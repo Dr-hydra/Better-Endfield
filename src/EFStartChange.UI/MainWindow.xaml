@@ -1,0 +1,426 @@
+<Window
+    x:Class="EFStartChange.UI.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid
+        Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+        Loaded="MainRoot_Loaded">
+        <Grid.Resources>
+            <Style x:Key="SectionCardStyle" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="Padding" Value="24" />
+            </Style>
+            <Style x:Key="SectionTitleStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="20" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Margin" Value="0,0,0,4" />
+            </Style>
+            <Style x:Key="FieldHintStyle" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+                <Setter Property="Margin" Value="0,4,0,0" />
+            </Style>
+        </Grid.Resources>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border
+            Grid.Row="0"
+            Padding="32,22"
+            Background="{ThemeResource LayerFillColorAltBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock FontSize="28" FontWeight="SemiBold" Text="EF Start Change" />
+                    <TextBlock
+                        Margin="0,4,0,0"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="登录场景角色与动画控制器 · 参数在下一次注入时生效" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                    <TextBlock
+                        x:Name="RuntimeStatusTextBlock"
+                        HorizontalAlignment="Right"
+                        FontWeight="SemiBold"
+                        Text="正在检查运行状态…" />
+                    <TextBlock
+                        x:Name="LogStatusTextBlock"
+                        Margin="0,4,0,0"
+                        HorizontalAlignment="Right"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        FontSize="12"
+                        Text="尚未发现日志" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel
+                Width="1080"
+                MaxWidth="1080"
+                Margin="32,28,32,40"
+                HorizontalAlignment="Center"
+                Spacing="18">
+
+                <Border Style="{StaticResource SectionCardStyle}">
+                    <StackPanel Spacing="16">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="启动与注入" />
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="选择游戏和 Il2cppDumper。运行配置会写入注入器所在目录。" />
+                        </StackPanel>
+
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox
+                                x:Name="GamePathBox"
+                                Header="游戏程序"
+                                PlaceholderText="Endfield.exe" />
+                            <Button
+                                Grid.Column="1"
+                                Margin="0,24,0,0"
+                                Click="BrowseGameButton_Click"
+                                Content="浏览…" />
+                        </Grid>
+
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox
+                                x:Name="MapperPathBox"
+                                Header="注入器"
+                                PlaceholderText="Il2cppDumper.exe"
+                                TextChanged="MapperPathBox_TextChanged" />
+                            <Button
+                                Grid.Column="1"
+                                Margin="0,24,0,0"
+                                Click="BrowseMapperButton_Click"
+                                Content="浏览…" />
+                        </Grid>
+
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    FontSize="12"
+                                    Text="配置文件" />
+                                <TextBlock
+                                    x:Name="ConfigurationPathTextBlock"
+                                    Margin="0,3,0,0"
+                                    TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <Button
+                                Grid.Column="1"
+                                Click="OpenConfigurationFolderButton_Click"
+                                Content="打开目录" />
+                            <Button
+                                Grid.Column="2"
+                                Click="OpenLogButton_Click"
+                                Content="查看日志" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SectionCardStyle}">
+                    <StackPanel Spacing="18">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Character &amp; animation assets" />
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Each postmodel uses its own sit chain. The final animation list contains every resolved clip for that character." />
+                        </StackPanel>
+
+                        <Grid ColumnSpacing="18">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <ComboBox
+                                x:Name="CharacterComboBox"
+                                Header="Postmodel file"
+                                DisplayMemberPath="DisplayName"
+                                SelectionChanged="CharacterComboBox_SelectionChanged" />
+                            <ComboBox
+                                x:Name="FinalActionComboBox"
+                                Grid.Column="1"
+                                Header="Final animation file"
+                                DisplayMemberPath="DisplayName"
+                                SelectionChanged="FinalActionComboBox_SelectionChanged" />
+                        </Grid>
+                        <StackPanel Spacing="4">
+                            <TextBlock
+                                x:Name="ActionDurationTextBlock"
+                                FontSize="14"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                x:Name="ActionDescriptionTextBlock"
+                                Style="{StaticResource FieldHintStyle}" />
+                        </StackPanel>
+                        <TextBlock
+                            x:Name="PresetDetailsTextBlock"
+                            Style="{StaticResource FieldHintStyle}" />
+
+                        <Grid ColumnSpacing="18">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <NumberBox
+                                x:Name="StartYawNumberBox"
+                                Header="起始角度 (°)"
+                                Maximum="360"
+                                Minimum="-360"
+                                SmallChange="1" />
+                            <NumberBox
+                                x:Name="TurnDurationNumberBox"
+                                Grid.Column="1"
+                                Header="转正时长 (秒)"
+                                Maximum="15"
+                                Minimum="0.1"
+                                SmallChange="0.1" />
+                            <NumberBox
+                                x:Name="ScaleNumberBox"
+                                Grid.Column="2"
+                                Header="模型缩放"
+                                Maximum="2"
+                                Minimum="0.5"
+                                SmallChange="0.05" />
+                            <NumberBox
+                                x:Name="LeanSampleNumberBox"
+                                Grid.Column="3"
+                                Header="前倾采样 (秒)"
+                                Maximum="5"
+                                Minimum="0"
+                                SmallChange="0.1" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SectionCardStyle}">
+                    <StackPanel Spacing="18">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="播放速度" />
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="1.0 为动画原速。每一阶段独立设置，不改变镜头时间轴。" />
+                        </StackPanel>
+                        <Grid ColumnSpacing="18">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <NumberBox
+                                x:Name="SitLoopSpeedNumberBox"
+                                Header="坐姿循环"
+                                Maximum="4"
+                                Minimum="0.1"
+                                SmallChange="0.1" />
+                            <NumberBox
+                                x:Name="SitSpecialSpeedNumberBox"
+                                Grid.Column="1"
+                                Header="坐姿小动作"
+                                Maximum="4"
+                                Minimum="0.1"
+                                SmallChange="0.1" />
+                            <NumberBox
+                                x:Name="SitToWalkSpeedNumberBox"
+                                Grid.Column="2"
+                                Header="起身过渡"
+                                Maximum="4"
+                                Minimum="0.1"
+                                SmallChange="0.1" />
+                            <NumberBox
+                                x:Name="FinalSpeedNumberBox"
+                                Grid.Column="3"
+                                Header="最后动作"
+                                Maximum="4"
+                                Minimum="0.1"
+                                SmallChange="0.1" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SectionCardStyle}">
+                    <StackPanel Spacing="18">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="连续循环" />
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="原生循环遵循资源设置；强制循环覆盖非循环资源；双 Playable 按自定义区间交叉混合。" />
+                        </StackPanel>
+
+                        <Grid ColumnSpacing="24">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <ToggleSwitch
+                                x:Name="FinalLoopToggle"
+                                Header="原生循环"
+                                OffContent="播放一次并停在末帧"
+                                OnContent="使用动画 LoopTime" />
+                            <ToggleSwitch
+                                x:Name="ForceLoopToggle"
+                                Grid.Column="1"
+                                Header="强制循环"
+                                OffContent="遵循动画导入设置"
+                                OnContent="覆盖非循环动画" />
+                            <ToggleSwitch
+                                x:Name="CrossfadeToggle"
+                                Grid.Column="2"
+                                Header="双 Playable 交叉混合"
+                                OffContent="关闭"
+                                OnContent="按自定义区间循环"
+                                Toggled="CrossfadeToggle_Toggled" />
+                        </Grid>
+
+                        <Grid x:Name="CrossfadeSettingsPanel" ColumnSpacing="18">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <NumberBox
+                                x:Name="LoopStartNumberBox"
+                                Header="循环起点 (秒)"
+                                Maximum="30"
+                                Minimum="0"
+                                SmallChange="0.05" />
+                            <NumberBox
+                                x:Name="LoopEndNumberBox"
+                                Grid.Column="1"
+                                Header="循环终点 (秒)"
+                                Maximum="60"
+                                Minimum="0.05"
+                                SmallChange="0.05" />
+                            <NumberBox
+                                x:Name="CrossfadeDurationNumberBox"
+                                Grid.Column="2"
+                                Header="混合时长 (秒)"
+                                Maximum="10"
+                                Minimum="0.01"
+                                SmallChange="0.05" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SectionCardStyle}">
+                    <StackPanel Spacing="18">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="角色配音语言" />
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="在每条语音真正提交给 Wwise 前，按 speakerChannel 同步切换游戏语音语言包。重叠语音仍共享最后一次全局语言。"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <Grid ColumnSpacing="18">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ToggleSwitch
+                                x:Name="VoiceRouterToggle"
+                                Header="按角色切换配音"
+                                OffContent="关闭"
+                                OnContent="启用" />
+                            <ComboBox
+                                x:Name="VoiceLanguageComboBox"
+                                Grid.Column="1"
+                                Header="当前角色使用的语言" />
+                            <Button
+                                Grid.Column="2"
+                                Margin="0,24,0,0"
+                                Click="AddVoiceRuleButton_Click"
+                                Content="添加 / 更新当前角色" />
+                        </Grid>
+
+                        <TextBox
+                            x:Name="VoiceLanguageRulesBox"
+                            Height="150"
+                            AcceptsReturn="True"
+                            Header="speakerChannel rules"
+                            PlaceholderText="aglina=Japanese&#x0a;chen=Chinese&#x0a;*=FollowGlobal"
+                            ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                            TextWrapping="NoWrap" />
+                        <TextBlock
+                            Style="{StaticResource FieldHintStyle}"
+                            Text="每行格式：speakerChannel=Chinese / English / Japanese / Korean / FollowGlobal。首次启用后，日志会以 [voice-lang] observed 记录游戏实际传入的 speakerChannel；可据此修正规则左侧名称。" />
+                    </StackPanel>
+                </Border>
+
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="游戏已运行时请先退出；注入器会以管理员权限重新启动游戏。" />
+                    <Button
+                        Grid.Column="1"
+                        Click="ResetButton_Click"
+                        Content="恢复默认" />
+                    <Button
+                        Grid.Column="2"
+                        Click="SaveButton_Click"
+                        Content="保存参数" />
+                    <Button
+                        Grid.Column="3"
+                        Click="LaunchButton_Click"
+                        Style="{StaticResource AccentButtonStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ProgressRing
+                                x:Name="LaunchProgressRing"
+                                Width="16"
+                                Height="16"
+                                IsActive="False"
+                                Visibility="Collapsed" />
+                            <TextBlock Text="保存并启动" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
+
+        <InfoBar
+            x:Name="StatusInfoBar"
+            Grid.Row="2"
+            Margin="24,0,24,20"
+            IsClosable="True"
+            IsOpen="False" />
+    </Grid>
+</Window>

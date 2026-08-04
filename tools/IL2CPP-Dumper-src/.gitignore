@@ -1,0 +1,44 @@
+# build outputs
+x64/
+Win32/
+Debug/
+Release/
+*.obj/
+*.tlog/
+
+# VS user state
+.vs/
+*.vcxproj.user
+*.vcxproj.filters
+*.suo
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
+mydatabase.db
+
+# build artefacts
+*.obj
+*.pdb
+*.ipdb
+*.iobj
+*.ilk
+*.exp
+*.lib
+*.idb
+*.exe
+*.dll
+*.recipe
+*.log
+*.res
+
+# dumps
+IL2CPP_Dump_Normal/
+IL2CPP_Dump_AI/
+IL2CPP_Dump_Strings.txt
+IL2CPP_World_Dump_*.txt
+IL2CPP_Camera_*.txt
+IL2CPP_MeshColliders_*.*
+IL2CPP_Scan_*.txt
+IL2CPP_DumpTracker.txt
+IL2CPPDump_Log.txt

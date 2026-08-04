@@ -1,0 +1,4 @@
+#include <windows.h>
+#include "include/resources.h"
+
+IDR_DUMPER_DLL  RCDATA  "il2cpp.dll"

@@ -1,0 +1,145 @@
+using System.Globalization;
+using System.Text;
+
+namespace EFStartChange.UI.Models;
+
+internal sealed class ModConfiguration
+{
+    public string Character { get; set; } = "chr_0013_aglina";
+
+    public string FinalAction { get; set; } =
+        "a_actor_aglina_dialog_state_shy2_walk_loop";
+
+    public string ModelPath { get; set; } = string.Empty;
+
+    public string ModelPathHash { get; set; } = string.Empty;
+
+    public string ModelBundleHash { get; set; } = string.Empty;
+
+    public string SitLoopPath { get; set; } = string.Empty;
+
+    public string SitLoopPathHash { get; set; } = string.Empty;
+
+    public string SitLoopLabel { get; set; } = string.Empty;
+
+    public string SitSpecialPath { get; set; } = string.Empty;
+
+    public string SitSpecialPathHash { get; set; } = string.Empty;
+
+    public string SitSpecialLabel { get; set; } = string.Empty;
+
+    public string SitToWalkPath { get; set; } = string.Empty;
+
+    public string SitToWalkPathHash { get; set; } = string.Empty;
+
+    public string SitToWalkLabel { get; set; } = string.Empty;
+
+    public string FinalPath { get; set; } = string.Empty;
+
+    public string FinalPathHash { get; set; } = string.Empty;
+
+    public string FinalLabel { get; set; } = string.Empty;
+
+    public bool FinalNativeLoop { get; set; }
+
+    public double StartYaw { get; set; } = -120.0;
+
+    public double TurnDuration { get; set; } = 3.0333335;
+
+    public double Scale { get; set; } = 1.0;
+
+    public double ForwardLeanSample { get; set; } = 1.0;
+
+    public double SitLoopSpeed { get; set; } = 1.0;
+
+    public double SitSpecialSpeed { get; set; } = 1.0;
+
+    public double SitToWalkSpeed { get; set; } = 1.0;
+
+    public double FinalSpeed { get; set; } = 1.0;
+
+    public bool FinalLoop { get; set; } = true;
+
+    public bool ForceLoop { get; set; }
+
+    public bool UseCrossfade { get; set; }
+
+    public double LoopStart { get; set; } = 0.968;
+
+    public double LoopEnd { get; set; } = 2.3760002;
+
+    public double CrossfadeDuration { get; set; } = 0.20;
+
+    public bool VoiceRouterEnabled { get; set; }
+
+    public string VoiceLanguageRules { get; set; } = string.Empty;
+
+    public static ModConfiguration CreateDefaults() => new();
+
+    public string ToIni()
+    {
+        static string Number(double value) =>
+            value.ToString("0.########", CultureInfo.InvariantCulture);
+        static string Boolean(bool value) => value ? "true" : "false";
+        static string VoiceRules(string value) => string.Join(
+            ",",
+            value.Split(
+                ['\r', '\n', ',', ';'],
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(rule =>
+                {
+                    int equals = rule.IndexOf('=');
+                    int colon = rule.IndexOf(':');
+                    int separator = equals >= 0 && colon >= 0
+                        ? Math.Min(equals, colon)
+                        : Math.Max(equals, colon);
+                    return separator > 0
+                        ? rule[..separator].Trim() + ":" + rule[(separator + 1)..].Trim()
+                        : rule;
+                }));
+
+        var text = new StringBuilder();
+        text.AppendLine("; EF Start Change runtime configuration");
+        text.AppendLine("; Changes are applied on the next injection.");
+        text.AppendLine();
+        text.AppendLine("[EFStartChange]");
+        text.AppendLine("schema_version=2");
+        text.AppendLine($"character={Character}");
+        text.AppendLine($"final_action={FinalAction}");
+        text.AppendLine($"model_path={ModelPath}");
+        text.AppendLine($"model_path_hash={ModelPathHash}");
+        text.AppendLine($"model_bundle_hash={ModelBundleHash}");
+        text.AppendLine($"sit_loop_path={SitLoopPath}");
+        text.AppendLine($"sit_loop_path_hash={SitLoopPathHash}");
+        text.AppendLine($"sit_loop_label={SitLoopLabel}");
+        text.AppendLine($"sit_special_path={SitSpecialPath}");
+        text.AppendLine($"sit_special_path_hash={SitSpecialPathHash}");
+        text.AppendLine($"sit_special_label={SitSpecialLabel}");
+        text.AppendLine($"sit_to_walk_path={SitToWalkPath}");
+        text.AppendLine($"sit_to_walk_path_hash={SitToWalkPathHash}");
+        text.AppendLine($"sit_to_walk_label={SitToWalkLabel}");
+        text.AppendLine($"final_path={FinalPath}");
+        text.AppendLine($"final_path_hash={FinalPathHash}");
+        text.AppendLine($"final_label={FinalLabel}");
+        text.AppendLine($"final_native_loop={Boolean(FinalNativeLoop)}");
+        text.AppendLine($"start_yaw={Number(StartYaw)}");
+        text.AppendLine($"turn_duration={Number(TurnDuration)}");
+        text.AppendLine($"scale={Number(Scale)}");
+        text.AppendLine($"forward_lean_sample={Number(ForwardLeanSample)}");
+        text.AppendLine($"sit_loop_speed={Number(SitLoopSpeed)}");
+        text.AppendLine($"sit_special_speed={Number(SitSpecialSpeed)}");
+        text.AppendLine($"sit_to_walk_speed={Number(SitToWalkSpeed)}");
+        text.AppendLine($"final_speed={Number(FinalSpeed)}");
+        text.AppendLine($"final_loop={Boolean(FinalLoop)}");
+        text.AppendLine($"force_loop={Boolean(ForceLoop)}");
+        text.AppendLine($"use_crossfade={Boolean(UseCrossfade)}");
+        text.AppendLine($"loop_start={Number(LoopStart)}");
+        text.AppendLine($"loop_end={Number(LoopEnd)}");
+        text.AppendLine($"crossfade_duration={Number(CrossfadeDuration)}");
+        text.AppendLine();
+        text.AppendLine("; speakerChannel:Chinese|English|Japanese|Korean|FollowGlobal");
+        text.AppendLine($"voice_router_enabled={Boolean(VoiceRouterEnabled)}");
+        text.AppendLine($"voice_language_rules={VoiceRules(VoiceLanguageRules)}");
+        return text.ToString();
+    }
+}

@@ -1,0 +1,41 @@
+bin/
+obj/
+artifacts/
+research/
+runs/*
+state/*
+Maps/
+vendor/
+dependencies.lock.json
+
+# Research-only applications and extraction tools are not part of the mod repo.
+src/EFStartCtl/
+src/EFStartProbe/
+tests/
+tools/EndfieldDumper/
+tools/EndfieldStudio/
+tools/EndfieldUnpacker/
+tools/FkArkEnd/
+tools/MetadataScan/
+
+# Keep only the scripts needed to build the distributable mod.
+scripts/*
+!scripts/BuildEFStartChange.ps1
+
+# Native build outputs and upstream sample dumps.
+tools/IL2CPP-Dumper-src/x64/
+tools/IL2CPP-Dumper-src/Arknights Endfield 1.2.4/
+tools/IL2CPP-Dumper-src/Dump/x64/
+tools/IL2CPP-Dumper-src/Mapper/x64/
+tools/IL2CPP-Dumper-src/third_party/minhook/build/
+
+vendor/bepinex6/
+vendor/tools/
+vendor/unity-libs-2021.3.34/
+*.user
+*.suo
+*.log
+*.pdb
+EFStartChange.ini
+IL2CPP_Dump_*/
+IL2CPPDump_Log.txt

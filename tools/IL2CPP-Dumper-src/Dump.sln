@@ -1,0 +1,34 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36908.2 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Dump", "Dump\Dump.vcxproj", "{6B330DED-84CA-49D9-9261-532E41C7FC9D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Il2cppDumper", "Mapper\Il2cppDumper.vcxproj", "{A1B2C3D4-E5F6-47A8-9B0C-1D2E3F4A5B6C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6B330DED-84CA-49D9-9261-532E41C7FC9D} = {6B330DED-84CA-49D9-9261-532E41C7FC9D}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6B330DED-84CA-49D9-9261-532E41C7FC9D}.Debug|x64.ActiveCfg = Debug|x64
+		{6B330DED-84CA-49D9-9261-532E41C7FC9D}.Debug|x64.Build.0 = Debug|x64
+		{6B330DED-84CA-49D9-9261-532E41C7FC9D}.Release|x64.ActiveCfg = Release|x64
+		{6B330DED-84CA-49D9-9261-532E41C7FC9D}.Release|x64.Build.0 = Release|x64
+		{A1B2C3D4-E5F6-47A8-9B0C-1D2E3F4A5B6C}.Debug|x64.ActiveCfg = Debug|x64
+		{A1B2C3D4-E5F6-47A8-9B0C-1D2E3F4A5B6C}.Debug|x64.Build.0 = Debug|x64
+		{A1B2C3D4-E5F6-47A8-9B0C-1D2E3F4A5B6C}.Release|x64.ActiveCfg = Release|x64
+		{A1B2C3D4-E5F6-47A8-9B0C-1D2E3F4A5B6C}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B63313EE-9329-45A2-8E64-16AEE0E2CBA2}
+	EndGlobalSection
+EndGlobal
