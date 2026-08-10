@@ -405,7 +405,7 @@ namespace {
         const bool exists = GetFileAttributesA( configPath.c_str( ) ) !=
             INVALID_FILE_ATTRIBUTES;
         g_modelReplacementConfiguredEnabled = ReadConfigBool(
-            configPath, "model_replacement_enabled", true );
+            configPath, "model_replacement_enabled", false );
         if ( !g_modelReplacementConfiguredEnabled ) {
             Log( "[config] model replacement configured disabled; model hooks will not be installed" );
             return exists;

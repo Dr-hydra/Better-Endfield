@@ -70,9 +70,9 @@ internal sealed class ModConfiguration
 
     public double CrossfadeDuration { get; set; } = 0.20;
 
-    public bool ModelReplacementEnabled { get; set; } = true;
+    public bool ModelReplacementEnabled { get; set; } = false;
 
-    public bool VoiceRouterEnabled { get; set; }
+    public bool VoiceRouterEnabled { get; set; } = false;
 
     public string VoiceLanguageRules { get; set; } = string.Empty;
 
