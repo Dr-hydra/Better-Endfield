@@ -6,13 +6,20 @@
     <AssemblyName>EFStartChange</AssemblyName>
     <RootNamespace>EFStartChange.UI</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\gilberta.ico</ApplicationIcon>
     <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <UseWinUI>true</UseWinUI>
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
-    <PublishSingleFile>false</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <Version>1.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,12 +27,22 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Assets\gilberta.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
     <EmbeddedResource
       Include="Assets\character-presets.json"
       LogicalName="EFStartChange.UI.Assets.character-presets.json" />
+    <EmbeddedResource
+      Include="Assets\character-names.json"
+      LogicalName="EFStartChange.UI.Assets.character-names.json" />
   </ItemGroup>
 
-  <Target Name="CopyWinUIResourcesToPublish" AfterTargets="Publish">
+  <Target
+    Name="CopyWinUIResourcesToPublish"
+    AfterTargets="Publish"
+    Condition="'$(PublishSingleFile)' != 'true'">
     <ItemGroup>
       <WinUICompiledResource Include="$(TargetDir)*.xbf" />
       <WinUICompiledResource Include="$(TargetDir)$(AssemblyName).pri" />

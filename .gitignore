@@ -21,6 +21,7 @@ tools/MetadataScan/
 # Keep only the scripts needed to build the distributable mod.
 scripts/*
 !scripts/BuildEFStartChange.ps1
+!scripts/BuildInstaller.ps1
 
 # Native build outputs and upstream sample dumps.
 tools/IL2CPP-Dumper-src/x64/

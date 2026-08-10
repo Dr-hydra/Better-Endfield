@@ -87,6 +87,7 @@ namespace {
     constexpr size_t MIN_UNIQUE_MAPPED_BONES = 20;
     uint64_t REPLACEMENT_POSTMODEL_PATH_HASH = 0x0C662A5986756356ULL;
     uint64_t REPLACEMENT_POSTMODEL_BUNDLE_HASH = 0x08FF104A90936771ULL;
+    bool g_modelReplacementConfiguredEnabled = true;
     float REPLACEMENT_SCALE_MULTIPLIER = 1.0f;
     double REPLACEMENT_WALK_SPEED = 1.0;
     // Retained for loop-capable final clips. Aglina's current special sprint is
@@ -100,6 +101,7 @@ namespace {
     double LOGIN_CAMERA_TURN_DURATION_SECONDS = 3.0333335;
     float LOGIN_SIT_START_YAW_DEGREES = -120.0f;
     double FORWARD_LEAN_POSE_SAMPLE_SECONDS = 1.0;
+    constexpr float REPLACEMENT_VERTICAL_FOLLOW_RESPONSE_SECONDS = 0.45f;
     constexpr int DIRECTOR_UPDATE_MODE_UNSCALED_GAME_TIME = 2;
     constexpr int DIRECTOR_WRAP_MODE_HOLD = 0;
     constexpr int DIRECTOR_WRAP_MODE_LOOP = 1;
@@ -402,6 +404,12 @@ namespace {
     static bool LoadRuntimeConfiguration( const std::string & configPath ) {
         const bool exists = GetFileAttributesA( configPath.c_str( ) ) !=
             INVALID_FILE_ATTRIBUTES;
+        g_modelReplacementConfiguredEnabled = ReadConfigBool(
+            configPath, "model_replacement_enabled", true );
+        if ( !g_modelReplacementConfiguredEnabled ) {
+            Log( "[config] model replacement configured disabled; model hooks will not be installed" );
+            return exists;
+        }
 
         std::string activeCharacter;
         std::string activeAction;
@@ -459,10 +467,11 @@ namespace {
         char summary [ 2048 ] = { 0 };
         _snprintf_s(
             summary, sizeof( summary ), _TRUNCATE,
-            "[config] %s%s | character=%s action=%s yaw=%.3f turn=%.3f "
+            "[config] %s%s | modelEnabled=%s character=%s action=%s yaw=%.3f turn=%.3f "
             "scale=%.3f speeds=%.3f,%.3f,%.3f,%.3f finalLoop=%s "
             "nativeLoop=%s forceLoop=%s crossfade=%s",
             exists ? "loaded " : "using defaults; missing ", configPath.c_str( ),
+            g_modelReplacementConfiguredEnabled ? "true" : "false",
             activeCharacter.c_str( ), activeAction.c_str( ),
             LOGIN_SIT_START_YAW_DEGREES,
             LOGIN_CAMERA_TURN_DURATION_SECONDS,
@@ -1204,7 +1213,8 @@ namespace {
         bool releaseReusableAssets );
     static void DiscoverFixedLoginActorInstances( );
     static bool AlignReplacementAnchor(
-        LoginActorReplacementState & state );
+        LoginActorReplacementState & state, bool snapVertical,
+        float deltaTime = 0.0f );
     static bool ApplyReplacementPhaseFacing(
         LoginActorReplacementState & state, ReplacementPhase phase );
     static bool UpdateReplacementPhaseFacing(
@@ -1453,7 +1463,7 @@ namespace {
                 g_originalLoginAnimTick( instance, deltaTime, method );
             for ( auto & candidate : g_loginActorSlots ) {
                 TickReplacementSequence( candidate, deltaTime );
-                AlignReplacementAnchor( candidate );
+                AlignReplacementAnchor( candidate, false, deltaTime );
             }
             return;
         }
@@ -1491,7 +1501,7 @@ namespace {
             g_originalLoginAnimTick( instance, deltaTime, method );
         for ( auto & candidate : g_loginActorSlots ) {
             TickReplacementSequence( candidate, deltaTime );
-            AlignReplacementAnchor( candidate );
+            AlignReplacementAnchor( candidate, false, deltaTime );
         }
     }
 
@@ -1720,7 +1730,9 @@ namespace {
 
         state.replacementRoot = replacement;
         state.replacementActive = true;
-        AlignReplacementAnchor( state );
+        if ( !AlignReplacementAnchor( state, true ) )
+            Log( "[anchor-sync] initial one-shot alignment failed; "
+                "replacement kept at copied root pose" );
         g_replacementActive = true;
         g_pelicaInstantiateSucceeded = true;
         if ( !g_replacementRoot ) {
@@ -2701,7 +2713,8 @@ namespace {
     }
 
     static bool AlignReplacementAnchor(
-        LoginActorReplacementState & state ) {
+        LoginActorReplacementState & state, bool snapVertical,
+        float deltaTime ) {
         if ( !state.replacementActive || !state.replacementTransform ||
             !state.originalAnchor || !state.replacementAnchor ||
             !mGetPosition || !mSetPosition )
@@ -2718,9 +2731,19 @@ namespace {
                 "Transform.get_position(replacement root)" ), rootPosition ) )
             return false;
 
+        float verticalError = originalPosition.y - replacementPosition.y;
+        float verticalCorrection = verticalError;
+        if ( !snapVertical ) {
+            float safeDeltaTime = std::clamp( deltaTime, 0.0f, 0.1f );
+            float response = REPLACEMENT_VERTICAL_FOLLOW_RESPONSE_SECONDS;
+            float alpha = response > 0.0f
+                ? 1.0f - std::exp( -safeDeltaTime / response ) : 1.0f;
+            verticalCorrection *= alpha;
+        }
+
         Vector3 alignedPosition {
             rootPosition.x + originalPosition.x - replacementPosition.x,
-            rootPosition.y + originalPosition.y - replacementPosition.y,
+            rootPosition.y + verticalCorrection,
             rootPosition.z + originalPosition.z - replacementPosition.z
         };
         void * positionParams [ 1 ] = { &alignedPosition };
@@ -2728,11 +2751,13 @@ namespace {
                 positionParams, "Transform.set_position(replacement root)" ) )
             return false;
 
-        if ( !state.anchorAlignmentLogged ) {
+        if ( snapVertical && !state.anchorAlignmentLogged ) {
             state.anchorAlignmentLogged = true;
             char message [ 352 ] = { 0 };
             snprintf( message, sizeof( message ),
-                "[anchor-sync] aligned Bip001_Pelvis delta=(%.3f,%.3f,%.3f) "
+                "[anchor-sync] one-shot aligned Bip001_Pelvis; "
+                "exact XZ and smoothed Y tracking enabled "
+                "delta=(%.3f,%.3f,%.3f) "
                 "replacementRoot=(%.3f,%.3f,%.3f)",
                 originalPosition.x - replacementPosition.x,
                 originalPosition.y - replacementPosition.y,
@@ -3113,7 +3138,8 @@ namespace {
                 ++configured;
         }
         Log( "[complete-replace] original animators forced to AlwaysAnimate "
-            "for anchor tracking (configured=" + std::to_string( configured ) +
+            "for login state synchronization (configured=" +
+            std::to_string( configured ) +
             "/" + std::to_string( animatorCount ) + ")" );
     }
 
@@ -3159,7 +3185,7 @@ namespace {
 
         g_originalRenderersDisabled = true;
         Log( "[complete-replace] original renderer hierarchy hidden; "
-            "login root and animation anchors remain active (count=" +
+            "login root and animation controller remain active (count=" +
             std::to_string( state.disabledRenderers.size( ) ) + ")" );
         return true;
     }
@@ -4195,6 +4221,9 @@ namespace {
                 RestoreActorRendererHierarchy( slot );
                 continue;
             }
+            if ( !AlignReplacementAnchor( slot, true ) )
+                Log( "[anchor-sync] reload one-shot alignment failed; "
+                    "replacement kept at copied root pose" );
             ++resumedCount;
         }
 
@@ -4452,31 +4481,12 @@ namespace {
         return true;
     }
 
-    static bool AttachReplacementToLoginRoot( void * replacementTransform,
+    static bool AttachReplacementBesideLoginRoot( void * replacementTransform,
         void * targetTransform ) {
-        if ( !replacementTransform || !targetTransform ||
-            !g_transformSetParent )
-            return false;
-
-        __try {
-            g_transformSetParent(
-                replacementTransform, targetTransform, false, nullptr );
-        }
-        __except ( EXCEPTION_EXECUTE_HANDLER ) {
-            Log( "[complete-replace] native exception while attaching "
-                "replacement to login root" );
-            return false;
-        }
-
-        Vector3 localPosition { 0.0f, 0.0f, 0.0f };
-        Quaternion localRotation { 0.0f, 0.0f, 0.0f, 1.0f };
-        void * positionParams [ 1 ] = { &localPosition };
-        void * rotationParams [ 1 ] = { &localRotation };
-        Invoke( mSetLocalPosition, replacementTransform, positionParams,
-            "Transform.set_localPosition" );
-        Invoke( mSetLocalRotation, replacementTransform, rotationParams,
-            "Transform.set_localRotation" );
-        return true;
+        // A child would inherit the original actor's animated root motion on
+        // top of the replacement clip. Keep both actors under the same stable
+        // scene parent and start from the original root's local transform.
+        return CopyLocalTransform( replacementTransform, targetTransform );
     }
 
     static bool PrepareCompleteReplacement(
@@ -4487,10 +4497,10 @@ namespace {
         if ( !targetTransform || !replacementTransform )
             return false;
 
-        // Resolve the original bone before parenting the replacement under the
-        // login root, otherwise a hierarchy search can return the replacement
-        // bone for both sides. The original animator remains alive and supplies
-        // the camera-specific sit/walk world anchor every frame.
+        // Resolve both bones before moving the replacement. Its sampled sit
+        // pose is aligned once in XYZ; afterwards the original staging drives
+        // XZ exactly and Y through a low-pass correction so the replacement
+        // keeps the framing without inheriting per-frame vertical jitter.
         state.replacementTransform = replacementTransform;
         state.originalAnchor = FindTransformByName(
             targetRoot, "Bip001_Pelvis" );
@@ -4498,15 +4508,14 @@ namespace {
             replacementRoot, "Bip001_Pelvis" );
         state.anchorAlignmentLogged = false;
         if ( !state.originalAnchor || !state.replacementAnchor )
-            Log( "[anchor-sync] Bip001_Pelvis anchor missing; replacement will stay at login root" );
+            Log( "[anchor-sync] Bip001_Pelvis anchor missing; replacement will "
+                "keep the copied sibling root pose" );
 
-        // Hide only the original visuals. Keeping the login root alive lets
-        // the game's activation and root-position animation continue to drive
-        // the correct sit/walk anchor. The replacement is attached afterwards
-        // so it is not included in the renderer list above.
+        // Hide only the original visuals. Attach the replacement afterwards so
+        // it is not included in the renderer list above.
         if ( !DisableOriginalRendererHierarchy( state, targetRoot ) )
             return false;
-        if ( !AttachReplacementToLoginRoot(
+        if ( !AttachReplacementBesideLoginRoot(
             replacementTransform, targetTransform ) ) {
             RestoreActorRendererHierarchy( state );
             return false;
@@ -5088,6 +5097,11 @@ namespace ModelReplacer {
 
     bool Initialize( HMODULE module ) {
         ( void ) module;
+        if ( !g_modelReplacementConfiguredEnabled ) {
+            g_redirectEnabled = false;
+            Log( "[redirect] model replacement disabled by configuration; hooks not installed" );
+            return true;
+        }
         if ( g_cachedLoadGameObjectTarget && g_i18nLoadGameObjectTarget &&
             g_resolveI18NPathHashTarget && g_initInitialPathHashTarget &&
             g_initMainPathHashTarget && g_loadUntrackedHashTarget &&

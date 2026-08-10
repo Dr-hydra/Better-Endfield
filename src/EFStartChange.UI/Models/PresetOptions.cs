@@ -61,6 +61,12 @@ internal static class PresetOptions
     private const string CatalogResourceName =
         "EFStartChange.UI.Assets.character-presets.json";
 
+    private const string ChineseNamesResourceName =
+        "EFStartChange.UI.Assets.character-names.json";
+
+    public static IReadOnlyDictionary<string, string> CharacterNames { get; } =
+        LoadChineseNames();
+
     public static IReadOnlyList<CharacterOption> Characters { get; } = LoadCharacters();
 
     public static string NormalizeCharacterId(string value) =>
@@ -98,6 +104,26 @@ internal static class PresetOptions
                 $"Unsupported preset catalog schema: {catalog.SchemaVersion}");
         }
 
+        foreach (CharacterOption character in catalog.Characters)
+        {
+            if (CharacterNames.TryGetValue(character.Id, out string? chineseName))
+            {
+                character.DisplayName = $"{chineseName}  ·  {character.Id}";
+            }
+        }
+
         return catalog.Characters;
+    }
+
+    private static IReadOnlyDictionary<string, string> LoadChineseNames()
+    {
+        using Stream stream = Assembly.GetExecutingAssembly()
+            .GetManifestResourceStream(ChineseNamesResourceName) ??
+            throw new InvalidOperationException(
+                $"Embedded character-name map was not found: {ChineseNamesResourceName}");
+        return JsonSerializer.Deserialize<Dictionary<string, string>>(
+            stream,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ??
+            throw new InvalidOperationException("Character-name map is invalid.");
     }
 }

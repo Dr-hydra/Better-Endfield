@@ -70,6 +70,8 @@ internal sealed class ModConfiguration
 
     public double CrossfadeDuration { get; set; } = 0.20;
 
+    public bool ModelReplacementEnabled { get; set; } = true;
+
     public bool VoiceRouterEnabled { get; set; }
 
     public string VoiceLanguageRules { get; set; } = string.Empty;
@@ -103,7 +105,8 @@ internal sealed class ModConfiguration
         text.AppendLine("; Changes are applied on the next injection.");
         text.AppendLine();
         text.AppendLine("[EFStartChange]");
-        text.AppendLine("schema_version=2");
+        text.AppendLine("schema_version=3");
+        text.AppendLine($"model_replacement_enabled={Boolean(ModelReplacementEnabled)}");
         text.AppendLine($"character={Character}");
         text.AppendLine($"final_action={FinalAction}");
         text.AppendLine($"model_path={ModelPath}");

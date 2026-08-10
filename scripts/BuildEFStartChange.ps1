@@ -1,14 +1,21 @@
 [CmdletBinding()]
 param(
     [ValidateSet("Debug", "Release")]
-    [string]$Configuration = "Release"
+    [string]$Configuration = "Release",
+
+    [string]$PublishDir = ""
 )
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $nativeRoot = Join-Path $repoRoot "tools\IL2CPP-Dumper-src"
 $uiProject = Join-Path $repoRoot "src\EFStartChange.UI\EFStartChange.UI.csproj"
-$publishDir = Join-Path $repoRoot "artifacts\EFStartChange-win-x64"
+$publishDir = if ([string]::IsNullOrWhiteSpace($PublishDir)) {
+    Join-Path $repoRoot "artifacts\EFStartChange-win-x64"
+}
+else {
+    [System.IO.Path]::GetFullPath($PublishDir)
+}
 $vswhere = Join-Path ${env:ProgramFiles(x86)} `
     "Microsoft Visual Studio\Installer\vswhere.exe"
 
@@ -31,7 +38,8 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 dotnet publish $uiProject -c $Configuration -r win-x64 `
-    --self-contained true -p:Platform=x64 -p:PublishDir="$publishDir\"
+    --self-contained true -p:Platform=x64 -p:PublishSingleFile=true `
+    -p:DebugType=None -p:DebugSymbols=false -p:PublishDir="$publishDir\"
 if ($LASTEXITCODE -ne 0) {
     throw "WinUI publish failed with exit code $LASTEXITCODE."
 }

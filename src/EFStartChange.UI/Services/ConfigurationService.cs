@@ -148,6 +148,10 @@ internal static class ConfigurationService
             values,
             "crossfade_duration",
             configuration.CrossfadeDuration);
+        configuration.ModelReplacementEnabled = Boolean(
+            values,
+            "model_replacement_enabled",
+            configuration.ModelReplacementEnabled);
         configuration.VoiceRouterEnabled = Boolean(
             values,
             "voice_router_enabled",

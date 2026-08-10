@@ -1,5 +1,8 @@
 using System.Diagnostics;
+using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using EFStartChange.UI.Models;
 using EFStartChange.UI.Services;
@@ -7,13 +10,40 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
 using Windows.Storage.Pickers;
 
 namespace EFStartChange.UI;
 
+internal sealed class VoiceCharacterChoice
+{
+    public required string Speaker { get; init; }
+
+    public required string DisplayName { get; init; }
+
+    public string? CharacterId { get; init; }
+}
+
+internal sealed class VoiceRuleEntry
+{
+    public required string Speaker { get; init; }
+
+    public required string DisplayName { get; init; }
+
+    public required string Language { get; init; }
+
+    public required string LanguageDisplayName { get; init; }
+}
+
 public sealed partial class MainWindow : Window
 {
+    private const string DisclaimerVersion = "1";
+    private const string BilibiliProfileUrl = "https://space.bilibili.com/441133155";
+    private const string XiaoheiheProfileUrl =
+        "https://www.xiaoheihe.cn/app/user/profile/38080236";
+    private const string QqGroupNumber = "851586605";
+
     private static readonly Dictionary<string, string> VoiceLanguageNames = new(
         StringComparer.OrdinalIgnoreCase)
     {
@@ -37,6 +67,16 @@ public sealed partial class MainWindow : Window
         @"\[sequence\].*?phase=(?<label>\S+).*?length=(?<length>[0-9]+(?:\.[0-9]+)?)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
+    private static readonly IReadOnlyDictionary<string, string> VoiceLanguageDisplayNames =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Chinese"] = "中文",
+            ["English"] = "English",
+            ["Japanese"] = "日本語",
+            ["Korean"] = "한국어",
+            ["FollowGlobal"] = "跟随游戏"
+        };
+
     private readonly DispatcherTimer _statusTimer = new()
     {
         Interval = TimeSpan.FromSeconds(1)
@@ -45,19 +85,45 @@ public sealed partial class MainWindow : Window
     private bool _initializing = true;
     private string _durationLogPath = string.Empty;
     private DateTime _durationLogWriteUtc;
+    private readonly ObservableCollection<VoiceRuleEntry> _voiceRules = [];
+    private readonly IReadOnlyList<VoiceCharacterChoice> _voiceCharacters;
+    private AppSettings _appSettings = new();
+    private string _latestReleaseUrl = UpdateService.ReleasesUrl;
 
     public MainWindow()
     {
         InitializeComponent();
         Title = "EF Start Change";
+        SystemBackdrop = new MicaBackdrop();
         TryResizeWindow();
+        CurrentVersionTextBlock.Text = $"版本 {UpdateService.CurrentVersion}";
+        if (FeatureNavigation.SettingsItem is NavigationViewItem settingsItem)
+        {
+            settingsItem.Content = "设置";
+        }
 
         CharacterComboBox.ItemsSource = PresetOptions.Characters;
-        VoiceLanguageComboBox.ItemsSource = new[]
-        {
-            "Chinese", "English", "Japanese", "Korean", "FollowGlobal"
-        };
-        VoiceLanguageComboBox.SelectedIndex = 2;
+        _voiceCharacters = PresetOptions.CharacterNames
+            .OrderBy(entry => entry.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(entry => new VoiceCharacterChoice
+            {
+                CharacterId = entry.Key,
+                Speaker = GetCharacterSpeakerAlias(entry.Key),
+                DisplayName = $"{entry.Value}  ·  {entry.Key}"
+            })
+            .GroupBy(choice => choice.Speaker, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .Append(new VoiceCharacterChoice
+            {
+                Speaker = "*",
+                DisplayName = "其他角色（默认规则）"
+            })
+            .ToArray();
+        VoiceCharacterComboBox.ItemsSource = _voiceCharacters;
+        VoiceCharacterComboBox.SelectedIndex = 0;
+        VoiceRulesListView.ItemsSource = _voiceRules;
+        SelectVoiceLanguage("Japanese");
+        UpdateVoiceRulesEmptyState();
         _statusTimer.Tick += StatusTimer_Tick;
         Closed += MainWindow_Closed;
     }
@@ -66,12 +132,30 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            AppSettings settings = await ConfigurationService.LoadAppSettingsAsync();
-            GamePathBox.Text = !string.IsNullOrWhiteSpace(settings.GameExecutablePath)
-                ? settings.GameExecutablePath
+            _appSettings = await ConfigurationService.LoadAppSettingsAsync();
+            SelectTheme(_appSettings.Theme);
+            ApplyTheme(_appSettings.Theme);
+            if (!string.Equals(
+                _appSettings.DisclaimerAcceptedVersion,
+                DisclaimerVersion,
+                StringComparison.Ordinal))
+            {
+                bool accepted = await ShowDisclaimerAsync(requireAcceptance: true);
+                if (!accepted)
+                {
+                    Close();
+                    return;
+                }
+
+                _appSettings.DisclaimerAcceptedVersion = DisclaimerVersion;
+                await ConfigurationService.SaveAppSettingsAsync(_appSettings);
+            }
+
+            GamePathBox.Text = !string.IsNullOrWhiteSpace(_appSettings.GameExecutablePath)
+                ? _appSettings.GameExecutablePath
                 : ConfigurationService.DiscoverGamePath();
-            MapperPathBox.Text = !string.IsNullOrWhiteSpace(settings.MapperPath)
-                ? settings.MapperPath
+            MapperPathBox.Text = !string.IsNullOrWhiteSpace(_appSettings.MapperPath)
+                ? _appSettings.MapperPath
                 : ConfigurationService.DiscoverMapperPath();
             RefreshRuntimeAnimationDurations();
 
@@ -164,49 +248,79 @@ public sealed partial class MainWindow : Window
     private void CrossfadeToggle_Toggled(object sender, RoutedEventArgs e) =>
         UpdateCrossfadePanel();
 
+    private void FeatureNavigation_SelectionChanged(
+        NavigationView sender,
+        NavigationViewSelectionChangedEventArgs args)
+    {
+        string page = args.IsSettingsSelected
+            ? "settings"
+            : args.SelectedItemContainer?.Tag as string ?? "model";
+        ModelPageScrollViewer.Visibility = page == "model"
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        VoicePageScrollViewer.Visibility = page == "voice"
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        SettingsPageScrollViewer.Visibility = page == "settings"
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        AboutPageScrollViewer.Visibility = page == "about"
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        ActionBar.Visibility = page == "about"
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+        PageSelectionHintTextBlock.Text = page switch
+        {
+            "settings" => "路径与外观会随保存一起写入本机设置。",
+            "voice" => "角色配音规则保存后在下一次注入时生效。",
+            _ => "角色与动画参数保存后在下一次注入时生效。"
+        };
+    }
+
+    private void VoiceCharacterComboBox_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        if (VoiceCharacterComboBox.SelectedItem is not VoiceCharacterChoice choice)
+        {
+            return;
+        }
+
+        VoiceRuleEntry? existing = _voiceRules.FirstOrDefault(rule =>
+            rule.Speaker.Equals(choice.Speaker, StringComparison.OrdinalIgnoreCase));
+        SelectVoiceLanguage(existing?.Language ?? "FollowGlobal");
+    }
+
     private void AddVoiceRuleButton_Click(object sender, RoutedEventArgs e)
     {
-        if (CharacterComboBox.SelectedItem is not CharacterOption character ||
-            VoiceLanguageComboBox.SelectedItem is not string language)
+        if (VoiceCharacterComboBox.SelectedItem is not VoiceCharacterChoice choice ||
+            GetSelectedVoiceLanguage() is not string language)
         {
             return;
         }
 
-        string speaker = GetCharacterSpeakerAlias(character.Id);
-        if (!TryNormalizeVoiceLanguageRules(
-            VoiceLanguageRulesBox.Text,
-            out string normalizedRules,
-            out string? ruleError))
+        UpsertVoiceRule(choice.Speaker, language, choice.DisplayName);
+        ShowStatus(
+            "配音规则已更新",
+            $"{choice.DisplayName} 将使用 {GetVoiceLanguageDisplayName(language)}。",
+            InfoBarSeverity.Success);
+    }
+
+    private void RemoveVoiceRuleButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string speaker })
         {
-            ShowStatus(
-                "配音规则无效",
-                ruleError ?? "请先修正现有规则。",
-                InfoBarSeverity.Error);
             return;
         }
-        var lines = normalizedRules.Split(
-            ['\r', '\n'],
-            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .ToList();
-        int existingIndex = lines.FindIndex(line =>
-        {
-            int separator = line.IndexOfAny(['=', ':']);
-            return separator > 0 && line[..separator].Trim().Equals(
-                speaker,
-                StringComparison.OrdinalIgnoreCase);
-        });
-        string rule = $"{speaker}={language}";
-        if (existingIndex >= 0)
-        {
-            lines[existingIndex] = rule;
-        }
-        else
-        {
-            lines.Add(rule);
-        }
 
-        VoiceLanguageRulesBox.Text = string.Join(Environment.NewLine, lines);
-        VoiceRouterToggle.IsOn = true;
+        VoiceRuleEntry? entry = _voiceRules.FirstOrDefault(rule =>
+            rule.Speaker.Equals(speaker, StringComparison.OrdinalIgnoreCase));
+        if (entry is not null)
+        {
+            _voiceRules.Remove(entry);
+            UpdateVoiceRulesEmptyState();
+        }
     }
 
     private async void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -303,6 +417,146 @@ public sealed partial class MainWindow : Window
         OpenWithShell(logPath);
     }
 
+    private void ThemeComboBox_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        string theme = GetSelectedTheme();
+        ApplyTheme(theme);
+        _appSettings.Theme = theme;
+    }
+
+    private void CreateAppShortcutButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            string shortcutPath = ShortcutService.CreateApplicationShortcut();
+            ShowStatus(
+                "快捷方式已创建",
+                shortcutPath,
+                InfoBarSeverity.Success);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or COMException)
+        {
+            ShowStatus("创建快捷方式失败", exception.Message, InfoBarSeverity.Error);
+        }
+    }
+
+    private async void CreateGameShortcutButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!await SaveAsync(showSuccess: false))
+        {
+            return;
+        }
+
+        try
+        {
+            string shortcutPath = ShortcutService.CreateGameShortcut(
+                MapperPathBox.Text,
+                GamePathBox.Text);
+            ShowStatus(
+                "一键启动快捷方式已创建",
+                $"已保存当前配置并创建：{shortcutPath}",
+                InfoBarSeverity.Success);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or COMException)
+        {
+            ShowStatus("创建快捷方式失败", exception.Message, InfoBarSeverity.Error);
+        }
+    }
+
+    private async void CheckUpdatesButton_Click(object sender, RoutedEventArgs e)
+    {
+        CheckUpdatesButton.IsEnabled = false;
+        UpdateProgressRing.Visibility = Visibility.Visible;
+        UpdateProgressRing.IsActive = true;
+        UpdateButtonIcon.Visibility = Visibility.Collapsed;
+        UpdateInfoBar.IsOpen = false;
+        OpenReleaseButton.Visibility = Visibility.Collapsed;
+        try
+        {
+            UpdateCheckResult result = await UpdateService.CheckAsync(CancellationToken.None);
+            _latestReleaseUrl = result.ReleasesUrl;
+            if (!result.HasRelease)
+            {
+                UpdateInfoBar.Title = "暂无可用发布版本";
+                UpdateInfoBar.Message = "GitHub Releases 中还没有正式发布记录。";
+                UpdateInfoBar.Severity = InfoBarSeverity.Informational;
+                OpenReleaseButton.Visibility = Visibility.Visible;
+            }
+            else if (result.IsUpdateAvailable)
+            {
+                UpdateInfoBar.Title = "发现新版本";
+                UpdateInfoBar.Message =
+                    $"当前 {result.CurrentVersion}，最新 {result.LatestVersion}。";
+                UpdateInfoBar.Severity = InfoBarSeverity.Success;
+                OpenReleaseButton.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                UpdateInfoBar.Title = "已经是最新版本";
+                UpdateInfoBar.Message =
+                    $"当前版本 {result.CurrentVersion}，远程版本 {result.LatestVersion}。";
+                UpdateInfoBar.Severity = InfoBarSeverity.Success;
+            }
+            UpdateInfoBar.IsOpen = true;
+        }
+        catch (Exception exception) when (
+            exception is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            UpdateInfoBar.Title = "检查更新失败";
+            UpdateInfoBar.Message = exception is TaskCanceledException
+                ? "连接 GitHub 超时，请稍后重试。"
+                : exception.Message;
+            UpdateInfoBar.Severity = InfoBarSeverity.Error;
+            UpdateInfoBar.IsOpen = true;
+            OpenReleaseButton.Visibility = Visibility.Visible;
+        }
+        finally
+        {
+            UpdateProgressRing.IsActive = false;
+            UpdateProgressRing.Visibility = Visibility.Collapsed;
+            UpdateButtonIcon.Visibility = Visibility.Visible;
+            CheckUpdatesButton.IsEnabled = true;
+        }
+    }
+
+    private void OpenReleaseButton_Click(object sender, RoutedEventArgs e) =>
+        OpenWithShell(_latestReleaseUrl);
+
+    private void OpenRepositoryButton_Click(object sender, RoutedEventArgs e) =>
+        OpenWithShell(UpdateService.RepositoryUrl);
+
+    private void OpenAllReleasesButton_Click(object sender, RoutedEventArgs e) =>
+        OpenWithShell(UpdateService.ReleasesUrl);
+
+    private void OpenBilibiliButton_Click(object sender, RoutedEventArgs e) =>
+        OpenWithShell(BilibiliProfileUrl);
+
+    private void OpenXiaoheiheButton_Click(object sender, RoutedEventArgs e) =>
+        OpenWithShell(XiaoheiheProfileUrl);
+
+    private void CopyQqGroupButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var package = new DataPackage();
+            package.SetText(QqGroupNumber);
+            Clipboard.SetContent(package);
+            Clipboard.Flush();
+            ShowStatus("QQ群号已复制", QqGroupNumber, InfoBarSeverity.Success);
+        }
+        catch (COMException exception)
+        {
+            ShowStatus("复制QQ群号失败", exception.Message, InfoBarSeverity.Error);
+        }
+    }
+
+    private async void ViewDisclaimerButton_Click(object sender, RoutedEventArgs e) =>
+        await ShowDisclaimerAsync(requireAcceptance: false);
+
     private async Task<bool> SaveAsync(bool showSuccess)
     {
         string mapperPath = MapperPathBox.Text.Trim();
@@ -321,11 +575,10 @@ public sealed partial class MainWindow : Window
         try
         {
             await ConfigurationService.SaveModConfigurationAsync(mapperPath, configuration);
-            await ConfigurationService.SaveAppSettingsAsync(new AppSettings
-            {
-                GameExecutablePath = GamePathBox.Text.Trim(),
-                MapperPath = mapperPath
-            });
+            _appSettings.GameExecutablePath = GamePathBox.Text.Trim();
+            _appSettings.MapperPath = mapperPath;
+            _appSettings.Theme = GetSelectedTheme();
+            await ConfigurationService.SaveAppSettingsAsync(_appSettings);
 
             ConfigurationPathTextBlock.Text =
                 ConfigurationService.GetNativeConfigurationPath(mapperPath);
@@ -394,7 +647,7 @@ public sealed partial class MainWindow : Window
         }
 
         if (!TryNormalizeVoiceLanguageRules(
-            VoiceLanguageRulesBox.Text,
+            SerializeVoiceRules(),
             out string voiceLanguageRules,
             out error))
         {
@@ -435,6 +688,7 @@ public sealed partial class MainWindow : Window
             LoopStart = LoopStartNumberBox.Value,
             LoopEnd = LoopEndNumberBox.Value,
             CrossfadeDuration = CrossfadeDurationNumberBox.Value,
+            ModelReplacementEnabled = ModelReplacementToggle.IsOn,
             VoiceRouterEnabled = VoiceRouterToggle.IsOn,
             VoiceLanguageRules = voiceLanguageRules
         };
@@ -470,8 +724,9 @@ public sealed partial class MainWindow : Window
         LoopStartNumberBox.Value = configuration.LoopStart;
         LoopEndNumberBox.Value = configuration.LoopEnd;
         CrossfadeDurationNumberBox.Value = configuration.CrossfadeDuration;
+        ModelReplacementToggle.IsOn = configuration.ModelReplacementEnabled;
         VoiceRouterToggle.IsOn = configuration.VoiceRouterEnabled;
-        VoiceLanguageRulesBox.Text = configuration.VoiceLanguageRules;
+        LoadVoiceRules(configuration.VoiceLanguageRules);
 
         _initializing = wasInitializing;
         UpdateCrossfadePanel();
@@ -569,6 +824,178 @@ public sealed partial class MainWindow : Window
         return characterId;
     }
 
+    private void SelectVoiceLanguage(string language)
+    {
+        string canonical = VoiceLanguageNames.TryGetValue(language, out string? value)
+            ? value
+            : "FollowGlobal";
+        foreach (RadioButton button in VoiceLanguageRadioButtons.Items.OfType<RadioButton>())
+        {
+            button.IsChecked = string.Equals(
+                button.Tag as string,
+                canonical,
+                StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    private string? GetSelectedVoiceLanguage()
+    {
+        RadioButton? selected = VoiceLanguageRadioButtons.Items
+            .OfType<RadioButton>()
+            .FirstOrDefault(button => button.IsChecked == true);
+        return selected?.Tag as string;
+    }
+
+    private void UpsertVoiceRule(string speaker, string language, string displayName)
+    {
+        string canonical = VoiceLanguageNames.TryGetValue(language, out string? value)
+            ? value
+            : "FollowGlobal";
+        var replacement = new VoiceRuleEntry
+        {
+            Speaker = speaker,
+            DisplayName = displayName,
+            Language = canonical,
+            LanguageDisplayName = GetVoiceLanguageDisplayName(canonical)
+        };
+        int existingIndex = -1;
+        for (int index = 0; index < _voiceRules.Count; index++)
+        {
+            if (_voiceRules[index].Speaker.Equals(
+                speaker,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                existingIndex = index;
+                break;
+            }
+        }
+        if (existingIndex >= 0)
+        {
+            _voiceRules[existingIndex] = replacement;
+        }
+        else
+        {
+            _voiceRules.Add(replacement);
+        }
+        UpdateVoiceRulesEmptyState();
+    }
+
+    private string GetVoiceLanguageDisplayName(string language) =>
+        VoiceLanguageDisplayNames.TryGetValue(language, out string? displayName)
+            ? displayName
+            : language;
+
+    private void UpdateVoiceRulesEmptyState()
+    {
+        VoiceRulesEmptyTextBlock.Visibility = _voiceRules.Count == 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    }
+
+    private void LoadVoiceRules(string rules)
+    {
+        _voiceRules.Clear();
+        if (!TryNormalizeVoiceLanguageRules(rules, out string normalized, out _))
+        {
+            UpdateVoiceRulesEmptyState();
+            return;
+        }
+
+        foreach (string entry in normalized.Split(
+            ['\r', '\n'],
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            int separator = entry.IndexOf('=');
+            if (separator <= 0 || separator >= entry.Length - 1)
+            {
+                continue;
+            }
+
+            string speaker = entry[..separator].Trim();
+            string language = entry[(separator + 1)..].Trim();
+            string displayName = _voiceCharacters.FirstOrDefault(choice =>
+                choice.Speaker.Equals(speaker, StringComparison.OrdinalIgnoreCase))?.DisplayName
+                ?? (speaker == "*" ? "其他角色（默认规则）" : speaker);
+            UpsertVoiceRule(speaker, language, displayName);
+        }
+        UpdateVoiceRulesEmptyState();
+    }
+
+    private string SerializeVoiceRules() => string.Join(
+        Environment.NewLine,
+        _voiceRules.Select(rule => $"{rule.Speaker}={rule.Language}"));
+
+    private void SelectTheme(string theme)
+    {
+        string normalized = theme is "Light" or "Dark" ? theme : "Default";
+        ThemeComboBox.SelectedItem = ThemeComboBox.Items
+            .OfType<ComboBoxItem>()
+            .FirstOrDefault(item => string.Equals(
+                item.Tag as string,
+                normalized,
+                StringComparison.OrdinalIgnoreCase)) ??
+            ThemeComboBox.Items.OfType<ComboBoxItem>().First();
+    }
+
+    private string GetSelectedTheme() =>
+        (ThemeComboBox.SelectedItem as ComboBoxItem)?.Tag as string ?? "Default";
+
+    private void ApplyTheme(string theme)
+    {
+        MainRoot.RequestedTheme = theme switch
+        {
+            "Light" => ElementTheme.Light,
+            "Dark" => ElementTheme.Dark,
+            _ => ElementTheme.Default
+        };
+    }
+
+    private async Task<bool> ShowDisclaimerAsync(bool requireAcceptance)
+    {
+        var content = new StackPanel
+        {
+            Spacing = 12,
+            MaxWidth = 560
+        };
+        content.Children.Add(new TextBlock
+        {
+            Text = "本软件会将本机代码注入游戏进程，并在运行时修改模型、动画和语音资源选择。",
+            TextWrapping = TextWrapping.Wrap,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+        });
+        content.Children.Add(new TextBlock
+        {
+            Text = "可能的风险包括游戏崩溃、存档或配置异常、更新后失效，以及被游戏安全或反作弊系统识别。使用在线账号可能产生账号限制风险。",
+            TextWrapping = TextWrapping.Wrap
+        });
+        content.Children.Add(new TextBlock
+        {
+            Text = "本项目为非官方实验工具，与鹰角网络、峘形山工作室及 GRYPHLINE 无关，也不提供任何形式的担保。请自行备份重要数据，遵守游戏服务条款，并自行承担使用后果。",
+            TextWrapping = TextWrapping.Wrap
+        });
+        content.Children.Add(new TextBlock
+        {
+            Text = "本软件不负责停用或绕过反作弊组件；游戏更新后如签名不匹配，相关 Hook 应停止使用，等待适配。",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = (Brush)Application.Current.Resources[
+                "TextFillColorSecondaryBrush"]
+        });
+
+        var dialog = new ContentDialog
+        {
+            XamlRoot = MainRoot.XamlRoot,
+            Title = requireAcceptance ? "使用前请阅读" : "风险与免责声明",
+            Content = content,
+            DefaultButton = requireAcceptance
+                ? ContentDialogButton.Primary
+                : ContentDialogButton.Close,
+            PrimaryButtonText = requireAcceptance ? "我已了解并继续" : string.Empty,
+            CloseButtonText = requireAcceptance ? "退出" : "关闭"
+        };
+        ContentDialogResult result = await dialog.ShowAsync();
+        return !requireAcceptance || result == ContentDialogResult.Primary;
+    }
+
     private async Task<string?> PickExecutableAsync(string commitButtonText)
     {
         var picker = new FileOpenPicker
@@ -590,8 +1017,8 @@ public sealed partial class MainWindow : Window
     {
         RefreshRuntimeAnimationDurations();
         bool gameRunning = Process.GetProcessesByName("Endfield").Length > 0;
-        RuntimeStatusTextBlock.Text = gameRunning ? "● 游戏正在运行" : "○ 游戏未运行";
-        RuntimeStatusTextBlock.Foreground = gameRunning
+        RuntimeStatusTextBlock.Text = gameRunning ? "游戏正在运行" : "游戏未运行";
+        RuntimeStatusIndicator.Fill = gameRunning
             ? new SolidColorBrush(Microsoft.UI.Colors.LimeGreen)
             : (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"];
 

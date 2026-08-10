@@ -1,11 +1,28 @@
-# Changelog
+# 更新日志
 
-## 0.1.0-preview.1
+## 1.0.0
 
-- Added a WinUI 3 controller for selecting character and animation assets.
-- Added 31 character postmodels and 4,058 resolved animation clips.
-- Added per-stage speed, facing, scale, pose sampling, and three loop modes.
-- Added per-character voice-language routing through the game's shared voice
-  language packs.
-- Added `speakerChannel` discovery logs and safe fallback for unmatched rules.
-- Added game-build signature checks for the voice hook and language functions.
+- 新增 WinUI 3 中文控制器，提供 Windows 11 风格导航、主题切换和运行状态显示。
+- 新增 31 组完整角色模型预设、中文角色名称和 4,058 个已索引动画片段。
+- 新增坐姿循环、坐姿特殊动作、起身过渡和最终动作四阶段播放。
+- 新增各阶段独立速度、朝向、缩放、前倾采样及三种循环模式。
+- 新增 32 个角色的独立中、英、日、韩配音语言路由及安全回退。
+- 新增 `speakerChannel` 诊断日志和游戏入口签名校验。
+- 新增模型替换与配音路由的独立功能开关。
+- 新增游戏与注入器路径保存、配置和日志入口、检查更新及桌面快捷方式。
+- 新增首次启动风险说明、免责声明和中文 Inno Setup 安装器。
+- .NET 与 WinUI 运行时改为自包含单文件发布，安装目录只保留控制器和原生注入器两个程序文件。
+
+兼容的 `GameAssembly.dll` SHA-256：
+
+```text
+0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE
+```
+
+安装器 SHA-256：
+
+```text
+810BD60C3A9E026A1393C855A03234B697054DA2E23936BA3A808A59B457BC2F
+```
+
+> 安装器暂未进行代码签名，Windows SmartScreen 可能显示未知发布者警告。

@@ -6,7 +6,9 @@
 namespace VoiceLanguageRouter {
 
     bool LoadConfiguration( const std::string & configPath );
+    bool IsEnabled( );
     bool Initialize( );
+    void PollHealth( );
     void Shutdown( );
 
 } // namespace VoiceLanguageRouter

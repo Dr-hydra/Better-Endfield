@@ -1,28 +1,34 @@
 # EF Start Change UI
 
-WinUI 3 controller for the login-scene model replacement mod.
+EF Start Change 的 WinUI 3 中文控制器。应用负责编辑 `EFStartChange.ini`、显示运行状态并启动原生注入器。
 
-The app writes `EFStartChange.ini` next to `Il2cppDumper.exe`. The injected DLL
-reads the file once during initialization, so saved values take effect on the
-next launch/injection.
+配置文件保存在 `Il2cppDumper.exe` 所在目录。注入 DLL 只在初始化时读取一次，因此保存后的参数会在下一次启动和注入时生效。
 
-## Controls
+## 界面功能
 
-- 31 character presets and the full indexed animation list
-- Final-action selection with clip duration display
-- Initial yaw, turn duration, scale, and forward-lean sample time
-- Independent playback speed for all four animation phases
-- Native, shared, and two-Playable crossfade loop modes
-- Editable loop range and fade time, plus a force-loop option
-- Per-character Chinese, English, Japanese, Korean, or global voice routing
-- Game/mapper path persistence, log access, launch, and runtime status
+- 31 个模型预设、32 个配音角色和完整动画索引。
+- 最终动作选择及运行时动画时长显示。
+- 初始朝向、转身时间、缩放和前倾采样时间。
+- 四阶段独立动画速度。
+- 原生循环、强制循环和双 Playable 交叉淡化循环。
+- 各角色独立的中、英、日、韩配音语言规则。
+- 游戏与注入器路径保存、日志入口、启动和运行状态显示。
+- 跟随系统、浅色和深色主题，以及 Windows 11 Mica 背景。
+- 控制器快捷方式和一键启动游戏快捷方式。
+- 关于页、风险说明、联系方式和按需检查更新。
 
-## Build
+## 构建
 
-From the repository root:
+在仓库根目录执行：
 
 ```powershell
 .\scripts\BuildEFStartChange.ps1
 ```
 
-The combined output is written to `artifacts\EFStartChange-win-x64`.
+自包含单文件应用和原生注入器会输出到 `artifacts\EFStartChange-win-x64`。
+
+构建中文 Inno Setup 安装器：
+
+```powershell
+.\scripts\BuildInstaller.ps1 -Version 1.0.0
+```
