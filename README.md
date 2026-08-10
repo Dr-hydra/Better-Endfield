@@ -16,7 +16,7 @@
 - 可分别调整四阶段播放速度，并配置朝向、转身时间、模型缩放和前倾采样时间。
 - 支持原生循环、强制循环及双 Playable 交叉淡化循环。
 - 内置 4,058 个已索引动画片段，可按角色选择最终动作并显示运行时动画时长。
-- 32 个角色的独立配音语言路由，可选择中文、英语、日语、韩语或跟随全局设置。
+- 32 个角色的独立配音语言路由，支持战斗、探索及剧情语音，可选择中文、英语、日语、韩语或跟随全局设置。
 - Windows 11 风格 WinUI 3 控制界面，支持浅色、深色和跟随系统主题。
 - 支持保存配置、查看日志、启动注入器、检查更新和创建桌面快捷方式。
 - 首次启动显示风险说明与免责声明。
@@ -35,7 +35,7 @@
 ## 下载与安装
 
 1. 打开 [Releases](https://github.com/Dr-hydra/EF-Start-Change/releases/latest)。
-2. 下载 `EFStartChange-1.0.0-Setup.exe`。
+2. 下载 `EFStartChange-1.0.1-Setup.exe`。
 3. 运行安装器并阅读风险说明。默认安装到 `%LocalAppData%\Programs\EF Start Change`，安装器本身不要求管理员权限。
 4. 启动 `EF Start Change`。首次运行时需确认应用内免责声明。
 
@@ -112,7 +112,7 @@ pwsh -File .\scripts\BuildEFStartChange.ps1
 构建中文安装器：
 
 ```powershell
-pwsh -File .\scripts\BuildInstaller.ps1 -Version 1.0.0
+pwsh -File .\scripts\BuildInstaller.ps1 -Version 1.0.1
 ```
 
 安装器输出到 `artifacts\installer`。构建过程使用独立临时发布目录，完成后会自动清理。

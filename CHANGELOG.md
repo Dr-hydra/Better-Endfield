@@ -1,5 +1,20 @@
 # 更新日志
 
+## 1.0.1
+
+- 新增剧情 `narrating/` 语音的按角色语言替换。
+- 保留既有 `characters/` 战斗与探索语音替换，不改写其他 Wwise 外部媒体。
+- 将不受支持的语音路径诊断改为 `replacementSource=<unsupported-voice-path>`。
+- 已实测李织烟剧情语音可从中文切换为日语。
+
+安装器 SHA-256：
+
+```text
+09C3D4E02A6B70EC14DCFEADCBE4E98E8F2F94C0194E74198F4630ADA7A40D2E
+```
+
+> 安装器暂未进行代码签名，Windows SmartScreen 可能显示未知发布者警告。
+
 ## 1.0.0
 
 - 新增 WinUI 3 中文控制器，提供 Windows 11 风格导航、主题切换和运行状态显示。

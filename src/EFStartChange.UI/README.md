@@ -30,5 +30,5 @@ EF Start Change 的 WinUI 3 中文控制器。应用负责编辑 `EFStartChange.
 构建中文 Inno Setup 安装器：
 
 ```powershell
-.\scripts\BuildInstaller.ps1 -Version 1.0.0
+.\scripts\BuildInstaller.ps1 -Version 1.0.1
 ```

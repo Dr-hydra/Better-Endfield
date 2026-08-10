@@ -316,10 +316,14 @@ namespace {
         if ( languageEnd == std::string::npos || languageEnd + 1 >= source.size( ) )
             return false;
 
-        // Only redirect localized character media. This avoids touching other
-        // external sources that happen to share the same Wwise submit path.
+        // Only redirect known localized voice roots. This avoids touching
+        // unrelated external sources that share the same Wwise submit path.
         const std::string suffix = source.substr( languageEnd + 1 );
-        if ( suffix.find( "characters/" ) == std::string::npos )
+        const bool isCharacterVoice =
+            suffix.find( "characters/" ) != std::string::npos;
+        const bool isNarrativeVoice =
+            suffix.find( "narrating/" ) != std::string::npos;
+        if ( !isCharacterVoice && !isNarrativeVoice )
             return false;
 
         replacement = "voice/";
@@ -1178,7 +1182,7 @@ namespace {
                     Log( "[voice-replace] matched=" + matchedIdentity +
                         " originalSource=" +
                         ( source.empty( ) ? std::string( "<empty>" ) : source ) +
-                        " replacementSource=<not-character-voice>" );
+                        " replacementSource=<unsupported-voice-path>" );
                 }
             }
         }

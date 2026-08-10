@@ -5,7 +5,7 @@
   #error OutputDir must be supplied by BuildInstaller.ps1
 #endif
 #ifndef AppVersion
-  #define AppVersion "1.0.0"
+  #define AppVersion "1.0.1"
 #endif
 
 #define AppName "EF Start Change"
@@ -36,11 +36,11 @@ SolidCompression=yes
 WizardStyle=modern
 CloseApplications=force
 RestartApplications=no
-VersionInfoVersion=1.0.0.0
+VersionInfoVersion=1.0.1.0
 VersionInfoCompany={#Publisher}
 VersionInfoDescription=EF Start Change 中文安装程序
 VersionInfoProductName={#AppName}
-VersionInfoProductVersion=1.0.0.0
+VersionInfoProductVersion=1.0.1.0
 
 [Languages]
 Name: "chinesesimp"; MessagesFile: "Languages\ChineseSimplified.isl"
