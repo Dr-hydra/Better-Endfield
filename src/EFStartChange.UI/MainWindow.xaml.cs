@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -157,6 +158,13 @@ public sealed partial class MainWindow : Window
             MapperPathBox.Text = !string.IsNullOrWhiteSpace(_appSettings.MapperPath)
                 ? _appSettings.MapperPath
                 : ConfigurationService.DiscoverMapperPath();
+            ExternalLoaderToggle.IsOn = _appSettings.ExternalLoaderEnabled;
+            ExternalLoaderPathBox.Text = _appSettings.ExternalLoaderPath;
+            ExternalLoaderArgumentsBox.Text = _appSettings.ExternalLoaderArguments;
+            ExternalLoaderDelayNumberBox.Value = Math.Clamp(
+                _appSettings.ExternalLoaderDelaySeconds,
+                ExternalLoaderDelayNumberBox.Minimum,
+                ExternalLoaderDelayNumberBox.Maximum);
             RefreshRuntimeAnimationDurations();
 
             ModConfiguration configuration =
@@ -202,6 +210,15 @@ public sealed partial class MainWindow : Window
         catch (IOException exception)
         {
             ShowStatus("读取配置失败", exception.Message, InfoBarSeverity.Error);
+        }
+    }
+
+    private async void BrowseExternalLoaderButton_Click(object sender, RoutedEventArgs e)
+    {
+        string? selectedPath = await PickExecutableAsync("选择外部加载器");
+        if (selectedPath is not null)
+        {
+            ExternalLoaderPathBox.Text = selectedPath;
         }
     }
 
@@ -354,6 +371,11 @@ public sealed partial class MainWindow : Window
                 return;
             }
 
+            if (!await StartExternalLoaderAsync())
+            {
+                return;
+            }
+
             var startInfo = new ProcessStartInfo
             {
                 FileName = MapperPathBox.Text.Trim(),
@@ -364,11 +386,14 @@ public sealed partial class MainWindow : Window
             Process.Start(startInfo);
             ShowStatus(
                 "注入器已启动",
-                "如果出现用户账户控制提示，请允许管理员权限。游戏启动后状态会自动更新。",
+                ExternalLoaderToggle.IsOn
+                    ? "外部加载器已先行启动；如果出现用户账户控制提示，请允许注入器权限。"
+                    : "如果出现用户账户控制提示，请允许管理员权限。游戏启动后状态会自动更新。",
                 InfoBarSeverity.Success);
         }
         catch (Exception exception) when (
-            exception is InvalidOperationException or IOException or UnauthorizedAccessException)
+            exception is InvalidOperationException or IOException or
+                UnauthorizedAccessException or Win32Exception)
         {
             ShowStatus("启动失败", exception.Message, InfoBarSeverity.Error);
         }
@@ -575,11 +600,21 @@ public sealed partial class MainWindow : Window
             return false;
         }
 
+        if (!TryValidateExternalLoader(out error))
+        {
+            ShowStatus("外部加载器设置无效", error ?? "请检查加载器设置。", InfoBarSeverity.Error);
+            return false;
+        }
+
         try
         {
             await ConfigurationService.SaveModConfigurationAsync(mapperPath, configuration);
             _appSettings.GameExecutablePath = GamePathBox.Text.Trim();
             _appSettings.MapperPath = mapperPath;
+            _appSettings.ExternalLoaderEnabled = ExternalLoaderToggle.IsOn;
+            _appSettings.ExternalLoaderPath = ExternalLoaderPathBox.Text.Trim();
+            _appSettings.ExternalLoaderArguments = ExternalLoaderArgumentsBox.Text.Trim();
+            _appSettings.ExternalLoaderDelaySeconds = ExternalLoaderDelayNumberBox.Value;
             _appSettings.Theme = GetSelectedTheme();
             await ConfigurationService.SaveAppSettingsAsync(_appSettings);
 
@@ -601,6 +636,99 @@ public sealed partial class MainWindow : Window
             ShowStatus("保存失败", exception.Message, InfoBarSeverity.Error);
             return false;
         }
+    }
+
+    private bool TryValidateExternalLoader(out string? error)
+    {
+        error = null;
+        double delay = ExternalLoaderDelayNumberBox.Value;
+        if (!double.IsFinite(delay) || delay < 0 || delay > 30)
+        {
+            error = "加载器等待时间必须在 0 到 30 秒之间。";
+            return false;
+        }
+
+        if (!ExternalLoaderToggle.IsOn)
+        {
+            return true;
+        }
+
+        string loaderPath = ExternalLoaderPathBox.Text.Trim();
+        if (!File.Exists(loaderPath))
+        {
+            error = "请选择有效的外部加载器程序。";
+            return false;
+        }
+
+        if (PathsEqual(loaderPath, MapperPathBox.Text) ||
+            PathsEqual(loaderPath, GamePathBox.Text))
+        {
+            error = "外部加载器不能与注入器或游戏程序使用同一路径。";
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool PathsEqual(string first, string second)
+    {
+        if (string.IsNullOrWhiteSpace(first) || string.IsNullOrWhiteSpace(second))
+        {
+            return false;
+        }
+
+        try
+        {
+            return Path.GetFullPath(first.Trim()).Equals(
+                Path.GetFullPath(second.Trim()),
+                StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception exception) when (
+            exception is ArgumentException or NotSupportedException or
+                IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    private async Task<bool> StartExternalLoaderAsync()
+    {
+        if (!ExternalLoaderToggle.IsOn)
+        {
+            return true;
+        }
+
+        string loaderPath = ExternalLoaderPathBox.Text.Trim();
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = loaderPath,
+            WorkingDirectory = Path.GetDirectoryName(loaderPath) ?? string.Empty,
+            Arguments = ExternalLoaderArgumentsBox.Text.Trim(),
+            UseShellExecute = true
+        };
+        Process? loaderProcess = Process.Start(startInfo);
+        if (loaderProcess is null)
+        {
+            throw new InvalidOperationException("外部加载器没有返回有效进程。");
+        }
+
+        loaderProcess.Dispose();
+        double delay = ExternalLoaderDelayNumberBox.Value;
+        if (delay > 0)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(delay));
+        }
+
+        if (Process.GetProcessesByName("Endfield").Length == 0)
+        {
+            return true;
+        }
+
+        ShowStatus(
+            "外部加载器已经启动游戏",
+            "EF 无法附加到现有进程。请完整退出游戏，并关闭外部加载器的自动启动游戏功能。",
+            InfoBarSeverity.Warning);
+        return false;
     }
 
     private bool TryReadConfiguration(

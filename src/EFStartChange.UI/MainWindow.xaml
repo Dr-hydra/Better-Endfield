@@ -495,7 +495,7 @@
                                     <TextBlock Style="{StaticResource PageTitleStyle}" Text="设置" />
                                     <TextBlock
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Text="管理运行路径、外观和桌面入口。"
+                                        Text="管理运行路径、外部加载器、外观和桌面入口。"
                                         TextWrapping="Wrap" />
                                 </StackPanel>
 
@@ -561,6 +561,56 @@
                                                 </StackPanel>
                                             </Button>
                                         </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="16">
+                                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="外部加载器" />
+                                        <ToggleSwitch
+                                            x:Name="ExternalLoaderToggle"
+                                            Header="启动第三方 Mod 加载器"
+                                            OffContent="直接启动 EF 注入器"
+                                            OnContent="先启动外部加载器" />
+                                        <ContentControl
+                                            HorizontalContentAlignment="Stretch"
+                                            IsEnabled="{Binding IsOn, ElementName=ExternalLoaderToggle}"
+                                            IsTabStop="False">
+                                            <StackPanel Spacing="14">
+                                                <Grid ColumnSpacing="8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox
+                                                    x:Name="ExternalLoaderPathBox"
+                                                    Header="加载器程序（需关闭其自动启动游戏功能）"
+                                                    PlaceholderText="3DMigoto Loader.exe / XXMI Launcher.exe" />
+                                                <Button
+                                                    Grid.Column="1"
+                                                    Margin="0,24,0,0"
+                                                    Click="BrowseExternalLoaderButton_Click"
+                                                    Style="{StaticResource PathButtonStyle}"
+                                                    ToolTipService.ToolTip="浏览外部加载器">
+                                                    <SymbolIcon Symbol="OpenFile" />
+                                                </Button>
+                                                </Grid>
+                                                <TextBox
+                                                    x:Name="ExternalLoaderArgumentsBox"
+                                                    Header="命令行参数（可选）"
+                                                    PlaceholderText="按外部加载器要求填写" />
+                                                <NumberBox
+                                                    x:Name="ExternalLoaderDelayNumberBox"
+                                                    Width="280"
+                                                    HorizontalAlignment="Left"
+                                                    Header="等待加载器就绪（秒）"
+                                                    Maximum="30"
+                                                    Minimum="0"
+                                                    SmallChange="0.5"
+                                                    SpinButtonPlacementMode="Compact"
+                                                    Value="2" />
+                                            </StackPanel>
+                                        </ContentControl>
                                     </StackPanel>
                                 </Border>
 
@@ -657,7 +707,7 @@
                                             x:Name="CurrentVersionTextBlock"
                                             Margin="0,2,0,0"
                                             FontFamily="Consolas"
-                                            Text="版本 1.0.2" />
+                                            Text="版本 1.1.0" />
                                     </StackPanel>
                                 </Grid>
 

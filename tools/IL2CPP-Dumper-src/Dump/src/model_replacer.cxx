@@ -5018,7 +5018,7 @@ namespace {
 
     static void ReplaceNow( ) {
         if ( g_replacementRoot ) {
-            Log( "[replace] replacement is already active; press F10 to restore" );
+            Log( "[replace] replacement is already active" );
             return;
         }
 
@@ -5030,7 +5030,7 @@ namespace {
 
         void * targetRoot = FindTargetRoot( );
         if ( !targetRoot ) {
-            Log( "[replace] SK_actor_female(Clone) not found; trigger F9 during silhouette" );
+            Log( "[replace] SK_actor_female(Clone) was not captured in the login scene" );
             return;
         }
         Log( "[replace] target=" + ObjectName( targetRoot ) );
@@ -5103,12 +5103,7 @@ namespace ModelReplacer {
             return true;
         }
         if ( g_cachedLoadGameObjectTarget && g_i18nLoadGameObjectTarget &&
-            g_resolveI18NPathHashTarget && g_initInitialPathHashTarget &&
-            g_initMainPathHashTarget && g_loadUntrackedHashTarget &&
-            g_loadAssetInternalHashTarget && g_bundleLoaderLoadAssetTarget &&
-             g_tryGetAssetInfoHashTarget && g_untrackedHandleGateTarget &&
-             g_assetProxyFinishErrorTarget && g_bundleProxyLoadSyncTarget &&
-             g_bundleProxyGetFilePathTarget && g_bundleProxyLoadFileTarget &&
+             g_initInitialPathHashTarget && g_initMainPathHashTarget &&
              g_loginManagerReleaseSceneTarget &&
              g_loginSceneRootOnBindTarget &&
              g_loginAnimChangeStateTarget && g_loginAnimResetA1Target &&
@@ -5689,13 +5684,32 @@ namespace ModelReplacer {
             loginAnimationProloguesMatch = false;
             loginLifecycleProloguesMatch = false;
         }
+        if ( !resolvePrologueMatches ) {
+            Log( "[compat] I18N path diagnostic signature mismatch; "
+                "model replacement will continue without that diagnostic" );
+            g_resolveI18NPathHashTarget = nullptr;
+        }
+        if ( !deepLoadProloguesMatch ) {
+            Log( "[compat] deep bundle diagnostics unavailable; "
+                "login capture and model replacement will continue" );
+            g_loadUntrackedHashTarget = nullptr;
+            g_loadAssetInternalHashTarget = nullptr;
+            g_bundleLoaderLoadAssetTarget = nullptr;
+            g_tryGetAssetInfoHashTarget = nullptr;
+            g_untrackedHandleGateTarget = nullptr;
+            g_assetProxyFinishErrorTarget = nullptr;
+            g_bundleProxyLoadSyncTarget = nullptr;
+            g_bundleProxyGetFilePathTarget = nullptr;
+            g_bundleProxyLoadFileTarget = nullptr;
+        }
         if ( !cachedPrologueMatches || !i18nPrologueMatches ||
-             !resolvePrologueMatches || !initialHashPrologueMatches ||
-             !mainHashPrologueMatches || !deepLoadProloguesMatch ||
+             !initialHashPrologueMatches ||
+             !mainHashPrologueMatches ||
              !loginAttachProloguesMatch ||
              !loginAnimationProloguesMatch ||
              !loginLifecycleProloguesMatch ) {
-            Log( "[redirect] login/Main diagnostic signature mismatch; refusing hook" );
+            Log( "[redirect] required login replacement signature mismatch; "
+                "model group disabled while other feature groups continue" );
             g_cachedLoadGameObjectTarget = nullptr;
             g_i18nLoadGameObjectTarget = nullptr;
             g_resolveI18NPathHashTarget = nullptr;
@@ -5930,105 +5944,62 @@ namespace ModelReplacer {
             return false;
         }
 
-        status = MH_CreateHook( g_resolveI18NPathHashTarget,
+        auto createOptionalDiagnosticHook = [ & ] (
+            void *& target, void * detour, void ** original,
+            const char * name ) {
+            if ( !target )
+                return;
+            const MH_STATUS optionalStatus = MH_CreateHook(
+                target, detour, original );
+            if ( optionalStatus == MH_OK )
+                return;
+            Log( "[compat] optional diagnostic hook " + std::string( name ) +
+                " unavailable status=" + std::to_string(
+                    static_cast< int >( optionalStatus ) ) );
+            target = nullptr;
+            *original = nullptr;
+        };
+
+        createOptionalDiagnosticHook( g_resolveI18NPathHashTarget,
             reinterpret_cast< void * >( &ResolveI18NPathHashHook ),
-            reinterpret_cast< void ** >( &g_originalResolveI18NPathHash ) );
-        if ( status != MH_OK ) {
-            Log( "[main-diag] MH_CreateHook(I18N resolve path hash) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
-
-        status = MH_CreateHook( g_tryGetAssetInfoHashTarget,
+            reinterpret_cast< void ** >( &g_originalResolveI18NPathHash ),
+            "I18N.ResolvePathHash" );
+        createOptionalDiagnosticHook( g_tryGetAssetInfoHashTarget,
             reinterpret_cast< void * >( &TryGetAssetInfoHashHook ),
-            reinterpret_cast< void ** >( &g_originalTryGetAssetInfoHash ) );
-        if ( status != MH_OK ) {
-            Log( "[load-diag] MH_CreateHook(TryGetAssetInfoFromPath) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
-
-        status = MH_CreateHook( g_assetProxyFinishErrorTarget,
+            reinterpret_cast< void ** >( &g_originalTryGetAssetInfoHash ),
+            "TryGetAssetInfoFromPath" );
+        createOptionalDiagnosticHook( g_assetProxyFinishErrorTarget,
             reinterpret_cast< void * >( &AssetProxyFinishErrorHook ),
-            reinterpret_cast< void ** >( &g_originalAssetProxyFinishError ) );
-        if ( status != MH_OK ) {
-            Log( "[bundle-diag] MH_CreateHook(AssetProxy._FinishWithError) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
-
-        status = MH_CreateHook( g_bundleProxyLoadSyncTarget,
+            reinterpret_cast< void ** >( &g_originalAssetProxyFinishError ),
+            "AssetProxy.FinishWithError" );
+        createOptionalDiagnosticHook( g_bundleProxyLoadSyncTarget,
             reinterpret_cast< void * >( &BundleProxyLoadSyncHook ),
-            reinterpret_cast< void ** >( &g_originalBundleProxyLoadSync ) );
-        if ( status != MH_OK ) {
-            Log( "[bundle-diag] MH_CreateHook(BundleProxy.LoadSync) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
-
-        status = MH_CreateHook( g_bundleProxyGetFilePathTarget,
+            reinterpret_cast< void ** >( &g_originalBundleProxyLoadSync ),
+            "BundleProxy.LoadSync" );
+        createOptionalDiagnosticHook( g_bundleProxyGetFilePathTarget,
             reinterpret_cast< void * >( &BundleProxyGetFilePathHook ),
-            reinterpret_cast< void ** >( &g_originalBundleProxyGetFilePath ) );
-        if ( status != MH_OK ) {
-            Log( "[bundle-diag] MH_CreateHook(BundleProxy._GetBundleFileFullPath) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
-
-        status = MH_CreateHook( g_bundleProxyLoadFileTarget,
+            reinterpret_cast< void ** >( &g_originalBundleProxyGetFilePath ),
+            "BundleProxy.GetFilePath" );
+        createOptionalDiagnosticHook( g_bundleProxyLoadFileTarget,
             reinterpret_cast< void * >( &BundleProxyLoadFileHook ),
-            reinterpret_cast< void ** >( &g_originalBundleProxyLoadFile ) );
-        if ( status != MH_OK ) {
-            Log( "[bundle-diag] MH_CreateHook(BundleProxy._LoadAssetBundle) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
-
-        status = MH_CreateHook( g_bundleLoaderLoadAssetTarget,
+            reinterpret_cast< void ** >( &g_originalBundleProxyLoadFile ),
+            "BundleProxy.LoadAssetBundle" );
+        createOptionalDiagnosticHook( g_bundleLoaderLoadAssetTarget,
             reinterpret_cast< void * >( &BundleLoaderLoadAssetHook ),
-            reinterpret_cast< void ** >( &g_originalBundleLoaderLoadAsset ) );
-        if ( status != MH_OK ) {
-            Log( "[load-diag] MH_CreateHook(BundleLoader.LoadAsset) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
-
-        status = MH_CreateHook( g_loadAssetInternalHashTarget,
+            reinterpret_cast< void ** >( &g_originalBundleLoaderLoadAsset ),
+            "BundleLoader.LoadAsset" );
+        createOptionalDiagnosticHook( g_loadAssetInternalHashTarget,
             reinterpret_cast< void * >( &LoadAssetInternalHashHook ),
-            reinterpret_cast< void ** >( &g_originalLoadAssetInternalHash ) );
-        if ( status != MH_OK ) {
-            Log( "[load-diag] MH_CreateHook(_LoadAssetInternal hash) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
-
-        status = MH_CreateHook( g_loadUntrackedHashTarget,
+            reinterpret_cast< void ** >( &g_originalLoadAssetInternalHash ),
+            "BundleResourceManager.LoadAssetInternal" );
+        createOptionalDiagnosticHook( g_loadUntrackedHashTarget,
             reinterpret_cast< void * >( &LoadUntrackedHashHook ),
-            reinterpret_cast< void ** >( &g_originalLoadUntrackedHash ) );
-        if ( status != MH_OK ) {
-            Log( "[load-diag] MH_CreateHook(LoadUntracked hash) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
-
-        status = MH_CreateHook( g_untrackedHandleGateTarget,
+            reinterpret_cast< void ** >( &g_originalLoadUntrackedHash ),
+            "BundleResourceManager.LoadUntracked" );
+        createOptionalDiagnosticHook( g_untrackedHandleGateTarget,
             reinterpret_cast< void * >( &UntrackedHandleGateHook ),
-            reinterpret_cast< void ** >( &g_originalUntrackedHandleGate ) );
-        if ( status != MH_OK ) {
-            Log( "[load-diag] MH_CreateHook(untracked-handle gate) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
+            reinterpret_cast< void ** >( &g_originalUntrackedHandleGate ),
+            "FAssetProxyUntrackedHandle.Gate" );
 
         status = MH_CreateHook( g_i18nLoadGameObjectTarget,
             reinterpret_cast< void * >( &I18NLoadGameObjectHook ),
@@ -6127,76 +6098,54 @@ namespace ModelReplacer {
             Shutdown( );
             return false;
         }
-        status = MH_EnableHook( g_resolveI18NPathHashTarget );
-        if ( status != MH_OK ) {
-            Log( "[main-diag] MH_EnableHook(I18N resolve path hash) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
-        status = MH_EnableHook( g_tryGetAssetInfoHashTarget );
-        if ( status != MH_OK ) {
-            Log( "[load-diag] MH_EnableHook(TryGetAssetInfoFromPath) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
-        status = MH_EnableHook( g_assetProxyFinishErrorTarget );
-        if ( status != MH_OK ) {
-            Log( "[bundle-diag] MH_EnableHook(AssetProxy._FinishWithError) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
-        status = MH_EnableHook( g_bundleProxyLoadSyncTarget );
-        if ( status != MH_OK ) {
-            Log( "[bundle-diag] MH_EnableHook(BundleProxy.LoadSync) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
-        status = MH_EnableHook( g_bundleProxyGetFilePathTarget );
-        if ( status != MH_OK ) {
-            Log( "[bundle-diag] MH_EnableHook(BundleProxy._GetBundleFileFullPath) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
-        status = MH_EnableHook( g_bundleProxyLoadFileTarget );
-        if ( status != MH_OK ) {
-            Log( "[bundle-diag] MH_EnableHook(BundleProxy._LoadAssetBundle) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
-        status = MH_EnableHook( g_bundleLoaderLoadAssetTarget );
-        if ( status != MH_OK ) {
-            Log( "[load-diag] MH_EnableHook(BundleLoader.LoadAsset) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
-        status = MH_EnableHook( g_loadAssetInternalHashTarget );
-        if ( status != MH_OK ) {
-            Log( "[load-diag] MH_EnableHook(_LoadAssetInternal hash) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
-        status = MH_EnableHook( g_loadUntrackedHashTarget );
-        if ( status != MH_OK ) {
-            Log( "[load-diag] MH_EnableHook(LoadUntracked hash) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
-        status = MH_EnableHook( g_untrackedHandleGateTarget );
-        if ( status != MH_OK ) {
-            Log( "[load-diag] MH_EnableHook(untracked-handle gate) failed: " +
-                std::to_string( static_cast< int >( status ) ) );
-            Shutdown( );
-            return false;
-        }
+        std::size_t optionalDiagnosticsReady = 0;
+        auto enableOptionalDiagnosticHook = [ & ] (
+            void *& target, void ** original, const char * name ) {
+            if ( !target )
+                return;
+            const MH_STATUS optionalStatus = MH_EnableHook( target );
+            if ( optionalStatus == MH_OK ) {
+                ++optionalDiagnosticsReady;
+                return;
+            }
+            Log( "[compat] optional diagnostic hook " + std::string( name ) +
+                " could not be enabled status=" + std::to_string(
+                    static_cast< int >( optionalStatus ) ) );
+            MH_RemoveHook( target );
+            target = nullptr;
+            *original = nullptr;
+        };
+
+        enableOptionalDiagnosticHook( g_resolveI18NPathHashTarget,
+            reinterpret_cast< void ** >( &g_originalResolveI18NPathHash ),
+            "I18N.ResolvePathHash" );
+        enableOptionalDiagnosticHook( g_tryGetAssetInfoHashTarget,
+            reinterpret_cast< void ** >( &g_originalTryGetAssetInfoHash ),
+            "TryGetAssetInfoFromPath" );
+        enableOptionalDiagnosticHook( g_assetProxyFinishErrorTarget,
+            reinterpret_cast< void ** >( &g_originalAssetProxyFinishError ),
+            "AssetProxy.FinishWithError" );
+        enableOptionalDiagnosticHook( g_bundleProxyLoadSyncTarget,
+            reinterpret_cast< void ** >( &g_originalBundleProxyLoadSync ),
+            "BundleProxy.LoadSync" );
+        enableOptionalDiagnosticHook( g_bundleProxyGetFilePathTarget,
+            reinterpret_cast< void ** >( &g_originalBundleProxyGetFilePath ),
+            "BundleProxy.GetFilePath" );
+        enableOptionalDiagnosticHook( g_bundleProxyLoadFileTarget,
+            reinterpret_cast< void ** >( &g_originalBundleProxyLoadFile ),
+            "BundleProxy.LoadAssetBundle" );
+        enableOptionalDiagnosticHook( g_bundleLoaderLoadAssetTarget,
+            reinterpret_cast< void ** >( &g_originalBundleLoaderLoadAsset ),
+            "BundleLoader.LoadAsset" );
+        enableOptionalDiagnosticHook( g_loadAssetInternalHashTarget,
+            reinterpret_cast< void ** >( &g_originalLoadAssetInternalHash ),
+            "BundleResourceManager.LoadAssetInternal" );
+        enableOptionalDiagnosticHook( g_loadUntrackedHashTarget,
+            reinterpret_cast< void ** >( &g_originalLoadUntrackedHash ),
+            "BundleResourceManager.LoadUntracked" );
+        enableOptionalDiagnosticHook( g_untrackedHandleGateTarget,
+            reinterpret_cast< void ** >( &g_originalUntrackedHandleGate ),
+            "FAssetProxyUntrackedHandle.Gate" );
         status = MH_EnableHook( g_i18nLoadGameObjectTarget );
         if ( status != MH_OK ) {
             Log( "[redirect] MH_EnableHook(I18N Load<GameObject>) failed: " +
@@ -6212,6 +6161,8 @@ namespace ModelReplacer {
             return false;
         }
 
+        Log( "[compat] model groups core=active load-diagnostics=" +
+            std::to_string( optionalDiagnosticsReady ) + "/10" );
         Log( "[deferred-load] login actor capture armed; Aglina will attach after Main initialization" );
         return true;
     }
@@ -6336,7 +6287,7 @@ namespace ModelReplacer {
     void QueueRestore( ) {
         g_redirectEnabled = false;
         g_deferredLoadPending = false;
-        Log( "[deferred-load] disabled for future loads; current scene objects were not changed by F10" );
+        Log( "[deferred-load] disabled for future loads; current scene objects were not changed" );
     }
 
     void Shutdown( ) {

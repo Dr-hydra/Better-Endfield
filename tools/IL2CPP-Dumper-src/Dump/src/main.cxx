@@ -40,9 +40,9 @@ static FILE * Startup( ) {
 
 DWORD WINAPI EntryPoint( LPVOID lpParam ) {
     HMODULE hModule = ( HMODULE ) lpParam;
-    FILE * output = Startup( );
+    Startup( );
 
-    Log( "DLL injected. Starting deferred Main actor load probe..." );
+    Log( "DLL injected. Starting EF Start Change runtime..." );
 
     const std::string configPath = g_outputDir.empty( )
         ? std::string( "EFStartChange.ini" )
@@ -56,59 +56,35 @@ DWORD WINAPI EntryPoint( LPVOID lpParam ) {
         GetTickCount( ) - waitStart <= timeoutMs )
         Sleep( 50 );
 
-    bool redirectReady = ModelReplacer::Initialize( hModule );
+    const bool redirectReady = ModelReplacer::Initialize( hModule );
     if ( !redirectReady )
-        Log( "[redirect] initialization failed; no game code will be called" );
+        Log( "[compat] model replacement unavailable; voice initialization will continue" );
+    bool voiceReady = false;
     if ( !WaitForVoiceHookInstallWindow( ) ) {
         Log( "[voice-lang] hook install window was not reached; game voice remains unchanged" );
     }
-    else if ( !VoiceLanguageRouter::Initialize( ) ) {
-        Log( "[voice-lang] initialization failed; game voice remains unchanged" );
+    else {
+        voiceReady = VoiceLanguageRouter::Initialize( );
+        if ( !voiceReady )
+            Log( "[compat] voice routing unavailable; model replacement state is preserved" );
     }
 
     Log( "" );
-    Log( "Deferred-load mode (Main asset load only inside a captured game callback)" );
-    Log( "  F9   show deferred Main actor load status" );
-    Log( "  F10  disable future deferred loads" );
-    Log( "  F6   exit & unload" );
+    Log( std::string( "[compat] feature hosts model=" ) +
+        ( redirectReady ? "ready" : "unavailable" ) +
+        " voice=" + ( voiceReady ? "ready" : "unavailable" ) );
+    Log( "[compat] global F6/F9/F10 diagnostic hotkeys are disabled" );
     Log( "" );
 
-    bool exitRequested = false;
-    bool prev [ 3 ] = { false };
     DWORD lastVoiceHealthPoll = GetTickCount( );
-    auto edge = [ & ] ( int slot, int vk ) -> bool {
-        bool down = ( GetAsyncKeyState( vk ) & 0x8000 ) != 0;
-        bool fired = down && !prev [ slot ];
-        prev [ slot ] = down;
-        return fired;
-        };
-
-    while ( !exitRequested ) {
-        if ( edge( 0, VK_F9 ) )
-            ModelReplacer::QueueReplace( );
-        if ( edge( 1, VK_F10 ) )
-            ModelReplacer::QueueRestore( );
-        if ( edge( 2, VK_F6 ) )
-            exitRequested = true;
+    for ( ;; ) {
         const DWORD now = GetTickCount( );
         if ( now - lastVoiceHealthPoll >= 1000 ) {
             VoiceLanguageRouter::PollHealth( );
             lastVoiceHealthPoll = now;
         }
-        Sleep( 50 );
+        Sleep( 100 );
     }
-
-    VoiceLanguageRouter::Shutdown( );
-    ModelReplacer::Shutdown( );
-
-    Log( "unloading..." );
-
-    if ( output )
-        fclose( output );
-    FreeConsole( );
-
-    FreeLibraryAndExitThread( hModule, 0 );
-    return 0;
 }
 
 BOOL APIENTRY DllMain( HMODULE hModule, DWORD reason, LPVOID lpReserved ) {

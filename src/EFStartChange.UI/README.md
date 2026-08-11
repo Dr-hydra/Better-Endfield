@@ -15,6 +15,7 @@ EF Start Change 的 WinUI 3 中文控制器。应用负责编辑 `EFStartChange.
 - 游戏与注入器路径保存、日志入口、启动和运行状态显示。
 - 跟随系统、浅色和深色主题，以及 Windows 11 Mica 背景。
 - 控制器快捷方式和一键启动游戏快捷方式。
+- 可在 EF 注入前启动外部 Mod 加载器，并检测外部加载器误启动游戏的冲突状态。
 - 关于页、风险说明、联系方式和按需检查更新。
 
 ## 构建
@@ -30,7 +31,7 @@ EF Start Change 的 WinUI 3 中文控制器。应用负责编辑 `EFStartChange.
 构建中文 Inno Setup 安装器：
 
 ```powershell
-.\scripts\BuildInstaller.ps1 -Version 1.0.2
+.\scripts\BuildInstaller.ps1 -Version 1.1.0
 ```
 
 ## 开源许可

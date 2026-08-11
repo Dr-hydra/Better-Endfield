@@ -2392,6 +2392,11 @@ namespace VoiceLanguageRouter {
         g_il2cppStringNew = reinterpret_cast< Il2CppStringNewFn >(
             GetProcAddress( gameAssembly, "il2cpp_string_new" ) );
 
+        const bool narrativeSignatureMatches = MatchesSignature(
+            g_voiceManagerSpeakNarrativeTarget,
+            VOICE_MANAGER_SPEAK_NARRATIVE_SIGNATURE,
+            sizeof( VOICE_MANAGER_SPEAK_NARRATIVE_SIGNATURE ) );
+
         if ( !MatchesSignature(
                 g_voiceManagerSpeakStringTarget,
                 VOICE_MANAGER_SPEAK_STRING_SIGNATURE,
@@ -2421,10 +2426,6 @@ namespace VoiceLanguageRouter {
                 VOICE_PLAYER_PLAY_VOICE_INTERNAL_SIGNATURE,
                 sizeof( VOICE_PLAYER_PLAY_VOICE_INTERNAL_SIGNATURE ) ) ||
             !MatchesSignature(
-                g_voiceManagerSpeakNarrativeTarget,
-                VOICE_MANAGER_SPEAK_NARRATIVE_SIGNATURE,
-                sizeof( VOICE_MANAGER_SPEAK_NARRATIVE_SIGNATURE ) ) ||
-            !MatchesSignature(
                 reinterpret_cast< const void * >( g_setLanguage ),
                 VOICE_I18N_SET_LANGUAGE_SIGNATURE,
                 sizeof( VOICE_I18N_SET_LANGUAGE_SIGNATURE ) ) ||
@@ -2453,6 +2454,12 @@ namespace VoiceLanguageRouter {
             g_enabled.store( false, std::memory_order_release );
             ResetVoiceHookPointers( );
             return false;
+        }
+
+        if ( !narrativeSignatureMatches ) {
+            Log( "[compat] narrative voice entry is already modified or incompatible; "
+                "battle and exploration routing will remain available" );
+            g_voiceManagerSpeakNarrativeTarget = nullptr;
         }
 
         if ( !MatchesSignature(
@@ -2524,12 +2531,6 @@ namespace VoiceLanguageRouter {
                     &g_originalVoicePlayerPlayVoiceInternal ),
                 "VoicePlayer._PlayVoice(ref)" ) &&
             CreateVoiceHook(
-                g_voiceManagerSpeakNarrativeTarget,
-                reinterpret_cast< void * >( &HookVoiceManagerSpeakNarrative ),
-                reinterpret_cast< void ** >(
-                    &g_originalVoiceManagerSpeakNarrative ),
-                "VoiceManager._SpeakNarrative" ) &&
-            CreateVoiceHook(
                 g_akSoundEngineLoadFilePackageTarget,
                 reinterpret_cast< void * >(
                     &HookAkSoundEngineLoadFilePackage ),
@@ -2567,9 +2568,6 @@ namespace VoiceLanguageRouter {
                 g_voicePlayerPlayVoiceInternalTarget,
                 "VoicePlayer._PlayVoice(ref)" ) &&
             EnableVoiceHook(
-                g_voiceManagerSpeakNarrativeTarget,
-                "VoiceManager._SpeakNarrative" ) &&
-            EnableVoiceHook(
                 g_akSoundEngineLoadFilePackageTarget,
                 "AkSoundEngine.LoadFilePackage" ) &&
             EnableVoiceHook(
@@ -2588,12 +2586,38 @@ namespace VoiceLanguageRouter {
             return false;
         }
 
+        bool narrativeReady = false;
+        if ( g_voiceManagerSpeakNarrativeTarget ) {
+            const bool narrativeCreated = CreateVoiceHook(
+                g_voiceManagerSpeakNarrativeTarget,
+                reinterpret_cast< void * >( &HookVoiceManagerSpeakNarrative ),
+                reinterpret_cast< void ** >(
+                    &g_originalVoiceManagerSpeakNarrative ),
+                "VoiceManager._SpeakNarrative" );
+            narrativeReady = narrativeCreated && EnableVoiceHook(
+                g_voiceManagerSpeakNarrativeTarget,
+                "VoiceManager._SpeakNarrative" );
+            if ( !narrativeReady ) {
+                if ( narrativeCreated ) {
+                    MH_DisableHook( g_voiceManagerSpeakNarrativeTarget );
+                    MH_RemoveHook( g_voiceManagerSpeakNarrativeTarget );
+                }
+                g_voiceManagerSpeakNarrativeTarget = nullptr;
+                g_originalVoiceManagerSpeakNarrative = nullptr;
+                Log( "[compat] narrative voice and lip routing disabled; "
+                    "battle and exploration routing remain active" );
+            }
+        }
+
         g_playVoiceHookBytesCaptured = TryCopyBytes(
             g_voicePlayerPlayVoiceTarget, g_playVoiceHookBytes.data( ),
             g_playVoiceHookBytes.size( ) );
         g_hookHostAvailable.store( true, std::memory_order_release );
         g_shuttingDown.store( false, std::memory_order_release );
-        Log( "[voice-lang] ten voice hooks installed after IL2CPP stabilization" );
+        Log( "[voice-lang] nine core voice hooks installed after IL2CPP stabilization" );
+        Log( std::string( "[compat] voice groups core=active narrative=" ) +
+            ( narrativeReady ? "active" : "unavailable" ) +
+            " lip=" + ( narrativeReady ? "deferred" : "unavailable" ) );
         Log( "[voice-route] per-character source replacement and auxiliary language-package mounting are active" );
         if ( g_playVoiceHookBytesCaptured ) {
             Log( "[voice-diag] VoicePlayer.PlayVoice patched entry=" +

@@ -19,6 +19,7 @@
 - 32 个角色的独立配音语言路由，支持战斗、探索、剧情语音及对应剧情口型，可选择中文、英语、日语、韩语或跟随全局设置。
 - Windows 11 风格 WinUI 3 控制界面，支持浅色、深色和跟随系统主题。
 - 支持保存配置、查看日志、启动注入器、检查更新和创建桌面快捷方式。
+- 支持在 EF 注入前启动 3DMigoto、XXMI 等外部 Mod 加载器，并提供冲突降级日志。
 - 首次启动显示风险说明与免责声明。
 
 ## 兼容性
@@ -35,7 +36,7 @@
 ## 下载与安装
 
 1. 打开 [Releases](https://github.com/Dr-hydra/EF-Start-Change/releases/latest)。
-2. 下载 `EFStartChange-1.0.2-Setup.exe`。
+2. 下载 `EFStartChange-1.1.0-Setup.exe`。
 3. 运行安装器并阅读风险说明与 GNU AGPL v3.0 许可。默认安装到 `%LocalAppData%\Programs\EF Start Change`，安装器本身不要求管理员权限。
 4. 启动 `EF Start Change`。首次运行时需确认应用内免责声明。
 
@@ -93,6 +94,14 @@ voice_language_rules=aglina:Japanese,chen:Chinese,*:FollowGlobal
 
 界面提供“打开目录”和“查看日志”按钮。配音总开关、剧情语音与口型开关及角色语言规则支持热更新；模型和动画参数仍在下一次启动并注入时读取。
 
+## 与其他 Mod 加载器共存
+
+在“设置 → 外部加载器”中启用第三方加载器后，可填写其程序路径、原始命令行参数和等待时间。EF Start Change 会先启动外部加载器，等待其进入监听状态，再由 EF 注入器创建并注入 `Endfield.exe`。
+
+外部加载器必须关闭“自动启动游戏”功能。如果等待期间检测到 `Endfield.exe` 已经运行，EF 会停止后续启动并保留现有进程，不会尝试附加或重复注入。对于 JASM/3DMigoto，应只让 JASM 启动 3DMigoto Loader，再由 EF Start Change 启动游戏。
+
+正式版不再轮询 `F6`、`F9`、`F10`，因此 3DMigoto/JASM 可以继续使用 `F10` 刷新。原生 Hook 按功能组降级：模型和配音互不撤销；模型深层 Bundle 诊断失败不影响核心替换；剧情或口型 Hook 不可用时，基础战斗与探索配音仍会保留。未知的同地址 Hook 不会被自动串联，相关功能组会安全停用并写入 `[compat]` 日志。
+
 ## 从源码构建
 
 构建环境：
@@ -113,7 +122,7 @@ pwsh -File .\scripts\BuildEFStartChange.ps1
 构建中文安装器：
 
 ```powershell
-pwsh -File .\scripts\BuildInstaller.ps1 -Version 1.0.2
+pwsh -File .\scripts\BuildInstaller.ps1 -Version 1.1.0
 ```
 
 安装器输出到 `artifacts\installer`。构建过程使用独立临时发布目录，完成后会自动清理。
