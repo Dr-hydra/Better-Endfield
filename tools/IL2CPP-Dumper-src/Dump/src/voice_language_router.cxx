@@ -1,5 +1,6 @@
 #include "../include/voice_language_router.hxx"
 
+#include "../include/il2cpp_api.hxx"
 #include "../include/utils.hxx"
 #include "../../third_party/minhook/include/MinHook.h"
 
@@ -40,6 +41,8 @@ namespace {
     constexpr std::uint32_t DIAGNOSTIC_HIT_LIMIT = 8;
     constexpr std::uint32_t VOICE_SELECT_MATCH_LOG_LIMIT = 32;
     constexpr std::uint32_t VOICE_SUBMIT_MATCH_LOG_LIMIT = 64;
+    constexpr std::uint32_t LIP_ROUTE_LOG_LIMIT = 64;
+    constexpr std::uint32_t LIP_DIAGNOSTIC_LOG_LIMIT = 32;
     constexpr std::uint8_t VOICE_MANAGER_SPEAK_STRING_SIGNATURE [ ] = {
         0x48, 0x89, 0x6C, 0x24, 0x10, 0x48, 0x89, 0x74,
         0x24, 0x18, 0x48, 0x89, 0x7C, 0x24, 0x20
@@ -119,6 +122,12 @@ namespace {
         std::uint32_t, void * );
     using AkSoundEngineGetCurrentLanguageFn = void * ( __fastcall * )( void * );
     using Il2CppStringNewFn = void * ( __fastcall * )( const char * );
+    using DialogManagerPlayLipSyncTrackFn = void ( __fastcall * )(
+        void *, void *, void *, void * );
+    using LipSyncGetTrackPathFn = void * ( __fastcall * )(
+        int, void *, void *, void * );
+    using LipSyncTryLoadTrackFn = bool ( __fastcall * )(
+        void *, void **, void * );
 
     struct RoutingState {
         bool active = false;
@@ -132,8 +141,56 @@ namespace {
         char source [ 96 ] = { 0 };
     };
 
+    struct LipRoutingContext {
+        bool active = false;
+        int target = FOLLOW_GLOBAL_LANGUAGE;
+        int sourceLanguage = FOLLOW_GLOBAL_LANGUAGE;
+        char actor [ 192 ] = { 0 };
+        char matchedIdentity [ 192 ] = { 0 };
+        char trunkId [ 256 ] = { 0 };
+    };
+
+    struct PendingLipRoute {
+        bool armed = false;
+        int target = FOLLOW_GLOBAL_LANGUAGE;
+        std::uint64_t generation = 0;
+        char lineId [ 256 ] = { 0 };
+        char matchedIdentity [ 192 ] = { 0 };
+    };
+
+    struct ThreadRoutingContext {
+        bool routingVoice = false;
+        LipRoutingContext lipRouting;
+        PendingLipRoute pendingLipRoute;
+    };
+
+    struct ManagedGetterStringResult {
+        std::string raw;
+        std::string normalized;
+        const char * status = "not-called";
+        void * managedException = nullptr;
+    };
+
+    struct ConfigFileStamp {
+        bool exists = false;
+        std::uint64_t writeTime = 0;
+        std::uint64_t size = 0;
+    };
+
+    using VoiceRuleMap = std::unordered_map< std::string, int >;
+
+    struct VoiceConfigurationSnapshot {
+        bool enabled = false;
+        bool replaceNarrativeVoice = true;
+        VoiceRuleMap rules;
+        int defaultLanguage = NO_DEFAULT_LANGUAGE;
+    };
+
     std::atomic< bool > g_enabled { false };
+    std::atomic< bool > g_replaceNarrativeVoice { true };
     std::atomic< bool > g_shuttingDown { false };
+    std::atomic< bool > g_hookHostAvailable { true };
+    std::atomic< std::uint64_t > g_configGeneration { 0 };
     std::atomic< std::uint32_t > g_playVoiceHits { 0 };
     std::atomic< std::uint32_t > g_managerSpeakStringHits { 0 };
     std::atomic< std::uint32_t > g_managerSpeakHits { 0 };
@@ -145,18 +202,36 @@ namespace {
     std::atomic< std::uint32_t > g_internalPlayVoiceHits { 0 };
     std::atomic< std::uint32_t > g_narrativeHits { 0 };
     std::atomic< std::uint32_t > g_identityFailures { 0 };
+    std::atomic< std::uint32_t > g_narrativeSkipLogs { 0 };
+    std::atomic< std::uint32_t > g_lipRouteLogs { 0 };
+    std::atomic< std::uint32_t > g_lipDialogHits { 0 };
+    std::atomic< std::uint32_t > g_lipPathHits { 0 };
+    std::atomic< std::uint32_t > g_lipLoadHits { 0 };
+    std::atomic< std::uint32_t > g_lipArmLogs { 0 };
+    std::atomic< std::uint32_t > g_lipLanguageOverrideHits { 0 };
+    std::atomic< bool > g_lipHooksAttempted { false };
+    std::atomic< bool > g_lipHooksReady { false };
     std::array< std::atomic< bool >, 4 > g_languagePackageAttempted { };
     std::array< std::atomic< bool >, 4 > g_languagePackageReady { };
     std::atomic< bool > g_auxiliaryPackageLoad { false };
     std::atomic< int > g_auxiliaryPackageLanguage { FOLLOW_GLOBAL_LANGUAGE };
     std::atomic< std::uint32_t > g_auxiliaryPackageLoads { 0 };
     std::atomic< std::uint32_t > g_auxiliaryPackageUnloadsSuppressed { 0 };
-    std::unordered_map< std::string, int > g_rules;
+    VoiceRuleMap g_rules;
     std::unordered_set< std::string > g_observedSpeakers;
     int g_defaultLanguage = NO_DEFAULT_LANGUAGE;
+    std::string g_configPath;
+    ConfigFileStamp g_appliedConfigStamp;
+    ConfigFileStamp g_pendingConfigStamp;
+    bool g_configReloadPending = false;
+    std::uint64_t g_configReloadDetectedAt = 0;
     SRWLOCK g_playLock = SRWLOCK_INIT;
+    SRWLOCK g_rulesLock = SRWLOCK_INIT;
     SRWLOCK g_observedLock = SRWLOCK_INIT;
-    thread_local bool g_routingVoice = false;
+    SRWLOCK g_routingTlsInitLock = SRWLOCK_INIT;
+    // Keep the slot for the game process lifetime. TlsFree does not clear
+    // values owned by other threads, so reuse after manual unload is unsafe.
+    std::atomic< DWORD > g_routingTlsIndex { TLS_OUT_OF_INDEXES };
 
     void * g_voiceManagerSpeakStringTarget = nullptr;
     void * g_voiceManagerSpeakTarget = nullptr;
@@ -168,6 +243,10 @@ namespace {
     void * g_voiceManagerSpeakNarrativeTarget = nullptr;
     void * g_akSoundEngineLoadFilePackageTarget = nullptr;
     void * g_akSoundEngineUnloadFilePackageTarget = nullptr;
+    void * g_dialogManagerPlayLipSyncTrackTarget = nullptr;
+    void * g_lipSyncGetTrackPathTarget = nullptr;
+    void * g_lipSyncTryLoadTrackTarget = nullptr;
+    void * g_voiceI18nGetCurrentLanguageTarget = nullptr;
     VoiceManagerSpeakStringFn g_originalVoiceManagerSpeakString = nullptr;
     VoiceContextInstanceUintFn g_originalVoiceManagerSpeak = nullptr;
     VoiceContextInstanceVoidFn g_originalVoiceSpeakChannelPlayVoice = nullptr;
@@ -182,20 +261,70 @@ namespace {
     AudioVfsTryLoadLanguagePckFn g_tryLoadLanguagePck = nullptr;
     AkSoundEngineLoadFilePackageFn g_originalAkSoundEngineLoadFilePackage = nullptr;
     AkSoundEngineUnloadFilePackageFn g_originalAkSoundEngineUnloadFilePackage = nullptr;
+    DialogManagerPlayLipSyncTrackFn g_originalDialogManagerPlayLipSyncTrack = nullptr;
+    LipSyncGetTrackPathFn g_originalLipSyncGetTrackPath = nullptr;
+    LipSyncTryLoadTrackFn g_originalLipSyncTryLoadTrack = nullptr;
+    VoiceI18nGetCurrentLanguageFn g_originalVoiceI18nGetCurrentLanguage = nullptr;
+    void * g_dialogActionGetRealActorNameId = nullptr;
+    void * g_dialogActionGetActorNameId = nullptr;
+    void * g_dialogActionGetTrunkId = nullptr;
     VoiceI18nSetLanguageFn g_setLanguage = nullptr;
     VoiceI18nGetCurrentLanguageFn g_getCurrentLanguage = nullptr;
     VoiceI18nGetLanguageNameFn g_getLanguageName = nullptr;
     AkSoundEngineGetCurrentLanguageFn g_getWwiseCurrentLanguage = nullptr;
     Il2CppStringNewFn g_il2cppStringNew = nullptr;
-    // Manual mapping does not provide the full CRT TLS lifecycle required by
-    // non-trivial thread_local objects such as std::string. Routing is already
-    // serialized by g_playLock, so a process-wide state is sufficient here.
+    // Manual mapping does not provide the CRT static-TLS lifecycle. Voice
+    // routing itself is serialized by g_playLock; nested per-thread state is
+    // stored through the Win32 TLS API above.
     RoutingState g_activeRouting;
     bool g_ownsMinHook = false;
     std::array< std::uint8_t, HOOK_FINGERPRINT_SIZE > g_playVoiceHookBytes { };
     bool g_playVoiceHookBytesCaptured = false;
     std::atomic< bool > g_healthReported { false };
     std::atomic< bool > g_healthRepairAttempted { false };
+
+    static bool EnsureRoutingTlsIndex( ) {
+        if ( g_routingTlsIndex.load( std::memory_order_acquire ) !=
+            TLS_OUT_OF_INDEXES )
+            return true;
+
+        AcquireSRWLockExclusive( &g_routingTlsInitLock );
+        DWORD index = g_routingTlsIndex.load( std::memory_order_relaxed );
+        if ( index == TLS_OUT_OF_INDEXES ) {
+            index = TlsAlloc( );
+            if ( index != TLS_OUT_OF_INDEXES )
+                g_routingTlsIndex.store( index, std::memory_order_release );
+        }
+        ReleaseSRWLockExclusive( &g_routingTlsInitLock );
+        return index != TLS_OUT_OF_INDEXES;
+    }
+
+    static ThreadRoutingContext * GetThreadRoutingContext(
+        bool create = true ) {
+        DWORD index = g_routingTlsIndex.load( std::memory_order_acquire );
+        if ( index == TLS_OUT_OF_INDEXES ) {
+            if ( !create || !EnsureRoutingTlsIndex( ) )
+                return nullptr;
+            index = g_routingTlsIndex.load( std::memory_order_acquire );
+        }
+
+        auto * context = static_cast< ThreadRoutingContext * >(
+            TlsGetValue( index ) );
+        if ( context || !create )
+            return context;
+
+        context = static_cast< ThreadRoutingContext * >(
+            HeapAlloc( GetProcessHeap( ), HEAP_ZERO_MEMORY,
+                sizeof( ThreadRoutingContext ) ) );
+        if ( !context )
+            return nullptr;
+        *context = ThreadRoutingContext { };
+        if ( !TlsSetValue( index, context ) ) {
+            HeapFree( GetProcessHeap( ), 0, context );
+            return nullptr;
+        }
+        return context;
+    }
 
     static bool MatchesSignature(
         const void * target, const std::uint8_t * signature,
@@ -333,6 +462,63 @@ namespace {
         return true;
     }
 
+    static bool IsNarrativeVoiceSource( const std::string & source ) {
+        return source.rfind( "voice/", 0 ) == 0 &&
+            source.find( "/narrating/" ) != std::string::npos;
+    }
+
+    static std::string ExtractVoiceLineId( const std::string & source ) {
+        if ( source.empty( ) )
+            return { };
+        const std::size_t separator = source.find_last_of( "/\\" );
+        std::string lineId = separator == std::string::npos
+            ? source : source.substr( separator + 1 );
+        constexpr const char * extension = ".wem";
+        if ( lineId.size( ) >= std::strlen( extension ) &&
+            lineId.compare(
+                lineId.size( ) - std::strlen( extension ),
+                std::strlen( extension ), extension ) == 0 ) {
+            lineId.erase( lineId.size( ) - std::strlen( extension ) );
+        }
+        return Normalize( std::move( lineId ) );
+    }
+
+    static void ClearPendingLipRoute( ThreadRoutingContext * context ) {
+        if ( context )
+            context->pendingLipRoute = PendingLipRoute { };
+    }
+
+    static bool ArmPendingLipRoute(
+        int targetLanguage, const std::string & matchedIdentity,
+        const std::string & source ) {
+        ThreadRoutingContext * context = GetThreadRoutingContext( );
+        const std::string lineId = ExtractVoiceLineId( source );
+        if ( !context || lineId.empty( ) || targetLanguage < 0 ||
+            targetLanguage > 3 ) {
+            ClearPendingLipRoute( context );
+            return false;
+        }
+
+        PendingLipRoute pending;
+        pending.armed = true;
+        pending.target = targetLanguage;
+        pending.generation = g_configGeneration.load(
+            std::memory_order_acquire );
+        strncpy_s( pending.lineId, lineId.c_str( ), _TRUNCATE );
+        strncpy_s(
+            pending.matchedIdentity, matchedIdentity.c_str( ), _TRUNCATE );
+        context->pendingLipRoute = pending;
+        if ( g_lipArmLogs.fetch_add(
+            1, std::memory_order_relaxed ) < LIP_ROUTE_LOG_LIMIT ) {
+            Log( "[lip-route] armed line=" + lineId +
+                " matched=" + ( matchedIdentity.empty( )
+                    ? std::string( "<empty>" ) : matchedIdentity ) +
+                " requested=" + LanguageName( targetLanguage ) +
+                "(" + std::to_string( targetLanguage ) + ")" );
+        }
+        return true;
+    }
+
     static void * CreateManagedString( const std::string & value ) {
         if ( !g_il2cppStringNew || value.empty( ) )
             return nullptr;
@@ -344,24 +530,28 @@ namespace {
         }
     }
 
-    static void AddRule( const std::string & sourceKey, int language ) {
+    static void AddRule(
+        VoiceRuleMap & rules, int & defaultLanguage,
+        const std::string & sourceKey, int language ) {
         const std::string key = Normalize( sourceKey );
         if ( key.empty( ) )
             return;
         if ( key == "*" ) {
-            g_defaultLanguage = language;
+            defaultLanguage = language;
             return;
         }
 
-        g_rules [ key ] = language;
+        rules [ key ] = language;
         if ( key.rfind( "chr_", 0 ) == 0 ) {
             const std::size_t suffixStart = key.find( '_', 4 );
             if ( suffixStart != std::string::npos && suffixStart + 1 < key.size( ) )
-                g_rules.emplace( key.substr( suffixStart + 1 ), language );
+                rules.emplace( key.substr( suffixStart + 1 ), language );
         }
     }
 
-    static void ParseRules( const std::string & source ) {
+    static void ParseRules(
+        const std::string & source, VoiceRuleMap & rules,
+        int & defaultLanguage ) {
         std::string flattened = source;
         std::replace_if(
             flattened.begin( ), flattened.end( ),
@@ -401,8 +591,126 @@ namespace {
                 Log( "[voice-lang] ignored invalid rule: " + entry );
                 continue;
             }
-            AddRule( key, language );
+            AddRule( rules, defaultLanguage, key, language );
         }
+    }
+
+    static ConfigFileStamp ReadConfigFileStamp(
+        const std::string & configPath ) {
+        ConfigFileStamp stamp;
+        WIN32_FILE_ATTRIBUTE_DATA data { };
+        if ( configPath.empty( ) || !GetFileAttributesExA(
+            configPath.c_str( ), GetFileExInfoStandard, &data ) ||
+            ( data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) != 0 ) {
+            return stamp;
+        }
+
+        ULARGE_INTEGER writeTime { };
+        writeTime.LowPart = data.ftLastWriteTime.dwLowDateTime;
+        writeTime.HighPart = data.ftLastWriteTime.dwHighDateTime;
+        ULARGE_INTEGER size { };
+        size.LowPart = data.nFileSizeLow;
+        size.HighPart = data.nFileSizeHigh;
+        stamp.exists = true;
+        stamp.writeTime = writeTime.QuadPart;
+        stamp.size = size.QuadPart;
+        return stamp;
+    }
+
+    static bool ConfigFileStampsEqual(
+        const ConfigFileStamp & left, const ConfigFileStamp & right ) {
+        return left.exists == right.exists &&
+            left.writeTime == right.writeTime && left.size == right.size;
+    }
+
+    static VoiceConfigurationSnapshot ReadVoiceConfiguration(
+        const std::string & configPath ) {
+        VoiceConfigurationSnapshot snapshot;
+        snapshot.enabled = ReadConfigBool(
+            configPath, "voice_router_enabled", false );
+        snapshot.replaceNarrativeVoice = ReadConfigBool(
+            configPath, "replace_narrative_voice", true );
+        ParseRules(
+            ReadConfigRules( configPath ), snapshot.rules,
+            snapshot.defaultLanguage );
+        return snapshot;
+    }
+
+    static void ApplyVoiceConfiguration(
+        VoiceConfigurationSnapshot && snapshot, bool hotReload ) {
+        const bool tlsReady = EnsureRoutingTlsIndex( );
+        const bool hookHostAvailable = g_hookHostAvailable.load(
+            std::memory_order_acquire );
+        const bool enabled =
+            snapshot.enabled && tlsReady && hookHostAvailable;
+        const bool replaceNarrativeVoice = snapshot.replaceNarrativeVoice;
+        const std::size_t ruleCount = snapshot.rules.size( );
+        const int defaultLanguage = snapshot.defaultLanguage;
+
+        g_enabled.store( false, std::memory_order_release );
+        AcquireSRWLockExclusive( &g_rulesLock );
+        g_rules.swap( snapshot.rules );
+        g_defaultLanguage = defaultLanguage;
+        g_replaceNarrativeVoice.store(
+            replaceNarrativeVoice, std::memory_order_release );
+        const std::uint64_t generation = g_configGeneration.fetch_add(
+            1, std::memory_order_acq_rel ) + 1;
+        g_enabled.store( enabled, std::memory_order_release );
+        ReleaseSRWLockExclusive( &g_rulesLock );
+
+        if ( hotReload ) {
+            g_selectWwiseEventMatchLogs.store( 0, std::memory_order_release );
+            g_submitExternalMatchLogs.store( 0, std::memory_order_release );
+            g_narrativeSkipLogs.store( 0, std::memory_order_release );
+            g_lipRouteLogs.store( 0, std::memory_order_release );
+            g_lipArmLogs.store( 0, std::memory_order_release );
+            g_lipLanguageOverrideHits.store( 0, std::memory_order_release );
+        }
+
+        Log( std::string( hotReload
+                ? "[voice-hot-reload] applied"
+                : "[voice-lang] configured" ) +
+            " generation=" + std::to_string( generation ) +
+            " enabled=" + ( enabled ? "true" : "false" ) +
+            " narrative=" +
+                ( replaceNarrativeVoice ? "true" : "false" ) +
+            " win32Tls=" + ( tlsReady ? "ready" : "failed" ) +
+            " hookHost=" +
+                ( hookHostAvailable ? "ready" : "unavailable" ) +
+            " rules=" + std::to_string( ruleCount ) +
+            " default=" + LanguageName( defaultLanguage ) );
+    }
+
+    static void PollConfigurationReload( ) {
+        if ( g_configPath.empty( ) )
+            return;
+
+        const ConfigFileStamp current = ReadConfigFileStamp( g_configPath );
+        if ( !current.exists ) {
+            g_configReloadPending = false;
+            return;
+        }
+        if ( ConfigFileStampsEqual( current, g_appliedConfigStamp ) ) {
+            g_configReloadPending = false;
+            return;
+        }
+
+        const std::uint64_t now = GetTickCount64( );
+        if ( !g_configReloadPending ||
+            !ConfigFileStampsEqual( current, g_pendingConfigStamp ) ) {
+            g_pendingConfigStamp = current;
+            g_configReloadPending = true;
+            g_configReloadDetectedAt = now;
+            return;
+        }
+        if ( now - g_configReloadDetectedAt < 250 )
+            return;
+
+        VoiceConfigurationSnapshot snapshot =
+            ReadVoiceConfiguration( g_configPath );
+        ApplyVoiceConfiguration( std::move( snapshot ), true );
+        g_appliedConfigStamp = current;
+        g_configReloadPending = false;
     }
 
     static bool TryCopyBytes(
@@ -687,12 +995,13 @@ namespace {
     }
 
     static bool ResolveExplicitLanguage(
-        const std::string & identity, int & language, std::string & matchedKey ) {
+        const VoiceRuleMap & rules, const std::string & identity,
+        int & language, std::string & matchedKey ) {
         if ( identity.empty( ) )
             return false;
 
-        auto found = g_rules.find( identity );
-        if ( found != g_rules.end( ) ) {
+        auto found = rules.find( identity );
+        if ( found != rules.end( ) ) {
             language = found->second;
             matchedKey = found->first;
             return true;
@@ -702,8 +1011,8 @@ namespace {
             const std::size_t suffixStart = identity.find( '_', 4 );
             if ( suffixStart != std::string::npos &&
                 suffixStart + 1 < identity.size( ) ) {
-                found = g_rules.find( identity.substr( suffixStart + 1 ) );
-                if ( found != g_rules.end( ) ) {
+                found = rules.find( identity.substr( suffixStart + 1 ) );
+                if ( found != rules.end( ) ) {
                     language = found->second;
                     matchedKey = found->first;
                     return true;
@@ -741,25 +1050,34 @@ namespace {
         const std::string & speaker, const std::string & voiceData,
         const std::string & wwiseEvent, int & language,
         std::string & matchedIdentity ) {
+        bool resolved = false;
+        AcquireSRWLockShared( &g_rulesLock );
+        if ( !g_enabled.load( std::memory_order_acquire ) ) {
+            ReleaseSRWLockShared( &g_rulesLock );
+            return false;
+        }
         if ( ResolveExplicitLanguage(
-            speaker, language, matchedIdentity ) )
-            return true;
-
-        for ( const auto & [ key, configuredLanguage ] : g_rules ) {
-            if ( ContainsIdentityToken( voiceData, key ) ||
-                ContainsIdentityToken( wwiseEvent, key ) ) {
-                language = configuredLanguage;
-                matchedIdentity = key;
-                return true;
+            g_rules, speaker, language, matchedIdentity ) ) {
+            resolved = true;
+        }
+        else {
+            for ( const auto & [ key, configuredLanguage ] : g_rules ) {
+                if ( ContainsIdentityToken( voiceData, key ) ||
+                    ContainsIdentityToken( wwiseEvent, key ) ) {
+                    language = configuredLanguage;
+                    matchedIdentity = key;
+                    resolved = true;
+                    break;
+                }
             }
         }
-
-        if ( g_defaultLanguage != NO_DEFAULT_LANGUAGE ) {
+        if ( !resolved && g_defaultLanguage != NO_DEFAULT_LANGUAGE ) {
             language = g_defaultLanguage;
             matchedIdentity = "*";
-            return true;
+            resolved = true;
         }
-        return false;
+        ReleaseSRWLockShared( &g_rulesLock );
+        return resolved;
     }
 
     static const std::string & PreferredVoiceIdentity(
@@ -806,17 +1124,637 @@ namespace {
         };
     }
 
+    static void * FindGameplayImage( ) {
+        if ( !api::initialized || !api::get_domain ||
+            !api::get_assemblies || !api::assembly_get_image ||
+            !api::image_get_name )
+            return nullptr;
+
+        void * domain = api::get_domain( );
+        if ( !domain )
+            return nullptr;
+        size_t count = 0;
+        void ** assemblies = api::get_assemblies( domain, &count );
+        if ( !assemblies )
+            return nullptr;
+        for ( size_t index = 0; index < count; ++index ) {
+            void * image = api::assembly_get_image( assemblies [ index ] );
+            const char * name = image ? api::image_get_name( image ) : nullptr;
+            if ( name && ( _stricmp( name, "Gameplay.Beyond.dll" ) == 0 ||
+                _stricmp( name, "Gameplay.Beyond" ) == 0 ) )
+                return image;
+        }
+        return nullptr;
+    }
+
+    static bool IsExecutableAddress( void * address ) {
+        if ( !address )
+            return false;
+        MEMORY_BASIC_INFORMATION info { };
+        if ( VirtualQuery( address, &info, sizeof( info ) ) == 0 )
+            return false;
+        const DWORD executable = PAGE_EXECUTE | PAGE_EXECUTE_READ |
+            PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY;
+        return info.State == MEM_COMMIT &&
+            ( info.Protect & executable ) != 0;
+    }
+
+    static bool IsGameAssemblyMethodEntry( void * address ) {
+        const uintptr_t value = reinterpret_cast< uintptr_t >( address );
+        if ( !value || !api::module_base || value < api::module_base )
+            return false;
+        if ( api::module_size &&
+            value >= api::module_base + api::module_size )
+            return false;
+        return IsExecutableAddress( address );
+    }
+
+    static std::string PointerText( const void * value ) {
+        char buffer [ 32 ] = { 0 };
+        sprintf_s( buffer, "%p", value );
+        return buffer;
+    }
+
+    struct GameplayMethodResolution {
+        void * klass = nullptr;
+        void * methodInfo = nullptr;
+        void * entry = nullptr;
+    };
+
+    static void * ReadGameplayMethodEntry(
+        void * methodInfo, const char * & source ) {
+        source = "none";
+        if ( !methodInfo )
+            return nullptr;
+
+        if ( api::method_get_pointer ) {
+            void * candidate = nullptr;
+            __try {
+                candidate = const_cast< void * >(
+                    api::method_get_pointer( methodInfo ) );
+            }
+            __except ( EXCEPTION_EXECUTE_HANDLER ) {
+                candidate = nullptr;
+            }
+            if ( IsGameAssemblyMethodEntry( candidate ) ) {
+                source = "export";
+                return candidate;
+            }
+        }
+
+        void * candidate = nullptr;
+        __try {
+            candidate = *reinterpret_cast< void ** >( methodInfo );
+        }
+        __except ( EXCEPTION_EXECUTE_HANDLER ) {
+            candidate = nullptr;
+        }
+        if ( IsGameAssemblyMethodEntry( candidate ) ) {
+            source = "MethodInfo[0]";
+            return candidate;
+        }
+        return nullptr;
+    }
+
+    static GameplayMethodResolution ResolveGameplayMethod(
+        void * image, const char * namespaze, const char * className,
+        const char * methodName, int parameterCount, const char * label ) {
+        GameplayMethodResolution result;
+        if ( !image || !api::class_from_name ||
+            !api::class_get_method_from_name ) {
+            Log( "[lip-route] resolve " + std::string( label ) +
+                " failed: reflection API unavailable" );
+            return result;
+        }
+
+        result.klass = api::class_from_name(
+            image, namespaze, className );
+        if ( result.klass )
+            result.methodInfo = api::class_get_method_from_name(
+                result.klass, methodName, parameterCount );
+
+        const char * entrySource = "none";
+        result.entry = ReadGameplayMethodEntry(
+            result.methodInfo, entrySource );
+        Log( "[lip-route] resolve " + std::string( label ) +
+            " class=" + ( result.klass ? "found" : "missing" ) +
+            " methodInfo=" + PointerText( result.methodInfo ) +
+            " entry=" + PointerText( result.entry ) +
+            " entrySource=" + entrySource +
+            " params=" + std::to_string( parameterCount ) );
+        return result;
+    }
+
+    static ManagedGetterStringResult ReadManagedGetterString(
+        void * getterMethodInfo, void * instance ) {
+        ManagedGetterStringResult result;
+        if ( !getterMethodInfo ) {
+            result.status = "getter-missing";
+            return result;
+        }
+        if ( !instance ) {
+            result.status = "instance-null";
+            return result;
+        }
+        if ( !api::runtime_invoke ) {
+            result.status = "runtime-invoke-missing";
+            return result;
+        }
+
+        void * exception = nullptr;
+        void * value = nullptr;
+        __try {
+            value = api::runtime_invoke(
+                getterMethodInfo, instance, nullptr, &exception );
+        }
+        __except ( EXCEPTION_EXECUTE_HANDLER ) {
+            result.status = "native-exception";
+            return result;
+        }
+        if ( exception ) {
+            result.status = "managed-exception";
+            result.managedException = exception;
+            return result;
+        }
+        if ( !value ) {
+            result.status = "value-null";
+            return result;
+        }
+
+        char buffer [ 256 ] = { 0 };
+        if ( !TryCopyManagedStringObject(
+            value, buffer, sizeof( buffer ) ) ) {
+            result.status = "copy-failed";
+            return result;
+        }
+        result.raw = buffer;
+        result.normalized = Normalize( buffer );
+        result.status = result.raw.empty( ) ? "empty" : "ok";
+        return result;
+    }
+
+    static bool g_lipDialogHookCreated = false;
+    static bool g_lipPathHookCreated = false;
+    static bool g_lipLoadHookCreated = false;
+    static bool g_lipLanguageHookCreated = false;
+
+    static void RemoveLipSyncHooks( ) {
+        if ( g_lipDialogHookCreated && g_dialogManagerPlayLipSyncTrackTarget ) {
+            MH_DisableHook( g_dialogManagerPlayLipSyncTrackTarget );
+            MH_RemoveHook( g_dialogManagerPlayLipSyncTrackTarget );
+        }
+        if ( g_lipPathHookCreated && g_lipSyncGetTrackPathTarget ) {
+            MH_DisableHook( g_lipSyncGetTrackPathTarget );
+            MH_RemoveHook( g_lipSyncGetTrackPathTarget );
+        }
+        if ( g_lipLoadHookCreated && g_lipSyncTryLoadTrackTarget ) {
+            MH_DisableHook( g_lipSyncTryLoadTrackTarget );
+            MH_RemoveHook( g_lipSyncTryLoadTrackTarget );
+        }
+        if ( g_lipLanguageHookCreated &&
+            g_voiceI18nGetCurrentLanguageTarget ) {
+            MH_DisableHook( g_voiceI18nGetCurrentLanguageTarget );
+            MH_RemoveHook( g_voiceI18nGetCurrentLanguageTarget );
+        }
+        g_lipDialogHookCreated = false;
+        g_lipPathHookCreated = false;
+        g_lipLoadHookCreated = false;
+        g_lipLanguageHookCreated = false;
+        g_dialogManagerPlayLipSyncTrackTarget = nullptr;
+        g_lipSyncGetTrackPathTarget = nullptr;
+        g_lipSyncTryLoadTrackTarget = nullptr;
+        g_voiceI18nGetCurrentLanguageTarget = nullptr;
+        g_originalDialogManagerPlayLipSyncTrack = nullptr;
+        g_originalLipSyncGetTrackPath = nullptr;
+        g_originalLipSyncTryLoadTrack = nullptr;
+        g_originalVoiceI18nGetCurrentLanguage = nullptr;
+        g_dialogActionGetRealActorNameId = nullptr;
+        g_dialogActionGetActorNameId = nullptr;
+        g_dialogActionGetTrunkId = nullptr;
+        g_lipHooksReady.store( false, std::memory_order_release );
+    }
+
+    static int __fastcall HookVoiceI18nGetCurrentLanguage(
+        void * methodInfo ) {
+        ThreadRoutingContext * threadContext =
+            GetThreadRoutingContext( false );
+        LipRoutingContext * routing = threadContext
+            ? &threadContext->lipRouting : nullptr;
+        if ( g_enabled.load( std::memory_order_acquire ) &&
+            routing && routing->active && routing->target >= 0 &&
+            routing->target <= 3 ) {
+            const std::uint32_t hit = g_lipLanguageOverrideHits.fetch_add(
+                1, std::memory_order_relaxed ) + 1;
+            if ( hit <= LIP_DIAGNOSTIC_LOG_LIMIT ) {
+                Log( "[lip-route] language-hit hit=" +
+                    std::to_string( hit ) +
+                    " thread=" + std::to_string( GetCurrentThreadId( ) ) +
+                    " line=" + ( routing->trunkId [ 0 ]
+                        ? std::string( routing->trunkId )
+                        : std::string( "<empty>" ) ) +
+                    " override=" + LanguageName( routing->target ) +
+                    "(" + std::to_string( routing->target ) + ")" );
+            }
+            return routing->target;
+        }
+        return g_originalVoiceI18nGetCurrentLanguage
+            ? g_originalVoiceI18nGetCurrentLanguage( methodInfo ) : 0;
+    }
+
+    static void __fastcall HookDialogManagerPlayLipSyncTrack(
+        void * self, void * trunkActionData, void * entity,
+        void * methodInfo ) {
+        ThreadRoutingContext * threadContext = GetThreadRoutingContext( );
+        const ManagedGetterStringResult realActorResult =
+            ReadManagedGetterString(
+                g_dialogActionGetRealActorNameId, trunkActionData );
+        const ManagedGetterStringResult actorResult =
+            ReadManagedGetterString(
+                g_dialogActionGetActorNameId, trunkActionData );
+        const ManagedGetterStringResult trunkResult =
+            ReadManagedGetterString(
+                g_dialogActionGetTrunkId, trunkActionData );
+        const std::uint32_t dialogHit = g_lipDialogHits.fetch_add(
+            1, std::memory_order_relaxed ) + 1;
+        if ( dialogHit <= LIP_DIAGNOSTIC_LOG_LIMIT ) {
+            Log( "[lip-route] dialog-hit hit=" + std::to_string( dialogHit ) +
+                " thread=" + std::to_string( GetCurrentThreadId( ) ) +
+                " context=" + ( threadContext ? "ready" : "missing" ) +
+                " action=" + PointerText( trunkActionData ) +
+                " entity=" + PointerText( entity ) +
+                " realActor=" + ( realActorResult.raw.empty( )
+                    ? std::string( "<empty>" ) : realActorResult.raw ) +
+                " realStatus=" + realActorResult.status +
+                " realException=" +
+                    PointerText( realActorResult.managedException ) +
+                " actor=" + ( actorResult.raw.empty( )
+                    ? std::string( "<empty>" ) : actorResult.raw ) +
+                " actorStatus=" + actorResult.status +
+                " actorException=" +
+                    PointerText( actorResult.managedException ) +
+                " trunk=" + ( trunkResult.raw.empty( )
+                    ? std::string( "<empty>" ) : trunkResult.raw ) +
+                " trunkStatus=" + trunkResult.status +
+                " trunkException=" +
+                    PointerText( trunkResult.managedException ) );
+        }
+        if ( !threadContext ) {
+            if ( g_originalDialogManagerPlayLipSyncTrack )
+                g_originalDialogManagerPlayLipSyncTrack(
+                    self, trunkActionData, entity, methodInfo );
+            return;
+        }
+
+        LipRoutingContext & current = threadContext->lipRouting;
+        const LipRoutingContext previous = current;
+        LipRoutingContext next = previous;
+        bool routed = false;
+        if ( g_replaceNarrativeVoice.load( std::memory_order_acquire ) &&
+            trunkActionData ) {
+            std::string actor = realActorResult.normalized;
+            if ( actor.empty( ) )
+                actor = actorResult.normalized;
+
+            int targetLanguage = FOLLOW_GLOBAL_LANGUAGE;
+            std::string matchedIdentity;
+            if ( !actor.empty( ) && ResolveLanguage(
+                actor, std::string( ), std::string( ), targetLanguage,
+                matchedIdentity ) &&
+                targetLanguage != FOLLOW_GLOBAL_LANGUAGE ) {
+                next = LipRoutingContext { };
+                next.active = true;
+                next.target = targetLanguage;
+                strncpy_s( next.actor, actor.c_str( ), _TRUNCATE );
+                strncpy_s(
+                    next.matchedIdentity, matchedIdentity.c_str( ), _TRUNCATE );
+                const std::string & trunkId = trunkResult.normalized;
+                strncpy_s( next.trunkId, trunkId.c_str( ), _TRUNCATE );
+                current = next;
+                routed = true;
+                if ( g_lipRouteLogs.fetch_add(
+                    1, std::memory_order_relaxed ) < LIP_ROUTE_LOG_LIMIT ) {
+                    Log( "[lip-route] enter actor=" + actor +
+                        " matched=" + matchedIdentity +
+                        " requested=" + LanguageName( targetLanguage ) +
+                        "(" + std::to_string( targetLanguage ) + ")" +
+                        " trunk=" + ( trunkId.empty( )
+                            ? std::string( "<empty>" ) : trunkId ) );
+                }
+            }
+        }
+
+        if ( g_originalDialogManagerPlayLipSyncTrack )
+            g_originalDialogManagerPlayLipSyncTrack(
+                self, trunkActionData, entity, methodInfo );
+        current = previous;
+        if ( routed && g_lipRouteLogs.load( std::memory_order_relaxed ) <=
+            LIP_ROUTE_LOG_LIMIT )
+            Log( "[lip-route] leave actor=" +
+                std::string( next.actor[ 0 ] ? next.actor : "<empty>" ) +
+                " track=" + ( next.trunkId [ 0 ]
+                    ? std::string( next.trunkId ) : std::string( "<empty>" ) ) );
+    }
+
+    static void * __fastcall HookLipSyncGetTrackPath(
+        int language, void * voiceId, void * suffix, void * methodInfo ) {
+        ThreadRoutingContext * threadContext =
+            GetThreadRoutingContext( false );
+        LipRoutingContext * routing = threadContext
+            ? &threadContext->lipRouting : nullptr;
+        const bool routed = g_enabled.load( std::memory_order_acquire ) &&
+            routing && routing->active &&
+            routing->target != FOLLOW_GLOBAL_LANGUAGE;
+        const int routedLanguage = routed ? routing->target : language;
+        if ( routed )
+            routing->sourceLanguage = language;
+        void * result = g_originalLipSyncGetTrackPath
+            ? g_originalLipSyncGetTrackPath(
+                routedLanguage, voiceId, suffix, methodInfo )
+            : nullptr;
+        const std::uint32_t pathHit = g_lipPathHits.fetch_add(
+            1, std::memory_order_relaxed ) + 1;
+        if ( pathHit <= LIP_DIAGNOSTIC_LOG_LIMIT ) {
+            char voiceBuffer [ 256 ] = { 0 };
+            char suffixBuffer [ 128 ] = { 0 };
+            char resultBuffer [ 512 ] = { 0 };
+            TryCopyManagedStringObject(
+                voiceId, voiceBuffer, sizeof( voiceBuffer ) );
+            TryCopyManagedStringObject(
+                suffix, suffixBuffer, sizeof( suffixBuffer ) );
+            TryCopyManagedStringObject(
+                result, resultBuffer, sizeof( resultBuffer ) );
+            Log( "[lip-route] path-hit hit=" + std::to_string( pathHit ) +
+                " thread=" + std::to_string( GetCurrentThreadId( ) ) +
+                " routed=" + ( routed ? "true" : "false" ) +
+                " language=" + LanguageName( language ) +
+                "(" + std::to_string( language ) + ")" +
+                " voiceId=" + ( voiceBuffer [ 0 ]
+                    ? std::string( voiceBuffer ) : std::string( "<empty>" ) ) +
+                " suffix=" + ( suffixBuffer [ 0 ]
+                    ? std::string( suffixBuffer ) : std::string( "<empty>" ) ) +
+                " path=" + ( resultBuffer [ 0 ]
+                    ? std::string( resultBuffer ) : std::string( "<empty>" ) ) );
+        }
+        if ( routed && g_lipRouteLogs.fetch_add(
+            1, std::memory_order_relaxed ) < LIP_ROUTE_LOG_LIMIT ) {
+            char voiceBuffer [ 256 ] = { 0 };
+            char suffixBuffer [ 128 ] = { 0 };
+            char resultBuffer [ 512 ] = { 0 };
+            TryCopyManagedStringObject(
+                voiceId, voiceBuffer, sizeof( voiceBuffer ) );
+            TryCopyManagedStringObject(
+                suffix, suffixBuffer, sizeof( suffixBuffer ) );
+            TryCopyManagedStringObject(
+                result, resultBuffer, sizeof( resultBuffer ) );
+            Log( "[lip-route] path actor=" +
+                std::string( routing->actor[ 0 ]
+                    ? routing->actor : "<empty>" ) +
+                " from=" + LanguageName( language ) +
+                " to=" + LanguageName( routedLanguage ) +
+                " voiceId=" + ( voiceBuffer [ 0 ]
+                    ? std::string( voiceBuffer ) : std::string( "<empty>" ) ) +
+                " suffix=" + ( suffixBuffer [ 0 ]
+                    ? std::string( suffixBuffer ) : std::string( "<empty>" ) ) +
+                " path=" + ( resultBuffer [ 0 ]
+                    ? std::string( resultBuffer ) : std::string( "<empty>" ) ) );
+        }
+        return result;
+    }
+
+    static bool __fastcall HookLipSyncTryLoadTrack(
+        void * lineId, void ** track, void * methodInfo ) {
+        char lineBuffer [ 256 ] = { 0 };
+        TryCopyManagedStringObject(
+            lineId, lineBuffer, sizeof( lineBuffer ) );
+        const std::string normalizedLine = Normalize( lineBuffer );
+        ThreadRoutingContext * threadContext =
+            GetThreadRoutingContext( false );
+        LipRoutingContext * routing = threadContext
+            ? &threadContext->lipRouting : nullptr;
+        PendingLipRoute * pending = threadContext
+            ? &threadContext->pendingLipRoute : nullptr;
+        const PendingLipRoute pendingSnapshot = pending
+            ? *pending : PendingLipRoute { };
+        const bool pendingMatches =
+            g_enabled.load( std::memory_order_acquire ) &&
+            pendingSnapshot.armed &&
+            pendingSnapshot.generation == g_configGeneration.load(
+                std::memory_order_acquire ) &&
+            !normalizedLine.empty( ) && pendingSnapshot.lineId [ 0 ] &&
+            normalizedLine == pendingSnapshot.lineId;
+
+        LipRoutingContext previousRouting;
+        bool pendingInjected = false;
+        if ( pendingMatches && routing && !routing->active ) {
+            previousRouting = *routing;
+            *routing = LipRoutingContext { };
+            routing->active = true;
+            routing->target = pendingSnapshot.target;
+            strncpy_s(
+                routing->actor, pendingSnapshot.matchedIdentity, _TRUNCATE );
+            strncpy_s(
+                routing->matchedIdentity,
+                pendingSnapshot.matchedIdentity, _TRUNCATE );
+            strncpy_s(
+                routing->trunkId, normalizedLine.c_str( ), _TRUNCATE );
+            pendingInjected = true;
+        }
+        const bool routed = g_enabled.load( std::memory_order_acquire ) &&
+            routing && routing->active &&
+            routing->target != FOLLOW_GLOBAL_LANGUAGE;
+        const LipRoutingContext routedSnapshot = routed
+            ? *routing : LipRoutingContext { };
+
+        // TryLoadTrack's internal path helper reads VoiceI18n directly. The
+        // getter hook below observes this TLS routing context only for the
+        // duration of this call, leaving the global Wwise language untouched.
+        bool result = g_originalLipSyncTryLoadTrack
+            ? g_originalLipSyncTryLoadTrack(
+                lineId, track, methodInfo ) : false;
+        bool fallback = false;
+        if ( routed && !result && g_originalLipSyncTryLoadTrack ) {
+            const bool previousActive = routing->active;
+            routing->active = false;
+            result = g_originalLipSyncTryLoadTrack(
+                lineId, track, methodInfo );
+            routing->active = previousActive;
+            fallback = result;
+        }
+        if ( pendingMatches )
+            ClearPendingLipRoute( threadContext );
+        if ( pendingInjected )
+            *routing = previousRouting;
+
+        void * resolvedTrack = nullptr;
+        __try {
+            resolvedTrack = track ? *track : nullptr;
+        }
+        __except ( EXCEPTION_EXECUTE_HANDLER ) {
+            resolvedTrack = nullptr;
+        }
+        const std::uint32_t loadHit = g_lipLoadHits.fetch_add(
+            1, std::memory_order_relaxed ) + 1;
+        if ( loadHit <= LIP_DIAGNOSTIC_LOG_LIMIT ) {
+            Log( "[lip-route] load-hit hit=" + std::to_string( loadHit ) +
+                " thread=" + std::to_string( GetCurrentThreadId( ) ) +
+                " routed=" + ( routed ? "true" : "false" ) +
+                " pending=" + ( pendingMatches ? "matched" :
+                    ( pendingSnapshot.armed ? "mismatch" : "none" ) ) +
+                " pendingLine=" + ( pendingSnapshot.lineId [ 0 ]
+                    ? std::string( pendingSnapshot.lineId )
+                    : std::string( "<empty>" ) ) +
+                " line=" + ( lineBuffer [ 0 ]
+                    ? std::string( lineBuffer ) : std::string( "<empty>" ) ) +
+                " result=" + ( result ? "true" : "false" ) +
+                " fallback=" + ( fallback ? "true" : "false" ) +
+                " track=" + PointerText( resolvedTrack ) );
+        }
+        if ( routed && g_lipRouteLogs.fetch_add(
+            1, std::memory_order_relaxed ) < LIP_ROUTE_LOG_LIMIT ) {
+            Log( "[lip-route] load actor=" +
+                std::string( routedSnapshot.actor[ 0 ]
+                    ? routedSnapshot.actor : "<empty>" ) +
+                " line=" + ( lineBuffer [ 0 ]
+                    ? std::string( lineBuffer ) : std::string( "<empty>" ) ) +
+                " target=" + LanguageName( routedSnapshot.target ) +
+                " result=" + ( result ? "true" : "false" ) +
+                " fallback=" + ( fallback ? "true" : "false" ) );
+        }
+        return result;
+    }
+
+    static bool InstallLipSyncHook(
+        void * target, void * detour, void ** original, const char * name,
+        bool & created ) {
+        if ( !target || !IsExecutableAddress( target ) ) {
+            Log( "[lip-route] invalid target for " + std::string( name ) );
+            return false;
+        }
+        const MH_STATUS status = MH_CreateHook( target, detour, original );
+        if ( status != MH_OK ) {
+            Log( "[lip-route] MH_CreateHook(" + std::string( name ) +
+                ") failed: " + std::to_string( static_cast< int >( status ) ) );
+            return false;
+        }
+        created = true;
+        return true;
+    }
+
+    static bool EnsureLipSyncHooksOnGameThread( ) {
+        if ( g_lipHooksReady.load( std::memory_order_acquire ) )
+            return true;
+        bool expected = false;
+        if ( !g_lipHooksAttempted.compare_exchange_strong(
+            expected, true, std::memory_order_acq_rel ) )
+            return false;
+
+        api::init( );
+        void * image = FindGameplayImage( );
+        if ( !image ) {
+            Log( "[lip-route] Gameplay.Beyond image unavailable; lip hooks skipped" );
+            return false;
+        }
+
+        const GameplayMethodResolution dialogPlay = ResolveGameplayMethod(
+            image, "Beyond.Gameplay.Core", "DialogManager",
+            "_PlayLipSyncTrack", 2, "DialogManager._PlayLipSyncTrack" );
+        const GameplayMethodResolution getTrackPath = ResolveGameplayMethod(
+            image, "Beyond.Gameplay.View.LipSync", "LipSyncUtils",
+            "GetLipSyncTrackPath", 3,
+            "LipSyncUtils.GetLipSyncTrackPath(AudioLang,string,string)" );
+        const GameplayMethodResolution tryLoadTrack = ResolveGameplayMethod(
+            image, "Beyond.Gameplay.View.LipSync", "LipSyncUtils",
+            "TryLoadTrack", 2, "LipSyncUtils.TryLoadTrack" );
+        const GameplayMethodResolution getRealActor = ResolveGameplayMethod(
+            image, "Beyond.Gameplay", "DialogPlayTrunkActionData",
+            "get_realActorNameId", 0,
+            "DialogPlayTrunkActionData.get_realActorNameId" );
+        const GameplayMethodResolution getActor = ResolveGameplayMethod(
+            image, "Beyond.Gameplay", "DialogPlayTrunkActionData",
+            "get_actorNameId", 0,
+            "DialogPlayTrunkActionData.get_actorNameId" );
+        const GameplayMethodResolution getTrunk = ResolveGameplayMethod(
+            image, "Beyond.Gameplay", "DialogPlayTrunkActionData",
+            "get_trunkId", 0,
+            "DialogPlayTrunkActionData.get_trunkId" );
+
+        g_dialogManagerPlayLipSyncTrackTarget = dialogPlay.entry;
+        g_lipSyncGetTrackPathTarget = getTrackPath.entry;
+        g_lipSyncTryLoadTrackTarget = tryLoadTrack.entry;
+        g_voiceI18nGetCurrentLanguageTarget =
+            reinterpret_cast< void * >( g_getCurrentLanguage );
+        g_dialogActionGetRealActorNameId = getRealActor.methodInfo;
+        g_dialogActionGetActorNameId = getActor.methodInfo;
+        g_dialogActionGetTrunkId = getTrunk.methodInfo;
+
+        if ( !g_dialogManagerPlayLipSyncTrackTarget ||
+            !g_lipSyncGetTrackPathTarget || !g_lipSyncTryLoadTrackTarget ||
+            !g_voiceI18nGetCurrentLanguageTarget ||
+            !g_dialogActionGetRealActorNameId ) {
+            Log( "[lip-route] required method resolution incomplete; lip hooks skipped" );
+            RemoveLipSyncHooks( );
+            return false;
+        }
+
+        const bool created =
+            InstallLipSyncHook(
+                g_dialogManagerPlayLipSyncTrackTarget,
+                reinterpret_cast< void * >(
+                    &HookDialogManagerPlayLipSyncTrack ),
+                reinterpret_cast< void ** >(
+                    &g_originalDialogManagerPlayLipSyncTrack ),
+                "DialogManager._PlayLipSyncTrack", g_lipDialogHookCreated ) &&
+            InstallLipSyncHook(
+                g_lipSyncGetTrackPathTarget,
+                reinterpret_cast< void * >( &HookLipSyncGetTrackPath ),
+                reinterpret_cast< void ** >( &g_originalLipSyncGetTrackPath ),
+                "LipSyncUtils.GetLipSyncTrackPath", g_lipPathHookCreated ) &&
+            InstallLipSyncHook(
+                g_lipSyncTryLoadTrackTarget,
+                reinterpret_cast< void * >( &HookLipSyncTryLoadTrack ),
+                reinterpret_cast< void ** >( &g_originalLipSyncTryLoadTrack ),
+                "LipSyncUtils.TryLoadTrack", g_lipLoadHookCreated ) &&
+            InstallLipSyncHook(
+                g_voiceI18nGetCurrentLanguageTarget,
+                reinterpret_cast< void * >(
+                    &HookVoiceI18nGetCurrentLanguage ),
+                reinterpret_cast< void ** >(
+                    &g_originalVoiceI18nGetCurrentLanguage ),
+                "VoiceI18n.GetCurrentLanguage",
+                g_lipLanguageHookCreated );
+        if ( !created ) {
+            RemoveLipSyncHooks( );
+            return false;
+        }
+
+        const bool enabled =
+            MH_EnableHook( g_dialogManagerPlayLipSyncTrackTarget ) == MH_OK &&
+            MH_EnableHook( g_lipSyncGetTrackPathTarget ) == MH_OK &&
+            MH_EnableHook( g_lipSyncTryLoadTrackTarget ) == MH_OK &&
+            MH_EnableHook( g_voiceI18nGetCurrentLanguageTarget ) == MH_OK;
+        if ( !enabled ) {
+            Log( "[lip-route] enabling lip hooks failed; preserving original lip sync" );
+            RemoveLipSyncHooks( );
+            return false;
+        }
+
+        g_lipHooksReady.store( true, std::memory_order_release );
+        Log( "[lip-route] dynamic lip hooks installed on the game thread" );
+        return true;
+    }
+
     static bool BeginResolvedRouting(
         int targetLanguage, const std::string & matchedIdentity,
         const char * source ) {
+        ThreadRoutingContext * threadContext = GetThreadRoutingContext( );
         if ( targetLanguage == FOLLOW_GLOBAL_LANGUAGE ||
             !g_enabled.load( std::memory_order_acquire ) ||
             g_shuttingDown.load( std::memory_order_acquire ) ||
-            g_routingVoice )
+            !threadContext || threadContext->routingVoice )
             return false;
 
         AcquireSRWLockExclusive( &g_playLock );
-        g_routingVoice = true;
+        threadContext->routingVoice = true;
         g_activeRouting = RoutingState { };
         g_activeRouting.active = true;
         g_activeRouting.target = targetLanguage;
@@ -887,7 +1825,10 @@ namespace {
 
         g_activeRouting = RoutingState { };
         ReleaseSRWLockExclusive( &g_playLock );
-        g_routingVoice = false;
+        ThreadRoutingContext * threadContext =
+            GetThreadRoutingContext( false );
+        if ( threadContext )
+            threadContext->routingVoice = false;
     }
 
     static bool BeginContextRouting(
@@ -1007,6 +1948,7 @@ namespace {
 
     static void __fastcall HookVoiceUtilsSelectWwiseEvent(
         void * voiceContext ) {
+        EnsureLipSyncHooksOnGameThread( );
         const std::uint32_t hit = g_selectWwiseEventHits.fetch_add(
             1, std::memory_order_relaxed ) + 1;
         const VoiceIdentity before = ReadVoiceIdentity( voiceContext );
@@ -1102,9 +2044,17 @@ namespace {
 
         int targetLanguage = FOLLOW_GLOBAL_LANGUAGE;
         std::string matchedIdentity;
-        const bool matched = ResolveLanguage(
+        const bool narrativeBlocked = IsNarrativeVoiceSource( source ) &&
+            !g_replaceNarrativeVoice.load( std::memory_order_acquire );
+        const bool matched = !narrativeBlocked && ResolveLanguage(
             std::string( ), source, event, targetLanguage, matchedIdentity ) &&
             targetLanguage != FOLLOW_GLOBAL_LANGUAGE;
+        if ( narrativeBlocked && g_narrativeSkipLogs.fetch_add(
+            1, std::memory_order_relaxed ) < DIAGNOSTIC_HIT_LIMIT ) {
+            Log( "[voice-route] narrative replacement disabled; preserved source=" +
+                ( source.empty( )
+                    ? std::string( "<empty>" ) : source ) );
+        }
         bool logMatch = false;
         std::string replacementSource;
         void * routedExternalSourceKey = externalSourceKey;
@@ -1119,6 +2069,17 @@ namespace {
         if ( replacementCandidate && packageReady ) {
             routedExternalSourceKey = CreateManagedString( replacementSource );
             sourceReplaced = routedExternalSourceKey != nullptr;
+        }
+        bool lipArmed = false;
+        if ( IsNarrativeVoiceSource( source ) ) {
+            if ( matched && sourceReplaced ) {
+                lipArmed = ArmPendingLipRoute(
+                    targetLanguage, matchedIdentity, source );
+            }
+            else {
+                ClearPendingLipRoute(
+                    GetThreadRoutingContext( false ) );
+            }
         }
         if ( matched ) {
             logMatch = g_submitExternalMatchLogs.fetch_add(
@@ -1145,6 +2106,7 @@ namespace {
                     " callbackType=" + std::to_string( callbackType ) +
                     " codec=" + std::to_string( codec ) +
                     " packageReady=" + ( packageReady ? "true" : "false" ) +
+                    " lipArmed=" + ( lipArmed ? "true" : "false" ) +
                     " cache=" + ( cacheReadable
                         ? std::string( LanguageName( cachedLanguage ) ) +
                             "(" + std::to_string( cachedLanguage ) + ")"
@@ -1191,6 +2153,8 @@ namespace {
             g_originalAudioAdapterPostEventExternal(
                 eventName, audioObjectId, routedExternalSourceKey, externalCookie,
                 callbackType, callback, cookie, codec );
+        if ( lipArmed && result == 0 )
+            ClearPendingLipRoute( GetThreadRoutingContext( false ) );
         if ( matched && logMatch )
             Log( "[voice-submit] leave hit=" + std::to_string( hit ) +
                 " matched=" + matchedIdentity +
@@ -1224,6 +2188,7 @@ namespace {
     static std::uint32_t __fastcall HookVoiceManagerSpeakNarrative(
         void * self, void * voiceId, std::uint64_t audioObjectId,
         void * config ) {
+        EnsureLipSyncHooksOnGameThread( );
         const std::uint32_t hit = g_narrativeHits.fetch_add(
             1, std::memory_order_relaxed ) + 1;
         const bool routed = BeginStringRouting(
@@ -1283,6 +2248,10 @@ namespace {
         g_getWwiseCurrentLanguage = nullptr;
         g_il2cppStringNew = nullptr;
         g_activeRouting = RoutingState { };
+        ThreadRoutingContext * threadContext =
+            GetThreadRoutingContext( false );
+        if ( threadContext )
+            *threadContext = ThreadRoutingContext { };
         g_auxiliaryPackageLoad.store( false, std::memory_order_release );
         g_auxiliaryPackageLanguage.store(
             FOLLOW_GLOBAL_LANGUAGE, std::memory_order_release );
@@ -1316,9 +2285,16 @@ namespace VoiceLanguageRouter {
 
     bool LoadConfiguration( const std::string & configPath ) {
         g_enabled.store( false, std::memory_order_release );
-        g_rules.clear( );
+        g_replaceNarrativeVoice.store( true, std::memory_order_release );
+        g_shuttingDown.store( false, std::memory_order_release );
+        g_hookHostAvailable.store( true, std::memory_order_release );
+        g_configGeneration.store( 0, std::memory_order_release );
+        g_configPath = configPath;
+        g_appliedConfigStamp = ConfigFileStamp { };
+        g_pendingConfigStamp = ConfigFileStamp { };
+        g_configReloadPending = false;
+        g_configReloadDetectedAt = 0;
         g_observedSpeakers.clear( );
-        g_defaultLanguage = NO_DEFAULT_LANGUAGE;
         g_playVoiceHits.store( 0, std::memory_order_release );
         g_managerSpeakStringHits.store( 0, std::memory_order_release );
         g_managerSpeakHits.store( 0, std::memory_order_release );
@@ -1330,6 +2306,16 @@ namespace VoiceLanguageRouter {
         g_internalPlayVoiceHits.store( 0, std::memory_order_release );
         g_narrativeHits.store( 0, std::memory_order_release );
         g_identityFailures.store( 0, std::memory_order_release );
+        g_narrativeSkipLogs.store( 0, std::memory_order_release );
+        g_lipRouteLogs.store( 0, std::memory_order_release );
+        g_lipDialogHits.store( 0, std::memory_order_release );
+        g_lipPathHits.store( 0, std::memory_order_release );
+        g_lipLoadHits.store( 0, std::memory_order_release );
+        g_lipArmLogs.store( 0, std::memory_order_release );
+        g_lipLanguageOverrideHits.store(
+            0, std::memory_order_release );
+        g_lipHooksAttempted.store( false, std::memory_order_release );
+        g_lipHooksReady.store( false, std::memory_order_release );
         for ( std::size_t index = 0;
             index < g_languagePackageAttempted.size( ); ++index ) {
             g_languagePackageAttempted [ index ].store(
@@ -1344,15 +2330,15 @@ namespace VoiceLanguageRouter {
         g_auxiliaryPackageUnloadsSuppressed.store(
             0, std::memory_order_release );
 
-        const bool enabled = ReadConfigBool(
-            configPath, "voice_router_enabled", false );
-        ParseRules( ReadConfigRules( configPath ) );
-        g_enabled.store( enabled, std::memory_order_release );
+        VoiceConfigurationSnapshot snapshot =
+            ReadVoiceConfiguration( configPath );
+        ApplyVoiceConfiguration( std::move( snapshot ), false );
+        g_appliedConfigStamp = ReadConfigFileStamp( configPath );
 
-        Log( "[voice-lang] configured enabled=" +
-            std::string( enabled ? "true" : "false" ) +
-            " rules=" + std::to_string( g_rules.size( ) ) +
-            " default=" + LanguageName( g_defaultLanguage ) );
+        ThreadRoutingContext * threadContext =
+            GetThreadRoutingContext( true );
+        if ( threadContext )
+            *threadContext = ThreadRoutingContext { };
         return true;
     }
 
@@ -1361,14 +2347,14 @@ namespace VoiceLanguageRouter {
     }
 
     bool Initialize( ) {
-        if ( !g_enabled.load( std::memory_order_acquire ) )
-            return true;
         if ( g_voicePlayerPlayVoiceTarget )
             return true;
 
         HMODULE gameAssembly = GetModuleHandleA( "GameAssembly.dll" );
         if ( !gameAssembly ) {
             Log( "[voice-lang] GameAssembly.dll is not loaded" );
+            g_hookHostAvailable.store( false, std::memory_order_release );
+            g_enabled.store( false, std::memory_order_release );
             return false;
         }
 
@@ -1463,6 +2449,7 @@ namespace VoiceLanguageRouter {
                 AK_SOUND_ENGINE_UNLOAD_FILE_PACKAGE_SIGNATURE,
                 sizeof( AK_SOUND_ENGINE_UNLOAD_FILE_PACKAGE_SIGNATURE ) ) ) {
             Log( "[voice-lang] signature mismatch; voice routing disabled for this game build" );
+            g_hookHostAvailable.store( false, std::memory_order_release );
             g_enabled.store( false, std::memory_order_release );
             ResetVoiceHookPointers( );
             return false;
@@ -1488,6 +2475,8 @@ namespace VoiceLanguageRouter {
         else if ( initializeStatus != MH_ERROR_ALREADY_INITIALIZED ) {
             Log( "[voice-lang] MH_Initialize failed: " + std::to_string(
                 static_cast< int >( initializeStatus ) ) );
+            g_hookHostAvailable.store( false, std::memory_order_release );
+            g_enabled.store( false, std::memory_order_release );
             ResetVoiceHookPointers( );
             return false;
         }
@@ -1588,6 +2577,8 @@ namespace VoiceLanguageRouter {
                 "AkSoundEngine.UnloadFilePackage" );
 
         if ( !enabled ) {
+            g_hookHostAvailable.store( false, std::memory_order_release );
+            g_enabled.store( false, std::memory_order_release );
             RemoveVoiceHooks( );
             if ( g_ownsMinHook ) {
                 MH_Uninitialize( );
@@ -1600,6 +2591,7 @@ namespace VoiceLanguageRouter {
         g_playVoiceHookBytesCaptured = TryCopyBytes(
             g_voicePlayerPlayVoiceTarget, g_playVoiceHookBytes.data( ),
             g_playVoiceHookBytes.size( ) );
+        g_hookHostAvailable.store( true, std::memory_order_release );
         g_shuttingDown.store( false, std::memory_order_release );
         Log( "[voice-lang] ten voice hooks installed after IL2CPP stabilization" );
         Log( "[voice-route] per-character source replacement and auxiliary language-package mounting are active" );
@@ -1613,9 +2605,11 @@ namespace VoiceLanguageRouter {
     }
 
     void PollHealth( ) {
-        if ( !g_enabled.load( std::memory_order_acquire ) ||
-            g_shuttingDown.load( std::memory_order_acquire ) ||
-            !g_voicePlayerPlayVoiceTarget ||
+        if ( g_shuttingDown.load( std::memory_order_acquire ) )
+            return;
+
+        PollConfigurationReload( );
+        if ( !g_voicePlayerPlayVoiceTarget ||
             !g_playVoiceHookBytesCaptured )
             return;
 
@@ -1660,15 +2654,24 @@ namespace VoiceLanguageRouter {
     void Shutdown( ) {
         g_shuttingDown.store( true, std::memory_order_release );
         g_enabled.store( false, std::memory_order_release );
+        RemoveLipSyncHooks( );
         RemoveVoiceHooks( );
         ResetVoiceHookPointers( );
         if ( g_ownsMinHook ) {
             MH_Uninitialize( );
             g_ownsMinHook = false;
         }
+        AcquireSRWLockExclusive( &g_rulesLock );
         g_rules.clear( );
-        g_observedSpeakers.clear( );
         g_defaultLanguage = NO_DEFAULT_LANGUAGE;
+        ReleaseSRWLockExclusive( &g_rulesLock );
+        g_observedSpeakers.clear( );
+        g_configPath.clear( );
+        g_appliedConfigStamp = ConfigFileStamp { };
+        g_pendingConfigStamp = ConfigFileStamp { };
+        g_configReloadPending = false;
+        g_configReloadDetectedAt = 0;
+        g_configGeneration.store( 0, std::memory_order_release );
         g_playVoiceHits.store( 0, std::memory_order_release );
         g_managerSpeakStringHits.store( 0, std::memory_order_release );
         g_managerSpeakHits.store( 0, std::memory_order_release );

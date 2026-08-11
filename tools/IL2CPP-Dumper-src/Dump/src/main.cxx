@@ -59,13 +59,11 @@ DWORD WINAPI EntryPoint( LPVOID lpParam ) {
     bool redirectReady = ModelReplacer::Initialize( hModule );
     if ( !redirectReady )
         Log( "[redirect] initialization failed; no game code will be called" );
-    if ( VoiceLanguageRouter::IsEnabled( ) ) {
-        if ( !WaitForVoiceHookInstallWindow( ) ) {
-            Log( "[voice-lang] hook install window was not reached; game voice remains unchanged" );
-        }
-        else if ( !VoiceLanguageRouter::Initialize( ) ) {
-            Log( "[voice-lang] initialization failed; game voice remains unchanged" );
-        }
+    if ( !WaitForVoiceHookInstallWindow( ) ) {
+        Log( "[voice-lang] hook install window was not reached; game voice remains unchanged" );
+    }
+    else if ( !VoiceLanguageRouter::Initialize( ) ) {
+        Log( "[voice-lang] initialization failed; game voice remains unchanged" );
     }
 
     Log( "" );

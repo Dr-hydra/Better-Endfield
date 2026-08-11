@@ -390,6 +390,12 @@
                                     HorizontalContentAlignment="Stretch"
                                     IsEnabled="{Binding IsOn, ElementName=VoiceRouterToggle}">
                                     <StackPanel Spacing="28">
+                                        <ToggleSwitch
+                                            x:Name="NarrativeVoiceToggle"
+                                            Header="替换剧情语音与口型"
+                                            OffContent="剧情对话跟随游戏语言"
+                                            OnContent="剧情对话应用角色规则" />
+
                                         <Border Style="{StaticResource SectionStyle}">
                                             <StackPanel Spacing="18">
                                                 <StackPanel Spacing="4">
@@ -651,7 +657,7 @@
                                             x:Name="CurrentVersionTextBlock"
                                             Margin="0,2,0,0"
                                             FontFamily="Consolas"
-                                            Text="版本 1.0.1" />
+                                            Text="版本 1.0.2" />
                                     </StackPanel>
                                 </Grid>
 
@@ -711,6 +717,14 @@
                                                 </StackPanel>
                                             </Button>
                                         </StackPanel>
+                                        <Button
+                                            HorizontalAlignment="Left"
+                                            Click="OpenLicenseButton_Click">
+                                            <StackPanel Orientation="Horizontal" Spacing="7">
+                                                <SymbolIcon Symbol="Document" />
+                                                <TextBlock Text="GNU AGPL v3.0 开源许可" />
+                                            </StackPanel>
+                                        </Button>
                                     </StackPanel>
                                 </Border>
 

@@ -74,6 +74,8 @@ internal sealed class ModConfiguration
 
     public bool VoiceRouterEnabled { get; set; } = false;
 
+    public bool ReplaceNarrativeVoice { get; set; } = true;
+
     public string VoiceLanguageRules { get; set; } = string.Empty;
 
     public static ModConfiguration CreateDefaults() => new();
@@ -102,10 +104,10 @@ internal sealed class ModConfiguration
 
         var text = new StringBuilder();
         text.AppendLine("; EF Start Change runtime configuration");
-        text.AppendLine("; Changes are applied on the next injection.");
+        text.AppendLine("; Language changes are hot-reloaded; model changes apply on the next injection.");
         text.AppendLine();
         text.AppendLine("[EFStartChange]");
-        text.AppendLine("schema_version=3");
+        text.AppendLine("schema_version=4");
         text.AppendLine($"model_replacement_enabled={Boolean(ModelReplacementEnabled)}");
         text.AppendLine($"character={Character}");
         text.AppendLine($"final_action={FinalAction}");
@@ -142,6 +144,7 @@ internal sealed class ModConfiguration
         text.AppendLine();
         text.AppendLine("; speakerChannel:Chinese|English|Japanese|Korean|FollowGlobal");
         text.AppendLine($"voice_router_enabled={Boolean(VoiceRouterEnabled)}");
+        text.AppendLine($"replace_narrative_voice={Boolean(ReplaceNarrativeVoice)}");
         text.AppendLine($"voice_language_rules={VoiceRules(VoiceLanguageRules)}");
         return text.ToString();
     }

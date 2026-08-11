@@ -532,6 +532,9 @@ public sealed partial class MainWindow : Window
     private void OpenAllReleasesButton_Click(object sender, RoutedEventArgs e) =>
         OpenWithShell(UpdateService.ReleasesUrl);
 
+    private void OpenLicenseButton_Click(object sender, RoutedEventArgs e) =>
+        OpenWithShell($"{UpdateService.RepositoryUrl}/blob/main/LICENSE");
+
     private void OpenBilibiliButton_Click(object sender, RoutedEventArgs e) =>
         OpenWithShell(BilibiliProfileUrl);
 
@@ -586,7 +589,7 @@ public sealed partial class MainWindow : Window
             {
                 ShowStatus(
                     "参数已保存",
-                    "配置会在下一次启动并注入时读取。",
+                    "语言配置会在约 2 秒内热更新；模型与动画配置将在下次启动并注入时读取。",
                     InfoBarSeverity.Success);
             }
 
@@ -690,6 +693,7 @@ public sealed partial class MainWindow : Window
             CrossfadeDuration = CrossfadeDurationNumberBox.Value,
             ModelReplacementEnabled = ModelReplacementToggle.IsOn,
             VoiceRouterEnabled = VoiceRouterToggle.IsOn,
+            ReplaceNarrativeVoice = NarrativeVoiceToggle.IsOn,
             VoiceLanguageRules = voiceLanguageRules
         };
         return true;
@@ -726,6 +730,7 @@ public sealed partial class MainWindow : Window
         CrossfadeDurationNumberBox.Value = configuration.CrossfadeDuration;
         ModelReplacementToggle.IsOn = configuration.ModelReplacementEnabled;
         VoiceRouterToggle.IsOn = configuration.VoiceRouterEnabled;
+        NarrativeVoiceToggle.IsOn = configuration.ReplaceNarrativeVoice;
         LoadVoiceRules(configuration.VoiceLanguageRules);
 
         _initializing = wasInitializing;

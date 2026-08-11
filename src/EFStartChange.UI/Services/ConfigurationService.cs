@@ -156,6 +156,10 @@ internal static class ConfigurationService
             values,
             "voice_router_enabled",
             configuration.VoiceRouterEnabled);
+        configuration.ReplaceNarrativeVoice = Boolean(
+            values,
+            "replace_narrative_voice",
+            configuration.ReplaceNarrativeVoice);
         configuration.VoiceLanguageRules = VoiceRulesForEditor(
             Text(values, "voice_language_rules", configuration.VoiceLanguageRules));
         return configuration;

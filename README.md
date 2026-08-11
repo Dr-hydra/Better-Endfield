@@ -16,7 +16,7 @@
 - 可分别调整四阶段播放速度，并配置朝向、转身时间、模型缩放和前倾采样时间。
 - 支持原生循环、强制循环及双 Playable 交叉淡化循环。
 - 内置 4,058 个已索引动画片段，可按角色选择最终动作并显示运行时动画时长。
-- 32 个角色的独立配音语言路由，支持战斗、探索及剧情语音，可选择中文、英语、日语、韩语或跟随全局设置。
+- 32 个角色的独立配音语言路由，支持战斗、探索、剧情语音及对应剧情口型，可选择中文、英语、日语、韩语或跟随全局设置。
 - Windows 11 风格 WinUI 3 控制界面，支持浅色、深色和跟随系统主题。
 - 支持保存配置、查看日志、启动注入器、检查更新和创建桌面快捷方式。
 - 首次启动显示风险说明与免责声明。
@@ -35,8 +35,8 @@
 ## 下载与安装
 
 1. 打开 [Releases](https://github.com/Dr-hydra/EF-Start-Change/releases/latest)。
-2. 下载 `EFStartChange-1.0.1-Setup.exe`。
-3. 运行安装器并阅读风险说明。默认安装到 `%LocalAppData%\Programs\EF Start Change`，安装器本身不要求管理员权限。
+2. 下载 `EFStartChange-1.0.2-Setup.exe`。
+3. 运行安装器并阅读风险说明与 GNU AGPL v3.0 许可。默认安装到 `%LocalAppData%\Programs\EF Start Change`，安装器本身不要求管理员权限。
 4. 启动 `EF Start Change`。首次运行时需确认应用内免责声明。
 
 安装器目前没有代码签名，Windows SmartScreen 可能显示未知发布者警告。请只从本仓库的 Releases 页面下载安装包，并在需要时核对发布页提供的 SHA-256。
@@ -66,8 +66,9 @@ WinUI 原生运行时会在应用启动时由 .NET 单文件机制解压到当�
 > 请先通过游戏下载对应语言的完整语音包。未安装目标语言包时，角色可能没有语音。
 
 1. 打开“配音语言”页并启用功能。
-2. 选择角色和目标语言，点击添加或更新规则。
-3. 保存参数并重新启动游戏。
+2. 需要同步替换剧情语音和口型时，启用“替换剧情语音与口型”。
+3. 选择角色和目标语言，点击添加或更新规则。
+4. 保存参数。游戏运行中会在约 2 秒内应用语言规则，当前正在播放的语音不会被中断。
 
 界面会自动维护角色规则。底层配置示例：
 
@@ -90,7 +91,7 @@ voice_language_rules=aglina:Japanese,chen:Chinese,*:FollowGlobal
 - 注入日志：同目录下的 `IL2CPPDump_Log.txt`。
 - 界面设置：`%LocalAppData%\EFStartChange\ui-settings.json`。
 
-界面提供“打开目录”和“查看日志”按钮，不建议在游戏运行时手动编辑配置文件。
+界面提供“打开目录”和“查看日志”按钮。配音总开关、剧情语音与口型开关及角色语言规则支持热更新；模型和动画参数仍在下一次启动并注入时读取。
 
 ## 从源码构建
 
@@ -112,7 +113,7 @@ pwsh -File .\scripts\BuildEFStartChange.ps1
 构建中文安装器：
 
 ```powershell
-pwsh -File .\scripts\BuildInstaller.ps1 -Version 1.0.1
+pwsh -File .\scripts\BuildInstaller.ps1 -Version 1.0.2
 ```
 
 安装器输出到 `artifacts\installer`。构建过程使用独立临时发布目录，完成后会自动清理。
@@ -125,6 +126,12 @@ pwsh -File .\scripts\BuildInstaller.ps1 -Version 1.0.1
 - `tools/IL2CPP-Dumper-src/third_party/minhook`：MinHook 依赖及其许可证。
 - `installer`：中文 Inno Setup 安装器定义与风险说明。
 - `scripts`：应用和安装器构建脚本。
+
+## 开源许可
+
+除目录中另有许可证声明的第三方组件外，本项目以 [GNU Affero General Public License v3.0 only](LICENSE)（`AGPL-3.0-only`）发布。复制、修改或分发本项目时须遵守该许可证；向用户提供修改版网络服务时，也须按许可证要求提供对应源代码。
+
+第三方组件保留其原有许可证，其中 IL2CPP-Dumper 相关上游代码使用 [MIT License](tools/IL2CPP-Dumper-src/LICENSE)，MinHook 及其 HDE 组件使用其各自的 [BSD 风格许可证](tools/IL2CPP-Dumper-src/third_party/minhook/LICENSE.txt)。
 
 ## 联系与反馈
 

@@ -5,7 +5,7 @@
   #error OutputDir must be supplied by BuildInstaller.ps1
 #endif
 #ifndef AppVersion
-  #define AppVersion "1.0.1"
+  #define AppVersion "1.0.2"
 #endif
 
 #define AppName "EF Start Change"
@@ -30,17 +30,18 @@ OutputBaseFilename=EFStartChange-{#AppVersion}-Setup
 SetupIconFile=..\src\EFStartChange.UI\Assets\gilberta.ico
 WizardSmallImageFile=..\src\EFStartChange.UI\Assets\gilberta.png
 UninstallDisplayIcon={app}\EFStartChange.exe
-LicenseFile=DISCLAIMER.zh-CN.txt
+InfoBeforeFile=DISCLAIMER.zh-CN.txt
+LicenseFile=..\LICENSE
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
 CloseApplications=force
 RestartApplications=no
-VersionInfoVersion=1.0.1.0
+VersionInfoVersion={#AppVersion}.0
 VersionInfoCompany={#Publisher}
 VersionInfoDescription=EF Start Change 中文安装程序
 VersionInfoProductName={#AppName}
-VersionInfoProductVersion=1.0.1.0
+VersionInfoProductVersion={#AppVersion}.0
 
 [Languages]
 Name: "chinesesimp"; MessagesFile: "Languages\ChineseSimplified.isl"
