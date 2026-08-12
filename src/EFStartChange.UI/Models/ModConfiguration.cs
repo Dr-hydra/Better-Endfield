@@ -76,6 +76,8 @@ internal sealed class ModConfiguration
 
     public bool ReplaceNarrativeVoice { get; set; } = true;
 
+    public bool VoiceDiagnostics { get; set; } = false;
+
     public string VoiceLanguageRules { get; set; } = string.Empty;
 
     public static ModConfiguration CreateDefaults() => new();
@@ -145,6 +147,7 @@ internal sealed class ModConfiguration
         text.AppendLine("; speakerChannel:Chinese|English|Japanese|Korean|FollowGlobal");
         text.AppendLine($"voice_router_enabled={Boolean(VoiceRouterEnabled)}");
         text.AppendLine($"replace_narrative_voice={Boolean(ReplaceNarrativeVoice)}");
+        text.AppendLine($"voice_diagnostics={Boolean(VoiceDiagnostics)}");
         text.AppendLine($"voice_language_rules={VoiceRules(VoiceLanguageRules)}");
         return text.ToString();
     }
