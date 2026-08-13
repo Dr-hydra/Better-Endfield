@@ -94,7 +94,7 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        Title = "EF Start Change";
+        Title = "Better Endfield";
         SystemBackdrop = new MicaBackdrop();
         TryResizeWindow();
         CurrentVersionTextBlock.Text = $"版本 {UpdateService.CurrentVersion}";

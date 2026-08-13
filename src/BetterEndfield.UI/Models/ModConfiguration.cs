@@ -105,7 +105,7 @@ internal sealed class ModConfiguration
                 }));
 
         var text = new StringBuilder();
-        text.AppendLine("; EF Start Change runtime configuration");
+        text.AppendLine("; Better Endfield runtime configuration");
         text.AppendLine("; Language changes are hot-reloaded; model changes apply on the next injection.");
         text.AppendLine();
         text.AppendLine("[EFStartChange]");

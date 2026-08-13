@@ -9,7 +9,7 @@ namespace VoiceLanguageRouter {
     bool IsEnabled( );
     bool Initialize( );
     void PollHealth( );
-    void Shutdown( );
+    bool Shutdown( );
 
 } // namespace VoiceLanguageRouter
 

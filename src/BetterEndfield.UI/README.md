@@ -1,6 +1,6 @@
-# EF Start Change UI
+# Better Endfield UI
 
-EF Start Change 的 WinUI 3 中文控制器。应用负责编辑 `EFStartChange.ini`、显示运行状态并启动原生注入器。
+Better Endfield 的 WinUI 3 中文控制器。应用负责编辑兼容配置 `EFStartChange.ini`、显示运行状态并启动原生注入器。
 
 配置文件保存在 `Il2cppDumper.exe` 所在目录。语言开关和角色语言规则会在运行时自动热更新；模型与动画参数仍在下一次启动和注入时读取。
 
@@ -15,7 +15,7 @@ EF Start Change 的 WinUI 3 中文控制器。应用负责编辑 `EFStartChange.
 - 游戏与注入器路径保存、日志入口、启动和运行状态显示。
 - 跟随系统、浅色和深色主题，以及 Windows 11 Mica 背景。
 - 控制器快捷方式和一键启动游戏快捷方式。
-- 可在 EF 注入前启动外部 Mod 加载器，并检测外部加载器误启动游戏的冲突状态。
+- 可在内置注入器前启动外部 Mod 加载器，并检测外部加载器误启动游戏的冲突状态。
 - 关于页、风险说明、联系方式和按需检查更新。
 
 ## 构建
@@ -23,10 +23,10 @@ EF Start Change 的 WinUI 3 中文控制器。应用负责编辑 `EFStartChange.
 在仓库根目录执行：
 
 ```powershell
-.\scripts\BuildEFStartChange.ps1
+.\scripts\BuildBetterEndfield.ps1
 ```
 
-自包含单文件应用和原生注入器会输出到 `artifacts\EFStartChange-win-x64`。
+自包含单文件应用和原生注入器会输出到 `artifacts\BetterEndfield-win-x64`。
 
 构建中文 Inno Setup 安装器：
 

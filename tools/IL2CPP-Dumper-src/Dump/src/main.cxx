@@ -42,7 +42,7 @@ DWORD WINAPI EntryPoint( LPVOID lpParam ) {
     HMODULE hModule = ( HMODULE ) lpParam;
     Startup( );
 
-    Log( "DLL injected. Starting EF Start Change runtime..." );
+    Log( "DLL injected. Starting Better Endfield runtime..." );
 
     const std::string configPath = g_outputDir.empty( )
         ? std::string( "EFStartChange.ini" )

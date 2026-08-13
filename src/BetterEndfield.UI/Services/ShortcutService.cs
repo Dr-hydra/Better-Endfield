@@ -9,20 +9,20 @@ internal static class ShortcutService
     public static string CreateApplicationShortcut()
     {
         string executablePath = Environment.ProcessPath ??
-            Path.Combine(AppContext.BaseDirectory, "EFStartChange.exe");
+            Path.Combine(AppContext.BaseDirectory, "BetterEndfield.exe");
         if (!File.Exists(executablePath))
         {
-            throw new FileNotFoundException("无法确定 EF Start Change 程序路径。", executablePath);
+            throw new FileNotFoundException("无法确定 Better Endfield 程序路径。", executablePath);
         }
 
-        string shortcutPath = Path.Combine(GetDesktopDirectory(), "EF Start Change.lnk");
+        string shortcutPath = Path.Combine(GetDesktopDirectory(), "Better Endfield.lnk");
         CreateShortcut(
             shortcutPath,
             executablePath,
             string.Empty,
             AppContext.BaseDirectory,
             executablePath,
-            "打开 EF Start Change");
+            "打开 Better Endfield");
         return shortcutPath;
     }
 
@@ -41,14 +41,14 @@ internal static class ShortcutService
 
         string shortcutPath = Path.Combine(
             GetDesktopDirectory(),
-            "终末地（EF Start Change）.lnk");
+            "终末地（Better Endfield）.lnk");
         CreateShortcut(
             shortcutPath,
             mapperPath,
             QuoteArgument(gamePath),
             Path.GetDirectoryName(mapperPath) ?? AppContext.BaseDirectory,
             gamePath,
-            "使用已保存的 EF Start Change 配置启动终末地");
+            "使用已保存的 Better Endfield 配置启动终末地");
         return shortcutPath;
     }
 

@@ -1,5 +1,6 @@
 #include "../include/voice_language_router.hxx"
 
+#include "../include/generated/voice_runtime_map.generated.hxx"
 #include "../include/il2cpp_api.hxx"
 #include "../include/utils.hxx"
 #include "../../third_party/minhook/include/MinHook.h"
@@ -7,6 +8,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <bcrypt.h>
 #include <cctype>
 #include <cmath>
 #include <cstdio>
@@ -18,6 +20,8 @@
 #include <unordered_set>
 #include <vector>
 #include <windows.h>
+
+#pragma comment( lib, "bcrypt.lib" )
 
 namespace {
 
@@ -65,6 +69,7 @@ namespace {
     constexpr std::uint32_t DIAGNOSTIC_HIT_LIMIT = 8;
     constexpr std::uint32_t VOICE_SELECT_MATCH_LOG_LIMIT = 32;
     constexpr std::uint32_t VOICE_SUBMIT_MATCH_LOG_LIMIT = 64;
+    constexpr std::uint32_t PACKAGED_MEDIA_DIAGNOSTIC_LOG_LIMIT = 96;
     constexpr std::uint32_t LIP_ROUTE_LOG_LIMIT = 64;
     constexpr std::uint32_t LIP_DIAGNOSTIC_LOG_LIMIT = 32;
     constexpr std::uint32_t VOICE_LIFECYCLE_LOG_LIMIT = 2048;
@@ -73,7 +78,7 @@ namespace {
 #ifdef EFSTARTCHANGE_VOICE_DIAGNOSTIC_BUILD
     constexpr bool VOICE_DIAGNOSTICS_DEFAULT = true;
     constexpr const char * VOICE_DIAGNOSTIC_BUILD_MARKER =
-        "EFStartChange voice duration-routing diagnostic build v6";
+        "Better Endfield native-container voice map v10";
 #else
     constexpr bool VOICE_DIAGNOSTICS_DEFAULT = false;
 #endif
@@ -201,6 +206,10 @@ namespace {
     constexpr std::uint8_t AK_SOUND_ENGINE_UNLOAD_FILE_PACKAGE_SIGNATURE [ ] = {
         0x40, 0x53, 0x48, 0x83, 0xEC, 0x20, 0x80, 0x3D
     };
+    constexpr std::uint8_t AK_EXTERNAL_SOURCE_FILE_SETTER_SIGNATURE [ ] = {
+        0x48, 0x89, 0x5C, 0x24, 0x08, 0x57, 0x48, 0x83,
+        0xEC, 0x20
+    };
     // The Wwise getter is used as an optional diagnostic/restore source. Keep
     // this fingerprint short so a harmless compiler prologue change does not
     // disable the otherwise valid voice hooks.
@@ -237,6 +246,16 @@ namespace {
     using AkSoundEngineUnloadFilePackageFn = int ( __fastcall * )(
         std::uint32_t, void * );
     using AkSoundEngineGetCurrentLanguageFn = void * ( __fastcall * )( void * );
+    using AkSoundEngineSetMediaFn = int ( __fastcall * )(
+        void *, std::uint32_t, void * );
+    using AkSoundEngineUnsetMediaFn = int ( __fastcall * )(
+        void *, std::uint32_t, void * );
+    using AkExternalSourceFileSetterFn = void ( __fastcall * )(
+        void *, void *, void * );
+    using AkExternalSourceMemorySetterFn = void ( __fastcall * )(
+        void *, std::intptr_t, void * );
+    using AkExternalSourceMemorySizeSetterFn = void ( __fastcall * )(
+        void *, std::uint32_t, void * );
     using AudioAdapterPostEventInternalFn = std::uint32_t ( __fastcall * )(
         std::uint32_t, std::uint64_t, void *, std::uint32_t, std::uint32_t,
         void *, void *, std::uint32_t );
@@ -308,6 +327,35 @@ namespace {
         char matchedIdentity [ 192 ] = { 0 };
     };
 
+    struct PackagedMediaSetterContext {
+        bool active = false;
+        bool setterObserved = false;
+        bool setterRouted = false;
+        int target = FOLLOW_GLOBAL_LANGUAGE;
+        std::uint32_t eventId = 0;
+        std::uint32_t mediaId = 0;
+        std::uint32_t expectedCodec = 0;
+        const void * memory = nullptr;
+        std::uint32_t memorySize = 0;
+        char voiceId [ 256 ] = { 0 };
+    };
+
+    struct ResidentWem {
+        void * memory = nullptr;
+        std::uint32_t size = 0;
+    };
+
+#pragma pack( push, 1 )
+    struct NativeAkSourceSettings {
+        std::uint32_t sourceId;
+        std::uint32_t reserved;
+        const void * mediaMemory;
+        std::uint32_t mediaSize;
+        std::uint32_t padding;
+    };
+#pragma pack( pop )
+    static_assert( sizeof( NativeAkSourceSettings ) == 24 );
+
     struct ThreadRoutingContext {
         bool routingVoice = false;
         bool bankEventRouted = false;
@@ -318,6 +366,7 @@ namespace {
         std::int32_t actionQueueFrame = -1;
         VoiceRequestDiagnosticContext voiceRequest;
         DurationRoutingContext durationRouting;
+        PackagedMediaSetterContext packagedMediaSetter;
         LipRoutingContext lipRouting;
         PendingLipRoute pendingLipRoute;
     };
@@ -395,6 +444,7 @@ namespace {
     std::atomic< std::uint32_t > g_lipArmLogs { 0 };
     std::atomic< std::uint32_t > g_lipLanguageOverrideHits { 0 };
     std::atomic< std::uint32_t > g_durationLanguageOverrideHits { 0 };
+    std::atomic< std::uint32_t > g_packagedMediaDiagnosticLogs { 0 };
     std::atomic< std::uint32_t > g_lifecycleLogs { 0 };
     std::atomic< bool > g_lipHooksAttempted { false };
     std::atomic< bool > g_lipHooksReady { false };
@@ -404,6 +454,13 @@ namespace {
     std::atomic< int > g_auxiliaryPackageLanguage { FOLLOW_GLOBAL_LANGUAGE };
     std::atomic< std::uint32_t > g_auxiliaryPackageLoads { 0 };
     std::atomic< std::uint32_t > g_auxiliaryPackageUnloadsSuppressed { 0 };
+    std::atomic< bool > g_packagedMemoryReady { false };
+    std::atomic< bool > g_nativeMediaRouteReady { false };
+    std::unordered_map< std::uint32_t, ResidentWem > g_residentWems;
+    std::unordered_map< std::uint32_t, std::uint32_t >
+        g_registeredNativeMedia;
+    std::unordered_set< std::uint32_t > g_uncertainNativeMediaSources;
+    std::atomic< bool > g_nativeMediaUnloadSafe { true };
     VoiceRuleMap g_rules;
     std::unordered_set< std::string > g_observedSpeakers;
     int g_defaultLanguage = NO_DEFAULT_LANGUAGE;
@@ -416,6 +473,9 @@ namespace {
     SRWLOCK g_observedLock = SRWLOCK_INIT;
     SRWLOCK g_routingTlsInitLock = SRWLOCK_INIT;
     SRWLOCK g_lifecycleLock = SRWLOCK_INIT;
+    SRWLOCK g_residentWemsLock = SRWLOCK_INIT;
+    SRWLOCK g_packagedPrewarmLock = SRWLOCK_INIT;
+    SRWLOCK g_nativeMediaRouteLock = SRWLOCK_INIT;
     // Keep the slot for the game process lifetime. TlsFree does not clear
     // values owned by other threads, so reuse after manual unload is unsafe.
     std::atomic< DWORD > g_routingTlsIndex { TLS_OUT_OF_INDEXES };
@@ -453,6 +513,7 @@ namespace {
     void * g_voiceManagerSpeakNarrativeTarget = nullptr;
     void * g_akSoundEngineLoadFilePackageTarget = nullptr;
     void * g_akSoundEngineUnloadFilePackageTarget = nullptr;
+    void * g_akExternalSourceFileSetterTarget = nullptr;
     void * g_dialogManagerPlayLipSyncTrackTarget = nullptr;
     void * g_lipSyncGetTrackPathTarget = nullptr;
     void * g_lipSyncTryLoadTrackTarget = nullptr;
@@ -488,6 +549,9 @@ namespace {
     AudioVfsTryLoadLanguagePckFn g_tryLoadLanguagePck = nullptr;
     AkSoundEngineLoadFilePackageFn g_originalAkSoundEngineLoadFilePackage = nullptr;
     AkSoundEngineUnloadFilePackageFn g_originalAkSoundEngineUnloadFilePackage = nullptr;
+    AkExternalSourceFileSetterFn g_originalAkExternalSourceFileSetter = nullptr;
+    AkExternalSourceMemorySetterFn g_akExternalSourceMemorySetter = nullptr;
+    AkExternalSourceMemorySizeSetterFn g_akExternalSourceMemorySizeSetter = nullptr;
     DialogManagerPlayLipSyncTrackFn g_originalDialogManagerPlayLipSyncTrack = nullptr;
     LipSyncGetTrackPathFn g_originalLipSyncGetTrackPath = nullptr;
     LipSyncTryLoadTrackFn g_originalLipSyncTryLoadTrack = nullptr;
@@ -499,6 +563,8 @@ namespace {
     VoiceI18nGetCurrentLanguageFn g_getCurrentLanguage = nullptr;
     VoiceI18nGetLanguageNameFn g_getLanguageName = nullptr;
     AkSoundEngineGetCurrentLanguageFn g_getWwiseCurrentLanguage = nullptr;
+    AkSoundEngineSetMediaFn g_setMedia = nullptr;
+    AkSoundEngineUnsetMediaFn g_unsetMedia = nullptr;
     AudioAdapterTryGetRealPlayingIdFn g_tryGetRealPlayingId = nullptr;
     AkSoundEngineGetSourcePositionFn g_getSourcePlayPosition = nullptr;
     AkEventCallbackGetPlayingIdFn g_getCallbackPlayingId = nullptr;
@@ -522,6 +588,7 @@ namespace {
     bool g_channelStopHookCreated = false;
     bool g_voiceStopHookCreated = false;
     bool g_durationHookCreated = false;
+    bool g_packagedMediaSetterHookCreated = false;
     uintptr_t g_gameAssemblyBase = 0;
     std::size_t g_gameAssemblySize = 0;
     std::atomic< bool > g_healthReported { false };
@@ -851,7 +918,1200 @@ namespace {
         return value.size( ) >= suffixLength &&
             value.compare(
                 value.size( ) - suffixLength,
-                suffixLength, suffix ) == 0;
+            suffixLength, suffix ) == 0;
+    }
+
+#pragma pack( push, 1 )
+    struct VoiceRuntimeMapHeader {
+        char magic [ 8 ];
+        std::uint16_t version;
+        std::uint16_t headerSize;
+        std::uint32_t totalSize;
+        std::uint32_t languageCount;
+        std::uint32_t packageCount;
+        std::uint32_t characterCount;
+        std::uint32_t voiceCount;
+        std::uint32_t routeCount;
+        std::uint32_t mediaCount;
+        std::uint32_t nativeSlotCount;
+        std::uint32_t stringSize;
+        std::uint32_t packageOffset;
+        std::uint32_t characterOffset;
+        std::uint32_t voiceOffset;
+        std::uint32_t routeOffset;
+        std::uint32_t mediaOffset;
+        std::uint32_t nativeSlotOffset;
+        std::uint32_t stringOffset;
+        std::uint8_t audioDialogSha256 [ 32 ];
+    };
+
+    struct VoiceRuntimePackageRow {
+        std::uint32_t sourceOffset;
+        std::uint16_t sourceLength;
+        std::uint8_t language;
+        std::uint8_t reserved;
+        std::uint64_t fileSize;
+        std::uint32_t headerSize;
+        std::uint8_t headerSha256 [ 32 ];
+    };
+
+    struct VoiceRuntimeCharacterRow {
+        std::uint32_t idOffset;
+        std::uint16_t idLength;
+        std::uint16_t reserved;
+    };
+
+    struct VoiceRuntimeVoiceRow {
+        std::uint32_t eventId;
+        std::uint32_t nameOffset;
+        std::uint16_t nameLength;
+        std::uint8_t characterIndex;
+        std::uint8_t codec;
+        std::uint32_t firstRoute;
+    };
+
+    struct VoiceRuntimeRouteRow {
+        std::uint32_t firstMedia;
+        std::uint16_t mediaCount;
+        std::uint16_t reserved;
+    };
+
+    struct VoiceRuntimeNativeSlotRow {
+        std::uint32_t mediaIds [ 4 ];
+        std::uint8_t characterIndex;
+        std::uint8_t reserved [ 3 ];
+    };
+#pragma pack( pop )
+
+    static_assert( sizeof( VoiceRuntimeMapHeader ) == 108 );
+    static_assert( sizeof( VoiceRuntimePackageRow ) == 52 );
+    static_assert( sizeof( VoiceRuntimeCharacterRow ) == 8 );
+    static_assert( sizeof( VoiceRuntimeVoiceRow ) == 16 );
+    static_assert( sizeof( VoiceRuntimeRouteRow ) == 8 );
+    static_assert( sizeof( VoiceRuntimeNativeSlotRow ) == 20 );
+
+    static constexpr char VOICE_RUNTIME_MAP_MAGIC [ 8 ] = {
+        'E', 'F', 'V', 'R', 'M', 'A', 'P', '\0'
+    };
+    static constexpr std::uint16_t VOICE_RUNTIME_MAP_VERSION = 2;
+    static constexpr std::uint32_t VOICE_RUNTIME_LANGUAGE_COUNT = 4;
+
+    static const VoiceRuntimeMapHeader * RuntimeMapHeader( ) {
+        if ( GeneratedVoiceRuntimeMap::kSize <
+            sizeof( VoiceRuntimeMapHeader ) )
+            return nullptr;
+        return reinterpret_cast< const VoiceRuntimeMapHeader * >(
+            GeneratedVoiceRuntimeMap::kData );
+    }
+
+    static bool RuntimeMapRangeValid(
+        std::uint32_t offset, std::uint64_t size ) {
+        return offset <= GeneratedVoiceRuntimeMap::kSize &&
+            size <= GeneratedVoiceRuntimeMap::kSize - offset;
+    }
+
+    static bool ValidateRuntimeMap( ) {
+        const VoiceRuntimeMapHeader * header = RuntimeMapHeader( );
+        if ( !header || std::memcmp(
+                header->magic, VOICE_RUNTIME_MAP_MAGIC,
+                sizeof( VOICE_RUNTIME_MAP_MAGIC ) ) != 0 ||
+            header->version != VOICE_RUNTIME_MAP_VERSION ||
+            header->headerSize != sizeof( VoiceRuntimeMapHeader ) ||
+            header->totalSize != GeneratedVoiceRuntimeMap::kSize ||
+            header->languageCount != VOICE_RUNTIME_LANGUAGE_COUNT ||
+            header->packageCount != VOICE_RUNTIME_LANGUAGE_COUNT )
+            return false;
+
+        const std::uint64_t packageBytes =
+            static_cast< std::uint64_t >( header->packageCount ) *
+            sizeof( VoiceRuntimePackageRow );
+        const std::uint64_t characterBytes =
+            static_cast< std::uint64_t >( header->characterCount ) *
+            sizeof( VoiceRuntimeCharacterRow );
+        const std::uint64_t voiceBytes =
+            static_cast< std::uint64_t >( header->voiceCount ) *
+            sizeof( VoiceRuntimeVoiceRow );
+        const std::uint64_t routeBytes =
+            static_cast< std::uint64_t >( header->routeCount ) *
+            sizeof( VoiceRuntimeRouteRow );
+        const std::uint64_t mediaBytes =
+            static_cast< std::uint64_t >( header->mediaCount ) *
+            sizeof( std::uint32_t );
+        const std::uint64_t nativeSlotBytes =
+            static_cast< std::uint64_t >( header->nativeSlotCount ) *
+            sizeof( VoiceRuntimeNativeSlotRow );
+        return RuntimeMapRangeValid( header->packageOffset, packageBytes ) &&
+            RuntimeMapRangeValid( header->characterOffset, characterBytes ) &&
+            RuntimeMapRangeValid( header->voiceOffset, voiceBytes ) &&
+            RuntimeMapRangeValid( header->routeOffset, routeBytes ) &&
+            RuntimeMapRangeValid( header->mediaOffset, mediaBytes ) &&
+            RuntimeMapRangeValid(
+                header->nativeSlotOffset, nativeSlotBytes ) &&
+            RuntimeMapRangeValid( header->stringOffset, header->stringSize ) &&
+            header->packageOffset == sizeof( VoiceRuntimeMapHeader ) &&
+            header->characterOffset == header->packageOffset + packageBytes &&
+            header->voiceOffset == header->characterOffset + characterBytes &&
+            header->routeOffset == header->voiceOffset + voiceBytes &&
+            header->mediaOffset == header->routeOffset + routeBytes &&
+            header->nativeSlotOffset == header->mediaOffset + mediaBytes &&
+            header->stringOffset ==
+                header->nativeSlotOffset + nativeSlotBytes &&
+            header->stringOffset + header->stringSize == header->totalSize &&
+            header->routeCount == header->voiceCount * header->languageCount;
+    }
+
+    template< typename T >
+    static const T * RuntimeMapRows( std::uint32_t offset ) {
+        return reinterpret_cast< const T * >(
+            GeneratedVoiceRuntimeMap::kData + offset );
+    }
+
+    static bool RuntimeMapStringEquals(
+        std::uint32_t offset, std::uint16_t length,
+        const std::string & value ) {
+        const VoiceRuntimeMapHeader * header = RuntimeMapHeader( );
+        return header && value.size( ) == length &&
+            offset <= header->stringSize &&
+            length <= header->stringSize - offset &&
+            std::memcmp(
+                GeneratedVoiceRuntimeMap::kData + header->stringOffset + offset,
+                value.data( ), length ) == 0;
+    }
+
+    static std::string RuntimeMapString(
+        std::uint32_t offset, std::uint16_t length ) {
+        const VoiceRuntimeMapHeader * header = RuntimeMapHeader( );
+        if ( !header || offset > header->stringSize ||
+            length > header->stringSize - offset )
+            return { };
+        return std::string(
+            reinterpret_cast< const char * >(
+                GeneratedVoiceRuntimeMap::kData +
+                header->stringOffset + offset ), length );
+    }
+
+    static const VoiceRuntimeVoiceRow * FindRuntimeVoice(
+        std::uint32_t eventId, const std::string & voiceId ) {
+        const VoiceRuntimeMapHeader * header = RuntimeMapHeader( );
+        if ( !header || !header->voiceCount )
+            return nullptr;
+        const VoiceRuntimeVoiceRow * voices =
+            RuntimeMapRows< VoiceRuntimeVoiceRow >( header->voiceOffset );
+        std::size_t first = 0;
+        std::size_t last = header->voiceCount;
+        while ( first < last ) {
+            const std::size_t middle = first + ( last - first ) / 2;
+            if ( voices [ middle ].eventId < eventId )
+                first = middle + 1;
+            else
+                last = middle;
+        }
+        for ( std::size_t index = first;
+            index < header->voiceCount &&
+            voices [ index ].eventId == eventId; ++index ) {
+            if ( RuntimeMapStringEquals(
+                    voices [ index ].nameOffset,
+                    voices [ index ].nameLength, voiceId ) )
+                return &voices [ index ];
+        }
+        return nullptr;
+    }
+
+    static bool RuntimeVoiceMedia(
+        const VoiceRuntimeVoiceRow & voice, int language,
+        const std::uint32_t *& mediaIds, std::size_t & mediaCount,
+        bool * nativeEligible = nullptr ) {
+        mediaIds = nullptr;
+        mediaCount = 0;
+        if ( nativeEligible )
+            *nativeEligible = false;
+        const VoiceRuntimeMapHeader * header = RuntimeMapHeader( );
+        if ( !header || language < 0 ||
+            language >= static_cast< int >( header->languageCount ) ||
+            voice.firstRoute + static_cast< std::uint32_t >( language ) >=
+                header->routeCount )
+            return false;
+        const VoiceRuntimeRouteRow * routes =
+            RuntimeMapRows< VoiceRuntimeRouteRow >( header->routeOffset );
+        const VoiceRuntimeRouteRow & route =
+            routes [ voice.firstRoute + language ];
+        if ( !route.mediaCount || route.firstMedia > header->mediaCount ||
+            route.mediaCount > header->mediaCount - route.firstMedia )
+            return false;
+        mediaIds = RuntimeMapRows< std::uint32_t >(
+            header->mediaOffset ) + route.firstMedia;
+        mediaCount = route.mediaCount;
+        if ( nativeEligible )
+            *nativeEligible = ( route.reserved & 1u ) != 0;
+        return true;
+    }
+
+    static bool ResolveRuntimeCharacterIndex(
+        const std::string & configuredIdentity, std::uint8_t & index ) {
+        const VoiceRuntimeMapHeader * header = RuntimeMapHeader( );
+        if ( !header || configuredIdentity.empty( ) ||
+            configuredIdentity == "*" )
+            return false;
+        const VoiceRuntimeCharacterRow * characters =
+            RuntimeMapRows< VoiceRuntimeCharacterRow >(
+                header->characterOffset );
+        for ( std::uint32_t candidate = 0;
+            candidate < header->characterCount; ++candidate ) {
+            const VoiceRuntimeCharacterRow & row = characters [ candidate ];
+            const std::string characterId = RuntimeMapString(
+                row.idOffset, row.idLength );
+            if ( characterId == configuredIdentity ) {
+                index = static_cast< std::uint8_t >( candidate );
+                return true;
+            }
+            if ( characterId.rfind( "chr_", 0 ) == 0 ) {
+                const std::size_t suffix = characterId.find( '_', 4 );
+                if ( suffix != std::string::npos &&
+                    characterId.substr( suffix + 1 ) == configuredIdentity ) {
+                    index = static_cast< std::uint8_t >( candidate );
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    static bool RuntimeVoiceMatchesConfiguredRule(
+        const VoiceRuntimeVoiceRow & voice, int targetLanguage ) {
+        const VoiceRuntimeMapHeader * header = RuntimeMapHeader( );
+        if ( !header || voice.characterIndex >= header->characterCount )
+            return false;
+        const VoiceRuntimeCharacterRow * characters =
+            RuntimeMapRows< VoiceRuntimeCharacterRow >(
+                header->characterOffset );
+        const VoiceRuntimeCharacterRow & character =
+            characters [ voice.characterIndex ];
+        const std::string characterId = RuntimeMapString(
+            character.idOffset, character.idLength );
+        int configured = NO_DEFAULT_LANGUAGE;
+        AcquireSRWLockShared( &g_rulesLock );
+        auto found = g_rules.find( characterId );
+        if ( found == g_rules.end( ) && characterId.rfind( "chr_", 0 ) == 0 ) {
+            const std::size_t suffix = characterId.find( '_', 4 );
+            if ( suffix != std::string::npos )
+                found = g_rules.find( characterId.substr( suffix + 1 ) );
+        }
+        configured = found != g_rules.end( )
+            ? found->second : g_defaultLanguage;
+        ReleaseSRWLockShared( &g_rulesLock );
+        return configured == targetLanguage;
+    }
+
+    static bool ResolvePackagedMedia(
+        const VoiceRequestDiagnosticContext & request,
+        std::uint32_t handleId, std::uint32_t & eventId,
+        std::uint32_t & mediaId, std::uint32_t & codec,
+        std::string & failure ) {
+        eventId = 0;
+        mediaId = 0;
+        codec = request.codec;
+        failure.clear( );
+
+        const std::string voiceId = Normalize( request.data );
+        if ( request.target < 0 || request.target > 3 || voiceId.empty( ) ) {
+            failure = "unsupported-language-or-voice-id";
+            return false;
+        }
+        eventId = WwiseStringId( voiceId );
+        const VoiceRuntimeVoiceRow * voice =
+            FindRuntimeVoice( eventId, voiceId );
+        if ( !voice ) {
+            failure = "media-map-miss";
+            return false;
+        }
+        if ( !RuntimeVoiceMatchesConfiguredRule( *voice, request.target ) ) {
+            failure = "voice-rule-mismatch";
+            return false;
+        }
+        if ( codec != voice->codec ) {
+            failure = "unexpected-codec-" + std::to_string( codec ) +
+                "-expected-" + std::to_string( voice->codec );
+            return false;
+        }
+        const std::uint32_t * candidates = nullptr;
+        std::size_t candidateCount = 0;
+        if ( !RuntimeVoiceMedia(
+                *voice, request.target, candidates, candidateCount ) ) {
+            failure = "language-route-miss";
+            return false;
+        }
+        mediaId = candidates [ ( handleId ? handleId : eventId ) %
+            candidateCount ];
+        return mediaId != 0;
+    }
+
+    static bool NativeRouteEligible(
+        const VoiceRequestDiagnosticContext & request ) {
+        if ( !g_nativeMediaRouteReady.load( std::memory_order_acquire ) ||
+            request.target < 0 || request.target > 3 )
+            return false;
+        const std::string voiceId = Normalize( request.data );
+        if ( voiceId.empty( ) )
+            return false;
+        const VoiceRuntimeVoiceRow * voice = FindRuntimeVoice(
+            WwiseStringId( voiceId ), voiceId );
+        if ( !voice || !RuntimeVoiceMatchesConfiguredRule(
+                *voice, request.target ) )
+            return false;
+        const std::uint32_t * mediaIds = nullptr;
+        std::size_t mediaCount = 0;
+        bool nativeEligible = false;
+        return RuntimeVoiceMedia(
+            *voice, request.target, mediaIds, mediaCount, &nativeEligible ) &&
+            nativeEligible;
+    }
+
+    struct PckMediaEntry {
+        std::uint64_t offset = 0;
+        std::uint32_t size = 0;
+    };
+
+    struct ExclusiveSrwLockGuard {
+        explicit ExclusiveSrwLockGuard( SRWLOCK & lock ) : lock_( &lock ) {
+            AcquireSRWLockExclusive( lock_ );
+        }
+
+        ~ExclusiveSrwLockGuard( ) {
+            ReleaseSRWLockExclusive( lock_ );
+        }
+
+        ExclusiveSrwLockGuard( const ExclusiveSrwLockGuard & ) = delete;
+        ExclusiveSrwLockGuard & operator=(
+            const ExclusiveSrwLockGuard & ) = delete;
+
+    private:
+        SRWLOCK * lock_;
+    };
+
+    static std::uint32_t ReadU32(
+        const std::vector< std::uint8_t > & data, std::size_t offset,
+        bool & valid ) {
+        if ( offset > data.size( ) || data.size( ) - offset < 4 ) {
+            valid = false;
+            return 0;
+        }
+        std::uint32_t value = 0;
+        std::memcpy( &value, data.data( ) + offset, sizeof( value ) );
+        return value;
+    }
+
+    static std::uint64_t ReadU64(
+        const std::vector< std::uint8_t > & data, std::size_t offset,
+        bool & valid ) {
+        if ( offset > data.size( ) || data.size( ) - offset < 8 ) {
+            valid = false;
+            return 0;
+        }
+        std::uint64_t value = 0;
+        std::memcpy( &value, data.data( ) + offset, sizeof( value ) );
+        return value;
+    }
+
+    static std::uint32_t DeriveVfsKey( std::uint32_t seed ) {
+        constexpr std::uint32_t multiplier = 81861667u;
+        constexpr std::uint32_t xorValue = 0x9C5A0B29u;
+        std::uint32_t key = ( ( seed & 0xFFu ) ^ xorValue ) * multiplier;
+        key = ( key ^ ( ( seed >> 8 ) & 0xFFu ) ) * multiplier;
+        key = ( key ^ ( ( seed >> 16 ) & 0xFFu ) ) * multiplier;
+        key = ( key ^ ( ( seed >> 24 ) & 0xFFu ) ) * multiplier;
+        return key;
+    }
+
+    static void DecryptVfsBytes(
+        std::uint8_t * data, std::size_t length, std::uint32_t seed,
+        std::uint64_t dataOffset = 0 ) {
+        if ( !data || !length )
+            return;
+        std::uint32_t keyIndex = seed +
+            static_cast< std::uint32_t >( dataOffset >> 2 );
+        std::size_t position = 0;
+        const std::size_t alignment = static_cast< std::size_t >(
+            dataOffset & 3u );
+        if ( alignment ) {
+            const std::uint32_t key = DeriveVfsKey( keyIndex );
+            const std::size_t count = ( std::min )(
+                4u - alignment, length );
+            for ( std::size_t index = 0; index < count; ++index )
+                data [ position++ ] ^= static_cast< std::uint8_t >(
+                    key >> ( ( alignment + index ) * 8 ) );
+            ++keyIndex;
+        }
+        while ( length - position >= 4 ) {
+            std::uint32_t value = 0;
+            std::memcpy( &value, data + position, sizeof( value ) );
+            value ^= DeriveVfsKey( keyIndex++ );
+            std::memcpy( data + position, &value, sizeof( value ) );
+            position += 4;
+        }
+        if ( position < length ) {
+            const std::uint32_t key = DeriveVfsKey( keyIndex );
+            for ( std::size_t index = 0; position < length;
+                ++index, ++position ) {
+                data [ position ] ^= static_cast< std::uint8_t >(
+                    key >> ( index * 8 ) );
+            }
+        }
+    }
+
+    static bool ReadFileRange(
+        HANDLE file, std::uint64_t offset, void * target,
+        std::uint32_t size ) {
+        if ( file == INVALID_HANDLE_VALUE || !target || !size )
+            return false;
+        LARGE_INTEGER position { };
+        position.QuadPart = static_cast< LONGLONG >( offset );
+        if ( !SetFilePointerEx( file, position, nullptr, FILE_BEGIN ) )
+            return false;
+        DWORD read = 0;
+        return ReadFile( file, target, size, &read, nullptr ) && read == size;
+    }
+
+    static bool ParsePckMediaSector(
+        const std::vector< std::uint8_t > & header, std::size_t start,
+        std::uint32_t size, bool external,
+        const std::unordered_set< std::uint32_t > & targets,
+        std::unordered_map< std::uint32_t, PckMediaEntry > & entries ) {
+        bool valid = true;
+        if ( size < 4 || start > header.size( ) ||
+            header.size( ) - start < size )
+            return false;
+        const std::uint32_t count = ReadU32( header, start, valid );
+        if ( !valid || !count )
+            return valid;
+        const std::uint32_t entrySize = ( size - 4 ) / count;
+        if ( entrySize < 20 || 4ull +
+            static_cast< std::uint64_t >( entrySize ) * count > size )
+            return false;
+        const bool alternate = entrySize == 0x18;
+        for ( std::uint32_t index = 0; index < count; ++index ) {
+            const std::size_t entry = start + 4ull +
+                static_cast< std::size_t >( entrySize ) * index;
+            const std::uint32_t mediaId = ReadU32( header, entry, valid );
+            std::size_t cursor = entry + 4;
+            if ( alternate && external )
+                cursor += 4;
+            const std::uint32_t blockSize = ReadU32(
+                header, cursor, valid );
+            cursor += 4;
+            const std::uint64_t mediaSize = alternate && !external
+                ? ReadU64( header, cursor, valid )
+                : ReadU32( header, cursor, valid );
+            cursor += alternate && !external ? 8 : 4;
+            const std::uint32_t blockOffset = ReadU32(
+                header, cursor, valid );
+            if ( !valid )
+                return false;
+            if ( targets.find( mediaId ) == targets.end( ) )
+                continue;
+            const std::uint64_t offset = blockSize
+                ? static_cast< std::uint64_t >( blockOffset ) * blockSize
+                : blockOffset;
+            if ( !mediaSize || mediaSize > UINT32_MAX )
+                return false;
+            entries [ mediaId ] = {
+                offset, static_cast< std::uint32_t >( mediaSize )
+            };
+        }
+        return true;
+    }
+
+    static std::string GameRootDirectory( ) {
+        std::array< char, 32768 > path { };
+        const DWORD length = GetModuleFileNameA(
+            nullptr, path.data( ), static_cast< DWORD >( path.size( ) ) );
+        if ( !length || length >= path.size( ) )
+            return { };
+        std::string result( path.data( ), length );
+        const std::size_t separator = result.find_last_of( "\\/" );
+        return separator == std::string::npos
+            ? std::string( ) : result.substr( 0, separator );
+    }
+
+    static std::string NormalizeWindowsPath( std::string path ) {
+        std::replace( path.begin( ), path.end( ), '/', '\\' );
+        return path;
+    }
+
+    static bool TryGetFileSize(
+        const std::string & path, std::uint64_t & size ) {
+        size = 0;
+        WIN32_FILE_ATTRIBUTE_DATA data { };
+        if ( !GetFileAttributesExA(
+                path.c_str( ), GetFileExInfoStandard, &data ) ||
+            ( data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) != 0 )
+            return false;
+        ULARGE_INTEGER value { };
+        value.LowPart = data.nFileSizeLow;
+        value.HighPart = data.nFileSizeHigh;
+        size = value.QuadPart;
+        return true;
+    }
+
+    static bool Sha256(
+        const std::uint8_t * data, std::size_t size,
+        std::array< std::uint8_t, 32 > & digest ) {
+        BCRYPT_ALG_HANDLE algorithm = nullptr;
+        BCRYPT_HASH_HANDLE hash = nullptr;
+        DWORD objectSize = 0;
+        DWORD resultSize = 0;
+        std::vector< std::uint8_t > object;
+        bool success = BCryptOpenAlgorithmProvider(
+                &algorithm, BCRYPT_SHA256_ALGORITHM, nullptr, 0 ) >= 0 &&
+            BCryptGetProperty(
+                algorithm, BCRYPT_OBJECT_LENGTH,
+                reinterpret_cast< PUCHAR >( &objectSize ), sizeof( objectSize ),
+                &resultSize, 0 ) >= 0 && objectSize != 0;
+        if ( success ) {
+            object.resize( objectSize );
+            success = BCryptCreateHash(
+                    algorithm, &hash, object.data( ), objectSize,
+                    nullptr, 0, 0 ) >= 0 &&
+                size <= ULONG_MAX && BCryptHashData(
+                    hash, const_cast< PUCHAR >( data ),
+                    static_cast< ULONG >( size ), 0 ) >= 0 &&
+                BCryptFinishHash(
+                    hash, digest.data( ),
+                    static_cast< ULONG >( digest.size( ) ), 0 ) >= 0;
+        }
+        if ( hash )
+            BCryptDestroyHash( hash );
+        if ( algorithm )
+            BCryptCloseAlgorithmProvider( algorithm, 0 );
+        return success;
+    }
+
+    static const VoiceRuntimePackageRow * RuntimePackageForLanguage(
+        int language ) {
+        const VoiceRuntimeMapHeader * header = RuntimeMapHeader( );
+        if ( !header || language < 0 ||
+            language >= static_cast< int >( header->languageCount ) )
+            return nullptr;
+        const VoiceRuntimePackageRow * packages =
+            RuntimeMapRows< VoiceRuntimePackageRow >( header->packageOffset );
+        for ( std::uint32_t index = 0;
+            index < header->packageCount; ++index ) {
+            if ( packages [ index ].language == language )
+                return &packages [ index ];
+        }
+        return nullptr;
+    }
+
+    static std::string FindVoicePackage(
+        const VoiceRuntimePackageRow & package ) {
+        const std::string root = GameRootDirectory( );
+        if ( root.empty( ) )
+            return { };
+        std::string relative = NormalizeWindowsPath( RuntimeMapString(
+            package.sourceOffset, package.sourceLength ) );
+        if ( relative.empty( ) )
+            return { };
+        std::string preferred = root + "\\" + relative;
+        std::uint64_t size = 0;
+        if ( TryGetFileSize( preferred, size ) && size == package.fileSize )
+            return preferred;
+
+        constexpr const char * persistent = "\\Persistent\\";
+        constexpr const char * streaming = "\\StreamingAssets\\";
+        const std::size_t marker = preferred.find( persistent );
+        if ( marker != std::string::npos ) {
+            std::string fallback = preferred;
+            fallback.replace( marker, std::strlen( persistent ), streaming );
+            if ( TryGetFileSize( fallback, size ) && size == package.fileSize )
+                return fallback;
+        }
+        return { };
+    }
+
+    static bool CollectConfiguredMedia(
+        std::array< std::unordered_set< std::uint32_t >, 4 > & targets,
+        std::size_t & selectedCharacters ) {
+        selectedCharacters = 0;
+        if ( !ValidateRuntimeMap( ) )
+            return false;
+        VoiceRuleMap rules;
+        int defaultLanguage = NO_DEFAULT_LANGUAGE;
+        bool enabled = false;
+        AcquireSRWLockShared( &g_rulesLock );
+        rules = g_rules;
+        defaultLanguage = g_defaultLanguage;
+        enabled = g_enabled.load( std::memory_order_acquire );
+        ReleaseSRWLockShared( &g_rulesLock );
+        if ( !enabled )
+            return true;
+
+        const VoiceRuntimeMapHeader * header = RuntimeMapHeader( );
+        const VoiceRuntimeCharacterRow * characters =
+            RuntimeMapRows< VoiceRuntimeCharacterRow >(
+                header->characterOffset );
+        std::vector< int > languageByCharacter(
+            header->characterCount, defaultLanguage );
+        for ( std::uint32_t index = 0;
+            index < header->characterCount; ++index ) {
+            const std::string characterId = RuntimeMapString(
+                characters [ index ].idOffset,
+                characters [ index ].idLength );
+            auto found = rules.find( characterId );
+            if ( found == rules.end( ) && characterId.rfind( "chr_", 0 ) == 0 ) {
+                const std::size_t suffix = characterId.find( '_', 4 );
+                if ( suffix != std::string::npos )
+                    found = rules.find( characterId.substr( suffix + 1 ) );
+            }
+            if ( found != rules.end( ) )
+                languageByCharacter [ index ] = found->second;
+        }
+
+        for ( const auto & [ identity, language ] : rules ) {
+            std::uint8_t index = 0;
+            if ( ResolveRuntimeCharacterIndex( identity, index ) )
+                languageByCharacter [ index ] = language;
+        }
+        selectedCharacters = static_cast< std::size_t >( std::count_if(
+            languageByCharacter.begin( ), languageByCharacter.end( ),
+            [ ] ( int language ) { return language >= 0 && language <= 3; } ) );
+
+        const VoiceRuntimeVoiceRow * voices =
+            RuntimeMapRows< VoiceRuntimeVoiceRow >( header->voiceOffset );
+        for ( std::uint32_t index = 0; index < header->voiceCount; ++index ) {
+            const VoiceRuntimeVoiceRow & voice = voices [ index ];
+            if ( voice.characterIndex >= languageByCharacter.size( ) )
+                return false;
+            const int language = languageByCharacter [ voice.characterIndex ];
+            const std::uint32_t * mediaIds = nullptr;
+            std::size_t mediaCount = 0;
+            if ( language < 0 || language > 3 ||
+                !RuntimeVoiceMedia(
+                    voice, language, mediaIds, mediaCount ) )
+                continue;
+            targets [ language ].insert( mediaIds, mediaIds + mediaCount );
+        }
+        return true;
+    }
+
+    static bool PrewarmLanguageMedia(
+        int language,
+        const std::unordered_set< std::uint32_t > & requestedTargets,
+        std::size_t & loadedCount, std::size_t & loadedBytes ) {
+        const ExclusiveSrwLockGuard prewarmGuard( g_packagedPrewarmLock );
+        loadedCount = 0;
+        loadedBytes = 0;
+        std::unordered_set< std::uint32_t > targets;
+        AcquireSRWLockShared( &g_residentWemsLock );
+        for ( const std::uint32_t mediaId : requestedTargets ) {
+            if ( g_residentWems.find( mediaId ) == g_residentWems.end( ) )
+                targets.insert( mediaId );
+        }
+        ReleaseSRWLockShared( &g_residentWemsLock );
+        if ( targets.empty( ) )
+            return true;
+
+        const VoiceRuntimePackageRow * package =
+            RuntimePackageForLanguage( language );
+        if ( !package )
+            return false;
+        const std::string packagePath = FindVoicePackage( *package );
+        if ( packagePath.empty( ) ) {
+            Log( "[voice-memory] " + std::string( LanguageName( language ) ) +
+                " PCK not found or size mismatch; v6 fallback retained" );
+            return false;
+        }
+        HANDLE file = CreateFileA(
+            packagePath.c_str( ), GENERIC_READ,
+            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+            nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr );
+        if ( file == INVALID_HANDLE_VALUE ) {
+            Log( "[voice-memory] PCK open failed language=" +
+                std::string( LanguageName( language ) ) + " error=" +
+                std::to_string( GetLastError( ) ) + "; v6 fallback retained" );
+            return false;
+        }
+
+        std::array< std::uint8_t, 12 > prefix { };
+        bool success = ReadFileRange(
+            file, 0, prefix.data( ), static_cast< std::uint32_t >(
+                prefix.size( ) ) );
+        std::uint32_t headerSize = 0;
+        if ( success )
+            std::memcpy( &headerSize, prefix.data( ) + 4, 4 );
+        if ( !success || std::memcmp( prefix.data( ), ":)xD", 4 ) != 0 ||
+            headerSize < 16 || headerSize > 16u * 1024u * 1024u ) {
+            CloseHandle( file );
+            Log( "[voice-memory] unsupported PCK header language=" +
+                std::string( LanguageName( language ) ) +
+                "; v6 fallback retained" );
+            return false;
+        }
+
+        std::vector< std::uint8_t > header( headerSize + 8ull );
+        success = ReadFileRange(
+            file, 0, header.data( ), static_cast< std::uint32_t >(
+                header.size( ) ) );
+        if ( success ) {
+            DecryptVfsBytes(
+                header.data( ) + 12, headerSize - 4, headerSize );
+            std::memcpy( header.data( ), "AKPK", 4 );
+            const std::uint32_t flags = 1;
+            std::memcpy( header.data( ) + 8, &flags, sizeof( flags ) );
+        }
+        std::array< std::uint8_t, 32 > headerDigest { };
+        if ( !success || header.size( ) != package->headerSize ||
+            !Sha256( header.data( ), header.size( ), headerDigest ) ||
+            std::memcmp(
+                headerDigest.data( ), package->headerSha256,
+                headerDigest.size( ) ) != 0 ) {
+            CloseHandle( file );
+            Log( "[voice-memory] PCK identity mismatch language=" +
+                std::string( LanguageName( language ) ) +
+                "; v6 fallback retained" );
+            return false;
+        }
+
+        bool valid = success;
+        std::size_t cursor = 4;
+        const std::uint32_t parsedHeaderSize = ReadU32(
+            header, cursor, valid );
+        cursor += 8;
+        const std::uint32_t languagesSize = ReadU32(
+            header, cursor, valid );
+        cursor += 4;
+        const std::uint32_t banksSize = ReadU32( header, cursor, valid );
+        cursor += 4;
+        const std::uint32_t soundsSize = ReadU32( header, cursor, valid );
+        cursor += 4;
+        std::uint32_t externalsSize = 0;
+        if ( valid && static_cast< std::uint64_t >( languagesSize ) +
+            banksSize + soundsSize + 0x10ull < parsedHeaderSize ) {
+            externalsSize = ReadU32( header, cursor, valid );
+            cursor += 4;
+        }
+        cursor += languagesSize + banksSize;
+        std::unordered_map< std::uint32_t, PckMediaEntry > entries;
+        success = valid && ParsePckMediaSector(
+            header, cursor, soundsSize, false, targets, entries );
+        cursor += soundsSize;
+        if ( success && externalsSize )
+            success = ParsePckMediaSector(
+                header, cursor, externalsSize, true, targets, entries );
+        if ( !success || entries.size( ) != targets.size( ) ) {
+            CloseHandle( file );
+            Log( "[voice-memory] PCK index incomplete language=" +
+                std::string( LanguageName( language ) ) + " targets=" +
+                std::to_string( entries.size( ) ) + "/" +
+                std::to_string( targets.size( ) ) +
+                "; v6 fallback retained" );
+            return false;
+        }
+
+        std::unordered_map< std::uint32_t, ResidentWem > staged;
+        for ( const std::uint32_t mediaId : targets ) {
+            const PckMediaEntry entry = entries [ mediaId ];
+            void * memory = VirtualAlloc(
+                nullptr, entry.size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE );
+            if ( !memory ) {
+                success = false;
+                break;
+            }
+            if ( !ReadFileRange(
+                    file, entry.offset, memory, entry.size ) ) {
+                VirtualFree( memory, 0, MEM_RELEASE );
+                success = false;
+                break;
+            }
+            std::uint8_t * bytes = static_cast< std::uint8_t * >( memory );
+            if ( std::memcmp( bytes, "RIFF", 4 ) != 0 &&
+                std::memcmp( bytes, "RIFX", 4 ) != 0 )
+                DecryptVfsBytes( bytes, entry.size, mediaId );
+            if ( std::memcmp( bytes, "RIFF", 4 ) != 0 &&
+                std::memcmp( bytes, "RIFX", 4 ) != 0 ) {
+                VirtualFree( memory, 0, MEM_RELEASE );
+                success = false;
+                break;
+            }
+            DWORD oldProtect = 0;
+            VirtualProtect( memory, entry.size, PAGE_READONLY, &oldProtect );
+            staged [ mediaId ] = { memory, entry.size };
+            loadedBytes += entry.size;
+        }
+        CloseHandle( file );
+        if ( !success || staged.size( ) != targets.size( ) ) {
+            for ( const auto & [ mediaId, wem ] : staged )
+                VirtualFree( wem.memory, 0, MEM_RELEASE );
+            loadedBytes = 0;
+            Log( "[voice-memory] WEM preload failed language=" +
+                std::string( LanguageName( language ) ) + " loaded=" +
+                std::to_string( staged.size( ) ) + "/" +
+                std::to_string( targets.size( ) ) +
+                "; v6 fallback retained" );
+            return false;
+        }
+        AcquireSRWLockExclusive( &g_residentWemsLock );
+        for ( const auto & [ mediaId, wem ] : staged )
+            g_residentWems.emplace( mediaId, wem );
+        ReleaseSRWLockExclusive( &g_residentWemsLock );
+        loadedCount = staged.size( );
+        Log( "[voice-memory] language preload ready language=" +
+            std::string( LanguageName( language ) ) + " media=" +
+            std::to_string( loadedCount ) + " bytes=" +
+            std::to_string( loadedBytes ) + " source=" + packagePath );
+        return true;
+    }
+
+    static bool PrewarmPackagedMedia( ) {
+        std::array< std::unordered_set< std::uint32_t >, 4 > targets;
+        std::size_t selectedCharacters = 0;
+        if ( !CollectConfiguredMedia( targets, selectedCharacters ) ) {
+            g_packagedMemoryReady.store( false, std::memory_order_release );
+            Log( "[voice-memory] embedded runtime map invalid; v6 fallback retained" );
+            return false;
+        }
+        bool success = true;
+        std::size_t requestedMedia = 0;
+        std::size_t newlyLoaded = 0;
+        std::size_t newlyLoadedBytes = 0;
+        for ( int language = 0; language < 4; ++language ) {
+            requestedMedia += targets [ language ].size( );
+            std::size_t loaded = 0;
+            std::size_t bytes = 0;
+            if ( !targets [ language ].empty( ) && !PrewarmLanguageMedia(
+                    language, targets [ language ], loaded, bytes ) )
+                success = false;
+            newlyLoaded += loaded;
+            newlyLoadedBytes += bytes;
+        }
+        bool allRequestedReady = true;
+        AcquireSRWLockShared( &g_residentWemsLock );
+        for ( int language = 0; language < 4 && allRequestedReady; ++language ) {
+            for ( const std::uint32_t mediaId : targets [ language ] ) {
+                if ( g_residentWems.find( mediaId ) == g_residentWems.end( ) ) {
+                    allRequestedReady = false;
+                    break;
+                }
+            }
+        }
+        ReleaseSRWLockShared( &g_residentWemsLock );
+        const bool routingReady = allRequestedReady &&
+            ( requestedMedia == 0 || g_packagedMediaSetterHookCreated );
+        g_packagedMemoryReady.store(
+            routingReady, std::memory_order_release );
+        Log( "[voice-memory] selective preload complete characters=" +
+            std::to_string( selectedCharacters ) + " requestedMedia=" +
+            std::to_string( requestedMedia ) + " newlyLoaded=" +
+            std::to_string( newlyLoaded ) + " bytes=" +
+            std::to_string( newlyLoadedBytes ) + " map=" +
+            GeneratedVoiceRuntimeMap::kSha256 + " result=" +
+            ( routingReady && success ? "ready" : "partial-v6-fallback" ) );
+        return routingReady && success;
+    }
+
+    static std::vector< int > ConfiguredLanguageByCharacter( ) {
+        const VoiceRuntimeMapHeader * header = RuntimeMapHeader( );
+        if ( !header )
+            return { };
+        VoiceRuleMap rules;
+        int defaultLanguage = NO_DEFAULT_LANGUAGE;
+        bool enabled = false;
+        AcquireSRWLockShared( &g_rulesLock );
+        rules = g_rules;
+        defaultLanguage = g_defaultLanguage;
+        enabled = g_enabled.load( std::memory_order_acquire );
+        ReleaseSRWLockShared( &g_rulesLock );
+        std::vector< int > result(
+            header->characterCount,
+            enabled ? defaultLanguage : FOLLOW_GLOBAL_LANGUAGE );
+        if ( !enabled )
+            return result;
+        const VoiceRuntimeCharacterRow * characters =
+            RuntimeMapRows< VoiceRuntimeCharacterRow >(
+                header->characterOffset );
+        for ( std::uint32_t index = 0;
+            index < header->characterCount; ++index ) {
+            const std::string characterId = RuntimeMapString(
+                characters [ index ].idOffset, characters [ index ].idLength );
+            auto found = rules.find( characterId );
+            if ( found == rules.end( ) && characterId.rfind( "chr_", 0 ) == 0 ) {
+                const std::size_t suffix = characterId.find( '_', 4 );
+                if ( suffix != std::string::npos )
+                    found = rules.find( characterId.substr( suffix + 1 ) );
+            }
+            if ( found != rules.end( ) )
+                result [ index ] = found->second;
+        }
+        for ( const auto & [ identity, language ] : rules ) {
+            std::uint8_t index = 0;
+            if ( ResolveRuntimeCharacterIndex( identity, index ) )
+                result [ index ] = language;
+        }
+        return result;
+    }
+
+    static bool BuildNativeMediaOverrides(
+        std::unordered_map< std::uint32_t, std::uint32_t > & overrides ) {
+        overrides.clear( );
+        if ( !ValidateRuntimeMap( ) )
+            return false;
+        const VoiceRuntimeMapHeader * header = RuntimeMapHeader( );
+        const std::vector< int > languageByCharacter =
+            ConfiguredLanguageByCharacter( );
+        if ( languageByCharacter.size( ) != header->characterCount )
+            return false;
+        const VoiceRuntimeNativeSlotRow * slots =
+            RuntimeMapRows< VoiceRuntimeNativeSlotRow >(
+                header->nativeSlotOffset );
+        for ( std::uint32_t index = 0;
+            index < header->nativeSlotCount; ++index ) {
+            const VoiceRuntimeNativeSlotRow & slot = slots [ index ];
+            if ( slot.characterIndex >= languageByCharacter.size( ) )
+                return false;
+            const int targetLanguage =
+                languageByCharacter [ slot.characterIndex ];
+            if ( targetLanguage < 0 || targetLanguage > 3 )
+                continue;
+            const std::uint32_t targetMedia = slot.mediaIds [ targetLanguage ];
+            for ( int sourceLanguage = 0; sourceLanguage < 4; ++sourceLanguage ) {
+                const std::uint32_t sourceMedia =
+                    slot.mediaIds [ sourceLanguage ];
+                const auto [ found, inserted ] = overrides.emplace(
+                    sourceMedia, targetMedia );
+                if ( !inserted && found->second != targetMedia )
+                    return false;
+            }
+        }
+        return true;
+    }
+
+    static int CallSetMedia(
+        const std::vector< NativeAkSourceSettings > & settings ) {
+        if ( !g_setMedia || settings.empty( ) ||
+            settings.size( ) > UINT32_MAX )
+            return settings.empty( ) ? 1 : 0;
+        int result = 0;
+        __try {
+            result = g_setMedia(
+                const_cast< NativeAkSourceSettings * >( settings.data( ) ),
+                static_cast< std::uint32_t >( settings.size( ) ), nullptr );
+        }
+        __except ( EXCEPTION_EXECUTE_HANDLER ) {
+            result = 0;
+        }
+        return result;
+    }
+
+    static int CallUnsetMedia(
+        const std::vector< NativeAkSourceSettings > & settings ) {
+        if ( !g_unsetMedia || settings.empty( ) ||
+            settings.size( ) > UINT32_MAX )
+            return settings.empty( ) ? 1 : 0;
+        int result = 0;
+        __try {
+            result = g_unsetMedia(
+                const_cast< NativeAkSourceSettings * >( settings.data( ) ),
+                static_cast< std::uint32_t >( settings.size( ) ), nullptr );
+        }
+        __except ( EXCEPTION_EXECUTE_HANDLER ) {
+            result = 0;
+        }
+        return result;
+    }
+
+    static bool CallSetMediaIndividually(
+        const std::vector< NativeAkSourceSettings > & settings ) {
+        bool success = true;
+        for ( const NativeAkSourceSettings & setting : settings ) {
+            const std::vector< NativeAkSourceSettings > single { setting };
+            if ( CallSetMedia( single ) != 1 )
+                success = false;
+        }
+        return success;
+    }
+
+    static bool CallUnsetMediaIndividually(
+        const std::vector< NativeAkSourceSettings > & settings,
+        std::unordered_set< std::uint32_t > * failedSources = nullptr ) {
+        if ( failedSources )
+            failedSources->clear( );
+        bool success = true;
+        for ( const NativeAkSourceSettings & setting : settings ) {
+            const std::vector< NativeAkSourceSettings > single { setting };
+            if ( CallUnsetMedia( single ) != 1 ) {
+                success = false;
+                if ( failedSources )
+                    failedSources->insert( setting.sourceId );
+            }
+        }
+        return success;
+    }
+
+    static bool ApplyNativeMediaRoutes( ) {
+        const ExclusiveSrwLockGuard guard( g_nativeMediaRouteLock );
+        g_nativeMediaRouteReady.store( false, std::memory_order_release );
+        if ( !g_setMedia || !g_unsetMedia )
+            return false;
+        if ( !g_uncertainNativeMediaSources.empty( ) ) {
+            Log( "[voice-native] unresolved SetMedia state; "
+                "v9 fallback retained until cleanup succeeds" );
+            return false;
+        }
+
+        std::unordered_map< std::uint32_t, std::uint32_t > desired;
+        if ( !BuildNativeMediaOverrides( desired ) ) {
+            Log( "[voice-native] runtime route map invalid; v9 fallback retained" );
+            return false;
+        }
+        std::vector< NativeAkSourceSettings > toUnset;
+        std::vector< NativeAkSourceSettings > toSet;
+        std::vector< NativeAkSourceSettings > toRestore;
+        bool residentReady = true;
+        AcquireSRWLockShared( &g_residentWemsLock );
+        for ( const auto & [ sourceMedia, targetMedia ] :
+            g_registeredNativeMedia ) {
+            const auto wanted = desired.find( sourceMedia );
+            if ( wanted == desired.end( ) || wanted->second != targetMedia ) {
+                toUnset.push_back( { sourceMedia, 0, nullptr, 0, 0 } );
+                const auto resident = g_residentWems.find( targetMedia );
+                if ( resident == g_residentWems.end( ) ||
+                    !resident->second.memory || !resident->second.size ) {
+                    residentReady = false;
+                    break;
+                }
+                toRestore.push_back( {
+                    sourceMedia, 0, resident->second.memory,
+                    resident->second.size, 0 } );
+            }
+        }
+        for ( const auto & [ sourceMedia, targetMedia ] : desired ) {
+            if ( !residentReady )
+                break;
+            const auto current = g_registeredNativeMedia.find( sourceMedia );
+            if ( current != g_registeredNativeMedia.end( ) &&
+                current->second == targetMedia )
+                continue;
+            const auto resident = g_residentWems.find( targetMedia );
+            if ( resident == g_residentWems.end( ) ||
+                !resident->second.memory || !resident->second.size ) {
+                residentReady = false;
+                break;
+            }
+            toSet.push_back( {
+                sourceMedia, 0, resident->second.memory,
+                resident->second.size, 0 } );
+        }
+        ReleaseSRWLockShared( &g_residentWemsLock );
+        if ( !residentReady ) {
+            Log( "[voice-native] target Media is not resident; v9 fallback retained" );
+            return false;
+        }
+
+        const int unsetResult = CallUnsetMedia( toUnset );
+        if ( unsetResult != 1 ) {
+            for ( const NativeAkSourceSettings & setting : toUnset )
+                g_uncertainNativeMediaSources.insert( setting.sourceId );
+            const bool cleanupReady = CallUnsetMediaIndividually( toUnset );
+            const bool restoreReady = CallSetMediaIndividually( toRestore );
+            if ( cleanupReady && restoreReady ) {
+                for ( const NativeAkSourceSettings & setting : toUnset )
+                    g_uncertainNativeMediaSources.erase( setting.sourceId );
+                g_nativeMediaUnloadSafe.store(
+                    true, std::memory_order_release );
+            }
+            else {
+                g_nativeMediaUnloadSafe.store(
+                    false, std::memory_order_release );
+            }
+            Log( "[voice-native] UnsetMedia failed result=" +
+                std::to_string( unsetResult ) + " cleanup=" +
+                ( cleanupReady ? "ready" : "uncertain" ) + " restore=" +
+                ( restoreReady ? "ready" : "uncertain" ) +
+                "; v9 fallback retained" );
+            return false;
+        }
+        const int setResult = CallSetMedia( toSet );
+        if ( setResult != 1 ) {
+            for ( const NativeAkSourceSettings & setting : toSet )
+                g_uncertainNativeMediaSources.insert( setting.sourceId );
+            const bool cleanupReady = CallUnsetMediaIndividually( toSet );
+            const bool restoreReady = CallSetMediaIndividually( toRestore );
+            if ( cleanupReady && restoreReady ) {
+                for ( const NativeAkSourceSettings & setting : toSet )
+                    g_uncertainNativeMediaSources.erase( setting.sourceId );
+                g_nativeMediaUnloadSafe.store(
+                    true, std::memory_order_release );
+            }
+            else {
+                if ( !restoreReady ) {
+                    for ( const NativeAkSourceSettings & setting : toUnset )
+                        g_uncertainNativeMediaSources.insert(
+                            setting.sourceId );
+                }
+                g_nativeMediaUnloadSafe.store(
+                    false, std::memory_order_release );
+            }
+            Log( "[voice-native] SetMedia failed result=" +
+                std::to_string( setResult ) + " cleanup=" +
+                ( cleanupReady ? "ready" : "uncertain" ) + " restore=" +
+                ( restoreReady ? "ready" : "uncertain" ) +
+                "; v9 fallback retained" );
+            return false;
+        }
+        g_registeredNativeMedia = std::move( desired );
+        for ( const NativeAkSourceSettings & setting : toUnset )
+            g_uncertainNativeMediaSources.erase( setting.sourceId );
+        for ( const NativeAkSourceSettings & setting : toSet )
+            g_uncertainNativeMediaSources.erase( setting.sourceId );
+        g_nativeMediaUnloadSafe.store( true, std::memory_order_release );
+        g_nativeMediaRouteReady.store( true, std::memory_order_release );
+        Log( "[voice-native] SetMedia routes ready sources=" +
+            std::to_string( g_registeredNativeMedia.size( ) ) +
+            " changed=" + std::to_string( toSet.size( ) ) +
+            " removed=" + std::to_string( toUnset.size( ) ) );
+        return true;
+    }
+
+    static bool ClearNativeMediaRoutes( ) {
+        const ExclusiveSrwLockGuard guard( g_nativeMediaRouteLock );
+        g_nativeMediaRouteReady.store( false, std::memory_order_release );
+        if ( g_registeredNativeMedia.empty( ) &&
+            g_uncertainNativeMediaSources.empty( ) )
+            return true;
+        std::vector< NativeAkSourceSettings > settings;
+        settings.reserve( g_registeredNativeMedia.size( ) +
+            g_uncertainNativeMediaSources.size( ) );
+        std::unordered_set< std::uint32_t > sources;
+        for ( const auto & [ sourceMedia, _targetMedia ] :
+            g_registeredNativeMedia )
+            sources.insert( sourceMedia );
+        sources.insert(
+            g_uncertainNativeMediaSources.begin( ),
+            g_uncertainNativeMediaSources.end( ) );
+        for ( const std::uint32_t sourceMedia : sources )
+            settings.push_back( { sourceMedia, 0, nullptr, 0, 0 } );
+        std::unordered_set< std::uint32_t > failedSources;
+        const bool success = CallUnsetMediaIndividually(
+            settings, &failedSources );
+        if ( !success ) {
+            for ( const std::uint32_t sourceMedia : sources ) {
+                if ( failedSources.find( sourceMedia ) ==
+                    failedSources.end( ) ) {
+                    g_registeredNativeMedia.erase( sourceMedia );
+                    g_uncertainNativeMediaSources.erase( sourceMedia );
+                }
+            }
+            g_uncertainNativeMediaSources.insert(
+                failedSources.begin( ), failedSources.end( ) );
+            g_nativeMediaUnloadSafe.store(
+                false, std::memory_order_release );
+            Log( "[voice-native] final UnsetMedia failed sources=" +
+                std::to_string( failedSources.size( ) ) +
+                "; registered memory must remain resident" );
+            return false;
+        }
+        g_registeredNativeMedia.clear( );
+        g_uncertainNativeMediaSources.clear( );
+        g_nativeMediaUnloadSafe.store( true, std::memory_order_release );
+        return true;
     }
 
     static std::string ConfigDirectory( ) {
@@ -951,6 +2211,62 @@ namespace {
             *playingId = 0;
             return false;
         }
+    }
+
+    static bool PackagedMediaLogAllowed( ) {
+        return g_packagedMediaDiagnosticLogs.fetch_add(
+            1, std::memory_order_relaxed ) <
+            PACKAGED_MEDIA_DIAGNOSTIC_LOG_LIMIT;
+    }
+
+    static void * FindImageByName( const char * requestedName ) {
+        if ( !requestedName || !api::initialized || !api::get_domain ||
+            !api::get_assemblies || !api::assembly_get_image ||
+            !api::image_get_name )
+            return nullptr;
+        void * domain = api::get_domain( );
+        if ( !domain )
+            return nullptr;
+        std::size_t count = 0;
+        void ** assemblies = api::get_assemblies( domain, &count );
+        for ( std::size_t index = 0; assemblies && index < count; ++index ) {
+            void * image = api::assembly_get_image( assemblies [ index ] );
+            const char * name = image ? api::image_get_name( image ) : nullptr;
+            if ( name && _stricmp( name, requestedName ) == 0 )
+                return image;
+        }
+        return nullptr;
+    }
+
+    static bool TryPlayMemoryExternalVoice(
+        PackagedMediaSetterContext & route, void * placeholder,
+        void * wwiseEvent, std::uint64_t audioObjectId,
+        std::uint32_t handleId, std::uint32_t codec,
+        std::uint32_t & playingId ) {
+        playingId = 0;
+        ThreadRoutingContext * threadContext = GetThreadRoutingContext( );
+        if ( !threadContext )
+            return false;
+
+        PackagedMediaSetterContext previousSetter =
+            threadContext->packagedMediaSetter;
+        const bool previousBankEventRouted = threadContext->bankEventRouted;
+        bool callCompleted = false;
+        __try {
+            threadContext->packagedMediaSetter = route;
+            threadContext->bankEventRouted = true;
+            callCompleted = TryPlayExternalVoice(
+                placeholder, wwiseEvent, audioObjectId,
+                handleId, codec, &playingId );
+            route = threadContext->packagedMediaSetter;
+        }
+        __except ( EXCEPTION_EXECUTE_HANDLER ) {
+            callCompleted = false;
+            playingId = 0;
+        }
+        threadContext->packagedMediaSetter = previousSetter;
+        threadContext->bankEventRouted = previousBankEventRouted;
+        return callCompleted;
     }
 
     static void AddRule(
@@ -1094,6 +2410,8 @@ namespace {
             g_lipLanguageOverrideHits.store( 0, std::memory_order_release );
             g_durationLanguageOverrideHits.store(
                 0, std::memory_order_release );
+            g_packagedMediaDiagnosticLogs.store(
+                0, std::memory_order_release );
         }
 
         Log( std::string( hotReload
@@ -1109,6 +2427,14 @@ namespace {
                 ( hookHostAvailable ? "ready" : "unavailable" ) +
             " rules=" + std::to_string( ruleCount ) +
             " default=" + LanguageName( defaultLanguage ) );
+        if ( hotReload && g_packagedMediaSetterHookCreated ) {
+            const bool prewarmed = PrewarmPackagedMedia( );
+            const bool applied = prewarmed && g_setMedia && g_unsetMedia &&
+                ApplyNativeMediaRoutes( );
+            if ( !applied && !ClearNativeMediaRoutes( ) )
+                Log( "[voice-native] hot-reload cleanup failed; "
+                    "module unload is disabled for this process" );
+        }
     }
 
     static void PollConfigurationReload( ) {
@@ -1466,7 +2792,8 @@ namespace {
             " source=" + ( originalSource.empty( )
                 ? std::string( "<empty>" ) : originalSource ) +
             " submitted=" + ( submittedSource.empty( )
-                ? std::string( "<empty>" ) : submittedSource ) );
+                ? std::string( "<empty>" ) : submittedSource ) +
+            " sourcePosition=" + ReadSourcePosition( playingId ) );
         if ( hasPrevious && previous.playingId != playingId )
             Log( "[voice-life] audio-object-overlap audioObjectId=" +
                 std::to_string( audioObjectId ) +
@@ -1676,6 +3003,10 @@ namespace {
         const char * completionKind = ( callbackType & 1 ) == 0
             ? "non-terminal"
             : ( stoppedBeforeCallback ? "end-after-stop" : "natural-end" );
+        const std::uint32_t positionPlayingId = callbackPlayingId
+            ? callbackPlayingId
+            : ( internalPlayingId ? internalPlayingId
+                : realInternalPlayingId );
         Log( "[voice-life] callback channel=" + std::string(
                 channel ? channel : "unknown" ) +
             " type=" + std::to_string( callbackType ) +
@@ -1706,7 +3037,8 @@ namespace {
                     ? std::string( "<empty>" ) : trace.originalSource ) +
                 " submitted=" + ( trace.submittedSource.empty( )
                     ? std::string( "<empty>" ) : trace.submittedSource )
-                : std::string( ) ) );
+                : std::string( ) ) +
+            " sourcePosition=" + ReadSourcePosition( positionPlayingId ) );
     }
 
     static int __fastcall HookAkSoundEngineLoadFilePackage(
@@ -1745,6 +3077,57 @@ namespace {
             return 1;
         }
         return g_originalAkSoundEngineUnloadFilePackage( packageId, method );
+    }
+
+    static void __fastcall HookAkExternalSourceFileSetter(
+        void * self, void * managedFile, void * method ) {
+        ThreadRoutingContext * threadContext =
+            GetThreadRoutingContext( false );
+        PackagedMediaSetterContext * route = threadContext
+            ? &threadContext->packagedMediaSetter : nullptr;
+        if ( route && route->active ) {
+            route->setterObserved = true;
+            const bool eligible = g_akExternalSourceMemorySetter &&
+                g_akExternalSourceMemorySizeSetter && route->memory &&
+                route->memorySize != 0;
+            bool routed = false;
+            if ( eligible ) {
+                __try {
+                    g_akExternalSourceMemorySetter(
+                        self, reinterpret_cast< std::intptr_t >(
+                            route->memory ), nullptr );
+                    g_akExternalSourceMemorySizeSetter(
+                        self, route->memorySize, nullptr );
+                    routed = true;
+                }
+                __except ( EXCEPTION_EXECUTE_HANDLER ) {
+                    routed = false;
+                }
+            }
+            route->setterRouted = routed;
+            if ( PackagedMediaLogAllowed( ) ) {
+                char fileBuffer [ 384 ] = { 0 };
+                TryCopyManagedStringObject(
+                    managedFile, fileBuffer, sizeof( fileBuffer ) );
+                Log( "[voice-memory-v9] setter voiceId=" +
+                    std::string( route->voiceId [ 0 ]
+                        ? route->voiceId : "<empty>" ) +
+                    " eventId=" + std::to_string( route->eventId ) +
+                    " mediaId=" + std::to_string( route->mediaId ) +
+                    " expectedCodec=" +
+                        std::to_string( route->expectedCodec ) +
+                    " memory=" + std::to_string(
+                        reinterpret_cast< std::uintptr_t >( route->memory ) ) +
+                    " bytes=" + std::to_string( route->memorySize ) +
+                    " routed=" + ( routed ? "true" : "false" ) +
+                    " placeholder=" + ( fileBuffer [ 0 ]
+                        ? std::string( fileBuffer ) : "<unreadable>" ) );
+            }
+            if ( routed )
+                return;
+        }
+        g_originalAkExternalSourceFileSetter(
+            self, managedFile, method );
     }
 
     static bool EnsureLanguagePackageReady( int targetLanguage ) {
@@ -2904,17 +4287,131 @@ namespace {
             TryCopyManagedStringObject(
                 eventName, eventBuffer, sizeof( eventBuffer ) );
 
+        if ( matched && threadContext && NativeRouteEligible( request ) ) {
+            threadContext->bankEventRouted = false;
+            const std::uint32_t nativePlayingId =
+                g_originalVoicePlayerPlayEvent(
+                    eventName, audioObjectId, handleId, method );
+            threadContext->bankEventRouted = previousBankEventRouted;
+            if ( PackagedMediaLogAllowed( ) ) {
+                Log( "[voice-native] original Wwise container submitted voiceId=" +
+                    std::string( request.data [ 0 ]
+                        ? request.data : "<empty>" ) +
+                    " target=" + LanguageName( request.target ) +
+                    " playingId=" + std::to_string( nativePlayingId ) );
+            }
+            return nativePlayingId;
+        }
+
+        std::uint32_t packagedEventId = 0;
+        std::uint32_t packagedMediaId = 0;
+        std::uint32_t packagedCodec = 0;
+        std::string packagedFailure;
+        const bool packagedMapped = matched && ResolvePackagedMedia(
+            request, handleId, packagedEventId, packagedMediaId,
+            packagedCodec, packagedFailure );
+        const bool residentTableReady = packagedMapped;
+        ResidentWem resident { };
+        if ( residentTableReady ) {
+            AcquireSRWLockShared( &g_residentWemsLock );
+            const auto found = g_residentWems.find( packagedMediaId );
+            if ( found != g_residentWems.end( ) )
+                resident = found->second;
+            ReleaseSRWLockShared( &g_residentWemsLock );
+        }
+        const bool packagedMemoryReady = resident.memory && resident.size != 0;
+        if ( packagedMapped && !residentTableReady )
+            packagedFailure = "memory-route-not-ready";
+        else if ( packagedMapped && !g_packagedMediaSetterHookCreated )
+            packagedFailure = "memory-setter-hook-unavailable";
+        else if ( packagedMapped && !packagedMemoryReady )
+            packagedFailure = "resident-wem-unavailable";
+
+        void * managedWwiseEvent = request.wwiseEventObject;
+        if ( !managedWwiseEvent && request.event [ 0 ] )
+            managedWwiseEvent = CreateManagedString( request.event );
+
+        if ( packagedMapped && packagedMemoryReady &&
+            g_packagedMediaSetterHookCreated && managedWwiseEvent &&
+            g_voicePlayerPlayExternal && threadContext ) {
+            const std::string placeholder =
+                "efstartchange://packaged-media/" +
+                std::to_string( packagedMediaId ) + ".wem";
+            void * managedPlaceholder = CreateManagedString( placeholder );
+            if ( managedPlaceholder ) {
+                PackagedMediaSetterContext route;
+                route.active = true;
+                route.target = request.target;
+                route.eventId = packagedEventId;
+                route.mediaId = packagedMediaId;
+                route.expectedCodec = packagedCodec;
+                route.memory = resident.memory;
+                route.memorySize = resident.size;
+                std::snprintf(
+                    route.voiceId, sizeof( route.voiceId ), "%s",
+                    request.data [ 0 ] ? request.data : "<empty>" );
+                std::uint32_t packagedPlayingId = 0;
+                const bool callCompleted = TryPlayMemoryExternalVoice(
+                    route, managedPlaceholder, managedWwiseEvent,
+                    audioObjectId, handleId, packagedCodec,
+                    packagedPlayingId );
+                const PackagedMediaSetterContext result = route;
+
+                if ( PackagedMediaLogAllowed( ) ) {
+                    Log( "[voice-memory-v9] submit voiceId=" +
+                        std::string( request.data [ 0 ]
+                            ? request.data : "<empty>" ) +
+                        " eventId=" + std::to_string( packagedEventId ) +
+                        " mediaId=" + std::to_string( packagedMediaId ) +
+                        " callCompleted=" +
+                            ( callCompleted ? "true" : "false" ) +
+                        " setterObserved=" +
+                            ( result.setterObserved ? "true" : "false" ) +
+                        " setterRouted=" +
+                            ( result.setterRouted ? "true" : "false" ) +
+                        " bytes=" + std::to_string( result.memorySize ) +
+                        " playingId=" +
+                            std::to_string( packagedPlayingId ) );
+                }
+                if ( callCompleted && result.setterObserved &&
+                    result.setterRouted && packagedPlayingId != 0 ) {
+                    return packagedPlayingId;
+                }
+                packagedFailure = !callCompleted
+                    ? "memory-submit-exception-or-swap-failed"
+                    : ( !result.setterObserved
+                        ? "memory-setter-not-observed"
+                        : ( !result.setterRouted
+                            ? "memory-setter-not-routed"
+                            : "memory-submit-returned-zero" ) );
+            }
+            else {
+                packagedFailure = "placeholder-string-failed";
+            }
+        }
+        else if ( packagedMapped && !managedWwiseEvent ) {
+            packagedFailure = "managed-wwise-event-unavailable";
+        }
+
+        if ( matched && PackagedMediaLogAllowed( ) ) {
+            Log( "[voice-memory-v9] fallback-to-v6 voiceId=" +
+                std::string( request.data [ 0 ]
+                    ? request.data : "<empty>" ) +
+                " mapped=" + ( packagedMapped ? "true" : "false" ) +
+                " memoryReady=" +
+                    ( packagedMemoryReady ? "true" : "false" ) +
+                " reason=" + ( packagedFailure.empty( )
+                    ? "media-map-not-applicable" : packagedFailure ) );
+        }
+
         std::uint32_t bankEventId = 0;
         std::string cachedWem;
         std::string fallbackReason;
         const bool cacheResolved = matched && ResolveCachedBankWem(
             request, handleId, bankEventId, cachedWem, fallbackReason );
         void * managedWem = nullptr;
-        void * managedWwiseEvent = request.wwiseEventObject;
         if ( cacheResolved && g_voicePlayerPlayExternal ) {
             managedWem = CreateManagedString( cachedWem );
-            if ( !managedWwiseEvent && request.event [ 0 ] )
-                managedWwiseEvent = CreateManagedString( request.event );
             if ( !managedWem )
                 fallbackReason = "managed-source-string-failed";
             else if ( !managedWwiseEvent )
@@ -3668,7 +5165,8 @@ namespace {
             g_voiceUtilsTryGetDurationTarget,
             g_voiceManagerSpeakNarrativeTarget,
             g_akSoundEngineLoadFilePackageTarget,
-            g_akSoundEngineUnloadFilePackageTarget
+            g_akSoundEngineUnloadFilePackageTarget,
+            g_akExternalSourceFileSetterTarget
         };
         for ( void * target : targets ) {
             if ( !target )
@@ -3690,9 +5188,12 @@ namespace {
         g_channelStopHookCreated = false;
         g_voiceStopHookCreated = false;
         g_durationHookCreated = false;
+        g_packagedMediaSetterHookCreated = false;
     }
 
-    static void ResetVoiceHookPointers( ) {
+    static bool ResetVoiceHookPointers( ) {
+        if ( !ClearNativeMediaRoutes( ) )
+            return false;
         g_voiceManagerSpeakStringTarget = nullptr;
         g_voiceManagerSpeakTarget = nullptr;
         g_voiceSpeakChannelPlayVoiceTarget = nullptr;
@@ -3718,6 +5219,7 @@ namespace {
         g_voiceManagerSpeakNarrativeTarget = nullptr;
         g_akSoundEngineLoadFilePackageTarget = nullptr;
         g_akSoundEngineUnloadFilePackageTarget = nullptr;
+        g_akExternalSourceFileSetterTarget = nullptr;
         g_originalVoiceManagerSpeakString = nullptr;
         g_originalVoiceManagerSpeak = nullptr;
         g_originalVoiceSpeakChannelPlayVoice = nullptr;
@@ -3744,10 +5246,15 @@ namespace {
         g_tryLoadLanguagePck = nullptr;
         g_originalAkSoundEngineLoadFilePackage = nullptr;
         g_originalAkSoundEngineUnloadFilePackage = nullptr;
+        g_originalAkExternalSourceFileSetter = nullptr;
+        g_akExternalSourceMemorySetter = nullptr;
+        g_akExternalSourceMemorySizeSetter = nullptr;
         g_setLanguage = nullptr;
         g_getCurrentLanguage = nullptr;
         g_getLanguageName = nullptr;
         g_getWwiseCurrentLanguage = nullptr;
+        g_setMedia = nullptr;
+        g_unsetMedia = nullptr;
         g_tryGetRealPlayingId = nullptr;
         g_getSourcePlayPosition = nullptr;
         g_getCallbackPlayingId = nullptr;
@@ -3761,9 +5268,12 @@ namespace {
         g_auxiliaryPackageLoad.store( false, std::memory_order_release );
         g_auxiliaryPackageLanguage.store(
             FOLLOW_GLOBAL_LANGUAGE, std::memory_order_release );
+        g_packagedMediaSetterHookCreated = false;
+        g_nativeMediaRouteReady.store( false, std::memory_order_release );
         g_playVoiceHookBytesCaptured = false;
         g_healthReported.store( false, std::memory_order_release );
         g_healthRepairAttempted.store( false, std::memory_order_release );
+        return true;
     }
 
     static bool CreateVoiceHook(
@@ -3783,6 +5293,117 @@ namespace {
         Log( "[voice-lang] MH_EnableHook(" + std::string( name ) +
             ") failed: " + std::to_string( static_cast< int >( status ) ) );
         return false;
+    }
+
+    static bool InstallPackagedMediaSetterHook( uintptr_t base ) {
+        ( void ) base;
+        api::init( );
+        void * attachedThread = nullptr;
+        if ( api::thread_current && api::thread_attach && api::get_domain &&
+            !api::thread_current( ) )
+            attachedThread = api::thread_attach( api::get_domain( ) );
+        void * wwiseImage = FindImageByName( "AK.Wwise.Unity.API.dll" );
+        void * externalClass = wwiseImage && api::class_from_name
+            ? api::class_from_name(
+                wwiseImage, "", "AkExternalSourceInfo" ) : nullptr;
+        void * fileMethod = externalClass && api::class_get_method_from_name
+            ? api::class_get_method_from_name(
+                externalClass, "set_szFile", 1 ) : nullptr;
+        void * memoryMethod = externalClass && api::class_get_method_from_name
+            ? api::class_get_method_from_name(
+                externalClass, "set_pInMemory", 1 ) : nullptr;
+        void * sizeMethod = externalClass && api::class_get_method_from_name
+            ? api::class_get_method_from_name(
+                externalClass, "set_uiMemorySize", 1 ) : nullptr;
+        const char * source = "none";
+        g_akExternalSourceFileSetterTarget = ReadGameplayMethodEntry(
+            fileMethod, source );
+        void * memorySetter = ReadGameplayMethodEntry(
+            memoryMethod, source );
+        void * sizeSetter = ReadGameplayMethodEntry(
+            sizeMethod, source );
+        if ( !g_akExternalSourceFileSetterTarget || !memorySetter ||
+            !sizeSetter ) {
+            Log( "[voice-memory-v9] AkExternalSourceInfo setters unavailable file=" +
+                std::string( g_akExternalSourceFileSetterTarget
+                    ? "true" : "false" ) + " memory=" +
+                ( memorySetter ? "true" : "false" ) + " size=" +
+                ( sizeSetter ? "true" : "false" ) +
+                "; v6 fallback retained" );
+            g_akExternalSourceFileSetterTarget = nullptr;
+            if ( attachedThread && api::thread_detach )
+                api::thread_detach( attachedThread );
+            return false;
+        }
+
+        g_akExternalSourceMemorySetter =
+            reinterpret_cast< AkExternalSourceMemorySetterFn >(
+                memorySetter );
+        g_akExternalSourceMemorySizeSetter =
+            reinterpret_cast< AkExternalSourceMemorySizeSetterFn >(
+                sizeSetter );
+        if ( attachedThread && api::thread_detach )
+            api::thread_detach( attachedThread );
+        const bool created = CreateVoiceHook(
+            g_akExternalSourceFileSetterTarget,
+            reinterpret_cast< void * >( &HookAkExternalSourceFileSetter ),
+            reinterpret_cast< void ** >(
+                &g_originalAkExternalSourceFileSetter ),
+            "AkExternalSourceInfo.set_szFile" );
+        const bool enabled = created && EnableVoiceHook(
+            g_akExternalSourceFileSetterTarget,
+            "AkExternalSourceInfo.set_szFile" );
+        if ( !enabled ) {
+            if ( created ) {
+                MH_DisableHook( g_akExternalSourceFileSetterTarget );
+                MH_RemoveHook( g_akExternalSourceFileSetterTarget );
+            }
+            g_akExternalSourceFileSetterTarget = nullptr;
+            g_originalAkExternalSourceFileSetter = nullptr;
+            g_akExternalSourceMemorySetter = nullptr;
+            g_akExternalSourceMemorySizeSetter = nullptr;
+            Log( "[voice-memory-v9] setter hook unavailable; v6 fallback retained" );
+            return false;
+        }
+
+        g_packagedMediaSetterHookCreated = true;
+        Log( "[voice-memory-v9] in-memory setters active" );
+        return true;
+    }
+
+    static bool ResolveNativeMediaApi( ) {
+        api::init( );
+        void * attachedThread = nullptr;
+        if ( api::thread_current && api::thread_attach && api::get_domain &&
+            !api::thread_current( ) )
+            attachedThread = api::thread_attach( api::get_domain( ) );
+        void * wwiseImage = FindImageByName( "AK.Wwise.Unity.API.dll" );
+        void * pinvokeClass = wwiseImage && api::class_from_name
+            ? api::class_from_name(
+                wwiseImage, "", "AkSoundEnginePINVOKE" ) : nullptr;
+        void * setMethod = pinvokeClass && api::class_get_method_from_name
+            ? api::class_get_method_from_name(
+                pinvokeClass, "CSharp_SetMedia", 2 ) : nullptr;
+        void * unsetMethod = pinvokeClass && api::class_get_method_from_name
+            ? api::class_get_method_from_name(
+                pinvokeClass, "CSharp_UnsetMedia", 2 ) : nullptr;
+        const char * source = "none";
+        void * setEntry = ReadGameplayMethodEntry( setMethod, source );
+        void * unsetEntry = ReadGameplayMethodEntry( unsetMethod, source );
+        if ( attachedThread && api::thread_detach )
+            api::thread_detach( attachedThread );
+        if ( !setEntry || !unsetEntry ) {
+            g_setMedia = nullptr;
+            g_unsetMedia = nullptr;
+            Log( "[voice-native] AkSoundEngine SetMedia API unavailable; "
+                "v9 fallback retained" );
+            return false;
+        }
+        g_setMedia = reinterpret_cast< AkSoundEngineSetMediaFn >( setEntry );
+        g_unsetMedia = reinterpret_cast< AkSoundEngineUnsetMediaFn >(
+            unsetEntry );
+        Log( "[voice-native] SetMedia API resolved dynamically" );
+        return true;
     }
 
     static bool InstallBankEventDiagnosticHooks( uintptr_t base ) {
@@ -4069,7 +5690,7 @@ namespace {
             return false;
         }
         Log( "[voice-life] diagnostic profile="
-            "duration-routing-v6" );
+            "native-container-v10" );
 
         g_audioAdapterPostEventInternalTarget = reinterpret_cast< void * >(
             base + AUDIO_ADAPTER_POST_EVENT_INTERNAL_RVA );
@@ -4264,6 +5885,8 @@ namespace VoiceLanguageRouter {
             0, std::memory_order_release );
         g_durationLanguageOverrideHits.store(
             0, std::memory_order_release );
+        g_packagedMediaDiagnosticLogs.store(
+            0, std::memory_order_release );
         g_lifecycleLogs.store( 0, std::memory_order_release );
         AcquireSRWLockExclusive( &g_lifecycleLock );
         g_voicePlaybackTraces.clear( );
@@ -4286,6 +5909,11 @@ namespace VoiceLanguageRouter {
         g_auxiliaryPackageLoads.store( 0, std::memory_order_release );
         g_auxiliaryPackageUnloadsSuppressed.store(
             0, std::memory_order_release );
+        g_packagedMemoryReady.store( false, std::memory_order_release );
+        g_nativeMediaRouteReady.store( false, std::memory_order_release );
+        g_registeredNativeMedia.clear( );
+        g_uncertainNativeMediaSources.clear( );
+        g_nativeMediaUnloadSafe.store( true, std::memory_order_release );
 
         VoiceConfigurationSnapshot snapshot =
             ReadVoiceConfiguration( configPath );
@@ -4468,7 +6096,6 @@ namespace VoiceLanguageRouter {
         else {
             Log( "[voice-route] Wwise GetCurrentLanguage diagnostic active" );
         }
-
         Log( std::string( "[voice-route] per-character source replacement=" ) +
             ( g_il2cppStringNew ? "available" : "unavailable" ) );
 
@@ -4595,6 +6222,13 @@ namespace VoiceLanguageRouter {
             InstallDurationRoutingHook( base );
         const bool lifecycleDiagnosticsReady =
             InstallLifecycleDiagnosticHooks( base );
+        const bool packagedMediaSetterReady =
+            InstallPackagedMediaSetterHook( base );
+        const bool nativeMediaApiReady = ResolveNativeMediaApi( );
+        const bool packagedMediaPrewarmReady = packagedMediaSetterReady &&
+            PrewarmPackagedMedia( );
+        const bool nativeMediaReady = packagedMediaPrewarmReady &&
+            nativeMediaApiReady && ApplyNativeMediaRoutes( );
 
         bool narrativeReady = false;
         if ( g_voiceManagerSpeakNarrativeTarget ) {
@@ -4634,7 +6268,13 @@ namespace VoiceLanguageRouter {
             " lifecycle=" + ( lifecycleDiagnosticsReady
                 ? "active"
                 : ( g_diagnosticsEnabled.load( std::memory_order_acquire )
-                    ? "unavailable" : "disabled" ) ) );
+                    ? "unavailable" : "disabled" ) ) +
+            " memoryRoute=" + ( packagedMediaPrewarmReady
+                ? "active"
+                : ( g_diagnosticsEnabled.load( std::memory_order_acquire )
+                    ? "unavailable" : "disabled" ) ) +
+            " nativeContainer=" + ( nativeMediaReady
+                ? "active" : "v9-fallback" ) );
         Log( "[voice-route] per-character source replacement and auxiliary language-package mounting are active" );
         if ( g_playVoiceHookBytesCaptured ) {
             Log( "[voice-diag] VoicePlayer.PlayVoice patched entry=" +
@@ -4692,12 +6332,17 @@ namespace VoiceLanguageRouter {
         }
     }
 
-    void Shutdown( ) {
+    bool Shutdown( ) {
         g_shuttingDown.store( true, std::memory_order_release );
         g_enabled.store( false, std::memory_order_release );
         RemoveLipSyncHooks( );
         RemoveVoiceHooks( );
-        ResetVoiceHookPointers( );
+        if ( !ResetVoiceHookPointers( ) ||
+            !g_nativeMediaUnloadSafe.load( std::memory_order_acquire ) ) {
+            Log( "[voice-native] shutdown refused: Wwise Media overrides "
+                "could not be released safely" );
+            return false;
+        }
         if ( g_ownsMinHook ) {
             MH_Uninitialize( );
             g_ownsMinHook = false;
@@ -4724,6 +6369,8 @@ namespace VoiceLanguageRouter {
         g_internalPlayVoiceHits.store( 0, std::memory_order_release );
         g_narrativeHits.store( 0, std::memory_order_release );
         g_identityFailures.store( 0, std::memory_order_release );
+        g_packagedMediaDiagnosticLogs.store(
+            0, std::memory_order_release );
         g_lifecycleLogs.store( 0, std::memory_order_release );
         AcquireSRWLockExclusive( &g_lifecycleLock );
         g_voicePlaybackTraces.clear( );
@@ -4741,6 +6388,7 @@ namespace VoiceLanguageRouter {
         g_auxiliaryPackageLoads.store( 0, std::memory_order_release );
         g_auxiliaryPackageUnloadsSuppressed.store(
             0, std::memory_order_release );
+        return true;
     }
 
 } // namespace VoiceLanguageRouter

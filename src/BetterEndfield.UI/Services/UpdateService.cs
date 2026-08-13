@@ -13,7 +13,7 @@ internal sealed record UpdateCheckResult(
 
 internal static partial class UpdateService
 {
-    public const string RepositoryUrl = "https://github.com/Dr-hydra/EF-Start-Change";
+    public const string RepositoryUrl = "https://github.com/Dr-hydra/Better-Endfield";
     public const string ReleasesUrl = RepositoryUrl + "/releases";
 
     private static readonly HttpClient Client = CreateClient();
@@ -27,7 +27,7 @@ internal static partial class UpdateService
     public static async Task<UpdateCheckResult> CheckAsync(CancellationToken cancellationToken)
     {
         using HttpResponseMessage response = await Client.GetAsync(
-            "https://api.github.com/repos/Dr-hydra/EF-Start-Change/releases/latest",
+            "https://api.github.com/repos/Dr-hydra/Better-Endfield/releases/latest",
             cancellationToken);
         if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
@@ -64,7 +64,7 @@ internal static partial class UpdateService
             Timeout = TimeSpan.FromSeconds(12)
         };
         client.DefaultRequestHeaders.UserAgent.ParseAdd(
-            $"EFStartChange/{CurrentVersion}");
+            $"BetterEndfield/{CurrentVersion}");
         client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
         return client;
     }

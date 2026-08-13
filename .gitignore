@@ -20,8 +20,14 @@ tools/MetadataScan/
 
 # Keep only the scripts needed to build the distributable mod.
 scripts/*
-!scripts/BuildEFStartChange.ps1
+!scripts/BuildBetterEndfield.ps1
 !scripts/BuildInstaller.ps1
+!scripts/GenerateModCharacterPresets.py
+!scripts/GenerateResourceManifests.py
+!scripts/CompileVoiceRuntimeMap.py
+!scripts/RefreshEndfieldResourceInputs.py
+!scripts/ScanCharacterAssets.py
+!scripts/UpdateResourceManifests.ps1
 
 # Native build outputs and upstream sample dumps.
 tools/IL2CPP-Dumper-src/x64/
@@ -32,6 +38,7 @@ tools/IL2CPP-Dumper-src/third_party/minhook/build/
 
 vendor/bepinex6/
 vendor/tools/
+vendor/wwiser/
 vendor/unity-libs-2021.3.34/
 *.user
 *.suo

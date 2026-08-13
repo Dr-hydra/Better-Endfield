@@ -1,5 +1,14 @@
 # 更新日志
 
+## 未发布
+
+- 项目对外名称由 EF Start Change 更改为 Better Endfield。
+- 主程序、安装器、开始菜单和桌面快捷方式改用 `BetterEndfield` 名称。
+- 保留 `EFStartChange.ini`、`[EFStartChange]` 和旧界面设置目录的兼容读取，旧安装可直接升级。
+- 新增游戏内接口参考，记录固定 RVA、动态 IL2CPP/Wwise/口型接口、资源映射约束与版本更新验证流程。
+- 短语音优先复用游戏原生 Wwise Random/Sequence Container；595 条事件保留原权重、随机模式和 Avoid Repeat，仅通过 `SetMedia` 替换最终 Sound 的语言媒体。
+- 新增 1,606 个跨语言 Sound 叶子槽位的紧凑运行时映射，并保留 342 条事件的 v9 外部媒体降级。
+
 ## 1.1.0
 
 - 新增外部 Mod 加载器设置，可配置程序、命令行参数和 0～30 秒启动等待时间。

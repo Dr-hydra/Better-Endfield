@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "aliases": [
+    {
+      "voiceId": "chr_0035_liino_combat_attack01_sv",
+      "expectedEventId": 3578147016,
+      "characterId": "chr_0035_liino",
+      "speakerChannel": "chr_0035_liino",
+      "codec": 4,
+      "voType": 2,
+      "runtimeVerified": true,
+      "evidence": "voice-memory-v8c-20260813"
+    },
+    {
+      "voiceId": "chr_0035_liino_combat_attack02_sv",
+      "expectedEventId": 585141825,
+      "characterId": "chr_0035_liino",
+      "speakerChannel": "chr_0035_liino",
+      "codec": 4,
+      "voType": 2,
+      "runtimeVerified": true,
+      "evidence": "voice-memory-v8c-20260813"
+    },
+    {
+      "voiceId": "chr_0035_liino_combat_attack03_sv",
+      "expectedEventId": 2790798794,
+      "characterId": "chr_0035_liino",
+      "speakerChannel": "chr_0035_liino",
+      "codec": 4,
+      "voType": 2,
+      "runtimeVerified": true,
+      "evidence": "voice-memory-v8c-20260813"
+    },
+    {
+      "voiceId": "chr_0035_liino_combat_attack04_sv",
+      "expectedEventId": 2245054067,
+      "characterId": "chr_0035_liino",
+      "speakerChannel": "chr_0035_liino",
+      "codec": 4,
+      "voType": 2,
+      "runtimeVerified": true,
+      "evidence": "voice-memory-v8c-20260813"
+    },
+    {
+      "voiceId": "chr_0035_liino_combat_attack_last_sv",
+      "expectedEventId": 1595193268,
+      "characterId": "chr_0035_liino",
+      "speakerChannel": "chr_0035_liino",
+      "codec": 4,
+      "voType": 2,
+      "runtimeVerified": true,
+      "evidence": "voice-memory-v8c-20260813"
+    }
+  ]
+}

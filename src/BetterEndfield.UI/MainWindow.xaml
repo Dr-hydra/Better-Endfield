@@ -63,7 +63,7 @@
                         <Image Source="Assets/gilberta.png" Stretch="UniformToFill" />
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
-                        <TextBlock FontSize="16" FontWeight="SemiBold" Text="EF Start Change" />
+                        <TextBlock FontSize="16" FontWeight="SemiBold" Text="Better Endfield" />
                         <TextBlock
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                             FontSize="11"
@@ -570,7 +570,7 @@
                                         <ToggleSwitch
                                             x:Name="ExternalLoaderToggle"
                                             Header="启动第三方 Mod 加载器"
-                                            OffContent="直接启动 EF 注入器"
+                                            OffContent="直接启动内置注入器"
                                             OnContent="先启动外部加载器" />
                                         <ContentControl
                                             HorizontalContentAlignment="Stretch"
@@ -639,7 +639,7 @@
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <StackPanel Spacing="3">
-                                                <TextBlock FontWeight="SemiBold" Text="EF Start Change" />
+                                                <TextBlock FontWeight="SemiBold" Text="Better Endfield" />
                                                 <TextBlock
                                                     Style="{StaticResource FieldHintStyle}"
                                                     Text="在桌面创建本控制器的启动入口。" />
@@ -699,7 +699,7 @@
                                         <Image Source="Assets/gilberta.png" Stretch="UniformToFill" />
                                     </Border>
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="6">
-                                        <TextBlock Style="{StaticResource PageTitleStyle}" Text="EF Start Change" />
+                                        <TextBlock Style="{StaticResource PageTitleStyle}" Text="Better Endfield" />
                                         <TextBlock
                                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                             Text="终末地登录场景模型与角色配音控制器" />

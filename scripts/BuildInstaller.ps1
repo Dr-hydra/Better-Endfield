@@ -11,7 +11,7 @@ $repoRoot = [System.IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
 $artifactsRoot = Join-Path $repoRoot "artifacts"
 $stagingDir = Join-Path $artifactsRoot ".installer-staging"
 $outputDir = Join-Path $artifactsRoot "installer"
-$installerScript = Join-Path $repoRoot "installer\EFStartChange.iss"
+$installerScript = Join-Path $repoRoot "installer\BetterEndfield.iss"
 
 function Assert-WorkspaceChildPath {
     param([Parameter(Mandatory)][string]$Path)
@@ -52,7 +52,7 @@ $stagingDir = Reset-Directory $stagingDir
 $outputDir = Reset-Directory $outputDir
 
 try {
-    & (Join-Path $PSScriptRoot "BuildEFStartChange.ps1") `
+    & (Join-Path $PSScriptRoot "BuildBetterEndfield.ps1") `
         -Configuration $Configuration `
         -PublishDir $stagingDir
     if ($LASTEXITCODE -ne 0) {

@@ -17,18 +17,26 @@ internal static class ConfigurationService
 
     public static string SettingsDirectory { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "EFStartChange");
+        "BetterEndfield");
 
     public static string SettingsPath { get; } =
         Path.Combine(SettingsDirectory, "ui-settings.json");
+
+    private static string LegacySettingsPath { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "EFStartChange",
+        "ui-settings.json");
 
     public static async Task<AppSettings> LoadAppSettingsAsync()
     {
         try
         {
-            if (File.Exists(SettingsPath))
+            string sourcePath = File.Exists(SettingsPath)
+                ? SettingsPath
+                : LegacySettingsPath;
+            if (File.Exists(sourcePath))
             {
-                await using FileStream stream = File.OpenRead(SettingsPath);
+                await using FileStream stream = File.OpenRead(sourcePath);
                 AppSettings? settings = await JsonSerializer.DeserializeAsync<AppSettings>(
                     stream,
                     JsonOptions);

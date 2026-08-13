@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="src/EFStartChange.UI/Assets/gilberta.png" width="128" alt="EF Start Change Logo">
+  <img src="src/BetterEndfield.UI/Assets/gilberta.png" width="128" alt="Better Endfield Logo">
 </p>
 
-<h1 align="center">EF Start Change</h1>
+<h1 align="center">Better Endfield</h1>
 
 <p align="center">《明日方舟：终末地》登录场景角色、动画与角色配音控制器</p>
 
@@ -17,9 +17,10 @@
 - 支持原生循环、强制循环及双 Playable 交叉淡化循环。
 - 内置 4,058 个已索引动画片段，可按角色选择最终动作并显示运行时动画时长。
 - 32 个角色的独立配音语言路由，支持战斗、探索、剧情语音及对应剧情口型，可选择中文、英语、日语、韩语或跟随全局设置。
+- 短语音优先保留游戏原生 Wwise Random/Sequence Container、权重与 Avoid Repeat，仅替换最终 Sound 的语言媒体。
 - Windows 11 风格 WinUI 3 控制界面，支持浅色、深色和跟随系统主题。
 - 支持保存配置、查看日志、启动注入器、检查更新和创建桌面快捷方式。
-- 支持在 EF 注入前启动 3DMigoto、XXMI 等外部 Mod 加载器，并提供冲突降级日志。
+- 支持在内置注入器前启动 3DMigoto、XXMI 等外部 Mod 加载器，并提供冲突降级日志。
 - 首次启动显示风险说明与免责声明。
 
 ## 兼容性
@@ -35,16 +36,16 @@
 
 ## 下载与安装
 
-1. 打开 [Releases](https://github.com/Dr-hydra/EF-Start-Change/releases/latest)。
-2. 下载 `EFStartChange-1.1.0-Setup.exe`。
-3. 运行安装器并阅读风险说明与 GNU AGPL v3.0 许可。默认安装到 `%LocalAppData%\Programs\EF Start Change`，安装器本身不要求管理员权限。
-4. 启动 `EF Start Change`。首次运行时需确认应用内免责声明。
+1. 打开 [Releases](https://github.com/Dr-hydra/Better-Endfield/releases/latest)。
+2. 下载 `BetterEndfield-<版本>-Setup.exe`。
+3. 运行安装器并阅读风险说明与 GNU AGPL v3.0 许可。默认安装到 `%LocalAppData%\Programs\Better Endfield`，安装器本身不要求管理员权限。
+4. 启动 `Better Endfield`。首次运行时需确认应用内免责声明。
 
 安装器目前没有代码签名，Windows SmartScreen 可能显示未知发布者警告。请只从本仓库的 Releases 页面下载安装包，并在需要时核对发布页提供的 SHA-256。
 
 发布版只安装两个程序文件：
 
-- `EFStartChange.exe`：包含 .NET 及 WinUI 运行时的自包含单文件控制器。
+- `BetterEndfield.exe`：包含 .NET 及 WinUI 运行时的自包含单文件控制器。
 - `Il2cppDumper.exe`：独立的原生启动器和手动映射器。
 
 WinUI 原生运行时会在应用启动时由 .NET 单文件机制解压到当前用户的运行时缓存目录。启动注入器时可能出现 UAC 提权提示。
@@ -90,15 +91,15 @@ voice_language_rules=aglina:Japanese,chen:Chinese,*:FollowGlobal
 
 - Mod 配置：`Il2cppDumper.exe` 所在目录下的 `EFStartChange.ini`。
 - 注入日志：同目录下的 `IL2CPPDump_Log.txt`。
-- 界面设置：`%LocalAppData%\EFStartChange\ui-settings.json`。
+- 界面设置：`%LocalAppData%\BetterEndfield\ui-settings.json`。首次运行会自动读取旧 `%LocalAppData%\EFStartChange\ui-settings.json`。
 
 界面提供“打开目录”和“查看日志”按钮。配音总开关、剧情语音与口型开关及角色语言规则支持热更新；模型和动画参数仍在下一次启动并注入时读取。
 
 ## 与其他 Mod 加载器共存
 
-在“设置 → 外部加载器”中启用第三方加载器后，可填写其程序路径、原始命令行参数和等待时间。EF Start Change 会先启动外部加载器，等待其进入监听状态，再由 EF 注入器创建并注入 `Endfield.exe`。
+在“设置 → 外部加载器”中启用第三方加载器后，可填写其程序路径、原始命令行参数和等待时间。Better Endfield 会先启动外部加载器，等待其进入监听状态，再由内置注入器创建并注入 `Endfield.exe`。
 
-外部加载器必须关闭“自动启动游戏”功能。如果等待期间检测到 `Endfield.exe` 已经运行，EF 会停止后续启动并保留现有进程，不会尝试附加或重复注入。对于 JASM/3DMigoto，应只让 JASM 启动 3DMigoto Loader，再由 EF Start Change 启动游戏。
+外部加载器必须关闭“自动启动游戏”功能。如果等待期间检测到 `Endfield.exe` 已经运行，Better Endfield 会停止后续启动并保留现有进程，不会尝试附加或重复注入。对于 JASM/3DMigoto，应只让 JASM 启动 3DMigoto Loader，再由 Better Endfield 启动游戏。
 
 正式版不再轮询 `F6`、`F9`、`F10`，因此 3DMigoto/JASM 可以继续使用 `F10` 刷新。原生 Hook 按功能组降级：模型和配音互不撤销；模型深层 Bundle 诊断失败不影响核心替换；剧情或口型 Hook 不可用时，基础战斗与探索配音仍会保留。未知的同地址 Hook 不会被自动串联，相关功能组会安全停用并写入 `[compat]` 日志。
 
@@ -114,10 +115,10 @@ voice_language_rules=aglina:Japanese,chen:Chinese,*:FollowGlobal
 构建原生注入器和自包含 WinUI 单文件应用：
 
 ```powershell
-pwsh -File .\scripts\BuildEFStartChange.ps1
+pwsh -File .\scripts\BuildBetterEndfield.ps1
 ```
 
-输出目录为 `artifacts\EFStartChange-win-x64`。
+输出目录为 `artifacts\BetterEndfield-win-x64`。
 
 构建中文安装器：
 
@@ -129,12 +130,13 @@ pwsh -File .\scripts\BuildInstaller.ps1 -Version 1.1.0
 
 ## 项目结构
 
-- `src/EFStartChange.UI`：WinUI 3 控制器、中文角色名称和动画预设。
+- `src/BetterEndfield.UI`：WinUI 3 控制器、中文角色名称和动画预设。
 - `tools/IL2CPP-Dumper-src/Dump`：注入运行时、模型动画替换和配音路由 Hook。
 - `tools/IL2CPP-Dumper-src/Mapper`：自提权启动器和手动映射器。
 - `tools/IL2CPP-Dumper-src/third_party/minhook`：MinHook 依赖及其许可证。
 - `installer`：中文 Inno Setup 安装器定义与风险说明。
 - `scripts`：应用和安装器构建脚本。
+- [游戏内接口参考](docs/GAME_INTERFACES.md)：固定 RVA、动态 IL2CPP/Wwise 接口、资源映射、版本兼容和降级策略。
 
 ## 开源许可
 
@@ -147,7 +149,7 @@ pwsh -File .\scripts\BuildInstaller.ps1 -Version 1.1.0
 - B站主页：[space.bilibili.com/441133155](https://space.bilibili.com/441133155)
 - 小黑盒主页：[用户主页 38080236](https://www.xiaoheihe.cn/app/user/profile/38080236)
 - QQ群：`851586605`
-- 问题反馈：[GitHub Issues](https://github.com/Dr-hydra/EF-Start-Change/issues)
+- 问题反馈：[GitHub Issues](https://github.com/Dr-hydra/Better-Endfield/issues)
 
 ## 风险说明
 

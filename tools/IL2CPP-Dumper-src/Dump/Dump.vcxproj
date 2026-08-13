@@ -20,6 +20,7 @@
     <ClInclude Include="include\scene_dumper.hxx" />
     <ClInclude Include="include\utils.hxx" />
     <ClInclude Include="include\voice_language_router.hxx" />
+    <ClInclude Include="include\generated\voice_runtime_map.generated.hxx" />
     <ClInclude Include="..\third_party\minhook\include\MinHook.h" />
   </ItemGroup>
   <ItemGroup>

@@ -9,15 +9,26 @@ param(
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $nativeRoot = Join-Path $repoRoot "tools\IL2CPP-Dumper-src"
-$uiProject = Join-Path $repoRoot "src\EFStartChange.UI\EFStartChange.UI.csproj"
+$uiProject = Join-Path $repoRoot "src\BetterEndfield.UI\BetterEndfield.UI.csproj"
 $publishDir = if ([string]::IsNullOrWhiteSpace($PublishDir)) {
-    Join-Path $repoRoot "artifacts\EFStartChange-win-x64"
+    Join-Path $repoRoot "artifacts\BetterEndfield-win-x64"
 }
 else {
     [System.IO.Path]::GetFullPath($PublishDir)
 }
 $vswhere = Join-Path ${env:ProgramFiles(x86)} `
     "Microsoft Visual Studio\Installer\vswhere.exe"
+$runtimeMapCompiler = Join-Path $repoRoot "scripts\CompileVoiceRuntimeMap.py"
+$runtimeMapManifest = Join-Path $repoRoot "manifests\voice-event-media-manifest.json"
+
+if (-not (Test-Path -LiteralPath $runtimeMapManifest)) {
+    throw "Voice manifest was not found. Run scripts\UpdateResourceManifests.ps1 first."
+}
+
+& py -3 $runtimeMapCompiler --input $runtimeMapManifest
+if ($LASTEXITCODE -ne 0) {
+    throw "Voice runtime map compilation failed with exit code $LASTEXITCODE."
+}
 
 if (-not (Test-Path -LiteralPath $vswhere)) {
     throw "vswhere.exe was not found. Install Visual Studio 2022 Build Tools with C++."
@@ -49,4 +60,4 @@ Copy-Item -LiteralPath $mapperPath -Destination $publishDir -Force
 
 Write-Host ""
 Write-Host "Build complete: $publishDir"
-Write-Host "Run EFStartChange.exe, select Endfield.exe, then save and launch."
+Write-Host "Run BetterEndfield.exe, select Endfield.exe, then save and launch."

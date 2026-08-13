@@ -3,7 +3,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-    <AssemblyName>EFStartChange</AssemblyName>
+    <AssemblyName>BetterEndfield</AssemblyName>
     <RootNamespace>EFStartChange.UI</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\gilberta.ico</ApplicationIcon>
