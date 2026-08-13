@@ -21,7 +21,7 @@ internal static partial class UpdateService
     public static string CurrentVersion =>
         (Assembly.GetExecutingAssembly()
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-            .InformationalVersion ?? "1.1.0")
+            .InformationalVersion ?? "1.1.1")
         .Split('+')[0];
 
     public static async Task<UpdateCheckResult> CheckAsync(CancellationToken cancellationToken)

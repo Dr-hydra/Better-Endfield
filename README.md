@@ -123,7 +123,7 @@ pwsh -File .\scripts\BuildBetterEndfield.ps1
 构建中文安装器：
 
 ```powershell
-pwsh -File .\scripts\BuildInstaller.ps1 -Version 1.1.0
+pwsh -File .\scripts\BuildInstaller.ps1 -Version 1.1.1
 ```
 
 安装器输出到 `artifacts\installer`。构建过程使用独立临时发布目录，完成后会自动清理。

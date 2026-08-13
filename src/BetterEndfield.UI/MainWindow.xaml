@@ -707,7 +707,7 @@
                                             x:Name="CurrentVersionTextBlock"
                                             Margin="0,2,0,0"
                                             FontFamily="Consolas"
-                                            Text="版本 1.1.0" />
+                                            Text="版本 1.1.1" />
                                     </StackPanel>
                                 </Grid>
 

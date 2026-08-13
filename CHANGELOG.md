@@ -1,6 +1,6 @@
 # 更新日志
 
-## 未发布
+## 1.1.1
 
 - 项目对外名称由 EF Start Change 更改为 Better Endfield。
 - 主程序、安装器、开始菜单和桌面快捷方式改用 `BetterEndfield` 名称。
@@ -8,6 +8,14 @@
 - 新增游戏内接口参考，记录固定 RVA、动态 IL2CPP/Wwise/口型接口、资源映射约束与版本更新验证流程。
 - 短语音优先复用游戏原生 Wwise Random/Sequence Container；595 条事件保留原权重、随机模式和 Avoid Repeat，仅通过 `SetMedia` 替换最终 Sound 的语言媒体。
 - 新增 1,606 个跨语言 Sound 叶子槽位的紧凑运行时映射，并保留 342 条事件的 v9 外部媒体降级。
+
+安装器 SHA-256：
+
+```text
+23A08607F5F38D6D303B5C3BCA949B96BABFB4FDEF44A1B26D43865C862BFBFE
+```
+
+> 安装器暂未进行代码签名，Windows SmartScreen 可能显示未知发布者警告。
 
 ## 1.1.0
 
