@@ -54,7 +54,7 @@ internal static class ShortcutService
 
     private static string GetDesktopDirectory()
     {
-        string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+        string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
         if (string.IsNullOrWhiteSpace(desktop))
         {
             throw new DirectoryNotFoundException("无法定位当前用户的桌面目录。");

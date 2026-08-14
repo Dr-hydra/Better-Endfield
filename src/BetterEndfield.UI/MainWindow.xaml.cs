@@ -468,21 +468,27 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private async void CreateGameShortcutButton_Click(object sender, RoutedEventArgs e)
+    private void CreateGameShortcutButton_Click(object sender, RoutedEventArgs e)
     {
-        if (!await SaveAsync(showSuccess: false))
+        string mapperPath = MapperPathBox.Text.Trim();
+        string gamePath = GamePathBox.Text.Trim();
+        if (!File.Exists(mapperPath))
         {
+            ShowStatus("注入器路径无效", "请选择有效的 Il2cppDumper.exe。", InfoBarSeverity.Error);
+            return;
+        }
+        if (!File.Exists(gamePath))
+        {
+            ShowStatus("游戏路径无效", "请选择有效的 Endfield.exe。", InfoBarSeverity.Error);
             return;
         }
 
         try
         {
-            string shortcutPath = ShortcutService.CreateGameShortcut(
-                MapperPathBox.Text,
-                GamePathBox.Text);
+            string shortcutPath = ShortcutService.CreateGameShortcut(mapperPath, gamePath);
             ShowStatus(
                 "一键启动快捷方式已创建",
-                $"已保存当前配置并创建：{shortcutPath}",
+                $"已创建：{shortcutPath}",
                 InfoBarSeverity.Success);
         }
         catch (Exception exception) when (
