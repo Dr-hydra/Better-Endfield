@@ -82,7 +82,7 @@ static bool LaunchAndInject( const std::string & exePath, const std::vector<BYTE
     strcpy_s( workDir, exePath.c_str( ) );
     PathRemoveFileSpecA( workDir );
 
-    std::string cmdLine = "\"" + exePath + "\"";
+    std::string cmdLine = "\"" + exePath + "\" -force-d3d11";
 
     PROCESS_INFORMATION pi = { 0 };
     STARTUPINFOA        si = { sizeof( STARTUPINFOA ) };
