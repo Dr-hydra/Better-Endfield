@@ -1,5 +1,5 @@
 <Window
-    x:Class="EFStartChange.UI.MainWindow"
+    x:Class="BetterEndfield.UI.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
@@ -495,13 +495,40 @@
                                     <TextBlock Style="{StaticResource PageTitleStyle}" Text="设置" />
                                     <TextBlock
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Text="管理运行路径、外部加载器、外观和桌面入口。"
+                                        Text="管理运行路径、加载方式、启动参数、外观和桌面入口。"
                                         TextWrapping="Wrap" />
                                 </StackPanel>
 
                                 <Border Style="{StaticResource SectionStyle}">
                                     <StackPanel Spacing="16">
-                                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="游戏与注入器" />
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Spacing="3">
+                                                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="运行路径" />
+                                                <TextBlock
+                                                    Style="{StaticResource FieldHintStyle}"
+                                                    Text="首次启动会自动扫描；移动游戏或软件后可重新扫描。" />
+                                            </StackPanel>
+                                            <Button
+                                                x:Name="ScanPathsButton"
+                                                Grid.Column="1"
+                                                VerticalAlignment="Center"
+                                                Click="ScanPathsButton_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <ProgressRing
+                                                        x:Name="PathScanProgressRing"
+                                                        Width="16"
+                                                        Height="16"
+                                                        IsActive="False"
+                                                        Visibility="Collapsed" />
+                                                    <SymbolIcon Symbol="Find" />
+                                                    <TextBlock Text="重新扫描" />
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
                                         <Grid ColumnSpacing="8">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -510,7 +537,8 @@
                                             <TextBox
                                                 x:Name="GamePathBox"
                                                 Header="游戏程序"
-                                                PlaceholderText="Endfield.exe" />
+                                                PlaceholderText="Endfield.exe"
+                                                TextChanged="GamePathBox_TextChanged" />
                                             <Button
                                                 Grid.Column="1"
                                                 Margin="0,24,0,0"
@@ -520,25 +548,45 @@
                                                 <SymbolIcon Symbol="OpenFile" />
                                             </Button>
                                         </Grid>
+                                        <TextBlock
+                                            x:Name="GamePathStatusTextBlock"
+                                            FontSize="12"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Text="等待扫描游戏路径。" />
+                                        <TextBox
+                                            x:Name="GameLaunchArgumentsBox"
+                                            Header="游戏启动参数（可选）"
+                                            MaxLength="2048"
+                                            PlaceholderText="例如：-force-d3d11"
+                                            TextWrapping="NoWrap" />
+                                        <TextBlock
+                                            Style="{StaticResource FieldHintStyle}"
+                                            Text="参数将原样传给 Endfield.exe；-force-d3d11 会使用 Direct3D 11 启动。"
+                                            TextWrapping="Wrap" />
                                         <Grid ColumnSpacing="8">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <TextBox
-                                                x:Name="MapperPathBox"
+                                                x:Name="InjectorPathBox"
                                                 Header="注入器"
-                                                PlaceholderText="Il2cppDumper.exe"
-                                                TextChanged="MapperPathBox_TextChanged" />
+                                                PlaceholderText="BetterEndfield.Injector.exe"
+                                                TextChanged="InjectorPathBox_TextChanged" />
                                             <Button
                                                 Grid.Column="1"
                                                 Margin="0,24,0,0"
-                                                Click="BrowseMapperButton_Click"
+                                                Click="BrowseInjectorButton_Click"
                                                 Style="{StaticResource PathButtonStyle}"
                                                 ToolTipService.ToolTip="浏览注入器">
                                                 <SymbolIcon Symbol="OpenFile" />
                                             </Button>
                                         </Grid>
+                                        <TextBlock
+                                            x:Name="InjectorPathStatusTextBlock"
+                                            FontSize="12"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Text="等待扫描注入器路径。" />
                                         <StackPanel Spacing="3">
                                             <TextBlock Style="{StaticResource FieldHintStyle}" Text="当前配置文件" />
                                             <TextBlock
@@ -566,51 +614,74 @@
 
                                 <Border Style="{StaticResource SectionStyle}">
                                     <StackPanel Spacing="16">
-                                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="外部加载器" />
-                                        <ToggleSwitch
-                                            x:Name="ExternalLoaderToggle"
-                                            Header="启动第三方 Mod 加载器"
-                                            OffContent="直接启动内置注入器"
-                                            OnContent="先启动外部加载器" />
-                                        <ContentControl
-                                            HorizontalContentAlignment="Stretch"
-                                            IsEnabled="{Binding IsOn, ElementName=ExternalLoaderToggle}"
-                                            IsTabStop="False">
-                                            <StackPanel Spacing="14">
-                                                <Grid ColumnSpacing="8">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBox
-                                                    x:Name="ExternalLoaderPathBox"
-                                                    Header="加载器程序（需关闭其自动启动游戏功能）"
-                                                    PlaceholderText="3DMigoto Loader.exe / XXMI Launcher.exe" />
+                                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="加载方式" />
+                                        <Grid ColumnSpacing="18">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <RadioButton
+                                                x:Name="InjectorModeRadioButton"
+                                                GroupName="LoaderMode"
+                                                IsChecked="True"
+                                                Checked="LoaderModeRadioButton_Checked">
+                                                <StackPanel Spacing="3">
+                                                    <TextBlock FontWeight="SemiBold" Text="内置注入器" />
+                                                    <TextBlock Style="{StaticResource FieldHintStyle}" Text="不写入游戏目录" />
+                                                </StackPanel>
+                                            </RadioButton>
+                                            <RadioButton
+                                                x:Name="XInputModeRadioButton"
+                                                Grid.Column="1"
+                                                GroupName="LoaderMode"
+                                                Checked="LoaderModeRadioButton_Checked">
+                                                <StackPanel Spacing="3">
+                                                    <TextBlock FontWeight="SemiBold" Text="XInput 自启动" />
+                                                    <TextBlock Style="{StaticResource FieldHintStyle}" Text="随游戏自动加载" />
+                                                </StackPanel>
+                                            </RadioButton>
+                                        </Grid>
+                                        <TextBlock
+                                            x:Name="LoaderModeDescriptionTextBlock"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Text="由 Better Endfield 启动游戏并在启动阶段加载 Host，游戏目录保持不变。"
+                                            TextWrapping="Wrap" />
+                                        <StackPanel
+                                            x:Name="XInputManagementPanel"
+                                            Spacing="12"
+                                            Visibility="Collapsed">
+                                            <InfoBar
+                                                IsClosable="False"
+                                                IsOpen="True"
+                                                Message="需要兼容其他加载器，或希望通过官方启动器、桌面快捷方式自启动时使用。安装会向 Endfield.exe 所在目录写入 xinput1_4.dll 和归属记录；不会覆盖未知同名文件。"
+                                                Severity="Informational"
+                                                Title="会写入游戏目录" />
+                                            <InfoBar
+                                                x:Name="XInputStatusInfoBar"
+                                                IsClosable="False"
+                                                IsOpen="True"
+                                                Message="正在检查安装状态。"
+                                                Severity="Informational"
+                                                Title="XInput 状态" />
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <Button
-                                                    Grid.Column="1"
-                                                    Margin="0,24,0,0"
-                                                    Click="BrowseExternalLoaderButton_Click"
-                                                    Style="{StaticResource PathButtonStyle}"
-                                                    ToolTipService.ToolTip="浏览外部加载器">
-                                                    <SymbolIcon Symbol="OpenFile" />
+                                                    x:Name="InstallXInputButton"
+                                                    Click="InstallXInputButton_Click">
+                                                    <StackPanel Orientation="Horizontal" Spacing="7">
+                                                        <SymbolIcon Symbol="Download" />
+                                                        <TextBlock Text="安装或更新" />
+                                                    </StackPanel>
                                                 </Button>
-                                                </Grid>
-                                                <TextBox
-                                                    x:Name="ExternalLoaderArgumentsBox"
-                                                    Header="命令行参数（可选）"
-                                                    PlaceholderText="按外部加载器要求填写" />
-                                                <NumberBox
-                                                    x:Name="ExternalLoaderDelayNumberBox"
-                                                    Width="280"
-                                                    HorizontalAlignment="Left"
-                                                    Header="等待加载器就绪（秒）"
-                                                    Maximum="30"
-                                                    Minimum="0"
-                                                    SmallChange="0.5"
-                                                    SpinButtonPlacementMode="Compact"
-                                                    Value="2" />
+                                                <Button
+                                                    x:Name="UninstallXInputButton"
+                                                    Click="UninstallXInputButton_Click">
+                                                    <StackPanel Orientation="Horizontal" Spacing="7">
+                                                        <SymbolIcon Symbol="Delete" />
+                                                        <TextBlock Text="从游戏目录卸载" />
+                                                    </StackPanel>
+                                                </Button>
                                             </StackPanel>
-                                        </ContentControl>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
 
@@ -664,7 +735,7 @@
                                                 <TextBlock FontWeight="SemiBold" Text="一键启动终末地" />
                                                 <TextBlock
                                                     Style="{StaticResource FieldHintStyle}"
-                                                    Text="直接调用注入器和当前游戏路径，使用已保存的 Mod 配置启动。" />
+                                                    Text="使用当前加载方式、游戏路径和启动参数创建桌面入口。" />
                                             </StackPanel>
                                             <Button
                                                 Grid.Column="1"
@@ -707,7 +778,7 @@
                                             x:Name="CurrentVersionTextBlock"
                                             Margin="0,2,0,0"
                                             FontFamily="Consolas"
-                                            Text="版本 1.1.1" />
+                                            Text="版本 2.0.0" />
                                     </StackPanel>
                                 </Grid>
 

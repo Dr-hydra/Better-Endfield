@@ -1,14 +1,14 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using EFStartChange.UI.Models;
+using BetterEndfield.UI.Models;
 
-namespace EFStartChange.UI.Services;
+namespace BetterEndfield.UI.Services;
 
 internal static class ConfigurationService
 {
-    public const string NativeConfigurationFileName = "EFStartChange.ini";
-    public const string LogFileName = "IL2CPPDump_Log.txt";
+    public const string NativeConfigurationFileName = "BetterEndfield.ini";
+    public const string LogFileName = "BetterEndfield.log";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -22,21 +22,13 @@ internal static class ConfigurationService
     public static string SettingsPath { get; } =
         Path.Combine(SettingsDirectory, "ui-settings.json");
 
-    private static string LegacySettingsPath { get; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "EFStartChange",
-        "ui-settings.json");
-
     public static async Task<AppSettings> LoadAppSettingsAsync()
     {
         try
         {
-            string sourcePath = File.Exists(SettingsPath)
-                ? SettingsPath
-                : LegacySettingsPath;
-            if (File.Exists(sourcePath))
+            if (File.Exists(SettingsPath))
             {
-                await using FileStream stream = File.OpenRead(sourcePath);
+                await using FileStream stream = File.OpenRead(SettingsPath);
                 AppSettings? settings = await JsonSerializer.DeserializeAsync<AppSettings>(
                     stream,
                     JsonOptions);
@@ -64,10 +56,16 @@ internal static class ConfigurationService
     }
 
     public static async Task SaveModConfigurationAsync(
-        string mapperPath,
+        string injectorPath,
+        string loaderMode,
         ModConfiguration configuration)
     {
-        string path = GetNativeConfigurationPath(mapperPath);
+        if (!loaderMode.Equals("injector", StringComparison.OrdinalIgnoreCase) &&
+            !loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("不支持的加载方式。");
+        }
+        string path = GetNativeConfigurationPath(injectorPath);
         string? directory = Path.GetDirectoryName(path);
         if (string.IsNullOrWhiteSpace(directory))
         {
@@ -75,10 +73,117 @@ internal static class ConfigurationService
         }
 
         Directory.CreateDirectory(directory);
+        string installRoot = ResolveInstallRoot(injectorPath, loaderMode);
+        string hostConfiguration = configuration.ToIni() +
+            Environment.NewLine +
+            "[Host]" + Environment.NewLine +
+            "modules_root=" + Path.Combine(installRoot, "modules") +
+            Environment.NewLine +
+            "[Loader]" + Environment.NewLine +
+            "install_root=" + installRoot + Environment.NewLine +
+            "load_host=true" + Environment.NewLine;
         await File.WriteAllTextAsync(
             path,
-            configuration.ToIni(),
+            hostConfiguration,
             new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+    }
+
+    internal static string ResolveInstallRoot(string injectorPath, string loaderMode)
+    {
+        if (!loaderMode.Equals("injector", StringComparison.OrdinalIgnoreCase) &&
+            !loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("不支持的加载方式。");
+        }
+
+        string? installRoot = TryResolveInstallRootFromInjector(injectorPath);
+        if (string.IsNullOrWhiteSpace(installRoot))
+        {
+            installRoot = TryResolveInstallRoot(AppContext.BaseDirectory);
+        }
+        if (string.IsNullOrWhiteSpace(installRoot) ||
+            !File.Exists(Path.Combine(installRoot, "runtime", "BetterEndfield.Host.dll")) ||
+            !Directory.Exists(Path.Combine(installRoot, "modules")))
+        {
+            throw new InvalidOperationException(
+                "注入器旁未找到 Better Endfield runtime 和 modules 目录。");
+        }
+        return installRoot;
+    }
+
+    private static string? TryResolveInstallRootFromInjector(string injectorPath)
+    {
+        if (string.IsNullOrWhiteSpace(injectorPath))
+        {
+            return null;
+        }
+
+        string fullInjectorPath;
+        try
+        {
+            fullInjectorPath = Path.GetFullPath(injectorPath.Trim());
+        }
+        catch (Exception exception) when (
+            exception is ArgumentException or NotSupportedException or IOException)
+        {
+            return null;
+        }
+
+        string? loaderDirectory = Path.GetDirectoryName(fullInjectorPath);
+        string? installRoot = loaderDirectory is null ? null :
+            TryResolveInstallRoot(loaderDirectory);
+        return installRoot;
+    }
+
+    private static string? TryResolveInstallRoot(string startDirectory)
+    {
+        string current;
+        try
+        {
+            current = Path.GetFullPath(startDirectory);
+        }
+        catch (Exception exception) when (
+            exception is ArgumentException or NotSupportedException)
+        {
+            return null;
+        }
+
+        for (int level = 0; level < 3; level++)
+        {
+            if (File.Exists(Path.Combine(current, "runtime", "BetterEndfield.Host.dll")) &&
+                Directory.Exists(Path.Combine(current, "modules")) &&
+                File.Exists(Path.Combine(
+                    current,
+                    "loaders",
+                    "BetterEndfield.Injector.exe")))
+            {
+                return current;
+            }
+
+            DirectoryInfo? parent = Directory.GetParent(current);
+            if (parent is null)
+            {
+                break;
+            }
+            current = parent.FullName;
+        }
+
+        return null;
+    }
+
+    internal static bool IsCompleteInstallRoot(string installRoot)
+    {
+        if (string.IsNullOrWhiteSpace(installRoot) ||
+            !File.Exists(Path.Combine(installRoot, "runtime", "BetterEndfield.Host.dll")) ||
+            !Directory.Exists(Path.Combine(installRoot, "modules")) ||
+            !File.Exists(Path.Combine(
+                installRoot,
+                "loaders",
+                "BetterEndfield.Injector.exe")))
+        {
+            return false;
+        }
+        return true;
     }
 
     public static async Task<ModConfiguration> LoadModConfigurationAsync(
@@ -104,9 +209,11 @@ internal static class ConfigurationService
 
             if (line.StartsWith('[') && line.EndsWith(']'))
             {
-                inSection = line[1..^1].Equals(
-                    "EFStartChange",
-                    StringComparison.OrdinalIgnoreCase);
+                string section = line[1..^1];
+                inSection = section.Equals("betterendfield.model",
+                    StringComparison.OrdinalIgnoreCase) ||
+                    section.Equals("betterendfield.voice",
+                        StringComparison.OrdinalIgnoreCase);
                 continue;
             }
 
@@ -177,80 +284,17 @@ internal static class ConfigurationService
         return configuration;
     }
 
-    public static string GetNativeConfigurationPath(string mapperPath)
+    public static string GetNativeConfigurationPath(string _)
     {
-        string? directory = Path.GetDirectoryName(mapperPath.Trim());
-        return string.IsNullOrWhiteSpace(directory)
-            ? NativeConfigurationFileName
-            : Path.Combine(directory, NativeConfigurationFileName);
+        Directory.CreateDirectory(SettingsDirectory);
+        return Path.Combine(SettingsDirectory, NativeConfigurationFileName);
     }
 
-    public static string GetLogPath(string mapperPath)
+    public static string GetLogPath(string _)
     {
-        string? directory = Path.GetDirectoryName(mapperPath.Trim());
-        return string.IsNullOrWhiteSpace(directory)
-            ? LogFileName
-            : Path.Combine(directory, LogFileName);
-    }
-
-    public static string DiscoverMapperPath()
-    {
-        string colocatedMapper = Path.Combine(
-            AppContext.BaseDirectory,
-            "Il2cppDumper.exe");
-        if (File.Exists(colocatedMapper))
-        {
-            return colocatedMapper;
-        }
-
-        string current = AppContext.BaseDirectory;
-        for (int level = 0; level < 8; level++)
-        {
-            string candidate = Path.Combine(
-                current,
-                "tools",
-                "IL2CPP-Dumper-src",
-                "x64",
-                "Release",
-                "Il2cppDumper.exe");
-            if (File.Exists(candidate))
-            {
-                return candidate;
-            }
-
-            DirectoryInfo? parent = Directory.GetParent(current);
-            if (parent is null)
-            {
-                break;
-            }
-
-            current = parent.FullName;
-        }
-
-        return string.Empty;
-    }
-
-    public static string DiscoverGamePath()
-    {
-        var candidates = new List<string>();
-        string programFiles = Environment.GetFolderPath(
-            Environment.SpecialFolder.ProgramFiles);
-        if (!string.IsNullOrWhiteSpace(programFiles))
-        {
-            candidates.Add(Path.Combine(programFiles, "Endfield Game", "Endfield.exe"));
-        }
-
-        foreach (DriveInfo drive in DriveInfo.GetDrives())
-        {
-            if (drive.DriveType == DriveType.Fixed && drive.IsReady)
-            {
-                candidates.Add(Path.Combine(
-                    drive.RootDirectory.FullName,
-                    "Endfield Game",
-                    "Endfield.exe"));
-            }
-        }
-        return candidates.FirstOrDefault(File.Exists) ?? string.Empty;
+        string logDirectory = Path.Combine(SettingsDirectory, "logs");
+        Directory.CreateDirectory(logDirectory);
+        return Path.Combine(logDirectory, LogFileName);
     }
 
     private static string Text(

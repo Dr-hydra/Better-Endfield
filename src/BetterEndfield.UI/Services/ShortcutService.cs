@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 
-namespace EFStartChange.UI.Services;
+namespace BetterEndfield.UI.Services;
 
 internal static class ShortcutService
 {
@@ -26,17 +26,44 @@ internal static class ShortcutService
         return shortcutPath;
     }
 
-    public static string CreateGameShortcut(string mapperPath, string gamePath)
+    public static string CreateGameShortcut(
+        string loaderMode,
+        string injectorPath,
+        string gamePath,
+        string gameArguments)
     {
-        mapperPath = Path.GetFullPath(mapperPath.Trim());
         gamePath = Path.GetFullPath(gamePath.Trim());
-        if (!File.Exists(mapperPath))
-        {
-            throw new FileNotFoundException("未找到注入器。", mapperPath);
-        }
         if (!File.Exists(gamePath))
         {
             throw new FileNotFoundException("未找到 Endfield.exe。", gamePath);
+        }
+
+        string targetPath;
+        string arguments;
+        string workingDirectory;
+        gameArguments = gameArguments.Trim();
+        if (loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase))
+        {
+            targetPath = gamePath;
+            arguments = gameArguments;
+            workingDirectory = Path.GetDirectoryName(gamePath) ?? AppContext.BaseDirectory;
+        }
+        else if (loaderMode.Equals("injector", StringComparison.OrdinalIgnoreCase))
+        {
+            injectorPath = Path.GetFullPath(injectorPath.Trim());
+            if (!File.Exists(injectorPath))
+            {
+                throw new FileNotFoundException("未找到注入器。", injectorPath);
+            }
+            targetPath = injectorPath;
+            arguments = "--game " + QuoteArgument(gamePath) +
+                (gameArguments.Length == 0 ? string.Empty : " -- " + gameArguments);
+            workingDirectory =
+                Path.GetDirectoryName(injectorPath) ?? AppContext.BaseDirectory;
+        }
+        else
+        {
+            throw new InvalidOperationException("不支持的加载方式。");
         }
 
         string shortcutPath = Path.Combine(
@@ -44,9 +71,9 @@ internal static class ShortcutService
             "终末地（Better Endfield）.lnk");
         CreateShortcut(
             shortcutPath,
-            mapperPath,
-            QuoteArgument(gamePath),
-            Path.GetDirectoryName(mapperPath) ?? AppContext.BaseDirectory,
+            targetPath,
+            arguments,
+            workingDirectory,
             gamePath,
             "使用已保存的 Better Endfield 配置启动终末地");
         return shortcutPath;

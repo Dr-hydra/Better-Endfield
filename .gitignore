@@ -9,8 +9,9 @@ vendor/
 dependencies.lock.json
 
 # Research-only applications and extraction tools are not part of the mod repo.
-src/EFStartCtl/
-src/EFStartProbe/
+src/Diagnostics/
+src/*Ctl/
+src/*Probe/
 tests/
 tools/EndfieldDumper/
 tools/EndfieldStudio/
@@ -22,21 +23,18 @@ tools/MetadataScan/
 scripts/*
 !scripts/BuildBetterEndfield.ps1
 !scripts/BuildInstaller.ps1
+!scripts/BuildVoiceCatalog.py
+!scripts/GenerateVoiceCatalogIndex.py
 !scripts/GenerateModCharacterPresets.py
 !scripts/GenerateResourceManifests.py
-!scripts/CompileVoiceRuntimeMap.py
 !scripts/RefreshEndfieldResourceInputs.py
 !scripts/ScanCharacterAssets.py
 !scripts/UpdateResourceManifests.ps1
 
-# Native build outputs and upstream sample dumps.
-tools/IL2CPP-Dumper-src/x64/
-tools/IL2CPP-Dumper-src/Arknights Endfield 1.2.4/
-tools/IL2CPP-Dumper-src/Dump/x64/
-tools/IL2CPP-Dumper-src/Mapper/x64/
-tools/IL2CPP-Dumper-src/third_party/minhook/build/
+# Native build outputs.
+native/build/
+native/third_party/minhook/build/
 
-vendor/bepinex6/
 vendor/tools/
 vendor/wwiser/
 vendor/unity-libs-2021.3.34/
@@ -44,6 +42,5 @@ vendor/unity-libs-2021.3.34/
 *.suo
 *.log
 *.pdb
-EFStartChange.ini
-IL2CPP_Dump_*/
-IL2CPPDump_Log.txt
+BetterEndfield.ini
+diagnostics/

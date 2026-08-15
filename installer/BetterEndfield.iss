@@ -5,7 +5,7 @@
   #error OutputDir must be supplied by BuildInstaller.ps1
 #endif
 #ifndef AppVersion
-  #define AppVersion "1.1.1"
+#define AppVersion "2.0.0"
 #endif
 
 #define AppName "Better Endfield"
@@ -52,15 +52,12 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "{#StageDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-[InstallDelete]
-Type: files; Name: "{app}\EFStartChange.exe"
-Type: files; Name: "{autoprograms}\EF Start Change.lnk"
-Type: files; Name: "{autodesktop}\EF Start Change.lnk"
-Type: files; Name: "{autodesktop}\终末地（EF Start Change）.lnk"
-
 [Icons]
 Name: "{autoprograms}\Better Endfield"; Filename: "{app}\BetterEndfield.exe"; WorkingDir: "{app}"
 Name: "{autodesktop}\Better Endfield"; Filename: "{app}\BetterEndfield.exe"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\BetterEndfield.exe"; Description: "启动 Better Endfield"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent
+
+[UninstallRun]
+Filename: "{app}\BetterEndfield.exe"; Parameters: "--uninstall-xinput-silent"; WorkingDir: "{app}"; RunOnceId: "RemoveXInputProxy"; Flags: runhidden waituntilterminated skipifdoesntexist

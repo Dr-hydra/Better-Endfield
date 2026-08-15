@@ -1,18 +1,14 @@
-namespace EFStartChange.UI.Models;
+namespace BetterEndfield.UI.Models;
 
 internal sealed class AppSettings
 {
     public string GameExecutablePath { get; set; } = string.Empty;
 
-    public string MapperPath { get; set; } = string.Empty;
+    public string InjectorPath { get; set; } = string.Empty;
 
-    public bool ExternalLoaderEnabled { get; set; }
+    public string LoaderMode { get; set; } = "injector";
 
-    public string ExternalLoaderPath { get; set; } = string.Empty;
-
-    public string ExternalLoaderArguments { get; set; } = string.Empty;
-
-    public double ExternalLoaderDelaySeconds { get; set; } = 2.0;
+    public string GameLaunchArguments { get; set; } = string.Empty;
 
     public string Theme { get; set; } = "Default";
 

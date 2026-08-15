@@ -46,7 +46,29 @@ if ($SkipPckDiscovery) { $arguments += '--no-pck-discovery' }
 & $python.Source @arguments
 if ($LASTEXITCODE -ne 0) { throw 'Resource manifest generation failed.' }
 
-& $python.Source -3 (Join-Path $Workspace 'scripts\CompileVoiceRuntimeMap.py')
-if ($LASTEXITCODE -ne 0) { throw 'Voice runtime map compilation failed.' }
+@('action-manifest.json', 'voice-event-media-manifest.json',
+    'resource-manifest-report.md') | ForEach-Object {
+    $artifact = Join-Path $Workspace "manifests\$_"
+    if (-not (Test-Path -LiteralPath $artifact -PathType Leaf)) {
+        throw "Expected manifest output was not generated: $artifact"
+    }
+}
+
+# Catalogs intentionally remain local, selected-language runtime inputs.
+# They are built after a user selects the target speaker and language.
+foreach ($jsonArtifact in @('action-manifest.json', 'voice-event-media-manifest.json')) {
+    $artifact = Join-Path $Workspace "manifests\$jsonArtifact"
+    try {
+        $null = Get-Content -LiteralPath $artifact -Raw | ConvertFrom-Json
+    }
+    catch {
+        throw "Generated manifest is not valid JSON: $artifact"
+    }
+}
+
+& $python.Source -3 (Join-Path $Workspace 'scripts\GenerateVoiceCatalogIndex.py') `
+    '--manifest' (Join-Path $Workspace 'manifests\voice-event-media-manifest.json') `
+    '--output' (Join-Path $Workspace 'src\BetterEndfield.UI\Assets\voice-catalog-index.json')
+if ($LASTEXITCODE -ne 0) { throw 'Voice catalog runtime index generation failed.' }
 
 Write-Host "Resource manifests: $(Join-Path $Workspace 'manifests')"

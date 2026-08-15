@@ -1,8 +1,8 @@
 # Better Endfield UI
 
-Better Endfield 的 WinUI 3 中文控制器。应用负责编辑兼容配置 `EFStartChange.ini`、显示运行状态并启动原生注入器。
+Better Endfield 的 WinUI 3 中文控制器。应用负责编辑模块配置、显示运行状态并启动原生注入器。
 
-配置文件保存在 `Il2cppDumper.exe` 所在目录。语言开关和角色语言规则会在运行时自动热更新；模型与动画参数仍在下一次启动和注入时读取。
+配置文件保存在 `%LocalAppData%\BetterEndfield\BetterEndfield.ini`。语言开关和角色语言规则会在运行时自动热更新；模型与动画参数仍在下一次启动并加载 Host 时读取。
 
 ## 界面功能
 
@@ -12,10 +12,13 @@ Better Endfield 的 WinUI 3 中文控制器。应用负责编辑兼容配置 `EF
 - 四阶段独立动画速度。
 - 原生循环、强制循环和双 Playable 交叉淡化循环。
 - 各角色独立的中、英、日、韩配音语言规则，以及可独立开关的剧情语音与口型联动。
-- 游戏与注入器路径保存、日志入口、启动和运行状态显示。
+- 保存时从本机已下载的语言 PCK 选择性生成角色 catalog；音频内容只写入 `%LocalAppData%\BetterEndfield\catalog`，不会进入发布包。
+- 游戏与注入器路径自动发现、有效性提示、手动重扫和日志入口。
+- 自定义游戏启动参数，例如使用 `-force-d3d11` 选择 Direct3D 11。
 - 跟随系统、浅色和深色主题，以及 Windows 11 Mica 背景。
 - 控制器快捷方式和一键启动游戏快捷方式。
-- 可在内置注入器前启动外部 Mod 加载器，并检测外部加载器误启动游戏的冲突状态。
+- 内置注入器与 XInput 自启动两种加载方式；XInput 可安装、更新和安全卸载。
+- XInput 适用于兼容其他加载器或从官方启动器自启动，并明确提示会写入游戏目录。
 - 关于页、风险说明、联系方式和按需检查更新。
 
 ## 构建
@@ -31,7 +34,7 @@ Better Endfield 的 WinUI 3 中文控制器。应用负责编辑兼容配置 `EF
 构建中文 Inno Setup 安装器：
 
 ```powershell
-.\scripts\BuildInstaller.ps1 -Version 1.1.1
+.\scripts\BuildInstaller.ps1 -Version 2.0.0
 ```
 
 ## 开源许可

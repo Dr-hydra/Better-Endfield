@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 
-namespace EFStartChange.UI.Models;
+namespace BetterEndfield.UI.Models;
 
 internal class AssetOption
 {
@@ -59,10 +59,10 @@ internal sealed class CharacterPresetCatalog
 internal static class PresetOptions
 {
     private const string CatalogResourceName =
-        "EFStartChange.UI.Assets.character-presets.json";
+        "BetterEndfield.UI.Assets.character-presets.json";
 
     private const string ChineseNamesResourceName =
-        "EFStartChange.UI.Assets.character-names.json";
+        "BetterEndfield.UI.Assets.character-names.json";
 
     public static IReadOnlyDictionary<string, string> CharacterNames { get; } =
         LoadChineseNames();

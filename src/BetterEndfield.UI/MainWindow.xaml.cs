@@ -5,8 +5,8 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using EFStartChange.UI.Models;
-using EFStartChange.UI.Services;
+using BetterEndfield.UI.Models;
+using BetterEndfield.UI.Services;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -15,7 +15,7 @@ using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
 using Windows.Storage.Pickers;
 
-namespace EFStartChange.UI;
+namespace BetterEndfield.UI;
 
 internal sealed class VoiceCharacterChoice
 {
@@ -90,6 +90,8 @@ public sealed partial class MainWindow : Window
     private readonly IReadOnlyList<VoiceCharacterChoice> _voiceCharacters;
     private AppSettings _appSettings = new();
     private string _latestReleaseUrl = UpdateService.ReleasesUrl;
+    private bool _pathScanRunning;
+    private int _xInputStatusRevision;
 
     public MainWindow()
     {
@@ -152,26 +154,21 @@ public sealed partial class MainWindow : Window
                 await ConfigurationService.SaveAppSettingsAsync(_appSettings);
             }
 
-            GamePathBox.Text = !string.IsNullOrWhiteSpace(_appSettings.GameExecutablePath)
-                ? _appSettings.GameExecutablePath
-                : ConfigurationService.DiscoverGamePath();
-            MapperPathBox.Text = !string.IsNullOrWhiteSpace(_appSettings.MapperPath)
-                ? _appSettings.MapperPath
-                : ConfigurationService.DiscoverMapperPath();
-            ExternalLoaderToggle.IsOn = _appSettings.ExternalLoaderEnabled;
-            ExternalLoaderPathBox.Text = _appSettings.ExternalLoaderPath;
-            ExternalLoaderArgumentsBox.Text = _appSettings.ExternalLoaderArguments;
-            ExternalLoaderDelayNumberBox.Value = Math.Clamp(
-                _appSettings.ExternalLoaderDelaySeconds,
-                ExternalLoaderDelayNumberBox.Minimum,
-                ExternalLoaderDelayNumberBox.Maximum);
+            GamePathBox.Text = _appSettings.GameExecutablePath;
+            InjectorPathBox.Text = _appSettings.InjectorPath;
+            GameLaunchArgumentsBox.Text = _appSettings.GameLaunchArguments;
+            SelectLoaderMode(_appSettings.LoaderMode);
+            await ScanRuntimePathsAsync(showResult: false);
             RefreshRuntimeAnimationDurations();
 
             ModConfiguration configuration =
-                await ConfigurationService.LoadModConfigurationAsync(MapperPathBox.Text);
+                await ConfigurationService.LoadModConfigurationAsync(InjectorPathBox.Text);
             ApplyConfiguration(configuration);
             _initializing = false;
             UpdateCrossfadePanel();
+            UpdateLoaderModePanel();
+            UpdatePathStatusText();
+            await RefreshXInputStatusAsync();
             RefreshRuntimeStatus();
             _statusTimer.Start();
         }
@@ -189,23 +186,25 @@ public sealed partial class MainWindow : Window
         if (selectedPath is not null)
         {
             GamePathBox.Text = selectedPath;
+            await RefreshXInputStatusAsync();
         }
     }
 
-    private async void BrowseMapperButton_Click(object sender, RoutedEventArgs e)
+    private async void BrowseInjectorButton_Click(object sender, RoutedEventArgs e)
     {
-        string? selectedPath = await PickExecutableAsync("选择 Il2cppDumper.exe");
+        string? selectedPath = await PickExecutableAsync("选择 BetterEndfield.Injector.exe");
         if (selectedPath is null)
         {
             return;
         }
 
-        MapperPathBox.Text = selectedPath;
+        InjectorPathBox.Text = selectedPath;
         try
         {
             ModConfiguration configuration =
                 await ConfigurationService.LoadModConfigurationAsync(selectedPath);
             ApplyConfiguration(configuration);
+            await RefreshXInputStatusAsync();
         }
         catch (IOException exception)
         {
@@ -213,22 +212,44 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private async void BrowseExternalLoaderButton_Click(object sender, RoutedEventArgs e)
+    private void InjectorPathBox_TextChanged(object sender, TextChangedEventArgs e)
     {
-        string? selectedPath = await PickExecutableAsync("选择外部加载器");
-        if (selectedPath is not null)
+        ConfigurationPathTextBlock.Text =
+            ConfigurationService.GetNativeConfigurationPath(InjectorPathBox.Text);
+        RefreshRuntimeAnimationDurations();
+        RefreshRuntimeStatus();
+        UpdatePathStatusText();
+        _ = RefreshXInputStatusAsync();
+    }
+
+    private void GamePathBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        UpdatePathStatusText();
+        _ = RefreshXInputStatusAsync();
+    }
+
+    private void SelectLoaderMode(string mode)
+    {
+        bool useXInput = mode.Equals("xinput", StringComparison.OrdinalIgnoreCase) ||
+            mode.Equals("version", StringComparison.OrdinalIgnoreCase);
+        XInputModeRadioButton.IsChecked = useXInput;
+        InjectorModeRadioButton.IsChecked = !useXInput;
+    }
+
+    private string GetSelectedLoaderMode() =>
+        XInputModeRadioButton.IsChecked == true ? "xinput" : "injector";
+
+    private void LoaderModeRadioButton_Checked(object sender, RoutedEventArgs e)
+    {
+        if (!_initializing)
         {
-            ExternalLoaderPathBox.Text = selectedPath;
+            UpdateLoaderModePanel();
+            _ = RefreshXInputStatusAsync();
         }
     }
 
-    private void MapperPathBox_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        ConfigurationPathTextBlock.Text =
-            ConfigurationService.GetNativeConfigurationPath(MapperPathBox.Text);
-        RefreshRuntimeAnimationDurations();
-        RefreshRuntimeStatus();
-    }
+    private async void ScanPathsButton_Click(object sender, RoutedEventArgs e) =>
+        await ScanRuntimePathsAsync(showResult: true);
 
     private void CharacterComboBox_SelectionChanged(
         object sender,
@@ -371,23 +392,42 @@ public sealed partial class MainWindow : Window
                 return;
             }
 
-            if (!await StartExternalLoaderAsync())
+            string loaderMode = GetSelectedLoaderMode();
+            ProcessStartInfo startInfo;
+            string launchArguments = GameLaunchArgumentsBox.Text.Trim();
+            if (loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase))
             {
-                return;
+                await XInputDeploymentService.InstallAsync(
+                    GamePathBox.Text.Trim(),
+                    InjectorPathBox.Text.Trim());
+                startInfo = new ProcessStartInfo
+                {
+                    FileName = GamePathBox.Text.Trim(),
+                    WorkingDirectory = Path.GetDirectoryName(GamePathBox.Text.Trim()) ?? string.Empty,
+                    UseShellExecute = true,
+                    Arguments = launchArguments
+                };
             }
-
-            var startInfo = new ProcessStartInfo
+            else
             {
-                FileName = MapperPathBox.Text.Trim(),
-                WorkingDirectory = Path.GetDirectoryName(MapperPathBox.Text.Trim()) ?? string.Empty,
-                UseShellExecute = true
-            };
-            startInfo.ArgumentList.Add(GamePathBox.Text.Trim());
+                startInfo = new ProcessStartInfo
+                {
+                    FileName = InjectorPathBox.Text.Trim(),
+                    WorkingDirectory = Path.GetDirectoryName(InjectorPathBox.Text.Trim()) ?? string.Empty,
+                    UseShellExecute = true,
+                    Verb = "runas",
+                    Arguments = BuildInjectorArguments(
+                        GamePathBox.Text.Trim(),
+                        launchArguments)
+                };
+            }
             Process.Start(startInfo);
             ShowStatus(
-                "注入器已启动",
-                ExternalLoaderToggle.IsOn
-                    ? "外部加载器已先行启动；如果出现用户账户控制提示，请允许注入器权限。"
+                loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase)
+                    ? "XInput 自启动已就绪"
+                    : "注入器已启动",
+                loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase)
+                    ? "游戏将通过 xinput1_4.dll 加载 Better Endfield Host。"
                     : "如果出现用户账户控制提示，请允许管理员权限。游戏启动后状态会自动更新。",
                 InfoBarSeverity.Success);
         }
@@ -416,7 +456,7 @@ public sealed partial class MainWindow : Window
     private void OpenConfigurationFolderButton_Click(object sender, RoutedEventArgs e)
     {
         string configPath =
-            ConfigurationService.GetNativeConfigurationPath(MapperPathBox.Text);
+            ConfigurationService.GetNativeConfigurationPath(InjectorPathBox.Text);
         string? directory = Path.GetDirectoryName(configPath);
         if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory))
         {
@@ -429,12 +469,12 @@ public sealed partial class MainWindow : Window
 
     private void OpenLogButton_Click(object sender, RoutedEventArgs e)
     {
-        string logPath = ConfigurationService.GetLogPath(MapperPathBox.Text);
+        string logPath = ConfigurationService.GetLogPath(InjectorPathBox.Text);
         if (!File.Exists(logPath))
         {
             ShowStatus(
                 "尚未生成日志",
-                "至少完成一次注入后才会出现 IL2CPPDump_Log.txt。",
+                "至少完成一次启动后才会出现 BetterEndfield.log。",
                 InfoBarSeverity.Informational);
             return;
         }
@@ -477,9 +517,18 @@ public sealed partial class MainWindow : Window
 
         try
         {
+            string loaderMode = GetSelectedLoaderMode();
+            if (loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase))
+            {
+                await XInputDeploymentService.InstallAsync(
+                    GamePathBox.Text.Trim(),
+                    InjectorPathBox.Text.Trim());
+            }
             string shortcutPath = ShortcutService.CreateGameShortcut(
-                MapperPathBox.Text,
-                GamePathBox.Text);
+                loaderMode,
+                InjectorPathBox.Text,
+                GamePathBox.Text,
+                GameLaunchArgumentsBox.Text);
             ShowStatus(
                 "一键启动快捷方式已创建",
                 $"已保存当前配置并创建：{shortcutPath}",
@@ -587,10 +636,28 @@ public sealed partial class MainWindow : Window
 
     private async Task<bool> SaveAsync(bool showSuccess)
     {
-        string mapperPath = MapperPathBox.Text.Trim();
-        if (!File.Exists(mapperPath))
+        string gamePath = GamePathBox.Text.Trim();
+        if (!RuntimePathDiscoveryService.IsGameExecutable(gamePath))
         {
-            ShowStatus("注入器路径无效", "请选择有效的 Il2cppDumper.exe。", InfoBarSeverity.Error);
+            ShowStatus("游戏路径无效", "请选择有效的 Endfield.exe。", InfoBarSeverity.Error);
+            return false;
+        }
+
+        string injectorPath = InjectorPathBox.Text.Trim();
+        if (!File.Exists(injectorPath))
+        {
+            ShowStatus("注入器路径无效", "请选择有效的 BetterEndfield.Injector.exe。", InfoBarSeverity.Error);
+            return false;
+        }
+        try
+        {
+            ConfigurationService.ResolveInstallRoot(
+                injectorPath,
+                GetSelectedLoaderMode());
+        }
+        catch (InvalidOperationException exception)
+        {
+            ShowStatus("软件目录不完整", exception.Message, InfoBarSeverity.Error);
             return false;
         }
 
@@ -600,26 +667,41 @@ public sealed partial class MainWindow : Window
             return false;
         }
 
-        if (!TryValidateExternalLoader(out error))
+        if (!TryValidateLaunchArguments(out error))
         {
-            ShowStatus("外部加载器设置无效", error ?? "请检查加载器设置。", InfoBarSeverity.Error);
+            ShowStatus("启动参数无效", error ?? "请检查游戏启动参数。", InfoBarSeverity.Error);
             return false;
         }
 
         try
         {
-            await ConfigurationService.SaveModConfigurationAsync(mapperPath, configuration);
-            _appSettings.GameExecutablePath = GamePathBox.Text.Trim();
-            _appSettings.MapperPath = mapperPath;
-            _appSettings.ExternalLoaderEnabled = ExternalLoaderToggle.IsOn;
-            _appSettings.ExternalLoaderPath = ExternalLoaderPathBox.Text.Trim();
-            _appSettings.ExternalLoaderArguments = ExternalLoaderArgumentsBox.Text.Trim();
-            _appSettings.ExternalLoaderDelaySeconds = ExternalLoaderDelayNumberBox.Value;
+            IReadOnlyList<VoiceCatalogRequest> catalogRequests =
+                BuildVoiceCatalogRequests(configuration.VoiceRouterEnabled);
+            if (catalogRequests.Count > 0)
+            {
+                ShowStatus(
+                    "正在准备配音资源",
+                    "正在从本地游戏语言包生成所选角色的 catalog。",
+                    InfoBarSeverity.Informational);
+            }
+            VoiceCatalogPreparation catalogPreparation =
+                await VoiceCatalogService.PrepareAsync(
+                    gamePath,
+                    catalogRequests);
+            await ConfigurationService.SaveModConfigurationAsync(
+                injectorPath,
+                GetSelectedLoaderMode(),
+                configuration);
+            await VoiceCatalogService.CommitAsync(catalogPreparation);
+            _appSettings.GameExecutablePath = gamePath;
+            _appSettings.InjectorPath = injectorPath;
+            _appSettings.LoaderMode = GetSelectedLoaderMode();
+            _appSettings.GameLaunchArguments = GameLaunchArgumentsBox.Text.Trim();
             _appSettings.Theme = GetSelectedTheme();
             await ConfigurationService.SaveAppSettingsAsync(_appSettings);
 
             ConfigurationPathTextBlock.Text =
-                ConfigurationService.GetNativeConfigurationPath(mapperPath);
+                ConfigurationService.GetNativeConfigurationPath(injectorPath);
             if (showSuccess)
             {
                 ShowStatus(
@@ -631,104 +713,215 @@ public sealed partial class MainWindow : Window
             return true;
         }
         catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException)
+            exception is IOException or UnauthorizedAccessException or
+            InvalidDataException or InvalidOperationException)
         {
             ShowStatus("保存失败", exception.Message, InfoBarSeverity.Error);
             return false;
         }
     }
 
-    private bool TryValidateExternalLoader(out string? error)
+    private bool TryValidateLaunchArguments(out string? error)
     {
         error = null;
-        double delay = ExternalLoaderDelayNumberBox.Value;
-        if (!double.IsFinite(delay) || delay < 0 || delay > 30)
+        string arguments = GameLaunchArgumentsBox.Text;
+        if (arguments.Contains('\0') || arguments.Contains('\r') || arguments.Contains('\n'))
         {
-            error = "加载器等待时间必须在 0 到 30 秒之间。";
+            error = "启动参数不能包含换行或空字符。";
             return false;
         }
-
-        if (!ExternalLoaderToggle.IsOn)
+        if (arguments.Length > 2048)
         {
-            return true;
-        }
-
-        string loaderPath = ExternalLoaderPathBox.Text.Trim();
-        if (!File.Exists(loaderPath))
-        {
-            error = "请选择有效的外部加载器程序。";
+            error = "启动参数不能超过 2048 个字符。";
             return false;
         }
-
-        if (PathsEqual(loaderPath, MapperPathBox.Text) ||
-            PathsEqual(loaderPath, GamePathBox.Text))
-        {
-            error = "外部加载器不能与注入器或游戏程序使用同一路径。";
-            return false;
-        }
-
         return true;
     }
 
-    private static bool PathsEqual(string first, string second)
+    private static string BuildInjectorArguments(
+        string gameExecutablePath,
+        string gameArguments)
     {
-        if (string.IsNullOrWhiteSpace(first) || string.IsNullOrWhiteSpace(second))
-        {
-            return false;
-        }
+        string arguments = "--game " + QuoteProcessArgument(gameExecutablePath);
+        return string.IsNullOrWhiteSpace(gameArguments)
+            ? arguments
+            : arguments + " -- " + gameArguments.Trim();
+    }
 
+    private async Task ScanRuntimePathsAsync(bool showResult)
+    {
+        if (_pathScanRunning)
+        {
+            return;
+        }
+        _pathScanRunning = true;
+        ScanPathsButton.IsEnabled = false;
+        PathScanProgressRing.Visibility = Visibility.Visible;
+        PathScanProgressRing.IsActive = true;
         try
         {
-            return Path.GetFullPath(first.Trim()).Equals(
-                Path.GetFullPath(second.Trim()),
-                StringComparison.OrdinalIgnoreCase);
+            RuntimePathDiscoveryResult result =
+                await RuntimePathDiscoveryService.DiscoverAsync(
+                    GamePathBox.Text,
+                    InjectorPathBox.Text);
+            if (!string.IsNullOrWhiteSpace(result.GameExecutablePath))
+            {
+                GamePathBox.Text = result.GameExecutablePath;
+            }
+            if (!string.IsNullOrWhiteSpace(result.InjectorPath))
+            {
+                InjectorPathBox.Text = result.InjectorPath;
+            }
+            UpdatePathStatusText();
+            await RefreshXInputStatusAsync();
+            if (showResult)
+            {
+                bool gameFound = RuntimePathDiscoveryService.IsGameExecutable(
+                    GamePathBox.Text);
+                bool injectorFound = File.Exists(InjectorPathBox.Text.Trim());
+                ShowStatus(
+                    gameFound && injectorFound ? "路径扫描完成" : "路径扫描未完成",
+                    gameFound && injectorFound
+                        ? "已定位 Endfield.exe 和 Better Endfield 注入器。"
+                        : "未找到的路径需要手动选择。",
+                    gameFound && injectorFound
+                        ? InfoBarSeverity.Success
+                        : InfoBarSeverity.Warning);
+            }
         }
-        catch (Exception exception) when (
-            exception is ArgumentException or NotSupportedException or
-                IOException or UnauthorizedAccessException)
+        finally
         {
-            return false;
+            _pathScanRunning = false;
+            ScanPathsButton.IsEnabled = true;
+            PathScanProgressRing.IsActive = false;
+            PathScanProgressRing.Visibility = Visibility.Collapsed;
         }
     }
 
-    private async Task<bool> StartExternalLoaderAsync()
+    private void UpdatePathStatusText()
     {
-        if (!ExternalLoaderToggle.IsOn)
-        {
-            return true;
-        }
+        bool gameValid = RuntimePathDiscoveryService.IsGameExecutable(
+            GamePathBox.Text.Trim());
+        GamePathStatusTextBlock.Text = gameValid
+            ? "已找到游戏程序。"
+            : "未找到有效的 Endfield.exe。";
 
-        string loaderPath = ExternalLoaderPathBox.Text.Trim();
-        var startInfo = new ProcessStartInfo
+        bool injectorValid = false;
+        try
         {
-            FileName = loaderPath,
-            WorkingDirectory = Path.GetDirectoryName(loaderPath) ?? string.Empty,
-            Arguments = ExternalLoaderArgumentsBox.Text.Trim(),
-            UseShellExecute = true
+            ConfigurationService.ResolveInstallRoot(
+                InjectorPathBox.Text.Trim(),
+                GetSelectedLoaderMode());
+            injectorValid = true;
+        }
+        catch (Exception exception) when (
+            exception is InvalidOperationException or ArgumentException)
+        {
+        }
+        InjectorPathStatusTextBlock.Text = injectorValid
+            ? "已找到完整的 runtime、modules 和注入器目录。"
+            : "注入器或相邻 runtime/modules 目录不完整。";
+    }
+
+    private void UpdateLoaderModePanel()
+    {
+        bool xinput = GetSelectedLoaderMode().Equals(
+            "xinput",
+            StringComparison.OrdinalIgnoreCase);
+        XInputManagementPanel.Visibility = xinput
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        LoaderModeDescriptionTextBlock.Text = xinput
+            ? "游戏每次启动都会自动加载 Better Endfield。适合与其他加载器共存，或通过官方启动器直接启动。"
+            : "由 Better Endfield 启动游戏并在启动阶段加载 Host，游戏目录保持不变。";
+        PageSelectionHintTextBlock.Text = xinput
+            ? "启动时会确保 XInput 代理已安装到游戏目录。"
+            : "保存后在下一次注入时生效。";
+        UpdatePathStatusText();
+    }
+
+    private async Task RefreshXInputStatusAsync()
+    {
+        int revision = Interlocked.Increment(ref _xInputStatusRevision);
+        XInputDeploymentStatus status = await XInputDeploymentService.InspectAsync(
+            GamePathBox.Text.Trim(),
+            InjectorPathBox.Text.Trim());
+        if (revision != _xInputStatusRevision)
+        {
+            return;
+        }
+        XInputStatusInfoBar.Title = status.State switch
+        {
+            XInputDeploymentState.Installed => "已安装",
+            XInputDeploymentState.UpdateAvailable => "可更新",
+            XInputDeploymentState.Conflict => "检测到冲突",
+            XInputDeploymentState.NotInstalled => "未安装",
+            _ => "暂不可用"
         };
-        Process? loaderProcess = Process.Start(startInfo);
-        if (loaderProcess is null)
+        XInputStatusInfoBar.Message = status.Message;
+        XInputStatusInfoBar.Severity = status.State switch
         {
-            throw new InvalidOperationException("外部加载器没有返回有效进程。");
-        }
+            XInputDeploymentState.Installed => InfoBarSeverity.Success,
+            XInputDeploymentState.Conflict => InfoBarSeverity.Error,
+            XInputDeploymentState.UpdateAvailable => InfoBarSeverity.Warning,
+            XInputDeploymentState.NotInstalled => InfoBarSeverity.Informational,
+            _ => InfoBarSeverity.Warning
+        };
+        InstallXInputButton.IsEnabled = status.CanInstall;
+        UninstallXInputButton.IsEnabled = status.CanUninstall;
+    }
 
-        loaderProcess.Dispose();
-        double delay = ExternalLoaderDelayNumberBox.Value;
-        if (delay > 0)
+    private async void InstallXInputButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (Process.GetProcessesByName("Endfield").Length > 0)
         {
-            await Task.Delay(TimeSpan.FromSeconds(delay));
+            ShowStatus("游戏正在运行", "请退出游戏后再安装或更新 XInput 代理。", InfoBarSeverity.Warning);
+            return;
         }
-
-        if (Process.GetProcessesByName("Endfield").Length == 0)
+        if (!await SaveAsync(showSuccess: false))
         {
-            return true;
+            return;
         }
+        try
+        {
+            XInputDeploymentStatus status = await XInputDeploymentService.InstallAsync(
+                GamePathBox.Text.Trim(),
+                InjectorPathBox.Text.Trim());
+            await RefreshXInputStatusAsync();
+            ShowStatus("XInput 已安装", status.Message, InfoBarSeverity.Success);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+                InvalidDataException or InvalidOperationException)
+        {
+            ShowStatus("XInput 安装失败", exception.Message, InfoBarSeverity.Error);
+        }
+    }
 
-        ShowStatus(
-            "外部加载器已经启动游戏",
-            "EF 无法附加到现有进程。请完整退出游戏，并关闭外部加载器的自动启动游戏功能。",
-            InfoBarSeverity.Warning);
-        return false;
+    private async void UninstallXInputButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (Process.GetProcessesByName("Endfield").Length > 0)
+        {
+            ShowStatus("游戏正在运行", "请退出游戏后再卸载 XInput 代理。", InfoBarSeverity.Warning);
+            return;
+        }
+        try
+        {
+            await XInputDeploymentService.UninstallAsync(
+                GamePathBox.Text.Trim(),
+                InjectorPathBox.Text.Trim());
+            await RefreshXInputStatusAsync();
+            ShowStatus(
+                "XInput 已卸载",
+                "已移除 Better Endfield 写入游戏目录的代理、归属记录和状态文件。",
+                InfoBarSeverity.Success);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+                InvalidOperationException or FileNotFoundException)
+        {
+            ShowStatus("XInput 卸载失败", exception.Message, InfoBarSeverity.Error);
+        }
     }
 
     private bool TryReadConfiguration(
@@ -1058,6 +1251,39 @@ public sealed partial class MainWindow : Window
         Environment.NewLine,
         _voiceRules.Select(rule => $"{rule.Speaker}={rule.Language}"));
 
+    private IReadOnlyList<VoiceCatalogRequest> BuildVoiceCatalogRequests(bool enabled)
+    {
+        if (!enabled)
+        {
+            return [];
+        }
+
+        var result = new List<VoiceCatalogRequest>();
+        foreach (VoiceRuleEntry rule in _voiceRules)
+        {
+            if (rule.Language.Equals("FollowGlobal", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+            VoiceCharacterChoice? choice = _voiceCharacters.FirstOrDefault(item =>
+                item.Speaker.Equals(rule.Speaker, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(
+                    item.CharacterId,
+                    rule.Speaker,
+                    StringComparison.OrdinalIgnoreCase));
+            if (choice is null)
+            {
+                throw new InvalidOperationException(
+                    $"角色“{rule.Speaker}”不在当前语音映射清单中。");
+            }
+            result.Add(new VoiceCatalogRequest(
+                rule.Speaker,
+                choice.CharacterId,
+                rule.Language));
+        }
+        return result;
+    }
+
     private void SelectTheme(string theme)
     {
         string normalized = theme is "Light" or "Dark" ? theme : "Default";
@@ -1155,7 +1381,7 @@ public sealed partial class MainWindow : Window
             ? new SolidColorBrush(Microsoft.UI.Colors.LimeGreen)
             : (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"];
 
-        string logPath = ConfigurationService.GetLogPath(MapperPathBox.Text);
+        string logPath = ConfigurationService.GetLogPath(InjectorPathBox.Text);
         if (File.Exists(logPath))
         {
             DateTime updated = File.GetLastWriteTime(logPath);
@@ -1163,7 +1389,7 @@ public sealed partial class MainWindow : Window
         }
         else
         {
-            LogStatusTextBlock.Text = File.Exists(MapperPathBox.Text.Trim())
+            LogStatusTextBlock.Text = File.Exists(InjectorPathBox.Text.Trim())
                 ? "注入器已就绪 · 尚无日志"
                 : "未找到注入器";
         }
@@ -1171,7 +1397,7 @@ public sealed partial class MainWindow : Window
 
     private void RefreshRuntimeAnimationDurations()
     {
-        string logPath = ConfigurationService.GetLogPath(MapperPathBox.Text);
+        string logPath = ConfigurationService.GetLogPath(InjectorPathBox.Text);
         if (!logPath.Equals(_durationLogPath, StringComparison.OrdinalIgnoreCase))
         {
             _durationLogPath = logPath;
@@ -1254,6 +1480,12 @@ public sealed partial class MainWindow : Window
             FileName = path,
             UseShellExecute = true
         });
+    }
+
+    private static string QuoteProcessArgument(string value)
+    {
+        string escaped = value.Replace("\"", "\\\"");
+        return $"\"{escaped}\"";
     }
 
     private void TryResizeWindow()

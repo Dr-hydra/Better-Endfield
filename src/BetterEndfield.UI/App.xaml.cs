@@ -1,6 +1,6 @@
 using Microsoft.UI.Xaml;
 
-namespace EFStartChange.UI;
+namespace BetterEndfield.UI;
 
 public partial class App : Application
 {
@@ -13,6 +13,16 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        if (Environment.GetCommandLineArgs().Any(argument => argument.Equals(
+                "--uninstall-xinput-silent",
+                StringComparison.OrdinalIgnoreCase)))
+        {
+            Task.Run(Services.XInputDeploymentService.TryUninstallSavedAsync)
+                .GetAwaiter()
+                .GetResult();
+            Exit();
+            return;
+        }
         _window = new MainWindow();
         _window.Activate();
     }

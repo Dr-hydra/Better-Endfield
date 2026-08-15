@@ -1,158 +1,101 @@
-<p align="center">
-  <img src="src/BetterEndfield.UI/Assets/gilberta.png" width="128" alt="Better Endfield Logo">
-</p>
+# Better Endfield
 
-<h1 align="center">Better Endfield</h1>
+Better Endfield 是一个面向《终末地》Windows 客户端的模块化运行时。模型和语音功能分别由独立 DLL 提供，Host 负责动态 IL2CPP 解析、Hook 生命周期、配置和模块发现。
 
-<p align="center">《明日方舟：终末地》登录场景角色、动画与角色配音控制器</p>
-
-> [!WARNING]
-> 本项目是非官方实验工具，会向游戏进程注入本机代码并修改运行时行为。使用时可能遇到游戏崩溃、版本不兼容或账号限制风险。请先阅读下方风险说明，并自行遵守游戏服务条款。
-
-## 功能
-
-- 登录场景角色替换，内置 31 组完整角色模型预设。
-- 复用角色自身骨架与动画，支持坐姿循环、坐姿特殊动作、起身过渡和最终动作四个阶段。
-- 可分别调整四阶段播放速度，并配置朝向、转身时间、模型缩放和前倾采样时间。
-- 支持原生循环、强制循环及双 Playable 交叉淡化循环。
-- 内置 4,058 个已索引动画片段，可按角色选择最终动作并显示运行时动画时长。
-- 32 个角色的独立配音语言路由，支持战斗、探索、剧情语音及对应剧情口型，可选择中文、英语、日语、韩语或跟随全局设置。
-- 短语音优先保留游戏原生 Wwise Random/Sequence Container、权重与 Avoid Repeat，仅替换最终 Sound 的语言媒体。
-- Windows 11 风格 WinUI 3 控制界面，支持浅色、深色和跟随系统主题。
-- 支持保存配置、查看日志、启动注入器、检查更新和创建桌面快捷方式。
-- 支持在内置注入器前启动 3DMigoto、XXMI 等外部 Mod 加载器，并提供冲突降级日志。
-- 首次启动显示风险说明与免责声明。
-
-## 兼容性
-
-- Windows 10/11 x64。
-- 当前版本面向 Unity IL2CPP 客户端，不支持其他架构。
-- Hook 与已验证的游戏构建绑定。游戏更新后如入口签名不匹配，相关功能会停止加载，需等待项目适配。
-- 已验证的 `GameAssembly.dll` SHA-256：
+## 架构
 
 ```text
-0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE
+BetterEndfield.exe
+  runtime/BetterEndfield.Host.dll
+  modules/BetterEndfield.Model.dll
+  modules/BetterEndfield.Voice.dll
+  loaders/BetterEndfield.Injector.exe
+  payloads/xinput1_4.dll
 ```
 
-## 下载与安装
+- `BetterEndfield.Host.dll`：唯一的进程内宿主、动态解析器和 HookBroker。
+- `BetterEndfield.Model.dll`：登录演员、模型资源和动画功能模块。
+- `BetterEndfield.Voice.dll`：语音语言、Wwise 媒体和口型功能模块。
+- `BetterEndfield.Injector.exe`：默认加载方式，Host 和模块均从软件目录加载。
+- `payloads/xinput1_4.dll`：可选的 XInput 自启动代理，仅在用户确认后部署到游戏目录。
 
-1. 打开 [Releases](https://github.com/Dr-hydra/Better-Endfield/releases/latest)。
-2. 下载 `BetterEndfield-<版本>-Setup.exe`。
-3. 运行安装器并阅读风险说明与 GNU AGPL v3.0 许可。默认安装到 `%LocalAppData%\Programs\Better Endfield`，安装器本身不要求管理员权限。
-4. 启动 `Better Endfield`。首次运行时需确认应用内免责声明。
+模块 ABI 使用纯 C 接口。模块通过程序集、命名空间、类、方法、参数和字段描述符动态解析 IL2CPP；Hook 入口由当前进程的 IL2CPP ABI 与 PE 可执行区间共同验证，不保存客户端地址或文件哈希条件。
 
-安装器目前没有代码签名，Windows SmartScreen 可能显示未知发布者警告。请只从本仓库的 Releases 页面下载安装包，并在需要时核对发布页提供的 SHA-256。
+## 加载方式
 
-发布版只安装两个程序文件：
+### 内置注入器
 
-- `BetterEndfield.exe`：包含 .NET 及 WinUI 运行时的自包含单文件控制器。
-- `Il2cppDumper.exe`：独立的原生启动器和手动映射器。
+这是默认方式。UI 启动 `loaders/BetterEndfield.Injector.exe`，注入器启动目标游戏并加载 `runtime/BetterEndfield.Host.dll`。游戏目录不写入任何 Better Endfield 文件。
 
-WinUI 原生运行时会在应用启动时由 .NET 单文件机制解压到当前用户的运行时缓存目录。启动注入器时可能出现 UAC 提权提示。
+### XInput 自启动
 
-## 使用方法
+当需要与其他加载器共同使用，或者希望通过官方启动器、桌面快捷方式直接启动时，可以安装 XInput 自启动代理。UI 会把 `payloads/xinput1_4.dll` 和一份归属记录写入 `Endfield.exe` 所在目录；游戏加载代理后，代理从 `%LocalAppData%\BetterEndfield\BetterEndfield.ini` 找到软件目录中的 Host。
 
-首次安装时，“角色替换”和“角色配音”两个功能均默认关闭。请在确认游戏版本兼容并阅读风险说明后，按需手动启用。更新安装不会覆盖已有的 `EFStartChange.ini` 设置。
+安装器和设置页都提供卸载。卸载前会验证文件哈希和归属记录，不会覆盖或删除未知的同名 `xinput1_4.dll`；如果其他工具也占用该文件名，请改用内置注入器。项目不包含任何反作弊停用、规避或对抗逻辑。
 
-### 角色替换
+## 路径与启动参数
 
-1. 在“设置”页确认 `Endfield.exe` 和随软件安装的 `Il2cppDumper.exe` 路径。
-2. 打开“角色替换”页并启用功能。
-3. 选择角色、最终动作及所需的速度、朝向、缩放和循环参数。
-4. 点击“保存参数”，或直接使用“保存并启动”。
+UI 会优先验证已保存路径，再检查软件相邻目录、Windows 卸载信息、常见安装目录和固定磁盘根目录下的有限候选，不递归扫描整块磁盘。设置页可随时重新扫描或手动选择 `Endfield.exe` 与 `BetterEndfield.Injector.exe`。
 
-模型与动画配置会在下一次启动和注入时读取。游戏已经运行时，请先完整退出游戏再重新启动。
+游戏启动参数会同时用于“保存并启动”和一键启动快捷方式。例如填写 `-force-d3d11` 可要求 Unity 使用 Direct3D 11。内置注入器会把这些参数放在自身 `--` 分隔符之后再传给游戏。
 
-### 角色配音
+## B 服兼容
 
-> 请先通过游戏下载对应语言的完整语音包。未安装目标语言包时，角色可能没有语音。
+B 服不通过官服 `GameAssembly.dll` 哈希判定。Host 在运行时解析 IL2CPP 元数据，模块只验证自己声明的类、方法、字段和资源契约。登录 SDK 或登录资源差异不会被当作全局失败条件。
 
-1. 打开“配音语言”页并启用功能。
-2. 需要同步替换剧情语音和口型时，启用“替换剧情语音与口型”。
-3. 选择角色和目标语言，点击添加或更新规则。
-4. 保存参数。游戏运行中会在约 2 秒内应用语言规则，当前正在播放的语音不会被中断。
+模型和语音资源目录由当前游戏目录生成，PCK、BNK/HIRC 和 `AudioDialog` 不编译进 DLL。缺少动态契约时对应模块会明确拒绝启动，不套用官服地址。
 
-界面会自动维护角色规则。底层配置示例：
+## 资源目录
 
-```ini
-voice_router_enabled=true
-voice_language_rules=aglina:Japanese,chen:Chinese,*:FollowGlobal
+UI 在保存配音规则时会从本机 PCK 选择性生成所需 Catalog。生成物位于
+`%LocalAppData%\BetterEndfield\catalog`，发布包不会携带 PCK、BNK、WEM 或
+`.becat`。角色规则写入配置前，UI 会先完成对应语言 Catalog 的原子更新；已删除
+规则所对应的旧文件只会在 UI 自己的生成记录范围内清理。
+
+开发或诊断时也可以手工生成：
+
+```powershell
+py -3 .\scripts\BuildVoiceCatalog.py `
+  --game-path 'E:\Endfield Game' `
+  --language Japanese `
+  --character-id chr_0013_aglina `
+  --output "$env:LOCALAPPDATA\BetterEndfield\catalog\voice.japanese.chr_0013_aglina.becat"
 ```
 
-如果角色标识与当前游戏数据不一致，可在 `IL2CPPDump_Log.txt` 中查找：
+Catalog 只包含目标角色需要的 WEM，重复目标 Media 只存储一次，运行时驻留内存并通过 Wwise `SetMedia` 注册。嵌入 UI 的索引只包含 Media ID、语言包指纹和相对路径，不包含音频内容；若官服与 B 服的 PCK 内容相同，即使 `GameAssembly.dll` 不同也复用同一映射，路径变化时会按 PCK 大小和解密后头部哈希定位。
 
-```text
-[voice-lang] observed speakerChannel=...
-```
+## 构建
 
-使用日志中的 `speakerChannel` 值修正规则。配音路由仅改变匹配角色的外部语音媒体选择，不会修改游戏资源包。
-
-## 配置与日志
-
-- Mod 配置：`Il2cppDumper.exe` 所在目录下的 `EFStartChange.ini`。
-- 注入日志：同目录下的 `IL2CPPDump_Log.txt`。
-- 界面设置：`%LocalAppData%\BetterEndfield\ui-settings.json`。首次运行会自动读取旧 `%LocalAppData%\EFStartChange\ui-settings.json`。
-
-界面提供“打开目录”和“查看日志”按钮。配音总开关、剧情语音与口型开关及角色语言规则支持热更新；模型和动画参数仍在下一次启动并注入时读取。
-
-## 与其他 Mod 加载器共存
-
-在“设置 → 外部加载器”中启用第三方加载器后，可填写其程序路径、原始命令行参数和等待时间。Better Endfield 会先启动外部加载器，等待其进入监听状态，再由内置注入器创建并注入 `Endfield.exe`。
-
-外部加载器必须关闭“自动启动游戏”功能。如果等待期间检测到 `Endfield.exe` 已经运行，Better Endfield 会停止后续启动并保留现有进程，不会尝试附加或重复注入。对于 JASM/3DMigoto，应只让 JASM 启动 3DMigoto Loader，再由 Better Endfield 启动游戏。
-
-正式版不再轮询 `F6`、`F9`、`F10`，因此 3DMigoto/JASM 可以继续使用 `F10` 刷新。原生 Hook 按功能组降级：模型和配音互不撤销；模型深层 Bundle 诊断失败不影响核心替换；剧情或口型 Hook 不可用时，基础战斗与探索配音仍会保留。未知的同地址 Hook 不会被自动串联，相关功能组会安全停用并写入 `[compat]` 日志。
-
-## 从源码构建
-
-构建环境：
-
-- Windows 10/11 x64。
-- Visual Studio 2022，包含 MSVC v143 C++ 工具集和 Windows SDK。
-- .NET SDK `9.0.314` 或符合 `global.json` 滚动策略的 9.0 补丁版本。
-- 构建安装器时需安装 Inno Setup 6。
-
-构建原生注入器和自包含 WinUI 单文件应用：
+环境要求：Windows 10/11 x64、Visual Studio 2022 C++ 工具集、CMake、.NET SDK 9.0 和 Inno Setup 6。
 
 ```powershell
 pwsh -File .\scripts\BuildBetterEndfield.ps1
+pwsh -File .\scripts\BuildInstaller.ps1 -Version 2.0.0
 ```
 
-输出目录为 `artifacts\BetterEndfield-win-x64`。
+原生构建入口是 `native/CMakeLists.txt`。MinHook 只由 Host 链接，模块不得自行初始化或卸载 Hook 引擎。
 
-构建中文安装器：
+## 配置
 
-```powershell
-pwsh -File .\scripts\BuildInstaller.ps1 -Version 1.1.1
+主配置位于 `%LocalAppData%\BetterEndfield\BetterEndfield.ini`，UI 设置位于同目录的 `ui-settings.json`。配置按模块分节：
+
+```ini
+[betterendfield.model]
+enabled=false
+model_enabled=false
+
+[betterendfield.voice]
+enabled=false
+voice_router_enabled=false
+voice_language_rules=*:Japanese
+
+[Loader]
+install_root=C:\Path\To\Better Endfield
+load_host=true
 ```
 
-安装器输出到 `artifacts\installer`。构建过程使用独立临时发布目录，完成后会自动清理。
+## 许可与风险
 
-## 项目结构
+本项目以 [AGPL-3.0-only](LICENSE) 发布。第三方 MinHook 保留其原许可证，副本位于 `native/third_party/minhook`。
 
-- `src/BetterEndfield.UI`：WinUI 3 控制器、中文角色名称和动画预设。
-- `tools/IL2CPP-Dumper-src/Dump`：注入运行时、模型动画替换和配音路由 Hook。
-- `tools/IL2CPP-Dumper-src/Mapper`：自提权启动器和手动映射器。
-- `tools/IL2CPP-Dumper-src/third_party/minhook`：MinHook 依赖及其许可证。
-- `installer`：中文 Inno Setup 安装器定义与风险说明。
-- `scripts`：应用和安装器构建脚本。
-- [游戏内接口参考](docs/GAME_INTERFACES.md)：固定 RVA、动态 IL2CPP/Wwise 接口、资源映射、版本兼容和降级策略。
-
-## 开源许可
-
-除目录中另有许可证声明的第三方组件外，本项目以 [GNU Affero General Public License v3.0 only](LICENSE)（`AGPL-3.0-only`）发布。复制、修改或分发本项目时须遵守该许可证；向用户提供修改版网络服务时，也须按许可证要求提供对应源代码。
-
-第三方组件保留其原有许可证，其中 IL2CPP-Dumper 相关上游代码使用 [MIT License](tools/IL2CPP-Dumper-src/LICENSE)，MinHook 及其 HDE 组件使用其各自的 [BSD 风格许可证](tools/IL2CPP-Dumper-src/third_party/minhook/LICENSE.txt)。
-
-## 联系与反馈
-
-- B站主页：[space.bilibili.com/441133155](https://space.bilibili.com/441133155)
-- 小黑盒主页：[用户主页 38080236](https://www.xiaoheihe.cn/app/user/profile/38080236)
-- QQ群：`851586605`
-- 问题反馈：[GitHub Issues](https://github.com/Dr-hydra/Better-Endfield/issues)
-
-## 风险说明
-
-本项目与鹰角网络、峘形山工作室及 GRYPHLINE 无关，不包含游戏资源、导出表格或反编译程序集。软件按“现状”提供，不附带任何明示或暗示的担保。
-
-本项目不负责停用、规避或对抗反作弊组件。游戏更新后如签名校验失败，请停止使用相关 Hook 并等待适配。使用者应自行备份重要数据、评估账号风险并承担使用后果。
+Better Endfield 与游戏发行商无关。使用前请备份配置并自行评估账号、客户端完整性和第三方 Mod 冲突风险。游戏更新后如果动态契约不满足，请停止使用对应模块并等待适配。

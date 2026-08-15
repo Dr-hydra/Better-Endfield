@@ -4,7 +4,7 @@
     <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <AssemblyName>BetterEndfield</AssemblyName>
-    <RootNamespace>EFStartChange.UI</RootNamespace>
+    <RootNamespace>BetterEndfield.UI</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\gilberta.ico</ApplicationIcon>
     <Platforms>x64</Platforms>
@@ -19,8 +19,8 @@
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
-    <Version>1.1.1</Version>
-    <InformationalVersion>1.1.1</InformationalVersion>
+    <Version>2.0.0</Version>
+    <InformationalVersion>2.0.0</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
@@ -35,10 +35,13 @@
     </Content>
     <EmbeddedResource
       Include="Assets\character-presets.json"
-      LogicalName="EFStartChange.UI.Assets.character-presets.json" />
+      LogicalName="BetterEndfield.UI.Assets.character-presets.json" />
     <EmbeddedResource
       Include="Assets\character-names.json"
-      LogicalName="EFStartChange.UI.Assets.character-names.json" />
+      LogicalName="BetterEndfield.UI.Assets.character-names.json" />
+    <EmbeddedResource
+      Include="Assets\voice-catalog-index.json"
+      LogicalName="BetterEndfield.UI.Assets.voice-catalog-index.json" />
   </ItemGroup>
 
   <Target

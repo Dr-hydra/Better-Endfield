@@ -3,7 +3,7 @@ param(
     [ValidateSet("Debug", "Release")]
     [string]$Configuration = "Release",
 
-    [string]$Version = "1.1.1"
+    [string]$Version = "2.0.0"
 )
 
 $ErrorActionPreference = "Stop"
@@ -59,7 +59,7 @@ try {
         throw "Application build failed with exit code $LASTEXITCODE."
     }
 
-    Get-ChildItem -LiteralPath $stagingDir -Recurse -File -Include *.pdb,*.log,*.ini |
+    Get-ChildItem -LiteralPath $stagingDir -Recurse -File -Include *.pdb,*.log |
         Remove-Item -Force
 
     $includedCultures = @('en-US', 'zh-CN', 'zh-TW')

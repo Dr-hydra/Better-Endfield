@@ -8,56 +8,81 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$nativeRoot = Join-Path $repoRoot "tools\IL2CPP-Dumper-src"
+$nativeRoot = Join-Path $repoRoot "native"
+$nativeBuild = Join-Path $repoRoot "artifacts\betterendfield-native-build"
 $uiProject = Join-Path $repoRoot "src\BetterEndfield.UI\BetterEndfield.UI.csproj"
+$voiceManifest = Join-Path $repoRoot "manifests\voice-event-media-manifest.json"
+$voiceCatalogIndex = Join-Path $repoRoot `
+    "src\BetterEndfield.UI\Assets\voice-catalog-index.json"
 $publishDir = if ([string]::IsNullOrWhiteSpace($PublishDir)) {
     Join-Path $repoRoot "artifacts\BetterEndfield-win-x64"
 }
 else {
     [System.IO.Path]::GetFullPath($PublishDir)
 }
-$vswhere = Join-Path ${env:ProgramFiles(x86)} `
-    "Microsoft Visual Studio\Installer\vswhere.exe"
-$runtimeMapCompiler = Join-Path $repoRoot "scripts\CompileVoiceRuntimeMap.py"
-$runtimeMapManifest = Join-Path $repoRoot "manifests\voice-event-media-manifest.json"
 
-if (-not (Test-Path -LiteralPath $runtimeMapManifest)) {
-    throw "Voice manifest was not found. Run scripts\UpdateResourceManifests.ps1 first."
+if (-not (Get-Command cmake.exe -ErrorAction SilentlyContinue)) {
+    throw "cmake.exe was not found. Install CMake and the Visual Studio C++ workload."
 }
 
-& py -3 $runtimeMapCompiler --input $runtimeMapManifest
+if (-not (Test-Path -LiteralPath $voiceManifest -PathType Leaf) -or
+    -not (Test-Path -LiteralPath $voiceCatalogIndex -PathType Leaf)) {
+    throw "Voice manifest or embedded catalog index is missing. Run scripts\UpdateResourceManifests.ps1."
+}
+$catalogIndexMetadata = Get-Content -LiteralPath $voiceCatalogIndex -Raw |
+    ConvertFrom-Json
+$voiceManifestSha256 = (Get-FileHash -LiteralPath $voiceManifest -Algorithm SHA256).Hash
+if ($catalogIndexMetadata.kind -ne 'betterendfield-voice-catalog-index' -or
+    $catalogIndexMetadata.sourceManifestSha256 -ne $voiceManifestSha256) {
+    throw "The embedded voice catalog index is stale. Run scripts\UpdateResourceManifests.ps1."
+}
+
+if (Test-Path -LiteralPath $publishDir) {
+    Remove-Item -LiteralPath $publishDir -Recurse -Force
+}
+New-Item -ItemType Directory -Force -Path $publishDir | Out-Null
+
+& cmake -S $nativeRoot -B $nativeBuild -G "Visual Studio 17 2022" -A x64
 if ($LASTEXITCODE -ne 0) {
-    throw "Voice runtime map compilation failed with exit code $LASTEXITCODE."
+    throw "Better Endfield native configuration failed with exit code $LASTEXITCODE."
 }
 
-if (-not (Test-Path -LiteralPath $vswhere)) {
-    throw "vswhere.exe was not found. Install Visual Studio 2022 Build Tools with C++."
-}
-
-$msbuild = & $vswhere -latest -products * `
-    -requires Microsoft.Component.MSBuild `
-    -find "MSBuild\**\Bin\MSBuild.exe" |
-    Select-Object -First 1
-if (-not $msbuild) {
-    throw "MSBuild was not found."
-}
-
-& $msbuild (Join-Path $nativeRoot "Dump.sln") /m /t:Build `
-    "/p:Configuration=$Configuration" /p:Platform=x64 /v:minimal
+& cmake --build $nativeBuild --config $Configuration --target BetterEndfield.Layout --parallel
 if ($LASTEXITCODE -ne 0) {
-    throw "Native build failed with exit code $LASTEXITCODE."
+    throw "Better Endfield native build failed with exit code $LASTEXITCODE."
 }
 
 dotnet publish $uiProject -c $Configuration -r win-x64 `
     --self-contained true -p:Platform=x64 -p:PublishSingleFile=true `
     -p:DebugType=None -p:DebugSymbols=false -p:PublishDir="$publishDir\"
 if ($LASTEXITCODE -ne 0) {
-    throw "WinUI publish failed with exit code $LASTEXITCODE."
+    throw "Better Endfield UI publish failed with exit code $LASTEXITCODE."
 }
 
-$mapperPath = Join-Path $nativeRoot "x64\$Configuration\Il2cppDumper.exe"
-Copy-Item -LiteralPath $mapperPath -Destination $publishDir -Force
+$nativeStage = Join-Path $nativeBuild "stage\$Configuration"
+if (-not (Test-Path -LiteralPath $nativeStage)) {
+    throw "Native stage directory was not produced: $nativeStage"
+}
+$forbiddenMedia = Get-ChildItem -LiteralPath $nativeStage -Recurse -File |
+    Where-Object { $_.Extension -in @(".becat", ".wem", ".pck", ".bnk") }
+if ($forbiddenMedia) {
+    $paths = $forbiddenMedia.FullName -join [Environment]::NewLine
+    throw ("Native stage contains local game-media payloads:" +
+        [Environment]::NewLine + $paths)
+}
+$payloadFiles = Get-ChildItem -LiteralPath (Join-Path $nativeStage "payloads") -File
+$unexpectedPayloads = $payloadFiles |
+    Where-Object { $_.Name -ne "xinput1_4.dll" }
+if ($unexpectedPayloads -or
+    -not ($payloadFiles | Where-Object { $_.Name -eq "xinput1_4.dll" })) {
+    $names = ($payloadFiles.Name | Sort-Object) -join ", "
+    throw "Native payload layout must contain only xinput1_4.dll; found: $names"
+}
+Copy-Item -LiteralPath (Join-Path $nativeStage "runtime") -Destination $publishDir -Recurse -Force
+Copy-Item -LiteralPath (Join-Path $nativeStage "modules") -Destination $publishDir -Recurse -Force
+Copy-Item -LiteralPath (Join-Path $nativeStage "loaders") -Destination $publishDir -Recurse -Force
+Copy-Item -LiteralPath (Join-Path $nativeStage "payloads") -Destination $publishDir -Recurse -Force
 
 Write-Host ""
-Write-Host "Build complete: $publishDir"
-Write-Host "Run BetterEndfield.exe, select Endfield.exe, then save and launch."
+Write-Host "Better Endfield build complete: $publishDir"
+Write-Host "Run BetterEndfield.exe, verify the detected paths, then choose Injector or XInput."

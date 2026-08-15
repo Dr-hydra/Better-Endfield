@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 
-namespace EFStartChange.UI.Models;
+namespace BetterEndfield.UI.Models;
 
 internal sealed class ModConfiguration
 {
@@ -108,8 +108,9 @@ internal sealed class ModConfiguration
         text.AppendLine("; Better Endfield runtime configuration");
         text.AppendLine("; Language changes are hot-reloaded; model changes apply on the next injection.");
         text.AppendLine();
-        text.AppendLine("[EFStartChange]");
+        text.AppendLine("[betterendfield.model]");
         text.AppendLine("schema_version=4");
+        text.AppendLine($"enabled={Boolean(ModelReplacementEnabled)}");
         text.AppendLine($"model_replacement_enabled={Boolean(ModelReplacementEnabled)}");
         text.AppendLine($"character={Character}");
         text.AppendLine($"final_action={FinalAction}");
@@ -144,7 +145,9 @@ internal sealed class ModConfiguration
         text.AppendLine($"loop_end={Number(LoopEnd)}");
         text.AppendLine($"crossfade_duration={Number(CrossfadeDuration)}");
         text.AppendLine();
+        text.AppendLine("[betterendfield.voice]");
         text.AppendLine("; speakerChannel:Chinese|English|Japanese|Korean|FollowGlobal");
+        text.AppendLine($"enabled={Boolean(VoiceRouterEnabled)}");
         text.AppendLine($"voice_router_enabled={Boolean(VoiceRouterEnabled)}");
         text.AppendLine($"replace_narrative_voice={Boolean(ReplaceNarrativeVoice)}");
         text.AppendLine($"voice_diagnostics={Boolean(VoiceDiagnostics)}");

@@ -2,7 +2,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace EFStartChange.UI.Services;
+namespace BetterEndfield.UI.Services;
 
 internal sealed record UpdateCheckResult(
     string CurrentVersion,
@@ -21,7 +21,7 @@ internal static partial class UpdateService
     public static string CurrentVersion =>
         (Assembly.GetExecutingAssembly()
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-            .InformationalVersion ?? "1.1.1")
+            .InformationalVersion ?? "2.0.0")
         .Split('+')[0];
 
     public static async Task<UpdateCheckResult> CheckAsync(CancellationToken cancellationToken)
