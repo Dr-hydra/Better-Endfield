@@ -55,7 +55,13 @@ Host 使用 `GameAssembly.dll` 的 IL2CPP 导出解析：
 可选契约还包括 `Beyond.Gameplay.Core.DialogManager._PlayLipSyncTrack`、
 `Beyond.Gameplay.View.LipSync.LipSyncUtils.GetLipSyncTrackPath`、
 `Beyond.Gameplay.View.LipSync.LipSyncUtils.TryLoadTrack` 及对话动作的角色标识 getter。
-剧情、时长和口型路由通过线程局部语言覆盖生效，不修改 Wwise 全局语言；时长覆盖独立于剧情语音开关。
+剧情请求在 `VoicePlayer.PlayVoice` 调用作用域内保存已识别的角色和目标语言，外部语音提交按
+“请求作用域、外部源路径、Wwise Event”顺序匹配规则。剧情文件路径不包含角色名时，可由
+`vo_narrating_<角色>_*` Event 或上游 `speakerChannel` 继续完成路由；作用域支持嵌套并在原调用
+返回后恢复。剧情 WEM 成功重定向后，模块还会按对白 ID 挂起一次目标口型语言；
+`LipSyncUtils.TryLoadTrack` 只有在收到完全相同的对白 ID 时才消费该状态，并在目标 Track
+不可用时重试游戏原语言。配置代数变化会使尚未消费的状态失效。时长和口型通过各自的线程
+局部语言覆盖生效，均不修改 Wwise 全局语言；时长覆盖独立于剧情语音开关。
 Wwise Media 只使用本机生成的 `BEVCAT01` Catalog；Catalog 中的 WEM 在 `SetMedia` 成功前保持驻留，清理状态确认后才释放。
 
 ## 外部 Catalog
