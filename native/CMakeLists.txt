@@ -67,6 +67,31 @@ set_target_properties(BetterEndfield.Voice PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
 )
 
+add_library(BetterEndfield.Music SHARED
+    modules/music/module.cpp
+    modules/music/music_bank.h
+    modules/music/omni_pcm_abi.h
+)
+better_endfield_target_defaults(BetterEndfield.Music)
+set_target_properties(BetterEndfield.Music PROPERTIES
+    OUTPUT_NAME "BetterEndfield.Music"
+    RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
+    LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
+)
+
+# Read-only research utility. It is deliberately excluded from the default
+# build and release layout; build the target explicitly when runtime metadata
+# signatures need to be refreshed.
+add_library(BetterEndfield.MusicProbe SHARED EXCLUDE_FROM_ALL
+    research/music_probe/module.cpp
+)
+better_endfield_target_defaults(BetterEndfield.MusicProbe)
+set_target_properties(BetterEndfield.MusicProbe PROPERTIES
+    OUTPUT_NAME "BetterEndfield.MusicProbe"
+    RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/research"
+    LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/research"
+)
+
 add_executable(BetterEndfield.Injector
     loaders/injector/main.cpp
     loaders/injector/BetterEndfield.Injector.rc
@@ -127,10 +152,14 @@ add_custom_target(BetterEndfield.Layout ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/../modules/betterendfield.voice.module.ini"
         "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.voice.module.ini"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/../modules/betterendfield.music.module.ini"
+        "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.music.module.ini"
     DEPENDS
         BetterEndfield.Host
         BetterEndfield.Model
         BetterEndfield.Voice
+        BetterEndfield.Music
         BetterEndfield.Injector
         BetterEndfield.Bootstrap
         BetterEndfield.XInput14Proxy

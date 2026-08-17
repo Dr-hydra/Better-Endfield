@@ -4,7 +4,7 @@
 
 ## Host 与模块
 
-Host 导出模块发现所需的 `BetterEndfield_GetModuleApiV1`。模块清单使用 `modules/*.module.ini`，包含模块 ID、DLL、ABI、契约组及 `requires` 程序集列表。Host 等待所需 IL2CPP 程序集注册后，按清单文件名的稳定顺序加载 DLL，先调用 `initialize`，再推送对应配置；依赖未就绪会在 90 秒窗口内重试，ABI 或契约拒绝则不重复加载。清单的 `enabled=false` 会禁用模块发现，而模块配置节中的 `enabled` 只控制该 DLL 是否激活 Hook，因此可在运行时热启用或停用。
+Host 导出模块发现所需的 `BetterEndfield_GetModuleApiV1`。模块清单使用 `modules/*.module.ini`，包含模块 ID、DLL、ABI、契约组及 `requires` 程序集列表。Host 等待所需 IL2CPP 程序集注册后，按清单文件名的稳定顺序加载 DLL，先调用 `initialize`，再推送对应配置；依赖未就绪会在 90 秒窗口内重试，ABI 或契约拒绝则不重复加载。模块配置节中的 `enabled=false` 会在本次进程启动时跳过该 DLL；已经加载的模块仍会收到后续配置变更并可停用自身行为，但从关闭改为开启需要下一次注入。
 
 Host 是唯一的 HookBroker 所有者，负责 MinHook 初始化、目标冲突检查、启用、禁用和移除。运行中只停用模块行为，不卸载 DLL；模块卸载在游戏进程结束后完成。
 
@@ -66,6 +66,41 @@ Wwise Media 只使用本机生成的 `BEVCAT01` Catalog；Catalog 中的 WEM 在
 - `VoiceCatalogEntryV1`：源 Media ID、目标 Media ID、驻留数据偏移和长度。
 
 Catalog 不包含 `GameAssembly.dll` 身份条件。B 服只要提供可解析的 PCK/BNK/HIRC 和 `AudioDialog`，即可重新生成自己的 Catalog。
+
+## 音乐模块
+
+音乐模块动态验证并挂接：
+
+- `Gameplay.Beyond.dll / Beyond.Gameplay.Audio / AudioMusicSystem.PostMusicEvent`
+- `AudioMusicSystem._StartMusicWithEvent`、`_StopMusicByPlayingId`
+- `AudioMusicSystem.PauseMusic`、`ResumeMusic`、`StopMusic`
+- `AudioMusicSystem.OnTimelinePause`、`OnTimelineResume`
+- `UnityEngine.CoreModule.dll / UnityEngine / UnitySynchronizationContext.Exec`
+- `AK.Wwise.Unity.API.dll / AkAudioInputManager.PostAudioInputEvent`
+- `AkAudioInputManager.InternalAudioFormatDelegate`、`InternalAudioSamplesDelegate`
+- `AkSoundEngine.LoadBankMemoryCopy`、`RegisterGameObj`、`ExecuteActionOnPlayingID`
+
+`UnitySynchronizationContext.Exec` 只作为 Unity 主线程命令泵。共享内存连接、心跳、读取、声道转换和重采样全部在模块自己的工作线程执行；Wwise 实时回调只读取预分配的本地 SPSC 缓冲，不分配、不加锁、不记录日志，也不调用 OmniPcmShared。
+
+OmniPcmShared 在加载后先通过 `OmniPcm_GetAbiVersion` 和
+`OmniPcm_GetAbiInfo` 验证 ABI 主版本 `2`、共享协议 `2` 与交错
+`float32`。实例使用 `OmniPcm_OpenInstanceUtf8`，流状态只读取带大小标记的
+`OmniPcm_GetSnapshotV2`；该检查失败时不会连接共享内存，也不会暂停原生
+Playing ID。
+
+模块内嵌 188 字节、四 HIRC 对象的 Audio Input Bank，不发布独立 `.bnk`。正式版继续使用已经在当前客户端验证的 `PostAudioInputEvent(..., null, null)` 路径，并只为自己的 Playing ID 截获 Internal 回调；其他 Playing ID 无条件转发给游戏原实现。构造纯 C++ IL2CPP 托管 Delegate 不属于当前 ABI。
+
+原游戏登录、主界面和游戏内 Playing ID 通过字段元数据动态取得。自定义 Event 路由到同一 Music Bus，因此模块只对选中范围的原生 Playing ID 执行 Pause/Resume，不静音总线。后端、流、预缓冲、格式回调和首个采样回调全部健康后才暂停原音乐；故障时按配置恢复。Audio Input 初始化失败按 2 秒退避重试；可闻游标在本地环形缓冲之外再扣除 100 ms 输出余量。
+
+Audio Input Event 是进程期持久 Source。OmniMix 暂停、停止、流切换或故障时，模块通过
+原子 PCM 门控让回调补零且不消费缓冲，不对持久 Event 执行 Pause/Resume；真正的 Source
+故障使用最近一次 Wwise 样本回调时间判定。实例声明 `QueueManagement`、`Seek` 能力，`stream_id`、格式
+generation 或 Seek generation 变化都会先清空旧流再绑定新流。策略只在状态边沿记录
+`[music.policy]`，可区分正常接管、场景离开、传输失效和后端会话丢失。
+
+图形后端不属于音乐模块接口。2026-08-17 的联调中曾偶发一次呈现线程崩溃，但后续测试
+无法稳定复现，也没有证据表明它由音乐模块、OmniMix 或特定图形后端触发。因此音乐模块
+不检测或修改渲染 API；UI 的自定义启动参数仅作为通用游戏启动能力保留。
 
 ## 加载适配器
 

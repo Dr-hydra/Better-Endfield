@@ -83,6 +83,40 @@ Copy-Item -LiteralPath (Join-Path $nativeStage "modules") -Destination $publishD
 Copy-Item -LiteralPath (Join-Path $nativeStage "loaders") -Destination $publishDir -Recurse -Force
 Copy-Item -LiteralPath (Join-Path $nativeStage "payloads") -Destination $publishDir -Recurse -Force
 
+$forbiddenReleaseMedia = Get-ChildItem -LiteralPath $publishDir -Recurse -File |
+    Where-Object { $_.Extension -in @(".becat", ".wem", ".pck", ".bnk") }
+if ($forbiddenReleaseMedia) {
+    $paths = $forbiddenReleaseMedia.FullName -join [Environment]::NewLine
+    throw ("Final release contains local game-media payloads:" +
+        [Environment]::NewLine + $paths)
+}
+$runtimeMarkers = Get-ChildItem -LiteralPath $publishDir -Recurse -File |
+    Where-Object {
+        $_.Name -in @(
+            "BetterEndfield-bootstrap.loaded",
+            "BetterEndfield-bootstrap-host.status")
+    }
+if ($runtimeMarkers) {
+    $paths = $runtimeMarkers.FullName -join [Environment]::NewLine
+    throw ("Final release contains runtime marker files:" +
+        [Environment]::NewLine + $paths)
+}
+$requiredReleaseFiles = @(
+    "BetterEndfield.exe",
+    "runtime\BetterEndfield.Host.dll",
+    "modules\BetterEndfield.Model.dll",
+    "modules\BetterEndfield.Voice.dll",
+    "modules\BetterEndfield.Music.dll",
+    "modules\betterendfield.music.module.ini",
+    "loaders\BetterEndfield.Injector.exe",
+    "payloads\xinput1_4.dll"
+)
+$missingReleaseFiles = $requiredReleaseFiles |
+    Where-Object { -not (Test-Path -LiteralPath (Join-Path $publishDir $_) -PathType Leaf) }
+if ($missingReleaseFiles) {
+    throw "Final release is incomplete: $($missingReleaseFiles -join ', ')"
+}
+
 Write-Host ""
 Write-Host "Better Endfield build complete: $publishDir"
 Write-Host "Run BetterEndfield.exe, verify the detected paths, then choose Injector or XInput."

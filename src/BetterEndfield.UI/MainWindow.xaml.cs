@@ -299,6 +299,9 @@ public sealed partial class MainWindow : Window
         VoicePageScrollViewer.Visibility = page == "voice"
             ? Visibility.Visible
             : Visibility.Collapsed;
+        MusicPageScrollViewer.Visibility = page == "music"
+            ? Visibility.Visible
+            : Visibility.Collapsed;
         SettingsPageScrollViewer.Visibility = page == "settings"
             ? Visibility.Visible
             : Visibility.Collapsed;
@@ -312,8 +315,63 @@ public sealed partial class MainWindow : Window
         {
             "settings" => "路径与外观会随保存一起写入本机设置。",
             "voice" => "角色配音规则保存后在下一次注入时生效。",
+            "music" => "首次启用在下一次注入时加载；已加载模块的设置会热更新。",
             _ => "角色与动画参数保存后在下一次注入时生效。"
         };
+    }
+
+    private async void BrowseOmniMixBackendButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        string? selectedPath = await PickExecutableAsync(
+            "选择 OmniMixPlayer.Backend.exe");
+        if (selectedPath is null)
+        {
+            return;
+        }
+
+        try
+        {
+            OmniMixRegistrationStatus status =
+                await OmniMixRegistrationService.RegisterAsync(selectedPath);
+            ApplyOmniMixRegistration(status);
+            ShowStatus(
+                "OmniMix 后端已注册",
+                "注册只保存路径；请保存配置后再启动游戏。",
+                InfoBarSeverity.Success);
+        }
+        catch (OmniMixRegistrationException exception)
+        {
+            ShowStatus("OmniMix 后端无效", exception.Message, InfoBarSeverity.Error);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException)
+        {
+            ShowStatus("OmniMix 注册失败", exception.Message, InfoBarSeverity.Error);
+        }
+    }
+
+    private async void UnregisterOmniMixButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        try
+        {
+            OmniMixRegistrationStatus status =
+                await OmniMixRegistrationService.UnregisterAsync();
+            ApplyOmniMixRegistration(status);
+            MusicReplacementToggle.IsOn = false;
+            ShowStatus(
+                "OmniMix 注册已清除",
+                "未删除 OmniMix 或 Better Endfield 的任何程序文件。",
+                InfoBarSeverity.Success);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException)
+        {
+            ShowStatus("解除注册失败", exception.Message, InfoBarSeverity.Error);
+        }
     }
 
     private void VoiceCharacterComboBox_SelectionChanged(
@@ -675,6 +733,13 @@ public sealed partial class MainWindow : Window
 
         try
         {
+            if (MusicReplacementToggle.IsOn)
+            {
+                OmniMixRegistrationStatus registration =
+                    await OmniMixRegistrationService.RegisterAsync(
+                        OmniMixBackendPathBox.Text);
+                ApplyOmniMixRegistration(registration);
+            }
             IReadOnlyList<VoiceCatalogRequest> catalogRequests =
                 BuildVoiceCatalogRequests(configuration.VoiceRouterEnabled);
             if (catalogRequests.Count > 0)
@@ -706,7 +771,7 @@ public sealed partial class MainWindow : Window
             {
                 ShowStatus(
                     "参数已保存",
-                    "语言配置会在约 2 秒内热更新；模型与动画配置将在下次启动并注入时读取。",
+                    "语言与已加载的音乐模块会在约 2 秒内热更新；模型、动画及首次启用的模块在下次注入时读取。",
                     InfoBarSeverity.Success);
             }
 
@@ -714,7 +779,8 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or
-            InvalidDataException or InvalidOperationException)
+            InvalidDataException or InvalidOperationException or
+            OmniMixRegistrationException)
         {
             ShowStatus("保存失败", exception.Message, InfoBarSeverity.Error);
             return false;
@@ -949,7 +1015,9 @@ public sealed partial class MainWindow : Window
             FinalSpeedNumberBox,
             LoopStartNumberBox,
             LoopEndNumberBox,
-            CrossfadeDurationNumberBox
+            CrossfadeDurationNumberBox,
+            MusicTargetLatencyNumberBox,
+            MusicPrebufferNumberBox
         ];
         if (numberBoxes.Any(box => !double.IsFinite(box.Value)))
         {
@@ -975,6 +1043,21 @@ public sealed partial class MainWindow : Window
             out string voiceLanguageRules,
             out error))
         {
+            return false;
+        }
+
+        if (MusicReplacementToggle.IsOn &&
+            !OmniMixRegistrationService.IsValidBackendPath(
+                OmniMixBackendPathBox.Text.Trim()))
+        {
+            error = "启用音乐替换前，请选择有效的 x64 OmniMixPlayer.Backend.exe。";
+            return false;
+        }
+
+        if (MusicReplacementToggle.IsOn &&
+            string.IsNullOrWhiteSpace(OmniMixClientIdTextBlock.Tag as string))
+        {
+            error = "OmniMix 客户端标识缺失，请重新注册后端。";
             return false;
         }
 
@@ -1015,7 +1098,17 @@ public sealed partial class MainWindow : Window
             ModelReplacementEnabled = ModelReplacementToggle.IsOn,
             VoiceRouterEnabled = VoiceRouterToggle.IsOn,
             ReplaceNarrativeVoice = NarrativeVoiceToggle.IsOn,
-            VoiceLanguageRules = voiceLanguageRules
+            VoiceLanguageRules = voiceLanguageRules,
+            MusicReplacementEnabled = MusicReplacementToggle.IsOn,
+            OmniMixBackendExe = OmniMixBackendPathBox.Text.Trim(),
+            OmniMixClientId = OmniMixClientIdTextBlock.Tag as string ?? string.Empty,
+            ReplaceLoginMusic = ReplaceLoginMusicToggle.IsOn,
+            ReplaceMetaMusic = ReplaceMetaMusicToggle.IsOn,
+            ReplaceGameplayMusic = ReplaceGameplayMusicToggle.IsOn,
+            MusicTargetLatency = MusicTargetLatencyNumberBox.Value,
+            MusicPrebufferMilliseconds = MusicPrebufferNumberBox.Value,
+            FallbackToNativeMusic = FallbackToNativeMusicToggle.IsOn,
+            MusicDiagnostics = MusicDiagnosticsToggle.IsOn
         };
         return true;
     }
@@ -1053,9 +1146,46 @@ public sealed partial class MainWindow : Window
         VoiceRouterToggle.IsOn = configuration.VoiceRouterEnabled;
         NarrativeVoiceToggle.IsOn = configuration.ReplaceNarrativeVoice;
         LoadVoiceRules(configuration.VoiceLanguageRules);
+        MusicReplacementToggle.IsOn = configuration.MusicReplacementEnabled;
+        OmniMixBackendPathBox.Text = configuration.OmniMixBackendExe;
+        OmniMixClientIdTextBlock.Tag = configuration.OmniMixClientId;
+        OmniMixRegistrationStatusTextBlock.Text =
+            string.IsNullOrWhiteSpace(configuration.OmniMixBackendExe)
+                ? "尚未注册 OmniMix 后端"
+                : OmniMixRegistrationService.IsValidBackendPath(
+                    configuration.OmniMixBackendExe)
+                    ? "OmniMix 后端路径有效"
+                    : "OmniMix 后端路径已失效";
+        OmniMixClientIdTextBlock.Text = string.IsNullOrWhiteSpace(
+            configuration.OmniMixClientId)
+                ? "客户端标识将在注册时生成。"
+                : $"客户端标识：{configuration.OmniMixClientId}";
+        ReplaceLoginMusicToggle.IsOn = configuration.ReplaceLoginMusic;
+        ReplaceMetaMusicToggle.IsOn = configuration.ReplaceMetaMusic;
+        ReplaceGameplayMusicToggle.IsOn = configuration.ReplaceGameplayMusic;
+        MusicTargetLatencyNumberBox.Value = configuration.MusicTargetLatency;
+        MusicPrebufferNumberBox.Value = configuration.MusicPrebufferMilliseconds;
+        FallbackToNativeMusicToggle.IsOn = configuration.FallbackToNativeMusic;
+        MusicDiagnosticsToggle.IsOn = configuration.MusicDiagnostics;
 
         _initializing = wasInitializing;
         UpdateCrossfadePanel();
+    }
+
+    private void ApplyOmniMixRegistration(OmniMixRegistrationStatus status)
+    {
+        OmniMixBackendPathBox.Text = status.BackendExe;
+        OmniMixClientIdTextBlock.Tag = status.ClientId;
+        OmniMixRegistrationStatusTextBlock.Text = status.Registered
+            ? status.Valid
+                ? string.IsNullOrWhiteSpace(status.BackendVersion)
+                    ? "OmniMix 后端路径有效"
+                    : $"OmniMix 后端 {status.BackendVersion}"
+                : $"OmniMix 后端不可用：{status.Reason}"
+            : "尚未注册 OmniMix 后端";
+        OmniMixClientIdTextBlock.Text = string.IsNullOrWhiteSpace(status.ClientId)
+            ? "客户端标识将在注册时生成。"
+            : $"客户端标识：{status.ClientId}";
     }
 
     private void RefreshActionOptions(string? preferredAction)

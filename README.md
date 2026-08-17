@@ -1,6 +1,6 @@
 # Better Endfield
 
-Better Endfield 是一个面向《终末地》Windows 客户端的模块化运行时。模型和语音功能分别由独立 DLL 提供，Host 负责动态 IL2CPP 解析、Hook 生命周期、配置和模块发现。
+Better Endfield 是一个面向《终末地》Windows 客户端的模块化运行时。模型、语音和 OmniMix 音乐集成分别由独立 DLL 提供，Host 负责动态 IL2CPP 解析、Hook 生命周期、配置和模块发现。
 
 ## 架构
 
@@ -9,6 +9,7 @@ BetterEndfield.exe
   runtime/BetterEndfield.Host.dll
   modules/BetterEndfield.Model.dll
   modules/BetterEndfield.Voice.dll
+  modules/BetterEndfield.Music.dll
   loaders/BetterEndfield.Injector.exe
   payloads/xinput1_4.dll
 ```
@@ -16,6 +17,7 @@ BetterEndfield.exe
 - `BetterEndfield.Host.dll`：唯一的进程内宿主、动态解析器和 HookBroker。
 - `BetterEndfield.Model.dll`：登录演员、模型资源和动画功能模块。
 - `BetterEndfield.Voice.dll`：语音语言、Wwise 媒体和口型功能模块。
+- `BetterEndfield.Music.dll`：OmniMix PCM、Wwise Audio Input 和原游戏音乐回退模块。
 - `BetterEndfield.Injector.exe`：默认加载方式，Host 和模块均从软件目录加载。
 - `payloads/xinput1_4.dll`：可选的 XInput 自启动代理，仅在用户确认后部署到游戏目录。
 
@@ -44,6 +46,26 @@ UI 会优先验证已保存路径，再检查软件相邻目录、Windows 卸载
 B 服不通过官服 `GameAssembly.dll` 哈希判定。Host 在运行时解析 IL2CPP 元数据，模块只验证自己声明的类、方法、字段和资源契约。登录 SDK 或登录资源差异不会被当作全局失败条件。
 
 模型和语音资源目录由当前游戏目录生成，PCK、BNK/HIRC 和 `AudioDialog` 不编译进 DLL。缺少动态契约时对应模块会明确拒绝启动，不套用官服地址。
+
+音乐模块同样不验证 `GameAssembly.dll` 身份。它按完整 IL2CPP 元数据签名解析 `AudioMusicSystem`、`AkAudioInputManager` 与 Unity 主线程入口；官服/B 服登录 SDK 和登录资源差异不参与音乐契约。
+
+## OmniMix 音乐集成
+
+音乐集成默认关闭。Better Endfield 只保存用户选择的 `OmniMixPlayer.Backend.exe` 绝对路径，并从该后端的 `native\x64` 目录动态加载兼容的 `OmniPcmShared.dll`；不会复制曲库、音频或 OmniMix 程序。注册和运行时都会验证 OmniPcmShared ABI `2.x`、共享协议 `2` 与交错 `float32` 能力。后端路径缺失、ABI 不兼容、心跳中断或 PCM 缓冲不足时，模块保持或恢复原游戏音乐。
+
+正式链路为：
+
+```text
+OmniMix instance shared memory
+  -> BetterEndfield.Music 工作线程
+  -> 48 kHz 立体声 SPSC 缓冲
+  -> Wwise Audio Input Event
+  -> 游戏 Music Bus
+```
+
+只有共享流、预缓冲、格式回调和采样回调全部健康后，模块才按登录、主界面/基地、游戏内三个独立范围暂停对应原生 Playing ID。它不会静音全局 Music Bus；Audio Input 暂态失败会退避重试，可闻游标额外保留 100 ms 输出队列余量。OmniMix 项目组的完整对接契约见 [`docs/OMNIMIX_INTEGRATION_HANDOFF.md`](docs/OMNIMIX_INTEGRATION_HANDOFF.md)。
+
+Better Endfield 在实例握手中声明播放队列管理和 Seek 能力，因此可以直接在 OmniMix 中向该游戏实例添加、插入、移动和清空队列。
 
 ## 资源目录
 
@@ -77,7 +99,7 @@ pwsh -File .\scripts\BuildInstaller.ps1 -Version 2.0.0
 
 ## 配置
 
-主配置位于 `%LocalAppData%\BetterEndfield\BetterEndfield.ini`，UI 设置位于同目录的 `ui-settings.json`。配置按模块分节：
+主配置位于 `%LocalAppData%\BetterEndfield\BetterEndfield.ini`，使用 UTF-16LE BOM 以保证 Windows Profile API 能无损读取中文路径；UI 设置位于同目录的 `ui-settings.json`。配置按模块分节：
 
 ```ini
 [betterendfield.model]
@@ -88,6 +110,18 @@ model_enabled=false
 enabled=false
 voice_router_enabled=false
 voice_language_rules=*:Japanese
+
+[betterendfield.music]
+enabled=false
+music_replacement_enabled=false
+backend_exe=C:\Path\To\OmniMixPlayer.Backend.exe
+client_id=better-endfield-example
+replace_login=true
+replace_meta=true
+replace_gameplay=true
+target_latency=0.4
+prebuffer_ms=150
+fallback_to_native=true
 
 [Loader]
 install_root=C:\Path\To\Better Endfield

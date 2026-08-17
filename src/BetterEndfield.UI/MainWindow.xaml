@@ -90,6 +90,14 @@
                         <FontIcon Glyph="&#xE767;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem
+                    x:Name="MusicNavigationItem"
+                    Content="音乐集成"
+                    Tag="music">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8D6;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
             </NavigationView.MenuItems>
 
             <NavigationView.FooterMenuItems>
@@ -476,6 +484,153 @@
                                                 </ListView.ItemTemplate>
                                             </ListView>
                                         </StackPanel>
+                                    </StackPanel>
+                                </ContentControl>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <ScrollViewer
+                            x:Name="MusicPageScrollViewer"
+                            HorizontalScrollBarVisibility="Disabled"
+                            Visibility="Collapsed"
+                            VerticalScrollBarVisibility="Auto">
+                            <StackPanel
+                                MaxWidth="920"
+                                Margin="32,28,32,44"
+                                HorizontalAlignment="Stretch"
+                                Spacing="28">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Style="{StaticResource PageTitleStyle}" Text="OmniMix 音乐集成" />
+                                    <TextBlock
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="将 OmniMix 输出的音乐送入游戏原生 Wwise 音乐总线。曲库、播放列表与后端仍由 OmniMix 管理。"
+                                        TextWrapping="Wrap" />
+                                    <ToggleSwitch
+                                        x:Name="MusicReplacementToggle"
+                                        Margin="0,12,0,0"
+                                        Header="启用音乐替换"
+                                        OffContent="保持游戏原生音乐"
+                                        OnContent="使用 OmniMix 音乐流" />
+                                </StackPanel>
+
+                                <ContentControl
+                                    HorizontalContentAlignment="Stretch">
+                                    <StackPanel Spacing="28">
+                                        <Border Style="{StaticResource SectionStyle}">
+                                            <StackPanel Spacing="16">
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="OmniMix 后端" />
+                                                    <TextBlock
+                                                        Style="{StaticResource FieldHintStyle}"
+                                                        Text="Better Endfield 只保存后端绝对路径，不复制或修改 OmniMix 文件。" />
+                                                </StackPanel>
+                                                <Grid ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox
+                                                        x:Name="OmniMixBackendPathBox"
+                                                        Header="OmniMixPlayer.Backend.exe"
+                                                        PlaceholderText="选择 OmniMix 后端程序" />
+                                                    <Button
+                                                        Grid.Column="1"
+                                                        Margin="0,24,0,0"
+                                                        Click="BrowseOmniMixBackendButton_Click"
+                                                        Style="{StaticResource PathButtonStyle}"
+                                                        ToolTipService.ToolTip="选择并注册 OmniMix 后端">
+                                                        <SymbolIcon Symbol="OpenFile" />
+                                                    </Button>
+                                                </Grid>
+                                                <Grid ColumnSpacing="12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Spacing="3">
+                                                        <TextBlock
+                                                            x:Name="OmniMixRegistrationStatusTextBlock"
+                                                            FontWeight="SemiBold"
+                                                            Text="尚未注册 OmniMix 后端" />
+                                                        <TextBlock
+                                                            x:Name="OmniMixClientIdTextBlock"
+                                                            Style="{StaticResource FieldHintStyle}"
+                                                            Text="客户端标识将在注册时生成。" />
+                                                    </StackPanel>
+                                                    <Button
+                                                        Grid.Column="1"
+                                                        VerticalAlignment="Center"
+                                                        Click="UnregisterOmniMixButton_Click"
+                                                        Content="解除注册" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Style="{StaticResource SectionStyle}">
+                                            <StackPanel Spacing="16">
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="替换范围" />
+                                                    <TextBlock
+                                                        Style="{StaticResource FieldHintStyle}"
+                                                        Text="关闭的场景继续使用游戏原生音乐。" />
+                                                </StackPanel>
+                                                <ToggleSwitch
+                                                    x:Name="ReplaceLoginMusicToggle"
+                                                    Header="登录场景"
+                                                    OffContent="原生音乐"
+                                                    OnContent="OmniMix" />
+                                                <ToggleSwitch
+                                                    x:Name="ReplaceMetaMusicToggle"
+                                                    Header="主界面与基地"
+                                                    OffContent="原生音乐"
+                                                    OnContent="OmniMix" />
+                                                <ToggleSwitch
+                                                    x:Name="ReplaceGameplayMusicToggle"
+                                                    Header="游戏内场景"
+                                                    OffContent="原生音乐"
+                                                    OnContent="OmniMix" />
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Style="{StaticResource SectionStyle}">
+                                            <StackPanel Spacing="16">
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="缓冲与回退" />
+                                                    <TextBlock
+                                                        Style="{StaticResource FieldHintStyle}"
+                                                        Text="只有 PCM 达到预缓冲且 Wwise 回调正常后，原游戏音乐才会暂停。" />
+                                                </StackPanel>
+                                                <Grid ColumnSpacing="16">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <NumberBox
+                                                        x:Name="MusicTargetLatencyNumberBox"
+                                                        Header="OmniMix 目标延迟 (秒)"
+                                                        Maximum="2"
+                                                        Minimum="0.1"
+                                                        SmallChange="0.05" />
+                                                    <NumberBox
+                                                        x:Name="MusicPrebufferNumberBox"
+                                                        Grid.Column="1"
+                                                        Header="本地预缓冲 (毫秒)"
+                                                        Maximum="1000"
+                                                        Minimum="50"
+                                                        SmallChange="25" />
+                                                </Grid>
+                                                <ToggleSwitch
+                                                    x:Name="FallbackToNativeMusicToggle"
+                                                    Header="故障时恢复原游戏音乐"
+                                                    OffContent="保持静音"
+                                                    OnContent="自动恢复" />
+                                                <ToggleSwitch
+                                                    x:Name="MusicDiagnosticsToggle"
+                                                    Header="详细诊断日志"
+                                                    OffContent="常规日志"
+                                                    OnContent="记录流状态与缓冲统计" />
+                                            </StackPanel>
+                                        </Border>
                                     </StackPanel>
                                 </ContentControl>
                             </StackPanel>
