@@ -2,6 +2,10 @@ bin/
 obj/
 artifacts/
 research/
+!native/research/
+!native/research/music_probe/
+!native/research/music_probe/*.cpp
+!native/research/music_probe/*.ini
 runs/*
 state/*
 Maps/

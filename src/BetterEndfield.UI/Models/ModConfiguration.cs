@@ -72,6 +72,10 @@ internal sealed class ModConfiguration
 
     public bool ModelReplacementEnabled { get; set; } = false;
 
+    public bool LogoThemeEnabled { get; set; } = false;
+
+    public string LogoThemeColor { get; set; } = "#FFC928";
+
     public bool VoiceRouterEnabled { get; set; } = false;
 
     public bool ReplaceNarrativeVoice { get; set; } = true;
@@ -79,6 +83,26 @@ internal sealed class ModConfiguration
     public bool VoiceDiagnostics { get; set; } = false;
 
     public string VoiceLanguageRules { get; set; } = string.Empty;
+
+    public bool MusicReplacementEnabled { get; set; } = false;
+
+    public string OmniMixBackendExe { get; set; } = string.Empty;
+
+    public string OmniMixClientId { get; set; } = string.Empty;
+
+    public bool ReplaceLoginMusic { get; set; } = true;
+
+    public bool ReplaceMetaMusic { get; set; } = true;
+
+    public bool ReplaceGameplayMusic { get; set; } = true;
+
+    public double MusicTargetLatency { get; set; } = 0.4;
+
+    public double MusicPrebufferMilliseconds { get; set; } = 150.0;
+
+    public bool FallbackToNativeMusic { get; set; } = true;
+
+    public bool MusicDiagnostics { get; set; } = false;
 
     public static ModConfiguration CreateDefaults() => new();
 
@@ -106,12 +130,15 @@ internal sealed class ModConfiguration
 
         var text = new StringBuilder();
         text.AppendLine("; Better Endfield runtime configuration");
-        text.AppendLine("; Language changes are hot-reloaded; model changes apply on the next injection.");
+        text.AppendLine("; Visual and language changes are hot-reloaded; model changes apply on the next injection.");
         text.AppendLine();
         text.AppendLine("[betterendfield.model]");
-        text.AppendLine("schema_version=4");
-        text.AppendLine($"enabled={Boolean(ModelReplacementEnabled)}");
+        text.AppendLine("schema_version=5");
+        text.AppendLine($"enabled={Boolean(ModelReplacementEnabled || LogoThemeEnabled)}");
         text.AppendLine($"model_replacement_enabled={Boolean(ModelReplacementEnabled)}");
+        text.AppendLine($"logo_theme_enabled={Boolean(LogoThemeEnabled)}");
+        text.AppendLine($"logo_theme_color={LogoThemeColor}");
+        text.AppendLine("diagnostics=true");
         text.AppendLine($"character={Character}");
         text.AppendLine($"final_action={FinalAction}");
         text.AppendLine($"model_path={ModelPath}");
@@ -152,6 +179,20 @@ internal sealed class ModConfiguration
         text.AppendLine($"replace_narrative_voice={Boolean(ReplaceNarrativeVoice)}");
         text.AppendLine($"voice_diagnostics={Boolean(VoiceDiagnostics)}");
         text.AppendLine($"voice_language_rules={VoiceRules(VoiceLanguageRules)}");
+        text.AppendLine();
+        text.AppendLine("[betterendfield.music]");
+        text.AppendLine("schema_version=1");
+        text.AppendLine($"enabled={Boolean(MusicReplacementEnabled)}");
+        text.AppendLine($"music_replacement_enabled={Boolean(MusicReplacementEnabled)}");
+        text.AppendLine($"backend_exe={OmniMixBackendExe}");
+        text.AppendLine($"client_id={OmniMixClientId}");
+        text.AppendLine($"replace_login={Boolean(ReplaceLoginMusic)}");
+        text.AppendLine($"replace_meta={Boolean(ReplaceMetaMusic)}");
+        text.AppendLine($"replace_gameplay={Boolean(ReplaceGameplayMusic)}");
+        text.AppendLine($"target_latency={Number(MusicTargetLatency)}");
+        text.AppendLine($"prebuffer_ms={Number(MusicPrebufferMilliseconds)}");
+        text.AppendLine($"fallback_to_native={Boolean(FallbackToNativeMusic)}");
+        text.AppendLine($"diagnostics={Boolean(MusicDiagnostics)}");
         return text.ToString();
     }
 }

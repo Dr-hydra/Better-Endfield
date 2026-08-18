@@ -48,6 +48,20 @@ struct VoiceConfiguration {
     std::vector<VoiceRule> rules;
 };
 
+struct VoiceRequestRoute {
+    bool active = false;
+    int language = -1;
+    char speaker[128]{};
+};
+
+struct PendingLipRoute {
+    bool armed = false;
+    int language = -1;
+    uint64_t configuration_generation = 0;
+    char line_id[256]{};
+    char speaker[128]{};
+};
+
 struct MethodContract {
     const char* key;
     BE_MethodDescriptorV1 descriptor;
@@ -63,6 +77,7 @@ VoiceConfiguration g_configuration;
 std::mutex g_configuration_mutex;
 std::atomic_bool g_diagnostics_enabled{true};
 std::atomic_bool g_replace_narrative{true};
+std::atomic<uint64_t> g_configuration_generation{1};
 
 std::atomic<uint64_t> g_play_voice_hits{0};
 std::atomic<uint64_t> g_channel_play_hits{0};
@@ -90,7 +105,6 @@ using NarrativeFn = uint32_t(__fastcall*)(
 using DurationFn = bool(__fastcall*)(
     void* voice_id, float* duration, void* method);
 using GetCurrentLanguageFn = int(__fastcall*)(void* method);
-using ManagedGetterFn = void*(__fastcall*)(void* instance, void* method);
 using LipDialogFn = void(__fastcall*)(
     void* instance, void* action_data, void* entity, void* method);
 using LipPathFn = void*(__fastcall*)(
@@ -148,6 +162,8 @@ std::array<uint64_t, 4> g_language_package_retry_at{};
 thread_local bool g_loading_auxiliary_package = false;
 thread_local int g_duration_language_override = -1;
 thread_local int g_lip_language_override = -1;
+thread_local VoiceRequestRoute g_voice_request_route{};
+thread_local PendingLipRoute g_pending_lip_route{};
 BE_ResolvedFieldV1 g_voice_context_voice_data{};
 BE_ResolvedFieldV1 g_runtime_voice_data_speaker_channel{};
 
@@ -247,6 +263,11 @@ MethodContract g_lip_actor{
     "lip.dialog.actor",
     {"Gameplay.Beyond.dll", "Beyond.Gameplay", "DialogPlayTrunkActionData",
         "get_actorNameId", nullptr, "System.String", 0},
+    false};
+MethodContract g_lip_trunk{
+    "lip.dialog.trunk",
+    {"Gameplay.Beyond.dll", "Beyond.Gameplay", "DialogPlayTrunkActionData",
+        "get_trunkId", nullptr, "System.String", 0},
     false};
 
 std::string_view Trim(std::string_view value) {
@@ -423,6 +444,7 @@ bool ResolveRuntimeContract() {
         &g_lip_load,
         &g_lip_real_actor,
         &g_lip_actor,
+        &g_lip_trunk,
     };
     for (MethodContract* contract : optional) {
         ResolveContract(*contract);
@@ -524,14 +546,20 @@ std::string ManagedString(void* value, size_t capacity = 1024) {
 bool TryReadManagedGetter(const MethodContract& contract, void* instance,
     void*& value) {
     value = nullptr;
-    if (!contract.resolved || !contract.pointer || !instance) {
+    if (!contract.resolved || !contract.method_info || !instance ||
+        !g_host || !g_host->runtime_invoke) {
         return false;
     }
+    void* exception = nullptr;
     __try {
-        value = reinterpret_cast<ManagedGetterFn>(contract.pointer)(
-            instance, const_cast<void*>(contract.method_info));
+        value = g_host->runtime_invoke(g_host->context, contract.method_info,
+            instance, nullptr, &exception);
     }
     __except (EXCEPTION_EXECUTE_HANDLER) {
+        value = nullptr;
+        return false;
+    }
+    if (exception) {
         value = nullptr;
         return false;
     }
@@ -586,6 +614,35 @@ bool SelectRule(std::string_view identity, bool allow_token_match,
     return false;
 }
 
+class ScopedVoiceRequestRoute {
+public:
+    explicit ScopedVoiceRequestRoute(const VoiceRule* rule) {
+        if (!rule || rule->language < 0 || rule->language > 3) {
+            return;
+        }
+        previous_ = g_voice_request_route;
+        g_voice_request_route = {};
+        g_voice_request_route.active = true;
+        g_voice_request_route.language = rule->language;
+        std::snprintf(g_voice_request_route.speaker,
+            sizeof(g_voice_request_route.speaker), "%s", rule->speaker.c_str());
+        applied_ = true;
+    }
+
+    ~ScopedVoiceRequestRoute() {
+        if (applied_) {
+            g_voice_request_route = previous_;
+        }
+    }
+
+    ScopedVoiceRequestRoute(const ScopedVoiceRequestRoute&) = delete;
+    ScopedVoiceRequestRoute& operator=(const ScopedVoiceRequestRoute&) = delete;
+
+private:
+    VoiceRequestRoute previous_{};
+    bool applied_ = false;
+};
+
 const char* LanguagePathName(int language) {
     static constexpr const char* names[]{
         "chinese", "english", "japanese", "korean"
@@ -621,6 +678,45 @@ bool BuildVoiceReplacementSource(const std::string& source, int language,
 bool IsNarrativeSource(std::string_view source) {
     return source.starts_with("voice/") &&
         source.find("/narrating/") != std::string_view::npos;
+}
+
+std::string ExtractVoiceLineId(std::string_view source) {
+    if (source.empty()) {
+        return {};
+    }
+    const size_t separator = source.find_last_of("/\\");
+    std::string line(separator == std::string_view::npos
+        ? source : source.substr(separator + 1));
+    if (line.size() >= 4 && line.compare(line.size() - 4, 4, ".wem") == 0) {
+        line.erase(line.size() - 4);
+    }
+    return Normalize(std::move(line));
+}
+
+void ClearPendingLipRoute() {
+    g_pending_lip_route = {};
+}
+
+bool ArmPendingLipRoute(int language, std::string_view speaker,
+    std::string_view source) {
+    const std::string line_id = ExtractVoiceLineId(source);
+    if (language < 0 || language > 3 || line_id.empty()) {
+        ClearPendingLipRoute();
+        return false;
+    }
+    PendingLipRoute pending;
+    pending.armed = true;
+    pending.language = language;
+    pending.configuration_generation = g_configuration_generation.load(
+        std::memory_order_acquire);
+    std::snprintf(pending.line_id, sizeof(pending.line_id), "%s",
+        line_id.c_str());
+    const int speaker_length = static_cast<int>(std::min(
+        speaker.size(), sizeof(pending.speaker) - 1));
+    std::snprintf(pending.speaker, sizeof(pending.speaker), "%.*s",
+        speaker_length, speaker.data());
+    g_pending_lip_route = pending;
+    return true;
 }
 
 bool TryGetCurrentLanguage(int& language) {
@@ -758,12 +854,16 @@ bool EnsureCatalogForSpeaker(const std::string& speaker) {
 void __fastcall HookPlayVoice(void* voice_context, void* method) {
     const uint64_t hit = g_play_voice_hits.fetch_add(1, std::memory_order_relaxed) + 1;
     const std::string speaker = SpeakerFromContext(voice_context);
+    VoiceRule rule;
+    const bool matched = SelectRule(speaker, false, rule) && rule.language >= 0;
     EnsureCatalogForSpeaker(speaker);
     if (ShouldLog(hit)) {
         Log("[voice-hook] VoicePlayer.PlayVoice hit=" + std::to_string(hit) +
             " speaker=" + (speaker.empty() ? "<unknown>" : speaker) +
+            " target=" + (matched ? std::to_string(rule.language) : "global") +
             " dynamic=true");
     }
+    const ScopedVoiceRequestRoute route(matched ? &rule : nullptr);
     if (g_original_play_voice) {
         g_original_play_voice(voice_context, method);
     }
@@ -773,12 +873,16 @@ void __fastcall HookChannelPlay(void* instance, void* voice_context, void* metho
     const uint64_t hit = g_channel_play_hits.fetch_add(
         1, std::memory_order_relaxed) + 1;
     const std::string speaker = SpeakerFromContext(voice_context);
+    VoiceRule rule;
+    const bool matched = SelectRule(speaker, false, rule) && rule.language >= 0;
     EnsureCatalogForSpeaker(speaker);
     if (ShouldLog(hit)) {
         Log("[voice-hook] VoiceSpeakChannelProcessor._PlayVoice hit=" +
             std::to_string(hit) + " speaker=" +
-            (speaker.empty() ? "<unknown>" : speaker));
+            (speaker.empty() ? "<unknown>" : speaker) +
+            " target=" + (matched ? std::to_string(rule.language) : "global"));
     }
+    const ScopedVoiceRequestRoute route(matched ? &rule : nullptr);
     if (g_original_channel_play) {
         g_original_channel_play(instance, voice_context, method);
     }
@@ -813,12 +917,15 @@ uint32_t __fastcall HookNarrative(void* instance, void* voice_id,
                 ? std::string{} : rule.speaker);
         }
     }
+    const bool matched = narrative_enabled && rule.language >= 0;
     if (ShouldLog(hit)) {
         Log("[voice-hook] VoiceManager._SpeakNarrative hit=" +
             std::to_string(hit) + " identity=" +
             (identity.empty() ? "<unknown>" : identity) +
-            " replacement=" + (narrative_enabled ? "enabled" : "disabled"));
+            " replacement=" + (narrative_enabled ? "enabled" : "disabled") +
+            " target=" + (matched ? std::to_string(rule.language) : "global"));
     }
+    const ScopedVoiceRequestRoute route(matched ? &rule : nullptr);
     return g_original_narrative
         ? g_original_narrative(instance, voice_id, audio_object_id, config, method)
         : 0;
@@ -910,11 +1017,18 @@ std::string ReadLipActor(void* action_data) {
     return {};
 }
 
+std::string ReadLipTrunk(void* action_data) {
+    void* value = nullptr;
+    return TryReadManagedGetter(g_lip_trunk, action_data, value)
+        ? Normalize(ManagedString(value)) : std::string{};
+}
+
 void __fastcall HookLipDialog(void* instance, void* action_data,
     void* entity, void* method) {
     const uint64_t hit = g_lip_dialog_hits.fetch_add(
         1, std::memory_order_relaxed) + 1;
     const std::string actor = ReadLipActor(action_data);
+    const std::string trunk = ReadLipTrunk(action_data);
     VoiceRule rule;
     const bool matched = g_replace_narrative.load(std::memory_order_relaxed) &&
         SelectRule(actor, false, rule) && rule.language >= 0;
@@ -925,6 +1039,7 @@ void __fastcall HookLipDialog(void* instance, void* action_data,
     if (ShouldLog(hit)) {
         Log("[lip-route] dialog hit=" + std::to_string(hit) +
             " actor=" + (actor.empty() ? "<unknown>" : actor) +
+            " trunk=" + (trunk.empty() ? "<unknown>" : trunk) +
             " target=" + (matched ? std::to_string(rule.language) : "global"));
     }
     if (g_original_lip_dialog) {
@@ -940,37 +1055,104 @@ void* __fastcall HookLipPath(int language, void* voice_id, void* suffix,
         ? override : language;
     const uint64_t hit = g_lip_path_hits.fetch_add(
         1, std::memory_order_relaxed) + 1;
-    if (ShouldLog(hit) && routed_language != language) {
-        Log("[lip-route] path language=" + std::to_string(language) +
-            " -> " + std::to_string(routed_language));
-    }
-    return g_original_lip_path
+    void* result = g_original_lip_path
         ? g_original_lip_path(routed_language, voice_id, suffix, method)
         : nullptr;
+    if (ShouldLog(hit)) {
+        const std::string voice = ManagedString(voice_id);
+        const std::string suffix_text = ManagedString(suffix);
+        const std::string path = ManagedString(result);
+        Log("[lip-route] path hit=" + std::to_string(hit) +
+            " language=" + std::to_string(language) +
+            " -> " + std::to_string(routed_language) +
+            " voice=" + (voice.empty() ? "<empty>" : voice) +
+            " suffix=" + (suffix_text.empty() ? "<empty>" : suffix_text) +
+            " result=" + (path.empty() ? "<empty>" : path));
+    }
+    return result;
 }
 
 bool __fastcall HookLipLoad(void* line_id, void** track, void* method) {
     const uint64_t hit = g_lip_load_hits.fetch_add(
         1, std::memory_order_relaxed) + 1;
-    if (ShouldLog(hit) && g_lip_language_override >= 0) {
-        Log("[lip-route] load target=" +
-            std::to_string(g_lip_language_override));
+    const std::string line = ExtractVoiceLineId(
+        Normalize(ManagedString(line_id)));
+    const PendingLipRoute pending = g_pending_lip_route;
+    const uint64_t generation = g_configuration_generation.load(
+        std::memory_order_acquire);
+    const bool pending_stale = pending.armed &&
+        pending.configuration_generation != generation;
+    const bool pending_matches = pending.armed && !pending_stale &&
+        !line.empty() && line == pending.line_id;
+    if (pending_stale) {
+        ClearPendingLipRoute();
     }
-    return g_original_lip_load
-        ? g_original_lip_load(line_id, track, method)
-        : false;
+
+    const int previous = g_lip_language_override;
+    const bool dialog_routed = previous >= 0 && previous <= 3;
+    const bool routed = pending_matches || dialog_routed;
+    const int target = pending_matches ? pending.language : previous;
+    if (routed) {
+        g_lip_language_override = target;
+    }
+    bool result = g_original_lip_load
+        ? g_original_lip_load(line_id, track, method) : false;
+    bool fallback = false;
+    if (routed && !result && g_original_lip_load) {
+        g_lip_language_override = -1;
+        result = g_original_lip_load(line_id, track, method);
+        fallback = result;
+    }
+    g_lip_language_override = previous;
+    if (pending_matches) {
+        ClearPendingLipRoute();
+    }
+
+    if (ShouldLog(hit)) {
+        const char* pending_state = pending_matches ? "matched"
+            : (pending_stale ? "stale" : (pending.armed ? "mismatch" : "none"));
+        Log("[lip-route] load hit=" + std::to_string(hit) +
+            " line=" + (line.empty() ? "<empty>" : line) +
+            " routed=" + (routed ? "true" : "false") +
+            " target=" + (routed ? std::to_string(target) : "global") +
+            " pending=" + pending_state +
+            " speaker=" + (pending.speaker[0]
+                ? std::string(pending.speaker) : "<none>") +
+            " result=" + (result ? "true" : "false") +
+            " fallback=" + (fallback ? "true" : "false"));
+    }
+    return result;
 }
 
 uint32_t __fastcall HookExternalEvent(void* event_name, uint64_t audio_object_id,
     void* external_source_key, uint32_t external_cookie, uint32_t callback_type,
     void* callback, void* cookie, uint32_t codec, void* method) {
     const uint64_t hit = g_external_hits.fetch_add(1, std::memory_order_relaxed) + 1;
+    const std::string event = Normalize(ManagedString(event_name));
     const std::string source = Normalize(ManagedString(external_source_key));
     VoiceRule rule;
     const bool narrative_blocked = IsNarrativeSource(source) &&
         !g_replace_narrative.load(std::memory_order_relaxed);
-    const bool matched = !narrative_blocked && SelectRule(source, true, rule) &&
-        rule.language >= 0;
+    const char* matched_by = "none";
+    bool matched = false;
+    if (!narrative_blocked && g_voice_request_route.active &&
+        g_voice_request_route.language >= 0 &&
+        g_voice_request_route.language <= 3) {
+        rule.speaker = g_voice_request_route.speaker;
+        rule.language = g_voice_request_route.language;
+        matched = true;
+        matched_by = "request";
+    }
+    if (!narrative_blocked && !matched && SelectRule(source, true, rule) &&
+        rule.language >= 0) {
+        matched = true;
+        matched_by = "source";
+    }
+    if (!narrative_blocked && !matched && SelectRule(event, true, rule) &&
+        rule.language >= 0) {
+        matched = true;
+        matched_by = "event";
+    }
     std::string replacement;
     void* routed_source = external_source_key;
     bool replaced = false;
@@ -979,18 +1161,34 @@ uint32_t __fastcall HookExternalEvent(void* event_name, uint64_t audio_object_id
         routed_source = g_host->string_new(g_host->context, replacement.c_str());
         replaced = routed_source != nullptr;
     }
+    const bool narrative = IsNarrativeSource(source);
+    bool lip_armed = false;
+    if (narrative) {
+        if (matched && replaced) {
+            lip_armed = ArmPendingLipRoute(rule.language, rule.speaker, source);
+        } else {
+            ClearPendingLipRoute();
+        }
+    }
     if (ShouldLog(hit)) {
         Log("[voice-external] hit=" + std::to_string(hit) +
             " matched=" + (matched ? rule.speaker : "<none>") +
-            " narrative=" + (IsNarrativeSource(source) ? "true" : "false") +
+            " matchedBy=" + matched_by +
+            " narrative=" + (narrative ? "true" : "false") +
             " replaced=" + (replaced ? "true" : "false") +
+            " lipArmed=" + (lip_armed ? "true" : "false") +
+            " event=" + (event.empty() ? "<empty>" : event) +
             " source=" + (source.empty() ? "<empty>" : source) +
             " target=" + (replacement.empty() ? "<unchanged>" : replacement));
     }
-    return g_original_external_event
+    const uint32_t result = g_original_external_event
         ? g_original_external_event(event_name, audio_object_id, routed_source,
             external_cookie, callback_type, callback, cookie, codec, method)
         : 0;
+    if (lip_armed && result == 0) {
+        ClearPendingLipRoute();
+    }
+    return result;
 }
 
 int __fastcall HookLoadFilePackage(void* package_path, uint32_t* package_id,
@@ -1531,11 +1729,12 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
         !host->resolve_method || !host->create_hook ||
         !host->release_module_hooks || !host->resolve_field ||
         !host->copy_catalog_root || !host->copy_managed_string || !host->string_new ||
-        !host->field_get_value_object || !host->log) {
+        !host->runtime_invoke || !host->field_get_value_object || !host->log) {
         return BE_Result_ContractMismatch;
     }
     g_host = host;
     g_configuration = {};
+    g_configuration_generation.store(1, std::memory_order_release);
     g_play_voice_hits.store(0, std::memory_order_release);
     g_channel_play_hits.store(0, std::memory_order_release);
     g_event_hits.store(0, std::memory_order_release);
@@ -1585,6 +1784,7 @@ BE_Result BE_CALL ConfigurationChanged(const char* configuration) {
         std::lock_guard lock(g_configuration_mutex);
         g_configuration = std::move(next);
     }
+    g_configuration_generation.fetch_add(1, std::memory_order_acq_rel);
     g_diagnostics_enabled.store(diagnostics, std::memory_order_release);
     g_replace_narrative.store(replace_narrative, std::memory_order_release);
     Log("[voice-config] enabled=" + std::string(enabled ? "true" : "false") +
@@ -1642,7 +1842,7 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Voice Language", "2.0.0", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Voice Language", "2.0.1", BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};

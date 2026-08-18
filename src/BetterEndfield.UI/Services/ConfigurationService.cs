@@ -85,7 +85,7 @@ internal static class ConfigurationService
         await File.WriteAllTextAsync(
             path,
             hostConfiguration,
-            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            Encoding.Unicode);
     }
 
     internal static string ResolveInstallRoot(string injectorPath, string loaderMode)
@@ -196,6 +196,7 @@ internal static class ConfigurationService
             return configuration;
         }
 
+        await EnsureUnicodeProfileEncodingAsync(path);
         string[] lines = await File.ReadAllLinesAsync(path);
         var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         bool inSection = false;
@@ -213,6 +214,8 @@ internal static class ConfigurationService
                 inSection = section.Equals("betterendfield.model",
                     StringComparison.OrdinalIgnoreCase) ||
                     section.Equals("betterendfield.voice",
+                        StringComparison.OrdinalIgnoreCase) ||
+                    section.Equals("betterendfield.music",
                         StringComparison.OrdinalIgnoreCase);
                 continue;
             }
@@ -267,6 +270,14 @@ internal static class ConfigurationService
             values,
             "model_replacement_enabled",
             configuration.ModelReplacementEnabled);
+        configuration.LogoThemeEnabled = Boolean(
+            values,
+            "logo_theme_enabled",
+            configuration.LogoThemeEnabled);
+        configuration.LogoThemeColor = Text(
+            values,
+            "logo_theme_color",
+            configuration.LogoThemeColor);
         configuration.VoiceRouterEnabled = Boolean(
             values,
             "voice_router_enabled",
@@ -281,7 +292,48 @@ internal static class ConfigurationService
             configuration.VoiceDiagnostics);
         configuration.VoiceLanguageRules = VoiceRulesForEditor(
             Text(values, "voice_language_rules", configuration.VoiceLanguageRules));
+        configuration.MusicReplacementEnabled = Boolean(
+            values,
+            "music_replacement_enabled",
+            configuration.MusicReplacementEnabled);
+        configuration.OmniMixBackendExe = Text(
+            values, "backend_exe", configuration.OmniMixBackendExe);
+        configuration.OmniMixClientId = Text(
+            values, "client_id", configuration.OmniMixClientId);
+        configuration.ReplaceLoginMusic = Boolean(
+            values, "replace_login", configuration.ReplaceLoginMusic);
+        configuration.ReplaceMetaMusic = Boolean(
+            values, "replace_meta", configuration.ReplaceMetaMusic);
+        configuration.ReplaceGameplayMusic = Boolean(
+            values, "replace_gameplay", configuration.ReplaceGameplayMusic);
+        configuration.MusicTargetLatency = Number(
+            values, "target_latency", configuration.MusicTargetLatency);
+        configuration.MusicPrebufferMilliseconds = Number(
+            values, "prebuffer_ms", configuration.MusicPrebufferMilliseconds);
+        configuration.FallbackToNativeMusic = Boolean(
+            values, "fallback_to_native", configuration.FallbackToNativeMusic);
+        configuration.MusicDiagnostics = Boolean(
+            values, "diagnostics", configuration.MusicDiagnostics);
         return configuration;
+    }
+
+    private static async Task EnsureUnicodeProfileEncodingAsync(string path)
+    {
+        byte[] prefix = new byte[2];
+        await using (FileStream stream = new(
+            path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+        {
+            if (await stream.ReadAsync(prefix) == prefix.Length &&
+                prefix[0] == 0xFF && prefix[1] == 0xFE)
+            {
+                return;
+            }
+        }
+
+        string contents = await File.ReadAllTextAsync(path);
+        string temporary = path + ".encoding.tmp";
+        await File.WriteAllTextAsync(temporary, contents, Encoding.Unicode);
+        File.Move(temporary, path, overwrite: true);
     }
 
     public static string GetNativeConfigurationPath(string _)
