@@ -8,7 +8,7 @@
     "path": "research/current-inputs/Table/AudioDialog.json",
     "sha256": "8B401C463E308DCE0D4B89AA9E64DF67DEE7D2540475782052DE077C76D016F4",
     "aliases": {
-      "path": "data/voice-event-aliases.json",
+      "path": "resources/voice/voice-event-aliases.json",
       "sha256": "1B19D21120D1B37086ED246369170DBCA0DAA75D0A12CE41B5DD755142B40F35"
     }
   },

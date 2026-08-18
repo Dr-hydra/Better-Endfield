@@ -16,7 +16,7 @@ internal sealed record VoiceCatalogPreparation(IReadOnlyList<string> FileNames);
 internal static class VoiceCatalogService
 {
     private const string CatalogResourceName =
-        "BetterEndfield.UI.Assets.voice-catalog-index.json";
+        "BetterEndfield.UI.Assets.voice.voice-catalog-index.json";
     private const string CatalogRegistryFileName = "generated-catalogs.json";
     private const uint XorConstant = 0x9C5A0B29;
     private const uint MultiplyConstant = 81861667;

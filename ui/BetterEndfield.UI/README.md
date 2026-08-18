@@ -2,6 +2,8 @@
 
 Better Endfield 的 WinUI 3 中文控制器。应用负责编辑模块配置、显示运行状态并启动原生注入器。
 
+项目位于仓库的 `ui/BetterEndfield.UI`。`Assets/model` 保存模型预设与角色名，`Assets/voice` 保存不含音频内容的紧凑语音索引，`Assets/shared` 保存 UI 与安装器共用的品牌资源。
+
 配置文件保存在 `%LocalAppData%\BetterEndfield\BetterEndfield.ini`。语言开关和角色语言规则会在运行时自动热更新；模型与动画参数仍在下一次启动并加载 Host 时读取。
 
 ## 界面功能

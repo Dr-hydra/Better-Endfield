@@ -12,7 +12,9 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MANIFEST = REPO_ROOT / "state/vfs-manifest/Data/Bundles/Windows/manifest.json"
 DEFAULT_CATALOG = REPO_ROOT / "research/character-catalog/characters.json"
-DEFAULT_OUTPUT = REPO_ROOT / "src/BetterEndfield.UI/Assets/character-presets.json"
+DEFAULT_OUTPUT = (
+    REPO_ROOT / "ui/BetterEndfield.UI/Assets/model/character-presets.json"
+)
 
 
 def parse_args() -> argparse.Namespace:

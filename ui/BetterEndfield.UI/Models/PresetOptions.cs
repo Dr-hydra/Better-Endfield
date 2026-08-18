@@ -59,10 +59,10 @@ internal sealed class CharacterPresetCatalog
 internal static class PresetOptions
 {
     private const string CatalogResourceName =
-        "BetterEndfield.UI.Assets.character-presets.json";
+        "BetterEndfield.UI.Assets.model.character-presets.json";
 
     private const string ChineseNamesResourceName =
-        "BetterEndfield.UI.Assets.character-names.json";
+        "BetterEndfield.UI.Assets.model.character-names.json";
 
     public static IReadOnlyDictionary<string, string> CharacterNames { get; } =
         LoadChineseNames();

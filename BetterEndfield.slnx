@@ -1,3 +1,3 @@
 <Solution>
-  <Project Path="src/BetterEndfield.UI/BetterEndfield.UI.csproj" />
+  <Project Path="ui/BetterEndfield.UI/BetterEndfield.UI.csproj" />
 </Solution>

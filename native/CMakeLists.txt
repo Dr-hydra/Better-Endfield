@@ -18,10 +18,10 @@ if(MSVC)
 endif()
 
 set(BETTER_ENDFIELD_STAGE_DIR "${CMAKE_BINARY_DIR}/stage/$<CONFIG>")
-set(BETTER_ENDFIELD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(BETTER_ENDFIELD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shared/include")
 
 add_subdirectory(
-    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/minhook"
+    "${CMAKE_CURRENT_SOURCE_DIR}/shared/third_party/minhook"
     "${CMAKE_BINARY_DIR}/minhook"
 )
 
@@ -35,13 +35,13 @@ function(better_endfield_target_defaults target)
 endfunction()
 
 add_library(BetterEndfield.Host SHARED
-    host/bootstrap.cpp
-    host/dynamic_resolver.cpp
-    host/hook_broker.cpp
-    host/host_runtime.cpp
-    host/logging.cpp
-    host/module_manager.cpp
-    host/settings_store.cpp
+    shared/host/bootstrap.cpp
+    shared/host/dynamic_resolver.cpp
+    shared/host/hook_broker.cpp
+    shared/host/host_runtime.cpp
+    shared/host/logging.cpp
+    shared/host/module_manager.cpp
+    shared/host/settings_store.cpp
 )
 better_endfield_target_defaults(BetterEndfield.Host)
 target_link_libraries(BetterEndfield.Host PRIVATE minhook)
@@ -108,7 +108,7 @@ set_target_properties(BetterEndfield.Injector PROPERTIES
 # XInput is the only game-directory proxy. It forwards the system API and
 # starts the Better Endfield Host after IL2CPP is ready.
 add_library(BetterEndfield.XInput14Proxy SHARED
-    loaders/input_proxy/input_proxy.cpp
+    loaders/xinput/input_proxy.cpp
 )
 better_endfield_target_defaults(BetterEndfield.XInput14Proxy)
 target_compile_definitions(BetterEndfield.XInput14Proxy PRIVATE
@@ -125,7 +125,7 @@ set_target_properties(BetterEndfield.XInput14Proxy PROPERTIES
 )
 
 add_library(BetterEndfield.Bootstrap SHARED
-    loaders/input_proxy/input_proxy.cpp
+    loaders/xinput/input_proxy.cpp
 )
 better_endfield_target_defaults(BetterEndfield.Bootstrap)
 target_compile_definitions(BetterEndfield.Bootstrap PRIVATE
@@ -147,13 +147,13 @@ add_custom_target(BetterEndfield.Layout ALL
         "${BETTER_ENDFIELD_STAGE_DIR}/payloads/version.dll"
         "${BETTER_ENDFIELD_STAGE_DIR}/payloads/dinput8.dll"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/../modules/betterendfield.model.module.ini"
+        "${CMAKE_CURRENT_SOURCE_DIR}/modules/model/betterendfield.model.module.ini"
         "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.model.module.ini"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/../modules/betterendfield.voice.module.ini"
+        "${CMAKE_CURRENT_SOURCE_DIR}/modules/voice/betterendfield.voice.module.ini"
         "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.voice.module.ini"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/../modules/betterendfield.music.module.ini"
+        "${CMAKE_CURRENT_SOURCE_DIR}/modules/music/betterendfield.music.module.ini"
         "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.music.module.ini"
     DEPENDS
         BetterEndfield.Host

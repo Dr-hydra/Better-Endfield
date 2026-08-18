@@ -6,7 +6,7 @@
     <AssemblyName>BetterEndfield</AssemblyName>
     <RootNamespace>BetterEndfield.UI</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon>Assets\gilberta.ico</ApplicationIcon>
+    <ApplicationIcon>Assets\shared\gilberta.ico</ApplicationIcon>
     <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -29,19 +29,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Assets\gilberta.png">
+    <Content Include="Assets\shared\gilberta.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
     <EmbeddedResource
-      Include="Assets\character-presets.json"
-      LogicalName="BetterEndfield.UI.Assets.character-presets.json" />
+      Include="Assets\model\character-presets.json"
+      LogicalName="BetterEndfield.UI.Assets.model.character-presets.json" />
     <EmbeddedResource
-      Include="Assets\character-names.json"
-      LogicalName="BetterEndfield.UI.Assets.character-names.json" />
+      Include="Assets\model\character-names.json"
+      LogicalName="BetterEndfield.UI.Assets.model.character-names.json" />
     <EmbeddedResource
-      Include="Assets\voice-catalog-index.json"
-      LogicalName="BetterEndfield.UI.Assets.voice-catalog-index.json" />
+      Include="Assets\voice\voice-catalog-index.json"
+      LogicalName="BetterEndfield.UI.Assets.voice.voice-catalog-index.json" />
   </ItemGroup>
 
   <Target

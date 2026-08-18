@@ -46,9 +46,13 @@ if ($SkipPckDiscovery) { $arguments += '--no-pck-discovery' }
 & $python.Source @arguments
 if ($LASTEXITCODE -ne 0) { throw 'Resource manifest generation failed.' }
 
-@('action-manifest.json', 'voice-event-media-manifest.json',
-    'resource-manifest-report.md') | ForEach-Object {
-    $artifact = Join-Path $Workspace "manifests\$_"
+$manifestArtifacts = @(
+    'manifests\model\action-manifest.json',
+    'manifests\voice\voice-event-media-manifest.json',
+    'manifests\shared\resource-manifest-report.md'
+)
+foreach ($relativePath in $manifestArtifacts) {
+    $artifact = Join-Path $Workspace $relativePath
     if (-not (Test-Path -LiteralPath $artifact -PathType Leaf)) {
         throw "Expected manifest output was not generated: $artifact"
     }
@@ -56,8 +60,10 @@ if ($LASTEXITCODE -ne 0) { throw 'Resource manifest generation failed.' }
 
 # Catalogs intentionally remain local, selected-language runtime inputs.
 # They are built after a user selects the target speaker and language.
-foreach ($jsonArtifact in @('action-manifest.json', 'voice-event-media-manifest.json')) {
-    $artifact = Join-Path $Workspace "manifests\$jsonArtifact"
+foreach ($relativePath in @(
+    'manifests\model\action-manifest.json',
+    'manifests\voice\voice-event-media-manifest.json')) {
+    $artifact = Join-Path $Workspace $relativePath
     try {
         $null = Get-Content -LiteralPath $artifact -Raw | ConvertFrom-Json
     }
@@ -67,8 +73,8 @@ foreach ($jsonArtifact in @('action-manifest.json', 'voice-event-media-manifest.
 }
 
 & $python.Source -3 (Join-Path $Workspace 'scripts\GenerateVoiceCatalogIndex.py') `
-    '--manifest' (Join-Path $Workspace 'manifests\voice-event-media-manifest.json') `
-    '--output' (Join-Path $Workspace 'src\BetterEndfield.UI\Assets\voice-catalog-index.json')
+    '--manifest' (Join-Path $Workspace 'manifests\voice\voice-event-media-manifest.json') `
+    '--output' (Join-Path $Workspace 'ui\BetterEndfield.UI\Assets\voice\voice-catalog-index.json')
 if ($LASTEXITCODE -ne 0) { throw 'Voice catalog runtime index generation failed.' }
 
 Write-Host "Resource manifests: $(Join-Path $Workspace 'manifests')"

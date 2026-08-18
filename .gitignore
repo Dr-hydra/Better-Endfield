@@ -37,7 +37,7 @@ scripts/*
 
 # Native build outputs.
 native/build/
-native/third_party/minhook/build/
+native/shared/third_party/minhook/build/
 
 vendor/tools/
 vendor/wwiser/

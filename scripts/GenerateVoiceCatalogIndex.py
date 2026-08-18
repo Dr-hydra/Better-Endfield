@@ -25,15 +25,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--manifest",
         type=Path,
-        default=ROOT / "manifests" / "voice-event-media-manifest.json",
+        default=ROOT / "manifests" / "voice" / "voice-event-media-manifest.json",
     )
     parser.add_argument(
         "--output",
         type=Path,
         default=ROOT
-        / "src"
+        / "ui"
         / "BetterEndfield.UI"
         / "Assets"
+        / "voice"
         / "voice-catalog-index.json",
     )
     return parser.parse_args()

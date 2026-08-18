@@ -39,7 +39,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ACTIONS = REPO_ROOT / "research/current-inputs/character-presets.json"
 DEFAULT_AUDIO_DIALOG = REPO_ROOT / "research/current-inputs/Table/AudioDialog.json"
 DEFAULT_BNK_DIR = REPO_ROOT / "research/bank-pck/bnk"
-DEFAULT_VOICE_ALIASES = REPO_ROOT / "data/voice-event-aliases.json"
+DEFAULT_VOICE_ALIASES = REPO_ROOT / "resources/voice/voice-event-aliases.json"
 DEFAULT_INPUT_SNAPSHOT = REPO_ROOT / "research/current-inputs/input-snapshot.json"
 DEFAULT_OUTPUT = REPO_ROOT / "manifests"
 
@@ -1118,10 +1118,15 @@ def main() -> int:
     if version_inputs:
         action_manifest["versionInputs"] = version_inputs
         voice_manifest["versionInputs"] = version_inputs
-    write_json(output_dir / "action-manifest.json", action_manifest)
-    write_json(output_dir / "voice-event-media-manifest.json", voice_manifest)
+    write_json(output_dir / "model" / "action-manifest.json", action_manifest)
+    write_json(
+        output_dir / "voice" / "voice-event-media-manifest.json",
+        voice_manifest,
+    )
     summary = build_summary(action_manifest, voice_manifest)
-    (output_dir / "resource-manifest-report.md").write_text(
+    report_path = output_dir / "shared" / "resource-manifest-report.md"
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(
         summary, encoding="utf-8", newline="\n"
     )
     print(

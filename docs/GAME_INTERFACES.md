@@ -39,7 +39,7 @@ Host 使用 `GameAssembly.dll` 的 IL2CPP 导出解析：
 
 首次 A1 请求发生而 Main 资源尚未就绪时，模块最多暂停该登录控制器 Tick 5 秒；替换体准备完成后调用原始 `_ResetToA1` 统一时间原点。只有 Prefab、四段有效动作、Animator、首个 PlayableGraph、原 Renderer 隐藏和初次锚点准备全部完成后才进入替换状态；任一步失败都会保留或恢复原演员。
 
-模型及动作路径来自当前 `action-manifest.json` 和 UI 写入的配置，不编译角色资源哈希白名单，也不依赖可执行文件身份。
+模型及动作路径来自当前 `manifests/model/action-manifest.json` 和 UI 写入的配置，不编译角色资源哈希白名单，也不依赖可执行文件身份。
 
 Logo 主题使用以下强类型契约：
 

@@ -10,10 +10,10 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $nativeRoot = Join-Path $repoRoot "native"
 $nativeBuild = Join-Path $repoRoot "artifacts\betterendfield-native-build"
-$uiProject = Join-Path $repoRoot "src\BetterEndfield.UI\BetterEndfield.UI.csproj"
-$voiceManifest = Join-Path $repoRoot "manifests\voice-event-media-manifest.json"
+$uiProject = Join-Path $repoRoot "ui\BetterEndfield.UI\BetterEndfield.UI.csproj"
+$voiceManifest = Join-Path $repoRoot "manifests\voice\voice-event-media-manifest.json"
 $voiceCatalogIndex = Join-Path $repoRoot `
-    "src\BetterEndfield.UI\Assets\voice-catalog-index.json"
+    "ui\BetterEndfield.UI\Assets\voice\voice-catalog-index.json"
 $publishDir = if ([string]::IsNullOrWhiteSpace($PublishDir)) {
     Join-Path $repoRoot "artifacts\BetterEndfield-win-x64"
 }

@@ -42,7 +42,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--manifest",
         type=Path,
-        default=ROOT / "manifests" / "voice-event-media-manifest.json",
+        default=ROOT / "manifests" / "voice" / "voice-event-media-manifest.json",
     )
     parser.add_argument("--language", choices=LANGUAGES, required=True)
     parser.add_argument("--character-id", default="")

@@ -60,7 +60,7 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <Border Width="34" Height="34" CornerRadius="6">
-                        <Image Source="Assets/gilberta.png" Stretch="UniformToFill" />
+                        <Image Source="Assets/shared/gilberta.png" Stretch="UniformToFill" />
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
                         <TextBlock FontSize="16" FontWeight="SemiBold" Text="Better Endfield" />
@@ -955,7 +955,7 @@
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
                                     <Border Width="76" Height="76" CornerRadius="8">
-                                        <Image Source="Assets/gilberta.png" Stretch="UniformToFill" />
+                                        <Image Source="Assets/shared/gilberta.png" Stretch="UniformToFill" />
                                     </Border>
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="6">
                                         <TextBlock Style="{StaticResource PageTitleStyle}" Text="Better Endfield" />

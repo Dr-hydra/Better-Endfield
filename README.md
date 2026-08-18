@@ -21,6 +21,29 @@ BetterEndfield.exe
 - `BetterEndfield.Injector.exe`：默认加载方式，Host 和模块均从软件目录加载。
 - `payloads/xinput1_4.dll`：可选的 XInput 自启动代理，仅在用户确认后部署到游戏目录。
 
+## 源码布局
+
+```text
+ui/BetterEndfield.UI/          WinUI 控制器与按领域分类的内嵌资源
+native/modules/model/          开屏视觉、角色模型与动画模块
+native/modules/voice/          配音语言、Wwise 媒体与口型模块
+native/modules/music/          OmniMix 音乐集成模块
+native/loaders/injector/       外部启动注入器
+native/loaders/xinput/         XInput 代理与进程内 Bootstrap
+native/shared/                 Host、公共 ABI 头文件与第三方原生依赖
+native/research/music_probe/   不进入发布包的音乐诊断模块
+manifests/model/               模型与动作资源清单
+manifests/voice/               语音 Event/Media 映射清单
+manifests/shared/              跨模块资源生成报告
+resources/voice/               语音映射生成器的维护输入
+android/                       独立开发中的 Android/Xposed 版本
+scripts/                       公共构建、清单生成与资源扫描工具
+tools/                         本地分析工具和工具链（不进入发布包）
+docs/                          运行时接口、研究结论与集成交接文档
+```
+
+发布目录仍使用 `runtime/modules/loaders/payloads`，源码归类不会改变现有安装与加载路径。`artifacts`、`runs`、反编译结果和本地工具输出属于工作产物，不参与源码层级整理。
+
 ## 已知问题
 
 开屏 Logo、中央色带和两侧色块的最终颜色可能与 UI 选择值存在偏差。这是因为主题色会与游戏源资源自带的颜色数据叠加；该问题在 `2.0.1` 中标记为不会修复，后续版本不再为此调整原始材质改色路径。
@@ -136,6 +159,6 @@ load_host=true
 
 ## 许可与风险
 
-本项目以 [AGPL-3.0-only](LICENSE) 发布。第三方 MinHook 保留其原许可证，副本位于 `native/third_party/minhook`。
+本项目以 [AGPL-3.0-only](LICENSE) 发布。第三方 MinHook 保留其原许可证，副本位于 `native/shared/third_party/minhook`。
 
 Better Endfield 与游戏发行商无关。使用前请备份配置并自行评估账号、客户端完整性和第三方 Mod 冲突风险。游戏更新后如果动态契约不满足，请停止使用对应模块并等待适配。
