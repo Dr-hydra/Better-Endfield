@@ -1949,7 +1949,7 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Better Endfield Music", "1.0.0",
+    {kModuleId, "Better Endfield Music", "2.0.1",
         BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,

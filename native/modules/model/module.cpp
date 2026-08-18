@@ -15,6 +15,7 @@
 #include <mutex>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace BetterEndfield::Model {
@@ -61,6 +62,13 @@ struct Quaternion {
     float w;
 };
 
+struct Color {
+    float r;
+    float g;
+    float b;
+    float a;
+};
+
 struct ClipConfiguration {
     std::string path;
     std::string label;
@@ -70,7 +78,10 @@ struct ClipConfiguration {
 };
 
 struct ModelConfiguration {
-    bool enabled = false;
+    bool module_enabled = false;
+    bool model_replacement_enabled = false;
+    bool logo_theme_enabled = false;
+    Color logo_theme_color{1.0f, 0.7882353f, 0.15686275f, 1.0f};
     bool diagnostics = true;
     std::string character_id;
     std::string model_path;
@@ -96,6 +107,10 @@ struct RuntimeMethod {
 };
 
 struct RuntimeMethods {
+    RuntimeMethod login_enter_value_changed;
+    RuntimeMethod login_material_animation_late_tick;
+    RuntimeMethod login_decorate_tick;
+    RuntimeMethod login_decorate_release;
     RuntimeMethod login_bind;
     RuntimeMethod init_main_hash;
     RuntimeMethod init_initial_hash;
@@ -108,6 +123,7 @@ struct RuntimeMethods {
     RuntimeMethod clone_with_parent;
     RuntimeMethod object_name;
     RuntimeMethod object_destroy;
+    RuntimeMethod component_game_object;
     RuntimeMethod game_object_transform;
     RuntimeMethod game_object_set_active;
     RuntimeMethod game_object_get_layer;
@@ -129,6 +145,22 @@ struct RuntimeMethods {
     RuntimeMethod transform_local_scale;
     RuntimeMethod transform_set_local_scale;
     RuntimeMethod behaviour_set_enabled;
+    RuntimeMethod behaviour_get_enabled;
+    RuntimeMethod graphic_get_color;
+    RuntimeMethod graphic_set_color;
+    RuntimeMethod graphic_get_material;
+    RuntimeMethod graphic_set_material;
+    RuntimeMethod graphic_get_main_texture;
+    RuntimeMethod image_get_sprite;
+    RuntimeMethod raw_image_get_texture;
+    RuntimeMethod logo_game_object_find;
+    RuntimeMethod object_get_type;
+    RuntimeMethod runtime_type_full_name;
+    RuntimeMethod material_get_shader;
+    RuntimeMethod material_has_property;
+    RuntimeMethod material_get_color;
+    RuntimeMethod material_set_color;
+    RuntimeMethod material_ctor_copy;
     RuntimeMethod animator_rebind;
     RuntimeMethod animator_culling;
     RuntimeMethod animator_update;
@@ -168,6 +200,13 @@ struct RuntimeClasses {
     BE_ResolvedClassV1 animator{};
     BE_ResolvedClassV1 animation_clip{};
     BE_ResolvedClassV1 renderer{};
+    BE_ResolvedClassV1 graphic{};
+    BE_ResolvedClassV1 material{};
+};
+
+struct RuntimeFields {
+    BE_ResolvedFieldV1 logo_canvas_group{};
+    BE_ResolvedFieldV1 logo_glow_target{};
 };
 
 struct PlayableData {
@@ -210,9 +249,56 @@ struct LiveActor {
     double phase_elapsed = 0.0;
 };
 
+struct LoginBandGraphicState {
+    void* graphic = nullptr;
+    std::string path;
+    std::string type;
+    Color last_color{};
+    std::string last_material;
+    std::string last_shader;
+    std::string last_main_texture;
+    std::string last_sprite;
+    std::string last_raw_texture;
+    Color original_color{};
+    void* original_material = nullptr;
+    void* source_material = nullptr;
+    void* themed_material = nullptr;
+    std::string material_color_property;
+    Color themed_color{};
+    bool themed_material_owned = false;
+    bool material_remap_attempted = false;
+    bool material_remap_applied = false;
+    bool theme_target = false;
+    bool initialized = false;
+};
+
+struct LoginBandState {
+    void* instance = nullptr;
+    void* panel_transform = nullptr;
+    std::vector<LoginBandGraphicState> graphics;
+    uint64_t next_discovery_tick = 0;
+    bool apply_logged = false;
+};
+
+struct LogoGraphicState {
+    void* graphic = nullptr;
+    Color original_color{};
+    std::string source;
+};
+
+struct LogoState {
+    void* instance = nullptr;
+    std::vector<LogoGraphicState> graphics;
+    uint64_t next_discovery_tick = 0;
+    bool game_logo_found = false;
+    bool game_logo_apply_logged = false;
+    bool diagnostic_logged = false;
+};
+
 const BE_HostApiV1* g_host = nullptr;
 RuntimeMethods g_methods;
 RuntimeClasses g_classes;
+RuntimeFields g_fields;
 std::atomic<ModuleState> g_state{ModuleState::Created};
 std::atomic_bool g_diagnostics{true};
 std::atomic_bool g_main_hash_ready{false};
@@ -224,6 +310,8 @@ std::atomic<SequencePhase> g_requested_phase{SequencePhase::SitLoop};
 std::mutex g_configuration_mutex;
 ModelConfiguration g_configuration;
 LiveActor g_actor;
+LoginBandState g_login_band;
+LogoState g_logo;
 void* g_model_prefab = nullptr;
 uint32_t g_model_prefab_root = 0;
 std::array<void*, kClipCount> g_clips{};
@@ -232,8 +320,16 @@ uint64_t g_next_asset_retry_tick = 0;
 uint64_t g_next_actor_discovery_tick = 0;
 bool g_assets_ready = false;
 bool g_hooks_installed = false;
+bool g_model_contract_ready = false;
+bool g_logo_contract_ready = false;
+bool g_login_band_contract_ready = false;
+bool g_model_hooks_installed = false;
+bool g_logo_hooks_installed = false;
+bool g_login_band_hook_installed = false;
+bool g_login_band_animation_hook_installed = false;
 
 using VoidInstanceFn = void(__fastcall*)(void*, void*);
+using ObjectArgInstanceFn = void(__fastcall*)(void*, void*, void*);
 using VoidStaticFn = void(__fastcall*)(void*);
 using TickFn = void(__fastcall*)(void*, float, void*);
 using ChangeStateFn = void(__fastcall*)(void*, int, void*);
@@ -263,6 +359,10 @@ using PlayableConnectFn = bool(__fastcall*)(PlayableData*, PlayableData*, int,
 using PlayableWeightFn = void(__fastcall*)(PlayableData*, int, float, void*);
 
 VoidInstanceFn g_original_login_bind = nullptr;
+ObjectArgInstanceFn g_original_login_enter_value_changed = nullptr;
+TickFn g_original_login_decorate_tick = nullptr;
+TickFn g_original_login_material_animation_late_tick = nullptr;
+VoidInstanceFn g_original_login_decorate_release = nullptr;
 VoidStaticFn g_original_init_main_hash = nullptr;
 VoidStaticFn g_original_init_initial_hash = nullptr;
 TickFn g_original_anim_tick = nullptr;
@@ -332,11 +432,40 @@ bool ParseUInt64(std::string_view value, uint64_t& output) {
     return true;
 }
 
+bool ParseHexColor(std::string_view value, Color& output) {
+    value = Trim(value);
+    if (!value.empty() && value.front() == '#') {
+        value.remove_prefix(1);
+    }
+    if (value.size() != 6) {
+        return false;
+    }
+    auto channel = [value](size_t offset, float& result) {
+        const std::string text(value.substr(offset, 2));
+        char* end = nullptr;
+        errno = 0;
+        const unsigned long parsed = std::strtoul(text.c_str(), &end, 16);
+        if (!end || *end != '\0' || errno == ERANGE || parsed > 0xff) {
+            return false;
+        }
+        result = static_cast<float>(parsed) / 255.0f;
+        return true;
+    };
+    Color parsed{0.0f, 0.0f, 0.0f, 1.0f};
+    if (!channel(0, parsed.r) || !channel(2, parsed.g) ||
+        !channel(4, parsed.b)) {
+        return false;
+    }
+    output = parsed;
+    return true;
+}
+
 bool ParseConfiguration(const char* text, ModelConfiguration& output,
     std::string& error) {
     output = {};
     output.clips[0].loop = true;
     output.clips[3].loop = true;
+    bool model_switch_present = false;
     if (!text || *text == '\0') {
         return true;
     }
@@ -359,10 +488,26 @@ bool ParseConfiguration(const char* text, ModelConfiguration& output,
         }
         const std::string key = Lower(line.substr(0, separator));
         const std::string_view value = Trim(line.substr(separator + 1));
-        if (key == "enabled" || key == "model_enabled" ||
-            key == "model_replacement_enabled") {
-            if (!ParseBoolean(value, output.enabled)) {
+        if (key == "enabled") {
+            if (!ParseBoolean(value, output.module_enabled)) {
                 error = "enabled must be a boolean";
+                return false;
+            }
+        } else if (key == "model_enabled" ||
+            key == "model_replacement_enabled") {
+            model_switch_present = true;
+            if (!ParseBoolean(value, output.model_replacement_enabled)) {
+                error = "model_replacement_enabled must be a boolean";
+                return false;
+            }
+        } else if (key == "logo_theme_enabled") {
+            if (!ParseBoolean(value, output.logo_theme_enabled)) {
+                error = "logo_theme_enabled must be a boolean";
+                return false;
+            }
+        } else if (key == "logo_theme_color") {
+            if (!ParseHexColor(value, output.logo_theme_color)) {
+                error = "logo_theme_color must use #RRGGBB";
                 return false;
             }
         } else if (key == "diagnostics") {
@@ -474,6 +619,9 @@ bool ParseConfiguration(const char* text, ModelConfiguration& output,
         }
     }
 
+    if (!model_switch_present) {
+        output.model_replacement_enabled = output.module_enabled;
+    }
     if (output.loop_end < output.loop_start + 0.05f) {
         error = "loop_end must be at least 0.05 seconds after loop_start";
         return false;
@@ -484,7 +632,7 @@ bool ParseConfiguration(const char* text, ModelConfiguration& output,
         output.crossfade_duration = maximum_crossfade;
     }
     output.clips[3].loop = output.final_loop;
-    if (output.enabled) {
+    if (output.model_replacement_enabled) {
         if (output.model_path_hash == 0 || output.model_path.empty()) {
             error = "enabled model replacement requires model_path and model_path_hash";
             return false;
@@ -500,6 +648,40 @@ bool ParseConfiguration(const char* text, ModelConfiguration& output,
         }
     }
     return true;
+}
+
+bool SameModelSettings(const ModelConfiguration& left,
+    const ModelConfiguration& right) {
+    if (left.model_replacement_enabled != right.model_replacement_enabled ||
+        left.character_id != right.character_id ||
+        left.model_path != right.model_path ||
+        left.model_path_hash != right.model_path_hash ||
+        left.scale != right.scale || left.start_yaw != right.start_yaw ||
+        left.turn_duration != right.turn_duration ||
+        left.forward_lean_sample != right.forward_lean_sample ||
+        left.final_native_loop != right.final_native_loop ||
+        left.final_loop != right.final_loop ||
+        left.force_loop != right.force_loop ||
+        left.use_crossfade != right.use_crossfade ||
+        left.loop_start != right.loop_start || left.loop_end != right.loop_end ||
+        left.crossfade_duration != right.crossfade_duration) {
+        return false;
+    }
+    for (size_t index = 0; index < left.clips.size(); ++index) {
+        const ClipConfiguration& a = left.clips[index];
+        const ClipConfiguration& b = right.clips[index];
+        if (a.path != b.path || a.label != b.label ||
+            a.path_hash != b.path_hash || a.speed != b.speed ||
+            a.loop != b.loop) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool AnyFeatureEnabled(const ModelConfiguration& configuration) {
+    return configuration.model_replacement_enabled ||
+        configuration.logo_theme_enabled;
 }
 
 const char* StateName(ModuleState state) {
@@ -574,6 +756,24 @@ bool Resolve(RuntimeMethod& output, const char* key, const char* assembly,
     }
     Log(std::string("[model-contract] missing key=") + key +
         " result=" + ResultName(status));
+    return false;
+}
+
+bool ResolveField(BE_ResolvedFieldV1& output, const char* key,
+    const char* assembly, const char* namespc, const char* klass,
+    const char* field, const char* field_type) {
+    output = {};
+    const BE_FieldDescriptorV1 descriptor{
+        assembly, namespc, klass, field, field_type};
+    const BE_Result status =
+        g_host->resolve_field(g_host->context, &descriptor, &output);
+    if (status == BE_Result_Ok && output.field_info && output.offset >= 0) {
+        Log(std::string("[model-contract] resolved key=") + key);
+        return true;
+    }
+    Log(std::string("[model-contract] missing key=") + key +
+        " result=" + ResultName(status));
+    output = {};
     return false;
 }
 
@@ -851,17 +1051,208 @@ bool ResolveRuntimeContract() {
         "UnityEngine.AnimationModule.dll", "UnityEngine", "AnimationClip", true));
     required(ResolveClass(g_classes.renderer, "UnityEngine.CoreModule.dll",
         "UnityEngine", "Renderer", true));
-    if (missing != 0) {
+    g_model_contract_ready = missing == 0;
+    if (!g_model_contract_ready) {
         char message[128]{};
         std::snprintf(message, sizeof(message),
             "dynamic model contract missing=%zu", missing);
+        Log(std::string("[model-contract] feature=model result=unavailable reason=") +
+            message);
+    } else {
+        Log("[model-contract] feature=model result=ready");
+    }
+
+    const bool visual_component_game_object = Resolve(g_methods.component_game_object,
+        "unity.component.game_object.visual", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "Component", "get_gameObject", nullptr,
+        "UnityEngine.GameObject", 0);
+    const bool visual_game_object_transform = Resolve(g_methods.game_object_transform,
+        "unity.game_object.transform.visual", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "GameObject", "get_transform", nullptr,
+        "UnityEngine.Transform", 0);
+    const bool visual_game_object_components = Resolve(
+        g_methods.game_object_get_components,
+        "unity.game_object.components_children.visual", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "GameObject", "GetComponentsInChildren",
+        "System.Type|System.Boolean", "UnityEngine.Component[]", 2);
+    const bool visual_game_object_find = Resolve(g_methods.game_object_find,
+        "unity.game_object.find.visual", "UnityEngine.CoreModule.dll", "UnityEngine",
+        "GameObject", "Find", "System.String", "UnityEngine.GameObject", 1);
+    const bool visual_transform_parent = Resolve(g_methods.transform_parent,
+        "unity.transform.parent.visual", "UnityEngine.CoreModule.dll", "UnityEngine",
+        "Transform", "get_parent", nullptr, "UnityEngine.Transform", 0);
+    const bool visual_transform_find = Resolve(g_methods.transform_find_name,
+        "unity.transform.find_name.visual", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "Transform", "FindTransformWithName",
+        "UnityEngine.Transform|System.String", "UnityEngine.Transform", 2);
+    const bool visual_array_length = Resolve(g_methods.array_get_length,
+        "system.array.length.visual", "mscorlib.dll", "System", "Array",
+        "GetLength", "System.Int32", "System.Int32", 1);
+    const bool visual_array_value = Resolve(g_methods.array_get_value,
+        "system.array.value.visual", "mscorlib.dll", "System", "Array",
+        "GetValue", "System.Int32", "System.Object", 1);
+    const bool visual_object_name = Resolve(g_methods.object_name,
+        "unity.object.name.visual", "UnityEngine.CoreModule.dll", "UnityEngine",
+        "Object", "get_name", nullptr, "System.String", 0);
+    const bool visual_material_shader = Resolve(g_methods.material_get_shader,
+        "unity.material.shader.visual", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "Material", "get_shader", nullptr,
+        "UnityEngine.Shader", 0);
+
+    size_t logo_missing = 0;
+    auto logo_required = [&logo_missing](bool result) {
+        if (!result) {
+            ++logo_missing;
+        }
+    };
+    logo_required(Resolve(g_methods.login_decorate_tick,
+        "login.decorate.tick", "Entry.Beyond.dll", "Beyond.Login",
+        "LoginDecorateUI", "Tick", "System.Single", "System.Void", 1));
+    logo_required(Resolve(g_methods.login_decorate_release,
+        "login.decorate.release", "Entry.Beyond.dll", "Beyond.Login",
+        "LoginDecorateUI", "OnRelease", nullptr, "System.Void", 0));
+    logo_required(ResolveField(g_fields.logo_canvas_group, "login.decorate.logo",
+        "Entry.Beyond.dll", "Beyond.Login", "LoginDecorateUI", "_imgLogo",
+        "UnityEngine.CanvasGroup"));
+    logo_required(ResolveField(g_fields.logo_glow_target,
+        "login.decorate.glow", "Entry.Beyond.dll", "Beyond.Login",
+        "LoginDecorateUI", "_targetGlow", "UnityEngine.Animator"));
+    logo_required(Resolve(g_methods.component_game_object,
+        "unity.component.game_object", "UnityEngine.CoreModule.dll", "UnityEngine",
+        "Component", "get_gameObject", nullptr, "UnityEngine.GameObject", 0));
+    logo_required(Resolve(g_methods.game_object_get_components,
+        "unity.game_object.components_children.logo", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "GameObject", "GetComponentsInChildren",
+        "System.Type|System.Boolean", "UnityEngine.Component[]", 2));
+    logo_required(Resolve(g_methods.array_get_length, "system.array.length.logo",
+        "mscorlib.dll", "System", "Array", "GetLength", "System.Int32",
+        "System.Int32", 1));
+    logo_required(Resolve(g_methods.array_get_value, "system.array.value.logo",
+        "mscorlib.dll", "System", "Array", "GetValue", "System.Int32",
+        "System.Object", 1));
+    logo_required(Resolve(g_methods.graphic_get_color, "unity.graphic.get_color",
+        "UnityEngine.UI.dll", "UnityEngine.UI", "Graphic", "get_color", nullptr,
+        "UnityEngine.Color", 0));
+    logo_required(Resolve(g_methods.graphic_set_color, "unity.graphic.set_color",
+        "UnityEngine.UI.dll", "UnityEngine.UI", "Graphic", "set_color",
+        "UnityEngine.Color", "System.Void", 1));
+    logo_required(ResolveClass(g_classes.graphic, "UnityEngine.UI.dll",
+        "UnityEngine.UI", "Graphic", true));
+    logo_required(Resolve(g_methods.logo_game_object_find,
+        "unity.game_object.find.logo", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "GameObject", "Find", "System.String",
+        "UnityEngine.GameObject", 1));
+
+    Resolve(g_methods.object_name, "unity.object.name.logo",
+        "UnityEngine.CoreModule.dll", "UnityEngine", "Object", "get_name",
+        nullptr, "System.String", 0);
+    Resolve(g_methods.graphic_get_material, "unity.graphic.material",
+        "UnityEngine.UI.dll", "UnityEngine.UI", "Graphic", "get_material",
+        nullptr, "UnityEngine.Material", 0);
+    Resolve(g_methods.graphic_get_main_texture, "unity.graphic.main_texture",
+        "UnityEngine.UI.dll", "UnityEngine.UI", "Graphic", "get_mainTexture",
+        nullptr, "UnityEngine.Texture", 0);
+    Resolve(g_methods.material_get_shader, "unity.material.shader",
+        "UnityEngine.CoreModule.dll", "UnityEngine", "Material", "get_shader",
+        nullptr, "UnityEngine.Shader", 0);
+    Resolve(g_methods.material_has_property, "unity.material.has_property",
+        "UnityEngine.CoreModule.dll", "UnityEngine", "Material", "HasProperty",
+        "System.String", "System.Boolean", 1);
+    Resolve(g_methods.material_get_color, "unity.material.get_color",
+        "UnityEngine.CoreModule.dll", "UnityEngine", "Material", "GetColor",
+        "System.String", "UnityEngine.Color", 1);
+    g_logo_contract_ready = logo_missing == 0;
+    Log(std::string("[model-contract] feature=logo result=") +
+        (g_logo_contract_ready ? "ready" : "unavailable") +
+        " missing=" + std::to_string(logo_missing));
+
+    size_t login_band_missing = 0;
+    auto login_band_required = [&login_band_missing](bool result) {
+        if (!result) {
+            ++login_band_missing;
+        }
+    };
+    login_band_required(Resolve(g_methods.login_enter_value_changed,
+        "login.enter_game.value_changed", "Entry.Beyond.dll", "Beyond.Login",
+        "LoginEnterGamePanel", "OnValueChanged", "Beyond.Login.LoginViewModel",
+        "System.Void", 1));
+    Resolve(g_methods.login_material_animation_late_tick,
+        "login.band.material_animation.late_tick", "UI.Beyond.dll", "Beyond.UI",
+        "UIMaterialAnimation", "LateTick", "System.Single", "System.Void", 1);
+    login_band_required(Resolve(g_methods.object_get_type,
+        "system.object.get_type.login_band", "mscorlib.dll", "System", "Object",
+        "GetType", nullptr, "System.Type", 0));
+    login_band_required(Resolve(g_methods.runtime_type_full_name,
+        "system.runtime_type.full_name.login_band", "mscorlib.dll", "System",
+        "RuntimeType", "get_FullName", nullptr, "System.String", 0));
+    login_band_required(Resolve(g_methods.image_get_sprite,
+        "unity.image.sprite.login_band", "UnityEngine.UI.dll", "UnityEngine.UI",
+        "Image", "get_sprite", nullptr, "UnityEngine.Sprite", 0));
+    login_band_required(Resolve(g_methods.raw_image_get_texture,
+        "unity.raw_image.texture.login_band", "UnityEngine.UI.dll",
+        "UnityEngine.UI", "RawImage", "get_texture", nullptr,
+        "UnityEngine.Texture", 0));
+    login_band_required(visual_component_game_object);
+    login_band_required(visual_game_object_transform);
+    login_band_required(visual_game_object_components);
+    login_band_required(visual_game_object_find);
+    login_band_required(visual_transform_parent);
+    login_band_required(visual_transform_find);
+    login_band_required(visual_array_length);
+    login_band_required(visual_array_value);
+    login_band_required(visual_object_name);
+    login_band_required(Resolve(g_methods.graphic_get_color,
+        "unity.graphic.get_color.login_band", "UnityEngine.UI.dll",
+        "UnityEngine.UI", "Graphic", "get_color", nullptr,
+        "UnityEngine.Color", 0));
+    login_band_required(Resolve(g_methods.graphic_set_color,
+        "unity.graphic.set_color.login_band", "UnityEngine.UI.dll",
+        "UnityEngine.UI", "Graphic", "set_color", "UnityEngine.Color",
+        "System.Void", 1));
+    login_band_required(Resolve(g_methods.graphic_get_material,
+        "unity.graphic.material.login_band", "UnityEngine.UI.dll",
+        "UnityEngine.UI", "Graphic", "get_material", nullptr,
+        "UnityEngine.Material", 0));
+    login_band_required(Resolve(g_methods.graphic_set_material,
+        "unity.graphic.set_material.login_band", "UnityEngine.UI.dll",
+        "UnityEngine.UI", "Graphic", "set_material",
+        "UnityEngine.Material", "System.Void", 1));
+    login_band_required(Resolve(g_methods.graphic_get_main_texture,
+        "unity.graphic.main_texture.login_band", "UnityEngine.UI.dll",
+        "UnityEngine.UI", "Graphic", "get_mainTexture", nullptr,
+        "UnityEngine.Texture", 0));
+    login_band_required(ResolveClass(g_classes.graphic, "UnityEngine.UI.dll",
+        "UnityEngine.UI", "Graphic", true));
+    login_band_required(ResolveClass(g_classes.material,
+        "UnityEngine.CoreModule.dll", "UnityEngine", "Material", true));
+    login_band_required(visual_material_shader);
+    login_band_required(Resolve(g_methods.material_has_property,
+        "unity.material.has_property.login_band",
+        "UnityEngine.CoreModule.dll", "UnityEngine", "Material",
+        "HasProperty", "System.String", "System.Boolean", 1));
+    login_band_required(Resolve(g_methods.material_set_color,
+        "unity.material.set_color.login_band",
+        "UnityEngine.CoreModule.dll", "UnityEngine", "Material",
+        "SetColor", "System.String|UnityEngine.Color", "System.Void", 2));
+    login_band_required(Resolve(g_methods.material_ctor_copy,
+        "unity.material.ctor_copy.login_band",
+        "UnityEngine.CoreModule.dll", "UnityEngine", "Material", ".ctor",
+        "UnityEngine.Material", "System.Void", 1));
+    g_login_band_contract_ready = login_band_missing == 0;
+    Log(std::string("[model-contract] feature=login-band result=") +
+        (g_login_band_contract_ready ? "ready" : "unavailable") +
+        " missing=" + std::to_string(login_band_missing));
+
+    if (!g_model_contract_ready && !g_logo_contract_ready &&
+        !g_login_band_contract_ready) {
         g_state.store(ModuleState::ContractMismatch, std::memory_order_release);
-        LogState(ModuleState::ContractMismatch, message);
+        LogState(ModuleState::ContractMismatch,
+            "model, logo, and login-band contracts are all unavailable");
         return false;
     }
     g_state.store(ModuleState::Ready, std::memory_order_release);
     LogState(ModuleState::Ready,
-        "login, Main VFS, Unity object, and PlayableGraph contracts resolved");
+        "feature contracts resolved independently through IL2CPP metadata");
     return true;
 }
 
@@ -1050,6 +1441,373 @@ bool SetRendererEnabled(void* renderer, bool enabled) {
         parameters, "Renderer.set_enabled");
 }
 
+void* FieldObject(const BE_ResolvedFieldV1& field, void* instance) {
+    if (!instance || !field.field_info || !g_host ||
+        !g_host->field_get_value_object) {
+        return nullptr;
+    }
+    __try {
+        return g_host->field_get_value_object(
+            g_host->context, field.field_info, instance);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return nullptr;
+    }
+}
+
+std::string VisualObjectName(void* object) {
+    if (!object || !g_methods.object_name.method_info || !g_host ||
+        !g_host->copy_managed_string) {
+        return "<unknown>";
+    }
+    void* managed = Invoke(g_methods.object_name, object, nullptr,
+        "Object.get_name");
+    char name[256]{};
+    return managed && g_host->copy_managed_string(g_host->context, managed,
+        name, sizeof(name)) > 0 ? std::string(name) : std::string("<unknown>");
+}
+
+std::string ManagedStringText(void* managed, const char* fallback = "<unknown>") {
+    if (!managed || !g_host || !g_host->copy_managed_string) {
+        return fallback ? fallback : "";
+    }
+    char text[512]{};
+    return g_host->copy_managed_string(g_host->context, managed, text,
+        sizeof(text)) > 0 ? std::string(text) : std::string(fallback ? fallback : "");
+}
+
+std::string ManagedTypeName(void* object) {
+    void* type = object ? Invoke(g_methods.object_get_type, object, nullptr,
+        "Object.GetType(login band)") : nullptr;
+    void* full_name = type ? Invoke(g_methods.runtime_type_full_name, type, nullptr,
+        "RuntimeType.get_FullName(login band)") : nullptr;
+    return ManagedStringText(full_name);
+}
+
+std::string ColorText(const Color& color);
+
+void* FindNamedGameObject(const char* name) {
+    if (!name || !g_host || !g_host->string_new ||
+        !g_methods.game_object_find.method_info) {
+        return nullptr;
+    }
+    void* managed_name = g_host->string_new(g_host->context, name);
+    void* parameters[1]{managed_name};
+    return managed_name ? Invoke(g_methods.game_object_find, nullptr,
+        parameters, "GameObject.Find(login visual)") : nullptr;
+}
+
+bool SetGraphicColor(void* graphic, const Color& color) {
+    Color copy = color;
+    void* parameters[1]{&copy};
+    return graphic && InvokeVoid(g_methods.graphic_set_color, graphic,
+        parameters, "Graphic.set_color");
+}
+
+bool GetGraphicColor(void* graphic, Color& color) {
+    return graphic && Unbox(Invoke(g_methods.graphic_get_color, graphic,
+        nullptr, "Graphic.get_color"), color);
+}
+
+void* GetGraphicMaterial(void* graphic) {
+    return graphic && g_methods.graphic_get_material.method_info
+        ? Invoke(g_methods.graphic_get_material, graphic, nullptr,
+            "Graphic.get_material(login band remap)") : nullptr;
+}
+
+bool SetGraphicMaterial(void* graphic, void* material) {
+    void* parameters[1]{material};
+    return graphic && material && InvokeVoid(g_methods.graphic_set_material,
+        graphic, parameters, "Graphic.set_material(login band remap)");
+}
+
+bool HasMaterialProperty(void* material, const char* property) {
+    if (!material || !property || !g_host || !g_host->string_new ||
+        !g_methods.material_has_property.method_info) {
+        return false;
+    }
+    void* managed = g_host->string_new(g_host->context, property);
+    void* parameters[1]{managed};
+    bool present = false;
+    return managed && Unbox(Invoke(g_methods.material_has_property, material,
+        parameters, "Material.HasProperty(login band remap)"), present) && present;
+}
+
+std::string SelectMaterialColorProperty(void* material) {
+    constexpr std::array<const char*, 4> properties{
+        "_Color", "_TintColor", "_BaseColor", "_GlowColor"};
+    for (const char* property : properties) {
+        if (HasMaterialProperty(material, property)) {
+            return property;
+        }
+    }
+    return {};
+}
+
+bool SetMaterialColor(void* material, const std::string& property,
+    const Color& color) {
+    if (!material || property.empty() || !g_host || !g_host->string_new ||
+        !g_methods.material_set_color.method_info) {
+        return false;
+    }
+    void* managed_property = g_host->string_new(g_host->context,
+        property.c_str());
+    Color copy = color;
+    void* parameters[2]{managed_property, &copy};
+    return managed_property && InvokeVoid(g_methods.material_set_color, material,
+        parameters, "Material.SetColor(login band remap)");
+}
+
+void* CloneMaterial(void* source) {
+    if (!source || !g_classes.material.class_info || !g_host ||
+        !g_host->object_new || !g_methods.material_ctor_copy.method_info) {
+        return nullptr;
+    }
+    void* clone = g_host->object_new(g_host->context,
+        g_classes.material.class_info);
+    if (!clone) {
+        return nullptr;
+    }
+    void* parameters[1]{source};
+    if (!InvokeVoid(g_methods.material_ctor_copy, clone, parameters,
+            "Material..ctor(Material) login band remap")) {
+        DestroyObject(clone);
+        return nullptr;
+    }
+    return clone;
+}
+
+bool RgbDiffer(const Color& left, const Color& right) {
+    constexpr float epsilon = 0.0005f;
+    return std::fabs(left.r - right.r) > epsilon ||
+        std::fabs(left.g - right.g) > epsilon ||
+        std::fabs(left.b - right.b) > epsilon;
+}
+
+std::string ColorText(const Color& color) {
+    char value[96]{};
+    std::snprintf(value, sizeof(value), "%.3f,%.3f,%.3f,%.3f",
+        color.r, color.g, color.b, color.a);
+    return value;
+}
+
+void LogMaterialColors(void* material) {
+    if (!material || !g_diagnostics.load() ||
+        !g_methods.material_has_property.method_info ||
+        !g_methods.material_get_color.method_info || !g_host ||
+        !g_host->string_new) {
+        return;
+    }
+    constexpr std::array<const char*, 4> properties{
+        "_Color", "_TintColor", "_EmissionColor", "_GlowColor"};
+    for (const char* property : properties) {
+        void* managed = g_host->string_new(g_host->context, property);
+        void* parameters[1]{managed};
+        bool present = false;
+        if (!managed || !Unbox(Invoke(g_methods.material_has_property,
+                material, parameters, "Material.HasProperty"), present) ||
+            !present) {
+            continue;
+        }
+        Color color{};
+        if (Unbox(Invoke(g_methods.material_get_color, material, parameters,
+                "Material.GetColor"), color)) {
+            Log(std::string("[logo-diag] materialProperty=") + property +
+                " color=" + ColorText(color));
+        }
+    }
+}
+
+void LogLogoGraphic(void* graphic, const Color& color, int index,
+    const char* root_role) {
+    if (!g_diagnostics.load()) {
+        return;
+    }
+    void* material = g_methods.graphic_get_material.method_info
+        ? Invoke(g_methods.graphic_get_material, graphic, nullptr,
+            "Graphic.get_material") : nullptr;
+    void* texture = g_methods.graphic_get_main_texture.method_info
+        ? Invoke(g_methods.graphic_get_main_texture, graphic, nullptr,
+            "Graphic.get_mainTexture") : nullptr;
+    void* shader = material && g_methods.material_get_shader.method_info
+        ? Invoke(g_methods.material_get_shader, material, nullptr,
+            "Material.get_shader") : nullptr;
+    Log("[logo-diag] index=" + std::to_string(index) +
+        " rootRole=" + (root_role ? root_role : "unknown") +
+        " graphic=" + VisualObjectName(graphic) +
+        " color=" + ColorText(color) +
+        " material=" + VisualObjectName(material) +
+        " shader=" + VisualObjectName(shader) +
+        " texture=" + VisualObjectName(texture));
+    LogMaterialColors(material);
+}
+
+size_t AppendLogoGraphicsFromRoot(void* root, const char* root_role) {
+    void* graphics = root ? GetComponentsInChildren(
+        root, g_classes.graphic.type_object) : nullptr;
+    const int count = ManagedArrayLength(graphics);
+    if (!root || count <= 0) {
+        return 0;
+    }
+    const size_t before = g_logo.graphics.size();
+    for (int index = 0; index < count; ++index) {
+        void* graphic = ManagedArrayValue(graphics, index);
+        if (std::any_of(g_logo.graphics.begin(), g_logo.graphics.end(),
+                [graphic](const LogoGraphicState& state) {
+                    return state.graphic == graphic;
+                })) {
+            continue;
+        }
+        Color color{};
+        if (!graphic || !GetGraphicColor(graphic, color)) {
+            continue;
+        }
+        LogoGraphicState state{};
+        state.graphic = graphic;
+        state.original_color = color;
+        state.source = root_role ? root_role : "unknown";
+        g_logo.graphics.push_back(std::move(state));
+        LogLogoGraphic(graphic, color, index, root_role);
+    }
+    Log("[logo-diag] rootRole=" + std::string(root_role ? root_role : "unknown") +
+        " root=" + VisualObjectName(root) +
+        " graphicsAdded=" + std::to_string(g_logo.graphics.size() - before));
+    return g_logo.graphics.size() - before;
+}
+
+size_t AppendLogoGraphics(void* component, const char* root_role) {
+    void* root = component
+        ? Invoke(g_methods.component_game_object, component, nullptr,
+            "Component.get_gameObject(logo decoration)") : nullptr;
+    return AppendLogoGraphicsFromRoot(root, root_role);
+}
+
+void* FindLogoGameObject(const char* name) {
+    if (!name || !g_host || !g_host->string_new ||
+        !g_methods.logo_game_object_find.method_info) {
+        return nullptr;
+    }
+    void* managed_name = g_host->string_new(g_host->context, name);
+    void* parameters[1]{managed_name};
+    return managed_name ? Invoke(g_methods.logo_game_object_find, nullptr,
+        parameters, "GameObject.Find(logo target)") : nullptr;
+}
+
+bool DiscoverGameLogoRaw() {
+    if (g_logo.game_logo_found) {
+        return true;
+    }
+    void* game_logo = FindLogoGameObject("GameLogoRaw");
+    if (!game_logo) {
+        return false;
+    }
+    const size_t added = AppendLogoGraphicsFromRoot(
+        game_logo, "login-game-logo");
+    g_logo.game_logo_found = true;
+    Log("[logo-diag] exact target=GameLogoRaw result=found graphicsAdded=" +
+        std::to_string(added) +
+        " source=login world hierarchy");
+    return true;
+}
+
+bool DiscoverLogoGraphics(void* instance) {
+    void* canvas_group = FieldObject(g_fields.logo_canvas_group, instance);
+    void* glow_target = FieldObject(g_fields.logo_glow_target, instance);
+    g_logo.graphics.clear();
+    g_logo.game_logo_found = false;
+    const size_t logo_count = AppendLogoGraphics(canvas_group, "logo");
+    const size_t glow_count = AppendLogoGraphics(glow_target, "glow");
+    const bool game_logo_found = DiscoverGameLogoRaw();
+    if (g_logo.graphics.empty()) {
+        const uint64_t now = GetTickCount64();
+        if (now >= g_logo.next_discovery_tick) {
+            Log("[logo-diag] _imgLogo and _targetGlow have no Graphic children");
+            g_logo.next_discovery_tick = now + 1000;
+        }
+        return false;
+    }
+    Log("[logo-diag] discovered logoGraphics=" + std::to_string(logo_count) +
+        " glowGraphics=" + std::to_string(glow_count) +
+        " gameLogoRaw=" + (game_logo_found ? "true" : "false") +
+        " source=LoginDecorateUI fields and exact login target");
+    g_logo.diagnostic_logged = true;
+    return !g_logo.graphics.empty();
+}
+
+void RestoreLogoColors(const char* reason) {
+    size_t restored = 0;
+    for (const LogoGraphicState& state : g_logo.graphics) {
+        Color current{};
+        Color original = state.original_color;
+        if (GetGraphicColor(state.graphic, current)) {
+            original.a = current.a;
+        }
+        if (SetGraphicColor(state.graphic, original)) {
+            ++restored;
+        }
+    }
+    if (!g_logo.graphics.empty()) {
+        Log("[logo-theme] restored=" + std::to_string(restored) +
+            " reason=" + (reason ? reason : "unknown"));
+    }
+    g_logo.graphics.clear();
+    g_logo.diagnostic_logged = false;
+}
+
+void ApplyLogoTheme(void* instance, const ModelConfiguration& configuration) {
+    if (g_logo.instance != instance) {
+        g_logo = {};
+        g_logo.instance = instance;
+    }
+    if (!configuration.logo_theme_enabled) {
+        RestoreLogoColors("configuration-disabled");
+        return;
+    }
+    if (g_logo.graphics.empty() && !DiscoverLogoGraphics(instance)) {
+        return;
+    }
+    const uint64_t now = GetTickCount64();
+    if (!g_logo.game_logo_found && now >= g_logo.next_discovery_tick) {
+        DiscoverGameLogoRaw();
+        g_logo.next_discovery_tick = now + 500;
+    }
+    size_t applied = 0;
+    size_t game_logo_applied = 0;
+    for (const LogoGraphicState& state : g_logo.graphics) {
+        Color current{};
+        if (!GetGraphicColor(state.graphic, current)) {
+            continue;
+        }
+        Color replacement = configuration.logo_theme_color;
+        replacement.a = current.a;
+        if (SetGraphicColor(state.graphic, replacement)) {
+            ++applied;
+            if (state.source == "login-game-logo") {
+                ++game_logo_applied;
+            }
+        }
+    }
+    if (applied > 0 && g_logo.diagnostic_logged) {
+        Log("[logo-theme] applied=#" +
+            [&configuration]() {
+                char rgb[7]{};
+                std::snprintf(rgb, sizeof(rgb), "%02X%02X%02X",
+                    static_cast<int>(std::round(configuration.logo_theme_color.r * 255.0f)),
+                    static_cast<int>(std::round(configuration.logo_theme_color.g * 255.0f)),
+                    static_cast<int>(std::round(configuration.logo_theme_color.b * 255.0f)));
+                return std::string(rgb);
+            }() + " graphics=" + std::to_string(applied) +
+            " gameLogoRaw=" + std::to_string(game_logo_applied) +
+            " alpha=preserved");
+        g_logo.diagnostic_logged = false;
+    }
+    if (game_logo_applied > 0 && !g_logo.game_logo_apply_logged) {
+        Log("[logo-theme] exact target=GameLogoRaw applied=" +
+            std::to_string(game_logo_applied) + " alpha=preserved");
+        g_logo.game_logo_apply_logged = true;
+    }
+}
+
 void RestoreOriginalRenderers() {
     for (void* renderer : g_actor.disabled_renderers) {
         SetRendererEnabled(renderer, true);
@@ -1108,6 +1866,366 @@ void* FindTransformByName(void* root_transform, const char* name) {
     void* parameters[2]{root_transform, managed_name};
     return managed_name ? Invoke(g_methods.transform_find_name, nullptr,
         parameters, "Transform.FindTransformWithName") : nullptr;
+}
+
+std::string HierarchyPath(void* component, void* stop_transform) {
+    void* game_object = component ? Invoke(g_methods.component_game_object,
+        component, nullptr, "Component.get_gameObject(login band path)") : nullptr;
+    void* transform = game_object ? Invoke(g_methods.game_object_transform,
+        game_object, nullptr, "GameObject.get_transform(login band path)") : nullptr;
+    if (!transform) {
+        return "<unknown>";
+    }
+
+    std::vector<std::string> parts;
+    for (int depth = 0; transform && depth < 64; ++depth) {
+        parts.push_back(VisualObjectName(transform));
+        if (transform == stop_transform) {
+            break;
+        }
+        transform = Invoke(g_methods.transform_parent, transform, nullptr,
+            "Transform.get_parent(login band path)");
+    }
+    std::reverse(parts.begin(), parts.end());
+    std::string path;
+    for (const std::string& part : parts) {
+        if (!path.empty()) {
+            path += '/';
+        }
+        path += part;
+    }
+    return path.empty() ? "<unknown>" : path;
+}
+
+bool ColorsDiffer(const Color& left, const Color& right) {
+    constexpr float epsilon = 0.0005f;
+    return std::fabs(left.r - right.r) > epsilon ||
+        std::fabs(left.g - right.g) > epsilon ||
+        std::fabs(left.b - right.b) > epsilon ||
+        std::fabs(left.a - right.a) > epsilon;
+}
+
+bool IsLoginBandThemeColor(const Color& color) {
+    return color.r >= 0.90f && color.g >= 0.75f && color.b <= 0.35f &&
+        color.r - color.g <= 0.35f;
+}
+
+bool IsLoginBandThemeTarget(const LoginBandGraphicState& state,
+    const Color& color, const std::string& sprite_name,
+    const std::string& raw_texture_name) {
+    const bool line_resource =
+        sprite_name.rfind("login_deco_line", 0) == 0 ||
+        raw_texture_name.rfind("login_deco_line", 0) == 0;
+    const bool final_line =
+        state.path == "EnterGamePanel/MiddlePanel/Line" ||
+        state.path == "EnterGamePanel/MiddlePanel/Line/LineLeft";
+    const bool adjacent_glitch =
+        state.path.rfind("EnterGamePanel/MiddlePanel/Line/LineDecoLeft", 0) == 0 ||
+        state.path.rfind("EnterGamePanel/MiddlePanel/Line/LineDecoRight", 0) == 0;
+    return IsLoginBandThemeColor(color) || line_resource || final_line ||
+        adjacent_glitch;
+}
+
+bool SnapshotLoginBandGraphic(LoginBandGraphicState& state, const char* phase,
+    bool force_log) {
+    Color color{};
+    if (!state.graphic || !GetGraphicColor(state.graphic, color)) {
+        return false;
+    }
+    void* material = Invoke(g_methods.graphic_get_material, state.graphic,
+        nullptr, "Graphic.get_material(login band)");
+    void* shader = material ? Invoke(g_methods.material_get_shader, material,
+        nullptr, "Material.get_shader(login band)") : nullptr;
+    void* main_texture = Invoke(g_methods.graphic_get_main_texture,
+        state.graphic, nullptr, "Graphic.get_mainTexture(login band)");
+
+    void* sprite = nullptr;
+    std::string sprite_name = "<not-image>";
+    std::string raw_texture_name = "<not-raw-image>";
+    if (state.type.find("RawImage") != std::string::npos) {
+        raw_texture_name = VisualObjectName(Invoke(g_methods.raw_image_get_texture,
+            state.graphic, nullptr, "RawImage.get_texture(login band)"));
+    } else if (state.type.find("Image") != std::string::npos) {
+        sprite = Invoke(g_methods.image_get_sprite, state.graphic, nullptr,
+            "Image.get_sprite(login band)");
+        sprite_name = VisualObjectName(sprite);
+    }
+
+    const std::string material_name = VisualObjectName(material);
+    const std::string shader_name = VisualObjectName(shader);
+    const std::string main_texture_name = VisualObjectName(main_texture);
+    const bool theme_target = IsLoginBandThemeTarget(
+        state, color, sprite_name, raw_texture_name);
+    const bool changed = state.initialized &&
+        (ColorsDiffer(state.last_color, color) ||
+            state.last_material != material_name ||
+            state.last_shader != shader_name ||
+            state.last_main_texture != main_texture_name ||
+            state.last_sprite != sprite_name ||
+            state.last_raw_texture != raw_texture_name);
+    if (g_diagnostics.load() && (force_log || changed || !state.initialized)) {
+        Log("[login-band-diag] phase=" + std::string(phase ? phase : "unknown") +
+            " changed=" + (changed ? "true" : "false") +
+            " path=" + state.path +
+            " type=" + state.type +
+            " color=" + ColorText(color) +
+            " material=" + material_name +
+            " shader=" + shader_name +
+            " mainTexture=" + main_texture_name +
+            " sprite=" + sprite_name +
+            " rawTexture=" + raw_texture_name +
+            " themeTarget=" +
+                (theme_target ? "true" : "false") +
+            " remapProperty=" +
+                (theme_target ? SelectMaterialColorProperty(material) : "<none>"));
+    }
+
+    if (!state.initialized) {
+        state.original_color = color;
+        state.original_material = material;
+        state.source_material = material;
+        state.theme_target = theme_target;
+        if (theme_target) {
+            state.material_color_property = SelectMaterialColorProperty(material);
+        }
+    }
+    state.last_color = color;
+    state.last_material = material_name;
+    state.last_shader = shader_name;
+    state.last_main_texture = main_texture_name;
+    state.last_sprite = sprite_name;
+    state.last_raw_texture = raw_texture_name;
+    state.initialized = true;
+    return changed;
+}
+
+size_t AppendLoginBandGraphics(void* root_transform, void* panel_transform) {
+    void* root = root_transform ? Invoke(g_methods.component_game_object,
+        root_transform, nullptr, "Component.get_gameObject(login band root)") : nullptr;
+    void* graphics = root ? GetComponentsInChildren(
+        root, g_classes.graphic.type_object) : nullptr;
+    const int count = ManagedArrayLength(graphics);
+    const size_t before = g_login_band.graphics.size();
+    for (int index = 0; index < count; ++index) {
+        void* graphic = ManagedArrayValue(graphics, index);
+        if (!graphic || std::any_of(g_login_band.graphics.begin(),
+                g_login_band.graphics.end(), [graphic](const auto& state) {
+                    return state.graphic == graphic;
+                })) {
+            continue;
+        }
+        LoginBandGraphicState state{};
+        state.graphic = graphic;
+        state.path = HierarchyPath(graphic, panel_transform);
+        state.type = ManagedTypeName(graphic);
+        g_login_band.graphics.push_back(std::move(state));
+    }
+    return g_login_band.graphics.size() - before;
+}
+
+void RestoreLoginBandTheme(const char* reason);
+
+bool CaptureLoginBand(void* instance, void* panel_game_object, const char* source) {
+    if (!panel_game_object) {
+        return false;
+    }
+    void* panel_transform = Invoke(g_methods.game_object_transform,
+        panel_game_object, nullptr, "GameObject.get_transform(login enter panel)");
+    if (!panel_transform) {
+        return false;
+    }
+    const bool cached_targets = std::any_of(g_login_band.graphics.begin(),
+        g_login_band.graphics.end(), [](const LoginBandGraphicState& state) {
+            return state.theme_target;
+        });
+    if (g_login_band.panel_transform == panel_transform && cached_targets) {
+        if (instance) {
+            g_login_band.instance = instance;
+        }
+        return true;
+    }
+    if (g_login_band.panel_transform) {
+        RestoreLoginBandTheme("re-capture");
+    }
+    void* middle = FindTransformByName(panel_transform, "MiddlePanel");
+    void* line = FindTransformByName(middle ? middle : panel_transform, "Line");
+
+    g_login_band = {};
+    g_login_band.instance = instance;
+    g_login_band.panel_transform = panel_transform;
+    const size_t line_count = AppendLoginBandGraphics(line, panel_transform);
+    for (auto& state : g_login_band.graphics) {
+        SnapshotLoginBandGraphic(state, "initial", g_diagnostics.load());
+    }
+    const size_t target_count = static_cast<size_t>(std::count_if(
+        g_login_band.graphics.begin(), g_login_band.graphics.end(),
+        [](const LoginBandGraphicState& state) { return state.theme_target; }));
+    Log("[login-band] captured source=" +
+        std::string(source ? source : "unknown") +
+        " panel=" + VisualObjectName(panel_game_object) +
+        " middlePanel=" + (middle ? "found" : "missing") +
+        " line=" + (line ? "found" : "missing") +
+        " graphics=" + std::to_string(line_count) +
+        " themeTargets=" + std::to_string(target_count));
+    return line && target_count > 0;
+}
+
+bool CaptureLoginBandFromInstance(void* instance, const char* source) {
+    void* panel_game_object = instance ? Invoke(g_methods.component_game_object,
+        instance, nullptr, "Component.get_gameObject(login enter panel)") : nullptr;
+    return CaptureLoginBand(instance, panel_game_object, source);
+}
+
+void RestoreLoginBandTheme(const char* reason) {
+    size_t restored = 0;
+    size_t materials_destroyed = 0;
+    for (LoginBandGraphicState& state : g_login_band.graphics) {
+        if (!state.theme_target) {
+            continue;
+        }
+        Color current{};
+        Color original = state.original_color;
+        if (GetGraphicColor(state.graphic, current)) {
+            original.a = current.a;
+        }
+        if (state.themed_material &&
+            GetGraphicMaterial(state.graphic) == state.themed_material &&
+            state.source_material) {
+            SetGraphicMaterial(state.graphic, state.source_material);
+        }
+        if (SetGraphicColor(state.graphic, original)) {
+            ++restored;
+        }
+        if (state.themed_material_owned && state.themed_material) {
+            DestroyObject(state.themed_material);
+            ++materials_destroyed;
+        }
+        state.themed_material = nullptr;
+        state.themed_material_owned = false;
+        state.material_remap_applied = false;
+    }
+    if (g_login_band.panel_transform) {
+        Log("[login-band] restored=" + std::to_string(restored) +
+            " materialsDestroyed=" + std::to_string(materials_destroyed) +
+            " reason=" +
+            std::string(reason ? reason : "unknown"));
+    }
+    g_login_band = {};
+}
+
+void ApplyLoginBandTheme(const ModelConfiguration& configuration) {
+    if (!configuration.logo_theme_enabled) {
+        RestoreLoginBandTheme("configuration-disabled");
+        return;
+    }
+    if (!g_login_band_contract_ready) {
+        return;
+    }
+    const uint64_t now = GetTickCount64();
+    if (!g_login_band.panel_transform) {
+        if (now < g_login_band.next_discovery_tick) {
+            return;
+        }
+        void* panel = FindNamedGameObject("EnterGamePanel");
+        if (!CaptureLoginBand(nullptr, panel, "scene-fallback")) {
+            g_login_band.next_discovery_tick = now + 500;
+            return;
+        }
+    }
+
+    size_t applied = 0;
+    size_t remap_failed = 0;
+    for (LoginBandGraphicState& state : g_login_band.graphics) {
+        if (!state.theme_target) {
+            continue;
+        }
+        const Color themed_color = configuration.logo_theme_color;
+        if (!state.material_remap_attempted) {
+            state.material_remap_attempted = true;
+            state.source_material = GetGraphicMaterial(state.graphic);
+            state.material_color_property = SelectMaterialColorProperty(
+                state.source_material);
+            if (!state.source_material || state.material_color_property.empty()) {
+                ++remap_failed;
+                if (g_diagnostics.load()) {
+                    Log("[login-band-remap] unavailable path=" + state.path +
+                        " reason=no-source-material-color-property");
+                }
+                continue;
+            }
+            state.themed_material = CloneMaterial(state.source_material);
+            if (!state.themed_material ||
+                !SetMaterialColor(state.themed_material,
+                    state.material_color_property,
+                    themed_color) ||
+                !SetGraphicMaterial(state.graphic, state.themed_material)) {
+                ++remap_failed;
+                if (state.themed_material) {
+                    DestroyObject(state.themed_material);
+                }
+                state.themed_material = nullptr;
+                state.themed_material_owned = false;
+                if (g_diagnostics.load()) {
+                    Log("[login-band-remap] failed path=" + state.path +
+                        " sourceMaterial=" + VisualObjectName(state.source_material) +
+                        " property=" + state.material_color_property);
+                }
+                continue;
+            }
+            state.themed_material_owned = true;
+            state.material_remap_applied = true;
+            state.themed_color = themed_color;
+            ++applied;
+            if (g_diagnostics.load()) {
+                Log("[login-band-remap] applied path=" + state.path +
+                    " sourceMaterial=" + VisualObjectName(state.source_material) +
+                    " themedMaterial=" + VisualObjectName(state.themed_material) +
+                    " property=" + state.material_color_property +
+                    " sprite-preserved=true");
+            }
+        } else if (state.themed_material && state.material_remap_applied) {
+            if (RgbDiffer(state.themed_color, themed_color)) {
+                if (SetMaterialColor(state.themed_material,
+                        state.material_color_property,
+                        themed_color)) {
+                    state.themed_color = themed_color;
+                    ++applied;
+                }
+            }
+            if (GetGraphicMaterial(state.graphic) != state.themed_material) {
+                SetGraphicMaterial(state.graphic, state.themed_material);
+            }
+        }
+        Color current{};
+        if (!GetGraphicColor(state.graphic, current)) {
+            continue;
+        }
+        Color neutral{1.0f, 1.0f, 1.0f, current.a};
+        if (RgbDiffer(current, neutral)) {
+            SetGraphicColor(state.graphic, neutral);
+        }
+    }
+    if ((applied > 0 || remap_failed > 0) && !g_login_band.apply_logged) {
+        Log("[login-band] theme applied graphics=" + std::to_string(applied) +
+            " remapFailed=" + std::to_string(remap_failed) +
+            " mode=material-clone sprite-preserved=true alpha=preserved");
+        g_login_band.apply_logged = true;
+    }
+}
+
+void ClearLoginBandState(const char* reason) {
+    const std::string_view release_reason = reason ? reason : "";
+    if (release_reason.find("OnRelease") != std::string_view::npos) {
+        Log("[login-band] state cleared without restore reason=" +
+            std::string(release_reason));
+        g_login_band = {};
+        return;
+    }
+    if (g_login_band.panel_transform) {
+        RestoreLoginBandTheme(reason);
+        return;
+    }
+    g_login_band = {};
 }
 
 bool AlignReplacementAnchor(bool snap_vertical, float delta_time = 0.0f) {
@@ -1288,7 +2406,7 @@ bool LoadConfiguredAssets() {
         return false;
     }
     const ModelConfiguration configuration = ConfigurationSnapshot();
-    if (!configuration.enabled) {
+    if (!configuration.model_replacement_enabled) {
         return false;
     }
 
@@ -2036,7 +3154,7 @@ void ProcessSequence(float delta_time) {
 
 void TryActivate() {
     const ModelConfiguration configuration = ConfigurationSnapshot();
-    if (!configuration.enabled) {
+    if (!configuration.model_replacement_enabled) {
         if (g_actor.replacement) {
             CleanupScene("configuration-disabled");
         }
@@ -2056,6 +3174,50 @@ void TryActivate() {
         return;
     }
     InstantiateReplacement();
+}
+
+void __fastcall LoginEnterGamePanelValueChangedHook(void* instance, void* value,
+    void* method) {
+    if (g_original_login_enter_value_changed) {
+        g_original_login_enter_value_changed(instance, value, method);
+    }
+    const ModelConfiguration configuration = ConfigurationSnapshot();
+    if (configuration.logo_theme_enabled && g_login_band_contract_ready) {
+        CaptureLoginBandFromInstance(instance,
+            "LoginEnterGamePanel.OnValueChanged.postfix");
+        ApplyLoginBandTheme(configuration);
+    }
+}
+
+void __fastcall LoginDecorateTickHook(void* instance, float delta_time,
+    void* method) {
+    if (g_original_login_decorate_tick) {
+        g_original_login_decorate_tick(instance, delta_time, method);
+    }
+    const ModelConfiguration configuration = ConfigurationSnapshot();
+    ApplyLogoTheme(instance, configuration);
+    ApplyLoginBandTheme(configuration);
+}
+
+void __fastcall LoginMaterialAnimationLateTickHook(void* instance,
+    float delta_time, void* method) {
+    if (g_original_login_material_animation_late_tick) {
+        g_original_login_material_animation_late_tick(instance, delta_time, method);
+    }
+    const ModelConfiguration configuration = ConfigurationSnapshot();
+    if (configuration.logo_theme_enabled && g_login_band_contract_ready) {
+        ApplyLoginBandTheme(configuration);
+    }
+}
+
+void __fastcall LoginDecorateReleaseHook(void* instance, void* method) {
+    if (g_logo.instance == instance) {
+        g_logo = {};
+        Log("[logo-theme] LoginDecorateUI released; cached Graphic state cleared");
+    }
+    if (g_original_login_decorate_release) {
+        g_original_login_decorate_release(instance, method);
+    }
 }
 
 void QueuePhase(void* controller, SequencePhase phase, const char* source) {
@@ -2145,7 +3307,7 @@ void __fastcall AnimationTickHook(void* instance, float delta_time, void* method
     const ModelConfiguration configuration = ConfigurationSnapshot();
     const bool replacement_ready = g_actor.replacement &&
         g_actor.graph.handle && g_actor.original_renderers_hidden;
-    const bool replacement_loading = configuration.enabled &&
+    const bool replacement_loading = configuration.model_replacement_enabled &&
         !replacement_ready && !g_actor.replacement_attempted;
     if (g_actor.gate_requested && replacement_loading) {
         const uint64_t elapsed = g_actor.gate_start_tick == 0
@@ -2192,6 +3354,10 @@ void __fastcall AnimationTickHook(void* instance, float delta_time, void* method
 }
 
 void __fastcall AnimationReleaseHook(void* instance, void* method) {
+    // The decorate controller is released before the EnterGamePanel's static
+    // band is destroyed. Keep the band material clone alive until the login
+    // scene animation controller releases the whole login scene.
+    ClearLoginBandState("LoginSceneAnimCtrl.OnRelease");
     CleanupScene("LoginSceneAnimCtrl.OnRelease");
     g_requested_phase.store(SequencePhase::SitLoop);
     if (g_original_anim_release) {
@@ -2245,6 +3411,10 @@ bool Hook(RuntimeMethod& method, void* detour, void** original) {
 }
 
 void ClearOriginals() {
+    g_original_login_enter_value_changed = nullptr;
+    g_original_login_decorate_tick = nullptr;
+    g_original_login_material_animation_late_tick = nullptr;
+    g_original_login_decorate_release = nullptr;
     g_original_login_bind = nullptr;
     g_original_init_main_hash = nullptr;
     g_original_init_initial_hash = nullptr;
@@ -2257,9 +3427,12 @@ void ClearOriginals() {
     g_original_clone_with_parent = nullptr;
 }
 
-bool InstallHooks() {
-    if (g_hooks_installed) {
-        g_state.store(ModuleState::Active);
+bool InstallModelHooks() {
+    if (g_model_hooks_installed) {
+        return true;
+    }
+    if (!g_model_contract_ready) {
+        Log("[model-hook] feature=model unavailable; contract is incomplete");
         return true;
     }
     const bool installed =
@@ -2290,13 +3463,87 @@ bool InstallHooks() {
     if (!installed) {
         g_host->release_module_hooks(g_host->context, kModuleId);
         ClearOriginals();
+        g_hooks_installed = false;
+        g_model_hooks_installed = false;
+        g_logo_hooks_installed = false;
+        g_login_band_hook_installed = false;
+        g_login_band_animation_hook_installed = false;
         g_state.store(ModuleState::Failed);
         return false;
     }
+    g_model_hooks_installed = true;
     g_hooks_installed = true;
-    g_state.store(ModuleState::Active);
-    LogState(ModuleState::Active,
-        "dynamic login capture, replacement, and four-stage animation active");
+    Log("[model-hook] feature=model active");
+    return true;
+}
+
+void InstallLogoHooks() {
+    if (g_logo_hooks_installed) {
+        return;
+    }
+    if (!g_logo_contract_ready) {
+        Log("[model-hook] feature=logo unavailable; contract is incomplete");
+        return;
+    }
+    if (!Hook(g_methods.login_decorate_tick,
+            reinterpret_cast<void*>(&LoginDecorateTickHook),
+            reinterpret_cast<void**>(&g_original_login_decorate_tick))) {
+        return;
+    }
+    g_logo_hooks_installed = true;
+    g_hooks_installed = true;
+    if (!Hook(g_methods.login_decorate_release,
+            reinterpret_cast<void*>(&LoginDecorateReleaseHook),
+            reinterpret_cast<void**>(&g_original_login_decorate_release))) {
+        Log("[model-hook] logo cleanup hook unavailable; Tick hook remains active");
+    }
+    Log("[model-hook] feature=logo active");
+}
+
+void InstallLoginBandHook() {
+    if (g_login_band_hook_installed) {
+        return;
+    }
+    if (!g_login_band_contract_ready) {
+        Log("[model-hook] feature=login-band unavailable; contract is incomplete");
+        return;
+    }
+    if (!Hook(g_methods.login_enter_value_changed,
+            reinterpret_cast<void*>(&LoginEnterGamePanelValueChangedHook),
+            reinterpret_cast<void**>(&g_original_login_enter_value_changed))) {
+        return;
+    }
+    g_login_band_hook_installed = true;
+    g_hooks_installed = true;
+    if (g_methods.login_material_animation_late_tick.method_info &&
+        Hook(g_methods.login_material_animation_late_tick,
+            reinterpret_cast<void*>(&LoginMaterialAnimationLateTickHook),
+            reinterpret_cast<void**>(&g_original_login_material_animation_late_tick))) {
+        g_login_band_animation_hook_installed = true;
+        Log("[model-hook] login-band post-animation hook active");
+    } else {
+        Log("[model-hook] login-band post-animation hook unavailable; value hook remains active");
+    }
+    Log("[model-hook] feature=login-band active mode=material-clone sprite-preserved alpha-preserved");
+}
+
+bool InstallHooks(const ModelConfiguration& configuration) {
+    if (configuration.model_replacement_enabled && !InstallModelHooks()) {
+        return false;
+    }
+    if (configuration.logo_theme_enabled) {
+        InstallLogoHooks();
+        InstallLoginBandHook();
+    }
+    if (g_hooks_installed) {
+        g_state.store(ModuleState::Active);
+        LogState(ModuleState::Active,
+            "requested opening-screen feature hooks are active");
+    } else {
+        g_state.store(ModuleState::Ready);
+        LogState(ModuleState::Ready,
+            "requested feature contracts were unavailable; module remains isolated");
+    }
     return true;
 }
 
@@ -2305,15 +3552,19 @@ void StopHooks() {
         g_host->release_module_hooks(g_host->context, kModuleId);
     }
     g_hooks_installed = false;
+    g_model_hooks_installed = false;
+    g_logo_hooks_installed = false;
+    g_login_band_hook_installed = false;
+    g_login_band_animation_hook_installed = false;
     ClearOriginals();
 }
 
 BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     if (!host || host->abi_version != BETTER_ENDFIELD_MODULE_ABI_V1 ||
-        !host->resolve_method || !host->resolve_class ||
+        !host->resolve_method || !host->resolve_field || !host->resolve_class ||
         !host->create_hook || !host->release_module_hooks || !host->runtime_invoke ||
         !host->object_unbox || !host->object_new || !host->string_new ||
-        !host->copy_managed_string ||
+        !host->copy_managed_string || !host->field_get_value_object ||
         !host->gchandle_new || !host->gchandle_free || !host->log) {
         return BE_Result_ContractMismatch;
     }
@@ -2335,32 +3586,41 @@ BE_Result BE_CALL ConfigurationChanged(const char* text) {
         Log("[model-config] rejected: " + error);
         return BE_Result_InvalidArgument;
     }
-    const bool enabled = next.enabled;
+    const bool enabled = AnyFeatureEnabled(next);
     const bool diagnostics = next.diagnostics;
     const std::string character = next.character_id;
+    const bool model_enabled = next.model_replacement_enabled;
+    const bool logo_enabled = next.logo_theme_enabled;
+    bool model_changed = false;
     {
         std::lock_guard lock(g_configuration_mutex);
+        model_changed = !SameModelSettings(g_configuration, next);
         g_configuration = std::move(next);
     }
     g_diagnostics.store(diagnostics);
-    g_configuration_revision.fetch_add(1);
-    g_cleanup_requested.store(true);
+    if (model_changed) {
+        g_configuration_revision.fetch_add(1);
+        g_cleanup_requested.store(true);
+    }
     Log("[model-config] enabled=" + std::string(enabled ? "true" : "false") +
+        " replacement=" + (model_enabled ? "true" : "false") +
+        " logo=" + (logo_enabled ? "true" : "false") +
         " character=" + (character.empty() ? "<unknown>" : character) +
+        " modelChanged=" + (model_changed ? "true" : "false") +
         " data-driven=true");
 
     const ModuleState state = g_state.load();
-    if (state == ModuleState::ContractMismatch || state == ModuleState::Failed ||
-        state == ModuleState::Stopped) {
+    if (state == ModuleState::Failed || state == ModuleState::Stopped) {
         return BE_Result_ContractMismatch;
     }
     if (!enabled) {
         g_state.store(ModuleState::Disabled);
         LogState(ModuleState::Disabled,
-            "configuration disabled replacement; cleanup is queued on game thread");
+            "all opening-screen features are disabled");
         return BE_Result_Ok;
     }
-    return InstallHooks() ? BE_Result_Ok : BE_Result_Failed;
+    return InstallHooks(ConfigurationSnapshot())
+        ? BE_Result_Ok : BE_Result_Failed;
 }
 
 void BE_CALL Shutdown() {
@@ -2372,7 +3632,7 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Login Model", "2.0.0", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Login Model", "2.0.1", BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};

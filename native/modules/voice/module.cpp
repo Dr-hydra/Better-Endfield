@@ -1842,7 +1842,7 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Voice Language", "2.0.0", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Voice Language", "2.0.1", BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};

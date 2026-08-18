@@ -15,11 +15,15 @@ BetterEndfield.exe
 ```
 
 - `BetterEndfield.Host.dll`：唯一的进程内宿主、动态解析器和 HookBroker。
-- `BetterEndfield.Model.dll`：登录演员、模型资源和动画功能模块。
+- `BetterEndfield.Model.dll`：开屏视觉、登录演员、模型资源和动画功能模块。
 - `BetterEndfield.Voice.dll`：语音语言、Wwise 媒体和口型功能模块。
 - `BetterEndfield.Music.dll`：OmniMix PCM、Wwise Audio Input 和原游戏音乐回退模块。
 - `BetterEndfield.Injector.exe`：默认加载方式，Host 和模块均从软件目录加载。
 - `payloads/xinput1_4.dll`：可选的 XInput 自启动代理，仅在用户确认后部署到游戏目录。
+
+## 已知问题
+
+开屏 Logo、中央色带和两侧色块的最终颜色可能与 UI 选择值存在偏差。这是因为主题色会与游戏源资源自带的颜色数据叠加；该问题在 `2.0.1` 中标记为不会修复，后续版本不再为此调整原始材质改色路径。
 
 模块 ABI 使用纯 C 接口。模块通过程序集、命名空间、类、方法、参数和字段描述符动态解析 IL2CPP；Hook 入口由当前进程的 IL2CPP ABI 与 PE 可执行区间共同验证，不保存客户端地址或文件哈希条件。
 
@@ -45,7 +49,7 @@ UI 会优先验证已保存路径，再检查软件相邻目录、Windows 卸载
 
 B 服不通过官服 `GameAssembly.dll` 哈希判定。Host 在运行时解析 IL2CPP 元数据，模块只验证自己声明的类、方法、字段和资源契约。登录 SDK 或登录资源差异不会被当作全局失败条件。
 
-模型和语音资源目录由当前游戏目录生成，PCK、BNK/HIRC 和 `AudioDialog` 不编译进 DLL。缺少动态契约时对应模块会明确拒绝启动，不套用官服地址。
+模型和语音资源目录由当前游戏目录生成，PCK、BNK/HIRC 和 `AudioDialog` 不编译进 DLL。开屏模块分别解析模型替换、Logo 与登录色带契约；某个视觉契约缺失只停用对应能力，不会阻断其他功能，也不会套用官服地址。
 
 音乐模块同样不验证 `GameAssembly.dll` 身份。它按完整 IL2CPP 元数据签名解析 `AudioMusicSystem`、`AkAudioInputManager` 与 Unity 主线程入口；官服/B 服登录 SDK 和登录资源差异不参与音乐契约。
 
@@ -92,7 +96,7 @@ Catalog 只包含目标角色需要的 WEM，重复目标 Media 只存储一次�
 
 ```powershell
 pwsh -File .\scripts\BuildBetterEndfield.ps1
-pwsh -File .\scripts\BuildInstaller.ps1 -Version 2.0.0
+pwsh -File .\scripts\BuildInstaller.ps1 -Version 2.0.1
 ```
 
 原生构建入口是 `native/CMakeLists.txt`。MinHook 只由 Host 链接，模块不得自行初始化或卸载 Hook 引擎。
@@ -104,7 +108,9 @@ pwsh -File .\scripts\BuildInstaller.ps1 -Version 2.0.0
 ```ini
 [betterendfield.model]
 enabled=false
-model_enabled=false
+model_replacement_enabled=false
+logo_theme_enabled=false
+logo_theme_color=#FFC928
 
 [betterendfield.voice]
 enabled=false

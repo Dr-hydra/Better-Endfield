@@ -270,6 +270,14 @@ internal static class ConfigurationService
             values,
             "model_replacement_enabled",
             configuration.ModelReplacementEnabled);
+        configuration.LogoThemeEnabled = Boolean(
+            values,
+            "logo_theme_enabled",
+            configuration.LogoThemeEnabled);
+        configuration.LogoThemeColor = Text(
+            values,
+            "logo_theme_color",
+            configuration.LogoThemeColor);
         configuration.VoiceRouterEnabled = Boolean(
             values,
             "voice_router_enabled",

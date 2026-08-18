@@ -75,7 +75,7 @@
             <NavigationView.MenuItems>
                 <NavigationViewItem
                     x:Name="ModelNavigationItem"
-                    Content="角色替换"
+                    Content="开屏"
                     IsSelected="True"
                     Tag="model">
                     <NavigationViewItem.Icon>
@@ -164,14 +164,47 @@
                                 HorizontalAlignment="Stretch"
                                 Spacing="28">
                                 <StackPanel Spacing="6">
-                                    <TextBlock Style="{StaticResource PageTitleStyle}" Text="角色替换" />
+                                    <TextBlock Style="{StaticResource PageTitleStyle}" Text="开屏" />
                                     <TextBlock
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Text="配置登录场景使用的角色模型与四阶段动画。"
+                                        Text="调整登录场景的视觉效果、角色模型与四阶段动画。"
                                         TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="18">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="界面视觉" />
+                                            <TextBlock
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="主题色可与原登录演员或角色替换同时使用。" />
+                                        </StackPanel>
+                                        <ToggleSwitch
+                                            x:Name="LogoThemeToggle"
+                                            Header="自定义 Logo 与色带主题色"
+                                            OffContent="使用游戏原色"
+                                            OnContent="使用所选颜色" />
+                                        <ContentControl
+                                            HorizontalContentAlignment="Stretch"
+                                            IsEnabled="{Binding IsOn, ElementName=LogoThemeToggle}">
+                                            <ColorPicker
+                                                x:Name="LogoThemeColorPicker"
+                                                MaxWidth="360"
+                                                HorizontalAlignment="Left"
+                                                Color="#FFFFC928"
+                                                ColorSpectrumShape="Ring"
+                                                IsAlphaEnabled="False"
+                                                IsColorChannelTextInputVisible="True"
+                                                IsColorPreviewVisible="True"
+                                                IsHexInputVisible="True"
+                                                IsMoreButtonVisible="False" />
+                                        </ContentControl>
+                                    </StackPanel>
+                                </Border>
+
+                                <StackPanel Spacing="6">
                                     <ToggleSwitch
                                         x:Name="ModelReplacementToggle"
-                                        Margin="0,12,0,0"
                                         Header="启用角色替换"
                                         OffContent="保持原登录演员"
                                         OnContent="使用下方角色与动画" />
@@ -933,7 +966,7 @@
                                             x:Name="CurrentVersionTextBlock"
                                             Margin="0,2,0,0"
                                             FontFamily="Consolas"
-                                            Text="版本 2.0.0" />
+                                            Text="版本 2.0.1" />
                                     </StackPanel>
                                 </Grid>
 

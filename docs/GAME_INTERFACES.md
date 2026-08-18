@@ -19,9 +19,11 @@ Host 使用 `GameAssembly.dll` 的 IL2CPP 导出解析：
 
 每个模块提供程序集、命名空间、类型、方法或字段描述符。Host 工作线程在使用元数据前附加到 IL2CPP 域，退出时解除附加。
 
-## 模型模块
+## 开屏模块
 
-模型模块动态验证并使用以下契约：
+`BetterEndfield.Model.dll` 在同一登录场景生命周期中提供模型替换、Logo 与登录色带主题。各能力组独立解析、独立安装 Hook；任一视觉契约缺失只停用对应功能。
+
+模型替换动态验证并使用以下契约：
 
 - `Entry.Beyond.dll / Beyond.Login / LoginSceneRoot.OnBindToManager`
 - `Entry.Beyond.dll / Beyond.Login / LoginSceneAnimCtrl`
@@ -38,6 +40,18 @@ Host 使用 `GameAssembly.dll` 的 IL2CPP 导出解析：
 首次 A1 请求发生而 Main 资源尚未就绪时，模块最多暂停该登录控制器 Tick 5 秒；替换体准备完成后调用原始 `_ResetToA1` 统一时间原点。只有 Prefab、四段有效动作、Animator、首个 PlayableGraph、原 Renderer 隐藏和初次锚点准备全部完成后才进入替换状态；任一步失败都会保留或恢复原演员。
 
 模型及动作路径来自当前 `action-manifest.json` 和 UI 写入的配置，不编译角色资源哈希白名单，也不依赖可执行文件身份。
+
+Logo 主题使用以下强类型契约：
+
+- `Entry.Beyond.dll / Beyond.Login / LoginDecorateUI.Tick` 与 `OnRelease`
+- `LoginDecorateUI._imgLogo` 与 `_targetGlow`
+- `Entry.Beyond.dll / Beyond.Login / LoginEnterGamePanel.OnValueChanged`
+- Unity `GameObject.Find("GameLogoRaw")`
+- Unity UI `Graphic.get_color/set_color` 与 `GetComponentsInChildren`
+
+模块在原 `Tick` 返回后覆盖 `_imgLogo`、`_targetGlow` 两个精确子树以及登录主界面独立 `GameLogoRaw` 的 `Graphic.color` RGB，并保留动画当前 Alpha。`GameLogoRaw` 是世界层级快照中确认的 `UIRawImage + UIMaterialAnimation` 对象，不属于 `LoginDecorateUI` 的两个字段子树；运行时按 500 ms 重试精确名称查找，不枚举全局 UI。
+
+登录界面的长条色带位于 `EnterGamePanel/MiddlePanel/Line` 的 UGUI 子树。`LoginEnterGamePanel.OnValueChanged` 返回后，模块按面板实例缓存该子树的 `Graphic`，并以精确层级、`login_deco_line*`/`login_deco_glitch*` Sprite/RawTexture 以及原始黄色 RGB 共同识别主题目标。这会覆盖入场特效、最终静态 `LineLeft` 和两侧 `LineDecoLeft`/`LineDecoRight` 小区块。主题处理为每个目标复制当前 `Material`，在副本的 `_Color`、`_TintColor`、`_BaseColor` 或 `_GlowColor` 属性上写入主题色，再把副本只赋给当前 `Graphic`；原 Sprite、纹理、UV、RectTransform、Shader 和层级保持不变，不创建白色 UI 四边形，也不修改共享材质。`Graphic.color` 仅把 RGB 归一为白色并保留游戏当前 Alpha，避免原黄色乘色污染材质主题色。模块在 `LoginDecorateUI.Tick` 和 `UIMaterialAnimation.LateTick` 返回后重新确认材质与颜色，因此游戏的最终动画状态不会覆盖主题色。重复的 `OnValueChanged` 不会重新枚举同一面板；热停用或界面释放时恢复原材质与原 RGB，并销毁运行时材质副本。
 
 ## 语音模块
 

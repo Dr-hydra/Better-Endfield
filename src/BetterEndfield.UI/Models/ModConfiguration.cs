@@ -72,6 +72,10 @@ internal sealed class ModConfiguration
 
     public bool ModelReplacementEnabled { get; set; } = false;
 
+    public bool LogoThemeEnabled { get; set; } = false;
+
+    public string LogoThemeColor { get; set; } = "#FFC928";
+
     public bool VoiceRouterEnabled { get; set; } = false;
 
     public bool ReplaceNarrativeVoice { get; set; } = true;
@@ -126,12 +130,15 @@ internal sealed class ModConfiguration
 
         var text = new StringBuilder();
         text.AppendLine("; Better Endfield runtime configuration");
-        text.AppendLine("; Language changes are hot-reloaded; model changes apply on the next injection.");
+        text.AppendLine("; Visual and language changes are hot-reloaded; model changes apply on the next injection.");
         text.AppendLine();
         text.AppendLine("[betterendfield.model]");
-        text.AppendLine("schema_version=4");
-        text.AppendLine($"enabled={Boolean(ModelReplacementEnabled)}");
+        text.AppendLine("schema_version=5");
+        text.AppendLine($"enabled={Boolean(ModelReplacementEnabled || LogoThemeEnabled)}");
         text.AppendLine($"model_replacement_enabled={Boolean(ModelReplacementEnabled)}");
+        text.AppendLine($"logo_theme_enabled={Boolean(LogoThemeEnabled)}");
+        text.AppendLine($"logo_theme_color={LogoThemeColor}");
+        text.AppendLine("diagnostics=true");
         text.AppendLine($"character={Character}");
         text.AppendLine($"final_action={FinalAction}");
         text.AppendLine($"model_path={ModelPath}");

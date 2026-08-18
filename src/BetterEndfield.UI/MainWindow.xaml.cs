@@ -14,6 +14,7 @@ using Microsoft.UI.Xaml.Media;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
 using Windows.Storage.Pickers;
+using Windows.UI;
 
 namespace BetterEndfield.UI;
 
@@ -771,7 +772,7 @@ public sealed partial class MainWindow : Window
             {
                 ShowStatus(
                     "参数已保存",
-                    "语言与已加载的音乐模块会在约 2 秒内热更新；模型、动画及首次启用的模块在下次注入时读取。",
+                    "视觉、语言与已加载的音乐模块会在约 2 秒内热更新；模型、动画及首次启用的模块在下次注入时读取。",
                     InfoBarSeverity.Success);
             }
 
@@ -1096,6 +1097,8 @@ public sealed partial class MainWindow : Window
             LoopEnd = LoopEndNumberBox.Value,
             CrossfadeDuration = CrossfadeDurationNumberBox.Value,
             ModelReplacementEnabled = ModelReplacementToggle.IsOn,
+            LogoThemeEnabled = LogoThemeToggle.IsOn,
+            LogoThemeColor = $"#{LogoThemeColorPicker.Color.R:X2}{LogoThemeColorPicker.Color.G:X2}{LogoThemeColorPicker.Color.B:X2}",
             VoiceRouterEnabled = VoiceRouterToggle.IsOn,
             ReplaceNarrativeVoice = NarrativeVoiceToggle.IsOn,
             VoiceLanguageRules = voiceLanguageRules,
@@ -1143,6 +1146,8 @@ public sealed partial class MainWindow : Window
         LoopEndNumberBox.Value = configuration.LoopEnd;
         CrossfadeDurationNumberBox.Value = configuration.CrossfadeDuration;
         ModelReplacementToggle.IsOn = configuration.ModelReplacementEnabled;
+        LogoThemeToggle.IsOn = configuration.LogoThemeEnabled;
+        LogoThemeColorPicker.Color = ParseLogoThemeColor(configuration.LogoThemeColor);
         VoiceRouterToggle.IsOn = configuration.VoiceRouterEnabled;
         NarrativeVoiceToggle.IsOn = configuration.ReplaceNarrativeVoice;
         LoadVoiceRules(configuration.VoiceLanguageRules);
@@ -1170,6 +1175,20 @@ public sealed partial class MainWindow : Window
 
         _initializing = wasInitializing;
         UpdateCrossfadePanel();
+    }
+
+    private static Color ParseLogoThemeColor(string value)
+    {
+        string normalized = value.Trim().TrimStart('#');
+        return normalized.Length == 6 &&
+            byte.TryParse(normalized[..2], NumberStyles.HexNumber,
+                CultureInfo.InvariantCulture, out byte red) &&
+            byte.TryParse(normalized.Substring(2, 2), NumberStyles.HexNumber,
+                CultureInfo.InvariantCulture, out byte green) &&
+            byte.TryParse(normalized.Substring(4, 2), NumberStyles.HexNumber,
+                CultureInfo.InvariantCulture, out byte blue)
+            ? Color.FromArgb(255, red, green, blue)
+            : Color.FromArgb(255, 255, 201, 40);
     }
 
     private void ApplyOmniMixRegistration(OmniMixRegistrationStatus status)
