@@ -104,6 +104,28 @@ internal sealed class ModConfiguration
 
     public bool MusicDiagnostics { get; set; } = false;
 
+    public bool CombatStatsEnabled { get; set; } = false;
+
+    public bool HideDamageNumbers { get; set; } = false;
+
+    public string CombatStartHotkey { get; set; } = "F7";
+
+    public string CombatStopHotkey { get; set; } = "F8";
+
+    public bool RecordAllDamage { get; set; } = true;
+
+    public bool IncludeOverkillDamage { get; set; } = false;
+
+    public double MinimumDamage { get; set; } = 0.0;
+
+    public bool GroupDamageByCharacter { get; set; } = true;
+
+    public bool GroupDamageBySkill { get; set; } = true;
+
+    public bool GroupDamageByType { get; set; } = true;
+
+    public bool SaveRawCombatEvents { get; set; } = false;
+
     public static ModConfiguration CreateDefaults() => new();
 
     public string ToIni()
@@ -193,6 +215,21 @@ internal sealed class ModConfiguration
         text.AppendLine($"prebuffer_ms={Number(MusicPrebufferMilliseconds)}");
         text.AppendLine($"fallback_to_native={Boolean(FallbackToNativeMusic)}");
         text.AppendLine($"diagnostics={Boolean(MusicDiagnostics)}");
+        text.AppendLine();
+        text.AppendLine("[betterendfield.combat_stats]");
+        text.AppendLine("schema_version=1");
+        text.AppendLine($"enabled={Boolean(CombatStatsEnabled || HideDamageNumbers)}");
+        text.AppendLine($"combat_stats_enabled={Boolean(CombatStatsEnabled)}");
+        text.AppendLine($"hide_damage_numbers={Boolean(HideDamageNumbers)}");
+        text.AppendLine($"hotkey_start={CombatStartHotkey}");
+        text.AppendLine($"hotkey_stop={CombatStopHotkey}");
+        text.AppendLine($"record_all_damage={Boolean(RecordAllDamage)}");
+        text.AppendLine($"include_overkill={Boolean(IncludeOverkillDamage)}");
+        text.AppendLine($"minimum_damage={Number(MinimumDamage)}");
+        text.AppendLine($"group_by_character={Boolean(GroupDamageByCharacter)}");
+        text.AppendLine($"group_by_skill={Boolean(GroupDamageBySkill)}");
+        text.AppendLine($"group_by_damage_type={Boolean(GroupDamageByType)}");
+        text.AppendLine($"save_raw_events={Boolean(SaveRawCombatEvents)}");
         return text.ToString();
     }
 }

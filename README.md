@@ -1,6 +1,6 @@
 # Better Endfield
 
-Better Endfield 是一个面向《终末地》Windows 客户端的模块化运行时。模型、语音和 OmniMix 音乐集成分别由独立 DLL 提供，Host 负责动态 IL2CPP 解析、Hook 生命周期、配置和模块发现。
+Better Endfield 是一个面向《终末地》Windows 客户端的模块化运行时。模型、语音、OmniMix 音乐和战斗数据分别由独立 DLL 提供，Host 负责动态 IL2CPP 解析、Hook 生命周期、配置和模块发现。
 
 ## 架构
 
@@ -10,6 +10,7 @@ BetterEndfield.exe
   modules/BetterEndfield.Model.dll
   modules/BetterEndfield.Voice.dll
   modules/BetterEndfield.Music.dll
+  modules/BetterEndfield.CombatStats.dll
   loaders/BetterEndfield.Injector.exe
   payloads/xinput1_4.dll
 ```
@@ -18,6 +19,7 @@ BetterEndfield.exe
 - `BetterEndfield.Model.dll`：开屏视觉、登录演员、模型资源和动画功能模块。
 - `BetterEndfield.Voice.dll`：语音语言、Wwise 媒体和口型功能模块。
 - `BetterEndfield.Music.dll`：OmniMix PCM、Wwise Audio Input 和原游戏音乐回退模块。
+- `BetterEndfield.CombatStats.dll`：伤害数字隐藏、战斗伤害统计、快捷键会话和本地结果模块。
 - `BetterEndfield.Injector.exe`：默认加载方式，Host 和模块均从软件目录加载。
 - `payloads/xinput1_4.dll`：可选的 XInput 自启动代理，仅在用户确认后部署到游戏目录。
 
@@ -28,6 +30,7 @@ ui/BetterEndfield.UI/          WinUI 控制器与按领域分类的内嵌资源
 native/modules/model/          开屏视觉、角色模型与动画模块
 native/modules/voice/          配音语言、Wwise 媒体与口型模块
 native/modules/music/          OmniMix 音乐集成模块
+native/modules/combat_stats/   战斗数据与伤害显示模块
 native/loaders/injector/       外部启动注入器
 native/loaders/xinput/         XInput 代理与进程内 Bootstrap
 native/shared/                 Host、公共 ABI 头文件与第三方原生依赖
@@ -76,6 +79,12 @@ B 服不通过官服 `GameAssembly.dll` 哈希判定。Host 在运行时解析 I
 
 音乐模块同样不验证 `GameAssembly.dll` 身份。它按完整 IL2CPP 元数据签名解析 `AudioMusicSystem`、`AkAudioInputManager` 与 Unity 主线程入口；官服/B 服登录 SDK 和登录资源差异不参与音乐契约。
 
+战斗数据模块默认关闭。启用后按 `hotkey_start`/`hotkey_stop` 建立一次统计会话，动态挂接
+`BattleRecorder.DamageDetail.Init` 读取已整理的攻击者、技能、伤害类型、伤害值和暴击字段；
+隐藏数字只挂接 `DamageTextProcessor.ProcessDamagePackDataInternal`，不会阻断伤害计算、生命值或韧性流程。
+结果写入 `%LocalAppData%\\BetterEndfield\\combat-sessions`，UI 的“战斗数据”页可刷新历史文件并显示总伤害排行。
+字段和方法均按 IL2CPP 元数据描述解析，契约缺失时只停用该模块。`minimum_damage`、过量伤害、分组和原始事件保存等规则均可在 UI 或配置节中调整。
+
 ## OmniMix 音乐集成
 
 音乐集成默认关闭。Better Endfield 只保存用户选择的 `OmniMixPlayer.Backend.exe` 绝对路径，并从该后端的 `native\x64` 目录动态加载兼容的 `OmniPcmShared.dll`；不会复制曲库、音频或 OmniMix 程序。注册和运行时都会验证 OmniPcmShared ABI `2.x`、共享协议 `2` 与交错 `float32` 能力。后端路径缺失、ABI 不兼容、心跳中断或 PCM 缓冲不足时，模块保持或恢复原游戏音乐。
@@ -119,7 +128,7 @@ Catalog 只包含目标角色需要的 WEM，重复目标 Media 只存储一次�
 
 ```powershell
 pwsh -File .\scripts\BuildBetterEndfield.ps1
-pwsh -File .\scripts\BuildInstaller.ps1 -Version 2.0.1
+pwsh -File .\scripts\BuildInstaller.ps1 -Version 2.1.1
 ```
 
 原生构建入口是 `native/CMakeLists.txt`。MinHook 只由 Host 链接，模块不得自行初始化或卸载 Hook 引擎。
@@ -151,6 +160,20 @@ replace_gameplay=true
 target_latency=0.4
 prebuffer_ms=150
 fallback_to_native=true
+
+[betterendfield.combat_stats]
+enabled=false
+combat_stats_enabled=false
+hide_damage_numbers=false
+hotkey_start=F7
+hotkey_stop=F8
+record_all_damage=true
+include_overkill=false
+minimum_damage=0
+group_by_character=true
+group_by_skill=true
+group_by_damage_type=true
+save_raw_events=false
 
 [Loader]
 install_root=C:\Path\To\Better Endfield

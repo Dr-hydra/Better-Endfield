@@ -19,8 +19,8 @@
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
-    <Version>2.0.1</Version>
-    <InformationalVersion>2.0.1</InformationalVersion>
+    <Version>2.1.1</Version>
+    <InformationalVersion>2.1.1</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
@@ -33,6 +33,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
+    <EmbeddedResource
+      Include="Assets\shared\gilberta.ico"
+      LogicalName="BetterEndfield.UI.Assets.shared.gilberta.ico" />
     <EmbeddedResource
       Include="Assets\model\character-presets.json"
       LogicalName="BetterEndfield.UI.Assets.model.character-presets.json" />

@@ -216,6 +216,8 @@ internal static class ConfigurationService
                     section.Equals("betterendfield.voice",
                         StringComparison.OrdinalIgnoreCase) ||
                     section.Equals("betterendfield.music",
+                        StringComparison.OrdinalIgnoreCase) ||
+                    section.Equals("betterendfield.combat_stats",
                         StringComparison.OrdinalIgnoreCase);
                 continue;
             }
@@ -314,6 +316,28 @@ internal static class ConfigurationService
             values, "fallback_to_native", configuration.FallbackToNativeMusic);
         configuration.MusicDiagnostics = Boolean(
             values, "diagnostics", configuration.MusicDiagnostics);
+        configuration.CombatStatsEnabled = Boolean(
+            values, "combat_stats_enabled", configuration.CombatStatsEnabled);
+        configuration.HideDamageNumbers = Boolean(
+            values, "hide_damage_numbers", configuration.HideDamageNumbers);
+        configuration.CombatStartHotkey = Text(
+            values, "hotkey_start", configuration.CombatStartHotkey);
+        configuration.CombatStopHotkey = Text(
+            values, "hotkey_stop", configuration.CombatStopHotkey);
+        configuration.RecordAllDamage = Boolean(
+            values, "record_all_damage", configuration.RecordAllDamage);
+        configuration.IncludeOverkillDamage = Boolean(
+            values, "include_overkill", configuration.IncludeOverkillDamage);
+        configuration.MinimumDamage = Number(
+            values, "minimum_damage", configuration.MinimumDamage);
+        configuration.GroupDamageByCharacter = Boolean(
+            values, "group_by_character", configuration.GroupDamageByCharacter);
+        configuration.GroupDamageBySkill = Boolean(
+            values, "group_by_skill", configuration.GroupDamageBySkill);
+        configuration.GroupDamageByType = Boolean(
+            values, "group_by_damage_type", configuration.GroupDamageByType);
+        configuration.SaveRawCombatEvents = Boolean(
+            values, "save_raw_events", configuration.SaveRawCombatEvents);
         return configuration;
     }
 

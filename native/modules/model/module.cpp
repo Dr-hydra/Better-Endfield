@@ -312,6 +312,14 @@ ModelConfiguration g_configuration;
 LiveActor g_actor;
 LoginBandState g_login_band;
 LogoState g_logo;
+// Unity release callbacks can re-enter while a Graphic property call is active.
+// Keep cached vector storage alive until the outer theme pass unwinds.
+std::atomic_bool g_login_band_applying{false};
+std::atomic_bool g_login_band_clear_pending{false};
+std::atomic_bool g_login_band_scene_begin_pending{false};
+std::atomic_bool g_login_scene_releasing{false};
+std::atomic_bool g_login_band_release_skip_logged{false};
+std::atomic_uint64_t g_login_band_generation{1};
 void* g_model_prefab = nullptr;
 uint32_t g_model_prefab_root = 0;
 std::array<void*, kClipCount> g_clips{};
@@ -1537,6 +1545,9 @@ std::string SelectMaterialColorProperty(void* material) {
     constexpr std::array<const char*, 4> properties{
         "_Color", "_TintColor", "_BaseColor", "_GlowColor"};
     for (const char* property : properties) {
+        if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+            return {};
+        }
         if (HasMaterialProperty(material, property)) {
             return property;
         }
@@ -1571,7 +1582,9 @@ void* CloneMaterial(void* source) {
     void* parameters[1]{source};
     if (!InvokeVoid(g_methods.material_ctor_copy, clone, parameters,
             "Material..ctor(Material) login band remap")) {
-        DestroyObject(clone);
+        if (!g_login_scene_releasing.load(std::memory_order_acquire)) {
+            DestroyObject(clone);
+        }
         return nullptr;
     }
     return clone;
@@ -2025,13 +2038,99 @@ size_t AppendLoginBandGraphics(void* root_transform, void* panel_transform) {
 
 void RestoreLoginBandTheme(const char* reason);
 
+void FinishPendingLoginBandClear() {
+    if (!g_login_band_clear_pending.load(std::memory_order_acquire) ||
+        g_login_band_applying.load(std::memory_order_acquire)) {
+        return;
+    }
+    bool expected = true;
+    if (!g_login_band_clear_pending.compare_exchange_strong(expected, false,
+            std::memory_order_acq_rel, std::memory_order_acquire)) {
+        return;
+    }
+    g_login_band = {};
+    const uint64_t generation =
+        g_login_band_generation.fetch_add(1, std::memory_order_acq_rel) + 1;
+    Log("[login-band] clear completed generation=" +
+        std::to_string(generation));
+}
+
+void BeginLoginBandScene(const char* source) {
+    if (!g_login_scene_releasing.load(std::memory_order_acquire) &&
+        !g_login_band_clear_pending.load(std::memory_order_acquire)) {
+        return;
+    }
+    if (g_login_band_applying.load(std::memory_order_acquire)) {
+        const bool already_pending =
+            g_login_band_scene_begin_pending.exchange(true,
+                std::memory_order_acq_rel);
+        if (!already_pending) {
+            Log("[login-band] scene activation deferred until current apply returns");
+        }
+        return;
+    }
+    g_login_band_clear_pending.store(false, std::memory_order_release);
+    g_login_band_scene_begin_pending.store(false, std::memory_order_release);
+    g_login_band = {};
+    const uint64_t generation =
+        g_login_band_generation.fetch_add(1, std::memory_order_acq_rel) + 1;
+    g_login_scene_releasing.store(false, std::memory_order_release);
+    g_login_band_release_skip_logged.store(false, std::memory_order_release);
+    Log("[login-band] scene active generation=" + std::to_string(generation) +
+        " source=" + std::string(source ? source : "unknown"));
+}
+
+class LoginBandApplyScope {
+public:
+    LoginBandApplyScope() {
+        bool expected = false;
+        if (!g_login_band_applying.compare_exchange_strong(expected, true,
+                std::memory_order_acq_rel, std::memory_order_acquire)) {
+            return;
+        }
+        if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+            g_login_band_applying.store(false, std::memory_order_release);
+            FinishPendingLoginBandClear();
+            return;
+        }
+        generation_ = g_login_band_generation.load(std::memory_order_acquire);
+        active_ = true;
+    }
+
+    ~LoginBandApplyScope() {
+        if (!active_) {
+            return;
+        }
+        active_ = false;
+        g_login_band_applying.store(false, std::memory_order_release);
+        FinishPendingLoginBandClear();
+        if (g_login_band_scene_begin_pending.exchange(false,
+                std::memory_order_acq_rel)) {
+            BeginLoginBandScene("deferred scene activation");
+        }
+    }
+
+    bool IsValid() const {
+        return active_ &&
+            !g_login_scene_releasing.load(std::memory_order_acquire) &&
+            generation_ ==
+                g_login_band_generation.load(std::memory_order_acquire);
+    }
+
+private:
+    bool active_ = false;
+    uint64_t generation_ = 0;
+};
+
 bool CaptureLoginBand(void* instance, void* panel_game_object, const char* source) {
-    if (!panel_game_object) {
+    if (!panel_game_object ||
+        g_login_scene_releasing.load(std::memory_order_acquire)) {
         return false;
     }
     void* panel_transform = Invoke(g_methods.game_object_transform,
         panel_game_object, nullptr, "GameObject.get_transform(login enter panel)");
-    if (!panel_transform) {
+    if (!panel_transform ||
+        g_login_scene_releasing.load(std::memory_order_acquire)) {
         return false;
     }
     const bool cached_targets = std::any_of(g_login_band.graphics.begin(),
@@ -2046,6 +2145,9 @@ bool CaptureLoginBand(void* instance, void* panel_game_object, const char* sourc
     }
     if (g_login_band.panel_transform) {
         RestoreLoginBandTheme("re-capture");
+    }
+    if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+        return false;
     }
     void* middle = FindTransformByName(panel_transform, "MiddlePanel");
     void* line = FindTransformByName(middle ? middle : panel_transform, "Line");
@@ -2080,6 +2182,9 @@ void RestoreLoginBandTheme(const char* reason) {
     size_t restored = 0;
     size_t materials_destroyed = 0;
     for (LoginBandGraphicState& state : g_login_band.graphics) {
+        if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+            break;
+        }
         if (!state.theme_target) {
             continue;
         }
@@ -2088,16 +2193,33 @@ void RestoreLoginBandTheme(const char* reason) {
         if (GetGraphicColor(state.graphic, current)) {
             original.a = current.a;
         }
+        if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+            break;
+        }
+        void* current_material = state.themed_material
+            ? GetGraphicMaterial(state.graphic) : nullptr;
+        if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+            break;
+        }
         if (state.themed_material &&
-            GetGraphicMaterial(state.graphic) == state.themed_material &&
+            current_material == state.themed_material &&
             state.source_material) {
             SetGraphicMaterial(state.graphic, state.source_material);
+        }
+        if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+            break;
         }
         if (SetGraphicColor(state.graphic, original)) {
             ++restored;
         }
+        if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+            break;
+        }
         if (state.themed_material_owned && state.themed_material) {
             DestroyObject(state.themed_material);
+            if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+                break;
+            }
             ++materials_destroyed;
         }
         state.themed_material = nullptr;
@@ -2113,7 +2235,19 @@ void RestoreLoginBandTheme(const char* reason) {
     g_login_band = {};
 }
 
-void ApplyLoginBandTheme(const ModelConfiguration& configuration) {
+void ApplyLoginBandTheme(const ModelConfiguration& configuration,
+    void* panel_instance = nullptr) {
+    if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+        if (!g_login_band_release_skip_logged.exchange(true,
+                std::memory_order_acq_rel)) {
+            Log("[login-band] tick skipped scene-releasing");
+        }
+        return;
+    }
+    LoginBandApplyScope apply_scope;
+    if (!apply_scope.IsValid()) {
+        return;
+    }
     if (!configuration.logo_theme_enabled) {
         RestoreLoginBandTheme("configuration-disabled");
         return;
@@ -2122,6 +2256,15 @@ void ApplyLoginBandTheme(const ModelConfiguration& configuration) {
         return;
     }
     const uint64_t now = GetTickCount64();
+    if (panel_instance &&
+        (g_login_band.instance != panel_instance ||
+            !g_login_band.panel_transform)) {
+        if (!CaptureLoginBandFromInstance(panel_instance,
+                "LoginEnterGamePanel.OnValueChanged.postfix") ||
+            !apply_scope.IsValid()) {
+            return;
+        }
+    }
     if (!g_login_band.panel_transform) {
         if (now < g_login_band.next_discovery_tick) {
             return;
@@ -2131,20 +2274,34 @@ void ApplyLoginBandTheme(const ModelConfiguration& configuration) {
             g_login_band.next_discovery_tick = now + 500;
             return;
         }
+        if (!apply_scope.IsValid()) {
+            return;
+        }
     }
 
     size_t applied = 0;
     size_t remap_failed = 0;
     for (LoginBandGraphicState& state : g_login_band.graphics) {
+        if (!apply_scope.IsValid()) {
+            break;
+        }
         if (!state.theme_target) {
             continue;
         }
         const Color themed_color = configuration.logo_theme_color;
         if (!state.material_remap_attempted) {
             state.material_remap_attempted = true;
-            state.source_material = GetGraphicMaterial(state.graphic);
-            state.material_color_property = SelectMaterialColorProperty(
-                state.source_material);
+            void* source_material = GetGraphicMaterial(state.graphic);
+            if (!apply_scope.IsValid()) {
+                break;
+            }
+            state.source_material = source_material;
+            const std::string color_property = SelectMaterialColorProperty(
+                source_material);
+            if (!apply_scope.IsValid()) {
+                break;
+            }
+            state.material_color_property = color_property;
             if (!state.source_material || state.material_color_property.empty()) {
                 ++remap_failed;
                 if (g_diagnostics.load()) {
@@ -2154,56 +2311,113 @@ void ApplyLoginBandTheme(const ModelConfiguration& configuration) {
                 continue;
             }
             state.themed_material = CloneMaterial(state.source_material);
-            if (!state.themed_material ||
-                !SetMaterialColor(state.themed_material,
-                    state.material_color_property,
-                    themed_color) ||
-                !SetGraphicMaterial(state.graphic, state.themed_material)) {
+            if (!apply_scope.IsValid()) {
+                break;
+            }
+            const bool color_applied = state.themed_material &&
+                SetMaterialColor(state.themed_material,
+                    state.material_color_property, themed_color);
+            if (!apply_scope.IsValid()) {
+                break;
+            }
+            const bool material_applied = color_applied &&
+                SetGraphicMaterial(state.graphic, state.themed_material);
+            if (!apply_scope.IsValid()) {
+                break;
+            }
+            if (!state.themed_material || !color_applied || !material_applied) {
                 ++remap_failed;
                 if (state.themed_material) {
                     DestroyObject(state.themed_material);
                 }
+                if (!apply_scope.IsValid()) {
+                    break;
+                }
                 state.themed_material = nullptr;
                 state.themed_material_owned = false;
                 if (g_diagnostics.load()) {
+                    const std::string source_name =
+                        VisualObjectName(state.source_material);
+                    if (!apply_scope.IsValid()) {
+                        break;
+                    }
                     Log("[login-band-remap] failed path=" + state.path +
-                        " sourceMaterial=" + VisualObjectName(state.source_material) +
+                        " sourceMaterial=" + source_name +
                         " property=" + state.material_color_property);
                 }
                 continue;
+            }
+            if (!apply_scope.IsValid()) {
+                break;
             }
             state.themed_material_owned = true;
             state.material_remap_applied = true;
             state.themed_color = themed_color;
             ++applied;
             if (g_diagnostics.load()) {
+                const std::string source_name =
+                    VisualObjectName(state.source_material);
+                if (!apply_scope.IsValid()) {
+                    break;
+                }
+                const std::string themed_name =
+                    VisualObjectName(state.themed_material);
+                if (!apply_scope.IsValid()) {
+                    break;
+                }
                 Log("[login-band-remap] applied path=" + state.path +
-                    " sourceMaterial=" + VisualObjectName(state.source_material) +
-                    " themedMaterial=" + VisualObjectName(state.themed_material) +
+                    " sourceMaterial=" + source_name +
+                    " themedMaterial=" + themed_name +
                     " property=" + state.material_color_property +
                     " sprite-preserved=true");
             }
         } else if (state.themed_material && state.material_remap_applied) {
             if (RgbDiffer(state.themed_color, themed_color)) {
-                if (SetMaterialColor(state.themed_material,
-                        state.material_color_property,
-                        themed_color)) {
+                const bool color_updated = SetMaterialColor(
+                    state.themed_material, state.material_color_property,
+                    themed_color);
+                if (!apply_scope.IsValid()) {
+                    break;
+                }
+                if (color_updated) {
                     state.themed_color = themed_color;
                     ++applied;
                 }
             }
-            if (GetGraphicMaterial(state.graphic) != state.themed_material) {
+            void* current_material = GetGraphicMaterial(state.graphic);
+            if (!apply_scope.IsValid()) {
+                break;
+            }
+            if (current_material != state.themed_material) {
                 SetGraphicMaterial(state.graphic, state.themed_material);
+                if (!apply_scope.IsValid()) {
+                    break;
+                }
             }
         }
         Color current{};
         if (!GetGraphicColor(state.graphic, current)) {
+            if (!apply_scope.IsValid()) {
+                break;
+            }
             continue;
+        }
+        if (!apply_scope.IsValid()) {
+            break;
         }
         Color neutral{1.0f, 1.0f, 1.0f, current.a};
         if (RgbDiffer(current, neutral)) {
             SetGraphicColor(state.graphic, neutral);
+            if (!apply_scope.IsValid()) {
+                break;
+            }
         }
+    }
+    if (!apply_scope.IsValid()) {
+        Log("[login-band] apply aborted after scene release generation=" +
+            std::to_string(g_login_band_generation.load(
+                std::memory_order_acquire)));
+        return;
     }
     if ((applied > 0 || remap_failed > 0) && !g_login_band.apply_logged) {
         Log("[login-band] theme applied graphics=" + std::to_string(applied) +
@@ -2216,9 +2430,20 @@ void ApplyLoginBandTheme(const ModelConfiguration& configuration) {
 void ClearLoginBandState(const char* reason) {
     const std::string_view release_reason = reason ? reason : "";
     if (release_reason.find("OnRelease") != std::string_view::npos) {
-        Log("[login-band] state cleared without restore reason=" +
-            std::string(release_reason));
-        g_login_band = {};
+        const bool already_releasing =
+            g_login_scene_releasing.exchange(true,
+                std::memory_order_acq_rel);
+        g_login_band_clear_pending.store(true, std::memory_order_release);
+        if (!already_releasing) {
+            const bool during_apply =
+                g_login_band_applying.load(std::memory_order_acquire);
+            Log("[login-band] release requested generation=" +
+                std::to_string(g_login_band_generation.load(
+                    std::memory_order_acquire)) +
+                " duringApply=" + (during_apply ? "true" : "false") +
+                " reason=" + std::string(release_reason));
+        }
+        FinishPendingLoginBandClear();
         return;
     }
     if (g_login_band.panel_transform) {
@@ -3181,11 +3406,10 @@ void __fastcall LoginEnterGamePanelValueChangedHook(void* instance, void* value,
     if (g_original_login_enter_value_changed) {
         g_original_login_enter_value_changed(instance, value, method);
     }
+    BeginLoginBandScene("LoginEnterGamePanel.OnValueChanged");
     const ModelConfiguration configuration = ConfigurationSnapshot();
     if (configuration.logo_theme_enabled && g_login_band_contract_ready) {
-        CaptureLoginBandFromInstance(instance,
-            "LoginEnterGamePanel.OnValueChanged.postfix");
-        ApplyLoginBandTheme(configuration);
+        ApplyLoginBandTheme(configuration, instance);
     }
 }
 
@@ -3193,6 +3417,13 @@ void __fastcall LoginDecorateTickHook(void* instance, float delta_time,
     void* method) {
     if (g_original_login_decorate_tick) {
         g_original_login_decorate_tick(instance, delta_time, method);
+    }
+    if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+        if (!g_login_band_release_skip_logged.exchange(true,
+                std::memory_order_acq_rel)) {
+            Log("[login-band] decorate tick skipped scene-releasing");
+        }
+        return;
     }
     const ModelConfiguration configuration = ConfigurationSnapshot();
     ApplyLogoTheme(instance, configuration);
@@ -3211,6 +3442,7 @@ void __fastcall LoginMaterialAnimationLateTickHook(void* instance,
 }
 
 void __fastcall LoginDecorateReleaseHook(void* instance, void* method) {
+    ClearLoginBandState("LoginDecorateUI.OnRelease");
     if (g_logo.instance == instance) {
         g_logo = {};
         Log("[logo-theme] LoginDecorateUI released; cached Graphic state cleared");
@@ -3250,6 +3482,7 @@ void QueuePhase(void* controller, SequencePhase phase, const char* source) {
 }
 
 void __fastcall LoginBindHook(void* instance, void* method) {
+    BeginLoginBandScene("LoginSceneRoot.OnBindToManager");
     g_requested_phase.store(SequencePhase::SitLoop);
     if (g_original_login_bind) {
         g_original_login_bind(instance, method);
@@ -3632,7 +3865,7 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Login Model", "2.0.1", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Login Model", "2.1.1", BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};

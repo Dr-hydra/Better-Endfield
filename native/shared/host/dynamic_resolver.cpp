@@ -57,6 +57,9 @@ bool DynamicResolver::Initialize(std::string& error) {
         "il2cpp_assembly_get_image");
     image_get_name_ = Export<ImageGetNameFn>(game_assembly_, "il2cpp_image_get_name");
     class_from_name_ = Export<ClassFromNameFn>(game_assembly_, "il2cpp_class_from_name");
+    class_get_name_ = Export<ClassGetNameFn>(game_assembly_, "il2cpp_class_get_name");
+    class_get_nested_types_ = Export<ClassGetNestedTypesFn>(game_assembly_,
+        "il2cpp_class_get_nested_types");
     class_get_methods_ = Export<ClassGetMethodsFn>(game_assembly_,
         "il2cpp_class_get_methods");
     method_get_name_ = Export<MethodGetNameFn>(game_assembly_, "il2cpp_method_get_name");
@@ -228,7 +231,7 @@ BE_Result DynamicResolver::ResolveField(const BE_FieldDescriptorV1& descriptor,
         error = "Assembly was not found for field: " + std::string(descriptor.assembly_name);
         return BE_Result_NotFound;
     }
-    void* klass = class_from_name_(image, descriptor.namespace_name, descriptor.class_name);
+    void* klass = FindClass(image, descriptor.namespace_name, descriptor.class_name);
     void* field = klass ? class_get_field_from_name_(klass, descriptor.field_name) : nullptr;
     if (!field) {
         error = "Field was not found: " + std::string(descriptor.field_name);
@@ -266,7 +269,7 @@ BE_Result DynamicResolver::ResolveClass(const char* assembly_name,
         error = "Assembly was not found for class: " + std::string(assembly_name);
         return BE_Result_NotFound;
     }
-    void* klass = class_from_name_(image, namespace_name, class_name);
+    void* klass = FindClass(image, namespace_name, class_name);
     if (!klass) {
         error = "Class was not found: " + std::string(class_name);
         return BE_Result_NotFound;
@@ -366,6 +369,52 @@ void* DynamicResolver::FindImage(const char* assembly_name) const {
     return nullptr;
 }
 
+void* DynamicResolver::FindNestedClass(void* outer, const char* class_name) const {
+    if (!outer || !class_name || !*class_name || !class_get_nested_types_ ||
+        !class_get_name_) {
+        return nullptr;
+    }
+    std::string_view path(class_name);
+    const size_t separator = path.find_first_of("./+");
+    const std::string_view wanted = path.substr(0, separator);
+    void* iterator = nullptr;
+    while (void* nested = class_get_nested_types_(outer, &iterator)) {
+        const char* nested_name = class_get_name_(nested);
+        if (!nested_name || std::string_view(nested_name) != wanted) {
+            continue;
+        }
+        if (separator == std::string_view::npos) {
+            return nested;
+        }
+        const std::string remainder(path.substr(separator + 1));
+        return FindNestedClass(nested, remainder.c_str());
+    }
+    return nullptr;
+}
+
+void* DynamicResolver::FindClass(void* image, const char* namespace_name,
+    const char* class_name) const {
+    if (!image || !namespace_name || !class_name || !class_from_name_) {
+        return nullptr;
+    }
+    if (void* direct = class_from_name_(image, namespace_name, class_name)) {
+        return direct;
+    }
+    const std::string_view path(class_name);
+    if (path.find_first_of("./+") == std::string_view::npos ||
+        !class_get_nested_types_ || !class_get_name_) {
+        return nullptr;
+    }
+    const size_t separator = path.find_first_of("./+");
+    const std::string outer_name(path.substr(0, separator));
+    void* outer = class_from_name_(image, namespace_name, outer_name.c_str());
+    if (!outer) {
+        return nullptr;
+    }
+    const std::string remainder(path.substr(separator + 1));
+    return FindNestedClass(outer, remainder.c_str());
+}
+
 bool DynamicResolver::MatchesMethod(void* method,
     const BE_MethodDescriptorV1& descriptor) const {
     const char* method_name = method_get_name_(method);
@@ -412,7 +461,7 @@ BE_Result DynamicResolver::ResolveMethod(const BE_MethodDescriptorV1& descriptor
         error = "Assembly was not found: " + std::string(descriptor.assembly_name);
         return BE_Result_NotFound;
     }
-    void* klass = class_from_name_(image, descriptor.namespace_name, descriptor.class_name);
+    void* klass = FindClass(image, descriptor.namespace_name, descriptor.class_name);
     if (!klass) {
         error = "Class was not found: " + std::string(descriptor.class_name);
         return BE_Result_NotFound;

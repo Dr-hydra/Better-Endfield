@@ -40,6 +40,8 @@ private:
     using AssemblyGetImageFn = void* (__fastcall*)(void*);
     using ImageGetNameFn = const char* (__fastcall*)(void*);
     using ClassFromNameFn = void* (__fastcall*)(void*, const char*, const char*);
+    using ClassGetNameFn = const char* (__fastcall*)(void*);
+    using ClassGetNestedTypesFn = void* (__fastcall*)(void*, void**);
     using ClassGetMethodsFn = void* (__fastcall*)(void*, void**);
     using MethodGetNameFn = const char* (__fastcall*)(void*);
     using MethodGetParameterCountFn = uint32_t (__fastcall*)(void*);
@@ -64,6 +66,9 @@ private:
     using GCHandleFreeFn = void(__fastcall*)(uint32_t);
 
     void* FindImage(const char* assembly_name) const;
+    void* FindClass(void* image, const char* namespace_name,
+        const char* class_name) const;
+    void* FindNestedClass(void* outer, const char* class_name) const;
     bool MatchesMethod(void* method, const BE_MethodDescriptorV1& descriptor) const;
     void* ResolveMethodEntry(void* method) const;
     bool IsExecutableAddress(uintptr_t address) const;
@@ -75,6 +80,8 @@ private:
     AssemblyGetImageFn assembly_get_image_ = nullptr;
     ImageGetNameFn image_get_name_ = nullptr;
     ClassFromNameFn class_from_name_ = nullptr;
+    ClassGetNameFn class_get_name_ = nullptr;
+    ClassGetNestedTypesFn class_get_nested_types_ = nullptr;
     ClassGetMethodsFn class_get_methods_ = nullptr;
     MethodGetNameFn method_get_name_ = nullptr;
     MethodGetParameterCountFn method_get_parameter_count_ = nullptr;

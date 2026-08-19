@@ -48,3 +48,7 @@ vendor/unity-libs-2021.3.34/
 *.pdb
 BetterEndfield.ini
 diagnostics/
+
+# Local reverse-engineering helpers are not distributable project sources.
+/ida_inspect_eftool.py
+/idat-local.exe

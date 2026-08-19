@@ -38,9 +38,29 @@ internal sealed class VoiceRuleEntry
     public required string LanguageDisplayName { get; init; }
 }
 
+internal sealed class CombatSessionSummary
+{
+    public required string FileName { get; init; }
+
+    public required string Summary { get; init; }
+
+    public double RelativeDamage { get; init; }
+}
+
+internal sealed class CombatBreakdownRow
+{
+    public required string Label { get; init; }
+
+    public required string Summary { get; init; }
+
+    public double RelativeDamage { get; init; }
+}
+
 public sealed partial class MainWindow : Window
 {
     private const string DisclaimerVersion = "1";
+    private const string WindowIconResourceName =
+        "BetterEndfield.UI.Assets.shared.gilberta.ico";
     private const string BilibiliProfileUrl = "https://space.bilibili.com/441133155";
     private const string XiaoheiheProfileUrl =
         "https://www.xiaoheihe.cn/app/user/profile/38080236";
@@ -88,6 +108,8 @@ public sealed partial class MainWindow : Window
     private string _durationLogPath = string.Empty;
     private DateTime _durationLogWriteUtc;
     private readonly ObservableCollection<VoiceRuleEntry> _voiceRules = [];
+    private readonly ObservableCollection<CombatSessionSummary> _combatSessions = [];
+    private readonly ObservableCollection<CombatBreakdownRow> _combatBreakdown = [];
     private readonly IReadOnlyList<VoiceCharacterChoice> _voiceCharacters;
     private AppSettings _appSettings = new();
     private string _latestReleaseUrl = UpdateService.ReleasesUrl;
@@ -99,6 +121,7 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         Title = "Better Endfield";
         SystemBackdrop = new MicaBackdrop();
+        TrySetWindowIcon();
         TryResizeWindow();
         CurrentVersionTextBlock.Text = $"版本 {UpdateService.CurrentVersion}";
         if (FeatureNavigation.SettingsItem is NavigationViewItem settingsItem)
@@ -126,6 +149,8 @@ public sealed partial class MainWindow : Window
         VoiceCharacterComboBox.ItemsSource = _voiceCharacters;
         VoiceCharacterComboBox.SelectedIndex = 0;
         VoiceRulesListView.ItemsSource = _voiceRules;
+        CombatSessionsListView.ItemsSource = _combatSessions;
+        CombatBreakdownListView.ItemsSource = _combatBreakdown;
         SelectVoiceLanguage("Japanese");
         UpdateVoiceRulesEmptyState();
         _statusTimer.Tick += StatusTimer_Tick;
@@ -165,6 +190,7 @@ public sealed partial class MainWindow : Window
             ModConfiguration configuration =
                 await ConfigurationService.LoadModConfigurationAsync(InjectorPathBox.Text);
             ApplyConfiguration(configuration);
+            RefreshCombatSessions();
             _initializing = false;
             UpdateCrossfadePanel();
             UpdateLoaderModePanel();
@@ -303,6 +329,9 @@ public sealed partial class MainWindow : Window
         MusicPageScrollViewer.Visibility = page == "music"
             ? Visibility.Visible
             : Visibility.Collapsed;
+        CombatPageScrollViewer.Visibility = page == "combat"
+            ? Visibility.Visible
+            : Visibility.Collapsed;
         SettingsPageScrollViewer.Visibility = page == "settings"
             ? Visibility.Visible
             : Visibility.Collapsed;
@@ -317,8 +346,132 @@ public sealed partial class MainWindow : Window
             "settings" => "路径与外观会随保存一起写入本机设置。",
             "voice" => "角色配音规则保存后在下一次注入时生效。",
             "music" => "首次启用在下一次注入时加载；已加载模块的设置会热更新。",
+            "combat" => "战斗统计使用开始和结束快捷键；结果会保存到本机目录。",
             _ => "角色与动画参数保存后在下一次注入时生效。"
         };
+    }
+
+    private void RefreshCombatSessionsButton_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshCombatSessions();
+    }
+
+    private void RefreshCombatSessions()
+    {
+        _combatSessions.Clear();
+        _combatBreakdown.Clear();
+        string directory = Path.Combine(
+            ConfigurationService.SettingsDirectory, "combat-sessions");
+        if (!Directory.Exists(directory))
+        {
+            CombatSessionsEmptyTextBlock.Visibility = Visibility.Visible;
+            CombatBreakdownEmptyTextBlock.Visibility = Visibility.Visible;
+            return;
+        }
+
+        var rows = new List<(string Path, string FileName, double Damage, double Dps, long Hits)>();
+        string[] paths = Directory.EnumerateFiles(directory, "combat-*.json")
+            .OrderByDescending(path => File.GetLastWriteTimeUtc(path))
+            .ToArray();
+        foreach (string path in paths)
+        {
+            try
+            {
+                using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
+                JsonElement root = document.RootElement;
+                double damage = root.TryGetProperty("totalDamage", out JsonElement damageValue)
+                    ? damageValue.GetDouble()
+                    : 0.0;
+                double dps = root.TryGetProperty("dps", out JsonElement dpsValue)
+                    ? dpsValue.GetDouble()
+                    : 0.0;
+                long hits = root.TryGetProperty("hitCount", out JsonElement hitsValue)
+                    ? hitsValue.GetInt64()
+                    : 0L;
+                rows.Add((path, Path.GetFileName(path), damage, dps, hits));
+            }
+            catch (IOException)
+            {
+            }
+            catch (JsonException)
+            {
+            }
+        }
+
+        double maximum = rows.Count == 0 ? 1.0 : Math.Max(1.0, rows.Max(row => row.Damage));
+        foreach (var row in rows)
+        {
+            _combatSessions.Add(new CombatSessionSummary
+            {
+                FileName = row.FileName,
+                RelativeDamage = row.Damage / maximum,
+                Summary = $"{row.Damage:N0}  ·  DPS {row.Dps:N0}  ·  {row.Hits} 次"
+            });
+        }
+        CombatSessionsEmptyTextBlock.Visibility = _combatSessions.Count == 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        if (rows.Count == 0)
+        {
+            CombatBreakdownEmptyTextBlock.Visibility = Visibility.Visible;
+            return;
+        }
+
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(File.ReadAllText(rows[0].Path));
+            var breakdown = new List<(string Label, double Damage, long Hits, long CriticalHits)>();
+            foreach (string group in new[] { "characters", "skills", "damageTypes" })
+            {
+                if (!document.RootElement.TryGetProperty(group, out JsonElement map) ||
+                    map.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+                foreach (JsonProperty property in map.EnumerateObject())
+                {
+                    JsonElement value = property.Value;
+                    double damage = value.TryGetProperty("damage", out JsonElement amount)
+                        ? amount.GetDouble()
+                        : 0.0;
+                    long hits = value.TryGetProperty("hits", out JsonElement hitValue)
+                        ? hitValue.GetInt64()
+                        : 0L;
+                    long criticalHits = value.TryGetProperty(
+                        "criticalHits", out JsonElement criticalValue)
+                        ? criticalValue.GetInt64()
+                        : 0L;
+                    string prefix = group switch
+                    {
+                        "characters" => "角色",
+                        "skills" => "技能",
+                        _ => "伤害类型"
+                    };
+                    breakdown.Add(($"{prefix} · {property.Name}", damage, hits, criticalHits));
+                }
+            }
+            double breakdownMaximum = breakdown.Count == 0
+                ? 1.0
+                : Math.Max(1.0, breakdown.Max(row => row.Damage));
+            foreach (var row in breakdown.OrderByDescending(row => row.Damage).Take(30))
+            {
+                _combatBreakdown.Add(new CombatBreakdownRow
+                {
+                    Label = row.Label,
+                    RelativeDamage = row.Damage / breakdownMaximum,
+                    Summary = $"{row.Damage:N0}  ·  {row.Hits} 次  ·  暴击 {row.CriticalHits}"
+                });
+            }
+        }
+        catch (IOException)
+        {
+        }
+        catch (JsonException)
+        {
+        }
+        CombatBreakdownEmptyTextBlock.Visibility = _combatBreakdown.Count == 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     }
 
     private async void BrowseOmniMixBackendButton_Click(
@@ -1018,7 +1171,8 @@ public sealed partial class MainWindow : Window
             LoopEndNumberBox,
             CrossfadeDurationNumberBox,
             MusicTargetLatencyNumberBox,
-            MusicPrebufferNumberBox
+            MusicPrebufferNumberBox,
+            MinimumDamageNumberBox
         ];
         if (numberBoxes.Any(box => !double.IsFinite(box.Value)))
         {
@@ -1044,6 +1198,20 @@ public sealed partial class MainWindow : Window
             out string voiceLanguageRules,
             out error))
         {
+            return false;
+        }
+
+        if (!TryNormalizeCombatHotkey(
+                CombatStartHotkeyBox.Text, out string startHotkey) ||
+            !TryNormalizeCombatHotkey(
+                CombatStopHotkeyBox.Text, out string stopHotkey))
+        {
+            error = "战斗统计快捷键必须为 F1-F24、Ctrl+F1-F24 或单个字母/数字。";
+            return false;
+        }
+        if (startHotkey.Equals(stopHotkey, StringComparison.OrdinalIgnoreCase))
+        {
+            error = "战斗统计的开始和结束快捷键不能相同。";
             return false;
         }
 
@@ -1111,7 +1279,18 @@ public sealed partial class MainWindow : Window
             MusicTargetLatency = MusicTargetLatencyNumberBox.Value,
             MusicPrebufferMilliseconds = MusicPrebufferNumberBox.Value,
             FallbackToNativeMusic = FallbackToNativeMusicToggle.IsOn,
-            MusicDiagnostics = MusicDiagnosticsToggle.IsOn
+            MusicDiagnostics = MusicDiagnosticsToggle.IsOn,
+            CombatStatsEnabled = CombatStatsToggle.IsOn,
+            HideDamageNumbers = HideDamageNumbersToggle.IsOn,
+            CombatStartHotkey = startHotkey,
+            CombatStopHotkey = stopHotkey,
+            RecordAllDamage = RecordAllDamageToggle.IsOn,
+            IncludeOverkillDamage = IncludeOverkillToggle.IsOn,
+            MinimumDamage = MinimumDamageNumberBox.Value,
+            GroupDamageByCharacter = GroupDamageByCharacterToggle.IsOn,
+            GroupDamageBySkill = GroupDamageBySkillToggle.IsOn,
+            GroupDamageByType = GroupDamageByTypeToggle.IsOn,
+            SaveRawCombatEvents = SaveRawCombatEventsToggle.IsOn
         };
         return true;
     }
@@ -1172,6 +1351,17 @@ public sealed partial class MainWindow : Window
         MusicPrebufferNumberBox.Value = configuration.MusicPrebufferMilliseconds;
         FallbackToNativeMusicToggle.IsOn = configuration.FallbackToNativeMusic;
         MusicDiagnosticsToggle.IsOn = configuration.MusicDiagnostics;
+        CombatStatsToggle.IsOn = configuration.CombatStatsEnabled;
+        HideDamageNumbersToggle.IsOn = configuration.HideDamageNumbers;
+        CombatStartHotkeyBox.Text = configuration.CombatStartHotkey;
+        CombatStopHotkeyBox.Text = configuration.CombatStopHotkey;
+        RecordAllDamageToggle.IsOn = configuration.RecordAllDamage;
+        IncludeOverkillToggle.IsOn = configuration.IncludeOverkillDamage;
+        MinimumDamageNumberBox.Value = configuration.MinimumDamage;
+        GroupDamageByCharacterToggle.IsOn = configuration.GroupDamageByCharacter;
+        GroupDamageBySkillToggle.IsOn = configuration.GroupDamageBySkill;
+        GroupDamageByTypeToggle.IsOn = configuration.GroupDamageByType;
+        SaveRawCombatEventsToggle.IsOn = configuration.SaveRawCombatEvents;
 
         _initializing = wasInitializing;
         UpdateCrossfadePanel();
@@ -1238,6 +1428,22 @@ public sealed partial class MainWindow : Window
         LoopStartNumberBox.IsEnabled = enabled;
         LoopEndNumberBox.IsEnabled = enabled;
         CrossfadeDurationNumberBox.IsEnabled = enabled;
+    }
+
+    private static bool TryNormalizeCombatHotkey(string value, out string normalized)
+    {
+        normalized = value.Trim().Replace(" ", string.Empty).ToUpperInvariant();
+        string key = normalized.StartsWith("CTRL+", StringComparison.Ordinal)
+            ? normalized[5..]
+            : normalized;
+        if (key.Length == 1 && char.IsAsciiLetterOrDigit(key[0]))
+        {
+            return true;
+        }
+        return key.Length >= 2 && key[0] == 'F' &&
+            int.TryParse(key[1..], NumberStyles.None, CultureInfo.InvariantCulture,
+                out int functionKey) &&
+            functionKey is >= 1 and <= 24;
     }
 
     private static bool TryNormalizeVoiceLanguageRules(
@@ -1647,6 +1853,42 @@ public sealed partial class MainWindow : Window
             AppWindow.GetFromWindowId(windowId).Resize(new SizeInt32(1180, 860));
         }
         catch (InvalidOperationException)
+        {
+        }
+    }
+
+    private void TrySetWindowIcon()
+    {
+        try
+        {
+            Version? version = typeof(MainWindow).Assembly.GetName().Version;
+            string versionLabel = version is null
+                ? "current"
+                : $"{version.Major}.{version.Minor}.{version.Build}";
+            string iconPath = Path.Combine(
+                ConfigurationService.SettingsDirectory,
+                $"window-icon-{versionLabel}.ico");
+            if (!File.Exists(iconPath))
+            {
+                using Stream? resource = typeof(MainWindow).Assembly
+                    .GetManifestResourceStream(WindowIconResourceName);
+                if (resource is null)
+                {
+                    return;
+                }
+                Directory.CreateDirectory(ConfigurationService.SettingsDirectory);
+                using FileStream output = File.Create(iconPath);
+                resource.CopyTo(output);
+            }
+
+            nint windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            Microsoft.UI.WindowId windowId =
+                Microsoft.UI.Win32Interop.GetWindowIdFromWindow(windowHandle);
+            AppWindow.GetFromWindowId(windowId).SetIcon(iconPath);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+            InvalidOperationException or COMException)
         {
         }
     }

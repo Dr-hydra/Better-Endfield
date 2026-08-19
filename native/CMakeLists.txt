@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25)
 
-project(BetterEndfieldNative VERSION 2.0.1 LANGUAGES C CXX)
+project(BetterEndfieldNative VERSION 2.1.1 LANGUAGES C CXX)
 
 if(NOT WIN32)
     message(FATAL_ERROR "Better Endfield native runtime targets Windows only.")
@@ -75,6 +75,14 @@ add_library(BetterEndfield.Music SHARED
 better_endfield_target_defaults(BetterEndfield.Music)
 set_target_properties(BetterEndfield.Music PROPERTIES
     OUTPUT_NAME "BetterEndfield.Music"
+    RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
+    LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
+)
+
+add_library(BetterEndfield.CombatStats SHARED modules/combat_stats/module.cpp)
+better_endfield_target_defaults(BetterEndfield.CombatStats)
+set_target_properties(BetterEndfield.CombatStats PROPERTIES
+    OUTPUT_NAME "BetterEndfield.CombatStats"
     RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
     LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
 )
@@ -155,11 +163,15 @@ add_custom_target(BetterEndfield.Layout ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/modules/music/betterendfield.music.module.ini"
         "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.music.module.ini"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/modules/combat_stats/betterendfield.combat_stats.module.ini"
+        "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.combat_stats.module.ini"
     DEPENDS
         BetterEndfield.Host
         BetterEndfield.Model
         BetterEndfield.Voice
         BetterEndfield.Music
+        BetterEndfield.CombatStats
         BetterEndfield.Injector
         BetterEndfield.Bootstrap
         BetterEndfield.XInput14Proxy

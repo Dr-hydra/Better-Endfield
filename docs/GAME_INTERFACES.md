@@ -14,6 +14,7 @@ Host 使用 `GameAssembly.dll` 的 IL2CPP 导出解析：
 
 - 域和程序集：`il2cpp_domain_get`、`il2cpp_domain_get_assemblies`、`il2cpp_assembly_get_image`、`il2cpp_image_get_name`
 - 类与方法：`il2cpp_class_from_name`、`il2cpp_class_get_methods`、`il2cpp_method_get_name`、`il2cpp_method_get_param_count`、`il2cpp_method_get_param`、`il2cpp_method_get_return_type`。Unity 2021 IL2CPP 的 `MethodInfo` ABI 以 `methodPointer` 开头；Host 只接受该入口位于当前 `GameAssembly.dll` 可执行 PE 节的结果，不扫描其他字段，也不尝试客户端地址。
+- 嵌套类：当描述符使用 `Outer.Inner` 时，Host 通过 `il2cpp_class_get_nested_types` 和 `il2cpp_class_get_name` 逐级解析嵌套类型；缺少这两个导出只影响使用嵌套类型的模块。
 - 字段：`il2cpp_class_get_field_from_name`、`il2cpp_field_get_offset`、`il2cpp_field_get_type`
 - 线程与字符串：`il2cpp_thread_attach`、`il2cpp_thread_detach`、`il2cpp_string_length`、`il2cpp_string_chars`
 
@@ -86,6 +87,22 @@ Wwise Media 只使用本机生成的 `BEVCAT01` Catalog；Catalog 中的 WEM 在
 - `VoiceCatalogEntryV1`：源 Media ID、目标 Media ID、驻留数据偏移和长度。
 
 Catalog 不包含 `GameAssembly.dll` 身份条件。B 服只要提供可解析的 PCK/BNK/HIRC 和 `AudioDialog`，即可重新生成自己的 Catalog。
+
+## 战斗数据模块
+
+`BetterEndfield.CombatStats.dll` 是第四个独立模块，默认关闭。它动态解析：
+
+- `Gameplay.Beyond.dll / Beyond.Gameplay.Core.BattleManager.BattleRecorder.DamageDetail.Init`
+- `Gameplay.Beyond.dll / Beyond.Gameplay.Core.DamageTextProcessor.ProcessDamagePackDataInternal`
+- `Gameplay.Beyond.dll / Beyond.Gameplay.Core.BattleManager.Tick`
+
+`DamageDetail.Init` 在原函数返回后读取 `attackerId`、`originSkillId`、`damageValue`、`hpDelta`、
+`damageType`、`damageDecorateMask` 和 `isCritical` 字段。事件先进入有界队列，再由模块线程汇总；
+队列满时只丢弃统计事件，不影响游戏线程。F7/F8（可配置）分别开始和结束会话，结果写入
+`%LocalAppData%\\BetterEndfield\\combat-sessions\\combat-*.json`。
+
+隐藏伤害数字只在开关开启时跳过 `DamageTextProcessor`，不触碰 `DamagePackData`、BattleRecorder、
+生命值或韧性处理。若任一契约在 B 服缺失，模块只禁用对应能力，其他三个模块继续运行。
 
 ## 音乐模块
 
