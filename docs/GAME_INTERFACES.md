@@ -59,6 +59,7 @@ Logo 主题使用以下强类型契约：
 语音模块动态验证并挂接：
 
 - `Gameplay.Beyond.dll / Beyond.Gameplay.Audio / VoicePlayer.PlayVoice`
+- `Gameplay.Beyond.dll / Beyond.Gameplay.Audio / VoicePlayer._PlayVoice(ref VoiceContext)`
 - `Gameplay.Beyond.dll / Beyond.Gameplay.Audio / VoiceSpeakChannelProcessor._PlayVoice`
 - `Gameplay.Beyond.dll / Beyond.Gameplay.Audio / VoicePlayer._PlayEvent`
 - `Gameplay.Beyond.dll / Beyond.Gameplay.Audio / VoiceManager._SpeakNarrative`
@@ -77,7 +78,7 @@ Logo 主题使用以下强类型契约：
 `LipSyncUtils.TryLoadTrack` 只有在收到完全相同的对白 ID 时才消费该状态，并在目标 Track
 不可用时重试游戏原语言。配置代数变化会使尚未消费的状态失效。时长和口型通过各自的线程
 局部语言覆盖生效，均不修改 Wwise 全局语言；时长覆盖独立于剧情语音开关。
-Wwise Media 只使用本机生成的 `BEVCAT01` Catalog；Catalog 中的 WEM 在 `SetMedia` 成功前保持驻留，清理状态确认后才释放。
+Wwise Media 只使用本机生成的 `BEVCAT01` Catalog。模块启动或配音规则热更新时会先读取全部已配置角色的 Catalog，按 Media ID 合并并常驻内存；为避免 Host 初始化时 Wwise 尚未就绪，`SetMedia` 会延迟到第一条命中已配置角色的语音请求时一次性注册所有合并路由。未配置角色发声不会卸载现有路由。通配规则先合并，角色专属规则覆盖同一角色的通配路由；两个专属规则若对同一源 Media 给出不同目标则拒绝激活。Catalog 中的 WEM 在 `SetMedia` 成功前保持驻留，清理状态确认后才释放。
 
 ## 外部 Catalog
 

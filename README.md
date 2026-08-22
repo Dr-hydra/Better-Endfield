@@ -120,7 +120,7 @@ py -3 .\scripts\BuildVoiceCatalog.py `
   --output "$env:LOCALAPPDATA\BetterEndfield\catalog\voice.japanese.chr_0013_aglina.becat"
 ```
 
-Catalog 只包含目标角色需要的 WEM，重复目标 Media 只存储一次，运行时驻留内存并通过 Wwise `SetMedia` 注册。嵌入 UI 的索引只包含 Media ID、语言包指纹和相对路径，不包含音频内容；若官服与 B 服的 PCK 内容相同，即使 `GameAssembly.dll` 不同也复用同一映射，路径变化时会按 PCK 大小和解密后头部哈希定位。
+Catalog 只包含目标角色需要的 WEM，重复目标 Media 只存储一次。运行时会把所有已配置角色的 Catalog 合并为一张常驻路由表，并在第一条已配置角色语音到达、Wwise 已就绪时通过 `SetMedia` 一次性注册；其他角色发声不会触发卸载或重新读取。嵌入 UI 的索引只包含 Media ID、语言包指纹和相对路径，不包含音频内容；若官服与 B 服的 PCK 内容相同，即使 `GameAssembly.dll` 不同也复用同一映射，路径变化时会按 PCK 大小和解密后头部哈希定位。
 
 ## 构建
 
