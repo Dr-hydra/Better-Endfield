@@ -108,9 +108,11 @@ internal sealed class ModConfiguration
 
     public bool HideDamageNumbers { get; set; } = false;
 
-    public string CombatStartHotkey { get; set; } = "F7";
+    public bool CombatOverlayEnabled { get; set; } = true;
 
-    public string CombatStopHotkey { get; set; } = "F8";
+    public string CombatToggleHotkey { get; set; } = "F11";
+
+    public string CombatOverlayHotkey { get; set; } = "F12";
 
     public bool RecordAllDamage { get; set; } = true;
 
@@ -122,7 +124,7 @@ internal sealed class ModConfiguration
 
     public bool GroupDamageBySkill { get; set; } = true;
 
-    public bool GroupDamageByType { get; set; } = true;
+    public bool GroupDamageByCategory { get; set; } = true;
 
     public bool SaveRawCombatEvents { get; set; } = false;
 
@@ -221,14 +223,15 @@ internal sealed class ModConfiguration
         text.AppendLine($"enabled={Boolean(CombatStatsEnabled || HideDamageNumbers)}");
         text.AppendLine($"combat_stats_enabled={Boolean(CombatStatsEnabled)}");
         text.AppendLine($"hide_damage_numbers={Boolean(HideDamageNumbers)}");
-        text.AppendLine($"hotkey_start={CombatStartHotkey}");
-        text.AppendLine($"hotkey_stop={CombatStopHotkey}");
+        text.AppendLine($"overlay_enabled={Boolean(CombatOverlayEnabled)}");
+        text.AppendLine($"hotkey_toggle={CombatToggleHotkey}");
+        text.AppendLine($"overlay_hotkey={CombatOverlayHotkey}");
         text.AppendLine($"record_all_damage={Boolean(RecordAllDamage)}");
         text.AppendLine($"include_overkill={Boolean(IncludeOverkillDamage)}");
         text.AppendLine($"minimum_damage={Number(MinimumDamage)}");
         text.AppendLine($"group_by_character={Boolean(GroupDamageByCharacter)}");
         text.AppendLine($"group_by_skill={Boolean(GroupDamageBySkill)}");
-        text.AppendLine($"group_by_damage_type={Boolean(GroupDamageByType)}");
+        text.AppendLine($"group_by_damage_category={Boolean(GroupDamageByCategory)}");
         text.AppendLine($"save_raw_events={Boolean(SaveRawCombatEvents)}");
         return text.ToString();
     }

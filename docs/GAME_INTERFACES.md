@@ -93,17 +93,39 @@ Catalog 不包含 `GameAssembly.dll` 身份条件。B 服只要提供可解析�
 
 `BetterEndfield.CombatStats.dll` 是第四个独立模块，默认关闭。它动态解析：
 
-- `Gameplay.Beyond.dll / Beyond.Gameplay.Core.BattleManager.BattleRecorder.DamageDetail.Init`
-- `Gameplay.Beyond.dll / Beyond.Gameplay.Core.DamageTextProcessor.ProcessDamagePackDataInternal`
+- `Gameplay.Beyond.dll / Beyond.Gameplay.Core.BattleManager.BattleRecorder.RecordDamage`
+- `UI.Gameplay.Beyond.dll / Beyond.UI.DamageTextCtrl._OnHpChanged`
+- `UI.Gameplay.Beyond.dll / Beyond.UI.DamageTextCtrlV2._OnHpChanged`
 - `Gameplay.Beyond.dll / Beyond.Gameplay.Core.BattleManager.Tick`
 
-`DamageDetail.Init` 在原函数返回后读取 `attackerId`、`originSkillId`、`damageValue`、`hpDelta`、
-`damageType`、`damageDecorateMask` 和 `isCritical` 字段。事件先进入有界队列，再由模块线程汇总；
-队列满时只丢弃统计事件，不影响游戏线程。F7/F8（可配置）分别开始和结束会话，结果写入
+`RecordDamage(ref AbilitySystem.Modifier)` 是普通地图和关卡战斗均经过的结算后路径。模块从未装箱的
+`Modifier` 中读取 `value`、`realDelta`、攻击者、技能、伤害类型、装饰掩码和暴击标志。IL2CPP
+元数据中的值类型字段偏移包含 16 字节装箱头，读取 `ref Modifier` 时必须扣除该头；类对象字段不扣除。
+事件先进入有界队列，再由模块线程汇总；
+队列满时只丢弃统计事件，不影响游戏线程。F11（可配置）切换开始和结束会话，结果写入
 `%LocalAppData%\\BetterEndfield\\combat-sessions\\combat-*.json`。
 
-隐藏伤害数字只在开关开启时跳过 `DamageTextProcessor`，不触碰 `DamagePackData`、BattleRecorder、
-生命值或韧性处理。若任一契约在 B 服缺失，模块只禁用对应能力，其他三个模块继续运行。
+`BetterEndfield.CombatOverlay.exe` 是随 CombatStats 模块分发的独立 Win32/GDI+ 伴随进程。
+模块不在 Unity/IL2CPP 渲染线程中创建窗口，而是把最多 16 个角色的累计值和六种技能分类写入
+`Local\\BetterEndfield.CombatStats.<game-pid>` 共享内存；悬浮窗以 sequence 奇偶校验读取一致快照。
+它显示嵌入 EXE 的本地角色头像、每 10 倍切换一级中文单位的数值和按普攻、战技、终结技、连携技、被动、其他堆叠的横向柱状图，并提供对应颜色图例。
+F12（可配置）只切换共享状态，不注入输入处理；悬浮窗相对游戏客户区定位，Ctrl+鼠标左键拖动后的
+偏移保存在 `%LocalAppData%\\BetterEndfield\\combat-overlay.ini`。游戏退出或模块卸载时伴随进程自动退出。
+头像来自 CEP 终末地规划器角色图鉴的构建时快照，来源记录在
+`native/modules/combat_stats/assets/SOURCE.md`；正式运行时不访问该站点。
+
+会话格式 schema 3 始终写入 `startedUnixSeconds` 和 `timeline`。时间轴以 0.25 秒为桶，同时保存
+六种技能分类聚合值和逐角色聚合值；`save_raw_events` 仍独立控制完整逐击事件，因此关闭原始事件不会影响历史图表。
+技能分类由原生 `originSkillId` 判定：`_attack*`、`_normal_skill`、`_ultimate_skill`、`_combo*`、
+`_passive_skill` 分别归入普攻、战技、终结技、连携技和被动，其余归入“其他”。
+WinUI 历史页按日期区间和最多四名角色筛选，默认只实例化最近三张记录卡；选择记录后复用相同的头像、
+技能分类颜色和角色排行，并把选中时间范围重新聚合为 X=时间、Y=伤害的堆叠柱状图。时间轴可在
+“按技能类型”和“按角色”之间切换，图例随当前系列同步更新。schema 1/2 记录可继续读取；旧数据无法反推的
+时间轴统一放入“其他”，且不伪造逐角色时间分布。
+
+隐藏伤害数字只在开关开启时跳过最终 UI 控制器的 `_OnHpChanged`，同时兼容旧版与 V2
+`DamageTextCtrl`；不触碰 `DamagePackData`、`Modifier.Apply`、BattleRecorder、生命值或韧性处理。
+若任一契约在 B 服缺失，模块只禁用对应能力，其他三个模块继续运行。
 
 ## 音乐模块
 

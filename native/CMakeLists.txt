@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25)
 
-project(BetterEndfieldNative VERSION 2.1.1 LANGUAGES C CXX)
+project(BetterEndfieldNative VERSION 2.2.1 LANGUAGES C CXX)
 
 if(NOT WIN32)
     message(FATAL_ERROR "Better Endfield native runtime targets Windows only.")
@@ -79,12 +79,29 @@ set_target_properties(BetterEndfield.Music PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
 )
 
-add_library(BetterEndfield.CombatStats SHARED modules/combat_stats/module.cpp)
+add_library(BetterEndfield.CombatStats SHARED
+    modules/combat_stats/module.cpp
+    modules/combat_stats/combat_overlay_protocol.h
+)
 better_endfield_target_defaults(BetterEndfield.CombatStats)
 set_target_properties(BetterEndfield.CombatStats PROPERTIES
     OUTPUT_NAME "BetterEndfield.CombatStats"
     RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
     LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
+)
+
+add_executable(BetterEndfield.CombatOverlay WIN32
+    modules/combat_stats/overlay/main.cpp
+    modules/combat_stats/overlay/combat_overlay.rc
+    modules/combat_stats/overlay/character_assets.generated.h
+    modules/combat_stats/overlay/avatars.generated.rcinc
+    modules/combat_stats/combat_overlay_protocol.h
+)
+better_endfield_target_defaults(BetterEndfield.CombatOverlay)
+target_link_libraries(BetterEndfield.CombatOverlay PRIVATE gdiplus shlwapi shell32)
+set_target_properties(BetterEndfield.CombatOverlay PROPERTIES
+    OUTPUT_NAME "BetterEndfield.CombatOverlay"
+    RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
 )
 
 # Read-only research utility. It is deliberately excluded from the default
@@ -172,6 +189,7 @@ add_custom_target(BetterEndfield.Layout ALL
         BetterEndfield.Voice
         BetterEndfield.Music
         BetterEndfield.CombatStats
+        BetterEndfield.CombatOverlay
         BetterEndfield.Injector
         BetterEndfield.Bootstrap
         BetterEndfield.XInput14Proxy

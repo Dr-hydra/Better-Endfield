@@ -7,10 +7,15 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using BetterEndfield.UI.Models;
 using BetterEndfield.UI.Services;
+using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Ellipse = Microsoft.UI.Xaml.Shapes.Ellipse;
+using Line = Microsoft.UI.Xaml.Shapes.Line;
+using Rectangle = Microsoft.UI.Xaml.Shapes.Rectangle;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
 using Windows.Storage.Pickers;
@@ -38,26 +43,13 @@ internal sealed class VoiceRuleEntry
     public required string LanguageDisplayName { get; init; }
 }
 
-internal sealed class CombatSessionSummary
-{
-    public required string FileName { get; init; }
-
-    public required string Summary { get; init; }
-
-    public double RelativeDamage { get; init; }
-}
-
-internal sealed class CombatBreakdownRow
-{
-    public required string Label { get; init; }
-
-    public required string Summary { get; init; }
-
-    public double RelativeDamage { get; init; }
-}
-
 public sealed partial class MainWindow : Window
 {
+    private sealed record CombatTimelineSeries(
+        string Label,
+        Brush Brush,
+        Func<CombatTimelinePoint, double> Value);
+
     private const string DisclaimerVersion = "1";
     private const string WindowIconResourceName =
         "BetterEndfield.UI.Assets.shared.gilberta.ico";
@@ -108,8 +100,18 @@ public sealed partial class MainWindow : Window
     private string _durationLogPath = string.Empty;
     private DateTime _durationLogWriteUtc;
     private readonly ObservableCollection<VoiceRuleEntry> _voiceRules = [];
-    private readonly ObservableCollection<CombatSessionSummary> _combatSessions = [];
-    private readonly ObservableCollection<CombatBreakdownRow> _combatBreakdown = [];
+    private readonly ObservableCollection<CombatSessionRecord> _combatSessions = [];
+    private readonly ObservableCollection<CombatCharacterFilterChoice> _combatCharacterFilters = [];
+    private readonly ObservableCollection<CombatLegendItem> _combatCategoryLegend = [];
+    private readonly ObservableCollection<CombatLegendItem> _combatTimelineLegend = [];
+    private IReadOnlyList<CombatSessionRecord> _allCombatSessions = [];
+    private CombatSessionRecord? _selectedCombatSession;
+    private bool _combatHistoryExpanded;
+    private bool _updatingCombatHistory;
+    private double _timelineRangeStart;
+    private double _timelineRangeEnd = 1.0;
+    private int _timelineDraggingHandle;
+    private double? _combatTimelineComboScrollOffset;
     private readonly IReadOnlyList<VoiceCharacterChoice> _voiceCharacters;
     private AppSettings _appSettings = new();
     private string _latestReleaseUrl = UpdateService.ReleasesUrl;
@@ -150,7 +152,18 @@ public sealed partial class MainWindow : Window
         VoiceCharacterComboBox.SelectedIndex = 0;
         VoiceRulesListView.ItemsSource = _voiceRules;
         CombatSessionsListView.ItemsSource = _combatSessions;
-        CombatBreakdownListView.ItemsSource = _combatBreakdown;
+        foreach (ComboBox comboBox in CombatCharacterFilterBoxes())
+            comboBox.ItemsSource = _combatCharacterFilters;
+        for (int category = 0; category < CombatSkillCategories.Count; ++category)
+        {
+            _combatCategoryLegend.Add(new CombatLegendItem
+            {
+                Label = CombatSkillCategories.Names[category],
+                Brush = CombatHistoryService.CategoryBrush(category)
+            });
+        }
+        CombatCategoryLegendItemsControl.ItemsSource = _combatCategoryLegend;
+        CombatTimelineLegendItemsControl.ItemsSource = _combatTimelineLegend;
         SelectVoiceLanguage("Japanese");
         UpdateVoiceRulesEmptyState();
         _statusTimer.Tick += StatusTimer_Tick;
@@ -346,7 +359,7 @@ public sealed partial class MainWindow : Window
             "settings" => "路径与外观会随保存一起写入本机设置。",
             "voice" => "角色配音规则保存后在下一次注入时生效。",
             "music" => "首次启用在下一次注入时加载；已加载模块的设置会热更新。",
-            "combat" => "战斗统计使用开始和结束快捷键；结果会保存到本机目录。",
+            "combat" => "F11 切换记录，F12 切换悬浮窗；结果会保存到本机目录。",
             _ => "角色与动画参数保存后在下一次注入时生效。"
         };
     }
@@ -358,120 +371,582 @@ public sealed partial class MainWindow : Window
 
     private void RefreshCombatSessions()
     {
-        _combatSessions.Clear();
-        _combatBreakdown.Clear();
         string directory = Path.Combine(
             ConfigurationService.SettingsDirectory, "combat-sessions");
-        if (!Directory.Exists(directory))
-        {
-            CombatSessionsEmptyTextBlock.Visibility = Visibility.Visible;
-            CombatBreakdownEmptyTextBlock.Visibility = Visibility.Visible;
-            return;
-        }
+        string? selectedPath = _selectedCombatSession?.Path;
+        _allCombatSessions = CombatHistoryService.Load(directory);
+        _combatHistoryExpanded = false;
+        RebuildCombatCharacterFilters();
+        ApplyCombatFilters(selectedPath);
+    }
 
-        var rows = new List<(string Path, string FileName, double Damage, double Dps, long Hits)>();
-        string[] paths = Directory.EnumerateFiles(directory, "combat-*.json")
-            .OrderByDescending(path => File.GetLastWriteTimeUtc(path))
-            .ToArray();
-        foreach (string path in paths)
-        {
-            try
-            {
-                using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
-                JsonElement root = document.RootElement;
-                double damage = root.TryGetProperty("totalDamage", out JsonElement damageValue)
-                    ? damageValue.GetDouble()
-                    : 0.0;
-                double dps = root.TryGetProperty("dps", out JsonElement dpsValue)
-                    ? dpsValue.GetDouble()
-                    : 0.0;
-                long hits = root.TryGetProperty("hitCount", out JsonElement hitsValue)
-                    ? hitsValue.GetInt64()
-                    : 0L;
-                rows.Add((path, Path.GetFileName(path), damage, dps, hits));
-            }
-            catch (IOException)
-            {
-            }
-            catch (JsonException)
-            {
-            }
-        }
-
-        double maximum = rows.Count == 0 ? 1.0 : Math.Max(1.0, rows.Max(row => row.Damage));
-        foreach (var row in rows)
-        {
-            _combatSessions.Add(new CombatSessionSummary
-            {
-                FileName = row.FileName,
-                RelativeDamage = row.Damage / maximum,
-                Summary = $"{row.Damage:N0}  ·  DPS {row.Dps:N0}  ·  {row.Hits} 次"
-            });
-        }
-        CombatSessionsEmptyTextBlock.Visibility = _combatSessions.Count == 0
-            ? Visibility.Visible
-            : Visibility.Collapsed;
-        if (rows.Count == 0)
-        {
-            CombatBreakdownEmptyTextBlock.Visibility = Visibility.Visible;
-            return;
-        }
-
+    private void RebuildCombatCharacterFilters()
+    {
+        _updatingCombatHistory = true;
+        ComboBox[] filterBoxes = CombatCharacterFilterBoxes();
+        string?[] selectedIds = filterBoxes.Select(comboBox =>
+            (comboBox.SelectedItem as CombatCharacterFilterChoice)?.Id).ToArray();
         try
         {
-            using JsonDocument document = JsonDocument.Parse(File.ReadAllText(rows[0].Path));
-            var breakdown = new List<(string Label, double Damage, long Hits, long CriticalHits)>();
-            foreach (string group in new[] { "characters", "skills", "damageTypes" })
+            _combatCharacterFilters.Clear();
+            _combatCharacterFilters.Add(new CombatCharacterFilterChoice
             {
-                if (!document.RootElement.TryGetProperty(group, out JsonElement map) ||
-                    map.ValueKind != JsonValueKind.Object)
-                {
-                    continue;
-                }
-                foreach (JsonProperty property in map.EnumerateObject())
-                {
-                    JsonElement value = property.Value;
-                    double damage = value.TryGetProperty("damage", out JsonElement amount)
-                        ? amount.GetDouble()
-                        : 0.0;
-                    long hits = value.TryGetProperty("hits", out JsonElement hitValue)
-                        ? hitValue.GetInt64()
-                        : 0L;
-                    long criticalHits = value.TryGetProperty(
-                        "criticalHits", out JsonElement criticalValue)
-                        ? criticalValue.GetInt64()
-                        : 0L;
-                    string prefix = group switch
-                    {
-                        "characters" => "角色",
-                        "skills" => "技能",
-                        _ => "伤害类型"
-                    };
-                    breakdown.Add(($"{prefix} · {property.Name}", damage, hits, criticalHits));
-                }
-            }
-            double breakdownMaximum = breakdown.Count == 0
-                ? 1.0
-                : Math.Max(1.0, breakdown.Max(row => row.Damage));
-            foreach (var row in breakdown.OrderByDescending(row => row.Damage).Take(30))
+                Id = null,
+                DisplayName = "不限"
+            });
+            foreach (CombatCharacterDamage character in _allCombatSessions
+                .SelectMany(record => record.Characters)
+                .Where(character => character.Id.StartsWith(
+                    "chr_", StringComparison.OrdinalIgnoreCase))
+                .GroupBy(character => character.Id, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .OrderBy(character => character.DisplayName, StringComparer.CurrentCulture))
             {
-                _combatBreakdown.Add(new CombatBreakdownRow
+                _combatCharacterFilters.Add(new CombatCharacterFilterChoice
                 {
-                    Label = row.Label,
-                    RelativeDamage = row.Damage / breakdownMaximum,
-                    Summary = $"{row.Damage:N0}  ·  {row.Hits} 次  ·  暴击 {row.CriticalHits}"
+                    Id = character.Id,
+                    DisplayName = character.DisplayName
                 });
             }
+            for (int index = 0; index < filterBoxes.Length; ++index)
+            {
+                string? selectedId = selectedIds[index];
+                filterBoxes[index].SelectedItem = _combatCharacterFilters.FirstOrDefault(
+                    choice => string.Equals(
+                        choice.Id, selectedId, StringComparison.OrdinalIgnoreCase))
+                    ?? _combatCharacterFilters[0];
+            }
         }
-        catch (IOException)
+        finally
         {
+            _updatingCombatHistory = false;
         }
-        catch (JsonException)
+    }
+
+    private ComboBox[] CombatCharacterFilterBoxes() =>
+    [
+        CombatCharacterFilter1ComboBox,
+        CombatCharacterFilter2ComboBox,
+        CombatCharacterFilter3ComboBox,
+        CombatCharacterFilter4ComboBox
+    ];
+
+    private void ApplyCombatFilters(string? preferredPath = null)
+    {
+        DateTime? from = CombatFromDatePicker.Date?.LocalDateTime.Date;
+        DateTime? to = CombatToDatePicker.Date?.LocalDateTime.Date;
+        string[] characterIds = CombatCharacterFilterBoxes()
+            .Select(comboBox =>
+                (comboBox.SelectedItem as CombatCharacterFilterChoice)?.Id)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Cast<string>()
+            .ToArray();
+        IEnumerable<CombatSessionRecord> filtered = _allCombatSessions;
+        if (from.HasValue)
         {
+            filtered = filtered.Where(record =>
+                record.StartedAt.LocalDateTime.Date >= from.Value);
         }
-        CombatBreakdownEmptyTextBlock.Visibility = _combatBreakdown.Count == 0
+        if (to.HasValue)
+        {
+            filtered = filtered.Where(record =>
+                record.StartedAt.LocalDateTime.Date <= to.Value);
+        }
+        if (characterIds.Length > 0)
+        {
+            filtered = filtered.Where(record => characterIds.All(characterId =>
+                record.Characters.Any(character => character.Id.Equals(
+                    characterId, StringComparison.OrdinalIgnoreCase))));
+        }
+
+        CombatSessionRecord[] matches = filtered.ToArray();
+        CombatSessionRecord[] visible = (_combatHistoryExpanded ? matches : matches.Take(3))
+            .ToArray();
+        _combatSessions.Clear();
+        foreach (CombatSessionRecord record in visible) _combatSessions.Add(record);
+
+        int hidden = Math.Max(0, matches.Length - 3);
+        ExpandCombatSessionsButton.Visibility = hidden > 0
             ? Visibility.Visible
             : Visibility.Collapsed;
+        ExpandCombatSessionsButton.Content = _combatHistoryExpanded
+            ? "收起，仅显示最近三条"
+            : $"展开其余 {hidden} 条";
+        CombatSessionsEmptyTextBlock.Visibility = matches.Length == 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+        CombatSessionRecord? selected = visible.FirstOrDefault(record =>
+            string.Equals(record.Path, preferredPath, StringComparison.OrdinalIgnoreCase))
+            ?? visible.FirstOrDefault();
+        CombatSessionsListView.SelectedItem = selected;
+        UpdateCombatSessionDetail(selected);
+    }
+
+    private void CombatDateFilter_DateChanged(
+        CalendarDatePicker sender,
+        CalendarDatePickerDateChangedEventArgs args)
+    {
+        if (_initializing) return;
+        _combatHistoryExpanded = false;
+        ApplyCombatFilters();
+    }
+
+    private void CombatCharacterFilterComboBox_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        if (_initializing || _updatingCombatHistory) return;
+        _combatHistoryExpanded = false;
+        ApplyCombatFilters();
+    }
+
+    private void ExpandCombatSessionsButton_Click(object sender, RoutedEventArgs e)
+    {
+        _combatHistoryExpanded = !_combatHistoryExpanded;
+        ApplyCombatFilters(_selectedCombatSession?.Path);
+    }
+
+    private void CombatSessionsListView_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        UpdateCombatSessionDetail(CombatSessionsListView.SelectedItem as CombatSessionRecord);
+    }
+
+    private async void DeleteCombatSessionButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: CombatSessionRecord record }) return;
+        var dialog = new ContentDialog
+        {
+            XamlRoot = MainRoot.XamlRoot,
+            Title = "删除战斗记录？",
+            Content = $"{record.DateText}\n{record.CharacterSummary}\n此操作会删除对应的本地 JSON 文件。",
+            PrimaryButtonText = "删除",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Close
+        };
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+        try
+        {
+            File.Delete(record.Path);
+            RefreshCombatSessions();
+            ShowStatus("记录已删除", record.FileName, InfoBarSeverity.Success);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException)
+        {
+            ShowStatus("删除失败", exception.Message, InfoBarSeverity.Error);
+        }
+    }
+
+    private void UpdateCombatSessionDetail(CombatSessionRecord? record)
+    {
+        _selectedCombatSession = record;
+        CombatCharacterBreakdownListView.ItemsSource = record?.Characters;
+        CombatBreakdownEmptyTextBlock.Visibility =
+            record is null || record.Characters.Count == 0
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        CombatSelectedSessionTextBlock.Text = record is null
+            ? "选择一条记录查看。"
+            : $"{record.DateText} · 总伤害 {record.TotalDamageText} · {record.Summary}";
+        _timelineRangeStart = 0;
+        _timelineRangeEnd = 1;
+        RenderCombatTimeline();
+    }
+
+    private void CombatTimelineCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        RenderCombatTimeline();
+    }
+
+    private void CombatDetailViewToggle_Click(object sender, RoutedEventArgs e)
+    {
+        bool showTimeline = ReferenceEquals(sender, CombatTimelineViewToggle);
+        CombatRankingViewToggle.IsChecked = !showTimeline;
+        CombatTimelineViewToggle.IsChecked = showTimeline;
+        CombatRankingPanel.Visibility = showTimeline
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+        CombatTimelinePanel.Visibility = showTimeline
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        if (showTimeline) DispatcherQueue.TryEnqueue(RenderCombatTimeline);
+    }
+
+    private void CombatTimelineGroupComboBox_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        if (CombatTimelineChartCanvas is null) return;
+        RenderCombatTimeline();
+    }
+
+    private void CombatTimelineGroupComboBox_DropDownOpened(object sender, object e)
+    {
+        _combatTimelineComboScrollOffset = CombatPageScrollViewer.VerticalOffset;
+    }
+
+    private void CombatTimelineGroupComboBox_DropDownClosed(object sender, object e)
+    {
+        if (!_combatTimelineComboScrollOffset.HasValue) return;
+        double offset = _combatTimelineComboScrollOffset.Value;
+        _combatTimelineComboScrollOffset = null;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            DispatcherQueue.TryEnqueue(() =>
+                CombatPageScrollViewer.ChangeView(null, offset, null, true));
+        });
+    }
+
+    private void CombatTimelinePanel_BringIntoViewRequested(
+        UIElement sender,
+        BringIntoViewRequestedEventArgs e)
+    {
+        e.Handled = true;
+    }
+
+    private void RenderCombatTimeline()
+    {
+        RenderCombatTimelineChart();
+        RenderCombatTimelineRange();
+    }
+
+    private void RenderCombatTimelineChart()
+    {
+        Canvas canvas = CombatTimelineChartCanvas;
+        canvas.Children.Clear();
+        CombatSessionRecord? record = _selectedCombatSession;
+        IReadOnlyList<CombatTimelineSeries> series = record is null
+            ? []
+            : BuildCombatTimelineSeries(record);
+        UpdateCombatTimelineLegend(series);
+        if (record is null || record.Timeline.Count == 0 || series.Count == 0 ||
+            canvas.ActualWidth < 120 || canvas.ActualHeight < 100)
+        {
+            CombatTimelineEmptyTextBlock.Text =
+                CombatTimelineGroupComboBox?.SelectedIndex == 1
+                    ? "该记录没有按角色保存的时间轴数据。"
+                    : "该记录没有技能分类时间轴数据。";
+            CombatTimelineEmptyTextBlock.Visibility = Visibility.Visible;
+            return;
+        }
+        CombatTimelineEmptyTextBlock.Visibility = Visibility.Collapsed;
+
+        double duration = Math.Max(
+            record.DurationSeconds,
+            record.Timeline.Count == 0 ? 0 : record.Timeline.Max(point => point.Time) + 0.25);
+        double rangeStart = duration * _timelineRangeStart;
+        double rangeEnd = duration * _timelineRangeEnd;
+        double rangeDuration = Math.Max(0.25, rangeEnd - rangeStart);
+        const double left = 62;
+        const double top = 16;
+        const double right = 16;
+        const double bottom = 34;
+        double plotWidth = Math.Max(1, canvas.ActualWidth - left - right);
+        double plotHeight = Math.Max(1, canvas.ActualHeight - top - bottom);
+        int columns = Math.Clamp((int)(plotWidth / 8), 12, 120);
+        var buckets = new double[columns, series.Count];
+        foreach (CombatTimelinePoint point in record.Timeline)
+        {
+            if (point.Time < rangeStart || point.Time > rangeEnd) continue;
+            int column = Math.Clamp(
+                (int)((point.Time - rangeStart) / rangeDuration * columns),
+                0,
+                columns - 1);
+            for (int seriesIndex = 0; seriesIndex < series.Count; ++seriesIndex)
+            {
+                buckets[column, seriesIndex] += Math.Max(
+                    0, series[seriesIndex].Value(point));
+            }
+        }
+        double maximum = 0;
+        for (int column = 0; column < columns; ++column)
+        {
+            double total = 0;
+            for (int seriesIndex = 0; seriesIndex < series.Count; ++seriesIndex)
+                total += buckets[column, seriesIndex];
+            maximum = Math.Max(maximum, total);
+        }
+        maximum = Math.Max(1, maximum);
+
+        Brush gridBrush = new SolidColorBrush(ColorHelper.FromArgb(45, 150, 160, 178));
+        Brush textBrush = new SolidColorBrush(ColorHelper.FromArgb(190, 174, 183, 199));
+        for (int lineIndex = 0; lineIndex <= 4; ++lineIndex)
+        {
+            double y = top + plotHeight * lineIndex / 4;
+            canvas.Children.Add(new Line
+            {
+                X1 = left,
+                X2 = left + plotWidth,
+                Y1 = y,
+                Y2 = y,
+                Stroke = gridBrush,
+                StrokeThickness = 1
+            });
+            double value = maximum * (1 - lineIndex / 4.0);
+            AddTimelineText(
+                canvas,
+                CombatNumberFormatter.Format(value),
+                2,
+                y - 9,
+                54,
+                textBrush,
+                TextAlignment.Right);
+        }
+
+        double columnWidth = plotWidth / columns;
+        for (int column = 0; column < columns; ++column)
+        {
+            double y = top + plotHeight;
+            for (int seriesIndex = 0; seriesIndex < series.Count; ++seriesIndex)
+            {
+                double amount = buckets[column, seriesIndex];
+                if (amount <= 0) continue;
+                double height = plotHeight * amount / maximum;
+                y -= height;
+                var bar = new Rectangle
+                {
+                    Width = Math.Max(1, columnWidth - 1),
+                    Height = Math.Max(0.5, height),
+                    Fill = series[seriesIndex].Brush,
+                    RadiusX = 1,
+                    RadiusY = 1
+                };
+                ToolTipService.SetToolTip(
+                    bar,
+                    $"{series[seriesIndex].Label}：{CombatNumberFormatter.Format(amount)}");
+                Canvas.SetLeft(bar, left + column * columnWidth);
+                Canvas.SetTop(bar, y);
+                canvas.Children.Add(bar);
+            }
+        }
+
+        AddTimelineText(canvas, FormatTimelineTime(rangeStart), left, top + plotHeight + 8,
+            80, textBrush, TextAlignment.Left);
+        AddTimelineText(canvas, FormatTimelineTime((rangeStart + rangeEnd) * 0.5),
+            left + plotWidth * 0.5 - 40, top + plotHeight + 8, 80, textBrush,
+            TextAlignment.Center);
+        AddTimelineText(canvas, FormatTimelineTime(rangeEnd), left + plotWidth - 80,
+            top + plotHeight + 8, 80, textBrush, TextAlignment.Right);
+    }
+
+    private IReadOnlyList<CombatTimelineSeries> BuildCombatTimelineSeries(
+        CombatSessionRecord record)
+    {
+        if (CombatTimelineGroupComboBox?.SelectedIndex != 1)
+        {
+            return Enumerable.Range(0, CombatSkillCategories.Count)
+                .Select(category =>
+                {
+                    int captured = category;
+                    return new CombatTimelineSeries(
+                        CombatSkillCategories.Names[category],
+                        CombatHistoryService.CategoryBrush(category),
+                        point => point.DamageByCategory[captured]);
+                })
+                .ToArray();
+        }
+
+        Dictionary<string, double> totals = new(StringComparer.OrdinalIgnoreCase);
+        foreach (CombatTimelinePoint point in record.Timeline)
+        {
+            foreach ((string id, double damage) in point.DamageByCharacter)
+            {
+                if (!id.StartsWith("chr_", StringComparison.OrdinalIgnoreCase)) continue;
+                totals[id] = totals.GetValueOrDefault(id) + damage;
+            }
+        }
+        return totals
+            .OrderByDescending(entry => entry.Value)
+            .Take(8)
+            .Select((entry, index) =>
+            {
+                string id = entry.Key;
+                string label = record.Characters.FirstOrDefault(character =>
+                    character.Id.Equals(id, StringComparison.OrdinalIgnoreCase))?.DisplayName ?? id;
+                return new CombatTimelineSeries(
+                    label,
+                    CombatHistoryService.CharacterBrush(index),
+                    point => point.DamageByCharacter.TryGetValue(id, out double damage)
+                        ? damage
+                        : 0);
+            })
+            .ToArray();
+    }
+
+    private void UpdateCombatTimelineLegend(IReadOnlyList<CombatTimelineSeries> series)
+    {
+        if (_combatTimelineLegend.Count == series.Count &&
+            _combatTimelineLegend.Select(item => item.Label)
+                .SequenceEqual(series.Select(item => item.Label), StringComparer.Ordinal))
+        {
+            return;
+        }
+        _combatTimelineLegend.Clear();
+        foreach (CombatTimelineSeries item in series)
+        {
+            _combatTimelineLegend.Add(new CombatLegendItem
+            {
+                Label = item.Label,
+                Brush = item.Brush
+            });
+        }
+    }
+
+    private static void AddTimelineText(
+        Canvas canvas,
+        string text,
+        double left,
+        double top,
+        double width,
+        Brush brush,
+        TextAlignment alignment)
+    {
+        var label = new TextBlock
+        {
+            Text = text,
+            Width = width,
+            FontSize = 11,
+            Foreground = brush,
+            TextAlignment = alignment
+        };
+        Canvas.SetLeft(label, left);
+        Canvas.SetTop(label, top);
+        canvas.Children.Add(label);
+    }
+
+    private void RenderCombatTimelineRange()
+    {
+        Canvas canvas = CombatTimelineRangeCanvas;
+        canvas.Children.Clear();
+        double width = canvas.ActualWidth;
+        if (width < 40) return;
+        const double margin = 12;
+        const double center = 22;
+        double trackWidth = width - margin * 2;
+        double startX = margin + trackWidth * _timelineRangeStart;
+        double endX = margin + trackWidth * _timelineRangeEnd;
+        var track = new Rectangle
+        {
+            Width = trackWidth,
+            Height = 4,
+            Fill = new SolidColorBrush(ColorHelper.FromArgb(80, 150, 160, 178)),
+            RadiusX = 2,
+            RadiusY = 2
+        };
+        Canvas.SetLeft(track, margin);
+        Canvas.SetTop(track, center - 2);
+        canvas.Children.Add(track);
+        var selection = new Rectangle
+        {
+            Width = Math.Max(0, endX - startX),
+            Height = 6,
+            Fill = new SolidColorBrush(ColorHelper.FromArgb(255, 67, 201, 255)),
+            RadiusX = 3,
+            RadiusY = 3
+        };
+        Canvas.SetLeft(selection, startX);
+        Canvas.SetTop(selection, center - 3);
+        canvas.Children.Add(selection);
+        AddTimelineRangeHandle(canvas, startX, center);
+        AddTimelineRangeHandle(canvas, endX, center);
+
+        double duration = _selectedCombatSession?.DurationSeconds ?? 0;
+        CombatTimelineRangeTextBlock.Text = duration <= 0
+            ? "完整时间范围"
+            : $"{FormatTimelineTime(duration * _timelineRangeStart)} – " +
+              $"{FormatTimelineTime(duration * _timelineRangeEnd)}";
+    }
+
+    private static void AddTimelineRangeHandle(Canvas canvas, double x, double y)
+    {
+        var handle = new Ellipse
+        {
+            Width = 18,
+            Height = 18,
+            Fill = new SolidColorBrush(ColorHelper.FromArgb(255, 245, 248, 252)),
+            Stroke = new SolidColorBrush(ColorHelper.FromArgb(255, 67, 201, 255)),
+            StrokeThickness = 3
+        };
+        Canvas.SetLeft(handle, x - 9);
+        Canvas.SetTop(handle, y - 9);
+        canvas.Children.Add(handle);
+    }
+
+    private void CombatTimelineRangeCanvas_PointerPressed(
+        object sender,
+        PointerRoutedEventArgs e)
+    {
+        if (_selectedCombatSession?.Timeline.Count is null or 0) return;
+        double normalized = TimelinePointerPosition(e);
+        _timelineDraggingHandle =
+            Math.Abs(normalized - _timelineRangeStart) <= Math.Abs(normalized - _timelineRangeEnd)
+                ? 1
+                : 2;
+        CombatTimelineRangeCanvas.CapturePointer(e.Pointer);
+        UpdateTimelineRange(normalized);
+        e.Handled = true;
+    }
+
+    private void CombatTimelineRangeCanvas_PointerMoved(
+        object sender,
+        PointerRoutedEventArgs e)
+    {
+        if (_timelineDraggingHandle == 0) return;
+        if (!e.GetCurrentPoint(CombatTimelineRangeCanvas).Properties.IsLeftButtonPressed)
+        {
+            ReleaseTimelinePointer(e);
+            return;
+        }
+        UpdateTimelineRange(TimelinePointerPosition(e));
+        e.Handled = true;
+    }
+
+    private void CombatTimelineRangeCanvas_PointerReleased(
+        object sender,
+        PointerRoutedEventArgs e)
+    {
+        ReleaseTimelinePointer(e);
+        e.Handled = true;
+    }
+
+    private void ReleaseTimelinePointer(PointerRoutedEventArgs e)
+    {
+        if (_timelineDraggingHandle == 0) return;
+        _timelineDraggingHandle = 0;
+        CombatTimelineRangeCanvas.ReleasePointerCapture(e.Pointer);
+    }
+
+    private double TimelinePointerPosition(PointerRoutedEventArgs e)
+    {
+        const double margin = 12;
+        double width = Math.Max(1, CombatTimelineRangeCanvas.ActualWidth - margin * 2);
+        return Math.Clamp(
+            (e.GetCurrentPoint(CombatTimelineRangeCanvas).Position.X - margin) / width,
+            0,
+            1);
+    }
+
+    private void UpdateTimelineRange(double value)
+    {
+        const double minimumSpan = 0.02;
+        if (_timelineDraggingHandle == 1)
+            _timelineRangeStart = Math.Clamp(value, 0, _timelineRangeEnd - minimumSpan);
+        else if (_timelineDraggingHandle == 2)
+            _timelineRangeEnd = Math.Clamp(value, _timelineRangeStart + minimumSpan, 1);
+        RenderCombatTimeline();
+    }
+
+    private static string FormatTimelineTime(double seconds)
+    {
+        seconds = Math.Max(0, seconds);
+        int minutes = (int)(seconds / 60);
+        return minutes > 0
+            ? $"{minutes}:{seconds % 60:00.0}"
+            : $"{seconds:0.0}s";
     }
 
     private async void BrowseOmniMixBackendButton_Click(
@@ -1202,16 +1677,16 @@ public sealed partial class MainWindow : Window
         }
 
         if (!TryNormalizeCombatHotkey(
-                CombatStartHotkeyBox.Text, out string startHotkey) ||
+                CombatToggleHotkeyBox.Text, out string toggleHotkey) ||
             !TryNormalizeCombatHotkey(
-                CombatStopHotkeyBox.Text, out string stopHotkey))
+                CombatOverlayHotkeyBox.Text, out string overlayHotkey))
         {
             error = "战斗统计快捷键必须为 F1-F24、Ctrl+F1-F24 或单个字母/数字。";
             return false;
         }
-        if (startHotkey.Equals(stopHotkey, StringComparison.OrdinalIgnoreCase))
+        if (toggleHotkey.Equals(overlayHotkey, StringComparison.OrdinalIgnoreCase))
         {
-            error = "战斗统计的开始和结束快捷键不能相同。";
+            error = "记录开关和悬浮窗开关不能使用同一个快捷键。";
             return false;
         }
 
@@ -1282,14 +1757,15 @@ public sealed partial class MainWindow : Window
             MusicDiagnostics = MusicDiagnosticsToggle.IsOn,
             CombatStatsEnabled = CombatStatsToggle.IsOn,
             HideDamageNumbers = HideDamageNumbersToggle.IsOn,
-            CombatStartHotkey = startHotkey,
-            CombatStopHotkey = stopHotkey,
+            CombatOverlayEnabled = CombatOverlayToggle.IsOn,
+            CombatToggleHotkey = toggleHotkey,
+            CombatOverlayHotkey = overlayHotkey,
             RecordAllDamage = RecordAllDamageToggle.IsOn,
             IncludeOverkillDamage = IncludeOverkillToggle.IsOn,
             MinimumDamage = MinimumDamageNumberBox.Value,
             GroupDamageByCharacter = GroupDamageByCharacterToggle.IsOn,
             GroupDamageBySkill = GroupDamageBySkillToggle.IsOn,
-            GroupDamageByType = GroupDamageByTypeToggle.IsOn,
+            GroupDamageByCategory = GroupDamageByCategoryToggle.IsOn,
             SaveRawCombatEvents = SaveRawCombatEventsToggle.IsOn
         };
         return true;
@@ -1353,14 +1829,15 @@ public sealed partial class MainWindow : Window
         MusicDiagnosticsToggle.IsOn = configuration.MusicDiagnostics;
         CombatStatsToggle.IsOn = configuration.CombatStatsEnabled;
         HideDamageNumbersToggle.IsOn = configuration.HideDamageNumbers;
-        CombatStartHotkeyBox.Text = configuration.CombatStartHotkey;
-        CombatStopHotkeyBox.Text = configuration.CombatStopHotkey;
+        CombatOverlayToggle.IsOn = configuration.CombatOverlayEnabled;
+        CombatToggleHotkeyBox.Text = configuration.CombatToggleHotkey;
+        CombatOverlayHotkeyBox.Text = configuration.CombatOverlayHotkey;
         RecordAllDamageToggle.IsOn = configuration.RecordAllDamage;
         IncludeOverkillToggle.IsOn = configuration.IncludeOverkillDamage;
         MinimumDamageNumberBox.Value = configuration.MinimumDamage;
         GroupDamageByCharacterToggle.IsOn = configuration.GroupDamageByCharacter;
         GroupDamageBySkillToggle.IsOn = configuration.GroupDamageBySkill;
-        GroupDamageByTypeToggle.IsOn = configuration.GroupDamageByType;
+        GroupDamageByCategoryToggle.IsOn = configuration.GroupDamageByCategory;
         SaveRawCombatEventsToggle.IsOn = configuration.SaveRawCombatEvents;
 
         _initializing = wasInitializing;

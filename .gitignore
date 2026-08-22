@@ -34,6 +34,7 @@ scripts/*
 !scripts/RefreshEndfieldResourceInputs.py
 !scripts/ScanCharacterAssets.py
 !scripts/UpdateResourceManifests.ps1
+!scripts/UpdateCombatAvatars.py
 
 # Native build outputs.
 native/build/

@@ -707,7 +707,7 @@
                                             <TextBlock Style="{StaticResource SectionTitleStyle}" Text="显示与快捷键" />
                                             <TextBlock
                                                 Style="{StaticResource FieldHintStyle}"
-                                                Text="开始和结束快捷键只在游戏战斗 Tick 中读取。"
+                                                Text="F11 切换开始/停止记录，F12 切换悬浮窗；均可在下方修改。按住 Ctrl 并用鼠标左键拖动悬浮窗可调整位置。"
                                                 TextWrapping="Wrap" />
                                         </StackPanel>
                                         <ToggleSwitch
@@ -715,20 +715,26 @@
                                             Header="隐藏伤害数字"
                                             OffContent="显示游戏数字"
                                             OnContent="隐藏数字" />
+                                        <ToggleSwitch
+                                            x:Name="CombatOverlayToggle"
+                                            Header="显示战斗悬浮窗"
+                                            IsOn="True"
+                                            OffContent="不启动悬浮窗"
+                                            OnContent="随模块自动启动" />
                                         <Grid ColumnSpacing="12">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
                                             <TextBox
-                                                x:Name="CombatStartHotkeyBox"
-                                                Header="开始统计快捷键"
-                                                Text="F7" />
+                                                x:Name="CombatToggleHotkeyBox"
+                                                Header="开始/停止记录快捷键"
+                                                Text="F11" />
                                             <TextBox
-                                                x:Name="CombatStopHotkeyBox"
+                                                x:Name="CombatOverlayHotkeyBox"
                                                 Grid.Column="1"
-                                                Header="结束统计快捷键"
-                                                Text="F8" />
+                                                Header="显示/隐藏悬浮窗快捷键"
+                                                Text="F12" />
                                         </Grid>
                                     </StackPanel>
                                 </Border>
@@ -776,10 +782,10 @@
                                             OffContent="不分组"
                                             OnContent="技能排行" />
                                         <ToggleSwitch
-                                            x:Name="GroupDamageByTypeToggle"
-                                            Header="按伤害类型分组"
+                                            x:Name="GroupDamageByCategoryToggle"
+                                            Header="按技能类型分组"
                                             OffContent="不分组"
-                                            OnContent="类型分布" />
+                                            OnContent="普攻/战技/终结技/连携" />
                                         <ToggleSwitch
                                             x:Name="SaveRawCombatEventsToggle"
                                             Header="保存原始事件"
@@ -789,7 +795,7 @@
                                 </Border>
 
                                 <Border Style="{StaticResource SectionStyle}">
-                                    <StackPanel Spacing="12">
+                                    <StackPanel Spacing="14">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -799,7 +805,7 @@
                                                 <TextBlock Style="{StaticResource SectionTitleStyle}" Text="历史统计" />
                                                 <TextBlock
                                                     Style="{StaticResource FieldHintStyle}"
-                                                    Text="结果保存在 %LocalAppData%\\BetterEndfield\\combat-sessions。"
+                                                    Text="默认显示最近三条；可按日期和参战角色筛选。"
                                                     TextWrapping="Wrap" />
                                             </StackPanel>
                                             <Button
@@ -812,70 +818,326 @@
                                                 </StackPanel>
                                             </Button>
                                         </Grid>
+
+                                        <Grid ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="190" />
+                                                <ColumnDefinition Width="190" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <CalendarDatePicker
+                                                x:Name="CombatFromDatePicker"
+                                                DateChanged="CombatDateFilter_DateChanged"
+                                                Header="开始日期"
+                                                PlaceholderText="不限" />
+                                            <CalendarDatePicker
+                                                x:Name="CombatToDatePicker"
+                                                Grid.Column="1"
+                                                DateChanged="CombatDateFilter_DateChanged"
+                                                Header="结束日期"
+                                                PlaceholderText="不限" />
+                                            <TextBlock
+                                                Grid.Column="2"
+                                                VerticalAlignment="Bottom"
+                                                Margin="0,0,0,8"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="日期范围两端均可留空。" />
+                                        </Grid>
+                                        <StackPanel Spacing="7">
+                                            <TextBlock
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="队伍角色（最多四个；记录需包含全部已选角色）" />
+                                            <Grid ColumnSpacing="8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <ComboBox
+                                                    x:Name="CombatCharacterFilter1ComboBox"
+                                                    DisplayMemberPath="DisplayName"
+                                                    PlaceholderText="角色 1"
+                                                    SelectionChanged="CombatCharacterFilterComboBox_SelectionChanged" />
+                                                <ComboBox
+                                                    x:Name="CombatCharacterFilter2ComboBox"
+                                                    Grid.Column="1"
+                                                    DisplayMemberPath="DisplayName"
+                                                    PlaceholderText="角色 2"
+                                                    SelectionChanged="CombatCharacterFilterComboBox_SelectionChanged" />
+                                                <ComboBox
+                                                    x:Name="CombatCharacterFilter3ComboBox"
+                                                    Grid.Column="2"
+                                                    DisplayMemberPath="DisplayName"
+                                                    PlaceholderText="角色 3"
+                                                    SelectionChanged="CombatCharacterFilterComboBox_SelectionChanged" />
+                                                <ComboBox
+                                                    x:Name="CombatCharacterFilter4ComboBox"
+                                                    Grid.Column="3"
+                                                    DisplayMemberPath="DisplayName"
+                                                    PlaceholderText="角色 4"
+                                                    SelectionChanged="CombatCharacterFilterComboBox_SelectionChanged" />
+                                            </Grid>
+                                        </StackPanel>
+
                                         <ListView
                                             x:Name="CombatSessionsListView"
-                                            MaxHeight="360"
-                                            SelectionMode="None">
+                                            MaxHeight="520"
+                                            SelectionChanged="CombatSessionsListView_SelectionChanged"
+                                            SelectionMode="Single">
                                             <ListView.ItemTemplate>
                                                 <DataTemplate>
-                                                    <Grid Padding="0,8" ColumnSpacing="18">
+                                                    <Grid Padding="4,10" ColumnSpacing="14">
                                                         <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="180" />
+                                                            <ColumnDefinition Width="154" />
                                                             <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="120" />
+                                                            <ColumnDefinition Width="142" />
+                                                            <ColumnDefinition Width="Auto" />
                                                         </Grid.ColumnDefinitions>
-                                                        <TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis" />
-                                                        <ProgressBar
-                                                            Grid.Column="1"
-                                                            Maximum="1"
-                                                            Value="{Binding RelativeDamage}"
-                                                            VerticalAlignment="Center" />
-                                                        <TextBlock
-                                                            Grid.Column="2"
-                                                            HorizontalAlignment="Right"
-                                                            Text="{Binding Summary}" />
+                                                        <StackPanel Spacing="3">
+                                                            <TextBlock FontWeight="SemiBold" Text="{Binding DateText}" />
+                                                            <TextBlock
+                                                                Style="{StaticResource FieldHintStyle}"
+                                                                Text="{Binding CharacterSummary}"
+                                                                TextTrimming="CharacterEllipsis" />
+                                                        </StackPanel>
+                                                        <ItemsControl Grid.Column="1" ItemsSource="{Binding PreviewCharacters}">
+                                                            <ItemsControl.ItemsPanel>
+                                                                <ItemsPanelTemplate>
+                                                                    <StackPanel Orientation="Horizontal" Spacing="6" />
+                                                                </ItemsPanelTemplate>
+                                                            </ItemsControl.ItemsPanel>
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <Border
+                                                                        Width="42"
+                                                                        Height="42"
+                                                                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                                        BorderThickness="1"
+                                                                        CornerRadius="21">
+                                                                        <Image Source="{Binding AvatarSource}" Stretch="UniformToFill" />
+                                                                    </Border>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                        <StackPanel Grid.Column="2" HorizontalAlignment="Right" Spacing="2">
+                                                            <TextBlock
+                                                                HorizontalAlignment="Right"
+                                                                FontSize="18"
+                                                                FontWeight="SemiBold"
+                                                                Text="{Binding TotalDamageText}" />
+                                                            <TextBlock
+                                                                HorizontalAlignment="Right"
+                                                                Style="{StaticResource FieldHintStyle}"
+                                                                Text="{Binding Summary}" />
+                                                        </StackPanel>
+                                                        <Button
+                                                            Grid.Column="3"
+                                                            Width="36"
+                                                            Height="36"
+                                                            Padding="8"
+                                                            Click="DeleteCombatSessionButton_Click"
+                                                            Tag="{Binding}"
+                                                            ToolTipService.ToolTip="删除记录">
+                                                            <FontIcon Glyph="&#xE74D;" />
+                                                        </Button>
                                                     </Grid>
                                                 </DataTemplate>
                                             </ListView.ItemTemplate>
                                         </ListView>
+                                        <Button
+                                            x:Name="ExpandCombatSessionsButton"
+                                            HorizontalAlignment="Center"
+                                            Click="ExpandCombatSessionsButton_Click"
+                                            Visibility="Collapsed" />
                                         <TextBlock
                                             x:Name="CombatSessionsEmptyTextBlock"
                                             Style="{StaticResource FieldHintStyle}"
-                                            Text="尚无已保存的战斗统计。"
+                                            Text="没有符合筛选条件的战斗统计。"
                                             Visibility="Collapsed" />
-                                        <TextBlock
-                                            Style="{StaticResource SectionTitleStyle}"
-                                            Text="最近会话明细" />
-                                        <ListView
-                                            x:Name="CombatBreakdownListView"
-                                            MaxHeight="420"
-                                            SelectionMode="None">
-                                            <ListView.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Grid Padding="0,6" ColumnSpacing="12">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="210" />
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="120" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
-                                                        <ProgressBar
-                                                            Grid.Column="1"
-                                                            Maximum="1"
-                                                            Value="{Binding RelativeDamage}"
-                                                            VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="14">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="记录明细" />
+                                            <TextBlock
+                                                x:Name="CombatSelectedSessionTextBlock"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="选择一条记录查看。" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <ToggleButton
+                                                x:Name="CombatRankingViewToggle"
+                                                Click="CombatDetailViewToggle_Click"
+                                                Content="角色排行"
+                                                IsChecked="True" />
+                                            <ToggleButton
+                                                x:Name="CombatTimelineViewToggle"
+                                                Click="CombatDetailViewToggle_Click"
+                                                Content="时间轴" />
+                                        </StackPanel>
+                                        <Grid MinHeight="560">
+                                            <StackPanel
+                                                x:Name="CombatRankingPanel"
+                                                Spacing="10">
+                                                    <ItemsControl
+                                                        x:Name="CombatCategoryLegendItemsControl"
+                                                        HorizontalAlignment="Left">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <ItemsWrapGrid Orientation="Horizontal" />
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <StackPanel Margin="0,0,18,0" Orientation="Horizontal" Spacing="6">
+                                                                    <Border
+                                                                        Width="10"
+                                                                        Height="10"
+                                                                        Background="{Binding Brush}"
+                                                                        CornerRadius="2" />
+                                                                    <TextBlock Style="{StaticResource FieldHintStyle}" Text="{Binding Label}" />
+                                                                </StackPanel>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                    <ListView
+                                                        x:Name="CombatCharacterBreakdownListView"
+                                                        MaxHeight="520"
+                                                        SelectionMode="None">
+                                                    <ListView.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Grid Padding="0,9" ColumnSpacing="14">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="54" />
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="120" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <Border
+                                                                    Width="48"
+                                                                    Height="48"
+                                                                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                                                    CornerRadius="24">
+                                                                    <Image Source="{Binding AvatarSource}" Stretch="UniformToFill" />
+                                                                </Border>
+                                                                <StackPanel Grid.Column="1" Spacing="5">
+                                                                    <TextBlock FontSize="15" FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                                                                    <ItemsControl ItemsSource="{Binding Segments}">
+                                                                        <ItemsControl.ItemsPanel>
+                                                                            <ItemsPanelTemplate>
+                                                                                <StackPanel Orientation="Horizontal" />
+                                                                            </ItemsPanelTemplate>
+                                                                        </ItemsControl.ItemsPanel>
+                                                                        <ItemsControl.ItemTemplate>
+                                                                            <DataTemplate>
+                                                                                <Border
+                                                                                    Width="{Binding Width}"
+                                                                                    Height="8"
+                                                                                    Background="{Binding Brush}"
+                                                                                    ToolTipService.ToolTip="{Binding ToolTip}" />
+                                                                            </DataTemplate>
+                                                                        </ItemsControl.ItemTemplate>
+                                                                    </ItemsControl>
+                                                                    <TextBlock Style="{StaticResource FieldHintStyle}" Text="{Binding HitSummary}" />
+                                                                </StackPanel>
+                                                                <TextBlock
+                                                                    Grid.Column="2"
+                                                                    HorizontalAlignment="Right"
+                                                                    VerticalAlignment="Top"
+                                                                    FontSize="17"
+                                                                    FontWeight="SemiBold"
+                                                                    Text="{Binding DamageText}" />
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </ListView.ItemTemplate>
+                                                    </ListView>
+                                            </StackPanel>
+                                            <StackPanel
+                                                x:Name="CombatTimelinePanel"
+                                                BringIntoViewRequested="CombatTimelinePanel_BringIntoViewRequested"
+                                                Spacing="10"
+                                                Visibility="Collapsed">
+                                                    <Grid>
                                                         <TextBlock
-                                                            Grid.Column="2"
+                                                            VerticalAlignment="Center"
+                                                            Style="{StaticResource FieldHintStyle}"
+                                                            Text="横轴为时间，纵轴为选中时间段内的伤害。" />
+                                                        <ComboBox
+                                                            x:Name="CombatTimelineGroupComboBox"
+                                                            Width="150"
                                                             HorizontalAlignment="Right"
-                                                            Text="{Binding Summary}" />
+                                                            DropDownClosed="CombatTimelineGroupComboBox_DropDownClosed"
+                                                            DropDownOpened="CombatTimelineGroupComboBox_DropDownOpened"
+                                                            Header="堆叠方式"
+                                                            SelectedIndex="0"
+                                                            SelectionChanged="CombatTimelineGroupComboBox_SelectionChanged">
+                                                            <ComboBoxItem Content="按技能类型" />
+                                                            <ComboBoxItem Content="按角色" />
+                                                        </ComboBox>
                                                     </Grid>
-                                                </DataTemplate>
-                                            </ListView.ItemTemplate>
-                                        </ListView>
+                                                    <Border
+                                                        Height="300"
+                                                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                                        CornerRadius="8">
+                                                        <Grid>
+                                                            <Canvas
+                                                                x:Name="CombatTimelineChartCanvas"
+                                                                SizeChanged="CombatTimelineCanvas_SizeChanged" />
+                                                            <TextBlock
+                                                                x:Name="CombatTimelineEmptyTextBlock"
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                Style="{StaticResource FieldHintStyle}"
+                                                                Text="该记录没有时间轴数据。"
+                                                                Visibility="Collapsed" />
+                                                        </Grid>
+                                                    </Border>
+                                                    <Canvas
+                                                        x:Name="CombatTimelineRangeCanvas"
+                                                        Height="48"
+                                                        Background="Transparent"
+                                                        PointerCanceled="CombatTimelineRangeCanvas_PointerReleased"
+                                                        PointerCaptureLost="CombatTimelineRangeCanvas_PointerReleased"
+                                                        PointerMoved="CombatTimelineRangeCanvas_PointerMoved"
+                                                        PointerPressed="CombatTimelineRangeCanvas_PointerPressed"
+                                                        PointerReleased="CombatTimelineRangeCanvas_PointerReleased"
+                                                        SizeChanged="CombatTimelineCanvas_SizeChanged" />
+                                                    <Grid>
+                                                        <TextBlock
+                                                            x:Name="CombatTimelineRangeTextBlock"
+                                                            Style="{StaticResource FieldHintStyle}"
+                                                            Text="完整时间范围" />
+                                                    </Grid>
+                                                    <ItemsControl
+                                                        x:Name="CombatTimelineLegendItemsControl"
+                                                        HorizontalAlignment="Left">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <ItemsWrapGrid Orientation="Horizontal" />
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <StackPanel Margin="0,0,18,6" Orientation="Horizontal" Spacing="6">
+                                                                    <Border
+                                                                        Width="10"
+                                                                        Height="10"
+                                                                        Background="{Binding Brush}"
+                                                                        CornerRadius="2" />
+                                                                    <TextBlock Style="{StaticResource FieldHintStyle}" Text="{Binding Label}" />
+                                                                </StackPanel>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                            </StackPanel>
+                                        </Grid>
                                         <TextBlock
                                             x:Name="CombatBreakdownEmptyTextBlock"
                                             Style="{StaticResource FieldHintStyle}"
-                                            Text="最近会话没有可分组的明细。"
+                                            Text="当前记录没有可显示的角色明细。"
                                             Visibility="Collapsed" />
                                     </StackPanel>
                                 </Border>
@@ -1179,7 +1441,7 @@
                                             x:Name="CurrentVersionTextBlock"
                                             Margin="0,2,0,0"
                                             FontFamily="Consolas"
-                                            Text="版本 2.1.1" />
+                                            Text="版本 2.2.1" />
                                     </StackPanel>
                                 </Grid>
 

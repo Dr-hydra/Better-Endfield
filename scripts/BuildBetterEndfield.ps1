@@ -108,6 +108,7 @@ $requiredReleaseFiles = @(
     "modules\BetterEndfield.Voice.dll",
     "modules\BetterEndfield.Music.dll",
     "modules\BetterEndfield.CombatStats.dll",
+    "modules\BetterEndfield.CombatOverlay.exe",
     "modules\betterendfield.music.module.ini",
     "modules\betterendfield.combat_stats.module.ini",
     "loaders\BetterEndfield.Injector.exe",

@@ -19,8 +19,8 @@
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
-    <Version>2.1.1</Version>
-    <InformationalVersion>2.1.1</InformationalVersion>
+    <Version>2.2.1</Version>
+    <InformationalVersion>2.2.1</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
@@ -45,6 +45,9 @@
     <EmbeddedResource
       Include="Assets\voice\voice-catalog-index.json"
       LogicalName="BetterEndfield.UI.Assets.voice.voice-catalog-index.json" />
+    <EmbeddedResource Include="..\..\native\modules\combat_stats\assets\avatars\*.png">
+      <LogicalName>BetterEndfield.UI.Assets.combat.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
   <Target

@@ -3865,7 +3865,7 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Login Model", "2.1.1", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Login Model", "2.2.1", BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};

@@ -79,10 +79,18 @@ B 服不通过官服 `GameAssembly.dll` 哈希判定。Host 在运行时解析 I
 
 音乐模块同样不验证 `GameAssembly.dll` 身份。它按完整 IL2CPP 元数据签名解析 `AudioMusicSystem`、`AkAudioInputManager` 与 Unity 主线程入口；官服/B 服登录 SDK 和登录资源差异不参与音乐契约。
 
-战斗数据模块默认关闭。启用后按 `hotkey_start`/`hotkey_stop` 建立一次统计会话，动态挂接
-`BattleRecorder.DamageDetail.Init` 读取已整理的攻击者、技能、伤害类型、伤害值和暴击字段；
-隐藏数字只挂接 `DamageTextProcessor.ProcessDamagePackDataInternal`，不会阻断伤害计算、生命值或韧性流程。
+战斗数据模块默认关闭。启用后按 `hotkey_toggle`（默认 F11）开始或停止一次统计会话，动态挂接
+`BattleRecorder.RecordDamage(ref AbilitySystem.Modifier)`，从普通地图和关卡共用的结算后路径读取
+攻击者、技能、伤害类型、伤害值和暴击字段；隐藏数字只挂接最终 UI 层的
+`DamageTextCtrl/DamageTextCtrlV2._OnHpChanged`，不会阻断伤害计算、生命值或韧性流程。
 结果写入 `%LocalAppData%\\BetterEndfield\\combat-sessions`，UI 的“战斗数据”页可刷新历史文件并显示总伤害排行。
+模块会按需启动随软件分发的 `BetterEndfield.CombatOverlay.exe`，通过当前进程专属共享内存展示
+角色头像、伤害排行、DPS 和按普攻、战技、终结技、连携技等技能分类分色的横向柱状图；F12（可配置）显示或隐藏，按住 Ctrl
+并用鼠标左键拖动可保存相对游戏窗口的位置。悬浮窗不依赖 Better Endfield 主界面常驻，也不会联网读取头像。
+伤害数字从一万起按每 10 倍切换“万、×10万、×100万、×1000万、亿”等显示单位。每次会话还会保存
+0.25 秒粒度的技能分类与角色双维度时间桶；历史页默认显示最近三条，可按日期和最多四名参战角色筛选、删除记录，
+并在角色排行与可拖动双端点的时间轴柱状图之间切换。时间轴可按技能类型或角色显示，并随模式显示对应图例。
+旧版汇总记录仍可查看排行；schema 1 没有时间轴，schema 2 的时间轴只能作为“其他”分类显示，不能还原逐角色分布。
 字段和方法均按 IL2CPP 元数据描述解析，契约缺失时只停用该模块。`minimum_damage`、过量伤害、分组和原始事件保存等规则均可在 UI 或配置节中调整。
 
 ## OmniMix 音乐集成
@@ -128,7 +136,7 @@ Catalog 只包含目标角色需要的 WEM，重复目标 Media 只存储一次�
 
 ```powershell
 pwsh -File .\scripts\BuildBetterEndfield.ps1
-pwsh -File .\scripts\BuildInstaller.ps1 -Version 2.1.1
+pwsh -File .\scripts\BuildInstaller.ps1 -Version 2.2.1
 ```
 
 原生构建入口是 `native/CMakeLists.txt`。MinHook 只由 Host 链接，模块不得自行初始化或卸载 Hook 引擎。
@@ -165,14 +173,15 @@ fallback_to_native=true
 enabled=false
 combat_stats_enabled=false
 hide_damage_numbers=false
-hotkey_start=F7
-hotkey_stop=F8
+overlay_enabled=true
+hotkey_toggle=F11
+overlay_hotkey=F12
 record_all_damage=true
 include_overkill=false
 minimum_damage=0
 group_by_character=true
 group_by_skill=true
-group_by_damage_type=true
+group_by_damage_category=true
 save_raw_events=false
 
 [Loader]

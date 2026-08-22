@@ -320,10 +320,14 @@ internal static class ConfigurationService
             values, "combat_stats_enabled", configuration.CombatStatsEnabled);
         configuration.HideDamageNumbers = Boolean(
             values, "hide_damage_numbers", configuration.HideDamageNumbers);
-        configuration.CombatStartHotkey = Text(
-            values, "hotkey_start", configuration.CombatStartHotkey);
-        configuration.CombatStopHotkey = Text(
-            values, "hotkey_stop", configuration.CombatStopHotkey);
+        configuration.CombatOverlayEnabled = Boolean(
+            values, "overlay_enabled", configuration.CombatOverlayEnabled);
+        string legacyCombatHotkey = Text(
+            values, "hotkey_start", configuration.CombatToggleHotkey);
+        configuration.CombatToggleHotkey = Text(
+            values, "hotkey_toggle", legacyCombatHotkey);
+        configuration.CombatOverlayHotkey = Text(
+            values, "overlay_hotkey", configuration.CombatOverlayHotkey);
         configuration.RecordAllDamage = Boolean(
             values, "record_all_damage", configuration.RecordAllDamage);
         configuration.IncludeOverkillDamage = Boolean(
@@ -334,8 +338,10 @@ internal static class ConfigurationService
             values, "group_by_character", configuration.GroupDamageByCharacter);
         configuration.GroupDamageBySkill = Boolean(
             values, "group_by_skill", configuration.GroupDamageBySkill);
-        configuration.GroupDamageByType = Boolean(
-            values, "group_by_damage_type", configuration.GroupDamageByType);
+        configuration.GroupDamageByCategory = Boolean(
+            values,
+            "group_by_damage_category",
+            Boolean(values, "group_by_damage_type", configuration.GroupDamageByCategory));
         configuration.SaveRawCombatEvents = Boolean(
             values, "save_raw_events", configuration.SaveRawCombatEvents);
         return configuration;
