@@ -2,3 +2,6 @@
 local.properties
 **/build/
 .cxx/
+research/device-*/
+*-ui.png
+model-test.png
