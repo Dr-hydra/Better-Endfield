@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "kind": "betterendfield-combat-semantics-build-report",
+  "catalogue": "combat-semantics.besem",
+  "catalogueSha256": "46BD934E3747E7F4C5FEA43284946415C44CD72F084A27EF3859B01DD05B1023",
+  "catalogueBytes": 139770,
+  "source": {
+    "schemaVersion": "1",
+    "generatorVersion": "1",
+    "sourceSha256": "69EBFFF20D38A07EA8155830D57C917C898E68F7D46E535653F20D92238A95F8",
+    "gameVersion": "1.4.4",
+    "hotfixVersion": "9163343-11",
+    "sourcePublishedAt": "2026-08-09T02:18:50.142413+00:00"
+  },
+  "counts": {
+    "effectRows": 221,
+    "excludedBuffs": 166,
+    "prefixRules": 3,
+    "buffNumericAliases": 85,
+    "buffStringAliases": 8,
+    "skillAliases": 1642,
+    "verifiedRegistryBuffs": 64,
+    "mechanismRows": 245,
+    "compiledEffects": 475,
+    "compiledUnparsed": 106
+  },
+  "effectRowsByStatus": {
+    "candidate": 123,
+    "verified": 85,
+    "verified_alias": 13
+  },
+  "effectRowsByZone": {
+    "amp": 9,
+    "arts_strength": 2,
+    "atk": 53,
+    "combo": 1,
+    "dmg_inc": 103,
+    "fragile": 21,
+    "res": 11,
+    "vuln_taken": 21
+  }
+}

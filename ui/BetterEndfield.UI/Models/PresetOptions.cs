@@ -61,13 +61,66 @@ internal static class PresetOptions
     private const string CatalogResourceName =
         "BetterEndfield.UI.Assets.model.character-presets.json";
 
+    private const string CombatDictionaryResourceName =
+        "BetterEndfield.UI.Assets.combat.combat-dictionary.json";
+
     private const string ChineseNamesResourceName =
         "BetterEndfield.UI.Assets.model.character-names.json";
 
     public static IReadOnlyDictionary<string, string> CharacterNames { get; } =
-        LoadChineseNames();
+        LoadCharacterNames();
+
+    public static IReadOnlyDictionary<string, string> DungeonNames { get; } =
+        LoadDungeonNames();
+
+    public static IReadOnlyDictionary<string, string> WeaponNames { get; } =
+        LoadWeaponNames();
+
+    public static IReadOnlyDictionary<string, string> SuitNames { get; } =
+        LoadSuitNames();
+
+    public static IReadOnlyDictionary<string, string> SkillNames { get; } =
+        LoadSkillNames();
+
+    public static IReadOnlyDictionary<string, int> SkillCategories { get; } =
+        LoadSkillCategories();
 
     public static IReadOnlyList<CharacterOption> Characters { get; } = LoadCharacters();
+
+    public static string? FormatDungeonName(string? id, string? name)
+    {
+        if (!string.IsNullOrWhiteSpace(name)) return name;
+        if (string.IsNullOrWhiteSpace(id)) return null;
+        if (DungeonNames.TryGetValue(id, out string? mapped) && !string.IsNullOrWhiteSpace(mapped))
+        {
+            return mapped;
+        }
+        return id;
+    }
+
+    public static string TranslateSemanticStatus(string status) => status.ToLowerInvariant() switch
+    {
+        "verified" => "已验证",
+        "candidate" => "候选",
+        "excluded" => "已排除",
+        "unknown" => "未知",
+        "dropped" => "丢弃",
+        _ => status
+    };
+
+    public static string TranslateSemanticZone(string zone) => zone.ToLowerInvariant() switch
+    {
+        "direct" or "direct_damage" => "直伤",
+        "attack" => "攻击力",
+        "damage" or "damage_boost" => "增伤",
+        "amplification" => "增幅",
+        "vulnerability" => "脆弱",
+        "vulnerability_taken" or "vuln_taken" => "承伤易伤",
+        "defense" or "resistance" or "def_res" => "减防/减抗",
+        "spell_intensity" or "intensity" => "法术强度",
+        "other" => "其他",
+        _ => zone
+    };
 
     public static string NormalizeCharacterId(string value) =>
         value.ToLowerInvariant() switch
@@ -115,15 +168,154 @@ internal static class PresetOptions
         return catalog.Characters;
     }
 
-    private static IReadOnlyDictionary<string, string> LoadChineseNames()
+    private static JsonDocument? LoadCombatDictionaryDocument()
     {
-        using Stream stream = Assembly.GetExecutingAssembly()
-            .GetManifestResourceStream(ChineseNamesResourceName) ??
-            throw new InvalidOperationException(
-                $"Embedded character-name map was not found: {ChineseNamesResourceName}");
-        return JsonSerializer.Deserialize<Dictionary<string, string>>(
-            stream,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ??
-            throw new InvalidOperationException("Character-name map is invalid.");
+        Stream? stream = Assembly.GetExecutingAssembly()
+            .GetManifestResourceStream(CombatDictionaryResourceName);
+        if (stream == null) return null;
+        using (stream)
+        {
+            return JsonDocument.Parse(stream);
+        }
     }
+
+    private static IReadOnlyDictionary<string, string> LoadCategoryNames(string categoryKey)
+    {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        using JsonDocument? doc = LoadCombatDictionaryDocument();
+        if (doc != null && doc.RootElement.TryGetProperty(categoryKey, out JsonElement catEl) &&
+            catEl.ValueKind == JsonValueKind.Object)
+        {
+            foreach (JsonProperty prop in catEl.EnumerateObject())
+            {
+                string key = prop.Name;
+                string name = string.Empty;
+                if (prop.Value.ValueKind == JsonValueKind.Object &&
+                    prop.Value.TryGetProperty("name", out JsonElement nameEl))
+                {
+                    name = nameEl.GetString() ?? string.Empty;
+                }
+                else if (prop.Value.ValueKind == JsonValueKind.String)
+                {
+                    name = prop.Value.GetString() ?? string.Empty;
+                }
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    result[key] = name;
+                }
+            }
+        }
+        return result;
+    }
+
+    private static IReadOnlyDictionary<string, string> LoadCharacterNames()
+    {
+        var names = new Dictionary<string, string>(LoadCategoryNames("characters"), StringComparer.OrdinalIgnoreCase);
+        // The combat dictionary is authoritative for current combat metadata,
+        // while the model name list can legitimately contain voice-enabled
+        // characters that are absent from an offline/stale combat snapshot.
+        // Merge missing names instead of using the fallback only when empty.
+        Stream? stream = Assembly.GetExecutingAssembly()
+            .GetManifestResourceStream(ChineseNamesResourceName);
+        if (stream != null)
+        {
+            using (stream)
+            {
+                var fallback = JsonSerializer.Deserialize<Dictionary<string, string>>(
+                    stream,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (fallback != null)
+                {
+                    foreach (var (key, value) in fallback)
+                    {
+                        names.TryAdd(key, value);
+                    }
+                }
+            }
+        }
+        return names;
+    }
+
+    private static IReadOnlyDictionary<string, int> LoadSkillCategories()
+    {
+        var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        using JsonDocument? doc = LoadCombatDictionaryDocument();
+        if (doc == null ||
+            !doc.RootElement.TryGetProperty("skills", out JsonElement skills) ||
+            skills.ValueKind != JsonValueKind.Object)
+        {
+            return result;
+        }
+        var categories = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["attack"] = 0,
+            ["skill"] = 1,
+            ["ultimate"] = 2,
+            ["combo"] = 3,
+            ["passive"] = 4
+        };
+        foreach (JsonProperty group in skills.EnumerateObject())
+        {
+            if (group.Value.ValueKind != JsonValueKind.Object ||
+                !group.Value.TryGetProperty("category", out JsonElement categoryValue) ||
+                categoryValue.ValueKind != JsonValueKind.String ||
+                !categories.TryGetValue(categoryValue.GetString() ?? string.Empty,
+                    out int category))
+            {
+                continue;
+            }
+            result[group.Name] = category;
+            if (!group.Value.TryGetProperty("skillIds", out JsonElement skillIds) ||
+                skillIds.ValueKind != JsonValueKind.Array) continue;
+            foreach (JsonElement skillId in skillIds.EnumerateArray())
+            {
+                if (skillId.ValueKind == JsonValueKind.String &&
+                    !string.IsNullOrWhiteSpace(skillId.GetString()))
+                {
+                    result[skillId.GetString()!] = category;
+                }
+            }
+        }
+        return result;
+    }
+
+    private static IReadOnlyDictionary<string, string> LoadDungeonNames()
+    {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        using JsonDocument? doc = LoadCombatDictionaryDocument();
+        if (doc != null && doc.RootElement.TryGetProperty("dungeons", out JsonElement dungsEl) &&
+            dungsEl.ValueKind == JsonValueKind.Object)
+        {
+            foreach (JsonProperty prop in dungsEl.EnumerateObject())
+            {
+                string id = prop.Name;
+                if (prop.Value.ValueKind == JsonValueKind.Object)
+                {
+                    string name = prop.Value.TryGetProperty("name", out JsonElement nameEl)
+                        ? (nameEl.GetString() ?? string.Empty)
+                        : string.Empty;
+                    string seriesName = prop.Value.TryGetProperty("seriesName", out JsonElement sEl)
+                        ? (sEl.GetString() ?? string.Empty)
+                        : string.Empty;
+
+                    if (!string.IsNullOrWhiteSpace(name))
+                    {
+                        result[id] = !string.IsNullOrWhiteSpace(seriesName) && !name.Contains(seriesName)
+                            ? $"{seriesName} · {name}"
+                            : name;
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    private static IReadOnlyDictionary<string, string> LoadWeaponNames() =>
+        LoadCategoryNames("weapons");
+
+    private static IReadOnlyDictionary<string, string> LoadSuitNames() =>
+        LoadCategoryNames("suits");
+
+    private static IReadOnlyDictionary<string, string> LoadSkillNames() =>
+        LoadCategoryNames("skills");
 }

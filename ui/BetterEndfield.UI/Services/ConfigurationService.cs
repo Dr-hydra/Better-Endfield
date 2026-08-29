@@ -15,6 +15,8 @@ internal static class ConfigurationService
         WriteIndented = true
     };
 
+    private static readonly SemaphoreSlim NativeConfigurationWriteLock = new(1, 1);
+
     public static string SettingsDirectory { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "BetterEndfield");
@@ -82,10 +84,47 @@ internal static class ConfigurationService
             "[Loader]" + Environment.NewLine +
             "install_root=" + installRoot + Environment.NewLine +
             "load_host=true" + Environment.NewLine;
-        await File.WriteAllTextAsync(
-            path,
-            hostConfiguration,
-            Encoding.Unicode);
+        await NativeConfigurationWriteLock.WaitAsync();
+        try
+        {
+            await File.WriteAllTextAsync(
+                path,
+                hostConfiguration,
+                Encoding.Unicode);
+        }
+        finally
+        {
+            NativeConfigurationWriteLock.Release();
+        }
+    }
+
+    public static async Task SaveUiEnhancementConfigurationAsync(bool mobileUiEnabled)
+    {
+        string path = GetNativeConfigurationPath(string.Empty);
+        Directory.CreateDirectory(SettingsDirectory);
+
+        await NativeConfigurationWriteLock.WaitAsync();
+        try
+        {
+            string existing = File.Exists(path)
+                ? await File.ReadAllTextAsync(path)
+                : string.Empty;
+            string enabled = mobileUiEnabled ? "true" : "false";
+            string section =
+                "[betterendfield.ui]" + Environment.NewLine +
+                "schema_version=1" + Environment.NewLine +
+                "enabled=" + enabled + Environment.NewLine +
+                "mobile_ui_enabled=" + enabled + Environment.NewLine +
+                "diagnostics=true" + Environment.NewLine;
+            string updated = UpsertIniSection(existing, "betterendfield.ui", section);
+            string temporary = path + ".ui.tmp";
+            await File.WriteAllTextAsync(temporary, updated, Encoding.Unicode);
+            File.Move(temporary, path, overwrite: true);
+        }
+        finally
+        {
+            NativeConfigurationWriteLock.Release();
+        }
     }
 
     internal static string ResolveInstallRoot(string injectorPath, string loaderMode)
@@ -218,6 +257,8 @@ internal static class ConfigurationService
                     section.Equals("betterendfield.music",
                         StringComparison.OrdinalIgnoreCase) ||
                     section.Equals("betterendfield.combat_stats",
+                        StringComparison.OrdinalIgnoreCase) ||
+                    section.Equals("betterendfield.ui",
                         StringComparison.OrdinalIgnoreCase);
                 continue;
             }
@@ -322,29 +363,57 @@ internal static class ConfigurationService
             values, "hide_damage_numbers", configuration.HideDamageNumbers);
         configuration.CombatOverlayEnabled = Boolean(
             values, "overlay_enabled", configuration.CombatOverlayEnabled);
+        configuration.CombatRdpsDisplay = Boolean(
+            values, "rdps_display", configuration.CombatRdpsDisplay);
         string legacyCombatHotkey = Text(
             values, "hotkey_start", configuration.CombatToggleHotkey);
         configuration.CombatToggleHotkey = Text(
             values, "hotkey_toggle", legacyCombatHotkey);
         configuration.CombatOverlayHotkey = Text(
             values, "overlay_hotkey", configuration.CombatOverlayHotkey);
-        configuration.RecordAllDamage = Boolean(
-            values, "record_all_damage", configuration.RecordAllDamage);
-        configuration.IncludeOverkillDamage = Boolean(
-            values, "include_overkill", configuration.IncludeOverkillDamage);
-        configuration.MinimumDamage = Number(
-            values, "minimum_damage", configuration.MinimumDamage);
-        configuration.GroupDamageByCharacter = Boolean(
-            values, "group_by_character", configuration.GroupDamageByCharacter);
-        configuration.GroupDamageBySkill = Boolean(
-            values, "group_by_skill", configuration.GroupDamageBySkill);
-        configuration.GroupDamageByCategory = Boolean(
-            values,
-            "group_by_damage_category",
-            Boolean(values, "group_by_damage_type", configuration.GroupDamageByCategory));
-        configuration.SaveRawCombatEvents = Boolean(
-            values, "save_raw_events", configuration.SaveRawCombatEvents);
+        configuration.AutoDungeonSession = Boolean(
+            values, "auto_dungeon_session", configuration.AutoDungeonSession);
+        configuration.UiEnhancementEnabled = Boolean(
+            values, "ui_enhancement_enabled",
+            Boolean(values, "enabled", configuration.UiEnhancementEnabled));
+        configuration.MobileUiEnabled = Boolean(
+            values, "mobile_ui_enabled", configuration.MobileUiEnabled);
         return configuration;
+    }
+
+    private static string UpsertIniSection(
+        string contents,
+        string sectionName,
+        string replacement)
+    {
+        string[] lines = contents.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+        int start = Array.FindIndex(lines, line =>
+            line.Trim().Equals($"[{sectionName}]", StringComparison.OrdinalIgnoreCase));
+        if (start < 0)
+        {
+            string separator = contents.Length == 0 || contents.EndsWith('\n')
+                ? string.Empty
+                : Environment.NewLine;
+            return contents + separator +
+                (contents.Length == 0 ? string.Empty : Environment.NewLine) + replacement;
+        }
+
+        int end = start + 1;
+        while (end < lines.Length)
+        {
+            string line = lines[end].Trim();
+            if (line.StartsWith('[') && line.EndsWith(']'))
+            {
+                break;
+            }
+            end++;
+        }
+
+        string prefix = string.Join(Environment.NewLine, lines[..start]);
+        string suffix = string.Join(Environment.NewLine, lines[end..]);
+        return string.IsNullOrEmpty(prefix)
+            ? replacement + suffix
+            : prefix + Environment.NewLine + replacement + suffix;
     }
 
     private static async Task EnsureUnicodeProfileEncodingAsync(string path)

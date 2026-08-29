@@ -77,4 +77,20 @@ foreach ($relativePath in @(
     '--output' (Join-Path $Workspace 'ui\BetterEndfield.UI\Assets\voice\voice-catalog-index.json')
 if ($LASTEXITCODE -ne 0) { throw 'Voice catalog runtime index generation failed.' }
 
-Write-Host "Resource manifests: $(Join-Path $Workspace 'manifests')"
+# Combat Data Dictionary Export (Characters, Weapons, Suits, Dungeons, Skills)
+$tableDir = Join-Path $Workspace 'research\table-dump\Table'
+$combatSemantics = Join-Path $Workspace 'manifests\combat\combat-semantics.besem'
+if (Test-Path -LiteralPath $tableDir -PathType Container) {
+    & $python.Source -3 (Join-Path $Workspace 'tools\CombatDataExporter\export_combat_data.py') `
+        '--table-dir' $tableDir `
+        '--game-path' $GamePath `
+        '--refresh-tables' `
+        '--besem' $combatSemantics `
+        '--output' (Join-Path $Workspace 'manifests\combat\combat-dictionary.json') `
+        '--ui-output' (Join-Path $Workspace 'ui\BetterEndfield.UI\Assets\combat\combat-dictionary.json') `
+        '--min-output' (Join-Path $Workspace 'web\src\data\combat-dict.min.json') `
+        '--verify'
+    if ($LASTEXITCODE -ne 0) { throw 'Combat data dictionary export failed.' }
+}
+
+Write-Host "Resource manifests updated successfully: $(Join-Path $Workspace 'manifests')" -ForegroundColor Green

@@ -90,8 +90,13 @@ B 服不通过官服 `GameAssembly.dll` 哈希判定。Host 在运行时解析 I
 伤害数字从一万起按每 10 倍切换“万、×10万、×100万、×1000万、亿”等显示单位。每次会话还会保存
 0.25 秒粒度的技能分类与角色双维度时间桶；历史页默认显示最近三条，可按日期和最多四名参战角色筛选、删除记录，
 并在角色排行与可拖动双端点的时间轴柱状图之间切换。时间轴可按技能类型或角色显示，并随模式显示对应图例。
-旧版汇总记录仍可查看排行；schema 1 没有时间轴，schema 2 的时间轴只能作为“其他”分类显示，不能还原逐角色分布。
-字段和方法均按 IL2CPP 元数据描述解析，契约缺失时只停用该模块。`minimum_damage`、过量伤害、分组和原始事件保存等规则均可在 UI 或配置节中调整。
+开启 rDPS 口径后，模块按单次伤害实际扣血量守恒分配“直伤、攻击力、增伤、增幅、脆弱、承伤易伤、
+减防/减抗、连携增益、法术强度、其他”十类贡献。跨乘区按乘数对数权重分配，同一乘区内按实际观测增量分配；
+角色自身效果保留在直伤，只有其他角色提供且语义已验证的效果才转移贡献。随版本发布的
+`modules/combat-semantics.besem` 提供 Buff、技能、元素和乘区语义，运行时不读取独立更新目录；软件升级时随模块一并更新。
+每条新记录保存目录版本、验证覆盖率和有界未解析项审计，历史页可直接查看，无法验证的候选项不会参与 rDPS。
+当前战斗记录使用 schema 11，只保存可验证的操作、原子结果、队伍快照和会话摘要；历史排行、技能统计、Buff 区间与时间轴均在读取时派生，不兼容更早的开发格式。64 位实例 ID 使用十进制字符串，避免浏览器解析时丢失精度。
+字段和方法均按 IL2CPP 元数据描述解析，契约缺失时只停用该模块。schema 11 不按时间或 ID 前缀猜测归属，无法唯一验证的来源明确记录为未知。
 
 ## OmniMix 音乐集成
 
@@ -176,13 +181,8 @@ hide_damage_numbers=false
 overlay_enabled=true
 hotkey_toggle=F11
 overlay_hotkey=F12
-record_all_damage=true
-include_overkill=false
-minimum_damage=0
-group_by_character=true
-group_by_skill=true
-group_by_damage_category=true
-save_raw_events=false
+rdps_display=false
+auto_dungeon_session=true
 
 [Loader]
 install_root=C:\Path\To\Better Endfield

@@ -1,0 +1,11 @@
+; Command line for BetterEndfield.TouchProbe.exe, one line, first non-comment
+; line wins. Lives here rather than in BetterEndfield.ini because the launcher
+; UI rewrites that file wholesale and would delete anything it does not model.
+;
+; Default with no arguments: anchored at the centre of the screen.
+;   <x> <y>            anchor the contact at these screen coordinates
+;   --follow-cursor    follow the mouse instead (useless once the game hides it)
+;   --skip-self-test   skip the startup self-test window
+;
+; Example:
+; 300 800 --skip-self-test

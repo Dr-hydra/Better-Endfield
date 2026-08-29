@@ -45,6 +45,9 @@
     <EmbeddedResource
       Include="Assets\voice\voice-catalog-index.json"
       LogicalName="BetterEndfield.UI.Assets.voice.voice-catalog-index.json" />
+    <EmbeddedResource
+      Include="Assets\combat\combat-dictionary.json"
+      LogicalName="BetterEndfield.UI.Assets.combat.combat-dictionary.json" />
     <EmbeddedResource Include="..\..\native\modules\combat_stats\assets\avatars\*.png">
       <LogicalName>BetterEndfield.UI.Assets.combat.%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>

@@ -40,6 +40,14 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--game-path", type=Path, required=True)
     parser.add_argument(
+        "--package-path",
+        type=Path,
+        help=(
+            "explicit local PCK/CHK payload to read instead of the source path "
+            "recorded in the manifest (for another validated client platform)"
+        ),
+    )
+    parser.add_argument(
         "--manifest",
         type=Path,
         default=ROOT / "manifests" / "voice" / "voice-event-media-manifest.json",
@@ -117,7 +125,11 @@ def build_catalog(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError(f"unsupported target language {args.language}")
 
     target_package = target_package_for(manifest, args.language)
-    target_path = source_path(args.game_path, target_package["source"])
+    target_path = (
+        args.package_path.resolve()
+        if args.package_path is not None
+        else source_path(args.game_path, target_package["source"])
+    )
     if not target_path.is_file():
         raise FileNotFoundError(target_path)
     target_index = generator.parse_pck(target_path, args.game_path)

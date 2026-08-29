@@ -1,6 +1,22 @@
 #include "BetterEndfield/ModuleApi.h"
 
+#include <cstdint>
+
+#if defined(_WIN32)
 #include <Windows.h>
+#else
+#include <chrono>
+#ifndef __fastcall
+#define __fastcall
+#endif
+#define __try try
+#define __except(filter) catch (...)
+#define EXCEPTION_EXECUTE_HANDLER 1
+static uint64_t GetTickCount64() {
+    return static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count());
+}
+#endif
 
 #include <algorithm>
 #include <array>
@@ -8,7 +24,6 @@
 #include <cctype>
 #include <cerrno>
 #include <cmath>
-#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

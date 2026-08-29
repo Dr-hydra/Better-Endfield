@@ -114,14 +114,13 @@ F12（可配置）只切换共享状态，不注入输入处理；悬浮窗相�
 头像来自 CEP 终末地规划器角色图鉴的构建时快照，来源记录在
 `native/modules/combat_stats/assets/SOURCE.md`；正式运行时不访问该站点。
 
-会话格式 schema 3 始终写入 `startedUnixSeconds` 和 `timeline`。时间轴以 0.25 秒为桶，同时保存
-六种技能分类聚合值和逐角色聚合值；`save_raw_events` 仍独立控制完整逐击事件，因此关闭原始事件不会影响历史图表。
+会话格式 schema 11 写入 `battle`、`dictionary`、完整队伍快照、`actions`、`effects` 和实时摘要，并分离原始实体与经验证的角色/装备来源。角色和状态的 64 位实例 ID 以十进制字符串保存。
+`actions` 记录普攻、战技、终结技、连携技、闪避等具体操作的开始与结束；`effects` 记录伤害、Buff、
+Debuff 和失衡状态的施加、刷新与移除。逐角色/技能聚合、0.25 秒时间桶、状态区间和 rDPS 归因均在读取时
+从这些原子记录派生，磁盘中不再重复保存派生时间轴，也没有可关闭逐击结果的配置项。
 技能分类由原生 `originSkillId` 判定：`_attack*`、`_normal_skill`、`_ultimate_skill`、`_combo*`、
 `_passive_skill` 分别归入普攻、战技、终结技、连携技和被动，其余归入“其他”。
-WinUI 历史页按日期区间和最多四名角色筛选，默认只实例化最近三张记录卡；选择记录后复用相同的头像、
-技能分类颜色和角色排行，并把选中时间范围重新聚合为 X=时间、Y=伤害的堆叠柱状图。时间轴可在
-“按技能类型”和“按角色”之间切换，图例随当前系列同步更新。schema 1/2 记录可继续读取；旧数据无法反推的
-时间轴统一放入“其他”，且不伪造逐角色时间分布。
+WinUI 历史页读取 schema 11 后构建相同的排行和时间轴视图；更早的开发格式不再兼容。
 
 隐藏伤害数字只在开关开启时跳过最终 UI 控制器的 `_OnHpChanged`，同时兼容旧版与 V2
 `DamageTextCtrl`；不触碰 `DamagePackData`、`Modifier.Apply`、BattleRecorder、生命值或韧性处理。
@@ -177,7 +176,15 @@ generation 或 Seek generation 变化都会先清空旧流再绑定新流。策�
 3. 等待 `GameAssembly.dll` 出现，并取得 `il2cpp_domain_get`、`il2cpp_thread_attach` 和 `il2cpp_thread_detach`。
 4. 等待 Domain 就绪，在 Worker 线程附加 IL2CPP 后加载 `runtime\BetterEndfield.Host.dll`，随后解除附加。
 
-UI 安装 XInput 时会同时写入 `BetterEndfield.xinput.install.json`。更新和卸载要求目标 DLL 与当前随包文件哈希一致，或与归属记录中的哈希一致；未知 `xinput1_4.dll` 一律不覆盖、不删除。软件安装器卸载前会调用同一清理流程。
+## 界面增强与移动端 UI 模块
+
+`BetterEndfield.UiModule.dll` 提供 PC 客户端下切换移动端/触控 UI 的实验性支持。相关接口与逆向成果详见专题文档：[docs/MOBILE_UI_REVERSING.md](file:///e:/Dr.Hydra/Better%20Endfield/docs/MOBILE_UI_REVERSING.md)。
+
+模块通过 Hook 拦截以下三层运行时契约：
+
+1. **输入状态**：`Beyond.DeviceInfo.get_inputType` (Touch=1)、`usingTouch`、`usingKeyboard`、`usingController`、`ChangeInputType`。
+2. **平台判定**：`Beyond.DeviceInfo.get_isMobile`、`get_isAndroid`、`get_isPC`、`get_isPCorConsole`、`get_platform`、`UnityEngine.Application.get_isMobilePlatform`、`get_platform`。
+3. **云游戏判定**：`UnityEngine.Application.get_isCloudGame`、`Beyond.CloudGameUtility.IsCloudGame`、`Beyond.CloudGame.get_enabled`、`get_isMobilePlatform`。
 
 ## 失败规则
 

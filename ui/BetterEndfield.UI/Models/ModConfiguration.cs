@@ -110,23 +110,17 @@ internal sealed class ModConfiguration
 
     public bool CombatOverlayEnabled { get; set; } = true;
 
+    public bool CombatRdpsDisplay { get; set; } = false;
+
     public string CombatToggleHotkey { get; set; } = "F11";
 
     public string CombatOverlayHotkey { get; set; } = "F12";
 
-    public bool RecordAllDamage { get; set; } = true;
+    public bool AutoDungeonSession { get; set; } = true;
 
-    public bool IncludeOverkillDamage { get; set; } = false;
+    public bool UiEnhancementEnabled { get; set; } = false;
 
-    public double MinimumDamage { get; set; } = 0.0;
-
-    public bool GroupDamageByCharacter { get; set; } = true;
-
-    public bool GroupDamageBySkill { get; set; } = true;
-
-    public bool GroupDamageByCategory { get; set; } = true;
-
-    public bool SaveRawCombatEvents { get; set; } = false;
+    public bool MobileUiEnabled { get; set; } = false;
 
     public static ModConfiguration CreateDefaults() => new();
 
@@ -219,20 +213,21 @@ internal sealed class ModConfiguration
         text.AppendLine($"diagnostics={Boolean(MusicDiagnostics)}");
         text.AppendLine();
         text.AppendLine("[betterendfield.combat_stats]");
-        text.AppendLine("schema_version=1");
+        text.AppendLine("schema_version=2");
         text.AppendLine($"enabled={Boolean(CombatStatsEnabled || HideDamageNumbers)}");
         text.AppendLine($"combat_stats_enabled={Boolean(CombatStatsEnabled)}");
         text.AppendLine($"hide_damage_numbers={Boolean(HideDamageNumbers)}");
         text.AppendLine($"overlay_enabled={Boolean(CombatOverlayEnabled)}");
+        text.AppendLine($"rdps_display={Boolean(CombatRdpsDisplay)}");
         text.AppendLine($"hotkey_toggle={CombatToggleHotkey}");
         text.AppendLine($"overlay_hotkey={CombatOverlayHotkey}");
-        text.AppendLine($"record_all_damage={Boolean(RecordAllDamage)}");
-        text.AppendLine($"include_overkill={Boolean(IncludeOverkillDamage)}");
-        text.AppendLine($"minimum_damage={Number(MinimumDamage)}");
-        text.AppendLine($"group_by_character={Boolean(GroupDamageByCharacter)}");
-        text.AppendLine($"group_by_skill={Boolean(GroupDamageBySkill)}");
-        text.AppendLine($"group_by_damage_category={Boolean(GroupDamageByCategory)}");
-        text.AppendLine($"save_raw_events={Boolean(SaveRawCombatEvents)}");
+        text.AppendLine($"auto_dungeon_session={Boolean(AutoDungeonSession)}");
+        text.AppendLine();
+        text.AppendLine("[betterendfield.ui]");
+        text.AppendLine("schema_version=1");
+        text.AppendLine($"enabled={Boolean(UiEnhancementEnabled || MobileUiEnabled)}");
+        text.AppendLine($"mobile_ui_enabled={Boolean(MobileUiEnabled)}");
+        text.AppendLine("diagnostics=true");
         return text.ToString();
     }
 }

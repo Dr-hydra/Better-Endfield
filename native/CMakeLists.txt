@@ -79,11 +79,27 @@ set_target_properties(BetterEndfield.Music PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
 )
 
+add_library(BetterEndfield.UiModule SHARED
+    modules/ui/module.cpp
+    modules/ui/touch_input.cpp
+    modules/ui/touch_input.h
+)
+better_endfield_target_defaults(BetterEndfield.UiModule)
+set_target_properties(BetterEndfield.UiModule PROPERTIES
+    OUTPUT_NAME "BetterEndfield.UiModule"
+    RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
+    LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
+)
+
 add_library(BetterEndfield.CombatStats SHARED
     modules/combat_stats/module.cpp
+    modules/combat_stats/combat_semantics.cpp
+    modules/combat_stats/combat_semantics.h
+    modules/combat_stats/rdps_math.h
     modules/combat_stats/combat_overlay_protocol.h
 )
 better_endfield_target_defaults(BetterEndfield.CombatStats)
+target_link_libraries(BetterEndfield.CombatStats PRIVATE shell32)
 set_target_properties(BetterEndfield.CombatStats PROPERTIES
     OUTPUT_NAME "BetterEndfield.CombatStats"
     RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
@@ -99,10 +115,21 @@ add_executable(BetterEndfield.CombatOverlay WIN32
 )
 better_endfield_target_defaults(BetterEndfield.CombatOverlay)
 target_link_libraries(BetterEndfield.CombatOverlay PRIVATE gdiplus shlwapi shell32)
+if(MSVC)
+    target_link_options(BetterEndfield.CombatOverlay PRIVATE "/MANIFEST:NO")
+endif()
 set_target_properties(BetterEndfield.CombatOverlay PROPERTIES
     OUTPUT_NAME "BetterEndfield.CombatOverlay"
     RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
 )
+
+add_executable(BetterEndfield.CombatSemanticsTests EXCLUDE_FROM_ALL
+    tests/combat_semantics_tests.cpp
+    modules/combat_stats/combat_semantics.cpp
+    modules/combat_stats/combat_semantics.h
+    modules/combat_stats/rdps_math.h
+)
+better_endfield_target_defaults(BetterEndfield.CombatSemanticsTests)
 
 # Read-only research utility. It is deliberately excluded from the default
 # build and release layout; build the target explicitly when runtime metadata
@@ -113,6 +140,30 @@ add_library(BetterEndfield.MusicProbe SHARED EXCLUDE_FROM_ALL
 better_endfield_target_defaults(BetterEndfield.MusicProbe)
 set_target_properties(BetterEndfield.MusicProbe PROPERTIES
     OUTPUT_NAME "BetterEndfield.MusicProbe"
+    RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/research"
+    LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/research"
+)
+
+# Standalone research probe for the mobile-UI input path. Also excluded from
+# the default build: it injects synthetic touch to answer whether the Unity
+# backend surfaces WM_POINTER as a Touchscreen device, and is not shipped.
+add_executable(BetterEndfield.TouchProbe EXCLUDE_FROM_ALL
+    research/touch_probe/main.cpp
+)
+better_endfield_target_defaults(BetterEndfield.TouchProbe)
+set_target_properties(BetterEndfield.TouchProbe PROPERTIES
+    OUTPUT_NAME "BetterEndfield.TouchProbe"
+    RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/research"
+)
+
+# The probe must run at the game's integrity level or UIPI drops its injected
+# input, so it is started from inside the game process rather than a shell.
+add_library(BetterEndfield.TouchProbeLauncher SHARED EXCLUDE_FROM_ALL
+    research/touch_probe/launcher_module.cpp
+)
+better_endfield_target_defaults(BetterEndfield.TouchProbeLauncher)
+set_target_properties(BetterEndfield.TouchProbeLauncher PROPERTIES
+    OUTPUT_NAME "BetterEndfield.TouchProbeLauncher"
     RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/research"
     LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/research"
 )
@@ -183,11 +234,21 @@ add_custom_target(BetterEndfield.Layout ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/modules/combat_stats/betterendfield.combat_stats.module.ini"
         "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.combat_stats.module.ini"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/modules/ui/betterendfield.ui.module.ini"
+        "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.ui.module.ini"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/../manifests/combat/combat-semantics.besem"
+        "${BETTER_ENDFIELD_STAGE_DIR}/modules/combat-semantics.besem"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/../manifests/combat/buff-sources.bemap"
+        "${BETTER_ENDFIELD_STAGE_DIR}/modules/buff-sources.bemap"
     DEPENDS
         BetterEndfield.Host
         BetterEndfield.Model
         BetterEndfield.Voice
         BetterEndfield.Music
+        BetterEndfield.UiModule
         BetterEndfield.CombatStats
         BetterEndfield.CombatOverlay
         BetterEndfield.Injector

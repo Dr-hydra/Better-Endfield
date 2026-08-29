@@ -22,6 +22,7 @@ tools/EndfieldStudio/
 tools/EndfieldUnpacker/
 tools/FkArkEnd/
 tools/MetadataScan/
+tools/CombatDataExporter/.icon-cache/
 
 # Keep only the scripts needed to build the distributable mod.
 scripts/*
@@ -53,3 +54,8 @@ diagnostics/
 # Local reverse-engineering helpers are not distributable project sources.
 /ida_inspect_eftool.py
 /idat-local.exe
+
+# CMake build tree and local tooling output.
+build/
+output/
+.playwright-cli/

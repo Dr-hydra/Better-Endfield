@@ -32,6 +32,25 @@ bool SameText(const char* actual, std::string_view expected) {
     return actual && std::string_view(actual) == expected;
 }
 
+bool SameTypeText(const char* actual, std::string_view expected) {
+    if (!actual) {
+        return false;
+    }
+    const std::string_view actual_view(actual);
+    if (actual_view.size() != expected.size()) {
+        return false;
+    }
+    for (size_t index = 0; index < actual_view.size(); ++index) {
+        const auto normalize = [](char value) {
+            return value == '/' || value == '+' ? '.' : value;
+        };
+        if (normalize(actual_view[index]) != normalize(expected[index])) {
+            return false;
+        }
+    }
+    return true;
+}
+
 struct Il2CppMethodInfoPrefix {
     const void* method_pointer;
 };
@@ -286,26 +305,33 @@ BE_Result DynamicResolver::ResolveClass(const char* assembly_name,
 
 int DynamicResolver::CopyManagedString(const void* managed_string, char* destination,
     size_t destination_size) const {
+    if (destination && destination_size > 0) {
+        destination[0] = '\0';
+    }
     if (!managed_string || !destination || destination_size == 0 || !string_length_ ||
         !string_chars_) {
         return 0;
     }
-    const int32_t length = string_length_(const_cast<void*>(managed_string));
-    wchar_t* chars = string_chars_(const_cast<void*>(managed_string));
-    if (length <= 0 || !chars) {
+    __try {
+        const int32_t length = string_length_(const_cast<void*>(managed_string));
+        wchar_t* chars = string_chars_(const_cast<void*>(managed_string));
+        if (length <= 0 || !chars) {
+            return 0;
+        }
+        const int required = WideCharToMultiByte(CP_UTF8, 0, chars, length, nullptr, 0,
+            nullptr, nullptr);
+        if (required <= 0) {
+            return 0;
+        }
+        const int copied = WideCharToMultiByte(CP_UTF8, 0, chars, length, destination,
+            static_cast<int>(destination_size - 1), nullptr, nullptr);
+        destination[std::max(copied, 0)] = '\0';
+        return copied;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
         destination[0] = '\0';
         return 0;
     }
-    const int required = WideCharToMultiByte(CP_UTF8, 0, chars, length, nullptr, 0,
-        nullptr, nullptr);
-    if (required <= 0) {
-        destination[0] = '\0';
-        return 0;
-    }
-    const int copied = WideCharToMultiByte(CP_UTF8, 0, chars, length, destination,
-        static_cast<int>(destination_size - 1), nullptr, nullptr);
-    destination[std::max(copied, 0)] = '\0';
-    return copied;
 }
 
 void* DynamicResolver::ObjectNew(const void* class_info) const {
@@ -334,7 +360,9 @@ void* DynamicResolver::ObjectUnbox(void* boxed_value) const {
 
 void* DynamicResolver::FieldGetValueObject(const void* field_info,
     void* instance) const {
-    return field_get_value_object_ && field_info && instance
+    // A null instance is how IL2CPP reads a static field; only the field itself
+    // is required.
+    return field_get_value_object_ && field_info
         ? field_get_value_object_(const_cast<void*>(field_info), instance)
         : nullptr;
 }
@@ -432,7 +460,7 @@ bool DynamicResolver::MatchesMethod(void* method,
         if (!parameters.empty()) {
             const char* type_name = type_get_name_(const_cast<void*>(
                 method_get_parameter_(method, index)));
-            if (!SameText(type_name, parameters[index])) {
+            if (!SameTypeText(type_name, parameters[index])) {
                 return false;
             }
         }

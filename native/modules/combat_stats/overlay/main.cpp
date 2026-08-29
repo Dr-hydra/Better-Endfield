@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
+#include <fstream>
 #include <iomanip>
 #include <memory>
 #include <sstream>
@@ -32,7 +33,9 @@ constexpr int kWindowWidth = 480;
 constexpr int kHeaderHeight = 96;
 constexpr int kRowHeight = 76;
 constexpr int kFooterHeight = 54;
+constexpr int kRdpsFooterHeight = 76;
 constexpr int kMinimumHeight = 176;
+constexpr int kRdpsMinimumHeight = 198;
 constexpr int kMaximumVisibleRows = 8;
 
 const std::array<Color, CombatOverlayProtocol::kDamageCategoryCount> kCategoryColors{
@@ -46,6 +49,23 @@ const std::array<Color, CombatOverlayProtocol::kDamageCategoryCount> kCategoryCo
 
 constexpr std::array<const wchar_t*, CombatOverlayProtocol::kDamageCategoryCount>
     kCategoryNames{L"普攻", L"战技", L"终结技", L"连携", L"被动", L"其他"};
+
+const std::array<Color, 9> kRdpsColors{
+    Color(255, 211, 216, 225), // Direct damage
+    Color(255, 255, 206, 82),  // Attack
+    Color(255, 67, 201, 255),  // Damage increase
+    Color(255, 255, 145, 72),  // Amplification
+    Color(255, 255, 122, 103), // Fragile
+    Color(255, 255, 79, 130),  // Vulnerability taken
+    Color(255, 87, 217, 155),  // Resistance/defense reduction
+    Color(255, 84, 179, 255),  // Arts strength
+    Color(255, 143, 152, 170), // Other
+};
+
+constexpr std::array<const wchar_t*, 9> kRdpsNames{
+    L"直伤", L"攻击力", L"增伤", L"增幅", L"脆弱", L"承伤易伤",
+    L"减防/减抗", L"法术强度", L"其他"
+};
 
 HINSTANCE g_instance = nullptr;
 HWND g_window = nullptr;
@@ -63,9 +83,52 @@ int g_offset_x = 0;
 int g_offset_y = 84;
 bool g_has_saved_position = false;
 HWND g_game_window = nullptr;
+HWND g_owned_game_window = nullptr;
 std::filesystem::path g_settings_path;
+std::filesystem::path g_log_path;
 ULONG_PTR g_gdiplus_token = 0;
 std::unordered_map<std::string, std::unique_ptr<Bitmap>> g_avatar_cache;
+ULONGLONG g_last_diagnostic_tick = 0;
+LONG g_last_snapshot_before = 0;
+LONG g_last_snapshot_after = 0;
+uint32_t g_last_snapshot_magic = 0;
+uint32_t g_last_snapshot_version = 0;
+uint32_t g_last_snapshot_size = 0;
+bool g_snapshot_read_succeeded = false;
+bool g_render_succeeded = false;
+int g_last_show_state = -1;
+bool g_game_was_foreground = false;
+
+std::filesystem::path DataDirectory() {
+    wchar_t local_app_data[32768]{};
+    const DWORD length = GetEnvironmentVariableW(L"LOCALAPPDATA", local_app_data,
+        static_cast<DWORD>(std::size(local_app_data)));
+    std::filesystem::path directory = length
+        ? std::filesystem::path(local_app_data) / L"BetterEndfield"
+        : std::filesystem::temp_directory_path() / L"BetterEndfield";
+    std::error_code error;
+    std::filesystem::create_directories(directory, error);
+    return directory;
+}
+
+void OverlayLog(std::string_view message) {
+    if (g_log_path.empty()) g_log_path = DataDirectory() / L"combat-overlay.log";
+    SYSTEMTIME now{};
+    GetLocalTime(&now);
+    char prefix[64]{};
+    std::snprintf(prefix, sizeof(prefix), "[%02u:%02u:%02u.%03u] ",
+        now.wHour, now.wMinute, now.wSecond, now.wMilliseconds);
+    std::ofstream output(g_log_path, std::ios::app | std::ios::binary);
+    if (!output) return;
+    output << prefix << message << "\r\n";
+}
+
+std::string HexHandle(HWND window) {
+    std::ostringstream output;
+    output << "0x" << std::hex << std::uppercase
+        << reinterpret_cast<uintptr_t>(window);
+    return output.str();
+}
 
 std::wstring Utf8ToWide(std::string_view value) {
     if (value.empty()) return {};
@@ -219,6 +282,7 @@ void FillDemoSnapshot() {
         auto& destination = g_snapshot.characters[index];
         std::snprintf(destination.id, sizeof(destination.id), "%s", rows[index].id);
         destination.total_damage = rows[index].total;
+        destination.dps = rows[index].total / g_snapshot.duration_seconds;
         destination.damage_by_category[rows[index].type] = rows[index].total * 0.82;
         destination.damage_by_category[0] = rows[index].total * 0.18;
         destination.hits = 12 + index * 7;
@@ -228,28 +292,44 @@ void FillDemoSnapshot() {
         g_snapshot.critical_count += destination.critical_hits;
     }
     g_snapshot.dps = g_snapshot.total_damage / g_snapshot.duration_seconds;
+    g_snapshot.rdps = g_snapshot.dps;
 }
 
 bool ReadSharedSnapshot() {
     if (g_demo) {
         FillDemoSnapshot();
+        g_snapshot_read_succeeded = true;
         return true;
     }
-    if (!g_shared) return false;
+    if (!g_shared) {
+        g_snapshot_read_succeeded = false;
+        return false;
+    }
     for (int attempt = 0; attempt < 4; ++attempt) {
         const LONG before = g_shared->sequence;
-        if (before & 1) continue;
+        g_last_snapshot_before = before;
+        if (before & 1) {
+            YieldProcessor();
+            continue;
+        }
         MemoryBarrier();
         std::memcpy(&g_snapshot, g_shared, sizeof(g_snapshot));
         MemoryBarrier();
         const LONG after = g_shared->sequence;
+        g_last_snapshot_after = after;
+        g_last_snapshot_magic = g_snapshot.magic;
+        g_last_snapshot_version = g_snapshot.version;
+        g_last_snapshot_size = g_snapshot.structure_size;
         if (before == after && !(after & 1) &&
             g_snapshot.magic == CombatOverlayProtocol::kMagic &&
             g_snapshot.version == CombatOverlayProtocol::kVersion &&
             g_snapshot.structure_size == sizeof(g_snapshot)) {
+            g_snapshot_read_succeeded = true;
             return true;
         }
+        YieldProcessor();
     }
+    g_snapshot_read_succeeded = false;
     return false;
 }
 
@@ -282,15 +362,7 @@ HWND FindGameWindow() {
 }
 
 std::filesystem::path SettingsPath() {
-    wchar_t local_app_data[32768]{};
-    const DWORD length = GetEnvironmentVariableW(L"LOCALAPPDATA", local_app_data,
-        static_cast<DWORD>(std::size(local_app_data)));
-    std::filesystem::path directory = length
-        ? std::filesystem::path(local_app_data) / L"BetterEndfield"
-        : std::filesystem::temp_directory_path() / L"BetterEndfield";
-    std::error_code error;
-    std::filesystem::create_directories(directory, error);
-    return directory / L"combat-overlay.ini";
+    return DataDirectory() / L"combat-overlay.ini";
 }
 
 void LoadPosition() {
@@ -323,6 +395,42 @@ bool GameClientRect(RECT& result) {
     if (!ClientToScreen(g_game_window, &origin)) return false;
     result = {origin.x, origin.y, origin.x + client.right, origin.y + client.bottom};
     return client.right > 0 && client.bottom > 0;
+}
+
+bool WindowBelongsToGame(HWND window) {
+    if (!window) return false;
+    DWORD pid = 0;
+    GetWindowThreadProcessId(window, &pid);
+    return pid == g_game_pid;
+}
+
+void RefreshGameWindowFromForeground() {
+    HWND foreground = GetForegroundWindow();
+    if (!WindowBelongsToGame(foreground)) return;
+    HWND root = GetAncestor(foreground, GA_ROOT);
+    if (root && WindowBelongsToGame(root)) foreground = root;
+    if (IsWindow(foreground) && IsWindowVisible(foreground)) {
+        g_game_window = foreground;
+    }
+}
+
+bool BindOverlayToGameWindow() {
+    if (g_demo) return true;
+    if (!g_window || !g_game_window || !IsWindow(g_game_window)) return false;
+    if (g_owned_game_window == g_game_window) return true;
+
+    SetLastError(ERROR_SUCCESS);
+    const LONG_PTR previous = SetWindowLongPtrW(g_window, GWLP_HWNDPARENT,
+        reinterpret_cast<LONG_PTR>(g_game_window));
+    const DWORD error = GetLastError();
+    if (!previous && error != ERROR_SUCCESS) {
+        OverlayLog("owner binding failed gameWindow=" + HexHandle(g_game_window) +
+            " error=" + std::to_string(error));
+        return false;
+    }
+    g_owned_game_window = g_game_window;
+    OverlayLog("owner binding succeeded gameWindow=" + HexHandle(g_game_window));
+    return true;
 }
 
 void UpdatePositionAndDrag() {
@@ -361,11 +469,42 @@ void UpdatePositionAndDrag() {
 }
 
 void Render() {
+    const bool rdps_mode = g_snapshot.metric_mode == 1;
+    const uint32_t active_count = g_snapshot.active_category_count;
+    const size_t segment_count = (active_count > 0 && active_count <= CombatOverlayProtocol::kDisplaySegmentCount)
+        ? active_count
+        : (rdps_mode ? CombatOverlayProtocol::kRdpsContributionCount : CombatOverlayProtocol::kDamageCategoryCount);
+    const auto segment_color = [rdps_mode](size_t index) -> Color {
+        if (index < CombatOverlayProtocol::kDisplaySegmentCount &&
+            g_snapshot.categories[index].color_argb != 0) {
+            return Color(g_snapshot.categories[index].color_argb);
+        }
+        if (rdps_mode) {
+            return index < kRdpsColors.size() ? kRdpsColors[index] : Color(255, 143, 152, 170);
+        }
+        return index < kCategoryColors.size() ? kCategoryColors[index] : Color(255, 143, 152, 170);
+    };
+    const auto segment_name = [rdps_mode](size_t index) -> std::wstring {
+        if (index < CombatOverlayProtocol::kDisplaySegmentCount &&
+            g_snapshot.categories[index].name[0] != '\0') {
+            const std::string utf8_name(g_snapshot.categories[index].name,
+                strnlen_s(g_snapshot.categories[index].name, sizeof(g_snapshot.categories[index].name)));
+            return Utf8ToWide(utf8_name);
+        }
+        if (rdps_mode) {
+            return index < kRdpsNames.size() ? kRdpsNames[index] : L"其他";
+        }
+        return index < kCategoryNames.size() ? kCategoryNames[index] : L"其他";
+    };
     const uint32_t row_count = std::min<uint32_t>(g_snapshot.character_count,
         kMaximumVisibleRows);
+    const size_t legend_columns = segment_count <= 4 ? (segment_count > 0 ? segment_count : 1) : (segment_count <= 8 ? 4 : 5);
+    const size_t legend_rows = (segment_count + legend_columns - 1) / legend_columns;
+    const int footer_height = static_cast<int>(32 + legend_rows * 22);
+    const int minimum_height = static_cast<int>(kHeaderHeight + footer_height + 26);
     g_window_height = row_count
-        ? kHeaderHeight + static_cast<int>(row_count) * kRowHeight + kFooterHeight
-        : kMinimumHeight;
+        ? kHeaderHeight + static_cast<int>(row_count) * kRowHeight + footer_height
+        : minimum_height;
     UpdatePositionAndDrag();
 
     BITMAPINFO bitmap_info{};
@@ -423,8 +562,9 @@ void Render() {
         RectF(22, 52, 60, 28));
     DrawText(graphics, FormatValue(g_snapshot.total_damage), value_font,
         Color(255, 248, 250, 253), RectF(78, 49, 116, 34));
-    DrawText(graphics, L"DPS", label_font, Color(190, 174, 183, 199),
-        RectF(224, 52, 40, 28));
+    const wchar_t* metric_label = g_snapshot.metric_mode == 1 ? L"rDPS" : L"DPS";
+    DrawText(graphics, metric_label, label_font, Color(190, 174, 183, 199),
+        RectF(218, 52, 46, 28));
     DrawText(graphics, FormatValue(g_snapshot.dps), value_font,
         Color(255, 248, 250, 253), RectF(264, 49, 112, 34));
     DrawText(graphics, std::to_wstring(g_snapshot.hit_count) + L" 次",
@@ -466,13 +606,14 @@ void Render() {
         graphics.SetClip(&bar_path);
         float x = bar_rect.X;
         double typed_total = 0.0;
-        for (double value : row.damage_by_category) typed_total += std::max(0.0, value);
+        for (size_t type = 0; type < segment_count; ++type)
+            typed_total += std::max(0.0, row.damage_by_category[type]);
         if (typed_total <= 0.0) typed_total = row.total_damage;
-        for (size_t type = 0; type < kCategoryColors.size(); ++type) {
+        for (size_t type = 0; type < segment_count; ++type) {
             const double type_damage = std::max(0.0, row.damage_by_category[type]);
             if (type_damage <= 0.0 || typed_total <= 0.0) continue;
             const float width = filled_width * static_cast<float>(type_damage / typed_total);
-            SolidBrush type_brush(kCategoryColors[type]);
+            SolidBrush type_brush(segment_color(type));
             graphics.FillRectangle(&type_brush, x, bar_rect.Y, width + 0.5f, bar_rect.Height);
             x += width;
         }
@@ -483,13 +624,18 @@ void Render() {
         graphics.Restore(state);
     }
 
-    const float legend_y = static_cast<float>(g_window_height - 49);
-    for (size_t category = 0; category < kCategoryNames.size(); ++category) {
-        const float x = 20.0f + static_cast<float>(category) * 73.0f;
-        SolidBrush dot(kCategoryColors[category]);
-        graphics.FillEllipse(&dot, x, legend_y + 7.0f, 8.0f, 8.0f);
-        DrawText(graphics, kCategoryNames[category], label_font,
-            Color(185, 178, 187, 203), RectF(x + 12.0f, legend_y, 57.0f, 22.0f));
+    const float legend_step = 440.0f / static_cast<float>(legend_columns);
+    const float legend_top = static_cast<float>(g_window_height - footer_height + 9);
+    for (size_t category = 0; category < segment_count; ++category) {
+        const size_t row = category / legend_columns;
+        const size_t column = category % legend_columns;
+        const float x = 20.0f + static_cast<float>(column) * legend_step;
+        const float y = legend_top + static_cast<float>(row) * 22.0f;
+        SolidBrush dot(segment_color(category));
+        graphics.FillEllipse(&dot, x, y + 7.0f, 8.0f, 8.0f);
+        DrawText(graphics, segment_name(category), label_font,
+            Color(185, 178, 187, 203),
+            RectF(x + 11.0f, y, legend_step - 11.0f, 22.0f));
     }
     DrawText(graphics, L"Ctrl + 鼠标左键拖动位置  ·  F12 显示/隐藏", label_font,
         Color(145, 153, 163, 181),
@@ -499,8 +645,21 @@ void Render() {
     POINT source{};
     SIZE size{kWindowWidth, g_window_height};
     BLENDFUNCTION blend{AC_SRC_OVER, 0, 255, AC_SRC_ALPHA};
-    UpdateLayeredWindow(g_window, screen, &g_window_position, &size, memory, &source,
-        0, &blend, ULW_ALPHA);
+    SetLastError(ERROR_SUCCESS);
+    const BOOL layered = UpdateLayeredWindow(g_window, screen, &g_window_position, &size,
+        memory, &source, 0, &blend, ULW_ALPHA);
+    if (!layered) {
+        OverlayLog("UpdateLayeredWindow failed error=" + std::to_string(GetLastError()) +
+            " position=" + std::to_string(g_window_position.x) + "," +
+            std::to_string(g_window_position.y) + " size=" +
+            std::to_string(kWindowWidth) + "x" + std::to_string(g_window_height));
+    } else if (!g_render_succeeded) {
+        g_render_succeeded = true;
+        OverlayLog("first frame rendered position=" +
+            std::to_string(g_window_position.x) + "," +
+            std::to_string(g_window_position.y) + " size=" +
+            std::to_string(kWindowWidth) + "x" + std::to_string(g_window_height));
+    }
     SelectObject(memory, old_bitmap);
     DeleteObject(dib);
     DeleteDC(memory);
@@ -510,27 +669,96 @@ void Render() {
 bool ShouldShow() {
     if (g_demo) return true;
     if (!g_snapshot.overlay_enabled || !g_snapshot.overlay_visible || !g_game_window ||
-        IsIconic(g_game_window)) return false;
-    const HWND foreground = GetForegroundWindow();
-    return foreground == g_game_window || foreground == g_window;
+        !IsWindowVisible(g_game_window) || IsIconic(g_game_window)) return false;
+    if (g_owned_game_window == g_game_window) return true;
+    return WindowBelongsToGame(GetForegroundWindow());
 }
 
 void Tick() {
     if (!g_demo && g_game_process && WaitForSingleObject(g_game_process, 0) != WAIT_TIMEOUT) {
+        OverlayLog("game process exited; companion stopping");
         PostQuitMessage(0);
         return;
     }
-    if (!ReadSharedSnapshot()) return;
+    if (!ReadSharedSnapshot()) {
+        const ULONGLONG now = GetTickCount64();
+        if (now - g_last_diagnostic_tick >= 1000) {
+            g_last_diagnostic_tick = now;
+            OverlayLog("snapshot rejected before=" + std::to_string(g_last_snapshot_before) +
+                " after=" + std::to_string(g_last_snapshot_after) +
+                " magic=0x" + [&] {
+                    std::ostringstream value;
+                    value << std::hex << std::uppercase << g_last_snapshot_magic;
+                    return value.str();
+                }() + " version=" + std::to_string(g_last_snapshot_version) +
+                " size=" + std::to_string(g_last_snapshot_size) +
+                " expectedSize=" + std::to_string(sizeof(g_snapshot)));
+        }
+        return;
+    }
     if (g_snapshot.shutdown_requested) {
+        OverlayLog("shutdown requested by module");
         PostQuitMessage(0);
         return;
     }
+    // The companion can start while Unity still owns a splash/bootstrap HWND.
+    // Once any Endfield window becomes foreground, promote its top-level root
+    // instead of retaining the early cached handle for the whole process.
+    RefreshGameWindowFromForeground();
     if (!g_demo && (!g_game_window || !IsWindow(g_game_window))) g_game_window = FindGameWindow();
-    if (!ShouldShow()) {
+    BindOverlayToGameWindow();
+    const HWND foreground = GetForegroundWindow();
+    const bool game_is_foreground = foreground == g_window || WindowBelongsToGame(foreground);
+    const bool should_show = ShouldShow();
+    const int show_state = should_show ? 1 : 0;
+    const bool became_visible = show_state == 1 && g_last_show_state != 1;
+    const bool game_became_foreground = game_is_foreground && !g_game_was_foreground;
+    g_game_was_foreground = game_is_foreground;
+    const ULONGLONG now = GetTickCount64();
+    if (show_state != g_last_show_state || now - g_last_diagnostic_tick >= 1000) {
+        g_last_show_state = show_state;
+        g_last_diagnostic_tick = now;
+        DWORD foreground_pid = 0;
+        if (foreground) GetWindowThreadProcessId(foreground, &foreground_pid);
+        RECT client{};
+        const bool has_client = GameClientRect(client);
+        OverlayLog("tick snapshot=ok seq=" + std::to_string(g_snapshot.sequence) +
+            " enabled=" + std::to_string(g_snapshot.overlay_enabled) +
+            " visible=" + std::to_string(g_snapshot.overlay_visible) +
+            " session=" + std::to_string(g_snapshot.session_active) +
+            " characters=" + std::to_string(g_snapshot.character_count) +
+            " gameWindow=" + HexHandle(g_game_window) +
+            " valid=" + std::to_string(g_game_window && IsWindow(g_game_window)) +
+            " iconic=" + std::to_string(g_game_window && IsIconic(g_game_window)) +
+            " foreground=" + HexHandle(foreground) +
+            " foregroundPid=" + std::to_string(foreground_pid) +
+            " expectedPid=" + std::to_string(g_game_pid) +
+            " ownerBound=" + std::to_string(g_owned_game_window == g_game_window) +
+            " gameForeground=" + std::to_string(game_is_foreground) +
+            " client=" + (has_client
+                ? std::to_string(client.right - client.left) + "x" +
+                    std::to_string(client.bottom - client.top)
+                : std::string("unavailable")) +
+            " shouldShow=" + std::to_string(should_show));
+    }
+    if (!should_show) {
         ShowWindow(g_window, SW_HIDE);
         return;
     }
     ShowWindow(g_window, SW_SHOWNOACTIVATE);
+    if (g_demo || game_became_foreground || (became_visible && game_is_foreground)) {
+        SetLastError(ERROR_SUCCESS);
+        const HWND insert_after = g_demo ? HWND_TOPMOST : HWND_TOP;
+        const BOOL promoted = SetWindowPos(g_window, insert_after, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
+        if (!promoted) {
+            OverlayLog("owner z-order promotion failed error=" +
+                std::to_string(GetLastError()));
+        } else {
+            OverlayLog(std::string(g_demo ? "demo topmost" : "owner z-order") +
+                " promotion succeeded");
+        }
+    }
     Render();
 }
 
@@ -571,19 +799,38 @@ bool ParseArguments(std::wstring& mapping_name) {
 
 int Run(HINSTANCE instance) {
     g_instance = instance;
+    g_log_path = DataDirectory() / L"combat-overlay.log";
+    OverlayLog("companion starting pid=" + std::to_string(GetCurrentProcessId()));
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
     std::wstring mapping_name;
-    if (!ParseArguments(mapping_name)) return 2;
+    if (!ParseArguments(mapping_name)) {
+        OverlayLog("argument parsing failed");
+        return 2;
+    }
+    OverlayLog(std::string("mode=") + (g_demo ? "demo" : "game") +
+        " gamePid=" + std::to_string(g_game_pid));
     if (!g_demo) {
         g_game_process = OpenProcess(SYNCHRONIZE, FALSE, g_game_pid);
         g_mapping = OpenFileMappingW(FILE_MAP_READ, FALSE, mapping_name.c_str());
-        if (!g_mapping) return 3;
+        if (!g_mapping) {
+            OverlayLog("OpenFileMapping failed error=" + std::to_string(GetLastError()));
+            return 3;
+        }
         g_shared = static_cast<const Protocol*>(MapViewOfFile(g_mapping, FILE_MAP_READ,
             0, 0, sizeof(Protocol)));
-        if (!g_shared) return 4;
+        if (!g_shared) {
+            OverlayLog("MapViewOfFile failed error=" + std::to_string(GetLastError()));
+            return 4;
+        }
+        OverlayLog("shared mapping opened expectedSize=" +
+            std::to_string(sizeof(Protocol)) + " processHandle=" +
+            std::to_string(g_game_process != nullptr));
     }
     GdiplusStartupInput startup;
-    if (GdiplusStartup(&g_gdiplus_token, &startup, nullptr) != Ok) return 5;
+    if (GdiplusStartup(&g_gdiplus_token, &startup, nullptr) != Ok) {
+        OverlayLog("GDI+ startup failed");
+        return 5;
+    }
     LoadPosition();
 
     WNDCLASSEXW window_class{sizeof(window_class)};
@@ -595,8 +842,13 @@ int Run(HINSTANCE instance) {
     g_window = CreateWindowExW(WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW |
             WS_EX_NOACTIVATE, kWindowClass, L"Better Endfield 战斗数据",
         WS_POPUP, 0, 0, kWindowWidth, kMinimumHeight, nullptr, nullptr, instance, nullptr);
-    if (!g_window) return 6;
-    SetWindowPos(g_window, HWND_TOPMOST, 0, 0, kWindowWidth, kMinimumHeight,
+    if (!g_window) {
+        OverlayLog("CreateWindowEx failed error=" + std::to_string(GetLastError()));
+        return 6;
+    }
+    OverlayLog("overlay window created hwnd=" + HexHandle(g_window));
+    SetWindowPos(g_window, g_demo ? HWND_TOPMOST : HWND_TOP, 0, 0,
+        kWindowWidth, kMinimumHeight,
         SWP_NOMOVE | SWP_NOACTIVATE | SWP_HIDEWINDOW);
     SetTimer(g_window, 1, 100, nullptr);
     Tick();
@@ -612,6 +864,7 @@ int Run(HINSTANCE instance) {
     if (g_game_process) CloseHandle(g_game_process);
     g_avatar_cache.clear();
     GdiplusShutdown(g_gdiplus_token);
+    OverlayLog("companion stopped normally");
     return 0;
 }
 

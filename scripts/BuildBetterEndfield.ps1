@@ -14,6 +14,10 @@ $uiProject = Join-Path $repoRoot "ui\BetterEndfield.UI\BetterEndfield.UI.csproj"
 $voiceManifest = Join-Path $repoRoot "manifests\voice\voice-event-media-manifest.json"
 $voiceCatalogIndex = Join-Path $repoRoot `
     "ui\BetterEndfield.UI\Assets\voice\voice-catalog-index.json"
+$combatSemantics = Join-Path $repoRoot "manifests\combat\combat-semantics.besem"
+$buffSourceMap = Join-Path $repoRoot "manifests\combat\buff-sources.bemap"
+$combatSemanticsReport = Join-Path $repoRoot `
+    "manifests\combat\combat-semantics-report.json"
 $publishDir = if ([string]::IsNullOrWhiteSpace($PublishDir)) {
     Join-Path $repoRoot "artifacts\BetterEndfield-win-x64"
 }
@@ -35,6 +39,23 @@ $voiceManifestSha256 = (Get-FileHash -LiteralPath $voiceManifest -Algorithm SHA2
 if ($catalogIndexMetadata.kind -ne 'betterendfield-voice-catalog-index' -or
     $catalogIndexMetadata.sourceManifestSha256 -ne $voiceManifestSha256) {
     throw "The embedded voice catalog index is stale. Run scripts\UpdateResourceManifests.ps1."
+}
+if (-not (Test-Path -LiteralPath $combatSemantics -PathType Leaf) -or
+    -not (Test-Path -LiteralPath $combatSemanticsReport -PathType Leaf)) {
+    throw "Combat semantics catalogue or build report is missing. Run scripts\BuildCombatSemantics.py."
+}
+if (-not (Test-Path -LiteralPath $buffSourceMap -PathType Leaf) -or
+    (Get-Content -LiteralPath $buffSourceMap -TotalCount 1) -notin @("BESOURCE`t1", "BESOURCE`t2")) {
+    throw "Buff source map is missing or invalid. Run tools\CombatDataExporter\export_combat_data.py."
+}
+$combatReportMetadata = Get-Content -LiteralPath $combatSemanticsReport -Raw |
+    ConvertFrom-Json
+$combatSemanticsSha256 = (Get-FileHash -LiteralPath $combatSemantics `
+    -Algorithm SHA256).Hash
+if ($combatReportMetadata.kind -ne 'betterendfield-combat-semantics-build-report' -or
+    $combatReportMetadata.schemaVersion -ne 1 -or
+    $combatReportMetadata.catalogueSha256 -ne $combatSemanticsSha256) {
+    throw "The bundled combat semantics catalogue is stale or invalid. Run scripts\BuildCombatSemantics.py."
 }
 
 if (Test-Path -LiteralPath $publishDir) {
@@ -107,8 +128,12 @@ $requiredReleaseFiles = @(
     "modules\BetterEndfield.Model.dll",
     "modules\BetterEndfield.Voice.dll",
     "modules\BetterEndfield.Music.dll",
+    "modules\BetterEndfield.UiModule.dll",
     "modules\BetterEndfield.CombatStats.dll",
     "modules\BetterEndfield.CombatOverlay.exe",
+    "modules\combat-semantics.besem",
+    "modules\buff-sources.bemap",
+    "modules\betterendfield.ui.module.ini",
     "modules\betterendfield.music.module.ini",
     "modules\betterendfield.combat_stats.module.ini",
     "loaders\BetterEndfield.Injector.exe",

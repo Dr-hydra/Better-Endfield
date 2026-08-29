@@ -11,11 +11,7 @@ using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Ellipse = Microsoft.UI.Xaml.Shapes.Ellipse;
-using Line = Microsoft.UI.Xaml.Shapes.Line;
-using Rectangle = Microsoft.UI.Xaml.Shapes.Rectangle;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
 using Windows.Storage.Pickers;
@@ -45,15 +41,12 @@ internal sealed class VoiceRuleEntry
 
 public sealed partial class MainWindow : Window
 {
-    private sealed record CombatTimelineSeries(
-        string Label,
-        Brush Brush,
-        Func<CombatTimelinePoint, double> Value);
-
     private const string DisclaimerVersion = "1";
     private const string WindowIconResourceName =
         "BetterEndfield.UI.Assets.shared.gilberta.ico";
     private const string BilibiliProfileUrl = "https://space.bilibili.com/441133155";
+    private const string CombatAnalysisUrl =
+        "https://www.bilibili.com/toy/endfield";
     private const string XiaoheiheProfileUrl =
         "https://www.xiaoheihe.cn/app/user/profile/38080236";
     private const string QqGroupNumber = "851586605";
@@ -103,15 +96,10 @@ public sealed partial class MainWindow : Window
     private readonly ObservableCollection<CombatSessionRecord> _combatSessions = [];
     private readonly ObservableCollection<CombatCharacterFilterChoice> _combatCharacterFilters = [];
     private readonly ObservableCollection<CombatLegendItem> _combatCategoryLegend = [];
-    private readonly ObservableCollection<CombatLegendItem> _combatTimelineLegend = [];
     private IReadOnlyList<CombatSessionRecord> _allCombatSessions = [];
     private CombatSessionRecord? _selectedCombatSession;
     private bool _combatHistoryExpanded;
     private bool _updatingCombatHistory;
-    private double _timelineRangeStart;
-    private double _timelineRangeEnd = 1.0;
-    private int _timelineDraggingHandle;
-    private double? _combatTimelineComboScrollOffset;
     private readonly IReadOnlyList<VoiceCharacterChoice> _voiceCharacters;
     private AppSettings _appSettings = new();
     private string _latestReleaseUrl = UpdateService.ReleasesUrl;
@@ -154,16 +142,8 @@ public sealed partial class MainWindow : Window
         CombatSessionsListView.ItemsSource = _combatSessions;
         foreach (ComboBox comboBox in CombatCharacterFilterBoxes())
             comboBox.ItemsSource = _combatCharacterFilters;
-        for (int category = 0; category < CombatSkillCategories.Count; ++category)
-        {
-            _combatCategoryLegend.Add(new CombatLegendItem
-            {
-                Label = CombatSkillCategories.Names[category],
-                Brush = CombatHistoryService.CategoryBrush(category)
-            });
-        }
         CombatCategoryLegendItemsControl.ItemsSource = _combatCategoryLegend;
-        CombatTimelineLegendItemsControl.ItemsSource = _combatTimelineLegend;
+        UpdateCombatCategoryLegend();
         SelectVoiceLanguage("Japanese");
         UpdateVoiceRulesEmptyState();
         _statusTimer.Tick += StatusTimer_Tick;
@@ -326,6 +306,29 @@ public sealed partial class MainWindow : Window
     private void CrossfadeToggle_Toggled(object sender, RoutedEventArgs e) =>
         UpdateCrossfadePanel();
 
+    private async void MobileUiToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_initializing)
+        {
+            return;
+        }
+
+        bool enabled = MobileUiToggle.IsOn;
+        try
+        {
+            await ConfigurationService.SaveUiEnhancementConfigurationAsync(enabled);
+            ShowStatus(
+                enabled ? "已启用手机版触控界面" : "已恢复原生 PC 界面",
+                "配置已保存；游戏已注入时会在约 0.5 秒内刷新，否则于下次注入时应用。",
+                InfoBarSeverity.Success);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException)
+        {
+            ShowStatus("界面模式保存失败", exception.Message, InfoBarSeverity.Error);
+        }
+    }
+
     private void FeatureNavigation_SelectionChanged(
         NavigationView sender,
         NavigationViewSelectionChangedEventArgs args)
@@ -345,6 +348,9 @@ public sealed partial class MainWindow : Window
         CombatPageScrollViewer.Visibility = page == "combat"
             ? Visibility.Visible
             : Visibility.Collapsed;
+        UiPageScrollViewer.Visibility = page == "ui"
+            ? Visibility.Visible
+            : Visibility.Collapsed;
         SettingsPageScrollViewer.Visibility = page == "settings"
             ? Visibility.Visible
             : Visibility.Collapsed;
@@ -360,6 +366,7 @@ public sealed partial class MainWindow : Window
             "voice" => "角色配音规则保存后在下一次注入时生效。",
             "music" => "首次启用在下一次注入时加载；已加载模块的设置会热更新。",
             "combat" => "F11 切换记录，F12 切换悬浮窗；结果会保存到本机目录。",
+            "ui" => "界面模式设置将在保存后热更新或于下次注入时应用。",
             _ => "角色与动画参数保存后在下一次注入时生效。"
         };
     }
@@ -369,15 +376,57 @@ public sealed partial class MainWindow : Window
         RefreshCombatSessions();
     }
 
+    private void CombatRdpsDisplayToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_initializing) return;
+        RefreshCombatSessions();
+    }
+
+    private void OpenCombatAnalysisWebButton_Click(object sender, RoutedEventArgs e) =>
+        OpenWithShell(CombatAnalysisUrl);
+
+    private void OpenCombatRecordsFolderButton_Click(object sender, RoutedEventArgs e)
+    {
+        string directory = Path.Combine(
+            ConfigurationService.SettingsDirectory, "combat-sessions");
+        try
+        {
+            Directory.CreateDirectory(directory);
+            OpenWithShell(directory);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or Win32Exception)
+        {
+            ShowStatus("无法打开记录文件夹", exception.Message, InfoBarSeverity.Error);
+        }
+    }
+
     private void RefreshCombatSessions()
     {
         string directory = Path.Combine(
             ConfigurationService.SettingsDirectory, "combat-sessions");
         string? selectedPath = _selectedCombatSession?.Path;
-        _allCombatSessions = CombatHistoryService.Load(directory);
+        bool useRdps = CombatRdpsDisplayToggle.IsOn;
+        _allCombatSessions = CombatHistoryService.Load(directory, useRdps);
+        UpdateCombatCategoryLegend();
         _combatHistoryExpanded = false;
         RebuildCombatCharacterFilters();
         ApplyCombatFilters(selectedPath);
+    }
+
+    private void UpdateCombatCategoryLegend()
+    {
+        bool useRdps = CombatRdpsDisplayToggle.IsOn;
+        int count = useRdps ? CombatRdpsCategories.Count : CombatSkillCategories.Count;
+        _combatCategoryLegend.Clear();
+        for (int category = 0; category < count; ++category)
+        {
+            _combatCategoryLegend.Add(new CombatLegendItem
+            {
+                Label = CombatHistoryService.CategoryName(category, useRdps),
+                Brush = CombatHistoryService.CategoryBrush(category, useRdps)
+            });
+        }
     }
 
     private void RebuildCombatCharacterFilters()
@@ -552,11 +601,9 @@ public sealed partial class MainWindow : Window
         CombatSelectedSessionTextBlock.Text = record is null
             ? "选择一条记录查看。"
             : $"{record.DateText} · 总伤害 {record.TotalDamageText} · {record.Summary}";
-        _timelineRangeStart = 0;
-        _timelineRangeEnd = 1;
-        RenderCombatTimeline();
     }
 
+#if false // 内置时间轴已弃用；详细分轨解析统一由网页提供。
     private void CombatTimelineCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         RenderCombatTimeline();
@@ -948,6 +995,7 @@ public sealed partial class MainWindow : Window
             ? $"{minutes}:{seconds % 60:00.0}"
             : $"{seconds:0.0}s";
     }
+#endif
 
     private async void BrowseOmniMixBackendButton_Click(
         object sender,
@@ -1646,8 +1694,7 @@ public sealed partial class MainWindow : Window
             LoopEndNumberBox,
             CrossfadeDurationNumberBox,
             MusicTargetLatencyNumberBox,
-            MusicPrebufferNumberBox,
-            MinimumDamageNumberBox
+            MusicPrebufferNumberBox
         ];
         if (numberBoxes.Any(box => !double.IsFinite(box.Value)))
         {
@@ -1758,15 +1805,12 @@ public sealed partial class MainWindow : Window
             CombatStatsEnabled = CombatStatsToggle.IsOn,
             HideDamageNumbers = HideDamageNumbersToggle.IsOn,
             CombatOverlayEnabled = CombatOverlayToggle.IsOn,
+            CombatRdpsDisplay = CombatRdpsDisplayToggle.IsOn,
             CombatToggleHotkey = toggleHotkey,
             CombatOverlayHotkey = overlayHotkey,
-            RecordAllDamage = RecordAllDamageToggle.IsOn,
-            IncludeOverkillDamage = IncludeOverkillToggle.IsOn,
-            MinimumDamage = MinimumDamageNumberBox.Value,
-            GroupDamageByCharacter = GroupDamageByCharacterToggle.IsOn,
-            GroupDamageBySkill = GroupDamageBySkillToggle.IsOn,
-            GroupDamageByCategory = GroupDamageByCategoryToggle.IsOn,
-            SaveRawCombatEvents = SaveRawCombatEventsToggle.IsOn
+            AutoDungeonSession = AutoDungeonSessionToggle.IsOn,
+            UiEnhancementEnabled = MobileUiToggle.IsOn,
+            MobileUiEnabled = MobileUiToggle.IsOn
         };
         return true;
     }
@@ -1830,15 +1874,11 @@ public sealed partial class MainWindow : Window
         CombatStatsToggle.IsOn = configuration.CombatStatsEnabled;
         HideDamageNumbersToggle.IsOn = configuration.HideDamageNumbers;
         CombatOverlayToggle.IsOn = configuration.CombatOverlayEnabled;
+        CombatRdpsDisplayToggle.IsOn = configuration.CombatRdpsDisplay;
         CombatToggleHotkeyBox.Text = configuration.CombatToggleHotkey;
         CombatOverlayHotkeyBox.Text = configuration.CombatOverlayHotkey;
-        RecordAllDamageToggle.IsOn = configuration.RecordAllDamage;
-        IncludeOverkillToggle.IsOn = configuration.IncludeOverkillDamage;
-        MinimumDamageNumberBox.Value = configuration.MinimumDamage;
-        GroupDamageByCharacterToggle.IsOn = configuration.GroupDamageByCharacter;
-        GroupDamageBySkillToggle.IsOn = configuration.GroupDamageBySkill;
-        GroupDamageByCategoryToggle.IsOn = configuration.GroupDamageByCategory;
-        SaveRawCombatEventsToggle.IsOn = configuration.SaveRawCombatEvents;
+        AutoDungeonSessionToggle.IsOn = configuration.AutoDungeonSession;
+        MobileUiToggle.IsOn = configuration.MobileUiEnabled;
 
         _initializing = wasInitializing;
         UpdateCrossfadePanel();
