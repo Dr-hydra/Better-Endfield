@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-  <assemblyIdentity version="2.2.1.0" processorArchitecture="amd64"
+  <assemblyIdentity version="2.3.1.0" processorArchitecture="amd64"
                     name="BetterEndfield.CombatOverlay" type="win32"/>
   <description>Better Endfield Combat Overlay</description>
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">

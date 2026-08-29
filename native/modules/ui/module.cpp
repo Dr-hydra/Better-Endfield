@@ -827,7 +827,7 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "UI Enhancements", "1.0.0", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "UI Enhancements", "2.3.1", BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};

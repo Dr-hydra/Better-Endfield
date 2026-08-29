@@ -3,7 +3,7 @@ param(
     [ValidateSet("Debug", "Release")]
     [string]$Configuration = "Release",
 
-    [string]$Version = "2.2.1"
+    [string]$Version = "2.3.1"
 )
 
 $ErrorActionPreference = "Stop"

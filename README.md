@@ -1,6 +1,6 @@
 # Better Endfield
 
-Better Endfield 是一个面向《终末地》Windows 客户端的模块化运行时。模型、语音、OmniMix 音乐和战斗数据分别由独立 DLL 提供，Host 负责动态 IL2CPP 解析、Hook 生命周期、配置和模块发现。
+Better Endfield 是一个面向《终末地》Windows 客户端的模块化运行时。模型、语音、OmniMix 音乐、战斗数据和移动端界面分别由独立 DLL 提供，Host 负责动态 IL2CPP 解析、Hook 生命周期、配置和模块发现。
 
 ## 架构
 
@@ -11,6 +11,7 @@ BetterEndfield.exe
   modules/BetterEndfield.Voice.dll
   modules/BetterEndfield.Music.dll
   modules/BetterEndfield.CombatStats.dll
+  modules/BetterEndfield.UiModule.dll
   loaders/BetterEndfield.Injector.exe
   payloads/xinput1_4.dll
 ```
@@ -20,6 +21,7 @@ BetterEndfield.exe
 - `BetterEndfield.Voice.dll`：语音语言、Wwise 媒体和口型功能模块。
 - `BetterEndfield.Music.dll`：OmniMix PCM、Wwise Audio Input 和原游戏音乐回退模块。
 - `BetterEndfield.CombatStats.dll`：伤害数字隐藏、战斗伤害统计、快捷键会话和本地结果模块。
+- `BetterEndfield.UiModule.dll`：移动端界面布局与鼠标转触控输入模块。
 - `BetterEndfield.Injector.exe`：默认加载方式，Host 和模块均从软件目录加载。
 - `payloads/xinput1_4.dll`：可选的 XInput 自启动代理，仅在用户确认后部署到游戏目录。
 
@@ -31,10 +33,12 @@ native/modules/model/          开屏视觉、角色模型与动画模块
 native/modules/voice/          配音语言、Wwise 媒体与口型模块
 native/modules/music/          OmniMix 音乐集成模块
 native/modules/combat_stats/   战斗数据与伤害显示模块
+native/modules/ui/             移动端界面与触控输入模块
 native/loaders/injector/       外部启动注入器
 native/loaders/xinput/         XInput 代理与进程内 Bootstrap
 native/shared/                 Host、公共 ABI 头文件与第三方原生依赖
 native/research/music_probe/   不进入发布包的音乐诊断模块
+native/research/touch_probe/   不进入发布包的触控注入探针
 manifests/model/               模型与动作资源清单
 manifests/voice/               语音 Event/Media 映射清单
 manifests/shared/              跨模块资源生成报告
@@ -98,6 +102,16 @@ B 服不通过官服 `GameAssembly.dll` 哈希判定。Host 在运行时解析 I
 当前战斗记录使用 schema 11，只保存可验证的操作、原子结果、队伍快照和会话摘要；历史排行、技能统计、Buff 区间与时间轴均在读取时派生，不兼容更早的开发格式。64 位实例 ID 使用十进制字符串，避免浏览器解析时丢失精度。
 字段和方法均按 IL2CPP 元数据描述解析，契约缺失时只停用该模块。schema 11 不按时间或 ID 前缀猜测归属，无法唯一验证的来源明确记录为未知。
 
+## 移动端界面与触控输入
+
+移动端界面默认关闭。启用后模块挂接 `DeviceInfo` 的输入类型与设备类型访问器，让客户端按触屏布局构建 UI：虚拟摇杆、技能轮盘和触控专用控件会出现在 PC 客户端上。该模块主要面向串流到手机、平板或掌机的场景。
+
+界面和输入是两条互不相通的链路，只改布局并不会让触控控件响应。客户端的触控读取全部经过 `EnhancedTouch.Touch.activeTouches`，而该集合只由 Unity 的 `Touchscreen` 设备填充，普通鼠标事件永远不会进入。因此模块同时提供鼠标转触控：通过 `CreateSyntheticPointerDevice` / `InjectSyntheticPointerInput` 注入合成触点，由 Unity 的 Windows 后端识别为真实 `Touchscreen`。鼠标左键即手指，按下、拖动、抬起对应触点的按下、移动和抬起；`Ctrl+Alt+T` 随时开关转换，关闭时立即释放当前触点。转换只在游戏窗口处于前台时生效，其余时间鼠标行为不变。
+
+合成注入需要 Windows 10 1809 或更新版本；系统不支持时模块只记录一条日志并保持转换关闭，不影响界面部分。注入的输入受 UIPI 约束，Better Endfield 与游戏同进程运行，因此不存在完整性级别不匹配的问题。转换按 `dwExtraInfo` 的触控签名过滤自身回声，但不过滤 `LLMHF_INJECTED`——串流客户端正是通过 `SendInput` 投递鼠标事件的，那些才是需要转换的输入。
+
+已知限制：注入使用屏幕绝对坐标，串流客户端需要工作在绝对坐标或触控透传模式，相对鼠标模式会让触点落在错误位置。触屏布局下客户端会改写键盘绑定掩码，除 WASD 移动外的键盘按键不生效——移动是唯一不经过触控链路的输入，由摇杆自带的键盘回退字段直接读取。向账号声明 Android/云游戏平台身份是独立于布局的能力，默认关闭且不由 UI 写入配置。
+
 ## OmniMix 音乐集成
 
 音乐集成默认关闭。Better Endfield 只保存用户选择的 `OmniMixPlayer.Backend.exe` 绝对路径，并从该后端的 `native\x64` 目录动态加载兼容的 `OmniPcmShared.dll`；不会复制曲库、音频或 OmniMix 程序。注册和运行时都会验证 OmniPcmShared ABI `2.x`、共享协议 `2` 与交错 `float32` 能力。后端路径缺失、ABI 不兼容、心跳中断或 PCM 缓冲不足时，模块保持或恢复原游戏音乐。
@@ -141,7 +155,7 @@ Catalog 只包含目标角色需要的 WEM，重复目标 Media 只存储一次�
 
 ```powershell
 pwsh -File .\scripts\BuildBetterEndfield.ps1
-pwsh -File .\scripts\BuildInstaller.ps1 -Version 2.2.1
+pwsh -File .\scripts\BuildInstaller.ps1 -Version 2.3.1
 ```
 
 原生构建入口是 `native/CMakeLists.txt`。MinHook 只由 Host 链接，模块不得自行初始化或卸载 Hook 引擎。
@@ -183,6 +197,10 @@ hotkey_toggle=F11
 overlay_hotkey=F12
 rdps_display=false
 auto_dungeon_session=true
+
+[betterendfield.ui]
+enabled=false
+mobile_ui_enabled=false
 
 [Loader]
 install_root=C:\Path\To\Better Endfield
