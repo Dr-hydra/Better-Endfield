@@ -1,0 +1,9 @@
+{
+  "name": "better-endfield-cleanup",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "^3.18.3"
+  }
+}

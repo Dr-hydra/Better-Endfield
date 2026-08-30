@@ -10,6 +10,8 @@
 #include <cctype>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <mutex>
 #include <string>
 #include <string_view>
@@ -34,6 +36,9 @@ enum class ModuleState : uint8_t {
 struct UiConfiguration {
     bool enabled = false;
     bool mobile_ui_enabled = false;
+    bool hide_uid_enabled = false;
+    bool hide_hud_enabled = false;
+    int hide_hud_hotkey = '0';
     // Reporting the client as Android/cloud is not needed for the touch layout
     // and is visible to account validation, so it is opt-in and separate.
     bool platform_spoof_enabled = false;
@@ -54,6 +59,9 @@ std::atomic<ModuleState> g_state{ModuleState::Created};
 UiConfiguration g_configuration;
 std::mutex g_configuration_mutex;
 std::atomic_bool g_mobile_ui_enabled{false};
+std::atomic_bool g_hide_uid_enabled{false};
+std::atomic_bool g_hide_hud_enabled{false};
+std::atomic_int g_hide_hud_hotkey{'0'};
 std::atomic_bool g_platform_spoof_enabled{false};
 std::atomic_bool g_diagnostics_enabled{true};
 
@@ -64,9 +72,12 @@ inline bool PlatformSpoofActive() {
 }
 
 using GetBoolFn = bool(__fastcall*)(void* method);
+using GetInstanceBoolFn = bool(__fastcall*)(void* instance, void* method);
 using GetInt32Fn = int32_t(__fastcall*)(void* method);
 using ChangeInputTypeFn = void(__fastcall*)(int32_t type, void* method);
 using AwakeFn = void(__fastcall*)(void* instance, void* method);
+using GetObjectFn = void*(__fastcall*)(void* instance, void* method);
+using SetActiveFn = void(__fastcall*)(void* instance, bool active, void* method);
 
 GetBoolFn g_original_get_is_mobile = nullptr;
 GetBoolFn g_original_get_is_mobile_user = nullptr;
@@ -98,19 +109,80 @@ GetBoolFn g_original_cloud_game_get_is_pc_platform = nullptr;
 
 AwakeFn g_original_ui_style_awake = nullptr;
 AwakeFn g_original_ui_style_update = nullptr;
+AwakeFn g_original_event_system_update = nullptr;
+GetInstanceBoolFn g_original_camera_get_hide_hud = nullptr;
+GetObjectFn g_object_get_name = nullptr;
+SetActiveFn g_original_game_object_set_active = nullptr;
 
 // MethodInfo for Beyond.DeviceInfo.ChangeInputType, used to push an input-type
 // switch through runtime_invoke from the game's own thread.
 const void* g_change_input_type_method = nullptr;
+const void* g_object_get_name_method = nullptr;
+const void* g_game_action_disable_hud_fade_method = nullptr;
+const void* g_lua_manager_get_instance_method = nullptr;
+const void* g_lua_manager_get_event_system_method = nullptr;
+const void* g_lua_event_system_dispatch_method = nullptr;
+const void* g_game_object_find_method = nullptr;
+const void* g_game_object_set_active_method = nullptr;
+const void* g_game_object_get_components_method = nullptr;
+const void* g_array_get_length_method = nullptr;
+const void* g_array_get_value_method = nullptr;
+const void* g_behaviour_get_enabled_method = nullptr;
+const void* g_behaviour_set_enabled_method = nullptr;
+BE_ResolvedClassV1 g_lua_manager_class{};
+BE_ResolvedClassV1 g_canvas_class{};
+BE_ResolvedClassV1 g_graphic_class{};
 // Static backing field behind DeviceInfo.inputType, read to recover the input
 // type the game chose for itself before the module overrode it.
 const void* g_input_type_field = nullptr;
+const void* g_lua_event_system_field = nullptr;
 
 // Bumped by every configuration push; the main-thread pump replays the switch
 // whenever it falls behind, so a hot toggle reaches already-live UI.
 std::atomic_uint32_t g_desired_generation{0};
 std::atomic_uint32_t g_applied_generation{0};
 std::atomic_int32_t g_restore_input_type{-1};
+std::atomic_uint32_t g_uid_desired_generation{0};
+std::atomic_uint32_t g_uid_applied_generation{0};
+std::atomic_uint64_t g_next_uid_scan_tick{0};
+std::atomic_uint64_t g_next_hud_scan_tick{0};
+
+struct HiddenHudCanvas {
+    void* object = nullptr;
+    uint32_t root_handle = 0;
+    bool original_enabled = false;
+};
+
+std::mutex g_hidden_hud_mutex;
+std::vector<HiddenHudCanvas> g_hidden_hud_canvases;
+bool g_hud_hidden = false;
+bool g_hud_hotkey_was_down = false;
+
+struct HiddenUidObject {
+    void* object = nullptr;
+    uint32_t root_handle = 0;
+};
+
+std::mutex g_hidden_uid_mutex;
+std::vector<HiddenUidObject> g_hidden_uid_objects;
+
+constexpr std::array<std::string_view, 4> kUidObjectNames{
+    "uidpanelpanel",
+    "watermarkgridpanel",
+    "watermarkcell",
+    "bottomnodewatermarkui",
+};
+
+constexpr std::array<const char*, 8> kUidFindNames{
+    "UIDPanelPanel",
+    "WaterMarkGridPanel",
+    "WaterMarkCell",
+    "BottomNodeWatermarkUI",
+    "uidpanelpanel",
+    "watermarkgridpanel",
+    "watermarkcell",
+    "bottomnodewatermarkui",
+};
 
 // UnityEngine.RuntimePlatform.Android = 11
 constexpr int32_t kPlatformAndroid = 11;
@@ -228,6 +300,63 @@ MethodContract g_contracts[]{
         {"UI.Beyond.dll", "Beyond.UI", "UIStyleByState", "UpdateStyle",
             nullptr, "System.Void", 0},
         false},
+    {"event_system.update",
+        {"UnityEngine.UI.dll", "UnityEngine.EventSystems", "EventSystem", "Update",
+            nullptr, "System.Void", 0},
+        false},
+    {"camera_controller.hide_hud",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.View", "CameraControllerBase",
+            "get_hideHUD", nullptr, "System.Boolean", 0},
+        false},
+    {"game_action.disable_hud_fade",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.Actions", "GameAction",
+            "DisableHudFade", "System.Boolean", "System.Void", 1},
+        false},
+    {"lua_manager.instance",
+        {"Lua.Beyond.dll", "Beyond.Lua", "LuaManager",
+            "get_instance", nullptr, nullptr, 0},
+        false},
+    {"lua_manager.event_system",
+        {"Lua.Beyond.dll", "Beyond.Lua", "LuaManager",
+            "get_luaEventSystem", nullptr, nullptr, 0},
+        false},
+    {"lua_event_system.dispatch",
+        {"Lua.Beyond.dll", "Beyond.Lua", "LuaEventSystem",
+            "DispatchEvent", "System.String", "System.Void", 1},
+        false},
+    {"object.get_name",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Object", "get_name",
+            nullptr, "System.String", 0},
+        false},
+    {"game_object.find",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "GameObject", "Find",
+            "System.String", "UnityEngine.GameObject", 1},
+        false},
+    {"game_object.set_active",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "GameObject", "SetActive",
+            "System.Boolean", "System.Void", 1},
+        false},
+    {"game_object.get_components",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "GameObject",
+            "GetComponentsInChildren", "System.Type|System.Boolean",
+            "UnityEngine.Component[]", 2},
+        false},
+    {"array.get_length",
+        {"mscorlib.dll", "System", "Array", "GetLength",
+            "System.Int32", "System.Int32", 1},
+        false},
+    {"array.get_value",
+        {"mscorlib.dll", "System", "Array", "GetValue",
+            "System.Int32", "System.Object", 1},
+        false},
+    {"behaviour.get_enabled",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Behaviour", "get_enabled",
+            nullptr, "System.Boolean", 0},
+        false},
+    {"behaviour.set_enabled",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Behaviour", "set_enabled",
+            "System.Boolean", "System.Void", 1},
+        false},
 };
 
 void Log(const std::string& message) {
@@ -235,6 +364,497 @@ void Log(const std::string& message) {
         return;
     }
     g_host->log(g_host->context, kModuleId, message.c_str());
+}
+
+MethodContract* Contract(std::string_view key) {
+    for (auto& contract : g_contracts) {
+        if (contract.key == key) {
+            return &contract;
+        }
+    }
+    return nullptr;
+}
+
+void* Invoke(const void* method_info, void* instance, void** parameters) {
+    if (!method_info || !g_host || !g_host->runtime_invoke) {
+        return nullptr;
+    }
+    void* exception = nullptr;
+    void* result = g_host->runtime_invoke(
+        g_host->context, method_info, instance, parameters, &exception);
+    return exception ? nullptr : result;
+}
+
+void DiscoverLuaEventSystemAccessor() {
+    if ((!g_lua_manager_class.class_info) ||
+        (g_lua_manager_get_event_system_method && g_lua_event_system_field)) {
+        return;
+    }
+
+    HMODULE game_assembly = GetModuleHandleW(L"GameAssembly.dll");
+    if (!game_assembly) {
+        Log("Lua event-system discovery skipped: GameAssembly is unavailable.");
+        return;
+    }
+
+    using ClassGetParentFn = void*(__cdecl*)(void* klass);
+    using ClassGetMethodsFn = void*(__cdecl*)(void* klass, void** iterator);
+    using ClassGetFieldsFn = void*(__cdecl*)(void* klass, void** iterator);
+    using MethodGetNameFn = const char*(__cdecl*)(const void* method);
+    using MethodGetParameterCountFn = uint32_t(__cdecl*)(const void* method);
+    using FieldGetNameFn = const char*(__cdecl*)(const void* field);
+
+    const auto class_get_parent = reinterpret_cast<ClassGetParentFn>(
+        GetProcAddress(game_assembly, "il2cpp_class_get_parent"));
+    const auto class_get_methods = reinterpret_cast<ClassGetMethodsFn>(
+        GetProcAddress(game_assembly, "il2cpp_class_get_methods"));
+    const auto class_get_fields = reinterpret_cast<ClassGetFieldsFn>(
+        GetProcAddress(game_assembly, "il2cpp_class_get_fields"));
+    const auto method_get_name = reinterpret_cast<MethodGetNameFn>(
+        GetProcAddress(game_assembly, "il2cpp_method_get_name"));
+    const auto method_get_parameter_count =
+        reinterpret_cast<MethodGetParameterCountFn>(
+            GetProcAddress(game_assembly, "il2cpp_method_get_param_count"));
+    const auto field_get_name = reinterpret_cast<FieldGetNameFn>(
+        GetProcAddress(game_assembly, "il2cpp_field_get_name"));
+    if (!class_get_parent || !class_get_methods || !class_get_fields ||
+        !method_get_name || !method_get_parameter_count || !field_get_name) {
+        Log("Lua event-system discovery skipped: IL2CPP reflection exports are incomplete.");
+        return;
+    }
+
+    void* klass = const_cast<void*>(g_lua_manager_class.class_info);
+    for (int depth = 0; klass && depth < 16; ++depth) {
+        if (!g_lua_manager_get_event_system_method) {
+            void* iterator = nullptr;
+            while (void* method = class_get_methods(klass, &iterator)) {
+                const char* name = method_get_name(method);
+                if (name && std::string_view(name) == "get_luaEventSystem" &&
+                    method_get_parameter_count(method) == 0) {
+                    g_lua_manager_get_event_system_method = method;
+                    Log("Discovered inherited method: lua_manager.event_system");
+                    break;
+                }
+            }
+        }
+
+        if (!g_lua_event_system_field) {
+            void* iterator = nullptr;
+            while (void* field = class_get_fields(klass, &iterator)) {
+                const char* name = field_get_name(field);
+                if (!name) {
+                    continue;
+                }
+                std::string normalized(name);
+                std::transform(normalized.begin(), normalized.end(),
+                    normalized.begin(), [](unsigned char c) {
+                        return static_cast<char>(std::tolower(c));
+                    });
+                if (normalized.find("luaeventsystem") != std::string::npos) {
+                    g_lua_event_system_field = field;
+                    Log(std::string("Discovered Lua event-system field: ") + name);
+                    break;
+                }
+            }
+        }
+
+        if (g_lua_manager_get_event_system_method || g_lua_event_system_field) {
+            return;
+        }
+        klass = class_get_parent(klass);
+    }
+    Log("Lua event-system accessor was not found in LuaManager hierarchy.");
+}
+
+template <typename T>
+bool Unbox(void* boxed, T& value) {
+    if (!boxed || !g_host || !g_host->object_unbox) {
+        return false;
+    }
+    void* raw = g_host->object_unbox(g_host->context, boxed);
+    if (!raw) {
+        return false;
+    }
+    std::memcpy(&value, raw, sizeof(T));
+    return true;
+}
+
+void* SafeGetObjectName(void* instance) {
+    __try {
+        return g_object_get_name(
+            instance, const_cast<void*>(g_object_get_name_method));
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return nullptr;
+    }
+}
+
+std::string NormalizedObjectName(void* instance) {
+    if (!instance || !g_object_get_name || !g_host ||
+        !g_host->copy_managed_string) {
+        return {};
+    }
+
+    void* managed_name = SafeGetObjectName(instance);
+    char buffer[256]{};
+    if (!managed_name || g_host->copy_managed_string(
+            g_host->context, managed_name, buffer, sizeof(buffer)) <= 0) {
+        return {};
+    }
+
+    std::string name(buffer);
+    std::transform(name.begin(), name.end(), name.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    constexpr std::string_view clone_suffix = "(clone)";
+    if (name.ends_with(clone_suffix)) {
+        name.resize(name.size() - clone_suffix.size());
+    }
+    while (!name.empty() && std::isspace(static_cast<unsigned char>(name.back()))) {
+        name.pop_back();
+    }
+    return name;
+}
+
+bool IsUidObject(void* instance) {
+    const std::string name = NormalizedObjectName(instance);
+    return std::find(kUidObjectNames.begin(), kUidObjectNames.end(), name) !=
+        kUidObjectNames.end();
+}
+
+void TrackHiddenUidObject(void* object) {
+    if (!object) {
+        return;
+    }
+    std::lock_guard lock(g_hidden_uid_mutex);
+    if (std::any_of(g_hidden_uid_objects.begin(), g_hidden_uid_objects.end(),
+            [object](const HiddenUidObject& item) { return item.object == object; })) {
+        return;
+    }
+    const uint32_t handle = g_host && g_host->gchandle_new
+        ? g_host->gchandle_new(g_host->context, object, 0)
+        : 0;
+    g_hidden_uid_objects.push_back({object, handle});
+}
+
+void ReleaseHiddenUidRoots() {
+    std::lock_guard lock(g_hidden_uid_mutex);
+    if (g_host && g_host->gchandle_free) {
+        for (const auto& item : g_hidden_uid_objects) {
+            if (item.root_handle) {
+                g_host->gchandle_free(g_host->context, item.root_handle);
+            }
+        }
+    }
+    g_hidden_uid_objects.clear();
+}
+
+void RestoreHiddenUidObjects() {
+    std::vector<HiddenUidObject> objects;
+    {
+        std::lock_guard lock(g_hidden_uid_mutex);
+        objects.swap(g_hidden_uid_objects);
+    }
+
+    for (const auto& item : objects) {
+        bool active = true;
+        void* parameters[1]{&active};
+        void* exception = nullptr;
+        if (g_host && g_host->runtime_invoke && g_game_object_set_active_method) {
+            g_host->runtime_invoke(g_host->context,
+                g_game_object_set_active_method, item.object, parameters, &exception);
+        }
+        if (item.root_handle && g_host && g_host->gchandle_free) {
+            g_host->gchandle_free(g_host->context, item.root_handle);
+        }
+    }
+}
+
+void FindAndHideUidObjects() {
+    if (!g_host || !g_host->runtime_invoke || !g_host->string_new ||
+        !g_game_object_find_method || !g_original_game_object_set_active) {
+        return;
+    }
+
+    for (const char* name : kUidFindNames) {
+        // Several WaterMarkCell instances may share one name. Deactivate each
+        // active match, then ask Unity again until none remain.
+        for (int match = 0; match < 64; ++match) {
+            void* managed_name = g_host->string_new(g_host->context, name);
+            void* parameters[1]{managed_name};
+            void* exception = nullptr;
+            void* object = g_host->runtime_invoke(g_host->context,
+                g_game_object_find_method, nullptr, parameters, &exception);
+            if (exception || !object) {
+                break;
+            }
+            TrackHiddenUidObject(object);
+            g_original_game_object_set_active(object, false,
+                const_cast<void*>(g_game_object_set_active_method));
+        }
+    }
+}
+
+void PumpUidVisibility() {
+    static thread_local bool in_progress = false;
+    if (in_progress) {
+        return;
+    }
+    in_progress = true;
+    struct Guard {
+        bool& flag;
+        ~Guard() { flag = false; }
+    } guard{in_progress};
+
+    const bool hidden = g_hide_uid_enabled.load(std::memory_order_acquire);
+    const uint32_t desired = g_uid_desired_generation.load(std::memory_order_acquire);
+    const uint32_t applied = g_uid_applied_generation.load(std::memory_order_relaxed);
+    const uint64_t now = GetTickCount64();
+
+    if (!hidden) {
+        if (applied != desired) {
+            RestoreHiddenUidObjects();
+            g_uid_applied_generation.store(desired, std::memory_order_release);
+        }
+        return;
+    }
+
+    if (applied != desired || now >= g_next_uid_scan_tick.load()) {
+        FindAndHideUidObjects();
+        g_uid_applied_generation.store(desired, std::memory_order_release);
+        g_next_uid_scan_tick.store(now + 2000, std::memory_order_release);
+    }
+}
+
+void* FindGameObject(const char* name) {
+    if (!name || !g_host || !g_host->string_new || !g_game_object_find_method) {
+        return nullptr;
+    }
+    void* managed_name = g_host->string_new(g_host->context, name);
+    void* parameters[1]{managed_name};
+    return Invoke(g_game_object_find_method, nullptr, parameters);
+}
+
+int ManagedArrayLength(void* array) {
+    int dimension = 0;
+    int length = 0;
+    void* parameters[1]{&dimension};
+    return array && Unbox(Invoke(g_array_get_length_method,
+        array, parameters), length) ? length : 0;
+}
+
+void* ManagedArrayValue(void* array, int index) {
+    void* parameters[1]{&index};
+    return array ? Invoke(g_array_get_value_method, array, parameters) : nullptr;
+}
+
+bool CanvasEnabled(void* canvas, bool& enabled) {
+    return canvas && Unbox(Invoke(g_behaviour_get_enabled_method,
+        canvas, nullptr), enabled);
+}
+
+void SetCanvasEnabled(void* canvas, bool enabled) {
+    void* parameters[1]{&enabled};
+    Invoke(g_behaviour_set_enabled_method, canvas, parameters);
+}
+
+void TrackAndDisableHudCanvas(void* canvas) {
+    if (!canvas) {
+        return;
+    }
+    {
+        std::lock_guard lock(g_hidden_hud_mutex);
+        const auto found = std::find_if(
+            g_hidden_hud_canvases.begin(), g_hidden_hud_canvases.end(),
+            [canvas](const HiddenHudCanvas& item) { return item.object == canvas; });
+        if (found == g_hidden_hud_canvases.end()) {
+            bool originally_enabled = false;
+            if (!CanvasEnabled(canvas, originally_enabled)) {
+                return;
+            }
+            const uint32_t handle = g_host && g_host->gchandle_new
+                ? g_host->gchandle_new(g_host->context, canvas, 0)
+                : 0;
+            g_hidden_hud_canvases.push_back(
+                {canvas, handle, originally_enabled});
+        }
+    }
+    SetCanvasEnabled(canvas, false);
+}
+
+int FindAndHideHudCanvases() {
+    if ((!g_canvas_class.type_object && !g_graphic_class.type_object) ||
+        !g_game_object_get_components_method) {
+        return -2;
+    }
+    void* root = FindGameObject("MainHudRoot");
+    if (!root) {
+        root = FindGameObject("MainHudRoot(Clone)");
+    }
+    if (!root) {
+        root = FindGameObject("mainhudroot");
+    }
+    if (!root) {
+        return -1;
+    }
+
+    const auto disable_components = [root](void* component_type) {
+        if (!component_type) {
+            return 0;
+        }
+        bool include_inactive = true;
+        void* parameters[2]{component_type, &include_inactive};
+        void* components = Invoke(
+            g_game_object_get_components_method, root, parameters);
+        const int length = std::min(ManagedArrayLength(components), 2048);
+        for (int index = 0; index < length; ++index) {
+            TrackAndDisableHudCanvas(ManagedArrayValue(components, index));
+        }
+        return length;
+    };
+
+    // A disabled parent Canvas suppresses every child Graphic at once. The
+    // Graphic path is a fallback for HUD prefab variants without a local Canvas.
+    const int canvas_count = disable_components(g_canvas_class.type_object);
+    if (canvas_count > 0) {
+        return canvas_count;
+    }
+    return disable_components(g_graphic_class.type_object);
+}
+
+void RestoreHudCanvases() {
+    std::vector<HiddenHudCanvas> canvases;
+    {
+        std::lock_guard lock(g_hidden_hud_mutex);
+        canvases.swap(g_hidden_hud_canvases);
+    }
+    for (const auto& item : canvases) {
+        SetCanvasEnabled(item.object, item.original_enabled);
+        if (item.root_handle && g_host && g_host->gchandle_free) {
+            g_host->gchandle_free(g_host->context, item.root_handle);
+        }
+    }
+}
+
+void ReleaseHudCanvasRoots() {
+    std::lock_guard lock(g_hidden_hud_mutex);
+    if (g_host && g_host->gchandle_free) {
+        for (const auto& item : g_hidden_hud_canvases) {
+            if (item.root_handle) {
+                g_host->gchandle_free(g_host->context, item.root_handle);
+            }
+        }
+    }
+    g_hidden_hud_canvases.clear();
+}
+
+bool InvokeStaticAction(const void* method_info, void** parameters) {
+    if (!method_info || !g_host || !g_host->runtime_invoke) {
+        return false;
+    }
+    void* exception = nullptr;
+    g_host->runtime_invoke(
+        g_host->context, method_info, nullptr, parameters, &exception);
+    return exception == nullptr;
+}
+
+struct HudVisibilityResult {
+    bool clear_screen = false;
+    bool hud_fade = false;
+};
+
+void* GetLuaEventSystem() {
+    void* manager = Invoke(g_lua_manager_get_instance_method, nullptr, nullptr);
+    if (!manager) {
+        return nullptr;
+    }
+    if (void* event_system = Invoke(
+            g_lua_manager_get_event_system_method, manager, nullptr)) {
+        return event_system;
+    }
+    return g_lua_event_system_field && g_host && g_host->field_get_value_object
+        ? g_host->field_get_value_object(
+              g_host->context, g_lua_event_system_field, manager)
+        : nullptr;
+}
+
+bool DispatchClearScreenEvent(bool show_hud) {
+    if (!g_lua_event_system_dispatch_method || !g_host ||
+        !g_host->runtime_invoke || !g_host->string_new) {
+        return false;
+    }
+    void* event_system = GetLuaEventSystem();
+    if (!event_system) {
+        return false;
+    }
+    void* event_name = g_host->string_new(g_host->context,
+        show_hud ? "CLEAR_SCREEN_OFF" : "CLEAR_SCREEN_ON");
+    void* parameters[1]{event_name};
+    void* exception = nullptr;
+    g_host->runtime_invoke(g_host->context,
+        g_lua_event_system_dispatch_method, event_system, parameters, &exception);
+    return exception == nullptr;
+}
+
+HudVisibilityResult ApplyGameHudVisibility(bool show_hud) {
+    HudVisibilityResult result{};
+    void* fade_parameters[1]{&show_hud};
+
+    result.clear_screen = DispatchClearScreenEvent(show_hud);
+    result.hud_fade = InvokeStaticAction(
+        g_game_action_disable_hud_fade_method, fade_parameters);
+    return result;
+}
+
+std::string HudVisibilityStatus(const HudVisibilityResult& result) {
+    return std::string("clear_screen=") +
+        (result.clear_screen ? "applied" : "unavailable") +
+        ", hud_fade=" +
+        (result.hud_fade ? "applied" : "unavailable");
+}
+
+void PumpHudVisibility() {
+    const bool allowed = g_hide_hud_enabled.load(std::memory_order_acquire);
+    const bool hotkey_down = allowed &&
+        (GetAsyncKeyState(g_hide_hud_hotkey.load(std::memory_order_relaxed)) &
+            0x8000) != 0;
+    const bool hotkey_pressed = hotkey_down && !g_hud_hotkey_was_down;
+    g_hud_hotkey_was_down = hotkey_down;
+
+    if (!allowed) {
+        if (g_hud_hidden) {
+            const HudVisibilityResult action = ApplyGameHudVisibility(true);
+            RestoreHudCanvases();
+            g_hud_hidden = false;
+            Log(std::string("All-HUD hiding disabled; restored HUD: ") +
+                HudVisibilityStatus(action));
+        }
+        return;
+    }
+
+    if (hotkey_pressed) {
+        g_hud_hidden = !g_hud_hidden;
+        if (g_hud_hidden) {
+            const HudVisibilityResult action = ApplyGameHudVisibility(false);
+            const int fallback_count = FindAndHideHudCanvases();
+            g_next_hud_scan_tick.store(GetTickCount64() + 2000,
+                std::memory_order_release);
+            Log(std::string("All HUD hide requested by hotkey: ") +
+                HudVisibilityStatus(action) + ", camera_contract=" +
+                (g_original_camera_get_hide_hud ? "ready" : "unavailable") +
+                ", fallback_components=" + std::to_string(fallback_count));
+        } else {
+            const HudVisibilityResult action = ApplyGameHudVisibility(true);
+            RestoreHudCanvases();
+            Log(std::string("All HUD restored by hotkey: ") +
+                HudVisibilityStatus(action));
+        }
+    }
+
+    const uint64_t now = GetTickCount64();
+    if (g_hud_hidden && now >= g_next_hud_scan_tick.load()) {
+        FindAndHideHudCanvases();
+        g_next_hud_scan_tick.store(now + 2000, std::memory_order_release);
+    }
 }
 
 bool __fastcall DetourGetIsMobile(void* method) {
@@ -510,14 +1130,48 @@ void __fastcall DetourUIStyleByStateAwake(void* instance, void* method) {
     // Awake has already registered this widget with onInputTypeChanged, so a
     // switch raised now reaches it along with every earlier one.
     PumpInputType();
+    PumpUidVisibility();
+    PumpHudVisibility();
 }
 
 void __fastcall DetourUIStyleByStateUpdateStyle(void* instance, void* method) {
     // Catches a toggle made while no new widget is being created; the pump is
     // a no-op once the pending switch has been applied.
     PumpInputType();
+    PumpUidVisibility();
+    PumpHudVisibility();
     if (g_original_ui_style_update) {
         g_original_ui_style_update(instance, method);
+    }
+}
+
+void __fastcall DetourEventSystemUpdate(void* instance, void* method) {
+    if (g_original_event_system_update) {
+        g_original_event_system_update(instance, method);
+    }
+    PumpInputType();
+    PumpUidVisibility();
+    PumpHudVisibility();
+}
+
+bool __fastcall DetourCameraGetHideHud(void* instance, void* method) {
+    if (g_hide_hud_enabled.load(std::memory_order_acquire) && g_hud_hidden) {
+        return true;
+    }
+    return g_original_camera_get_hide_hud
+        ? g_original_camera_get_hide_hud(instance, method)
+        : false;
+}
+
+void __fastcall DetourGameObjectSetActive(
+    void* instance, bool active, void* method) {
+    if (active && g_hide_uid_enabled.load(std::memory_order_acquire) &&
+        IsUidObject(instance)) {
+        TrackHiddenUidObject(instance);
+        active = false;
+    }
+    if (g_original_game_object_set_active) {
+        g_original_game_object_set_active(instance, active, method);
     }
 }
 
@@ -542,6 +1196,27 @@ bool ParseBoolean(std::string_view value, bool default_value = false) {
         return false;
     }
     return default_value;
+}
+
+int ParseVirtualKey(std::string_view value, int fallback) {
+    std::string key = Trim(value);
+    std::transform(key.begin(), key.end(), key.begin(),
+        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    if (key.size() == 1 && std::isalnum(static_cast<unsigned char>(key[0]))) {
+        return static_cast<unsigned char>(key[0]);
+    }
+    if (key.size() > 1 && key.front() == 'F') {
+        const int number = std::atoi(key.c_str() + 1);
+        if (number >= 1 && number <= 24) {
+            return VK_F1 + number - 1;
+        }
+    }
+    constexpr std::string_view numpad_prefix = "NUMPAD";
+    if (key.size() == numpad_prefix.size() + 1 &&
+        key.starts_with(numpad_prefix) && key.back() >= '0' && key.back() <= '9') {
+        return VK_NUMPAD0 + key.back() - '0';
+    }
+    return fallback;
 }
 
 UiConfiguration ParseConfigurationText(const char* raw_configuration) {
@@ -590,6 +1265,12 @@ UiConfiguration ParseConfigurationText(const char* raw_configuration) {
             config.enabled = ParseBoolean(value, config.enabled);
         } else if (key == "mobile_ui_enabled") {
             config.mobile_ui_enabled = ParseBoolean(value, config.mobile_ui_enabled);
+        } else if (key == "hide_uid_enabled") {
+            config.hide_uid_enabled = ParseBoolean(value, config.hide_uid_enabled);
+        } else if (key == "hide_hud_enabled") {
+            config.hide_hud_enabled = ParseBoolean(value, config.hide_hud_enabled);
+        } else if (key == "hide_hud_hotkey") {
+            config.hide_hud_hotkey = ParseVirtualKey(value, config.hide_hud_hotkey);
         } else if (key == "platform_spoof_enabled") {
             config.platform_spoof_enabled =
                 ParseBoolean(value, config.platform_spoof_enabled);
@@ -618,6 +1299,35 @@ bool ResolveContracts() {
             resolved_count++;
             if (std::string_view(contract.key) == "device.change_input_type") {
                 g_change_input_type_method = resolved.method_info;
+            } else if (std::string_view(contract.key) ==
+                "game_action.disable_hud_fade") {
+                g_game_action_disable_hud_fade_method = resolved.method_info;
+            } else if (std::string_view(contract.key) ==
+                "lua_manager.instance") {
+                g_lua_manager_get_instance_method = resolved.method_info;
+            } else if (std::string_view(contract.key) ==
+                "lua_manager.event_system") {
+                g_lua_manager_get_event_system_method = resolved.method_info;
+            } else if (std::string_view(contract.key) ==
+                "lua_event_system.dispatch") {
+                g_lua_event_system_dispatch_method = resolved.method_info;
+            } else if (std::string_view(contract.key) == "object.get_name") {
+                g_object_get_name = reinterpret_cast<GetObjectFn>(resolved.method_pointer);
+                g_object_get_name_method = resolved.method_info;
+            } else if (std::string_view(contract.key) == "game_object.find") {
+                g_game_object_find_method = resolved.method_info;
+            } else if (std::string_view(contract.key) == "game_object.set_active") {
+                g_game_object_set_active_method = resolved.method_info;
+            } else if (std::string_view(contract.key) == "game_object.get_components") {
+                g_game_object_get_components_method = resolved.method_info;
+            } else if (std::string_view(contract.key) == "array.get_length") {
+                g_array_get_length_method = resolved.method_info;
+            } else if (std::string_view(contract.key) == "array.get_value") {
+                g_array_get_value_method = resolved.method_info;
+            } else if (std::string_view(contract.key) == "behaviour.get_enabled") {
+                g_behaviour_get_enabled_method = resolved.method_info;
+            } else if (std::string_view(contract.key) == "behaviour.set_enabled") {
+                g_behaviour_set_enabled_method = resolved.method_info;
             }
             Log(std::string("Resolved method contract: ") + contract.key);
         } else {
@@ -639,6 +1349,49 @@ bool ResolveContracts() {
         } else {
             Log("Optional field not found: device.input_type_backing");
         }
+
+        const BE_FieldDescriptorV1 lua_event_descriptor{
+            "Lua.Beyond.dll", "Beyond.Lua", "LuaManager",
+            "<luaEventSystem>k__BackingField", nullptr};
+        field = {};
+        if (g_host->resolve_field(g_host->context, &lua_event_descriptor, &field) ==
+                BE_Result_Ok &&
+            field.field_info != nullptr) {
+            g_lua_event_system_field = field.field_info;
+            Log("Resolved field contract: lua_manager.event_system_backing");
+        } else {
+            Log("Optional field not found: lua_manager.event_system_backing");
+        }
+    }
+
+    if (g_host->resolve_class &&
+        g_host->resolve_class(g_host->context, "Lua.Beyond.dll",
+            "Beyond.Lua", "LuaManager", &g_lua_manager_class) == BE_Result_Ok &&
+        g_lua_manager_class.class_info) {
+        Log("Resolved class contract: lua_manager");
+        DiscoverLuaEventSystemAccessor();
+    } else {
+        g_lua_manager_class = {};
+        Log("Optional class not found: lua_manager");
+    }
+
+    if (g_host->resolve_class &&
+        g_host->resolve_class(g_host->context, "UnityEngine.UIModule.dll",
+            "UnityEngine", "Canvas", &g_canvas_class) == BE_Result_Ok &&
+        g_canvas_class.type_object) {
+        Log("Resolved class contract: unity.canvas");
+    } else {
+        g_canvas_class = {};
+        Log("Optional class not found: unity.canvas");
+    }
+    if (g_host->resolve_class &&
+        g_host->resolve_class(g_host->context, "UnityEngine.UI.dll",
+            "UnityEngine.UI", "Graphic", &g_graphic_class) == BE_Result_Ok &&
+        g_graphic_class.type_object) {
+        Log("Resolved class contract: unity.ui.graphic");
+    } else {
+        g_graphic_class = {};
+        Log("Optional class not found: unity.ui.graphic");
     }
 
     return resolved_count > 0;
@@ -739,6 +1492,15 @@ bool InstallHooks() {
         } else if (key == "ui_style.update") {
             detour = reinterpret_cast<void*>(&DetourUIStyleByStateUpdateStyle);
             original = reinterpret_cast<void**>(&g_original_ui_style_update);
+        } else if (key == "event_system.update") {
+            detour = reinterpret_cast<void*>(&DetourEventSystemUpdate);
+            original = reinterpret_cast<void**>(&g_original_event_system_update);
+        } else if (key == "camera_controller.hide_hud") {
+            detour = reinterpret_cast<void*>(&DetourCameraGetHideHud);
+            original = reinterpret_cast<void**>(&g_original_camera_get_hide_hud);
+        } else if (key == "game_object.set_active") {
+            detour = reinterpret_cast<void*>(&DetourGameObjectSetActive);
+            original = reinterpret_cast<void**>(&g_original_game_object_set_active);
         }
 
         if (detour && original) {
@@ -796,15 +1558,24 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
         g_configuration = config;
     }
 
-    const bool active = config.enabled && config.mobile_ui_enabled;
-    g_mobile_ui_enabled.store(active, std::memory_order_release);
-    g_platform_spoof_enabled.store(active && config.platform_spoof_enabled,
+    const bool mobile_active = config.enabled && config.mobile_ui_enabled;
+    const bool uid_active = config.enabled && config.hide_uid_enabled;
+    const bool hud_active = config.enabled && config.hide_hud_enabled;
+    const bool active = mobile_active || uid_active || hud_active;
+    g_mobile_ui_enabled.store(mobile_active, std::memory_order_release);
+    g_hide_uid_enabled.store(uid_active, std::memory_order_release);
+    g_hide_hud_enabled.store(hud_active, std::memory_order_release);
+    g_hide_hud_hotkey.store(config.hide_hud_hotkey, std::memory_order_release);
+    g_platform_spoof_enabled.store(mobile_active && config.platform_spoof_enabled,
         std::memory_order_release);
     g_diagnostics_enabled.store(config.diagnostics, std::memory_order_release);
-    TouchInput::SetEnabled(active);
+    TouchInput::SetEnabled(mobile_active);
 
     Log(std::string("UI Configuration applied: enabled=") + (config.enabled ? "true" : "false") +
         ", mobile_ui_enabled=" + (config.mobile_ui_enabled ? "true" : "false") +
+        ", hide_uid_enabled=" + (config.hide_uid_enabled ? "true" : "false") +
+        ", hide_hud_enabled=" + (config.hide_hud_enabled ? "true" : "false") +
+        ", hide_hud_hotkey_vk=" + std::to_string(config.hide_hud_hotkey) +
         ", platform_spoof=" + (config.platform_spoof_enabled ? "true" : "false") +
         " (effective=" + (active ? "ACTIVE" : "INACTIVE") + ")");
 
@@ -812,6 +1583,9 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
     // into managed code.  Record the request and let the UI-thread pump raise
     // the actual input-type switch.
     g_desired_generation.fetch_add(1, std::memory_order_acq_rel);
+    g_uid_desired_generation.fetch_add(1, std::memory_order_acq_rel);
+    g_next_uid_scan_tick.store(0, std::memory_order_release);
+    g_next_hud_scan_tick.store(0, std::memory_order_release);
 
     g_state.store(active ? ModuleState::Active : ModuleState::Disabled);
     return BE_Result_Ok;
@@ -820,6 +1594,10 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
 void BE_CALL Shutdown() {
     TouchInput::SetEnabled(false);
     TouchInput::Stop();
+    g_hide_uid_enabled.store(false, std::memory_order_release);
+    g_hide_hud_enabled.store(false, std::memory_order_release);
+    ReleaseHiddenUidRoots();
+    ReleaseHudCanvasRoots();
     StopHooks();
     g_state.store(ModuleState::Stopped);
     g_mobile_ui_enabled.store(false, std::memory_order_release);
@@ -827,7 +1605,7 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "UI Enhancements", "2.3.1", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "UI Enhancements", "3.0.1", BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};

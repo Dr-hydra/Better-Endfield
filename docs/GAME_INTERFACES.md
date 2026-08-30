@@ -178,13 +178,35 @@ generation 或 Seek generation 变化都会先清空旧流再绑定新流。策�
 
 ## 界面增强与移动端 UI 模块
 
-`BetterEndfield.UiModule.dll` 提供 PC 客户端下切换移动端/触控 UI 的实验性支持。相关接口与逆向成果详见专题文档：[docs/MOBILE_UI_REVERSING.md](file:///e:/Dr.Hydra/Better%20Endfield/docs/MOBILE_UI_REVERSING.md)。
+`BetterEndfield.UiModule.dll` 提供 PC 客户端下切换移动端/触控 UI 与隐藏 UID 水印的实验性支持。两个功能默认关闭、相互独立；管理器中的开关会立即保存并由 Host 热重载。移动端相关接口与逆向成果详见专题文档：[docs/MOBILE_UI_REVERSING.md](file:///e:/Dr.Hydra/Better%20Endfield/docs/MOBILE_UI_REVERSING.md)。
 
 模块通过 Hook 拦截以下三层运行时契约：
 
 1. **输入状态**：`Beyond.DeviceInfo.get_inputType` (Touch=1)、`usingTouch`、`usingKeyboard`、`usingController`、`ChangeInputType`。
 2. **平台判定**：`Beyond.DeviceInfo.get_isMobile`、`get_isAndroid`、`get_isPC`、`get_isPCorConsole`、`get_platform`、`UnityEngine.Application.get_isMobilePlatform`、`get_platform`。
 3. **云游戏判定**：`UnityEngine.Application.get_isCloudGame`、`Beyond.CloudGameUtility.IsCloudGame`、`Beyond.CloudGame.get_enabled`、`get_isMobilePlatform`。
+
+### UID 水印隐藏
+
+模块不使用依赖分辨率、渲染后端和固定屏幕坐标的替换 Shader。它通过 `UnityEngine.GameObject.Find` 和 `GameObject.SetActive` 定位当前资源清单中的 `UIDPanelPanel`、`WaterMarkGridPanel`、`WaterMarkCell`、`BottomNodeWatermarkUI` 根对象；运行时新激活的同名对象由 `SetActive` Hook 捕获。模块只记录并恢复由自己关闭的对象，避免关闭功能时误启用游戏原本隐藏的其他界面。
+
+### 全部 HUD 隐藏
+
+开启 `hide_hud_enabled` 后，通过 `hide_hud_hotkey` 指定的热键（默认主键盘数字 0）隐藏或恢复游戏内界面。主路径通过 `Beyond.Lua.LuaEventSystem.DispatchEvent` 广播拍照清屏使用的 `CLEAR_SCREEN_ON` / `CLEAR_SCREEN_OFF`，`DisableHudFade(bool showHud)` 继续处理角色战斗 HUD。`GameAction.ToggleUI` 和剧情演出的 `DramaticPerformanceForbidLevelUI` 都会进入游戏的 UI/演出输入控制状态，造成相机与角色操作冻结，因此不用于玩家主动清屏。`Beyond.Gameplay.View.CameraControllerBase.get_hideHUD` 覆盖及 `MainHudRoot` 子级组件禁用方案仅作为补充回退。所有调用均在游戏主线程执行。
+
+## 相机增强模块
+
+`BetterEndfield.Camera.dll` 独立负责自由视角和镜头近距离反虚化，读取 `[betterendfield.camera]`。模块以 `Beyond.Gameplay.View.CameraMono._ProcessDitherByPitch` 作为游戏主线程上的相机更新泵；所有 Unity 对象读取和写入均发生在该线程，不从 Host 配置轮询线程调用 Unity API。
+
+### 自由视角
+
+开启 `free_camera_enabled` 后，通过 `toggle_hotkey` 指定的热键（默认主键盘数字 9）在游戏内进入或退出自由视角。模块通过 `UnityEngine.Camera.get_main` 获取当前主相机，保存其位置、FOV 及可选的 `Time.timeScale`，随后在每帧原相机逻辑执行后只覆盖位置。方向键前后左右移动、PageUp/PageDown 升降；镜头旋转继续使用游戏原生鼠标控制。主相机实例变化时自动退出，退出时恢复捕获到的相机状态和时间缩放。
+
+`pause_game_enabled` 默认关闭，可按需在自由视角期间暂停角色与世界。移动速度和 FOV 有范围校验，并支持配置热更新。
+
+### 角色近距离反虚化
+
+模块拦截 `Beyond.Gameplay.View.CameraMono._ProcessDitherByPitch`，保留原始相机处理后按开关调用同类的 `ForceClearDither`。这条路径直接复用游戏自身的清理逻辑，不修改材质、Shader 或渲染管线。
 
 ## 失败规则
 

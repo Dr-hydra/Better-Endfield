@@ -19,13 +19,16 @@ public partial class App : Application
         {
             return;
         }
-        if (arguments.Any(argument => argument.Equals(
-                "--uninstall-xinput-silent",
-                StringComparison.OrdinalIgnoreCase)))
+        // --uninstall-xinput-silent 是旧名，已安装版本的卸载日志里记的是它，必须继续接受。
+        if (arguments.Any(argument =>
+                argument.Equals("--uninstall-game-files-silent", StringComparison.OrdinalIgnoreCase) ||
+                argument.Equals("--uninstall-xinput-silent", StringComparison.OrdinalIgnoreCase)))
         {
-            Task.Run(Services.XInputDeploymentService.TryUninstallSavedAsync)
-                .GetAwaiter()
-                .GetResult();
+            Task.Run(async () =>
+            {
+                await Services.XInputDeploymentService.TryUninstallSavedAsync();
+                await Services.OptiScalerDeploymentService.TryUninstallSavedAsync();
+            }).GetAwaiter().GetResult();
             Exit();
             return;
         }

@@ -48,6 +48,9 @@
     <EmbeddedResource
       Include="Assets\combat\combat-dictionary.json"
       LogicalName="BetterEndfield.UI.Assets.combat.combat-dictionary.json" />
+    <EmbeddedResource
+      Include="..\..\manifests\shared\optiscaler.lock.json"
+      LogicalName="BetterEndfield.UI.Assets.shared.optiscaler.lock.json" />
     <EmbeddedResource Include="..\..\native\modules\combat_stats\assets\avatars\*.png">
       <LogicalName>BetterEndfield.UI.Assets.combat.%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>

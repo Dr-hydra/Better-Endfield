@@ -114,6 +114,22 @@
                         <FontIcon Glyph="&#xE740;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem
+                    x:Name="CameraNavigationItem"
+                    Content="相机增强"
+                    Tag="camera">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE722;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem
+                    x:Name="DisplayNavigationItem"
+                    Content="显示增强"
+                    Tag="display">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7F4;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
             </NavigationView.MenuItems>
 
             <NavigationView.FooterMenuItems>
@@ -1057,7 +1073,7 @@
                                     <TextBlock Style="{StaticResource PageTitleStyle}" Text="界面增强" />
                                     <TextBlock
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Text="自定义游戏界面布局与交互模式。可在 PC 客户端中体验移动端 UI 与触控按键。"
+                                        Text="自定义游戏界面布局、画面遮挡与交互模式。各项默认关闭，切换后会立即保存。"
                                         TextWrapping="Wrap" />
                                 </StackPanel>
 
@@ -1075,7 +1091,278 @@
                                             Header="使用手机版 UI"
                                             OffContent="原生 PC 界面"
                                             OnContent="手机版触控界面"
-                                            Toggled="MobileUiToggle_Toggled" />
+                                            Toggled="UiEnhancementToggle_Toggled" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="18">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="UID 水印" />
+                                            <TextBlock
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="隐藏游戏画面中的账号 UID 水印。"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ToggleSwitch
+                                            x:Name="HideUidToggle"
+                                            Header="隐藏 UID 水印"
+                                            OffContent="显示 UID"
+                                            OnContent="隐藏 UID"
+                                            Toggled="UiEnhancementToggle_Toggled" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="18">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="HUD 显示" />
+                                            <TextBlock
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="通过热键隐藏或恢复游戏内 MainHudRoot 下的全部 HUD 画布，不影响菜单和设置界面。"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ToggleSwitch
+                                            x:Name="HideHudToggle"
+                                            Header="启用隐藏全部 HUD 热键"
+                                            OffContent="关闭"
+                                            OnContent="允许热键切换"
+                                            Toggled="UiEnhancementToggle_Toggled" />
+                                        <TextBox
+                                            x:Name="HideHudHotkeyBox"
+                                            Header="HUD 显示切换热键"
+                                            LostFocus="HideHudHotkeyBox_LostFocus"
+                                            MaxLength="8"
+                                            PlaceholderText="例如 0、F10、NUMPAD0"
+                                            Text="0" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <ScrollViewer
+                            x:Name="CameraPageScrollViewer"
+                            HorizontalScrollBarVisibility="Disabled"
+                            Visibility="Collapsed"
+                            VerticalScrollBarVisibility="Auto">
+                            <StackPanel
+                                MaxWidth="920"
+                                Margin="32,28,32,44"
+                                HorizontalAlignment="Stretch"
+                                Spacing="28">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Style="{StaticResource PageTitleStyle}" Text="相机增强" />
+                                    <TextBlock
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="自由控制游戏相机，并调整镜头相关的画面效果。各项默认关闭，修改后立即保存。"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <InfoBar
+                                    IsClosable="False"
+                                    IsOpen="True"
+                                    Message="启用后按设置的热键进入或退出。方向键前后左右移动，PageUp/PageDown 升降；视角旋转继续使用游戏原生鼠标控制。切换场景或主相机时会自动退出。"
+                                    Severity="Informational"
+                                    Title="自由视角操作" />
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="18">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="自由视角" />
+                                            <TextBlock
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="进入时捕获主相机的位置和视野，退出后恢复原值。模块只接管相机位置，鼠标旋转仍由游戏原生相机逻辑处理。"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ToggleSwitch
+                                            x:Name="FreeCameraToggle"
+                                            Header="启用自由视角功能"
+                                            OffContent="关闭"
+                                            OnContent="允许热键切换"
+                                            Toggled="CameraEnhancementToggle_Toggled" />
+                                        <ToggleSwitch
+                                            x:Name="PauseGameInFreeCameraToggle"
+                                            Header="进入自由视角时暂停游戏"
+                                            OffContent="游戏继续运行"
+                                            OnContent="暂停角色与世界"
+                                            Toggled="CameraEnhancementToggle_Toggled" />
+                                        <Grid ColumnSpacing="12" RowSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <NumberBox
+                                                x:Name="FreeCameraMovementSpeedNumberBox"
+                                                Grid.Column="1"
+                                                Header="移动速度"
+                                                Minimum="0.1"
+                                                Maximum="100"
+                                                SmallChange="0.5"
+                                                SpinButtonPlacementMode="Compact"
+                                                Value="5"
+                                                ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                            <TextBox
+                                                x:Name="FreeCameraHotkeyBox"
+                                                Header="切换热键"
+                                                LostFocus="FreeCameraHotkeyBox_LostFocus"
+                                                MaxLength="8"
+                                                PlaceholderText="例如 9、F9、NUMPAD9"
+                                                Text="9" />
+                                            <NumberBox
+                                                x:Name="FreeCameraFieldOfViewNumberBox"
+                                                Grid.Row="1"
+                                                Header="视野（FOV）"
+                                                Minimum="20"
+                                                Maximum="120"
+                                                SmallChange="1"
+                                                SpinButtonPlacementMode="Compact"
+                                                Value="60"
+                                                ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="16">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="镜头画面" />
+                                            <TextBlock
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="调用游戏自身的清理逻辑，移除镜头贴近角色时出现的半透明虚化。"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ToggleSwitch
+                                            x:Name="DisableDitherToggle"
+                                            Header="移除角色近距离虚化"
+                                            OffContent="保留原效果"
+                                            OnContent="关闭虚化"
+                                            Toggled="CameraEnhancementToggle_Toggled" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <ScrollViewer
+                            x:Name="DisplayPageScrollViewer"
+                            HorizontalScrollBarVisibility="Disabled"
+                            Visibility="Collapsed"
+                            VerticalScrollBarVisibility="Auto">
+                            <StackPanel
+                                MaxWidth="920"
+                                Margin="32,28,32,44"
+                                HorizontalAlignment="Stretch"
+                                Spacing="28">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Style="{StaticResource PageTitleStyle}" Text="显示增强" />
+                                    <TextBlock
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="通过 OptiScaler 接管客户端的画质提升选项，为 AMD 与 Intel 显卡提供客户端本身不支持的超分方案。"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <InfoBar
+                                    IsClosable="False"
+                                    IsOpen="True"
+                                    Message="启用会向 Endfield.exe 所在目录写入 OptiScaler 组件（含 dxgi.dll）与归属记录，不会覆盖未知同名文件。客户端带有内核级反作弊，向游戏目录写入文件比运行时注入更容易被静态扫描发现，是否使用请自行判断。"
+                                    Severity="Warning"
+                                    Title="会写入游戏目录" />
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="16">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="显示适配器" />
+                                            <TextBlock
+                                                x:Name="DisplayGpuTextBlock"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="正在检测。"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ComboBox
+                                            x:Name="DisplayBackendComboBox"
+                                            Header="超分后端"
+                                            HorizontalAlignment="Stretch"
+                                            SelectionChanged="DisplayBackendComboBox_SelectionChanged" />
+                                        <TextBlock
+                                            x:Name="DisplayTradeoffTextBlock"
+                                            Style="{StaticResource FieldHintStyle}"
+                                            TextWrapping="Wrap"
+                                            Visibility="Collapsed" />
+                                        <ToggleSwitch
+                                            x:Name="DisplaySpoofingToggle"
+                                            Header="GPU 欺骗"
+                                            OffContent="关闭"
+                                            OnContent="开启" />
+                                        <TextBlock
+                                            Style="{StaticResource FieldHintStyle}"
+                                            Text="客户端的 FSR3 为引擎内置、没有可拦截的 FidelityFX 接口，因此非 NVIDIA 显卡必须开启欺骗让客户端暴露 DLSS 选项，OptiScaler 才能接管。开启后请在客户端【设置-性能与画面-画质提升】中选择 NVIDIA DLSS。"
+                                            TextWrapping="Wrap" />
+                                        <ToggleSwitch
+                                            x:Name="DisplayDiagnosticsToggle"
+                                            Header="诊断日志"
+                                            OffContent="关闭"
+                                            OnContent="写入 OptiScaler 日志到游戏目录" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="12">
+                                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="组件部署" />
+                                        <InfoBar
+                                            x:Name="DisplayStatusInfoBar"
+                                            IsClosable="False"
+                                            IsOpen="True"
+                                            Message="正在检查部署状态。"
+                                            Severity="Informational"
+                                            Title="部署状态" />
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button
+                                                x:Name="InstallDisplayButton"
+                                                Click="InstallDisplayButton_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <SymbolIcon Symbol="Download" />
+                                                    <TextBlock Text="部署或更新" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Button
+                                                x:Name="ApplyDisplayButton"
+                                                Click="ApplyDisplayButton_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <SymbolIcon Symbol="Accept" />
+                                                    <TextBlock Text="应用配置" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Button
+                                                x:Name="UninstallDisplayButton"
+                                                Click="UninstallDisplayButton_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <SymbolIcon Symbol="Delete" />
+                                                    <TextBlock Text="从游戏目录卸载" />
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                        <TextBlock
+                                            x:Name="DisplayNotesTextBlock"
+                                            Style="{StaticResource FieldHintStyle}"
+                                            TextWrapping="Wrap"
+                                            Visibility="Collapsed" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="使用须知" />
+                                        <TextBlock
+                                            Style="{StaticResource FieldHintStyle}"
+                                            Text="OptiScaler 覆盖层由 Insert 键呼出，与战斗数据模块的 F11/F12 不冲突。帧生成不会启用：客户端已有原生 DLSS 帧生成。FSR4 在客户端的 DX11 与 Vulkan 后端下都经 DX12 interop 运行，会额外承担一层同步开销。"
+                                            TextWrapping="Wrap" />
+                                        <TextBlock
+                                            Style="{StaticResource FieldHintStyle}"
+                                            Text="OptiScaler 为 GPL-3.0 授权的独立开源项目，不随本软件分发，需自行放入软件目录下的 payloads/optiscaler。"
+                                            TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Border>
                             </StackPanel>

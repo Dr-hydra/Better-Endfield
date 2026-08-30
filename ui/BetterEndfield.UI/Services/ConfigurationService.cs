@@ -57,6 +57,47 @@ internal static class ConfigurationService
         await JsonSerializer.SerializeAsync(stream, settings, JsonOptions);
     }
 
+    /// <summary>
+    /// 显示增强的设置单独存放：它是部署期选项，由 UI 投影到客户端目录的
+    /// OptiScaler.ini，不经 BetterEndfield.ini，也不会被 Host 或任何模块读取。
+    /// </summary>
+    public static string DisplaySettingsPath { get; } =
+        Path.Combine(SettingsDirectory, "display-settings.json");
+
+    public static async Task<DisplayConfiguration> LoadDisplayConfigurationAsync()
+    {
+        try
+        {
+            if (File.Exists(DisplaySettingsPath))
+            {
+                await using FileStream stream = File.OpenRead(DisplaySettingsPath);
+                DisplayConfiguration? configuration =
+                    await JsonSerializer.DeserializeAsync<DisplayConfiguration>(
+                        stream,
+                        JsonOptions);
+                if (configuration is not null)
+                {
+                    return configuration;
+                }
+            }
+        }
+        catch (IOException)
+        {
+        }
+        catch (JsonException)
+        {
+        }
+
+        return new DisplayConfiguration();
+    }
+
+    public static async Task SaveDisplayConfigurationAsync(DisplayConfiguration configuration)
+    {
+        Directory.CreateDirectory(SettingsDirectory);
+        await using FileStream stream = File.Create(DisplaySettingsPath);
+        await JsonSerializer.SerializeAsync(stream, configuration, JsonOptions);
+    }
+
     public static async Task SaveModConfigurationAsync(
         string injectorPath,
         string loaderMode,
@@ -98,7 +139,11 @@ internal static class ConfigurationService
         }
     }
 
-    public static async Task SaveUiEnhancementConfigurationAsync(bool mobileUiEnabled)
+    public static async Task SaveUiEnhancementConfigurationAsync(
+        bool mobileUiEnabled,
+        bool hideUidEnabled,
+        bool hideHudEnabled,
+        string hideHudHotkey)
     {
         string path = GetNativeConfigurationPath(string.Empty);
         Directory.CreateDirectory(SettingsDirectory);
@@ -109,15 +154,61 @@ internal static class ConfigurationService
             string existing = File.Exists(path)
                 ? await File.ReadAllTextAsync(path)
                 : string.Empty;
-            string enabled = mobileUiEnabled ? "true" : "false";
+            static string Boolean(bool value) => value ? "true" : "false";
+            bool anyEnabled = mobileUiEnabled || hideUidEnabled || hideHudEnabled;
             string section =
                 "[betterendfield.ui]" + Environment.NewLine +
-                "schema_version=1" + Environment.NewLine +
-                "enabled=" + enabled + Environment.NewLine +
-                "mobile_ui_enabled=" + enabled + Environment.NewLine +
+                "schema_version=3" + Environment.NewLine +
+                "enabled=" + Boolean(anyEnabled) + Environment.NewLine +
+                "mobile_ui_enabled=" + Boolean(mobileUiEnabled) + Environment.NewLine +
+                "hide_uid_enabled=" + Boolean(hideUidEnabled) + Environment.NewLine +
+                "hide_hud_enabled=" + Boolean(hideHudEnabled) + Environment.NewLine +
+                "hide_hud_hotkey=" + hideHudHotkey + Environment.NewLine +
                 "diagnostics=true" + Environment.NewLine;
             string updated = UpsertIniSection(existing, "betterendfield.ui", section);
             string temporary = path + ".ui.tmp";
+            await File.WriteAllTextAsync(temporary, updated, Encoding.Unicode);
+            File.Move(temporary, path, overwrite: true);
+        }
+        finally
+        {
+            NativeConfigurationWriteLock.Release();
+        }
+    }
+
+    public static async Task SaveCameraEnhancementConfigurationAsync(
+        bool freeCameraEnabled,
+        bool disableDitherEnabled,
+        bool pauseGameEnabled,
+        string toggleHotkey,
+        double movementSpeed,
+        double fieldOfView)
+    {
+        static string Boolean(bool value) => value ? "true" : "false";
+        static string Number(double value) =>
+            value.ToString("0.########", CultureInfo.InvariantCulture);
+
+        string path = GetNativeConfigurationPath(string.Empty);
+        Directory.CreateDirectory(SettingsDirectory);
+        await NativeConfigurationWriteLock.WaitAsync();
+        try
+        {
+            string existing = File.Exists(path)
+                ? await File.ReadAllTextAsync(path)
+                : string.Empty;
+            string section =
+                "[betterendfield.camera]" + Environment.NewLine +
+                "schema_version=3" + Environment.NewLine +
+                "enabled=" + Boolean(freeCameraEnabled || disableDitherEnabled) + Environment.NewLine +
+                "free_camera_enabled=" + Boolean(freeCameraEnabled) + Environment.NewLine +
+                "disable_dither_enabled=" + Boolean(disableDitherEnabled) + Environment.NewLine +
+                "pause_game_enabled=" + Boolean(pauseGameEnabled) + Environment.NewLine +
+                "toggle_hotkey=" + toggleHotkey + Environment.NewLine +
+                "movement_speed=" + Number(movementSpeed) + Environment.NewLine +
+                "field_of_view=" + Number(fieldOfView) + Environment.NewLine +
+                "diagnostics=true" + Environment.NewLine;
+            string updated = UpsertIniSection(existing, "betterendfield.camera", section);
+            string temporary = path + ".camera.tmp";
             await File.WriteAllTextAsync(temporary, updated, Encoding.Unicode);
             File.Move(temporary, path, overwrite: true);
         }
@@ -134,7 +225,15 @@ internal static class ConfigurationService
         {
             throw new InvalidOperationException("不支持的加载方式。");
         }
+        return ResolveInstallRoot(injectorPath);
+    }
 
+    /// <summary>
+    /// 定位安装根目录，不校验加载方式。供不属于任何加载方式的功能使用，例如显示
+    /// 增强的组件部署——它只需要读取安装目录下的负载，与 Host 的加载路径无关。
+    /// </summary>
+    internal static string ResolveInstallRoot(string injectorPath)
+    {
         string? installRoot = TryResolveInstallRootFromInjector(injectorPath);
         if (string.IsNullOrWhiteSpace(installRoot))
         {
@@ -239,6 +338,9 @@ internal static class ConfigurationService
         string[] lines = await File.ReadAllLinesAsync(path);
         var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         bool inSection = false;
+        bool cameraSectionPresent = false;
+        bool inCameraSection = false;
+        int cameraSchemaVersion = 0;
         foreach (string sourceLine in lines)
         {
             string line = sourceLine.Trim();
@@ -250,6 +352,9 @@ internal static class ConfigurationService
             if (line.StartsWith('[') && line.EndsWith(']'))
             {
                 string section = line[1..^1];
+                inCameraSection = section.Equals(
+                    "betterendfield.camera", StringComparison.OrdinalIgnoreCase);
+                cameraSectionPresent |= inCameraSection;
                 inSection = section.Equals("betterendfield.model",
                     StringComparison.OrdinalIgnoreCase) ||
                     section.Equals("betterendfield.voice",
@@ -259,6 +364,8 @@ internal static class ConfigurationService
                     section.Equals("betterendfield.combat_stats",
                         StringComparison.OrdinalIgnoreCase) ||
                     section.Equals("betterendfield.ui",
+                        StringComparison.OrdinalIgnoreCase) ||
+                    section.Equals("betterendfield.camera",
                         StringComparison.OrdinalIgnoreCase);
                 continue;
             }
@@ -271,7 +378,15 @@ internal static class ConfigurationService
             int separator = line.IndexOf('=');
             if (separator > 0)
             {
-                values[line[..separator].Trim()] = line[(separator + 1)..].Trim();
+                string key = line[..separator].Trim();
+                string value = line[(separator + 1)..].Trim();
+                if (inCameraSection &&
+                    key.Equals("schema_version", StringComparison.OrdinalIgnoreCase))
+                {
+                    int.TryParse(value, NumberStyles.Integer,
+                        CultureInfo.InvariantCulture, out cameraSchemaVersion);
+                }
+                values[key] = value;
             }
         }
 
@@ -378,6 +493,44 @@ internal static class ConfigurationService
             Boolean(values, "enabled", configuration.UiEnhancementEnabled));
         configuration.MobileUiEnabled = Boolean(
             values, "mobile_ui_enabled", configuration.MobileUiEnabled);
+        configuration.HideUidEnabled = Boolean(
+            values, "hide_uid_enabled", configuration.HideUidEnabled);
+        configuration.HideHudEnabled = Boolean(
+            values, "hide_hud_enabled", configuration.HideHudEnabled);
+        configuration.HideHudToggleHotkey = Text(
+            values, "hide_hud_hotkey", configuration.HideHudToggleHotkey);
+        configuration.FreeCameraEnabled = Boolean(
+            values, "free_camera_enabled", configuration.FreeCameraEnabled);
+        configuration.DisableDitherEnabled = Boolean(
+            values, "disable_dither_enabled", configuration.DisableDitherEnabled);
+        configuration.PauseGameInFreeCamera = Boolean(
+            values, "pause_game_enabled", configuration.PauseGameInFreeCamera);
+        configuration.FreeCameraToggleHotkey = Text(
+            values, "toggle_hotkey", configuration.FreeCameraToggleHotkey);
+        configuration.FreeCameraMovementSpeed = Number(
+            values, "movement_speed", configuration.FreeCameraMovementSpeed);
+        configuration.FreeCameraFieldOfView = Number(
+            values, "field_of_view", configuration.FreeCameraFieldOfView);
+        if (cameraSectionPresent && cameraSchemaVersion < 3)
+        {
+            // Earlier test schemas used F8, then 8. Adopt the current default
+            // for existing test configs while keeping pause disabled.
+            configuration.PauseGameInFreeCamera = false;
+            configuration.FreeCameraToggleHotkey = "9";
+        }
+        if ((!cameraSectionPresent && values.ContainsKey("disable_dither_enabled")) ||
+            (cameraSectionPresent && cameraSchemaVersion < 3))
+        {
+            // v2.4 stored anti-dither under betterendfield.ui. Preserve that
+            // choice when the feature moves to the independent camera module.
+            await SaveCameraEnhancementConfigurationAsync(
+                configuration.FreeCameraEnabled,
+                configuration.DisableDitherEnabled,
+                configuration.PauseGameInFreeCamera,
+                configuration.FreeCameraToggleHotkey,
+                configuration.FreeCameraMovementSpeed,
+                configuration.FreeCameraFieldOfView);
+        }
         return configuration;
     }
 

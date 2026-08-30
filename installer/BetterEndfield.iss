@@ -60,4 +60,6 @@ Name: "{autodesktop}\Better Endfield"; Filename: "{app}\BetterEndfield.exe"; Wor
 Filename: "{app}\BetterEndfield.exe"; Description: "启动 Better Endfield"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
-Filename: "{app}\BetterEndfield.exe"; Parameters: "--uninstall-xinput-silent"; WorkingDir: "{app}"; RunOnceId: "RemoveXInputProxy"; Flags: runhidden waituntilterminated skipifdoesntexist
+; 清理写入游戏目录的全部文件：XInput 代理与显示增强组件。旧安装记录的是
+; --uninstall-xinput-silent，程序仍接受该参数。
+Filename: "{app}\BetterEndfield.exe"; Parameters: "--uninstall-game-files-silent"; WorkingDir: "{app}"; RunOnceId: "RemoveGameDirectoryFiles"; Flags: runhidden waituntilterminated skipifdoesntexist

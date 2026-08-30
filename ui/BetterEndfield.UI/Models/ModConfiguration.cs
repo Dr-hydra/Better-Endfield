@@ -122,6 +122,24 @@ internal sealed class ModConfiguration
 
     public bool MobileUiEnabled { get; set; } = false;
 
+    public bool HideUidEnabled { get; set; } = false;
+
+    public bool HideHudEnabled { get; set; } = false;
+
+    public string HideHudToggleHotkey { get; set; } = "0";
+
+    public bool FreeCameraEnabled { get; set; } = false;
+
+    public bool DisableDitherEnabled { get; set; } = false;
+
+    public bool PauseGameInFreeCamera { get; set; } = false;
+
+    public string FreeCameraToggleHotkey { get; set; } = "9";
+
+    public double FreeCameraMovementSpeed { get; set; } = 5.0;
+
+    public double FreeCameraFieldOfView { get; set; } = 60.0;
+
     public static ModConfiguration CreateDefaults() => new();
 
     public string ToIni()
@@ -224,9 +242,23 @@ internal sealed class ModConfiguration
         text.AppendLine($"auto_dungeon_session={Boolean(AutoDungeonSession)}");
         text.AppendLine();
         text.AppendLine("[betterendfield.ui]");
-        text.AppendLine("schema_version=1");
-        text.AppendLine($"enabled={Boolean(UiEnhancementEnabled || MobileUiEnabled)}");
+        text.AppendLine("schema_version=3");
+        text.AppendLine($"enabled={Boolean(UiEnhancementEnabled || MobileUiEnabled || HideUidEnabled || HideHudEnabled)}");
         text.AppendLine($"mobile_ui_enabled={Boolean(MobileUiEnabled)}");
+        text.AppendLine($"hide_uid_enabled={Boolean(HideUidEnabled)}");
+        text.AppendLine($"hide_hud_enabled={Boolean(HideHudEnabled)}");
+        text.AppendLine($"hide_hud_hotkey={HideHudToggleHotkey}");
+        text.AppendLine("diagnostics=true");
+        text.AppendLine();
+        text.AppendLine("[betterendfield.camera]");
+        text.AppendLine("schema_version=3");
+        text.AppendLine($"enabled={Boolean(FreeCameraEnabled || DisableDitherEnabled)}");
+        text.AppendLine($"free_camera_enabled={Boolean(FreeCameraEnabled)}");
+        text.AppendLine($"disable_dither_enabled={Boolean(DisableDitherEnabled)}");
+        text.AppendLine($"pause_game_enabled={Boolean(PauseGameInFreeCamera)}");
+        text.AppendLine($"toggle_hotkey={FreeCameraToggleHotkey}");
+        text.AppendLine($"movement_speed={Number(FreeCameraMovementSpeed)}");
+        text.AppendLine($"field_of_view={Number(FreeCameraFieldOfView)}");
         text.AppendLine("diagnostics=true");
         return text.ToString();
     }

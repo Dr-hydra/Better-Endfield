@@ -1,0 +1,96 @@
+{
+  "Version": "0.9.4",
+  "Notes": "OptiScaler v0.9.4 (2026-07-18)，发布资产 Optiscaler_0.9.4-final.20260718._MM.7z，SHA256 575CB4DF866116093DF75AF607E37FD70E10F5163E0F23FD5C804142E80EF0AD（与上游 release 公布值一致）。组件不随发布包分发，需自行放入 payloads/optiscaler/。已排除 setup_windows.bat、setup_linux.sh 与 README：本软件使用自己的部署流程。OptiScaler.dll 部署为 dxgi.dll，因 UnityPlayer.dll 静态导入该名称。详见 docs/DISPLAY_PIPELINE.md。",
+  "Files": [
+    {
+      "Source": "D3D12_Optiscaler/D3D12Core.dll",
+      "Target": "D3D12_Optiscaler/D3D12Core.dll",
+      "Sha256": "07D286C306F8117321422AFFD9E6388C12D0FB4BE1C7FC689D9E899324FEEB24"
+    },
+    {
+      "Source": "Licenses/DirectX_LICENSE.txt",
+      "Target": "Licenses/DirectX_LICENSE.txt",
+      "Sha256": "5239850894610071566F7ECEE0B751FDE43C862032D92B99D7D0F596B3433EBD"
+    },
+    {
+      "Source": "Licenses/FidelityFX_v1_LICENSE.md",
+      "Target": "Licenses/FidelityFX_v1_LICENSE.md",
+      "Sha256": "A335C2BB2BD28184B9A30B6E35B0C7E4AA7826ABD1C388FC2AA02405E9D04F03"
+    },
+    {
+      "Source": "Licenses/FidelityFX_v2_LICENSE.md",
+      "Target": "Licenses/FidelityFX_v2_LICENSE.md",
+      "Sha256": "F0DA09D71AD5C82759A179E774535D4A829E5C96C49294167C1152402B2CB400"
+    },
+    {
+      "Source": "Licenses/XeSS_LICENSE.txt",
+      "Target": "Licenses/XeSS_LICENSE.txt",
+      "Sha256": "784BE42C39A4A4D03CF85D88E15E59D75828FCA773CE45B8DBFFFBD7EAF208DF"
+    },
+    {
+      "Source": "OptiScaler.dll",
+      "Target": "dxgi.dll",
+      "Sha256": "FBFB6676B829DAD7E020FB830586A16AA0EC6ADD78016DB48EF12E2AE1803231"
+    },
+    {
+      "Source": "OptiScaler.ini",
+      "Target": "OptiScaler.ini",
+      "Sha256": "6D7ED07E2E9DF3D611B6F59047716BCBC0B67834296B8E4414816189B1233AA7"
+    },
+    {
+      "Source": "amd_fidelityfx_dx12.dll",
+      "Target": "amd_fidelityfx_dx12.dll",
+      "Sha256": "E2D85AA05A9BD9ED8B38935FDF5199372CCA6F74C12015143BB6F945EE1608AA"
+    },
+    {
+      "Source": "amd_fidelityfx_framegeneration_dx12.dll",
+      "Target": "amd_fidelityfx_framegeneration_dx12.dll",
+      "Sha256": "02297BEEDD285E822D3A64F314CF00FAF378DCEC0EDC47FF0C4DD71B3A8C2F18"
+    },
+    {
+      "Source": "amd_fidelityfx_upscaler_dx12.dll",
+      "Target": "amd_fidelityfx_upscaler_dx12.dll",
+      "Sha256": "D0DCCCC74A43C44BA435B7A369B456E0970D8A4464E4BD683119B374F2C9FB46"
+    },
+    {
+      "Source": "amd_fidelityfx_vk.dll",
+      "Target": "amd_fidelityfx_vk.dll",
+      "Sha256": "A1624CC4238FEF046F30C4D80CE3F47BE63FC5F5373F49E3EE9EDB9960F54C78"
+    },
+    {
+      "Source": "dlssg_to_fsr3_amd_is_better.dll",
+      "Target": "dlssg_to_fsr3_amd_is_better.dll",
+      "Sha256": "806020C0444F7841A3A9F661295C16FC482E981E0666D0B9624BF6CCD19C4B5E"
+    },
+    {
+      "Source": "fakenvapi.dll",
+      "Target": "fakenvapi.dll",
+      "Sha256": "373E73DC06E2D66E90083FDE3BC99EF5C1ED0BEF98D1F7EDA56C8B073269C3F1"
+    },
+    {
+      "Source": "fakenvapi.ini",
+      "Target": "fakenvapi.ini",
+      "Sha256": "A4BFA3EC7B4BADD93AE5E1AD74A582238082D871F54F38F68E7D9FB6384CE772"
+    },
+    {
+      "Source": "libxell.dll",
+      "Target": "libxell.dll",
+      "Sha256": "61AEEAB7FDCFB6D1742F86C14C68C663D759607D01A6132645C857291EAEBB86"
+    },
+    {
+      "Source": "libxess.dll",
+      "Target": "libxess.dll",
+      "Sha256": "251659DD84A3E84DE67C886A4186E01F3ECA49B00641906FE38BB6B807E5D5B7"
+    },
+    {
+      "Source": "libxess_dx11.dll",
+      "Target": "libxess_dx11.dll",
+      "Sha256": "C7CFE86F0C9D94E4FB3696D3CD5035E2BBB6A8B1B0572F8B7395A4CDFD0C625E"
+    },
+    {
+      "Source": "libxess_fg.dll",
+      "Target": "libxess_fg.dll",
+      "Sha256": "EC5E0C65E075570C6EDE72618BB666D0BE0C2E10B2EA9762C0FE8CB8E375AB27"
+    }
+  ]
+}

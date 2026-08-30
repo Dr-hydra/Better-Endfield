@@ -189,6 +189,7 @@ public sealed partial class MainWindow : Window
             UpdateLoaderModePanel();
             UpdatePathStatusText();
             await RefreshXInputStatusAsync();
+            await InitializeDisplayPageAsync();
             RefreshRuntimeStatus();
             _statusTimer.Start();
         }
@@ -306,19 +307,43 @@ public sealed partial class MainWindow : Window
     private void CrossfadeToggle_Toggled(object sender, RoutedEventArgs e) =>
         UpdateCrossfadePanel();
 
-    private async void MobileUiToggle_Toggled(object sender, RoutedEventArgs e)
+    private async void UiEnhancementToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        await SaveUiEnhancementAsync();
+    }
+
+    private async void HideHudHotkeyBox_LostFocus(object sender, RoutedEventArgs e)
+    {
+        await SaveUiEnhancementAsync();
+    }
+
+    private async Task SaveUiEnhancementAsync()
     {
         if (_initializing)
         {
             return;
         }
 
-        bool enabled = MobileUiToggle.IsOn;
+        if (!TryNormalizeCameraHotkey(
+                HideHudHotkeyBox.Text, out string hideHudHotkey))
+        {
+            ShowStatus(
+                "HUD 热键无效",
+                "请输入单个字母、数字、F1-F24，或 NUMPAD0-NUMPAD9。",
+                InfoBarSeverity.Error);
+            return;
+        }
+        HideHudHotkeyBox.Text = hideHudHotkey;
+
         try
         {
-            await ConfigurationService.SaveUiEnhancementConfigurationAsync(enabled);
+            await ConfigurationService.SaveUiEnhancementConfigurationAsync(
+                MobileUiToggle.IsOn,
+                HideUidToggle.IsOn,
+                HideHudToggle.IsOn,
+                hideHudHotkey);
             ShowStatus(
-                enabled ? "已启用手机版触控界面" : "已恢复原生 PC 界面",
+                "界面增强设置已更新",
                 "配置已保存；游戏已注入时会在约 0.5 秒内刷新，否则于下次注入时应用。",
                 InfoBarSeverity.Success);
         }
@@ -326,6 +351,67 @@ public sealed partial class MainWindow : Window
             exception is IOException or UnauthorizedAccessException)
         {
             ShowStatus("界面模式保存失败", exception.Message, InfoBarSeverity.Error);
+        }
+    }
+
+    private async void CameraEnhancementToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        await SaveCameraEnhancementAsync();
+    }
+
+    private async void CameraEnhancementNumberBox_ValueChanged(
+        NumberBox sender,
+        NumberBoxValueChangedEventArgs args)
+    {
+        await SaveCameraEnhancementAsync();
+    }
+
+    private async void FreeCameraHotkeyBox_LostFocus(
+        object sender,
+        RoutedEventArgs e)
+    {
+        await SaveCameraEnhancementAsync();
+    }
+
+    private async Task SaveCameraEnhancementAsync()
+    {
+        if (_initializing)
+        {
+            return;
+        }
+
+        static double Value(NumberBox numberBox, double fallback) =>
+            double.IsFinite(numberBox.Value) ? numberBox.Value : fallback;
+
+        if (!TryNormalizeCameraHotkey(
+                FreeCameraHotkeyBox.Text, out string toggleHotkey))
+        {
+            ShowStatus(
+                "相机热键无效",
+                "请输入单个字母、数字、F1-F24，或 NUMPAD0-NUMPAD9。",
+                InfoBarSeverity.Error);
+            return;
+        }
+        FreeCameraHotkeyBox.Text = toggleHotkey;
+
+        try
+        {
+            await ConfigurationService.SaveCameraEnhancementConfigurationAsync(
+                FreeCameraToggle.IsOn,
+                DisableDitherToggle.IsOn,
+                PauseGameInFreeCameraToggle.IsOn,
+                toggleHotkey,
+                Value(FreeCameraMovementSpeedNumberBox, 5.0),
+                Value(FreeCameraFieldOfViewNumberBox, 60.0));
+            ShowStatus(
+                "相机增强设置已更新",
+                $"配置已保存；模块加载后可在游戏内按 {toggleHotkey} 切换自由视角。",
+                InfoBarSeverity.Success);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException)
+        {
+            ShowStatus("相机增强设置保存失败", exception.Message, InfoBarSeverity.Error);
         }
     }
 
@@ -351,6 +437,16 @@ public sealed partial class MainWindow : Window
         UiPageScrollViewer.Visibility = page == "ui"
             ? Visibility.Visible
             : Visibility.Collapsed;
+        CameraPageScrollViewer.Visibility = page == "camera"
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        DisplayPageScrollViewer.Visibility = page == "display"
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        if (page == "display")
+        {
+            _ = RefreshDisplayStatusAsync();
+        }
         SettingsPageScrollViewer.Visibility = page == "settings"
             ? Visibility.Visible
             : Visibility.Collapsed;
@@ -367,6 +463,8 @@ public sealed partial class MainWindow : Window
             "music" => "首次启用在下一次注入时加载；已加载模块的设置会热更新。",
             "combat" => "F11 切换记录，F12 切换悬浮窗；结果会保存到本机目录。",
             "ui" => "界面模式设置将在保存后热更新或于下次注入时应用。",
+            "camera" => "相机设置会立即保存；游戏内按配置的热键进入或退出自由视角。",
+            "display" => "显示增强直接写入游戏目录，改动在下一次启动客户端时生效。",
             _ => "角色与动画参数保存后在下一次注入时生效。"
         };
     }
@@ -1583,6 +1681,260 @@ public sealed partial class MainWindow : Window
         UpdatePathStatusText();
     }
 
+    private sealed record DisplayBackendOption(UpscalerBackend Backend, string Label);
+
+    private GpuInfo _displayGpu = GpuInfo.Unknown;
+    private DisplayConfiguration _displayConfiguration = new();
+    private bool _displayInitializing;
+    private int _displayStatusRevision;
+
+    private async Task InitializeDisplayPageAsync()
+    {
+        _displayInitializing = true;
+        try
+        {
+            _displayGpu = GpuDetectionService.Detect();
+            _displayConfiguration = await ConfigurationService.LoadDisplayConfigurationAsync();
+
+            DisplayGpuTextBlock.Text = _displayGpu.Architecture == GpuArchitecture.Unknown
+                ? $"{_displayGpu.Description}。未能判定架构代次，请自行选择后端。"
+                : $"{_displayGpu.Description}（{DescribeArchitecture(_displayGpu.Architecture)}）";
+
+            DisplayBackendOption[] options = BuildBackendOptions(_displayGpu);
+            DisplayBackendComboBox.ItemsSource = options;
+            DisplayBackendComboBox.DisplayMemberPath = nameof(DisplayBackendOption.Label);
+
+            // 未配置过时落到按硬件给出的建议值；配置过但当前硬件不支持该后端时
+            // （换卡）同样回退，避免把无效组合写进 ini。
+            UpscalerBackend desired = _displayConfiguration.Enabled
+                ? _displayConfiguration.Backend
+                : DisplayConfiguration.SuggestBackend(_displayGpu);
+            DisplayBackendOption selected =
+                options.FirstOrDefault(option => option.Backend == desired) ?? options[0];
+            DisplayBackendComboBox.SelectedItem = selected;
+            _displayConfiguration.Backend = selected.Backend;
+
+            DisplaySpoofingToggle.IsOn = _displayConfiguration.GpuSpoofing;
+            DisplayDiagnosticsToggle.IsOn = _displayConfiguration.Diagnostics;
+            UpdateDisplayTradeoffText(selected.Backend);
+        }
+        finally
+        {
+            _displayInitializing = false;
+        }
+        await RefreshDisplayStatusAsync();
+    }
+
+    private static DisplayBackendOption[] BuildBackendOptions(GpuInfo gpu)
+    {
+        var options = new List<DisplayBackendOption>
+        {
+            new(UpscalerBackend.Disabled, DisplayConfiguration.DescribeBackend(UpscalerBackend.Disabled))
+        };
+        void Add(UpscalerBackend backend) =>
+            options.Add(new DisplayBackendOption(
+                backend, DisplayConfiguration.DescribeBackend(backend)));
+
+        switch (gpu.Architecture)
+        {
+            case GpuArchitecture.AmdRdna4:
+                Add(UpscalerBackend.Fsr31);
+                Add(UpscalerBackend.Fsr4Fp8);
+                break;
+            case GpuArchitecture.AmdRdna3:
+            case GpuArchitecture.AmdRdna2:
+                Add(UpscalerBackend.Fsr31);
+                Add(UpscalerBackend.Fsr4Int8);
+                break;
+            case GpuArchitecture.AmdRdna1:
+            case GpuArchitecture.AmdPreRdna:
+                Add(UpscalerBackend.Fsr31);
+                break;
+            case GpuArchitecture.IntelArc:
+                Add(UpscalerBackend.XeSS);
+                break;
+            case GpuArchitecture.Nvidia:
+                // 客户端原生 DLSS 已是 N 卡上的最佳路径，不提供替代后端。
+                break;
+            default:
+                Add(UpscalerBackend.Fsr31);
+                Add(UpscalerBackend.Fsr4Int8);
+                Add(UpscalerBackend.Fsr4Fp8);
+                Add(UpscalerBackend.XeSS);
+                break;
+        }
+        return [.. options];
+    }
+
+    private static string DescribeArchitecture(GpuArchitecture architecture) => architecture switch
+    {
+        GpuArchitecture.AmdRdna4 => "RDNA4",
+        GpuArchitecture.AmdRdna3 => "RDNA3",
+        GpuArchitecture.AmdRdna2 => "RDNA2",
+        GpuArchitecture.AmdRdna1 => "RDNA1",
+        GpuArchitecture.AmdPreRdna => "RDNA 之前",
+        GpuArchitecture.IntelArc => "Intel Arc",
+        GpuArchitecture.Nvidia => "NVIDIA",
+        _ => "未知"
+    };
+
+    private void UpdateDisplayTradeoffText(UpscalerBackend backend)
+    {
+        string? tradeoff = DisplayConfiguration.DescribeTradeoff(backend, _displayGpu);
+        DisplayTradeoffTextBlock.Text = tradeoff ?? string.Empty;
+        DisplayTradeoffTextBlock.Visibility = tradeoff is null
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+    }
+
+    private void DisplayBackendComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_displayInitializing ||
+            DisplayBackendComboBox.SelectedItem is not DisplayBackendOption option)
+        {
+            return;
+        }
+        _displayConfiguration.Backend = option.Backend;
+        UpdateDisplayTradeoffText(option.Backend);
+    }
+
+    private async Task RefreshDisplayStatusAsync()
+    {
+        int revision = Interlocked.Increment(ref _displayStatusRevision);
+        OptiScalerDeploymentStatus status = await OptiScalerDeploymentService.InspectAsync(
+            GamePathBox.Text.Trim(),
+            InjectorPathBox.Text.Trim());
+        if (revision != _displayStatusRevision)
+        {
+            return;
+        }
+        DisplayStatusInfoBar.Title = status.State switch
+        {
+            OptiScalerDeploymentState.Installed => "已部署",
+            OptiScalerDeploymentState.UpdateAvailable => "可更新",
+            OptiScalerDeploymentState.Conflict => "检测到冲突",
+            OptiScalerDeploymentState.NotInstalled => "未部署",
+            _ => "暂不可用"
+        };
+        DisplayStatusInfoBar.Message = status.Message;
+        DisplayStatusInfoBar.Severity = status.State switch
+        {
+            OptiScalerDeploymentState.Installed => InfoBarSeverity.Success,
+            OptiScalerDeploymentState.Conflict => InfoBarSeverity.Error,
+            OptiScalerDeploymentState.UpdateAvailable => InfoBarSeverity.Warning,
+            OptiScalerDeploymentState.NotInstalled => InfoBarSeverity.Informational,
+            _ => InfoBarSeverity.Warning
+        };
+        InstallDisplayButton.IsEnabled = status.CanInstall;
+        UninstallDisplayButton.IsEnabled = status.CanUninstall;
+        ApplyDisplayButton.IsEnabled = status.State == OptiScalerDeploymentState.Installed;
+    }
+
+    private bool IsGameRunningForDisplay(string action)
+    {
+        if (Process.GetProcessesByName("Endfield").Length == 0)
+        {
+            return false;
+        }
+        ShowStatus("游戏正在运行", $"请退出游戏后再{action}显示增强组件。", InfoBarSeverity.Warning);
+        return true;
+    }
+
+    private async void InstallDisplayButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (IsGameRunningForDisplay("部署"))
+        {
+            return;
+        }
+        try
+        {
+            OptiScalerDeploymentStatus status = await OptiScalerDeploymentService.InstallAsync(
+                GamePathBox.Text.Trim(),
+                InjectorPathBox.Text.Trim());
+            await ApplyDisplayConfigurationAsync(silent: true);
+            await RefreshDisplayStatusAsync();
+            ShowStatus("显示增强已部署", status.Message, InfoBarSeverity.Success);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+                InvalidDataException or InvalidOperationException or FileNotFoundException)
+        {
+            ShowStatus("显示增强部署失败", exception.Message, InfoBarSeverity.Error);
+        }
+    }
+
+    private async void ApplyDisplayButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (IsGameRunningForDisplay("重新配置"))
+        {
+            return;
+        }
+        await ApplyDisplayConfigurationAsync(silent: false);
+    }
+
+    private async Task ApplyDisplayConfigurationAsync(bool silent)
+    {
+        _displayConfiguration.GpuSpoofing = DisplaySpoofingToggle.IsOn;
+        _displayConfiguration.Diagnostics = DisplayDiagnosticsToggle.IsOn;
+        _displayConfiguration.Enabled =
+            _displayConfiguration.Backend != UpscalerBackend.Disabled;
+        try
+        {
+            await ConfigurationService.SaveDisplayConfigurationAsync(_displayConfiguration);
+            IReadOnlyList<string> notes = await OptiScalerConfigurationService.ApplyAsync(
+                GamePathBox.Text.Trim(),
+                InjectorPathBox.Text.Trim(),
+                _displayConfiguration,
+                _displayGpu);
+            DisplayNotesTextBlock.Text = string.Join(
+                Environment.NewLine, notes.Select(note => "· " + note));
+            DisplayNotesTextBlock.Visibility = notes.Count > 0
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+            if (!silent)
+            {
+                ShowStatus(
+                    "显示增强配置已应用",
+                    "已写入 OptiScaler.ini，改动在下一次启动客户端时生效。",
+                    InfoBarSeverity.Success);
+            }
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+                InvalidDataException or InvalidOperationException or FileNotFoundException)
+        {
+            ShowStatus("显示增强配置失败", exception.Message, InfoBarSeverity.Error);
+        }
+    }
+
+    private async void UninstallDisplayButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (IsGameRunningForDisplay("卸载"))
+        {
+            return;
+        }
+        try
+        {
+            await OptiScalerDeploymentService.UninstallAsync(
+                GamePathBox.Text.Trim(),
+                InjectorPathBox.Text.Trim());
+            DisplayNotesTextBlock.Visibility = Visibility.Collapsed;
+            await RefreshDisplayStatusAsync();
+            ShowStatus(
+                "显示增强已卸载",
+                "已移除 Better Endfield 写入游戏目录的 OptiScaler 组件与归属记录。",
+                InfoBarSeverity.Success);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+                InvalidOperationException or InvalidDataException or FileNotFoundException)
+        {
+            // 卸载会在保留了非本软件文件时抛出，属于预期结果而非失败，用警告呈现。
+            await RefreshDisplayStatusAsync();
+            ShowStatus("显示增强部分保留", exception.Message, InfoBarSeverity.Warning);
+        }
+    }
+
     private async Task RefreshXInputStatusAsync()
     {
         int revision = Interlocked.Increment(ref _xInputStatusRevision);
@@ -1694,7 +2046,9 @@ public sealed partial class MainWindow : Window
             LoopEndNumberBox,
             CrossfadeDurationNumberBox,
             MusicTargetLatencyNumberBox,
-            MusicPrebufferNumberBox
+            MusicPrebufferNumberBox,
+            FreeCameraMovementSpeedNumberBox,
+            FreeCameraFieldOfViewNumberBox
         ];
         if (numberBoxes.Any(box => !double.IsFinite(box.Value)))
         {
@@ -1734,6 +2088,18 @@ public sealed partial class MainWindow : Window
         if (toggleHotkey.Equals(overlayHotkey, StringComparison.OrdinalIgnoreCase))
         {
             error = "记录开关和悬浮窗开关不能使用同一个快捷键。";
+            return false;
+        }
+        if (!TryNormalizeCameraHotkey(
+                FreeCameraHotkeyBox.Text, out string cameraToggleHotkey))
+        {
+            error = "相机热键必须为单个字母/数字、F1-F24 或 NUMPAD0-NUMPAD9。";
+            return false;
+        }
+        if (!TryNormalizeCameraHotkey(
+                HideHudHotkeyBox.Text, out string hideHudToggleHotkey))
+        {
+            error = "HUD 热键必须为单个字母/数字、F1-F24 或 NUMPAD0-NUMPAD9。";
             return false;
         }
 
@@ -1809,8 +2175,18 @@ public sealed partial class MainWindow : Window
             CombatToggleHotkey = toggleHotkey,
             CombatOverlayHotkey = overlayHotkey,
             AutoDungeonSession = AutoDungeonSessionToggle.IsOn,
-            UiEnhancementEnabled = MobileUiToggle.IsOn,
-            MobileUiEnabled = MobileUiToggle.IsOn
+            UiEnhancementEnabled = MobileUiToggle.IsOn || HideUidToggle.IsOn ||
+                HideHudToggle.IsOn,
+            MobileUiEnabled = MobileUiToggle.IsOn,
+            HideUidEnabled = HideUidToggle.IsOn,
+            HideHudEnabled = HideHudToggle.IsOn,
+            HideHudToggleHotkey = hideHudToggleHotkey,
+            FreeCameraEnabled = FreeCameraToggle.IsOn,
+            DisableDitherEnabled = DisableDitherToggle.IsOn,
+            PauseGameInFreeCamera = PauseGameInFreeCameraToggle.IsOn,
+            FreeCameraToggleHotkey = cameraToggleHotkey,
+            FreeCameraMovementSpeed = FreeCameraMovementSpeedNumberBox.Value,
+            FreeCameraFieldOfView = FreeCameraFieldOfViewNumberBox.Value
         };
         return true;
     }
@@ -1879,6 +2255,15 @@ public sealed partial class MainWindow : Window
         CombatOverlayHotkeyBox.Text = configuration.CombatOverlayHotkey;
         AutoDungeonSessionToggle.IsOn = configuration.AutoDungeonSession;
         MobileUiToggle.IsOn = configuration.MobileUiEnabled;
+        HideUidToggle.IsOn = configuration.HideUidEnabled;
+        HideHudToggle.IsOn = configuration.HideHudEnabled;
+        HideHudHotkeyBox.Text = configuration.HideHudToggleHotkey;
+        FreeCameraToggle.IsOn = configuration.FreeCameraEnabled;
+        DisableDitherToggle.IsOn = configuration.DisableDitherEnabled;
+        PauseGameInFreeCameraToggle.IsOn = configuration.PauseGameInFreeCamera;
+        FreeCameraHotkeyBox.Text = configuration.FreeCameraToggleHotkey;
+        FreeCameraMovementSpeedNumberBox.Value = configuration.FreeCameraMovementSpeed;
+        FreeCameraFieldOfViewNumberBox.Value = configuration.FreeCameraFieldOfView;
 
         _initializing = wasInitializing;
         UpdateCrossfadePanel();
@@ -1960,6 +2345,24 @@ public sealed partial class MainWindow : Window
         return key.Length >= 2 && key[0] == 'F' &&
             int.TryParse(key[1..], NumberStyles.None, CultureInfo.InvariantCulture,
                 out int functionKey) &&
+            functionKey is >= 1 and <= 24;
+    }
+
+    private static bool TryNormalizeCameraHotkey(string value, out string normalized)
+    {
+        normalized = value.Trim().Replace(" ", string.Empty).ToUpperInvariant();
+        if (normalized.Length == 1 && char.IsAsciiLetterOrDigit(normalized[0]))
+        {
+            return true;
+        }
+        if (normalized.StartsWith("NUMPAD", StringComparison.Ordinal) &&
+            normalized.Length == 7 && char.IsAsciiDigit(normalized[^1]))
+        {
+            return true;
+        }
+        return normalized.Length >= 2 && normalized[0] == 'F' &&
+            int.TryParse(normalized[1..], NumberStyles.None,
+                CultureInfo.InvariantCulture, out int functionKey) &&
             functionKey is >= 1 and <= 24;
     }
 

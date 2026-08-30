@@ -91,6 +91,16 @@ set_target_properties(BetterEndfield.UiModule PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
 )
 
+add_library(BetterEndfield.Camera SHARED
+    modules/camera/module.cpp
+)
+better_endfield_target_defaults(BetterEndfield.Camera)
+set_target_properties(BetterEndfield.Camera PROPERTIES
+    OUTPUT_NAME "BetterEndfield.Camera"
+    RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
+    LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
+)
+
 add_library(BetterEndfield.CombatStats SHARED
     modules/combat_stats/module.cpp
     modules/combat_stats/combat_semantics.cpp
@@ -238,6 +248,9 @@ add_custom_target(BetterEndfield.Layout ALL
         "${CMAKE_CURRENT_SOURCE_DIR}/modules/ui/betterendfield.ui.module.ini"
         "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.ui.module.ini"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/modules/camera/betterendfield.camera.module.ini"
+        "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.camera.module.ini"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/../manifests/combat/combat-semantics.besem"
         "${BETTER_ENDFIELD_STAGE_DIR}/modules/combat-semantics.besem"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -249,6 +262,7 @@ add_custom_target(BetterEndfield.Layout ALL
         BetterEndfield.Voice
         BetterEndfield.Music
         BetterEndfield.UiModule
+        BetterEndfield.Camera
         BetterEndfield.CombatStats
         BetterEndfield.CombatOverlay
         BetterEndfield.Injector
