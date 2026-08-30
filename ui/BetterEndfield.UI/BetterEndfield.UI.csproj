@@ -43,6 +43,9 @@
       Include="Assets\model\character-names.json"
       LogicalName="BetterEndfield.UI.Assets.model.character-names.json" />
     <EmbeddedResource
+      Include="Assets\model\character-names-en.json"
+      LogicalName="BetterEndfield.UI.Assets.model.character-names-en.json" />
+    <EmbeddedResource
       Include="Assets\voice\voice-catalog-index.json"
       LogicalName="BetterEndfield.UI.Assets.voice.voice-catalog-index.json" />
     <EmbeddedResource
@@ -51,6 +54,9 @@
     <EmbeddedResource
       Include="..\..\manifests\shared\optiscaler.lock.json"
       LogicalName="BetterEndfield.UI.Assets.shared.optiscaler.lock.json" />
+    <EmbeddedResource
+      Include="Assets\locales\*.json"
+      LogicalName="BetterEndfield.UI.Assets.locales.%(Filename)%(Extension)" />
     <EmbeddedResource Include="..\..\native\modules\combat_stats\assets\avatars\*.png">
       <LogicalName>BetterEndfield.UI.Assets.combat.%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>

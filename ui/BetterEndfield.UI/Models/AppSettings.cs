@@ -12,5 +12,7 @@ internal sealed class AppSettings
 
     public string Theme { get; set; } = "Default";
 
+    public string Language { get; set; } = "System";
+
     public string DisclaimerAcceptedVersion { get; set; } = string.Empty;
 }

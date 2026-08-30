@@ -24,6 +24,32 @@ internal static class ConfigurationService
     public static string SettingsPath { get; } =
         Path.Combine(SettingsDirectory, "ui-settings.json");
 
+    public static AppSettings LoadAppSettings()
+    {
+        try
+        {
+            if (File.Exists(SettingsPath))
+            {
+                string json = File.ReadAllText(SettingsPath);
+                AppSettings? settings = JsonSerializer.Deserialize<AppSettings>(
+                    json,
+                    JsonOptions);
+                if (settings is not null)
+                {
+                    return settings;
+                }
+            }
+        }
+        catch (IOException)
+        {
+        }
+        catch (JsonException)
+        {
+        }
+
+        return new AppSettings();
+    }
+
     public static async Task<AppSettings> LoadAppSettingsAsync()
     {
         try

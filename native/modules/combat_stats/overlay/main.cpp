@@ -48,7 +48,9 @@ const std::array<Color, CombatOverlayProtocol::kDamageCategoryCount> kCategoryCo
 };
 
 constexpr std::array<const wchar_t*, CombatOverlayProtocol::kDamageCategoryCount>
-    kCategoryNames{L"普攻", L"战技", L"终结技", L"连携", L"被动", L"其他"};
+    kCategoryNamesZh{L"普攻", L"战技", L"终结技", L"连携", L"被动", L"其他"};
+constexpr std::array<const wchar_t*, CombatOverlayProtocol::kDamageCategoryCount>
+    kCategoryNamesEn{L"Basic", L"Skill", L"Ultimate", L"Combo", L"Passive", L"Other"};
 
 const std::array<Color, 9> kRdpsColors{
     Color(255, 211, 216, 225), // Direct damage
@@ -62,9 +64,13 @@ const std::array<Color, 9> kRdpsColors{
     Color(255, 143, 152, 170), // Other
 };
 
-constexpr std::array<const wchar_t*, 9> kRdpsNames{
+constexpr std::array<const wchar_t*, 9> kRdpsNamesZh{
     L"直伤", L"攻击力", L"增伤", L"增幅", L"脆弱", L"承伤易伤",
     L"减防/减抗", L"法术强度", L"其他"
+};
+constexpr std::array<const wchar_t*, 9> kRdpsNamesEn{
+    L"Direct", L"ATK", L"DMG Bonus", L"Amplify", L"Fragile", L"Vulnerability",
+    L"DEF/RES Down", L"Arts Power", L"Other"
 };
 
 HINSTANCE g_instance = nullptr;
@@ -141,8 +147,72 @@ std::wstring Utf8ToWide(std::string_view value) {
     return result;
 }
 
+bool IsEnglish() {
+    static int cached_lang = -1;
+    static ULONGLONG last_check = 0;
+    const ULONGLONG now = GetTickCount64();
+    if (cached_lang != -1 && (now - last_check < 3000)) {
+        return cached_lang == 1;
+    }
+    last_check = now;
+
+    std::filesystem::path ini_path = DataDirectory() / L"BetterEndfield.ini";
+    wchar_t buffer[64]{};
+    GetPrivateProfileStringW(L"Launcher", L"Language", L"", buffer,
+        static_cast<DWORD>(std::size(buffer)), ini_path.c_str());
+    if (!buffer[0]) {
+        GetPrivateProfileStringW(L"CombatStats", L"Language", L"", buffer,
+            static_cast<DWORD>(std::size(buffer)), ini_path.c_str());
+    }
+
+    if (_wcsicmp(buffer, L"en_US") == 0 || _wcsicmp(buffer, L"en") == 0 || _wcsicmp(buffer, L"English") == 0) {
+        cached_lang = 1;
+    } else if (_wcsicmp(buffer, L"zh_CN") == 0 || _wcsicmp(buffer, L"zh") == 0 || _wcsicmp(buffer, L"Chinese") == 0) {
+        cached_lang = 0;
+    } else {
+        LANGID langId = GetUserDefaultUILanguage();
+        cached_lang = (PRIMARYLANGID(langId) == LANG_CHINESE) ? 0 : 1;
+    }
+    return cached_lang == 1;
+}
+
 std::wstring FormatValue(double value) {
     const double absolute = std::abs(value);
+    const bool is_en = IsEnglish();
+
+    if (is_en) {
+        int exponent = 0;
+        double divisor = 1.0;
+        std::wstring suffix = L"";
+        if (absolute >= 1.0e12) {
+            divisor = 1.0e12;
+            suffix = L"T";
+            exponent = 12;
+        } else if (absolute >= 1.0e9) {
+            divisor = 1.0e9;
+            suffix = L"B";
+            exponent = 9;
+        } else if (absolute >= 1.0e6) {
+            divisor = 1.0e6;
+            suffix = L"M";
+            exponent = 6;
+        } else if (absolute >= 1.0e3) {
+            divisor = 1.0e3;
+            suffix = L"K";
+            exponent = 3;
+        }
+
+        const int decimals = exponent ? 2 : 0;
+        std::wostringstream output;
+        output << std::fixed << std::setprecision(decimals) << value / divisor;
+        std::wstring result = output.str();
+        if (decimals) {
+            while (!result.empty() && result.back() == L'0') result.pop_back();
+            if (!result.empty() && result.back() == L'.') result.pop_back();
+        }
+        return result + suffix;
+    }
+
     static constexpr std::array<const wchar_t*, 12> kDecimalUnits{
         L"万", L"×10万", L"×100万", L"×1000万",
         L"亿", L"×10亿", L"×100亿", L"×1000亿",
@@ -225,8 +295,11 @@ Bitmap* AvatarFor(std::string_view id) {
 }
 
 std::wstring DisplayName(std::string_view id) {
-    if (const CharacterAsset* asset = FindCharacter(id)) return asset->name;
-    if (id == "<unknown>") return L"未知来源";
+    const bool is_en = IsEnglish();
+    if (const CharacterAsset* asset = FindCharacter(id)) {
+        return (is_en && asset->name_en && asset->name_en[0]) ? asset->name_en : asset->name;
+    }
+    if (id == "<unknown>") return is_en ? L"Unknown" : L"未知来源";
     return Utf8ToWide(id);
 }
 
@@ -484,7 +557,8 @@ void Render() {
         }
         return index < kCategoryColors.size() ? kCategoryColors[index] : Color(255, 143, 152, 170);
     };
-    const auto segment_name = [rdps_mode](size_t index) -> std::wstring {
+    const bool is_en = IsEnglish();
+    const auto segment_name = [rdps_mode, is_en](size_t index) -> std::wstring {
         if (index < CombatOverlayProtocol::kDisplaySegmentCount &&
             g_snapshot.categories[index].name[0] != '\0') {
             const std::string utf8_name(g_snapshot.categories[index].name,
@@ -492,9 +566,13 @@ void Render() {
             return Utf8ToWide(utf8_name);
         }
         if (rdps_mode) {
-            return index < kRdpsNames.size() ? kRdpsNames[index] : L"其他";
+            return index < kRdpsNamesZh.size()
+                ? (is_en ? kRdpsNamesEn[index] : kRdpsNamesZh[index])
+                : (is_en ? L"Other" : L"其他");
         }
-        return index < kCategoryNames.size() ? kCategoryNames[index] : L"其他";
+        return index < kCategoryNamesZh.size()
+            ? (is_en ? kCategoryNamesEn[index] : kCategoryNamesZh[index])
+            : (is_en ? L"Other" : L"其他");
     };
     const uint32_t row_count = std::min<uint32_t>(g_snapshot.character_count,
         kMaximumVisibleRows);
@@ -541,41 +619,43 @@ void Render() {
     Font label_font(L"Microsoft YaHei UI", 11.0f, FontStyleRegular, UnitPixel);
     Font value_font(L"Microsoft YaHei UI", 15.0f, FontStyleBold, UnitPixel);
     Font row_name_font(L"Microsoft YaHei UI", 14.0f, FontStyleBold, UnitPixel);
-    DrawText(graphics, L"战斗数据", title_font, Color(255, 244, 247, 252),
-        RectF(34, 12, 112, 36));
+    DrawText(graphics, is_en ? L"Combat Stats" : L"战斗数据", title_font,
+        Color(255, 244, 247, 252), RectF(34, 12, 130, 36));
 
-    const wchar_t* status = g_snapshot.session_active ? L"记录中" : L"已停止";
+    const wchar_t* status = g_snapshot.session_active
+        ? (is_en ? L"Recording" : L"记录中")
+        : (is_en ? L"Paused" : L"已停止");
     const Color status_color = g_snapshot.session_active
         ? Color(255, 87, 224, 154) : Color(255, 163, 171, 186);
     SolidBrush status_background(Color(52, status_color.GetR(), status_color.GetG(),
         status_color.GetB()));
     GraphicsPath status_path;
-    AddRoundedRect(status_path, RectF(137, 17, 62, 24), 12.0f);
+    AddRoundedRect(status_path, RectF(168, 17, is_en ? 78.0f : 62.0f, 24.0f), 12.0f);
     graphics.FillPath(&status_background, &status_path);
-    DrawText(graphics, status, label_font, status_color, RectF(137, 16, 62, 25),
-        StringAlignmentCenter);
+    DrawText(graphics, status, label_font, status_color,
+        RectF(168, 16, is_en ? 78.0f : 62.0f, 25.0f), StringAlignmentCenter);
 
     const std::wstring time = FormatDuration(g_snapshot.duration_seconds);
     DrawText(graphics, time, label_font, Color(220, 190, 198, 212),
         RectF(400, 13, 54, 30), StringAlignmentFar);
-    DrawText(graphics, L"总伤害", label_font, Color(190, 174, 183, 199),
-        RectF(22, 52, 60, 28));
+    DrawText(graphics, is_en ? L"Total DMG" : L"总伤害", label_font,
+        Color(190, 174, 183, 199), RectF(22, 52, 65, 28));
     DrawText(graphics, FormatValue(g_snapshot.total_damage), value_font,
-        Color(255, 248, 250, 253), RectF(78, 49, 116, 34));
+        Color(255, 248, 250, 253), RectF(88, 49, 116, 34));
     const wchar_t* metric_label = g_snapshot.metric_mode == 1 ? L"rDPS" : L"DPS";
     DrawText(graphics, metric_label, label_font, Color(190, 174, 183, 199),
         RectF(218, 52, 46, 28));
     DrawText(graphics, FormatValue(g_snapshot.dps), value_font,
         Color(255, 248, 250, 253), RectF(264, 49, 112, 34));
-    DrawText(graphics, std::to_wstring(g_snapshot.hit_count) + L" 次",
+    DrawText(graphics, std::to_wstring(g_snapshot.hit_count) + (is_en ? L" Hits" : L" 次"),
         label_font, Color(210, 186, 195, 211), RectF(386, 51, 68, 30),
         StringAlignmentFar);
 
     Pen divider(Color(40, 255, 255, 255), 1.0f);
     graphics.DrawLine(&divider, 20.0f, 90.0f, 460.0f, 90.0f);
     if (!row_count) {
-        DrawText(graphics, L"按 F11 开始记录战斗数据", value_font,
-            Color(210, 186, 195, 211), RectF(24, 94, 432, 48), StringAlignmentCenter);
+        DrawText(graphics, is_en ? L"Press F11 to start recording" : L"按 F11 开始记录战斗数据",
+            value_font, Color(210, 186, 195, 211), RectF(24, 94, 432, 48), StringAlignmentCenter);
     }
 
     double maximum_damage = 1.0;
@@ -591,8 +671,10 @@ void Render() {
         DrawText(graphics, FormatValue(row.total_damage), value_font,
             Color(255, 246, 248, 252), RectF(324, top + 4, 132, 29),
             StringAlignmentFar);
-        DrawText(graphics, std::to_wstring(row.hits) + L" 命中 · " +
-            std::to_wstring(row.critical_hits) + L" 暴击", label_font,
+        const std::wstring hit_info = is_en
+            ? (std::to_wstring(row.hits) + L" Hits · " + std::to_wstring(row.critical_hits) + L" Crits")
+            : (std::to_wstring(row.hits) + L" 命中 · " + std::to_wstring(row.critical_hits) + L" 暴击");
+        DrawText(graphics, hit_info, label_font,
             Color(175, 164, 174, 191), RectF(88, top + 30, 210, 21));
 
         const RectF bar_rect(88, top + 55, 368, 8);
@@ -637,8 +719,8 @@ void Render() {
             Color(185, 178, 187, 203),
             RectF(x + 11.0f, y, legend_step - 11.0f, 22.0f));
     }
-    DrawText(graphics, L"Ctrl + 鼠标左键拖动位置  ·  F12 显示/隐藏", label_font,
-        Color(145, 153, 163, 181),
+    DrawText(graphics, is_en ? L"Ctrl + Left Drag to move  ·  F12 to toggle" : L"Ctrl + 鼠标左键拖动位置  ·  F12 显示/隐藏",
+        label_font, Color(145, 153, 163, 181),
         RectF(20.0f, static_cast<float>(g_window_height - 27), 440.0f, 21.0f),
         StringAlignmentCenter);
 

@@ -64,11 +64,12 @@ internal static class XInputDeploymentService
 
         try
         {
+            bool isZh = LocalizationService.Instance.IsChinese;
             if (!File.Exists(paths.Target))
             {
                 return new XInputDeploymentStatus(
                     XInputDeploymentState.NotInstalled,
-                    "尚未向游戏目录安装 XInput 自启动代理。",
+                    isZh ? "尚未向游戏目录安装 XInput 自启动代理。" : "XInput auto-load proxy is not installed in game directory.",
                     true,
                     File.Exists(paths.Manifest));
             }
@@ -79,7 +80,7 @@ internal static class XInputDeploymentService
             {
                 return new XInputDeploymentStatus(
                     XInputDeploymentState.Installed,
-                    "XInput 自启动代理已安装，版本与当前软件一致。",
+                    isZh ? "XInput 自启动代理已安装，版本与当前软件一致。" : "XInput proxy installed; version matches current launcher.",
                     false,
                     true);
             }
@@ -89,23 +90,26 @@ internal static class XInputDeploymentService
             {
                 return new XInputDeploymentStatus(
                     XInputDeploymentState.UpdateAvailable,
-                    "游戏目录中是 Better Endfield 安装的旧版 XInput 代理，可更新或卸载。",
+                    isZh ? "游戏目录中是 Better Endfield 安装的旧版 XInput 代理，可更新或卸载。"
+                         : "Outdated XInput proxy installed by Better Endfield found; can be updated or uninstalled.",
                     true,
                     true);
             }
 
             return new XInputDeploymentStatus(
                 XInputDeploymentState.Conflict,
-                "游戏目录已有未知 xinput1_4.dll。为避免破坏其他加载器，该文件不会被覆盖或删除。",
+                isZh ? "游戏目录已有未知 xinput1_4.dll。为避免破坏其他加载器，该文件不会被覆盖或删除。"
+                     : "Unknown xinput1_4.dll found in game directory. Will not overwrite or remove it.",
                 false,
                 false);
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException)
         {
+            bool isZh = LocalizationService.Instance.IsChinese;
             return new XInputDeploymentStatus(
                 XInputDeploymentState.Unavailable,
-                "无法检查 XInput 状态：" + exception.Message,
+                (isZh ? "无法检查 XInput 状态：" : "Failed to inspect XInput status: ") + exception.Message,
                 false,
                 false);
         }

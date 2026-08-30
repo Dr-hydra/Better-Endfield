@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using BetterEndfield.UI.Services;
 
 namespace BetterEndfield.UI.Models;
 
@@ -260,6 +261,9 @@ internal sealed class ModConfiguration
         text.AppendLine($"movement_speed={Number(FreeCameraMovementSpeed)}");
         text.AppendLine($"field_of_view={Number(FreeCameraFieldOfView)}");
         text.AppendLine("diagnostics=true");
+        text.AppendLine();
+        text.AppendLine("[Launcher]");
+        text.AppendLine($"Language={(LocalizationService.Instance.IsChinese ? "zh_CN" : "en_US")}");
         return text.ToString();
     }
 }

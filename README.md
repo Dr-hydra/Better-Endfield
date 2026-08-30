@@ -1,5 +1,7 @@
 # Better Endfield
 
+[简体中文](README.md) | [English](README.en.md)
+
 Better Endfield 是一个面向《终末地》Windows 客户端的模块化运行时。模型、语音、OmniMix 音乐、战斗数据和移动端界面分别由独立 DLL 提供，Host 负责动态 IL2CPP 解析、Hook 生命周期、配置和模块发现。
 
 ## 架构

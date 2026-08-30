@@ -100,7 +100,7 @@ public sealed partial class MainWindow : Window
     private CombatSessionRecord? _selectedCombatSession;
     private bool _combatHistoryExpanded;
     private bool _updatingCombatHistory;
-    private readonly IReadOnlyList<VoiceCharacterChoice> _voiceCharacters;
+    private IReadOnlyList<VoiceCharacterChoice> _voiceCharacters = [];
     private AppSettings _appSettings = new();
     private string _latestReleaseUrl = UpdateService.ReleasesUrl;
     private bool _pathScanRunning;
@@ -120,22 +120,7 @@ public sealed partial class MainWindow : Window
         }
 
         CharacterComboBox.ItemsSource = PresetOptions.Characters;
-        _voiceCharacters = PresetOptions.CharacterNames
-            .OrderBy(entry => entry.Key, StringComparer.OrdinalIgnoreCase)
-            .Select(entry => new VoiceCharacterChoice
-            {
-                CharacterId = entry.Key,
-                Speaker = GetCharacterSpeakerAlias(entry.Key),
-                DisplayName = $"{entry.Value}  ·  {entry.Key}"
-            })
-            .GroupBy(choice => choice.Speaker, StringComparer.OrdinalIgnoreCase)
-            .Select(group => group.First())
-            .Append(new VoiceCharacterChoice
-            {
-                Speaker = "*",
-                DisplayName = "其他角色（默认规则）"
-            })
-            .ToArray();
+        _voiceCharacters = BuildVoiceCharacterChoices();
         VoiceCharacterComboBox.ItemsSource = _voiceCharacters;
         VoiceCharacterComboBox.SelectedIndex = 0;
         VoiceRulesListView.ItemsSource = _voiceRules;
@@ -146,6 +131,7 @@ public sealed partial class MainWindow : Window
         UpdateCombatCategoryLegend();
         SelectVoiceLanguage("Japanese");
         UpdateVoiceRulesEmptyState();
+        UpdateLocalizedUI();
         _statusTimer.Tick += StatusTimer_Tick;
         Closed += MainWindow_Closed;
     }
@@ -155,6 +141,9 @@ public sealed partial class MainWindow : Window
         try
         {
             _appSettings = await ConfigurationService.LoadAppSettingsAsync();
+            SelectLanguage(_appSettings.Language);
+            LocalizationService.Instance.ApplyLanguage(_appSettings.Language);
+            UpdateLocalizedUI();
             SelectTheme(_appSettings.Theme);
             ApplyTheme(_appSettings.Theme);
             if (!string.Equals(
@@ -193,10 +182,18 @@ public sealed partial class MainWindow : Window
             RefreshRuntimeStatus();
             _statusTimer.Start();
         }
-        catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException)
+        catch (Exception exception)
         {
             _initializing = false;
+            try
+            {
+                string logPath = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "BetterEndfield", "crash.log");
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(logPath)!);
+                System.IO.File.WriteAllText(logPath, $"MainRoot_Loaded Exception: {exception.Message}\r\n{exception}\r\n{exception.StackTrace}");
+            }
+            catch { }
             ShowStatus("读取配置失败", exception.Message, InfoBarSeverity.Error);
         }
     }
@@ -293,9 +290,11 @@ public sealed partial class MainWindow : Window
             return;
         }
 
+        bool isZh = LocalizationService.Instance.IsChinese;
         UpdateActionMetadata(action);
-        ActionDescriptionTextBlock.Text =
-            $"资源哈希：{action.PathHash} · 原生 LoopTime：{(action.NativeLoop ? "是" : "否")}";
+        ActionDescriptionTextBlock.Text = isZh
+            ? $"资源哈希：{action.PathHash} · 原生 LoopTime：{(action.NativeLoop ? "是" : "否")}"
+            : $"Asset Hash: {action.PathHash} · Native LoopTime: {(action.NativeLoop ? "Yes" : "No")}";
         if (!_initializing)
         {
             FinalLoopToggle.IsOn = action.NativeLoop;
@@ -539,7 +538,7 @@ public sealed partial class MainWindow : Window
             _combatCharacterFilters.Add(new CombatCharacterFilterChoice
             {
                 Id = null,
-                DisplayName = "不限"
+                DisplayName = LocalizationService.Instance.IsChinese ? "不限" : "Any"
             });
             foreach (CombatCharacterDamage character in _allCombatSessions
                 .SelectMany(record => record.Characters)
@@ -617,9 +616,10 @@ public sealed partial class MainWindow : Window
         ExpandCombatSessionsButton.Visibility = hidden > 0
             ? Visibility.Visible
             : Visibility.Collapsed;
+        bool isZh = LocalizationService.Instance.IsChinese;
         ExpandCombatSessionsButton.Content = _combatHistoryExpanded
-            ? "收起，仅显示最近三条"
-            : $"展开其余 {hidden} 条";
+            ? (isZh ? "收起，仅显示最近三条" : "Collapse to recent 3")
+            : (isZh ? $"展开其余 {hidden} 条" : $"Expand remaining {hidden}");
         CombatSessionsEmptyTextBlock.Visibility = matches.Length == 0
             ? Visibility.Visible
             : Visibility.Collapsed;
@@ -1201,18 +1201,23 @@ public sealed partial class MainWindow : Window
 
     private async void LaunchButton_Click(object sender, RoutedEventArgs e)
     {
+        bool isZh = LocalizationService.Instance.IsChinese;
         if (Process.GetProcessesByName("Endfield").Length > 0)
         {
             ShowStatus(
-                "游戏已经在运行",
-                "为避免重复注入，请完整退出游戏后再使用“保存并启动”。",
+                isZh ? "游戏已经在运行" : "Game Already Running",
+                isZh ? "为避免重复注入，请完整退出游戏后再使用“保存并启动”。"
+                     : "To avoid duplicate injection, please exit the game before using Save & Launch.",
                 InfoBarSeverity.Warning);
             return;
         }
 
         if (!File.Exists(GamePathBox.Text.Trim()))
         {
-            ShowStatus("游戏路径无效", "请选择有效的 Endfield.exe。", InfoBarSeverity.Error);
+            ShowStatus(
+                isZh ? "游戏路径无效" : "Invalid Game Path",
+                isZh ? "请选择有效的 Endfield.exe。" : "Please select a valid Endfield.exe.",
+                InfoBarSeverity.Error);
             return;
         }
 
@@ -1257,18 +1262,20 @@ public sealed partial class MainWindow : Window
             Process.Start(startInfo);
             ShowStatus(
                 loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase)
-                    ? "XInput 自启动已就绪"
-                    : "注入器已启动",
+                    ? (isZh ? "XInput 自启动已就绪" : "XInput Auto-load Ready")
+                    : (isZh ? "注入器已启动" : "Injector Launched"),
                 loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase)
-                    ? "游戏将通过 xinput1_4.dll 加载 Better Endfield Host。"
-                    : "如果出现用户账户控制提示，请允许管理员权限。游戏启动后状态会自动更新。",
+                    ? (isZh ? "游戏将通过 xinput1_4.dll 加载 Better Endfield Host。"
+                            : "The game will load Better Endfield Host via xinput1_4.dll.")
+                    : (isZh ? "如果出现用户账户控制提示，请允许管理员权限。游戏启动后状态会自动更新。"
+                            : "Please grant administrator permissions if prompted by UAC. Status will update once game starts."),
                 InfoBarSeverity.Success);
         }
         catch (Exception exception) when (
             exception is InvalidOperationException or IOException or
                 UnauthorizedAccessException or Win32Exception)
         {
-            ShowStatus("启动失败", exception.Message, InfoBarSeverity.Error);
+            ShowStatus(isZh ? "启动失败" : "Launch Failed", exception.Message, InfoBarSeverity.Error);
         }
         finally
         {
@@ -1279,10 +1286,11 @@ public sealed partial class MainWindow : Window
 
     private void ResetButton_Click(object sender, RoutedEventArgs e)
     {
+        bool isZh = LocalizationService.Instance.IsChinese;
         ApplyConfiguration(ModConfiguration.CreateDefaults());
         ShowStatus(
-            "已恢复界面默认值",
-            "点击“保存参数”后才会覆盖配置文件。",
+            isZh ? "已恢复界面默认值" : "Restored Defaults",
+            isZh ? "点击“保存”后才会覆盖配置文件。" : "Configuration file will be updated after clicking Save.",
             InfoBarSeverity.Informational);
     }
 
@@ -1315,6 +1323,19 @@ public sealed partial class MainWindow : Window
         OpenWithShell(logPath);
     }
 
+    private async void LanguageComboBox_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        if (_initializing) return;
+        string language = GetSelectedLanguage();
+        _appSettings.Language = language;
+        LocalizationService.Instance.ApplyLanguage(language);
+        UpdateLocalizedUI();
+        await ConfigurationService.SaveAppSettingsAsync(_appSettings);
+        RefreshRuntimeStatus();
+    }
+
     private void ThemeComboBox_SelectionChanged(
         object sender,
         SelectionChangedEventArgs e)
@@ -1326,18 +1347,19 @@ public sealed partial class MainWindow : Window
 
     private void CreateAppShortcutButton_Click(object sender, RoutedEventArgs e)
     {
+        bool isZh = LocalizationService.Instance.IsChinese;
         try
         {
             string shortcutPath = ShortcutService.CreateApplicationShortcut();
             ShowStatus(
-                "快捷方式已创建",
+                isZh ? "快捷方式已创建" : "Shortcut Created",
                 shortcutPath,
                 InfoBarSeverity.Success);
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or COMException)
         {
-            ShowStatus("创建快捷方式失败", exception.Message, InfoBarSeverity.Error);
+            ShowStatus(isZh ? "创建快捷方式失败" : "Failed to Create Shortcut", exception.Message, InfoBarSeverity.Error);
         }
     }
 
@@ -1348,6 +1370,7 @@ public sealed partial class MainWindow : Window
             return;
         }
 
+        bool isZh = LocalizationService.Instance.IsChinese;
         try
         {
             string loaderMode = GetSelectedLoaderMode();
@@ -1363,19 +1386,20 @@ public sealed partial class MainWindow : Window
                 GamePathBox.Text,
                 GameLaunchArgumentsBox.Text);
             ShowStatus(
-                "一键启动快捷方式已创建",
-                $"已保存当前配置并创建：{shortcutPath}",
+                isZh ? "一键启动快捷方式已创建" : "Quick Launch Shortcut Created",
+                isZh ? $"已保存当前配置并创建：{shortcutPath}" : $"Saved configuration and created: {shortcutPath}",
                 InfoBarSeverity.Success);
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or COMException)
         {
-            ShowStatus("创建快捷方式失败", exception.Message, InfoBarSeverity.Error);
+            ShowStatus(isZh ? "创建快捷方式失败" : "Failed to Create Shortcut", exception.Message, InfoBarSeverity.Error);
         }
     }
 
     private async void CheckUpdatesButton_Click(object sender, RoutedEventArgs e)
     {
+        bool isZh = LocalizationService.Instance.IsChinese;
         CheckUpdatesButton.IsEnabled = false;
         UpdateProgressRing.Visibility = Visibility.Visible;
         UpdateProgressRing.IsActive = true;
@@ -1388,24 +1412,26 @@ public sealed partial class MainWindow : Window
             _latestReleaseUrl = result.ReleasesUrl;
             if (!result.HasRelease)
             {
-                UpdateInfoBar.Title = "暂无可用发布版本";
-                UpdateInfoBar.Message = "GitHub Releases 中还没有正式发布记录。";
+                UpdateInfoBar.Title = isZh ? "暂无可用发布版本" : "No Releases Available";
+                UpdateInfoBar.Message = isZh ? "GitHub Releases 中还没有正式发布记录。" : "No releases found in GitHub repository.";
                 UpdateInfoBar.Severity = InfoBarSeverity.Informational;
                 OpenReleaseButton.Visibility = Visibility.Visible;
             }
             else if (result.IsUpdateAvailable)
             {
-                UpdateInfoBar.Title = "发现新版本";
-                UpdateInfoBar.Message =
-                    $"当前 {result.CurrentVersion}，最新 {result.LatestVersion}。";
+                UpdateInfoBar.Title = isZh ? "发现新版本" : "New Version Available";
+                UpdateInfoBar.Message = isZh
+                    ? $"当前 {result.CurrentVersion}，最新 {result.LatestVersion}。"
+                    : $"Current {result.CurrentVersion}, Latest {result.LatestVersion}.";
                 UpdateInfoBar.Severity = InfoBarSeverity.Success;
                 OpenReleaseButton.Visibility = Visibility.Visible;
             }
             else
             {
-                UpdateInfoBar.Title = "已经是最新版本";
-                UpdateInfoBar.Message =
-                    $"当前版本 {result.CurrentVersion}，远程版本 {result.LatestVersion}。";
+                UpdateInfoBar.Title = isZh ? "已经是最新版本" : "Up to Date";
+                UpdateInfoBar.Message = isZh
+                    ? $"当前版本 {result.CurrentVersion}，远程版本 {result.LatestVersion}。"
+                    : $"Current version {result.CurrentVersion}, Remote {result.LatestVersion}.";
                 UpdateInfoBar.Severity = InfoBarSeverity.Success;
             }
             UpdateInfoBar.IsOpen = true;
@@ -1413,9 +1439,9 @@ public sealed partial class MainWindow : Window
         catch (Exception exception) when (
             exception is HttpRequestException or TaskCanceledException or JsonException)
         {
-            UpdateInfoBar.Title = "检查更新失败";
+            UpdateInfoBar.Title = isZh ? "检查更新失败" : "Update Check Failed";
             UpdateInfoBar.Message = exception is TaskCanceledException
-                ? "连接 GitHub 超时，请稍后重试。"
+                ? (isZh ? "连接 GitHub 超时，请稍后重试。" : "Connection timed out. Please retry later.")
                 : exception.Message;
             UpdateInfoBar.Severity = InfoBarSeverity.Error;
             UpdateInfoBar.IsOpen = true;
@@ -1450,17 +1476,17 @@ public sealed partial class MainWindow : Window
 
     private void CopyQqGroupButton_Click(object sender, RoutedEventArgs e)
     {
+        bool isZh = LocalizationService.Instance.IsChinese;
         try
         {
             var package = new DataPackage();
             package.SetText(QqGroupNumber);
             Clipboard.SetContent(package);
-            Clipboard.Flush();
-            ShowStatus("QQ群号已复制", QqGroupNumber, InfoBarSeverity.Success);
+            ShowStatus(isZh ? "QQ群号已复制" : "QQ Group Number Copied", QqGroupNumber, InfoBarSeverity.Success);
         }
         catch (COMException exception)
         {
-            ShowStatus("复制QQ群号失败", exception.Message, InfoBarSeverity.Error);
+            ShowStatus(isZh ? "复制QQ群号失败" : "Failed to Copy QQ Group Number", exception.Message, InfoBarSeverity.Error);
         }
     }
 
@@ -1469,17 +1495,24 @@ public sealed partial class MainWindow : Window
 
     private async Task<bool> SaveAsync(bool showSuccess)
     {
+        bool isZh = LocalizationService.Instance.IsChinese;
         string gamePath = GamePathBox.Text.Trim();
         if (!RuntimePathDiscoveryService.IsGameExecutable(gamePath))
         {
-            ShowStatus("游戏路径无效", "请选择有效的 Endfield.exe。", InfoBarSeverity.Error);
+            ShowStatus(
+                isZh ? "游戏路径无效" : "Invalid Game Path",
+                isZh ? "请选择有效的 Endfield.exe。" : "Please select a valid Endfield.exe.",
+                InfoBarSeverity.Error);
             return false;
         }
 
         string injectorPath = InjectorPathBox.Text.Trim();
         if (!File.Exists(injectorPath))
         {
-            ShowStatus("注入器路径无效", "请选择有效的 BetterEndfield.Injector.exe。", InfoBarSeverity.Error);
+            ShowStatus(
+                isZh ? "注入器路径无效" : "Invalid Injector Path",
+                isZh ? "请选择有效的 BetterEndfield.Injector.exe。" : "Please select a valid BetterEndfield.Injector.exe.",
+                InfoBarSeverity.Error);
             return false;
         }
         try
@@ -1490,19 +1523,28 @@ public sealed partial class MainWindow : Window
         }
         catch (InvalidOperationException exception)
         {
-            ShowStatus("软件目录不完整", exception.Message, InfoBarSeverity.Error);
+            ShowStatus(
+                isZh ? "软件目录不完整" : "Incomplete Directory",
+                exception.Message,
+                InfoBarSeverity.Error);
             return false;
         }
 
         if (!TryReadConfiguration(out ModConfiguration configuration, out string? error))
         {
-            ShowStatus("参数无效", error ?? "请检查输入值。", InfoBarSeverity.Error);
+            ShowStatus(
+                isZh ? "参数无效" : "Invalid Parameters",
+                error ?? (isZh ? "请检查输入值。" : "Please check input values."),
+                InfoBarSeverity.Error);
             return false;
         }
 
         if (!TryValidateLaunchArguments(out error))
         {
-            ShowStatus("启动参数无效", error ?? "请检查游戏启动参数。", InfoBarSeverity.Error);
+            ShowStatus(
+                isZh ? "启动参数无效" : "Invalid Launch Arguments",
+                error ?? (isZh ? "请检查游戏启动参数。" : "Please check game launch arguments."),
+                InfoBarSeverity.Error);
             return false;
         }
 
@@ -1520,8 +1562,9 @@ public sealed partial class MainWindow : Window
             if (catalogRequests.Count > 0)
             {
                 ShowStatus(
-                    "正在准备配音资源",
-                    "正在从本地游戏语言包生成所选角色的 catalog。",
+                    isZh ? "正在准备配音资源" : "Preparing Voice Assets",
+                    isZh ? "正在从本地游戏语言包生成所选角色的 catalog。"
+                         : "Generating character voice catalog from local game language packs.",
                     InfoBarSeverity.Informational);
             }
             VoiceCatalogPreparation catalogPreparation =
@@ -1545,8 +1588,9 @@ public sealed partial class MainWindow : Window
             if (showSuccess)
             {
                 ShowStatus(
-                    "参数已保存",
-                    "视觉、语言与已加载的音乐模块会在约 2 秒内热更新；模型、动画及首次启用的模块在下次注入时读取。",
+                    isZh ? "参数已保存" : "Configuration Saved",
+                    isZh ? "视觉、语言与已加载的音乐模块会在约 2 秒内热更新；模型、动画及首次启用的模块在下次注入时读取。"
+                         : "Visuals, language, and loaded music reload within 2s; models and animations load on next launch.",
                     InfoBarSeverity.Success);
             }
 
@@ -1557,7 +1601,7 @@ public sealed partial class MainWindow : Window
             InvalidDataException or InvalidOperationException or
             OmniMixRegistrationException)
         {
-            ShowStatus("保存失败", exception.Message, InfoBarSeverity.Error);
+            ShowStatus(isZh ? "保存失败" : "Save Failed", exception.Message, InfoBarSeverity.Error);
             return false;
         }
     }
@@ -1641,11 +1685,12 @@ public sealed partial class MainWindow : Window
 
     private void UpdatePathStatusText()
     {
+        bool isZh = LocalizationService.Instance.IsChinese;
         bool gameValid = RuntimePathDiscoveryService.IsGameExecutable(
             GamePathBox.Text.Trim());
         GamePathStatusTextBlock.Text = gameValid
-            ? "已找到游戏程序。"
-            : "未找到有效的 Endfield.exe。";
+            ? (isZh ? "已找到游戏程序。" : "Valid game executable found.")
+            : (isZh ? "未找到有效的 Endfield.exe。" : "No valid Endfield.exe found.");
 
         bool injectorValid = false;
         try
@@ -1660,12 +1705,13 @@ public sealed partial class MainWindow : Window
         {
         }
         InjectorPathStatusTextBlock.Text = injectorValid
-            ? "已找到完整的 runtime、modules 和注入器目录。"
-            : "注入器或相邻 runtime/modules 目录不完整。";
+            ? (isZh ? "已找到完整的 runtime、modules 和注入器目录。" : "Valid runtime, modules, and injector directory found.")
+            : (isZh ? "注入器或相邻 runtime/modules 目录不完整。" : "Injector or adjacent runtime/modules directory is incomplete.");
     }
 
     private void UpdateLoaderModePanel()
     {
+        bool isZh = LocalizationService.Instance.IsChinese;
         bool xinput = GetSelectedLoaderMode().Equals(
             "xinput",
             StringComparison.OrdinalIgnoreCase);
@@ -1673,11 +1719,13 @@ public sealed partial class MainWindow : Window
             ? Visibility.Visible
             : Visibility.Collapsed;
         LoaderModeDescriptionTextBlock.Text = xinput
-            ? "游戏每次启动都会自动加载 Better Endfield。适合与其他加载器共存，或通过官方启动器直接启动。"
-            : "由 Better Endfield 启动游戏并在启动阶段加载 Host，游戏目录保持不变。";
+            ? (isZh ? "游戏每次启动都会自动加载 Better Endfield。适合与其他加载器共存，或通过官方启动器直接启动。"
+                    : "Better Endfield loads automatically whenever game starts. Recommended when coexisting with other mods or launching via official launcher.")
+            : (isZh ? "由 Better Endfield 启动游戏并在启动阶段加载 Host，游戏目录保持不变。"
+                    : "Launched and injected by Better Endfield at startup; game directory remains unmodified.");
         PageSelectionHintTextBlock.Text = xinput
-            ? "启动时会确保 XInput 代理已安装到游戏目录。"
-            : "保存后在下一次注入时生效。";
+            ? (isZh ? "启动时会确保 XInput 代理已安装到游戏目录。" : "Launcher will ensure XInput proxy is installed in game directory.")
+            : (isZh ? "保存后在下一次注入时生效。" : "Changes will take effect on next game launch/injection.");
         UpdatePathStatusText();
     }
 
@@ -1800,6 +1848,7 @@ public sealed partial class MainWindow : Window
 
     private async Task RefreshDisplayStatusAsync()
     {
+        bool isZh = LocalizationService.Instance.IsChinese;
         int revision = Interlocked.Increment(ref _displayStatusRevision);
         OptiScalerDeploymentStatus status = await OptiScalerDeploymentService.InspectAsync(
             GamePathBox.Text.Trim(),
@@ -1810,11 +1859,11 @@ public sealed partial class MainWindow : Window
         }
         DisplayStatusInfoBar.Title = status.State switch
         {
-            OptiScalerDeploymentState.Installed => "已部署",
-            OptiScalerDeploymentState.UpdateAvailable => "可更新",
-            OptiScalerDeploymentState.Conflict => "检测到冲突",
-            OptiScalerDeploymentState.NotInstalled => "未部署",
-            _ => "暂不可用"
+            OptiScalerDeploymentState.Installed => isZh ? "已部署" : "Deployed",
+            OptiScalerDeploymentState.UpdateAvailable => isZh ? "可更新" : "Update Available",
+            OptiScalerDeploymentState.Conflict => isZh ? "检测到冲突" : "Conflict Detected",
+            OptiScalerDeploymentState.NotInstalled => isZh ? "未部署" : "Not Deployed",
+            _ => isZh ? "暂不可用" : "Unavailable"
         };
         DisplayStatusInfoBar.Message = status.Message;
         DisplayStatusInfoBar.Severity = status.State switch
@@ -1836,13 +1885,19 @@ public sealed partial class MainWindow : Window
         {
             return false;
         }
-        ShowStatus("游戏正在运行", $"请退出游戏后再{action}显示增强组件。", InfoBarSeverity.Warning);
+        bool isZh = LocalizationService.Instance.IsChinese;
+        ShowStatus(
+            isZh ? "游戏正在运行" : "Game Already Running",
+            isZh ? $"请退出游戏后再{action}显示增强组件。"
+                 : $"Please exit the game before attempting to {action} display enhancement components.",
+            InfoBarSeverity.Warning);
         return true;
     }
 
     private async void InstallDisplayButton_Click(object sender, RoutedEventArgs e)
     {
-        if (IsGameRunningForDisplay("部署"))
+        bool isZh = LocalizationService.Instance.IsChinese;
+        if (IsGameRunningForDisplay(isZh ? "部署" : "deploy"))
         {
             return;
         }
@@ -1853,19 +1908,20 @@ public sealed partial class MainWindow : Window
                 InjectorPathBox.Text.Trim());
             await ApplyDisplayConfigurationAsync(silent: true);
             await RefreshDisplayStatusAsync();
-            ShowStatus("显示增强已部署", status.Message, InfoBarSeverity.Success);
+            ShowStatus(isZh ? "显示增强已部署" : "Display Enhancement Deployed", status.Message, InfoBarSeverity.Success);
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or
                 InvalidDataException or InvalidOperationException or FileNotFoundException)
         {
-            ShowStatus("显示增强部署失败", exception.Message, InfoBarSeverity.Error);
+            ShowStatus(isZh ? "显示增强部署失败" : "Deployment Failed", exception.Message, InfoBarSeverity.Error);
         }
     }
 
     private async void ApplyDisplayButton_Click(object sender, RoutedEventArgs e)
     {
-        if (IsGameRunningForDisplay("重新配置"))
+        bool isZh = LocalizationService.Instance.IsChinese;
+        if (IsGameRunningForDisplay(isZh ? "重新配置" : "reconfigure"))
         {
             return;
         }
@@ -1874,6 +1930,7 @@ public sealed partial class MainWindow : Window
 
     private async Task ApplyDisplayConfigurationAsync(bool silent)
     {
+        bool isZh = LocalizationService.Instance.IsChinese;
         _displayConfiguration.GpuSpoofing = DisplaySpoofingToggle.IsOn;
         _displayConfiguration.Diagnostics = DisplayDiagnosticsToggle.IsOn;
         _displayConfiguration.Enabled =
@@ -1894,8 +1951,9 @@ public sealed partial class MainWindow : Window
             if (!silent)
             {
                 ShowStatus(
-                    "显示增强配置已应用",
-                    "已写入 OptiScaler.ini，改动在下一次启动客户端时生效。",
+                    isZh ? "显示增强配置已应用" : "Display Configuration Applied",
+                    isZh ? "已写入 OptiScaler.ini，改动在下一次启动客户端时生效。"
+                         : "Written to OptiScaler.ini; changes will take effect on next game launch.",
                     InfoBarSeverity.Success);
             }
         }
@@ -1903,13 +1961,14 @@ public sealed partial class MainWindow : Window
             exception is IOException or UnauthorizedAccessException or
                 InvalidDataException or InvalidOperationException or FileNotFoundException)
         {
-            ShowStatus("显示增强配置失败", exception.Message, InfoBarSeverity.Error);
+            ShowStatus(isZh ? "显示增强配置失败" : "Configuration Failed", exception.Message, InfoBarSeverity.Error);
         }
     }
 
     private async void UninstallDisplayButton_Click(object sender, RoutedEventArgs e)
     {
-        if (IsGameRunningForDisplay("卸载"))
+        bool isZh = LocalizationService.Instance.IsChinese;
+        if (IsGameRunningForDisplay(isZh ? "卸载" : "uninstall"))
         {
             return;
         }
@@ -1921,8 +1980,9 @@ public sealed partial class MainWindow : Window
             DisplayNotesTextBlock.Visibility = Visibility.Collapsed;
             await RefreshDisplayStatusAsync();
             ShowStatus(
-                "显示增强已卸载",
-                "已移除 Better Endfield 写入游戏目录的 OptiScaler 组件与归属记录。",
+                isZh ? "显示增强已卸载" : "Display Enhancement Uninstalled",
+                isZh ? "已移除 Better Endfield 写入游戏目录的 OptiScaler 组件与归属记录。"
+                     : "Removed OptiScaler components and attribution records written by Better Endfield.",
                 InfoBarSeverity.Success);
         }
         catch (Exception exception) when (
@@ -1931,12 +1991,13 @@ public sealed partial class MainWindow : Window
         {
             // 卸载会在保留了非本软件文件时抛出，属于预期结果而非失败，用警告呈现。
             await RefreshDisplayStatusAsync();
-            ShowStatus("显示增强部分保留", exception.Message, InfoBarSeverity.Warning);
+            ShowStatus(isZh ? "显示增强部分保留" : "Partial Components Preserved", exception.Message, InfoBarSeverity.Warning);
         }
     }
 
     private async Task RefreshXInputStatusAsync()
     {
+        bool isZh = LocalizationService.Instance.IsChinese;
         int revision = Interlocked.Increment(ref _xInputStatusRevision);
         XInputDeploymentStatus status = await XInputDeploymentService.InspectAsync(
             GamePathBox.Text.Trim(),
@@ -1947,11 +2008,11 @@ public sealed partial class MainWindow : Window
         }
         XInputStatusInfoBar.Title = status.State switch
         {
-            XInputDeploymentState.Installed => "已安装",
-            XInputDeploymentState.UpdateAvailable => "可更新",
-            XInputDeploymentState.Conflict => "检测到冲突",
-            XInputDeploymentState.NotInstalled => "未安装",
-            _ => "暂不可用"
+            XInputDeploymentState.Installed => isZh ? "已安装" : "Installed",
+            XInputDeploymentState.UpdateAvailable => isZh ? "可更新" : "Update Available",
+            XInputDeploymentState.Conflict => isZh ? "检测到冲突" : "Conflict Detected",
+            XInputDeploymentState.NotInstalled => isZh ? "未安装" : "Not Installed",
+            _ => isZh ? "暂不可用" : "Unavailable"
         };
         XInputStatusInfoBar.Message = status.Message;
         XInputStatusInfoBar.Severity = status.State switch
@@ -1968,9 +2029,13 @@ public sealed partial class MainWindow : Window
 
     private async void InstallXInputButton_Click(object sender, RoutedEventArgs e)
     {
+        bool isZh = LocalizationService.Instance.IsChinese;
         if (Process.GetProcessesByName("Endfield").Length > 0)
         {
-            ShowStatus("游戏正在运行", "请退出游戏后再安装或更新 XInput 代理。", InfoBarSeverity.Warning);
+            ShowStatus(
+                isZh ? "游戏正在运行" : "Game Already Running",
+                isZh ? "请退出游戏后再安装或更新 XInput 代理。" : "Please exit the game before installing or updating XInput proxy.",
+                InfoBarSeverity.Warning);
             return;
         }
         if (!await SaveAsync(showSuccess: false))
@@ -1983,13 +2048,13 @@ public sealed partial class MainWindow : Window
                 GamePathBox.Text.Trim(),
                 InjectorPathBox.Text.Trim());
             await RefreshXInputStatusAsync();
-            ShowStatus("XInput 已安装", status.Message, InfoBarSeverity.Success);
+            ShowStatus(isZh ? "XInput 已安装" : "XInput Installed", status.Message, InfoBarSeverity.Success);
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or
                 InvalidDataException or InvalidOperationException)
         {
-            ShowStatus("XInput 安装失败", exception.Message, InfoBarSeverity.Error);
+            ShowStatus(isZh ? "XInput 安装失败" : "XInput Installation Failed", exception.Message, InfoBarSeverity.Error);
         }
     }
 
@@ -2229,17 +2294,7 @@ public sealed partial class MainWindow : Window
         MusicReplacementToggle.IsOn = configuration.MusicReplacementEnabled;
         OmniMixBackendPathBox.Text = configuration.OmniMixBackendExe;
         OmniMixClientIdTextBlock.Tag = configuration.OmniMixClientId;
-        OmniMixRegistrationStatusTextBlock.Text =
-            string.IsNullOrWhiteSpace(configuration.OmniMixBackendExe)
-                ? "尚未注册 OmniMix 后端"
-                : OmniMixRegistrationService.IsValidBackendPath(
-                    configuration.OmniMixBackendExe)
-                    ? "OmniMix 后端路径有效"
-                    : "OmniMix 后端路径已失效";
-        OmniMixClientIdTextBlock.Text = string.IsNullOrWhiteSpace(
-            configuration.OmniMixClientId)
-                ? "客户端标识将在注册时生成。"
-                : $"客户端标识：{configuration.OmniMixClientId}";
+        UpdateOmniMixStatusTexts();
         ReplaceLoginMusicToggle.IsOn = configuration.ReplaceLoginMusic;
         ReplaceMetaMusicToggle.IsOn = configuration.ReplaceMetaMusic;
         ReplaceGameplayMusicToggle.IsOn = configuration.ReplaceGameplayMusic;
@@ -2269,6 +2324,143 @@ public sealed partial class MainWindow : Window
         UpdateCrossfadePanel();
     }
 
+    private void UpdateOmniMixStatusTexts()
+    {
+        bool isZh = LocalizationService.Instance.IsChinese;
+        string backend = OmniMixBackendPathBox.Text?.Trim() ?? string.Empty;
+        string? clientId = OmniMixClientIdTextBlock.Tag as string;
+
+        if (string.IsNullOrWhiteSpace(backend))
+        {
+            OmniMixRegistrationStatusTextBlock.Text = isZh ? "尚未注册 OmniMix 后端" : "OmniMix backend not registered";
+        }
+        else
+        {
+            bool valid = OmniMixRegistrationService.IsValidBackendPath(backend);
+            OmniMixRegistrationStatusTextBlock.Text = valid
+                ? (isZh ? "OmniMix 后端路径有效" : "OmniMix backend path valid")
+                : (isZh ? "OmniMix 后端路径已失效" : "OmniMix backend path is invalid");
+        }
+
+        OmniMixClientIdTextBlock.Text = string.IsNullOrWhiteSpace(clientId)
+            ? (isZh ? "客户端标识将在注册时生成。" : "Client ID will be generated upon registration.")
+            : (isZh ? $"客户端标识：{clientId}" : $"Client ID: {clientId}");
+    }
+
+    private void LogoThemeColorPicker_Loaded(object sender, RoutedEventArgs e)
+    {
+        UpdateColorPickerLabels();
+    }
+
+    private void UpdateColorPickerLabels()
+    {
+        bool isZh = LocalizationService.Instance.IsChinese;
+        UpdateColorPickerVisualTree(LogoThemeColorPicker, isZh);
+    }
+
+    private static void UpdateColorPickerVisualTree(DependencyObject parent, bool isChinese)
+    {
+        int count = VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < count; i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(parent, i);
+            if (child is TextBlock tb)
+            {
+                string text = tb.Text?.Trim() ?? string.Empty;
+                string? target = null;
+                if (string.Equals(text, "红色", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(text, "Red", StringComparison.OrdinalIgnoreCase))
+                {
+                    target = isChinese ? "红色" : "Red";
+                }
+                else if (string.Equals(text, "绿色", StringComparison.OrdinalIgnoreCase) ||
+                         string.Equals(text, "Green", StringComparison.OrdinalIgnoreCase))
+                {
+                    target = isChinese ? "绿色" : "Green";
+                }
+                else if (string.Equals(text, "蓝色", StringComparison.OrdinalIgnoreCase) ||
+                         string.Equals(text, "Blue", StringComparison.OrdinalIgnoreCase))
+                {
+                    target = isChinese ? "蓝色" : "Blue";
+                }
+                else if (string.Equals(text, "十六进制", StringComparison.OrdinalIgnoreCase) ||
+                         string.Equals(text, "Hex", StringComparison.OrdinalIgnoreCase) ||
+                         string.Equals(text, "Hexadecimal", StringComparison.OrdinalIgnoreCase))
+                {
+                    target = isChinese ? "十六进制" : "Hex";
+                }
+
+                if (target != null && tb.Text != target)
+                {
+                    tb.Text = target;
+                }
+            }
+            else if (child is TextBox textBox)
+            {
+                if (textBox.Header is string headerStr)
+                {
+                    string header = headerStr.Trim();
+                    string? target = null;
+                    if (string.Equals(header, "红色", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(header, "Red", StringComparison.OrdinalIgnoreCase))
+                    {
+                        target = isChinese ? "红色" : "Red";
+                    }
+                    else if (string.Equals(header, "绿色", StringComparison.OrdinalIgnoreCase) ||
+                             string.Equals(header, "Green", StringComparison.OrdinalIgnoreCase))
+                    {
+                        target = isChinese ? "绿色" : "Green";
+                    }
+                    else if (string.Equals(header, "蓝色", StringComparison.OrdinalIgnoreCase) ||
+                             string.Equals(header, "Blue", StringComparison.OrdinalIgnoreCase))
+                    {
+                        target = isChinese ? "蓝色" : "Blue";
+                    }
+                    else if (string.Equals(header, "十六进制", StringComparison.OrdinalIgnoreCase) ||
+                             string.Equals(header, "Hex", StringComparison.OrdinalIgnoreCase))
+                    {
+                        target = isChinese ? "十六进制" : "Hex";
+                    }
+
+                    if (target != null && !Equals(textBox.Header, target))
+                    {
+                        textBox.Header = target;
+                    }
+                }
+            }
+            else if (child is NumberBox numberBox)
+            {
+                if (numberBox.Header is string headerStr)
+                {
+                    string header = headerStr.Trim();
+                    string? target = null;
+                    if (string.Equals(header, "红色", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(header, "Red", StringComparison.OrdinalIgnoreCase))
+                    {
+                        target = isChinese ? "红色" : "Red";
+                    }
+                    else if (string.Equals(header, "绿色", StringComparison.OrdinalIgnoreCase) ||
+                             string.Equals(header, "Green", StringComparison.OrdinalIgnoreCase))
+                    {
+                        target = isChinese ? "绿色" : "Green";
+                    }
+                    else if (string.Equals(header, "蓝色", StringComparison.OrdinalIgnoreCase) ||
+                             string.Equals(header, "Blue", StringComparison.OrdinalIgnoreCase))
+                    {
+                        target = isChinese ? "蓝色" : "Blue";
+                    }
+
+                    if (target != null && !Equals(numberBox.Header, target))
+                    {
+                        numberBox.Header = target;
+                    }
+                }
+            }
+
+            UpdateColorPickerVisualTree(child, isChinese);
+        }
+    }
+
     private static Color ParseLogoThemeColor(string value)
     {
         string normalized = value.Trim().TrimStart('#');
@@ -2287,16 +2479,17 @@ public sealed partial class MainWindow : Window
     {
         OmniMixBackendPathBox.Text = status.BackendExe;
         OmniMixClientIdTextBlock.Tag = status.ClientId;
+        bool isZh = LocalizationService.Instance.IsChinese;
         OmniMixRegistrationStatusTextBlock.Text = status.Registered
             ? status.Valid
                 ? string.IsNullOrWhiteSpace(status.BackendVersion)
-                    ? "OmniMix 后端路径有效"
-                    : $"OmniMix 后端 {status.BackendVersion}"
-                : $"OmniMix 后端不可用：{status.Reason}"
-            : "尚未注册 OmniMix 后端";
+                    ? (isZh ? "OmniMix 后端路径有效" : "OmniMix backend path valid")
+                    : (isZh ? $"OmniMix 后端 {status.BackendVersion}" : $"OmniMix backend {status.BackendVersion}")
+                : (isZh ? $"OmniMix 后端不可用：{status.Reason}" : $"OmniMix backend unavailable: {status.Reason}")
+            : (isZh ? "尚未注册 OmniMix 后端" : "OmniMix backend not registered");
         OmniMixClientIdTextBlock.Text = string.IsNullOrWhiteSpace(status.ClientId)
-            ? "客户端标识将在注册时生成。"
-            : $"客户端标识：{status.ClientId}";
+            ? (isZh ? "客户端标识将在注册时生成。" : "Client ID will be generated upon registration.")
+            : (isZh ? $"客户端标识：{status.ClientId}" : $"Client ID: {status.ClientId}");
     }
 
     private void RefreshActionOptions(string? preferredAction)
@@ -2412,6 +2605,59 @@ public sealed partial class MainWindow : Window
         return true;
     }
 
+    private static IReadOnlyList<VoiceCharacterChoice> BuildVoiceCharacterChoices()
+    {
+        bool isZh = LocalizationService.Instance.IsChinese;
+        return PresetOptions.CharacterNamesZh
+            .OrderBy(entry => entry.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(entry => new VoiceCharacterChoice
+            {
+                CharacterId = entry.Key,
+                Speaker = GetCharacterSpeakerAlias(entry.Key),
+                DisplayName = PresetOptions.GetCharacterName(entry.Key)
+            })
+            .GroupBy(choice => choice.Speaker, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .OrderBy(choice => choice.DisplayName, StringComparer.CurrentCulture)
+            .Append(new VoiceCharacterChoice
+            {
+                Speaker = "*",
+                DisplayName = isZh ? "其他角色（默认规则）" : "All Other Characters (Default Rule)"
+            })
+            .ToArray();
+    }
+
+    private void RefreshVoiceCharactersList()
+    {
+        string? selectedSpeaker = (VoiceCharacterComboBox.SelectedItem as VoiceCharacterChoice)?.Speaker;
+        _voiceCharacters = BuildVoiceCharacterChoices();
+        VoiceCharacterComboBox.ItemsSource = _voiceCharacters;
+        VoiceCharacterComboBox.SelectedItem = _voiceCharacters.FirstOrDefault(
+            choice => string.Equals(choice.Speaker, selectedSpeaker, StringComparison.OrdinalIgnoreCase))
+            ?? _voiceCharacters.FirstOrDefault();
+    }
+
+    private void RefreshVoiceRulesDisplay()
+    {
+        bool isZh = LocalizationService.Instance.IsChinese;
+        for (int index = 0; index < _voiceRules.Count; index++)
+        {
+            VoiceRuleEntry old = _voiceRules[index];
+            string characterId = _voiceCharacters.FirstOrDefault(
+                c => c.Speaker.Equals(old.Speaker, StringComparison.OrdinalIgnoreCase))?.CharacterId ?? old.Speaker;
+            string displayName = old.Speaker == "*"
+                ? (isZh ? "其他角色（默认规则）" : "All Other Characters (Default Rule)")
+                : PresetOptions.GetCharacterName(characterId);
+            _voiceRules[index] = new VoiceRuleEntry
+            {
+                Speaker = old.Speaker,
+                DisplayName = displayName,
+                Language = old.Language,
+                LanguageDisplayName = GetVoiceLanguageDisplayName(old.Language)
+            };
+        }
+    }
+
     private static string GetCharacterSpeakerAlias(string characterId)
     {
         if (characterId.StartsWith("chr_", StringComparison.OrdinalIgnoreCase))
@@ -2481,10 +2727,19 @@ public sealed partial class MainWindow : Window
         UpdateVoiceRulesEmptyState();
     }
 
-    private string GetVoiceLanguageDisplayName(string language) =>
-        VoiceLanguageDisplayNames.TryGetValue(language, out string? displayName)
-            ? displayName
-            : language;
+    private string GetVoiceLanguageDisplayName(string language)
+    {
+        bool isZh = LocalizationService.Instance.IsChinese;
+        return language switch
+        {
+            "Chinese" or "CN" or "ZH" => "中文",
+            "English" or "EN" => "English",
+            "Japanese" or "JP" or "JA" => "日本語",
+            "Korean" or "KR" or "KO" => "한국어",
+            "FollowGlobal" or "Global" or "Default" => isZh ? "跟随游戏" : "Follow Game",
+            _ => language
+        };
+    }
 
     private void UpdateVoiceRulesEmptyState()
     {
@@ -2502,6 +2757,7 @@ public sealed partial class MainWindow : Window
             return;
         }
 
+        bool isZh = LocalizationService.Instance.IsChinese;
         foreach (string entry in normalized.Split(
             ['\r', '\n'],
             StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
@@ -2514,9 +2770,11 @@ public sealed partial class MainWindow : Window
 
             string speaker = entry[..separator].Trim();
             string language = entry[(separator + 1)..].Trim();
-            string displayName = _voiceCharacters.FirstOrDefault(choice =>
-                choice.Speaker.Equals(speaker, StringComparison.OrdinalIgnoreCase))?.DisplayName
-                ?? (speaker == "*" ? "其他角色（默认规则）" : speaker);
+            string characterId = _voiceCharacters.FirstOrDefault(choice =>
+                choice.Speaker.Equals(speaker, StringComparison.OrdinalIgnoreCase))?.CharacterId ?? speaker;
+            string displayName = speaker == "*"
+                ? (isZh ? "其他角色（默认规则）" : "All Other Characters (Default Rule)")
+                : PresetOptions.GetCharacterName(characterId);
             UpsertVoiceRule(speaker, language, displayName);
         }
         UpdateVoiceRulesEmptyState();
@@ -2559,8 +2817,25 @@ public sealed partial class MainWindow : Window
         return result;
     }
 
+    private void SelectLanguage(string language)
+    {
+        if (LanguageComboBox == null || LanguageComboBox.Items.Count == 0) return;
+        string normalized = language is "zh-CN" or "en-US" ? language : "System";
+        LanguageComboBox.SelectedItem = LanguageComboBox.Items
+            .OfType<ComboBoxItem>()
+            .FirstOrDefault(item => string.Equals(
+                item.Tag as string,
+                normalized,
+                StringComparison.OrdinalIgnoreCase)) ??
+            LanguageComboBox.Items.OfType<ComboBoxItem>().FirstOrDefault();
+    }
+
+    private string GetSelectedLanguage() =>
+        (LanguageComboBox?.SelectedItem as ComboBoxItem)?.Tag as string ?? "System";
+
     private void SelectTheme(string theme)
     {
+        if (ThemeComboBox == null || ThemeComboBox.Items.Count == 0) return;
         string normalized = theme is "Light" or "Dark" ? theme : "Default";
         ThemeComboBox.SelectedItem = ThemeComboBox.Items
             .OfType<ComboBoxItem>()
@@ -2568,11 +2843,11 @@ public sealed partial class MainWindow : Window
                 item.Tag as string,
                 normalized,
                 StringComparison.OrdinalIgnoreCase)) ??
-            ThemeComboBox.Items.OfType<ComboBoxItem>().First();
+            ThemeComboBox.Items.OfType<ComboBoxItem>().FirstOrDefault();
     }
 
     private string GetSelectedTheme() =>
-        (ThemeComboBox.SelectedItem as ComboBoxItem)?.Tag as string ?? "Default";
+        (ThemeComboBox?.SelectedItem as ComboBoxItem)?.Tag as string ?? "Default";
 
     private void ApplyTheme(string theme)
     {
@@ -2586,6 +2861,7 @@ public sealed partial class MainWindow : Window
 
     private async Task<bool> ShowDisclaimerAsync(bool requireAcceptance)
     {
+        bool isZh = LocalizationService.Instance.IsChinese;
         var content = new StackPanel
         {
             Spacing = 12,
@@ -2593,23 +2869,31 @@ public sealed partial class MainWindow : Window
         };
         content.Children.Add(new TextBlock
         {
-            Text = "本软件会将本机代码注入游戏进程，并在运行时修改模型、动画和语音资源选择。",
+            Text = isZh
+                ? "本软件会将本机代码注入游戏进程，并在运行时修改模型、动画和语音资源选择。"
+                : "This software injects native code into the game process to modify models, animations, and voice audio routing at runtime.",
             TextWrapping = TextWrapping.Wrap,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
         });
         content.Children.Add(new TextBlock
         {
-            Text = "可能的风险包括游戏崩溃、存档或配置异常、更新后失效，以及被游戏安全或反作弊系统识别。使用在线账号可能产生账号限制风险。",
+            Text = isZh
+                ? "可能的风险包括游戏崩溃、存档或配置异常、更新后失效，以及被游戏安全或反作弊系统识别。使用在线账号可能产生账号限制风险。"
+                : "Potential risks include game crashes, configuration anomalies, invalidation after updates, and detection by game security or anti-cheat systems. Online accounts may be subject to restrictions.",
             TextWrapping = TextWrapping.Wrap
         });
         content.Children.Add(new TextBlock
         {
-            Text = "本项目为非官方实验工具，与鹰角网络、峘形山工作室及 GRYPHLINE 无关，也不提供任何形式的担保。请自行备份重要数据，遵守游戏服务条款，并自行承担使用后果。",
+            Text = isZh
+                ? "本项目为非官方实验工具，与鹰角网络、峘形山工作室及 GRYPHLINE 无关，也不提供任何形式的担保。请自行备份重要数据，遵守游戏服务条款，并自行承担使用后果。"
+                : "This project is an unofficial experimental tool, not affiliated with Hypergryph, Mountain Contour, or GRYPHLINE, and provides no warranties. Please backup important data, comply with terms of service, and use at your own risk.",
             TextWrapping = TextWrapping.Wrap
         });
         content.Children.Add(new TextBlock
         {
-            Text = "本软件不负责停用或绕过反作弊组件；游戏更新后如签名不匹配，相关 Hook 应停止使用，等待适配。",
+            Text = isZh
+                ? "本软件不负责停用或绕过反作弊组件；游戏更新后如签名不匹配，相关 Hook 应停止使用，等待适配。"
+                : "This software does not disable or bypass anti-cheat components. If signatures mismatch after a game update, related hooks should be suspended pending compatibility fixes.",
             TextWrapping = TextWrapping.Wrap,
             Foreground = (Brush)Application.Current.Resources[
                 "TextFillColorSecondaryBrush"]
@@ -2618,13 +2902,19 @@ public sealed partial class MainWindow : Window
         var dialog = new ContentDialog
         {
             XamlRoot = MainRoot.XamlRoot,
-            Title = requireAcceptance ? "使用前请阅读" : "风险与免责声明",
+            Title = requireAcceptance
+                ? (isZh ? "使用前请阅读" : "Please Read Before Use")
+                : (isZh ? "风险与免责声明" : "Risk & Disclaimer"),
             Content = content,
             DefaultButton = requireAcceptance
                 ? ContentDialogButton.Primary
                 : ContentDialogButton.Close,
-            PrimaryButtonText = requireAcceptance ? "我已了解并继续" : string.Empty,
-            CloseButtonText = requireAcceptance ? "退出" : "关闭"
+            PrimaryButtonText = requireAcceptance
+                ? (isZh ? "我已了解并继续" : "I Understand & Continue")
+                : string.Empty,
+            CloseButtonText = requireAcceptance
+                ? (isZh ? "退出" : "Exit")
+                : (isZh ? "关闭" : "Close")
         };
         ContentDialogResult result = await dialog.ShowAsync();
         return !requireAcceptance || result == ContentDialogResult.Primary;
@@ -2650,8 +2940,11 @@ public sealed partial class MainWindow : Window
     private void RefreshRuntimeStatus()
     {
         RefreshRuntimeAnimationDurations();
+        bool isZh = LocalizationService.Instance.IsChinese;
         bool gameRunning = Process.GetProcessesByName("Endfield").Length > 0;
-        RuntimeStatusTextBlock.Text = gameRunning ? "游戏正在运行" : "游戏未运行";
+        RuntimeStatusTextBlock.Text = gameRunning
+            ? (isZh ? "游戏正在运行" : "Game is running")
+            : (isZh ? "游戏未运行" : "Game is not running");
         RuntimeStatusIndicator.Fill = gameRunning
             ? new SolidColorBrush(Microsoft.UI.Colors.LimeGreen)
             : (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"];
@@ -2660,13 +2953,15 @@ public sealed partial class MainWindow : Window
         if (File.Exists(logPath))
         {
             DateTime updated = File.GetLastWriteTime(logPath);
-            LogStatusTextBlock.Text = $"日志更新：{updated:MM-dd HH:mm:ss}";
+            LogStatusTextBlock.Text = isZh
+                ? $"日志更新：{updated:MM-dd HH:mm:ss}"
+                : $"Log updated: {updated:MM-dd HH:mm:ss}";
         }
         else
         {
             LogStatusTextBlock.Text = File.Exists(InjectorPathBox.Text.Trim())
-                ? "注入器已就绪 · 尚无日志"
-                : "未找到注入器";
+                ? (isZh ? "注入器已就绪 · 尚无日志" : "Injector ready · No logs yet")
+                : (isZh ? "未找到注入器" : "Injector not found");
         }
     }
 
@@ -2735,9 +3030,12 @@ public sealed partial class MainWindow : Window
 
     private void UpdateActionMetadata(ActionOption action)
     {
+        bool isZh = LocalizationService.Instance.IsChinese;
         ActionDurationTextBlock.Text = action.Duration is double seconds
-            ? $"动画原始时长：{seconds.ToString("0.###", CultureInfo.InvariantCulture)} 秒"
-            : "动画原始时长：未知（首次播放后自动读取）";
+            ? (isZh
+                ? $"动画原始时长：{seconds.ToString("0.###", CultureInfo.InvariantCulture)} 秒"
+                : $"Original Duration: {seconds.ToString("0.###", CultureInfo.InvariantCulture)} s")
+            : (isZh ? "动画原始时长：未知（首次播放后自动读取）" : "Original Duration: Unknown (read on first play)");
     }
 
     private void ShowStatus(string title, string message, InfoBarSeverity severity)
@@ -2811,6 +3109,417 @@ public sealed partial class MainWindow : Window
             InvalidOperationException or COMException)
         {
         }
+    }
+
+    private void UpdateLocalizedUI()
+    {
+        string lang = LocalizationService.Instance.EffectiveLanguage;
+        bool isZh = LocalizationService.Instance.IsChinese;
+
+        MainRoot.Language = lang;
+        LogoThemeColorPicker.Language = lang;
+
+        // Window & Title
+        Title = "Better Endfield";
+        PaneSubtitleTextBlock.Text = isZh ? "终末地 Mod 控制器" : "Endfield Mod Controller";
+
+        // NavigationView Menu Items
+        ModelNavigationItem.Content = isZh ? "开屏" : "Title Screen";
+        VoiceNavigationItem.Content = isZh ? "配音语言" : "Voice Language";
+        MusicNavigationItem.Content = isZh ? "音乐集成" : "Music Integration";
+        CombatNavigationItem.Content = isZh ? "战斗数据" : "Combat Stats";
+        UiNavigationItem.Content = isZh ? "界面增强" : "Touch & UI";
+        CameraNavigationItem.Content = isZh ? "相机增强" : "Camera";
+        DisplayNavigationItem.Content = isZh ? "显示增强" : "Display & Pipeline";
+        if (FeatureNavigation.SettingsItem is NavigationViewItem settingsItem)
+        {
+            settingsItem.Content = isZh ? "设置" : "Settings";
+        }
+        AboutNavigationItem.Content = isZh ? "关于" : "About";
+
+        // Model Page
+        ModelPageTitleTextBlock.Text = isZh ? "开屏" : "Title Screen";
+        ModelPageDescriptionTextBlock.Text = isZh
+            ? "调整登录场景的视觉效果、角色模型与四阶段动画。"
+            : "Customize title screen visuals, character models, and 4-phase animations.";
+        ModelVisualSectionTitle.Text = isZh ? "界面视觉" : "Interface Visuals";
+        ModelVisualSectionHint.Text = isZh
+            ? "主题色可与原登录演员或角色替换同时使用。"
+            : "Theme color works with both original actors and custom replacements.";
+        LogoThemeToggle.Header = isZh ? "自定义 Logo 与色带主题色" : "Custom Logo & Ribbon Accent Theme";
+        LogoThemeToggle.OffContent = isZh ? "使用游戏原色" : "Use game default colors";
+        LogoThemeToggle.OnContent = isZh ? "使用所选颜色" : "Use selected accent color";
+        ModelReplacementToggle.Header = isZh ? "启用角色替换" : "Enable Character Replacement";
+        ModelReplacementToggle.OffContent = isZh ? "保持原登录演员" : "Keep original login actor";
+        ModelReplacementToggle.OnContent = isZh ? "使用下方角色与动画" : "Use custom character & animations";
+        ModelCharacterSectionTitle.Text = isZh ? "角色与动作" : "Character & Action Sequence";
+        ModelCharacterSectionHint.Text = isZh
+            ? "角色使用自己的坐姿动画链，最后动作从该角色的已索引动画中选择。"
+            : "Characters use their own sit animation chains; final action is selected from indexed animations.";
+        CharacterComboBox.Header = isZh ? "角色模型" : "Character Model";
+        FinalActionComboBox.Header = isZh ? "最后动作" : "Final Action";
+        StartYawNumberBox.Header = isZh ? "起始角度 (°)" : "Initial Yaw (°)";
+        TurnDurationNumberBox.Header = isZh ? "转正时长 (秒)" : "Turn Duration (s)";
+        ScaleNumberBox.Header = isZh ? "模型缩放" : "Model Scale";
+        LeanSampleNumberBox.Header = isZh ? "前倾采样 (秒)" : "Forward Lean Sample (s)";
+        ModelSpeedSectionTitle.Text = isZh ? "播放速度" : "Playback Speed";
+        ModelSpeedSectionHint.Text = isZh
+            ? "1.0 为动画原速。各阶段独立设置，不改变镜头时间轴。"
+            : "1.0 is default speed. Each phase is configured independently without altering camera timeline.";
+        SitLoopSpeedNumberBox.Header = isZh ? "坐姿循环" : "Sit Loop";
+        SitSpecialSpeedNumberBox.Header = isZh ? "坐姿小动作" : "Sit Special";
+        SitToWalkSpeedNumberBox.Header = isZh ? "起身过渡" : "Sit to Walk";
+        FinalSpeedNumberBox.Header = isZh ? "最后动作" : "Final Action";
+        ModelLoopSectionTitle.Text = isZh ? "连续循环" : "Continuous Looping";
+        ModelLoopSectionHint.Text = isZh
+            ? "可遵循资源 LoopTime、强制覆盖非循环资源，或按自定义区间交叉混合。"
+            : "Follow asset LoopTime, force loop non-looping clips, or blend custom crossfade intervals.";
+        FinalLoopToggle.Header = isZh ? "原生循环" : "Native Loop";
+        FinalLoopToggle.OffContent = isZh ? "播放一次并停在末帧" : "Play once & hold last frame";
+        FinalLoopToggle.OnContent = isZh ? "使用动画 LoopTime" : "Use clip LoopTime";
+        ForceLoopToggle.Header = isZh ? "强制循环" : "Force Loop";
+        ForceLoopToggle.OffContent = isZh ? "遵循资源原生标志" : "Follow native clip flag";
+        ForceLoopToggle.OnContent = isZh ? "强制忽略末帧停留" : "Force continuous looping";
+        CrossfadeToggle.Header = isZh ? "首尾交叉过渡" : "Crossfade Loop Transition";
+        CrossfadeToggle.OffContent = isZh ? "不混合" : "No blending";
+        CrossfadeToggle.OnContent = isZh ? "首尾平滑混合" : "Smooth head-to-tail crossfade";
+        LoopStartNumberBox.Header = isZh ? "循环起点 (秒)" : "Loop Start (s)";
+        LoopEndNumberBox.Header = isZh ? "循环终点 (秒)" : "Loop End (s)";
+        CrossfadeDurationNumberBox.Header = isZh ? "混合时长 (秒)" : "Crossfade Duration (s)";
+
+        // Voice Page
+        VoicePageTitleTextBlock.Text = isZh ? "配音语言" : "Voice Language";
+        VoicePageDescriptionTextBlock.Text = isZh
+            ? "为单个角色指定语音包，同时保持游戏全局语言不变。"
+            : "Assign per-character audio language packs while keeping global game language intact.";
+        VoicePageDownloadHintTextBlock.Text = isZh
+            ? "请先下载对应语言包。"
+            : "Please ensure corresponding language packs are downloaded in game first.";
+        VoiceRouterToggle.Header = isZh ? "启用按角色配音" : "Enable Per-Character Voice";
+        VoiceRouterToggle.OffContent = isZh ? "全部跟随游戏" : "Follow game global language";
+        VoiceRouterToggle.OnContent = isZh ? "应用下方角色规则" : "Apply custom rules below";
+        NarrativeVoiceToggle.Header = isZh ? "替换剧情语音与口型" : "Replace Story Dialogue & Lip-sync";
+        NarrativeVoiceToggle.OffContent = isZh ? "剧情对话跟随游戏语言" : "Story dialogues follow game global";
+        NarrativeVoiceToggle.OnContent = isZh ? "剧情对话应用角色规则" : "Story dialogues apply character rules";
+        VoiceRuleSectionTitle.Text = isZh ? "设置角色语言" : "Configure Character Rule";
+        VoiceRuleSectionHint.Text = isZh
+            ? "同一角色再次添加时会更新现有规则。"
+            : "Adding the same character again will update the existing rule.";
+        VoiceCharacterComboBox.Header = isZh ? "角色" : "Character";
+        VoiceLanguageRadioButtons.Header = isZh ? "配音语言" : "Voice Language";
+        VoiceAddRuleButtonTextBlock.Text = isZh ? "添加或更新规则" : "Add or Update Rule";
+        VoiceConfiguredSectionTitle.Text = isZh ? "已配置角色" : "Configured Rules";
+        VoiceRulesEmptyTextBlock.Text = isZh
+            ? "尚未配置角色，将全部跟随游戏全局语言。"
+            : "No custom character rules configured; all characters follow global language.";
+
+        var radioButtons = VoiceLanguageRadioButtons.Items.OfType<RadioButton>().ToList();
+        if (radioButtons.Count >= 5)
+        {
+            radioButtons[0].Content = isZh ? "中文" : "Chinese";
+            radioButtons[1].Content = "English";
+            radioButtons[2].Content = "日本語";
+            radioButtons[3].Content = "한국어";
+            radioButtons[4].Content = isZh ? "跟随游戏" : "Follow Global";
+        }
+
+        // Music Page
+        MusicPageTitleTextBlock.Text = isZh ? "OmniMix 音乐集成" : "OmniMix Music Integration";
+        MusicPageDescriptionTextBlock.Text = isZh
+            ? "将 OmniMix 输出的音乐送入游戏原生 Wwise 音乐总线。曲库、播放列表与后端仍由 OmniMix 管理。"
+            : "Streams OmniMix audio into native Wwise music bus. Tracks, playlists, and playback remain managed by OmniMix.";
+        MusicReplacementToggle.Header = isZh ? "启用音乐替换" : "Enable Music Replacement";
+        MusicReplacementToggle.OffContent = isZh ? "保持游戏原生音乐" : "Keep game native music";
+        MusicReplacementToggle.OnContent = isZh ? "使用 OmniMix 音乐流" : "Stream OmniMix audio";
+        MusicBackendSectionTitle.Text = isZh ? "OmniMix 后端" : "OmniMix Backend";
+        MusicBackendSectionHint.Text = isZh
+            ? "Better Endfield 只保存后端绝对路径，不复制或修改 OmniMix 文件。"
+            : "Better Endfield only saves the backend executable path without modifying OmniMix files.";
+        OmniMixBackendPathBox.PlaceholderText = isZh ? "选择 OmniMix 后端程序" : "Select OmniMix backend executable";
+        UnregisterOmniMixButton.Content = isZh ? "解除注册" : "Unregister";
+        MusicScopeSectionTitle.Text = isZh ? "替换范围" : "Replacement Channels";
+        MusicScopeSectionHint.Text = isZh
+            ? "关闭的场景继续使用游戏原生音乐。"
+            : "Disabled channels will continue using native game background music.";
+        ReplaceLoginMusicToggle.Header = isZh ? "登录场景" : "Title / Login Screen";
+        ReplaceLoginMusicToggle.OffContent = isZh ? "原生音乐" : "Native Music";
+        ReplaceLoginMusicToggle.OnContent = "OmniMix";
+        ReplaceMetaMusicToggle.Header = isZh ? "主界面与基地" : "Main Menu & Base";
+        ReplaceMetaMusicToggle.OffContent = isZh ? "原生音乐" : "Native Music";
+        ReplaceMetaMusicToggle.OnContent = "OmniMix";
+        ReplaceGameplayMusicToggle.Header = isZh ? "游戏内场景" : "In-Game & Combat";
+        ReplaceGameplayMusicToggle.OffContent = isZh ? "原生音乐" : "Native Music";
+        ReplaceGameplayMusicToggle.OnContent = "OmniMix";
+        MusicBufferSectionTitle.Text = isZh ? "缓冲与回退" : "Buffering & Fallback";
+        MusicBufferSectionHint.Text = isZh
+            ? "只有 PCM 达到预缓冲且 Wwise 回调正常后，原游戏音乐才会暂停。"
+            : "Original game audio is paused only when PCM buffer threshold and Wwise callbacks are healthy.";
+        MusicTargetLatencyNumberBox.Header = isZh ? "OmniMix 目标延迟 (秒)" : "Target Latency (s)";
+        MusicPrebufferNumberBox.Header = isZh ? "本地预缓冲 (毫秒)" : "Local Prebuffer (ms)";
+        FallbackToNativeMusicToggle.Header = isZh ? "故障时恢复原游戏音乐" : "Fallback to Native on Failure";
+        FallbackToNativeMusicToggle.OffContent = isZh ? "保持静音" : "Stay silent";
+        FallbackToNativeMusicToggle.OnContent = isZh ? "自动恢复" : "Auto fallback";
+        MusicDiagnosticsToggle.Header = isZh ? "详细诊断日志" : "Detailed Diagnostics Log";
+        MusicDiagnosticsToggle.OffContent = isZh ? "常规日志" : "Normal logging";
+        MusicDiagnosticsToggle.OnContent = isZh ? "记录流状态与缓冲统计" : "Log stream & buffer telemetry";
+
+        // Combat Page
+        CombatPageTitleTextBlock.Text = isZh ? "战斗数据" : "Combat Statistics";
+        CombatPageDescriptionTextBlock.Text = isZh
+            ? "记录战斗伤害并按角色、技能和伤害类型汇总。统计默认关闭，不会修改伤害计算。"
+            : "Track combat damage grouped by character, skill, and damage category. Does not alter damage calculations.";
+        CombatStatsToggle.Header = isZh ? "启用战斗数据统计" : "Enable Combat Statistics";
+        CombatStatsToggle.OffContent = isZh ? "关闭" : "Disabled";
+        CombatStatsToggle.OnContent = isZh ? "按快捷键记录" : "Record via hotkey";
+        CombatDisplaySectionTitle.Text = isZh ? "显示与快捷键" : "Display & Hotkeys";
+        CombatDisplaySectionHint.Text = isZh
+            ? "F11 切换开始/停止记录，F12 切换悬浮窗；均可在下方修改。按住 Ctrl 并用鼠标左键拖动悬浮窗可调整位置。"
+            : "F11 toggles recording, F12 toggles overlay. Hold Ctrl and drag with left mouse button to reposition overlay.";
+        HideDamageNumbersToggle.Header = isZh ? "隐藏伤害数字" : "Hide Damage Numbers";
+        HideDamageNumbersToggle.OffContent = isZh ? "显示游戏数字" : "Show damage numbers";
+        HideDamageNumbersToggle.OnContent = isZh ? "隐藏数字" : "Hide damage numbers";
+        CombatOverlayToggle.Header = isZh ? "显示战斗悬浮窗" : "Show In-Game HUD Overlay";
+        CombatOverlayToggle.OffContent = isZh ? "不启动悬浮窗" : "Do not launch overlay";
+        CombatOverlayToggle.OnContent = isZh ? "随模块自动启动" : "Launch automatically";
+        CombatRdpsDisplayToggle.Header = isZh ? "悬浮窗与本地排行口径" : "Ranking & Overlay Metric";
+        CombatToggleHotkeyBox.Header = isZh ? "开始/停止记录快捷键" : "Start/Stop Recording Hotkey";
+        CombatOverlayHotkeyBox.Header = isZh ? "显示/隐藏悬浮窗快捷键" : "Show/Hide Overlay Hotkey";
+        CombatRecordSectionTitle.Text = isZh ? "记录方式" : "Recording Protocol";
+        CombatRecordSectionHint.Text = isZh
+            ? "schema 11 仅保存可验证的操作与原子结果；64 位实例 ID 使用字符串保存，无法确定的归属明确标为未知。"
+            : "Schema 11 persists verifiable atomic events; 64-bit instance IDs are stored as strings with strict attribution.";
+        AutoDungeonSessionToggle.Header = isZh ? "自动记录" : "Auto-Dungeon Recording";
+        AutoDungeonSessionToggle.OffContent = isZh ? "手动快捷键" : "Manual hotkey only";
+        AutoDungeonSessionToggle.OnContent = isZh ? "进关卡自动开启 / 结算自动保存" : "Auto-start on dungeon enter / auto-save on finish";
+        CombatHistorySectionTitle.Text = isZh ? "历史统计" : "Combat History";
+        CombatHistorySectionHint.Text = isZh
+            ? "默认显示最近三条；可按日期和参战角色筛选。"
+            : "Showing recent 3 sessions by default; filter by date range and team characters.";
+        CombatWebButtonTextBlock.Text = isZh ? "打开解析网页" : "Open Web Visualizer";
+        CombatRecordsFolderButtonTextBlock.Text = isZh ? "记录文件夹" : "Open Log Folder";
+        CombatRefreshButtonTextBlock.Text = isZh ? "刷新" : "Refresh";
+        CombatFromDatePicker.Header = isZh ? "开始日期" : "Start Date";
+        CombatFromDatePicker.PlaceholderText = isZh ? "不限" : "Any";
+        CombatToDatePicker.Header = isZh ? "结束日期" : "End Date";
+        CombatToDatePicker.PlaceholderText = isZh ? "不限" : "Any";
+        CombatDateFilterHintTextBlock.Text = isZh ? "日期范围两端均可留空。" : "Date range boundaries can be left empty.";
+        CombatTeamFilterHintTextBlock.Text = isZh
+            ? "队伍角色（最多四个；记录需包含全部已选角色）"
+            : "Team Characters (up to 4; sessions must contain all selected characters)";
+        CombatCharacterFilter1ComboBox.PlaceholderText = isZh ? "角色 1" : "Operator 1";
+        CombatCharacterFilter2ComboBox.PlaceholderText = isZh ? "角色 2" : "Operator 2";
+        CombatCharacterFilter3ComboBox.PlaceholderText = isZh ? "角色 3" : "Operator 3";
+        CombatCharacterFilter4ComboBox.PlaceholderText = isZh ? "角色 4" : "Operator 4";
+        CombatSelectedSessionSectionTitle.Text = isZh ? "记录明细" : "Session Breakdown";
+        CombatSelectedSessionTextBlock.Text = isZh ? "选择一条记录查看。" : "Select a session record to view breakdown.";
+        CombatSessionsEmptyTextBlock.Text = isZh ? "没有符合筛选条件的战斗统计。" : "No combat sessions match the filter criteria.";
+        CombatBreakdownEmptyTextBlock.Text = isZh ? "当前记录没有可显示的角色明细。" : "No character breakdown available for this record.";
+
+        // UI Enhancement Page
+        UiPageTitleTextBlock.Text = isZh ? "界面增强" : "Touch & UI Enhancements";
+        UiPageDescriptionTextBlock.Text = isZh
+            ? "自定义游戏界面布局、画面遮挡与交互模式。各项默认关闭，切换后会立即保存。"
+            : "Customize HUD layout, overlays, and touch simulation. Disabled by default; changes apply immediately.";
+        MobileUiSectionTitle.Text = isZh ? "移动端 UI 模式" : "Mobile Touch UI Layout";
+        MobileUiSectionHint.Text = isZh
+            ? "在电脑端开启手机版 UI（移动端虚拟摇杆、技能轮盘与触控布局）。保留 PC 端常规登录；切换后会自动保存，已启动的游戏会刷新界面。"
+            : "Enable mobile touch layout (virtual joystick, action wheels, touch UI) on PC. Retains standard PC login flow.";
+        MobileUiToggle.Header = isZh ? "使用手机版 UI" : "Use Mobile Touch Layout";
+        MobileUiToggle.OffContent = isZh ? "原生 PC 界面" : "Native PC UI";
+        MobileUiToggle.OnContent = isZh ? "手机版触控界面" : "Mobile Touch UI";
+        HideUidSectionTitle.Text = isZh ? "UID 水印" : "Account UID Watermark";
+        HideUidSectionHint.Text = isZh ? "隐藏游戏画面中的账号 UID 水印。" : "Hide the account UID watermark from game rendering.";
+        HideUidToggle.Header = isZh ? "隐藏 UID 水印" : "Hide UID Watermark";
+        HideUidToggle.OffContent = isZh ? "显示 UID" : "Show UID";
+        HideUidToggle.OnContent = isZh ? "隐藏 UID" : "Hide UID";
+        HideHudSectionTitle.Text = isZh ? "HUD 显示" : "In-Game HUD Visibility";
+        HideHudSectionHint.Text = isZh
+            ? "通过热键隐藏或恢复游戏内 MainHudRoot 下的全部 HUD 画布，不影响菜单和设置界面。"
+            : "Toggle in-game HUD canvases under MainHudRoot via hotkey without affecting menus or pause screens.";
+        HideHudToggle.Header = isZh ? "启用隐藏全部 HUD 热键" : "Enable Toggle HUD Hotkey";
+        HideHudToggle.OffContent = isZh ? "关闭" : "Disabled";
+        HideHudToggle.OnContent = isZh ? "允许热键切换" : "Enabled";
+        HideHudHotkeyBox.Header = isZh ? "HUD 显示切换热键" : "HUD Toggle Hotkey";
+        HideHudHotkeyBox.PlaceholderText = isZh ? "例如 0、F10、NUMPAD0" : "e.g. 0, F10, NUMPAD0";
+
+        // Camera Page
+        CameraPageTitleTextBlock.Text = isZh ? "相机增强" : "Camera Enhancements";
+        CameraPageDescriptionTextBlock.Text = isZh
+            ? "自由控制游戏相机，并调整镜头相关的画面效果。各项默认关闭，修改后立即保存。"
+            : "Free camera control and visual tuning. Disabled by default; changes apply immediately.";
+        CameraFreeInfoBar.Title = isZh ? "自由视角操作" : "Free Camera Controls";
+        CameraFreeInfoBar.Message = isZh
+            ? "启用后按设置的热键进入或退出。方向键前后左右移动，PageUp/PageDown 升降；视角旋转继续使用游戏原生鼠标控制。切换场景或主相机时会自动退出。"
+            : "Press configured hotkey to enter/exit. Arrow keys move camera, PageUp/PageDown elevates; mouse rotates native view. Exits automatically on scene transitions.";
+        CameraFreeSectionTitle.Text = isZh ? "自由视角" : "Free Camera";
+        CameraFreeSectionHint.Text = isZh
+            ? "进入时捕获主相机的位置和视野，退出后恢复原值。模块只接管相机位置，鼠标旋转仍由游戏原生相机逻辑处理。"
+            : "Captures main camera transform on entry and restores on exit. Mod handles translation while mouse rotates.";
+        FreeCameraToggle.Header = isZh ? "启用自由视角功能" : "Enable Free Camera";
+        FreeCameraToggle.OffContent = isZh ? "关闭" : "Disabled";
+        FreeCameraToggle.OnContent = isZh ? "允许热键切换" : "Enabled";
+        PauseGameInFreeCameraToggle.Header = isZh ? "进入自由视角时暂停游戏" : "Pause Game in Free Camera";
+        PauseGameInFreeCameraToggle.OffContent = isZh ? "游戏继续运行" : "Game keeps running";
+        PauseGameInFreeCameraToggle.OnContent = isZh ? "暂停角色与世界" : "Freeze world & entities";
+        FreeCameraMovementSpeedNumberBox.Header = isZh ? "移动速度" : "Movement Speed";
+        FreeCameraHotkeyBox.Header = isZh ? "切换热键" : "Toggle Hotkey";
+        FreeCameraHotkeyBox.PlaceholderText = isZh ? "例如 9、F9、NUMPAD9" : "e.g. 9, F9, NUMPAD9";
+        FreeCameraFieldOfViewNumberBox.Header = isZh ? "视野（FOV）" : "Field of View (FOV)";
+        CameraVisualSectionTitle.Text = isZh ? "镜头画面" : "Visual & Occlusion";
+        CameraVisualSectionHint.Text = isZh
+            ? "调用游戏自身的清理逻辑，移除镜头贴近角色时出现的半透明虚化。"
+            : "Invokes native engine cleanup to eliminate character mesh dithering/transparency on close camera.";
+        DisableDitherToggle.Header = isZh ? "移除角色近距离虚化" : "Disable Character Mesh Dither";
+        DisableDitherToggle.OffContent = isZh ? "保留原效果" : "Keep default dithering";
+        DisableDitherToggle.OnContent = isZh ? "关闭虚化" : "Remove dithering";
+
+        // Display Page
+        DisplayPageTitleTextBlock.Text = isZh ? "显示增强" : "Display & Upscaling Pipeline";
+        DisplayPageDescriptionTextBlock.Text = isZh
+            ? "通过 OptiScaler 接管客户端的画质提升选项，为 AMD 与 Intel 显卡提供客户端本身不支持的超分方案。"
+            : "Leverages OptiScaler to intercept upscaling, offering DLSS/FSR/XeSS upscaling on all GPUs.";
+        DisplayWarningInfoBar.Title = isZh ? "会写入游戏目录" : "Writes to Game Directory";
+        DisplayWarningInfoBar.Message = isZh
+            ? "启用会向 Endfield.exe 所在目录写入 OptiScaler 组件（含 dxgi.dll）与归属记录，不会覆盖未知同名文件。客户端带有内核级反作弊，向游戏目录写入文件比运行时注入更容易被静态扫描发现，是否使用请自行判断。"
+            : "Installs OptiScaler binaries (dxgi.dll) into the game folder. Game features kernel anti-cheat; writing files to game directory has different risk profiles than memory injection.";
+        DisplayAdapterSectionTitle.Text = isZh ? "显示适配器" : "Graphics Hardware";
+        DisplayBackendComboBox.Header = isZh ? "超分后端" : "Upscaler Backend";
+        DisplaySpoofingToggle.Header = isZh ? "GPU 欺骗" : "GPU Architecture Spoofing";
+        DisplaySpoofingToggle.OffContent = isZh ? "关闭" : "Disabled";
+        DisplaySpoofingToggle.OnContent = isZh ? "开启" : "Enabled";
+        DisplaySpoofingHintTextBlock.Text = isZh
+            ? "客户端的 FSR3 为引擎内置、没有可拦截的 FidelityFX 接口，因此非 NVIDIA 显卡必须开启欺骗让客户端暴露 DLSS 选项，OptiScaler 才能接管。开启后请在客户端【设置-性能与画面-画质提升】中选择 NVIDIA DLSS。"
+            : "Non-NVIDIA GPUs require spoofing so game unlocks DLSS settings menu for OptiScaler interception. Choose NVIDIA DLSS in game Graphic settings.";
+        DisplayDiagnosticsToggle.Header = isZh ? "诊断日志" : "Diagnostic Logging";
+        DisplayDiagnosticsToggle.OffContent = isZh ? "关闭" : "Disabled";
+        DisplayDiagnosticsToggle.OnContent = isZh ? "写入 OptiScaler 日志到游戏目录" : "Write OptiScaler log to game folder";
+        DisplayDeploySectionTitle.Text = isZh ? "组件部署" : "Deployment";
+        DisplayStatusInfoBar.Title = isZh ? "部署状态" : "Deployment Status";
+        InstallDisplayButtonTextBlock.Text = isZh ? "部署或更新" : "Deploy / Update";
+        ApplyDisplayButtonTextBlock.Text = isZh ? "应用配置" : "Apply Config";
+        UninstallDisplayButtonTextBlock.Text = isZh ? "从游戏目录卸载" : "Uninstall from Game";
+        DisplayUsageSectionTitle.Text = isZh ? "使用须知" : "Notes & Compatibility";
+        DisplayUsageNotice1TextBlock.Text = isZh
+            ? "OptiScaler 覆盖层由 Insert 键呼出，与战斗数据模块的 F11/F12 不冲突。帧生成不会启用：客户端已有原生 DLSS 帧生成。FSR4 在客户端的 DX11 与 Vulkan 后端下都经 DX12 interop 运行，会额外承担一层同步开销。"
+            : "Press Insert in-game to toggle OptiScaler overlay menu. Frame generation is not replaced since game provides native DLSS frame gen.";
+        DisplayUsageNotice2TextBlock.Text = isZh
+            ? "OptiScaler 为 GPL-3.0 授权的独立开源项目，不随本软件分发，需自行放入软件目录下的 payloads/optiscaler。"
+            : "OptiScaler is licensed under GPL-3.0 and not bundled directly; place payloads into payloads/optiscaler folder.";
+
+        // Settings Page
+        SettingsPageTitleTextBlock.Text = isZh ? "设置" : "Global Settings";
+        SettingsPageDescriptionTextBlock.Text = isZh
+            ? "管理运行路径、加载方式、启动参数、外观和桌面入口。"
+            : "Configure application paths, loader mode, launch arguments, theme, and shortcuts.";
+        SettingsPathsSectionTitle.Text = isZh ? "运行路径" : "Application & Game Paths";
+        SettingsPathsSectionHint.Text = isZh
+            ? "首次启动会自动扫描；移动游戏或软件后可重新扫描。"
+            : "Scanned automatically on launch; re-scan if game or launcher location changes.";
+        ScanPathsButtonTextBlock.Text = isZh ? "重新扫描" : "Rescan Paths";
+        GamePathBox.Header = isZh ? "游戏程序" : "Game Executable";
+        GameLaunchArgumentsBox.Header = isZh ? "游戏启动参数（可选）" : "Game Launch Arguments (Optional)";
+        GameLaunchArgumentsBox.PlaceholderText = isZh ? "例如：-force-d3d11" : "e.g. -force-d3d11";
+        GameLaunchArgumentsHintTextBlock.Text = isZh
+            ? "参数将原样传给 Endfield.exe；-force-d3d11 会使用 Direct3D 11 启动。"
+            : "Arguments are passed directly to Endfield.exe. E.g. -force-d3d11 forces Direct3D 11 backend.";
+        InjectorPathBox.Header = isZh ? "注入器" : "Mod Injector Path";
+        CurrentConfigLabelTextBlock.Text = isZh ? "当前配置文件" : "Active Configuration File";
+        OpenConfigFolderButtonTextBlock.Text = isZh ? "配置目录" : "Config Directory";
+        OpenLogButtonTextBlock.Text = isZh ? "运行日志" : "Runtime Logs";
+        LoaderModeSectionTitle.Text = isZh ? "加载方式" : "Loader & Injection Mode";
+        InjectorModeTitleTextBlock.Text = isZh ? "内置注入器" : "Built-in Injector";
+        InjectorModeHintTextBlock.Text = isZh ? "不写入游戏目录" : "Leaves game folder intact";
+        XInputModeTitleTextBlock.Text = isZh ? "XInput 自启动" : "XInput Auto-load";
+        XInputModeHintTextBlock.Text = isZh ? "随游戏自动加载" : "Loads automatically with game";
+        XInputWarningInfoBar.Title = isZh ? "会写入游戏目录" : "Writes to Game Directory";
+        XInputWarningInfoBar.Message = isZh
+            ? "需要兼容其他加载器，或希望通过官方启动器、桌面快捷方式自启动时使用。安装会向 Endfield.exe 所在目录写入 xinput1_4.dll 和归属记录；不会覆盖未知同名文件。"
+            : "Used for launching directly via official client or shortcuts. Deploys xinput1_4.dll into game folder.";
+        XInputStatusInfoBar.Title = isZh ? "XInput 状态" : "XInput Status";
+        InstallXInputButtonTextBlock.Text = isZh ? "安装或更新" : "Install / Update";
+        UninstallXInputButtonTextBlock.Text = isZh ? "从游戏目录卸载" : "Uninstall from Game";
+        AppearanceSectionTitle.Text = isZh ? "外观与语言" : "Appearance & Language";
+        LanguageComboBox.Header = isZh ? "界面语言 / Language" : "Language / 界面语言";
+        ThemeComboBox.Header = isZh ? "应用主题" : "Theme";
+        ThemeItemDefault.Content = isZh ? "跟随系统" : "System Default";
+        ThemeItemLight.Content = isZh ? "浅色" : "Light";
+        ThemeItemDark.Content = isZh ? "深色" : "Dark";
+        ShortcutsSectionTitle.Text = isZh ? "桌面快捷方式" : "Desktop Shortcuts";
+        AppShortcutTitleTextBlock.Text = "Better Endfield";
+        AppShortcutHintTextBlock.Text = isZh
+            ? "在桌面创建本控制器的启动入口。"
+            : "Create a desktop shortcut for Better Endfield launcher.";
+        CreateAppShortcutButtonTextBlock.Text = isZh ? "创建" : "Create";
+        GameShortcutTitleTextBlock.Text = isZh ? "一键启动终末地" : "Quick Launch Endfield";
+        GameShortcutHintTextBlock.Text = isZh
+            ? "使用当前加载方式、游戏路径和启动参数创建桌面入口。"
+            : "Create a one-click desktop shortcut with current launcher mode and parameters.";
+        CreateGameShortcutButtonTextBlock.Text = isZh ? "创建" : "Create";
+
+        // About Page
+        AboutAppTitleTextBlock.Text = "Better Endfield";
+        AboutAppSubtitleTextBlock.Text = isZh
+            ? "终末地登录场景模型与角色配音控制器"
+            : "Endfield Title Scene Models & Voice Router Controller";
+        CurrentVersionTextBlock.Text = $"{(isZh ? "版本" : "Version")} {UpdateService.CurrentVersion}";
+        AboutUpdateSectionTitle.Text = isZh ? "软件更新" : "Software Updates";
+        AboutUpdateSectionHint.Text = isZh
+            ? "仅在点击检查时访问 GitHub Releases，不会后台自动联网。"
+            : "Connects to GitHub Releases only when manually checked; no background network tracking.";
+        CheckUpdatesButtonTextBlock.Text = isZh ? "检查更新" : "Check for Updates";
+        OpenReleaseButtonTextBlock.Text = isZh ? "打开下载页" : "Open Release Page";
+        AboutProjectSectionTitle.Text = isZh ? "项目" : "Project";
+        OpenRepoButtonTextBlock.Text = isZh ? "GitHub 仓库" : "GitHub Repository";
+        OpenReleasesButtonTextBlock.Text = isZh ? "全部版本" : "All Releases";
+        OpenLicenseButtonTextBlock.Text = isZh ? "GNU AGPL v3.0 开源许可" : "GNU AGPL v3.0 License";
+        AboutAuthorSectionTitle.Text = isZh ? "作者与交流" : "Author & Community";
+        BilibiliLabelTextBlock.Text = "Bilibili";
+        OpenBilibiliButtonTextBlock.Text = isZh ? "打开 B站主页" : "Bilibili Space";
+        XiaoheiheLabelTextBlock.Text = isZh ? "小黑盒" : "Heybox";
+        OpenXiaoheiheButtonTextBlock.Text = isZh ? "打开小黑盒主页" : "Heybox Profile";
+        QqGroupLabelTextBlock.Text = isZh ? "QQ群" : "QQ Group";
+        ToolTipService.SetToolTip(CopyQqGroupButton, isZh ? "复制QQ群号" : "Copy QQ Group Number");
+        AboutDisclaimerSectionTitle.Text = isZh ? "风险与免责声明" : "Disclaimer & Terms";
+        AboutDisclaimerHintTextBlock.Text = isZh
+            ? "本项目为非官方实验工具，与鹰角网络、峘形山工作室及 GRYPHLINE 无关。注入和运行时修改可能造成游戏崩溃、版本不兼容或账号风险。"
+            : "This is an unofficial experimental project not affiliated with Hypergryph or GRYPHLINE. Use at your own risk.";
+        ViewDisclaimerButton.Content = isZh ? "查看完整说明" : "View Full Disclaimer";
+
+        // Bottom Action Bar
+        PageSelectionHintTextBlock.Text = isZh
+            ? "保存后在下一次注入时生效。"
+            : "Changes will take effect on next game launch/injection.";
+        ResetButtonTextBlock.Text = isZh ? "恢复默认" : "Reset to Defaults";
+        SaveButtonTextBlock.Text = isZh ? "保存" : "Save";
+        LaunchButtonTextBlock.Text = isZh ? "保存并启动" : "Save & Launch";
+
+        if (FinalActionComboBox.SelectedItem is ActionOption selectedAction)
+        {
+            UpdateActionMetadata(selectedAction);
+            ActionDescriptionTextBlock.Text = isZh
+                ? $"资源哈希：{selectedAction.PathHash} · 原生 LoopTime：{(selectedAction.NativeLoop ? "是" : "否")}"
+                : $"Asset Hash: {selectedAction.PathHash} · Native LoopTime: {(selectedAction.NativeLoop ? "Yes" : "No")}";
+        }
+
+        PresetOptions.RefreshCharacterDisplayNames();
+        string? selectedModelCharacterId = (CharacterComboBox.SelectedItem as CharacterOption)?.Id;
+        CharacterComboBox.ItemsSource = null;
+        CharacterComboBox.ItemsSource = PresetOptions.Characters;
+        CharacterComboBox.SelectedItem = PresetOptions.Characters.FirstOrDefault(
+            c => string.Equals(c.Id, selectedModelCharacterId, StringComparison.OrdinalIgnoreCase))
+            ?? PresetOptions.Characters.FirstOrDefault();
+
+        RefreshVoiceCharactersList();
+        RefreshVoiceRulesDisplay();
+
+        UpdateOmniMixStatusTexts();
+        UpdateColorPickerLabels();
+        UpdateCombatCategoryLegend();
+        RebuildCombatCharacterFilters();
+        ApplyCombatFilters(_selectedCombatSession?.Path);
+        UpdatePathStatusText();
+        _ = RefreshDisplayStatusAsync();
+        _ = RefreshXInputStatusAsync();
     }
 
     private void MainWindow_Closed(object sender, WindowEventArgs args)

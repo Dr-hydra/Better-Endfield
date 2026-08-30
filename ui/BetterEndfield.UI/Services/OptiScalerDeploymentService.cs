@@ -133,13 +133,14 @@ internal static class OptiScalerDeploymentService
                 }
             }
 
+            bool isZh = LocalizationService.Instance.IsChinese;
             if (foreign.Count > 0)
             {
                 return new OptiScalerDeploymentStatus(
                     OptiScalerDeploymentState.Conflict,
-                    "客户端目录已有非本软件安装的同名文件（" +
-                    string.Join("、", foreign) +
-                    "）。为避免破坏其他加载器或客户端自带文件，不会覆盖或删除它们。",
+                    isZh
+                        ? "客户端目录已有非本软件安装的同名文件（" + string.Join("、", foreign) + "）。为避免破坏其他加载器或客户端自带文件，不会覆盖或删除它们。"
+                        : "Conflicting foreign files detected in game directory (" + string.Join(", ", foreign) + "). Will not overwrite or remove them.",
                     false,
                     false,
                     manifest?.OptiScalerVersion);
@@ -150,7 +151,7 @@ internal static class OptiScalerDeploymentService
             {
                 return new OptiScalerDeploymentStatus(
                     OptiScalerDeploymentState.NotInstalled,
-                    "尚未向客户端目录部署显示增强组件。",
+                    isZh ? "尚未向客户端目录部署显示增强组件。" : "Display enhancement components are not yet deployed to game directory.",
                     true,
                     anyOwned);
             }
@@ -158,7 +159,9 @@ internal static class OptiScalerDeploymentService
             {
                 return new OptiScalerDeploymentStatus(
                     OptiScalerDeploymentState.UpdateAvailable,
-                    "客户端目录中的显示增强组件不完整或版本较旧，可更新或卸载。",
+                    isZh
+                        ? "客户端目录中的显示增强组件不完整或版本较旧，可更新或卸载。"
+                        : "Display enhancement components in game directory are incomplete or outdated; can be updated or uninstalled.",
                     true,
                     true,
                     manifest?.OptiScalerVersion);
@@ -166,7 +169,7 @@ internal static class OptiScalerDeploymentService
 
             return new OptiScalerDeploymentStatus(
                 OptiScalerDeploymentState.Installed,
-                $"显示增强组件已部署，版本 {paths.Lock.Version}。",
+                isZh ? $"显示增强组件已部署，版本 {paths.Lock.Version}。" : $"Display enhancement components deployed, version {paths.Lock.Version}.",
                 false,
                 true,
                 paths.Lock.Version);
@@ -174,9 +177,10 @@ internal static class OptiScalerDeploymentService
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException)
         {
+            bool isZh = LocalizationService.Instance.IsChinese;
             return new OptiScalerDeploymentStatus(
                 OptiScalerDeploymentState.Unavailable,
-                "无法检查显示增强状态：" + exception.Message,
+                (isZh ? "无法检查显示增强状态：" : "Failed to inspect display enhancement: ") + exception.Message,
                 false,
                 false);
         }
@@ -425,11 +429,14 @@ internal static class OptiScalerDeploymentService
         string payloadDirectory = Path.Combine(installRoot, "payloads", PayloadDirectoryName);
         if (!Directory.Exists(payloadDirectory))
         {
+            bool isZh = LocalizationService.Instance.IsChinese;
             throw new FileNotFoundException(
-                "组件包未随当前软件提供，请先获取 OptiScaler 组件。", payloadDirectory);
+                isZh ? "组件包未随当前软件提供，请先获取 OptiScaler 组件。"
+                     : "Payload package is not bundled with the current release. Please obtain OptiScaler payloads first.",
+                payloadDirectory);
         }
         string gameDirectory = Path.GetDirectoryName(Path.GetFullPath(gameExecutablePath)) ??
-            throw new InvalidOperationException("客户端目录无效。");
+            throw new InvalidOperationException(LocalizationService.Instance.IsChinese ? "客户端目录无效。" : "Invalid game directory.");
 
         return new DeploymentPaths(
             payloadDirectory,

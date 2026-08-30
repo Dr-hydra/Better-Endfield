@@ -275,8 +275,9 @@ internal static class CombatHistoryService
             result.Characters.Add(new CombatCharacterDamage
             {
                 Id = id,
-                DisplayName = PresetOptions.CharacterNames.TryGetValue(id, out string? name)
-                    ? name : id == "<unknown>" ? "未知来源" : id,
+                DisplayName = id == "<unknown>"
+                    ? (LocalizationService.Instance.IsChinese ? "未知来源" : "Unknown Source")
+                    : PresetOptions.GetCharacterName(id),
                 AvatarSource = LoadAvatar(id),
                 Damage = value.Damage,
                 Hits = value.Hits,
@@ -478,9 +479,9 @@ internal static class CombatHistoryService
             result.Add(new CombatCharacterDamage
             {
                 Id = id,
-                DisplayName = PresetOptions.CharacterNames.TryGetValue(id, out string? name)
-                    ? name
-                    : id == "<unknown>" ? "未知来源" : id,
+                DisplayName = id == "<unknown>"
+                    ? (LocalizationService.Instance.IsChinese ? "未知来源" : "Unknown Source")
+                    : PresetOptions.GetCharacterName(id),
                 AvatarSource = LoadAvatar(id),
                 Damage = characterDamage,
                 Hits = (ulong)Math.Max(0, Integer(value, "hits")),

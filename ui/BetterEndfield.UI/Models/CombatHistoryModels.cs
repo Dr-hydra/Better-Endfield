@@ -1,4 +1,5 @@
 using Microsoft.UI.Xaml.Media;
+using BetterEndfield.UI.Services;
 
 namespace BetterEndfield.UI.Models;
 
@@ -6,10 +7,17 @@ internal static class CombatSkillCategories
 {
     public const int Count = 6;
 
-    public static readonly string[] Names =
+    public static readonly string[] NamesZh =
     [
         "普攻", "战技", "终结技", "连携技", "被动", "其他"
     ];
+
+    public static readonly string[] NamesEn =
+    [
+        "Normal", "Battle Skill", "Ultimate", "Combo Skill", "Passive", "Other"
+    ];
+
+    public static string[] Names => LocalizationService.Instance.IsChinese ? NamesZh : NamesEn;
 
     public static readonly string[] Colors =
     [
@@ -22,11 +30,19 @@ internal static class CombatRdpsCategories
 {
     public const int Count = 9;
 
-    public static readonly string[] Names =
+    public static readonly string[] NamesZh =
     [
         "直伤", "攻击力", "增伤", "增幅", "脆弱",
         "承伤易伤", "减防/减抗", "法术强度", "其他"
     ];
+
+    public static readonly string[] NamesEn =
+    [
+        "Direct", "ATK Boost", "DMG Boost", "Amp", "Fragility",
+        "Vulnerability", "Def/Res Shred", "Spell Power", "Other"
+    ];
+
+    public static string[] Names => LocalizationService.Instance.IsChinese ? NamesZh : NamesEn;
 
     public static readonly string[] Colors =
     [
@@ -47,7 +63,7 @@ internal static class CombatRdpsCategories
 
 internal static class CombatNumberFormatter
 {
-    private static readonly string[] DecimalUnits =
+    private static readonly string[] DecimalUnitsZh =
     [
         "万", "×10万", "×100万", "×1000万",
         "亿", "×10亿", "×100亿", "×1000亿",
@@ -56,7 +72,18 @@ internal static class CombatNumberFormatter
 
     public static string Format(double value)
     {
+        bool isZh = LocalizationService.Instance.IsChinese;
         double absolute = Math.Abs(value);
+
+        if (!isZh)
+        {
+            if (absolute < 1_000) return value.ToString("N0");
+            if (absolute < 1_000_000) return $"{value / 1_000:0.##}K";
+            if (absolute < 1_000_000_000) return $"{value / 1_000_000:0.##}M";
+            if (absolute < 1_000_000_000_000) return $"{value / 1_000_000_000:0.##}B";
+            return $"{value / 1_000_000_000_000:0.##}T";
+        }
+
         if (absolute < 10_000)
         {
             return value.ToString("N0");
@@ -65,7 +92,7 @@ internal static class CombatNumberFormatter
         int exponent = (int)Math.Floor(Math.Log10(absolute));
         if (exponent >= 4 && exponent <= 15)
         {
-            return $"{value / Math.Pow(10, exponent):0.##}{DecimalUnits[exponent - 4]}";
+            return $"{value / Math.Pow(10, exponent):0.##}{DecimalUnitsZh[exponent - 4]}";
         }
 
         return $"{value / Math.Pow(10, exponent):0.##}×10^{exponent}";
@@ -213,8 +240,7 @@ internal sealed class CombatSquadMember
 
     public int EquipSuitCount { get; init; }
 
-    public string DisplayName => PresetOptions.CharacterNames.TryGetValue(
-        CharId, out string? name) ? name : CharId;
+    public string DisplayName => PresetOptions.GetCharacterName(CharId);
 }
 
 internal sealed class CombatActionRecord
@@ -314,7 +340,9 @@ internal sealed class CombatSessionRecord
 
     public string? ModeId { get; init; }
 
-    public string DateText => StartedAt.LocalDateTime.ToString("yyyy年M月d日  HH:mm");
+    public string DateText => LocalizationService.Instance.IsChinese
+        ? StartedAt.LocalDateTime.ToString("yyyy年M月d日  HH:mm")
+        : StartedAt.LocalDateTime.ToString("MMM d, yyyy  HH:mm", System.Globalization.CultureInfo.InvariantCulture);
 
     public string DurationText => TimeSpan.FromSeconds(Math.Max(0, DurationSeconds)).ToString(@"mm\:ss");
 
@@ -322,17 +350,21 @@ internal sealed class CombatSessionRecord
 
     public string MetricName => UsesRdps ? "rDPS" : "DPS";
 
-    public string Summary => $"{MetricName} {CombatNumberFormatter.Format(Dps)} · 耗时 {DurationText} · {HitCount} 次命中";
+    public string Summary => LocalizationService.Instance.IsChinese
+        ? $"{MetricName} {CombatNumberFormatter.Format(Dps)} · 耗时 {DurationText} · {HitCount} 次命中"
+        : $"{MetricName} {CombatNumberFormatter.Format(Dps)} · Duration {DurationText} · {HitCount} Hits";
 
     public string? DungeonDisplayName => PresetOptions.FormatDungeonName(DungeonId, DungeonName);
 
     public string SubtitleText => DungeonDisplayName != null
-        ? $"{CharacterSummary} · 关卡：{DungeonDisplayName}"
+        ? (LocalizationService.Instance.IsChinese
+            ? $"{CharacterSummary} · 关卡：{DungeonDisplayName}"
+            : $"{CharacterSummary} · Stage: {DungeonDisplayName}")
         : CharacterSummary;
 
     public string CharacterSummary => Characters.Count == 0
-        ? "未识别角色"
-        : string.Join("、", Characters.Take(3).Select(character => character.DisplayName));
+        ? (LocalizationService.Instance.IsChinese ? "未识别角色" : "Unknown Operator")
+        : string.Join(LocalizationService.Instance.IsChinese ? "、" : ", ", Characters.Take(3).Select(character => character.DisplayName));
 
     public string SemanticSummary
     {

@@ -9,6 +9,18 @@ public partial class App : Application
 
     public App()
     {
+        UnhandledException += (s, e) =>
+        {
+            try
+            {
+                string logPath = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "BetterEndfield", "crash.log");
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(logPath)!);
+                System.IO.File.WriteAllText(logPath, $"UnhandledException: {e.Message}\r\nException: {e.Exception}\r\nStackTrace: {e.Exception?.StackTrace}");
+            }
+            catch { }
+        };
         InitializeComponent();
     }
 
@@ -32,8 +44,25 @@ public partial class App : Application
             Exit();
             return;
         }
-        _window = new MainWindow();
-        _window.Activate();
+
+        try
+        {
+            var appSettings = Services.ConfigurationService.LoadAppSettings();
+            Services.LocalizationService.Instance.ApplyLanguage(appSettings.Language);
+            Resources["Loc"] = Services.LocalizationService.Instance;
+
+            _window = new MainWindow();
+            _window.Activate();
+        }
+        catch (Exception ex)
+        {
+            string logPath = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "BetterEndfield", "crash.log");
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(logPath)!);
+            System.IO.File.WriteAllText(logPath, $"OnLaunched Exception: {ex.Message}\r\n{ex}\r\n{ex.StackTrace}");
+            throw;
+        }
     }
 
     private static bool TryRunOmniMixCommand(string[] arguments)

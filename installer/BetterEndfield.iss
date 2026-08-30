@@ -39,12 +39,17 @@ CloseApplications=force
 RestartApplications=no
 VersionInfoVersion={#AppVersion}.0
 VersionInfoCompany={#Publisher}
-VersionInfoDescription=Better Endfield 中文安装程序
+VersionInfoDescription=Better Endfield Installer
 VersionInfoProductName={#AppName}
 VersionInfoProductVersion={#AppVersion}.0
 
 [Languages]
-Name: "chinesesimp"; MessagesFile: "Languages\ChineseSimplified.isl"
+Name: "en"; MessagesFile: "compiler:Default.isl"; InfoBeforeFile: "DISCLAIMER.en.txt"
+Name: "chinesesimp"; MessagesFile: "Languages\ChineseSimplified.isl"; InfoBeforeFile: "DISCLAIMER.zh-CN.txt"
+
+[CustomMessages]
+en.LaunchProgram=Launch Better Endfield
+chinesesimp.LaunchProgram=启动 Better Endfield
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
@@ -57,7 +62,7 @@ Name: "{autoprograms}\Better Endfield"; Filename: "{app}\BetterEndfield.exe"; Wo
 Name: "{autodesktop}\Better Endfield"; Filename: "{app}\BetterEndfield.exe"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\BetterEndfield.exe"; Description: "启动 Better Endfield"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\BetterEndfield.exe"; Description: "{cm:LaunchProgram}"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
 ; 清理写入游戏目录的全部文件：XInput 代理与显示增强组件。旧安装记录的是

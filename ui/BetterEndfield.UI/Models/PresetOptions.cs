@@ -67,8 +67,17 @@ internal static class PresetOptions
     private const string ChineseNamesResourceName =
         "BetterEndfield.UI.Assets.model.character-names.json";
 
-    public static IReadOnlyDictionary<string, string> CharacterNames { get; } =
-        LoadCharacterNames();
+    private const string EnglishNamesResourceName =
+        "BetterEndfield.UI.Assets.model.character-names-en.json";
+
+    public static IReadOnlyDictionary<string, string> CharacterNamesZh { get; } =
+        LoadChineseCharacterNames();
+
+    public static IReadOnlyDictionary<string, string> CharacterNamesEn { get; } =
+        LoadEnglishCharacterNames();
+
+    public static IReadOnlyDictionary<string, string> CharacterNames =>
+        Services.LocalizationService.Instance.IsChinese ? CharacterNamesZh : CharacterNamesEn;
 
     public static IReadOnlyDictionary<string, string> DungeonNames { get; } =
         LoadDungeonNames();
@@ -86,6 +95,41 @@ internal static class PresetOptions
         LoadSkillCategories();
 
     public static IReadOnlyList<CharacterOption> Characters { get; } = LoadCharacters();
+
+    public static string GetCharacterName(string? characterId)
+    {
+        if (string.IsNullOrWhiteSpace(characterId)) return string.Empty;
+        bool isZh = Services.LocalizationService.Instance.IsChinese;
+        if (isZh)
+        {
+            if (CharacterNamesZh.TryGetValue(characterId, out string? zhName) && !string.IsNullOrWhiteSpace(zhName))
+            {
+                return zhName;
+            }
+        }
+        else
+        {
+            if (CharacterNamesEn.TryGetValue(characterId, out string? enName) && !string.IsNullOrWhiteSpace(enName))
+            {
+                return enName;
+            }
+        }
+
+        if (CharacterNamesZh.TryGetValue(characterId, out string? fallbackZh) && !string.IsNullOrWhiteSpace(fallbackZh))
+        {
+            return fallbackZh;
+        }
+
+        return characterId;
+    }
+
+    public static void RefreshCharacterDisplayNames()
+    {
+        foreach (CharacterOption character in Characters)
+        {
+            character.DisplayName = GetCharacterName(character.Id);
+        }
+    }
 
     public static string? FormatDungeonName(string? id, string? name)
     {
@@ -159,10 +203,7 @@ internal static class PresetOptions
 
         foreach (CharacterOption character in catalog.Characters)
         {
-            if (CharacterNames.TryGetValue(character.Id, out string? chineseName))
-            {
-                character.DisplayName = $"{chineseName}  ·  {character.Id}";
-            }
+            character.DisplayName = GetCharacterName(character.Id);
         }
 
         return catalog.Characters;
@@ -208,13 +249,9 @@ internal static class PresetOptions
         return result;
     }
 
-    private static IReadOnlyDictionary<string, string> LoadCharacterNames()
+    private static IReadOnlyDictionary<string, string> LoadChineseCharacterNames()
     {
         var names = new Dictionary<string, string>(LoadCategoryNames("characters"), StringComparer.OrdinalIgnoreCase);
-        // The combat dictionary is authoritative for current combat metadata,
-        // while the model name list can legitimately contain voice-enabled
-        // characters that are absent from an offline/stale combat snapshot.
-        // Merge missing names instead of using the fallback only when empty.
         Stream? stream = Assembly.GetExecutingAssembly()
             .GetManifestResourceStream(ChineseNamesResourceName);
         if (stream != null)
@@ -229,6 +266,30 @@ internal static class PresetOptions
                     foreach (var (key, value) in fallback)
                     {
                         names.TryAdd(key, value);
+                    }
+                }
+            }
+        }
+        return names;
+    }
+
+    private static IReadOnlyDictionary<string, string> LoadEnglishCharacterNames()
+    {
+        var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        Stream? stream = Assembly.GetExecutingAssembly()
+            .GetManifestResourceStream(EnglishNamesResourceName);
+        if (stream != null)
+        {
+            using (stream)
+            {
+                var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(
+                    stream,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (dict != null)
+                {
+                    foreach (var (key, value) in dict)
+                    {
+                        names[key] = value;
                     }
                 }
             }
