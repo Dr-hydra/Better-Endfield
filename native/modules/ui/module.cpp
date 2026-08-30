@@ -119,6 +119,7 @@ SetActiveFn g_original_game_object_set_active = nullptr;
 const void* g_change_input_type_method = nullptr;
 const void* g_object_get_name_method = nullptr;
 const void* g_game_action_disable_hud_fade_method = nullptr;
+const void* g_event_manager_send_global_method = nullptr;
 const void* g_lua_manager_get_instance_method = nullptr;
 const void* g_lua_manager_get_event_system_method = nullptr;
 const void* g_lua_event_system_dispatch_method = nullptr;
@@ -135,6 +136,8 @@ BE_ResolvedClassV1 g_graphic_class{};
 // Static backing field behind DeviceInfo.inputType, read to recover the input
 // type the game chose for itself before the module overrode it.
 const void* g_input_type_field = nullptr;
+const void* g_clear_screen_off_field = nullptr;
+const void* g_clear_screen_on_field = nullptr;
 const void* g_lua_event_system_field = nullptr;
 
 // Bumped by every configuration push; the main-thread pump replays the switch
@@ -311,6 +314,10 @@ MethodContract g_contracts[]{
     {"game_action.disable_hud_fade",
         {"Gameplay.Beyond.dll", "Beyond.Gameplay.Actions", "GameAction",
             "DisableHudFade", "System.Boolean", "System.Void", 1},
+        false},
+    {"event_manager.send_global",
+        {"Common.Beyond.dll", "Beyond", "EventManager",
+            "SendGlobal", "System.Int32", "System.Void", 1},
         false},
     {"lua_manager.instance",
         {"Lua.Beyond.dll", "Beyond.Lua", "LuaManager",
@@ -778,6 +785,29 @@ void* GetLuaEventSystem() {
 }
 
 bool DispatchClearScreenEvent(bool show_hud) {
+    if (g_event_manager_send_global_method && g_clear_screen_off_field &&
+        g_clear_screen_on_field && g_host && g_host->runtime_invoke &&
+        g_host->field_get_value_object) {
+        const void* event_field = show_hud
+            ? g_clear_screen_off_field
+            : g_clear_screen_on_field;
+        void* boxed_event_key = g_host->field_get_value_object(
+            g_host->context, event_field, nullptr);
+        int32_t event_key = 0;
+        if (Unbox(boxed_event_key, event_key)) {
+            void* parameters[1]{&event_key};
+            void* exception = nullptr;
+            g_host->runtime_invoke(g_host->context,
+                g_event_manager_send_global_method, nullptr, parameters,
+                &exception);
+            if (!exception) {
+                return true;
+            }
+        }
+    }
+
+    // Compatibility fallback for clients where the native event-bus contract
+    // is unavailable but LuaManager still exposes its LuaEventSystem instance.
     if (!g_lua_event_system_dispatch_method || !g_host ||
         !g_host->runtime_invoke || !g_host->string_new) {
         return false;
@@ -1303,6 +1333,9 @@ bool ResolveContracts() {
                 "game_action.disable_hud_fade") {
                 g_game_action_disable_hud_fade_method = resolved.method_info;
             } else if (std::string_view(contract.key) ==
+                "event_manager.send_global") {
+                g_event_manager_send_global_method = resolved.method_info;
+            } else if (std::string_view(contract.key) ==
                 "lua_manager.instance") {
                 g_lua_manager_get_instance_method = resolved.method_info;
             } else if (std::string_view(contract.key) ==
@@ -1348,6 +1381,32 @@ bool ResolveContracts() {
             Log("Resolved field contract: device.input_type_backing");
         } else {
             Log("Optional field not found: device.input_type_backing");
+        }
+
+        const BE_FieldDescriptorV1 clear_screen_off_descriptor{
+            "Common.Beyond.dll", "Beyond", "PredefinedEventKeys",
+            "CLEAR_SCREEN_OFF", "System.Int32"};
+        field = {};
+        if (g_host->resolve_field(g_host->context,
+                &clear_screen_off_descriptor, &field) == BE_Result_Ok &&
+            field.field_info != nullptr) {
+            g_clear_screen_off_field = field.field_info;
+            Log("Resolved field contract: predefined_event.clear_screen_off");
+        } else {
+            Log("Optional field not found: predefined_event.clear_screen_off");
+        }
+
+        const BE_FieldDescriptorV1 clear_screen_on_descriptor{
+            "Common.Beyond.dll", "Beyond", "PredefinedEventKeys",
+            "CLEAR_SCREEN_ON", "System.Int32"};
+        field = {};
+        if (g_host->resolve_field(g_host->context,
+                &clear_screen_on_descriptor, &field) == BE_Result_Ok &&
+            field.field_info != nullptr) {
+            g_clear_screen_on_field = field.field_info;
+            Log("Resolved field contract: predefined_event.clear_screen_on");
+        } else {
+            Log("Optional field not found: predefined_event.clear_screen_on");
         }
 
         const BE_FieldDescriptorV1 lua_event_descriptor{
@@ -1605,7 +1664,7 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "UI Enhancements", "3.0.1", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "UI Enhancements", "3.0.2", BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};

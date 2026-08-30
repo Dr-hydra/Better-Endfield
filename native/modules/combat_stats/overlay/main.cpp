@@ -165,9 +165,9 @@ bool IsEnglish() {
             static_cast<DWORD>(std::size(buffer)), ini_path.c_str());
     }
 
-    if (_wcsicmp(buffer, L"en_US") == 0 || _wcsicmp(buffer, L"en") == 0 || _wcsicmp(buffer, L"English") == 0) {
+    if (_wcsicmp(buffer, L"en_US") == 0 || _wcsicmp(buffer, L"en-US") == 0 || _wcsicmp(buffer, L"en") == 0 || _wcsicmp(buffer, L"English") == 0) {
         cached_lang = 1;
-    } else if (_wcsicmp(buffer, L"zh_CN") == 0 || _wcsicmp(buffer, L"zh") == 0 || _wcsicmp(buffer, L"Chinese") == 0) {
+    } else if (_wcsicmp(buffer, L"zh_CN") == 0 || _wcsicmp(buffer, L"zh-CN") == 0 || _wcsicmp(buffer, L"zh") == 0 || _wcsicmp(buffer, L"Chinese") == 0) {
         cached_lang = 0;
     } else {
         LANGID langId = GetUserDefaultUILanguage();
@@ -559,20 +559,38 @@ void Render() {
     };
     const bool is_en = IsEnglish();
     const auto segment_name = [rdps_mode, is_en](size_t index) -> std::wstring {
+        if (rdps_mode) {
+            if (index < kRdpsNamesZh.size()) {
+                return is_en ? kRdpsNamesEn[index] : kRdpsNamesZh[index];
+            }
+        } else {
+            if (index < kCategoryNamesZh.size()) {
+                return is_en ? kCategoryNamesEn[index] : kCategoryNamesZh[index];
+            }
+        }
         if (index < CombatOverlayProtocol::kDisplaySegmentCount &&
             g_snapshot.categories[index].name[0] != '\0') {
             const std::string utf8_name(g_snapshot.categories[index].name,
                 strnlen_s(g_snapshot.categories[index].name, sizeof(g_snapshot.categories[index].name)));
+            if (is_en) {
+                if (utf8_name == "直伤" || utf8_name == "direct" || utf8_name == "direct_damage") return L"Direct";
+                if (utf8_name == "攻击力" || utf8_name == "attack") return L"ATK";
+                if (utf8_name == "增伤" || utf8_name == "damage" || utf8_name == "damage_boost") return L"DMG Bonus";
+                if (utf8_name == "增幅" || utf8_name == "amplification") return L"Amplify";
+                if (utf8_name == "脆弱" || utf8_name == "vulnerability") return L"Fragile";
+                if (utf8_name == "承伤易伤" || utf8_name == "vulnerability_taken" || utf8_name == "vuln_taken") return L"Vulnerability";
+                if (utf8_name == "减防/减抗" || utf8_name == "defense" || utf8_name == "resistance" || utf8_name == "def_res") return L"DEF/RES Down";
+                if (utf8_name == "法术强度" || utf8_name == "spell_intensity" || utf8_name == "intensity") return L"Arts Power";
+                if (utf8_name == "其他" || utf8_name == "other") return L"Other";
+                if (utf8_name == "普攻" || utf8_name == "basic") return L"Basic";
+                if (utf8_name == "战技" || utf8_name == "skill") return L"Skill";
+                if (utf8_name == "终结技" || utf8_name == "ultimate") return L"Ultimate";
+                if (utf8_name == "连携" || utf8_name == "combo") return L"Combo";
+                if (utf8_name == "被动" || utf8_name == "passive") return L"Passive";
+            }
             return Utf8ToWide(utf8_name);
         }
-        if (rdps_mode) {
-            return index < kRdpsNamesZh.size()
-                ? (is_en ? kRdpsNamesEn[index] : kRdpsNamesZh[index])
-                : (is_en ? L"Other" : L"其他");
-        }
-        return index < kCategoryNamesZh.size()
-            ? (is_en ? kCategoryNamesEn[index] : kCategoryNamesZh[index])
-            : (is_en ? L"Other" : L"其他");
+        return is_en ? L"Other" : L"其他";
     };
     const uint32_t row_count = std::min<uint32_t>(g_snapshot.character_count,
         kMaximumVisibleRows);

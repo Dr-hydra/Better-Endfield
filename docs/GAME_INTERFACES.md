@@ -192,7 +192,7 @@ generation 或 Seek generation 变化都会先清空旧流再绑定新流。策�
 
 ### 全部 HUD 隐藏
 
-开启 `hide_hud_enabled` 后，通过 `hide_hud_hotkey` 指定的热键（默认主键盘数字 0）隐藏或恢复游戏内界面。主路径通过 `Beyond.Lua.LuaEventSystem.DispatchEvent` 广播拍照清屏使用的 `CLEAR_SCREEN_ON` / `CLEAR_SCREEN_OFF`，`DisableHudFade(bool showHud)` 继续处理角色战斗 HUD。`GameAction.ToggleUI` 和剧情演出的 `DramaticPerformanceForbidLevelUI` 都会进入游戏的 UI/演出输入控制状态，造成相机与角色操作冻结，因此不用于玩家主动清屏。`Beyond.Gameplay.View.CameraControllerBase.get_hideHUD` 覆盖及 `MainHudRoot` 子级组件禁用方案仅作为补充回退。所有调用均在游戏主线程执行。
+开启 `hide_hud_enabled` 后，通过 `hide_hud_hotkey` 指定的热键（默认主键盘数字 0）隐藏或恢复游戏内界面。主路径复用 `Beyond.Gameplay.Actions.ToggleClearScreen.Execute` 的原生调用链：从 `Beyond.PredefinedEventKeys` 读取 `CLEAR_SCREEN_ON` / `CLEAR_SCREEN_OFF`，再通过 `Beyond.EventManager.SendGlobal(int)` 广播清屏事件；`DisableHudFade(bool showHud)` 继续处理角色战斗 HUD。`Beyond.Lua.LuaEventSystem.DispatchEvent` 仅作为旧客户端兼容回退。`GameAction.ToggleUI`（也是 `ShowHideEntireHUD.Execute` 的下游）和剧情演出的 `DramaticPerformanceForbidLevelUI` 都会进入游戏的 UI/演出输入控制状态，造成相机与角色操作冻结，因此不用于玩家主动清屏。`Beyond.Gameplay.View.CameraControllerBase.get_hideHUD` 覆盖及 `MainHudRoot` 子级组件禁用方案仅作为补充回退。所有调用均在游戏主线程执行。
 
 ## 相机增强模块
 
