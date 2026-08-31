@@ -3334,8 +3334,8 @@ public sealed partial class MainWindow : Window
         HideUidToggle.OnContent = isZh ? "隐藏 UID" : "Hide UID";
         HideHudSectionTitle.Text = isZh ? "HUD 显示" : "In-Game HUD Visibility";
         HideHudSectionHint.Text = isZh
-            ? "通过热键隐藏或恢复游戏内 MainHudRoot 下的全部 HUD 画布，不影响菜单和设置界面。"
-            : "Toggle in-game HUD canvases under MainHudRoot via hotkey without affecting menus or pause screens.";
+            ? "通过原生 UI 相机遮罩隐藏或恢复游戏内全部界面；隐藏期间不会冻结角色移动和镜头操作。"
+            : "Hide or restore the entire in-game interface through the native UI camera mask without freezing movement or camera control.";
         HideHudToggle.Header = isZh ? "启用隐藏全部 HUD 热键" : "Enable Toggle HUD Hotkey";
         HideHudToggle.OffContent = isZh ? "关闭" : "Disabled";
         HideHudToggle.OnContent = isZh ? "允许热键切换" : "Enabled";

@@ -72,7 +72,6 @@ inline bool PlatformSpoofActive() {
 }
 
 using GetBoolFn = bool(__fastcall*)(void* method);
-using GetInstanceBoolFn = bool(__fastcall*)(void* instance, void* method);
 using GetInt32Fn = int32_t(__fastcall*)(void* method);
 using ChangeInputTypeFn = void(__fastcall*)(int32_t type, void* method);
 using AwakeFn = void(__fastcall*)(void* instance, void* method);
@@ -110,7 +109,6 @@ GetBoolFn g_original_cloud_game_get_is_pc_platform = nullptr;
 AwakeFn g_original_ui_style_awake = nullptr;
 AwakeFn g_original_ui_style_update = nullptr;
 AwakeFn g_original_event_system_update = nullptr;
-GetInstanceBoolFn g_original_camera_get_hide_hud = nullptr;
 GetObjectFn g_object_get_name = nullptr;
 SetActiveFn g_original_game_object_set_active = nullptr;
 
@@ -118,11 +116,9 @@ SetActiveFn g_original_game_object_set_active = nullptr;
 // switch through runtime_invoke from the game's own thread.
 const void* g_change_input_type_method = nullptr;
 const void* g_object_get_name_method = nullptr;
-const void* g_game_action_disable_hud_fade_method = nullptr;
-const void* g_event_manager_send_global_method = nullptr;
-const void* g_lua_manager_get_instance_method = nullptr;
-const void* g_lua_manager_get_event_system_method = nullptr;
-const void* g_lua_event_system_dispatch_method = nullptr;
+const void* g_camera_utils_get_manager_method = nullptr;
+const void* g_camera_manager_add_ui_mask_method = nullptr;
+const void* g_camera_manager_remove_ui_mask_method = nullptr;
 const void* g_game_object_find_method = nullptr;
 const void* g_game_object_set_active_method = nullptr;
 const void* g_game_object_get_components_method = nullptr;
@@ -130,15 +126,11 @@ const void* g_array_get_length_method = nullptr;
 const void* g_array_get_value_method = nullptr;
 const void* g_behaviour_get_enabled_method = nullptr;
 const void* g_behaviour_set_enabled_method = nullptr;
-BE_ResolvedClassV1 g_lua_manager_class{};
 BE_ResolvedClassV1 g_canvas_class{};
 BE_ResolvedClassV1 g_graphic_class{};
 // Static backing field behind DeviceInfo.inputType, read to recover the input
 // type the game chose for itself before the module overrode it.
 const void* g_input_type_field = nullptr;
-const void* g_clear_screen_off_field = nullptr;
-const void* g_clear_screen_on_field = nullptr;
-const void* g_lua_event_system_field = nullptr;
 
 // Bumped by every configuration push; the main-thread pump replays the switch
 // whenever it falls behind, so a hot toggle reaches already-live UI.
@@ -160,6 +152,8 @@ std::mutex g_hidden_hud_mutex;
 std::vector<HiddenHudCanvas> g_hidden_hud_canvases;
 bool g_hud_hidden = false;
 bool g_hud_hotkey_was_down = false;
+
+constexpr char kHudCameraMaskOwner[] = "BetterEndfield.HideHUD";
 
 struct HiddenUidObject {
     void* object = nullptr;
@@ -307,29 +301,19 @@ MethodContract g_contracts[]{
         {"UnityEngine.UI.dll", "UnityEngine.EventSystems", "EventSystem", "Update",
             nullptr, "System.Void", 0},
         false},
-    {"camera_controller.hide_hud",
-        {"Gameplay.Beyond.dll", "Beyond.Gameplay.View", "CameraControllerBase",
-            "get_hideHUD", nullptr, "System.Boolean", 0},
+    {"camera_utils.manager",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.View", "CameraUtils",
+            "get_cameraManager", nullptr, nullptr, 0},
         false},
-    {"game_action.disable_hud_fade",
-        {"Gameplay.Beyond.dll", "Beyond.Gameplay.Actions", "GameAction",
-            "DisableHudFade", "System.Boolean", "System.Void", 1},
+    {"camera_manager.add_ui_culling_mask",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.View", "CameraManager",
+            "AddUICamCullingMaskConfig", "System.String|System.Int32",
+            "System.Boolean", 2},
         false},
-    {"event_manager.send_global",
-        {"Common.Beyond.dll", "Beyond", "EventManager",
-            "SendGlobal", "System.Int32", "System.Void", 1},
-        false},
-    {"lua_manager.instance",
-        {"Lua.Beyond.dll", "Beyond.Lua", "LuaManager",
-            "get_instance", nullptr, nullptr, 0},
-        false},
-    {"lua_manager.event_system",
-        {"Lua.Beyond.dll", "Beyond.Lua", "LuaManager",
-            "get_luaEventSystem", nullptr, nullptr, 0},
-        false},
-    {"lua_event_system.dispatch",
-        {"Lua.Beyond.dll", "Beyond.Lua", "LuaEventSystem",
-            "DispatchEvent", "System.String", "System.Void", 1},
+    {"camera_manager.remove_ui_culling_mask",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.View", "CameraManager",
+            "RemoveUICamCullingMaskConfig", "System.String",
+            "System.Boolean", 1},
         false},
     {"object.get_name",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Object", "get_name",
@@ -390,87 +374,6 @@ void* Invoke(const void* method_info, void* instance, void** parameters) {
     void* result = g_host->runtime_invoke(
         g_host->context, method_info, instance, parameters, &exception);
     return exception ? nullptr : result;
-}
-
-void DiscoverLuaEventSystemAccessor() {
-    if ((!g_lua_manager_class.class_info) ||
-        (g_lua_manager_get_event_system_method && g_lua_event_system_field)) {
-        return;
-    }
-
-    HMODULE game_assembly = GetModuleHandleW(L"GameAssembly.dll");
-    if (!game_assembly) {
-        Log("Lua event-system discovery skipped: GameAssembly is unavailable.");
-        return;
-    }
-
-    using ClassGetParentFn = void*(__cdecl*)(void* klass);
-    using ClassGetMethodsFn = void*(__cdecl*)(void* klass, void** iterator);
-    using ClassGetFieldsFn = void*(__cdecl*)(void* klass, void** iterator);
-    using MethodGetNameFn = const char*(__cdecl*)(const void* method);
-    using MethodGetParameterCountFn = uint32_t(__cdecl*)(const void* method);
-    using FieldGetNameFn = const char*(__cdecl*)(const void* field);
-
-    const auto class_get_parent = reinterpret_cast<ClassGetParentFn>(
-        GetProcAddress(game_assembly, "il2cpp_class_get_parent"));
-    const auto class_get_methods = reinterpret_cast<ClassGetMethodsFn>(
-        GetProcAddress(game_assembly, "il2cpp_class_get_methods"));
-    const auto class_get_fields = reinterpret_cast<ClassGetFieldsFn>(
-        GetProcAddress(game_assembly, "il2cpp_class_get_fields"));
-    const auto method_get_name = reinterpret_cast<MethodGetNameFn>(
-        GetProcAddress(game_assembly, "il2cpp_method_get_name"));
-    const auto method_get_parameter_count =
-        reinterpret_cast<MethodGetParameterCountFn>(
-            GetProcAddress(game_assembly, "il2cpp_method_get_param_count"));
-    const auto field_get_name = reinterpret_cast<FieldGetNameFn>(
-        GetProcAddress(game_assembly, "il2cpp_field_get_name"));
-    if (!class_get_parent || !class_get_methods || !class_get_fields ||
-        !method_get_name || !method_get_parameter_count || !field_get_name) {
-        Log("Lua event-system discovery skipped: IL2CPP reflection exports are incomplete.");
-        return;
-    }
-
-    void* klass = const_cast<void*>(g_lua_manager_class.class_info);
-    for (int depth = 0; klass && depth < 16; ++depth) {
-        if (!g_lua_manager_get_event_system_method) {
-            void* iterator = nullptr;
-            while (void* method = class_get_methods(klass, &iterator)) {
-                const char* name = method_get_name(method);
-                if (name && std::string_view(name) == "get_luaEventSystem" &&
-                    method_get_parameter_count(method) == 0) {
-                    g_lua_manager_get_event_system_method = method;
-                    Log("Discovered inherited method: lua_manager.event_system");
-                    break;
-                }
-            }
-        }
-
-        if (!g_lua_event_system_field) {
-            void* iterator = nullptr;
-            while (void* field = class_get_fields(klass, &iterator)) {
-                const char* name = field_get_name(field);
-                if (!name) {
-                    continue;
-                }
-                std::string normalized(name);
-                std::transform(normalized.begin(), normalized.end(),
-                    normalized.begin(), [](unsigned char c) {
-                        return static_cast<char>(std::tolower(c));
-                    });
-                if (normalized.find("luaeventsystem") != std::string::npos) {
-                    g_lua_event_system_field = field;
-                    Log(std::string("Discovered Lua event-system field: ") + name);
-                    break;
-                }
-            }
-        }
-
-        if (g_lua_manager_get_event_system_method || g_lua_event_system_field) {
-            return;
-        }
-        klass = class_get_parent(klass);
-    }
-    Log("Lua event-system accessor was not found in LuaManager hierarchy.");
 }
 
 template <typename T>
@@ -754,92 +657,55 @@ void ReleaseHudCanvasRoots() {
     g_hidden_hud_canvases.clear();
 }
 
-bool InvokeStaticAction(const void* method_info, void** parameters) {
-    if (!method_info || !g_host || !g_host->runtime_invoke) {
-        return false;
-    }
-    void* exception = nullptr;
-    g_host->runtime_invoke(
-        g_host->context, method_info, nullptr, parameters, &exception);
-    return exception == nullptr;
-}
-
 struct HudVisibilityResult {
-    bool clear_screen = false;
-    bool hud_fade = false;
+    bool camera_mask = false;
 };
 
-void* GetLuaEventSystem() {
-    void* manager = Invoke(g_lua_manager_get_instance_method, nullptr, nullptr);
-    if (!manager) {
-        return nullptr;
-    }
-    if (void* event_system = Invoke(
-            g_lua_manager_get_event_system_method, manager, nullptr)) {
-        return event_system;
-    }
-    return g_lua_event_system_field && g_host && g_host->field_get_value_object
-        ? g_host->field_get_value_object(
-              g_host->context, g_lua_event_system_field, manager)
-        : nullptr;
-}
-
-bool DispatchClearScreenEvent(bool show_hud) {
-    if (g_event_manager_send_global_method && g_clear_screen_off_field &&
-        g_clear_screen_on_field && g_host && g_host->runtime_invoke &&
-        g_host->field_get_value_object) {
-        const void* event_field = show_hud
-            ? g_clear_screen_off_field
-            : g_clear_screen_on_field;
-        void* boxed_event_key = g_host->field_get_value_object(
-            g_host->context, event_field, nullptr);
-        int32_t event_key = 0;
-        if (Unbox(boxed_event_key, event_key)) {
-            void* parameters[1]{&event_key};
-            void* exception = nullptr;
-            g_host->runtime_invoke(g_host->context,
-                g_event_manager_send_global_method, nullptr, parameters,
-                &exception);
-            if (!exception) {
-                return true;
-            }
-        }
-    }
-
-    // Compatibility fallback for clients where the native event-bus contract
-    // is unavailable but LuaManager still exposes its LuaEventSystem instance.
-    if (!g_lua_event_system_dispatch_method || !g_host ||
+bool ApplyHudCameraMask(bool hide_hud) {
+    if (!g_camera_utils_get_manager_method ||
+        !g_camera_manager_add_ui_mask_method ||
+        !g_camera_manager_remove_ui_mask_method || !g_host ||
         !g_host->runtime_invoke || !g_host->string_new) {
         return false;
     }
-    void* event_system = GetLuaEventSystem();
-    if (!event_system) {
+    void* camera_manager = Invoke(
+        g_camera_utils_get_manager_method, nullptr, nullptr);
+    void* owner = g_host->string_new(g_host->context, kHudCameraMaskOwner);
+    if (!camera_manager || !owner) {
         return false;
     }
-    void* event_name = g_host->string_new(g_host->context,
-        show_hud ? "CLEAR_SCREEN_OFF" : "CLEAR_SCREEN_ON");
-    void* parameters[1]{event_name};
+
+    // This is the visibility half of UIManager.OnToggleUiAction.  Calling the
+    // CameraManager directly deliberately avoids UIManager._ToggleUIInputBinding,
+    // which is the independent branch that freezes player/camera input.
+    int32_t nothing_mask = 0;
+    void* add_parameters[2]{owner, &nothing_mask};
+    void* remove_parameters[1]{owner};
     void* exception = nullptr;
-    g_host->runtime_invoke(g_host->context,
-        g_lua_event_system_dispatch_method, event_system, parameters, &exception);
-    return exception == nullptr;
+    void* result = g_host->runtime_invoke(g_host->context,
+        hide_hud ? g_camera_manager_add_ui_mask_method
+                 : g_camera_manager_remove_ui_mask_method,
+        camera_manager, hide_hud ? add_parameters : remove_parameters,
+        &exception);
+    if (exception) {
+        return false;
+    }
+    // The Boolean reports whether the keyed collection changed.  False also
+    // means the requested state was already present (duplicate add or absent
+    // remove), so successful unboxing is enough to accept the final state.
+    bool collection_changed = false;
+    return Unbox(result, collection_changed);
 }
 
 HudVisibilityResult ApplyGameHudVisibility(bool show_hud) {
     HudVisibilityResult result{};
-    void* fade_parameters[1]{&show_hud};
-
-    result.clear_screen = DispatchClearScreenEvent(show_hud);
-    result.hud_fade = InvokeStaticAction(
-        g_game_action_disable_hud_fade_method, fade_parameters);
+    result.camera_mask = ApplyHudCameraMask(!show_hud);
     return result;
 }
 
 std::string HudVisibilityStatus(const HudVisibilityResult& result) {
-    return std::string("clear_screen=") +
-        (result.clear_screen ? "applied" : "unavailable") +
-        ", hud_fade=" +
-        (result.hud_fade ? "applied" : "unavailable");
+    return std::string("camera_mask=") +
+        (result.camera_mask ? "applied" : "unavailable");
 }
 
 void PumpHudVisibility() {
@@ -865,12 +731,14 @@ void PumpHudVisibility() {
         g_hud_hidden = !g_hud_hidden;
         if (g_hud_hidden) {
             const HudVisibilityResult action = ApplyGameHudVisibility(false);
-            const int fallback_count = FindAndHideHudCanvases();
+            const int fallback_count = action.camera_mask
+                ? 0
+                : FindAndHideHudCanvases();
             g_next_hud_scan_tick.store(GetTickCount64() + 2000,
                 std::memory_order_release);
             Log(std::string("All HUD hide requested by hotkey: ") +
-                HudVisibilityStatus(action) + ", camera_contract=" +
-                (g_original_camera_get_hide_hud ? "ready" : "unavailable") +
+                HudVisibilityStatus(action) + ", camera_manager_contract=" +
+                (g_camera_manager_add_ui_mask_method ? "ready" : "unavailable") +
                 ", fallback_components=" + std::to_string(fallback_count));
         } else {
             const HudVisibilityResult action = ApplyGameHudVisibility(true);
@@ -882,7 +750,12 @@ void PumpHudVisibility() {
 
     const uint64_t now = GetTickCount64();
     if (g_hud_hidden && now >= g_next_hud_scan_tick.load()) {
-        FindAndHideHudCanvases();
+        const HudVisibilityResult action = ApplyGameHudVisibility(false);
+        if (action.camera_mask) {
+            RestoreHudCanvases();
+        } else {
+            FindAndHideHudCanvases();
+        }
         g_next_hud_scan_tick.store(now + 2000, std::memory_order_release);
     }
 }
@@ -1184,15 +1057,6 @@ void __fastcall DetourEventSystemUpdate(void* instance, void* method) {
     PumpHudVisibility();
 }
 
-bool __fastcall DetourCameraGetHideHud(void* instance, void* method) {
-    if (g_hide_hud_enabled.load(std::memory_order_acquire) && g_hud_hidden) {
-        return true;
-    }
-    return g_original_camera_get_hide_hud
-        ? g_original_camera_get_hide_hud(instance, method)
-        : false;
-}
-
 void __fastcall DetourGameObjectSetActive(
     void* instance, bool active, void* method) {
     if (active && g_hide_uid_enabled.load(std::memory_order_acquire) &&
@@ -1330,20 +1194,14 @@ bool ResolveContracts() {
             if (std::string_view(contract.key) == "device.change_input_type") {
                 g_change_input_type_method = resolved.method_info;
             } else if (std::string_view(contract.key) ==
-                "game_action.disable_hud_fade") {
-                g_game_action_disable_hud_fade_method = resolved.method_info;
+                "camera_utils.manager") {
+                g_camera_utils_get_manager_method = resolved.method_info;
             } else if (std::string_view(contract.key) ==
-                "event_manager.send_global") {
-                g_event_manager_send_global_method = resolved.method_info;
+                "camera_manager.add_ui_culling_mask") {
+                g_camera_manager_add_ui_mask_method = resolved.method_info;
             } else if (std::string_view(contract.key) ==
-                "lua_manager.instance") {
-                g_lua_manager_get_instance_method = resolved.method_info;
-            } else if (std::string_view(contract.key) ==
-                "lua_manager.event_system") {
-                g_lua_manager_get_event_system_method = resolved.method_info;
-            } else if (std::string_view(contract.key) ==
-                "lua_event_system.dispatch") {
-                g_lua_event_system_dispatch_method = resolved.method_info;
+                "camera_manager.remove_ui_culling_mask") {
+                g_camera_manager_remove_ui_mask_method = resolved.method_info;
             } else if (std::string_view(contract.key) == "object.get_name") {
                 g_object_get_name = reinterpret_cast<GetObjectFn>(resolved.method_pointer);
                 g_object_get_name_method = resolved.method_info;
@@ -1383,55 +1241,6 @@ bool ResolveContracts() {
             Log("Optional field not found: device.input_type_backing");
         }
 
-        const BE_FieldDescriptorV1 clear_screen_off_descriptor{
-            "Common.Beyond.dll", "Beyond", "PredefinedEventKeys",
-            "CLEAR_SCREEN_OFF", "System.Int32"};
-        field = {};
-        if (g_host->resolve_field(g_host->context,
-                &clear_screen_off_descriptor, &field) == BE_Result_Ok &&
-            field.field_info != nullptr) {
-            g_clear_screen_off_field = field.field_info;
-            Log("Resolved field contract: predefined_event.clear_screen_off");
-        } else {
-            Log("Optional field not found: predefined_event.clear_screen_off");
-        }
-
-        const BE_FieldDescriptorV1 clear_screen_on_descriptor{
-            "Common.Beyond.dll", "Beyond", "PredefinedEventKeys",
-            "CLEAR_SCREEN_ON", "System.Int32"};
-        field = {};
-        if (g_host->resolve_field(g_host->context,
-                &clear_screen_on_descriptor, &field) == BE_Result_Ok &&
-            field.field_info != nullptr) {
-            g_clear_screen_on_field = field.field_info;
-            Log("Resolved field contract: predefined_event.clear_screen_on");
-        } else {
-            Log("Optional field not found: predefined_event.clear_screen_on");
-        }
-
-        const BE_FieldDescriptorV1 lua_event_descriptor{
-            "Lua.Beyond.dll", "Beyond.Lua", "LuaManager",
-            "<luaEventSystem>k__BackingField", nullptr};
-        field = {};
-        if (g_host->resolve_field(g_host->context, &lua_event_descriptor, &field) ==
-                BE_Result_Ok &&
-            field.field_info != nullptr) {
-            g_lua_event_system_field = field.field_info;
-            Log("Resolved field contract: lua_manager.event_system_backing");
-        } else {
-            Log("Optional field not found: lua_manager.event_system_backing");
-        }
-    }
-
-    if (g_host->resolve_class &&
-        g_host->resolve_class(g_host->context, "Lua.Beyond.dll",
-            "Beyond.Lua", "LuaManager", &g_lua_manager_class) == BE_Result_Ok &&
-        g_lua_manager_class.class_info) {
-        Log("Resolved class contract: lua_manager");
-        DiscoverLuaEventSystemAccessor();
-    } else {
-        g_lua_manager_class = {};
-        Log("Optional class not found: lua_manager");
     }
 
     if (g_host->resolve_class &&
@@ -1554,9 +1363,6 @@ bool InstallHooks() {
         } else if (key == "event_system.update") {
             detour = reinterpret_cast<void*>(&DetourEventSystemUpdate);
             original = reinterpret_cast<void**>(&g_original_event_system_update);
-        } else if (key == "camera_controller.hide_hud") {
-            detour = reinterpret_cast<void*>(&DetourCameraGetHideHud);
-            original = reinterpret_cast<void**>(&g_original_camera_get_hide_hud);
         } else if (key == "game_object.set_active") {
             detour = reinterpret_cast<void*>(&DetourGameObjectSetActive);
             original = reinterpret_cast<void**>(&g_original_game_object_set_active);
@@ -1664,7 +1470,7 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "UI Enhancements", "3.0.2", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "UI Enhancements", "3.2.0", BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};
