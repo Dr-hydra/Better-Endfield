@@ -23,6 +23,8 @@ public sealed partial class GachaPage : UserControl
     private List<GachaRecord> _weapons = [];
     private Dictionary<string, GachaPoolInfo> _poolInfos = new(StringComparer.Ordinal);
     private string _selectedCategory = "限定";
+    private string _statusKey = "waiting";
+    private string? _statusDetail;
     public ObservableCollection<GachaRecord> Records { get; } = [];
     public ObservableCollection<GachaSummaryView> Summaries { get; } = [];
     public ObservableCollection<GachaPoolView> Pools { get; } = [];
@@ -30,7 +32,9 @@ public sealed partial class GachaPage : UserControl
     public GachaPage()
     {
         InitializeComponent();
+        LocalizationService.Instance.PropertyChanged += LocalizationChanged;
         LimitedButton.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 30, 30, 30));
+        UpdateLocalizedUi();
         Loaded += async (_, _) =>
         {
             if (Records.Count != 0) return;
@@ -65,15 +69,70 @@ public sealed partial class GachaPage : UserControl
         };
     }
 
+    private void LocalizationChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            UpdateLocalizedUi();
+            if (Records.Count != 0) ShowCurrent();
+        });
+    }
+
+    private void UpdateLocalizedUi()
+    {
+        bool isZh = LocalizationService.Instance.IsChinese;
+        PageTitleText.Text = isZh ? "寻访查询" : "Gacha History";
+        ImportButtonText.Text = isZh ? "导入 JSON" : "Import JSON";
+        ExportButtonText.Text = isZh ? "导出 JSON" : "Export JSON";
+        OpenWebButtonText.Text = isZh ? "打开网页" : "Open Web";
+        SyncButtonText.Text = isZh ? "同步" : "Sync";
+        LimitedButton.Content = isZh ? "限定池" : "Limited";
+        WeaponButton.Content = isZh ? "武器池" : "Weapons";
+        FestivalButton.Content = isZh ? "庆典池" : "Festival";
+        StandardButton.Content = isZh ? "常驻池" : "Standard";
+        BeginnerButton.Content = isZh ? "新手池" : "Beginner";
+        OtherButton.Content = isZh ? "其他" : "Other";
+        SetStatusText();
+    }
+
+    private void SetStatus(string key, string? detail = null)
+    {
+        _statusKey = key;
+        _statusDetail = detail;
+        SetStatusText();
+    }
+
+    private void SetStatusText()
+    {
+        bool isZh = LocalizationService.Instance.IsChinese;
+        string detail = _statusDetail ?? "";
+        StatusText.Text = _statusKey switch
+        {
+            "connecting" => isZh ? "正在连接游戏..." : "Connecting to game...",
+            "not-connected" => isZh ? "未连接：请启动游戏并完成登录" : "Not connected: start the game and finish signing in",
+            "syncing" => isZh ? "正在同步寻访记录..." : "Syncing gacha history...",
+            "complete" => string.IsNullOrWhiteSpace(detail) ? (isZh ? "同步完成" : "Sync complete") : isZh ? $"账号 {detail} · 同步完成" : $"Account {detail} · sync complete",
+            "invalid-session" => isZh ? "同步失败：会话无效" : "Sync failed: session expired",
+            "sync-failed" => isZh ? $"同步失败：{detail}" : $"Sync failed: {detail}",
+            "exported" => isZh ? $"已导出：{detail}" : $"Exported: {detail}",
+            "export-failed" => isZh ? $"导出失败：{detail}" : $"Export failed: {detail}",
+            "web-opened" => isZh ? $"已打开网页 · {detail} 个卡池" : $"Web page opened · {detail} pools",
+            "web-failed" => isZh ? $"打开网页失败：{detail}" : $"Failed to open web page: {detail}",
+            "imported" => isZh ? $"已导入 {detail} 条记录" : $"Imported {detail} records",
+            "import-failed" => isZh ? $"导入失败：{detail}" : $"Import failed: {detail}",
+            _ => isZh ? "等待连接游戏" : "Waiting for game connection"
+        };
+    }
+
     private async void SyncButton_Click(object sender, RoutedEventArgs e)
     {
         SyncButton.IsEnabled = false;
-        StatusText.Text = "正在连接游戏...";
+        SetStatus("connecting");
         try
         {
             GachaSession? session = await _sessions.TryGetSessionAsync();
-            if (session is null) { StatusText.Text = "未连接：请启动游戏并完成登录"; return; }
-            StatusText.Text = "正在同步寻访记录...";
+            if (session is null) { SetStatus("not-connected"); return; }
+            SetStatus("syncing");
             _characters = await _api.FetchCharactersAsync(session, _characters);
             _weapons = await _api.FetchWeaponsAsync(session, _weapons);
             _poolInfos = await _api.FetchPoolInfosAsync(session, _characters.Concat(_weapons), _poolInfos);
@@ -85,12 +144,12 @@ public sealed partial class GachaPage : UserControl
                     record.PoolCategory = info.Category;
                 }
             await _store.SaveAsync(_characters.Concat(_weapons));
-            StatusText.Text = string.IsNullOrWhiteSpace(session.Uid) ? "同步完成" : $"账号 {session.Uid} · 同步完成";
+            SetStatus("complete", session.Uid);
             ShowCurrent();
         }
         catch (Exception ex) when (ex is HttpRequestException or IOException or InvalidOperationException)
         {
-            StatusText.Text = ex.Message.Contains("token", StringComparison.OrdinalIgnoreCase) ? "同步失败：会话无效" : $"同步失败：{ex.Message}";
+            SetStatus(ex.Message.Contains("token", StringComparison.OrdinalIgnoreCase) ? "invalid-session" : "sync-failed", ex.Message);
         }
         finally { SyncButton.IsEnabled = true; }
     }
@@ -111,9 +170,9 @@ public sealed partial class GachaPage : UserControl
         try
         {
             string path = await _store.ExportAsync(_characters.Concat(_weapons), _poolInfos.Values);
-            StatusText.Text = $"已导出：{path}";
+            SetStatus("exported", path);
         }
-        catch (IOException ex) { StatusText.Text = $"导出失败：{ex.Message}"; }
+        catch (IOException ex) { SetStatus("export-failed", ex.Message); }
         finally { ExportButton.IsEnabled = true; }
     }
 
@@ -125,11 +184,11 @@ public sealed partial class GachaPage : UserControl
             GachaWebSnapshot snapshot = GachaWebSnapshotBuilder.Build(_characters.Concat(_weapons), _poolInfos);
             string url = GachaSnapshotLink.BuildUrl(GachaWebUrl, snapshot);
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-            StatusText.Text = $"已打开网页 · {snapshot.Pools.Count} 个卡池";
+            SetStatus("web-opened", snapshot.Pools.Count.ToString());
         }
         catch (Exception ex) when (ex is InvalidDataException or NotSupportedException or InvalidOperationException or Win32Exception)
         {
-            StatusText.Text = $"打开网页失败：{ex.Message}";
+            SetStatus("web-failed", ex.Message);
         }
         finally { OpenWebButton.IsEnabled = true; }
     }
@@ -153,11 +212,11 @@ public sealed partial class GachaPage : UserControl
             await _store.SaveAsync(_characters.Concat(_weapons));
             await _store.SavePoolInfosAsync(_poolInfos.Values);
             ShowCurrent();
-            StatusText.Text = $"已导入 {imported.Records.Count} 条记录";
+            SetStatus("imported", imported.Records.Count.ToString());
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
         {
-            StatusText.Text = $"导入失败：{ex.Message}";
+            SetStatus("import-failed", ex.Message);
         }
         finally { ImportButton.IsEnabled = true; }
     }
@@ -175,7 +234,9 @@ public sealed partial class GachaPage : UserControl
             GachaPoolStatistics stats = poolStats[index];
             bool isLatestPool = index == 0;
             int currentCarry = stats.SixStars.Count == 0 ? stats.StartingPity : 0;
-            var pool = new GachaPoolView { PoolName = stats.PoolName, TotalPulls = stats.PaidPulls, FreePulls = stats.FreePulls, CurrentPity = stats.CurrentPity, ShowCurrentPity = isLatestPool && stats.CurrentPity > 0, CurrentPityRow = new GachaStarView { Name = "", Pity = stats.CurrentPity, CarryPity = currentCarry, IsCurrentPity = true } };
+            string poolName = !LocalizationService.Instance.IsChinese && string.Equals(stats.PoolName, "未知卡池", StringComparison.Ordinal)
+                ? "Unknown pool" : stats.PoolName;
+            var pool = new GachaPoolView { PoolName = poolName, TotalPulls = stats.PaidPulls, FreePulls = stats.FreePulls, CurrentPity = stats.CurrentPity, ShowCurrentPity = isLatestPool && stats.CurrentPity > 0, CurrentPityRow = new GachaStarView { Name = "", Pity = stats.CurrentPity, CarryPity = currentCarry, IsCurrentPity = true } };
             foreach (GachaSixStarResult star in stats.SixStars)
                 pool.SixStars.Add(CreateStarView(star));
             foreach (GachaSixStarResult star in stats.FreeSixStars)
@@ -206,7 +267,10 @@ public sealed partial class GachaPage : UserControl
         {
             var ids = group.SelectMany(x => x.PoolId is not null && _poolInfos.TryGetValue(x.PoolId, out GachaPoolInfo? info) ? info.UpIds : []).ToHashSet(StringComparer.Ordinal);
             GachaPoolStatistics stats = GachaStatisticsCalculator.Calculate(group, ids);
-            Summaries.Add(new GachaSummaryView { Title = group.Key ?? "其他", TotalPulls = stats.PaidPulls, PaidPulls = stats.PaidPulls, SixStars = stats.SixStarCount, UpCount = stats.UpCount, OffRateCount = stats.OffRateCount });
+            string title = group.Key ?? "其他";
+            if (!LocalizationService.Instance.IsChinese)
+                title = title switch { "限定" => "Limited", "武器" => "Weapons", "庆典" => "Festival", "常驻" => "Standard", "新手" => "Beginner", _ => "Other" };
+            Summaries.Add(new GachaSummaryView { Title = title, TotalPulls = stats.PaidPulls, PaidPulls = stats.PaidPulls, SixStars = stats.SixStarCount, UpCount = stats.UpCount, OffRateCount = stats.OffRateCount });
         }
     }
 }
