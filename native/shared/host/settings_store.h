@@ -12,6 +12,7 @@ struct HostPaths {
     std::filesystem::path log_root;
     std::filesystem::path modules_root;
     std::filesystem::path settings_file;
+    bool bootstrap_install_root = false;
 };
 
 class SettingsStore {

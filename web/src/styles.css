@@ -36,18 +36,28 @@ button { color: inherit; }
 a { color: inherit; }
 img { display: block; max-width: 100%; }
 
-.app-shell { min-height: 100vh; padding-left: 94px; }
-.side-rail { position: fixed; inset: 0 auto 0 0; z-index: 40; width: 94px; display: flex; flex-direction: column; align-items: center; background: var(--ink); color: var(--panel); border-right: 1px solid color-mix(in srgb, var(--ink), white 14%); }
-.brand { appearance: none; width: 100%; min-height: 92px; padding: 15px 8px; border: 0; background: var(--yellow); color: #172126; cursor: pointer; display: grid; place-items: center; gap: 3px; }
+.app-shell { min-height: 100vh; padding-left: 220px; }
+.side-rail { position: fixed; inset: 0 auto 0 0; z-index: 40; width: 220px; display: flex; flex-direction: column; align-items: stretch; background: var(--ink); color: var(--panel); border-right: 1px solid color-mix(in srgb, var(--ink), white 14%); transition: width .18s ease; }
+.brand { appearance: none; width: 100%; min-height: 92px; padding: 15px 18px; border: 0; background: var(--yellow); color: #172126; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; gap: 12px; }
 .brand span { font: 900 28px/1 Arial Black, sans-serif; letter-spacing: -3px; }
 .brand b { font: 800 8px/1.15 Consolas, monospace; letter-spacing: .08em; }
 .side-rail nav { width: 100%; display: flex; flex: 1; flex-direction: column; padding-top: 22px; }
-.side-rail nav button { position: relative; min-height: 82px; padding: 10px 4px; border: 0; background: transparent; color: #aeb7ba; cursor: pointer; display: grid; place-items: center; gap: 6px; }
-.side-rail nav button::before { content: ""; position: absolute; left: 0; top: 18px; bottom: 18px; width: 3px; background: transparent; }
-.side-rail nav button.active { color: #fff; }
+.side-rail nav button { position: relative; min-height: 62px; padding: 10px 22px; border: 0; background: transparent; color: #aeb7ba; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; gap: 14px; text-align: left; }
+.side-rail nav button::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; background: transparent; }
+.side-rail nav button.active { color: var(--yellow); background: color-mix(in srgb, var(--yellow), transparent 90%); }
 .side-rail nav button.active::before { background: var(--yellow); }
-.side-rail nav button i { color: var(--yellow); font: normal 9px Consolas, monospace; }
-.side-rail nav button span { font-size: 11px; writing-mode: vertical-rl; letter-spacing: .12em; }
+.side-rail nav button i { width: 22px; color: var(--yellow); font: normal 12px Consolas, monospace; }
+.side-rail nav button span { font-size: 15px; letter-spacing: 0; white-space: nowrap; }
+.rail-toggle { align-self: flex-end; width: 40px; height: 32px; margin: 8px 12px 0; border: 1px solid #596367; background: transparent; color: #d6dfe0; cursor: pointer; font-size: 24px; line-height: 1; }
+.rail-toggle:hover { color: var(--yellow); border-color: var(--yellow); }
+.rail-collapsed { padding-left: 76px; }
+.rail-collapsed .side-rail { width: 76px; }
+.rail-collapsed .brand { padding: 15px 8px; justify-content: center; }
+.rail-collapsed .brand b { display: none; }
+.rail-collapsed .side-rail nav button { justify-content: center; padding: 10px 4px; }
+.rail-collapsed .side-rail nav button span { display: none; }
+.rail-collapsed .side-rail nav button i { width: auto; }
+.rail-collapsed .rail-toggle { align-self: center; margin: 8px 0 0; }
 .rail-bottom { width: 100%; display: grid; place-items: center; gap: 14px; padding: 20px 0; border-top: 1px solid #394246; }
 .rail-bottom > span { font: 8px/1.3 Consolas, monospace; text-align: center; color: #8e989b; }
 .rail-bottom b { color: var(--yellow); font-size: 18px; }
@@ -67,14 +77,6 @@ img { display: block; max-width: 100%; }
 .section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
 .section-heading h2 { margin: 5px 0 0; font-size: clamp(24px, 2vw, 34px); letter-spacing: -.045em; }
 .data-note, .refresh-state { padding: 7px 9px; background: var(--panel-2); color: var(--muted); font: 9px Consolas, monospace; letter-spacing: .1em; }
-
-.leaderboard-hero { min-height: 340px; display: flex; align-items: center; justify-content: space-between; gap: 40px; padding: 30px 4vw 48px; border-left: 12px solid var(--yellow); }
-.leaderboard-hero h1 { margin: 18px 0; font-size: clamp(44px, 6vw, 88px); line-height: .98; letter-spacing: -.075em; }
-.leaderboard-hero h1 em { color: transparent; -webkit-text-stroke: 1.5px var(--ink); font-style: normal; }
-.leaderboard-hero p { color: var(--muted); font: 12px Consolas, monospace; }
-.hero-mark { min-width: 220px; align-self: stretch; display: flex; align-items: flex-end; justify-content: flex-end; gap: 12px; background: repeating-linear-gradient(135deg, transparent 0 13px, color-mix(in srgb, var(--line), transparent 30%) 13px 14px); }
-.hero-mark b { color: var(--yellow); font: 900 clamp(100px, 15vw, 220px)/.7 Arial Black, sans-serif; letter-spacing: -.12em; }
-.hero-mark span { margin-bottom: 4px; font: 700 10px/1.3 Consolas, monospace; }
 
 .leaderboard { overflow: hidden; }
 .leaderboard-title { padding: 28px 30px 0; }
@@ -225,6 +227,78 @@ select { min-height: 43px; padding: 0 13px; border: 1px solid var(--line); borde
 .qr-modal { width: min(430px, 100%); padding: 28px; display: grid; place-items: center; gap: 18px; background: var(--panel); }
 .qr-modal img { width: 300px; max-width: 100%; }
 
+.calendar-home { display: grid; gap: 22px; }
+.calendar-hero { padding: 14px; overflow: auto; background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.calendar-hero img { width: 100%; min-width: 760px; height: auto; object-fit: contain; }
+.home-entry-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+.home-entry { min-height: 190px; padding: 28px; display: grid; align-content: space-between; gap: 12px; border: 1px solid var(--line); border-top: 7px solid var(--yellow); background: var(--panel); color: var(--ink); text-align: left; cursor: pointer; box-shadow: var(--shadow); transition: transform .16s ease, box-shadow .16s ease; }
+.home-entry.combat { border-top-color: var(--green); }
+.home-entry:hover { transform: translateY(-3px); box-shadow: 8px 12px 0 color-mix(in srgb, var(--line), transparent 35%); }
+.home-entry strong { font-size: clamp(26px, 3vw, 42px); letter-spacing: -.06em; }
+.home-entry small { color: var(--muted); font-size: 12px; }
+.home-entry i { justify-self: start; color: var(--muted); font: 700 10px Consolas, monospace; font-style: normal; letter-spacing: .1em; }
+
+.gacha-page { display: grid; gap: 22px; }
+.gacha-summary-grid { display: grid; grid-template-columns: repeat(5, minmax(145px, 1fr)); gap: 1px; overflow-x: auto; background: var(--line); border: 1px solid var(--line); }
+.gacha-summary-card { min-width: 145px; min-height: 150px; padding: 18px; display: grid; align-content: start; gap: 6px; background: var(--panel); }
+.gacha-summary-card.active { box-shadow: inset 0 -5px 0 var(--yellow); }
+.gacha-summary-card > span { color: var(--muted); font: 700 11px Consolas, monospace; }
+.gacha-summary-card > strong { font: 900 38px/1 Consolas, monospace; letter-spacing: -.08em; }
+.gacha-summary-card > small { color: var(--muted); font-size: 10px; }
+.gacha-summary-card > div { display: flex; flex-wrap: wrap; gap: 8px; font: 10px Consolas, monospace; }
+.gacha-summary-card > div b { font-size: 12px; }
+.up-stat b { color: var(--green); }
+.off-stat b { color: var(--red); }
+.gacha-browser { overflow: hidden; }
+.gacha-tabs { display: flex; overflow-x: auto; padding: 0 18px; border-bottom: 1px solid var(--line); }
+.gacha-tabs button { position: relative; min-height: 56px; padding: 0 18px; flex: 0 0 auto; border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 14px; }
+.gacha-tabs button.active { color: var(--ink); font-weight: 800; }
+.gacha-tabs button.active::after { content: ""; position: absolute; left: 14px; right: 14px; bottom: -1px; height: 3px; background: var(--ink); }
+.gacha-browser-heading { padding: 26px 28px 18px; display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; }
+.gacha-browser-heading h2 { margin: 5px 0 0; font-size: clamp(24px, 3vw, 36px); letter-spacing: -.05em; }
+.gacha-pool-list { padding: 0 22px 22px; display: grid; gap: 14px; }
+.gacha-pool-card { padding: 20px; border: 1px solid var(--line); background: var(--panel-2); }
+.gacha-pool-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding-bottom: 15px; border-bottom: 1px solid var(--line); }
+.gacha-pool-header h3 { margin: 5px 0 0; font-size: 20px; letter-spacing: -.04em; }
+.gacha-pool-total { display: grid; justify-items: end; gap: 5px; }
+.gacha-pool-total strong { font: 800 16px Consolas, monospace; }
+.gacha-pool-total span { color: var(--muted); font: 10px Consolas, monospace; }
+.gacha-results { display: grid; gap: 7px; padding-top: 12px; }
+.gacha-result-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: center; padding: 8px 0; }
+.gacha-item-icon { width: 44px; height: 44px; overflow: hidden; border: 1px solid var(--line); background: var(--ink); }
+.gacha-item-icon img { width: 100%; height: 100%; object-fit: cover; }
+.gacha-result-copy { min-width: 0; display: grid; gap: 5px; }
+.gacha-result-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.gacha-result-title strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.gacha-badge { padding: 3px 6px; flex: 0 0 auto; color: #fff; font: 800 9px Consolas, monospace; }
+.gacha-badge.up { background: var(--green); }
+.gacha-badge.off { background: var(--red); }
+.gacha-bar-line { display: grid; grid-template-columns: minmax(120px, 1fr) auto; align-items: center; gap: 9px; }
+.gacha-bar { height: 14px; display: flex; overflow: hidden; background: color-mix(in srgb, var(--line), transparent 35%); }
+.gacha-bar i { display: block; height: 100%; }
+.gacha-bar i.carry { flex: 0 0 auto; background: #4d91d6; }
+.gacha-bar i.paid { flex: 1 1 auto; }
+.gacha-bar i.paid.green { background: var(--green); }
+.gacha-bar i.paid.yellow { background: var(--yellow); }
+.gacha-bar i.paid.red { background: var(--red); }
+.gacha-bar-line b { font: 800 12px Consolas, monospace; white-space: nowrap; }
+.gacha-result-copy small, .gacha-current-pity small { color: var(--muted); font: 10px Consolas, monospace; }
+.gacha-current-pity { display: grid; gap: 7px; padding: 13px 0 3px; }
+.gacha-current-pity > span { color: var(--muted); font: 700 10px Consolas, monospace; letter-spacing: .1em; }
+.gacha-free-section { margin-top: 9px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.gacha-subheading { display: flex; justify-content: space-between; color: var(--muted); font: 10px Consolas, monospace; }
+.gacha-free-empty { min-height: 44px; margin-top: 8px; padding: 9px 12px; display: flex; align-items: center; justify-content: space-between; background: var(--panel); color: var(--muted); font: 11px Consolas, monospace; }
+.gacha-empty-inline { margin: 0; padding: 20px; color: var(--muted); text-align: center; font-size: 12px; }
+.gacha-empty-page { min-height: 410px; padding: 55px clamp(24px, 7vw, 90px); display: grid; align-content: center; gap: 12px; border-top: 8px solid var(--yellow); }
+.gacha-empty-page h1 { margin: 4px 0; font-size: clamp(34px, 5vw, 64px); letter-spacing: -.07em; }
+.gacha-empty-page p { max-width: 620px; color: var(--muted); line-height: 1.8; }
+.gacha-cloud-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.gacha-browser-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; }
+.gacha-cloud-notice { padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid color-mix(in srgb, var(--yellow), var(--line) 45%); border-left: 6px solid var(--yellow); background: color-mix(in srgb, var(--yellow), var(--panel) 88%); }
+.gacha-cloud-notice div { display: grid; gap: 3px; }
+.gacha-cloud-notice strong { font-size: 14px; }
+.gacha-cloud-notice span { color: var(--muted); font-size: 11px; }
+
 @media (max-width: 1050px) {
   .squad-grid, .analysis-grid { grid-template-columns: 1fr; }
   .metric-grid { grid-template-columns: repeat(2, 1fr); }
@@ -241,13 +315,10 @@ select { min-height: 43px; padding: 0 13px; border: 1px solid var(--line); borde
   .brand.compact { width: auto; min-height: 38px; padding: 5px 10px; display: flex; gap: 8px; }
   .brand.compact span { font-size: 19px; }
   .brand.compact b { font-size: 8px; }
-  .mobile-nav { position: fixed; inset: auto 0 0; z-index: 50; height: 62px; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--ink); }
-  .mobile-nav button { border: 0; border-top: 2px solid transparent; background: transparent; color: #aeb7ba; font-size: 10px; }
-  .mobile-nav button.active { color: #fff; border-top-color: var(--yellow); }
+  .mobile-nav { position: fixed; inset: auto 0 0; z-index: 50; height: 62px; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--ink); }
+  .mobile-nav button { border: 0; border-top: 2px solid transparent; background: transparent; color: #aeb7ba; font-size: 11px; }
+  .mobile-nav button.active { color: var(--yellow); border-top-color: var(--yellow); font-weight: 800; }
   .page-content { padding: 18px 13px 35px; }
-  .leaderboard-hero { min-height: 260px; padding: 30px 16px; border-left-width: 7px; }
-  .leaderboard-hero h1 { font-size: 42px; }
-  .hero-mark { display: none; }
   .leaderboard-controls { grid-template-columns: 1fr; padding: 0 16px 18px; }
   .sort-tabs { width: 100%; }
   .sort-tabs button { flex: 1; }
@@ -282,6 +353,15 @@ select { min-height: 43px; padding: 0 13px; border: 1px solid var(--line); borde
   .download-hero { min-height: auto; padding: 30px 5px; }
   .software-card { min-height: 320px; }
   .software-card > b { font-size: 110px; }
+  .home-entry-grid { grid-template-columns: 1fr; }
+  .calendar-hero { padding: 8px; }
+  .gacha-summary-grid { grid-template-columns: repeat(3, minmax(145px, 1fr)); }
+  .gacha-browser-heading { padding: 20px 16px 14px; }
+  .gacha-pool-list { padding: 0 12px 12px; }
+  .gacha-pool-card { padding: 14px; }
+  .gacha-cloud-notice { align-items: flex-start; flex-direction: column; }
+  .gacha-pool-header { flex-direction: column; gap: 8px; }
+  .gacha-pool-total { justify-items: start; }
   .toast { right: 12px; bottom: 76px; max-width: calc(100vw - 24px); }
 }
 

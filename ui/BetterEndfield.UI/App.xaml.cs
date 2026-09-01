@@ -5,6 +5,7 @@ namespace BetterEndfield.UI;
 
 public partial class App : Application
 {
+    public static Window? MainWindowInstance => (Current as App)?._window;
     private Window? _window;
 
     public App()

@@ -442,6 +442,9 @@ public sealed partial class MainWindow : Window
         DisplayPageScrollViewer.Visibility = page == "display"
             ? Visibility.Visible
             : Visibility.Collapsed;
+        GachaPage.Visibility = page == "gacha"
+            ? Visibility.Visible
+            : Visibility.Collapsed;
         if (page == "display")
         {
             _ = RefreshDisplayStatusAsync();
@@ -452,7 +455,7 @@ public sealed partial class MainWindow : Window
         AboutPageScrollViewer.Visibility = page == "about"
             ? Visibility.Visible
             : Visibility.Collapsed;
-        ActionBar.Visibility = page == "about"
+        ActionBar.Visibility = page is "about" or "gacha"
             ? Visibility.Collapsed
             : Visibility.Visible;
         PageSelectionHintTextBlock.Text = page switch
@@ -464,6 +467,7 @@ public sealed partial class MainWindow : Window
             "ui" => "界面模式设置将在保存后热更新或于下次注入时应用。",
             "camera" => "相机设置会立即保存；游戏内按配置的热键进入或退出自由视角。",
             "display" => "显示增强直接写入游戏目录，改动在下一次启动客户端时生效。",
+            "gacha" => "寻访记录同步后仅在本机保存，登录会话不会写入磁盘。",
             _ => "角色与动画参数保存后在下一次注入时生效。"
         };
     }
@@ -3131,6 +3135,7 @@ public sealed partial class MainWindow : Window
         UiNavigationItem.Content = isZh ? "界面增强" : "Touch & UI";
         CameraNavigationItem.Content = isZh ? "相机增强" : "Camera";
         DisplayNavigationItem.Content = isZh ? "显示增强" : "Display & Pipeline";
+        GachaNavigationItem.Content = isZh ? "寻访查询" : "Gacha History";
         if (FeatureNavigation.SettingsItem is NavigationViewItem settingsItem)
         {
             settingsItem.Content = isZh ? "设置" : "Settings";

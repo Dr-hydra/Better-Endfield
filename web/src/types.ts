@@ -292,9 +292,59 @@ export interface HomePayload {
   time: LeaderboardEntry[];
 }
 
+export interface GachaWebSnapshot {
+  schemaVersion: number;
+  kind: string;
+  createdAt: string;
+  categories: GachaSnapshotCategory[];
+  pools: GachaSnapshotPool[];
+}
+
+export interface GachaSnapshotCategory {
+  id: string;
+  name: string;
+  totalPulls: number;
+  sixStarCount: number;
+  upCount: number;
+  offRateCount: number;
+  upAveragePaidPulls: number | null;
+}
+
+export interface GachaSnapshotPool {
+  poolId: string | null;
+  poolType: string;
+  categoryId: string;
+  category: string;
+  poolName: string;
+  totalPulls: number;
+  freePulls: number;
+  sixStarCount: number;
+  upCount: number;
+  offRateCount: number;
+  startingPity: number;
+  currentPity: number;
+  lastSeqId: string | null;
+  sixStars: GachaSnapshotStar[];
+  freeSixStars: GachaSnapshotStar[];
+}
+
+export interface GachaSnapshotStar {
+  id: string;
+  name: string;
+  itemId: string | null;
+  pity: number;
+  carryPity: number;
+  isUp: boolean;
+  isFree: boolean;
+  seqId: string;
+  gachaTs: string | null;
+}
+
 export type Route =
   | { page: "home" }
+  | { page: "combat" }
   | { page: "analyze" }
+  | { page: "gacha" }
   | { page: "record"; id?: string }
   | { page: "archive" }
   | { page: "download" };

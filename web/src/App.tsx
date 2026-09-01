@@ -1,20 +1,28 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
 import dictionaryJson from "./data/combat-dict.min.json";
 import { CombatDetail } from "./components/CombatDetail";
+import { GachaPage } from "./components/GachaPage";
 import { deleteArchive, getOwnerToken, listArchives, loadArchive, saveArchive, type ArchiveMeta } from "./lib/archive";
 import { getHome, getPublicRecord, publishRecord } from "./lib/api";
 import { dungeonName, formatDuration, formatNumber, parseCombatRecord, totalRdps } from "./lib/combat";
+import { decodeGachaSnapshot, isGachaSnapshotFragment } from "./lib/gacha";
+import { loadGachaCloudSnapshot, saveGachaCloudSnapshot } from "./lib/gachaCloud";
 import { recordQrCode, requestToyProfile, shareRecord, type ToyProfile } from "./lib/toy";
-import type { CombatDictionary, CombatRecordV11, HomePayload, LeaderboardEntry, Route } from "./types";
+import type { CombatDictionary, CombatRecordV11, GachaWebSnapshot, HomePayload, LeaderboardEntry, Route } from "./types";
 
 const dictionary = dictionaryJson as CombatDictionary;
 const WAR_SERIES = "indie_group_twdg";
 
 function parseRoute(): Route {
-  const sharedId = new URLSearchParams(location.search).get("r");
+  const params = new URLSearchParams(location.search);
+  const sharedId = params.get("r");
   if (sharedId) return { page: "record", id: sharedId };
+  if (params.get("mode") === "gacha" || isGachaSnapshotFragment(location.hash)) return { page: "gacha" };
+  if (params.get("mode") === "combat") return { page: "analyze" };
   const value = location.hash.replace(/^#\/?/, "");
   if (value.startsWith("record/")) return { page: "record", id: value.slice(7) };
+  if (value === "combat") return { page: "combat" };
+  if (value === "gacha") return { page: "gacha" };
   if (value === "analyze") return { page: "analyze" };
   if (value === "archive") return { page: "archive" };
   if (value === "download") return { page: "download" };
@@ -53,6 +61,7 @@ function imageFallback(event: Event) {
 export default function App() {
   const [route, setRoute] = useState<Route>(parseRoute);
   const [theme, setTheme] = useState(() => localStorage.getItem("be-theme") || "light");
+  const [railCollapsed, setRailCollapsed] = useState(() => localStorage.getItem("be-rail-collapsed") === "1");
   const [profile, setProfile] = useState<ToyProfile | null>(null);
   const [record, setRecord] = useState<CombatRecordV11 | null>(null);
   const [rawText, setRawText] = useState("");
@@ -61,6 +70,10 @@ export default function App() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [qrCode, setQrCode] = useState("");
+  const [gachaSnapshot, setGachaSnapshot] = useState<GachaWebSnapshot | null>(null);
+  const [gachaError, setGachaError] = useState("");
+  const [gachaSyncing, setGachaSyncing] = useState(false);
+  const [gachaAutoSyncKey, setGachaAutoSyncKey] = useState("");
 
   useEffect(() => {
     const handler = () => setRoute(parseRoute());
@@ -69,9 +82,69 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    // Toy exposes the existing login session without requiring a second sign-in flow.
+    requestToyProfile().then(setProfile).catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if (route.page !== "gacha" || !isGachaSnapshotFragment(location.hash)) return;
+    try {
+      setGachaSnapshot(decodeGachaSnapshot(location.hash));
+      setGachaError("");
+      history.replaceState(null, "", `${location.pathname}#/gacha`);
+    } catch (reason) {
+      setGachaSnapshot(null);
+      setGachaError(reason instanceof Error ? reason.message : "寻访快照读取失败");
+    }
+  }, [route]);
+
+  async function loadGachaCloud() {
+    setGachaSyncing(true);
+    setGachaError("");
+    try {
+      const cloud = await loadGachaCloudSnapshot();
+      if (!cloud) throw new Error("Toy 云端尚未保存寻访记录");
+      setGachaSnapshot(cloud);
+      setNotice("已读取云端寻访记录");
+    } catch (reason) {
+      setGachaError(reason instanceof Error ? reason.message : "寻访云存档读取失败");
+    } finally {
+      setGachaSyncing(false);
+    }
+  }
+
+  async function saveGachaCloud() {
+    if (!gachaSnapshot) return;
+    setGachaSyncing(true);
+    setGachaError("");
+    try {
+      const result = await saveGachaCloudSnapshot(gachaSnapshot);
+      setGachaSnapshot(result.snapshot);
+      setNotice(result.changed ? "寻访记录已增量合并并保存" : "寻访云端记录已是最新");
+    } catch (reason) {
+      setGachaError(reason instanceof Error ? reason.message : "寻访云存档同步失败");
+    } finally {
+      setGachaSyncing(false);
+    }
+  }
+
+  useEffect(() => {
+    if (route.page !== "gacha" || !profile || gachaSyncing) return;
+    const key = gachaSnapshot ? `snapshot:${gachaSnapshot.createdAt}:${gachaSnapshot.pools.length}` : "cloud-only";
+    if (gachaAutoSyncKey === key) return;
+    setGachaAutoSyncKey(key);
+    if (gachaSnapshot) void saveGachaCloud();
+    else void loadGachaCloud();
+  }, [route.page, profile, gachaSnapshot, gachaSyncing, gachaAutoSyncKey]);
+
+  useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("be-theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem("be-rail-collapsed", railCollapsed ? "1" : "0");
+  }, [railCollapsed]);
 
   useEffect(() => {
     if (route.page !== "record" || !route.id) return;
@@ -90,6 +163,7 @@ export default function App() {
   async function login() {
     try {
       setProfile(await requestToyProfile());
+      setGachaError("");
       setNotice("Toy 登录成功");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "登录失败");
@@ -195,18 +269,21 @@ export default function App() {
   }
 
   const navItems = [
-    ["home", "排行榜"],
+    ["home", "首页"],
+    ["combat", "战斗排行"],
     ["analyze", "战斗解析"],
+    ["gacha", "寻访统计"],
     ["archive", "云存档"],
     ["download", "软件下载"],
   ] as const;
 
   return (
-    <div class="app-shell">
+    <div class={`app-shell ${railCollapsed ? "rail-collapsed" : ""}`}>
       <aside class="side-rail">
-        <button class="brand" onClick={() => navigate("home")} aria-label="回到排行榜">
+        <button class="brand" onClick={() => navigate("home")} aria-label="回到首页">
           <span>BE</span><b>BETTER<br />ENDFIELD</b>
         </button>
+        <button class="rail-toggle" onClick={() => setRailCollapsed((value) => !value)} aria-label={railCollapsed ? "展开导航" : "收起导航"} title={railCollapsed ? "展开导航" : "收起导航"}>{railCollapsed ? "›" : "‹"}</button>
         <nav>{navItems.map(([path, label], index) => <button class={route.page === path ? "active" : ""} onClick={() => navigate(path)} key={path}><i>{String(index + 1).padStart(2, "0")}</i><span>{label}</span></button>)}</nav>
         <div class="rail-bottom">
           <button class="theme-toggle" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label="切换明暗主题">{theme === "light" ? "◐" : "◑"}</button>
@@ -222,7 +299,8 @@ export default function App() {
         {profile ? <button class="profile-button"><img src={profile.avatar} alt="" />{profile.nickname}</button> : <button onClick={login}>TOY 登录</button>}
       </div>
       <div class="page-content">
-        {route.page === "home" && <HomePage dictionary={dictionary} onOpen={(id) => navigate(`record/${id}`)} />}
+        {route.page === "home" && <HomePage onNavigate={navigate} />}
+        {route.page === "combat" && <CombatHomePage dictionary={dictionary} onOpen={(id) => navigate(`record/${id}`)} onAnalyze={() => navigate("analyze")} />}
         {route.page === "analyze" && (record ? <CombatDetail record={record} dictionary={dictionary} sourceLabel={sourceLabel} actions={<>
           <button class="button secondary" onClick={privateSave} disabled={busy}>私密云存档</button>
           <button class="button primary" onClick={publicSave} disabled={busy}>公开并参加排行</button>
@@ -235,6 +313,7 @@ export default function App() {
           catch (reason) { setError(reason instanceof Error ? reason.message : "存档解析失败"); }
         }} onError={setError} />}
         {route.page === "download" && <DownloadPage />}
+        {route.page === "gacha" && <GachaPage snapshot={gachaSnapshot} error={gachaError} profileReady={Boolean(profile)} onLogin={login} onLoadCloud={gachaSnapshot ? saveGachaCloud : loadGachaCloud} onSaveCloud={gachaSnapshot ? saveGachaCloud : undefined} busy={gachaSyncing} />}
       </div>
       <nav class="mobile-nav">{navItems.map(([path, label]) => <button class={route.page === path ? "active" : ""} onClick={() => navigate(path)} key={path}>{label}</button>)}</nav>
       {busy && <div class="busy-bar" />}
@@ -244,7 +323,17 @@ export default function App() {
   );
 }
 
-function HomePage({ dictionary, onOpen }: { dictionary: CombatDictionary; onOpen: (id: string) => void }) {
+function HomePage({ onNavigate }: { onNavigate: (path: string) => void }) {
+  return <main class="calendar-home">
+    <section class="calendar-hero"><img src="./version-calendar.png" alt="雪松幽梦版本日历" /></section>
+    <section class="home-entry-grid">
+      <button class="home-entry combat" onClick={() => onNavigate("analyze")}><span class="eyebrow">01 / COMBAT DATA</span><strong>战斗数据解析</strong><small>导入记录、查看排行榜与逐帧复盘</small><i>进入解析 →</i></button>
+      <button class="home-entry gacha" onClick={() => onNavigate("gacha")}><span class="eyebrow">02 / GACHA INTELLIGENCE</span><strong>寻访统计</strong><small>查看卡池历史、六星抽数、UP 与歪</small><i>打开寻访 →</i></button>
+    </section>
+  </main>;
+}
+
+function CombatHomePage({ dictionary, onOpen, onAnalyze }: { dictionary: CombatDictionary; onOpen: (id: string) => void; onAnalyze: () => void }) {
   const series = Object.entries(dictionary.ds);
   const initialSeries = dictionary.ds[WAR_SERIES] ? WAR_SERIES : series[0]?.[0] || "";
   const [seriesId, setSeriesId] = useState(initialSeries);
@@ -267,12 +356,8 @@ function HomePage({ dictionary, onOpen }: { dictionary: CombatDictionary; onOpen
 
   const rows = home?.[sort]?.length ? home[sort] : demoRows(dungeonId);
   return <main class="home-page">
-    <section class="leaderboard-hero">
-      <div><span class="eyebrow">COMBAT INTELLIGENCE / 战斗情报</span><h1>把每一次操作，<br /><em>拆成可验证的数据。</em></h1><p>schema 11 可验证操作与结果事件 · DPS / rDPS 归因 · 分轨时间轴</p></div>
-      <div class="hero-mark"><b>08</b><span>LIVE<br />ANALYSIS</span></div>
-    </section>
     <section class="leaderboard panel">
-      <div class="section-heading leaderboard-title"><div><span class="eyebrow">RANKING / 实战排行</span><h2>{dictionary.ds[seriesId] || "关卡排行榜"}</h2></div><span class="refresh-state">{loading ? "SYNCING" : home ? "UPDATED" : "DEMO DATA"}</span></div>
+      <div class="section-heading leaderboard-title"><div><span class="eyebrow">RANKING / 实战排行</span><h2>{dictionary.ds[seriesId] || "关卡排行榜"}</h2></div><div class="hero-actions"><span class="refresh-state">{loading ? "SYNCING" : home ? "UPDATED" : "DEMO DATA"}</span><button class="button primary" onClick={onAnalyze}>导入战斗记录</button></div></div>
       <div class="leaderboard-controls">
         <label><span>关卡类型</span><select value={seriesId} onChange={(event) => setSeriesId(event.currentTarget.value)}>{series.map(([id, name]) => <option value={id} key={id}>{name}</option>)}</select></label>
         <label><span>具体关卡</span><select value={dungeonId} onChange={(event) => setDungeonId(event.currentTarget.value)}>{dungeonOptions.map(([id]) => <option value={id} key={id}>{dungeonName(dictionary, id)}</option>)}</select></label>

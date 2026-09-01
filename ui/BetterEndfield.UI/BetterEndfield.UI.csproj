@@ -60,6 +60,9 @@
     <EmbeddedResource Include="..\..\native\modules\combat_stats\assets\avatars\*.png">
       <LogicalName>BetterEndfield.UI.Assets.combat.%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="..\..\web\public\icons\items\wpn_*.png">
+      <LogicalName>BetterEndfield.UI.Assets.gacha.weapon.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
   <Target

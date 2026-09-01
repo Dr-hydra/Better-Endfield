@@ -86,6 +86,7 @@ HostPaths SettingsStore::DiscoverPaths(void* host_module, const void* bootstrap_
             std::memcmp(bootstrap->magic, BETTER_ENDFIELD_BOOTSTRAP_MAGIC, 9) == 0) {
             if (bootstrap->install_root[0] != L'\0') {
                 paths.install_root = bootstrap->install_root;
+                paths.bootstrap_install_root = true;
             }
             if (bootstrap->settings_root[0] != L'\0') {
                 paths.settings_root = bootstrap->settings_root;
@@ -131,7 +132,7 @@ bool SettingsStore::Initialize(HostPaths paths, std::string& error) {
     std::array<wchar_t, 32768> configured_modules{};
     GetPrivateProfileStringW(L"Host", L"modules_root", L"", configured_modules.data(),
         static_cast<DWORD>(configured_modules.size()), paths.settings_file.c_str());
-    if (configured_modules[0] != L'\0') {
+    if (!paths.bootstrap_install_root && configured_modules[0] != L'\0') {
         paths.modules_root = configured_modules.data();
     }
 
