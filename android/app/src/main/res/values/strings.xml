@@ -17,10 +17,16 @@
     <string name="model_theme_section">登录界面主题</string>
     <string name="model_character">替换角色</string>
     <string name="model_action">最终循环动作</string>
-    <string name="model_final_loop">循环播放最终动作</string>
+    <string name="model_final_loop">原生循环（遵循 LoopTime）</string>
+    <string name="model_force_loop">强制循环（覆盖非循环动画）</string>
+    <string name="model_crossfade">双 Playable 交叉混合</string>
+    <string name="model_loop_start">循环起点（秒）</string>
+    <string name="model_loop_end">循环终点（秒）</string>
+    <string name="model_crossfade_duration">混合时长（秒）</string>
     <string name="model_scale">模型缩放</string>
     <string name="logo_enable">启用 Logo 与登录色带主题色</string>
     <string name="logo_color_label">主题色（#RRGGBB）</string>
+    <string name="logo_palette_label">常用颜色</string>
     <string name="model_save">保存模型设置</string>
     <string name="model_selection_ready">当前预设：%1$s\n动作：%2$s</string>
     <string name="model_settings_invalid">模型设置无效：%1$s</string>

@@ -22,14 +22,17 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_GAME = Path(r"E:\Endfield Game")
 DEFAULT_OUTPUT = REPO_ROOT / "research/current-inputs"
-TARGET = re.compile(
-    r"^(?:"
-    r"Bundles/Windows/manifest\.hgmmap|"
-    r"TableCfg/AudioDialog\.bytes|"
-    r"Json/NPC/PrefabInfo/npc_chr_[0-9]{4}_[a-z0-9]+\.json"
-    r")$",
-    re.IGNORECASE,
-)
+
+
+def target_pattern(platform: str) -> re.Pattern[str]:
+    return re.compile(
+        rf"^(?:"
+        rf"Bundles/{re.escape(platform)}/manifest\.hgmmap|"
+        r"TableCfg/AudioDialog\.bytes|"
+        r"Json/NPC/PrefabInfo/npc_chr_[0-9]{4}_[a-z0-9]+\.json"
+        r")$",
+        re.IGNORECASE,
+    )
 
 
 @dataclass
@@ -48,6 +51,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--game-path", type=Path, default=DEFAULT_GAME)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument(
+        "--platform", choices=("Windows", "Android"), default="Windows"
+    )
+    parser.add_argument("--streaming-vfs", type=Path)
+    parser.add_argument("--persistent-vfs", type=Path)
     parser.add_argument(
         "--resconv",
         type=Path,
@@ -82,7 +90,10 @@ def normalize_vfs_path(value: str) -> str:
 
 
 def parse_blc_records(
-    unpacker: Any, blc_path: Path, layer: str,
+    unpacker: Any,
+    blc_path: Path,
+    layer: str,
+    target: re.Pattern[str],
 ) -> list[VfsRecord]:
     plain = unpacker.decrypt_blc(str(blc_path))
     offset = 0
@@ -130,7 +141,7 @@ def parse_blc_records(
             if code_version > 3:
                 _file_tag, offset = unpacker.read_i32(plain, offset)
             relative_path = normalize_vfs_path(filename)
-            if TARGET.fullmatch(relative_path):
+            if target.fullmatch(relative_path):
                 result.append(
                     VfsRecord(
                         relative_path=relative_path,
@@ -160,6 +171,7 @@ def extract_overlay(
     unpacker: Any,
     roots: list[tuple[str, Path]],
     output: Path,
+    target: re.Pattern[str],
 ) -> list[VfsRecord]:
     chunks = build_chunk_index(roots)
     selected: dict[str, VfsRecord] = {}
@@ -172,7 +184,7 @@ def extract_overlay(
             blc = directory / f"{directory.name}.blc"
             if not blc.exists():
                 continue
-            for record in parse_blc_records(unpacker, blc, layer):
+            for record in parse_blc_records(unpacker, blc, layer, target):
                 selected[record.relative_path.casefold()] = record
 
     records = sorted(selected.values(), key=lambda item: item.relative_path.casefold())
@@ -210,11 +222,9 @@ def sha256(path: Path) -> str:
 
 
 def convert_inputs(
-    unpacker_root: Path,
-    resconv: Path,
-    staging: Path,
-) -> dict[str, int]:
-    manifest = staging / "Bundles/Windows/manifest.hgmmap"
+    unpacker_root: Path, resconv: Path, staging: Path, platform: str
+) -> tuple[dict[str, int], set[str]]:
+    manifest = staging / f"Bundles/{platform}/manifest.hgmmap"
     audio_dialog = staging / "TableCfg/AudioDialog.bytes"
     prefab_root = staging / "Json/NPC/PrefabInfo"
     if not manifest.exists() or not audio_dialog.exists():
@@ -243,23 +253,33 @@ def convert_inputs(
     decoded_root = staging / "Json_decrypted/NPC/PrefabInfo"
     decoded_root.mkdir(parents=True, exist_ok=True)
     prefab_count = 0
+    excluded_prefabs: set[str] = set()
     for source in sorted(prefab_root.glob("npc_chr_*.json")):
         result, _ = decoder.decode_file(source.read_bytes())
         parsed = json.loads(result)
-        if not isinstance(parsed, dict) or not parsed.get("correspondingCharId"):
+        if not isinstance(parsed, dict):
             raise ValueError(f"PrefabInfo decode failed: {source.name}")
+        if not parsed.get("correspondingCharId"):
+            excluded_prefabs.add(
+                source.relative_to(staging).as_posix().casefold()
+            )
+            source.unlink()
+            continue
         (decoded_root / source.name).write_text(
             result + "\n", encoding="utf-8", newline="\n"
         )
         prefab_count += 1
     if prefab_count < 30:
         raise ValueError(f"only {prefab_count} playable PrefabInfo files decoded")
-    return {
-        "manifestAssets": len(manifest_data["Assets"]),
-        "manifestBundles": len(manifest_data["Bundles"]),
-        "audioDialogRows": len(table),
-        "prefabInfoCount": prefab_count,
-    }
+    return (
+        {
+            "manifestAssets": len(manifest_data["Assets"]),
+            "manifestBundles": len(manifest_data["Bundles"]),
+            "audioDialogRows": len(table),
+            "prefabInfoCount": prefab_count,
+        },
+        excluded_prefabs,
+    )
 
 
 def replace_output(staging: Path, output: Path) -> None:
@@ -312,9 +332,12 @@ def main() -> int:
     roots = [
         (
             "StreamingAssets",
-            game_path / "Endfield_Data/StreamingAssets/VFS",
+            (args.streaming_vfs or game_path / "Endfield_Data/StreamingAssets/VFS").resolve(),
         ),
-        ("Persistent", game_path / "Endfield_Data/Persistent/VFS"),
+        (
+            "Persistent",
+            (args.persistent_vfs or game_path / "Endfield_Data/Persistent/VFS").resolve(),
+        ),
     ]
     if not any(root.exists() for _layer, root in roots):
         raise FileNotFoundError(f"Endfield VFS was not found under {game_path}")
@@ -324,13 +347,23 @@ def main() -> int:
         tempfile.mkdtemp(prefix=f".{output.name}.staging-", dir=output.parent)
     )
     try:
-        records = extract_overlay(unpacker, roots, staging)
-        counts = convert_inputs(unpacker_root, resconv, staging)
+        records = extract_overlay(
+            unpacker, roots, staging, target_pattern(args.platform)
+        )
+        counts, excluded_prefabs = convert_inputs(
+            unpacker_root, resconv, staging, args.platform
+        )
+        records = [
+            record
+            for record in records
+            if record.relative_path.casefold() not in excluded_prefabs
+        ]
         generated_files = sorted(
             path for path in staging.rglob("*") if path.is_file()
         )
         snapshot = {
             "schemaVersion": 1,
+            "platform": args.platform,
             "overlayOrder": [layer for layer, _root in roots],
             "counts": counts,
             "records": [asdict(item) for item in records],

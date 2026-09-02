@@ -32,7 +32,7 @@ Chinese. The per-character duration route is active as well: device logs showed
 9.828813 seconds (Japanese), and `chr_0035_liino_sim_talk_lv01_01` from
 11.639063 to 12.834063 seconds.
 
-Version 0.8 mirrors all 15 desktop voice Hook points. In addition to the core
+Version 3.0.1 mirrors all 15 desktop voice Hook points. In addition to the core
 Media, external-source, package, duration, language, and lip-track hooks, it
 includes the four context routes `VoicePlayer._PlayVoice`,
 `VoiceSpeakChannelProcessor._PlayVoice`, `VoicePlayer._PlayEvent`, and
@@ -43,7 +43,7 @@ not launched for another device test.
 
 ## Login model module parity
 
-Version 0.8 also ports `betterendfield.model`. Android does not maintain a
+Version 3.0.1 also ports `betterendfield.model`. Android does not maintain a
 second rewritten implementation: CMake compiles the desktop source file
 `native/modules/model/module.cpp` directly into the Android ARM64 library. An
 Android Host adapter supplies exact IL2CPP method/field/class resolution,
@@ -93,23 +93,28 @@ It uses a dependency-free native Android dark card layout with the desktop
 amber accent, a segmented page switcher, and the existing desktop
 `Assets/shared/gilberta.png` artwork as both the launcher icon and settings
 header mark.
-The model page reads the desktop `character-presets.json` and
-`character-names.json` directly and currently exposes 31 replacement models and
-4,058 final actions, plus final-action looping, model scale, and the desktop
+The model page reads the generated Android `character-presets.json` and
+`character-names.json` resources and currently exposes 32 replacement models and
+4,210 final actions, plus final-action looping, model scale, and the desktop
 Logo/login-band theme switch. Saving a preset serializes the same schema-5
 model configuration consumed by the desktop module. The voice page retains the
 per-character language table and Android catalog materializer workflow.
+
+The model page exposes the desktop loop modes: native LoopTime, forced looping,
+and dual-Playable crossfade with editable loop start, loop end, and blend
+duration. Logo and login-band colors can be selected from swatches or entered
+as an exact `#RRGGBB` value.
 
 ## Character rules and embedded comparison table
 
 The Android settings page exposes every character present in the desktop
 short-voice table, plus the desktop-style default rule. Each row supports
-Chinese, English, Japanese, Korean, or Follow Global. The desktop files
-`ui/BetterEndfield.UI/Assets/voice/voice-catalog-index.json` and
-`ui/BetterEndfield.UI/Assets/model/character-names.json` are copied directly
-into the APK at build time. There is no separately maintained Android mapping.
-The trusted desktop table currently contains 31 characters and 128
-character/language catalog entries.
+Chinese, English, Japanese, Korean, or Follow Global. The generated files under
+`android/resources` are copied into the APK at build time. Model bundle hashes
+come from the Android manifest, while voice route IDs may be shared with the
+desktop table only after the current `AudioDialog` and device PCK indexes agree.
+The current table contains 32 model presets and 132 character/language catalog
+entries.
 
 ## Android catalog materialization
 
@@ -119,7 +124,7 @@ the same catalog format, route deduplication, PCK header/media parsing, VFS
 decryption, target-Media validation, atomic output, and cache validation. It
 runs in the target game process before the native runtime is loaded.
 
-The route pairs still come directly from the trusted desktop
+The route pairs are stored in the validated Android
 `voice-catalog-index.json`. Only the payload lookup differs: Windows validates
 the exact desktop package descriptor, while Android extracts the language VFS
 partition from that descriptor, scans the target app's downloaded CHKs, and

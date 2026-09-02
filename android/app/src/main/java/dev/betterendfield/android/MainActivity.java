@@ -1,6 +1,8 @@
 package dev.betterendfield.android;
 
 import android.app.Activity;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +19,17 @@ import java.util.Locale;
 import java.util.Map;
 
 public final class MainActivity extends Activity {
+    private static final int[] THEME_COLOR_VIEW_IDS = {
+            R.id.theme_color_amber,
+            R.id.theme_color_cyan,
+            R.id.theme_color_green,
+            R.id.theme_color_coral,
+            R.id.theme_color_magenta,
+            R.id.theme_color_white
+    };
+    private static final String[] THEME_COLORS = {
+            "#FFC928", "#35C8E8", "#41C77A", "#F0645A", "#D866B7", "#F2F2F2"
+    };
     private static final String[] LANGUAGE_VALUES = {
             "FollowGlobal", "Chinese", "English", "Japanese", "Korean"
     };
@@ -34,8 +47,13 @@ public final class MainActivity extends Activity {
     private Spinner modelAction;
     private Switch modelEnabled;
     private Switch modelFinalLoop;
+    private Switch modelForceLoop;
+    private Switch modelCrossfade;
     private Switch logoEnabled;
     private EditText modelScale;
+    private EditText modelLoopStart;
+    private EditText modelLoopEnd;
+    private EditText modelCrossfadeDuration;
     private EditText logoColor;
     private TextView modelSelectionStatus;
     private boolean initializingModel = true;
@@ -82,8 +100,13 @@ public final class MainActivity extends Activity {
         modelAction = findViewById(R.id.model_action);
         modelEnabled = findViewById(R.id.model_enabled);
         modelFinalLoop = findViewById(R.id.model_final_loop);
+        modelForceLoop = findViewById(R.id.model_force_loop);
+        modelCrossfade = findViewById(R.id.model_crossfade);
         logoEnabled = findViewById(R.id.logo_enabled);
         modelScale = findViewById(R.id.model_scale);
+        modelLoopStart = findViewById(R.id.model_loop_start);
+        modelLoopEnd = findViewById(R.id.model_loop_end);
+        modelCrossfadeDuration = findViewById(R.id.model_crossfade_duration);
         logoColor = findViewById(R.id.logo_color);
 
         try {
@@ -97,9 +120,20 @@ public final class MainActivity extends Activity {
 
             modelEnabled.setChecked(ModuleSettings.isModelEnabled(this));
             modelFinalLoop.setChecked(ModuleSettings.isModelFinalLoop(this));
+            modelForceLoop.setChecked(ModuleSettings.isModelForceLoop(this));
+            modelCrossfade.setChecked(ModuleSettings.isModelCrossfade(this));
+            if (modelCrossfade.isChecked()) {
+                modelFinalLoop.setChecked(true);
+            }
             logoEnabled.setChecked(ModuleSettings.isLogoEnabled(this));
             modelScale.setText(ModuleSettings.getModelScale(this));
+            modelLoopStart.setText(ModuleSettings.getModelLoopStart(this));
+            modelLoopEnd.setText(ModuleSettings.getModelLoopEnd(this));
+            modelCrossfadeDuration.setText(
+                    ModuleSettings.getModelCrossfadeDuration(this));
             logoColor.setText(ModuleSettings.getLogoColor(this));
+            installThemeColorPalette();
+            updateThemeColorPalette(logoColor.getText().toString());
 
             int characterPosition = findCharacterPosition(
                     ModuleSettings.getModelCharacter(this));
@@ -139,9 +173,30 @@ public final class MainActivity extends Activity {
                 });
         modelAction.setOnItemSelectedListener(simpleModelSelectionListener());
         modelEnabled.setOnCheckedChangeListener((button, checked) -> saveModelSettings());
-        modelFinalLoop.setOnCheckedChangeListener((button, checked) -> saveModelSettings());
+        modelFinalLoop.setOnCheckedChangeListener((button, checked) -> {
+            if (!checked && modelCrossfade.isChecked()) {
+                modelCrossfade.setChecked(false);
+            }
+            saveModelSettings();
+        });
+        modelForceLoop.setOnCheckedChangeListener((button, checked) -> saveModelSettings());
+        modelCrossfade.setOnCheckedChangeListener((button, checked) -> {
+            if (checked && !modelFinalLoop.isChecked()) {
+                modelFinalLoop.setChecked(true);
+            }
+            saveModelSettings();
+        });
         logoEnabled.setOnCheckedChangeListener((button, checked) -> saveModelSettings());
         modelScale.setOnFocusChangeListener((view, hasFocus) -> {
+            if (!hasFocus) saveModelSettings();
+        });
+        modelLoopStart.setOnFocusChangeListener((view, hasFocus) -> {
+            if (!hasFocus) saveModelSettings();
+        });
+        modelLoopEnd.setOnFocusChangeListener((view, hasFocus) -> {
+            if (!hasFocus) saveModelSettings();
+        });
+        modelCrossfadeDuration.setOnFocusChangeListener((view, hasFocus) -> {
             if (!hasFocus) saveModelSettings();
         });
         logoColor.setOnFocusChangeListener((view, hasFocus) -> {
@@ -241,6 +296,29 @@ public final class MainActivity extends Activity {
             return;
         }
 
+        double loopStart;
+        double loopEnd;
+        double crossfadeDuration;
+        try {
+            loopStart = Double.parseDouble(modelLoopStart.getText().toString().trim());
+            loopEnd = Double.parseDouble(modelLoopEnd.getText().toString().trim());
+            crossfadeDuration = Double.parseDouble(
+                    modelCrossfadeDuration.getText().toString().trim());
+            if (!Double.isFinite(loopStart) || loopStart < 0.0 || loopStart > 30.0 ||
+                    !Double.isFinite(loopEnd) || loopEnd < 0.05 || loopEnd > 60.0 ||
+                    loopEnd < loopStart + 0.05 ||
+                    !Double.isFinite(crossfadeDuration) ||
+                    crossfadeDuration < 0.01 || crossfadeDuration > 10.0 ||
+                    crossfadeDuration > (loopEnd - loopStart) * 0.5) {
+                throw new NumberFormatException();
+            }
+        } catch (NumberFormatException error) {
+            modelSelectionStatus.setText(getString(
+                    R.string.model_settings_invalid,
+                    "循环区间或混合时长无效"));
+            return;
+        }
+
         String color = logoColor.getText().toString().trim().toUpperCase(Locale.ROOT);
         if (!color.matches("#[0-9A-F]{6}")) {
             modelSelectionStatus.setText(getString(
@@ -248,11 +326,13 @@ public final class MainActivity extends Activity {
             return;
         }
         logoColor.setText(color);
+        updateThemeColorPalette(color);
 
         boolean enableModel = modelEnabled.isChecked();
         boolean enableLogo = logoEnabled.isChecked();
         String configuration = enableModel || enableLogo
-                ? buildModelConfiguration(character, action, scale, color)
+                ? buildModelConfiguration(character, action, scale, color,
+                        loopStart, loopEnd, crossfadeDuration)
                 : "";
         ModuleSettings.setModelSettings(
                 this,
@@ -260,20 +340,56 @@ public final class MainActivity extends Activity {
                 character.id(),
                 action.id(),
                 modelFinalLoop.isChecked(),
+                modelForceLoop.isChecked(),
+                modelCrossfade.isChecked(),
+                number(loopStart),
+                number(loopEnd),
+                number(crossfadeDuration),
                 number(scale),
                 enableLogo,
                 color,
                 configuration);
         modelScale.setText(number(scale));
+        modelLoopStart.setText(number(loopStart));
+        modelLoopEnd.setText(number(loopEnd));
+        modelCrossfadeDuration.setText(number(crossfadeDuration));
         updateModelSelectionStatus();
         status.setText(R.string.model_restart_required);
+    }
+
+    private void installThemeColorPalette() {
+        for (int index = 0; index < THEME_COLOR_VIEW_IDS.length; ++index) {
+            View swatch = findViewById(THEME_COLOR_VIEW_IDS[index]);
+            String color = THEME_COLORS[index];
+            swatch.setOnClickListener(view -> {
+                logoColor.setText(color);
+                updateThemeColorPalette(color);
+                saveModelSettings();
+            });
+        }
+    }
+
+    private void updateThemeColorPalette(String selectedColor) {
+        for (int index = 0; index < THEME_COLOR_VIEW_IDS.length; ++index) {
+            GradientDrawable background = new GradientDrawable();
+            background.setShape(GradientDrawable.RECTANGLE);
+            background.setColor(Color.parseColor(THEME_COLORS[index]));
+            background.setCornerRadius(dp(6));
+            int strokeColor = THEME_COLORS[index].equalsIgnoreCase(selectedColor)
+                    ? Color.WHITE : Color.TRANSPARENT;
+            background.setStroke(dp(2), strokeColor);
+            findViewById(THEME_COLOR_VIEW_IDS[index]).setBackground(background);
+        }
     }
 
     private String buildModelConfiguration(
             ModelPresetIndex.Character character,
             ModelPresetIndex.Action action,
             double scale,
-            String color) {
+            String color,
+            double loopStart,
+            double loopEnd,
+            double crossfadeDuration) {
         StringBuilder text = new StringBuilder();
         append(text, "schema_version=5");
         append(text, "enabled=true");
@@ -302,11 +418,11 @@ public final class MainActivity extends Activity {
         append(text, "sit_to_walk_speed=1");
         append(text, "final_speed=1");
         append(text, "final_loop=" + modelFinalLoop.isChecked());
-        append(text, "force_loop=false");
-        append(text, "use_crossfade=false");
-        append(text, "loop_start=0.968");
-        append(text, "loop_end=2.3760002");
-        append(text, "crossfade_duration=0.20");
+        append(text, "force_loop=" + modelForceLoop.isChecked());
+        append(text, "use_crossfade=" + modelCrossfade.isChecked());
+        append(text, "loop_start=" + number(loopStart));
+        append(text, "loop_end=" + number(loopEnd));
+        append(text, "crossfade_duration=" + number(crossfadeDuration));
         return text.toString();
     }
 

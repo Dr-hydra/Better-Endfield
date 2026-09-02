@@ -11,6 +11,11 @@ final class ModuleSettings {
     private static final String MODEL_CHARACTER = "model_character";
     private static final String MODEL_ACTION = "model_action";
     private static final String MODEL_FINAL_LOOP = "model_final_loop";
+    private static final String MODEL_FORCE_LOOP = "model_force_loop";
+    private static final String MODEL_CROSSFADE = "model_crossfade";
+    private static final String MODEL_LOOP_START = "model_loop_start";
+    private static final String MODEL_LOOP_END = "model_loop_end";
+    private static final String MODEL_CROSSFADE_DURATION = "model_crossfade_duration";
     private static final String MODEL_SCALE = "model_scale";
     private static final String LOGO_ENABLED = "logo_theme_enabled";
     private static final String LOGO_COLOR = "logo_theme_color";
@@ -80,6 +85,26 @@ final class ModuleSettings {
         return preferences(context).getBoolean(MODEL_FINAL_LOOP, true);
     }
 
+    static boolean isModelForceLoop(Context context) {
+        return preferences(context).getBoolean(MODEL_FORCE_LOOP, false);
+    }
+
+    static boolean isModelCrossfade(Context context) {
+        return preferences(context).getBoolean(MODEL_CROSSFADE, false);
+    }
+
+    static String getModelLoopStart(Context context) {
+        return preferences(context).getString(MODEL_LOOP_START, "0.968");
+    }
+
+    static String getModelLoopEnd(Context context) {
+        return preferences(context).getString(MODEL_LOOP_END, "2.3760002");
+    }
+
+    static String getModelCrossfadeDuration(Context context) {
+        return preferences(context).getString(MODEL_CROSSFADE_DURATION, "0.20");
+    }
+
     static String getModelScale(Context context) {
         return preferences(context).getString(MODEL_SCALE, "1.0");
     }
@@ -98,6 +123,11 @@ final class ModuleSettings {
             String character,
             String action,
             boolean finalLoop,
+            boolean forceLoop,
+            boolean crossfade,
+            String loopStart,
+            String loopEnd,
+            String crossfadeDuration,
             String scale,
             boolean logoEnabled,
             String logoColor,
@@ -108,6 +138,11 @@ final class ModuleSettings {
                 .putString(MODEL_CHARACTER, character)
                 .putString(MODEL_ACTION, action)
                 .putBoolean(MODEL_FINAL_LOOP, finalLoop)
+                .putBoolean(MODEL_FORCE_LOOP, forceLoop)
+                .putBoolean(MODEL_CROSSFADE, crossfade)
+                .putString(MODEL_LOOP_START, loopStart)
+                .putString(MODEL_LOOP_END, loopEnd)
+                .putString(MODEL_CROSSFADE_DURATION, crossfadeDuration)
                 .putString(MODEL_SCALE, scale)
                 .putBoolean(LOGO_ENABLED, logoEnabled)
                 .putString(LOGO_COLOR, logoColor)

@@ -15,8 +15,8 @@ android {
         applicationId = "dev.betterendfield.android"
         minSdk = 27
         targetSdk = 35
-        versionCode = 8
-        versionName = "0.8.0-alpha"
+        versionCode = 30001
+        versionName = "3.0.1"
 
         ndk {
             abiFilters += "arm64-v8a"
@@ -36,6 +36,7 @@ android {
         }
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -63,15 +64,15 @@ android {
 
     sourceSets {
         getByName("main").assets.srcDir(
-            layout.buildDirectory.dir("generated/desktopVoiceAssets"))
+            layout.buildDirectory.dir("generated/androidResourceAssets"))
     }
 }
 
-val prepareDesktopVoiceAssets by tasks.registering(Copy::class) {
-    from(rootProject.file("../ui/BetterEndfield.UI/Assets/voice/voice-catalog-index.json"))
-    from(rootProject.file("../ui/BetterEndfield.UI/Assets/model/character-names.json"))
-    from(rootProject.file("../ui/BetterEndfield.UI/Assets/model/character-presets.json"))
-    into(layout.buildDirectory.dir("generated/desktopVoiceAssets"))
+val prepareAndroidResourceAssets by tasks.registering(Copy::class) {
+    from(rootProject.file("resources/voice-catalog-index.json"))
+    from(rootProject.file("resources/character-names.json"))
+    from(rootProject.file("resources/character-presets.json"))
+    into(layout.buildDirectory.dir("generated/androidResourceAssets"))
 }
 
 val verifyDesktopModelHookParity by tasks.registering {
@@ -112,7 +113,7 @@ val verifyDesktopModelHookParity by tasks.registering {
 }
 
 tasks.named("preBuild").configure {
-    dependsOn(prepareDesktopVoiceAssets)
+    dependsOn(prepareAndroidResourceAssets)
     dependsOn(verifyDesktopModelHookParity)
 }
 

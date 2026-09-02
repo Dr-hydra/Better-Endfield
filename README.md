@@ -45,7 +45,7 @@ manifests/model/               模型与动作资源清单
 manifests/voice/               语音 Event/Media 映射清单
 manifests/shared/              跨模块资源生成报告
 resources/voice/               语音映射生成器的维护输入
-android/                       独立开发中的 Android/Xposed 版本
+android/                       Android/LSPosed 正式版本
 scripts/                       公共构建、清单生成与资源扫描工具
 tools/                         本地分析工具和工具链（不进入发布包）
 docs/                          运行时接口、研究结论与集成交接文档
@@ -157,7 +157,7 @@ Catalog 只包含目标角色需要的 WEM，重复目标 Media 只存储一次�
 
 ```powershell
 pwsh -File .\scripts\BuildBetterEndfield.ps1
-pwsh -File .\scripts\BuildInstaller.ps1 -Version 2.3.1
+pwsh -File .\scripts\BuildInstaller.ps1 -Version 3.0.1
 ```
 
 原生构建入口是 `native/CMakeLists.txt`。MinHook 只由 Host 链接，模块不得自行初始化或卸载 Hook 引擎。

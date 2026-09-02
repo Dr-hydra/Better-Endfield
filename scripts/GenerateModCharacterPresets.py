@@ -31,7 +31,7 @@ def load_json(path: Path) -> dict[str, Any]:
 
 
 def hex_u64(value: int) -> str:
-    return f"0x{value:016X}"
+    return f"0x{value & 0xFFFFFFFFFFFFFFFF:016X}"
 
 
 def display_asset(path: str, clip_name: str | None = None) -> str:

@@ -164,6 +164,37 @@
                     android:layout_marginTop="14dp"
                     android:text="@string/model_final_loop" />
 
+                <Switch
+                    android:id="@+id/model_force_loop"
+                    style="@style/SettingSwitch"
+                    android:text="@string/model_force_loop" />
+
+                <Switch
+                    android:id="@+id/model_crossfade"
+                    style="@style/SettingSwitch"
+                    android:text="@string/model_crossfade" />
+
+                <TextView style="@style/FieldLabel" android:text="@string/model_loop_start" />
+                <EditText
+                    android:id="@+id/model_loop_start"
+                    style="@style/InputEditText"
+                    android:hint="0.968"
+                    android:inputType="numberDecimal" />
+
+                <TextView style="@style/FieldLabel" android:text="@string/model_loop_end" />
+                <EditText
+                    android:id="@+id/model_loop_end"
+                    style="@style/InputEditText"
+                    android:hint="2.376"
+                    android:inputType="numberDecimal" />
+
+                <TextView style="@style/FieldLabel" android:text="@string/model_crossfade_duration" />
+                <EditText
+                    android:id="@+id/model_crossfade_duration"
+                    style="@style/InputEditText"
+                    android:hint="0.20"
+                    android:inputType="numberDecimal" />
+
                 <TextView style="@style/FieldLabel" android:text="@string/model_scale" />
                 <EditText
                     android:id="@+id/model_scale"
@@ -187,6 +218,73 @@
                     style="@style/SettingSwitch"
                     android:layout_marginTop="10dp"
                     android:text="@string/logo_enable" />
+
+                <TextView style="@style/FieldLabel" android:text="@string/logo_palette_label" />
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:overScrollMode="never"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:id="@+id/theme_color_amber"
+                            android:layout_width="42dp"
+                            android:layout_height="42dp"
+                            android:layout_marginEnd="10dp"
+                            android:clickable="true"
+                            android:contentDescription="#FFC928"
+                            android:focusable="true" />
+
+                        <View
+                            android:id="@+id/theme_color_cyan"
+                            android:layout_width="42dp"
+                            android:layout_height="42dp"
+                            android:layout_marginEnd="10dp"
+                            android:clickable="true"
+                            android:contentDescription="#35C8E8"
+                            android:focusable="true" />
+
+                        <View
+                            android:id="@+id/theme_color_green"
+                            android:layout_width="42dp"
+                            android:layout_height="42dp"
+                            android:layout_marginEnd="10dp"
+                            android:clickable="true"
+                            android:contentDescription="#41C77A"
+                            android:focusable="true" />
+
+                        <View
+                            android:id="@+id/theme_color_coral"
+                            android:layout_width="42dp"
+                            android:layout_height="42dp"
+                            android:layout_marginEnd="10dp"
+                            android:clickable="true"
+                            android:contentDescription="#F0645A"
+                            android:focusable="true" />
+
+                        <View
+                            android:id="@+id/theme_color_magenta"
+                            android:layout_width="42dp"
+                            android:layout_height="42dp"
+                            android:layout_marginEnd="10dp"
+                            android:clickable="true"
+                            android:contentDescription="#D866B7"
+                            android:focusable="true" />
+
+                        <View
+                            android:id="@+id/theme_color_white"
+                            android:layout_width="42dp"
+                            android:layout_height="42dp"
+                            android:clickable="true"
+                            android:contentDescription="#F2F2F2"
+                            android:focusable="true" />
+                    </LinearLayout>
+                </HorizontalScrollView>
 
                 <TextView style="@style/FieldLabel" android:text="@string/logo_color_label" />
                 <EditText
