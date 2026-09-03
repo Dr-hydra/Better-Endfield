@@ -25,6 +25,7 @@ add_library(betterendfield_android SHARED
     core/log.cpp
     core/runtime.cpp
     modules/character_voice/character_voice_module.cpp
+    modules/enhancement/enhancement_module.cpp
     modules/login_model/login_model_module.cpp
     "${BETTER_ENDFIELD_ROOT}/native/modules/model/module.cpp")
 

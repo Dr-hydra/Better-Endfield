@@ -89,9 +89,35 @@ Graphics and themed all 27 intended targets without a material-remap failure.
 The game process remained alive without a fatal signal, and the replacement
 was visually confirmed on the device.
 
+Version 3.0.2 compiles the current desktop model source instead of the 2.3.1
+baseline that 3.0.1 shipped. The desktop 3.0.1 "Main path hash recovery" in
+`LoadConfiguredAssets` was removed on both platforms after an Android A/B test
+on the same game client: with the recovery present, the prefab was loaded
+before `InitMainPathHash`, and the clone's Animator reported `avatar=null`,
+`human=false`; with the original gate restored, the replacement was verified
+working again. The 3.0.1 improvements that remain (Animator enumeration, avatar
+copy fallback, full rollback on failure, no actor capture during login scene
+release) were verified in the same run.
+
+## Enhancement module
+
+Version 3.0.2 adds `betterendfield.enhancement`, a port of the two desktop
+features that do not depend on a keyboard: hide UID/watermark (from
+`BetterEndfield.UI`) and disable near-camera character dither (from
+`BetterEndfield.Camera`). Hook points are identical to desktop:
+`GameObject.SetActive` plus a 2-second `GameObject.Find` sweep driven by
+`UIStyleByState.Awake`, `UIStyleByState.UpdateStyle` and
+`EventSystem.Update` for the UID panels, and
+`CameraMono._ProcessDitherByPitch` followed by the game's own
+`CameraMono.ForceClearDither` for the dither. Both switches live on the
+Enhancements page and are passed to the native library through
+`BETTER_ENDFIELD_ENHANCEMENT_CONFIG`; leaving both off keeps the module out of
+the process entirely.
+
 ## Android settings UI
 
-The settings screen is split into Model Replacement and Character Voice pages.
+The settings screen is split into Model Replacement, Character Voice and
+Enhancements pages.
 It uses a dependency-free native Android dark card layout with the desktop
 amber accent, a segmented page switcher, and the existing desktop
 `Assets/shared/gilberta.png` artwork as both the launcher icon and settings

@@ -20,8 +20,32 @@ final class ModuleSettings {
     private static final String LOGO_ENABLED = "logo_theme_enabled";
     private static final String LOGO_COLOR = "logo_theme_color";
     private static final String MODEL_CONFIGURATION = "model_configuration";
+    private static final String ENHANCEMENT_HIDE_UID = "enhancement_hide_uid";
+    private static final String ENHANCEMENT_DISABLE_DITHER = "enhancement_disable_dither";
+    private static final String ENHANCEMENT_CONFIGURATION = "enhancement_configuration";
 
     private ModuleSettings() {}
+
+    static boolean isHideUidEnabled(Context context) {
+        return preferences(context).getBoolean(ENHANCEMENT_HIDE_UID, false);
+    }
+
+    static boolean isDisableDitherEnabled(Context context) {
+        return preferences(context).getBoolean(ENHANCEMENT_DISABLE_DITHER, false);
+    }
+
+    static void setEnhancementSettings(
+            Context context,
+            boolean hideUid,
+            boolean disableDither,
+            String configuration) {
+        preferences(context)
+                .edit()
+                .putBoolean(ENHANCEMENT_HIDE_UID, hideUid)
+                .putBoolean(ENHANCEMENT_DISABLE_DITHER, disableDither)
+                .putString(ENHANCEMENT_CONFIGURATION, configuration)
+                .commit();
+    }
 
     static String getVoiceCatalogs(Context context) {
         return preferences(context).getString(VOICE_CATALOGS, "");

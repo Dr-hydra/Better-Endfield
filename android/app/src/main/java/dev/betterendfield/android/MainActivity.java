@@ -58,6 +58,11 @@ public final class MainActivity extends Activity {
     private TextView modelSelectionStatus;
     private boolean initializingModel = true;
 
+    private Switch enhancementHideUid;
+    private Switch enhancementDisableDither;
+    private TextView enhancementStatus;
+    private boolean initializingEnhancement = true;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,30 +72,32 @@ public final class MainActivity extends Activity {
         setupPageNavigation();
         setupModelPage();
         setupVoicePage();
+        setupEnhancementPage();
     }
 
     private void setupPageNavigation() {
-        View modelSection = findViewById(R.id.model_section);
-        View voiceSection = findViewById(R.id.voice_section);
-        View modelButton = findViewById(R.id.show_model_button);
-        View voiceButton = findViewById(R.id.show_voice_button);
-        modelButton.setOnClickListener(view -> showPage(
-                modelSection, voiceSection, modelButton, voiceButton, true));
-        voiceButton.setOnClickListener(view -> showPage(
-                modelSection, voiceSection, modelButton, voiceButton, false));
-        showPage(modelSection, voiceSection, modelButton, voiceButton, true);
+        View[] sections = {
+                findViewById(R.id.model_section),
+                findViewById(R.id.voice_section),
+                findViewById(R.id.enhancement_section)
+        };
+        View[] buttons = {
+                findViewById(R.id.show_model_button),
+                findViewById(R.id.show_voice_button),
+                findViewById(R.id.show_enhancement_button)
+        };
+        for (int index = 0; index < buttons.length; ++index) {
+            final int page = index;
+            buttons[index].setOnClickListener(view -> showPage(sections, buttons, page));
+        }
+        showPage(sections, buttons, 0);
     }
 
-    private static void showPage(
-            View modelSection,
-            View voiceSection,
-            View modelButton,
-            View voiceButton,
-            boolean showModel) {
-        modelSection.setVisibility(showModel ? View.VISIBLE : View.GONE);
-        voiceSection.setVisibility(showModel ? View.GONE : View.VISIBLE);
-        modelButton.setSelected(showModel);
-        voiceButton.setSelected(!showModel);
+    private static void showPage(View[] sections, View[] buttons, int page) {
+        for (int index = 0; index < sections.length; ++index) {
+            sections[index].setVisibility(index == page ? View.VISIBLE : View.GONE);
+            buttons[index].setSelected(index == page);
+        }
     }
 
     private void setupModelPage() {
@@ -554,6 +561,44 @@ public final class MainActivity extends Activity {
             if (LANGUAGE_VALUES[index].equalsIgnoreCase(value)) return index;
         }
         return 0;
+    }
+
+    private void setupEnhancementPage() {
+        enhancementHideUid = findViewById(R.id.enhancement_hide_uid);
+        enhancementDisableDither = findViewById(R.id.enhancement_disable_dither);
+        enhancementStatus = findViewById(R.id.enhancement_status);
+        enhancementHideUid.setChecked(ModuleSettings.isHideUidEnabled(this));
+        enhancementDisableDither.setChecked(ModuleSettings.isDisableDitherEnabled(this));
+        updateEnhancementStatus();
+        enhancementHideUid.setOnCheckedChangeListener(
+                (button, checked) -> saveEnhancementSettings());
+        enhancementDisableDither.setOnCheckedChangeListener(
+                (button, checked) -> saveEnhancementSettings());
+        findViewById(R.id.save_enhancement_settings).setOnClickListener(
+                view -> saveEnhancementSettings());
+        initializingEnhancement = false;
+    }
+
+    private void saveEnhancementSettings() {
+        if (initializingEnhancement) return;
+        boolean hideUid = enhancementHideUid.isChecked();
+        boolean disableDither = enhancementDisableDither.isChecked();
+        // An empty configuration keeps the native runtime from starting the
+        // module at all, mirroring how the model configuration behaves.
+        String configuration = hideUid || disableDither
+                ? "hide_uid=" + hideUid + '\n' + "disable_dither=" + disableDither + '\n'
+                : "";
+        ModuleSettings.setEnhancementSettings(this, hideUid, disableDither, configuration);
+        updateEnhancementStatus();
+        status.setText(R.string.enhancement_restart_required);
+    }
+
+    private void updateEnhancementStatus() {
+        enhancementStatus.setText(getString(
+                R.string.enhancement_status,
+                getString(enhancementHideUid.isChecked() ? R.string.state_on : R.string.state_off),
+                getString(enhancementDisableDither.isChecked()
+                        ? R.string.state_on : R.string.state_off)));
     }
 
     private int dp(int value) {

@@ -34,6 +34,7 @@ public final class BetterEndfieldXposed implements IXposedHookLoadPackage {
         XposedBridge.log("BetterEndfield.Xposed: target process matched");
         String voiceRules = readVoiceRules();
         String modelConfiguration = readModelConfiguration();
+        String enhancementConfiguration = readEnhancementConfiguration();
         XposedHelpers.findAndHookMethod(
                 Application.class,
                 "attach",
@@ -46,7 +47,8 @@ public final class BetterEndfieldXposed implements IXposedHookLoadPackage {
                                 (Context) param.args[0],
                                 loadPackageParam.classLoader,
                                 voiceRules,
-                                modelConfiguration);
+                                modelConfiguration,
+                                enhancementConfiguration);
                     }
                 });
     }
@@ -56,8 +58,10 @@ public final class BetterEndfieldXposed implements IXposedHookLoadPackage {
             Context targetContext,
             ClassLoader targetClassLoader,
             String voiceRules,
-            String modelConfiguration) {
-        if (voiceRules.isEmpty() && modelConfiguration.isEmpty()) {
+            String modelConfiguration,
+            String enhancementConfiguration) {
+        if (voiceRules.isEmpty() && modelConfiguration.isEmpty() &&
+                enhancementConfiguration.isEmpty()) {
             XposedBridge.log(
                     "BetterEndfield.Xposed: no Android modules selected; native runtime skipped");
             return;
@@ -94,7 +98,8 @@ public final class BetterEndfieldXposed implements IXposedHookLoadPackage {
                     targetContext,
                     targetClassLoader,
                     voiceRules,
-                    modelConfiguration);
+                    modelConfiguration,
+                    enhancementConfiguration);
         }, "BetterEndfield-Catalog");
         worker.setDaemon(true);
         worker.start();
@@ -105,7 +110,8 @@ public final class BetterEndfieldXposed implements IXposedHookLoadPackage {
             Context targetContext,
             ClassLoader targetClassLoader,
             String voiceRules,
-            String modelConfiguration) {
+            String modelConfiguration,
+            String enhancementConfiguration) {
         try {
             Class<?> unityPlayer = XposedHelpers.findClass(
                     "com.unity3d.player.UnityPlayer",
@@ -123,7 +129,8 @@ public final class BetterEndfieldXposed implements IXposedHookLoadPackage {
                                     targetApplication,
                                     targetContext,
                                     voiceRules,
-                                    modelConfiguration);
+                                    modelConfiguration,
+                                    enhancementConfiguration);
                             if (LOAD_REQUESTED.get()) {
                                 removeNativeLoadTrigger();
                             }
@@ -135,7 +142,8 @@ public final class BetterEndfieldXposed implements IXposedHookLoadPackage {
             XposedBridge.log(
                     "BetterEndfield.Xposed: waiting for the first successful Unity frame; " +
                             "voice=" + !voiceRules.isEmpty() +
-                            " model=" + !modelConfiguration.isEmpty());
+                            " model=" + !modelConfiguration.isEmpty() +
+                            " enhancement=" + !enhancementConfiguration.isEmpty());
         } catch (Throwable error) {
             XposedBridge.log(
                     "BetterEndfield.Xposed: failed to install Unity frame trigger: " + error);
@@ -157,7 +165,8 @@ public final class BetterEndfieldXposed implements IXposedHookLoadPackage {
             Application targetApplication,
             Context targetContext,
             String voiceRules,
-            String modelConfiguration) {
+            String modelConfiguration,
+            String enhancementConfiguration) {
         if (!LOAD_REQUESTED.compareAndSet(false, true)) {
             return;
         }
@@ -177,6 +186,10 @@ public final class BetterEndfieldXposed implements IXposedHookLoadPackage {
             Os.setenv("BETTER_ENDFIELD_VOICE_RULES", voiceRules, true);
             Os.setenv("BETTER_ENDFIELD_MODEL_CONFIG", modelConfiguration, true);
             Os.setenv(
+                    "BETTER_ENDFIELD_ENHANCEMENT_CONFIG",
+                    enhancementConfiguration,
+                    true);
+            Os.setenv(
                     "BETTER_ENDFIELD_VOICE_CATALOG_ROOT",
                     catalogRoot.getAbsolutePath(),
                     true);
@@ -195,7 +208,8 @@ public final class BetterEndfieldXposed implements IXposedHookLoadPackage {
             XposedBridge.log(
                     "BetterEndfield.Xposed: native runtime loaded; voice=" +
                             !voiceRules.isEmpty() + " model=" +
-                            !modelConfiguration.isEmpty() + " library=" + library);
+                            !modelConfiguration.isEmpty() + " enhancement=" +
+                            !enhancementConfiguration.isEmpty() + " library=" + library);
         } catch (Throwable error) {
             LOAD_REQUESTED.set(false);
             XposedBridge.log("BetterEndfield.Xposed: native runtime load failed: " + error);
@@ -265,6 +279,26 @@ public final class BetterEndfieldXposed implements IXposedHookLoadPackage {
         } catch (Throwable error) {
             XposedBridge.log(
                     "BetterEndfield.Xposed: model configuration unavailable: " + error);
+            return "";
+        }
+    }
+
+    private static String readEnhancementConfiguration() {
+        try {
+            XSharedPreferences preferences = new XSharedPreferences(
+                    MODULE_PACKAGE,
+                    "module_settings");
+            preferences.reload();
+            String value = preferences.getString("enhancement_configuration", "");
+            if (value == null) value = "";
+            XposedBridge.log(
+                    "BetterEndfield.Xposed: enhancement configuration readable=" +
+                            preferences.getFile().canRead() +
+                            " enabled=" + !value.isEmpty());
+            return value;
+        } catch (Throwable error) {
+            XposedBridge.log(
+                    "BetterEndfield.Xposed: enhancement configuration unavailable: " + error);
             return "";
         }
     }
