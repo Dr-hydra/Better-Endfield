@@ -234,6 +234,12 @@ std::unordered_map<std::string, int> g_native_speaker_languages;
 std::array<bool, 4> g_language_package_ready{};
 std::array<uint64_t, 4> g_language_package_retry_at{};
 std::atomic<uint32_t> g_auxiliary_mount_depth{0};
+// IL2CPP resolves the P/Invoke target of CSharp_UnloadFilePackage lazily on
+// its first real call. The slot address is static, so it is located once at
+// install time and the native hook is attached as soon as the slot is filled.
+void** g_native_unload_slot = nullptr;
+std::mutex g_native_unload_mutex;
+bool g_native_unload_deferred_logged = false;
 thread_local int g_duration_language_override = -1;
 thread_local int g_lip_language_override = -1;
 thread_local bool g_ifix_duration_routing = false;
@@ -250,6 +256,7 @@ bool LoadConfiguredCatalogs(const std::vector<VoiceRule>& rules);
 bool ApplyCatalog();
 bool UnapplyCatalog();
 bool StopHooks();
+bool EnsureNativeUnloadHook();
 
 MethodContract g_play_voice{
     "voice.player.play",
@@ -697,6 +704,12 @@ bool ShouldLog(uint64_t count) {
         count % 256 == 0);
 }
 
+std::string HexString(uint32_t value) {
+    char buffer[16];
+    std::snprintf(buffer, sizeof(buffer), "%08X", value);
+    return buffer;
+}
+
 std::string SpeakerFromContext(void* voice_context) {
     if (!voice_context || !g_voice_context_voice_data.field_info ||
         g_voice_context_voice_data.offset < 0 ||
@@ -993,6 +1006,15 @@ bool EnsureLanguagePackageReady(int language) {
     }
     const uint64_t now = GetTickCount64();
     if (now < g_language_package_retry_at[language]) {
+        return false;
+    }
+    if (!EnsureNativeUnloadHook()) {
+        // Mounting an auxiliary language makes the game unload the current
+        // one through the raw P/Invoke slot. Never mount while that path is
+        // unprotected; the next voice request retries.
+        g_language_package_retry_at[language] = now + 5000;
+        Log("[voice-pck] language=" + std::to_string(language) +
+            " mount refused; native unload protection is not active");
         return false;
     }
 
@@ -1968,6 +1990,11 @@ int __fastcall HookLoadFilePackage(void* package_path, uint32_t* package_id,
     const int result = g_original_load_file_package
         ? g_original_load_file_package(package_path, package_id, method)
         : 0;
+    if (!g_original_native_unload_file_package) {
+        // The game's own startup package traffic resolves the unload slot long
+        // before any auxiliary mount; attach the protection as early as it can.
+        EnsureNativeUnloadHook();
+    }
     if (g_auxiliary_mount_depth.load(std::memory_order_acquire) != 0) {
         const uint64_t hit =
             g_package_load_hits.fetch_add(1, std::memory_order_relaxed) + 1;
@@ -2007,34 +2034,42 @@ int __fastcall HookNativeUnloadFilePackage(uint32_t package_id) {
     return result;
 }
 
-bool TryProbePinvokeUnload() {
-    if (!g_pinvoke_unload_file_package.pointer) {
-        return false;
-    }
-    __try {
-        // Package ID zero is invalid. Calling it once initializes IL2CPP's
-        // cached native P/Invoke target without unloading a real package.
-        reinterpret_cast<UnloadFilePackageFn>(
-            g_pinvoke_unload_file_package.pointer)(0, nullptr);
-        return true;
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-        return false;
-    }
+int CaptureExceptionCode(DWORD code, DWORD* output) {
+    *output = code;
+    return EXCEPTION_EXECUTE_HANDLER;
 }
 
-bool TryFindPinvokeNativeTarget(void*& target) {
-    target = nullptr;
+bool IsExecutableAddress(const void* address) {
+    MEMORY_BASIC_INFORMATION memory{};
+    if (!address || VirtualQuery(address, &memory, sizeof(memory)) !=
+            sizeof(memory)) {
+        return false;
+    }
+    if (memory.State != MEM_COMMIT) {
+        return false;
+    }
+    const DWORD protect = memory.Protect & 0xFF;
+    return protect == PAGE_EXECUTE || protect == PAGE_EXECUTE_READ ||
+        protect == PAGE_EXECUTE_READWRITE ||
+        protect == PAGE_EXECUTE_WRITECOPY;
+}
+
+bool TryLocateNativeUnloadSlot(void**& slot, DWORD& seh_code) {
+    slot = nullptr;
+    seh_code = 0;
     auto* code = static_cast<const uint8_t*>(
         g_pinvoke_unload_file_package.pointer);
     if (!code) {
         return false;
     }
+    void** fallback = nullptr;
     __try {
         // IL2CPP P/Invoke stubs load their lazily resolved native target with
         // `mov rax, [rip+disp32]` before tail-calling it. The IFix path reads
         // the same slot directly, which is why hooking the managed stub alone
-        // misses unloads.
+        // misses unloads. Only the slot address is derived here; the game is
+        // never called to force the resolution. The cache is a writable
+        // static, so read-only constant loads are never mistaken for it.
         for (size_t offset = 0; offset + 7 <= 64; ++offset) {
             if (code[offset] != 0x48 || code[offset + 1] != 0x8B ||
                 code[offset + 2] != 0x05) {
@@ -2043,38 +2078,79 @@ bool TryFindPinvokeNativeTarget(void*& target) {
             int32_t displacement = 0;
             std::memcpy(&displacement, code + offset + 3,
                 sizeof(displacement));
-            auto** slot = reinterpret_cast<void**>(
+            auto** candidate = reinterpret_cast<void**>(
                 const_cast<uint8_t*>(code) + offset + 7 + displacement);
-            void* candidate = *slot;
             MEMORY_BASIC_INFORMATION memory{};
-            if (!candidate || VirtualQuery(candidate, &memory,
-                    sizeof(memory)) != sizeof(memory)) {
+            if (VirtualQuery(candidate, &memory, sizeof(memory)) !=
+                    sizeof(memory) || memory.State != MEM_COMMIT) {
                 continue;
             }
-            const DWORD executable = memory.Protect & 0xFF;
-            if (executable == PAGE_EXECUTE ||
-                executable == PAGE_EXECUTE_READ ||
-                executable == PAGE_EXECUTE_READWRITE ||
-                executable == PAGE_EXECUTE_WRITECOPY) {
-                target = candidate;
+            const DWORD protect = memory.Protect & 0xFF;
+            if (protect != PAGE_READWRITE && protect != PAGE_WRITECOPY &&
+                protect != PAGE_EXECUTE_READWRITE &&
+                protect != PAGE_EXECUTE_WRITECOPY) {
+                continue;
+            }
+            if (IsExecutableAddress(*candidate)) {
+                slot = candidate;
                 return true;
+            }
+            if (!fallback) {
+                fallback = candidate;
             }
         }
     }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-        target = nullptr;
+    __except (CaptureExceptionCode(GetExceptionCode(), &seh_code)) {
+        fallback = nullptr;
     }
-    return false;
+    slot = fallback;
+    return slot != nullptr;
 }
 
-bool InstallNativeUnloadHook() {
-    if (!TryProbePinvokeUnload()) {
-        Log("[voice-pck] native unload probe failed");
+bool TryReadNativeUnloadTarget(void*& target, DWORD& seh_code) {
+    target = nullptr;
+    seh_code = 0;
+    if (!g_native_unload_slot) {
         return false;
     }
+    __try {
+        void* candidate = *g_native_unload_slot;
+        if (!IsExecutableAddress(candidate)) {
+            return false;
+        }
+        target = candidate;
+        return true;
+    }
+    __except (CaptureExceptionCode(GetExceptionCode(), &seh_code)) {
+        target = nullptr;
+        return false;
+    }
+}
+
+// Attaches the native unload hook once IL2CPP has resolved the P/Invoke slot.
+// Returns true only while the protection is actually active.
+bool EnsureNativeUnloadHook() {
+    if (g_original_native_unload_file_package) {
+        return true;
+    }
+    if (!g_host || !g_host->create_hook || !g_native_unload_slot) {
+        return false;
+    }
+    std::lock_guard lock(g_native_unload_mutex);
+    if (g_original_native_unload_file_package) {
+        return true;
+    }
     void* target = nullptr;
-    if (!TryFindPinvokeNativeTarget(target)) {
-        Log("[voice-pck] native unload target was not found in the P/Invoke stub");
+    DWORD seh_code = 0;
+    if (!TryReadNativeUnloadTarget(target, seh_code)) {
+        if (seh_code != 0) {
+            Log("[voice-pck] native unload slot read failed code=0x" +
+                HexString(seh_code));
+        } else if (!g_native_unload_deferred_logged) {
+            g_native_unload_deferred_logged = true;
+            Log("[voice-pck] native unload protection deferred; P/Invoke "
+                "target is not resolved yet");
+        }
         return false;
     }
     const BE_Result status = g_host->create_hook(
@@ -2082,11 +2158,38 @@ bool InstallNativeUnloadHook() {
         reinterpret_cast<void*>(&HookNativeUnloadFilePackage),
         reinterpret_cast<void**>(&g_original_native_unload_file_package));
     if (status != BE_Result_Ok) {
+        g_original_native_unload_file_package = nullptr;
         Log("[voice-pck] native unload hook failed result=" +
             std::string(ResultName(status)));
         return false;
     }
     Log("[voice-pck] native unload protection installed");
+    return true;
+}
+
+// Locates the P/Invoke slot at install time. Slot discovery is required
+// because the auxiliary language mount refuses to run without protection;
+// the hook itself attaches as soon as the game resolves the slot.
+bool PrepareNativeUnloadHook() {
+    if (!g_pinvoke_unload_file_package.resolved ||
+        !g_pinvoke_unload_file_package.pointer) {
+        Log("[voice-pck] native unload protection unavailable; P/Invoke stub "
+            "contract was not resolved");
+        return false;
+    }
+    void** slot = nullptr;
+    DWORD seh_code = 0;
+    if (!TryLocateNativeUnloadSlot(slot, seh_code)) {
+        Log("[voice-pck] native unload slot was not found in the P/Invoke "
+            "stub code=0x" + HexString(seh_code));
+        return false;
+    }
+    {
+        std::lock_guard lock(g_native_unload_mutex);
+        g_native_unload_slot = slot;
+        g_native_unload_deferred_logged = false;
+    }
+    EnsureNativeUnloadHook();
     return true;
 }
 
@@ -2738,6 +2841,11 @@ void ClearOriginals() {
     g_original_pinvoke_unload_file_package = nullptr;
     g_original_native_unload_file_package = nullptr;
     g_original_unload_pcks = nullptr;
+    {
+        std::lock_guard lock(g_native_unload_mutex);
+        g_native_unload_slot = nullptr;
+        g_native_unload_deferred_logged = false;
+    }
 }
 
 bool InstallHooks() {
@@ -2768,7 +2876,7 @@ bool InstallHooks() {
         InstallHook("wwise.package.unload", g_unload_file_package,
             reinterpret_cast<void*>(&HookUnloadFilePackage),
             reinterpret_cast<void**>(&g_original_unload_file_package), true) &&
-        InstallNativeUnloadHook();
+        PrepareNativeUnloadHook();
     if (!required) {
         if (g_host->release_module_hooks) {
             g_host->release_module_hooks(g_host->context, kModuleId);
