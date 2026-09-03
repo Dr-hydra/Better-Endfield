@@ -2221,7 +2221,7 @@ public sealed partial class MainWindow : Window
             LoopStart = LoopStartNumberBox.Value,
             LoopEnd = LoopEndNumberBox.Value,
             CrossfadeDuration = CrossfadeDurationNumberBox.Value,
-            ModelReplacementEnabled = ModelReplacementToggle.IsOn,
+            ModelReplacementEnabled = false,
             LogoThemeEnabled = LogoThemeToggle.IsOn,
             LogoThemeColor = $"#{LogoThemeColorPicker.Color.R:X2}{LogoThemeColorPicker.Color.G:X2}{LogoThemeColorPicker.Color.B:X2}",
             VoiceRouterEnabled = VoiceRouterToggle.IsOn,
@@ -2289,7 +2289,7 @@ public sealed partial class MainWindow : Window
         LoopStartNumberBox.Value = configuration.LoopStart;
         LoopEndNumberBox.Value = configuration.LoopEnd;
         CrossfadeDurationNumberBox.Value = configuration.CrossfadeDuration;
-        ModelReplacementToggle.IsOn = configuration.ModelReplacementEnabled;
+        ModelReplacementToggle.IsOn = false;
         LogoThemeToggle.IsOn = configuration.LogoThemeEnabled;
         LogoThemeColorPicker.Color = ParseLogoThemeColor(configuration.LogoThemeColor);
         VoiceRouterToggle.IsOn = configuration.VoiceRouterEnabled;
@@ -3147,6 +3147,12 @@ public sealed partial class MainWindow : Window
         ModelPageDescriptionTextBlock.Text = isZh
             ? "调整登录场景的视觉效果、角色模型与四阶段动画。"
             : "Customize title screen visuals, character models, and 4-phase animations.";
+        ModelReplacementUnavailableInfoBar.Title = isZh
+            ? "角色替换暂不可用"
+            : "Character Replacement Temporarily Unavailable";
+        ModelReplacementUnavailableInfoBar.Message = isZh
+            ? "当前游戏版本不兼容，修复完成前无法启用。"
+            : "The current game version is incompatible. This feature is locked off until the compatibility fix is complete.";
         ModelVisualSectionTitle.Text = isZh ? "界面视觉" : "Interface Visuals";
         ModelVisualSectionHint.Text = isZh
             ? "主题色可与原登录演员或角色替换同时使用。"
@@ -3200,6 +3206,10 @@ public sealed partial class MainWindow : Window
         VoicePageDownloadHintTextBlock.Text = isZh
             ? "请先下载对应语言包。"
             : "Please ensure corresponding language packs are downloaded in game first.";
+        VoiceCompatibilityInfoBar.Title = isZh ? "已知问题" : "Known Issues";
+        VoiceCompatibilityInfoBar.Message = isZh
+            ? "替换语音的时长修正与口型同步目前存在问题，仍待修复。"
+            : "Voice duration correction and lip-sync are currently inaccurate and still need fixes.";
         VoiceRouterToggle.Header = isZh ? "启用按角色配音" : "Enable Per-Character Voice";
         VoiceRouterToggle.OffContent = isZh ? "全部跟随游戏" : "Follow game global language";
         VoiceRouterToggle.OnContent = isZh ? "应用下方角色规则" : "Apply custom rules below";

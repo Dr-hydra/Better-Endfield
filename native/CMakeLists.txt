@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25)
 
-project(BetterEndfieldNative VERSION 2.3.1 LANGUAGES C CXX)
+project(BetterEndfieldNative VERSION 3.0.1 LANGUAGES C CXX)
 
 if(NOT WIN32)
     message(FATAL_ERROR "Better Endfield native runtime targets Windows only.")

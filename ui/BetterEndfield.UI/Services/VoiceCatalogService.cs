@@ -99,7 +99,7 @@ internal static class VoiceCatalogService
         LoadedCatalogIndex index = CatalogIndex.Value;
         string catalogRoot = GetCatalogRoot();
         Directory.CreateDirectory(catalogRoot);
-        var packages = new Dictionary<int, PckIndex>();
+        var packages = new Dictionary<int, IReadOnlyList<PckIndex>>();
         var fileNames = new List<string>(selected.Length);
 
         foreach (VoiceCatalogRequest request in selected)
@@ -112,25 +112,34 @@ internal static class VoiceCatalogService
                 catalog.CharacterId.Equals(characterId, StringComparison.OrdinalIgnoreCase))
                 ?? throw new InvalidOperationException(
                     $"内置语音映射中没有 {characterId} / {request.Language}，请更新资源清单。");
-            if (routeSet.Routes.Count == 0 || routeSet.Routes.Count % 2 != 0)
+            if (routeSet.Routes.Count == 0 || routeSet.Routes.Count % 3 != 0)
             {
                 throw new InvalidDataException("内置语音映射表损坏。");
             }
 
-            if (!packages.TryGetValue(language, out PckIndex? package))
+            if (!packages.TryGetValue(language, out IReadOnlyList<PckIndex>? languagePackages))
             {
-                CatalogPackage descriptor = index.Value.Packages.FirstOrDefault(item =>
-                    item.Language == language)
-                    ?? throw new InvalidDataException("内置语音映射缺少语言包描述。");
-                package = LocateAndReadPackage(gameRoot, descriptor, cancellationToken);
-                packages.Add(language, package);
+                CatalogPackage[] descriptors = index.Value.Packages
+                    .Where(item => item.Language == language)
+                    .ToArray();
+                if (descriptors.Length == 0)
+                {
+                    throw new InvalidDataException("内置语音映射缺少语言包描述。");
+                }
+                languagePackages = descriptors
+                    .Select(descriptor => LocateAndReadPackage(
+                        gameRoot,
+                        descriptor,
+                        cancellationToken))
+                    .ToArray();
+                packages.Add(language, languagePackages);
             }
 
             string fileName = CatalogFileName(language, characterId);
             string outputPath = Path.Combine(catalogRoot, fileName);
-            if (!IsCurrentCatalog(outputPath, index.Identity, package, routeSet))
+            if (!IsCurrentCatalog(outputPath, index.Identity, languagePackages, routeSet))
             {
-                BuildCatalog(outputPath, index.Identity, package, routeSet,
+                BuildCatalog(outputPath, index.Identity, languagePackages, routeSet,
                     cancellationToken);
             }
             fileNames.Add(fileName);
@@ -150,9 +159,10 @@ internal static class VoiceCatalogService
         VoiceCatalogIndex value = JsonSerializer.Deserialize<VoiceCatalogIndex>(
             bytes,
             JsonOptions) ?? throw new InvalidDataException("Voice catalog index is invalid.");
-        if (value.SchemaVersion != 1 ||
+        if (value.SchemaVersion != 2 ||
             value.Kind != "betterendfield-voice-catalog-index" ||
-            value.Packages.Count != LanguageNames.Length ||
+            Enumerable.Range(0, LanguageNames.Length).Any(language =>
+                !value.Packages.Any(package => package.Language == language)) ||
             value.Catalogs.Count == 0)
         {
             throw new InvalidDataException("Voice catalog index schema is unsupported.");
@@ -366,22 +376,73 @@ internal static class VoiceCatalogService
     private static void BuildCatalog(
         string outputPath,
         string indexIdentity,
-        PckIndex package,
+        IReadOnlyList<PckIndex> packages,
         CatalogRouteSet routeSet,
         CancellationToken cancellationToken)
     {
-        var routes = new SortedDictionary<uint, uint>();
-        for (int index = 0; index < routeSet.Routes.Count; index += 2)
+        var routes = new SortedDictionary<(uint SourceLanguage, uint SourceId), uint>();
+        for (int index = 0; index < routeSet.Routes.Count; index += 3)
         {
-            routes.TryAdd(routeSet.Routes[index], routeSet.Routes[index + 1]);
+            routes.TryAdd(
+                (routeSet.Routes[index], routeSet.Routes[index + 1]),
+                routeSet.Routes[index + 2]);
         }
         var targets = new SortedSet<uint>(routes.Values);
+        var mediaSources = new Dictionary<uint, PckMediaSource>();
+        foreach (PckIndex package in packages)
+        {
+            foreach ((uint mediaId, PckMedia media) in package.Media)
+            {
+                mediaSources.TryAdd(mediaId, new PckMediaSource(package, media));
+            }
+        }
         foreach (uint target in targets)
         {
-            if (!package.Media.ContainsKey(target))
+            if (!mediaSources.ContainsKey(target))
             {
                 throw new InvalidOperationException(
                     $"当前语言包缺少 Media ID {target}，请更新游戏语言包或资源清单。");
+            }
+        }
+
+        var payloads = new Dictionary<uint, byte[]>(targets.Count);
+        var sources = new Dictionary<string, FileStream>(
+            StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            foreach (PckIndex package in packages)
+            {
+                sources.Add(package.Path, new FileStream(
+                    package.Path,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite,
+                    1024 * 1024,
+                    FileOptions.RandomAccess));
+            }
+            foreach (uint target in targets)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                PckMediaSource mediaSource = mediaSources[target];
+                PckMedia media = mediaSource.Media;
+                FileStream source = sources[mediaSource.Package.Path];
+                if (media.Size > int.MaxValue ||
+                    media.Offset + media.Size > (ulong)source.Length)
+                {
+                    throw new InvalidDataException($"PCK Media ID {target} 越界。");
+                }
+                byte[] payload = new byte[(int)media.Size];
+                source.Position = checked((long)media.Offset);
+                source.ReadExactly(payload);
+                DecryptVfs(payload, target);
+                payloads[target] = payload;
+            }
+        }
+        finally
+        {
+            foreach (FileStream source in sources.Values)
+            {
+                source.Dispose();
             }
         }
 
@@ -392,7 +453,29 @@ internal static class VoiceCatalogService
         foreach (uint target in targets)
         {
             payloadOffsets[target] = cursor;
-            cursor = checked(cursor + package.Media[target].Size);
+            cursor = checked(cursor + (ulong)payloads[target].Length);
+        }
+        uint durationTableOffset = checked((uint)cursor);
+
+        var durations = new SortedDictionary<string, float>(StringComparer.Ordinal);
+        var targetsBySourceId = routes
+            .GroupBy(pair => pair.Key.SourceId)
+            .ToDictionary(group => group.Key, group => group.First().Value);
+        foreach ((string identity, List<uint> sourceMediaIds) in routeSet.VoiceSources)
+        {
+            double longest = 0;
+            foreach (uint sourceMediaId in sourceMediaIds)
+            {
+                if (targetsBySourceId.TryGetValue(sourceMediaId, out uint target) &&
+                    payloads.TryGetValue(target, out byte[]? payload))
+                {
+                    longest = Math.Max(longest, WemDurationSeconds(payload));
+                }
+            }
+            if (longest > 0)
+            {
+                durations.TryAdd(identity, (float)longest);
+            }
         }
 
         string temporary = outputPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
@@ -408,43 +491,33 @@ internal static class VoiceCatalogService
             {
                 using var writer = new BinaryWriter(output, Encoding.UTF8, leaveOpen: true);
                 writer.Write("BEVCAT01"u8);
-                writer.Write((ushort)1);
+                writer.Write((ushort)2);
                 writer.Write((ushort)routeSet.Language);
                 writer.Write((uint)routes.Count);
-                writer.Write(0u);
+                writer.Write(durationTableOffset);
                 writer.Write((ulong)CatalogHeaderSize);
                 writer.Write(dataOffset);
-                foreach ((uint sourceMediaId, uint target) in routes)
+                foreach (((uint sourceLanguage, uint sourceMediaId), uint target) in routes)
                 {
-                    PckMedia media = package.Media[target];
+                    byte[] payload = payloads[target];
                     writer.Write(sourceMediaId);
                     writer.Write(target);
                     writer.Write(payloadOffsets[target]);
-                    writer.Write(media.Size);
-                    writer.Write(0u);
+                    writer.Write((uint)payload.Length);
+                    writer.Write(sourceLanguage);
                 }
-
-                using var source = new FileStream(
-                    package.Path,
-                    FileMode.Open,
-                    FileAccess.Read,
-                    FileShare.ReadWrite,
-                    1024 * 1024,
-                    FileOptions.RandomAccess);
                 foreach (uint target in targets)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    PckMedia media = package.Media[target];
-                    if (media.Size > int.MaxValue ||
-                        media.Offset + media.Size > (ulong)source.Length)
-                    {
-                        throw new InvalidDataException($"PCK Media ID {target} 越界。");
-                    }
-                    byte[] payload = new byte[(int)media.Size];
-                    source.Position = checked((long)media.Offset);
-                    source.ReadExactly(payload);
-                    DecryptVfs(payload, target);
-                    output.Write(payload);
+                    output.Write(payloads[target]);
+                }
+                writer.Write((uint)durations.Count);
+                foreach ((string identity, float seconds) in durations)
+                {
+                    byte[] identityBytes = Encoding.UTF8.GetBytes(identity);
+                    writer.Write((uint)identityBytes.Length);
+                    writer.Write(identityBytes);
+                    writer.Write(seconds);
                 }
                 output.Flush(flushToDisk: true);
             }
@@ -456,16 +529,20 @@ internal static class VoiceCatalogService
                 TargetLanguage = LanguageNames[routeSet.Language],
                 CharacterId = routeSet.CharacterId,
                 EntryCount = routes.Count,
+                DurationIdentityCount = durations.Count,
                 UniqueTargetMediaCount = targets.Count,
-                PayloadBytes = checked((long)(cursor - dataOffset)),
+                PayloadBytes = checked((long)(durationTableOffset - dataOffset)),
                 CatalogLength = info.Length,
                 CatalogLastWriteUtcTicks = info.LastWriteTimeUtc.Ticks,
                 CatalogSha256 = HashFile(outputPath),
                 CatalogIndexSha256 = indexIdentity,
-                SourcePackage = package.Path,
-                SourcePackageSize = package.Size,
-                SourcePackageLastWriteUtcTicks = package.LastWriteUtcTicks,
-                SourcePackageHeaderSha256 = package.HeaderSha256
+                SourcePackages = packages.Select(package => new CatalogSourcePackageReport
+                {
+                    SourcePackage = package.Path,
+                    SourcePackageSize = package.Size,
+                    SourcePackageLastWriteUtcTicks = package.LastWriteUtcTicks,
+                    SourcePackageHeaderSha256 = package.HeaderSha256
+                }).ToList()
             };
             WriteJsonAtomicallyAsync(
                 outputPath + ".json",
@@ -478,10 +555,53 @@ internal static class VoiceCatalogService
         }
     }
 
+    private static double WemDurationSeconds(ReadOnlySpan<byte> payload)
+    {
+        if (payload.Length < 32 ||
+            !payload[..4].SequenceEqual("RIFF"u8) ||
+            !payload.Slice(8, 4).SequenceEqual("WAVE"u8))
+        {
+            return 0;
+        }
+        uint sampleRate = 0;
+        uint averageBytesPerSecond = 0;
+        int position = 12;
+        while (position + 8 <= payload.Length)
+        {
+            uint chunkSize = BinaryPrimitives.ReadUInt32LittleEndian(
+                payload.Slice(position + 4, 4));
+            int available = payload.Length - position - 8;
+            int boundedSize = (int)Math.Min(chunkSize, (uint)Math.Max(0, available));
+            if (payload.Slice(position, 4).SequenceEqual("fmt "u8) && boundedSize >= 16)
+            {
+                ReadOnlySpan<byte> format = payload.Slice(position + 8, boundedSize);
+                sampleRate = BinaryPrimitives.ReadUInt32LittleEndian(format.Slice(4, 4));
+                averageBytesPerSecond = BinaryPrimitives.ReadUInt32LittleEndian(
+                    format.Slice(8, 4));
+                if (boundedSize >= 28 && sampleRate > 0)
+                {
+                    uint sampleCount = BinaryPrimitives.ReadUInt32LittleEndian(
+                        format.Slice(24, 4));
+                    if (sampleCount > 0)
+                    {
+                        return (double)sampleCount / sampleRate;
+                    }
+                }
+            }
+            else if (payload.Slice(position, 4).SequenceEqual("data"u8) &&
+                averageBytesPerSecond > 0)
+            {
+                return (double)boundedSize / averageBytesPerSecond;
+            }
+            position = checked(position + 8 + (int)((chunkSize + 1) & ~1u));
+        }
+        return 0;
+    }
+
     private static bool IsCurrentCatalog(
         string path,
         string indexIdentity,
-        PckIndex package,
+        IReadOnlyList<PckIndex> packages,
         CatalogRouteSet routeSet)
     {
         try
@@ -495,7 +615,7 @@ internal static class VoiceCatalogService
                 JsonOptions);
             var info = new FileInfo(path);
             return report is not null &&
-                report.SchemaVersion == 1 &&
+                report.SchemaVersion == 3 &&
                 report.Kind == "betterendfield-voice-catalog" &&
                 report.CharacterId.Equals(
                     routeSet.CharacterId,
@@ -503,15 +623,20 @@ internal static class VoiceCatalogService
                 report.TargetLanguage.Equals(
                     LanguageNames[routeSet.Language],
                     StringComparison.OrdinalIgnoreCase) &&
-                report.EntryCount == routeSet.Routes.Count / 2 &&
+                report.EntryCount == routeSet.Routes.Count / 3 &&
                 report.CatalogIndexSha256.Equals(
                     indexIdentity,
                     StringComparison.OrdinalIgnoreCase) &&
-                report.SourcePackageHeaderSha256.Equals(
-                    package.HeaderSha256,
-                    StringComparison.OrdinalIgnoreCase) &&
-                report.SourcePackageSize == package.Size &&
-                report.SourcePackageLastWriteUtcTicks == package.LastWriteUtcTicks &&
+                report.CatalogVersion == 3 &&
+                report.DurationIdentityCount == CountDurationIdentities(routeSet) &&
+                report.SourcePackages.Count == packages.Count &&
+                report.SourcePackages.Zip(packages).All(pair =>
+                    pair.First.SourcePackageHeaderSha256.Equals(
+                        pair.Second.HeaderSha256,
+                        StringComparison.OrdinalIgnoreCase) &&
+                    pair.First.SourcePackageSize == pair.Second.Size &&
+                    pair.First.SourcePackageLastWriteUtcTicks ==
+                        pair.Second.LastWriteUtcTicks) &&
                 report.CatalogLength == info.Length &&
                 report.CatalogLastWriteUtcTicks == info.LastWriteTimeUtc.Ticks;
         }
@@ -520,6 +645,16 @@ internal static class VoiceCatalogService
         {
             return false;
         }
+    }
+
+    private static int CountDurationIdentities(CatalogRouteSet routeSet)
+    {
+        var sourceIds = new HashSet<uint>();
+        for (int index = 0; index + 2 < routeSet.Routes.Count; index += 3)
+        {
+            sourceIds.Add(routeSet.Routes[index + 1]);
+        }
+        return routeSet.VoiceSources.Count(pair => pair.Value.Any(sourceIds.Contains));
     }
 
     private static int LanguageIndex(string language)
@@ -736,6 +871,8 @@ internal static class VoiceCatalogService
 
     private sealed record PckMedia(ulong Offset, uint Size);
 
+    private sealed record PckMediaSource(PckIndex Package, PckMedia Media);
+
     private sealed record PckIndex(
         string Path,
         long Size,
@@ -768,21 +905,29 @@ internal static class VoiceCatalogService
         public int Language { get; set; }
         public int VoiceCount { get; set; }
         public List<uint> Routes { get; set; } = [];
+        public Dictionary<string, List<uint>> VoiceSources { get; set; } = [];
     }
 
     private sealed class CatalogReport
     {
-        public int SchemaVersion { get; set; } = 1;
+        public int SchemaVersion { get; set; } = 3;
         public string Kind { get; set; } = "betterendfield-voice-catalog";
+        public int CatalogVersion { get; set; } = 3;
         public string TargetLanguage { get; set; } = string.Empty;
         public string CharacterId { get; set; } = string.Empty;
         public int EntryCount { get; set; }
+        public int DurationIdentityCount { get; set; }
         public int UniqueTargetMediaCount { get; set; }
         public long PayloadBytes { get; set; }
         public long CatalogLength { get; set; }
         public long CatalogLastWriteUtcTicks { get; set; }
         public string CatalogSha256 { get; set; } = string.Empty;
         public string CatalogIndexSha256 { get; set; } = string.Empty;
+        public List<CatalogSourcePackageReport> SourcePackages { get; set; } = [];
+    }
+
+    private sealed class CatalogSourcePackageReport
+    {
         public string SourcePackage { get; set; } = string.Empty;
         public long SourcePackageSize { get; set; }
         public long SourcePackageLastWriteUtcTicks { get; set; }

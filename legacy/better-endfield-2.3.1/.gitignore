@@ -1,0 +1,13 @@
+# Historical client payloads are retained locally for comparison only.
+/local-only/
+
+# Keep readable exports, but never publish copied game/tool payloads.
+/references/source-research/**/*.ab
+/references/source-research/**/*.pck
+/references/source-research/**/*.bnk
+/references/source-research/**/*.wem
+/references/source-research/**/*.chk
+/references/source-research/**/*.dll
+/references/source-research/**/*.exe
+/references/source-research/**/*.png
+/references/source-research/**/__pycache__/

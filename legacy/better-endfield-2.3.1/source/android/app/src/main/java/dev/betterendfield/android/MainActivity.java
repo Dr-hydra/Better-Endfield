@@ -1,0 +1,446 @@
+package dev.betterendfield.android;
+
+import android.app.Activity;
+import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.Spinner;
+import android.widget.Switch;
+import android.widget.TextView;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+public final class MainActivity extends Activity {
+    private static final String[] LANGUAGE_VALUES = {
+            "FollowGlobal", "Chinese", "English", "Japanese", "Korean"
+    };
+    private static final String[] LANGUAGE_LABELS = {
+            "跟随游戏", "中文", "English", "日本語", "한국어"
+    };
+
+    private final Map<String, Spinner> ruleSpinners = new LinkedHashMap<>();
+    private TextView status;
+    private boolean initializingRules = true;
+    private String lastSavedRules = "";
+
+    private ModelPresetIndex modelIndex;
+    private Spinner modelCharacter;
+    private Spinner modelAction;
+    private Switch modelEnabled;
+    private Switch modelFinalLoop;
+    private Switch logoEnabled;
+    private EditText modelScale;
+    private EditText logoColor;
+    private TextView modelSelectionStatus;
+    private boolean initializingModel = true;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        status = findViewById(R.id.restart_status);
+        setupPageNavigation();
+        setupModelPage();
+        setupVoicePage();
+    }
+
+    private void setupPageNavigation() {
+        View modelSection = findViewById(R.id.model_section);
+        View voiceSection = findViewById(R.id.voice_section);
+        View modelButton = findViewById(R.id.show_model_button);
+        View voiceButton = findViewById(R.id.show_voice_button);
+        modelButton.setOnClickListener(view -> showPage(
+                modelSection, voiceSection, modelButton, voiceButton, true));
+        voiceButton.setOnClickListener(view -> showPage(
+                modelSection, voiceSection, modelButton, voiceButton, false));
+        showPage(modelSection, voiceSection, modelButton, voiceButton, true);
+    }
+
+    private static void showPage(
+            View modelSection,
+            View voiceSection,
+            View modelButton,
+            View voiceButton,
+            boolean showModel) {
+        modelSection.setVisibility(showModel ? View.VISIBLE : View.GONE);
+        voiceSection.setVisibility(showModel ? View.GONE : View.VISIBLE);
+        modelButton.setSelected(showModel);
+        voiceButton.setSelected(!showModel);
+    }
+
+    private void setupModelPage() {
+        TextView tableStatus = findViewById(R.id.model_table_status);
+        modelSelectionStatus = findViewById(R.id.model_selection_status);
+        modelCharacter = findViewById(R.id.model_character);
+        modelAction = findViewById(R.id.model_action);
+        modelEnabled = findViewById(R.id.model_enabled);
+        modelFinalLoop = findViewById(R.id.model_final_loop);
+        logoEnabled = findViewById(R.id.logo_enabled);
+        modelScale = findViewById(R.id.model_scale);
+        logoColor = findViewById(R.id.logo_color);
+
+        try {
+            modelIndex = ModelPresetIndex.load(this);
+            ArrayAdapter<ModelPresetIndex.Character> characters = new ArrayAdapter<>(
+                    this,
+                    android.R.layout.simple_spinner_item,
+                    modelIndex.characters());
+            characters.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            modelCharacter.setAdapter(characters);
+
+            modelEnabled.setChecked(ModuleSettings.isModelEnabled(this));
+            modelFinalLoop.setChecked(ModuleSettings.isModelFinalLoop(this));
+            logoEnabled.setChecked(ModuleSettings.isLogoEnabled(this));
+            modelScale.setText(ModuleSettings.getModelScale(this));
+            logoColor.setText(ModuleSettings.getLogoColor(this));
+
+            int characterPosition = findCharacterPosition(
+                    ModuleSettings.getModelCharacter(this));
+            modelCharacter.setSelection(characterPosition, false);
+            refreshActionOptions(ModuleSettings.getModelAction(this));
+            updateModelSelectionStatus();
+            tableStatus.setText(getString(
+                    R.string.model_table_ready,
+                    modelIndex.characters().size(),
+                    modelIndex.actionCount()));
+
+            installModelListeners();
+            initializingModel = false;
+        } catch (Exception error) {
+            tableStatus.setText(getString(R.string.model_table_failed, error.getMessage()));
+            modelEnabled.setEnabled(false);
+            logoEnabled.setEnabled(false);
+        }
+    }
+
+    private void installModelListeners() {
+        modelCharacter.setOnItemSelectedListener(
+                new android.widget.AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(
+                            android.widget.AdapterView<?> parent,
+                            View view,
+                            int position,
+                            long id) {
+                        if (initializingModel) return;
+                        refreshActionOptions("");
+                        saveModelSettings();
+                    }
+
+                    @Override
+                    public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+                });
+        modelAction.setOnItemSelectedListener(simpleModelSelectionListener());
+        modelEnabled.setOnCheckedChangeListener((button, checked) -> saveModelSettings());
+        modelFinalLoop.setOnCheckedChangeListener((button, checked) -> saveModelSettings());
+        logoEnabled.setOnCheckedChangeListener((button, checked) -> saveModelSettings());
+        modelScale.setOnFocusChangeListener((view, hasFocus) -> {
+            if (!hasFocus) saveModelSettings();
+        });
+        logoColor.setOnFocusChangeListener((view, hasFocus) -> {
+            if (!hasFocus) saveModelSettings();
+        });
+        findViewById(R.id.save_model_settings).setOnClickListener(
+                view -> saveModelSettings());
+    }
+
+    private android.widget.AdapterView.OnItemSelectedListener simpleModelSelectionListener() {
+        return new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(
+                    android.widget.AdapterView<?> parent,
+                    View view,
+                    int position,
+                    long id) {
+                if (!initializingModel) saveModelSettings();
+            }
+
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        };
+    }
+
+    private int findCharacterPosition(String id) {
+        List<ModelPresetIndex.Character> characters = modelIndex.characters();
+        for (int index = 0; index < characters.size(); ++index) {
+            if (characters.get(index).id().equalsIgnoreCase(id)) return index;
+        }
+        for (int index = 0; index < characters.size(); ++index) {
+            if ("chr_0013_aglina".equalsIgnoreCase(characters.get(index).id())) return index;
+        }
+        return 0;
+    }
+
+    private void refreshActionOptions(String preferredAction) {
+        ModelPresetIndex.Character character = selectedCharacter();
+        if (character == null) return;
+        ArrayAdapter<ModelPresetIndex.Action> actions = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_item,
+                character.actions());
+        actions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        modelAction.setAdapter(actions);
+
+        String desired = preferredAction == null || preferredAction.isEmpty()
+                ? character.defaultActionId() : preferredAction;
+        int selected = 0;
+        for (int index = 0; index < character.actions().size(); ++index) {
+            if (character.actions().get(index).id().equalsIgnoreCase(desired)) {
+                selected = index;
+                break;
+            }
+        }
+        modelAction.setSelection(selected, false);
+        updateModelSelectionStatus();
+    }
+
+    private ModelPresetIndex.Character selectedCharacter() {
+        return modelCharacter == null || modelCharacter.getSelectedItem() == null
+                ? null : (ModelPresetIndex.Character) modelCharacter.getSelectedItem();
+    }
+
+    private ModelPresetIndex.Action selectedAction() {
+        return modelAction == null || modelAction.getSelectedItem() == null
+                ? null : (ModelPresetIndex.Action) modelAction.getSelectedItem();
+    }
+
+    private void updateModelSelectionStatus() {
+        ModelPresetIndex.Character character = selectedCharacter();
+        ModelPresetIndex.Action action = selectedAction();
+        if (character != null && action != null) {
+            modelSelectionStatus.setText(getString(
+                    R.string.model_selection_ready,
+                    character.id(),
+                    action.id()));
+        }
+    }
+
+    private void saveModelSettings() {
+        if (initializingModel || modelIndex == null) return;
+        ModelPresetIndex.Character character = selectedCharacter();
+        ModelPresetIndex.Action action = selectedAction();
+        if (character == null || action == null) return;
+
+        String scaleText = modelScale.getText().toString().trim();
+        double scale;
+        try {
+            scale = Double.parseDouble(scaleText);
+            if (!Double.isFinite(scale) || scale < 0.05 || scale > 20.0) {
+                throw new NumberFormatException("范围 0.05–20");
+            }
+        } catch (NumberFormatException error) {
+            modelSelectionStatus.setText(getString(
+                    R.string.model_settings_invalid, "模型缩放应为 0.05–20"));
+            return;
+        }
+
+        String color = logoColor.getText().toString().trim().toUpperCase(Locale.ROOT);
+        if (!color.matches("#[0-9A-F]{6}")) {
+            modelSelectionStatus.setText(getString(
+                    R.string.model_settings_invalid, "主题色应为 #RRGGBB"));
+            return;
+        }
+        logoColor.setText(color);
+
+        boolean enableModel = modelEnabled.isChecked();
+        boolean enableLogo = logoEnabled.isChecked();
+        String configuration = enableModel || enableLogo
+                ? buildModelConfiguration(character, action, scale, color)
+                : "";
+        ModuleSettings.setModelSettings(
+                this,
+                enableModel,
+                character.id(),
+                action.id(),
+                modelFinalLoop.isChecked(),
+                number(scale),
+                enableLogo,
+                color,
+                configuration);
+        modelScale.setText(number(scale));
+        updateModelSelectionStatus();
+        status.setText(R.string.model_restart_required);
+    }
+
+    private String buildModelConfiguration(
+            ModelPresetIndex.Character character,
+            ModelPresetIndex.Action action,
+            double scale,
+            String color) {
+        StringBuilder text = new StringBuilder();
+        append(text, "schema_version=5");
+        append(text, "enabled=true");
+        append(text, "model_replacement_enabled=" + modelEnabled.isChecked());
+        append(text, "logo_theme_enabled=" + logoEnabled.isChecked());
+        append(text, "logo_theme_color=" + color);
+        append(text, "diagnostics=true");
+        append(text, "character=" + character.id());
+        append(text, "final_action=" + action.id());
+        append(text, "model_path=" + character.modelPath());
+        append(text, "model_path_hash=" + character.modelPathHash());
+        append(text, "model_bundle_hash=" + character.modelBundleHash());
+        appendAsset(text, "sit_loop", character.sitLoop());
+        appendAsset(text, "sit_special", character.sitSpecial());
+        appendAsset(text, "sit_to_walk", character.sitToWalk());
+        append(text, "final_path=" + action.path());
+        append(text, "final_path_hash=" + action.pathHash());
+        append(text, "final_label=" + action.id());
+        append(text, "final_native_loop=" + action.nativeLoop());
+        append(text, "start_yaw=-120");
+        append(text, "turn_duration=3.0333335");
+        append(text, "scale=" + number(scale));
+        append(text, "forward_lean_sample=1");
+        append(text, "sit_loop_speed=1");
+        append(text, "sit_special_speed=1");
+        append(text, "sit_to_walk_speed=1");
+        append(text, "final_speed=1");
+        append(text, "final_loop=" + modelFinalLoop.isChecked());
+        append(text, "force_loop=false");
+        append(text, "use_crossfade=false");
+        append(text, "loop_start=0.968");
+        append(text, "loop_end=2.3760002");
+        append(text, "crossfade_duration=0.20");
+        return text.toString();
+    }
+
+    private static void appendAsset(
+            StringBuilder text, String prefix, ModelPresetIndex.Asset asset) {
+        append(text, prefix + "_path=" + asset.path());
+        append(text, prefix + "_path_hash=" + asset.pathHash());
+        append(text, prefix + "_label=" + asset.label());
+    }
+
+    private static void append(StringBuilder text, String line) {
+        text.append(line).append('\n');
+    }
+
+    private static String number(double value) {
+        String result = String.format(Locale.ROOT, "%.8f", value);
+        return result.replaceFirst("0+$", "").replaceFirst("\\.$", "");
+    }
+
+    private void setupVoicePage() {
+        LinearLayout rows = findViewById(R.id.voice_rule_rows);
+        TextView tableStatus = findViewById(R.id.voice_table_status);
+        if (BuildConfig.DEBUG && getIntent().hasExtra("voice_rules")) {
+            ModuleSettings.setVoiceRules(
+                    this, getIntent().getStringExtra("voice_rules"));
+        }
+
+        try {
+            VoiceCatalogIndex index = VoiceCatalogIndex.load(this);
+            lastSavedRules = ModuleSettings.getVoiceRules(this);
+            Map<String, String> configured = parseRules(lastSavedRules);
+            for (VoiceCatalogIndex.CharacterChoice choice : index.characters()) {
+                addRuleRow(rows, choice, configured.getOrDefault(
+                        choice.characterId(), "FollowGlobal"));
+            }
+            initializingRules = false;
+            tableStatus.setText(getString(
+                    R.string.voice_table_ready,
+                    index.characters().size() - 1,
+                    index.catalogCount()));
+        } catch (Exception error) {
+            tableStatus.setText(getString(
+                    R.string.voice_table_failed, error.getMessage()));
+            status.setText(R.string.voice_table_unavailable);
+        }
+    }
+
+    private void addRuleRow(
+            LinearLayout parent,
+            VoiceCatalogIndex.CharacterChoice choice,
+            String selectedLanguage) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        row.setBackgroundResource(R.drawable.bg_voice_row);
+        row.setPadding(dp(14), dp(10), dp(10), dp(10));
+
+        TextView label = new TextView(this);
+        label.setText(choice.displayName());
+        label.setTextSize(14);
+        label.setTextColor(getColor(R.color.text_primary));
+        row.addView(label, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+
+        Spinner spinner = new Spinner(this);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_item,
+                LANGUAGE_LABELS);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        spinner.setBackgroundResource(R.drawable.bg_input);
+        spinner.setPadding(dp(10), 0, dp(4), 0);
+        spinner.setSelection(languagePosition(selectedLanguage), false);
+        spinner.setContentDescription(choice.displayName());
+        spinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(
+                    android.widget.AdapterView<?> parent,
+                    View view,
+                    int position,
+                    long id) {
+                if (!initializingRules) saveRules();
+            }
+
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
+        ruleSpinners.put(choice.characterId(), spinner);
+        row.addView(spinner, new LinearLayout.LayoutParams(
+                dp(132), ViewGroup.LayoutParams.WRAP_CONTENT));
+        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        rowParams.bottomMargin = dp(8);
+        parent.addView(row, rowParams);
+    }
+
+    private void saveRules() {
+        if (ruleSpinners.isEmpty()) return;
+        StringBuilder rules = new StringBuilder();
+        for (Map.Entry<String, Spinner> entry : ruleSpinners.entrySet()) {
+            int position = entry.getValue().getSelectedItemPosition();
+            if (position <= 0 || position >= LANGUAGE_VALUES.length) continue;
+            if (rules.length() > 0) rules.append(';');
+            rules.append(entry.getKey()).append(':').append(LANGUAGE_VALUES[position]);
+        }
+        String serialized = rules.toString();
+        if (serialized.equals(lastSavedRules)) return;
+        ModuleSettings.setVoiceRules(this, serialized);
+        lastSavedRules = serialized;
+        status.setText(R.string.restart_required);
+    }
+
+    private static Map<String, String> parseRules(String value) {
+        Map<String, String> rules = new LinkedHashMap<>();
+        if (value == null || value.isEmpty()) return rules;
+        for (String item : value.split(";")) {
+            int separator = item.indexOf(':');
+            if (separator > 0 && separator + 1 < item.length()) {
+                rules.put(item.substring(0, separator), item.substring(separator + 1));
+            }
+        }
+        return rules;
+    }
+
+    private static int languagePosition(String value) {
+        for (int index = 0; index < LANGUAGE_VALUES.length; ++index) {
+            if (LANGUAGE_VALUES[index].equalsIgnoreCase(value)) return index;
+        }
+        return 0;
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+}

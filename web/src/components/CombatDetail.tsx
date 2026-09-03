@@ -40,7 +40,7 @@ function imageFallback(event: Event) {
   (event.currentTarget as HTMLImageElement).style.display = "none";
 }
 
-export function CombatDetail({ record, dictionary, sourceLabel = "SCHEMA 10", actions }: Props) {
+export function CombatDetail({ record, dictionary, sourceLabel = "SCHEMA 11", actions }: Props) {
   const rdps = totalRdps(record);
   const characters = useMemo(
     () => Object.entries(record.characters).sort((a, b) => b[1].damage - a[1].damage),

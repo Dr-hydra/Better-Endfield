@@ -24,7 +24,26 @@ function validRecord() {
       equipSuits: [],
     }],
     actions: [{ id: 1, start: 1, end: 1.5, actorId: "chr_test", type: "basicAttack", skillId: "chr_test_attack1", result: "completed" }],
-    effects: [{ id: 1, actionId: 1, time: 1.2, type: "damage", sourceId: "chr_test", targetId: "enemy", skillId: "chr_test_attack1", value: 1000 }],
+    effects: [{
+      id: 1,
+      actionId: 1,
+      parentEffectId: 7,
+      time: 1.2,
+      type: "damage",
+      sourceId: "chr_test",
+      sourceEntityId: "chr_test_1001",
+      creditedActorId: "chr_test",
+      actorAttribution: "runtimeExact",
+      targetId: "enemy",
+      skillId: "chr_test_attack1",
+      value: 1000,
+      rawValue: 1200,
+      hpDelta: -1000,
+      damageType: 2,
+      decorateMask: 4,
+      critical: true,
+      rdpsShares: [],
+    }],
   };
 }
 
@@ -34,6 +53,10 @@ describe("schema 11 parser", () => {
     expect(record.schemaVersion).toBe(11);
     expect(record.totalDamage).toBe(1000);
     expect(record.events[0].actionId).toBe(1);
+    expect(record.events[0].parentEffectId).toBe(7);
+    expect(record.events[0].rawDamage).toBe(1200);
+    expect(record.events[0].sourceEntityId).toBe("chr_test_1001");
+    expect(record.events[0].decorateMask).toBe(4);
   });
 
   it("rejects old schemas", () => {

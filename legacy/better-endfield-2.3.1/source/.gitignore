@@ -1,0 +1,64 @@
+bin/
+obj/
+artifacts/
+research/
+!native/research/
+!native/research/music_probe/
+!native/research/music_probe/*.cpp
+!native/research/music_probe/*.ini
+runs/*
+state/*
+Maps/
+vendor/
+dependencies.lock.json
+
+# Research-only applications and extraction tools are not part of the mod repo.
+src/Diagnostics/
+src/*Ctl/
+src/*Probe/
+tests/
+tools/EndfieldDumper/
+tools/EndfieldStudio/
+tools/EndfieldUnpacker/
+tools/FkArkEnd/
+tools/MetadataScan/
+tools/CombatDataExporter/.icon-cache/
+
+# Keep only the scripts needed to build the distributable mod.
+scripts/*
+!scripts/BuildBetterEndfield.ps1
+!scripts/BuildInstaller.ps1
+!scripts/BuildVoiceCatalog.py
+!scripts/GenerateVoiceCatalogIndex.py
+!scripts/GenerateModCharacterPresets.py
+!scripts/GenerateResourceManifests.py
+!scripts/RefreshEndfieldResourceInputs.py
+!scripts/ScanCharacterAssets.py
+!scripts/UpdateResourceManifests.ps1
+!scripts/UpdateCombatAvatars.py
+
+# Native build outputs.
+native/build/
+native/shared/third_party/minhook/build/
+
+vendor/tools/
+vendor/wwiser/
+vendor/unity-libs-2021.3.34/
+*.user
+*.suo
+*.log
+*.pdb
+BetterEndfield.ini
+diagnostics/
+
+# Local reverse-engineering helpers are not distributable project sources.
+/ida_inspect_eftool.py
+/idat-local.exe
+
+# CMake build tree and local tooling output.
+build/
+output/
+.playwright-cli/
+node_modules/
+*.tsbuildinfo
+dist/

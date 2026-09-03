@@ -2,15 +2,15 @@
   "schemaVersion": 1,
   "kind": "endfield-action-manifest",
   "generatorVersion": 2,
-  "manifestVersion": "5f521eb8-5202-dcdf-2412-02d992d0d771",
-  "manifestHash": "990fc6b726a0b27026ab83b67145d02c",
+  "manifestVersion": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+  "manifestHash": "6933a7d5b377d93d18aeb7c1515a1b7f",
   "source": {
     "path": "research/current-inputs/character-presets.json",
-    "sha256": "1504228081CB498A822D6ECEF75C570D3B044BB1D5B2C63897F926EF1D8432D6"
+    "sha256": "C9DAC2CB17DBAA1EB432CD8F510BABF1B4420B3718DE2A4CE22459C1D588006B"
   },
   "stats": {
-    "characterCount": 31,
-    "actionCount": 4075,
+    "characterCount": 32,
+    "actionCount": 4210,
     "skippedCharacterCount": 1
   },
   "characters": [
@@ -20,7 +20,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0002_endminm_postmodel.prefab",
         "pathHash": "0x0B0F0EF23D692090",
-        "bundleHash": "0x0B32223C8542C2C5"
+        "bundleHash": "0x6C45EF3F1D7ECD5B"
       },
       "introSequence": {
         "sitLoop": {
@@ -174,6 +174,30 @@
           "displayName": "a_actor_endminm_battle_to_idle.fbx##a_actor_endminm_battle_to_idle",
           "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/battle/a_actor_endminm_battle_to_idle.fbx##a_actor_endminm_battle_to_idle",
           "pathHash": "0x044802B64D33C5A0",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_endminm_customized_state_back2_end",
+          "displayName": "a_actor_endminm_customized_state_back2.fbx##a_actor_endminm_customized_state_back2_end",
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/customized/a_actor_endminm_customized_state_back2.fbx##a_actor_endminm_customized_state_back2_end",
+          "pathHash": "0x067230B3AB974339",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_endminm_customized_state_back2_loop",
+          "displayName": "a_actor_endminm_customized_state_back2.fbx##a_actor_endminm_customized_state_back2_loop",
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/customized/a_actor_endminm_customized_state_back2.fbx##a_actor_endminm_customized_state_back2_loop",
+          "pathHash": "0x0089111899433E80",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_endminm_customized_state_back2_start",
+          "displayName": "a_actor_endminm_customized_state_back2.fbx##a_actor_endminm_customized_state_back2_start",
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/customized/a_actor_endminm_customized_state_back2.fbx##a_actor_endminm_customized_state_back2_start",
+          "pathHash": "0x04B81F53725B5A26",
           "nativeLoop": false,
           "duration": null
         },
@@ -1498,6 +1522,30 @@
           "duration": null
         },
         {
+          "id": "a_actor_endminm_dialog_state_praise_end",
+          "displayName": "a_actor_endminm_dialog_state_praise.fbx##a_actor_endminm_dialog_state_praise_end",
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/dialog/a_actor_endminm_dialog_state_praise.fbx##a_actor_endminm_dialog_state_praise_end",
+          "pathHash": "0x0BCA252C003B72B4",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_endminm_dialog_state_praise_loop",
+          "displayName": "a_actor_endminm_dialog_state_praise.fbx##a_actor_endminm_dialog_state_praise_loop",
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/dialog/a_actor_endminm_dialog_state_praise.fbx##a_actor_endminm_dialog_state_praise_loop",
+          "pathHash": "0x00E3127933CA481B",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_endminm_dialog_state_praise_start",
+          "displayName": "a_actor_endminm_dialog_state_praise.fbx##a_actor_endminm_dialog_state_praise_start",
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/dialog/a_actor_endminm_dialog_state_praise.fbx##a_actor_endminm_dialog_state_praise_start",
+          "pathHash": "0x050EE0739F77E353",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
           "id": "a_actor_endminm_dialog_state_reminder_end",
           "displayName": "a_actor_endminm_dialog_state_reminder.fbx##a_actor_endminm_dialog_state_reminder_end",
           "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/dialog/a_actor_endminm_dialog_state_reminder.fbx##a_actor_endminm_dialog_state_reminder_end",
@@ -2625,7 +2673,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0003_endminf_postmodel.prefab",
         "pathHash": "0x0C9AC03D143EA082",
-        "bundleHash": "0x05007AC75B29FED2"
+        "bundleHash": "0x9A33A3226FCB8566"
       },
       "introSequence": {
         "sitLoop": {
@@ -4535,6 +4583,30 @@
           "duration": null
         },
         {
+          "id": "a_actor_endminf_dialog_state_praise_end",
+          "displayName": "a_actor_endminf_dialog_state_praise.fbx##a_actor_endminf_dialog_state_praise_end",
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_state_praise.fbx##a_actor_endminf_dialog_state_praise_end",
+          "pathHash": "0x0C84DC00336EDD7B",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_endminf_dialog_state_praise_loop",
+          "displayName": "a_actor_endminf_dialog_state_praise.fbx##a_actor_endminf_dialog_state_praise_loop",
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_state_praise.fbx##a_actor_endminf_dialog_state_praise_loop",
+          "pathHash": "0x038A1C855F834F68",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_endminf_dialog_state_praise_start",
+          "displayName": "a_actor_endminf_dialog_state_praise.fbx##a_actor_endminf_dialog_state_praise_start",
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_state_praise.fbx##a_actor_endminf_dialog_state_praise_start",
+          "pathHash": "0x0D205CE73E5A65A2",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
           "id": "a_actor_endminf_dialog_state_pray_end",
           "displayName": "a_actor_endminf_dialog_state_pray.fbx##a_actor_endminf_dialog_state_pray_end",
           "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_state_pray.fbx##a_actor_endminf_dialog_state_pray_end",
@@ -5019,6 +5091,30 @@
           "displayName": "a_actor_endminf_dialog_state_squat.fbx##a_actor_endminf_dialog_state_squat_start",
           "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_state_squat.fbx##a_actor_endminf_dialog_state_squat_start",
           "pathHash": "0x0B2407AF964A7DA8",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_endminf_dialog_state_squat1_end",
+          "displayName": "a_actor_endminf_dialog_state_squat1.fbx##a_actor_endminf_dialog_state_squat1_end",
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_state_squat1.fbx##a_actor_endminf_dialog_state_squat1_end",
+          "pathHash": "0x0C46D369966E7C3F",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_endminf_dialog_state_squat1_loop",
+          "displayName": "a_actor_endminf_dialog_state_squat1.fbx##a_actor_endminf_dialog_state_squat1_loop",
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_state_squat1.fbx##a_actor_endminf_dialog_state_squat1_loop",
+          "pathHash": "0x02E29202505BEFD2",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_endminf_dialog_state_squat1_start",
+          "displayName": "a_actor_endminf_dialog_state_squat1.fbx##a_actor_endminf_dialog_state_squat1_start",
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_state_squat1.fbx##a_actor_endminf_dialog_state_squat1_start",
+          "pathHash": "0x052141027D16B5D8",
           "nativeLoop": false,
           "duration": null
         },
@@ -6118,7 +6214,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0004_pelica_postmodel.prefab",
         "pathHash": "0x06F2CE7B3D05C9CC",
-        "bundleHash": "0x0AF1ED0668AAAB45"
+        "bundleHash": "0x7C55EB52CB317DD2"
       },
       "introSequence": {
         "sitLoop": {
@@ -9204,6 +9300,14 @@
           "duration": null
         },
         {
+          "id": "a_actor_pelica_interact_bow_attack",
+          "displayName": "a_actor_pelica_interact_bow_attack.fbx##a_actor_pelica_interact_bow_attack",
+          "path": "assets/beyond/arts/entity/actor/girl/pelica/animations/interact/bow/a_actor_pelica_interact_bow_attack.fbx##a_actor_pelica_interact_bow_attack",
+          "pathHash": "0x0E79DBD9F6178CED",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
           "id": "a_actor_pelica_interact_call",
           "displayName": "a_actor_pelica_interact_call.fbx##a_actor_pelica_interact_call",
           "path": "assets/beyond/arts/entity/actor/girl/pelica/animations/interact/a_actor_pelica_interact_call.fbx##a_actor_pelica_interact_call",
@@ -9611,7 +9715,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0005_chen_postmodel.prefab",
         "pathHash": "0x031AC8CAD30401A9",
-        "bundleHash": "0x03B74C377F07729C"
+        "bundleHash": "0xA804871EAFDCB109"
       },
       "introSequence": {
         "sitLoop": {
@@ -12360,7 +12464,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0006_wolfgd_postmodel.prefab",
         "pathHash": "0x026D940422DADF27",
-        "bundleHash": "0x006A76556FFD4135"
+        "bundleHash": "0xBB8CDB15D309A089"
       },
       "introSequence": {
         "sitLoop": {
@@ -13317,7 +13421,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0007_ikut_postmodel.prefab",
         "pathHash": "0x09BEAE5BB9BDF25A",
-        "bundleHash": "0x086AF32A2C6E33DE"
+        "bundleHash": "0x313231FAB31CB132"
       },
       "introSequence": {
         "sitLoop": {
@@ -14042,7 +14146,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0009_azrila_postmodel.prefab",
         "pathHash": "0x053EC7DD14798674",
-        "bundleHash": "0x09CB43BC15FE4D08"
+        "bundleHash": "0xB515BC09CED88B13"
       },
       "introSequence": {
         "sitLoop": {
@@ -14271,7 +14375,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0011_seraph_postmodel.prefab",
         "pathHash": "0x0AED037CDCEE2809",
-        "bundleHash": "0x09130F3E84319316"
+        "bundleHash": "0x128F53E0DA3F5033"
       },
       "introSequence": {
         "sitLoop": {
@@ -15020,7 +15124,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0012_avywen_postmodel.prefab",
         "pathHash": "0x0964C1C06179597D",
-        "bundleHash": "0x09726149CDB4B37A"
+        "bundleHash": "0x84CA859573904098"
       },
       "introSequence": {
         "sitLoop": {
@@ -15769,7 +15873,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0013_aglina_postmodel.prefab",
         "pathHash": "0x0C662A5986756356",
-        "bundleHash": "0x08FF104A90936771"
+        "bundleHash": "0xE909F07FCA5C3163"
       },
       "introSequence": {
         "sitLoop": {
@@ -17206,7 +17310,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0014_aurora_postmodel.prefab",
         "pathHash": "0x047D3B13A63A193B",
-        "bundleHash": "0x072B6BFF03E4DC00"
+        "bundleHash": "0x2FC0393554FC030B"
       },
       "introSequence": {
         "sitLoop": {
@@ -17811,7 +17915,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0015_lifeng_postmodel.prefab",
         "pathHash": "0x07FF7B6D88E6E3D7",
-        "bundleHash": "0x034E73F77FB8C8AA"
+        "bundleHash": "0xAD4B8278C27DD4B5"
       },
       "introSequence": {
         "sitLoop": {
@@ -18560,7 +18664,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0016_laevat_postmodel.prefab",
         "pathHash": "0x0DC296A6DCDAE25C",
-        "bundleHash": "0x0C09B1E56A1907DF"
+        "bundleHash": "0x73C0CFAEACF157CE"
       },
       "introSequence": {
         "sitLoop": {
@@ -19805,7 +19909,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0017_yvonne_postmodel.prefab",
         "pathHash": "0x0C73D67F54F49C2F",
-        "bundleHash": "0x091B409A8F871A6D"
+        "bundleHash": "0x28293959170508FF"
       },
       "introSequence": {
         "sitLoop": {
@@ -22083,6 +22187,14 @@
           "duration": null
         },
         {
+          "id": "a_actor_yvonne_interact_camera_01",
+          "displayName": "a_actor_yvonne_interact_camera_01.fbx##a_actor_yvonne_interact_camera_01",
+          "path": "assets/beyond/arts/entity/actor/girl/yvonne/animations/interact/a_actor_yvonne_interact_camera_01.fbx##a_actor_yvonne_interact_camera_01",
+          "pathHash": "0x080F1B7C47761D2F",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
           "id": "a_actor_yvonne_interact_receive_gift",
           "displayName": "a_actor_yvonne_interact_receive_gift.fbx##a_actor_yvonne_interact_receive_gift",
           "path": "assets/beyond/arts/entity/actor/girl/yvonne/animations/interact/a_actor_yvonne_interact_receive_gift.fbx##a_actor_yvonne_interact_receive_gift",
@@ -22138,7 +22250,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0018_dapan_postmodel.prefab",
         "pathHash": "0x0105DF570CBCE34B",
-        "bundleHash": "0x07B8D3CD2792152A"
+        "bundleHash": "0x3F90882271B1AF11"
       },
       "introSequence": {
         "sitLoop": {
@@ -22823,7 +22935,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0019_karin_postmodel.prefab",
         "pathHash": "0x08CD6140BDD57787",
-        "bundleHash": "0x0AEB43B5ABEB9B55"
+        "bundleHash": "0x03EA395DC9438997"
       },
       "introSequence": {
         "sitLoop": {
@@ -23044,7 +23156,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0020_meurs_postmodel.prefab",
         "pathHash": "0x0BA2CFE1AB9CE4D4",
-        "bundleHash": "0x008D6F98D6F39D6D"
+        "bundleHash": "0x74F93DD36919D751"
       },
       "introSequence": {
         "sitLoop": {
@@ -23273,7 +23385,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0021_whiten_postmodel.prefab",
         "pathHash": "0x082002C1204E574A",
-        "bundleHash": "0x081A7FF3BBAF6784"
+        "bundleHash": "0xF03F951B9A64EE77"
       },
       "introSequence": {
         "sitLoop": {
@@ -23478,7 +23590,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0022_bounda_postmodel.prefab",
         "pathHash": "0x0EFD2D80B488DF5F",
-        "bundleHash": "0x0CDB501ABDD73A08"
+        "bundleHash": "0xA8906661C01464BA"
       },
       "introSequence": {
         "sitLoop": {
@@ -23691,7 +23803,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0023_antal_postmodel.prefab",
         "pathHash": "0x0FF04A874BF0C797",
-        "bundleHash": "0x0BB2304FAE2D47B5"
+        "bundleHash": "0x8F40561553B58521"
       },
       "introSequence": {
         "sitLoop": {
@@ -23904,7 +24016,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0024_deepfin_postmodel.prefab",
         "pathHash": "0x03C7A9CD087AF16F",
-        "bundleHash": "0x0278A4702A5A584C"
+        "bundleHash": "0x4069AA634888B09D"
       },
       "introSequence": {
         "sitLoop": {
@@ -24101,7 +24213,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0025_ardelia_postmodel.prefab",
         "pathHash": "0x037DC4359CB5AD71",
-        "bundleHash": "0x04D18DA64F1E2844"
+        "bundleHash": "0x94B6D4F20F6D4229"
       },
       "introSequence": {
         "sitLoop": {
@@ -24914,7 +25026,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0026_lastrite_postmodel.prefab",
         "pathHash": "0x05EA3F0C1AC3C02A",
-        "bundleHash": "0x0F16C326F37AD9B9"
+        "bundleHash": "0x2D3C905BF05D5AA3"
       },
       "introSequence": {
         "sitLoop": {
@@ -25335,7 +25447,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0027_tangtang_postmodel.prefab",
         "pathHash": "0x03374C55AF0F3AD9",
-        "bundleHash": "0x0ECBCF80CE2B8D3C"
+        "bundleHash": "0x0A566D974D539494"
       },
       "introSequence": {
         "sitLoop": {
@@ -27668,7 +27780,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0028_wulfa_postmodel.prefab",
         "pathHash": "0x0D1205AC233F06DB",
-        "bundleHash": "0x03C9CF516F5E194E"
+        "bundleHash": "0x0627FAA2D20B8F97"
       },
       "introSequence": {
         "sitLoop": {
@@ -29144,6 +29256,30 @@
           "pathHash": "0x0C34DE4B4410803D",
           "nativeLoop": false,
           "duration": null
+        },
+        {
+          "id": "a_actor_wulfa_interact_touch_end",
+          "displayName": "a_actor_wulfa_interact_touch_end.fbx##a_actor_wulfa_interact_touch_end",
+          "path": "assets/beyond/arts/entity/actor/loli/wulfa/animations/interact/a_actor_wulfa_interact_touch_end.fbx##a_actor_wulfa_interact_touch_end",
+          "pathHash": "0x0FCF709F9AF010BD",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_wulfa_interact_touch_loop",
+          "displayName": "a_actor_wulfa_interact_touch_loop.fbx##a_actor_wulfa_interact_touch_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/wulfa/animations/interact/a_actor_wulfa_interact_touch_loop.fbx##a_actor_wulfa_interact_touch_loop",
+          "pathHash": "0x0C4144F0D7C4B329",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_wulfa_interact_touch_start",
+          "displayName": "a_actor_wulfa_interact_touch_start.fbx##a_actor_wulfa_interact_touch_start",
+          "path": "assets/beyond/arts/entity/actor/loli/wulfa/animations/interact/a_actor_wulfa_interact_touch_start.fbx##a_actor_wulfa_interact_touch_start",
+          "pathHash": "0x0DB25ADF3F531B7D",
+          "nativeLoop": false,
+          "duration": null
         }
       ]
     },
@@ -29153,7 +29289,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0029_pograni_postmodel.prefab",
         "pathHash": "0x024BB7A96A83BE87",
-        "bundleHash": "0x08748583C38F7E73"
+        "bundleHash": "0x25BB8E85D8BE06A1"
       },
       "introSequence": {
         "sitLoop": {
@@ -29382,7 +29518,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0030_zhuangfy_postmodel.prefab",
         "pathHash": "0x0A68984D9436CE0F",
-        "bundleHash": "0x01ACC17E70292408"
+        "bundleHash": "0xBCF637E9F4F0F70E"
       },
       "introSequence": {
         "sitLoop": {
@@ -30435,7 +30571,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0031_mifu_postmodel.prefab",
         "pathHash": "0x050F4BC622E56BC5",
-        "bundleHash": "0x0F1090638E684375"
+        "bundleHash": "0xC9FA31F84FD1FA7B"
       },
       "introSequence": {
         "sitLoop": {
@@ -31456,7 +31592,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0032_lizhiyan_postmodel.prefab",
         "pathHash": "0x0C73F28350A31E2D",
-        "bundleHash": "0x0B657B21E302A9F9"
+        "bundleHash": "0xC1DBC0113A6824D1"
       },
       "introSequence": {
         "sitLoop": {
@@ -32213,7 +32349,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0033_camille_postmodel.prefab",
         "pathHash": "0x06CFD0811652AC8B",
-        "bundleHash": "0x066D9BD43DE49A1F"
+        "bundleHash": "0x74DC540C5523FA4E"
       },
       "introSequence": {
         "sitLoop": {
@@ -32821,12 +32957,985 @@
       ]
     },
     {
+      "characterId": "chr_0034_typhoea",
+      "displayName": "chr_0034_typhoea_postmodel.prefab",
+      "model": {
+        "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0034_typhoea_postmodel.prefab",
+        "pathHash": "0x09325F7EF0D10A39",
+        "bundleHash": "0xDA2BABE459212CDE"
+      },
+      "introSequence": {
+        "sitLoop": {
+          "displayName": "a_actor_typhoea_interact_sit_loop.fbx##a_actor_typhoea_interact_sit_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/a_actor_typhoea_interact_sit_loop.fbx##a_actor_typhoea_interact_sit_loop",
+          "pathHash": "0x03EA048DC6A07BEC"
+        },
+        "sitSpecial": {
+          "displayName": "a_actor_typhoea_interact_sit_sp.fbx##a_actor_typhoea_interact_sit_sp",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/a_actor_typhoea_interact_sit_sp.fbx##a_actor_typhoea_interact_sit_sp",
+          "pathHash": "0x01A7304E4493AC0E"
+        },
+        "sitToWalk": {
+          "displayName": "a_actor_typhoea_interact_sit_end.fbx##a_actor_typhoea_interact_sit_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/a_actor_typhoea_interact_sit_end.fbx##a_actor_typhoea_interact_sit_end",
+          "pathHash": "0x06FACB0465C91626"
+        },
+        "finalActionId": "a_actor_typhoea_dialog_virtual_single_walk_l"
+      },
+      "actions": [
+        {
+          "id": "a_actor_typhoea_battle_air_atk_end",
+          "displayName": "a_actor_typhoea_battle_air_atk_end.fbx##a_actor_typhoea_battle_air_atk_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_air_atk_end.fbx##a_actor_typhoea_battle_air_atk_end",
+          "pathHash": "0x0CD235AAF7BDA7D6",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_air_atk_loop",
+          "displayName": "a_actor_typhoea_battle_air_atk_loop.fbx##a_actor_typhoea_battle_air_atk_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_air_atk_loop.fbx##a_actor_typhoea_battle_air_atk_loop",
+          "pathHash": "0x0BED1446E8E30F66",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_air_atk_start",
+          "displayName": "a_actor_typhoea_battle_air_atk_start.fbx##a_actor_typhoea_battle_air_atk_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_air_atk_start.fbx##a_actor_typhoea_battle_air_atk_start",
+          "pathHash": "0x0D1B239B1A99AE96",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_attack_01",
+          "displayName": "a_actor_typhoea_battle_attack_01.fbx##a_actor_typhoea_battle_attack_01",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_attack_01.fbx##a_actor_typhoea_battle_attack_01",
+          "pathHash": "0x0CA34E06B958D996",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_attack_02",
+          "displayName": "a_actor_typhoea_battle_attack_02.fbx##a_actor_typhoea_battle_attack_02",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_attack_02.fbx##a_actor_typhoea_battle_attack_02",
+          "pathHash": "0x0E3524127F33D576",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_attack_03",
+          "displayName": "a_actor_typhoea_battle_attack_03.fbx##a_actor_typhoea_battle_attack_03",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_attack_03.fbx##a_actor_typhoea_battle_attack_03",
+          "pathHash": "0x0430C016B64E31D6",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_attack_04",
+          "displayName": "a_actor_typhoea_battle_attack_04.fbx##a_actor_typhoea_battle_attack_04",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_attack_04.fbx##a_actor_typhoea_battle_attack_04",
+          "pathHash": "0x055773FF85864EB6",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_attack_05",
+          "displayName": "a_actor_typhoea_battle_attack_05.fbx##a_actor_typhoea_battle_attack_05",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_attack_05.fbx##a_actor_typhoea_battle_attack_05",
+          "pathHash": "0x00D0D36EDE8DA816",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_combo_skill_air",
+          "displayName": "a_actor_typhoea_battle_combo_skill_air.fbx##a_actor_typhoea_battle_combo_skill_air",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_combo_skill_air.fbx##a_actor_typhoea_battle_combo_skill_air",
+          "pathHash": "0x084C72B179A52716",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_combo_skill_ground",
+          "displayName": "a_actor_typhoea_battle_combo_skill_ground.fbx##a_actor_typhoea_battle_combo_skill_ground",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_combo_skill_ground.fbx##a_actor_typhoea_battle_combo_skill_ground",
+          "pathHash": "0x03E6BA62E659C046",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_dead",
+          "displayName": "a_actor_typhoea_battle_dead.fbx##a_actor_typhoea_battle_dead",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_dead.fbx##a_actor_typhoea_battle_dead",
+          "pathHash": "0x06F7E7061CB766E6",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_normal_skill_attack_01",
+          "displayName": "a_actor_typhoea_battle_normal_skill_attack_01.fbx##a_actor_typhoea_battle_normal_skill_attack_01",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_normal_skill_attack_01.fbx##a_actor_typhoea_battle_normal_skill_attack_01",
+          "pathHash": "0x03FD40AF07EF0646",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_normal_skill_attack_02",
+          "displayName": "a_actor_typhoea_battle_normal_skill_attack_02.fbx##a_actor_typhoea_battle_normal_skill_attack_02",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_normal_skill_attack_02.fbx##a_actor_typhoea_battle_normal_skill_attack_02",
+          "pathHash": "0x09008308F72453D4",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_normal_skill_attack_03",
+          "displayName": "a_actor_typhoea_battle_normal_skill_attack_03.fbx##a_actor_typhoea_battle_normal_skill_attack_03",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_normal_skill_attack_03.fbx##a_actor_typhoea_battle_normal_skill_attack_03",
+          "pathHash": "0x0A3D4F6256B3B8CE",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_normal_skill_attack_04",
+          "displayName": "a_actor_typhoea_battle_normal_skill_attack_04.fbx##a_actor_typhoea_battle_normal_skill_attack_04",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_normal_skill_attack_04.fbx##a_actor_typhoea_battle_normal_skill_attack_04",
+          "pathHash": "0x0DBB079B0CF1555C",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_normal_skill_attack_05",
+          "displayName": "a_actor_typhoea_battle_normal_skill_attack_05.fbx##a_actor_typhoea_battle_normal_skill_attack_05",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_normal_skill_attack_05.fbx##a_actor_typhoea_battle_normal_skill_attack_05",
+          "pathHash": "0x0CB2C87DE8C4A656",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_normal_skill_end",
+          "displayName": "a_actor_typhoea_battle_normal_skill_end.fbx##a_actor_typhoea_battle_normal_skill_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_normal_skill_end.fbx##a_actor_typhoea_battle_normal_skill_end",
+          "pathHash": "0x0B424CC5F48C52FC",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_normal_skill_loop",
+          "displayName": "a_actor_typhoea_battle_normal_skill_loop.fbx##a_actor_typhoea_battle_normal_skill_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_normal_skill_loop.fbx##a_actor_typhoea_battle_normal_skill_loop",
+          "pathHash": "0x0A61B91553F18916",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_normal_skill_start",
+          "displayName": "a_actor_typhoea_battle_normal_skill_start.fbx##a_actor_typhoea_battle_normal_skill_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_normal_skill_start.fbx##a_actor_typhoea_battle_normal_skill_start",
+          "pathHash": "0x0596B5704BBF69DE",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_power_attack",
+          "displayName": "a_actor_typhoea_battle_power_attack.fbx##a_actor_typhoea_battle_power_attack",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_power_attack.fbx##a_actor_typhoea_battle_power_attack",
+          "pathHash": "0x0669D50974E4DC46",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_skill_ult",
+          "displayName": "a_actor_typhoea_battle_skill_ult.fbx##a_actor_typhoea_battle_skill_ult",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_skill_ult.fbx##a_actor_typhoea_battle_skill_ult",
+          "pathHash": "0x0E19A188B3D07A36",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_skill_ult_cam",
+          "displayName": "a_actor_typhoea_battle_skill_ult_cam.fbx##a_actor_typhoea_battle_skill_ult_cam",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_skill_ult_cam.fbx##a_actor_typhoea_battle_skill_ult_cam",
+          "pathHash": "0x00344A764B3E16F6",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_skill_ult_cam_end",
+          "displayName": "a_actor_typhoea_battle_skill_ult_cam.fbx##a_actor_typhoea_battle_skill_ult_cam_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_skill_ult_cam.fbx##a_actor_typhoea_battle_skill_ult_cam_end",
+          "pathHash": "0x0E70C5B3C2AC874C",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_skill_ult_cam_start",
+          "displayName": "a_actor_typhoea_battle_skill_ult_cam.fbx##a_actor_typhoea_battle_skill_ult_cam_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_skill_ult_cam.fbx##a_actor_typhoea_battle_skill_ult_cam_start",
+          "pathHash": "0x0C897BF4ABAA608D",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_skill_ult_flaotingmode",
+          "displayName": "a_actor_typhoea_battle_skill_ult_flaotingmode.fbx##a_actor_typhoea_battle_skill_ult_flaotingmode",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_skill_ult_flaotingmode.fbx##a_actor_typhoea_battle_skill_ult_flaotingmode",
+          "pathHash": "0x045B65639F19F8C4",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_skill_ult_flaotingmode_cam",
+          "displayName": "a_actor_typhoea_battle_skill_ult_flaotingmode_cam.fbx##a_actor_typhoea_battle_skill_ult_flaotingmode_cam",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_skill_ult_flaotingmode_cam.fbx##a_actor_typhoea_battle_skill_ult_flaotingmode_cam",
+          "pathHash": "0x05F11CEB05420644",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_skill_ult_flaotingmode_cam_end",
+          "displayName": "a_actor_typhoea_battle_skill_ult_flaotingmode_cam.fbx##a_actor_typhoea_battle_skill_ult_flaotingmode_cam_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_skill_ult_flaotingmode_cam.fbx##a_actor_typhoea_battle_skill_ult_flaotingmode_cam_end",
+          "pathHash": "0x06AC008A6437BD2E",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_battle_skill_ult_flaotingmode_cam_start",
+          "displayName": "a_actor_typhoea_battle_skill_ult_flaotingmode_cam.fbx##a_actor_typhoea_battle_skill_ult_flaotingmode_cam_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/battle/a_actor_typhoea_battle_skill_ult_flaotingmode_cam.fbx##a_actor_typhoea_battle_skill_ult_flaotingmode_cam_start",
+          "pathHash": "0x0C2C12B7883F3BB5",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_single_idle_turn_l_180",
+          "displayName": "a_actor_typhoea_dialog_single_idle_turn_l_180.fbx##a_actor_typhoea_dialog_single_idle_turn_l_180",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_single_idle_turn_l_180.fbx##a_actor_typhoea_dialog_single_idle_turn_l_180",
+          "pathHash": "0x016DBB39155DFD10",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_single_idle_turn_l_90",
+          "displayName": "a_actor_typhoea_dialog_single_idle_turn_l_90.fbx##a_actor_typhoea_dialog_single_idle_turn_l_90",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_single_idle_turn_l_90.fbx##a_actor_typhoea_dialog_single_idle_turn_l_90",
+          "pathHash": "0x07BA54CF5B091A00",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_single_idle_turn_r_180",
+          "displayName": "a_actor_typhoea_dialog_single_idle_turn_r_180.fbx##a_actor_typhoea_dialog_single_idle_turn_r_180",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_single_idle_turn_r_180.fbx##a_actor_typhoea_dialog_single_idle_turn_r_180",
+          "pathHash": "0x063E1B651C777924",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_single_idle_turn_r_90",
+          "displayName": "a_actor_typhoea_dialog_single_idle_turn_r_90.fbx##a_actor_typhoea_dialog_single_idle_turn_r_90",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_single_idle_turn_r_90.fbx##a_actor_typhoea_dialog_single_idle_turn_r_90",
+          "pathHash": "0x0F03100810B2B8C0",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_single_walk_start_l_0_r",
+          "displayName": "a_actor_typhoea_dialog_single_walk_start_l_0_r.fbx##a_actor_typhoea_dialog_single_walk_start_l_0_r",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_single_walk_start_l_0_r.fbx##a_actor_typhoea_dialog_single_walk_start_l_0_r",
+          "pathHash": "0x0FC971CF2BB9D900",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_single_walk_stop_l",
+          "displayName": "a_actor_typhoea_dialog_single_walk_stop_l.fbx##a_actor_typhoea_dialog_single_walk_stop_l",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_single_walk_stop_l.fbx##a_actor_typhoea_dialog_single_walk_stop_l",
+          "pathHash": "0x0853371D94697E54",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_single_walk_stop_r",
+          "displayName": "a_actor_typhoea_dialog_single_walk_stop_r.fbx##a_actor_typhoea_dialog_single_walk_stop_r",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_single_walk_stop_r.fbx##a_actor_typhoea_dialog_single_walk_stop_r",
+          "pathHash": "0x0CC8448747DEC7E0",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_check_end",
+          "displayName": "a_actor_typhoea_dialog_state_check.fbx##a_actor_typhoea_dialog_state_check_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_check.fbx##a_actor_typhoea_dialog_state_check_end",
+          "pathHash": "0x06911B6167CFCBB6",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_check_loop",
+          "displayName": "a_actor_typhoea_dialog_state_check.fbx##a_actor_typhoea_dialog_state_check_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_check.fbx##a_actor_typhoea_dialog_state_check_loop",
+          "pathHash": "0x009A7D0592ED245F",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_check_start",
+          "displayName": "a_actor_typhoea_dialog_state_check.fbx##a_actor_typhoea_dialog_state_check_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_check.fbx##a_actor_typhoea_dialog_state_check_start",
+          "pathHash": "0x08B4889DAB1EBC37",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_check2_end",
+          "displayName": "a_actor_typhoea_dialog_state_check2.fbx##a_actor_typhoea_dialog_state_check2_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_check2.fbx##a_actor_typhoea_dialog_state_check2_end",
+          "pathHash": "0x017B349C35D113CA",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_check2_loop",
+          "displayName": "a_actor_typhoea_dialog_state_check2.fbx##a_actor_typhoea_dialog_state_check2_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_check2.fbx##a_actor_typhoea_dialog_state_check2_loop",
+          "pathHash": "0x06B2F4E380F69317",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_check2_start",
+          "displayName": "a_actor_typhoea_dialog_state_check2.fbx##a_actor_typhoea_dialog_state_check2_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_check2.fbx##a_actor_typhoea_dialog_state_check2_start",
+          "pathHash": "0x00E1C7BCD71AFC4F",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_happywalk_end",
+          "displayName": "a_actor_typhoea_dialog_state_happywalk.fbx##a_actor_typhoea_dialog_state_happywalk_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_happywalk.fbx##a_actor_typhoea_dialog_state_happywalk_end",
+          "pathHash": "0x0FA245DB3428A336",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_happywalk_loop",
+          "displayName": "a_actor_typhoea_dialog_state_happywalk.fbx##a_actor_typhoea_dialog_state_happywalk_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_happywalk.fbx##a_actor_typhoea_dialog_state_happywalk_loop",
+          "pathHash": "0x0563B52DE0F0BBDF",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_happywalk_start",
+          "displayName": "a_actor_typhoea_dialog_state_happywalk.fbx##a_actor_typhoea_dialog_state_happywalk_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_happywalk.fbx##a_actor_typhoea_dialog_state_happywalk_start",
+          "pathHash": "0x03EB0251029283B7",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_happywrite_loop",
+          "displayName": "a_actor_typhoea_dialog_state_happywrite.fbx##a_actor_typhoea_dialog_state_happywrite_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_happywrite.fbx##a_actor_typhoea_dialog_state_happywrite_loop",
+          "pathHash": "0x011E10296751D88B",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_idle_loop",
+          "displayName": "a_actor_typhoea_dialog_state_idle.fbx##a_actor_typhoea_dialog_state_idle_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_idle.fbx##a_actor_typhoea_dialog_state_idle_loop",
+          "pathHash": "0x0738A90ACE7D3BD7",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_kneelpray_loop",
+          "displayName": "a_actor_typhoea_dialog_state_kneelpray.fbx##a_actor_typhoea_dialog_state_kneelpray_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_kneelpray.fbx##a_actor_typhoea_dialog_state_kneelpray_loop",
+          "pathHash": "0x0419DA7143070FDF",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_kneelpray_start",
+          "displayName": "a_actor_typhoea_dialog_state_kneelpray.fbx##a_actor_typhoea_dialog_state_kneelpray_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_kneelpray.fbx##a_actor_typhoea_dialog_state_kneelpray_start",
+          "pathHash": "0x0FB1973A1BD617B7",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_kneelpray_derived_write_end",
+          "displayName": "a_actor_typhoea_dialog_state_kneelpray_derived_write.fbx##a_actor_typhoea_dialog_state_kneelpray_derived_write_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_kneelpray_derived_write.fbx##a_actor_typhoea_dialog_state_kneelpray_derived_write_end",
+          "pathHash": "0x0BF71BC3DB8FF4D6",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_kneelpray_derived_write_loop",
+          "displayName": "a_actor_typhoea_dialog_state_kneelpray_derived_write.fbx##a_actor_typhoea_dialog_state_kneelpray_derived_write_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_kneelpray_derived_write.fbx##a_actor_typhoea_dialog_state_kneelpray_derived_write_loop",
+          "pathHash": "0x08D06270E5D9F6FF",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_kneelpray_derived_write_start",
+          "displayName": "a_actor_typhoea_dialog_state_kneelpray_derived_write.fbx##a_actor_typhoea_dialog_state_kneelpray_derived_write_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_kneelpray_derived_write.fbx##a_actor_typhoea_dialog_state_kneelpray_derived_write_start",
+          "pathHash": "0x0ADA951FEA9E3617",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_rubhand_end",
+          "displayName": "a_actor_typhoea_dialog_state_rubhand.fbx##a_actor_typhoea_dialog_state_rubhand_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_rubhand.fbx##a_actor_typhoea_dialog_state_rubhand_end",
+          "pathHash": "0x00262506EC743376",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_rubhand_loop",
+          "displayName": "a_actor_typhoea_dialog_state_rubhand.fbx##a_actor_typhoea_dialog_state_rubhand_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_rubhand.fbx##a_actor_typhoea_dialog_state_rubhand_loop",
+          "pathHash": "0x0ED6F75EF02E3C1F",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_rubhand_start",
+          "displayName": "a_actor_typhoea_dialog_state_rubhand.fbx##a_actor_typhoea_dialog_state_rubhand_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_rubhand.fbx##a_actor_typhoea_dialog_state_rubhand_start",
+          "pathHash": "0x04EAC6F3C44FFB77",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_search_end",
+          "displayName": "a_actor_typhoea_dialog_state_search.fbx##a_actor_typhoea_dialog_state_search_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_search.fbx##a_actor_typhoea_dialog_state_search_end",
+          "pathHash": "0x0AB82C1BB7629426",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_search_loop",
+          "displayName": "a_actor_typhoea_dialog_state_search.fbx##a_actor_typhoea_dialog_state_search_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_search.fbx##a_actor_typhoea_dialog_state_search_loop",
+          "pathHash": "0x06B855B0998A5A8F",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_searchhappy_loop",
+          "displayName": "a_actor_typhoea_dialog_state_searchhappy.fbx##a_actor_typhoea_dialog_state_searchhappy_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_searchhappy.fbx##a_actor_typhoea_dialog_state_searchhappy_loop",
+          "pathHash": "0x0443FBFA177FD4DF",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_searchhappy_start",
+          "displayName": "a_actor_typhoea_dialog_state_searchhappy.fbx##a_actor_typhoea_dialog_state_searchhappy_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_searchhappy.fbx##a_actor_typhoea_dialog_state_searchhappy_start",
+          "pathHash": "0x0AC1919BCA54B077",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_smalljump_end",
+          "displayName": "a_actor_typhoea_dialog_state_smalljump.fbx##a_actor_typhoea_dialog_state_smalljump_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_smalljump.fbx##a_actor_typhoea_dialog_state_smalljump_end",
+          "pathHash": "0x03DFE33BC5A7F736",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_smalljump_loop",
+          "displayName": "a_actor_typhoea_dialog_state_smalljump.fbx##a_actor_typhoea_dialog_state_smalljump_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_smalljump.fbx##a_actor_typhoea_dialog_state_smalljump_loop",
+          "pathHash": "0x03983ECE5D0EFFDF",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_smalljump_start",
+          "displayName": "a_actor_typhoea_dialog_state_smalljump.fbx##a_actor_typhoea_dialog_state_smalljump_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_smalljump.fbx##a_actor_typhoea_dialog_state_smalljump_start",
+          "pathHash": "0x0FDC4BC3C3FC57B7",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_takearrow_end",
+          "displayName": "a_actor_typhoea_dialog_state_takearrow.fbx##a_actor_typhoea_dialog_state_takearrow_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_takearrow.fbx##a_actor_typhoea_dialog_state_takearrow_end",
+          "pathHash": "0x0DD411905D24AFF6",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_takearrow_loop",
+          "displayName": "a_actor_typhoea_dialog_state_takearrow.fbx##a_actor_typhoea_dialog_state_takearrow_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_takearrow.fbx##a_actor_typhoea_dialog_state_takearrow_loop",
+          "pathHash": "0x03E56E057B43931F",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_takearrow_start",
+          "displayName": "a_actor_typhoea_dialog_state_takearrow.fbx##a_actor_typhoea_dialog_state_takearrow_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_takearrow.fbx##a_actor_typhoea_dialog_state_takearrow_start",
+          "pathHash": "0x0856447C9ECA75F7",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_wave_end",
+          "displayName": "a_actor_typhoea_dialog_state_wave.fbx##a_actor_typhoea_dialog_state_wave_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_wave.fbx##a_actor_typhoea_dialog_state_wave_end",
+          "pathHash": "0x071D051DBB3C5E24",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_wave_loop",
+          "displayName": "a_actor_typhoea_dialog_state_wave.fbx##a_actor_typhoea_dialog_state_wave_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_wave.fbx##a_actor_typhoea_dialog_state_wave_loop",
+          "pathHash": "0x0B0DEC6968F22F3B",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_state_wave_start",
+          "displayName": "a_actor_typhoea_dialog_state_wave.fbx##a_actor_typhoea_dialog_state_wave_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_state_wave.fbx##a_actor_typhoea_dialog_state_wave_start",
+          "pathHash": "0x0ABDAA1318633EEB",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_single_idle_nod",
+          "displayName": "a_actor_typhoea_dialog_virtual_single_idle_nod.fbx##a_actor_typhoea_dialog_virtual_single_idle_nod",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_single_idle_nod.fbx##a_actor_typhoea_dialog_virtual_single_idle_nod",
+          "pathHash": "0x0102317655BF2D40",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_single_idle_shake",
+          "displayName": "a_actor_typhoea_dialog_virtual_single_idle_shake.fbx##a_actor_typhoea_dialog_virtual_single_idle_shake",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_single_idle_shake.fbx##a_actor_typhoea_dialog_virtual_single_idle_shake",
+          "pathHash": "0x0E5B07B7134A40C0",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_single_idle_talkhands",
+          "displayName": "a_actor_typhoea_dialog_virtual_single_idle_talkhands.fbx##a_actor_typhoea_dialog_virtual_single_idle_talkhands",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_single_idle_talkhands.fbx##a_actor_typhoea_dialog_virtual_single_idle_talkhands",
+          "pathHash": "0x07296209EB52AFC0",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_single_idle_talklefthand1",
+          "displayName": "a_actor_typhoea_dialog_virtual_single_idle_talklefthand1.fbx##a_actor_typhoea_dialog_virtual_single_idle_talklefthand1",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_single_idle_talklefthand1.fbx##a_actor_typhoea_dialog_virtual_single_idle_talklefthand1",
+          "pathHash": "0x08B639ADBB75CEA0",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_single_idle_talklefthand2",
+          "displayName": "a_actor_typhoea_dialog_virtual_single_idle_talklefthand2.fbx##a_actor_typhoea_dialog_virtual_single_idle_talklefthand2",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_single_idle_talklefthand2.fbx##a_actor_typhoea_dialog_virtual_single_idle_talklefthand2",
+          "pathHash": "0x09A2FD682E776200",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_single_idle_talkrighthand1",
+          "displayName": "a_actor_typhoea_dialog_virtual_single_idle_talkrighthand1.fbx##a_actor_typhoea_dialog_virtual_single_idle_talkrighthand1",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_single_idle_talkrighthand1.fbx##a_actor_typhoea_dialog_virtual_single_idle_talkrighthand1",
+          "pathHash": "0x0E2B008E91E39534",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_single_idle_talkrighthand2",
+          "displayName": "a_actor_typhoea_dialog_virtual_single_idle_talkrighthand2.fbx##a_actor_typhoea_dialog_virtual_single_idle_talkrighthand2",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_single_idle_talkrighthand2.fbx##a_actor_typhoea_dialog_virtual_single_idle_talkrighthand2",
+          "pathHash": "0x0952538DF008E806",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_single_walk_l",
+          "displayName": "a_actor_typhoea_dialog_virtual_single_walk_l.fbx##a_actor_typhoea_dialog_virtual_single_walk_l",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_single_walk_l.fbx##a_actor_typhoea_dialog_virtual_single_walk_l",
+          "pathHash": "0x0FB50EEDCB26EF20",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_single_walk_m",
+          "displayName": "a_actor_typhoea_dialog_virtual_single_walk_m.fbx##a_actor_typhoea_dialog_virtual_single_walk_m",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_single_walk_m.fbx##a_actor_typhoea_dialog_virtual_single_walk_m",
+          "pathHash": "0x0DC3C86D80E41640",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_single_walk_s",
+          "displayName": "a_actor_typhoea_dialog_virtual_single_walk_s.fbx##a_actor_typhoea_dialog_virtual_single_walk_s",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_single_walk_s.fbx##a_actor_typhoea_dialog_virtual_single_walk_s",
+          "pathHash": "0x015C2E2864429F00",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_akimbo1_end",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_akimbo1.fbx##a_actor_typhoea_dialog_virtual_state_akimbo1_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_akimbo1.fbx##a_actor_typhoea_dialog_virtual_state_akimbo1_end",
+          "pathHash": "0x09F5FD3E821059B6",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_akimbo1_loop",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_akimbo1.fbx##a_actor_typhoea_dialog_virtual_state_akimbo1_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_akimbo1.fbx##a_actor_typhoea_dialog_virtual_state_akimbo1_loop",
+          "pathHash": "0x08B8B134646C1C1F",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_akimbo1_start",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_akimbo1.fbx##a_actor_typhoea_dialog_virtual_state_akimbo1_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_akimbo1.fbx##a_actor_typhoea_dialog_virtual_state_akimbo1_start",
+          "pathHash": "0x08B5A606B74E1037",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_akimboleft_end",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_akimboleft.fbx##a_actor_typhoea_dialog_virtual_state_akimboleft_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_akimboleft.fbx##a_actor_typhoea_dialog_virtual_state_akimboleft_end",
+          "pathHash": "0x0AC407EE7942EDF6",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_akimboleft_loop",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_akimboleft.fbx##a_actor_typhoea_dialog_virtual_state_akimboleft_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_akimboleft.fbx##a_actor_typhoea_dialog_virtual_state_akimboleft_loop",
+          "pathHash": "0x0DB7DBF7D8CBFADF",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_akimboleft_start",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_akimboleft.fbx##a_actor_typhoea_dialog_virtual_state_akimboleft_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_akimboleft.fbx##a_actor_typhoea_dialog_virtual_state_akimboleft_start",
+          "pathHash": "0x034506E44118DEF7",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_akimboright_end",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_akimboright.fbx##a_actor_typhoea_dialog_virtual_state_akimboright_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_akimboright.fbx##a_actor_typhoea_dialog_virtual_state_akimboright_end",
+          "pathHash": "0x0EAA482B0D0E6416",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_akimboright_loop",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_akimboright.fbx##a_actor_typhoea_dialog_virtual_state_akimboright_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_akimboright.fbx##a_actor_typhoea_dialog_virtual_state_akimboright_loop",
+          "pathHash": "0x02927035323F6BBF",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_akimboright_start",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_akimboright.fbx##a_actor_typhoea_dialog_virtual_state_akimboright_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_akimboright.fbx##a_actor_typhoea_dialog_virtual_state_akimboright_start",
+          "pathHash": "0x03F34E9BF8303FD7",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_earphone_end",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_earphone.fbx##a_actor_typhoea_dialog_virtual_state_earphone_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_earphone.fbx##a_actor_typhoea_dialog_virtual_state_earphone_end",
+          "pathHash": "0x006CF18F54C7D66A",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_earphone_loop",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_earphone.fbx##a_actor_typhoea_dialog_virtual_state_earphone_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_earphone.fbx##a_actor_typhoea_dialog_virtual_state_earphone_loop",
+          "pathHash": "0x0907606E17EC75B7",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_earphone_start",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_earphone.fbx##a_actor_typhoea_dialog_virtual_state_earphone_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_earphone.fbx##a_actor_typhoea_dialog_virtual_state_earphone_start",
+          "pathHash": "0x0E0B2313D4EA12AF",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_introduction_end",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_introduction.fbx##a_actor_typhoea_dialog_virtual_state_introduction_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_introduction.fbx##a_actor_typhoea_dialog_virtual_state_introduction_end",
+          "pathHash": "0x09FB1242D4143AC6",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_introduction_loop",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_introduction.fbx##a_actor_typhoea_dialog_virtual_state_introduction_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_introduction.fbx##a_actor_typhoea_dialog_virtual_state_introduction_loop",
+          "pathHash": "0x0C5E8CFA398A9D8F",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_introduction_start",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_introduction.fbx##a_actor_typhoea_dialog_virtual_state_introduction_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_introduction.fbx##a_actor_typhoea_dialog_virtual_state_introduction_start",
+          "pathHash": "0x095D595F610076F7",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_scratchhead_end",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_scratchhead.fbx##a_actor_typhoea_dialog_virtual_state_scratchhead_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_scratchhead.fbx##a_actor_typhoea_dialog_virtual_state_scratchhead_end",
+          "pathHash": "0x0492A2F765AFFBF6",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_scratchhead_loop",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_scratchhead.fbx##a_actor_typhoea_dialog_virtual_state_scratchhead_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_scratchhead.fbx##a_actor_typhoea_dialog_virtual_state_scratchhead_loop",
+          "pathHash": "0x02E95633E9D01F1F",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_scratchhead_start",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_scratchhead.fbx##a_actor_typhoea_dialog_virtual_state_scratchhead_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_scratchhead.fbx##a_actor_typhoea_dialog_virtual_state_scratchhead_start",
+          "pathHash": "0x06E702C4B8BF41F7",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_think1_end",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_think1.fbx##a_actor_typhoea_dialog_virtual_state_think1_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_think1.fbx##a_actor_typhoea_dialog_virtual_state_think1_end",
+          "pathHash": "0x0F7076DBA1C873A0",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_think1_loop",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_think1.fbx##a_actor_typhoea_dialog_virtual_state_think1_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_think1.fbx##a_actor_typhoea_dialog_virtual_state_think1_loop",
+          "pathHash": "0x0D772F32D3F86BD3",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_dialog_virtual_state_think1_start",
+          "displayName": "a_actor_typhoea_dialog_virtual_state_think1.fbx##a_actor_typhoea_dialog_virtual_state_think1_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/dialog/a_actor_typhoea_dialog_virtual_state_think1.fbx##a_actor_typhoea_dialog_virtual_state_think1_start",
+          "pathHash": "0x0D7F50FA8F18F1D3",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_bow_attack_01",
+          "displayName": "a_actor_typhoea_interact_bow_attack_01.fbx##a_actor_typhoea_interact_bow_attack_01",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/bow/a_actor_typhoea_interact_bow_attack_01.fbx##a_actor_typhoea_interact_bow_attack_01",
+          "pathHash": "0x076FA777E1B23607",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_bow_attack_02",
+          "displayName": "a_actor_typhoea_interact_bow_attack_02.fbx##a_actor_typhoea_interact_bow_attack_02",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/bow/a_actor_typhoea_interact_bow_attack_02.fbx##a_actor_typhoea_interact_bow_attack_02",
+          "pathHash": "0x0A79B321BCA75587",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_bow_attack_03",
+          "displayName": "a_actor_typhoea_interact_bow_attack_03.fbx##a_actor_typhoea_interact_bow_attack_03",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/bow/a_actor_typhoea_interact_bow_attack_03.fbx##a_actor_typhoea_interact_bow_attack_03",
+          "pathHash": "0x0D07B63C32EC4007",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_bow_attack_04",
+          "displayName": "a_actor_typhoea_interact_bow_attack_04.fbx##a_actor_typhoea_interact_bow_attack_04",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/bow/a_actor_typhoea_interact_bow_attack_04.fbx##a_actor_typhoea_interact_bow_attack_04",
+          "pathHash": "0x0EFE7EB401D85B87",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_camera_01",
+          "displayName": "a_actor_typhoea_interact_camera_01.fbx##a_actor_typhoea_interact_camera_01",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/a_actor_typhoea_interact_camera_01.fbx##a_actor_typhoea_interact_camera_01",
+          "pathHash": "0x07E6DCE27A4ED0E6",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_check_end_dislike",
+          "displayName": "a_actor_typhoea_interact_check.fbx##a_actor_typhoea_interact_check_end_dislike",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/a_actor_typhoea_interact_check.fbx##a_actor_typhoea_interact_check_end_dislike",
+          "pathHash": "0x09313A908B6CC280",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_check_loop",
+          "displayName": "a_actor_typhoea_interact_check.fbx##a_actor_typhoea_interact_check_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/a_actor_typhoea_interact_check.fbx##a_actor_typhoea_interact_check_loop",
+          "pathHash": "0x0F6C8F5109200789",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_check_start",
+          "displayName": "a_actor_typhoea_interact_check.fbx##a_actor_typhoea_interact_check_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/a_actor_typhoea_interact_check.fbx##a_actor_typhoea_interact_check_start",
+          "pathHash": "0x0E4A0BC1C4BDB2B9",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_check_end",
+          "displayName": "a_actor_typhoea_interact_check_end.fbx##a_actor_typhoea_interact_check_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/a_actor_typhoea_interact_check_end.fbx##a_actor_typhoea_interact_check_end",
+          "pathHash": "0x00420CC40A1AEF66",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_receive_gift",
+          "displayName": "a_actor_typhoea_interact_receive_gift.fbx##a_actor_typhoea_interact_receive_gift",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/a_actor_typhoea_interact_receive_gift.fbx##a_actor_typhoea_interact_receive_gift",
+          "pathHash": "0x074AF1EBAA4C2D56",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_sit_end",
+          "displayName": "a_actor_typhoea_interact_sit_end.fbx##a_actor_typhoea_interact_sit_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/a_actor_typhoea_interact_sit_end.fbx##a_actor_typhoea_interact_sit_end",
+          "pathHash": "0x06FACB0465C91626",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_sit_loop",
+          "displayName": "a_actor_typhoea_interact_sit_loop.fbx##a_actor_typhoea_interact_sit_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/a_actor_typhoea_interact_sit_loop.fbx##a_actor_typhoea_interact_sit_loop",
+          "pathHash": "0x03EA048DC6A07BEC",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_sit_sp",
+          "displayName": "a_actor_typhoea_interact_sit_sp.fbx##a_actor_typhoea_interact_sit_sp",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/a_actor_typhoea_interact_sit_sp.fbx##a_actor_typhoea_interact_sit_sp",
+          "pathHash": "0x01A7304E4493AC0E",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_sit_start",
+          "displayName": "a_actor_typhoea_interact_sit_start.fbx##a_actor_typhoea_interact_sit_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/a_actor_typhoea_interact_sit_start.fbx##a_actor_typhoea_interact_sit_start",
+          "pathHash": "0x0D94877028D9C5E6",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_thinkship_end",
+          "displayName": "a_actor_typhoea_interact_thinkship.fbx##a_actor_typhoea_interact_thinkship_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/a_actor_typhoea_interact_thinkship.fbx##a_actor_typhoea_interact_thinkship_end",
+          "pathHash": "0x06BFE4924FD6E83C",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_thinkship_loop",
+          "displayName": "a_actor_typhoea_interact_thinkship.fbx##a_actor_typhoea_interact_thinkship_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/a_actor_typhoea_interact_thinkship.fbx##a_actor_typhoea_interact_thinkship_loop",
+          "pathHash": "0x09A490176FD2BF89",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_thinkship_start",
+          "displayName": "a_actor_typhoea_interact_thinkship.fbx##a_actor_typhoea_interact_thinkship_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/a_actor_typhoea_interact_thinkship.fbx##a_actor_typhoea_interact_thinkship_start",
+          "pathHash": "0x0EBC759E55194AB9",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_touch_end",
+          "displayName": "a_actor_typhoea_interact_touch_end.fbx##a_actor_typhoea_interact_touch_end",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/a_actor_typhoea_interact_touch_end.fbx##a_actor_typhoea_interact_touch_end",
+          "pathHash": "0x0BA9B6D7F21087E6",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_touch_loop",
+          "displayName": "a_actor_typhoea_interact_touch_loop.fbx##a_actor_typhoea_interact_touch_loop",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/a_actor_typhoea_interact_touch_loop.fbx##a_actor_typhoea_interact_touch_loop",
+          "pathHash": "0x054AECDDD8410CBE",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_typhoea_interact_touch_start",
+          "displayName": "a_actor_typhoea_interact_touch_start.fbx##a_actor_typhoea_interact_touch_start",
+          "path": "assets/beyond/arts/entity/actor/loli/typhoea/animations/interact/a_actor_typhoea_interact_touch_start.fbx##a_actor_typhoea_interact_touch_start",
+          "pathHash": "0x065E85B214A06626",
+          "nativeLoop": false,
+          "duration": null
+        }
+      ]
+    },
+    {
       "characterId": "chr_0035_liino",
       "displayName": "chr_0035_liino_postmodel.prefab",
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0035_liino_postmodel.prefab",
         "pathHash": "0x0C3F66CB23A3ECAF",
-        "bundleHash": "0x057B1F8D8A1A5124"
+        "bundleHash": "0xAC7CF315D05B5318"
       },
       "introSequence": {
         "sitLoop": {
@@ -33519,27 +34628,5 @@
       "characterId": "chr_0036_jsspsi",
       "reason": "incomplete model/sit chain"
     }
-  ],
-  "versionInputs": {
-    "snapshot": {
-      "path": "research/current-inputs/input-snapshot.json",
-      "sha256": "C1CA18F17978A3F196D03F5863DE4A2EDC8043CE587D4B0BFE974BFF31E56403"
-    },
-    "overlayOrder": [
-      "StreamingAssets",
-      "Persistent"
-    ],
-    "files": [
-      {
-        "path": "Bundles/Windows/manifest.hgmmap",
-        "size": 47235775,
-        "sha256": "BF8AF16CBD7ACA2E1498CBC7F266779930934A020983A36108CB92E58CCB8B2F"
-      },
-      {
-        "path": "TableCfg/AudioDialog.bytes",
-        "size": 4697156,
-        "sha256": "533763086BE069FC42CF7E48669601A921506E0A8F09A8FDC6A22879C8827E82"
-      }
-    ]
-  }
+  ]
 }

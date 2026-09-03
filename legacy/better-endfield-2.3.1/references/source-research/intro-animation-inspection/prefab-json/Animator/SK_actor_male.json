@@ -1,0 +1,23 @@
+{
+  "m_Avatar": {
+    "m_FileID": 0,
+    "m_PathID": 0,
+    "Name": "",
+    "IsNull": true
+  },
+  "m_Controller": {
+    "m_FileID": 0,
+    "m_PathID": 0,
+    "Name": "",
+    "IsNull": true
+  },
+  "m_HasTransformHierarchy": false,
+  "m_Enabled": 1,
+  "m_GameObject": {
+    "m_FileID": 0,
+    "m_PathID": 7681478902439637471,
+    "Name": "SK_actor_male",
+    "IsNull": false
+  },
+  "Name": "SK_actor_male"
+}

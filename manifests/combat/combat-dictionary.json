@@ -2,50 +2,50 @@
   "metadata": {
     "schemaVersion": 1,
     "generator": "CombatDataExporter v1.0",
-    "exportedAt": "2026-08-28T19:45:02.595257+00:00",
+    "exportedAt": "2026-09-02T13:29:34.312931+00:00",
     "source": {
       "kind": "persistent+base",
-      "refreshedAt": "2026-08-26T10:49:41.911325+00:00",
+      "refreshedAt": "2026-09-02T13:28:05.277080+00:00",
       "gamePath": "E:\\Endfield Game",
       "baseVfs": "E:\\Endfield Game\\Endfield_Data\\StreamingAssets",
       "persistentVfs": "E:\\Endfield Game\\Endfield_Data\\Persistent",
-      "tableCount": 693,
+      "tableCount": 724,
       "requiredSha256": {
-        "CharacterTable.json": "222fec4688210db952614380eee393e1683523011a787b476061317057fe3353",
-        "CharGrowthTable.json": "84365c850aa504307bb3ed349bf49bc3d3511e62f6c68be24352c6a2f620dafd",
-        "I18nTextTable_CN.json": "fde82e5c5c27f68b6a5f73ef1b2f65ef008e520b81b1fd52c05dad52156640f7",
-        "ItemTable.json": "7285ad0c39010cd6bae812f300be491698577c2569f50eddeb21389f8c3c1c5c",
-        "WeaponBasicTable.json": "0299c35387dd20576659ea9085f80d9b5ce27aeddb1275890845a45376d2e326",
-        "EquipTable.json": "a179b72c85813a34c78d3952de5dcedd5ed97188d012467613214395494aeb7b",
-        "EquipSuitTable.json": "28ac9b205e9c9a11deee3e7842fecd665f243a7a794243d34e14aa66e5e626f6",
-        "DungeonTable.json": "82670f5bd29a890f8fc26ab9a15699dfdc1fc31d47216342d8de1234708b4921"
+        "CharacterTable.json": "037bff20503c6a562293885a5b6af2115307039d58c1d0699266b57b6e8db96f",
+        "CharGrowthTable.json": "78fbdff0d961fd19f0b394f7a74c2afbbcf5b5294111fb88ccd1d637625b0ff2",
+        "I18nTextTable_CN.json": "78868da25388a2c5b804b519f8d27ac999493f2524c82c0963d7277c685e9cd4",
+        "ItemTable.json": "fed97c346da9b22f5306ab9a7b7ccb02896a4154bcd0c6ef925a41e0a898d61d",
+        "WeaponBasicTable.json": "6998ff9a98fb3e68ceee326ea88dc4aa2ab12850e5881faa5cc96c097d48c56d",
+        "EquipTable.json": "ff511db7354ef0d4b37fb5d1226453e98afdbeb09753ed11fce34819770b0650",
+        "EquipSuitTable.json": "b937764bec054fc2028a9d57d9105200c690dbb462227205326ba585e5e7a430",
+        "DungeonTable.json": "1be0a1bdcbdfbb821c4da34d1a02af5c0499afedb36c1c761264254e289e6c11"
       }
     },
     "counts": {
-      "characters": 32,
-      "skills": 251,
-      "talents": 122,
-      "weapons": 77,
-      "suits": 23,
-      "equipment": 243,
-      "dungeons": 307,
-      "dungeonSeries": 77,
+      "characters": 33,
+      "skills": 257,
+      "talents": 127,
+      "weapons": 79,
+      "suits": 24,
+      "equipment": 258,
+      "dungeons": 354,
+      "dungeonSeries": 82,
       "buffs": 182,
-      "buffSourceMappings": 592,
-      "buffSourceCandidates": 1568
+      "buffSourceMappings": 632,
+      "buffSourceCandidates": 1784
     },
     "buffSourceIndex": {
       "schemaVersion": 2,
-      "sourceSha256": "c3f6a66f2b0153759b5d144d3cc369992befa8e8925906c29cecafb6c9a1ad96",
-      "skillConfigs": 2459,
-      "buffConfigs": 2678,
-      "referenceEdges": 10499,
-      "sourceRoots": 679,
+      "sourceSha256": "81139cac85655e089f49dd4ac7c7142da7c6bc35fcc4d45d27eda9c6c9b6a82d",
+      "skillConfigs": 2621,
+      "buffConfigs": 2872,
+      "referenceEdges": 11423,
+      "sourceRoots": 710,
       "missingRoots": 0,
-      "mappedBuffs": 592,
-      "candidateRows": 1568,
-      "ambiguousBuffs": 237,
-      "skillBuffEdges": 2178
+      "mappedBuffs": 632,
+      "candidateRows": 1784,
+      "ambiguousBuffs": 263,
+      "skillBuffEdges": 2383
     }
   },
   "characters": {
@@ -378,6 +378,17 @@
       "department": "ENDFIELD INDUSTRIES",
       "defaultWeaponId": "wpn_lance_0009",
       "iconAvatar": "icon_head_chr_0033_camille"
+    },
+    "chr_0034_typhoea": {
+      "name": "提弗洛斯",
+      "engName": "",
+      "rarity": 6,
+      "profession": 8,
+      "weaponType": 2,
+      "charTypeId": "Natural",
+      "department": "ENDFIELD INDUSTRIES",
+      "defaultWeaponId": "wpn_funnel_0002",
+      "iconAvatar": "icon_head_chr_0034_typhoea"
     },
     "chr_0035_liino": {
       "name": "梨诺",
@@ -1791,6 +1802,60 @@
         "chr_0033_camille_ultimate_skill"
       ]
     },
+    "chr_0034_typhoea_ComboSkill": {
+      "characterId": "chr_0034_typhoea",
+      "name": "野棘丛生",
+      "category": "combo",
+      "desc": "当自身<#ba.arrowenergy>启示</>已满时可以发动。\n将当前<#ba.arrowenergy>启示</>全部转化为<#ba.arrownum>猎矢</>，并且重置空中普通攻击次数。\n凝聚“猎手的注视”向目标齐射，在目标区域形成<@ba.key>箭阵</>。处于<@ba.key>箭阵</>内的敌人会持续受到<@ba.natur>自然伤害</>和<#ba.slow>缓速</>，同时受到的<#ba.naturalburst>自然爆发</>伤害提高。\n<@ba.info>每2点启示可以转化为1枚猎矢。</>",
+      "iconId": "icon_combo_skill_typhoea_01",
+      "skillIds": [
+        "chr_0034_typhoea_combo_skill",
+        "chr_0034_typhoea_combo_skillfloating"
+      ]
+    },
+    "chr_0034_typhoea_NormalAttack": {
+      "characterId": "chr_0034_typhoea",
+      "name": "追猎荒原",
+      "category": "attack",
+      "desc": "普通攻击：\n对敌人进行至多5段攻击，造成<@ba.natur>自然伤害</>。作为主控干员时，<#ba.lastcombo>重击</>会造成<@ba.poise>{poise:0}</>点失衡。\n\n下落攻击：\n处于空中时使用普通攻击，会下落并攻击附近敌人，造成<@ba.natur>自然伤害</>。\n\n处决攻击：\n附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量<@ba.natur>自然伤害</>并恢复一定技力。",
+      "iconId": "icon_attack_funnel",
+      "skillIds": [
+        "chr_0034_typhoea_attack1",
+        "chr_0034_typhoea_attack2",
+        "chr_0034_typhoea_attack3",
+        "chr_0034_typhoea_attack4",
+        "chr_0034_typhoea_attack5",
+        "chr_0034_typhoea_power_attack",
+        "chr_0034_typhoea_plunging_attack_end"
+      ]
+    },
+    "chr_0034_typhoea_NormalSkill": {
+      "characterId": "chr_0034_typhoea",
+      "name": "风矢穿林",
+      "category": "skill",
+      "desc": "跃入空中进入短暂<@ba.key>浮空</>状态，期间可施放5次空中普通攻击，每次可同时攻击至多2名目标，造成<@ba.natur>自然伤害</>。\n每次空中普通攻击若命中带有<#ba.naturalinflict>自然附着</>的敌人，则消耗目标身上的1层<#ba.naturalinflict>自然附着</>，获得1点<#ba.arrowenergy>启示</>，并额外获得终结技能量。\n若自身仍存有<#ba.arrownum>猎矢</>，则会消耗1枚<#ba.arrownum>猎矢</>，将空中普通攻击转化为<@ba.key>强化射击</>。\n<@ba.key>强化射击</>：命中后额外强制造成一次<#ba.naturalburst>自然爆发</>；若消耗了目标身上的<#ba.naturalinflict>自然附着</>，则将本次造成的<#ba.naturalburst>自然爆发</>伤害提升至原本的<@ba.vup>{enchence_burst_damage_rate:0.0}</>倍。\n<@ba.info>作为主控干员时，第五次空中普通攻击同时视为重击与强化射击，且无需消耗猎矢。</>",
+      "iconId": "icon_skill_typhoea_01",
+      "skillIds": [
+        "chr_0034_typhoea_normal_skill_floating_start",
+        "chr_0034_typhoea_normal_skill_floating_loop",
+        "chr_0034_typhoea_normal_skill_floating_end",
+        "chr_0034_typhoea_floating_attack1",
+        "chr_0034_typhoea_floating_attack2",
+        "chr_0034_typhoea_floating_attack3",
+        "chr_0034_typhoea_floating_attack4",
+        "chr_0034_typhoea_floating_attack5"
+      ]
+    },
+    "chr_0034_typhoea_UltimateSkill": {
+      "characterId": "chr_0034_typhoea",
+      "name": "冰山呼告",
+      "category": "ultimate",
+      "desc": "拉弓射出一支强力箭矢，命中目标后引发爆炸，对范围内的敌人造成高额<@ba.natur>自然伤害</>。之后会进入<@ba.key>浮空</>状态，并且重置空中普通攻击次数。\n之后的五次空中普通攻击命中敌人时，都会在目标的位置产生一轮<@ba.key>箭雨</>，造成<@ba.natur>自然伤害</>。第五轮<@ba.key>箭雨</>为强化<@ba.key>箭雨</>，造成的伤害提升。\n施放终结技可立即获得<@ba.vup>{arrow_num_given:0}</>枚<#ba.arrownum>猎矢</>。",
+      "iconId": "icon_ultimate_skill_typhoea_01",
+      "skillIds": [
+        "chr_0034_typhoea_ultimate_skillfloating"
+      ]
+    },
     "chr_0035_liino_ComboSkill": {
       "characterId": "chr_0035_liino",
       "name": "悦心音调",
@@ -2052,6 +2117,16 @@
     },
     "sk_wpn_funnel_0018": {
       "name": "效益·回环",
+      "category": "passive_patch",
+      "desc": ""
+    },
+    "sk_wpn_funnel_0019": {
+      "name": "迸发·猎人本能",
+      "category": "passive_patch",
+      "desc": ""
+    },
+    "sk_wpn_funnel_0020": {
+      "name": "迸发·长夜拂晓",
       "category": "passive_patch",
       "desc": ""
     },
@@ -3196,6 +3271,36 @@
       "name": "血涌苏生",
       "iconId": "icon_talent_camille_02"
     },
+    "chr_0034_typhoea_talent_1_1": {
+      "characterId": "chr_0034_typhoea",
+      "nodeId": "chr_0034_typhoea_passive_skill_0_1",
+      "name": "猎物清点",
+      "iconId": "icon_talent_typhoea_01"
+    },
+    "chr_0034_typhoea_talent_1_2": {
+      "characterId": "chr_0034_typhoea",
+      "nodeId": "chr_0034_typhoea_passive_skill_0_2",
+      "name": "猎物清点",
+      "iconId": "icon_talent_typhoea_01"
+    },
+    "chr_0034_typhoea_talent_1_3": {
+      "characterId": "chr_0034_typhoea",
+      "nodeId": "chr_0034_typhoea_passive_skill_0_3",
+      "name": "猎物清点",
+      "iconId": "icon_talent_typhoea_01"
+    },
+    "chr_0034_typhoea_talent_2_1": {
+      "characterId": "chr_0034_typhoea",
+      "nodeId": "chr_0034_typhoea_passive_skill_1_1",
+      "name": "猎手的专注",
+      "iconId": "icon_talent_typhoea_02"
+    },
+    "chr_0034_typhoea_talent_2_2": {
+      "characterId": "chr_0034_typhoea",
+      "nodeId": "chr_0034_typhoea_passive_skill_1_2",
+      "name": "猎手的专注",
+      "iconId": "icon_talent_typhoea_02"
+    },
     "chr_0035_liino_talent_1_1": {
       "characterId": "chr_0035_liino",
       "nodeId": "chr_0035_liino_passive_skill_0_1",
@@ -3501,6 +3606,22 @@
       "iconId": "wpn_funnel_0018",
       "potentialSkillId": "sk_wpn_funnel_0018",
       "potentialSkillName": "效益·回环"
+    },
+    "wpn_funnel_0019": {
+      "name": "寒夜幽影",
+      "rarity": 6,
+      "weaponType": 2,
+      "iconId": "wpn_funnel_0019",
+      "potentialSkillId": "sk_wpn_funnel_0019",
+      "potentialSkillName": "迸发·猎人本能"
+    },
+    "wpn_funnel_0020": {
+      "name": "苦难的尽头",
+      "rarity": 6,
+      "weaponType": 2,
+      "iconId": "wpn_funnel_0020",
+      "potentialSkillId": "sk_wpn_funnel_0020",
+      "potentialSkillName": "迸发·长夜拂晓"
     },
     "wpn_lance_0003": {
       "name": "寻路者道标",
@@ -4068,6 +4189,19 @@
         {
           "count": 3,
           "skillId": "passive_equipsuit_cpinflict_01",
+          "skillLevel": 1
+        }
+      ]
+    },
+    "suit_spellburst": {
+      "name": "险关",
+      "skillId": "passive_equipsuit_spellburst01",
+      "skillName": "",
+      "logoName": "icon_pack_wuling_suit_fire_natr01",
+      "bonuses": [
+        {
+          "count": 3,
+          "skillId": "passive_equipsuit_spellburst01",
           "skillLevel": 1
         }
       ]
@@ -7847,6 +7981,112 @@
         }
       ]
     },
+    "item_equip_t4_parts_wuling00_body_04": {
+      "name": "集成实训突袭护甲",
+      "rarity": 5,
+      "iconId": "item_equip_t4_parts_wuling00_body_04",
+      "partType": 0,
+      "suitId": "suit_generaltype",
+      "minWearLevel": 60,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 48.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 0,
+          "value": 74.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            81.0,
+            88.0,
+            96.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 0,
+          "value": 49.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            53.0,
+            58.0,
+            63.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 87,
+          "value": 17.7,
+          "modifierType": 5,
+          "enhancedValues": [
+            19.469999313354492,
+            21.239999771118164,
+            23.010000228881836
+          ],
+          "base": false
+        }
+      ]
+    },
+    "item_equip_t4_parts_wuling00_body_05": {
+      "name": "集成实训医疗护甲",
+      "rarity": 5,
+      "iconId": "item_equip_t4_parts_wuling00_body_05",
+      "partType": 0,
+      "suitId": "suit_generaltype",
+      "minWearLevel": 60,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 48.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 0,
+          "value": 74.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            81.0,
+            88.0,
+            96.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 0,
+          "value": 49.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            53.0,
+            58.0,
+            63.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 29,
+          "value": 0.0885,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.09735000133514404,
+            0.10620000213384628,
+            0.11505000293254852
+          ],
+          "base": false
+        }
+      ]
+    },
     "item_equip_t4_parts_wuling00_edc_01": {
       "name": "集成实训排障刀",
       "rarity": 5,
@@ -8006,6 +8246,112 @@
         }
       ]
     },
+    "item_equip_t4_parts_wuling00_edc_04": {
+      "name": "集成实训突袭刺刃",
+      "rarity": 5,
+      "iconId": "item_equip_t4_parts_wuling00_edc_04",
+      "partType": 2,
+      "suitId": "suit_generaltype",
+      "minWearLevel": 60,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 18.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 0,
+          "value": 27.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            29.0,
+            32.0,
+            35.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 0,
+          "value": 18.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            19.0,
+            21.0,
+            23.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 87,
+          "value": 35.4,
+          "modifierType": 5,
+          "enhancedValues": [
+            38.939998626708984,
+            42.47999954223633,
+            46.02000045776367
+          ],
+          "base": false
+        }
+      ]
+    },
+    "item_equip_t4_parts_wuling00_edc_05": {
+      "name": "集成实训供能栓",
+      "rarity": 5,
+      "iconId": "item_equip_t4_parts_wuling00_edc_05",
+      "partType": 2,
+      "suitId": "suit_generaltype",
+      "minWearLevel": 60,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 18.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 0,
+          "value": 27.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            29.0,
+            32.0,
+            35.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 0,
+          "value": 18.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            19.0,
+            21.0,
+            23.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 29,
+          "value": 0.177,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.19470000267028809,
+            0.21240000426769257,
+            0.23010000586509705
+          ],
+          "base": false
+        }
+      ]
+    },
     "item_equip_t4_parts_wuling00_hand_01": {
       "name": "集成实训手套",
       "rarity": 5,
@@ -8160,6 +8506,112 @@
             0.16226397454738617,
             0.1770152449607849,
             0.19176651537418365
+          ],
+          "base": false
+        }
+      ]
+    },
+    "item_equip_t4_parts_wuling00_hand_04": {
+      "name": "集成实训突袭护手",
+      "rarity": 5,
+      "iconId": "item_equip_t4_parts_wuling00_hand_04",
+      "partType": 1,
+      "suitId": "suit_generaltype",
+      "minWearLevel": 60,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 36.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 0,
+          "value": 55.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            60.0,
+            66.0,
+            71.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 0,
+          "value": 37.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            40.0,
+            44.0,
+            48.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 87,
+          "value": 29.5,
+          "modifierType": 5,
+          "enhancedValues": [
+            32.45000076293945,
+            35.400001525878906,
+            38.349998474121094
+          ],
+          "base": false
+        }
+      ]
+    },
+    "item_equip_t4_parts_wuling00_hand_05": {
+      "name": "集成实训医疗护手",
+      "rarity": 5,
+      "iconId": "item_equip_t4_parts_wuling00_hand_05",
+      "partType": 1,
+      "suitId": "suit_generaltype",
+      "minWearLevel": 60,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 36.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 0,
+          "value": 55.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            60.0,
+            66.0,
+            71.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 0,
+          "value": 37.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            40.0,
+            44.0,
+            48.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 29,
+          "value": 0.1475,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.16224999725818634,
+            0.1770000010728836,
+            0.19175000488758087
           ],
           "base": false
         }
@@ -10794,6 +11246,112 @@
         }
       ]
     },
+    "item_equip_t4_suit_burst01_body_02": {
+      "name": "落潮轻甲·壹型",
+      "rarity": 5,
+      "iconId": "item_equip_t4_suit_burst01_body_02",
+      "partType": 0,
+      "suitId": "suit_burst01",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 56.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 41,
+          "value": 87.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            95.0,
+            104.0,
+            113.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 42,
+          "value": 58.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            63.0,
+            69.0,
+            75.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 44,
+          "value": 0.1232142857142857,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.13553571701049805,
+            0.14785714447498322,
+            0.16017857193946838
+          ],
+          "base": false
+        }
+      ]
+    },
+    "item_equip_t4_suit_burst01_body_03": {
+      "name": "涌浪重装甲",
+      "rarity": 5,
+      "iconId": "item_equip_t4_suit_burst01_body_03",
+      "partType": 0,
+      "suitId": "suit_burst01",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 56.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 39,
+          "value": 87.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            95.0,
+            104.0,
+            113.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 42,
+          "value": 58.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            63.0,
+            69.0,
+            75.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 0,
+          "value": 0.11499999999999999,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.1264999955892563,
+            0.1379999965429306,
+            0.14949999749660492
+          ],
+          "base": false
+        }
+      ]
+    },
     "item_equip_t4_suit_burst01_edc_01": {
       "name": "悬河供氧栓",
       "rarity": 5,
@@ -10900,6 +11458,59 @@
         }
       ]
     },
+    "item_equip_t4_suit_burst01_edc_03": {
+      "name": "浊流切割炬·壹型",
+      "rarity": 5,
+      "iconId": "item_equip_t4_suit_burst01_edc_03",
+      "partType": 2,
+      "suitId": "suit_burst01",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 21.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 41,
+          "value": 32.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            35.0,
+            38.0,
+            41.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 42,
+          "value": 21.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            23.0,
+            25.0,
+            27.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 0,
+          "value": 0.22999999999999998,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.2529999911785126,
+            0.2759999930858612,
+            0.29899999499320984
+          ],
+          "base": false
+        }
+      ]
+    },
     "item_equip_t4_suit_burst01_hand_01": {
       "name": "潮涌手甲",
       "rarity": 5,
@@ -10948,6 +11559,59 @@
             0.2108333259820938,
             0.23000000417232513,
             0.24916666746139526
+          ],
+          "base": false
+        }
+      ]
+    },
+    "item_equip_t4_suit_burst01_hand_02": {
+      "name": "沉水手套",
+      "rarity": 5,
+      "iconId": "item_equip_t4_suit_burst01_hand_02",
+      "partType": 1,
+      "suitId": "suit_burst01",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 42.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 41,
+          "value": 65.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            71.0,
+            78.0,
+            84.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 42,
+          "value": 43.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            47.0,
+            51.0,
+            55.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 0,
+          "value": 0.23,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.2529999911785126,
+            0.2759999930858612,
+            0.29899999499320984
           ],
           "base": false
         }
@@ -14909,6 +15573,165 @@
         }
       ]
     },
+    "item_equip_t4_suit_spellburst_body_01": {
+      "name": "险关装甲",
+      "rarity": 5,
+      "iconId": "item_equip_t4_suit_spellburst_body_01",
+      "partType": 0,
+      "suitId": "suit_spellburst",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 56.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 40,
+          "value": 87.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            95.0,
+            104.0,
+            113.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 42,
+          "value": 58.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            63.0,
+            69.0,
+            75.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 87,
+          "value": 20.7,
+          "modifierType": 5,
+          "enhancedValues": [
+            22.770000457763672,
+            24.84000015258789,
+            26.90999984741211
+          ],
+          "base": false
+        }
+      ]
+    },
+    "item_equip_t4_suit_spellburst_edc_01": {
+      "name": "险关通信器",
+      "rarity": 5,
+      "iconId": "item_equip_t4_suit_spellburst_edc_01",
+      "partType": 2,
+      "suitId": "suit_spellburst",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 21.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 40,
+          "value": 32.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            35.0,
+            38.0,
+            41.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 42,
+          "value": 21.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            23.0,
+            25.0,
+            27.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 87,
+          "value": 41.4,
+          "modifierType": 5,
+          "enhancedValues": [
+            45.540000915527344,
+            49.68000030517578,
+            53.81999969482422
+          ],
+          "base": false
+        }
+      ]
+    },
+    "item_equip_t4_suit_spellburst_hand_01": {
+      "name": "险关手甲",
+      "rarity": 5,
+      "iconId": "item_equip_t4_suit_spellburst_hand_01",
+      "partType": 1,
+      "suitId": "suit_spellburst",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 42.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 40,
+          "value": 65.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            71.0,
+            78.0,
+            84.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 42,
+          "value": 43.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            47.0,
+            51.0,
+            55.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 87,
+          "value": 34.5,
+          "modifierType": 5,
+          "enhancedValues": [
+            37.95000076293945,
+            41.400001525878906,
+            44.849998474121094
+          ],
+          "base": false
+        }
+      ]
+    },
     "item_equip_t4_suit_usp02_body_01": {
       "name": "长息装甲",
       "rarity": 5,
@@ -15251,6 +16074,112 @@
             0.22771961987018585,
             0.24842140078544617,
             0.2691231966018677
+          ],
+          "base": false
+        }
+      ]
+    },
+    "item_equip_t4_suit_usp02_edc_05": {
+      "name": "长息加固板·壹型",
+      "rarity": 5,
+      "iconId": "item_equip_t4_suit_usp02_edc_05",
+      "partType": 2,
+      "suitId": "suit_usp02",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 21.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 42,
+          "value": 32.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            35.0,
+            38.0,
+            41.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 40,
+          "value": 21.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            23.0,
+            25.0,
+            27.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 44,
+          "value": 0.2464285714285714,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.2710714340209961,
+            0.29571428894996643,
+            0.32035714387893677
+          ],
+          "base": false
+        }
+      ]
+    },
+    "item_equip_t4_suit_usp02_edc_06": {
+      "name": "长息重护板",
+      "rarity": 5,
+      "iconId": "item_equip_t4_suit_usp02_edc_06",
+      "partType": 2,
+      "suitId": "suit_usp02",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 21.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 39,
+          "value": 32.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            35.0,
+            38.0,
+            41.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 42,
+          "value": 21.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            23.0,
+            25.0,
+            27.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 44,
+          "value": 0.2464285714285714,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.2710714340209961,
+            0.29571428894996643,
+            0.32035714387893677
           ],
           "base": false
         }
@@ -16070,6 +16999,78 @@
       "domainId": "",
       "costStamina": 0
     },
+    "dung02_archery01": {
+      "name": "dung02_archery01",
+      "subName": "",
+      "seriesId": "",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_archery02": {
+      "name": "dung02_archery02",
+      "subName": "",
+      "seriesId": "",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_archery03": {
+      "name": "dung02_archery03",
+      "subName": "",
+      "seriesId": "",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_archery04": {
+      "name": "dung02_archery04",
+      "subName": "",
+      "seriesId": "",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_archery05": {
+      "name": "dung02_archery05",
+      "subName": "",
+      "seriesId": "",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_archery06": {
+      "name": "dung02_archery06",
+      "subName": "",
+      "seriesId": "",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_archery07": {
+      "name": "dung02_archery07",
+      "subName": "",
+      "seriesId": "",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_archery08": {
+      "name": "dung02_archery08",
+      "subName": "",
+      "seriesId": "",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_archery09": {
+      "name": "dung02_archery09",
+      "subName": "",
+      "seriesId": "",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
     "dung02_bossrush01_01": {
       "name": "危境遗影·阮一",
       "subName": "",
@@ -16142,6 +17143,70 @@
       "domainId": "",
       "costStamina": 0
     },
+    "dung02_daily_archery01": {
+      "name": "dung02_daily_archery01",
+      "subName": "",
+      "seriesId": "",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_daily_archery02": {
+      "name": "dung02_daily_archery02",
+      "subName": "",
+      "seriesId": "",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_daily_archery03": {
+      "name": "dung02_daily_archery03",
+      "subName": "",
+      "seriesId": "",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_daily_archery04": {
+      "name": "dung02_daily_archery04",
+      "subName": "",
+      "seriesId": "",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_daily_archery05": {
+      "name": "dung02_daily_archery05",
+      "subName": "",
+      "seriesId": "",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_daily_archery06": {
+      "name": "dung02_daily_archery06",
+      "subName": "",
+      "seriesId": "",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_daily_archery07": {
+      "name": "dung02_daily_archery07",
+      "subName": "",
+      "seriesId": "",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_daily_archery08": {
+      "name": "dung02_daily_archery08",
+      "subName": "",
+      "seriesId": "",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
     "dung02_minibossrush01_01": {
       "name": "碎片遗影·巨山犼兽",
       "subName": "",
@@ -16171,6 +17236,22 @@
       "subName": "",
       "seriesId": "dung02_group_minibossrush02",
       "seriesName": "危境碎片·蚀影噪雷",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_minibossrush03_01": {
+      "name": "碎片遗影·幽林之怒",
+      "subName": "",
+      "seriesId": "dung02_group_minibossrush03",
+      "seriesName": "危境碎片·幽林之怒",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_minibossrush03_02": {
+      "name": "碎片延影·幽林之怒",
+      "subName": "",
+      "seriesId": "dung02_group_minibossrush03",
+      "seriesName": "危境碎片·幽林之怒",
       "domainId": "",
       "costStamina": 0
     },
@@ -16267,6 +17348,38 @@
       "subName": "",
       "seriesId": "dung02_group_puzzle12",
       "seriesName": "六方巧境",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_rcdg001": {
+      "name": "登楼阁",
+      "subName": "",
+      "seriesId": "dung02_group_rcdg01",
+      "seriesName": "登楼阁",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_rcdg002": {
+      "name": "蹈清风",
+      "subName": "",
+      "seriesId": "dung02_group_rcdg02",
+      "seriesName": "蹈清风",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_rcdg003": {
+      "name": "步流云",
+      "subName": "",
+      "seriesId": "dung02_group_rcdg03",
+      "seriesName": "步流云",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_rcdg004": {
+      "name": "赴雄城",
+      "subName": "",
+      "seriesId": "dung02_group_rcdg04",
+      "seriesName": "赴雄城",
       "domainId": "",
       "costStamina": 0
     },
@@ -17158,6 +18271,54 @@
       "domainId": "",
       "costStamina": 0
     },
+    "dung_typhoea_01": {
+      "name": "dung_typhoea_01",
+      "subName": "",
+      "seriesId": "dung_group_typhoea_01",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung_typhoea_02": {
+      "name": "dung_typhoea_02",
+      "subName": "",
+      "seriesId": "dung_group_typhoea_02",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung_typhoea_03": {
+      "name": "dung_typhoea_03",
+      "subName": "",
+      "seriesId": "dung_group_typhoea_03",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung_typhoea_04": {
+      "name": "dung_typhoea_04",
+      "subName": "",
+      "seriesId": "dung_group_typhoea_04",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung_typhoea_chartrain01": {
+      "name": "干员教学·提弗洛斯",
+      "subName": "",
+      "seriesId": "dung_group_chartrain",
+      "seriesName": "干员教学",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung_typhoea_chartrial": {
+      "name": "提弗洛斯的作战演练",
+      "subName": "",
+      "seriesId": "",
+      "seriesName": "",
+      "domainId": "",
+      "costStamina": 0
+    },
     "dung_wolfgd_01": {
       "name": "dung_wolfgd_01",
       "subName": "",
@@ -17472,6 +18633,150 @@
     },
     "indie_battletower008_s": {
       "name": "战争简史·困难",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower009": {
+      "name": "掩埋阵线·普通",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower009_ex": {
+      "name": "掩埋阵线·残酷",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower009_s": {
+      "name": "掩埋阵线·困难",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower010": {
+      "name": "方阵庇护·普通",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower010_ex": {
+      "name": "方阵庇护·残酷",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower010_s": {
+      "name": "方阵庇护·困难",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower011": {
+      "name": "重伤之围·普通",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower011_ex": {
+      "name": "重伤之围·残酷",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower011_s": {
+      "name": "重伤之围·困难",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower012": {
+      "name": "无机狂热·普通",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower012_ex": {
+      "name": "无机狂热·残酷",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower012_s": {
+      "name": "无机狂热·困难",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower013": {
+      "name": "斩首蓄势·普通",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower013_ex": {
+      "name": "斩首蓄势·残酷",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower013_s": {
+      "name": "斩首蓄势·困难",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower014": {
+      "name": "野兽诡计·普通",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower014_ex": {
+      "name": "野兽诡计·残酷",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower014_s": {
+      "name": "野兽诡计·困难",
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
@@ -17954,6 +19259,7 @@
     "dung02_group_bossrush03": "危境再现·阿莱克琉斯",
     "dung02_group_minibossrush01": "危境碎片·巨山犼兽",
     "dung02_group_minibossrush02": "危境碎片·蚀影噪雷",
+    "dung02_group_minibossrush03": "危境碎片·幽林之怒",
     "dung02_group_puzzle01": "行探险窟",
     "dung02_group_puzzle02": "行探险窟",
     "dung02_group_puzzle03": "行探险窟",
@@ -17966,6 +19272,10 @@
     "dung02_group_puzzle10": "六方巧境",
     "dung02_group_puzzle11": "六方巧境",
     "dung02_group_puzzle12": "六方巧境",
+    "dung02_group_rcdg01": "登楼阁",
+    "dung02_group_rcdg02": "蹈清风",
+    "dung02_group_rcdg03": "步流云",
+    "dung02_group_rcdg04": "赴雄城",
     "dung_group_aglina01": "支线任务",
     "dung_group_chartrain": "干员教学",
     "dung_group_kamiu01": "支线任务",

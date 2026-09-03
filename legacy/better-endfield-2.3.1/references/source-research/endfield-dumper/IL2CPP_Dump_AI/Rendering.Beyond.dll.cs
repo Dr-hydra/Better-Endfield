@@ -1,0 +1,3584 @@
+// ========================================================
+// Dumped by @desirepro
+// Assembly: Rendering.Beyond.dll
+// Classes:  153
+// Module:   GameAssembly.dll  base=0x7FFA73900000
+// Date:     Aug  3 2026 04:44:03
+// ========================================================
+
+# AI-FRIENDLY STRUCTURED DUMP
+# Optimized for LLM parsing / code generation
+
+CLASS: <Module>
+TYPE:  class
+TOKEN: 0x2000001
+SIZE:  0x1
+FIELDS:
+METHODS:
+END_CLASS
+
+CLASS: LDstaticObjectLightmappingDataLoader
+TYPE:  class
+TOKEN: 0x2000002
+SIZE:  0x38
+EXTENDS: UnityEngine.MonoBehaviour
+FIELDS:
+  public            System.Boolean                  test  // 0x18
+  public            System.Boolean                  recover  // 0x19
+  public            UnityEngine.Renderer[]          ldLightmappedRenderer  // 0x20
+  public            System.Int32[]                  ldLightmappedRendererLightmapIndex  // 0x28
+  public            UnityEngine.Vector4[]           ldLightmappedRendererLightmapUvScale  // 0x30
+METHODS:
+  RVA=0x0A9AD448  token=0x6000001  System.Void RecoverLightmapdata()
+  RVA=0x05393520  token=0x6000002  System.Void .ctor()
+END_CLASS
+
+CLASS: WarmUpReason
+TYPE:  sealed struct
+TOKEN: 0x200000F
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.ShaderWarmupManager.WarmUpReasonNoReason  // const
+  public    static  Beyond.Rendering.ShaderWarmupManager.WarmUpReasonFirstEntryGame  // const
+  public    static  Beyond.Rendering.ShaderWarmupManager.WarmUpReasonLodChange  // const
+  public    static  Beyond.Rendering.ShaderWarmupManager.WarmUpReasonAssetUpdate  // const
+  public    static  Beyond.Rendering.ShaderWarmupManager.WarmUpReasonAppUpdate  // const
+  public    static  Beyond.Rendering.ShaderWarmupManager.WarmUpReasonGraphicsAPIChange  // const
+  public    static  Beyond.Rendering.ShaderWarmupManager.WarmUpReasonShaderCacheSmall  // const
+  public    static  Beyond.Rendering.ShaderWarmupManager.WarmUpReasonShaderCacheIOInvalid  // const
+  public    static  Beyond.Rendering.ShaderWarmupManager.WarmUpReasonDevOverride  // const
+  public    static  Beyond.Rendering.ShaderWarmupManager.WarmUpReasonCrashRetry  // const
+  public    static  Beyond.Rendering.ShaderWarmupManager.WarmUpReasonPsoCacheCorrupted  // const
+  public    static  Beyond.Rendering.ShaderWarmupManager.WarmUpReasonShaderCacheApiInvalid  // const
+  public    static  Beyond.Rendering.ShaderWarmupManager.WarmUpReasonDriverVersionUpdate  // const
+  public    static  Beyond.Rendering.ShaderWarmupManager.WarmUpReasonRemoteCtrlRetry  // const
+METHODS:
+END_CLASS
+
+CLASS: WarmupRunType
+TYPE:  sealed struct
+TOKEN: 0x2000010
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.ShaderWarmupManager.WarmupRunTypeNone  // const
+  public    static  Beyond.Rendering.ShaderWarmupManager.WarmupRunTypeLogin  // const
+  public    static  Beyond.Rendering.ShaderWarmupManager.WarmupRunTypeDownload  // const
+METHODS:
+END_CLASS
+
+CLASS: TimeCostCounter
+TYPE:  class
+TOKEN: 0x2000011
+SIZE:  0x20
+FIELDS:
+  private   static  System.Single                   MAX_DELTA_TIME  // const
+  private   static  System.Single                   MAX_DELTA_TIME_FIX  // const
+  private           System.Single                   <duration>k__BackingField  // 0x10
+  private           System.Single                   m_lastRealTime  // 0x14
+  private           System.Single                   m_maxDurationSecond  // 0x18
+PROPERTIES:
+  duration  get=0x04D85F70  set=0x04D88280
+  isTimeOut  get=0x0A9AF2B8
+METHODS:
+  RVA=0x0A9AF2A4  token=0x6000063  System.Void .ctor(System.Single maxDurationMilliSecond)
+  RVA=0x0A9AF1D4  token=0x6000064  System.Void Begin()
+  RVA=0x0A9AF230  token=0x6000065  System.Void Tick()
+END_CLASS
+
+CLASS: <WarmupShadersLogin>d__63
+TYPE:  sealed class
+TOKEN: 0x2000012
+SIZE:  0x50
+IMPLEMENTS: System.Collections.Generic.IEnumerator`1 System.Collections.IEnumerator System.IDisposable
+FIELDS:
+  private           System.Int32                    <>1__state  // 0x10
+  private           System.Object                   <>2__current  // 0x18
+  public            System.Boolean                  supportsRaytracing  // 0x20
+  private           System.Collections.Generic.List<Beyond.Resource.FAssetProxyHandle><assetProxyHandles>5__2  // 0x28
+  private           System.Collections.Generic.List<UnityEngine.HGPsoWarmupCollection><loadedAssets>5__3  // 0x30
+  private           System.Int32                    <unfinishedCount>5__4  // 0x38
+  private           Beyond.Rendering.ShaderWarmupManager.TimeCostCounter<timeCostCounter>5__5  // 0x40
+  private           System.Int32                    <i>5__6  // 0x48
+PROPERTIES:
+  System.Collections.Generic.IEnumerator<System.Object>.Current  get=0x0385B100
+  System.Collections.IEnumerator.Current  get=0x0385B100
+METHODS:
+  RVA=0x014F51F0  token=0x6000066  System.Void .ctor(System.Int32 <>1__state)
+  RVA=0x02E5AD40  token=0x6000067  System.Void System.IDisposable.Dispose()
+  RVA=0x02E58FD0  token=0x6000068  System.Boolean MoveNext()
+  RVA=0x02E5ADC0  token=0x6000069  System.Void <>m__Finally1()
+  RVA=0x02E5ACF0  token=0x600006B  System.Void System.Collections.IEnumerator.Reset()
+END_CLASS
+
+CLASS: <WarmupShadersDownloading>d__64
+TYPE:  sealed class
+TOKEN: 0x2000013
+SIZE:  0x40
+IMPLEMENTS: System.Collections.Generic.IEnumerator`1 System.Collections.IEnumerator System.IDisposable
+FIELDS:
+  private           System.Int32                    <>1__state  // 0x10
+  private           System.Object                   <>2__current  // 0x18
+  public            System.Boolean                  supportsRaytracing  // 0x20
+  private           System.Collections.Generic.List<Beyond.Resource.FAssetProxyHandle><assetProxyHandles>5__2  // 0x28
+  private           System.Collections.Generic.List<UnityEngine.HGPsoWarmupCollection><loadedAssets>5__3  // 0x30
+  private           System.Int32                    <i>5__4  // 0x38
+PROPERTIES:
+  System.Collections.Generic.IEnumerator<System.Object>.Current  get=0x0385B100
+  System.Collections.IEnumerator.Current  get=0x0385B100
+METHODS:
+  RVA=0x014F51F0  token=0x600006D  System.Void .ctor(System.Int32 <>1__state)
+  RVA=0x02E58B60  token=0x600006E  System.Void System.IDisposable.Dispose()
+  RVA=0x02E57FD0  token=0x600006F  System.Boolean MoveNext()
+  RVA=0x02E58BE0  token=0x6000070  System.Void <>m__Finally1()
+  RVA=0x02E58B10  token=0x6000072  System.Void System.Collections.IEnumerator.Reset()
+END_CLASS
+
+CLASS: <_StopDownloadingWarmupAndWait>d__66
+TYPE:  sealed class
+TOKEN: 0x2000014
+SIZE:  0x20
+IMPLEMENTS: System.Collections.Generic.IEnumerator`1 System.Collections.IEnumerator System.IDisposable
+FIELDS:
+  private           System.Int32                    <>1__state  // 0x10
+  private           System.Object                   <>2__current  // 0x18
+PROPERTIES:
+  System.Collections.Generic.IEnumerator<System.Object>.Current  get=0x0385B100
+  System.Collections.IEnumerator.Current  get=0x0385B100
+METHODS:
+  RVA=0x014F51F0  token=0x6000074  System.Void .ctor(System.Int32 <>1__state)
+  RVA=0x041E1670  token=0x6000075  System.Void System.IDisposable.Dispose()
+  RVA=0x02E5CBC0  token=0x6000076  System.Boolean MoveNext()
+  RVA=0x02E5CDC0  token=0x6000078  System.Void System.Collections.IEnumerator.Reset()
+END_CLASS
+
+CLASS: <_LoadPsoAssets>d__71
+TYPE:  sealed class
+TOKEN: 0x2000015
+SIZE:  0x38
+IMPLEMENTS: System.Collections.Generic.IEnumerator`1 System.Collections.IEnumerator System.IDisposable
+FIELDS:
+  private           System.Int32                    <>1__state  // 0x10
+  private           System.Object                   <>2__current  // 0x18
+  public            System.Collections.Generic.List<Beyond.Resource.StringPathHash>resPathList  // 0x20
+  public            System.Collections.Generic.List<Beyond.Resource.FAssetProxyHandle>assetProxyHandles  // 0x28
+  public            System.Collections.Generic.List<UnityEngine.HGPsoWarmupCollection>loadedAssets  // 0x30
+PROPERTIES:
+  System.Collections.Generic.IEnumerator<System.Object>.Current  get=0x0385B100
+  System.Collections.IEnumerator.Current  get=0x0385B100
+METHODS:
+  RVA=0x014F51F0  token=0x600007A  System.Void .ctor(System.Int32 <>1__state)
+  RVA=0x041E1670  token=0x600007B  System.Void System.IDisposable.Dispose()
+  RVA=0x02E5C460  token=0x600007C  System.Boolean MoveNext()
+  RVA=0x02E5CB70  token=0x600007E  System.Void System.Collections.IEnumerator.Reset()
+END_CLASS
+
+CLASS: <WarmupShadersScene>d__72
+TYPE:  sealed class
+TOKEN: 0x2000016
+SIZE:  0x48
+IMPLEMENTS: System.Collections.Generic.IEnumerator`1 System.Collections.IEnumerator System.IDisposable
+FIELDS:
+  private           System.Int32                    <>1__state  // 0x10
+  private           System.Object                   <>2__current  // 0x18
+  public            System.String                   scene  // 0x20
+  private           System.String                   <path>5__2  // 0x28
+  private           Beyond.Resource.FAssetProxyHandle<assetHandle>5__3  // 0x30
+PROPERTIES:
+  System.Collections.Generic.IEnumerator<System.Object>.Current  get=0x0385B100
+  System.Collections.IEnumerator.Current  get=0x0385B100
+METHODS:
+  RVA=0x014F51F0  token=0x6000080  System.Void .ctor(System.Int32 <>1__state)
+  RVA=0x041E1670  token=0x6000081  System.Void System.IDisposable.Dispose()
+  RVA=0x02E5AFD0  token=0x6000082  System.Boolean MoveNext()
+  RVA=0x02E5C410  token=0x6000084  System.Void System.Collections.IEnumerator.Reset()
+END_CLASS
+
+CLASS: <WarmupOnePso>d__73
+TYPE:  sealed class
+TOKEN: 0x2000017
+SIZE:  0x30
+IMPLEMENTS: System.Collections.Generic.IEnumerator`1 System.Collections.IEnumerator System.IDisposable
+FIELDS:
+  private           System.Int32                    <>1__state  // 0x10
+  private           System.Object                   <>2__current  // 0x18
+  public            UnityEngine.HGPsoWarmupCollectionpsoC  // 0x20
+  public            System.Int32                    startIndex  // 0x28
+  public            System.Int32                    warmupCount  // 0x2c
+PROPERTIES:
+  System.Collections.Generic.IEnumerator<System.Object>.Current  get=0x0385B100
+  System.Collections.IEnumerator.Current  get=0x0385B100
+METHODS:
+  RVA=0x014F51F0  token=0x6000086  System.Void .ctor(System.Int32 <>1__state)
+  RVA=0x041E1670  token=0x6000087  System.Void System.IDisposable.Dispose()
+  RVA=0x02E57AB0  token=0x6000088  System.Boolean MoveNext()
+  RVA=0x02E57F80  token=0x600008A  System.Void System.Collections.IEnumerator.Reset()
+END_CLASS
+
+CLASS: <_WarmupOnePsoTimeLimited>d__74
+TYPE:  sealed class
+TOKEN: 0x2000018
+SIZE:  0x58
+IMPLEMENTS: System.Collections.Generic.IEnumerator`1 System.Collections.IEnumerator System.IDisposable
+FIELDS:
+  private           System.Int32                    <>1__state  // 0x10
+  private           System.Object                   <>2__current  // 0x18
+  public            UnityEngine.HGPsoWarmupCollectionpsoC  // 0x20
+  public            System.Int32                    startIndex  // 0x28
+  public            System.Int32                    desiredWarmupCount  // 0x2c
+  public            Beyond.Rendering.ShaderWarmupManager.TimeCostCountertimeStart  // 0x30
+  private           System.Int32                    <totalCount>5__2  // 0x38
+  private           System.Int32                    <computeShaderCount>5__3  // 0x3c
+  private           System.Int32                    <warmupCountPerStepMainJobCompile>5__4  // 0x40
+  private           System.Int32                    <compileTotalCount>5__5  // 0x44
+  private           System.Int32                    <countToCleanUp>5__6  // 0x48
+  private           System.Int32                    <backJobLastLeftCount>5__7  // 0x4c
+  private           System.Int32                    <leftBackJobCount>5__8  // 0x50
+PROPERTIES:
+  System.Collections.Generic.IEnumerator<System.Object>.Current  get=0x0385B100
+  System.Collections.IEnumerator.Current  get=0x0385B100
+METHODS:
+  RVA=0x014F51F0  token=0x600008C  System.Void .ctor(System.Int32 <>1__state)
+  RVA=0x041E1670  token=0x600008D  System.Void System.IDisposable.Dispose()
+  RVA=0x02E5D750  token=0x600008E  System.Boolean MoveNext()
+  RVA=0x02E5E2C0  token=0x6000090  System.Void System.Collections.IEnumerator.Reset()
+END_CLASS
+
+CLASS: <_WarmupOnePsoBackgroundOnly>d__75
+TYPE:  sealed class
+TOKEN: 0x2000019
+SIZE:  0x48
+IMPLEMENTS: System.Collections.Generic.IEnumerator`1 System.Collections.IEnumerator System.IDisposable
+FIELDS:
+  private           System.Int32                    <>1__state  // 0x10
+  private           System.Object                   <>2__current  // 0x18
+  public            UnityEngine.HGPsoWarmupCollectionpsoC  // 0x20
+  public            System.Int32                    startIndex  // 0x28
+  public            System.Int32                    desiredWarmupCount  // 0x2c
+  private           System.Int32                    <totalCount>5__2  // 0x30
+  private           System.Int32                    <compileTotalCount>5__3  // 0x34
+  private           System.Int32                    <countToCleanUp>5__4  // 0x38
+  private           System.Int32                    <backJobLastLeftCount>5__5  // 0x3c
+  private           System.Int32                    <currentIndex>5__6  // 0x40
+  private           System.Int32                    <leftBackJobCount>5__7  // 0x44
+PROPERTIES:
+  System.Collections.Generic.IEnumerator<System.Object>.Current  get=0x0385B100
+  System.Collections.IEnumerator.Current  get=0x0385B100
+METHODS:
+  RVA=0x014F51F0  token=0x6000092  System.Void .ctor(System.Int32 <>1__state)
+  RVA=0x041E1670  token=0x6000093  System.Void System.IDisposable.Dispose()
+  RVA=0x02E5CE10  token=0x6000094  System.Boolean MoveNext()
+  RVA=0x02E5D700  token=0x6000096  System.Void System.Collections.IEnumerator.Reset()
+END_CLASS
+
+CLASS: ShaderWarmupRemoteBlackDevice
+TYPE:  class
+TOKEN: 0x200001B
+SIZE:  0x40
+FIELDS:
+  public            System.String                   deviceModel  // 0x10
+  public            System.String                   graphicsDeviceName  // 0x18
+  public            System.String                   graphicsDeviceVersion  // 0x20
+  public            System.String                   os  // 0x28
+  public            System.String                   cpuName  // 0x30
+  public            System.String                   disableFeature  // 0x38
+METHODS:
+  RVA=0x041E1670  token=0x600009D  System.Void .ctor()
+END_CLASS
+
+CLASS: ShaderWarmupGlobalConfig
+TYPE:  class
+TOKEN: 0x200001C
+SIZE:  0x18
+FIELDS:
+  public            System.Boolean                  enableDriverVerDetect  // 0x10
+METHODS:
+  RVA=0x041E1670  token=0x600009E  System.Void .ctor()
+END_CLASS
+
+CLASS: ShaderWarmupRemoteBlacklist
+TYPE:  class
+TOKEN: 0x200001D
+SIZE:  0x20
+FIELDS:
+  public            System.Collections.Generic.List<Beyond.Rendering.ShaderWarmupManagerRemoteCfg.ShaderWarmupRemoteBlackDevice>devices  // 0x10
+  public            Beyond.Rendering.ShaderWarmupManagerRemoteCfg.ShaderWarmupGlobalConfigconfig  // 0x18
+METHODS:
+  RVA=0x041E1670  token=0x600009F  System.Void .ctor()
+END_CLASS
+
+CLASS: Result
+TYPE:  sealed class
+TOKEN: 0x200001F
+SIZE:  0x48
+FIELDS:
+  public            System.String                   driverVersion  // 0x10
+  public            System.String                   deviceName  // 0x18
+  public            System.String                   deviceDesc  // 0x20
+  public            System.String                   mfg  // 0x28
+  public            System.Int32                    score  // 0x30
+  public            System.String                   driverKey  // 0x38
+  public            System.String                   keyId  // 0x40
+METHODS:
+  RVA=0x0A9AD784  token=0x60000B4  System.String ToString()
+  RVA=0x041E1670  token=0x60000B5  System.Void .ctor()
+  RVA=0x0669AD6C  token=0x60000B6  System.String <>iFixBaseProxy_ToString()
+END_CLASS
+
+CLASS: SafeRegistryHandle
+TYPE:  sealed class
+TOKEN: 0x2000020
+SIZE:  0x20
+EXTENDS: Microsoft.Win32.SafeHandles.SafeHandleZeroOrMinusOneIsInvalid
+FIELDS:
+METHODS:
+  RVA=0x053948D4  token=0x60000B7  System.Void .ctor()
+  RVA=0x039B85E0  token=0x60000B8  System.Void .ctor(System.IntPtr preexistingHandle, System.Boolean ownsHandle)
+  RVA=0x0A9AD91C  token=0x60000B9  System.Boolean ReleaseHandle()
+END_CLASS
+
+CLASS: RegistryRights
+TYPE:  sealed struct
+TOKEN: 0x2000021
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.WindowsGpuDriverVersion.RegistryRightsKEY_QUERY_VALUE  // const
+METHODS:
+END_CLASS
+
+CLASS: SP_DEVINFO_DATA
+TYPE:  sealed struct
+TOKEN: 0x2000022
+SIZE:  0x30
+FIELDS:
+  public            System.UInt32                   cbSize  // 0x10
+  public            System.Guid                     classGuid  // 0x14
+  public            System.UInt32                   devInst  // 0x24
+  public            System.IntPtr                   reserved  // 0x28
+METHODS:
+END_CLASS
+
+CLASS: <>c
+TYPE:  sealed class
+TOKEN: 0x2000023
+SIZE:  0x10
+FIELDS:
+  public    static readonly Beyond.Rendering.WindowsGpuDriverVersion.<>c<>9  // static @ 0x0
+  public    static  System.Comparison<Beyond.Rendering.WindowsGpuDriverVersion.Result><>9__18_0  // static @ 0x8
+METHODS:
+  RVA=0x0A9AF334  token=0x60000BA  System.Void .cctor()
+  RVA=0x041E1670  token=0x60000BB  System.Void .ctor()
+  RVA=0x0A9AF30C  token=0x60000BC  System.Int32 <GetAllDisplayDriverVersions>b__18_0(Beyond.Rendering.WindowsGpuDriverVersion.Result a, Beyond.Rendering.WindowsGpuDriverVersion.Result b)
+END_CLASS
+
+CLASS: ChunkData
+TYPE:  sealed struct
+TOKEN: 0x2000027
+SIZE:  0x30
+FIELDS:
+  public            UnityEngine.Vector3[]           centers  // 0x10
+  public            UnityEngine.Vector3[]           extents  // 0x18
+  public            UnityEngine.Vector3[]           vertexData  // 0x20
+  public            System.Single[]                 areas  // 0x28
+METHODS:
+END_CLASS
+
+CLASS: SubSceneDataPerSceneStateArea
+TYPE:  sealed struct
+TOKEN: 0x2000028
+SIZE:  0x28
+FIELDS:
+  public            UnityEngine.Vector2Int[]        chunkCoords  // 0x10
+  public            Beyond.Rendering.HGSOCSubSceneData.ChunkData[]chunkDataArray  // 0x18
+  public            System.Int32[]                  explicitLayers  // 0x20
+METHODS:
+END_CLASS
+
+CLASS: MeshRendererToSync
+TYPE:  sealed struct
+TOKEN: 0x200002D
+SIZE:  0x30
+FIELDS:
+  public            UnityEngine.Transform           captureTransform  // 0x10
+  public            UnityEngine.Renderer            captureRenderer  // 0x18
+  public            UnityEngine.Transform           followTransform  // 0x20
+  public            UnityEngine.Renderer            followRenderer  // 0x28
+METHODS:
+END_CLASS
+
+CLASS: CaptureRenderGameObject
+TYPE:  class
+TOKEN: 0x200002E
+SIZE:  0x28
+FIELDS:
+  public            UnityEngine.GameObject          gameObject  // 0x10
+  public            UnityEngine.MeshRenderer        meshRenderer  // 0x18
+  public            UnityEngine.MeshFilter          meshFilter  // 0x20
+METHODS:
+  RVA=0x041E1670  token=0x60000DF  System.Void .ctor()
+END_CLASS
+
+CLASS: RendererInfo
+TYPE:  class
+TOKEN: 0x2000031
+SIZE:  0x58
+FIELDS:
+  private           UnityEngine.Renderer            m_renderer  // 0x10
+  private           System.String                   m_rendererName  // 0x18
+  public            Beyond.Rendering.EntityVFXRendererMasktypeMask  // 0x20
+  public            System.Int32                    subMeshCount  // 0x24
+  public            UnityEngine.Rendering.ShadowCastingModeoriShadowCastingMode  // 0x28
+  public            UnityEngine.Experimental.Rendering.RayTracingModeoriRayTracingMode  // 0x2c
+  public            UnityEngine.Material[]          sourceMaterials  // 0x30
+  public            System.Boolean                  materialReplacing  // 0x38
+  public            UnityEngine.Material[]          replacingMaterials  // 0x40
+  public            UnityEngine.Vector4             customPerDrawData0  // 0x48
+PROPERTIES:
+  currentMeshMaterials  get=0x0302F140
+  rendererValid  get=0x02E61B10
+  rendererName  get=0x02E61800
+METHODS:
+  RVA=0x02E5E700  token=0x6000103  System.Boolean IsRendererValid()
+  RVA=0x02E5E910  token=0x6000104  System.Boolean TryBeginMaterialUpdate()
+  RVA=0x02E5F1C0  token=0x6000105  System.Boolean TryInit(UnityEngine.Renderer renderer, System.Collections.Generic.List<Beyond.Rendering.EntityRendererTypeConfig> configs)
+  RVA=0x02E60FB0  token=0x6000106  System.Void _Init(UnityEngine.Renderer renderer, System.Collections.Generic.List<Beyond.Rendering.EntityRendererTypeConfig> configs)
+  RVA=0x02E60840  token=0x6000107  System.Boolean TryStopShadowCasting(System.Boolean stopRayTracing)
+  RVA=0x02E5F7F0  token=0x6000108  System.Boolean TryRevertShadowCastingMode()
+  RVA=0x02E5EB90  token=0x6000109  System.Boolean TryFillRendererTypeMask(System.Collections.Generic.Dictionary<UnityEngine.Renderer,Beyond.Rendering.EntityVFXRendererMask> target)
+  RVA=0x02E5FE60  token=0x600010A  System.Boolean TrySetManualDitherAlphaValue(System.Single value)
+  RVA=0x02E5FFE0  token=0x600010B  System.Boolean TrySetManualDitherEnable(System.Boolean enable, System.Boolean& allRendererEnabled)
+  RVA=0x02E60260  token=0x600010C  System.Boolean TrySetSharedMaterial(UnityEngine.Material material)
+  RVA=0x02E603D0  token=0x600010D  System.Boolean TrySetSharedMaterials(UnityEngine.Material[] materials)
+  RVA=0x02E5F360  token=0x600010E  System.Boolean TryReplaceSharedMaterials(UnityEngine.Material[] newMaterials)
+  RVA=0x02E5EE60  token=0x600010F  System.Boolean TryGetRendererPosition(UnityEngine.Vector3& position)
+  RVA=0x02E5ECC0  token=0x6000110  System.Boolean TryGetRendererBounds(UnityEngine.Bounds& bounds)
+  RVA=0x02E5E9F0  token=0x6000111  System.Boolean TryEncapsulateBounds(UnityEngine.Bounds& bounds)
+  RVA=0x02E5F980  token=0x6000112  System.Boolean TrySetCharacterPerDrawData(UnityEngine.Vector4 value)
+  RVA=0x02E5FBF0  token=0x6000113  System.Boolean TrySetEmissiveColor(UnityEngine.Vector4 value)
+  RVA=0x02E609F0  token=0x6000114  System.Int32 _GetSubMeshCount(UnityEngine.Renderer renderer)
+  RVA=0x041E1670  token=0x6000115  System.Void .ctor()
+END_CLASS
+
+CLASS: AddedMaterialInfo
+TYPE:  sealed struct
+TOKEN: 0x2000032
+SIZE:  0x40
+FIELDS:
+  public            System.Int32                    handle  // 0x10
+  public            UnityEngine.Material            material  // 0x18
+  public            Beyond.Rendering.EntityVFXRendererMaskmask  // 0x20
+  public            Beyond.Rendering.AddMaterialConfigconfig  // 0x28
+  public            System.Collections.Generic.Dictionary<UnityEngine.Material,UnityEngine.Material>customizeMaterialDict  // 0x38
+METHODS:
+END_CLASS
+
+CLASS: SourceMaterialCustomizeData
+TYPE:  sealed struct
+TOKEN: 0x2000033
+SIZE:  0x18
+FIELDS:
+  public            UnityEngine.Texture             colorTexture  // 0x10
+METHODS:
+END_CLASS
+
+CLASS: AddedMaterialController
+TYPE:  class
+TOKEN: 0x2000034
+SIZE:  0x58
+FIELDS:
+  public    static  System.Int32                    MAX_ACTIVE_ADDED_MATERIAL  // const
+  public            System.Collections.Generic.List<Beyond.Rendering.EntityRenderHelperMaterialController.AddedMaterialInfo>addedMaterialInfos  // 0x10
+  private           System.Collections.Generic.Dictionary<System.Int32,System.Single>m_addictiveFloatProperties  // 0x18
+  private           System.Collections.Generic.Dictionary<System.Int32,UnityEngine.Vector4>m_addictiveVectorProperties  // 0x20
+  private           System.Collections.Generic.Dictionary<System.Int32,UnityEngine.Texture>m_addictiveTextureProperties  // 0x28
+  private           System.Boolean                  m_useCustomizeRendererProperty  // 0x30
+  private           Beyond.Rendering.EntityCustomizeRendererPropertyConfigm_customizeRendererPropertyConfig  // 0x38
+  private           System.Boolean                  m_initedCustomizeRendererPropertyConfig  // 0x40
+  private           System.Collections.Generic.Dictionary<UnityEngine.Material,Beyond.Rendering.EntityRenderHelperMaterialController.SourceMaterialCustomizeData>m_sourceMaterialCustomizeDatas  // 0x48
+  private           System.Collections.Generic.List<Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo>m_rendererInfos  // 0x50
+  private   static  System.Int32                    s_handleCount  // static @ 0x0
+METHODS:
+  RVA=0x046B5900  token=0x6000116  System.Void Init(System.Collections.Generic.List<Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo> rendererInfos, Beyond.Rendering.EntityCustomizeRendererPropertyConfig customizeRendererPropertyConfig)
+  RVA=0x0A9B1F7C  token=0x6000117  System.Void _InitCustomizeRendererProperty()
+  RVA=0x046E8E80  token=0x6000118  System.Void Reset()
+  RVA=0x03578AF0  token=0x6000119  System.Int32 RequireAddMaterial(UnityEngine.Material material, Beyond.Rendering.EntityVFXRendererMask mask, Beyond.Rendering.AddMaterialConfig config)
+  RVA=0x03577020  token=0x600011A  Beyond.Rendering.EntityVFXRendererMask RequireRemoveMaterial(System.Int32 handle)
+  RVA=0x0A9B1DF8  token=0x600011B  UnityEngine.Material _GetCustomizePropertyMaterial(Beyond.Rendering.EntityRenderHelperMaterialController.AddedMaterialInfo addedMaterialInfo, UnityEngine.Material material)
+  RVA=0x0302EBF0  token=0x600011C  System.Void ApplySharedMaterialArray(Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo rendererInfo)
+  RVA=0x0A9B16B0  token=0x600011D  System.Boolean GetAddedMaterialsOfCustomizeProperties(System.Int32 handle, System.Collections.Generic.List<UnityEngine.Material> result)
+  RVA=0x0A9B1B98  token=0x600011E  System.Void SetAddictiveFloatProperty(System.Int32 propertyId, System.Single value)
+  RVA=0x0A9B1994  token=0x600011F  System.Single GetAddictiveFloatProperty(System.Int32 propertyId, System.Single defaultValue)
+  RVA=0x0A9B1D20  token=0x6000120  System.Void SetAddictiveVectorProperty(System.Int32 propertyId, UnityEngine.Vector4 value)
+  RVA=0x0A9B1ACC  token=0x6000121  UnityEngine.Vector4 GetAddictiveVectorProperty(System.Int32 propertyId, UnityEngine.Vector4 defaultValue)
+  RVA=0x0A9B1C5C  token=0x6000122  System.Void SetAddictiveTextureProperty(System.Int32 propertyId, UnityEngine.Texture value)
+  RVA=0x0A9B1A30  token=0x6000123  UnityEngine.Texture GetAddictiveTextureProperty(System.Int32 propertyId, UnityEngine.Texture defaultValue)
+  RVA=0x041E1670  token=0x6000124  System.Void .ctor()
+END_CLASS
+
+CLASS: CustomPerDrawDataController
+TYPE:  class
+TOKEN: 0x2000035
+SIZE:  0x20
+FIELDS:
+  private           System.Collections.Generic.List<Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo>m_rendererInfos  // 0x10
+  private           System.Single                   m_characterEnvironmentEffectPackedValue  // 0x18
+METHODS:
+  RVA=0x03522FF0  token=0x6000125  System.Single _PackUNorm8ToFloat(System.Single packed, System.Single value, System.Int32 bitShift)
+  RVA=0x04825740  token=0x6000126  System.Void Init(System.Collections.Generic.List<Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo> allRendererInfos)
+  RVA=0x0415F9E0  token=0x6000127  System.Void Reset()
+  RVA=0x0323AF90  token=0x6000128  System.Void SetFloatToCustomPerDraw(Beyond.Rendering.EntityRenderHelperCustomPerDrawType type, System.Single value, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=0x0A9B2B98  token=0x6000129  System.Void SetVectorToCustomPerDraw(Beyond.Rendering.EntityRenderHelperVectorCustomPerDrawType type, UnityEngine.Vector4 value, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=0x041E1670  token=0x600012A  System.Void .ctor()
+END_CLASS
+
+CLASS: MeshMaterialGroupData
+TYPE:  class
+TOKEN: 0x2000036
+SIZE:  0x50
+FIELDS:
+  public            Beyond.Rendering.EntityVFXRendererMaskmask  // 0x10
+  public            System.Collections.Generic.List<Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo>rendererInfos  // 0x18
+  public            System.Collections.Generic.Dictionary<System.Int32,System.Single>floatProperties  // 0x20
+  public            System.Collections.Generic.Dictionary<System.Int32,UnityEngine.Vector4>vectorProperties  // 0x28
+  public            System.Collections.Generic.Dictionary<System.Int32,UnityEngine.Texture>textureProperties  // 0x30
+  public            System.Collections.Generic.Dictionary<System.String,System.Boolean>keywordStates  // 0x38
+  public            System.Boolean                  depthOnlyPassControlling  // 0x40
+  public            System.Collections.Generic.Dictionary<UnityEngine.Material,UnityEngine.Material>src2dstMaterialDict  // 0x48
+METHODS:
+  RVA=0x04770870  token=0x600012B  System.Void CopyFrom(Beyond.Rendering.EntityRenderHelperMaterialController.MeshMaterialGroupData src)
+  RVA=0x0369B780  token=0x600012C  System.Void Clear()
+  RVA=0x041E1670  token=0x600012D  System.Void .ctor()
+END_CLASS
+
+CLASS: MeshMaterialController
+TYPE:  class
+TOKEN: 0x2000037
+SIZE:  0x18
+FIELDS:
+  private           System.Collections.Generic.List<Beyond.Rendering.EntityRenderHelperMaterialController.MeshMaterialGroupData>m_meshMaterialDatas  // 0x10
+  private   static  System.Collections.Generic.List<Beyond.Rendering.EntityRenderHelperMaterialController.MeshMaterialGroupData>s_cacheMeshMaterialDatas  // static @ 0x0
+  private   static readonly System.String                   VFX_MATERIAL_POSTFIX  // static @ 0x8
+METHODS:
+  RVA=0x03699A70  token=0x600012E  System.Void Init(System.Collections.Generic.List<Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo> allRendererInfos)
+  RVA=0x0369AED0  token=0x600012F  System.Void Reset()
+  RVA=0x035758F0  token=0x6000130  System.Void SetKeywordEnableToAllMaterial(System.String keyword, System.Boolean enable, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=0x0A9B70F4  token=0x6000131  System.Void SetDepthOnlyPassEnableToAllMaterial(System.Boolean enable, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=0x034DFDA0  token=0x6000132  System.Void SetFloatToAllMaterial(System.Int32 nameId, System.Single value, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=0x0A9B6C5C  token=0x6000133  System.Void ReleaseFloatToAllMaterial(System.Int32 nameId, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=0x0357B570  token=0x6000134  System.Void SetVectorToAllMaterial(System.Int32 nameId, UnityEngine.Vector4 value, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=0x0A9B6F6C  token=0x6000135  System.Void ReleaseVectorToAllMaterial(System.Int32 nameId, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=0x039411C0  token=0x6000136  System.Void SetTextureToAllMaterial(System.Int32 nameId, UnityEngine.Texture value, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=0x0A9B6DE4  token=0x6000137  System.Void ReleaseTextureToAllMaterial(System.Int32 nameId, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=0x03574C40  token=0x6000138  System.Void _CreateReplaceMaterial(Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo rendererInfo, Beyond.Rendering.EntityRenderHelperMaterialController.MeshMaterialGroupData groupData)
+  RVA=0x02E5E5A0  token=0x6000139  System.Boolean _TryEnsureReplaceMaterial(Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo rendererInfo, Beyond.Rendering.EntityRenderHelperMaterialController.MeshMaterialGroupData groupData)
+  RVA=0x04656720  token=0x600013A  System.Void _CopyReplaceMaterial(Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo rendererInfo, Beyond.Rendering.EntityRenderHelperMaterialController.MeshMaterialGroupData groupData)
+  RVA=0x0369B370  token=0x600013B  System.Void _ReleaseAllReplaceMaterial(Beyond.Rendering.EntityRenderHelperMaterialController.MeshMaterialGroupData groupData)
+  RVA=0x035751C0  token=0x600013C  System.Void _ReplaceSharedMaterial(Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo rendererInfo, UnityEngine.Material[] newMaterials)
+  RVA=0x0369B2A0  token=0x600013D  System.Void _GetAffectGroupData(Beyond.Rendering.EntityVFXRendererMask rendererMask, System.Collections.Generic.List<Beyond.Rendering.EntityRenderHelperMaterialController.MeshMaterialGroupData> result)
+  RVA=0x032C5570  token=0x600013E  System.Void _SplitRenderers(System.Int32 oldStateIndex, Beyond.Rendering.EntityVFXRendererMask newMask)
+  RVA=0x0A9B79D4  token=0x600013F  System.Void SetZTestInMaterial(System.String shaderName, System.Boolean enable)
+  RVA=0x041E1670  token=0x6000140  System.Void .ctor()
+  RVA=0x04D27FD0  token=0x6000141  System.Void .cctor()
+END_CLASS
+
+CLASS: RendererInfo
+TYPE:  class
+TOKEN: 0x200003B
+SIZE:  0x28
+FIELDS:
+  private           UnityEngine.Renderer            m_renderer  // 0x10
+  private           System.String                   <rendererName>k__BackingField  // 0x18
+  public            System.Boolean                  oriVisible  // 0x20
+  public            System.Boolean                  curVisible  // 0x21
+PROPERTIES:
+  rendererName  get=0x0385B100  set=0x02E61C50
+  rendererValid  get=0x02E619D0
+METHODS:
+  RVA=0x02E5F050  token=0x6000150  System.Boolean TryInit(UnityEngine.Renderer renderer)
+  RVA=0x02E60D40  token=0x6000151  System.Void _Init(UnityEngine.Renderer renderer)
+  RVA=0x02E5E7E0  token=0x6000152  System.Boolean TryAddToDictionary(System.Collections.Generic.Dictionary<UnityEngine.Renderer,Beyond.Rendering.EntityRenderHelperVisibleController.RendererInfo> dictionary)
+  RVA=0x02E606B0  token=0x6000153  System.Boolean TrySetVisible(System.Boolean visible)
+  RVA=0x02E60540  token=0x6000154  System.Boolean TrySetVisibleByRenderer(System.Boolean visible)
+  RVA=0x02E5F6D0  token=0x6000155  System.Boolean TryResetVisible()
+  RVA=0x041E1670  token=0x6000156  System.Void .ctor()
+END_CLASS
+
+CLASS: TimeMode
+TYPE:  sealed struct
+TOKEN: 0x2000044
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.EntityVFXAfterImageData.TimeModeInterval  // const
+  public    static  Beyond.Rendering.EntityVFXAfterImageData.TimeModeBurst  // const
+METHODS:
+END_CLASS
+
+CLASS: State
+TYPE:  sealed struct
+TOKEN: 0x2000052
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.EntityVFXControllerStateBase.StateEnd  // const
+  public    static  Beyond.Rendering.EntityVFXControllerStateBase.StateStart  // const
+  public    static  Beyond.Rendering.EntityVFXControllerStateBase.StateLoop  // const
+  public    static  Beyond.Rendering.EntityVFXControllerStateBase.StateEnding  // const
+METHODS:
+END_CLASS
+
+CLASS: UVSet
+TYPE:  sealed struct
+TOKEN: 0x2000058
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.EntityVFXDissolveData.UVSetUV  // const
+  public    static  Beyond.Rendering.EntityVFXDissolveData.UVSetUV2  // const
+METHODS:
+END_CLASS
+
+CLASS: VATData
+TYPE:  class
+TOKEN: 0x200005C
+SIZE:  0x28
+FIELDS:
+  public            UnityEngine.Texture             factoryVATMap  // 0x10
+  public            UnityEngine.Vector4             factoryVATMapParams  // 0x18
+METHODS:
+  RVA=0x041E1670  token=0x60001C0  System.Void .ctor()
+END_CLASS
+
+CLASS: AddedMaterialData
+TYPE:  class
+TOKEN: 0x200005D
+SIZE:  0x30
+FIELDS:
+  public            UnityEngine.Material            srcMaterial  // 0x10
+  public            UnityEngine.Material[]          materialInstancesOfEachVAT  // 0x18
+  public            System.Collections.Generic.Dictionary<System.Int32,System.Single>savedFloatProperties  // 0x20
+  public            System.Collections.Generic.Dictionary<System.Int32,UnityEngine.Vector4>savedVectorProperties  // 0x28
+METHODS:
+  RVA=0x0A9B2218  token=0x60001C1  System.Void .ctor()
+END_CLASS
+
+CLASS: <>c__DisplayClass12_0
+TYPE:  sealed class
+TOKEN: 0x200005E
+SIZE:  0x18
+FIELDS:
+  public            UnityEngine.Material            src  // 0x10
+METHODS:
+  RVA=0x041E1670  token=0x60001C2  System.Void .ctor()
+  RVA=0x06C8C288  token=0x60001C3  System.Boolean <_GetAddedMaterialIndex>b__0(Beyond.Rendering.EntityVFXFactoryAddedMaterialManager.AddedMaterialData data)
+END_CLASS
+
+CLASS: <>c__DisplayClass13_0
+TYPE:  sealed class
+TOKEN: 0x200005F
+SIZE:  0x18
+FIELDS:
+  public            UnityEngine.Material            src  // 0x10
+METHODS:
+  RVA=0x041E1670  token=0x60001C4  System.Void .ctor()
+  RVA=0x06C8C288  token=0x60001C5  System.Boolean <_RemoveVATMaterial>b__0(Beyond.Rendering.EntityVFXFactoryAddedMaterialManager.AddedMaterialData data)
+END_CLASS
+
+CLASS: VATMaterialData
+TYPE:  class
+TOKEN: 0x2000061
+SIZE:  0x20
+FIELDS:
+  public            System.Int32                    refCount  // 0x10
+  public            UnityEngine.Material            vatMaterial  // 0x18
+METHODS:
+  RVA=0x041E1670  token=0x60001C9  System.Void .ctor()
+END_CLASS
+
+CLASS: Type
+TYPE:  sealed struct
+TOKEN: 0x2000063
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.EntityVFXSetParamsData.TypeCharacter  // const
+  public    static  Beyond.Rendering.EntityVFXSetParamsData.TypeVFX  // const
+  public    static  Beyond.Rendering.EntityVFXSetParamsData.TypeLit  // const
+METHODS:
+END_CLASS
+
+CLASS: PsoInfoWrapperItem
+TYPE:  class
+TOKEN: 0x2000072
+SIZE:  0x30
+FIELDS:
+  public            System.String                   infoJson  // 0x10
+  public            System.Single                   time  // 0x18
+  public            System.Int32                    codeSize  // 0x1c
+  public            System.Boolean                  isMissing  // 0x20
+  public            System.String                   levelId  // 0x28
+METHODS:
+  RVA=0x041E1670  token=0x600023F  System.Void .ctor()
+END_CLASS
+
+CLASS: PsoInfoWrapper
+TYPE:  class
+TOKEN: 0x2000073
+SIZE:  0x58
+FIELDS:
+  public            UnityEngine.RuntimePlatform     platform  // 0x10
+  public            System.String                   lastCL  // 0x18
+  public            System.String                   lastEngineCl  // 0x20
+  public            System.String                   deviceModel  // 0x28
+  public            System.String                   devVersion  // 0x30
+  public            System.String                   branch  // 0x38
+  public            UnityEngine.Rendering.GraphicsDeviceTypegraphicsDeviceType  // 0x40
+  public            System.Int32                    shaderLod  // 0x44
+  public            System.Int32                    infoVersion  // 0x48
+  public            System.Boolean                  isDebug  // 0x4c
+  public            System.Collections.Generic.List<Beyond.Rendering.PsoCreateUploadHelper.PsoInfoWrapperItem>psoInfoWrapperItems  // 0x50
+METHODS:
+  RVA=0x0A9B85F0  token=0x6000240  System.Void .ctor()
+END_CLASS
+
+CLASS: <>c__DisplayClass36_0
+TYPE:  sealed class
+TOKEN: 0x2000074
+SIZE:  0x28
+FIELDS:
+  public            System.String                   path  // 0x10
+  public            System.String                   serverFileName  // 0x18
+  public            Beyond.Rendering.PsoCreateUploadHelper.PsoInfoWrapperpsoInfoWrapper  // 0x20
+METHODS:
+  RVA=0x041E1670  token=0x6000241  System.Void .ctor()
+  RVA=0x02E61CB0  token=0x6000242  System.Void <_CreateAndUploadFinalJson>b__0(System.Object param)
+END_CLASS
+
+CLASS: <>c__DisplayClass42_0
+TYPE:  sealed class
+TOKEN: 0x2000075
+SIZE:  0x30
+FIELDS:
+  public            System.String                   urlPath  // 0x10
+  public            System.String                   rawFilePath  // 0x18
+  public            System.String                   serverFileNameOverride  // 0x20
+  public            System.Action<System.Boolean,System.String,System.String>callback  // 0x28
+METHODS:
+  RVA=0x041E1670  token=0x6000243  System.Void .ctor()
+  RVA=0x02E61D00  token=0x6000244  System.Void <_UploadFile>b__0(System.Object param)
+END_CLASS
+
+CLASS: <>c__DisplayClass43_0
+TYPE:  sealed class
+TOKEN: 0x2000076
+SIZE:  0x28
+FIELDS:
+  public            System.Action<System.Boolean,System.String,System.String>callback  // 0x10
+  public            System.String                   fileServerUrl  // 0x18
+  public            System.String                   errorMessage  // 0x20
+METHODS:
+  RVA=0x041E1670  token=0x6000245  System.Void .ctor()
+  RVA=0x02E61D70  token=0x6000246  System.Void <_UploadFileToServer>b__1(System.Object _)
+  RVA=0x02E61D70  token=0x6000247  System.Void <_UploadFileToServer>b__2(System.Object _)
+END_CLASS
+
+CLASS: <>c__DisplayClass43_1
+TYPE:  sealed class
+TOKEN: 0x2000077
+SIZE:  0x20
+FIELDS:
+  public            System.String                   result  // 0x10
+  public            Beyond.Rendering.PsoCreateUploadHelper.<>c__DisplayClass43_0CS$<>8__locals1  // 0x18
+METHODS:
+  RVA=0x041E1670  token=0x6000248  System.Void .ctor()
+  RVA=0x02E61DB0  token=0x6000249  System.Void <_UploadFileToServer>b__0(System.Object _)
+END_CLASS
+
+CLASS: <_UploadFileToServer>d__43
+TYPE:  sealed struct
+TOKEN: 0x2000078
+SIZE:  0xA0
+IMPLEMENTS: System.Runtime.CompilerServices.IAsyncStateMachine
+FIELDS:
+  public            System.Int32                    <>1__state  // 0x10
+  public            System.Runtime.CompilerServices.AsyncVoidMethodBuilder<>t__builder  // 0x18
+  public            System.Action<System.Boolean,System.String,System.String>callback  // 0x38
+  public            System.String                   urlPath  // 0x40
+  public            System.String                   serverFileNameOverride  // 0x48
+  public            System.String                   rawFilePath  // 0x50
+  private           Beyond.Rendering.PsoCreateUploadHelper.<>c__DisplayClass43_1<>8__1  // 0x58
+  private           Beyond.Rendering.PsoCreateUploadHelper.<>c__DisplayClass43_0<>8__2  // 0x60
+  private           System.String                   <filePathServerUrl>5__2  // 0x68
+  private           System.IO.Stream                <fileStream>5__3  // 0x70
+  private           System.Net.Http.HttpClient      <httpClient>5__4  // 0x78
+  private           System.Net.Http.MultipartFormDataContent<content>5__5  // 0x80
+  private           System.Net.Http.HttpResponseMessage<response>5__6  // 0x88
+  private           System.Runtime.CompilerServices.TaskAwaiter<System.Net.Http.HttpResponseMessage><>u__1  // 0x90
+  private           System.Runtime.CompilerServices.TaskAwaiter<System.String><>u__2  // 0x98
+METHODS:
+  RVA=0x02E61DF0  token=0x600024A  System.Void MoveNext()
+  RVA=0x02A58B10  token=0x600024B  System.Void SetStateMachine(System.Runtime.CompilerServices.IAsyncStateMachine stateMachine)
+END_CLASS
+
+CLASS: <>c__DisplayClass41_0
+TYPE:  sealed class
+TOKEN: 0x200007A
+SIZE:  0x38
+FIELDS:
+  public            System.Single[,]                sdf  // 0x10
+  public            System.Collections.Generic.HashSet<System.Int32>hashList  // 0x18
+  public            System.Int32                    xCount  // 0x20
+  public            System.Collections.Generic.Queue<UnityEngine.Vector2Int>pendingList  // 0x28
+  public            System.Action<System.Int32,System.Int32><>9__0  // 0x30
+METHODS:
+  RVA=0x041E1670  token=0x6000261  System.Void .ctor()
+  RVA=0x0A9C5BE8  token=0x6000262  System.Void <_CalculateEdgeSignedDistance>b__0(System.Int32 tx, System.Int32 tz)
+END_CLASS
+
+CLASS: <>c__DisplayClass41_1
+TYPE:  sealed class
+TOKEN: 0x200007B
+SIZE:  0x28
+FIELDS:
+  public            System.Int32                    ix  // 0x10
+  public            System.Int32                    iz  // 0x14
+  public            System.Single                   minDistance  // 0x18
+  public            Beyond.Rendering.VFXSludgeBaker.<>c__DisplayClass41_0CS$<>8__locals1  // 0x20
+METHODS:
+  RVA=0x041E1670  token=0x6000263  System.Void .ctor()
+  RVA=0x0A9C5C8C  token=0x6000264  System.Void <_CalculateEdgeSignedDistance>b__1(System.Int32 tx, System.Int32 tz)
+END_CLASS
+
+CLASS: BoundsUtil
+TYPE:  static class
+TOKEN: 0x200007D
+SIZE:  0x10
+FIELDS:
+METHODS:
+  RVA=0x0A9BBBE4  token=0x6000266  System.Void GetTopBottomPoints(UnityEngine.Bounds bounds, UnityEngine.Transform t, UnityEngine.Vector3& topPoint, UnityEngine.Vector3& bottomPoint, System.Nullable<UnityEngine.Vector3> upDir)
+END_CLASS
+
+CLASS: Frame
+TYPE:  sealed struct
+TOKEN: 0x200007F
+SIZE:  0x2C
+FIELDS:
+  public            UnityEngine.Vector3             origin  // 0x10
+  public            UnityEngine.Quaternion          rot  // 0x1c
+METHODS:
+  RVA=0x04D91FA0  token=0x6000272  System.Void .ctor(UnityEngine.Vector3 origin, UnityEngine.Quaternion rot)
+  RVA=0x0A9BC02C  token=0x6000273  UnityEngine.Vector3 WorldToFrame(UnityEngine.Vector3 pWorld)
+  RVA=0x0A9BBF38  token=0x6000274  UnityEngine.Vector3 FrameToWorld(UnityEngine.Vector3 pFrame)
+END_CLASS
+
+CLASS: EdgeMode
+TYPE:  sealed struct
+TOKEN: 0x2000080
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.VFXSludgeNavUtils.Spline2DProjectAndSimplify.EdgeModeUseSplineOrder  // const
+  public    static  Beyond.Rendering.VFXSludgeNavUtils.Spline2DProjectAndSimplify.EdgeModeConvexHull  // const
+METHODS:
+END_CLASS
+
+CLASS: ProcessResult
+TYPE:  class
+TOKEN: 0x2000081
+SIZE:  0x40
+FIELDS:
+  public            System.Collections.Generic.List<UnityEngine.Vector3>samples3D  // 0x10
+  public            System.Collections.Generic.List<UnityEngine.Vector2>projected2D  // 0x18
+  public            System.Collections.Generic.List<System.Int32>edgeIndices  // 0x20
+  public            System.Collections.Generic.List<System.Int32>simplifiedIndices  // 0x28
+  public            System.Single                   worldMinY  // 0x30
+  public            System.Single                   worldMaxY  // 0x34
+  public            System.Single                   frameMinY  // 0x38
+  public            System.Single                   frameMaxY  // 0x3c
+METHODS:
+  RVA=0x041E1670  token=0x6000275  System.Void .ctor()
+END_CLASS
+
+CLASS: <>c__DisplayClass6_0
+TYPE:  sealed class
+TOKEN: 0x2000082
+SIZE:  0x18
+FIELDS:
+  public            System.Collections.Generic.List<UnityEngine.Vector2>pts  // 0x10
+METHODS:
+  RVA=0x041E1670  token=0x6000276  System.Void .ctor()
+  RVA=0x0A9C5DCC  token=0x6000277  System.Int32 <ConvexHullIndices>b__0(System.Int32 i, System.Int32 j)
+END_CLASS
+
+CLASS: Spline2DProjectAndSimplify
+TYPE:  static class
+TOKEN: 0x200007E
+SIZE:  0x10
+FIELDS:
+METHODS:
+  RVA=0x0A9C3A88  token=0x6000267  Beyond.Rendering.VFXSludgeNavUtils.Spline2DProjectAndSimplify.Frame MakeFrameFromPlaneNormal(UnityEngine.Vector3 planeOrigin, UnityEngine.Vector3 planeNormal)
+  RVA=0x0A9C39C4  token=0x6000268  Beyond.Rendering.VFXSludgeNavUtils.Spline2DProjectAndSimplify.Frame MakeFrameByYaw(UnityEngine.Vector3 origin, System.Single yawDeg)
+  RVA=0x0A9C42FC  token=0x6000269  System.Collections.Generic.List<UnityEngine.Vector3> SampleUniformByArcLength(UnityEngine.Splines.SplineContainer container, System.Single stepMeters, System.Int32 splineIndex, System.Boolean closed, System.Single oversample)
+  RVA=0x0A9C4088  token=0x600026A  System.Void ProjectWorldToFrameXZ(System.Collections.Generic.List<UnityEngine.Vector3> worldPts, Beyond.Rendering.VFXSludgeNavUtils.Spline2DProjectAndSimplify.Frame frame, System.Collections.Generic.List<UnityEngine.Vector2>& projected2D, System.Collections.Generic.List<System.Single>& frameYs, System.Single& worldMinY, System.Single& worldMaxY, System.Single& frameMinY, System.Single& frameMaxY)
+  RVA=0x0A9C347C  token=0x600026B  System.Collections.Generic.List<System.Int32> ConvexHullIndices(System.Collections.Generic.List<UnityEngine.Vector2> pts)
+  RVA=0x0A9C4C64  token=0x600026C  System.Single _AngleDegAt(System.Collections.Generic.List<UnityEngine.Vector2> p, System.Int32 i, System.Boolean closed)
+  RVA=0x0A9C4E98  token=0x600026D  System.Single _CurvatureAt(System.Collections.Generic.List<UnityEngine.Vector2> p, System.Int32 i, System.Boolean closed)
+  RVA=0x0A9C5178  token=0x600026E  System.Single _PointToSegmentDistance2D(UnityEngine.Vector2 a, UnityEngine.Vector2 b, UnityEngine.Vector2 p)
+  RVA=0x0A9C4834  token=0x600026F  System.Collections.Generic.List<System.Int32> Simplify2D_ByCurvatureAngleDeviation(System.Collections.Generic.List<UnityEngine.Vector2> poly, System.Boolean closed, System.Single angleDegThresh, System.Single deltaKappaThresh, System.Single devEps)
+  RVA=0x0A9C3BB0  token=0x6000270  Beyond.Rendering.VFXSludgeNavUtils.Spline2DProjectAndSimplify.ProcessResult Process(UnityEngine.Splines.SplineContainer container, Beyond.Rendering.VFXSludgeNavUtils.Spline2DProjectAndSimplify.Frame frame, System.Single stepMeters, System.Int32 splineIndex, System.Boolean splineClosed, Beyond.Rendering.VFXSludgeNavUtils.Spline2DProjectAndSimplify.EdgeMode edgeMode, System.Single angleDegThresh, System.Single deltaKappaThresh, System.Single devEpsFactor)
+  RVA=0x0A9C4C0C  token=0x6000271  System.Single <ConvexHullIndices>g__Cross|6_1(UnityEngine.Vector2 a, UnityEngine.Vector2 b, UnityEngine.Vector2 c)
+END_CLASS
+
+CLASS: <>c__DisplayClass0_0
+TYPE:  sealed struct
+TOKEN: 0x2000084
+SIZE:  0x30
+FIELDS:
+  public            System.Int32                    lutResolution  // 0x10
+  public            UnityEngine.Splines.SplineContainercontainer  // 0x18
+  public            System.Int32                    splineIndex  // 0x20
+  public            System.Boolean                  worldSpace  // 0x24
+  public            System.Boolean                  closed  // 0x25
+  public            System.Single                   totalLen  // 0x28
+METHODS:
+END_CLASS
+
+CLASS: SplineSamplingUtils
+TYPE:  static class
+TOKEN: 0x2000083
+SIZE:  0x10
+FIELDS:
+METHODS:
+  RVA=0x0A9C52A8  token=0x6000278  System.Collections.Generic.List<UnityEngine.Vector2> SampleByArcLength(UnityEngine.Splines.SplineContainer container, System.Single step, System.Int32 splineIndex, System.Int32 lutResolution, System.Boolean closed, System.Boolean worldSpace)
+  RVA=0x0A9C5AA0  token=0x6000279  UnityEngine.Vector3 <SampleByArcLength>g__P|0_0(System.Int32 i, Beyond.Rendering.VFXSludgeNavUtils.SplineSamplingUtils.<>c__DisplayClass0_0& )
+  RVA=0x0A9C5BB8  token=0x600027A  System.Single <SampleByArcLength>g__WrapLen|0_1(System.Single s, Beyond.Rendering.VFXSludgeNavUtils.SplineSamplingUtils.<>c__DisplayClass0_0& )
+END_CLASS
+
+CLASS: PolySimplify
+TYPE:  static class
+TOKEN: 0x2000085
+SIZE:  0x10
+FIELDS:
+METHODS:
+  RVA=0x0A9C2ECC  token=0x600027B  System.Collections.Generic.List<UnityEngine.Vector3> SimplifyByAngle(System.Collections.Generic.List<UnityEngine.Vector3> pts, System.Single maxTurnDeg, System.Single minEdgeLen, System.Boolean closed)
+END_CLASS
+
+CLASS: OverlayLayer
+TYPE:  class
+TOKEN: 0x200008F
+SIZE:  0x40
+FIELDS:
+  public            System.Int32                    handle  // 0x10
+  public            UnityEngine.GameObject          overlayGO  // 0x18
+  public            UnityEngine.HGMeshRenderer      overlayRenderer  // 0x20
+  public            UnityEngine.HGMeshRendererData  clonedData  // 0x28
+  public            UnityEngine.Material            currentMaterial  // 0x30
+  public            UnityEngine.Material[]          materialsScratch  // 0x38
+METHODS:
+  RVA=0x041E1670  token=0x60002AA  System.Void .ctor()
+END_CLASS
+
+CLASS: MaterialsProvider
+TYPE:  sealed class
+TOKEN: 0x2000091
+SIZE:  0x80
+EXTENDS: System.MulticastDelegate
+FIELDS:
+METHODS:
+  RVA=0x083D0A80  token=0x60002B5  System.Void .ctor(System.Object object, System.IntPtr method)
+  RVA=0x07378308  token=0x60002B6  UnityEngine.Material[] Invoke()
+  RVA=0x053DED94  token=0x60002B7  System.IAsyncResult BeginInvoke(System.AsyncCallback callback, System.Object object)
+  RVA=0x05397E84  token=0x60002B8  UnityEngine.Material[] EndInvoke(System.IAsyncResult result)
+END_CLASS
+
+CLASS: __StaticArrayInitTypeSize=20
+TYPE:  sealed struct
+TOKEN: 0x2000095
+SIZE:  0x24
+FIELDS:
+METHODS:
+END_CLASS
+
+CLASS: <PrivateImplementationDetails>
+TYPE:  sealed class
+TOKEN: 0x2000094
+SIZE:  0x10
+FIELDS:
+  private   static readonly <PrivateImplementationDetails>.__StaticArrayInitTypeSize=207848C87B1819709EC2A0D678BCD530B3C49CA3BB2F61B8FCEF827B64DE251E15  // static @ 0x0
+METHODS:
+END_CLASS
+
+CLASS: Beyond.Rendering.CustomPerDrawDataChannelUtils
+TYPE:  class
+TOKEN: 0x200000B
+SIZE:  0x10
+FIELDS:
+  public    static  System.Int32                    HOUDINI_VAT_INDEX  // const
+  public    static  System.Int32                    HOUDINI_VAT_CHANNEL  // const
+  public    static  System.Int32                    LIT_EMISSIVE_INDEX  // const
+  public    static  System.Int32                    LIT_EMISSIVE_ANIMATION_SWEEP_INDEX  // const
+  public    static  System.Int32                    LIT_EMISSIVE_ALBEDO_INDEX  // const
+  public    static  System.Int32                    UV_ANIMATION_INDEX  // const
+  public    static  System.Int32                    MOVING_BAMBOO_CUR_PARAM_INDEX  // const
+  public    static  System.Int32                    MOVING_BAMBOO_LAST_PARAM_INDEX  // const
+  public    static  System.Int32                    LIT_DISSOLVE_INDEX  // const
+  public    static  System.Int32                    LIT_DISSOLVE_CHANNEL  // const
+  public    static  System.Int32                    CHARACTER_PARAMS_INDEX  // const
+  public    static  System.Int32                    CHARACTER_ENVIRONMENT_EFFECT_INTENSITY_CHANNEL  // const
+  public    static  System.Int32                    CHARACTER_WET_EFFECT_WORLD_SPACE_HEIGHT_CHANNEL  // const
+  public    static  System.Int32                    CHARACTER_DISSOLVE_SCHEDULE_OFFSET_CHANNEL  // const
+  public    static  System.Int32                    CHARACTER_RAIN_EFFECT_INTENSITY_CHANNEL_BIT  // const
+  public    static  System.Int32                    CHARACTER_WET_EFFECT_INTENSITY_CHANNEL_BIT  // const
+  public    static  System.Int32                    CHARACTER_WET_EFFECT_GLOBAL_INTENSITY_CHANNEL_BIT  // const
+  public    static  System.Int32                    CHARACTER_SNOW_EFFECT_INTENSITY_CHANNEL_BIT  // const
+  public    static  System.Int32                    CHARACTER_PARAMS_CHANNEL_BIT_BIAS  // const
+  public    static  System.Int32                    CHANNELS_PER_PARAM  // const
+  public    static  System.Int32                    VFX_ALPHA_INDEX  // const
+  public    static  System.Int32                    VFX_ALPHA_DEFAULT_CHANNEL  // const
+  public    static  System.Int32                    TRAIL_EFFECT_DISPLAY_INDEX  // const
+  public    static  System.Int32                    TRAIL_EFFECT_SCAN_INDEX  // const
+METHODS:
+  RVA=0x0A9AB688  token=0x600001B  System.Void SetPerDrawData_LitDissolve(UnityEngine.Renderer affectRenderer, System.Single dissolve)
+  RVA=0x0A9AB5EC  token=0x600001C  System.Void SetPerDrawData_HoudiniVAT(UnityEngine.Renderer affectRenderer, System.Int32 displayFrame)
+  RVA=0x0A9AB720  token=0x600001D  System.Void SetPerDrawData_MovingBamboo(UnityEngine.Renderer affectRenderer, UnityEngine.Vector4 curParam, UnityEngine.Vector4 lastParam)
+  RVA=0x03F26D20  token=0x600001E  System.Void SetPerDrawData_EmissiveColor(UnityEngine.Renderer affectRenderer, UnityEngine.Vector4 emissive)
+  RVA=0x03F26D90  token=0x600001F  System.Void SetPerDrawData_EmissiveAlbedoColor(UnityEngine.Renderer affectRenderer, UnityEngine.Vector4 emissiveAlbedo)
+  RVA=0x03F26F90  token=0x6000020  System.Void SetPerDrawData_SweepLightIntensity(UnityEngine.Renderer affectRenderer, System.Single intensity)
+  RVA=0x03F26E00  token=0x6000021  System.Void SetPerDrawData_SweepBreathing(UnityEngine.Renderer affectRenderer, System.Single frequency, System.Single intensity, System.Single timeOffset)
+  RVA=0x0A9AB95C  token=0x6000022  System.Void SetPerDrawData_UVAnimation(UnityEngine.Renderer affectRenderer, System.Single animationEnable, System.Single customAddTime)
+  RVA=0x0323AF00  token=0x6000023  System.Void SetPerDrawData_CharacterParams(UnityEngine.Renderer affectRenderer, UnityEngine.Vector4 param0)
+  RVA=0x0A9ABA0C  token=0x6000024  System.Void SetPerDrawData_VFXAlpha0(UnityEngine.Renderer affectRenderer, System.Single alpha)
+  RVA=0x0A9AB7E0  token=0x6000025  System.Void SetPerDrawData_TrailDisplayArea(UnityEngine.Renderer affectRenderer, System.Single displayDistanceStart1, System.Single displayDistanceEnd1, System.Single displayDistanceStart2, System.Single displayDistanceEnd2)
+  RVA=0x0A9AB8BC  token=0x6000026  System.Void SetPerDrawData_TrailScanCircle(UnityEngine.Renderer affectRenderer, System.Single scanRadiusStart, System.Single scanRadiusEnd)
+  RVA=0x041E1670  token=0x6000027  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.PipelineSettingHelper
+TYPE:  static class
+TOKEN: 0x200000C
+SIZE:  0x10
+FIELDS:
+  public    static  System.String                   SETTING_FOLDER  // const
+  public    static  System.String                   SETTING_FILE_LIST  // const
+METHODS:
+  RVA=0x03583870  token=0x6000028  System.Void LoadPipelineSettings()
+  RVA=0x035850E0  token=0x6000029  System.String _LoadSetting(System.String settingName)
+  RVA=0x03584E30  token=0x600002A  System.String _GetFullSettingPath(System.String settingName)
+END_CLASS
+
+CLASS: Beyond.Rendering.ResourceRouter
+TYPE:  static class
+TOKEN: 0x200000D
+SIZE:  0x10
+FIELDS:
+  private   static  System.String                   DYNAMIC_ENVIRONMENTS_FOLDER  // const
+METHODS:
+  RVA=0x0A9AD718  token=0x600002B  System.String _GetCategoryFolder(Beyond.Resource.RootCategory category)
+  RVA=0x0A9AD69C  token=0x600002C  System.String GetEnvironmentsFullPath(Beyond.Resource.RootCategory category, System.Boolean isDevOnly)
+  RVA=0x0A9AD658  token=0x600002D  System.String GetDecalResourcesPath()
+  RVA=0x0A9AD5DC  token=0x600002E  System.String GetDecalResourcesFullPath(Beyond.Resource.RootCategory category, System.Boolean isDevOnly)
+END_CLASS
+
+CLASS: Beyond.Rendering.ShaderWarmupManager
+TYPE:  class
+TOKEN: 0x200000E
+SIZE:  0x10
+FIELDS:
+  public    static readonly System.String                   RUNTIME_PSO_COLLECTION_FOLDER  // static @ 0x0
+  private   static  System.String                   WARM_UP_KEY_WORD  // const
+  private   static  System.String                   WARM_UP_API_KEY_WORD  // const
+  private   static  System.String                   WARM_UP_DRIVER_KEY_WORD  // const
+  private   static  System.String                   WARM_UP_REASON_KEY_WORD  // const
+  private   static  System.String                   WARMUP_RETRY_COUNT  // const
+  private   static  System.String                   WARMUP_UNFINISHED_COUNT  // const
+  private   static  System.String                   DOWNLOADING_WARMUP_UNFINISHED_COUNT  // const
+  private   static  System.String                   FEATURE_RAYTRACING  // const
+  private   static  System.String                   FEATURE_ONE_PASS  // const
+  private   static  System.Int32                    SHADER_COMPILE_WEIGHT  // const
+  public    static readonly System.Int32                    UNFINISHED_RETRY_COUNT_LIMIT  // static @ 0x8
+  public    static readonly System.Int32                    DOWNLOADING_UNFINISHED_RETRY_COUNT_LIMIT  // static @ 0xc
+  public    static readonly System.Int32                    CACHE_FAILED_RETRY_COUNT_LIMIT  // static @ 0x10
+  public    static  System.Boolean                  s_shouldUseOverride  // static @ 0x14
+  public    static  System.Boolean                  s_needWarmupOverride  // static @ 0x15
+  public    static  System.Int32                    s_forceLoginWarmupStartIndex  // static @ 0x18
+  public    static  System.Int32                    s_forceLoginWarmupCount  // static @ 0x1c
+  public    static  System.Int32                    s_forceSceneWarmupStartIndex  // static @ 0x20
+  public    static  System.Int32                    s_forceSceneWarmupCount  // static @ 0x24
+  private   static  System.String                   s_disabledFeature  // static @ 0x28
+  private   static  System.Boolean                  s_warmupByCacheLoadChecked  // static @ 0x30
+  private   static  System.Boolean                  s_isDeviceInBlackList  // static @ 0x31
+  private   static  System.Boolean                  s_isDx11DriverCheck  // static @ 0x32
+  public    static  System.Int32                    s_warmupTotalCount  // static @ 0x34
+  public    static  System.Int32                    s_warmupTotalCountWeighted  // static @ 0x38
+  public    static  System.Int32                    s_warmupRemainCountWeighted  // static @ 0x3c
+  private   static  System.Int32                    s_warmupFinishedCount  // static @ 0x40
+  private   static  System.Int32                    s_cacheFileSizeBefore  // static @ 0x44
+  private   static  System.Int32                    s_compileTotalCount  // static @ 0x48
+  public    static  System.Single                   s_loginWarmUpTime  // static @ 0x4c
+  public    static  Beyond.Rendering.ShaderWarmupManager.WarmUpReasons_loginWarmUpReason  // static @ 0x50
+  public    static  System.Single                   s_downloadWarmupPercent  // static @ 0x54
+  private   static  Beyond.Rendering.ShaderWarmupManager.WarmupRunTypes_lastWarmupRunType  // static @ 0x58
+  private   static  System.Boolean                  s_isDownloadingWarmupRunning  // static @ 0x5c
+  private   static  System.Boolean                  s_shouldStopDownloadingWarmup  // static @ 0x5d
+  public    static  System.Int64                    s_cacheSizeRecompileThreshold  // static @ 0x60
+  public    static  System.Int32                    s_warmupCountPerWorkerMainJobCompile  // static @ 0x68
+  public    static  System.Int32                    s_warmupCountPerStepBackJobCompile  // static @ 0x6c
+  public    static  System.Int32                    s_warmupCountPerStepMainJob  // static @ 0x70
+  public    static  System.Int32                    s_warmupCountPerStepBackJob  // static @ 0x74
+  public    static  System.Int32                    s_warmupCountPerStepBackDispatchLimit  // static @ 0x78
+  public    static  System.Int32                    s_warmupCountToClean  // static @ 0x7c
+  public    static  System.Int32                    s_warmupTimeLimitMobile  // static @ 0x80
+  public    static  System.Int32                    s_warmupTimeLimitPC  // static @ 0x84
+  public    static  System.String                   s_vulkanCacheFileName  // static @ 0x88
+  public    static  System.String                   s_iosCacheFileName  // static @ 0x90
+PROPERTIES:
+  isWarming  get=0x03EBBA10
+METHODS:
+  RVA=0x0A9ADE68  token=0x6000030  System.String GetPsoPathName(UnityEngine.RuntimePlatform platform, UnityEngine.Rendering.GraphicsDeviceType graphicsDeviceType, System.Int32 shaderLod, System.String levelId)
+  RVA=0x0A9ADF3C  token=0x6000031  System.String GetPsoPathName(UnityEngine.RuntimePlatform platform, UnityEngine.Rendering.GraphicsDeviceType graphicsDeviceType, System.Int32 shaderLod, System.String levelId, System.String feature)
+  RVA=0x04D537E0  token=0x6000032  System.String GetLoginWarmupDetail()
+  RVA=0x0A9AE6EC  token=0x6000033  System.Int64 _GetCacheFileSize()
+  RVA=0x03C8F850  token=0x6000034  System.Void ProcessRemoteConfig(System.String remoteConfigStr)
+  RVA=0x0A9AE024  token=0x6000035  System.Void MarkNeedShaderWarmUp(Beyond.Rendering.ShaderWarmupManager.WarmUpReason reason)
+  RVA=0x0A9AE08C  token=0x6000036  System.Void MarkWarmUpLoginFinish()
+  RVA=0x0A9ADE0C  token=0x6000037  System.Void CleanLoadedPso()
+  RVA=0x0A9AEAFC  token=0x6000038  System.Void _MarkWarmUpLoginFinish()
+  RVA=0x0A9AE0E8  token=0x6000039  System.Void TryRepairPsoCacheAfterCorruptCheck()
+  RVA=0x0A9AEEF4  token=0x600003A  System.Boolean _TryDeleteVulkanPsoCacheFile()
+  RVA=0x03C90DA0  token=0x600003B  System.Boolean CheckNeedWarmUpLogin(System.Boolean stateless)
+  RVA=0x0A9AE244  token=0x600003C  System.Collections.IEnumerator WarmupShadersLogin(System.Boolean supportsRaytracing)
+  RVA=0x0A9AE1E8  token=0x600003D  System.Collections.IEnumerator WarmupShadersDownloading(System.Boolean supportsRaytracing)
+  RVA=0x046DD340  token=0x600003E  System.Void StopWarmupShadersDownloading()
+  RVA=0x0A9AEEA4  token=0x600003F  System.Collections.IEnumerator _StopDownloadingWarmupAndWait()
+  RVA=0x0A9AE314  token=0x6000040  System.Collections.Generic.List<Beyond.Resource.StringPathHash> _BuildLoginWarmupPaths(System.Boolean supportsRaytracing)
+  RVA=0x02E574D0  token=0x6000041  System.Void _InitWarmupStats(System.Collections.Generic.List<UnityEngine.HGPsoWarmupCollection> loadedAssets, System.Boolean isBackgroundWarmup, System.Boolean updateCacheFileSizeBefore)
+  RVA=0x02E578F0  token=0x6000042  System.Void _UpdateDownloadWarmupPercent()
+  RVA=0x0A9AE514  token=0x6000043  System.Void _DisposeWarmupAssetHandles(System.Collections.Generic.List<Beyond.Resource.FAssetProxyHandle> assetProxyHandles)
+  RVA=0x0A9AEA54  token=0x6000044  System.Collections.IEnumerator _LoadPsoAssets(System.Collections.Generic.List<Beyond.Resource.StringPathHash> resPathList, System.Collections.Generic.List<Beyond.Resource.FAssetProxyHandle> assetProxyHandles, System.Collections.Generic.List<UnityEngine.HGPsoWarmupCollection> loadedAssets)
+  RVA=0x0A9AE2A0  token=0x6000045  System.Collections.IEnumerator WarmupShadersScene(System.String scene)
+  RVA=0x0A9AE150  token=0x6000046  System.Collections.IEnumerator WarmupOnePso(UnityEngine.HGPsoWarmupCollection psoC, System.Int32 startIndex, System.Int32 warmupCount)
+  RVA=0x0A9AF120  token=0x6000047  System.Collections.IEnumerator _WarmupOnePsoTimeLimited(UnityEngine.HGPsoWarmupCollection psoC, System.Int32 startIndex, System.Int32 desiredWarmupCount, Beyond.Rendering.ShaderWarmupManager.TimeCostCounter timeStart)
+  RVA=0x0A9AF088  token=0x6000048  System.Collections.IEnumerator _WarmupOnePsoBackgroundOnly(UnityEngine.HGPsoWarmupCollection psoC, System.Int32 startIndex, System.Int32 desiredWarmupCount)
+  RVA=0x0A9AEDE8  token=0x6000049  System.Void _StepProgress(System.Int32 newFinishedCount, System.Int32& compileTotalCount)
+  RVA=0x03811960  token=0x600004A  System.Boolean _CheckNeedWarmUpByFirstEntry()
+  RVA=0x03C91110  token=0x600004B  System.Boolean _CheckNeedWarmUpByDeviceState(System.Boolean stateless)
+  RVA=0x03C905A0  token=0x600004C  System.Boolean _IsNeedWarmupByGraphicsChange()
+  RVA=0x03C91030  token=0x600004D  System.Boolean _IsNeedWarmupByCacheOutdated()
+  RVA=0x0A9AED30  token=0x600004E  System.Void _SetWarmupRetryCount(System.Int32 count)
+  RVA=0x0A9AED8C  token=0x600004F  System.Void _SetWarmupUnfinishedCount(System.Int32 count)
+  RVA=0x0A9AE89C  token=0x6000050  System.Int32 _GetDownloadingWarmupUnfinishedCount()
+  RVA=0x0A9AECD4  token=0x6000051  System.Void _SetDownloadingWarmupUnfinishedCount(System.Int32 count)
+  RVA=0x0A9AEC48  token=0x6000052  System.Void _MarkWarmupFinishAPI()
+  RVA=0x03C92470  token=0x6000053  System.Boolean _IsNeedWarmupDx11Driver()
+  RVA=0x0A9AEB78  token=0x6000054  System.Void _MarkWarmupDx11Driver()
+  RVA=0x03C90F40  token=0x6000055  System.Void _ResetWarmUpStatsIfNeed()
+  RVA=0x03C90EF0  token=0x6000056  System.Boolean _IsDeviceSupportWarmUp()
+  RVA=0x02E57820  token=0x6000057  System.Boolean _IsDeviceSupportDownloadWarmUp()
+  RVA=0x0A9AE9E8  token=0x6000058  System.Boolean _IsFeatureEnabled(System.String featureKeyword)
+  RVA=0x03C90FA0  token=0x6000059  System.Boolean _CheckWarmUpUnfinishedOften()
+  RVA=0x0A9AE8EC  token=0x600005A  System.Int32 _GetLoginTimeLimit()
+  RVA=0x0A9AE948  token=0x600005B  System.Int32 _GetWarmupEndIndexExclusive(UnityEngine.HGPsoWarmupCollection psoC, System.Int32 startIndex, System.Int32 desiredWarmupCount)
+  RVA=0x0A9AE7F4  token=0x600005C  System.Int32 _GetCompileCountForRange(UnityEngine.HGPsoWarmupCollection psoC, System.Int32 startIndex, System.Int32 desiredWarmupCount)
+  RVA=0x0A9AE660  token=0x600005D  System.Int32 _GetBackgroundWarmupStartIndex(UnityEngine.HGPsoWarmupCollection psoC, System.Int32 startIndex, System.Int32 endIndexExclusive)
+  RVA=0x041E1670  token=0x600005E  System.Void .ctor()
+  RVA=0x049916A0  token=0x600005F  System.Void .cctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.ShaderWarmupManagerRemoteCfg
+TYPE:  class
+TOKEN: 0x200001A
+SIZE:  0x18
+FIELDS:
+  private           Beyond.Rendering.ShaderWarmupManagerRemoteCfg.ShaderWarmupRemoteBlacklistm_blacklist  // 0x10
+PROPERTIES:
+  cpuNameForWarmUp  get=0x0A9ADDCC
+METHODS:
+  RVA=0x03C8F940  token=0x6000098  System.Void .ctor(System.String blackListStr)
+  RVA=0x03C8F910  token=0x6000099  System.Boolean IsEnableDx11DriverVersionDetect()
+  RVA=0x03C8F3C0  token=0x600009A  System.Boolean IsDeviceInBlackList(System.String& disabledFeature)
+  RVA=0x0A9ADB54  token=0x600009C  System.Boolean _CheckDeviceMatch(Beyond.Rendering.ShaderWarmupManagerRemoteCfg.ShaderWarmupRemoteBlackDevice blacklistDevice, System.String currentDeviceModel, System.String currentGraphicsDeviceName, System.String currentGraphicsDeviceVersion, System.String currentProcessorType, System.String currentOS)
+END_CLASS
+
+CLASS: Beyond.Rendering.WindowsGpuDriverVersion
+TYPE:  static class
+TOKEN: 0x200001E
+SIZE:  0x10
+FIELDS:
+  private   static readonly System.Guid                     GUID_DEVCLASS_DISPLAY  // static @ 0x0
+  private   static  System.UInt32                   DIGCF_PRESENT  // const
+  private   static  System.UInt32                   SPDRP_DEVICEDESC  // const
+  private   static  System.UInt32                   SPDRP_MFG  // const
+  private   static  System.UInt32                   SPDRP_FRIENDLYNAME  // const
+  private   static  System.UInt32                   SPDRP_DRIVER  // const
+  private   static  System.UInt32                   DICS_FLAG_GLOBAL  // const
+  private   static  System.UInt32                   DIREG_DRV  // const
+  private   static readonly System.IntPtr                   INVALID_HANDLE_VALUE  // static @ 0x10
+  private   static  System.Int32                    ERROR_SUCCESS  // const
+  private   static  System.Int32                    ERROR_NO_MORE_ITEMS  // const
+  private   static  System.Int32                    ERROR_INSUFFICIENT_BUFFER  // const
+  private   static  System.Int32                    ERROR_MORE_DATA  // const
+  private   static  System.UInt32                   REG_SZ  // const
+  private   static  System.UInt32                   REG_EXPAND_SZ  // const
+METHODS:
+  RVA=0x0A9B0168  token=0x60000A0  System.String GetCurrentDriverVersion()
+  RVA=0x0A9AFBAC  token=0x60000A1  Beyond.Rendering.WindowsGpuDriverVersion.Result GetBestMatch()
+  RVA=0x0A9AF37C  token=0x60000A2  System.Collections.Generic.List<Beyond.Rendering.WindowsGpuDriverVersion.Result> GetAllDisplayDriverVersions()
+  RVA=0x0A9B0470  token=0x60000A3  System.String SerializeAllResults(System.Collections.Generic.List<Beyond.Rendering.WindowsGpuDriverVersion.Result> results)
+  RVA=0x0A9B0414  token=0x60000A4  System.String SerializeAllCurrentResults()
+  RVA=0x0A9B01DC  token=0x60000A5  System.Boolean IsBestMatchDriverVersionChanged(System.String serialized)
+  RVA=0x0A9B116C  token=0x60000A6  System.Boolean _TryGetDriverVersionByKeyId(System.String serialized, System.String keyId, System.String& driverVersion)
+  RVA=0x0A9B0ED8  token=0x60000A7  System.Int32 _ScoreAgainstUnityCurrentGpu(System.String friendlyName, System.String deviceDesc, System.String mfg)
+  RVA=0x0A9B0954  token=0x60000A8  System.Boolean _ContainsIgnoreCase(System.String a, System.String b)
+  RVA=0x0A9B09D8  token=0x60000A9  System.String _GetDeviceRegistryPropertyString(System.IntPtr infoSet, Beyond.Rendering.WindowsGpuDriverVersion.SP_DEVINFO_DATA& devInfo, System.UInt32 prop)
+  RVA=0x0A9B0C20  token=0x60000AA  System.String _GetDriverKeySuffix(System.String driverKey)
+  RVA=0x0A9B0CB4  token=0x60000AB  System.String _ReadRegistrySz(Beyond.Rendering.WindowsGpuDriverVersion.SafeRegistryHandle hKey, System.String valueName)
+  RVA=0x0A9B02C4  token=0x60000AC  System.Int32 RegCloseKey(System.IntPtr hKey)
+  RVA=0x0A9B06F4  token=0x60000AD  System.IntPtr SetupDiGetClassDevs(System.Guid& classGuid, System.IntPtr enumerator, System.IntPtr hwndParent, System.UInt32 flags)
+  RVA=0x0A9B0658  token=0x60000AE  System.Boolean SetupDiEnumDeviceInfo(System.IntPtr deviceInfoSet, System.UInt32 memberIndex, Beyond.Rendering.WindowsGpuDriverVersion.SP_DEVINFO_DATA& deviceInfoData)
+  RVA=0x0A9B07A0  token=0x60000AF  System.Boolean SetupDiGetDeviceRegistryProperty(System.IntPtr deviceInfoSet, Beyond.Rendering.WindowsGpuDriverVersion.SP_DEVINFO_DATA& deviceInfoData, System.UInt32 property, System.UInt32& propertyRegDataType, System.IntPtr propertyBuffer, System.UInt32 propertyBufferSize, System.UInt32& requiredSize)
+  RVA=0x0A9B0874  token=0x60000B0  Beyond.Rendering.WindowsGpuDriverVersion.SafeRegistryHandle SetupDiOpenDevRegKey(System.IntPtr deviceInfoSet, Beyond.Rendering.WindowsGpuDriverVersion.SP_DEVINFO_DATA& deviceInfoData, System.UInt32 scope, System.UInt32 hwProfile, System.UInt32 keyType, System.Int32 samDesired)
+  RVA=0x0A9B0620  token=0x60000B1  System.Boolean SetupDiDestroyDeviceInfoList(System.IntPtr deviceInfoSet)
+  RVA=0x0A9B0308  token=0x60000B2  System.Int32 RegQueryValueEx(Beyond.Rendering.WindowsGpuDriverVersion.SafeRegistryHandle hKey, System.String lpValueName, System.IntPtr lpReserved, System.UInt32& lpType, System.IntPtr lpData, System.UInt32& lpcbData)
+  RVA=0x0A9B12D4  token=0x60000B3  System.Void .cctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.SOCHelper
+TYPE:  static class
+TOKEN: 0x2000024
+SIZE:  0x10
+FIELDS:
+  public    static readonly System.Int32                    CHUNK_SIZE  // static @ 0x0
+  public    static  System.String                   SOC_FOLDER_NAME  // const
+  public    static  System.String                   SOC_INTERMEDIATE_FILE_NAME  // const
+METHODS:
+  RVA=0x0A9AD8FC  token=0x60000BD  System.Void .cctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.SceneStateAreaKey
+TYPE:  sealed struct
+TOKEN: 0x2000025
+SIZE:  0x18
+IMPLEMENTS: System.IEquatable`1
+FIELDS:
+  public            System.UInt32                   sceneStateMask  // 0x10
+  public            System.Int32                    areaId  // 0x14
+  public    static readonly Beyond.Rendering.SceneStateAreaKeyDEFAULT  // static @ 0x0
+METHODS:
+  RVA=0x04D85C40  token=0x60000BE  System.Void .ctor(System.UInt32 sceneStateMask, System.Int32 areaId)
+  RVA=0x0A9AD984  token=0x60000BF  System.Boolean Equals(Beyond.Rendering.SceneStateAreaKey other)
+  RVA=0x0A9AD9F0  token=0x60000C0  System.Boolean Equals(System.Object obj)
+  RVA=0x0A9ADA80  token=0x60000C1  System.Int32 GetHashCode()
+  RVA=0x04DA6BD0  token=0x60000C2  System.Void .cctor()
+  RVA=0x0A9ADAF0  token=0x60000C3  System.Boolean <>iFixBaseProxy_Equals(System.Object P0)
+  RVA=0x0A9ADB28  token=0x60000C4  System.Int32 <>iFixBaseProxy_GetHashCode()
+END_CLASS
+
+CLASS: Beyond.Rendering.HGSOCSubSceneData
+TYPE:  class
+TOKEN: 0x2000026
+SIZE:  0x28
+EXTENDS: UnityEngine.ScriptableObject
+FIELDS:
+  public            Beyond.Rendering.SceneStateAreaKey[]keyArray  // 0x18
+  public            Beyond.Rendering.HGSOCSubSceneData.SubSceneDataPerSceneStateArea[]dataArray  // 0x20
+METHODS:
+  RVA=0x03573370  token=0x60000C5  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.HGSOCDataHelper
+TYPE:  class
+TOKEN: 0x2000029
+SIZE:  0x38
+EXTENDS: UnityEngine.MonoBehaviour
+FIELDS:
+  public            System.Single                   fallOffStrength  // 0x18
+  public            System.Single                   innerBlendWeight  // 0x1c
+  private           System.Boolean                  <displayQuadOccluders>k__BackingField  // 0x20
+  private           System.Boolean                  <displayHGOccluders>k__BackingField  // 0x21
+  public            UnityEngine.Material            material  // 0x28
+  public            UnityEngine.HGOccluder[]        occluders  // 0x30
+PROPERTIES:
+  displayQuadOccluders  get=0x04D866B0  set=0x04D866D0
+  displayHGOccluders  get=0x04D86850  set=0x04D86860
+METHODS:
+  RVA=0x0A9AD424  token=0x60000CA  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityRenderAlphaDitherController
+TYPE:  class
+TOKEN: 0x200002A
+SIZE:  0x30
+FIELDS:
+  private           Beyond.Rendering.IRendererHelperm_owner  // 0x10
+  private           System.Single                   m_ditherAlpha  // 0x18
+  private   static  System.Int32                    s_CharDitherFade  // static @ 0x0
+  private   static  System.Int32                    s_DitherTransparentAlpha  // static @ 0x4
+  private           System.Collections.Generic.Dictionary<System.Int32,System.Single>m_alphaPerHandles  // 0x20
+  private           System.Boolean                  m_lastSetAllRendererEnabled  // 0x28
+METHODS:
+  RVA=0x03699720  token=0x60000CB  System.Void .ctor(Beyond.Rendering.IRendererHelper owner)
+  RVA=0x0369BA90  token=0x60000CC  System.Void ResetDitherAlpha()
+  RVA=0x0302E760  token=0x60000CD  System.Boolean SetDitherAlpha(System.Single alpha, System.Int32 handle)
+  RVA=0x0302EB90  token=0x60000CE  System.Single GetDitherAlpha()
+  RVA=0x03699CD0  token=0x60000CF  System.Void Reset()
+  RVA=0x0302E370  token=0x60000D0  System.Boolean _ApplyNewAlpha()
+  RVA=0x0302E480  token=0x60000D1  System.Single _GetCurMinAlpha()
+  RVA=0x03B970B0  token=0x60000D2  System.Collections.Generic.Dictionary<System.Int32,System.Single> GetAlphaDictionary()
+  RVA=0x03F2FF40  token=0x60000D3  System.Void _SetMaterialDitherAlpha(System.Single value)
+  RVA=0x03F2F9D0  token=0x60000D4  System.Boolean _SetMaterialDitherEnabled(System.Boolean enabled)
+  RVA=0x04D5E130  token=0x60000D5  System.Void .cctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityRenderCapturedEntity
+TYPE:  class
+TOKEN: 0x200002B
+SIZE:  0x28
+FIELDS:
+  public            UnityEngine.GameObject          rootGameObject  // 0x10
+  public            System.Collections.Generic.List<UnityEngine.MeshRenderer>meshRenderers  // 0x18
+  public            System.Collections.Generic.List<UnityEngine.MeshRenderer>capturedRenderers  // 0x20
+METHODS:
+  RVA=0x0A9ACCC8  token=0x60000D6  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityRenderCaptureMeshController
+TYPE:  class
+TOKEN: 0x200002C
+SIZE:  0x48
+FIELDS:
+  private           Beyond.Rendering.IRendererHelperm_owner  // 0x10
+  private           UnityEngine.GameObject          m_gameObject  // 0x18
+  private           UnityEngine.LODGroup            m_lodGroup  // 0x20
+  private           System.Collections.Generic.List<Beyond.Rendering.EntityRenderCapturedEntity>m_capturedEntities  // 0x28
+  private           System.Int32                    m_meshRendererToSyncFrame  // 0x30
+  private           System.Collections.Generic.List<Beyond.Rendering.EntityRenderCaptureMeshController.MeshRendererToSync>m_meshRendererToSync  // 0x38
+  private           System.Collections.Generic.Dictionary<UnityEngine.Renderer,Beyond.Rendering.EntityVFXRendererMask>m_rendererTypeMasks  // 0x40
+METHODS:
+  RVA=0x03699570  token=0x60000D7  System.Void .ctor(Beyond.Rendering.IRendererHelper owner, UnityEngine.GameObject gameObject)
+  RVA=0x03699D50  token=0x60000D8  System.Void Reset()
+  RVA=0x040FB920  token=0x60000D9  System.Void LateTick()
+  RVA=0x0A9AC9B4  token=0x60000DA  System.Void InitRendererTypeMasks(System.Collections.Generic.Dictionary<UnityEngine.Renderer,Beyond.Rendering.EntityVFXRendererMask> masks)
+  RVA=0x0A9ABAB0  token=0x60000DB  Beyond.Rendering.EntityRenderCapturedEntity Capture(UnityEngine.GameObject root, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=0x0A9A76BC  token=0x60000DC  System.Boolean _PassRendererMaskFilter(UnityEngine.Renderer renderer, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=0x040FB960  token=0x60000DD  System.Void _SyncTransformInRenderPipeline()
+  RVA=0x0A9ACA18  token=0x60000DE  System.Void Release(Beyond.Rendering.EntityRenderCapturedEntity mesh)
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityRendererTypeConfig
+TYPE:  class
+TOKEN: 0x200002F
+SIZE:  0x30
+FIELDS:
+  public            System.Boolean                  useRegex  // 0x10
+  public            System.String                   regexString  // 0x18
+  public            System.Text.RegularExpressions.Regexregex  // 0x20
+  public            Beyond.Rendering.EntityVFXRendererTypetype  // 0x28
+METHODS:
+  RVA=0x041E1670  token=0x60000E0  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityRenderHelperMaterialController
+TYPE:  class
+TOKEN: 0x2000030
+SIZE:  0x40
+FIELDS:
+  private   static  System.Collections.Generic.List<UnityEngine.Material>s_cachedMaterialList  // static @ 0x0
+  private           System.Collections.Generic.List<Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo>m_rendererInfos  // 0x10
+  private           Beyond.Rendering.EntityRenderHelperMaterialController.AddedMaterialControllerm_addedMaterialController  // 0x18
+  private           Beyond.Rendering.EntityRenderHelperMaterialController.MeshMaterialControllerm_meshMaterialController  // 0x20
+  private           System.Collections.Generic.Dictionary<Beyond.Rendering.EntityVFXRendererMask,System.Collections.Generic.List<Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo>>m_renderInfoIndexPerMask  // 0x28
+  private           Beyond.Rendering.EntityRenderHelperMaterialController.CustomPerDrawDataControllerm_customPerDrawDataController  // 0x30
+  private           System.Boolean                  m_calculateBoundsWithTransform  // 0x38
+  private   static  Beyond.PoolCore.ObjectPool<Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo>s_rendererInfoPool  // static @ 0x8
+  private   static  Beyond.PoolCore.ObjectPool<System.Collections.Generic.List<Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo>>s_rendererInfoListPool  // static @ 0x10
+  private   static  System.Int32                    s_ZTestGBuffer  // static @ 0x18
+  private   static  System.Int32                    s_OutlineZTest  // static @ 0x1c
+  private   static  System.String                   s_AlphaBlendOnKeyword  // static @ 0x20
+METHODS:
+  RVA=0x0302D300  token=0x60000E1  System.Void Init(System.Collections.Generic.List<UnityEngine.Renderer> allRenderers, System.Collections.Generic.List<Beyond.Rendering.EntityRendererTypeConfig> configs, Beyond.Rendering.EntityCustomizeRendererPropertyConfig customRendererPropertyConfig, System.Boolean calculateBoundsWithTransform)
+  RVA=0x031DB150  token=0x60000E2  System.Void OnRelease()
+  RVA=0x03699DB0  token=0x60000E3  System.Void Reset()
+  RVA=0x0369ABF0  token=0x60000E4  System.Boolean IsAllRendererValid()
+  RVA=0x032C5D00  token=0x60000E5  System.Void StopShadowCasting(System.Boolean stopRayTracing)
+  RVA=0x032C5FF0  token=0x60000E6  System.Void RevertShadowCastingMode()
+  RVA=0x03578690  token=0x60000E7  System.Int32 AddMaterialToAllRenderer(UnityEngine.Material material, Beyond.Rendering.EntityVFXRendererMask rendererMask, Beyond.Rendering.AddMaterialConfig config)
+  RVA=0x0A9AD0AC  token=0x60000E8  System.Void SetAddictiveFloatProperty(System.Int32 propertyId, System.Single value)
+  RVA=0x0A9ACEEC  token=0x60000E9  System.Single GetAddictiveFloatProperty(System.Int32 propertyId, System.Single defaultValue)
+  RVA=0x0A9AD1AC  token=0x60000EA  System.Void SetAddictiveVectorProperty(System.Int32 propertyId, UnityEngine.Vector4 value)
+  RVA=0x0A9ACFEC  token=0x60000EB  UnityEngine.Vector4 GetAddictiveVectorProperty(System.Int32 propertyId, UnityEngine.Vector4 defaultValue)
+  RVA=0x0A9AD12C  token=0x60000EC  System.Void SetAddictiveTextureProperty(System.Int32 propertyId, UnityEngine.Texture value)
+  RVA=0x0A9ACF6C  token=0x60000ED  UnityEngine.Texture GetAddictiveTextureProperty(System.Int32 propertyId, UnityEngine.Texture defaultValue)
+  RVA=0x035773C0  token=0x60000EE  System.Void RemoveMaterialFromAllRenderer(System.Int32 handle)
+  RVA=0x0A9ACE68  token=0x60000EF  System.Boolean GetAddedMaterialsOfCustomizeProperties(System.Int32 handle, System.Collections.Generic.List<UnityEngine.Material> result)
+  RVA=0x04502C00  token=0x60000F0  System.Void SetKeywordEnableToAllMaterial(System.String keyword, System.Boolean enable, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=0x0A9AD240  token=0x60000F1  System.Void SetDepthOnlyPassEnableToAllMaterial(System.Boolean enable, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=0x0357A6A0  token=0x60000F2  System.Void SetFloatToCustomPerDraw(Beyond.Rendering.EntityRenderHelperCustomPerDrawType type, System.Single value, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=0x0A9AD2C0  token=0x60000F3  System.Void SetVectorToCustomPerDraw(Beyond.Rendering.EntityRenderHelperVectorCustomPerDrawType type, UnityEngine.Vector4 value, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=0x0357A800  token=0x60000F4  System.Void SetFloatToAllMaterial(System.Int32 nameId, System.Single value, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=0x0357B4F0  token=0x60000F5  System.Void SetVectorToAllMaterial(System.Int32 nameId, UnityEngine.Vector4 value, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=0x03941150  token=0x60000F6  System.Void SetTextureToAllMaterial(System.Int32 nameId, UnityEngine.Texture value, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=0x0A9ACD48  token=0x60000F7  System.Void FillRendererTypeMasks(System.Collections.Generic.Dictionary<UnityEngine.Renderer,Beyond.Rendering.EntityVFXRendererMask> target)
+  RVA=0x03578850  token=0x60000F8  System.Collections.Generic.List<Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo> _GetRenderersOfRendererMask(Beyond.Rendering.EntityVFXRendererMask rendererMask, System.Boolean affectAll)
+  RVA=0x03103EB0  token=0x60000F9  System.Void SetManualDitherAlphaValue(System.Single value)
+  RVA=0x03104230  token=0x60000FA  System.Boolean SetManualDitherEnable(System.Boolean enable)
+  RVA=0x032C56C0  token=0x60000FB  UnityEngine.Bounds GetRendererBounds()
+  RVA=0x0A9AD3A4  token=0x60000FC  System.Void SetZTestInMaterial(System.String shaderName, System.Boolean enable)
+  RVA=0x0411B870  token=0x60000FD  Beyond.Rendering.RenderHelperType GetRenderHelperType()
+  RVA=0x04D919E0  token=0x60000FE  System.Void .ctor()
+  RVA=0x04A3A560  token=0x60000FF  System.Void .cctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityRenderHelperCustomPerDrawType
+TYPE:  sealed struct
+TOKEN: 0x2000038
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.EntityRenderHelperCustomPerDrawTypeRainEffectIntensity  // const
+  public    static  Beyond.Rendering.EntityRenderHelperCustomPerDrawTypeWetEffectIntensity  // const
+  public    static  Beyond.Rendering.EntityRenderHelperCustomPerDrawTypeWetEffectGlobalIntensity  // const
+  public    static  Beyond.Rendering.EntityRenderHelperCustomPerDrawTypeSnowEffectIntensity  // const
+  public    static  Beyond.Rendering.EntityRenderHelperCustomPerDrawTypeWetEffectWorldSpaceHeight  // const
+  public    static  Beyond.Rendering.EntityRenderHelperCustomPerDrawTypeCharacterDissolveScheduleOffset  // const
+METHODS:
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityRenderHelperVectorCustomPerDrawType
+TYPE:  sealed struct
+TOKEN: 0x2000039
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.EntityRenderHelperVectorCustomPerDrawTypeEmissive  // const
+METHODS:
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityRenderHelperVisibleController
+TYPE:  class
+TOKEN: 0x200003A
+SIZE:  0x20
+FIELDS:
+  private           System.Collections.Generic.List<Beyond.Rendering.EntityRenderHelperVisibleController.RendererInfo>m_rendererInfos  // 0x10
+  private           System.Collections.Generic.Dictionary<UnityEngine.Renderer,Beyond.Rendering.EntityRenderHelperVisibleController.RendererInfo>m_dictionary  // 0x18
+  private   static  Beyond.PoolCore.ObjectPool<System.Collections.Generic.List<Beyond.Rendering.EntityRenderHelperVisibleController.RendererInfo>>s_rendererInfoListPool  // static @ 0x0
+  private   static  Beyond.PoolCore.ObjectPool<System.Collections.Generic.Dictionary<UnityEngine.Renderer,Beyond.Rendering.EntityRenderHelperVisibleController.RendererInfo>>s_rendererInfoDictPool  // static @ 0x8
+METHODS:
+  RVA=0x0302B800  token=0x6000142  System.Void Init(System.Collections.Generic.List<UnityEngine.Renderer> allRenderers)
+  RVA=0x0A9B2EE4  token=0x6000143  System.Void _InitDictionary()
+  RVA=0x02E5E3A0  token=0x6000144  System.Boolean _TryGetRendererInfo(UnityEngine.Renderer renderer, System.Boolean initDictionary, Beyond.Rendering.EntityRenderHelperVisibleController.RendererInfo& rendererInfo)
+  RVA=0x031DB0B0  token=0x6000145  System.Void Release()
+  RVA=0x0385AEA0  token=0x6000146  System.Void SetVisibleByNameContainsStr(System.String name, System.Boolean visible)
+  RVA=0x0A9B2E44  token=0x6000147  System.Void SetVisibleByRenderer(UnityEngine.Renderer renderer, System.Boolean visible)
+  RVA=0x0385AC60  token=0x6000148  System.Void ResetVisibleByNameContainsStr(System.String name)
+  RVA=0x0A9B2DB8  token=0x6000149  System.Void ResetVisibleByRenderer(UnityEngine.Renderer renderer)
+  RVA=0x03699F00  token=0x600014A  System.Void Reset()
+  RVA=0x041E1670  token=0x600014B  System.Void .ctor()
+  RVA=0x04CB0FC0  token=0x600014C  System.Void .cctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityRenderMaterialManager
+TYPE:  class
+TOKEN: 0x200003C
+SIZE:  0x50
+FIELDS:
+  private           System.Collections.Generic.Dictionary<System.Int32,System.Single>m_floatProperties  // 0x10
+  private           System.Collections.Generic.Dictionary<System.Int32,UnityEngine.Texture>m_textureProperties  // 0x18
+  private           System.Collections.Generic.Dictionary<System.Int32,UnityEngine.Vector4>m_vectorProperties  // 0x20
+  private           System.Collections.Generic.HashSet<System.String>m_EnabledKeyWords  // 0x28
+  private           System.Collections.Generic.HashSet<System.String>m_DisabledKeyWords  // 0x30
+  private           System.Boolean                  m_shaderPassEnabled  // 0x38
+  private           System.Collections.Generic.Dictionary<UnityEngine.Material,System.Boolean>m_oriMaterialShaderPassEnabled  // 0x40
+  private   static  System.Int32                    s_ZTestGBuffer  // static @ 0x0
+  private           System.Collections.Generic.List<UnityEngine.Material>m_materials  // 0x48
+METHODS:
+  RVA=0x0A9B3AE8  token=0x6000157  System.Void SetFloat(System.Int32 nameID, System.Single value)
+  RVA=0x0A9B3D6C  token=0x6000158  System.Void SetTexture(System.Int32 nameID, UnityEngine.Texture value)
+  RVA=0x0A9B3E30  token=0x6000159  System.Void SetVector(System.Int32 nameID, UnityEngine.Vector4 value)
+  RVA=0x0A9B3098  token=0x600015A  System.Void AddMaterial(UnityEngine.Material material)
+  RVA=0x0A9B3754  token=0x600015B  System.Void RemoveMaterial(UnityEngine.Material material)
+  RVA=0x0A9B35FC  token=0x600015C  System.Void ClearMaterials()
+  RVA=0x0A9B3BAC  token=0x600015D  System.Void SetKeywordEnable(System.String keyword, System.Boolean enable)
+  RVA=0x0A9B37D0  token=0x600015E  System.Void SetDepthOnlyEnabled(System.Boolean enable)
+  RVA=0x0A9B3F14  token=0x600015F  System.Void SetZTestInMaterial(System.String shaderName, System.Boolean enable)
+  RVA=0x0A9B4060  token=0x6000160  System.Void _RevertMaterial(UnityEngine.Material material)
+  RVA=0x0A9B4294  token=0x6000161  System.Void .ctor()
+  RVA=0x0A9B426C  token=0x6000162  System.Void .cctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXCurve
+TYPE:  class
+TOKEN: 0x200003D
+SIZE:  0x28
+FIELDS:
+  public            UnityEngine.AnimationCurve      curve  // 0x10
+  public            UnityEngine.Vector2             rangeEdit  // 0x18
+  public            UnityEngine.Vector2             rangeLimit  // 0x20
+METHODS:
+  RVA=0x053908C0  token=0x6000163  System.Void .ctor(UnityEngine.AnimationCurve curve)
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXCurveEvaluateResult
+TYPE:  sealed struct
+TOKEN: 0x200003E
+SIZE:  0x48
+FIELDS:
+  public            UnityEngine.Rendering.ShaderPropertyTypepropertyType  // 0x10
+  public            System.String                   propertyName  // 0x18
+  public            System.Int32                    propertyId  // 0x20
+  public            System.Single                   floatValue  // 0x24
+  public            UnityEngine.Vector4             vectorValue  // 0x28
+  public            UnityEngine.Vector4             textureScaleOffset  // 0x38
+METHODS:
+END_CLASS
+
+CLASS: Beyond.Rendering.AddMaterialConfig
+TYPE:  sealed struct
+TOKEN: 0x200003F
+SIZE:  0x20
+FIELDS:
+  public            System.Boolean                  useColorTexture  // 0x10
+  public            System.String                   colorTextureName  // 0x18
+PROPERTIES:
+  useCustomizeProperty  get=0x03578C80
+METHODS:
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXCurveData
+TYPE:  class
+TOKEN: 0x2000040
+SIZE:  0x58
+FIELDS:
+  public            System.String                   propertyName  // 0x10
+  public            UnityEngine.Rendering.ShaderPropertyTypepropertyType  // 0x18
+  public            Beyond.Rendering.EntityVFXCurve curve  // 0x20
+  public            Beyond.Rendering.EntityVFXCurve curveX  // 0x28
+  public            Beyond.Rendering.EntityVFXCurve curveY  // 0x30
+  public            Beyond.Rendering.EntityVFXCurve curveZ  // 0x38
+  public            Beyond.Rendering.EntityVFXCurve curveW  // 0x40
+  public            UnityEngine.Gradient            gradient  // 0x48
+  public            System.Single                   colorIntensity  // 0x50
+METHODS:
+  RVA=0x04CAE4C0  token=0x6000165  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXAddictiveMaterialData
+TYPE:  class
+TOKEN: 0x2000041
+SIZE:  0xD8
+FIELDS:
+  public            Beyond.Rendering.EntityVFXPriorityTypepriorityType  // 0x10
+  public            Beyond.Rendering.EntityVFXRendererMaskrendererMask  // 0x14
+  public            System.Boolean                  useScaledTime  // 0x18
+  public            System.Boolean                  enableVertColorIfMeshHasVFXVertColor  // 0x19
+  public            UnityEngine.Material            material  // 0x20
+  public            System.Boolean                  loop  // 0x28
+  public            System.Boolean                  useDissolveCurve  // 0x29
+  public            System.Boolean                  useScanCurve  // 0x2a
+  public            System.Boolean                  useCutoffPosY  // 0x2b
+  public            System.Boolean                  useCutoffPosYAutoBounds  // 0x2c
+  public            System.Single                   cutoffPosYAbsoluteBounds  // 0x30
+  public            System.Boolean                  useCutoffLocalDirection  // 0x34
+  public            UnityEngine.Vector3             cutoffDirection  // 0x38
+  public            System.Single                   duration  // 0x44
+  public            System.Boolean                  useStartCurve  // 0x48
+  public            UnityEngine.AnimationCurve      opacityCurve  // 0x50
+  public            UnityEngine.AnimationCurve      dissolveCurve  // 0x58
+  public            UnityEngine.AnimationCurve      scanCurve  // 0x60
+  public            UnityEngine.AnimationCurve      cutoffPosYCurve  // 0x68
+  public            System.Collections.Generic.List<Beyond.Rendering.EntityVFXCurveData>customCurves  // 0x70
+  public            System.Boolean                  useLoopCurve  // 0x78
+  public            System.Single                   loopDuration  // 0x7c
+  public            UnityEngine.AnimationCurve      loopCurve  // 0x80
+  public            UnityEngine.AnimationCurve      dissolveLoopCurve  // 0x88
+  public            System.Collections.Generic.List<Beyond.Rendering.EntityVFXCurveData>customLoopCurves  // 0x90
+  public            System.Boolean                  useEndCurve  // 0x98
+  public            System.Single                   endDuration  // 0x9c
+  public            UnityEngine.AnimationCurve      endCurve  // 0xa0
+  public            UnityEngine.AnimationCurve      dissolveEndCurve  // 0xa8
+  public            System.Collections.Generic.List<Beyond.Rendering.EntityVFXCurveData>customEndCurves  // 0xb0
+  public            System.Boolean                  useAddictiveProperties  // 0xb8
+  public            System.Boolean                  useAddictivePropertiesUpdate  // 0xb9
+  public            System.Collections.Generic.List<System.String>addictiveVectorProperties  // 0xc0
+  public            System.Boolean                  useColorTexture  // 0xc8
+  public            System.String                   colorTextureName  // 0xd0
+METHODS:
+  RVA=0x045DF500  token=0x6000166  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXAddictiveMaterialAsset
+TYPE:  class
+TOKEN: 0x2000042
+SIZE:  0x38
+EXTENDS: Beyond.Rendering.EntityVFXAssetBase
+FIELDS:
+  public            Beyond.Rendering.EntityVFXAddictiveMaterialDatadata  // 0x30
+METHODS:
+  RVA=0x046EA7B0  token=0x6000167  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXAfterImageData
+TYPE:  class
+TOKEN: 0x2000043
+SIZE:  0x78
+FIELDS:
+  public            Beyond.Rendering.EntityVFXRendererMaskrendererMask  // 0x10
+  public            System.Boolean                  useScaledTime  // 0x14
+  public            Beyond.Rendering.EntityVFXAfterImageData.TimeModetimeMode  // 0x18
+  public            System.Boolean                  loop  // 0x1c
+  public            System.Single                   duration  // 0x20
+  public            System.Single                   timeInterval  // 0x24
+  public            System.Collections.Generic.List<System.Single>timeBurst  // 0x28
+  public            UnityEngine.Material            depthOnlyMaterial  // 0x30
+  public            UnityEngine.Material            material  // 0x38
+  public            UnityEngine.Material            materialOutline  // 0x40
+  public            System.Single                   lifeTime  // 0x48
+  public            UnityEngine.AnimationCurve      opacityCurve  // 0x50
+  public            UnityEngine.AnimationCurve      dissolveCurve  // 0x58
+  public            System.Collections.Generic.List<Beyond.Rendering.EntityVFXCurveData>customCurves  // 0x60
+  public            UnityEngine.AnimationCurve      opacityCurveOutline  // 0x68
+  public            System.Collections.Generic.List<Beyond.Rendering.EntityVFXCurveData>customCurvesOutline  // 0x70
+METHODS:
+  RVA=0x04D39C30  token=0x6000168  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXAfterImageAsset
+TYPE:  class
+TOKEN: 0x2000045
+SIZE:  0x38
+EXTENDS: Beyond.Rendering.EntityVFXAssetBase
+FIELDS:
+  public            Beyond.Rendering.EntityVFXAfterImageDatadata  // 0x30
+METHODS:
+  RVA=0x046EA7B0  token=0x6000169  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityCustomizeRendererType
+TYPE:  sealed struct
+TOKEN: 0x2000046
+SIZE:  0x28
+FIELDS:
+  public            System.Boolean                  useContainStr  // 0x10
+  public            System.String                   rendererNameRegex  // 0x18
+  public            Beyond.Rendering.EntityVFXRendererTypetype  // 0x20
+METHODS:
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXAsset
+TYPE:  class
+TOKEN: 0x2000047
+SIZE:  0x40
+EXTENDS: UnityEngine.ScriptableObject
+FIELDS:
+  public            Beyond.Rendering.RenderHelperTyperenderHelperType  // 0x18
+  public            System.Boolean                  useCustomRenderer  // 0x1c
+  public            System.Collections.Generic.List<Beyond.Rendering.EntityCustomizeRendererType>customRenderers  // 0x20
+  public            System.Boolean                  meshHasVFXVertColor  // 0x28
+  public            System.Boolean                  useCustomRendererProperty  // 0x29
+  public            Beyond.Rendering.EntityCustomizeRendererPropertyConfigcustomRendererPropertyConfig  // 0x30
+  private           System.Collections.Generic.List<Beyond.Rendering.EntityRendererTypeConfig>m_rendererTypeConfigs  // 0x38
+METHODS:
+  RVA=0x0432BAC0  token=0x600016A  System.Collections.Generic.List<Beyond.Rendering.EntityRendererTypeConfig> GetRendererTypeConfigs(System.Boolean forceUpdate)
+  RVA=0x0495D100  token=0x600016B  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXRendererType
+TYPE:  sealed struct
+TOKEN: 0x2000048
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.EntityVFXRendererTypeNormal  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypeBody  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypeCloth  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypeEyebrow  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypeEyeShadow  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypeFace  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypeHair  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypeHairShadow  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypeIris  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypeWeapon1  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypeWeapon2  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypePart1  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypePart2  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypePart3  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypePart4  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypePart5  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypePart6  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypePart7  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypePart8  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypePart9  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypePart10  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypePart11  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypePart12  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypePart13  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypePart14  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypePart15  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypeAlphaQuadAvoidAddMaterial  // const
+  public    static  Beyond.Rendering.EntityVFXRendererTypeCount  // const
+METHODS:
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXRendererMask
+TYPE:  sealed struct
+TOKEN: 0x2000049
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.EntityVFXRendererMaskNormal  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskBody  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskCloth  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskEyebrow  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskEyeShadow  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskFace  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskHair  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskHairShadow  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskIris  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskWeapon1  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskWeapon2  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskPart1  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskPart2  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskPart3  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskPart4  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskPart5  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskPart6  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskPart7  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskPart8  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskPart9  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskPart10  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskPart11  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskPart12  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskPart13  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskPart14  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskPart15  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskAlphaQuadAvoidAddMaterial  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskAll  // const
+  public    static  Beyond.Rendering.EntityVFXRendererMaskAllWithoutAlphaQuad  // const
+METHODS:
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXPriorityType
+TYPE:  sealed struct
+TOKEN: 0x200004A
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.EntityVFXPriorityTypeNormal  // const
+  public    static  Beyond.Rendering.EntityVFXPriorityTypeUltiSkillTimeline  // const
+METHODS:
+END_CLASS
+
+CLASS: Beyond.Rendering.SettingLodLevel
+TYPE:  sealed struct
+TOKEN: 0x200004B
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.SettingLodLevelNone  // const
+  public    static  Beyond.Rendering.SettingLodLevelLow  // const
+  public    static  Beyond.Rendering.SettingLodLevelMid  // const
+  public    static  Beyond.Rendering.SettingLodLevelHigh  // const
+  public    static  Beyond.Rendering.SettingLodLevelHighest  // const
+METHODS:
+END_CLASS
+
+CLASS: Beyond.Rendering.AssetPlatformLayers
+TYPE:  sealed struct
+TOKEN: 0x200004C
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.AssetPlatformLayersPC  // const
+  public    static  Beyond.Rendering.AssetPlatformLayersMobile  // const
+  public    static  Beyond.Rendering.AssetPlatformLayersOther  // const
+METHODS:
+END_CLASS
+
+CLASS: Beyond.Rendering.EffectTargetLayers
+TYPE:  sealed struct
+TOKEN: 0x200004D
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.EffectTargetLayersMain  // const
+  public    static  Beyond.Rendering.EffectTargetLayersGuard  // const
+METHODS:
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXAssetBase
+TYPE:  class
+TOKEN: 0x200004E
+SIZE:  0x30
+EXTENDS: UnityEngine.ScriptableObject
+FIELDS:
+  public            System.Boolean                  useECSRenderer  // 0x18
+  public            Beyond.Rendering.SettingLodLevelsettingLodLevel  // 0x1c
+  public            Beyond.Rendering.AssetPlatformLayersplatformLayer  // 0x20
+  public            Beyond.Rendering.EffectTargetLayerstargetLayer  // 0x24
+  private           System.String                   m_assetName  // 0x28
+PROPERTIES:
+  assetName  get=0x0A9B4418
+METHODS:
+  RVA=0x05397B78  token=0x600016D  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.VFXType
+TYPE:  sealed struct
+TOKEN: 0x200004F
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.VFXType        Addictive  // const
+  public    static  Beyond.Rendering.VFXType        Dissolve  // const
+  public    static  Beyond.Rendering.VFXType        Max  // const
+METHODS:
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXControllerBase
+TYPE:  class
+TOKEN: 0x2000050
+SIZE:  0x48
+FIELDS:
+  public            Beyond.Rendering.SettingLodLevelsettingLodLevel  // 0x10
+  public            Beyond.Rendering.AssetPlatformLayersplatformLayer  // 0x14
+  public            Beyond.Rendering.EffectTargetLayerstargetLayer  // 0x18
+  protected         Beyond.Rendering.IRendererHelperm_owner  // 0x20
+  protected         System.Boolean                  m_isPlaying  // 0x28
+  private           System.Boolean                  m_isHiding  // 0x29
+  protected         System.Boolean                  m_isKeyword  // 0x2a
+  private           System.String                   m_vfxName  // 0x30
+  private           System.Single                   m_destroyTime  // 0x38
+  private           System.Single                   m_lastTickTime  // 0x3c
+  public            System.Boolean                  preload  // 0x40
+  public            System.Boolean                  fromTimeline  // 0x41
+PROPERTIES:
+  isPlaying  get=0x0402AB10
+  isStopping  get=0x0A9B49B0
+  isHiding  get=0x03099050
+  isKeyword  get=0x03098E80
+  vfxName  get=0x031DA370
+  destroyTime  get=0x0302E1E0  set=0x031DA450
+  lastTickTime  get=0x03577E70  set=0x03577EA0
+METHODS:
+  RVA=0x031DA620  token=0x6000177  System.Void SetOwner(System.String name, Beyond.Rendering.IRendererHelper owner)
+  RVA=0x031D9B60  token=0x6000178  System.Void InitLOD(Beyond.Rendering.EntityVFXAssetBase vfxAssetBase)
+  RVA=0x031DA3A0  token=0x6000179  System.Void SetName(System.String name)
+  RVA=0x0A9B47FC  token=0x600017A  System.Boolean PoolTick()
+  RVA=0x0A9B4484  token=0x600017B  System.Void Destroy()
+  RVA=0x0A9B4684  token=0x600017C  System.Void OnDestroy()
+  RVA=0x0A9B47B8  token=0x600017D  System.Void Play()
+  RVA=0x0A9B4908  token=0x600017E  System.Void Stop(System.Boolean forceStop)
+  RVA=0x0A9B4848  token=0x600017F  System.Void Replay()
+  RVA=0x0A9B495C  token=0x6000180  System.Void Tick(System.Single logicDeltaTime)
+  RVA=0x03577B00  token=0x6000181  System.Void RefreshLastTickTime()
+  RVA=0x03577DE0  token=0x6000182  System.Single GetDeltaTimeFromLastTick(System.Boolean useScaledTime)
+  RVA=0x0A9B45EC  token=0x6000183  Beyond.Rendering.EntityVFXPriorityType GetPriorityType()
+  RVA=0x0A9B4638  token=0x6000184  Beyond.Rendering.EntityVFXRendererMask GetRendererMask()
+  RVA=0x0A9B4554  token=0x6000185  System.Boolean GetAllowSimultaneousKeyword()
+  RVA=0x0A9B45A0  token=0x6000186  System.Boolean GetNeedTick()
+  RVA=0x0485AEF0  token=0x6000187  System.Void Hide()
+  RVA=0x0A9B46C8  token=0x6000188  System.Void OnHide()
+  RVA=0x049AFA80  token=0x6000189  System.Void Show()
+  RVA=0x0A9B4774  token=0x600018A  System.Void OnShow()
+  RVA=0x0A9B488C  token=0x600018B  System.Void Sample(System.Single time, System.Boolean ending)
+  RVA=0x0A9B470C  token=0x600018C  System.Void OnSample(System.Single time, System.Boolean ending)
+  RVA=0x04D8E730  token=0x600018D  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXControllerStateBase
+TYPE:  abstract class
+TOKEN: 0x2000051
+SIZE:  0x58
+EXTENDS: Beyond.Rendering.EntityVFXControllerBase
+FIELDS:
+  private           System.Single                   <m_passTime>k__BackingField  // 0x48
+  private           System.Single                   <m_loopPassTime>k__BackingField  // 0x4c
+  private           System.Single                   <m_endPassTime>k__BackingField  // 0x50
+  private           Beyond.Rendering.EntityVFXControllerStateBase.Statem_curState  // 0x54
+PROPERTIES:
+  m_passTime  get=0x04D8D350  set=0x04D8D380
+  m_loopPassTime  get=0x04D87860  set=0x04D91480
+  m_endPassTime  get=0x04D885A0  set=0x04D88FF0
+  isStopping  get=0x0A9B4C04
+  useScaledTime  get=0x0A9B4D8C
+  useStartCurve  get=0x0A9B4DD8
+  useLoopCurve  get=0x0A9B4D40
+  useEndCurve  get=0x0A9B4CF4
+  loop  get=0x0A9B4CA8
+  duration  get=0x0A9B4B64
+  loopDuration  get=0x0A9B4C54
+  endDuration  get=0x0A9B4BB8
+METHODS:
+  RVA=0x0455A2A0  token=0x6000195  System.Void Play()
+  RVA=0x0A9B4B00  token=0x6000196  System.Void Replay()
+  RVA=0x045DFBB0  token=0x6000197  System.Void Stop(System.Boolean forceStop)
+  RVA=0x0402AA60  token=0x6000198  System.Boolean GetNeedTick()
+  RVA=0x03577B40  token=0x6000199  System.Void Tick(System.Single logicDeltaTime)
+  RVA=0x0A9B49FC  token=0x600019A  System.Void OnSample(System.Single time, System.Boolean ending)
+  RVA=-1  // abstract  token=0x60001A3  System.Void UpdateStart()
+  RVA=-1  // abstract  token=0x60001A4  System.Void UpdateLoop()
+  RVA=-1  // abstract  token=0x60001A5  System.Void UpdateStop()
+  RVA=0x045DFC10  token=0x60001A6  System.Void _FinalStop()
+  RVA=-1  // abstract  token=0x60001A7  System.Void OnFinalStop()
+  RVA=0x04D8E730  token=0x60001A8  System.Void .ctor()
+  RVA=0x06C1D558  token=0x60001A9  System.Boolean <>iFixBaseProxy_get_isStopping()
+  RVA=0x06C1D538  token=0x60001AA  System.Void <>iFixBaseProxy_Play()
+  RVA=0x06C1D540  token=0x60001AB  System.Void <>iFixBaseProxy_Replay()
+  RVA=0x06C1D548  token=0x60001AC  System.Void <>iFixBaseProxy_Stop(System.Boolean P0)
+  RVA=0x06C1E0F8  token=0x60001AD  System.Boolean <>iFixBaseProxy_GetNeedTick()
+  RVA=0x06C1D550  token=0x60001AE  System.Void <>iFixBaseProxy_Tick(System.Single P0)
+  RVA=0x06C1D528  token=0x60001AF  System.Void <>iFixBaseProxy_OnSample(System.Single P0, System.Boolean P1)
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityCustomizePropertyName
+TYPE:  sealed struct
+TOKEN: 0x2000053
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.EntityCustomizePropertyNameNone  // const
+  public    static  Beyond.Rendering.EntityCustomizePropertyNameAlphaTex  // const
+  public    static  Beyond.Rendering.EntityCustomizePropertyNameNormalTex  // const
+METHODS:
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityCustomizeMatchMethod
+TYPE:  sealed struct
+TOKEN: 0x2000054
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.EntityCustomizeMatchMethodNone  // const
+  public    static  Beyond.Rendering.EntityCustomizeMatchMethodAll  // const
+  public    static  Beyond.Rendering.EntityCustomizeMatchMethodRendererName  // const
+  public    static  Beyond.Rendering.EntityCustomizeMatchMethodSourceMaterial0  // const
+  public    static  Beyond.Rendering.EntityCustomizeMatchMethodSourceMesh  // const
+METHODS:
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityCustomizeRendererPropertyConfig
+TYPE:  class
+TOKEN: 0x2000055
+SIZE:  0x28
+FIELDS:
+  public            System.Boolean                  useColorTexture  // 0x10
+  public            System.Boolean                  useAutoFindColorTexture  // 0x11
+  public            System.String                   autoFindColorTextureName  // 0x18
+  public            Beyond.SerializeFieldDictionary<UnityEngine.Material,UnityEngine.Texture>preConfigColorTextureDict  // 0x20
+METHODS:
+  RVA=0x0A9B2D2C  token=0x60001B0  UnityEngine.Texture GetColorTexture(UnityEngine.Material material)
+  RVA=0x041E1670  token=0x60001B1  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXKeywordEnum
+TYPE:  sealed struct
+TOKEN: 0x2000056
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.EntityVFXKeywordEnumNone  // const
+  public    static  Beyond.Rendering.EntityVFXKeywordEnumDissolve  // const
+METHODS:
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXDissolveData
+TYPE:  class
+TOKEN: 0x2000057
+SIZE:  0xC8
+FIELDS:
+  public            Beyond.Rendering.EntityVFXPriorityTypepriorityType  // 0x10
+  public            Beyond.Rendering.EntityVFXRendererMaskrendererMask  // 0x14
+  public            System.Boolean                  useScaledTime  // 0x18
+  public            System.Boolean                  allowSimultaneous  // 0x19
+  public            System.Boolean                  loop  // 0x1a
+  public            System.Single                   duration  // 0x1c
+  public            Beyond.Rendering.EntityVFXDissolveData.UVSetuvSet  // 0x20
+  public            System.Boolean                  useCutoffPosY  // 0x24
+  public            System.Boolean                  useCutoffPosYAutoBounds  // 0x25
+  public            System.Single                   cutoffPosYAbsoluteBounds  // 0x28
+  public            System.Boolean                  useCutoffLocalDirection  // 0x2c
+  public            UnityEngine.Vector3             cutoffDirection  // 0x30
+  public            System.Single                   cutoffUseDissolve  // 0x3c
+  public            System.Boolean                  stopShadowCasting  // 0x40
+  public            System.Boolean                  stopRayTracingMeanTime  // 0x41
+  public            System.Single                   stopShadowCastingDelay  // 0x44
+  public            System.Single                   revertShadowCastingDelay  // 0x48
+  public            UnityEngine.Texture2D           dissolveTexture  // 0x50
+  public            UnityEngine.Vector4             dissolveTextureTillingOffset  // 0x58
+  public            System.Single                   dissolveEdgeSharp  // 0x68
+  public            UnityEngine.Color               dissolveEmissiveColor  // 0x6c
+  public            System.Single                   dissolveEmissiveEdge  // 0x7c
+  public            System.Boolean                  useLocalScreenUV  // 0x80
+  public            UnityEngine.AnimationCurve      dissolveValueCurve  // 0x88
+  public            UnityEngine.AnimationCurve      cutoffPosYCurve  // 0x90
+  public            System.Boolean                  useLoopCurve  // 0x98
+  public            System.Single                   loopDuration  // 0x9c
+  public            UnityEngine.AnimationCurve      dissolveValueLoopCurve  // 0xa0
+  public            UnityEngine.AnimationCurve      cutoffPosYLoopCurve  // 0xa8
+  public            System.Boolean                  useEndCurve  // 0xb0
+  public            System.Single                   endDuration  // 0xb4
+  public            UnityEngine.AnimationCurve      dissolveValueEndCurve  // 0xb8
+  public            UnityEngine.AnimationCurve      cutoffPosYEndCurve  // 0xc0
+METHODS:
+  RVA=0x047A0220  token=0x60001B2  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXDissolveAsset
+TYPE:  class
+TOKEN: 0x2000059
+SIZE:  0x38
+EXTENDS: Beyond.Rendering.EntityVFXAssetBase
+FIELDS:
+  public            Beyond.Rendering.EntityVFXDissolveDatadata  // 0x30
+METHODS:
+  RVA=0x046EA7B0  token=0x60001B3  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityFactoryRendererInfo
+TYPE:  class
+TOKEN: 0x200005A
+SIZE:  0x20
+FIELDS:
+  public            System.Int32                    subMeshCount  // 0x10
+  public            System.Boolean                  enableVAT  // 0x14
+  public            System.Int32                    vatIndex  // 0x18
+  public            System.Int32                    initMaterialsCount  // 0x1c
+METHODS:
+  RVA=0x041E1670  token=0x60001B4  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXFactoryAddedMaterialManager
+TYPE:  class
+TOKEN: 0x200005B
+SIZE:  0x30
+FIELDS:
+  private   static readonly System.Int32                    S_ENABLE_FACTORY_VAT  // static @ 0x0
+  private   static readonly System.Int32                    S_FACTORY_VAT_MAP  // static @ 0x4
+  private   static readonly System.Int32                    S_FACTORY_VAT_MAP_PARAMS  // static @ 0x8
+  private           System.Collections.Generic.List<Beyond.Rendering.EntityFactoryRendererInfo>m_factoryRendererInfos  // 0x10
+  private           System.Collections.Generic.List<Beyond.Rendering.EntityVFXFactoryAddedMaterialManager.VATData>m_vatDatas  // 0x18
+  private           System.Collections.Generic.List<Beyond.Rendering.EntityVFXFactoryAddedMaterialManager.AddedMaterialData>m_addedMaterialDatas  // 0x20
+  private           System.Collections.Generic.Dictionary<UnityEngine.Material,Beyond.Rendering.EntityVFXFactoryAddedMaterialManager.AddedMaterialData>m_addedMaterialDataDict  // 0x28
+METHODS:
+  RVA=0x0A9B4EA8  token=0x60001B5  System.Void Init(System.Collections.Generic.List<Beyond.Rendering.EntityFactoryRendererInfo> factoryRendererInfos)
+  RVA=0x0A9B52F8  token=0x60001B6  System.Void _AddVATMaterial(UnityEngine.Material src)
+  RVA=0x0A9B56A4  token=0x60001B7  UnityEngine.Material _GetVATMaterial(Beyond.Rendering.EntityFactoryRendererInfo rendererInfo, UnityEngine.Material src)
+  RVA=0x0A9B55C0  token=0x60001B8  System.Int32 _GetAddedMaterialIndex(Beyond.Rendering.EntityFactoryRendererInfo rendererInfo, UnityEngine.Material src)
+  RVA=0x0A9B5758  token=0x60001B9  System.Void _RemoveVATMaterial(UnityEngine.Material src)
+  RVA=0x0A9B4E24  token=0x60001BA  System.Void AddMaterialToAllRenderer(UnityEngine.Material material)
+  RVA=0x0A9B4FBC  token=0x60001BB  System.Void RemoveMaterialFromAllRenderer(UnityEngine.Material material)
+  RVA=0x0A9B50EC  token=0x60001BC  System.Void SetFloatToFactoryMaterial(UnityEngine.Material material, System.Int32 nameId, System.Single value)
+  RVA=0x0A9B51E0  token=0x60001BD  System.Void SetVectorToFactoryMaterial(UnityEngine.Material material, System.Int32 nameId, UnityEngine.Vector4 value)
+  RVA=0x0A9B58C8  token=0x60001BE  System.Void .ctor()
+  RVA=0x0A9B5860  token=0x60001BF  System.Void .cctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXFactoryMaterialCache
+TYPE:  static class
+TOKEN: 0x2000060
+SIZE:  0x10
+FIELDS:
+  private   static readonly System.Int32                    S_FACTORY_VAT_MAP  // static @ 0x0
+  private   static readonly System.Int32                    S_FACTORY_VAT_MAP_PARAMS  // static @ 0x4
+  private   static  System.Collections.Generic.Dictionary<System.Int32,System.Collections.Generic.Dictionary<System.Int32,Beyond.Rendering.EntityVFXFactoryMaterialCache.VATMaterialData>>s_cachedMaterials  // static @ 0x8
+METHODS:
+  RVA=0x0A9B59B0  token=0x60001C6  UnityEngine.Material GetVATMaterial(UnityEngine.Material srcMaterial, UnityEngine.Texture factoryVATMap, UnityEngine.Vector4 factoryVATMapParams)
+  RVA=0x0A9B5C2C  token=0x60001C7  System.Void ReleaseVATMaterial(UnityEngine.Material srcMaterial, UnityEngine.Texture factoryVATMap)
+  RVA=0x0A9B5DE4  token=0x60001C8  System.Void .cctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXSetParamsData
+TYPE:  class
+TOKEN: 0x2000062
+SIZE:  0x50
+FIELDS:
+  public            Beyond.Rendering.EntityVFXPriorityTypepriorityType  // 0x10
+  public            Beyond.Rendering.EntityVFXRendererMaskrendererMask  // 0x14
+  public            System.Boolean                  useScaledTime  // 0x18
+  public            System.Boolean                  loop  // 0x19
+  public            Beyond.Rendering.EntityVFXSetParamsData.Typetype  // 0x1c
+  public            System.Single                   duration  // 0x20
+  public            System.Collections.Generic.List<Beyond.Rendering.EntityVFXCurveData>customCurves  // 0x28
+  public            System.Boolean                  useLoopCurve  // 0x30
+  public            System.Single                   loopDuration  // 0x34
+  public            System.Collections.Generic.List<Beyond.Rendering.EntityVFXCurveData>customLoopCurves  // 0x38
+  public            System.Single                   endDuration  // 0x40
+  public            System.Collections.Generic.List<Beyond.Rendering.EntityVFXCurveData>customEndCurves  // 0x48
+METHODS:
+  RVA=0x04DA6BF0  token=0x60001CA  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXSetParamsAsset
+TYPE:  class
+TOKEN: 0x2000064
+SIZE:  0x38
+EXTENDS: Beyond.Rendering.EntityVFXAssetBase
+FIELDS:
+  public            Beyond.Rendering.EntityVFXSetParamsDatadata  // 0x30
+METHODS:
+  RVA=0x046EA7B0  token=0x60001CB  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.EntityVFXUtils
+TYPE:  static class
+TOKEN: 0x2000065
+SIZE:  0x10
+FIELDS:
+METHODS:
+  RVA=0x0302DC00  token=0x60001CC  Beyond.Rendering.EntityVFXRendererMask ToMask(Beyond.Rendering.EntityVFXRendererType type)
+  RVA=0x032C5080  token=0x60001CD  System.Void CalculateCutOffBounds(Beyond.Rendering.IRendererHelper owner, System.Boolean useCutoffLocalDirection, UnityEngine.Vector3 cutoffDirectionData, System.Boolean useCutoffPosYAutoBounds, System.Single cutoffPosYAbsoluteBounds, System.Single& cutoffMin, System.Single& cutoffMax, UnityEngine.Vector3& cutoffDirection)
+  RVA=0x032C4EA0  token=0x60001CE  System.ValueTuple<System.Single,System.Single> GetBoundsMinMaxOfDirection(UnityEngine.Bounds bounds, UnityEngine.Vector3 direction)
+  RVA=0x03578D40  token=0x60001CF  System.Void ApplyEntityVFXCurves(UnityEngine.Material material, System.Collections.Generic.List<Beyond.Rendering.EntityVFXCurveData> curveDataList, System.Single schedule)
+  RVA=0x03579520  token=0x60001D0  Beyond.Rendering.EntityVFXCurveEvaluateResult Evaluate(Beyond.Rendering.EntityVFXCurveData curveData, System.Single schedule)
+  RVA=0x03579450  token=0x60001D1  System.Void _UpdateCurve(UnityEngine.Material material, Beyond.Rendering.EntityVFXCurveData curveData, System.Single schedule)
+  RVA=0x0A9B5E80  token=0x60001D2  System.Boolean IsCharacterShader(System.String name)
+  RVA=0x0A9A7704  token=0x60001D3  System.Boolean IsLitShader(System.String name)
+END_CLASS
+
+CLASS: Beyond.Rendering.ICaptureMesh
+TYPE:  interface
+TOKEN: 0x2000066
+FIELDS:
+METHODS:
+  RVA=-1  // abstract  token=0x60001D4  Beyond.Rendering.EntityRenderCapturedEntity Capture(UnityEngine.GameObject placeRoot, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=-1  // abstract  token=0x60001D5  System.Void Release(Beyond.Rendering.EntityRenderCapturedEntity mesh)
+END_CLASS
+
+CLASS: Beyond.Rendering.IEntityVFXTimelineHost
+TYPE:  interface
+TOKEN: 0x2000067
+FIELDS:
+PROPERTIES:
+  gameObject  get=-1  // abstract
+  inited  get=-1  // abstract
+METHODS:
+  RVA=-1  // abstract  token=0x60001D8  System.Void InitAll()
+  RVA=-1  // abstract  token=0x60001D9  System.Void ResetAll()
+  RVA=-1  // abstract  token=0x60001DA  System.Void SampleVFX(System.String assetName, System.Boolean playing, System.Single time, System.Boolean ending)
+  RVA=-1  // abstract  token=0x60001DB  System.Void AddTimelineEffect(Beyond.Rendering.EntityVFXAssetBase asset)
+END_CLASS
+
+CLASS: Beyond.Rendering.RenderHelperType
+TYPE:  sealed struct
+TOKEN: 0x2000068
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.RenderHelperTypeUnknown  // const
+  public    static  Beyond.Rendering.RenderHelperTypeCharacter  // const
+  public    static  Beyond.Rendering.RenderHelperTypeLit  // const
+  public    static  Beyond.Rendering.RenderHelperTypeMix  // const
+METHODS:
+END_CLASS
+
+CLASS: Beyond.Rendering.IRendererHelper
+TYPE:  interface
+TOKEN: 0x2000069
+FIELDS:
+METHODS:
+  RVA=-1  // abstract  token=0x60001DC  System.Void Reset()
+  RVA=-1  // abstract  token=0x60001DD  System.Void Play(System.String vfxName)
+  RVA=-1  // abstract  token=0x60001DE  System.Void Stop(System.String vfxName)
+  RVA=-1  // abstract  token=0x60001DF  System.Void ShowAll()
+  RVA=-1  // abstract  token=0x60001E0  System.Void HideAll()
+  RVA=-1  // abstract  token=0x60001E1  System.Void SetDitherAlpha(System.Single ditherAlpha, System.Int32 handle)
+  RVA=-1  // abstract  token=0x60001E2  System.Single GetDitherAlpha()
+  RVA=-1  // abstract  token=0x60001E3  System.Void ResetAllDitherAlpha()
+  RVA=-1  // abstract  token=0x60001E4  System.Void ClearEffectCache(System.String name)
+  RVA=-1  // abstract  token=0x60001E5  System.Void OnEntityVFXControllerDestroying(Beyond.Rendering.EntityVFXControllerBase controller)
+  RVA=-1  // abstract  token=0x60001E6  System.Void SetVisibleByNameContainsStr(System.String name, System.Boolean visible)
+  RVA=-1  // abstract  token=0x60001E7  System.Void SetVisibleByRenderer(UnityEngine.Renderer renderer, System.Boolean visible)
+  RVA=-1  // abstract  token=0x60001E8  System.Int32 AddMaterialToAllRenderer(UnityEngine.Material material, Beyond.Rendering.EntityVFXRendererMask rendererMask, Beyond.Rendering.AddMaterialConfig config)
+  RVA=-1  // abstract  token=0x60001E9  System.Void RemoveMaterialFromAllRenderer(System.Int32 handle)
+  RVA=-1  // abstract  token=0x60001EA  System.Boolean GetAddedMaterialsOfCustomizeProperties(System.Int32 handle, System.Collections.Generic.List<UnityEngine.Material> result)
+  RVA=-1  // abstract  token=0x60001EB  System.Void SetKeywordEnableToAllMaterial(System.String keyword, System.Boolean enable, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=-1  // abstract  token=0x60001EC  System.Void SetFloatToAllMaterial(System.Int32 nameId, System.Single value, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=-1  // abstract  token=0x60001ED  System.Void SetFloatToCustomPerDraw(Beyond.Rendering.EntityRenderHelperCustomPerDrawType type, System.Single value, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=-1  // abstract  token=0x60001EE  System.Void SetTextureToAllMaterial(System.Int32 nameId, UnityEngine.Texture value, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=-1  // abstract  token=0x60001EF  System.Void SetVectorToAllMaterial(System.Int32 nameId, UnityEngine.Vector4 value, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=-1  // abstract  token=0x60001F0  System.Void SetFloatToFactoryMaterial(UnityEngine.Material material, System.Int32 nameId, System.Single value)
+  RVA=-1  // abstract  token=0x60001F1  System.Void SetVectorToFactoryMaterial(UnityEngine.Material material, System.Int32 nameId, UnityEngine.Vector4 value)
+  RVA=-1  // abstract  token=0x60001F2  System.Void SetAddictiveFloatProperty(System.Int32 propertyId, System.Single value)
+  RVA=-1  // abstract  token=0x60001F3  System.Single GetAddictiveFloatProperty(System.Int32 propertyId, System.Single defaultValue)
+  RVA=-1  // abstract  token=0x60001F4  System.Void SetAddictiveVectorProperty(System.Int32 propertyId, UnityEngine.Vector4 value)
+  RVA=-1  // abstract  token=0x60001F5  UnityEngine.Vector4 GetAddictiveVectorProperty(System.Int32 propertyId, UnityEngine.Vector4 defaultValue)
+  RVA=-1  // abstract  token=0x60001F6  System.Void SetAddictiveTextureProperty(System.Int32 propertyId, UnityEngine.Texture value)
+  RVA=-1  // abstract  token=0x60001F7  UnityEngine.Texture GetAddictiveTextureProperty(System.Int32 propertyId, UnityEngine.Texture defaultValue)
+  RVA=-1  // abstract  token=0x60001F8  System.Void StopShadowCasting(System.Boolean stopRayTracing)
+  RVA=-1  // abstract  token=0x60001F9  System.Void RevertShadowCastingMode()
+  RVA=-1  // abstract  token=0x60001FA  System.Void SetDepthOnlyEnabledToAllMaterial(System.Boolean enable, Beyond.Rendering.EntityVFXRendererMask rendererMask)
+  RVA=-1  // abstract  token=0x60001FB  System.Boolean SetManualDitherEnable(System.Boolean enable)
+  RVA=-1  // abstract  token=0x60001FC  System.Void SetManualDitherAlphaValue(System.Single value)
+  RVA=-1  // abstract  token=0x60001FD  UnityEngine.Bounds GetRendererBounds()
+  RVA=-1  // abstract  token=0x60001FE  UnityEngine.Matrix4x4 GetTransform()
+  RVA=-1  // abstract  token=0x60001FF  System.Boolean IsFactory()
+  RVA=-1  // abstract  token=0x6000200  Beyond.Rendering.RenderHelperType GetRenderHelperType(System.Boolean forceCalculate)
+  RVA=-1  // abstract  token=0x6000201  System.Void SetTimeScale(System.Single timeScale)
+  RVA=-1  // abstract  token=0x6000202  System.Single GetTimeScale()
+  RVA=-1  // abstract  token=0x6000203  System.Boolean GetMeshHasVFXVertColor()
+  RVA=-1  // abstract  token=0x6000204  System.Boolean CanPlay(Beyond.Rendering.SettingLodLevel settingLodLevel, Beyond.Rendering.AssetPlatformLayers platformLayer, Beyond.Rendering.EffectTargetLayers targetLayer)
+END_CLASS
+
+CLASS: Beyond.Rendering.CommonVAT
+TYPE:  class
+TOKEN: 0x200006A
+SIZE:  0x50
+EXTENDS: UnityEngine.MonoBehaviour
+FIELDS:
+  private   static readonly System.Int32                    S_COMMON_VAT_PLAY_PARAMS  // static @ 0x0
+  public            Beyond.Rendering.RuntimeVATData data  // 0x18
+  private           System.Collections.Generic.Dictionary<System.String,System.Collections.Generic.List<Beyond.Rendering.RuntimeVATAnimationClip>>m_animDic  // 0x20
+  private           System.Collections.Generic.List<Beyond.Rendering.RuntimeVATAnimationClip>m_curClips  // 0x28
+  private           Beyond.Rendering.VATPropertySetterm_propertySetter  // 0x30
+  private           System.Int32                    m_curIndex  // 0x38
+  private           System.Int32                    m_nextPlayTimerId  // 0x3c
+  private           System.Boolean                  m_hasNextAnimToPlay  // 0x40
+  private           System.String                   m_nextAnimName  // 0x48
+PROPERTIES:
+  PropertySetterType  get=0x0A9B2B1C
+METHODS:
+  RVA=0x0A9B2330  token=0x6000206  System.Void Start()
+  RVA=0x0A9B2298  token=0x6000207  System.Void Play(System.String name, System.Boolean playWhenComplete)
+  RVA=0x0A9B2674  token=0x6000208  System.Void _DoPlay(System.String name)
+  RVA=0x0A9B27F4  token=0x6000209  System.Void _NextPlay()
+  RVA=0x0A9B25A8  token=0x600020A  System.Void _CreateTimer(System.Single time, System.Action func, System.String funcName)
+  RVA=0x0A9B2534  token=0x600020B  System.Void _ClearTimer()
+  RVA=0x0A9B2964  token=0x600020C  System.Void _UpdateProperty(Beyond.Rendering.RuntimeVATAnimationClip runtimeVatAnimationClip)
+  RVA=0x0A9B2A88  token=0x600020D  System.Void .ctor()
+  RVA=0x0A9B2A60  token=0x600020E  System.Void .cctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.FactoryVAT
+TYPE:  class
+TOKEN: 0x200006B
+SIZE:  0x90
+EXTENDS: UnityEngine.MonoBehaviour
+FIELDS:
+  public            Beyond.Rendering.RuntimeVATData data  // 0x18
+  public            System.Single                   speed  // 0x20
+  public            System.Single                   passTime  // 0x24
+  public            System.Int32                    lastFrame  // 0x28
+  public            System.Int32                    curFrame  // 0x2c
+  public            System.Boolean                  preview  // 0x30
+  private           UnityEngine.MaterialPropertyBlockm_materialPropertyBlock  // 0x38
+  private           System.Collections.Generic.Dictionary<System.String,System.Collections.Generic.List<Beyond.Rendering.RuntimeVATAnimationClip>>m_animDic  // 0x40
+  private           System.Collections.Generic.List<Beyond.Rendering.RuntimeVATAnimationClip>m_curClips  // 0x48
+  private           System.Int32                    m_curIndex  // 0x50
+  private           System.Action                   m_callBack  // 0x58
+  private           System.Boolean                  m_hasNextAnimToPlay  // 0x60
+  private           System.String                   m_nextAnimName  // 0x68
+  private           System.Action                   m_nextAnimCallBack  // 0x70
+  private   static readonly System.Int32                    S_FACTORY_VAT_FRAME  // static @ 0x0
+  private   static readonly System.Int32                    S_FACTORY_VAT_LAST_FRAME  // static @ 0x4
+  private           System.Collections.Generic.List<UnityEngine.Renderer>m_allRenderers  // 0x78
+  private           System.Collections.Generic.List<UnityEngine.Renderer>m_dynamicRenders  // 0x80
+  private           System.Collections.Generic.List<UnityEngine.Renderer>m_staticRenders  // 0x88
+METHODS:
+  RVA=0x0A9B6058  token=0x600020F  System.Void Start()
+  RVA=0x0A9B6008  token=0x6000210  System.Void Reset()
+  RVA=0x0A9B691C  token=0x6000211  System.Void _UpdateAnim()
+  RVA=0x0A9B5EFC  token=0x6000212  System.Void OnUpdate()
+  RVA=0x0A9B5F4C  token=0x6000213  System.Void Play(System.String name, System.Action callBack, System.Boolean whenComplete)
+  RVA=0x0A9B61DC  token=0x6000214  System.Void _DoPlay(System.String name, System.Action callBack)
+  RVA=0x0A9B64D4  token=0x6000215  System.Void _InitRenderer()
+  RVA=0x0A9B62C8  token=0x6000216  System.Void _InitRenderer_MeshRender(UnityEngine.LODGroup lodGroup)
+  RVA=0x0A9B68CC  token=0x6000217  System.Void _SetParamsToRenderer()
+  RVA=0x0A9B67D8  token=0x6000218  System.Void _SetParamsToRenderer_MeshRender()
+  RVA=0x0A9B6788  token=0x6000219  System.Void _ReSetParamsToRenderer()
+  RVA=0x0A9B6590  token=0x600021A  System.Void _ReSetParamsToRenderer_MeshRender()
+  RVA=0x0A9B6B20  token=0x600021B  System.Void .ctor()
+  RVA=0x0A9B6AD8  token=0x600021C  System.Void .cctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.RuntimeVATAnimationClip
+TYPE:  class
+TOKEN: 0x200006C
+SIZE:  0x30
+FIELDS:
+  public            System.String                   stateName  // 0x10
+  public            System.String                   name  // 0x18
+  public            System.Boolean                  loop  // 0x20
+  public            System.Int32                    startFrame  // 0x24
+  public            System.Int32                    endFrame  // 0x28
+METHODS:
+  RVA=0x041E1670  token=0x600021D  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.RuntimeVATData
+TYPE:  class
+TOKEN: 0x200006D
+SIZE:  0x38
+FIELDS:
+  public            UnityEngine.Texture             vatMap  // 0x10
+  public            System.Boolean                  fullRigidBody  // 0x18
+  public            System.Collections.Generic.List<UnityEngine.Matrix4x4>bonePoses  // 0x20
+  public            System.Single                   frameRate  // 0x28
+  public            System.Collections.Generic.List<Beyond.Rendering.RuntimeVATAnimationClip>animationClips  // 0x30
+METHODS:
+  RVA=0x0A9B8640  token=0x600021E  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.VATPropertySetter
+TYPE:  abstract class
+TOKEN: 0x200006E
+SIZE:  0x10
+FIELDS:
+METHODS:
+  RVA=-1  // abstract  token=0x600021F  System.Void Init(UnityEngine.GameObject gameObject)
+  RVA=-1  // abstract  token=0x6000220  System.Void SetFloat(System.Int32 id, System.Single value)
+  RVA=-1  // abstract  token=0x6000221  System.Void SetVector(System.Int32 id, UnityEngine.Vector4 value)
+  RVA=0x041E1670  token=0x6000222  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.VATRendererPropertySetter
+TYPE:  class
+TOKEN: 0x200006F
+SIZE:  0x20
+EXTENDS: Beyond.Rendering.VATPropertySetter
+FIELDS:
+  private           System.Collections.Generic.List<UnityEngine.Renderer>m_allRenderers  // 0x10
+  private           System.Collections.Generic.List<UnityEngine.Material>m_allMaterials  // 0x18
+METHODS:
+  RVA=0x0A9B87F8  token=0x6000223  System.Void Init(UnityEngine.GameObject gameObject)
+  RVA=0x0A9B89F0  token=0x6000224  System.Void SetFloat(System.Int32 id, System.Single value)
+  RVA=0x0A9B8B38  token=0x6000225  System.Void SetVector(System.Int32 id, UnityEngine.Vector4 value)
+  RVA=0x041E1670  token=0x6000226  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.VATEntityRendererHelperPropertySetter
+TYPE:  class
+TOKEN: 0x2000070
+SIZE:  0x18
+EXTENDS: Beyond.Rendering.VATPropertySetter
+FIELDS:
+  private           Beyond.Rendering.IRendererHelperm_rendererHelper  // 0x10
+METHODS:
+  RVA=0x053908C0  token=0x6000227  System.Void .ctor(Beyond.Rendering.IRendererHelper rendererHelper)
+  RVA=0x0A9B8690  token=0x6000228  System.Void Init(UnityEngine.GameObject gameObject)
+  RVA=0x0A9B86E4  token=0x6000229  System.Void SetFloat(System.Int32 id, System.Single value)
+  RVA=0x0A9B8764  token=0x600022A  System.Void SetVector(System.Int32 id, UnityEngine.Vector4 value)
+END_CLASS
+
+CLASS: Beyond.Rendering.PsoCreateUploadHelper
+TYPE:  class
+TOKEN: 0x2000071
+SIZE:  0x18
+FIELDS:
+  protected static  System.Int32                    PSO_UPLOAD_INFO_VERSION  // const
+  protected static  System.Int32                    MAX_UPLOAD_COUNT_PER_LOOP  // const
+  protected static  System.Int32                    MAX_UPLOAD_COUNT_PER_LOOP_LARGE  // const
+  protected static  System.Int32                    MAX_UPLOAD_SIZE_PER_LOOP  // const
+  protected static  System.Int32                    MAX_UPLOAD_SIZE_PER_LOOP_LARGE  // const
+  protected static  System.Single                   TICK_INTERVAL  // const
+  protected static  System.Int32                    TICK_UPLOAD_INTERVAL  // const
+  protected static  System.Single                   CREATE_TIME_SMALL_DROP  // const
+  protected static  Beyond.Rendering.PsoCreateUploadHelpers_instance  // static @ 0x0
+  public    static  System.Int32                    s_enabled  // static @ 0x8
+  protected static  System.Int32                    s_tickCount  // static @ 0xc
+  public    static  System.Boolean                  s_skipUploadFile  // static @ 0x10
+  public    static  System.Boolean                  s_isShaderWarming  // static @ 0x11
+  public    static  System.Boolean                  s_enableTimeLimit  // static @ 0x12
+  private   static readonly System.Action<System.Boolean,System.String,System.String>s_uploadFileCallback  // static @ 0x18
+  private   static  System.String                   s_persistentDataPath  // static @ 0x20
+  private   static  System.Collections.Concurrent.ConcurrentQueue<System.ValueTuple<System.String,System.Single,System.Int32,System.Boolean,System.String>>s_concurrentQueue  // static @ 0x28
+  private           Beyond.TickFunction             m_timerId  // 0x10
+  private   static  System.String                   URL  // const
+  private   static  System.String                   TOKEN  // const
+  private   static  System.Threading.SynchronizationContexts_mainSyncContext  // static @ 0x30
+  private   static  System.Int32                    s_mainThreadId  // static @ 0x38
+PROPERTIES:
+  instance  get=0x04CEC1A0
+  persistentDataPath  get=0x03828780
+METHODS:
+  RVA=0x04B83810  token=0x600022C  System.Void .cctor()
+  RVA=0x04848BE0  token=0x600022E  System.Void Initialize()
+  RVA=0x03829F90  token=0x600022F  System.Void Init()
+  RVA=0x03F84BC0  token=0x6000230  System.Void _SceneLoadStartHandler(Beyond.EventData<System.String,System.String>& args)
+  RVA=0x0A9B7E34  token=0x6000231  System.Void Dispose()
+  RVA=0x03F84D60  token=0x6000232  System.Boolean IsPsoRecordEnabled()
+  RVA=0x0A9B7DC4  token=0x6000233  System.Void BeforeWarmUpBegin()
+  RVA=0x0A9B7D48  token=0x6000234  System.Void AfterWarmUpFinish()
+  RVA=0x03F84C20  token=0x6000235  System.Void _Tick(System.Single deltaTime)
+  RVA=0x03EBB900  token=0x6000236  System.Void _PsoUploadProcessOneCallBack(System.String infoJson, UnityEngine.HGPsoExtInfo info)
+  RVA=0x0A9B8350  token=0x6000237  System.String _PsoUpdateGameInfoCallBack()
+  RVA=0x03F84D20  token=0x6000238  System.Void _UploadPipelineCreatedInfo(System.Boolean timeLimit)
+  RVA=0x03F851E0  token=0x6000239  System.Void _CreateAndUploadFinalJson(System.Boolean timeLimit)
+  RVA=0x0A9B7F90  token=0x600023A  System.Void _CreateAndUploadFileToServer(System.String path, System.String serverFileName, Beyond.Rendering.PsoCreateUploadHelper.PsoInfoWrapper psoInfoWrapper)
+  RVA=0x0A9B84C8  token=0x600023B  System.Void _UploadFile(System.String urlPath, System.String rawFilePath, System.String serverFileNameOverride, System.Action<System.Boolean,System.String,System.String> callback)
+  RVA=0x0A9B83BC  token=0x600023C  System.Void _UploadFileToServer(System.String urlPath, System.String rawFilePath, System.String serverFileNameOverride, System.Action<System.Boolean,System.String,System.String> callback)
+  RVA=0x0A9B7F28  token=0x600023D  System.Void _Callback(System.Boolean success, System.String msg, System.String url)
+  RVA=0x041E1670  token=0x600023E  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.VFXSludgeBaker
+TYPE:  class
+TOKEN: 0x2000079
+SIZE:  0xB8
+FIELDS:
+  public            UnityEngine.Splines.SplineContainersplineContainer  // 0x10
+  public            UnityEngine.Transform           rootTransform  // 0x18
+  public            System.Single                   thickness  // 0x20
+  public            System.Single                   density  // 0x24
+  public            System.Single                   maxHeight  // 0x28
+  public            System.Single                   blurIntensity  // 0x2c
+  public            System.Single                   gridHeightOffset  // 0x30
+  public            System.Single                   topLimit  // 0x34
+  public            System.Single                   bottomLimit  // 0x38
+  public            UnityEngine.Texture2D           bakedTexture1  // 0x40
+  public            UnityEngine.Bounds              localBounds  // 0x48
+  public            System.Single                   maxHighPowerZoneSignedDistance  // 0x60
+  public            System.Single                   maxEdgeToHighPowerZoneSignedDistance  // 0x64
+  private           System.Collections.Generic.List<UnityEngine.Vector3>m_localPolygon  // 0x68
+  private           System.Int32                    m_xCount  // 0x70
+  private           System.Int32                    m_zCount  // 0x74
+  private           System.Single[,]                m_raycastHeights  // 0x78
+  private           System.Single[,]                m_topHeights  // 0x80
+  private           UnityEngine.Vector3[,]          m_normals  // 0x88
+  private           System.Single[,]                m_edgeSignedDistance  // 0x90
+  private           System.Single[,]                m_highPowerZoneSignedDistance  // 0x98
+  private           System.Boolean[,]               m_inPolygon  // 0xa0
+  private           System.Boolean[,]               m_inHighPowerZone  // 0xa8
+  private   static  System.Single                   EXTEND_SIZE  // const
+  public            System.Single                   rayCastPosY  // 0xb0
+METHODS:
+  RVA=0x0A9BBB74  token=0x600024C  System.Void .ctor(UnityEngine.Splines.SplineContainer splineContainer, UnityEngine.Transform target, System.Single density, System.Single thickness, System.Single maxHeight, System.Single blurIntensity, System.Single gridHeightOffset)
+  RVA=0x0A9B8CA0  token=0x600024D  System.Void Bake()
+  RVA=0x0A9BA178  token=0x600024E  System.Void _CalculatePolygonAndBounds()
+  RVA=0x0A9B8D38  token=0x600024F  UnityEngine.Vector2Int GetLocalIndex(UnityEngine.Vector3 localPosition)
+  RVA=0x0A9B8E1C  token=0x6000250  UnityEngine.Vector3 GetLocalPosition(UnityEngine.Vector2Int index)
+  RVA=0x0A9BB350  token=0x6000251  System.Void _RaycastSceneObjectsHeight()
+  RVA=0x0A9B9C8C  token=0x6000252  System.Void _CalculateInPolygon()
+  RVA=0x0A9B98DC  token=0x6000253  System.Void _CalculateInHighPowerZone()
+  RVA=0x0A9BAB84  token=0x6000254  System.Single[] _CreateGaussianKernel(System.Int32 size, System.Single sigma)
+  RVA=0x0A9BA978  token=0x6000255  System.Single[,] _Convolution(System.Single[,] src, System.Single[] kernel, UnityEngine.Vector2Int offsetDir)
+  RVA=0x0A9B8F40  token=0x6000256  System.Void _BlurTopHeight()
+  RVA=0x0A9BA49C  token=0x6000257  System.Void _CalculateThicknessAndTopHeight()
+  RVA=0x0A9B9E70  token=0x6000258  System.Void _CalculateNormals()
+  RVA=0x0A9BAE28  token=0x6000259  System.Void _ForAround(System.Int32 ix, System.Int32 iz, System.Int32 xCount, System.Int32 zCount, System.Action<System.Int32,System.Int32> callback)
+  RVA=0x0A9BAF90  token=0x600025A  System.Int32 _GetHash(System.Int32 ix, System.Int32 iz)
+  RVA=0x0A9BAF24  token=0x600025B  System.Int32 _GetHash(System.Int32 ix, System.Int32 iz, System.Int32 xCount)
+  RVA=0x0A9B9104  token=0x600025C  System.Void _CalculateEdgeSignedDistance(System.Single[,] sdf)
+  RVA=0x0A9B9418  token=0x600025D  System.Void _CalculateEdgeSignedDistance()
+  RVA=0x0A9BB000  token=0x600025E  UnityEngine.Color _GetTextureColor1(System.Int32 ix, System.Int32 iz)
+  RVA=0x0A9BB200  token=0x600025F  UnityEngine.Color _GetTextureColor2(System.Int32 ix, System.Int32 iz)
+  RVA=0x0A9BACBC  token=0x6000260  System.Void _CreateTexture()
+END_CLASS
+
+CLASS: Beyond.Rendering.VFXSludgeNavUtils
+TYPE:  class
+TOKEN: 0x200007C
+SIZE:  0x10
+FIELDS:
+METHODS:
+  RVA=0x041E1670  token=0x6000265  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.VFXSludgeUtils
+TYPE:  static class
+TOKEN: 0x2000086
+SIZE:  0x10
+FIELDS:
+METHODS:
+  RVA=0x0A9C689C  token=0x600027C  System.Collections.Generic.List<UnityEngine.Vector3> GetPolygonOffSpline(UnityEngine.Splines.SplineContainer splineContainer, System.Single splitDistance, System.Int32 splineIndex)
+  RVA=0x0A9C6350  token=0x600027D  System.Void GetPolygonOffSplineWithSimplify(UnityEngine.Splines.SplineContainer container, System.Collections.Generic.List<UnityEngine.Vector2>& points, System.Int32 splineIndex, System.Boolean closed, System.Boolean isDebug, System.Boolean isConvexHull)
+  RVA=0x0A9C6010  token=0x600027E  System.Collections.Generic.List<UnityEngine.Vector3> GetPolygonOffByPolyLine(System.Collections.Generic.List<UnityEngine.Vector2> polylinePoints, UnityEngine.Transform transform, System.Single splitDistance)
+  RVA=0x0A9C5E9C  token=0x600027F  System.Collections.Generic.List<UnityEngine.Vector3> CalculatePointPolygonHorizonRayCross(System.Collections.Generic.List<UnityEngine.Vector3> polygon, UnityEngine.Vector3 point)
+END_CLASS
+
+CLASS: Beyond.Rendering.HGTerrain
+TYPE:  class
+TOKEN: 0x2000087
+SIZE:  0x18
+EXTENDS: UnityEngine.MonoBehaviour
+FIELDS:
+METHODS:
+  RVA=0x05393520  token=0x6000280  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.ToggleFunc
+TYPE:  sealed class
+TOKEN: 0x2000088
+SIZE:  0x80
+EXTENDS: System.MulticastDelegate
+FIELDS:
+METHODS:
+  RVA=0x068FE0AC  token=0x6000281  System.Void .ctor(System.Object object, System.IntPtr method)
+  RVA=0x02B46B90  token=0x6000282  System.Void Invoke(Beyond.Rendering.HGTerrainHelper terrainHelper)
+  RVA=0x047FDD70  token=0x6000283  System.IAsyncResult BeginInvoke(Beyond.Rendering.HGTerrainHelper terrainHelper, System.AsyncCallback callback, System.Object object)
+  RVA=0x053DE22C  token=0x6000284  System.Void EndInvoke(System.IAsyncResult result)
+END_CLASS
+
+CLASS: Beyond.Rendering.HGTerrainHelper
+TYPE:  class
+TOKEN: 0x2000089
+SIZE:  0x18
+EXTENDS: UnityEngine.MonoBehaviour
+FIELDS:
+METHODS:
+  RVA=0x05393520  token=0x6000285  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.ECS.HGAddedMaterialController
+TYPE:  class
+TOKEN: 0x200008E
+SIZE:  0x70
+FIELDS:
+  public    static  System.Int32                    MAX_ACTIVE_ADDED_MATERIAL  // const
+  private           UnityEngine.HGMeshRenderer      m_sourceRenderer  // 0x10
+  private           UnityEngine.HGMeshRendererData  m_sourceData  // 0x18
+  private           UnityEngine.Transform           m_overlayParent  // 0x20
+  private           System.Int32                    m_sourceMaterialSlotCount  // 0x28
+  private   readonly System.Collections.Generic.Dictionary<System.Int32,Beyond.Rendering.ECS.HGAddedMaterialController.OverlayLayer>m_activeLayers  // 0x30
+  private   readonly System.Collections.Generic.Stack<Beyond.Rendering.ECS.HGAddedMaterialController.OverlayLayer>m_pool  // 0x38
+  private           System.Int32                    m_nextHandle  // 0x40
+  private           System.Int32                    m_layerCreateCounter  // 0x44
+  private   readonly System.Collections.Generic.List<System.Int32>m_handlesScratch  // 0x48
+  public            System.Action<UnityEngine.HGMeshRenderer>onLayerActivated  // 0x50
+  private           System.Collections.Generic.Dictionary<System.Int32,System.Single>m_addictiveFloatProperties  // 0x58
+  private           System.Collections.Generic.Dictionary<System.Int32,UnityEngine.Vector4>m_addictiveVectorProperties  // 0x60
+  private           System.Collections.Generic.Dictionary<System.Int32,UnityEngine.Texture>m_addictiveTextureProperties  // 0x68
+PROPERTIES:
+  activeLayerCount  get=0x0A9BD844
+METHODS:
+  RVA=0x0A9BC61C  token=0x6000299  System.Void Init(UnityEngine.HGMeshRenderer sourceRenderer, UnityEngine.HGMeshRendererData sourceData, UnityEngine.Transform overlayParent, System.Int32 sourceMaterialSlotCount)
+  RVA=0x0A9BCABC  token=0x600029A  System.Int32 RequireAddMaterial(UnityEngine.Material material)
+  RVA=0x0A9BCD88  token=0x600029B  System.Void RequireRemoveMaterial(System.Int32 handle)
+  RVA=0x0A9BC144  token=0x600029C  System.Int32 GetActiveOverlayRenderers(System.Collections.Generic.List<UnityEngine.HGMeshRenderer> result)
+  RVA=0x0A9BC324  token=0x600029E  System.Boolean GetAddedMaterialsOfCustomizeProperties(System.Int32 handle, System.Collections.Generic.List<UnityEngine.Material> result)
+  RVA=0x0A9BD174  token=0x600029F  System.Void SetAddictiveFloatProperty(System.Int32 propertyId, System.Single value)
+  RVA=0x0A9BC41C  token=0x60002A0  System.Single GetAddictiveFloatProperty(System.Int32 propertyId, System.Single defaultValue)
+  RVA=0x0A9BD2FC  token=0x60002A1  System.Void SetAddictiveVectorProperty(System.Int32 propertyId, UnityEngine.Vector4 value)
+  RVA=0x0A9BC554  token=0x60002A2  UnityEngine.Vector4 GetAddictiveVectorProperty(System.Int32 propertyId, UnityEngine.Vector4 defaultValue)
+  RVA=0x0A9BD238  token=0x60002A3  System.Void SetAddictiveTextureProperty(System.Int32 propertyId, UnityEngine.Texture value)
+  RVA=0x0A9BC4B8  token=0x60002A4  UnityEngine.Texture GetAddictiveTextureProperty(System.Int32 propertyId, UnityEngine.Texture defaultValue)
+  RVA=0x0A9BD3D4  token=0x60002A5  Beyond.Rendering.ECS.HGAddedMaterialController.OverlayLayer _CreateNewLayer()
+  RVA=0x0A9BCF44  token=0x60002A6  System.Void Reset()
+  RVA=0x0A9BC6D0  token=0x60002A7  System.Void Release()
+  RVA=0x0A9BD634  token=0x60002A8  System.Void _DestroyLayer(Beyond.Rendering.ECS.HGAddedMaterialController.OverlayLayer layer)
+  RVA=0x0A9BD784  token=0x60002A9  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.ECS.HGMaterialCommitter
+TYPE:  class
+TOKEN: 0x2000090
+SIZE:  0x48
+FIELDS:
+  private           UnityEngine.HGMeshRenderer      m_hgRenderer  // 0x10
+  private           UnityEngine.HGMeshRendererData  m_sourceData  // 0x18
+  private           UnityEngine.HGMeshRendererData  m_clonedData  // 0x20
+  private           Beyond.Rendering.ECS.HGMaterialCommitter.MaterialsProviderm_materialsProvider  // 0x28
+  private           System.Action                   m_onDirty  // 0x30
+  private           System.Action                   m_onCommitted  // 0x38
+  private           System.Boolean                  m_dirtyMaterialsArray  // 0x40
+PROPERTIES:
+  clonedData  get=0x0A9BDEB0
+METHODS:
+  RVA=0x0A9BD8EC  token=0x60002AC  System.Void Init(UnityEngine.HGMeshRenderer renderer, UnityEngine.HGMeshRendererData sourceData, Beyond.Rendering.ECS.HGMaterialCommitter.MaterialsProvider materialsProvider, System.Action onDirty, System.Action onCommitted)
+  RVA=0x0A9BDA24  token=0x60002AD  System.Void MarkMaterialsArrayDirty()
+  RVA=0x0A9BD9D8  token=0x60002AE  System.Boolean IsDirty()
+  RVA=0x0A9BDC8C  token=0x60002AF  System.Void TryCommit()
+  RVA=0x0A9BD89C  token=0x60002B0  System.Void ForceCommit()
+  RVA=0x0A9BDCE4  token=0x60002B1  System.Void _Commit()
+  RVA=0x0A9BDBE0  token=0x60002B2  System.Void Reset()
+  RVA=0x0A9BDA84  token=0x60002B3  System.Void Release()
+  RVA=0x041E1670  token=0x60002B4  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.ECS.HGMaterialController
+TYPE:  class
+TOKEN: 0x2000092
+SIZE:  0x70
+FIELDS:
+  private   static  System.String                   VFX_MATERIAL_POSTFIX  // const
+  private   static  System.String                   ALPHA_BLEND_ON_KEYWORD  // const
+  private   static  System.String                   DEPTH_ONLY_PASS  // const
+  private   static  System.String                   DITHER_KEYWORD  // const
+  private   static  System.Int32                    s_zTestGBuffer  // static @ 0x0
+  private   static  System.Int32                    s_outlineZTest  // static @ 0x4
+  private   static  System.Int32                    s_ditherTransparentAlpha  // static @ 0x8
+  private           UnityEngine.HGMeshRenderer      m_hgRenderer  // 0x10
+  private           UnityEngine.HGMeshRendererData  m_sourceData  // 0x18
+  private           Beyond.Rendering.ECS.HGMaterialCommitterm_committer  // 0x20
+  private           UnityEngine.Material[]          m_sourceMaterials  // 0x28
+  private           UnityEngine.Material[]          m_currentMaterials  // 0x30
+  private           System.Collections.Generic.List<UnityEngine.Material>m_instancedMaterials  // 0x38
+  private           System.Collections.Generic.Dictionary<UnityEngine.Material,UnityEngine.Material>m_src2dstMaterialDict  // 0x40
+  private           System.Collections.Generic.Dictionary<System.Int32,System.Single>m_floatProperties  // 0x48
+  private           System.Collections.Generic.Dictionary<System.Int32,UnityEngine.Vector4>m_vectorProperties  // 0x50
+  private           System.Collections.Generic.Dictionary<System.Int32,UnityEngine.Texture>m_textureProperties  // 0x58
+  private           System.Collections.Generic.Dictionary<System.String,System.Boolean>m_keywordStates  // 0x60
+  private           System.Boolean                  m_depthOnlyPassEnabled  // 0x68
+  private           System.Boolean                  m_depthOnlyPassControlling  // 0x69
+PROPERTIES:
+  currentMeshMaterials  get=0x0A9BF764
+METHODS:
+  RVA=0x0A9BDF00  token=0x60002BA  System.Void Init(UnityEngine.HGMeshRenderer renderer, UnityEngine.HGMeshRendererData sourceData, UnityEngine.Material[] sourceMaterials, Beyond.Rendering.ECS.HGMaterialCommitter committer)
+  RVA=0x0A9BF454  token=0x60002BB  UnityEngine.Material _GetOrCreateInstancedMaterial(System.Int32 slot)
+  RVA=0x0A9BEDCC  token=0x60002BC  System.Void _ApplyAllPropertiesToOneMaterial(UnityEngine.Material mat)
+  RVA=0x0A9BF2B4  token=0x60002BD  System.Void _ApplyDepthOnlyPassToMaterial(UnityEngine.Material mat, System.Boolean enable)
+  RVA=0x0A9BE684  token=0x60002BE  System.Void SetFloatToAllMaterial(System.Int32 nameId, System.Single value)
+  RVA=0x0A9BEBD0  token=0x60002BF  System.Void SetVectorToAllMaterial(System.Int32 nameId, UnityEngine.Vector4 value)
+  RVA=0x0A9BEA8C  token=0x60002C0  System.Void SetTextureToAllMaterial(System.Int32 nameId, UnityEngine.Texture value)
+  RVA=0x0A9BE7FC  token=0x60002C1  System.Void SetKeywordEnableToAllMaterial(System.String keyword, System.Boolean enable)
+  RVA=0x0A9BE5D4  token=0x60002C2  System.Void SetDepthOnlyPassEnableToAllMaterial(System.Boolean enable)
+  RVA=0x0A9BEA14  token=0x60002C3  System.Boolean SetManualDitherEnable(System.Boolean enable)
+  RVA=0x0A9BE990  token=0x60002C4  System.Void SetManualDitherAlphaValue(System.Single value)
+  RVA=0x0A9BE254  token=0x60002C5  System.Void ReplaceAllMaterials(UnityEngine.Material replacement)
+  RVA=0x0A9BE32C  token=0x60002C6  System.Void ReplaceMaterialBySource(UnityEngine.Material srcMat, UnityEngine.Material replacement)
+  RVA=0x0A9BE4C4  token=0x60002C7  System.Void Reset()
+  RVA=0x0A9BE060  token=0x60002C8  System.Void Release()
+  RVA=0x041E1670  token=0x60002C9  System.Void .ctor()
+  RVA=0x0A9BF6FC  token=0x60002CA  System.Void .cctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.ECS.HGRendererStateController
+TYPE:  class
+TOKEN: 0x2000093
+SIZE:  0x88
+FIELDS:
+  private           UnityEngine.HGMeshRenderer      m_hgRenderer  // 0x10
+  private           System.Boolean                  m_oriEnabled  // 0x18
+  private           System.Boolean                  m_warnedNoMeshes  // 0x19
+  private           UnityEngine.Bounds[]            m_meshLocalBounds  // 0x20
+  private           UnityEngine.Matrix4x4           m_cachedL2W  // 0x28
+  private           UnityEngine.Bounds              m_cachedWorldBounds  // 0x68
+  private           System.Boolean                  m_hasCachedWorldBounds  // 0x80
+PROPERTIES:
+  hgRenderer  get=0x0A9C0780
+METHODS:
+  RVA=0x0A9BFB54  token=0x60002CB  System.Void Init(UnityEngine.HGMeshRenderer renderer)
+  RVA=0x0A9BFC60  token=0x60002CC  System.Boolean IsValid()
+  RVA=0x0A9BFE38  token=0x60002CE  System.Void SetVisible(System.Boolean visible)
+  RVA=0x0A9BFD70  token=0x60002CF  System.Void Reset()
+  RVA=0x0A9BF7B4  token=0x60002D0  UnityEngine.Bounds GetBounds()
+  RVA=0x0A9BFC00  token=0x60002D1  System.Void InvalidateMeshCache()
+  RVA=0x0A9BFF20  token=0x60002D2  System.Void _EnsureMeshLocalBoundsCached()
+  RVA=0x0A9C0118  token=0x60002D3  UnityEngine.Bounds _LocalBoundsToWorld(UnityEngine.Bounds local, UnityEngine.Matrix4x4 l2w)
+  RVA=0x0A9C06B4  token=0x60002D4  System.Void _WarnNoMeshes()
+  RVA=0x0A9BFECC  token=0x60002D5  System.Void StopShadowCasting(System.Boolean stopRayTracing)
+  RVA=0x0A9BFDF4  token=0x60002D6  System.Void RevertShadowCastingMode()
+  RVA=0x0A9BFCC8  token=0x60002D7  System.Void Release()
+  RVA=0x041E1670  token=0x60002D8  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.LODLightmapping.LightmapInfoTransfer
+TYPE:  class
+TOKEN: 0x200008B
+SIZE:  0x28
+EXTENDS: UnityEngine.MonoBehaviour
+FIELDS:
+  private           UnityEngine.MeshRenderer        _lightmappedRenderer  // 0x18
+  private           UnityEngine.MeshRenderer        m_currentRenderer  // 0x20
+METHODS:
+  RVA=0x0A9C2CE4  token=0x6000293  System.Void OnEnable()
+  RVA=0x0A9C2C68  token=0x6000294  System.Void Awake()
+  RVA=0x0A9C2D34  token=0x6000295  System.Void _RendererInfoTransfer()
+  RVA=0x05393520  token=0x6000296  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.LODLightmapping.LodLightmappingMode
+TYPE:  sealed struct
+TOKEN: 0x200008C
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  Beyond.Rendering.LODLightmapping.LodLightmappingModeAllFromLightProbe  // const
+  public    static  Beyond.Rendering.LODLightmapping.LodLightmappingModeAllFromLOD0  // const
+  public    static  Beyond.Rendering.LODLightmapping.LodLightmappingModeUseDifferentLightmapAreaForLODs  // const
+METHODS:
+END_CLASS
+
+CLASS: Beyond.Rendering.LODLightmapping.LODLightmapping
+TYPE:  class
+TOKEN: 0x200008D
+SIZE:  0x30
+EXTENDS: UnityEngine.MonoBehaviour
+FIELDS:
+  public            Beyond.Rendering.LODLightmapping.LodLightmappingModemode  // 0x18
+  public            UnityEngine.Vector4             lightmapScaleOffset  // 0x1c
+  public            System.Int32                    lightmapIndex  // 0x2c
+METHODS:
+  RVA=0x0A9C28EC  token=0x6000297  System.Void RendererInfoTransfer()
+  RVA=0x04A39E70  token=0x6000298  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.Rendering.SplineMovingObjects.HGSplineMovingObjects
+TYPE:  class
+TOKEN: 0x200008A
+SIZE:  0x278
+EXTENDS: UnityEngine.MonoBehaviour
+IMPLEMENTS: HG.Rendering.Runtime.IVFXPlayable
+FIELDS:
+  private           UnityEngine.HyperGryph.SplineObjectsDescdesc  // 0x18
+  private           UnityEngine.HyperGryph.SplineObjectsKnotData[]knotData  // 0x258
+  private           System.Boolean                  fixedPostion  // 0x260
+  private           System.Boolean                  optimizeCurve  // 0x261
+  private           System.UInt32                   m_instanceHandle  // 0x264
+  private           Unity.Collections.NativeArray<UnityEngine.HyperGryph.SplineObjectsKnotData>m_stonesKnotDataNativeArray  // 0x268
+METHODS:
+  RVA=0x0A9C0C00  token=0x6000286  System.Void _CreateInstance()
+  RVA=0x0A9C0E9C  token=0x6000287  System.Void _ExtractSplineData()
+  RVA=0x0A9C0E34  token=0x6000288  System.Void _DestroyInstance()
+  RVA=0x0A9C10F8  token=0x6000289  System.Void _Release()
+  RVA=0x0A9C0B48  token=0x600028A  System.Void Update()
+  RVA=0x0A9C0A04  token=0x600028B  System.Void OnEnable()
+  RVA=0x0A9C0820  token=0x600028C  System.Void OnDisable()
+  RVA=0x0A9C07D0  token=0x600028D  System.Void OnDestroy()
+  RVA=0x0A9C0870  token=0x600028E  System.Void OnDrawGizmosSelected()
+  RVA=0x0A9C0A54  token=0x600028F  System.Void Pause()
+  RVA=0x0A9C0AA8  token=0x6000290  System.Void Play()
+  RVA=0x0A9C0AF8  token=0x6000291  System.Void Stop()
+  RVA=0x0A9C1174  token=0x6000292  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.SourceGenerator.AnimatorBlackboardUtility
+TYPE:  static class
+TOKEN: 0x2000006
+SIZE:  0x10
+FIELDS:
+  private   static  System.Boolean                  s_enableFastPathBuffer  // static @ 0x0
+METHODS:
+  RVA=-1  // generic def  token=0x6000016  System.Void ClearAndEnsureDictionaryCapacity(System.Collections.Generic.Dictionary<TKey,TValue>& dict, System.Int32 capacity)
+END_CLASS
+
+CLASS: Beyond.SourceGenerator.AnimatorBlackboardAttribute
+TYPE:  class
+TOKEN: 0x2000007
+SIZE:  0x10
+EXTENDS: System.Attribute
+FIELDS:
+METHODS:
+  RVA=0x041E1670  token=0x6000017  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.SourceGenerator.ECSComponentAttribute
+TYPE:  class
+TOKEN: 0x2000008
+SIZE:  0x18
+EXTENDS: System.Attribute
+FIELDS:
+  public            System.Runtime.InteropServices.LayoutKindlayoutKind  // 0x10
+  public            System.Boolean                  isTag  // 0x14
+METHODS:
+  RVA=0x041E1670  token=0x6000018  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.SourceGenerator.DataNAttribute
+TYPE:  class
+TOKEN: 0x2000009
+SIZE:  0x20
+EXTENDS: System.Attribute
+FIELDS:
+  public            System.Int32                    capacity  // 0x10
+  public            System.Int32                    tSize  // 0x14
+  public            System.Boolean                  ring  // 0x18
+METHODS:
+  RVA=0x041E1670  token=0x6000019  System.Void .ctor()
+END_CLASS
+
+CLASS: Beyond.SourceGenerator.CameraControlConfigAttribute
+TYPE:  class
+TOKEN: 0x200000A
+SIZE:  0x10
+EXTENDS: System.Attribute
+FIELDS:
+METHODS:
+  RVA=0x041E1670  token=0x600001A  System.Void .ctor()
+END_CLASS
+
+CLASS: HG.Rendering.Runtime.ContainerWaterManager
+TYPE:  class
+TOKEN: 0x2000003
+SIZE:  0x170
+EXTENDS: UnityEngine.MonoBehaviour
+FIELDS:
+  private   static readonly System.Int32                    DISPLACEMENT_TEX  // static @ 0x0
+  private   static readonly System.Int32                    DISPLACEMENT_TEX_ST  // static @ 0x4
+  private   static readonly System.Int32                    WATER_MENISCUS_WIDTH  // static @ 0x8
+  private   static readonly System.Int32                    ICE_POSITION  // static @ 0xc
+  public            UnityEngine.Material            waveMaterial  // 0x18
+  public            UnityEngine.Texture2D           waveTexture  // 0x20
+  public            UnityEngine.Transform           iceBall  // 0x28
+  public            UnityEngine.Renderer            liquidRenderer  // 0x30
+  private           System.Single[][]               m_waveN  // 0x38
+  private           System.Single[][]               m_waveNm1  // 0x40
+  private           System.Single[][]               m_waveNp1  // 0x48
+  private   readonly System.Single                   m_cylinderRadius  // 0x50
+  private           System.Single                   _dx  // 0x54
+  private           System.Int32                    m_nx  // 0x58
+  private           System.Int32                    m_ny  // 0x5c
+  public            System.Single                   CFL  // 0x60
+  public            System.Single                   c  // 0x64
+  private           System.Single                   m_dt  // 0x68
+  private           System.Single                   m_t  // 0x6c
+  public            System.Boolean                  reflectiveBoundary  // 0x70
+  private           System.Single                   _waveMultiplier  // 0x74
+  private           System.Single                   _pulseFrequency  // 0x78
+  private           System.Single                   _pulseMagnitude  // 0x7c
+  private           System.Single                   _elasticity  // 0x80
+  private           System.Single                   _viscosity  // 0x84
+  private           System.Single                   _surfaceTension  // 0x88
+  private           System.Boolean                  _adaptiveQuality  // 0x8c
+  private           System.Single                   _targetFrameTime  // 0x90
+  private           System.Single                   m_lastFrameTime  // 0x94
+  private           UnityEngine.UI.RawImage         _debugDisplay  // 0x98
+  private           System.Int32                    _updateFrequency  // 0xa0
+  private           System.Int32                    m_frameCounter  // 0xa4
+  private           System.Single                   m_currentYRotationSpeed  // 0xa8
+  private           System.Boolean                  m_needsTextureUpdate  // 0xac
+  private           UnityEngine.Vector3             m_lastIceBallPosition  // 0xb0
+  private           UnityEngine.Quaternion          m_lastIceBallRotation  // 0xbc
+  private   readonly System.Single                   m_iceBallRadius  // 0xcc
+  private           System.Single                   _rippleUpdateInterval  // 0xd0
+  private           System.Single                   _rippleBaseStrength  // 0xd4
+  private           System.Single                   _rippleRadius  // 0xd8
+  private           System.Single                   _rippleWaveLength  // 0xdc
+  private           System.Single                   _rippleSpeed  // 0xe0
+  private           System.Single                   _distanceDecayPower  // 0xe4
+  private           System.Single                   _meltingUniformity  // 0xe8
+  private           System.Single                   _meltingVariation  // 0xec
+  private           System.Single                   m_lastRippleUpdateTime  // 0xf0
+  private           System.Single                   m_ripplePhase  // 0xf4
+  private           System.Single                   _rotationWaveMultiplier  // 0xf8
+  private           System.Single                   _rotationSensitivity  // 0xfc
+  private           System.Boolean[,]               m_cylinderMask  // 0x100
+  private           System.Collections.Generic.List<UnityEngine.Vector2Int>m_activePoints  // 0x108
+  private           UnityEngine.Color32[]           m_cachedPixels  // 0x110
+  private           System.Single                   _normalMeniscusWidth  // 0x118
+  private           System.Single                   _vortexDetectionThreshold  // 0x11c
+  private           System.Single                   _vortexTransitionTime  // 0x120
+  private           System.Boolean                  m_isVortexActive  // 0x124
+  private           System.Single                   m_vortexTransitionProgress  // 0x128
+  private           System.Single                   m_lastVortexCheckTime  // 0x12c
+  private           System.Single                   m_lastYAxisStopTime  // 0x130
+  private           System.Boolean                  m_wasYAxisRotating  // 0x134
+  private   readonly System.Single                   m_yAxisStopDelay  // 0x138
+  private   static  System.Single                   VORTEX_CHECK_INTERVAL  // const
+  private           System.Single                   _movementDistanceThreshold  // 0x13c
+  private           System.Single                   _movementRecoveryDelay  // 0x140
+  private           System.Boolean                  m_isMovementActive  // 0x144
+  private           System.Single                   m_lastMovementStopTime  // 0x148
+  private           System.Boolean                  m_wasMoving  // 0x14c
+  private           System.Single                   m_currentMeniscusWidth  // 0x150
+  private           System.Boolean                  m_isMeniscusTransitioning  // 0x154
+  private           System.Single                   m_meniscusTransitionStartTime  // 0x158
+  private           System.Single                   m_meniscusTransitionStartValue  // 0x15c
+  private           UnityEngine.Vector2Int          m_tempTexturePos  // 0x160
+  private           UnityEngine.Vector2Int          m_tempNearestPoint  // 0x168
+PROPERTIES:
+  dy  get=0x0A9AB5A4
+METHODS:
+  RVA=0x0A9A84C0  token=0x6000004  System.Void Start()
+  RVA=0x0A9A8FE8  token=0x6000005  System.Void _InitializeWaveSystem()
+  RVA=0x0A9A956C  token=0x6000006  System.Void _PrecomputeCylinderMask()
+  RVA=0x0A9A975C  token=0x6000007  System.Void _UnifiedWaveStep(System.Boolean isEditorUpdate)
+  RVA=0x0A9AB32C  token=0x6000008  System.Boolean _WorldToTextureCoords(UnityEngine.Vector3 worldPos, UnityEngine.Vector2Int& texturePos)
+  RVA=0x0A9A945C  token=0x6000009  System.Boolean _IsInsideCylinder(System.Int32 i, System.Int32 j)
+  RVA=0x0A9A94F0  token=0x600000A  System.Boolean _IsValidPosition(System.Int32 x, System.Int32 y)
+  RVA=0x0A9A894C  token=0x600000B  System.Void _ApplyMatrixToTexture(System.Single[][] state, UnityEngine.Texture2D& tex, System.Single waveMultiplier)
+  RVA=0x0A9A8DCC  token=0x600000C  System.Void _ApplyReflectiveBoundary()
+  RVA=0x0A9A87F8  token=0x600000D  System.Void _ApplyAbsorptiveBoundary()
+  RVA=0x0A9A8E80  token=0x600000E  UnityEngine.Vector2Int _FindNearestInsidePoint(System.Int32 x, System.Int32 y)
+  RVA=0x0A9AAFB4  token=0x600000F  System.Void _UpdateVortexState(System.Boolean isEditorUpdate)
+  RVA=0x0A9A8334  token=0x6000010  System.Void ResetWaveTexture()
+  RVA=0x0A9A8544  token=0x6000011  System.Void Update()
+  RVA=0x0A9AB4A0  token=0x6000012  System.Void .ctor()
+  RVA=0x0A9AB41C  token=0x6000013  System.Void .cctor()
+END_CLASS
+
+CLASS: HG.Rendering.Runtime.VFXLockTransform
+TYPE:  class
+TOKEN: 0x2000004
+SIZE:  0x18
+EXTENDS: UnityEngine.MonoBehaviour
+FIELDS:
+METHODS:
+  RVA=0x05393520  token=0x6000014  System.Void .ctor()
+END_CLASS
+
+CLASS: HG.Rendering.Runtime.HGConstantBufferLayoutAttribute
+TYPE:  class
+TOKEN: 0x2000005
+SIZE:  0x10
+EXTENDS: System.Attribute
+FIELDS:
+METHODS:
+  RVA=0x041E1670  token=0x6000015  System.Void .ctor()
+END_CLASS
+
+CLASS: IFix.ILFixDynamicMethodWrapper
+TYPE:  class
+TOKEN: 0x2000096
+SIZE:  0x28
+FIELDS:
+  private           IFix.Core.VirtualMachine        virtualMachine  // 0x10
+  private           System.Int32                    methodId  // 0x18
+  private           System.Object                   anonObj  // 0x20
+  public    static  IFix.ILFixDynamicMethodWrapper[]wrapperArray  // static @ 0x0
+METHODS:
+  RVA=0x032B2C30  token=0x60002D9  System.Void .ctor(IFix.Core.VirtualMachine virtualMachine, System.Int32 methodId, System.Object anonObj)
+  RVA=0x066C0730  token=0x60002DA  System.Single __Gen_Wrap_0(System.Object P0)
+  RVA=0x063633B4  token=0x60002DB  System.Void __Gen_Wrap_1(System.Object P0)
+  RVA=0x09CA9454  token=0x60002DC  System.Boolean __Gen_Wrap_2(System.Object P0, System.Int32 P1, System.Int32 P2)
+  RVA=0x0A9C2474  token=0x60002DD  UnityEngine.Vector2Int __Gen_Wrap_3(System.Object P0, System.Int32 P1, System.Int32 P2)
+  RVA=0x0A9C2568  token=0x60002DE  System.Boolean __Gen_Wrap_4(System.Object P0, UnityEngine.Vector3 P1, UnityEngine.Vector2Int& P2)
+  RVA=0x066C2B40  token=0x60002DF  System.Void __Gen_Wrap_5(System.Object P0, System.Boolean P1)
+  RVA=0x0A9C26B0  token=0x60002E0  System.Void __Gen_Wrap_6(System.Object P0, System.Object P1, UnityEngine.Texture2D& P2, System.Single P3)
+  RVA=0x066C288C  token=0x60002E1  System.Void __Gen_Wrap_7(System.Object P0, System.Single P1)
+  RVA=0x066F3838  token=0x60002E2  System.Void __Gen_Wrap_8(System.Object P0, System.Int32 P1)
+  RVA=0x0A9C27D4  token=0x60002E3  System.Void __Gen_Wrap_9(System.Object P0, UnityEngine.Vector4 P1, UnityEngine.Vector4 P2)
+  RVA=0x0A9C1378  token=0x60002E4  System.Void __Gen_Wrap_10(System.Object P0, UnityEngine.Vector4 P1)
+  RVA=0x0A9C1470  token=0x60002E5  System.Void __Gen_Wrap_11(System.Object P0, System.Single P1, System.Single P2, System.Single P3)
+  RVA=0x0A9C157C  token=0x60002E6  System.Void __Gen_Wrap_12(System.Object P0, System.Single P1, System.Single P2)
+  RVA=0x09CD8CC0  token=0x60002E7  System.Void __Gen_Wrap_13(System.Object P0, System.Single P1, System.Single P2, System.Single P3, System.Single P4)
+  RVA=0x06366CB0  token=0x60002E8  System.String __Gen_Wrap_14(System.Object P0)
+  RVA=0x063625A4  token=0x60002E9  System.Void __Gen_Wrap_15()
+  RVA=0x0A9C1664  token=0x60002EA  System.String __Gen_Wrap_16(Beyond.Resource.RootCategory P0)
+  RVA=0x0A9C1724  token=0x60002EB  System.String __Gen_Wrap_17(Beyond.Resource.RootCategory P0, System.Boolean P1)
+  RVA=0x0A9C1800  token=0x60002EC  System.String __Gen_Wrap_18()
+  RVA=0x063623A8  token=0x60002ED  System.Boolean __Gen_Wrap_19()
+  RVA=0x0A9C18B0  token=0x60002EE  System.String __Gen_Wrap_20(UnityEngine.RuntimePlatform P0, UnityEngine.Rendering.GraphicsDeviceType P1, System.Int32 P2, System.Object P3)
+  RVA=0x0A9C19B8  token=0x60002EF  System.String __Gen_Wrap_21(UnityEngine.RuntimePlatform P0, UnityEngine.Rendering.GraphicsDeviceType P1, System.Int32 P2, System.Object P3, System.Object P4)
+  RVA=0x0635FE78  token=0x60002F0  System.Int64 __Gen_Wrap_22()
+  RVA=0x0A9C1AD0  token=0x60002F1  System.Boolean __Gen_Wrap_23(System.Object P0, System.Object P1, System.Object P2, System.Object P3, System.Object P4, System.Object P5)
+  RVA=0x0A9C1C08  token=0x60002F2  System.Boolean __Gen_Wrap_24(System.Object P0, System.String& P1)
+  RVA=0x063632E4  token=0x60002F3  System.Boolean __Gen_Wrap_25(System.Object P0)
+  RVA=0x06301ED4  token=0x60002F4  System.Void __Gen_Wrap_26(Beyond.Rendering.ShaderWarmupManager.WarmUpReason P0)
+  RVA=0x0A9C1D24  token=0x60002F5  System.String __Gen_Wrap_27(System.IntPtr P0, Beyond.Rendering.WindowsGpuDriverVersion.SP_DEVINFO_DATA& P1, System.UInt32 P2)
+  RVA=0x06366BC4  token=0x60002F6  System.Boolean __Gen_Wrap_28(System.Object P0, System.Object P1)
+  RVA=0x0A9C1E84  token=0x60002F7  System.Int32 __Gen_Wrap_29(System.Object P0, System.Object P1, System.Object P2)
+  RVA=0x06366900  token=0x60002F8  System.String __Gen_Wrap_30(System.Object P0, System.Object P1)
+  RVA=0x071AD678  token=0x60002F9  System.Int32 __Gen_Wrap_31(Beyond.Rendering.WindowsGpuDriverVersion.Result P0, Beyond.Rendering.WindowsGpuDriverVersion.Result P1)
+  RVA=0x0A9C1F8C  token=0x60002FA  System.Collections.Generic.List<Beyond.Rendering.WindowsGpuDriverVersion.Result> __Gen_Wrap_32()
+  RVA=0x0635FF24  token=0x60002FB  System.Void __Gen_Wrap_33(System.Int32 P0)
+  RVA=0x0A9C203C  token=0x60002FC  Beyond.Rendering.WindowsGpuDriverVersion.Result __Gen_Wrap_34()
+  RVA=0x0A9C20EC  token=0x60002FD  System.Boolean __Gen_Wrap_35(System.Object P0, System.Object P1, System.String& P2)
+  RVA=0x06363D30  token=0x60002FE  System.Boolean __Gen_Wrap_36(System.Boolean P0)
+  RVA=0x0A9C2220  token=0x60002FF  System.Collections.IEnumerator __Gen_Wrap_37()
+  RVA=0x0A9C22BC  token=0x6000300  System.Collections.Generic.List<Beyond.Resource.StringPathHash> __Gen_Wrap_38(System.Boolean P0)
+  RVA=0x0A9C237C  token=0x6000301  System.Collections.IEnumerator __Gen_Wrap_39(System.Object P0, System.Object P1, System.Object P2)
+  RVA=0x071AFE44  token=0x6000302  System.Int32 __Gen_Wrap_40(System.Object P0, System.Int32 P1, System.Int32 P2)
+  RVA=0x01282570  token=0x6000303  System.Void __Gen_Wrap_41(System.Object P0, System.Boolean P1, System.Boolean P2)
+  RVA=0x012B9870  token=0x6000304  System.Int32 __Gen_Wrap_42()
+  RVA=0x02E762E0  token=0x6000305  System.Void __Gen_Wrap_43(System.Int32 P0, System.Int32& P1)
+  RVA=0x02E76510  token=0x6000306  System.Collections.IEnumerator __Gen_Wrap_44(System.Object P0, System.Int32 P1, System.Int32 P2, System.Object P3)
+  RVA=0x02E76C70  token=0x6000307  System.Collections.IEnumerator __Gen_Wrap_45(System.Boolean P0)
+  RVA=0x02E77220  token=0x6000308  System.Collections.IEnumerator __Gen_Wrap_46(System.Object P0, System.Int32 P1, System.Int32 P2)
+  RVA=0x02E778C0  token=0x6000309  System.Collections.IEnumerator __Gen_Wrap_47(System.Object P0)
+  RVA=0x02E77F20  token=0x600030A  System.Boolean __Gen_Wrap_48(Beyond.Rendering.SceneStateAreaKey& P0, Beyond.Rendering.SceneStateAreaKey P1)
+  RVA=0x02E78660  token=0x600030B  System.Boolean __Gen_Wrap_49(Beyond.Rendering.SceneStateAreaKey& P0, System.Object P1)
+  RVA=0x02E78D80  token=0x600030C  System.Int32 __Gen_Wrap_50(Beyond.Rendering.SceneStateAreaKey& P0)
+  RVA=0x012B6D00  token=0x600030D  System.Boolean __Gen_Wrap_51(System.Object P0, System.Boolean P1)
+  RVA=0x02E793C0  token=0x600030E  System.Boolean __Gen_Wrap_52(System.Object P0, System.Single P1, System.Int32 P2)
+  RVA=0x02E796E0  token=0x600030F  System.Collections.Generic.Dictionary<System.Int32,System.Single> __Gen_Wrap_53(System.Object P0)
+  RVA=0x02E79D50  token=0x6000310  System.Void __Gen_Wrap_54(System.Object P0, System.Object P1)
+  RVA=0x02E7A100  token=0x6000311  Beyond.Rendering.EntityRenderCapturedEntity __Gen_Wrap_55(System.Object P0, System.Object P1, Beyond.Rendering.EntityVFXRendererMask P2)
+  RVA=0x0125D2B0  token=0x6000312  System.Int32 __Gen_Wrap_56(System.Object P0)
+  RVA=0x0127B070  token=0x6000313  Beyond.Rendering.EntityVFXRendererMask __Gen_Wrap_57(Beyond.Rendering.EntityVFXRendererType P0)
+  RVA=0x02E7A840  token=0x6000314  System.Void __Gen_Wrap_58(System.Object P0, System.Object P1, System.Object P2)
+  RVA=0x01416100  token=0x6000315  System.Boolean __Gen_Wrap_59(System.Object P0, System.Object P1, System.Object P2)
+  RVA=0x01CB9BE0  token=0x6000316  System.Void __Gen_Wrap_60(System.Object P0, System.Object P1, System.Object P2, System.Object P3, System.Boolean P4)
+  RVA=0x02E7ACD0  token=0x6000317  UnityEngine.Material[] __Gen_Wrap_61(System.Object P0)
+  RVA=0x02E7B340  token=0x6000318  System.Boolean __Gen_Wrap_62(Beyond.Rendering.AddMaterialConfig& P0)
+  RVA=0x02E7BA00  token=0x6000319  UnityEngine.Material __Gen_Wrap_63(System.Object P0, Beyond.Rendering.EntityRenderHelperMaterialController.AddedMaterialInfo P1, System.Object P2)
+  RVA=0x02E7C270  token=0x600031A  System.Boolean __Gen_Wrap_64(System.Object P0, UnityEngine.Vector4 P1)
+  RVA=0x02E7C640  token=0x600031B  UnityEngine.Texture __Gen_Wrap_65(System.Object P0, System.Object P1)
+  RVA=0x02E7CDA0  token=0x600031C  System.Int32 __Gen_Wrap_66(System.Object P0, System.Object P1, Beyond.Rendering.EntityVFXRendererMask P2, Beyond.Rendering.AddMaterialConfig P3)
+  RVA=0x02E7D280  token=0x600031D  System.Collections.Generic.List<Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo> __Gen_Wrap_67(System.Object P0, Beyond.Rendering.EntityVFXRendererMask P1, System.Boolean P2)
+  RVA=0x019531C0  token=0x600031E  System.Void __Gen_Wrap_68(System.Object P0, System.Int32 P1, System.Single P2)
+  RVA=0x02474C00  token=0x600031F  System.Single __Gen_Wrap_69(System.Object P0, System.Int32 P1, System.Single P2)
+  RVA=0x02E7D940  token=0x6000320  System.Void __Gen_Wrap_70(System.Object P0, System.Int32 P1, UnityEngine.Vector4 P2)
+  RVA=0x02E7DD20  token=0x6000321  UnityEngine.Vector4 __Gen_Wrap_71(System.Object P0, System.Int32 P1, UnityEngine.Vector4 P2)
+  RVA=0x011C8780  token=0x6000322  System.Void __Gen_Wrap_72(System.Object P0, System.Int32 P1, System.Object P2)
+  RVA=0x02E7E470  token=0x6000323  UnityEngine.Texture __Gen_Wrap_73(System.Object P0, System.Int32 P1, System.Object P2)
+  RVA=0x012F6B10  token=0x6000324  Beyond.Rendering.EntityVFXRendererMask __Gen_Wrap_74(System.Object P0, System.Int32 P1)
+  RVA=0x019DF960  token=0x6000325  System.Boolean __Gen_Wrap_75(System.Object P0, System.Int32 P1, System.Object P2)
+  RVA=0x0128FA90  token=0x6000326  System.Void __Gen_Wrap_76(System.Object P0, System.Int32 P1, Beyond.Rendering.EntityVFXRendererMask P2)
+  RVA=0x011C8780  token=0x6000327  System.Void __Gen_Wrap_77(System.Object P0, Beyond.Rendering.EntityVFXRendererMask P1, System.Object P2)
+  RVA=0x01847510  token=0x6000328  System.Void __Gen_Wrap_78(System.Object P0, System.Object P1, System.Boolean P2, Beyond.Rendering.EntityVFXRendererMask P3)
+  RVA=0x01921E20  token=0x6000329  System.Void __Gen_Wrap_79(System.Object P0, System.Boolean P1, Beyond.Rendering.EntityVFXRendererMask P2)
+  RVA=0x02E7EBB0  token=0x600032A  System.Single __Gen_Wrap_80(System.Object P0, System.Single P1, System.Single P2, System.Int32 P3)
+  RVA=0x01753E10  token=0x600032B  System.Void __Gen_Wrap_81(System.Object P0, Beyond.Rendering.EntityRenderHelperCustomPerDrawType P1, System.Single P2, Beyond.Rendering.EntityVFXRendererMask P3)
+  RVA=0x02E7EF00  token=0x600032C  System.Void __Gen_Wrap_82(System.Object P0, Beyond.Rendering.EntityRenderHelperVectorCustomPerDrawType P1, UnityEngine.Vector4 P2, Beyond.Rendering.EntityVFXRendererMask P3)
+  RVA=0x01753E10  token=0x600032D  System.Void __Gen_Wrap_83(System.Object P0, System.Int32 P1, System.Single P2, Beyond.Rendering.EntityVFXRendererMask P3)
+  RVA=0x02E7F2E0  token=0x600032E  System.Void __Gen_Wrap_84(System.Object P0, System.Int32 P1, UnityEngine.Vector4 P2, Beyond.Rendering.EntityVFXRendererMask P3)
+  RVA=0x01E4DC00  token=0x600032F  System.Void __Gen_Wrap_85(System.Object P0, System.Int32 P1, System.Object P2, Beyond.Rendering.EntityVFXRendererMask P3)
+  RVA=0x017F4E90  token=0x6000330  System.Boolean __Gen_Wrap_86(System.Object P0, System.Single P1)
+  RVA=0x02E7F6E0  token=0x6000331  System.Boolean __Gen_Wrap_87(System.Object P0, System.Boolean P1, System.Boolean& P2)
+  RVA=0x02E7FA30  token=0x6000332  System.Boolean __Gen_Wrap_88(System.Object P0, UnityEngine.Vector3& P1)
+  RVA=0x02E80100  token=0x6000333  System.Boolean __Gen_Wrap_89(System.Object P0, UnityEngine.Bounds& P1)
+  RVA=0x02E807D0  token=0x6000334  System.Boolean __Gen_Wrap_90(System.Object P0, UnityEngine.Bounds& P1)
+  RVA=0x02E80F40  token=0x6000335  UnityEngine.Bounds __Gen_Wrap_91(System.Object P0)
+  RVA=0x012C0160  token=0x6000336  System.Void __Gen_Wrap_92(System.Object P0, System.Object P1, System.Boolean P2)
+  RVA=0x0125D2B0  token=0x6000337  Beyond.Rendering.RenderHelperType __Gen_Wrap_93(System.Object P0)
+  RVA=0x02E81570  token=0x6000338  System.Boolean __Gen_Wrap_94(System.Object P0, System.Object P1, System.Boolean P2, Beyond.Rendering.EntityRenderHelperVisibleController.RendererInfo& P3)
+  RVA=0x02E81D70  token=0x6000339  System.Collections.Generic.List<Beyond.Rendering.EntityRendererTypeConfig> __Gen_Wrap_95(System.Object P0, System.Boolean P1)
+  RVA=0x017AD6A0  token=0x600033A  System.Single __Gen_Wrap_96(System.Object P0, System.Boolean P1)
+  RVA=0x01298AE0  token=0x600033B  Beyond.Rendering.EntityVFXPriorityType __Gen_Wrap_97(System.Object P0)
+  RVA=0x01298AE0  token=0x600033C  Beyond.Rendering.EntityVFXRendererMask __Gen_Wrap_98(System.Object P0)
+  RVA=0x02E82400  token=0x600033D  System.Void __Gen_Wrap_99(System.Object P0, System.Single P1, System.Boolean P2)
+  RVA=0x02E65CB0  token=0x600033E  UnityEngine.Material __Gen_Wrap_100(System.Object P0, System.Object P1, System.Object P2)
+  RVA=0x01738AF0  token=0x600033F  System.Boolean __Gen_Wrap_101(Beyond.Rendering.EntityVFXFactoryAddedMaterialManager.AddedMaterialData P0)
+  RVA=0x02214660  token=0x6000340  System.Void __Gen_Wrap_102(System.Object P0, System.Object P1, System.Int32 P2, System.Single P3)
+  RVA=0x02E664B0  token=0x6000341  System.Void __Gen_Wrap_103(System.Object P0, System.Object P1, System.Int32 P2, UnityEngine.Vector4 P3)
+  RVA=0x02E66940  token=0x6000342  UnityEngine.Material __Gen_Wrap_104(System.Object P0, System.Object P1, UnityEngine.Vector4 P2)
+  RVA=0x02E67150  token=0x6000343  System.ValueTuple<System.Single,System.Single> __Gen_Wrap_105(UnityEngine.Bounds P0, UnityEngine.Vector3 P1)
+  RVA=0x02E67880  token=0x6000344  System.Void __Gen_Wrap_106(System.Object P0, System.Boolean P1, UnityEngine.Vector3 P2, System.Boolean P3, System.Single P4, System.Single& P5, System.Single& P6, UnityEngine.Vector3& P7)
+  RVA=0x02E681B0  token=0x6000345  Beyond.Rendering.EntityVFXCurveEvaluateResult __Gen_Wrap_107(System.Object P0, System.Single P1)
+  RVA=0x02E68830  token=0x6000346  System.Void __Gen_Wrap_108(System.Object P0, System.Object P1, System.Single P2)
+  RVA=0x0259F9D0  token=0x6000347  System.Void __Gen_Wrap_109(System.Object P0, System.Single P1, System.Object P2, System.Object P3)
+  RVA=0x01527A20  token=0x6000348  System.Void __Gen_Wrap_110(System.Object P0, System.Object P1, System.Object P2, System.Boolean P3)
+  RVA=0x02E68C00  token=0x6000349  Beyond.Rendering.PsoCreateUploadHelper __Gen_Wrap_111()
+  RVA=0x02E69160  token=0x600034A  System.Void __Gen_Wrap_112(System.Object P0, UnityEngine.HGPsoExtInfo P1)
+  RVA=0x011C7C80  token=0x600034B  System.Void __Gen_Wrap_113(System.Boolean P0)
+  RVA=0x02CBB8F0  token=0x600034C  System.Void __Gen_Wrap_114(System.Object P0, System.Object P1, System.Object P2, System.Object P3)
+  RVA=0x0181A080  token=0x600034D  System.Void __Gen_Wrap_115(System.Single P0)
+  RVA=0x02E69500  token=0x600034E  System.Void __Gen_Wrap_116(System.Object P0, Beyond.EventData<System.String,System.String>& P1)
+  RVA=0x02E698D0  token=0x600034F  System.Void __Gen_Wrap_117(System.Boolean P0, System.Object P1, System.Object P2)
+  RVA=0x02E69C70  token=0x6000350  System.Collections.Generic.List<UnityEngine.Vector3> __Gen_Wrap_118(System.Object P0, System.Single P1, System.Int32 P2)
+  RVA=0x02E6A320  token=0x6000351  UnityEngine.Vector3 __Gen_Wrap_119(System.Object P0, UnityEngine.Vector2Int P1)
+  RVA=0x02E6AA30  token=0x6000352  System.Collections.Generic.List<UnityEngine.Vector3> __Gen_Wrap_120(System.Object P0, UnityEngine.Vector3 P1)
+  RVA=0x02E6B180  token=0x6000353  UnityEngine.Vector2Int __Gen_Wrap_121(System.Object P0, UnityEngine.Vector3 P1)
+  RVA=0x01F50410  token=0x6000354  System.Int32 __Gen_Wrap_122(System.Int32 P0, System.Int32 P1, System.Int32 P2)
+  RVA=0x017F2A10  token=0x6000355  System.Void __Gen_Wrap_123(System.Int32 P0, System.Int32 P1)
+  RVA=0x02E6B890  token=0x6000356  System.Void __Gen_Wrap_124(System.Int32 P0, System.Int32 P1, System.Int32 P2, System.Int32 P3, System.Object P4)
+  RVA=0x02E6BBB0  token=0x6000357  UnityEngine.Color __Gen_Wrap_125(System.Object P0, System.Int32 P1, System.Int32 P2)
+  RVA=0x02E6C200  token=0x6000358  System.Single[] __Gen_Wrap_126(System.Int32 P0, System.Single P1)
+  RVA=0x02E6C7E0  token=0x6000359  System.Single[,] __Gen_Wrap_127(System.Object P0, System.Object P1, UnityEngine.Vector2Int P2)
+  RVA=0x02E6CFF0  token=0x600035A  System.Void __Gen_Wrap_128(UnityEngine.Bounds P0, System.Object P1, UnityEngine.Vector3& P2, UnityEngine.Vector3& P3, System.Nullable<UnityEngine.Vector3> P4)
+  RVA=0x02E6DB70  token=0x600035B  Beyond.Rendering.VFXSludgeNavUtils.Spline2DProjectAndSimplify.Frame __Gen_Wrap_129(UnityEngine.Vector3 P0, UnityEngine.Vector3 P1)
+  RVA=0x02E6E2B0  token=0x600035C  Beyond.Rendering.VFXSludgeNavUtils.Spline2DProjectAndSimplify.Frame __Gen_Wrap_130(UnityEngine.Vector3 P0, System.Single P1)
+  RVA=0x02E6E930  token=0x600035D  System.Collections.Generic.List<UnityEngine.Vector3> __Gen_Wrap_131(System.Object P0, System.Single P1, System.Int32 P2, System.Boolean P3, System.Single P4)
+  RVA=0x02E6F010  token=0x600035E  UnityEngine.Vector3 __Gen_Wrap_132(Beyond.Rendering.VFXSludgeNavUtils.Spline2DProjectAndSimplify.Frame& P0, UnityEngine.Vector3 P1)
+  RVA=0x02E6FAE0  token=0x600035F  System.Void __Gen_Wrap_133(System.Object P0, Beyond.Rendering.VFXSludgeNavUtils.Spline2DProjectAndSimplify.Frame P1, System.Collections.Generic.List<UnityEngine.Vector2>& P2, System.Collections.Generic.List<System.Single>& P3, System.Single& P4, System.Single& P5, System.Single& P6, System.Single& P7)
+  RVA=0x01D41D40  token=0x6000360  System.Int32 __Gen_Wrap_134(System.Int32 P0, System.Int32 P1)
+  RVA=0x02E70730  token=0x6000361  System.Collections.Generic.List<System.Int32> __Gen_Wrap_135(System.Object P0)
+  RVA=0x02E70D90  token=0x6000362  System.Single __Gen_Wrap_136(System.Object P0, System.Int32 P1, System.Boolean P2)
+  RVA=0x02E71090  token=0x6000363  System.Single __Gen_Wrap_137(UnityEngine.Vector2 P0, UnityEngine.Vector2 P1, UnityEngine.Vector2 P2)
+  RVA=0x02E71560  token=0x6000364  System.Collections.Generic.List<System.Int32> __Gen_Wrap_138(System.Object P0, System.Boolean P1, System.Single P2, System.Single P3, System.Single P4)
+  RVA=0x02E71C50  token=0x6000365  Beyond.Rendering.VFXSludgeNavUtils.Spline2DProjectAndSimplify.ProcessResult __Gen_Wrap_139(System.Object P0, Beyond.Rendering.VFXSludgeNavUtils.Spline2DProjectAndSimplify.Frame P1, System.Single P2, System.Int32 P3, System.Boolean P4, Beyond.Rendering.VFXSludgeNavUtils.Spline2DProjectAndSimplify.EdgeMode P5, System.Single P6, System.Single P7, System.Single P8)
+  RVA=0x02E72480  token=0x6000366  System.Collections.Generic.List<UnityEngine.Vector2> __Gen_Wrap_140(System.Object P0, System.Single P1, System.Int32 P2, System.Int32 P3, System.Boolean P4, System.Boolean P5)
+  RVA=0x02E72B80  token=0x6000367  System.Collections.Generic.List<UnityEngine.Vector3> __Gen_Wrap_141(System.Object P0, System.Single P1, System.Single P2, System.Boolean P3)
+  RVA=0x02E73260  token=0x6000368  System.Void __Gen_Wrap_142(System.Object P0, System.Collections.Generic.List<UnityEngine.Vector2>& P1, System.Int32 P2, System.Boolean P3, System.Boolean P4, System.Boolean P5)
+  RVA=0x02E73A70  token=0x6000369  System.Collections.Generic.List<UnityEngine.Vector3> __Gen_Wrap_143(System.Object P0, System.Object P1, System.Single P2)
+  RVA=0x01294170  token=0x600036A  System.Void __Gen_Wrap_144(System.Object P0, System.Object P1, System.Object P2, System.Object P3, System.Int32 P4)
+  RVA=0x02E741D0  token=0x600036B  Beyond.Rendering.ECS.HGAddedMaterialController.OverlayLayer __Gen_Wrap_145(System.Object P0)
+  RVA=0x0137AF60  token=0x600036C  System.Int32 __Gen_Wrap_146(System.Object P0, System.Object P1)
+  RVA=0x02E74840  token=0x600036D  UnityEngine.HGMeshRendererData __Gen_Wrap_147(System.Object P0)
+  RVA=0x01293280  token=0x600036E  System.Void __Gen_Wrap_148(System.Object P0, System.Object P1, System.Object P2, System.Object P3, System.Object P4, System.Object P5)
+  RVA=0x01363040  token=0x600036F  System.Void __Gen_Wrap_149(System.Object P0, System.Object P1, System.Object P2, System.Object P3, System.Object P4)
+  RVA=0x02E74EA0  token=0x6000370  UnityEngine.Material __Gen_Wrap_150(System.Object P0, System.Int32 P1)
+  RVA=0x02E75530  token=0x6000371  UnityEngine.HGMeshRenderer __Gen_Wrap_151(System.Object P0)
+  RVA=0x02E75B90  token=0x6000372  UnityEngine.Bounds __Gen_Wrap_152(UnityEngine.Bounds P0, UnityEngine.Matrix4x4 P1)
+  RVA=0x04D7A3D0  token=0x6000373  System.Void .cctor()
+END_CLASS
+
+CLASS: IFix.ILFixInterfaceBridge
+TYPE:  class
+TOKEN: 0x2000097
+SIZE:  0x60
+EXTENDS: IFix.Core.AnonymousStorey
+IMPLEMENTS: System.IDisposable System.Collections.IEnumerator System.Collections.Generic.IEnumerator`1 System.Runtime.CompilerServices.IAsyncStateMachine
+FIELDS:
+  private           System.Int32                    methodId_0  // 0x40
+  private           System.Int32                    methodId_1  // 0x44
+  private           System.Int32                    methodId_2  // 0x48
+  private           System.Int32                    methodId_3  // 0x4c
+  private           System.Int32                    methodId_4  // 0x50
+  private           System.Int32                    methodId_5  // 0x54
+  private           System.Int32                    methodId_6  // 0x58
+PROPERTIES:
+  System.Collections.Generic.IEnumerator<System.Object>.Current  get=0x0A9C6B24
+  System.Collections.IEnumerator.Current  get=0x0A9C6BB4
+METHODS:
+  RVA=0x06365FC0  token=0x6000374  System.Void System.IDisposable.Dispose()
+  RVA=0x06365D60  token=0x6000375  System.Boolean MoveNext()
+  RVA=0x06365E98  token=0x6000377  System.Void System.Collections.IEnumerator.Reset()
+  RVA=0x0A8A5D4C  token=0x6000379  System.Void MoveNext()
+  RVA=0x0A8A5FAC  token=0x600037A  System.Void SetStateMachine(System.Runtime.CompilerServices.IAsyncStateMachine P0)
+  RVA=0x0A9C6C44  token=0x600037B  System.Void .ctor(System.Int32 fieldNum, System.Int32[] fieldTypes, System.Int32 typeIndex, System.Int32[] vTable, System.Int32[] methodIdArray, IFix.Core.VirtualMachine virtualMachine)
+  RVA=0x0A9C6AC0  token=0x600037C  System.Void RefAwaitUnsafeOnCompleteMethod()
+  RVA=0x0A9C6A98  token=0x600037D  System.Void RefAsyncBuilderStartMethod()
+END_CLASS
+
+CLASS: IFix.WrappersManagerImpl
+TYPE:  class
+TOKEN: 0x2000098
+SIZE:  0x18
+IMPLEMENTS: IFix.Core.WrappersManager
+FIELDS:
+  private           IFix.Core.VirtualMachine        virtualMachine  // 0x10
+METHODS:
+  RVA=0x053908C0  token=0x600037E  System.Void .ctor(IFix.Core.VirtualMachine virtualMachine)
+  RVA=0x0A9C6EB0  token=0x600037F  IFix.ILFixDynamicMethodWrapper GetPatch(System.Int32 id)
+  RVA=0x0302E240  token=0x6000380  System.Boolean IsPatched(System.Int32 id)
+  RVA=0x0A9C6DC0  token=0x6000381  System.Delegate CreateDelegate(System.Type type, System.Int32 id, System.Object anon)
+  RVA=0x0A9C6E54  token=0x6000382  System.Object CreateWrapper(System.Int32 id)
+  RVA=0x0A9C6F04  token=0x6000383  System.Object InitWrapperArray(System.Int32 len)
+  RVA=0x0A9C6D38  token=0x6000384  IFix.Core.AnonymousStorey CreateBridge(System.Int32 fieldNum, System.Int32[] fieldTypes, System.Int32 typeIndex, System.Int32[] vTable, System.Int32[] slots, IFix.Core.VirtualMachine virtualMachine)
+END_CLASS
+
+CLASS: IFix.IDMAP0
+TYPE:  sealed struct
+TOKEN: 0x2000099
+SIZE:  0x14
+FIELDS:
+  public            System.Int32                    value__  // 0x10
+  public    static  IFix.IDMAP0                     HG-Rendering-Runtime-ContainerWaterManager-get_dy0  // const
+  public    static  IFix.IDMAP0                     HG-Rendering-Runtime-ContainerWaterManager-_PrecomputeCylinderMask0  // const
+  public    static  IFix.IDMAP0                     HG-Rendering-Runtime-ContainerWaterManager-_InitializeWaveSystem0  // const
+  public    static  IFix.IDMAP0                     HG-Rendering-Runtime-ContainerWaterManager-Start0  // const
+  public    static  IFix.IDMAP0                     HG-Rendering-Runtime-ContainerWaterManager-_IsInsideCylinder0  // const
+  public    static  IFix.IDMAP0                     HG-Rendering-Runtime-ContainerWaterManager-_ApplyReflectiveBoundary0  // const
+  public    static  IFix.IDMAP0                     HG-Rendering-Runtime-ContainerWaterManager-_FindNearestInsidePoint0  // const
+  public    static  IFix.IDMAP0                     HG-Rendering-Runtime-ContainerWaterManager-_ApplyAbsorptiveBoundary0  // const
+  public    static  IFix.IDMAP0                     HG-Rendering-Runtime-ContainerWaterManager-_WorldToTextureCoords0  // const
+  public    static  IFix.IDMAP0                     HG-Rendering-Runtime-ContainerWaterManager-_IsValidPosition0  // const
+  public    static  IFix.IDMAP0                     HG-Rendering-Runtime-ContainerWaterManager-_UnifiedWaveStep0  // const
+  public    static  IFix.IDMAP0                     HG-Rendering-Runtime-ContainerWaterManager-_ApplyMatrixToTexture0  // const
+  public    static  IFix.IDMAP0                     HG-Rendering-Runtime-ContainerWaterManager-_UpdateVortexState0  // const
+  public    static  IFix.IDMAP0                     HG-Rendering-Runtime-ContainerWaterManager-ResetWaveTexture0  // const
+  public    static  IFix.IDMAP0                     HG-Rendering-Runtime-ContainerWaterManager-Update0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CustomPerDrawDataChannelUtils-SetPerDrawData_LitDissolve0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CustomPerDrawDataChannelUtils-SetPerDrawData_HoudiniVAT0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CustomPerDrawDataChannelUtils-SetPerDrawData_MovingBamboo0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CustomPerDrawDataChannelUtils-SetPerDrawData_EmissiveColor0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CustomPerDrawDataChannelUtils-SetPerDrawData_EmissiveAlbedoColor0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CustomPerDrawDataChannelUtils-SetPerDrawData_SweepLightIntensity0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CustomPerDrawDataChannelUtils-SetPerDrawData_SweepBreathing0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CustomPerDrawDataChannelUtils-SetPerDrawData_UVAnimation0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CustomPerDrawDataChannelUtils-SetPerDrawData_CharacterParams0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CustomPerDrawDataChannelUtils-SetPerDrawData_VFXAlpha00  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CustomPerDrawDataChannelUtils-SetPerDrawData_TrailDisplayArea0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CustomPerDrawDataChannelUtils-SetPerDrawData_TrailScanCircle0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PipelineSettingHelper-_GetFullSettingPath0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PipelineSettingHelper-_LoadSetting0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PipelineSettingHelper-LoadPipelineSettings0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ResourceRouter-_GetCategoryFolder0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ResourceRouter-GetEnvironmentsFullPath0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ResourceRouter-GetDecalResourcesPath0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ResourceRouter-GetDecalResourcesFullPath0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-get_isWarming0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-GetPsoPathName0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-GetPsoPathName1  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_GetCacheFileSize0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-GetLoginWarmupDetail0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManagerRemoteCfg-get_cpuNameForWarmUp0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManagerRemoteCfg-_CheckDeviceMatch0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManagerRemoteCfg-IsDeviceInBlackList0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManagerRemoteCfg-IsEnableDx11DriverVersionDetect0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-ProcessRemoteConfig0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-MarkNeedShaderWarmUp0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_MarkWarmupFinishAPI0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_MarkWarmUpLoginFinish0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-WindowsGpuDriverVersion-_GetDeviceRegistryPropertyString0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-WindowsGpuDriverVersion-_ContainsIgnoreCase0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-WindowsGpuDriverVersion-_ScoreAgainstUnityCurrentGpu0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-WindowsGpuDriverVersion-_GetDriverKeySuffix0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-WindowsGpuDriverVersion-_ReadRegistrySz0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-WindowsGpuDriverVersion-GetAllDisplayDriverVersions0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-WindowsGpuDriverVersion-SerializeAllResults0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_MarkWarmupDx11Driver0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-MarkWarmUpLoginFinish0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-CleanLoadedPso0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_TryDeleteVulkanPsoCacheFile0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-TryRepairPsoCacheAfterCorruptCheck0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_ResetWarmUpStatsIfNeed0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_IsDeviceSupportWarmUp0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_CheckNeedWarmUpByFirstEntry0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_IsNeedWarmupByGraphicsChange0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_SetWarmupRetryCount0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_SetWarmupUnfinishedCount0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_CheckWarmUpUnfinishedOften0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-WindowsGpuDriverVersion-GetBestMatch0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-WindowsGpuDriverVersion-_TryGetDriverVersionByKeyId0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-WindowsGpuDriverVersion-IsBestMatchDriverVersionChanged0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_IsNeedWarmupDx11Driver0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_IsNeedWarmupByCacheOutdated0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_CheckNeedWarmUpByDeviceState0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-CheckNeedWarmUpLogin0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_DisposeWarmupAssetHandles0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-StopWarmupShadersDownloading0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_StopDownloadingWarmupAndWait0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_BuildLoginWarmupPaths0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_LoadPsoAssets0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_GetBackgroundWarmupStartIndex0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_GetCompileCountForRange0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_InitWarmupStats0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_GetLoginTimeLimit0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_GetWarmupEndIndexExclusive0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PsoCreateUploadHelper-IsPsoRecordEnabled0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PsoCreateUploadHelper-BeforeWarmUpBegin0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-TimeCostCounter-Tick0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_StepProgress0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-TimeCostCounter-get_isTimeOut0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PsoCreateUploadHelper-AfterWarmUpFinish0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_WarmupOnePsoTimeLimited0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_SetDownloadingWarmupUnfinishedCount0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-WarmupShadersLogin0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_UpdateDownloadWarmupPercent0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_IsDeviceSupportDownloadWarmUp0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_GetDownloadingWarmupUnfinishedCount0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-_WarmupOnePsoBackgroundOnly0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-WarmupShadersDownloading0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-WarmupOnePso0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-WarmupShadersScene0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ShaderWarmupManager-TimeCostCounter-Begin0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-WindowsGpuDriverVersion-GetCurrentDriverVersion0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-WindowsGpuDriverVersion-SerializeAllCurrentResults0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-WindowsGpuDriverVersion-Result-ToString0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-WindowsGpuDriverVersion-SafeRegistryHandle-ReleaseHandle0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-SceneStateAreaKey-Equals0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-SceneStateAreaKey-Equals1  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-SceneStateAreaKey-GetHashCode0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderAlphaDitherController-_GetCurMinAlpha0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderAlphaDitherController-_SetMaterialDitherEnabled0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderAlphaDitherController-_SetMaterialDitherAlpha0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderAlphaDitherController-_ApplyNewAlpha0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderAlphaDitherController-ResetDitherAlpha0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderAlphaDitherController-SetDitherAlpha0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderAlphaDitherController-GetDitherAlpha0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderAlphaDitherController-Reset0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderAlphaDitherController-GetAlphaDictionary0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderCaptureMeshController-Release0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderCaptureMeshController-Reset0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderCaptureMeshController-_SyncTransformInRenderPipeline0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderCaptureMeshController-LateTick0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderCaptureMeshController-InitRendererTypeMasks0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderCaptureMeshController-Capture0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-_GetSubMeshCount0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXUtils-ToMask0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-_Init0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-TryInit0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialController-Init0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-AddedMaterialController-Init0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-Init0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-OnRelease0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-AddedMaterialController-Reset0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-get_rendererValid0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-TryBeginMaterialUpdate0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-get_currentMeshMaterials0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-TrySetSharedMaterials0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-AddMaterialConfig-get_useCustomizeProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-AddedMaterialController-_GetCustomizePropertyMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-AddedMaterialController-ApplySharedMaterialArray0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-TryReplaceSharedMaterials0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialController-_ReplaceSharedMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialController-_ReleaseAllReplaceMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialGroupData-Clear0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialController-Reset0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-TrySetCharacterPerDrawData0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-CustomPerDrawDataController-Reset0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-Reset0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-IsRendererValid0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-IsAllRendererValid0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-TryStopShadowCasting0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-StopShadowCasting0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-TryRevertShadowCastingMode0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RevertShadowCastingMode0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityCustomizeRendererPropertyConfig-GetColorTexture0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-AddedMaterialController-_InitCustomizeRendererProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-AddedMaterialController-RequireAddMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-_GetRenderersOfRendererMask0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-AddMaterialToAllRenderer0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-AddedMaterialController-SetAddictiveFloatProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-SetAddictiveFloatProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-AddedMaterialController-GetAddictiveFloatProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-GetAddictiveFloatProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-AddedMaterialController-SetAddictiveVectorProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-SetAddictiveVectorProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-AddedMaterialController-GetAddictiveVectorProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-GetAddictiveVectorProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-AddedMaterialController-SetAddictiveTextureProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-SetAddictiveTextureProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-AddedMaterialController-GetAddictiveTextureProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-GetAddictiveTextureProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-AddedMaterialController-RequireRemoveMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RemoveMaterialFromAllRenderer0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-AddedMaterialController-GetAddedMaterialsOfCustomizeProperties0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-GetAddedMaterialsOfCustomizeProperties0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialGroupData-CopyFrom0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialController-_CopyReplaceMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialController-_SplitRenderers0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialController-_GetAffectGroupData0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-get_rendererName0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-TrySetSharedMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialController-_CreateReplaceMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialController-_TryEnsureReplaceMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialController-SetKeywordEnableToAllMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-SetKeywordEnableToAllMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialController-SetDepthOnlyPassEnableToAllMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-SetDepthOnlyPassEnableToAllMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-CustomPerDrawDataController-Init0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-CustomPerDrawDataController-_PackUNorm8ToFloat0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-CustomPerDrawDataController-SetFloatToCustomPerDraw0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-SetFloatToCustomPerDraw0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-TrySetEmissiveColor0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-CustomPerDrawDataController-SetVectorToCustomPerDraw0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-SetVectorToCustomPerDraw0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialController-SetFloatToAllMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-SetFloatToAllMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialController-SetVectorToAllMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-SetVectorToAllMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialController-SetTextureToAllMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-SetTextureToAllMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-TryFillRendererTypeMask0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-FillRendererTypeMasks0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-TrySetManualDitherAlphaValue0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-SetManualDitherAlphaValue0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-TrySetManualDitherEnable0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-SetManualDitherEnable0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-TryGetRendererPosition0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-TryGetRendererBounds0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-RendererInfo-TryEncapsulateBounds0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-GetRendererBounds0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialController-SetZTestInMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-SetZTestInMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-GetRenderHelperType0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialController-ReleaseFloatToAllMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialController-ReleaseVectorToAllMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperMaterialController-MeshMaterialController-ReleaseTextureToAllMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperVisibleController-RendererInfo-_Init0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperVisibleController-RendererInfo-TryInit0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperVisibleController-Init0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperVisibleController-RendererInfo-get_rendererValid0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperVisibleController-RendererInfo-TryAddToDictionary0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperVisibleController-_InitDictionary0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperVisibleController-_TryGetRendererInfo0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperVisibleController-Release0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperVisibleController-RendererInfo-TrySetVisible0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperVisibleController-SetVisibleByNameContainsStr0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperVisibleController-RendererInfo-TrySetVisibleByRenderer0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperVisibleController-SetVisibleByRenderer0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperVisibleController-RendererInfo-TryResetVisible0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperVisibleController-ResetVisibleByNameContainsStr0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperVisibleController-ResetVisibleByRenderer0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderHelperVisibleController-Reset0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderMaterialManager-SetFloat0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderMaterialManager-SetTexture0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderMaterialManager-SetVector0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderMaterialManager-AddMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderMaterialManager-_RevertMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderMaterialManager-RemoveMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderMaterialManager-ClearMaterials0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderMaterialManager-SetKeywordEnable0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderMaterialManager-SetDepthOnlyEnabled0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityRenderMaterialManager-SetZTestInMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXAsset-GetRendererTypeConfigs0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXAssetBase-get_assetName0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-get_isPlaying0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-get_isStopping0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-get_isHiding0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-get_isKeyword0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-get_vfxName0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-get_destroyTime0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-set_destroyTime0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-get_lastTickTime0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-set_lastTickTime0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-SetOwner0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-InitLOD0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-SetName0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-Stop0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-OnDestroy0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-Destroy0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-Play0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-Replay0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-Tick0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-RefreshLastTickTime0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-GetDeltaTimeFromLastTick0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-GetPriorityType0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-GetRendererMask0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-GetAllowSimultaneousKeyword0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-GetNeedTick0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-OnHide0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-Hide0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-OnShow0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-Show0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-OnSample0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerBase-Sample0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerStateBase-get_isStopping0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerStateBase-Play0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerStateBase-Replay0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerStateBase-_FinalStop0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerStateBase-get_useEndCurve0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerStateBase-get_endDuration0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerStateBase-Stop0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerStateBase-get_useLoopCurve0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerStateBase-GetNeedTick0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerStateBase-get_useScaledTime0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerStateBase-get_duration0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerStateBase-get_loop0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerStateBase-get_useStartCurve0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerStateBase-get_loopDuration0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerStateBase-Tick0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXControllerStateBase-OnSample0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXFactoryAddedMaterialManager-Init0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXFactoryAddedMaterialManager-_AddVATMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXFactoryAddedMaterialManager-_GetVATMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXFactoryAddedMaterialManager-_GetAddedMaterialIndex0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXFactoryAddedMaterialManager-_RemoveVATMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXFactoryAddedMaterialManager-AddMaterialToAllRenderer0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXFactoryAddedMaterialManager-RemoveMaterialFromAllRenderer0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXFactoryAddedMaterialManager-SetFloatToFactoryMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXFactoryAddedMaterialManager-SetVectorToFactoryMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXFactoryMaterialCache-GetVATMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXFactoryMaterialCache-ReleaseVATMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXUtils-GetBoundsMinMaxOfDirection0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXUtils-CalculateCutOffBounds0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXUtils-Evaluate0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXUtils-_UpdateCurve0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-EntityVFXUtils-ApplyEntityVFXCurves0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CommonVAT-get_PropertySetterType0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CommonVAT-Start0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CommonVAT-_ClearTimer0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CommonVAT-_UpdateProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CommonVAT-_CreateTimer0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CommonVAT-_NextPlay0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CommonVAT-_DoPlay0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-CommonVAT-Play0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-FactoryVAT-_InitRenderer_MeshRender0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-FactoryVAT-_InitRenderer0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-FactoryVAT-Start0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-FactoryVAT-_ReSetParamsToRenderer_MeshRender0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-FactoryVAT-_ReSetParamsToRenderer0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-FactoryVAT-Reset0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-FactoryVAT-_SetParamsToRenderer_MeshRender0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-FactoryVAT-_SetParamsToRenderer0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-FactoryVAT-_DoPlay0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-FactoryVAT-_UpdateAnim0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-FactoryVAT-OnUpdate0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-FactoryVAT-Play0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VATRendererPropertySetter-Init0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VATRendererPropertySetter-SetFloat0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VATRendererPropertySetter-SetVector0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VATEntityRendererHelperPropertySetter-Init0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VATEntityRendererHelperPropertySetter-SetFloat0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VATEntityRendererHelperPropertySetter-SetVector0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PsoCreateUploadHelper-get_instance0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PsoCreateUploadHelper-get_persistentDataPath0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PsoCreateUploadHelper-_PsoUploadProcessOneCallBack0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PsoCreateUploadHelper-_PsoUpdateGameInfoCallBack0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PsoCreateUploadHelper-Initialize0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PsoCreateUploadHelper-_UploadPipelineCreatedInfo0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PsoCreateUploadHelper-_UploadFileToServer0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PsoCreateUploadHelper-_CreateAndUploadFileToServer0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PsoCreateUploadHelper-_CreateAndUploadFinalJson0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PsoCreateUploadHelper-_Tick0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PsoCreateUploadHelper-_SceneLoadStartHandler0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PsoCreateUploadHelper-Init0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PsoCreateUploadHelper-Dispose0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PsoCreateUploadHelper-_UploadFile0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-PsoCreateUploadHelper-_Callback0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeUtils-GetPolygonOffSpline0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-_CalculatePolygonAndBounds0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-GetLocalPosition0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-_RaycastSceneObjectsHeight0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeUtils-CalculatePointPolygonHorizonRayCross0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-GetLocalIndex0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-_CalculateInPolygon0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-_CalculateInHighPowerZone0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-_GetHash0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-_ForAround0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-_CalculateEdgeSignedDistance0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-_CalculateEdgeSignedDistance1  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-_BlurTopHeight0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-_CalculateThicknessAndTopHeight0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-_CalculateNormals0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-_GetTextureColor10  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-_CreateTexture0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-Bake0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-_CreateGaussianKernel0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-_Convolution0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-_GetHash1  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeBaker-_GetTextureColor20  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeNavUtils-BoundsUtil-GetTopBottomPoints0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeNavUtils-Spline2DProjectAndSimplify-MakeFrameFromPlaneNormal0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeNavUtils-Spline2DProjectAndSimplify-MakeFrameByYaw0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeNavUtils-Spline2DProjectAndSimplify-SampleUniformByArcLength0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeNavUtils-Spline2DProjectAndSimplify-Frame-WorldToFrame0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeNavUtils-Spline2DProjectAndSimplify-ProjectWorldToFrameXZ0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeNavUtils-Spline2DProjectAndSimplify-ConvexHullIndices0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeNavUtils-Spline2DProjectAndSimplify-_AngleDegAt0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeNavUtils-Spline2DProjectAndSimplify-_CurvatureAt0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeNavUtils-Spline2DProjectAndSimplify-_PointToSegmentDistance2D0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeNavUtils-Spline2DProjectAndSimplify-Simplify2D_ByCurvatureAngleDeviation0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeNavUtils-Spline2DProjectAndSimplify-Process0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeNavUtils-Spline2DProjectAndSimplify-Frame-FrameToWorld0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeNavUtils-SplineSamplingUtils-SampleByArcLength0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeNavUtils-PolySimplify-SimplifyByAngle0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeUtils-GetPolygonOffSplineWithSimplify0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-VFXSludgeUtils-GetPolygonOffByPolyLine0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-SplineMovingObjects-HGSplineMovingObjects-_CreateInstance0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-SplineMovingObjects-HGSplineMovingObjects-_ExtractSplineData0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-SplineMovingObjects-HGSplineMovingObjects-_DestroyInstance0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-SplineMovingObjects-HGSplineMovingObjects-_Release0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-SplineMovingObjects-HGSplineMovingObjects-Update0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-SplineMovingObjects-HGSplineMovingObjects-OnEnable0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-SplineMovingObjects-HGSplineMovingObjects-OnDisable0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-SplineMovingObjects-HGSplineMovingObjects-OnDestroy0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-SplineMovingObjects-HGSplineMovingObjects-OnDrawGizmosSelected0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-SplineMovingObjects-HGSplineMovingObjects-Pause0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-SplineMovingObjects-HGSplineMovingObjects-Play0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-SplineMovingObjects-HGSplineMovingObjects-Stop0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-LODLightmapping-LightmapInfoTransfer-_RendererInfoTransfer0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-LODLightmapping-LightmapInfoTransfer-Awake0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-LODLightmapping-LightmapInfoTransfer-OnEnable0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-LODLightmapping-LODLightmapping-RendererInfoTransfer0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGAddedMaterialController-Init0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGAddedMaterialController-_CreateNewLayer0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGAddedMaterialController-RequireAddMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGAddedMaterialController-RequireRemoveMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGAddedMaterialController-GetActiveOverlayRenderers0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGAddedMaterialController-get_activeLayerCount0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGAddedMaterialController-GetAddedMaterialsOfCustomizeProperties0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGAddedMaterialController-SetAddictiveFloatProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGAddedMaterialController-GetAddictiveFloatProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGAddedMaterialController-SetAddictiveVectorProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGAddedMaterialController-GetAddictiveVectorProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGAddedMaterialController-SetAddictiveTextureProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGAddedMaterialController-GetAddictiveTextureProperty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGAddedMaterialController-Reset0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGAddedMaterialController-_DestroyLayer0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGAddedMaterialController-Release0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialCommitter-get_clonedData0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialCommitter-Init0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialCommitter-MarkMaterialsArrayDirty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialCommitter-IsDirty0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialCommitter-_Commit0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialCommitter-TryCommit0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialCommitter-ForceCommit0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialCommitter-Reset0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialCommitter-Release0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialController-get_currentMeshMaterials0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialController-Init0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialController-_ApplyDepthOnlyPassToMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialController-_ApplyAllPropertiesToOneMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialController-_GetOrCreateInstancedMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialController-SetFloatToAllMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialController-SetVectorToAllMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialController-SetTextureToAllMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialController-SetKeywordEnableToAllMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialController-SetDepthOnlyPassEnableToAllMaterial0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialController-SetManualDitherEnable0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialController-SetManualDitherAlphaValue0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialController-ReplaceAllMaterials0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialController-ReplaceMaterialBySource0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialController-Reset0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGMaterialController-Release0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGRendererStateController-Init0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGRendererStateController-IsValid0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGRendererStateController-get_hgRenderer0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGRendererStateController-SetVisible0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGRendererStateController-Reset0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGRendererStateController-_WarnNoMeshes0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGRendererStateController-_EnsureMeshLocalBoundsCached0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGRendererStateController-_LocalBoundsToWorld0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGRendererStateController-GetBounds0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGRendererStateController-InvalidateMeshCache0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGRendererStateController-StopShadowCasting0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGRendererStateController-RevertShadowCastingMode0  // const
+  public    static  IFix.IDMAP0                     Beyond-Rendering-ECS-HGRendererStateController-Release0  // const
+METHODS:
+END_CLASS
+

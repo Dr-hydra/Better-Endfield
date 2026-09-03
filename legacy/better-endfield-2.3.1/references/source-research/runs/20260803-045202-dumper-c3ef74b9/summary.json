@@ -1,0 +1,944 @@
+{
+  "schemaVersion": 1,
+  "generatedUtc": "2026-08-02T20:59:27.9010126+00:00",
+  "runPath": "E:\\Dr.Hydra\\EF-Start-Change\\runs\\20260803-045202-dumper-c3ef74b9",
+  "run": {
+    "schemaVersion": 1,
+    "sessionId": "20260803-045202-dumper-c3ef74b9",
+    "kind": "dumper",
+    "gamePath": "E:\\Endfield Game",
+    "targetExecutable": "E:\\Endfield Game\\Endfield.exe",
+    "dumperWorkingDirectory": "E:\\Dr.Hydra\\EF-Start-Change\\runs\\20260803-045202-dumper-c3ef74b9",
+    "startedUtc": "2026-08-03T04:52:02.7206463+08:00",
+    "observedUntilUtc": "2026-08-03T04:53:32.9513372+08:00",
+    "dumperPid": 33672,
+    "gamePid": 22120,
+    "gameExited": false,
+    "durationSeconds": 90,
+    "marks": [
+      {
+        "utc": "2026-08-03T04:52:18.0213416+08:00",
+        "elapsedSeconds": 15.2869144,
+        "key": "F7"
+      },
+      {
+        "utc": "2026-08-03T04:52:33.3157447+08:00",
+        "elapsedSeconds": 30.5945237,
+        "key": "F11"
+      },
+      {
+        "utc": "2026-08-03T04:52:47.8531624+08:00",
+        "elapsedSeconds": 45.1301145,
+        "key": "F3"
+      }
+    ],
+    "externalTcpConnectionCount": 0
+  },
+  "network": {
+    "sampleCount": 238,
+    "externalTcpConnectionCount": 0
+  },
+  "staticDump": {
+    "normalAssemblyCount": 170,
+    "aiAssemblyCount": 170,
+    "stringLiteralBytes": 331982
+  },
+  "dynamicEvidenceFiles": [],
+  "candidates": [
+    {
+      "name": "RenderSilhouetteRT",
+      "role": "silhouette render target",
+      "block": {
+        "file": "Entry.Beyond.dll.cs",
+        "line": 18,
+        "declaration": "public class RenderSilhouetteRT : UnityEngine.MonoBehaviour",
+        "fields": [
+          "public UnityEngine.Camera cameraRT;  // 0x18",
+          "public UnityEngine.Camera mainCamera;  // 0x20",
+          "public UnityEngine.Material materialSilhouette;  // 0x28",
+          "public System.UInt32 dwFileAttributes;  // 0x10",
+          "public System.Runtime.InteropServices.ComTypes.FILETIME ftCreationTime;  // 0x14",
+          "public System.Runtime.InteropServices.ComTypes.FILETIME ftLastAccessTime;  // 0x1c",
+          "public System.Runtime.InteropServices.ComTypes.FILETIME ftLastWriteTime;  // 0x24",
+          "public System.UInt32 nFileSizeHigh;  // 0x2c",
+          "public System.UInt32 nFileSizeLow;  // 0x30",
+          "public System.UInt32 dwReserved0;  // 0x34",
+          "public System.UInt32 dwReserved1;  // 0x38",
+          "public System.String cFileName;  // 0x40",
+          "public System.String cAlternateFileName;  // 0x48",
+          "public System.String name;  // 0x10",
+          "public System.String fullPath;  // 0x18",
+          "public System.Int64 size;  // 0x20",
+          "public System.String md5;  // 0x28",
+          "public System.Int32 pathLength;  // 0x30",
+          "public System.Boolean readable;  // 0x34",
+          "public System.Boolean writable;  // 0x35",
+          "public System.Boolean readOnly;  // 0x36",
+          "public System.String fullPath;  // 0x10",
+          "public System.Int64 size;  // 0x18",
+          "public System.Boolean readOnlyAttr;  // 0x20",
+          "public readonly System.Collections.Concurrent.ConcurrentQueue<System.String> dirQueue;  // 0x10",
+          "public readonly System.Collections.Concurrent.ConcurrentQueue<Beyond.GameApp.PendingFile> fileQueue;  // 0x18",
+          "public readonly System.Collections.Concurrent.ConcurrentBag<Beyond.GameApp.FileEntry> results;  // 0x20",
+          "public System.Int32 pendingDirs;  // 0x28",
+          "public System.Int32 pendingFiles;  // 0x2c",
+          "public System.String name;  // 0x10",
+          "public Beyond.GameApp.FileEntry fileEntry;  // 0x18",
+          "public System.Collections.Generic.Dictionary<System.String,Beyond.GameApp.TreeNode> children;  // 0x20",
+          "private System.Int32 <>1__state;  // 0x10",
+          "private System.Object <>2__current;  // 0x18",
+          "public Beyond.GameApp <>4__this;  // 0x20",
+          "private System.Int32 <>1__state;  // 0x10",
+          "private System.Object <>2__current;  // 0x18",
+          "public Beyond.GameApp <>4__this;  // 0x20",
+          "private System.Int32 <>1__state;  // 0x10",
+          "private System.Object <>2__current;  // 0x18"
+        ],
+        "methods": [
+          "private System.Void Update() { }",
+          "private System.Void OnDestroy() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void .ctor(System.Int32 <>1__state) { }",
+          "private virtual System.Void System.IDisposable.Dispose() { }",
+          "private virtual System.Boolean MoveNext() { }",
+          "private virtual System.Void System.Collections.IEnumerator.Reset() { }",
+          "public System.Void .ctor(System.Int32 <>1__state) { }",
+          "private virtual System.Void System.IDisposable.Dispose() { }",
+          "private virtual System.Boolean MoveNext() { }",
+          "private virtual System.Void System.Collections.IEnumerator.Reset() { }",
+          "public System.Void .ctor(System.Int32 <>1__state) { }",
+          "private virtual System.Void System.IDisposable.Dispose() { }",
+          "private virtual System.Boolean MoveNext() { }",
+          "private virtual System.Void System.Collections.IEnumerator.Reset() { }",
+          "public System.Void .ctor() { }"
+        ]
+      },
+      "hits": [
+        {
+          "file": "BeyondDynamicBone.dll.cs",
+          "line": 3619,
+          "text": "public System.Boolean hasMainCamera;  // 0x80"
+        },
+        {
+          "file": "CW.Common.dll.cs",
+          "line": 56,
+          "text": "public static CW.Common.CwFollow.FollowType MainCamera;  // const"
+        },
+        {
+          "file": "Entry.Beyond.dll.cs",
+          "line": 18,
+          "text": "public class RenderSilhouetteRT : UnityEngine.MonoBehaviour"
+        },
+        {
+          "file": "Entry.Beyond.dll.cs",
+          "line": 21,
+          "text": "public UnityEngine.Camera cameraRT;  // 0x18"
+        },
+        {
+          "file": "Entry.Beyond.dll.cs",
+          "line": 22,
+          "text": "public UnityEngine.Camera mainCamera;  // 0x20"
+        },
+        {
+          "file": "Entry.Beyond.dll.cs",
+          "line": 23,
+          "text": "public UnityEngine.Material materialSilhouette;  // 0x28"
+        },
+        {
+          "file": "Entry.Beyond.dll.cs",
+          "line": 24,
+          "text": "private static UnityEngine.Texture s_mSilhouetteRT;  // static @ 0x0"
+        },
+        {
+          "file": "Entry.Beyond.dll.cs",
+          "line": 25,
+          "text": "private static UnityEngine.RenderTexture s_mSilhouetteRth;  // static @ 0x8"
+        },
+        {
+          "file": "FactoryUnsafe.Gameplay.Beyond.dll.cs",
+          "line": 12268,
+          "text": "public Unity.Mathematics.float3 mainCameraPos;  // 0x20"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 7722,
+          "text": "public static Beyond.Gameplay.CharInteractPerformEnums.FocusTargetType MainCamera;  // const"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 31203,
+          "text": "public static Beyond.Gameplay.AI.CharacterFocusBehavior.FocusTarget MainCamera;  // const"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 53564,
+          "text": "public UnityEngine.Camera mainCamera;  // 0x50"
+        }
+      ]
+    },
+    {
+      "name": "FMVController",
+      "role": "opening FMV / PlayableDirector controller",
+      "block": {
+        "file": "Gameplay.Beyond.dll.cs",
+        "line": 81055,
+        "declaration": "public class FMVController : Beyond.TickableUIMono",
+        "fields": [
+          "private UnityEngine.Playables.PlayableDirector _fmvDirector;  // 0x68",
+          "private Beyond.UI.UISubtitle _subtitle;  // 0x70",
+          "private Beyond.UI.UIBigLogo _bigLogo;  // 0x78",
+          "private System.String m_fmvName;  // 0x80",
+          "private System.Collections.Generic.Dictionary<System.String,Beyond.Resource.FAssetProxyHandle> m_loadedBigLogoHandles;  // 0x88",
+          "private Beyond.Resource.SimpleAssetLoader m_fmvLoader;  // 0x90",
+          "private Beyond.Gameplay.Core.GlobalMultiTagHandle m_globalTagHandle;  // 0x98",
+          "private CriWare.CriManaMovieMaterialBase m_boundMovieController;  // 0xa8",
+          "private System.Boolean m_shouldSyncMovieUserTime;  // 0xb0",
+          "private System.Boolean m_needReleaseFmvResources;  // 0xb1",
+          "private UnityEngine.Coroutine m_preloadCoroutine;  // 0xb8",
+          "private UnityEngine.Timeline.TimelineAsset m_durationOverrideTimeline;  // 0xc0",
+          "private UnityEngine.Timeline.TimelineAsset.DurationMode m_originalDurationMode;  // 0xc8",
+          "private System.Double m_originalFixedDuration;  // 0xd0",
+          "private System.Boolean m_hasDurationOverride;  // 0xd8",
+          "public System.String subtitleKey;  // 0x10",
+          "public System.String audioKey;  // 0x18",
+          "public System.String voKey;  // 0x20",
+          "public System.String[] audioKeyList;  // 0x28",
+          "public System.String[] voKeyList;  // 0x30",
+          "public System.Boolean showOnTop;  // 0x38",
+          "public System.Single startTime;  // 0x3c",
+          "public System.Single endTime;  // 0x40",
+          "public System.String subtitleKey;  // 0x10",
+          "public System.Single startTime;  // 0x18",
+          "public System.Single endTime;  // 0x1c",
+          "public UnityEngine.Vector3 position;  // 0x20",
+          "public Beyond.Gameplay.SubtitleInfo[] subtitles;  // 0x18",
+          "public Beyond.Gameplay.FloatingSubtitleInfo[] floatingSubtitles;  // 0x20",
+          "public Beyond.SerializeFieldDictionary<System.String,Beyond.Gameplay.FocusPointSetting.FocusPointRangeCfg> rangeCfg;  // 0x18",
+          "public Beyond.SerializeFieldDictionary<System.String,Beyond.Gameplay.FocusPointSetting.FocusPointPriorityCfg> priority;  // 0x20",
+          "public UnityEngine.Vector2 focusImportantCD;  // 0x28",
+          "public System.Single focusImportNavmeshCDTimer;  // 0x30",
+          "public System.Single focusImportantRadius;  // 0x34",
+          "public System.Single focusImportantHeight;  // 0x38",
+          "public System.Single focusImportantStartTime;  // 0x3c",
+          "public System.Single focusImportantMaxNavmeshDis;  // 0x40",
+          "public System.Single focusImportantEnemyRadius;  // 0x44",
+          "public System.Single focusImportantEnemyHeight;  // 0x48",
+          "public System.Single focusImportantExitDis;  // 0x4c"
+        ],
+        "methods": [
+          "public System.Void BindMovieController(CriWare.CriManaMovieMaterialBase movieController) { }",
+          "public System.Void UnbindMovieController() { }",
+          "public System.Void Pause(System.Boolean pause) { }",
+          "public System.Void Play() { }",
+          "public System.Void Stop() { }",
+          "public System.Void ReleaseAll() { }",
+          "protected virtual System.Void OnRelease() { }",
+          "public virtual System.Void LateTick(System.Single deltaTime) { }",
+          "private System.Void _SyncMovieUserTime() { }",
+          "private System.Boolean _TryGetMovieDuration(CriWare.CriMana.MovieInfo movieInfo, System.Double& duration) { }",
+          "private System.Void _ApplyTimelineDurationOverride(UnityEngine.Timeline.TimelineAsset timelineAsset, System.Double videoDuration) { }",
+          "private System.Void _RestoreTimelineDurationOverride() { }",
+          "private System.Boolean _HasAnyPlayableClip(UnityEngine.Playables.PlayableAsset playableAsset) { }",
+          "public System.Void PreloadFMVConfig(System.String fmvName, System.Action callback) { }",
+          "private System.Collections.IEnumerator _PreloadFmvConfigInGameplay(System.String fmvName, System.Action callback) { }",
+          "private System.Void _PreprocessBigLogo() { }",
+          "public System.Void SetBigLogoImage(System.String bigLogoPath, System.Boolean useStretchImage, System.Boolean showOnTop, System.Boolean hideBackground) { }",
+          "private System.Collections.Generic.List<System.String> _CollectAllAudioEvents(UnityEngine.Timeline.TimelineAsset timelineAsset) { }",
+          "private UnityEngine.Timeline.TimelineAsset _GetProperFmvSubtitleConfig(Beyond.Gameplay.I18NSingleFMVSubtitleConfig i18NConfig, System.String fmvName) { }",
+          "private System.Void _BindBigLogoTrack(UnityEngine.Playables.PlayableDirector director, UnityEngine.Timeline.TimelineAsset properAsset, Beyond.UI.UIBigLogo bigLogo) { }",
+          "private System.Void _BindSubtitleTrack(UnityEngine.Playables.PlayableDirector director, UnityEngine.Timeline.TimelineAsset properAsset, Beyond.UI.UISubtitle subtitle) { }",
+          "public System.Void .ctor() { }",
+          "public Beyond.TickType <>iFixBaseProxy_get_tickOption() { }",
+          "public System.Void <>iFixBaseProxy_OnRelease() { }",
+          "public System.Void <>iFixBaseProxy_LateTick(System.Single P0) { }",
+          "public System.Void .ctor() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void .ctor() { }"
+        ]
+      },
+      "hits": [
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 5037,
+          "text": "public sealed class <_PreloadFmvConfigInGameplay>d__39 : System.Collections.Generic.IEnumerator`1, System.Collections.IEnumerator, System.IDisposable"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 5042,
+          "text": "public Beyond.Gameplay.FMVController <>4__this;  // 0x20"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 81055,
+          "text": "public class FMVController : Beyond.TickableUIMono"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 81058,
+          "text": "private UnityEngine.Playables.PlayableDirector _fmvDirector;  // 0x68"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 81079,
+          "text": "UnityEngine.Playables.PlayableDirector fmvDirector { get; /* RVA: 0x06C01B08 */ }"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 81084,
+          "text": "public System.Void BindMovieController(CriWare.CriManaMovieMaterialBase movieController) { }"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 81086,
+          "text": "public System.Void UnbindMovieController() { }"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 81110,
+          "text": "public System.Void PreloadFMVConfig(System.String fmvName, System.Action callback) { }"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 81112,
+          "text": "private System.Collections.IEnumerator _PreloadFmvConfigInGameplay(System.String fmvName, System.Action callback) { }"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 359811,
+          "text": "public static IFix.IDMAP0 Beyond-Gameplay-FMVController-get_tickOption0;  // const"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 359812,
+          "text": "public static IFix.IDMAP0 Beyond-Gameplay-FMVController-get_fmvDirector0;  // const"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 359813,
+          "text": "public static IFix.IDMAP0 Beyond-Gameplay-FMVController-_HasAnyPlayableClip0;  // const"
+        }
+      ]
+    },
+    {
+      "name": "CinematicTimelineManagerBase",
+      "role": "timeline root, actor spawn and FMV preprocessing",
+      "block": {
+        "file": "Gameplay.Beyond.dll.cs",
+        "line": 215560,
+        "declaration": "public abstract class CinematicTimelineManagerBase : Beyond.Gameplay.BaseWorldManager",
+        "fields": [
+          "protected Beyond.Resource.CachedPathAssetLoader m_assetLoader;  // 0x80",
+          "protected Beyond.Resource.SimpleAssetLoader m_configLoader;  // 0x88",
+          "protected readonly System.Collections.Generic.Dictionary<System.String,Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle> m_preloadingTimelineHandles;  // 0x90",
+          "protected Beyond.Gameplay.ForbidHandle m_forbidSpIdleHandle;  // 0x98",
+          "protected UnityEngine.Animator m_animator;  // 0xd0",
+          "protected System.UInt32 m_leaderMoveTagHandle;  // 0xd8",
+          "protected System.Boolean m_lowFPSHasSet;  // 0xdc",
+          "protected System.Boolean m_pauseFrameGen;  // 0xdd",
+          "private UnityEngine.Transform <cutsceneRoot>k__BackingField;  // 0xe0",
+          "private readonly System.Collections.Generic.Dictionary<Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle,Beyond.Gameplay.View.CameraMono> m_ditherFacBuildingCameraMonos;  // 0xe8",
+          "private Beyond.Gameplay.Core.GlobalMultiTagHandle m_globalTagHandle;  // 0xf0",
+          "private System.Collections.Generic.Dictionary<System.String,Beyond.Gameplay.I18NSingleCutsceneSubtitleConfig> m_i18NSingleCutsceneSubtitleConfigs;  // 0x100",
+          "private readonly System.Collections.Generic.HashSet<System.Int32> m_cinematicFocusSlotIndices;  // 0x108"
+        ],
+        "methods": [
+          "protected System.Void .ctor() { }",
+          "private static Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelinePreloadProfilerScope _CreateTimelinePreloadProfilerScope(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle) { }",
+          "private static Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelinePreloadStepProfilerScope _CreateTimelinePreloadStepProfilerScope(Unity.Profiling.ProfilerMarker stepMarker) { }",
+          "private static Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelinePreloadProfilerStepScope _CreateTimelinePreloadProfilerScope(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle, Unity.Profiling.ProfilerMarker stepMarker) { }",
+          "protected static System.IDisposable CreateTimelinePreloadProfilerScope(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle, Unity.Profiling.ProfilerMarker stepMarker) { }",
+          "public System.Void OnApplicationPause(System.Boolean pauseStatus) { }",
+          "public virtual System.Void OnMapUnloaded(System.String mapIdStr) { }",
+          "protected virtual System.Void OnRelease() { }",
+          "private System.Void _CleanUpTimelineManager() { }",
+          "private System.Void _CleanUpCacheFile() { }",
+          "private System.Void _ClearPreloadTimelineHandles() { }",
+          "protected System.Void StopTimelineHandlePreloadProcess(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle timelineHandle) { }",
+          "private System.Void _ForceCleanUpGO() { }",
+          "protected virtual System.Void ForceStopAllTimeline() { }",
+          "protected virtual System.Void OnTick(System.Single deltaTime) { }",
+          "protected System.Void TriggerHoldingOptimize(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle) { }",
+          "public virtual System.Void Tick(System.Single deltaTime) { }",
+          "public System.Void PauseTimeByTimeline(System.Boolean pause) { }",
+          "public System.Void PauseTimelineByUI(System.Boolean pause) { }",
+          "protected virtual System.Void PauseAllTimeline() { }",
+          "protected virtual System.Void ResumeAllTimeline() { }",
+          "private System.Void _CreateDirectorRoot() { }",
+          "protected virtual System.Void OnInit() { }",
+          "protected System.Void TryResetFPS() { }",
+          "protected System.Void TryResumeFrameGen() { }",
+          "private System.Void _TryLoadCutsceneSubtitleConfig(System.String cutsceneName) { }",
+          "protected System.Void TryReplaceSubtitlePlayable(Beyond.Gameplay.View.CutsceneRootComponent rootComponent, System.String cutsceneId, Beyond.GEnums.EnvLang envLang, Beyond.I18n.AudioLang audioLang) { }",
+          "protected virtual System.Void RemoveFromPreloadingHandles(System.String cutsceneName) { }",
+          "protected System.Void InitTimelineHandleCommon(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle timelineHandle, System.Action afterFinish, System.Collections.Generic.List<Beyond.Gameplay.Core.EntityPtr> existingInteractives, System.Collections.Generic.List<Beyond.Gameplay.Core.EntityPtr> existingEnemies, System.Collections.Generic.List<System.UInt64> existingSceneObjects, Beyond.Gameplay.Core.CinematicPlayParam playParam) { }",
+          "protected System.Collections.Generic.Dictionary<System.UInt64,Beyond.Gameplay.Core.EntityPtr> GetAndControlExistingInteractive(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle, System.Collections.Generic.List<Beyond.Gameplay.Core.EntityPtr> extraInteractive) { }",
+          "protected System.Collections.Generic.Dictionary<System.UInt64,System.UInt64> GetAndControlExistingSceneObject(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle, System.Collections.Generic.List<System.UInt64> extraSceneObjects) { }",
+          "protected virtual System.Void OnAfterInitTimelineHandle(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle) { }",
+          "protected System.Void InstantiateTimelineRoot(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle timelineHandle, Beyond.Gameplay.View.CutsceneRootComponent& rootComp) { }",
+          "protected System.Void InitEffectInstance(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle timelineHandle) { }",
+          "protected System.Void RemoveEffectInstanceManagement(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle timelineHandle) { }",
+          "protected System.Void ResetTimelineToBeginning(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle) { }",
+          "private UnityEngine.GameObject _GetTimelineRootGoFromAssetHandle(Beyond.Resource.FAssetProxyHandle assetHandle, System.String cutsceneName) { }",
+          "protected System.Void TrySetLowFPS(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle) { }",
+          "protected System.Void TryPauseFrameGen() { }",
+          "protected virtual System.Void ProcessTimelineBeforePlay(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle) { }",
+          "protected System.Void PreprocessTimelineCommonSync(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle) { }",
+          "private System.Void _PreprocessDitherFacBuilding(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle) { }",
+          "protected System.Void TickDitherFacBuildingCameraMonos() { }",
+          "protected virtual System.Void AfterEntitiesInited(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle) { }",
+          "protected virtual System.Void AfterSpawnNPC(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle, Beyond.Gameplay.Core.Entity npcEntity) { }",
+          "protected System.Void OnUsedEntityUnExpectedRelease(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle, Beyond.Gameplay.Core.EventParams eventParams) { }",
+          "protected System.Boolean IsUsingSceneObjects(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle timelineHandle) { }",
+          "private System.Void _PreprocessActors(System.Collections.Generic.List<Beyond.Gameplay.CutsceneActorData> actors, Beyond.Gameplay.View.CutsceneRootComponent rootComp, Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle) { }",
+          "private System.Void _TryAddAddonComponents(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle, Beyond.Gameplay.CutsceneActorData actorData) { }",
+          "private System.Collections.IEnumerator _PreloadRendererMaterialOverrides(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle) { }",
+          "private System.Void _TryApplyRendererMaterialOverrides(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle, Beyond.Gameplay.CutsceneActorData actorData, UnityEngine.GameObject actorGo) { }",
+          "private System.Boolean _ShouldCaptureOriginalRendererMaterials(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle, System.String uniqueId, Beyond.Gameplay.CutsceneEnums.CutsceneObjectType objectType) { }",
+          "private System.Collections.Generic.List<Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle.RendererMaterialRuntimeSnapshot> _CaptureRendererMaterialSnapshots(UnityEngine.GameObject actorGo) { }",
+          "private System.Void _RestoreRendererMaterialSnapshots(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle, System.String uniqueId, UnityEngine.GameObject actorGo) { }",
+          "private UnityEngine.Material[] _CopyMaterials(UnityEngine.Material[] source) { }",
+          "private System.Boolean _TryBuildRuntimeMaterials(Beyond.Gameplay.Core.CinematicTimelineManagerBase.TimelineHandle handle, Beyond.Gameplay.CutsceneRendererMaterialOverride materialOverride, UnityEngine.Material[]& materials) { }",
+          "private System.Boolean _TryFindRenderer(UnityEngine.GameObject actorGo, Beyond.Gameplay.CutsceneRendererMaterialOverride materialOverride, UnityEngine.Renderer& renderer) { }",
+          "private System.Boolean _TryFindRenderer(UnityEngine.GameObject actorGo, System.String rendererPath, System.String rendererType, UnityEngine.Renderer& renderer) { }",
+          "private System.String _GetRendererType(UnityEngine.Renderer renderer) { }",
+          "private System.String _BuildRelativePath(UnityEngine.Transform root, UnityEngine.Transform child) { }"
+        ]
+      },
+      "hits": [
+        {
+          "file": "Assembly-CSharp.dll.cs",
+          "line": 3967,
+          "text": "public UnityEngine.Playables.PlayableDirector p0;  // 0x18"
+        },
+        {
+          "file": "Assembly-CSharp.dll.cs",
+          "line": 4765,
+          "text": "private System.Void <GetDelegateByType>b__2(UnityEngine.Playables.PlayableDirector p0) { }"
+        },
+        {
+          "file": "Assembly-CSharp.dll.cs",
+          "line": 120766,
+          "text": "public static System.Void __Gen_Delegate_Imp2(XLua.DelegateBridge bridge, UnityEngine.Playables.PlayableDirector p0) { }"
+        },
+        {
+          "file": "Assembly-CSharp.dll.cs",
+          "line": 120768,
+          "text": "private static System.Void __Gen_Delegate_Imp2_AfterGC(XLua.DelegateBridge bridge, UnityEngine.Playables.PlayableDirector p0) { }"
+        },
+        {
+          "file": "Assembly-CSharp.dll.cs",
+          "line": 156533,
+          "text": "public class UnityEnginePlayablesPlayableDirectorWrap"
+        },
+        {
+          "file": "Cinemachine.dll.cs",
+          "line": 128,
+          "text": "public virtual System.Void GatherProperties(UnityEngine.Playables.PlayableDirector director, UnityEngine.Timeline.IPropertyCollector driver) { }"
+        },
+        {
+          "file": "CriMw.CriWare.Runtime.dll.cs",
+          "line": 8190,
+          "text": "private UnityEngine.Playables.PlayableDirector m_Director;  // 0x10"
+        },
+        {
+          "file": "CriMw.CriWare.Runtime.dll.cs",
+          "line": 8367,
+          "text": "private UnityEngine.Playables.PlayableDirector m_PlayableDirector;  // 0x10"
+        },
+        {
+          "file": "CriMw.CriWare.Runtime.dll.cs",
+          "line": 8457,
+          "text": "public System.Void BindBehaviourMovieMaterial(UnityEngine.Playables.PlayableDirector director, CriWare.CriManaMovieMaterialBase boundMovieMaterial) { }"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 59052,
+          "text": "public UnityEngine.Playables.PlayableDirector director;  // 0x10"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 59180,
+          "text": "UnityEngine.Playables.PlayableDirector director { get; /* RVA: -1  // abstract */ }"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 59301,
+          "text": "public readonly System.Collections.Generic.HashSet<UnityEngine.Playables.PlayableDirector> asyncCompileDiscoveredDirectors;  // 0x278"
+        }
+      ]
+    },
+    {
+      "name": "SquadManager",
+      "role": "account character / endmin gender switch",
+      "block": {
+        "file": "Gameplay.Beyond.dll.cs",
+        "line": 215022,
+        "declaration": "public class SquadManager : Beyond.Gameplay.BasePlayerManager",
+        "fields": [
+          "private readonly System.Collections.Generic.Dictionary<System.UInt64,Beyond.Gameplay.Core.Entity> m_characters;  // 0x70",
+          "private readonly System.Collections.Generic.List<Beyond.Gameplay.Core.Entity> m_serverChars;  // 0x78",
+          "private readonly System.Collections.Generic.List<Beyond.Gameplay.Core.Entity> m_clientChars;  // 0x80",
+          "private Beyond.Gameplay.View.ModelVisibleTypeMask m_squadHideTypeMask;  // 0x88",
+          "private Beyond.Resource.Runtime.PreloadGroupHandle m_endminCharPreloadHandle;  // 0x90",
+          "private System.String m_lastEndminTid;  // 0x98",
+          "private Beyond.Gameplay.Core.SquadManager.Squad <curSquad>k__BackingField;  // 0xa0",
+          "private Beyond.Gameplay.Core.SquadManager.ServerSquad <curRealSquad>k__BackingField;  // 0xa8",
+          "private System.Boolean m_serverTeamChanged;  // 0xb0",
+          "private readonly System.Collections.Generic.List<Beyond.Gameplay.Core.SquadManager.ClientSquad.Request> m_clientTempSquadRequests;  // 0xb8",
+          "private readonly System.Collections.Generic.Dictionary<System.UInt64,Beyond.Gameplay.Core.MultiTagHandle> m_realSquadInvincibleTags;  // 0xc0",
+          "private System.Boolean <isWaitingNewSelfInfo>k__BackingField;  // 0xc8",
+          "private System.Boolean m_isSquadLoading;  // 0xc9"
+        ],
+        "methods": [
+          "public System.Void .ctor() { }",
+          "public Beyond.Gameplay.Core.SquadManager.Squad.Slot GetSlotInCurSquad(System.UInt64 charInstId) { }",
+          "public Beyond.Gameplay.Core.SquadManager.Squad.Slot GetSlotInCurSquad(System.Int32 slotIndex) { }",
+          "public Beyond.Gameplay.Core.SquadManager.Squad.Slot GetSlotInCurSquad(Beyond.Gameplay.Core.AbilitySystem abilityCom) { }",
+          "public System.Int32 GetMemberIndex(Beyond.Gameplay.Core.Entity character) { }",
+          "public Beyond.Gameplay.Core.Entity GetMemberBySlot(System.Int32 slotIndex) { }",
+          "public Beyond.Gameplay.Core.Entity GetMemberByTemplateId(System.String charTemplateId) { }",
+          "private Beyond.Gameplay.Core.Entity _GetCharacter(System.UInt64 charInstId) { }",
+          "public System.Boolean TryGetCharacter(System.UInt64 charInstId, Beyond.Gameplay.Core.Entity& character) { }",
+          "public System.Boolean SetLeaderByClient(Beyond.Gameplay.Core.Entity newLeader, Beyond.Gameplay.SetLeaderReason reason) { }",
+          "public System.Void OnEndminGenderSwitch() { }",
+          "private System.Void _RecreateSlotCharacter(Beyond.Gameplay.Core.SquadManager.Squad squad, Beyond.Gameplay.Core.SquadManager.Squad.Slot slot) { }",
+          "public System.Void ServerTeleportSquad(System.Int32 levelIdNum, UnityEngine.Vector3 pos, UnityEngine.Quaternion rot, Beyond.Gameplay.TeleportParam& teleportParam, System.Action teleportCb) { }",
+          "public System.Void TeleportSquad(UnityEngine.Vector3 pos, UnityEngine.Quaternion rot, Beyond.Gameplay.TeleportSource source, Beyond.Gameplay.TeleportUIType tpUIType, Beyond.Gameplay.TeleportOptions options, System.Action teleportCb) { }",
+          "private System.Void _DoTeleportImmediately(UnityEngine.Vector3 pos, UnityEngine.Quaternion centerCharRot) { }",
+          "private System.Void _OnSquadTeleport(UnityEngine.Vector3 mainCharNewPos) { }",
+          "public System.Void TeleportSquadShort(UnityEngine.Vector3 pos, UnityEngine.Quaternion rot) { }",
+          "public System.Void TeleportSquadByOffset(UnityEngine.Vector3 posOffset, UnityEngine.Quaternion rotOffset, System.Action teleportCb) { }",
+          "private System.Void _DoTeleportByOffsetImmediately(UnityEngine.Vector3 posOffset, UnityEngine.Quaternion rotOffset) { }",
+          "private System.Void _TeleportMemberImmediately(Beyond.Gameplay.Core.Entity member, UnityEngine.Vector3 pos, UnityEngine.Quaternion centerCharRot) { }",
+          "public System.Void TeleportSquadMemberToAndCleanRootMotion(System.Int32 memberIndex, UnityEngine.Vector3 pos, UnityEngine.Quaternion centerCharRot) { }",
+          "public System.Void TeleportSquadAndKeepCamera(UnityEngine.Vector3 pos, UnityEngine.Quaternion rot, System.Boolean keepCamera) { }",
+          "public System.Void OnTeleportFinish(System.Boolean hasLoading) { }",
+          "private static System.Void _ResetCharacterAnimation(Beyond.Gameplay.Core.Entity entity) { }",
+          "public System.UInt32 SwitchToSingleSquad(System.String reason) { }",
+          "public System.UInt32 SwitchToTempSquadByInstIds(System.String reason, System.Collections.Generic.List<System.UInt64> charInstIds) { }",
+          "public System.UInt32 SwitchToTempSquadEndminOnly(System.String reason, System.Boolean isVisitorSpaceship, System.Boolean realSquadInvincible) { }",
+          "public System.UInt32 SwitchToTempSquad(System.String reason, System.Collections.Generic.List<System.String> charTemplateIds, System.Int32 inLeaderIndex) { }",
+          "public System.UInt32 SwitchToTempSquadReplaceLeaderWithEndmin(System.String reason) { }",
+          "private System.UInt32 _PushTempSquad(Beyond.Gameplay.Core.SquadManager.ClientSquad.Request tempSquad) { }",
+          "private System.Void _RefreshRealSquadInvincible() { }",
+          "private System.Void _ClearAllRealSquadInvincible() { }",
+          "public System.Void PopTempSquad(System.UInt32 handle, System.Boolean playFx) { }",
+          "private System.Void _ClearAllTempSquad() { }",
+          "private Beyond.Gameplay.Core.SquadManager.ClientSquad _SpawnClientSquad(Beyond.Gameplay.Core.SquadManager.ClientSquad.Request request) { }",
+          "private System.Void _ApplyToCurrentSquad(Beyond.Gameplay.Core.SquadManager.Squad squad, Beyond.Gameplay.SetLeaderReason reason) { }",
+          "private System.Void _RefreshCharactersOnSquadApply() { }",
+          "private System.Void _ReleaseObsoleteClientCharacters() { }",
+          "private System.Void _RefreshServerCharacterShowHide(System.String switchReason) { }",
+          "public System.Void SetHide(System.Boolean hide, Beyond.Gameplay.View.ModelVisibleType visibleType, System.Boolean withEffect) { }",
+          "public System.Void SetMemberHideByIndex(System.Boolean hide, Beyond.Gameplay.View.ModelVisibleType visibleType, System.Int32 index, System.Boolean withEffect) { }",
+          "private System.Void _SetHideByIndexInner(System.Boolean hide, Beyond.Gameplay.View.ModelVisibleTypeMask visibleTypeMask, System.Int32 index, System.Boolean withEffect) { }",
+          "public System.Void OnServerLeaveScene() { }",
+          "public System.Void OnMapUnloaded(System.Boolean isRelease) { }",
+          "private System.Void _PlaySwitchSquadFx() { }",
+          "private System.Void _PreloadEndmin() { }",
+          "private static System.Void _SetMainCharacter(Beyond.Gameplay.Core.Entity newLeader, Beyond.Gameplay.SetLeaderReason reason) { }",
+          "private static System.Void _SwapLeaderPosIfNeeded(Beyond.Gameplay.Core.Entity newLeader, Beyond.Gameplay.SetLeaderReason reason, Beyond.Gameplay.Core.Entity oldMainChar) { }",
+          "private static System.Void _PostProcessMembers(Beyond.Gameplay.Core.Entity newMainChar, Beyond.Gameplay.Core.Entity oldMainChar) { }",
+          "public System.Boolean IsAllDead() { }",
+          "public System.Boolean IsTeamDeathRelease(Beyond.Gameplay.Core.Entity entity) { }",
+          "private static System.Boolean _IsSquadAllDead(Beyond.Gameplay.Core.SquadManager.Squad squad) { }",
+          "public System.Void OnCharacterDie(Beyond.Gameplay.Core.Entity character) { }",
+          "public System.Boolean IsAllMemberReady() { }",
+          "public System.Void ServerSpawnSquad(Proto.SC_SELF_SCENE_INFO msg) { }",
+          "private System.Void _CreateNewServerSquadWhenTeamChanged() { }",
+          "private System.Boolean _IsSelfInfoWithServerPos(Proto.SELF_INFO_REASON_TYPE reason) { }",
+          "private static UnityEngine.Vector3 _GetTargetPosFromSelfInfo(Proto.SC_SELF_SCENE_INFO msg) { }",
+          "private System.Void _LoadSceneIfNeed(Proto.SC_SELF_SCENE_INFO msg) { }",
+          "private System.Boolean _ServerSpawnSquadNeedResetCamera(Proto.SELF_INFO_REASON_TYPE reason) { }"
+        ]
+      },
+      "hits": [
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 215030,
+          "text": "private System.String m_lastEndminTid;  // 0x98"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 215074,
+          "text": "public System.Void OnEndminGenderSwitch() { }"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 215076,
+          "text": "private System.Void _RecreateSlotCharacter(Beyond.Gameplay.Core.SquadManager.Squad squad, Beyond.Gameplay.Core.SquadManager.Squad.Slot slot) { }"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 375959,
+          "text": "public static IFix.IDMAP0 Beyond-Gameplay-Core-SquadManager-_RecreateSlotCharacter0;  // const"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 375960,
+          "text": "public static IFix.IDMAP0 Beyond-Gameplay-Core-SquadManager-OnEndminGenderSwitch0;  // const"
+        }
+      ]
+    },
+    {
+      "name": "NarrativeGenderEnum",
+      "role": "Default/Male/Female branch",
+      "block": null,
+      "hits": [
+        {
+          "file": "AK.Wwise.Unity.API.dll.cs",
+          "line": 275,
+          "text": "public static AkAudioObjectDestination eDefault;  // const"
+        },
+        {
+          "file": "AK.Wwise.Unity.API.dll.cs",
+          "line": 733,
+          "text": "System.Boolean isDefaultDevice { get; /* RVA: 0x04009060 */ set; /* RVA: 0x0539FFA0 */ }"
+        },
+        {
+          "file": "AK.Wwise.Unity.API.dll.cs",
+          "line": 1013,
+          "text": "public static AkFloorPlane AkFloorPlane_Default;  // const"
+        },
+        {
+          "file": "AK.Wwise.Unity.API.dll.cs",
+          "line": 2051,
+          "text": "public static AkMonitorErrorCode ErrorCode_RevertingToDefaultAudioDevice;  // const"
+        },
+        {
+          "file": "AK.Wwise.Unity.API.dll.cs",
+          "line": 2089,
+          "text": "public static AkMonitorErrorCode ErrorCode_NoDefaultSwitch;  // const"
+        },
+        {
+          "file": "AK.Wwise.Unity.API.dll.cs",
+          "line": 2637,
+          "text": "public static AkQueryRTPCValue RTPCValue_Default;  // const"
+        },
+        {
+          "file": "AK.Wwise.Unity.API.dll.cs",
+          "line": 2947,
+          "text": "public static AkSetPositionFlags AkSetPositionFlags_Default;  // const"
+        },
+        {
+          "file": "AK.Wwise.Unity.API.dll.cs",
+          "line": 3449,
+          "text": "public static System.Void CSharp_AkDeviceDescription_isDefaultDevice_set(System.IntPtr jarg1, System.Boolean jarg2) { }"
+        },
+        {
+          "file": "AK.Wwise.Unity.API.dll.cs",
+          "line": 3451,
+          "text": "public static System.Boolean CSharp_AkDeviceDescription_isDefaultDevice_get(System.IntPtr jarg1) { }"
+        },
+        {
+          "file": "AK.Wwise.Unity.API.dll.cs",
+          "line": 4317,
+          "text": "public static System.Int32 CSharp_AddDefaultListener(System.UInt64 jarg1) { }"
+        },
+        {
+          "file": "AK.Wwise.Unity.API.dll.cs",
+          "line": 4319,
+          "text": "public static System.Int32 CSharp_RemoveDefaultListener(System.UInt64 jarg1) { }"
+        },
+        {
+          "file": "AK.Wwise.Unity.API.dll.cs",
+          "line": 4321,
+          "text": "public static System.Int32 CSharp_ResetListenersToDefault(System.UInt64 jarg1) { }"
+        }
+      ]
+    },
+    {
+      "name": "CheckNarrativeGender",
+      "role": "runtime narrative gender condition",
+      "block": {
+        "file": "Gameplay.Beyond.dll.cs",
+        "line": 126962,
+        "declaration": "public class CheckNarrativeGender : Beyond.Gameplay.GameConditionClient",
+        "fields": [
+          "public Beyond.Gameplay.NarrativeGenderEnum narrativeGender;  // 0x90",
+          "public Beyond.Gameplay.Actions.Param<System.String> _formulaId;  // 0x90",
+          "protected System.String m_formulaId;  // 0x98",
+          "public Beyond.Gameplay.Actions.Param<System.String> _domainId;  // 0x90",
+          "public Beyond.Gameplay.Actions.Param<System.String> _levelId;  // 0x90",
+          "public Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr> _entity;  // 0x98",
+          "private Beyond.Gameplay.Core.ListenerHandle m_eventHandleScan;  // 0xa0"
+        ],
+        "methods": [
+          "public virtual System.Void CollectParams(System.Collections.Generic.List<Beyond.Gameplay.Actions.IParamBindable>& paramList) { }",
+          "protected virtual System.Void OnActivate() { }",
+          "protected virtual System.Void OnDeactivate() { }",
+          "protected System.Void GetResult() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void <>iFixBaseProxy_OnActivate() { }",
+          "public System.Void <>iFixBaseProxy_OnDeactivate() { }",
+          "public virtual System.Void CollectParams(System.Collections.Generic.List<Beyond.Gameplay.Actions.IParamBindable>& paramList) { }",
+          "protected virtual System.Void OnActivate() { }",
+          "protected System.Void GetResult() { }",
+          "private System.Void _OnPlayerGenderChanged() { }",
+          "protected virtual System.Void OnDeactivate() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void <>iFixBaseProxy_OnActivate() { }",
+          "public System.Void <>iFixBaseProxy_OnDeactivate() { }",
+          "public virtual System.Void CollectParams(System.Collections.Generic.List<Beyond.Gameplay.Actions.IParamBindable>& paramList) { }",
+          "protected virtual System.Void OnActivate() { }",
+          "protected virtual System.Void OnDeactivate() { }",
+          "private System.Void _GetResult(Beyond.EventData<Beyond.Gameplay.Core.MovementComponent.MoveMode,Beyond.Gameplay.Core.MovementComponent.MoveMode>& _) { }",
+          "public System.Void .ctor() { }",
+          "public System.Void <>iFixBaseProxy_OnActivate() { }",
+          "public System.Void <>iFixBaseProxy_OnDeactivate() { }",
+          "public virtual System.Void CollectParams(System.Collections.Generic.List<Beyond.Gameplay.Actions.IParamBindable>& paramList) { }",
+          "protected virtual System.Void OnActivate() { }",
+          "protected System.Void GetResult() { }",
+          "private System.Void _OnCurrLevelChanged(Beyond.EventData<Beyond.Gameplay.Core.LevelChangeReason>& data) { }",
+          "private System.Void _OnPinStateChanged(Beyond.EventData<System.String,System.Int32,System.Int32>& data) { }",
+          "protected virtual System.Void OnDeactivate() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void <>iFixBaseProxy_OnActivate() { }",
+          "public System.Void <>iFixBaseProxy_OnDeactivate() { }",
+          "public virtual System.Void CollectParams(System.Collections.Generic.List<Beyond.Gameplay.Actions.IParamBindable>& paramList) { }",
+          "protected virtual System.Void OnActivate() { }",
+          "protected System.Void GetResult() { }",
+          "protected System.Void Callback(Beyond.EventData<Beyond.GEnums.DomainPoiType,System.String,System.Int32,System.Int32>& eventData) { }",
+          "protected virtual System.Void OnDeactivate() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void <>iFixBaseProxy_OnActivate() { }",
+          "public System.Void <>iFixBaseProxy_OnDeactivate() { }",
+          "public virtual System.Void CollectParams(System.Collections.Generic.List<Beyond.Gameplay.Actions.IParamBindable>& paramList) { }",
+          "protected virtual System.Void OnActivate() { }",
+          "protected System.Void GetResult() { }",
+          "protected System.Void OnBeingScanned(Beyond.Gameplay.ParamBlackboard blackboard) { }",
+          "protected System.Void OnScanEnd() { }",
+          "protected virtual System.Void OnDeactivate() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void <>iFixBaseProxy_OnActivate() { }",
+          "public System.Void <>iFixBaseProxy_OnDeactivate() { }",
+          "public virtual System.Void CollectParams(System.Collections.Generic.List<Beyond.Gameplay.Actions.IParamBindable>& paramList) { }",
+          "protected virtual System.Void OnActivate() { }",
+          "private System.Void _UpdateResult() { }",
+          "private System.Void _OnAchieveUpdate(Beyond.EventData<System.String>& data) { }",
+          "private System.Void _OnSeasonTowerUpdate() { }",
+          "protected virtual System.Void OnDeactivate() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void <>iFixBaseProxy_OnActivate() { }",
+          "public System.Void <>iFixBaseProxy_OnDeactivate() { }"
+        ]
+      },
+      "hits": [
+        {
+          "file": "Assembly-CSharp.dll.cs",
+          "line": 1799,
+          "text": "private System.Void <Init>b__836(System.IntPtr L, System.Int32 idx, Beyond.Gameplay.NarrativeGenderEnum& val) { }"
+        },
+        {
+          "file": "Assembly-CSharp.dll.cs",
+          "line": 30157,
+          "text": "public sealed class stringboolobjectstringBeyond_Gameplay_NarrativeGenderEnum_uintDelegate`6 : System.MulticastDelegate"
+        },
+        {
+          "file": "Assembly-CSharp.dll.cs",
+          "line": 30172,
+          "text": "public sealed class stringobjectstringBeyond_Gameplay_NarrativeGenderEnum_uintDelegate`5 : System.MulticastDelegate"
+        },
+        {
+          "file": "Assembly-CSharp.dll.cs",
+          "line": 50377,
+          "text": "public sealed class stringBeyond_Gameplay_NarrativeGenderEnum_stringDelegate`3 : System.MulticastDelegate"
+        },
+        {
+          "file": "Assembly-CSharp.dll.cs",
+          "line": 50392,
+          "text": "public sealed class Beyond_Gameplay_NarrativeGenderEnumstring_stringDelegate`3 : System.MulticastDelegate"
+        },
+        {
+          "file": "Assembly-CSharp.dll.cs",
+          "line": 60397,
+          "text": "public sealed class Beyond_Gameplay_NarrativeGenderEnum_voidDelegate`1 : System.MulticastDelegate"
+        },
+        {
+          "file": "Assembly-CSharp.dll.cs",
+          "line": 76107,
+          "text": "private static System.Int32 LuastringboolobjectstringBeyond_Gameplay_NarrativeGenderEnum_uintCall(System.IntPtr L, System.Delegate delegate, XLua.ObjectTranslator translator, System.Collections.Generic.List<System.Type> castType) { }"
+        },
+        {
+          "file": "Assembly-CSharp.dll.cs",
+          "line": 76109,
+          "text": "private static System.Int32 LuastringobjectstringBeyond_Gameplay_NarrativeGenderEnum_uintCall(System.IntPtr L, System.Delegate delegate, XLua.ObjectTranslator translator, System.Collections.Generic.List<System.Type> castType) { }"
+        },
+        {
+          "file": "Assembly-CSharp.dll.cs",
+          "line": 80475,
+          "text": "private static System.Int32 LuastringBeyond_Gameplay_NarrativeGenderEnum_stringCall(System.IntPtr L, System.Delegate delegate, XLua.ObjectTranslator translator, System.Collections.Generic.List<System.Type> castType) { }"
+        },
+        {
+          "file": "Assembly-CSharp.dll.cs",
+          "line": 80477,
+          "text": "private static System.Int32 LuaBeyond_Gameplay_NarrativeGenderEnumstring_stringCall(System.IntPtr L, System.Delegate delegate, XLua.ObjectTranslator translator, System.Collections.Generic.List<System.Type> castType) { }"
+        },
+        {
+          "file": "Assembly-CSharp.dll.cs",
+          "line": 82511,
+          "text": "private static System.Int32 LuaBeyond_Gameplay_NarrativeGenderEnum_voidCall(System.IntPtr L, System.Delegate delegate, XLua.ObjectTranslator translator, System.Collections.Generic.List<System.Type> castType) { }"
+        },
+        {
+          "file": "Assembly-CSharp.dll.cs",
+          "line": 86278,
+          "text": "public Beyond.Reflection.GenericDelegateCallerGen.stringboolobjectstringBeyond_Gameplay_NarrativeGenderEnum_uintDelegate<System.String,System.Boolean,System.Object,System.String,Beyond.Gameplay.NarrativeGenderEnum,System.UInt32> _6247534217743843420;  // 0x17b0"
+        }
+      ]
+    },
+    {
+      "name": "CheckCurCutsceneName",
+      "role": "cutscene and gender condition",
+      "block": {
+        "file": "Gameplay.Beyond.dll.cs",
+        "line": 126564,
+        "declaration": "public class CheckCurCutsceneName : Beyond.Gameplay.GameConditionClient",
+        "fields": [
+          "public Beyond.Gameplay.Actions.Param<System.String> _cutsceneName;  // 0x90",
+          "public Beyond.Gameplay.Actions.Param<System.Boolean> _acceptEndminGenderMale;  // 0x98",
+          "public Beyond.Gameplay.Actions.Param<System.Boolean> _acceptEndminGenderFemale;  // 0xa0",
+          "private Beyond.Gameplay.Audio.AudioStateSystem.ActionHandler m_audioStateActionHandler;  // 0xa8",
+          "public Beyond.Gameplay.Actions.Param<System.Int32> _needCount;  // 0x90",
+          "protected System.String m_roomId;  // 0x98",
+          "public Beyond.Gameplay.Actions.Param<Beyond.GEnums.CompareOperator> _comparer;  // 0x90",
+          "public Beyond.Gameplay.Actions.Param<System.Int32> _maxRarity;  // 0x98",
+          "public Beyond.Gameplay.Actions.Param<System.String> _domainId;  // 0x90",
+          "public Beyond.Gameplay.Actions.Param<System.Int32> _level;  // 0x98",
+          "public Beyond.Gameplay.Actions.Param<Beyond.GEnums.CompareOperator> _comparer;  // 0xa0",
+          "public Beyond.Gameplay.Actions.Param<System.String> _channelId;  // 0x90",
+          "public Beyond.Gameplay.Actions.Param<System.Int32> _level;  // 0x98",
+          "public Beyond.Gameplay.Actions.Param<Beyond.GEnums.CompareOperator> _comparer;  // 0xa0",
+          "public Beyond.Gameplay.Actions.Param<System.UInt64> m_logicIdGlobal;  // 0x90",
+          "private Beyond.Gameplay.Core.ListenerHandle m_eventHandle;  // 0x98"
+        ],
+        "methods": [
+          "public virtual System.Void CollectParams(System.Collections.Generic.List<Beyond.Gameplay.Actions.IParamBindable>& paramList) { }",
+          "protected virtual System.Void OnActivate() { }",
+          "protected virtual System.Void OnDeactivate() { }",
+          "private System.Void _OnAudioCutsceneStateChanged(Beyond.Gameplay.Audio.AudioStateSystem.EAudioState fromState, Beyond.Gameplay.Audio.AudioStateSystem.EAudioState toState) { }",
+          "private System.Void _UpdateResult() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void <>iFixBaseProxy_OnActivate() { }",
+          "public System.Void <>iFixBaseProxy_OnDeactivate() { }",
+          "public virtual System.Void CollectParams(System.Collections.Generic.List<Beyond.Gameplay.Actions.IParamBindable>& paramList) { }",
+          "protected virtual System.Void OnActivate() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void <>iFixBaseProxy_OnActivate() { }",
+          "public virtual System.Void CollectParams(System.Collections.Generic.List<Beyond.Gameplay.Actions.IParamBindable>& paramList) { }",
+          "protected virtual System.Void OnActivate() { }",
+          "protected virtual System.Void OnDeactivate() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void <>iFixBaseProxy_OnActivate() { }",
+          "public System.Void <>iFixBaseProxy_OnDeactivate() { }",
+          "public virtual System.Void CollectParams(System.Collections.Generic.List<Beyond.Gameplay.Actions.IParamBindable>& paramList) { }",
+          "protected virtual System.Void OnActivate() { }",
+          "protected virtual System.Void OnDeactivate() { }",
+          "protected System.Void Callback(Beyond.EventData<System.String,System.UInt32,System.UInt64>& eventData) { }",
+          "protected System.Void GetResult() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void <>iFixBaseProxy_OnActivate() { }",
+          "public System.Void <>iFixBaseProxy_OnDeactivate() { }",
+          "public virtual System.Void CollectParams(System.Collections.Generic.List<Beyond.Gameplay.Actions.IParamBindable>& paramList) { }",
+          "protected virtual System.Void OnActivate() { }",
+          "protected virtual System.Void OnDeactivate() { }",
+          "protected System.Void GetResult() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void <>iFixBaseProxy_OnActivate() { }",
+          "public System.Void <>iFixBaseProxy_OnDeactivate() { }",
+          "public virtual System.Void CollectParams(System.Collections.Generic.List<Beyond.Gameplay.Actions.IParamBindable>& paramList) { }",
+          "protected virtual System.Void OnActivate() { }",
+          "protected System.Void Callback() { }",
+          "protected virtual System.Void OnDeactivate() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void <>iFixBaseProxy_OnActivate() { }",
+          "public System.Void <>iFixBaseProxy_OnDeactivate() { }",
+          "public virtual System.Void CollectParams(System.Collections.Generic.List<Beyond.Gameplay.Actions.IParamBindable>& paramList) { }",
+          "protected virtual System.Void OnActivate() { }",
+          "private System.Void _Bind() { }",
+          "private System.Void _OnEntityStart(Beyond.Gameplay.ParamBlackboard param) { }",
+          "private System.Void _TryUnBind() { }",
+          "protected virtual System.Void OnDeactivate() { }",
+          "public System.Void .ctor() { }",
+          "public System.Void <>iFixBaseProxy_OnActivate() { }",
+          "public System.Void <>iFixBaseProxy_OnDeactivate() { }"
+        ]
+      },
+      "hits": [
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 126564,
+          "text": "public class CheckCurCutsceneName : Beyond.Gameplay.GameConditionClient"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 126568,
+          "text": "public Beyond.Gameplay.Actions.Param<System.Boolean> _acceptEndminGenderMale;  // 0x98"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 126569,
+          "text": "public Beyond.Gameplay.Actions.Param<System.Boolean> _acceptEndminGenderFemale;  // 0xa0"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 373284,
+          "text": "public static IFix.IDMAP0 Beyond-Gameplay-CheckCurCutsceneName-CollectParams0;  // const"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 373285,
+          "text": "public static IFix.IDMAP0 Beyond-Gameplay-CheckCurCutsceneName-_UpdateResult0;  // const"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 373286,
+          "text": "public static IFix.IDMAP0 Beyond-Gameplay-CheckCurCutsceneName-_OnAudioCutsceneStateChanged0;  // const"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 373288,
+          "text": "public static IFix.IDMAP0 Beyond-Gameplay-CheckCurCutsceneName-OnActivate0;  // const"
+        },
+        {
+          "file": "Gameplay.Beyond.dll.cs",
+          "line": 373294,
+          "text": "public static IFix.IDMAP0 Beyond-Gameplay-CheckCurCutsceneName-OnDeactivate0;  // const"
+        },
+        {
+          "file": "MemoryPack.Beyond.dll.cs",
+          "line": 26647,
+          "text": "public class Beyond_Gameplay_CheckCurCutsceneNameFormatter : MemoryPack.MemoryPackFormatter`1"
+        },
+        {
+          "file": "MemoryPack.Beyond.dll.cs",
+          "line": 26651,
+          "text": "public virtual System.Void Deserialize(MemoryPack.MemoryPackReader& reader, Beyond.Gameplay.CheckCurCutsceneName& value) { }"
+        },
+        {
+          "file": "MemoryPack.Beyond.dll.cs",
+          "line": 26658,
+          "text": "public sealed class Beyond_Gameplay_CheckCurCutsceneNameForMemoryPackFormatter : MemoryPack.MemoryPackFormatter`1"
+        },
+        {
+          "file": "MemoryPack.Beyond.dll.cs",
+          "line": 26662,
+          "text": "public virtual System.Void Deserialize(MemoryPack.MemoryPackReader& reader, Beyond_Gameplay_CheckCurCutsceneNameForMemoryPack& value) { }"
+        }
+      ]
+    }
+  ],
+  "confidence": {
+    "RenderSilhouetteRT": "high-static",
+    "FMVController": "medium-static",
+    "CinematicTimelineManagerBase": "high-static",
+    "SquadManager": "medium-static",
+    "NarrativeGenderEnum": "high-static",
+    "CheckNarrativeGender": "medium-static",
+    "CheckCurCutsceneName": "medium-static"
+  }
+}

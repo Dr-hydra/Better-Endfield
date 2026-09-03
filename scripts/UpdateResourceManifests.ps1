@@ -35,6 +35,11 @@ if ($LASTEXITCODE -ne 0) { throw 'Character asset scan failed.' }
     '--output' (Join-Path $currentInputs 'character-presets.json')
 if ($LASTEXITCODE -ne 0) { throw 'Character preset generation failed.' }
 
+$embeddedCharacterPresets = Join-Path $Workspace `
+    'ui\BetterEndfield.UI\Assets\model\character-presets.json'
+Copy-Item -LiteralPath (Join-Path $currentInputs 'character-presets.json') `
+    -Destination $embeddedCharacterPresets -Force
+
 $arguments = @(
     '-3',
     (Join-Path $Workspace 'scripts\GenerateResourceManifests.py'),
@@ -62,7 +67,8 @@ foreach ($relativePath in $manifestArtifacts) {
 # They are built after a user selects the target speaker and language.
 foreach ($relativePath in @(
     'manifests\model\action-manifest.json',
-    'manifests\voice\voice-event-media-manifest.json')) {
+    'manifests\voice\voice-event-media-manifest.json',
+    'ui\BetterEndfield.UI\Assets\model\character-presets.json')) {
     $artifact = Join-Path $Workspace $relativePath
     try {
         $null = Get-Content -LiteralPath $artifact -Raw | ConvertFrom-Json

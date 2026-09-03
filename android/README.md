@@ -4,6 +4,9 @@ Android ARM64 and LSPosed workspace for Better Endfield. The Android port keeps
 the desktop project's module boundary: a small runtime owns IL2CPP access and
 independent feature modules implement game behavior.
 
+The packaged Android release is an LSPosed module and requires a working
+LSPosed/LSP framework. Installing the APK alone does not inject it into the game.
+
 The first feature module is `voice.character`. It combines two desktop routes:
 resident `BEVCAT01` Media-ID replacement through Wwise `CSharp_SetMedia`, and
 external-source replacement through `AudioAdapter.PostEventExternal`. External

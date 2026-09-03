@@ -60,8 +60,10 @@ export interface RdpsShare {
 export interface DamageEvent {
   id?: number;
   actionId?: number;
+  parentEffectId?: number;
   time: number;
   damage: number;
+  rawDamage?: number;
   hpDelta?: number;
   damageType?: number;
   decorateMask?: number;
@@ -112,6 +114,7 @@ export interface CombatEffect {
   targetEntityId?: string;
   skillId?: string;
   value?: number;
+  rawValue?: number;
   hpDelta?: number;
   critical?: boolean;
   damageType?: number;

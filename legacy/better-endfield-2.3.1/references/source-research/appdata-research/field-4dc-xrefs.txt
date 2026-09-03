@@ -1,0 +1,2 @@
+input=E:\Endfield Game\GameAssembly.dll imagebase=0x180000000 matches=1
+func=0x183C200C0 rva=0x3C200C0 insn=0x183C2010A +0x4A JUMPOUT_w_3 mov     ebx, [rax+4DCh]

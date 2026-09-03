@@ -1,0 +1,23 @@
+{
+  "m_Avatar": {
+    "m_FileID": 0,
+    "m_PathID": 0,
+    "Name": "",
+    "IsNull": true
+  },
+  "m_Controller": {
+    "m_FileID": 0,
+    "m_PathID": 0,
+    "Name": "",
+    "IsNull": true
+  },
+  "m_HasTransformHierarchy": false,
+  "m_Enabled": 1,
+  "m_GameObject": {
+    "m_FileID": 0,
+    "m_PathID": 6943421171331547521,
+    "Name": "Main",
+    "IsNull": false
+  },
+  "Name": "Main"
+}

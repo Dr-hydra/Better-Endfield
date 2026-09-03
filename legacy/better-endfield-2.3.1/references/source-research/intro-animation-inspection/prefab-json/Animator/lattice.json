@@ -1,0 +1,23 @@
+{
+  "m_Avatar": {
+    "m_FileID": 0,
+    "m_PathID": 0,
+    "Name": "",
+    "IsNull": true
+  },
+  "m_Controller": {
+    "m_FileID": 0,
+    "m_PathID": 0,
+    "Name": "",
+    "IsNull": true
+  },
+  "m_HasTransformHierarchy": false,
+  "m_Enabled": 1,
+  "m_GameObject": {
+    "m_FileID": 0,
+    "m_PathID": 8249886813434362746,
+    "Name": "lattice",
+    "IsNull": false
+  },
+  "Name": "lattice"
+}

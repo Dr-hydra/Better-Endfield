@@ -1,0 +1,1046 @@
+{
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-08-04T01:42:00.834303+00:00",
+  "criterion": "Unity AnimationClip m_MuscleClip.m_LoopTime",
+  "sourceRoots": [
+    "E:\\Dr.Hydra\\EF-Start-Change\\research\\character-catalog\\walk-clip-metadata.json"
+  ],
+  "clips": [
+    {
+      "name": "A_actor_aglina_dialog_state_shy2_walk_end",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 2.4500008,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_aglina_dialog_state_shy2_walk_loop",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 8.150001,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_aglina_dialog_state_shy2_walk_start",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 1.8666668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_aglina_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.4,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_aglina_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.6166668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_aglina_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.3333335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_ardelia_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.4,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_ardelia_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.6166668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_ardelia_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.3333335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_aurora_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.4,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_aurora_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.6166668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_aurora_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.3333335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_avywen_dialog_single_walkhandsback",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.2000003,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_avywen_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.4,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_avywen_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.6166668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_avywen_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.3333335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_camille_dialog_single_walk_loop_careful_additive",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 1.0666667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_camille_dialog_single_walk_loop_careful_sp",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 5.6833334,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_camille_dialog_single_walk_stop_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 2.5666668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_camille_dialog_single_walk_stop_r",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 2.5666668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_camille_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.7333336,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_camille_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.766667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_camille_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.0,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_chen_dialog_single_walk_stop_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 1.2,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_chen_dialog_single_walk_stop_r",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 1.2,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_chen_dialog_state_platewalk_loop",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 10.000001,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_chen_dialog_state_scratchheadwalk_loop",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 1.0666667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_chen_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.4,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_chen_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.6166668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_chen_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.3333335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_dapan_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.7500005,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_dapan_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.766667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_dapan_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 2.4,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminf_dialog_single_bamboowalk",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 10.000001,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminf_dialog_single_walksit_derived_talk",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 5.166667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminf_dialog_state_walk_end",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.4833336,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminf_dialog_state_walk_longpaopao_loop",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 1.0666667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminf_dialog_state_walk_loop",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 2.0833335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminf_dialog_state_walk_start",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 1.6000001,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminf_dialog_state_walksit_derived_getdocument_end",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.666668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminf_dialog_state_walksit_derived_getdocument_loop",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 3.666668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminf_dialog_state_walksit_derived_getdocument_start",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 10.666668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminf_dialog_state_walksit_end",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 5.1666665,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminf_dialog_state_walksit_loop",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 6.5,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminf_dialog_state_walksit_start",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 17.666668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminf_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.4,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminf_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.6166668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminf_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.3333335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminm_dialog_single_bamboowalk",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 10.000001,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminm_dialog_single_walksit_derived_talk",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 5.166667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminm_dialog_state_walk_end",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.8000002,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminm_dialog_state_walk_longpaopao_loop",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 1.0666667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminm_dialog_state_walk_loop",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 2.0833335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminm_dialog_state_walk_start",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 1.6000001,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminm_dialog_state_walksit_derived_getdocument_end",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.666668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminm_dialog_state_walksit_derived_getdocument_loop",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 3.666668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminm_dialog_state_walksit_derived_getdocument_start",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 10.666668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminm_dialog_state_walksit_end",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 5.1666665,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminm_dialog_state_walksit_loop",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 6.5,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminm_dialog_state_walksit_start",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 17.666668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminm_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.7333336,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminm_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.766667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_endminm_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.0,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_ikut_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.4,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_ikut_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.6166668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_ikut_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.3333335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_jsspsi_dialog_single_walk_start_l_0_r",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 1.6666667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_jsspsi_dialog_single_walk_stop_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 2.5666668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_jsspsi_dialog_single_walk_stop_r",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 2.5666668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_jsspsi_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.4,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_jsspsi_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.6166668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_jsspsi_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.3333335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_laevat_dialog_single_restwalk",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 15.333335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_laevat_dialog_single_wavewalk",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 8.583334,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_laevat_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.4,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_laevat_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.6166668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_laevat_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.3333335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_laevat_walk_loop_entry",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 1.0666667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_laevat_walk_loop_entry_pose",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 1.0666667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_lifeng_dialog_state_walkthink_end",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 17.866667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_lifeng_dialog_state_walkthink_loop",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 10.250001,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_lifeng_dialog_state_walkthink_start",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 8.083334,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_lifeng_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.7333336,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_lifeng_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.766667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_lifeng_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.0,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_liino_dialog_single_walk_start_l_0_r",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 1.6666667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_liino_dialog_single_walk_stop_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 2.5666668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_liino_dialog_single_walk_stop_r",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 2.5666668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_liino_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.4,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_liino_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.6166668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_liino_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.3333335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_lizhiyan_dialog_single_walk_loop_hurt_additive",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 1.0666667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_lizhiyan_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.4,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_lizhiyan_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.6166668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_lizhiyan_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.3333335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_mifu_dialog_state_walk_end",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.4833336,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_mifu_dialog_state_walk_loop",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 2.0833335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_mifu_dialog_state_walk_start",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 1.6000001,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_mifu_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.4,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_mifu_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.6166668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_mifu_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.3333335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_pelica_battle_walk_retreat",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 1.3333334,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_pelica_dialog_state_holdwalk_loop",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 10.000001,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_pelica_dialog_state_walk_b",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 6.066667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_pelica_dialog_state_walk_end",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.4833336,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_pelica_dialog_state_walk_loop",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 2.0833335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_pelica_dialog_state_walk_start",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 1.6000001,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_pelica_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.4,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_pelica_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.6166668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_pelica_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.3333335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_seraph_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.4,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_seraph_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.6166668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_seraph_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.3333335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_tangtang_dialog_single_akimbo1_lookbackandwalk",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 12.750001,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_tangtang_dialog_single_walkarrogant",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 7.833334,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_tangtang_dialog_single_walkincircle",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 13.583334,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_tangtang_dialog_single_walkwitharms",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 11.333334,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_tangtang_dialog_single_wavewalk",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 6.666667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_tangtang_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.4,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_tangtang_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.6166668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_tangtang_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.3333335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_wolfgd_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.7333336,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_wolfgd_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.766667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_wolfgd_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.0,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_wulfa_dialog_single_happywalk",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 21.333334,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_wulfa_dialog_single_walktalk",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 10.833334,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_wulfa_dialog_state_akimbo2_shield_followme_walk_end",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 6.500002,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_wulfa_dialog_state_akimbo2_shield_followme_walk_loop",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 4.333335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_wulfa_dialog_state_akimbo2_shield_followme_walk_start",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 5.833334,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_wulfa_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.4,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_wulfa_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.6166668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_wulfa_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.3333335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_yvonne_dialog_single_lookbackwalk",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 7.1071644,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_yvonne_dialog_single_wavewalk",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 6.666667,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_yvonne_dialog_state_walkin_end",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.883334,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_yvonne_dialog_state_walkin_loop",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 6.2500005,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_yvonne_dialog_state_walkin_start",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.2333336,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_yvonne_dialog_state_walkinsilent_loop",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 3.583334,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_yvonne_dialog_state_walkinsilent_start",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 17.833336,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_yvonne_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.4,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_yvonne_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.6166668,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_yvonne_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.3333335,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_zhuangfy_dialog_state_handbackwalk_end",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 1.9833336,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_zhuangfy_dialog_state_handbackwalk_loop",
+      "loopTime": true,
+      "loopBlend": false,
+      "stopTime": 1.9000001,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_zhuangfy_dialog_state_handbackwalk_start",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 2.9,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_zhuangfy_dialog_virtual_single_walk_l",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 4.400368,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_zhuangfy_dialog_virtual_single_walk_m",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.616969,
+      "sampleRate": 60.0
+    },
+    {
+      "name": "A_actor_zhuangfy_dialog_virtual_single_walk_s",
+      "loopTime": false,
+      "loopBlend": false,
+      "stopTime": 3.3333335,
+      "sampleRate": 60.0
+    }
+  ]
+}

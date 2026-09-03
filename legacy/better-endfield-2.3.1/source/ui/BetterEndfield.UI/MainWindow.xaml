@@ -1,0 +1,1930 @@
+<Window
+    x:Class="BetterEndfield.UI.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:BetterEndfield.UI.Controls">
+
+    <Grid
+        x:Name="MainRoot"
+        Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+        Loaded="MainRoot_Loaded">
+        <Grid.Resources>
+            <Style x:Key="PageTitleStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="28" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+            </Style>
+            <Style x:Key="SectionTitleStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="18" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+            </Style>
+            <Style x:Key="FieldHintStyle" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+            </Style>
+            <Style x:Key="SectionStyle" TargetType="Border">
+                <Setter Property="Padding" Value="0,0,0,28" />
+                <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+                <Setter Property="BorderThickness" Value="0,0,0,1" />
+            </Style>
+            <Style x:Key="SettingsRowStyle" TargetType="Border">
+                <Setter Property="Padding" Value="18,14" />
+                <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="8" />
+            </Style>
+            <Style x:Key="PathButtonStyle" TargetType="Button">
+                <Setter Property="Width" Value="40" />
+                <Setter Property="Height" Value="32" />
+                <Setter Property="Padding" Value="8" />
+            </Style>
+        </Grid.Resources>
+
+        <NavigationView
+            x:Name="FeatureNavigation"
+            CompactModeThresholdWidth="720"
+            CompactPaneLength="48"
+            ExpandedModeThresholdWidth="1000"
+            IsBackButtonVisible="Collapsed"
+            IsPaneToggleButtonVisible="True"
+            IsSettingsVisible="True"
+            OpenPaneLength="220"
+            PaneDisplayMode="Auto"
+            SelectionChanged="FeatureNavigation_SelectionChanged">
+            <NavigationView.PaneHeader>
+                <Grid Margin="4,8,8,12" ColumnSpacing="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="34" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Width="34" Height="34" CornerRadius="6">
+                        <Image Source="Assets/shared/gilberta.png" Stretch="UniformToFill" />
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                        <TextBlock FontSize="16" FontWeight="SemiBold" Text="Better Endfield" />
+                        <TextBlock
+                            x:Name="PaneSubtitleTextBlock"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            FontSize="11"
+                            Text="终末地 Mod 控制器" />
+                    </StackPanel>
+                </Grid>
+            </NavigationView.PaneHeader>
+
+            <NavigationView.MenuItems>
+                <NavigationViewItem
+                    x:Name="ModelNavigationItem"
+                    Content="开屏"
+                    IsSelected="True"
+                    Tag="model">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE77B;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem
+                    x:Name="VoiceNavigationItem"
+                    Content="配音语言"
+                    Tag="voice">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE767;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem
+                    x:Name="MusicNavigationItem"
+                    Content="音乐集成"
+                    Tag="music">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8D6;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem
+                    x:Name="CombatNavigationItem"
+                    Content="战斗数据"
+                    Tag="combat">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE9D9;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem
+                    x:Name="UiNavigationItem"
+                    Content="界面增强"
+                    Tag="ui">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE740;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem
+                    x:Name="CameraNavigationItem"
+                    Content="相机增强"
+                    Tag="camera">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE722;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem
+                    x:Name="DisplayNavigationItem"
+                    Content="显示增强"
+                    Tag="display">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7F4;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+
+            <NavigationView.FooterMenuItems>
+                <NavigationViewItem
+                    x:Name="AboutNavigationItem"
+                    Content="关于"
+                    Tag="about">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE946;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.FooterMenuItems>
+
+            <NavigationView.Content>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border
+                        Grid.Row="0"
+                        Padding="24,10"
+                        Background="{ThemeResource LayerFillColorAltBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="0,0,0,1">
+                        <Grid ColumnSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Ellipse
+                                x:Name="RuntimeStatusIndicator"
+                                Width="8"
+                                Height="8"
+                                VerticalAlignment="Center"
+                                Fill="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <TextBlock
+                                x:Name="RuntimeStatusTextBlock"
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                FontWeight="SemiBold"
+                                Text="正在检查运行状态…" />
+                            <TextBlock
+                                x:Name="LogStatusTextBlock"
+                                Grid.Column="2"
+                                MaxWidth="340"
+                                VerticalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                FontSize="12"
+                                Text="尚未发现日志"
+                                TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                    </Border>
+
+                    <Grid Grid.Row="1">
+                        <ScrollViewer
+                            x:Name="ModelPageScrollViewer"
+                            HorizontalScrollBarVisibility="Disabled"
+                            VerticalScrollBarVisibility="Auto">
+                            <StackPanel
+                                MaxWidth="920"
+                                Margin="32,28,32,44"
+                                HorizontalAlignment="Stretch"
+                                Spacing="28">
+                                <StackPanel Spacing="6">
+                                    <TextBlock x:Name="ModelPageTitleTextBlock" Style="{StaticResource PageTitleStyle}" Text="开屏" />
+                                    <TextBlock
+                                        x:Name="ModelPageDescriptionTextBlock"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="调整登录场景的视觉效果、角色模型与四阶段动画。"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="18">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Name="ModelVisualSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="界面视觉" />
+                                            <TextBlock
+                                                x:Name="ModelVisualSectionHint"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="主题色可与原登录演员或角色替换同时使用。" />
+                                        </StackPanel>
+                                        <ToggleSwitch
+                                            x:Name="LogoThemeToggle"
+                                            Header="自定义 Logo 与色带主题色"
+                                            OffContent="使用游戏原色"
+                                            OnContent="使用所选颜色" />
+                                        <ContentControl
+                                            HorizontalContentAlignment="Stretch"
+                                            IsEnabled="{Binding IsOn, ElementName=LogoThemeToggle}">
+                                            <ColorPicker
+                                                x:Name="LogoThemeColorPicker"
+                                                MaxWidth="360"
+                                                HorizontalAlignment="Left"
+                                                Color="#FFFFC928"
+                                                ColorSpectrumShape="Ring"
+                                                IsAlphaEnabled="False"
+                                                IsColorChannelTextInputVisible="True"
+                                                IsColorPreviewVisible="True"
+                                                IsHexInputVisible="True"
+                                                IsMoreButtonVisible="False"
+                                                Loaded="LogoThemeColorPicker_Loaded" />
+                                        </ContentControl>
+                                    </StackPanel>
+                                </Border>
+
+                                <StackPanel Spacing="6">
+                                    <ToggleSwitch
+                                        x:Name="ModelReplacementToggle"
+                                        Header="启用角色替换"
+                                        OffContent="保持原登录演员"
+                                        OnContent="使用下方角色与动画" />
+                                </StackPanel>
+
+                                <ContentControl
+                                    HorizontalContentAlignment="Stretch"
+                                    IsEnabled="{Binding IsOn, ElementName=ModelReplacementToggle}">
+                                    <StackPanel Spacing="28">
+                                        <Border Style="{StaticResource SectionStyle}">
+                                            <StackPanel Spacing="16">
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock x:Name="ModelCharacterSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="角色与动作" />
+                                                    <TextBlock
+                                                        x:Name="ModelCharacterSectionHint"
+                                                        Style="{StaticResource FieldHintStyle}"
+                                                        Text="角色使用自己的坐姿动画链，最后动作从该角色的已索引动画中选择。" />
+                                                </StackPanel>
+                                                <ComboBox
+                                                    x:Name="CharacterComboBox"
+                                                    HorizontalAlignment="Stretch"
+                                                    Header="角色模型"
+                                                    DisplayMemberPath="DisplayName"
+                                                    SelectionChanged="CharacterComboBox_SelectionChanged" />
+                                                <ComboBox
+                                                    x:Name="FinalActionComboBox"
+                                                    HorizontalAlignment="Stretch"
+                                                    Header="最后动作"
+                                                    DisplayMemberPath="DisplayName"
+                                                    SelectionChanged="FinalActionComboBox_SelectionChanged" />
+                                                <StackPanel Spacing="3">
+                                                    <TextBlock
+                                                        x:Name="ActionDurationTextBlock"
+                                                        FontWeight="SemiBold" />
+                                                    <TextBlock
+                                                        x:Name="ActionDescriptionTextBlock"
+                                                        Style="{StaticResource FieldHintStyle}" />
+                                                    <TextBlock
+                                                        x:Name="PresetDetailsTextBlock"
+                                                        Style="{StaticResource FieldHintStyle}" />
+                                                </StackPanel>
+                                                <Grid ColumnSpacing="16" RowSpacing="12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    <NumberBox
+                                                        x:Name="StartYawNumberBox"
+                                                        Header="起始角度 (°)"
+                                                        Maximum="360"
+                                                        Minimum="-360"
+                                                        SmallChange="1" />
+                                                    <NumberBox
+                                                        x:Name="TurnDurationNumberBox"
+                                                        Grid.Column="1"
+                                                        Header="转正时长 (秒)"
+                                                        Maximum="15"
+                                                        Minimum="0.1"
+                                                        SmallChange="0.1" />
+                                                    <NumberBox
+                                                        x:Name="ScaleNumberBox"
+                                                        Grid.Row="1"
+                                                        Header="模型缩放"
+                                                        Maximum="2"
+                                                        Minimum="0.5"
+                                                        SmallChange="0.05" />
+                                                    <NumberBox
+                                                        x:Name="LeanSampleNumberBox"
+                                                        Grid.Row="1"
+                                                        Grid.Column="1"
+                                                        Header="前倾采样 (秒)"
+                                                        Maximum="5"
+                                                        Minimum="0"
+                                                        SmallChange="0.1" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Style="{StaticResource SectionStyle}">
+                                            <StackPanel Spacing="16">
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock x:Name="ModelSpeedSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="播放速度" />
+                                                    <TextBlock
+                                                        x:Name="ModelSpeedSectionHint"
+                                                        Style="{StaticResource FieldHintStyle}"
+                                                        Text="1.0 为动画原速。各阶段独立设置，不改变镜头时间轴。" />
+                                                </StackPanel>
+                                                <Grid ColumnSpacing="16" RowSpacing="12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    <NumberBox
+                                                        x:Name="SitLoopSpeedNumberBox"
+                                                        Header="坐姿循环"
+                                                        Maximum="4"
+                                                        Minimum="0.1"
+                                                        SmallChange="0.1" />
+                                                    <NumberBox
+                                                        x:Name="SitSpecialSpeedNumberBox"
+                                                        Grid.Column="1"
+                                                        Header="坐姿小动作"
+                                                        Maximum="4"
+                                                        Minimum="0.1"
+                                                        SmallChange="0.1" />
+                                                    <NumberBox
+                                                        x:Name="SitToWalkSpeedNumberBox"
+                                                        Grid.Row="1"
+                                                        Header="起身过渡"
+                                                        Maximum="4"
+                                                        Minimum="0.1"
+                                                        SmallChange="0.1" />
+                                                    <NumberBox
+                                                        x:Name="FinalSpeedNumberBox"
+                                                        Grid.Row="1"
+                                                        Grid.Column="1"
+                                                        Header="最后动作"
+                                                        Maximum="4"
+                                                        Minimum="0.1"
+                                                        SmallChange="0.1" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <StackPanel Spacing="16">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock x:Name="ModelLoopSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="连续循环" />
+                                                <TextBlock
+                                                    x:Name="ModelLoopSectionHint"
+                                                    Style="{StaticResource FieldHintStyle}"
+                                                    Text="可遵循资源 LoopTime、强制覆盖非循环资源，或按自定义区间交叉混合。" />
+                                            </StackPanel>
+                                            <ToggleSwitch
+                                                x:Name="FinalLoopToggle"
+                                                Header="原生循环"
+                                                OffContent="播放一次并停在末帧"
+                                                OnContent="使用动画 LoopTime" />
+                                            <ToggleSwitch
+                                                x:Name="ForceLoopToggle"
+                                                Header="强制循环"
+                                                OffContent="遵循动画导入设置"
+                                                OnContent="覆盖非循环动画" />
+                                            <ToggleSwitch
+                                                x:Name="CrossfadeToggle"
+                                                Header="双 Playable 交叉混合"
+                                                OffContent="关闭"
+                                                OnContent="按自定义区间循环"
+                                                Toggled="CrossfadeToggle_Toggled" />
+                                            <Grid
+                                                x:Name="CrossfadeSettingsPanel"
+                                                ColumnSpacing="16"
+                                                RowSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+                                                <NumberBox
+                                                    x:Name="LoopStartNumberBox"
+                                                    Header="循环起点 (秒)"
+                                                    Maximum="30"
+                                                    Minimum="0"
+                                                    SmallChange="0.05" />
+                                                <NumberBox
+                                                    x:Name="LoopEndNumberBox"
+                                                    Grid.Column="1"
+                                                    Header="循环终点 (秒)"
+                                                    Maximum="60"
+                                                    Minimum="0.05"
+                                                    SmallChange="0.05" />
+                                                <NumberBox
+                                                    x:Name="CrossfadeDurationNumberBox"
+                                                    Grid.Row="1"
+                                                    Grid.ColumnSpan="2"
+                                                    Header="混合时长 (秒)"
+                                                    Maximum="10"
+                                                    Minimum="0.01"
+                                                    SmallChange="0.05" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </ContentControl>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <ScrollViewer
+                            x:Name="VoicePageScrollViewer"
+                            HorizontalScrollBarVisibility="Disabled"
+                            Visibility="Collapsed"
+                            VerticalScrollBarVisibility="Auto">
+                            <StackPanel
+                                MaxWidth="920"
+                                Margin="32,28,32,44"
+                                HorizontalAlignment="Stretch"
+                                Spacing="28">
+                                <StackPanel Spacing="6">
+                                    <TextBlock x:Name="VoicePageTitleTextBlock" Style="{StaticResource PageTitleStyle}" Text="配音语言" />
+                                    <TextBlock
+                                        x:Name="VoicePageDescriptionTextBlock"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="为单个角色指定语音包，同时保持游戏全局语言不变。"
+                                        TextWrapping="Wrap" />
+                                    <TextBlock
+                                        x:Name="VoicePageDownloadHintTextBlock"
+                                        Margin="0,2,0,0"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        FontSize="12"
+                                        Text="请先下载对应语言包。" />
+                                    <ToggleSwitch
+                                        x:Name="VoiceRouterToggle"
+                                        Margin="0,12,0,0"
+                                        Header="启用按角色配音"
+                                        OffContent="全部跟随游戏"
+                                        OnContent="应用下方角色规则" />
+                                </StackPanel>
+
+                                <ContentControl
+                                    HorizontalContentAlignment="Stretch"
+                                    IsEnabled="{Binding IsOn, ElementName=VoiceRouterToggle}">
+                                    <StackPanel Spacing="28">
+                                        <ToggleSwitch
+                                            x:Name="NarrativeVoiceToggle"
+                                            Header="替换剧情语音与口型"
+                                            OffContent="剧情对话跟随游戏语言"
+                                            OnContent="剧情对话应用角色规则" />
+
+                                        <Border Style="{StaticResource SectionStyle}">
+                                            <StackPanel Spacing="18">
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock x:Name="VoiceRuleSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="设置角色语言" />
+                                                    <TextBlock
+                                                        x:Name="VoiceRuleSectionHint"
+                                                        Style="{StaticResource FieldHintStyle}"
+                                                        Text="同一角色再次添加时会更新现有规则。" />
+                                                </StackPanel>
+                                                <ComboBox
+                                                    x:Name="VoiceCharacterComboBox"
+                                                    HorizontalAlignment="Stretch"
+                                                    Header="角色"
+                                                    DisplayMemberPath="DisplayName"
+                                                    SelectionChanged="VoiceCharacterComboBox_SelectionChanged" />
+                                                <RadioButtons
+                                                    x:Name="VoiceLanguageRadioButtons"
+                                                    Header="配音语言"
+                                                    MaxColumns="3">
+                                                    <RadioButton Content="中文" Tag="Chinese" />
+                                                    <RadioButton Content="English" Tag="English" />
+                                                    <RadioButton Content="日本語" Tag="Japanese" />
+                                                    <RadioButton Content="한국어" Tag="Korean" />
+                                                    <RadioButton Content="跟随游戏" Tag="FollowGlobal" />
+                                                </RadioButtons>
+                                                <Button
+                                                    HorizontalAlignment="Left"
+                                                    Click="AddVoiceRuleButton_Click"
+                                                    Style="{StaticResource AccentButtonStyle}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <SymbolIcon Symbol="Add" />
+                                                        <TextBlock x:Name="VoiceAddRuleButtonTextBlock" Text="添加或更新规则" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <StackPanel Spacing="12">
+                                            <TextBlock x:Name="VoiceConfiguredSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="已配置角色" />
+                                            <TextBlock
+                                                x:Name="VoiceRulesEmptyTextBlock"
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Text="尚未配置角色，将全部跟随游戏全局语言。" />
+                                            <ListView
+                                                x:Name="VoiceRulesListView"
+                                                MaxHeight="360"
+                                                SelectionMode="None">
+                                                <ListView.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid MinHeight="56" Padding="4,6" ColumnSpacing="12">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="120" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <StackPanel VerticalAlignment="Center">
+                                                                <TextBlock
+                                                                    FontWeight="SemiBold"
+                                                                    Text="{Binding DisplayName}"
+                                                                    TextTrimming="CharacterEllipsis" />
+                                                            </StackPanel>
+                                                            <TextBlock
+                                                                Grid.Column="1"
+                                                                VerticalAlignment="Center"
+                                                                Text="{Binding LanguageDisplayName}" />
+                                                            <Button
+                                                                Grid.Column="2"
+                                                                Click="RemoveVoiceRuleButton_Click"
+                                                                Tag="{Binding Speaker}"
+                                                                ToolTipService.ToolTip="删除规则">
+                                                                <SymbolIcon Symbol="Delete" />
+                                                            </Button>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ListView.ItemTemplate>
+                                            </ListView>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </ContentControl>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <ScrollViewer
+                            x:Name="MusicPageScrollViewer"
+                            HorizontalScrollBarVisibility="Disabled"
+                            Visibility="Collapsed"
+                            VerticalScrollBarVisibility="Auto">
+                            <StackPanel
+                                MaxWidth="920"
+                                Margin="32,28,32,44"
+                                HorizontalAlignment="Stretch"
+                                Spacing="28">
+                                <StackPanel Spacing="6">
+                                    <TextBlock x:Name="MusicPageTitleTextBlock" Style="{StaticResource PageTitleStyle}" Text="OmniMix 音乐集成" />
+                                    <TextBlock
+                                        x:Name="MusicPageDescriptionTextBlock"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="将 OmniMix 输出的音乐送入游戏原生 Wwise 音乐总线。曲库、播放列表与后端仍由 OmniMix 管理。"
+                                        TextWrapping="Wrap" />
+                                    <ToggleSwitch
+                                        x:Name="MusicReplacementToggle"
+                                        Margin="0,12,0,0"
+                                        Header="启用音乐替换"
+                                        OffContent="保持游戏原生音乐"
+                                        OnContent="使用 OmniMix 音乐流" />
+                                </StackPanel>
+
+                                <ContentControl
+                                    HorizontalContentAlignment="Stretch">
+                                    <StackPanel Spacing="28">
+                                        <Border Style="{StaticResource SectionStyle}">
+                                            <StackPanel Spacing="16">
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock x:Name="MusicBackendSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="OmniMix 后端" />
+                                                    <TextBlock
+                                                        x:Name="MusicBackendSectionHint"
+                                                        Style="{StaticResource FieldHintStyle}"
+                                                        Text="Better Endfield 只保存后端绝对路径，不复制或修改 OmniMix 文件。" />
+                                                </StackPanel>
+                                                <Grid ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox
+                                                        x:Name="OmniMixBackendPathBox"
+                                                        Header="OmniMixPlayer.Backend.exe"
+                                                        PlaceholderText="选择 OmniMix 后端程序" />
+                                                    <Button
+                                                        Grid.Column="1"
+                                                        Margin="0,24,0,0"
+                                                        Click="BrowseOmniMixBackendButton_Click"
+                                                        Style="{StaticResource PathButtonStyle}"
+                                                        ToolTipService.ToolTip="选择并注册 OmniMix 后端">
+                                                        <SymbolIcon Symbol="OpenFile" />
+                                                    </Button>
+                                                </Grid>
+                                                <Grid ColumnSpacing="12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Spacing="3">
+                                                        <TextBlock
+                                                            x:Name="OmniMixRegistrationStatusTextBlock"
+                                                            FontWeight="SemiBold"
+                                                            Text="尚未注册 OmniMix 后端" />
+                                                        <TextBlock
+                                                            x:Name="OmniMixClientIdTextBlock"
+                                                            Style="{StaticResource FieldHintStyle}"
+                                                            Text="客户端标识将在注册时生成。" />
+                                                    </StackPanel>
+                                                    <Button
+                                                        x:Name="UnregisterOmniMixButton"
+                                                        Grid.Column="1"
+                                                        VerticalAlignment="Center"
+                                                        Click="UnregisterOmniMixButton_Click"
+                                                        Content="解除注册" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Style="{StaticResource SectionStyle}">
+                                            <StackPanel Spacing="16">
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock x:Name="MusicScopeSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="替换范围" />
+                                                    <TextBlock
+                                                        x:Name="MusicScopeSectionHint"
+                                                        Style="{StaticResource FieldHintStyle}"
+                                                        Text="关闭的场景继续使用游戏原生音乐。" />
+                                                </StackPanel>
+                                                <ToggleSwitch
+                                                    x:Name="ReplaceLoginMusicToggle"
+                                                    Header="登录场景"
+                                                    OffContent="原生音乐"
+                                                    OnContent="OmniMix" />
+                                                <ToggleSwitch
+                                                    x:Name="ReplaceMetaMusicToggle"
+                                                    Header="主界面与基地"
+                                                    OffContent="原生音乐"
+                                                    OnContent="OmniMix" />
+                                                <ToggleSwitch
+                                                    x:Name="ReplaceGameplayMusicToggle"
+                                                    Header="游戏内场景"
+                                                    OffContent="原生音乐"
+                                                    OnContent="OmniMix" />
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Style="{StaticResource SectionStyle}">
+                                            <StackPanel Spacing="16">
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock x:Name="MusicBufferSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="缓冲与回退" />
+                                                    <TextBlock
+                                                        x:Name="MusicBufferSectionHint"
+                                                        Style="{StaticResource FieldHintStyle}"
+                                                        Text="只有 PCM 达到预缓冲且 Wwise 回调正常后，原游戏音乐才会暂停。" />
+                                                </StackPanel>
+                                                <Grid ColumnSpacing="16">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <NumberBox
+                                                        x:Name="MusicTargetLatencyNumberBox"
+                                                        Header="OmniMix 目标延迟 (秒)"
+                                                        Maximum="2"
+                                                        Minimum="0.1"
+                                                        SmallChange="0.05" />
+                                                    <NumberBox
+                                                        x:Name="MusicPrebufferNumberBox"
+                                                        Grid.Column="1"
+                                                        Header="本地预缓冲 (毫秒)"
+                                                        Maximum="1000"
+                                                        Minimum="50"
+                                                        SmallChange="25" />
+                                                </Grid>
+                                                <ToggleSwitch
+                                                    x:Name="FallbackToNativeMusicToggle"
+                                                    Header="故障时恢复原游戏音乐"
+                                                    OffContent="保持静音"
+                                                    OnContent="自动恢复" />
+                                                <ToggleSwitch
+                                                    x:Name="MusicDiagnosticsToggle"
+                                                    Header="详细诊断日志"
+                                                    OffContent="常规日志"
+                                                    OnContent="记录流状态与缓冲统计" />
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </ContentControl>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <ScrollViewer
+                            x:Name="CombatPageScrollViewer"
+                            HorizontalScrollBarVisibility="Disabled"
+                            Visibility="Collapsed"
+                            VerticalScrollBarVisibility="Auto">
+                            <StackPanel
+                                MaxWidth="920"
+                                Margin="32,28,32,44"
+                                HorizontalAlignment="Stretch"
+                                Spacing="28">
+                                <StackPanel Spacing="6">
+                                    <TextBlock x:Name="CombatPageTitleTextBlock" Style="{StaticResource PageTitleStyle}" Text="战斗数据" />
+                                    <TextBlock
+                                        x:Name="CombatPageDescriptionTextBlock"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="记录战斗伤害并按角色、技能和伤害类型汇总。统计默认关闭，不会修改伤害计算。"
+                                        TextWrapping="Wrap" />
+                                    <ToggleSwitch
+                                        x:Name="CombatStatsToggle"
+                                        Margin="0,12,0,0"
+                                        Header="启用战斗数据统计"
+                                        OffContent="关闭"
+                                        OnContent="按快捷键记录" />
+                                </StackPanel>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="16">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Name="CombatDisplaySectionTitle" Style="{StaticResource SectionTitleStyle}" Text="显示与快捷键" />
+                                            <TextBlock
+                                                x:Name="CombatDisplaySectionHint"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="F11 切换开始/停止记录，F12 切换悬浮窗；均可在下方修改。按住 Ctrl 并用鼠标左键拖动悬浮窗可调整位置。"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ToggleSwitch
+                                            x:Name="HideDamageNumbersToggle"
+                                            Header="隐藏伤害数字"
+                                            OffContent="显示游戏数字"
+                                            OnContent="隐藏数字" />
+                                        <ToggleSwitch
+                                            x:Name="CombatOverlayToggle"
+                                            Header="显示战斗悬浮窗"
+                                            IsOn="True"
+                                            OffContent="不启动悬浮窗"
+                                            OnContent="随模块自动启动" />
+                                        <ToggleSwitch
+                                            x:Name="CombatRdpsDisplayToggle"
+                                            Header="悬浮窗与本地排行口径"
+                                            OffContent="DPS"
+                                            OnContent="rDPS"
+                                            Toggled="CombatRdpsDisplayToggle_Toggled" />
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox
+                                                x:Name="CombatToggleHotkeyBox"
+                                                Header="开始/停止记录快捷键"
+                                                Text="F11" />
+                                            <TextBox
+                                                x:Name="CombatOverlayHotkeyBox"
+                                                Grid.Column="1"
+                                                Header="显示/隐藏悬浮窗快捷键"
+                                                Text="F12" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="16">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Name="CombatRecordSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="记录方式" />
+                                            <TextBlock
+                                                x:Name="CombatRecordSectionHint"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="schema 11 仅保存可验证的操作与原子结果；64 位实例 ID 使用字符串保存，无法确定的归属明确标为未知。"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ToggleSwitch
+                                            x:Name="AutoDungeonSessionToggle"
+                                            Header="自动记录"
+                                            OffContent="手动快捷键"
+                                            OnContent="进关卡自动开启 / 结算自动保存" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="14">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock x:Name="CombatHistorySectionTitle" Style="{StaticResource SectionTitleStyle}" Text="历史统计" />
+                                                <TextBlock
+                                                    x:Name="CombatHistorySectionHint"
+                                                    Style="{StaticResource FieldHintStyle}"
+                                                    Text="默认显示最近三条；可按日期和参战角色筛选。"
+                                                    TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <StackPanel
+                                                Grid.Column="1"
+                                                Orientation="Horizontal"
+                                                Spacing="8">
+                                                <Button Click="OpenCombatAnalysisWebButton_Click">
+                                                    <StackPanel Orientation="Horizontal" Spacing="7">
+                                                        <SymbolIcon Symbol="Globe" />
+                                                        <TextBlock x:Name="CombatWebButtonTextBlock" Text="打开解析网页" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button Click="OpenCombatRecordsFolderButton_Click">
+                                                    <StackPanel Orientation="Horizontal" Spacing="7">
+                                                        <SymbolIcon Symbol="Folder" />
+                                                        <TextBlock x:Name="CombatRecordsFolderButtonTextBlock" Text="记录文件夹" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button
+                                                    x:Name="RefreshCombatSessionsButton"
+                                                    Click="RefreshCombatSessionsButton_Click">
+                                                    <StackPanel Orientation="Horizontal" Spacing="7">
+                                                        <SymbolIcon Symbol="Refresh" />
+                                                        <TextBlock x:Name="CombatRefreshButtonTextBlock" Text="刷新" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <Grid ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="190" />
+                                                <ColumnDefinition Width="190" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <CalendarDatePicker
+                                                x:Name="CombatFromDatePicker"
+                                                DateChanged="CombatDateFilter_DateChanged"
+                                                Header="开始日期"
+                                                PlaceholderText="不限" />
+                                            <CalendarDatePicker
+                                                x:Name="CombatToDatePicker"
+                                                Grid.Column="1"
+                                                DateChanged="CombatDateFilter_DateChanged"
+                                                Header="结束日期"
+                                                PlaceholderText="不限" />
+                                            <TextBlock
+                                                x:Name="CombatDateFilterHintTextBlock"
+                                                Grid.Column="2"
+                                                VerticalAlignment="Bottom"
+                                                Margin="0,0,0,8"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="日期范围两端均可留空。" />
+                                        </Grid>
+                                        <StackPanel Spacing="7">
+                                            <TextBlock
+                                                x:Name="CombatTeamFilterHintTextBlock"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="队伍角色（最多四个；记录需包含全部已选角色）" />
+                                            <Grid ColumnSpacing="8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <ComboBox
+                                                    x:Name="CombatCharacterFilter1ComboBox"
+                                                    DisplayMemberPath="DisplayName"
+                                                    PlaceholderText="角色 1"
+                                                    SelectionChanged="CombatCharacterFilterComboBox_SelectionChanged" />
+                                                <ComboBox
+                                                    x:Name="CombatCharacterFilter2ComboBox"
+                                                    Grid.Column="1"
+                                                    DisplayMemberPath="DisplayName"
+                                                    PlaceholderText="角色 2"
+                                                    SelectionChanged="CombatCharacterFilterComboBox_SelectionChanged" />
+                                                <ComboBox
+                                                    x:Name="CombatCharacterFilter3ComboBox"
+                                                    Grid.Column="2"
+                                                    DisplayMemberPath="DisplayName"
+                                                    PlaceholderText="角色 3"
+                                                    SelectionChanged="CombatCharacterFilterComboBox_SelectionChanged" />
+                                                <ComboBox
+                                                    x:Name="CombatCharacterFilter4ComboBox"
+                                                    Grid.Column="3"
+                                                    DisplayMemberPath="DisplayName"
+                                                    PlaceholderText="角色 4"
+                                                    SelectionChanged="CombatCharacterFilterComboBox_SelectionChanged" />
+                                            </Grid>
+                                        </StackPanel>
+
+                                        <ListView
+                                            x:Name="CombatSessionsListView"
+                                            MaxHeight="520"
+                                            SelectionChanged="CombatSessionsListView_SelectionChanged"
+                                            SelectionMode="Single">
+                                            <ListView.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Padding="4,10" ColumnSpacing="14">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="154" />
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="142" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Spacing="3">
+                                                            <TextBlock FontWeight="SemiBold" Text="{Binding DateText}" />
+                                                            <TextBlock
+                                                                Style="{StaticResource FieldHintStyle}"
+                                                                Text="{Binding CharacterSummary}"
+                                                                TextTrimming="CharacterEllipsis" />
+                                                        </StackPanel>
+                                                        <ItemsControl Grid.Column="1" ItemsSource="{Binding PreviewCharacters}">
+                                                            <ItemsControl.ItemsPanel>
+                                                                <ItemsPanelTemplate>
+                                                                    <StackPanel Orientation="Horizontal" Spacing="6" />
+                                                                </ItemsPanelTemplate>
+                                                            </ItemsControl.ItemsPanel>
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <Border
+                                                                        Width="42"
+                                                                        Height="42"
+                                                                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                                        BorderThickness="1"
+                                                                        CornerRadius="21">
+                                                                        <Image Source="{Binding AvatarSource}" Stretch="UniformToFill" />
+                                                                    </Border>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                        <StackPanel Grid.Column="2" HorizontalAlignment="Right" Spacing="2">
+                                                            <TextBlock
+                                                                HorizontalAlignment="Right"
+                                                                FontSize="18"
+                                                                FontWeight="SemiBold"
+                                                                Text="{Binding TotalDamageText}" />
+                                                            <TextBlock
+                                                                HorizontalAlignment="Right"
+                                                                Style="{StaticResource FieldHintStyle}"
+                                                                Text="{Binding Summary}" />
+                                                        </StackPanel>
+                                                        <Button
+                                                            Grid.Column="3"
+                                                            Width="36"
+                                                            Height="36"
+                                                            Padding="8"
+                                                            Click="DeleteCombatSessionButton_Click"
+                                                            Tag="{Binding}"
+                                                            ToolTipService.ToolTip="删除记录">
+                                                            <FontIcon Glyph="&#xE74D;" />
+                                                        </Button>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListView.ItemTemplate>
+                                        </ListView>
+                                        <Button
+                                            x:Name="ExpandCombatSessionsButton"
+                                            HorizontalAlignment="Center"
+                                            Click="ExpandCombatSessionsButton_Click"
+                                            Visibility="Collapsed" />
+                                        <TextBlock
+                                            x:Name="CombatSessionsEmptyTextBlock"
+                                            Style="{StaticResource FieldHintStyle}"
+                                            Text="没有符合筛选条件的战斗统计。"
+                                            Visibility="Collapsed" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="14">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Name="CombatSelectedSessionSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="记录明细" />
+                                            <TextBlock
+                                                x:Name="CombatSelectedSessionTextBlock"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="选择一条记录查看。" />
+                                        </StackPanel>
+                                        <StackPanel MinHeight="560" Spacing="10">
+                                                    <ItemsControl
+                                                        x:Name="CombatCategoryLegendItemsControl"
+                                                        HorizontalAlignment="Stretch">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <controls:WrapPanel HorizontalSpacing="16" VerticalSpacing="6" />
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                    <Border
+                                                                        Width="10"
+                                                                        Height="10"
+                                                                        Background="{Binding Brush}"
+                                                                        CornerRadius="2" />
+                                                                    <TextBlock Style="{StaticResource FieldHintStyle}" Text="{Binding Label}" />
+                                                                </StackPanel>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                    <ListView
+                                                        x:Name="CombatCharacterBreakdownListView"
+                                                        MaxHeight="520"
+                                                        SelectionMode="None">
+                                                    <ListView.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Grid Padding="0,9" ColumnSpacing="14">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="54" />
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="120" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <Border
+                                                                    Width="48"
+                                                                    Height="48"
+                                                                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                                                    CornerRadius="24">
+                                                                    <Image Source="{Binding AvatarSource}" Stretch="UniformToFill" />
+                                                                </Border>
+                                                                <StackPanel Grid.Column="1" Spacing="5">
+                                                                    <TextBlock FontSize="15" FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                                                                    <ItemsControl ItemsSource="{Binding Segments}">
+                                                                        <ItemsControl.ItemsPanel>
+                                                                            <ItemsPanelTemplate>
+                                                                                <StackPanel Orientation="Horizontal" />
+                                                                            </ItemsPanelTemplate>
+                                                                        </ItemsControl.ItemsPanel>
+                                                                        <ItemsControl.ItemTemplate>
+                                                                            <DataTemplate>
+                                                                                <Border
+                                                                                    Width="{Binding Width}"
+                                                                                    Height="8"
+                                                                                    Background="{Binding Brush}"
+                                                                                    ToolTipService.ToolTip="{Binding ToolTip}" />
+                                                                            </DataTemplate>
+                                                                        </ItemsControl.ItemTemplate>
+                                                                    </ItemsControl>
+                                                                    <TextBlock Style="{StaticResource FieldHintStyle}" Text="{Binding HitSummary}" />
+                                                                </StackPanel>
+                                                                <TextBlock
+                                                                    Grid.Column="2"
+                                                                    HorizontalAlignment="Right"
+                                                                    VerticalAlignment="Top"
+                                                                    FontSize="17"
+                                                                    FontWeight="SemiBold"
+                                                                    Text="{Binding DamageText}" />
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </ListView.ItemTemplate>
+                                                    </ListView>
+                                        </StackPanel>
+                                        <TextBlock
+                                            x:Name="CombatBreakdownEmptyTextBlock"
+                                            Style="{StaticResource FieldHintStyle}"
+                                            Text="当前记录没有可显示的角色明细。"
+                                            Visibility="Collapsed" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <ScrollViewer
+                            x:Name="UiPageScrollViewer"
+                            HorizontalScrollBarVisibility="Disabled"
+                            Visibility="Collapsed"
+                            VerticalScrollBarVisibility="Auto">
+                            <StackPanel
+                                MaxWidth="920"
+                                Margin="32,28,32,44"
+                                HorizontalAlignment="Stretch"
+                                Spacing="28">
+                                <StackPanel Spacing="6">
+                                    <TextBlock x:Name="UiPageTitleTextBlock" Style="{StaticResource PageTitleStyle}" Text="界面增强" />
+                                    <TextBlock
+                                        x:Name="UiPageDescriptionTextBlock"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="自定义游戏界面布局、画面遮挡与交互模式。各项默认关闭，切换后会立即保存。"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="16">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Name="MobileUiSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="移动端 UI 模式" />
+                                            <TextBlock
+                                                x:Name="MobileUiSectionHint"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="在电脑端开启手机版 UI（移动端虚拟摇杆、技能轮盘与触控布局）。保留 PC 端常规登录；切换后会自动保存，已启动的游戏会刷新界面。"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ToggleSwitch
+                                            x:Name="MobileUiToggle"
+                                            Header="使用手机版 UI"
+                                            OffContent="原生 PC 界面"
+                                            OnContent="手机版触控界面"
+                                            Toggled="UiEnhancementToggle_Toggled" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="18">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Name="HideUidSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="UID 水印" />
+                                            <TextBlock
+                                                x:Name="HideUidSectionHint"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="隐藏游戏画面中的账号 UID 水印。"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ToggleSwitch
+                                            x:Name="HideUidToggle"
+                                            Header="隐藏 UID 水印"
+                                            OffContent="显示 UID"
+                                            OnContent="隐藏 UID"
+                                            Toggled="UiEnhancementToggle_Toggled" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="18">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Name="HideHudSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="HUD 显示" />
+                                            <TextBlock
+                                                x:Name="HideHudSectionHint"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="通过热键隐藏或恢复游戏内 MainHudRoot 下的全部 HUD 画布，不影响菜单和设置界面。"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ToggleSwitch
+                                            x:Name="HideHudToggle"
+                                            Header="启用隐藏全部 HUD 热键"
+                                            OffContent="关闭"
+                                            OnContent="允许热键切换"
+                                            Toggled="UiEnhancementToggle_Toggled" />
+                                        <TextBox
+                                            x:Name="HideHudHotkeyBox"
+                                            Header="HUD 显示切换热键"
+                                            LostFocus="HideHudHotkeyBox_LostFocus"
+                                            MaxLength="8"
+                                            PlaceholderText="例如 0、F10、NUMPAD0"
+                                            Text="0" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <ScrollViewer
+                            x:Name="CameraPageScrollViewer"
+                            HorizontalScrollBarVisibility="Disabled"
+                            Visibility="Collapsed"
+                            VerticalScrollBarVisibility="Auto">
+                            <StackPanel
+                                MaxWidth="920"
+                                Margin="32,28,32,44"
+                                HorizontalAlignment="Stretch"
+                                Spacing="28">
+                                <StackPanel Spacing="6">
+                                    <TextBlock x:Name="CameraPageTitleTextBlock" Style="{StaticResource PageTitleStyle}" Text="相机增强" />
+                                    <TextBlock
+                                        x:Name="CameraPageDescriptionTextBlock"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="自由控制游戏相机，并调整镜头相关的画面效果。各项默认关闭，修改后立即保存。"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <InfoBar
+                                    x:Name="CameraFreeInfoBar"
+                                    IsClosable="False"
+                                    IsOpen="True"
+                                    Message="启用后按设置的热键进入或退出。方向键前后左右移动，PageUp/PageDown 升降；视角旋转继续使用游戏原生鼠标控制。切换场景或主相机时会自动退出。"
+                                    Severity="Informational"
+                                    Title="自由视角操作" />
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="18">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Name="CameraFreeSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="自由视角" />
+                                            <TextBlock
+                                                x:Name="CameraFreeSectionHint"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="进入时捕获主相机的位置和视野，退出后恢复原值。模块只接管相机位置，鼠标旋转仍由游戏原生相机逻辑处理。"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ToggleSwitch
+                                            x:Name="FreeCameraToggle"
+                                            Header="启用自由视角功能"
+                                            OffContent="关闭"
+                                            OnContent="允许热键切换"
+                                            Toggled="CameraEnhancementToggle_Toggled" />
+                                        <ToggleSwitch
+                                            x:Name="PauseGameInFreeCameraToggle"
+                                            Header="进入自由视角时暂停游戏"
+                                            OffContent="游戏继续运行"
+                                            OnContent="暂停角色与世界"
+                                            Toggled="CameraEnhancementToggle_Toggled" />
+                                        <Grid ColumnSpacing="12" RowSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <NumberBox
+                                                x:Name="FreeCameraMovementSpeedNumberBox"
+                                                Grid.Column="1"
+                                                Header="移动速度"
+                                                Minimum="0.1"
+                                                Maximum="100"
+                                                SmallChange="0.5"
+                                                SpinButtonPlacementMode="Compact"
+                                                Value="5"
+                                                ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                            <TextBox
+                                                x:Name="FreeCameraHotkeyBox"
+                                                Header="切换热键"
+                                                LostFocus="FreeCameraHotkeyBox_LostFocus"
+                                                MaxLength="8"
+                                                PlaceholderText="例如 9、F9、NUMPAD9"
+                                                Text="9" />
+                                            <NumberBox
+                                                x:Name="FreeCameraFieldOfViewNumberBox"
+                                                Grid.Row="1"
+                                                Header="视野（FOV）"
+                                                Minimum="20"
+                                                Maximum="120"
+                                                SmallChange="1"
+                                                SpinButtonPlacementMode="Compact"
+                                                Value="60"
+                                                ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="16">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Name="CameraVisualSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="镜头画面" />
+                                            <TextBlock
+                                                x:Name="CameraVisualSectionHint"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="调用游戏自身的清理逻辑，移除镜头贴近角色时出现的半透明虚化。"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ToggleSwitch
+                                            x:Name="DisableDitherToggle"
+                                            Header="移除角色近距离虚化"
+                                            OffContent="保留原效果"
+                                            OnContent="关闭虚化"
+                                            Toggled="CameraEnhancementToggle_Toggled" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <ScrollViewer
+                            x:Name="DisplayPageScrollViewer"
+                            HorizontalScrollBarVisibility="Disabled"
+                            Visibility="Collapsed"
+                            VerticalScrollBarVisibility="Auto">
+                            <StackPanel
+                                MaxWidth="920"
+                                Margin="32,28,32,44"
+                                HorizontalAlignment="Stretch"
+                                Spacing="28">
+                                <StackPanel Spacing="6">
+                                    <TextBlock x:Name="DisplayPageTitleTextBlock" Style="{StaticResource PageTitleStyle}" Text="显示增强" />
+                                    <TextBlock
+                                        x:Name="DisplayPageDescriptionTextBlock"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="通过 OptiScaler 接管客户端的画质提升选项，为 AMD 与 Intel 显卡提供客户端本身不支持的超分方案。"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <InfoBar
+                                    x:Name="DisplayWarningInfoBar"
+                                    IsClosable="False"
+                                    IsOpen="True"
+                                    Message="启用会向 Endfield.exe 所在目录写入 OptiScaler 组件（含 dxgi.dll）与归属记录，不会覆盖未知同名文件。客户端带有内核级反作弊，向游戏目录写入文件比运行时注入更容易被静态扫描发现，是否使用请自行判断。"
+                                    Severity="Warning"
+                                    Title="会写入游戏目录" />
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="16">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Name="DisplayAdapterSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="显示适配器" />
+                                            <TextBlock
+                                                x:Name="DisplayGpuTextBlock"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="正在检测。"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ComboBox
+                                            x:Name="DisplayBackendComboBox"
+                                            Header="超分后端"
+                                            HorizontalAlignment="Stretch"
+                                            SelectionChanged="DisplayBackendComboBox_SelectionChanged" />
+                                        <TextBlock
+                                            x:Name="DisplayTradeoffTextBlock"
+                                            Style="{StaticResource FieldHintStyle}"
+                                            TextWrapping="Wrap"
+                                            Visibility="Collapsed" />
+                                        <ToggleSwitch
+                                            x:Name="DisplaySpoofingToggle"
+                                            Header="GPU 欺骗"
+                                            OffContent="关闭"
+                                            OnContent="开启" />
+                                        <TextBlock
+                                            x:Name="DisplaySpoofingHintTextBlock"
+                                            Style="{StaticResource FieldHintStyle}"
+                                            Text="客户端的 FSR3 为引擎内置、没有可拦截的 FidelityFX 接口，因此非 NVIDIA 显卡必须开启欺骗让客户端暴露 DLSS 选项，OptiScaler 才能接管。开启后请在客户端【设置-性能与画面-画质提升】中选择 NVIDIA DLSS。"
+                                            TextWrapping="Wrap" />
+                                        <ToggleSwitch
+                                            x:Name="DisplayDiagnosticsToggle"
+                                            Header="诊断日志"
+                                            OffContent="关闭"
+                                            OnContent="写入 OptiScaler 日志到游戏目录" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="12">
+                                        <TextBlock x:Name="DisplayDeploySectionTitle" Style="{StaticResource SectionTitleStyle}" Text="组件部署" />
+                                        <InfoBar
+                                            x:Name="DisplayStatusInfoBar"
+                                            IsClosable="False"
+                                            IsOpen="True"
+                                            Message="正在检查部署状态。"
+                                            Severity="Informational"
+                                            Title="部署状态" />
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button
+                                                x:Name="InstallDisplayButton"
+                                                Click="InstallDisplayButton_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <SymbolIcon Symbol="Download" />
+                                                    <TextBlock x:Name="InstallDisplayButtonTextBlock" Text="部署或更新" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Button
+                                                x:Name="ApplyDisplayButton"
+                                                Click="ApplyDisplayButton_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <SymbolIcon Symbol="Accept" />
+                                                    <TextBlock x:Name="ApplyDisplayButtonTextBlock" Text="应用配置" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Button
+                                                x:Name="UninstallDisplayButton"
+                                                Click="UninstallDisplayButton_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <SymbolIcon Symbol="Delete" />
+                                                    <TextBlock x:Name="UninstallDisplayButtonTextBlock" Text="从游戏目录卸载" />
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                        <TextBlock
+                                            x:Name="DisplayNotesTextBlock"
+                                            Style="{StaticResource FieldHintStyle}"
+                                            TextWrapping="Wrap"
+                                            Visibility="Collapsed" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock x:Name="DisplayUsageSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="使用须知" />
+                                        <TextBlock
+                                            x:Name="DisplayUsageNotice1TextBlock"
+                                            Style="{StaticResource FieldHintStyle}"
+                                            Text="OptiScaler 覆盖层由 Insert 键呼出，与战斗数据模块的 F11/F12 不冲突。帧生成不会启用：客户端已有原生 DLSS 帧生成。FSR4 在客户端的 DX11 与 Vulkan 后端下都经 DX12 interop 运行，会额外承担一层同步开销。"
+                                            TextWrapping="Wrap" />
+                                        <TextBlock
+                                            x:Name="DisplayUsageNotice2TextBlock"
+                                            Style="{StaticResource FieldHintStyle}"
+                                            Text="OptiScaler 为 GPL-3.0 授权的独立开源项目，不随本软件分发，需自行放入软件目录下的 payloads/optiscaler。"
+                                            TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <ScrollViewer
+                            x:Name="SettingsPageScrollViewer"
+                            HorizontalScrollBarVisibility="Disabled"
+                            Visibility="Collapsed"
+                            VerticalScrollBarVisibility="Auto">
+                            <StackPanel
+                                MaxWidth="920"
+                                Margin="32,28,32,44"
+                                HorizontalAlignment="Stretch"
+                                Spacing="28">
+                                <StackPanel Spacing="6">
+                                    <TextBlock x:Name="SettingsPageTitleTextBlock" Style="{StaticResource PageTitleStyle}" Text="设置" />
+                                    <TextBlock
+                                        x:Name="SettingsPageDescriptionTextBlock"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="管理运行路径、加载方式、启动参数、外观和桌面入口。"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="16">
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Spacing="3">
+                                                <TextBlock x:Name="SettingsPathsSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="运行路径" />
+                                                <TextBlock
+                                                    x:Name="SettingsPathsSectionHint"
+                                                    Style="{StaticResource FieldHintStyle}"
+                                                    Text="首次启动会自动扫描；移动游戏或软件后可重新扫描。" />
+                                            </StackPanel>
+                                            <Button
+                                                x:Name="ScanPathsButton"
+                                                Grid.Column="1"
+                                                VerticalAlignment="Center"
+                                                Click="ScanPathsButton_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <ProgressRing
+                                                        x:Name="PathScanProgressRing"
+                                                        Width="16"
+                                                        Height="16"
+                                                        IsActive="False"
+                                                        Visibility="Collapsed" />
+                                                    <SymbolIcon Symbol="Find" />
+                                                    <TextBlock x:Name="ScanPathsButtonTextBlock" Text="重新扫描" />
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+                                        <Grid ColumnSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox
+                                                x:Name="GamePathBox"
+                                                Header="游戏程序"
+                                                PlaceholderText="Endfield.exe"
+                                                TextChanged="GamePathBox_TextChanged" />
+                                            <Button
+                                                Grid.Column="1"
+                                                Margin="0,24,0,0"
+                                                Click="BrowseGameButton_Click"
+                                                Style="{StaticResource PathButtonStyle}"
+                                                ToolTipService.ToolTip="浏览游戏程序">
+                                                <SymbolIcon Symbol="OpenFile" />
+                                            </Button>
+                                        </Grid>
+                                        <TextBlock
+                                            x:Name="GamePathStatusTextBlock"
+                                            FontSize="12"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Text="等待扫描游戏路径。" />
+                                        <TextBox
+                                            x:Name="GameLaunchArgumentsBox"
+                                            Header="游戏启动参数（可选）"
+                                            MaxLength="2048"
+                                            PlaceholderText="例如：-force-d3d11"
+                                            TextWrapping="NoWrap" />
+                                        <TextBlock
+                                            x:Name="GameLaunchArgumentsHintTextBlock"
+                                            Style="{StaticResource FieldHintStyle}"
+                                            Text="参数将原样传给 Endfield.exe；-force-d3d11 会使用 Direct3D 11 启动。"
+                                            TextWrapping="Wrap" />
+                                        <Grid ColumnSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox
+                                                x:Name="InjectorPathBox"
+                                                Header="注入器"
+                                                PlaceholderText="BetterEndfield.Injector.exe"
+                                                TextChanged="InjectorPathBox_TextChanged" />
+                                            <Button
+                                                Grid.Column="1"
+                                                Margin="0,24,0,0"
+                                                Click="BrowseInjectorButton_Click"
+                                                Style="{StaticResource PathButtonStyle}"
+                                                ToolTipService.ToolTip="浏览注入器">
+                                                <SymbolIcon Symbol="OpenFile" />
+                                            </Button>
+                                        </Grid>
+                                        <TextBlock
+                                            x:Name="InjectorPathStatusTextBlock"
+                                            FontSize="12"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Text="等待扫描注入器路径。" />
+                                        <StackPanel Spacing="3">
+                                            <TextBlock x:Name="CurrentConfigLabelTextBlock" Style="{StaticResource FieldHintStyle}" Text="当前配置文件" />
+                                            <TextBlock
+                                                x:Name="ConfigurationPathTextBlock"
+                                                FontFamily="Consolas"
+                                                FontSize="12"
+                                                TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button Click="OpenConfigurationFolderButton_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <SymbolIcon Symbol="Folder" />
+                                                    <TextBlock x:Name="OpenConfigFolderButtonTextBlock" Text="配置目录" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Click="OpenLogButton_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <SymbolIcon Symbol="Document" />
+                                                    <TextBlock x:Name="OpenLogButtonTextBlock" Text="运行日志" />
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="16">
+                                        <TextBlock x:Name="LoaderModeSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="加载方式" />
+                                        <Grid ColumnSpacing="18">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <RadioButton
+                                                x:Name="InjectorModeRadioButton"
+                                                GroupName="LoaderMode"
+                                                IsChecked="True"
+                                                Checked="LoaderModeRadioButton_Checked">
+                                                <StackPanel Spacing="3">
+                                                    <TextBlock x:Name="InjectorModeTitleTextBlock" FontWeight="SemiBold" Text="内置注入器" />
+                                                    <TextBlock x:Name="InjectorModeHintTextBlock" Style="{StaticResource FieldHintStyle}" Text="不写入游戏目录" />
+                                                </StackPanel>
+                                            </RadioButton>
+                                            <RadioButton
+                                                x:Name="XInputModeRadioButton"
+                                                Grid.Column="1"
+                                                GroupName="LoaderMode"
+                                                Checked="LoaderModeRadioButton_Checked">
+                                                <StackPanel Spacing="3">
+                                                    <TextBlock x:Name="XInputModeTitleTextBlock" FontWeight="SemiBold" Text="XInput 自启动" />
+                                                    <TextBlock x:Name="XInputModeHintTextBlock" Style="{StaticResource FieldHintStyle}" Text="随游戏自动加载" />
+                                                </StackPanel>
+                                            </RadioButton>
+                                        </Grid>
+                                        <TextBlock
+                                            x:Name="LoaderModeDescriptionTextBlock"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Text="由 Better Endfield 启动游戏并在启动阶段加载 Host，游戏目录保持不变。"
+                                            TextWrapping="Wrap" />
+                                        <StackPanel
+                                            x:Name="XInputManagementPanel"
+                                            Spacing="12"
+                                            Visibility="Collapsed">
+                                            <InfoBar
+                                                x:Name="XInputWarningInfoBar"
+                                                IsClosable="False"
+                                                IsOpen="True"
+                                                Message="需要兼容其他加载器，或希望通过官方启动器、桌面快捷方式自启动时使用。安装会向 Endfield.exe 所在目录写入 xinput1_4.dll 和归属记录；不会覆盖未知同名文件。"
+                                                Severity="Informational"
+                                                Title="会写入游戏目录" />
+                                            <InfoBar
+                                                x:Name="XInputStatusInfoBar"
+                                                IsClosable="False"
+                                                IsOpen="True"
+                                                Message="正在检查安装状态。"
+                                                Severity="Informational"
+                                                Title="XInput 状态" />
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <Button
+                                                    x:Name="InstallXInputButton"
+                                                    Click="InstallXInputButton_Click">
+                                                    <StackPanel Orientation="Horizontal" Spacing="7">
+                                                        <SymbolIcon Symbol="Download" />
+                                                        <TextBlock x:Name="InstallXInputButtonTextBlock" Text="安装或更新" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button
+                                                    x:Name="UninstallXInputButton"
+                                                    Click="UninstallXInputButton_Click">
+                                                    <StackPanel Orientation="Horizontal" Spacing="7">
+                                                        <SymbolIcon Symbol="Delete" />
+                                                        <TextBlock x:Name="UninstallXInputButtonTextBlock" Text="从游戏目录卸载" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="14">
+                                        <TextBlock x:Name="AppearanceSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="外观与语言" />
+                                        <ComboBox
+                                            x:Name="LanguageComboBox"
+                                            Width="280"
+                                            HorizontalAlignment="Left"
+                                            Header="界面语言 / Language"
+                                            SelectionChanged="LanguageComboBox_SelectionChanged">
+                                            <ComboBoxItem Content="跟随系统 (System Default)" Tag="System" />
+                                            <ComboBoxItem Content="简体中文 (Chinese Simplified)" Tag="zh-CN" />
+                                            <ComboBoxItem Content="English (United States)" Tag="en-US" />
+                                        </ComboBox>
+                                        <ComboBox
+                                            x:Name="ThemeComboBox"
+                                            Width="280"
+                                            HorizontalAlignment="Left"
+                                            Header="应用主题"
+                                            SelectionChanged="ThemeComboBox_SelectionChanged">
+                                            <ComboBoxItem x:Name="ThemeItemDefault" Content="跟随系统" Tag="Default" />
+                                            <ComboBoxItem x:Name="ThemeItemLight" Content="浅色" Tag="Light" />
+                                            <ComboBoxItem x:Name="ThemeItemDark" Content="深色" Tag="Dark" />
+                                        </ComboBox>
+                                    </StackPanel>
+                                </Border>
+
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Name="ShortcutsSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="桌面快捷方式" />
+                                    <Border Style="{StaticResource SettingsRowStyle}">
+                                        <Grid ColumnSpacing="18">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Spacing="3">
+                                                <TextBlock x:Name="AppShortcutTitleTextBlock" FontWeight="SemiBold" Text="Better Endfield" />
+                                                <TextBlock
+                                                    x:Name="AppShortcutHintTextBlock"
+                                                    Style="{StaticResource FieldHintStyle}"
+                                                    Text="在桌面创建本控制器的启动入口。" />
+                                            </StackPanel>
+                                            <Button
+                                                Grid.Column="1"
+                                                Click="CreateAppShortcutButton_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <SymbolIcon Symbol="Pin" />
+                                                    <TextBlock x:Name="CreateAppShortcutButtonTextBlock" Text="创建" />
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                    <Border Style="{StaticResource SettingsRowStyle}">
+                                        <Grid ColumnSpacing="18">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Spacing="3">
+                                                <TextBlock x:Name="GameShortcutTitleTextBlock" FontWeight="SemiBold" Text="一键启动终末地" />
+                                                <TextBlock
+                                                    x:Name="GameShortcutHintTextBlock"
+                                                    Style="{StaticResource FieldHintStyle}"
+                                                    Text="使用当前加载方式、游戏路径和启动参数创建桌面入口。" />
+                                            </StackPanel>
+                                            <Button
+                                                Grid.Column="1"
+                                                Click="CreateGameShortcutButton_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <SymbolIcon Symbol="Play" />
+                                                    <TextBlock x:Name="CreateGameShortcutButtonTextBlock" Text="创建" />
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <ScrollViewer
+                            x:Name="AboutPageScrollViewer"
+                            HorizontalScrollBarVisibility="Disabled"
+                            Visibility="Collapsed"
+                            VerticalScrollBarVisibility="Auto">
+                            <StackPanel
+                                MaxWidth="920"
+                                Margin="32,28,32,44"
+                                HorizontalAlignment="Stretch"
+                                Spacing="30">
+                                <Grid ColumnSpacing="18">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="76" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="76" Height="76" CornerRadius="8">
+                                        <Image Source="Assets/shared/gilberta.png" Stretch="UniformToFill" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="6">
+                                        <TextBlock x:Name="AboutAppTitleTextBlock" Style="{StaticResource PageTitleStyle}" Text="Better Endfield" />
+                                        <TextBlock
+                                            x:Name="AboutAppSubtitleTextBlock"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Text="终末地登录场景模型与角色配音控制器" />
+                                        <TextBlock
+                                            x:Name="CurrentVersionTextBlock"
+                                            Margin="0,2,0,0"
+                                            FontFamily="Consolas"
+                                            Text="版本 2.2.1" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="14">
+                                        <TextBlock x:Name="AboutUpdateSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="软件更新" />
+                                        <TextBlock
+                                            x:Name="AboutUpdateSectionHint"
+                                            Style="{StaticResource FieldHintStyle}"
+                                            Text="仅在点击检查时访问 GitHub Releases，不会后台自动联网。" />
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button
+                                                x:Name="CheckUpdatesButton"
+                                                Click="CheckUpdatesButton_Click"
+                                                Style="{StaticResource AccentButtonStyle}">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <ProgressRing
+                                                        x:Name="UpdateProgressRing"
+                                                        Width="16"
+                                                        Height="16"
+                                                        IsActive="False"
+                                                        Visibility="Collapsed" />
+                                                    <SymbolIcon x:Name="UpdateButtonIcon" Symbol="Refresh" />
+                                                    <TextBlock x:Name="CheckUpdatesButtonTextBlock" Text="检查更新" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Button
+                                                x:Name="OpenReleaseButton"
+                                                Click="OpenReleaseButton_Click"
+                                                Visibility="Collapsed">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <SymbolIcon Symbol="Download" />
+                                                    <TextBlock x:Name="OpenReleaseButtonTextBlock" Text="打开下载页" />
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                        <InfoBar
+                                            x:Name="UpdateInfoBar"
+                                            IsClosable="True"
+                                            IsOpen="False" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="14">
+                                        <TextBlock x:Name="AboutProjectSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="项目" />
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button Click="OpenRepositoryButton_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <SymbolIcon Symbol="Link" />
+                                                    <TextBlock x:Name="OpenRepoButtonTextBlock" Text="GitHub 仓库" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Click="OpenAllReleasesButton_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <SymbolIcon Symbol="Download" />
+                                                    <TextBlock x:Name="OpenReleasesButtonTextBlock" Text="全部版本" />
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                        <Button
+                                            HorizontalAlignment="Left"
+                                            Click="OpenLicenseButton_Click">
+                                            <StackPanel Orientation="Horizontal" Spacing="7">
+                                                <SymbolIcon Symbol="Document" />
+                                                <TextBlock x:Name="OpenLicenseButtonTextBlock" Text="GNU AGPL v3.0 开源许可" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="14">
+                                        <TextBlock x:Name="AboutAuthorSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="作者与交流" />
+                                        <Grid ColumnSpacing="12" RowSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="96" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+
+                                            <TextBlock x:Name="BilibiliLabelTextBlock" VerticalAlignment="Center" Text="B站" />
+                                            <Button
+                                                Grid.Column="1"
+                                                HorizontalAlignment="Left"
+                                                Click="OpenBilibiliButton_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <SymbolIcon Symbol="Link" />
+                                                    <TextBlock x:Name="OpenBilibiliButtonTextBlock" Text="打开 B站主页" />
+                                                </StackPanel>
+                                            </Button>
+
+                                            <TextBlock x:Name="XiaoheiheLabelTextBlock" Grid.Row="1" VerticalAlignment="Center" Text="小黑盒" />
+                                            <Button
+                                                Grid.Row="1"
+                                                Grid.Column="1"
+                                                HorizontalAlignment="Left"
+                                                Click="OpenXiaoheiheButton_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <SymbolIcon Symbol="Link" />
+                                                    <TextBlock x:Name="OpenXiaoheiheButtonTextBlock" Text="打开小黑盒主页" />
+                                                </StackPanel>
+                                            </Button>
+
+                                            <TextBlock x:Name="QqGroupLabelTextBlock" Grid.Row="2" VerticalAlignment="Center" Text="QQ群" />
+                                            <TextBlock
+                                                Grid.Row="2"
+                                                Grid.Column="1"
+                                                VerticalAlignment="Center"
+                                                FontFamily="Consolas"
+                                                IsTextSelectionEnabled="True"
+                                                Text="851586605" />
+                                            <Button
+                                                x:Name="CopyQqGroupButton"
+                                                Grid.Row="2"
+                                                Grid.Column="2"
+                                                Width="40"
+                                                Height="32"
+                                                Padding="8"
+                                                Click="CopyQqGroupButton_Click"
+                                                ToolTipService.ToolTip="复制QQ群号">
+                                                <SymbolIcon Symbol="Copy" />
+                                            </Button>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Name="AboutDisclaimerSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="风险与免责声明" />
+                                    <TextBlock
+                                        x:Name="AboutDisclaimerHintTextBlock"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="本项目为非官方实验工具，与鹰角网络、峘形山工作室及 GRYPHLINE 无关。注入和运行时修改可能造成游戏崩溃、版本不兼容或账号风险。"
+                                        TextWrapping="Wrap" />
+                                    <Button
+                                        x:Name="ViewDisclaimerButton"
+                                        HorizontalAlignment="Left"
+                                        Click="ViewDisclaimerButton_Click"
+                                        Content="查看完整说明" />
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <Border
+                        x:Name="ActionBar"
+                        Grid.Row="2"
+                        Padding="20,12"
+                        Background="{ThemeResource LayerFillColorAltBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="0,1,0,0">
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock
+                                x:Name="PageSelectionHintTextBlock"
+                                VerticalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="保存后在下一次注入时生效。"
+                                TextTrimming="CharacterEllipsis" />
+                            <Button x:Name="ResetButton" Grid.Column="1" Click="ResetButton_Click">
+                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                    <SymbolIcon Symbol="Undo" />
+                                    <TextBlock x:Name="ResetButtonTextBlock" Text="恢复默认" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="SaveButton" Grid.Column="2" Click="SaveButton_Click">
+                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                    <SymbolIcon Symbol="Save" />
+                                    <TextBlock x:Name="SaveButtonTextBlock" Text="保存" />
+                                </StackPanel>
+                            </Button>
+                            <Button
+                                x:Name="LaunchButton"
+                                Grid.Column="3"
+                                Click="LaunchButton_Click"
+                                Style="{StaticResource AccentButtonStyle}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <ProgressRing
+                                        x:Name="LaunchProgressRing"
+                                        Width="16"
+                                        Height="16"
+                                        IsActive="False"
+                                        Visibility="Collapsed" />
+                                    <SymbolIcon Symbol="Play" />
+                                    <TextBlock x:Name="LaunchButtonTextBlock" Text="保存并启动" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <InfoBar
+                        x:Name="StatusInfoBar"
+                        Grid.Row="3"
+                        Margin="16,8,16,12"
+                        IsClosable="True"
+                        IsOpen="False" />
+                </Grid>
+            </NavigationView.Content>
+        </NavigationView>
+    </Grid>
+</Window>

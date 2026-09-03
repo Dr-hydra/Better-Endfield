@@ -7,8 +7,10 @@
 #include <array>
 #include <atomic>
 #include <cctype>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <fstream>
 #include <filesystem>
 #include <mutex>
@@ -68,6 +70,7 @@ struct CatalogEntry {
     uint32_t target_media_id = 0;
     uint64_t data_offset = 0;
     uint32_t data_size = 0;
+    int source_language = -1;
 };
 
 struct ResidentCatalog {
@@ -76,6 +79,7 @@ struct ResidentCatalog {
     bool wildcard = false;
     std::vector<uint8_t> blob;
     std::vector<CatalogEntry> entries;
+    std::unordered_map<std::string, float> duration_by_identity;
 };
 
 struct MethodContract {
@@ -101,6 +105,11 @@ std::atomic<uint64_t> g_channel_play_hits{0};
 std::atomic<uint64_t> g_event_hits{0};
 std::atomic<uint64_t> g_narrative_hits{0};
 std::atomic<uint64_t> g_duration_hits{0};
+std::atomic<uint64_t> g_duration_by_id_hits{0};
+std::atomic<uint64_t> g_voice_data_duration_hits{0};
+std::atomic<uint64_t> g_ifix_duration_hits{0};
+std::atomic<uint64_t> g_ifix_duration_by_id_hits{0};
+std::atomic<uint64_t> g_native_custom_path_hits{0};
 std::atomic<uint64_t> g_language_override_hits{0};
 std::atomic<uint64_t> g_lip_dialog_hits{0};
 std::atomic<uint64_t> g_lip_path_hits{0};
@@ -110,6 +119,8 @@ std::atomic<uint64_t> g_set_media_hits{0};
 std::atomic<uint64_t> g_unset_media_hits{0};
 std::atomic<uint64_t> g_package_load_hits{0};
 std::atomic<uint64_t> g_package_unload_hits{0};
+std::atomic<uint64_t> g_pinvoke_unload_hits{0};
+std::atomic<uint64_t> g_unload_pcks_hits{0};
 
 using VoiceContextFn = void(__fastcall*)(void* voice_context, void* method);
 using InternalVoiceContextFn = uint32_t(__fastcall*)(
@@ -123,6 +134,20 @@ using NarrativeFn = uint32_t(__fastcall*)(
     void* method);
 using DurationFn = bool(__fastcall*)(
     void* voice_id, float* duration, void* method);
+using DurationByIdFn = bool(__fastcall*)(
+    int32_t voice_id, float* duration, void* method);
+using VoiceDataStringGetterFn = void*(__fastcall*)(
+    void* voice_data, void* method);
+using VoiceDataFloatGetterFn = float(__fastcall*)(
+    void* voice_data, void* method);
+using TryGetVoiceDataFn = bool(__fastcall*)(
+    void* voice_id, void* voice_data, int32_t* numeric_id, void* method);
+using GetVoiceDataByIdFn = bool(__fastcall*)(
+    int32_t voice_id, void* voice_data, void* method);
+using IfixDurationFn = bool(__fastcall*)(
+    void* patch, void* voice_id, float* duration, void* method);
+using IfixDurationByIdFn = bool(__fastcall*)(
+    void* patch, int32_t voice_id, float* duration, void* method);
 using GetCurrentLanguageFn = int(__fastcall*)(void* method);
 using LipDialogFn = void(__fastcall*)(
     void* instance, void* action_data, void* entity, void* method);
@@ -135,11 +160,25 @@ using ExternalEventFn = uint32_t(__fastcall*)(
     void* event_name, uint64_t audio_object_id, void* external_source_key,
     uint32_t external_cookie, uint32_t callback_type, void* callback,
     void* cookie, uint32_t codec, void* method);
+using ExternalEventByIdFn = uint32_t(__fastcall*)(
+    uint32_t event_id, uint64_t audio_object_id, void* external_source_key,
+    uint32_t external_cookie, uint32_t callback_type, void* callback,
+    void* cookie, uint32_t codec, void* method);
 using TryLoadLanguagePackageFn = bool(__fastcall*)(void* language, void* method);
 using GetLanguageNameFn = void*(__fastcall*)(int language, void* method);
+using SetSpeakerCustomLangFn = void(__fastcall*)(
+    void* speaker, int language, void* method);
+using TryGetSpeakerCustomLangFn = bool(__fastcall*)(
+    void* speaker, void** language, void* method);
+using GetVoicePathFn = void(__fastcall*)(
+    void* path, void** voice_path, int dev_stage, void* method);
+using GetCustomLanguageVoicePathFn = void(__fastcall*)(
+    void* path, void** voice_path, int dev_stage, void* language, void* method);
 using LoadFilePackageFn = int(__fastcall*)(
     void* package_path, uint32_t* package_id, void* method);
 using UnloadFilePackageFn = int(__fastcall*)(uint32_t package_id, void* method);
+using NativeUnloadFilePackageFn = int(__fastcall*)(uint32_t package_id);
+using UnloadPcksFn = void(__fastcall*)(void* loaded_info, void* method);
 
 #pragma pack(push, 1)
 struct NativeAkSourceSettings {
@@ -159,6 +198,14 @@ ChannelPlayFn g_original_channel_play = nullptr;
 PlayEventFn g_original_play_event = nullptr;
 NarrativeFn g_original_narrative = nullptr;
 DurationFn g_original_duration = nullptr;
+DurationByIdFn g_original_duration_by_id = nullptr;
+VoiceDataFloatGetterFn g_original_voice_data_duration_cn = nullptr;
+VoiceDataFloatGetterFn g_original_voice_data_duration_en = nullptr;
+VoiceDataFloatGetterFn g_original_voice_data_duration_jp = nullptr;
+VoiceDataFloatGetterFn g_original_voice_data_duration_kr = nullptr;
+IfixDurationFn g_original_ifix_duration = nullptr;
+IfixDurationByIdFn g_original_ifix_duration_by_id = nullptr;
+GetVoicePathFn g_original_get_voice_path = nullptr;
 GetCurrentLanguageFn g_original_voice_language = nullptr;
 LipDialogFn g_original_lip_dialog = nullptr;
 LipPathFn g_original_lip_path = nullptr;
@@ -166,25 +213,38 @@ LipLoadFn g_original_lip_load = nullptr;
 WwiseMediaFn g_original_set_media = nullptr;
 WwiseMediaFn g_original_unset_media = nullptr;
 ExternalEventFn g_original_external_event = nullptr;
+ExternalEventByIdFn g_original_external_event_by_id = nullptr;
+ExternalEventByIdFn g_original_external_event_internal = nullptr;
 LoadFilePackageFn g_original_load_file_package = nullptr;
 UnloadFilePackageFn g_original_unload_file_package = nullptr;
+UnloadFilePackageFn g_original_pinvoke_unload_file_package = nullptr;
+NativeUnloadFilePackageFn g_original_native_unload_file_package = nullptr;
+UnloadPcksFn g_original_unload_pcks = nullptr;
 std::vector<ResidentCatalog> g_resident_catalogs;
 std::vector<NativeAkSourceSettings> g_catalog_routes;
 std::vector<NativeAkSourceSettings> g_catalog_unset_routes;
 std::unordered_set<uint32_t> g_catalog_missing_routes;
+std::unordered_map<std::string, float> g_duration_by_identity;
 bool g_catalog_loaded = false;
 bool g_catalog_applied = false;
 std::mutex g_catalog_mutex;
 std::mutex g_package_mutex;
+std::mutex g_native_language_mutex;
+std::unordered_map<std::string, int> g_native_speaker_languages;
 std::array<bool, 4> g_language_package_ready{};
 std::array<uint64_t, 4> g_language_package_retry_at{};
-thread_local bool g_loading_auxiliary_package = false;
+std::atomic<uint32_t> g_auxiliary_mount_depth{0};
 thread_local int g_duration_language_override = -1;
 thread_local int g_lip_language_override = -1;
+thread_local bool g_ifix_duration_routing = false;
+thread_local bool g_custom_path_building = false;
 thread_local VoiceRequestRoute g_voice_request_route{};
 thread_local PendingLipRoute g_pending_lip_route{};
 BE_ResolvedFieldV1 g_voice_context_voice_data{};
 BE_ResolvedFieldV1 g_runtime_voice_data_speaker_channel{};
+BE_ResolvedFieldV1 g_ifix_method_id{};
+int32_t g_duration_ifix_method_id = -1;
+int32_t g_duration_by_id_ifix_method_id = -1;
 
 bool LoadConfiguredCatalogs(const std::vector<VoiceRule>& rules);
 bool ApplyCatalog();
@@ -219,7 +279,12 @@ MethodContract g_narrative{
 MethodContract g_duration{
     "voice.duration",
     {"Gameplay.Beyond.dll", "Beyond.Gameplay.Audio", "VoiceUtils",
-        "TryGetVoiceDuration", nullptr, "System.Boolean", 2},
+        "TryGetVoiceDuration", "System.String|System.Single&", "System.Boolean", 2},
+    false};
+MethodContract g_duration_by_id{
+    "voice.duration-by-id",
+    {"Gameplay.Beyond.dll", "Beyond.Gameplay.Audio", "VoiceUtils",
+        "TryGetVoiceDuration", "System.Int32|System.Single&", "System.Boolean", 2},
     false};
 MethodContract g_set_media{
     "wwise.media.set",
@@ -247,6 +312,95 @@ MethodContract g_get_language_name{
     {"Gameplay.Beyond.dll", "Beyond.Gameplay.Audio", "VoiceI18n",
         "GetLanguageName", "Beyond.I18n.AudioLang", "System.String", 1},
     true};
+MethodContract g_external_event_by_id{
+    "audio.external-event-by-id",
+    {"Audio.Beyond.dll", "Beyond.Audio", "AudioAdapter", "PostEventExternal",
+        "System.UInt32|System.UInt64|System.String|System.UInt32|Beyond.Audio.AudioCallbackType|Beyond.Audio.AudioEventCallback|System.Object|Beyond.Audio.AudioCodec",
+        "System.UInt32", 8},
+    false};
+MethodContract g_try_get_voice_data{
+    "voice.data.lookup-by-string",
+    {"Gameplay.Beyond.dll", "Beyond.Gameplay.Audio", "VoiceUtils",
+        "TryGetVoiceData",
+        "System.String|Beyond.Cfg.VoiceData&|System.Int32&",
+        "System.Boolean", 3},
+    false};
+MethodContract g_get_voice_data_by_id{
+    "voice.data.lookup-by-id",
+    {"Gameplay.Beyond.dll", "Beyond.Gameplay.Audio", "VoiceUtils",
+        "GetVoDataFromVoId", "System.Int32|Beyond.Cfg.VoiceData&",
+        "System.Boolean", 2},
+    false};
+MethodContract g_ifix_duration{
+    "voice.duration-ifix",
+    {"Gameplay.Beyond.dll", "IFix", "ILFixDynamicMethodWrapper",
+        "__Gen_Wrap_90", "System.Object|System.Single&",
+        "System.Boolean", 2},
+    false};
+MethodContract g_ifix_duration_by_id{
+    "voice.duration-by-id-ifix",
+    {"Gameplay.Beyond.dll", "IFix", "ILFixDynamicMethodWrapper",
+        "__Gen_Wrap_2533", "System.Int32|System.Single&",
+        "System.Boolean", 2},
+    false};
+MethodContract g_voice_data_speaker{
+    "voice.data.speaker",
+    {"Common.Beyond.dll", "Beyond.Cfg", "VoiceData",
+        "get_speakerChannel", nullptr, "System.String", 0},
+    false};
+MethodContract g_voice_data_duration_cn{
+    "voice.data.duration-cn",
+    {"Common.Beyond.dll", "Beyond.Cfg", "VoiceData",
+        "get_wavDuration", nullptr, "System.Single", 0},
+    false};
+MethodContract g_voice_data_duration_en{
+    "voice.data.duration-en",
+    {"Common.Beyond.dll", "Beyond.Cfg", "VoiceData",
+        "get_wavDurationEN", nullptr, "System.Single", 0},
+    false};
+MethodContract g_voice_data_duration_jp{
+    "voice.data.duration-jp",
+    {"Common.Beyond.dll", "Beyond.Cfg", "VoiceData",
+        "get_wavDurationJP", nullptr, "System.Single", 0},
+    false};
+MethodContract g_voice_data_duration_kr{
+    "voice.data.duration-kr",
+    {"Common.Beyond.dll", "Beyond.Cfg", "VoiceData",
+        "get_wavDurationKR", nullptr, "System.Single", 0},
+    false};
+MethodContract g_external_event_internal{
+    "audio.external-event-internal",
+    {"Audio.Beyond.dll", "Beyond.Audio", "AudioAdapter",
+        "_PostEventWithExternalSource",
+        "System.UInt32|System.UInt64|System.String|System.UInt32|Beyond.Audio.AudioCallbackType|Beyond.Audio.AudioEventCallback|System.Object|Beyond.Audio.AudioCodec",
+        "System.UInt32", 8},
+    false};
+MethodContract g_set_speaker_custom_language{
+    "voice.native-custom-language.set",
+    {"Gameplay.Beyond.dll", "Beyond.Gameplay.Audio", "VoiceI18n",
+        "SetSpeakerCustomLang", "System.String|Beyond.I18n.AudioLang",
+        "System.Void", 2},
+    false};
+MethodContract g_try_get_speaker_custom_language{
+    "voice.native-custom-language.get",
+    {"Gameplay.Beyond.dll", "Beyond.Gameplay.Audio", "VoiceI18n",
+        "TryGetSpeakerCustomLang", "System.String|System.String&",
+        "System.Boolean", 2},
+    false};
+MethodContract g_get_custom_voice_path{
+    "voice.native-custom-path.build",
+    {"Gameplay.Beyond.dll", "Beyond.Gameplay.Audio", "VoiceI18n",
+        "GetCustomLanguageVoicePath",
+        "System.String|System.String&|Beyond.GEnums.EVoiceDevStage|System.String",
+        "System.Void", 4},
+    false};
+MethodContract g_get_voice_path{
+    "voice.native-custom-path.entry",
+    {"Gameplay.Beyond.dll", "Beyond.Gameplay.Audio", "VoiceI18n",
+        "GetVoicePath",
+        "System.String|System.String&|Beyond.GEnums.EVoiceDevStage",
+        "System.Void", 3},
+    false};
 MethodContract g_load_file_package{
     "wwise.package.load",
     {"AK.Wwise.Unity.API.dll", "", "AkSoundEngine", "LoadFilePackage",
@@ -257,6 +411,16 @@ MethodContract g_unload_file_package{
     {"AK.Wwise.Unity.API.dll", "", "AkSoundEngine", "UnloadFilePackage",
         "System.UInt32", "AKRESULT", 1},
     true};
+MethodContract g_pinvoke_unload_file_package{
+    "wwise.package.unload-pinvoke",
+    {"AK.Wwise.Unity.API.dll", "", "AkSoundEnginePINVOKE",
+        "CSharp_UnloadFilePackage", "System.UInt32", "System.Int32", 1},
+    false};
+MethodContract g_unload_pcks{
+    "audio.language-package.unload",
+    {"Audio.Beyond.dll", "Beyond.Audio", "AudioVFSLoader",
+        "_UnloadPcks", nullptr, "System.Void", 1},
+    false};
 
 MethodContract g_voice_language{
     "voice.language",
@@ -451,6 +615,7 @@ bool ResolveRuntimeContract() {
         &g_voice_language,
         &g_load_file_package,
         &g_unload_file_package,
+        &g_pinvoke_unload_file_package,
     };
     for (MethodContract* contract : required) {
         if (!ResolveContract(*contract)) {
@@ -464,6 +629,18 @@ bool ResolveRuntimeContract() {
         &g_play_event,
         &g_narrative,
         &g_duration,
+        &g_duration_by_id,
+        &g_try_get_voice_data,
+        &g_get_voice_data_by_id,
+        &g_ifix_duration,
+        &g_ifix_duration_by_id,
+        &g_voice_data_speaker,
+        &g_voice_data_duration_cn,
+        &g_voice_data_duration_en,
+        &g_voice_data_duration_jp,
+        &g_voice_data_duration_kr,
+        &g_external_event_by_id,
+        &g_external_event_internal,
         &g_lip_dialog,
         &g_lip_path,
         &g_lip_load,
@@ -481,14 +658,20 @@ bool ResolveRuntimeContract() {
     const BE_FieldDescriptorV1 speaker_channel_field{
         "Gameplay.Beyond.dll", "Beyond.Gameplay.Audio", "RuntimeVoiceData",
         "speakerChannel", "System.String"};
+    const BE_FieldDescriptorV1 ifix_method_id_field{
+        "Gameplay.Beyond.dll", "IFix", "ILFixDynamicMethodWrapper",
+        "methodId", "System.Int32"};
     const BE_Result voice_data_status = g_host->resolve_field(
         g_host->context, &voice_data_field, &g_voice_context_voice_data);
     const BE_Result speaker_status = g_host->resolve_field(
         g_host->context, &speaker_channel_field,
         &g_runtime_voice_data_speaker_channel);
+    const BE_Result ifix_method_id_status = g_host->resolve_field(
+        g_host->context, &ifix_method_id_field, &g_ifix_method_id);
     Log(std::string("[voice-contract] field voiceData=") +
         ResultName(voice_data_status) +
-        " RuntimeVoiceData.speakerChannel=" + ResultName(speaker_status));
+        " RuntimeVoiceData.speakerChannel=" + ResultName(speaker_status) +
+        " IFix.methodId=" + ResultName(ifix_method_id_status));
     if (voice_data_status != BE_Result_Ok || speaker_status != BE_Result_Ok) {
         ++required_missing;
     }
@@ -510,8 +693,8 @@ bool ResolveRuntimeContract() {
 }
 
 bool ShouldLog(uint64_t count) {
-    return g_diagnostics_enabled.load(std::memory_order_relaxed) &&
-        (count <= 32 || count % 256 == 0);
+    return count <= 64 || (g_diagnostics_enabled.load(std::memory_order_relaxed) &&
+        count % 256 == 0);
 }
 
 std::string SpeakerFromContext(void* voice_context) {
@@ -771,18 +954,23 @@ bool TryLoadLanguagePackageRaw(int language, void*& managed_language) {
         return false;
     }
     bool loaded = false;
+    bool mount_entered = false;
     __try {
         managed_language = reinterpret_cast<GetLanguageNameFn>(
             g_get_language_name.pointer)(language, nullptr);
         if (managed_language) {
-            g_loading_auxiliary_package = true;
+            g_auxiliary_mount_depth.fetch_add(1, std::memory_order_acq_rel);
+            mount_entered = true;
             loaded = reinterpret_cast<TryLoadLanguagePackageFn>(
                 g_try_load_language_package.pointer)(managed_language, nullptr);
-            g_loading_auxiliary_package = false;
+            g_auxiliary_mount_depth.fetch_sub(1, std::memory_order_acq_rel);
+            mount_entered = false;
         }
     }
     __except (EXCEPTION_EXECUTE_HANDLER) {
-        g_loading_auxiliary_package = false;
+        if (mount_entered) {
+            g_auxiliary_mount_depth.fetch_sub(1, std::memory_order_acq_rel);
+        }
         loaded = false;
     }
     return loaded;
@@ -816,6 +1004,118 @@ bool EnsureLanguagePackageReady(int language) {
         " name=" + ManagedString(managed_language, 64) +
         " result=" + (loaded ? "success" : "failed"));
     return loaded;
+}
+
+bool TrySetNativeSpeakerLanguageRaw(void* speaker, int language,
+    void*& observed_language) {
+    observed_language = nullptr;
+    if (!speaker || !g_set_speaker_custom_language.pointer) {
+        return false;
+    }
+    __try {
+        reinterpret_cast<SetSpeakerCustomLangFn>(
+            g_set_speaker_custom_language.pointer)(speaker, language, nullptr);
+        if (!g_try_get_speaker_custom_language.pointer) {
+            return true;
+        }
+        return reinterpret_cast<TryGetSpeakerCustomLangFn>(
+            g_try_get_speaker_custom_language.pointer)(
+                speaker, &observed_language, nullptr);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        observed_language = nullptr;
+        return false;
+    }
+}
+
+bool EnsureNativeSpeakerLanguage(const std::string& speaker, int language) {
+    if (speaker.empty() || language < 0 || language > 3 || !g_host ||
+        !g_host->string_new || !g_set_speaker_custom_language.pointer) {
+        return false;
+    }
+    std::lock_guard lock(g_native_language_mutex);
+    const auto found = g_native_speaker_languages.find(speaker);
+    if (found != g_native_speaker_languages.end() && found->second == language) {
+        return true;
+    }
+    void* managed_speaker = g_host->string_new(g_host->context, speaker.c_str());
+    void* observed_language = nullptr;
+    const bool applied = TrySetNativeSpeakerLanguageRaw(
+        managed_speaker, language, observed_language);
+    Log("[voice-native-language] speaker=" + speaker +
+        " target=" + std::to_string(language) +
+        " applied=" + (applied ? "true" : "false") +
+        " observed=" + (observed_language
+            ? ManagedString(observed_language, 64) : "<unavailable>"));
+    if (applied) {
+        g_native_speaker_languages[speaker] = language;
+    }
+    return applied;
+}
+
+bool TryBuildNativeCustomVoicePath(void* path, void** voice_path,
+    int dev_stage, int language) {
+    if (!path || !voice_path || language < 0 || language > 3 ||
+        !g_get_language_name.pointer || !g_get_custom_voice_path.pointer) {
+        return false;
+    }
+    __try {
+        void* language_name = reinterpret_cast<GetLanguageNameFn>(
+            g_get_language_name.pointer)(language, nullptr);
+        if (!language_name) {
+            return false;
+        }
+        g_custom_path_building = true;
+        reinterpret_cast<GetCustomLanguageVoicePathFn>(
+            g_get_custom_voice_path.pointer)(
+                path, voice_path, dev_stage, language_name, nullptr);
+        g_custom_path_building = false;
+        return *voice_path != nullptr;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        g_custom_path_building = false;
+        return false;
+    }
+}
+
+void __fastcall HookGetVoicePath(void* path, void** voice_path,
+    int dev_stage, void* method) {
+    if (g_custom_path_building) {
+        if (g_original_get_voice_path) {
+            g_original_get_voice_path(path, voice_path, dev_stage, method);
+        }
+        return;
+    }
+    const uint64_t hit = g_native_custom_path_hits.fetch_add(
+        1, std::memory_order_relaxed) + 1;
+    const std::string source = Normalize(ManagedString(path));
+    VoiceRule rule;
+    bool matched = false;
+    if (g_voice_request_route.active &&
+        g_voice_request_route.language >= 0 &&
+        g_voice_request_route.language <= 3) {
+        rule.speaker = g_voice_request_route.speaker;
+        rule.language = g_voice_request_route.language;
+        matched = true;
+    } else {
+        matched = SelectRule(source, true, rule) && rule.language >= 0;
+    }
+    const bool package_ready = matched &&
+        EnsureLanguagePackageReady(rule.language);
+    const bool routed = package_ready && TryBuildNativeCustomVoicePath(
+        path, voice_path, dev_stage, rule.language);
+    if (!routed && g_original_get_voice_path) {
+        g_original_get_voice_path(path, voice_path, dev_stage, method);
+    }
+    if (hit <= 32 || ShouldLog(hit)) {
+        Log("[voice-native-path] hit=" + std::to_string(hit) +
+            " matched=" + (matched ? "true" : "false") +
+            " packageReady=" + (package_ready ? "true" : "false") +
+            " routed=" + (routed ? "true" : "false") +
+            " source=" + (source.empty() ? "<empty>" : source) +
+            " result=" + (voice_path && *voice_path
+                ? ManagedString(*voice_path) : "<empty>"));
+    }
 }
 
 int __fastcall HookGetCurrentLanguage(void* method) {
@@ -1007,6 +1307,9 @@ uint32_t __fastcall HookNarrative(void* instance, void* voice_id,
     }
     const bool matched = narrative_enabled && rule.language >= 0 &&
         catalog_ready;
+    if (matched && !identity.empty()) {
+        ArmPendingLipRoute(rule.language, rule.speaker, identity);
+    }
     if (ShouldLog(hit)) {
         Log("[voice-hook] VoiceManager._SpeakNarrative hit=" +
             std::to_string(hit) + " identity=" +
@@ -1049,6 +1352,328 @@ bool TryWriteFloat(float* value, float result) {
     return true;
 }
 
+VoiceDataFloatGetterFn VoiceDataDurationGetter(int language) {
+    switch (language) {
+    case 0:
+        return reinterpret_cast<VoiceDataFloatGetterFn>(
+            g_voice_data_duration_cn.pointer);
+    case 1:
+        return reinterpret_cast<VoiceDataFloatGetterFn>(
+            g_voice_data_duration_en.pointer);
+    case 2:
+        return reinterpret_cast<VoiceDataFloatGetterFn>(
+            g_voice_data_duration_jp.pointer);
+    case 3:
+        return reinterpret_cast<VoiceDataFloatGetterFn>(
+            g_voice_data_duration_kr.pointer);
+    default:
+        return nullptr;
+    }
+}
+
+bool TryCallVoiceDataDuration(VoiceDataFloatGetterFn getter,
+    void* voice_data, void* method, float& result) {
+    result = 0.0f;
+    if (!getter || !voice_data) {
+        return false;
+    }
+    __try {
+        result = getter(voice_data, method);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        result = 0.0f;
+        return false;
+    }
+    return std::isfinite(result);
+}
+
+bool TryReadVoiceDataSpeaker(void* voice_data, void*& value) {
+    value = nullptr;
+    if (!voice_data || !g_voice_data_speaker.pointer) {
+        return false;
+    }
+    __try {
+        value = reinterpret_cast<VoiceDataStringGetterFn>(
+            g_voice_data_speaker.pointer)(voice_data, nullptr);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        value = nullptr;
+        return false;
+    }
+    return value != nullptr;
+}
+
+bool TryFindIfixMethodId(const MethodContract& contract, int32_t& method_id) {
+    method_id = -1;
+    auto* code = static_cast<const uint8_t*>(contract.pointer);
+    if (!code) {
+        return false;
+    }
+    __try {
+        // Every IFix-enabled method starts its dispatch with
+        // `xor edx,edx; mov ecx,<methodId>; call IsPatched`.
+        for (size_t offset = 0; offset + 12 <= 128; ++offset) {
+            if (code[offset] != 0x33 || code[offset + 1] != 0xD2 ||
+                code[offset + 2] != 0xB9 || code[offset + 7] != 0xE8) {
+                continue;
+            }
+            int32_t candidate = -1;
+            std::memcpy(&candidate, code + offset + 3, sizeof(candidate));
+            if (candidate >= 0) {
+                method_id = candidate;
+                return true;
+            }
+        }
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        method_id = -1;
+    }
+    return false;
+}
+
+bool TryReadIfixMethodId(void* patch, int32_t& method_id) {
+    method_id = -1;
+    if (!patch || !g_ifix_method_id.field_info || g_ifix_method_id.offset < 0) {
+        return false;
+    }
+    __try {
+        method_id = *reinterpret_cast<const int32_t*>(
+            static_cast<const uint8_t*>(patch) + g_ifix_method_id.offset);
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        method_id = -1;
+        return false;
+    }
+}
+
+bool TryLookupVoiceData(void* voice_id, void* voice_data,
+    int32_t& numeric_id) {
+    numeric_id = 0;
+    if (!voice_id || !voice_data || !g_try_get_voice_data.pointer) {
+        return false;
+    }
+    __try {
+        return reinterpret_cast<TryGetVoiceDataFn>(
+            g_try_get_voice_data.pointer)(
+                voice_id, voice_data, &numeric_id, nullptr);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        numeric_id = 0;
+        return false;
+    }
+}
+
+bool TryLookupVoiceData(int32_t voice_id, void* voice_data) {
+    if (!voice_data || !g_get_voice_data_by_id.pointer) {
+        return false;
+    }
+    __try {
+        return reinterpret_cast<GetVoiceDataByIdFn>(
+            g_get_voice_data_by_id.pointer)(voice_id, voice_data, nullptr);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+}
+
+bool TryRouteIfixDuration(void* voice_data, std::string_view identity,
+    float& routed_duration, std::string& speaker, int& target_language,
+    bool& table_hit) {
+    speaker.clear();
+    target_language = -1;
+    table_hit = false;
+
+    void* speaker_value = nullptr;
+    if (voice_data && TryReadVoiceDataSpeaker(voice_data, speaker_value)) {
+        speaker = Normalize(ManagedString(speaker_value));
+    }
+    VoiceRule rule;
+    if (!speaker.empty() && SelectRule(speaker, false, rule) &&
+        rule.language >= 0) {
+        target_language = rule.language;
+        float candidate = 0.0f;
+        if (TryCallVoiceDataDuration(VoiceDataDurationGetter(rule.language),
+                voice_data, nullptr, candidate) && candidate > 0.0f) {
+            routed_duration = candidate;
+            return true;
+        }
+    }
+
+    const auto catalog_duration = g_duration_by_identity.find(
+        std::string(identity));
+    table_hit = catalog_duration != g_duration_by_identity.end();
+    if (table_hit && catalog_duration->second > 0.0f) {
+        routed_duration = catalog_duration->second;
+        return true;
+    }
+    return false;
+}
+
+bool __fastcall HookIfixDuration(void* patch, void* voice_id,
+    float* duration, void* method) {
+    const bool result = g_original_ifix_duration
+        ? g_original_ifix_duration(patch, voice_id, duration, method) : false;
+    int32_t method_id = -1;
+    if (g_ifix_duration_routing ||
+        !TryReadIfixMethodId(patch, method_id) ||
+        method_id != g_duration_ifix_method_id) {
+        return result;
+    }
+
+    g_ifix_duration_routing = true;
+    const uint64_t hit = g_ifix_duration_hits.fetch_add(
+        1, std::memory_order_relaxed) + 1;
+    const std::string identity = Normalize(ManagedString(voice_id));
+    alignas(16) std::array<uint8_t, 0x28> voice_data{};
+    int32_t numeric_id = 0;
+    const bool data_found = TryLookupVoiceData(
+        voice_id, voice_data.data(), numeric_id);
+    float original_duration = -1.0f;
+    TryReadFloat(duration, original_duration);
+    float routed_duration = original_duration;
+    std::string speaker;
+    int target_language = -1;
+    bool table_hit = false;
+    const bool applied = TryRouteIfixDuration(
+        data_found ? voice_data.data() : nullptr, identity, routed_duration,
+        speaker, target_language, table_hit) &&
+        TryWriteFloat(duration, routed_duration);
+    g_ifix_duration_routing = false;
+
+    if (ShouldLog(hit)) {
+        Log("[voice-duration-ifix] hit=" + std::to_string(hit) +
+            " methodId=" + std::to_string(method_id) +
+            " identity=" + (identity.empty() ? "<unknown>" : identity) +
+            " numericId=" + std::to_string(numeric_id) +
+            " data=" + (data_found ? "true" : "false") +
+            " speaker=" + (speaker.empty() ? "<unknown>" : speaker) +
+            " target=" + std::to_string(target_language) +
+            " tableHit=" + (table_hit ? "true" : "false") +
+            " original=" + std::to_string(original_duration) +
+            " routed=" + std::to_string(routed_duration) +
+            " override=" + (applied ? "true" : "false") +
+            " result=" + ((result || applied) ? "true" : "false"));
+    }
+    return result || applied;
+}
+
+bool __fastcall HookIfixDurationById(void* patch, int32_t voice_id,
+    float* duration, void* method) {
+    const bool result = g_original_ifix_duration_by_id
+        ? g_original_ifix_duration_by_id(
+            patch, voice_id, duration, method) : false;
+    int32_t method_id = -1;
+    if (g_ifix_duration_routing ||
+        !TryReadIfixMethodId(patch, method_id) ||
+        method_id != g_duration_by_id_ifix_method_id) {
+        return result;
+    }
+
+    g_ifix_duration_routing = true;
+    const uint64_t hit = g_ifix_duration_by_id_hits.fetch_add(
+        1, std::memory_order_relaxed) + 1;
+    const std::string identity = std::to_string(voice_id);
+    alignas(16) std::array<uint8_t, 0x28> voice_data{};
+    const bool data_found = TryLookupVoiceData(voice_id, voice_data.data());
+    float original_duration = -1.0f;
+    TryReadFloat(duration, original_duration);
+    float routed_duration = original_duration;
+    std::string speaker;
+    int target_language = -1;
+    bool table_hit = false;
+    const bool applied = TryRouteIfixDuration(
+        data_found ? voice_data.data() : nullptr, identity, routed_duration,
+        speaker, target_language, table_hit) &&
+        TryWriteFloat(duration, routed_duration);
+    g_ifix_duration_routing = false;
+
+    if (ShouldLog(hit)) {
+        Log("[voice-duration-ifix] hit=" + std::to_string(hit) +
+            " methodId=" + std::to_string(method_id) +
+            " identity=" + identity + " overload=int" +
+            " data=" + (data_found ? "true" : "false") +
+            " speaker=" + (speaker.empty() ? "<unknown>" : speaker) +
+            " target=" + std::to_string(target_language) +
+            " tableHit=" + (table_hit ? "true" : "false") +
+            " original=" + std::to_string(original_duration) +
+            " routed=" + std::to_string(routed_duration) +
+            " override=" + (applied ? "true" : "false") +
+            " result=" + ((result || applied) ? "true" : "false"));
+    }
+    return result || applied;
+}
+
+float RouteVoiceDataDuration(void* voice_data, void* method,
+    int source_language, VoiceDataFloatGetterFn source_getter) {
+    const uint64_t hit = g_voice_data_duration_hits.fetch_add(
+        1, std::memory_order_relaxed) + 1;
+    float source_duration = 0.0f;
+    std::string speaker;
+    TryCallVoiceDataDuration(
+        source_getter, voice_data, method, source_duration);
+    void* speaker_value = nullptr;
+    if (TryReadVoiceDataSpeaker(voice_data, speaker_value)) {
+        speaker = Normalize(ManagedString(speaker_value));
+    }
+
+    VoiceRule rule;
+    const bool matched = !speaker.empty() &&
+        SelectRule(speaker, false, rule) && rule.language >= 0;
+    float routed_duration = source_duration;
+    bool applied = false;
+    if (matched && rule.language != source_language) {
+        VoiceDataFloatGetterFn target_getter =
+            VoiceDataDurationGetter(rule.language);
+        if (target_getter) {
+            float candidate = 0.0f;
+            if (TryCallVoiceDataDuration(
+                    target_getter, voice_data, nullptr, candidate) &&
+                candidate > 0.0f) {
+                routed_duration = candidate;
+                applied = true;
+            }
+        }
+    }
+
+    if (ShouldLog(hit)) {
+        Log("[voice-duration-leaf] hit=" + std::to_string(hit) +
+            " speaker=" + (speaker.empty() ? "<unknown>" : speaker) +
+            " matched=" + (matched ? "true" : "false") +
+            " sourceLanguage=" + std::to_string(source_language) +
+            " targetLanguage=" + std::to_string(
+                matched ? rule.language : -1) +
+            " source=" + std::to_string(source_duration) +
+            " routed=" + std::to_string(routed_duration) +
+            " override=" + (applied ? "true" : "false"));
+    }
+    return routed_duration;
+}
+
+float __fastcall HookVoiceDataDurationChinese(
+    void* voice_data, void* method) {
+    return RouteVoiceDataDuration(voice_data, method, 0,
+        g_original_voice_data_duration_cn);
+}
+
+float __fastcall HookVoiceDataDurationEnglish(
+    void* voice_data, void* method) {
+    return RouteVoiceDataDuration(voice_data, method, 1,
+        g_original_voice_data_duration_en);
+}
+
+float __fastcall HookVoiceDataDurationJapanese(
+    void* voice_data, void* method) {
+    return RouteVoiceDataDuration(voice_data, method, 2,
+        g_original_voice_data_duration_jp);
+}
+
+float __fastcall HookVoiceDataDurationKorean(
+    void* voice_data, void* method) {
+    return RouteVoiceDataDuration(voice_data, method, 3,
+        g_original_voice_data_duration_kr);
+}
+
 bool __fastcall HookDuration(void* voice_id, float* duration, void* method) {
     const uint64_t hit = g_duration_hits.fetch_add(
         1, std::memory_order_relaxed) + 1;
@@ -1068,27 +1693,59 @@ bool __fastcall HookDuration(void* voice_id, float* duration, void* method) {
     TryReadFloat(duration, global_duration);
     float routed_duration = global_duration;
     bool override_applied = false;
-    if (matched && target != current && g_original_duration) {
-        const int previous = g_duration_language_override;
-        g_duration_language_override = target;
-        const bool routed_result = g_original_duration(voice_id, duration, method);
-        g_duration_language_override = previous;
-        if (routed_result && TryReadFloat(duration, routed_duration) &&
-            routed_duration > 0.0f) {
-            result = true;
-            override_applied = true;
-        } else {
-            TryWriteFloat(duration, global_duration);
-            routed_duration = global_duration;
-        }
+    bool direct = false;
+    const auto catalog_duration = g_duration_by_identity.find(identity);
+    if (catalog_duration != g_duration_by_identity.end() &&
+        catalog_duration->second > 0.0f &&
+        TryWriteFloat(duration, catalog_duration->second)) {
+        routed_duration = catalog_duration->second;
+        result = true;
+        override_applied = true;
+        direct = true;
     }
-    if (ShouldLog(hit) && matched) {
+    if (ShouldLog(hit)) {
         Log("[voice-duration] identity=" +
             (identity.empty() ? "<unknown>" : identity) +
+            " matched=" + (matched ? "true" : "false") +
+            " tableHit=" +
+            (catalog_duration != g_duration_by_identity.end() ? "true" : "false") +
+            " current=" + std::to_string(current) +
             " target=" + std::to_string(target) +
             " global=" + std::to_string(global_duration) +
             " routed=" + std::to_string(routed_duration) +
-            " override=" + (override_applied ? "true" : "false"));
+            " override=" + (override_applied ? "true" : "false") +
+            " direct=" + (direct ? "true" : "false") +
+            " result=" + (result ? "true" : "false"));
+    }
+    return result;
+}
+
+bool __fastcall HookDurationById(int32_t voice_id, float* duration, void* method) {
+    const uint64_t hit = g_duration_by_id_hits.fetch_add(
+        1, std::memory_order_relaxed) + 1;
+    const std::string identity = std::to_string(voice_id);
+    bool result = g_original_duration_by_id
+        ? g_original_duration_by_id(voice_id, duration, method) : false;
+    float global_duration = -1.0f;
+    TryReadFloat(duration, global_duration);
+    float routed_duration = global_duration;
+    bool direct = false;
+    const auto catalog_duration = g_duration_by_identity.find(identity);
+    if (catalog_duration != g_duration_by_identity.end() &&
+        catalog_duration->second > 0.0f &&
+        TryWriteFloat(duration, catalog_duration->second)) {
+        routed_duration = catalog_duration->second;
+        result = true;
+        direct = true;
+    }
+    if (ShouldLog(hit)) {
+        Log("[voice-duration] identity=" + identity +
+            " overload=int tableHit=" +
+            (catalog_duration != g_duration_by_identity.end() ? "true" : "false") +
+            " global=" + std::to_string(global_duration) +
+            " routed=" + std::to_string(routed_duration) +
+            " direct=" + (direct ? "true" : "false") +
+            " result=" + (result ? "true" : "false"));
     }
     return result;
 }
@@ -1214,11 +1871,11 @@ bool __fastcall HookLipLoad(void* line_id, void** track, void* method) {
     return result;
 }
 
-uint32_t __fastcall HookExternalEvent(void* event_name, uint64_t audio_object_id,
-    void* external_source_key, uint32_t external_cookie, uint32_t callback_type,
-    void* callback, void* cookie, uint32_t codec, void* method) {
+void* RouteExternalSource(void* event_name, uint32_t event_id,
+    const char* entry_point, void* external_source_key, bool& lip_armed) {
     const uint64_t hit = g_external_hits.fetch_add(1, std::memory_order_relaxed) + 1;
-    const std::string event = Normalize(ManagedString(event_name));
+    const std::string event = event_name
+        ? Normalize(ManagedString(event_name)) : std::to_string(event_id);
     const std::string source = Normalize(ManagedString(external_source_key));
     VoiceRule rule;
     const bool narrative_blocked = IsNarrativeSource(source) &&
@@ -1233,6 +1890,15 @@ uint32_t __fastcall HookExternalEvent(void* event_name, uint64_t audio_object_id
         matched = true;
         matched_by = "request";
     }
+    if (!narrative_blocked && !matched && g_pending_lip_route.armed &&
+        g_pending_lip_route.configuration_generation ==
+            g_configuration_generation.load(std::memory_order_acquire) &&
+        ExtractVoiceLineId(source) == g_pending_lip_route.line_id) {
+        rule.speaker = g_pending_lip_route.speaker;
+        rule.language = g_pending_lip_route.language;
+        matched = rule.language >= 0 && rule.language <= 3;
+        matched_by = matched ? "pending-line" : "none";
+    }
     if (!narrative_blocked && !matched && SelectRule(source, true, rule) &&
         rule.language >= 0) {
         matched = true;
@@ -1243,18 +1909,23 @@ uint32_t __fastcall HookExternalEvent(void* event_name, uint64_t audio_object_id
         matched = true;
         matched_by = "event";
     }
+    const bool package_ready = matched &&
+        EnsureLanguagePackageReady(rule.language);
     std::string replacement;
     void* routed_source = external_source_key;
     bool replaced = false;
-    if (matched && BuildVoiceReplacementSource(source, rule.language, replacement) &&
-        replacement != source && EnsureLanguagePackageReady(rule.language)) {
+    if (package_ready &&
+        BuildVoiceReplacementSource(source, rule.language, replacement) &&
+        replacement != source) {
         routed_source = g_host->string_new(g_host->context, replacement.c_str());
         replaced = routed_source != nullptr;
     }
+    const bool already_routed = matched && !replacement.empty() &&
+        replacement == source;
     const bool narrative = IsNarrativeSource(source);
-    bool lip_armed = false;
+    lip_armed = false;
     if (narrative) {
-        if (matched && replaced) {
+        if (matched && (replaced || already_routed)) {
             lip_armed = ArmPendingLipRoute(rule.language, rule.speaker, source);
         } else {
             ClearPendingLipRoute();
@@ -1262,8 +1933,10 @@ uint32_t __fastcall HookExternalEvent(void* event_name, uint64_t audio_object_id
     }
     if (ShouldLog(hit)) {
         Log("[voice-external] hit=" + std::to_string(hit) +
+            " entry=" + entry_point +
             " matched=" + (matched ? rule.speaker : "<none>") +
             " matchedBy=" + matched_by +
+            " packageReady=" + (package_ready ? "true" : "false") +
             " narrative=" + (narrative ? "true" : "false") +
             " replaced=" + (replaced ? "true" : "false") +
             " lipArmed=" + (lip_armed ? "true" : "false") +
@@ -1271,6 +1944,15 @@ uint32_t __fastcall HookExternalEvent(void* event_name, uint64_t audio_object_id
             " source=" + (source.empty() ? "<empty>" : source) +
             " target=" + (replacement.empty() ? "<unchanged>" : replacement));
     }
+    return routed_source;
+}
+
+uint32_t __fastcall HookExternalEvent(void* event_name, uint64_t audio_object_id,
+    void* external_source_key, uint32_t external_cookie, uint32_t callback_type,
+    void* callback, void* cookie, uint32_t codec, void* method) {
+    bool lip_armed = false;
+    void* routed_source = RouteExternalSource(
+        event_name, 0, "name", external_source_key, lip_armed);
     const uint32_t result = g_original_external_event
         ? g_original_external_event(event_name, audio_object_id, routed_source,
             external_cookie, callback_type, callback, cookie, codec, method)
@@ -1286,7 +1968,7 @@ int __fastcall HookLoadFilePackage(void* package_path, uint32_t* package_id,
     const int result = g_original_load_file_package
         ? g_original_load_file_package(package_path, package_id, method)
         : 0;
-    if (g_loading_auxiliary_package) {
+    if (g_auxiliary_mount_depth.load(std::memory_order_acquire) != 0) {
         const uint64_t hit =
             g_package_load_hits.fetch_add(1, std::memory_order_relaxed) + 1;
         if (ShouldLog(hit)) {
@@ -1299,8 +1981,117 @@ int __fastcall HookLoadFilePackage(void* package_path, uint32_t* package_id,
     return result;
 }
 
+bool AuxiliaryMountActive() {
+    return g_auxiliary_mount_depth.load(std::memory_order_acquire) != 0;
+}
+
+int __fastcall HookNativeUnloadFilePackage(uint32_t package_id) {
+    const uint64_t hit =
+        g_pinvoke_unload_hits.fetch_add(1, std::memory_order_relaxed) + 1;
+    if (AuxiliaryMountActive()) {
+        if (ShouldLog(hit)) {
+            Log("[voice-pck] preserved(native) packageId=" +
+                std::to_string(package_id) +
+                " while mounting auxiliary language");
+        }
+        return kAkSuccess;
+    }
+    const int result = g_original_native_unload_file_package
+        ? g_original_native_unload_file_package(package_id)
+        : 0;
+    if (ShouldLog(hit)) {
+        Log("[voice-pck] native-unload hit=" + std::to_string(hit) +
+            " packageId=" + std::to_string(package_id) +
+            " result=" + std::to_string(result));
+    }
+    return result;
+}
+
+bool TryProbePinvokeUnload() {
+    if (!g_pinvoke_unload_file_package.pointer) {
+        return false;
+    }
+    __try {
+        // Package ID zero is invalid. Calling it once initializes IL2CPP's
+        // cached native P/Invoke target without unloading a real package.
+        reinterpret_cast<UnloadFilePackageFn>(
+            g_pinvoke_unload_file_package.pointer)(0, nullptr);
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+}
+
+bool TryFindPinvokeNativeTarget(void*& target) {
+    target = nullptr;
+    auto* code = static_cast<const uint8_t*>(
+        g_pinvoke_unload_file_package.pointer);
+    if (!code) {
+        return false;
+    }
+    __try {
+        // IL2CPP P/Invoke stubs load their lazily resolved native target with
+        // `mov rax, [rip+disp32]` before tail-calling it. The IFix path reads
+        // the same slot directly, which is why hooking the managed stub alone
+        // misses unloads.
+        for (size_t offset = 0; offset + 7 <= 64; ++offset) {
+            if (code[offset] != 0x48 || code[offset + 1] != 0x8B ||
+                code[offset + 2] != 0x05) {
+                continue;
+            }
+            int32_t displacement = 0;
+            std::memcpy(&displacement, code + offset + 3,
+                sizeof(displacement));
+            auto** slot = reinterpret_cast<void**>(
+                const_cast<uint8_t*>(code) + offset + 7 + displacement);
+            void* candidate = *slot;
+            MEMORY_BASIC_INFORMATION memory{};
+            if (!candidate || VirtualQuery(candidate, &memory,
+                    sizeof(memory)) != sizeof(memory)) {
+                continue;
+            }
+            const DWORD executable = memory.Protect & 0xFF;
+            if (executable == PAGE_EXECUTE ||
+                executable == PAGE_EXECUTE_READ ||
+                executable == PAGE_EXECUTE_READWRITE ||
+                executable == PAGE_EXECUTE_WRITECOPY) {
+                target = candidate;
+                return true;
+            }
+        }
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        target = nullptr;
+    }
+    return false;
+}
+
+bool InstallNativeUnloadHook() {
+    if (!TryProbePinvokeUnload()) {
+        Log("[voice-pck] native unload probe failed");
+        return false;
+    }
+    void* target = nullptr;
+    if (!TryFindPinvokeNativeTarget(target)) {
+        Log("[voice-pck] native unload target was not found in the P/Invoke stub");
+        return false;
+    }
+    const BE_Result status = g_host->create_hook(
+        g_host->context, kModuleId, target,
+        reinterpret_cast<void*>(&HookNativeUnloadFilePackage),
+        reinterpret_cast<void**>(&g_original_native_unload_file_package));
+    if (status != BE_Result_Ok) {
+        Log("[voice-pck] native unload hook failed result=" +
+            std::string(ResultName(status)));
+        return false;
+    }
+    Log("[voice-pck] native unload protection installed");
+    return true;
+}
+
 int __fastcall HookUnloadFilePackage(uint32_t package_id, void* method) {
-    if (g_loading_auxiliary_package) {
+    if (AuxiliaryMountActive()) {
         const uint64_t hit =
             g_package_unload_hits.fetch_add(1, std::memory_order_relaxed) + 1;
         if (ShouldLog(hit)) {
@@ -1312,6 +2103,92 @@ int __fastcall HookUnloadFilePackage(uint32_t package_id, void* method) {
     return g_original_unload_file_package
         ? g_original_unload_file_package(package_id, method)
         : 0;
+}
+
+int __fastcall HookPinvokeUnloadFilePackage(uint32_t package_id, void* method) {
+    const uint64_t hit =
+        g_pinvoke_unload_hits.fetch_add(1, std::memory_order_relaxed) + 1;
+    if (AuxiliaryMountActive()) {
+        if (ShouldLog(hit)) {
+            Log("[voice-pck] preserved(pinvoke) packageId=" +
+                std::to_string(package_id) +
+                " while mounting auxiliary language");
+        }
+        return kAkSuccess;
+    }
+    const int result = g_original_pinvoke_unload_file_package
+        ? g_original_pinvoke_unload_file_package(package_id, method)
+        : 0;
+    if (g_external_hits.load(std::memory_order_relaxed) <= 64 ||
+        g_diagnostics_enabled.load(std::memory_order_relaxed)) {
+        Log("[voice-external-result] entry=name result=" +
+            std::to_string(result));
+    }
+    if (ShouldLog(hit)) {
+        Log("[voice-pck] pinvoke-unload hit=" + std::to_string(hit) +
+            " packageId=" + std::to_string(package_id) +
+            " result=" + std::to_string(result));
+    }
+    return result;
+}
+
+uint32_t __fastcall HookExternalEventById(uint32_t event_id,
+    uint64_t audio_object_id, void* external_source_key,
+    uint32_t external_cookie, uint32_t callback_type, void* callback,
+    void* cookie, uint32_t codec, void* method) {
+    bool lip_armed = false;
+    void* routed_source = RouteExternalSource(
+        nullptr, event_id, "id", external_source_key, lip_armed);
+    const uint32_t result = g_original_external_event_by_id
+        ? g_original_external_event_by_id(event_id, audio_object_id, routed_source,
+            external_cookie, callback_type, callback, cookie, codec, method)
+        : 0;
+    if (g_external_hits.load(std::memory_order_relaxed) <= 64 ||
+        g_diagnostics_enabled.load(std::memory_order_relaxed)) {
+        Log("[voice-external-result] entry=id result=" +
+            std::to_string(result));
+    }
+    if (lip_armed && result == 0) {
+        ClearPendingLipRoute();
+    }
+    return result;
+}
+
+uint32_t __fastcall HookExternalEventInternal(uint32_t event_id,
+    uint64_t audio_object_id, void* external_source_key,
+    uint32_t external_cookie, uint32_t callback_type, void* callback,
+    void* cookie, uint32_t codec, void* method) {
+    bool lip_armed = false;
+    void* routed_source = RouteExternalSource(
+        nullptr, event_id, "internal", external_source_key, lip_armed);
+    const uint32_t result = g_original_external_event_internal
+        ? g_original_external_event_internal(event_id, audio_object_id, routed_source,
+            external_cookie, callback_type, callback, cookie, codec, method)
+        : 0;
+    if (g_external_hits.load(std::memory_order_relaxed) <= 64 ||
+        g_diagnostics_enabled.load(std::memory_order_relaxed)) {
+        Log("[voice-external-result] entry=internal result=" +
+            std::to_string(result));
+    }
+    if (lip_armed && result == 0) {
+        ClearPendingLipRoute();
+    }
+    return result;
+}
+
+void __fastcall HookUnloadPcks(void* loaded_info, void* method) {
+    const uint64_t hit = g_unload_pcks_hits.fetch_add(
+        1, std::memory_order_relaxed) + 1;
+    if (AuxiliaryMountActive()) {
+        if (ShouldLog(hit)) {
+            Log("[voice-pck] preserved AudioVFSLoader._UnloadPcks hit=" +
+                std::to_string(hit) + " while mounting auxiliary language");
+        }
+        return;
+    }
+    if (g_original_unload_pcks) {
+        g_original_unload_pcks(loaded_info, method);
+    }
 }
 
 bool TryReadMediaIds(void* settings, uint32_t count, uint32_t* destination) {
@@ -1425,6 +2302,51 @@ bool InstallHook(const char* key, MethodContract& contract, void* detour,
     return true;
 }
 
+bool InstallDurationIfixHooks() {
+    if (!g_duration.pointer || !g_duration_by_id.pointer ||
+        !g_ifix_duration.pointer || !g_ifix_duration_by_id.pointer ||
+        !g_ifix_method_id.field_info || g_ifix_method_id.offset < 0 ||
+        !g_try_get_voice_data.pointer || !g_get_voice_data_by_id.pointer ||
+        !g_voice_data_speaker.pointer ||
+        !g_voice_data_duration_cn.pointer ||
+        !g_voice_data_duration_en.pointer ||
+        !g_voice_data_duration_jp.pointer ||
+        !g_voice_data_duration_kr.pointer) {
+        Log("[voice-duration-ifix] required IFix/data contracts unavailable");
+        return false;
+    }
+    if (!TryFindIfixMethodId(g_duration, g_duration_ifix_method_id) ||
+        !TryFindIfixMethodId(
+            g_duration_by_id, g_duration_by_id_ifix_method_id)) {
+        Log("[voice-duration-ifix] duration method IDs were not found");
+        return false;
+    }
+
+    const BE_Result string_status = g_host->create_hook(
+        g_host->context, kModuleId, g_ifix_duration.pointer,
+        reinterpret_cast<void*>(&HookIfixDuration),
+        reinterpret_cast<void**>(&g_original_ifix_duration));
+    if (string_status != BE_Result_Ok) {
+        Log("[voice-duration-ifix] string wrapper hook failed result=" +
+            std::string(ResultName(string_status)));
+        return false;
+    }
+    const BE_Result id_status = g_host->create_hook(
+        g_host->context, kModuleId, g_ifix_duration_by_id.pointer,
+        reinterpret_cast<void*>(&HookIfixDurationById),
+        reinterpret_cast<void**>(&g_original_ifix_duration_by_id));
+    if (id_status != BE_Result_Ok) {
+        Log("[voice-duration-ifix] integer wrapper hook failed result=" +
+            std::string(ResultName(id_status)));
+        return false;
+    }
+    Log("[voice-duration-ifix] active stringMethodId=" +
+        std::to_string(g_duration_ifix_method_id) +
+        " integerMethodId=" +
+        std::to_string(g_duration_by_id_ifix_method_id));
+    return true;
+}
+
 std::filesystem::path ResolveCatalogPath(const std::filesystem::path& root,
     int language, const std::string& speaker) {
     static constexpr const char* languages[] = {
@@ -1483,9 +2405,13 @@ bool LoadCatalogFile(const std::filesystem::path& root, const VoiceRule& rule,
     const bool entries_in_bounds = header->entry_offset <= blob_size &&
         header->entry_count <=
             (blob_size - header->entry_offset) / sizeof(VoiceCatalogEntryV1);
-    if (std::memcmp(header->magic, "BEVCAT01", 8) != 0 || header->version != 1 ||
+    const uint64_t media_limit = header->version >= 2
+        ? static_cast<uint64_t>(header->reserved) : blob_size;
+    if (std::memcmp(header->magic, "BEVCAT01", 8) != 0 ||
+        (header->version != 1 && header->version != 2 && header->version != 3) ||
         header->language != static_cast<uint16_t>(rule.language) ||
-        !entries_in_bounds || header->data_offset > blob_size) {
+        !entries_in_bounds || header->data_offset > blob_size ||
+        media_limit < header->data_offset || media_limit > blob_size) {
         catalog = {};
         Log("[voice-catalog] catalog header validation failed");
         return false;
@@ -1497,22 +2423,70 @@ bool LoadCatalogFile(const std::filesystem::path& root, const VoiceRule& rule,
     for (uint32_t index = 0; index < header->entry_count; ++index) {
         const auto& entry = entries[index];
         if (entry.data_offset < header->data_offset ||
-            entry.data_offset > blob_size ||
-            entry.data_size > blob_size - entry.data_offset ||
+            entry.data_offset > media_limit ||
+            entry.data_size > media_limit - entry.data_offset ||
             entry.source_media_id == 0 || entry.target_media_id == 0 ||
-            entry.data_size == 0) {
+            entry.data_size == 0 ||
+            (header->version == 3 && entry.reserved > 3)) {
             catalog = {};
             Log("[voice-catalog] catalog media bounds validation failed");
             return false;
         }
         catalog.entries.push_back({
             entry.source_media_id, entry.target_media_id,
-            entry.data_offset, entry.data_size
+            entry.data_offset, entry.data_size,
+            header->version == 3 ? static_cast<int>(entry.reserved) : -1
         });
+    }
+    if (header->version >= 2) {
+        size_t position = static_cast<size_t>(media_limit);
+        auto read_u32 = [&](uint32_t& value) {
+            if (position > catalog.blob.size() ||
+                catalog.blob.size() - position < sizeof(value)) {
+                return false;
+            }
+            std::memcpy(&value, catalog.blob.data() + position, sizeof(value));
+            position += sizeof(value);
+            return true;
+        };
+        uint32_t count = 0;
+        if (!read_u32(count) || count > 100000) {
+            catalog = {};
+            Log("[voice-catalog] duration table header validation failed");
+            return false;
+        }
+        for (uint32_t index = 0; index < count; ++index) {
+            uint32_t length = 0;
+            if (!read_u32(length) || length == 0 || length > 4096 ||
+                position > catalog.blob.size() ||
+                catalog.blob.size() - position < length + sizeof(float)) {
+                catalog = {};
+                Log("[voice-catalog] duration table entry validation failed");
+                return false;
+            }
+            std::string identity(reinterpret_cast<const char*>(
+                catalog.blob.data() + position), length);
+            position += length;
+            float seconds = 0.0f;
+            std::memcpy(&seconds, catalog.blob.data() + position, sizeof(seconds));
+            position += sizeof(seconds);
+            if (!std::isfinite(seconds) || seconds <= 0.0f || seconds > 3600.0f) {
+                catalog = {};
+                Log("[voice-catalog] duration value validation failed");
+                return false;
+            }
+            catalog.duration_by_identity.emplace(Normalize(std::move(identity)), seconds);
+        }
+        if (position != catalog.blob.size()) {
+            catalog = {};
+            Log("[voice-catalog] duration table trailing data validation failed");
+            return false;
+        }
     }
     Log("[voice-catalog] staged entries=" +
         std::to_string(catalog.entries.size()) + " bytes=" +
         std::to_string(catalog.blob.size()) +
+        " durations=" + std::to_string(catalog.duration_by_identity.size()) +
         " speaker=" + (speaker.empty() ? "*" : speaker));
     return !catalog.entries.empty();
 }
@@ -1560,6 +2534,13 @@ bool LoadConfiguredCatalogs(const std::vector<VoiceRule>& rules) {
         staged.push_back(std::move(catalog));
     }
 
+    int source_language = -1;
+    if (!TryGetCurrentLanguage(source_language) || source_language < 0 ||
+        source_language > 3) {
+        Log("[voice-catalog] current source language is unavailable");
+        return false;
+    }
+
     struct Selection {
         size_t catalog_index = 0;
         size_t entry_index = 0;
@@ -1572,6 +2553,10 @@ bool LoadConfiguredCatalogs(const std::vector<VoiceRule>& rules) {
         for (size_t entry_index = 0; entry_index < catalog.entries.size();
             ++entry_index) {
             const CatalogEntry& entry = catalog.entries[entry_index];
+            if (entry.source_language >= 0 &&
+                entry.source_language != source_language) {
+                continue;
+            }
             const auto found = selected.find(entry.source_media_id);
             if (found == selected.end()) {
                 selected.emplace(entry.source_media_id,
@@ -1609,7 +2594,14 @@ bool LoadConfiguredCatalogs(const std::vector<VoiceRule>& rules) {
     }
     std::sort(source_ids.begin(), source_ids.end());
 
+    std::unordered_map<std::string, float> staged_durations;
+    for (const ResidentCatalog& catalog : staged) {
+        for (const auto& [identity, seconds] : catalog.duration_by_identity) {
+            staged_durations.try_emplace(identity, seconds);
+        }
+    }
     g_resident_catalogs = std::move(staged);
+    g_duration_by_identity = std::move(staged_durations);
     g_catalog_routes.clear();
     g_catalog_unset_routes.clear();
     g_catalog_missing_routes.clear();
@@ -1629,7 +2621,9 @@ bool LoadConfiguredCatalogs(const std::vector<VoiceRule>& rules) {
     Log("[voice-catalog] resident set ready catalogs=" +
         std::to_string(g_resident_catalogs.size()) + " entries=" +
         std::to_string(g_catalog_routes.size()) + " bytes=" +
-        std::to_string(resident_bytes));
+        std::to_string(resident_bytes) + " durations=" +
+        std::to_string(g_duration_by_identity.size()) + " sourceLanguage=" +
+        std::to_string(source_language));
     return true;
 }
 
@@ -1708,6 +2702,7 @@ bool UnapplyCatalog() {
     g_catalog_routes.clear();
     g_catalog_unset_routes.clear();
     g_catalog_missing_routes.clear();
+    g_duration_by_identity.clear();
     g_resident_catalogs.clear();
     return true;
 }
@@ -1719,6 +2714,16 @@ void ClearOriginals() {
     g_original_play_event = nullptr;
     g_original_narrative = nullptr;
     g_original_duration = nullptr;
+    g_original_duration_by_id = nullptr;
+    g_original_voice_data_duration_cn = nullptr;
+    g_original_voice_data_duration_en = nullptr;
+    g_original_voice_data_duration_jp = nullptr;
+    g_original_voice_data_duration_kr = nullptr;
+    g_original_ifix_duration = nullptr;
+    g_original_ifix_duration_by_id = nullptr;
+    g_duration_ifix_method_id = -1;
+    g_duration_by_id_ifix_method_id = -1;
+    g_original_get_voice_path = nullptr;
     g_original_voice_language = nullptr;
     g_original_lip_dialog = nullptr;
     g_original_lip_path = nullptr;
@@ -1726,8 +2731,13 @@ void ClearOriginals() {
     g_original_set_media = nullptr;
     g_original_unset_media = nullptr;
     g_original_external_event = nullptr;
+    g_original_external_event_by_id = nullptr;
+    g_original_external_event_internal = nullptr;
     g_original_load_file_package = nullptr;
     g_original_unload_file_package = nullptr;
+    g_original_pinvoke_unload_file_package = nullptr;
+    g_original_native_unload_file_package = nullptr;
+    g_original_unload_pcks = nullptr;
 }
 
 bool InstallHooks() {
@@ -1757,7 +2767,8 @@ bool InstallHooks() {
             reinterpret_cast<void**>(&g_original_load_file_package), true) &&
         InstallHook("wwise.package.unload", g_unload_file_package,
             reinterpret_cast<void*>(&HookUnloadFilePackage),
-            reinterpret_cast<void**>(&g_original_unload_file_package), true);
+            reinterpret_cast<void**>(&g_original_unload_file_package), true) &&
+        InstallNativeUnloadHook();
     if (!required) {
         if (g_host->release_module_hooks) {
             g_host->release_module_hooks(g_host->context, kModuleId);
@@ -1783,9 +2794,19 @@ bool InstallHooks() {
     InstallHook("voice.manager.narrative", g_narrative,
         reinterpret_cast<void*>(&HookNarrative),
         reinterpret_cast<void**>(&g_original_narrative), false);
+    InstallDurationIfixHooks();
     InstallHook("voice.duration", g_duration,
         reinterpret_cast<void*>(&HookDuration),
         reinterpret_cast<void**>(&g_original_duration), false);
+    InstallHook("voice.duration-by-id", g_duration_by_id,
+        reinterpret_cast<void*>(&HookDurationById),
+        reinterpret_cast<void**>(&g_original_duration_by_id), false);
+    InstallHook("audio.external-event-by-id", g_external_event_by_id,
+        reinterpret_cast<void*>(&HookExternalEventById),
+        reinterpret_cast<void**>(&g_original_external_event_by_id), false);
+    InstallHook("audio.external-event-internal", g_external_event_internal,
+        reinterpret_cast<void*>(&HookExternalEventInternal),
+        reinterpret_cast<void**>(&g_original_external_event_internal), false);
 
     const bool needs_language_override = g_duration.resolved ||
         g_lip_dialog.resolved || g_lip_path.resolved || g_lip_load.resolved;
@@ -1847,9 +2868,8 @@ bool InstallHooks() {
     }
 
     g_state.store(ModuleState::Active, std::memory_order_release);
-    Log("[voice-route] external WEM, auxiliary PCK, and merged resident catalog routing active");
-    Log("[voice-route] all configured Media routes are resident; Wwise activation "
-        "is deferred until the first configured voice");
+    Log("[voice-route] v3.0.1 external voice path and auxiliary PCK routing active");
+    Log("[voice-route] native package unload protection is active; short-voice Media routes are resident and deferred until the first configured voice");
     return true;
 }
 
@@ -2010,6 +3030,11 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     g_event_hits.store(0, std::memory_order_release);
     g_narrative_hits.store(0, std::memory_order_release);
     g_duration_hits.store(0, std::memory_order_release);
+    g_duration_by_id_hits.store(0, std::memory_order_release);
+    g_voice_data_duration_hits.store(0, std::memory_order_release);
+    g_ifix_duration_hits.store(0, std::memory_order_release);
+    g_ifix_duration_by_id_hits.store(0, std::memory_order_release);
+    g_native_custom_path_hits.store(0, std::memory_order_release);
     g_language_override_hits.store(0, std::memory_order_release);
     g_lip_dialog_hits.store(0, std::memory_order_release);
     g_lip_path_hits.store(0, std::memory_order_release);
@@ -2019,6 +3044,16 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     g_external_hits.store(0, std::memory_order_release);
     g_package_load_hits.store(0, std::memory_order_release);
     g_package_unload_hits.store(0, std::memory_order_release);
+    g_pinvoke_unload_hits.store(0, std::memory_order_release);
+    g_unload_pcks_hits.store(0, std::memory_order_release);
+    g_auxiliary_mount_depth.store(0, std::memory_order_release);
+    g_ifix_method_id = {};
+    g_duration_ifix_method_id = -1;
+    g_duration_by_id_ifix_method_id = -1;
+    {
+        std::lock_guard lock(g_native_language_mutex);
+        g_native_speaker_languages.clear();
+    }
     {
         std::lock_guard lock(g_package_mutex);
         g_language_package_ready.fill(false);
@@ -2120,8 +3155,17 @@ BE_Result BE_CALL ConfigurationChanged(const char* configuration) {
 void BE_CALL Shutdown() {
     if (g_original_play_voice || g_original_internal_play_voice ||
         g_original_set_media || g_original_unset_media ||
-        g_original_external_event || g_original_load_file_package ||
-        g_original_unload_file_package || g_original_channel_play ||
+        g_original_external_event || g_original_external_event_by_id ||
+        g_original_external_event_internal || g_original_load_file_package ||
+        g_original_unload_file_package || g_original_pinvoke_unload_file_package ||
+        g_original_native_unload_file_package ||
+        g_original_unload_pcks || g_original_duration_by_id ||
+        g_original_voice_data_duration_cn ||
+        g_original_voice_data_duration_en ||
+        g_original_voice_data_duration_jp ||
+        g_original_voice_data_duration_kr ||
+        g_original_get_voice_path ||
+        g_original_channel_play ||
         g_original_play_event || g_original_narrative || g_original_duration ||
         g_original_voice_language || g_original_lip_dialog ||
         g_original_lip_path || g_original_lip_load) {
@@ -2136,7 +3180,7 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Voice Language", "2.3.1", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Voice Language", "3.0.1", BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};

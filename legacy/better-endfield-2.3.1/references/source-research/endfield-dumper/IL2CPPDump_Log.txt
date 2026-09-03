@@ -1,0 +1,639 @@
+DLL injected. Waiting for IL2CPP runtime...
+[OK] IL2CPP API ready  base=0x7FFA73900000  size=0x10E7D000
+[diag] gc_register=NO gc_disable=yes gc_enable=yes GC_disable=NO GC_enable=NO GC_dont_gc=NO props=yes events=yes field_default=NO method_token=yes runtime_invoke=yes class_from_name=yes
+Domain ready, settling for 12s before touching IL2CPP...
+thread attached to runtime
+170 assemblies
+Dumping assembly: Gameplay.Beyond.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Gameplay.Beyond.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Gameplay.Beyond.dll.cs  [AI mode]
+Dumping assembly: Assembly-CSharp.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Assembly-CSharp.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Assembly-CSharp.dll.cs  [AI mode]
+Dumping assembly: MemoryPack.Beyond.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\MemoryPack.Beyond.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\MemoryPack.Beyond.dll.cs  [AI mode]
+Dumping assembly: Beyond.Network.Proto.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Beyond.Network.Proto.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Beyond.Network.Proto.dll.cs  [AI mode]
+Dumping assembly: HG.RenderPipelines.Runtime.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\HG.RenderPipelines.Runtime.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\HG.RenderPipelines.Runtime.dll.cs  [AI mode]
+Dumping assembly: Common.Beyond.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Common.Beyond.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Common.Beyond.dll.cs  [AI mode]
+Dumping assembly: mscorlib.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\mscorlib.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\mscorlib.dll.cs  [AI mode]
+Dumping assembly: Rewired_Core.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Rewired_Core.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Rewired_Core.dll.cs  [AI mode]
+Dumping assembly: USD.NET.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\USD.NET.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\USD.NET.dll.cs  [AI mode]
+Dumping assembly: System.Xml.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\System.Xml.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\System.Xml.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.UIElementsModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.UIElementsModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.UIElementsModule.dll.cs  [AI mode]
+Dumping assembly: Unity.InputSystem.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Unity.InputSystem.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Unity.InputSystem.dll.cs  [AI mode]
+Dumping assembly: BeyondDynamicBone.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\BeyondDynamicBone.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\BeyondDynamicBone.dll.cs  [AI mode]
+Dumping assembly: System.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\System.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\System.dll.cs  [AI mode]
+Dumping assembly: FactoryUnsafe.Gameplay.Beyond.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\FactoryUnsafe.Gameplay.Beyond.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\FactoryUnsafe.Gameplay.Beyond.dll.cs  [AI mode]
+Dumping assembly: UI.Beyond.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UI.Beyond.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UI.Beyond.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.CoreModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.CoreModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.CoreModule.dll.cs  [AI mode]
+Dumping assembly: ParadoxNotion.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\ParadoxNotion.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\ParadoxNotion.dll.cs  [AI mode]
+Dumping assembly: HoudiniEngineUnity.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\HoudiniEngineUnity.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\HoudiniEngineUnity.dll.cs  [AI mode]
+Dumping assembly: System.Data.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\System.Data.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\System.Data.dll.cs  [AI mode]
+Dumping assembly: Rewired_Windows.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Rewired_Windows.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Rewired_Windows.dll.cs  [AI mode]
+Dumping assembly: UI.Gameplay.Beyond.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UI.Gameplay.Beyond.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UI.Gameplay.Beyond.dll.cs  [AI mode]
+Dumping assembly: System.Core.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\System.Core.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\System.Core.dll.cs  [AI mode]
+Dumping assembly: MagicaCloth.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\MagicaCloth.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\MagicaCloth.dll.cs  [AI mode]
+Dumping assembly: Newtonsoft.Json.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Newtonsoft.Json.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Newtonsoft.Json.dll.cs  [AI mode]
+Dumping assembly: Unity.TextMeshPro.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Unity.TextMeshPro.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Unity.TextMeshPro.dll.cs  [AI mode]
+Dumping assembly: Google.Protobuf.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Google.Protobuf.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Google.Protobuf.dll.cs  [AI mode]
+Dumping assembly: RootMotion.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\RootMotion.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\RootMotion.dll.cs  [AI mode]
+Dumping assembly: Entry.Beyond.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Entry.Beyond.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Entry.Beyond.dll.cs  [AI mode]
+Dumping assembly: AK.Wwise.Unity.API.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\AK.Wwise.Unity.API.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\AK.Wwise.Unity.API.dll.cs  [AI mode]
+Dumping assembly: Unity.RenderPipelines.Core.Runtime.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Unity.RenderPipelines.Core.Runtime.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Unity.RenderPipelines.Core.Runtime.dll.cs  [AI mode]
+Dumping assembly: Unity.Mathematics.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Unity.Mathematics.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Unity.Mathematics.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.UI.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.UI.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.UI.dll.cs  [AI mode]
+Dumping assembly: Rendering.Beyond.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Rendering.Beyond.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Rendering.Beyond.dll.cs  [AI mode]
+Dumping assembly: CriMw.CriWare.Runtime.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\CriMw.CriWare.Runtime.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\CriMw.CriWare.Runtime.dll.cs  [AI mode]
+Dumping assembly: Cinemachine.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Cinemachine.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Cinemachine.dll.cs  [AI mode]
+Dumping assembly: Slate.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Slate.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Slate.dll.cs  [AI mode]
+Dumping assembly: DestMath.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\DestMath.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\DestMath.dll.cs  [AI mode]
+Dumping assembly: XLua.Runtime.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\XLua.Runtime.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\XLua.Runtime.dll.cs  [AI mode]
+Dumping assembly: Input.Beyond.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Input.Beyond.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Input.Beyond.dll.cs  [AI mode]
+Dumping assembly: Unity.VisualScripting.Core.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Unity.VisualScripting.Core.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Unity.VisualScripting.Core.dll.cs  [AI mode]
+Dumping assembly: DOTween.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\DOTween.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\DOTween.dll.cs  [AI mode]
+Dumping assembly: Network.Beyond.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Network.Beyond.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Network.Beyond.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.TextCoreTextEngineModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.TextCoreTextEngineModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.TextCoreTextEngineModule.dll.cs  [AI mode]
+Dumping assembly: PaintIn3D.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\PaintIn3D.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\PaintIn3D.dll.cs  [AI mode]
+Dumping assembly: Unity.Timeline.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Unity.Timeline.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Unity.Timeline.dll.cs  [AI mode]
+Dumping assembly: MemoryPack.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\MemoryPack.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\MemoryPack.dll.cs  [AI mode]
+Dumping assembly: Unity.Formats.USD.Runtime.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Unity.Formats.USD.Runtime.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Unity.Formats.USD.Runtime.dll.cs  [AI mode]
+Dumping assembly: StompyRobot.SRDebugger.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\StompyRobot.SRDebugger.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\StompyRobot.SRDebugger.dll.cs  [AI mode]
+Dumping assembly: Rewired.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Rewired.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Rewired.dll.cs  [AI mode]
+Dumping assembly: AmazingAssets.TerrainToMesh.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\AmazingAssets.TerrainToMesh.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\AmazingAssets.TerrainToMesh.dll.cs  [AI mode]
+Dumping assembly: Mono.Security.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Mono.Security.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Mono.Security.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.AnimationModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.AnimationModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.AnimationModule.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.IMGUIModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.IMGUIModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.IMGUIModule.dll.cs  [AI mode]
+Dumping assembly: Unity.Collections.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Unity.Collections.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Unity.Collections.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.HGGraphicsModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.HGGraphicsModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.HGGraphicsModule.dll.cs  [AI mode]
+Dumping assembly: RuntimeQuality.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\RuntimeQuality.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\RuntimeQuality.dll.cs  [AI mode]
+Dumping assembly: Unsafe.Beyond.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Unsafe.Beyond.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Unsafe.Beyond.dll.cs  [AI mode]
+Dumping assembly: Audio.Beyond.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Audio.Beyond.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Audio.Beyond.dll.cs  [AI mode]
+Dumping assembly: Unity.Animation.Rigging.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Unity.Animation.Rigging.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Unity.Animation.Rigging.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.PhysicsModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.PhysicsModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.PhysicsModule.dll.cs  [AI mode]
+Dumping assembly: IFixRuntime.Beyond.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\IFixRuntime.Beyond.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\IFixRuntime.Beyond.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.dll.cs  [AI mode]
+Dumping assembly: Hypergryph.OneChannel.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Hypergryph.OneChannel.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Hypergryph.OneChannel.dll.cs  [AI mode]
+Dumping assembly: Beyond.Dlogger.Runtime.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Beyond.Dlogger.Runtime.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Beyond.Dlogger.Runtime.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.HGGraphicsCPPModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.HGGraphicsCPPModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.HGGraphicsCPPModule.dll.cs  [AI mode]
+Dumping assembly: System.Net.Http.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\System.Net.Http.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\System.Net.Http.dll.cs  [AI mode]
+Dumping assembly: Lua.Beyond.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Lua.Beyond.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Lua.Beyond.dll.cs  [AI mode]
+Dumping assembly: StompyRobot.SRF.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\StompyRobot.SRF.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\StompyRobot.SRF.dll.cs  [AI mode]
+Dumping assembly: CW.Common.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\CW.Common.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\CW.Common.dll.cs  [AI mode]
+Dumping assembly: ZString.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\ZString.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\ZString.dll.cs  [AI mode]
+Dumping assembly: IFix.Core.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\IFix.Core.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\IFix.Core.dll.cs  [AI mode]
+Dumping assembly: HGSDKInterfaces.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\HGSDKInterfaces.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\HGSDKInterfaces.dll.cs  [AI mode]
+Dumping assembly: Sirenix.OdinInspector.Attributes.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Sirenix.OdinInspector.Attributes.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Sirenix.OdinInspector.Attributes.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.ParticleSystemModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.ParticleSystemModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.ParticleSystemModule.dll.cs  [AI mode]
+Dumping assembly: Beyond.HGNetLogger.Proto.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Beyond.HGNetLogger.Proto.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Beyond.HGNetLogger.Proto.dll.cs  [AI mode]
+Dumping assembly: System.Drawing.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\System.Drawing.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\System.Drawing.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.AndroidJNIModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.AndroidJNIModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.AndroidJNIModule.dll.cs  [AI mode]
+Dumping assembly: Hypergryph.CloudClientBridge.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Hypergryph.CloudClientBridge.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Hypergryph.CloudClientBridge.dll.cs  [AI mode]
+Dumping assembly: clipper_library.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\clipper_library.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\clipper_library.dll.cs  [AI mode]
+Dumping assembly: VolumetricLightBeam.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\VolumetricLightBeam.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\VolumetricLightBeam.dll.cs  [AI mode]
+Dumping assembly: System.Numerics.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\System.Numerics.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\System.Numerics.dll.cs  [AI mode]
+Dumping assembly: AstarPathfindingProject.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\AstarPathfindingProject.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\AstarPathfindingProject.dll.cs  [AI mode]
+Dumping assembly: USD.NET.Unity.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\USD.NET.Unity.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\USD.NET.Unity.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.UnityWebRequestModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.UnityWebRequestModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.UnityWebRequestModule.dll.cs  [AI mode]
+Dumping assembly: Unity.Splines.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Unity.Splines.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Unity.Splines.dll.cs  [AI mode]
+Dumping assembly: System.Xml.Linq.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\System.Xml.Linq.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\System.Xml.Linq.dll.cs  [AI mode]
+Dumping assembly: Unity.VisualScripting.Flow.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Unity.VisualScripting.Flow.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Unity.VisualScripting.Flow.dll.cs  [AI mode]
+Dumping assembly: Unity.Burst.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Unity.Burst.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Unity.Burst.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.UIElementsNativeModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.UIElementsNativeModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.UIElementsNativeModule.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.TerrainModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.TerrainModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.TerrainModule.dll.cs  [AI mode]
+Dumping assembly: ZSimpleJSON.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\ZSimpleJSON.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\ZSimpleJSON.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.AIModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.AIModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.AIModule.dll.cs  [AI mode]
+Dumping assembly: Hypergryph.SpeedTest.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Hypergryph.SpeedTest.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Hypergryph.SpeedTest.dll.cs  [AI mode]
+Dumping assembly: Beyond.NativeSDK.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Beyond.NativeSDK.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Beyond.NativeSDK.dll.cs  [AI mode]
+Dumping assembly: DOTween.Modules.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\DOTween.Modules.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\DOTween.Modules.dll.cs  [AI mode]
+Dumping assembly: Beyond.Byte.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Beyond.Byte.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Beyond.Byte.dll.cs  [AI mode]
+Dumping assembly: DynamicSceneUnsafe.Gameplay.Beyond.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\DynamicSceneUnsafe.Gameplay.Beyond.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\DynamicSceneUnsafe.Gameplay.Beyond.dll.cs  [AI mode]
+Dumping assembly: Hypergryph.Browser.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Hypergryph.Browser.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Hypergryph.Browser.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.TextCoreFontEngineModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.TextCoreFontEngineModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.TextCoreFontEngineModule.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.UIModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.UIModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.UIModule.dll.cs  [AI mode]
+Dumping assembly: Hypergryph.EventLogSDK.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Hypergryph.EventLogSDK.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Hypergryph.EventLogSDK.dll.cs  [AI mode]
+Dumping assembly: Base.Beyond.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Base.Beyond.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Base.Beyond.dll.cs  [AI mode]
+Dumping assembly: Google.FlatBuffers.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Google.FlatBuffers.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Google.FlatBuffers.dll.cs  [AI mode]
+Dumping assembly: ManifestDataBinary.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\ManifestDataBinary.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\ManifestDataBinary.dll.cs  [AI mode]
+Dumping assembly: SkeletalUnsafe.Gameplay.Beyond.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\SkeletalUnsafe.Gameplay.Beyond.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\SkeletalUnsafe.Gameplay.Beyond.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.Physics2DModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.Physics2DModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.Physics2DModule.dll.cs  [AI mode]
+Dumping assembly: Priority Queue.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Priority Queue.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Priority Queue.dll.cs  [AI mode]
+Dumping assembly: System.IO.Compression.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\System.IO.Compression.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\System.IO.Compression.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.AudioModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.AudioModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.AudioModule.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.XRModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.XRModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.XRModule.dll.cs  [AI mode]
+Dumping assembly: LibScePad.Runtime.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\LibScePad.Runtime.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\LibScePad.Runtime.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.InputLegacyModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.InputLegacyModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.InputLegacyModule.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.VideoModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.VideoModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.VideoModule.dll.cs  [AI mode]
+Dumping assembly: Unsafe.SceneGrid.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Unsafe.SceneGrid.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Unsafe.SceneGrid.dll.cs  [AI mode]
+Dumping assembly: NavMeshComponents.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\NavMeshComponents.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\NavMeshComponents.dll.cs  [AI mode]
+Dumping assembly: DOTweenPro.Runtime.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\DOTweenPro.Runtime.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\DOTweenPro.Runtime.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.TextRenderingModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.TextRenderingModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.TextRenderingModule.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.AssetBundleModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.AssetBundleModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.AssetBundleModule.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.TilemapModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.TilemapModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.TilemapModule.dll.cs  [AI mode]
+Dumping assembly: VWKDTree.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\VWKDTree.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\VWKDTree.dll.cs  [AI mode]
+Dumping assembly: Sirenix.Utilities.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Sirenix.Utilities.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Sirenix.Utilities.dll.cs  [AI mode]
+Dumping assembly: ACESDK_WIN.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\ACESDK_WIN.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\ACESDK_WIN.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.SharedInternalsModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.SharedInternalsModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.SharedInternalsModule.dll.cs  [AI mode]
+Dumping assembly: UnityWebSocket.Runtime.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityWebSocket.Runtime.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityWebSocket.Runtime.dll.cs  [AI mode]
+Dumping assembly: DOTweenPro.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\DOTweenPro.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\DOTweenPro.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.VFXModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.VFXModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.VFXModule.dll.cs  [AI mode]
+Dumping assembly: AbilityUnsafe.Gameplay.Beyond.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\AbilityUnsafe.Gameplay.Beyond.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\AbilityUnsafe.Gameplay.Beyond.dll.cs  [AI mode]
+Dumping assembly: HG.RenderPipelines.ScriptBridge.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\HG.RenderPipelines.ScriptBridge.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\HG.RenderPipelines.ScriptBridge.dll.cs  [AI mode]
+Dumping assembly: Sirenix.Serialization.Config.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Sirenix.Serialization.Config.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Sirenix.Serialization.Config.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.DirectorModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.DirectorModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.DirectorModule.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.SubsystemsModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.SubsystemsModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.SubsystemsModule.dll.cs  [AI mode]
+Dumping assembly: Common.Beyond.Cyptor.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Common.Beyond.Cyptor.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Common.Beyond.Cyptor.dll.cs  [AI mode]
+Dumping assembly: Unsafe.Streaming.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Unsafe.Streaming.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Unsafe.Streaming.dll.cs  [AI mode]
+Dumping assembly: IFix.Define.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\IFix.Define.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\IFix.Define.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.InputModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.InputModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.InputModule.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.UnityAnalyticsModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.UnityAnalyticsModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.UnityAnalyticsModule.dll.cs  [AI mode]
+Dumping assembly: Common.Beyond.XXEnc.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Common.Beyond.XXEnc.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Common.Beyond.XXEnc.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.VRModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.VRModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.VRModule.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.JSONSerializeModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.JSONSerializeModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.JSONSerializeModule.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.GridModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.GridModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.GridModule.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.ImageConversionModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.ImageConversionModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.ImageConversionModule.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.TerrainPhysicsModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.TerrainPhysicsModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.TerrainPhysicsModule.dll.cs  [AI mode]
+Dumping assembly: Unsafe.VFS.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Unsafe.VFS.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Unsafe.VFS.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.SpriteShapeModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.SpriteShapeModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.SpriteShapeModule.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.StreamingModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.StreamingModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.StreamingModule.dll.cs  [AI mode]
+Dumping assembly: UnityEngine.WindModule.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\UnityEngine.WindModule.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\UnityEngine.WindModule.dll.cs  [AI mode]
+Dumping assembly: HoudiniEngineUnity.VisualScripting.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\HoudiniEngineUnity.VisualScripting.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\HoudiniEngineUnity.VisualScripting.dll.cs  [AI mode]
+Dumping assembly: Hypergryph.DownloadSDK.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Hypergryph.DownloadSDK.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Hypergryph.DownloadSDK.dll.cs  [AI mode]
+Dumping assembly: Hypergryph.GameUpdate.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Hypergryph.GameUpdate.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Hypergryph.GameUpdate.dll.cs  [AI mode]
+Dumping assembly: SRSA.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\SRSA.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\SRSA.dll.cs  [AI mode]
+Dumping assembly: Unity.Formats.USD.Common.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Unity.Formats.USD.Common.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Unity.Formats.USD.Common.dll.cs  [AI mode]
+Dumping assembly: CriMw.CriWare.Vp9.Runtime.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\CriMw.CriWare.Vp9.Runtime.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\CriMw.CriWare.Vp9.Runtime.dll.cs  [AI mode]
+Dumping assembly: VFSEditor.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\VFSEditor.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\VFSEditor.dll.cs  [AI mode]
+Dumping assembly: Beyond.Native.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Beyond.Native.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Beyond.Native.dll.cs  [AI mode]
+Dumping assembly: System.Runtime.CompilerServices.Unsafe.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\System.Runtime.CompilerServices.Unsafe.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\System.Runtime.CompilerServices.Unsafe.dll.cs  [AI mode]
+Dumping assembly: System.Runtime.Serialization.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\System.Runtime.Serialization.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\System.Runtime.Serialization.dll.cs  [AI mode]
+Dumping assembly: HG.RenderPipelines.Logger.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\HG.RenderPipelines.Logger.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\HG.RenderPipelines.Logger.dll.cs  [AI mode]
+Dumping assembly: System.Configuration.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\System.Configuration.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\System.Configuration.dll.cs  [AI mode]
+Dumping assembly: GCAllocStatusEditorWindow.Editor.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\GCAllocStatusEditorWindow.Editor.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\GCAllocStatusEditorWindow.Editor.dll.cs  [AI mode]
+Dumping assembly: IFix.Editor.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\IFix.Editor.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\IFix.Editor.dll.cs  [AI mode]
+Dumping assembly: AntiSDK.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\AntiSDK.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\AntiSDK.dll.cs  [AI mode]
+Dumping assembly: InfinityCode.MeshToTerrain.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\InfinityCode.MeshToTerrain.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\InfinityCode.MeshToTerrain.dll.cs  [AI mode]
+Dumping assembly: Obfuscator.Attribute.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Obfuscator.Attribute.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Obfuscator.Attribute.dll.cs  [AI mode]
+Dumping assembly: OverdrawForURP.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\OverdrawForURP.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\OverdrawForURP.dll.cs  [AI mode]
+Dumping assembly: Rewired_Windows_Functions.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Rewired_Windows_Functions.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Rewired_Windows_Functions.dll.cs  [AI mode]
+Dumping assembly: Unity.Collections.LowLevel.ILSupport.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Unity.Collections.LowLevel.ILSupport.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Unity.Collections.LowLevel.ILSupport.dll.cs  [AI mode]
+Dumping assembly: RoslynAnalyzers.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\RoslynAnalyzers.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\RoslynAnalyzers.dll.cs  [AI mode]
+Dumping assembly: Unity.Burst.Unsafe.dll ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\Unity.Burst.Unsafe.dll.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\Unity.Burst.Unsafe.dll.cs  [AI mode]
+Dumping assembly: __Generated ...
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\__Generated.cs  [C# mode]
+Saved -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\__Generated.cs  [AI mode]
+
+Done!
+  Normal (C#):     E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Normal\
+  AI-friendly:     E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_AI\
+  String literals: E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Dump_Strings.txt  (4167 entries)
+  RVA resolved:    456648 / 494830 methods
+
+hardware: HIGH  cores=16  ram=31GB  yield=1ms/250
+scene dumper ready
+
+Hotkeys:
+  F5   full snapshot  (camera + scene + mesh colliders)
+  F7   scene light    (positions + components + materials)
+  F11  scene deep     (with MonoBehaviour field values)
+  F8   camera state
+  F2   mesh colliders (world solidity for AI)
+  F3   targeted class scan (reads IL2CPP_ScanList.txt)
+  F6   exit & unload
+
+[scene] deep MonoBehaviour field dump OFF
+scene snapshot: light mode
+1918 GameObjects
+250/1918  16 ms
+500/1918  16 ms
+750/1918  16 ms
+1000/1918  31 ms
+1250/1918  31 ms
+1500/1918  31 ms
+1750/1918  47 ms
+dumped 1918 / 1918  (0 skipped, 47 ms) -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_World_Dump_20260803_050558.txt
+[scene] deep MonoBehaviour field dump ON
+scene snapshot: deep mode (MB fields)
+3934 GameObjects
+50/3934  0 ms
+100/3934  0 ms
+150/3934  0 ms
+200/3934  0 ms
+250/3934  16 ms
+300/3934  16 ms
+350/3934  16 ms
+400/3934  16 ms
+450/3934  16 ms
+500/3934  16 ms
+550/3934  16 ms
+600/3934  31 ms
+650/3934  31 ms
+700/3934  31 ms
+750/3934  31 ms
+800/3934  31 ms
+850/3934  31 ms
+900/3934  31 ms
+950/3934  31 ms
+1000/3934  31 ms
+1050/3934  31 ms
+1100/3934  31 ms
+1150/3934  47 ms
+1200/3934  47 ms
+1250/3934  47 ms
+1300/3934  47 ms
+1350/3934  47 ms
+1400/3934  47 ms
+1450/3934  47 ms
+1500/3934  47 ms
+1550/3934  47 ms
+1600/3934  63 ms
+1650/3934  63 ms
+1700/3934  63 ms
+1750/3934  63 ms
+1800/3934  63 ms
+1850/3934  63 ms
+1900/3934  63 ms
+1950/3934  63 ms
+2000/3934  63 ms
+2050/3934  63 ms
+2100/3934  78 ms
+2150/3934  78 ms
+2200/3934  78 ms
+2250/3934  78 ms
+2300/3934  78 ms
+2350/3934  78 ms
+2400/3934  78 ms
+2450/3934  78 ms
+2500/3934  78 ms
+2550/3934  78 ms
+2600/3934  78 ms
+2650/3934  78 ms
+2700/3934  78 ms
+2750/3934  94 ms
+2800/3934  94 ms
+2850/3934  94 ms
+2900/3934  94 ms
+2950/3934  94 ms
+3000/3934  94 ms
+3050/3934  94 ms
+3100/3934  94 ms
+3150/3934  94 ms
+3200/3934  94 ms
+3250/3934  94 ms
+3300/3934  94 ms
+3350/3934  109 ms
+3400/3934  109 ms
+3450/3934  109 ms
+3500/3934  109 ms
+3550/3934  109 ms
+3600/3934  109 ms
+3650/3934  109 ms
+3700/3934  109 ms
+3750/3934  109 ms
+3800/3934  109 ms
+3850/3934  109 ms
+3900/3934  109 ms
+dumped 3934 / 3934  (0 skipped, 125 ms) -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_World_Dump_20260803_050608.txt
+[scene] deep MonoBehaviour field dump OFF
+RenderSilhouetteRT: 0 instances
+Beyond.UI.SplashController: 0 instances
+Beyond.Gameplay.FMVController: 0 instances
+Beyond.Gameplay.Core.CinematicTimelineManagerBase: 0 instances
+Beyond.Gameplay.Core.SquadManager: 0 instances
+UnityEngine.Playables.PlayableDirector: 0 instances
+UnityEngine.Animator: 138 instances
+UnityEngine.SkinnedMeshRenderer: 171 instances
+UnityEngine.MeshRenderer: 2224 instances
+scan: 2533 instances -> E:\Dr.Hydra\EF-Start-Change\tools\EndfieldDumper\IL2CPP_Scan_20260803_050615.txt

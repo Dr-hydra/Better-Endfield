@@ -1,0 +1,17 @@
+{
+  "m_Script": {
+    "m_FileID": 1,
+    "m_PathID": 5094705188149185362,
+    "Name": "",
+    "IsNull": false
+  },
+  "m_Name": "",
+  "m_Enabled": 0,
+  "m_GameObject": {
+    "m_FileID": 0,
+    "m_PathID": -279035188908998271,
+    "Name": "MainCamera",
+    "IsNull": false
+  },
+  "Name": ""
+}

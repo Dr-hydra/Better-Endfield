@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "gamePath": "E:\\Endfield Game",
+  "audioInputPluginId": "0x00C80002",
+  "packageCount": 42,
+  "bankCount": 43187,
+  "bankVersions": {
+    "150": 43187
+  },
+  "candidateBankCount": 0,
+  "candidateBanks": [],
+  "targetEventBankCount": 7,
+  "targetEventBanks": [
+    {
+      "eventName": "au_music_login_intro",
+      "eventId": 203239650,
+      "package": "Endfield_Data/StreamingAssets/VFS/07A1BB91/25936D83C79CD53F222C4AC96052965F.chk",
+      "bankId": 203239650,
+      "bankVersion": 150,
+      "bankSize": 195,
+      "reachableObjectCount": 5,
+      "reachableObjectTypes": {
+        "3": 4,
+        "4": 1
+      },
+      "sounds": []
+    },
+    {
+      "eventName": "au_music_login_theme",
+      "eventId": 3146994555,
+      "package": "Endfield_Data/StreamingAssets/VFS/07A1BB91/25936D83C79CD53F222C4AC96052965F.chk",
+      "bankId": 3146994555,
+      "bankVersion": 150,
+      "bankSize": 160,
+      "reachableObjectCount": 4,
+      "reachableObjectTypes": {
+        "3": 3,
+        "4": 1
+      },
+      "sounds": []
+    },
+    {
+      "eventName": "au_music_login_intro",
+      "eventId": 203239650,
+      "package": "Endfield_Data/StreamingAssets/VFS/07A1BB91/7ADAAA581875BD19F6117C6161D259F2.chk",
+      "bankId": 203239650,
+      "bankVersion": 150,
+      "bankSize": 195,
+      "reachableObjectCount": 5,
+      "reachableObjectTypes": {
+        "3": 4,
+        "4": 1
+      },
+      "sounds": []
+    },
+    {
+      "eventName": "au_music_login_theme",
+      "eventId": 3146994555,
+      "package": "Endfield_Data/StreamingAssets/VFS/07A1BB91/7ADAAA581875BD19F6117C6161D259F2.chk",
+      "bankId": 3146994555,
+      "bankVersion": 150,
+      "bankSize": 160,
+      "reachableObjectCount": 4,
+      "reachableObjectTypes": {
+        "3": 3,
+        "4": 1
+      },
+      "sounds": []
+    },
+    {
+      "eventName": "au_music_placeholder_start",
+      "eventId": 862706936,
+      "package": "Endfield_Data/StreamingAssets/VFS/24ED34CF/2A1AAC98E4CF4DF80DE8DE4B84584774.chk",
+      "bankId": 2810053935,
+      "bankVersion": 150,
+      "bankSize": 603,
+      "reachableObjectCount": 4,
+      "reachableObjectTypes": {
+        "2": 1,
+        "3": 1,
+        "4": 1,
+        "7": 1
+      },
+      "sounds": [
+        {
+          "soundObjectId": 386760046,
+          "pluginId": "0x00080001",
+          "streamType": 0,
+          "sourceId": 618371124
+        }
+      ]
+    },
+    {
+      "eventName": "au_music_dijiang_player_map01_lv001_theme",
+      "eventId": 2566470034,
+      "package": "Endfield_Data/StreamingAssets/VFS/24ED34CF/B788A5C406AFDD9CF2E48FD2F399A6A2.chk",
+      "bankId": 2566470034,
+      "bankVersion": 150,
+      "bankSize": 132,
+      "reachableObjectCount": 4,
+      "reachableObjectTypes": {
+        "3": 2,
+        "4": 2
+      },
+      "sounds": []
+    },
+    {
+      "eventName": "au_music_placeholder_start",
+      "eventId": 862706936,
+      "package": "Endfield_Data/StreamingAssets/VFS/24ED34CF/B788A5C406AFDD9CF2E48FD2F399A6A2.chk",
+      "bankId": 2810053935,
+      "bankVersion": 150,
+      "bankSize": 608,
+      "reachableObjectCount": 4,
+      "reachableObjectTypes": {
+        "2": 1,
+        "3": 1,
+        "4": 1,
+        "7": 1
+      },
+      "sounds": [
+        {
+          "soundObjectId": 386760046,
+          "pluginId": "0x00080001",
+          "streamType": 0,
+          "sourceId": 618371124
+        }
+      ]
+    }
+  ],
+  "duplicateObjectIdBankCount": 14,
+  "parseErrorCount": 0,
+  "parseErrors": [],
+  "notes": [
+    "Sound plug-in IDs are read from the Wwise v150 HIRC Sound layout.",
+    "Event reachability uses a conservative in-bank 32-bit object-ID graph.",
+    "No BNK or WEM payload is written by this scan."
+  ]
+}

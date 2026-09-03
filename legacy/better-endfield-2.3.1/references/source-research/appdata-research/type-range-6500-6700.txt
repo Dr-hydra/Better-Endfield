@@ -1,0 +1,1376 @@
+TYPE_INDEX 6500 TOKEN 0x00102001 IMAGE Gameplay.Beyond.dll TYPE .FrameTickGroup fields=5+65535 methods=3+27068
+  METHOD_INDEX 37692 get_eventKey token=0x0600933D
+  METHOD_INDEX 37693 get_eventKeyEnum token=0x0600933E
+  METHOD_INDEX 37694 get_eventKeyString token=0x0600933F
+  METHOD_INDEX 37695 CollectParams token=0x06009340
+  METHOD_INDEX 37696 Process token=0x06009341
+  METHOD_INDEX 37697 .ctor token=0x06009342
+  METHOD_INDEX 37698 <>iFixBaseProxy_get_eventKeyEnum token=0x06009343
+  METHOD_INDEX 37699 <>iFixBaseProxy_get_eventKeyString token=0x06009344
+  METHOD_INDEX 37700 <>iFixBaseProxy_CollectParams token=0x06009345
+  METHOD_INDEX 37701 <>iFixBaseProxy_Process token=0x06009346
+TYPE_INDEX 6501 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE TickGroup.tFrom fields=20024+28646 methods=3+59922
+  METHOD_INDEX 37702 get_eventKey token=0x06009347
+  METHOD_INDEX 37703 get_hasFilterMode token=0x06009348
+  METHOD_INDEX 37704 CollectParams token=0x06009349
+  METHOD_INDEX 37705 Process token=0x0600934A
+  METHOD_INDEX 37706 .ctor token=0x0600934B
+  METHOD_INDEX 37707 <>iFixBaseProxy_get_hasFilterMode token=0x0600934C
+  METHOD_INDEX 37708 <>iFixBaseProxy_CollectParams token=0x0600934D
+  METHOD_INDEX 37709 <>iFixBaseProxy_Process token=0x0600934E
+TYPE_INDEX 6502 TOKEN 0x00027123 IMAGE Gameplay.Beyond.dll TYPE rom.checkSqrDis fields=8655+59922 methods=20025+62174
+  METHOD_INDEX 37710 get_eventKey token=0x0600934F
+  METHOD_INDEX 37711 get_hasFilterMode token=0x06009350
+  METHOD_INDEX 37712 CollectParams token=0x06009351
+  METHOD_INDEX 37713 Process token=0x06009352
+  METHOD_INDEX 37714 .ctor token=0x06009353
+  METHOD_INDEX 37715 <>iFixBaseProxy_get_hasFilterMode token=0x06009354
+  METHOD_INDEX 37716 <>iFixBaseProxy_CollectParams token=0x06009355
+  METHOD_INDEX 37717 <>iFixBaseProxy_Process token=0x06009356
+TYPE_INDEX 6503 TOKEN 0x0001D893 IMAGE Gameplay.Beyond.dll TYPE checkSqrDis. fields=95740+4812 methods=8657+6221
+  METHOD_INDEX 37718 get_eventKey token=0x06009357
+  METHOD_INDEX 37719 get_hasFilterMode token=0x06009358
+  METHOD_INDEX 37720 CollectParams token=0x06009359
+  METHOD_INDEX 37721 Process token=0x0600935A
+  METHOD_INDEX 37722 .ctor token=0x0600935B
+  METHOD_INDEX 37723 <>iFixBaseProxy_get_hasFilterMode token=0x0600935C
+  METHOD_INDEX 37724 <>iFixBaseProxy_CollectParams token=0x0600935D
+  METHOD_INDEX 37725 <>iFixBaseProxy_Process token=0x0600935E
+TYPE_INDEX 6504 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE .ntityAnim fields=-1+6222 methods=95759+3072
+  METHOD_INDEX 37726 get_eventKey token=0x0600935F
+  METHOD_INDEX 37727 get_hasFilterMode token=0x06009360
+  METHOD_INDEX 37728 CollectParams token=0x06009361
+  METHOD_INDEX 37729 Process token=0x06009362
+  METHOD_INDEX 37730 .ctor token=0x06009363
+  METHOD_INDEX 37731 <>iFixBaseProxy_get_hasFilterMode token=0x06009364
+  METHOD_INDEX 37732 <>iFixBaseProxy_CollectParams token=0x06009365
+  METHOD_INDEX 37733 <>iFixBaseProxy_Process token=0x06009366
+TYPE_INDEX 6505 TOKEN 0x00027DC6 IMAGE Gameplay.Beyond.dll TYPE mation.>k__BackingField fields=-1+3072 methods=-1+0
+  METHOD_INDEX 37734 get_eventKey token=0x06009367
+  METHOD_INDEX 37735 get_hasFilterMode token=0x06009368
+  METHOD_INDEX 37736 CollectParams token=0x06009369
+  METHOD_INDEX 37737 Process token=0x0600936A
+  METHOD_INDEX 37738 .ctor token=0x0600936B
+  METHOD_INDEX 37739 <>iFixBaseProxy_get_hasFilterMode token=0x0600936C
+  METHOD_INDEX 37740 <>iFixBaseProxy_CollectParams token=0x0600936D
+  METHOD_INDEX 37741 <>iFixBaseProxy_Process token=0x0600936E
+TYPE_INDEX 6506 TOKEN 0x000CEA12 IMAGE Gameplay.Beyond.dll TYPE >k__BackingField. fields=-1+0 methods=-1+0
+  METHOD_INDEX 37742 get_eventKey token=0x0600936F
+  METHOD_INDEX 37743 get_maxFilterMask token=0x06009370
+  METHOD_INDEX 37744 CollectParams token=0x06009371
+  METHOD_INDEX 37745 Process token=0x06009372
+  METHOD_INDEX 37746 .ctor token=0x06009373
+  METHOD_INDEX 37747 <>iFixBaseProxy_get_maxFilterMask token=0x06009374
+  METHOD_INDEX 37748 <>iFixBaseProxy_CollectParams token=0x06009375
+  METHOD_INDEX 37749 <>iFixBaseProxy_Process token=0x06009376
+TYPE_INDEX 6507 TOKEN 0x000DCE62 IMAGE Gameplay.Beyond.dll TYPE .TriggerObserver fields=-1+0 methods=5567+5
+  METHOD_INDEX 37750 get_eventKey token=0x06009377
+  METHOD_INDEX 37751 get_hasFilterMode token=0x06009378
+  METHOD_INDEX 37752 CollectParams token=0x06009379
+  METHOD_INDEX 37753 Process token=0x0600937A
+  METHOD_INDEX 37754 .ctor token=0x0600937B
+  METHOD_INDEX 37755 <>iFixBaseProxy_get_hasFilterMode token=0x0600937C
+  METHOD_INDEX 37756 <>iFixBaseProxy_CollectParams token=0x0600937D
+  METHOD_INDEX 37757 <>iFixBaseProxy_Process token=0x0600937E
+TYPE_INDEX 6508 TOKEN 0x02001852 IMAGE Gameplay.Beyond.dll TYPE ry.Beyond.Gameplay.Actions fields=36501+9 methods=-1+14
+  FIELD_INDEX 36501 _straightDist token=0x04008E96
+  FIELD_INDEX 36502 _bezierMidPoint1 token=0x04008E97
+  FIELD_INDEX 36503 m_speed token=0x04008E98
+  FIELD_INDEX 36504 m_ySpeed token=0x04008E99
+  FIELD_INDEX 36505 m_gravity token=0x04008E9A
+  FIELD_INDEX 36506 m_fixedTarget token=0x04008E9B
+  FIELD_INDEX 36507 m_target token=0x04008E9C
+  FIELD_INDEX 36508 m_targetPos token=0x04008E9D
+  FIELD_INDEX 36509 m_delayClearCor token=0x04008E9E
+  METHOD_INDEX 37758 get_eventKey token=0x0600937F
+  METHOD_INDEX 37759 get_maxFilterMask token=0x06009380
+  METHOD_INDEX 37760 CollectParams token=0x06009381
+  METHOD_INDEX 37761 Process token=0x06009382
+  METHOD_INDEX 37762 .ctor token=0x06009383
+  METHOD_INDEX 37763 <>iFixBaseProxy_get_maxFilterMask token=0x06009384
+  METHOD_INDEX 37764 <>iFixBaseProxy_CollectParams token=0x06009385
+  METHOD_INDEX 37765 <>iFixBaseProxy_Process token=0x06009386
+TYPE_INDEX 6509 TOKEN 0x00000C00 IMAGE Gameplay.Beyond.dll TYPE Beyond.Gameplay.Actions.StartCutsceneAndHideSceneObjectAction fields=27077+20 methods=36515+1042
+  FIELD_INDEX 27077 _cutsceneId token=0x040069C6
+  FIELD_INDEX 27078 _needLoadExtraStream token=0x040069C7
+  FIELD_INDEX 27079 _extraStreamPosition token=0x040069C8
+  FIELD_INDEX 27080 m_preloadedKey token=0x040069C9
+  FIELD_INDEX 27081 _nodeEnablePreload token=0x040069CA
+  FIELD_INDEX 27082 _hideInteractive token=0x040069CB
+  FIELD_INDEX 27083 _hideSceneObject token=0x040069CC
+  FIELD_INDEX 27084 _overrideBeforeMaskConfig token=0x040069CD
+  FIELD_INDEX 27085 beforeMask token=0x040069CE
+  FIELD_INDEX 27086 _overrideAfterMaskConfig token=0x040069CF
+  FIELD_INDEX 27087 afterMask token=0x040069D0
+  FIELD_INDEX 27088 m_hideInteractives token=0x040069D1
+  FIELD_INDEX 27089 _cutsceneId token=0x040069D2
+  FIELD_INDEX 27090 _needLoadExtraStream token=0x040069D3
+  FIELD_INDEX 27091 _extraStreamPosition token=0x040069D4
+  FIELD_INDEX 27092 _existingInteractives token=0x040069D5
+  FIELD_INDEX 27093 _existingEnemy token=0x040069D6
+  FIELD_INDEX 27094 _existingSceneObjects token=0x040069D7
+  FIELD_INDEX 27095 m_existingInteractives token=0x040069D8
+  FIELD_INDEX 27096 m_existingEnemies token=0x040069D9
+  METHOD_INDEX 37766 get_eventKey token=0x06009387
+  METHOD_INDEX 37767 get_maxFilterMask token=0x06009388
+  METHOD_INDEX 37768 CollectParams token=0x06009389
+  METHOD_INDEX 37769 Process token=0x0600938A
+  METHOD_INDEX 37770 .ctor token=0x0600938B
+  METHOD_INDEX 37771 <>iFixBaseProxy_get_maxFilterMask token=0x0600938C
+  METHOD_INDEX 37772 <>iFixBaseProxy_CollectParams token=0x0600938D
+  METHOD_INDEX 37773 <>iFixBaseProxy_Process token=0x0600938E
+TYPE_INDEX 6510 TOKEN 0x00020000 IMAGE Gameplay.Beyond.dll TYPE StartCinematicAndHideSceneObject.<� fields=1056769+19945 methods=27082+8673
+  METHOD_INDEX 37774 get_eventKey token=0x0600938F
+  METHOD_INDEX 37775 get_hasFilterMode token=0x06009390
+  METHOD_INDEX 37776 CollectParams token=0x06009391
+  METHOD_INDEX 37777 Process token=0x06009392
+  METHOD_INDEX 37778 .ctor token=0x06009393
+  METHOD_INDEX 37779 <>iFixBaseProxy_get_hasFilterMode token=0x06009394
+  METHOD_INDEX 37780 <>iFixBaseProxy_CollectParams token=0x06009395
+  METHOD_INDEX 37781 <>iFixBaseProxy_Process token=0x06009396
+TYPE_INDEX 6511 TOKEN 0x001D0000 IMAGE Gameplay.Beyond.dll TYPE �.ct fields=-1+8675 methods=1056769+30388
+  METHOD_INDEX 37782 get_eventKey token=0x06009397
+  METHOD_INDEX 37783 get_hasFilterMode token=0x06009398
+  METHOD_INDEX 37784 CollectParams token=0x06009399
+  METHOD_INDEX 37785 Process token=0x0600939A
+  METHOD_INDEX 37786 .ctor token=0x0600939B
+  METHOD_INDEX 37787 <>iFixBaseProxy_get_hasFilterMode token=0x0600939C
+  METHOD_INDEX 37788 <>iFixBaseProxy_CollectParams token=0x0600939D
+  METHOD_INDEX 37789 <>iFixBaseProxy_Process token=0x0600939E
+TYPE_INDEX 6512 TOKEN 0x0000000B IMAGE Gameplay.Beyond.dll TYPE ct.ontroller fields=164897+30417 methods=-1+65535
+  METHOD_INDEX 37790 get_eventKey token=0x0600939F
+  METHOD_INDEX 37791 get_hasFilterMode token=0x060093A0
+  METHOD_INDEX 37792 CollectParams token=0x060093A1
+  METHOD_INDEX 37793 Process token=0x060093A2
+  METHOD_INDEX 37794 .ctor token=0x060093A3
+  METHOD_INDEX 37795 <>iFixBaseProxy_get_hasFilterMode token=0x060093A4
+  METHOD_INDEX 37796 <>iFixBaseProxy_CollectParams token=0x060093A5
+  METHOD_INDEX 37797 <>iFixBaseProxy_Process token=0x060093A6
+TYPE_INDEX 6513 TOKEN 0x00000002 IMAGE Gameplay.Beyond.dll TYPE RegionUpgradeCameraConfig.BackingField fields=155509+65535 methods=204634+65535
+  METHOD_INDEX 37798 get_eventKey token=0x060093A7
+  METHOD_INDEX 37799 get_hasFilterMode token=0x060093A8
+  METHOD_INDEX 37800 CollectParams token=0x060093A9
+  METHOD_INDEX 37801 Process token=0x060093AA
+  METHOD_INDEX 37802 .ctor token=0x060093AB
+  METHOD_INDEX 37803 <>iFixBaseProxy_get_hasFilterMode token=0x060093AC
+  METHOD_INDEX 37804 <>iFixBaseProxy_CollectParams token=0x060093AD
+  METHOD_INDEX 37805 <>iFixBaseProxy_Process token=0x060093AE
+TYPE_INDEX 6514 TOKEN 0x00004E3F IMAGE Gameplay.Beyond.dll TYPE lobalTemplate.lay.Beyond fields=-1+1503 methods=133917+65535
+  METHOD_INDEX 37806 get_eventKey token=0x060093AF
+  METHOD_INDEX 37807 get_hasFilterMode token=0x060093B0
+  METHOD_INDEX 37808 CollectParams token=0x060093B1
+  METHOD_INDEX 37809 Process token=0x060093B2
+  METHOD_INDEX 37810 .ctor token=0x060093B3
+  METHOD_INDEX 37811 <>iFixBaseProxy_get_hasFilterMode token=0x060093B4
+  METHOD_INDEX 37812 <>iFixBaseProxy_CollectParams token=0x060093B5
+  METHOD_INDEX 37813 <>iFixBaseProxy_Process token=0x060093B6
+TYPE_INDEX 6515 TOKEN 0x000021EA IMAGE Gameplay.Beyond.dll TYPE ameplay.Beyond.lay.Beyond fields=164908+65535 methods=-1+65535
+  METHOD_INDEX 37814 get_eventKey token=0x060093B7
+  METHOD_INDEX 37815 get_hasFilterMode token=0x060093B8
+  METHOD_INDEX 37816 CollectParams token=0x060093B9
+  METHOD_INDEX 37817 Process token=0x060093BA
+  METHOD_INDEX 37818 .ctor token=0x060093BB
+  METHOD_INDEX 37819 <>iFixBaseProxy_get_hasFilterMode token=0x060093BC
+  METHOD_INDEX 37820 <>iFixBaseProxy_CollectParams token=0x060093BD
+  METHOD_INDEX 37821 <>iFixBaseProxy_Process token=0x060093BE
+TYPE_INDEX 6516 TOKEN 0x00017712 IMAGE Gameplay.Beyond.dll TYPE play.Beyond.TARTCOLOR_COLOR fields=846354+65535 methods=164914+36583
+  METHOD_INDEX 37822 get_eventKey token=0x060093BF
+  METHOD_INDEX 37823 get_hasFilterMode token=0x060093C0
+  METHOD_INDEX 37824 CollectParams token=0x060093C1
+  METHOD_INDEX 37825 Process token=0x060093C2
+  METHOD_INDEX 37826 .ctor token=0x060093C3
+  METHOD_INDEX 37827 <>iFixBaseProxy_get_hasFilterMode token=0x060093C4
+  METHOD_INDEX 37828 <>iFixBaseProxy_CollectParams token=0x060093C5
+  METHOD_INDEX 37829 <>iFixBaseProxy_Process token=0x060093C6
+TYPE_INDEX 6517 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE ARTCOLOR_COLOR.oroutine>d__18 fields=905638+36587 methods=846354+27121
+  METHOD_INDEX 37830 get_eventKey token=0x060093C7
+  METHOD_INDEX 37831 get_maxFilterMask token=0x060093C8
+  METHOD_INDEX 37832 CollectParams token=0x060093C9
+  METHOD_INDEX 37833 Process token=0x060093CA
+  METHOD_INDEX 37834 .ctor token=0x060093CB
+  METHOD_INDEX 37835 <>iFixBaseProxy_get_maxFilterMask token=0x060093CC
+  METHOD_INDEX 37836 <>iFixBaseProxy_CollectParams token=0x060093CD
+  METHOD_INDEX 37837 <>iFixBaseProxy_Process token=0x060093CE
+TYPE_INDEX 6518 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE outine>d__18.nt fields=33560667+27122 methods=905665+8193
+  METHOD_INDEX 37838 get_eventKey token=0x060093CF
+  METHOD_INDEX 37839 get_maxFilterMask token=0x060093D0
+  METHOD_INDEX 37840 CollectParams token=0x060093D1
+  METHOD_INDEX 37841 Process token=0x060093D2
+  METHOD_INDEX 37842 .ctor token=0x060093D3
+  METHOD_INDEX 37843 <>iFixBaseProxy_get_maxFilterMask token=0x060093D4
+  METHOD_INDEX 37844 <>iFixBaseProxy_CollectParams token=0x060093D5
+  METHOD_INDEX 37845 <>iFixBaseProxy_Process token=0x060093D6
+TYPE_INDEX 6519 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE . fields=3072+8193 methods=33560668+65535
+  METHOD_INDEX 37846 get_eventKey token=0x060093D7
+  METHOD_INDEX 37847 get_hasFilterMode token=0x060093D8
+  METHOD_INDEX 37848 CollectParams token=0x060093D9
+  METHOD_INDEX 37849 Process token=0x060093DA
+  METHOD_INDEX 37850 .ctor token=0x060093DB
+  METHOD_INDEX 37851 <>iFixBaseProxy_get_hasFilterMode token=0x060093DC
+  METHOD_INDEX 37852 <>iFixBaseProxy_CollectParams token=0x060093DD
+  METHOD_INDEX 37853 <>iFixBaseProxy_Process token=0x060093DE
+TYPE_INDEX 6520 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE . fields=131072+65535 methods=3072+34064
+  METHOD_INDEX 37854 get_eventKey token=0x060093DF
+  METHOD_INDEX 37855 get_hasFilterMode token=0x060093E0
+  METHOD_INDEX 37856 CollectParams token=0x060093E1
+  METHOD_INDEX 37857 Process token=0x060093E2
+  METHOD_INDEX 37858 .ctor token=0x060093E3
+  METHOD_INDEX 37859 <>iFixBaseProxy_get_hasFilterMode token=0x060093E4
+  METHOD_INDEX 37860 <>iFixBaseProxy_CollectParams token=0x060093E5
+  METHOD_INDEX 37861 <>iFixBaseProxy_Process token=0x060093E6
+TYPE_INDEX 6521 TOKEN 0x00008EFA IMAGE Gameplay.Beyond.dll TYPE . fields=1245184+34588 methods=131072+55443
+  METHOD_INDEX 37862 get_eventKey token=0x060093E7
+  METHOD_INDEX 37863 get_hasFilterMode token=0x060093E8
+  METHOD_INDEX 37864 CollectParams token=0x060093E9
+  METHOD_INDEX 37865 Process token=0x060093EA
+  METHOD_INDEX 37866 .ctor token=0x060093EB
+  METHOD_INDEX 37867 <>iFixBaseProxy_get_hasFilterMode token=0x060093EC
+  METHOD_INDEX 37868 <>iFixBaseProxy_CollectParams token=0x060093ED
+  METHOD_INDEX 37869 <>iFixBaseProxy_Process token=0x060093EE
+TYPE_INDEX 6522 TOKEN 0x000069F9 IMAGE Gameplay.Beyond.dll TYPE . fields=1+55443 methods=1245184+65535
+  METHOD_INDEX 37870 get_hasFilterMode token=0x060093EF
+  METHOD_INDEX 37871 get_eventKey token=0x060093F0
+  METHOD_INDEX 37872 CollectParams token=0x060093F1
+  METHOD_INDEX 37873 Process token=0x060093F2
+  METHOD_INDEX 37874 .ctor token=0x060093F3
+  METHOD_INDEX 37875 <>iFixBaseProxy_get_hasFilterMode token=0x060093F4
+  METHOD_INDEX 37876 <>iFixBaseProxy_CollectParams token=0x060093F5
+  METHOD_INDEX 37877 <>iFixBaseProxy_Process token=0x060093F6
+TYPE_INDEX 6523 TOKEN 0x00102001 IMAGE Gameplay.Beyond.dll TYPE .tServerConfig fields=3+65535 methods=1+848
+  METHOD_INDEX 37878 get_eventKey token=0x060093F7
+  METHOD_INDEX 37879 get_hasFilterMode token=0x060093F8
+  METHOD_INDEX 37880 CollectParams token=0x060093F9
+  METHOD_INDEX 37881 Process token=0x060093FA
+  METHOD_INDEX 37882 .ctor token=0x060093FB
+  METHOD_INDEX 37883 <>iFixBaseProxy_get_hasFilterMode token=0x060093FC
+  METHOD_INDEX 37884 <>iFixBaseProxy_CollectParams token=0x060093FD
+  METHOD_INDEX 37885 <>iFixBaseProxy_Process token=0x060093FE
+TYPE_INDEX 6524 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE rverConfig.ED_PARAM_MODE fields=20040+850 methods=3+59922
+TYPE_INDEX 6525 TOKEN 0x00027D4D IMAGE Gameplay.Beyond.dll TYPE AM_MODE.checkSqrDis fields=8700+59922 methods=20041+23039
+  METHOD_INDEX 37886 get_eventKey token=0x060093FF
+  METHOD_INDEX 37887 get_hasFilterMode token=0x06009400
+  METHOD_INDEX 37888 CollectParams token=0x06009401
+  METHOD_INDEX 37889 Process token=0x06009402
+  METHOD_INDEX 37890 .ctor token=0x06009403
+  METHOD_INDEX 37891 <>iFixBaseProxy_get_hasFilterMode token=0x06009404
+  METHOD_INDEX 37892 <>iFixBaseProxy_CollectParams token=0x06009405
+  METHOD_INDEX 37893 <>iFixBaseProxy_Process token=0x06009406
+TYPE_INDEX 6526 TOKEN 0x0001D893 IMAGE Gameplay.Beyond.dll TYPE checkSqrDis. fields=96191+5180 methods=8702+6243
+  METHOD_INDEX 37894 get_eventKey token=0x06009407
+  METHOD_INDEX 37895 get_hasFilterMode token=0x06009408
+  METHOD_INDEX 37896 CollectParams token=0x06009409
+  METHOD_INDEX 37897 Process token=0x0600940A
+  METHOD_INDEX 37898 .ctor token=0x0600940B
+  METHOD_INDEX 37899 <>iFixBaseProxy_get_hasFilterMode token=0x0600940C
+  METHOD_INDEX 37900 <>iFixBaseProxy_CollectParams token=0x0600940D
+  METHOD_INDEX 37901 <>iFixBaseProxy_Process token=0x0600940E
+TYPE_INDEX 6527 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE .LoadLevelData fields=-1+6244 methods=96210+3072
+  METHOD_INDEX 37902 get_eventKey token=0x0600940F
+  METHOD_INDEX 37903 get_hasFilterMode token=0x06009410
+  METHOD_INDEX 37904 CollectParams token=0x06009411
+  METHOD_INDEX 37905 Process token=0x06009412
+  METHOD_INDEX 37906 .ctor token=0x06009413
+  METHOD_INDEX 37907 <>iFixBaseProxy_get_hasFilterMode token=0x06009414
+  METHOD_INDEX 37908 <>iFixBaseProxy_CollectParams token=0x06009415
+  METHOD_INDEX 37909 <>iFixBaseProxy_Process token=0x06009416
+TYPE_INDEX 6528 TOKEN 0x000308F3 IMAGE Gameplay.Beyond.dll TYPE >k__BackingField.>k__BackingField fields=-1+3072 methods=-1+0
+  METHOD_INDEX 37910 get_eventKey token=0x06009417
+  METHOD_INDEX 37911 get_hasFilterMode token=0x06009418
+  METHOD_INDEX 37912 CollectParams token=0x06009419
+  METHOD_INDEX 37913 Process token=0x0600941A
+  METHOD_INDEX 37914 .ctor token=0x0600941B
+  METHOD_INDEX 37915 <>iFixBaseProxy_get_hasFilterMode token=0x0600941C
+  METHOD_INDEX 37916 <>iFixBaseProxy_CollectParams token=0x0600941D
+  METHOD_INDEX 37917 <>iFixBaseProxy_Process token=0x0600941E
+TYPE_INDEX 6529 TOKEN 0x000CEA12 IMAGE Gameplay.Beyond.dll TYPE .o fields=-1+0 methods=-1+0
+  METHOD_INDEX 37918 get_eventKey token=0x0600941F
+  METHOD_INDEX 37919 CollectParams token=0x06009420
+  METHOD_INDEX 37920 Process token=0x06009421
+  METHOD_INDEX 37921 .ctor token=0x06009422
+  METHOD_INDEX 37922 <>iFixBaseProxy_CollectParams token=0x06009423
+  METHOD_INDEX 37923 <>iFixBaseProxy_Process token=0x06009424
+TYPE_INDEX 6530 TOKEN 0x000DD34D IMAGE Gameplay.Beyond.dll TYPE .o fields=-1+1 methods=-1+3
+  METHOD_INDEX 37924 get_eventKey token=0x06009425
+  METHOD_INDEX 37925 get_hasFilterMode token=0x06009426
+  METHOD_INDEX 37926 CollectParams token=0x06009427
+  METHOD_INDEX 37927 Process token=0x06009428
+  METHOD_INDEX 37928 .ctor token=0x06009429
+  METHOD_INDEX 37929 <>iFixBaseProxy_get_hasFilterMode token=0x0600942A
+  METHOD_INDEX 37930 <>iFixBaseProxy_CollectParams token=0x0600942B
+  METHOD_INDEX 37931 <>iFixBaseProxy_Process token=0x0600942C
+TYPE_INDEX 6531 TOKEN 0x02001868 IMAGE Gameplay.Beyond.dll TYPE <_PreloadFmvConfigInGameplay>d__39.Beyond.Gameplay.Actions fields=36632+1 methods=-1+3
+  FIELD_INDEX 36632 vector1Name token=0x04008F19
+  METHOD_INDEX 37932 get_eventKey token=0x0600942D
+  METHOD_INDEX 37933 get_hasFilterMode token=0x0600942E
+  METHOD_INDEX 37934 CollectParams token=0x0600942F
+  METHOD_INDEX 37935 Process token=0x06009430
+  METHOD_INDEX 37936 .ctor token=0x06009431
+  METHOD_INDEX 37937 <>iFixBaseProxy_get_hasFilterMode token=0x06009432
+  METHOD_INDEX 37938 <>iFixBaseProxy_CollectParams token=0x06009433
+  METHOD_INDEX 37939 <>iFixBaseProxy_Process token=0x06009434
+TYPE_INDEX 6532 TOKEN 0x00000C00 IMAGE Gameplay.Beyond.dll TYPE Beyond.Gameplay.Actions.SetNpcAtmosphericClusterVisible fields=27155+3 methods=36635+20047
+  FIELD_INDEX 27155 _clusterId token=0x04006A14
+  FIELD_INDEX 27156 _visible token=0x04006A15
+  FIELD_INDEX 27157 _targetNpc token=0x04006A16
+  METHOD_INDEX 37940 get_eventKey token=0x06009435
+  METHOD_INDEX 37941 get_showDestroyReason token=0x06009436
+  METHOD_INDEX 37942 CollectParams token=0x06009437
+  METHOD_INDEX 37943 Process token=0x06009438
+  METHOD_INDEX 37944 .ctor token=0x06009439
+  METHOD_INDEX 37945 <>iFixBaseProxy_CollectParams token=0x0600943A
+  METHOD_INDEX 37946 <>iFixBaseProxy_Process token=0x0600943B
+TYPE_INDEX 6533 TOKEN 0x00020000 IMAGE Gameplay.Beyond.dll TYPE NpcEnableStim. fields=1056769+20048 methods=27157+8714
+  METHOD_INDEX 37947 get_eventKey token=0x0600943C
+  METHOD_INDEX 37948 CollectParams token=0x0600943D
+  METHOD_INDEX 37949 Process token=0x0600943E
+  METHOD_INDEX 37950 .ctor token=0x0600943F
+  METHOD_INDEX 37951 <>iFixBaseProxy_CollectParams token=0x06009440
+  METHOD_INDEX 37952 <>iFixBaseProxy_Process token=0x06009441
+TYPE_INDEX 6534 TOKEN 0x00130000 IMAGE Gameplay.Beyond.dll TYPE l:�.ct fields=-1+8716 methods=1056769+30792
+  METHOD_INDEX 37953 get_eventKey token=0x06009442
+  METHOD_INDEX 37954 CollectParams token=0x06009443
+  METHOD_INDEX 37955 Process token=0x06009444
+  METHOD_INDEX 37956 .ctor token=0x06009445
+  METHOD_INDEX 37957 <>iFixBaseProxy_CollectParams token=0x06009446
+  METHOD_INDEX 37958 <>iFixBaseProxy_Process token=0x06009447
+TYPE_INDEX 6535 TOKEN 0x00000003 IMAGE Gameplay.Beyond.dll TYPE ct.RegionUpgradeCameraConfig fields=155168+30811 methods=-1+65535
+  METHOD_INDEX 37959 get_eventKey token=0x06009448
+  METHOD_INDEX 37960 get_hasFilterMode token=0x06009449
+  METHOD_INDEX 37961 CollectParams token=0x0600944A
+  METHOD_INDEX 37962 Process token=0x0600944B
+  METHOD_INDEX 37963 .ctor token=0x0600944C
+  METHOD_INDEX 37964 <>iFixBaseProxy_get_hasFilterMode token=0x0600944D
+  METHOD_INDEX 37965 <>iFixBaseProxy_CollectParams token=0x0600944E
+  METHOD_INDEX 37966 <>iFixBaseProxy_Process token=0x0600944F
+TYPE_INDEX 6536 TOKEN 0x00000003 IMAGE Gameplay.Beyond.dll TYPE RegionUpgradeCameraConfig.BackingField fields=120979+65535 methods=155170+65535
+  METHOD_INDEX 37967 get_eventKey token=0x06009450
+  METHOD_INDEX 37968 get_hasFilterMode token=0x06009451
+  METHOD_INDEX 37969 CollectParams token=0x06009452
+  METHOD_INDEX 37970 Process token=0x06009453
+  METHOD_INDEX 37971 .ctor token=0x06009454
+  METHOD_INDEX 37972 <>iFixBaseProxy_get_hasFilterMode token=0x06009455
+  METHOD_INDEX 37973 <>iFixBaseProxy_CollectParams token=0x06009456
+  METHOD_INDEX 37974 <>iFixBaseProxy_Process token=0x06009457
+TYPE_INDEX 6537 TOKEN 0x00004E54 IMAGE Gameplay.Beyond.dll TYPE BackingField.ameplay.Beyond fields=-1+65535 methods=120979+65535
+  METHOD_INDEX 37975 get_eventKey token=0x06009458
+  METHOD_INDEX 37976 Process token=0x06009459
+  METHOD_INDEX 37977 .ctor token=0x0600945A
+  METHOD_INDEX 37978 <>iFixBaseProxy_Process token=0x0600945B
+TYPE_INDEX 6538 TOKEN 0x00002214 IMAGE Gameplay.Beyond.dll TYPE ameplay.Beyond.eplay.Beyond fields=155257+65535 methods=-1+65535
+  METHOD_INDEX 37979 get_eventKey token=0x0600945C
+  METHOD_INDEX 37980 CollectParams token=0x0600945D
+  METHOD_INDEX 37981 Process token=0x0600945E
+  METHOD_INDEX 37982 .ctor token=0x0600945F
+  METHOD_INDEX 37983 <>iFixBaseProxy_CollectParams token=0x06009460
+  METHOD_INDEX 37984 <>iFixBaseProxy_Process token=0x06009461
+TYPE_INDEX 6539 TOKEN 0x000178A7 IMAGE Gameplay.Beyond.dll TYPE eplay.Beyond.IN_STARTCOLOR_COLORMIN fields=846354+65535 methods=155262+36656
+  METHOD_INDEX 37985 get_eventKey token=0x06009462
+  METHOD_INDEX 37986 get_hasFilterMode token=0x06009463
+  METHOD_INDEX 37987 CollectParams token=0x06009464
+  METHOD_INDEX 37988 Process token=0x06009465
+  METHOD_INDEX 37989 .ctor token=0x06009466
+  METHOD_INDEX 37990 <>iFixBaseProxy_get_hasFilterMode token=0x06009467
+  METHOD_INDEX 37991 <>iFixBaseProxy_CollectParams token=0x06009468
+  METHOD_INDEX 37992 <>iFixBaseProxy_Process token=0x06009469
+TYPE_INDEX 6540 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE N_STARTCOLOR_COLORMIN.le.Dispose fields=857110+36659 methods=846354+27174
+TYPE_INDEX 6541 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE .Dispose.AbilityAnimationOrientationParameters fields=33560689+27176 methods=103678+8193
+  METHOD_INDEX 37993 get_eventKey token=0x0600946A
+  METHOD_INDEX 37994 get_hasFilterMode token=0x0600946B
+  METHOD_INDEX 37995 OnInit token=0x0600946C
+  METHOD_INDEX 37996 EventCallback token=0x0600946D
+  METHOD_INDEX 37997 OnRelease token=0x0600946E
+  METHOD_INDEX 37998 CollectParams token=0x0600946F
+  METHOD_INDEX 37999 Process token=0x06009470
+  METHOD_INDEX 38000 .ctor token=0x06009471
+  METHOD_INDEX 38001 <>iFixBaseProxy_get_hasFilterMode token=0x06009472
+  METHOD_INDEX 38002 <>iFixBaseProxy_OnInit token=0x06009473
+  METHOD_INDEX 38003 <>iFixBaseProxy_OnRelease token=0x06009474
+  METHOD_INDEX 38004 <>iFixBaseProxy_CollectParams token=0x06009475
+  METHOD_INDEX 38005 <>iFixBaseProxy_Process token=0x06009476
+TYPE_INDEX 6542 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE entationParameters. fields=3072+8193 methods=33560690+65535
+  METHOD_INDEX 38006 get_eventKey token=0x06009477
+  METHOD_INDEX 38007 CollectParams token=0x06009478
+  METHOD_INDEX 38008 Process token=0x06009479
+  METHOD_INDEX 38009 .ctor token=0x0600947A
+  METHOD_INDEX 38010 <>iFixBaseProxy_CollectParams token=0x0600947B
+  METHOD_INDEX 38011 <>iFixBaseProxy_Process token=0x0600947C
+TYPE_INDEX 6543 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE . fields=131072+65535 methods=3072+24104
+  METHOD_INDEX 38012 get_eventKey token=0x0600947D
+  METHOD_INDEX 38013 CollectParams token=0x0600947E
+  METHOD_INDEX 38014 Process token=0x0600947F
+  METHOD_INDEX 38015 .ctor token=0x06009480
+  METHOD_INDEX 38016 <>iFixBaseProxy_CollectParams token=0x06009481
+  METHOD_INDEX 38017 <>iFixBaseProxy_Process token=0x06009482
+TYPE_INDEX 6544 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE . fields=1114112+2384 methods=131072+38419
+  METHOD_INDEX 38018 get_eventKey token=0x06009483
+  METHOD_INDEX 38019 get_hasFilterMode token=0x06009484
+  METHOD_INDEX 38020 CollectParams token=0x06009485
+  METHOD_INDEX 38021 Process token=0x06009486
+  METHOD_INDEX 38022 .ctor token=0x06009487
+  METHOD_INDEX 38023 <>iFixBaseProxy_get_hasFilterMode token=0x06009488
+  METHOD_INDEX 38024 <>iFixBaseProxy_CollectParams token=0x06009489
+  METHOD_INDEX 38025 <>iFixBaseProxy_Process token=0x0600948A
+TYPE_INDEX 6545 TOKEN 0x00006A2C IMAGE Gameplay.Beyond.dll TYPE . fields=2+55443 methods=262144+65535
+  METHOD_INDEX 38026 get_eventKey token=0x0600948B
+  METHOD_INDEX 38027 get_hasFilterMode token=0x0600948C
+  METHOD_INDEX 38028 CollectParams token=0x0600948D
+  METHOD_INDEX 38029 Process token=0x0600948E
+  METHOD_INDEX 38030 .ctor token=0x0600948F
+  METHOD_INDEX 38031 <>iFixBaseProxy_get_hasFilterMode token=0x06009490
+  METHOD_INDEX 38032 <>iFixBaseProxy_CollectParams token=0x06009491
+  METHOD_INDEX 38033 <>iFixBaseProxy_Process token=0x06009492
+TYPE_INDEX 6546 TOKEN 0x00102001 IMAGE Gameplay.Beyond.dll TYPE .OnlyEnvironment fields=3+65535 methods=3+24173
+  METHOD_INDEX 38034 get_eventKey token=0x06009493
+  METHOD_INDEX 38035 get_hasFilterMode token=0x06009494
+  METHOD_INDEX 38036 CollectParams token=0x06009495
+  METHOD_INDEX 38037 Process token=0x06009496
+  METHOD_INDEX 38038 .ctor token=0x06009497
+  METHOD_INDEX 38039 <>iFixBaseProxy_get_hasFilterMode token=0x06009498
+  METHOD_INDEX 38040 <>iFixBaseProxy_CollectParams token=0x06009499
+  METHOD_INDEX 38041 <>iFixBaseProxy_Process token=0x0600949A
+TYPE_INDEX 6547 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE yEnvironment.D_LIGHT_NPR_DEFAULT_AUTO_LIMIT fields=20060+24175 methods=3+59922
+  METHOD_INDEX 38042 get_eventKey token=0x0600949B
+  METHOD_INDEX 38043 CollectParams token=0x0600949C
+  METHOD_INDEX 38044 Process token=0x0600949D
+  METHOD_INDEX 38045 .ctor token=0x0600949E
+  METHOD_INDEX 38046 <>iFixBaseProxy_CollectParams token=0x0600949F
+  METHOD_INDEX 38047 <>iFixBaseProxy_Process token=0x060094A0
+TYPE_INDEX 6548 TOKEN 0x00025E73 IMAGE Gameplay.Beyond.dll TYPE IGHT_NPR_DEFAULT_AUTO_LIMIT.checkSqrDis fields=8740+59922 methods=20061+54483
+  METHOD_INDEX 38048 get_eventKey token=0x060094A1
+  METHOD_INDEX 38049 get_hasFilterMode token=0x060094A2
+  METHOD_INDEX 38050 CollectParams token=0x060094A3
+  METHOD_INDEX 38051 Process token=0x060094A4
+  METHOD_INDEX 38052 .ctor token=0x060094A5
+  METHOD_INDEX 38053 <>iFixBaseProxy_get_hasFilterMode token=0x060094A6
+  METHOD_INDEX 38054 <>iFixBaseProxy_CollectParams token=0x060094A7
+  METHOD_INDEX 38055 <>iFixBaseProxy_Process token=0x060094A8
+TYPE_INDEX 6549 TOKEN 0x0001D893 IMAGE Gameplay.Beyond.dll TYPE checkSqrDis. fields=96575+54529 methods=8742+6265
+  METHOD_INDEX 38056 get_eventKey token=0x060094A9
+  METHOD_INDEX 38057 get_hasFilterMode token=0x060094AA
+  METHOD_INDEX 38058 CollectParams token=0x060094AB
+  METHOD_INDEX 38059 Process token=0x060094AC
+  METHOD_INDEX 38060 .ctor token=0x060094AD
+  METHOD_INDEX 38061 <>iFixBaseProxy_get_hasFilterMode token=0x060094AE
+  METHOD_INDEX 38062 <>iFixBaseProxy_CollectParams token=0x060094AF
+  METHOD_INDEX 38063 <>iFixBaseProxy_Process token=0x060094B0
+TYPE_INDEX 6550 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE .ubtitles fields=-1+6266 methods=96594+3072
+  METHOD_INDEX 38064 get_eventKey token=0x060094B1
+  METHOD_INDEX 38065 get_maxFilterMask token=0x060094B2
+  METHOD_INDEX 38066 CollectParams token=0x060094B3
+  METHOD_INDEX 38067 Process token=0x060094B4
+  METHOD_INDEX 38068 .ctor token=0x060094B5
+  METHOD_INDEX 38069 <>iFixBaseProxy_get_maxFilterMask token=0x060094B6
+  METHOD_INDEX 38070 <>iFixBaseProxy_CollectParams token=0x060094B7
+  METHOD_INDEX 38071 <>iFixBaseProxy_Process token=0x060094B8
+TYPE_INDEX 6551 TOKEN 0x00025E80 IMAGE Gameplay.Beyond.dll TYPE s.>k__BackingField fields=-1+3072 methods=-1+0
+  METHOD_INDEX 38072 get_eventKey token=0x060094B9
+  METHOD_INDEX 38073 get_hasFilterMode token=0x060094BA
+  METHOD_INDEX 38074 CollectParams token=0x060094BB
+  METHOD_INDEX 38075 Process token=0x060094BC
+  METHOD_INDEX 38076 .ctor token=0x060094BD
+  METHOD_INDEX 38077 <>iFixBaseProxy_get_hasFilterMode token=0x060094BE
+  METHOD_INDEX 38078 <>iFixBaseProxy_CollectParams token=0x060094BF
+  METHOD_INDEX 38079 <>iFixBaseProxy_Process token=0x060094C0
+TYPE_INDEX 6552 TOKEN 0x00000010 IMAGE Gameplay.Beyond.dll TYPE >k__BackingField. fields=-1+0 methods=-1+0
+  METHOD_INDEX 38080 get_eventKey token=0x060094C1
+  METHOD_INDEX 38081 get_hasFilterMode token=0x060094C2
+  METHOD_INDEX 38082 CollectParams token=0x060094C3
+  METHOD_INDEX 38083 Process token=0x060094C4
+  METHOD_INDEX 38084 .ctor token=0x060094C5
+  METHOD_INDEX 38085 <>iFixBaseProxy_get_hasFilterMode token=0x060094C6
+  METHOD_INDEX 38086 <>iFixBaseProxy_CollectParams token=0x060094C7
+  METHOD_INDEX 38087 <>iFixBaseProxy_Process token=0x060094C8
+TYPE_INDEX 6553 TOKEN 0x000DD571 IMAGE Gameplay.Beyond.dll TYPE focusImportantCD.ash fields=-1+0 methods=-1+2
+TYPE_INDEX 6554 TOKEN 0x0200187D IMAGE Gameplay.Beyond.dll TYPE focusImportantCD.Beyond.Gameplay.Actions fields=36692+3 methods=-1+3
+  FIELD_INDEX 36692 _relativeTo token=0x04008F55
+  FIELD_INDEX 36693 _reverse token=0x04008F56
+  FIELD_INDEX 36694 m_rotationAxisVector3 token=0x04008F57
+  METHOD_INDEX 38088 get_eventKey token=0x060094C9
+  METHOD_INDEX 38089 get_hasFilterMode token=0x060094CA
+  METHOD_INDEX 38090 CollectParams token=0x060094CB
+  METHOD_INDEX 38091 Process token=0x060094CC
+  METHOD_INDEX 38092 .ctor token=0x060094CD
+  METHOD_INDEX 38093 <>iFixBaseProxy_get_hasFilterMode token=0x060094CE
+  METHOD_INDEX 38094 <>iFixBaseProxy_CollectParams token=0x060094CF
+  METHOD_INDEX 38095 <>iFixBaseProxy_Process token=0x060094D0
+TYPE_INDEX 6555 TOKEN 0x00000C00 IMAGE Gameplay.Beyond.dll TYPE Beyond.Gameplay.Actions.NpcProxyOverrideName fields=27207+7 methods=36695+20067
+  FIELD_INDEX 27207 _proxyId token=0x04006A48
+  FIELD_INDEX 27208 _nameId token=0x04006A49
+  FIELD_INDEX 27209 m_isTriggered token=0x04006A4A
+  FIELD_INDEX 27210 _targetProxy token=0x04006A4B
+  FIELD_INDEX 27211 _levelId token=0x04006A4C
+  FIELD_INDEX 27212 _targetProxy token=0x04006A4D
+  FIELD_INDEX 27213 _patrolId token=0x04006A4E
+  METHOD_INDEX 38096 get_eventKey token=0x060094D1
+  METHOD_INDEX 38097 get_hasFilterMode token=0x060094D2
+  METHOD_INDEX 38098 CollectParams token=0x060094D3
+  METHOD_INDEX 38099 Process token=0x060094D4
+  METHOD_INDEX 38100 .ctor token=0x060094D5
+  METHOD_INDEX 38101 <>iFixBaseProxy_get_hasFilterMode token=0x060094D6
+  METHOD_INDEX 38102 <>iFixBaseProxy_CollectParams token=0x060094D7
+  METHOD_INDEX 38103 <>iFixBaseProxy_Process token=0x060094D8
+TYPE_INDEX 6556 TOKEN 0x00020000 IMAGE Gameplay.Beyond.dll TYPE NpcProxyPatrolPause.�� fields=1056769+20068 methods=27210+8754
+  METHOD_INDEX 38104 get_eventKey token=0x060094D9
+  METHOD_INDEX 38105 get_hasFilterMode token=0x060094DA
+  METHOD_INDEX 38106 CollectParams token=0x060094DB
+  METHOD_INDEX 38107 Process token=0x060094DC
+  METHOD_INDEX 38108 .ctor token=0x060094DD
+  METHOD_INDEX 38109 <>iFixBaseProxy_get_hasFilterMode token=0x060094DE
+  METHOD_INDEX 38110 <>iFixBaseProxy_CollectParams token=0x060094DF
+  METHOD_INDEX 38111 <>iFixBaseProxy_Process token=0x060094E0
+TYPE_INDEX 6557 TOKEN 0x00110000 IMAGE Gameplay.Beyond.dll TYPE �.ct fields=-1+8756 methods=1056769+31176
+  METHOD_INDEX 38112 get_eventKey token=0x060094E1
+  METHOD_INDEX 38113 get_hasFilterMode token=0x060094E2
+  METHOD_INDEX 38114 CollectParams token=0x060094E3
+  METHOD_INDEX 38115 Process token=0x060094E4
+  METHOD_INDEX 38116 .ctor token=0x060094E5
+  METHOD_INDEX 38117 <>iFixBaseProxy_get_hasFilterMode token=0x060094E6
+  METHOD_INDEX 38118 <>iFixBaseProxy_CollectParams token=0x060094E7
+  METHOD_INDEX 38119 <>iFixBaseProxy_Process token=0x060094E8
+TYPE_INDEX 6558 TOKEN 0x00000005 IMAGE Gameplay.Beyond.dll TYPE ct.RegionUpgradeCameraConfig fields=155297+31193 methods=-1+65535
+TYPE_INDEX 6559 TOKEN 0x00000003 IMAGE Gameplay.Beyond.dll TYPE RegionUpgradeCameraConfig.BackingField fields=120979+65535 methods=155299+65535
+  METHOD_INDEX 38120 get_eventKey token=0x060094E9
+  METHOD_INDEX 38121 get_hasFilterMode token=0x060094EA
+  METHOD_INDEX 38122 CollectParams token=0x060094EB
+  METHOD_INDEX 38123 Process token=0x060094EC
+  METHOD_INDEX 38124 .ctor token=0x060094ED
+  METHOD_INDEX 38125 <>iFixBaseProxy_get_hasFilterMode token=0x060094EE
+  METHOD_INDEX 38126 <>iFixBaseProxy_CollectParams token=0x060094EF
+  METHOD_INDEX 38127 <>iFixBaseProxy_Process token=0x060094F0
+TYPE_INDEX 6560 TOKEN 0x00004E68 IMAGE Gameplay.Beyond.dll TYPE BackingField.meplay.Beyond fields=-1+65535 methods=120979+65535
+  METHOD_INDEX 38128 get_eventKey token=0x060094F1
+  METHOD_INDEX 38129 get_hasFilterMode token=0x060094F2
+  METHOD_INDEX 38130 CollectParams token=0x060094F3
+  METHOD_INDEX 38131 Process token=0x060094F4
+  METHOD_INDEX 38132 .ctor token=0x060094F5
+  METHOD_INDEX 38133 <>iFixBaseProxy_get_hasFilterMode token=0x060094F6
+  METHOD_INDEX 38134 <>iFixBaseProxy_CollectParams token=0x060094F7
+  METHOD_INDEX 38135 <>iFixBaseProxy_Process token=0x060094F8
+TYPE_INDEX 6561 TOKEN 0x0000223C IMAGE Gameplay.Beyond.dll TYPE meplay.Beyond.eplay.Beyond fields=155303+65535 methods=-1+65535
+  METHOD_INDEX 38136 get_eventKey token=0x060094F9
+  METHOD_INDEX 38137 CollectParams token=0x060094FA
+  METHOD_INDEX 38138 Process token=0x060094FB
+  METHOD_INDEX 38139 .ctor token=0x060094FC
+  METHOD_INDEX 38140 <>iFixBaseProxy_CollectParams token=0x060094FD
+  METHOD_INDEX 38141 <>iFixBaseProxy_Process token=0x060094FE
+TYPE_INDEX 6562 TOKEN 0x00017A38 IMAGE Gameplay.Beyond.dll TYPE eplay.Beyond.IN fields=16+65535 methods=199001+36726
+  METHOD_INDEX 38142 get_eventKey token=0x060094FF
+  METHOD_INDEX 38143 CollectParams token=0x06009500
+  METHOD_INDEX 38144 Process token=0x06009501
+  METHOD_INDEX 38145 .ctor token=0x06009502
+  METHOD_INDEX 38146 <>iFixBaseProxy_CollectParams token=0x06009503
+  METHOD_INDEX 38147 <>iFixBaseProxy_Process token=0x06009504
+TYPE_INDEX 6563 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE Gameplay.Beyond. fields=906800+36720 methods=846354+27226
+  METHOD_INDEX 38148 get_eventKey token=0x06009505
+  METHOD_INDEX 38149 CollectParams token=0x06009506
+  METHOD_INDEX 38150 Process token=0x06009507
+  METHOD_INDEX 38151 .ctor token=0x06009508
+  METHOD_INDEX 38152 <>iFixBaseProxy_CollectParams token=0x06009509
+  METHOD_INDEX 38153 <>iFixBaseProxy_Process token=0x0600950A
+TYPE_INDEX 6564 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE eneric.IEnumerator<System.Object>.get_Current.s fields=33560710+27240 methods=906938+8193
+  METHOD_INDEX 38154 get_eventKey token=0x0600950B
+  METHOD_INDEX 38155 .ctor token=0x0600950C
+TYPE_INDEX 6565 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE tationProcessors. fields=3072+8193 methods=33560712+65535
+  METHOD_INDEX 38156 get_eventKey token=0x0600950D
+  METHOD_INDEX 38157 .ctor token=0x0600950E
+TYPE_INDEX 6566 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE . fields=131072+65535 methods=3072+24241
+  METHOD_INDEX 38158 get_eventKey token=0x0600950F
+  METHOD_INDEX 38159 get_hasFilterMode token=0x06009510
+  METHOD_INDEX 38160 CollectParams token=0x06009511
+  METHOD_INDEX 38161 Process token=0x06009512
+  METHOD_INDEX 38162 .ctor token=0x06009513
+  METHOD_INDEX 38163 <>iFixBaseProxy_get_hasFilterMode token=0x06009514
+  METHOD_INDEX 38164 <>iFixBaseProxy_CollectParams token=0x06009515
+  METHOD_INDEX 38165 <>iFixBaseProxy_Process token=0x06009516
+TYPE_INDEX 6567 TOKEN 0x00008F82 IMAGE Gameplay.Beyond.dll TYPE .y fields=1245184+24243 methods=131072+55443
+TYPE_INDEX 6568 TOKEN 0x00006A70 IMAGE Gameplay.Beyond.dll TYPE . fields=2+55443 methods=1245184+65535
+  METHOD_INDEX 38166 get_eventKey token=0x06009517
+  METHOD_INDEX 38167 get_filterWave token=0x06009518
+  METHOD_INDEX 38168 get_filterGroup token=0x06009519
+  METHOD_INDEX 38169 CollectParams token=0x0600951A
+  METHOD_INDEX 38170 Process token=0x0600951B
+  METHOD_INDEX 38171 .ctor token=0x0600951C
+  METHOD_INDEX 38172 <>iFixBaseProxy_CollectParams token=0x0600951D
+  METHOD_INDEX 38173 <>iFixBaseProxy_Process token=0x0600951E
+TYPE_INDEX 6569 TOKEN 0x00102001 IMAGE Gameplay.Beyond.dll TYPE .erverDescFromList fields=3+65535 methods=1+24247
+TYPE_INDEX 6570 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE erDescFromList.ID_LIGHT_NPR_RAMP_SHADOW_DIMMER fields=20080+25498 methods=3+59922
+  METHOD_INDEX 38174 get_eventKey token=0x0600951F
+  METHOD_INDEX 38175 get_filterWave token=0x06009520
+  METHOD_INDEX 38176 get_filterGroup token=0x06009521
+  METHOD_INDEX 38177 CollectParams token=0x06009522
+  METHOD_INDEX 38178 Process token=0x06009523
+  METHOD_INDEX 38179 .ctor token=0x06009524
+  METHOD_INDEX 38180 <>iFixBaseProxy_CollectParams token=0x06009525
+  METHOD_INDEX 38181 <>iFixBaseProxy_Process token=0x06009526
+TYPE_INDEX 6571 TOKEN 0x00026798 IMAGE Gameplay.Beyond.dll TYPE _LIGHT_NPR_RAMP_SHADOW_DIMMER.checkSqrDis fields=8780+59922 methods=20081+55118
+TYPE_INDEX 6572 TOKEN 0x0001D893 IMAGE Gameplay.Beyond.dll TYPE checkSqrDis. fields=96961+55149 methods=8782+6287
+  METHOD_INDEX 38182 get_eventKey token=0x06009527
+  METHOD_INDEX 38183 get_filterWave token=0x06009528
+  METHOD_INDEX 38184 get_filterGroup token=0x06009529
+  METHOD_INDEX 38185 CollectParams token=0x0600952A
+  METHOD_INDEX 38186 Process token=0x0600952B
+  METHOD_INDEX 38187 .ctor token=0x0600952C
+  METHOD_INDEX 38188 <>iFixBaseProxy_CollectParams token=0x0600952D
+  METHOD_INDEX 38189 <>iFixBaseProxy_Process token=0x0600952E
+TYPE_INDEX 6573 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE .ubtitleAudioBean fields=-1+6288 methods=96980+3072
+TYPE_INDEX 6574 TOKEN 0x00028505 IMAGE Gameplay.Beyond.dll TYPE rker.>k__BackingField fields=-1+3072 methods=-1+0
+  METHOD_INDEX 38190 get_eventKey token=0x0600952F
+  METHOD_INDEX 38191 get_filterWave token=0x06009530
+  METHOD_INDEX 38192 get_filterGroup token=0x06009531
+  METHOD_INDEX 38193 CollectParams token=0x06009532
+  METHOD_INDEX 38194 Process token=0x06009533
+  METHOD_INDEX 38195 .ctor token=0x06009534
+  METHOD_INDEX 38196 <>iFixBaseProxy_CollectParams token=0x06009535
+  METHOD_INDEX 38197 <>iFixBaseProxy_Process token=0x06009536
+TYPE_INDEX 6575 TOKEN 0x000CEA12 IMAGE Gameplay.Beyond.dll TYPE >k__BackingField. fields=-1+0 methods=-1+0
+  METHOD_INDEX 38198 get_eventKey token=0x06009537
+  METHOD_INDEX 38199 get_hasFilterMode token=0x06009538
+  METHOD_INDEX 38200 get_maxFilterLevel token=0x06009539
+  METHOD_INDEX 38201 CollectParams token=0x0600953A
+  METHOD_INDEX 38202 Process token=0x0600953B
+  METHOD_INDEX 38203 .ctor token=0x0600953C
+  METHOD_INDEX 38204 <>iFixBaseProxy_get_hasFilterMode token=0x0600953D
+  METHOD_INDEX 38205 <>iFixBaseProxy_get_maxFilterLevel token=0x0600953E
+  METHOD_INDEX 38206 <>iFixBaseProxy_CollectParams token=0x0600953F
+  METHOD_INDEX 38207 <>iFixBaseProxy_Process token=0x06009540
+TYPE_INDEX 6576 TOKEN 0x000DD7B6 IMAGE Gameplay.Beyond.dll TYPE .istingValue fields=-1+0 methods=-1+3
+  METHOD_INDEX 38208 get_eventKey token=0x06009541
+  METHOD_INDEX 38209 get_hasFilterMode token=0x06009542
+  METHOD_INDEX 38210 get_maxFilterLevel token=0x06009543
+  METHOD_INDEX 38211 CollectParams token=0x06009544
+  METHOD_INDEX 38212 Process token=0x06009545
+  METHOD_INDEX 38213 .ctor token=0x06009546
+  METHOD_INDEX 38214 <>iFixBaseProxy_get_hasFilterMode token=0x06009547
+  METHOD_INDEX 38215 <>iFixBaseProxy_get_maxFilterLevel token=0x06009548
+  METHOD_INDEX 38216 <>iFixBaseProxy_CollectParams token=0x06009549
+  METHOD_INDEX 38217 <>iFixBaseProxy_Process token=0x0600954A
+TYPE_INDEX 6577 TOKEN 0x02001894 IMAGE Gameplay.Beyond.dll TYPE onfig.Beyond.Gameplay.Actions fields=36773+1 methods=-1+3
+  FIELD_INDEX 36773 m_isRuntimeMesh token=0x04008FA6
+  METHOD_INDEX 38218 get_eventKey token=0x0600954B
+  METHOD_INDEX 38219 get_hasFilterMode token=0x0600954C
+  METHOD_INDEX 38220 get_maxFilterLevel token=0x0600954D
+  METHOD_INDEX 38221 CollectParams token=0x0600954E
+  METHOD_INDEX 38222 Process token=0x0600954F
+  METHOD_INDEX 38223 .ctor token=0x06009550
+  METHOD_INDEX 38224 <>iFixBaseProxy_get_hasFilterMode token=0x06009551
+  METHOD_INDEX 38225 <>iFixBaseProxy_get_maxFilterLevel token=0x06009552
+  METHOD_INDEX 38226 <>iFixBaseProxy_CollectParams token=0x06009553
+  METHOD_INDEX 38227 <>iFixBaseProxy_Process token=0x06009554
+TYPE_INDEX 6578 TOKEN 0x00000C00 IMAGE Gameplay.Beyond.dll TYPE Beyond.Gameplay.Actions.NpcResetEnvTalks fields=27270+3 methods=36776+20088
+  FIELD_INDEX 27270 _npcId token=0x04006A87
+  FIELD_INDEX 27271 targetNpc token=0x04006A88
+  FIELD_INDEX 27272 targetPos token=0x04006A89
+  METHOD_INDEX 38228 get_eventKey token=0x06009555
+  METHOD_INDEX 38229 get_hasFilterMode token=0x06009556
+  METHOD_INDEX 38230 get_maxFilterLevel token=0x06009557
+  METHOD_INDEX 38231 CollectParams token=0x06009558
+  METHOD_INDEX 38232 get_hasOnAfterLevelScriptTriggerRegistered token=0x06009559
+  METHOD_INDEX 38233 OnAfterLevelScriptTriggerRegistered token=0x0600955A
+  METHOD_INDEX 38234 Process token=0x0600955B
+  METHOD_INDEX 38235 .ctor token=0x0600955C
+  METHOD_INDEX 38236 <>iFixBaseProxy_get_hasFilterMode token=0x0600955D
+  METHOD_INDEX 38237 <>iFixBaseProxy_get_maxFilterLevel token=0x0600955E
+  METHOD_INDEX 38238 <>iFixBaseProxy_CollectParams token=0x0600955F
+  METHOD_INDEX 38239 <>iFixBaseProxy_get_hasOnAfterLevelScriptTriggerRegistered token=0x06009560
+  METHOD_INDEX 38240 <>iFixBaseProxy_OnAfterLevelScriptTriggerRegistered token=0x06009561
+  METHOD_INDEX 38241 <>iFixBaseProxy_Process token=0x06009562
+TYPE_INDEX 6579 TOKEN 0x00020000 IMAGE Gameplay.Beyond.dll TYPE NpcRotateToTarget. fields=1056769+20089 methods=27271+8796
+  METHOD_INDEX 38242 get_eventKey token=0x06009563
+  METHOD_INDEX 38243 get_hasFilterMode token=0x06009564
+  METHOD_INDEX 38244 get_maxFilterLevel token=0x06009565
+  METHOD_INDEX 38245 CollectParams token=0x06009566
+  METHOD_INDEX 38246 get_hasOnAfterLevelScriptTriggerRegistered token=0x06009567
+  METHOD_INDEX 38247 OnAfterLevelScriptTriggerRegistered token=0x06009568
+  METHOD_INDEX 38248 Process token=0x06009569
+  METHOD_INDEX 38249 .ctor token=0x0600956A
+  METHOD_INDEX 38250 <>iFixBaseProxy_get_hasFilterMode token=0x0600956B
+  METHOD_INDEX 38251 <>iFixBaseProxy_get_maxFilterLevel token=0x0600956C
+  METHOD_INDEX 38252 <>iFixBaseProxy_CollectParams token=0x0600956D
+  METHOD_INDEX 38253 <>iFixBaseProxy_get_hasOnAfterLevelScriptTriggerRegistered token=0x0600956E
+  METHOD_INDEX 38254 <>iFixBaseProxy_OnAfterLevelScriptTriggerRegistered token=0x0600956F
+  METHOD_INDEX 38255 <>iFixBaseProxy_Process token=0x06009570
+TYPE_INDEX 6580 TOKEN 0x00130000 IMAGE Gameplay.Beyond.dll TYPE l��.ct fields=-1+8798 methods=1056769+31577
+  METHOD_INDEX 38256 get_eventKey token=0x06009571
+  METHOD_INDEX 38257 get_hasFilterMode token=0x06009572
+  METHOD_INDEX 38258 get_maxFilterLevel token=0x06009573
+  METHOD_INDEX 38259 CollectParams token=0x06009574
+  METHOD_INDEX 38260 Process token=0x06009575
+  METHOD_INDEX 38261 .ctor token=0x06009576
+  METHOD_INDEX 38262 <>iFixBaseProxy_get_hasFilterMode token=0x06009577
+  METHOD_INDEX 38263 <>iFixBaseProxy_get_maxFilterLevel token=0x06009578
+  METHOD_INDEX 38264 <>iFixBaseProxy_CollectParams token=0x06009579
+  METHOD_INDEX 38265 <>iFixBaseProxy_Process token=0x0600957A
+TYPE_INDEX 6581 TOKEN 0x00000002 IMAGE Gameplay.Beyond.dll TYPE ct.RegionUpgradeCameraConfig fields=155367+31596 methods=-1+65535
+  METHOD_INDEX 38266 get_eventKey token=0x0600957B
+  METHOD_INDEX 38267 get_hasFilterMode token=0x0600957C
+  METHOD_INDEX 38268 CollectParams token=0x0600957D
+  METHOD_INDEX 38269 Process token=0x0600957E
+  METHOD_INDEX 38270 .ctor token=0x0600957F
+  METHOD_INDEX 38271 <>iFixBaseProxy_get_hasFilterMode token=0x06009580
+  METHOD_INDEX 38272 <>iFixBaseProxy_CollectParams token=0x06009581
+  METHOD_INDEX 38273 <>iFixBaseProxy_Process token=0x06009582
+TYPE_INDEX 6582 TOKEN 0x00000003 IMAGE Gameplay.Beyond.dll TYPE RegionUpgradeCameraConfig.BackingField fields=120979+65535 methods=155369+65535
+  METHOD_INDEX 38274 get_eventKey token=0x06009583
+  METHOD_INDEX 38275 get_hasFilterMode token=0x06009584
+  METHOD_INDEX 38276 CollectParams token=0x06009585
+  METHOD_INDEX 38277 Process token=0x06009586
+  METHOD_INDEX 38278 .ctor token=0x06009587
+  METHOD_INDEX 38279 <>iFixBaseProxy_get_hasFilterMode token=0x06009588
+  METHOD_INDEX 38280 <>iFixBaseProxy_CollectParams token=0x06009589
+  METHOD_INDEX 38281 <>iFixBaseProxy_Process token=0x0600958A
+TYPE_INDEX 6583 TOKEN 0x00004E7D IMAGE Gameplay.Beyond.dll TYPE BackingField.meplay.Beyond fields=-1+65535 methods=120979+65535
+  METHOD_INDEX 38282 get_eventKey token=0x0600958B
+  METHOD_INDEX 38283 get_hasFilterMode token=0x0600958C
+  METHOD_INDEX 38284 get_maxFilterLevel token=0x0600958D
+  METHOD_INDEX 38285 CollectParams token=0x0600958E
+  METHOD_INDEX 38286 Process token=0x0600958F
+  METHOD_INDEX 38287 .ctor token=0x06009590
+  METHOD_INDEX 38288 <>iFixBaseProxy_get_hasFilterMode token=0x06009591
+  METHOD_INDEX 38289 <>iFixBaseProxy_get_maxFilterLevel token=0x06009592
+  METHOD_INDEX 38290 <>iFixBaseProxy_CollectParams token=0x06009593
+  METHOD_INDEX 38291 <>iFixBaseProxy_Process token=0x06009594
+TYPE_INDEX 6584 TOKEN 0x00002266 IMAGE Gameplay.Beyond.dll TYPE eplay.Beyond.eplay.Beyond fields=155401+65535 methods=-1+65535
+  METHOD_INDEX 38292 get_eventKey token=0x06009595
+  METHOD_INDEX 38293 get_hasFilterMode token=0x06009596
+  METHOD_INDEX 38294 get_maxFilterLevel token=0x06009597
+  METHOD_INDEX 38295 CollectParams token=0x06009598
+  METHOD_INDEX 38296 Process token=0x06009599
+  METHOD_INDEX 38297 .ctor token=0x0600959A
+  METHOD_INDEX 38298 <>iFixBaseProxy_get_hasFilterMode token=0x0600959B
+  METHOD_INDEX 38299 <>iFixBaseProxy_get_maxFilterLevel token=0x0600959C
+  METHOD_INDEX 38300 <>iFixBaseProxy_CollectParams token=0x0600959D
+  METHOD_INDEX 38301 <>iFixBaseProxy_Process token=0x0600959E
+TYPE_INDEX 6585 TOKEN 0x00017BB8 IMAGE Gameplay.Beyond.dll TYPE eplay.Beyond._COLORMAX fields=846354+65535 methods=157590+36797
+  METHOD_INDEX 38302 get_eventKey token=0x0600959F
+  METHOD_INDEX 38303 get_hasFilterMode token=0x060095A0
+  METHOD_INDEX 38304 get_maxFilterLevel token=0x060095A1
+  METHOD_INDEX 38305 CollectParams token=0x060095A2
+  METHOD_INDEX 38306 Process token=0x060095A3
+  METHOD_INDEX 38307 .ctor token=0x060095A4
+  METHOD_INDEX 38308 <>iFixBaseProxy_get_hasFilterMode token=0x060095A5
+  METHOD_INDEX 38309 <>iFixBaseProxy_get_maxFilterLevel token=0x060095A6
+  METHOD_INDEX 38310 <>iFixBaseProxy_CollectParams token=0x060095A7
+  METHOD_INDEX 38311 <>iFixBaseProxy_Process token=0x060095A8
+TYPE_INDEX 6586 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE COLORMAX.ent fields=857517+36802 methods=846354+65535
+  METHOD_INDEX 38312 get_eventKey token=0x060095A9
+  METHOD_INDEX 38313 CollectParams token=0x060095AA
+  METHOD_INDEX 38314 Process token=0x060095AB
+  METHOD_INDEX 38315 .ctor token=0x060095AC
+  METHOD_INDEX 38316 <>iFixBaseProxy_CollectParams token=0x060095AD
+  METHOD_INDEX 38317 <>iFixBaseProxy_Process token=0x060095AE
+TYPE_INDEX 6587 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE t.FNPCAbilityStandingSteeringFragment fields=33560733+27289 methods=857548+8193
+  METHOD_INDEX 38318 get_eventKey token=0x060095AF
+  METHOD_INDEX 38319 CollectParams token=0x060095B0
+  METHOD_INDEX 38320 Process token=0x060095B1
+  METHOD_INDEX 38321 .ctor token=0x060095B2
+  METHOD_INDEX 38322 <>iFixBaseProxy_CollectParams token=0x060095B3
+  METHOD_INDEX 38323 <>iFixBaseProxy_Process token=0x060095B4
+TYPE_INDEX 6588 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE SteeringFragment. fields=3072+8193 methods=33560734+65535
+  METHOD_INDEX 38324 get_hasFilterMode token=0x060095B5
+  METHOD_INDEX 38325 get_eventKey token=0x060095B6
+  METHOD_INDEX 38326 CollectParams token=0x060095B7
+  METHOD_INDEX 38327 Process token=0x060095B8
+  METHOD_INDEX 38328 .ctor token=0x060095B9
+  METHOD_INDEX 38329 <>iFixBaseProxy_get_hasFilterMode token=0x060095BA
+  METHOD_INDEX 38330 <>iFixBaseProxy_CollectParams token=0x060095BB
+  METHOD_INDEX 38331 <>iFixBaseProxy_Process token=0x060095BC
+TYPE_INDEX 6589 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE . fields=131072+65535 methods=3072+35142
+  METHOD_INDEX 38332 get_hasFilterMode token=0x060095BD
+  METHOD_INDEX 38333 get_eventKey token=0x060095BE
+  METHOD_INDEX 38334 CollectParams token=0x060095BF
+  METHOD_INDEX 38335 Process token=0x060095C0
+  METHOD_INDEX 38336 .ctor token=0x060095C1
+  METHOD_INDEX 38337 <>iFixBaseProxy_get_hasFilterMode token=0x060095C2
+  METHOD_INDEX 38338 <>iFixBaseProxy_CollectParams token=0x060095C3
+  METHOD_INDEX 38339 <>iFixBaseProxy_Process token=0x060095C4
+TYPE_INDEX 6590 TOKEN 0x00008FCE IMAGE Gameplay.Beyond.dll TYPE . fields=1245184+31022 methods=131072+23088
+  METHOD_INDEX 38340 get_hasFilterMode token=0x060095C5
+  METHOD_INDEX 38341 get_eventKey token=0x060095C6
+  METHOD_INDEX 38342 CollectParams token=0x060095C7
+  METHOD_INDEX 38343 Process token=0x060095C8
+  METHOD_INDEX 38344 .ctor token=0x060095C9
+  METHOD_INDEX 38345 <>iFixBaseProxy_get_hasFilterMode token=0x060095CA
+  METHOD_INDEX 38346 <>iFixBaseProxy_CollectParams token=0x060095CB
+  METHOD_INDEX 38347 <>iFixBaseProxy_Process token=0x060095CC
+TYPE_INDEX 6591 TOKEN 0x00006AA2 IMAGE Gameplay.Beyond.dll TYPE <isRecording>k__BackingField. fields=2+23092 methods=1376256+65535
+  METHOD_INDEX 38348 get_eventKey token=0x060095CD
+  METHOD_INDEX 38349 get_availableTargetStateStrList token=0x060095CE
+  METHOD_INDEX 38350 OnInit token=0x060095CF
+  METHOD_INDEX 38351 CollectParams token=0x060095D0
+  METHOD_INDEX 38352 Process token=0x060095D1
+  METHOD_INDEX 38353 .ctor token=0x060095D2
+  METHOD_INDEX 38354 <>iFixBaseProxy_OnInit token=0x060095D3
+  METHOD_INDEX 38355 <>iFixBaseProxy_CollectParams token=0x060095D4
+  METHOD_INDEX 38356 <>iFixBaseProxy_Process token=0x060095D5
+TYPE_INDEX 6592 TOKEN 0x00102001 IMAGE Gameplay.Beyond.dll TYPE .tion fields=131076+65535 methods=2+31036
+  METHOD_INDEX 38357 get_eventKey token=0x060095D6
+  METHOD_INDEX 38358 .ctor token=0x060095D7
+TYPE_INDEX 6593 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE .PEC_MAX_ROUGHNESS fields=20102+31043 methods=131076+59922
+  METHOD_INDEX 38359 get_eventKey token=0x060095D8
+  METHOD_INDEX 38360 CollectParams token=0x060095D9
+  METHOD_INDEX 38361 Process token=0x060095DA
+  METHOD_INDEX 38362 .ctor token=0x060095DB
+  METHOD_INDEX 38363 <>iFixBaseProxy_CollectParams token=0x060095DC
+  METHOD_INDEX 38364 <>iFixBaseProxy_Process token=0x060095DD
+TYPE_INDEX 6594 TOKEN 0x00027945 IMAGE Gameplay.Beyond.dll TYPE C_MAX_ROUGHNESS.nCurve fields=8824+59922 methods=18563+55524
+  METHOD_INDEX 38365 get_eventKey token=0x060095DE
+  METHOD_INDEX 38366 CollectParams token=0x060095DF
+  METHOD_INDEX 38367 Process token=0x060095E0
+  METHOD_INDEX 38368 .ctor token=0x060095E1
+  METHOD_INDEX 38369 <>iFixBaseProxy_CollectParams token=0x060095E2
+  METHOD_INDEX 38370 <>iFixBaseProxy_Process token=0x060095E3
+TYPE_INDEX 6595 TOKEN 0x0001D893 IMAGE Gameplay.Beyond.dll TYPE nCurve.TransformsJob fields=97385+5666 methods=8826+6309
+  METHOD_INDEX 38371 get_eventKey token=0x060095E4
+  METHOD_INDEX 38372 CollectParams token=0x060095E5
+  METHOD_INDEX 38373 Process token=0x060095E6
+  METHOD_INDEX 38374 ConvertDeprecated token=0x060095E7
+  METHOD_INDEX 38375 .ctor token=0x060095E8
+  METHOD_INDEX 38376 <>iFixBaseProxy_CollectParams token=0x060095E9
+  METHOD_INDEX 38377 <>iFixBaseProxy_Process token=0x060095EA
+TYPE_INDEX 6596 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE .get_interactiveSafeZoneSdfTable fields=-1+6310 methods=97406+3072
+  METHOD_INDEX 38378 get_eventKey token=0x060095EB
+  METHOD_INDEX 38379 get_hasFilterMode token=0x060095EC
+  METHOD_INDEX 38380 CollectParams token=0x060095ED
+  METHOD_INDEX 38381 Process token=0x060095EE
+  METHOD_INDEX 38382 .ctor token=0x060095EF
+  METHOD_INDEX 38383 <>iFixBaseProxy_get_hasFilterMode token=0x060095F0
+  METHOD_INDEX 38384 <>iFixBaseProxy_CollectParams token=0x060095F1
+  METHOD_INDEX 38385 <>iFixBaseProxy_Process token=0x060095F2
+TYPE_INDEX 6597 TOKEN 0x00022FE3 IMAGE Gameplay.Beyond.dll TYPE peed.>k__BackingField fields=-1+3072 methods=-1+0
+  METHOD_INDEX 38386 get_eventKey token=0x060095F3
+  METHOD_INDEX 38387 CollectParams token=0x060095F4
+  METHOD_INDEX 38388 Process token=0x060095F5
+  METHOD_INDEX 38389 .ctor token=0x060095F6
+  METHOD_INDEX 38390 <>iFixBaseProxy_CollectParams token=0x060095F7
+  METHOD_INDEX 38391 <>iFixBaseProxy_Process token=0x060095F8
+TYPE_INDEX 6598 TOKEN 0x000CEA12 IMAGE Gameplay.Beyond.dll TYPE eEmotion. fields=-1+0 methods=-1+0
+  METHOD_INDEX 38392 get_eventKey token=0x060095F9
+  METHOD_INDEX 38393 CollectParams token=0x060095FA
+  METHOD_INDEX 38394 Process token=0x060095FB
+  METHOD_INDEX 38395 .ctor token=0x060095FC
+  METHOD_INDEX 38396 <>iFixBaseProxy_CollectParams token=0x060095FD
+  METHOD_INDEX 38397 <>iFixBaseProxy_Process token=0x060095FE
+TYPE_INDEX 6599 TOKEN 0x000DD96A IMAGE Gameplay.Beyond.dll TYPE .onfig fields=-1+0 methods=-1+1
+  METHOD_INDEX 38398 get_eventKey token=0x060095FF
+  METHOD_INDEX 38399 CollectParams token=0x06009600
+  METHOD_INDEX 38400 Process token=0x06009601
+  METHOD_INDEX 38401 .ctor token=0x06009602
+  METHOD_INDEX 38402 <>iFixBaseProxy_CollectParams token=0x06009603
+  METHOD_INDEX 38403 <>iFixBaseProxy_Process token=0x06009604
+TYPE_INDEX 6600 TOKEN 0x020018AA IMAGE Gameplay.Beyond.dll TYPE fig.Beyond.Gameplay.Actions fields=36843+1 methods=-1+3
+  FIELD_INDEX 36843 ___bufferIdxInt token=0x04008FEC
+  METHOD_INDEX 38404 get_eventKey token=0x06009605
+  METHOD_INDEX 38405 CollectParams token=0x06009606
+  METHOD_INDEX 38406 Process token=0x06009607
+  METHOD_INDEX 38407 .ctor token=0x06009608
+  METHOD_INDEX 38408 <>iFixBaseProxy_CollectParams token=0x06009609
+  METHOD_INDEX 38409 <>iFixBaseProxy_Process token=0x0600960A
+TYPE_INDEX 6601 TOKEN 0x00000C00 IMAGE Gameplay.Beyond.dll TYPE Beyond.Gameplay.Actions.ResumeSpawner fields=27311+3 methods=36846+20108
+  FIELD_INDEX 27311 _spawnerPtr token=0x04006AB0
+  FIELD_INDEX 27312 _pauseKey token=0x04006AB1
+  FIELD_INDEX 27313 _spawnerPtr token=0x04006AB2
+  METHOD_INDEX 38410 get_eventKey token=0x0600960B
+  METHOD_INDEX 38411 CollectParams token=0x0600960C
+  METHOD_INDEX 38412 Process token=0x0600960D
+  METHOD_INDEX 38413 .ctor token=0x0600960E
+  METHOD_INDEX 38414 <>iFixBaseProxy_CollectParams token=0x0600960F
+  METHOD_INDEX 38415 <>iFixBaseProxy_Process token=0x06009610
+TYPE_INDEX 6602 TOKEN 0x00020000 IMAGE Gameplay.Beyond.dll TYPE SpawnerGetSpawnedEntityList.�� fields=1056769+20109 methods=27313+8840
+  METHOD_INDEX 38416 get_eventKey token=0x06009611
+  METHOD_INDEX 38417 CollectParams token=0x06009612
+  METHOD_INDEX 38418 Process token=0x06009613
+  METHOD_INDEX 38419 .ctor token=0x06009614
+  METHOD_INDEX 38420 <>iFixBaseProxy_CollectParams token=0x06009615
+  METHOD_INDEX 38421 <>iFixBaseProxy_Process token=0x06009616
+TYPE_INDEX 6603 TOKEN 0x00130000 IMAGE Gameplay.Beyond.dll TYPE �.ct fields=-1+8842 methods=1056769+31995
+  METHOD_INDEX 38422 get_eventKey token=0x06009617
+  METHOD_INDEX 38423 get_hasFilterMode token=0x06009618
+  METHOD_INDEX 38424 CollectParams token=0x06009619
+  METHOD_INDEX 38425 Process token=0x0600961A
+  METHOD_INDEX 38426 .ctor token=0x0600961B
+  METHOD_INDEX 38427 <>iFixBaseProxy_get_hasFilterMode token=0x0600961C
+  METHOD_INDEX 38428 <>iFixBaseProxy_CollectParams token=0x0600961D
+  METHOD_INDEX 38429 <>iFixBaseProxy_Process token=0x0600961E
+TYPE_INDEX 6604 TOKEN 0x00000004 IMAGE Gameplay.Beyond.dll TYPE ct.RegionUpgradeCameraConfig fields=163646+32014 methods=-1+65535
+  METHOD_INDEX 38430 get_eventKey token=0x0600961F
+  METHOD_INDEX 38431 .ctor token=0x06009620
+TYPE_INDEX 6605 TOKEN 0x00000003 IMAGE Gameplay.Beyond.dll TYPE RegionUpgradeCameraConfig.BackingField fields=120979+65535 methods=168824+65535
+  METHOD_INDEX 38432 get_eventKey token=0x06009621
+  METHOD_INDEX 38433 .ctor token=0x06009622
+TYPE_INDEX 6606 TOKEN 0x00004E91 IMAGE Gameplay.Beyond.dll TYPE BackingField.ameplay.Beyond fields=-1+65535 methods=120979+65535
+  METHOD_INDEX 38434 get_eventKey token=0x06009623
+  METHOD_INDEX 38435 get_eventKeyEnum token=0x06009624
+  METHOD_INDEX 38436 get_eventKeyString token=0x06009625
+  METHOD_INDEX 38437 .ctor token=0x06009626
+  METHOD_INDEX 38438 <>iFixBaseProxy_get_eventKeyEnum token=0x06009627
+  METHOD_INDEX 38439 <>iFixBaseProxy_get_eventKeyString token=0x06009628
+TYPE_INDEX 6607 TOKEN 0x00002292 IMAGE Gameplay.Beyond.dll TYPE play.Beyond.eplay.Beyond fields=142188+65535 methods=-1+65535
+  METHOD_INDEX 38440 get_eventKey token=0x06009629
+  METHOD_INDEX 38441 Process token=0x0600962A
+  METHOD_INDEX 38442 .ctor token=0x0600962B
+  METHOD_INDEX 38443 <>iFixBaseProxy_Process token=0x0600962C
+TYPE_INDEX 6608 TOKEN 0x00017D5A IMAGE Gameplay.Beyond.dll TYPE eplay.Beyond.Config fields=846354+65535 methods=142190+36867
+  METHOD_INDEX 38444 get_eventKey token=0x0600962D
+  METHOD_INDEX 38445 Process token=0x0600962E
+  METHOD_INDEX 38446 .ctor token=0x0600962F
+  METHOD_INDEX 38447 <>iFixBaseProxy_Process token=0x06009630
+TYPE_INDEX 6609 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE onfig.tem.Collections.IEnumerator.get_Current fields=907923+36870 methods=846354+27333
+  METHOD_INDEX 38448 get_eventKey token=0x06009631
+  METHOD_INDEX 38449 Process token=0x06009632
+  METHOD_INDEX 38450 .ctor token=0x06009633
+  METHOD_INDEX 38451 <>iFixBaseProxy_Process token=0x06009634
+TYPE_INDEX 6610 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE m.Collections.IEnumerator.get_Current.domSeed fields=33560755+27340 methods=908006+8193
+  METHOD_INDEX 38452 get_eventKey token=0x06009635
+  METHOD_INDEX 38453 CollectParams token=0x06009636
+  METHOD_INDEX 38454 Process token=0x06009637
+  METHOD_INDEX 38455 .ctor token=0x06009638
+  METHOD_INDEX 38456 <>iFixBaseProxy_CollectParams token=0x06009639
+  METHOD_INDEX 38457 <>iFixBaseProxy_Process token=0x0600963A
+TYPE_INDEX 6611 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE avmeshProbeSubSystem. fields=3072+8193 methods=33560756+65535
+  METHOD_INDEX 38458 get_eventKey token=0x0600963B
+  METHOD_INDEX 38459 CollectParams token=0x0600963C
+  METHOD_INDEX 38460 Process token=0x0600963D
+  METHOD_INDEX 38461 .ctor token=0x0600963E
+  METHOD_INDEX 38462 <>iFixBaseProxy_CollectParams token=0x0600963F
+  METHOD_INDEX 38463 <>iFixBaseProxy_Process token=0x06009640
+TYPE_INDEX 6612 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE . fields=131072+65535 methods=3072+11911
+  METHOD_INDEX 38464 get_eventKey token=0x06009641
+  METHOD_INDEX 38465 CollectParams token=0x06009642
+  METHOD_INDEX 38466 Process token=0x06009643
+  METHOD_INDEX 38467 .ctor token=0x06009644
+  METHOD_INDEX 38468 <>iFixBaseProxy_CollectParams token=0x06009645
+  METHOD_INDEX 38469 <>iFixBaseProxy_Process token=0x06009646
+TYPE_INDEX 6613 TOKEN 0x00009018 IMAGE Gameplay.Beyond.dll TYPE . fields=1114112+11913 methods=131072+55443
+  METHOD_INDEX 38470 get_eventKey token=0x06009647
+  METHOD_INDEX 38471 CollectParams token=0x06009648
+  METHOD_INDEX 38472 Process token=0x06009649
+  METHOD_INDEX 38473 get_hasOnAfterEntityTriggerRegistered token=0x0600964A
+  METHOD_INDEX 38474 OnAfterEntityTriggerRegistered token=0x0600964B
+  METHOD_INDEX 38475 .ctor token=0x0600964C
+  METHOD_INDEX 38476 <>iFixBaseProxy_CollectParams token=0x0600964D
+  METHOD_INDEX 38477 <>iFixBaseProxy_Process token=0x0600964E
+  METHOD_INDEX 38478 <>iFixBaseProxy_get_hasOnAfterEntityTriggerRegistered token=0x0600964F
+  METHOD_INDEX 38479 <>iFixBaseProxy_OnAfterEntityTriggerRegistered token=0x06009650
+TYPE_INDEX 6614 TOKEN 0x00006AD2 IMAGE Gameplay.Beyond.dll TYPE . fields=1+24437 methods=1245184+33816
+  METHOD_INDEX 38480 get_eventKey token=0x06009651
+  METHOD_INDEX 38481 .ctor token=0x06009652
+TYPE_INDEX 6615 TOKEN 0x00102001 IMAGE Gameplay.Beyond.dll TYPE .meEnv fields=3+65535 methods=2+33816
+  METHOD_INDEX 38482 get_eventKey token=0x06009653
+  METHOD_INDEX 38483 .ctor token=0x06009654
+TYPE_INDEX 6616 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE ntimeEnv.GHNESS_BIAS fields=20121+8027 methods=3+16
+  METHOD_INDEX 38484 get_eventKey token=0x06009655
+  METHOD_INDEX 38485 get_eventKeyEnum token=0x06009656
+  METHOD_INDEX 38486 get_eventKeyString token=0x06009657
+  METHOD_INDEX 38487 CollectParams token=0x06009658
+  METHOD_INDEX 38488 Process token=0x06009659
+  METHOD_INDEX 38489 .ctor token=0x0600965A
+  METHOD_INDEX 38490 <>iFixBaseProxy_get_eventKeyEnum token=0x0600965B
+  METHOD_INDEX 38491 <>iFixBaseProxy_get_eventKeyString token=0x0600965C
+  METHOD_INDEX 38492 <>iFixBaseProxy_CollectParams token=0x0600965D
+  METHOD_INDEX 38493 <>iFixBaseProxy_Process token=0x0600965E
+TYPE_INDEX 6617 TOKEN 0x00028436 IMAGE Gameplay.Beyond.dll TYPE IAS.reaDis fields=8868+59922 methods=16+56163
+  METHOD_INDEX 38494 get_eventKey token=0x0600965F
+  METHOD_INDEX 38495 Process token=0x06009660
+  METHOD_INDEX 38496 .ctor token=0x06009661
+  METHOD_INDEX 38497 <>iFixBaseProxy_Process token=0x06009662
+TYPE_INDEX 6618 TOKEN 0x0001D893 IMAGE Gameplay.Beyond.dll TYPE checkSqrDis. fields=97761+56317 methods=8866+6330
+  METHOD_INDEX 38498 get_eventKey token=0x06009663
+  METHOD_INDEX 38499 CollectParams token=0x06009664
+  METHOD_INDEX 38500 Process token=0x06009665
+  METHOD_INDEX 38501 .ctor token=0x06009666
+  METHOD_INDEX 38502 <>iFixBaseProxy_CollectParams token=0x06009667
+  METHOD_INDEX 38503 <>iFixBaseProxy_Process token=0x06009668
+TYPE_INDEX 6619 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE .aceshipShowcaseSystemComponent fields=-1+6332 methods=97803+3072
+  METHOD_INDEX 38504 get_eventKey token=0x06009669
+  METHOD_INDEX 38505 CollectParams token=0x0600966A
+  METHOD_INDEX 38506 Process token=0x0600966B
+  METHOD_INDEX 38507 .ctor token=0x0600966C
+  METHOD_INDEX 38508 <>iFixBaseProxy_CollectParams token=0x0600966D
+  METHOD_INDEX 38509 <>iFixBaseProxy_Process token=0x0600966E
+TYPE_INDEX 6620 TOKEN 0x000298D1 IMAGE Gameplay.Beyond.dll TYPE ig.>k__BackingField fields=-1+3072 methods=-1+0
+  METHOD_INDEX 38510 get_eventKey token=0x0600966F
+  METHOD_INDEX 38511 .ctor token=0x06009670
+TYPE_INDEX 6621 TOKEN 0x000CEA12 IMAGE Gameplay.Beyond.dll TYPE >k__BackingField. fields=-1+0 methods=-1+0
+  METHOD_INDEX 38512 get_eventKey token=0x06009671
+  METHOD_INDEX 38513 Process token=0x06009672
+  METHOD_INDEX 38514 .ctor token=0x06009673
+  METHOD_INDEX 38515 <>iFixBaseProxy_Process token=0x06009674
+TYPE_INDEX 6622 TOKEN 0x000DDC5A IMAGE Gameplay.Beyond.dll TYPE .ngConfig fields=-1+0 methods=-1+3
+  METHOD_INDEX 38516 get_eventKey token=0x06009675
+  METHOD_INDEX 38517 .ctor token=0x06009676
+TYPE_INDEX 6623 TOKEN 0x020018C0 IMAGE Gameplay.Beyond.dll TYPE fig.Beyond.Gameplay.Actions fields=36914+0 methods=-1+3
+  METHOD_INDEX 38518 get_eventKey token=0x06009677
+  METHOD_INDEX 38519 .ctor token=0x06009678
+TYPE_INDEX 6624 TOKEN 0x00000C00 IMAGE Gameplay.Beyond.dll TYPE Beyond.Gameplay.Actions.WaitForSeconds fields=27364+3 methods=36917+20128
+  FIELD_INDEX 27364 _seconds token=0x04006AE5
+  FIELD_INDEX 27365 _seconds token=0x04006AE6
+  FIELD_INDEX 27366 _areaEntity token=0x04006AE7
+  METHOD_INDEX 38520 get_eventKey token=0x06009679
+  METHOD_INDEX 38521 CollectParams token=0x0600967A
+  METHOD_INDEX 38522 Process token=0x0600967B
+  METHOD_INDEX 38523 .ctor token=0x0600967C
+  METHOD_INDEX 38524 <>iFixBaseProxy_CollectParams token=0x0600967D
+  METHOD_INDEX 38525 <>iFixBaseProxy_Process token=0x0600967E
+TYPE_INDEX 6625 TOKEN 0x00020000 IMAGE Gameplay.Beyond.dll TYPE WaitForSecondsInArea. fields=1056769+20129 methods=27365+8883
+  METHOD_INDEX 38526 get_eventKey token=0x0600967F
+  METHOD_INDEX 38527 CollectParams token=0x06009680
+  METHOD_INDEX 38528 Process token=0x06009681
+  METHOD_INDEX 38529 .ctor token=0x06009682
+  METHOD_INDEX 38530 <>iFixBaseProxy_CollectParams token=0x06009683
+  METHOD_INDEX 38531 <>iFixBaseProxy_Process token=0x06009684
+TYPE_INDEX 6626 TOKEN 0x00140000 IMAGE Gameplay.Beyond.dll TYPE l��.ct fields=-1+8885 methods=1056769+32401
+  METHOD_INDEX 38532 get_eventKey token=0x06009685
+  METHOD_INDEX 38533 .ctor token=0x06009686
+TYPE_INDEX 6627 TOKEN 0x00000004 IMAGE Gameplay.Beyond.dll TYPE ct.RegionUpgradeCameraConfig fields=170226+32421 methods=-1+65535
+  METHOD_INDEX 38534 get_eventKey token=0x06009687
+  METHOD_INDEX 38535 Process token=0x06009688
+  METHOD_INDEX 38536 .ctor token=0x06009689
+  METHOD_INDEX 38537 <>iFixBaseProxy_Process token=0x0600968A
+TYPE_INDEX 6628 TOKEN 0x00010006 IMAGE Gameplay.Beyond.dll TYPE RegionUpgradeCameraConfig.BackingField fields=120979+65535 methods=121328+65535
+  METHOD_INDEX 38538 get_eventKey token=0x0600968B
+  METHOD_INDEX 38539 CollectParams token=0x0600968C
+  METHOD_INDEX 38540 Process token=0x0600968D
+  METHOD_INDEX 38541 .ctor token=0x0600968E
+  METHOD_INDEX 38542 <>iFixBaseProxy_CollectParams token=0x0600968F
+  METHOD_INDEX 38543 <>iFixBaseProxy_Process token=0x06009690
+TYPE_INDEX 6629 TOKEN 0x00004EA5 IMAGE Gameplay.Beyond.dll TYPE BackingField..Beyond fields=-1+65535 methods=120979+5599
+  METHOD_INDEX 38544 get_eventKey token=0x06009691
+  METHOD_INDEX 38545 CollectParams token=0x06009692
+  METHOD_INDEX 38546 Process token=0x06009693
+  METHOD_INDEX 38547 .ctor token=0x06009694
+  METHOD_INDEX 38548 <>iFixBaseProxy_CollectParams token=0x06009695
+  METHOD_INDEX 38549 <>iFixBaseProxy_Process token=0x06009696
+TYPE_INDEX 6630 TOKEN 0x000022BD IMAGE Gameplay.Beyond.dll TYPE ay.Beyond.Coroutine fields=159728+65535 methods=-1+65535
+  METHOD_INDEX 38550 get_eventKey token=0x06009697
+  METHOD_INDEX 38551 CollectParams token=0x06009698
+  METHOD_INDEX 38552 Process token=0x06009699
+  METHOD_INDEX 38553 .ctor token=0x0600969A
+  METHOD_INDEX 38554 <>iFixBaseProxy_CollectParams token=0x0600969B
+  METHOD_INDEX 38555 <>iFixBaseProxy_Process token=0x0600969C
+TYPE_INDEX 6631 TOKEN 0x00017F04 IMAGE Gameplay.Beyond.dll TYPE eplay.Beyond.fig fields=16+65535 methods=188709+65535
+  METHOD_INDEX 38556 get_eventKey token=0x0600969D
+  METHOD_INDEX 38557 CollectParams token=0x0600969E
+  METHOD_INDEX 38558 Process token=0x0600969F
+  METHOD_INDEX 38559 .ctor token=0x060096A0
+  METHOD_INDEX 38560 <>iFixBaseProxy_CollectParams token=0x060096A1
+  METHOD_INDEX 38561 <>iFixBaseProxy_Process token=0x060096A2
+TYPE_INDEX 6632 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE .current fields=908786+36954 methods=846354+27397
+  METHOD_INDEX 38562 get_eventKey token=0x060096A3
+  METHOD_INDEX 38563 CollectParams token=0x060096A4
+  METHOD_INDEX 38564 Process token=0x060096A5
+  METHOD_INDEX 38565 .ctor token=0x060096A6
+  METHOD_INDEX 38566 <>iFixBaseProxy_CollectParams token=0x060096A7
+  METHOD_INDEX 38567 <>iFixBaseProxy_Process token=0x060096A8
+TYPE_INDEX 6633 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE __current.Point fields=33560776+27409 methods=908879+8193
+  METHOD_INDEX 38568 get_eventKey token=0x060096A9
+  METHOD_INDEX 38569 CollectParams token=0x060096AA
+  METHOD_INDEX 38570 Process token=0x060096AB
+  METHOD_INDEX 38571 .ctor token=0x060096AC
+  METHOD_INDEX 38572 <>iFixBaseProxy_CollectParams token=0x060096AD
+  METHOD_INDEX 38573 <>iFixBaseProxy_Process token=0x060096AE
+TYPE_INDEX 6634 TOKEN 0x000015E1 IMAGE Gameplay.Beyond.dll TYPE tBeginEndDist. fields=3072+8193 methods=33560778+65535
+  METHOD_INDEX 38574 get_eventKey token=0x060096AF
+  METHOD_INDEX 38575 CollectParams token=0x060096B0
+  METHOD_INDEX 38576 Process token=0x060096B1
+  METHOD_INDEX 38577 .ctor token=0x060096B2
+  METHOD_INDEX 38578 <>iFixBaseProxy_CollectParams token=0x060096B3
+  METHOD_INDEX 38579 <>iFixBaseProxy_Process token=0x060096B4
+TYPE_INDEX 6635 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE . fields=131072+65535 methods=3072+12067
+  METHOD_INDEX 38580 get_eventKey token=0x060096B5
+  METHOD_INDEX 38581 .ctor token=0x060096B6
+TYPE_INDEX 6636 TOKEN 0x0000906A IMAGE Gameplay.Beyond.dll TYPE . fields=1114112+12073 methods=131072+20369
+  METHOD_INDEX 38582 get_eventKey token=0x060096B7
+  METHOD_INDEX 38583 Process token=0x060096B8
+  METHOD_INDEX 38584 get_hasOnAfterEntityTriggerRegistered token=0x060096B9
+  METHOD_INDEX 38585 OnAfterEntityTriggerRegistered token=0x060096BA
+  METHOD_INDEX 38586 .ctor token=0x060096BB
+  METHOD_INDEX 38587 <>iFixBaseProxy_Process token=0x060096BC
+  METHOD_INDEX 38588 <>iFixBaseProxy_get_hasOnAfterEntityTriggerRegistered token=0x060096BD
+  METHOD_INDEX 38589 <>iFixBaseProxy_OnAfterEntityTriggerRegistered token=0x060096BE
+TYPE_INDEX 6637 TOKEN 0x00006B19 IMAGE Gameplay.Beyond.dll TYPE . fields=2+20369 methods=1114112+65535
+  METHOD_INDEX 38590 get_eventKey token=0x060096BF
+  METHOD_INDEX 38591 Process token=0x060096C0
+  METHOD_INDEX 38592 .ctor token=0x060096C1
+  METHOD_INDEX 38593 <>iFixBaseProxy_Process token=0x060096C2
+TYPE_INDEX 6638 TOKEN 0x00102001 IMAGE Gameplay.Beyond.dll TYPE .Text fields=3+65535 methods=2+55782
+  METHOD_INDEX 38594 get_eventKey token=0x060096C3
+  METHOD_INDEX 38595 Process token=0x060096C4
+  METHOD_INDEX 38596 .ctor token=0x060096C5
+  METHOD_INDEX 38597 <>iFixBaseProxy_Process token=0x060096C6
+TYPE_INDEX 6639 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE t.ROP_ID_LIGHT_NPR_RIM_ALBEDO_ALPHA fields=20141+55784 methods=6+59922
+  METHOD_INDEX 38598 get_eventKey token=0x060096C7
+  METHOD_INDEX 38599 CollectParams token=0x060096C8
+  METHOD_INDEX 38600 Process token=0x060096C9
+  METHOD_INDEX 38601 .ctor token=0x060096CA
+  METHOD_INDEX 38602 <>iFixBaseProxy_CollectParams token=0x060096CB
+  METHOD_INDEX 38603 <>iFixBaseProxy_Process token=0x060096CC
+TYPE_INDEX 6640 TOKEN 0x0002057B IMAGE Gameplay.Beyond.dll TYPE ID_LIGHT_NPR_RIM_ALBEDO_ALPHA.checkSqrDis fields=8912+59922 methods=20142+57263
+  METHOD_INDEX 38604 get_eventKey token=0x060096CD
+  METHOD_INDEX 38605 Process token=0x060096CE
+  METHOD_INDEX 38606 .ctor token=0x060096CF
+  METHOD_INDEX 38607 <>iFixBaseProxy_Process token=0x060096D0
+TYPE_INDEX 6641 TOKEN 0x0001D893 IMAGE Gameplay.Beyond.dll TYPE checkSqrDis. fields=98200+57289 methods=8914+6353
+  METHOD_INDEX 38608 get_eventKey token=0x060096D1
+  METHOD_INDEX 38609 Process token=0x060096D2
+  METHOD_INDEX 38610 .ctor token=0x060096D3
+  METHOD_INDEX 38611 <>iFixBaseProxy_Process token=0x060096D4
+TYPE_INDEX 6642 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE .delTable fields=-1+6354 methods=98219+3072
+  METHOD_INDEX 38612 get_eventKey token=0x060096D5
+  METHOD_INDEX 38613 Process token=0x060096D6
+  METHOD_INDEX 38614 .ctor token=0x060096D7
+  METHOD_INDEX 38615 <>iFixBaseProxy_Process token=0x060096D8
+TYPE_INDEX 6643 TOKEN 0x0002197D IMAGE Gameplay.Beyond.dll TYPE <weaponDecoEffectConfig>k__BackingField.>k__BackingField fields=-1+3072 methods=-1+0
+  METHOD_INDEX 38616 get_eventKey token=0x060096D9
+  METHOD_INDEX 38617 Process token=0x060096DA
+  METHOD_INDEX 38618 .ctor token=0x060096DB
+  METHOD_INDEX 38619 <>iFixBaseProxy_Process token=0x060096DC
+TYPE_INDEX 6644 TOKEN 0x000CEA12 IMAGE Gameplay.Beyond.dll TYPE >k__BackingField. fields=-1+0 methods=-1+0
+  METHOD_INDEX 38620 get_eventKey token=0x060096DD
+  METHOD_INDEX 38621 CollectParams token=0x060096DE
+  METHOD_INDEX 38622 Process token=0x060096DF
+  METHOD_INDEX 38623 .ctor token=0x060096E0
+  METHOD_INDEX 38624 <>iFixBaseProxy_CollectParams token=0x060096E1
+  METHOD_INDEX 38625 <>iFixBaseProxy_Process token=0x060096E2
+TYPE_INDEX 6645 TOKEN 0x000DE00D IMAGE Gameplay.Beyond.dll TYPE .lag fields=-1+0 methods=-1+1
+  METHOD_INDEX 38626 get_eventKey token=0x060096E3
+  METHOD_INDEX 38627 CollectParams token=0x060096E4
+  METHOD_INDEX 38628 Process token=0x060096E5
+  METHOD_INDEX 38629 .ctor token=0x060096E6
+  METHOD_INDEX 38630 <>iFixBaseProxy_CollectParams token=0x060096E7
+  METHOD_INDEX 38631 <>iFixBaseProxy_Process token=0x060096E8
+TYPE_INDEX 6646 TOKEN 0x020018D6 IMAGE Gameplay.Beyond.dll TYPE .Beyond.Gameplay.Actions fields=37006+3 methods=-1+3
+  FIELD_INDEX 37006 m_hasPlayedNormalSpThisRoutine token=0x0400908F
+  FIELD_INDEX 37007 m_moveStopSwitchTimer token=0x04009090
+  FIELD_INDEX 37008 FACE_CAMERA_AO_SMOOTH_ADD_SPEED token=0x04009091
+  METHOD_INDEX 38632 get_eventKey token=0x060096E9
+  METHOD_INDEX 38633 .ctor token=0x060096EA
+TYPE_INDEX 6647 TOKEN 0x00000C00 IMAGE Gameplay.Beyond.dll TYPE Beyond.Gameplay.Actions.HideItemTips fields=-1+3 methods=37009+20149
+  METHOD_INDEX 38634 get_eventKey token=0x060096EB
+  METHOD_INDEX 38635 .ctor token=0x060096EC
+TYPE_INDEX 6648 TOKEN 0x00020000 IMAGE Gameplay.Beyond.dll TYPE MarkWikiEntryRead.�� fields=1056769+20150 methods=27434+8928
+  METHOD_INDEX 38636 get_eventKey token=0x060096ED
+  METHOD_INDEX 38637 Process token=0x060096EE
+  METHOD_INDEX 38638 .ctor token=0x060096EF
+  METHOD_INDEX 38639 <>iFixBaseProxy_Process token=0x060096F0
+TYPE_INDEX 6649 TOKEN 0x00130000 IMAGE Gameplay.Beyond.dll TYPE �.ct fields=-1+8930 methods=1056769+32816
+  METHOD_INDEX 38640 get_eventKey token=0x060096F1
+  METHOD_INDEX 38641 .ctor token=0x060096F2
+TYPE_INDEX 6650 TOKEN 0x00000000 IMAGE Gameplay.Beyond.dll TYPE ct.RegionUpgradeCameraConfig fields=156467+32835 methods=-1+65535
+  METHOD_INDEX 38642 get_eventKey token=0x060096F3
+  METHOD_INDEX 38643 .ctor token=0x060096F4
+TYPE_INDEX 6651 TOKEN 0x00000002 IMAGE Gameplay.Beyond.dll TYPE RegionUpgradeCameraConfig.BackingField fields=155509+65535 methods=199250+65535
+  METHOD_INDEX 38644 get_eventKey token=0x060096F5
+  METHOD_INDEX 38645 Process token=0x060096F6
+  METHOD_INDEX 38646 .ctor token=0x060096F7
+  METHOD_INDEX 38647 <>iFixBaseProxy_Process token=0x060096F8
+TYPE_INDEX 6652 TOKEN 0x00004EB9 IMAGE Gameplay.Beyond.dll TYPE lobalTemplate.eplay.Beyond fields=-1+1511 methods=120979+65535
+  METHOD_INDEX 38648 get_eventKey token=0x060096F9
+  METHOD_INDEX 38649 CollectParams token=0x060096FA
+  METHOD_INDEX 38650 Process token=0x060096FB
+  METHOD_INDEX 38651 .ctor token=0x060096FC
+  METHOD_INDEX 38652 <>iFixBaseProxy_CollectParams token=0x060096FD
+  METHOD_INDEX 38653 <>iFixBaseProxy_Process token=0x060096FE
+TYPE_INDEX 6653 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE eplay.Beyond.eplay.Beyond fields=199251+65535 methods=156471+65535
+  METHOD_INDEX 38654 get_eventKey token=0x060096FF
+  METHOD_INDEX 38655 CollectParams token=0x06009700
+  METHOD_INDEX 38656 Process token=0x06009701
+  METHOD_INDEX 38657 .ctor token=0x06009702
+  METHOD_INDEX 38658 <>iFixBaseProxy_CollectParams token=0x06009703
+  METHOD_INDEX 38659 <>iFixBaseProxy_Process token=0x06009704
+TYPE_INDEX 6654 TOKEN 0x0001806D IMAGE Gameplay.Beyond.dll TYPE meplay.Beyond.Gameplay.Beyond fields=846354+65535 methods=156471+37026
+  METHOD_INDEX 38660 get_eventKey token=0x06009705
+  METHOD_INDEX 38661 CollectParams token=0x06009706
+  METHOD_INDEX 38662 Process token=0x06009707
+  METHOD_INDEX 38663 .ctor token=0x06009708
+  METHOD_INDEX 38664 <>iFixBaseProxy_CollectParams token=0x06009709
+  METHOD_INDEX 38665 <>iFixBaseProxy_Process token=0x0600970A
+TYPE_INDEX 6655 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE g.neric.IEnumerator<System.Object>.Current fields=909484+37031 methods=846354+27446
+  METHOD_INDEX 38666 get_eventKey token=0x0600970B
+  METHOD_INDEX 38667 CollectParams token=0x0600970C
+  METHOD_INDEX 38668 Process token=0x0600970D
+  METHOD_INDEX 38669 .ctor token=0x0600970E
+  METHOD_INDEX 38670 <>iFixBaseProxy_CollectParams token=0x0600970F
+  METHOD_INDEX 38671 <>iFixBaseProxy_Process token=0x06009710
+TYPE_INDEX 6656 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE ic.IEnumerator<System.Object>.Current.owPointCount fields=33560799+27448 methods=909513+8193
+  METHOD_INDEX 38672 get_eventKey token=0x06009711
+  METHOD_INDEX 38673 CollectParams token=0x06009712
+  METHOD_INDEX 38674 Process token=0x06009713
+  METHOD_INDEX 38675 .ctor token=0x06009714
+  METHOD_INDEX 38676 <>iFixBaseProxy_CollectParams token=0x06009715
+  METHOD_INDEX 38677 <>iFixBaseProxy_Process token=0x06009716
+TYPE_INDEX 6657 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE roximateTimeToTarget. fields=3072+8193 methods=33560800+65535
+  METHOD_INDEX 38678 get_eventKey token=0x06009717
+  METHOD_INDEX 38679 CollectParams token=0x06009718
+  METHOD_INDEX 38680 Process token=0x06009719
+  METHOD_INDEX 38681 .ctor token=0x0600971A
+  METHOD_INDEX 38682 <>iFixBaseProxy_CollectParams token=0x0600971B
+  METHOD_INDEX 38683 <>iFixBaseProxy_Process token=0x0600971C
+TYPE_INDEX 6658 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE . fields=131072+65535 methods=3072+28650
+  METHOD_INDEX 38684 get_eventKey token=0x0600971D
+  METHOD_INDEX 38685 CollectParams token=0x0600971E
+  METHOD_INDEX 38686 Process token=0x0600971F
+  METHOD_INDEX 38687 get_hasOnAfterEntityTriggerRegistered token=0x06009720
+  METHOD_INDEX 38688 OnAfterEntityTriggerRegistered token=0x06009721
+  METHOD_INDEX 38689 .ctor token=0x06009722
+  METHOD_INDEX 38690 <>iFixBaseProxy_CollectParams token=0x06009723
+  METHOD_INDEX 38691 <>iFixBaseProxy_Process token=0x06009724
+  METHOD_INDEX 38692 <>iFixBaseProxy_get_hasOnAfterEntityTriggerRegistered token=0x06009725
+  METHOD_INDEX 38693 <>iFixBaseProxy_OnAfterEntityTriggerRegistered token=0x06009726
+TYPE_INDEX 6659 TOKEN 0x000090B3 IMAGE Gameplay.Beyond.dll TYPE . fields=1245184+28652 methods=131072+55443
+  METHOD_INDEX 38694 get_eventKey token=0x06009727
+  METHOD_INDEX 38695 Process token=0x06009728
+  METHOD_INDEX 38696 .ctor token=0x06009729
+  METHOD_INDEX 38697 <>iFixBaseProxy_Process token=0x0600972A
+TYPE_INDEX 6660 TOKEN 0x00006B3D IMAGE Gameplay.Beyond.dll TYPE . fields=1+55443 methods=1245184+65535
+  METHOD_INDEX 38698 get_eventKey token=0x0600972B
+  METHOD_INDEX 38699 Process token=0x0600972C
+  METHOD_INDEX 38700 .ctor token=0x0600972D
+  METHOD_INDEX 38701 <>iFixBaseProxy_Process token=0x0600972E
+TYPE_INDEX 6661 TOKEN 0x00102001 IMAGE Gameplay.Beyond.dll TYPE .OnServerConfigChanged fields=4+65535 methods=5+31695
+  METHOD_INDEX 38702 get_eventKey token=0x0600972F
+  METHOD_INDEX 38703 Process token=0x06009730
+  METHOD_INDEX 38704 .ctor token=0x06009731
+  METHOD_INDEX 38705 <>iFixBaseProxy_Process token=0x06009732
+TYPE_INDEX 6662 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE rverConfigChanged.ID_LIGHT_NPR_FOG_ALPHA fields=20161+7168 methods=3+16
+  METHOD_INDEX 38706 get_eventKey token=0x06009733
+  METHOD_INDEX 38707 get_hasFilterMode token=0x06009734
+  METHOD_INDEX 38708 CollectParams token=0x06009735
+  METHOD_INDEX 38709 Process token=0x06009736
+  METHOD_INDEX 38710 .ctor token=0x06009737
+  METHOD_INDEX 38711 <>iFixBaseProxy_get_hasFilterMode token=0x06009738
+  METHOD_INDEX 38712 <>iFixBaseProxy_CollectParams token=0x06009739
+  METHOD_INDEX 38713 <>iFixBaseProxy_Process token=0x0600973A
+TYPE_INDEX 6663 TOKEN 0x00027BD1 IMAGE Gameplay.Beyond.dll TYPE .sFactorshowEntity fields=8955+59922 methods=9009+57711
+  METHOD_INDEX 38714 get_eventKey token=0x0600973B
+  METHOD_INDEX 38715 get_hasFilterMode token=0x0600973C
+  METHOD_INDEX 38716 CollectParams token=0x0600973D
+  METHOD_INDEX 38717 Process token=0x0600973E
+  METHOD_INDEX 38718 .ctor token=0x0600973F
+  METHOD_INDEX 38719 <>iFixBaseProxy_get_hasFilterMode token=0x06009740
+  METHOD_INDEX 38720 <>iFixBaseProxy_CollectParams token=0x06009741
+  METHOD_INDEX 38721 <>iFixBaseProxy_Process token=0x06009742
+TYPE_INDEX 6664 TOKEN 0x00012FDD IMAGE Gameplay.Beyond.dll TYPE checkSqrDis. fields=98569+57778 methods=8953+6374
+  METHOD_INDEX 38722 get_eventKey token=0x06009743
+  METHOD_INDEX 38723 CollectParams token=0x06009744
+  METHOD_INDEX 38724 Process token=0x06009745
+  METHOD_INDEX 38725 .ctor token=0x06009746
+  METHOD_INDEX 38726 <>iFixBaseProxy_CollectParams token=0x06009747
+  METHOD_INDEX 38727 <>iFixBaseProxy_Process token=0x06009748
+TYPE_INDEX 6665 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE .ashSkillDistance fields=-1+6377 methods=98614+3072
+  METHOD_INDEX 38728 get_hasFilterMode token=0x06009749
+  METHOD_INDEX 38729 get_eventKey token=0x0600974A
+  METHOD_INDEX 38730 CollectParams token=0x0600974B
+  METHOD_INDEX 38731 Process token=0x0600974C
+  METHOD_INDEX 38732 .ctor token=0x0600974D
+  METHOD_INDEX 38733 <>iFixBaseProxy_get_hasFilterMode token=0x0600974E
+  METHOD_INDEX 38734 <>iFixBaseProxy_CollectParams token=0x0600974F
+  METHOD_INDEX 38735 <>iFixBaseProxy_Process token=0x06009750
+TYPE_INDEX 6666 TOKEN 0x00027D39 IMAGE Gameplay.Beyond.dll TYPE mponent.>k__BackingField fields=1514+3072 methods=-1+0
+  METHOD_INDEX 38736 get_eventKey token=0x06009751
+  METHOD_INDEX 38737 CollectParams token=0x06009752
+  METHOD_INDEX 38738 Process token=0x06009753
+  METHOD_INDEX 38739 .ctor token=0x06009754
+  METHOD_INDEX 38740 <>iFixBaseProxy_CollectParams token=0x06009755
+  METHOD_INDEX 38741 <>iFixBaseProxy_Process token=0x06009756
+TYPE_INDEX 6667 TOKEN 0x000CEA12 IMAGE Gameplay.Beyond.dll TYPE >k__BackingField. fields=-1+0 methods=-1+0
+  METHOD_INDEX 38742 get_hasFilterMode token=0x06009757
+  METHOD_INDEX 38743 get_eventKey token=0x06009758
+  METHOD_INDEX 38744 CollectParams token=0x06009759
+  METHOD_INDEX 38745 Process token=0x0600975A
+  METHOD_INDEX 38746 .ctor token=0x0600975B
+  METHOD_INDEX 38747 <>iFixBaseProxy_get_hasFilterMode token=0x0600975C
+  METHOD_INDEX 38748 <>iFixBaseProxy_CollectParams token=0x0600975D
+  METHOD_INDEX 38749 <>iFixBaseProxy_Process token=0x0600975E
+TYPE_INDEX 6668 TOKEN 0x000DE1E3 IMAGE Gameplay.Beyond.dll TYPE .sInteractComponent fields=-1+0 methods=-1+2
+  METHOD_INDEX 38750 get_hasFilterMode token=0x0600975F
+  METHOD_INDEX 38751 get_eventKey token=0x06009760
+  METHOD_INDEX 38752 CollectParams token=0x06009761
+  METHOD_INDEX 38753 Process token=0x06009762
+  METHOD_INDEX 38754 .ctor token=0x06009763
+  METHOD_INDEX 38755 <>iFixBaseProxy_get_hasFilterMode token=0x06009764
+  METHOD_INDEX 38756 <>iFixBaseProxy_CollectParams token=0x06009765
+  METHOD_INDEX 38757 <>iFixBaseProxy_Process token=0x06009766
+TYPE_INDEX 6669 TOKEN 0x020018EC IMAGE Gameplay.Beyond.dll TYPE nteractComponent.Beyond.Gameplay.Actions fields=37073+1 methods=-1+4
+  FIELD_INDEX 37073 m_layerIndexClothBase token=0x040090D2
+  METHOD_INDEX 38758 CollectParams token=0x06009767
+  METHOD_INDEX 38759 Execute token=0x06009768
+  METHOD_INDEX 38760 .ctor token=0x06009769
+TYPE_INDEX 6670 TOKEN 0x00000C00 IMAGE Gameplay.Beyond.dll TYPE Beyond.Gameplay.Actions.ShowDramaticPerformanceNewItemToast fields=27470+3 methods=37077+20167
+  FIELD_INDEX 27470 _itemId token=0x04006B4F
+  FIELD_INDEX 27471 m_isAudioMute token=0x04006B50
+  FIELD_INDEX 27472 _isShow token=0x04006B51
+  METHOD_INDEX 38761 CollectParams token=0x0600976A
+  METHOD_INDEX 38762 Execute token=0x0600976B
+  METHOD_INDEX 38763 .ctor token=0x0600976C
+TYPE_INDEX 6671 TOKEN 0x00020000 IMAGE Gameplay.Beyond.dll TYPE ShowEndingToast. fields=1056769+20168 methods=-1+8969
+  METHOD_INDEX 38764 CollectParams token=0x0600976D
+  METHOD_INDEX 38765 Execute token=0x0600976E
+  METHOD_INDEX 38766 .ctor token=0x0600976F
+TYPE_INDEX 6672 TOKEN 0x00130000 IMAGE Gameplay.Beyond.dll TYPE l��.ct fields=-1+8971 methods=1056769+33180
+  METHOD_INDEX 38767 GetResult token=0x06009770
+  METHOD_INDEX 38768 CollectParams token=0x06009771
+  METHOD_INDEX 38769 .ctor token=0x06009772
+TYPE_INDEX 6673 TOKEN 0x00000001 IMAGE Gameplay.Beyond.dll TYPE ct.RegionUpgradeCameraConfig fields=163607+33199 methods=-1+65535
+  METHOD_INDEX 38770 GetResult token=0x06009773
+  METHOD_INDEX 38771 CollectParams token=0x06009774
+  METHOD_INDEX 38772 .ctor token=0x06009775
+TYPE_INDEX 6674 TOKEN 0x00000006 IMAGE Gameplay.Beyond.dll TYPE RegionUpgradeCameraConfig.BackingField fields=120979+65535 methods=163619+65535
+  METHOD_INDEX 38773 CollectParams token=0x06009776
+  METHOD_INDEX 38774 GetResult token=0x06009777
+  METHOD_INDEX 38775 .ctor token=0x06009778
+TYPE_INDEX 6675 TOKEN 0x00004ECC IMAGE Gameplay.Beyond.dll TYPE BackingField.ameplay.Beyond fields=-1+65535 methods=120979+65535
+  METHOD_INDEX 38776 .ctor token=0x06009779
+TYPE_INDEX 6676 TOKEN 0x00002313 IMAGE Gameplay.Beyond.dll TYPE ameplay.Beyond.eplay.Beyond fields=163630+65535 methods=-1+65535
+  METHOD_INDEX 38779 add_OnAudioMapDataLoaded token=0x0600977C
+  METHOD_INDEX 38780 remove_OnAudioMapDataLoaded token=0x0600977D
+  METHOD_INDEX 38781 DoActionOnMapLoaded token=0x0600977E
+  METHOD_INDEX 38782 UnloadAudioMapData token=0x0600977F
+  METHOD_INDEX 38783 LoadAudioMapData token=0x06009780
+  METHOD_INDEX 38784 _OnMapDataLoaded token=0x06009781
+  METHOD_INDEX 38785 Reset token=0x06009782
+  METHOD_INDEX 38786 .cctor token=0x06009783
+TYPE_INDEX 6677 TOKEN 0x000181FB IMAGE Gameplay.Beyond.dll TYPE eplay.Beyond. fields=846354+65535 methods=163632+37104
+  METHOD_INDEX 38777 get_audioGlobalConfig token=0x0600977A
+  METHOD_INDEX 38778 get_audioBranchConfig token=0x0600977B
+TYPE_INDEX 6678 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE ParamType.em.Collections.IEnumerator.Current fields=858159+37108 methods=846354+27478
+TYPE_INDEX 6679 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE .Collections.IEnumerator.Current.ChangeAnimRotateTarget fields=33560821+27479 methods=910056+8193
+TYPE_INDEX 6680 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE get. fields=3072+1 methods=33560822+65535
+  FIELD_INDEX 3072 runBeginForwardCurve token=0x04000C01
+TYPE_INDEX 6681 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE . fields=0+65535 methods=3072+17255
+TYPE_INDEX 6682 TOKEN 0x000090FB IMAGE Gameplay.Beyond.dll TYPE . fields=1507328+32584 methods=196608+55443
+TYPE_INDEX 6683 TOKEN 0x00006B61 IMAGE Gameplay.Beyond.dll TYPE . fields=2+55443 methods=1245185+65535
+TYPE_INDEX 6684 TOKEN 0x00102001 IMAGE Gameplay.Beyond.dll TYPE .sDevEnv fields=3+65535 methods=1+32586
+TYPE_INDEX 6685 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE vEnv.IGHT_NPR_FOG_FALLOFF_FACTOR fields=20179+35959 methods=3+59922
+TYPE_INDEX 6686 TOKEN 0x00028C79 IMAGE Gameplay.Beyond.dll TYPE HT_NPR_FOG_FALLOFF_FACTOR.checkSqrDis fields=8997+59922 methods=20180+58259
+TYPE_INDEX 6687 TOKEN 0x0001D893 IMAGE Gameplay.Beyond.dll TYPE checkSqrDis. fields=98971+58285 methods=8999+6397
+TYPE_INDEX 6688 TOKEN 0xFFFFFFFF IMAGE Gameplay.Beyond.dll TYPE .Key fields=-1+6398 methods=98990+3072
+TYPE_INDEX 6689 TOKEN 0x00028C96 IMAGE Gameplay.Beyond.dll TYPE afeZoneInModelEffectKey.>k__BackingField fields=-1+3072 methods=-1+0
+TYPE_INDEX 6690 TOKEN 0x000CEA12 IMAGE Gameplay.Beyond.dll TYPE >k__BackingField. fields=-1+0 methods=-1+0
+TYPE_INDEX 6691 TOKEN 0x000DE430 IMAGE Gameplay.Beyond.dll TYPE .elEffectKey fields=-1+0 methods=-1+2
+  METHOD_INDEX 38787 .cctor token=0x06009784
+TYPE_INDEX 6692 TOKEN 0x02001902 IMAGE Gameplay.Beyond.dll TYPE .Beyond.Gameplay.Actions fields=37142+2 methods=-1+3
+  FIELD_INDEX 37142 Fight token=0x04009117
+  FIELD_INDEX 37143 ToFight token=0x04009118
+  METHOD_INDEX 38788 .ctor token=0x06009785
+TYPE_INDEX 6693 TOKEN 0x00000C00 IMAGE Gameplay.Beyond.dll TYPE Beyond.Gameplay.Actions.UIScrollRectScrollTo fields=27504+3 methods=37145+20187
+  FIELD_INDEX 27504 _rectPath token=0x04006B71
+  FIELD_INDEX 27505 _targetGameObjectPath token=0x04006B72
+  FIELD_INDEX 27506 _togglePath token=0x04006B73
+TYPE_INDEX 6694 TOKEN 0x00020000 IMAGE Gameplay.Beyond.dll TYPE UIToggleSetValue.�� fields=1056769+20188 methods=27506+9013
+  METHOD_INDEX 38790 TryGet token=0x06009787
+  METHOD_INDEX 38791 Set token=0x06009788
+  METHOD_INDEX 38792 OnBeforeSerialize token=0x06009789
+  METHOD_INDEX 38793 OnAfterDeserialize token=0x0600978A
+  METHOD_INDEX 38794 .ctor token=0x0600978B
+TYPE_INDEX 6695 TOKEN 0x00110000 IMAGE Gameplay.Beyond.dll TYPE �.ct fields=-1+9015 methods=1056769+33587
+TYPE_INDEX 6696 TOKEN 0x00000001 IMAGE Gameplay.Beyond.dll TYPE ct.RegionUpgradeCameraConfig fields=170347+33604 methods=-1+65535
+  METHOD_INDEX 38789 .ctor token=0x06009786
+TYPE_INDEX 6697 TOKEN 0x00000003 IMAGE Gameplay.Beyond.dll TYPE RegionUpgradeCameraConfig.UpdateCameraState fields=120979+65535 methods=170349+65535
+  METHOD_INDEX 38795 .ctor token=0x0600978C
+  METHOD_INDEX 38796 _LogBinaryLoadError token=0x0600978D
+TYPE_INDEX 6698 TOKEN 0x00004EE0 IMAGE Gameplay.Beyond.dll TYPE BackingField.play.Beyond fields=-1+65535 methods=120979+65535
+  METHOD_INDEX 38797 .ctor token=0x0600978E
+  METHOD_INDEX 38798 Contains token=0x0600978F
+  METHOD_INDEX 38799 get_Item token=0x06009790
+  METHOD_INDEX 38800 get_length token=0x06009791
+TYPE_INDEX 6699 TOKEN 0x0000233F IMAGE Gameplay.Beyond.dll TYPE play.Beyond.play.Beyond fields=170363+5602 methods=-1+65535

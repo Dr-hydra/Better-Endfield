@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "gamePath": "E:\\Endfield Game",
+  "audioInputPluginId": "0x00C80002",
+  "packageCount": 42,
+  "bankCount": 43187,
+  "bankVersions": {
+    "150": 43187
+  },
+  "candidateBankCount": 0,
+  "candidateBanks": [],
+  "targetEventBankCount": 11,
+  "targetEventBanks": [
+    {
+      "eventName": "au_music_main",
+      "eventId": 266542773,
+      "package": "Endfield_Data/Persistent/VFS/F151B649/1B1175658C4C824C0E0A53F9C7A2BEFD.chk",
+      "bankId": 266542773,
+      "bankVersion": 150,
+      "bankSize": 1062237,
+      "reachableObjectCount": 5545,
+      "reachableObjectTypes": {
+        "3": 44,
+        "4": 27,
+        "10": 1887,
+        "11": 1964,
+        "12": 331,
+        "13": 1085,
+        "16": 1,
+        "17": 205,
+        "22": 1
+      },
+      "sounds": []
+    },
+    {
+      "eventName": "au_music_login",
+      "eventId": 4247105105,
+      "package": "Endfield_Data/StreamingAssets/VFS/07A1BB91/25936D83C79CD53F222C4AC96052965F.chk",
+      "bankId": 4247105105,
+      "bankVersion": 150,
+      "bankSize": 4757,
+      "reachableObjectCount": 27,
+      "reachableObjectTypes": {
+        "3": 2,
+        "4": 1,
+        "10": 6,
+        "11": 13,
+        "12": 1,
+        "13": 3,
+        "22": 1
+      },
+      "sounds": []
+    },
+    {
+      "eventName": "au_music_login",
+      "eventId": 4247105105,
+      "package": "Endfield_Data/StreamingAssets/VFS/07A1BB91/7ADAAA581875BD19F6117C6161D259F2.chk",
+      "bankId": 4247105105,
+      "bankVersion": 150,
+      "bankSize": 4757,
+      "reachableObjectCount": 27,
+      "reachableObjectTypes": {
+        "3": 2,
+        "4": 1,
+        "10": 6,
+        "11": 13,
+        "12": 1,
+        "13": 3,
+        "22": 1
+      },
+      "sounds": []
+    },
+    {
+      "eventName": "au_music_main",
+      "eventId": 266542773,
+      "package": "Endfield_Data/StreamingAssets/VFS/1EBAF5C6/F6DCAE423E02AAB01F9E5D81D792E0B7.chk",
+      "bankId": 266542773,
+      "bankVersion": 150,
+      "bankSize": 787826,
+      "reachableObjectCount": 4092,
+      "reachableObjectTypes": {
+        "3": 43,
+        "4": 26,
+        "10": 1440,
+        "11": 1511,
+        "12": 248,
+        "13": 805,
+        "16": 1,
+        "17": 17,
+        "22": 1
+      },
+      "sounds": []
+    },
+    {
+      "eventName": "au_music_meta",
+      "eventId": 183346233,
+      "package": "Endfield_Data/StreamingAssets/VFS/24ED34CF/2A1AAC98E4CF4DF80DE8DE4B84584774.chk",
+      "bankId": 183346233,
+      "bankVersion": 150,
+      "bankSize": 16046,
+      "reachableObjectCount": 84,
+      "reachableObjectTypes": {
+        "3": 2,
+        "4": 1,
+        "10": 29,
+        "11": 34,
+        "12": 2,
+        "13": 8,
+        "17": 8
+      },
+      "sounds": []
+    },
+    {
+      "eventName": "au_music_hongshan_004_wilderness_after_story",
+      "eventId": 1019941273,
+      "package": "Endfield_Data/StreamingAssets/VFS/24ED34CF/2A1AAC98E4CF4DF80DE8DE4B84584774.chk",
+      "bankId": 1019941273,
+      "bankVersion": 150,
+      "bankSize": 100,
+      "reachableObjectCount": 2,
+      "reachableObjectTypes": {
+        "3": 1,
+        "4": 1
+      },
+      "sounds": []
+    },
+    {
+      "eventName": "au_music_hongshan_004_wilderness",
+      "eventId": 1180474316,
+      "package": "Endfield_Data/StreamingAssets/VFS/24ED34CF/2A1AAC98E4CF4DF80DE8DE4B84584774.chk",
+      "bankId": 1180474316,
+      "bankVersion": 150,
+      "bankSize": 100,
+      "reachableObjectCount": 2,
+      "reachableObjectTypes": {
+        "3": 1,
+        "4": 1
+      },
+      "sounds": []
+    },
+    {
+      "eventName": "au_music_main",
+      "eventId": 266542773,
+      "package": "Endfield_Data/StreamingAssets/VFS/24ED34CF/582349A71A5494AAF808E8DAB4875300.chk",
+      "bankId": 266542773,
+      "bankVersion": 150,
+      "bankSize": 1060337,
+      "reachableObjectCount": 5533,
+      "reachableObjectTypes": {
+        "3": 44,
+        "4": 27,
+        "10": 1885,
+        "11": 1962,
+        "12": 331,
+        "13": 1084,
+        "16": 1,
+        "17": 198,
+        "22": 1
+      },
+      "sounds": []
+    },
+    {
+      "eventName": "au_music_meta",
+      "eventId": 183346233,
+      "package": "Endfield_Data/StreamingAssets/VFS/24ED34CF/B788A5C406AFDD9CF2E48FD2F399A6A2.chk",
+      "bankId": 183346233,
+      "bankVersion": 150,
+      "bankSize": 18336,
+      "reachableObjectCount": 95,
+      "reachableObjectTypes": {
+        "3": 2,
+        "4": 1,
+        "10": 29,
+        "11": 36,
+        "12": 2,
+        "13": 10,
+        "17": 15
+      },
+      "sounds": []
+    },
+    {
+      "eventName": "au_music_hongshan_004_wilderness_after_story",
+      "eventId": 1019941273,
+      "package": "Endfield_Data/StreamingAssets/VFS/24ED34CF/B788A5C406AFDD9CF2E48FD2F399A6A2.chk",
+      "bankId": 1019941273,
+      "bankVersion": 150,
+      "bankSize": 100,
+      "reachableObjectCount": 2,
+      "reachableObjectTypes": {
+        "3": 1,
+        "4": 1
+      },
+      "sounds": []
+    },
+    {
+      "eventName": "au_music_hongshan_004_wilderness",
+      "eventId": 1180474316,
+      "package": "Endfield_Data/StreamingAssets/VFS/24ED34CF/B788A5C406AFDD9CF2E48FD2F399A6A2.chk",
+      "bankId": 1180474316,
+      "bankVersion": 150,
+      "bankSize": 100,
+      "reachableObjectCount": 2,
+      "reachableObjectTypes": {
+        "3": 1,
+        "4": 1
+      },
+      "sounds": []
+    }
+  ],
+  "targetObjectBankCount": 0,
+  "targetObjectBanks": [],
+  "duplicateObjectIdBankCount": 14,
+  "parseErrorCount": 0,
+  "parseErrors": [],
+  "notes": [
+    "Sound plug-in IDs are read from the Wwise v150 HIRC Sound layout.",
+    "Event reachability uses a conservative in-bank 32-bit object-ID graph.",
+    "No BNK or WEM payload is written by this scan."
+  ]
+}

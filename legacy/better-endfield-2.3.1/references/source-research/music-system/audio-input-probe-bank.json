@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "bankVersion": 150,
+  "bankSize": 168,
+  "hircObjectCount": 3,
+  "audioInputPluginId": "0x00C80002",
+  "musicBusId": "0x8BA25F54",
+  "route": "master",
+  "ids": {
+    "bank": 3704265910,
+    "sound": 2492895281,
+    "actorMixer": 3052111383,
+    "playAction": 1415274018,
+    "event": 95937692
+  },
+  "checks": {
+    "audioInputPlugin": true,
+    "parameterSize": true,
+    "gain": true,
+    "soundRoute": true,
+    "actorChild": true,
+    "musicBus": true,
+    "actionTarget": true,
+    "actionBank": true,
+    "eventAction": true
+  }
+}

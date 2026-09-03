@@ -182,6 +182,7 @@ struct RuntimeMethods {
     RuntimeMethod animator_initialized;
     RuntimeMethod animator_human;
     RuntimeMethod animator_avatar;
+    RuntimeMethod animator_set_avatar;
     RuntimeMethod clip_length;
     RuntimeMethod clip_empty;
     RuntimeMethod clip_human_motion;
@@ -645,6 +646,10 @@ bool ParseConfiguration(const char* text, ModelConfiguration& output,
     if (!model_switch_present) {
         output.model_replacement_enabled = output.module_enabled;
     }
+#ifdef _WIN32
+    // Disabled for the current PC game version until model lifecycle hooks are compatible.
+    output.model_replacement_enabled = false;
+#endif
     if (output.loop_end < output.loop_start + 0.05f) {
         error = "loop_end must be at least 0.05 seconds after loop_start";
         return false;
@@ -951,6 +956,9 @@ bool ResolveRuntimeContract() {
     required(Resolve(g_methods.animator_avatar, "unity.animator.avatar",
         "UnityEngine.AnimationModule.dll", "UnityEngine", "Animator",
         "get_avatar", nullptr, "UnityEngine.Avatar", 0));
+    Resolve(g_methods.animator_set_avatar, "unity.animator.set_avatar",
+        "UnityEngine.AnimationModule.dll", "UnityEngine", "Animator",
+        "set_avatar", "UnityEngine.Avatar", "System.Void", 1);
     required(Resolve(g_methods.clip_length, "unity.animation_clip.length",
         "UnityEngine.AnimationModule.dll", "UnityEngine", "AnimationClip",
         "get_length", nullptr, "System.Single", 0));
@@ -2641,8 +2649,24 @@ bool LoadConfiguredAssets() {
         return true;
     }
     const uint64_t now = GetTickCount64();
-    if (now < g_next_asset_retry_tick || !g_main_hash_ready.load() ||
-        !g_initial_hash_ready.load() || !ResourcesReady()) {
+    if (now < g_next_asset_retry_tick || !g_initial_hash_ready.load()) {
+        return false;
+    }
+    const bool resources_ready = ResourcesReady();
+    if (!g_main_hash_ready.load(std::memory_order_acquire)) {
+        if (!resources_ready) {
+            return false;
+        }
+        bool expected = false;
+        if (g_main_hash_ready.compare_exchange_strong(expected, true,
+                std::memory_order_acq_rel)) {
+            g_next_asset_retry_tick = now + 50;
+            Log("[model-resource] Main path hash readiness recovered after "
+                "pre-hook initialization; asset loading deferred for stabilization");
+        }
+        return false;
+    }
+    if (!resources_ready) {
         return false;
     }
     const ModelConfiguration configuration = ConfigurationSnapshot();
@@ -2995,54 +3019,144 @@ bool StartPhase(SequencePhase phase, const char* source) {
 }
 
 bool PrepareAnimation(void* replacement) {
-    void* animator_type = g_classes.animator.type_object;
-    bool include_inactive = true;
-    void* parameters[2]{animator_type, &include_inactive};
-    void* animator = Invoke(g_methods.game_object_get_animator, replacement,
-        parameters, "GameObject.GetComponentInChildren(Animator)");
-    if (!animator) {
+    void* animators = GetComponentsInChildren(
+        replacement, g_classes.animator.type_object);
+    const int animator_count = ManagedArrayLength(animators);
+    if (!animators || animator_count <= 0) {
         Log("[model-animation] replacement has no Animator");
         return false;
     }
 
-    bool enabled = true;
-    bool write_defaults = true;
-    int culling = 0;
-    int update_mode = 2;
-    void* enabled_parameters[1]{&enabled};
-    void* culling_parameters[1]{&culling};
-    void* update_parameters[1]{&update_mode};
-    void* rebind_parameters[1]{&write_defaults};
-    if (!InvokeVoid(g_methods.behaviour_set_enabled, animator, enabled_parameters,
-            "Behaviour.set_enabled") ||
-        !InvokeVoid(g_methods.animator_culling, animator, culling_parameters,
-            "Animator.set_cullingMode") ||
-        !InvokeVoid(g_methods.animator_update, animator, update_parameters,
-            "Animator.set_updateMode") ||
-        !InvokeVoid(g_methods.animator_rebind, animator, rebind_parameters,
-            "Animator.Rebind")) {
-        return false;
+    struct AnimatorStatus {
+        void* animator = nullptr;
+        void* avatar = nullptr;
+        bool initialized = false;
+        bool initialized_readable = false;
+        bool human = false;
+        bool human_readable = false;
+    };
+    auto inspect = [](void* animator) {
+        AnimatorStatus status{};
+        status.animator = animator;
+        status.avatar = Invoke(g_methods.animator_avatar, animator, nullptr,
+            "Animator.get_avatar");
+        status.initialized_readable = Unbox(Invoke(
+            g_methods.animator_initialized, animator, nullptr,
+            "Animator.get_isInitialized"), status.initialized);
+        status.human_readable = Unbox(Invoke(g_methods.animator_human,
+            animator, nullptr, "Animator.get_isHuman"), status.human);
+        return status;
+    };
+    auto usable = [](const AnimatorStatus& status) {
+        return status.animator && status.avatar && status.initialized_readable &&
+            status.initialized && status.human_readable && status.human;
+    };
+    auto configure = [](void* animator) {
+        bool enabled = true;
+        bool write_defaults = true;
+        int culling = 0;
+        int update_mode = kUnscaledGameTime;
+        void* enabled_parameters[1]{&enabled};
+        void* culling_parameters[1]{&culling};
+        void* update_parameters[1]{&update_mode};
+        void* rebind_parameters[1]{&write_defaults};
+        return InvokeVoid(g_methods.behaviour_set_enabled, animator,
+                   enabled_parameters, "Behaviour.set_enabled") &&
+            InvokeVoid(g_methods.animator_culling, animator,
+                culling_parameters, "Animator.set_cullingMode") &&
+            InvokeVoid(g_methods.animator_update, animator,
+                update_parameters, "Animator.set_updateMode") &&
+            InvokeVoid(g_methods.animator_rebind, animator,
+                rebind_parameters, "Animator.Rebind");
+    };
+    auto log_candidate = [animator_count](const AnimatorStatus& status,
+                             int index, const char* source) {
+        char readiness[512]{};
+        std::snprintf(readiness, sizeof(readiness),
+            "[model-animation] %s candidate=%d/%d name=%s initialized=%s "
+            "readable=%s human=%s humanReadable=%s avatar=%p",
+            source, index + 1, animator_count,
+            ObjectName(status.animator).c_str(),
+            status.initialized ? "true" : "false",
+            status.initialized_readable ? "true" : "false",
+            status.human ? "true" : "false",
+            status.human_readable ? "true" : "false", status.avatar);
+        Log(readiness);
+    };
+
+    std::vector<AnimatorStatus> candidates;
+    candidates.reserve(static_cast<size_t>(animator_count));
+    void* animator = nullptr;
+    void* generic_animator = nullptr;
+    for (int index = 0; index < animator_count; ++index) {
+        void* candidate = ManagedArrayValue(animators, index);
+        if (!candidate || !configure(candidate)) {
+            Log("[model-animation] candidate setup failed index=" +
+                std::to_string(index + 1));
+            continue;
+        }
+        AnimatorStatus status = inspect(candidate);
+        log_candidate(status, index, "replacement");
+        candidates.push_back(status);
+        if (!animator && usable(status)) {
+            animator = candidate;
+        }
+        if (!generic_animator && status.initialized_readable &&
+            status.initialized) {
+            generic_animator = candidate;
+        }
     }
 
-    bool initialized = false;
-    bool human = false;
-    void* avatar = Invoke(g_methods.animator_avatar, animator, nullptr,
-        "Animator.get_avatar");
-    const bool initialized_readable = Unbox(Invoke(
-        g_methods.animator_initialized, animator, nullptr,
-        "Animator.get_isInitialized"), initialized);
-    const bool human_readable = Unbox(Invoke(g_methods.animator_human,
-        animator, nullptr, "Animator.get_isHuman"), human);
-    char readiness[320]{};
-    std::snprintf(readiness, sizeof(readiness),
-        "[model-animation] Animator ready initialized=%s readable=%s "
-        "human=%s humanReadable=%s avatar=%p",
-        initialized ? "true" : "false",
-        initialized_readable ? "true" : "false",
-        human ? "true" : "false", human_readable ? "true" : "false", avatar);
-    Log(readiness);
-    if (!initialized_readable || !initialized || !human_readable || !human ||
-        !avatar) {
+    if (!animator && g_methods.animator_set_avatar.method_info && g_actor.original) {
+        void* original_animators = GetComponentsInChildren(
+            g_actor.original, g_classes.animator.type_object);
+        const int original_count = ManagedArrayLength(original_animators);
+        void* fallback_avatar = nullptr;
+        for (int index = 0; index < original_count; ++index) {
+            AnimatorStatus original_status = inspect(
+                ManagedArrayValue(original_animators, index));
+            char message[512]{};
+            std::snprintf(message, sizeof(message),
+                "[model-animation] original candidate=%d/%d name=%s avatar=%p",
+                index + 1, original_count,
+                ObjectName(original_status.animator).c_str(),
+                original_status.avatar);
+            Log(message);
+            if (!fallback_avatar && original_status.avatar) {
+                fallback_avatar = original_status.avatar;
+            }
+        }
+        if (fallback_avatar) {
+            for (AnimatorStatus& status : candidates) {
+                if (status.avatar) {
+                    continue;
+                }
+                void* avatar_parameters[1]{fallback_avatar};
+                if (!InvokeVoid(g_methods.animator_set_avatar, status.animator,
+                        avatar_parameters, "Animator.set_avatar") ||
+                    !configure(status.animator)) {
+                    continue;
+                }
+                status = inspect(status.animator);
+                if (usable(status)) {
+                    animator = status.animator;
+                    Log("[model-animation] avatar copy fallback applied name=" +
+                        ObjectName(animator) + " human=true");
+                    break;
+                }
+            }
+        } else {
+            Log("[model-animation] avatar copy fallback failed: original actor "
+                "has no Animator with Avatar");
+        }
+    }
+    if (!animator && generic_animator) {
+        animator = generic_animator;
+        Log("[model-animation] no humanoid Avatar available; using initialized "
+            "generic Animator name=" + ObjectName(animator));
+    }
+    if (!animator) {
+        Log("[model-animation] no initialized Animator was found; replacement rejected");
         return false;
     }
 
@@ -3055,6 +3169,22 @@ bool PrepareAnimation(void* replacement) {
         return false;
     }
     return true;
+}
+
+void RollbackReplacement(void* replacement, const char* reason) {
+    DestroyGraph();
+    RestoreOriginalRenderers();
+    if (replacement) {
+        SetActive(replacement, false);
+        DestroyObject(replacement);
+    }
+    g_actor.replacement = nullptr;
+    g_actor.replacement_transform = nullptr;
+    g_actor.replacement_anchor = nullptr;
+    g_actor.anchor_alignment_logged = false;
+    Log(std::string("[model-replace] rollback reason=") +
+        (reason ? reason : "unknown") +
+        " replacementDestroyed=true originalRestored=true");
 }
 
 bool InstantiateReplacement() {
@@ -3072,34 +3202,25 @@ bool InstantiateReplacement() {
         return false;
     }
     if (!SetActive(replacement, false)) {
-        DestroyObject(replacement);
+        RollbackReplacement(replacement, "deactivation-failed");
         return false;
     }
     const ModelConfiguration configuration = ConfigurationSnapshot();
     if (!CopyTransformAndLayer(g_actor.original, replacement, configuration.scale)) {
-        DestroyObject(replacement);
-        Log("[model-replace] transform synchronization failed");
+        RollbackReplacement(replacement, "transform-synchronization-failed");
         return false;
     }
     g_actor.replacement = replacement;
-    if (!DisableOriginalRenderers()) {
-        DestroyObject(replacement);
-        g_actor.replacement = nullptr;
-        Log("[model-replace] original renderer hierarchy could not be hidden");
-        return false;
-    }
     if (!SetActive(replacement, true)) {
-        RestoreOriginalRenderers();
-        DestroyObject(replacement);
-        g_actor.replacement = nullptr;
+        RollbackReplacement(replacement, "activation-failed");
         return false;
     }
     if (!PrepareAnimation(replacement)) {
-        RestoreOriginalRenderers();
-        SetActive(replacement, false);
-        DestroyObject(replacement);
-        g_actor.replacement = nullptr;
-        Log("[model-replace] animation graph setup failed; original retained");
+        RollbackReplacement(replacement, "animation-graph-setup-failed");
+        return false;
+    }
+    if (!DisableOriginalRenderers()) {
+        RollbackReplacement(replacement, "original-renderer-hide-failed");
         return false;
     }
     if (!AlignReplacementAnchor(true)) {
@@ -3510,7 +3631,8 @@ void* __fastcall CloneWithParentHook(void* original, void* parent,
     void* instance = g_original_clone_with_parent
         ? g_original_clone_with_parent(original, parent, world_position_stays, method)
         : nullptr;
-    if (original && instance && !g_actor.original) {
+    if (original && instance && !g_actor.original &&
+        !g_login_scene_releasing.load(std::memory_order_acquire)) {
         const std::string name = ObjectName(original);
         if (name.starts_with("SK_actor_")) {
             CaptureActor(instance, parent, "login Instantiate");
@@ -3880,7 +4002,7 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Login Model", "2.3.1", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Login Model", "3.0.1", BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};

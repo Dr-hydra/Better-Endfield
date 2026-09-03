@@ -1,0 +1,6 @@
+input=E:\Endfield Game\GameAssembly.dll imagebase=0x180000000 matches=5
+field=0x4DC func=0x183C200C0 rva=0x3C200C0 insn=0x183C2010A +0x4A JUMPOUT_w_3 mov     ebx, [rax+4DCh]
+field=0xF00 func=0x186AAC43C rva=0x6AAC43C insn=0x186AAC504 +0xC8 JUMPOUT_w_40 mov     ebx, [rax+0F00h]
+field=0xEFC func=0x186AAC43C rva=0x6AAC43C insn=0x186AAC516 +0xDA JUMPOUT_w_40 mov     ebx, [rax+0EFCh]
+field=0xEC0 func=0x186AAC61C rva=0x6AAC61C insn=0x186AAC69E +0x82 JUMPOUT_w_39 mov     ebx, [rax+0EC0h]
+field=0xEC4 func=0x186AAC61C rva=0x6AAC61C insn=0x186AAC6B0 +0x94 JUMPOUT_w_39 mov     ebx, [rax+0EC4h]

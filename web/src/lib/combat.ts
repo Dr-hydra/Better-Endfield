@@ -173,8 +173,10 @@ function analyze(raw: CombatRecordV11Raw, dictionary?: CombatDictionary): Combat
     events.push({
       id: effect.id,
       actionId: effect.actionId,
+      parentEffectId: effect.parentEffectId,
       time: effect.time,
       damage: amount,
+      rawDamage: effect.rawValue == null ? undefined : Math.abs(Number(effect.rawValue) || 0),
       hpDelta: effect.hpDelta,
       damageType: effect.damageType,
       decorateMask: effect.decorateMask,

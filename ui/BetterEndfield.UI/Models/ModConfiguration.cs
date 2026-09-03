@@ -171,8 +171,8 @@ internal sealed class ModConfiguration
         text.AppendLine();
         text.AppendLine("[betterendfield.model]");
         text.AppendLine("schema_version=5");
-        text.AppendLine($"enabled={Boolean(ModelReplacementEnabled || LogoThemeEnabled)}");
-        text.AppendLine($"model_replacement_enabled={Boolean(ModelReplacementEnabled)}");
+        text.AppendLine($"enabled={Boolean(LogoThemeEnabled)}");
+        text.AppendLine("model_replacement_enabled=false");
         text.AppendLine($"logo_theme_enabled={Boolean(LogoThemeEnabled)}");
         text.AppendLine($"logo_theme_color={LogoThemeColor}");
         text.AppendLine("diagnostics=true");

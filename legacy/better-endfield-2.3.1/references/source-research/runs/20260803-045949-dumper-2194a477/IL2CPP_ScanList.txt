@@ -1,0 +1,10 @@
+# Runtime candidates for the opening silhouette
+RenderSilhouetteRT
+Beyond.UI.SplashController
+Beyond.Gameplay.FMVController
+Beyond.Gameplay.Core.CinematicTimelineManagerBase
+Beyond.Gameplay.Core.SquadManager
+UnityEngine.Playables.PlayableDirector
+UnityEngine.Animator
+UnityEngine.SkinnedMeshRenderer
+UnityEngine.MeshRenderer

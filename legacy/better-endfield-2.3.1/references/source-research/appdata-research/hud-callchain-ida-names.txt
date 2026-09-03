@@ -1,0 +1,40 @@
+input=E:\Endfield Game\GameAssembly.dll
+imagebase=0x180000000
+MATCHING NAMES
+  0x180BE1994 il2cpp_capture_memory_snapshot
+  0x180BE1D00 il2cpp_free_captured_memory_snapshot
+
+FUNCTION 0x180BE1994 il2cpp_capture_memory_snapshot size=105
+CALLERS
+CALLEES
+  0x180BE1994 from 0x180BE1994 il2cpp_capture_memory_snapshot type=21
+PSEUDOCODE
+void il2cpp_capture_memory_snapshot()
+{
+  JUMPOUT(0x180BE1996LL);
+}
+
+DISASSEMBLY
+  0x180BE1994 push    rbx
+  0x180BE1996 sub     rsp, 20h
+  0x180BE199A mov     rax, cs:off_18EF57320
+  0x180BE19A1 mov     edx, 60h ; '`'
+  0x180BE19A6 mov     ecx, 1
+  0x180BE19AB call    rax ; unk_1801CB4A0
+  0x180BE19AD mov     rbx, rax
+  0x180BE19B0 lea     rcx, [rax+20h]
+  0x180BE19B4 call    sub_1802F7840
+  0x180BE19B9 mov     rcx, rbx
+  0x180BE19BC call    sub_1802F6EE0
+  0x180BE19C1 lea     rcx, [rbx+30h]
+  0x180BE19C5 call    sub_1802F6DA0
+  0x180BE19CA mov     rax, rbx
+  0x180BE19CD mov     dword ptr [rbx+40h], 8
+  0x180BE19D4 mov     dword ptr [rbx+44h], 10h
+  0x180BE19DB mov     dword ptr [rbx+48h], 20h ; ' '
+  0x180BE19E2 mov     dword ptr [rbx+50h], 18h
+  0x180BE19E9 mov     dword ptr [rbx+4Ch], 10h
+  0x180BE19F0 mov     dword ptr [rbx+54h], 10h
+  0x180BE19F7 add     rsp, 20h
+  0x180BE19FB pop     rbx
+  0x180BE19FC retn

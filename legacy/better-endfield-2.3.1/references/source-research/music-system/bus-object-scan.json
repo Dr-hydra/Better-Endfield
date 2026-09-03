@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "gamePath": "E:\\Endfield Game",
+  "audioInputPluginId": "0x00C80002",
+  "packageCount": 42,
+  "bankCount": 43187,
+  "bankVersions": {
+    "150": 43187
+  },
+  "candidateBankCount": 0,
+  "candidateBanks": [],
+  "targetEventBankCount": 0,
+  "targetEventBanks": [],
+  "targetObjectBankCount": 0,
+  "targetObjectBanks": [],
+  "duplicateObjectIdBankCount": 14,
+  "parseErrorCount": 0,
+  "parseErrors": [],
+  "notes": [
+    "Sound plug-in IDs are read from the Wwise v150 HIRC Sound layout.",
+    "Event reachability uses a conservative in-bank 32-bit object-ID graph.",
+    "No BNK or WEM payload is written by this scan."
+  ]
+}

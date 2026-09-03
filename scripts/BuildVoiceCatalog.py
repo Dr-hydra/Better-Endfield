@@ -24,6 +24,8 @@ LANGUAGES = ("Chinese", "English", "Japanese", "Korean")
 MAGIC = b"BEVCAT01"
 HEADER = struct.Struct("<8sHHIIQQ")
 ENTRY = struct.Struct("<IIQII")
+DURATION_COUNT = struct.Struct("<I")
+DURATION_VALUE = struct.Struct("<f")
 
 
 def load_generator() -> Any:
@@ -68,24 +70,27 @@ def source_path(game_path: Path, value: str) -> Path:
     return path if path.is_absolute() else game_path / path
 
 
-def target_package_for(manifest: dict[str, Any], language: str) -> dict[str, Any]:
-    target_package = next(
-        (
-            item
-            for item in manifest.get("pckPackages", [])
-            if item.get("mappingLanguage") == language
-        ),
-        None,
-    )
-    if not target_package:
+def target_packages_for(
+    manifest: dict[str, Any], language: str
+) -> list[dict[str, Any]]:
+    target_packages = [
+        item
+        for item in manifest.get("pckPackages", [])
+        if item.get("mappingLanguage") == language
+    ]
+    if not target_packages:
         raise ValueError(f"no PCK package is recorded for {language}")
-    return target_package
+    return target_packages
+
+
+def target_package_for(manifest: dict[str, Any], language: str) -> dict[str, Any]:
+    return target_packages_for(manifest, language)[0]
 
 
 def collect_routes(
     manifest: dict[str, Any], language: str, character_id: str = ""
-) -> tuple[dict[int, int], int]:
-    routes: dict[int, int] = {}
+) -> tuple[dict[tuple[int, int], int], int]:
+    routes: dict[tuple[int, int], int] = {}
     voice_count = 0
     for voice in manifest.get("voices", []):
         if character_id and voice.get("characterId") != character_id:
@@ -106,14 +111,72 @@ def collect_routes(
         if not target_slots:
             continue
         voice_count += 1
-        for mapping in mappings.values():
+        for source_language, mapping in mappings.items():
+            source_language_index = LANGUAGES.index(source_language)
             for slot in mapping.get("soundSlots", []):
                 sound_id = int(slot.get("soundObjectId", 0))
                 source_id = int(slot.get("mediaId", 0))
                 target_id = target_slots.get(sound_id)
-                if source_id and target_id and source_id not in routes:
-                    routes[source_id] = target_id
+                key = (source_language_index, source_id)
+                if source_id and target_id and key not in routes:
+                    routes[key] = target_id
     return routes, voice_count
+
+
+def collect_voice_sources(
+    manifest: dict[str, Any], language: str, character_id: str
+) -> dict[str, list[int]]:
+    sources: dict[str, list[int]] = {}
+    for voice in manifest.get("voices", []):
+        if character_id and voice.get("characterId") != character_id:
+            continue
+        identities = [
+            str(value)
+            for value in (voice.get("voiceId"), voice.get("audioDialogKey"))
+            if value is not None and str(value)
+        ]
+        media: set[int] = set()
+        for mapping in voice.get("languageMappings", []):
+            if mapping.get("language") != language:
+                continue
+            media.update(
+                int(slot["mediaId"]) & 0xFFFFFFFF
+                for slot in mapping.get("soundSlots", [])
+                if slot.get("mediaId")
+            )
+            media.update(
+                int(media_id) & 0xFFFFFFFF
+                for media_id in mapping.get("mediaIds", [])
+                if media_id
+            )
+        if media:
+            for identity in identities:
+                sources[identity] = sorted(media)
+    return sources
+
+
+def wem_duration_seconds(payload: bytes) -> float:
+    if len(payload) < 32 or payload[:4] != b"RIFF" or payload[8:12] != b"WAVE":
+        return 0.0
+    sample_rate = 0
+    average_bytes_per_second = 0
+    position = 12
+    while position + 8 <= len(payload):
+        chunk_id = payload[position : position + 4]
+        chunk_size = struct.unpack_from("<I", payload, position + 4)[0]
+        available = min(chunk_size, len(payload) - position - 8)
+        data = position + 8
+        if chunk_id == b"fmt " and available >= 16:
+            sample_rate = struct.unpack_from("<I", payload, data + 4)[0]
+            average_bytes_per_second = struct.unpack_from("<I", payload, data + 8)[0]
+            if available >= 28 and sample_rate:
+                sample_count = struct.unpack_from("<I", payload, data + 24)[0]
+                if sample_count:
+                    return sample_count / sample_rate
+        elif chunk_id == b"data" and average_bytes_per_second:
+            return available / average_bytes_per_second
+        position += 8 + ((chunk_size + 1) & ~1)
+    return 0.0
 
 
 def build_catalog(args: argparse.Namespace) -> dict[str, Any]:
@@ -124,31 +187,34 @@ def build_catalog(args: argparse.Namespace) -> dict[str, Any]:
     if args.language not in LANGUAGES:
         raise ValueError(f"unsupported target language {args.language}")
 
-    target_package = target_package_for(manifest, args.language)
-    target_path = (
-        args.package_path.resolve()
+    target_packages = target_packages_for(manifest, args.language)
+    target_paths = (
+        [args.package_path.resolve()]
         if args.package_path is not None
-        else source_path(args.game_path, target_package["source"])
+        else [source_path(args.game_path, item["source"]) for item in target_packages]
     )
-    if not target_path.is_file():
-        raise FileNotFoundError(target_path)
-    target_index = generator.parse_pck(target_path, args.game_path)
-    target_media = {
-        entry.file_id & 0xFFFFFFFF: entry
-        for entry in target_index.media
-        if entry.file_id <= 0xFFFFFFFF
-    }
+    for target_path in target_paths:
+        if not target_path.is_file():
+            raise FileNotFoundError(target_path)
+    target_indexes = [
+        generator.parse_pck(target_path, args.game_path) for target_path in target_paths
+    ]
+    target_media: dict[int, tuple[Any, Any]] = {}
+    for target_index in target_indexes:
+        for entry in target_index.media:
+            if entry.file_id <= 0xFFFFFFFF:
+                target_media.setdefault(entry.file_id & 0xFFFFFFFF, (target_index, entry))
 
     routes, voice_count = collect_routes(
         manifest, args.language, args.character_id
     )
     missing = 0
-    available_routes: dict[int, int] = {}
-    for source_id, target_id in routes.items():
+    available_routes: dict[tuple[int, int], int] = {}
+    for route_key, target_id in routes.items():
         if target_id not in target_media:
             missing += 1
             continue
-        available_routes[source_id] = target_id
+        available_routes[route_key] = target_id
     if missing:
         raise ValueError(
             f"{missing} target Media IDs are absent from the selected PCK"
@@ -157,7 +223,7 @@ def build_catalog(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("the requested speaker/language produced no media routes")
 
     payloads = {
-        target_id: generator.read_pck_payload(target_index, target_media[target_id])
+        target_id: generator.read_pck_payload(*target_media[target_id])
         for target_id in sorted(set(available_routes.values()))
     }
 
@@ -168,21 +234,44 @@ def build_catalog(args: argparse.Namespace) -> dict[str, Any]:
     for target_id, payload in payloads.items():
         payload_offsets[target_id] = data_offset + len(data)
         data.extend(payload)
+    durations: dict[str, float] = {}
+    for identity, source_ids in collect_voice_sources(
+        manifest, args.language, args.character_id
+    ).items():
+        longest = max(
+            (
+                wem_duration_seconds(payloads[target_id])
+                for source_id in source_ids
+                for (_, route_source_id), target_id in available_routes.items()
+                if route_source_id == source_id and target_id in payloads
+            ),
+            default=0.0,
+        )
+        if longest > 0:
+            durations[identity] = longest
+    duration_offset = data_offset + len(data)
+    duration_table = bytearray(DURATION_COUNT.pack(len(durations)))
+    for identity, seconds in sorted(durations.items()):
+        encoded = identity.encode("utf-8")
+        duration_table.extend(DURATION_COUNT.pack(len(encoded)))
+        duration_table.extend(encoded)
+        duration_table.extend(DURATION_VALUE.pack(seconds))
     packed_entries = bytearray()
-    for source_id, target_id in sorted(available_routes.items()):
+    for (source_language, source_id), target_id in sorted(available_routes.items()):
         payload = payloads[target_id]
         packed_entries.extend(
             ENTRY.pack(
-                source_id, target_id, payload_offsets[target_id], len(payload), 0
+                source_id, target_id, payload_offsets[target_id], len(payload),
+                source_language
             )
         )
 
     header = HEADER.pack(
         MAGIC,
-        1,
+        3,
         LANGUAGES.index(args.language),
         len(available_routes),
-        0,
+        duration_offset,
         entry_offset,
         data_offset,
     )
@@ -195,22 +284,26 @@ def build_catalog(args: argparse.Namespace) -> dict[str, Any]:
         stream.write(header)
         stream.write(packed_entries)
         stream.write(data)
+        stream.write(duration_table)
     temporary.replace(args.output)
 
     digest = hashlib.sha256(args.output.read_bytes()).hexdigest().upper()
     report = {
-        "schemaVersion": 1,
+        "schemaVersion": 3,
         "kind": "betterendfield-voice-catalog",
+        "catalogVersion": 3,
         "targetLanguage": args.language,
         "characterId": args.character_id or "*",
         "entryCount": len(available_routes),
+        "durationIdentityCount": len(durations),
         "uniqueTargetMediaCount": len(payloads),
         "payloadBytes": len(data),
         "voiceCount": voice_count,
         "missingTargetMediaCount": missing,
         "catalogSha256": digest,
         "sourceManifest": str(args.manifest),
-        "sourcePackage": str(target_path),
+        "sourcePackage": str(target_paths[0]),
+        "sourcePackages": [str(path) for path in target_paths],
     }
     args.output.with_suffix(args.output.suffix + ".json").write_text(
         json.dumps(report, ensure_ascii=True, indent=2) + "\n",

@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 11,
+  "battle": {
+    "sessionId": 9001,
+    "startedUnixSeconds": 1787677200,
+    "durationSeconds": 28.5,
+    "dungeonId": "indie_battletower008_s",
+    "modeId": "battle_tower"
+  },
+  "dictionary": {
+    "schemaVersion": 1,
+    "gameVersion": "dev",
+    "hotfixVersion": "",
+    "sourceSha256": "sample"
+  },
+  "squad": [{
+    "charId": "chr_0004_pelica",
+    "charInstId": "10001",
+    "level": 90,
+    "breakStage": 5,
+    "potential": 4,
+    "skillGroups": [
+      { "skillGroupId": "chr_0004_pelica_NormalAttack", "level": 12, "maxLevel": 12 },
+      { "skillGroupId": "chr_0004_pelica_NormalSkill", "level": 10, "maxLevel": 12 }
+    ],
+    "weapon": {
+      "templateId": "wpn_claym_0003",
+      "level": 90,
+      "refineLevel": 3,
+      "breakthroughLevel": 5,
+      "skills": [{ "skillId": "wpn_claym_0003", "level": 4, "maxLevel": 5 }]
+    },
+    "equipments": [
+      { "slot": 0, "templateId": "item_equip_t1_suit_stragi01_body_01", "enhanceLevels": { "0": 8 } }
+    ],
+    "equipSuits": [{ "suitId": "suit_stragi01", "count": 2, "skills": [] }]
+  }],
+  "actions": [
+    { "id": 1, "start": 1.1, "end": 1.9, "actorId": "chr_0004_pelica", "type": "basicAttack", "skillId": "chr_0004_pelica_attack1", "stage": 1, "result": "completed" },
+    { "id": 2, "start": 4.3, "end": 5.1, "actorId": "chr_0004_pelica", "type": "basicAttack", "skillId": "chr_0004_pelica_attack2", "stage": 2, "result": "completed" },
+    { "id": 3, "start": 11.8, "end": 12.7, "actorId": "chr_0004_pelica", "type": "skill", "skillId": "chr_0004_pelica_normal_skill", "stage": 0, "result": "completed" }
+  ],
+  "effects": [
+    { "id": 1, "actionId": 1, "time": 1.2, "type": "damage", "sourceId": "chr_0004_pelica", "targetId": "enemy", "skillId": "chr_0004_pelica_attack1", "value": 420000, "critical": false, "rdpsShares": [] },
+    { "id": 2, "actionId": 2, "time": 4.8, "type": "damage", "sourceId": "chr_0004_pelica", "targetId": "enemy", "skillId": "chr_0004_pelica_attack2", "value": 420000, "critical": true, "rdpsShares": [] },
+    { "id": 3, "actionId": 3, "time": 12.4, "type": "damage", "sourceId": "chr_0004_pelica", "targetId": "enemy", "skillId": "chr_0004_pelica_normal_skill", "value": 1149200, "critical": false, "rdpsShares": [] },
+    { "id": 4, "actionId": 3, "time": 12.45, "type": "statusApply", "sourceId": "chr_0004_pelica", "targetId": "enemy", "skillId": "chr_0004_pelica_normal_skill", "statusId": "buff_demo_vulnerable", "statusInstanceId": "7001", "statusKind": "debuff", "contributionType": 5, "contributionKind": "vulnerabilityTaken" },
+    { "id": 5, "actionId": 3, "time": 24.0, "type": "statusRemove", "sourceId": "chr_0004_pelica", "targetId": "enemy", "skillId": "chr_0004_pelica_normal_skill", "statusId": "buff_demo_vulnerable", "statusInstanceId": "7001", "statusKind": "debuff" }
+  ],
+  "summary": {
+    "totalDamage": 1989200,
+    "dps": 69796.49122807018,
+    "rdps": 69796.49122807018,
+    "hitCount": 3,
+    "criticalCount": 1
+  }
+}

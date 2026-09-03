@@ -1,0 +1,84 @@
+{
+    "partNameIdList": [
+        "chr_0036_jsspsi_postmodel"
+    ],
+    "avatarTempletName": "NPC/AvatarTemplet/Entity/Actor/jsspsi",
+    "avatarMeshName": "NPC/AvatarMesh/Actor/jsspsi",
+    "cpuAnimationTempletName": "NPC/AnimationConfig/Humanoid/Girl/jsspsi",
+    "abilityTempletName": "NPC/Ability/Humanoid/girl",
+    "sizeType": 4,
+    "templateType": 2,
+    "camp": "",
+    "career": "",
+    "gender": 0,
+    "id": "npc_chr_0036_jsspsi",
+    "facialMorphAvatarName": "FacialMorph/Avatar/Girl/jsspsi",
+    "earMorphAvatarName": "",
+    "useHighResShadow": false,
+    "correspondingCharId": "chr_0036_jsspsi",
+    "lodNum": 4,
+    "renders": [],
+    "materialCodes": [],
+    "scale": 1.0,
+    "hasCloth": true,
+    "needBattle": false,
+    "battleData": {
+        "battleShapeData": {
+            "_shape": 0,
+            "_rotationOffset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "_useExtentKey": false,
+            "_extent": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "_extentXKey": "",
+            "_extentYKey": "",
+            "_extentZKey": "",
+            "_useCenterKey": false,
+            "_center": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "_centerXKey": "",
+            "_centerYKey": "",
+            "_centerZKey": "",
+            "_heightKey": "",
+            "_height": 0.0,
+            "_radiusKey": "",
+            "_radius": 0.0
+        },
+        "activeSkillId": [],
+        "passiveSkillId": [],
+        "blackboard": []
+    },
+    "bornTag": [],
+    "npcGamePlayDataList": [],
+    "accessories": [],
+    "bornEffectInfos": [],
+    "waterInteractData": {
+        "effectKey": "",
+        "rippleSize": 1.0,
+        "waterDepth": 0.30000001192092896
+    },
+    "aiCfg": "",
+    "lookAt": false,
+    "disableBlink": false,
+    "enableBlurDetect": false,
+    "enableMainCharCollisionDetect": false,
+    "mainCharCollisionEnterDistance": 0.5,
+    "mainCharCollisionLeaveDistance": 1.0,
+    "mainCharCollisionReenterCd": 1.0,
+    "mainCharCollisionAction": 0,
+    "mainCharCollisionEffectKey": "",
+    "mainCharCollisionEffectMountPoint": 0,
+    "blurPriority": 0,
+    "confrontAnims": [],
+    "battleAnims": [],
+    "idleBreakTags": []
+}

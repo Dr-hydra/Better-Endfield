@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "sessionId": "20260803-034308-bootstrap-6ba5e806",
+  "kind": "bootstrap",
+  "probeEnabled": false,
+  "startedUtc": "2026-08-02T19:43:08.2220622+00:00",
+  "observedUntilUtc": "2026-08-02T19:44:39.0518595+00:00",
+  "processId": 9012,
+  "processExited": false,
+  "exitCode": null,
+  "durationSeconds": 90,
+  "externalTcpConnectionCount": 0
+}

@@ -1,17 +1,15 @@
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import dictionaryJson from "./data/combat-dict.min.json";
 import { CombatDetail } from "./components/CombatDetail";
 import { GachaPage } from "./components/GachaPage";
-import { deleteArchive, getOwnerToken, listArchives, loadArchive, saveArchive, type ArchiveMeta } from "./lib/archive";
-import { getHome, getPublicRecord, publishRecord } from "./lib/api";
-import { dungeonName, formatDuration, formatNumber, parseCombatRecord, totalRdps } from "./lib/combat";
+import { getPublicRecord } from "./lib/api";
+import { parseCombatRecord } from "./lib/combat";
 import { decodeGachaSnapshot, isGachaSnapshotFragment } from "./lib/gacha";
 import { loadGachaCloudSnapshot, saveGachaCloudSnapshot } from "./lib/gachaCloud";
 import { recordQrCode, requestToyProfile, shareRecord, type ToyProfile } from "./lib/toy";
-import type { CombatDictionary, CombatRecordV11, GachaWebSnapshot, HomePayload, LeaderboardEntry, Route } from "./types";
+import type { CombatDictionary, CombatRecordV11, GachaWebSnapshot, Route } from "./types";
 
 const dictionary = dictionaryJson as CombatDictionary;
-const WAR_SERIES = "indie_group_twdg";
 
 function parseRoute(): Route {
   const params = new URLSearchParams(location.search);
@@ -21,10 +19,10 @@ function parseRoute(): Route {
   if (params.get("mode") === "combat") return { page: "analyze" };
   const value = location.hash.replace(/^#\/?/, "");
   if (value.startsWith("record/")) return { page: "record", id: value.slice(7) };
-  if (value === "combat") return { page: "combat" };
+  // The public ranking and combat cloud archive are held back for this release.
+  if (value === "combat" || value === "archive") return { page: "home" };
   if (value === "gacha") return { page: "gacha" };
   if (value === "analyze") return { page: "analyze" };
-  if (value === "archive") return { page: "archive" };
   if (value === "download") return { page: "download" };
   return { page: "home" };
 }
@@ -33,38 +31,12 @@ function navigate(path: string) {
   location.hash = path === "home" ? "#/" : `#/${path}`;
 }
 
-function normalizeBvid(value: string): string {
-  const match = value.trim().match(/(?:video\/)?(BV[0-9A-Za-z]{10})/i);
-  return match?.[1] ?? "";
-}
-
-function demoRows(dungeonId: string): LeaderboardEntry[] {
-  const chars = ["chr_0004_pelica", "chr_0005_chen", "chr_0006_wolfgd", "chr_0017_yvonne"];
-  return ["工业协议", "塔卫记录", "前线样本", "终末地勤务组"].map((nickname, index) => ({
-    shortId: `example-${index}`,
-    rank: index + 1,
-    nickname,
-    durationSeconds: 57.24 + index * 7.83,
-    dps: 184320 - index * 17340,
-    rdps: 191880 - index * 16620,
-    uploadedAt: new Date(Date.now() - index * 86400000).toISOString(),
-    dungeonId,
-    squad: chars.map((charId, charIndex) => ({ charId, level: 90 - charIndex * 5, potential: 5 - charIndex })),
-    example: true,
-  }));
-}
-
-function imageFallback(event: Event) {
-  (event.currentTarget as HTMLImageElement).style.display = "none";
-}
-
 export default function App() {
   const [route, setRoute] = useState<Route>(parseRoute);
   const [theme, setTheme] = useState(() => localStorage.getItem("be-theme") || "light");
   const [railCollapsed, setRailCollapsed] = useState(() => localStorage.getItem("be-rail-collapsed") === "1");
   const [profile, setProfile] = useState<ToyProfile | null>(null);
   const [record, setRecord] = useState<CombatRecordV11 | null>(null);
-  const [rawText, setRawText] = useState("");
   const [sourceLabel, setSourceLabel] = useState("LOCAL / 本地记录");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
@@ -153,7 +125,6 @@ export default function App() {
     getPublicRecord(route.id)
       .then((value) => {
         setRecord(value);
-        setRawText(JSON.stringify(value));
         setSourceLabel(`PUBLIC / ${route.id}`);
       })
       .catch((reason) => setError(reason instanceof Error ? reason.message : "公开记录读取失败"))
@@ -181,7 +152,6 @@ export default function App() {
       setBusy(false);
       worker.terminate();
       if (!event.data.ok || !event.data.record) return setError(event.data.error || "解析失败");
-      setRawText(text);
       setRecord(event.data.record);
       setSourceLabel("LOCAL / 本地记录");
       navigate("analyze");
@@ -192,60 +162,6 @@ export default function App() {
       setError("解析工作线程异常");
     };
     worker.postMessage({ text, dictionary });
-  }
-
-  async function privateSave() {
-    if (!record || !rawText) return;
-    setBusy(true);
-    setError("");
-    try {
-      if (!profile) setProfile(await requestToyProfile());
-      const meta = await saveArchive(rawText, {
-        title: dungeonName(dictionary, record.dungeonId),
-        dungeonId: record.dungeonId,
-        durationSeconds: record.durationSeconds,
-        dps: record.dps,
-      });
-      setNotice(`已写入私密云存档 ${meta.id}`);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "云存档写入失败");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function publicSave() {
-    if (!record || !rawText) return;
-    setBusy(true);
-    setError("");
-    try {
-      const currentProfile = profile ?? await requestToyProfile();
-      setProfile(currentProfile);
-      await saveArchive(rawText, {
-        title: dungeonName(dictionary, record.dungeonId),
-        dungeonId: record.dungeonId,
-        durationSeconds: record.durationSeconds,
-        dps: record.dps,
-      });
-      const bvidInput = window.prompt("可选：输入要绑定的 BVID 或B站视频链接", "") || "";
-      const bvid = bvidInput ? normalizeBvid(bvidInput) : "";
-      if (bvidInput && !bvid) throw new Error("无法识别该 BVID");
-      const result = await publishRecord({
-        text: rawText,
-        ownerToken: await getOwnerToken(),
-        nickname: currentProfile.nickname,
-        avatar: currentProfile.avatar,
-        bvid,
-      });
-      setNotice(`公开记录已生成：${result.shortId}`);
-      history.replaceState(null, "", `${location.pathname}?r=${encodeURIComponent(result.shortId)}#/record/${result.shortId}`);
-      setSourceLabel(`PUBLIC / ${result.shortId}`);
-      setRoute({ page: "record", id: result.shortId });
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "公开上传失败");
-    } finally {
-      setBusy(false);
-    }
   }
 
   async function shareCurrent() {
@@ -270,10 +186,8 @@ export default function App() {
 
   const navItems = [
     ["home", "首页"],
-    ["combat", "战斗排行"],
     ["analyze", "战斗解析"],
     ["gacha", "寻访统计"],
-    ["archive", "云存档"],
     ["download", "软件下载"],
   ] as const;
 
@@ -300,18 +214,12 @@ export default function App() {
       </div>
       <div class="page-content">
         {route.page === "home" && <HomePage onNavigate={navigate} />}
-        {route.page === "combat" && <CombatHomePage dictionary={dictionary} onOpen={(id) => navigate(`record/${id}`)} onAnalyze={() => navigate("analyze")} />}
         {route.page === "analyze" && (record ? <CombatDetail record={record} dictionary={dictionary} sourceLabel={sourceLabel} actions={<>
-          <button class="button secondary" onClick={privateSave} disabled={busy}>私密云存档</button>
-          <button class="button primary" onClick={publicSave} disabled={busy}>公开并参加排行</button>
+          <span class="data-note">当前版本仅提供本地解析</span>
         </>} /> : <ImportPage onImport={importFile} busy={busy} />)}
         {route.page === "record" && (record ? <CombatDetail record={record} dictionary={dictionary} sourceLabel={sourceLabel} actions={<>
           <button class="button secondary" onClick={showQr}>二维码</button><button class="button primary" onClick={shareCurrent}>分享记录</button>
         </>} /> : <LoadingState busy={busy} error={error} />)}
-        {route.page === "archive" && <ArchivePage onOpen={(text) => {
-          try { setRecord(parseCombatRecord(text)); setRawText(text); setSourceLabel("PRIVATE / Toy 云存档"); navigate("analyze"); }
-          catch (reason) { setError(reason instanceof Error ? reason.message : "存档解析失败"); }
-        }} onError={setError} />}
         {route.page === "download" && <DownloadPage />}
         {route.page === "gacha" && <GachaPage snapshot={gachaSnapshot} error={gachaError} profileReady={Boolean(profile)} onLogin={login} onLoadCloud={gachaSnapshot ? saveGachaCloud : loadGachaCloud} onSaveCloud={gachaSnapshot ? saveGachaCloud : undefined} busy={gachaSyncing} />}
       </div>
@@ -327,67 +235,14 @@ function HomePage({ onNavigate }: { onNavigate: (path: string) => void }) {
   return <main class="calendar-home">
     <section class="calendar-hero"><img src="./version-calendar.png" alt="雪松幽梦版本日历" /></section>
     <section class="home-entry-grid">
-      <button class="home-entry combat" onClick={() => onNavigate("analyze")}><span class="eyebrow">01 / COMBAT DATA</span><strong>战斗数据解析</strong><small>导入记录、查看排行榜与逐帧复盘</small><i>进入解析 →</i></button>
+      <button class="home-entry combat" onClick={() => onNavigate("analyze")}><span class="eyebrow">01 / COMBAT DATA</span><strong>战斗数据解析</strong><small>导入当前版本记录并进行本地复盘</small><i>进入解析 →</i></button>
       <button class="home-entry gacha" onClick={() => onNavigate("gacha")}><span class="eyebrow">02 / GACHA INTELLIGENCE</span><strong>寻访统计</strong><small>查看卡池历史、六星抽数、UP 与歪</small><i>打开寻访 →</i></button>
     </section>
   </main>;
 }
 
-function CombatHomePage({ dictionary, onOpen, onAnalyze }: { dictionary: CombatDictionary; onOpen: (id: string) => void; onAnalyze: () => void }) {
-  const series = Object.entries(dictionary.ds);
-  const initialSeries = dictionary.ds[WAR_SERIES] ? WAR_SERIES : series[0]?.[0] || "";
-  const [seriesId, setSeriesId] = useState(initialSeries);
-  const dungeonOptions = useMemo(() => Object.entries(dictionary.d).filter(([, value]) => typeof value !== "string" && value.s === seriesId), [dictionary, seriesId]);
-  const [dungeonId, setDungeonId] = useState(dungeonOptions.at(-1)?.[0] || "");
-  const [sort, setSort] = useState<"dps" | "time">("dps");
-  const [home, setHome] = useState<HomePayload | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const options = Object.entries(dictionary.d).filter(([, value]) => typeof value !== "string" && value.s === seriesId);
-    if (!options.some(([id]) => id === dungeonId)) setDungeonId(options.at(-1)?.[0] || "");
-  }, [dictionary, dungeonId, seriesId]);
-
-  useEffect(() => {
-    if (!dungeonId || !import.meta.env.VITE_CLOUDBASE_API) return setHome(null);
-    setLoading(true);
-    getHome(dungeonId).then(setHome).catch(() => setHome(null)).finally(() => setLoading(false));
-  }, [dungeonId]);
-
-  const rows = home?.[sort]?.length ? home[sort] : demoRows(dungeonId);
-  return <main class="home-page">
-    <section class="leaderboard panel">
-      <div class="section-heading leaderboard-title"><div><span class="eyebrow">RANKING / 实战排行</span><h2>{dictionary.ds[seriesId] || "关卡排行榜"}</h2></div><div class="hero-actions"><span class="refresh-state">{loading ? "SYNCING" : home ? "UPDATED" : "DEMO DATA"}</span><button class="button primary" onClick={onAnalyze}>导入战斗记录</button></div></div>
-      <div class="leaderboard-controls">
-        <label><span>关卡类型</span><select value={seriesId} onChange={(event) => setSeriesId(event.currentTarget.value)}>{series.map(([id, name]) => <option value={id} key={id}>{name}</option>)}</select></label>
-        <label><span>具体关卡</span><select value={dungeonId} onChange={(event) => setDungeonId(event.currentTarget.value)}>{dungeonOptions.map(([id]) => <option value={id} key={id}>{dungeonName(dictionary, id)}</option>)}</select></label>
-        <div class="sort-tabs"><button class={sort === "dps" ? "active" : ""} onClick={() => setSort("dps")}>DPS</button><button class={sort === "time" ? "active" : ""} onClick={() => setSort("time")}>用时</button></div>
-      </div>
-      <div class="rank-table">
-        <div class="rank-head"><span>RANK</span><span>玩家 / 队伍</span><span>通关用时</span><span>DPS</span><span>rDPS</span><span>记录</span></div>
-        {rows.slice(0, 50).map((entry) => <button class="rank-row" key={entry.shortId} disabled={entry.example} onClick={() => onOpen(entry.shortId)}>
-          <strong class={entry.rank <= 3 ? "top-rank" : ""}>{String(entry.rank).padStart(2, "0")}</strong>
-          <span class="player-cell"><span class="mini-avatar">{entry.avatar && <img src={entry.avatar} alt="" onError={imageFallback} />}{entry.nickname.slice(0, 1)}</span><span><b>{entry.nickname}</b><small>{entry.squad.map((item) => {
-            const char = dictionary.c[item.charId]; const data = typeof char === "string" ? null : char;
-            return <span class="team-face" key={item.charId}>{data?.i && <img src={`./${data.i}`} alt={data.n} onError={imageFallback} />}</span>;
-          })}</small></span></span>
-          <b>{formatDuration(entry.durationSeconds)}</b><b>{formatNumber(entry.dps)}</b><b class="rdps-value">{formatNumber(entry.rdps)}</b><span>{entry.example ? "示例" : new Date(entry.uploadedAt).toLocaleDateString("zh-CN")}</span>
-        </button>)}
-      </div>
-    </section>
-    <section class="feature-strip"><article><b>01</b><span>本地解析</span><p>JSON 只在浏览器工作线程中解析。</p></article><article><b>02</b><span>贡献归因</span><p>区分直接伤害与队友增益贡献。</p></article><article><b>03</b><span>逐帧复盘</span><p>把技能、Buff 与失衡窗口放进同一时间轴。</p></article></section>
-  </main>;
-}
-
 function ImportPage({ onImport, busy }: { onImport: (file?: File) => void; busy: boolean }) {
-  return <main class="import-page"><section class="import-hero panel"><span class="eyebrow">LOCAL PARSER / 本地解析</span><h1>导入 schema 11<br />战斗记录</h1><p>文件在浏览器本地解析。只有当你选择公开上传时，记录才会发送到 CloudBase。</p><label class="drop-zone desktop-only"><input type="file" accept="application/json,.json" disabled={busy} onChange={(event) => onImport(event.currentTarget.files?.[0])} /><b>选择 JSON 文件</b><span>或拖放最新版 Better Endfield 战斗记录</span><small>仅 schema 11 · 最大 64 MiB</small></label><div class="mobile-only mobile-disabled"><b>手机版不提供 JSON 解析</b><p>请从软件内跳转至 PC 浏览器完成解析；手机仍可查看分享记录。</p></div></section></main>;
-}
-
-function ArchivePage({ onOpen, onError }: { onOpen: (text: string) => void; onError: (message: string) => void }) {
-  const [archives, setArchives] = useState<ArchiveMeta[]>([]);
-  const [loading, setLoading] = useState(false);
-  async function refresh() { setLoading(true); try { await requestToyProfile(); setArchives(await listArchives()); } catch (reason) { onError(reason instanceof Error ? reason.message : "云存档读取失败"); } finally { setLoading(false); } }
-  return <main class="archive-page"><section class="page-heading"><span class="eyebrow">TOY CLOUD / 私密存档</span><h1>云存档管理</h1><p>无损压缩、按需分片；空间不足时由你决定删除哪一条。</p><button class="button primary" onClick={refresh} disabled={loading}>{loading ? "读取中…" : "登录并读取"}</button></section><section class="archive-list panel">{archives.length ? archives.map((item) => <article key={item.id}><div><span class="eyebrow">{item.id}</span><h3>{item.title}</h3><p>{new Date(item.createdAt).toLocaleString("zh-CN")} · {formatDuration(item.durationSeconds)} · {formatNumber(item.dps)} DPS</p></div><span>{item.parts} 片<br />{(item.bytes / 1024).toFixed(1)} KiB</span><div><button class="button secondary" onClick={async () => { try { onOpen(await loadArchive(item.id)); } catch (reason) { onError(reason instanceof Error ? reason.message : "读取失败"); } }}>打开</button><button class="text-danger" onClick={async () => { if (!confirm(`确定删除“${item.title}”吗？此操作无法恢复。`)) return; try { await deleteArchive(item.id); await refresh(); } catch (reason) { onError(reason instanceof Error ? reason.message : "删除失败"); } }}>删除</button></div></article>) : <div class="empty-state"><b>尚未读取云存档</b><p>登录 Toy 后，此处会显示当前账号在本 Toy 下保存的记录。</p></div>}</section></main>;
+  return <main class="import-page"><section class="import-hero panel"><span class="eyebrow">LOCAL PARSER / 本地解析</span><h1>导入 schema 11<br />战斗记录</h1><p>文件仅在浏览器本地解析，当前版本不会上传战斗记录或写入云存档。</p><label class="drop-zone desktop-only"><input type="file" accept="application/json,.json" disabled={busy} onChange={(event) => onImport(event.currentTarget.files?.[0])} /><b>选择 JSON 文件</b><span>或拖放最新版 Better Endfield 战斗记录</span><small>仅当前 schema 11 · 最大 64 MiB</small></label><div class="mobile-only mobile-disabled"><b>手机版不提供 JSON 解析</b><p>请从软件内跳转至 PC 浏览器完成解析；手机仍可查看已有分享记录。</p></div></section></main>;
 }
 
 function DownloadPage() {

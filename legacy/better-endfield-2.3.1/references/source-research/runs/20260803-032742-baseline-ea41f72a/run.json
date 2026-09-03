@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "sessionId": "20260803-032742-baseline-ea41f72a",
+  "kind": "baseline",
+  "probeEnabled": false,
+  "startedUtc": "2026-08-02T19:27:42.532255+00:00",
+  "observedUntilUtc": "2026-08-02T19:29:12.8854021+00:00",
+  "processId": 20704,
+  "processExited": false,
+  "exitCode": null,
+  "durationSeconds": 90,
+  "externalTcpConnectionCount": 0
+}

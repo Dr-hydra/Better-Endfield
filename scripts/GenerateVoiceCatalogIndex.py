@@ -13,7 +13,7 @@ from BuildVoiceCatalog import (
     LANGUAGES,
     collect_routes,
     load_json,
-    target_package_for,
+    target_packages_for,
 )
 
 
@@ -40,6 +40,41 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def collect_voice_sources(
+    manifest: dict[str, Any], language: str, character_id: str
+) -> dict[str, list[int]]:
+    sources: dict[str, list[int]] = {}
+    for voice in manifest.get("voices", []):
+        if character_id and voice.get("characterId") != character_id:
+            continue
+        identities = [
+            str(value)
+            for value in (voice.get("voiceId"), voice.get("audioDialogKey"))
+            if value is not None and str(value)
+        ]
+        if not identities:
+            continue
+        media: set[int] = set()
+        for mapping in voice.get("languageMappings", []):
+            if mapping.get("language") != language:
+                continue
+            media.update(
+                int(slot["mediaId"]) & 0xFFFFFFFF
+                for slot in mapping.get("soundSlots", [])
+                if slot.get("mediaId")
+            )
+            media.update(
+                int(media_id) & 0xFFFFFFFF
+                for media_id in mapping.get("mediaIds", [])
+                if media_id
+            )
+        if media:
+            ordered = sorted(media)
+            for identity in identities:
+                sources[identity] = ordered
+    return sources
+
+
 def build_index(manifest_path: Path) -> dict[str, Any]:
     manifest_bytes = manifest_path.read_bytes()
     manifest = load_json(manifest_path)
@@ -48,16 +83,16 @@ def build_index(manifest_path: Path) -> dict[str, Any]:
 
     packages: list[dict[str, Any]] = []
     for language_index, language in enumerate(LANGUAGES):
-        package = target_package_for(manifest, language)
-        packages.append(
-            {
-                "language": language_index,
-                "source": package["source"],
-                "size": int(package["size"]),
-                "headerSize": int(package["headerSize"]),
-                "headerSha256": package["headerSha256"],
-            }
-        )
+        for package in target_packages_for(manifest, language):
+            packages.append(
+                {
+                    "language": language_index,
+                    "source": package["source"],
+                    "size": int(package["size"]),
+                    "headerSize": int(package["headerSize"]),
+                    "headerSha256": package["headerSha256"],
+                }
+            )
 
     characters = sorted(
         {
@@ -74,19 +109,22 @@ def build_index(manifest_path: Path) -> dict[str, Any]:
             if not routes:
                 continue
             flattened: list[int] = []
-            for source_id, target_id in sorted(routes.items()):
-                flattened.extend((source_id, target_id))
+            for (source_language, source_id), target_id in sorted(routes.items()):
+                flattened.extend((source_language, source_id, target_id))
             catalogs.append(
                 {
                     "characterId": character_id,
                     "language": language_index,
                     "voiceCount": voice_count,
                     "routes": flattened,
+                    "voiceSources": collect_voice_sources(
+                        manifest, language, filter_id
+                    ),
                 }
             )
 
     return {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "kind": "betterendfield-voice-catalog-index",
         "sourceManifestSha256": hashlib.sha256(manifest_bytes).hexdigest().upper(),
         "packages": packages,

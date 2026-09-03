@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "sessionId": "20260803-044740-dumper-16a8195e",
+  "kind": "dumper",
+  "startedUtc": "2026-08-02T20:47:41.0213798+00:00",
+  "observedUntilUtc": "2026-08-02T20:48:11.3309691+00:00",
+  "dumperPid": 17640,
+  "gamePid": null,
+  "gameExited": null,
+  "durationSeconds": 30,
+  "marks": [],
+  "externalTcpConnectionCount": 0
+}

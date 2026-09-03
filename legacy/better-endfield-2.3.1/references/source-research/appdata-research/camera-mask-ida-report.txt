@@ -1,0 +1,376 @@
+input=E:\Endfield Game\GameAssembly.dll imagebase=0x180000000
+
+CameraManager_AddUICamCullingMaskConfig rva=0x394D540 ea=0x18394D540 size=615
+void sub_18394D540()
+{
+  JUMPOUT(0x18394D545LL);
+}
+
+DISASSEMBLY
+  0x18394D540 mov     [rsp+arg_18], rbx
+  0x18394D545 mov     [rsp+arg_10], r8d
+  0x18394D54A mov     [rsp+arg_8], rdx
+  0x18394D54F mov     [rsp+arg_0], rcx
+  0x18394D554 push    rsi
+  0x18394D555 push    rdi
+  0x18394D556 push    r14
+  0x18394D558 sub     rsp, 0A0h
+  0x18394D55F mov     r14d, r8d
+  0x18394D562 mov     rbx, rdx
+  0x18394D565 mov     rdi, rcx
+  0x18394D568 cmp     cs:byte_18F364A3E, 0
+  0x18394D56F jnz     short loc_18394D5C0
+  0x18394D571 lea     rcx, qword_18E27FDD8
+  0x18394D578 call    sub_180035ED0
+  0x18394D57D lea     rcx, unk_18E27FDF0
+  0x18394D584 call    sub_180035ED0
+  0x18394D589 lea     rcx, qword_18E27FDE8
+  0x18394D590 call    sub_180035ED0
+  0x18394D595 lea     rcx, unk_18E27FDB8
+  0x18394D59C call    sub_180035ED0
+  0x18394D5A1 lea     rcx, qword_18E27FDC0
+  0x18394D5A8 call    sub_180035ED0
+  0x18394D5AD lea     rcx, qword_18E27FDC8
+  0x18394D5B4 call    sub_180035ED0
+  0x18394D5B9 mov     cs:byte_18F364A3E, 1
+  0x18394D5C0 xor     edx, edx
+  0x18394D5C2 mov     ecx, 0A191h
+  0x18394D5C7 call    sub_182EFE6C0
+  0x18394D5CC test    al, al
+  0x18394D5CE jnz     loc_18394D74A
+  0x18394D5D4 mov     rsi, [rdi+180h]
+  0x18394D5DB test    rsi, rsi
+  0x18394D5DE jz      loc_18394D789
+  0x18394D5E4 mov     r8, cs:qword_18E27FDC8
+  0x18394D5EB mov     rdx, rsi
+  0x18394D5EE lea     rcx, [rsp+0B8h+var_48]
+  0x18394D5F3 call    sub_183D4E5E0
+  0x18394D5F8 movups  xmm0, [rsp+0B8h+var_48]
+  0x18394D5FD movups  [rsp+0B8h+var_78], xmm0
+  0x18394D602 movups  xmm1, [rsp+0B8h+var_38]
+  0x18394D60A movups  [rsp+0B8h+var_68], xmm1
+  0x18394D60F movsd   xmm0, [rsp+0B8h+var_28]
+  0x18394D618 movsd   [rsp+0B8h+var_58], xmm0
+  0x18394D61E mov     [rsp+0B8h+var_88], 0
+  0x18394D627 lea     rax, [rsp+0B8h+var_78]
+  0x18394D62C mov     [rsp+0B8h+var_80], rax
+  0x18394D631 mov     rdx, cs:qword_18E27FDE8
+  0x18394D638 lea     rcx, [rsp+0B8h+var_78]
+  0x18394D63D call    sub_183B3BDE0
+  0x18394D642 test    al, al
+  0x18394D644 jz      short loc_18394D691
+  0x18394D646 mov     r8, qword ptr [rsp+0B8h+var_68+8]
+  0x18394D64B test    r8, r8
+  0x18394D64E jz      loc_18394D78F
+  0x18394D654 mov     r8, [r8+10h]
+  0x18394D658 cmp     r8, rbx
+  0x18394D65B jz      short loc_18394D68A
+  0x18394D65D test    r8, r8
+  0x18394D660 jz      short loc_18394D631
+  0x18394D662 test    rbx, rbx
+  0x18394D665 jz      short loc_18394D631
+  0x18394D667 mov     eax, [r8+10h]
+  0x18394D66B cmp     eax, [rbx+10h]
+  0x18394D66E jnz     short loc_18394D631
+  0x18394D670 lea     rcx, [r8+14h]
+  0x18394D674 lea     rdx, [rbx+14h]
+  0x18394D678 movsxd  r8, eax
+  0x18394D67B add     r8, r8
+  0x18394D67E xor     r9d, r9d
+  0x18394D681 call    sub_183060350
+  0x18394D686 test    al, al
+  0x18394D688 jz      short loc_18394D631
+  0x18394D68A xor     al, al
+  0x18394D68C jmp     loc_18394D775
+  0x18394D691 jmp     short loc_18394D6B9
+  0x18394D693 mov     rcx, [rsp+0B8h+var_88]
+  0x18394D698 test    rcx, rcx
+  0x18394D69B jnz     loc_18394D795
+  0x18394D6A1 mov     r14d, [rsp+0B8h+arg_10]
+  0x18394D6A9 mov     rbx, [rsp+0B8h+arg_8]
+  0x18394D6B1 mov     rdi, [rsp+0B8h+arg_0]
+  0x18394D6B9 mov     rsi, [rdi+180h]
+  0x18394D6C0 mov     rcx, cs:qword_18E27FDD8
+  0x18394D6C7 call    sub_18002C620
+  0x18394D6CC mov     r10, rax
+  0x18394D6CF test    rax, rax
+  0x18394D6D2 jz      loc_18394D79B
+  0x18394D6D8 mov     [rax+10h], rbx
+  0x18394D6DC cmp     cs:dword_18F35FD08, 0
+  0x18394D6E3 jz      short loc_18394D721
+  0x18394D6E5 lea     r9, [rax+10h]
+  0x18394D6E9 shr     r9, 0Ch
+  0x18394D6ED and     r9d, 1FFFFFh
+  0x18394D6F4 mov     ecx, r9d
+  0x18394D6F7 shr     rcx, 6
+  0x18394D6FB lea     rax, qword_18F103690
+  0x18394D702 lea     r8, [rax+rcx*8]
+  0x18394D706 and     r9d, 3Fh
+  0x18394D70A prefetchw byte ptr [r8]
+  0x18394D70E xchg    ax, ax
+  0x18394D710 mov     rax, [r8]
+  0x18394D713 mov     rdx, rax
+  0x18394D716 bts     rdx, r9
+  0x18394D71A lock cmpxchg [r8], rdx
+  0x18394D71F jnz     short loc_18394D710
+  0x18394D721 mov     [r10+18h], r14d
+  0x18394D725 test    rsi, rsi
+  0x18394D728 jz      short loc_18394D79B
+  0x18394D72A mov     r8, cs:qword_18E27FDC0
+  0x18394D731 mov     rdx, r10
+  0x18394D734 mov     rcx, rsi
+  0x18394D737 call    sub_183CCCCB0
+  0x18394D73C xor     edx, edx
+  0x18394D73E mov     rcx, rdi
+  0x18394D741 call    sub_18394D880
+  0x18394D746 mov     al, 1
+  0x18394D748 jmp     short loc_18394D775
+  0x18394D74A xor     edx, edx
+  0x18394D74C mov     ecx, 0A191h
+  0x18394D751 call    sub_1871C7E18
+  0x18394D756 test    rax, rax
+  0x18394D759 jz      short loc_18394D7A1
+  0x18394D75B mov     [rsp+0B8h+var_98], 0
+  0x18394D764 mov     r9d, r14d
+  0x18394D767 mov     r8, rbx
+  0x18394D76A mov     rdx, rdi
+  0x18394D76D mov     rcx, rax
+  0x18394D770 call    sub_18175E030
+  0x18394D775 mov     rbx, [rsp+0B8h+arg_18]
+  0x18394D77D add     rsp, 0A0h
+  0x18394D784 pop     r14
+  0x18394D786 pop     rdi
+  0x18394D787 pop     rsi
+  0x18394D788 retn
+  0x18394D789 call    sub_1800D8260
+  0x18394D78F call    sub_1800D8250
+  0x18394D795 call    sub_18007E1E0
+  0x18394D79B call    sub_1800D8250
+  0x18394D7A1 call    sub_1800D8260
+
+CameraManager_RemoveUICamCullingMaskConfig rva=0x394D950 ea=0x18394D950 size=493
+void sub_18394D950()
+{
+  JUMPOUT(0x18394D955LL);
+}
+
+DISASSEMBLY
+  0x18394D950 mov     [rsp+arg_8], rbx
+  0x18394D955 mov     [rsp+arg_10], rsi
+  0x18394D95A mov     [rsp+arg_0], rcx
+  0x18394D95F push    rdi
+  0x18394D960 sub     rsp, 90h
+  0x18394D967 mov     rdi, rdx
+  0x18394D96A mov     rsi, rcx
+  0x18394D96D cmp     cs:byte_18F364A3F, 0
+  0x18394D974 jnz     short loc_18394D9B9
+  0x18394D976 lea     rcx, unk_18E27FDF0
+  0x18394D97D call    sub_180035ED0
+  0x18394D982 lea     rcx, qword_18E27FDE8
+  0x18394D989 call    sub_180035ED0
+  0x18394D98E lea     rcx, unk_18E27FDB8
+  0x18394D995 call    sub_180035ED0
+  0x18394D99A lea     rcx, qword_18E27FDC8
+  0x18394D9A1 call    sub_180035ED0
+  0x18394D9A6 lea     rcx, qword_18E27FD60
+  0x18394D9AD call    sub_180035ED0
+  0x18394D9B2 mov     cs:byte_18F364A3F, 1
+  0x18394D9B9 xor     edx, edx
+  0x18394D9BB mov     ecx, 0A195h
+  0x18394D9C0 call    sub_182EFE6C0
+  0x18394D9C5 test    al, al
+  0x18394D9C7 jnz     loc_18394DAE8
+  0x18394D9CD mov     [rsp+98h+arg_18], 0
+  0x18394D9D9 mov     rbx, [rsi+180h]
+  0x18394D9E0 test    rbx, rbx
+  0x18394D9E3 jz      loc_18394DB1F
+  0x18394D9E9 mov     r8, cs:qword_18E27FDC8
+  0x18394D9F0 mov     rdx, rbx
+  0x18394D9F3 lea     rcx, [rsp+98h+var_38]
+  0x18394D9F8 call    sub_183D4E5E0
+  0x18394D9FD movups  xmm0, [rsp+98h+var_38]
+  0x18394DA02 movups  [rsp+98h+var_60], xmm0
+  0x18394DA07 movups  xmm1, [rsp+98h+var_28]
+  0x18394DA0C movups  [rsp+98h+var_50], xmm1
+  0x18394DA11 movsd   xmm0, [rsp+98h+var_18]
+  0x18394DA1A movsd   [rsp+98h+var_40], xmm0
+  0x18394DA20 mov     [rsp+98h+var_70], 0
+  0x18394DA29 lea     rax, [rsp+98h+var_60]
+  0x18394DA2E mov     [rsp+98h+var_68], rax
+  0x18394DA33 mov     rdx, cs:qword_18E27FDE8
+  0x18394DA3A lea     rcx, [rsp+98h+var_60]
+  0x18394DA3F call    sub_183B3BDE0
+  0x18394DA44 test    al, al
+  0x18394DA46 jz      short loc_18394DA96
+  0x18394DA48 mov     rbx, qword ptr [rsp+98h+var_50+8]
+  0x18394DA4D test    rbx, rbx
+  0x18394DA50 jz      loc_18394DB25
+  0x18394DA56 mov     r8, [rbx+10h]
+  0x18394DA5A cmp     r8, rdi
+  0x18394DA5D jz      short loc_18394DA8C
+  0x18394DA5F test    r8, r8
+  0x18394DA62 jz      short loc_18394DA33
+  0x18394DA64 test    rdi, rdi
+  0x18394DA67 jz      short loc_18394DA33
+  0x18394DA69 mov     eax, [r8+10h]
+  0x18394DA6D cmp     eax, [rdi+10h]
+  0x18394DA70 jnz     short loc_18394DA33
+  0x18394DA72 lea     rcx, [r8+14h]
+  0x18394DA76 lea     rdx, [rdi+14h]
+  0x18394DA7A movsxd  r8, eax
+  0x18394DA7D add     r8, r8
+  0x18394DA80 xor     r9d, r9d
+  0x18394DA83 call    sub_183060350
+  0x18394DA88 test    al, al
+  0x18394DA8A jz      short loc_18394DA33
+  0x18394DA8C mov     [rsp+98h+arg_18], rbx
+  0x18394DA94 jmp     short loc_18394DAB6
+  0x18394DA96 jmp     short loc_18394DABB
+  0x18394DA98 mov     rcx, [rsp+98h+var_70]
+  0x18394DA9D test    rcx, rcx
+  0x18394DAA0 jnz     loc_18394DB2B
+  0x18394DAA6 mov     rsi, [rsp+98h+arg_0]
+  0x18394DAAE mov     rbx, [rsp+98h+arg_18]
+  0x18394DAB6 test    rbx, rbx
+  0x18394DAB9 jnz     short loc_18394DABF
+  0x18394DABB xor     al, al
+  0x18394DABD jmp     short loc_18394DB0A
+  0x18394DABF mov     rcx, [rsi+180h]
+  0x18394DAC6 test    rcx, rcx
+  0x18394DAC9 jz      short loc_18394DB31
+  0x18394DACB mov     r8, cs:qword_18E27FD60
+  0x18394DAD2 mov     rdx, rbx
+  0x18394DAD5 call    sub_183F20E70
+  0x18394DADA xor     edx, edx
+  0x18394DADC mov     rcx, rsi
+  0x18394DADF call    sub_18394D880
+  0x18394DAE4 mov     al, 1
+  0x18394DAE6 jmp     short loc_18394DB0A
+  0x18394DAE8 xor     edx, edx
+  0x18394DAEA mov     ecx, 0A195h
+  0x18394DAEF call    sub_1871C7E18
+  0x18394DAF4 test    rax, rax
+  0x18394DAF7 jz      short loc_18394DB37
+  0x18394DAF9 xor     r9d, r9d
+  0x18394DAFC mov     r8, rdi
+  0x18394DAFF mov     rdx, rsi
+  0x18394DB02 mov     rcx, rax
+  0x18394DB05 call    sub_186366BC4
+  0x18394DB0A lea     r11, [rsp+98h+var_8]
+  0x18394DB12 mov     rbx, [r11+18h]
+  0x18394DB16 mov     rsi, [r11+20h]
+  0x18394DB1A mov     rsp, r11
+  0x18394DB1D pop     rdi
+  0x18394DB1E retn
+  0x18394DB1F call    sub_1800D8260
+  0x18394DB25 call    sub_1800D8250
+  0x18394DB2B call    sub_18007E1E0
+  0x18394DB31 call    sub_1800D8250
+  0x18394DB37 call    sub_1800D8260
+
+CameraManager_UpdateUICamCullingMask rva=0x394D880 ea=0x18394D880 size=204
+void sub_18394D880()
+{
+  JUMPOUT(0x18394D882LL);
+}
+
+DISASSEMBLY
+  0x18394D880 push    rbx
+  0x18394D882 sub     rsp, 20h
+  0x18394D886 cmp     cs:byte_18F364A40, 0
+  0x18394D88D mov     rbx, rcx
+  0x18394D890 jz      short loc_18394D909
+  0x18394D892 xor     edx, edx
+  0x18394D894 mov     ecx, 0A192h
+  0x18394D899 call    sub_182EFE6C0
+  0x18394D89E test    al, al
+  0x18394D8A0 jnz     loc_1851439C6
+  0x18394D8A6 mov     rax, [rbx+180h]
+  0x18394D8AD test    rax, rax
+  0x18394D8B0 jz      short loc_18394D8CF
+  0x18394D8B2 cmp     qword ptr [rax+10h], 0
+  0x18394D8B7 jz      short loc_18394D8D5
+  0x18394D8B9 mov     rcx, [rax+10h]
+  0x18394D8BD mov     rax, [rcx+20h]
+  0x18394D8C1 test    rax, rax
+  0x18394D8C4 jz      short loc_18394D8D5
+  0x18394D8C6 mov     rdx, [rax+28h]
+  0x18394D8CA test    rdx, rdx
+  0x18394D8CD jnz     short loc_18394D939
+  0x18394D8CF call    sub_1800D8260
+  0x18394D8D5 mov     rcx, cs:qword_18E2FE320
+  0x18394D8DC cmp     dword ptr [rcx+0E0h], 0
+  0x18394D8E3 jnz     short loc_18394D8EA
+  0x18394D8E5 call    sub_18002C880
+  0x18394D8EA xor     ecx, ecx
+  0x18394D8EC call    sub_18394E230
+  0x18394D8F1 xor     r8d, r8d
+  0x18394D8F4 mov     edx, eax
+  0x18394D8F6 mov     rcx, rbx
+  0x18394D8F9 add     rsp, 20h
+  0x18394D8FD pop     rbx
+  0x18394D8FE jmp     sub_18394D7B0
+  0x18394D903 add     rsp, 20h
+  0x18394D907 pop     rbx
+  0x18394D908 retn
+  0x18394D909 lea     rcx, qword_18E2FE320
+  0x18394D910 call    sub_180035ED0
+  0x18394D915 lea     rcx, unk_18E27FD28
+  0x18394D91C call    sub_180035ED0
+  0x18394D921 lea     rcx, unk_18E27FD38
+  0x18394D928 call    sub_180035ED0
+  0x18394D92D mov     cs:byte_18F364A40, 1
+  0x18394D934 jmp     loc_18394D892
+  0x18394D939 mov     edx, [rdx+18h]
+  0x18394D93C xor     r8d, r8d
+  0x18394D93F mov     rcx, rbx
+  0x18394D942 add     rsp, 20h
+  0x18394D946 pop     rbx
+  0x18394D947 jmp     sub_18394D7B0
+  0x1851439C6 xor     edx, edx
+  0x1851439C8 mov     ecx, 0A192h
+  0x1851439CD call    sub_1871C7E18
+  0x1851439D2 test    rax, rax
+  0x1851439D5 jz      loc_18394D8CF
+  0x1851439DB xor     r8d, r8d
+  0x1851439DE mov     rdx, rbx
+  0x1851439E1 mov     rcx, rax
+  0x1851439E4 call    sub_1863633B4
+  0x1851439E9 nop
+  0x1851439EA jmp     loc_18394D903
+
+CameraUtils_get_cameraManager rva=0x6BDBAB8 ea=0x186BDBAB8 size=120
+void sub_186BDBAB8()
+{
+  JUMPOUT(0x186BDBABCLL);
+}
+
+DISASSEMBLY
+  0x186BDBAB8 sub     rsp, 28h
+  0x186BDBABC cmp     cs:byte_18F385460, 0
+  0x186BDBAC3 jnz     short loc_186BDBAD8
+  0x186BDBAC5 lea     rcx, qword_18E355258
+  0x186BDBACC call    sub_180035ED0
+  0x186BDBAD1 mov     cs:byte_18F385460, 1
+  0x186BDBAD8 xor     edx, edx
+  0x186BDBADA mov     ecx, 1E8Bh
+  0x186BDBADF call    sub_182EFE6C0
+  0x186BDBAE4 test    al, al
+  0x186BDBAE6 jnz     short loc_186BDBB0B
+  0x186BDBAE8 mov     rcx, cs:qword_18E355258
+  0x186BDBAEF call    sub_1800036A0
+  0x186BDBAF4 mov     rax, cs:qword_18E355258
+  0x186BDBAFB mov     rax, [rax+0B8h]
+  0x186BDBB02 mov     rax, [rax+30h]
+  0x186BDBB06 add     rsp, 28h
+  0x186BDBB0A retn
+  0x186BDBB0B xor     edx, edx
+  0x186BDBB0D mov     ecx, 1E8Bh
+  0x186BDBB12 call    sub_1871C7E18
+  0x186BDBB17 test    rax, rax
+  0x186BDBB1A jnz     short loc_186BDBB22
+  0x186BDBB1C call    sub_1800D8260
+  0x186BDBB22 xor     edx, edx
+  0x186BDBB24 mov     rcx, rax
+  0x186BDBB27 add     rsp, 28h
+  0x186BDBB2B jmp     sub_18185B0C0

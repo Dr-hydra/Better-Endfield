@@ -1,0 +1,3 @@
+DLL injected. Waiting for IL2CPP runtime...
+[OK] IL2CPP API ready  base=0x7FFA73900000  size=0x10E7D000
+[diag] gc_register=NO gc_disable=yes gc_enable=yes GC_disable=NO GC_enable=NO GC_dont_gc=NO props=yes events=yes field_default=NO method_token=yes runtime_invoke=yes class_from_name=yes

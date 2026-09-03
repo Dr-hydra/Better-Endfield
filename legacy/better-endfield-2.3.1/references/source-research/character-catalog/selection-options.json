@@ -1,0 +1,1917 @@
+{
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-08-04T01:42:00.834303+00:00",
+  "characters": [
+    {
+      "characterId": "chr_0002_endminm",
+      "codename": "endminm",
+      "rigFamily": "Boy",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/endminm",
+      "avatarMesh": "NPC/AvatarMesh/Actor/endminm",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Boy/endminm",
+      "modelOptions": [
+        {
+          "partName": "chr_0002_endminm_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0002_endminm_postmodel.prefab",
+          "pathHashHead": 796872092643041424,
+          "pathHashHex": "0x0B0F0EF23D692090",
+          "assetSize": 520,
+          "bundleIndex": 199461,
+          "bundleName": "main/d678052c467064e2203f653b.ab",
+          "bundleHashName": 806744926581867205,
+          "bundleHashHex": "0x0B32223C8542C2C5"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/dialog/a_actor_endminm_dialog_single_bamboowalk.fbx##a_actor_endminm_dialog_single_bamboowalk",
+          "clipName": "a_actor_endminm_dialog_single_bamboowalk",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 10.000001,
+          "bundleName": "main/cfff5ed8734b7aea3cacc013.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/dialog/a_actor_endminm_dialog_single_walksit_derived_talk.fbx##a_actor_endminm_dialog_single_walksit_derived_talk",
+          "clipName": "a_actor_endminm_dialog_single_walksit_derived_talk",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 5.166667,
+          "bundleName": "main/bdb17b793455e9268cecfd4c.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/dialog/a_actor_endminm_dialog_state_walk.fbx##a_actor_endminm_dialog_state_walk_end",
+          "clipName": "a_actor_endminm_dialog_state_walk_end",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 3.8000002,
+          "bundleName": "main/761c0207c86c8f5ea6207c05.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/dialog/a_actor_endminm_dialog_state_walk.fbx##a_actor_endminm_dialog_state_walk_loop",
+          "clipName": "a_actor_endminm_dialog_state_walk_loop",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 2.0833335,
+          "bundleName": "main/761c0207c86c8f5ea6207c05.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/dialog/a_actor_endminm_dialog_state_walk.fbx##a_actor_endminm_dialog_state_walk_start",
+          "clipName": "a_actor_endminm_dialog_state_walk_start",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 1.6000001,
+          "bundleName": "main/761c0207c86c8f5ea6207c05.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/dialog/a_actor_endminm_dialog_state_walk_longpaopao.fbx##a_actor_endminm_dialog_state_walk_longpaopao_loop",
+          "clipName": "a_actor_endminm_dialog_state_walk_longpaopao_loop",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 1.0666667,
+          "bundleName": "main/2761d1b327327d17deea86a5.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/dialog/a_actor_endminm_dialog_state_walksit.fbx##a_actor_endminm_dialog_state_walksit_end",
+          "clipName": "a_actor_endminm_dialog_state_walksit_end",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 5.1666665,
+          "bundleName": "main/51e2a4cf51c824205456827f.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/dialog/a_actor_endminm_dialog_state_walksit.fbx##a_actor_endminm_dialog_state_walksit_loop",
+          "clipName": "a_actor_endminm_dialog_state_walksit_loop",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 6.5,
+          "bundleName": "main/51e2a4cf51c824205456827f.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/dialog/a_actor_endminm_dialog_state_walksit.fbx##a_actor_endminm_dialog_state_walksit_start",
+          "clipName": "a_actor_endminm_dialog_state_walksit_start",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 17.666668,
+          "bundleName": "main/51e2a4cf51c824205456827f.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/dialog/a_actor_endminm_dialog_state_walksit_derived_getdocument.fbx##a_actor_endminm_dialog_state_walksit_derived_getdocument_end",
+          "clipName": "a_actor_endminm_dialog_state_walksit_derived_getdocument_end",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 3.666668,
+          "bundleName": "main/fa1f140b0c9ffaa2db79da60.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/dialog/a_actor_endminm_dialog_state_walksit_derived_getdocument.fbx##a_actor_endminm_dialog_state_walksit_derived_getdocument_loop",
+          "clipName": "a_actor_endminm_dialog_state_walksit_derived_getdocument_loop",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 3.666668,
+          "bundleName": "main/fa1f140b0c9ffaa2db79da60.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/dialog/a_actor_endminm_dialog_state_walksit_derived_getdocument.fbx##a_actor_endminm_dialog_state_walksit_derived_getdocument_start",
+          "clipName": "a_actor_endminm_dialog_state_walksit_derived_getdocument_start",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 10.666668,
+          "bundleName": "main/fa1f140b0c9ffaa2db79da60.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/dialog/a_actor_endminm_dialog_virtual_single_walk_l.fbx##a_actor_endminm_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_endminm_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.7333336,
+          "bundleName": "main/2c2302fb071251594e7febd4.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/dialog/a_actor_endminm_dialog_virtual_single_walk_m.fbx##a_actor_endminm_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_endminm_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.766667,
+          "bundleName": "main/faed76205af4ea2f533f4818.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/endminm/animations/dialog/a_actor_endminm_dialog_virtual_single_walk_s.fbx##a_actor_endminm_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_endminm_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.0,
+          "bundleName": "main/0cd83a8f7007ec983a42c68f.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0003_endminf",
+      "codename": "endminf",
+      "rigFamily": "Girl",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/endminf",
+      "avatarMesh": "NPC/AvatarMesh/Actor/endminf",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Girl/endminf",
+      "modelOptions": [
+        {
+          "partName": "chr_0003_endminf_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0003_endminf_postmodel.prefab",
+          "pathHashHead": 908249643433762946,
+          "pathHashHex": "0x0C9AC03D143EA082",
+          "assetSize": 520,
+          "bundleIndex": 71831,
+          "bundleName": "main/4c8ce1a0eaacf3305a6a4e66.ab",
+          "bundleHashName": 360422966836199122,
+          "bundleHashHex": "0x05007AC75B29FED2"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_single_bamboowalk.fbx##a_actor_endminf_dialog_single_bamboowalk",
+          "clipName": "a_actor_endminf_dialog_single_bamboowalk",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 10.000001,
+          "bundleName": "main/60c9d9eac24a0aa7c11073f7.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_single_walksit_derived_talk.fbx##a_actor_endminf_dialog_single_walksit_derived_talk",
+          "clipName": "a_actor_endminf_dialog_single_walksit_derived_talk",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 5.166667,
+          "bundleName": "main/378413deea36fe9d666ee069.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_state_walk.fbx##a_actor_endminf_dialog_state_walk_end",
+          "clipName": "a_actor_endminf_dialog_state_walk_end",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 3.4833336,
+          "bundleName": "main/37c4cc7c2444331f2128a475.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_state_walk.fbx##a_actor_endminf_dialog_state_walk_loop",
+          "clipName": "a_actor_endminf_dialog_state_walk_loop",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 2.0833335,
+          "bundleName": "main/37c4cc7c2444331f2128a475.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_state_walk.fbx##a_actor_endminf_dialog_state_walk_start",
+          "clipName": "a_actor_endminf_dialog_state_walk_start",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 1.6000001,
+          "bundleName": "main/37c4cc7c2444331f2128a475.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_state_walk_longpaopao.fbx##a_actor_endminf_dialog_state_walk_longpaopao_loop",
+          "clipName": "a_actor_endminf_dialog_state_walk_longpaopao_loop",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 1.0666667,
+          "bundleName": "main/37c1c0bfb3dac23c85dff194.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_state_walksit.fbx##a_actor_endminf_dialog_state_walksit_end",
+          "clipName": "a_actor_endminf_dialog_state_walksit_end",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 5.1666665,
+          "bundleName": "main/3ffee226ed69c31d73be8783.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_state_walksit.fbx##a_actor_endminf_dialog_state_walksit_loop",
+          "clipName": "a_actor_endminf_dialog_state_walksit_loop",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 6.5,
+          "bundleName": "main/3ffee226ed69c31d73be8783.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_state_walksit.fbx##a_actor_endminf_dialog_state_walksit_start",
+          "clipName": "a_actor_endminf_dialog_state_walksit_start",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 17.666668,
+          "bundleName": "main/3ffee226ed69c31d73be8783.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_state_walksit_derived_getdocument.fbx##a_actor_endminf_dialog_state_walksit_derived_getdocument_end",
+          "clipName": "a_actor_endminf_dialog_state_walksit_derived_getdocument_end",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 3.666668,
+          "bundleName": "main/77212de3834605831f35d9d7.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_state_walksit_derived_getdocument.fbx##a_actor_endminf_dialog_state_walksit_derived_getdocument_loop",
+          "clipName": "a_actor_endminf_dialog_state_walksit_derived_getdocument_loop",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 3.666668,
+          "bundleName": "main/77212de3834605831f35d9d7.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_state_walksit_derived_getdocument.fbx##a_actor_endminf_dialog_state_walksit_derived_getdocument_start",
+          "clipName": "a_actor_endminf_dialog_state_walksit_derived_getdocument_start",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 10.666668,
+          "bundleName": "main/77212de3834605831f35d9d7.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_virtual_single_walk_l.fbx##a_actor_endminf_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_endminf_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.4,
+          "bundleName": "main/8cc41bc98a8eb8d8b6932385.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_virtual_single_walk_m.fbx##a_actor_endminf_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_endminf_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.6166668,
+          "bundleName": "main/cac193a3d03627dd51ba6f9b.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/endminf/animations/dialog/a_actor_endminf_dialog_virtual_single_walk_s.fbx##a_actor_endminf_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_endminf_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.3333335,
+          "bundleName": "main/46e0e60ca23f4cdff08e1e42.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0004_pelica",
+      "codename": "pelica",
+      "rigFamily": "Girl",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/pelica",
+      "avatarMesh": "NPC/AvatarMesh/Actor/pelica",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Girl/pelica",
+      "modelOptions": [
+        {
+          "partName": "chr_0004_pelica_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0004_pelica_postmodel.prefab",
+          "pathHashHead": 500689537291635148,
+          "pathHashHex": "0x06F2CE7B3D05C9CC",
+          "assetSize": 544,
+          "bundleIndex": 188214,
+          "bundleName": "main/ca788b482b3c7b99d02c5057.ab",
+          "bundleHashName": 788672021548149573,
+          "bundleHashHex": "0x0AF1ED0668AAAB45"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/pelica/animations/battle/a_actor_pelica_battle_walk_retreat.fbx##a_actor_pelica_battle_walk_retreat",
+          "clipName": "a_actor_pelica_battle_walk_retreat",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 1.3333334,
+          "bundleName": "main/9ff52578ecbbf0f056a6168f.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/pelica/animations/dialog/a_actor_pelica_dialog_state_holdwalk.fbx##a_actor_pelica_dialog_state_holdwalk_loop",
+          "clipName": "a_actor_pelica_dialog_state_holdwalk_loop",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 10.000001,
+          "bundleName": "main/97813b316bd1938e5a3e94d9.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/pelica/animations/dialog/a_actor_pelica_dialog_state_walk.fbx##a_actor_pelica_dialog_state_walk_end",
+          "clipName": "a_actor_pelica_dialog_state_walk_end",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 3.4833336,
+          "bundleName": "main/f35d3949450fe52d1335dbf8.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/pelica/animations/dialog/a_actor_pelica_dialog_state_walk.fbx##a_actor_pelica_dialog_state_walk_loop",
+          "clipName": "a_actor_pelica_dialog_state_walk_loop",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 2.0833335,
+          "bundleName": "main/f35d3949450fe52d1335dbf8.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/pelica/animations/dialog/a_actor_pelica_dialog_state_walk.fbx##a_actor_pelica_dialog_state_walk_start",
+          "clipName": "a_actor_pelica_dialog_state_walk_start",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 1.6000001,
+          "bundleName": "main/f35d3949450fe52d1335dbf8.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/pelica/animations/dialog/a_actor_pelica_dialog_state_walk_b.fbx##a_actor_pelica_dialog_state_walk_b",
+          "clipName": "a_actor_pelica_dialog_state_walk_b",
+          "kind": "walk_other",
+          "loopTime": true,
+          "stopTime": 6.066667,
+          "bundleName": "main/5bd1aa3ae50fcc0fd6d10b49.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/pelica/animations/dialog/a_actor_pelica_dialog_virtual_single_walk_l.fbx##a_actor_pelica_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_pelica_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.4,
+          "bundleName": "main/4c97608ceab755c33b10ca18.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/pelica/animations/dialog/a_actor_pelica_dialog_virtual_single_walk_m.fbx##a_actor_pelica_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_pelica_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.6166668,
+          "bundleName": "main/653592c5db08a2cb8a0fe1f8.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/pelica/animations/dialog/a_actor_pelica_dialog_virtual_single_walk_s.fbx##a_actor_pelica_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_pelica_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.3333335,
+          "bundleName": "main/c04a93779a3d61958573a4a2.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0005_chen",
+      "codename": "chen",
+      "rigFamily": "Girl",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/chen",
+      "avatarMesh": "NPC/AvatarMesh/Actor/chen",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Girl/chen",
+      "modelOptions": [
+        {
+          "partName": "chr_0005_chen_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0005_chen_postmodel.prefab",
+          "pathHashHead": 223711904957465001,
+          "pathHashHex": "0x031AC8CAD30401A9",
+          "assetSize": 520,
+          "bundleIndex": 105559,
+          "bundleName": "main/7115e22187448e4f46cba21b.ab",
+          "bundleHashName": 267766504089940636,
+          "bundleHashHex": "0x03B74C377F07729C"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/chen/animations/dialog/a_actor_chen_dialog_single_walk_stop_l.fbx##a_actor_chen_dialog_single_walk_stop_l",
+          "clipName": "a_actor_chen_dialog_single_walk_stop_l",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 1.2,
+          "bundleName": "main/b5bb7d1e7b643d660a86a3fa.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/chen/animations/dialog/a_actor_chen_dialog_single_walk_stop_r.fbx##a_actor_chen_dialog_single_walk_stop_r",
+          "clipName": "a_actor_chen_dialog_single_walk_stop_r",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 1.2,
+          "bundleName": "main/a58a309f2093e1cd2101ae7d.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/chen/animations/dialog/a_actor_chen_dialog_state_platewalk.fbx##a_actor_chen_dialog_state_platewalk_loop",
+          "clipName": "a_actor_chen_dialog_state_platewalk_loop",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 10.000001,
+          "bundleName": "main/ae47698f77da9d6a838d648f.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/chen/animations/dialog/a_actor_chen_dialog_state_scratchheadwalk.fbx##a_actor_chen_dialog_state_scratchheadwalk_loop",
+          "clipName": "a_actor_chen_dialog_state_scratchheadwalk_loop",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 1.0666667,
+          "bundleName": "main/cf74465d4aa29983538cb973.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/chen/animations/dialog/a_actor_chen_dialog_virtual_single_walk_l.fbx##a_actor_chen_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_chen_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.4,
+          "bundleName": "main/3be9f88ba17309ee2ece7ca3.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/chen/animations/dialog/a_actor_chen_dialog_virtual_single_walk_m.fbx##a_actor_chen_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_chen_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.6166668,
+          "bundleName": "main/7ce26b7f645b1b7f1b4b5569.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/chen/animations/dialog/a_actor_chen_dialog_virtual_single_walk_s.fbx##a_actor_chen_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_chen_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.3333335,
+          "bundleName": "main/710365f6639cdbab3458bfbc.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0006_wolfgd",
+      "codename": "wolfgd",
+      "rigFamily": "Gentleman",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/wolfgd",
+      "avatarMesh": "NPC/AvatarMesh/Actor/wolfgd",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Gentleman/wolfgd",
+      "modelOptions": [
+        {
+          "partName": "chr_0006_wolfgd_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0006_wolfgd_postmodel.prefab",
+          "pathHashHead": 174958706022866727,
+          "pathHashHex": "0x026D940422DADF27",
+          "assetSize": 520,
+          "bundleIndex": 5487,
+          "bundleName": "main/04e0321f0d34865378bf8fb7.ab",
+          "bundleHashName": 29966456854495541,
+          "bundleHashHex": "0x006A76556FFD4135"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/gentleman/wolfgd/animations/dialog/a_actor_wolfgd_dialog_virtual_single_walk_l.fbx##a_actor_wolfgd_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_wolfgd_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.7333336,
+          "bundleName": "main/676fd3d50be64ef47a45e8a8.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/gentleman/wolfgd/animations/dialog/a_actor_wolfgd_dialog_virtual_single_walk_m.fbx##a_actor_wolfgd_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_wolfgd_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.766667,
+          "bundleName": "main/d087019c1033ba48fd35ccde.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/gentleman/wolfgd/animations/dialog/a_actor_wolfgd_dialog_virtual_single_walk_s.fbx##a_actor_wolfgd_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_wolfgd_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.0,
+          "bundleName": "main/234f7614b28f9e5a1f02f2af.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0007_ikut",
+      "codename": "ikut",
+      "rigFamily": "Girl",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/ikut",
+      "avatarMesh": "NPC/AvatarMesh/Actor/ikut",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Girl/ikut",
+      "modelOptions": [
+        {
+          "partName": "chr_0007_ikut_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0007_ikut_postmodel.prefab",
+          "pathHashHead": 702190300897866330,
+          "pathHashHex": "0x09BEAE5BB9BDF25A",
+          "assetSize": 520,
+          "bundleIndex": 19628,
+          "bundleName": "main/1421520cc4cc192089ee27fb.ab",
+          "bundleHashName": 606564462294348766,
+          "bundleHashHex": "0x086AF32A2C6E33DE"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/ikut/animations/dialog/a_actor_ikut_dialog_virtual_single_walk_l.fbx##a_actor_ikut_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_ikut_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.4,
+          "bundleName": "main/dddd8ce96949a2a991813500.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/ikut/animations/dialog/a_actor_ikut_dialog_virtual_single_walk_m.fbx##a_actor_ikut_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_ikut_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.6166668,
+          "bundleName": "main/c7326642e1e4d8e5ce48ae89.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/ikut/animations/dialog/a_actor_ikut_dialog_virtual_single_walk_s.fbx##a_actor_ikut_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_ikut_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.3333335,
+          "bundleName": "main/7dab17da3db10cee011c7f05.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0009_azrila",
+      "codename": "azrila",
+      "rigFamily": "Lady",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/azrila",
+      "avatarMesh": "NPC/AvatarMesh/Actor/azrila",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Lady/azrila",
+      "modelOptions": [
+        {
+          "partName": "chr_0009_azrila_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0009_azrila_postmodel.prefab",
+          "pathHashHead": 377959171090908788,
+          "pathHashHex": "0x053EC7DD14798674",
+          "assetSize": 520,
+          "bundleIndex": 199641,
+          "bundleName": "main/d6acbc58169164c4edff82f2.ab",
+          "bundleHashName": 705732241715514632,
+          "bundleHashHex": "0x09CB43BC15FE4D08"
+        }
+      ],
+      "finalAnimationOptions": []
+    },
+    {
+      "characterId": "chr_0011_seraph",
+      "codename": "seraph",
+      "rigFamily": "Girl",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/seraph",
+      "avatarMesh": "NPC/AvatarMesh/Actor/seraph",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Girl/seraph",
+      "modelOptions": [
+        {
+          "partName": "chr_0011_seraph_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0011_seraph_postmodel.prefab",
+          "pathHashHead": 787289344677128201,
+          "pathHashHex": "0x0AED037CDCEE2809",
+          "assetSize": 520,
+          "bundleIndex": 63621,
+          "bundleName": "main/439e13969207d3cd60d75bf1.ab",
+          "bundleHashName": 653883132079084310,
+          "bundleHashHex": "0x09130F3E84319316"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/seraph/animations/dialog/a_actor_seraph_dialog_virtual_single_walk_l.fbx##a_actor_seraph_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_seraph_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.4,
+          "bundleName": "main/4956d1a0f79941d360a1c0b7.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/seraph/animations/dialog/a_actor_seraph_dialog_virtual_single_walk_m.fbx##a_actor_seraph_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_seraph_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.6166668,
+          "bundleName": "main/5ad42ba15c6dd92a7a0827a8.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/seraph/animations/dialog/a_actor_seraph_dialog_virtual_single_walk_s.fbx##a_actor_seraph_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_seraph_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.3333335,
+          "bundleName": "main/5b14e46c28660422eeee01c7.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0012_avywen",
+      "codename": "avywen",
+      "rigFamily": "Girl",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/avywen",
+      "avatarMesh": "NPC/AvatarMesh/Actor/avywen",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Girl/avywen",
+      "modelOptions": [
+        {
+          "partName": "chr_0012_avywen_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0012_avywen_postmodel.prefab",
+          "pathHashHead": 676878876025641341,
+          "pathHashHex": "0x0964C1C06179597D",
+          "assetSize": 520,
+          "bundleIndex": 42146,
+          "bundleName": "main/2c84ddbe606ad62f2ff2c3ff.ab",
+          "bundleHashName": 680713463298044794,
+          "bundleHashHex": "0x09726149CDB4B37A"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/avywen/animations/dialog/a_actor_avywen_dialog_single_walkhandsback.fbx##a_actor_avywen_dialog_single_walkhandsback",
+          "clipName": "a_actor_avywen_dialog_single_walkhandsback",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 3.2000003,
+          "bundleName": "main/c43572f43dc1900f44aa0712.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/avywen/animations/dialog/a_actor_avywen_dialog_virtual_single_walk_l.fbx##a_actor_avywen_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_avywen_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.4,
+          "bundleName": "main/76cbaaf10afcf72c369b09dc.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/avywen/animations/dialog/a_actor_avywen_dialog_virtual_single_walk_m.fbx##a_actor_avywen_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_avywen_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.6166668,
+          "bundleName": "main/608ceb70eb8604b995e0f7bf.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/avywen/animations/dialog/a_actor_avywen_dialog_virtual_single_walk_s.fbx##a_actor_avywen_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_avywen_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.3333335,
+          "bundleName": "main/a4baca519bfb57412e883198.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0013_aglina",
+      "codename": "aglina",
+      "rigFamily": "Girl",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/aglina",
+      "avatarMesh": "NPC/AvatarMesh/Actor/aglina",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Girl/aglina",
+      "modelOptions": [
+        {
+          "partName": "chr_0013_aglina_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0013_aglina_postmodel.prefab",
+          "pathHashHead": 893448140075918166,
+          "pathHashHex": "0x0C662A5986756356",
+          "assetSize": 544,
+          "bundleIndex": 12043,
+          "bundleName": "main/0c0997a754a9db5dec4b6060.ab",
+          "bundleHashName": 648254783803844465,
+          "bundleHashHex": "0x08FF104A90936771"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/aglina/animations/dialog/a_actor_aglina_dialog_state_shy2_walk.fbx##a_actor_aglina_dialog_state_shy2_walk_end",
+          "clipName": "a_actor_aglina_dialog_state_shy2_walk_end",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 2.4500008,
+          "bundleName": "main/a5e63a67a67ace423a4aa99b.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/aglina/animations/dialog/a_actor_aglina_dialog_state_shy2_walk.fbx##a_actor_aglina_dialog_state_shy2_walk_loop",
+          "clipName": "a_actor_aglina_dialog_state_shy2_walk_loop",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 8.150001,
+          "bundleName": "main/a5e63a67a67ace423a4aa99b.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/aglina/animations/dialog/a_actor_aglina_dialog_state_shy2_walk.fbx##a_actor_aglina_dialog_state_shy2_walk_start",
+          "clipName": "a_actor_aglina_dialog_state_shy2_walk_start",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 1.8666668,
+          "bundleName": "main/a5e63a67a67ace423a4aa99b.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/aglina/animations/dialog/a_actor_aglina_dialog_virtual_single_walk_l.fbx##a_actor_aglina_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_aglina_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.4,
+          "bundleName": "main/8dd4b16c385d6506d5270827.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/aglina/animations/dialog/a_actor_aglina_dialog_virtual_single_walk_m.fbx##a_actor_aglina_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_aglina_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.6166668,
+          "bundleName": "main/bc006c9b42094f45dc2fd102.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/aglina/animations/dialog/a_actor_aglina_dialog_virtual_single_walk_s.fbx##a_actor_aglina_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_aglina_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.3333335,
+          "bundleName": "main/e0eedd381b9ffd40ce55d67e.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0014_aurora",
+      "codename": "aurora",
+      "rigFamily": "Lady",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/aurora",
+      "avatarMesh": "NPC/AvatarMesh/Actor/aurora",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Lady/aurora",
+      "modelOptions": [
+        {
+          "partName": "chr_0014_aurora_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0014_aurora_postmodel.prefab",
+          "pathHashHead": 323479703819786555,
+          "pathHashHex": "0x047D3B13A63A193B",
+          "assetSize": 520,
+          "bundleIndex": 128847,
+          "bundleName": "main/8a26c8120880c5362546bd08.ab",
+          "bundleHashName": 516625325290216448,
+          "bundleHashHex": "0x072B6BFF03E4DC00"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/aurora/animations/dialog/a_actor_aurora_dialog_virtual_single_walk_l.fbx##a_actor_aurora_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_aurora_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.4,
+          "bundleName": "main/e7c52f14f19aa3b17c68b3a3.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/aurora/animations/dialog/a_actor_aurora_dialog_virtual_single_walk_m.fbx##a_actor_aurora_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_aurora_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.6166668,
+          "bundleName": "main/5d9f48b90a2cb75b7620eef9.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/aurora/animations/dialog/a_actor_aurora_dialog_virtual_single_walk_s.fbx##a_actor_aurora_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_aurora_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.3333335,
+          "bundleName": "main/ecbe9dc499622d2b618b45b4.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0015_lifeng",
+      "codename": "lifeng",
+      "rigFamily": "Littleboy",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/lifeng",
+      "avatarMesh": "NPC/AvatarMesh/Actor/lifeng",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Littleboy/lifeng",
+      "modelOptions": [
+        {
+          "partName": "chr_0015_lifeng_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0015_lifeng_postmodel.prefab",
+          "pathHashHead": 576314987705197527,
+          "pathHashHex": "0x07FF7B6D88E6E3D7",
+          "assetSize": 544,
+          "bundleIndex": 123648,
+          "bundleName": "main/8492c4cee9ff896d61f3257b.ab",
+          "bundleHashName": 238255337134147754,
+          "bundleHashHex": "0x034E73F77FB8C8AA"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/littleboy/lifeng/animations/dialog/a_actor_lifeng_dialog_state_walkthink.fbx##a_actor_lifeng_dialog_state_walkthink_end",
+          "clipName": "a_actor_lifeng_dialog_state_walkthink_end",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 17.866667,
+          "bundleName": "main/1b42d8fb7c48cc65886bfe65.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/littleboy/lifeng/animations/dialog/a_actor_lifeng_dialog_state_walkthink.fbx##a_actor_lifeng_dialog_state_walkthink_loop",
+          "clipName": "a_actor_lifeng_dialog_state_walkthink_loop",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 10.250001,
+          "bundleName": "main/1b42d8fb7c48cc65886bfe65.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/littleboy/lifeng/animations/dialog/a_actor_lifeng_dialog_state_walkthink.fbx##a_actor_lifeng_dialog_state_walkthink_start",
+          "clipName": "a_actor_lifeng_dialog_state_walkthink_start",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 8.083334,
+          "bundleName": "main/1b42d8fb7c48cc65886bfe65.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/littleboy/lifeng/animations/dialog/a_actor_lifeng_dialog_virtual_single_walk_l.fbx##a_actor_lifeng_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_lifeng_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.7333336,
+          "bundleName": "main/8cee0fc85d2109a417cb8402.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/littleboy/lifeng/animations/dialog/a_actor_lifeng_dialog_virtual_single_walk_m.fbx##a_actor_lifeng_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_lifeng_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.766667,
+          "bundleName": "main/3f1a029a7aff5207915c1ce7.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/littleboy/lifeng/animations/dialog/a_actor_lifeng_dialog_virtual_single_walk_s.fbx##a_actor_lifeng_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_lifeng_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.0,
+          "bundleName": "main/b2ffdecf2585d75ca9a88678.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0016_laevat",
+      "codename": "laevat",
+      "rigFamily": "Lady",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/laevat",
+      "avatarMesh": "NPC/AvatarMesh/Actor/laevat",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Lady/laevat",
+      "modelOptions": [
+        {
+          "partName": "chr_0016_laevat_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0016_laevat_postmodel.prefab",
+          "pathHashHead": 991520511389000284,
+          "pathHashHex": "0x0DC296A6DCDAE25C",
+          "assetSize": 568,
+          "bundleIndex": 10602,
+          "bundleName": "main/0a728d7e1d7536de2a6c902b.ab",
+          "bundleHashName": 867420002131183583,
+          "bundleHashHex": "0x0C09B1E56A1907DF"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/laevat/animations/3c/a_actor_laevat_walk_loop_entry.fbx##a_actor_laevat_walk_loop_entry",
+          "clipName": "a_actor_laevat_walk_loop_entry",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 1.0666667,
+          "bundleName": "main/ac09d2f244e7548463cbf6ef.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/laevat/animations/3c/a_actor_laevat_walk_loop_entry.fbx##a_actor_laevat_walk_loop_entry_pose",
+          "clipName": "a_actor_laevat_walk_loop_entry_pose",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 1.0666667,
+          "bundleName": "main/ac09d2f244e7548463cbf6ef.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/laevat/animations/dialog/a_actor_laevat_dialog_single_restwalk.fbx##a_actor_laevat_dialog_single_restwalk",
+          "clipName": "a_actor_laevat_dialog_single_restwalk",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 15.333335,
+          "bundleName": "main/50538d3e95186836b78454c2.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/laevat/animations/dialog/a_actor_laevat_dialog_single_wavewalk.fbx##a_actor_laevat_dialog_single_wavewalk",
+          "clipName": "a_actor_laevat_dialog_single_wavewalk",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 8.583334,
+          "bundleName": "main/5543bc28658c30481b80a036.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/laevat/animations/dialog/a_actor_laevat_dialog_virtual_single_walk_l.fbx##a_actor_laevat_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_laevat_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.4,
+          "bundleName": "main/dfe17c1072167dbc1b8d1f54.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/laevat/animations/dialog/a_actor_laevat_dialog_virtual_single_walk_m.fbx##a_actor_laevat_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_laevat_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.6166668,
+          "bundleName": "main/05320dfb2d2f99140338ec39.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/laevat/animations/dialog/a_actor_laevat_dialog_virtual_single_walk_s.fbx##a_actor_laevat_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_laevat_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.3333335,
+          "bundleName": "main/d802f50f647bcad43d1022fb.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0017_yvonne",
+      "codename": "yvonne",
+      "rigFamily": "Girl",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/yvonne",
+      "avatarMesh": "NPC/AvatarMesh/Actor/yvonne",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Girl/yvonne",
+      "modelOptions": [
+        {
+          "partName": "chr_0017_yvonne_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0017_yvonne_postmodel.prefab",
+          "pathHashHead": 897296593151368239,
+          "pathHashHex": "0x0C73D67F54F49C2F",
+          "assetSize": 496,
+          "bundleIndex": 81217,
+          "bundleName": "main/56e4fa213e336ebebd060ecf.ab",
+          "bundleHashName": 656189203289676397,
+          "bundleHashHex": "0x091B409A8F871A6D"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/yvonne/animations/dialog/a_actor_yvonne_dialog_single_lookbackwalk.fbx##a_actor_yvonne_dialog_single_lookbackwalk",
+          "clipName": "a_actor_yvonne_dialog_single_lookbackwalk",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 7.1071644,
+          "bundleName": "main/106655d2552ad7c611dae7fb.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/yvonne/animations/dialog/a_actor_yvonne_dialog_single_wavewalk.fbx##a_actor_yvonne_dialog_single_wavewalk",
+          "clipName": "a_actor_yvonne_dialog_single_wavewalk",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 6.666667,
+          "bundleName": "main/988226a98b8016a4c6a8ae29.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/yvonne/animations/dialog/a_actor_yvonne_dialog_state_walkin.fbx##a_actor_yvonne_dialog_state_walkin_end",
+          "clipName": "a_actor_yvonne_dialog_state_walkin_end",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 4.883334,
+          "bundleName": "main/31064b1cbb7716b0e5e5633e.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/yvonne/animations/dialog/a_actor_yvonne_dialog_state_walkin.fbx##a_actor_yvonne_dialog_state_walkin_loop",
+          "clipName": "a_actor_yvonne_dialog_state_walkin_loop",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 6.2500005,
+          "bundleName": "main/31064b1cbb7716b0e5e5633e.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/yvonne/animations/dialog/a_actor_yvonne_dialog_state_walkin.fbx##a_actor_yvonne_dialog_state_walkin_start",
+          "clipName": "a_actor_yvonne_dialog_state_walkin_start",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 4.2333336,
+          "bundleName": "main/31064b1cbb7716b0e5e5633e.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/yvonne/animations/dialog/a_actor_yvonne_dialog_state_walkinsilent.fbx##a_actor_yvonne_dialog_state_walkinsilent_loop",
+          "clipName": "a_actor_yvonne_dialog_state_walkinsilent_loop",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 3.583334,
+          "bundleName": "main/9711308bbf15364ddac7f2bd.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/yvonne/animations/dialog/a_actor_yvonne_dialog_state_walkinsilent.fbx##a_actor_yvonne_dialog_state_walkinsilent_start",
+          "clipName": "a_actor_yvonne_dialog_state_walkinsilent_start",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 17.833336,
+          "bundleName": "main/9711308bbf15364ddac7f2bd.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/yvonne/animations/dialog/a_actor_yvonne_dialog_virtual_single_walk_l.fbx##a_actor_yvonne_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_yvonne_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.4,
+          "bundleName": "main/0b041be5afa1a5e7a71425fc.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/yvonne/animations/dialog/a_actor_yvonne_dialog_virtual_single_walk_m.fbx##a_actor_yvonne_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_yvonne_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.6166668,
+          "bundleName": "main/02c13b6e6fbc1214eb183425.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/yvonne/animations/dialog/a_actor_yvonne_dialog_virtual_single_walk_s.fbx##a_actor_yvonne_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_yvonne_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.3333335,
+          "bundleName": "main/4c9baf79c5db919da84d2f01.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0018_dapan",
+      "codename": "dapan",
+      "rigFamily": "Panda",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/dapan",
+      "avatarMesh": "NPC/AvatarMesh/Actor/dapan",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Panda/dapan",
+      "modelOptions": [
+        {
+          "partName": "chr_0018_dapan_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0018_dapan_postmodel.prefab",
+          "pathHashHead": 73710533890335563,
+          "pathHashHex": "0x0105DF570CBCE34B",
+          "assetSize": 520,
+          "bundleIndex": 145611,
+          "bundleName": "main/9c6bc644e8cdf8da07329190.ab",
+          "bundleHashName": 556427432065897770,
+          "bundleHashHex": "0x07B8D3CD2792152A"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/panda/dapan/animations/dialog/a_actor_dapan_dialog_virtual_single_walk_l.fbx##a_actor_dapan_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_dapan_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.7500005,
+          "bundleName": "main/b4687d5d308630aa6b58f3a5.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/panda/dapan/animations/dialog/a_actor_dapan_dialog_virtual_single_walk_m.fbx##a_actor_dapan_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_dapan_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.766667,
+          "bundleName": "main/f908bbac809d52352f4cdc3b.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/panda/dapan/animations/dialog/a_actor_dapan_dialog_virtual_single_walk_s.fbx##a_actor_dapan_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_dapan_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 2.4,
+          "bundleName": "main/441af01b112b19ba37b607bb.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0019_karin",
+      "codename": "karin",
+      "rigFamily": "Girl",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/karin",
+      "avatarMesh": "NPC/AvatarMesh/Actor/karin",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Girl/karin",
+      "modelOptions": [
+        {
+          "partName": "chr_0019_karin_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0019_karin_postmodel.prefab",
+          "pathHashHead": 634270053219792775,
+          "pathHashHex": "0x08CD6140BDD57787",
+          "assetSize": 520,
+          "bundleIndex": 2294,
+          "bundleName": "main/0163a60ae303ab2cf0fc1807.ab",
+          "bundleHashName": 786797007458769749,
+          "bundleHashHex": "0x0AEB43B5ABEB9B55"
+        }
+      ],
+      "finalAnimationOptions": []
+    },
+    {
+      "characterId": "chr_0020_meurs",
+      "codename": "meurs",
+      "rigFamily": "Boy",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/meurs",
+      "avatarMesh": "NPC/AvatarMesh/Actor/meurs",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Boy/meurs",
+      "modelOptions": [
+        {
+          "partName": "chr_0020_meurs_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0020_meurs_postmodel.prefab",
+          "pathHashHead": 838461048798110932,
+          "pathHashHex": "0x0BA2CFE1AB9CE4D4",
+          "assetSize": 520,
+          "bundleIndex": 128153,
+          "bundleName": "main/895dc307638f3c2c6e6dd110.ab",
+          "bundleHashName": 39810673948204397,
+          "bundleHashHex": "0x008D6F98D6F39D6D"
+        }
+      ],
+      "finalAnimationOptions": []
+    },
+    {
+      "characterId": "chr_0021_whiten",
+      "codename": "whiten",
+      "rigFamily": "Girl",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/whiten",
+      "avatarMesh": "NPC/AvatarMesh/Actor/whiten",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Girl/whiten",
+      "modelOptions": [
+        {
+          "partName": "chr_0021_whiten_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0021_whiten_postmodel.prefab",
+          "pathHashHead": 585470980052113226,
+          "pathHashHex": "0x082002C1204E574A",
+          "assetSize": 520,
+          "bundleIndex": 137179,
+          "bundleName": "main/933238cefedcf69687ae8fc4.ab",
+          "bundleHashName": 583919786500515716,
+          "bundleHashHex": "0x081A7FF3BBAF6784"
+        }
+      ],
+      "finalAnimationOptions": []
+    },
+    {
+      "characterId": "chr_0022_bounda",
+      "codename": "bounda",
+      "rigFamily": "Girl",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/bounda",
+      "avatarMesh": "NPC/AvatarMesh/Actor/bounda",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Girl/bounda",
+      "modelOptions": [
+        {
+          "partName": "chr_0022_bounda_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0022_bounda_postmodel.prefab",
+          "pathHashHead": 1080069516446719839,
+          "pathHashHex": "0x0EFD2D80B488DF5F",
+          "assetSize": 496,
+          "bundleIndex": 169388,
+          "bundleName": "main/b628cfed24403f5d245ce0c1.ab",
+          "bundleHashName": 926422224139139592,
+          "bundleHashHex": "0x0CDB501ABDD73A08"
+        }
+      ],
+      "finalAnimationOptions": []
+    },
+    {
+      "characterId": "chr_0023_antal",
+      "codename": "antal",
+      "rigFamily": "Boy",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/antal",
+      "avatarMesh": "NPC/AvatarMesh/Actor/antal",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Boy/antal",
+      "modelOptions": [
+        {
+          "partName": "chr_0023_antal_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0023_antal_postmodel.prefab",
+          "pathHashHead": 1148499849934587799,
+          "pathHashHex": "0x0FF04A874BF0C797",
+          "assetSize": 520,
+          "bundleIndex": 121305,
+          "bundleName": "main/820a924a0d0845b71c7733c0.ab",
+          "bundleHashName": 842789199054456757,
+          "bundleHashHex": "0x0BB2304FAE2D47B5"
+        }
+      ],
+      "finalAnimationOptions": []
+    },
+    {
+      "characterId": "chr_0024_deepfin",
+      "codename": "deepfin",
+      "rigFamily": "Gentleman",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/deepfin",
+      "avatarMesh": "NPC/AvatarMesh/Actor/deepfin",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Gentleman/deepfin",
+      "modelOptions": [
+        {
+          "partName": "chr_0024_deepfin_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0024_deepfin_postmodel.prefab",
+          "pathHashHead": 272373000554869103,
+          "pathHashHex": "0x03C7A9CD087AF16F",
+          "assetSize": 520,
+          "bundleIndex": 81934,
+          "bundleName": "main/57b0a22ba9f05942cfd0d98d.ab",
+          "bundleHashName": 178072986934990924,
+          "bundleHashHex": "0x0278A4702A5A584C"
+        }
+      ],
+      "finalAnimationOptions": []
+    },
+    {
+      "characterId": "chr_0025_ardelia",
+      "codename": "ardelia",
+      "rigFamily": "Girl",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/ardelia",
+      "avatarMesh": "NPC/AvatarMesh/Actor/ardelia",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Girl/ardelia",
+      "modelOptions": [
+        {
+          "partName": "chr_0025_ardelia_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0025_ardelia_postmodel.prefab",
+          "pathHashHead": 251572888744078705,
+          "pathHashHex": "0x037DC4359CB5AD71",
+          "assetSize": 520,
+          "bundleIndex": 104209,
+          "bundleName": "main/6f9fb38bb417b91f9b1b4e86.ab",
+          "bundleHashName": 347214391715702852,
+          "bundleHashHex": "0x04D18DA64F1E2844"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/ardelia/animations/dialog/a_actor_ardelia_dialog_virtual_single_walk_l.fbx##a_actor_ardelia_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_ardelia_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.4,
+          "bundleName": "main/2846c7abdcd93743101f424c.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/ardelia/animations/dialog/a_actor_ardelia_dialog_virtual_single_walk_m.fbx##a_actor_ardelia_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_ardelia_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.6166668,
+          "bundleName": "main/57071acd4b256606bdffe6ca.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/ardelia/animations/dialog/a_actor_ardelia_dialog_virtual_single_walk_s.fbx##a_actor_ardelia_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_ardelia_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.3333335,
+          "bundleName": "main/b1cbd2e3b03aa30c39ccad6b.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0026_lastrite",
+      "codename": "lastrite",
+      "rigFamily": "Girl",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/lastrite",
+      "avatarMesh": "NPC/AvatarMesh/Actor/lastrite",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Girl/lastrite",
+      "modelOptions": [
+        {
+          "partName": "chr_0026_lastrite_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0026_lastrite_postmodel.prefab",
+          "pathHashHead": 426222435961126954,
+          "pathHashHex": "0x05EA3F0C1AC3C02A",
+          "assetSize": 544,
+          "bundleIndex": 146299,
+          "bundleName": "main/9d24d5f93a28690c736cedb7.ab",
+          "bundleHashName": 1087270932117641657,
+          "bundleHashHex": "0x0F16C326F37AD9B9"
+        }
+      ],
+      "finalAnimationOptions": []
+    },
+    {
+      "characterId": "chr_0027_tangtang",
+      "codename": "tangtang",
+      "rigFamily": "Girl",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/tangtang",
+      "avatarMesh": "NPC/AvatarMesh/Actor/tangtang",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Girl/tangtang",
+      "modelOptions": [
+        {
+          "partName": "chr_0027_tangtang_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0027_tangtang_postmodel.prefab",
+          "pathHashHead": 231737836725811929,
+          "pathHashHex": "0x03374C55AF0F3AD9",
+          "assetSize": 496,
+          "bundleIndex": 141616,
+          "bundleName": "main/98068fd1ad76fc7a78363355.ab",
+          "bundleHashName": 1066173888924978492,
+          "bundleHashHex": "0x0ECBCF80CE2B8D3C"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/tangtang/animations/dialog/a_actor_tangtang_dialog_single_akimbo1_lookbackandwalk.fbx##a_actor_tangtang_dialog_single_akimbo1_lookbackandwalk",
+          "clipName": "a_actor_tangtang_dialog_single_akimbo1_lookbackandwalk",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 12.750001,
+          "bundleName": "main/74ca14302d003aa6835f04c7.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/tangtang/animations/dialog/a_actor_tangtang_dialog_single_walkarrogant.fbx##a_actor_tangtang_dialog_single_walkarrogant",
+          "clipName": "a_actor_tangtang_dialog_single_walkarrogant",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 7.833334,
+          "bundleName": "main/88ac3c913baef93514b46d5e.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/tangtang/animations/dialog/a_actor_tangtang_dialog_single_walkincircle.fbx##a_actor_tangtang_dialog_single_walkincircle",
+          "clipName": "a_actor_tangtang_dialog_single_walkincircle",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 13.583334,
+          "bundleName": "main/a4b2465b729ea185edee80a5.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/tangtang/animations/dialog/a_actor_tangtang_dialog_single_walkwitharms.fbx##a_actor_tangtang_dialog_single_walkwitharms",
+          "clipName": "a_actor_tangtang_dialog_single_walkwitharms",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 11.333334,
+          "bundleName": "main/e95b9d2c738891b1f99afeb1.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/tangtang/animations/dialog/a_actor_tangtang_dialog_single_wavewalk.fbx##a_actor_tangtang_dialog_single_wavewalk",
+          "clipName": "a_actor_tangtang_dialog_single_wavewalk",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 6.666667,
+          "bundleName": "main/9859e8d59825bb2295147b55.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/tangtang/animations/dialog/a_actor_tangtang_dialog_virtual_single_walk_l.fbx##a_actor_tangtang_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_tangtang_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.4,
+          "bundleName": "main/649af8c2cc70aaa6b033a0e1.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/tangtang/animations/dialog/a_actor_tangtang_dialog_virtual_single_walk_m.fbx##a_actor_tangtang_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_tangtang_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.6166668,
+          "bundleName": "main/3a86b60263a71506f7108aee.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/tangtang/animations/dialog/a_actor_tangtang_dialog_virtual_single_walk_s.fbx##a_actor_tangtang_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_tangtang_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.3333335,
+          "bundleName": "main/88f98919908df61550a855ab.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0028_wulfa",
+      "codename": "wulfa",
+      "rigFamily": "Loli",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/wulfa",
+      "avatarMesh": "NPC/AvatarMesh/Actor/wulfa",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Loli/wulfa",
+      "modelOptions": [
+        {
+          "partName": "chr_0028_wulfa_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0028_wulfa_postmodel.prefab",
+          "pathHashHead": 941821508957701851,
+          "pathHashHex": "0x0D1205AC233F06DB",
+          "assetSize": 544,
+          "bundleIndex": 11326,
+          "bundleName": "main/0b44582beca1783c9a8f9732.ab",
+          "bundleHashName": 272977201100364110,
+          "bundleHashHex": "0x03C9CF516F5E194E"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/loli/wulfa/animations/dialog/a_actor_wulfa_dialog_single_happywalk.fbx##a_actor_wulfa_dialog_single_happywalk",
+          "clipName": "a_actor_wulfa_dialog_single_happywalk",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 21.333334,
+          "bundleName": "main/474e0121d9e641b2524668b8.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/loli/wulfa/animations/dialog/a_actor_wulfa_dialog_single_walktalk.fbx##a_actor_wulfa_dialog_single_walktalk",
+          "clipName": "a_actor_wulfa_dialog_single_walktalk",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 10.833334,
+          "bundleName": "main/a96128b102bbdc3dc1b1d629.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/loli/wulfa/animations/dialog/a_actor_wulfa_dialog_state_akimbo2_shield_followme_walk.fbx##a_actor_wulfa_dialog_state_akimbo2_shield_followme_walk_end",
+          "clipName": "a_actor_wulfa_dialog_state_akimbo2_shield_followme_walk_end",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 6.500002,
+          "bundleName": "main/e7365cff44713fba020cdb6c.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/loli/wulfa/animations/dialog/a_actor_wulfa_dialog_state_akimbo2_shield_followme_walk.fbx##a_actor_wulfa_dialog_state_akimbo2_shield_followme_walk_loop",
+          "clipName": "a_actor_wulfa_dialog_state_akimbo2_shield_followme_walk_loop",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 4.333335,
+          "bundleName": "main/e7365cff44713fba020cdb6c.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/loli/wulfa/animations/dialog/a_actor_wulfa_dialog_state_akimbo2_shield_followme_walk.fbx##a_actor_wulfa_dialog_state_akimbo2_shield_followme_walk_start",
+          "clipName": "a_actor_wulfa_dialog_state_akimbo2_shield_followme_walk_start",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 5.833334,
+          "bundleName": "main/e7365cff44713fba020cdb6c.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/loli/wulfa/animations/dialog/a_actor_wulfa_dialog_virtual_single_walk_l.fbx##a_actor_wulfa_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_wulfa_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.4,
+          "bundleName": "main/636f71abb24d06fbd528f689.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/loli/wulfa/animations/dialog/a_actor_wulfa_dialog_virtual_single_walk_m.fbx##a_actor_wulfa_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_wulfa_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.6166668,
+          "bundleName": "main/2cae597d2b22d1439ff80677.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/loli/wulfa/animations/dialog/a_actor_wulfa_dialog_virtual_single_walk_s.fbx##a_actor_wulfa_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_wulfa_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.3333335,
+          "bundleName": "main/37a17cd58d070db986265bc1.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0029_pograni",
+      "codename": "pograni",
+      "rigFamily": "Gentleman",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/pograni",
+      "avatarMesh": "NPC/AvatarMesh/Actor/pograni",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Gentleman/pograni",
+      "modelOptions": [
+        {
+          "partName": "chr_0029_pograni_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0029_pograni_postmodel.prefab",
+          "pathHashHead": 165427749593529991,
+          "pathHashHex": "0x024BB7A96A83BE87",
+          "assetSize": 544,
+          "bundleIndex": 75204,
+          "bundleName": "main/5047be85ecd4d747d9bb878b.ab",
+          "bundleHashName": 609258650570030707,
+          "bundleHashHex": "0x08748583C38F7E73"
+        }
+      ],
+      "finalAnimationOptions": []
+    },
+    {
+      "characterId": "chr_0030_zhuangfy",
+      "codename": "zhuangfy",
+      "rigFamily": "Lady",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/zhuangfy",
+      "avatarMesh": "NPC/AvatarMesh/Actor/zhuangfy",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Lady/zhuangfy",
+      "modelOptions": [
+        {
+          "partName": "chr_0030_zhuangfy_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0030_zhuangfy_postmodel.prefab",
+          "pathHashHead": 750016796923710991,
+          "pathHashHex": "0x0A68984D9436CE0F",
+          "assetSize": 664,
+          "bundleIndex": 168606,
+          "bundleName": "main/b5535e956d58f214e5f99de1.ab",
+          "bundleHashName": 120684038823945224,
+          "bundleHashHex": "0x01ACC17E70292408"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/zhuangfy/animations/dialog/a_actor_zhuangfy_dialog_state_handbackwalk.fbx##a_actor_zhuangfy_dialog_state_handbackwalk_end",
+          "clipName": "a_actor_zhuangfy_dialog_state_handbackwalk_end",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 1.9833336,
+          "bundleName": "main/c40e51c41157952da8b82729.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/zhuangfy/animations/dialog/a_actor_zhuangfy_dialog_state_handbackwalk.fbx##a_actor_zhuangfy_dialog_state_handbackwalk_loop",
+          "clipName": "a_actor_zhuangfy_dialog_state_handbackwalk_loop",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 1.9000001,
+          "bundleName": "main/c40e51c41157952da8b82729.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/zhuangfy/animations/dialog/a_actor_zhuangfy_dialog_state_handbackwalk.fbx##a_actor_zhuangfy_dialog_state_handbackwalk_start",
+          "clipName": "a_actor_zhuangfy_dialog_state_handbackwalk_start",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 2.9,
+          "bundleName": "main/c40e51c41157952da8b82729.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/zhuangfy/animations/dialog/a_actor_zhuangfy_dialog_virtual_single_walk_l.fbx##a_actor_zhuangfy_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_zhuangfy_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.400368,
+          "bundleName": "main/8eda5ebfe93fff8b911d480a.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/zhuangfy/animations/dialog/a_actor_zhuangfy_dialog_virtual_single_walk_m.fbx##a_actor_zhuangfy_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_zhuangfy_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.616969,
+          "bundleName": "main/ab4e6b9adbfc8cecd7aaefb1.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/zhuangfy/animations/dialog/a_actor_zhuangfy_dialog_virtual_single_walk_s.fbx##a_actor_zhuangfy_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_zhuangfy_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.3333335,
+          "bundleName": "main/6f4aff65a842ff5295bafec1.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0031_mifu",
+      "codename": "mifu",
+      "rigFamily": "Lady",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/mifu",
+      "avatarMesh": "NPC/AvatarMesh/Actor/mifu",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Lady/mifu",
+      "modelOptions": [
+        {
+          "partName": "chr_0031_mifu_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0031_mifu_postmodel.prefab",
+          "pathHashHead": 364593409201368005,
+          "pathHashHex": "0x050F4BC622E56BC5",
+          "assetSize": 568,
+          "bundleIndex": 105470,
+          "bundleName": "main/70fcff48dee071de09b865b7.ab",
+          "bundleHashName": 1085526267461649269,
+          "bundleHashHex": "0x0F1090638E684375"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/mifu/animations/dialog/a_actor_mifu_dialog_state_walk.fbx##a_actor_mifu_dialog_state_walk_end",
+          "clipName": "a_actor_mifu_dialog_state_walk_end",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 3.4833336,
+          "bundleName": "main/80e91c2825c0a3759433d45f.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/mifu/animations/dialog/a_actor_mifu_dialog_state_walk.fbx##a_actor_mifu_dialog_state_walk_loop",
+          "clipName": "a_actor_mifu_dialog_state_walk_loop",
+          "kind": "walk_loop_named",
+          "loopTime": true,
+          "stopTime": 2.0833335,
+          "bundleName": "main/80e91c2825c0a3759433d45f.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/mifu/animations/dialog/a_actor_mifu_dialog_state_walk.fbx##a_actor_mifu_dialog_state_walk_start",
+          "clipName": "a_actor_mifu_dialog_state_walk_start",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 1.6000001,
+          "bundleName": "main/80e91c2825c0a3759433d45f.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/mifu/animations/dialog/a_actor_mifu_dialog_virtual_single_walk_l.fbx##a_actor_mifu_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_mifu_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.4,
+          "bundleName": "main/4c75d18b5346ad1d65fc4d1f.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/mifu/animations/dialog/a_actor_mifu_dialog_virtual_single_walk_m.fbx##a_actor_mifu_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_mifu_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.6166668,
+          "bundleName": "main/55a8bab211fb6fa808f0a940.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/lady/mifu/animations/dialog/a_actor_mifu_dialog_virtual_single_walk_s.fbx##a_actor_mifu_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_mifu_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.3333335,
+          "bundleName": "main/815b551eba2e3f78864deac0.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0032_lizhiyan",
+      "codename": "lizhiyan",
+      "rigFamily": "Girl",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/lizhiyan",
+      "avatarMesh": "NPC/AvatarMesh/Actor/lizhiyan",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Girl/lizhiyan",
+      "modelOptions": [
+        {
+          "partName": "chr_0032_lizhiyan_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0032_lizhiyan_postmodel.prefab",
+          "pathHashHead": 897327396584365613,
+          "pathHashHex": "0x0C73F28350A31E2D",
+          "assetSize": 568,
+          "bundleIndex": 121421,
+          "bundleName": "main/8229c4301795d3f1e1440bfc.ab",
+          "bundleHashName": 821197892537723385,
+          "bundleHashHex": "0x0B657B21E302A9F9"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/lizhiyan/animations/dialog/a_actor_lizhiyan_dialog_single_walk_loop_hurt_additive.fbx##a_actor_lizhiyan_dialog_single_walk_loop_hurt_additive",
+          "clipName": "a_actor_lizhiyan_dialog_single_walk_loop_hurt_additive",
+          "kind": "walk_additive",
+          "loopTime": true,
+          "stopTime": 1.0666667,
+          "bundleName": "main/8e7f907650fa2af51c5f8175.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/lizhiyan/animations/dialog/a_actor_lizhiyan_dialog_virtual_single_walk_l.fbx##a_actor_lizhiyan_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_lizhiyan_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.4,
+          "bundleName": "main/bb0f92d842d18d073eeafca5.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/lizhiyan/animations/dialog/a_actor_lizhiyan_dialog_virtual_single_walk_m.fbx##a_actor_lizhiyan_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_lizhiyan_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.6166668,
+          "bundleName": "main/7ae5f26e7048030259560f27.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/lizhiyan/animations/dialog/a_actor_lizhiyan_dialog_virtual_single_walk_s.fbx##a_actor_lizhiyan_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_lizhiyan_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.3333335,
+          "bundleName": "main/c747711dfd5a4f626c68df7d.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0033_camille",
+      "codename": "camille",
+      "rigFamily": "Boy",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/camille",
+      "avatarMesh": "NPC/AvatarMesh/Actor/camille",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Boy/camille",
+      "modelOptions": [
+        {
+          "partName": "chr_0033_camille_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0033_camille_postmodel.prefab",
+          "pathHashHead": 490840137250548875,
+          "pathHashHex": "0x06CFD0811652AC8B",
+          "assetSize": 568,
+          "bundleIndex": 140342,
+          "bundleName": "main/969204856889c5e3a941c3c6.ab",
+          "bundleHashName": 463197672562792991,
+          "bundleHashHex": "0x066D9BD43DE49A1F"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/camille/animations/dialog/a_actor_camille_dialog_single_walk_loop_careful_additive.fbx##a_actor_camille_dialog_single_walk_loop_careful_additive",
+          "clipName": "a_actor_camille_dialog_single_walk_loop_careful_additive",
+          "kind": "walk_additive",
+          "loopTime": true,
+          "stopTime": 1.0666667,
+          "bundleName": "main/2b4c9a2dc7e519d72903f145.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/camille/animations/dialog/a_actor_camille_dialog_single_walk_loop_careful_sp.fbx##a_actor_camille_dialog_single_walk_loop_careful_sp",
+          "clipName": "a_actor_camille_dialog_single_walk_loop_careful_sp",
+          "kind": "walk_loop_named",
+          "loopTime": false,
+          "stopTime": 5.6833334,
+          "bundleName": "main/0166d8dfd3eb504b3207c2af.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/camille/animations/dialog/a_actor_camille_dialog_single_walk_stop_l.fbx##a_actor_camille_dialog_single_walk_stop_l",
+          "clipName": "a_actor_camille_dialog_single_walk_stop_l",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 2.5666668,
+          "bundleName": "main/9abb499fffece5858301ad20.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/camille/animations/dialog/a_actor_camille_dialog_single_walk_stop_r.fbx##a_actor_camille_dialog_single_walk_stop_r",
+          "clipName": "a_actor_camille_dialog_single_walk_stop_r",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 2.5666668,
+          "bundleName": "main/045d7f007fcd2ff6118add7b.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/camille/animations/dialog/a_actor_camille_dialog_virtual_single_walk_l.fbx##a_actor_camille_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_camille_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.7333336,
+          "bundleName": "main/6addc2b18aba608790015103.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/camille/animations/dialog/a_actor_camille_dialog_virtual_single_walk_m.fbx##a_actor_camille_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_camille_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.766667,
+          "bundleName": "main/4f96b7ffc6bf4c4f8933378b.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/boy/camille/animations/dialog/a_actor_camille_dialog_virtual_single_walk_s.fbx##a_actor_camille_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_camille_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.0,
+          "bundleName": "main/1a6cc4afc418221989a52ec9.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0035_liino",
+      "codename": "liino",
+      "rigFamily": "Girl",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/liino",
+      "avatarMesh": "NPC/AvatarMesh/Actor/liino",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Girl/liino",
+      "modelOptions": [
+        {
+          "partName": "chr_0035_liino_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0035_liino_postmodel.prefab",
+          "pathHashHead": 882537074650246319,
+          "pathHashHex": "0x0C3F66CB23A3ECAF",
+          "assetSize": 520,
+          "bundleIndex": 40910,
+          "bundleName": "main/2b3309373794eab53df96fdb.ab",
+          "bundleHashName": 394944085092880676,
+          "bundleHashHex": "0x057B1F8D8A1A5124"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/liino/animations/dialog/a_actor_liino_dialog_single_walk_start_l_0_r.fbx##a_actor_liino_dialog_single_walk_start_l_0_r",
+          "clipName": "a_actor_liino_dialog_single_walk_start_l_0_r",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 1.6666667,
+          "bundleName": "main/6ba6553e28f2111aebeab733.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/liino/animations/dialog/a_actor_liino_dialog_single_walk_stop_l.fbx##a_actor_liino_dialog_single_walk_stop_l",
+          "clipName": "a_actor_liino_dialog_single_walk_stop_l",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 2.5666668,
+          "bundleName": "main/cc006a753dfea19b3ba6da37.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/liino/animations/dialog/a_actor_liino_dialog_single_walk_stop_r.fbx##a_actor_liino_dialog_single_walk_stop_r",
+          "clipName": "a_actor_liino_dialog_single_walk_stop_r",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 2.5666668,
+          "bundleName": "main/8361416973282ff5f8dcbb29.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/liino/animations/dialog/a_actor_liino_dialog_virtual_single_walk_l.fbx##a_actor_liino_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_liino_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.4,
+          "bundleName": "main/996c55f98b253a5b463f51a3.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/liino/animations/dialog/a_actor_liino_dialog_virtual_single_walk_m.fbx##a_actor_liino_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_liino_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.6166668,
+          "bundleName": "main/1905578a0906d3258d04165f.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/liino/animations/dialog/a_actor_liino_dialog_virtual_single_walk_s.fbx##a_actor_liino_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_liino_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.3333335,
+          "bundleName": "main/008793ff2848990564db39f6.ab"
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0036_jsspsi",
+      "codename": "jsspsi",
+      "rigFamily": "Girl",
+      "avatarTemplate": "NPC/AvatarTemplet/Entity/Actor/jsspsi",
+      "avatarMesh": "NPC/AvatarMesh/Actor/jsspsi",
+      "animationConfig": "NPC/AnimationConfig/Humanoid/Girl/jsspsi",
+      "modelOptions": [
+        {
+          "partName": "chr_0036_jsspsi_postmodel",
+          "loadPath": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0036_jsspsi_postmodel.prefab",
+          "pathHashHead": 750258578023638001,
+          "pathHashHex": "0x0A697433A0C9E3F1",
+          "assetSize": 520,
+          "bundleIndex": 51402,
+          "bundleName": "main/367f5064fc08050749fa0c97.ab",
+          "bundleHashName": 169189643978559178,
+          "bundleHashHex": "0x02591515B5044ECA"
+        }
+      ],
+      "finalAnimationOptions": [
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/jsspsi/animations/dialog/a_actor_jsspsi_dialog_single_walk_start_l_0_r.fbx##a_actor_jsspsi_dialog_single_walk_start_l_0_r",
+          "clipName": "a_actor_jsspsi_dialog_single_walk_start_l_0_r",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 1.6666667,
+          "bundleName": "main/3fdacb73ef4149140552e0c2.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/jsspsi/animations/dialog/a_actor_jsspsi_dialog_single_walk_stop_l.fbx##a_actor_jsspsi_dialog_single_walk_stop_l",
+          "clipName": "a_actor_jsspsi_dialog_single_walk_stop_l",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 2.5666668,
+          "bundleName": "main/8fb7183d6d4a904afad29533.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/jsspsi/animations/dialog/a_actor_jsspsi_dialog_single_walk_stop_r.fbx##a_actor_jsspsi_dialog_single_walk_stop_r",
+          "clipName": "a_actor_jsspsi_dialog_single_walk_stop_r",
+          "kind": "walk_other",
+          "loopTime": false,
+          "stopTime": 2.5666668,
+          "bundleName": "main/33de657eb10b14ab89a7a41f.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/jsspsi/animations/dialog/a_actor_jsspsi_dialog_virtual_single_walk_l.fbx##a_actor_jsspsi_dialog_virtual_single_walk_l",
+          "clipName": "a_actor_jsspsi_dialog_virtual_single_walk_l",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 4.4,
+          "bundleName": "main/f4b46b406d84b6a841cbabe6.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/jsspsi/animations/dialog/a_actor_jsspsi_dialog_virtual_single_walk_m.fbx##a_actor_jsspsi_dialog_virtual_single_walk_m",
+          "clipName": "a_actor_jsspsi_dialog_virtual_single_walk_m",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.6166668,
+          "bundleName": "main/a6a940b7d4afcfc5415bd31a.ab"
+        },
+        {
+          "path": "assets/beyond/arts/entity/actor/girl/jsspsi/animations/dialog/a_actor_jsspsi_dialog_virtual_single_walk_s.fbx##a_actor_jsspsi_dialog_virtual_single_walk_s",
+          "clipName": "a_actor_jsspsi_dialog_virtual_single_walk_s",
+          "kind": "walk_single",
+          "loopTime": false,
+          "stopTime": 3.3333335,
+          "bundleName": "main/c37d09b5e2ac7cff4f7b718f.ab"
+        }
+      ]
+    }
+  ]
+}

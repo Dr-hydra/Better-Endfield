@@ -1,0 +1,4 @@
+#include <windows.h>
+
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST
+    "BetterEndfield.Injector.manifest"

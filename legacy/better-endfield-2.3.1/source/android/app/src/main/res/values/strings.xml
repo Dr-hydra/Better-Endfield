@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Better Endfield</string>
+    <string name="xposed_description">Modular Endfield model replacement and per-character voice routing</string>
+    <string name="settings_subtitle">终末地增强模块 · Android</string>
+    <string name="app_icon_description">Better Endfield 图标</string>
+    <string name="runtime_badge">ROOT · LSPOSED</string>
+    <string name="model_page">模型替换</string>
+    <string name="voice_page">角色配音</string>
+    <string name="model_title">登录模型替换</string>
+    <string name="model_eyebrow">MODEL REPLACEMENT</string>
+    <string name="model_description">直接复用桌面端模型模块、角色预设和动画序列。模型设置在下次启动游戏时生效。</string>
+    <string name="model_table_ready">桌面预设已加载：%1$d 名角色，%2$d 个可选动作；14 个 Hook 入口同源编译。</string>
+    <string name="model_table_failed">模型预设加载失败：%1$s</string>
+    <string name="model_enable">启用登录角色模型替换</string>
+    <string name="model_basic_section">角色与动作</string>
+    <string name="model_theme_section">登录界面主题</string>
+    <string name="model_character">替换角色</string>
+    <string name="model_action">最终循环动作</string>
+    <string name="model_final_loop">循环播放最终动作</string>
+    <string name="model_scale">模型缩放</string>
+    <string name="logo_enable">启用 Logo 与登录色带主题色</string>
+    <string name="logo_color_label">主题色（#RRGGBB）</string>
+    <string name="model_save">保存模型设置</string>
+    <string name="model_selection_ready">当前预设：%1$s\n动作：%2$s</string>
+    <string name="model_settings_invalid">模型设置无效：%1$s</string>
+    <string name="settings_title">角色配音</string>
+    <string name="voice_eyebrow">CHARACTER VOICE</string>
+    <string name="voice_list_caption">全角色语言规则</string>
+    <string name="settings_description">为每名角色独立选择中文、英文、日文、韩文或跟随游戏。角色与语气词对照表直接复用桌面端内置旧表；所需 resident catalog 会在下次启动游戏时从手机本机语言包单独生成。</string>
+    <string name="voice_table_ready">桌面端旧表已加载：%1$d 名角色，%2$d 个角色/语言目录。</string>
+    <string name="voice_table_failed">旧表加载失败：%1$s</string>
+    <string name="voice_table_unavailable">无法读取预存语气词对照表，设置未保存。</string>
+    <string name="current_setting_ready">当前设置已加载。修改后需强制停止并重新启动游戏。模型替换、动画序列、Logo 和登录色带已通过实机验证。</string>
+    <string name="restart_required">设置已保存。请强制停止并重新启动游戏；首次使用新的配音规则时会自动生成手机专用 catalog。</string>
+    <string name="model_restart_required">模型设置已保存。请强制停止并重新启动游戏。</string>
+</resources>

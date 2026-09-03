@@ -1,0 +1,885 @@
+{
+  "m_AnimationType": 0,
+  "m_Legacy": false,
+  "m_Compressed": false,
+  "m_UseHighQualityCurve": true,
+  "m_RotationCurves": [],
+  "m_CompressedRotationCurves": [],
+  "m_EulerCurves": [],
+  "m_PositionCurves": [],
+  "m_ScaleCurves": [],
+  "m_FloatCurves": [],
+  "m_PPtrCurves": [],
+  "m_SampleRate": 60.0,
+  "m_WrapMode": 0,
+  "m_Bounds": {
+    "m_Center": {
+      "X": 0.0,
+      "Y": 0.0,
+      "Z": 0.0
+    },
+    "m_Extent": {
+      "X": 0.0,
+      "Y": 0.0,
+      "Z": 0.0
+    }
+  },
+  "m_MuscleClipSize": 2740,
+  "m_MuscleClip": {
+    "m_DeltaPose": {
+      "m_RootX": {
+        "t": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        "q": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0,
+          "W": 1.0
+        },
+        "s": {
+          "X": 1.0,
+          "Y": 1.0,
+          "Z": 1.0
+        }
+      },
+      "m_LookAtPosition": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      },
+      "m_LookAtWeight": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0,
+        "W": 0.0
+      },
+      "m_GoalArray": [
+        {
+          "m_X": {
+            "t": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "q": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0,
+              "W": 1.0
+            },
+            "s": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "m_WeightT": 0.0,
+          "m_WeightR": 0.0,
+          "m_HintT": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 0.0
+          },
+          "m_HintWeightT": 0.0
+        },
+        {
+          "m_X": {
+            "t": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "q": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0,
+              "W": 1.0
+            },
+            "s": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "m_WeightT": 0.0,
+          "m_WeightR": 0.0,
+          "m_HintT": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 0.0
+          },
+          "m_HintWeightT": 0.0
+        },
+        {
+          "m_X": {
+            "t": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "q": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0,
+              "W": 1.0
+            },
+            "s": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "m_WeightT": 0.0,
+          "m_WeightR": 0.0,
+          "m_HintT": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 0.0
+          },
+          "m_HintWeightT": 0.0
+        },
+        {
+          "m_X": {
+            "t": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "q": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0,
+              "W": 1.0
+            },
+            "s": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "m_WeightT": 0.0,
+          "m_WeightR": 0.0,
+          "m_HintT": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 0.0
+          },
+          "m_HintWeightT": 0.0
+        }
+      ],
+      "m_LeftHandPose": {
+        "m_GrabX": {
+          "t": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 0.0
+          },
+          "q": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 0.0,
+            "W": 1.0
+          },
+          "s": {
+            "X": 1.0,
+            "Y": 1.0,
+            "Z": 1.0
+          }
+        },
+        "m_DoFArray": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_Override": 0.0,
+        "m_CloseOpen": 0.0,
+        "m_InOut": 0.0,
+        "m_Grab": 0.0
+      },
+      "m_RightHandPose": {
+        "m_GrabX": {
+          "t": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 0.0
+          },
+          "q": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 0.0,
+            "W": 1.0
+          },
+          "s": {
+            "X": 1.0,
+            "Y": 1.0,
+            "Z": 1.0
+          }
+        },
+        "m_DoFArray": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_Override": 0.0,
+        "m_CloseOpen": 0.0,
+        "m_InOut": 0.0,
+        "m_Grab": 0.0
+      },
+      "m_DoFArray": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "m_TDoFArray": [
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        }
+      ]
+    },
+    "m_StartX": {
+      "t": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      },
+      "q": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0,
+        "W": 1.0
+      },
+      "s": {
+        "X": 1.0,
+        "Y": 1.0,
+        "Z": 1.0
+      }
+    },
+    "m_StopX": {
+      "t": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      },
+      "q": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0,
+        "W": 1.0
+      },
+      "s": {
+        "X": 1.0,
+        "Y": 1.0,
+        "Z": 1.0
+      }
+    },
+    "m_LeftFootStartX": {
+      "t": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      },
+      "q": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0,
+        "W": 1.0
+      },
+      "s": {
+        "X": 1.0,
+        "Y": 1.0,
+        "Z": 1.0
+      }
+    },
+    "m_RightFootStartX": {
+      "t": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      },
+      "q": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0,
+        "W": 1.0
+      },
+      "s": {
+        "X": 1.0,
+        "Y": 1.0,
+        "Z": 1.0
+      }
+    },
+    "m_MotionStartX": {
+      "t": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      },
+      "q": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0,
+        "W": 0.0
+      },
+      "s": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      }
+    },
+    "m_MotionStopX": {
+      "t": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      },
+      "q": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0,
+        "W": 0.0
+      },
+      "s": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      }
+    },
+    "m_AverageSpeed": {
+      "X": 0.0,
+      "Y": 0.0,
+      "Z": 0.0
+    },
+    "m_Clip": {
+      "m_ACLClip": {
+        "IsSet": false,
+        "CurveCount": 0
+      },
+      "m_StreamedClip": {
+        "data": [
+          4286578687,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          3260547072,
+          1104674816,
+          0,
+          0,
+          1051372203,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1065353216,
+          2139095040,
+          0
+        ],
+        "curveCount": 1
+      },
+      "m_DenseClip": {
+        "m_ACLType": 0,
+        "m_ACLArray": "",
+        "m_PositionFactor": 1.0,
+        "m_EulerFactor": 1.0,
+        "m_ScaleFactor": 1.0,
+        "m_FloatFactor": 1.0,
+        "m_nPositionCurves": 0,
+        "m_nRotationCurves": 0,
+        "m_nEulerCurves": 0,
+        "m_nScaleCurves": 0,
+        "m_nGenericCurves": 0,
+        "m_FrameCount": 22,
+        "m_CurveCount": 0,
+        "m_SampleRate": 60.0,
+        "m_BeginTime": 0.0,
+        "m_SampleArray": []
+      },
+      "m_ConstantClip": {
+        "data": []
+      },
+      "m_Binding": null
+    },
+    "m_StartTime": 0.0,
+    "m_StopTime": 0.33333334,
+    "m_OrientationOffsetY": 0.0,
+    "m_Level": 0.0,
+    "m_CycleOffset": 0.0,
+    "m_AverageAngularSpeed": 0.0,
+    "m_IndexArray": [
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "m_ValueArrayDelta": [
+      {
+        "m_Start": 0.0,
+        "m_Stop": 1.0
+      }
+    ],
+    "m_ValueArrayReferencePose": [],
+    "m_Mirror": false,
+    "m_LoopTime": false,
+    "m_LoopBlend": false,
+    "m_LoopBlendOrientation": false,
+    "m_LoopBlendPositionY": false,
+    "m_LoopBlendPositionXZ": false,
+    "m_StartAtOrigin": true,
+    "m_KeepOriginalOrientation": false,
+    "m_KeepOriginalPositionY": true,
+    "m_KeepOriginalPositionXZ": false,
+    "m_HeightFromFeet": false,
+    "m_ReducedDeltaValue": false
+  },
+  "m_ClipBindingConstant": {
+    "genericBindings": [
+      {
+        "version": [
+          2021,
+          3,
+          34,
+          5
+        ],
+        "path": 0,
+        "attribute": 1451932078,
+        "script": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "typeID": "ParticleSystem",
+        "customType": 27,
+        "isPPtrCurve": 0,
+        "isIntCurve": 0
+      }
+    ],
+    "pptrCurveMapping": []
+  },
+  "m_AclCompressedBuffer": {
+    "Version": -1,
+    "TransformBufferData": "",
+    "RootMotionBufferData": "",
+    "FloatBufferData": "",
+    "TransformSubTrackMasks": "",
+    "TransformSubTrackConstantMasks": "",
+    "OutputTrackCount": 0,
+    "RootPosIndex": 65535,
+    "RootRotIndex": 65535,
+    "RootScaleIndex": 65535,
+    "RootTrackCount": 0,
+    "FloatCurveCount": 0,
+    "m_DefaultIndexs": [],
+    "m_ConstantIndexs": [],
+    "m_ConstantValues": []
+  },
+  "m_Events": [],
+  "m_StreamData": null,
+  "m_Name": "A_intro_particle",
+  "Name": "A_intro_particle"
+}

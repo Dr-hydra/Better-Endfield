@@ -1,0 +1,9 @@
+Risk Notice & User Disclaimer
+
+Better Endfield is an unofficial experimental mod utility, not affiliated with Hypergryph, Mountain Contour, or GRYPHLINE.
+
+This software injects native code into the game process to modify models, animations, audio routing, and visual pipelines at runtime. Using this tool carries potential risks, including game crashes, configuration anomalies, invalidation after game patches, and detection by game security or anti-cheat systems. Online accounts may be subject to account restrictions.
+
+Please backup your important data before use, comply with all applicable terms of service, and use at your own risk. This software is provided "as is", without warranty of any kind, express or implied.
+
+This software does not disable or bypass anti-cheat mechanisms. If entry signatures mismatch following a game update, suspend related hooks and wait for official compatibility updates.

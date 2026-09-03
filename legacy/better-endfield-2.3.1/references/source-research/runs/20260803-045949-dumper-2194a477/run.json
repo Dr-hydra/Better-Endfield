@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "sessionId": "20260803-045949-dumper-2194a477",
+  "kind": "dumper",
+  "gamePath": "E:\\Endfield Game",
+  "targetExecutable": "E:\\Endfield Game\\Endfield.exe",
+  "dumperWorkingDirectory": "E:\\Dr.Hydra\\EF-Start-Change\\runs\\20260803-045949-dumper-2194a477",
+  "startedUtc": "2026-08-02T20:59:50.4744682+00:00",
+  "observedUntilUtc": "2026-08-02T21:00:58.0207527+00:00",
+  "dumperPid": 15660,
+  "gamePid": 18300,
+  "gameExited": true,
+  "durationSeconds": 90,
+  "marks": [
+    {
+      "utc": "2026-08-02T21:00:05.8123442+00:00",
+      "elapsedSeconds": 15.3265811,
+      "key": "F7"
+    },
+    {
+      "utc": "2026-08-02T21:00:20.7916146+00:00",
+      "elapsedSeconds": 30.3164539,
+      "key": "F11"
+    },
+    {
+      "utc": "2026-08-02T21:00:35.5493135+00:00",
+      "elapsedSeconds": 45.0727776,
+      "key": "F3"
+    }
+  ],
+  "externalTcpConnectionCount": 0
+}

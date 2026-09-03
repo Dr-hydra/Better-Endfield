@@ -219,6 +219,14 @@
                                         TextWrapping="Wrap" />
                                 </StackPanel>
 
+                                <InfoBar
+                                    x:Name="ModelReplacementUnavailableInfoBar"
+                                    IsClosable="False"
+                                    IsOpen="True"
+                                    Message="当前游戏版本不兼容，修复完成前无法启用。"
+                                    Severity="Warning"
+                                    Title="角色替换暂不可用" />
+
                                 <Border Style="{StaticResource SectionStyle}">
                                     <StackPanel Spacing="18">
                                         <StackPanel Spacing="4">
@@ -256,6 +264,8 @@
                                     <ToggleSwitch
                                         x:Name="ModelReplacementToggle"
                                         Header="启用角色替换"
+                                        IsEnabled="False"
+                                        IsOn="False"
                                         OffContent="保持原登录演员"
                                         OnContent="使用下方角色与动画" />
                                 </StackPanel>
@@ -474,6 +484,14 @@
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                         FontSize="12"
                                         Text="请先下载对应语言包。" />
+                                    <InfoBar
+                                        x:Name="VoiceCompatibilityInfoBar"
+                                        Margin="0,10,0,0"
+                                        IsClosable="False"
+                                        IsOpen="True"
+                                        Message="替换语音的时长修正与口型同步目前存在问题，仍待修复。"
+                                        Severity="Warning"
+                                        Title="已知问题" />
                                     <ToggleSwitch
                                         x:Name="VoiceRouterToggle"
                                         Margin="0,12,0,0"
