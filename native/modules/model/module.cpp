@@ -2652,21 +2652,11 @@ bool LoadConfiguredAssets() {
     if (now < g_next_asset_retry_tick || !g_initial_hash_ready.load()) {
         return false;
     }
-    const bool resources_ready = ResourcesReady();
-    if (!g_main_hash_ready.load(std::memory_order_acquire)) {
-        if (!resources_ready) {
-            return false;
-        }
-        bool expected = false;
-        if (g_main_hash_ready.compare_exchange_strong(expected, true,
-                std::memory_order_acq_rel)) {
-            g_next_asset_retry_tick = now + 50;
-            Log("[model-resource] Main path hash readiness recovered after "
-                "pre-hook initialization; asset loading deferred for stabilization");
-        }
-        return false;
-    }
-    if (!resources_ready) {
+    // Wait for the real InitMainPathHash hook. Forcing readiness once the
+    // resource manager reports initialized loads the prefab before its
+    // dependency set is complete; the clone then carries an Animator with
+    // avatar=null / human=false (verified on Android 1.5.3).
+    if (!g_main_hash_ready.load(std::memory_order_acquire) || !ResourcesReady()) {
         return false;
     }
     const ModelConfiguration configuration = ConfigurationSnapshot();
