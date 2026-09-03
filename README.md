@@ -53,9 +53,7 @@ docs/                          运行时接口、研究结论与集成交接文�
 
 发布目录仍使用 `runtime/modules/loaders/payloads`，源码归类不会改变现有安装与加载路径。`artifacts`、`runs`、反编译结果和本地工具输出属于工作产物，不参与源码层级整理。
 
-## 已知问题
-
-开屏 Logo、中央色带和两侧色块的最终颜色可能与 UI 选择值存在偏差。这是因为主题色会与游戏源资源自带的颜色数据叠加；该问题在 `2.0.1` 中标记为不会修复，后续版本不再为此调整原始材质改色路径。
+## 模块 ABI
 
 模块 ABI 使用纯 C 接口。模块通过程序集、命名空间、类、方法、参数和字段描述符动态解析 IL2CPP；Hook 入口由当前进程的 IL2CPP ABI 与 PE 可执行区间共同验证，不保存客户端地址或文件哈希条件。
 
@@ -157,7 +155,7 @@ Catalog 只包含目标角色需要的 WEM，重复目标 Media 只存储一次�
 
 ```powershell
 pwsh -File .\scripts\BuildBetterEndfield.ps1
-pwsh -File .\scripts\BuildInstaller.ps1 -Version 3.0.1
+pwsh -File .\scripts\BuildInstaller.ps1 -Version 3.1.1
 ```
 
 原生构建入口是 `native/CMakeLists.txt`。MinHook 只由 Host 链接，模块不得自行初始化或卸载 Hook 引擎。

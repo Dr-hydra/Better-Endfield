@@ -71,16 +71,30 @@ Logo 主题使用以下强类型契约：
 - `AK.Wwise.Unity.API.dll / AkSoundEnginePINVOKE.CSharp_SetMedia`
 - `AK.Wwise.Unity.API.dll / AkSoundEnginePINVOKE.CSharp_UnsetMedia`
 
-可选契约还包括 `Beyond.Gameplay.Core.DialogManager._PlayLipSyncTrack`、
-`Beyond.Gameplay.View.LipSync.LipSyncUtils.GetLipSyncTrackPath`、
+可选契约还包括 `VoiceUtils._GetVoDurationFromVoData`（时长叶子）、`Beyond.Cfg.VoiceData` 的
+`get_speakerChannel`/`get_path`/`get_wavDuration*` getter（只调用、不挂接）、
+`Beyond.Gameplay.Core.DialogManager._PlayLipSyncTrack`、
 `Beyond.Gameplay.View.LipSync.LipSyncUtils.TryLoadTrack` 及对话动作的角色标识 getter。
 剧情请求在 `VoicePlayer.PlayVoice` 调用作用域内保存已识别的角色和目标语言，外部语音提交按
 “请求作用域、外部源路径、Wwise Event”顺序匹配规则。剧情文件路径不包含角色名时，可由
 `vo_narrating_<角色>_*` Event 或上游 `speakerChannel` 继续完成路由；作用域支持嵌套并在原调用
-返回后恢复。剧情 WEM 成功重定向后，模块还会按对白 ID 挂起一次目标口型语言；
-`LipSyncUtils.TryLoadTrack` 只有在收到完全相同的对白 ID 时才消费该状态，并在目标 Track
-不可用时重试游戏原语言。配置代数变化会使尚未消费的状态失效。时长和口型通过各自的线程
-局部语言覆盖生效，均不修改 Wwise 全局语言；时长覆盖独立于剧情语音开关。
+返回后恢复。
+
+时长修正只在 `_GetVoDurationFromVoData(voId, ref VoiceData)` 返回后改写返回值：两个
+`TryGetVoiceDuration` 重载以及 IL2CPP 为 xLua 委托生成的 `Invoke` 快路径副本（其中内联了
+`TryGetVoiceDuration(String)` 的整段函数体，因此挂在该入口上的 Hook 永远收不到 Lua 调用）
+都会 out-of-line 调用这个叶子。模块按 `VoiceData.speakerChannel`（其次按 `path` 中的对白 ID
+token）选规则，目标语言与当前语言不同时优先读取该行的目标语言 `wavDuration*` 列，列为空再查
+Catalog 时长表；`narrating/` 路径受剧情语音开关约束。两个 `TryGetVoiceDuration` 入口仅保留日志。
+
+口型链路是 `DialogManager._PlayLipSyncTrack` / `DialogTimelineManager.PlayLipSync` →
+`DialogUtils.EntityPlayLipSyncByVoiceId` → `LipSyncUtils.TryLoadTrack(lineId)` →
+`GetLipSyncTrackPath` → `VoiceI18n.GetCurrentLanguage`，同步且无缓存。`TryLoadTrack` 是唯一入口，
+路由来源按优先级为：剧情 WEM 成功重定向后按对白 ID 挂起的目标语言（只有收到完全相同的对白 ID
+才消费，配置代数变化会使其失效）、`_PlayLipSyncTrack` 的角色作用域、以及 `lineId` 自身（它就是
+voiceId，按角色 token 选规则；Timeline 对白不经过 `_PlayLipSyncTrack`，依赖这一项）。目标 Track
+不可用时重试游戏原语言。口型通过线程局部语言覆盖生效，不修改 Wwise 全局语言；带语言参数的
+`GetLipSyncTrackPath(AudioLang, …)` 重载在当前客户端没有调用方（被内联），不再挂接。
 Wwise Media 只使用本机生成的 `BEVCAT01` Catalog。模块启动或配音规则热更新时会先读取全部已配置角色的 Catalog，按 Media ID 合并并常驻内存；为避免 Host 初始化时 Wwise 尚未就绪，`SetMedia` 会延迟到第一条命中已配置角色的语音请求时一次性注册所有合并路由。未配置角色发声不会卸载现有路由。通配规则先合并，角色专属规则覆盖同一角色的通配路由；两个专属规则若对同一源 Media 给出不同目标则拒绝激活。Catalog 中的 WEM 在 `SetMedia` 成功前保持驻留，清理状态确认后才释放。
 
 ## 外部 Catalog

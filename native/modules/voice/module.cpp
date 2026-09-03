@@ -106,13 +106,10 @@ std::atomic<uint64_t> g_event_hits{0};
 std::atomic<uint64_t> g_narrative_hits{0};
 std::atomic<uint64_t> g_duration_hits{0};
 std::atomic<uint64_t> g_duration_by_id_hits{0};
-std::atomic<uint64_t> g_voice_data_duration_hits{0};
-std::atomic<uint64_t> g_ifix_duration_hits{0};
-std::atomic<uint64_t> g_ifix_duration_by_id_hits{0};
+std::atomic<uint64_t> g_vo_duration_hits{0};
 std::atomic<uint64_t> g_native_custom_path_hits{0};
 std::atomic<uint64_t> g_language_override_hits{0};
 std::atomic<uint64_t> g_lip_dialog_hits{0};
-std::atomic<uint64_t> g_lip_path_hits{0};
 std::atomic<uint64_t> g_lip_load_hits{0};
 std::atomic<uint64_t> g_external_hits{0};
 std::atomic<uint64_t> g_set_media_hits{0};
@@ -140,19 +137,12 @@ using VoiceDataStringGetterFn = void*(__fastcall*)(
     void* voice_data, void* method);
 using VoiceDataFloatGetterFn = float(__fastcall*)(
     void* voice_data, void* method);
-using TryGetVoiceDataFn = bool(__fastcall*)(
-    void* voice_id, void* voice_data, int32_t* numeric_id, void* method);
-using GetVoiceDataByIdFn = bool(__fastcall*)(
+// VoiceUtils._GetVoDurationFromVoData(Int32 voId, VoiceData& vo) -> Single.
+using VoDurationFn = float(__fastcall*)(
     int32_t voice_id, void* voice_data, void* method);
-using IfixDurationFn = bool(__fastcall*)(
-    void* patch, void* voice_id, float* duration, void* method);
-using IfixDurationByIdFn = bool(__fastcall*)(
-    void* patch, int32_t voice_id, float* duration, void* method);
 using GetCurrentLanguageFn = int(__fastcall*)(void* method);
 using LipDialogFn = void(__fastcall*)(
     void* instance, void* action_data, void* entity, void* method);
-using LipPathFn = void*(__fastcall*)(
-    int language, void* voice_id, void* suffix, void* method);
 using LipLoadFn = bool(__fastcall*)(void* line_id, void** track, void* method);
 using WwiseMediaFn = int(__fastcall*)(
     void* settings, uint32_t count, void* method);
@@ -199,16 +189,10 @@ PlayEventFn g_original_play_event = nullptr;
 NarrativeFn g_original_narrative = nullptr;
 DurationFn g_original_duration = nullptr;
 DurationByIdFn g_original_duration_by_id = nullptr;
-VoiceDataFloatGetterFn g_original_voice_data_duration_cn = nullptr;
-VoiceDataFloatGetterFn g_original_voice_data_duration_en = nullptr;
-VoiceDataFloatGetterFn g_original_voice_data_duration_jp = nullptr;
-VoiceDataFloatGetterFn g_original_voice_data_duration_kr = nullptr;
-IfixDurationFn g_original_ifix_duration = nullptr;
-IfixDurationByIdFn g_original_ifix_duration_by_id = nullptr;
+VoDurationFn g_original_vo_duration = nullptr;
 GetVoicePathFn g_original_get_voice_path = nullptr;
 GetCurrentLanguageFn g_original_voice_language = nullptr;
 LipDialogFn g_original_lip_dialog = nullptr;
-LipPathFn g_original_lip_path = nullptr;
 LipLoadFn g_original_lip_load = nullptr;
 WwiseMediaFn g_original_set_media = nullptr;
 WwiseMediaFn g_original_unset_media = nullptr;
@@ -240,17 +224,12 @@ std::atomic<uint32_t> g_auxiliary_mount_depth{0};
 void** g_native_unload_slot = nullptr;
 std::mutex g_native_unload_mutex;
 bool g_native_unload_deferred_logged = false;
-thread_local int g_duration_language_override = -1;
 thread_local int g_lip_language_override = -1;
-thread_local bool g_ifix_duration_routing = false;
 thread_local bool g_custom_path_building = false;
 thread_local VoiceRequestRoute g_voice_request_route{};
 thread_local PendingLipRoute g_pending_lip_route{};
 BE_ResolvedFieldV1 g_voice_context_voice_data{};
 BE_ResolvedFieldV1 g_runtime_voice_data_speaker_channel{};
-BE_ResolvedFieldV1 g_ifix_method_id{};
-int32_t g_duration_ifix_method_id = -1;
-int32_t g_duration_by_id_ifix_method_id = -1;
 
 bool LoadConfiguredCatalogs(const std::vector<VoiceRule>& rules);
 bool ApplyCatalog();
@@ -325,35 +304,26 @@ MethodContract g_external_event_by_id{
         "System.UInt32|System.UInt64|System.String|System.UInt32|Beyond.Audio.AudioCallbackType|Beyond.Audio.AudioEventCallback|System.Object|Beyond.Audio.AudioCodec",
         "System.UInt32", 8},
     false};
-MethodContract g_try_get_voice_data{
-    "voice.data.lookup-by-string",
+// The only out-of-line duration leaf. Both TryGetVoiceDuration overloads and
+// the delegate-Invoke clones IL2CPP generates for xLua (which inline the
+// TryGetVoiceDuration(String) body, so hooks on that entry never fire from Lua)
+// all call this method; the VoiceData getters below are inlined everywhere and
+// are only resolved to be called, never hooked.
+MethodContract g_vo_duration{
+    "voice.duration-leaf",
     {"Gameplay.Beyond.dll", "Beyond.Gameplay.Audio", "VoiceUtils",
-        "TryGetVoiceData",
-        "System.String|Beyond.Cfg.VoiceData&|System.Int32&",
-        "System.Boolean", 3},
-    false};
-MethodContract g_get_voice_data_by_id{
-    "voice.data.lookup-by-id",
-    {"Gameplay.Beyond.dll", "Beyond.Gameplay.Audio", "VoiceUtils",
-        "GetVoDataFromVoId", "System.Int32|Beyond.Cfg.VoiceData&",
-        "System.Boolean", 2},
-    false};
-MethodContract g_ifix_duration{
-    "voice.duration-ifix",
-    {"Gameplay.Beyond.dll", "IFix", "ILFixDynamicMethodWrapper",
-        "__Gen_Wrap_90", "System.Object|System.Single&",
-        "System.Boolean", 2},
-    false};
-MethodContract g_ifix_duration_by_id{
-    "voice.duration-by-id-ifix",
-    {"Gameplay.Beyond.dll", "IFix", "ILFixDynamicMethodWrapper",
-        "__Gen_Wrap_2533", "System.Int32|System.Single&",
-        "System.Boolean", 2},
+        "_GetVoDurationFromVoData", "System.Int32|Beyond.Cfg.VoiceData&",
+        "System.Single", 2},
     false};
 MethodContract g_voice_data_speaker{
     "voice.data.speaker",
     {"Common.Beyond.dll", "Beyond.Cfg", "VoiceData",
         "get_speakerChannel", nullptr, "System.String", 0},
+    false};
+MethodContract g_voice_data_path{
+    "voice.data.path",
+    {"Common.Beyond.dll", "Beyond.Cfg", "VoiceData",
+        "get_path", nullptr, "System.String", 0},
     false};
 MethodContract g_voice_data_duration_cn{
     "voice.data.duration-cn",
@@ -439,11 +409,10 @@ MethodContract g_lip_dialog{
     {"Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "DialogManager",
         "_PlayLipSyncTrack", nullptr, "System.Void", 2},
     false};
-MethodContract g_lip_path{
-    "lip.track.path",
-    {"Gameplay.Beyond.dll", "Beyond.Gameplay.View.LipSync", "LipSyncUtils",
-        "GetLipSyncTrackPath", nullptr, "System.String", 3},
-    false};
+// TryLoadTrack is the single entry both dialog routes (DialogManager and the
+// Timeline DialogLipSyncPlayableBehaviour) reach through
+// DialogUtils.EntityPlayLipSyncByVoiceId; the language-taking
+// GetLipSyncTrackPath overload is inlined into its siblings and has no callers.
 MethodContract g_lip_load{
     "lip.track.load",
     {"Gameplay.Beyond.dll", "Beyond.Gameplay.View.LipSync", "LipSyncUtils",
@@ -637,11 +606,9 @@ bool ResolveRuntimeContract() {
         &g_narrative,
         &g_duration,
         &g_duration_by_id,
-        &g_try_get_voice_data,
-        &g_get_voice_data_by_id,
-        &g_ifix_duration,
-        &g_ifix_duration_by_id,
+        &g_vo_duration,
         &g_voice_data_speaker,
+        &g_voice_data_path,
         &g_voice_data_duration_cn,
         &g_voice_data_duration_en,
         &g_voice_data_duration_jp,
@@ -649,7 +616,6 @@ bool ResolveRuntimeContract() {
         &g_external_event_by_id,
         &g_external_event_internal,
         &g_lip_dialog,
-        &g_lip_path,
         &g_lip_load,
         &g_lip_real_actor,
         &g_lip_actor,
@@ -665,20 +631,14 @@ bool ResolveRuntimeContract() {
     const BE_FieldDescriptorV1 speaker_channel_field{
         "Gameplay.Beyond.dll", "Beyond.Gameplay.Audio", "RuntimeVoiceData",
         "speakerChannel", "System.String"};
-    const BE_FieldDescriptorV1 ifix_method_id_field{
-        "Gameplay.Beyond.dll", "IFix", "ILFixDynamicMethodWrapper",
-        "methodId", "System.Int32"};
     const BE_Result voice_data_status = g_host->resolve_field(
         g_host->context, &voice_data_field, &g_voice_context_voice_data);
     const BE_Result speaker_status = g_host->resolve_field(
         g_host->context, &speaker_channel_field,
         &g_runtime_voice_data_speaker_channel);
-    const BE_Result ifix_method_id_status = g_host->resolve_field(
-        g_host->context, &ifix_method_id_field, &g_ifix_method_id);
     Log(std::string("[voice-contract] field voiceData=") +
         ResultName(voice_data_status) +
-        " RuntimeVoiceData.speakerChannel=" + ResultName(speaker_status) +
-        " IFix.methodId=" + ResultName(ifix_method_id_status));
+        " RuntimeVoiceData.speakerChannel=" + ResultName(speaker_status));
     if (voice_data_status != BE_Result_Ok || speaker_status != BE_Result_Ok) {
         ++required_missing;
     }
@@ -1141,11 +1101,9 @@ void __fastcall HookGetVoicePath(void* path, void** voice_path,
 }
 
 int __fastcall HookGetCurrentLanguage(void* method) {
-    const int duration_language = g_duration_language_override;
     const int lip_language = g_lip_language_override;
-    const int override = duration_language >= 0 && duration_language <= 3
-        ? duration_language
-        : (lip_language >= 0 && lip_language <= 3 ? lip_language : -1);
+    const int override = lip_language >= 0 && lip_language <= 3
+        ? lip_language : -1;
     if (override >= 0) {
         const uint64_t hit = g_language_override_hits.fetch_add(
             1, std::memory_order_relaxed) + 1;
@@ -1361,19 +1319,6 @@ bool TryReadFloat(float* value, float& result) {
     return true;
 }
 
-bool TryWriteFloat(float* value, float result) {
-    if (!value) {
-        return false;
-    }
-    __try {
-        *value = result;
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-        return false;
-    }
-    return true;
-}
-
 VoiceDataFloatGetterFn VoiceDataDurationGetter(int language) {
     switch (language) {
     case 0:
@@ -1409,334 +1354,115 @@ bool TryCallVoiceDataDuration(VoiceDataFloatGetterFn getter,
     return std::isfinite(result);
 }
 
-bool TryReadVoiceDataSpeaker(void* voice_data, void*& value) {
-    value = nullptr;
-    if (!voice_data || !g_voice_data_speaker.pointer) {
-        return false;
-    }
+void* CallVoiceDataStringGetter(void* getter, void* voice_data) {
     __try {
-        value = reinterpret_cast<VoiceDataStringGetterFn>(
-            g_voice_data_speaker.pointer)(voice_data, nullptr);
+        return reinterpret_cast<VoiceDataStringGetterFn>(getter)(
+            voice_data, nullptr);
     }
     __except (EXCEPTION_EXECUTE_HANDLER) {
-        value = nullptr;
-        return false;
-    }
-    return value != nullptr;
-}
-
-bool TryFindIfixMethodId(const MethodContract& contract, int32_t& method_id) {
-    method_id = -1;
-    auto* code = static_cast<const uint8_t*>(contract.pointer);
-    if (!code) {
-        return false;
-    }
-    __try {
-        // Every IFix-enabled method starts its dispatch with
-        // `xor edx,edx; mov ecx,<methodId>; call IsPatched`.
-        for (size_t offset = 0; offset + 12 <= 128; ++offset) {
-            if (code[offset] != 0x33 || code[offset + 1] != 0xD2 ||
-                code[offset + 2] != 0xB9 || code[offset + 7] != 0xE8) {
-                continue;
-            }
-            int32_t candidate = -1;
-            std::memcpy(&candidate, code + offset + 3, sizeof(candidate));
-            if (candidate >= 0) {
-                method_id = candidate;
-                return true;
-            }
-        }
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-        method_id = -1;
-    }
-    return false;
-}
-
-bool TryReadIfixMethodId(void* patch, int32_t& method_id) {
-    method_id = -1;
-    if (!patch || !g_ifix_method_id.field_info || g_ifix_method_id.offset < 0) {
-        return false;
-    }
-    __try {
-        method_id = *reinterpret_cast<const int32_t*>(
-            static_cast<const uint8_t*>(patch) + g_ifix_method_id.offset);
-        return true;
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-        method_id = -1;
-        return false;
+        return nullptr;
     }
 }
 
-bool TryLookupVoiceData(void* voice_id, void* voice_data,
-    int32_t& numeric_id) {
-    numeric_id = 0;
-    if (!voice_id || !voice_data || !g_try_get_voice_data.pointer) {
+bool TryReadVoiceDataString(const MethodContract& getter, void* voice_data,
+    std::string& value) {
+    value.clear();
+    if (!voice_data || !getter.pointer) {
         return false;
     }
-    __try {
-        return reinterpret_cast<TryGetVoiceDataFn>(
-            g_try_get_voice_data.pointer)(
-                voice_id, voice_data, &numeric_id, nullptr);
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-        numeric_id = 0;
+    void* managed = CallVoiceDataStringGetter(getter.pointer, voice_data);
+    if (!managed) {
         return false;
     }
+    value = Normalize(ManagedString(managed));
+    return !value.empty();
 }
 
-bool TryLookupVoiceData(int32_t voice_id, void* voice_data) {
-    if (!voice_data || !g_get_voice_data_by_id.pointer) {
-        return false;
-    }
-    __try {
-        return reinterpret_cast<GetVoiceDataByIdFn>(
-            g_get_voice_data_by_id.pointer)(voice_id, voice_data, nullptr);
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-        return false;
-    }
-}
+// Duration leaf. `voice_data` is the by-ref VoiceData the game already
+// resolved for `voice_id`, so the routed language's wavDuration column can be
+// read straight from it; the catalog table (target WEM lengths of the short
+// voices) is the fallback for rows whose column is empty.
+float __fastcall HookVoDuration(int32_t voice_id, void* voice_data,
+    void* method) {
+    const uint64_t hit = g_vo_duration_hits.fetch_add(
+        1, std::memory_order_relaxed) + 1;
+    const float source = g_original_vo_duration
+        ? g_original_vo_duration(voice_id, voice_data, method) : 0.0f;
 
-bool TryRouteIfixDuration(void* voice_data, std::string_view identity,
-    float& routed_duration, std::string& speaker, int& target_language,
-    bool& table_hit) {
-    speaker.clear();
-    target_language = -1;
-    table_hit = false;
+    std::string speaker;
+    std::string path;
+    TryReadVoiceDataString(g_voice_data_speaker, voice_data, speaker);
+    TryReadVoiceDataString(g_voice_data_path, voice_data, path);
+    const std::string line = ExtractVoiceLineId(path);
+    const bool narrative = path.find("narrating/") != std::string::npos;
+    const bool narrative_blocked = narrative &&
+        !g_replace_narrative.load(std::memory_order_relaxed);
 
-    void* speaker_value = nullptr;
-    if (voice_data && TryReadVoiceDataSpeaker(voice_data, speaker_value)) {
-        speaker = Normalize(ManagedString(speaker_value));
-    }
     VoiceRule rule;
-    if (!speaker.empty() && SelectRule(speaker, false, rule) &&
-        rule.language >= 0) {
-        target_language = rule.language;
+    const char* matched_by = "none";
+    if (!narrative_blocked && !speaker.empty() &&
+        SelectRule(speaker, false, rule) && rule.language >= 0) {
+        matched_by = "speaker";
+    } else if (!narrative_blocked && !line.empty() &&
+        SelectRule(line, true, rule) && rule.language >= 0) {
+        matched_by = "line";
+    } else {
+        rule.language = -1;
+    }
+    int current = -1;
+    TryGetCurrentLanguage(current);
+    const bool matched = rule.language >= 0 && rule.language != current;
+
+    float routed = source;
+    const char* via = "none";
+    if (matched) {
         float candidate = 0.0f;
         if (TryCallVoiceDataDuration(VoiceDataDurationGetter(rule.language),
                 voice_data, nullptr, candidate) && candidate > 0.0f) {
-            routed_duration = candidate;
-            return true;
-        }
-    }
-
-    const auto catalog_duration = g_duration_by_identity.find(
-        std::string(identity));
-    table_hit = catalog_duration != g_duration_by_identity.end();
-    if (table_hit && catalog_duration->second > 0.0f) {
-        routed_duration = catalog_duration->second;
-        return true;
-    }
-    return false;
-}
-
-bool __fastcall HookIfixDuration(void* patch, void* voice_id,
-    float* duration, void* method) {
-    const bool result = g_original_ifix_duration
-        ? g_original_ifix_duration(patch, voice_id, duration, method) : false;
-    int32_t method_id = -1;
-    if (g_ifix_duration_routing ||
-        !TryReadIfixMethodId(patch, method_id) ||
-        method_id != g_duration_ifix_method_id) {
-        return result;
-    }
-
-    g_ifix_duration_routing = true;
-    const uint64_t hit = g_ifix_duration_hits.fetch_add(
-        1, std::memory_order_relaxed) + 1;
-    const std::string identity = Normalize(ManagedString(voice_id));
-    alignas(16) std::array<uint8_t, 0x28> voice_data{};
-    int32_t numeric_id = 0;
-    const bool data_found = TryLookupVoiceData(
-        voice_id, voice_data.data(), numeric_id);
-    float original_duration = -1.0f;
-    TryReadFloat(duration, original_duration);
-    float routed_duration = original_duration;
-    std::string speaker;
-    int target_language = -1;
-    bool table_hit = false;
-    const bool applied = TryRouteIfixDuration(
-        data_found ? voice_data.data() : nullptr, identity, routed_duration,
-        speaker, target_language, table_hit) &&
-        TryWriteFloat(duration, routed_duration);
-    g_ifix_duration_routing = false;
-
-    if (ShouldLog(hit)) {
-        Log("[voice-duration-ifix] hit=" + std::to_string(hit) +
-            " methodId=" + std::to_string(method_id) +
-            " identity=" + (identity.empty() ? "<unknown>" : identity) +
-            " numericId=" + std::to_string(numeric_id) +
-            " data=" + (data_found ? "true" : "false") +
-            " speaker=" + (speaker.empty() ? "<unknown>" : speaker) +
-            " target=" + std::to_string(target_language) +
-            " tableHit=" + (table_hit ? "true" : "false") +
-            " original=" + std::to_string(original_duration) +
-            " routed=" + std::to_string(routed_duration) +
-            " override=" + (applied ? "true" : "false") +
-            " result=" + ((result || applied) ? "true" : "false"));
-    }
-    return result || applied;
-}
-
-bool __fastcall HookIfixDurationById(void* patch, int32_t voice_id,
-    float* duration, void* method) {
-    const bool result = g_original_ifix_duration_by_id
-        ? g_original_ifix_duration_by_id(
-            patch, voice_id, duration, method) : false;
-    int32_t method_id = -1;
-    if (g_ifix_duration_routing ||
-        !TryReadIfixMethodId(patch, method_id) ||
-        method_id != g_duration_by_id_ifix_method_id) {
-        return result;
-    }
-
-    g_ifix_duration_routing = true;
-    const uint64_t hit = g_ifix_duration_by_id_hits.fetch_add(
-        1, std::memory_order_relaxed) + 1;
-    const std::string identity = std::to_string(voice_id);
-    alignas(16) std::array<uint8_t, 0x28> voice_data{};
-    const bool data_found = TryLookupVoiceData(voice_id, voice_data.data());
-    float original_duration = -1.0f;
-    TryReadFloat(duration, original_duration);
-    float routed_duration = original_duration;
-    std::string speaker;
-    int target_language = -1;
-    bool table_hit = false;
-    const bool applied = TryRouteIfixDuration(
-        data_found ? voice_data.data() : nullptr, identity, routed_duration,
-        speaker, target_language, table_hit) &&
-        TryWriteFloat(duration, routed_duration);
-    g_ifix_duration_routing = false;
-
-    if (ShouldLog(hit)) {
-        Log("[voice-duration-ifix] hit=" + std::to_string(hit) +
-            " methodId=" + std::to_string(method_id) +
-            " identity=" + identity + " overload=int" +
-            " data=" + (data_found ? "true" : "false") +
-            " speaker=" + (speaker.empty() ? "<unknown>" : speaker) +
-            " target=" + std::to_string(target_language) +
-            " tableHit=" + (table_hit ? "true" : "false") +
-            " original=" + std::to_string(original_duration) +
-            " routed=" + std::to_string(routed_duration) +
-            " override=" + (applied ? "true" : "false") +
-            " result=" + ((result || applied) ? "true" : "false"));
-    }
-    return result || applied;
-}
-
-float RouteVoiceDataDuration(void* voice_data, void* method,
-    int source_language, VoiceDataFloatGetterFn source_getter) {
-    const uint64_t hit = g_voice_data_duration_hits.fetch_add(
-        1, std::memory_order_relaxed) + 1;
-    float source_duration = 0.0f;
-    std::string speaker;
-    TryCallVoiceDataDuration(
-        source_getter, voice_data, method, source_duration);
-    void* speaker_value = nullptr;
-    if (TryReadVoiceDataSpeaker(voice_data, speaker_value)) {
-        speaker = Normalize(ManagedString(speaker_value));
-    }
-
-    VoiceRule rule;
-    const bool matched = !speaker.empty() &&
-        SelectRule(speaker, false, rule) && rule.language >= 0;
-    float routed_duration = source_duration;
-    bool applied = false;
-    if (matched && rule.language != source_language) {
-        VoiceDataFloatGetterFn target_getter =
-            VoiceDataDurationGetter(rule.language);
-        if (target_getter) {
-            float candidate = 0.0f;
-            if (TryCallVoiceDataDuration(
-                    target_getter, voice_data, nullptr, candidate) &&
-                candidate > 0.0f) {
-                routed_duration = candidate;
-                applied = true;
+            routed = candidate;
+            via = "column";
+        } else {
+            auto table = g_duration_by_identity.find(line);
+            if (table == g_duration_by_identity.end()) {
+                table = g_duration_by_identity.find(std::to_string(voice_id));
+            }
+            if (table != g_duration_by_identity.end() && table->second > 0.0f) {
+                routed = table->second;
+                via = "table";
             }
         }
     }
-
     if (ShouldLog(hit)) {
         Log("[voice-duration-leaf] hit=" + std::to_string(hit) +
+            " voId=" + std::to_string(voice_id) +
+            " line=" + (line.empty() ? "<unknown>" : line) +
             " speaker=" + (speaker.empty() ? "<unknown>" : speaker) +
-            " matched=" + (matched ? "true" : "false") +
-            " sourceLanguage=" + std::to_string(source_language) +
-            " targetLanguage=" + std::to_string(
-                matched ? rule.language : -1) +
-            " source=" + std::to_string(source_duration) +
-            " routed=" + std::to_string(routed_duration) +
-            " override=" + (applied ? "true" : "false"));
+            " matchedBy=" + matched_by +
+            " narrative=" + (narrative ? "true" : "false") +
+            " current=" + std::to_string(current) +
+            " target=" + std::to_string(rule.language) +
+            " source=" + std::to_string(source) +
+            " routed=" + std::to_string(routed) +
+            " via=" + via);
     }
-    return routed_duration;
+    return routed;
 }
 
-float __fastcall HookVoiceDataDurationChinese(
-    void* voice_data, void* method) {
-    return RouteVoiceDataDuration(voice_data, method, 0,
-        g_original_voice_data_duration_cn);
-}
-
-float __fastcall HookVoiceDataDurationEnglish(
-    void* voice_data, void* method) {
-    return RouteVoiceDataDuration(voice_data, method, 1,
-        g_original_voice_data_duration_en);
-}
-
-float __fastcall HookVoiceDataDurationJapanese(
-    void* voice_data, void* method) {
-    return RouteVoiceDataDuration(voice_data, method, 2,
-        g_original_voice_data_duration_jp);
-}
-
-float __fastcall HookVoiceDataDurationKorean(
-    void* voice_data, void* method) {
-    return RouteVoiceDataDuration(voice_data, method, 3,
-        g_original_voice_data_duration_kr);
-}
-
+// The two TryGetVoiceDuration entries only see the native callers (dialog,
+// timeline, EnvTalk, AIBark); Lua reaches the inlined delegate clones instead.
+// The override itself lives in HookVoDuration, these hooks are diagnostics.
 bool __fastcall HookDuration(void* voice_id, float* duration, void* method) {
     const uint64_t hit = g_duration_hits.fetch_add(
         1, std::memory_order_relaxed) + 1;
-    const std::string identity = Normalize(ManagedString(voice_id));
-    VoiceRule rule;
-    const bool matched = SelectRule(identity, true, rule) && rule.language >= 0;
-    const int target = matched ? rule.language : -1;
-    const int current = [&]() {
-        int value = -1;
-        TryGetCurrentLanguage(value);
-        return value;
-    }();
-
-    bool result = g_original_duration
+    const bool result = g_original_duration
         ? g_original_duration(voice_id, duration, method) : false;
-    float global_duration = -1.0f;
-    TryReadFloat(duration, global_duration);
-    float routed_duration = global_duration;
-    bool override_applied = false;
-    bool direct = false;
-    const auto catalog_duration = g_duration_by_identity.find(identity);
-    if (catalog_duration != g_duration_by_identity.end() &&
-        catalog_duration->second > 0.0f &&
-        TryWriteFloat(duration, catalog_duration->second)) {
-        routed_duration = catalog_duration->second;
-        result = true;
-        override_applied = true;
-        direct = true;
-    }
     if (ShouldLog(hit)) {
+        const std::string identity = Normalize(ManagedString(voice_id));
+        float value = -1.0f;
+        TryReadFloat(duration, value);
         Log("[voice-duration] identity=" +
             (identity.empty() ? "<unknown>" : identity) +
-            " matched=" + (matched ? "true" : "false") +
-            " tableHit=" +
-            (catalog_duration != g_duration_by_identity.end() ? "true" : "false") +
-            " current=" + std::to_string(current) +
-            " target=" + std::to_string(target) +
-            " global=" + std::to_string(global_duration) +
-            " routed=" + std::to_string(routed_duration) +
-            " override=" + (override_applied ? "true" : "false") +
-            " direct=" + (direct ? "true" : "false") +
+            " duration=" + std::to_string(value) +
             " result=" + (result ? "true" : "false"));
     }
     return result;
@@ -1745,28 +1471,13 @@ bool __fastcall HookDuration(void* voice_id, float* duration, void* method) {
 bool __fastcall HookDurationById(int32_t voice_id, float* duration, void* method) {
     const uint64_t hit = g_duration_by_id_hits.fetch_add(
         1, std::memory_order_relaxed) + 1;
-    const std::string identity = std::to_string(voice_id);
-    bool result = g_original_duration_by_id
+    const bool result = g_original_duration_by_id
         ? g_original_duration_by_id(voice_id, duration, method) : false;
-    float global_duration = -1.0f;
-    TryReadFloat(duration, global_duration);
-    float routed_duration = global_duration;
-    bool direct = false;
-    const auto catalog_duration = g_duration_by_identity.find(identity);
-    if (catalog_duration != g_duration_by_identity.end() &&
-        catalog_duration->second > 0.0f &&
-        TryWriteFloat(duration, catalog_duration->second)) {
-        routed_duration = catalog_duration->second;
-        result = true;
-        direct = true;
-    }
     if (ShouldLog(hit)) {
-        Log("[voice-duration] identity=" + identity +
-            " overload=int tableHit=" +
-            (catalog_duration != g_duration_by_identity.end() ? "true" : "false") +
-            " global=" + std::to_string(global_duration) +
-            " routed=" + std::to_string(routed_duration) +
-            " direct=" + (direct ? "true" : "false") +
+        float value = -1.0f;
+        TryReadFloat(duration, value);
+        Log("[voice-duration] identity=" + std::to_string(voice_id) +
+            " overload=int duration=" + std::to_string(value) +
             " result=" + (result ? "true" : "false"));
     }
     return result;
@@ -1817,30 +1528,6 @@ void __fastcall HookLipDialog(void* instance, void* action_data,
     g_lip_language_override = previous;
 }
 
-void* __fastcall HookLipPath(int language, void* voice_id, void* suffix,
-    void* method) {
-    const int override = g_lip_language_override;
-    const int routed_language = override >= 0 && override <= 3
-        ? override : language;
-    const uint64_t hit = g_lip_path_hits.fetch_add(
-        1, std::memory_order_relaxed) + 1;
-    void* result = g_original_lip_path
-        ? g_original_lip_path(routed_language, voice_id, suffix, method)
-        : nullptr;
-    if (ShouldLog(hit)) {
-        const std::string voice = ManagedString(voice_id);
-        const std::string suffix_text = ManagedString(suffix);
-        const std::string path = ManagedString(result);
-        Log("[lip-route] path hit=" + std::to_string(hit) +
-            " language=" + std::to_string(language) +
-            " -> " + std::to_string(routed_language) +
-            " voice=" + (voice.empty() ? "<empty>" : voice) +
-            " suffix=" + (suffix_text.empty() ? "<empty>" : suffix_text) +
-            " result=" + (path.empty() ? "<empty>" : path));
-    }
-    return result;
-}
-
 bool __fastcall HookLipLoad(void* line_id, void** track, void* method) {
     const uint64_t hit = g_lip_load_hits.fetch_add(
         1, std::memory_order_relaxed) + 1;
@@ -1857,10 +1544,23 @@ bool __fastcall HookLipLoad(void* line_id, void** track, void* method) {
         ClearPendingLipRoute();
     }
 
+    // Route sources in priority order: a line armed by the matching voice
+    // request, the DialogManager actor scope, and finally the line id itself
+    // (it is the voice id, so the speaker token selects the rule). The last
+    // one is what the Timeline dialog route relies on: it never passes
+    // through DialogManager._PlayLipSyncTrack.
     const int previous = g_lip_language_override;
     const bool dialog_routed = previous >= 0 && previous <= 3;
-    const bool routed = pending_matches || dialog_routed;
-    const int target = pending_matches ? pending.language : previous;
+    VoiceRule line_rule;
+    const bool line_routed = !pending_matches && !dialog_routed &&
+        g_replace_narrative.load(std::memory_order_relaxed) &&
+        !line.empty() && SelectRule(line, true, line_rule) &&
+        line_rule.language >= 0 && line_rule.language <= 3;
+    const bool routed = pending_matches || dialog_routed || line_routed;
+    const int target = pending_matches ? pending.language
+        : (dialog_routed ? previous : (line_routed ? line_rule.language : -1));
+    const char* routed_by = pending_matches ? "pending"
+        : (dialog_routed ? "dialog" : (line_routed ? "line" : "none"));
     if (routed) {
         g_lip_language_override = target;
     }
@@ -1883,10 +1583,11 @@ bool __fastcall HookLipLoad(void* line_id, void** track, void* method) {
         Log("[lip-route] load hit=" + std::to_string(hit) +
             " line=" + (line.empty() ? "<empty>" : line) +
             " routed=" + (routed ? "true" : "false") +
+            " routedBy=" + routed_by +
             " target=" + (routed ? std::to_string(target) : "global") +
             " pending=" + pending_state +
-            " speaker=" + (pending.speaker[0]
-                ? std::string(pending.speaker) : "<none>") +
+            " speaker=" + (pending_matches ? std::string(pending.speaker)
+                : (line_routed ? line_rule.speaker : "<none>")) +
             " result=" + (result ? "true" : "false") +
             " fallback=" + (fallback ? "true" : "false"));
     }
@@ -2405,51 +2106,6 @@ bool InstallHook(const char* key, MethodContract& contract, void* detour,
     return true;
 }
 
-bool InstallDurationIfixHooks() {
-    if (!g_duration.pointer || !g_duration_by_id.pointer ||
-        !g_ifix_duration.pointer || !g_ifix_duration_by_id.pointer ||
-        !g_ifix_method_id.field_info || g_ifix_method_id.offset < 0 ||
-        !g_try_get_voice_data.pointer || !g_get_voice_data_by_id.pointer ||
-        !g_voice_data_speaker.pointer ||
-        !g_voice_data_duration_cn.pointer ||
-        !g_voice_data_duration_en.pointer ||
-        !g_voice_data_duration_jp.pointer ||
-        !g_voice_data_duration_kr.pointer) {
-        Log("[voice-duration-ifix] required IFix/data contracts unavailable");
-        return false;
-    }
-    if (!TryFindIfixMethodId(g_duration, g_duration_ifix_method_id) ||
-        !TryFindIfixMethodId(
-            g_duration_by_id, g_duration_by_id_ifix_method_id)) {
-        Log("[voice-duration-ifix] duration method IDs were not found");
-        return false;
-    }
-
-    const BE_Result string_status = g_host->create_hook(
-        g_host->context, kModuleId, g_ifix_duration.pointer,
-        reinterpret_cast<void*>(&HookIfixDuration),
-        reinterpret_cast<void**>(&g_original_ifix_duration));
-    if (string_status != BE_Result_Ok) {
-        Log("[voice-duration-ifix] string wrapper hook failed result=" +
-            std::string(ResultName(string_status)));
-        return false;
-    }
-    const BE_Result id_status = g_host->create_hook(
-        g_host->context, kModuleId, g_ifix_duration_by_id.pointer,
-        reinterpret_cast<void*>(&HookIfixDurationById),
-        reinterpret_cast<void**>(&g_original_ifix_duration_by_id));
-    if (id_status != BE_Result_Ok) {
-        Log("[voice-duration-ifix] integer wrapper hook failed result=" +
-            std::string(ResultName(id_status)));
-        return false;
-    }
-    Log("[voice-duration-ifix] active stringMethodId=" +
-        std::to_string(g_duration_ifix_method_id) +
-        " integerMethodId=" +
-        std::to_string(g_duration_by_id_ifix_method_id));
-    return true;
-}
-
 std::filesystem::path ResolveCatalogPath(const std::filesystem::path& root,
     int language, const std::string& speaker) {
     static constexpr const char* languages[] = {
@@ -2818,18 +2474,10 @@ void ClearOriginals() {
     g_original_narrative = nullptr;
     g_original_duration = nullptr;
     g_original_duration_by_id = nullptr;
-    g_original_voice_data_duration_cn = nullptr;
-    g_original_voice_data_duration_en = nullptr;
-    g_original_voice_data_duration_jp = nullptr;
-    g_original_voice_data_duration_kr = nullptr;
-    g_original_ifix_duration = nullptr;
-    g_original_ifix_duration_by_id = nullptr;
-    g_duration_ifix_method_id = -1;
-    g_duration_by_id_ifix_method_id = -1;
+    g_original_vo_duration = nullptr;
     g_original_get_voice_path = nullptr;
     g_original_voice_language = nullptr;
     g_original_lip_dialog = nullptr;
-    g_original_lip_path = nullptr;
     g_original_lip_load = nullptr;
     g_original_set_media = nullptr;
     g_original_unset_media = nullptr;
@@ -2902,13 +2550,19 @@ bool InstallHooks() {
     InstallHook("voice.manager.narrative", g_narrative,
         reinterpret_cast<void*>(&HookNarrative),
         reinterpret_cast<void**>(&g_original_narrative), false);
-    InstallDurationIfixHooks();
     InstallHook("voice.duration", g_duration,
         reinterpret_cast<void*>(&HookDuration),
         reinterpret_cast<void**>(&g_original_duration), false);
     InstallHook("voice.duration-by-id", g_duration_by_id,
         reinterpret_cast<void*>(&HookDurationById),
         reinterpret_cast<void**>(&g_original_duration_by_id), false);
+    if (g_voice_data_speaker.resolved || g_voice_data_path.resolved) {
+        InstallHook("voice.duration-leaf", g_vo_duration,
+            reinterpret_cast<void*>(&HookVoDuration),
+            reinterpret_cast<void**>(&g_original_vo_duration), false);
+    } else {
+        Log("[voice-duration-leaf] VoiceData getters unavailable; leaf hook skipped");
+    }
     InstallHook("audio.external-event-by-id", g_external_event_by_id,
         reinterpret_cast<void*>(&HookExternalEventById),
         reinterpret_cast<void**>(&g_original_external_event_by_id), false);
@@ -2916,8 +2570,8 @@ bool InstallHooks() {
         reinterpret_cast<void*>(&HookExternalEventInternal),
         reinterpret_cast<void**>(&g_original_external_event_internal), false);
 
-    const bool needs_language_override = g_duration.resolved ||
-        g_lip_dialog.resolved || g_lip_path.resolved || g_lip_load.resolved;
+    const bool needs_language_override = g_lip_dialog.resolved ||
+        g_lip_load.resolved;
     if (needs_language_override) {
         InstallHook("voice.language.override", g_voice_language,
             reinterpret_cast<void*>(&HookGetCurrentLanguage),
@@ -2926,9 +2580,6 @@ bool InstallHooks() {
     InstallHook("lip.dialog.play", g_lip_dialog,
         reinterpret_cast<void*>(&HookLipDialog),
         reinterpret_cast<void**>(&g_original_lip_dialog), false);
-    InstallHook("lip.track.path", g_lip_path,
-        reinterpret_cast<void*>(&HookLipPath),
-        reinterpret_cast<void**>(&g_original_lip_path), false);
     InstallHook("lip.track.load", g_lip_load,
         reinterpret_cast<void*>(&HookLipLoad),
         reinterpret_cast<void**>(&g_original_lip_load), false);
@@ -2976,7 +2627,7 @@ bool InstallHooks() {
     }
 
     g_state.store(ModuleState::Active, std::memory_order_release);
-    Log("[voice-route] v3.0.1 external voice path and auxiliary PCK routing active");
+    Log("[voice-route] v3.1.1 external voice path and auxiliary PCK routing active");
     Log("[voice-route] native package unload protection is active; short-voice Media routes are resident and deferred until the first configured voice");
     return true;
 }
@@ -3139,13 +2790,10 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     g_narrative_hits.store(0, std::memory_order_release);
     g_duration_hits.store(0, std::memory_order_release);
     g_duration_by_id_hits.store(0, std::memory_order_release);
-    g_voice_data_duration_hits.store(0, std::memory_order_release);
-    g_ifix_duration_hits.store(0, std::memory_order_release);
-    g_ifix_duration_by_id_hits.store(0, std::memory_order_release);
+    g_vo_duration_hits.store(0, std::memory_order_release);
     g_native_custom_path_hits.store(0, std::memory_order_release);
     g_language_override_hits.store(0, std::memory_order_release);
     g_lip_dialog_hits.store(0, std::memory_order_release);
-    g_lip_path_hits.store(0, std::memory_order_release);
     g_lip_load_hits.store(0, std::memory_order_release);
     g_set_media_hits.store(0, std::memory_order_release);
     g_unset_media_hits.store(0, std::memory_order_release);
@@ -3155,9 +2803,6 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     g_pinvoke_unload_hits.store(0, std::memory_order_release);
     g_unload_pcks_hits.store(0, std::memory_order_release);
     g_auxiliary_mount_depth.store(0, std::memory_order_release);
-    g_ifix_method_id = {};
-    g_duration_ifix_method_id = -1;
-    g_duration_by_id_ifix_method_id = -1;
     {
         std::lock_guard lock(g_native_language_mutex);
         g_native_speaker_languages.clear();
@@ -3268,15 +2913,11 @@ void BE_CALL Shutdown() {
         g_original_unload_file_package || g_original_pinvoke_unload_file_package ||
         g_original_native_unload_file_package ||
         g_original_unload_pcks || g_original_duration_by_id ||
-        g_original_voice_data_duration_cn ||
-        g_original_voice_data_duration_en ||
-        g_original_voice_data_duration_jp ||
-        g_original_voice_data_duration_kr ||
-        g_original_get_voice_path ||
+        g_original_vo_duration || g_original_get_voice_path ||
         g_original_channel_play ||
         g_original_play_event || g_original_narrative || g_original_duration ||
         g_original_voice_language || g_original_lip_dialog ||
-        g_original_lip_path || g_original_lip_load) {
+        g_original_lip_load) {
         if (!StopHooks()) {
             Log("[voice-state] shutdown cleanup incomplete; catalog storage "
                 "remains resident until process teardown");
@@ -3288,7 +2929,7 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Voice Language", "3.0.1", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Voice Language", "3.1.1", BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};

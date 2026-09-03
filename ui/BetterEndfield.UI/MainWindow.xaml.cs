@@ -3200,10 +3200,6 @@ public sealed partial class MainWindow : Window
         VoicePageDownloadHintTextBlock.Text = isZh
             ? "请先下载对应语言包。"
             : "Please ensure corresponding language packs are downloaded in game first.";
-        VoiceCompatibilityInfoBar.Title = isZh ? "已知问题" : "Known Issues";
-        VoiceCompatibilityInfoBar.Message = isZh
-            ? "替换语音的时长修正与口型同步目前存在问题，仍待修复。"
-            : "Voice duration correction and lip-sync are currently inaccurate and still need fixes.";
         VoiceRouterToggle.Header = isZh ? "启用按角色配音" : "Enable Per-Character Voice";
         VoiceRouterToggle.OffContent = isZh ? "全部跟随游戏" : "Follow game global language";
         VoiceRouterToggle.OnContent = isZh ? "应用下方角色规则" : "Apply custom rules below";

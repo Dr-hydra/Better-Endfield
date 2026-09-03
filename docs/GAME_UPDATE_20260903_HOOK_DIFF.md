@@ -301,10 +301,17 @@ Unity 层(`Object/GameObject/Transform/Renderer/Animator/AnimationClip/Graphic/M
 
 ### 5.3 时长修正失效(调用点已确认,覆盖链路断点已定位)
 
-> **调查暂存更新（2026-09-03）**：当前 PC 的完整 Lua 覆盖面、native 消费者、XLua
-> 委托旁路证据和后续诊断步骤已整理到
-> `docs/VOICE_DURATION_INVESTIGATION_20260903.md`。本专题为优先发版暂时冻结；下文的
-> IFix wrapper/leaf Hook 仍未产生运行时命中，不代表修复完成。
+> **根因定案（2026-09-04）**：Lua 经 xLua 委托调用时，IL2CPP 生成的委托 `Invoke` 桩把
+> `TryGetVoiceDuration(String)` 的函数体整段内联为快路径，入口 Hook 永远收不到 Lua 调用；
+> `VoiceData.get_wavDuration*` getter 全库零调用点。修复改挂唯一 out-of-line 的叶子
+> `VoiceUtils._GetVoDurationFromVoData`，下文的 IFix wrapper/getter Hook 已删除。完整证据与
+> 修复说明见 `docs/VOICE_DURATION_INVESTIGATION_20260903.md` §7。
+>
+> 同时确认口型链路：`GetLipSyncTrackPath(AudioLang,…)` 三参重载零调用方（`lip.track.path`
+> 是死 Hook，已删除）；Timeline 对白经 `DialogTimelineManager.PlayLipSync →
+> DialogUtils.EntityPlayLipSyncByVoiceId → LipSyncUtils.TryLoadTrack`，不经过
+> `DialogManager._PlayLipSyncTrack`，`TryLoadTrack` Hook 已补充按 `lineId`（即 voiceId）
+> 直接选规则的路由来源。整份运行日志尚无任何剧情对白样本，口型仍待实测。
 
 > **当前测试修复(2026-09-03)**:运行日志进一步证明 `TryGetVoiceDuration` 两个入口及
 > `Beyond.Cfg.VoiceData` 的四个语言 getter 均被 IFix 补丁执行路径绕过:所有 Hook

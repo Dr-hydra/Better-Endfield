@@ -38,7 +38,7 @@ Better Endfield 的 WinUI 3 中文控制器。应用负责编辑模块配置、�
 构建中文 Inno Setup 安装器：
 
 ```powershell
-.\scripts\BuildInstaller.ps1 -Version 3.0.1
+.\scripts\BuildInstaller.ps1 -Version 3.1.1
 ```
 
 ## 开源许可

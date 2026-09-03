@@ -1,6 +1,6 @@
 # PC 语音时长调查暂存（2026-09-03）
 
-> 状态：已完成调用面梳理，修复尚未完成。为优先处理发版，本专题暂时冻结。
+> 状态：根因已于 2026-09-04 定案并实施修复（见 §7），待运行时验证。
 > 本文只讨论当前 PC 版；Android 使用旧实现，不能作为当前 PC Hook 入口的依据。
 
 ## 1. 已证实的调用面
@@ -90,6 +90,38 @@
 
 ## 6. 发版注意
 
-本轮新增的 IFix/leaf 时长 Hook 尚未出现运行时命中，属于未验证实验实现。正式构建前应将
-其视为不可依赖功能，不应在发布说明中宣称“时长修正已恢复”；是否保留这些无命中 Hook，
-需在发版构建前单独决定。
+§3 的 IFix wrapper Hook 与 `VoiceData.get_wavDuration*` getter Hook 从未出现运行时命中，
+已在 §7 的修复中删除。§7 的叶子 Hook 在运行日志出现 `[voice-duration-leaf] … via=column|table`
+之前，发布说明仍不应宣称“时长修正已恢复”。
+
+## 7. 根因定案与修复（2026-09-04）
+
+§3 的“XLua 委托绕开 methodPointer”猜测方向正确，但机制不同，且不需要运行时诊断即可从字节
+级证据定案：
+
+1. `Init.lua:120` 把 `VoiceUtils = CS.Beyond.Gameplay.Audio.VoiceUtils`，Assembly-CSharp 没有
+   `VoiceUtilsWrap`，Lua 经 `LuaGenericDelegateCallerGen.Luastringoutfloat_boolCall`
+   （0x04971B20）以委托调用。
+2. 该委托的 `Invoke` 桩（0x04A43320，以及 `.text` 中的 0x000D5890）由 IL2CPP 生成为
+   “`method_ptr == &TryGetVoiceDuration(String)` → 直接执行内联副本”的快路径：桩内完整复制了
+   `IsPatched(0x4bb4) → IsPatched(0x3920) → _GetGenderSuffix → AudioVoiceUtil.TryGetVoiceData
+   → _GetVoDurationFromVoData` 的函数体。MinHook 挂在 0x0364E0E0 的入口，Lua 路径从不经过该
+   地址，因此 Hook 安装成功却零命中。全库对 0x0364E0E0 的 LEA rip-rel 引用恰好只有这两处。
+3. 连带结论：`Beyond.Cfg.VoiceData.get_wavDuration*` 四个 getter 全库 0 个调用点（全部内联），
+   getter Hook 不可能命中；旧的 IFix methodId 扫描取到的 14624=0x3920 实为被内联的
+   `TryGetVoiceData` 的 id，`TryGetVoiceDuration(String)` 的真实 id 是 0x4bb4。
+4. 稳定挂点：`VoiceUtils._GetVoDurationFromVoData(Int32 voId, VoiceData& vo) → Single`
+   （0x0364F180）。全库恰好 4 个调用点——两个 `TryGetVoiceDuration` 重载与两个委托内联副本——
+   且无 LEA 引用，即 §1 的全部 native 调用方、AIBark 的 Int32 重载与 8 个 Lua 场景都最终
+   out-of-line 调用它。
+5. 修复（`native/modules/voice/module.cpp`）：新增可选契约 `voice.duration-leaf` 挂接该叶子，
+   返回后按 `VoiceData.speakerChannel`（其次按 `path` 的对白 ID token）选规则；目标语言与当前
+   语言不同时先读该行目标语言的 `wavDuration*` 列（`voice.data.duration-*` 契约只调用不挂接），
+   为空再查 Catalog 时长表（对白 ID / `voId` 数字键）。`narrating/` 路径受剧情语音开关约束。
+   删除 IFix wrapper Hook、getter Hook 与相关字段解析；两个 `TryGetVoiceDuration` 入口 Hook
+   仅保留 `[voice-duration]` 日志。
+6. 数据面提醒：当前 Catalog 时长表只覆盖 manifest 中 970 条 `_sv` 短语音，角色档案/剧情等
+   外部 WEM 语音一条都不在表内，因此这些场景的修正值完全依赖 `wavDurationEN/JP/KR` 列是否
+   有值——需由运行日志 `[voice-duration-leaf] … source= routed= via=` 确认。
+7. 验证点：角色档案播放已配置角色语音时出现 `[voice-duration-leaf] … matchedBy=speaker
+   via=column routed=<目标语言时长>`，且档案页停止计时与替换语音对齐。

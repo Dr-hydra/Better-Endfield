@@ -44,6 +44,13 @@ includes the four context routes `VoicePlayer._PlayVoice`,
 than fixed offsets. Per request, this parity update is build-verified but was
 not launched for another device test.
 
+Version 3.1.1 keeps the Android voice module unchanged and only aligns the
+version with desktop. The desktop 3.1.1 duration fix (hooking
+`VoiceUtils._GetVoDurationFromVoData` instead of the `TryGetVoiceDuration`
+entry) addresses an x64 IL2CPP delegate-invoke inlining path that the ARM64
+build does not exhibit; the `TryGetVoiceDuration` entry hook above is still
+observed working on device.
+
 ## Login model module parity
 
 Version 3.0.1 also ports `betterendfield.model`. Android does not maintain a

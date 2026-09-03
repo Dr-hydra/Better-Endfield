@@ -1,5 +1,14 @@
 # 更新日志
 
+## 3.1.1
+
+- 修复替换语音的时长修正：Lua 侧调用经 IL2CPP 委托快路径内联，绕过了原入口 Hook；现改挂唯一的时长叶子 `_GetVoDurationFromVoData`，按角色规则直接读取目标语言时长列。角色档案、电台、对话回放、剧情与 Bark 的时长查询全部覆盖。
+- 口型加载补充按对白 ID 直接选规则的路由来源，Timeline 剧情不再依赖语音先行触发；移除没有调用方的 `GetLipSyncTrackPath` 重载 Hook。
+- 恢复 Windows 端登录角色模型替换：`InitMainPathHash` 在当前客户端被整体内联，改挂 `StringPathHashBinary.InitMain/InitInit`，桌面端与 Android 同源。
+- 登录 Logo、色带与两侧色块改为运行时生成去色副本后再套用主题色，最终颜色与所选颜色一致；移除相关已知问题说明。
+- 语音页移除"时长修正与口型同步存在问题"的提示。
+- Android 编译当前桌面模型源码，新增 `betterendfield.enhancement`（隐藏 UID 水印、关闭近镜头角色抖动）与模型页 HSV 调色盘；Windows 与 Android 统一版本号为 3.1.1。
+
 ## 3.0.1
 
 - 更新 Windows 桌面端资源数据以适配当前游戏版本，并统一桌面端与 Android 版本号。
