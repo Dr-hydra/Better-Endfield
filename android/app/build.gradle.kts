@@ -94,7 +94,8 @@ val verifyDesktopModelHookParity by tasks.registering {
             "login_decorate_tick" to "LoginDecorateTickHook",
             "login_decorate_release" to "LoginDecorateReleaseHook",
             "login_enter_value_changed" to "LoginEnterGamePanelValueChangedHook",
-            "login_material_animation_late_tick" to "LoginMaterialAnimationLateTickHook"
+            "login_material_animation_late_tick" to "LoginMaterialAnimationLateTickHook",
+            "canvas_update_perform" to "CanvasUpdatePerformHook"
         )
         val missing = expected.filter { (field, detour) ->
             !Regex(

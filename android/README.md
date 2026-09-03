@@ -73,12 +73,15 @@ The complete desktop Hook set is therefore present in the Android binary:
 | Logo | `LoginDecorateUI.OnRelease` |
 | Login band | `LoginEnterGamePanel.OnValueChanged` |
 | Login band | `UIMaterialAnimation.LateTick` |
+| Login band | `CanvasUpdateRegistry.PerformUpdate` |
 
-This is 10 model/animation Hooks, 2 Logo Hooks, and 2 login-band Hooks. The
+This is 10 model/animation Hooks, 2 Logo Hooks, and 3 login-band Hooks. The
 local Android metadata snapshot contains every declaring class and method name.
 The same-source native code and its Android Host adapter compile successfully.
-Device testing then confirmed that all three contracts are ready, all 14 Hooks
-install, and their runtime paths execute.
+Device testing then confirmed that all three contracts are ready, the original
+14 Hooks install, and their runtime paths execute. The `PerformUpdate` prefix
+and the neutralized sprite/texture copies (see `docs/GAME_INTERFACES.md`) were
+added later for the baked-yellow login assets and are verified on desktop.
 
 On the tested client, `chr_0013_aglina_postmodel(Clone)` loaded and replaced
 `SK_actor_female(Clone)`. All four configured animation clips became resident,

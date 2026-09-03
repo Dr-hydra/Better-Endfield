@@ -84,6 +84,25 @@ struct Color {
     float a;
 };
 
+struct Vector2 {
+    float x;
+    float y;
+};
+
+struct Vector4 {
+    float x;
+    float y;
+    float z;
+    float w;
+};
+
+struct Rect {
+    float x;
+    float y;
+    float width;
+    float height;
+};
+
 struct ClipConfiguration {
     std::string path;
     std::string label;
@@ -124,6 +143,33 @@ struct RuntimeMethod {
 struct RuntimeMethods {
     RuntimeMethod login_enter_value_changed;
     RuntimeMethod login_material_animation_late_tick;
+    RuntimeMethod canvas_update_perform;
+    RuntimeMethod graphic_get_canvas_renderer;
+    RuntimeMethod canvas_renderer_get_color;
+    RuntimeMethod canvas_renderer_set_color;
+    RuntimeMethod canvas_group_get_color;
+    RuntimeMethod canvas_group_set_color;
+    RuntimeMethod canvas_group_get_alpha;
+    RuntimeMethod image_set_sprite;
+    RuntimeMethod raw_image_set_texture;
+    RuntimeMethod sprite_get_texture;
+    RuntimeMethod sprite_get_rect;
+    RuntimeMethod sprite_get_pivot;
+    RuntimeMethod sprite_get_pixels_per_unit;
+    RuntimeMethod sprite_get_border;
+    RuntimeMethod sprite_create;
+    RuntimeMethod texture_get_width;
+    RuntimeMethod texture_get_height;
+    RuntimeMethod texture2d_ctor;
+    RuntimeMethod texture2d_read_pixels;
+    RuntimeMethod texture2d_apply;
+    RuntimeMethod texture2d_get_pixels32;
+    RuntimeMethod texture2d_set_pixels32;
+    RuntimeMethod render_texture_get_temporary;
+    RuntimeMethod render_texture_release_temporary;
+    RuntimeMethod render_texture_get_active;
+    RuntimeMethod render_texture_set_active;
+    RuntimeMethod graphics_blit;
     RuntimeMethod login_decorate_tick;
     RuntimeMethod login_decorate_release;
     RuntimeMethod login_bind;
@@ -218,6 +264,8 @@ struct RuntimeClasses {
     BE_ResolvedClassV1 renderer{};
     BE_ResolvedClassV1 graphic{};
     BE_ResolvedClassV1 material{};
+    BE_ResolvedClassV1 canvas_group{};
+    BE_ResolvedClassV1 texture2d{};
 };
 
 struct RuntimeFields {
@@ -286,25 +334,79 @@ struct LoginBandGraphicState {
     bool material_remap_applied = false;
     bool theme_target = false;
     bool initialized = false;
+    // CanvasRenderer.color multiplies the whole mesh at render time,
+    // independently of Graphic.color; captured once so it can be restored.
+    Color original_renderer_color{1.0f, 1.0f, 1.0f, 1.0f};
+    bool renderer_color_captured = false;
+    bool neutral_color_applied = false;
+    // One-shot drift diagnostics: which game write-back was observed after
+    // the theme had already been applied.
+    bool color_drift_logged = false;
+    bool material_drift_logged = false;
+    bool renderer_drift_logged = false;
+    // Sprite currently shown by the game (original) and our neutralized copy.
+    void* original_sprite = nullptr;
+    void* themed_sprite = nullptr;
+    bool is_image = false;
+    bool sprite_swap_logged = false;
+};
+
+// The band's sprites (`login_deco_line*`, `login_deco_glitch*`) have the
+// brand yellow baked into their texels, so no amount of color multiplication
+// can reach an arbitrary theme color. Each distinct sprite is copied once into
+// a readable RGBA32 texture whose saturated texels are desaturated to their
+// brightness; the material tint then supplies the theme. Cached per original
+// sprite because the glitch animation cycles sprites on the same Image.
+struct LoginBandSpriteCopy {
+    // Original Sprite, or original Texture when `raw_texture` is set.
+    void* original_sprite = nullptr;
+    void* sprite = nullptr;
+    void* texture = nullptr;
+    bool raw_texture = false;
+    std::string name;
+};
+
+// This client's CanvasGroup carries an HG-specific `color` that is multiplied
+// onto every descendant at render time (the RGB analogue of CanvasGroup.alpha).
+// Groups above the band are tracked so their tint can be neutralized/restored.
+struct LoginBandGroupState {
+    void* group = nullptr;
+    std::string path;
+    Color original_color{1.0f, 1.0f, 1.0f, 1.0f};
+    Color last_color{};
+    bool drift_logged = false;
 };
 
 struct LoginBandState {
     void* instance = nullptr;
     void* panel_transform = nullptr;
     std::vector<LoginBandGraphicState> graphics;
+    std::vector<LoginBandGroupState> groups;
+    std::vector<LoginBandSpriteCopy> sprites;
     uint64_t next_discovery_tick = 0;
     bool apply_logged = false;
+    bool sprite_contract_logged = false;
 };
 
 struct LogoGraphicState {
     void* graphic = nullptr;
     Color original_color{};
     std::string source;
+    std::string name;
+    // The layered copies behind the black logo (GameLogoRaw/Image*) carry the
+    // brand yellow in their sprite texels, exactly like the band; they get the
+    // same neutralized-sprite treatment so Graphic.color alone sets the hue.
+    bool is_image = false;
+    bool is_raw_image = false;
+    void* original_sprite = nullptr;
+    void* themed_sprite = nullptr;
+    bool sprite_swap_logged = false;
 };
 
 struct LogoState {
     void* instance = nullptr;
     std::vector<LogoGraphicState> graphics;
+    std::vector<LoginBandSpriteCopy> sprites;
     uint64_t next_discovery_tick = 0;
     bool game_logo_found = false;
     bool game_logo_apply_logged = false;
@@ -351,6 +453,8 @@ bool g_model_hooks_installed = false;
 bool g_logo_hooks_installed = false;
 bool g_login_band_hook_installed = false;
 bool g_login_band_animation_hook_installed = false;
+bool g_login_band_canvas_hook_installed = false;
+bool g_login_band_sprite_contract_ready = false;
 
 using VoidInstanceFn = void(__fastcall*)(void*, void*);
 using ObjectArgInstanceFn = void(__fastcall*)(void*, void*, void*);
@@ -386,6 +490,7 @@ VoidInstanceFn g_original_login_bind = nullptr;
 ObjectArgInstanceFn g_original_login_enter_value_changed = nullptr;
 TickFn g_original_login_decorate_tick = nullptr;
 TickFn g_original_login_material_animation_late_tick = nullptr;
+VoidInstanceFn g_original_canvas_update_perform = nullptr;
 VoidInstanceFn g_original_login_decorate_release = nullptr;
 VoidInstanceFn g_original_init_main_hash = nullptr;
 VoidInstanceFn g_original_init_initial_hash = nullptr;
@@ -1211,6 +1316,133 @@ bool ResolveRuntimeContract() {
     Resolve(g_methods.login_material_animation_late_tick,
         "login.band.material_animation.late_tick", "UI.Beyond.dll", "Beyond.UI",
         "UIMaterialAnimation", "LateTick", "System.Single", "System.Void", 1);
+    // Optional: Canvas.willRenderCanvases -> CanvasUpdateRegistry.PerformUpdate
+    // runs after every Update/Animator/LateUpdate write of the frame, so a
+    // prefix there is the last chance to neutralize game write-backs before
+    // the band meshes are rebuilt.
+    Resolve(g_methods.canvas_update_perform,
+        "login.band.canvas_update.perform", "UnityEngine.UI.dll", "UnityEngine.UI",
+        "CanvasUpdateRegistry", "PerformUpdate", nullptr, "System.Void", 0);
+    Resolve(g_methods.graphic_get_canvas_renderer,
+        "unity.graphic.canvas_renderer.login_band", "UnityEngine.UI.dll",
+        "UnityEngine.UI", "Graphic", "get_canvasRenderer", nullptr,
+        "UnityEngine.CanvasRenderer", 0);
+    Resolve(g_methods.canvas_renderer_get_color,
+        "unity.canvas_renderer.get_color.login_band", "UnityEngine.UIModule.dll",
+        "UnityEngine", "CanvasRenderer", "GetColor", nullptr,
+        "UnityEngine.Color", 0);
+    Resolve(g_methods.canvas_renderer_set_color,
+        "unity.canvas_renderer.set_color.login_band", "UnityEngine.UIModule.dll",
+        "UnityEngine", "CanvasRenderer", "SetColor", "UnityEngine.Color",
+        "System.Void", 1);
+    // Optional: HG-extended CanvasGroup.color (absent from stock Unity).
+    ResolveClass(g_classes.canvas_group, "UnityEngine.UIModule.dll",
+        "UnityEngine", "CanvasGroup", true);
+    Resolve(g_methods.canvas_group_get_color,
+        "unity.canvas_group.get_color.login_band", "UnityEngine.UIModule.dll",
+        "UnityEngine", "CanvasGroup", "get_color", nullptr,
+        "UnityEngine.Color", 0);
+    Resolve(g_methods.canvas_group_set_color,
+        "unity.canvas_group.set_color.login_band", "UnityEngine.UIModule.dll",
+        "UnityEngine", "CanvasGroup", "set_color", "UnityEngine.Color",
+        "System.Void", 1);
+    Resolve(g_methods.canvas_group_get_alpha,
+        "unity.canvas_group.get_alpha.login_band", "UnityEngine.UIModule.dll",
+        "UnityEngine", "CanvasGroup", "get_alpha", nullptr,
+        "System.Single", 0);
+    // Optional: sprite neutralization (readable copy via Blit + ReadPixels).
+    size_t sprite_missing = 0;
+    auto sprite_required = [&sprite_missing](bool result) {
+        if (!result) {
+            ++sprite_missing;
+        }
+    };
+    sprite_required(Resolve(g_methods.image_set_sprite,
+        "unity.image.set_sprite.login_band", "UnityEngine.UI.dll",
+        "UnityEngine.UI", "Image", "set_sprite", "UnityEngine.Sprite",
+        "System.Void", 1));
+    // Optional within the optional group: RawImage targets fall back to
+    // color-only theming when missing.
+    Resolve(g_methods.raw_image_set_texture,
+        "unity.raw_image.set_texture.login_band", "UnityEngine.UI.dll",
+        "UnityEngine.UI", "RawImage", "set_texture", "UnityEngine.Texture",
+        "System.Void", 1);
+    sprite_required(Resolve(g_methods.sprite_get_texture,
+        "unity.sprite.texture.login_band", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "Sprite", "get_texture", nullptr,
+        "UnityEngine.Texture2D", 0));
+    sprite_required(Resolve(g_methods.sprite_get_rect,
+        "unity.sprite.rect.login_band", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "Sprite", "get_rect", nullptr, "UnityEngine.Rect", 0));
+    sprite_required(Resolve(g_methods.sprite_get_pivot,
+        "unity.sprite.pivot.login_band", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "Sprite", "get_pivot", nullptr, "UnityEngine.Vector2", 0));
+    sprite_required(Resolve(g_methods.sprite_get_pixels_per_unit,
+        "unity.sprite.pixels_per_unit.login_band", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "Sprite", "get_pixelsPerUnit", nullptr,
+        "System.Single", 0));
+    sprite_required(Resolve(g_methods.sprite_get_border,
+        "unity.sprite.border.login_band", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "Sprite", "get_border", nullptr, "UnityEngine.Vector4", 0));
+    sprite_required(Resolve(g_methods.sprite_create,
+        "unity.sprite.create.login_band", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "Sprite", "Create",
+        "UnityEngine.Texture2D|UnityEngine.Rect|UnityEngine.Vector2|System.Single|"
+        "System.UInt32|UnityEngine.SpriteMeshType|UnityEngine.Vector4",
+        "UnityEngine.Sprite", 7));
+    sprite_required(Resolve(g_methods.texture_get_width,
+        "unity.texture.width.login_band", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "Texture", "get_width", nullptr, "System.Int32", 0));
+    sprite_required(Resolve(g_methods.texture_get_height,
+        "unity.texture.height.login_band", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "Texture", "get_height", nullptr, "System.Int32", 0));
+    sprite_required(ResolveClass(g_classes.texture2d, "UnityEngine.CoreModule.dll",
+        "UnityEngine", "Texture2D", false));
+    sprite_required(Resolve(g_methods.texture2d_ctor,
+        "unity.texture2d.ctor.login_band", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "Texture2D", ".ctor",
+        "System.Int32|System.Int32|UnityEngine.TextureFormat|System.Boolean",
+        "System.Void", 4));
+    sprite_required(Resolve(g_methods.texture2d_read_pixels,
+        "unity.texture2d.read_pixels.login_band", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "Texture2D", "ReadPixels",
+        "UnityEngine.Rect|System.Int32|System.Int32", "System.Void", 3));
+    sprite_required(Resolve(g_methods.texture2d_apply,
+        "unity.texture2d.apply.login_band", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "Texture2D", "Apply", nullptr, "System.Void", 0));
+    sprite_required(Resolve(g_methods.texture2d_get_pixels32,
+        "unity.texture2d.get_pixels32.login_band", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "Texture2D", "GetPixels32", nullptr,
+        "UnityEngine.Color32[]", 0));
+    sprite_required(Resolve(g_methods.texture2d_set_pixels32,
+        "unity.texture2d.set_pixels32.login_band", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "Texture2D", "SetPixels32", "UnityEngine.Color32[]",
+        "System.Void", 1));
+    sprite_required(Resolve(g_methods.render_texture_get_temporary,
+        "unity.render_texture.get_temporary.login_band",
+        "UnityEngine.CoreModule.dll", "UnityEngine", "RenderTexture",
+        "GetTemporary", "System.Int32|System.Int32|System.Int32",
+        "UnityEngine.RenderTexture", 3));
+    sprite_required(Resolve(g_methods.render_texture_release_temporary,
+        "unity.render_texture.release_temporary.login_band",
+        "UnityEngine.CoreModule.dll", "UnityEngine", "RenderTexture",
+        "ReleaseTemporary", "UnityEngine.RenderTexture", "System.Void", 1));
+    sprite_required(Resolve(g_methods.render_texture_get_active,
+        "unity.render_texture.get_active.login_band",
+        "UnityEngine.CoreModule.dll", "UnityEngine", "RenderTexture",
+        "get_active", nullptr, "UnityEngine.RenderTexture", 0));
+    sprite_required(Resolve(g_methods.render_texture_set_active,
+        "unity.render_texture.set_active.login_band",
+        "UnityEngine.CoreModule.dll", "UnityEngine", "RenderTexture",
+        "set_active", "UnityEngine.RenderTexture", "System.Void", 1));
+    sprite_required(Resolve(g_methods.graphics_blit,
+        "unity.graphics.blit.login_band", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "Graphics", "Blit",
+        "UnityEngine.Texture|UnityEngine.RenderTexture", "System.Void", 2));
+    g_login_band_sprite_contract_ready = sprite_missing == 0;
+    Log(std::string("[model-contract] feature=login-band-sprite result=") +
+        (g_login_band_sprite_contract_ready ? "ready" : "unavailable") +
+        " missing=" + std::to_string(sprite_missing));
     login_band_required(Resolve(g_methods.object_get_type,
         "system.object.get_type.login_band", "mscorlib.dll", "System", "Object",
         "GetType", nullptr, "System.Type", 0));
@@ -1541,6 +1773,473 @@ bool GetGraphicColor(void* graphic, Color& color) {
         nullptr, "Graphic.get_color"), color);
 }
 
+void* GetGraphicCanvasRenderer(void* graphic) {
+    return graphic && g_methods.graphic_get_canvas_renderer.method_info
+        ? Invoke(g_methods.graphic_get_canvas_renderer, graphic, nullptr,
+            "Graphic.get_canvasRenderer(login band)") : nullptr;
+}
+
+bool GetCanvasRendererColor(void* renderer, Color& color) {
+    return renderer && g_methods.canvas_renderer_get_color.method_info &&
+        Unbox(Invoke(g_methods.canvas_renderer_get_color, renderer, nullptr,
+            "CanvasRenderer.GetColor(login band)"), color);
+}
+
+bool SetCanvasRendererColor(void* renderer, const Color& color) {
+    Color copy = color;
+    void* parameters[1]{&copy};
+    return renderer && g_methods.canvas_renderer_set_color.method_info &&
+        InvokeVoid(g_methods.canvas_renderer_set_color, renderer, parameters,
+            "CanvasRenderer.SetColor(login band)");
+}
+
+bool GetCanvasGroupColor(void* group, Color& color) {
+    return group && g_methods.canvas_group_get_color.method_info &&
+        Unbox(Invoke(g_methods.canvas_group_get_color, group, nullptr,
+            "CanvasGroup.get_color(login band)"), color);
+}
+
+bool SetCanvasGroupColor(void* group, const Color& color) {
+    Color copy = color;
+    void* parameters[1]{&copy};
+    return group && g_methods.canvas_group_set_color.method_info &&
+        InvokeVoid(g_methods.canvas_group_set_color, group, parameters,
+            "CanvasGroup.set_color(login band)");
+}
+
+bool GetCanvasGroupAlpha(void* group, float& alpha) {
+    return group && g_methods.canvas_group_get_alpha.method_info &&
+        Unbox(Invoke(g_methods.canvas_group_get_alpha, group, nullptr,
+            "CanvasGroup.get_alpha(login band)"), alpha);
+}
+
+void* GetImageSprite(void* image) {
+    return image && g_methods.image_get_sprite.method_info
+        ? Invoke(g_methods.image_get_sprite, image, nullptr,
+            "Image.get_sprite(login band)") : nullptr;
+}
+
+bool SetImageSprite(void* image, void* sprite) {
+    void* parameters[1]{sprite};
+    return image && InvokeVoid(g_methods.image_set_sprite, image, parameters,
+        "Image.set_sprite(login band)");
+}
+
+// Desaturates every saturated texel of a Color32 array in place: the texel
+// keeps its brightness (max channel) and alpha, so a flat brand-yellow shape
+// becomes a white shape and gray/white texels stay untouched.
+// IL2CPP arrays store elements right after the 32-byte header; the array is
+// freshly allocated by GetPixels32 and the GC is non-moving.
+size_t DesaturateColor32Array(void* array, int expected_count, size_t& opaque) {
+    const int count = ManagedArrayLength(array);
+    opaque = 0;
+    if (!array || count <= 0 || count != expected_count) {
+        return 0;
+    }
+    auto* texels = reinterpret_cast<uint8_t*>(array) + 32;
+    size_t changed = 0;
+    for (int index = 0; index < count; ++index) {
+        uint8_t* texel = texels + static_cast<size_t>(index) * 4;
+        if (texel[3] < 16) {
+            continue;
+        }
+        ++opaque;
+        const uint8_t r = texel[0];
+        const uint8_t g = texel[1];
+        const uint8_t b = texel[2];
+        const uint8_t peak = std::max(r, std::max(g, b));
+        const uint8_t low = std::min(r, std::min(g, b));
+        if (peak == 0 || (peak - low) * 5 <= peak) {
+            continue;
+        }
+        texel[0] = peak;
+        texel[1] = peak;
+        texel[2] = peak;
+        ++changed;
+    }
+    return changed;
+}
+
+// Reads `rect` of `source` back into a fresh readable RGBA32 Texture2D and
+// desaturates its accent-colored texels. Returns false (nothing allocated)
+// when the readback fails or when the visible texels carry no accent color, in
+// which case the caller keeps the original asset.
+bool CreateNeutralTextureCopy(void* source, const Rect& rect, const char* label,
+    void*& texture, size_t& opaque, size_t& changed, int& width, int& height) {
+    texture = nullptr;
+    opaque = 0;
+    changed = 0;
+    if (!source || !g_login_band_sprite_contract_ready || !g_host ||
+        !g_host->object_new || !g_classes.texture2d.class_info) {
+        return false;
+    }
+    int source_width = 0;
+    int source_height = 0;
+    if (!Unbox(Invoke(g_methods.texture_get_width, source, nullptr,
+            "Texture.get_width(login band)"), source_width) ||
+        !Unbox(Invoke(g_methods.texture_get_height, source, nullptr,
+            "Texture.get_height(login band)"), source_height)) {
+        return false;
+    }
+    width = static_cast<int>(std::lround(rect.width));
+    height = static_cast<int>(std::lround(rect.height));
+    if (width <= 0 || height <= 0 || source_width <= 0 || source_height <= 0 ||
+        width > 4096 || height > 4096) {
+        return false;
+    }
+
+    // GPU copy of the (possibly compressed / non-readable) source into a
+    // temporary RenderTexture, then a CPU readback of just the wanted rect.
+    int depth = 0;
+    void* temporary_parameters[3]{&source_width, &source_height, &depth};
+    void* render_texture = Invoke(g_methods.render_texture_get_temporary, nullptr,
+        temporary_parameters, "RenderTexture.GetTemporary(login band)");
+    if (!render_texture) {
+        return false;
+    }
+    void* blit_parameters[2]{source, render_texture};
+    const bool blitted = InvokeVoid(g_methods.graphics_blit, nullptr,
+        blit_parameters, "Graphics.Blit(login band)");
+    void* previous_active = Invoke(g_methods.render_texture_get_active, nullptr,
+        nullptr, "RenderTexture.get_active(login band)");
+    void* activate_parameters[1]{render_texture};
+    const bool activated = blitted && InvokeVoid(g_methods.render_texture_set_active,
+        nullptr, activate_parameters, "RenderTexture.set_active(login band)");
+
+    bool read = false;
+    if (activated) {
+        texture = g_host->object_new(g_host->context, g_classes.texture2d.class_info);
+        int texture_format = 4;  // TextureFormat.RGBA32
+        bool mip_chain = false;
+        void* ctor_parameters[4]{&width, &height, &texture_format, &mip_chain};
+        if (!texture || !InvokeVoid(g_methods.texture2d_ctor, texture,
+                ctor_parameters, "Texture2D..ctor(login band)")) {
+            texture = nullptr;
+        }
+        Rect read_rect{rect.x, rect.y, static_cast<float>(width),
+            static_cast<float>(height)};
+        int destination_x = 0;
+        int destination_y = 0;
+        void* read_parameters[3]{&read_rect, &destination_x, &destination_y};
+        read = texture && InvokeVoid(g_methods.texture2d_read_pixels, texture,
+            read_parameters, "Texture2D.ReadPixels(login band)");
+    }
+    void* restore_parameters[1]{previous_active};
+    InvokeVoid(g_methods.render_texture_set_active, nullptr, restore_parameters,
+        "RenderTexture.set_active(restore, login band)");
+    void* release_parameters[1]{render_texture};
+    InvokeVoid(g_methods.render_texture_release_temporary, nullptr,
+        release_parameters, "RenderTexture.ReleaseTemporary(login band)");
+    if (!read) {
+        if (texture) {
+            DestroyObject(texture);
+            texture = nullptr;
+        }
+        return false;
+    }
+
+    void* pixels = Invoke(g_methods.texture2d_get_pixels32, texture, nullptr,
+        "Texture2D.GetPixels32(login band)");
+    changed = DesaturateColor32Array(pixels, width * height, opaque);
+    // Visible texels that are (almost) all gray or white carry no baked accent
+    // color; leave the original in place rather than swap in an identical copy.
+    if (opaque == 0 || changed * 100 < opaque * 15) {
+        DestroyObject(texture);
+        texture = nullptr;
+        if (g_diagnostics.load()) {
+            Log("[login-band-sprite] neutral " + std::string(label ? label : "") +
+                " opaque=" + std::to_string(opaque) +
+                " colored=" + std::to_string(changed) + " result=kept-original");
+        }
+        return false;
+    }
+    void* set_parameters[1]{pixels};
+    if (!pixels ||
+        !InvokeVoid(g_methods.texture2d_set_pixels32, texture, set_parameters,
+            "Texture2D.SetPixels32(login band)") ||
+        !InvokeVoid(g_methods.texture2d_apply, texture, nullptr,
+            "Texture2D.Apply(login band)")) {
+        DestroyObject(texture);
+        texture = nullptr;
+        return false;
+    }
+    return true;
+}
+
+// Builds a neutralized copy of `sprite` (see LoginBandSpriteCopy). Returns
+// false and leaves nothing allocated on any failure; the caller then keeps the
+// original sprite on that Image.
+bool CreateNeutralSpriteCopy(void* sprite, LoginBandSpriteCopy& output) {
+    if (!sprite || !g_login_band_sprite_contract_ready) {
+        return false;
+    }
+    void* source = Invoke(g_methods.sprite_get_texture, sprite, nullptr,
+        "Sprite.get_texture(login band)");
+    Rect rect{};
+    Vector2 pivot{};
+    float pixels_per_unit = 100.0f;
+    Vector4 border{};
+    if (!source ||
+        !Unbox(Invoke(g_methods.sprite_get_rect, sprite, nullptr,
+            "Sprite.get_rect(login band)"), rect) ||
+        !Unbox(Invoke(g_methods.sprite_get_pivot, sprite, nullptr,
+            "Sprite.get_pivot(login band)"), pivot) ||
+        !Unbox(Invoke(g_methods.sprite_get_pixels_per_unit, sprite, nullptr,
+            "Sprite.get_pixelsPerUnit(login band)"), pixels_per_unit) ||
+        !Unbox(Invoke(g_methods.sprite_get_border, sprite, nullptr,
+            "Sprite.get_border(login band)"), border)) {
+        return false;
+    }
+    const std::string name = VisualObjectName(sprite);
+    void* texture = nullptr;
+    size_t opaque = 0;
+    size_t changed = 0;
+    int width = 0;
+    int height = 0;
+    if (!CreateNeutralTextureCopy(source, rect, ("sprite=" + name).c_str(),
+            texture, opaque, changed, width, height)) {
+        return false;
+    }
+
+    Rect copy_rect{0.0f, 0.0f, static_cast<float>(width),
+        static_cast<float>(height)};
+    Vector2 normalized_pivot{pivot.x / static_cast<float>(width),
+        pivot.y / static_cast<float>(height)};
+    uint32_t extrude = 0;
+    int mesh_type = 0;  // SpriteMeshType.FullRect
+    void* create_parameters[7]{texture, &copy_rect, &normalized_pivot,
+        &pixels_per_unit, &extrude, &mesh_type, &border};
+    void* copy = Invoke(g_methods.sprite_create, nullptr, create_parameters,
+        "Sprite.Create(login band)");
+    if (!copy) {
+        DestroyObject(texture);
+        return false;
+    }
+    output.original_sprite = sprite;
+    output.sprite = copy;
+    output.texture = texture;
+    output.name = name;
+    Log("[login-band-sprite] neutralized sprite=" + output.name +
+        " size=" + std::to_string(width) + "x" + std::to_string(height) +
+        " opaque=" + std::to_string(opaque) +
+        " texelsChanged=" + std::to_string(changed));
+    return true;
+}
+
+// RawImage variant: the whole texture is copied and the RawImage keeps its
+// uvRect. `output.sprite` stays null; `output.texture` is the replacement.
+bool CreateNeutralRawTextureCopy(void* source, LoginBandSpriteCopy& output) {
+    if (!source || !g_login_band_sprite_contract_ready) {
+        return false;
+    }
+    int source_width = 0;
+    int source_height = 0;
+    if (!Unbox(Invoke(g_methods.texture_get_width, source, nullptr,
+            "Texture.get_width(raw, login band)"), source_width) ||
+        !Unbox(Invoke(g_methods.texture_get_height, source, nullptr,
+            "Texture.get_height(raw, login band)"), source_height)) {
+        return false;
+    }
+    const std::string name = VisualObjectName(source);
+    Rect rect{0.0f, 0.0f, static_cast<float>(source_width),
+        static_cast<float>(source_height)};
+    void* texture = nullptr;
+    size_t opaque = 0;
+    size_t changed = 0;
+    int width = 0;
+    int height = 0;
+    if (!CreateNeutralTextureCopy(source, rect, ("texture=" + name).c_str(),
+            texture, opaque, changed, width, height)) {
+        return false;
+    }
+    output.original_sprite = source;
+    output.sprite = nullptr;
+    output.texture = texture;
+    output.raw_texture = true;
+    output.name = name;
+    Log("[login-band-sprite] neutralized texture=" + output.name +
+        " size=" + std::to_string(width) + "x" + std::to_string(height) +
+        " opaque=" + std::to_string(opaque) +
+        " texelsChanged=" + std::to_string(changed));
+    return true;
+}
+
+// Returns the neutralized copy for `sprite`, creating it on first use.
+// Returns nullptr when the copy cannot be produced (sprite stays original).
+void* NeutralSpriteFor(std::vector<LoginBandSpriteCopy>& cache, void* sprite) {
+    if (!sprite) {
+        return nullptr;
+    }
+    for (const LoginBandSpriteCopy& copy : cache) {
+        if (copy.raw_texture) {
+            continue;
+        }
+        if (copy.original_sprite == sprite) {
+            return copy.sprite;
+        }
+        if (copy.sprite == sprite) {
+            return sprite;
+        }
+    }
+    LoginBandSpriteCopy copy{};
+    if (!CreateNeutralSpriteCopy(sprite, copy)) {
+        // Remember the failure so the Image is not retried every tick.
+        copy.original_sprite = sprite;
+        copy.sprite = nullptr;
+        copy.texture = nullptr;
+        cache.push_back(std::move(copy));
+        return nullptr;
+    }
+    cache.push_back(std::move(copy));
+    return cache.back().sprite;
+}
+
+// RawImage counterpart: returns the neutralized texture for `texture`.
+void* NeutralRawTextureFor(std::vector<LoginBandSpriteCopy>& cache, void* texture) {
+    if (!texture) {
+        return nullptr;
+    }
+    for (const LoginBandSpriteCopy& copy : cache) {
+        if (!copy.raw_texture) {
+            continue;
+        }
+        if (copy.original_sprite == texture) {
+            return copy.texture;
+        }
+        if (copy.texture == texture) {
+            return texture;
+        }
+    }
+    LoginBandSpriteCopy copy{};
+    if (!CreateNeutralRawTextureCopy(texture, copy)) {
+        copy.original_sprite = texture;
+        copy.sprite = nullptr;
+        copy.texture = nullptr;
+        copy.raw_texture = true;
+        cache.push_back(std::move(copy));
+        return nullptr;
+    }
+    cache.push_back(std::move(copy));
+    return cache.back().texture;
+}
+
+void* GetRawImageTexture(void* raw_image) {
+    return raw_image && g_methods.raw_image_get_texture.method_info
+        ? Invoke(g_methods.raw_image_get_texture, raw_image, nullptr,
+            "RawImage.get_texture(login band)") : nullptr;
+}
+
+bool SetRawImageTexture(void* raw_image, void* texture) {
+    void* parameters[1]{texture};
+    return raw_image && g_methods.raw_image_set_texture.method_info &&
+        InvokeVoid(g_methods.raw_image_set_texture, raw_image, parameters,
+            "RawImage.set_texture(login band)");
+}
+
+void DestroyNeutralSprites(std::vector<LoginBandSpriteCopy>& cache,
+    const char* owner) {
+    size_t destroyed = 0;
+    for (const LoginBandSpriteCopy& copy : cache) {
+        if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+            break;
+        }
+        if (copy.sprite) {
+            DestroyObject(copy.sprite);
+            ++destroyed;
+        }
+        if (copy.texture) {
+            DestroyObject(copy.texture);
+        }
+    }
+    if (destroyed > 0) {
+        Log(std::string("[") + owner + "-sprite] copies destroyed=" +
+            std::to_string(destroyed));
+    }
+    cache.clear();
+}
+
+// Shared by the band and the logo: keeps an Image on the neutralized copy of
+// whatever sprite the game currently shows on it. Sprites cycled in by the
+// game are treated as new originals, not as drift to revert. Returns true when
+// the Image now shows one of our copies.
+bool MaintainNeutralSprite(std::vector<LoginBandSpriteCopy>& cache, void* image,
+    void*& original_sprite, void*& themed_sprite, bool& swap_logged,
+    const char* owner, const std::string& label, const char* phase) {
+    if (!image || !g_login_band_sprite_contract_ready) {
+        return false;
+    }
+    void* current = GetImageSprite(image);
+    if (!current) {
+        return false;
+    }
+    if (current == themed_sprite) {
+        return true;
+    }
+    void* neutral = NeutralSpriteFor(cache, current);
+    if (neutral == current) {
+        // Already one of our copies (e.g. re-applied by the game).
+        themed_sprite = current;
+        return true;
+    }
+    original_sprite = current;
+    if (!neutral) {
+        themed_sprite = nullptr;
+        return false;
+    }
+    if (!SetImageSprite(image, neutral)) {
+        return false;
+    }
+    themed_sprite = neutral;
+    if (g_diagnostics.load() && !swap_logged) {
+        swap_logged = true;
+        Log(std::string("[") + owner + "-sprite] applied target=" + label +
+            " phase=" + (phase ? phase : "unknown") +
+            " sprite=" + VisualObjectName(current));
+    }
+    return true;
+}
+
+// RawImage counterpart of MaintainNeutralSprite. GameLogoRaw draws the logo
+// texture (`login_logo*`) whose yellow edge layers and "ARKNIGHTS ENDFIELD"
+// caption are baked into the texels.
+bool MaintainNeutralRawTexture(std::vector<LoginBandSpriteCopy>& cache,
+    void* raw_image, void*& original_texture, void*& themed_texture,
+    bool& swap_logged, const char* owner, const std::string& label,
+    const char* phase) {
+    if (!raw_image || !g_login_band_sprite_contract_ready ||
+        !g_methods.raw_image_set_texture.method_info) {
+        return false;
+    }
+    void* current = GetRawImageTexture(raw_image);
+    if (!current) {
+        return false;
+    }
+    if (current == themed_texture) {
+        return true;
+    }
+    void* neutral = NeutralRawTextureFor(cache, current);
+    if (neutral == current) {
+        themed_texture = current;
+        return true;
+    }
+    original_texture = current;
+    if (!neutral) {
+        themed_texture = nullptr;
+        return false;
+    }
+    if (!SetRawImageTexture(raw_image, neutral)) {
+        return false;
+    }
+    themed_texture = neutral;
+    if (g_diagnostics.load() && !swap_logged) {
+        swap_logged = true;
+        Log(std::string("[") + owner + "-sprite] applied target=" + label +
+            " phase=" + (phase ? phase : "unknown") +
+            " texture=" + VisualObjectName(current));
+    }
+    return true;
+}
+
 void* GetGraphicMaterial(void* graphic) {
     return graphic && g_methods.graphic_get_material.method_info
         ? Invoke(g_methods.graphic_get_material, graphic, nullptr,
@@ -1703,6 +2402,11 @@ size_t AppendLogoGraphicsFromRoot(void* root, const char* root_role) {
         state.graphic = graphic;
         state.original_color = color;
         state.source = root_role ? root_role : "unknown";
+        state.name = VisualObjectName(graphic);
+        const std::string type = ManagedTypeName(graphic);
+        state.is_raw_image = type.find("RawImage") != std::string::npos;
+        state.is_image = !state.is_raw_image &&
+            type.find("Image") != std::string::npos;
         g_logo.graphics.push_back(std::move(state));
         LogLogoGraphic(graphic, color, index, root_role);
     }
@@ -1782,7 +2486,17 @@ void RestoreLogoColors(const char* reason) {
         if (SetGraphicColor(state.graphic, original)) {
             ++restored;
         }
+        if (state.themed_sprite && state.original_sprite) {
+            if (state.is_image &&
+                GetImageSprite(state.graphic) == state.themed_sprite) {
+                SetImageSprite(state.graphic, state.original_sprite);
+            } else if (state.is_raw_image &&
+                GetRawImageTexture(state.graphic) == state.themed_sprite) {
+                SetRawImageTexture(state.graphic, state.original_sprite);
+            }
+        }
     }
+    DestroyNeutralSprites(g_logo.sprites, "logo");
     if (!g_logo.graphics.empty()) {
         Log("[logo-theme] restored=" + std::to_string(restored) +
             " reason=" + (reason ? reason : "unknown"));
@@ -1810,7 +2524,16 @@ void ApplyLogoTheme(void* instance, const ModelConfiguration& configuration) {
     }
     size_t applied = 0;
     size_t game_logo_applied = 0;
-    for (const LogoGraphicState& state : g_logo.graphics) {
+    for (LogoGraphicState& state : g_logo.graphics) {
+        if (state.is_image) {
+            MaintainNeutralSprite(g_logo.sprites, state.graphic,
+                state.original_sprite, state.themed_sprite,
+                state.sprite_swap_logged, "logo", state.name, "decorate-tick");
+        } else if (state.is_raw_image) {
+            MaintainNeutralRawTexture(g_logo.sprites, state.graphic,
+                state.original_sprite, state.themed_sprite,
+                state.sprite_swap_logged, "logo", state.name, "decorate-tick");
+        }
         Color current{};
         if (!GetGraphicColor(state.graphic, current)) {
             continue;
@@ -2055,9 +2778,79 @@ size_t AppendLoginBandGraphics(void* root_transform, void* panel_transform) {
         state.graphic = graphic;
         state.path = HierarchyPath(graphic, panel_transform);
         state.type = ManagedTypeName(graphic);
+        // Text, raycast-only graphics and the logo subtree (owned by the logo
+        // theme) are never band targets.
+        if (state.type.find("Text") != std::string::npos ||
+            state.type.find("NonDrawing") != std::string::npos ||
+            state.path.find("GameLogoRaw") != std::string::npos) {
+            continue;
+        }
+        state.is_image = state.type.find("Image") != std::string::npos &&
+            state.type.find("RawImage") == std::string::npos;
         g_login_band.graphics.push_back(std::move(state));
     }
     return g_login_band.graphics.size() - before;
+}
+
+// Collects every CanvasGroup on the band's ancestor chain (Line and above, up
+// to the canvas root) so its HG color tint can be neutralized like the
+// per-Graphic vertex color. Logged in full because this tint is invisible
+// through Graphic.color and CanvasRenderer.color.
+size_t CaptureLoginBandGroups(void* line_transform) {
+    g_login_band.groups.clear();
+    if (!line_transform || !g_classes.canvas_group.type_object ||
+        !g_methods.canvas_group_get_color.method_info) {
+        return 0;
+    }
+    std::vector<void*> ancestors;
+    void* topmost = line_transform;
+    for (void* transform = line_transform; transform && ancestors.size() < 64;) {
+        ancestors.push_back(transform);
+        topmost = transform;
+        transform = Invoke(g_methods.transform_parent, transform, nullptr,
+            "Transform.get_parent(login band groups)");
+        if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+            return 0;
+        }
+    }
+    void* root = Invoke(g_methods.component_game_object, topmost, nullptr,
+        "Component.get_gameObject(login band group root)");
+    void* groups = root ? GetComponentsInChildren(
+        root, g_classes.canvas_group.type_object) : nullptr;
+    const int count = ManagedArrayLength(groups);
+    for (int index = 0; index < count; ++index) {
+        if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+            break;
+        }
+        void* group = ManagedArrayValue(groups, index);
+        void* game_object = group ? Invoke(g_methods.component_game_object,
+            group, nullptr, "Component.get_gameObject(login band group)") : nullptr;
+        void* transform = game_object ? Invoke(g_methods.game_object_transform,
+            game_object, nullptr, "GameObject.get_transform(login band group)")
+            : nullptr;
+        if (!transform || std::find(ancestors.begin(), ancestors.end(),
+                transform) == ancestors.end()) {
+            continue;
+        }
+        Color color{};
+        if (!GetCanvasGroupColor(group, color)) {
+            continue;
+        }
+        float alpha = -1.0f;
+        GetCanvasGroupAlpha(group, alpha);
+        LoginBandGroupState state{};
+        state.group = group;
+        state.path = HierarchyPath(group, nullptr);
+        state.original_color = color;
+        state.last_color = color;
+        g_login_band.groups.push_back(std::move(state));
+        Log("[login-band-group] path=" + g_login_band.groups.back().path +
+            " color=" + ColorText(color) +
+            " alpha=" + std::to_string(alpha) +
+            " tinted=" + (RgbDiffer(color, Color{1.0f, 1.0f, 1.0f, color.a})
+                ? "true" : "false"));
+    }
+    return g_login_band.groups.size();
 }
 
 void RestoreLoginBandTheme(const char* reason);
@@ -2179,10 +2972,38 @@ bool CaptureLoginBand(void* instance, void* panel_game_object, const char* sourc
     g_login_band = {};
     g_login_band.instance = instance;
     g_login_band.panel_transform = panel_transform;
-    const size_t line_count = AppendLoginBandGraphics(line, panel_transform);
+    // Scan the whole MiddlePanel: besides the Line subtree, the logo frame and
+    // corner decorations carry the same baked accent color (e.g. TextDeco
+    // under the "ARKNIGHTS ENDFIELD" block).
+    void* scan_root = middle ? middle : panel_transform;
+    const size_t line_count = AppendLoginBandGraphics(scan_root, panel_transform);
     for (auto& state : g_login_band.graphics) {
         SnapshotLoginBandGraphic(state, "initial", g_diagnostics.load());
     }
+    // Promote Images whose sprite texels are themselves accent-colored: the
+    // color/name/path rules cannot see baked texture color, but the
+    // neutralized copy's texel statistics can.
+    size_t promoted = 0;
+    for (auto& state : g_login_band.graphics) {
+        if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+            return false;
+        }
+        if (state.theme_target || !state.is_image ||
+            !g_login_band_sprite_contract_ready) {
+            continue;
+        }
+        void* sprite = GetImageSprite(state.graphic);
+        if (!sprite || !NeutralSpriteFor(g_login_band.sprites, sprite)) {
+            continue;
+        }
+        state.theme_target = true;
+        state.material_color_property =
+            SelectMaterialColorProperty(state.source_material);
+        ++promoted;
+        Log("[login-band-diag] promoted path=" + state.path +
+            " reason=accent-colored-sprite sprite=" + VisualObjectName(sprite));
+    }
+    const size_t group_count = CaptureLoginBandGroups(line ? line : scan_root);
     const size_t target_count = static_cast<size_t>(std::count_if(
         g_login_band.graphics.begin(), g_login_band.graphics.end(),
         [](const LoginBandGraphicState& state) { return state.theme_target; }));
@@ -2192,8 +3013,10 @@ bool CaptureLoginBand(void* instance, void* panel_game_object, const char* sourc
         " middlePanel=" + (middle ? "found" : "missing") +
         " line=" + (line ? "found" : "missing") +
         " graphics=" + std::to_string(line_count) +
-        " themeTargets=" + std::to_string(target_count));
-    return line && target_count > 0;
+        " themeTargets=" + std::to_string(target_count) +
+        " promoted=" + std::to_string(promoted) +
+        " canvasGroups=" + std::to_string(group_count));
+    return target_count > 0;
 }
 
 bool CaptureLoginBandFromInstance(void* instance, const char* source) {
@@ -2220,6 +3043,16 @@ void RestoreLoginBandTheme(const char* reason) {
         if (g_login_scene_releasing.load(std::memory_order_acquire)) {
             break;
         }
+        if (state.themed_sprite && state.original_sprite &&
+            GetImageSprite(state.graphic) == state.themed_sprite) {
+            if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+                break;
+            }
+            SetImageSprite(state.graphic, state.original_sprite);
+        }
+        if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+            break;
+        }
         void* current_material = state.themed_material
             ? GetGraphicMaterial(state.graphic) : nullptr;
         if (g_login_scene_releasing.load(std::memory_order_acquire)) {
@@ -2239,6 +3072,24 @@ void RestoreLoginBandTheme(const char* reason) {
         if (g_login_scene_releasing.load(std::memory_order_acquire)) {
             break;
         }
+        if (state.renderer_color_captured) {
+            void* renderer = GetGraphicCanvasRenderer(state.graphic);
+            Color renderer_current{};
+            Color renderer_original = state.original_renderer_color;
+            if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+                break;
+            }
+            if (renderer && GetCanvasRendererColor(renderer, renderer_current)) {
+                renderer_original.a = renderer_current.a;
+                if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+                    break;
+                }
+                SetCanvasRendererColor(renderer, renderer_original);
+            }
+            if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+                break;
+            }
+        }
         if (state.themed_material_owned && state.themed_material) {
             DestroyObject(state.themed_material);
             if (g_login_scene_releasing.load(std::memory_order_acquire)) {
@@ -2250,6 +3101,21 @@ void RestoreLoginBandTheme(const char* reason) {
         state.themed_material_owned = false;
         state.material_remap_applied = false;
     }
+    for (const LoginBandGroupState& group : g_login_band.groups) {
+        if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+            break;
+        }
+        Color current{};
+        Color original = group.original_color;
+        if (GetCanvasGroupColor(group.group, current)) {
+            original.a = current.a;
+        }
+        if (g_login_scene_releasing.load(std::memory_order_acquire)) {
+            break;
+        }
+        SetCanvasGroupColor(group.group, original);
+    }
+    DestroyNeutralSprites(g_login_band.sprites, "login-band");
     if (g_login_band.panel_transform) {
         Log("[login-band] restored=" + std::to_string(restored) +
             " materialsDestroyed=" + std::to_string(materials_destroyed) +
@@ -2259,8 +3125,21 @@ void RestoreLoginBandTheme(const char* reason) {
     g_login_band = {};
 }
 
+// Keeps an Image target on the neutralized copy of whatever sprite the game
+// currently shows on it. The glitch decorations cycle through several sprites,
+// so a sprite that is neither our copy nor the last known original is treated
+// as a new original rather than as drift to be reverted.
+void MaintainLoginBandSprite(LoginBandGraphicState& state, const char* phase) {
+    if (!state.is_image) {
+        return;
+    }
+    MaintainNeutralSprite(g_login_band.sprites, state.graphic,
+        state.original_sprite, state.themed_sprite, state.sprite_swap_logged,
+        "login-band", state.path, phase);
+}
+
 void ApplyLoginBandTheme(const ModelConfiguration& configuration,
-    void* panel_instance = nullptr) {
+    void* panel_instance = nullptr, const char* phase = "tick") {
     if (g_login_scene_releasing.load(std::memory_order_acquire)) {
         if (!g_login_band_release_skip_logged.exchange(true,
                 std::memory_order_acq_rel)) {
@@ -2413,10 +3292,27 @@ void ApplyLoginBandTheme(const ModelConfiguration& configuration,
                 break;
             }
             if (current_material != state.themed_material) {
+                if (g_diagnostics.load() && !state.material_drift_logged) {
+                    state.material_drift_logged = true;
+                    const std::string current_name =
+                        VisualObjectName(current_material);
+                    if (!apply_scope.IsValid()) {
+                        break;
+                    }
+                    Log("[login-band-drift] kind=material phase=" +
+                        std::string(phase ? phase : "unknown") +
+                        " path=" + state.path + " material=" + current_name);
+                }
                 SetGraphicMaterial(state.graphic, state.themed_material);
                 if (!apply_scope.IsValid()) {
                     break;
                 }
+            }
+        }
+        if (state.material_remap_applied) {
+            MaintainLoginBandSprite(state, phase);
+            if (!apply_scope.IsValid()) {
+                break;
             }
         }
         Color current{};
@@ -2431,11 +3327,87 @@ void ApplyLoginBandTheme(const ModelConfiguration& configuration,
         }
         Color neutral{1.0f, 1.0f, 1.0f, current.a};
         if (RgbDiffer(current, neutral)) {
-            SetGraphicColor(state.graphic, neutral);
+            // A yellow RGB here after the first apply means the game rewrote
+            // Graphic.color behind us (animation write-back).
+            if (g_diagnostics.load() && state.neutral_color_applied &&
+                !state.color_drift_logged) {
+                state.color_drift_logged = true;
+                Log("[login-band-drift] kind=graphic-color phase=" +
+                    std::string(phase ? phase : "unknown") +
+                    " path=" + state.path + " color=" + ColorText(current));
+            }
+            if (SetGraphicColor(state.graphic, neutral)) {
+                state.neutral_color_applied = true;
+            }
             if (!apply_scope.IsValid()) {
                 break;
             }
         }
+        // CanvasRenderer.color is multiplied onto the mesh at render time and
+        // is not visible through Graphic.color; neutralize its RGB as well and
+        // keep the alpha the game animates through it.
+        void* renderer = GetGraphicCanvasRenderer(state.graphic);
+        if (!apply_scope.IsValid()) {
+            break;
+        }
+        Color renderer_color{};
+        if (renderer && GetCanvasRendererColor(renderer, renderer_color)) {
+            if (!apply_scope.IsValid()) {
+                break;
+            }
+            if (!state.renderer_color_captured) {
+                state.original_renderer_color = renderer_color;
+                state.renderer_color_captured = true;
+            }
+            Color renderer_neutral{1.0f, 1.0f, 1.0f, renderer_color.a};
+            if (RgbDiffer(renderer_color, renderer_neutral)) {
+                if (g_diagnostics.load() && !state.renderer_drift_logged) {
+                    state.renderer_drift_logged = true;
+                    Log("[login-band-drift] kind=canvas-renderer-color phase=" +
+                        std::string(phase ? phase : "unknown") +
+                        " path=" + state.path +
+                        " color=" + ColorText(renderer_color));
+                }
+                SetCanvasRendererColor(renderer, renderer_neutral);
+                if (!apply_scope.IsValid()) {
+                    break;
+                }
+            }
+        } else if (!apply_scope.IsValid()) {
+            break;
+        }
+    }
+    // Ancestor CanvasGroup tint: neutralize RGB, keep the animated alpha.
+    for (LoginBandGroupState& group : g_login_band.groups) {
+        if (!apply_scope.IsValid()) {
+            break;
+        }
+        Color current{};
+        if (!GetCanvasGroupColor(group.group, current)) {
+            if (!apply_scope.IsValid()) {
+                break;
+            }
+            continue;
+        }
+        if (!apply_scope.IsValid()) {
+            break;
+        }
+        Color neutral{1.0f, 1.0f, 1.0f, current.a};
+        if (RgbDiffer(current, neutral)) {
+            if (g_diagnostics.load() && !group.drift_logged &&
+                RgbDiffer(current, group.last_color)) {
+                group.drift_logged = true;
+                Log("[login-band-drift] kind=canvas-group-color phase=" +
+                    std::string(phase ? phase : "unknown") +
+                    " path=" + group.path + " color=" + ColorText(current));
+            }
+            SetCanvasGroupColor(group.group, neutral);
+            if (!apply_scope.IsValid()) {
+                break;
+            }
+            ++applied;
+        }
+        group.last_color = neutral;
     }
     if (!apply_scope.IsValid()) {
         Log("[login-band] apply aborted after scene release generation=" +
@@ -3536,7 +4508,7 @@ void __fastcall LoginEnterGamePanelValueChangedHook(void* instance, void* value,
     BeginLoginBandScene("LoginEnterGamePanel.OnValueChanged");
     const ModelConfiguration configuration = ConfigurationSnapshot();
     if (configuration.logo_theme_enabled && g_login_band_contract_ready) {
-        ApplyLoginBandTheme(configuration, instance);
+        ApplyLoginBandTheme(configuration, instance, "value-changed");
     }
 }
 
@@ -3554,7 +4526,7 @@ void __fastcall LoginDecorateTickHook(void* instance, float delta_time,
     }
     const ModelConfiguration configuration = ConfigurationSnapshot();
     ApplyLogoTheme(instance, configuration);
-    ApplyLoginBandTheme(configuration);
+    ApplyLoginBandTheme(configuration, nullptr, "decorate-tick");
 }
 
 void __fastcall LoginMaterialAnimationLateTickHook(void* instance,
@@ -3564,7 +4536,26 @@ void __fastcall LoginMaterialAnimationLateTickHook(void* instance,
     }
     const ModelConfiguration configuration = ConfigurationSnapshot();
     if (configuration.logo_theme_enabled && g_login_band_contract_ready) {
-        ApplyLoginBandTheme(configuration);
+        ApplyLoginBandTheme(configuration, nullptr, "material-late-tick");
+    }
+}
+
+// Prefix on CanvasUpdateRegistry.PerformUpdate (Canvas.willRenderCanvases).
+// Runs once per frame after Animator/LateUpdate write-backs and before the
+// UI meshes are rebuilt, so the neutralized colors are what actually renders.
+// Registering dirty graphics here is legal: m_PerformingGraphicUpdate is
+// still false. Only touches a band that an earlier hook already captured.
+void __fastcall CanvasUpdatePerformHook(void* instance, void* method) {
+    if (g_login_band.panel_transform &&
+        !g_login_scene_releasing.load(std::memory_order_acquire) &&
+        g_login_band_contract_ready) {
+        const ModelConfiguration configuration = ConfigurationSnapshot();
+        if (configuration.logo_theme_enabled) {
+            ApplyLoginBandTheme(configuration, nullptr, "canvas-pre-render");
+        }
+    }
+    if (g_original_canvas_update_perform) {
+        g_original_canvas_update_perform(instance, method);
     }
 }
 
@@ -3775,6 +4766,7 @@ void ClearOriginals() {
     g_original_login_enter_value_changed = nullptr;
     g_original_login_decorate_tick = nullptr;
     g_original_login_material_animation_late_tick = nullptr;
+    g_original_canvas_update_perform = nullptr;
     g_original_login_decorate_release = nullptr;
     g_original_login_bind = nullptr;
     g_original_init_main_hash = nullptr;
@@ -3829,6 +4821,7 @@ bool InstallModelHooks() {
         g_logo_hooks_installed = false;
         g_login_band_hook_installed = false;
         g_login_band_animation_hook_installed = false;
+        g_login_band_canvas_hook_installed = false;
         g_state.store(ModuleState::Failed);
         return false;
     }
@@ -3885,6 +4878,15 @@ void InstallLoginBandHook() {
     } else {
         Log("[model-hook] login-band post-animation hook unavailable; value hook remains active");
     }
+    if (g_methods.canvas_update_perform.method_info &&
+        Hook(g_methods.canvas_update_perform,
+            reinterpret_cast<void*>(&CanvasUpdatePerformHook),
+            reinterpret_cast<void**>(&g_original_canvas_update_perform))) {
+        g_login_band_canvas_hook_installed = true;
+        Log("[model-hook] login-band canvas pre-render hook active");
+    } else {
+        Log("[model-hook] login-band canvas pre-render hook unavailable; tick hooks remain active");
+    }
     Log("[model-hook] feature=login-band active mode=material-clone sprite-preserved alpha-preserved");
 }
 
@@ -3917,6 +4919,7 @@ void StopHooks() {
     g_logo_hooks_installed = false;
     g_login_band_hook_installed = false;
     g_login_band_animation_hook_installed = false;
+    g_login_band_canvas_hook_installed = false;
     ClearOriginals();
 }
 

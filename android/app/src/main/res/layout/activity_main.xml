@@ -302,13 +302,37 @@
                     </LinearLayout>
                 </HorizontalScrollView>
 
+                <TextView style="@style/FieldLabel" android:text="@string/logo_wheel_label" />
+                <dev.betterendfield.android.ColorWheelView
+                    android:id="@+id/logo_color_wheel"
+                    android:layout_width="240dp"
+                    android:layout_height="240dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="4dp" />
+
                 <TextView style="@style/FieldLabel" android:text="@string/logo_color_label" />
-                <EditText
-                    android:id="@+id/logo_color"
-                    style="@style/InputEditText"
-                    android:hint="#FFC928"
-                    android:inputType="textCapCharacters"
-                    android:maxLength="7" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <EditText
+                        android:id="@+id/logo_color"
+                        style="@style/InputEditText"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:hint="#FFC928"
+                        android:inputType="textCapCharacters"
+                        android:maxLength="7" />
+
+                    <View
+                        android:id="@+id/logo_color_preview"
+                        android:layout_width="52dp"
+                        android:layout_height="52dp"
+                        android:layout_marginStart="10dp"
+                        android:contentDescription="@string/logo_color_label" />
+                </LinearLayout>
             </LinearLayout>
 
             <Button

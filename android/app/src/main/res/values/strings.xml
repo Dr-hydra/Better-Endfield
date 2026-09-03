@@ -40,6 +40,7 @@
     <string name="logo_enable">启用 Logo 与登录色带主题色</string>
     <string name="logo_color_label">主题色（#RRGGBB）</string>
     <string name="logo_palette_label">常用颜色</string>
+    <string name="logo_wheel_label">调色盘（外环选色相，内框选饱和度与明度）</string>
     <string name="model_save">保存模型设置</string>
     <string name="model_selection_ready">当前预设：%1$s\n动作：%2$s</string>
     <string name="model_settings_invalid">模型设置无效：%1$s</string>

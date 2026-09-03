@@ -49,10 +49,13 @@ Logo 主题使用以下强类型契约：
 - `Entry.Beyond.dll / Beyond.Login / LoginEnterGamePanel.OnValueChanged`
 - Unity `GameObject.Find("GameLogoRaw")`
 - Unity UI `Graphic.get_color/set_color` 与 `GetComponentsInChildren`
+- 可选：`Image.set_sprite`、`RawImage.set_texture`、`Sprite.Create` 与 `Texture2D`/`RenderTexture`/`Graphics.Blit` 读回接口（与登录色带共用，见下）
 
-模块在原 `Tick` 返回后覆盖 `_imgLogo`、`_targetGlow` 两个精确子树以及登录主界面独立 `GameLogoRaw` 的 `Graphic.color` RGB，并保留动画当前 Alpha。`GameLogoRaw` 是世界层级快照中确认的 `UIRawImage + UIMaterialAnimation` 对象，不属于 `LoginDecorateUI` 的两个字段子树；运行时按 500 ms 重试精确名称查找，不枚举全局 UI。
+模块在原 `Tick` 返回后覆盖 `_imgLogo`、`_targetGlow` 两个精确子树以及登录主界面独立 `GameLogoRaw` 的 `Graphic.color` RGB，并保留动画当前 Alpha。`GameLogoRaw` 是世界层级快照中确认的 `UIRawImage + UIMaterialAnimation` 对象，不属于 `LoginDecorateUI` 的两个字段子树；运行时按 500 ms 重试精确名称查找，不枚举全局 UI。`GameLogoRaw` 使用的 `login_logo01`（及 `login_logo_en/jp/kr/tc`）纹理把黄色错位边层和 "ARKNIGHTS ENDFIELD" 字样直接烘焙在纹素里，乘色无法得到任意主题色；因此 Logo 路径对 `Image` 的 Sprite 和 `RawImage` 的 Texture 同样使用下文的"去色副本"，再写入 `Graphic.color`。
 
-登录界面的长条色带位于 `EnterGamePanel/MiddlePanel/Line` 的 UGUI 子树。`LoginEnterGamePanel.OnValueChanged` 返回后，模块按面板实例缓存该子树的 `Graphic`，并以精确层级、`login_deco_line*`/`login_deco_glitch*` Sprite/RawTexture 以及原始黄色 RGB 共同识别主题目标。这会覆盖入场特效、最终静态 `LineLeft` 和两侧 `LineDecoLeft`/`LineDecoRight` 小区块。主题处理为每个目标复制当前 `Material`，在副本的 `_Color`、`_TintColor`、`_BaseColor` 或 `_GlowColor` 属性上写入主题色，再把副本只赋给当前 `Graphic`；原 Sprite、纹理、UV、RectTransform、Shader 和层级保持不变，不创建白色 UI 四边形，也不修改共享材质。`Graphic.color` 仅把 RGB 归一为白色并保留游戏当前 Alpha，避免原黄色乘色污染材质主题色。模块在 `LoginDecorateUI.Tick` 和 `UIMaterialAnimation.LateTick` 返回后重新确认材质与颜色，因此游戏的最终动画状态不会覆盖主题色。重复的 `OnValueChanged` 不会重新枚举同一面板；热停用或界面释放时恢复原材质与原 RGB，并销毁运行时材质副本。
+登录界面的长条色带位于 `EnterGamePanel/MiddlePanel` 的 UGUI 子树。`LoginEnterGamePanel.OnValueChanged` 返回后，模块按面板实例缓存该子树的 `Graphic`（跳过 Text/NonDrawing 与 `GameLogoRaw`），并以精确层级、`login_deco_line*`/`login_deco_glitch*`/`login_cross_deco` Sprite/RawTexture 以及原始黄色 RGB 共同识别主题目标；Sprite 副本检测为带色的非目标 `Image` 也会被提升为目标。这会覆盖入场特效、最终静态 `LineLeft`、两侧 `LineDecoLeft`/`LineDecoRight` 小区块和四角标记。
+
+这些素材的黄色同样烘焙在纹素中，所以主题处理分两层：先为每个目标的当前 Sprite/纹理生成一份"去色副本"——用 `Graphics.Blit` 把（可能压缩、不可读的）源纹理复制到临时 `RenderTexture`，`Texture2D.ReadPixels` 读回 Sprite 矩形，把饱和纹素的 RGB 归一为峰值通道（Alpha 不变），`Sprite.Create` 按原 pivot/ppu/border 生成新 Sprite 并 `Image.set_sprite`（`RawImage` 则整张纹理替换 `texture`，UV 不变）；带色可见纹素少于 15% 的素材保留原件。副本按原始 Sprite/纹理缓存，游戏切换 Sprite 时按新原件重新生成。随后复制当前 `Material`，在副本的 `_Color`、`_TintColor`、`_BaseColor` 或 `_GlowColor` 属性上写入主题色，只赋给当前 `Graphic`；RectTransform、Shader 和层级保持不变，不创建白色 UI 四边形，也不修改共享材质或原始资源。`Graphic.color`、`CanvasRenderer` 颜色和祖先 `CanvasGroup.color`（HG 扩展）的 RGB 归一为白色并保留游戏当前 Alpha。模块在 `LoginDecorateUI.Tick`、`UIMaterialAnimation.LateTick` 返回后以及 `CanvasUpdateRegistry.PerformUpdate` 之前重新确认 Sprite、材质与颜色。重复的 `OnValueChanged` 不会重新枚举同一面板；热停用或界面释放时恢复原 Sprite/纹理、原材质与原 RGB，并销毁运行时的材质副本、Sprite 副本和纹理副本。
 
 ## 语音模块
 

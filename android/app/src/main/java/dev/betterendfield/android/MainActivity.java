@@ -55,6 +55,8 @@ public final class MainActivity extends Activity {
     private EditText modelLoopEnd;
     private EditText modelCrossfadeDuration;
     private EditText logoColor;
+    private ColorWheelView logoColorWheel;
+    private View logoColorPreview;
     private TextView modelSelectionStatus;
     private boolean initializingModel = true;
 
@@ -115,6 +117,8 @@ public final class MainActivity extends Activity {
         modelLoopEnd = findViewById(R.id.model_loop_end);
         modelCrossfadeDuration = findViewById(R.id.model_crossfade_duration);
         logoColor = findViewById(R.id.logo_color);
+        logoColorWheel = findViewById(R.id.logo_color_wheel);
+        logoColorPreview = findViewById(R.id.logo_color_preview);
 
         try {
             modelIndex = ModelPresetIndex.load(this);
@@ -208,6 +212,12 @@ public final class MainActivity extends Activity {
         });
         logoColor.setOnFocusChangeListener((view, hasFocus) -> {
             if (!hasFocus) saveModelSettings();
+        });
+        logoColorWheel.setOnColorChangedListener((rgb, committed) -> {
+            String color = String.format(Locale.ROOT, "#%06X", rgb);
+            logoColor.setText(color);
+            updateThemeColorPalette(color);
+            if (committed) saveModelSettings();
         });
         findViewById(R.id.save_model_settings).setOnClickListener(
                 view -> saveModelSettings());
@@ -387,6 +397,19 @@ public final class MainActivity extends Activity {
             background.setStroke(dp(2), strokeColor);
             findViewById(THEME_COLOR_VIEW_IDS[index]).setBackground(background);
         }
+        if (!selectedColor.matches("#[0-9A-Fa-f]{6}")) {
+            return;
+        }
+        int rgb = Color.parseColor(selectedColor);
+        if (logoColorWheel.getColor() != (rgb & 0xFFFFFF)) {
+            logoColorWheel.setColor(rgb);
+        }
+        GradientDrawable preview = new GradientDrawable();
+        preview.setShape(GradientDrawable.RECTANGLE);
+        preview.setColor(rgb);
+        preview.setCornerRadius(dp(8));
+        preview.setStroke(dp(1), getColor(R.color.surface_border));
+        logoColorPreview.setBackground(preview);
     }
 
     private String buildModelConfiguration(
