@@ -59,8 +59,16 @@ try {
         throw "Application build failed with exit code $LASTEXITCODE."
     }
 
-    Get-ChildItem -LiteralPath $stagingDir -Recurse -File -Include *.pdb,*.log |
+    # Windows PowerShell 5.1 ignores -Include together with -LiteralPath and
+    # -Recurse and would match every staged file, so filter explicitly.
+    Get-ChildItem -LiteralPath $stagingDir -Recurse -File |
+        Where-Object { $_.Extension -in @(".pdb", ".log") } |
         Remove-Item -Force
+
+    $stagedExecutable = Join-Path $stagingDir "BetterEndfield.exe"
+    if (-not (Test-Path -LiteralPath $stagedExecutable -PathType Leaf)) {
+        throw "Installer staging lost BetterEndfield.exe before packaging."
+    }
 
     $includedCultures = @('en-US', 'zh-CN', 'zh-TW')
     foreach ($directory in Get-ChildItem -LiteralPath $stagingDir -Directory) {
