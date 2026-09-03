@@ -2221,7 +2221,7 @@ public sealed partial class MainWindow : Window
             LoopStart = LoopStartNumberBox.Value,
             LoopEnd = LoopEndNumberBox.Value,
             CrossfadeDuration = CrossfadeDurationNumberBox.Value,
-            ModelReplacementEnabled = false,
+            ModelReplacementEnabled = ModelReplacementToggle.IsOn,
             LogoThemeEnabled = LogoThemeToggle.IsOn,
             LogoThemeColor = $"#{LogoThemeColorPicker.Color.R:X2}{LogoThemeColorPicker.Color.G:X2}{LogoThemeColorPicker.Color.B:X2}",
             VoiceRouterEnabled = VoiceRouterToggle.IsOn,
@@ -2289,7 +2289,7 @@ public sealed partial class MainWindow : Window
         LoopStartNumberBox.Value = configuration.LoopStart;
         LoopEndNumberBox.Value = configuration.LoopEnd;
         CrossfadeDurationNumberBox.Value = configuration.CrossfadeDuration;
-        ModelReplacementToggle.IsOn = false;
+        ModelReplacementToggle.IsOn = configuration.ModelReplacementEnabled;
         LogoThemeToggle.IsOn = configuration.LogoThemeEnabled;
         LogoThemeColorPicker.Color = ParseLogoThemeColor(configuration.LogoThemeColor);
         VoiceRouterToggle.IsOn = configuration.VoiceRouterEnabled;
@@ -3147,12 +3147,6 @@ public sealed partial class MainWindow : Window
         ModelPageDescriptionTextBlock.Text = isZh
             ? "调整登录场景的视觉效果、角色模型与四阶段动画。"
             : "Customize title screen visuals, character models, and 4-phase animations.";
-        ModelReplacementUnavailableInfoBar.Title = isZh
-            ? "角色替换暂不可用"
-            : "Character Replacement Temporarily Unavailable";
-        ModelReplacementUnavailableInfoBar.Message = isZh
-            ? "当前游戏版本不兼容，修复完成前无法启用。"
-            : "The current game version is incompatible. This feature is locked off until the compatibility fix is complete.";
         ModelVisualSectionTitle.Text = isZh ? "界面视觉" : "Interface Visuals";
         ModelVisualSectionHint.Text = isZh
             ? "主题色可与原登录演员或角色替换同时使用。"

@@ -450,7 +450,10 @@ internal static class ConfigurationService
             values,
             "crossfade_duration",
             configuration.CrossfadeDuration);
-        configuration.ModelReplacementEnabled = false;
+        configuration.ModelReplacementEnabled = Boolean(
+            values,
+            "model_replacement_enabled",
+            configuration.ModelReplacementEnabled);
         configuration.LogoThemeEnabled = Boolean(
             values,
             "logo_theme_enabled",

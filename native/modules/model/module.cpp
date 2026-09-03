@@ -387,8 +387,8 @@ ObjectArgInstanceFn g_original_login_enter_value_changed = nullptr;
 TickFn g_original_login_decorate_tick = nullptr;
 TickFn g_original_login_material_animation_late_tick = nullptr;
 VoidInstanceFn g_original_login_decorate_release = nullptr;
-VoidStaticFn g_original_init_main_hash = nullptr;
-VoidStaticFn g_original_init_initial_hash = nullptr;
+VoidInstanceFn g_original_init_main_hash = nullptr;
+VoidInstanceFn g_original_init_initial_hash = nullptr;
 TickFn g_original_anim_tick = nullptr;
 VoidInstanceFn g_original_anim_release = nullptr;
 ChangeStateFn g_original_anim_change_state = nullptr;
@@ -646,10 +646,6 @@ bool ParseConfiguration(const char* text, ModelConfiguration& output,
     if (!model_switch_present) {
         output.model_replacement_enabled = output.module_enabled;
     }
-#ifdef _WIN32
-    // Disabled for the current PC game version until model lifecycle hooks are compatible.
-    output.model_replacement_enabled = false;
-#endif
     if (output.loop_end < output.loop_start + 0.05f) {
         error = "loop_end must be at least 0.05 seconds after loop_start";
         return false;
@@ -828,12 +824,17 @@ bool ResolveRuntimeContract() {
     required(Resolve(g_methods.login_bind, "login.scene_root.bind",
         "Entry.Beyond.dll", "Beyond.Login", "LoginSceneRoot", "OnBindToManager",
         nullptr, "System.Void", 0));
+    // Hook the StringPathHashBinary implementations rather than the static
+    // HashStringPathProcessor.Init*PathHash wrappers: the PC build inlines the
+    // InitMainPathHash wrapper into GameInitState._ReloadResourceIndexes, which
+    // then calls StringPathHashBinary.InitMain directly, so a hook on the
+    // wrapper never fires there. Both wrappers tail-call these methods.
     required(Resolve(g_methods.init_main_hash, "resource.main_hash",
-        "Common.Beyond.dll", "Beyond.Resource", "HashStringPathProcessor",
-        "InitMainPathHash", nullptr, "System.Void", 0));
+        "Common.Beyond.dll", "Beyond.Resource", "StringPathHashBinary",
+        "InitMain", nullptr, "System.Void", 0));
     required(Resolve(g_methods.init_initial_hash, "resource.initial_hash",
-        "Common.Beyond.dll", "Beyond.Resource", "HashStringPathProcessor",
-        "InitInitPathHash", nullptr, "System.Void", 0));
+        "Common.Beyond.dll", "Beyond.Resource", "StringPathHashBinary",
+        "InitInit", nullptr, "System.Void", 0));
     required(Resolve(g_methods.anim_tick, "login.animation.tick",
         "Entry.Beyond.dll", "Beyond.Login", "LoginSceneAnimCtrl", "Tick",
         "System.Single", "System.Void", 1));
@@ -2652,7 +2653,7 @@ bool LoadConfiguredAssets() {
     if (now < g_next_asset_retry_tick || !g_initial_hash_ready.load()) {
         return false;
     }
-    // Wait for the real InitMainPathHash hook. Forcing readiness once the
+    // Wait for the real InitMain hook. Forcing readiness once the
     // resource manager reports initialized loads the prefab before its
     // dependency set is complete; the clone then carries an Animator with
     // avatar=null / human=false (verified on Android 1.5.3).
@@ -3631,21 +3632,21 @@ void* __fastcall CloneWithParentHook(void* original, void* parent,
     return instance;
 }
 
-void __fastcall InitMainHashHook(void* method) {
+void __fastcall InitMainHashHook(void* instance, void* method) {
     if (g_original_init_main_hash) {
-        g_original_init_main_hash(method);
+        g_original_init_main_hash(instance, method);
     }
     g_main_hash_ready.store(true);
     Log("[model-resource] Main path hash ready");
     TryActivate();
 }
 
-void __fastcall InitInitialHashHook(void* method) {
+void __fastcall InitInitialHashHook(void* instance, void* method) {
     g_initial_hash_ready.store(false);
     CleanupScene("Initial path hash rebuild");
     ReleaseAssets();
     if (g_original_init_initial_hash) {
-        g_original_init_initial_hash(method);
+        g_original_init_initial_hash(instance, method);
     }
     g_initial_hash_ready.store(true);
     Log("[model-resource] Initial path hash ready");

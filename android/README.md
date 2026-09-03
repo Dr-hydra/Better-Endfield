@@ -60,8 +60,8 @@ The complete desktop Hook set is therefore present in the Android binary:
 | Group | Managed Hook point |
 | --- | --- |
 | Model lifecycle | `LoginSceneRoot.OnBindToManager` |
-| Resource lifecycle | `HashStringPathProcessor.InitMainPathHash` |
-| Resource lifecycle | `HashStringPathProcessor.InitInitPathHash` |
+| Resource lifecycle | `StringPathHashBinary.InitMain` |
+| Resource lifecycle | `StringPathHashBinary.InitInit` |
 | Animation | `LoginSceneAnimCtrl.Tick` |
 | Animation | `LoginSceneAnimCtrl.OnRelease` |
 | Animation | `LoginSceneAnimCtrl._ChangeToState` |

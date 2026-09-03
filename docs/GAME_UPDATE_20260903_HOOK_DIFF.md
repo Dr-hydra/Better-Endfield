@@ -4,6 +4,24 @@
 逐条核对 mod 所 hook 与动态解析的游戏函数,并结合更新后运行日志,给出三个运行时症状的归因与处置建议。
 契约命名与模块行为背景参见 [GAME_INTERFACES.md](GAME_INTERFACES.md)。
 
+## 勘误(2026-09-04)
+
+后续反汇编与双端 A/B 验证推翻了本文关于角色替换的两条归因(结论速览第 2、3 条及 §5.1 第 2–4 点):
+
+- **`InitMainPathHash` 不是"回调先于 hook 安装",而是根本没有调用方。** 新版 PC `GameAssembly.dll`
+  对 `HashStringPathProcessor.InitMainPathHash`(0x0472E3D0)的 E8/E9 直接调用点为 **0**;它只是
+  "IFix `IsPatched` 检查 → `jmp StringPathHashBinary.InitMain`"的薄包装,MSVC 将其整体内联进
+  `GameInitState.<_ReloadResourceIndexes>d__46.MoveNext`,后者直接 `call StringPathHashBinary.InitMain`
+  (0x0472E480)。`InitInitPathHash` 未被内联(6 处调用点),所以同一份代码里只有 Main 钩子失效。
+  Android 由 clang 编译未内联,故手机端一直正常。修复:`resource.main_hash/initial_hash` 改挂
+  `StringPathHashBinary.InitMain()/InitInit()`(实例方法),两端同源;PC 实测 `Main path hash ready`
+  出现并完成替换。
+- **`Animator human=false / avatar=null` 是"就绪恢复"补丁自己造成的,不是资产内容变化。** 在同一
+  Android 客户端上:含恢复逻辑的构建复现该失败,去掉恢复逻辑、恢复原门槛后立即正常。恢复逻辑在
+  `InitMain` 之前就加载 prefab,依赖集不完整,克隆体的 Animator 因而无 Avatar。该补丁已删除。
+
+`_ReloadResourceIndexes` 是否还会在其它路径调用 `InitMain`、以及 §7 中语音时长问题,不受本勘误影响。
+
 ## 结论速览
 
 1. **全部 hook 契约在新客户端元数据层完好。** 两个模块共 30 余个 hook/解析目标逐一比对:

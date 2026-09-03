@@ -28,7 +28,7 @@ Host 使用 `GameAssembly.dll` 的 IL2CPP 导出解析：
 
 - `Entry.Beyond.dll / Beyond.Login / LoginSceneRoot.OnBindToManager`
 - `Entry.Beyond.dll / Beyond.Login / LoginSceneAnimCtrl`
-- `Common.Beyond.dll / Beyond.Resource / HashStringPathProcessor.InitMainPathHash`
+- `Common.Beyond.dll / Beyond.Resource / StringPathHashBinary.InitMain` 与 `InitInit`（`HashStringPathProcessor.InitMainPathHash/InitInitPathHash` 的实际实现；PC 版编译器已把 `InitMainPathHash` 包装内联进 `GameInitState._ReloadResourceIndexes`，包装上的 Hook 不会触发）
 - `Common.Beyond.dll / Beyond.Resource / I18NAssetLoader.Load`
 - Unity `Object`、`GameObject`、`Transform`、`Renderer`、`Animator` 和 `AnimationClip`
 - Unity `PlayableGraph`、`AnimationClipPlayable`、`AnimationMixerPlayable` 和 `AnimationPlayableOutput`
