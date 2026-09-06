@@ -1000,13 +1000,31 @@
 
                                 <Border Style="{StaticResource SectionStyle}">
                                     <StackPanel Spacing="14">
-                                        <StackPanel Spacing="4">
-                                            <TextBlock x:Name="CombatSelectedSessionSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="记录明细" />
-                                            <TextBlock
-                                                x:Name="CombatSelectedSessionTextBlock"
-                                                Style="{StaticResource FieldHintStyle}"
-                                                Text="选择一条记录查看。" />
-                                        </StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock x:Name="CombatSelectedSessionSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="记录明细" />
+                                                <TextBlock
+                                                    x:Name="CombatSelectedSessionTextBlock"
+                                                    Style="{StaticResource FieldHintStyle}"
+                                                    Text="选择一条记录查看。" />
+                                            </StackPanel>
+                                            <Button
+                                                x:Name="AnalyzeCombatSessionButton"
+                                                Grid.Column="1"
+                                                VerticalAlignment="Top"
+                                                Click="AnalyzeCombatSessionButton_Click"
+                                                IsEnabled="False"
+                                                Style="{StaticResource AccentButtonStyle}">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <SymbolIcon Symbol="Globe" />
+                                                    <TextBlock x:Name="AnalyzeCombatSessionButtonTextBlock" Text="在网页中解析" />
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
                                         <StackPanel MinHeight="560" Spacing="10">
                                                     <ItemsControl
                                                         x:Name="CombatCategoryLegendItemsControl"

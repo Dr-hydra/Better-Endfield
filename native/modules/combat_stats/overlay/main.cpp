@@ -52,25 +52,29 @@ constexpr std::array<const wchar_t*, CombatOverlayProtocol::kDamageCategoryCount
 constexpr std::array<const wchar_t*, CombatOverlayProtocol::kDamageCategoryCount>
     kCategoryNamesEn{L"Basic", L"Skill", L"Ultimate", L"Combo", L"Passive", L"Other"};
 
-const std::array<Color, 9> kRdpsColors{
+const std::array<Color, CombatOverlayProtocol::kRdpsContributionCount> kRdpsColors{
     Color(255, 211, 216, 225), // Direct damage
     Color(255, 255, 206, 82),  // Attack
     Color(255, 67, 201, 255),  // Damage increase
-    Color(255, 255, 145, 72),  // Amplification
-    Color(255, 255, 122, 103), // Fragile
-    Color(255, 255, 79, 130),  // Vulnerability taken
-    Color(255, 87, 217, 155),  // Resistance/defense reduction
-    Color(255, 84, 179, 255),  // Arts strength
+    Color(255, 255, 106, 61),  // Abnormal / burst increase
+    Color(255, 192, 132, 252), // Amplification
+    Color(255, 240, 98, 146),  // Critical
+    Color(255, 45, 212, 191),  // Independent zone
+    Color(255, 255, 145, 72),  // Fragile
+    Color(255, 163, 230, 53),  // Vulnerability taken
+    Color(255, 87, 217, 155),  // Defense reduction
+    Color(255, 59, 130, 246),  // Resistance reduction
+    Color(255, 139, 92, 246),  // Arts strength
     Color(255, 143, 152, 170), // Other
 };
 
-constexpr std::array<const wchar_t*, 9> kRdpsNamesZh{
-    L"直伤", L"攻击力", L"增伤", L"增幅", L"脆弱", L"承伤易伤",
-    L"减防/减抗", L"法术强度", L"其他"
+constexpr std::array<const wchar_t*, CombatOverlayProtocol::kRdpsContributionCount> kRdpsNamesZh{
+    L"直伤", L"攻击力", L"增伤", L"异常增伤", L"增幅", L"暴击", L"独立乘区",
+    L"脆弱", L"承伤", L"减防", L"减抗", L"法术强度", L"其他"
 };
-constexpr std::array<const wchar_t*, 9> kRdpsNamesEn{
-    L"Direct", L"ATK", L"DMG Bonus", L"Amplify", L"Fragile", L"Vulnerability",
-    L"DEF/RES Down", L"Arts Power", L"Other"
+constexpr std::array<const wchar_t*, CombatOverlayProtocol::kRdpsContributionCount> kRdpsNamesEn{
+    L"Direct", L"ATK", L"DMG Bonus", L"Abnormal DMG", L"Amplify", L"Crit", L"Indep. Zone",
+    L"Fragile", L"DMG Taken", L"DEF Down", L"RES Down", L"Arts Power", L"Other"
 };
 
 HINSTANCE g_instance = nullptr;

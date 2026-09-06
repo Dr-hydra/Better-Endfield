@@ -257,14 +257,22 @@ Unity 层(`Object/GameObject/Transform/Renderer/Animator/AnimationClip/Graphic/M
 > `avatar copy fallback failed`。运行时验证点:`avatar copy fallback applied … human=true`
 > 且替换成功;若原演员 Avatar 也为空,则需资产层提取 prefab 进一步排查。
 
-### 5.2 配音替换:已配置角色可路由,未配置角色无声(已定案:卸载保护被 IFix 层绕过)
+### 5.2 配音替换:已配置角色可路由,未配置角色无声(已定案:卸载包装被整体内联,hook 落空)
 
+> **机制修正(2026-09-05)**:下文第 3 点把零卸载命中归因于"IFix 热补丁包装"是误读。
+> `_UnloadPcks`(0x041175B0)有 5 个 out-of-line 调用方(`_DoLoadLanguageAndHotfixPck`、
+> `UnloadAll`、`_ReloadResourceIndexes`),体内把 `AkSoundEngine.UnloadFilePackage →
+> AkSoundEnginePINVOKE.CSharp_UnloadFilePackage` 一路内联到 `call rax`(缓存的原生指针槽
+> 0x0DEA05E8);`AkSoundEngine.UnloadFilePackage` 全库零调用方。体内的 `GetPatch/__Gen_Wrap_44`
+> 只是 IFix 给可补丁方法统一插入的前导。因此托管包装器 hook 与 PINVOKE 托管桩 hook 都收不到
+> 这条路径;现行实现(`b5db146d`)挂原生指针槽目标 + `_UnloadPcks` 是正确层级。
+>
 > **修复已实施(2026-09-03)**:新增 PINVOKE 层卸载保护
 > (`voice/module.cpp`:可选契约 `wwise.package.unload-pinvoke` =
 > `AkSoundEnginePINVOKE.CSharp_UnloadFilePackage`,辅助挂载期间吞卸载,平时透传并记录
-> `pinvoke-unload/preserved(pinvoke)` 日志)。PINVOKE 是托管卸载的必经层,IFix 动态分发
-> 无法绕过;native 构建已通过。运行时验证点:配置角色发声触发挂载后,立即播放未配置角色,
-> 默认配音应恢复,日志出现 `preserved(pinvoke)`。
+> `pinvoke-unload/preserved(pinvoke)` 日志),随后下沉到原生指针槽并补挂 `_UnloadPcks`。
+> 运行时验证点:配置角色发声触发挂载后,立即播放未配置角色,默认配音应恢复,日志出现
+> `preserved(native) packageId=`(原生槽)或 `preserved AudioVFSLoader._UnloadPcks`。
 
 1. 游戏侧元数据不变(§3.2);`AudioLang` 四语言值不变。
 2. **数据层嫌疑全部排除(实证)**:
@@ -282,7 +290,7 @@ Unity 层(`Object/GameObject/Transform/Renderer/Animator/AnimationClip/Graphic/M
      零 `UnloadFilePackage` 命中);
    - 静态证据:`AudioVFSLoader._UnloadPcks`(0x041175B0)函数体内调用
      `IFix.WrappersManagerImpl::GetPatch` 与 `IFix.ILFixDynamicMethodWrapper::__Gen_Wrap_44`
-     → **卸载逻辑被 IFix 热补丁包装**;调用链
+     → ~~卸载逻辑被 IFix 热补丁包装~~(误读,见本节顶部修正:这是 IFix 前导,真实原因是内联);调用链
      `TryLoadLanguagePck →(尾跳)→ _DoLoadLanguageAndHotfixPck →(+0x9B 内联)→ _UnloadPcks`;
    - 结论:**换装语言包时对默认语言媒体的卸载走 IFix 补丁/更低层调用,绕过了 mod 挂在
      `AkSoundEngine.UnloadFilePackage` 包装器上的 hook,"挂载期间吞卸载"的保护失效**
@@ -367,6 +375,22 @@ Unity 层(`Object/GameObject/Transform/Renderer/Animator/AnimationClip/Graphic/M
 4. 口型覆盖不受影响:`LipSyncUtils.GetLipSyncTrackPath` 体内两处直调 `GetCurrentLanguage`
    (E8 0x05F9639E / 0x05F964A2),线程局部 override 通道有效。
 
+### 5.4 战斗数据模块:动作捕获归零与 rDPS 份额归零(2026-09-05 补记)
+
+更新后第一场完整战斗记录(`combat-1788550428-*.json`,`dung_ss02`,508 次伤害)暴露两处回归,
+均为契约层面的变化,与本文其余结论同源(整程序内联 / 字段重构):
+
+| 症状 | 证据 | 根因 | 处置 |
+|---|---|---|---|
+| `actions:[]`,`[combat-diag] action capture start=0 end=199 matched=0` | `BattleRecorder.RecordCastSkill`(0x03787940)全库零 E8/E9/LEA 引用;按其 IFix id(`mov ecx,0x1631` + `call IsPatched`)扫描,唯一内联副本位于 `Skill.DoCast`(0x030F8680)+0xDF1 | `RecordCastSkill` 被 MSVC 整体内联进唯一调用方 `Skill.DoCast`,入口不再执行(与 `TryGetVoiceDuration`、`_UnloadPcks` 同类) | 新增 `skill.do-cast` / `skill.get-owner` 契约,优先 hook `Skill.DoCast`(此 = Skill,`get_owner()` 取施法者),`RecordCastSkill` 降为回退;二者只装其一,避免重复开动作 |
+| 全部伤害事件 `rdpsShares:[]`,`summary.rdps == dps` | 日志 `[host.resolver] Field was not found: skillCastInfo` → `[rdps-diag] damage transaction contract unavailable`,`ApplyDamageModifer`/`CalculateDamage` hook 未安装,`CompletedDamageFlow` 永不生成 | `DamagePackData`(0x110 → 0x100)移除 `skillCastInfo`,改持 `IActionEnvironment actionEnvironment`(+0x38);`Ability.FillSkillCastInfo` 返回 `castOriginSkill`(+0x60),`Buff.FillSkillCastInfo` 返回自身 `skillCastInfo`(+0x100),其余环境走接口默认(空) | 新增 `damage-pack.action-environment`、`ability.cast-origin-skill`、`ability.class`/`buff.class` 契约;`ResolveSkillIdFromPack` 按运行时类分派,`skillCastInfo` 仍存在的客户端走旧路径 |
+
+同批顺手修正:`ItemInstData/WeaponInstData/EquipInstData` 描述符改为嵌套类写法
+(`Beyond.Gameplay` + `InventorySystem.ItemInstData`),此前一直靠 schema-9 偏移回退,偏移仍正确。
+记录新增 `diagnostics` 块(路由计数、动作捕获计数、语义覆盖率、未识别 buff 审计,含运行时
+side/zoneIndex/sourceId),之前这些只进日志且 `StopSession` 收集后被 `SaveSession` 的提前
+`return` 丢弃。
+
 ## 6. 工作区未提交适配现状(分析时快照)
 
 - `native/modules/model/module.cpp`(+150/−37):资源门诊断(`LogResourceGateDiagnostic`,含
@@ -392,14 +416,15 @@ Unity 层(`Object/GameObject/Transform/Renderer/Animator/AnimationClip/Graphic/M
 |---|---|---|
 | Q1 | `TryGetVoiceDuration` 是否仍被调用/被谁调用 | **已答**:7 个调用方(剧情/对白链路,§5.3);`Int32` 重载仅 AIBarkManager;绑定正确;真实断点 = 作用域外查询 + 语言覆盖通道无效(§5.3-2) |
 | Q2 | `InitMainPathHash` 调用方/时机相对 2.3.1 是否变化 | **新侧已答**:新客户端**零静态调用方**(对照组 `InitInitPathHash` 有 `GameLoginState.OnEnter`、`GameInitState._InitInitialResourceManager`、`ResourceManager.ManualInit`、`<_ReloadResourceIndexes>d__46` 直调),仅剩 `.data` 方法指针槽(0x0D608AE0)→ 经元数据/委托间接调用,与"回调时机相对 hook 安装漂移"吻合;旧版逐调用方对比待旧库重分析完成 |
-| Q1'(语音) | `GetVoicePath` 是否查自定义语言表 | **已答**:函数体内无任何对三件套的调用 → 查表消费方在 IFix 补丁层(专题文档 §7) |
-| Q5'(语音) | 语言包挂载/卸载链路 | **已答**:挂载链 `TryLoadLanguagePck →(尾跳)→ _DoLoadLanguageAndHotfixPck → 内联 _UnloadPcks → IFix 包装器`;挂载实测装载 14 包;卸载绕过 mod 的 `UnloadFilePackage` hook(§5.2) |
+| Q1'(语音) | `GetVoicePath` 是否查自定义语言表 | **已答(2026-09-05 修正)**:`GetVoicePath` 本体不查表;查表在调用方 `VoicePlayer._PlayVoice` 内以 `voiceData.speakerChannel` 为键完成,命中走内联的 `GetCustomLanguageVoicePath`。三件套零调用方是内联所致,不是 IFix 分发(专题文档 §3) |
+| Q5'(语音) | 语言包挂载/卸载链路 | **已答(2026-09-05 修正)**:挂载链 `TryLoadLanguagePck →(尾跳)→ _DoLoadLanguageAndHotfixPck → _UnloadPcks`;`_UnloadPcks` 体内把 `UnloadFilePackage → CSharp_UnloadFilePackage` 内联到原生指针槽 `call rax`,托管层 hook 因此落空(§5.2);挂载实测装载 14 包 |
 
-另外确认的一个普遍现象:**IFix 包装分发**——若干方法(`VoiceI18n` 路径族、
-`AudioVFSLoader._UnloadPcks` 等)在静态代码中零调用方,实际经 IFix 的
-`WrappersManagerImpl::GetPatch` + `ILFixDynamicMethodWrapper` 分发。对 mod 的含义:
-hook 静态入口仍能拦截普通调用,但补丁代码发起的调用可能直达 PINVOKE/其他层,
-**hook 点应尽量选最低稳定层**。
+另外确认的一个普遍现象(2026-09-05 修正结论):**整程序内联**——若干方法(`VoiceI18n` 路径族、
+`AkSoundEngine.UnloadFilePackage`、`VoiceData.get_wavDuration*`、`InitMainPathHash`)在静态代码中
+零调用方,是因为 IL2CPP 生成的 C++ 被 MSVC 内联进了调用方;体内出现的
+`IsPatched / GetPatch / __Gen_Wrap_N` 只是 IFix 给可补丁方法统一插入的前导,不是被分发的证据。
+对 mod 的含义:入口 hook 对被内联的方法不可见,**hook 点应选最深的 out-of-line 被调方**,
+用类指针/静态字段的 rip 相对引用反查真实消费方。
 
 ## 8. 附录
 

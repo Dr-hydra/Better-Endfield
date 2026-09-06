@@ -189,6 +189,21 @@ set_target_properties(BetterEndfield.TouchProbeLauncher PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/research"
 )
 
+# Buff resource table probe. Excluded from the default build and the release
+# layout: it is a local development tool that dumps every BuffData through the
+# client's own loader, because the shipped BuffData files are MemoryPack blobs
+# that carry no field names. The source lives under tools/ with the rest of the
+# buff-table pipeline rather than here, since nothing in a release builds it.
+add_library(BetterEndfield.BuffProbe SHARED EXCLUDE_FROM_ALL
+    ../tools/BuffProbe/module.cpp
+)
+better_endfield_target_defaults(BetterEndfield.BuffProbe)
+set_target_properties(BetterEndfield.BuffProbe PROPERTIES
+    OUTPUT_NAME "BetterEndfield.BuffProbe"
+    RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/research"
+    LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/research"
+)
+
 add_executable(BetterEndfield.Injector
     loaders/injector/main.cpp
     loaders/injector/BetterEndfield.Injector.rc

@@ -62,3 +62,13 @@ output/
 node_modules/
 *.tsbuildinfo
 dist/
+
+# CloudBase CLI deploy state
+web/cloudbase/.tcb/
+web/cloudbase/functions/*/node_modules/
+
+# Scratch analysis output: multi-gigabyte sample records and build logs.
+tmp_analysis/
+.zcode/
+# Carries COMBAT_DATA_KEY, the path segment guarding the bucket's private half.
+web/cloudbase/cloudbaserc.json

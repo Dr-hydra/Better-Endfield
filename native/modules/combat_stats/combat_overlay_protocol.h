@@ -11,7 +11,7 @@ namespace BetterEndfield::CombatOverlayProtocol {
 inline constexpr uint32_t kMagic = 0x53434542; // "BECS"
 inline constexpr uint32_t kVersion = 7;
 inline constexpr uint32_t kDamageCategoryCount = 6;
-inline constexpr uint32_t kRdpsContributionCount = 10;
+inline constexpr uint32_t kRdpsContributionCount = 13;
 inline constexpr uint32_t kDisplaySegmentCount = 16;
 inline constexpr uint32_t kMaxCharacters = 16;
 inline constexpr size_t kCharacterIdCapacity = 64;

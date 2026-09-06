@@ -1,215 +1,4 @@
-export interface Aggregate {
-  damage: number;
-  hits: number;
-  criticalHits: number;
-}
-
-export interface CharacterAggregate extends Aggregate {
-  damageByCategory?: number[];
-  rdpsByContribution?: number[];
-}
-
-export interface SkillLevel {
-  skillId?: string;
-  skillGroupId?: string;
-  level: number;
-  maxLevel: number;
-}
-
-export interface WeaponSnapshot {
-  templateId: string;
-  level: number;
-  refineLevel: number;
-  breakthroughLevel: number;
-  skills: SkillLevel[];
-}
-
-export interface EquipmentSnapshot {
-  slot: number;
-  templateId: string;
-  enhanceLevels: Record<string, number>;
-}
-
-export interface EquipSuitSnapshot {
-  suitId: string;
-  count: number;
-  skills: SkillLevel[];
-}
-
-export interface SquadMemberV11 {
-  charId: string;
-  charInstId: string;
-  level: number;
-  breakStage: number;
-  potential: number;
-  skillGroups: SkillLevel[];
-  weapon: WeaponSnapshot | null;
-  equipments: EquipmentSnapshot[];
-  equipSuits: EquipSuitSnapshot[];
-}
-
-export interface RdpsShare {
-  source?: string;
-  sourceId?: string;
-  fraction: number;
-  kind?: number | string;
-  contributionType?: number;
-  contributionKind?: string;
-}
-
-export interface DamageEvent {
-  id?: number;
-  actionId?: number;
-  parentEffectId?: number;
-  time: number;
-  damage: number;
-  rawDamage?: number;
-  hpDelta?: number;
-  damageType?: number;
-  decorateMask?: number;
-  critical?: boolean;
-  attackerId: string;
-  sourceEntityId?: string;
-  actorAttribution?: "runtimeExact" | "dictionaryExact" | "unknown";
-  attributionReason?: string;
-  originSkillId: string;
-  rdpsShares?: RdpsShare[];
-}
-
-export type CombatActionType =
-  | "basicAttack" | "skill" | "ultimate" | "combo"
-  | "switch" | "dodge" | "passive" | "system" | "skillCast";
-
-export interface CombatAction {
-  id: number;
-  start: number;
-  end: number | null;
-  observedUntil?: number;
-  actorId: string;
-  type: CombatActionType;
-  skillId?: string;
-  stage?: number;
-  parentActionId?: number;
-  result: "completed" | "cancelled" | "interrupted" |
-    "superseded" | "openAtSessionEnd";
-}
-
-export interface CombatEffect {
-  id: number;
-  actionId?: number;
-  parentEffectId?: number;
-  time: number;
-  type: "damage" | "heal" | "statusApply" | "statusRefresh" |
-    "statusRemove" | "resource" | "stagger";
-  sourceId: string;
-  sourceEntityId?: string;
-  creditedActorId?: string;
-  actorAttribution?: "runtimeExact" | "unknown";
-  sourceAttribution?: "configurationVerified" | "unknown";
-  sourceKind?: "character" | "characterSkill" | "characterPassive" | "weapon" | "equipSuit" | "system" | "unknown";
-  sourceTemplateId?: string;
-  sourceSkillId?: string;
-  attributionReason?: string;
-  targetId?: string;
-  targetEntityId?: string;
-  skillId?: string;
-  value?: number;
-  rawValue?: number;
-  hpDelta?: number;
-  critical?: boolean;
-  damageType?: number;
-  decorateMask?: number;
-  statusId?: string;
-  statusInstanceId?: string;
-  statusKind?: "buff" | "debuff" | "stagger";
-  stack?: number;
-  contributionType?: number;
-  contributionKind?: string;
-  effectKind?: number;
-  effectMin?: number;
-  effectMax?: number;
-  rdpsShares?: RdpsShare[];
-}
-
-export interface BuffInterval {
-  buffId: string;
-  sourceId?: string;
-  targetId?: string;
-  targetEntityId?: string;
-  skillId?: string;
-  originSkillId?: string;
-  start: number;
-  end: number;
-  kind?: number | string;
-  contributionType?: number;
-  contributionKind?: string;
-  effectMin?: number;
-  effectMax?: number;
-  relevant?: boolean;
-  sourceEntityId?: string;
-  creditedActorId?: string;
-  actorAttribution?: "runtimeExact" | "unknown";
-  sourceAttribution?: "configurationVerified" | "unknown";
-  sourceKind?: "character" | "characterSkill" | "characterPassive" | "weapon" | "equipSuit" | "system" | "unknown";
-  sourceTemplateId?: string;
-  sourceSkillId?: string;
-  attributionReason?: string;
-}
-
-export interface StaggerInterval {
-  targetId?: string;
-  buffId?: string;
-  start: number;
-  end: number;
-}
-
-export interface CombatRecordV11Raw {
-  schemaVersion: 11;
-  battle: {
-    sessionId: number;
-    startedUnixSeconds: number;
-    durationSeconds: number;
-    dungeonId: string;
-    modeId?: string;
-  };
-  dictionary: {
-    schemaVersion: number;
-    gameVersion: string;
-    hotfixVersion: string;
-    sourceSha256: string;
-  };
-  squad: SquadMemberV11[];
-  actions: CombatAction[];
-  effects: CombatEffect[];
-  summary: {
-    totalDamage: number;
-    dps: number;
-    rdps: number;
-    hitCount: number;
-    criticalCount: number;
-  };
-}
-
-export interface CombatRecordV11 extends CombatRecordV11Raw {
-  sessionId: number;
-  startedUnixSeconds: number;
-  durationSeconds: number;
-  totalDamage: number;
-  dps: number;
-  hitCount: number;
-  criticalCount: number;
-  dungeonId: string;
-  modeId?: string;
-  squad: SquadMemberV11[];
-  characters: Record<string, CharacterAggregate>;
-  rdpsCharacters: Record<string, CharacterAggregate>;
-  skills: Record<string, Aggregate>;
-  damageCategories: Record<string, Aggregate>;
-  timeline: unknown[];
-  buffIntervals: BuffInterval[];
-  staggerIntervals: StaggerInterval[];
-  events: DamageEvent[];
-}
+export * from "./types.combat";
 
 export interface CharacterDictionaryEntry {
   n: string;
@@ -280,19 +69,53 @@ export interface LeaderboardEntry {
   rank: number;
   nickname: string;
   avatar?: string;
+  bvid?: string;
   durationSeconds: number;
   dps: number;
   rdps: number;
+  totalDamage: number;
   uploadedAt: string;
   dungeonId: string;
+  /** BEC layer bitmask, so the row can say what the detail view will offer. */
+  layers?: number;
+  idSpaceVersion?: number;
   squad: Array<{ charId: string; level: number; potential: number }>;
+  /** Present on /me/records: whether the record is currently held by a board. */
+  ranked?: boolean;
+  /** Present on /me/records: whether the uploader wants it on a board at all. */
+  optIn?: boolean;
+  expireAt?: string | null;
   example?: boolean;
 }
 
-export interface HomePayload {
+export type BoardMetric = "dps" | "time";
+
+export interface BoardPayload {
   dungeonId: string;
   dps: LeaderboardEntry[];
   time: LeaderboardEntry[];
+  entries: number;
+  updatedAt: string;
+}
+
+/** Category overview: the top few of every stage that has records. */
+export interface CategoryBoard {
+  categoryId: string;
+  updatedAt: number;
+  stages: Record<string, { entries: number; dps: LeaderboardEntry[]; time: LeaderboardEntry[] }>;
+}
+
+export interface PublicRecord {
+  shortId: string;
+  layers: number;
+  idSpaceVersion: number;
+  dungeonId: string;
+  nickname: string;
+  avatar?: string;
+  bvid?: string;
+  uploadedAt: string;
+  ranked: boolean;
+  expireAt?: string | null;
 }
 
 export interface GachaWebSnapshot {
@@ -345,9 +168,11 @@ export interface GachaSnapshotStar {
 
 export type Route =
   | { page: "home" }
-  | { page: "combat" }
+  | { page: "board"; dungeonId?: string; categoryId?: string }
   | { page: "analyze" }
   | { page: "gacha" }
   | { page: "record"; id?: string }
   | { page: "archive" }
+  /** Desktop handoff: fetch one record from the app's loopback port. */
+  | { page: "import"; port: number; nonce: string }
   | { page: "download" };

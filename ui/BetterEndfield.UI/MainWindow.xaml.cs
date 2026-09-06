@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -45,8 +46,10 @@ public sealed partial class MainWindow : Window
     private const string WindowIconResourceName =
         "BetterEndfield.UI.Assets.shared.gilberta.ico";
     private const string BilibiliProfileUrl = "https://space.bilibili.com/441133155";
+    // index.html spelled out: the handoff appends a query string, and the Toy
+    // wrapper only forwards it into the app iframe from this exact entry point.
     private const string CombatAnalysisUrl =
-        "https://www.bilibili.com/toy/endfield";
+        "https://www.bilibili.com/toy/endfield/index.html";
     private const string XiaoheiheProfileUrl =
         "https://www.xiaoheihe.cn/app/user/profile/38080236";
     private const string QqGroupNumber = "851586605";
@@ -703,6 +706,35 @@ public sealed partial class MainWindow : Window
         CombatSelectedSessionTextBlock.Text = record is null
             ? "选择一条记录查看。"
             : $"{record.DateText} · 总伤害 {record.TotalDamageText} · {record.Summary}";
+        AnalyzeCombatSessionButton.IsEnabled = record is not null;
+    }
+
+    /// <summary>
+    /// Opens the analysis page on this record. The record itself does not ride
+    /// in the link — it is far too large — so the app serves it once over
+    /// loopback and the link only carries the address. See
+    /// <see cref="CombatWebHandoff"/>.
+    /// </summary>
+    private void AnalyzeCombatSessionButton_Click(object sender, RoutedEventArgs e)
+    {
+        CombatSessionRecord? record = _selectedCombatSession;
+        if (record is null) return;
+        AnalyzeCombatSessionButton.IsEnabled = false;
+        try
+        {
+            string url = CombatWebHandoff.Publish(CombatAnalysisUrl, record.Path);
+            OpenWithShell(url);
+            ShowStatus("已打开解析网页", "网页会直接从本机取这份记录，不经过网络。链接几分钟内有效，只能用一次。", InfoBarSeverity.Success);
+        }
+        catch (Exception exception) when (exception is IOException or InvalidDataException
+            or UnauthorizedAccessException or SocketException or Win32Exception)
+        {
+            ShowStatus("打开解析网页失败", exception.Message, InfoBarSeverity.Error);
+        }
+        finally
+        {
+            AnalyzeCombatSessionButton.IsEnabled = _selectedCombatSession is not null;
+        }
     }
 
 #if false // 内置时间轴已弃用；详细分轨解析统一由网页提供。
@@ -3530,5 +3562,8 @@ public sealed partial class MainWindow : Window
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {
         _statusTimer.Stop();
+        // The handoff port outlives the click by a few minutes; it must not
+        // outlive the app.
+        CombatWebHandoff.CloseCurrent();
     }
 }

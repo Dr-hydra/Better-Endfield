@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      What LSPosed pre-selects in the scope picker. It is a suggestion, not a
+      restriction: the picker still lists every app, and the module honours
+      whatever the user ticks. Only the two ids that could be confirmed are
+      listed — the bilibili channel build is not here because its package name
+      has no authoritative source, so it has to be ticked by hand.
+    -->
+    <string-array name="xposed_scope">
+        <item>com.hypergryph.endfield</item>
+        <item>com.gryphline.endfield.gp</item>
+    </string-array>
+</resources>

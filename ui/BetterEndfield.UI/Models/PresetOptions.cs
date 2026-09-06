@@ -155,13 +155,17 @@ internal static class PresetOptions
     public static string TranslateSemanticZone(string zone) => zone.ToLowerInvariant() switch
     {
         "direct" or "direct_damage" => "直伤",
-        "attack" => "攻击力",
-        "damage" or "damage_boost" => "增伤",
-        "amplification" => "增幅",
-        "vulnerability" => "脆弱",
-        "vulnerability_taken" or "vuln_taken" => "承伤易伤",
-        "defense" or "resistance" or "def_res" => "减防/减抗",
-        "spell_intensity" or "intensity" => "法术强度",
+        "attack" or "atk" => "攻击力",
+        "damage" or "damage_boost" or "dmg_inc" => "增伤",
+        "abnormal_increase" => "异常增伤",
+        "amplification" or "amp" => "增幅",
+        "critical" => "暴击",
+        "independent_zone" or "combo" => "独立乘区",
+        "vulnerability" or "fragile" => "脆弱",
+        "vulnerability_taken" or "vuln_taken" => "承伤",
+        "defense" => "减防",
+        "resistance" or "res" or "def_res" => "减防/减抗",
+        "spell_intensity" or "intensity" or "arts_strength" => "法术强度",
         "other" => "其他",
         _ => zone
     };

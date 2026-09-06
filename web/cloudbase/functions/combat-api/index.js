@@ -1,32 +1,54 @@
 "use strict";
 
-const cloud = require("@cloudbase/node-sdk");
+// HTTP云函数：排行榜与分享记录的**写入**接口。
+//
+// 读取不经过这里。榜单、单关卡榜、记录本体都是云存储里的 JSONP 对象，浏览器用
+// <script> 直接从 CDN 拉——那条路上没有云函数、没有网关、也没有数据库。这个函数
+// 只在有人上传、删除、改视频号或改上榜意愿时被调用，然后就地重算受影响的对象。
+//
+// 之所以这么排：本环境的 PostgreSQL 按核秒计费，且是被唤醒就开始算，不是按查询
+// 的 CPU 算。公开榜单每个访客都是一次读，靠数据库撑读路径等于花钱买实例常驻。
+// 对象存储按请求数和流量计费，读多少花多少。
+//
+// 上传的 payload 是 BEC1 紧凑快照（base64url），不是 JSON 记录。榜单字段全部从
+// 快照头部解析而来，而不是信任 body 里的数字，这样榜单上的 DPS 与点开详情后看到
+// 的一定是同一份数据。注意快照用 fflate 的裸 DEFLATE（无 zlib 包头）。
+
 const crypto = require("node:crypto");
 const zlib = require("node:zlib");
 
-const app = cloud.init({ env: cloud.SYMBOL_CURRENT_ENV });
-const db = app.database();
-const command = db.command;
+const store = require("./store");
+const boards = require("./board");
+const STAGE_MAP = require("./stage-map.json");
 
-const RECORDS = "combat_records";
-const PARTS = "combat_record_parts";
-const SNAPSHOTS = "combat_board_snapshots";
-const UPLOADS = "combat_uploads";
-const TOP_LIMIT = 50;
-const PART_CHARS = 480_000;
-const INLINE_CHARS = 3_000_000;
-const MAX_RAW_BYTES = 64 * 1024 * 1024;
-const OFF_BOARD_MS = 7 * 24 * 60 * 60 * 1000;
+/** BEC snapshots are kilobytes; anything larger is not one of ours. */
+const MAX_PAYLOAD_CHARS = 512 * 1024;
+const BEC_MAGIC = 0x42454331;
+/**
+ * Only HEAD is read here, and every version so far encodes it identically —
+ * v2 only added fields to BUFFDEF. So the range widens with the writer instead
+ * of pinning one version and rejecting every snapshot a newer page produces.
+ */
+const MIN_BEC_VERSION = 1;
+const MAX_BEC_VERSION = 2;
+const LAYER_SQUAD = 1 << 1;
 
-function json(statusCode, body, extraHeaders = {}) {
+/** Shares per user. */
+const MAX_SHARES = 20;
+/** Grace period for a record that has fallen off every board. */
+const GRACE_MS = 7 * 24 * 3600 * 1000;
+
+const OTHER_CATEGORY = "dungeon_other";
+
+function json(statusCode, body) {
   return {
     statusCode,
     headers: {
-      "content-type": "application/json; charset=utf-8",
-      "access-control-allow-origin": "https://www.bilibili.com",
-      "access-control-allow-headers": "content-type,x-owner-token",
-      "access-control-allow-methods": "GET,POST,PATCH,DELETE,OPTIONS",
-      ...extraHeaders,
+      "Content-Type": "application/json; charset=utf-8",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Methods": "GET,POST,PATCH,DELETE,OPTIONS",
+      "Access-Control-Max-Age": "86400",
     },
     body: JSON.stringify(body),
   };
@@ -34,331 +56,346 @@ function json(statusCode, body, extraHeaders = {}) {
 
 function requestBody(event) {
   if (!event.body) return {};
-  if (typeof event.body === "object") return event.body;
-  try {
-    const source = event.isBase64Encoded
-      ? Buffer.from(event.body, "base64").toString("utf8")
-      : event.body;
-    return JSON.parse(source);
-  } catch {
-    throw new Error("请求体不是有效 JSON");
-  }
+  const text = event.isBase64Encoded
+    ? Buffer.from(event.body, "base64").toString("utf8")
+    : event.body;
+  try { return JSON.parse(text); } catch { throw new Error("请求体不是有效 JSON"); }
 }
 
-function pathOf(event) {
-  const path = event.path || event.requestContext?.path || "/";
-  return path.replace(/^\/combat-api/, "").replace(/\/$/, "") || "/";
-}
-
-function methodOf(event) {
-  return String(event.httpMethod || event.requestContext?.httpMethod || "GET").toUpperCase();
-}
-
-function queryOf(event) {
-  return event.queryStringParameters || {};
-}
-
-function sha256(value) {
-  return crypto.createHash("sha256").update(value).digest("hex");
-}
-
-function shortId() {
-  const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-  const bytes = crypto.randomBytes(9);
-  let result = "";
-  for (const byte of bytes) result += alphabet[byte % alphabet.length];
-  return result;
-}
+const pathOf = (event) => String(event.path || event.rawPath || "/").replace(/\/+$/, "") || "/";
+const methodOf = (event) => String(event.httpMethod || event.method || "GET").toUpperCase();
+const queryOf = (event) => event.queryStringParameters || event.queryString || {};
+const sha256 = (value) => crypto.createHash("sha256").update(String(value)).digest("hex");
+const shortId = () => crypto.randomBytes(9).toString("base64url");
+const categoryOf = (dungeonId) => STAGE_MAP[dungeonId] || OTHER_CATEGORY;
 
 function normalizeBvid(value) {
-  if (!value) return "";
-  const match = String(value).match(/(?:video\/)?(BV[0-9A-Za-z]{10})/i);
-  if (!match) throw new Error("BVID 格式无效");
-  return match[1];
+  const text = String(value || "").trim();
+  return /^BV[0-9A-Za-z]{10}$/.test(text) ? text : "";
 }
 
-function finite(value, name, min = 0, max = Number.MAX_SAFE_INTEGER) {
-  if (typeof value !== "number" || !Number.isFinite(value) || value < min || value > max) {
-    throw new Error(`${name} 超出允许范围`);
-  }
-  return value;
-}
+// ---------------------------------------------------------------------------
+// BEC head
 
-function unsignedIntegerString(value, name) {
-  if (typeof value !== "string" || !/^\d+$/.test(value)) {
-    throw new Error(`${name} 不是有效的无符号整数字符串`);
+class Cursor {
+  constructor(bytes) { this.bytes = bytes; this.offset = 0; }
+  u8() {
+    if (this.offset >= this.bytes.length) throw new Error("快照头部不完整");
+    return this.bytes[this.offset++];
   }
-  return value;
-}
-
-function validateRecord(text) {
-  const bytes = Buffer.byteLength(text, "utf8");
-  if (bytes > MAX_RAW_BYTES) throw new Error("战斗记录超过 64 MiB");
-  let record;
-  try { record = JSON.parse(text); } catch { throw new Error("战斗记录不是有效 JSON"); }
-  if (record?.schemaVersion !== 11) throw new Error("仅接受最新版 schema 11");
-  for (const key of ["squad", "actions", "effects"]) {
-    if (!Array.isArray(record[key])) throw new Error(`缺少 ${key}`);
-  }
-  if (!record.battle || typeof record.battle !== "object") throw new Error("缺少 battle");
-  if (!record.summary || typeof record.summary !== "object") throw new Error("缺少 summary");
-  if (!record.squad.length || record.squad.length > 16) throw new Error("队伍人数无效");
-  for (const member of record.squad) {
-    if (!member?.charId || !Array.isArray(member.skillGroups) || !Array.isArray(member.equipments) || !Array.isArray(member.equipSuits)) {
-      throw new Error("队伍配置快照不完整");
-    }
-    unsignedIntegerString(member.charInstId, "member.charInstId");
-  }
-  if (typeof record.battle.dungeonId !== "string" || !record.battle.dungeonId) throw new Error("缺少 battle.dungeonId");
-  finite(record.battle.durationSeconds, "battle.durationSeconds", 0.001, 24 * 60 * 60);
-  finite(record.summary.totalDamage, "summary.totalDamage", 0, 1e18);
-  finite(record.summary.dps, "summary.dps", 0, 1e15);
-  finite(record.summary.rdps, "summary.rdps", 0, 1e15);
-  const actionIds = new Set();
-  for (const action of record.actions) {
-    actionIds.add(finite(action?.id, "action.id", 1));
-    finite(action?.start, "action.start", 0, record.battle.durationSeconds + 60);
-    if (action?.end === null) {
-      finite(action?.observedUntil, "action.observedUntil", action.start,
-        record.battle.durationSeconds + 60);
-    } else {
-      finite(action?.end, "action.end", action.start,
-        record.battle.durationSeconds + 60);
+  varint() {
+    let result = 0;
+    let shift = 1;
+    for (;;) {
+      const byte = this.u8();
+      result += (byte & 0x7f) * shift;
+      if (!(byte & 0x80)) return result;
+      shift *= 128;
+      if (shift > 2 ** 56) throw new Error("快照 varint 过长");
     }
   }
-  for (const effect of record.effects) {
-    finite(effect?.id, "effect.id", 1);
-    if (effect?.actionId !== undefined &&
-        !actionIds.has(finite(effect.actionId, "effect.actionId", 1))) {
-      throw new Error("结果引用了不存在的操作");
-    }
-    finite(effect?.time, "effect.time", 0, record.battle.durationSeconds + 60);
-    if (["statusApply", "statusRefresh", "statusRemove"].includes(effect?.type)) {
-      unsignedIntegerString(effect.statusInstanceId, "effect.statusInstanceId");
-    }
-    if (effect?.sourceAttribution === "configurationVerified" &&
-        (!effect.sourceTemplateId || !effect.sourceKind ||
-         effect.sourceKind === "unknown")) {
-      throw new Error("已验证来源缺少来源模板");
-    }
+}
+
+/**
+ * Reads the mandatory HEAD layer. Everything a board sorts on lives here, so
+ * the board can never disagree with the record it links to.
+ */
+function readHead(payload) {
+  const raw = Buffer.from(payload, "base64url");
+  const cursor = new Cursor(zlib.inflateRawSync(raw));
+  if (cursor.varint() !== BEC_MAGIC) throw new Error("不是 BEC 快照");
+  const version = cursor.u8();
+  if (version < MIN_BEC_VERSION || version > MAX_BEC_VERSION) {
+    throw new Error(`不支持的 BEC 版本 ${version}`);
   }
-  return { record, bytes, rdps: record.summary.rdps };
+  const idSpaceVersion = cursor.varint();
+  const layers = cursor.varint();
+  const sessionId = cursor.varint() + cursor.varint() * 0x100000000;
+  cursor.varint();                                   // startedUnixSeconds
+  const durationSeconds = cursor.varint() / 100;
+  const dungeonIndex = cursor.varint();
+  cursor.varint();                                   // modeIndex
+  const totalDamage = cursor.varint();
+  const dps = cursor.varint() / 100;
+  const hitCount = cursor.varint();
+  cursor.varint();                                   // criticalCount
+  const rdps = cursor.varint() / 100;
+  if (!(durationSeconds > 0) || durationSeconds > 24 * 3600) throw new Error("战斗时长无效");
+  if (!(layers & LAYER_SQUAD)) throw new Error("快照缺少队伍层，无法上榜");
+  return { idSpaceVersion, layers, sessionId, durationSeconds, dungeonIndex, totalDamage, dps, hitCount, rdps };
 }
 
-function publicEntry(item, rank = 0) {
-  return {
-    shortId: item._id,
-    rank,
-    nickname: item.nickname,
-    avatar: item.avatar || "",
-    durationSeconds: item.durationSeconds,
-    dps: item.dps,
-    rdps: item.rdps,
-    uploadedAt: item.uploadedAt,
-    dungeonId: item.dungeonId,
-    squad: item.squad,
-  };
-}
+// ---------------------------------------------------------------------------
+// storage shapes
 
-function personalBest(items, metric) {
-  const best = new Map();
-  for (const item of items) {
-    const current = best.get(item.ownerHash);
-    const better = !current || (metric === "dps"
-      ? item.dps > current.dps || (item.dps === current.dps && item.uploadedAt < current.uploadedAt)
-      : item.durationSeconds < current.durationSeconds || (item.durationSeconds === current.durationSeconds && item.uploadedAt < current.uploadedAt));
-    if (better) best.set(item.ownerHash, item);
-  }
-  return [...best.values()].sort((left, right) => metric === "dps"
-    ? right.dps - left.dps || left.uploadedAt.localeCompare(right.uploadedAt)
-    : left.durationSeconds - right.durationSeconds || left.uploadedAt.localeCompare(right.uploadedAt));
-}
+const categoryKey = (categoryId) => `cat/${categoryId}.json`;
+const ownerKey = (ownerHash) => `own/${ownerHash}.json`;
 
-async function rebuildBoard(dungeonId) {
-  const result = await db.collection(RECORDS)
-    .where({ dungeonId })
-    .field({ payload: false })
-    .limit(1000)
-    .get();
-  const items = result.data || [];
-  const dps = personalBest(items, "dps").slice(0, TOP_LIMIT);
-  const time = personalBest(items, "time").slice(0, TOP_LIMIT);
-  const rankedIds = new Set([...dps, ...time].map((item) => item._id));
-  const now = new Date();
-  await Promise.all(items.map((item) => {
-    const ranked = rankedIds.has(item._id);
-    const update = ranked
-      ? { ranked: true, expireAt: command.remove() }
-      : { ranked: false, expireAt: item.expireAt || new Date(now.getTime() + OFF_BOARD_MS) };
-    return db.collection(RECORDS).doc(item._id).update(update).catch(() => undefined);
+const readCategory = async (categoryId) => (await store.readPrivate(categoryKey(categoryId)))?.rows ?? [];
+const readOwner = async (ownerHash) => (await store.readPrivate(ownerKey(ownerHash)))?.rows ?? [];
+
+/**
+ * Rewrite what one write actually changed: the private row file, the category
+ * overview, and the board of every stage named in `touched`. Rewriting all of
+ * a category's stages would be up to 49 objects for a one-row edit.
+ *
+ * A stage whose last row just went away gets its board object deleted rather
+ * than left behind as a page that says nothing.
+ */
+async function republish(categoryId, rows, touched) {
+  await store.writeScript(`cat/${categoryId}`, boards.categoryBoard(categoryId, rows));
+  const grouped = boards.groupByStage(rows);
+  await Promise.all([...new Set(touched)].map((dungeonId) => {
+    const stageRows = grouped.get(dungeonId);
+    return stageRows
+      ? store.writeScript(`stage/${dungeonId}`, boards.stageBoard(dungeonId, stageRows))
+      : store.removeScript(`stage/${dungeonId}`).catch(() => undefined);
   }));
-  const snapshot = {
-    dungeonId,
-    dps: dps.map((item, index) => publicEntry(item, index + 1)),
-    time: time.map((item, index) => publicEntry(item, index + 1)),
-    updatedAt: now.toISOString(),
-  };
-  await db.collection(SNAPSHOTS).doc(sha256(dungeonId).slice(0, 24)).set(snapshot);
-  return snapshot;
+  await refreshIndex(categoryId, rows.length);
 }
 
-async function storeCompressed(shortIdValue, compressed) {
-  if (compressed.length <= INLINE_CHARS) return { payload: compressed, partCount: 0 };
-  const chunks = [];
-  for (let index = 0; index < compressed.length; index += PART_CHARS) chunks.push(compressed.slice(index, index + PART_CHARS));
-  await Promise.all(chunks.map((value, index) => db.collection(PARTS).doc(`${shortIdValue}_${index}`).set({ recordId: shortIdValue, index, value })));
-  return { payload: "", partCount: chunks.length };
+/**
+ * Read-modify-write of one category's rows, then republish what it feeds.
+ *
+ * Object storage has no compare-and-set, so two uploads landing on the same
+ * category in the same instant can still lose one. Writing and then reading
+ * back turns that from a silent loss into a retry: if our change is not in the
+ * settled copy, someone else's write landed on top and we redo it against the
+ * new state. `apply` therefore has to work from whatever it is handed.
+ */
+async function mutateCategory(categoryId, apply, verify, touched) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const rows = apply(await readCategory(categoryId));
+    await store.writePrivate(categoryKey(categoryId), { rows });
+    const settled = await readCategory(categoryId);
+    if (verify(settled)) {
+      await republish(categoryId, settled, touched);
+      return settled;
+    }
+  }
+  throw new Error("存储写入冲突，请稍后重试");
 }
+
+/** Per-category totals, so the browser can tell which tabs have anything in them. */
+async function refreshIndex(categoryId, count) {
+  const index = (await store.readPrivate("index.json")) || { c: {} };
+  if (count > 0) index.c[categoryId] = count;
+  else delete index.c[categoryId];
+  index.t = Date.now();
+  await store.writePrivate("index.json", index);
+  await store.writeScript("index", index);
+}
+
+// ---------------------------------------------------------------------------
+// handlers
 
 async function ingest(body) {
-  if (typeof body.text !== "string" || typeof body.ownerToken !== "string" || body.ownerToken.length < 32) {
-    throw new Error("记录或 owner token 缺失");
+  const payload = String(body.payload || "");
+  const ownerToken = String(body.ownerToken || "");
+  if (ownerToken.length < 32) throw new Error("缺少 owner token");
+  if (!payload) throw new Error("缺少快照数据");
+  if (payload.length > MAX_PAYLOAD_CHARS) throw new Error("快照过大");
+  if (!/^[A-Za-z0-9_-]+$/.test(payload)) throw new Error("快照不是 base64url");
+
+  const dungeonId = String(body.dungeonId || "").slice(0, 64);
+  if (!/^[A-Za-z0-9_]{1,64}$/.test(dungeonId)) throw new Error("关卡 id 无效");
+
+  const head = readHead(payload);
+  const ownerHash = sha256(ownerToken);
+  const mine = await readOwner(ownerHash);
+  if (mine.length >= MAX_SHARES) {
+    throw new Error(`分享数量已达上限（${MAX_SHARES} 条），请先在云存档页删除旧分享`);
   }
-  const { record, bytes, rdps } = validateRecord(body.text);
-  const id = shortId();
-  const compressed = zlib.deflateRawSync(Buffer.from(body.text, "utf8"), { level: 9 }).toString("base64url");
-  const payload = await storeCompressed(id, compressed);
-  const uploadedAt = new Date().toISOString();
-  const entry = {
-    ownerHash: sha256(body.ownerToken),
-    nickname: String(body.nickname || "匿名玩家").slice(0, 32),
-    avatar: String(body.avatar || "").slice(0, 1024),
-    bvid: normalizeBvid(body.bvid),
-    dungeonId: record.battle.dungeonId,
-    modeId: String(record.battle.modeId || ""),
-    durationSeconds: record.battle.durationSeconds,
-    totalDamage: record.summary.totalDamage,
-    dps: record.summary.dps,
-    rdps,
-    uploadedAt,
-    ranked: false,
-    expireAt: new Date(Date.now() + OFF_BOARD_MS),
-    squad: record.squad.slice(0, 8).map((member) => ({
-      charId: member.charId,
-      level: Number(member.level) || 0,
-      potential: Number(member.potential) || 0,
-    })),
-    payload: payload.payload,
-    partCount: payload.partCount,
-    rawBytes: bytes,
-    digest: sha256(body.text),
+
+  const categoryId = categoryOf(dungeonId);
+  const row = {
+    i: shortId(),
+    d: dungeonId,
+    // Full owner hash: it is what dedupes a board to one entry per player, and
+    // what lets pruning find the owner file of a record it just deleted. It
+    // only ever lives in the private half, and it is not a credential — writes
+    // are authorised by the token, which this is the hash of.
+    o: ownerHash,
+    n: String(body.nickname || "匿名玩家").slice(0, 32),
+    a: String(body.avatar || "").slice(0, 512),
+    b: normalizeBvid(body.bvid),
+    du: head.durationSeconds,
+    dp: head.dps,
+    rd: head.rdps,
+    dm: head.totalDamage,
+    hc: head.hitCount,
+    ly: head.layers,
+    iv: head.idSpaceVersion,
+    sq: Array.isArray(body.squad)
+      ? body.squad.slice(0, 8).map((member) => [
+        String(member?.charId || "").slice(0, 64),
+        Number(member?.level) || 0,
+        Number(member?.potential) || 0,
+      ])
+      : [],
+    t: Date.now(),
+    // Sharing joins the board unless the uploader says otherwise; the toggle
+    // afterwards lives in 我的分享管理.
+    x: body.optIn !== false,
+    f: 0,
   };
-  await db.collection(RECORDS).doc(id).set(entry);
-  await rebuildBoard(record.dungeonId);
-  return { shortId: id, entry: publicEntry({ ...entry, _id: id }) };
+
+  // The record object first: a row pointing at a record that is not there yet
+  // would be a broken link on the board for as long as the rest takes.
+  await store.writeScript(`rec/${row.i}`, {
+    i: row.i, d: dungeonId, n: row.n, a: row.a, b: row.b,
+    ly: row.ly, iv: row.iv, t: row.t, p: payload,
+  });
+
+  await mutateCategory(
+    categoryId,
+    (rows) => [...rows.filter((item) => item.i !== row.i), row],
+    (rows) => rows.some((item) => item.i === row.i),
+    [dungeonId],
+  );
+  await store.writePrivate(ownerKey(ownerHash), { rows: [...mine, { ...row, c: categoryId }] });
+
+  return { shortId: row.i, categoryId };
 }
 
-async function loadRecord(id) {
-  const result = await db.collection(RECORDS).doc(id).get();
-  const item = result.data?.[0];
-  if (!item) return null;
-  let compressed = item.payload || "";
-  if (item.partCount) {
-    const parts = await db.collection(PARTS).where({ recordId: id }).orderBy("index", "asc").limit(item.partCount).get();
-    compressed = (parts.data || []).map((part) => part.value).join("");
-  }
-  const text = zlib.inflateRawSync(Buffer.from(compressed, "base64url")).toString("utf8");
-  if (sha256(text) !== item.digest) throw new Error("记录摘要校验失败");
-  return { item, record: JSON.parse(text) };
+/** Finds one of the caller's own records; the owner file is the authority. */
+async function ownedRow(shortIdValue, ownerToken) {
+  if (String(ownerToken || "").length < 32) throw new Error("缺少 owner token");
+  const ownerHash = sha256(ownerToken);
+  const mine = await readOwner(ownerHash);
+  const index = mine.findIndex((row) => row.i === shortIdValue);
+  if (index < 0) throw new Error("记录不存在或无权修改");
+  return { ownerHash, mine, index, row: mine[index] };
 }
 
-async function deleteRecord(id, ownerToken) {
-  const found = await db.collection(RECORDS).doc(id).get();
-  const item = found.data?.[0];
-  if (!item) throw new Error("记录不存在");
-  if (item.ownerHash !== sha256(ownerToken || "")) throw new Error("无权操作此记录");
-  await db.collection(RECORDS).doc(id).remove();
-  if (item.partCount) {
-    const parts = await db.collection(PARTS).where({ recordId: id }).get();
-    await Promise.all((parts.data || []).map((part) => db.collection(PARTS).doc(part._id).remove()));
+async function patchRow(shortIdValue, ownerToken, mutate) {
+  const { ownerHash, mine, index, row } = await ownedRow(shortIdValue, ownerToken);
+  mutate(row);
+  await mutateCategory(
+    row.c,
+    (rows) => rows.map((item) => (item.i === shortIdValue ? { ...item, x: row.x, b: row.b, f: row.f } : item)),
+    (rows) => rows.some((item) => item.i === shortIdValue && item.x === row.x && item.b === row.b),
+    [row.d],
+  );
+  await store.writePrivate(ownerKey(ownerHash), { rows: mine.map((item, at) => (at === index ? row : item)) });
+  return row;
+}
+
+async function removeRecord(shortIdValue, ownerToken) {
+  const { ownerHash, mine, row } = await ownedRow(shortIdValue, ownerToken);
+  await mutateCategory(
+    row.c,
+    (rows) => rows.filter((item) => item.i !== shortIdValue),
+    (rows) => !rows.some((item) => item.i === shortIdValue),
+    [row.d],
+  );
+  await store.writePrivate(ownerKey(ownerHash), { rows: mine.filter((item) => item.i !== shortIdValue) });
+  await store.removeScript(`rec/${shortIdValue}`).catch(() => undefined);
+}
+
+/**
+ * Marks rows that have fallen off every board and deletes the ones past the
+ * grace period. Runs from a timer trigger on this same function — the logic
+ * needs the storage layout, and a second function would be a second copy of it.
+ *
+ * The mark is only set once: a row that dropped off days ago keeps its original
+ * timestamp, so the grace period counts from when it actually fell off. Getting
+ * back onto a board clears it.
+ */
+async function prune() {
+  const index = (await store.readPrivate("index.json")) || { c: {} };
+  const now = Date.now();
+  const report = { categories: 0, marked: 0, restored: 0, deleted: 0 };
+
+  for (const categoryId of Object.keys(index.c || {})) {
+    const rows = await readCategory(categoryId);
+    if (!rows.length) continue;
+    const held = boards.rankedIds(rows);
+    const survivors = [];
+    const expired = [];
+    let changed = 0;
+    for (const row of rows) {
+      if (held.has(row.i)) {
+        if (row.f) { row.f = 0; report.restored += 1; changed += 1; }
+        survivors.push(row);
+        continue;
+      }
+      if (!row.f) { row.f = now; report.marked += 1; changed += 1; }
+      if (now - row.f > GRACE_MS) { expired.push(row); changed += 1; }
+      else survivors.push(row);
+    }
+    report.categories += 1;
+    report.deleted += expired.length;
+    if (!changed) continue;
+    await store.writePrivate(categoryKey(categoryId), { rows: survivors });
+    await republish(categoryId, survivors, expired.map((row) => row.d));
+    await Promise.all(expired.map((row) => store.removeScript(`rec/${row.i}`).catch(() => undefined)));
+    await forgetFromOwners(expired);
   }
-  await rebuildBoard(item.dungeonId);
+  return report;
+}
+
+/** Drops expired records from their owners' lists so 我的分享 has no ghosts. */
+async function forgetFromOwners(expired) {
+  const byOwner = new Map();
+  for (const row of expired) {
+    if (!byOwner.has(row.o)) byOwner.set(row.o, new Set());
+    byOwner.get(row.o).add(row.i);
+  }
+  for (const [ownerHash, ids] of byOwner) {
+    const mine = await readOwner(ownerHash);
+    const kept = mine.filter((row) => !ids.has(row.i));
+    if (kept.length !== mine.length) await store.writePrivate(ownerKey(ownerHash), { rows: kept });
+  }
 }
 
 exports.main = async (event) => {
+  // Timer triggers arrive as a bare object, not an HTTP request.
+  if (event && (event.Type === "Timer" || event.TriggerName)) return prune();
+
   const method = methodOf(event);
   const path = pathOf(event);
   if (method === "OPTIONS") return json(204, {});
   try {
-    if (method === "GET" && path === "/home") {
-      const dungeonId = String(queryOf(event).dungeonId || "");
-      if (!dungeonId) return json(400, { message: "缺少 dungeonId" });
-      const key = sha256(dungeonId).slice(0, 24);
-      const result = await db.collection(SNAPSHOTS).doc(key).get();
-      const payload = result.data?.[0] || await rebuildBoard(dungeonId);
-      const etag = `\"${sha256(JSON.stringify(payload))}\"`;
-      return json(200, payload, { "cache-control": "public,max-age=60,stale-while-revalidate=300", etag });
+    const recordMatch = /^\/records\/([A-Za-z0-9_-]{6,32})$/.exec(path);
+    const videoMatch = /^\/records\/([A-Za-z0-9_-]{6,32})\/video$/.exec(path);
+    const rankedMatch = /^\/records\/([A-Za-z0-9_-]{6,32})\/ranked$/.exec(path);
+
+    if (method === "GET" && path === "/health") {
+      const index = (await store.readPrivate("index.json")) || { c: {} };
+      return json(200, { ok: true, storage: store.BUCKET, categories: Object.keys(index.c || {}).length });
     }
-    const recordMatch = path.match(/^\/records\/([0-9A-Za-z]+)$/);
-    if (method === "GET" && recordMatch) {
-      const loaded = await loadRecord(recordMatch[1]);
-      if (!loaded) return json(404, { message: "记录不存在或已过期" });
-      return json(200, { record: loaded.record, bvid: loaded.item.bvid || "" }, { "cache-control": "public,max-age=300" });
-    }
-    if (method === "POST" && path === "/records") return json(201, await ingest(requestBody(event)));
-    if (method === "POST" && path === "/records/multipart/init") {
-      const body = requestBody(event);
-      const uploadId = shortId();
-      await db.collection(UPLOADS).doc(uploadId).set({
-        ownerHash: sha256(String(body.ownerToken || "")),
-        parts: finite(body.parts, "parts", 1, 128),
-        createdAt: new Date(),
-      });
-      return json(201, { uploadId });
-    }
-    const partMatch = path.match(/^\/records\/multipart\/([0-9A-Za-z]+)\/(\d+)$/);
-    if (method === "POST" && partMatch) {
-      const body = requestBody(event);
-      if (typeof body.value !== "string" || body.value.length > 1_000_000) throw new Error("分片无效");
-      const manifest = await db.collection(UPLOADS).doc(partMatch[1]).get();
-      const upload = manifest.data?.[0];
-      const index = Number(partMatch[2]);
-      if (!upload || upload.ownerHash !== sha256(String(body.ownerToken || "")) || index >= upload.parts) {
-        throw new Error("上传会话无效");
-      }
-      await db.collection(UPLOADS).doc(`${partMatch[1]}_${partMatch[2]}`).set({
-        uploadId: partMatch[1], index, value: body.value, createdAt: new Date(),
-      });
-      return json(201, { ok: true });
-    }
-    const completeMatch = path.match(/^\/records\/multipart\/([0-9A-Za-z]+)\/complete$/);
-    if (method === "POST" && completeMatch) {
-      const body = requestBody(event);
-      const manifest = await db.collection(UPLOADS).doc(completeMatch[1]).get();
-      const upload = manifest.data?.[0];
-      if (!upload || upload.ownerHash !== sha256(String(body.ownerToken || ""))) throw new Error("上传会话无效");
-      const result = await db.collection(UPLOADS).where({ uploadId: completeMatch[1] }).orderBy("index", "asc").limit(upload.parts).get();
-      const pieces = result.data || [];
-      if (pieces.length !== upload.parts) throw new Error("上传分片不完整");
-      const response = await ingest({ ...body, text: pieces.map((item) => item.value).join("") });
-      await Promise.all([db.collection(UPLOADS).doc(completeMatch[1]).remove(), ...pieces.map((item) => db.collection(UPLOADS).doc(item._id).remove())]);
-      return json(201, response);
+    if (method === "POST" && path === "/records") {
+      return json(201, await ingest(requestBody(event)));
     }
     if (method === "GET" && path === "/me/records") {
-      const ownerToken = event.headers?.["x-owner-token"] || event.headers?.["X-Owner-Token"] || "";
-      const result = await db.collection(RECORDS).where({ ownerHash: sha256(ownerToken) }).field({ payload: false }).orderBy("uploadedAt", "desc").limit(100).get();
-      return json(200, { records: (result.data || []).map((item) => publicEntry(item)) });
+      const ownerToken = String(queryOf(event).ownerToken || "");
+      if (ownerToken.length < 32) throw new Error("缺少 owner token");
+      const mine = await readOwner(sha256(ownerToken));
+      return json(200, { records: mine, limit: MAX_SHARES });
     }
-    const videoMatch = path.match(/^\/records\/([0-9A-Za-z]+)\/video$/);
     if (method === "PATCH" && videoMatch) {
       const body = requestBody(event);
-      const found = await db.collection(RECORDS).doc(videoMatch[1]).get();
-      const item = found.data?.[0];
-      if (!item || item.ownerHash !== sha256(String(body.ownerToken || ""))) throw new Error("无权操作此记录");
-      await db.collection(RECORDS).doc(videoMatch[1]).update({ bvid: normalizeBvid(body.bvid) });
+      const bvid = normalizeBvid(body.bvid);
+      const row = await patchRow(videoMatch[1], body.ownerToken, (item) => { item.b = bvid; });
+      // The record object carries the video id too, so it has to be rewritten.
+      const published = await store.readScript(`rec/${row.i}`);
+      if (published) await store.writeScript(`rec/${row.i}`, { ...published, b: bvid });
+      return json(200, { ok: true });
+    }
+    if (method === "PATCH" && rankedMatch) {
+      const body = requestBody(event);
+      const optIn = body.optIn !== false;
+      await patchRow(rankedMatch[1], body.ownerToken, (item) => { item.x = optIn; item.f = 0; });
       return json(200, { ok: true });
     }
     if (method === "DELETE" && recordMatch) {
-      const body = requestBody(event);
-      await deleteRecord(recordMatch[1], body.ownerToken);
+      await removeRecord(recordMatch[1], requestBody(event).ownerToken);
       return json(200, { ok: true });
     }
-    return json(404, { message: "接口不存在" });
+    return json(404, { message: "未知接口" });
   } catch (error) {
-    console.error(error);
-    return json(400, { message: error instanceof Error ? error.message : "请求失败" });
+    return json(400, { message: error?.message || "请求失败" });
   }
 };
 
-exports.rebuildBoard = rebuildBoard;
-exports.validateRecord = validateRecord;

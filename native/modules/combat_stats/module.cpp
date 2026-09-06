@@ -28,6 +28,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <set>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -45,6 +46,10 @@ constexpr size_t kMaxRawEvents = 100000;
 constexpr size_t kMaxBuffIntervals = 8192;
 constexpr size_t kMaxRdpsModifiersPerHit = 32;
 constexpr size_t kMaxRdpsSourcesPerHit = 16;
+// One buff writes a handful of (attribute, slot) pairs at most; the cap only
+// stops a pathological buff from growing the interval without bound.
+constexpr size_t kMaxBuffNominalEffects = 16;
+constexpr size_t kModifierSlotCount = 8;
 constexpr int32_t kAttributeTypeCount = 101;
 constexpr size_t kAttributeModifierValueCount = 9;
 
@@ -57,17 +62,26 @@ enum class ModuleState : uint8_t {
     Stopped,
 };
 
+// One category per factor of BattleFormula.CalculateDamage, attacker side
+// first, then defender side. Zone-backed categories follow the roles the
+// client's DamageScaleProcessorConfig assigns to each zone, not zone indices.
 enum class RdpsContributionKind : uint8_t {
     DirectDamage = 0,
-    Attack = 1,
-    DamageIncrease = 2,
-    Amplification = 3,
-    Fragile = 4,
-    VulnerabilityTaken = 5,
-    Resistance = 6,
-    ArtsStrength = 7,
-    Other = 8,
+    Attack = 1,             // ATK attribute
+    DamageIncrease = 2,     // attacker zone with damage-type / skill-type / broken roles
+    AbnormalIncrease = 3,   // ignite-role zone and the Ignite scalar attribute
+    Amplification = 4,      // enhanced-role zone
+    Critical = 5,           // crit rate (expected value) and crit damage
+    IndependentZone = 6,    // zones without an attribute role (Prod / Combo / Race)
+    Fragile = 7,            // vulnerable-role zone
+    VulnerabilityTaken = 8, // defender damage-type zone and taken scalars
+    Defense = 9,            // DEF
+    Resistance = 10,        // elemental resistance
+    ArtsStrength = 11,      // instant attribute modifiers
+    Other = 12,             // weakness / shelter and anything unclassified
 };
+
+inline constexpr size_t kRdpsContributionKindCount = 13;
 
 struct DynamicCategoryMeta {
     const char* id;
@@ -75,15 +89,20 @@ struct DynamicCategoryMeta {
     uint32_t color_argb;
 };
 
-inline constexpr std::array<DynamicCategoryMeta, 9> kDynamicRdpsCategories{{
+inline constexpr std::array<DynamicCategoryMeta, kRdpsContributionKindCount>
+    kDynamicRdpsCategories{{
     {"direct_damage", "直伤", 0xFFD3D8E1},
     {"attack", "攻击力", 0xFFFFCE52},
     {"damage_increase", "增伤", 0xFF43C9FF},
-    {"amplification", "增幅", 0xFFFF9148},
-    {"fragile", "脆弱", 0xFFFF7A67},
-    {"vulnerability_taken", "承伤易伤", 0xFFFF4F82},
-    {"resistance", "减防/减抗", 0xFF57D99B},
-    {"arts_strength", "法术强度", 0xFF54B3FF},
+    {"abnormal_increase", "异常增伤", 0xFFFF6A3D},
+    {"amplification", "增幅", 0xFFC084FC},
+    {"critical", "暴击", 0xFFF06292},
+    {"independent_zone", "独立乘区", 0xFF2DD4BF},
+    {"fragile", "脆弱", 0xFFFF9148},
+    {"vulnerability_taken", "承伤", 0xFFA3E635},
+    {"defense", "减防", 0xFF57D99B},
+    {"resistance", "减抗", 0xFF3B82F6},
+    {"arts_strength", "法术强度", 0xFF8B5CF6},
     {"other", "其他", 0xFF8F98AA},
 }};
 
@@ -106,8 +125,10 @@ RdpsContributionKind ContributionKindForZone(SemanticZone zone) {
     case SemanticZone::Fragile: return RdpsContributionKind::Fragile;
     case SemanticZone::VulnerabilityTaken:
         return RdpsContributionKind::VulnerabilityTaken;
+    // The catalog's "res" zone covers both DEF and elemental resistance; the
+    // attribute type observed at runtime decides between the two.
     case SemanticZone::Resistance: return RdpsContributionKind::Resistance;
-    case SemanticZone::Combo: return RdpsContributionKind::DamageIncrease;
+    case SemanticZone::Combo: return RdpsContributionKind::IndependentZone;
     case SemanticZone::ArtsStrength: return RdpsContributionKind::ArtsStrength;
     default: return RdpsContributionKind::Other;
     }
@@ -145,6 +166,8 @@ struct RdpsShare {
     char source[160]{};
 };
 
+struct HitLedger;
+
 struct DamageEvent {
     uint64_t session_id = 0;
     uint64_t action_id = 0;
@@ -158,6 +181,7 @@ struct DamageEvent {
     char attacker[160]{};
     char skill[160]{};
     std::array<RdpsShare, kMaxRdpsSourcesPerHit> rdps_shares{};
+    std::shared_ptr<HitLedger> ledger;
 };
 
 struct CombatAction {
@@ -176,6 +200,37 @@ struct CombatAction {
     bool end_observed = false;
     bool inferred_end = false;
     bool inferred = false;
+};
+
+// BuffData.stackingSettings, read per instance. Two applications of the same
+// buff id only add up when they share a stacking group and the type allows it;
+// the ordinals below come from BuffStackingSettings.get_isStackType /
+// get_isPriorityType / IsEnhanceType, which test them as immediates.
+enum class BuffStackingType : int16_t {
+    Unlimited = 0,
+    HighPriority = 1,
+    Stack = 2,
+    Enhance = 3,
+    Refresh = 4,
+    Extend = 5,
+    Modify = 6,
+    Unique = 7,
+    EnhanceAndRefresh = 8,
+    OverwriteDuration = 9,
+    EnhanceAndOverwriteDuration = 10,
+    HighPriorityWithMaxStack = 11,
+    TimedGrowingEnhance = 12,
+};
+
+struct BuffStackingInfo {
+    bool resolved = false;
+    // false when the group is keyed by buff id, true when a shared stackingKey
+    // makes different buff ids compete for the same layers.
+    bool keyed = false;
+    int32_t type = -1;
+    int32_t max_stack = 0;
+    int32_t enhance_count = 0;
+    std::string key;
 };
 
 struct BuffDiagnosticInfo {
@@ -207,6 +262,7 @@ struct BuffDiagnosticInfo {
     void* owner_ability = nullptr;
     void* blackboard = nullptr;
     void* buff_data = nullptr;
+    BuffStackingInfo stacking;
     std::vector<void*> damage_modifiers;
     double arts_strength_points = 0.0;
     bool has_arts_strength_points = false;
@@ -238,6 +294,22 @@ struct TimelineBucket {
     std::map<std::string, double> rdps_by_character;
 };
 
+// The magnitude a buff configures for one slot of one attribute, as the game
+// resolved it. A range rather than a number, because it moves while the buff
+// is alive: enhance layers and blackboard writes rewrite it (the client raises
+// Buff.OnBlackboardValueChange for exactly that), and a modifier parameter
+// keyed on the damage pack -- enemies hit, target debuff stacks, own HP --
+// resolves anew on every hit.
+//
+// min == max means the buff held one value throughout, which is the common
+// case. A spread is real information: it is the buff scaling with something.
+struct BuffNominalEffect {
+    int32_t attribute_type = -1;
+    int32_t slot = -1;  // Beyond.GEnums.ModifierType ordinal, 0-7
+    double min = 0.0;
+    double max = 0.0;
+};
+
 struct BuffInterval {
     uint64_t inst_id = 0;
     uint64_t action_id = 0;
@@ -250,6 +322,8 @@ struct BuffInterval {
     bool effect_observed = false;
     double effect_min = 0.0;
     double effect_max = 0.0;
+    BuffStackingInfo stacking;
+    std::vector<BuffNominalEffect> nominal;
     std::string buff_id;
     std::string source;
     std::string owner;
@@ -274,10 +348,26 @@ struct Session {
         uint64_t unresolved_dropped = 0;
     };
 
+    struct AttributionStats {
+        uint64_t hits = 0;
+        uint64_t hits_external = 0;
+        uint64_t live_set_failures = 0;
+        uint64_t group_sum_mismatch = 0;
+        uint64_t zone_residual_unexplained = 0;
+        uint64_t late_buffs = 0;
+        uint64_t stale_map_buffs = 0;
+        uint64_t attack_unlinked = 0;
+    };
+
     struct SemanticAuditItem {
         std::string buff_id;
         SemanticStatus status = SemanticStatus::Unknown;
         SemanticZone observed_zone = SemanticZone::Unknown;
+        // Runtime location of the write (DamageScaleSide, zone array index),
+        // kept even when no semantic zone maps to it.
+        int32_t side = -1;
+        int32_t zone_index = -1;
+        std::string source;
         uint64_t count = 0;
         bool element_mismatch = false;
     };
@@ -306,6 +396,7 @@ struct Session {
     std::string semantic_hotfix_version;
     std::string semantic_source_sha256;
     SemanticCoverage semantic_coverage{};
+    AttributionStats attribution{};
     std::vector<SemanticAuditItem> unresolved_semantics;
     std::map<std::string, CharacterAggregate> characters;
     std::map<std::string, CharacterAggregate> rdps_characters;
@@ -387,7 +478,13 @@ using RecordDodgeSuccessFn = void(__fastcall*)(
 // it by reference; forwarding the register as an opaque pointer is exact.
 using SkillCastEndFn = void(__fastcall*)(void* skill, int32_t finish_type,
     int32_t interrupt_reason, void* interrupt_context, void* method);
+// Skill.DoCast(onCastEnd, onExclusive, Nullable<CastSkillOptions>, skipApplyCost).
+// Nullable<CastSkillOptions> is 0x20 bytes and therefore arrives by reference;
+// the bool lands in the fifth (stack) slot.
+using SkillDoCastFn = void(__fastcall*)(void* skill, void* on_cast_end,
+    void* on_exclusive, void* options, uint8_t skip_apply_cost, void* method);
 using UInt64GetterFn = uint64_t(__fastcall*)(void* instance, void* method);
+using Int32GetterFn = int32_t(__fastcall*)(void* instance, void* method);
 using BoolGetterFn = bool(__fastcall*)(void* instance, void* method);
 using ObjectGetterFn = void*(__fastcall*)(void* instance, void* method);
 using EquipGetterFn = void*(__fastcall*)(
@@ -416,11 +513,6 @@ using BuffModifyAttributesFn = void(__fastcall*)(void* instance, void* input_dat
     void* input_blackboard, int32_t enhance_count, void* method);
 using AttributeValuesFn = void*(__fastcall*)(
     void* instance, int32_t attribute_type, void* method);
-using CalculateFinalAttributeFn = double(__fastcall*)(double raw_value,
-    double addition, double multiplier, double final_addition,
-    double final_multiplier, double base_addition, double base_multiplier,
-    double base_final_addition, double base_final_multiplier, double minimum,
-    double maximum, void* method);
 using PackDoubleFn = double(__fastcall*)(void* pack_data, void* method);
 using StaticObjectGetterFn = void*(__fastcall*)(void* method);
 using CharInfoGetterFn = void*(__fastcall*)(void* instance, uint64_t char_id,
@@ -440,6 +532,7 @@ std::atomic_bool g_tick_hook_installed{false};
 std::atomic_bool g_buff_start_hook_installed{false};
 std::atomic_bool g_buff_finish_hook_installed{false};
 std::atomic_bool g_cast_skill_hook_installed{false};
+std::atomic_bool g_skill_do_cast_hook_installed{false};
 std::atomic_bool g_end_skill_hook_installed{false};
 std::atomic_bool g_dodge_success_hook_installed{false};
 std::atomic_bool g_skill_cast_end_hook_installed{false};
@@ -474,6 +567,15 @@ std::atomic<uint64_t> g_semantic_excluded{0};
 std::atomic<uint64_t> g_semantic_unknown{0};
 std::atomic<uint64_t> g_semantic_element_mismatch{0};
 std::atomic<uint64_t> g_semantic_unresolved_dropped{0};
+// Attribution model self-checks, reported in diagnostics.attribution.
+std::atomic<uint64_t> g_attribution_hits{0};
+std::atomic<uint64_t> g_attribution_hits_external{0};
+std::atomic<uint64_t> g_attribution_live_set_failures{0};
+std::atomic<uint64_t> g_attribution_group_sum_mismatch{0};
+std::atomic<uint64_t> g_attribution_zone_residual_unexplained{0};
+std::atomic<uint64_t> g_attribution_late_buffs{0};
+std::atomic<uint64_t> g_attribution_stale_map_buffs{0};
+std::atomic<uint64_t> g_attribution_attack_unlinked{0};
 std::atomic<uint64_t> g_rdps_flow_sequence{0};
 std::atomic<uint64_t> g_rdps_flow_generation{0};
 std::atomic_bool g_overlay_visible{true};
@@ -602,14 +704,16 @@ RuntimeMethod g_record_end_skill;
 RuntimeMethod g_record_dodge_success;
 RuntimeMethod g_skill_is_casting;
 RuntimeMethod g_skill_cast_end;
+RuntimeMethod g_skill_do_cast;
+RuntimeMethod g_skill_get_owner;
 RuntimeMethod g_buff_inst_id_getter;
 RuntimeMethod g_buff_attribute_get_value;
 RuntimeMethod g_buff_attribute_get_base_value;
 RuntimeMethod g_buff_blackboard_value_change;
 RuntimeMethod g_buff_modify_attributes;
+RuntimeMethod g_buff_max_stack_count;
 RuntimeMethod g_ability_attributes_getter;
 RuntimeMethod g_attributes_get_all_modifier_values;
-RuntimeMethod g_calculate_final_attribute_value;
 RuntimeMethod g_get_final_damage_scale;
 RuntimeMethod g_get_def_resistance_value;
 RuntimeMethod g_get_damage_type_resistance_value;
@@ -658,6 +762,13 @@ RuntimeField g_buff_attribute_mask;
 RuntimeField g_buff_blackboard;
 RuntimeField g_buff_damage_modifiers;
 RuntimeField g_buff_data;
+RuntimeField g_buff_enhance_count;
+RuntimeField g_buff_data_stacking;
+RuntimeField g_stacking_identifier_type;
+RuntimeField g_stacking_type;
+RuntimeField g_stacking_key;
+RuntimeField g_stacking_use_max_key;
+RuntimeField g_stacking_max_count;
 RuntimeField g_damage_modifier_owner;
 RuntimeField g_damage_modifier_data;
 RuntimeField g_pack_calc_result;
@@ -669,6 +780,13 @@ RuntimeField g_pack_defender_attributes;
 RuntimeField g_pack_attacker;
 RuntimeField g_pack_defender;
 RuntimeField g_pack_skill_cast_info;
+// 1.4.4 (2026-09-03) replaced DamagePackData.skillCastInfo with the
+// IActionEnvironment that produced the hit. Ability and Buff are the only
+// environments whose FillSkillCastInfo returns a real origin skill.
+RuntimeField g_pack_action_environment;
+RuntimeField g_ability_cast_origin_skill;
+const void* g_ability_class = nullptr;
+const void* g_buff_class = nullptr;
 RuntimeField g_pack_damage_type;
 RuntimeField g_pack_damage_decorate_mask;
 RuntimeField g_attributes_data_min;
@@ -680,6 +798,22 @@ RuntimeField g_attribute_modifier_modify_type;
 RuntimeField g_attribute_modifier_attribute_type;
 RuntimeField g_attribute_modifier_formula_item;
 RuntimeField g_attribute_modifier_param;
+// Live attribute modifier enumeration (Attributes.GetModifiers) and the
+// runtime zone taxonomy (DataManager.damageScaleProcessorConfig.allZones).
+RuntimeMethod g_attributes_get_modifiers;
+RuntimeField g_game_instance_data_manager;
+RuntimeMethod g_data_manager_damage_scale_config;
+RuntimeField g_scale_config_all_zones;
+RuntimeField g_scale_config_damage_type_zone_name;
+RuntimeField g_scale_config_ignite_zone_name;
+RuntimeField g_scale_config_skill_type_zone_name;
+RuntimeField g_scale_config_broken_unit_zone_name;
+RuntimeField g_scale_config_enhanced_zone_name;
+RuntimeField g_scale_config_vulnerable_zone_name;
+RuntimeField g_zone_name_field;
+RuntimeField g_zone_is_multiply;
+RuntimeField g_zone_merge_sides;
+RuntimeField g_zone_is_damage_type;
 RuntimeMethod g_game_instance_getter;
 RuntimeMethod g_char_info_getter;
 RuntimeMethod g_char_info_get_weapon;
@@ -726,6 +860,8 @@ bool g_rdps_value_contract_ready = false;
 bool g_rdps_flow_contract_ready = false;
 bool g_instant_attribute_contract_ready = false;
 bool g_arts_strength_contract_ready = false;
+bool g_live_modifier_contract_ready = false;
+bool g_zone_table_contract_ready = false;
 bool g_squad_contract_ready = false;
 bool g_dungeon_contract_ready = false;
 std::atomic_bool g_squad_snapshot_logged{false};
@@ -742,6 +878,7 @@ RecordCastSkillFn g_original_record_cast_skill = nullptr;
 RecordEndSkillFn g_original_record_end_skill = nullptr;
 RecordDodgeSuccessFn g_original_record_dodge_success = nullptr;
 SkillCastEndFn g_original_skill_cast_end = nullptr;
+SkillDoCastFn g_original_skill_do_cast = nullptr;
 BuffBlackboardChangedFn g_original_buff_blackboard_value_change = nullptr;
 BuffModifyAttributesFn g_original_buff_modify_attributes = nullptr;
 DamageModifierProcessFn g_original_damage_modifier_process = nullptr;
@@ -995,6 +1132,17 @@ bool ResolveRuntimeContract() {
     ResolveMethod(g_skill_cast_end, "skill.cast-end",
         "Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "Skill",
         "CastEnd", 3, "System.Void");
+    // Since the 2026-09-03 client MSVC inlines BattleRecorder.RecordCastSkill
+    // into its only caller, Skill.DoCast (+0xDF1), so the RecordCastSkill entry
+    // is never executed. DoCast is the committed-cast path and stays out of
+    // line; it is the preferred action-start source, RecordCastSkill the
+    // fallback for clients where DoCast cannot be resolved.
+    ResolveMethod(g_skill_do_cast, "skill.do-cast",
+        "Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "Skill",
+        "DoCast", 4, "System.Void");
+    ResolveMethod(g_skill_get_owner, "skill.get-owner",
+        "Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "Skill",
+        "get_owner", 0, "Beyond.Gameplay.Core.AbilitySystem");
     ResolveMethod(g_buff_inst_id_getter, "buff.get-inst-id",
         "Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "Buff", "get_buffInstId", 0,
         "System.UInt64");
@@ -1010,6 +1158,11 @@ bool ResolveRuntimeContract() {
     ResolveMethod(g_buff_modify_attributes, "buff.modify-attributes",
         "Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "Buff",
         "_ModifyAttributesModifier", 3, "System.Void");
+    // Resolves BuffStackingSettings.maxStackCntKey against the buff blackboard
+    // when useMaxStackCntKey is set, so it beats reading maxStackCnt directly.
+    ResolveMethod(g_buff_max_stack_count, "buff.get-max-stack-count",
+        "Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "Buff",
+        "get_maxStackCount", 0, "System.Int32");
     ResolveMethod(g_ability_attributes_getter, "ability.get-attributes",
         "Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "AbilitySystem",
         "get_attributes", 0, "Beyond.Gameplay.Core.Attributes");
@@ -1017,10 +1170,6 @@ bool ResolveRuntimeContract() {
         "attributes.get-all-modifier-values", "Gameplay.Beyond.dll",
         "Beyond.Gameplay.Core", "Attributes", "GetAllModifierValues", 1,
         "System.Double[]");
-    ResolveMethod(g_calculate_final_attribute_value,
-        "attributes-calculator.calculate-final", "Gameplay.Beyond.dll",
-        "Beyond.Gameplay", "AttributesCalculator", "_CalculateFinalAttribute", 11,
-        "System.Double");
     ResolveMethod(g_get_final_damage_scale, "damage-pack.get-final-damage-scale",
         "Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "DamagePackData",
         "_GetFinalDamageScale", 0, "System.Double");
@@ -1059,6 +1208,15 @@ bool ResolveRuntimeContract() {
         "action-blackboard.try-get-double", "Gameplay.Beyond.dll", "Beyond",
         "ActionBlackboard", "TryGetDouble", "System.String|System.Double&", 2,
         "System.Boolean");
+    // Returns HashSet<IAttributesModifier>; the generic return type name is
+    // not matched so the descriptor only pins class, name and arity.
+    ResolveMethod(g_attributes_get_modifiers, "attributes.get-modifiers",
+        "Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "Attributes",
+        "GetModifiers", 1, "");
+    ResolveMethod(g_data_manager_damage_scale_config,
+        "data-manager.get-damage-scale-config", "Gameplay.Beyond.dll",
+        "Beyond.Gameplay", "DataManager", "get_damageScaleProcessorConfig", 0,
+        "Beyond.Gameplay.Core.DamageScaleProcessorConfig");
     const char* assembly = "Gameplay.Beyond.dll";
     const char* namespc = "Beyond.Gameplay.Core";
     const char* klass = "BattleManager.BattleRecorder.DamageDetail";
@@ -1147,6 +1305,23 @@ bool ResolveRuntimeContract() {
         "Buff", "m_damageModifiers");
     ResolveField(g_buff_data, "buff.data", assembly, namespc,
         "Buff", "m_data");
+    // Stacking contract: BuffData.stackingSettings decides whether two live
+    // instances of the same buff id add up, replace each other, or fold into a
+    // single instance whose Buff.m_enhanceCnt carries the layer count.
+    ResolveField(g_buff_enhance_count, "buff.enhance-count", assembly, namespc,
+        "Buff", "m_enhanceCnt");
+    ResolveField(g_buff_data_stacking, "buff-data.stacking-settings", assembly,
+        namespc, "BuffData", "stackingSettings");
+    ResolveField(g_stacking_identifier_type, "buff-stacking.identifier-type",
+        assembly, namespc, "BuffStackingSettings", "identifierType");
+    ResolveField(g_stacking_type, "buff-stacking.type", assembly, namespc,
+        "BuffStackingSettings", "stackingType");
+    ResolveField(g_stacking_key, "buff-stacking.key", assembly, namespc,
+        "BuffStackingSettings", "stackingKey");
+    ResolveField(g_stacking_use_max_key, "buff-stacking.use-max-key", assembly,
+        namespc, "BuffStackingSettings", "useMaxStackCntKey");
+    ResolveField(g_stacking_max_count, "buff-stacking.max-count", assembly,
+        namespc, "BuffStackingSettings", "maxStackCnt");
     ResolveField(g_damage_modifier_owner, "damage-modifier.owner", assembly, namespc,
         "DamageModifier", "m_owner");
     ResolveField(g_damage_modifier_data, "damage-modifier.data", assembly, namespc,
@@ -1174,6 +1349,24 @@ bool ResolveRuntimeContract() {
     const bool pack_skill_cast_info_field = ResolveField(g_pack_skill_cast_info,
         "damage-pack.skill-cast-info", assembly, namespc, "DamagePackData",
         "skillCastInfo");
+    bool pack_origin_skill_available = pack_skill_cast_info_field;
+    // Buff's class pointer also classifies the elements of the live
+    // Attributes modifier sets, so it is needed on every client.
+    g_buff_class = ResolveClassInfo("buff.class", assembly, namespc, "Buff");
+    if (!pack_skill_cast_info_field) {
+        const bool pack_environment_field = ResolveField(g_pack_action_environment,
+            "damage-pack.action-environment", assembly, namespc, "DamagePackData",
+            "actionEnvironment");
+        const bool ability_origin_field = ResolveField(g_ability_cast_origin_skill,
+            "ability.cast-origin-skill", assembly, namespc, "Ability",
+            "castOriginSkill");
+        g_ability_class = ResolveClassInfo("ability.class", assembly, namespc,
+            "Ability");
+        pack_origin_skill_available = pack_environment_field &&
+            ability_origin_field && g_ability_class && g_buff_class;
+        Log(std::string("[combat-contract] damage-pack origin skill via ") +
+            (pack_origin_skill_available ? "actionEnvironment" : "<unavailable>"));
+    }
     const bool pack_damage_type_field = ResolveField(g_pack_damage_type,
         "damage-pack.damage-type", assembly, namespc, "DamagePackData", "damageType");
     const bool pack_damage_decorate_mask_field = ResolveField(
@@ -1203,6 +1396,46 @@ bool ResolveRuntimeContract() {
     const bool attribute_param_field = ResolveField(g_attribute_modifier_param,
         "attribute-modifier.param", assembly, "Beyond.Gameplay",
         "AttributeModifierData.AttributeModifier", "param");
+    const bool data_manager_field = ResolveField(g_game_instance_data_manager,
+        "game-instance.data-manager", assembly, "Beyond.Gameplay", "GameInstance",
+        "dataManager");
+    const bool all_zones_field = ResolveField(g_scale_config_all_zones,
+        "damage-scale-config.all-zones", assembly, namespc,
+        "DamageScaleProcessorConfig", "allZones");
+    const bool zone_role_fields =
+        ResolveField(g_scale_config_damage_type_zone_name,
+            "damage-scale-config.damage-type-zone", assembly, namespc,
+            "DamageScaleProcessorConfig", "damageTypeDamageIncreaseZoneName") &&
+        ResolveField(g_scale_config_ignite_zone_name,
+            "damage-scale-config.ignite-zone", assembly, namespc,
+            "DamageScaleProcessorConfig", "igniteDamageIncreaseZoneName") &&
+        ResolveField(g_scale_config_skill_type_zone_name,
+            "damage-scale-config.skill-type-zone", assembly, namespc,
+            "DamageScaleProcessorConfig", "skillTypeDamageIncreaseZoneName") &&
+        ResolveField(g_scale_config_broken_unit_zone_name,
+            "damage-scale-config.broken-unit-zone", assembly, namespc,
+            "DamageScaleProcessorConfig", "damageToBrokenUnitIncreaseZoneName") &&
+        ResolveField(g_scale_config_enhanced_zone_name,
+            "damage-scale-config.enhanced-zone", assembly, namespc,
+            "DamageScaleProcessorConfig", "damageEnhancedZoneName") &&
+        ResolveField(g_scale_config_vulnerable_zone_name,
+            "damage-scale-config.vulnerable-zone", assembly, namespc,
+            "DamageScaleProcessorConfig", "damageVulnerableZoneName");
+    const bool zone_fields =
+        ResolveField(g_zone_name_field, "damage-scale-zone.name", assembly, namespc,
+            "DamageScaleProcessorConfig.Zone", "name") &&
+        ResolveField(g_zone_is_multiply, "damage-scale-zone.is-multiply", assembly,
+            namespc, "DamageScaleProcessorConfig.Zone", "isMultiplyZone") &&
+        ResolveField(g_zone_merge_sides, "damage-scale-zone.merge-sides", assembly,
+            namespc, "DamageScaleProcessorConfig.Zone", "mergeAttackerAndDefender") &&
+        ResolveField(g_zone_is_damage_type, "damage-scale-zone.is-damage-type",
+            assembly, namespc, "DamageScaleProcessorConfig.Zone", "isDamageTypeZone");
+    g_zone_table_contract_ready = data_manager_field &&
+        g_data_manager_damage_scale_config.pointer && all_zones_field &&
+        zone_role_fields && zone_fields && g_host->field_get_value_object;
+    g_live_modifier_contract_ready = g_attributes_get_modifiers.pointer &&
+        g_buff_class && g_buff_inst_id_getter.pointer &&
+        g_buff_attribute_get_value.pointer && g_buff_attribute_get_base_value.pointer;
     g_modifier_contract_ready = shared_flags_field && delta_type_field && value_field &&
         real_delta_field && modifier_damage_type_field && modifier_mask_field;
     g_rdps_diagnostic_contract_ready = damage_pack_field &&
@@ -1211,11 +1444,14 @@ bool ResolveRuntimeContract() {
         handle_buff_field && handle_index_field && handle_processor_args_field;
     g_buff_diagnostic_contract_ready = g_buff_inst_id_getter.pointer && buff_id_field &&
         buff_owner_field && buff_source_field && buff_skill_field;
+    // AttributesCalculator._CalculateFinalAttribute is no longer called: the
+    // game passes 1+sum(multiplier) into it, so the module evaluates the
+    // verified formula itself (EvaluateAttribute) from GetAllModifierValues.
     g_buff_attribute_contract_ready = g_buff_diagnostic_contract_ready &&
         g_buff_attribute_get_value.pointer && g_buff_attribute_get_base_value.pointer &&
         buff_attribute_mask_field && g_ability_attributes_getter.pointer &&
         g_attributes_get_all_modifier_values.pointer &&
-        g_calculate_final_attribute_value.pointer && g_get_final_damage_scale.pointer &&
+        g_get_final_damage_scale.pointer &&
         g_get_def_resistance_value.pointer &&
         g_get_damage_type_resistance_value.pointer && pack_attacker_field &&
         pack_defender_field && pack_damage_type_field &&
@@ -1229,7 +1465,7 @@ bool ResolveRuntimeContract() {
     g_rdps_flow_contract_ready = g_rdps_value_contract_ready &&
         g_apply_damage_modifier.pointer && g_calculate_damage.pointer &&
         g_damage_pack_server_detail_getter.pointer && damage_pack_field &&
-        pack_skill_cast_info_field;
+        pack_origin_skill_available;
     g_instant_attribute_contract_ready = g_rdps_flow_contract_ready &&
         g_instant_attribute_process.pointer &&
         instant_target_side_field && instant_modifier_field &&
@@ -1262,6 +1498,10 @@ bool ResolveRuntimeContract() {
         (g_rdps_flow_contract_ready ? "ready" : "unavailable"));
     Log(std::string("[rdps-diag] instant attribute processor contract ") +
         (g_instant_attribute_contract_ready ? "ready" : "unavailable"));
+    Log(std::string("[rdps-diag] live attribute modifier contract ") +
+        (g_live_modifier_contract_ready ? "ready" : "unavailable"));
+    Log(std::string("[rdps-diag] damage zone table contract ") +
+        (g_zone_table_contract_ready ? "ready" : "unavailable"));
     if (!source_field || !ability_entity_field || !entity_name_field) {
         Log("[combat-contract] attacker labels unavailable; totals remain available");
     }
@@ -1347,20 +1587,22 @@ bool ResolveRuntimeContract() {
         "Gameplay.Beyond.dll", "Beyond.Gameplay", "SkillGroupLevelInfo", "maxLevel");
     ResolveField(g_skill_group_id, "skill-group.id",
         "Gameplay.Beyond.dll", "Beyond.Gameplay", "SkillGroupLevelInfo", "skillGroupId");
+    // ItemInstData / WeaponInstData / EquipInstData are nested types of
+    // Beyond.Gameplay.InventorySystem, not members of a namespace of that name.
     ResolveFieldWithOffsetFallback(g_item_inst_template_id, "item-inst.template-id",
-        "Gameplay.Beyond.dll", "Beyond.Gameplay.InventorySystem", "ItemInstData",
+        "Gameplay.Beyond.dll", "Beyond.Gameplay", "InventorySystem.ItemInstData",
         "templateId", 0x18);
     ResolveFieldWithOffsetFallback(g_weapon_level, "weapon-inst.level",
-        "Gameplay.Beyond.dll", "Beyond.Gameplay.InventorySystem", "WeaponInstData",
+        "Gameplay.Beyond.dll", "Beyond.Gameplay", "InventorySystem.WeaponInstData",
         "weaponLv", 0x38);
     ResolveFieldWithOffsetFallback(g_weapon_refine_level, "weapon-inst.refine-level",
-        "Gameplay.Beyond.dll", "Beyond.Gameplay.InventorySystem", "WeaponInstData",
+        "Gameplay.Beyond.dll", "Beyond.Gameplay", "InventorySystem.WeaponInstData",
         "refineLv", 0x3c);
     ResolveFieldWithOffsetFallback(g_weapon_breakthrough_level,
         "weapon-inst.breakthrough-level", "Gameplay.Beyond.dll",
-        "Beyond.Gameplay.InventorySystem", "WeaponInstData", "breakthroughLv", 0x40);
+        "Beyond.Gameplay", "InventorySystem.WeaponInstData", "breakthroughLv", 0x40);
     ResolveFieldWithOffsetFallback(g_equip_enhance_levels, "equip-inst.enhance-levels",
-        "Gameplay.Beyond.dll", "Beyond.Gameplay.InventorySystem", "EquipInstData",
+        "Gameplay.Beyond.dll", "Beyond.Gameplay", "InventorySystem.EquipInstData",
         "enhanceAttrLevels", 0x38);
     ResolveField(g_game_player_dungeon_manager, "game-player.dungeon-manager",
         "Gameplay.Beyond.dll", "Beyond.Gameplay", "GamePlayer", "dungeonManager");
@@ -1659,6 +1901,52 @@ void* ManagedListElement(void* list, int32_t index) {
     }
 }
 
+int32_t ReadBuffMaxStackCount(void* buff) {
+    if (!buff || !g_buff_max_stack_count.pointer) return 0;
+    __try {
+        return reinterpret_cast<Int32GetterFn>(g_buff_max_stack_count.pointer)(
+            buff, const_cast<void*>(g_buff_max_stack_count.method_info));
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return 0;
+    }
+}
+
+// Buff.get_maxStackCount already folds in the blackboard override, so
+// maxStackCnt is only the fallback when the getter is unavailable.
+BuffStackingInfo CaptureBuffStackingInfo(void* buff, void* buff_data) {
+    BuffStackingInfo info;
+    void* settings = nullptr;
+    if (!buff_data || !ReadValue(buff_data, g_buff_data_stacking, settings) ||
+        !settings) {
+        return info;
+    }
+    int16_t type = -1;
+    if (!ReadValue(settings, g_stacking_type, type)) return info;
+    info.resolved = true;
+    info.type = type;
+    uint8_t identifier = 0;
+    if (ReadValue(settings, g_stacking_identifier_type, identifier)) {
+        info.keyed = identifier != 0;
+    }
+    void* key = nullptr;
+    if (ReadValue(settings, g_stacking_key, key) && key) {
+        info.key = CopyString(key);
+    }
+    info.max_stack = ReadBuffMaxStackCount(buff);
+    if (info.max_stack <= 0) {
+        bool use_key = false;
+        int32_t configured = 0;
+        if (!ReadValue(settings, g_stacking_use_max_key, use_key) || !use_key) {
+            if (ReadValue(settings, g_stacking_max_count, configured)) {
+                info.max_stack = configured;
+            }
+        }
+    }
+    ReadValue(buff, g_buff_enhance_count, info.enhance_count);
+    return info;
+}
+
 BuffDiagnosticInfo CaptureBuffDiagnosticInfo(void* buff) {
     BuffDiagnosticInfo result;
     if (!buff) return result;
@@ -1676,6 +1964,7 @@ BuffDiagnosticInfo CaptureBuffDiagnosticInfo(void* buff) {
     result.owner = ResolveAbilityName(owner);
     ReadValue(buff, g_buff_blackboard, result.blackboard);
     ReadValue(buff, g_buff_data, result.buff_data);
+    result.stacking = CaptureBuffStackingInfo(buff, result.buff_data);
     result.has_arts_strength_points = TryReadArtsStrengthPoints(
         result.blackboard, result.buff_id, result.arts_strength_points);
     if (g_buff_skill_cast_info.resolved) {
@@ -2151,6 +2440,26 @@ bool IsIdentityScalar(double value) {
     return std::isfinite(value) && std::abs(value - 1.0) <= 1.0e-10;
 }
 
+// AttributeContribution carries one double per ModifierType slot, and its
+// members are declared in ordinal order: GetValue fills 0-3, GetBaseValue
+// fills the base_* half, 4-7.
+std::array<double, kModifierSlotCount> ContributionSlots(
+    const BuffDiagnosticInfo::AttributeContribution& contribution) {
+    return {contribution.addition, contribution.multiplier,
+        contribution.final_addition, contribution.final_scalar,
+        contribution.base_addition, contribution.base_multiplier,
+        contribution.base_final_addition, contribution.base_final_scalar};
+}
+
+// The attribute formula is base = ((raw + [4]) x (1 + [5]) + [6]) x [7], and
+// final applies [0]-[3] the same way, so slots 3 and 7 multiply directly and
+// are neutral at 1 while every other slot adds and is neutral at 0.
+bool IsSlotIdentity(size_t slot, double value) {
+    if (!std::isfinite(value)) return true;
+    return slot == 3 || slot == 7 ? IsIdentityScalar(value)
+                                  : std::abs(value) <= 1.0e-10;
+}
+
 bool HasAttributeContribution(
     const BuffDiagnosticInfo::AttributeContribution& value) {
     return std::isfinite(value.addition) && std::isfinite(value.multiplier) &&
@@ -2216,6 +2525,9 @@ CaptureBuffAttributeContributions(void* buff) {
     return result;
 }
 
+void TrackBuffNominalEffects(uint64_t inst_id,
+    const std::vector<BuffDiagnosticInfo::AttributeContribution>& contributions);
+
 void RefreshActiveBuffAttributeContributions(void* buff) {
     if (!buff || (!g_buff_attribute_contract_ready &&
         !g_arts_strength_contract_ready)) return;
@@ -2235,15 +2547,23 @@ void RefreshActiveBuffAttributeContributions(void* buff) {
     double arts_strength_points = 0.0;
     const bool has_arts_strength_points = TryReadArtsStrengthPoints(
         blackboard, buff_id, arts_strength_points);
-    std::scoped_lock lock(g_buff_diagnostic_mutex);
-    const auto found = g_buff_diagnostic_map.find(inst_id);
-    if (found != g_buff_diagnostic_map.end()) {
-        if (g_buff_attribute_contract_ready) {
-            found->second.attribute_contributions = std::move(contributions);
+    // The session lock is taken after this scope closes, never inside it: the
+    // damage path already holds the diagnostic lock in places, so nesting the
+    // two in opposite orders would be a deadlock waiting for a busy fight.
+    {
+        std::scoped_lock lock(g_buff_diagnostic_mutex);
+        const auto found = g_buff_diagnostic_map.find(inst_id);
+        if (found != g_buff_diagnostic_map.end()) {
+            if (g_buff_attribute_contract_ready) {
+                found->second.attribute_contributions = contributions;
+            }
+            found->second.blackboard = blackboard;
+            found->second.arts_strength_points = arts_strength_points;
+            found->second.has_arts_strength_points = has_arts_strength_points;
         }
-        found->second.blackboard = blackboard;
-        found->second.arts_strength_points = arts_strength_points;
-        found->second.has_arts_strength_points = has_arts_strength_points;
+    }
+    if (g_buff_attribute_contract_ready) {
+        TrackBuffNominalEffects(inst_id, contributions);
     }
 }
 
@@ -2353,26 +2673,184 @@ struct NumericHookContext {
 thread_local NumericHookContext g_numeric_hook_context;
 thread_local int32_t g_damage_processor_timing = -1;
 
-struct RdpsModifierSample {
-    uint64_t buff_inst_id = 0;
-    int32_t side = -1;
-    uint32_t zone_index = 0;
-    double delta = 0.0;
-    RdpsContributionKind kind = RdpsContributionKind::Other;
-    SemanticZone semantic_zone = SemanticZone::Unknown;
-    SemanticStatus semantic_status = SemanticStatus::Unknown;
-    char buff_id[192]{};
-    char source[160]{};
-};
-
+// One InstantModifyAttribute processor run inside the flow: the pack's
+// attribute arrays before/after, reduced to a damage factor by the hit model.
 struct RdpsFactorSample {
     uint64_t buff_inst_id = 0;
     double multiplier = 1.0;
+    int32_t attribute_type = -1;
+    int32_t side = -1;
     RdpsContributionKind kind = RdpsContributionKind::Other;
-    SemanticZone semantic_zone = SemanticZone::Unknown;
     char buff_id[192]{};
     char source[160]{};
+    char owner[160]{};
 };
+
+// Zone taxonomy read from DamageScaleProcessorConfig at runtime. A zone can
+// carry several roles: _GetDamageScale adds the damage-type, ignite,
+// skill-type and broken-unit attribute increases into whichever zones the
+// config names, and they may all be the same zone.
+enum class ZoneRole : uint8_t {
+    None = 0,
+    DamageType = 1,
+    Ignite = 2,
+    SkillType = 3,
+    BrokenUnit = 4,
+    Enhanced = 5,
+    Vulnerable = 6,
+};
+constexpr size_t kZoneRoleCount = 7;
+
+constexpr uint8_t ZoneRoleBit(ZoneRole role) {
+    return static_cast<uint8_t>(1u << static_cast<uint8_t>(role));
+}
+
+struct ZoneInfo {
+    std::string name;
+    bool multiply = false;
+    bool merge_sides = false;
+    bool damage_type_zone = false;
+    uint8_t roles = 0;
+};
+
+struct ZoneTable {
+    bool ready = false;
+    bool attempted = false;
+    void* config = nullptr;
+    std::vector<ZoneInfo> zones;
+    std::array<int32_t, kZoneRoleCount> role_index{};
+};
+
+std::mutex g_zone_table_mutex;
+ZoneTable g_zone_table;
+
+// Per-hit evidence ledger: every zone write and every live attribute modifier
+// that shaped the pack, external or not, catalogued or not. Attribution runs
+// on top of it (LedgerContributor) and can be re-run offline.
+struct LedgerZoneWrite {
+    uint64_t buff_inst_id = 0;
+    int32_t side = -1;
+    uint32_t zone_index = 0;
+    double before = 0.0;
+    double after = 0.0;
+    bool external = false;
+    SemanticStatus status = SemanticStatus::Unknown;
+    std::string buff_id;
+    std::string source;
+    std::string owner;
+    std::string zone_name;
+};
+
+struct LedgerAttributeGroup {
+    int32_t side = -1;
+    int32_t attribute_type = -1;
+    std::array<double, kAttributeModifierValueCount> values{};
+    double minimum = 0.0;
+    double maximum = 0.0;
+    double full_value = 0.0;
+    double pack_value = 0.0;
+    bool pack_value_ok = false;
+    // Attributes.GetModifiers(type) contents: Buff objects versus the
+    // equipment / potential / talent / weapon modifiers that are not buffs.
+    bool live_enumerated = false;
+    uint32_t live_buffs = 0;
+    uint32_t other_modifiers = 0;
+};
+
+struct LedgerAttributeWrite {
+    uint64_t buff_inst_id = 0;
+    int32_t side = -1;
+    int32_t attribute_type = -1;
+    bool external = false;
+    SemanticStatus status = SemanticStatus::Unknown;
+    std::string buff_id;
+    std::string source;
+    std::string owner;
+    BuffDiagnosticInfo::AttributeContribution contribution{};
+    double without_value = 0.0;
+    bool without_ok = false;
+};
+
+enum class RdpsMechanism : uint8_t {
+    ZoneWrite = 0,
+    Attribute = 1,
+    InstantModifier = 2,
+    ArtsStrength = 3,
+};
+
+// One (buff, mechanism, location) that changed this hit's damage. factor is
+// damage_without / damage_with from the hit model; fraction is the share of
+// the hit credited to the buff's source once all external factors are
+// allocated in log space.
+struct LedgerContributor {
+    uint64_t buff_inst_id = 0;
+    std::string buff_id;
+    std::string source;
+    std::string owner;
+    RdpsContributionKind kind = RdpsContributionKind::Other;
+    RdpsMechanism mechanism = RdpsMechanism::ZoneWrite;
+    SemanticStatus status = SemanticStatus::Unknown;
+    int32_t side = -1;
+    int32_t attribute_type = -1;
+    int32_t zone_index = -1;
+    double factor = 1.0;
+    double fraction = 0.0;
+    bool external = false;
+    bool excluded = false;
+};
+
+// The BattleFormula.CalculateDamage inputs for one hit, read from the pack
+// after the game finished with it:
+//   damage = calcResult * prod(zones) * weakness * (1 + critDmg if crit)
+//            * defRes * (1 - shelter) * max(0, typeRes) [* ignite]
+struct HitFactors {
+    bool valid = false;
+    double attack = 0.0;
+    bool attack_linked = false;
+    double zone_product = 1.0;
+    double defense = 0.0;
+    double def_resistance = 1.0;
+    bool def_resistance_ok = false;
+    double type_resistance = 1.0;
+    bool type_resistance_ok = false;
+    bool critical = false;
+    double crit_rate = 0.0;
+    double crit_damage = 0.0;
+    double weakness = 1.0;
+    double shelter = 0.0;
+    double ignite = 1.0;
+    bool ignite_applies = false;
+};
+
+struct HitLedger {
+    std::string origin_skill;
+    double calc_result = 0.0;
+    float atk_scale = 0.0f;
+    std::vector<double> attacker_zones;
+    std::vector<double> defender_zones;
+    std::vector<LedgerZoneWrite> zone_writes;
+    std::vector<LedgerAttributeGroup> attribute_groups;
+    std::vector<LedgerAttributeWrite> attribute_writes;
+    std::vector<LedgerContributor> contributors;
+    HitFactors factors;
+    // 1 - prod(external factors): the part of the hit created by teammates.
+    double external_fraction = 0.0;
+    // Same for the attacker's own buffs; informational only.
+    double self_fraction = 0.0;
+    // Buffs in the lifecycle map owned by attacker/defender that expose
+    // attribute contributions but were absent from every live modifier set:
+    // finished or displaced instances the recorder never reported.
+    uint32_t stale_map_buffs = 0;
+    uint32_t zone_writes_dropped = 0;
+};
+
+constexpr size_t kMaxLedgerZoneWrites = 64;
+constexpr size_t kMaxLedgerZoneIndices = 16;
+
+// Zone array index -> zone name, learned from ModifyDamageScaleZone calls whose
+// effect on the pack arrays is unambiguous. Cross-checks the config table.
+std::mutex g_zone_name_mutex;
+std::array<std::array<std::string, kMaxLedgerZoneIndices>, 2> g_zone_names;
 
 struct DamageFlowContext {
     bool active = false;
@@ -2389,10 +2867,10 @@ struct DamageFlowContext {
     char defender_name[160]{};
     char origin_skill[192]{};
     double calculated_damage = 0.0;
-    uint8_t modifier_count = 0;
     uint8_t factor_count = 0;
-    std::array<RdpsModifierSample, kMaxRdpsModifiersPerHit> modifiers{};
     std::array<RdpsFactorSample, kMaxRdpsModifiersPerHit> factors{};
+    std::vector<LedgerZoneWrite> ledger_zone_writes;
+    uint32_t ledger_zone_writes_dropped = 0;
 };
 
 thread_local DamageFlowContext g_damage_flow_context;
@@ -2404,10 +2882,47 @@ struct CompletedDamageFlow {
     double calculated_damage = 0.0;
     uint8_t rdps_share_count = 0;
     std::array<RdpsShare, kMaxRdpsSourcesPerHit> rdps_shares{};
+    std::shared_ptr<HitLedger> ledger;
 };
 
 thread_local std::deque<CompletedDamageFlow> g_completed_damage_flows;
 constexpr size_t kCompletedDamageFlowCapacity = 64;
+
+// Mirrors IActionEnvironment.FillSkillCastInfo for the two environments that
+// carry an origin skill: Ability copies castOriginSkill, Buff copies its own
+// skillCastInfo. Every other environment (GlobalBuff, ComboSkillEnvironment,
+// SkillHighlightEnvironment) inherits the interface default and yields none.
+std::string ResolveSkillIdFromActionEnvironment(void* environment) {
+    if (!environment) return {};
+    const void* klass = ReadObjectClass(environment);
+    if (!klass) return {};
+    if (klass == g_ability_class) {
+        void* skill = nullptr;
+        if (!ReadValue(environment, g_ability_cast_origin_skill, skill) || !skill) {
+            return {};
+        }
+        void* id = nullptr;
+        if (!ReadValue(skill, g_skill_id, id) || !id) return {};
+        return CopyString(id);
+    }
+    if (klass == g_buff_class) {
+        return ResolveSkillIdFromCastInfo(
+            EmbeddedValueType(environment, g_buff_skill_cast_info));
+    }
+    return {};
+}
+
+std::string ResolveSkillIdFromPack(void* pack_data) {
+    if (g_pack_skill_cast_info.resolved) {
+        return ResolveSkillIdFromCastInfo(
+            EmbeddedValueType(pack_data, g_pack_skill_cast_info));
+    }
+    void* environment = nullptr;
+    if (!ReadValueTypeField(pack_data, g_pack_action_environment, environment)) {
+        return {};
+    }
+    return ResolveSkillIdFromActionEnvironment(environment);
+}
 
 void BeginDamageFlow(void* pack_data) {
     g_damage_flow_context = {};
@@ -2427,8 +2942,7 @@ void BeginDamageFlow(void* pack_data) {
         g_damage_flow_context.attacker_ability);
     const std::string defender_name = ResolveAbilityName(
         g_damage_flow_context.defender_ability);
-    const std::string origin_skill = ResolveSkillIdFromCastInfo(
-        EmbeddedValueType(pack_data, g_pack_skill_cast_info));
+    const std::string origin_skill = ResolveSkillIdFromPack(pack_data);
     std::snprintf(g_damage_flow_context.attacker_name,
         sizeof(g_damage_flow_context.attacker_name), "%s", attacker_name.c_str());
     std::snprintf(g_damage_flow_context.defender_name,
@@ -2761,15 +3275,118 @@ const DoubleArraySnapshot* RdpsZoneArray(
     return nullptr;
 }
 
-SemanticZone RuntimeSemanticZone(int32_t side, uint32_t index) {
-    if (side == 0) {
-        if (index == 1) return SemanticZone::DamageIncrease;
-        if (index == 3) return SemanticZone::Amplification;
-        if (index == 4) return SemanticZone::Combo;
-    } else if (side == 1) {
-        if (index == 1) return SemanticZone::VulnerabilityTaken;
-        if (index == 5) return SemanticZone::Fragile;
+void* ReadStaticObjectField(const RuntimeField& field) {
+    if (!field.resolved || !field.value.field_info || !g_host ||
+        !g_host->field_get_value_object) {
+        return nullptr;
     }
+    __try {
+        return g_host->field_get_value_object(g_host->context,
+            field.value.field_info, nullptr);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return nullptr;
+    }
+}
+
+void* CallObjectGetter(const RuntimeMethod& method, void* instance) {
+    if (!method.pointer || !instance) return nullptr;
+    __try {
+        return reinterpret_cast<ObjectGetterFn>(method.pointer)(
+            instance, const_cast<void*>(method.method_info));
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return nullptr;
+    }
+}
+
+// Builds the zone table from DataManager.damageScaleProcessorConfig. allZones
+// order is the zone array index (GetZoneIndex); the six named zones tell which
+// attribute increases _GetDamageScale folds into which index.
+void EnsureZoneTable() {
+    if (!g_zone_table_contract_ready) return;
+    std::scoped_lock lock(g_zone_table_mutex);
+    if (g_zone_table.ready) return;
+    void* data_manager = ReadStaticObjectField(g_game_instance_data_manager);
+    void* config = CallObjectGetter(g_data_manager_damage_scale_config, data_manager);
+    if (!config) {
+        if (!g_zone_table.attempted) {
+            Log("[rdps-zones] damageScaleProcessorConfig unavailable yet");
+            g_zone_table.attempted = true;
+        }
+        return;
+    }
+    void* all_zones = nullptr;
+    if (!ReadValue(config, g_scale_config_all_zones, all_zones) || !all_zones) return;
+    const int32_t count = ManagedListCount(all_zones);
+    if (count <= 0 || count > static_cast<int32_t>(kMaxLedgerZoneIndices)) {
+        Log("[rdps-zones] unexpected allZones count=" + std::to_string(count));
+        return;
+    }
+    ZoneTable table;
+    table.config = config;
+    table.role_index.fill(-1);
+    table.zones.resize(static_cast<size_t>(count));
+    for (int32_t index = 0; index < count; ++index) {
+        void* zone = ManagedListElement(all_zones, index);
+        ZoneInfo& info = table.zones[static_cast<size_t>(index)];
+        if (!zone) continue;
+        void* name = nullptr;
+        ReadValue(zone, g_zone_name_field, name);
+        info.name = CopyString(name);
+        ReadValue(zone, g_zone_is_multiply, info.multiply);
+        ReadValue(zone, g_zone_merge_sides, info.merge_sides);
+        ReadValue(zone, g_zone_is_damage_type, info.damage_type_zone);
+    }
+    const auto assign_role = [&](const RuntimeField& field, ZoneRole role) {
+        void* name = nullptr;
+        if (!ReadValue(config, field, name) || !name) return;
+        const std::string text = CopyString(name);
+        if (text.empty()) return;
+        for (size_t index = 0; index < table.zones.size(); ++index) {
+            if (_stricmp(table.zones[index].name.c_str(), text.c_str()) != 0) continue;
+            table.zones[index].roles |= ZoneRoleBit(role);
+            table.role_index[static_cast<size_t>(role)] = static_cast<int32_t>(index);
+            return;
+        }
+        Log("[rdps-zones] role zone not in allZones: " + text);
+    };
+    assign_role(g_scale_config_damage_type_zone_name, ZoneRole::DamageType);
+    assign_role(g_scale_config_ignite_zone_name, ZoneRole::Ignite);
+    assign_role(g_scale_config_skill_type_zone_name, ZoneRole::SkillType);
+    assign_role(g_scale_config_broken_unit_zone_name, ZoneRole::BrokenUnit);
+    assign_role(g_scale_config_enhanced_zone_name, ZoneRole::Enhanced);
+    assign_role(g_scale_config_vulnerable_zone_name, ZoneRole::Vulnerable);
+    table.ready = true;
+    std::ostringstream summary;
+    summary << "[rdps-zones] table ready zones=" << table.zones.size();
+    for (size_t index = 0; index < table.zones.size(); ++index) {
+        const ZoneInfo& info = table.zones[index];
+        summary << " [" << index << "]=" << info.name
+            << (info.multiply ? "*" : "+") << (info.merge_sides ? "M" : "")
+            << (info.damage_type_zone ? "T" : "") << "/roles=" << int(info.roles);
+    }
+    Log(summary.str());
+    g_zone_table = std::move(table);
+}
+
+ZoneTable ZoneTableSnapshot() {
+    std::scoped_lock lock(g_zone_table_mutex);
+    return g_zone_table;
+}
+
+// Semantic zone used for catalogue audit only: roles from the config table;
+// an unnamed zone is generic damage increase on the attacker side and generic
+// damage taken on the defender side.
+SemanticZone RuntimeSemanticZone(int32_t side, uint32_t index) {
+    const ZoneTable table = ZoneTableSnapshot();
+    if (table.ready && index < table.zones.size()) {
+        const uint8_t roles = table.zones[index].roles;
+        if (roles & ZoneRoleBit(ZoneRole::Enhanced)) return SemanticZone::Amplification;
+        if (roles & ZoneRoleBit(ZoneRole::Vulnerable)) return SemanticZone::Fragile;
+    }
+    if (side == 0) return SemanticZone::DamageIncrease;
+    if (side == 1) return SemanticZone::VulnerabilityTaken;
     return SemanticZone::Unknown;
 }
 
@@ -2831,7 +3448,9 @@ const char* SemanticStatusId(SemanticStatus status) {
 
 void RecordSemanticResolution(const SemanticResolution& resolution,
     std::string_view buff_id = {},
-    SemanticZone observed_zone = SemanticZone::Unknown) {
+    SemanticZone observed_zone = SemanticZone::Unknown,
+    int32_t side = -1, int32_t zone_index = -1,
+    std::string_view source = {}) {
     g_semantic_observed.fetch_add(1, std::memory_order_relaxed);
     switch (resolution.status) {
     case SemanticStatus::Verified:
@@ -2854,14 +3473,16 @@ void RecordSemanticResolution(const SemanticResolution& resolution,
     if (resolution.status == SemanticStatus::Verified || buff_id.empty()) return;
     const std::string key = std::string(SemanticStatusId(resolution.status)) +
         "|" + CombatSemanticCatalog::ZoneId(observed_zone) + "|" +
-        std::string(buff_id) + (resolution.element_mismatch ? "|element" : "");
+        std::to_string(side) + ":" + std::to_string(zone_index) + "|" +
+        std::string(buff_id) + "|" + std::string(source) +
+        (resolution.element_mismatch ? "|element" : "");
     std::scoped_lock lock(g_semantic_audit_mutex);
     const auto found = g_semantic_audit.find(key);
     if (found != g_semantic_audit.end()) {
         ++found->second.count;
         return;
     }
-    constexpr size_t kMaxSemanticAuditItems = 256;
+    constexpr size_t kMaxSemanticAuditItems = 512;
     if (g_semantic_audit.size() >= kMaxSemanticAuditItems) {
         g_semantic_unresolved_dropped.fetch_add(1, std::memory_order_relaxed);
         return;
@@ -2870,54 +3491,98 @@ void RecordSemanticResolution(const SemanticResolution& resolution,
     item.buff_id = buff_id;
     item.status = resolution.status;
     item.observed_zone = observed_zone;
+    item.side = side;
+    item.zone_index = zone_index;
+    item.source = NormalizeAttackerId(std::string(source));
     item.count = 1;
     item.element_mismatch = resolution.element_mismatch;
     g_semantic_audit.emplace(key, std::move(item));
 }
 
-void CaptureRdpsModifierSamples(const DamagePackNumericSnapshot& before,
+void LearnZoneName(int32_t side, uint32_t index, std::string_view name) {
+    if (side < 0 || side > 1 || index >= kMaxLedgerZoneIndices || name.empty()) return;
+    {
+        std::scoped_lock lock(g_zone_name_mutex);
+        std::string& slot = g_zone_names[static_cast<size_t>(side)][index];
+        if (!slot.empty()) return;
+        slot = std::string(name);
+    }
+    // Cross-check the observed write against the config table's index order.
+    const ZoneTable table = ZoneTableSnapshot();
+    if (table.ready && index < table.zones.size() &&
+        _stricmp(table.zones[index].name.c_str(), std::string(name).c_str()) != 0) {
+        Log("[rdps-zones] observed zone name mismatch index=" + std::to_string(index) +
+            " observed=" + std::string(name) + " table=" + table.zones[index].name);
+    }
+}
+
+std::string ZoneNameFor(int32_t side, uint32_t index) {
+    if (side < 0 || side > 1 || index >= kMaxLedgerZoneIndices) return {};
+    std::scoped_lock lock(g_zone_name_mutex);
+    return g_zone_names[static_cast<size_t>(side)][index];
+}
+
+// Records every zone delta one DamageModifier produced on the pack, with the
+// ModifyDamageScaleZone call name when the write is unambiguous on that side.
+void CaptureLedgerZoneWrites(const DamagePackNumericSnapshot& before,
     const DamagePackNumericSnapshot& after, const BuffDiagnosticInfo& buff,
-    uint64_t buff_inst_id) {
-    if (!g_damage_flow_context.active || !IsExternalDamageSource(buff)) return;
+    uint64_t buff_inst_id, const NumericHookContext& calls) {
+    if (!g_damage_flow_context.active) return;
+    const bool external = IsExternalDamageSource(buff);
+    const std::string_view credited = CreditedBuffSource(buff);
     const auto capture = [&](int32_t side, const DoubleArraySnapshot& left,
         const DoubleArraySnapshot& right) {
         if (!left.valid || !right.valid) return;
         const size_t limit = std::min<size_t>(
             std::min(left.count, right.count), kRdpsArraySampleCapacity);
+        uint32_t changed_on_side = 0;
+        uint32_t changed_index = 0;
         for (size_t index = 0; index < limit; ++index) {
             const double delta = right.values[index] - left.values[index];
-            if (!std::isfinite(delta) || delta <= 1.0e-9 ||
-                g_damage_flow_context.modifier_count >=
-                    g_damage_flow_context.modifiers.size()) {
+            if (!std::isfinite(delta) || std::abs(delta) <= 1.0e-9) continue;
+            ++changed_on_side;
+            changed_index = static_cast<uint32_t>(index);
+        }
+        uint32_t calls_on_side = 0;
+        const char* call_name = nullptr;
+        for (uint32_t call = 0; call < calls.zone_count; ++call) {
+            if (calls.zones[call].side != side) continue;
+            ++calls_on_side;
+            call_name = calls.zones[call].name;
+        }
+        if (changed_on_side == 1 && calls_on_side == 1 && call_name) {
+            LearnZoneName(side, changed_index, call_name);
+        }
+        for (size_t index = 0; index < limit; ++index) {
+            const double delta = right.values[index] - left.values[index];
+            if (!std::isfinite(delta) || std::abs(delta) <= 1.0e-9) continue;
+            if (g_damage_flow_context.ledger_zone_writes.size() >= kMaxLedgerZoneWrites) {
+                ++g_damage_flow_context.ledger_zone_writes_dropped;
                 continue;
             }
-            const SemanticZone zone = RuntimeSemanticZone(
-                side, static_cast<uint32_t>(index));
-            if (zone == SemanticZone::Unknown) {
-                RecordSemanticResolution({}, buff.buff_id, zone);
-                continue;
-            }
+            LedgerZoneWrite write;
+            write.buff_inst_id = buff_inst_id;
+            write.side = side;
+            write.zone_index = static_cast<uint32_t>(index);
+            write.before = left.values[index];
+            write.after = right.values[index];
+            write.external = external;
+            const SemanticZone zone = RuntimeSemanticZone(side, write.zone_index);
             const SemanticResolution resolution = ResolveBuffSemantic(
                 buff.buff_id, zone, g_damage_flow_context.damage_type);
-            RecordSemanticResolution(resolution, buff.buff_id, zone);
-            if (resolution.status != SemanticStatus::Verified ||
-                resolution.zone == SemanticZone::Unknown) {
-                continue;
+            write.status = resolution.status;
+            if (external) {
+                RecordSemanticResolution(resolution, buff.buff_id, zone, side,
+                    static_cast<int32_t>(index), credited);
             }
-            RdpsModifierSample& sample = g_damage_flow_context.modifiers[
-                g_damage_flow_context.modifier_count++];
-            sample.buff_inst_id = buff_inst_id;
-            sample.side = side;
-            sample.zone_index = static_cast<uint32_t>(index);
-            sample.delta = delta;
-            sample.semantic_zone = resolution.zone;
-            sample.semantic_status = resolution.status;
-            sample.kind = ContributionKindForZone(resolution.zone);
-            std::snprintf(sample.buff_id, sizeof(sample.buff_id), "%s",
-                buff.buff_id.c_str());
-            const std::string_view credited_source = CreditedBuffSource(buff);
-            std::snprintf(sample.source, sizeof(sample.source), "%.*s",
-                static_cast<int>(credited_source.size()), credited_source.data());
+            write.buff_id = buff.buff_id;
+            write.source = NormalizeAttackerId(std::string(credited));
+            write.owner = NormalizeAttackerId(buff.owner);
+            write.zone_name = ZoneNameFor(side, write.zone_index);
+            if (write.zone_name.empty() && changed_on_side == 1 && call_name) {
+                write.zone_name = call_name;
+            }
+            g_damage_flow_context.ledger_zone_writes.push_back(std::move(write));
         }
     };
     capture(0, before.attacker_zones, after.attacker_zones);
@@ -2928,34 +3593,6 @@ struct AttributeAggregate {
     std::array<double, kAttributeModifierValueCount> values{};
     double minimum = -std::numeric_limits<double>::max();
     double maximum = std::numeric_limits<double>::max();
-};
-
-struct AttributeSimulationGroup {
-    int32_t side = -1;
-    int32_t attribute_type = -1;
-    void* ability = nullptr;
-    SemanticZone zone = SemanticZone::Unknown;
-    double full_value = 0.0;
-    AttributeAggregate full{};
-};
-
-struct ActiveAttributeBuff {
-    uint64_t inst_id = 0;
-    std::string source;
-    std::string buff_id;
-    int32_t side = -1;
-    RdpsContributionKind kind = RdpsContributionKind::Other;
-    SemanticZone zone = SemanticZone::Unknown;
-    std::vector<BuffDiagnosticInfo::AttributeContribution> contributions;
-};
-
-struct PersistentAttributeContributor {
-    uint64_t inst_id = 0;
-    std::string source;
-    std::string buff_id;
-    SemanticZone zone = SemanticZone::Unknown;
-    RdpsContributionKind kind = RdpsContributionKind::Other;
-    double rate = 0.0;
 };
 
 struct ArtsStrengthContributor {
@@ -2973,24 +3610,46 @@ struct ArtsStrengthEvidence {
 void MarkBuffIntervalRelevant(uint64_t inst_id, RdpsContributionKind kind,
     double effect_value = 0.0,
     BuffEffectKind effect_kind = BuffEffectKind::None);
+void TrackBuffStart(uint64_t inst_id, const BuffDiagnosticInfo& info,
+    double forced_start = -1.0);
+void TrackBuffEnhanceCount(uint64_t inst_id, int32_t enhance_count);
+void TrackBuffNominalSample(uint64_t inst_id, int32_t attribute_type,
+    int32_t slot, double value);
+void TrackBuffNominalContribution(uint64_t inst_id,
+    const BuffDiagnosticInfo::AttributeContribution& contribution);
 
 RdpsContributionKind ClassifyAttributeContribution(int32_t side,
     int32_t attribute_type) {
-    if (side == 0 && attribute_type == 2) return RdpsContributionKind::Attack;
-    if (side == 0 && (attribute_type == 17 || attribute_type == 28 ||
-        attribute_type == 32 || attribute_type == 33 ||
-        (attribute_type >= 50 && attribute_type <= 54))) {
-        return RdpsContributionKind::DamageIncrease;
+    if (side == 0) {
+        if (attribute_type == 2) return RdpsContributionKind::Attack;
+        if (attribute_type == 17 || attribute_type == 28 ||
+            attribute_type == 32 || attribute_type == 33 ||
+            attribute_type == 61 ||
+            (attribute_type >= 50 && attribute_type <= 55)) {
+            return RdpsContributionKind::DamageIncrease;
+        }
+        if (attribute_type == 49 ||
+            (attribute_type >= 35 && attribute_type <= 38)) {
+            return RdpsContributionKind::AbnormalIncrease;
+        }
+        if (attribute_type >= 64 && attribute_type <= 69) {
+            return RdpsContributionKind::Amplification;
+        }
+        if (attribute_type == 9 || attribute_type == 10) {
+            return RdpsContributionKind::Critical;
+        }
+        return RdpsContributionKind::Other;
     }
-    if (side == 0 && attribute_type >= 65 && attribute_type <= 68) {
-        return RdpsContributionKind::Amplification;
-    }
-    if ((attribute_type >= 70 && attribute_type <= 74) ||
+    if ((attribute_type >= 70 && attribute_type <= 75) ||
         (attribute_type >= 80 && attribute_type <= 85)) {
         return RdpsContributionKind::Fragile;
     }
-    if (side == 1 && (attribute_type == 3 ||
-        (attribute_type >= 94 && attribute_type <= 99))) {
+    if (attribute_type == 4 || attribute_type == 5 || attribute_type == 6 ||
+        attribute_type == 7 || attribute_type == 48 || attribute_type == 60) {
+        return RdpsContributionKind::VulnerabilityTaken;
+    }
+    if (attribute_type == 3) return RdpsContributionKind::Defense;
+    if (attribute_type >= 94 && attribute_type <= 99) {
         return RdpsContributionKind::Resistance;
     }
     return RdpsContributionKind::Other;
@@ -3003,10 +3662,16 @@ SemanticZone AttributeSemanticZone(int32_t side, int32_t attribute_type) {
         switch (kind) {
         case RdpsContributionKind::Attack: return SemanticZone::Attack;
         case RdpsContributionKind::DamageIncrease:
+        case RdpsContributionKind::AbnormalIncrease:
             return SemanticZone::DamageIncrease;
         case RdpsContributionKind::Amplification:
             return SemanticZone::Amplification;
         case RdpsContributionKind::Fragile: return SemanticZone::Fragile;
+        case RdpsContributionKind::VulnerabilityTaken:
+            return SemanticZone::VulnerabilityTaken;
+        case RdpsContributionKind::Defense:
+        case RdpsContributionKind::Resistance:
+            return SemanticZone::Resistance;
         default: return SemanticZone::Unknown;
         }
     }();
@@ -3104,22 +3769,23 @@ bool CaptureAttributeAggregate(void* ability, int32_t attribute_type,
     return output.minimum <= output.maximum;
 }
 
+// Attributes.GetAllModifierValues layout (Attributes.GetAllModifierValues /
+// _CalculateFinalAttributeValue disassembly, 2026-09-03 client):
+//   [0] raw  [1] sum baseAddition  [2] sum baseMultiplier
+//   [3] sum baseFinalAddition  [4] prod baseFinalScalar
+//   [5] sum addition  [6] sum multiplier  [7] sum finalAddition  [8] prod finalScalar
+// base  = clamp((clamp(raw + [1]) * max(0, 1 + [2]) + [3]) * [4])
+// final = clamp(((base + [5]) * max(0, 1 + [6]) + [7]) * [8])
+// Verified against DamagePackData.attackerAttributes on 1202/1202 groups.
 double CalculateFinalAttribute(const AttributeAggregate& aggregate) {
-    if (!g_calculate_final_attribute_value.pointer) {
-        return std::numeric_limits<double>::quiet_NaN();
-    }
-    __try {
-        return reinterpret_cast<CalculateFinalAttributeFn>(
-            g_calculate_final_attribute_value.pointer)(aggregate.values[0],
-            aggregate.values[1], aggregate.values[2], aggregate.values[3],
-            aggregate.values[4], aggregate.values[5], aggregate.values[6],
-            aggregate.values[7], aggregate.values[8], aggregate.minimum,
-            aggregate.maximum,
-            const_cast<void*>(g_calculate_final_attribute_value.method_info));
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-        return std::numeric_limits<double>::quiet_NaN();
-    }
+    const auto clamp = [&aggregate](double value) {
+        if (!std::isfinite(value)) return value;
+        return std::min(std::max(value, aggregate.minimum), aggregate.maximum);
+    };
+    const auto& v = aggregate.values;
+    const double base = clamp(
+        (clamp(v[0] + v[1]) * std::max(0.0, 1.0 + v[2]) + v[3]) * v[4]);
+    return clamp(((base + v[5]) * std::max(0.0, 1.0 + v[6]) + v[7]) * v[8]);
 }
 
 bool CallPackDouble(const RuntimeMethod& method, void* pack_data, double& output) {
@@ -3136,20 +3802,22 @@ bool CallPackDouble(const RuntimeMethod& method, void* pack_data, double& output
 
 bool ApplyAttributeContribution(AttributeAggregate& aggregate,
     const BuffDiagnosticInfo::AttributeContribution& contribution, bool add) {
+    // Base group first ([1..4]), then the post-base group ([5..8]); see
+    // CalculateFinalAttribute for the layout.
     const double sign = add ? 1.0 : -1.0;
-    aggregate.values[1] += sign * contribution.addition;
-    aggregate.values[2] += sign * contribution.multiplier;
-    aggregate.values[3] += sign * contribution.final_addition;
-    aggregate.values[5] += sign * contribution.base_addition;
-    aggregate.values[6] += sign * contribution.base_multiplier;
-    aggregate.values[7] += sign * contribution.base_final_addition;
+    aggregate.values[1] += sign * contribution.base_addition;
+    aggregate.values[2] += sign * contribution.base_multiplier;
+    aggregate.values[3] += sign * contribution.base_final_addition;
+    aggregate.values[5] += sign * contribution.addition;
+    aggregate.values[6] += sign * contribution.multiplier;
+    aggregate.values[7] += sign * contribution.final_addition;
     const auto apply_scalar = [add](double& value, double scalar) {
         if (!std::isfinite(scalar) || std::abs(scalar) <= 1.0e-12) return false;
         value = add ? value * scalar : value / scalar;
         return std::isfinite(value);
     };
-    return apply_scalar(aggregate.values[4], contribution.final_scalar) &&
-        apply_scalar(aggregate.values[8], contribution.base_final_scalar);
+    return apply_scalar(aggregate.values[4], contribution.base_final_scalar) &&
+        apply_scalar(aggregate.values[8], contribution.final_scalar);
 }
 
 bool SameRuntimeOwner(const BuffDiagnosticInfo& buff, int32_t side) {
@@ -3160,62 +3828,6 @@ bool SameRuntimeOwner(const BuffDiagnosticInfo& buff, int32_t side) {
     return (expected && buff.owner_ability == expected) ||
         (expected_name[0] != '\0' && !buff.owner.empty() &&
             _stricmp(expected_name, buff.owner.c_str()) == 0);
-}
-
-std::vector<ActiveAttributeBuff> CaptureActiveAttributeBuffsForDamage() {
-    std::vector<ActiveAttributeBuff> result;
-    std::scoped_lock lock(g_buff_diagnostic_mutex);
-    for (const auto& [inst_id, buff] : g_buff_diagnostic_map) {
-        if (buff.attribute_contributions.empty() ||
-            !IsExternalDamageSource(buff)) {
-            continue;
-        }
-        const std::string source = NormalizeAttackerId(
-            std::string(CreditedBuffSource(buff)));
-        const std::string owner = NormalizeAttackerId(buff.owner);
-        if (source.empty() || _stricmp(source.c_str(), owner.c_str()) == 0) continue;
-        int32_t side = -1;
-        if (SameRuntimeOwner(buff, 0)) side = 0;
-        else if (SameRuntimeOwner(buff, 1)) side = 1;
-        if (side < 0) continue;
-
-        std::array<std::vector<BuffDiagnosticInfo::AttributeContribution>,
-            static_cast<size_t>(SemanticZone::ArtsStrength) + 1> by_zone;
-        for (const auto& contribution : buff.attribute_contributions) {
-            const SemanticZone zone = AttributeSemanticZone(
-                side, contribution.attribute_type);
-            if (zone == SemanticZone::Unknown ||
-                !AttributeAppliesToSkill(contribution.attribute_type,
-                    g_damage_flow_context.origin_skill) ||
-                !CombatSemanticCatalog::ElementMatches(
-                    AttributeSemanticElement(contribution.attribute_type),
-                    g_damage_flow_context.damage_type)) {
-                continue;
-            }
-            by_zone[static_cast<size_t>(zone)].push_back(contribution);
-        }
-        for (size_t zone_index = 1; zone_index < by_zone.size(); ++zone_index) {
-            if (by_zone[zone_index].empty()) continue;
-            const SemanticZone zone = static_cast<SemanticZone>(zone_index);
-            const SemanticResolution semantic = ResolveBuffSemantic(
-                buff.buff_id, zone, g_damage_flow_context.damage_type);
-            RecordSemanticResolution(semantic, buff.buff_id, zone);
-            if (semantic.status != SemanticStatus::Verified ||
-                semantic.zone != zone) {
-                continue;
-            }
-            ActiveAttributeBuff candidate;
-            candidate.inst_id = inst_id;
-            candidate.source = std::string(CreditedBuffSource(buff));
-            candidate.buff_id = buff.buff_id;
-            candidate.side = side;
-            candidate.zone = zone;
-            candidate.kind = ContributionKindForZone(zone);
-            candidate.contributions = std::move(by_zone[zone_index]);
-            result.push_back(std::move(candidate));
-        }
-    }
-    return result;
 }
 
 bool IsArtsStrengthDamage(std::string_view origin_skill) {
@@ -3306,478 +3918,924 @@ void MergeRdpsShare(std::array<RdpsShare, kMaxRdpsSourcesPerHit>& output,
     destination.kind = kind;
 }
 
-#if 0 // Removed: this legacy counterfactual path wrote into live managed arrays.
-void ApplyPersistentAttributeRdps(const DamagePackNumericSnapshot& snapshot,
-    std::array<RdpsShare, kMaxRdpsSourcesPerHit>& output, uint8_t& output_count) {
-    if (!g_buff_attribute_contract_ready || !g_damage_flow_context.pack) return;
-    std::vector<ActiveAttributeBuff> buffs = CaptureActiveAttributeBuffsForDamage();
-    if (buffs.empty()) return;
+// ---------------------------------------------------------------------------
+// Live attribute modifiers
+// ---------------------------------------------------------------------------
 
-    std::vector<AttributeSimulationGroup> groups;
-    const auto find_group = [&](int32_t side, int32_t attribute_type)
-        -> AttributeSimulationGroup* {
-        const auto found = std::find_if(groups.begin(), groups.end(),
-            [side, attribute_type](const AttributeSimulationGroup& group) {
-                return group.side == side && group.attribute_type == attribute_type;
-            });
-        return found == groups.end() ? nullptr : &*found;
-    };
-    for (const ActiveAttributeBuff& buff : buffs) {
-        for (const auto& contribution : buff.contributions) {
-            if (find_group(buff.side, contribution.attribute_type)) continue;
-            const DoubleArraySnapshot& side_array = buff.side == 0
-                ? snapshot.attacker_attributes : snapshot.defender_attributes;
-            void* ability = buff.side == 0 ? g_damage_flow_context.attacker_ability
-                                           : g_damage_flow_context.defender_ability;
-            if (!side_array.valid || !side_array.managed_array || !ability ||
-                contribution.attribute_type < 0 ||
-                static_cast<uint32_t>(contribution.attribute_type) >= side_array.count) {
-                continue;
-            }
-            AttributeSimulationGroup group;
-            group.side = buff.side;
-            group.attribute_type = contribution.attribute_type;
-            group.ability = ability;
-            group.managed_array = side_array.managed_array;
-            if (!ReadManagedDouble(group.managed_array, group.attribute_type,
-                    group.pack_value) ||
-                !CaptureAttributeAggregate(ability, group.attribute_type, group.full)) {
-                continue;
-            }
-            group.calculated_full_value = CalculateFinalAttribute(group.full);
-            if (!std::isfinite(group.calculated_full_value)) continue;
-            groups.push_back(std::move(group));
+// IL2CPP System.Collections.Generic.HashSet<T> with a reference T:
+//   _buckets 0x10, _slots 0x18, _count 0x20, _lastIndex 0x24;
+//   Slot = { int hashCode; int next; T value; } (16 bytes, value at +8),
+//   used slots have hashCode >= 0. The read is rejected unless the number of
+//   used slots equals _count, so a layout change fails closed.
+constexpr size_t kHashSetSlotsOffset = 0x18;
+constexpr size_t kHashSetCountOffset = 0x20;
+constexpr size_t kHashSetLastIndexOffset = 0x24;
+constexpr size_t kHashSetSlotSize = 16;
+constexpr size_t kHashSetSlotValueOffset = 8;
+constexpr int32_t kHashSetSaneLimit = 4096;
+
+bool EnumerateHashSetObjects(void* set, std::vector<void*>& output) {
+    output.clear();
+    if (!set) return true;
+    __try {
+        uint8_t* base = reinterpret_cast<uint8_t*>(set);
+        void* slots = *reinterpret_cast<void**>(base + kHashSetSlotsOffset);
+        const int32_t count = *reinterpret_cast<int32_t*>(base + kHashSetCountOffset);
+        const int32_t last_index =
+            *reinterpret_cast<int32_t*>(base + kHashSetLastIndexOffset);
+        if (count < 0 || last_index < 0 || count > kHashSetSaneLimit ||
+            last_index > kHashSetSaneLimit || count > last_index) {
+            return false;
         }
-    }
-    if (groups.empty()) return;
-
-    const double full_factor = EvaluatePersistentAttributeDamageFactor(
-        g_damage_flow_context.pack, snapshot);
-    if (!std::isfinite(full_factor)) return;
-
-    const auto restore_groups = [&]() {
-        for (const AttributeSimulationGroup& group : groups) {
-            WriteManagedDouble(group.managed_array, group.attribute_type,
-                group.pack_value);
+        if (count == 0) return true;
+        if (!slots) return false;
+        const uintptr_t length = *reinterpret_cast<uintptr_t*>(
+            reinterpret_cast<uint8_t*>(slots) + 0x18);
+        if (static_cast<uintptr_t>(last_index) > length) return false;
+        uint8_t* data = reinterpret_cast<uint8_t*>(slots) + 0x20;
+        for (int32_t index = 0; index < last_index; ++index) {
+            uint8_t* slot = data + static_cast<size_t>(index) * kHashSetSlotSize;
+            if (*reinterpret_cast<int32_t*>(slot) < 0) continue;
+            void* value = *reinterpret_cast<void**>(slot + kHashSetSlotValueOffset);
+            if (value) output.push_back(value);
         }
-    };
-    const auto patch_without = [&](const ActiveAttributeBuff* only_buff,
-                                   bool remove_all) {
-        bool changed = false;
-        for (AttributeSimulationGroup& group : groups) {
-            AttributeAggregate aggregate = group.full;
-            for (const ActiveAttributeBuff& buff : buffs) {
-                if ((!remove_all && &buff != only_buff) || buff.side != group.side) {
-                    continue;
-                }
-                for (const auto& contribution : buff.contributions) {
-                    if (contribution.attribute_type == group.attribute_type &&
-                        ApplyAttributeContribution(aggregate, contribution, false)) {
-                        changed = true;
-                    }
-                }
-            }
-            const double value = MapCalculatedAttributeToPack(group, aggregate);
-            if (!WriteManagedDouble(group.managed_array, group.attribute_type, value)) {
-                restore_groups();
-                return false;
-            }
-        }
-        return changed;
-    };
-
-    if (!patch_without(nullptr, true)) {
-        restore_groups();
-        return;
+        return static_cast<int32_t>(output.size()) == count;
     }
-    const double baseline_factor = EvaluatePersistentAttributeDamageFactor(
-        g_damage_flow_context.pack, snapshot);
-    restore_groups();
-    if (!std::isfinite(baseline_factor) || baseline_factor >= full_factor - 1.0e-12) {
-        return;
-    }
-
-    std::vector<double> marginal_gains(buffs.size(), 0.0);
-    double marginal_sum = 0.0;
-    for (size_t index = 0; index < buffs.size(); ++index) {
-        if (!patch_without(&buffs[index], false)) {
-            restore_groups();
-            continue;
-        }
-        const double without_factor = EvaluatePersistentAttributeDamageFactor(
-            g_damage_flow_context.pack, snapshot);
-        restore_groups();
-        if (!std::isfinite(without_factor)) continue;
-        const double gain = std::max(0.0, full_factor - without_factor);
-        marginal_gains[index] = gain;
-        marginal_sum += gain;
-    }
-    if (marginal_sum <= 1.0e-12) return;
-
-    const double attribute_fraction = std::clamp(
-        (full_factor - baseline_factor) / full_factor, 0.0, 0.999999);
-    const double direct_scale = std::clamp(
-        baseline_factor / full_factor, 0.0, 1.0);
-    for (uint8_t index = 0; index < output_count; ++index) {
-        output[index].fraction *= direct_scale;
-    }
-    for (size_t index = 0; index < buffs.size(); ++index) {
-        if (marginal_gains[index] <= 0.0) continue;
-        const double share_fraction = attribute_fraction *
-            marginal_gains[index] / marginal_sum;
-        MarkBuffIntervalRelevant(buffs[index].inst_id, buffs[index].kind,
-            share_fraction, BuffEffectKind::DamageShare);
-        MergeRdpsShare(output, output_count, buffs[index].source,
-            share_fraction, buffs[index].kind);
-    }
-
-    const Configuration config = ConfigurationSnapshot();
-    const uint32_t sample = config.diagnostics
-        ? g_rdps_attribute_share_samples.fetch_add(1, std::memory_order_relaxed)
-        : 64;
-    if (config.diagnostics && sample < 64) {
-        std::ostringstream diagnostic;
-        diagnostic << std::setprecision(10)
-            << "[rdps-attribute-share] sample=" << sample
-            << " txn=" << g_damage_flow_context.transaction
-            << " attacker=\"" << g_damage_flow_context.attacker_name << "\""
-            << " defender=\"" << g_damage_flow_context.defender_name << "\""
-            << " buffs=" << buffs.size() << " groups=" << groups.size()
-            << " factor=" << baseline_factor << "->" << full_factor
-            << " fraction=" << attribute_fraction;
-        Log(diagnostic.str());
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        output.clear();
+        return false;
     }
 }
-#endif
 
-std::vector<PersistentAttributeContributor>
-CapturePersistentAttributeContributors() {
-    const std::vector<ActiveAttributeBuff> buffs =
-        CaptureActiveAttributeBuffsForDamage();
-    if (buffs.empty()) return {};
-
-    struct ContributorKey {
-        uint64_t inst_id = 0;
-        std::string source;
-        std::string buff_id;
-        RdpsContributionKind kind = RdpsContributionKind::Other;
-    };
-    struct ZoneEvidence {
-        double external_rate = 0.0;
-        std::vector<std::pair<ContributorKey, double>> contributors;
-    };
-    std::array<ZoneEvidence,
-        static_cast<size_t>(SemanticZone::ArtsStrength) + 1> zones;
-
-    std::vector<AttributeSimulationGroup> groups;
-    for (const ActiveAttributeBuff& buff : buffs) {
-        for (const auto& contribution : buff.contributions) {
-            const auto duplicate = std::find_if(groups.begin(), groups.end(),
-                [&buff, &contribution](const AttributeSimulationGroup& group) {
-                    return group.side == buff.side &&
-                        group.attribute_type == contribution.attribute_type;
-                });
-            if (duplicate != groups.end()) continue;
-            void* ability = buff.side == 0 ? g_damage_flow_context.attacker_ability
-                                           : g_damage_flow_context.defender_ability;
-            AttributeSimulationGroup group;
-            group.side = buff.side;
-            group.attribute_type = contribution.attribute_type;
-            group.ability = ability;
-            group.zone = buff.zone;
-            if (!ability || !CaptureAttributeAggregate(
-                    ability, group.attribute_type, group.full)) {
-                continue;
-            }
-            group.full_value = CalculateFinalAttribute(group.full);
-            if (!std::isfinite(group.full_value)) continue;
-            groups.push_back(std::move(group));
-        }
+void* CallAttributeModifierSet(void* attributes, int32_t attribute_type) {
+    if (!attributes || !g_attributes_get_modifiers.pointer) return nullptr;
+    __try {
+        return reinterpret_cast<AttributeValuesFn>(g_attributes_get_modifiers.pointer)(
+            attributes, attribute_type,
+            const_cast<void*>(g_attributes_get_modifiers.method_info));
     }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return nullptr;
+    }
+}
 
-    for (const AttributeSimulationGroup& group : groups) {
-        AttributeAggregate baseline = group.full;
-        bool baseline_changed = false;
-        for (const ActiveAttributeBuff& buff : buffs) {
-            if (buff.side != group.side || buff.zone != group.zone) continue;
-            for (const auto& contribution : buff.contributions) {
-                if (contribution.attribute_type == group.attribute_type &&
-                    ApplyAttributeContribution(baseline, contribution, false)) {
-                    baseline_changed = true;
-                }
-            }
-        }
-        if (!baseline_changed) continue;
-        const double baseline_value = CalculateFinalAttribute(baseline);
-        const double external_rate = group.full_value - baseline_value;
-        if (!std::isfinite(baseline_value) || !std::isfinite(external_rate) ||
-            external_rate <= 1.0e-12) {
+struct LiveAttributeModifier {
+    void* object = nullptr;
+    uint64_t inst_id = 0;
+    bool has_contribution = false;
+    BuffDiagnosticInfo::AttributeContribution contribution{};
+};
+
+// Attributes.GetModifiers(type) is the set the game actually sums, so it is
+// authoritative over the lifecycle map: displaced stack instances and buffs
+// whose finish the recorder never reported are simply absent here.
+bool CollectLiveAttributeModifiers(void* attributes, int32_t attribute_type,
+    std::vector<LiveAttributeModifier>& output, uint32_t& other_modifiers) {
+    output.clear();
+    other_modifiers = 0;
+    if (!attributes || !g_live_modifier_contract_ready) return false;
+    void* set = CallAttributeModifierSet(attributes, attribute_type);
+    std::vector<void*> objects;
+    if (!EnumerateHashSetObjects(set, objects)) {
+        g_attribution_live_set_failures.fetch_add(1, std::memory_order_relaxed);
+        return false;
+    }
+    for (void* object : objects) {
+        if (ReadObjectClass(object) != g_buff_class) {
+            ++other_modifiers;
             continue;
         }
-
-        struct Marginal {
-            const ActiveAttributeBuff* buff = nullptr;
-            double value = 0.0;
-        };
-        std::vector<Marginal> marginals;
-        double marginal_sum = 0.0;
-        for (const ActiveAttributeBuff& buff : buffs) {
-            if (buff.side != group.side || buff.zone != group.zone) continue;
-            AttributeAggregate without = group.full;
-            bool changed = false;
-            for (const auto& contribution : buff.contributions) {
-                if (contribution.attribute_type == group.attribute_type &&
-                    ApplyAttributeContribution(without, contribution, false)) {
-                    changed = true;
-                }
-            }
-            if (!changed) continue;
-            const double without_value = CalculateFinalAttribute(without);
-            const double marginal = group.full_value - without_value;
-            if (!std::isfinite(marginal) || marginal <= 1.0e-12) continue;
-            marginals.push_back({&buff, marginal});
-            marginal_sum += marginal;
+        LiveAttributeModifier modifier;
+        modifier.object = object;
+        modifier.inst_id = ReadBuffInstId(object);
+        modifier.contribution.attribute_type = attribute_type;
+        bool has_value = false;
+        bool has_base_value = false;
+        TryReadBuffAttributeContribution(object, attribute_type,
+            modifier.contribution, has_value, has_base_value);
+        modifier.has_contribution = (has_value || has_base_value) &&
+            HasAttributeContribution(modifier.contribution);
+        if (modifier.has_contribution) {
+            TrackBuffNominalContribution(modifier.inst_id, modifier.contribution);
         }
-        if (marginal_sum <= 1.0e-12) continue;
+        int32_t enhance_count = 0;
+        if (ReadValue(object, g_buff_enhance_count, enhance_count)) {
+            TrackBuffEnhanceCount(modifier.inst_id, enhance_count);
+        }
+        output.push_back(modifier);
+    }
+    return true;
+}
 
-        ZoneEvidence& zone = zones[static_cast<size_t>(group.zone)];
-        zone.external_rate += external_rate;
-        for (const Marginal& marginal : marginals) {
-            const ActiveAttributeBuff& buff = *marginal.buff;
-            const double normalized_rate = external_rate *
-                marginal.value / marginal_sum;
-            const auto existing = std::find_if(zone.contributors.begin(),
-                zone.contributors.end(), [&buff](const auto& entry) {
-                    return entry.first.inst_id == buff.inst_id;
-                });
-            if (existing != zone.contributors.end()) {
-                existing->second += normalized_rate;
-            } else {
-                zone.contributors.push_back({
-                    {buff.inst_id, buff.source, buff.buff_id, buff.kind},
-                    normalized_rate});
-            }
+// Identity for a live Buff object: the lifecycle map when it saw the buff
+// start, otherwise a fresh capture that is also inserted so later hits and the
+// statusApply timeline agree on it.
+BuffDiagnosticInfo IdentifyLiveBuff(void* object, uint64_t inst_id) {
+    {
+        std::scoped_lock lock(g_buff_diagnostic_mutex);
+        if (const auto found = g_buff_diagnostic_map.find(inst_id);
+            found != g_buff_diagnostic_map.end()) {
+            return found->second;
         }
     }
+    BuffDiagnosticInfo info = CaptureBuffDiagnosticInfo(object);
+    info.attribute_contributions = CaptureBuffAttributeContributions(object);
+    ResolveExactBuffAttribution(info);
+    g_attribution_late_buffs.fetch_add(1, std::memory_order_relaxed);
+    if (inst_id != 0) {
+        {
+            std::scoped_lock lock(g_buff_diagnostic_mutex);
+            g_buff_diagnostic_map.emplace(inst_id, info);
+        }
+        TrackBuffStart(inst_id, info);
+    }
+    return info;
+}
 
-    std::vector<PersistentAttributeContributor> result;
-    for (size_t zone_index = 1; zone_index < zones.size(); ++zone_index) {
-        const SemanticZone semantic_zone = static_cast<SemanticZone>(zone_index);
-        for (const auto& [key, rate] : zones[zone_index].contributors) {
-            if (!std::isfinite(rate) || rate <= 1.0e-12) continue;
-            result.push_back({key.inst_id, key.source, key.buff_id,
-                semantic_zone, key.kind, rate});
+// ---------------------------------------------------------------------------
+// Hit model
+// ---------------------------------------------------------------------------
+
+// DamageType -> element slot for the per-element attribute families
+// (DamageIncrease 50+, Enhanced 64+, Vulnerable 70+, TakenScalar, Resistance).
+int32_t DamageTypeElementSlot(int32_t damage_type) {
+    switch (damage_type) {
+    case 0: return 0;  // Physical
+    case 2: return 1;  // Fire
+    case 3: return 2;  // Pulse
+    case 4: return 3;  // Cryst
+    case 6: return 4;  // Natural
+    case 7: return 5;  // Ether
+    default: return -1;
+    }
+}
+
+int32_t TakenScalarAttribute(int32_t slot) {
+    static constexpr std::array<int32_t, 6> kTypes{4, 5, 6, 7, 48, 60};
+    return slot >= 0 && slot < 6 ? kTypes[static_cast<size_t>(slot)] : -1;
+}
+
+// Resistance enum order differs from the element order:
+// Physical 94, Natural 95, Cryst 96, Pulse 97, Fire 98, Ether 99.
+int32_t ResistanceAttribute(int32_t slot) {
+    static constexpr std::array<int32_t, 6> kTypes{94, 98, 97, 96, 95, 99};
+    return slot >= 0 && slot < 6 ? kTypes[static_cast<size_t>(slot)] : -1;
+}
+
+constexpr int32_t kAttributeAtk = 2;
+constexpr int32_t kAttributeDef = 3;
+constexpr int32_t kAttributeCriticalRate = 9;
+constexpr int32_t kAttributeCriticalDamage = 10;
+constexpr int32_t kAttributeIgniteScalar = 49;
+constexpr int32_t kAttributeBrokenUnit = 61;
+constexpr int32_t kAttributeWeakness = 62;
+constexpr int32_t kAttributeShelter = 63;
+constexpr uint64_t kIgniteDecorateMask = 0xfd00038ull;
+
+bool IsSkillTypeIncreaseAttribute(int32_t type) {
+    return type == 17 || type == 28 || type == 32 || type == 33;
+}
+
+bool IsIgniteIncreaseAttribute(int32_t type) {
+    return type >= 35 && type <= 38;
+}
+
+// Attribute types the damage formula reads on each side; groups for these are
+// always captured so zone residuals can be explained even without buffs.
+std::vector<int32_t> DamageRelevantAttributes(int32_t side) {
+    if (side == 0) {
+        return {kAttributeAtk, kAttributeCriticalRate, kAttributeCriticalDamage,
+            17, 28, 32, 33, 35, 36, 37, 38, kAttributeIgniteScalar,
+            50, 51, 52, 53, 54, 55, kAttributeBrokenUnit, kAttributeWeakness,
+            64, 65, 66, 67, 68, 69};
+    }
+    return {kAttributeDef, 4, 5, 6, 7, 48, 60, kAttributeShelter,
+        70, 71, 72, 73, 74, 75, 94, 95, 96, 97, 98, 99};
+}
+
+double SnapshotAttribute(const DoubleArraySnapshot& array, int32_t type) {
+    if (!array.valid || type < 0 || static_cast<uint32_t>(type) >= array.count ||
+        static_cast<size_t>(type) >= array.values.size()) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    return array.values[static_cast<size_t>(type)];
+}
+
+double SnapshotAttributeOrZero(const DoubleArraySnapshot& array, int32_t type) {
+    const double value = SnapshotAttribute(array, type);
+    return std::isfinite(value) ? value : 0.0;
+}
+
+HitFactors CaptureHitFactors(const DamagePackNumericSnapshot& snapshot,
+    void* pack_data, bool critical) {
+    HitFactors factors;
+    if (!snapshot.valid) return factors;
+    factors.valid = true;
+    factors.critical = critical;
+    factors.attack = SnapshotAttribute(snapshot.attacker_attributes, kAttributeAtk);
+    const double linked = factors.attack * static_cast<double>(snapshot.atk_scale);
+    factors.attack_linked = std::isfinite(factors.attack) &&
+        std::abs(linked - snapshot.calc_result) <=
+            1.0e-6 * std::max(1.0, std::abs(snapshot.calc_result));
+    factors.defense = SnapshotAttribute(snapshot.defender_attributes, kAttributeDef);
+    factors.crit_rate = SnapshotAttributeOrZero(snapshot.attacker_attributes,
+        kAttributeCriticalRate);
+    factors.crit_damage = SnapshotAttributeOrZero(snapshot.attacker_attributes,
+        kAttributeCriticalDamage);
+    factors.weakness = SnapshotAttribute(snapshot.attacker_attributes, kAttributeWeakness);
+    factors.shelter = SnapshotAttributeOrZero(snapshot.defender_attributes,
+        kAttributeShelter);
+    factors.ignite = SnapshotAttribute(snapshot.attacker_attributes, kAttributeIgniteScalar);
+    factors.ignite_applies =
+        (g_damage_flow_context.decorate_mask & kIgniteDecorateMask) != 0;
+    factors.def_resistance_ok = CallPackDouble(
+        g_get_def_resistance_value, pack_data, factors.def_resistance);
+    factors.type_resistance_ok = CallPackDouble(
+        g_get_damage_type_resistance_value, pack_data, factors.type_resistance);
+    const ZoneTable table = ZoneTableSnapshot();
+    const size_t zone_count = std::min<size_t>(
+        std::min(snapshot.attacker_zones.count, snapshot.defender_zones.count),
+        kMaxLedgerZoneIndices);
+    for (size_t index = 0; index < zone_count; ++index) {
+        const double attacker_zone = snapshot.attacker_zones.values[index];
+        const double defender_zone = snapshot.defender_zones.values[index];
+        const bool merge = table.ready && index < table.zones.size() &&
+            table.zones[index].merge_sides;
+        const double scale = merge ? attacker_zone + defender_zone - 1.0
+                                   : attacker_zone * defender_zone;
+        factors.zone_product *= std::max(0.0, scale);
+    }
+    return factors;
+}
+
+// Scale of one zone as _GetDamageScale computes it.
+double ZoneScale(const ZoneTable& table, size_t index, double attacker_zone,
+    double defender_zone) {
+    const bool merge = table.ready && index < table.zones.size() &&
+        table.zones[index].merge_sides;
+    return std::max(0.0, merge ? attacker_zone + defender_zone - 1.0
+                               : attacker_zone * defender_zone);
+}
+
+// damage_without / damage_with when `side`'s value in zone `index` moves from
+// its final value to `without`.
+double ZoneFactor(const ZoneTable& table, const HitLedger& ledger, int32_t side,
+    size_t index, double without) {
+    if (index >= ledger.attacker_zones.size() ||
+        index >= ledger.defender_zones.size() || !std::isfinite(without)) {
+        return 1.0;
+    }
+    const double attacker_zone = ledger.attacker_zones[index];
+    const double defender_zone = ledger.defender_zones[index];
+    const double with = ZoneScale(table, index, attacker_zone, defender_zone);
+    if (with <= 1.0e-12) return 1.0;
+    const double replaced = side == 0
+        ? ZoneScale(table, index, without, defender_zone)
+        : ZoneScale(table, index, attacker_zone, without);
+    const double factor = replaced / with;
+    return std::isfinite(factor) && factor > 0.0 ? factor : 1.0;
+}
+
+// Category of a DamageModifier write into zone `index`, decided by the roles
+// the client config assigns to that zone. A zone that carries no attribute
+// role (ProdCalcZone, ComboCalcZone, RaceCalcZone) is an independent
+// multiplier on either side.
+RdpsContributionKind ZoneKind(const ZoneTable& table, int32_t side, size_t index) {
+    if (table.ready && index < table.zones.size()) {
+        const uint8_t roles = table.zones[index].roles;
+        if (roles & ZoneRoleBit(ZoneRole::Enhanced)) return RdpsContributionKind::Amplification;
+        if (roles & ZoneRoleBit(ZoneRole::Vulnerable)) return RdpsContributionKind::Fragile;
+        if (roles & (ZoneRoleBit(ZoneRole::DamageType) |
+                     ZoneRoleBit(ZoneRole::SkillType) |
+                     ZoneRoleBit(ZoneRole::BrokenUnit))) {
+            return side == 0 ? RdpsContributionKind::DamageIncrease
+                             : RdpsContributionKind::VulnerabilityTaken;
+        }
+        if (roles & ZoneRoleBit(ZoneRole::Ignite)) {
+            return RdpsContributionKind::AbnormalIncrease;
+        }
+        return RdpsContributionKind::IndependentZone;
+    }
+    return side == 0 ? RdpsContributionKind::DamageIncrease
+                     : RdpsContributionKind::VulnerabilityTaken;
+}
+
+SemanticZone SemanticZoneForKind(RdpsContributionKind kind) {
+    switch (kind) {
+    case RdpsContributionKind::Attack: return SemanticZone::Attack;
+    case RdpsContributionKind::DamageIncrease:
+    case RdpsContributionKind::AbnormalIncrease:
+        return SemanticZone::DamageIncrease;
+    case RdpsContributionKind::Amplification: return SemanticZone::Amplification;
+    case RdpsContributionKind::IndependentZone: return SemanticZone::Combo;
+    case RdpsContributionKind::Fragile: return SemanticZone::Fragile;
+    case RdpsContributionKind::VulnerabilityTaken:
+        return SemanticZone::VulnerabilityTaken;
+    case RdpsContributionKind::Defense:
+    case RdpsContributionKind::Resistance:
+        return SemanticZone::Resistance;
+    case RdpsContributionKind::ArtsStrength: return SemanticZone::ArtsStrength;
+    default: return SemanticZone::Unknown;
+    }
+}
+
+// Which attacker attributes _GetDamageScale folded into the attacker zones of
+// this hit. Damage-type and enhanced increases always apply to their element;
+// skill-type, ignite and broken-unit increases apply conditionally, so the
+// subset is chosen that explains the zone residual (final value minus 1 minus
+// every recorded DamageModifier write minus the unconditional attributes).
+struct ZoneAttributeActivation {
+    std::array<bool, kAttributeTypeCount> active{};
+    bool residual_ok = true;
+};
+
+ZoneAttributeActivation ResolveZoneAttributeActivation(const ZoneTable& table,
+    const HitLedger& ledger, const DoubleArraySnapshot& attacker_attributes,
+    int32_t damage_type) {
+    ZoneAttributeActivation result;
+    const int32_t slot = DamageTypeElementSlot(damage_type);
+    if (slot >= 0) {
+        result.active[static_cast<size_t>(50 + slot)] = true;
+        result.active[static_cast<size_t>(64 + slot)] = true;
+    }
+    if (!table.ready) return result;
+    const auto value = [&](int32_t type) {
+        return SnapshotAttributeOrZero(attacker_attributes, type);
+    };
+    for (size_t index = 0; index < table.zones.size() &&
+         index < ledger.attacker_zones.size(); ++index) {
+        const uint8_t roles = table.zones[index].roles;
+        if (!roles) continue;
+        double residual = ledger.attacker_zones[index] - 1.0;
+        for (const LedgerZoneWrite& write : ledger.zone_writes) {
+            if (write.side != 0 || write.zone_index != index) continue;
+            residual -= write.after - write.before;
+        }
+        if ((roles & ZoneRoleBit(ZoneRole::DamageType)) && slot >= 0) {
+            residual -= value(50 + slot);
+        }
+        if ((roles & ZoneRoleBit(ZoneRole::Enhanced)) && slot >= 0) {
+            residual -= value(64 + slot);
+        }
+        std::vector<int32_t> candidates;
+        if (roles & ZoneRoleBit(ZoneRole::SkillType)) {
+            for (int32_t type : {17, 28, 32, 33}) {
+                if (std::abs(value(type)) > 1.0e-9) candidates.push_back(type);
+            }
+        }
+        if (roles & ZoneRoleBit(ZoneRole::Ignite)) {
+            for (int32_t type : {35, 36, 37, 38}) {
+                if (std::abs(value(type)) > 1.0e-9) candidates.push_back(type);
+            }
+        }
+        if ((roles & ZoneRoleBit(ZoneRole::BrokenUnit)) &&
+            std::abs(value(kAttributeBrokenUnit)) > 1.0e-9) {
+            candidates.push_back(kAttributeBrokenUnit);
+        }
+        if (candidates.size() > 12) candidates.resize(12);
+        const double tolerance =
+            1.0e-6 * std::max(1.0, std::abs(ledger.attacker_zones[index]));
+        uint32_t best_mask = 0;
+        double best_error = std::abs(residual);
+        for (uint32_t mask = 1; mask < (1u << candidates.size()); ++mask) {
+            double sum = 0.0;
+            for (size_t bit = 0; bit < candidates.size(); ++bit) {
+                if (mask & (1u << bit)) sum += value(candidates[bit]);
+            }
+            const double error = std::abs(residual - sum);
+            if (error < best_error) {
+                best_error = error;
+                best_mask = mask;
+            }
+        }
+        if (best_error > tolerance) {
+            result.residual_ok = false;
+            g_attribution_zone_residual_unexplained.fetch_add(1, std::memory_order_relaxed);
+            continue;
+        }
+        for (size_t bit = 0; bit < candidates.size(); ++bit) {
+            if (best_mask & (1u << bit)) {
+                result.active[static_cast<size_t>(candidates[bit])] = true;
+            }
         }
     }
     return result;
 }
 
-void BuildRdpsShares(const DamagePackNumericSnapshot& final_snapshot,
-    std::array<RdpsShare, kMaxRdpsSourcesPerHit>& output, uint8_t& output_count) {
-    output = {};
-    output_count = 0;
-    struct ZoneContributor {
-        uint64_t inst_id = 0;
-        std::string source;
-        RdpsContributionKind kind = RdpsContributionKind::Other;
-        double delta = 0.0;
+// damage_without / damage_with for removing `delta` from attribute `type` on
+// `side`, following BattleFormula.CalculateDamage and _GetDamageScale.
+bool AttributeDamageFactor(const ZoneTable& table, const HitLedger& ledger,
+    const DamagePackNumericSnapshot& snapshot,
+    const ZoneAttributeActivation& activation, int32_t side, int32_t type,
+    double delta, int32_t damage_type, double& factor, RdpsContributionKind& kind) {
+    factor = 1.0;
+    kind = RdpsContributionKind::Other;
+    const HitFactors& f = ledger.factors;
+    if (!f.valid || !std::isfinite(delta) || std::abs(delta) <= 1.0e-12) return false;
+    const auto accept = [&]() {
+        return std::isfinite(factor) && factor > 0.0 &&
+            std::abs(factor - 1.0) > 1.0e-12;
     };
-    struct ZoneState {
-        SemanticZone semantic_zone = SemanticZone::Unknown;
-        int32_t side = -1;
-        uint32_t index = 0;
-        double initial = 0.0;
-        double final_value = 0.0;
-        double total_delta = 0.0;
-        double multiplier = 1.0;
-        bool logarithmic_contributors = false;
-        std::vector<ZoneContributor> contributors;
+    const auto linear = [&](double with) {
+        if (!std::isfinite(with) || std::abs(with) <= 1.0e-12) return false;
+        factor = (with - delta) / with;
+        return accept();
     };
-    std::vector<ZoneState> zones;
-    const auto find_zone = [&](int32_t side, uint32_t index) -> ZoneState* {
-        const auto found = std::find_if(zones.begin(), zones.end(),
-            [side, index](const ZoneState& zone) {
-                return zone.side == side && zone.index == index;
-            });
-        return found == zones.end() ? nullptr : &*found;
+    const auto zone_role_factor = [&](ZoneRole role, int32_t zone_side) {
+        const int32_t index = table.ready
+            ? table.role_index[static_cast<size_t>(role)] : -1;
+        if (index < 0) return false;
+        const std::vector<double>& zones = zone_side == 0
+            ? ledger.attacker_zones : ledger.defender_zones;
+        if (static_cast<size_t>(index) >= zones.size()) return false;
+        factor = ZoneFactor(table, ledger, zone_side, static_cast<size_t>(index),
+            zones[static_cast<size_t>(index)] - delta);
+        return accept();
     };
-    for (uint8_t index = 0; index < g_damage_flow_context.modifier_count; ++index) {
-        const RdpsModifierSample& modifier = g_damage_flow_context.modifiers[index];
-        const DoubleArraySnapshot* array = RdpsZoneArray(final_snapshot, modifier.side);
-        if (!array || !array->valid || modifier.zone_index >= array->count ||
-            modifier.zone_index >= array->values.size()) {
-            continue;
+    const int32_t slot = DamageTypeElementSlot(damage_type);
+    if (side == 0) {
+        if (type == kAttributeAtk) {
+            kind = RdpsContributionKind::Attack;
+            return f.attack_linked && linear(f.attack);
         }
-        ZoneState* zone = find_zone(modifier.side, modifier.zone_index);
-        if (!zone) {
-            zones.push_back({modifier.semantic_zone, modifier.side,
-                modifier.zone_index, 0.0, array->values[modifier.zone_index],
-                0.0, 1.0, false, {}});
-            zone = &zones.back();
+        if (type >= 50 && type <= 55) {
+            kind = RdpsContributionKind::DamageIncrease;
+            return slot >= 0 && type == 50 + slot &&
+                zone_role_factor(ZoneRole::DamageType, 0);
         }
-        zone->total_delta += modifier.delta;
-        zone->contributors.push_back({modifier.buff_inst_id, modifier.source,
-            modifier.kind, modifier.delta});
+        if (type >= 64 && type <= 69) {
+            kind = RdpsContributionKind::Amplification;
+            return slot >= 0 && type == 64 + slot &&
+                zone_role_factor(ZoneRole::Enhanced, 0);
+        }
+        if (IsSkillTypeIncreaseAttribute(type)) {
+            kind = RdpsContributionKind::DamageIncrease;
+            return activation.active[static_cast<size_t>(type)] &&
+                zone_role_factor(ZoneRole::SkillType, 0);
+        }
+        if (IsIgniteIncreaseAttribute(type)) {
+            kind = RdpsContributionKind::AbnormalIncrease;
+            return activation.active[static_cast<size_t>(type)] &&
+                zone_role_factor(ZoneRole::Ignite, 0);
+        }
+        if (type == kAttributeBrokenUnit) {
+            kind = RdpsContributionKind::DamageIncrease;
+            return activation.active[static_cast<size_t>(type)] &&
+                zone_role_factor(ZoneRole::BrokenUnit, 0);
+        }
+        if (type == kAttributeWeakness) return linear(f.weakness);
+        if (type == kAttributeIgniteScalar) {
+            kind = RdpsContributionKind::AbnormalIncrease;
+            return f.ignite_applies && linear(f.ignite);
+        }
+        if (type == kAttributeCriticalDamage) {
+            kind = RdpsContributionKind::Critical;
+            return f.critical && linear(1.0 + f.crit_damage);
+        }
+        if (type == kAttributeCriticalRate) {
+            kind = RdpsContributionKind::Critical;
+            // Expected-value attribution: the roll itself cannot be assigned
+            // to a buff, so a crit-rate buff is credited on every hit by the
+            // change it makes to E[1 + rate * critDmg].
+            const double rate = std::clamp(f.crit_rate, 0.0, 1.0);
+            const double without = std::clamp(f.crit_rate - delta, 0.0, 1.0);
+            const double crit_damage = std::max(0.0, f.crit_damage);
+            const double with = 1.0 + rate * crit_damage;
+            if (with <= 1.0e-12) return false;
+            factor = (1.0 + without * crit_damage) / with;
+            return accept();
+        }
+        return false;
     }
-
-    const auto location_for_zone = [](SemanticZone zone,
-        int32_t& side, uint32_t& index) {
-        switch (zone) {
-        case SemanticZone::DamageIncrease: side = 0; index = 1; return true;
-        case SemanticZone::Amplification: side = 0; index = 3; return true;
-        case SemanticZone::Combo: side = 0; index = 4; return true;
-        case SemanticZone::VulnerabilityTaken: side = 1; index = 1; return true;
-        case SemanticZone::Fragile: side = 1; index = 5; return true;
-        case SemanticZone::Attack: side = 0; index = UINT32_MAX; return true;
-        default: return false;
+    if (side == 1) {
+        if (type == kAttributeDef) {
+            kind = RdpsContributionKind::Defense;
+            if (!f.def_resistance_ok || !std::isfinite(f.defense) ||
+                f.defense <= 1.0e-9 || f.def_resistance <= 1.0e-12 ||
+                f.def_resistance >= 1.0 - 1.0e-12) {
+                return false;
+            }
+            const double k = (1.0 / f.def_resistance - 1.0) / f.defense;
+            const double without = std::max(0.0, f.defense - delta);
+            factor = (1.0 / (1.0 + k * without)) / f.def_resistance;
+            return accept();
         }
-    };
-    for (const PersistentAttributeContributor& contributor :
-         CapturePersistentAttributeContributors()) {
-        int32_t side = -1;
-        uint32_t index = 0;
-        if (!location_for_zone(contributor.zone, side, index)) continue;
-        const bool already_captured = std::any_of(zones.begin(), zones.end(),
-            [&contributor](const ZoneState& zone) {
-                return zone.semantic_zone == contributor.zone &&
-                    std::any_of(zone.contributors.begin(), zone.contributors.end(),
-                        [&contributor](const ZoneContributor& existing) {
-                            return existing.inst_id == contributor.inst_id;
-                        });
-            });
-        if (already_captured) continue;
+        if (type >= 70 && type <= 75) {
+            kind = RdpsContributionKind::Fragile;
+            return slot >= 0 && type == 70 + slot &&
+                zone_role_factor(ZoneRole::Vulnerable, 1);
+        }
+        if (slot >= 0 && type == ResistanceAttribute(slot)) {
+            kind = RdpsContributionKind::Resistance;
+            const double resistance =
+                SnapshotAttributeOrZero(snapshot.defender_attributes, type);
+            const double taken = SnapshotAttributeOrZero(
+                snapshot.defender_attributes, TakenScalarAttribute(slot));
+            const double with = std::max(0.0, (1.0 - resistance / 100.0) * taken);
+            const double without = std::max(0.0,
+                (1.0 - (resistance - delta) / 100.0) * taken);
+            if (with <= 1.0e-12) return false;
+            factor = without / with;
+            return accept();
+        }
+        if (slot >= 0 && type == TakenScalarAttribute(slot)) {
+            kind = RdpsContributionKind::VulnerabilityTaken;
+            return linear(SnapshotAttributeOrZero(snapshot.defender_attributes, type));
+        }
+        if (type == kAttributeShelter) {
+            if (1.0 - f.shelter <= 1.0e-12) return false;
+            factor = (1.0 - (f.shelter - delta)) / (1.0 - f.shelter);
+            return accept();
+        }
+    }
+    return false;
+}
 
-        ZoneState* zone = find_zone(side, index);
-        if (!zone) {
-            double final_value = std::numeric_limits<double>::quiet_NaN();
-            if (contributor.zone == SemanticZone::Attack) {
-                if (final_snapshot.attacker_attributes.valid &&
-                    final_snapshot.attacker_attributes.count > 2) {
-                    final_value = final_snapshot.attacker_attributes.values[2];
+// ---------------------------------------------------------------------------
+// Ledger capture
+// ---------------------------------------------------------------------------
+
+// Attribute groups for every damage-relevant type on both sides plus every
+// type the lifecycle map claims a contribution for, each with the live
+// modifier set, so the ledger explains the pack even where no buff exists.
+void CaptureLedgerAttributes(HitLedger& ledger,
+    const DamagePackNumericSnapshot& final_snapshot) {
+    if (!g_buff_attribute_contract_ready) return;
+    std::vector<BuffDiagnosticInfo> mapped;
+    {
+        std::scoped_lock lock(g_buff_diagnostic_mutex);
+        for (const auto& [inst_id, buff] : g_buff_diagnostic_map) {
+            (void)inst_id;
+            if (!buff.attribute_contributions.empty() &&
+                (SameRuntimeOwner(buff, 0) || SameRuntimeOwner(buff, 1))) {
+                mapped.push_back(buff);
+            }
+        }
+    }
+    std::array<std::set<uint64_t>, 2> live_ids;
+    std::array<bool, 2> live_ok{false, false};
+    for (int32_t side = 0; side < 2; ++side) {
+        void* ability = side == 0 ? g_damage_flow_context.attacker_ability
+                                  : g_damage_flow_context.defender_ability;
+        void* attributes = GetAbilityAttributes(ability);
+        if (!ability || !attributes) continue;
+        std::vector<int32_t> types = DamageRelevantAttributes(side);
+        for (const BuffDiagnosticInfo& buff : mapped) {
+            if (!SameRuntimeOwner(buff, side)) continue;
+            for (const auto& contribution : buff.attribute_contributions) {
+                if (std::find(types.begin(), types.end(),
+                        contribution.attribute_type) == types.end()) {
+                    types.push_back(contribution.attribute_type);
+                }
+            }
+        }
+        const DoubleArraySnapshot& pack_attributes = side == 0
+            ? final_snapshot.attacker_attributes : final_snapshot.defender_attributes;
+        bool all_live = true;
+        for (int32_t type : types) {
+            if (type < 0 || type >= kAttributeTypeCount) continue;
+            AttributeAggregate aggregate;
+            if (!CaptureAttributeAggregate(ability, type, aggregate)) continue;
+            LedgerAttributeGroup group;
+            group.side = side;
+            group.attribute_type = type;
+            group.values = aggregate.values;
+            group.minimum = aggregate.minimum;
+            group.maximum = aggregate.maximum;
+            group.full_value = CalculateFinalAttribute(aggregate);
+            const double pack_value = SnapshotAttribute(pack_attributes, type);
+            group.pack_value_ok = std::isfinite(pack_value);
+            group.pack_value = group.pack_value_ok ? pack_value : 0.0;
+            std::vector<LiveAttributeModifier> modifiers;
+            group.live_enumerated = CollectLiveAttributeModifiers(
+                attributes, type, modifiers, group.other_modifiers);
+            if (group.live_enumerated) {
+                AttributeAggregate check = aggregate;
+                for (const LiveAttributeModifier& modifier : modifiers) {
+                    if (!modifier.has_contribution) continue;
+                    ++group.live_buffs;
+                    live_ids[static_cast<size_t>(side)].insert(modifier.inst_id);
+                    const BuffDiagnosticInfo buff = IdentifyLiveBuff(
+                        modifier.object, modifier.inst_id);
+                    LedgerAttributeWrite write;
+                    write.buff_inst_id = modifier.inst_id;
+                    write.side = side;
+                    write.attribute_type = type;
+                    write.external = IsExternalDamageSource(buff);
+                    write.buff_id = buff.buff_id;
+                    write.source = NormalizeAttackerId(
+                        std::string(CreditedBuffSource(buff)));
+                    write.owner = NormalizeAttackerId(buff.owner);
+                    write.contribution = modifier.contribution;
+                    const SemanticZone zone = AttributeSemanticZone(side, type);
+                    write.status = zone == SemanticZone::Unknown
+                        ? SemanticStatus::Unknown
+                        : ResolveBuffSemantic(buff.buff_id, zone,
+                            g_damage_flow_context.damage_type).status;
+                    AttributeAggregate without = aggregate;
+                    if (ApplyAttributeContribution(without, modifier.contribution, false)) {
+                        write.without_value = CalculateFinalAttribute(without);
+                        write.without_ok = std::isfinite(write.without_value);
+                    }
+                    ledger.attribute_writes.push_back(std::move(write));
+                    ApplyAttributeContribution(check, modifier.contribution, false);
+                }
+                // Removing every live buff must leave the multiplier sums at
+                // or above zero; a negative remainder means a contribution
+                // was counted that the game does not sum.
+                if (check.values[2] < -1.0e-6 || check.values[6] < -1.0e-6) {
+                    g_attribution_group_sum_mismatch.fetch_add(1, std::memory_order_relaxed);
                 }
             } else {
-                const DoubleArraySnapshot* array = RdpsZoneArray(final_snapshot, side);
-                if (array && array->valid && index < array->count &&
-                    index < array->values.size()) {
-                    final_value = array->values[index];
+                all_live = false;
+                // Fallback: the lifecycle map, knowing it may hold displaced
+                // instances the game no longer sums.
+                for (const BuffDiagnosticInfo& buff : mapped) {
+                    if (!SameRuntimeOwner(buff, side)) continue;
+                    for (const auto& contribution : buff.attribute_contributions) {
+                        if (contribution.attribute_type != type) continue;
+                        LedgerAttributeWrite write;
+                        write.buff_inst_id = buff.inst_id;
+                        write.side = side;
+                        write.attribute_type = type;
+                        write.external = IsExternalDamageSource(buff);
+                        write.buff_id = buff.buff_id;
+                        write.source = NormalizeAttackerId(
+                            std::string(CreditedBuffSource(buff)));
+                        write.owner = NormalizeAttackerId(buff.owner);
+                        write.contribution = contribution;
+                        const SemanticZone zone = AttributeSemanticZone(side, type);
+                        write.status = zone == SemanticZone::Unknown
+                            ? SemanticStatus::Unknown
+                            : ResolveBuffSemantic(buff.buff_id, zone,
+                                g_damage_flow_context.damage_type).status;
+                        AttributeAggregate without = aggregate;
+                        if (ApplyAttributeContribution(without, contribution, false)) {
+                            write.without_value = CalculateFinalAttribute(without);
+                            write.without_ok = std::isfinite(write.without_value);
+                        }
+                        ledger.attribute_writes.push_back(std::move(write));
+                    }
                 }
             }
-            if (!std::isfinite(final_value)) continue;
-            zones.push_back({contributor.zone, side, index, 0.0, final_value,
-                0.0, 1.0, false, {}});
-            zone = &zones.back();
+            ledger.attribute_groups.push_back(std::move(group));
         }
-        zone->total_delta += contributor.rate;
-        zone->contributors.push_back({contributor.inst_id, contributor.source,
-            contributor.kind, contributor.rate});
+        live_ok[static_cast<size_t>(side)] = all_live;
     }
-    for (uint8_t index = 0; index < g_damage_flow_context.factor_count; ++index) {
-        const RdpsFactorSample& factor = g_damage_flow_context.factors[index];
-        if (factor.semantic_zone == SemanticZone::Unknown ||
-            factor.source[0] == '\0' || !std::isfinite(factor.multiplier) ||
-            factor.multiplier <= 1.0 + 1.0e-12) {
-            continue;
-        }
-        const int32_t side = -2;
-        const uint32_t zone_index = static_cast<uint32_t>(factor.semantic_zone);
-        ZoneState* zone = find_zone(side, zone_index);
-        if (!zone) {
-            zones.push_back({factor.semantic_zone, side, zone_index, 1.0, 1.0,
-                0.0, 1.0, true, {}});
-            zone = &zones.back();
-        }
-        const double weight = std::log(factor.multiplier);
-        zone->final_value *= factor.multiplier;
-        zone->total_delta += weight;
-        zone->contributors.push_back({factor.buff_inst_id, factor.source,
-            factor.kind, weight});
-    }
-    const ArtsStrengthEvidence arts_strength = CaptureArtsStrengthEvidence();
-    if (std::isfinite(arts_strength.multiplier) &&
-        arts_strength.multiplier > 1.0 + 1.0e-12 &&
-        arts_strength.external_points > 1.0e-12) {
-        const int32_t side = -2;
-        const uint32_t zone_index =
-            static_cast<uint32_t>(SemanticZone::ArtsStrength);
-        ZoneState* zone = find_zone(side, zone_index);
-        if (!zone) {
-            zones.push_back({SemanticZone::ArtsStrength, side, zone_index,
-                1.0, arts_strength.multiplier, 0.0, 1.0, true, {}});
-            zone = &zones.back();
-        } else {
-            zone->final_value *= arts_strength.multiplier;
-            zone->logarithmic_contributors = true;
-        }
-        for (const ArtsStrengthContributor& contributor :
-             arts_strength.contributors) {
-            zone->total_delta += contributor.points;
-            zone->contributors.push_back({contributor.inst_id,
-                contributor.source, RdpsContributionKind::ArtsStrength,
-                contributor.points});
+    for (const BuffDiagnosticInfo& buff : mapped) {
+        const int32_t side = SameRuntimeOwner(buff, 0) ? 0 : 1;
+        if (live_ok[static_cast<size_t>(side)] &&
+            !live_ids[static_cast<size_t>(side)].contains(buff.inst_id)) {
+            ++ledger.stale_map_buffs;
         }
     }
-    zones.erase(std::remove_if(zones.begin(), zones.end(), [](ZoneState& zone) {
-        if (zone.logarithmic_contributors) {
-            zone.initial = 1.0;
-            zone.multiplier = zone.final_value;
-        } else {
-            zone.initial = zone.final_value - zone.total_delta;
-            zone.multiplier = zone.final_value / zone.initial;
-        }
-        return !std::isfinite(zone.final_value) || !std::isfinite(zone.initial) ||
-            zone.final_value <= 1.0e-9 || zone.initial <= 1.0e-9 ||
-            !std::isfinite(zone.multiplier) || zone.multiplier <= 1.0;
-    }), zones.end());
-    if (zones.empty()) return;
-
-    std::vector<RdpsMathZone> math_zones;
-    math_zones.reserve(zones.size());
-    for (const ZoneState& zone : zones) {
-        RdpsMathZone math_zone;
-        math_zone.multiplier = zone.multiplier;
-        math_zone.contributor_weights.reserve(zone.contributors.size());
-        for (const ZoneContributor& contributor : zone.contributors) {
-            math_zone.contributor_weights.push_back(contributor.delta);
-        }
-        math_zones.push_back(std::move(math_zone));
-    }
-    std::vector<std::vector<double>> allocations;
-    double external_fraction = 0.0;
-    if (!AllocateExternalFractions(math_zones, allocations,
-            external_fraction)) {
-        return;
-    }
-    for (size_t zone_index = 0; zone_index < zones.size(); ++zone_index) {
-        const ZoneState& zone = zones[zone_index];
-        for (size_t contributor_index = 0;
-             contributor_index < zone.contributors.size(); ++contributor_index) {
-            if (zone_index >= allocations.size() ||
-                contributor_index >= allocations[zone_index].size()) {
-                continue;
-            }
-            const ZoneContributor& contributor =
-                zone.contributors[contributor_index];
-            const double fraction = allocations[zone_index][contributor_index];
-            if (contributor.source.empty() || !std::isfinite(fraction) ||
-                fraction <= 1.0e-12) {
-                continue;
-            }
-            MarkBuffIntervalRelevant(contributor.inst_id, contributor.kind,
-                fraction, BuffEffectKind::DamageShare);
-            MergeRdpsShare(output, output_count, contributor.source, fraction,
-                contributor.kind);
-        }
+    if (ledger.stale_map_buffs) {
+        g_attribution_stale_map_buffs.fetch_add(ledger.stale_map_buffs,
+            std::memory_order_relaxed);
     }
 }
 
-void RememberCompletedDamageFlow(const DamagePackNumericSnapshot& final_snapshot) {
+// ---------------------------------------------------------------------------
+// Attribution
+// ---------------------------------------------------------------------------
+
+bool IsCatalogExcluded(std::string_view buff_id) {
+    const auto catalog = SemanticCatalogSnapshot();
+    if (!catalog || buff_id.empty()) return false;
+    const BuffSemantic* semantic = catalog->FindBuff(buff_id);
+    return semantic && (semantic->status == SemanticStatus::Excluded ||
+        semantic->status == SemanticStatus::Structural);
+}
+
+// Converts the ledger into per-(buff, mechanism) damage factors, then splits
+// the externally created part of the hit across teammates in log space.
+void BuildRdpsAttribution(HitLedger& ledger,
+    const DamagePackNumericSnapshot& final_snapshot,
+    std::array<RdpsShare, kMaxRdpsSourcesPerHit>& output, uint8_t& output_count) {
+    output = {};
+    output_count = 0;
+    const ZoneTable table = ZoneTableSnapshot();
+    const int32_t damage_type = g_damage_flow_context.damage_type;
+    const std::string attacker = NormalizeAttackerId(g_damage_flow_context.attacker_name);
+    std::vector<LedgerContributor>& contributors = ledger.contributors;
+
+    const auto identity = [&](uint64_t inst_id, LedgerContributor& contributor,
+        std::string_view buff_id, std::string_view source, std::string_view owner,
+        bool external) {
+        contributor.buff_inst_id = inst_id;
+        contributor.buff_id = std::string(buff_id);
+        contributor.source = std::string(source);
+        contributor.owner = std::string(owner);
+        contributor.external = external;
+        contributor.excluded = IsCatalogExcluded(buff_id);
+        contributor.status = ResolveBuffSemantic(buff_id,
+            SemanticZoneForKind(contributor.kind), damage_type).status;
+    };
+
+    // 1. DamageModifier zone writes: one contributor per (buff, side, zone),
+    //    folding repeated writes by the same buff into one "without" value.
+    struct ZoneWithout {
+        const LedgerZoneWrite* first = nullptr;
+        double without = 0.0;
+    };
+    std::vector<ZoneWithout> zone_withouts;
+    for (const LedgerZoneWrite& write : ledger.zone_writes) {
+        const std::vector<double>& zones = write.side == 0
+            ? ledger.attacker_zones : ledger.defender_zones;
+        if (write.zone_index >= zones.size()) continue;
+        const bool multiply = table.ready && write.zone_index < table.zones.size() &&
+            table.zones[write.zone_index].multiply;
+        auto existing = std::find_if(zone_withouts.begin(), zone_withouts.end(),
+            [&](const ZoneWithout& entry) {
+                return entry.first->buff_inst_id == write.buff_inst_id &&
+                    entry.first->side == write.side &&
+                    entry.first->zone_index == write.zone_index;
+            });
+        if (existing == zone_withouts.end()) {
+            zone_withouts.push_back({&write, zones[write.zone_index]});
+            existing = zone_withouts.end() - 1;
+        }
+        if (multiply) {
+            if (std::abs(write.after) <= 1.0e-12) continue;
+            existing->without *= write.before / write.after;
+        } else {
+            existing->without -= write.after - write.before;
+        }
+    }
+    for (const ZoneWithout& entry : zone_withouts) {
+        const LedgerZoneWrite& write = *entry.first;
+        LedgerContributor contributor;
+        contributor.mechanism = RdpsMechanism::ZoneWrite;
+        contributor.side = write.side;
+        contributor.zone_index = static_cast<int32_t>(write.zone_index);
+        contributor.kind = ZoneKind(table, write.side, write.zone_index);
+        contributor.factor = ZoneFactor(table, ledger, write.side, write.zone_index,
+            entry.without);
+        identity(write.buff_inst_id, contributor, write.buff_id, write.source,
+            write.owner, write.external);
+        contributors.push_back(std::move(contributor));
+    }
+
+    // 2. Live attribute contributions.
+    const ZoneAttributeActivation activation = ResolveZoneAttributeActivation(
+        table, ledger, final_snapshot.attacker_attributes, damage_type);
+    for (const LedgerAttributeWrite& write : ledger.attribute_writes) {
+        const LedgerAttributeGroup* group = nullptr;
+        for (const LedgerAttributeGroup& candidate : ledger.attribute_groups) {
+            if (candidate.side == write.side &&
+                candidate.attribute_type == write.attribute_type) {
+                group = &candidate;
+                break;
+            }
+        }
+        if (!group || !write.without_ok || !std::isfinite(group->full_value)) continue;
+        const double delta = group->full_value - write.without_value;
+        double factor = 1.0;
+        RdpsContributionKind kind = RdpsContributionKind::Other;
+        if (!AttributeDamageFactor(table, ledger, final_snapshot, activation,
+                write.side, write.attribute_type, delta, damage_type, factor, kind)) {
+            continue;
+        }
+        LedgerContributor contributor;
+        contributor.mechanism = RdpsMechanism::Attribute;
+        contributor.side = write.side;
+        contributor.attribute_type = write.attribute_type;
+        contributor.kind = kind;
+        contributor.factor = factor;
+        identity(write.buff_inst_id, contributor, write.buff_id, write.source,
+            write.owner, write.external);
+        if (write.external) {
+            const SemanticZone zone = SemanticZoneForKind(kind);
+            RecordSemanticResolution(ResolveBuffSemantic(write.buff_id, zone,
+                damage_type), write.buff_id, zone, write.side, -1, write.source);
+        }
+        contributors.push_back(std::move(contributor));
+    }
+
+    // 3. InstantModifyAttribute processors observed inside the flow.
+    for (uint8_t index = 0; index < g_damage_flow_context.factor_count; ++index) {
+        const RdpsFactorSample& sample = g_damage_flow_context.factors[index];
+        if (!std::isfinite(sample.multiplier) || sample.multiplier <= 1.0e-12 ||
+            std::abs(sample.multiplier - 1.0) <= 1.0e-12) {
+            continue;
+        }
+        LedgerContributor contributor;
+        contributor.mechanism = RdpsMechanism::InstantModifier;
+        contributor.side = sample.side;
+        contributor.attribute_type = sample.attribute_type;
+        contributor.kind = sample.kind;
+        contributor.factor = 1.0 / sample.multiplier;
+        const std::string source = NormalizeAttackerId(sample.source);
+        const bool external = StartsWithCharacterPrefix(source) && !attacker.empty() &&
+            _stricmp(source.c_str(), attacker.c_str()) != 0;
+        identity(sample.buff_inst_id, contributor, sample.buff_id, source,
+            NormalizeAttackerId(sample.owner), external);
+        contributors.push_back(std::move(contributor));
+    }
+
+    // 4. Arts strength points on elemental triggers. multiplier is
+    //    (baseline + external) / baseline; each contributor removes its own
+    //    points from the numerator.
+    const ArtsStrengthEvidence arts_strength = CaptureArtsStrengthEvidence();
+    if (arts_strength.multiplier > 1.0 + 1.0e-12 && arts_strength.external_points > 1.0e-12) {
+        const double total = arts_strength.external_points /
+            (1.0 - 1.0 / arts_strength.multiplier);
+        for (const ArtsStrengthContributor& points : arts_strength.contributors) {
+            if (total <= 1.0e-12 || points.points <= 1.0e-12) continue;
+            LedgerContributor contributor;
+            contributor.mechanism = RdpsMechanism::ArtsStrength;
+            contributor.side = 0;
+            contributor.kind = RdpsContributionKind::ArtsStrength;
+            contributor.factor = std::max(1.0e-9, 1.0 - points.points / total);
+            std::string buff_id;
+            std::string owner;
+            {
+                std::scoped_lock lock(g_buff_diagnostic_mutex);
+                if (const auto found = g_buff_diagnostic_map.find(points.inst_id);
+                    found != g_buff_diagnostic_map.end()) {
+                    buff_id = found->second.buff_id;
+                    owner = NormalizeAttackerId(found->second.owner);
+                }
+            }
+            identity(points.inst_id, contributor, buff_id,
+                NormalizeAttackerId(points.source), owner, true);
+            contributors.push_back(std::move(contributor));
+        }
+    }
+
+    // 5. Log-space allocation across the external contributors that helped.
+    double external_product = 1.0;
+    double self_product = 1.0;
+    double weight_total = 0.0;
+    for (LedgerContributor& contributor : contributors) {
+        if (!std::isfinite(contributor.factor) || contributor.factor <= 0.0) {
+            contributor.factor = 1.0;
+        }
+        const bool helps = contributor.factor < 1.0 - 1.0e-9;
+        const bool self = !contributor.external && !attacker.empty() &&
+            _stricmp(contributor.source.c_str(), attacker.c_str()) == 0;
+        if (self && helps) self_product *= contributor.factor;
+        if (!contributor.external || contributor.excluded || !helps) continue;
+        external_product *= contributor.factor;
+        weight_total += -std::log(contributor.factor);
+    }
+    ledger.self_fraction = std::clamp(1.0 - self_product, 0.0, 1.0);
+    ledger.external_fraction = std::clamp(1.0 - external_product, 0.0, 1.0);
+    g_attribution_hits.fetch_add(1, std::memory_order_relaxed);
+    if (!ledger.factors.attack_linked) {
+        g_attribution_attack_unlinked.fetch_add(1, std::memory_order_relaxed);
+    }
+    if (ledger.external_fraction <= 1.0e-12 || weight_total <= 1.0e-12) return;
+    g_attribution_hits_external.fetch_add(1, std::memory_order_relaxed);
+    for (LedgerContributor& contributor : contributors) {
+        const bool helps = contributor.factor < 1.0 - 1.0e-9;
+        if (!contributor.external || contributor.excluded || !helps) continue;
+        contributor.fraction = ledger.external_fraction *
+            (-std::log(contributor.factor)) / weight_total;
+        if (!std::isfinite(contributor.fraction) || contributor.fraction <= 1.0e-12) {
+            contributor.fraction = 0.0;
+            continue;
+        }
+        MarkBuffIntervalRelevant(contributor.buff_inst_id, contributor.kind,
+            contributor.fraction, BuffEffectKind::DamageShare);
+        MergeRdpsShare(output, output_count, contributor.source,
+            contributor.fraction, contributor.kind);
+    }
+}
+
+std::shared_ptr<HitLedger> BuildHitLedger(
+    const DamagePackNumericSnapshot& final_snapshot, bool critical) {
+    auto ledger = std::make_shared<HitLedger>();
+    ledger->origin_skill = g_damage_flow_context.origin_skill;
+    ledger->calc_result = final_snapshot.calc_result;
+    ledger->atk_scale = final_snapshot.atk_scale;
+    const auto copy_zones = [](const DoubleArraySnapshot& array,
+        std::vector<double>& output) {
+        if (!array.valid) return;
+        const size_t count = std::min<size_t>(array.count, kMaxLedgerZoneIndices);
+        output.assign(array.values.begin(), array.values.begin() + count);
+    };
+    copy_zones(final_snapshot.attacker_zones, ledger->attacker_zones);
+    copy_zones(final_snapshot.defender_zones, ledger->defender_zones);
+    ledger->zone_writes = g_damage_flow_context.ledger_zone_writes;
+    ledger->zone_writes_dropped = g_damage_flow_context.ledger_zone_writes_dropped;
+    ledger->factors = CaptureHitFactors(final_snapshot,
+        g_damage_flow_context.pack, critical);
+    CaptureLedgerAttributes(*ledger, final_snapshot);
+    return ledger;
+}
+
+void RememberCompletedDamageFlow(const DamagePackNumericSnapshot& final_snapshot,
+    bool critical) {
     if (!g_damage_flow_context.server_detail) return;
+    EnsureZoneTable();
     CompletedDamageFlow completed{};
     completed.generation = g_damage_flow_context.generation;
     completed.transaction = g_damage_flow_context.transaction;
     completed.server_detail = g_damage_flow_context.server_detail;
     completed.calculated_damage = g_damage_flow_context.calculated_damage;
-    BuildRdpsShares(final_snapshot, completed.rdps_shares,
+    completed.ledger = BuildHitLedger(final_snapshot, critical);
+    BuildRdpsAttribution(*completed.ledger, final_snapshot, completed.rdps_shares,
         completed.rdps_share_count);
     g_completed_damage_flows.push_back(completed);
     while (g_completed_damage_flows.size() > kCompletedDamageFlowCapacity) {
@@ -3971,9 +5029,10 @@ bool IsEnemyAttacker(std::string_view value) {
 }
 
 const char* RdpsContributionId(RdpsContributionKind kind) {
-    static constexpr std::array<const char*, 9> kIds{
-        "direct", "attack", "damageIncrease", "amplification", "fragile",
-        "vulnerabilityTaken", "resistance", "artsStrength", "other"};
+    static constexpr std::array<const char*, kRdpsContributionKindCount> kIds{
+        "direct", "attack", "damageIncrease", "abnormalIncrease",
+        "amplification", "critical", "independentZone", "fragile",
+        "vulnerabilityTaken", "defense", "resistance", "artsStrength", "other"};
     const size_t index = RdpsContributionIndex(kind);
     return index < kIds.size() ? kIds[index] : kIds.back();
 }
@@ -3990,18 +5049,22 @@ RdpsContributionKind ClassifyBuffInterval(const BuffDiagnosticInfo& info) {
     }
     const std::string owner = NormalizeAttackerId(info.owner);
     const int32_t side = StartsWithCharacterPrefix(owner) ? 0 : 1;
-    std::array<bool, 9> present{};
+    std::array<bool, kRdpsContributionKindCount> present{};
     for (const auto& contribution : info.attribute_contributions) {
         present[RdpsContributionIndex(ClassifyAttributeContribution(
             side, contribution.attribute_type))] = true;
     }
-    static constexpr std::array<RdpsContributionKind, 7> kPriority{
+    static constexpr std::array<RdpsContributionKind, 11> kPriority{
+        RdpsContributionKind::Defense,
         RdpsContributionKind::Resistance,
         RdpsContributionKind::Fragile,
         RdpsContributionKind::VulnerabilityTaken,
         RdpsContributionKind::Amplification,
+        RdpsContributionKind::AbnormalIncrease,
+        RdpsContributionKind::Critical,
         RdpsContributionKind::Attack,
         RdpsContributionKind::DamageIncrease,
+        RdpsContributionKind::IndependentZone,
         RdpsContributionKind::ArtsStrength};
     for (const RdpsContributionKind kind : kPriority) {
         if (present[RdpsContributionIndex(kind)]) return kind;
@@ -4030,8 +5093,53 @@ double SessionElapsedLocked(std::chrono::steady_clock::time_point now) {
         std::chrono::duration<double>(now - g_session.started).count());
 }
 
+// Widens the interval's range for one (attribute, slot) pair. Caller holds
+// g_session_mutex.
+//
+// Two sources feed this and they measure slightly different things: the buff's
+// own GetValue/GetBaseValue return the aggregate of every modifier the buff
+// put in that slot, while the per-hit sample is a single modifier's parameter.
+// They agree whenever a buff writes a slot once, which is the normal shape. A
+// buff that writes the same slot twice widens the range to [one, sum], which
+// is still an honest statement about magnitudes observed.
+void MergeBuffNominalLocked(BuffInterval& interval, int32_t attribute_type,
+    int32_t slot, double value) {
+    if (attribute_type < 0 || attribute_type >= kAttributeTypeCount ||
+        slot < 0 || static_cast<size_t>(slot) >= kModifierSlotCount ||
+        !std::isfinite(value)) {
+        return;
+    }
+    for (BuffNominalEffect& effect : interval.nominal) {
+        if (effect.attribute_type != attribute_type || effect.slot != slot) continue;
+        effect.min = std::min(effect.min, value);
+        effect.max = std::max(effect.max, value);
+        return;
+    }
+    if (interval.nominal.size() >= kMaxBuffNominalEffects) return;
+    interval.nominal.push_back(
+        BuffNominalEffect{attribute_type, slot, value, value});
+}
+
+void MergeContributionLocked(BuffInterval& interval,
+    const BuffDiagnosticInfo::AttributeContribution& contribution) {
+    const std::array<double, kModifierSlotCount> slots =
+        ContributionSlots(contribution);
+    for (size_t slot = 0; slot < slots.size(); ++slot) {
+        if (IsSlotIdentity(slot, slots[slot])) continue;
+        MergeBuffNominalLocked(interval, contribution.attribute_type,
+            static_cast<int32_t>(slot), slots[slot]);
+    }
+}
+
+void SeedBuffNominalLocked(BuffInterval& interval,
+    const std::vector<BuffDiagnosticInfo::AttributeContribution>& contributions) {
+    for (const auto& contribution : contributions) {
+        MergeContributionLocked(interval, contribution);
+    }
+}
+
 void TrackBuffStart(uint64_t inst_id, const BuffDiagnosticInfo& info,
-    double forced_start = -1.0) {
+    double forced_start) {
     if (!inst_id || info.buff_id.empty() ||
         !g_session_active.load(std::memory_order_acquire)) {
         return;
@@ -4046,6 +5154,8 @@ void TrackBuffStart(uint64_t inst_id, const BuffDiagnosticInfo& info,
         SessionElapsedLocked(std::chrono::steady_clock::now());
     interval.kind = kind;
     interval.relevant = false;
+    interval.stacking = info.stacking;
+    SeedBuffNominalLocked(interval, info.attribute_contributions);
     interval.buff_id = info.buff_id;
     interval.source = info.source;
     interval.owner = info.owner;
@@ -4064,6 +5174,64 @@ void TrackBuffStart(uint64_t inst_id, const BuffDiagnosticInfo& info,
         interval.origin_skill);
     g_session.open_buff_intervals[inst_id] = g_session.buff_intervals.size();
     g_session.buff_intervals.push_back(std::move(interval));
+}
+
+// Enhance-type stacking folds every layer into one Buff instance, so the
+// interval keeps the highest layer count the buff was ever seen holding.
+void TrackBuffEnhanceCount(uint64_t inst_id, int32_t enhance_count) {
+    if (!inst_id || enhance_count <= 0 ||
+        !g_session_active.load(std::memory_order_acquire)) {
+        return;
+    }
+    std::scoped_lock lock(g_session_mutex);
+    const auto found = g_session.open_buff_intervals.find(inst_id);
+    if (found == g_session.open_buff_intervals.end() ||
+        found->second >= g_session.buff_intervals.size()) return;
+    BuffInterval& interval = g_session.buff_intervals[found->second];
+    if (enhance_count > interval.stacking.enhance_count) {
+        interval.stacking.enhance_count = enhance_count;
+    }
+}
+
+void TrackBuffNominalEffects(uint64_t inst_id,
+    const std::vector<BuffDiagnosticInfo::AttributeContribution>& contributions) {
+    if (!inst_id || contributions.empty() ||
+        !g_session_active.load(std::memory_order_acquire)) {
+        return;
+    }
+    std::scoped_lock lock(g_session_mutex);
+    const auto found = g_session.open_buff_intervals.find(inst_id);
+    if (found == g_session.open_buff_intervals.end() ||
+        found->second >= g_session.buff_intervals.size()) return;
+    SeedBuffNominalLocked(g_session.buff_intervals[found->second], contributions);
+}
+
+// The live-modifier walk reads every buff's current contribution while
+// resolving a hit, which is a fresher reading than either hook: a buff whose
+// magnitude drifts without raising OnBlackboardValueChange shows up here.
+void TrackBuffNominalContribution(uint64_t inst_id,
+    const BuffDiagnosticInfo::AttributeContribution& contribution) {
+    if (!inst_id || !g_session_active.load(std::memory_order_acquire)) return;
+    std::scoped_lock lock(g_session_mutex);
+    const auto found = g_session.open_buff_intervals.find(inst_id);
+    if (found == g_session.open_buff_intervals.end() ||
+        found->second >= g_session.buff_intervals.size()) return;
+    MergeContributionLocked(g_session.buff_intervals[found->second], contribution);
+}
+
+// The per-hit half: a modifier parameter the client resolved against the
+// damage pack's blackboard, so it already reflects whatever the buff scales
+// with. Buff.GetValue cannot see these -- it reads the buff's own blackboard.
+void TrackBuffNominalSample(uint64_t inst_id, int32_t attribute_type,
+    int32_t slot, double value) {
+    if (!inst_id || !g_session_active.load(std::memory_order_acquire)) return;
+    if (IsSlotIdentity(static_cast<size_t>(slot), value)) return;
+    std::scoped_lock lock(g_session_mutex);
+    const auto found = g_session.open_buff_intervals.find(inst_id);
+    if (found == g_session.open_buff_intervals.end() ||
+        found->second >= g_session.buff_intervals.size()) return;
+    MergeBuffNominalLocked(g_session.buff_intervals[found->second],
+        attribute_type, slot, value);
 }
 
 void MarkBuffIntervalRelevant(uint64_t inst_id, RdpsContributionKind kind,
@@ -4229,6 +5397,17 @@ void TrackActionEnd(void* skill, int32_t finish_type,
     g_session.open_actions.erase(found);
 }
 
+void* ReadSkillOwner(void* skill) {
+    if (!skill || !g_skill_get_owner.pointer) return nullptr;
+    __try {
+        return reinterpret_cast<ObjectGetterFn>(g_skill_get_owner.pointer)(
+            skill, const_cast<void*>(g_skill_get_owner.method_info));
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return nullptr;
+    }
+}
+
 bool TryReadSkillCasting(void* skill, bool& casting) {
     if (!skill || !g_skill_is_casting.pointer) return false;
     __try {
@@ -4291,6 +5470,28 @@ void TrackDodgeAction(void* source) {
     g_session.actions.push_back(std::move(action));
 }
 
+// Beyond.Gameplay.Core.Skill.InterruptReason, in declaration order.
+const char* SkillInterruptReasonId(int32_t reason) {
+    static constexpr std::array<const char*, 10> kIds{
+        "default", "enterFreeState", "aiManual", "mud", "detachSkill",
+        "interruptAction", "dash", "castNextSkill", "levelScript", "narrative"};
+    return reason >= 0 && static_cast<size_t>(reason) < kIds.size()
+        ? kIds[static_cast<size_t>(reason)] : "unknown";
+}
+
+// BuffStackingSettings.StackingType, in declaration order. get_isStackType,
+// get_isPriorityType and IsEnhanceType compare against these ordinals as bare
+// immediates, which is what pins the mapping.
+const char* BuffStackingTypeId(int32_t type) {
+    static constexpr std::array<const char*, 13> kIds{
+        "unlimited", "highPriority", "stack", "enhance", "refresh", "extend",
+        "modify", "unique", "enhanceAndRefresh", "overwriteDuration",
+        "enhanceAndOverwriteDuration", "highPriorityWithMaxStack",
+        "timedGrowingEnhance"};
+    return type >= 0 && static_cast<size_t>(type) < kIds.size()
+        ? kIds[static_cast<size_t>(type)] : "unknown";
+}
+
 void WriteAggregateMap(std::ostream& output, const std::map<std::string, Aggregate>& values) {
     output << "{";
     bool first = true;
@@ -4329,6 +5530,159 @@ void WriteCharacterMap(std::ostream& output,
         output << "]}";
     }
     output << "}";
+}
+
+void WriteDoubleArray(std::ostream& output, const std::vector<double>& values) {
+    output << "[";
+    for (size_t index = 0; index < values.size(); ++index) {
+        if (index) output << ",";
+        output << values[index];
+    }
+    output << "]";
+}
+
+const char* RdpsMechanismId(RdpsMechanism mechanism) {
+    switch (mechanism) {
+    case RdpsMechanism::ZoneWrite: return "zoneWrite";
+    case RdpsMechanism::Attribute: return "attribute";
+    case RdpsMechanism::InstantModifier: return "instantModifier";
+    case RdpsMechanism::ArtsStrength: return "artsStrength";
+    default: return "unknown";
+    }
+}
+
+void WriteHitLedger(std::ostream& output, const HitLedger& ledger) {
+    const auto write_bool = [&output](bool value) {
+        output << (value ? "true" : "false");
+    };
+    const auto write_optional = [&output](bool ok, double value) {
+        if (ok && std::isfinite(value)) output << value;
+        else output << "null";
+    };
+    output << std::setprecision(15)
+        << "{\"originSkillId\":\"" << JsonEscape(ledger.origin_skill)
+        << "\",\"calcResult\":" << ledger.calc_result
+        << ",\"atkScale\":" << ledger.atk_scale
+        << ",\"attackerZones\":";
+    WriteDoubleArray(output, ledger.attacker_zones);
+    output << ",\"defenderZones\":";
+    WriteDoubleArray(output, ledger.defender_zones);
+    const HitFactors& f = ledger.factors;
+    output << ",\"factors\":{\"valid\":";
+    write_bool(f.valid);
+    output << ",\"attack\":";
+    write_optional(std::isfinite(f.attack), f.attack);
+    output << ",\"attackLinked\":";
+    write_bool(f.attack_linked);
+    output << ",\"zoneProduct\":" << f.zone_product
+        << ",\"defense\":";
+    write_optional(std::isfinite(f.defense), f.defense);
+    output << ",\"defResistance\":";
+    write_optional(f.def_resistance_ok, f.def_resistance);
+    output << ",\"typeResistance\":";
+    write_optional(f.type_resistance_ok, f.type_resistance);
+    output << ",\"critical\":";
+    write_bool(f.critical);
+    output << ",\"critRate\":" << f.crit_rate
+        << ",\"critDamage\":" << f.crit_damage
+        << ",\"weakness\":";
+    write_optional(std::isfinite(f.weakness), f.weakness);
+    output << ",\"shelter\":" << f.shelter
+        << ",\"ignite\":";
+    write_optional(std::isfinite(f.ignite), f.ignite);
+    output << ",\"igniteApplies\":";
+    write_bool(f.ignite_applies);
+    output << "},\"externalFraction\":" << ledger.external_fraction
+        << ",\"selfFraction\":" << ledger.self_fraction
+        << ",\"zoneWrites\":[";
+    for (size_t index = 0; index < ledger.zone_writes.size(); ++index) {
+        if (index) output << ",";
+        const LedgerZoneWrite& write = ledger.zone_writes[index];
+        output << "{\"statusInstanceId\":\"" << write.buff_inst_id
+            << "\",\"statusId\":\"" << JsonEscape(write.buff_id)
+            << "\",\"sourceId\":\"" << JsonEscape(write.source)
+            << "\",\"ownerId\":\"" << JsonEscape(write.owner)
+            << "\",\"side\":" << write.side
+            << ",\"zoneIndex\":" << write.zone_index
+            << ",\"zoneName\":\"" << JsonEscape(write.zone_name)
+            << "\",\"before\":" << write.before
+            << ",\"after\":" << write.after
+            << ",\"external\":";
+        write_bool(write.external);
+        output << ",\"semantic\":\"" << SemanticStatusId(write.status) << "\"}";
+    }
+    output << "],\"zoneWritesDropped\":" << ledger.zone_writes_dropped
+        << ",\"attributeGroups\":[";
+    for (size_t index = 0; index < ledger.attribute_groups.size(); ++index) {
+        if (index) output << ",";
+        const LedgerAttributeGroup& group = ledger.attribute_groups[index];
+        output << "{\"side\":" << group.side
+            << ",\"attributeType\":" << group.attribute_type
+            << ",\"values\":[";
+        for (size_t value_index = 0; value_index < group.values.size(); ++value_index) {
+            if (value_index) output << ",";
+            output << group.values[value_index];
+        }
+        output << "],\"min\":" << group.minimum
+            << ",\"max\":" << group.maximum
+            << ",\"fullValue\":" << group.full_value
+            << ",\"packValue\":";
+        write_optional(group.pack_value_ok, group.pack_value);
+        output << ",\"liveEnumerated\":";
+        write_bool(group.live_enumerated);
+        output << ",\"liveBuffs\":" << group.live_buffs
+            << ",\"otherModifiers\":" << group.other_modifiers << "}";
+    }
+    output << "],\"attributeWrites\":[";
+    for (size_t index = 0; index < ledger.attribute_writes.size(); ++index) {
+        if (index) output << ",";
+        const LedgerAttributeWrite& write = ledger.attribute_writes[index];
+        const auto& value = write.contribution;
+        output << "{\"statusInstanceId\":\"" << write.buff_inst_id
+            << "\",\"statusId\":\"" << JsonEscape(write.buff_id)
+            << "\",\"sourceId\":\"" << JsonEscape(write.source)
+            << "\",\"ownerId\":\"" << JsonEscape(write.owner)
+            << "\",\"side\":" << write.side
+            << ",\"attributeType\":" << write.attribute_type
+            << ",\"external\":";
+        write_bool(write.external);
+        output << ",\"semantic\":\"" << SemanticStatusId(write.status)
+            << "\",\"addition\":" << value.addition
+            << ",\"multiplier\":" << value.multiplier
+            << ",\"finalAddition\":" << value.final_addition
+            << ",\"finalScalar\":" << value.final_scalar
+            << ",\"baseAddition\":" << value.base_addition
+            << ",\"baseMultiplier\":" << value.base_multiplier
+            << ",\"baseFinalAddition\":" << value.base_final_addition
+            << ",\"baseFinalScalar\":" << value.base_final_scalar
+            << ",\"withoutValue\":";
+        write_optional(write.without_ok, write.without_value);
+        output << "}";
+    }
+    output << "],\"contributors\":[";
+    for (size_t index = 0; index < ledger.contributors.size(); ++index) {
+        if (index) output << ",";
+        const LedgerContributor& contributor = ledger.contributors[index];
+        output << "{\"statusInstanceId\":\"" << contributor.buff_inst_id
+            << "\",\"statusId\":\"" << JsonEscape(contributor.buff_id)
+            << "\",\"sourceId\":\"" << JsonEscape(contributor.source)
+            << "\",\"ownerId\":\"" << JsonEscape(contributor.owner)
+            << "\",\"mechanism\":\"" << RdpsMechanismId(contributor.mechanism)
+            << "\",\"contributionType\":" << RdpsContributionIndex(contributor.kind)
+            << ",\"contributionKind\":\"" << RdpsContributionId(contributor.kind)
+            << "\",\"semantic\":\"" << SemanticStatusId(contributor.status)
+            << "\",\"side\":" << contributor.side
+            << ",\"attributeType\":" << contributor.attribute_type
+            << ",\"zoneIndex\":" << contributor.zone_index
+            << ",\"factor\":" << contributor.factor
+            << ",\"fraction\":" << contributor.fraction
+            << ",\"external\":";
+        write_bool(contributor.external);
+        output << ",\"excluded\":";
+        write_bool(contributor.excluded);
+        output << "}";
+    }
+    output << "],\"staleMapBuffs\":" << ledger.stale_map_buffs << "}";
 }
 
 std::filesystem::path SessionsDirectory() {
@@ -4404,7 +5758,7 @@ void SaveSession(const Session& session) {
     }
     const double duration = std::max(0.001, std::chrono::duration<double>(
         session.ended - session.started).count());
-    output << "{\n  \"schemaVersion\":11,\n";
+    output << "{\n  \"schemaVersion\":15,\n";
     output << "  \"battle\":{\"sessionId\":" << session.id
         << ",\"startedUnixSeconds\":" << stamp
         << ",\"durationSeconds\":" << std::setprecision(15) << duration
@@ -4416,7 +5770,49 @@ void SaveSession(const Session& session) {
         << "\",\"hotfixVersion\":\""
         << JsonEscape(session.semantic_hotfix_version)
         << "\",\"sourceSha256\":\""
-        << JsonEscape(session.semantic_source_sha256) << "\"},\n";
+        << JsonEscape(session.semantic_source_sha256) << "\",\"zoneNames\":{";
+    {
+        std::scoped_lock zone_lock(g_zone_name_mutex);
+        for (size_t side = 0; side < g_zone_names.size(); ++side) {
+            if (side) output << ",";
+            output << "\"" << (side == 0 ? "attacker" : "defender") << "\":{";
+            bool first_zone = true;
+            for (size_t index = 0; index < g_zone_names[side].size(); ++index) {
+                if (g_zone_names[side][index].empty()) continue;
+                if (!first_zone) output << ",";
+                first_zone = false;
+                output << "\"" << index << "\":\""
+                    << JsonEscape(g_zone_names[side][index]) << "\"";
+            }
+            output << "}";
+        }
+    }
+    output << "},\"zones\":[";
+    {
+        const ZoneTable table = ZoneTableSnapshot();
+        static constexpr std::array<const char*, kZoneRoleCount> kRoleIds{
+            "none", "damageType", "ignite", "skillType", "brokenUnit",
+            "enhanced", "vulnerable"};
+        for (size_t index = 0; index < table.zones.size(); ++index) {
+            if (index) output << ",";
+            const ZoneInfo& zone = table.zones[index];
+            output << "{\"index\":" << index
+                << ",\"name\":\"" << JsonEscape(zone.name)
+                << "\",\"multiply\":" << (zone.multiply ? "true" : "false")
+                << ",\"mergeSides\":" << (zone.merge_sides ? "true" : "false")
+                << ",\"damageTypeZone\":" << (zone.damage_type_zone ? "true" : "false")
+                << ",\"roles\":[";
+            bool first_role = true;
+            for (size_t role = 1; role < kZoneRoleCount; ++role) {
+                if (!(zone.roles & ZoneRoleBit(static_cast<ZoneRole>(role)))) continue;
+                if (!first_role) output << ",";
+                first_role = false;
+                output << "\"" << kRoleIds[role] << "\"";
+            }
+            output << "]}";
+        }
+    }
+    output << "]},\n";
     if (!session.squad.empty()) {
         output << "  \"squad\":[";
         for (size_t index = 0; index < session.squad.size(); ++index) {
@@ -4505,10 +5901,13 @@ void SaveSession(const Session& session) {
     for (size_t index = 0; index < saved_actions.size(); ++index) {
         if (index) output << ",";
         const CombatAction& action = saved_actions[index];
+        // Skill.FinishType: 0 Completed, 1 Interrupted. Casts that ran to the
+        // end still report an InterruptReason (EnterFreeState for most normal
+        // attacks), so the reason alone does not mean the cast was cut short.
         const char* result = action.cancelled ? "cancelled" :
-            action.interrupt_reason != 0 ? "interrupted" :
+            !action.end_observed ? "openAtSessionEnd" :
             action.inferred_end ? "superseded" :
-            action.end_observed ? "completed" : "openAtSessionEnd";
+            action.finish_type == 1 ? "interrupted" : "completed";
         output << "{\"id\":" << action.id
             << ",\"start\":" << std::setprecision(15) << action.start_time
             << ",\"end\":";
@@ -4523,6 +5922,12 @@ void SaveSession(const Session& session) {
             << JsonEscape(action.type.empty() ? "skillCast" : action.type)
             << "\",\"skillId\":\"" << JsonEscape(action.skill)
             << "\",\"result\":\"" << result << "\"";
+        if (action.end_observed && !action.inferred_end && action.type == "skillCast") {
+            output << ",\"finishType\":\""
+                << (action.finish_type == 1 ? "interrupted" : "completed")
+                << "\",\"interruptReason\":\""
+                << SkillInterruptReasonId(action.interrupt_reason) << "\"";
+        }
         if (action.parent_action_id) {
             output << ",\"parentActionId\":" << action.parent_action_id;
         }
@@ -4574,7 +5979,12 @@ void SaveSession(const Session& session) {
                 << ",\"contributionKind\":\""
                 << RdpsContributionId(share.kind) << "\"}";
         }
-        output << "]}";
+        output << "]";
+        if (event.ledger) {
+            output << ",\"ledger\":";
+            WriteHitLedger(output, *event.ledger);
+        }
+        output << "}";
     }
     for (const BuffInterval& interval : session.buff_intervals) {
         if (interval.buff_id.empty() || interval.end_time <= interval.start_time) continue;
@@ -4619,6 +6029,31 @@ void SaveSession(const Session& session) {
             << "\",\"effectKind\":" << static_cast<uint32_t>(interval.effect_kind)
             << ",\"effectMin\":" << interval.effect_min
             << ",\"effectMax\":" << interval.effect_max;
+        if (interval.stacking.resolved) {
+            output << ",\"stacking\":{\"type\":"
+                << interval.stacking.type << ",\"typeId\":\""
+                << BuffStackingTypeId(interval.stacking.type)
+                << "\",\"maxStack\":" << interval.stacking.max_stack
+                << ",\"enhanceCount\":" << interval.stacking.enhance_count
+                << ",\"keyed\":"
+                << (interval.stacking.keyed ? "true" : "false")
+                << ",\"key\":\"" << JsonEscape(interval.stacking.key) << "\"}";
+        }
+        if (!interval.nominal.empty()) {
+            output << ",\"nominalEffects\":[";
+            bool first_nominal = true;
+            for (const BuffNominalEffect& effect : interval.nominal) {
+                if (!first_nominal) output << ",";
+                first_nominal = false;
+                output << "{\"attributeType\":" << effect.attribute_type
+                    << ",\"slot\":" << effect.slot
+                    << ",\"min\":" << std::setprecision(10) << effect.min
+                    << ",\"max\":" << effect.max << "}";
+            }
+            // Restored because the statusRemove below inherits this stream's
+            // precision for its timestamp.
+            output << "]" << std::setprecision(15);
+        }
         if (interval.action_id) output << ",\"actionId\":" << interval.action_id;
         output << "}";
         output << ",{\"id\":" << effect_id++
@@ -4642,12 +6077,55 @@ void SaveSession(const Session& session) {
         (void)character;
         total_rdps_damage += aggregate.damage;
     }
-    output << "],\n  \"summary\":{\"totalDamage\":" << session.total_damage
+    // Additive block: route counters and the semantic audit that used to be
+    // logged only. Readers ignore unknown keys; this is what tells us which
+    // buffs touched a damage zone but were not credited.
+    output << "],\n  \"diagnostics\":{\"routeHits\":{\"recordDamage\":"
+        << session.record_damage_calls
+        << ",\"recordDamageDetail\":" << session.record_detail_calls
+        << ",\"damageDetailInit\":" << session.detail_init_calls
+        << ",\"damageText\":" << session.damage_text_calls
+        << "},\"actionCapture\":{\"start\":" << session.action_start_calls
+        << ",\"end\":" << session.action_end_calls
+        << ",\"matched\":" << session.action_end_matches
+        << ",\"dodge\":" << session.dodge_calls
+        << "},\"semanticCoverage\":{\"observed\":"
+        << session.semantic_coverage.observed
+        << ",\"verified\":" << session.semantic_coverage.verified
+        << ",\"candidate\":" << session.semantic_coverage.candidate
+        << ",\"excluded\":" << session.semantic_coverage.excluded
+        << ",\"unknown\":" << session.semantic_coverage.unknown
+        << ",\"elementMismatch\":" << session.semantic_coverage.element_mismatch
+        << ",\"unresolvedDropped\":" << session.semantic_coverage.unresolved_dropped
+        << "},\"attribution\":{\"hits\":" << session.attribution.hits
+        << ",\"hitsWithExternal\":" << session.attribution.hits_external
+        << ",\"liveSetFailures\":" << session.attribution.live_set_failures
+        << ",\"groupSumMismatch\":" << session.attribution.group_sum_mismatch
+        << ",\"zoneResidualUnexplained\":" << session.attribution.zone_residual_unexplained
+        << ",\"lateBuffs\":" << session.attribution.late_buffs
+        << ",\"staleMapBuffs\":" << session.attribution.stale_map_buffs
+        << ",\"attackUnlinked\":" << session.attribution.attack_unlinked
+        << "},\"unresolvedSemantics\":[";
+    for (size_t index = 0; index < session.unresolved_semantics.size(); ++index) {
+        if (index) output << ",";
+        const Session::SemanticAuditItem& item = session.unresolved_semantics[index];
+        output << "{\"buffId\":\"" << JsonEscape(item.buff_id)
+            << "\",\"status\":\"" << SemanticStatusId(item.status)
+            << "\",\"observedZone\":\""
+            << CombatSemanticCatalog::ZoneId(item.observed_zone)
+            << "\",\"side\":" << item.side
+            << ",\"zoneIndex\":" << item.zone_index
+            << ",\"sourceId\":\"" << JsonEscape(item.source)
+            << "\",\"count\":" << item.count
+            << ",\"elementMismatch\":"
+            << (item.element_mismatch ? "true" : "false") << "}";
+    }
+    output << "]},\n  \"summary\":{\"totalDamage\":" << session.total_damage
         << ",\"dps\":" << session.total_damage / duration
         << ",\"rdps\":" << total_rdps_damage / duration
         << ",\"hitCount\":" << session.hits
         << ",\"criticalCount\":" << session.critical_hits << "}\n}\n";
-    Log(std::string("[combat-save] wrote schema 11 ") + path.string());
+    Log(std::string("[combat-save] wrote schema 14 ") + path.string());
     return;
     if (!session.stagger_intervals.empty()) {
         output << "  \"staggerIntervals\":[";
@@ -5237,6 +6715,7 @@ void StartSession() {
         interval.start_time = 0.0;
         interval.kind = ClassifyBuffInterval(info);
         interval.relevant = false;
+        SeedBuffNominalLocked(interval, info.attribute_contributions);
         interval.buff_id = info.buff_id;
         interval.source = info.source;
         interval.owner = info.owner;
@@ -5350,6 +6829,21 @@ void StopSession() {
             g_semantic_element_mismatch.load(std::memory_order_relaxed);
         g_session.semantic_coverage.unresolved_dropped =
             g_semantic_unresolved_dropped.load(std::memory_order_relaxed);
+        g_session.attribution.hits = g_attribution_hits.load(std::memory_order_relaxed);
+        g_session.attribution.hits_external =
+            g_attribution_hits_external.load(std::memory_order_relaxed);
+        g_session.attribution.live_set_failures =
+            g_attribution_live_set_failures.load(std::memory_order_relaxed);
+        g_session.attribution.group_sum_mismatch =
+            g_attribution_group_sum_mismatch.load(std::memory_order_relaxed);
+        g_session.attribution.zone_residual_unexplained =
+            g_attribution_zone_residual_unexplained.load(std::memory_order_relaxed);
+        g_session.attribution.late_buffs =
+            g_attribution_late_buffs.load(std::memory_order_relaxed);
+        g_session.attribution.stale_map_buffs =
+            g_attribution_stale_map_buffs.load(std::memory_order_relaxed);
+        g_session.attribution.attack_unlinked =
+            g_attribution_attack_unlinked.load(std::memory_order_relaxed);
         {
             std::scoped_lock audit_lock(g_semantic_audit_mutex);
             g_session.unresolved_semantics.clear();
@@ -5365,7 +6859,7 @@ void StopSession() {
                 if (left.count != right.count) return left.count > right.count;
                 return left.buff_id < right.buff_id;
             });
-        constexpr size_t kSavedSemanticAuditItems = 64;
+        constexpr size_t kSavedSemanticAuditItems = 128;
         if (g_session.unresolved_semantics.size() > kSavedSemanticAuditItems) {
             g_session.semantic_coverage.unresolved_dropped +=
                 g_session.unresolved_semantics.size() - kSavedSemanticAuditItems;
@@ -5544,6 +7038,14 @@ void __fastcall InstantModifyAttributeHook(void* instance, void* pack_data,
         g_numeric_hook_context.modifier_handle_reference);
     ReadValue(handle, g_modifier_handle_buff_inst_id, buff_inst_id);
     ReadValue(handle, g_modifier_handle_index, modifier_index);
+    // The parameter resolved against this pack's blackboard. Buffs that scale
+    // with the hit -- enemies caught, stacks on the target -- only ever show
+    // their magnitude here, so it feeds the interval's range alongside the
+    // buff's own GetValue reading.
+    if (parameter_available) {
+        TrackBuffNominalSample(buff_inst_id, attribute_type, formula_item,
+            parameter_value);
+    }
     BuffDiagnosticInfo buff;
     {
         std::scoped_lock lock(g_buff_diagnostic_mutex);
@@ -5552,40 +7054,50 @@ void __fastcall InstantModifyAttributeHook(void* instance, void* pack_data,
             buff = found->second;
         }
     }
+    // Damage factor of this processor: DEF and damage-type resistance through
+    // the game's own formula helpers, ATK linearly. Zone effects of instant
+    // attribute changes are folded in later by _GetDamageScale and land in
+    // the zone residual instead.
     double factor_multiplier = 1.0;
+    RdpsContributionKind factor_kind = RdpsContributionKind::Other;
     if (defense_before_ok && defense_after_ok && defense_before > 1.0e-12 &&
-        defense_after > defense_before + 1.0e-12) {
+        std::abs(defense_after - defense_before) > 1.0e-12) {
         factor_multiplier *= defense_after / defense_before;
+        factor_kind = RdpsContributionKind::Defense;
     }
     if (resistance_before_ok && resistance_after_ok &&
         resistance_before > 1.0e-12 &&
-        resistance_after > resistance_before + 1.0e-12) {
+        std::abs(resistance_after - resistance_before) > 1.0e-12) {
         factor_multiplier *= resistance_after / resistance_before;
+        factor_kind = RdpsContributionKind::Resistance;
     }
-    if (factor_multiplier > 1.0 + 1.0e-12 &&
-        IsExternalDamageSource(buff)) {
-        const SemanticResolution semantic = ResolveBuffSemantic(buff.buff_id,
-            SemanticZone::Resistance, g_damage_flow_context.damage_type);
-        RecordSemanticResolution(semantic, buff.buff_id,
-            SemanticZone::Resistance);
-        if (semantic.status == SemanticStatus::Verified &&
-            semantic.zone == SemanticZone::Resistance &&
-            g_damage_flow_context.factor_count <
-                g_damage_flow_context.factors.size()) {
-            RdpsFactorSample& factor = g_damage_flow_context.factors[
-                g_damage_flow_context.factor_count++];
-            factor.buff_inst_id = buff_inst_id;
-            factor.multiplier = factor_multiplier;
-            factor.kind = RdpsContributionKind::Resistance;
-            factor.semantic_zone = SemanticZone::Resistance;
-            std::snprintf(factor.buff_id, sizeof(factor.buff_id), "%s",
-                buff.buff_id.c_str());
-            const std::string_view credited_source = CreditedBuffSource(buff);
-            std::snprintf(factor.source, sizeof(factor.source), "%.*s",
-                static_cast<int>(credited_source.size()), credited_source.data());
+    const double attack_before = SnapshotAttribute(before.attacker_attributes, kAttributeAtk);
+    const double attack_after = SnapshotAttribute(after.attacker_attributes, kAttributeAtk);
+    if (std::isfinite(attack_before) && std::isfinite(attack_after) &&
+        attack_before > 1.0e-12 && std::abs(attack_after - attack_before) > 1.0e-9) {
+        factor_multiplier *= attack_after / attack_before;
+        if (factor_kind == RdpsContributionKind::Other) {
+            factor_kind = RdpsContributionKind::Attack;
         }
     }
-    if (!config.diagnostics || (!changed && factor_multiplier <= 1.0 + 1.0e-12)) {
+    if (std::isfinite(factor_multiplier) &&
+        std::abs(factor_multiplier - 1.0) > 1.0e-12 &&
+        g_damage_flow_context.factor_count < g_damage_flow_context.factors.size()) {
+        RdpsFactorSample& factor = g_damage_flow_context.factors[
+            g_damage_flow_context.factor_count++];
+        factor.buff_inst_id = buff_inst_id;
+        factor.multiplier = factor_multiplier;
+        factor.side = target_side;
+        factor.attribute_type = attribute_type;
+        factor.kind = factor_kind;
+        std::snprintf(factor.buff_id, sizeof(factor.buff_id), "%s",
+            buff.buff_id.c_str());
+        const std::string_view credited_source = CreditedBuffSource(buff);
+        std::snprintf(factor.source, sizeof(factor.source), "%.*s",
+            static_cast<int>(credited_source.size()), credited_source.data());
+        std::snprintf(factor.owner, sizeof(factor.owner), "%s", buff.owner.c_str());
+    }
+    if (!config.diagnostics || (!changed && std::abs(factor_multiplier - 1.0) <= 1.0e-12)) {
         return;
     }
     const uint32_t sample = g_rdps_processor_samples.fetch_add(1,
@@ -5613,7 +7125,7 @@ void __fastcall InstantModifyAttributeHook(void* instance, void* pack_data,
         << " owner=\"" << buff.owner << "\""
         << " skill=\"" << buff.origin_skill << "\""
         << " changed=" << changed << changes.str();
-    if (factor_multiplier > 1.0 + 1.0e-12) {
+    if (std::abs(factor_multiplier - 1.0) > 1.0e-12) {
         output << " factor=" << factor_multiplier
             << " defense=" << defense_before << "->" << defense_after
             << " resistance=" << resistance_before << "->" << resistance_after;
@@ -5689,9 +7201,9 @@ double __fastcall CalculateDamageHook(void* pack_data, bool* is_critical,
     g_damage_flow_context.server_detail = ReadDamagePackServerDetail(pack_data);
     DamagePackNumericSnapshot final_snapshot;
     const bool snapshot_ok = CapturePackNumericSnapshot(pack_data, final_snapshot);
-    RememberCompletedDamageFlow(final_snapshot);
     const bool critical = ReadBoolPointer(is_critical);
     const bool blocked = ReadBoolPointer(is_blocked);
+    RememberCompletedDamageFlow(final_snapshot, critical);
     const uint32_t sample = config.diagnostics
         ? g_rdps_flow_samples.fetch_add(1, std::memory_order_relaxed)
         : 384;
@@ -5792,15 +7304,7 @@ void __fastcall DamageModifierProcessHook(void* instance, int32_t timing,
             buff = found->second;
         }
     }
-    const uint8_t modifier_count_before = g_damage_flow_context.modifier_count;
-    CaptureRdpsModifierSamples(before, after, buff, buff_inst_id);
-    for (uint8_t index = modifier_count_before;
-         index < g_damage_flow_context.modifier_count; ++index) {
-        MarkBuffIntervalRelevant(buff_inst_id,
-            g_damage_flow_context.modifiers[index].kind,
-            g_damage_flow_context.modifiers[index].delta,
-            BuffEffectKind::MultiplierDelta);
-    }
+    CaptureLedgerZoneWrites(before, after, buff, buff_inst_id, modifier_context);
     if (!config.diagnostics) return;
     const uint32_t sample = g_rdps_value_samples.fetch_add(1,
         std::memory_order_relaxed);
@@ -5835,6 +7339,15 @@ void __fastcall RecordCastSkillHook(
     TrackActionStart(caster, skill);
     if (g_original_record_cast_skill) {
         g_original_record_cast_skill(instance, caster, skill, method);
+    }
+}
+
+void __fastcall SkillDoCastHook(void* skill, void* on_cast_end,
+    void* on_exclusive, void* options, uint8_t skip_apply_cost, void* method) {
+    TrackActionStart(ReadSkillOwner(skill), skill);
+    if (g_original_skill_do_cast) {
+        g_original_skill_do_cast(skill, on_cast_end, on_exclusive, options,
+            skip_apply_cost, method);
     }
 }
 
@@ -6007,6 +7520,7 @@ void __fastcall RecordDamageHook(void* instance, void* modifier, void* method) {
             event.rdps_share_count = completed.rdps_share_count;
             std::copy_n(completed.rdps_shares.begin(), completed.rdps_share_count,
                 event.rdps_shares.begin());
+            event.ledger = completed.ledger;
         }
         const uint32_t flow_sample = config.diagnostics
             ? g_rdps_flow_samples.fetch_add(1, std::memory_order_relaxed)
@@ -6182,7 +7696,18 @@ bool Hook(const RuntimeMethod& method, void* detour, void** original) {
 }
 
 void InstallHooks(const Configuration& config) {
+    // Skill.DoCast is the only caller of RecordCastSkill and the entry that
+    // survives inlining; install exactly one of the two so a cast is never
+    // opened twice.
+    if (config.stats_enabled && !g_skill_do_cast_hook_installed.load() &&
+        !g_cast_skill_hook_installed.load() &&
+        g_skill_do_cast.pointer && g_skill_get_owner.pointer) {
+        g_skill_do_cast_hook_installed.store(Hook(g_skill_do_cast,
+            reinterpret_cast<void*>(&SkillDoCastHook),
+            reinterpret_cast<void**>(&g_original_skill_do_cast)));
+    }
     if (config.stats_enabled && !g_cast_skill_hook_installed.load() &&
+        !g_skill_do_cast_hook_installed.load() &&
         g_record_cast_skill.pointer) {
         g_cast_skill_hook_installed.store(Hook(g_record_cast_skill,
             reinterpret_cast<void*>(&RecordCastSkillHook),
@@ -6335,7 +7860,8 @@ void InstallHooks(const Configuration& config) {
         g_damage_hook_installed ||
         g_record_damage_hook_installed || g_record_detail_hook_installed ||
         g_tick_hook_installed || g_buff_start_hook_installed ||
-        g_cast_skill_hook_installed || g_end_skill_hook_installed ||
+        g_cast_skill_hook_installed || g_skill_do_cast_hook_installed ||
+        g_end_skill_hook_installed ||
         g_dodge_success_hook_installed || g_skill_cast_end_hook_installed ||
         g_buff_finish_hook_installed || g_buff_blackboard_hook_installed ||
         g_buff_modify_attributes_hook_installed ||
@@ -6361,6 +7887,7 @@ void StopHooks() {
     g_buff_start_hook_installed.store(false);
     g_buff_finish_hook_installed.store(false);
     g_cast_skill_hook_installed.store(false);
+    g_skill_do_cast_hook_installed.store(false);
     g_end_skill_hook_installed.store(false);
     g_dodge_success_hook_installed.store(false);
     g_skill_cast_end_hook_installed.store(false);
@@ -6384,6 +7911,7 @@ void StopHooks() {
     g_original_record_end_skill = nullptr;
     g_original_record_dodge_success = nullptr;
     g_original_skill_cast_end = nullptr;
+    g_original_skill_do_cast = nullptr;
     g_original_buff_blackboard_value_change = nullptr;
     g_original_buff_modify_attributes = nullptr;
     g_original_damage_modifier_process = nullptr;

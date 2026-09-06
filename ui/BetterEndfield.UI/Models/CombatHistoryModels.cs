@@ -28,37 +28,29 @@ internal static class CombatSkillCategories
 
 internal static class CombatRdpsCategories
 {
-    public const int Count = 9;
+    // Mirrors RdpsContributionKind in native/modules/combat_stats/module.cpp:
+    // one entry per factor of the game's damage formula, attacker side first.
+    public const int Count = 13;
 
     public static readonly string[] NamesZh =
     [
-        "直伤", "攻击力", "增伤", "增幅", "脆弱",
-        "承伤易伤", "减防/减抗", "法术强度", "其他"
+        "直伤", "攻击力", "增伤", "异常增伤", "增幅", "暴击", "独立乘区",
+        "脆弱", "承伤", "减防", "减抗", "法术强度", "其他"
     ];
 
     public static readonly string[] NamesEn =
     [
-        "Direct", "ATK Boost", "DMG Boost", "Amp", "Fragility",
-        "Vulnerability", "Def/Res Shred", "Spell Power", "Other"
+        "Direct", "ATK", "DMG Bonus", "Abnormal DMG", "Amplify", "Crit", "Indep. Zone",
+        "Fragile", "DMG Taken", "DEF Down", "RES Down", "Arts Power", "Other"
     ];
 
     public static string[] Names => LocalizationService.Instance.IsChinese ? NamesZh : NamesEn;
 
     public static readonly string[] Colors =
     [
-        "#D3D8E1", "#FFCE52", "#43C9FF", "#FF9148", "#FF7A67",
-        "#FF4F82", "#57D99B", "#54B3FF", "#8F98AA"
+        "#D3D8E1", "#FFCE52", "#43C9FF", "#FF6A3D", "#C084FC", "#F06292", "#2DD4BF",
+        "#FF9148", "#A3E635", "#57D99B", "#3B82F6", "#8B5CF6", "#8F98AA"
     ];
-
-    public static int LegacyIndex(int index) => index switch
-    {
-        0 => 0, // direct
-        1 => 1, // attack boost
-        2 => 2, // damage boost
-        3 => 5, // vulnerability
-        4 or 5 => 6, // defense/resistance reduction
-        _ => 8
-    };
 }
 
 internal static class CombatNumberFormatter

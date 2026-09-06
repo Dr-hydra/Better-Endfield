@@ -18,20 +18,41 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 public final class BetterEndfieldXposed implements IXposedHookLoadPackage {
     private static final String MODULE_PACKAGE = "dev.betterendfield.android";
-    private static final String TARGET_PACKAGE = "com.hypergryph.endfield";
+    private static final String SYSTEM_PACKAGE = "android";
     private static final String NATIVE_LIBRARY = "libbetterendfield_android.so";
     private static final AtomicBoolean PREPARATION_REQUESTED = new AtomicBoolean();
     private static final AtomicBoolean LOAD_REQUESTED = new AtomicBoolean();
     private static volatile Set<XC_MethodHook.Unhook> renderHooks;
 
+    /**
+     * Runs in whatever the user put in the module's scope, as long as it is that
+     * app's own main process.
+     *
+     * The package name is deliberately not checked against a list. The game
+     * ships under at least three ids — {@code com.hypergryph.endfield} (官服),
+     * {@code com.gryphline.endfield.gp} (国际服) and a bilibili channel build —
+     * and pinning one of them is exactly what kept the others out, while a list
+     * would still miss the next channel or a repackaged build. LSPosed already
+     * asked the user which app to attach to; second-guessing that answer buys
+     * nothing.
+     *
+     * What actually decides whether anything happens is evidence, further down:
+     * {@code com.unity3d.player.UnityPlayer.nativeRender} has to exist before a
+     * trigger is installed, and the native runtime resolves every hook by name
+     * through {@code libil2cpp.so}'s exports. A process that is not this Unity
+     * game gets a log line and nothing else.
+     */
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam loadPackageParam) {
-        if (!TARGET_PACKAGE.equals(loadPackageParam.packageName) ||
-                !TARGET_PACKAGE.equals(loadPackageParam.processName)) {
+        // Subprocesses (push services, crash handlers) have no Unity runtime.
+        if (!loadPackageParam.packageName.equals(loadPackageParam.processName) ||
+                MODULE_PACKAGE.equals(loadPackageParam.packageName) ||
+                SYSTEM_PACKAGE.equals(loadPackageParam.packageName)) {
             return;
         }
 
-        XposedBridge.log("BetterEndfield.Xposed: target process matched");
+        XposedBridge.log(
+                "BetterEndfield.Xposed: attached to " + loadPackageParam.packageName);
         String voiceRules = readVoiceRules();
         String modelConfiguration = readModelConfiguration();
         String enhancementConfiguration = readEnhancementConfiguration();
@@ -145,8 +166,11 @@ public final class BetterEndfieldXposed implements IXposedHookLoadPackage {
                             " model=" + !modelConfiguration.isEmpty() +
                             " enhancement=" + !enhancementConfiguration.isEmpty());
         } catch (Throwable error) {
+            // Also the normal outcome when the scope names something that is not
+            // this game: no UnityPlayer, no trigger, no native runtime.
             XposedBridge.log(
-                    "BetterEndfield.Xposed: failed to install Unity frame trigger: " + error);
+                    "BetterEndfield.Xposed: no Unity frame trigger installed, leaving the " +
+                            "process alone: " + error);
         }
     }
 

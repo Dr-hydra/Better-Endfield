@@ -1,5 +1,15 @@
 # 更新日志
 
+## 3.1.2
+
+- Android 不再硬编码目标包名。模块附着到 LSPosed 作用域里选中的应用（只进主进程），是否真正介入改由证据决定：`UnityPlayer.nativeRender` 必须存在，原生 Hook 全部经 `libil2cpp.so` 导出按名字解析。官服 `com.hypergryph.endfield`、国际服 `com.gryphline.endfield.gp` 与 B 服等渠道包由此共用同一份构建，客户端更新只要托管层类名方法名不变就无需重新适配。
+- Android 清单新增 `xposedscope`，LSPosed 作用域页预选官服与国际服包名；渠道包仍需手动勾选。
+- 桌面端「在网页中解析」把回环地址改用查询串传递。Toy 正式页把应用装在 iframe 里，只有查询串会被转发进去，URL fragment 到不了服务端也无人转发。
+- 网页端分享改为不信任 `isSupport("share")`：该接口在浏览器中返回 true 但调用必定抛出，导致复制链接的兜底路径从未执行。新增分享弹窗，二维码在本地生成（不依赖 SDK），复制依次尝试剪贴板 API、`execCommand`，都失败则选中链接。
+- 网页端不再于启动时调用 `getUserProfile`。宿主桥对该接口的守卫是"手机 UA 且不在 B 站 App 内"，命中时会先拉起 App 再抛错，导致手机上打开分享链接直接跳出页面。
+- 修复手机端三处：iframe 内 viewport meta 不生效导致浏览器自行放大字号（补 `text-size-adjust`）；时间轴画布 `touch-action` 由 `none` 改为 `pan-y`，纵向滑动不再被吞掉；分享链接的 `?r=` 参数在消费后从 URL 移除，底部导航不再被它一直劫持回记录页。
+- 云函数放宽 BEC 快照版本门至 1–2（仅解析 HEAD 层，两版编码一致）。
+
 ## 3.1.1
 
 - 修复替换语音的时长修正：Lua 侧调用经 IL2CPP 委托快路径内联，绕过了原入口 Hook；现改挂唯一的时长叶子 `_GetVoDurationFromVoData`，按角色规则直接读取目标语言时长列。角色档案、电台、对话回放、剧情与 Bark 的时长查询全部覆盖。

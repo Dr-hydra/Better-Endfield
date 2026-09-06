@@ -207,7 +207,17 @@ Research catalogs and source PCK/CHK files stay under ignored
   device-local catalog preparation before arming the native hooks. Missing or
   stale language packages are reported in LSPosed logs; external-source routing
   is still allowed to start when resident catalog generation fails.
-- The current build is ARM64-only and targets `com.hypergryph.endfield` user 0.
+- The current build is ARM64-only and runs in user 0.
+- The target package is not hard-coded. The module attaches to whatever the
+  LSPosed scope names, as long as it is that app's own main process, and then
+  requires evidence before doing anything: `UnityPlayer.nativeRender` must
+  exist, and every native hook is resolved by name through `libil2cpp.so`'s
+  exports rather than by offset. So 官服 (`com.hypergryph.endfield`), 国际服
+  (`com.gryphline.endfield.gp`) and channel builds such as the bilibili one are
+  all supported without a per-variant build, and a client update does not
+  invalidate the hooks unless the managed type or method names themselves
+  change. Only the first two are declared in `xposed_scope`, because the
+  bilibili package name has no authoritative source; tick it by hand.
 - Model, animation, Logo, and login-band behavior is verified on the connected
   Android client with `chr_0013_aglina` and its default final action. Other
   character/action combinations remain data-driven but have not each been
@@ -232,11 +242,14 @@ The APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`.
 
 After installing or updating the APK, disable and re-enable the module once in
 LSPosed. This makes LSPosed register the module's protected shared-preference
-store. Keep the only scope set to `com.hypergryph.endfield`, enable the desired
-character rules in the module app, force-stop the game, and launch it again.
+store. Set the scope to the Endfield build you actually play — the two
+confirmed ids are pre-selected, any other channel build has to be ticked
+manually — enable the desired character rules in the module app, force-stop the
+game, and launch it again. Scoping the module to unrelated apps is harmless but
+pointless: they fail the Unity check and are left alone.
 
 The debug build writes a short native diagnostic log to
-`/data/user/0/com.hypergryph.endfield/cache/betterendfield-diagnostics.log`.
+`/data/user/0/<game package>/cache/betterendfield-diagnostics.log`.
 The native library is linked with 16 KiB ELF LOAD-segment alignment and the APK
 is also zip-aligned for Android 16 page-size compatibility.
 

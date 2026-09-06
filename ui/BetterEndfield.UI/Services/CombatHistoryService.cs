@@ -96,13 +96,21 @@ internal static class CombatHistoryService
         using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
         JsonElement root = document.RootElement;
         int schemaVersion = (int)Integer(root, "schemaVersion");
-        if (schemaVersion != 11) throw new InvalidOperationException("仅支持 schema 11");
+        // schema 15 (2026-09-06): adds statusApply.nominalEffects, the
+        // magnitude a buff is configured for, next to the measured multiplier.
+        // 14 brought the per-hit ledger / contributors, the 13-category
+        // contribution index and per-status stacking settings. Older schemas
+        // are not read.
+        if (schemaVersion != 15)
+        {
+            throw new InvalidOperationException("仅支持 schema 15");
+        }
         if (!root.TryGetProperty("battle", out JsonElement battle) ||
             battle.ValueKind != JsonValueKind.Object ||
             !root.TryGetProperty("summary", out JsonElement summary) ||
             summary.ValueKind != JsonValueKind.Object)
         {
-            throw new InvalidOperationException("schema 11 结构不完整");
+            throw new InvalidOperationException("schema 15 结构不完整");
         }
         double duration = Number(battle, "durationSeconds");
         if (duration <= 0) throw new InvalidOperationException("战斗时长无效");
@@ -150,7 +158,7 @@ internal static class CombatHistoryService
             !root.TryGetProperty("effects", out JsonElement effects) ||
             effects.ValueKind != JsonValueKind.Array)
         {
-            throw new InvalidOperationException("schema 11 缺少操作或结果事件");
+            throw new InvalidOperationException("schema 15 缺少操作或结果事件");
         }
         var result = new DerivedRecord();
         foreach (JsonElement action in actions.EnumerateArray())
@@ -461,8 +469,7 @@ internal static class CombatHistoryService
                 int index = 0;
                 foreach (JsonElement amount in categories.EnumerateArray())
                 {
-                    int destination = useRdps && schemaVersion < 7
-                        ? CombatRdpsCategories.LegacyIndex(index) : index;
+                    int destination = index;
                     if (destination >= damageByCategory.Length) break;
                     if (amount.TryGetDouble(out double parsed))
                         damageByCategory[destination] += parsed;
@@ -536,8 +543,7 @@ internal static class CombatHistoryService
                 int index = 0;
                 foreach (JsonElement amount in categories.EnumerateArray())
                 {
-                    int destination = useRdps && schemaVersion < 7
-                        ? CombatRdpsCategories.LegacyIndex(index) : index;
+                    int destination = index;
                     if (destination >= values.Length) break;
                     if (amount.TryGetDouble(out double parsed)) values[destination] += parsed;
                     ++index;
@@ -593,10 +599,8 @@ internal static class CombatHistoryService
                 SourceId = NormalizeCharacterId(source),
                 TargetId = NormalizeCharacterId(Text(item, "targetId")),
                 OriginSkillId = Text(item, "originSkillId"),
-                ContributionType = schemaVersion < 7
-                    ? CombatRdpsCategories.LegacyIndex((int)Integer(item, "contributionType"))
-                    : (int)Math.Clamp(Integer(item, "contributionType"), 0,
-                        CombatRdpsCategories.Count - 1),
+                ContributionType = (int)Math.Clamp(Integer(item, "contributionType"), 0,
+                    CombatRdpsCategories.Count - 1),
                 EffectKind = (int)Math.Clamp(Integer(item, "effectKind"), 0, 2),
                 EffectMin = Number(item, "effectMin"),
                 EffectMax = Number(item, "effectMax")

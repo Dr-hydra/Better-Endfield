@@ -20,13 +20,14 @@ import collections
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -318,6 +319,9 @@ def extract_dungeons_and_series(reader: GameTableReader) -> Tuple[Dict[str, Any]
             "subName": subname,
             "seriesId": srid,
             "seriesName": series_dict.get(srid, ""),
+            # The in-game tab a stage lives under, and its order within it.
+            "category": d.get("dungeonCategory", ""),
+            "sortId": d.get("sortId", 0),
             "domainId": d.get("domainId", ""),
             "costStamina": d.get("costStamina", 0),
         }
@@ -712,10 +716,168 @@ def create_minified_web_dict(full_dict: Dict[str, Any]) -> Dict[str, Any]:
         "su": min_suits,
         "d": min_dungeons,
         "ds": min_series,
+        # rDPS contribution categories; keep in sync with RdpsContributionKind
+        # (native/modules/combat_stats/module.cpp) and web CONTRIBUTION_CATEGORIES.
         "zones": [
-            "直伤", "攻击力", "增伤", "增幅", "脆弱",
-            "承伤易伤", "减防/减抗", "法术强度", "其他"
+            "直伤", "攻击力", "增伤", "异常增伤", "增幅", "暴击", "独立乘区",
+            "脆弱", "承伤", "减防", "减抗", "法术强度", "其他"
         ],
+    }
+
+
+def load_id_registry(path: Path) -> Tuple[List[str], Dict[str, int]]:
+    """Permanent numeric ids for every string a snapshot may reference.
+
+    BEC snapshots store indices, not strings, so an index must never change
+    meaning: the registry is append-only and survives across exports. Index 0 is
+    the empty id, which is what an unresolved reference decodes back to.
+    """
+    if path.exists():
+        with open(path, "r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+        ids = payload.get("ids") or [""]
+    else:
+        ids = [""]
+    if not ids or ids[0] != "":
+        ids = [""] + [value for value in ids if value != ""]
+    return ids, {value: index for index, value in enumerate(ids)}
+
+
+def register_ids(ids: List[str], lookup: Dict[str, int], values: Iterable[str]) -> int:
+    added = 0
+    for value in values:
+        if not value or value in lookup:
+            continue
+        lookup[value] = len(ids)
+        ids.append(value)
+        added += 1
+    return added
+
+
+def collect_registry_ids(full_dict: Dict[str, Any], buff_ids: Iterable[str]) -> List[str]:
+    """Every id a record can name, in a stable order for first-time assignment."""
+    out: List[str] = []
+    for section in ("characters", "skills", "talents", "weapons", "equipment", "suits", "dungeons"):
+        out.extend(sorted(full_dict.get(section, {}).keys()))
+    # Skills are recorded by their runtime ids, which the table lists as aliases.
+    for key, value in sorted(full_dict.get("skills", {}).items()):
+        out.extend(value.get("skillIds") or [])
+    out.extend(sorted(full_dict.get("dungeonSeries", {}).keys()))
+    out.extend(sorted(buff_ids))
+    return out
+
+
+def discover_buff_ids(buff_data_dir: Optional[Path]) -> List[str]:
+    """Buff ids come from the BuffData filenames; the contents are MemoryPack."""
+    if not buff_data_dir or not buff_data_dir.is_dir():
+        return []
+    return sorted(path.stem for path in buff_data_dir.glob("*.json"))
+
+
+# The leaderboard navigates by the in-game tab (DungeonTable.dungeonCategory).
+# DungeonTypeTable has no display name for it — enemyInfoTitle is the closest
+# thing and it collapses seven distinct tabs onto "协议空间" — so the labels and
+# their order are curated here. Categories missing from this list still appear,
+# after the listed ones, under their own id.
+STAGE_CATEGORIES = [
+    ("dungeon_seasontower", "战争回响"),
+    ("dungeon_highdifficulty", "影拓丰碑"),
+    ("dungeon_bossrush", "危境再现"),
+    ("dungeon_weeklyraid", "周常突袭"),
+    ("dungeon_takestwo", "竞技大会"),
+    ("dungeon_ss", "协议空间·高阶培养"),
+    ("dungeon_worldlevel", "协议空间·探索等级"),
+    ("dungeon_resource", "协议空间·资源采集"),
+    ("dungeon_actmonster", "生存特训"),
+    ("dungeon_challenge", "秘境探索"),
+    ("dungeon_archery", "提丰靶场"),
+    ("dungeon_race", "根脉奇境"),
+    ("dungeon_wuling_racing", "武陵赛道"),
+    ("dungeon_wuling_A", "武陵城"),
+    ("dungeon_wuling_B", "武陵城·破阵"),
+    ("dungeon_contract", "危机合约"),
+    ("dungeon_chartrial", "作战演练"),
+    ("dungeon_chartutorial", "干员教学"),
+    ("dungeon_train", "战术训练"),
+    ("dungeon_char", "干员支线"),
+    ("dungeon_story", "剧情作战"),
+    ("dungeon_factory", "工业设施"),
+]
+
+# Difficulty variants share a base id and differ only by suffix. The ranks are
+# ordinal, not absolute: they only have to order the members of one family.
+# `_s` is the raid half of every DungeonRaidTable pair and `_hard` the raid half
+# of every DungeonNormal2RaidTable pair, so both sit above the plain id; `_ex`
+# (战争回响·残酷) sits above `_s` (困难); `_guide` is the tutorial run.
+STAGE_DIFFICULTY_SUFFIXES = [("_guide", -1), ("_ex", 3), ("_hard", 2), ("_s", 2)]
+# Boss rush spells its difficulties as a trailing two-digit index on an id that
+# already ends in a digit (dung01_bossrush01_04), which no other family does.
+STAGE_DIFFICULTY_INDEX = re.compile(r"^(.*\d)_(\d{2})$")
+
+
+def split_stage_difficulty(stage_id: str) -> Tuple[str, int]:
+    """Stage id -> (family id, difficulty rank within the family)."""
+    for suffix, rank in STAGE_DIFFICULTY_SUFFIXES:
+        if stage_id.endswith(suffix):
+            return stage_id[: -len(suffix)], rank
+    match = STAGE_DIFFICULTY_INDEX.match(stage_id)
+    if match:
+        return match.group(1), int(match.group(2))
+    return stage_id, 0
+
+
+def build_stage_table(full_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Stage list for the leaderboard, keyed by the in-game category.
+
+    Each category lists only the hardest difficulty of every stage: a board is
+    per dungeon id, and ranking 普通 next to 残酷 would just bury the runs
+    people care about. Every difficulty stays in `stages` so an already-uploaded
+    record still resolves to a name.
+    """
+    dungeons: Dict[str, Any] = full_dict.get("dungeons", {})
+    series_names = dict(full_dict.get("dungeonSeries", {}))
+    category_names = dict(STAGE_CATEGORIES)
+    category_order = {category: index for index, (category, _) in enumerate(STAGE_CATEGORIES)}
+
+    stages: Dict[str, Any] = {}
+    families: Dict[str, List[Tuple[int, str]]] = {}
+    for stage_id, value in sorted(dungeons.items()):
+        family, rank = split_stage_difficulty(stage_id)
+        category = value.get("category") or "dungeon_other"
+        stages[stage_id] = {
+            "n": value.get("name", stage_id),
+            "sn": value.get("subName", ""),
+            "g": value.get("seriesId", ""),
+            "c": category,
+            "d": rank,
+        }
+        families.setdefault(family, []).append((rank, stage_id))
+
+    members: Dict[str, List[str]] = {}
+    for candidates in families.values():
+        top = max(candidates)[1]
+        members.setdefault(stages[top]["c"], []).append(top)
+
+    def stage_order(stage_id: str) -> Tuple[int, str]:
+        return int(dungeons.get(stage_id, {}).get("sortId", 0) or 0), stage_id
+
+    categories = [
+        {
+            "id": category,
+            "n": category_names.get(category, category),
+            "s": sorted(stage_ids, key=stage_order),
+        }
+        for category, stage_ids in sorted(
+            members.items(),
+            key=lambda item: (category_order.get(item[0], len(category_order)), -len(item[1]), item[0]),
+        )
+    ]
+    used_series = {value["g"] for value in stages.values() if value["g"]}
+    return {
+        "version": 2,
+        "cats": categories,
+        "series": {key: series_names[key] for key in sorted(used_series & set(series_names))},
+        "stages": stages,
     }
 
 
@@ -1138,6 +1300,30 @@ def main():
         help="Output minified JSON dictionary path for web/mobile",
     )
     parser.add_argument(
+        "--stage-output",
+        type=Path,
+        default=Path("web/src/data/combat-stages.min.json"),
+        help="Output grouped stage table used by the leaderboard navigation",
+    )
+    parser.add_argument(
+        "--stage-map-output",
+        type=Path,
+        default=Path("web/cloudbase/functions/combat-api/stage-map.json"),
+        help="Output dungeon id -> category id map bundled with the leaderboard function",
+    )
+    parser.add_argument(
+        "--id-registry",
+        type=Path,
+        default=Path("tools/CombatDataExporter/id_registry.json"),
+        help="Append-only permanent id registry backing BEC snapshot indices",
+    )
+    parser.add_argument(
+        "--buff-data",
+        type=Path,
+        default=Path("research/combat-jsondata/Data/Json/BuffData"),
+        help="BuffData directory; only the filenames are read, for buff ids",
+    )
+    parser.add_argument(
         "--icon-source",
         type=Path,
         default=Path(os.environ["ENDFIELD_ICON_SOURCE"]) if os.environ.get("ENDFIELD_ICON_SOURCE") else None,
@@ -1331,12 +1517,47 @@ def main():
             json.dump(full_dict, f, ensure_ascii=False, indent=2)
         print(f"[+] UI Embedded Dictionary saved to: {args.ui_output} ({args.ui_output.stat().st_size / 1024:.1f} KB)")
 
+    # Permanent ids, so BEC snapshot indices keep their meaning across exports.
+    ids, lookup = load_id_registry(args.id_registry)
+    buff_ids = discover_buff_ids(args.buff_data)
+    added = register_ids(ids, lookup, collect_registry_ids(full_dict, buff_ids))
+    args.id_registry.parent.mkdir(parents=True, exist_ok=True)
+    with open(args.id_registry, "w", encoding="utf-8") as f:
+        json.dump({"version": len(ids), "ids": ids}, f, ensure_ascii=False, separators=(",", ":"))
+    print(f"[+] Id registry: {len(ids)} ids (+{added} new, {len(buff_ids)} buff ids) -> {args.id_registry}")
+
     # Write minified JSON
     args.min_output.parent.mkdir(parents=True, exist_ok=True)
     min_dict = create_minified_web_dict(full_dict)
+    # The id table is only needed when a BEC snapshot is encoded or decoded, so
+    # it ships as its own lazily-imported file rather than inside the bundle.
+    min_dict["idv"] = len(ids)
+    id_output = args.min_output.with_name("combat-ids.min.json")
+    with open(id_output, "w", encoding="utf-8") as f:
+        json.dump({"version": len(ids), "ids": ids}, f, ensure_ascii=False, separators=(",", ":"))
+    print(f"[+] Id table saved to: {id_output} ({id_output.stat().st_size / 1024:.1f} KB)")
     with open(args.min_output, "w", encoding="utf-8") as f:
         json.dump(min_dict, f, ensure_ascii=False, separators=(",", ":"))
     print(f"[+] Minified Web Dictionary saved to: {args.min_output} ({args.min_output.stat().st_size / 1024:.1f} KB)")
+
+    # Stage table for the leaderboard navigation
+    if args.stage_output:
+        stage_table = build_stage_table(full_dict)
+        args.stage_output.parent.mkdir(parents=True, exist_ok=True)
+        with open(args.stage_output, "w", encoding="utf-8") as f:
+            json.dump(stage_table, f, ensure_ascii=False, separators=(",", ":"))
+        print(f"[+] Stage table saved to: {args.stage_output} "
+              f"({len(stage_table['stages'])} stages in {len(stage_table['cats'])} categories)")
+
+        # The leaderboard backend groups records by category, so the function
+        # needs the same dungeon -> category mapping the web bundle has. Names
+        # stay out of it; the function never renders anything.
+        if args.stage_map_output:
+            stage_map = {stage_id: value["c"] for stage_id, value in stage_table["stages"].items()}
+            args.stage_map_output.parent.mkdir(parents=True, exist_ok=True)
+            with open(args.stage_map_output, "w", encoding="utf-8") as f:
+                json.dump(stage_map, f, ensure_ascii=False, separators=(",", ":"))
+            print(f"[+] Stage map saved to: {args.stage_map_output} ({len(stage_map)} stages)")
 
     icon_source = args.icon_source
     if icon_source is None and args.icon_cache.exists():
