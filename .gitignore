@@ -72,3 +72,8 @@ tmp_analysis/
 .zcode/
 # Carries COMBAT_DATA_KEY, the path segment guarding the bucket's private half.
 web/cloudbase/cloudbaserc.json
+
+# Python bytecode. The copy under legacy/ stays tracked: it is part of a
+# historical source snapshot, and gitignore does not untrack what is already in.
+__pycache__/
+*.pyc
