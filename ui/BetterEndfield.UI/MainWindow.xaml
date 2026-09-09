@@ -117,6 +117,9 @@
                         <FontIcon Glyph="&#xE740;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem x:Name="ActionsNavigationItem" Content="动作模块" Tag="actions">
+                    <NavigationViewItem.Icon><FontIcon Glyph="&#xE7C1;" /></NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItem
                     x:Name="CameraNavigationItem"
                     Content="相机增强"
@@ -1193,6 +1196,21 @@
                             </StackPanel>
                         </ScrollViewer>
 
+                        <ScrollViewer x:Name="ActionsPageScrollViewer" Visibility="Collapsed"
+                            HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                            <StackPanel MaxWidth="920" Margin="32,28,32,44" Spacing="24">
+                                <TextBlock x:Name="ActionsPageTitle" Style="{StaticResource PageTitleStyle}" Text="动作模块" />
+                                <TextBlock x:Name="ActionsPageDescription" TextWrapping="Wrap"
+                                    Text="调整角色动作的持续表现。设置保存后，下一次特殊冲刺生效。" />
+                                <ToggleSwitch x:Name="AglinaContinuousDashToggle" Header="艾洁莉娜：持续特殊冲刺"
+                                    OffContent="关闭" OnContent="开启" Toggled="ActionsToggle_Toggled" />
+                                <InfoBar x:Name="ActionsExperimentalInfo" IsOpen="True" IsClosable="False" Severity="Informational"
+                                    Title="实验功能"
+                                    Message="保留游戏本次选中的左或右特殊冲刺动作，在持续冲刺时延后自然结束；停止或被打断时结束。此版本仍需实机验证。" />
+
+                            </StackPanel>
+                        </ScrollViewer>
+
                         <ScrollViewer
                             x:Name="CameraPageScrollViewer"
                             HorizontalScrollBarVisibility="Disabled"
@@ -1238,10 +1256,17 @@
                                             Toggled="CameraEnhancementToggle_Toggled" />
                                         <ToggleSwitch
                                             x:Name="PauseGameInFreeCameraToggle"
-                                            Header="进入自由视角时暂停游戏"
-                                            OffContent="游戏继续运行"
-                                            OnContent="暂停角色与世界"
+                                            Header="启用时间冻结功能"
+                                            OffContent="不冻结世界"
+                                            OnContent="允许热键冻结"
                                             Toggled="CameraEnhancementToggle_Toggled" />
+                                        <TextBox
+                                            x:Name="PauseWorldHotkeyBox"
+                                            Header="时间冻结热键"
+                                            LostFocus="PauseWorldHotkeyBox_LostFocus"
+                                            MaxLength="8"
+                                            PlaceholderText="例如 8、F8、NUMPAD8"
+                                            Text="8" />
                                         <Grid ColumnSpacing="12" RowSpacing="12">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -1263,7 +1288,7 @@
                                                 ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
                                             <TextBox
                                                 x:Name="FreeCameraHotkeyBox"
-                                                Header="切换热键"
+                                                Header="自由视角热键"
                                                 LostFocus="FreeCameraHotkeyBox_LostFocus"
                                                 MaxLength="8"
                                                 PlaceholderText="例如 9、F9、NUMPAD9"

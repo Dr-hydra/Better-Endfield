@@ -375,6 +375,32 @@ public sealed partial class MainWindow : Window
         await SaveCameraEnhancementAsync();
     }
 
+    private async void PauseWorldHotkeyBox_LostFocus(
+        object sender,
+        RoutedEventArgs e)
+    {
+        await SaveCameraEnhancementAsync();
+    }
+
+    private async void ActionsToggle_Toggled(object sender, RoutedEventArgs e) => await SaveActionsAsync();
+
+    private async Task SaveActionsAsync()
+    {
+        if (_initializing) return;
+        bool isZh = LocalizationService.Instance.IsChinese;
+        var configuration = new ModConfiguration { AglinaContinuousDashEnabled = AglinaContinuousDashToggle.IsOn };
+        try
+        {
+            await ConfigurationService.SaveActionConfigurationAsync(configuration);
+            ShowStatus(isZh ? "动作设置已保存" : "Action settings saved",
+                isZh ? "新设置在下一次特殊冲刺生效；关闭会结束当前保持。" : "Changes apply on the next special dash; disabling ends the current hold.", InfoBarSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            ShowStatus(isZh ? "动作设置保存失败" : "Could not save action settings", ex.Message, InfoBarSeverity.Error);
+        }
+    }
+
     private async Task SaveCameraEnhancementAsync()
     {
         if (_initializing)
@@ -395,6 +421,25 @@ public sealed partial class MainWindow : Window
             return;
         }
         FreeCameraHotkeyBox.Text = toggleHotkey;
+        if (!TryNormalizeCameraHotkey(
+                PauseWorldHotkeyBox.Text, out string pauseHotkey))
+        {
+            ShowStatus(
+                "时间冻结热键无效",
+                "请输入单个字母、数字、F1-F24，或 NUMPAD0-NUMPAD9。",
+                InfoBarSeverity.Error);
+            return;
+        }
+        if (string.Equals(toggleHotkey, pauseHotkey,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            ShowStatus(
+                "相机热键不能重复",
+                "自由视角热键和时间冻结热键必须设置为不同按键。",
+                InfoBarSeverity.Error);
+            return;
+        }
+        PauseWorldHotkeyBox.Text = pauseHotkey;
 
         try
         {
@@ -403,11 +448,12 @@ public sealed partial class MainWindow : Window
                 DisableDitherToggle.IsOn,
                 PauseGameInFreeCameraToggle.IsOn,
                 toggleHotkey,
+                pauseHotkey,
                 Value(FreeCameraMovementSpeedNumberBox, 5.0),
                 Value(FreeCameraFieldOfViewNumberBox, 60.0));
             ShowStatus(
                 "相机增强设置已更新",
-                $"配置已保存；模块加载后可在游戏内按 {toggleHotkey} 切换自由视角。",
+                $"配置已保存；按 {toggleHotkey} 切换自由视角，按 {pauseHotkey} 冻结或恢复世界时间。",
                 InfoBarSeverity.Success);
         }
         catch (Exception exception) when (
@@ -442,6 +488,8 @@ public sealed partial class MainWindow : Window
         CameraPageScrollViewer.Visibility = page == "camera"
             ? Visibility.Visible
             : Visibility.Collapsed;
+        ActionsPageScrollViewer.Visibility = page == "actions"
+            ? Visibility.Visible : Visibility.Collapsed;
         DisplayPageScrollViewer.Visibility = page == "display"
             ? Visibility.Visible
             : Visibility.Collapsed;
@@ -2283,9 +2331,11 @@ public sealed partial class MainWindow : Window
             HideHudEnabled = HideHudToggle.IsOn,
             HideHudToggleHotkey = hideHudToggleHotkey,
             FreeCameraEnabled = FreeCameraToggle.IsOn,
+            AglinaContinuousDashEnabled = AglinaContinuousDashToggle.IsOn,
             DisableDitherEnabled = DisableDitherToggle.IsOn,
             PauseGameInFreeCamera = PauseGameInFreeCameraToggle.IsOn,
             FreeCameraToggleHotkey = cameraToggleHotkey,
+            WorldPauseToggleHotkey = PauseWorldHotkeyBox.Text,
             FreeCameraMovementSpeed = FreeCameraMovementSpeedNumberBox.Value,
             FreeCameraFieldOfView = FreeCameraFieldOfViewNumberBox.Value
         };
@@ -2350,9 +2400,11 @@ public sealed partial class MainWindow : Window
         HideHudToggle.IsOn = configuration.HideHudEnabled;
         HideHudHotkeyBox.Text = configuration.HideHudToggleHotkey;
         FreeCameraToggle.IsOn = configuration.FreeCameraEnabled;
+        AglinaContinuousDashToggle.IsOn = configuration.AglinaContinuousDashEnabled;
         DisableDitherToggle.IsOn = configuration.DisableDitherEnabled;
         PauseGameInFreeCameraToggle.IsOn = configuration.PauseGameInFreeCamera;
         FreeCameraHotkeyBox.Text = configuration.FreeCameraToggleHotkey;
+        PauseWorldHotkeyBox.Text = configuration.WorldPauseToggleHotkey;
         FreeCameraMovementSpeedNumberBox.Value = configuration.FreeCameraMovementSpeed;
         FreeCameraFieldOfViewNumberBox.Value = configuration.FreeCameraFieldOfView;
 
@@ -3166,6 +3218,14 @@ public sealed partial class MainWindow : Window
         CombatNavigationItem.Content = isZh ? "战斗数据" : "Combat Stats";
         UiNavigationItem.Content = isZh ? "界面增强" : "Touch & UI";
         CameraNavigationItem.Content = isZh ? "相机增强" : "Camera";
+        ActionsNavigationItem.Content = isZh ? "动作模块" : "Actions";
+        ActionsPageTitle.Text = isZh ? "动作模块" : "Character Actions";
+        ActionsPageDescription.Text = isZh ? "调整角色动作的持续表现。设置保存后，下一次特殊冲刺生效。" : "Adjust character animation behavior. Changes apply on the next special dash.";
+        AglinaContinuousDashToggle.Header = isZh ? "艾洁莉娜：持续特殊冲刺" : "Aglina: continuous special dash";
+        AglinaContinuousDashToggle.OffContent = isZh ? "关闭" : "Disabled";
+        AglinaContinuousDashToggle.OnContent = isZh ? "开启" : "Enabled";
+        ActionsExperimentalInfo.Title = isZh ? "实验功能" : "Experimental";
+        ActionsExperimentalInfo.Message = isZh ? "保留游戏本次选中的左或右特殊冲刺动作，在持续冲刺时延后自然结束；停止或被打断时结束。此版本仍需实机验证。" : "Preserves the left or right special dash chosen by the game, deferring natural completion while sprinting. Stops on movement end or interruption. In-game verification is still needed.";
         DisplayNavigationItem.Content = isZh ? "显示增强" : "Display & Pipeline";
         GachaNavigationItem.Content = isZh ? "寻访查询" : "Gacha History";
         if (FeatureNavigation.SettingsItem is NavigationViewItem settingsItem)
@@ -3386,8 +3446,8 @@ public sealed partial class MainWindow : Window
             : "Free camera control and visual tuning. Disabled by default; changes apply immediately.";
         CameraFreeInfoBar.Title = isZh ? "自由视角操作" : "Free Camera Controls";
         CameraFreeInfoBar.Message = isZh
-            ? "启用后按设置的热键进入或退出。方向键前后左右移动，PageUp/PageDown 升降；视角旋转继续使用游戏原生鼠标控制。切换场景或主相机时会自动退出。"
-            : "Press configured hotkey to enter/exit. Arrow keys move camera, PageUp/PageDown elevates; mouse rotates native view. Exits automatically on scene transitions.";
+            ? "按自由视角热键进入或退出，按时间冻结热键冻结或恢复世界。方向键前后左右移动，PageUp/PageDown 升降；视角旋转继续使用游戏原生鼠标控制。切换场景或主相机时会自动退出。"
+            : "Use the free-camera hotkey to enter/exit and the pause hotkey to freeze/resume the world. Arrow keys move camera, PageUp/PageDown elevates; mouse rotates native view. Exits automatically on scene transitions.";
         CameraFreeSectionTitle.Text = isZh ? "自由视角" : "Free Camera";
         CameraFreeSectionHint.Text = isZh
             ? "进入时捕获主相机的位置和视野，退出后恢复原值。模块只接管相机位置，鼠标旋转仍由游戏原生相机逻辑处理。"
@@ -3395,12 +3455,14 @@ public sealed partial class MainWindow : Window
         FreeCameraToggle.Header = isZh ? "启用自由视角功能" : "Enable Free Camera";
         FreeCameraToggle.OffContent = isZh ? "关闭" : "Disabled";
         FreeCameraToggle.OnContent = isZh ? "允许热键切换" : "Enabled";
-        PauseGameInFreeCameraToggle.Header = isZh ? "进入自由视角时暂停游戏" : "Pause Game in Free Camera";
-        PauseGameInFreeCameraToggle.OffContent = isZh ? "游戏继续运行" : "Game keeps running";
-        PauseGameInFreeCameraToggle.OnContent = isZh ? "暂停角色与世界" : "Freeze world & entities";
+        PauseGameInFreeCameraToggle.Header = isZh ? "启用时间冻结功能" : "Enable World Time Freeze";
+        PauseGameInFreeCameraToggle.OffContent = isZh ? "不冻结世界" : "World runs normally";
+        PauseGameInFreeCameraToggle.OnContent = isZh ? "允许热键冻结" : "Allow pause hotkey";
         FreeCameraMovementSpeedNumberBox.Header = isZh ? "移动速度" : "Movement Speed";
-        FreeCameraHotkeyBox.Header = isZh ? "切换热键" : "Toggle Hotkey";
+        FreeCameraHotkeyBox.Header = isZh ? "自由视角热键" : "Free Camera Hotkey";
         FreeCameraHotkeyBox.PlaceholderText = isZh ? "例如 9、F9、NUMPAD9" : "e.g. 9, F9, NUMPAD9";
+        PauseWorldHotkeyBox.Header = isZh ? "时间冻结热键" : "World Pause Hotkey";
+        PauseWorldHotkeyBox.PlaceholderText = isZh ? "例如 8、F8、NUMPAD8" : "e.g. 8, F8, NUMPAD8";
         FreeCameraFieldOfViewNumberBox.Header = isZh ? "视野（FOV）" : "Field of View (FOV)";
         CameraVisualSectionTitle.Text = isZh ? "镜头画面" : "Visual & Occlusion";
         CameraVisualSectionHint.Text = isZh

@@ -131,11 +131,20 @@ internal sealed class ModConfiguration
 
     public bool FreeCameraEnabled { get; set; } = false;
 
+    public bool AglinaContinuousDashEnabled { get; set; } = false;
+    public string ToActionsIniSection() =>
+        "[betterendfield.actions]" + Environment.NewLine +
+        "schema_version=2" + Environment.NewLine +
+        $"enabled={(AglinaContinuousDashEnabled ? "true" : "false")}" + Environment.NewLine +
+        "diagnostics=true" + Environment.NewLine;
+
     public bool DisableDitherEnabled { get; set; } = false;
 
     public bool PauseGameInFreeCamera { get; set; } = false;
 
     public string FreeCameraToggleHotkey { get; set; } = "9";
+
+    public string WorldPauseToggleHotkey { get; set; } = "8";
 
     public double FreeCameraMovementSpeed { get; set; } = 5.0;
 
@@ -252,16 +261,18 @@ internal sealed class ModConfiguration
         text.AppendLine("diagnostics=true");
         text.AppendLine();
         text.AppendLine("[betterendfield.camera]");
-        text.AppendLine("schema_version=3");
+        text.AppendLine("schema_version=4");
         text.AppendLine($"enabled={Boolean(FreeCameraEnabled || DisableDitherEnabled)}");
         text.AppendLine($"free_camera_enabled={Boolean(FreeCameraEnabled)}");
         text.AppendLine($"disable_dither_enabled={Boolean(DisableDitherEnabled)}");
-        text.AppendLine($"pause_game_enabled={Boolean(PauseGameInFreeCamera)}");
+        text.AppendLine($"pause_enabled={Boolean(PauseGameInFreeCamera)}");
         text.AppendLine($"toggle_hotkey={FreeCameraToggleHotkey}");
+        text.AppendLine($"pause_hotkey={WorldPauseToggleHotkey}");
         text.AppendLine($"movement_speed={Number(FreeCameraMovementSpeed)}");
         text.AppendLine($"field_of_view={Number(FreeCameraFieldOfView)}");
         text.AppendLine("diagnostics=true");
         text.AppendLine();
+        text.AppendLine(ToActionsIniSection());
         text.AppendLine("[Launcher]");
         text.AppendLine($"Language={(LocalizationService.Instance.IsChinese ? "zh_CN" : "en_US")}");
         return text.ToString();
