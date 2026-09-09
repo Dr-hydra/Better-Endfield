@@ -59,6 +59,14 @@ set_target_properties(BetterEndfield.Model PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
 )
 
+add_library(BetterEndfield.CustomModel SHARED modules/custom_model/module.cpp)
+better_endfield_target_defaults(BetterEndfield.CustomModel)
+set_target_properties(BetterEndfield.CustomModel PROPERTIES
+    OUTPUT_NAME "BetterEndfield.CustomModel"
+    RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
+    LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
+)
+
 add_library(BetterEndfield.Voice SHARED modules/voice/module.cpp)
 better_endfield_target_defaults(BetterEndfield.Voice)
 set_target_properties(BetterEndfield.Voice PROPERTIES
@@ -262,6 +270,9 @@ add_custom_target(BetterEndfield.Layout ALL
         "${CMAKE_CURRENT_SOURCE_DIR}/modules/model/betterendfield.model.module.ini"
         "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.model.module.ini"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/modules/custom_model/betterendfield.custom_model.module.ini"
+        "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.custom_model.module.ini"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/modules/voice/betterendfield.voice.module.ini"
         "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.voice.module.ini"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -288,6 +299,7 @@ add_custom_target(BetterEndfield.Layout ALL
     DEPENDS
         BetterEndfield.Host
         BetterEndfield.Model
+        BetterEndfield.CustomModel
         BetterEndfield.Voice
         BetterEndfield.Music
         BetterEndfield.UiModule
