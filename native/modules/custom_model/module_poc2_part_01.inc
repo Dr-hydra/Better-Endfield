@@ -1,3 +1,90 @@
+        "m_Weight0", "System.Single"}, kBoxedValueHeaderSize + 0},
+    {"weight1", {"UnityEngine.CoreModule.dll", "UnityEngine", "BoneWeight",
+        "m_Weight1", "System.Single"}, kBoxedValueHeaderSize + 4},
+    {"weight2", {"UnityEngine.CoreModule.dll", "UnityEngine", "BoneWeight",
+        "m_Weight2", "System.Single"}, kBoxedValueHeaderSize + 8},
+    {"weight3", {"UnityEngine.CoreModule.dll", "UnityEngine", "BoneWeight",
+        "m_Weight3", "System.Single"}, kBoxedValueHeaderSize + 12},
+    {"index0", {"UnityEngine.CoreModule.dll", "UnityEngine", "BoneWeight",
+        "m_BoneIndex0", "System.Int32"}, kBoxedValueHeaderSize + 16},
+    {"index1", {"UnityEngine.CoreModule.dll", "UnityEngine", "BoneWeight",
+        "m_BoneIndex1", "System.Int32"}, kBoxedValueHeaderSize + 20},
+    {"index2", {"UnityEngine.CoreModule.dll", "UnityEngine", "BoneWeight",
+        "m_BoneIndex2", "System.Int32"}, kBoxedValueHeaderSize + 24},
+    {"index3", {"UnityEngine.CoreModule.dll", "UnityEngine", "BoneWeight",
+        "m_BoneIndex3", "System.Int32"}, kBoxedValueHeaderSize + 28},
+}};
+
+MethodContract* Contract(std::string_view key) {
+    for (auto& method : g_methods) {
+        if (method.key == key) return &method;
+    }
+    return nullptr;
+}
+
+void Log(const std::string& message) {
+    if (g_host && g_host->log) {
+        g_host->log(g_host->context, kModuleId, message.c_str());
+    }
+}
+
+void* Invoke(const MethodContract* method, void* instance, void** parameters,
+    bool log_exception = true) {
+    if (!method || !method->method_info || !g_host || !g_host->runtime_invoke) {
+        return nullptr;
+    }
+    void* exception = nullptr;
+    void* result = g_host->runtime_invoke(
+        g_host->context, method->method_info, instance, parameters, &exception);
+    if (exception && log_exception) {
+        Log(std::string("Managed exception from ") + method->key);
+    }
+    return exception ? nullptr : result;
+}
+
+template <typename T>
+bool Unbox(void* boxed, T& value) {
+    if (!boxed || !g_host || !g_host->object_unbox) return false;
+    void* raw = g_host->object_unbox(g_host->context, boxed);
+    if (!raw) return false;
+    std::memcpy(&value, raw, sizeof(T));
+    return true;
+}
+
+template <typename T>
+bool InvokeValue(const MethodContract* method, void* instance, void** parameters,
+    T& value) {
+    return Unbox(Invoke(method, instance, parameters), value);
+}
+
+bool InvokeVoid(const MethodContract* method, void* instance, void** parameters) {
+    if (!method || !method->resolved || !g_host || !g_host->runtime_invoke) {
+        return false;
+    }
+    void* exception = nullptr;
+    g_host->runtime_invoke(
+        g_host->context, method->method_info, instance, parameters, &exception);
+    if (exception) {
+        Log(std::string("Managed exception from ") + method->key);
+        return false;
+    }
+    return true;
+}
+
+std::string ManagedString(void* value) {
+    if (!value || !g_host || !g_host->copy_managed_string) return {};
+    std::array<char, 1024> buffer{};
+    const int copied = g_host->copy_managed_string(
+        g_host->context, value, buffer.data(), buffer.size());
+    return copied > 0 ? std::string(buffer.data(), static_cast<size_t>(copied))
+                      : std::string{};
+}
+
+std::string ObjectName(void* object) {
+    return object
+        ? ManagedString(Invoke(Contract("object.get_name"), object, nullptr, false))
+        : std::string{};
+}
 
 int ArrayLength(void* array) {
     int dimension = 0;
@@ -52,8 +139,10 @@ bool IsSupportedLiveTargetPath(std::string_view path) {
     return IsGameplayPostModelPath(path) || IsUiModelPath(path);
 }
 
-bool IsLod0Path(std::string_view path) {
-    return path.find("/Mesh_all/lod0/") != std::string_view::npos;
+int PathLod(std::string_view path) {
+    if (path.find("/Mesh_all/lod0/") != std::string_view::npos) return 0;
+    if (path.find("/Mesh_all/lod1/") != std::string_view::npos) return 1;
+    return -1;
 }
 
 std::filesystem::path Utf8Path(std::string_view value) {
@@ -109,222 +198,49 @@ bool LoadBemPoc(const std::filesystem::path& path, BemPocData& output) {
     }
 
     std::memcpy(&output.header, bytes.data(), sizeof(output.header));
-    const std::array<char, 8> expected_magic{
-        'B','E','M','P','O','C','2','\0'};
-    const uint32_t required_flags =
-        kBemFlagUv0 | kBemFlagSkin4 | kBemFlagIndex16 |
-        kBemFlagNormal | kBemFlagColor0;
-
-    if (std::memcmp(output.header.magic, expected_magic.data(),
-            expected_magic.size()) != 0 ||
-        output.header.version != 2 ||
-        output.header.component_id != 9 ||
-        output.header.original_index_count != kComponent9OriginalIndexCount ||
+    const std::array<char, 8> expected_magic{'B','E','M','P','O','C','3','\0'};
+    if (std::memcmp(output.header.magic, expected_magic.data(), expected_magic.size()) != 0 ||
+        output.header.version != 3 || output.header.component_id != 9 ||
         output.header.vertex_count != kExpectedBemVertices ||
         output.header.index_count != kExpectedBemIndices ||
-        output.header.max_bone != kExpectedBemMaxBone ||
-        (output.header.flags & required_flags) != required_flags) {
-        Log("BEM PoC header does not match validated Endmin Casualwear C9.");
+        output.header.max_bone_lod0 != kExpectedBemMaxBoneLod0 ||
+        output.header.max_bone_lod1 != kExpectedBemMaxBoneLod1 ||
+        output.header.original_index_count_lod0 != kComponent9OriginalIndexCountLod0 ||
+        output.header.original_index_count_lod1 != kComponent9OriginalIndexCountLod1 ||
+        output.header.vb0_stride != kExpectedVb0Stride ||
+        output.header.vb1_lod0_stride != kExpectedVb1Lod0Stride ||
+        output.header.vb2_lod0_stride != kExpectedVb2Lod0Stride ||
+        output.header.vb1_lod1_stride != kExpectedVb1Lod1Stride ||
+        output.header.vb2_lod1_stride != kExpectedVb2Lod1Stride) {
+        Log("BEM PoC-3 header does not match validated Endmin Casualwear C9 raw layout.");
         return false;
     }
 
     size_t cursor = sizeof(BemPocHeader);
-    const size_t position_bytes =
-        static_cast<size_t>(output.header.vertex_count) * sizeof(Float3);
-    const size_t uv_bytes =
-        static_cast<size_t>(output.header.vertex_count) * sizeof(Float2);
-    const size_t normal_bytes =
-        static_cast<size_t>(output.header.vertex_count) * sizeof(Float3);
-    const size_t color_bytes =
-        static_cast<size_t>(output.header.vertex_count) * sizeof(Float4);
-    const size_t weight_bytes =
-        static_cast<size_t>(output.header.vertex_count) * sizeof(float) * 4;
-    const size_t bone_index_bytes =
-        static_cast<size_t>(output.header.vertex_count) * 4;
-    const size_t index_bytes =
-        static_cast<size_t>(output.header.index_count) * sizeof(uint16_t);
-    const size_t expected_size = cursor + position_bytes + uv_bytes +
-        normal_bytes + color_bytes + weight_bytes + bone_index_bytes +
-        index_bytes;
+    auto take = [&](std::vector<uint8_t>& dst, size_t size) -> bool {
+        if (cursor > bytes.size() || size > bytes.size() - cursor) return false;
+        dst.assign(bytes.begin() + static_cast<std::ptrdiff_t>(cursor),
+                   bytes.begin() + static_cast<std::ptrdiff_t>(cursor + size));
+        cursor += size;
+        return true;
+    };
 
-    if (expected_size != bytes.size()) {
-        Log("BEM PoC payload size mismatch.");
+    const size_t vertices = output.header.vertex_count;
+    if (!take(output.vb0, vertices * output.header.vb0_stride) ||
+        !take(output.vb1_lod0, vertices * output.header.vb1_lod0_stride) ||
+        !take(output.vb2_lod0, vertices * output.header.vb2_lod0_stride) ||
+        !take(output.vb1_lod1, vertices * output.header.vb1_lod1_stride) ||
+        !take(output.vb2_lod1, vertices * output.header.vb2_lod1_stride)) {
+        Log("BEM PoC-3 vertex stream payload is truncated.");
         return false;
     }
 
-    output.positions.resize(output.header.vertex_count);
-    std::memcpy(
-        output.positions.data(), bytes.data() + cursor, position_bytes);
-    if (!CheckedAdvance(cursor, position_bytes, bytes.size())) return false;
-
-    output.uvs.resize(output.header.vertex_count);
-    std::memcpy(output.uvs.data(), bytes.data() + cursor, uv_bytes);
-    if (!CheckedAdvance(cursor, uv_bytes, bytes.size())) return false;
-
-    output.normals.resize(output.header.vertex_count);
-    std::memcpy(output.normals.data(), bytes.data() + cursor, normal_bytes);
-    if (!CheckedAdvance(cursor, normal_bytes, bytes.size())) return false;
-
-    output.colors.resize(output.header.vertex_count);
-    std::memcpy(output.colors.data(), bytes.data() + cursor, color_bytes);
-    if (!CheckedAdvance(cursor, color_bytes, bytes.size())) return false;
-
-    const uint8_t* weights = bytes.data() + cursor;
-    if (!CheckedAdvance(cursor, weight_bytes, bytes.size())) return false;
-    const uint8_t* bones = bytes.data() + cursor;
-    if (!CheckedAdvance(cursor, bone_index_bytes, bytes.size())) return false;
-
-    output.bone_weights.resize(output.header.vertex_count);
-    for (uint32_t i = 0; i < output.header.vertex_count; ++i) {
-        BoneWeightPoc item{};
-        std::memcpy(
-            &item.weight0, weights + static_cast<size_t>(i) * 16, 16);
-        const uint8_t* bi = bones + static_cast<size_t>(i) * 4;
-        item.bone_index0 = bi[0];
-        item.bone_index1 = bi[1];
-        item.bone_index2 = bi[2];
-        item.bone_index3 = bi[3];
-        output.bone_weights[i] = item;
+    const size_t index_bytes = static_cast<size_t>(output.header.index_count) * sizeof(uint16_t);
+    if (cursor > bytes.size() || index_bytes != bytes.size() - cursor) {
+        Log("BEM PoC-3 index payload size mismatch.");
+        return false;
     }
-
     output.indices.resize(output.header.index_count);
     std::memcpy(output.indices.data(), bytes.data() + cursor, index_bytes);
-    if (!CheckedAdvance(cursor, index_bytes, bytes.size()) ||
-        cursor != bytes.size()) {
-        return false;
-    }
-
     for (uint16_t index : output.indices) {
         if (index >= output.header.vertex_count) {
-            Log("BEM PoC index references a vertex outside vertexCount.");
-            return false;
-        }
-    }
-
-    Log("Loaded BEM PoC-2: vertices=" +
-        std::to_string(output.header.vertex_count) +
-        " indices=" + std::to_string(output.header.index_count) +
-        " maxBone=" + std::to_string(output.header.max_bone) +
-        " streams=POSITION+UV0+NORMAL+COLOR0+SKIN4");
-    return true;
-}
-
-void* CreateManagedArray(
-    const BE_ResolvedClassV1& element_class, int count) {
-    if (!element_class.type_object || count < 0) return nullptr;
-    void* parameters[2]{element_class.type_object, &count};
-    void* array = Invoke(
-        Contract("array.create_instance"), nullptr, parameters);
-    if (!array || ArrayLength(array) != count) return nullptr;
-    return array;
-}
-
-template <typename T>
-T* ManagedArrayData(void* array, size_t expected_count) {
-    if (!array) return nullptr;
-    __try {
-        const uintptr_t length = *reinterpret_cast<const uintptr_t*>(
-            static_cast<const uint8_t*>(array) + kIl2CppArrayLengthOffset);
-        if (length != expected_count) return nullptr;
-        return reinterpret_cast<T*>(
-            static_cast<uint8_t*>(array) + kIl2CppArrayDataOffset);
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-        return nullptr;
-    }
-}
-
-bool ValidateBoneWeightLayout() {
-    for (const auto& field : kBoneWeightFields) {
-        BE_ResolvedFieldV1 result{};
-        const BE_Result status = g_host->resolve_field(
-            g_host->context, &field.descriptor, &result);
-        if (status != BE_Result_Ok || !result.field_info ||
-            result.offset != field.expected_offset) {
-            Log(std::string("BoneWeight layout mismatch: ") + field.key +
-                " expected=" + std::to_string(field.expected_offset) +
-                " actual=" + std::to_string(result.offset));
-            return false;
-        }
-    }
-    Log("Validated UnityEngine.BoneWeight 32-byte PoC layout.");
-    return true;
-}
-
-struct RendererSummary {
-    void* renderer = nullptr;
-    void* mesh = nullptr;
-    std::string renderer_name;
-    std::string mesh_name;
-    std::string path;
-    uint64_t total_indices = 0;
-    int bones_count = 0;
-    int bindpose_count = 0;
-    bool c9_signature = false;
-    bool exact_name = false;
-    bool live_clone = false;
-    bool lod0_path = false;
-};
-
-RendererSummary SummarizeRenderer(void* renderer) {
-    RendererSummary summary;
-    summary.renderer = renderer;
-    summary.renderer_name = ObjectName(renderer);
-    summary.path = BuildTransformPath(renderer);
-    summary.mesh = Invoke(
-        Contract("skinned.get_shared_mesh"), renderer, nullptr, false);
-    summary.mesh_name = ObjectName(summary.mesh);
-    summary.bones_count = ArrayLength(Invoke(
-        Contract("skinned.get_bones"), renderer, nullptr, false));
-
-    if (summary.mesh) {
-        int sub_mesh_count = 0;
-        if (InvokeValue(Contract("mesh.get_sub_mesh_count"),
-                summary.mesh, nullptr, sub_mesh_count)) {
-            const int count = std::min(
-                std::max(sub_mesh_count, 0), kMaxSubMeshes);
-            for (int submesh = 0; submesh < count; ++submesh) {
-                uint32_t index_count = 0;
-                void* parameters[1]{&submesh};
-                if (InvokeValue(Contract("mesh.get_index_count"),
-                        summary.mesh, parameters, index_count)) {
-                    summary.total_indices += index_count;
-                }
-            }
-        }
-        summary.bindpose_count = ArrayLength(Invoke(
-            Contract("mesh.get_bindposes"), summary.mesh, nullptr, false));
-    }
-
-    summary.c9_signature =
-        summary.total_indices == kComponent9OriginalIndexCount;
-    summary.exact_name =
-        summary.renderer_name == kTargetRendererName &&
-        summary.mesh_name == kTargetMeshName;
-    summary.live_clone = IsLiveClonePath(summary.path);
-    summary.lod0_path = IsLod0Path(summary.path);
-    return summary;
-}
-
-void LogRenderer(const RendererSummary& item, int ordinal) {
-    std::string line =
-        "  candidate[" + std::to_string(ordinal) + "] renderer=\"" +
-        item.renderer_name + "\" mesh=\"" + item.mesh_name +
-        "\" totalIndices=" + std::to_string(item.total_indices) +
-        " bones=" + std::to_string(item.bones_count) +
-        " bindposes=" + std::to_string(item.bindpose_count);
-    if (item.c9_signature) line += " C9_SIGNATURE";
-    if (item.exact_name) line += " EXACT_NAME";
-    if (item.live_clone) line += " LIVE_CLONE";
-    if (item.lod0_path) line += " LOD0_PATH";
-    Log(line);
-    if (!item.path.empty()) Log("    path=\"" + item.path + "\"");
-}
-
-std::vector<RendererSummary> EnumerateRenderers() {
-    std::vector<RendererSummary> summaries;
-    void* parameters[1]{g_skinned_renderer_class.type_object};
-    void* objects = Invoke(
-        Contract("resources.find_objects_of_type_all"), nullptr, parameters);
-    const int raw_count = ArrayLength(objects);
-    const int count = std::min(std::max(raw_count, 0), kMaxRenderers);
