@@ -18,61 +18,82 @@ namespace BetterEndfield::CustomModelModule {
 namespace {
 
 constexpr char kModuleId[] = "betterendfield.custom_model";
-constexpr char kTargetRendererNameLod0[] = "S_actor_endminf_cloth_01_lod0";
-constexpr char kTargetMeshNameLod0[] = "S_actor_endminf_cloth_01_lod0";
-constexpr char kTargetRendererNameLod1[] = "S_actor_endminf_cloth_01_lod1";
-constexpr char kTargetMeshNameLod1[] = "S_actor_endminf_cloth_01_lod1";
+constexpr char kTargetRendererName[] = "S_actor_endminf_cloth_01_lod0";
+constexpr char kTargetMeshName[] = "S_actor_endminf_cloth_01_lod0";
 constexpr char kDefaultBemRelativePath[] = "custom-model/endmin-casualwear-c9.bempoc";
 constexpr int kToggleHotkey = VK_F9;
 constexpr int kMaxRenderers = 4096;
 constexpr int kMaxSubMeshes = 256;
-constexpr uint32_t kComponent9OriginalIndexCountLod0 = 101994;
-constexpr uint32_t kComponent9OriginalIndexCountLod1 = 59301;
+constexpr uint32_t kComponent9OriginalIndexCount = 101994;
 constexpr uint32_t kExpectedBemVertices = 12873;
 constexpr uint32_t kExpectedBemIndices = 59073;
-constexpr uint32_t kExpectedBemMaxBoneLod0 = 155;
-constexpr uint32_t kExpectedBemMaxBoneLod1 = 148;
-constexpr uint32_t kExpectedVb0Stride = 16;
-constexpr uint32_t kExpectedVb1Lod0Stride = 12;
-constexpr uint32_t kExpectedVb2Lod0Stride = 12;
-constexpr uint32_t kExpectedVb1Lod1Stride = 8;
-constexpr uint32_t kExpectedVb2Lod1Stride = 12;
-constexpr uint64_t kActiveRefreshInterval = 120;
+constexpr uint32_t kExpectedBemMaxBone = 155;
 
-// The PoC only writes an Int32[] index list through the high-level Mesh API.
-// Vertex streams are kept byte-for-byte identical to EFMI and copied through
-// Unity's private graphics-API-independent Mesh::InternalSetVertexBufferData.
+// This research PoC intentionally uses the same 64-bit IL2CPP array ABI that
+// other repository probes already validate: max_length @ 0x18, data @ 0x20.
 constexpr size_t kIl2CppArrayLengthOffset = 0x18;
 constexpr size_t kIl2CppArrayDataOffset = 0x20;
 constexpr int32_t kBoxedValueHeaderSize = 16;
+
+constexpr uint32_t kBemFlagUv0 = 1u << 0;
+constexpr uint32_t kBemFlagSkin4 = 1u << 1;
+constexpr uint32_t kBemFlagIndex16 = 1u << 2;
+constexpr uint32_t kBemFlagNormal = 1u << 3;
+constexpr uint32_t kBemFlagColor0 = 1u << 4;
+constexpr uint64_t kActiveRefreshInterval = 120;
 
 #pragma pack(push, 1)
 struct BemPocHeader {
     char magic[8];
     uint32_t version;
     uint32_t component_id;
+    uint32_t original_index_count;
     uint32_t vertex_count;
     uint32_t index_count;
-    uint32_t max_bone_lod0;
-    uint32_t max_bone_lod1;
-    uint32_t original_index_count_lod0;
-    uint32_t original_index_count_lod1;
-    uint32_t vb0_stride;
-    uint32_t vb1_lod0_stride;
-    uint32_t vb2_lod0_stride;
-    uint32_t vb1_lod1_stride;
-    uint32_t vb2_lod1_stride;
+    uint32_t max_bone;
+    uint32_t flags;
 };
 #pragma pack(pop)
-static_assert(sizeof(BemPocHeader) == 60);
+static_assert(sizeof(BemPocHeader) == 36);
+
+struct Float2 {
+    float x;
+    float y;
+};
+
+struct Float3 {
+    float x;
+    float y;
+    float z;
+};
+
+struct Float4 {
+    float x;
+    float y;
+    float z;
+    float w;
+};
+static_assert(sizeof(Float4) == 16);
+
+struct BoneWeightPoc {
+    float weight0;
+    float weight1;
+    float weight2;
+    float weight3;
+    int32_t bone_index0;
+    int32_t bone_index1;
+    int32_t bone_index2;
+    int32_t bone_index3;
+};
+static_assert(sizeof(BoneWeightPoc) == 32);
 
 struct BemPocData {
     BemPocHeader header{};
-    std::vector<uint8_t> vb0;
-    std::vector<uint8_t> vb1_lod0;
-    std::vector<uint8_t> vb2_lod0;
-    std::vector<uint8_t> vb1_lod1;
-    std::vector<uint8_t> vb2_lod1;
+    std::vector<Float3> positions;
+    std::vector<Float2> uvs;
+    std::vector<Float3> normals;
+    std::vector<Float4> colors;
+    std::vector<BoneWeightPoc> bone_weights;
     std::vector<uint16_t> indices;
 };
 
@@ -93,6 +114,11 @@ struct FieldContract {
 
 const BE_HostApiV1* g_host = nullptr;
 BE_ResolvedClassV1 g_skinned_renderer_class{};
+BE_ResolvedClassV1 g_mesh_class{};
+BE_ResolvedClassV1 g_vector3_class{};
+BE_ResolvedClassV1 g_vector2_class{};
+BE_ResolvedClassV1 g_color_class{};
+BE_ResolvedClassV1 g_bone_weight_class{};
 BE_ResolvedClassV1 g_int32_class{};
 
 std::atomic_bool g_toggle_requested{false};
@@ -101,15 +127,12 @@ std::atomic_bool g_hotkey_thread_stop{false};
 std::atomic_uint64_t g_pump_hits{0};
 HANDLE g_hotkey_thread = nullptr;
 
-struct MeshVariantState {
-    void* original_mesh = nullptr;
-    void* custom_mesh = nullptr;
-    uint32_t original_handle = 0;
-    uint32_t custom_handle = 0;
-};
-
-MeshVariantState g_lod0{};
-MeshVariantState g_lod1{};
+void* g_replaced_renderer = nullptr;
+void* g_original_mesh = nullptr;
+void* g_custom_mesh = nullptr;
+uint32_t g_renderer_handle = 0;
+uint32_t g_original_mesh_handle = 0;
+uint32_t g_custom_mesh_handle = 0;
 
 using VoidInstanceFn = void(__fastcall*)(void* instance, void* method_info);
 VoidInstanceFn g_original_pump = nullptr;
@@ -137,9 +160,6 @@ MethodContract g_methods[]{
     {"object.destroy",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Object", "Destroy",
             "UnityEngine.Object", "System.Void", 1}, false},
-    {"object.instantiate",
-        {"UnityEngine.CoreModule.dll", "UnityEngine", "Object", "Instantiate",
-            "UnityEngine.Object", "UnityEngine.Object", 1}, true},
 
     {"array.create_instance",
         {"mscorlib.dll", "System", "Array", "CreateInstance",
@@ -183,16 +203,6 @@ MethodContract g_methods[]{
     {"mesh.get_bindposes",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "get_bindposes",
             nullptr, "UnityEngine.Matrix4x4[]", 0}, true},
-    {"mesh.get_vertex_buffer_count",
-        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "get_vertexBufferCount",
-            nullptr, "System.Int32", 0}, true},
-    {"mesh.get_vertex_buffer_stride",
-        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "GetVertexBufferStride",
-            "System.Int32", "System.Int32", 1}, true},
-    {"mesh.internal_set_vertex_buffer_data",
-        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "InternalSetVertexBufferData",
-            "System.Int32|System.IntPtr|System.Int32|System.Int32|System.Int32|System.Int32|UnityEngine.Rendering.MeshUpdateFlags",
-            "System.Void", 7}, true},
     {"mesh.set_vertices",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "set_vertices",
             "UnityEngine.Vector3[]", "System.Void", 1}, true},
@@ -231,3 +241,90 @@ MethodContract g_methods[]{
 
 constexpr std::array<FieldContract, 8> kBoneWeightFields{{
     {"weight0", {"UnityEngine.CoreModule.dll", "UnityEngine", "BoneWeight",
+        "m_Weight0", "System.Single"}, kBoxedValueHeaderSize + 0},
+    {"weight1", {"UnityEngine.CoreModule.dll", "UnityEngine", "BoneWeight",
+        "m_Weight1", "System.Single"}, kBoxedValueHeaderSize + 4},
+    {"weight2", {"UnityEngine.CoreModule.dll", "UnityEngine", "BoneWeight",
+        "m_Weight2", "System.Single"}, kBoxedValueHeaderSize + 8},
+    {"weight3", {"UnityEngine.CoreModule.dll", "UnityEngine", "BoneWeight",
+        "m_Weight3", "System.Single"}, kBoxedValueHeaderSize + 12},
+    {"index0", {"UnityEngine.CoreModule.dll", "UnityEngine", "BoneWeight",
+        "m_BoneIndex0", "System.Int32"}, kBoxedValueHeaderSize + 16},
+    {"index1", {"UnityEngine.CoreModule.dll", "UnityEngine", "BoneWeight",
+        "m_BoneIndex1", "System.Int32"}, kBoxedValueHeaderSize + 20},
+    {"index2", {"UnityEngine.CoreModule.dll", "UnityEngine", "BoneWeight",
+        "m_BoneIndex2", "System.Int32"}, kBoxedValueHeaderSize + 24},
+    {"index3", {"UnityEngine.CoreModule.dll", "UnityEngine", "BoneWeight",
+        "m_BoneIndex3", "System.Int32"}, kBoxedValueHeaderSize + 28},
+}};
+
+MethodContract* Contract(std::string_view key) {
+    for (auto& method : g_methods) {
+        if (method.key == key) return &method;
+    }
+    return nullptr;
+}
+
+void Log(const std::string& message) {
+    if (g_host && g_host->log) {
+        g_host->log(g_host->context, kModuleId, message.c_str());
+    }
+}
+
+void* Invoke(const MethodContract* method, void* instance, void** parameters,
+    bool log_exception = true) {
+    if (!method || !method->method_info || !g_host || !g_host->runtime_invoke) {
+        return nullptr;
+    }
+    void* exception = nullptr;
+    void* result = g_host->runtime_invoke(
+        g_host->context, method->method_info, instance, parameters, &exception);
+    if (exception && log_exception) {
+        Log(std::string("Managed exception from ") + method->key);
+    }
+    return exception ? nullptr : result;
+}
+
+template <typename T>
+bool Unbox(void* boxed, T& value) {
+    if (!boxed || !g_host || !g_host->object_unbox) return false;
+    void* raw = g_host->object_unbox(g_host->context, boxed);
+    if (!raw) return false;
+    std::memcpy(&value, raw, sizeof(T));
+    return true;
+}
+
+template <typename T>
+bool InvokeValue(const MethodContract* method, void* instance, void** parameters,
+    T& value) {
+    return Unbox(Invoke(method, instance, parameters), value);
+}
+
+bool InvokeVoid(const MethodContract* method, void* instance, void** parameters) {
+    if (!method || !method->resolved || !g_host || !g_host->runtime_invoke) {
+        return false;
+    }
+    void* exception = nullptr;
+    g_host->runtime_invoke(
+        g_host->context, method->method_info, instance, parameters, &exception);
+    if (exception) {
+        Log(std::string("Managed exception from ") + method->key);
+        return false;
+    }
+    return true;
+}
+
+std::string ManagedString(void* value) {
+    if (!value || !g_host || !g_host->copy_managed_string) return {};
+    std::array<char, 1024> buffer{};
+    const int copied = g_host->copy_managed_string(
+        g_host->context, value, buffer.data(), buffer.size());
+    return copied > 0 ? std::string(buffer.data(), static_cast<size_t>(copied))
+                      : std::string{};
+}
+
+std::string ObjectName(void* object) {
+    return object
+        ? ManagedString(Invoke(Contract("object.get_name"), object, nullptr, false))
+        : std::string{};
+}
