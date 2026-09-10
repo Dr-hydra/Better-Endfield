@@ -7,7 +7,6 @@
 #include <atomic>
 #include <cctype>
 #include <cstdint>
-#include <cstdio>
 #include <cstring>
 #include <string>
 #include <string_view>
@@ -29,9 +28,8 @@ struct EfmiComponentSignature {
     uint32_t index_count;
 };
 
-// Endmin Casualwear reference sample. These counts are diagnostics only: they
-// annotate exact runtime submesh matches and are never used as an identity or
-// replacement key.
+// Endmin Casualwear reference sample. Diagnostic hints only; these values are
+// deliberately not treated as stable renderer identities.
 constexpr std::array<EfmiComponentSignature, 11> kSampleEfmiComponents{{
     {0, 27615}, {1, 9000}, {2, 4524}, {3, 20577}, {4, 1638}, {5, 16524},
     {6, 117}, {7, 1386}, {8, 90}, {9, 101994}, {10, 2286},
@@ -48,13 +46,22 @@ struct MethodContract {
 
 const BE_HostApiV1* g_host = nullptr;
 BE_ResolvedClassV1 g_skinned_renderer_class{};
+
 std::atomic_bool g_dump_in_progress{false};
-bool g_hotkey_was_down = false;
+std::atomic_bool g_dump_requested{false};
+std::atomic_bool g_hotkey_thread_stop{false};
+std::atomic_uint64_t g_pump_hits{0};
+HANDLE g_hotkey_thread = nullptr;
 
 using VoidInstanceFn = void(__fastcall*)(void* instance, void* method_info);
 VoidInstanceFn g_original_pump = nullptr;
 
 MethodContract g_methods[]{
+    // Test builds may disable the Camera module, so prefer the exact per-frame
+    // main-thread callback already proven by BetterEndfield.Camera.
+    {"pump.process_dither_pitch",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.View", "CameraMono",
+            "_ProcessDitherByPitch", nullptr, "System.Void", 0}, false},
     {"pump.evaluate_touched_entities",
         {"Gameplay.Beyond.dll", "Beyond.Gameplay.View", "CameraMono",
             "EvaluateAllTouchedEntities", nullptr, "System.Void", 0}, false},
@@ -197,8 +204,8 @@ std::string LowerAscii(std::string value) {
 }
 
 bool ContainsTargetHint(std::string_view value) {
-    if (value.empty()) return false;
-    return LowerAscii(std::string(value)).find(kTargetHint) != std::string::npos;
+    return !value.empty() &&
+        LowerAscii(std::string(value)).find(kTargetHint) != std::string::npos;
 }
 
 std::string BuildTransformPath(void* component) {
@@ -337,8 +344,7 @@ void DumpMesh(void* mesh) {
         const bool got_count = InvokeValue(
             Contract("mesh.get_index_count"), mesh, parameters, index_count);
         bool got_base_vertex = false;
-        if (auto* method = Contract("mesh.get_base_vertex");
-            method && method->resolved) {
+        if (auto* method = Contract("mesh.get_base_vertex"); method && method->resolved) {
             got_base_vertex = InvokeValue(method, mesh, parameters, base_vertex);
         }
         if (got_count) total_indices += index_count;
@@ -434,11 +440,28 @@ void DumpTargetRenderers() {
     g_dump_in_progress.store(false, std::memory_order_release);
 }
 
+DWORD WINAPI HotkeyThread(void*) {
+    bool held = false;
+    while (!g_hotkey_thread_stop.load(std::memory_order_acquire)) {
+        const bool down = (GetAsyncKeyState(kDumpHotkey) & 0x8000) != 0;
+        if (down && !held) {
+            g_dump_requested.store(true, std::memory_order_release);
+        }
+        held = down;
+        Sleep(15);
+    }
+    return 0;
+}
+
 void PumpProbe() {
-    const bool down = (GetAsyncKeyState(kDumpHotkey) & 0x8000) != 0;
-    const bool pressed = down && !g_hotkey_was_down;
-    g_hotkey_was_down = down;
-    if (pressed) DumpTargetRenderers();
+    const uint64_t hit = g_pump_hits.fetch_add(1, std::memory_order_relaxed) + 1;
+    if (hit == 1) {
+        Log("Probe main-thread pump observed first runtime call.");
+    }
+    if (g_dump_requested.exchange(false, std::memory_order_acq_rel)) {
+        Log("F8 dump request consumed on Unity main thread.");
+        DumpTargetRenderers();
+    }
 }
 
 void __fastcall DetourPump(void* instance, void* method_info) {
@@ -477,8 +500,11 @@ bool ResolveContracts() {
 }
 
 bool InstallPumpHook() {
-    constexpr std::array<std::string_view, 2> candidates{
-        "pump.evaluate_touched_entities", "pump.process_dither_trace"};
+    constexpr std::array<std::string_view, 3> candidates{
+        "pump.process_dither_pitch",
+        "pump.evaluate_touched_entities",
+        "pump.process_dither_trace"};
+
     for (std::string_view key : candidates) {
         MethodContract* method = Contract(key);
         if (!method || !method->resolved || !method->pointer) continue;
@@ -497,6 +523,25 @@ bool InstallPumpHook() {
     return false;
 }
 
+bool StartHotkeyThread() {
+    g_hotkey_thread_stop.store(false, std::memory_order_release);
+    g_hotkey_thread = CreateThread(nullptr, 0, &HotkeyThread, nullptr, 0, nullptr);
+    if (!g_hotkey_thread) {
+        Log("Failed to start F8 hotkey latch thread.");
+        return false;
+    }
+    return true;
+}
+
+void StopHotkeyThread() {
+    g_hotkey_thread_stop.store(true, std::memory_order_release);
+    if (g_hotkey_thread) {
+        WaitForSingleObject(g_hotkey_thread, 1000);
+        CloseHandle(g_hotkey_thread);
+        g_hotkey_thread = nullptr;
+    }
+}
+
 BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     if (!host || host->abi_version != BETTER_ENDFIELD_MODULE_ABI_V1 ||
         !host->resolve_method || !host->resolve_class || !host->runtime_invoke ||
@@ -504,15 +549,28 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
         !host->release_module_hooks || !host->log) {
         return BE_Result_InvalidArgument;
     }
+
     g_host = host;
+    g_dump_requested.store(false, std::memory_order_release);
+    g_dump_in_progress.store(false, std::memory_order_release);
+    g_pump_hits.store(0, std::memory_order_release);
+
     if (!ResolveContracts()) {
         Log("CustomModel probe contract resolution failed.");
         return BE_Result_ContractMismatch;
     }
     if (!InstallPumpHook()) {
-        Log("CustomModel probe could not install a conflict-free main-thread pump.");
+        Log("CustomModel probe could not install a main-thread pump.");
         return BE_Result_Conflict;
     }
+    if (!StartHotkeyThread()) {
+        if (g_host->release_module_hooks) {
+            g_host->release_module_hooks(g_host->context, kModuleId);
+        }
+        g_original_pump = nullptr;
+        return BE_Result_Failed;
+    }
+
     Log("BetterEndfield.CustomModel probe ready. Load Endministrator (F), then press F8 once to dump mesh/skeleton data.");
     return BE_Result_Ok;
 }
@@ -522,16 +580,19 @@ BE_Result BE_CALL ConfigurationChanged(const char*) {
 }
 
 void BE_CALL Shutdown() {
+    StopHotkeyThread();
     if (g_host && g_host->release_module_hooks) {
         g_host->release_module_hooks(g_host->context, kModuleId);
     }
     g_original_pump = nullptr;
-    g_hotkey_was_down = false;
+    g_dump_requested.store(false, std::memory_order_release);
+    g_dump_in_progress.store(false, std::memory_order_release);
+    g_pump_hits.store(0, std::memory_order_release);
     g_host = nullptr;
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Custom Model (Research Probe)", "0.0.1-probe",
+    {kModuleId, "Custom Model (Research Probe)", "0.0.2-probe",
         BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
