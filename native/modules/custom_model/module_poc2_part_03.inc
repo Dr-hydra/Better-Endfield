@@ -38,7 +38,7 @@
             g_host->context, g_custom_mesh, 0);
     }
 
-    Log("F9 replacement active: applied=" + std::to_string(applied.total) +
+    Log("F9 PoC-2.1 replacement active: applied=" + std::to_string(applied.total) +
         " gameplay=" + std::to_string(applied.gameplay) +
         " ui=" + std::to_string(applied.ui) +
         ". New live gameplay/UI clones will be refreshed automatically.");
@@ -62,7 +62,7 @@ void RefreshActiveReplacement() {
     }
 
     if (applied.total > 0) {
-        Log("Active CustomModel refresh applied to new live C9 instances: total=" +
+        Log("Active CustomModel PoC-2.1 refresh applied to new live C9 instances: total=" +
             std::to_string(applied.total) +
             " gameplay=" + std::to_string(applied.gameplay) +
             " ui=" + std::to_string(applied.ui));
@@ -135,14 +135,11 @@ void PumpCustomModel() {
 
     if (g_toggle_requested.exchange(
             false, std::memory_order_acq_rel)) {
-        Log("F9 CustomModel request consumed on Unity main thread.");
+        Log("F9 CustomModel PoC-2.1 request consumed on Unity main thread.");
         ToggleReplacement();
         return;
     }
 
-    // Character detail/party UI creates chr_0003_endminf_uimodel(Clone)
-    // after gameplay is already running. While F9 is active, periodically
-    // discover newly-created live instances and attach the same custom mesh.
     if (g_custom_mesh && hit % kActiveRefreshInterval == 0 &&
         !g_operation_in_progress.exchange(true, std::memory_order_acq_rel)) {
         RefreshActiveReplacement();
@@ -202,9 +199,6 @@ bool ResolveContracts() {
     ready &= ResolveClass(
         "UnityEngine.CoreModule.dll", "UnityEngine",
         "Vector2", g_vector2_class);
-    ready &= ResolveClass(
-        "UnityEngine.CoreModule.dll", "UnityEngine",
-        "Color", g_color_class);
     ready &= ResolveClass(
         "UnityEngine.CoreModule.dll", "UnityEngine",
         "BoneWeight", g_bone_weight_class);
@@ -286,11 +280,11 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     ClearReplacementState();
 
     if (!ResolveContracts()) {
-        Log("CustomModel PoC-2 contract resolution failed.");
+        Log("CustomModel PoC-2.1 contract resolution failed.");
         return BE_Result_ContractMismatch;
     }
     if (!InstallPumpHook()) {
-        Log("CustomModel PoC-2 could not install a main-thread pump.");
+        Log("CustomModel PoC-2.1 could not install a main-thread pump.");
         return BE_Result_Conflict;
     }
     if (!StartHotkeyThread()) {
@@ -300,10 +294,15 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     }
 
     const std::filesystem::path path = BemPath();
-    Log("BetterEndfield.CustomModel PoC-2 ready. "
-        "Load Endministrator (F), then press F9.");
+    Log("BetterEndfield.CustomModel PoC-2.1 ready. "
+        "F9 is guarded by source-declaration validation; GraphicsBuffer is not used.");
     if (!path.empty()) {
-        Log("Expected BEM PoC path: " + path.string());
+        Log("Expected BEM PoC-2.1 path: " + path.string());
+    }
+    if (!RawChannelContractsAvailable()) {
+        Log("PoC-2.1 raw-channel capability is unavailable in this client; F9 will refuse safely.");
+    } else {
+        Log("PoC-2.1 Mesh CPU raw-channel contracts resolved.");
     }
     return BE_Result_Ok;
 }
