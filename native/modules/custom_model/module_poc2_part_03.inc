@@ -1,330 +1,226 @@
-    if (!BuildMeshFromBem(bem, source->mesh, custom_mesh)) {
+    g_lod1.original_mesh = nullptr;
+    g_lod1.custom_mesh = nullptr;
+}
+
+bool HasActiveReplacement() {
+    return g_lod0.custom_mesh || g_lod1.custom_mesh;
+}
+
+bool QueryVertexStreamLayout(void* mesh, int lod, std::vector<int>& strides) {
+    strides.clear();
+    int count = 0;
+    if (!InvokeValue(Contract("mesh.get_vertex_buffer_count"), mesh, nullptr, count) ||
+        count <= 0 || count > 4) {
+        Log("Unexpected vertexBufferCount for C9 LOD" + std::to_string(lod) +
+            ": " + std::to_string(count));
         return false;
     }
-
-    TargetCounts applied{};
-    for (RendererSummary* item : targets) {
-        if (!SetSharedMesh(item->renderer, custom_mesh)) {
-            Log("Failed to assign custom C9 Mesh to live target:");
-            LogRenderer(*item, applied.total);
-            continue;
+    for (int stream = 0; stream < count; ++stream) {
+        int stride = 0;
+        void* p[1]{&stream};
+        if (!InvokeValue(Contract("mesh.get_vertex_buffer_stride"), mesh, p, stride)) {
+            return false;
         }
-        void* observed = Invoke(
-            Contract("skinned.get_shared_mesh"), item->renderer, nullptr, false);
-        if (observed != custom_mesh) {
-            Log("sharedMesh read-back mismatch on live C9 target; restoring it.");
-            SetSharedMesh(item->renderer, item->mesh);
-            continue;
-        }
-        CountTarget(*item, applied);
+        strides.push_back(stride);
     }
 
-    if (applied.total == 0) {
-        Log("Custom C9 Mesh was built, but no live renderer accepted it.");
-        DestroyCustomMesh(custom_mesh);
+    std::string line = "C9 LOD" + std::to_string(lod) + " original vertex streams=" +
+        std::to_string(count) + " strides=";
+    for (size_t i = 0; i < strides.size(); ++i) {
+        if (i) line += ",";
+        line += std::to_string(strides[i]);
+    }
+    Log(line);
+
+    const int vb1_stride = lod == 1 ? static_cast<int>(kExpectedVb1Lod1Stride)
+                                    : static_cast<int>(kExpectedVb1Lod0Stride);
+    const int vb2_stride = lod == 1 ? static_cast<int>(kExpectedVb2Lod1Stride)
+                                    : static_cast<int>(kExpectedVb2Lod0Stride);
+    if (strides.size() < 3 || strides[0] != static_cast<int>(kExpectedVb0Stride) ||
+        strides[1] != vb1_stride || strides[2] != vb2_stride) {
+        Log("C9 original Unity vertex stream layout does not match EFMI VB0/VB1/VB2 expectation; refusing raw overwrite.");
         return false;
     }
-
-    g_replaced_renderer = source->renderer;
-    g_original_mesh = source->mesh;
-    g_custom_mesh = custom_mesh;
-
-    if (g_host->gchandle_new) {
-        g_renderer_handle = g_host->gchandle_new(
-            g_host->context, g_replaced_renderer, 0);
-        g_original_mesh_handle = g_host->gchandle_new(
-            g_host->context, g_original_mesh, 0);
-        g_custom_mesh_handle = g_host->gchandle_new(
-            g_host->context, g_custom_mesh, 0);
+    if (strides.size() == 4 && strides[3] != static_cast<int>(kExpectedVb0Stride)) {
+        Log("C9 stream3 exists but is not the EFMI-compatible VB0 alias stride; refusing raw overwrite.");
+        return false;
     }
-
-    Log("F9 replacement active: applied=" + std::to_string(applied.total) +
-        " gameplay=" + std::to_string(applied.gameplay) +
-        " ui=" + std::to_string(applied.ui) +
-        ". New live gameplay/UI clones will be refreshed automatically.");
     return true;
 }
 
-void RefreshActiveReplacement() {
-    if (!g_custom_mesh || !g_original_mesh) return;
+bool WriteRawVertexStream(void* mesh, int stream, const std::vector<uint8_t>& bytes,
+    int stride, uint32_t vertex_count) {
+    if (!mesh || bytes.size() != static_cast<size_t>(stride) * vertex_count) return false;
+    int data_start = 0;
+    int mesh_start = 0;
+    int count = static_cast<int>(vertex_count);
+    int elem_size = stride;
+    int flags = 0;
+    void* data_ptr = const_cast<uint8_t*>(bytes.data());
+    void* parameters[7]{&stream, &data_ptr, &data_start, &mesh_start, &count, &elem_size, &flags};
+    return InvokeVoid(Contract("mesh.internal_set_vertex_buffer_data"), mesh, parameters);
+}
 
-    std::vector<RendererSummary> summaries =
-        EnumerateLiveComponent9Renderers(false);
+bool BuildRawMeshFromBem(const BemPocData& bem, int lod, void* original_mesh, void*& new_mesh) {
+    new_mesh = nullptr;
+    if (!original_mesh || (lod != 0 && lod != 1)) return false;
+
+    int original_vertices = 0;
+    InvokeValue(Contract("mesh.get_vertex_count"), original_mesh, nullptr, original_vertices);
+    if (original_vertices < static_cast<int>(bem.header.vertex_count)) {
+        Log("Original C9 LOD" + std::to_string(lod) + " vertex capacity too small: original=" +
+            std::to_string(original_vertices) + " custom=" + std::to_string(bem.header.vertex_count));
+        return false;
+    }
+
+    std::vector<int> strides;
+    if (!QueryVertexStreamLayout(original_mesh, lod, strides)) return false;
+
+    void* instantiate_parameters[1]{original_mesh};
+    void* mesh = Invoke(Contract("object.instantiate"), nullptr, instantiate_parameters);
+    if (!mesh) {
+        Log("Failed to clone original C9 LOD" + std::to_string(lod) + " Mesh.");
+        return false;
+    }
+
+    if (auto* set_name = Contract("object.set_name"); set_name && set_name->resolved && g_host->string_new) {
+        const std::string name_text = "BetterEndfield.C9.BEM.Raw.LOD" + std::to_string(lod);
+        void* name = g_host->string_new(g_host->context, name_text.c_str());
+        void* p[1]{name};
+        InvokeVoid(set_name, mesh, p);
+    }
+
+    const std::vector<uint8_t>& vb1 = lod == 1 ? bem.vb1_lod1 : bem.vb1_lod0;
+    const std::vector<uint8_t>& vb2 = lod == 1 ? bem.vb2_lod1 : bem.vb2_lod0;
+    const int vb1_stride = lod == 1 ? static_cast<int>(bem.header.vb1_lod1_stride)
+                                    : static_cast<int>(bem.header.vb1_lod0_stride);
+    const int vb2_stride = lod == 1 ? static_cast<int>(bem.header.vb2_lod1_stride)
+                                    : static_cast<int>(bem.header.vb2_lod0_stride);
+
+    if (!WriteRawVertexStream(mesh, 0, bem.vb0, static_cast<int>(bem.header.vb0_stride), bem.header.vertex_count) ||
+        !WriteRawVertexStream(mesh, 1, vb1, vb1_stride, bem.header.vertex_count) ||
+        !WriteRawVertexStream(mesh, 2, vb2, vb2_stride, bem.header.vertex_count)) {
+        Log("Failed writing EFMI raw VB0/VB1/VB2 into cloned C9 LOD" + std::to_string(lod) + " Mesh.");
+        DestroyCustomMesh(mesh);
+        return false;
+    }
+    if (strides.size() == 4 &&
+        !WriteRawVertexStream(mesh, 3, bem.vb0, static_cast<int>(bem.header.vb0_stride), bem.header.vertex_count)) {
+        Log("Failed writing EFMI VB0 alias into C9 stream3.");
+        DestroyCustomMesh(mesh);
+        return false;
+    }
+
+    void* triangles = CreateManagedArray(g_int32_class, static_cast<int>(bem.indices.size()));
+    int32_t* triangle_data = ManagedArrayData<int32_t>(triangles, bem.indices.size());
+    if (!triangles || !triangle_data) {
+        Log("Failed to allocate combined C9 index array.");
+        DestroyCustomMesh(mesh);
+        return false;
+    }
+    for (size_t i = 0; i < bem.indices.size(); ++i) triangle_data[i] = bem.indices[i];
+
+    int sub_mesh_count = 1;
+    void* p_sub_mesh_count[1]{&sub_mesh_count};
+    if (!InvokeVoid(Contract("mesh.set_sub_mesh_count"), mesh, p_sub_mesh_count)) {
+        DestroyCustomMesh(mesh);
+        return false;
+    }
+    int submesh = 0;
+    bool calculate_bounds = false;
+    int base_vertex = 0;
+    void* p_triangles[4]{triangles, &submesh, &calculate_bounds, &base_vertex};
+    if (!InvokeVoid(Contract("mesh.set_triangles"), mesh, p_triangles)) {
+        Log("SetTriangles failed for raw C9 LOD" + std::to_string(lod) + " Mesh.");
+        DestroyCustomMesh(mesh);
+        return false;
+    }
+
+    // Intentionally preserve the cloned original bounds and bindposes. The
+    // EFMI replacement stays near the original body, and retaining bounds also
+    // rules out RecalculateBounds-induced culling during this validation step.
+    uint32_t index_count = 0;
+    void* p_index[1]{&submesh};
+    InvokeValue(Contract("mesh.get_index_count"), mesh, p_index, index_count);
+    Log("Built raw-layout C9 LOD" + std::to_string(lod) + " Mesh clone: capacityVertices=" +
+        std::to_string(original_vertices) + " customVertices=" +
+        std::to_string(bem.header.vertex_count) + " indexCount=" + std::to_string(index_count));
+    new_mesh = mesh;
+    return true;
+}
+
+RendererSummary* FindSourceForLod(std::vector<RendererSummary>& summaries, int lod) {
+    RendererSummary* fallback = nullptr;
+    for (auto& item : summaries) {
+        if (item.lod != lod || !IsOriginalLiveComponent9(item)) continue;
+        if (!fallback) fallback = &item;
+        if (IsGameplayPostModelPath(item.path)) return &item;
+    }
+    return fallback;
+}
+
+bool ApplyReplacement() {
+    BemPocData bem;
+    const std::filesystem::path path = BemPath();
+    if (path.empty()) {
+        Log("Catalog root unavailable; cannot locate BEM PoC.");
+        return false;
+    }
+    if (!LoadBemPoc(path, bem)) {
+        Log("Regenerate it with the current tools/CustomModel/convert_efmi_poc.py (PoC-3).");
+        return false;
+    }
+
+    std::vector<RendererSummary> summaries = EnumerateLiveComponent9Renderers(true);
+    RendererSummary* source0 = FindSourceForLod(summaries, 0);
+    RendererSummary* source1 = FindSourceForLod(summaries, 1);
+    if (!source0 || !source1) {
+        Log("Both live C9 LOD0 and LOD1 source renderers are required for PoC-3.");
+        LogComponent9Candidates(EnumerateRenderers());
+        return false;
+    }
+
+    Log("Using C9 LOD0 source:");
+    LogRenderer(*source0, 0);
+    Log("Using C9 LOD1 source:");
+    LogRenderer(*source1, 1);
+
+    void* custom0 = nullptr;
+    void* custom1 = nullptr;
+    if (!BuildRawMeshFromBem(bem, 0, source0->mesh, custom0) ||
+        !BuildRawMeshFromBem(bem, 1, source1->mesh, custom1)) {
+        if (custom0) DestroyCustomMesh(custom0);
+        if (custom1) DestroyCustomMesh(custom1);
+        return false;
+    }
+
+    g_lod0.original_mesh = source0->mesh;
+    g_lod0.custom_mesh = custom0;
+    g_lod1.original_mesh = source1->mesh;
+    g_lod1.custom_mesh = custom1;
+    if (g_host->gchandle_new) {
+        g_lod0.original_handle = g_host->gchandle_new(g_host->context, g_lod0.original_mesh, 0);
+        g_lod0.custom_handle = g_host->gchandle_new(g_host->context, g_lod0.custom_mesh, 0);
+        g_lod1.original_handle = g_host->gchandle_new(g_host->context, g_lod1.original_mesh, 0);
+        g_lod1.custom_handle = g_host->gchandle_new(g_host->context, g_lod1.custom_mesh, 0);
+    }
+
     TargetCounts applied{};
     for (auto& item : summaries) {
         if (!IsOriginalLiveComponent9(item)) continue;
-        if (!SetSharedMesh(item.renderer, g_custom_mesh)) continue;
-        void* observed = Invoke(
-            Contract("skinned.get_shared_mesh"), item.renderer, nullptr, false);
-        if (observed == g_custom_mesh) {
-            CountTarget(item, applied);
-        }
+        MeshVariantState& variant = VariantForLod(item.lod);
+        if (!SetSharedMesh(item.renderer, variant.custom_mesh)) continue;
+        void* observed = Invoke(Contract("skinned.get_shared_mesh"), item.renderer, nullptr, false);
+        if (observed == variant.custom_mesh) CountTarget(item, applied);
     }
 
-    if (applied.total > 0) {
-        Log("Active CustomModel refresh applied to new live C9 instances: total=" +
-            std::to_string(applied.total) +
-            " gameplay=" + std::to_string(applied.gameplay) +
-            " ui=" + std::to_string(applied.ui));
-    }
-}
-
-bool RollbackReplacement() {
-    if (!g_custom_mesh || !g_original_mesh) {
+    if (applied.total == 0) {
+        void* doomed0 = g_lod0.custom_mesh;
+        void* doomed1 = g_lod1.custom_mesh;
         ClearReplacementState();
-        return true;
-    }
-
-    std::vector<RendererSummary> summaries =
-        EnumerateLiveComponent9Renderers(true);
-    TargetCounts restored{};
-    for (auto& item : summaries) {
-        if (!IsCustomLiveComponent9(item)) continue;
-        if (!SetSharedMesh(item.renderer, g_original_mesh)) continue;
-        void* observed = Invoke(
-            Contract("skinned.get_shared_mesh"), item.renderer, nullptr, false);
-        if (observed == g_original_mesh) {
-            CountTarget(item, restored);
-        }
-    }
-
-    void* doomed = g_custom_mesh;
-    ClearReplacementState();
-    DestroyCustomMesh(doomed);
-    Log("F9 rollback complete: restored=" + std::to_string(restored.total) +
-        " gameplay=" + std::to_string(restored.gameplay) +
-        " ui=" + std::to_string(restored.ui));
-    return true;
-}
-
-void ToggleReplacement() {
-    if (g_operation_in_progress.exchange(
-            true, std::memory_order_acq_rel)) {
-        return;
-    }
-
-    if (g_custom_mesh) {
-        RollbackReplacement();
-    } else {
-        ApplyReplacement();
-    }
-
-    g_operation_in_progress.store(false, std::memory_order_release);
-}
-
-DWORD WINAPI HotkeyThread(void*) {
-    bool held = false;
-    while (!g_hotkey_thread_stop.load(std::memory_order_acquire)) {
-        const bool down =
-            (GetAsyncKeyState(kToggleHotkey) & 0x8000) != 0;
-        if (down && !held) {
-            g_toggle_requested.store(true, std::memory_order_release);
-        }
-        held = down;
-        Sleep(15);
-    }
-    return 0;
-}
-
-void PumpCustomModel() {
-    const uint64_t hit =
-        g_pump_hits.fetch_add(1, std::memory_order_relaxed) + 1;
-    if (hit == 1) {
-        Log("CustomModel main-thread pump observed first runtime call.");
-    }
-
-    if (g_toggle_requested.exchange(
-            false, std::memory_order_acq_rel)) {
-        Log("F9 CustomModel request consumed on Unity main thread.");
-        ToggleReplacement();
-        return;
-    }
-
-    // Character detail/party UI creates chr_0003_endminf_uimodel(Clone)
-    // after gameplay is already running. While F9 is active, periodically
-    // discover newly-created live instances and attach the same custom mesh.
-    if (g_custom_mesh && hit % kActiveRefreshInterval == 0 &&
-        !g_operation_in_progress.exchange(true, std::memory_order_acq_rel)) {
-        RefreshActiveReplacement();
-        g_operation_in_progress.store(false, std::memory_order_release);
-    }
-}
-
-void __fastcall DetourPump(void* instance, void* method_info) {
-    if (g_original_pump) {
-        g_original_pump(instance, method_info);
-    }
-    PumpCustomModel();
-}
-
-bool ResolveClass(
-    const char* assembly, const char* namespc, const char* klass,
-    BE_ResolvedClassV1& output) {
-    output = {};
-    const BE_Result status = g_host->resolve_class(
-        g_host->context, assembly, namespc, klass, &output);
-    if (status != BE_Result_Ok ||
-        !output.class_info || !output.type_object) {
-        Log(std::string("Required class not found: ") +
-            namespc + "." + klass);
+        DestroyCustomMesh(doomed0);
+        DestroyCustomMesh(doomed1);
         return false;
     }
-    return true;
-}
 
-bool ResolveContracts() {
-    bool ready = true;
-    for (auto& method : g_methods) {
-        BE_ResolvedMethodV1 resolved{};
-        const BE_Result result = g_host->resolve_method(
-            g_host->context, &method.descriptor, &resolved);
-        if (result == BE_Result_Ok &&
-            resolved.method_info && resolved.method_pointer) {
-            method.pointer = resolved.method_pointer;
-            method.method_info = resolved.method_info;
-            method.resolved = true;
-        } else {
-            Log(std::string(method.required ? "Required" : "Optional") +
-                " method not found: " + method.key);
-            if (method.required) ready = false;
-        }
-    }
-
-    ready &= ResolveClass(
-        "UnityEngine.CoreModule.dll", "UnityEngine",
-        "SkinnedMeshRenderer", g_skinned_renderer_class);
-    ready &= ResolveClass(
-        "UnityEngine.CoreModule.dll", "UnityEngine",
-        "Mesh", g_mesh_class);
-    ready &= ResolveClass(
-        "UnityEngine.CoreModule.dll", "UnityEngine",
-        "Vector3", g_vector3_class);
-    ready &= ResolveClass(
-        "UnityEngine.CoreModule.dll", "UnityEngine",
-        "Vector2", g_vector2_class);
-    ready &= ResolveClass(
-        "UnityEngine.CoreModule.dll", "UnityEngine",
-        "Color", g_color_class);
-    ready &= ResolveClass(
-        "UnityEngine.CoreModule.dll", "UnityEngine",
-        "BoneWeight", g_bone_weight_class);
-    ready &= ResolveClass(
-        "mscorlib.dll", "System", "Int32", g_int32_class);
-    return ready;
-}
-
-bool InstallPumpHook() {
-    constexpr std::array<std::string_view, 3> candidates{
-        "pump.process_dither_pitch",
-        "pump.evaluate_touched_entities",
-        "pump.process_dither_trace"};
-
-    for (std::string_view key : candidates) {
-        MethodContract* method = Contract(key);
-        if (!method || !method->resolved || !method->pointer) continue;
-
-        void* original = nullptr;
-        const BE_Result result = g_host->create_hook(
-            g_host->context, kModuleId, method->pointer,
-            reinterpret_cast<void*>(&DetourPump), &original);
-        if (result == BE_Result_Ok) {
-            g_original_pump =
-                reinterpret_cast<VoidInstanceFn>(original);
-            Log(std::string("CustomModel main-thread pump installed: ") +
-                method->key);
-            return true;
-        }
-
-        Log(std::string("CustomModel pump unavailable: ") +
-            method->key + " result=" +
-            std::to_string(static_cast<int>(result)));
-    }
-    return false;
-}
-
-bool StartHotkeyThread() {
-    g_hotkey_thread_stop.store(false, std::memory_order_release);
-    g_hotkey_thread = CreateThread(
-        nullptr, 0, &HotkeyThread, nullptr, 0, nullptr);
-    if (!g_hotkey_thread) {
-        Log("Failed to start F9 hotkey latch thread.");
-        return false;
-    }
-    return true;
-}
-
-void StopHotkeyThread() {
-    g_hotkey_thread_stop.store(true, std::memory_order_release);
-    if (g_hotkey_thread) {
-        WaitForSingleObject(g_hotkey_thread, 1000);
-        CloseHandle(g_hotkey_thread);
-        g_hotkey_thread = nullptr;
-    }
-}
-
-BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
-    if (!host ||
-        host->abi_version != BETTER_ENDFIELD_MODULE_ABI_V1 ||
-        !host->resolve_method ||
-        !host->resolve_field ||
-        !host->resolve_class ||
-        !host->object_new ||
-        !host->runtime_invoke ||
-        !host->object_unbox ||
-        !host->copy_managed_string ||
-        !host->copy_catalog_root ||
-        !host->create_hook ||
-        !host->release_module_hooks ||
-        !host->log) {
-        return BE_Result_InvalidArgument;
-    }
-
-    g_host = host;
-    g_toggle_requested.store(false, std::memory_order_release);
-    g_operation_in_progress.store(false, std::memory_order_release);
-    g_pump_hits.store(0, std::memory_order_release);
-    ClearReplacementState();
-
-    if (!ResolveContracts()) {
-        Log("CustomModel PoC-2 contract resolution failed.");
-        return BE_Result_ContractMismatch;
-    }
-    if (!InstallPumpHook()) {
-        Log("CustomModel PoC-2 could not install a main-thread pump.");
-        return BE_Result_Conflict;
-    }
-    if (!StartHotkeyThread()) {
-        g_host->release_module_hooks(g_host->context, kModuleId);
-        g_original_pump = nullptr;
-        return BE_Result_Failed;
-    }
-
-    const std::filesystem::path path = BemPath();
-    Log("BetterEndfield.CustomModel PoC-2 ready. "
-        "Load Endministrator (F), then press F9.");
-    if (!path.empty()) {
-        Log("Expected BEM PoC path: " + path.string());
-    }
-    return BE_Result_Ok;
-}
-
-BE_Result BE_CALL ConfigurationChanged(const char*) {
-    return BE_Result_Ok;
-}
-
-void BE_CALL Shutdown() {
-    StopHotkeyThread();
-    if (g_host && g_host->release_module_hooks) {
-        g_host->release_module_hooks(g_host->context, kModuleId);
-    }
-
-    // Shutdown may run outside the Unity main thread. Do not call Unity APIs.
-    ReleaseReplacementHandles();
-    g_replaced_renderer = nullptr;
-    g_original_mesh = nullptr;
-    g_custom_mesh = nullptr;
-    g_original_pump = nullptr;
-    g_toggle_requested.store(false, std::memory_order_release);
-    g_operation_in_progress.store(false, std::memory_order_release);
-    g_pump_hits.store(0, std::memory_order_release);
-    g_host = nullptr;
+    Log("F9 PoC-3 raw replacement active: applied=" + std::to_string(applied.total) +
