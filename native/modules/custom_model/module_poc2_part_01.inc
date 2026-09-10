@@ -110,21 +110,21 @@ bool LoadBemPoc(const std::filesystem::path& path, BemPocData& output) {
 
     std::memcpy(&output.header, bytes.data(), sizeof(output.header));
     const std::array<char, 8> expected_magic{
-        'B','E','M','P','O','C','2','\0'};
+        'B','E','M','P','C','2','1','\0'};
     const uint32_t required_flags =
         kBemFlagUv0 | kBemFlagSkin4 | kBemFlagIndex16 |
-        kBemFlagNormal | kBemFlagColor0;
+        kBemFlagPackedNormal | kBemFlagTexCoord4SNorm;
 
     if (std::memcmp(output.header.magic, expected_magic.data(),
             expected_magic.size()) != 0 ||
-        output.header.version != 2 ||
+        output.header.version != 21 ||
         output.header.component_id != 9 ||
         output.header.original_index_count != kComponent9OriginalIndexCount ||
         output.header.vertex_count != kExpectedBemVertices ||
         output.header.index_count != kExpectedBemIndices ||
         output.header.max_bone != kExpectedBemMaxBone ||
         (output.header.flags & required_flags) != required_flags) {
-        Log("BEM PoC header does not match validated Endmin Casualwear C9.");
+        Log("BEM PoC-2.1 header does not match validated Endmin Casualwear C9.");
         return false;
     }
 
@@ -133,10 +133,10 @@ bool LoadBemPoc(const std::filesystem::path& path, BemPocData& output) {
         static_cast<size_t>(output.header.vertex_count) * sizeof(Float3);
     const size_t uv_bytes =
         static_cast<size_t>(output.header.vertex_count) * sizeof(Float2);
-    const size_t normal_bytes =
-        static_cast<size_t>(output.header.vertex_count) * sizeof(Float3);
-    const size_t color_bytes =
-        static_cast<size_t>(output.header.vertex_count) * sizeof(Float4);
+    const size_t packed_normal_bytes =
+        static_cast<size_t>(output.header.vertex_count) * sizeof(uint32_t);
+    const size_t texcoord4_bytes =
+        static_cast<size_t>(output.header.vertex_count) * sizeof(Byte4);
     const size_t weight_bytes =
         static_cast<size_t>(output.header.vertex_count) * sizeof(float) * 4;
     const size_t bone_index_bytes =
@@ -144,11 +144,11 @@ bool LoadBemPoc(const std::filesystem::path& path, BemPocData& output) {
     const size_t index_bytes =
         static_cast<size_t>(output.header.index_count) * sizeof(uint16_t);
     const size_t expected_size = cursor + position_bytes + uv_bytes +
-        normal_bytes + color_bytes + weight_bytes + bone_index_bytes +
-        index_bytes;
+        packed_normal_bytes + texcoord4_bytes + weight_bytes +
+        bone_index_bytes + index_bytes;
 
     if (expected_size != bytes.size()) {
-        Log("BEM PoC payload size mismatch.");
+        Log("BEM PoC-2.1 payload size mismatch.");
         return false;
     }
 
@@ -161,13 +161,17 @@ bool LoadBemPoc(const std::filesystem::path& path, BemPocData& output) {
     std::memcpy(output.uvs.data(), bytes.data() + cursor, uv_bytes);
     if (!CheckedAdvance(cursor, uv_bytes, bytes.size())) return false;
 
-    output.normals.resize(output.header.vertex_count);
-    std::memcpy(output.normals.data(), bytes.data() + cursor, normal_bytes);
-    if (!CheckedAdvance(cursor, normal_bytes, bytes.size())) return false;
+    output.packed_normals.resize(output.header.vertex_count);
+    std::memcpy(
+        output.packed_normals.data(), bytes.data() + cursor,
+        packed_normal_bytes);
+    if (!CheckedAdvance(cursor, packed_normal_bytes, bytes.size())) return false;
 
-    output.colors.resize(output.header.vertex_count);
-    std::memcpy(output.colors.data(), bytes.data() + cursor, color_bytes);
-    if (!CheckedAdvance(cursor, color_bytes, bytes.size())) return false;
+    output.texcoord4_snorm.resize(output.header.vertex_count);
+    std::memcpy(
+        output.texcoord4_snorm.data(), bytes.data() + cursor,
+        texcoord4_bytes);
+    if (!CheckedAdvance(cursor, texcoord4_bytes, bytes.size())) return false;
 
     const uint8_t* weights = bytes.data() + cursor;
     if (!CheckedAdvance(cursor, weight_bytes, bytes.size())) return false;
@@ -196,16 +200,23 @@ bool LoadBemPoc(const std::filesystem::path& path, BemPocData& output) {
 
     for (uint16_t index : output.indices) {
         if (index >= output.header.vertex_count) {
-            Log("BEM PoC index references a vertex outside vertexCount.");
+            Log("BEM PoC-2.1 index references a vertex outside vertexCount.");
             return false;
         }
     }
 
-    Log("Loaded BEM PoC-2: vertices=" +
+    for (uint32_t packed : output.packed_normals) {
+        if ((packed & 0x40000000u) == 0) {
+            Log("BEM PoC-2.1 packed Normal contains an unset packed-data flag.");
+            return false;
+        }
+    }
+
+    Log("Loaded BEM PoC-2.1: vertices=" +
         std::to_string(output.header.vertex_count) +
         " indices=" + std::to_string(output.header.index_count) +
         " maxBone=" + std::to_string(output.header.max_bone) +
-        " streams=POSITION+UV0+NORMAL+COLOR0+SKIN4");
+        " streams=POSITION+UV0+NORMAL_PACKED+TEXCOORD4_SNORM+SKIN4");
     return true;
 }
 
