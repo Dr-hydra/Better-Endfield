@@ -1,7 +1,7 @@
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Custom Model (BEM PoC-2)", "0.0.5-poc2",
+    {kModuleId, "Custom Model (BEM PoC-2.1)", "0.0.6-poc2.1",
         BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
