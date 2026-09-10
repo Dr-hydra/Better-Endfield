@@ -38,8 +38,8 @@ constexpr int32_t kBoxedValueHeaderSize = 16;
 constexpr uint32_t kBemFlagUv0 = 1u << 0;
 constexpr uint32_t kBemFlagSkin4 = 1u << 1;
 constexpr uint32_t kBemFlagIndex16 = 1u << 2;
-constexpr uint32_t kBemFlagNormal = 1u << 3;
-constexpr uint32_t kBemFlagColor0 = 1u << 4;
+constexpr uint32_t kBemFlagPackedNormal = 1u << 3;
+constexpr uint32_t kBemFlagTexCoord4SNorm = 1u << 4;
 constexpr uint64_t kActiveRefreshInterval = 120;
 
 #pragma pack(push, 1)
@@ -67,13 +67,13 @@ struct Float3 {
     float z;
 };
 
-struct Float4 {
-    float x;
-    float y;
-    float z;
-    float w;
+struct Byte4 {
+    uint8_t x;
+    uint8_t y;
+    uint8_t z;
+    uint8_t w;
 };
-static_assert(sizeof(Float4) == 16);
+static_assert(sizeof(Byte4) == 4);
 
 struct BoneWeightPoc {
     float weight0;
@@ -91,8 +91,8 @@ struct BemPocData {
     BemPocHeader header{};
     std::vector<Float3> positions;
     std::vector<Float2> uvs;
-    std::vector<Float3> normals;
-    std::vector<Float4> colors;
+    std::vector<uint32_t> packed_normals;
+    std::vector<Byte4> texcoord4_snorm;
     std::vector<BoneWeightPoc> bone_weights;
     std::vector<uint16_t> indices;
 };
@@ -117,7 +117,6 @@ BE_ResolvedClassV1 g_skinned_renderer_class{};
 BE_ResolvedClassV1 g_mesh_class{};
 BE_ResolvedClassV1 g_vector3_class{};
 BE_ResolvedClassV1 g_vector2_class{};
-BE_ResolvedClassV1 g_color_class{};
 BE_ResolvedClassV1 g_bone_weight_class{};
 BE_ResolvedClassV1 g_int32_class{};
 
@@ -203,18 +202,42 @@ MethodContract g_methods[]{
     {"mesh.get_bindposes",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "get_bindposes",
             nullptr, "UnityEngine.Matrix4x4[]", 0}, true},
+
+    // Metadata-only Mesh declaration queries. These never expose native graphics
+    // resources and are used to prove the EFMI semantic remap against the live
+    // source Mesh before any custom data is written.
+    {"mesh.has_vertex_attribute",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "HasVertexAttribute",
+            "UnityEngine.Rendering.VertexAttribute", "System.Boolean", 1}, false},
+    {"mesh.get_vertex_attribute_dimension",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "GetVertexAttributeDimension",
+            "UnityEngine.Rendering.VertexAttribute", "System.Int32", 1}, false},
+    {"mesh.get_vertex_attribute_format",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "GetVertexAttributeFormat",
+            "UnityEngine.Rendering.VertexAttribute",
+            "UnityEngine.Rendering.VertexAttributeFormat", 1}, false},
+    {"mesh.get_vertex_attribute_stream",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "GetVertexAttributeStream",
+            "UnityEngine.Rendering.VertexAttribute", "System.Int32", 1}, false},
+    {"mesh.get_vertex_attribute_offset",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "GetVertexAttributeOffset",
+            "UnityEngine.Rendering.VertexAttribute", "System.Int32", 1}, false},
+
+    // This is the non-generic CPU->Mesh channel writer used by Unity's
+    // NativeArray channel setters. Unlike PoC-3, it does not retrieve or mutate
+    // a GraphicsBuffer object. If stripped from the client we simply refuse the
+    // raw-channel PoC instead of falling back to any native graphics path.
+    {"mesh.set_native_array_for_channel",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "SetNativeArrayForChannelImpl",
+            "UnityEngine.Rendering.VertexAttribute|UnityEngine.Rendering.VertexAttributeFormat|System.Int32|System.IntPtr|System.Int32|System.Int32|System.Int32|UnityEngine.Rendering.MeshUpdateFlags",
+            "System.Void", 8}, false},
+
     {"mesh.set_vertices",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "set_vertices",
             "UnityEngine.Vector3[]", "System.Void", 1}, true},
     {"mesh.set_uv",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "set_uv",
             "UnityEngine.Vector2[]", "System.Void", 1}, true},
-    {"mesh.set_normals",
-        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "set_normals",
-            "UnityEngine.Vector3[]", "System.Void", 1}, true},
-    {"mesh.set_colors",
-        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "set_colors",
-            "UnityEngine.Color[]", "System.Void", 1}, true},
     {"mesh.set_bone_weights",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "set_boneWeights",
             "UnityEngine.BoneWeight[]", "System.Void", 1}, true},
@@ -228,12 +251,6 @@ MethodContract g_methods[]{
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "SetTriangles",
             "System.Int32[]|System.Int32|System.Boolean|System.Int32",
             "System.Void", 4}, true},
-    {"mesh.recalculate_normals",
-        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "RecalculateNormals",
-            nullptr, "System.Void", 0}, false},
-    {"mesh.recalculate_tangents",
-        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "RecalculateTangents",
-            nullptr, "System.Void", 0}, false},
     {"mesh.recalculate_bounds",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "RecalculateBounds",
             nullptr, "System.Void", 0}, true},
