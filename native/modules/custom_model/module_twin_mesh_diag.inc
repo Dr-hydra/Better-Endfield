@@ -1,49 +1,29 @@
-// C9 four-way Mesh construction diagnostic.
+// C9 A/B Mesh construction diagnostic for isolating the first final upload.
 //
-// The previous twin test established that first-use order has no obvious
-// correlation with the fault. This version keeps the same main-thread hook but
-// builds four C9 variants in one pump frame so the creation path itself is the
-// only intended variable:
+// The four-way variant test proved unsafe because invoking
+// UnityEngine.Object.Internal_CloneSingle(Object) on the live source Mesh
+// crashes this modified client. Clone/Instantiate probing is deliberately not
+// present in this file anymore.
 //
-//   Num7 : build all four variants, detached
-//   Num8 : A = new Mesh + canonical BuildMeshFromComponent + UploadMeshData
-//   Num9 : B = new Mesh + canonical BuildMeshFromComponent, but its final
-//          UploadMeshDataImpl call is intercepted as a no-op
-//   Num4 : C = clone original Mesh + overwrite BEM VB/IB/layout + UploadMeshData
-//   Num5 : D = clone original Mesh + overwrite BEM VB/IB/layout, no final upload
-//   Num0 : restore original C9 Mesh while retaining A/B/C/D
+// Numpad 7 : build a fresh C9 pair A/B, both detached.
+// Numpad 8 : attach A = new Mesh + canonical BuildMeshFromComponent including
+//            its normal final UploadMeshDataImpl(false).
+// Numpad 9 : attach B = the same canonical builder with only that final upload
+//            temporarily intercepted as a no-op.
+// Numpad 0 : restore the original C9 Mesh while retaining A/B.
 //
 // Restore with Num0 before switching variants. F12/F11 and the BEM format are
-// unchanged. GraphicsBuffer is not used.
+// unchanged. GraphicsBuffer and Object clone APIs are not used.
 
 constexpr int kTwinBuildHotkey = VK_NUMPAD7;
 constexpr int kTwinAttachAHotkey = VK_NUMPAD8;
 constexpr int kTwinAttachBHotkey = VK_NUMPAD9;
-constexpr int kTwinAttachCHotkey = VK_NUMPAD4;
-constexpr int kTwinAttachDHotkey = VK_NUMPAD5;
 constexpr int kTwinRestoreHotkey = VK_NUMPAD0;
 constexpr uint32_t kTwinComponentId = 9;
-constexpr size_t kTwinVariantCount = 4;
-
-enum class TwinVariant : size_t {
-    A_NewUpload = 0,
-    B_NewNoUpload = 1,
-    C_CloneUpload = 2,
-    D_CloneNoUpload = 3,
-};
-
-constexpr std::array<const char*, kTwinVariantCount> kTwinVariantNames{{
-    "A:new+upload",
-    "B:new+no-upload",
-    "C:clone+overwrite+upload",
-    "D:clone+overwrite+no-upload",
-}};
 
 std::atomic_bool g_twin_build_requested{false};
 std::atomic_bool g_twin_attach_a_requested{false};
 std::atomic_bool g_twin_attach_b_requested{false};
-std::atomic_bool g_twin_attach_c_requested{false};
-std::atomic_bool g_twin_attach_d_requested{false};
 std::atomic_bool g_twin_restore_requested{false};
 std::atomic_bool g_twin_hotkey_stop{false};
 HANDLE g_twin_hotkey_thread = nullptr;
@@ -53,42 +33,25 @@ const BE_HostApiV1* g_twin_real_host = nullptr;
 BE_HostApiV1 g_twin_host_proxy{};
 bool g_twin_pump_intercepted = false;
 
-const void* g_twin_clone_method_info = nullptr;
-const char* g_twin_clone_method_name = nullptr;
-
 struct TwinMeshDiagState {
     uint64_t generation = 0;
     void* renderer = nullptr;
     void* original_mesh = nullptr;
-    std::array<void*, kTwinVariantCount> meshes{};
+    void* mesh_a = nullptr;
+    void* mesh_b = nullptr;
     uint32_t renderer_handle = 0;
     uint32_t original_handle = 0;
-    std::array<uint32_t, kTwinVariantCount> mesh_handles{};
-    std::array<uint32_t, kTwinVariantCount> attach_count{};
-    std::array<uint32_t, kTwinVariantCount> first_use_order{};
-    uint32_t first_use_sequence = 0;
+    uint32_t mesh_a_handle = 0;
+    uint32_t mesh_b_handle = 0;
     std::string path;
+    uint32_t first_use_sequence = 0;
+    uint32_t a_first_use_order = 0;
+    uint32_t b_first_use_order = 0;
+    uint32_t a_attach_count = 0;
+    uint32_t b_attach_count = 0;
 };
 TwinMeshDiagState g_twin{};
 uint64_t g_twin_next_generation = 0;
-
-size_t TwinVariantIndex(TwinVariant variant) {
-    return static_cast<size_t>(variant);
-}
-
-const char* TwinVariantName(TwinVariant variant) {
-    return kTwinVariantNames[TwinVariantIndex(variant)];
-}
-
-void* TwinVariantMesh(TwinVariant variant) {
-    return g_twin.meshes[TwinVariantIndex(variant)];
-}
-
-bool IsTwinVariantMesh(void* mesh) {
-    if (!mesh) return false;
-    return std::any_of(g_twin.meshes.begin(), g_twin.meshes.end(),
-        [&](void* candidate) { return candidate == mesh; });
-}
 
 void ReleaseTwinHandles() {
     if (!g_host || !g_host->gchandle_free) return;
@@ -98,88 +61,74 @@ void ReleaseTwinHandles() {
     if (g_twin.original_handle) {
         g_host->gchandle_free(g_host->context, g_twin.original_handle);
     }
-    for (uint32_t handle : g_twin.mesh_handles) {
-        if (handle) g_host->gchandle_free(g_host->context, handle);
+    if (g_twin.mesh_a_handle) {
+        g_host->gchandle_free(g_host->context, g_twin.mesh_a_handle);
+    }
+    if (g_twin.mesh_b_handle) {
+        g_host->gchandle_free(g_host->context, g_twin.mesh_b_handle);
     }
     g_twin.renderer_handle = 0;
     g_twin.original_handle = 0;
-    g_twin.mesh_handles.fill(0);
+    g_twin.mesh_a_handle = 0;
+    g_twin.mesh_b_handle = 0;
 }
 
 bool PinTwinObjects() {
     if (!g_host || !g_host->gchandle_new || !g_host->gchandle_free ||
-        !g_twin.renderer || !g_twin.original_mesh) {
+        !g_twin.renderer || !g_twin.original_mesh || !g_twin.mesh_a ||
+        !g_twin.mesh_b) {
         return false;
     }
-    for (void* mesh : g_twin.meshes) {
-        if (!mesh) return false;
-    }
-
     g_twin.renderer_handle =
         g_host->gchandle_new(g_host->context, g_twin.renderer, 0);
     g_twin.original_handle =
         g_host->gchandle_new(g_host->context, g_twin.original_mesh, 0);
-    for (size_t i = 0; i < kTwinVariantCount; ++i) {
-        g_twin.mesh_handles[i] =
-            g_host->gchandle_new(g_host->context, g_twin.meshes[i], 0);
-    }
-
+    g_twin.mesh_a_handle =
+        g_host->gchandle_new(g_host->context, g_twin.mesh_a, 0);
+    g_twin.mesh_b_handle =
+        g_host->gchandle_new(g_host->context, g_twin.mesh_b, 0);
     if (!g_twin.renderer_handle || !g_twin.original_handle ||
-        std::any_of(g_twin.mesh_handles.begin(), g_twin.mesh_handles.end(),
-            [](uint32_t handle) { return handle == 0; })) {
+        !g_twin.mesh_a_handle || !g_twin.mesh_b_handle) {
         ReleaseTwinHandles();
         return false;
     }
     return true;
 }
 
-bool TwinSetExists() {
+bool TwinPairExists() {
     return g_twin.renderer && g_twin.original_mesh &&
-        std::all_of(g_twin.meshes.begin(), g_twin.meshes.end(),
-            [](void* mesh) { return mesh != nullptr; });
+        g_twin.mesh_a && g_twin.mesh_b;
 }
 
 bool TwinMeshesInUse() {
-    bool any = false;
-    for (void* mesh : g_twin.meshes) any = any || mesh != nullptr;
-    if (!any) return false;
-
+    if (!g_twin.mesh_a && !g_twin.mesh_b) return false;
     std::vector<RendererSummary> live;
     if (!SnapshotRendererMeshes(live)) return true;
     for (const auto& item : live) {
-        if (IsTwinVariantMesh(item.mesh)) return true;
+        if (item.mesh == g_twin.mesh_a || item.mesh == g_twin.mesh_b) {
+            return true;
+        }
     }
     return false;
 }
 
-void DestroyTwinMeshArray(std::array<void*, kTwinVariantCount>& meshes) {
-    for (void*& mesh : meshes) {
-        if (mesh && IsNativeObjectAlive(mesh)) DestroyUnityObject(mesh);
-        mesh = nullptr;
-    }
-}
-
-bool DestroyTwinSetIfDetached() {
-    if (!TwinSetExists()) {
+bool DestroyTwinPairIfDetached() {
+    if (!TwinPairExists()) {
         ReleaseTwinHandles();
         g_twin = {};
         return true;
     }
     if (TwinMeshesInUse()) {
-        Log("[VARIANT-DIAG] previous C9 variant set is still bound; press Num0 before Num7.");
+        Log("[UPLOAD-AB] old pair is still bound somewhere; press Num0 before building a new pair.");
         return false;
     }
-
+    if (IsNativeObjectAlive(g_twin.mesh_a)) DestroyUnityObject(g_twin.mesh_a);
+    if (IsNativeObjectAlive(g_twin.mesh_b)) DestroyUnityObject(g_twin.mesh_b);
     const uint64_t retired = g_twin.generation;
-    std::array<void*, kTwinVariantCount> doomed = g_twin.meshes;
-    // Keep the managed wrappers pinned until Destroy has been issued for every
-    // native Mesh; releasing GC handles first would make this cleanup itself a
-    // lifetime experiment.
-    DestroyTwinMeshArray(doomed);
     ReleaseTwinHandles();
     g_twin = {};
-    Log("[VARIANT-DIAG] retired detached generation=" +
-        std::to_string(retired) + " meshesDestroyed=4.");
+    Log("[UPLOAD-AB] retired detached pair generation=" +
+        std::to_string(retired) + " meshesDestroyed=2.");
     return true;
 }
 
@@ -205,7 +154,7 @@ const RendererSummary* TwinFindGameplayC9(
             continue;
         }
         if (candidate) {
-            Log("[VARIANT-DIAG] more than one gameplay C9 candidate is live; refusing ambiguous test.");
+            Log("[UPLOAD-AB] more than one gameplay C9 candidate is live; refusing an ambiguous test.");
             return nullptr;
         }
         candidate = &item;
@@ -215,76 +164,21 @@ const RendererSummary* TwinFindGameplayC9(
 
 bool TwinBasePreflight(const char* action) {
     if (!GenerationDiagOfficialPathIdle()) {
-        Log(std::string("[VARIANT-DIAG] ") + action +
+        Log(std::string("[UPLOAD-AB] ") + action +
             " refused: normal F12 replacement is active/pending; use F11 first.");
         return false;
     }
     if (g_generation_diag_attached) {
-        Log(std::string("[VARIANT-DIAG] ") + action +
+        Log(std::string("[UPLOAD-AB] ") + action +
             " refused: cached-generation diagnostic is attached; press main '=' first.");
         return false;
     }
     return true;
 }
 
-bool ResolveTwinCloneMethod() {
-    if (g_twin_clone_method_info) return true;
-    if (!g_host || !g_host->resolve_method || !g_host->runtime_invoke) {
-        Log("[VARIANT-DIAG] host method resolver/runtime_invoke is unavailable.");
-        return false;
-    }
-
-    constexpr std::array<const char*, 2> methods{{
-        "Internal_CloneSingle",
-        "Instantiate",
-    }};
-    for (const char* method : methods) {
-        BE_MethodDescriptorV1 descriptor{
-            "UnityEngine.CoreModule.dll",
-            "UnityEngine",
-            "Object",
-            method,
-            "UnityEngine.Object",
-            "UnityEngine.Object",
-            1};
-        BE_ResolvedMethodV1 resolved{};
-        if (g_host->resolve_method(g_host->context, &descriptor, &resolved) ==
-                BE_Result_Ok &&
-            resolved.method_info && resolved.method_pointer) {
-            g_twin_clone_method_info = resolved.method_info;
-            g_twin_clone_method_name = method;
-            Log(std::string("[VARIANT-DIAG] resolved UnityEngine.Object.") +
-                method + "(Object) for Mesh clone variants.");
-            return true;
-        }
-    }
-
-    Log("[VARIANT-DIAG] neither Object.Internal_CloneSingle(Object) nor Object.Instantiate(Object) resolved.");
-    return false;
-}
-
-void* CloneTwinMesh(void* source_mesh) {
-    if (!source_mesh || !ResolveTwinCloneMethod()) return nullptr;
-
-    void* parameters[1]{source_mesh};
-    void* exception = nullptr;
-    void* clone = g_host->runtime_invoke(
-        g_host->context, g_twin_clone_method_info, nullptr, parameters,
-        &exception);
-    if (exception || !clone || !IsNativeObjectAlive(clone)) {
-        Log(std::string("[VARIANT-DIAG] ") +
-            (g_twin_clone_method_name ? g_twin_clone_method_name : "clone") +
-            " failed for sourceMesh=" + GenerationDiagPointer(source_mesh));
-        return nullptr;
-    }
-    return clone;
-}
-
-// BuildMeshFromComponent currently performs the canonical final
-// UploadMeshDataImpl(false). For B only, temporarily replace that one binding
-// with a same-signature no-op. Everything else in the canonical builder,
-// including validation, declaration creation, VB/IB writes, submesh, bindposes
-// and bounds, executes unchanged.
+// BuildMeshFromComponent performs the canonical final UploadMeshDataImpl(false).
+// B uses the exact same builder and only suppresses that one final call. The
+// engine binding is restored immediately before this function returns.
 void TwinNoopUploadMeshData(void*, bool) {
 }
 
@@ -292,7 +186,7 @@ bool BuildTwinNewNoUpload(
     const BemComponent& component, void* source_mesh, void*& new_mesh) {
     new_mesh = nullptr;
     if (!ResolveEngineBindings() || !g_engine.upload_mesh_data) {
-        Log("[VARIANT-DIAG] B build failed: UploadMeshData binding unavailable.");
+        Log("[UPLOAD-AB] B build failed: UploadMeshData binding unavailable.");
         return false;
     }
 
@@ -302,45 +196,16 @@ bool BuildTwinNewNoUpload(
     g_engine.upload_mesh_data = real_upload;
 
     if (!ok || !new_mesh) {
-        Log("[VARIANT-DIAG] B build failed on canonical path with final upload suppressed.");
+        Log("[UPLOAD-AB] B build failed on canonical path with final upload suppressed.");
         return false;
     }
-    Log("[VARIANT-DIAG] B final UploadMeshDataImpl intentionally suppressed; canonical builder otherwise completed.");
-    return true;
-}
-
-bool BuildTwinCloneVariant(
-    const BemComponent& component, void* source_mesh, bool final_upload,
-    void*& new_mesh) {
-    new_mesh = CloneTwinMesh(source_mesh);
-    if (!new_mesh) return false;
-    if (!ResolveEngineBindings()) {
-        DestroyUnityObject(new_mesh);
-        new_mesh = nullptr;
-        return false;
-    }
-
-    GenerationDiagRecord record{};
-    record.component_id = component.info.component_id;
-    record.original_mesh = source_mesh;
-    record.custom_mesh = new_mesh;
-
-    if (!RebuildGenerationMeshInPlace(record, component)) {
-        DestroyUnityObject(new_mesh);
-        new_mesh = nullptr;
-        return false;
-    }
-    if (final_upload && !SafeUploadMeshData(new_mesh)) {
-        DestroyUnityObject(new_mesh);
-        new_mesh = nullptr;
-        return false;
-    }
+    Log("[UPLOAD-AB] B final UploadMeshDataImpl intentionally suppressed; canonical builder otherwise completed.");
     return true;
 }
 
 void BuildTwinPair() {
     if (g_operation_in_progress.exchange(true, std::memory_order_acq_rel)) {
-        Log("[VARIANT-DIAG] Num7 ignored: CustomModel is busy.");
+        Log("[UPLOAD-AB] Num7 ignored: CustomModel is busy.");
         return;
     }
     const auto unlock = []() {
@@ -352,38 +217,40 @@ void BuildTwinPair() {
         return;
     }
 
+    // Retire the older generation diagnostic cache so only one diagnostic owns
+    // runtime custom Mesh objects for this renderer. DestroyGenerationDiagCache
+    // is safe only while detached and verifies that condition itself.
     if (!g_generation_diag_records.empty() && !DestroyGenerationDiagCache()) {
-        Log("[VARIANT-DIAG] Num7 refused: previous generation cache could not be retired.");
+        Log("[UPLOAD-AB] Num7 refused: previous generation cache could not be retired.");
         unlock();
         return;
     }
-    if (!DestroyTwinSetIfDetached()) {
+    if (!DestroyTwinPairIfDetached()) {
         unlock();
         return;
     }
 
     // SetSharedMesh retains diagnostic Meshes through the normal CustomModel
-    // asset-retention path. At this point every diagnostic renderer is back on
-    // an original Mesh, so clear that bookkeeping before starting a fresh
-    // probability trial. Otherwise destroyed wrappers from older trials could
-    // remain in g_retained_assets and pointer reuse would become a confounder.
+    // retention list. Once the previous pair is detached and destroyed, clear
+    // those records before creating a fresh probability trial so stale wrappers
+    // and pointer reuse cannot bias later generations.
     if (!g_retained_assets.empty()) {
         const size_t retained = g_retained_assets.size();
         ReleaseRetainedAssets(true);
-        Log("[VARIANT-DIAG] cleared detached asset-retention records=" +
+        Log("[UPLOAD-AB] cleared detached asset-retention records=" +
             std::to_string(retained) + " before fresh generation.");
     }
 
     BemPocData bem;
     const std::filesystem::path path = BemPath();
     if (path.empty() || !LoadBemPoc(path, bem)) {
-        Log("[VARIANT-DIAG] Num7 failed: BEM payload unavailable.");
+        Log("[UPLOAD-AB] Num7 failed: BEM payload unavailable.");
         unlock();
         return;
     }
     const BemComponent* component = TwinFindC9(bem);
     if (!component) {
-        Log("[VARIANT-DIAG] Num7 failed: C9 replacement geometry is absent.");
+        Log("[UPLOAD-AB] Num7 failed: C9 replacement geometry is absent.");
         unlock();
         return;
     }
@@ -392,59 +259,38 @@ void BuildTwinPair() {
         EnumerateLiveEndminfRenderers();
     const RendererSummary* source = TwinFindGameplayC9(summaries, *component);
     if (!source) {
-        Log("[VARIANT-DIAG] Num7 failed: unique gameplay C9 renderer was not found.");
+        Log("[UPLOAD-AB] Num7 failed: unique gameplay C9 renderer was not found.");
         unlock();
         return;
     }
     if (source->mesh_name.rfind("BetterEndfield.", 0) == 0) {
-        Log("[VARIANT-DIAG] Num7 refused: C9 source already carries a runtime BetterEndfield Mesh.");
+        Log("[UPLOAD-AB] Num7 refused: C9 source already carries a runtime BetterEndfield Mesh.");
         unlock();
         return;
     }
     if (source->bones_count <= static_cast<int>(component->info.max_bone) ||
         !ValidateRendererSkin(*component, source->renderer, source->mesh)) {
-        Log("[VARIANT-DIAG] Num7 failed: source C9 skin validation failed.");
+        Log("[UPLOAD-AB] Num7 failed: source C9 skin validation failed.");
         unlock();
         return;
     }
 
-    std::array<void*, kTwinVariantCount> built{};
+    void* mesh_a = nullptr;
+    void* mesh_b = nullptr;
 
-    // A: exact current production builder.
-    if (!BuildMeshFromComponent(
-            *component, source->mesh,
-            built[TwinVariantIndex(TwinVariant::A_NewUpload)]) ||
-        !built[TwinVariantIndex(TwinVariant::A_NewUpload)]) {
-        Log("[VARIANT-DIAG] Num7 failed while building A:new+upload.");
-        DestroyTwinMeshArray(built);
+    // A: the exact current production builder, including its normal final
+    // UploadMeshDataImpl(false).
+    if (!BuildMeshFromComponent(*component, source->mesh, mesh_a) || !mesh_a) {
+        Log("[UPLOAD-AB] Num7 failed while building A:new+upload.");
         unlock();
         return;
     }
 
-    // B: exact same builder, except its final UploadMeshDataImpl is a no-op.
-    if (!BuildTwinNewNoUpload(
-            *component, source->mesh,
-            built[TwinVariantIndex(TwinVariant::B_NewNoUpload)])) {
-        DestroyTwinMeshArray(built);
-        unlock();
-        return;
-    }
-
-    // C/D: clone the original C9 Mesh object first, then overwrite the clone
-    // with exactly the BEM declaration/streams/submesh/bindposes.
-    if (!BuildTwinCloneVariant(
-            *component, source->mesh, true,
-            built[TwinVariantIndex(TwinVariant::C_CloneUpload)])) {
-        Log("[VARIANT-DIAG] Num7 failed while building C:clone+overwrite+upload.");
-        DestroyTwinMeshArray(built);
-        unlock();
-        return;
-    }
-    if (!BuildTwinCloneVariant(
-            *component, source->mesh, false,
-            built[TwinVariantIndex(TwinVariant::D_CloneNoUpload)])) {
-        Log("[VARIANT-DIAG] Num7 failed while building D:clone+overwrite+no-upload.");
-        DestroyTwinMeshArray(built);
+    // B: the exact same builder, except only its final UploadMeshDataImpl call
+    // is intercepted as a no-op.
+    if (!BuildTwinNewNoUpload(*component, source->mesh, mesh_b) || !mesh_b) {
+        DestroyUnityObject(mesh_a);
+        Log("[UPLOAD-AB] Num7 failed while building B:new+no-upload; A discarded.");
         unlock();
         return;
     }
@@ -453,140 +299,135 @@ void BuildTwinPair() {
     g_twin.generation = ++g_twin_next_generation;
     g_twin.renderer = source->renderer;
     g_twin.original_mesh = source->mesh;
-    g_twin.meshes = built;
+    g_twin.mesh_a = mesh_a;
+    g_twin.mesh_b = mesh_b;
     g_twin.path = source->path;
-
     if (!PinTwinObjects()) {
-        std::array<void*, kTwinVariantCount> doomed = g_twin.meshes;
+        DestroyUnityObject(mesh_a);
+        DestroyUnityObject(mesh_b);
         g_twin = {};
-        DestroyTwinMeshArray(doomed);
-        Log("[VARIANT-DIAG] Num7 failed to pin source/variant objects; set discarded.");
+        Log("[UPLOAD-AB] Num7 failed to pin A/B/source objects; pair discarded.");
         unlock();
         return;
     }
 
-    Log("[VARIANT-DIAG] build generation=" +
+    Log("[UPLOAD-AB] build generation=" +
         std::to_string(g_twin.generation) + " complete frame=" +
         std::to_string(g_last_pump_frame) + " renderer=" +
         GenerationDiagPointer(g_twin.renderer) + " originalMesh=" +
-        GenerationDiagPointer(g_twin.original_mesh) +
-        " A=" + GenerationDiagPointer(g_twin.meshes[0]) +
-        " B=" + GenerationDiagPointer(g_twin.meshes[1]) +
-        " C=" + GenerationDiagPointer(g_twin.meshes[2]) +
-        " D=" + GenerationDiagPointer(g_twin.meshes[3]) +
-        " allDetached=1 meshesBuilt=4 path=\"" + g_twin.path + "\"");
-    Log("[VARIANT-DIAG] Num8=A:new+upload, Num9=B:new+no-upload, Num4=C:clone+overwrite+upload, Num5=D:clone+overwrite+no-upload; Num0 restores original.");
+        GenerationDiagPointer(g_twin.original_mesh) + " A=" +
+        GenerationDiagPointer(g_twin.mesh_a) + " B=" +
+        GenerationDiagPointer(g_twin.mesh_b) +
+        " bothDetached=1 meshesBuilt=2 path=\"" + g_twin.path + "\"");
+    Log("[UPLOAD-AB] Num8=A:new+upload; Num9=B:new+no-upload; Num0 restores original. No Object clone API is used.");
     unlock();
 }
 
-void AttachTwin(TwinVariant variant) {
+void AttachTwin(bool use_a) {
     if (g_operation_in_progress.exchange(true, std::memory_order_acq_rel)) {
-        Log(std::string("[VARIANT-DIAG] attach ignored: CustomModel is busy; variant=") +
-            TwinVariantName(variant));
+        Log(std::string("[UPLOAD-AB] ") + (use_a ? "Num8" : "Num9") +
+            " ignored: CustomModel is busy.");
         return;
     }
     const auto unlock = []() {
         g_operation_in_progress.store(false, std::memory_order_release);
     };
-
-    if (!TwinBasePreflight(TwinVariantName(variant)) || !TwinSetExists()) {
-        if (!TwinSetExists()) {
-            Log("[VARIANT-DIAG] no C9 variant set exists; press Num7 first.");
+    const char* variant = use_a ? "A:new+upload" : "B:new+no-upload";
+    if (!TwinBasePreflight(use_a ? "Num8" : "Num9") || !TwinPairExists()) {
+        if (!TwinPairExists()) {
+            Log("[UPLOAD-AB] no C9 A/B pair exists; press Num7 first.");
         }
         unlock();
         return;
     }
     if (!IsNativeObjectAlive(g_twin.renderer) ||
         !IsNativeObjectAlive(g_twin.original_mesh) ||
-        std::any_of(g_twin.meshes.begin(), g_twin.meshes.end(),
-            [](void* mesh) { return !IsNativeObjectAlive(mesh); })) {
-        Log("[VARIANT-DIAG] variant set contains a dead object; build a fresh set with Num7.");
+        !IsNativeObjectAlive(g_twin.mesh_a) ||
+        !IsNativeObjectAlive(g_twin.mesh_b)) {
+        Log("[UPLOAD-AB] pair contains a dead object; build a fresh pair with Num7.");
         unlock();
         return;
     }
 
-    void* current = Invoke(
-        Contract("skinned.get_shared_mesh"), g_twin.renderer, nullptr, false);
+    void* current = Invoke(Contract("skinned.get_shared_mesh"),
+        g_twin.renderer, nullptr, false);
     if (current != g_twin.original_mesh) {
-        Log("[VARIANT-DIAG] attach refused: C9 is not on originalMesh (current=" +
-            GenerationDiagPointer(current) + "); press Num0 first.");
+        Log("[UPLOAD-AB] attach refused: C9 is not on originalMesh (current=" +
+            GenerationDiagPointer(current) + "); press Num0 before switching A/B.");
         unlock();
         return;
     }
 
-    const size_t index = TwinVariantIndex(variant);
-    void* target = g_twin.meshes[index];
+    void* target = use_a ? g_twin.mesh_a : g_twin.mesh_b;
     if (!SetSharedMesh(g_twin.renderer, target) ||
         Invoke(Contract("skinned.get_shared_mesh"), g_twin.renderer,
             nullptr, false) != target) {
-        Log(std::string("[VARIANT-DIAG] attach failed for ") +
-            TwinVariantName(variant) + "; restoring original C9 Mesh.");
+        Log(std::string("[UPLOAD-AB] attach failed for ") + variant +
+            "; restoring original C9 Mesh.");
         SetSharedMesh(g_twin.renderer, g_twin.original_mesh);
         unlock();
         return;
     }
 
-    ++g_twin.attach_count[index];
-    if (g_twin.first_use_order[index] == 0) {
-        g_twin.first_use_order[index] = ++g_twin.first_use_sequence;
+    uint32_t& attach_count = use_a ? g_twin.a_attach_count : g_twin.b_attach_count;
+    uint32_t& first_order = use_a ? g_twin.a_first_use_order : g_twin.b_first_use_order;
+    ++attach_count;
+    if (first_order == 0) {
+        first_order = ++g_twin.first_use_sequence;
     }
 
-    Log("[VARIANT-DIAG] attach generation=" +
-        std::to_string(g_twin.generation) + " variant=" +
-        TwinVariantName(variant) + " mesh=" + GenerationDiagPointer(target) +
-        " attachCount=" + std::to_string(g_twin.attach_count[index]) +
-        " firstUseOrder=" + std::to_string(g_twin.first_use_order[index]) +
-        " setFirstUseSequence=" + std::to_string(g_twin.first_use_sequence) +
+    Log(std::string("[UPLOAD-AB] attach generation=") +
+        std::to_string(g_twin.generation) + " variant=" + variant + " mesh=" +
+        GenerationDiagPointer(target) + " attachCount=" +
+        std::to_string(attach_count) + " firstUseOrder=" +
+        std::to_string(first_order) + " pairFirstUseSequence=" +
+        std::to_string(g_twin.first_use_sequence) +
         " meshesBuilt=0 meshesDestroyed=0.");
     unlock();
 }
 
 void RestoreTwin() {
     if (g_operation_in_progress.exchange(true, std::memory_order_acq_rel)) {
-        Log("[VARIANT-DIAG] Num0 ignored: CustomModel is busy.");
+        Log("[UPLOAD-AB] Num0 ignored: CustomModel is busy.");
         return;
     }
     const auto unlock = []() {
         g_operation_in_progress.store(false, std::memory_order_release);
     };
-
-    if (!TwinSetExists()) {
-        Log("[VARIANT-DIAG] Num0: no variant set exists; C9 left unchanged.");
+    if (!TwinPairExists()) {
+        Log("[UPLOAD-AB] Num0: no pair exists; C9 left unchanged.");
         unlock();
         return;
     }
     if (!IsNativeObjectAlive(g_twin.renderer) ||
         !IsNativeObjectAlive(g_twin.original_mesh)) {
-        Log("[VARIANT-DIAG] Num0 failed: renderer/original Mesh is dead.");
+        Log("[UPLOAD-AB] Num0 failed: renderer/original Mesh is dead.");
         unlock();
         return;
     }
-
-    void* current = Invoke(
-        Contract("skinned.get_shared_mesh"), g_twin.renderer, nullptr, false);
+    void* current = Invoke(Contract("skinned.get_shared_mesh"),
+        g_twin.renderer, nullptr, false);
     if (current == g_twin.original_mesh) {
-        Log("[VARIANT-DIAG] Num0: C9 already uses originalMesh; A/B/C/D retained.");
+        Log("[UPLOAD-AB] Num0: C9 already uses originalMesh; A/B retained.");
         unlock();
         return;
     }
-    if (!IsTwinVariantMesh(current)) {
-        Log("[VARIANT-DIAG] Num0 refused: renderer carries a foreign Mesh current=" +
-            GenerationDiagPointer(current));
+    if (current != g_twin.mesh_a && current != g_twin.mesh_b) {
+        Log("[UPLOAD-AB] Num0 refused: renderer owns a foreign Mesh=" +
+            GenerationDiagPointer(current) + ".");
         unlock();
         return;
     }
-
     if (!SetSharedMesh(g_twin.renderer, g_twin.original_mesh) ||
         Invoke(Contract("skinned.get_shared_mesh"), g_twin.renderer,
             nullptr, false) != g_twin.original_mesh) {
-        Log("[VARIANT-DIAG] Num0 failed to restore original C9 Mesh.");
+        Log("[UPLOAD-AB] Num0 failed to restore original C9 Mesh.");
         unlock();
         return;
     }
-
-    Log("[VARIANT-DIAG] restore generation=" +
+    Log("[UPLOAD-AB] restore generation=" +
         std::to_string(g_twin.generation) +
-        " complete: originalMesh restored, A/B/C/D retained, meshesBuilt=0 meshesDestroyed=0.");
+        " complete: originalMesh restored, A/B retained, meshesBuilt=0 meshesDestroyed=0.");
     unlock();
 }
 
@@ -596,15 +437,11 @@ DWORD WINAPI TwinHotkeyThread(void*) {
         std::atomic_bool* flag;
         bool held = false;
     };
-    std::array<Latch, 6> latches{{
+    std::array<Latch, 4> latches{{
         {kTwinBuildHotkey, &g_twin_build_requested, false},
         {kTwinAttachAHotkey, &g_twin_attach_a_requested, false},
         {kTwinAttachBHotkey, &g_twin_attach_b_requested, false},
-        {kTwinAttachCHotkey, &g_twin_attach_c_requested, false},
-        {kTwinAttachDHotkey, &g_twin_attach_d_requested, false},
-        {kTwinRestoreHotkey, &g_twin_restore_requested, false},
-    }};
-
+        {kTwinRestoreHotkey, &g_twin_restore_requested, false}}};
     while (!g_twin_hotkey_stop.load(std::memory_order_acquire)) {
         for (auto& latch : latches) {
             const bool down = (GetAsyncKeyState(latch.key) & 0x8000) != 0;
@@ -639,33 +476,23 @@ void PumpTwinDiag() {
     g_twin_last_frame = frame;
 
     if (g_twin_restore_requested.exchange(false, std::memory_order_acq_rel)) {
-        Log("[VARIANT-DIAG] Num0 restore request consumed on Unity main thread.");
+        Log("[UPLOAD-AB] Num0 restore request consumed on Unity main thread.");
         RestoreTwin();
         return;
     }
     if (g_twin_build_requested.exchange(false, std::memory_order_acq_rel)) {
-        Log("[VARIANT-DIAG] Num7 build-variants request consumed on Unity main thread.");
+        Log("[UPLOAD-AB] Num7 build A/B request consumed on Unity main thread.");
         BuildTwinPair();
         return;
     }
     if (g_twin_attach_a_requested.exchange(false, std::memory_order_acq_rel)) {
-        Log("[VARIANT-DIAG] Num8 attach A:new+upload request consumed on Unity main thread.");
-        AttachTwin(TwinVariant::A_NewUpload);
+        Log("[UPLOAD-AB] Num8 attach A:new+upload request consumed on Unity main thread.");
+        AttachTwin(true);
         return;
     }
     if (g_twin_attach_b_requested.exchange(false, std::memory_order_acq_rel)) {
-        Log("[VARIANT-DIAG] Num9 attach B:new+no-upload request consumed on Unity main thread.");
-        AttachTwin(TwinVariant::B_NewNoUpload);
-        return;
-    }
-    if (g_twin_attach_c_requested.exchange(false, std::memory_order_acq_rel)) {
-        Log("[VARIANT-DIAG] Num4 attach C:clone+overwrite+upload request consumed on Unity main thread.");
-        AttachTwin(TwinVariant::C_CloneUpload);
-        return;
-    }
-    if (g_twin_attach_d_requested.exchange(false, std::memory_order_acq_rel)) {
-        Log("[VARIANT-DIAG] Num5 attach D:clone+overwrite+no-upload request consumed on Unity main thread.");
-        AttachTwin(TwinVariant::D_CloneNoUpload);
+        Log("[UPLOAD-AB] Num9 attach B:new+no-upload request consumed on Unity main thread.");
+        AttachTwin(false);
     }
 }
 
@@ -697,14 +524,9 @@ BE_Result BE_CALL InitializeWithTwinDiag(const BE_HostApiV1* host) {
     g_twin_host_proxy.create_hook = &TwinCreateHook;
     g_twin_pump_intercepted = false;
     g_twin_last_frame = -1;
-    g_twin_clone_method_info = nullptr;
-    g_twin_clone_method_name = nullptr;
-
     g_twin_build_requested.store(false, std::memory_order_release);
     g_twin_attach_a_requested.store(false, std::memory_order_release);
     g_twin_attach_b_requested.store(false, std::memory_order_release);
-    g_twin_attach_c_requested.store(false, std::memory_order_release);
-    g_twin_attach_d_requested.store(false, std::memory_order_release);
     g_twin_restore_requested.store(false, std::memory_order_release);
 
     const BE_Result result =
@@ -714,20 +536,20 @@ BE_Result BE_CALL InitializeWithTwinDiag(const BE_HostApiV1* host) {
         return result;
     }
     if (!g_twin_pump_intercepted) {
-        Log("[VARIANT-DIAG] failed to intercept recommit diagnostic pump; controls disabled.");
+        Log("[UPLOAD-AB] failed to intercept recommit diagnostic pump; A/B controls disabled.");
         ShutdownWithGenerationRecommitDiag();
         g_twin_real_host = nullptr;
         return BE_Result_Failed;
     }
     if (!StartTwinHotkeys()) {
-        Log("[VARIANT-DIAG] failed to start variant diagnostic hotkey thread.");
+        Log("[UPLOAD-AB] failed to start A/B diagnostic hotkey thread.");
         ShutdownWithGenerationRecommitDiag();
         g_twin_real_host = nullptr;
         return BE_Result_Failed;
     }
 
-    Log("[VARIANT-DIAG] C9 construction controls ready: Num7=build four detached variants; Num8=A new+upload; Num9=B new+no-upload; Num4=C clone+overwrite+upload; Num5=D clone+overwrite+no-upload; Num0=restore original.");
-    Log("[VARIANT-DIAG] restore with Num0 before switching variants; repeat several fresh Num7 generations to compare failure rates by construction path.");
+    Log("[UPLOAD-AB] C9 controls ready: Num7=build detached A/B; Num8=A new+upload; Num9=B new+no-upload; Num0=restore original. Clone APIs are disabled.");
+    Log("[UPLOAD-AB] compare many fresh Num7 generations; restore with Num0 before switching A/B.");
     return BE_Result_Ok;
 }
 
@@ -736,27 +558,23 @@ void BE_CALL ShutdownWithTwinDiag() {
     g_twin_build_requested.store(false, std::memory_order_release);
     g_twin_attach_a_requested.store(false, std::memory_order_release);
     g_twin_attach_b_requested.store(false, std::memory_order_release);
-    g_twin_attach_c_requested.store(false, std::memory_order_release);
-    g_twin_attach_d_requested.store(false, std::memory_order_release);
     g_twin_restore_requested.store(false, std::memory_order_release);
 
-    if (TwinSetExists() && IsNativeObjectAlive(g_twin.renderer) &&
+    if (TwinPairExists() && IsNativeObjectAlive(g_twin.renderer) &&
         IsNativeObjectAlive(g_twin.original_mesh)) {
-        void* current = Invoke(
-            Contract("skinned.get_shared_mesh"), g_twin.renderer, nullptr, false);
-        if (IsTwinVariantMesh(current)) {
+        void* current = Invoke(Contract("skinned.get_shared_mesh"),
+            g_twin.renderer, nullptr, false);
+        if (current == g_twin.mesh_a || current == g_twin.mesh_b) {
             SetSharedMesh(g_twin.renderer, g_twin.original_mesh);
         }
     }
-    if (TwinSetExists() && !TwinMeshesInUse()) {
-        std::array<void*, kTwinVariantCount> doomed = g_twin.meshes;
-        DestroyTwinMeshArray(doomed);
+    if (TwinPairExists() && !TwinMeshesInUse()) {
+        if (IsNativeObjectAlive(g_twin.mesh_a)) DestroyUnityObject(g_twin.mesh_a);
+        if (IsNativeObjectAlive(g_twin.mesh_b)) DestroyUnityObject(g_twin.mesh_b);
     }
     ReleaseTwinHandles();
     g_twin = {};
     g_twin_last_frame = -1;
-    g_twin_clone_method_info = nullptr;
-    g_twin_clone_method_name = nullptr;
 
     ShutdownWithGenerationRecommitDiag();
     g_twin_real_host = nullptr;
