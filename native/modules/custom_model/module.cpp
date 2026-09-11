@@ -9,5 +9,5 @@
 } // closes the Shutdown() body continued from module_poc2_part_03.inc
 #include "module_f12_state_dump.inc"
 #include "module_ai_shadow_coverage.inc"
-#include "module_resource_asset_probe.inc"
+#include "module_resource_asset_probe_v2.inc"
 #include "module_poc2_part_04.inc"
