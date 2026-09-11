@@ -1,9 +1,9 @@
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Custom Model (BEM PoC-2.5)", "0.0.18-poc2.5-generation-diag",
+    {kModuleId, "Custom Model (BEM PoC-2.5)", "0.0.19-poc2.5-generation-recommit-diag",
         BETTER_ENDFIELD_MODULE_ABI_V1},
-    &InitializeWithGenerationDiag,
+    &InitializeWithGenerationRecommitDiag,
     &ConfigurationChanged,
-    &ShutdownWithGenerationDiag};
+    &ShutdownWithGenerationRecommitDiag};
 
 } // namespace
 } // namespace BetterEndfield::CustomModelModule
