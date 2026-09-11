@@ -1,5 +1,5 @@
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Custom Model (BEM PoC-2.5)", "0.0.20-poc2.5-twin-mesh-diag",
+    {kModuleId, "Custom Model (BEM PoC-2.5)", "0.0.21-poc2.5-build-variant-diag",
         BETTER_ENDFIELD_MODULE_ABI_V1},
     &InitializeWithTwinDiag,
     &ConfigurationChanged,
