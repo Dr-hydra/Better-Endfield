@@ -1,9 +1,9 @@
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Custom Model (BEM PoC-2.5)", "0.0.30-poc2.5-natural-resource-trace",
+    {kModuleId, "Custom Model (BEM PoC-2.5)", "0.0.31-poc2.5-renderer-arrival-trace",
         BETTER_ENDFIELD_MODULE_ABI_V1},
-    &InitializeWithNaturalResourceTrace,
+    &InitializeWithRendererArrivalTrace,
     &ConfigurationChanged,
-    &ShutdownWithNaturalResourceTrace};
+    &ShutdownWithRendererArrivalTrace};
 
 } // namespace
 } // namespace BetterEndfield::CustomModelModule
