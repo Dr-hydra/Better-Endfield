@@ -1,5 +1,5 @@
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Custom Model (BEM PoC-2.5)", "0.0.26-poc2.5-resource-prefab-probe",
+    {kModuleId, "Custom Model (BEM PoC-2.5)", "0.0.27-poc2.5-resource-one-shot-probe",
         BETTER_ENDFIELD_MODULE_ABI_V1},
     &InitializeWithResourceAssetProbe,
     &ConfigurationChanged,
