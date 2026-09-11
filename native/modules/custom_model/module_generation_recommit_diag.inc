@@ -61,16 +61,26 @@ bool ResolveGenerationMarkModified() {
     return false;
 }
 
+#if defined(_MSC_VER)
+// Kept free of unwindable objects so __try is legal here.
+static bool SafeInvokeMeshMarkModified(MeshMarkModifiedFn fn, void* mesh) {
+    __try {
+        fn(mesh);
+        return true;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+}
+#endif
+
 bool SafeGenerationMarkModified(void* mesh) {
     if (!mesh || !ResolveGenerationMarkModified()) return false;
 #if defined(_MSC_VER)
-    __try {
-        g_generation_recommit_mark_modified(mesh);
-        return true;
-    } __except (EXCEPTION_EXECUTE_HANDLER) {
+    if (!SafeInvokeMeshMarkModified(g_generation_recommit_mark_modified, mesh)) {
         Log("[GEN-RECOMMIT] Mesh.MarkModified native call faulted.");
         return false;
     }
+    return true;
 #else
     g_generation_recommit_mark_modified(mesh);
     return true;
