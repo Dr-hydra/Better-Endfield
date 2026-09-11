@@ -1,25 +1,20 @@
-// One-shot startup resource probe for the global replacement design.
+// Balanced startup resource probe for the global replacement design.
 //
-// Safety rules for this revision:
-//   * wait until ResourceManager is initialized and no longer async-initializing;
-//   * wait a short stabilization window after that point;
-//   * call I18NAssetLoader.Load exactly once for the whole process;
-//   * immediately root the boxed FAssetProxyHandle before unboxing it;
-//   * call FAssetProxyHandle.Get exactly once;
-//   * root the returned UnityEngine.Object as well;
-//   * never run a cache recheck, never retry a failed load, and never free either
-//     root while the process is alive.
+// This revision mirrors the existing model module's ABI for FAssetProxyHandle:
+// I18NAssetLoader.Load is invoked through IL2CPP, while value-type instance
+// methods are called through their resolved native method pointers.  The proxy
+// handle is kept alive only inside this one synchronous probe and is explicitly
+// disposed before the frame returns.  The prefab itself is never GC-rooted.
 //
-// The previous probe rooted only the returned prefab.  Because
-// FAssetProxyHandle is a value type whose boxed lifetime may participate in the
-// resource proxy's ownership, allowing that temporary box to die was not a
-// valid read-only experiment.  This probe intentionally leaks two GC roots for
-// the remainder of the process so the resource system never observes us
-// releasing anything it handed out.
+// The experiment answers one question: does touching the postmodel remain safe
+// when Better-Endfield does not carry resource ownership across the login ->
+// main-interface transition?
 
 constexpr uint64_t kResourceProbeEndminfPostmodelHash = 0x0C9AC03D143EA082ULL;
 constexpr uint8_t kResourceProbeMainCategory = 0;
-constexpr uint64_t kResourceProbeReadyStabilizeMs = 3000;
+constexpr uint64_t kResourceProbeReadyStabilizeMs = 500;
+constexpr uint64_t kResourceProbeObserve1Ms = 2000;
+constexpr uint64_t kResourceProbeObserve2Ms = 6000;
 constexpr char kResourceProbeEndminfPostmodelPath[] =
     "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/"
     "chr_0003_endminf_postmodel.prefab";
@@ -30,22 +25,19 @@ bool g_resource_probe_pump_intercepted = false;
 
 BE_ResolvedMethodV1 g_resource_probe_i18n_load{};
 BE_ResolvedMethodV1 g_resource_probe_handle_get{};
+BE_ResolvedMethodV1 g_resource_probe_handle_load_immediate{};
+BE_ResolvedMethodV1 g_resource_probe_handle_dispose{};
 BE_ResolvedMethodV1 g_resource_probe_initialized{};
 BE_ResolvedMethodV1 g_resource_probe_async_initing{};
 BE_ResolvedClassV1 g_resource_probe_game_object_class{};
 
-// These are deliberately process-lifetime roots.  Do not free them from module
-// shutdown: unloading the probe must not look like a resource release to the
-// game.  A process restart is the cleanup boundary for this diagnostic build.
-void* g_resource_probe_boxed_handle = nullptr;
-uint32_t g_resource_probe_boxed_handle_root = 0;
-void* g_resource_probe_prefab = nullptr;
-uint32_t g_resource_probe_prefab_root = 0;
-
 uint64_t g_resource_probe_ready_since = 0;
+uint64_t g_resource_probe_observe1_at = 0;
+uint64_t g_resource_probe_observe2_at = 0;
 bool g_resource_probe_contract_ready = false;
 bool g_resource_probe_attempted = false;
-bool g_resource_probe_done = false;
+bool g_resource_probe_observe1_done = false;
+bool g_resource_probe_observe2_done = false;
 
 std::string ResourceProbePointer(const void* pointer) {
     std::array<char, 32> buffer{};
@@ -107,6 +99,34 @@ bool ResourceProbeManagerReady() {
         initialized && !async_initing;
 }
 
+using ResourceProbeObjectInstanceFn = void*(__fastcall*)(void*, void*);
+using ResourceProbeVoidInstanceFn = void(__fastcall*)(void*, void*);
+
+void* ResourceProbeDirectObjectCall(
+    const BE_ResolvedMethodV1& method, void* instance) {
+    if (!method.method_pointer || !method.method_info || !instance) return nullptr;
+    __try {
+        return reinterpret_cast<ResourceProbeObjectInstanceFn>(method.method_pointer)(
+            instance, const_cast<void*>(method.method_info));
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return nullptr;
+    }
+}
+
+bool ResourceProbeDirectVoidCall(
+    const BE_ResolvedMethodV1& method, void* instance) {
+    if (!method.method_pointer || !method.method_info || !instance) return false;
+    __try {
+        reinterpret_cast<ResourceProbeVoidInstanceFn>(method.method_pointer)(
+            instance, const_cast<void*>(method.method_info));
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+}
+
 struct ResourceProbeLiveSnapshot {
     int loaded_endminf_smr = 0;
     int active_endminf_smr = 0;
@@ -155,16 +175,13 @@ void ResourceProbeLogLiveSnapshot(
     }
 }
 
-void ResourceProbeRunOnce() {
-    // Set this before invoking managed code so re-entrancy can never issue a
-    // second Load call.
+void ResourceProbeRunBalancedOnce() {
     if (g_resource_probe_attempted) return;
     g_resource_probe_attempted = true;
 
     if (!g_host || !g_host->runtime_invoke || !g_host->object_unbox ||
-        !g_host->gchandle_new || !g_resource_probe_game_object_class.type_object) {
-        Log("[RESOURCE-PROBE] ONE-SHOT aborted before Load: required rooting/runtime API unavailable; no retry will be attempted.");
-        g_resource_probe_done = true;
+        !g_resource_probe_game_object_class.type_object) {
+        Log("[RESOURCE-PROBE] BALANCED aborted before Load: required runtime API unavailable.");
         return;
     }
 
@@ -182,71 +199,105 @@ void ResourceProbeRunOnce() {
     void* boxed_handle = g_host->runtime_invoke(g_host->context,
         g_resource_probe_i18n_load.method_info, nullptr, parameters, &exception);
     if (exception || !boxed_handle) {
-        Log("[RESOURCE-PROBE] LOAD failed; one-shot probe stops here and will not retry.");
-        g_resource_probe_done = true;
+        Log("[RESOURCE-PROBE] LOAD failed; balanced probe stops without retry.");
         return;
     }
 
-    // Root the BOX, not only the asset.  The unboxed value is used only while
-    // this strong root is already alive.
-    g_resource_probe_boxed_handle = boxed_handle;
-    g_resource_probe_boxed_handle_root =
-        g_host->gchandle_new(g_host->context, boxed_handle, 0);
-    Log("[RESOURCE-PROBE] HOLD boxedHandle=" +
-        ResourceProbePointer(boxed_handle) + " gcRoot=" +
-        std::to_string(g_resource_probe_boxed_handle_root));
-    if (!g_resource_probe_boxed_handle_root) {
-        Log("[RESOURCE-PROBE] HOLD failed for boxed FAssetProxyHandle; refusing Get and never retrying Load.");
-        g_resource_probe_done = true;
-        return;
-    }
-
+    // Root only for this synchronous scope.  The root is not the resource
+    // ownership mechanism; FAssetProxyHandle.Dispose is.  This simply keeps the
+    // boxed value stable while native instance methods execute.
+    const uint32_t box_root = g_host->gchandle_new
+        ? g_host->gchandle_new(g_host->context, boxed_handle, 0)
+        : 0;
     void* handle = g_host->object_unbox(g_host->context, boxed_handle);
+    Log("[RESOURCE-PROBE] HANDLE box=" + ResourceProbePointer(boxed_handle) +
+        " payload=" + ResourceProbePointer(handle) + " tempRoot=" +
+        std::to_string(box_root));
+
     if (!handle) {
-        Log("[RESOURCE-PROBE] GET aborted: boxed FAssetProxyHandle could not be unboxed.");
-        g_resource_probe_done = true;
+        if (box_root && g_host->gchandle_free) {
+            g_host->gchandle_free(g_host->context, box_root);
+        }
+        Log("[RESOURCE-PROBE] HANDLE unbox failed; temporary GC root released.");
         return;
     }
 
-    exception = nullptr;
-    Log("[RESOURCE-PROBE] GET begin handlePayload=" +
-        ResourceProbePointer(handle));
-    void* prefab = g_host->runtime_invoke(g_host->context,
-        g_resource_probe_handle_get.method_info, handle, nullptr, &exception);
-    if (exception || !prefab) {
-        Log("[RESOURCE-PROBE] GET failed; boxed handle remains rooted for process lifetime.");
-        g_resource_probe_done = true;
-        return;
+    // Match native/modules/model/module.cpp: value-type Get is a native instance
+    // call, not runtime_invoke(instance=unboxed-value).
+    void* prefab = ResourceProbeDirectObjectCall(g_resource_probe_handle_get, handle);
+    Log("[RESOURCE-PROBE] GET(native) result=" + ResourceProbePointer(prefab));
+
+    if (!prefab) {
+        Log("[RESOURCE-PROBE] GET not ready; calling FAssetProxyHandle.LoadImmediate once.");
+        const bool load_immediate_ok = ResourceProbeDirectVoidCall(
+            g_resource_probe_handle_load_immediate, handle);
+        Log("[RESOURCE-PROBE] LOAD-IMMEDIATE returned=" +
+            std::to_string(load_immediate_ok ? 1 : 0));
+        prefab = ResourceProbeDirectObjectCall(g_resource_probe_handle_get, handle);
+        Log("[RESOURCE-PROBE] GET(native)-AFTER-IMMEDIATE result=" +
+            ResourceProbePointer(prefab));
     }
 
-    g_resource_probe_prefab = prefab;
-    g_resource_probe_prefab_root =
-        g_host->gchandle_new(g_host->context, prefab, 0);
-    Log("[RESOURCE-PROBE] HOLD prefab=" + ResourceProbePointer(prefab) +
-        " gcRoot=" + std::to_string(g_resource_probe_prefab_root) +
-        " alive=" + std::to_string(IsNativeObjectAlive(prefab) ? 1 : 0) +
-        " name=\"" + ObjectName(prefab) + "\"");
+    if (prefab) {
+        Log("[RESOURCE-PROBE] PREFAB transient object=" +
+            ResourceProbePointer(prefab) + " alive=" +
+            std::to_string(IsNativeObjectAlive(prefab) ? 1 : 0) + " name=\"" +
+            ObjectName(prefab) + "\"; prefab is intentionally NOT GC-rooted.");
+        const ResourceProbeLiveSnapshot during = ResourceProbeCaptureLiveSnapshot();
+        ResourceProbeLogLiveSnapshot("BEFORE-DISPOSE", during);
+        Log("[RESOURCE-PROBE] OBSERVE beforeDispose deltaLoaded=" +
+            std::to_string(during.loaded_endminf_smr - before.loaded_endminf_smr) +
+            " deltaActive=" +
+            std::to_string(during.active_endminf_smr - before.active_endminf_smr));
+    } else {
+        Log("[RESOURCE-PROBE] PREFAB unavailable even after LoadImmediate; handle will still be disposed.");
+    }
 
-    // Intentionally do NOT call GetComponentsInChildren on the loaded prefab in
-    // this revision.  The previous child enumeration was another independent
-    // suspect and is not needed to validate resource lifetime.
-    const ResourceProbeLiveSnapshot after = ResourceProbeCaptureLiveSnapshot();
-    ResourceProbeLogLiveSnapshot("AFTER-GET", after);
-    Log("[RESOURCE-PROBE] OBSERVE deltaLoaded=" +
-        std::to_string(after.loaded_endminf_smr - before.loaded_endminf_smr) +
-        " deltaActive=" +
-        std::to_string(after.active_endminf_smr - before.active_endminf_smr));
-    Log("[RESOURCE-PROBE] ONE-SHOT complete: Load=1 Get=1 cacheRecheck=0 childEnumeration=0 releases=0. Roots are retained until process exit.");
-    g_resource_probe_done = true;
+    const bool dispose_ok = ResourceProbeDirectVoidCall(
+        g_resource_probe_handle_dispose, handle);
+    if (box_root && g_host->gchandle_free) {
+        g_host->gchandle_free(g_host->context, box_root);
+    }
+    Log("[RESOURCE-PROBE] RELEASE handleDispose=" +
+        std::to_string(dispose_ok ? 1 : 0) + " tempRootFreed=" +
+        std::to_string(box_root ? 1 : 0) +
+        " retainedHandleRoots=0 retainedPrefabRoots=0");
+
+    const ResourceProbeLiveSnapshot released = ResourceProbeCaptureLiveSnapshot();
+    ResourceProbeLogLiveSnapshot("AFTER-DISPOSE", released);
+
+    const uint64_t now = GetTickCount64();
+    g_resource_probe_observe1_at = now + kResourceProbeObserve1Ms;
+    g_resource_probe_observe2_at = now + kResourceProbeObserve2Ms;
+    Log("[RESOURCE-PROBE] BALANCED complete: one Load, native Get, optional LoadImmediate, explicit Dispose in same frame; delayed observations armed.");
+}
+
+void ResourceProbeRunDelayedObservations(uint64_t now) {
+    if (!g_resource_probe_attempted) return;
+    if (!g_resource_probe_observe1_done && g_resource_probe_observe1_at &&
+        now >= g_resource_probe_observe1_at) {
+        g_resource_probe_observe1_done = true;
+        ResourceProbeLogLiveSnapshot(
+            "POST-RELEASE+2S", ResourceProbeCaptureLiveSnapshot());
+    }
+    if (!g_resource_probe_observe2_done && g_resource_probe_observe2_at &&
+        now >= g_resource_probe_observe2_at) {
+        g_resource_probe_observe2_done = true;
+        ResourceProbeLogLiveSnapshot(
+            "POST-RELEASE+6S", ResourceProbeCaptureLiveSnapshot());
+        Log("[RESOURCE-PROBE] observation window complete; no resource handles or prefab roots are retained by the probe.");
+    }
 }
 
 void PumpResourceAssetProbe() {
-    if (!g_resource_probe_contract_ready || g_resource_probe_done ||
-        g_resource_probe_attempted) {
+    if (!g_resource_probe_contract_ready) return;
+    const uint64_t now = GetTickCount64();
+
+    if (g_resource_probe_attempted) {
+        ResourceProbeRunDelayedObservations(now);
         return;
     }
 
-    const uint64_t now = GetTickCount64();
     if (!ResourceProbeManagerReady()) {
         g_resource_probe_ready_since = 0;
         return;
@@ -254,7 +305,7 @@ void PumpResourceAssetProbe() {
 
     if (!g_resource_probe_ready_since) {
         g_resource_probe_ready_since = now;
-        Log("[RESOURCE-PROBE] ResourceManager ready; one-shot probe will run after " +
+        Log("[RESOURCE-PROBE] ResourceManager ready; balanced probe will run after " +
             std::to_string(kResourceProbeReadyStabilizeMs) +
             " ms stabilization window.");
         return;
@@ -264,7 +315,7 @@ void PumpResourceAssetProbe() {
         return;
     }
 
-    ResourceProbeRunOnce();
+    ResourceProbeRunBalancedOnce();
 }
 
 bool ResolveResourceAssetProbeContracts() {
@@ -284,6 +335,13 @@ bool ResolveResourceAssetProbeContracts() {
     ok &= ResourceProbeResolve(g_resource_probe_handle_get,
         "Common.Beyond.dll", "Beyond.Resource", "FAssetProxyHandle", "Get",
         nullptr, "UnityEngine.Object", 0, "FAssetProxyHandle.Get");
+    ok &= ResourceProbeResolve(g_resource_probe_handle_load_immediate,
+        "Common.Beyond.dll", "Beyond.Resource", "FAssetProxyHandle",
+        "LoadImmediate", nullptr, "System.Void", 0,
+        "FAssetProxyHandle.LoadImmediate");
+    ok &= ResourceProbeResolve(g_resource_probe_handle_dispose,
+        "Common.Beyond.dll", "Beyond.Resource", "FAssetProxyHandle", "Dispose",
+        nullptr, "System.Void", 0, "FAssetProxyHandle.Dispose");
     ok &= ResourceProbeResolve(g_resource_probe_initialized,
         "Common.Beyond.dll", "Beyond.Resource", "ResourceManager",
         "IsInitialized", nullptr, "System.Boolean", 0,
@@ -322,14 +380,11 @@ BE_Result BE_CALL InitializeWithResourceAssetProbe(const BE_HostApiV1* host) {
     g_resource_probe_host_proxy.create_hook = &ResourceAssetProbeCreateHook;
     g_resource_probe_pump_intercepted = false;
     g_resource_probe_ready_since = 0;
+    g_resource_probe_observe1_at = 0;
+    g_resource_probe_observe2_at = 0;
+    g_resource_probe_observe1_done = false;
+    g_resource_probe_observe2_done = false;
     g_resource_probe_contract_ready = false;
-
-    // If the module is reinitialized in the same process after a shutdown, do
-    // not issue another Load.  Existing process-lifetime roots are proof that
-    // this diagnostic already ran.
-    const bool already_rooted = g_resource_probe_boxed_handle_root != 0;
-    g_resource_probe_attempted = already_rooted;
-    g_resource_probe_done = already_rooted;
 
     const BE_Result result =
         InitializeWithAiShadowCoverage(&g_resource_probe_host_proxy);
@@ -348,13 +403,13 @@ BE_Result BE_CALL InitializeWithResourceAssetProbe(const BE_HostApiV1* host) {
 
     g_resource_probe_contract_ready = ResolveResourceAssetProbeContracts();
     if (g_resource_probe_contract_ready) {
-        if (already_rooted) {
-            Log("[RESOURCE-PROBE] existing process-lifetime handle root detected; probe will not run again in this process.");
+        if (g_resource_probe_attempted) {
+            Log("[RESOURCE-PROBE] probe already ran in this process; it will not acquire another resource handle.");
         } else {
-            Log("[RESOURCE-PROBE] automatic one-shot probe armed: path=\"" +
+            Log("[RESOURCE-PROBE] automatic balanced-lifetime probe armed: path=\"" +
                 std::string(kResourceProbeEndminfPostmodelPath) + "\" hash=" +
                 ResourceProbeHashText(kResourceProbeEndminfPostmodelHash));
-            Log("[RESOURCE-PROBE] policy: wait-ready + 3000ms, Load once, root boxed handle, Get once, root asset, no retries/rechecks/releases.");
+            Log("[RESOURCE-PROBE] policy: wait-ready + 500ms, Load once, native Get, optional LoadImmediate, explicit Dispose in same frame, retain nothing across scene transition.");
         }
     } else {
         Log("[RESOURCE-PROBE] contracts incomplete; probe disabled while production F12/AI/shadow behavior remains active.");
@@ -363,14 +418,11 @@ BE_Result BE_CALL InitializeWithResourceAssetProbe(const BE_HostApiV1* host) {
 }
 
 void BE_CALL ShutdownWithResourceAssetProbe() {
-    // Deliberately do not free g_resource_probe_boxed_handle_root or
-    // g_resource_probe_prefab_root.  Releasing them during a live game process
-    // would reintroduce the exact ownership experiment this revision removes.
-    if (g_resource_probe_boxed_handle_root || g_resource_probe_prefab_root) {
-        Log("[RESOURCE-PROBE] shutdown: process-lifetime resource roots intentionally retained; cleanup boundary is process exit.");
-    }
+    Log("[RESOURCE-PROBE] shutdown: no probe-owned FAssetProxyHandle or prefab GC root is retained.");
     g_resource_probe_contract_ready = false;
     g_resource_probe_ready_since = 0;
+    g_resource_probe_observe1_at = 0;
+    g_resource_probe_observe2_at = 0;
     ShutdownWithAiShadowCoverage();
     g_resource_probe_real_host = nullptr;
     g_resource_probe_host_proxy = {};
