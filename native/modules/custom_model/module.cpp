@@ -8,4 +8,5 @@
 #include "module_poc2_part_03.inc"
 } // closes the Shutdown() body continued from module_poc2_part_03.inc
 #include "module_generation_diag.inc"
+#include "module_generation_recommit_diag.inc"
 #include "module_poc2_part_04.inc"
