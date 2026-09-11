@@ -6,19 +6,22 @@
 //   2. The login/intro actor is naturally loaded as
 //      Assets/Beyond/InitialAssets/Intro/Prefab/SK_actor_female.prefab.
 //
-// That login prefab is useful evidence but is not the final global gameplay
-// character seam. This layer therefore keeps observing renderer-set changes
-// across scene transitions instead of stopping after the first login actor.
-// Every newly observed Endminf container set dumps the preceding natural I18N
-// requests and starts a NaturalTrace correlation epoch.
+// SK_actor_female is a special splash/intro actor. It may reuse Endministrator
+// mesh/material naming or other character resources, but it is not evidence for
+// the gameplay character assembly seam. Keep observing it at the low-level load
+// tracer, but exclude its renderer container from renderer-arrival events.
 //
-// Read-only policy remains strict: no resource is loaded, retained, disposed,
-// instantiated, replaced or modified by this layer.
+// This layer therefore keeps observing renderer-set changes across scene
+// transitions and only triggers correlation epochs for non-intro Endminf
+// containers. Read-only policy remains strict: no resource is loaded, retained,
+// disposed, instantiated, replaced or modified by this layer.
 
 constexpr uint64_t kRendererArrivalScanIntervalMs = 50;
 constexpr uint64_t kRendererArrivalHistoryMs = 10000;
 constexpr uint64_t kRendererArrivalRepeatCooldownMs = 1000;
 constexpr size_t kRendererArrivalMaxHistoryLines = 160;
+constexpr char kRendererArrivalIgnoredIntroRoot[] =
+    "SceneRoot/SK_actor_female(Clone)";
 
 const BE_HostApiV1* g_renderer_arrival_real_host = nullptr;
 BE_HostApiV1 g_renderer_arrival_host_proxy{};
@@ -27,6 +30,7 @@ uint64_t g_renderer_arrival_next_scan_tick = 0;
 uint64_t g_renderer_arrival_last_event_tick = 0;
 size_t g_renderer_arrival_event_count = 0;
 bool g_renderer_arrival_initial_scan_done = false;
+bool g_renderer_arrival_intro_notice_logged = false;
 std::vector<std::string> g_renderer_arrival_last_roots;
 std::vector<uintptr_t> g_renderer_arrival_last_renderers;
 
@@ -40,6 +44,27 @@ std::string RendererArrivalContainerRoot(const RendererSummary& summary) {
     const size_t slash = summary.path.rfind('/');
     return slash == std::string::npos ? summary.path
                                       : summary.path.substr(0, slash);
+}
+
+bool RendererArrivalIsIgnoredIntro(const RendererSummary& summary) {
+    if (summary.path.empty()) return false;
+    return summary.path.find(kRendererArrivalIgnoredIntroRoot) !=
+        std::string::npos;
+}
+
+std::vector<RendererSummary> RendererArrivalGameplaySummaries(
+    const std::vector<RendererSummary>& summaries, size_t& ignored_intro_count) {
+    std::vector<RendererSummary> output;
+    ignored_intro_count = 0;
+    output.reserve(summaries.size());
+    for (const RendererSummary& summary : summaries) {
+        if (RendererArrivalIsIgnoredIntro(summary)) {
+            ++ignored_intro_count;
+            continue;
+        }
+        output.push_back(summary);
+    }
+    return output;
 }
 
 std::vector<std::string> RendererArrivalRoots(
@@ -158,7 +183,7 @@ void RendererArrivalTriggerEvent(uint64_t now,
         RendererArrivalJoinRoots(roots));
 
     RendererArrivalDumpLoadHistory(now, g_renderer_arrival_event_count);
-    NaturalTraceTrigger(now, "Endminf renderer container/set changed");
+    NaturalTraceTrigger(now, "gameplay Endminf renderer container/set changed");
     NaturalTraceLogLiveSnapshot(
         ("EVENT-" + std::to_string(g_renderer_arrival_event_count)).c_str());
 }
@@ -168,8 +193,17 @@ void PumpRendererArrivalTrace() {
     if (now < g_renderer_arrival_next_scan_tick) return;
     g_renderer_arrival_next_scan_tick = now + kRendererArrivalScanIntervalMs;
 
-    const std::vector<RendererSummary> summaries =
+    const std::vector<RendererSummary> all_summaries =
         EnumerateLiveEndminfRenderers();
+    size_t ignored_intro_count = 0;
+    const std::vector<RendererSummary> summaries =
+        RendererArrivalGameplaySummaries(all_summaries, ignored_intro_count);
+
+    if (ignored_intro_count > 0 && !g_renderer_arrival_intro_notice_logged) {
+        g_renderer_arrival_intro_notice_logged = true;
+        Log("[RENDERER-ARRIVAL] ignoring splash-only SceneRoot/SK_actor_female(Clone) as a trigger; low-level load tracing remains active so shared Endministrator resources are still observable.");
+    }
+
     const std::vector<std::string> roots = RendererArrivalRoots(summaries);
     const std::vector<uintptr_t> renderer_ids =
         RendererArrivalRendererIds(summaries);
@@ -178,9 +212,10 @@ void PumpRendererArrivalTrace() {
         g_renderer_arrival_initial_scan_done = true;
         g_renderer_arrival_last_roots = roots;
         g_renderer_arrival_last_renderers = renderer_ids;
-        Log("[RENDERER-ARRIVAL] baseline live Endminf renderers=" +
+        Log("[RENDERER-ARRIVAL] gameplay baseline Endminf renderers=" +
             std::to_string(summaries.size()) + " roots=" +
-            RendererArrivalJoinRoots(roots));
+            RendererArrivalJoinRoots(roots) + " ignoredIntro=" +
+            std::to_string(ignored_intro_count));
         if (!summaries.empty()) {
             RendererArrivalTriggerEvent(
                 now, summaries, roots, "already-live-at-first-scan");
@@ -199,13 +234,14 @@ void PumpRendererArrivalTrace() {
     g_renderer_arrival_last_roots = roots;
     g_renderer_arrival_last_renderers = renderer_ids;
 
-    Log("[RENDERER-ARRIVAL] renderer set changed oldRoots=" +
+    Log("[RENDERER-ARRIVAL] gameplay renderer set changed oldRoots=" +
         RendererArrivalJoinRoots(previous_roots) + " newRoots=" +
         RendererArrivalJoinRoots(roots) + " newRendererCount=" +
-        std::to_string(summaries.size()));
+        std::to_string(summaries.size()) + " ignoredIntro=" +
+        std::to_string(ignored_intro_count));
 
     if (is_empty) {
-        Log("[RENDERER-ARRIVAL] Endminf renderer set departed; tracer remains armed for the next scene/container.");
+        Log("[RENDERER-ARRIVAL] gameplay Endminf renderer set departed; tracer remains armed for the next scene/container.");
         return;
     }
 
@@ -258,6 +294,7 @@ BE_Result BE_CALL InitializeWithRendererArrivalTrace(
     g_renderer_arrival_last_event_tick = 0;
     g_renderer_arrival_event_count = 0;
     g_renderer_arrival_initial_scan_done = false;
+    g_renderer_arrival_intro_notice_logged = false;
     g_renderer_arrival_last_roots.clear();
     g_renderer_arrival_last_renderers.clear();
 
@@ -269,8 +306,8 @@ BE_Result BE_CALL InitializeWithRendererArrivalTrace(
         return BE_Result_Failed;
     }
 
-    Log("[RENDERER-ARRIVAL] multi-scene trace armed: every new/rebuilt Endminf renderer container will dump the preceding 10 seconds of naturally observed resource requests.");
-    Log("[RENDERER-ARRIVAL] login/intro evidence is retained, but tracing continues into gameplay instead of stopping after SK_actor_female(Clone).");
+    Log("[RENDERER-ARRIVAL] gameplay trace armed: splash SK_actor_female is ignored as an event source; every later non-intro Endminf renderer container will dump the preceding 10 seconds of naturally observed resource requests.");
+    Log("[RENDERER-ARRIVAL] low-level observation still records intro loads because they may reveal resource reuse, but intro evidence is not treated as the global character seam.");
     Log("[RENDERER-ARRIVAL] read-only: no Load/Get/Dispose/Instantiate/replacement calls are issued by this layer.");
     return BE_Result_Ok;
 }
@@ -281,6 +318,7 @@ void BE_CALL ShutdownWithRendererArrivalTrace() {
     g_renderer_arrival_last_event_tick = 0;
     g_renderer_arrival_event_count = 0;
     g_renderer_arrival_initial_scan_done = false;
+    g_renderer_arrival_intro_notice_logged = false;
     g_renderer_arrival_last_roots.clear();
     g_renderer_arrival_last_renderers.clear();
     g_renderer_arrival_pump_intercepted = false;
