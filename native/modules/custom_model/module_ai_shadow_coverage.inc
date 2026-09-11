@@ -51,8 +51,8 @@ std::string AiCoverageComponentStem(std::string name) {
     if (shadow != std::string::npos) name.resize(shadow);
 
     const size_t lod = name.rfind("_lod");
-    if (lod != std::string::npos && lod + 4 == name.size() &&
-        std::isdigit(static_cast<unsigned char>(name[lod + 3]))) {
+    if (lod != std::string::npos && lod + 5 == name.size() &&
+        std::isdigit(static_cast<unsigned char>(name[lod + 4]))) {
         name.resize(lod);
     }
     return name;
