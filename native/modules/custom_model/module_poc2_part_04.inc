@@ -1,9 +1,9 @@
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Custom Model (BEM PoC-2.5)", "0.0.25-poc2.5-ai-shadow-coverage",
+    {kModuleId, "Custom Model (BEM PoC-2.5)", "0.0.26-poc2.5-resource-prefab-probe",
         BETTER_ENDFIELD_MODULE_ABI_V1},
-    &InitializeWithAiShadowCoverage,
+    &InitializeWithResourceAssetProbe,
     &ConfigurationChanged,
-    &ShutdownWithAiShadowCoverage};
+    &ShutdownWithResourceAssetProbe};
 
 } // namespace
 } // namespace BetterEndfield::CustomModelModule
