@@ -10,4 +10,5 @@
 #include "module_f12_state_dump.inc"
 #include "module_ai_shadow_coverage.inc"
 #include "module_natural_resource_trace.inc"
+#include "module_renderer_arrival_trace.inc"
 #include "module_poc2_part_04.inc"
