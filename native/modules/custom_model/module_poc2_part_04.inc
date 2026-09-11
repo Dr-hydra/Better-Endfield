@@ -1,5 +1,5 @@
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Custom Model (BEM PoC-2.5)", "0.0.31-poc2.5-renderer-arrival-trace",
+    {kModuleId, "Custom Model (BEM PoC-2.5)", "0.0.32-poc2.5-multiscene-resource-trace",
         BETTER_ENDFIELD_MODULE_ABI_V1},
     &InitializeWithRendererArrivalTrace,
     &ConfigurationChanged,
