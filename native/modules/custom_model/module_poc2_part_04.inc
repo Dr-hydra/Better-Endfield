@@ -1,9 +1,9 @@
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Custom Model (BEM PoC-2.5)", "0.0.23-poc2.5-pair-mode-diag",
+    {kModuleId, "Custom Model (BEM PoC-2.5)", "0.0.24-poc2.5-f12-state-dump",
         BETTER_ENDFIELD_MODULE_ABI_V1},
-    &InitializeWithPairModeDiag,
+    &InitializeWithF12Dump,
     &ConfigurationChanged,
-    &ShutdownWithPairModeDiag};
+    &ShutdownWithF12Dump};
 
 } // namespace
 } // namespace BetterEndfield::CustomModelModule
