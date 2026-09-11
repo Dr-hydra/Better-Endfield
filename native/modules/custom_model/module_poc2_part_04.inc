@@ -1,9 +1,9 @@
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Custom Model (BEM PoC-2.5)", "0.0.28-poc2.5-resource-balanced-design-probe",
+    {kModuleId, "Custom Model (BEM PoC-2.5)", "0.0.29-poc2.5-live-auto-apply",
         BETTER_ENDFIELD_MODULE_ABI_V1},
-    &InitializeWithResourceAssetProbe,
+    &InitializeWithLiveAutoApply,
     &ConfigurationChanged,
-    &ShutdownWithResourceAssetProbe};
+    &ShutdownWithLiveAutoApply};
 
 } // namespace
 } // namespace BetterEndfield::CustomModelModule
