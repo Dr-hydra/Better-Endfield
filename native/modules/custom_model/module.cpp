@@ -8,4 +8,5 @@
 #include "module_poc2_part_03.inc"
 } // closes the Shutdown() body continued from module_poc2_part_03.inc
 #include "module_f12_state_dump.inc"
+#include "module_ai_shadow_coverage.inc"
 #include "module_poc2_part_04.inc"
