@@ -1,14 +1,10 @@
 // Balanced startup resource probe for the global replacement design.
 //
-// This revision mirrors the existing model module's ABI for FAssetProxyHandle:
-// I18NAssetLoader.Load is invoked through IL2CPP, while value-type instance
-// methods are called through their resolved native method pointers.  The proxy
-// handle is kept alive only inside this one synchronous probe and is explicitly
-// disposed before the frame returns.  The prefab itself is never GC-rooted.
-//
-// The experiment answers one question: does touching the postmodel remain safe
-// when Better-Endfield does not carry resource ownership across the login ->
-// main-interface transition?
+// The resource handle is deliberately short-lived: acquire, inspect, dispose in
+// the same Unity-main-thread pump.  The structural evidence survives only in
+// logs.  This lets the CustomModel work keep answering its original question —
+// where the global Endminf replacement seam actually is — without carrying a
+// foreign FAssetProxyHandle across the login -> main-interface transition.
 
 constexpr uint64_t kResourceProbeEndminfPostmodelHash = 0x0C9AC03D143EA082ULL;
 constexpr uint8_t kResourceProbeMainCategory = 0;
@@ -29,7 +25,11 @@ BE_ResolvedMethodV1 g_resource_probe_handle_load_immediate{};
 BE_ResolvedMethodV1 g_resource_probe_handle_dispose{};
 BE_ResolvedMethodV1 g_resource_probe_initialized{};
 BE_ResolvedMethodV1 g_resource_probe_async_initing{};
+BE_ResolvedMethodV1 g_resource_probe_get_components{};
+BE_ResolvedMethodV1 g_resource_probe_object_get_type{};
+BE_ResolvedMethodV1 g_resource_probe_runtime_type_full_name{};
 BE_ResolvedClassV1 g_resource_probe_game_object_class{};
+BE_ResolvedClassV1 g_resource_probe_component_class{};
 
 uint64_t g_resource_probe_ready_since = 0;
 uint64_t g_resource_probe_observe1_at = 0;
@@ -50,6 +50,14 @@ std::string ResourceProbeHashText(uint64_t value) {
     std::snprintf(buffer.data(), buffer.size(), "0x%016llX",
         static_cast<unsigned long long>(value));
     return std::string(buffer.data());
+}
+
+std::string ResourceProbeManagedString(void* value) {
+    if (!value || !g_host || !g_host->copy_managed_string) return {};
+    std::array<char, 512> buffer{};
+    const int copied = g_host->copy_managed_string(
+        g_host->context, value, buffer.data(), buffer.size());
+    return copied > 0 ? std::string(buffer.data()) : std::string{};
 }
 
 bool ResourceProbeResolve(BE_ResolvedMethodV1& output,
@@ -127,6 +135,19 @@ bool ResourceProbeDirectVoidCall(
     }
 }
 
+std::string ResourceProbeManagedTypeName(void* object) {
+    if (!object || !g_host || !g_host->runtime_invoke) return {};
+    void* exception = nullptr;
+    void* type = g_host->runtime_invoke(g_host->context,
+        g_resource_probe_object_get_type.method_info, object, nullptr, &exception);
+    if (exception || !type) return {};
+    exception = nullptr;
+    void* full_name = g_host->runtime_invoke(g_host->context,
+        g_resource_probe_runtime_type_full_name.method_info, type, nullptr,
+        &exception);
+    return exception ? std::string{} : ResourceProbeManagedString(full_name);
+}
+
 struct ResourceProbeLiveSnapshot {
     int loaded_endminf_smr = 0;
     int active_endminf_smr = 0;
@@ -175,6 +196,150 @@ void ResourceProbeLogLiveSnapshot(
     }
 }
 
+struct ResourceProbePrefabRenderer {
+    void* renderer = nullptr;
+    void* mesh = nullptr;
+    std::string renderer_name;
+    std::string mesh_name;
+    int vertex_count = -1;
+    uint64_t total_indices = 0;
+    int bones_count = 0;
+};
+
+std::vector<ResourceProbePrefabRenderer> ResourceProbePrefabRenderers(
+    void* prefab) {
+    std::vector<ResourceProbePrefabRenderer> output;
+    if (!prefab || !g_resource_probe_get_components.method_info ||
+        !g_skinned_renderer_class.type_object || !g_host ||
+        !g_host->runtime_invoke) {
+        return output;
+    }
+
+    bool include_inactive = true;
+    void* parameters[2]{g_skinned_renderer_class.type_object, &include_inactive};
+    void* exception = nullptr;
+    void* components = g_host->runtime_invoke(g_host->context,
+        g_resource_probe_get_components.method_info, prefab, parameters,
+        &exception);
+    if (exception || !components) return output;
+
+    const int count = std::max(ArrayLength(components), 0);
+    output.reserve(static_cast<size_t>(count));
+    for (int index = 0; index < count; ++index) {
+        void* renderer = ArrayValue(components, index);
+        if (!renderer || !IsNativeObjectAlive(renderer)) continue;
+        RendererSummary summary = SummarizeRenderer(renderer);
+        if (!summary.mesh || !IsNativeObjectAlive(summary.mesh)) continue;
+
+        ResourceProbePrefabRenderer item;
+        item.renderer = renderer;
+        item.mesh = summary.mesh;
+        item.renderer_name = summary.renderer_name;
+        item.mesh_name = summary.mesh_name;
+        item.total_indices = summary.total_indices;
+        item.bones_count = summary.bones_count;
+        InvokeValue(Contract("mesh.get_vertex_count"), summary.mesh, nullptr,
+            item.vertex_count);
+        output.push_back(std::move(item));
+    }
+    return output;
+}
+
+std::vector<std::string> ResourceProbePrefabComponentTypes(void* prefab) {
+    std::vector<std::string> types;
+    if (!prefab || !g_resource_probe_component_class.type_object ||
+        !g_resource_probe_get_components.method_info || !g_host ||
+        !g_host->runtime_invoke) {
+        return types;
+    }
+
+    bool include_inactive = true;
+    void* parameters[2]{g_resource_probe_component_class.type_object,
+        &include_inactive};
+    void* exception = nullptr;
+    void* components = g_host->runtime_invoke(g_host->context,
+        g_resource_probe_get_components.method_info, prefab, parameters,
+        &exception);
+    if (exception || !components) return types;
+
+    const int count = std::max(ArrayLength(components), 0);
+    for (int index = 0; index < count; ++index) {
+        void* component = ArrayValue(components, index);
+        if (!component) continue;
+        std::string type = ResourceProbeManagedTypeName(component);
+        if (type.empty()) type = "<unknown>";
+        if (std::find(types.begin(), types.end(), type) == types.end()) {
+            types.push_back(std::move(type));
+        }
+    }
+    std::sort(types.begin(), types.end());
+    return types;
+}
+
+void ResourceProbeInspectPrefab(void* prefab) {
+    const auto prefab_renderers = ResourceProbePrefabRenderers(prefab);
+    const auto component_types = ResourceProbePrefabComponentTypes(prefab);
+
+    std::vector<void*> prefab_meshes;
+    for (const auto& item : prefab_renderers) {
+        if (std::find(prefab_meshes.begin(), prefab_meshes.end(), item.mesh) ==
+            prefab_meshes.end()) {
+            prefab_meshes.push_back(item.mesh);
+        }
+    }
+
+    int exact_mesh_consumers = 0;
+    int active_consumers = 0;
+    if (!prefab_meshes.empty()) {
+        void* parameters[1]{g_skinned_renderer_class.type_object};
+        void* objects = Invoke(Contract("resources.find_objects_of_type_all"),
+            nullptr, parameters, false);
+        const int count = std::max(ArrayLength(objects), 0);
+        for (int index = 0; index < count; ++index) {
+            void* renderer = ArrayValue(objects, index);
+            if (!renderer || !IsNativeObjectAlive(renderer)) continue;
+            void* mesh = Invoke(Contract("skinned.get_shared_mesh"), renderer,
+                nullptr, false);
+            if (!mesh || std::find(prefab_meshes.begin(), prefab_meshes.end(),
+                    mesh) == prefab_meshes.end()) {
+                continue;
+            }
+            ++exact_mesh_consumers;
+            if (IsActiveSceneRenderer(renderer)) ++active_consumers;
+        }
+    }
+
+    Log("[RESOURCE-PROBE] PREFAB-INSPECT object=" +
+        ResourceProbePointer(prefab) + " name=\"" + ObjectName(prefab) +
+        "\" childSMR=" + std::to_string(prefab_renderers.size()) +
+        " uniqueMeshes=" + std::to_string(prefab_meshes.size()) +
+        " componentTypes=" + std::to_string(component_types.size()) +
+        " exactMeshConsumers=" + std::to_string(exact_mesh_consumers) +
+        " activeMeshConsumers=" + std::to_string(active_consumers));
+
+    for (size_t index = 0; index < prefab_renderers.size(); ++index) {
+        const auto& item = prefab_renderers[index];
+        Log("[RESOURCE-PROBE] PREFAB-SMR #" + std::to_string(index) +
+            " renderer=" + ResourceProbePointer(item.renderer) + " name=\"" +
+            item.renderer_name + "\" mesh=" + ResourceProbePointer(item.mesh) +
+            " meshName=\"" + item.mesh_name + "\" vtx=" +
+            std::to_string(item.vertex_count) + " idx=" +
+            std::to_string(item.total_indices) + " bones=" +
+            std::to_string(item.bones_count));
+    }
+    for (const std::string& type : component_types) {
+        Log("[RESOURCE-PROBE] PREFAB-COMPONENT-TYPE " + type);
+    }
+
+    if (prefab_renderers.empty()) {
+        Log("[RESOURCE-PROBE] DESIGN-HINT postmodel has no directly readable SkinnedMeshRenderer; component-type list is the next lead for the runtime assembly layer.");
+    } else if (active_consumers > 0) {
+        Log("[RESOURCE-PROBE] DESIGN-HINT prefab Mesh identity is consumed by active scene renderers; this is a strong global replacement seam candidate.");
+    } else {
+        Log("[RESOURCE-PROBE] DESIGN-HINT prefab contains inspectable Meshes but active scene consumers do not share their identities; instantiation likely clones or rebuilds them.");
+    }
+}
+
 void ResourceProbeRunBalancedOnce() {
     if (g_resource_probe_attempted) return;
     g_resource_probe_attempted = true;
@@ -203,9 +368,6 @@ void ResourceProbeRunBalancedOnce() {
         return;
     }
 
-    // Root only for this synchronous scope.  The root is not the resource
-    // ownership mechanism; FAssetProxyHandle.Dispose is.  This simply keeps the
-    // boxed value stable while native instance methods execute.
     const uint32_t box_root = g_host->gchandle_new
         ? g_host->gchandle_new(g_host->context, boxed_handle, 0)
         : 0;
@@ -222,8 +384,8 @@ void ResourceProbeRunBalancedOnce() {
         return;
     }
 
-    // Match native/modules/model/module.cpp: value-type Get is a native instance
-    // call, not runtime_invoke(instance=unboxed-value).
+    // Match native/modules/model/module.cpp: FAssetProxyHandle.Get is a native
+    // value-type instance call, not runtime_invoke(instance=unboxed-value).
     void* prefab = ResourceProbeDirectObjectCall(g_resource_probe_handle_get, handle);
     Log("[RESOURCE-PROBE] GET(native) result=" + ResourceProbePointer(prefab));
 
@@ -242,7 +404,8 @@ void ResourceProbeRunBalancedOnce() {
         Log("[RESOURCE-PROBE] PREFAB transient object=" +
             ResourceProbePointer(prefab) + " alive=" +
             std::to_string(IsNativeObjectAlive(prefab) ? 1 : 0) + " name=\"" +
-            ObjectName(prefab) + "\"; prefab is intentionally NOT GC-rooted.");
+            ObjectName(prefab) + "\"; structural inspection begins before Dispose.");
+        ResourceProbeInspectPrefab(prefab);
         const ResourceProbeLiveSnapshot during = ResourceProbeCaptureLiveSnapshot();
         ResourceProbeLogLiveSnapshot("BEFORE-DISPOSE", during);
         Log("[RESOURCE-PROBE] OBSERVE beforeDispose deltaLoaded=" +
@@ -269,7 +432,7 @@ void ResourceProbeRunBalancedOnce() {
     const uint64_t now = GetTickCount64();
     g_resource_probe_observe1_at = now + kResourceProbeObserve1Ms;
     g_resource_probe_observe2_at = now + kResourceProbeObserve2Ms;
-    Log("[RESOURCE-PROBE] BALANCED complete: one Load, native Get, optional LoadImmediate, explicit Dispose in same frame; delayed observations armed.");
+    Log("[RESOURCE-PROBE] BALANCED complete: resource ownership released in the same frame; prefab structure evidence retained only in logs.");
 }
 
 void ResourceProbeRunDelayedObservations(uint64_t now) {
@@ -305,7 +468,7 @@ void PumpResourceAssetProbe() {
 
     if (!g_resource_probe_ready_since) {
         g_resource_probe_ready_since = now;
-        Log("[RESOURCE-PROBE] ResourceManager ready; balanced probe will run after " +
+        Log("[RESOURCE-PROBE] ResourceManager ready; balanced design probe will run after " +
             std::to_string(kResourceProbeReadyStabilizeMs) +
             " ms stabilization window.");
         return;
@@ -324,6 +487,12 @@ bool ResolveResourceAssetProbeContracts() {
             "UnityEngine", "GameObject", &g_resource_probe_game_object_class) !=
             BE_Result_Ok || !g_resource_probe_game_object_class.type_object) {
         Log("[RESOURCE-PROBE] unresolved UnityEngine.GameObject class.");
+        return false;
+    }
+    if (g_host->resolve_class(g_host->context, "UnityEngine.CoreModule.dll",
+            "UnityEngine", "Component", &g_resource_probe_component_class) !=
+            BE_Result_Ok || !g_resource_probe_component_class.type_object) {
+        Log("[RESOURCE-PROBE] unresolved UnityEngine.Component class.");
         return false;
     }
 
@@ -350,6 +519,16 @@ bool ResolveResourceAssetProbeContracts() {
         "Common.Beyond.dll", "Beyond.Resource", "ResourceManager",
         "IsAsyncIniting", nullptr, "System.Boolean", 0,
         "ResourceManager.IsAsyncIniting");
+    ok &= ResourceProbeResolve(g_resource_probe_get_components,
+        "UnityEngine.CoreModule.dll", "UnityEngine", "GameObject",
+        "GetComponentsInChildren", "System.Type|System.Boolean",
+        "UnityEngine.Component[]", 2, "GameObject.GetComponentsInChildren");
+    ok &= ResourceProbeResolve(g_resource_probe_object_get_type,
+        "mscorlib.dll", "System", "Object", "GetType", nullptr,
+        "System.Type", 0, "System.Object.GetType");
+    ok &= ResourceProbeResolve(g_resource_probe_runtime_type_full_name,
+        "mscorlib.dll", "System", "RuntimeType", "get_FullName", nullptr,
+        "System.String", 0, "System.RuntimeType.get_FullName");
     return ok;
 }
 
@@ -406,10 +585,10 @@ BE_Result BE_CALL InitializeWithResourceAssetProbe(const BE_HostApiV1* host) {
         if (g_resource_probe_attempted) {
             Log("[RESOURCE-PROBE] probe already ran in this process; it will not acquire another resource handle.");
         } else {
-            Log("[RESOURCE-PROBE] automatic balanced-lifetime probe armed: path=\"" +
+            Log("[RESOURCE-PROBE] automatic balanced design probe armed: path=\"" +
                 std::string(kResourceProbeEndminfPostmodelPath) + "\" hash=" +
                 ResourceProbeHashText(kResourceProbeEndminfPostmodelHash));
-            Log("[RESOURCE-PROBE] policy: wait-ready + 500ms, Load once, native Get, optional LoadImmediate, explicit Dispose in same frame, retain nothing across scene transition.");
+            Log("[RESOURCE-PROBE] purpose: identify the global replacement seam; policy: acquire briefly, inspect prefab/components/Mesh identity, Dispose in the same frame, retain nothing across scene transition.");
         }
     } else {
         Log("[RESOURCE-PROBE] contracts incomplete; probe disabled while production F12/AI/shadow behavior remains active.");
