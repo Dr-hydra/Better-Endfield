@@ -6,4 +6,5 @@
 #include "module_poc2_part_01.inc"
 #include "module_poc2_part_02.inc"
 #include "module_poc2_part_03.inc"
+#include "module_generation_diag.inc"
 #include "module_poc2_part_04.inc"
