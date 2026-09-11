@@ -172,9 +172,12 @@ bool DestroyTwinSetIfDetached() {
 
     const uint64_t retired = g_twin.generation;
     std::array<void*, kTwinVariantCount> doomed = g_twin.meshes;
+    // Keep the managed wrappers pinned until Destroy has been issued for every
+    // native Mesh; releasing GC handles first would make this cleanup itself a
+    // lifetime experiment.
+    DestroyTwinMeshArray(doomed);
     ReleaseTwinHandles();
     g_twin = {};
-    DestroyTwinMeshArray(doomed);
     Log("[VARIANT-DIAG] retired detached generation=" +
         std::to_string(retired) + " meshesDestroyed=4.");
     return true;
@@ -357,6 +360,18 @@ void BuildTwinPair() {
     if (!DestroyTwinSetIfDetached()) {
         unlock();
         return;
+    }
+
+    // SetSharedMesh retains diagnostic Meshes through the normal CustomModel
+    // asset-retention path. At this point every diagnostic renderer is back on
+    // an original Mesh, so clear that bookkeeping before starting a fresh
+    // probability trial. Otherwise destroyed wrappers from older trials could
+    // remain in g_retained_assets and pointer reuse would become a confounder.
+    if (!g_retained_assets.empty()) {
+        const size_t retained = g_retained_assets.size();
+        ReleaseRetainedAssets(true);
+        Log("[VARIANT-DIAG] cleared detached asset-retention records=" +
+            std::to_string(retained) + " before fresh generation.");
     }
 
     BemPocData bem;
