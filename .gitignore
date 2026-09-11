@@ -17,6 +17,7 @@ src/Diagnostics/
 src/*Ctl/
 src/*Probe/
 tests/
+!native/tests/
 tools/EndfieldDumper/
 tools/EndfieldStudio/
 tools/EndfieldUnpacker/
@@ -48,6 +49,7 @@ vendor/unity-libs-2021.3.34/
 *.suo
 *.log
 *.pdb
+*.patch
 BetterEndfield.ini
 diagnostics/
 

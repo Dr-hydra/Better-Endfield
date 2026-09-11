@@ -160,6 +160,11 @@ add_executable(BetterEndfield.CombatSemanticsTests EXCLUDE_FROM_ALL
 )
 better_endfield_target_defaults(BetterEndfield.CombatSemanticsTests)
 
+add_executable(BetterEndfield.CustomModelLifecycleTests EXCLUDE_FROM_ALL
+    tests/custom_model_lifecycle_tests.cpp
+)
+better_endfield_target_defaults(BetterEndfield.CustomModelLifecycleTests)
+
 # Read-only research utility. It is deliberately excluded from the default
 # build and release layout; build the target explicitly when runtime metadata
 # signatures need to be refreshed.

@@ -38,14 +38,17 @@ bool IsLiveClonePath(std::string_view path) {
     return path.find("(Clone)") != std::string_view::npos;
 }
 
+// The container name identifies the character, not the instance. Requiring
+// "(Clone)" excluded the character showcase, whose model is parented under a
+// prefab proxy manager, and the prefab templates, which are the same model.
+// What actually gets replaced is still decided by the index-count join and the
+// declaration check, not by this name.
 bool IsGameplayPostModelPath(std::string_view path) {
-    return path.find("chr_0003_endminf_postmodel(Clone)") !=
-        std::string_view::npos;
+    return path.find("chr_0003_endminf_postmodel") != std::string_view::npos;
 }
 
 bool IsUiModelPath(std::string_view path) {
-    return path.find("chr_0003_endminf_uimodel(Clone)") !=
-        std::string_view::npos;
+    return path.find("chr_0003_endminf_uimodel") != std::string_view::npos;
 }
 
 bool IsSupportedLiveTargetPath(std::string_view path) {
@@ -54,6 +57,51 @@ bool IsSupportedLiveTargetPath(std::string_view path) {
 
 bool IsLod0Path(std::string_view path) {
     return path.find("/Mesh_all/lod0/") != std::string_view::npos;
+}
+
+// Whether a live SkinnedMeshRenderer is one of the Endministrator's lod0 draws.
+//
+// The container name is deliberately not consulted. The world model sits under
+// a scene root, the character showcase under a prefab proxy manager, and the
+// prefab template under the asset itself, and a whitelist of those names
+// silently skipped whatever container the next screen used - which is why the
+// showcase kept its original geometry while its materials, shared assets, were
+// still retextured. What identifies the draw is the renderer's own object name.
+// The shadow proxies carry the same character prefix, so they are excluded by
+// name, and lod1+ draws are excluded so the lod0 payload is never dropped onto
+// cheaper geometry.
+bool IsEndminfLod0Draw(
+    std::string_view renderer_name, std::string_view path) {
+    if (renderer_name.find(kActorMeshPrefix) != 0) return false;
+    if (renderer_name.find("shadowProxy") != std::string_view::npos) {
+        return false;
+    }
+    if (path.find("/lod1/") != std::string_view::npos ||
+        path.find("/lod2/") != std::string_view::npos ||
+        path.find("/lod3/") != std::string_view::npos) {
+        return false;
+    }
+    return renderer_name.find("_lod0") != std::string_view::npos ||
+        IsLod0Path(path);
+}
+
+// Everything above "/Mesh_all/": two renderers with the same root are two
+// components of one model instance.
+std::string PathRoot(std::string_view path) {
+    const size_t split = path.find("/Mesh_all/");
+    return std::string(
+        split == std::string_view::npos ? path : path.substr(0, split));
+}
+
+std::string JoinRoots(std::vector<std::string> roots) {
+    std::sort(roots.begin(), roots.end());
+    roots.erase(std::unique(roots.begin(), roots.end()), roots.end());
+    std::string text;
+    for (const std::string& root : roots) {
+        if (!text.empty()) text += " | ";
+        text += root;
+    }
+    return text;
 }
 
 std::filesystem::path Utf8Path(std::string_view value) {
@@ -85,18 +133,229 @@ bool CheckedAdvance(size_t& cursor, size_t amount, size_t limit) {
     return true;
 }
 
+// Block-compressed mip chain size, used to prove the payload's declared
+// dimensions agree with the number of bytes actually carried. Nothing here
+// decodes or reinterprets the surface; it is uploaded exactly as stored.
+size_t BlockCompressedChainSize(
+    uint32_t width, uint32_t height, uint32_t mip_count, uint32_t block_bytes) {
+    size_t total = 0;
+    for (uint32_t level = 0; level < mip_count; ++level) {
+        const uint32_t level_width = std::max(width >> level, 1u);
+        const uint32_t level_height = std::max(height >> level, 1u);
+        total += static_cast<size_t>((level_width + 3) / 4) *
+            static_cast<size_t>((level_height + 3) / 4) * block_bytes;
+    }
+    return total;
+}
+
+// Bytes per 4x4 block for the UnityEngine.TextureFormat values the converter is
+// allowed to emit. An unlisted format is refused rather than guessed at.
+bool BlockBytesForTextureFormat(int32_t format, uint32_t& block_bytes) {
+    switch (format) {
+    case 10:  // DXT1
+    case 26:  // BC4
+        block_bytes = 8;
+        return true;
+    case 12:  // DXT5
+    case 25:  // BC7
+    case 27:  // BC5
+        block_bytes = 16;
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool LoadBemTextures(
+    const std::vector<uint8_t>& bytes, size_t& cursor, BemPocData& output) {
+    const uint32_t texture_count = output.header.texture_count;
+    if (texture_count == 0) {
+        Log("BEM PoC-2.4 carries no textures; geometry only.");
+        return true;
+    }
+    if (texture_count > kMaxBemTextures) {
+        Log("BEM PoC-2.4 declares an implausible texture count: " +
+            std::to_string(texture_count));
+        return false;
+    }
+
+    output.textures.reserve(texture_count);
+    for (uint32_t index = 0; index < texture_count; ++index) {
+        const std::string label =
+            "BEM PoC-2.4 texture[" + std::to_string(index) + "]";
+        BemTexture texture;
+        if (bytes.size() - cursor < sizeof(BemTextureEntryRaw)) {
+            Log(label + " header is truncated.");
+            return false;
+        }
+        std::memcpy(
+            &texture.info, bytes.data() + cursor, sizeof(BemTextureEntryRaw));
+        if (!CheckedAdvance(cursor, sizeof(BemTextureEntryRaw), bytes.size())) {
+            return false;
+        }
+
+        const BemTextureEntryRaw& info = texture.info;
+        uint32_t block_bytes = 0;
+        if (!BlockBytesForTextureFormat(info.create_format, block_bytes)) {
+            Log(label + " uses unsupported TextureFormat " +
+                std::to_string(info.create_format));
+            return false;
+        }
+        if (info.width == 0 || info.height == 0 || info.width % 4 != 0 ||
+            info.height % 4 != 0 || info.mip_count == 0 ||
+            info.mip_count > 16 || info.name_length > 256 ||
+            info.component_mask == 0 || info.data_size == 0 ||
+            info.data_size > kMaxBemTextureBytes) {
+            Log(label + " has implausible dimensions, sizes or component set.");
+            return false;
+        }
+        const size_t expected = BlockCompressedChainSize(
+            info.width, info.height, info.mip_count, block_bytes);
+        if (expected != info.data_size) {
+            Log(label + " declares " + std::to_string(info.data_size) +
+                " bytes but " + std::to_string(info.width) + "x" +
+                std::to_string(info.height) + " with " +
+                std::to_string(info.mip_count) + " mip level(s) needs " +
+                std::to_string(expected));
+            return false;
+        }
+        if (bytes.size() - cursor < info.name_length ||
+            bytes.size() - cursor - info.name_length < info.data_size) {
+            Log(label + " payload is truncated.");
+            return false;
+        }
+
+        texture.name.assign(
+            reinterpret_cast<const char*>(bytes.data() + cursor),
+            info.name_length);
+        if (!CheckedAdvance(cursor, info.name_length, bytes.size())) {
+            return false;
+        }
+        texture.data.resize(info.data_size);
+        std::memcpy(
+            texture.data.data(), bytes.data() + cursor, info.data_size);
+        if (!CheckedAdvance(cursor, info.data_size, bytes.size())) {
+            return false;
+        }
+        output.textures.push_back(std::move(texture));
+    }
+    return true;
+}
+
+std::string ComponentMaskText(uint32_t mask) {
+    std::string text;
+    for (uint32_t i = 0; i < 32; ++i) {
+        if ((mask >> i & 1u) == 0) continue;
+        if (!text.empty()) text += ",";
+        text += std::to_string(i);
+    }
+    return "{" + text + "}";
+}
+
+bool LoadBemComponent(
+    const std::vector<uint8_t>& bytes, size_t& cursor, BemComponent& output) {
+    if (bytes.size() - cursor < sizeof(BemComponentHeaderRaw)) {
+        Log("BEM PoC-2.4 component header is truncated.");
+        return false;
+    }
+    std::memcpy(
+        &output.info, bytes.data() + cursor, sizeof(BemComponentHeaderRaw));
+    if (!CheckedAdvance(
+            cursor, sizeof(BemComponentHeaderRaw), bytes.size())) {
+        return false;
+    }
+
+    const BemComponentHeaderRaw& info = output.info;
+    const std::string label =
+        "BEM PoC-2.4 C" + std::to_string(info.component_id);
+    if (info.original_index_count == 0 ||
+        info.original_index_count % 3 != 0) {
+        Log(label + " declares an implausible original index count.");
+        return false;
+    }
+    if ((info.flags & kComponentFlagNoGeometry) != 0) {
+        // Carried only so its renderer can be identified while the texture
+        // component sets are computed.
+        return true;
+    }
+
+    if (info.stream_count != kBemStreamCount ||
+        info.index_element_size != kIndexElementSize ||
+        info.vertex_count == 0 || info.vertex_count > (1u << 20) ||
+        info.index_count == 0 || info.index_count % 3 != 0 ||
+        info.stride0 == 0 || info.stride1 == 0 || info.stride2 == 0 ||
+        info.stride0 > 64 || info.stride1 > 64 || info.stride2 > 64) {
+        Log(label + " has an implausible geometry description.");
+        return false;
+    }
+
+    const std::array<uint32_t, 3> strides{
+        info.stride0, info.stride1, info.stride2};
+    for (uint32_t stream = 0; stream < kBemStreamCount; ++stream) {
+        const size_t size =
+            static_cast<size_t>(info.vertex_count) * strides[stream];
+        if (bytes.size() - cursor < size) {
+            Log(label + " stream " + std::to_string(stream) +
+                " is truncated.");
+            return false;
+        }
+        output.streams[stream].resize(size);
+        std::memcpy(
+            output.streams[stream].data(), bytes.data() + cursor, size);
+        if (!CheckedAdvance(cursor, size, bytes.size())) return false;
+    }
+
+    const size_t index_bytes =
+        static_cast<size_t>(info.index_count) * kIndexElementSize;
+    if (bytes.size() - cursor < index_bytes) {
+        Log(label + " index buffer is truncated.");
+        return false;
+    }
+    output.indices.resize(index_bytes);
+    std::memcpy(output.indices.data(), bytes.data() + cursor, index_bytes);
+    if (!CheckedAdvance(cursor, index_bytes, bytes.size())) return false;
+
+    const uint16_t* indices =
+        reinterpret_cast<const uint16_t*>(output.indices.data());
+    for (uint32_t i = 0; i < info.index_count; ++i) {
+        if (indices[i] >= info.vertex_count) {
+            Log(label + " index " + std::to_string(indices[i]) +
+                " is outside vertexCount " +
+                std::to_string(info.vertex_count));
+            return false;
+        }
+    }
+
+    // Bone indices are the last four bytes of every stream 2 element in every
+    // declaration this format allows, with or without preceding weights.
+    uint32_t max_bone = 0;
+    for (uint32_t i = 0; i < info.vertex_count; ++i) {
+        const uint8_t* bones = output.streams[2].data() +
+            static_cast<size_t>(i) * info.stride2 + (info.stride2 - 4);
+        for (int k = 0; k < 4; ++k) {
+            max_bone = std::max(max_bone, static_cast<uint32_t>(bones[k]));
+        }
+    }
+    if (max_bone != info.max_bone) {
+        Log(label + " stream 2 max bone " + std::to_string(max_bone) +
+            " disagrees with the header's " + std::to_string(info.max_bone));
+        return false;
+    }
+    return true;
+}
+
 bool LoadBemPoc(const std::filesystem::path& path, BemPocData& output) {
     output = {};
     std::ifstream input(path, std::ios::binary | std::ios::ate);
     if (!input) {
-        Log("BEM PoC file not found: " + path.string());
+        Log("BEM payload not found: " + path.string());
         return false;
     }
 
     const std::streamoff end = input.tellg();
-    if (end < static_cast<std::streamoff>(sizeof(BemPocHeader)) ||
-        end > static_cast<std::streamoff>(256 * 1024 * 1024)) {
-        Log("BEM PoC file size is invalid.");
+    if (end < static_cast<std::streamoff>(sizeof(BemFileHeader)) ||
+        end > static_cast<std::streamoff>(512 * 1024 * 1024)) {
+        Log("BEM payload size is invalid.");
         return false;
     }
 
@@ -104,119 +363,90 @@ bool LoadBemPoc(const std::filesystem::path& path, BemPocData& output) {
     input.seekg(0, std::ios::beg);
     if (!input.read(reinterpret_cast<char*>(bytes.data()),
             static_cast<std::streamsize>(bytes.size()))) {
-        Log("Failed to read BEM PoC file.");
+        Log("Failed to read the BEM payload.");
         return false;
     }
 
     std::memcpy(&output.header, bytes.data(), sizeof(output.header));
     const std::array<char, 8> expected_magic{
-        'B','E','M','P','C','2','1','\0'};
-    const uint32_t required_flags =
-        kBemFlagUv0 | kBemFlagSkin4 | kBemFlagIndex16 |
-        kBemFlagPackedNormal | kBemFlagTexCoord4SNorm;
-
+        'B','E','M','P','C','2','4','\0'};
     if (std::memcmp(output.header.magic, expected_magic.data(),
             expected_magic.size()) != 0 ||
-        output.header.version != 21 ||
-        output.header.component_id != 9 ||
-        output.header.original_index_count != kComponent9OriginalIndexCount ||
-        output.header.vertex_count != kExpectedBemVertices ||
-        output.header.index_count != kExpectedBemIndices ||
-        output.header.max_bone != kExpectedBemMaxBone ||
-        (output.header.flags & required_flags) != required_flags) {
-        Log("BEM PoC-2.1 header does not match validated Endmin Casualwear C9.");
+        output.header.version != 24) {
+        Log("BEM payload is not a PoC-2.4 file; regenerate it with "
+            "tools/CustomModel/convert_efmi_poc.py.");
+        return false;
+    }
+    if (output.header.component_count == 0 ||
+        output.header.component_count > kMaxBemComponents) {
+        Log("BEM payload declares an implausible component count: " +
+            std::to_string(output.header.component_count));
         return false;
     }
 
-    size_t cursor = sizeof(BemPocHeader);
-    const size_t position_bytes =
-        static_cast<size_t>(output.header.vertex_count) * sizeof(Float3);
-    const size_t uv_bytes =
-        static_cast<size_t>(output.header.vertex_count) * sizeof(Float2);
-    const size_t packed_normal_bytes =
-        static_cast<size_t>(output.header.vertex_count) * sizeof(uint32_t);
-    const size_t texcoord4_bytes =
-        static_cast<size_t>(output.header.vertex_count) * sizeof(Byte4);
-    const size_t weight_bytes =
-        static_cast<size_t>(output.header.vertex_count) * sizeof(float) * 4;
-    const size_t bone_index_bytes =
-        static_cast<size_t>(output.header.vertex_count) * 4;
-    const size_t index_bytes =
-        static_cast<size_t>(output.header.index_count) * sizeof(uint16_t);
-    const size_t expected_size = cursor + position_bytes + uv_bytes +
-        packed_normal_bytes + texcoord4_bytes + weight_bytes +
-        bone_index_bytes + index_bytes;
-
-    if (expected_size != bytes.size()) {
-        Log("BEM PoC-2.1 payload size mismatch.");
+    size_t cursor = sizeof(BemFileHeader);
+    output.components.resize(output.header.component_count);
+    for (BemComponent& component : output.components) {
+        if (!LoadBemComponent(bytes, cursor, component)) return false;
+    }
+    if (!LoadBemTextures(bytes, cursor, output)) return false;
+    if (cursor != bytes.size()) {
+        Log("BEM payload has " + std::to_string(bytes.size() - cursor) +
+            " trailing bytes.");
         return false;
     }
 
-    output.positions.resize(output.header.vertex_count);
-    std::memcpy(
-        output.positions.data(), bytes.data() + cursor, position_bytes);
-    if (!CheckedAdvance(cursor, position_bytes, bytes.size())) return false;
-
-    output.uvs.resize(output.header.vertex_count);
-    std::memcpy(output.uvs.data(), bytes.data() + cursor, uv_bytes);
-    if (!CheckedAdvance(cursor, uv_bytes, bytes.size())) return false;
-
-    output.packed_normals.resize(output.header.vertex_count);
-    std::memcpy(
-        output.packed_normals.data(), bytes.data() + cursor,
-        packed_normal_bytes);
-    if (!CheckedAdvance(cursor, packed_normal_bytes, bytes.size())) return false;
-
-    output.texcoord4_snorm.resize(output.header.vertex_count);
-    std::memcpy(
-        output.texcoord4_snorm.data(), bytes.data() + cursor,
-        texcoord4_bytes);
-    if (!CheckedAdvance(cursor, texcoord4_bytes, bytes.size())) return false;
-
-    const uint8_t* weights = bytes.data() + cursor;
-    if (!CheckedAdvance(cursor, weight_bytes, bytes.size())) return false;
-    const uint8_t* bones = bytes.data() + cursor;
-    if (!CheckedAdvance(cursor, bone_index_bytes, bytes.size())) return false;
-
-    output.bone_weights.resize(output.header.vertex_count);
-    for (uint32_t i = 0; i < output.header.vertex_count; ++i) {
-        BoneWeightPoc item{};
-        std::memcpy(
-            &item.weight0, weights + static_cast<size_t>(i) * 16, 16);
-        const uint8_t* bi = bones + static_cast<size_t>(i) * 4;
-        item.bone_index0 = bi[0];
-        item.bone_index1 = bi[1];
-        item.bone_index2 = bi[2];
-        item.bone_index3 = bi[3];
-        output.bone_weights[i] = item;
-    }
-
-    output.indices.resize(output.header.index_count);
-    std::memcpy(output.indices.data(), bytes.data() + cursor, index_bytes);
-    if (!CheckedAdvance(cursor, index_bytes, bytes.size()) ||
-        cursor != bytes.size()) {
-        return false;
-    }
-
-    for (uint16_t index : output.indices) {
-        if (index >= output.header.vertex_count) {
-            Log("BEM PoC-2.1 index references a vertex outside vertexCount.");
-            return false;
+    // Two components cannot share an original index count: the runtime would
+    // have no way to tell their renderers apart.
+    for (size_t i = 0; i < output.components.size(); ++i) {
+        for (size_t k = i + 1; k < output.components.size(); ++k) {
+            if (output.components[i].info.original_index_count ==
+                output.components[k].info.original_index_count) {
+                Log("BEM payload components C" +
+                    std::to_string(output.components[i].info.component_id) +
+                    " and C" +
+                    std::to_string(output.components[k].info.component_id) +
+                    " share original index count " +
+                    std::to_string(
+                        output.components[i].info.original_index_count) +
+                    "; their renderers cannot be told apart.");
+                return false;
+            }
         }
     }
 
-    for (uint32_t packed : output.packed_normals) {
-        if ((packed & 0x40000000u) == 0) {
-            Log("BEM PoC-2.1 packed Normal contains an unset packed-data flag.");
-            return false;
+    Log("Loaded BEM PoC-2.4: components=" +
+        std::to_string(output.components.size()) + " textures=" +
+        std::to_string(output.textures.size()));
+    for (const BemComponent& component : output.components) {
+        const BemComponentHeaderRaw& info = component.info;
+        if ((info.flags & kComponentFlagNoGeometry) != 0) {
+            Log("  C" + std::to_string(info.component_id) + " origIdx=" +
+                std::to_string(info.original_index_count) +
+                " not replaced (carried for texture identification)");
+            continue;
         }
+        Log("  C" + std::to_string(info.component_id) + " origIdx=" +
+            std::to_string(info.original_index_count) + " vtx=" +
+            std::to_string(info.vertex_count) + " idx=" +
+            std::to_string(info.index_count) + " maxBone=" +
+            std::to_string(info.max_bone) + " strides=" +
+            std::to_string(info.stride0) + "/" +
+            std::to_string(info.stride1) + "/" +
+            std::to_string(info.stride2) +
+            ((info.flags & kComponentFlagHidden) != 0
+                ? " HIDDEN_BY_DEFAULT" : ""));
     }
-
-    Log("Loaded BEM PoC-2.1: vertices=" +
-        std::to_string(output.header.vertex_count) +
-        " indices=" + std::to_string(output.header.index_count) +
-        " maxBone=" + std::to_string(output.header.max_bone) +
-        " streams=POSITION+UV0+NORMAL_PACKED+TEXCOORD4_SNORM+SKIN4");
+    for (const BemTexture& texture : output.textures) {
+        Log("  t=" + texture.name + " " +
+            std::to_string(texture.info.width) + "x" +
+            std::to_string(texture.info.height) + " mips=" +
+            std::to_string(texture.info.mip_count) + " slot=fmt" +
+            std::to_string(texture.info.slot_format) + "/srgb" +
+            std::to_string(texture.info.slot_srgb) + " components=" +
+            ComponentMaskText(texture.info.component_mask) +
+            (texture.info.explicit_slot != 0 ? " PINNED" : ""));
+    }
     return true;
 }
 
@@ -277,11 +507,15 @@ struct RendererSummary {
     bool lod0_path = false;
 };
 
-RendererSummary SummarizeRenderer(void* renderer) {
+// `known_path` lets a caller that already walked the transform chain hand the
+// result over instead of paying for a second walk.
+RendererSummary SummarizeRenderer(
+    void* renderer, std::string_view known_path = {}) {
     RendererSummary summary;
     summary.renderer = renderer;
     summary.renderer_name = ObjectName(renderer);
-    summary.path = BuildTransformPath(renderer);
+    summary.path = known_path.empty() ? BuildTransformPath(renderer)
+                                      : std::string(known_path);
     summary.mesh = Invoke(
         Contract("skinned.get_shared_mesh"), renderer, nullptr, false);
     summary.mesh_name = ObjectName(summary.mesh);
@@ -338,4 +572,4 @@ std::vector<RendererSummary> EnumerateRenderers() {
     void* objects = Invoke(
         Contract("resources.find_objects_of_type_all"), nullptr, parameters);
     const int raw_count = ArrayLength(objects);
-    const int count = std::min(std::max(raw_count, 0), kMaxRenderers);
+    const int count = std::max(raw_count, 0);

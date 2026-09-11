@@ -2,6 +2,14 @@
 
 Date: 2026-09-10
 
+> **Superseded on 2026-09-11 by `CUSTOM_MODEL_POC22_RAW_STREAM.md`.**
+> This document's central premise — that the client cannot express the Endfield
+> character vertex layout because `SetVertexBufferParams` and friends are absent
+> — is wrong. Those bindings are only missing from IL2CPP *managed metadata*;
+> `UnityPlayer.dll` still registers them by name and `il2cpp_resolve_icall`
+> reaches them. Kept for the reasoning trail behind the abandoned carrier
+> approach; do not build on its conclusions.
+
 ## Why PoC-3 was abandoned
 
 The PoC-3 experiment attempted to preserve EFMI's complete GPU vertex streams by obtaining `UnityEngine.GraphicsBuffer` objects from `Mesh.GetVertexBufferImpl()` and writing them directly. On the validated Endministrator (F) C9 target the game crashed during the first GraphicsBuffer access, before any custom vertex data was uploaded.
@@ -65,15 +73,18 @@ Before creating or assigning a replacement Mesh, PoC-2.1 requires the live origi
 | BlendWeight | UNorm16 | 4 |
 | BlendIndices | UInt8 | 4 |
 
-Stream and offset are logged for evidence but are not currently required to match a hard-coded layout. Shader attributes are restored by semantic/format/dimension rather than by assuming a particular Unity stream packing policy.
+Stream is logged for evidence but is not required to match a hard-coded layout. Shader attributes are restored by semantic/format/dimension rather than by assuming a particular Unity stream packing policy.
+
+The declaration is read through the enumeration API rather than the per-attribute getters. The validated client strips `GetVertexAttributeDimension`, `GetVertexAttributeFormat`, `GetVertexAttributeStream` and `GetVertexAttributeOffset`; the first F9 attempt refused on that alone even though the write primitive was present. `get_vertexAttributeCount` plus `GetVertexAttribute(int)` survive stripping and return attribute, format, dimension and stream together in one `VertexAttributeDescriptor`, which covers everything the guard compares.
+
+`GetVertexAttribute` returns that struct by value. IL2CPP `runtime_invoke` boxes it, and the module's existing unbox path copies out the four `Int32` backing fields directly, so no new invocation machinery is required.
+
+Attribute offset is no longer obtainable. It was only ever logged as evidence, so nothing in the guard changes.
 
 The following method contracts are optional at module startup:
 
-- `Mesh.HasVertexAttribute`
-- `Mesh.GetVertexAttributeDimension`
-- `Mesh.GetVertexAttributeFormat`
-- `Mesh.GetVertexAttributeStream`
-- `Mesh.GetVertexAttributeOffset`
+- `Mesh.get_vertexAttributeCount`
+- `Mesh.GetVertexAttribute`
 - `Mesh.SetNativeArrayForChannelImpl`
 
 If any are stripped from the current client, the module still loads but F9 refuses the PoC-2.1 replacement. There is deliberately no GraphicsBuffer fallback.
