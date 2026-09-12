@@ -1238,10 +1238,17 @@
                                             Toggled="CameraEnhancementToggle_Toggled" />
                                         <ToggleSwitch
                                             x:Name="PauseGameInFreeCameraToggle"
-                                            Header="进入自由视角时暂停游戏"
-                                            OffContent="游戏继续运行"
-                                            OnContent="暂停角色与世界"
+                                            Header="启用时间冻结功能"
+                                            OffContent="不冻结世界"
+                                            OnContent="允许热键冻结"
                                             Toggled="CameraEnhancementToggle_Toggled" />
+                                        <TextBox
+                                            x:Name="PauseWorldHotkeyBox"
+                                            Header="时间冻结热键"
+                                            LostFocus="PauseWorldHotkeyBox_LostFocus"
+                                            MaxLength="8"
+                                            PlaceholderText="例如 8、F8、NUMPAD8"
+                                            Text="8" />
                                         <Grid ColumnSpacing="12" RowSpacing="12">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -1263,7 +1270,7 @@
                                                 ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
                                             <TextBox
                                                 x:Name="FreeCameraHotkeyBox"
-                                                Header="切换热键"
+                                                Header="自由视角热键"
                                                 LostFocus="FreeCameraHotkeyBox_LostFocus"
                                                 MaxLength="8"
                                                 PlaceholderText="例如 9、F9、NUMPAD9"

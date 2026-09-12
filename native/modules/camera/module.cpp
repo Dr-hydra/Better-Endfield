@@ -12,6 +12,7 @@
 #include <cstring>
 #include <string>
 #include <string_view>
+#include <thread>
 
 namespace BetterEndfield::CameraModule {
 namespace {
@@ -34,11 +35,12 @@ struct CameraConfiguration {
     bool enabled = false;
     bool free_camera_enabled = false;
     bool disable_dither_enabled = false;
-    bool pause_game_enabled = false;
+    bool pause_enabled = false;
     bool diagnostics = true;
     float movement_speed = 5.0f;
     float field_of_view = 60.0f;
     int toggle_key = '9';
+    int pause_key = '8';
 };
 
 struct Vector3 {
@@ -59,19 +61,27 @@ const BE_HostApiV1* g_host = nullptr;
 std::atomic<ModuleState> g_state{ModuleState::Created};
 std::atomic_bool g_free_camera_enabled{false};
 std::atomic_bool g_disable_dither_enabled{false};
-std::atomic_bool g_pause_game_enabled{false};
+std::atomic_bool g_pause_enabled{false};
 std::atomic_bool g_diagnostics_enabled{true};
 std::atomic<float> g_movement_speed{5.0f};
 std::atomic<float> g_field_of_view{60.0f};
 std::atomic_int g_toggle_key{'9'};
+std::atomic_int g_pause_key{'8'};
 
 using CameraTickFn = void(__fastcall*)(void* instance, void* method);
 CameraTickFn g_original_camera_tick = nullptr;
+using TimeUnscaledDeltaFn = float(__fastcall*)(void* method);
+TimeUnscaledDeltaFn g_original_time_unscaled_delta = nullptr;
 
 bool g_free_camera_contract_ready = false;
 bool g_dither_contract_ready = false;
+bool g_time_heartbeat_contract_ready = false;
 bool g_free_camera_active = false;
-bool g_toggle_was_down = false;
+std::atomic_bool g_toggle_request{false};
+std::atomic_bool g_pause_request{false};
+std::atomic_bool g_force_exit_request{false};
+std::atomic_bool g_input_thread_stop{false};
+std::thread g_input_thread;
 uint64_t g_last_tick = 0;
 void* g_active_camera = nullptr;
 uint32_t g_active_camera_root = 0;
@@ -121,6 +131,9 @@ MethodContract g_contracts[]{
     {"unity.time.scale.set",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Time", "set_timeScale",
             "System.Single", "System.Void", 1}},
+    {"unity.time.unscaled_delta.get",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Time",
+            "get_unscaledDeltaTime", nullptr, "System.Single", 0}},
 };
 
 MethodContract* Contract(std::string_view key) {
@@ -207,12 +220,56 @@ bool KeyDown(int key) {
     return (GetAsyncKeyState(key) & 0x8000) != 0;
 }
 
+bool GameWindowHasFocus() {
+    HWND foreground = GetForegroundWindow();
+    if (!foreground) {
+        return false;
+    }
+    DWORD process_id = 0;
+    GetWindowThreadProcessId(foreground, &process_id);
+    return process_id == GetCurrentProcessId();
+}
+
+void InputThreadMain() {
+    bool toggle_was_down = false;
+    bool pause_was_down = false;
+    while (!g_input_thread_stop.load(std::memory_order_acquire)) {
+        const bool enabled = g_free_camera_enabled.load(std::memory_order_acquire) &&
+            g_free_camera_contract_ready;
+        const int toggle_key = g_toggle_key.load(std::memory_order_relaxed);
+        const int pause_key = g_pause_key.load(std::memory_order_relaxed);
+        const bool focused = enabled && GameWindowHasFocus();
+        const bool toggle_down = focused && KeyDown(toggle_key);
+        const bool pause_down = focused && KeyDown(pause_key);
+        if (toggle_down && !toggle_was_down) {
+            g_toggle_request.store(true, std::memory_order_release);
+        }
+        if (pause_down && !pause_was_down) {
+            g_pause_request.store(true, std::memory_order_release);
+        }
+        toggle_was_down = toggle_down;
+        pause_was_down = pause_down;
+        Sleep(5);
+    }
+}
+
 void ReleaseCameraRoot() {
     if (g_active_camera_root && g_host && g_host->gchandle_free) {
         g_host->gchandle_free(g_host->context, g_active_camera_root);
     }
     g_active_camera_root = 0;
     g_active_camera = nullptr;
+}
+
+void RestoreWorldPause(const char* reason) {
+    if (!g_changed_time_scale) {
+        return;
+    }
+    const bool restored = SetValue(Contract("unity.time.scale.set"), nullptr,
+        g_original_time_scale);
+    g_changed_time_scale = false;
+    Log(std::string("World time restored: ") + reason +
+        (restored ? " (ok)" : " (failed)"));
 }
 
 void ExitFreeCamera(const char* reason) {
@@ -227,9 +284,7 @@ void ExitFreeCamera(const char* reason) {
             g_original_position);
     }
     SetValue(Contract("unity.camera.fov.set"), g_active_camera, g_original_fov);
-    if (g_changed_time_scale) {
-        SetValue(Contract("unity.time.scale.set"), nullptr, g_original_time_scale);
-    }
+    RestoreWorldPause("free camera exit");
 
     g_free_camera_active = false;
     g_changed_time_scale = false;
@@ -255,28 +310,12 @@ bool EnterFreeCamera() {
     g_free_position = g_original_position;
     g_last_tick = GetTickCount64();
 
-    if (g_pause_game_enabled.load(std::memory_order_acquire) &&
-        GetValue(Contract("unity.time.scale.get"), nullptr, g_original_time_scale)) {
-        g_changed_time_scale = SetValue(
-            Contract("unity.time.scale.set"), nullptr, 0.0f);
-    }
-
     g_free_camera_active = true;
     Log("Free camera enabled (arrow keys move, PageUp/PageDown change height).");
     return true;
 }
 
 void ApplyFreeCamera() {
-    const bool should_pause = g_pause_game_enabled.load(std::memory_order_acquire);
-    if (should_pause && !g_changed_time_scale &&
-        GetValue(Contract("unity.time.scale.get"), nullptr, g_original_time_scale)) {
-        g_changed_time_scale = SetValue(
-            Contract("unity.time.scale.set"), nullptr, 0.0f);
-    } else if (!should_pause && g_changed_time_scale) {
-        SetValue(Contract("unity.time.scale.set"), nullptr, g_original_time_scale);
-        g_changed_time_scale = false;
-    }
-
     void* current_camera = Invoke(Contract("unity.camera.main"), nullptr, nullptr);
     if (!current_camera || current_camera != g_active_camera) {
         ExitFreeCamera("active camera changed");
@@ -320,27 +359,70 @@ void ApplyFreeCamera() {
         g_field_of_view.load(std::memory_order_relaxed));
 }
 
-void PumpFreeCamera() {
+void PumpFreeCameraControl() {
     const bool allowed = g_free_camera_enabled.load(std::memory_order_acquire) &&
         g_free_camera_contract_ready;
-    const bool toggle_down = KeyDown(g_toggle_key.load(std::memory_order_relaxed));
-    const bool toggle_pressed = toggle_down && !g_toggle_was_down;
-    g_toggle_was_down = toggle_down;
 
     if (!allowed) {
-        ExitFreeCamera("feature disabled");
+        g_toggle_request.store(false, std::memory_order_release);
+        g_pause_request.store(false, std::memory_order_release);
+        if (g_free_camera_active ||
+            g_force_exit_request.exchange(false, std::memory_order_acq_rel)) {
+            ExitFreeCamera("feature disabled");
+        }
         return;
     }
-    if (toggle_pressed) {
+
+    g_force_exit_request.store(false, std::memory_order_release);
+    if (g_toggle_request.exchange(false, std::memory_order_acq_rel)) {
         if (g_free_camera_active) {
             ExitFreeCamera("toggle hotkey");
         } else {
             EnterFreeCamera();
         }
     }
+    const bool pause_pressed = g_pause_request.exchange(false,
+        std::memory_order_acq_rel);
+    if (pause_pressed && g_free_camera_active) {
+        if (!g_pause_enabled.load(std::memory_order_acquire)) {
+            return;
+        }
+        if (g_changed_time_scale) {
+            RestoreWorldPause("pause hotkey");
+        } else if (GetValue(Contract("unity.time.scale.get"), nullptr,
+                g_original_time_scale)) {
+            const bool paused = SetValue(Contract("unity.time.scale.set"),
+                nullptr, 0.0f);
+            if (paused) {
+                g_changed_time_scale = true;
+                Log("World time frozen by pause hotkey.");
+            } else {
+                Log("World time freeze failed.");
+            }
+        }
+    }
+    if (!g_pause_enabled.load(std::memory_order_acquire)) {
+        RestoreWorldPause("pause feature disabled");
+    }
+}
+
+void PumpFreeCamera() {
+    PumpFreeCameraControl();
     if (g_free_camera_active) {
         ApplyFreeCamera();
     }
+}
+
+float __fastcall DetourTimeUnscaledDelta(void* method) {
+    const float result = g_original_time_unscaled_delta
+        ? g_original_time_unscaled_delta(method)
+        : 0.0f;
+    // Keep the toggle/restore path alive on the Unity main thread even when
+    // the game simulation is paused with Time.timeScale == 0.
+    if (g_time_heartbeat_contract_ready) {
+        PumpFreeCameraControl();
+    }
+    return result;
 }
 
 void __fastcall DetourCameraTick(void* instance, void* method) {
@@ -432,20 +514,23 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
             config.free_camera_enabled = ParseBoolean(value, config.free_camera_enabled);
         else if (key == "disable_dither_enabled")
             config.disable_dither_enabled = ParseBoolean(value, config.disable_dither_enabled);
-        else if (key == "pause_game_enabled")
-            config.pause_game_enabled = ParseBoolean(value, config.pause_game_enabled);
+        else if (key == "pause_enabled" || key == "pause_game_enabled")
+            config.pause_enabled = ParseBoolean(value, config.pause_enabled);
         else if (key == "movement_speed")
             config.movement_speed = ParseFloat(value, config.movement_speed);
         else if (key == "field_of_view")
             config.field_of_view = ParseFloat(value, config.field_of_view);
         else if (key == "toggle_hotkey")
             config.toggle_key = ParseVirtualKey(value, config.toggle_key);
+        else if (key == "pause_hotkey")
+            config.pause_key = ParseVirtualKey(value, config.pause_key);
         else if (key == "diagnostics")
             config.diagnostics = ParseBoolean(value, config.diagnostics);
     }
     if (config.schema_version < 3) {
-        config.pause_game_enabled = false;
+        config.pause_enabled = false;
         config.toggle_key = '9';
+        config.pause_key = '8';
     }
     config.movement_speed = std::clamp(config.movement_speed, 0.1f, 100.0f);
     config.field_of_view = std::clamp(config.field_of_view, 20.0f, 120.0f);
@@ -483,9 +568,12 @@ bool ResolveContracts() {
         ready("unity.transform.forward") && ready("unity.transform.right") &&
         ready("unity.transform.up") && ready("unity.time.scale.get") &&
         ready("unity.time.scale.set");
+    g_time_heartbeat_contract_ready = ready("unity.time.unscaled_delta.get");
     Log(std::string("Camera feature contracts: free_camera=") +
         (g_free_camera_contract_ready ? "ready" : "unavailable") +
-        ", anti_dither=" + (g_dither_contract_ready ? "ready" : "unavailable"));
+        ", anti_dither=" + (g_dither_contract_ready ? "ready" : "unavailable") +
+        ", time_heartbeat=" +
+        (g_time_heartbeat_contract_ready ? "ready" : "unavailable"));
     return g_free_camera_contract_ready || g_dither_contract_ready;
 }
 
@@ -494,9 +582,21 @@ bool InstallHook() {
     if (!tick || !tick->resolved || !g_host || !g_host->create_hook) {
         return false;
     }
-    return g_host->create_hook(g_host->context, kModuleId, tick->pointer,
+    if (g_host->create_hook(g_host->context, kModuleId, tick->pointer,
         reinterpret_cast<void*>(&DetourCameraTick),
-        reinterpret_cast<void**>(&g_original_camera_tick)) == BE_Result_Ok;
+        reinterpret_cast<void**>(&g_original_camera_tick)) != BE_Result_Ok) {
+        return false;
+    }
+
+    MethodContract* heartbeat = Contract("unity.time.unscaled_delta.get");
+    if (heartbeat && heartbeat->resolved) {
+        if (g_host->create_hook(g_host->context, kModuleId, heartbeat->pointer,
+            reinterpret_cast<void*>(&DetourTimeUnscaledDelta),
+            reinterpret_cast<void**>(&g_original_time_unscaled_delta)) != BE_Result_Ok) {
+            Log("Failed to install unscaled time heartbeat hook; camera hook fallback remains active.");
+        }
+    }
+    return true;
 }
 
 BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
@@ -516,6 +616,8 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
         Log("Failed to install camera update hook.");
         return BE_Result_Failed;
     }
+    g_input_thread_stop.store(false, std::memory_order_release);
+    g_input_thread = std::thread(InputThreadMain);
     g_state.store(ModuleState::Ready, std::memory_order_release);
     Log("BetterEndfield.Camera module initialized successfully.");
     return BE_Result_Ok;
@@ -525,13 +627,18 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
     const CameraConfiguration config = ParseConfiguration(raw_configuration);
     const bool free_camera = config.enabled && config.free_camera_enabled;
     const bool anti_dither = config.enabled && config.disable_dither_enabled;
+    const bool was_enabled = g_free_camera_enabled.load(std::memory_order_acquire);
     g_free_camera_enabled.store(free_camera, std::memory_order_release);
     g_disable_dither_enabled.store(anti_dither, std::memory_order_release);
-    g_pause_game_enabled.store(config.pause_game_enabled, std::memory_order_release);
+    g_pause_enabled.store(config.pause_enabled, std::memory_order_release);
     g_diagnostics_enabled.store(config.diagnostics, std::memory_order_release);
     g_movement_speed.store(config.movement_speed, std::memory_order_release);
     g_field_of_view.store(config.field_of_view, std::memory_order_release);
     g_toggle_key.store(config.toggle_key, std::memory_order_release);
+    g_pause_key.store(config.pause_key, std::memory_order_release);
+    if (was_enabled && !free_camera) {
+        g_force_exit_request.store(true, std::memory_order_release);
+    }
     g_state.store(free_camera || anti_dither
         ? ModuleState::Active
         : ModuleState::Disabled, std::memory_order_release);
@@ -539,10 +646,11 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
     char buffer[320];
     std::snprintf(buffer, sizeof(buffer),
         "Camera configuration applied: enabled=%s, free_camera=%s, anti_dither=%s, "
-        "pause=%s, hotkey_vk=%d, speed=%.2f, fov=%.1f",
+        "pause_enabled=%s, free_hotkey_vk=%d, pause_hotkey_vk=%d, speed=%.2f, fov=%.1f",
         config.enabled ? "true" : "false", free_camera ? "true" : "false",
-        anti_dither ? "true" : "false", config.pause_game_enabled ? "true" : "false",
-        config.toggle_key, config.movement_speed, config.field_of_view);
+        anti_dither ? "true" : "false", config.pause_enabled ? "true" : "false",
+        config.toggle_key, config.pause_key, config.movement_speed,
+        config.field_of_view);
     Log(buffer);
     return BE_Result_Ok;
 }
@@ -550,6 +658,10 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
 void BE_CALL Shutdown() {
     g_free_camera_enabled.store(false, std::memory_order_release);
     g_disable_dither_enabled.store(false, std::memory_order_release);
+    g_input_thread_stop.store(true, std::memory_order_release);
+    if (g_input_thread.joinable()) {
+        g_input_thread.join();
+    }
     // Host shutdown occurs while the game is closing. Release managed roots;
     // never invoke Unity from this worker-thread path.
     ReleaseCameraRoot();

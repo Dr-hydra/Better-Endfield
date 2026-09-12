@@ -205,8 +205,9 @@ internal static class ConfigurationService
     public static async Task SaveCameraEnhancementConfigurationAsync(
         bool freeCameraEnabled,
         bool disableDitherEnabled,
-        bool pauseGameEnabled,
-        string toggleHotkey,
+        bool pauseEnabled,
+        string freeCameraHotkey,
+        string pauseHotkey,
         double movementSpeed,
         double fieldOfView)
     {
@@ -224,12 +225,13 @@ internal static class ConfigurationService
                 : string.Empty;
             string section =
                 "[betterendfield.camera]" + Environment.NewLine +
-                "schema_version=3" + Environment.NewLine +
+                "schema_version=4" + Environment.NewLine +
                 "enabled=" + Boolean(freeCameraEnabled || disableDitherEnabled) + Environment.NewLine +
                 "free_camera_enabled=" + Boolean(freeCameraEnabled) + Environment.NewLine +
                 "disable_dither_enabled=" + Boolean(disableDitherEnabled) + Environment.NewLine +
-                "pause_game_enabled=" + Boolean(pauseGameEnabled) + Environment.NewLine +
-                "toggle_hotkey=" + toggleHotkey + Environment.NewLine +
+                "pause_enabled=" + Boolean(pauseEnabled) + Environment.NewLine +
+                "toggle_hotkey=" + freeCameraHotkey + Environment.NewLine +
+                "pause_hotkey=" + pauseHotkey + Environment.NewLine +
                 "movement_speed=" + Number(movementSpeed) + Environment.NewLine +
                 "field_of_view=" + Number(fieldOfView) + Environment.NewLine +
                 "diagnostics=true" + Environment.NewLine;
@@ -530,22 +532,29 @@ internal static class ConfigurationService
         configuration.DisableDitherEnabled = Boolean(
             values, "disable_dither_enabled", configuration.DisableDitherEnabled);
         configuration.PauseGameInFreeCamera = Boolean(
-            values, "pause_game_enabled", configuration.PauseGameInFreeCamera);
+            values, "pause_enabled",
+            Boolean(values, "pause_game_enabled", configuration.PauseGameInFreeCamera));
         configuration.FreeCameraToggleHotkey = Text(
             values, "toggle_hotkey", configuration.FreeCameraToggleHotkey);
+        configuration.WorldPauseToggleHotkey = Text(
+            values, "pause_hotkey", configuration.WorldPauseToggleHotkey);
         configuration.FreeCameraMovementSpeed = Number(
             values, "movement_speed", configuration.FreeCameraMovementSpeed);
         configuration.FreeCameraFieldOfView = Number(
             values, "field_of_view", configuration.FreeCameraFieldOfView);
-        if (cameraSectionPresent && cameraSchemaVersion < 3)
+        if (cameraSectionPresent && cameraSchemaVersion < 4)
         {
-            // Earlier test schemas used F8, then 8. Adopt the current default
-            // for existing test configs while keeping pause disabled.
-            configuration.PauseGameInFreeCamera = false;
+            // Migrate the old auto-pause setting to an independent pause
+            // feature and provide the separate default pause hotkey.
+            if (cameraSchemaVersion < 3)
+            {
+                configuration.PauseGameInFreeCamera = false;
+            }
             configuration.FreeCameraToggleHotkey = "9";
+            configuration.WorldPauseToggleHotkey = "8";
         }
         if ((!cameraSectionPresent && values.ContainsKey("disable_dither_enabled")) ||
-            (cameraSectionPresent && cameraSchemaVersion < 3))
+            (cameraSectionPresent && cameraSchemaVersion < 4))
         {
             // v2.4 stored anti-dither under betterendfield.ui. Preserve that
             // choice when the feature moves to the independent camera module.
@@ -554,6 +563,7 @@ internal static class ConfigurationService
                 configuration.DisableDitherEnabled,
                 configuration.PauseGameInFreeCamera,
                 configuration.FreeCameraToggleHotkey,
+                configuration.WorldPauseToggleHotkey,
                 configuration.FreeCameraMovementSpeed,
                 configuration.FreeCameraFieldOfView);
         }
