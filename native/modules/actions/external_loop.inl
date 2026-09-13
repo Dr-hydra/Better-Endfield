@@ -41,12 +41,12 @@ void RestoreExternal(bool unity_calls) {
                 bool check = true;
                 if (Object(ControllerGet, old.animator, check) == old.wrapper && check) {
                     old.pending_restore = true; g_external_owner = old;
-                    Log("Aglina v11: controller restore deferred after managed failure; ownership retained.");
+                    Log("Sustained dash v11: controller restore deferred after managed failure; ownership retained.");
                     return;
                 }
             }
             can_destroy = ok && Object(ControllerGet, old.animator, ok) == old.original;
-            Log(ok ? "Aglina v11: original controller restored." : "Aglina v11: controller restore invocation failed.");
+            Log(ok ? "Sustained dash v11: original controller restored." : "Sustained dash v11: controller restore invocation failed.");
         }
     }
     if (can_destroy && UnityObjectAlive(old.wrapper)) { bool ok = true; void* args[]{old.wrapper}; Invoke(DestroyOwned, nullptr, args, ok); }
@@ -97,16 +97,16 @@ void* LoadNativeExternalClip(int side, void* type, bool& ok) {
 bool LoadExternalAssets() {
     if (g_external_assets.attempted) return g_external_assets.ready;
     g_external_assets.attempted = true;
-    if (!g_external_contract) { Log("Aglina v11: optional external API contract unavailable; using v9 loop."); return false; }
+    if (!g_external_contract) { Log("Sustained dash v11: optional external API contract unavailable; using v9 loop."); return false; }
     wchar_t module_path[32768]{}; HMODULE module = nullptr;
     if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
         reinterpret_cast<LPCWSTR>(&g_external_assets), &module) ||
         !GetModuleFileNameW(module, module_path, static_cast<DWORD>(std::size(module_path)))) {
-        Log("Aglina v11: module resource path unavailable; using v9 loop."); return false;
+        Log("Sustained dash v11: module resource path unavailable; using v9 loop."); return false;
     }
     const auto file = std::filesystem::path(module_path).parent_path() / L"actions" / L"aglina_native_return_v2.bundle";
     if (GetFileAttributesW(file.c_str()) == INVALID_FILE_ATTRIBUTES) {
-        Log("Aglina v11: external bundle absent; using v9 loop."); return false;
+        Log("Sustained dash v11: external bundle absent; using v9 loop."); return false;
     }
     auto game = GetModuleHandleW(L"GameAssembly.dll");
     g_external_string = reinterpret_cast<ExternalNewString>(GetProcAddress(game, "il2cpp_string_new"));
@@ -118,30 +118,30 @@ bool LoadExternalAssets() {
     if (!g_external_string || !g_external_object || !class_type || !type_object ||
         g_host->resolve_class(g_host->context, kUnity, "UnityEngine", "AnimationClip", &clip_class) != BE_Result_Ok ||
         g_host->resolve_class(g_host->context, kUnity, "UnityEngine", "AnimatorOverrideController", &override_class) != BE_Result_Ok) {
-        Log("Aglina v11: IL2CPP exports/classes unavailable; using v9 loop."); return false;
+        Log("Sustained dash v11: IL2CPP exports/classes unavailable; using v9 loop."); return false;
     }
     g_override_class = override_class.class_info;
     void* type = type_object(class_type(clip_class.class_info));
     int size = WideCharToMultiByte(CP_UTF8, 0, file.c_str(), -1, nullptr, 0, nullptr, nullptr);
-    if (!type || size <= 0) { Log("Aglina v11: clip type/path conversion failed; using v9 loop."); return false; }
+    if (!type || size <= 0) { Log("Sustained dash v11: clip type/path conversion failed; using v9 loop."); return false; }
     std::string path(static_cast<size_t>(size), '\0');
     WideCharToMultiByte(CP_UTF8, 0, file.c_str(), -1, path.data(), size, nullptr, nullptr);
     void* managed_path = g_external_string(path.c_str());
     bool ok = managed_path != nullptr;
     void* args[]{managed_path};
-    TraceExternalLoad(file, "Aglina v11: LoadFromFile begin, native-schema ACL bundle.");
+    TraceExternalLoad(file, "Sustained dash v11: LoadFromFile begin, native-schema ACL bundle.");
     g_external_assets.bundle = Invoke(BundleLoad, nullptr, args, ok);
     const char* failed_stage = !ok ? "LoadFromFile managed invocation/path allocation" : "LoadFromFile returned null/dead bundle (see Player.log)";
     if (ok && UnityObjectAlive(g_external_assets.bundle)) {
-        TraceExternalLoad(file, "Aglina v11: archive accepted by LoadFromFile; loading native AnimationClip assets.");
+        TraceExternalLoad(file, "Sustained dash v11: archive accepted by LoadFromFile; loading native AnimationClip assets.");
         g_external_assets.bundle_root = g_host->gchandle_new(g_host->context, g_external_assets.bundle, 1);
         ok = g_external_assets.bundle_root != 0;
         failed_stage = "bundle GC pin";
         for (int side = 0; side < 2 && ok; ++side) {
             failed_stage = side == 0 ? "left LoadAsset" : "right LoadAsset";
-            TraceExternalLoad(file, side == 0 ? "Aglina v11: left LoadAsset(Int64, Type) begin." : "Aglina v11: right LoadAsset(Int64, Type) begin.");
+            TraceExternalLoad(file, side == 0 ? "Sustained dash v11: left LoadAsset(Int64, Type) begin." : "Sustained dash v11: right LoadAsset(Int64, Type) begin.");
             auto clip = LoadNativeExternalClip(side, type, ok);
-            TraceExternalLoad(file, side == 0 ? "Aglina v11: left LoadAsset returned." : "Aglina v11: right LoadAsset returned.");
+            TraceExternalLoad(file, side == 0 ? "Sustained dash v11: left LoadAsset returned." : "Sustained dash v11: right LoadAsset returned.");
             g_external_assets.clips[side] = clip;
             if (ok && UnityObjectAlive(clip)) {
                 failed_stage = side == 0 ? "left AnimationClip properties/validation" : "right AnimationClip properties/validation";
@@ -150,7 +150,7 @@ bool LoadExternalAssets() {
                 void* clip_name = Object(ClipName, clip, ok);
                 char actual_name[160]{}, detail[384]{};
                 if (clip_name) g_host->copy_managed_string(g_host->context, clip_name, actual_name, sizeof(actual_name));
-                std::snprintf(detail, sizeof(detail), "Aglina v11: %s clip name=%s length=%.6f human=%d properties_ok=%d",
+                std::snprintf(detail, sizeof(detail), "Sustained dash v11: %s clip name=%s length=%.6f human=%d properties_ok=%d",
                     side == 0 ? "left" : "right", actual_name, length, human, ok);
                 TraceExternalLoad(file, detail);
                 ok = ok && human && std::isfinite(length) && std::fabs(length - 208.0f / 60.0f) < .02f &&
@@ -164,13 +164,13 @@ bool LoadExternalAssets() {
     } else ok = false;
     if (!ok) {
         char detail[256]{};
-        std::snprintf(detail, sizeof(detail), "Aglina v11: external load failed at %s; using v9 loop.", failed_stage);
+        std::snprintf(detail, sizeof(detail), "Sustained dash v11: external load failed at %s; using v9 loop.", failed_stage);
         TraceExternalLoad(file, detail);
         FreeExternalAssets(true);
         return false;
     }
     g_external_assets.ready = true;
-    TraceExternalLoad(file, "Aglina v11: native Humanoid clips loaded: BE_Aglina_Return_L/R, length=3.466667.");
+    TraceExternalLoad(file, "Sustained dash v11: native Humanoid clips loaded: BE_Aglina_Return_L/R, length=3.466667.");
     return true;
 }
 bool InstallExternal(void* component) {
@@ -196,7 +196,7 @@ bool InstallExternal(void* component) {
         if (StringEquals(name, "A_actor_aglina_sprint_dash_sp_r")) originals[1] = clip;
     }
     if (!ok || count < 2 || count > 4096 || !originals[0] || !originals[1]) {
-        Log("Aglina v11: original dash clips unavailable in this controller; using v9 loop."); return false;
+        Log("Sustained dash v11: original dash clips unavailable in this controller; using v9 loop."); return false;
     }
     ExternalOwner owner;
     owner.component = component; owner.animator = animator; owner.original = original;
@@ -213,11 +213,11 @@ bool InstallExternal(void* component) {
         void* args[]{originals[side], g_external_assets.clips[side], &notify};
         Invoke(OverrideClip, owner.wrapper, args, ok);
     }
-    if (!ok) { AbandonExternalOwner(owner); Log("Aglina v11: private override setup failed; using v9 loop."); return false; }
+    if (!ok) { AbandonExternalOwner(owner); Log("Sustained dash v11: private override setup failed; using v9 loop."); return false; }
     g_external_owner = owner;
     void* bind_args[]{owner.wrapper}; Invoke(ControllerSet, animator, bind_args, ok);
     if (!ok) { RestoreExternal(true); return false; }
-    Log("Aglina v11: private return controller installed; awaiting actual clip confirmation.");
+    Log("Sustained dash v11: private return controller installed; awaiting actual clip confirmation.");
     return true;
 }
 bool ExternalControllerOwned(void* component) {

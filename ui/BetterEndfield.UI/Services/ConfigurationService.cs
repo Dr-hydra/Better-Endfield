@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using BetterEndfield.UI.Models;
@@ -450,9 +450,19 @@ internal static class ConfigurationService
             }
         }
 
-        configuration.AglinaContinuousDashEnabled = Boolean(actionValues, "enabled", false);
         string actionSchema = Text(actionValues, "schema_version", "1");
-        if (actionSchema != "1" && actionSchema != "2") configuration.AglinaContinuousDashEnabled = false;
+        bool actionsUsable = actionSchema is "1" or "2" or "3";
+        bool actionsEnabled = actionsUsable && Boolean(actionValues, "enabled", false);
+        // Schema 1 and 2 had a single switch covering every supported character.
+        string characters = Text(actionValues, "characters", string.Empty);
+        bool listPresent = actionSchema == "3" && actionValues.ContainsKey("characters");
+        configuration.ContinuousSpecialDashAglinaEnabled =
+            actionsEnabled && (!listPresent || HasCharacter(characters, "aglina"));
+        configuration.ContinuousSpecialDashLiinoEnabled =
+            actionsEnabled && (!listPresent || HasCharacter(characters, "liino"));
+        // Preserve the accepted clean test build's appearance when the key is absent.
+        // Keep the preference even while Liino's sustained dash is disabled.
+        configuration.LiinoCleanDashEnabled = Boolean(actionValues, "liino_clean", true);
         configuration.Character = Text(values, "character", configuration.Character);
         configuration.FinalAction = Text(values, "final_action", configuration.FinalAction);
         configuration.StartYaw = Number(values, "start_yaw", configuration.StartYaw);
@@ -679,6 +689,14 @@ internal static class ConfigurationService
         values.TryGetValue(key, out string? value) && !string.IsNullOrWhiteSpace(value)
             ? value
             : fallback;
+
+    // The native module reads the same comma separated codename list.
+    private static bool HasCharacter(string list, string codename)
+    {
+        foreach (string entry in list.Split(','))
+            if (entry.Trim().Equals(codename, StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
+    }
 
     private static double Number(
         IReadOnlyDictionary<string, string> values,

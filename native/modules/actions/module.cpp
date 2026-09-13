@@ -17,8 +17,6 @@
 namespace BetterEndfield::Actions {
 namespace {
 constexpr char kId[] = "betterendfield.actions";
-constexpr char kCharacter[] = "chr_0013_aglina";
-constexpr char kPerform[] = "CharIntPerform_Aglina_Spdash";
 constexpr char kGame[] = "Gameplay.Beyond.dll";
 constexpr char kUnity[] = "UnityEngine.AnimationModule.dll";
 constexpr char kUnityCore[] = "UnityEngine.CoreModule.dll";
@@ -32,10 +30,49 @@ constexpr char kBrain[] = "CharacterSpecialDashBrain";
 constexpr char kPerformNs[] = "Beyond.Gameplay.Core.CharInteractPerform";
 constexpr char kHandle[] = "CharPerformHandleBase";
 
+// Everything character specific lives here; the hooks themselves are shared.
+// A character with no continuous VFX or deferred prop hide simply leaves those
+// entries empty, and the corresponding hold is skipped for that session.
+struct CharacterProfile {
+    const char* codename;
+    const char* template_id;
+    const char* perform_id;
+    const wchar_t* pose_file;
+    LoopConstants loop;
+    // Perform effects whose own lifetime is shorter than a held dash, indexed by
+    // the actorIndex the perform creates them under. Empty slots are skipped.
+    const char* effects[4];
+    // Aglina's second effect is a single 3 s burst inside a 5 s system; renewing
+    // it needs a shorter particle duration. No other character has that shape.
+    bool renew_short_glow;
+    const char* flying_stop_event;
+    PropHideRule prop_hide;
+    // Some performs hide model parts partway through the clip (Liino stows the
+    // board at 2.2 s). Deferring those hides keeps the parts visible while the
+    // dash repeats; the native Clear still restores them on exit.
+    bool defer_mesh_group_hide;
+};
+constexpr CharacterProfile kCharacters[]{
+    {"aglina", "chr_0013_aglina", "CharIntPerform_Aglina_Spdash", L"pose_aglina.bin", kAglinaLoop,
+     {"P_fxbat_aglina_sprint_dash_sp_01", "P_fxbat_aglina_sprint_dash_sp_02", nullptr, nullptr}, true,
+     "Aglina_SprintDashSp_Flying_Stop", kAglinaPropHide, false},
+    // Liino's board glow is one prefab mounted under each foot (actor 0 and 1)
+    // plus the trail at actor 2; all three expire at 2.884 s without a hold.
+    {"liino", "chr_0035_liino", "CharIntPerform_Liino_Spdash", L"pose_liino.bin", kLiinoLoop,
+     {"P_fxbat_liino_sprint_dash_sp_01", "P_fxbat_liino_sprint_dash_sp_01",
+      "P_fxbat_liino_sprint_dash_sp_02", nullptr}, false,
+     nullptr, {}, true},
+};
+constexpr size_t kCharacterCount = std::size(kCharacters);
+
 struct Configuration {
     bool enabled = false;
     bool diagnostics = true;
     bool external_loop = false; // v12: external bone-pose data, not AnimationClip bundles.
+    bool liino_clean = true; // Match the UI default and existing clean test configurations.
+    // One bit per kCharacters entry. A configuration without the key predates the
+    // per-character switches and keeps every supported character armed.
+    uint32_t characters = (1u << kCharacterCount) - 1;
     bool operator==(const Configuration&) const = default;
 };
 std::atomic<std::shared_ptr<const Configuration>> g_config{std::make_shared<Configuration>()};
@@ -59,7 +96,8 @@ enum MethodId {
     BundleLoad, BundleAsset, BundleUnload, ClipLength, ClipHuman, ClipName,
     ControllerGet, ControllerSet, ControllerClips, OverrideCtor, OverrideClip,
     CurrentClipInfos, InfoClip, DestroyOwned,
-    PoseTail, PoseComponentTransform, PoseFind, PoseGetLocal, PoseSetLocal, PoseFrameCount, PoseIsChild, MethodCount
+    PoseTail, PoseComponentTransform, PoseFind, PoseGetLocal, PoseSetLocal, PoseFrameCount, PoseIsChild,
+    MeshGroupShow, EffectActionPlay, EffectManualFollow, VisualPerformId, VisualPerformEntity, MethodCount
 };
 struct Method { BE_MethodDescriptorV1 desc; BE_ResolvedMethodV1 resolved{}; };
 Method g_methods[] = {
@@ -145,11 +183,16 @@ Method g_methods[] = {
     {{kUnityCore,"UnityEngine","Transform","SetLocalPositionAndRotation_Injected","UnityEngine.Vector3&|UnityEngine.Quaternion&","System.Void",2}},
     {{kUnityCore,"UnityEngine","Time","get_frameCount",nullptr,"System.Int32",0}},
     {{kUnityCore,"UnityEngine","Transform","IsChildOf","UnityEngine.Transform","System.Boolean",1}},
+    {{kGame,kPerformNs,kHandle,"SetCharMeshGroupShow","Beyond.Gameplay.Core.Entity|Beyond.Gameplay.ModelPartEnum|System.Boolean","System.Void",3}},
+    {{kGame,kPerformNs,"EffectPlayAction","OnPlay",nullptr,"System.Void",0}},
+    {{kGame,"Beyond.Gameplay","EffectInstance","ManualUpdateFollow",nullptr,"System.Void",0}},
+    {{kGame,kPerformNs,kHandle,"get_interactPerformId",nullptr,"System.String",0}},
+    {{kGame,kPerformNs,kHandle,"get_entity",nullptr,"Beyond.Gameplay.Core.Entity",0}},
 };
 static_assert(std::size(g_methods) == MethodCount);
 struct Field { BE_FieldDescriptorV1 desc; BE_ResolvedFieldV1 resolved{}; };
 enum FieldId { TemplateId, Request, RequestHandle, HasCommand,
-    CommandType, CommandReason, ActionLogic, ActionIndex, ActionShow, ActionDelay, Effects, FieldCount };
+    CommandType, CommandReason, ActionLogic, ActionIndex, ActionShow, ActionDelay, Effects, VisualActionHandle, VisualActionData, FieldCount };
 Field g_fields[] = {
     {{kGame,"Beyond.Gameplay","GameDataWithId","id","System.String"}},
     {{kGame,kView,kCharacterComp,"m_currentRequest","Beyond.Gameplay.View.CharacterAnimationComponent.PerformRequest"}},
@@ -162,6 +205,8 @@ Field g_fields[] = {
     {{kGame,kPerformNs,"ObjectShowActData","show","System.Boolean"}},
     {{kGame,kPerformNs,"CharInteractPerformActionData","delay","System.Single"}},
     {{kGame,kPerformNs,kHandle,"m_effects","System.Collections.Generic.Dictionary<System.Int32,Beyond.ObjectPtr<Beyond.Gameplay.EffectInstance>>"}},
+    {{kGame,kPerformNs,"CharInteractPerformActionBase","m_handle","Beyond.Gameplay.Core.CharInteractPerform.CharPerformHandleBase"}},
+    {{kGame,kPerformNs,"CharInteractPerformActionBase","m_actionData","Beyond.Gameplay.Core.CharInteractPerform.CharInteractPerformActionData"}},
 };
 static_assert(std::size(g_fields) == FieldCount);
 
@@ -213,15 +258,17 @@ struct EffectHold {
     bool prepared = false;
     bool disabled = false;
     uint32_t ticks = 0;
-    ParticleHold particles[8]{};
+    ParticleHold particles[16]{};
     int count = 0;
 };
+constexpr int kMaxHeldParticles = 16;
 struct Session {
     void* component = nullptr;
     void* handle = nullptr;
     uint32_t root = 0;
     uint32_t handle_root = 0;
     std::shared_ptr<const Configuration> config;
+    const CharacterProfile* profile = nullptr;
     DashPolicy policy;
     LoopSchedule loop;
     ImportedLoopSchedule imported_loop;
@@ -230,8 +277,12 @@ struct Session {
     void* entity = nullptr;
     bool deferred_flying_stop = false;
     uint32_t hidden_deferrals = 0;
-    EffectHold effects[2]{};
+    uint32_t prop_hide_deferrals = 0;
+    uint32_t mesh_group_calls = 0;
+    EffectHold effects[4]{};
     bool effect_error_logged = false;
+    uint32_t visual_teardowns_skipped = 0;
+    uint32_t effect_follow_frames = 0;
     void* blackboard = nullptr;
     bool last_requested_dashing = false;
     bool overridden_dashing = false;
@@ -249,6 +300,10 @@ struct Session {
 // Only game-thread hooks access the session. Configuration callbacks publish an
 // immutable snapshot; no Unity/managed calls are made on the settings thread.
 Session g_session;
+bool g_liino_teardown_contract = true, g_effect_follow_contract = true;
+bool g_liino_clean_contract = true;
+int g_liino_mesh_groups[2]{-1, -1};
+VoidFn g_effect_action_play = nullptr;
 const void* g_hash_fields[2]{};
 int g_hashes[2]{};
 const void* g_locomotion_fields[2]{};
@@ -257,7 +312,7 @@ int g_sprint = -1, g_dash_mode = -1, g_grounded_mode = -1;
 int g_perform_end = -1;
 int g_sp_dash_end = -1, g_force_exit = -1;
 int g_blend_style = -1, g_blend_interrupt = -1, g_audio_none = -1;
-uint32_t g_flying_stop_hash = 0;
+uint32_t g_flying_stop_hashes[kCharacterCount]{};
 
 void Log(const char* message) {
     if (g_host && g_host->log) g_host->log(g_host->context, kId, message);
@@ -297,15 +352,15 @@ bool StringEquals(void* managed, const char* expected) {
     return managed && g_host->copy_managed_string(g_host->context,
         managed, text, sizeof(text)) > 0 && std::strcmp(text, expected) == 0;
 }
-void* OwnedPerform(void* component) {
+void* OwnedPerform(void* component, const CharacterProfile* profile) {
     bool ok = true;
-    if (!Value<bool>(IsPlayingPerform, component, ok) || !ok) return nullptr;
+    if (!profile || !Value<bool>(IsPlayingPerform, component, ok) || !ok) return nullptr;
     void* request = FieldObject(Request, component);
     if (!request) return nullptr;
     void* unboxed = g_host->object_unbox(g_host->context, request);
     if (!unboxed) return nullptr;
     void* id = Invoke(PerformId, unboxed, nullptr, ok);
-    return ok && StringEquals(id, kPerform) ? FieldObject(RequestHandle, request) : nullptr;
+    return ok && StringEquals(id, profile->perform_id) ? FieldObject(RequestHandle, request) : nullptr;
 }
 void* InvokeNamed(void* object, const char* name, int count, void** args, bool& ok, bool value_type = false) {
     if (!ok || !object) { ok = false; return nullptr; }
@@ -364,13 +419,15 @@ bool TargetEffectName(void* effect, int index, bool& ok) {
     char* base = name;
     for (char* c = name; *c; ++c) if (*c == '/' || *c == '\\') base = c + 1;
     if (auto* suffix = std::strrchr(base, '.'); suffix && _stricmp(suffix, ".prefab") == 0) *suffix = 0;
-    return _stricmp(base, index == 0 ? "P_fxbat_aglina_sprint_dash_sp_01" : "P_fxbat_aglina_sprint_dash_sp_02") == 0;
+    const char* expected = g_session.profile ? g_session.profile->effects[index] : nullptr;
+    return expected && _stricmp(base, expected) == 0;
 }
 void MaintainEffects() {
     if (!g_session.component || !g_session.policy.active) return;
-    for (int slot = 0; slot < 2; ++slot) {
+    if (!g_session.profile || !g_session.profile->effects[0]) return;
+    for (int slot = 0; slot < (int)std::size(g_session.effects); ++slot) {
         auto& effect = g_session.effects[slot];
-        if (effect.disabled || effect.prepared) continue;
+        if (!g_session.profile->effects[slot] || effect.disabled || effect.prepared) continue;
         bool ok = true;
         if (!effect.object) {
             void* dictionary = FieldObject(Effects, g_session.handle);
@@ -378,7 +435,7 @@ void MaintainEffects() {
             void* args[]{&slot};
             bool contains = Unbox<bool>(InvokeNamed(dictionary, "ContainsKey", 1, args, ok), ok);
             if (!ok) {
-                if (!g_session.effect_error_logged) Log("Aglina v9: effect dictionary lookup unavailable.");
+                if (!g_session.effect_error_logged) Log("Sustained dash v9: effect dictionary lookup unavailable.");
                 g_session.effect_error_logged = true;
                 continue;
             }
@@ -386,7 +443,7 @@ void MaintainEffects() {
             void* boxed_ptr = InvokeNamed(dictionary, "get_Item", 1, args, ok);
             void* object = InvokeNamed(boxed_ptr, "Lock", 0, nullptr, ok, true);
             if (!ok || !object || !TargetEffectName(object, slot, ok)) {
-                if (!g_session.effect_error_logged) Log("Aglina v9: effect pointer/identity not ready; no VFX mutation.");
+                if (!g_session.effect_error_logged) Log("Sustained dash v9: effect pointer/identity not ready; no VFX mutation.");
                 g_session.effect_error_logged = true;
                 continue;
             }
@@ -400,10 +457,10 @@ void MaintainEffects() {
         void* component_args[]{g_particle_type, &inactive};
         void* array = Invoke(ComponentsInChildren, go, component_args, ok);
         int count = Value<int>(ArrayLength, array, ok);
-        if (!ok || count <= 0 || count > 8) {
+        if (!ok || count <= 0 || count > kMaxHeldParticles) {
             if (count == 0 && ok) continue;
             RestoreEffect(effect, true);
-            if (!g_session.effect_error_logged) Log("Aglina v9: particle enumeration failed; VFX hold skipped.");
+            if (!g_session.effect_error_logged) Log("Sustained dash v9: particle enumeration failed; VFX hold skipped.");
             g_session.effect_error_logged = true;
             continue;
         }
@@ -421,7 +478,7 @@ void MaintainEffects() {
             ++effect.count; // Save original state before any instance mutation.
             // The _02 glow is a single 3-second particle in a 5-second system.
             // A plain loop flag would still leave a 2-second gap; overlap renewals.
-            if (slot == 1 && std::fabs(old_duration - 5.0f) < .01f) {
+            if (g_session.profile->renew_short_glow && slot == 1 && std::fabs(old_duration - 5.0f) < .01f) {
                 StopParticle(particle, ok);
                 float renewal = 2.5f;
                 void* duration_args[]{&renewal};
@@ -436,12 +493,12 @@ void MaintainEffects() {
         }
         if (!ok) {
             RestoreEffect(effect, true);
-            Log("Aglina v9: particle setup failed; original instance settings restored.");
+            Log("Sustained dash v9: particle setup failed; original instance settings restored.");
         } else {
             effect.prepared = true;
             if (g_session.config->diagnostics) {
                 char message[144];
-                std::snprintf(message, sizeof(message), "Aglina v9: effect %d continuous particles prepared: count=%d", slot, effect.count);
+                std::snprintf(message, sizeof(message), "Sustained dash v9: effect %d continuous particles prepared: count=%d", slot, effect.count);
                 Log(message);
             }
         }
@@ -451,13 +508,18 @@ void* CurrentRequestHandle(void* component) {
     void* request = FieldObject(Request, component);
     return request ? FieldObject(RequestHandle, request) : nullptr;
 }
-bool CanMove(void* component, bool verify_character) {
+bool CanMove(void* component, const CharacterProfile** matched = nullptr) {
     bool ok = true;
     void* entity = Object(GetEntity, component, ok);
     if (!Value<bool>(EntityValid, entity, ok) || !ok) return false;
-    if (verify_character) {
+    if (matched) {
         void* data = Object(GetTemplate, entity, ok);
-        if (!ok || !StringEquals(FieldObject(TemplateId, data), kCharacter)) return false;
+        if (!ok) return false;
+        void* id = FieldObject(TemplateId, data);
+        *matched = nullptr;
+        for (const auto& profile : kCharacters)
+            if (StringEquals(id, profile.template_id)) { *matched = &profile; break; }
+        if (!*matched) return false;
     }
     void* control = Object(GetCharCtrl, entity, ok);
     if (!Value<bool>(IsMain, control, ok) || !ok) return false;
@@ -497,6 +559,7 @@ bool ReadFrame(void* component, Frame& frame, int& current_hash) {
     }
     return ok;
 }
+void RefreshLiinoEffectsAfterPose(void* component);
 #include "external_loop.inl"
 #include "pose_overlay.inl"
 void Cancel(const char* reason, bool stop_perform, bool restore_parameter = true) {
@@ -509,7 +572,7 @@ void Cancel(const char* reason, bool stop_perform, bool restore_parameter = true
     for (auto& effect : old.effects) RestoreEffect(effect, restore_effects);
     if (old.config && old.config->diagnostics) {
         char text[192];
-        std::snprintf(text, sizeof(text), "Aglina dash ended: %s, state_changes=%u, natural_end_deferrals=%u, replays=%u", reason, old.side_changes, old.natural_end_deferrals, old.animation_replays);
+        std::snprintf(text, sizeof(text), "Sustained dash ended: %s, state_changes=%u, natural_end_deferrals=%u, replays=%u, hide_deferrals=%u", reason, old.side_changes, old.natural_end_deferrals, old.animation_replays, old.hidden_deferrals);
         Log(text);
     }
     // Restore the latest value requested by the game's own blackboard update.
@@ -520,7 +583,8 @@ void Cancel(const char* reason, bool stop_perform, bool restore_parameter = true
     if (restore_parameter && old.deferred_flying_stop && old.entity && g_audio_entity) {
         bool ok = true;
         if (Value<bool>(EntityValid, old.entity, ok) && ok)
-            g_audio_entity(old.entity, g_flying_stop_hash, g_audio_none, nullptr, nullptr,
+            g_audio_entity(old.entity, old.profile ? g_flying_stop_hashes[old.profile - kCharacters] : 0,
+                g_audio_none, nullptr, nullptr,
                 g_methods[AudioEntityPost].resolved.method_info);
     }
     if (stop_perform && CurrentRequestHandle(old.component) == old.handle && g_interrupt)
@@ -532,8 +596,90 @@ bool HoldContext(void* component);
 bool ShouldHold(void* component) {
     if (g_stopping || !component || component != g_session.component ||
         g_config.load() != g_session.config || !g_session.config->enabled) return false;
-    if (!CanMove(component, false) || CurrentRequestHandle(component) != g_session.handle) return false;
+    if (!CanMove(component) || CurrentRequestHandle(component) != g_session.handle) return false;
     return HoldContext(component);
+}
+// Call the game's zero-delta follow refresh after the final bone writes. It
+// respects each effect's mount offset/rotation and does not advance its clock.
+bool RefreshEffectFollow(void* effect) {
+    bool ok = true;
+    void* go = Invoke(EffectObject, effect, nullptr, ok);
+    if (!ok || !UnityObjectAlive(go)) return false;
+    Invoke(EffectManualFollow, effect, nullptr, ok);
+    return ok;
+}
+void RefreshLiinoEffectsAfterPose(void* component) {
+    if (!g_effect_follow_contract || g_session.profile != &kCharacters[1] ||
+        component != g_session.component || !ShouldHold(component)) return;
+    void* handle = g_session.handle;
+    void* dictionary = FieldObject(Effects, handle);
+    if (!dictionary) return;
+    unsigned refreshed = 0;
+    // Include the short entry accents, not just the three sustained particles.
+    // Re-lock ObjectPtr each frame: finished/recycled effects must not be kept.
+    for (int slot = 0; slot < 22; ++slot) {
+        if (g_session.handle != handle || g_session.component != component) return;
+        bool ok = true; void* args[]{&slot};
+        if (!Unbox<bool>(InvokeNamed(dictionary, "ContainsKey", 1, args, ok), ok)) continue;
+        void* boxed = InvokeNamed(dictionary, "get_Item", 1, args, ok);
+        void* effect = InvokeNamed(boxed, "Lock", 0, nullptr, ok, true);
+        if (!ok || !effect) continue;
+        uint32_t pin = g_host->gchandle_new(g_host->context, effect, 1);
+        if (!pin) continue;
+        char name[384]{};
+        void* text = Invoke(EffectName, effect, nullptr, ok);
+        bool named = ok && text && g_host->copy_managed_string(g_host->context, text, name, sizeof(name)) > 0;
+        const char* base = name;
+        for (const char* c = name; *c; ++c) if (*c == '/' || *c == '\\') base = c + 1;
+        constexpr char prefix[] = "P_fxbat_liino_sprint_dash_sp_";
+        if (named && g_session.handle == handle && g_session.component == component &&
+            _strnicmp(base, prefix, sizeof(prefix) - 1) == 0 && RefreshEffectFollow(effect)) ++refreshed;
+        g_host->gchandle_free(g_host->context, pin);
+    }
+    if (g_session.handle == handle && refreshed && ++g_session.effect_follow_frames == 1 && g_session.config->diagnostics)
+        Log("Sustained dash Liino: effect mounts refreshed after final bone pose; native offsets retained.");
+}
+// Identify the native perform directly, including actions executed inside
+// StartSpDash before our animation session is armed, and its exit actions.
+// Never borrow the current session's identity for another handle.
+bool CleanLiinoPerform(void* handle, void* target = nullptr) {
+    if (!handle || g_stopping || !g_liino_clean_contract ||
+        GetCurrentThreadId() != g_game_thread.load(std::memory_order_relaxed)) return false;
+    auto config = g_config.load();
+    if (!config->enabled || !config->liino_clean || !(config->characters & (1u << 1))) return false;
+    bool ok = true;
+    if (!StringEquals(Invoke(VisualPerformId, handle, nullptr, ok), kCharacters[1].perform_id) || !ok) return false;
+    void* entity = Object(VisualPerformEntity, handle, ok);
+    if (!ok || (target && target != entity) || !Value<bool>(EntityValid, entity, ok)) return false;
+    void* control = Object(GetCharCtrl, entity, ok);
+    return Value<bool>(IsMain, control, ok) && ok;
+}
+void __fastcall EffectActionPlayDetour(void* action, const void* method) {
+    // All EffectPlayActions belonging to this exact perform are cosmetic:
+    // entry/exit particles, continuous trails, and material dissolve/glow VFX.
+    if (action && !g_stopping && g_liino_clean_contract &&
+        GetCurrentThreadId() == g_game_thread.load(std::memory_order_relaxed) &&
+        CleanLiinoPerform(FieldObject(VisualActionHandle, action))) return;
+    if (action && GetCurrentThreadId() == g_game_thread.load(std::memory_order_relaxed) &&
+        g_session.profile == &kCharacters[1] && g_session.policy.active &&
+        FieldObject(VisualActionHandle, action) == g_session.handle && ShouldHold(g_session.component)) {
+        void* data = FieldObject(VisualActionData, action);
+        if (!data) { g_effect_action_play(action, method); return; }
+        bool ok = true;
+        unsigned logic = Unbox<unsigned>(FieldObject(ActionLogic, data), ok);
+        int actor = Unbox<int>(FieldObject(ActionIndex, data), ok);
+        float delay = Unbox<float>(FieldObject(ActionDelay, data), ok);
+        if (ok && IsLiinoFlightTeardown(logic, actor, delay)) {
+            ++g_session.visual_teardowns_skipped;
+            if (g_session.config->diagnostics) {
+                char text[160];
+                std::snprintf(text, sizeof(text), "Sustained dash Liino: skipped flight teardown effect actor=%d logic=%u delay=%.3f.", actor, logic, delay);
+                Log(text);
+            }
+            return;
+        }
+    }
+    g_effect_action_play(action, method);
 }
 // IsPlayingSpDashPerform can be cleared before the queued SpDashEnd command
 // reaches _TryExit. The pinned handle remains the ownership proof for the
@@ -541,7 +687,7 @@ bool ShouldHold(void* component) {
 bool HoldContext(void* component) {
     if (g_stopping || !component || component != g_session.component ||
         g_config.load() != g_session.config || !g_session.config->enabled ||
-        !CanMove(component, false)) return false;
+        !CanMove(component)) return false;
     // Keep the natural entry alive until the Animator sees Dash's CrossFade.
     if (g_session.policy.WithinEntryWindow()) return true;
     Frame frame;
@@ -555,7 +701,7 @@ void __fastcall EffectDurationDetour(void* instance, float delta, const void* me
         for (auto& effect : g_session.effects) {
             if (effect.object == instance && effect.prepared && ShouldHold(g_session.component)) {
                 if (++effect.ticks == 1 && g_session.config->diagnostics)
-                    Log("Aglina v9: held target effect lifetime/auto-fade clock; particles keep simulating.");
+                    Log("Sustained dash v9: held target effect lifetime/auto-fade clock; particles keep simulating.");
                 delta = 0; // Only the effect lifetime clock, not ParticleSystem/FollowTick.
                 break;
             }
@@ -592,7 +738,7 @@ void __fastcall StateInterruptDetour(void* component, const void* method) {
     // The generic callback calls ForceExit and clears m_currentRequest directly.
     if (ShouldHold(component)) {
         if (!g_session.held_state_interrupt && g_session.config->diagnostics)
-            Log("Aglina: holding _TickStatePerformInterrupt for the owned sprint session (v4).");
+            Log("Sustained dash: holding _TickStatePerformInterrupt for the owned sprint session (v4).");
         g_session.held_state_interrupt = true;
         return;
     }
@@ -607,14 +753,14 @@ bool __fastcall TryExitDetour(void* handle, void* command, const void* method) {
         int mode = -1, gait = -1;
         bool moving = false, airborne = false;
         bool movement_ok = ReadMovementState(g_session.component, mode, gait, moving, airborne);
-        bool owned = OwnedPerform(g_session.component) == g_session.handle;
+        bool owned = OwnedPerform(g_session.component, g_session.profile) == g_session.handle;
         bool hold = ok && movement_ok && HoldContext(g_session.component);
         if (g_session.config->diagnostics &&
             (g_session.try_exit_calls == 1 || (command && (type != g_session.last_interrupt_type || reason != g_session.last_interrupt_reason)))) {
             g_session.last_interrupt_type = type;
             g_session.last_interrupt_reason = reason;
             char text[256];
-            std::snprintf(text, sizeof(text), "Aglina Perform _TryExit: command=%p, reason=%d, type=%d, suppress=%d, hold=%d, mode=%d, gait=%d, moving=%d, airborne=%d, owned=%d",
+            std::snprintf(text, sizeof(text), "Sustained dash Perform _TryExit: command=%p, reason=%d, type=%d, suppress=%d, hold=%d, mode=%d, gait=%d, moving=%d, airborne=%d, owned=%d",
                 command, reason, type, hold && reason == g_sp_dash_end && type == g_force_exit,
                 hold, mode, gait, moving, airborne, owned);
             Log(text);
@@ -631,7 +777,7 @@ void __fastcall DashingDetour(void* blackboard, bool value, const void* method) 
         g_session.last_requested_dashing = value;
         if (!value && ShouldHold(g_session.component)) {
             if (!g_session.overridden_dashing && g_session.config->diagnostics)
-                Log("Aglina: preserving native isDashing across Dash -> grounded Sprint.");
+                Log("Sustained dash: preserving native isDashing across Dash -> grounded Sprint.");
             g_session.overridden_dashing = true;
             value = true;
         }
@@ -660,10 +806,42 @@ bool __fastcall TrackEndDetour(void* handle, const void* method) {
         g_session.policy.active, ShouldHold(g_session.component), command, alive, phase == g_perform_end);
     if (defer) {
         if (++g_session.natural_end_deferrals == 1 && g_session.config->diagnostics)
-            Log("Aglina v8: deferred owned Perform End track cleanup.");
+            Log("Sustained dash v8: deferred owned Perform End track cleanup.");
         return false;
     }
     return result;
+}
+// Optional: absent on builds where the mesh-group action is unavailable.
+bool g_mesh_group_contract = true;
+using MeshGroupFn = void(__fastcall*)(void*, void*, int, bool, const void*);
+MeshGroupFn g_mesh_group_show = nullptr;
+void __fastcall MeshGroupShowDetour(void* handle, void* entity, int group, bool show, const void* method) {
+    if (entity && (group == g_liino_mesh_groups[0] || group == g_liino_mesh_groups[1]) &&
+        CleanLiinoPerform(handle, entity)) {
+        // Skip both edges. SetCharMeshGroupShow caches !show on the first call;
+        // substituting false would incorrectly restore true during Clear.
+        if (g_config.load()->diagnostics) {
+            char text[112];
+            std::snprintf(text, sizeof(text), "Liino clean dash: omitted mesh group %d show=%d; native restore cache untouched.", group, show ? 1 : 0);
+            Log(text);
+        }
+        return;
+    }
+    bool owned = GetCurrentThreadId() == g_game_thread.load(std::memory_order_relaxed) &&
+        g_session.component && handle == g_session.handle && entity == g_session.entity;
+    bool defer = owned && !show && g_session.profile && g_session.profile->defer_mesh_group_hide &&
+        (group == g_liino_mesh_groups[0] || group == g_liino_mesh_groups[1]) &&
+        g_session.policy.active && ShouldHold(g_session.component);
+    // Model parts are what the player sees appear and disappear, so record every
+    // toggle this perform makes rather than only the first deferral.
+    if (owned && g_session.config->diagnostics && g_session.mesh_group_calls < 12) {
+        char text[160];
+        std::snprintf(text, sizeof(text), "Sustained dash: mesh group %d show=%d deferred=%d, call=%u",
+            group, show ? 1 : 0, defer ? 1 : 0, ++g_session.mesh_group_calls);
+        Log(text);
+    }
+    if (defer) { ++g_session.hidden_deferrals; return; }
+    g_mesh_group_show(handle, entity, group, show, method);
 }
 void __fastcall ShowObjectDetour(void* handle, void* action, const void* method) {
     if (action && handle == g_session.handle && g_session.policy.active && ShouldHold(g_session.component)) {
@@ -672,24 +850,27 @@ void __fastcall ShowObjectDetour(void* handle, void* action, const void* method)
         int index = Unbox<int>(FieldObject(ActionIndex, action), ok);
         bool show = Unbox<bool>(FieldObject(ActionShow, action), ok);
         float delay = Unbox<float>(FieldObject(ActionDelay, action), ok);
-        if (ok && IsTargetHide(logic, index, show, delay)) {
-            if (++g_session.hidden_deferrals == 1 && g_session.config->diagnostics)
-                Log("Aglina v8: deferred logic 11 prop hide; native Clear still owns cleanup.");
+        if (ok && g_session.profile && IsTargetHide(g_session.profile->prop_hide, logic, index, show, delay)) {
+            if (++g_session.prop_hide_deferrals == 1 && g_session.config->diagnostics)
+                Log("Sustained dash v8: deferred prop hide; native Clear still owns cleanup.");
             return;
         }
     }
     g_show(handle, action, method);
 }
+uint32_t SessionFlyingStopHash() {
+    return g_session.profile ? g_flying_stop_hashes[g_session.profile - kCharacters] : 0;
+}
 bool DeferFlyingStop(uint32_t hash) {
-    if (hash != g_flying_stop_hash || !g_session.policy.active || !ShouldHold(g_session.component)) return false;
+    if (!hash || hash != SessionFlyingStopHash() || !g_session.policy.active || !ShouldHold(g_session.component)) return false;
     if (!g_session.deferred_flying_stop && g_session.config->diagnostics)
-        Log("Aglina v8: deferred Flying_Stop until session exit.");
+        Log("Sustained dash v8: deferred Flying_Stop until session exit.");
     g_session.deferred_flying_stop = true;
     return true;
 }
 void __fastcall AudioMonoDetour(void* mono, uint32_t hash, float clip_in, const void* method) {
     if (GetCurrentThreadId() == g_game_thread.load(std::memory_order_relaxed) &&
-        hash == g_flying_stop_hash && g_session.component) {
+        hash == SessionFlyingStopHash() && g_session.component) {
         bool ok = true;
         void* component = Object(AudioMonoComponent, mono, ok);
         if (ok && component == g_session.component && DeferFlyingStop(hash)) return;
@@ -709,7 +890,7 @@ void __fastcall PerformClearDetour(void* handle, bool releasing, const void* met
             void* stack[12]{};
             USHORT count = CaptureStackBackTrace(0, 12, stack, nullptr);
             auto base = reinterpret_cast<uintptr_t>(GetModuleHandleW(L"GameAssembly.dll"));
-            char text[384] = "Aglina Clear stack (GameAssembly-relative):";
+            char text[384] = "Sustained dash Clear stack (GameAssembly-relative):";
             size_t used = std::strlen(text);
             for (USHORT i = 0; i < count && used < sizeof(text) - 24; ++i) {
                 auto address = reinterpret_cast<uintptr_t>(stack[i]);
@@ -725,7 +906,7 @@ void __fastcall PerformClearDetour(void* handle, bool releasing, const void* met
 void __fastcall CommandDetour(void* handle, int reason, int type, bool weak, const void* method) {
     if (handle == g_session.handle && g_session.component && g_session.config->diagnostics) {
         char text[144];
-        std::snprintf(text, sizeof(text), "Aglina Perform interrupt command: reason=%d, type=%d, weak=%d", reason, type, weak);
+        std::snprintf(text, sizeof(text), "Sustained dash Perform interrupt command: reason=%d, type=%d, weak=%d", reason, type, weak);
         Log(text);
     }
     if (handle == g_session.handle && reason == g_sp_dash_end && type == g_force_exit &&
@@ -740,7 +921,9 @@ void __fastcall StartDetour(void* component, int index, const void* method) {
     g_start(component, index, method);
     auto config = g_config.load();
     if (g_stopping || !config->enabled || !component || index < 0) return;
-    if (!CanMove(component, true)) return;
+    const CharacterProfile* profile = nullptr;
+    if (!CanMove(component, &profile)) return;
+    if (!(config->characters & (1u << (profile - kCharacters)))) return;
     bool ok = true;
     // This class is already initialized by the original StartSpDash. Read the
     // game's real state identifiers, not names guessed from documentation.
@@ -751,7 +934,7 @@ void __fastcall StartDetour(void* component, int index, const void* method) {
     if (!ok || !g_hashes[0] || !g_hashes[1] || g_hashes[0] == g_hashes[1]) return;
     void* blackboard = Object(GetBlackboard, component, ok);
     if (!ok) return;
-    void* handle = OwnedPerform(component);
+    void* handle = OwnedPerform(component, profile);
     if (!handle) return;
     // Repeated calls for the same perform are not a fresh animation session.
     if (g_session.component == component && g_session.handle == handle) return;
@@ -759,6 +942,8 @@ void __fastcall StartDetour(void* component, int index, const void* method) {
     g_session.component = component;
     g_session.handle = handle;
     g_session.config = config;
+    g_session.profile = profile;
+    g_session.loop.c = profile->loop;
     g_session.blackboard = blackboard;
     g_session.entity = Object(GetEntity, component, ok);
     if (!ok) { Cancel("entity unavailable", false); return; }
@@ -767,14 +952,14 @@ void __fastcall StartDetour(void* component, int index, const void* method) {
     if (!g_session.root || !g_session.handle_root) Cancel("root failed", false);
     else {
         if (config->external_loop) {
-            BeginPoseOverlay(component);
+            BeginPoseOverlay(component, profile);
         }
         if (!g_session.external_expected && g_external_owner.component == component) {
             Cancel("external controller rollback pending", true); return;
         }
         if (config->diagnostics) {
             char text[160];
-            std::snprintf(text, sizeof(text), "Aglina native dash armed: left_hash=%d, right_hash=%d", g_hashes[0], g_hashes[1]);
+            std::snprintf(text, sizeof(text), "Sustained dash armed for %s: left_hash=%d, right_hash=%d", profile->codename, g_hashes[0], g_hashes[1]);
             Log(text);
         }
     }
@@ -784,7 +969,7 @@ void __fastcall PreLateDetour(void* component, float delta, const void* method) 
     if (g_session.component) {
         if (g_stopping || g_config.load() != g_session.config)
             Cancel("configuration changed", true);
-        else if (!CanMove(g_session.component, false))
+        else if (!CanMove(g_session.component))
             Cancel("movement or owner ended", true);
         else if (g_session.component == component) {
             void* observed_handle = g_session.handle;
@@ -798,12 +983,12 @@ void __fastcall PreLateDetour(void* component, float delta, const void* method) 
                 else if (!g_session.external_confirmed && frame.current_special && !frame.transitioning) {
                     if (ExternalClipPlaying(component, hash)) {
                         g_session.external_confirmed = true;
-                        Log("Aglina v11: external return clip confirmed active; using baked closed-loop window.");
+                        Log("Sustained dash v11: external return clip confirmed active; using baked closed-loop window.");
                     } else if ((g_session.external_wait += delta) > .35f) {
                         RestoreExternal(true);
                         g_session.external_expected = false;
                         if (g_external_owner.component == component) frame.allowed = false;
-                        else Log("Aglina v11: imported clip not observed; original controller restored, using v9 loop.");
+                        else Log("Sustained dash v11: imported clip not observed; original controller restored, using v9 loop.");
                     }
                 }
             }
@@ -815,10 +1000,10 @@ void __fastcall PreLateDetour(void* component, float delta, const void* method) 
             if (loop_action == LoopAction::Abort) {
                 if (g_session.config->diagnostics) {
                     char detail[192];
-                    std::snprintf(detail, sizeof(detail), "Aglina %s loop rejected: current=%.3f next=%.3f transition=%d expected_target=%.3f wait=%.3f",
+                    std::snprintf(detail, sizeof(detail), "Sustained dash %s loop rejected: current=%.3f next=%.3f transition=%d expected_target=%.3f wait=%.3f",
                         g_session.external_confirmed ? "v11 imported" : "v9",
                         frame.time, frame.next_time, frame.transitioning,
-                        g_session.external_confirmed ? ImportedLoopSchedule::TargetAt(g_session.imported_loop.submitted_time) : LoopSchedule::TargetAt(g_session.loop.submitted_time),
+                        g_session.external_confirmed ? ImportedLoopSchedule::TargetAt(g_session.imported_loop.submitted_time) : g_session.loop.TargetAt(g_session.loop.submitted_time),
                         g_session.external_confirmed ? g_session.imported_loop.waiting : g_session.loop.waiting);
                     Log(detail);
                 }
@@ -826,8 +1011,8 @@ void __fastcall PreLateDetour(void* component, float delta, const void* method) 
             } else if (loop_action == LoopAction::Blend) {
                 bool ok = true;
                 int layer = 0;
-                float duration = g_session.external_confirmed ? 0.0f : kLoopBlend;
-                float offset = g_session.external_confirmed ? ImportedLoopSchedule::TargetAt(frame.time) : LoopSchedule::TargetAt(frame.time);
+                float duration = g_session.external_confirmed ? 0.0f : g_session.loop.c.blend;
+                float offset = g_session.external_confirmed ? ImportedLoopSchedule::TargetAt(frame.time) : g_session.loop.TargetAt(frame.time);
                 float transition_time = 0;
                 bool blend_root_motion = false;
                 void* animator = Object(GetAnimator, component, ok);
@@ -842,7 +1027,7 @@ void __fastcall PreLateDetour(void* component, float delta, const void* method) 
                     ++g_session.animation_replays;
                     if (g_session.config->diagnostics && (g_session.animation_replays <= 4 || g_session.animation_replays % 16 == 0)) {
                         char text[240];
-                        std::snprintf(text, sizeof(text), "Aglina %s: hash=%d, source=%.3f, target=%.3f, duration=%.3f, count=%u",
+                        std::snprintf(text, sizeof(text), "Sustained dash %s: hash=%d, source=%.3f, target=%.3f, duration=%.3f, count=%u",
                             g_session.external_confirmed ? "v11 imported loop wrap" : "v9 normalized bob blend", hash, frame.time, offset, duration, g_session.animation_replays);
                         Log(text);
                     }
@@ -860,7 +1045,7 @@ void __fastcall PreLateDetour(void* component, float delta, const void* method) 
                 if (g_session.config->diagnostics) {
                     char text[280];
                     std::snprintf(text, sizeof(text),
-                        "Aglina exit: hash=%d, next=%d, time=%.3f, length=%.3f, clip_loop=%d, perform=%d, special=%d, entering=%d, outgoing=%d, pending=%.3f",
+                        "Sustained dash exit: hash=%d, next=%d, time=%.3f, length=%.3f, clip_loop=%d, perform=%d, special=%d, entering=%d, outgoing=%d, pending=%.3f",
                         hash, frame.next_hash, frame.time, frame.length, frame.clip_loop, frame.allowed, frame.current_special, frame.entering_special,
                         frame.outgoing, g_session.policy.pending_time);
                     Log(text);
@@ -871,7 +1056,7 @@ void __fastcall PreLateDetour(void* component, float delta, const void* method) 
                 g_session.last_special_hash = hash;
                 if (g_session.config->diagnostics && (g_session.side_changes < 5 || g_session.side_changes % 16 == 0)) {
                     char text[160];
-                    std::snprintf(text, sizeof(text), "Aglina selected state=%s, time=%.3f, length=%.3f, clip_loop=%d",
+                    std::snprintf(text, sizeof(text), "Sustained dash selected state=%s, time=%.3f, length=%.3f, clip_loop=%d",
                         hash == g_hashes[0] ? "left" : "right", frame.time, frame.length, frame.clip_loop);
                     Log(text);
                 }
@@ -882,7 +1067,7 @@ void __fastcall PreLateDetour(void* component, float delta, const void* method) 
                     g_session.last_progress_bucket = bucket;
                     if (g_session.config->diagnostics) {
                         char text[224];
-                        std::snprintf(text, sizeof(text), "Aglina animation progress: time=%.3f, next=%.3f, transition=%d, length=%.3f, clip_loop=%d, deferred=%u",
+                        std::snprintf(text, sizeof(text), "Sustained dash animation progress: time=%.3f, next=%.3f, transition=%d, length=%.3f, clip_loop=%d, deferred=%u",
                             frame.time, frame.next_time, frame.transitioning, frame.length, frame.clip_loop, g_session.natural_end_deferrals);
                         Log(text);
                     }
@@ -902,7 +1087,7 @@ void __fastcall InterruptDetour(void* component, const void* method) {
     if (component == g_session.component && HoldContext(component)) {
         ++g_session.spdash_interrupts_suppressed;
         if (g_session.config->diagnostics && g_session.spdash_interrupts_suppressed == 1)
-            Log("Aglina: suppressed InterruptSpDashPerform while the selected special state is active (v7).");
+            Log("Sustained dash: suppressed InterruptSpDashPerform while the selected special state is active (v7).");
         return;
     }
     if (component == g_session.component) Cancel("native dash interruption", false);
@@ -934,6 +1119,21 @@ bool ParseBool(std::string_view s, bool& out) {
     if (s == "false" || s == "0") { out = false; return true; }
     return false;
 }
+// Comma separated codenames, matching CharacterProfile::codename. An empty list
+// is legitimate: it is what the UI writes when every character switch is off.
+// Names this build does not know are ignored so a newer UI stays compatible.
+bool ParseCharacters(std::string_view s, uint32_t& out) {
+    out = 0;
+    while (!s.empty()) {
+        auto comma = s.find(',');
+        auto name = Trim(s.substr(0, comma));
+        s = comma == s.npos ? std::string_view{} : s.substr(comma + 1);
+        if (name.empty()) continue;
+        for (size_t i = 0; i < kCharacterCount; ++i)
+            if (name == kCharacters[i].codename) { out |= 1u << i; break; }
+    }
+    return true;
+}
 BE_Result BE_CALL Configure(const char* raw) {
     auto config = std::make_shared<Configuration>();
     std::string_view remaining = raw ? raw : "";
@@ -948,10 +1148,12 @@ BE_Result BE_CALL Configure(const char* raw) {
         if (equals == line.npos) { valid = false; break; }
         auto key = Trim(line.substr(0, equals));
         auto value = Trim(line.substr(equals + 1));
-        if (key == "schema_version") { schema_present = true; valid &= value == "1" || value == "2"; }
+        if (key == "schema_version") { schema_present = true; valid &= value == "1" || value == "2" || value == "3"; }
         else if (key == "enabled") valid &= ParseBool(value, config->enabled);
         else if (key == "diagnostics") valid &= ParseBool(value, config->diagnostics);
         else if (key == "external_loop") valid &= ParseBool(value, config->external_loop);
+        else if (key == "liino_clean") valid &= ParseBool(value, config->liino_clean);
+        else if (key == "characters") valid &= ParseCharacters(value, config->characters);
     }
     if (!valid || (config->enabled && !schema_present)) {
         // A bad live edit must never leave the old hold enabled indefinitely.
@@ -962,13 +1164,22 @@ BE_Result BE_CALL Configure(const char* raw) {
     g_config.store(config);
     if (config->enabled && config->diagnostics) {
         char text[160];
-        std::snprintf(text, sizeof(text), "Aglina action constants: SpDashEnd=%d, ForceExit=%d, DashMode=%d, GroundedMode=%d, SprintGait=%d",
+        std::snprintf(text, sizeof(text), "Sustained dash constants: SpDashEnd=%d, ForceExit=%d, DashMode=%d, GroundedMode=%d, SprintGait=%d",
             g_sp_dash_end, g_force_exit, g_dash_mode, g_grounded_mode, g_sprint);
         Log(text);
     }
     Log(!config->enabled ? "Actions disabled." : config->external_loop ?
-        "Actions enabled: Aglina v12 bone-pose overlay; native movement/Animator retained, no external clip load." :
-        "Actions enabled: Aglina v9 loop; external pose overlay disabled.");
+        "Actions enabled: v12 bone-pose overlay; native movement/Animator retained, no external clip load." :
+        "Actions enabled: v9 loop; external pose overlay disabled.");
+    if (config->enabled) {
+        char text[192];
+        int written = std::snprintf(text, sizeof(text), "Sustained dash characters:");
+        for (size_t i = 0; i < kCharacterCount && written > 0 && written < (int)sizeof(text); ++i)
+            if (config->characters & (1u << i))
+                written += std::snprintf(text + written, sizeof(text) - written, " %s", kCharacters[i].codename);
+        if (!config->characters) std::snprintf(text + written, sizeof(text) - written, " none");
+        Log(text);
+    }
     return BE_Result_Ok;
 }
 
@@ -982,6 +1193,10 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     for (auto& method : g_methods) {
         if (host->resolve_method(host->context, &method.desc, &method.resolved) != BE_Result_Ok) {
             Log((std::string("Missing action method: ") + method.desc.class_name + "." + method.desc.method_name).c_str());
+            if (&method == &g_methods[MeshGroupShow]) { g_mesh_group_contract = false; continue; }
+            if (&method == &g_methods[EffectActionPlay]) { g_liino_teardown_contract = false; continue; }
+            if (&method == &g_methods[EffectManualFollow]) { g_effect_follow_contract = false; continue; }
+            if (&method >= &g_methods[VisualPerformId]) { g_liino_clean_contract = false; continue; }
             if (&method >= &g_methods[PoseTail]) { g_pose_contract = false; continue; }
             if (&method >= &g_methods[BundleLoad]) { g_external_contract = false; continue; }
             return BE_Result_ContractMismatch;
@@ -990,6 +1205,7 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     for (auto& field : g_fields) {
         if (host->resolve_field(host->context, &field.desc, &field.resolved) != BE_Result_Ok) {
             Log((std::string("Missing action field: ") + field.desc.field_name).c_str());
+            if (&field >= &g_fields[VisualActionHandle]) { g_liino_teardown_contract = false; continue; }
             return BE_Result_ContractMismatch;
         }
     }
@@ -1028,6 +1244,14 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     g_perform_end = constant("Beyond.Gameplay", "CharInteractPerformEnums.CharInteractPerformState", "End");
     g_sp_dash_end = constant("Beyond.Gameplay", "CharInteractPerformEnums.InterruptReason", "SpDashEnd");
     g_force_exit = constant("Beyond.Gameplay", "CharInteractPerformEnums.InterruptType", "ForceExit");
+    // Resolve model-part values independently; a missing optional visual
+    // contract must not disable the other character's dash.
+    for (int i = 0; i < 2; ++i) {
+        const void* field = static_field("Beyond.Gameplay", "ModelPartEnum", i == 0 ? "MeshGroup1" : "MeshGroup2");
+        bool group_ok = field != nullptr;
+        if (field) g_liino_mesh_groups[i] = Unbox<int>(host->field_get_value_object(host->context, field, nullptr), group_ok);
+        if (!group_ok || g_liino_mesh_groups[i] <= 0) g_mesh_group_contract = false;
+    }
     auto other_constant = [&](const char* assembly, const char* ns, const char* cls, const char* name) {
         BE_ResolvedClassV1 resolved{};
         if (host->resolve_class(host->context, assembly, ns, cls, &resolved) != BE_Result_Ok) { ok = false; return -1; }
@@ -1042,11 +1266,15 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     using NewStringFn = void*(*)(const char*);
     auto new_string = reinterpret_cast<NewStringFn>(GetProcAddress(GetModuleHandleW(L"GameAssembly.dll"), "il2cpp_string_new"));
     if (!new_string) return BE_Result_ContractMismatch;
-    void* stop_name = new_string("Aglina_SprintDashSp_Flying_Stop");
-    void* hash_args[]{stop_name};
-    if (!stop_name) return BE_Result_Failed;
-    g_flying_stop_hash = Unbox<uint32_t>(Invoke(AudioHash, nullptr, hash_args, ok), ok);
-    if (!g_flying_stop_hash) return BE_Result_ContractMismatch;
+    for (size_t i = 0; i < kCharacterCount; ++i) {
+        const char* event = kCharacters[i].flying_stop_event;
+        if (!event) continue; // This character has no continuous audio to defer.
+        void* stop_name = new_string(event);
+        if (!stop_name) return BE_Result_Failed;
+        void* hash_args[]{stop_name};
+        g_flying_stop_hashes[i] = Unbox<uint32_t>(Invoke(AudioHash, nullptr, hash_args, ok), ok);
+        if (!ok || !g_flying_stop_hashes[i]) return BE_Result_ContractMismatch;
+    }
     g_hash_fields[0] = static_field(kView, kCharacterComp, "HASH_SP_DASH_L");
     g_hash_fields[1] = static_field(kView, kCharacterComp, "HASH_SP_DASH_R");
     g_locomotion_fields[0] = static_field(kView, "CharacterAnimationBlackboard", "HASH_STATE_RUN");
@@ -1109,12 +1337,33 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
             return BE_Result_Failed;
         }
     }
+    if (g_liino_teardown_contract &&
+        ((flags(g_methods[EffectActionPlay].resolved.method_info, &impl) & 0x10u) ||
+         host->create_hook(host->context, kId, g_methods[EffectActionPlay].resolved.method_pointer,
+             reinterpret_cast<void*>(&EffectActionPlayDetour), reinterpret_cast<void**>(&g_effect_action_play)) != BE_Result_Ok))
+        g_liino_teardown_contract = false;
+    if (!g_liino_teardown_contract) Log("Sustained dash Liino: teardown hook unavailable; material dissolve follows native timing.");
+    if (g_effect_follow_contract && (flags(g_methods[EffectManualFollow].resolved.method_info, &impl) & 0x10u))
+        g_effect_follow_contract = false;
+    if (!g_effect_follow_contract) Log("Sustained dash Liino: final-pose effect follow refresh unavailable.");
+    if (g_mesh_group_contract && host->create_hook(host->context, kId, g_methods[MeshGroupShow].resolved.method_pointer,
+            reinterpret_cast<void*>(&MeshGroupShowDetour), reinterpret_cast<void**>(&g_mesh_group_show)) != BE_Result_Ok) {
+        g_mesh_group_contract = false;
+        Log("Sustained dash: mesh group hook unavailable; model parts follow their native timing.");
+    }
+    if (g_liino_clean_contract) {
+        for (int id : {VisualPerformId, VisualPerformEntity})
+            if (flags(g_methods[id].resolved.method_info, &impl) & 0x10u) g_liino_clean_contract = false;
+    }
+    g_liino_clean_contract = g_liino_clean_contract && g_mesh_group_contract && g_liino_teardown_contract;
+    Log(g_liino_clean_contract ? "Liino clean dash available: native perform entry/exit VFX and MeshGroup1/2 omitted when liino_clean=true." :
+        "Liino clean dash unavailable: required visual hooks missing; retained appearance fallback.");
     if (g_pose_contract && host->create_hook(host->context, kId, g_methods[PoseTail].resolved.method_pointer,
             reinterpret_cast<void*>(&PoseTailDetour), reinterpret_cast<void**>(&g_pose_tail)) != BE_Result_Ok) {
         g_pose_contract = false;
-        Log("Aglina v12: TailLate hook unavailable; pose overlay disabled, native v9 hold remains.");
+        Log("Sustained dash v12: TailLate hook unavailable; pose overlay disabled, native v9 hold remains.");
     }
-    Log("Actions module ready; scoped to Aglina special dash, disabled by default.");
+    Log("Actions module ready; scoped to character special dashes, disabled by default.");
     return BE_Result_Ok;
 }
 void BE_CALL Shutdown() {
@@ -1130,7 +1379,7 @@ void BE_CALL Shutdown() {
     g_particle_type_root = 0;
     g_particle_type = nullptr;
 }
-const BE_ModuleApiV1 kApi{{kId, "Character Actions", "1.11.0", BETTER_ENDFIELD_MODULE_ABI_V1},
+const BE_ModuleApiV1 kApi{{kId, "Sustained Dash", "1.13.3", BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize, &Configure, &Shutdown};
 } // namespace
 } // namespace BetterEndfield::Actions

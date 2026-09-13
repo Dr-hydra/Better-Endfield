@@ -1,14 +1,53 @@
-# 动作模块 1.11.0（v12：过程段骨骼姿态覆盖原型）
+# 冲刺持续模块 1.13.3
 
-## 当前状态
+模块 ID `betterendfield.actions`，显示名 `Sustained Dash`。启动器「冲刺持续」页提供分角色开关，默认关闭。游戏在每次特殊冲刺里选择左或右动作，本模块保留该选择，不重新掷。
 
-v12 使用 `actions/aglina_pose_v12.bin` 直接采样已批准的骨骼粗修帧，在目标角色 TailLateTick 后覆盖本地位置/旋转。保留原生 Animator、Controller、移动和特效逻辑；不再从启用分支调用 AssetBundle 或安装外部 Controller。沿用 external_loop 作为外部姿态开关，本机当前设置不变，新配置默认 false。
+梨诺下方提供独立的「隐藏机甲与光效」开关（默认开启），全程省略机甲、腿甲及粒子/材质 VFX，沿用低位平滑飞行动画。关闭外观开关时恢复 [1.13.1 显隐与挂点修复](../../../docs/LIINO_DASH_VISUAL_FIX.md)。偏好通过 `liino_clean` 保存，梨诺持续冲刺关闭时仍保留选择。实现与验证见 [无机甲冲刺](../../../docs/LIINO_CLEAN_DASH.md)。
 
-独立周期为 103/60 秒，进入/退出短混合约 0.12 秒；缓存有角色、Animator 根、层级和代次约束，常量通道去除自身上次写入的残留。82 项接口描述、新姿态测试及三组已有回归检查通过，尚未启动游戏。新的成功标志是 `Aglina v12: TailLate pose applied`，原生 v9 回绕日志仍会同时存在。
+## 支持的角色
 
-这版直接播放骨骼帧，不进行运行时 muscle 换算；此前最初导出阶段的 95/101 语义问题不因此被宣布修复。详见 `tmp_analysis/aglina-pose-overlay-v12/README.md`。以下保留历史试验记录。
+角色资源配置在 `module.cpp` 的 `CharacterProfile` 表里，生命周期 hook 共用；梨诺的退场溶解和挂点修正仅作用于她的会话。当前两个条目：
 
-## v11 原生包候选记录
+| | 洁尔佩塔 `chr_0013_aglina` | 梨诺 `chr_0035_liino` |
+| --- | --- | --- |
+| Perform | `CharIntPerform_Aglina_Spdash` | `CharIntPerform_Liino_Spdash` |
+| 姿态数据 | `actions/pose_aglina.bin`（226 骨骼，周期 103 帧 / 1.717 秒） | `actions/pose_liino.bin`（339 骨骼，低位半速循环 40 帧 / 0.667 秒） |
+| Animator 回绕 | 136/208 → 80/208，周期 56/208 | 107/173 → 55/173，周期 52/173 |
+| 额外保持 | 两套持续粒子、`Aglina_SprintDashSp_Flying_Stop` 延后、道具隐藏（logic 11，2.4 秒）延后 | 网格组隐藏（2.2 秒收板）延后 |
+
+新增角色需要：档案表加一行、离线做一份闭合循环数据、把数据放进 `modules/actions/`。
+
+## 三层机制
+
+1. **Perform 保持**：`_TryExit` 对 `SpDashEnd + ForceExit` 返回 false，`ShouldInterruptSpDash` / `InterruptSpDashPerform` / `_TickStatePerformInterrupt` 同步抑制，`_CheckTrackEnd` 延后 End 阶段清理。判断以启动时记录的 handle 为准。
+2. **Animator 状态保持**：到达 `begin` 时对同状态发带偏移的 `CrossFade` 回绕到 `target`，随后几帧确认落点，落点不符即中止。回绕点必须早于 0.85（出口过渡 Exit Time 约 0.9）。
+3. **骨骼姿态覆盖**：`TailLateTick` 之后按数据文件写入局部位移和旋转，独立时钟，进出各约 0.12 秒淡化。写入前记录原生基线，只回收自己写过且未被原生改动的值。不替换 Controller、不禁用 Animator、不动世界坐标、不写缩放。
+
+`external_loop=false` 时只做前两层，姿态覆盖关闭。
+
+## 配置
+
+```ini
+[betterendfield.actions]
+schema_version=2
+enabled=true
+external_loop=true
+diagnostics=true
+```
+
+## 日志
+
+`Sustained dash armed for <角色>`、`Sustained dash v12: bone-pose file loaded for <角色>`、`Sustained dash v12: bone overlay bound: matched=<数量>`、`Sustained dash v12: TailLate pose applied`。`Sustained dash: mesh group hook unavailable` 表示可选钩子缺失，只影响隐藏动作延后。
+
+数据制作流程、通道映射与验证数据见 `docs/SPECIAL_DASH_CONTINUOUS_ANIMATION.md`。
+
+梨诺 2026-09-14 改用源帧 46–66 的低位段，交叠 ±8 后半速重采样，源帧 56 接管。骨盆起伏从 44.3 cm 降至 3.9 cm；Animator 保持参数不变。复现脚本和高低位比较见 `docs/LIINO_LOW_GLIDE.md`。
+
+## 历史记录
+
+以下为被取代的试验轮次，保留作证据。
+
+### v11 原生包候选记录
 
 v11 已将粗修结果编码回原生 Endfield ACL / AnimationClip TypeTree，并保留原生 AssetBundle 的 path flags、hash container 和引用结构。标准 2022 序列化对象不再进入交付包；Unity 2022 仅用于离线 HumanPose 计算。新文件为 `actions/aglina_native_return_v2.bundle`，加载使用当前游戏的 `LoadAsset(Int64, Type)` 和原生资源 ID。
 
@@ -16,13 +55,13 @@ v11 已将粗修结果编码回原生 Endfield ACL / AnimationClip TypeTree，�
 
 加载阶段额外写入 `actions/aglina_native_return_v2.load.log`，每个关键原生调用前后及时落盘。成功仍需实际 Clip 确认及 `v11 imported loop wrap`。完整步骤、备份和限制见 `tmp_analysis/aglina-native-return-v2/README.md`。启动器的配置保存也保留已存在的 external_loop 开/关设置，避免整体保存或动作开关将其丢弃。
 
-## v10.2 崩溃恢复记录
+### v10.2 崩溃恢复记录
 
 v10.1 实机在 `AssetBundle.LoadAsset` 读取动画时发生 Unity 原生访问违规。归档加载已返回，但尚未执行控制器替换。原版与标准包的 AnimationClip TypeTree 存在 ACL 和其他自定义字段差异，外层转换不足以保证动画内部格式兼容。
 
 1.9.2 将 `external_loop` 默认值改为 false；部署包已从自动加载路径移开，当前用户配置也已关闭外部加载。原动作开关继续使用 v9 的循环和特效保持。托管异常回退不能捕获这次原生硬崩溃；内部格式转换与离线验证完成之前不再启用此候选。证据见 `tmp_analysis/aglina-return-v1/v10.1-crash-20260909-225137/analysis.md`。以下为历史试验实现记录。
 
-## v10.1 历史试验
+### v10.1 历史试验
 
 v10 首次实机在 `LoadFromFile` 的归档包头读取阶段失败，随后回退 v9。v10.1 将标准 UnityFS 转换成游戏当前 Endfield VFS 内层归档格式，使用原包已有的无压缩信息/数据块模式；动画字节不变。详细日志区分归档加载、左右 LoadAsset、Clip 属性校验及 GC pin 失败。当前测试目录已部署专用包；还未确认游戏接受。
 
@@ -42,9 +81,7 @@ v10 首次实机在 `LoadFromFile` 的归档包头读取阶段失败，随后回
 
 若看到 `using v9 loop`，说明回导分支没有启用，不能据此评价外部动画效果。当前测试资源及构建证据在 `tmp_analysis/aglina-return-v1`，粗修原文件在 `tmp_analysis/aglina-loop-test-v1`。三组本地测试覆盖原动作策略、粒子恢复、新控制器所有权/失败重试/100 次闭合回绕；不替代游戏实测。
 
-模块 ID：`betterendfield.actions`。启动器「动作模块」提供艾洁莉娜持续特殊冲刺开关，默认关闭。游戏在每次特殊冲刺选择左或右动作，本模块保留该选择。
-
-## 历史版本 v9
+### 历史版本 v9
 
 用户已确认 v8 能循环、道具仍在，但粒子消失且接缝明显。22:52 的实机日志显示 v8 请求目标约 1.33 秒，混合后实际进度却回到 normalizedTime≈0.087，即约 0.30 秒；此前的“只要时间回落就算成功”误接受了入场重播。
 
@@ -71,7 +108,7 @@ cmake --build build/native --config Release --target BetterEndfield.Actions Bett
 & build/native/Release/BetterEndfield.ActionsEffectsTests.exe
 ```
 
-## v8 实现记录（已由 v9 替换固定时间播放入口）
+### v8 实现记录（已由 v9 替换固定时间播放入口）
 
 这是一版可实测的同状态混合实现，尚未完成游戏内自然度验证。以下为当前行为；后面的 v4–v7 内容仅保留历史记录，其中整段 Play 重播与阻止 `_DoEnd` 的方案已经撤换。
 
@@ -102,9 +139,9 @@ v8 在保持期间较早安排下一轮，因此正常情况下到不了上述 S
 
 限制：两个源高点的 Root/手脚姿态并不相同，v8 用同侧混合验证可行性，尚未证明接缝自然；同状态转场、游戏时间缩放、快速声音分支和根运动仍以实机日志/画面为准。
 
-## 历史版本记录（以下不代表 v8 当前策略）
+### 更早的版本记录（不代表当前策略）
 
-## v4 修正（2026-09-08）
+### v4 修正（2026-09-08）
 
 v3 实机仍失败：02:06 的日志确认加载 v3，随后直接 `perform cleared`，`natural_end_deferrals=0`。左右动画均报告 `clip_loop=0`，状态长度约 3.04–3.47 秒。不能再将这一结果归因于测试版本没有更新。
 
@@ -114,7 +151,7 @@ v3 实机仍失败：02:06 的日志确认加载 v3，随后直接 `perform clea
 
 构建与策略回归通过。测试 DLL 更新在 `artifacts/BetterEndfield-win-x64/modules/BetterEndfield.Actions.dll`；v3 备份在 `tmp_analysis/actions-before-v4-test-update-20260908`。下面保留 v3 自然结束拦截说明，该机制仍存在，但不足以独自解决实机问题。
 
-## v5 修正（1.4.0）
+### v5 修正（1.4.0）
 
 v4 日志已确认 `_TickStatePerformInterrupt` 不是实际入口。调用栈为：
 
@@ -129,21 +166,21 @@ CharPerformHandleBase._TickMainFlow
 
 此版本还会记录 `Aglina Perform _TryExit: reason=..., type=..., suppress=...`，用于确认游戏实际发出的命令；如果命令不是 `SpDashEnd + ForceExit`，不会被模块吞掉。自然结束后同侧动画重播逻辑保持不变。
 
-## v6 诊断补充（1.5.0）
+### v6 诊断补充（1.5.0）
 
 v5 没有打印 `_TryExit`，但其日志条件要求“命令存在且保持条件已成立”，因此不能据此判断 Hook 没有执行。v6 在目标 handle 的每次 `_TryExit` 首次调用时都记录命令指针及 `moveMode/gait/moving/airborne/owned/hold`，并记录启动时解析出的枚举值。这样可以区分命令为空、移动条件不成立、Perform 归属变化和枚举值不匹配。
 
-## v7 修正（1.6.0）
+### v7 修正（1.6.0）
 
 v5/v6 的保持判断仍要求 `IsPlayingSpDashPerform()` 为 true。实际退出栈表明游戏会先清掉这个瞬时标志，再处理 `SpDashEnd + ForceExit`，因此 `_TryExit` 和 `InterruptSpDashPerform` 都提前放行。v7 在这两个入口使用已记录的 pinned Perform handle、特殊 Animator 状态和移动状态判断，不再重复要求瞬时播放标志；只要仍是本次特殊状态且角色仍在有效移动，就拦截该自动结束命令。
 
 测试时应看到 `Actions enabled: Aglina SpDashEnd hold and selected-side replay (v7).`，并在第一次自动结束时看到 `suppress=1` 或 `suppressed InterruptSpDashPerform`。
 
-## 2026-09-08 实机证据
+### 2026-09-08 实机证据
 
 1.1.0 已能进入特殊状态并延后清除 `isDashing`，但仍不能持续。多次日志在 normalizedTime 约 0.688–0.691 时出现：`perform=0, special=1, outgoing=0`，然后模块撤销保持。这说明观察到的取消先发生在 Perform 归属/播放状态一侧，当时动画尚未到 normalizedTime=1，也没有正在退出的 Transition。不能仅据此认定整个退化问题都是 Clip 长度导致。
 
-## 新补上的自然结束路径
+### 新补上的自然结束路径
 
 当前原生代码：`CharPerformHandleBase._TickMainFlow()` 除了处理显式退出，还会因 `_CheckEnd()` 或时间轴轨道完成而调用 `_DoEnd()`（研究调用地址 `0x037163F6`）。`_CheckEnd()` 检查中断命令、固定时长等条件；轨道完成也有独立分支。因此前两版仅处理动画黑板和特殊冲刺 Brain 的中断不够。
 
@@ -159,7 +196,7 @@ v5/v6 的保持判断仍要求 `IsPlayingSpDashPerform()` 为 true。实际退�
 
 **该自然结束分支已通过反汇编确认，但 1.2.0 尚未实机验证。** 若还有动画本身到尾退出，需要根据新增日志再判断；当前版本未宣称已经解决所有退出路径。
 
-## 原有保持与退出
+### 原有保持与退出
 
 - `StartSpDash` 完成后校验 `chr_0013_aglina`、主控身份和 `CharIntPerform_Aglina_Spdash`，记录具体 handle。
 - 入场 Pending 最多等待 1 秒游戏时间，允许旧普通 Dash 的过渡先完成。状态 ID 读取游戏的 `HASH_SP_DASH_L/R` 静态字段。
@@ -168,7 +205,7 @@ v5/v6 的保持判断仍要求 `IsPlayingSpDashPerform()` 为 true。实际退�
 - 停止、攻击/受击接管、腾空、换人、死亡、关闭配置、强制停止或释放都保留退出。
 - 清理时恢复游戏最后请求的黑板参数值；不向释放后的组件或工作线程调用 Unity。
 
-## 配置
+### 旧版配置说明
 
 ```ini
 [betterendfield.actions]
@@ -179,7 +216,7 @@ diagnostics=true
 
 兼容首版 schema 1 的开关，忽略旧循环区间配置。开关默认关闭，下一次自然触发生效。
 
-## 新日志与验收
+### 新日志与验收
 
 - `selected state=left/right`：本次实际选择、动画长度及 `clip_loop`。
 - `Perform _DoEnd: defer=...`：是否延后自然结束，Perform 当前时间、固定时长、总时长、循环标志、阶段及命令标志。

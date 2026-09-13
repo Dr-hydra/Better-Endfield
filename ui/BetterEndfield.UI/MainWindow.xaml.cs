@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -388,7 +388,12 @@ public sealed partial class MainWindow : Window
     {
         if (_initializing) return;
         bool isZh = LocalizationService.Instance.IsChinese;
-        var configuration = new ModConfiguration { AglinaContinuousDashEnabled = AglinaContinuousDashToggle.IsOn };
+        var configuration = new ModConfiguration
+        {
+            ContinuousSpecialDashAglinaEnabled = ContinuousSpecialDashAglinaToggle.IsOn,
+            ContinuousSpecialDashLiinoEnabled = ContinuousSpecialDashLiinoToggle.IsOn,
+            LiinoCleanDashEnabled = LiinoCleanDashToggle.IsOn,
+        };
         try
         {
             await ConfigurationService.SaveActionConfigurationAsync(configuration);
@@ -2331,7 +2336,9 @@ public sealed partial class MainWindow : Window
             HideHudEnabled = HideHudToggle.IsOn,
             HideHudToggleHotkey = hideHudToggleHotkey,
             FreeCameraEnabled = FreeCameraToggle.IsOn,
-            AglinaContinuousDashEnabled = AglinaContinuousDashToggle.IsOn,
+            ContinuousSpecialDashAglinaEnabled = ContinuousSpecialDashAglinaToggle.IsOn,
+            ContinuousSpecialDashLiinoEnabled = ContinuousSpecialDashLiinoToggle.IsOn,
+            LiinoCleanDashEnabled = LiinoCleanDashToggle.IsOn,
             DisableDitherEnabled = DisableDitherToggle.IsOn,
             PauseGameInFreeCamera = PauseGameInFreeCameraToggle.IsOn,
             FreeCameraToggleHotkey = cameraToggleHotkey,
@@ -2400,7 +2407,9 @@ public sealed partial class MainWindow : Window
         HideHudToggle.IsOn = configuration.HideHudEnabled;
         HideHudHotkeyBox.Text = configuration.HideHudToggleHotkey;
         FreeCameraToggle.IsOn = configuration.FreeCameraEnabled;
-        AglinaContinuousDashToggle.IsOn = configuration.AglinaContinuousDashEnabled;
+        ContinuousSpecialDashAglinaToggle.IsOn = configuration.ContinuousSpecialDashAglinaEnabled;
+        ContinuousSpecialDashLiinoToggle.IsOn = configuration.ContinuousSpecialDashLiinoEnabled;
+        LiinoCleanDashToggle.IsOn = configuration.LiinoCleanDashEnabled;
         DisableDitherToggle.IsOn = configuration.DisableDitherEnabled;
         PauseGameInFreeCameraToggle.IsOn = configuration.PauseGameInFreeCamera;
         FreeCameraHotkeyBox.Text = configuration.FreeCameraToggleHotkey;
@@ -3218,14 +3227,21 @@ public sealed partial class MainWindow : Window
         CombatNavigationItem.Content = isZh ? "战斗数据" : "Combat Stats";
         UiNavigationItem.Content = isZh ? "界面增强" : "Touch & UI";
         CameraNavigationItem.Content = isZh ? "相机增强" : "Camera";
-        ActionsNavigationItem.Content = isZh ? "动作模块" : "Actions";
-        ActionsPageTitle.Text = isZh ? "动作模块" : "Character Actions";
-        ActionsPageDescription.Text = isZh ? "调整角色动作的持续表现。设置保存后，下一次特殊冲刺生效。" : "Adjust character animation behavior. Changes apply on the next special dash.";
-        AglinaContinuousDashToggle.Header = isZh ? "艾洁莉娜：持续特殊冲刺" : "Aglina: continuous special dash";
-        AglinaContinuousDashToggle.OffContent = isZh ? "关闭" : "Disabled";
-        AglinaContinuousDashToggle.OnContent = isZh ? "开启" : "Enabled";
+        ActionsNavigationItem.Content = isZh ? "冲刺持续" : "Sustained Dash";
+        ActionsPageTitle.Text = isZh ? "冲刺持续" : "Sustained Dash";
+        ActionsPageDescription.Text = isZh ? "分角色开启特殊冲刺动作的持续播放。设置保存后，下一次特殊冲刺生效。" : "Enables the sustained special dash per character. Changes apply on the next special dash.";
+        ContinuousSpecialDashAglinaToggle.Header = isZh ? "洁尔佩塔" : "Aglina";
+        ContinuousSpecialDashAglinaToggle.OffContent = isZh ? "关闭" : "Disabled";
+        ContinuousSpecialDashAglinaToggle.OnContent = isZh ? "开启" : "Enabled";
+        ContinuousSpecialDashLiinoToggle.Header = isZh ? "梨诺" : "Liino";
+        ContinuousSpecialDashLiinoToggle.OffContent = isZh ? "关闭" : "Disabled";
+        ContinuousSpecialDashLiinoToggle.OnContent = isZh ? "开启" : "Enabled";
+        LiinoCleanDashToggle.Header = isZh ? "隐藏机甲与光效" : "Hide mech and effects";
+        LiinoCleanDashToggle.OffContent = isZh ? "关闭" : "Disabled";
+        LiinoCleanDashToggle.OnContent = isZh ? "开启" : "Enabled";
+        LiinoCleanDashDescription.Text = isZh ? "梨诺冲刺全程隐藏机甲（含腿甲）与光效，保留飞行动画。" : "Hides Liino's mech, including leg armor, and effects throughout her dash while keeping the flight animation.";
         ActionsExperimentalInfo.Title = isZh ? "实验功能" : "Experimental";
-        ActionsExperimentalInfo.Message = isZh ? "保留游戏本次选中的左或右特殊冲刺动作，在持续冲刺时延后自然结束；停止或被打断时结束。此版本仍需实机验证。" : "Preserves the left or right special dash chosen by the game, deferring natural completion while sprinting. Stops on movement end or interruption. In-game verification is still needed.";
+        ActionsExperimentalInfo.Message = isZh ? "保留游戏本次选中的左或右特殊冲刺动作，在持续冲刺时循环播放，延后自然结束；停止或被打断时结束。" : "Preserves the left or right special dash chosen by the game and repeats it while sprinting, deferring natural completion. Stops on movement end or interruption.";
         DisplayNavigationItem.Content = isZh ? "显示增强" : "Display & Pipeline";
         GachaNavigationItem.Content = isZh ? "寻访查询" : "Gacha History";
         if (FeatureNavigation.SettingsItem is NavigationViewItem settingsItem)

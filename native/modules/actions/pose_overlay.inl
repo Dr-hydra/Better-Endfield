@@ -3,7 +3,8 @@
 bool g_pose_contract = true;
 TickFn g_pose_tail = nullptr;
 PoseBank g_pose_bank;
-bool g_pose_data_attempted = false, g_pose_data_ready = false;
+const CharacterProfile* g_pose_data_profile = nullptr;
+bool g_pose_data_ready = false;
 uint64_t g_pose_generation=0;
 struct PoseBinding {
     void* transform = nullptr;uint32_t pin=0;size_t sample=0;
@@ -47,27 +48,29 @@ void ReleasePoseOverlay(bool restore){
         }
     }
     if(old.component&&old.writes){
-        char text[192]{};std::snprintf(text,sizeof(text),"Aglina v12: pose overlay released, frames=%u, mean_apply_us=%.1f, restored=%d.",old.writes,old.microseconds/old.writes,restore);
+        char text[192]{};std::snprintf(text,sizeof(text),"Sustained dash v12: pose overlay released, frames=%u, mean_apply_us=%.1f, restored=%d.",old.writes,old.microseconds/old.writes,restore);
         Log(text);
     }
     FreePoseOwner(old);
 }
-bool LoadPoseBank(){
-    if(g_pose_data_attempted)return g_pose_data_ready;
-    g_pose_data_attempted=true;
+bool LoadPoseBank(const CharacterProfile* profile){
+    if(g_pose_data_profile==profile)return g_pose_data_ready;
+    g_pose_data_profile=profile;g_pose_data_ready=false;
     wchar_t name[32768]{};HMODULE module=nullptr;
     if(!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS|GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,reinterpret_cast<LPCWSTR>(&g_pose_bank),&module)||
        !GetModuleFileNameW(module,name,static_cast<DWORD>(std::size(name))))return false;
-    const auto file=std::filesystem::path(name).parent_path()/L"actions"/L"aglina_pose_v12.bin";
+    const auto file=std::filesystem::path(name).parent_path()/L"actions"/profile->pose_file;
     std::ifstream input(file,std::ios::binary);std::string error;
-    if(!input){Log("Aglina v12: bone-pose file absent; native v9 hold only.");return false;}
+    if(!input){Log(("Sustained dash v12: bone-pose file absent for "+std::string(profile->codename)+"; native v9 hold only.").c_str());return false;}
     try {g_pose_data_ready=g_pose_bank.Load(input,error);}catch(const std::exception& ex){error=ex.what();}
-    if(!g_pose_data_ready){Log(("Aglina v12: pose file rejected: "+error).c_str());return false;}
-    Log("Aglina v12: bone-pose file loaded; 104 samples, independent 103/60-second loop.");return true;
+    if(!g_pose_data_ready){Log(("Sustained dash v12: pose file rejected: "+error).c_str());return false;}
+    char text[192]{};std::snprintf(text,sizeof(text),"Sustained dash v12: bone-pose file loaded for %s; %u samples, independent %u/%.0f-second loop.",
+        profile->codename,g_pose_bank.frames,g_pose_bank.period,g_pose_bank.fps);
+    Log(text);return true;
 }
-bool BeginPoseOverlay(void* component){
+bool BeginPoseOverlay(void* component,const CharacterProfile* profile){
     ReleasePoseOverlay(true);
-    if(!g_pose_contract||!LoadPoseBank())return false;
+    if(!g_pose_contract||!profile||!LoadPoseBank(profile))return false;
     using StringNew=void*(*)(const char*);
     auto string_new=reinterpret_cast<StringNew>(GetProcAddress(GetModuleHandleW(L"GameAssembly.dll"),"il2cpp_string_new"));
     if(!string_new)return false;
@@ -86,14 +89,14 @@ bool BeginPoseOverlay(void* component){
         if(found&&UnityObjectAlive(transform)&&PoseReadLocal(transform,bone.baseline))bone.pin=g_host->gchandle_new(g_host->context,transform,1);
         if(!bone.pin){
             ++owner.missing;if(spec.required)++missing_required;
-            if(owner.missing<=4)Log(("Aglina v12: bone unavailable: "+spec.path).c_str());
+            if(owner.missing<=4)Log(("Sustained dash v12: bone unavailable: "+spec.path).c_str());
         }else owner.bindings.push_back(bone);
     }
     if(missing_required||owner.bindings.size()*5<g_pose_bank.bones.size()*4||g_session.component!=component){
-        char text[160]{};std::snprintf(text,sizeof(text),"Aglina v12: bone binding rejected: matched=%zu missing_required=%u; native hold only.",owner.bindings.size(),missing_required);Log(text);
+        char text[160]{};std::snprintf(text,sizeof(text),"Sustained dash v12: bone binding rejected: matched=%zu missing_required=%u; native hold only.",owner.bindings.size(),missing_required);Log(text);
         FreePoseOwner(owner);return false;
     }
-    char text[160]{};std::snprintf(text,sizeof(text),"Aglina v12: bone overlay bound: matched=%zu missing_optional=%u; waiting for process window.",owner.bindings.size(),owner.missing);Log(text);
+    char text[160]{};std::snprintf(text,sizeof(text),"Sustained dash v12: bone overlay bound: matched=%zu missing_optional=%u; waiting for process window.",owner.bindings.size(),owner.missing);Log(text);
     ++g_pose_generation;g_pose_owner=std::move(owner);return true;
 }
 void ApplyPoseOverlay(void* component,float delta){
@@ -121,12 +124,12 @@ void ApplyPoseOverlay(void* component,float delta){
     for(auto& bone:g_pose_owner.bindings){
         bool child_ok=true;void* root_args[]{g_pose_owner.root};bool child=Value<bool>(PoseIsChild,bone.transform,child_ok,root_args);
         if(generation!=g_pose_generation)return;
-        if(!child_ok||!child){Log("Aglina v12: bone left owned hierarchy; ending overlay.");ReleasePoseOverlay(true);return;}
+        if(!child_ok||!child){Log("Sustained dash v12: bone left owned hierarchy; ending overlay.");ReleasePoseOverlay(true);return;}
         BonePose current;
         const bool read_ok=PoseReadLocal(bone.transform,current);
         if(generation!=g_pose_generation)return;
         if(!read_ok){
-            Log("Aglina v12: bone read failed; ending overlay.");ReleasePoseOverlay(true);return;
+            Log("Sustained dash v12: bone read failed; ending overlay.");ReleasePoseOverlay(true);return;
         }
         bone.baseline=PoseNativeBaseline(current,bone.last,bone.baseline,bone.wrote);
         auto sampled=g_pose_bank.Sample(selected,bone.sample,seconds);
@@ -134,14 +137,16 @@ void ApplyPoseOverlay(void* component,float delta){
         const bool write_ok=PoseWriteLocal(bone.transform,output);
         if(generation!=g_pose_generation)return;
         if(!write_ok){
-            Log("Aglina v12: bone write failed; ending overlay.");ReleasePoseOverlay(true);return;
+            Log("Sustained dash v12: bone write failed; ending overlay.");ReleasePoseOverlay(true);return;
         }
         bone.last=output;bone.wrote=true;
     }
+    RefreshLiinoEffectsAfterPose(component);
+    if(generation!=g_pose_generation)return;
     QueryPerformanceCounter(&end);g_pose_owner.microseconds+=(end.QuadPart-begin.QuadPart)*1e6/frequency.QuadPart;
     ++g_pose_owner.writes;
     if(g_pose_owner.writes<=2||g_pose_owner.writes%120==0){
-        char text[240]{};std::snprintf(text,sizeof(text),"Aglina v12: TailLate pose applied side=%s bones=%zu weight=%.3f time=%.3f frame=%d count=%u mean_us=%.1f; Animator remains native.",selected==0?"left":"right",g_pose_owner.bindings.size(),weight,seconds,frame_id,g_pose_owner.writes,g_pose_owner.microseconds/g_pose_owner.writes);Log(text);
+        char text[240]{};std::snprintf(text,sizeof(text),"Sustained dash v12: TailLate pose applied side=%s bones=%zu weight=%.3f time=%.3f frame=%d count=%u mean_us=%.1f; Animator remains native.",selected==0?"left":"right",g_pose_owner.bindings.size(),weight,seconds,frame_id,g_pose_owner.writes,g_pose_owner.microseconds/g_pose_owner.writes);Log(text);
     }
 }
 void __fastcall PoseTailDetour(void* component,float delta,const void* method){

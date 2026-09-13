@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text;
 using BetterEndfield.UI.Services;
 
@@ -131,11 +131,34 @@ internal sealed class ModConfiguration
 
     public bool FreeCameraEnabled { get; set; } = false;
 
-    public bool AglinaContinuousDashEnabled { get; set; } = false;
+    // One switch per supported character. The native module keys its per-character
+    // profiles on the same codenames, so adding a character only adds a name here.
+    public bool ContinuousSpecialDashAglinaEnabled { get; set; } = false;
+
+    public bool ContinuousSpecialDashLiinoEnabled { get; set; } = false;
+
+    public bool LiinoCleanDashEnabled { get; set; } = true;
+
+    public bool ContinuousSpecialDashEnabled =>
+        ContinuousSpecialDashAglinaEnabled || ContinuousSpecialDashLiinoEnabled;
+
+    public string ContinuousSpecialDashCharacters
+    {
+        get
+        {
+            var names = new List<string>(2);
+            if (ContinuousSpecialDashAglinaEnabled) names.Add("aglina");
+            if (ContinuousSpecialDashLiinoEnabled) names.Add("liino");
+            return string.Join(',', names);
+        }
+    }
+
     public string ToActionsIniSection() =>
         "[betterendfield.actions]" + Environment.NewLine +
-        "schema_version=2" + Environment.NewLine +
-        $"enabled={(AglinaContinuousDashEnabled ? "true" : "false")}" + Environment.NewLine +
+        "schema_version=3" + Environment.NewLine +
+        $"enabled={(ContinuousSpecialDashEnabled ? "true" : "false")}" + Environment.NewLine +
+        $"characters={ContinuousSpecialDashCharacters}" + Environment.NewLine +
+        $"liino_clean={(LiinoCleanDashEnabled ? "true" : "false")}" + Environment.NewLine +
         "diagnostics=true" + Environment.NewLine;
 
     public bool DisableDitherEnabled { get; set; } = false;

@@ -1,32 +1,108 @@
-# Aglina 特殊冲刺动画持续播放调查结论
+# 特殊冲刺动画持续播放
 
-> **2026-09-08 v8 实测反馈与 v9 修正：** 用户确认已能循环、道具保留，但粒子消失且接缝明显。22:52 日志显示实际落点约 0.087（约 0.30 秒），并非请求的中段；v8 的回绕确认规则过宽。v9（1.8.0）改为显式归一化 CrossFade 并验证落点范围。资源另确认两套特效自身寿命 2.7 / 3 秒、自动淡出、四个粒子均不循环；现按本次实例延后寿命计时、开启粒子循环，并在退出/回收前恢复原值。构建与离线测试通过，v9 仍待实测。详见文末“v9：实际落点与粒子寿命”。
+按住冲刺时，让角色保持自己的特殊冲刺动作循环播放，而不是播完一遍就回到普通疾跑。当前支持洁尔佩塔（`chr_0013_aglina`）和梨诺（`chr_0035_liino`）。启动器「冲刺持续」页的开关写入 `[betterendfield.actions] enabled`；`external_loop=true` 时启用骨骼姿态覆盖，`false` 时退回只保持状态不改姿态的 v9 行为。
 
-> **2026-09-08 已落地 v8 实验实现（1.7.0）：** 用户随后授权实现。现已用游戏组件的同状态 CrossFade 实现完整起伏的相位衔接，补齐目标道具隐藏、Perform End 轨道清理和 Flying_Stop 的保持/退出处理；编译、策略测试、接口核对及 DLL 导出检查通过。测试包已更新，**尚未完成游戏内混合/根运动/自然度验证**。当前实现与退出说明见文末“v8 实现与测试包”，此前“未修改运行时代码”均为对应历史轮次记录。
+## 1. 运行时如何工作
 
-> **2026-09-08 用户要求保留完整起伏后的补充：** 已将检查范围延后至 2.9 秒，没有把 Flying_Stop 当作骨骼检查截止线。后两个明显高度峰值为 **1.6333 秒、2.5667 秒**，中间低点为 2.2667 秒；该段长 **0.9333 秒**，适合继续研究“一次完整起伏”的节奏。两峰高度仅差约 0.087 资源单位，但 Root 参考旋转约差 81°，55 条主体 muscle 首尾差 RMS 约 0.45，**不能直接整姿态回绕**。此前 0.5 秒方案只是中段小幅循环对照，不应替代用户提出的完整起伏目标。详见文末“后两个高点之间的完整起伏”。
+游戏侧有两层机制：Animator 的 `SpDash_L` / `SpDash_R` 状态，以及 `CharIntPerform_<角色>_Spdash` 这个 Perform。两者生命周期独立，都要处理。模块（`native/modules/actions`）分三部分：
 
-> **2026-09-08 循环切入候选：** 离线比较 455 组同侧重叠混合后，建议优先预览 **首次原片播至 1.70 秒，随后用 0.40 秒将原片 1.70–2.10 秒混合到同侧 1.20–1.60 秒**，形成约 0.50 秒重复周期。该参数是便于验证的候选，不是已经确认自然的循环：脚部参考旋转仍有明显差值，左侧源 Transform 轨道 207 还存在未定位骨骼的急转。详见文末“循环切入位置与混合候选”；未修改运行时代码。
+**保持 Perform 不退出。** `_TryExit` 收到 `SpDashEnd + ForceExit` 时，若本次会话仍满足保持条件就返回 false；`ShouldInterruptSpDash`、`InterruptSpDashPerform`、`_TickStatePerformInterrupt` 同理。`_CheckTrackEnd` 在 End 阶段延后自然清理。所有判断都以启动时记录的 handle 为准，不依赖 `IsPlayingSpDashPerform` 这个会提前变 false 的瞬时标志。
 
-> **2026-09-08 逐帧采样与实例入口补充：** 左右原片均已解出 **209 个 60 Hz 采样点，覆盖 3.466667 秒**，数秒时长存在于单条 Clip 内；当前绑定不是左右短片拼接。对 0.4–2.3167 秒范围内、长度至少 0.5 秒的接缝筛选，尚未找到可直接硬回绕的无缝区间。已定位角色组件的 `SetStateOverrideClip`（RVA `0x05F6B15C`）及两条正常退出过渡的名称 `SPdashLtoSprint` / `SPdashRtoSprint`；但 `SetTransitionOverride` 只能改时长、偏移和 Exit Time，不能据此声称已经能禁用退出。详见文末“逐帧数据与实例覆盖入口”。本轮仅研究，没有修改动作模块或替换游戏 DLL。
+**保持 Animator 状态不走到结尾。** 每帧读归一化时间，到达 `begin` 时对同一状态发一次带偏移的 `CrossFade`，把播放位置绕回 `target`，并在随后几帧确认落点确实落在预期区间，否则中止。两个角色的出口过渡 Exit Time 都是 0.9 左右，所以回绕点必须早于 0.85。
 
-> **用户纠正后，以本条为准：** 上一轮把道具/特效 Perform 的清理位置过早当作动画保持的完整方案，现已撤回该结论。已从当前 Persistent overlay 导出标准/optNew 两个 Controller 及其真实左右 Clip：状态名为 **`SpDash_L`、`SpDash_R`**，分别绑定 `A_actor_aglina_sprint_dash_sp_l/r`，均长 3.466667 秒且非循环。左右 Clip 在 **2.34 秒发出 Flying_Stop**，随后有落地与普通疾跑脚步事件；正常 Sprint 过渡的 Exit Time 分别为 **0.9000001 / 0.91833866**。因此“等 normalizedTime>=1 再整段重播”会经过收尾段，不能满足持续保持过程动作。主线应改为定位左右 Clip 内可循环的过程区间，之后再配合保留道具/特效及正确退出，详见文末“左右过程动画与收尾段”。
+**覆盖骨骼姿态（v12 机制）。** 在 `CharacterAnimationComponent.TailLateTick` 之后，按角色数据文件逐骨骼写入局部位移和旋转。数据是离线修好的闭合循环，有自己的时钟，与 Animator 的回绕互不依赖。写入前记录原生基线，只在自己写过且值未被原生改动时还原，退出时按基线回写。不替换 Controller、不禁用 Animator、不动世界坐标、不写缩放。
 
-> **2026-09-08 Perform 层结论（动画方案随后修正）：** 已完整解析目标 Perform 的 743 字节本地资源，并核对原生反序列化字段顺序。`startActions`、`loopActions` 为空，实际道具/特效动作全部在 `endActions`，其中 `logicId=11` 在 2.4 秒隐藏 `Weapons/wpn_misc_0013`。原生 `_CheckTrackEnd → _DoExit` 是 **End=5 阶段**的收尾，旧文把它读成 PreStart/Start/Loop 分支有误。ShowObject 定时隐藏与 End 阶段自然清理是道具/特效侧的配套控制点，不能直接阻止该资源进入 End；当时提出的 Animator 整段同侧重播已撤回，不能作为持续过程动作的完整方案。详见文末“资源解码与实现位置”及后续修正。
+角色差异集中在 `module.cpp` 的 `CharacterProfile` 表里：模板 id、Perform id、姿态数据文件、Animator 回绕常量、需要保持的持续特效名、需要延后的音频停止事件、需要延后的道具隐藏或网格组隐藏。其余 hook 对所有角色共用。
 
-> 当前进展（2026-09-08）：游戏每次选择左或右特殊动作，并非左右交替。1.1.0 实机日志显示在动画进度约 0.69 时 Perform 消失，而特殊动画仍在播放。1.2.0 新增对目标 Perform `_TickMainFlow → _DoEnd` 自然结束的处理，保留显式中断，并增加动画长度/循环诊断。新版尚待实机验证，当前实现见 [动作模块 README](../native/modules/actions/README.md)。以下为历史调查，原“左右交替”和手动回绕假设已撤回。
+| | 洁尔佩塔 | 梨诺 |
+| --- | --- | --- |
+| 模板 id | `chr_0013_aglina` | `chr_0035_liino` |
+| Perform | `CharIntPerform_Aglina_Spdash` | `CharIntPerform_Liino_Spdash` |
+| 源 Clip | `A_actor_aglina_sprint_dash_sp_l/r`，209 采样 / 3.4667 秒 | `A_actor_liino_sprint_dash_sp_l/r`，174 采样 / 2.8833 秒 |
+| 动作性质 | 滑翔，循环段内双脚离地 0.27–1.2 m | 踩板滑行，约 2.13 秒落地 |
+| 回绕常量 begin/target/blend/period | 136/208、80/208、18/208、56/208 | 107/173、55/173、15/173、52/173 |
+| 姿态文件 | `actions/pose_aglina.bin` | `actions/pose_liino.bin` |
+| 持续特效保持 | `P_fxbat_aglina_sprint_dash_sp_01/02` 两套粒子 | 无需处理，其特效 duration 为 -1，随 Perform 存续 |
+| 延后的音频停止 | `Aglina_SprintDashSp_Flying_Stop` | 无 |
+| 延后的隐藏动作 | 道具隐藏 logic 11 / index 0 / delay 2.4 | 网格组隐藏（2.2 秒收起滑板），经 `SetCharMeshGroupShow` 拦截 |
 
-> 最新修正：02:33 实机已明确加载 v5，仍直接进入 `Clear`。v5 的 `_TryExit` 日志条件依赖保持条件，不能据此判断 Hook 是否执行。v6（1.5.0）增加诊断；进一步确认 `IsPlayingSpDashPerform` 可能在退出命令前先变 false。v7（1.6.0）在 `_TryExit` 和 `InterruptSpDashPerform` 使用已记录 handle 及特殊 Animator 状态判断，不再依赖该瞬时标志。构建/策略回归通过，效果待实测。
+网格组钩子是可选契约：解析不到就只关掉这一项，模块其余功能照常。
 
-调查对象：`chr_0013_aglina`  
-调查时间：2026-09-06  
-调查范围：当前客户端资源配置、IL2CPP 类型定义及 `GameAssembly.dll` 中的特殊冲刺调用链。
+## 2. 数据是怎么做出来的
+
+五步，全部是本地离线处理，不改游戏文件：
+
+1. `tmp_analysis/extract_*_animation_inputs.py` 从当前 VFS 定点取出 Controller、左右 Clip 和模型包。
+2. `AclProbe`（ACL 2.1 官方解压接口）把 Clip 的 Transform / RootMotion / Float 三个缓冲解成每帧浮点样本。
+3. `prepare_bake.py` + Unity 2022.3.62f3 批处理 `CharBakeV1.Run`：用原 Avatar 建 `HumanPoseHandler`，把 Humanoid 通道还原成骨骼姿态，再叠加附属骨骼曲线，输出每帧 `骨骼数 × 10` 浮点。
+4. `make_loop_fine.py` 做闭合循环：在接缝两侧各取 W 帧真实源数据交叠淡化（五次平滑权重），中间区段一帧不改。
+5. `prepare_pose_overlay.py` 打包成 `BEPOSE12` v1 数据文件，剔除源片段里完全静止的骨骼和全部面部 / 视线骨骼，把口型、注视交还原生系统。
+
+梨诺自 2026-09-14 起由 `tools/actions/build_liino_glide.py` 完成第 4–5 步：改取低位源帧 46–66，交叠 ±8 后半速重采样为 40 帧周期，避免旧循环的大幅上下起伏。区间比较、复现和验收见 [梨诺低位滑翔修复](LIINO_LOW_GLIDE.md)。
+
+**原生 Humanoid 流的通道布局**（两角色一致，这是之前出错的地方）：0–2 Motion T，3–6 Motion Q，7–9 Root T，10–13 Root Q，14–41 四肢 IK 参考，42–142 是 **101 条 muscle**，之后是 IK 权重（洁尔佩塔 8 条、梨诺 9 条）。Unity 标准只有 95 条 muscle，映射关系是 0–28 相同、29–36 加 3、37–94 加 6；原生 29–31 与 40–42 这六条是近常量额外通道，直接丢弃。按恒等索引连续复制会把这六条塞进右大腿，正是 v12 试播「腿一直翘着」的原因。
+
+## 3. 验证结果
+
+| 指标 | 洁尔佩塔 | 梨诺 |
+| --- | --- | --- |
+| muscle 往返最大差 | 0.0000423 | 0.00023 |
+| Avatar 缩放（源 / 重建） | 一致 | 0.9917296 / 0.9917296 |
+| 循环区间（源帧） | 22–125，交叠 ±22 | 46–66，交叠 ±8，半速 |
+| 循环周期 | 103 帧 / 1.717 秒 | 40 帧 / 0.667 秒 |
+| 数据文件骨骼数（必需） | 226（22） | 339（22） |
+| 相位 / 切入归一化时间 | 18 / 0.19231 | 20 / 0.32370 |
+| 文件大小 | 1,348,105 字节 | 826,638 字节 |
+| 接缝最差骨骼抖动 ÷ 该骨骼源片段自身峰值 | 0.94（`IK_Weapon_L_001`） | 旧版 0.63；新版见独立高度与循环验证 |
+| Blender 端点差 / 四周期重复差 | 0 / 0 | 0 / 0 |
+
+抖动比值的口径是：对每根非面部骨骼，比较循环接缝处的角加速度与这根骨骼在原始片段里自身出现过的最大角加速度。小于 1 表示接缝的突变不超过原动作本身就有的抖动。身体骨骼单独看，洁尔佩塔接缝峰值 0.99 °/帧²、均值 0.47；梨诺旧版为 2.18 / 0.51，不能套用到新的半速区间。新版骨盆起伏从 44.3 cm 降至 3.9 cm，左右 Blender 端点和四周期重复差均为零。
+
+洁尔佩塔的映射修复另有一项独立佐证：Clip 自带的四个 IK 目标点通道不经过 muscle 映射，用它校验重建的手脚位置，两两距离平均差从 0.232 m 降到 0.076 m，双手一对从 0.511 m 降到 0.009 m。
+
+## 4. 部署与配置
+
+`scripts/BuildBetterEndfield.ps1` 产出的 `modules/` 需要再放入数据文件：
+
+```
+modules/BetterEndfield.Actions.dll
+modules/betterendfield.actions.module.ini
+modules/actions/pose_aglina.bin
+modules/actions/pose_liino.bin
+```
+
+`%LOCALAPPDATA%\BetterEndfield\BetterEndfield.ini`：
+
+```ini
+[betterendfield.actions]
+schema_version=2
+enabled=true
+external_loop=true
+diagnostics=true
+```
+
+启动器里的开关只重写 `enabled`，会保留 `external_loop`。
+
+## 5. 日志与验收
+
+开启诊断后应看到 `Sustained dash armed for <角色>`、`Sustained dash v12: bone-pose file loaded for <角色>`、`Sustained dash v12: bone overlay bound: matched=<骨骼数>`。`matched` 应为 226（洁尔佩塔）或 339（梨诺）。出现 `bone binding rejected` 说明必需骨骼路径与实机层级不符。
+
+## 6. 已知边界
+
+离线重建到 FBX / Blender 的转换已逐帧校验，但不等于与实机的 IK、布料、特效完全一致；预览不含贴图和粒子。梨诺低位循环为 0.667 秒，采用半速减缓小幅运动，仍需实机确认长时间重复的观感。武器 IK 与蝴蝶结这类附属骨骼未作单独曲线修复。
+
+---
+
+# 研究记录
+
+以下按时间顺序保留原始调查过程与被推翻的中间结论，仅作证据留存，与上面的当前实现不一致时以上面为准。
 
 ### 2026-09-08 测试版本核对
 
 01:58–02:00 的测试仍打印 v2 启动标识。用户确认 `artifacts/BetterEndfield-win-x64` 是复制测试包使用的目录；核对该目录的动作 DLL，大小为 180736 字节，修改时间为 2026-09-07 20:39:28，含 v2 标识、不含 v3 标识。不能将这次结果当作 v3 实机失败。已将输出目录中 186368 字节的 v3 动作 DLL 更新到该测试目录，旧文件备份在 `tmp_analysis/actions-before-v3-test-update-20260908`，并核对新标识。没有修改启动路径选择逻辑。
 
 用户观察到后续体力恢复；当前保持条件已覆盖 `Dash` 以及 `Grounded + Sprint + moving`，没有把体力恢复当作退出条件。这次旧版日志也显示已跨过 `Dash → grounded Sprint`，随后才丢失 Perform。v3 效果仍需更新后的实机日志验证。
+
 
 ## 结论
 
@@ -1024,3 +1100,28 @@ Actions 1.10.0 使用游戏已有 LoadAsset(Int64, Type) 加载新包 aglina_nat
 原生状态/移动/特效/中断继续运行，现有 v9 原生回绕保持生命周期；视觉时钟独立。目标角色 TailLateTick 原函数执行后应用位置与四元数，进入与退出采用约 0.12 秒混合。原生未重新写入的常量通道会识别并剔除本模块残留，清理时保留外部新值；按 Animator 根、骨骼归属和代次约束操作，组件释放前清理，关闭线程不调用 Unity。
 
 Release 编译、82 个接口描述、新增文件/时钟/混合/所有权清理检查和三组已有回归测试通过。本轮未启动游戏，TailLateTick 后是否仍有其他组件写回，以及真实帧开销和显示效果，尚待试播。日志须看到 TailLate pose applied 才算新路径实际写入；v9 normalized bob blend 可同时存在，不再代表新视觉路径失败。文档、备份与发布状态见 tmp_analysis/aglina-pose-overlay-v12/README.md。
+
+## 2026-09-13：v12 试播“腿一直翘着”的定位与 v13 数据重做
+
+用户试播 v12 后反馈动画整体接入、但一条腿全程抬着，且没有日志。定位结论：**问题在烘焙数据，不在运行时导入**。运行时按路径绑定骨骼、缺骨会拒绝并记日志，写入的就是数据文件本身的值；而 `aglina-loop-test-v1/left-baked.f32` 里 `Bip001_R_Thigh` 整段循环的局部旋转变化为 0.0°，左上臂、左前臂同样为 0.0°。
+
+根因是 EIEM 研究里已经指出、但当时未修的 95/101 通道问题。对原生 Clip Float 流的逐通道统计证实：第 42 位起共 101 个 muscle，原生 29–31 与 40–42 是六路近常量的额外通道（均值绝对值小于 0.01），右腿块为 32–39、双臂为 43–60。`AglinaBake.cs` 的恒等复制把三路额外通道送进右大腿，把大腿摆动送进右膝，双臂整体错位 6 路。第二版验证里被判为“表示差异”的手腕 muscle 往返差 4.5，实际是原生左肩通道超范围截断，本就是错位信号；Blender 粗修预览也是同一份数据，缺陷当时就存在。
+
+本轮完成（均未启动游戏，DLL 未改）：
+
+1. `AglinaBakeV2.cs` 按“0–28 同、29–36 加 3、37–94 加 6”重新烘焙左右完整 209 帧到 `tmp_analysis/aglina-fbx-validation-v3`。muscle 往返最大差 4.50 → 0.00004；右大腿变化幅度 0° → 97°。用 Clip 自带、与映射无关的四个 IK 目标点做独立校验：四末端两两距离与 FK 的平均差 0.232 m → 0.076 m，双手一对最大差 0.009 m。并排视频 `aglina_mapping_fix_comparison.mp4`。期间 Unity Personal 许可离线有效期过期，用户在 Hub 重新登录后恢复。
+2. 动作本质是滑翔：根高度 40 帧谷、98 峰、138 谷，循环段内双脚离地 0.27–1.2 m，无脚部接触问题。全身边界搜索仍选源帧 22–125（首尾位置 RMS 0.253 → 0.104 m）。
+3. `make_aglina_loop_fine.py`：接缝改为真实数据交叠淡化（起点侧源帧 0–44 与终点侧 103–147 各 22 帧，五次 smootherstep 权重），源帧 45–102 不动。身体骨骼接缝角加速度 0.1–1.0 °/帧²，低于原动作自身 99 分位（1.6–15）；头发链 3–4 对 10；端点差 0；Blender 四轮周期检查差 0。产物 `tmp_analysis/aglina-loop-fine-v1`，对照视频 `aglina_loop_before_after_4cycles.mp4`。
+4. `prepare_aglina_pose_overlay_v13.py`：399 → 226 根骨骼。剔除 84 根原动作中静止的骨骼（Nub、lod 网格节点、Funnel、IK_Root 等）和 89 根面部/视线骨骼（交还口型、注视、表情系统；冲刺中有语音事件）。22 根 Humanoid 骨骼全部保留并标记 required。时序参数与 v12 相同（104 点、周期 103、相位 18、入口 40/208），文件名沿用 `aglina_pose_v12.bin`。`validate_aglina_pose_bank.py` 按 PoseBank::Load 规则复核通过。
+5. 已替换 `build/native/stage/Release/modules/actions/aglina_pose_v12.bin`；备份在 `tmp_analysis/aglina-pose-overlay-v13/backup/`。线上 `artifacts/BetterEndfield-win-x64` 自 2026-09-10 08:00 主线重建后已不含 Actions 模块（v12 试播日志在 `%LOCALAPPDATA%\BetterEndfield\logs\BetterEndfield.log.bak`，03:48–03:50，matched=399、mean_apply_us≈157），本轮未改动线上目录，而是从本工作树完整发布到 `artifacts/BetterEndfield-win-x64-aglina-test`（含本分支 Actions DLL 与 v13 数据），并把 `BetterEndfield.ini` 的 `[Host]`/`[Loader]` 指向该目录、加入 `[betterendfield.actions]` 节（原 ini 已备份），见 v13 README“2026-09-13 21:45 测试发布”。
+
+待实机确认：`bone overlay bound: matched=226`、`TailLate pose applied` 后右腿是否随循环摆动；面部交还原生后口型与注视是否正常；`wep_L` 挂点在接缝处的跳变是否可见（原动作自身即有）。加载日志里“104 samples”是 DLL 写死的文案。说明见 `tmp_analysis/aglina-fbx-validation-v3/README.md`、`aglina-loop-fine-v1/README.md`、`aglina-pose-overlay-v13/README.md`。
+
+## 2026-09-14：确定版、模块通用化与梨诺接入
+
+1. 本轮把模块从单角色改成角色档案表驱动。`module.cpp` 新增 `CharacterProfile`，把模板 id、Perform id、姿态文件、Animator 回绕常量、持续特效、延后的音频停止与隐藏动作全部收进数据；`dash_policy.h` 的循环常量与道具隐藏规则改成按角色传入。日志前缀由 `Aglina …` 改为 `Sustained dash …`，模块显示名改为 `Sustained Dash`，版本 1.12.0。UI 页名改为「冲刺持续」，开关与配置属性改为 `ContinuousSpecialDash*`。姿态数据文件名改为 `actions/pose_<角色>.bin`。
+2. 梨诺的可行性已用同一条流水线验证并接入。她的 Float 通道是 152 条（muscle 段与洁尔佩塔一致，尾部多一条 IK 权重），烘焙 muscle 往返最大差 0.00023。第一次按全身位置距离矩阵选出的 40–80 窗口接缝偏硬（最差骨骼是源片段自身峰值的 1.68 倍），按「接缝抖动 ÷ 该骨骼自身源片段峰值」重新搜索后改用 52–104、交叠 ±14，比值 0.63，优于洁尔佩塔已发布循环的 0.94。
+3. 梨诺的 Perform 在 2.2 秒用 `CharMeshGroupShowActData`（logic 39/40）收起滑板，与洁尔佩塔的 `ObjectShowActData` 道具隐藏不是同一条路径。新增可选钩子 `CharPerformHandleBase.SetCharMeshGroupShow`，保持期间抑制 `show=false`；解析失败只关掉这一项。她的特效 duration 多为 -1，随 Perform 存续，不需要粒子寿命保持。
+4. Perform 配置解码器补全了 union 标签表。梨诺的配置里出现标签 13，旧解码器只认 25 和 32。这次直接从 `GameAssembly.dll` 的 union dispatcher 跳转表（RVA `0x0438E1F8`）逐标签取类型槽，再与各 `*ForMemoryPack::Deserialize` 函数体里引用的类型槽比对，解出 0–36 的完整映射（13 = `CharMeshGroupShowActData`），结果写在 `tmp_analysis/perform-union-tags.json`；用新表重解洁尔佩塔的配置，与 2026-09-08 的结果逐字段相同。
+5. 四个动作测试全部通过；姿态数据测试改为接受多个数据文件并按加载器契约逐一校验，同时跑洁尔佩塔与梨诺的数据。
+6. 新产物：`tmp_analysis/liino-fbx-validation`（烘焙与完整片段 FBX、预览）、`tmp_analysis/liino-loop-fine-v1`（循环数据、FBX、Blender 校验）、`tmp_analysis/liino-pose-overlay-v1`（姿态数据与说明）。通用化脚本：`prepare_bake.py`、`analyze_fullbody_candidates.py`、`make_loop_fine.py`、`prepare_pose_overlay.py`、`preview_loop.py`、`inspect_perform_cfg_v2.py`、`BundleTreeDump`、`CharFbxProbe`、`CharBakeV1.cs`。

@@ -29,20 +29,30 @@ void Own(Stub& component,Stub& animator,Stub& root,Stub& bone){
 }
 }
 int main(int argc,char** argv){
-    CHECK(argc==2);std::ifstream file(argv[1],std::ios::binary);std::string bytes((std::istreambuf_iterator<char>(file)),{});CHECK(!bytes.empty());
-    PoseBank bank;std::string error;std::istringstream valid(bytes);CHECK(bank.Load(valid,error));CHECK(bank.bones.size()==399&&bank.period==103);
-    for(auto bad:{bytes.substr(0,bytes.size()-1),bytes+"x"}){PoseBank rejected;std::istringstream input(bad);CHECK(!rejected.Load(input,error));}
-    for(size_t at:{size_t(12),size_t(20)}){auto bad=bytes;uint32_t invalid=0x7F800000;std::memcpy(bad.data()+at,&invalid,4);PoseBank rejected;std::istringstream input(bad);CHECK(!rejected.Load(input,error));}
-    auto bad=bytes;bad[44]='/';std::istringstream pathBad(bad);PoseBank rejected;CHECK(!rejected.Load(pathBad,error));
-    const double period=double(bank.period)/bank.fps;
-    for(int side=0;side<2;side++)for(size_t i=0;i<bank.bones.size();i++){
-        auto a=bank.Sample(side,i,.31),b=bank.Sample(side,i,.31+period);CHECK(PoseSame(a.position,b.position)&&PoseSame(a.rotation,b.rotation));
+    // One argument per shipped character data file; every file must satisfy the
+    // same loader contract, so adding a character cannot weaken these checks.
+    CHECK(argc>=2);PoseBank bank;std::string error,bytes;
+    for(int arg=1;arg<argc;arg++){
+        std::ifstream file(argv[arg],std::ios::binary);bytes.assign((std::istreambuf_iterator<char>(file)),{});CHECK(!bytes.empty());
+        std::istringstream valid(bytes);CHECK(bank.Load(valid,error));
+        CHECK(bank.bones.size()>=20&&bank.bones.size()<=512&&bank.period+1==bank.frames&&bank.fps==60&&bank.phase<bank.period);
+        CHECK(bank.samples[0].size()==bank.bones.size()*bank.frames&&bank.samples[1].size()==bank.samples[0].size());
+        unsigned required=0;for(const auto& b:bank.bones)required+=b.required;CHECK(required>=10);
+        for(auto bad:{bytes.substr(0,bytes.size()-1),bytes+"x"}){PoseBank rejected;std::istringstream input(bad);CHECK(!rejected.Load(input,error));}
+        for(size_t at:{size_t(12),size_t(20)}){auto bad=bytes;uint32_t invalid=0x7F800000;std::memcpy(bad.data()+at,&invalid,4);PoseBank rejected;std::istringstream input(bad);CHECK(!rejected.Load(input,error));}
+        auto bad=bytes;bad[44]='/';std::istringstream pathBad(bad);PoseBank rejected;CHECK(!rejected.Load(pathBad,error));
+        const double period=double(bank.period)/bank.fps;
+        for(int side=0;side<2;side++)for(size_t i=0;i<bank.bones.size();i++){
+            auto a=bank.Sample(side,i,.31),b=bank.Sample(side,i,.31+period);CHECK(PoseSame(a.position,b.position)&&PoseSame(a.rotation,b.rotation));
+        }
     }
-    PoseClock clock;CHECK(!clock.Tick(1,.016f,true,0,.1f,208.f/60,bank.entry));CHECK(clock.Tick(2,.016f,true,0,.2f,208.f/60,bank.entry));
-    double t=clock.seconds;CHECK(clock.Tick(2,.5f,true,0,.6f,208.f/60,bank.entry)&&clock.seconds==t);
-    CHECK(clock.Tick(3,.016f,true,0,.474f,208.f/60,bank.entry)&&std::fabs(clock.seconds-t-.016)<1e-6);
-    for(int i=4;i<14;i++)clock.Tick(i,.016f,true,0,.5f,208.f/60,bank.entry);
-    CHECK(clock.weight==1);clock.End();CHECK(clock.Tick(14,.06f,false,-1,.2f,1,bank.entry));CHECK(!clock.Tick(15,.061f,false,-1,.2f,1,bank.entry)&&clock.state==PoseClock::State::Done);
+    // Clock behaviour is independent of any character file; use a fixed entry.
+    const float entry=.15f;
+    PoseClock clock;CHECK(!clock.Tick(1,.016f,true,0,.1f,208.f/60,entry));CHECK(clock.Tick(2,.016f,true,0,.2f,208.f/60,entry));
+    double t=clock.seconds;CHECK(clock.Tick(2,.5f,true,0,.6f,208.f/60,entry)&&clock.seconds==t);
+    CHECK(clock.Tick(3,.016f,true,0,.474f,208.f/60,entry)&&std::fabs(clock.seconds-t-.016)<1e-6);
+    for(int i=4;i<14;i++)clock.Tick(i,.016f,true,0,.5f,208.f/60,entry);
+    CHECK(clock.weight==1);clock.End();CHECK(clock.Tick(14,.06f,false,-1,.2f,1,entry));CHECK(!clock.Tick(15,.061f,false,-1,.2f,1,entry)&&clock.state==PoseClock::State::Done);
     auto q=PoseSlerp({0,0,0,1},{0,0,0,-1},.5f);CHECK(PoseSame(q,{0,0,0,1}));
     BonePose last,baseline;last.position={4,5,6};baseline.position={1,2,3};auto clean=PoseNativeBaseline(last,last,baseline,true);CHECK(PoseSame(clean.position,baseline.position));
     auto fresh=last;fresh.position.x=9;clean=PoseNativeBaseline(fresh,last,baseline,true);CHECK(clean.position.x==9);
