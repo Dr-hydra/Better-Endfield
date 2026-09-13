@@ -1,5 +1,10 @@
 # 更新日志
 
+## 3.1.3
+
+- 修复战斗悬浮窗普通 DPS 的技能分类。伤害现在结合运行时 `damageDecorateMask` 与技能 ID 归入普攻、战技、终结技、连携技、被动或其他，并正确处理终结技强化普攻等保留普攻标记的转换形态。
+- 寻访界面的“打开网页”按钮改名为“上传云端”，英文同步为“Upload to Cloud”，使按钮行为更明确。
+
 ## 3.1.2
 
 - Android 不再硬编码目标包名。模块附着到 LSPosed 作用域里选中的应用（只进主进程），是否真正介入改由证据决定：`UnityPlayer.nativeRender` 必须存在，原生 Hook 全部经 `libil2cpp.so` 导出按名字解析。官服 `com.hypergryph.endfield`、国际服 `com.gryphline.endfield.gp` 与 B 服等渠道包由此共用同一份构建，客户端更新只要托管层类名方法名不变就无需重新适配。

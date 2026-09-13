@@ -84,7 +84,7 @@ public sealed partial class GachaPage : UserControl
         PageTitleText.Text = isZh ? "寻访查询" : "Gacha History";
         ImportButtonText.Text = isZh ? "导入 JSON" : "Import JSON";
         ExportButtonText.Text = isZh ? "导出 JSON" : "Export JSON";
-        OpenWebButtonText.Text = isZh ? "打开网页" : "Open Web";
+        OpenWebButtonText.Text = isZh ? "上传云端" : "Upload to Cloud";
         SyncButtonText.Text = isZh ? "同步" : "Sync";
         LimitedButton.Content = isZh ? "限定池" : "Limited";
         WeaponButton.Content = isZh ? "武器池" : "Weapons";

@@ -2,6 +2,7 @@
 
 #include "combat_overlay_protocol.h"
 #include "combat_semantics.h"
+#include "damage_category.h"
 #include "rdps_math.h"
 
 #include <Windows.h>
@@ -5311,10 +5312,7 @@ void TrackStaggerFinish(uint64_t inst_id) {
 }
 
 size_t SkillCategoryFromId(std::string_view skill) {
-    // Native records do not contain an authoritative skill-group category.
-    // Keep unknown skills in "other" instead of classifying by an ID substring.
-    (void)skill;
-    return 5;
+    return DamageCategory::Classify(skill, 0);
 }
 
 const char* ActionTypeId(std::string_view skill) {
@@ -6312,7 +6310,7 @@ void ProcessEvent(const DamageEvent& event) {
     ++g_session.hits;
     if (event.critical) ++g_session.critical_hits;
     const std::string skill = event.skill[0] ? event.skill : "<unknown>";
-    const size_t skill_category = SkillCategoryFromId(skill);
+    const size_t skill_category = DamageCategory::Classify(skill, event.decorate_mask);
     static constexpr std::array<const char*, CombatOverlayProtocol::kDamageCategoryCount>
         kCategoryIds{"basic_attack", "skill", "ultimate", "combo", "passive", "other"};
     auto add = [&event, amount](Aggregate& aggregate) {
@@ -8013,7 +8011,7 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Combat Statistics", "3.1.1", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Combat Statistics", "3.1.3", BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};
