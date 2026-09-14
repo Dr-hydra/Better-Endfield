@@ -137,7 +137,7 @@ internal sealed class ModConfiguration
 
     public bool ContinuousSpecialDashLiinoEnabled { get; set; } = false;
 
-    public bool LiinoCleanDashEnabled { get; set; } = true;
+    public bool LiinoCleanDashEnabled { get; set; } = false;
 
     public bool ContinuousSpecialDashEnabled =>
         ContinuousSpecialDashAglinaEnabled || ContinuousSpecialDashLiinoEnabled;

@@ -182,8 +182,9 @@ public sealed partial class GachaPage : UserControl
         try
         {
             GachaWebSnapshot snapshot = GachaWebSnapshotBuilder.Build(_characters.Concat(_weapons), _poolInfos);
-            string url = CombatWebHandoff.PublishJson(GachaWebUrl, "gacha_import", snapshot);
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            ToyAnalysisWindow.Open(GachaWebUrl, "gacha", System.Text.Json.JsonSerializer.Serialize(snapshot,
+                new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web)
+                { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull }));
             SetStatus("web-opened", snapshot.Pools.Count.ToString());
         }
         catch (Exception ex) when (ex is InvalidDataException or NotSupportedException or InvalidOperationException or Win32Exception)

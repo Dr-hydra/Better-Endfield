@@ -28,6 +28,12 @@ public partial class App : Application
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         string[] arguments = Environment.GetCommandLineArgs().Skip(1).ToArray();
+        if (arguments.Contains("--webview-probe"))
+        {
+            _window = new Views.WebViewProbeWindow();
+            _window.Activate();
+            return;
+        }
         if (TryRunOmniMixCommand(arguments))
         {
             return;

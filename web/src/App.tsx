@@ -1,4 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
+import { connectDesktopBridge } from "./lib/desktopBridge";
 import { ArchivePage } from "./components/ArchivePage";
 import { ArchiveSaveDialog } from "./components/ArchiveSaveDialog";
 import { CombatDetail } from "./components/CombatDetail";
@@ -80,6 +81,27 @@ export default function App() {
   const [savingArchive, setSavingArchive] = useState(false);
   /** Short id of the current record's upload, so 分享 and 参与排行榜 share one. */
   const [shareId, setShareId] = useState("");
+  const [desktopPending, setDesktopPending] = useState(() => new URLSearchParams(location.search).get("desktop") === "1");
+
+  useEffect(() => connectDesktopBridge((kind, text) => {
+    if (kind === "probe") {
+      if (!/^x+$/.test(text)) throw new Error("probe_content_mismatch");
+      setNotice(`桌面直连验证成功：已接收 ${text.length / 1024 / 1024} MiB，数据未上传`);
+    } else if (kind === "gacha") {
+      const snapshot = parseGachaSnapshotJson(text);
+      setGachaSnapshot(snapshot);
+      setDesktopPending(false);
+      setGachaError("");
+      dropQueryParam("mode");
+      setRoute({ page: "gacha" });
+      navigate("gacha");
+    } else {
+      dropQueryParam("mode");
+      setDesktopPending(false);
+      setRoute({ page: "analyze" });
+      parseRecordText(text, "DESKTOP / 桌面端直连");
+    }
+  }), []);
 
   useEffect(() => {
     const handler = () => setRoute(parseRoute());
@@ -154,13 +176,13 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (route.page !== "gacha" || route.port || route.nonce || !profile || gachaSyncing) return;
+    if (desktopPending || route.page !== "gacha" || route.port || route.nonce || !profile || gachaSyncing) return;
     const key = gachaSnapshot ? `snapshot:${gachaSnapshot.createdAt}:${gachaSnapshot.pools.length}` : "cloud-only";
     if (gachaAutoSyncKey === key) return;
     setGachaAutoSyncKey(key);
     if (gachaSnapshot) void saveGachaCloud();
     else void loadGachaCloud();
-  }, [route.page, profile, gachaSnapshot, gachaSyncing, gachaAutoSyncKey]);
+  }, [desktopPending, route.page, profile, gachaSnapshot, gachaSyncing, gachaAutoSyncKey]);
 
   useEffect(() => {
     // A different fight is a different upload.

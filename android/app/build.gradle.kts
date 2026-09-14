@@ -15,8 +15,8 @@ android {
         applicationId = "dev.betterendfield.android"
         minSdk = 27
         targetSdk = 35
-        versionCode = 30200
-        versionName = "3.2.0"
+        versionCode = 30201
+        versionName = "3.2.1"
 
         ndk {
             abiFilters += "arm64-v8a"

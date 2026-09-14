@@ -69,7 +69,7 @@ struct Configuration {
     bool enabled = false;
     bool diagnostics = true;
     bool external_loop = false; // v12: external bone-pose data, not AnimationClip bundles.
-    bool liino_clean = true; // Match the UI default and existing clean test configurations.
+    bool liino_clean = false; // Optional dash features default off.
     // One bit per kCharacters entry. A configuration without the key predates the
     // per-character switches and keeps every supported character armed.
     uint32_t characters = (1u << kCharacterCount) - 1;

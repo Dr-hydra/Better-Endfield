@@ -762,10 +762,7 @@ public sealed partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Opens the analysis page on this record. The record itself does not ride
-    /// in the link — it is far too large — so the app serves it once over
-    /// loopback and the link only carries the address. See
-    /// <see cref="CombatWebHandoff"/>.
+    /// Opens Toy in a separate window and transfers the record through WebView2.
     /// </summary>
     private void AnalyzeCombatSessionButton_Click(object sender, RoutedEventArgs e)
     {
@@ -774,9 +771,8 @@ public sealed partial class MainWindow : Window
         AnalyzeCombatSessionButton.IsEnabled = false;
         try
         {
-            string url = CombatWebHandoff.Publish(CombatAnalysisUrl, record.Path);
-            OpenWithShell(url);
-            ShowStatus("已打开解析网页", "网页会直接从本机取这份记录，不经过网络。链接几分钟内有效，只能用一次。", InfoBarSeverity.Success);
+            Views.ToyAnalysisWindow.Open(CombatAnalysisUrl, "combat", File.ReadAllText(record.Path));
+            ShowStatus("已打开解析网页", "记录将在页面加载完成后自动解析。", InfoBarSeverity.Success);
         }
         catch (Exception exception) when (exception is IOException or InvalidDataException
             or UnauthorizedAccessException or SocketException or Win32Exception)
@@ -3642,5 +3638,6 @@ public sealed partial class MainWindow : Window
         // The handoff port outlives the click by a few minutes; it must not
         // outlive the app.
         CombatWebHandoff.CloseCurrent();
+        Views.ToyAnalysisWindow.CloseAll();
     }
 }

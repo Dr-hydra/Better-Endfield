@@ -460,9 +460,8 @@ internal static class ConfigurationService
             actionsEnabled && (!listPresent || HasCharacter(characters, "aglina"));
         configuration.ContinuousSpecialDashLiinoEnabled =
             actionsEnabled && (!listPresent || HasCharacter(characters, "liino"));
-        // Preserve the accepted clean test build's appearance when the key is absent.
-        // Keep the preference even while Liino's sustained dash is disabled.
-        configuration.LiinoCleanDashEnabled = Boolean(actionValues, "liino_clean", true);
+        // Missing preferences default off; preserve explicitly saved choices.
+        configuration.LiinoCleanDashEnabled = Boolean(actionValues, "liino_clean", false);
         configuration.Character = Text(values, "character", configuration.Character);
         configuration.FinalAction = Text(values, "final_action", configuration.FinalAction);
         configuration.StartYaw = Number(values, "start_yaw", configuration.StartYaw);
