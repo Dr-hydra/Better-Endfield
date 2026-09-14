@@ -62,7 +62,7 @@
 
 ## 4. 部署与配置
 
-`scripts/BuildBetterEndfield.ps1` 产出的 `modules/` 需要再放入数据文件：
+`scripts/BuildBetterEndfield.ps1` 产出的 `modules/` 已自动包含模块与姿态数据文件：
 
 ```
 modules/BetterEndfield.Actions.dll

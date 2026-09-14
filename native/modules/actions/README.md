@@ -15,7 +15,7 @@
 | Animator 回绕 | 136/208 → 80/208，周期 56/208 | 107/173 → 55/173，周期 52/173 |
 | 额外保持 | 两套持续粒子、`Aglina_SprintDashSp_Flying_Stop` 延后、道具隐藏（logic 11，2.4 秒）延后 | 网格组隐藏（2.2 秒收板）延后 |
 
-新增角色需要：档案表加一行、离线做一份闭合循环数据、把数据放进 `modules/actions/`。
+新增角色需要：档案表加一行、离线做一份闭合循环数据、把数据放进 `native/modules/actions/assets/`（构建时由 CMake 自动部署到 `modules/actions/`）。
 
 ## 三层机制
 
