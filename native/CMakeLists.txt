@@ -101,6 +101,26 @@ set_target_properties(BetterEndfield.Camera PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
 )
 
+add_library(BetterEndfield.Actions SHARED modules/actions/module.cpp)
+better_endfield_target_defaults(BetterEndfield.Actions)
+set_target_properties(BetterEndfield.Actions PROPERTIES
+    OUTPUT_NAME "BetterEndfield.Actions"
+    RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
+    LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
+)
+
+add_executable(BetterEndfield.ActionsTests EXCLUDE_FROM_ALL modules/actions/dash_policy_tests.cpp)
+better_endfield_target_defaults(BetterEndfield.ActionsTests)
+
+add_executable(BetterEndfield.ActionsEffectsTests EXCLUDE_FROM_ALL modules/actions/effects_lifecycle_tests.cpp)
+better_endfield_target_defaults(BetterEndfield.ActionsEffectsTests)
+
+add_executable(BetterEndfield.ActionsExternalTests EXCLUDE_FROM_ALL modules/actions/external_loop_tests.cpp)
+better_endfield_target_defaults(BetterEndfield.ActionsExternalTests)
+
+add_executable(BetterEndfield.ActionsPoseTests EXCLUDE_FROM_ALL modules/actions/pose_overlay_tests.cpp)
+better_endfield_target_defaults(BetterEndfield.ActionsPoseTests)
+
 add_library(BetterEndfield.Gacha SHARED
     modules/gacha/module.cpp
 )
@@ -277,6 +297,9 @@ add_custom_target(BetterEndfield.Layout ALL
         "${CMAKE_CURRENT_SOURCE_DIR}/modules/camera/betterendfield.camera.module.ini"
         "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.camera.module.ini"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/modules/actions/betterendfield.actions.module.ini"
+        "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.actions.module.ini"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/modules/gacha/betterendfield.gacha.module.ini"
         "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.gacha.module.ini"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -292,6 +315,7 @@ add_custom_target(BetterEndfield.Layout ALL
         BetterEndfield.Music
         BetterEndfield.UiModule
         BetterEndfield.Camera
+        BetterEndfield.Actions
         BetterEndfield.Gacha
         BetterEndfield.CombatStats
         BetterEndfield.CombatOverlay

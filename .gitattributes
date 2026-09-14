@@ -1,0 +1,4 @@
+# Preserve LF line endings for manifests and catalog files with strict hashes or parsers
+manifests/** text eol=lf
+*.besem text eol=lf
+*.bemap text eol=lf

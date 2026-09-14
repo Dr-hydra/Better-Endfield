@@ -1,4 +1,5 @@
 #include "dynamic_resolver.h"
+#include "type_name_contract.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -26,29 +27,6 @@ std::vector<std::string_view> SplitParameters(const char* parameters) {
         remaining.remove_prefix(separator + 1);
     }
     return result;
-}
-
-bool SameText(const char* actual, std::string_view expected) {
-    return actual && std::string_view(actual) == expected;
-}
-
-bool SameTypeText(const char* actual, std::string_view expected) {
-    if (!actual) {
-        return false;
-    }
-    const std::string_view actual_view(actual);
-    if (actual_view.size() != expected.size()) {
-        return false;
-    }
-    for (size_t index = 0; index < actual_view.size(); ++index) {
-        const auto normalize = [](char value) {
-            return value == '/' || value == '+' ? '.' : value;
-        };
-        if (normalize(actual_view[index]) != normalize(expected[index])) {
-            return false;
-        }
-    }
-    return true;
 }
 
 struct Il2CppMethodInfoPrefix {
@@ -264,7 +242,7 @@ BE_Result DynamicResolver::ResolveField(const BE_FieldDescriptorV1& descriptor,
     if (descriptor.field_type && *descriptor.field_type != '\0') {
         void* field_type = field_get_type_(field);
         const char* actual_type = field_type ? type_get_name_(field_type) : nullptr;
-        if (!SameText(actual_type, descriptor.field_type)) {
+        if (!SameTypeText(actual_type, descriptor.field_type)) {
             error = "Field type contract mismatch: " +
                 std::string(descriptor.field_name);
             return BE_Result_ContractMismatch;
@@ -468,7 +446,7 @@ bool DynamicResolver::MatchesMethod(void* method,
 
     if (descriptor.return_type && *descriptor.return_type != '\0') {
         const char* return_type = type_get_name_(method_get_return_type_(method));
-        if (!SameText(return_type, descriptor.return_type)) {
+        if (!SameTypeText(return_type, descriptor.return_type)) {
             return false;
         }
     }

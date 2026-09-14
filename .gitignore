@@ -16,7 +16,7 @@ dependencies.lock.json
 src/Diagnostics/
 src/*Ctl/
 src/*Probe/
-tests/
+/tests/
 tools/EndfieldDumper/
 tools/EndfieldStudio/
 tools/EndfieldUnpacker/

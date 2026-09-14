@@ -1,4 +1,4 @@
-<Window
+﻿<Window
     x:Class="BetterEndfield.UI.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -116,6 +116,9 @@
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE740;" />
                     </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:Name="ActionsNavigationItem" Content="动作模块" Tag="actions">
+                    <NavigationViewItem.Icon><FontIcon Glyph="&#xE7C1;" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem
                     x:Name="CameraNavigationItem"
@@ -1190,6 +1193,30 @@
                                             Text="0" />
                                     </StackPanel>
                                 </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <ScrollViewer x:Name="ActionsPageScrollViewer" Visibility="Collapsed"
+                            HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                            <StackPanel MaxWidth="920" Margin="32,28,32,44" Spacing="24">
+                                <TextBlock x:Name="ActionsPageTitle" Style="{StaticResource PageTitleStyle}" Text="冲刺持续" />
+                                <TextBlock x:Name="ActionsPageDescription" TextWrapping="Wrap"
+                                    Text="分角色开启特殊冲刺动作的持续播放。设置保存后，下一次特殊冲刺生效。" />
+                                <ToggleSwitch x:Name="ContinuousSpecialDashAglinaToggle" Header="洁尔佩塔"
+                                    OffContent="关闭" OnContent="开启" Toggled="ActionsToggle_Toggled" />
+                                <ToggleSwitch x:Name="ContinuousSpecialDashLiinoToggle" Header="梨诺"
+                                    OffContent="关闭" OnContent="开启" Toggled="ActionsToggle_Toggled" />
+                                <StackPanel Margin="24,0,0,0" Spacing="8">
+                                    <ToggleSwitch x:Name="LiinoCleanDashToggle" Header="隐藏机甲与光效"
+                                        IsEnabled="{Binding IsOn, ElementName=ContinuousSpecialDashLiinoToggle}"
+                                        OffContent="关闭" OnContent="开启" Toggled="ActionsToggle_Toggled" />
+                                    <TextBlock x:Name="LiinoCleanDashDescription" TextWrapping="Wrap"
+                                        Text="梨诺冲刺全程隐藏机甲（含腿甲）与光效，保留飞行动画。" />
+                                </StackPanel>
+                                <InfoBar x:Name="ActionsExperimentalInfo" IsOpen="True" IsClosable="False" Severity="Informational"
+                                    Title="实验功能"
+                                    Message="保留游戏本次选中的左或右特殊冲刺动作，在持续冲刺时循环播放，延后自然结束；停止或被打断时结束。" />
+
                             </StackPanel>
                         </ScrollViewer>
 
