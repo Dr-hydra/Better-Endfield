@@ -158,6 +158,8 @@ $requiredReleaseFiles = @(
     "modules\betterendfield.ui.module.ini",
     "modules\betterendfield.camera.module.ini",
     "modules\betterendfield.actions.module.ini",
+    "modules\actions\pose_aglina.bin",
+    "modules\actions\pose_liino.bin",
     "modules\betterendfield.gacha.module.ini",
     "modules\betterendfield.music.module.ini",
     "modules\betterendfield.combat_stats.module.ini",

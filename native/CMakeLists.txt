@@ -299,6 +299,14 @@ add_custom_target(BetterEndfield.Layout ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/modules/actions/betterendfield.actions.module.ini"
         "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.actions.module.ini"
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+        "${BETTER_ENDFIELD_STAGE_DIR}/modules/actions"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/modules/actions/assets/pose_aglina.bin"
+        "${BETTER_ENDFIELD_STAGE_DIR}/modules/actions/pose_aglina.bin"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/modules/actions/assets/pose_liino.bin"
+        "${BETTER_ENDFIELD_STAGE_DIR}/modules/actions/pose_liino.bin"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/modules/gacha/betterendfield.gacha.module.ini"
         "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.gacha.module.ini"

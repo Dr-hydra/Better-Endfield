@@ -2,3 +2,4 @@
 manifests/** text eol=lf
 *.besem text eol=lf
 *.bemap text eol=lf
+*.bin binary
