@@ -25,6 +25,7 @@ export interface HandoffTarget {
 
 /** Query parameter the desktop puts `<port>.<nonce>` in. */
 export const HANDOFF_PARAM = "import";
+export const GACHA_HANDOFF_PARAM = "gacha_import";
 
 /**
  * Reads `<port>.<nonce>`.

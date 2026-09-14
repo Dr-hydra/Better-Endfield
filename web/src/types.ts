@@ -170,7 +170,7 @@ export type Route =
   | { page: "home" }
   | { page: "board"; dungeonId?: string; categoryId?: string }
   | { page: "analyze" }
-  | { page: "gacha" }
+  | { page: "gacha"; port?: number; nonce?: string }
   | { page: "record"; id?: string }
   | { page: "archive" }
   /** Desktop handoff: fetch one record from the app's loopback port. */

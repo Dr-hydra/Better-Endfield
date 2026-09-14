@@ -127,7 +127,7 @@ export function GachaPage({ snapshot, error, onLoadCloud, onSaveCloud, profileRe
   const selected = categories.find((category) => category.id === selectedCategory);
   const pools = useMemo(() => (snapshot?.pools ?? []).filter((pool) => pool.categoryId === selectedCategory), [snapshot, selectedCategory]);
 
-  if (!snapshot) return <main class="gacha-page">{!profileReady && <CloudNotice onLogin={onLogin} busy={busy} /> }<section class="gacha-empty-page panel"><span class="eyebrow">GACHA INTELLIGENCE / 寻访统计</span><h1>{error || "等待寻访快照"}</h1><p>{error ? "链接中的数据无法读取，请从桌面端重新打开网页。" : "请从 Better Endfield 寻访页面点击“打开网页”，或从 Toy 云存档读取。"}</p><div class="gacha-cloud-actions">{profileReady && onLoadCloud && <button class="button secondary" onClick={onLoadCloud} disabled={busy}>{busy ? "读取中…" : "读取云端寻访"}</button>}</div></section></main>;
+  if (!snapshot) return <main class="gacha-page">{!profileReady && <CloudNotice onLogin={onLogin} busy={busy} /> }<section class="gacha-empty-page panel"><span class="eyebrow">GACHA INTELLIGENCE / 寻访统计</span><h1>{error || "等待寻访快照"}</h1><p>{error?.startsWith("桌面端") || error?.startsWith("链接") ? "请返回 Better Endfield 寻访页面重新点击“上传云端”。" : "请从 Better Endfield 寻访页面点击“上传云端”，或从 Toy 云存档读取。"}</p><div class="gacha-cloud-actions">{profileReady && onLoadCloud && <button class="button secondary" onClick={onLoadCloud} disabled={busy}>{busy ? "读取中…" : "读取云端寻访"}</button>}</div></section></main>;
 
   return <main class="gacha-page">
     {!profileReady && <CloudNotice onLogin={onLogin} busy={busy} />}

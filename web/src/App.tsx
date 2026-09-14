@@ -8,8 +8,8 @@ import { apiConfigured, boardConfigured, getPublicRecord, publishRecord } from "
 import { getOwnerToken } from "./lib/archive";
 import { dictionary, stageName } from "./lib/dict";
 import { SUPPORTED_SCHEMA } from "./lib/combat";
-import { decodeGachaSnapshot, isGachaSnapshotFragment } from "./lib/gacha";
-import { HANDOFF_PARAM, fetchHandoffRecord, parseHandoffRoute, parseHandoffValue } from "./lib/handoff";
+import { decodeGachaSnapshot, isGachaSnapshotFragment, parseGachaSnapshotJson } from "./lib/gacha";
+import { GACHA_HANDOFF_PARAM, HANDOFF_PARAM, fetchHandoffRecord, parseHandoffRoute, parseHandoffValue } from "./lib/handoff";
 import { loadGachaCloudSnapshot, saveGachaCloudSnapshot } from "./lib/gachaCloud";
 import { recordUrl, requestToyProfile, shareRecord, type ToyProfile } from "./lib/toy";
 import ShareDialog from "./components/ShareDialog";
@@ -23,6 +23,8 @@ function parseRoute(): Route {
   // app's iframe.
   const query = parseHandoffValue(params.get(HANDOFF_PARAM));
   if (query) return { page: "import", ...query };
+  const gachaQuery = parseHandoffValue(params.get(GACHA_HANDOFF_PARAM));
+  if (gachaQuery) return { page: "gacha", ...gachaQuery };
   if (params.get("mode") === "gacha" || isGachaSnapshotFragment(location.hash)) return { page: "gacha" };
   if (params.get("mode") === "combat") return { page: "analyze" };
   const value = location.hash.replace(/^#\/?/, "");
@@ -91,14 +93,33 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (route.page !== "gacha" || !isGachaSnapshotFragment(location.hash)) return;
+    if (route.page !== "gacha") return;
+    if (route.port && route.nonce) {
+      setGachaSyncing(true);
+      setGachaError("");
+      dropQueryParam(GACHA_HANDOFF_PARAM);
+      fetchHandoffRecord({ port: route.port, nonce: route.nonce })
+        .then(parseGachaSnapshotJson)
+        .then((snapshot) => {
+          setGachaSnapshot(snapshot);
+          setNotice("已从桌面端读取寻访记录");
+          setRoute({ page: "gacha" });
+        })
+        .catch((reason) => {
+          setGachaSnapshot(null);
+          setGachaError(reason instanceof Error ? `桌面端寻访快照读取失败：${reason.message}` : "桌面端寻访快照读取失败");
+        })
+        .finally(() => setGachaSyncing(false));
+      return;
+    }
+    if (!isGachaSnapshotFragment(location.hash)) return;
     try {
       setGachaSnapshot(decodeGachaSnapshot(location.hash));
       setGachaError("");
       history.replaceState(null, "", `${location.pathname}#/gacha`);
     } catch (reason) {
       setGachaSnapshot(null);
-      setGachaError(reason instanceof Error ? reason.message : "寻访快照读取失败");
+      setGachaError(reason instanceof Error ? `链接寻访快照读取失败：${reason.message}` : "链接寻访快照读取失败");
     }
   }, [route]);
 
@@ -133,7 +154,7 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (route.page !== "gacha" || !profile || gachaSyncing) return;
+    if (route.page !== "gacha" || route.port || route.nonce || !profile || gachaSyncing) return;
     const key = gachaSnapshot ? `snapshot:${gachaSnapshot.createdAt}:${gachaSnapshot.pools.length}` : "cloud-only";
     if (gachaAutoSyncKey === key) return;
     setGachaAutoSyncKey(key);

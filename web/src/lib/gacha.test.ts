@@ -1,6 +1,6 @@
 import { deflateSync, strToU8 } from "fflate";
 import { describe, expect, it } from "vitest";
-import { decodeGachaSnapshot } from "./gacha";
+import { decodeGachaSnapshot, parseGachaSnapshotJson } from "./gacha";
 import { mergeGachaSnapshots } from "./gachaCloud";
 import type { GachaWebSnapshot } from "../types";
 
@@ -15,6 +15,11 @@ describe("gacha snapshot protocol", () => {
     const snapshot = { schemaVersion: 1, kind: "betterendfield.gacha", createdAt: "2026-09-02T00:00:00Z", categories: [], pools: [] };
     const encoded = `#gacha:v1:${base64Url(deflateSync(strToU8(JSON.stringify(snapshot))))}`;
     expect(decodeGachaSnapshot(encoded)).toEqual(snapshot);
+  });
+
+  it("parses a desktop loopback snapshot", () => {
+    const snapshot = { schemaVersion: 1, kind: "betterendfield.gacha", createdAt: "2026-09-14T00:00:00Z", categories: [], pools: [] };
+    expect(parseGachaSnapshotJson(JSON.stringify(snapshot))).toEqual(snapshot);
   });
 
   it("merges cloud and local snapshots by pool and six-star id", () => {

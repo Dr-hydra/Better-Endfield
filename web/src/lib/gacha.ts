@@ -21,6 +21,16 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+export function parseGachaSnapshotJson(json: string): GachaWebSnapshot {
+  let parsed: unknown;
+  try { parsed = JSON.parse(json); } catch { throw new Error("寻访快照内容不是有效 JSON"); }
+  if (!isObject(parsed) || parsed.schemaVersion !== CURRENT_SCHEMA_VERSION || parsed.kind !== SNAPSHOT_KIND ||
+      !Array.isArray(parsed.categories) || !Array.isArray(parsed.pools)) {
+    throw new Error("寻访快照内容无效");
+  }
+  return parsed as unknown as GachaWebSnapshot;
+}
+
 export function decodeGachaSnapshot(fragment: string): GachaWebSnapshot {
   const value = fragment.trim().replace(/^#/, "");
   if (!value.startsWith(PREFIX)) throw new Error("不是寻访快照链接");
@@ -31,13 +41,7 @@ export function decodeGachaSnapshot(fragment: string): GachaWebSnapshot {
     throw new Error(`不支持的寻访快照版本：${value.slice(PREFIX.length, colon)}`);
   }
   const json = strFromU8(inflateSync(fromBase64Url(value.slice(colon + 1))));
-  let parsed: unknown;
-  try { parsed = JSON.parse(json); } catch { throw new Error("寻访快照内容不是有效 JSON"); }
-  if (!isObject(parsed) || parsed.schemaVersion !== version || parsed.kind !== SNAPSHOT_KIND ||
-      !Array.isArray(parsed.categories) || !Array.isArray(parsed.pools)) {
-    throw new Error("寻访快照内容无效");
-  }
-  return parsed as unknown as GachaWebSnapshot;
+  return parseGachaSnapshotJson(json);
 }
 
 export function isGachaSnapshotFragment(fragment: string): boolean {

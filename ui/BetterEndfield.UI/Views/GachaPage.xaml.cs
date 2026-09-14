@@ -182,7 +182,7 @@ public sealed partial class GachaPage : UserControl
         try
         {
             GachaWebSnapshot snapshot = GachaWebSnapshotBuilder.Build(_characters.Concat(_weapons), _poolInfos);
-            string url = GachaSnapshotLink.BuildUrl(GachaWebUrl, snapshot);
+            string url = CombatWebHandoff.PublishJson(GachaWebUrl, "gacha_import", snapshot);
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
             SetStatus("web-opened", snapshot.Pools.Count.ToString());
         }

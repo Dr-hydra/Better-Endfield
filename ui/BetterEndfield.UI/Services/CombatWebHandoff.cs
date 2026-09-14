@@ -3,16 +3,16 @@ using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 namespace BetterEndfield.UI.Services;
 
 /// <summary>
-/// Hands one combat record to the analysis page over loopback.
+/// Hands one payload to a web page over loopback.
 /// </summary>
 /// <remarks>
 /// <para>
-/// 寻访快照走的是 <see cref="GachaSnapshotLink"/> 那条路：deflate + base64url 塞进 URL
-/// fragment。战斗记录塞不进去。一份 40 秒的记录，把网页根本不读的
+/// 链接中只保存端口与一次性 nonce，数据不进入 URL。一份 40 秒的战斗记录，把网页根本不读的
 /// <c>ledger.attributeGroups</c> / <c>attributeWrites</c> / <c>zoneWrites</c> 全删掉之后
 /// 仍有 69,000 个 base64 字符；连 <c>ledger</c> 整个删掉（代价是归因明细全没了）也还有
 /// 40,500 个。而 <c>ShellExecute</c> 传 URL 的历史上限是 INTERNET_MAX_URL_LENGTH（2,083），
@@ -55,13 +55,38 @@ public sealed class CombatWebHandoff : IDisposable
 
     /// <summary>
     /// Publishes <paramref name="recordPath"/> and returns the page URL that
-    /// fetches it. Any previous handoff is closed: one button, one record.
+    /// fetches it. Any previous handoff is closed: one button, one payload.
     /// </summary>
     public static string Publish(string baseUrl, string recordPath)
     {
         if (string.IsNullOrWhiteSpace(baseUrl)) throw new ArgumentException("网页地址不能为空", nameof(baseUrl));
         byte[] json = File.ReadAllBytes(recordPath);
         if (json.Length == 0) throw new InvalidDataException("战斗记录为空");
+        return PublishJson(baseUrl, "import", json);
+    }
+
+    /// <summary>
+    /// Publishes one JSON value for a page embedded by Toy. The query parameter
+    /// survives the outer page-to-iframe handoff; the payload itself does not
+    /// depend on fragments or URL length limits.
+    /// </summary>
+    public static string PublishJson<T>(string baseUrl, string queryParameter, T payload)
+    {
+        ArgumentNullException.ThrowIfNull(payload);
+        return PublishJson(baseUrl, queryParameter,
+            JsonSerializer.SerializeToUtf8Bytes(payload, new JsonSerializerOptions(JsonSerializerDefaults.Web)
+            {
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+            }));
+    }
+
+    private static string PublishJson(string baseUrl, string queryParameter, byte[] json)
+    {
+        if (string.IsNullOrWhiteSpace(baseUrl)) throw new ArgumentException("网页地址不能为空", nameof(baseUrl));
+        if (string.IsNullOrWhiteSpace(queryParameter) ||
+            queryParameter.Any(character => !char.IsAsciiLetterOrDigit(character) && character != '_'))
+            throw new ArgumentException("查询参数名称无效", nameof(queryParameter));
+        if (json.Length == 0) throw new InvalidDataException("网页交接数据为空");
 
         // Gzipped on the way out. The record is mostly repeated keys, so this
         // turns a several-megabyte read into a few hundred kilobytes and the
@@ -90,7 +115,7 @@ public sealed class CombatWebHandoff : IDisposable
         // nothing forwards it client-side, so a `#/import/...` link arrives as
         // a plain homepage load.
         string separator = baseUrl.Contains('?') ? "&" : "?";
-        return $"{baseUrl}{separator}import={handoff.Port}.{nonce}";
+        return $"{baseUrl}{separator}{queryParameter}={handoff.Port}.{nonce}";
     }
 
     public static void CloseCurrent()
