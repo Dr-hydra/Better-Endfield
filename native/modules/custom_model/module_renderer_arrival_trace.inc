@@ -194,7 +194,7 @@ void PumpRendererArrivalTrace() {
     g_renderer_arrival_next_scan_tick = now + kRendererArrivalScanIntervalMs;
 
     const std::vector<RendererSummary> all_summaries =
-        EnumerateLiveEndminfRenderers();
+        EnumerateLiveTargetRenderers();
     size_t ignored_intro_count = 0;
     const std::vector<RendererSummary> summaries =
         RendererArrivalGameplaySummaries(all_summaries, ignored_intro_count);

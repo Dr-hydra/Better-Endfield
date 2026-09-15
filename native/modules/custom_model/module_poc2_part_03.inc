@@ -40,19 +40,34 @@ const ReplacedComponent* ReplacementSource(void* mesh) {
     return nullptr;
 }
 
-bool PrepareReplacement(const RendererSummary& item, ReplacedComponent& record) {
-    const ReplacedComponent* source = ReplacementSource(item.mesh);
-    if (source) {
-        record = *source;
-        // A cloned custom Mesh must roll back to its source asset, never to
-        // itself. The clone also inherits the template's hidden state.
-        if (item.mesh != source->custom_mesh && !source->hidden_by_mod) {
-            GetRendererEnabled(item.renderer, record.original_enabled);
+bool PrepareReplacement(const RendererSummary& item, ReplacedComponent& record,
+    bool (*build_mesh)(const BemComponent&, void*, void*&) = BuildMeshFromComponent) {
+    record = {};
+    // Only trace an already-patched clone back to its original asset. An
+    // unmodified receiver always builds from its own mesh, even if another
+    // renderer uses that exact same source asset.
+    const ReplacedComponent* source = nullptr;
+    for (const auto& candidate : g_replaced) {
+        if (candidate.custom_mesh && candidate.custom_mesh == item.mesh) {
+            source = &candidate;
+            break;
         }
+    }
+    const BemComponent* component = nullptr;
+    if (source) {
+        if (!TargetComponentName(source->component_id, item.renderer_name)) return false;
+        // Unity cloned a patched resource. Preserve provenance for rollback;
+        // do not copy another renderer's bones, handles or material state.
+        record.component_id = source->component_id;
+        record.original_index_count = source->original_index_count;
+        record.original_mesh = source->original_mesh;
+        record.custom_mesh = item.mesh;
+        record.hidden_by_mod = source->hidden_by_mod;
+        record.original_enabled = source->original_enabled;
+        component = ActiveComponent(record.component_id);
     } else {
-        const BemComponent* component = nullptr;
         for (const auto& candidate : g_active_bem.components) {
-            if (candidate.info.original_index_count == item.total_indices) {
+            if (MatchesTargetComponent(candidate.info, item)) {
                 component = &candidate;
                 break;
             }
@@ -66,32 +81,32 @@ bool PrepareReplacement(const RendererSummary& item, ReplacedComponent& record) 
         GetRendererEnabled(item.renderer, record.original_enabled);
         if ((component->info.flags & kComponentFlagNoGeometry) == 0) {
             if (item.bones_count <= static_cast<int>(component->info.max_bone) ||
-                !BuildMeshFromComponent(*component, item.mesh, record.custom_mesh)) {
-                return false;
-            }
+                !ValidateRendererSkin(*component, item.renderer, item.mesh) ||
+                !build_mesh(*component, item.mesh, record.custom_mesh)) return false;
         }
     }
     record.renderer = item.renderer;
-    record.renderer_handle = record.original_mesh_handle =
-        record.custom_mesh_handle = 0;
-    const BemComponent* component = ActiveComponent(record.component_id);
-    if (record.custom_mesh && component &&
-        !ValidateRendererSkin(*component, item.renderer, record.original_mesh)) {
-        if (!source) DestroyUnityObject(record.custom_mesh);
-        return false;
-    }
-    if (record.custom_mesh && component &&
-        item.bones_count <= static_cast<int>(component->info.max_bone)) {
-        if (!source) DestroyUnityObject(record.custom_mesh);
-        return false;
-    }
+    if (source && record.custom_mesh && component &&
+        !ValidateRendererSkin(*component, item.renderer, record.original_mesh)) return false;
     if (record.custom_mesh && item.mesh != record.custom_mesh) {
         if (!SetSharedMesh(item.renderer, record.custom_mesh) ||
             Invoke(Contract("skinned.get_shared_mesh"), item.renderer,
                 nullptr, false) != record.custom_mesh) {
             SetSharedMesh(item.renderer, item.mesh);
-            if (!source) DestroyUnityObject(record.custom_mesh);
+            DestroyUnityObject(record.custom_mesh);
             return false;
+        }
+    }
+    if (PrivateMaterialMode() && !g_active_bem.textures.empty()) {
+        // A patched clone needs its matching template's original materials for
+        // restoration. A fresh UI resource always uses its own materials.
+        const bool inherited_materials = source && source->custom_material &&
+            RendererMaterialsMatch(item.renderer, source->custom_material);
+        if (inherited_materials && source->original_material)
+            ApplyRendererMaterials(item.renderer, source->original_material);
+        if (!PreparePelicaMaterials(record)) {
+            record.original_material = nullptr;
+            record.custom_material = nullptr;
         }
     }
     PinReplacement(record);
@@ -105,6 +120,7 @@ void RefreshActiveReplacement(const std::vector<RendererSummary>& summaries) {
     int applied = 0;
     int repaired = 0;
     int rehidden = 0;
+    std::vector<std::pair<uint32_t, void*>> material_renderers;
     for (const RendererSummary& item : summaries) {
         if (!item.renderer || !item.mesh) continue;
         size_t known = 0;
@@ -124,6 +140,7 @@ void RefreshActiveReplacement(const std::vector<RendererSummary>& summaries) {
              item.mesh != g_replaced[known].original_mesh))) {
             ReplacedComponent record;
             if (!PrepareReplacement(item, record)) continue;
+            if (record.custom_material) material_renderers.emplace_back(record.component_id, record.renderer);
             if (existed) {
                 // Keep old asset ownership until rollback: other prefab clones
                 // may still reference this variant, even after this renderer
@@ -140,11 +157,16 @@ void RefreshActiveReplacement(const std::vector<RendererSummary>& summaries) {
             }
         }
         auto& record = g_replaced[known];
+        if (PrivateMaterialMode() && record.custom_material &&
+            RendererMaterialsMatch(record.renderer, record.original_material))
+            ApplyRendererMaterials(record.renderer, record.custom_material);
         bool enabled = false;
         if (record.hidden_by_mod && GetRendererEnabled(item.renderer, enabled) &&
             enabled != g_mask_visible &&
             SetRendererEnabled(item.renderer, g_mask_visible)) ++rehidden;
     }
+
+    InstallModelTextures(g_active_bem, material_renderers);
 
     if (applied > 0 || repaired > 0 || rehidden > 0) {
         Log("CustomModel refresh: newRenderers=" + std::to_string(applied) +
@@ -232,7 +254,7 @@ bool RollbackReplacement() {
             !source->hidden_by_mod)) continue;
         // Non-custom hidden draws still need the character filter; a shared
         // original asset may also be used outside this model's lod0 draws.
-        if (item.mesh != source->custom_mesh && !IsEndminfLod0Draw(
+        if (item.mesh != source->custom_mesh && !IsTargetLod0Draw(
                 ObjectName(item.renderer), BuildTransformPath(item.renderer))) continue;
         ReplacedComponent record = *source;
         record.renderer = item.renderer;
@@ -279,9 +301,8 @@ bool RollbackReplacement() {
             void* params[1]{record.original_root_bone};
             Invoke(Contract("skinned.set_root_bone"), record.renderer, params, true);
         }
-        if (record.original_material) {
-            ApplyRendererMaterials(record.renderer, record.original_material);
-        }
+        if (record.original_material &&
+            !ApplyRendererMaterials(record.renderer, record.original_material)) failed = true;
         if (SetSharedMesh(record.renderer, record.original_mesh) &&
             Invoke(Contract("skinned.get_shared_mesh"), record.renderer, nullptr,
                 false) == record.original_mesh) ++restored;
@@ -296,6 +317,8 @@ bool RollbackReplacement() {
         return false;
     }
     const size_t total = g_replaced.size();
+    // Release unload protection after all receivers and texture slots are restored.
+    // Unity owns material instance disposal; no untracked renderer may be invalidated.
     ClearReplacementState();
     ResumeLockedCrowdLODs();
     for (void* mesh : doomed) DestroyUnityObject(mesh);
@@ -337,7 +360,7 @@ void UpdateReplacement(int32_t frame) {
         if (frame < g_pending_apply_frame) return;
     } else if (g_refresh_suspended || now < g_next_refresh_tick) return;
     if (g_operation_in_progress.exchange(true, std::memory_order_acq_rel)) return;
-    const auto summaries = EnumerateLiveEndminfRenderers();
+    const auto summaries = EnumerateLiveTargetRenderers();
     if (g_pending_apply_frame >= 0) {
         g_pending_apply_frame = -1;
         ApplyReplacement(summaries);
@@ -373,6 +396,7 @@ void ToggleMaskVisibility() {
 }
 
 void RunBufferProbe() {
+    if (g_target_pelica) { Log("Administrator C9 probe unavailable for Pelica; use 0 for target diagnostics."); return; }
     if (g_operation_in_progress.exchange(
             true, std::memory_order_acq_rel)) {
         return;
@@ -382,6 +406,7 @@ void RunBufferProbe() {
 }
 
 void RunAbiProbe() {
+    if (g_target_pelica) { Log("Administrator C9 probe unavailable for Pelica; use 0 for target diagnostics."); return; }
     if (g_operation_in_progress.exchange(
             true, std::memory_order_acq_rel)) {
         return;
@@ -391,6 +416,7 @@ void RunAbiProbe() {
 }
 
 void RunTextureProbe() {
+    if (g_target_pelica) { Log("Administrator C9 probe unavailable for Pelica; use 0 for target diagnostics."); return; }
     if (g_operation_in_progress.exchange(
             true, std::memory_order_acq_rel)) {
         return;
@@ -443,6 +469,38 @@ DWORD WINAPI HotkeyThread(void*) {
     return 0;
 }
 
+void PumpMultiCharacter() {
+    if (g_operation_in_progress.exchange(true)) return;
+    const bool rollback = g_rollback_requested.exchange(false);
+    const bool apply = g_toggle_requested.exchange(false);
+    for (size_t i = 0; i < 2; ++i) {
+        CharacterScope scope(i);
+        auto& session = g_character_sessions[i];
+        if (rollback) {
+            session.armed = false;
+            g_pending_apply_frame = -1;
+            if (g_replacement_active) RollbackReplacement();
+            Log(std::string("[MULTI] disarmed ") + g_target_postmodel);
+            continue;
+        }
+        if (apply) {
+            session.armed = !g_replacement_active || RollbackReplacement();
+            Log(std::string("[MULTI] armed=") + (session.armed ? "1 " : "0 ") + g_target_postmodel +
+                (g_resource_path ? " path=resource (future delivery only)" : " path=instance"));
+        }
+        if (!session.armed || g_resource_path || g_refresh_suspended) continue;
+        if (g_last_pump_frame < g_earliest_apply_frame) continue;
+        const uint64_t now = GetTickCount64();
+        if (now < g_next_refresh_tick) continue;
+        const auto summaries = EnumerateLiveTargetRenderers();
+        if (!g_replacement_active && !summaries.empty()) {
+            if (ApplyReplacement(summaries)) Log(std::string("[MULTI] INSTANCE-SCAN applied ") + g_target_postmodel);
+        } else if (g_replacement_active) RefreshActiveReplacement(summaries);
+        g_next_refresh_tick = now + kActiveRefreshIntervalMs;
+    }
+    g_operation_in_progress.store(false);
+}
+
 void PumpCustomModel() {
     // Claim the frame before invoking managed APIs that may reenter us.
     // Do not consume queued keys if the frame counter cannot be read.
@@ -455,6 +513,8 @@ void PumpCustomModel() {
     if (hit == 1) {
         Log("CustomModel main-thread pump observed first runtime call.");
     }
+
+    if (g_multi_character) { PumpMultiCharacter(); return; }
 
     // Restoration wins if both keys arrived before the same frame.
     if (g_rollback_requested.exchange(false, std::memory_order_acq_rel)) {
@@ -669,13 +729,15 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     }
 
     g_host = host;
+    if (!LoadCharacterTarget()) return BE_Result_InvalidArgument;
+    Log(std::string("CustomModel selected target: ") + (g_target_pelica ? "pelica (native materials validation)" : "endminf"));
     g_toggle_requested.store(false, std::memory_order_release);
     g_rollback_requested.store(false, std::memory_order_release);
     g_operation_in_progress.store(false, std::memory_order_release);
     g_pump_hits.store(0, std::memory_order_release);
     g_last_pump_frame = -1;
     g_pending_apply_frame = -1;
-    ClearReplacementState();
+    for (size_t i = 0; i < 2; ++i) { CharacterScope scope(i); ClearReplacementState(); g_character_sessions[i].armed = false; }
     g_earliest_apply_frame = -1;
 
     if (!ResolveContracts()) {
@@ -735,8 +797,14 @@ void BE_CALL Shutdown() {
     // Shutdown may run outside the Unity main thread. Do not call Unity APIs:
     // this releases GC handles and forgets our bookkeeping, but leaves the
     // replacement standing until the scene reloads.
-    ReleaseReplacementHandles();
-    ReleaseRetainedAssets(false);
+    for (size_t i = 0; i < 2; ++i) {
+        CharacterScope scope(i);
+        ReleaseReplacementHandles();
+        ReleaseRetainedAssets(false);
+        g_replaced.clear(); g_active_bem = {};
+        g_replacement_active = false;
+        g_character_sessions[i].armed = false;
+    }
     g_replaced.clear();
     g_replacement_active = false;
     g_refresh_suspended = false;

@@ -181,7 +181,7 @@ void BuildGenerationDiag() {
     }
 
     const std::vector<RendererSummary> summaries =
-        EnumerateLiveEndminfRenderers();
+        EnumerateLiveTargetRenderers();
     std::vector<const RendererSummary*> gameplay;
     for (const auto& item : summaries) {
         if (item.renderer && item.mesh && IsGameplayPostModelPath(item.path)) {

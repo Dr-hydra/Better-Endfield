@@ -47,6 +47,20 @@ std::vector<AiCoverageShadowModeState> g_ai_coverage_shadow_modes;
 std::vector<AiCoverageProxyState> g_ai_coverage_shadow_proxies;
 std::vector<AiCoverageHiddenVfxPartState> g_ai_coverage_hidden_vfxparts;
 
+struct CharacterCoverageState {
+    std::vector<AiCoverageShadowModeState> modes;
+    std::vector<AiCoverageProxyState> proxies;
+    std::vector<AiCoverageHiddenVfxPartState> hidden;
+    uint64_t next_tick = 0;
+};
+std::array<CharacterCoverageState, 2> g_saved_coverage;
+void SwapCoverage(size_t i) {
+    g_ai_coverage_shadow_modes.swap(g_saved_coverage[i].modes);
+    g_ai_coverage_shadow_proxies.swap(g_saved_coverage[i].proxies);
+    g_ai_coverage_hidden_vfxparts.swap(g_saved_coverage[i].hidden);
+    std::swap(g_ai_coverage_next_scan_tick, g_saved_coverage[i].next_tick);
+}
+
 std::string AiCoveragePointer(const void* pointer) {
     std::array<char, 32> buffer{};
     std::snprintf(buffer.data(), buffer.size(), "%p", pointer);
@@ -321,6 +335,9 @@ bool AiCoverageAttachReuseOnly(
         item.path.find("SK_actor_female") != std::string::npos) {
         return false;
     }
+
+    // Pelica uses the main LOD0 refresh; alternate LOD palette reuse is unverified.
+    if (g_target_pelica) return false;
 
     size_t known = 0;
     const bool existed = AiCoverageHasRendererRecord(item.renderer, known);
@@ -610,10 +627,10 @@ void PumpAiShadowCoverage() {
         void* renderer = ArrayValue(objects, index);
         if (!renderer) continue;
         const std::string name = ObjectName(renderer);
-        if (name.find("endminf") == std::string::npos) continue;
+        if (name.find(kActorMeshPrefix) != 0) continue;
 
         // 0. When custom model is active, hide unmatched vfxpart renderers (e.g. S_actor_endminf_vfxpart_01_lod0):
-        if (name.find("vfxpart") != std::string::npos) {
+        if (!g_target_pelica && name.find("vfxpart") != std::string::npos) {
             bool has_custom_replacement = false;
             for (const auto& record : g_replaced) {
                 if (record.custom_mesh && record.renderer == renderer) {
@@ -721,8 +738,15 @@ void __fastcall DetourPumpWithAiShadowCoverage(void* method_info) {
     // Preserve the production pump and the GOOD/BAD diagnostic, but run scene
     // coverage between them so POST_APPLY/TAG dumps observe the final bindings.
     DetourPump(method_info);
-    PumpAiShadowCoverage();
-    PumpF12StateDump();
+    if (g_multi_character) {
+        for (size_t i = 0; i < 2; ++i) {
+            CharacterScope scope(i);
+            SwapCoverage(i);
+            if (g_resource_path) { PumpNpcLodLock(); if (!g_replacement_active) RestoreAiShadowCoverage(); }
+            else PumpAiShadowCoverage();
+            SwapCoverage(i);
+        }
+    } else { PumpAiShadowCoverage(); PumpF12StateDump(); }
 }
 
 BE_Result BE_CALL AiShadowCoverageCreateHook(
@@ -774,8 +798,13 @@ BE_Result BE_CALL InitializeWithAiShadowCoverage(const BE_HostApiV1* host) {
 }
 
 void BE_CALL ShutdownWithAiShadowCoverage() {
+    if (g_multi_character) {
+        for (size_t i = 0; i < 2; ++i) {
+            CharacterScope scope(i); SwapCoverage(i); RestoreAiShadowCoverage(); SwapCoverage(i);
+        }
+    } else RestoreAiShadowCoverage();
+    // Shutdown will clear both ownership states; no early release while another is active.
     ResumeLockedCrowdLODs();
-    RestoreAiShadowCoverage();
     g_ai_coverage_next_scan_tick = 0;
     g_ai_coverage_set_shadow_mode_method = nullptr;
 

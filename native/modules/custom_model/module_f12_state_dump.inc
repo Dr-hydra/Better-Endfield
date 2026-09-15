@@ -199,7 +199,7 @@ const RendererSummary* F12DumpFindSummary(
 void F12DumpReplacementState(const char* phase, const char* label) {
     int32_t frame = -1;
     InvokeValue(Contract("time.get_frame_count"), nullptr, nullptr, frame);
-    const std::vector<RendererSummary> summaries = EnumerateLiveEndminfRenderers();
+    const std::vector<RendererSummary> summaries = EnumerateLiveTargetRenderers();
 
     Log("[F12-DUMP] BEGIN generation=" +
         std::to_string(g_f12_dump_generation) + " phase=" + phase +

@@ -1,0 +1,123 @@
+{
+  "schema": 1,
+  "character_id": "chr_0004_pelica",
+  "evidence": "Base LOD0 RabbitFX assignments from mod.ini, installed Material/Texture2D exports. Native approximation, not complete RabbitFX shader emulation. Exact original-name pins, component-scoped. No numeric Unity property IDs assumed.",
+  "textures": [
+    {
+      "source": "e3746997",
+      "components": [
+        0
+      ],
+      "target_texture": "T_actor_pelica_hair_01_D",
+      "evidence": "Base TextureOverride RabbitFX Diffuse binding. Native D->BaseMap, N->BumpMap, P->MetallicGlossMap mapping; Lightmap to P is an explicit native approximation pending visual validation. Exact original texture name must exist live."
+    },
+    {
+      "source": "f571c377",
+      "components": [
+        0
+      ],
+      "target_texture": "T_actor_pelica_hair_01_P",
+      "evidence": "Base TextureOverride RabbitFX Lightmap binding. Native D->BaseMap, N->BumpMap, P->MetallicGlossMap mapping; Lightmap to P is an explicit native approximation pending visual validation. Exact original texture name must exist live."
+    },
+    {
+      "source": "e70c7687",
+      "components": [
+        2
+      ],
+      "target_texture": "T_actor_pelica_body_01_D",
+      "evidence": "Base TextureOverride RabbitFX Diffuse binding. Native D->BaseMap, N->BumpMap, P->MetallicGlossMap mapping; Lightmap to P is an explicit native approximation pending visual validation. Exact original texture name must exist live."
+    },
+    {
+      "source": "f3ee56b5",
+      "components": [
+        2
+      ],
+      "target_texture": "T_actor_pelica_body_01_N",
+      "evidence": "Base TextureOverride RabbitFX Normalmap binding. Native D->BaseMap, N->BumpMap, P->MetallicGlossMap mapping; Lightmap to P is an explicit native approximation pending visual validation. Exact original texture name must exist live."
+    },
+    {
+      "source": "93fcbc2a",
+      "components": [
+        4,
+        8
+      ],
+      "target_texture": "T_actor_pelica_cloth_01_D",
+      "evidence": "Base TextureOverride RabbitFX Diffuse binding. Native D->BaseMap, N->BumpMap, P->MetallicGlossMap mapping; Lightmap to P is an explicit native approximation pending visual validation. Exact original texture name must exist live."
+    },
+    {
+      "source": "568c19f5",
+      "components": [
+        4,
+        8
+      ],
+      "target_texture": "T_actor_pelica_cloth_01_N",
+      "evidence": "Base TextureOverride RabbitFX Normalmap binding. Native D->BaseMap, N->BumpMap, P->MetallicGlossMap mapping; Lightmap to P is an explicit native approximation pending visual validation. Exact original texture name must exist live."
+    },
+    {
+      "source": "0681184e",
+      "components": [
+        4,
+        8
+      ],
+      "target_texture": "T_actor_pelica_cloth_01_P",
+      "evidence": "Base TextureOverride RabbitFX Lightmap binding. Native D->BaseMap, N->BumpMap, P->MetallicGlossMap mapping; Lightmap to P is an explicit native approximation pending visual validation. Exact original texture name must exist live."
+    },
+    {
+      "source": "e70c7687",
+      "components": [
+        7,
+        9
+      ],
+      "target_texture": "T_actor_pelica_cloth_02_D",
+      "evidence": "Base TextureOverride RabbitFX Diffuse binding. Native D->BaseMap, N->BumpMap, P->MetallicGlossMap mapping; Lightmap to P is an explicit native approximation pending visual validation. Exact original texture name must exist live."
+    },
+    {
+      "source": "f3ee56b5",
+      "components": [
+        7,
+        9
+      ],
+      "target_texture": "T_actor_pelica_cloth_02_N",
+      "evidence": "Base TextureOverride RabbitFX Normalmap binding. Native D->BaseMap, N->BumpMap, P->MetallicGlossMap mapping; Lightmap to P is an explicit native approximation pending visual validation. Exact original texture name must exist live."
+    },
+    {
+      "source": "ad53c86f",
+      "components": [
+        7,
+        9
+      ],
+      "target_texture": "T_actor_pelica_cloth_02_P",
+      "evidence": "Base TextureOverride RabbitFX Lightmap binding. Native D->BaseMap, N->BumpMap, P->MetallicGlossMap mapping; Lightmap to P is an explicit native approximation pending visual validation. Exact original texture name must exist live."
+    },
+    {
+      "source": "151c9982",
+      "components": [
+        0
+      ],
+      "target_texture": "T_actor_common_hairline_03_M",
+      "evidence": "Same EFMI resource ID has verified name pin in administrator sample; apply only on Pelica C0."
+    },
+    {
+      "source": "0a7b28f6",
+      "components": [
+        1
+      ],
+      "target_texture": "T_actor_pelica_face_01_N",
+      "evidence": "Only BC5 1024x1024 face DDS; original face N is BC5 1024x1024. Explicit candidate mapping pending visual validation."
+    },
+    {
+      "source": "1f4e3bca",
+      "components": [
+        5
+      ],
+      "target_texture": "T_actor_pelica_iris_01_D",
+      "evidence": "Only iris texture replacement; original iris D is 512x512 BC7."
+    }
+  ],
+  "limitations": [
+    "Face diffuse has two 1024 sRGB candidates; keep original until resolved.",
+    "Hair auxiliary normal/ramp/mask and cloth emission remain original unless explicitly mapped.",
+    "Body material has no serialized MetallicGlossMap; RabbitFX body Lightmap has no verified native target.",
+    "RabbitFX custom shader behavior and texture channel compatibility require in-game validation."
+  ]
+}

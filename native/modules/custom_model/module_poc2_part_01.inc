@@ -44,11 +44,11 @@ bool IsLiveClonePath(std::string_view path) {
 // What actually gets replaced is still decided by the index-count join and the
 // declaration check, not by this name.
 bool IsGameplayPostModelPath(std::string_view path) {
-    return path.find("chr_0003_endminf_postmodel") != std::string_view::npos;
+    return path.find(g_target_postmodel) != std::string_view::npos;
 }
 
 bool IsUiModelPath(std::string_view path) {
-    return path.find("chr_0003_endminf_uimodel") != std::string_view::npos;
+    return path.find(g_target_uimodel) != std::string_view::npos;
 }
 
 bool IsSupportedLiveTargetPath(std::string_view path) {
@@ -59,7 +59,7 @@ bool IsLod0Path(std::string_view path) {
     return path.find("/Mesh_all/lod0/") != std::string_view::npos;
 }
 
-// Whether a live SkinnedMeshRenderer is one of the Endministrator's lod0 draws.
+// Whether a live SkinnedMeshRenderer is one of the selected character's LOD0 draws.
 //
 // The container name is deliberately not consulted. The world model sits under
 // a scene root, the character showcase under a prefab proxy manager, and the
@@ -70,7 +70,7 @@ bool IsLod0Path(std::string_view path) {
 // The shadow proxies carry the same character prefix, so they are excluded by
 // name, and lod1+ draws are excluded so the lod0 payload is never dropped onto
 // cheaper geometry.
-bool IsEndminfLod0Draw(
+bool IsTargetLod0Draw(
     std::string_view renderer_name, std::string_view path) {
     if (renderer_name.find(kActorMeshPrefix) != 0) return false;
     if (renderer_name.find("shadowProxy") != std::string_view::npos) {
@@ -399,6 +399,8 @@ bool LoadBemPoc(const std::filesystem::path& path, BemPocData& output) {
         return false;
     }
 
+    if (!ValidateTargetPayload(output)) return false;
+
     // Two components cannot share an original index count: the runtime would
     // have no way to tell their renderers apart.
     for (size_t i = 0; i < output.components.size(); ++i) {
@@ -509,6 +511,14 @@ struct RendererSummary {
     bool live_clone = false;
     bool lod0_path = false;
 };
+
+bool MatchesTargetComponent(const BemComponentHeaderRaw& info, const RendererSummary& item) {
+    if (item.total_indices != info.original_index_count ||
+        !TargetComponentName(info.component_id, item.renderer_name)) return false;
+    if (!g_target_pelica) return true;
+    const auto& expected = kPelicaComponents[info.component_id];
+    return info.original_index_count == expected.indices && item.mesh_name == expected.mesh_name;
+}
 
 // `known_path` lets a caller that already walked the transform chain hand the
 // result over instead of paying for a second walk.

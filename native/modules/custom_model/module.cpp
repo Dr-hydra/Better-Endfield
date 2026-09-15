@@ -7,6 +7,7 @@
 // textual continuations of one translation unit and will be consolidated once
 // the BEM v1 runtime shape is frozen.
 #include "module_poc2_part_00.inc"
+#include "module_character_target.inc"
 #include "module_poc2_part_01.inc"
 #include "module_poc2_part_02.inc"
 #include "module_mesh_dynamic_trace.inc"

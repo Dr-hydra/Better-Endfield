@@ -17,6 +17,7 @@
 #include <string_view>
 #include <vector>
 #include <unordered_set>
+#include <unordered_map>
 
 namespace BetterEndfield::CustomModelModule {
 namespace {
@@ -24,8 +25,8 @@ namespace {
 constexpr char kModuleId[] = "betterendfield.custom_model";
 constexpr char kTargetRendererName[] = "S_actor_endminf_cloth_01_lod0";
 constexpr char kTargetMeshName[] = "S_actor_endminf_cloth_01_lod0";
-constexpr char kActorMeshPrefix[] = "S_actor_endminf_";
-constexpr char kDefaultBemRelativePath[] = "custom-model/endmin-casualwear-c9.bempoc";
+const char* kActorMeshPrefix = "S_actor_endminf_";
+const char* kDefaultBemRelativePath = "custom-model/endmin-casualwear-c9.bempoc";
 constexpr int kToggleHotkey = VK_F12;
 constexpr int kRollbackHotkey = VK_F11;
 // The F10 diagnostic box and F11 baked-identity controls are gone. They existed
@@ -369,22 +370,22 @@ struct ReplacedComponent {
     bool original_enabled = true;
     bool hidden_by_mod = false;
 };
-std::vector<ReplacedComponent> g_replaced;
-BemPocData g_active_bem;
-bool g_replacement_active = false;
-bool g_refresh_suspended = false;
-int32_t g_pending_apply_frame = -1;
-int32_t g_earliest_apply_frame = -1;
-uint64_t g_next_refresh_tick = 0;
+
+
+
+
+
+
+
 constexpr int32_t kDontUnloadUnusedAsset = 32;
 struct RetainedAsset {
     void* object = nullptr;
     uint32_t handle = 0;
     bool added_unload_protection = false;
 };
-std::vector<RetainedAsset> g_retained_assets;
+
 // Mirrors the mod's own mask toggle. The sample's default is mask-off.
-bool g_mask_visible = false;
+
 
 // One record per material slot we overwrote, so a rollback can put the exact
 // original Texture object back rather than clearing the slot.
@@ -396,13 +397,51 @@ struct InstalledTextureSlot {
     uint32_t material_handle = 0;
     uint32_t original_handle = 0;
 };
-std::vector<InstalledTextureSlot> g_installed_slots;
+
 
 struct CreatedTexture {
     void* texture = nullptr;
     uint32_t handle = 0;
 };
-std::vector<CreatedTexture> g_created_textures;
+
+
+// Character-owned state. Current context is changed only while holding the
+// main-thread operation guard; background callbacks never select a context.
+struct CharacterSession {
+    std::vector<ReplacedComponent> replaced;
+    BemPocData active_bem;
+    bool replacement_active = false;
+    bool refresh_suspended = false;
+    int32_t pending_apply_frame = -1;
+    int32_t earliest_apply_frame = -1;
+    uint64_t next_refresh_tick = 0;
+    std::vector<RetainedAsset> retained_assets;
+    bool mask_visible = false;
+    std::vector<InstalledTextureSlot> installed_slots;
+    std::vector<CreatedTexture> created_textures;
+    bool armed = false;
+};
+std::array<CharacterSession, 2> g_character_sessions;
+size_t g_current_character = 0;
+bool g_multi_character = false;
+bool g_resource_path = false;
+bool g_template_materials = false;
+#define g_replaced (g_character_sessions[g_current_character].replaced)
+#define g_active_bem (g_character_sessions[g_current_character].active_bem)
+#define g_replacement_active (g_character_sessions[g_current_character].replacement_active)
+#define g_refresh_suspended (g_character_sessions[g_current_character].refresh_suspended)
+#define g_pending_apply_frame (g_character_sessions[g_current_character].pending_apply_frame)
+#define g_earliest_apply_frame (g_character_sessions[g_current_character].earliest_apply_frame)
+#define g_next_refresh_tick (g_character_sessions[g_current_character].next_refresh_tick)
+#define g_retained_assets (g_character_sessions[g_current_character].retained_assets)
+#define g_mask_visible (g_character_sessions[g_current_character].mask_visible)
+#define g_installed_slots (g_character_sessions[g_current_character].installed_slots)
+#define g_created_textures (g_character_sessions[g_current_character].created_textures)
+
+bool AnyCharacterActive() {
+    return g_character_sessions[0].replacement_active || g_character_sessions[1].replacement_active;
+}
+bool PrivateMaterialMode() { return g_multi_character || g_current_character == 1; }
 
 using VoidStaticFn = void(__fastcall*)(void* method_info);
 VoidStaticFn g_original_pump = nullptr;
@@ -482,9 +521,6 @@ MethodContract g_methods[]{
     {"renderer.set_enabled",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Renderer",
             "set_enabled", "System.Boolean", "System.Void", 1}, true},
-    {"renderer.get_materials",
-        {"UnityEngine.CoreModule.dll", "UnityEngine", "Renderer",
-            "get_materials", nullptr, "UnityEngine.Material[]", 0}, false},
     {"renderer.set_materials",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Renderer",
             "set_materials", "UnityEngine.Material[]", "System.Void", 1}, false},
@@ -665,6 +701,8 @@ MethodContract g_methods[]{
     {"material.get_texture_property_ids",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Material",
             "GetTexturePropertyNameIDs", nullptr, "System.Int32[]", 0}, false},
+    {"array.clone",
+        {"mscorlib.dll", "System", "Array", "Clone", nullptr, "System.Object", 0}, false},
     {"material.get_texture_by_id",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Material", "GetTexture",
             "System.Int32", "UnityEngine.Texture", 1}, false},

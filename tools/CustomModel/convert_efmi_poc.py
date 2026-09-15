@@ -159,7 +159,9 @@ class Source:
 
     def find(self, suffix: str) -> str | None:
         matches = [
-            n for n in self.names if n.replace("\\", "/").endswith(suffix)
+            n for n in self.names
+            if n.replace("\\", "/") == suffix
+            or n.replace("\\", "/").endswith("/" + suffix)
         ]
         if len(matches) > 1:
             raise ValueError(f"ambiguous '*{suffix}': {len(matches)} matches")
@@ -194,7 +196,7 @@ def parse_original_index_counts(text: str) -> dict[int, int]:
     """
     counts: dict[int, int] = {}
     for match in re.finditer(
-        r"^\[TextureOverride_EntryPoint_Component(\d+)\]\s*\n"
+        r"^\[TextureOverride_(?:EntryPoint_)?Component(\d+)\]\s*\n"
         r"((?:(?!\[).*\n?)*)",
         text,
         re.M,
@@ -202,7 +204,11 @@ def parse_original_index_counts(text: str) -> dict[int, int]:
         body = match.group(2)
         found = re.search(r"^\s*match_index_count\s*=\s*(\d+)", body, re.M)
         if found:
-            counts[int(match.group(1))] = int(found.group(1))
+            component = int(match.group(1))
+            count = int(found.group(1))
+            if component in counts and counts[component] != count:
+                raise ValueError(f"Component{component}: conflicting original index counts")
+            counts[component] = count
     return counts
 
 
@@ -465,6 +471,7 @@ def read_component(
     index: int,
     original_index_count: int,
     hidden: bool,
+    adaptations: dict | None = None,
 ) -> Component:
     label = f"Component{index}"
     strides: list[int] = []
@@ -478,6 +485,9 @@ def read_component(
         if decl is None or stride == 0:
             raise ValueError(f"{label}: stream {stream} has no declaration")
         data = src.read(f"Meshes/{key}.buf")
+        if adaptations and str(stream) in adaptations:
+            from efmi_source import adapt_stream
+            data = adapt_stream(data, adaptations[str(stream)], stride)
         if len(data) % stride:
             raise ValueError(
                 f"{key}: {len(data)} bytes is not a multiple of stride {stride}"
@@ -543,6 +553,13 @@ def read_component(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("source", type=Path, help="EFMI mod folder or zip")
+    parser.add_argument("--ini", help="Exact archive-relative configuration path")
+    parser.add_argument("--geometry-only", action="store_true",
+                        help="Validation payload with no replacement textures")
+    parser.add_argument("--source-profile", type=Path,
+                        help="Verified source declarations and component mapping JSON")
+    parser.add_argument("--material-profile", type=Path,
+                        help="Explicit component and original texture-name bindings")
     parser.add_argument(
         "-o",
         "--output",
@@ -557,14 +574,32 @@ def main() -> int:
 
     src = Source(args.source)
     try:
-        ini = src.read("mod.ini").decode("utf-8-sig", errors="strict")
+        ini_name = args.ini or src.find("mod.ini")
+        if not ini_name or ini_name not in src.names:
+            raise ValueError("selected mod.ini is missing")
+        ini = src.read_exact(ini_name).decode("utf-8-sig", errors="strict")
+        ini = ini.replace("\r\n", "\n").replace("\r", "")
         if "EFMI ALPHA" not in ini:
             raise ValueError("sample is not an EFMI ALPHA export")
-        meta = json.loads(
-            src.read("Meshes/Components.buf").decode("utf-8-sig")
-        )
+        from efmi_source import analyze_source, conversion_inputs
+        profile = (json.loads(args.source_profile.read_text(encoding="utf-8-sig"))
+                   if args.source_profile else None)
+        material_profile = (json.loads(args.material_profile.read_text(encoding="utf-8-sig"))
+                            if args.material_profile else None)
+        if profile and profile.get("requires_material_profile") and not args.geometry_only and not material_profile:
+            raise ValueError("source requires --material-profile or --geometry-only")
+        analysis = analyze_source(src, ini_name, profile, geometry_only=args.geometry_only, material_profile=material_profile)
+        if analysis["errors"]:
+            raise ValueError("source validation failed:\n  " + "\n  ".join(analysis["errors"]))
+        for warning in analysis["warnings"]:
+            print(f"warning: {warning}", file=sys.stderr)
+        meta, profile_counts = conversion_inputs(src, profile)
         constants = parse_ini_constants(ini)
         original_counts = parse_original_index_counts(ini)
+        for component, count in profile_counts.items():
+            if component in original_counts and original_counts[component] != count:
+                raise ValueError(f"C{component}: profile disagrees with original index count")
+            original_counts[component] = count
         hidden_by_default = parse_default_hidden(ini, constants)
 
         override_name = src.find("bem-slots.json")
@@ -601,9 +636,19 @@ def main() -> int:
                     index,
                     original_counts[index],
                     hidden_by_default.get(index, False),
+                    profile.get("components", {}).get(str(index), {}).get("stream_adaptations") if profile else None,
                 )
             )
-        textures = collect_textures(src, overrides)
+        if args.geometry_only:
+            textures = []
+        elif material_profile:
+            from efmi_materials import collect_mapped_textures
+            textures = collect_mapped_textures(src, material_profile, profile.get("character_id") if profile else None)
+            available = {c.index for c in components}
+            if any(c not in available for t in textures for c in component_list(t.component_mask)):
+                raise ValueError("material binding references a missing component")
+        else:
+            textures = collect_textures(src, overrides)
     finally:
         src.close()
     if not components:

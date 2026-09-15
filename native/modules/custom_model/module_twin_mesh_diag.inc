@@ -256,7 +256,7 @@ void BuildTwinPair() {
     }
 
     const std::vector<RendererSummary> summaries =
-        EnumerateLiveEndminfRenderers();
+        EnumerateLiveTargetRenderers();
     const RendererSummary* source = TwinFindGameplayC9(summaries, *component);
     if (!source) {
         Log("[UPLOAD-AB] Num7 failed: unique gameplay C9 renderer was not found.");

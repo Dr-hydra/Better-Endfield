@@ -50,7 +50,7 @@ bool IsActiveSceneRenderer(void* renderer) {
 // Extending the replacement past C9 needs the whole model's declarations, and
 // the join key onto EFMI's components is the original index count, so this
 // filters on path alone and keeps whatever it finds.
-std::vector<RendererSummary> EnumerateLiveEndminfRenderers() {
+std::vector<RendererSummary> EnumerateLiveTargetRenderers() {
     std::vector<RendererSummary> summaries;
     void* parameters[1]{g_skinned_renderer_class.type_object};
     void* objects = Invoke(
@@ -70,7 +70,7 @@ std::vector<RendererSummary> EnumerateLiveEndminfRenderers() {
         // so the name decides whether a path is worth building at all. This
         // scan runs about once a second while a replacement is active.
         const std::string renderer_name = ObjectName(renderer);
-        if (renderer_name.find("endminf") == std::string::npos) continue;
+        if (renderer_name.find(g_target_pelica ? "pelica" : "endminf") == std::string::npos) continue;
         if (renderer_name.find(kActorMeshPrefix) != 0) {
             // Names the character but not in the form the payload was built
             // for. Nothing downstream looks at these, so a screen that draws
@@ -82,7 +82,7 @@ std::vector<RendererSummary> EnumerateLiveEndminfRenderers() {
             continue;
         }
         const std::string path = BuildTransformPath(renderer);
-        if (!IsEndminfLod0Draw(renderer_name, path)) {
+        if (!IsTargetLod0Draw(renderer_name, path)) {
             rejected_roots.push_back(PathRoot(path));
             continue;
         }
@@ -98,7 +98,7 @@ std::vector<RendererSummary> EnumerateLiveEndminfRenderers() {
     if (last_count != raw_count || last_live_count != summaries.size()) {
         last_count = raw_count;
         last_live_count = summaries.size();
-        Log("Endminf lod0 renderer scan: allSMR=" + std::to_string(raw_count) +
+        Log("Target lod0 renderer scan: allSMR=" + std::to_string(raw_count) +
             " scanned=" + std::to_string(count) +
             " live=" + std::to_string(summaries.size()));
     }
@@ -110,7 +110,7 @@ std::vector<RendererSummary> EnumerateLiveEndminfRenderers() {
     static std::string last_containers;
     if (containers != last_containers) {
         last_containers = containers;
-        Log("Endminf containers: " + containers);
+        Log("Target containers: " + containers);
     }
     std::sort(outside_prefix.begin(), outside_prefix.end());
     outside_prefix.erase(
@@ -124,7 +124,7 @@ std::vector<RendererSummary> EnumerateLiveEndminfRenderers() {
     static std::string last_outside;
     if (outside_text != last_outside) {
         last_outside = outside_text;
-        Log("Endminf-named draws outside the actor prefix: [" + outside_text +
+        Log("Target draws outside the actor prefix: [" + outside_text +
             "]");
     }
     return summaries;
@@ -280,7 +280,16 @@ bool RetainAsset(void* object) {
 
 void ReleaseRetainedAssets(bool restore_flags) {
     for (const auto& retained : g_retained_assets) {
-        if (restore_flags && retained.added_unload_protection &&
+        bool owned_elsewhere = false;
+        for (size_t i = 0; i < g_character_sessions.size(); ++i) {
+            if (i == g_current_character) continue;
+            for (auto& other : g_character_sessions[i].retained_assets) {
+                if (other.object != retained.object) continue;
+                owned_elsewhere = true;
+                other.added_unload_protection |= retained.added_unload_protection;
+            }
+        }
+        if (restore_flags && !owned_elsewhere && retained.added_unload_protection &&
             IsNativeObjectAlive(retained.object)) {
             int32_t flags = 0;
             if (InvokeValue(Contract("object.get_hide_flags"), retained.object,
@@ -2118,12 +2127,70 @@ uint32_t Crc32(std::string_view text) {
     return ~crc;
 }
 
+// Always copy explicitly: Renderer.materials may return existing instances after
+// rollback, so it cannot guarantee fresh objects for a new replacement generation.
+bool PreparePelicaMaterials(ReplacedComponent& record) {
+    if (!PrivateMaterialMode()) return true;
+    void* original = Invoke(Contract("renderer.get_shared_materials"), record.renderer, nullptr, false);
+    if (!original || ArrayLength(original) <= 0) return false;
+    const uint32_t root = g_host->gchandle_new(g_host->context, original, 0);
+    if (!root) return false;
+    void* copies = Invoke(Contract("array.clone"), original, nullptr, false);
+    const uint32_t copy_root = copies ? g_host->gchandle_new(g_host->context, copies, 0) : 0;
+    bool valid = copy_root && ArrayLength(copies) == ArrayLength(original);
+    if (valid) {
+        for (int i = 0; valid && i < ArrayLength(original); ++i) {
+            void* source = ArrayValue(original, i);
+            void* copy = source ? g_host->object_new(g_host->context, g_material_class.class_info) : nullptr;
+            const uint32_t handle = copy ? g_host->gchandle_new(g_host->context, copy, 0) : 0;
+            void* ctor_args[1]{source};
+            void* array_args[2]{copy, &i};
+            valid = handle && EarlyInvoke(g_early_material_ctor, copy, ctor_args) &&
+                EarlyInvoke(g_early_array_set, copies, array_args);
+            if (handle) g_host->gchandle_free(g_host->context, handle);
+        }
+        if (valid) valid = ApplyRendererMaterials(record.renderer, copies);
+    }
+    for (int i = 0; valid && i < ArrayLength(copies); ++i) {
+        void* copy = ArrayValue(copies, i);
+        void* source = ArrayValue(original, i);
+        valid = copy && source && copy != source && RetainAsset(copy) && RetainAsset(source);
+    }
+    if (!valid) {
+        ApplyRendererMaterials(record.renderer, original);
+        if (copy_root) g_host->gchandle_free(g_host->context, copy_root);
+        g_host->gchandle_free(g_host->context, root);
+        Log("Private material preparation failed: renderer=" + ObjectName(record.renderer) +
+            " C" + std::to_string(record.component_id) + "; keeping original material.");
+        return false;
+    }
+    record.original_material = original;
+    record.custom_material = copies;
+    g_host->gchandle_free(g_host->context, copy_root);
+    // The caller pins the record immediately, with no intervening managed call.
+    g_host->gchandle_free(g_host->context, root);
+    return true;
+}
+
 // Builds the model-wide slot table.
 //
 // The component set is computed by texture object identity, not by name, so two
 // materials binding the same asset produce one entry with both components set.
 // That set is exactly what EFMI recorded per texture, which is what makes the
 // join possible at all.
+void UnionTextureComponentMasks(std::vector<LiveTextureSlot>& slots) {
+    // Union the sets across every slot that holds the same texture object: a
+    // texture bound by both the face and the eyebrow material has component
+    // set {1,4} however many slots reference it.
+    for (LiveTextureSlot& slot : slots) {
+        uint32_t mask = slot.component_mask;
+        for (const LiveTextureSlot& other : slots) {
+            if (other.texture == slot.texture) mask |= other.component_mask;
+        }
+        slot.component_mask = mask;
+    }
+}
+
 std::vector<LiveTextureSlot> BuildLiveTextureSlots(
     const std::vector<std::pair<uint32_t, void*>>& component_renderers) {
     std::vector<LiveTextureSlot> slots;
@@ -2161,16 +2228,7 @@ std::vector<LiveTextureSlot> BuildLiveTextureSlots(
         }
     }
 
-    // Union the sets across every slot that holds the same texture object: a
-    // texture bound by both the face and the eyebrow material has component
-    // set {1,4} however many slots reference it.
-    for (LiveTextureSlot& slot : slots) {
-        uint32_t mask = slot.component_mask;
-        for (const LiveTextureSlot& other : slots) {
-            if (other.texture == slot.texture) mask |= other.component_mask;
-        }
-        slot.component_mask = mask;
-    }
+    if (!g_target_pelica) UnionTextureComponentMasks(slots);
     return slots;
 }
 
@@ -2210,6 +2268,9 @@ void InstallCustomTextures(
     int shared_skipped = 0;
 
     for (const LiveTextureSlot& slot : slots) {
+        if (PrivateMaterialMode() && std::any_of(g_installed_slots.begin(), g_installed_slots.end(),
+                [&](const auto& installed) { return installed.material == slot.material &&
+                    installed.slot_id == slot.slot_id && installed.replacement == slot.texture; })) continue;
         std::array<char, 24> id_text{};
         std::snprintf(id_text.data(), id_text.size(), "0x%08X",
             static_cast<unsigned>(slot.slot_id));
@@ -2558,7 +2619,7 @@ void ProbeShadowTextureUsers() {
     for (int i = 0; i < renderer_count; ++i) {
         void* renderer = ArrayValue(renderers, i);
         const std::string name = ObjectName(renderer);
-        if (name.find("endminf") == std::string::npos ||
+        if (name.find(kActorMeshPrefix) != 0 ||
             name.find("shadowProxy") == std::string::npos) continue;
         ++proxies;
         void* mesh = Invoke(Contract("skinned.get_shared_mesh"), renderer, nullptr, false);
@@ -2597,9 +2658,9 @@ void ProbeShadowTextureUsers() {
 // destination Unity channel for those cannot be derived from the mod; it has to
 // be read off the live mesh. Read-only.
 void ProbeFullModel() {
-    Log("Endminf full-model declaration probe (read-only):");
+    Log("Target full-model declaration probe (read-only):");
     ProbeShadowTextureUsers();
-    std::vector<RendererSummary> summaries = EnumerateLiveEndminfRenderers();
+    std::vector<RendererSummary> summaries = EnumerateLiveTargetRenderers();
     if (summaries.empty()) {
         Log("  no live Endministrator lod0 renderer; load the character first.");
         return;
@@ -2817,7 +2878,7 @@ void ProbeSkinnedSnapshot(const RendererSummary& item) {
 void ProbeSkinningState(int32_t sample, int32_t sample_count) {
     int32_t frame = -1;
     InvokeValue(Contract("time.get_frame_count"), nullptr, nullptr, frame);
-    auto summaries = EnumerateLiveEndminfRenderers();
+    auto summaries = EnumerateLiveTargetRenderers();
     Log("0 skin diagnostic begin sample=" + std::to_string(sample) + "/" +
         std::to_string(sample_count) + " frame=" + std::to_string(frame) +
         " replacementActive=" + std::to_string(g_replacement_active) +
@@ -2852,7 +2913,7 @@ bool GetRendererEnabled(void* renderer, bool& enabled) {
 // draws are off by default, which is the look the mod is for; F4 brings them
 // back.
 void ApplyMaskVisibility() {
-    const std::vector<RendererSummary> live = EnumerateLiveEndminfRenderers();
+    const std::vector<RendererSummary> live = EnumerateLiveTargetRenderers();
     int changed = 0;
     for (const ReplacedComponent& item : g_replaced) {
         if (!item.hidden_by_mod) continue;
@@ -2864,6 +2925,33 @@ void ApplyMaskVisibility() {
             (g_mask_visible ? "visible" : "hidden") + ": renderers=" +
             std::to_string(changed));
     }
+}
+
+void* TextureModelRoot(void* renderer) {
+    void* transform = Invoke(Contract("component.get_transform"), renderer, nullptr, false);
+    void* fallback = transform ? transform : renderer;
+    for (int depth = 0; transform && depth < 128; ++depth) {
+        const std::string name = ObjectName(transform);
+        if (name.find(g_target_postmodel) == 0 || name.find(g_target_uimodel) == 0)
+            return transform;
+        transform = Invoke(Contract("transform.get_parent"), transform, nullptr, false);
+    }
+    return fallback;
+}
+
+using ModelTextureGroups = std::unordered_map<void*, std::vector<std::pair<uint32_t, void*>>>;
+ModelTextureGroups GroupModelTextureRenderers(
+    const std::vector<std::pair<uint32_t, void*>>& renderers) {
+    ModelTextureGroups models;
+    for (const auto& entry : renderers) models[TextureModelRoot(entry.second)].push_back(entry);
+    return models;
+}
+
+void InstallModelTextures(const BemPocData& bem,
+    const std::vector<std::pair<uint32_t, void*>>& renderers) {
+    if (bem.textures.empty() || renderers.empty()) return;
+    for (const auto& entry : GroupModelTextureRenderers(renderers))
+        InstallCustomTextures(bem, entry.second);
 }
 
 bool ApplyReplacement(const std::vector<RendererSummary>& summaries) {
@@ -2879,7 +2967,7 @@ bool ApplyReplacement(const std::vector<RendererSummary>& summaries) {
     }
 
     if (summaries.empty()) {
-        Log("No live Endministrator lod0 renderer; load the character first.");
+        Log("No live selected-character lod0 renderer; load the character first.");
         return false;
     }
 
@@ -2897,7 +2985,7 @@ bool ApplyReplacement(const std::vector<RendererSummary>& summaries) {
         std::vector<const RendererSummary*> targets;
         for (const RendererSummary& item : summaries) {
             if (!item.renderer || !item.mesh) continue;
-            if (item.total_indices != info.original_index_count) continue;
+            if (!MatchesTargetComponent(info, item)) continue;
             targets.push_back(&item);
         }
         if (targets.empty()) {
@@ -2931,17 +3019,7 @@ bool ApplyReplacement(const std::vector<RendererSummary>& summaries) {
             continue;
         }
 
-        // Bindposes belong to the source Mesh, not its vertex declaration.
-        // Two meshes with identical formats can have different bone palettes.
-        // Reuse only for the exact same source asset.
-        struct BuiltMesh {
-            void* source_mesh = nullptr;
-            VertexDeclaration declaration{};
-            std::vector<int32_t> strides;
-            void* mesh = nullptr;
-            int assigned = 0;
-        };
-        std::vector<BuiltMesh> built;
+        // Build independently for every receiver, including UI resources.
         int applied = 0;
 
         for (const RendererSummary* item : targets) {
@@ -2953,44 +3031,13 @@ bool ApplyReplacement(const std::vector<RendererSummary>& summaries) {
                 continue;
             }
 
-            VertexDeclaration target_declaration;
-            std::vector<int32_t> target_strides;
-            if (!ReadVertexDeclaration(item->mesh, target_declaration) ||
-                !ReadMeshStrides(item->mesh, target_strides)) {
-                Log("  " + label +
-                    " target declaration is unreadable; skipped one renderer.");
-                continue;
-            }
-
-            BuiltMesh* match = nullptr;
-            for (BuiltMesh& candidate : built) {
-                if (candidate.source_mesh == item->mesh && DeclarationsEqual(
-                        candidate.declaration, target_declaration) &&
-                    candidate.strides == target_strides) {
-                    match = &candidate;
-                    break;
-                }
-            }
-            if (!match) {
-                void* custom_mesh = nullptr;
-                if (!BuildMeshFromComponent(
-                        component, item->mesh, custom_mesh)) {
-                    continue;
-                }
-                BuiltMesh fresh;
-                fresh.source_mesh = item->mesh;
-                fresh.declaration = target_declaration;
-                fresh.strides = target_strides;
-                fresh.mesh = custom_mesh;
-                built.push_back(std::move(fresh));
-                match = &built.back();
-            }
-
-            if (!SetSharedMesh(item->renderer, match->mesh)) continue;
-            if (Invoke(Contract("skinned.get_shared_mesh"), item->renderer,
-                    nullptr, false) != match->mesh) {
-                Log("  " + label + " sharedMesh read-back mismatch; restored.");
+            void* custom_mesh = nullptr;
+            if (!BuildMeshFromComponent(component, item->mesh, custom_mesh)) continue;
+            if (!SetSharedMesh(item->renderer, custom_mesh) ||
+                Invoke(Contract("skinned.get_shared_mesh"), item->renderer,
+                    nullptr, false) != custom_mesh) {
                 SetSharedMesh(item->renderer, item->mesh);
+                DestroyUnityObject(custom_mesh);
                 continue;
             }
             ReplacedComponent record;
@@ -2998,18 +3045,13 @@ bool ApplyReplacement(const std::vector<RendererSummary>& summaries) {
             record.original_index_count = info.original_index_count;
             record.renderer = item->renderer;
             record.original_mesh = item->mesh;
-            record.custom_mesh = match->mesh;
+            record.custom_mesh = custom_mesh;
             record.original_material = Invoke(Contract("renderer.get_shared_materials"), item->renderer, nullptr, false);
             record.hidden_by_mod = (info.flags & kComponentFlagHidden) != 0;
             GetRendererEnabled(item->renderer, record.original_enabled);
             pending.push_back(record);
             component_renderers.emplace_back(info.component_id, item->renderer);
-            ++match->assigned;
             ++applied;
-        }
-
-        for (const BuiltMesh& entry : built) {
-            if (entry.assigned == 0) DestroyUnityObject(entry.mesh);
         }
 
         if (applied == 0) {
@@ -3017,19 +3059,14 @@ bool ApplyReplacement(const std::vector<RendererSummary>& summaries) {
             continue;
         }
         Log("  " + label + " applied to " + std::to_string(applied) +
-            " renderer(s)" +
-            (built.size() > 1
-                ? " over " + std::to_string(built.size()) +
-                      " distinct declarations"
-                : ""));
+            " renderer(s), each with an independent mesh");
     }
 
     for (const RendererSummary& item : summaries) {
         const bool known = std::any_of(
             bem.components.begin(), bem.components.end(),
             [&](const BemComponent& component) {
-                return component.info.original_index_count ==
-                    item.total_indices;
+                return MatchesTargetComponent(component.info, item);
             });
         if (!known) ++unmatched_renderers;
     }
@@ -3058,7 +3095,18 @@ bool ApplyReplacement(const std::vector<RendererSummary>& summaries) {
         }
     }
 
-    InstallCustomTextures(bem, component_renderers);
+    if (PrivateMaterialMode() && !bem.textures.empty()) {
+        std::vector<std::pair<uint32_t, void*>> private_renderers;
+        for (auto& record : g_replaced) {
+            if (!PreparePelicaMaterials(record)) continue;
+            if (record.original_material_handle) g_host->gchandle_free(g_host->context, record.original_material_handle);
+            if (record.custom_material_handle) g_host->gchandle_free(g_host->context, record.custom_material_handle);
+            record.original_material_handle = g_host->gchandle_new(g_host->context, record.original_material, 0);
+            record.custom_material_handle = g_host->gchandle_new(g_host->context, record.custom_material, 0);
+            private_renderers.emplace_back(record.component_id, record.renderer);
+        }
+        InstallModelTextures(bem, private_renderers);
+    } else InstallModelTextures(bem, component_renderers);
     ProbeShadowTextureUsers();
     ApplyMaskVisibility();
     for (ReplacedComponent& item : g_replaced) {

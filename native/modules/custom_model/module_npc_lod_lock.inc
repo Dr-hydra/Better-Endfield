@@ -121,6 +121,7 @@ void ApplyLockedCrowdLODs() {
 }
 
 void ResumeLockedCrowdLODs() {
+    if (AnyCharacterActive()) return;
     if (!g_pipeline_lod0_locked && !g_npc_crowd_lod_locked) return;
 
     // 1. Pipeline Level: HGRenderPipeline.DisableForceLOD0()
@@ -148,7 +149,7 @@ void ResumeLockedCrowdLODs() {
 }
 
 void PumpNpcLodLock() {
-    if (g_replacement_active) {
+    if (AnyCharacterActive()) {
         if (!g_pipeline_lod0_locked || !g_npc_crowd_lod_locked) {
             ApplyLockedCrowdLODs();
         }

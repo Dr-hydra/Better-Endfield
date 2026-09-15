@@ -37,7 +37,7 @@ bool DeliveryValue(const BE_ResolvedMethodV1& method, void* object, T& value) {
 
 bool DeliveryTargetName(const std::string& name) {
     return name.find("endminf") != std::string::npos ||
-        name.find("aglina") != std::string::npos;
+        name.find("aglina") != std::string::npos || name.find("pelica") != std::string::npos;
 }
 
 bool DeliveryBudget() {
@@ -68,6 +68,8 @@ void DeliveryMeshLine(const char* stage, uint64_t sequence, int slot, void* rend
         "\" bones=" + std::to_string(bones));
 }
 
+#include "module_multi_path.inc"
+
 void __fastcall DeliveryFinishHook(void* proxy, void* asset, void* method) {
     // Only managed scalar getters on this path: asset loading may run off-thread.
     bool trace = false;
@@ -87,6 +89,7 @@ void __fastcall DeliveryFinishHook(void* proxy, void* asset, void* method) {
                 " asset=" + NaturalTracePointer(asset));
         }
     }
+    if (g_delivery_enabled.load()) MultiApplyModel(asset, "RESOURCE-BEFORE-FINISH", true);
     g_delivery_original_finish(proxy, asset, method);
     // Dynamic diagnostic build: leave initial assets intact; F12 owns replacement.
     if (trace) {
@@ -162,12 +165,14 @@ void __fastcall DeliveryPartPostHook(void* part, void* method) {
     DeliveryPartSnapshot(part, "PART-BASE-BEGIN");
     g_delivery_original_part_post(part, method);
     DeliveryPartSnapshot(part, "PART-BASE-END");
+    MultiAssemblyComplete(part, "INSTANCE-BASE-END");
 }
 
 void __fastcall DeliveryComplexPostHook(void* part, void* method) {
     DeliveryPartSnapshot(part, "PART-COMPLEX-BEGIN");
     g_delivery_original_complex_post(part, method);
     DeliveryPartSnapshot(part, "PART-COMPLEX-END");
+    MultiAssemblyComplete(part, "INSTANCE-COMPLEX-END");
 }
 
 void __fastcall DeliverySmsHook(void* config, int32_t lod, void* pool,
@@ -269,8 +274,12 @@ BE_Result BE_CALL InitializeWithAssetDeliveryTrace(const BE_HostApiV1* host) {
         Log("[ASSET-DELIVERY] hook install failed; delivery trace disabled, module kept loaded for existing hooks.");
         return BE_Result_Ok;
     }
+    if (g_multi_character) {
+        for (auto& session : g_character_sessions) session.armed = true;
+        Log(std::string("[MULTI] startup armed endminf+pelica path=") + (g_resource_path ? "resource" : "instance"));
+    }
     g_delivery_enabled.store(true);
-    MeshTraceInitialize(host);
+    if (!g_target_pelica && !g_multi_character) MeshTraceInitialize(host);
     Log("[ASSET-DELIVERY] armed v0.0.43: F12 replace/refresh, F11 restore, 0 snapshot, 9 C5 field A/B. Early replacement disabled.");
     return BE_Result_Ok;
 }

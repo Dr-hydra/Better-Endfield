@@ -327,7 +327,7 @@ void* __fastcall NaturalTraceCloneWithParentHook(
 
 void NaturalTraceLogLiveSnapshot(const char* stage) {
     const std::vector<RendererSummary> summaries =
-        EnumerateLiveEndminfRenderers();
+        EnumerateLiveTargetRenderers();
     Log(std::string("[NATURAL-TRACE] LIVE-") + stage +
         " renderers=" + std::to_string(summaries.size()));
     for (size_t index = 0; index < summaries.size(); ++index) {

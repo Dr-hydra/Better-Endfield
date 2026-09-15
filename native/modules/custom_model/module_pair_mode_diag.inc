@@ -118,7 +118,7 @@ bool PreparePairBuildSource(
         return false;
     }
 
-    summaries = EnumerateLiveEndminfRenderers();
+    summaries = EnumerateLiveTargetRenderers();
     source = TwinFindGameplayC9(summaries, *component);
     if (!source) {
         Log(std::string("[PAIR-MODE] ") + mode_name +
