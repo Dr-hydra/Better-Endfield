@@ -16,6 +16,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <unordered_set>
 
 namespace BetterEndfield::CustomModelModule {
 namespace {
@@ -306,6 +307,7 @@ struct EngineBindings {
     MeshSetIndexBufferDataFn set_index_buffer_data = nullptr;
     MeshSetSubMeshFn set_sub_mesh = nullptr;
     MeshUploadDataFn upload_mesh_data = nullptr;
+    int32_t cached_ptr_offset = -1;
     bool resolved = false;
 };
 EngineBindings g_engine{};
@@ -326,10 +328,20 @@ constexpr int32_t kTopologyTriangles = 0;
 constexpr int32_t kIndexFormatUInt16 = 0;
 // MeshUpdateFlags.Default keeps Unity's own validation and bounds bookkeeping.
 constexpr int32_t kMeshUpdateDefault = 0;
+void MeshTraceBuild(const BemComponent&, void*, void*, const char*);
 std::atomic_bool g_operation_in_progress{false};
 std::atomic_bool g_hotkey_thread_stop{false};
 std::atomic_uint64_t g_pump_hits{0};
 HANDLE g_hotkey_thread = nullptr;
+
+BE_ResolvedMethodV1 g_early_main_thread{}, g_early_material_ctor{}, g_early_set_material{}, g_early_array_set{};
+
+bool EarlyInvoke(const BE_ResolvedMethodV1& method, void* object, void** args) {
+    if (!method.method_info || !g_host || !g_host->runtime_invoke) return false;
+    void* exception = nullptr;
+    g_host->runtime_invoke(g_host->context, method.method_info, object, args, &exception);
+    return !exception;
+}
 
 // One record per renderer whose mesh we replaced. There are several instances
 // of the model live at once and ten components in each, so this replaces the
@@ -343,9 +355,17 @@ struct ReplacedComponent {
     void* renderer = nullptr;
     void* original_mesh = nullptr;
     void* custom_mesh = nullptr;
+    void* original_material = nullptr;
+    void* custom_material = nullptr;
+    void* original_bones = nullptr;
+    void* original_root_bone = nullptr;
     uint32_t renderer_handle = 0;
     uint32_t original_mesh_handle = 0;
     uint32_t custom_mesh_handle = 0;
+    uint32_t original_material_handle = 0;
+    uint32_t custom_material_handle = 0;
+    uint32_t original_bones_handle = 0;
+    uint32_t original_root_bone_handle = 0;
     bool original_enabled = true;
     bool hidden_by_mod = false;
 };
@@ -435,23 +455,48 @@ MethodContract g_methods[]{
     {"array.get_value",
         {"mscorlib.dll", "System", "Array", "GetValue",
             "System.Int32", "System.Object", 1}, true},
-
-    {"component.get_transform",
-        {"UnityEngine.CoreModule.dll", "UnityEngine", "Component", "get_transform",
-            nullptr, "UnityEngine.Transform", 0}, true},
     {"component.get_game_object",
-        {"UnityEngine.CoreModule.dll", "UnityEngine", "Component", "get_gameObject",
-            nullptr, "UnityEngine.GameObject", 0}, true},
-    {"game_object.get_active_in_hierarchy",
-        {"UnityEngine.CoreModule.dll", "UnityEngine", "GameObject", "get_activeInHierarchy",
-            nullptr, "System.Boolean", 0}, true},
-    {"game_object.get_scene",
-        {"UnityEngine.CoreModule.dll", "UnityEngine", "GameObject", "get_scene",
-            nullptr, "UnityEngine.SceneManagement.Scene", 0}, true},
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Component",
+            "get_gameObject", nullptr, "UnityEngine.GameObject", 0}, true},
+    {"component.get_transform",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Component",
+            "get_transform", nullptr, "UnityEngine.Transform", 0}, true},
     {"transform.get_parent",
-        {"UnityEngine.CoreModule.dll", "UnityEngine", "Transform", "get_parent",
-            nullptr, "UnityEngine.Transform", 0}, true},
-
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Transform",
+            "get_parent", nullptr, "UnityEngine.Transform", 0}, true},
+    {"game_object.get_active_in_hierarchy",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "GameObject",
+            "get_activeInHierarchy", nullptr, "System.Boolean", 0}, true},
+    {"game_object.get_scene",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "GameObject",
+            "get_scene", nullptr, "UnityEngine.SceneManagement.Scene", 0}, true},
+    {"scene.get_is_loaded",
+        {"UnityEngine.CoreModule.dll", "UnityEngine.SceneManagement", "Scene",
+            "get_isLoaded", nullptr, "System.Boolean", 0}, true},
+    {"scene.get_name",
+        {"UnityEngine.CoreModule.dll", "UnityEngine.SceneManagement", "Scene",
+            "get_name", nullptr, "System.String", 0}, true},
+    {"renderer.get_enabled",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Renderer",
+            "get_enabled", nullptr, "System.Boolean", 0}, true},
+    {"renderer.set_enabled",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Renderer",
+            "set_enabled", "System.Boolean", "System.Void", 1}, true},
+    {"renderer.get_materials",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Renderer",
+            "get_materials", nullptr, "UnityEngine.Material[]", 0}, false},
+    {"renderer.set_materials",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Renderer",
+            "set_materials", "UnityEngine.Material[]", "System.Void", 1}, false},
+    {"renderer.get_shadow_casting_mode",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Renderer",
+            "get_shadowCastingMode", nullptr, "UnityEngine.Rendering.ShadowCastingMode", 0}, false},
+    {"skinned.get_force_matrix",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "SkinnedMeshRenderer",
+            "get_forceMatrixRecalculationPerRender", nullptr, "System.Boolean", 0}, false},
+    {"skinned.set_force_matrix",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "SkinnedMeshRenderer",
+            "set_forceMatrixRecalculationPerRender", "System.Boolean", "System.Void", 1}, false},
     {"skinned.get_shared_mesh",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "SkinnedMeshRenderer",
             "get_sharedMesh", nullptr, "UnityEngine.Mesh", 0}, true},
@@ -461,9 +506,15 @@ MethodContract g_methods[]{
     {"skinned.get_bones",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "SkinnedMeshRenderer",
             "get_bones", nullptr, "UnityEngine.Transform[]", 0}, true},
+    {"skinned.set_bones",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "SkinnedMeshRenderer",
+            "set_bones", "UnityEngine.Transform[]", "System.Void", 1}, false},
     {"skinned.get_root_bone",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "SkinnedMeshRenderer",
             "get_rootBone", nullptr, "UnityEngine.Transform", 0}, false},
+    {"skinned.set_root_bone",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "SkinnedMeshRenderer",
+            "set_rootBone", "UnityEngine.Transform", "System.Void", 1}, false},
     {"skinned.get_skinning_root",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "SkinnedMeshRenderer",
             "get_skinningRoot", nullptr, "UnityEngine.Transform", 0}, false},
@@ -588,6 +639,9 @@ MethodContract g_methods[]{
     {"renderer.get_shared_materials",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Renderer",
             "get_sharedMaterials", nullptr, "UnityEngine.Material[]", 0}, false},
+    {"renderer.set_shared_materials",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Renderer",
+            "set_sharedMaterials", "UnityEngine.Material[]", "System.Void", 1}, false},
     // Hiding a component means disabling its renderer, which is how the mod's
     // skipped draw calls are reproduced without a graphics hook.
     {"renderer.get_enabled",
@@ -710,6 +764,18 @@ MethodContract g_methods[]{
     {"mesh.recalculate_bounds",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "RecalculateBounds",
             nullptr, "System.Void", 0}, true},
+    {"pipeline.current",
+        {"UnityEngine.CoreModule.dll", "UnityEngine.Rendering", "RenderPipelineManager",
+            "get_currentPipeline", nullptr, nullptr, 0}, false},
+    {"pipeline.enable_force_lod0",
+        {"HG.RenderPipelines.Runtime.dll", "HG.Rendering.Runtime", "HGRenderPipeline",
+            "EnableForceLOD0", nullptr, nullptr, 0}, false},
+    {"pipeline.disable_force_lod0",
+        {"HG.RenderPipelines.Runtime.dll", "HG.Rendering.Runtime", "HGRenderPipeline",
+            "DisableForceLOD0", nullptr, nullptr, 0}, false},
+    {"quality.set_max_lod",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "QualitySettings",
+            "set_maximumLODLevel", "System.Int32", "System.Void", 1}, false},
 };
 
 constexpr std::array<FieldContract, 8> kBoneWeightFields{{
@@ -801,3 +867,5 @@ std::string ObjectName(void* object) {
         ? ManagedString(Invoke(Contract("object.get_name"), object, nullptr, false))
         : std::string{};
 }
+
+void ResumeLockedCrowdLODs();

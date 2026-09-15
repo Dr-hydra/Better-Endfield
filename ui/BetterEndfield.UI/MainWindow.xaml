@@ -1283,6 +1283,55 @@
                                 </Border>
 
                                 <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="18">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Name="CameraFirstPersonSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="第一人称视角" />
+                                            <TextBlock
+                                                x:Name="CameraFirstPersonSectionHint"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="将相机吸附到当前操控角色的头部眼睛位置，并隐藏头部与毛发模型（同时保留投射阴影），进入真正沉浸式第一人称体验。"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ToggleSwitch
+                                            x:Name="FirstPersonCameraToggle"
+                                            Header="启用第一人称视角功能"
+                                            OffContent="关闭"
+                                            OnContent="允许热键切换"
+                                            Toggled="CameraEnhancementToggle_Toggled" />
+                                        <ToggleSwitch
+                                            x:Name="FirstPersonHideHeadToggle"
+                                            Header="隐藏头部和头发模型"
+                                            OffContent="显示头部"
+                                            OnContent="隐藏头部（保留投射阴影）"
+                                            IsOn="True"
+                                            Toggled="CameraEnhancementToggle_Toggled" />
+                                        <Grid ColumnSpacing="12" RowSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox
+                                                x:Name="FirstPersonHotkeyBox"
+                                                Header="第一人称切换热键"
+                                                LostFocus="FirstPersonHotkeyBox_LostFocus"
+                                                MaxLength="8"
+                                                PlaceholderText="默认 -（减号），支持 -、F7、NUMPAD-"
+                                                Text="-" />
+                                            <NumberBox
+                                                x:Name="FirstPersonFieldOfViewNumberBox"
+                                                Grid.Column="1"
+                                                Header="第一人称视野（FOV）"
+                                                Minimum="30"
+                                                Maximum="130"
+                                                SmallChange="1"
+                                                SpinButtonPlacementMode="Compact"
+                                                Value="75"
+                                                ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
                                     <StackPanel Spacing="16">
                                         <StackPanel Spacing="4">
                                             <TextBlock x:Name="CameraVisualSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="镜头画面" />

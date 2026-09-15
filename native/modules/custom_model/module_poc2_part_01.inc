@@ -81,6 +81,9 @@ bool IsEndminfLod0Draw(
         path.find("/lod3/") != std::string_view::npos) {
         return false;
     }
+    if (path.find("SK_actor_female") != std::string_view::npos) {
+        return false;
+    }
     return renderer_name.find("_lod0") != std::string_view::npos ||
         IsLod0Path(path);
 }

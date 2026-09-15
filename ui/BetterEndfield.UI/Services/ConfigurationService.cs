@@ -537,6 +537,15 @@ internal static class ConfigurationService
             values, "movement_speed", configuration.FreeCameraMovementSpeed);
         configuration.FreeCameraFieldOfView = Number(
             values, "field_of_view", configuration.FreeCameraFieldOfView);
+        configuration.FirstPersonCameraEnabled = Boolean(
+            values, "first_person_camera_enabled",
+            Boolean(values, "first_person_enabled", configuration.FirstPersonCameraEnabled));
+        configuration.FirstPersonHideHead = Boolean(
+            values, "first_person_hide_head", configuration.FirstPersonHideHead);
+        configuration.FirstPersonHotkey = Text(
+            values, "first_person_hotkey", configuration.FirstPersonHotkey);
+        configuration.FirstPersonFieldOfView = Number(
+            values, "first_person_fov", configuration.FirstPersonFieldOfView);
         if (cameraSectionPresent && cameraSchemaVersion < 3)
         {
             // Earlier test schemas used F8, then 8. Adopt the current default

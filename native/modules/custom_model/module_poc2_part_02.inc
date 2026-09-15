@@ -195,6 +195,54 @@ bool IsNativeObjectAlive(void* object) {
         parameters, alive) && alive != 0;
 }
 
+bool RendererMaterialsMatch(void* renderer, void* expected_materials) {
+    if (!renderer || !expected_materials) return false;
+    void* current_materials = Invoke(Contract("renderer.get_shared_materials"), renderer, nullptr, false);
+    if (!current_materials) return false;
+    const int count = ArrayLength(expected_materials);
+    if (count != ArrayLength(current_materials)) return false;
+    for (int i = 0; i < count; ++i) {
+        if (ArrayValue(current_materials, i) != ArrayValue(expected_materials, i)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool ApplyRendererMaterials(void* renderer, void* materials) {
+    if (!renderer || !IsNativeObjectAlive(renderer) || !materials) return false;
+    const int count = ArrayLength(materials);
+    if (count <= 0) return false;
+    void* first_mat = ArrayValue(materials, 0);
+    if (!first_mat || !IsNativeObjectAlive(first_mat)) {
+        Log("[APPLY-MAT] material array element 0 is null or dead");
+        return false;
+    }
+    void* a[1]{materials};
+    bool ok = false;
+    if (g_early_set_material.method_info) {
+        ok = EarlyInvoke(g_early_set_material, renderer, a);
+    }
+    if (!ok && Contract("renderer.set_shared_materials")) {
+        ok = InvokeVoid(Contract("renderer.set_shared_materials"), renderer, a);
+    }
+    if (ok) {
+        if (RendererMaterialsMatch(renderer, materials)) {
+            Log(std::string("[APPLY-MAT] successfully assigned ") + std::to_string(count) +
+                " custom materials to renderer=" + ObjectName(renderer));
+            return true;
+        } else {
+            Log(std::string("[APPLY-MAT] set_sharedMaterials succeeded but readback mismatch on renderer=") +
+                ObjectName(renderer));
+            return false;
+        }
+    } else {
+        Log(std::string("[APPLY-MAT] failed to invoke set_sharedMaterials on renderer=") +
+            ObjectName(renderer));
+        return false;
+    }
+}
+
 // A GC handle preserves the managed wrapper, not Unity's native asset during
 // UnloadUnusedAssets. Protect assets before removing their last scene reference.
 // https://docs.unity3d.com/2022.3/Documentation/ScriptReference/HideFlags.DontUnloadUnusedAsset.html
@@ -318,12 +366,28 @@ void ReleaseReplacementHandles() {
             if (item.custom_mesh_handle) {
                 g_host->gchandle_free(g_host->context, item.custom_mesh_handle);
             }
+            if (item.original_material_handle) {
+                g_host->gchandle_free(g_host->context, item.original_material_handle);
+            }
+            if (item.custom_material_handle) {
+                g_host->gchandle_free(g_host->context, item.custom_material_handle);
+            }
+            if (item.original_bones_handle) {
+                g_host->gchandle_free(g_host->context, item.original_bones_handle);
+            }
+            if (item.original_root_bone_handle) {
+                g_host->gchandle_free(g_host->context, item.original_root_bone_handle);
+            }
         }
     }
     for (ReplacedComponent& item : g_replaced) {
         item.renderer_handle = 0;
         item.original_mesh_handle = 0;
         item.custom_mesh_handle = 0;
+        item.original_material_handle = 0;
+        item.custom_material_handle = 0;
+        item.original_bones_handle = 0;
+        item.original_root_bone_handle = 0;
     }
 }
 
@@ -699,8 +763,57 @@ bool ResolveEngineBindings() {
         }
         *binding.slot = pointer;
     }
+    if (g_engine.cached_ptr_offset < 0) {
+        if (g_host && g_host->resolve_field) {
+            const BE_FieldDescriptorV1 cached_ptr{
+                "UnityEngine.CoreModule.dll", "UnityEngine", "Object",
+                "m_CachedPtr", "System.IntPtr"};
+            BE_ResolvedFieldV1 field{};
+            if (g_host->resolve_field(g_host->context, &cached_ptr, &field) == BE_Result_Ok &&
+                field.field_info && field.offset >= 0) {
+                g_engine.cached_ptr_offset = field.offset;
+                Log(std::string("Engine binding resolved m_CachedPtr offset: ") + std::to_string(field.offset));
+            }
+        }
+        if (g_engine.cached_ptr_offset < 0) {
+            g_engine.cached_ptr_offset = 0x10;
+            Log("Engine binding fallback m_CachedPtr offset: 16 (0x10)");
+        }
+    }
     g_engine.resolved = complete;
     return complete;
+}
+
+uintptr_t GetNativeObjectPointer(void* object) {
+    if (!object || g_engine.cached_ptr_offset < 0) return 0;
+    uintptr_t ptr = 0;
+    __try {
+        ptr = *reinterpret_cast<const uintptr_t*>(
+            reinterpret_cast<const uint8_t*>(object) + g_engine.cached_ptr_offset);
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        ptr = 0;
+    }
+    return ptr;
+}
+
+bool TryReadNativeUInt32(uintptr_t address, uint32_t& value) {
+    if (!address) return false;
+    __try {
+        value = *reinterpret_cast<const volatile uint32_t*>(address);
+        return true;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+}
+
+bool TryWriteNativeUInt32(uintptr_t address, uint32_t value) {
+    if (!address) return false;
+    __try {
+        *reinterpret_cast<volatile uint32_t*>(address) = value;
+        return (*reinterpret_cast<const volatile uint32_t*>(address) == value);
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
 }
 
 // The Endfield character layout is not one declaration. Across the validated
@@ -1069,6 +1182,39 @@ bool BuildMeshFromComponent(
         InvokeVoid(set_name, mesh, parameters);
     }
 
+    // Initialize native Mesh + 0x1C8 directly from the source mesh native value
+    // as early as possible before any buffer, geometry or bindpose assignment.
+    const uintptr_t source_native = GetNativeObjectPointer(source_mesh);
+    const uintptr_t new_native = GetNativeObjectPointer(mesh);
+    uint32_t source_native_influences = 0;
+    if (source_native && new_native) {
+        uint32_t old_value = 0;
+        const bool read_source_ok = TryReadNativeUInt32(source_native + 0x1C8, source_native_influences);
+        const bool read_old_ok = TryReadNativeUInt32(new_native + 0x1C8, old_value);
+        if (read_source_ok && read_old_ok) {
+            const bool write_ok = TryWriteNativeUInt32(new_native + 0x1C8, source_native_influences);
+            char hex_buf[16]{};
+            std::snprintf(hex_buf, sizeof(hex_buf), "0x%08X", old_value);
+            Log(label + " native Mesh + 0x1C8 initialized from source: " +
+                std::to_string(source_native_influences) + " (heap garbage was " + hex_buf +
+                ", verified=" + std::to_string(write_ok) + ")");
+            if (!write_ok) {
+                Log(label + " failed to write native Mesh + 0x1C8; refusing.");
+                DestroyUnityObject(mesh);
+                return false;
+            }
+        } else {
+            Log(label + " failed to read native Mesh + 0x1C8 from source; refusing.");
+            DestroyUnityObject(mesh);
+            return false;
+        }
+    } else {
+        Log(label + " failed to obtain native Mesh pointers (source=" +
+            std::to_string(source_native) + " new=" + std::to_string(new_native) + "); refusing.");
+        DestroyUnityObject(mesh);
+        return false;
+    }
+
     std::array<VertexAttributeDescriptorRaw, kMaxVertexAttributes> attributes{};
     for (int32_t i = 0; i < declaration.count; ++i) {
         attributes[static_cast<size_t>(i)] =
@@ -1210,6 +1356,17 @@ bool BuildMeshFromComponent(
         " idx=" + std::to_string(built_index_count) + " strides=" +
         StrideText(source_strides) + " attributes=" +
         std::to_string(declaration.count) + " uploaded=1");
+
+    if (new_native) {
+        uint32_t final_influences = 0;
+        if (TryReadNativeUInt32(new_native + 0x1C8, final_influences)) {
+            if (final_influences != source_native_influences) {
+                Log(label + " native Mesh + 0x1C8 post-upload check failed: expected=" +
+                    std::to_string(source_native_influences) + " actual=" + std::to_string(final_influences));
+            }
+        }
+    }
+
     new_mesh = mesh;
     return true;
 }
@@ -2842,6 +2999,7 @@ bool ApplyReplacement(const std::vector<RendererSummary>& summaries) {
             record.renderer = item->renderer;
             record.original_mesh = item->mesh;
             record.custom_mesh = match->mesh;
+            record.original_material = Invoke(Contract("renderer.get_shared_materials"), item->renderer, nullptr, false);
             record.hidden_by_mod = (info.flags & kComponentFlagHidden) != 0;
             GetRendererEnabled(item->renderer, record.original_enabled);
             pending.push_back(record);
@@ -2903,6 +3061,17 @@ bool ApplyReplacement(const std::vector<RendererSummary>& summaries) {
     InstallCustomTextures(bem, component_renderers);
     ProbeShadowTextureUsers();
     ApplyMaskVisibility();
+    for (ReplacedComponent& item : g_replaced) {
+        if (item.renderer && IsNativeObjectAlive(item.renderer)) {
+            item.custom_material = Invoke(Contract("renderer.get_shared_materials"), item.renderer, nullptr, false);
+            if (item.custom_material && g_host && g_host->gchandle_new) {
+                if (item.custom_material_handle) {
+                    g_host->gchandle_free(g_host->context, item.custom_material_handle);
+                }
+                item.custom_material_handle = g_host->gchandle_new(g_host->context, item.custom_material, 0);
+            }
+        }
+    }
     g_active_bem = std::move(bem);
 
     int distinct_components = 0;

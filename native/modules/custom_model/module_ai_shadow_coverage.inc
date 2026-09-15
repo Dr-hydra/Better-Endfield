@@ -37,8 +37,15 @@ struct AiCoverageProxyState {
     bool original_enabled = true;
 };
 
+struct AiCoverageHiddenVfxPartState {
+    void* renderer = nullptr;
+    uint32_t handle = 0;
+    bool original_enabled = true;
+};
+
 std::vector<AiCoverageShadowModeState> g_ai_coverage_shadow_modes;
 std::vector<AiCoverageProxyState> g_ai_coverage_shadow_proxies;
+std::vector<AiCoverageHiddenVfxPartState> g_ai_coverage_hidden_vfxparts;
 
 std::string AiCoveragePointer(const void* pointer) {
     std::array<char, 32> buffer{};
@@ -110,9 +117,14 @@ const ReplacedComponent* AiCoverageFindReusableSource(
         AiCoverageComponentStem(item.renderer_name);
     const std::string mesh_stem = AiCoverageComponentStem(item.mesh_name);
     for (const ReplacedComponent& record : g_replaced) {
-        if (!record.custom_mesh || !record.original_mesh ||
-            !IsNativeObjectAlive(record.custom_mesh) ||
+        if (!record.original_mesh ||
             !IsNativeObjectAlive(record.original_mesh)) {
+            continue;
+        }
+        if (!record.custom_mesh && !record.hidden_by_mod) {
+            continue;
+        }
+        if (record.custom_mesh && !IsNativeObjectAlive(record.custom_mesh)) {
             continue;
         }
         const std::string source_stem =
@@ -180,6 +192,36 @@ void AiCoverageRememberProxy(void* renderer, bool original_enabled) {
     g_ai_coverage_shadow_proxies.push_back(state);
 }
 
+void AiCoverageRememberHiddenVfxPart(void* renderer, bool original_enabled) {
+    for (const auto& state : g_ai_coverage_hidden_vfxparts) {
+        if (state.renderer == renderer) return;
+    }
+    AiCoverageHiddenVfxPartState state;
+    state.renderer = renderer;
+    state.original_enabled = original_enabled;
+    if (g_host && g_host->gchandle_new) {
+        state.handle = g_host->gchandle_new(g_host->context, renderer, 0);
+    }
+    g_ai_coverage_hidden_vfxparts.push_back(state);
+    Log(std::string("[AI-SHADOW] hiding unmatched vfxpart renderer: ") + ObjectName(renderer));
+}
+
+void RestoreAiCoverageHiddenVfxParts() {
+    int restored = 0;
+    for (auto& state : g_ai_coverage_hidden_vfxparts) {
+        if (state.renderer && IsNativeObjectAlive(state.renderer)) {
+            if (SetRendererEnabled(state.renderer, state.original_enabled)) {
+                ++restored;
+            }
+        }
+        AiCoverageFreeHandle(state.handle);
+    }
+    if (!g_ai_coverage_hidden_vfxparts.empty()) {
+        Log("[AI-SHADOW] restored hidden vfxpart renderers: " + std::to_string(restored));
+    }
+    g_ai_coverage_hidden_vfxparts.clear();
+}
+
 void RestoreAiShadowCoverage() {
     int restored_modes = 0;
     int restored_proxies = 0;
@@ -197,6 +239,7 @@ void RestoreAiShadowCoverage() {
         }
         AiCoverageFreeHandle(state.handle);
     }
+    RestoreAiCoverageHiddenVfxParts();
     if (!g_ai_coverage_shadow_modes.empty() ||
         !g_ai_coverage_shadow_proxies.empty()) {
         Log("[AI-SHADOW] restored shadow state: castingModes=" +
@@ -214,18 +257,105 @@ bool AiCoverageHasRendererRecord(void* renderer, size_t& index) {
     return index < g_replaced.size();
 }
 
-bool AiCoverageAttachReuseOnly(const RendererSummary& item) {
+void* AiCoverageFindDonorBones(
+    const RendererSummary& receiver,
+    const BemComponent& component,
+    const std::vector<RendererSummary>& donor_pool,
+    void** out_root_bone) {
+    if (out_root_bone) *out_root_bone = nullptr;
+
+    const std::string receiver_root = PathRoot(receiver.path);
+    const std::string stem = AiCoverageComponentStem(receiver.renderer_name);
+
+    // 1. First priority: Check g_replaced records on the same character instance
+    for (const ReplacedComponent& record : g_replaced) {
+        if (!record.renderer || !IsNativeObjectAlive(record.renderer)) continue;
+        const std::string record_path = BuildTransformPath(record.renderer);
+        if (PathRoot(record_path) != receiver_root) continue;
+
+        std::string record_stem;
+        if (record.original_mesh && IsNativeObjectAlive(record.original_mesh)) {
+            record_stem = AiCoverageComponentStem(ObjectName(record.original_mesh));
+        } else {
+            record_stem = AiCoverageComponentStem(ObjectName(record.renderer));
+        }
+        if (record_stem != stem) continue;
+
+        void* bones = Invoke(Contract("skinned.get_bones"), record.renderer, nullptr, false);
+        const int bone_count = ArrayLength(bones);
+        if (bone_count > static_cast<int>(component.info.max_bone)) {
+            if (out_root_bone) {
+                *out_root_bone = Invoke(Contract("skinned.get_root_bone"), record.renderer, nullptr, false);
+            }
+            return bones;
+        }
+    }
+
+    // 2. Second priority: Search donor_pool for sibling renderer on the same character instance
+    for (const RendererSummary& donor : donor_pool) {
+        if (!donor.renderer || donor.renderer == receiver.renderer) continue;
+        if (PathRoot(donor.path) != receiver_root) continue;
+
+        const std::string donor_stem = AiCoverageComponentStem(donor.renderer_name);
+        if (donor_stem != stem) continue;
+
+        void* bones = Invoke(Contract("skinned.get_bones"), donor.renderer, nullptr, false);
+        const int bone_count = ArrayLength(bones);
+        if (bone_count > static_cast<int>(component.info.max_bone)) {
+            if (out_root_bone) {
+                *out_root_bone = Invoke(Contract("skinned.get_root_bone"), donor.renderer, nullptr, false);
+            }
+            return bones;
+        }
+    }
+
+    return nullptr;
+}
+
+bool AiCoverageAttachReuseOnly(
+    const RendererSummary& item,
+    const std::vector<RendererSummary>& donor_pool) {
     if (!item.renderer || !item.mesh ||
         item.renderer_name.find(kActorMeshPrefix) != 0 ||
-        item.renderer_name.find("shadowProxy") != std::string::npos) {
+        item.renderer_name.find("shadowProxy") != std::string::npos ||
+        item.path.find("SK_actor_female") != std::string::npos) {
         return false;
     }
 
     size_t known = 0;
     const bool existed = AiCoverageHasRendererRecord(item.renderer, known);
-    if (existed && g_replaced[known].custom_mesh &&
-        item.mesh == g_replaced[known].custom_mesh) {
-        return false;
+    if (existed) {
+        const auto& existing = g_replaced[known];
+        const bool mesh_matches = existing.custom_mesh
+            ? (item.mesh == existing.custom_mesh)
+            : (item.mesh == existing.original_mesh);
+        if (mesh_matches) {
+            void* mat_to_apply = existing.custom_material;
+            if (!mat_to_apply) {
+                if (const auto* s = AiCoverageFindReusableSource(item)) {
+                    mat_to_apply = s->custom_material;
+                }
+            }
+            if (mat_to_apply &&
+                !RendererMaterialsMatch(item.renderer, mat_to_apply)) {
+                ApplyRendererMaterials(item.renderer, mat_to_apply);
+                if (!existing.custom_material) {
+                    g_replaced[known].custom_material = mat_to_apply;
+                    if (g_host && g_host->gchandle_new) {
+                        g_replaced[known].custom_material_handle =
+                            g_host->gchandle_new(g_host->context, mat_to_apply, 0);
+                    }
+                }
+            }
+            if (existing.hidden_by_mod) {
+                bool enabled = false;
+                if (GetRendererEnabled(item.renderer, enabled) &&
+                    enabled != g_mask_visible) {
+                    SetRendererEnabled(item.renderer, g_mask_visible);
+                }
+            }
+            return false;
+        }
     }
 
     ReplacedComponent source_copy;
@@ -236,37 +366,116 @@ bool AiCoverageAttachReuseOnly(const RendererSummary& item) {
     } else {
         source = AiCoverageFindReusableSource(item);
     }
-    if (!source || !source->custom_mesh) return false;
+    if (!source || (!source->custom_mesh && !source->hidden_by_mod)) return false;
     source_copy = *source;
 
     const BemComponent* component = ActiveComponent(source_copy.component_id);
-    if (!component ||
-        item.bones_count <= static_cast<int>(component->info.max_bone)) {
-        return false;
+    if (!component) return false;
+
+    void* original_bones_to_restore = nullptr;
+    void* original_root_bone_to_restore = nullptr;
+    void* original_material_to_restore = nullptr;
+    if (existed && g_replaced[known].original_bones) {
+        original_bones_to_restore = g_replaced[known].original_bones;
+        original_root_bone_to_restore = g_replaced[known].original_root_bone;
+    }
+    if (existed && g_replaced[known].original_material) {
+        original_material_to_restore = g_replaced[known].original_material;
+    } else {
+        original_material_to_restore = Invoke(Contract("renderer.get_shared_materials"), item.renderer, nullptr, false);
     }
 
-    if (item.mesh != source_copy.custom_mesh &&
-        !AiCoverageMeshesCompatible(item.mesh, source_copy.custom_mesh)) {
-        return false;
-    }
-    if (!ValidateRendererSkin(*component, item.renderer,
-            item.mesh == source_copy.custom_mesh
-                ? source_copy.original_mesh
-                : item.mesh)) {
-        return false;
+    if (source_copy.custom_mesh) {
+        int effective_bones = item.bones_count;
+        if (effective_bones <= static_cast<int>(component->info.max_bone)) {
+            void* donor_root = nullptr;
+            void* donor_bones = AiCoverageFindDonorBones(item, *component, donor_pool, &donor_root);
+            if (!donor_bones) {
+                return false;
+            }
+            const int donor_count = ArrayLength(donor_bones);
+            if (donor_count <= static_cast<int>(component->info.max_bone)) {
+                return false;
+            }
+
+            if (!original_bones_to_restore) {
+                original_bones_to_restore = Invoke(Contract("skinned.get_bones"), item.renderer, nullptr, false);
+                original_root_bone_to_restore = Invoke(Contract("skinned.get_root_bone"), item.renderer, nullptr, false);
+            }
+
+            void* bones_param[1]{donor_bones};
+            Invoke(Contract("skinned.set_bones"), item.renderer, bones_param, true);
+            if (donor_root) {
+                void* root_param[1]{donor_root};
+                Invoke(Contract("skinned.set_root_bone"), item.renderer, root_param, true);
+            }
+
+            effective_bones = donor_count;
+            Log("[AI-COVERAGE] elevated bone palette on " + item.renderer_name +
+                " from " + std::to_string(item.bones_count) + " to " + std::to_string(donor_count) +
+                " bones (path=\"" + item.path + "\")");
+        }
+
+        const bool is_lod_variant =
+            item.renderer_name.find("_lod") != std::string::npos ||
+            item.path.find("/lod1/") != std::string::npos ||
+            item.path.find("/lod2/") != std::string::npos ||
+            item.path.find("/lod3/") != std::string::npos;
+
+        if (!is_lod_variant && item.mesh != source_copy.custom_mesh &&
+            !AiCoverageMeshesCompatible(item.mesh, source_copy.custom_mesh)) {
+            if (original_bones_to_restore) {
+                void* p[1]{original_bones_to_restore};
+                Invoke(Contract("skinned.set_bones"), item.renderer, p, true);
+                if (original_root_bone_to_restore) {
+                    void* pr[1]{original_root_bone_to_restore};
+                    Invoke(Contract("skinned.set_root_bone"), item.renderer, pr, true);
+                }
+            }
+            return false;
+        }
+
+        void* bindpose_mesh = (source_copy.original_mesh &&
+                               IsNativeObjectAlive(source_copy.original_mesh))
+            ? source_copy.original_mesh
+            : source_copy.custom_mesh;
+
+        if (!ValidateRendererSkin(*component, item.renderer, bindpose_mesh)) {
+            if (original_bones_to_restore) {
+                void* p[1]{original_bones_to_restore};
+                Invoke(Contract("skinned.set_bones"), item.renderer, p, true);
+                if (original_root_bone_to_restore) {
+                    void* pr[1]{original_root_bone_to_restore};
+                    Invoke(Contract("skinned.set_root_bone"), item.renderer, pr, true);
+                }
+            }
+            return false;
+        }
+
+        if (item.mesh != source_copy.custom_mesh &&
+            (!SetSharedMesh(item.renderer, source_copy.custom_mesh) ||
+             Invoke(Contract("skinned.get_shared_mesh"), item.renderer, nullptr,
+                 false) != source_copy.custom_mesh)) {
+            if (original_bones_to_restore) {
+                void* p[1]{original_bones_to_restore};
+                Invoke(Contract("skinned.set_bones"), item.renderer, p, true);
+                if (original_root_bone_to_restore) {
+                    void* pr[1]{original_root_bone_to_restore};
+                    Invoke(Contract("skinned.set_root_bone"), item.renderer, pr, true);
+                }
+            }
+            return false;
+        }
+
+        if (source_copy.custom_material) {
+            ApplyRendererMaterials(item.renderer, source_copy.custom_material);
+        }
     }
 
     void* original_for_record = item.mesh == source_copy.custom_mesh
         ? source_copy.original_mesh
         : item.mesh;
     if (!original_for_record || !IsNativeObjectAlive(original_for_record)) {
-        return false;
-    }
-
-    if (item.mesh != source_copy.custom_mesh &&
-        (!SetSharedMesh(item.renderer, source_copy.custom_mesh) ||
-         Invoke(Contract("skinned.get_shared_mesh"), item.renderer, nullptr,
-             false) != source_copy.custom_mesh)) {
         return false;
     }
 
@@ -279,6 +488,13 @@ bool AiCoverageAttachReuseOnly(const RendererSummary& item) {
     record.renderer_handle = 0;
     record.original_mesh_handle = 0;
     record.custom_mesh_handle = 0;
+    record.original_material = original_material_to_restore;
+    record.original_material_handle = 0;
+    record.custom_material_handle = 0;
+    record.original_bones = original_bones_to_restore;
+    record.original_root_bone = original_root_bone_to_restore;
+    record.original_bones_handle = 0;
+    record.original_root_bone_handle = 0;
     GetRendererEnabled(item.renderer, record.original_enabled);
     PinReplacement(record);
 
@@ -301,8 +517,11 @@ bool AiCoverageAttachReuseOnly(const RendererSummary& item) {
 
     Log("[AI-COVERAGE] reused C" + std::to_string(record.component_id) +
         " renderer=" + AiCoveragePointer(item.renderer) +
+        " (" + item.renderer_name + ")" +
         " sourceMesh=" + AiCoveragePointer(original_for_record) +
         " customMesh=" + AiCoveragePointer(record.custom_mesh) +
+        " elevatedBones=" + std::to_string(original_bones_to_restore != nullptr) +
+        " hidden=" + std::to_string(record.hidden_by_mod) +
         " path=\"" + item.path + "\" (no Mesh build)");
     return true;
 }
@@ -363,9 +582,11 @@ void AiCoverageApplyShadowState(
 }
 
 void PumpAiShadowCoverage() {
+    PumpNpcLodLock();
     if (!g_replacement_active || g_refresh_suspended || g_replaced.empty()) {
         if (!g_ai_coverage_shadow_modes.empty() ||
-            !g_ai_coverage_shadow_proxies.empty()) {
+            !g_ai_coverage_shadow_proxies.empty() ||
+            !g_ai_coverage_hidden_vfxparts.empty()) {
             RestoreAiShadowCoverage();
         }
         return;
@@ -379,15 +600,58 @@ void PumpAiShadowCoverage() {
 
     std::vector<void*> normal_renderers;
     std::vector<void*> shadow_proxies;
+    std::vector<RendererSummary> candidate_items;
+
     void* parameters[1]{g_skinned_renderer_class.type_object};
     void* objects = Invoke(Contract("resources.find_objects_of_type_all"),
         nullptr, parameters);
     const int count = std::max(ArrayLength(objects), 0);
     for (int index = 0; index < count; ++index) {
         void* renderer = ArrayValue(objects, index);
-        if (!renderer || !IsActiveSceneRenderer(renderer)) continue;
+        if (!renderer) continue;
         const std::string name = ObjectName(renderer);
         if (name.find("endminf") == std::string::npos) continue;
+
+        // 0. When custom model is active, hide unmatched vfxpart renderers (e.g. S_actor_endminf_vfxpart_01_lod0):
+        if (name.find("vfxpart") != std::string::npos) {
+            bool has_custom_replacement = false;
+            for (const auto& record : g_replaced) {
+                if (record.custom_mesh && record.renderer == renderer) {
+                    has_custom_replacement = true;
+                    break;
+                }
+            }
+            if (!has_custom_replacement) {
+                bool enabled = false;
+                if (GetRendererEnabled(renderer, enabled) && enabled) {
+                    AiCoverageRememberHiddenVfxPart(renderer, enabled);
+                    SetRendererEnabled(renderer, false);
+                }
+                continue;
+            }
+        }
+
+        // Maintain hidden status for companion coat parts (cloth_02, cloth_03, cloth_05) across all LOD levels:
+        if (name.find(kActorMeshPrefix) == 0 && name.find("shadowProxy") == std::string::npos) {
+            const std::string stem = AiCoverageComponentStem(name);
+            bool is_hidden_by_mod = false;
+            for (const auto& record : g_replaced) {
+                if (record.hidden_by_mod && record.original_mesh) {
+                    if (AiCoverageComponentStem(ObjectName(record.original_mesh)) == stem) {
+                        is_hidden_by_mod = true;
+                        break;
+                    }
+                }
+            }
+            if (is_hidden_by_mod) {
+                bool enabled = true;
+                if (GetRendererEnabled(renderer, enabled) && enabled != g_mask_visible) {
+                    SetRendererEnabled(renderer, g_mask_visible);
+                }
+            }
+        }
+
+        if (!IsActiveSceneRenderer(renderer)) continue;
 
         if (name.find("shadowProxy") != std::string::npos) {
             shadow_proxies.push_back(renderer);
@@ -396,9 +660,35 @@ void PumpAiShadowCoverage() {
         if (name.find(kActorMeshPrefix) != 0) continue;
 
         RendererSummary item = SummarizeRenderer(renderer);
-        if (!item.renderer || !item.mesh) continue;
+        if (!item.renderer || !item.mesh ||
+            item.path.find("SK_actor_female") != std::string::npos) {
+            continue;
+        }
         normal_renderers.push_back(renderer);
-        AiCoverageAttachReuseOnly(item);
+        candidate_items.push_back(std::move(item));
+    }
+
+    auto GetLodRank = [](const RendererSummary& s) -> int {
+        if (s.renderer_name.find("_lod0") != std::string::npos ||
+            s.path.find("/lod0/") != std::string::npos) return 0;
+        if (s.renderer_name.find("_lod1") != std::string::npos ||
+            s.path.find("/lod1/") != std::string::npos) return 1;
+        if (s.renderer_name.find("_lod2") != std::string::npos ||
+            s.path.find("/lod2/") != std::string::npos) return 2;
+        if (s.renderer_name.find("_lod3") != std::string::npos ||
+            s.path.find("/lod3/") != std::string::npos) return 3;
+        if (s.renderer_name.find("_lod4") != std::string::npos ||
+            s.path.find("/lod4/") != std::string::npos) return 4;
+        return 0;
+    };
+
+    std::stable_sort(candidate_items.begin(), candidate_items.end(),
+        [&](const RendererSummary& a, const RendererSummary& b) {
+            return GetLodRank(a) < GetLodRank(b);
+        });
+
+    for (const auto& item : candidate_items) {
+        AiCoverageAttachReuseOnly(item, candidate_items);
     }
 
     AiCoverageApplyShadowState(normal_renderers, shadow_proxies);
@@ -459,6 +749,7 @@ BE_Result BE_CALL InitializeWithAiShadowCoverage(const BE_HostApiV1* host) {
     g_ai_coverage_next_scan_tick = 0;
     g_ai_coverage_shadow_modes.clear();
     g_ai_coverage_shadow_proxies.clear();
+    g_ai_coverage_hidden_vfxparts.clear();
 
     const BE_Result result = InitializeWithF12Dump(&g_ai_coverage_host_proxy);
     if (result != BE_Result_Ok) {
@@ -475,12 +766,15 @@ BE_Result BE_CALL InitializeWithAiShadowCoverage(const BE_HostApiV1* host) {
     }
 
     ResolveAiShadowSetter();
+    ResolveNpcLodLockBindings(host);
+    InstallNpcLodLockHooks(host);
     Log("[AI-COVERAGE] active: control-switch/AI renderers reuse existing BEM Meshes only; this layer never builds a Mesh.");
     Log("[AI-SHADOW] active when setter is available: BEM renderers cast, matching shadowProxy renderers are disabled and restored on rollback.");
     return BE_Result_Ok;
 }
 
 void BE_CALL ShutdownWithAiShadowCoverage() {
+    ResumeLockedCrowdLODs();
     RestoreAiShadowCoverage();
     g_ai_coverage_next_scan_tick = 0;
     g_ai_coverage_set_shadow_mode_method = nullptr;

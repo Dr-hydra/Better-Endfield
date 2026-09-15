@@ -141,6 +141,14 @@ internal sealed class ModConfiguration
 
     public double FreeCameraFieldOfView { get; set; } = 60.0;
 
+    public bool FirstPersonCameraEnabled { get; set; } = false;
+
+    public bool FirstPersonHideHead { get; set; } = true;
+
+    public string FirstPersonHotkey { get; set; } = "-";
+
+    public double FirstPersonFieldOfView { get; set; } = 75.0;
+
     public static ModConfiguration CreateDefaults() => new();
 
     public string ToIni()

@@ -1,7 +1,9 @@
 // Each record owns distinct GC handles, even when several records share a Mesh.
 void PinReplacement(ReplacedComponent& record) {
     record.renderer_handle = record.original_mesh_handle =
-        record.custom_mesh_handle = 0;
+        record.custom_mesh_handle = record.original_material_handle =
+        record.custom_material_handle =
+        record.original_bones_handle = record.original_root_bone_handle = 0;
     if (!g_host->gchandle_new) return;
     if (record.renderer) record.renderer_handle =
         g_host->gchandle_new(g_host->context, record.renderer, 0);
@@ -9,6 +11,14 @@ void PinReplacement(ReplacedComponent& record) {
         g_host->gchandle_new(g_host->context, record.original_mesh, 0);
     if (record.custom_mesh) record.custom_mesh_handle =
         g_host->gchandle_new(g_host->context, record.custom_mesh, 0);
+    if (record.original_material) record.original_material_handle =
+        g_host->gchandle_new(g_host->context, record.original_material, 0);
+    if (record.custom_material) record.custom_material_handle =
+        g_host->gchandle_new(g_host->context, record.custom_material, 0);
+    if (record.original_bones) record.original_bones_handle =
+        g_host->gchandle_new(g_host->context, record.original_bones, 0);
+    if (record.original_root_bone) record.original_root_bone_handle =
+        g_host->gchandle_new(g_host->context, record.original_root_bone, 0);
 }
 
 const BemComponent* ActiveComponent(uint32_t id) {
@@ -261,6 +271,17 @@ bool RollbackReplacement() {
             else failed = true;
         }
         if (!record.custom_mesh || item->mesh != record.custom_mesh) continue;
+        if (record.original_bones) {
+            void* params[1]{record.original_bones};
+            Invoke(Contract("skinned.set_bones"), record.renderer, params, true);
+        }
+        if (record.original_root_bone) {
+            void* params[1]{record.original_root_bone};
+            Invoke(Contract("skinned.set_root_bone"), record.renderer, params, true);
+        }
+        if (record.original_material) {
+            ApplyRendererMaterials(record.renderer, record.original_material);
+        }
         if (SetSharedMesh(record.renderer, record.original_mesh) &&
             Invoke(Contract("skinned.get_shared_mesh"), record.renderer, nullptr,
                 false) == record.original_mesh) ++restored;
@@ -276,6 +297,7 @@ bool RollbackReplacement() {
     }
     const size_t total = g_replaced.size();
     ClearReplacementState();
+    ResumeLockedCrowdLODs();
     for (void* mesh : doomed) DestroyUnityObject(mesh);
     int32_t frame = 0;
     if (InvokeValue(Contract("time.get_frame_count"), nullptr, nullptr, frame))

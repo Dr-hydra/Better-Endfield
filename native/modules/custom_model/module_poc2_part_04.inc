@@ -1,9 +1,9 @@
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Custom Model (BEM PoC-2.5)", "0.0.34-poc2.5-preheat-control-trace",
+    {kModuleId, "Custom Model (BEM PoC-2.12)", "0.0.52-poc2.12-multi-lod-bone-elevation",
         BETTER_ENDFIELD_MODULE_ABI_V1},
-    &InitializeWithPreheatControlTrace,
+    &InitializeWithAssetDeliveryTrace,
     &ConfigurationChanged,
-    &ShutdownWithPreheatControlTrace};
+    &ShutdownWithAssetDeliveryTrace};
 
 } // namespace
 } // namespace BetterEndfield::CustomModelModule
