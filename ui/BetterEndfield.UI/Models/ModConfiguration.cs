@@ -173,6 +173,18 @@ internal sealed class ModConfiguration
 
     public double FreeCameraFieldOfView { get; set; } = 60.0;
 
+    public bool FirstPersonCameraEnabled { get; set; } = false;
+
+    public bool FirstPersonHideHead { get; set; } = true;
+
+    public string FirstPersonHotkey { get; set; } = "-";
+
+    public double FirstPersonFieldOfView { get; set; } = 75.0;
+
+    public bool FirstPersonFillNeckHole { get; set; } = true;
+
+    public double FirstPersonNeckPlugScale { get; set; } = 1.0;
+
     public static ModConfiguration CreateDefaults() => new();
 
     public string ToIni()
@@ -285,10 +297,16 @@ internal sealed class ModConfiguration
         text.AppendLine();
         text.AppendLine("[betterendfield.camera]");
         text.AppendLine("schema_version=4");
-        text.AppendLine($"enabled={Boolean(FreeCameraEnabled || DisableDitherEnabled)}");
+        text.AppendLine($"enabled={Boolean(FreeCameraEnabled || DisableDitherEnabled || FirstPersonCameraEnabled)}");
         text.AppendLine($"free_camera_enabled={Boolean(FreeCameraEnabled)}");
         text.AppendLine($"disable_dither_enabled={Boolean(DisableDitherEnabled)}");
         text.AppendLine($"pause_enabled={Boolean(PauseGameInFreeCamera)}");
+        text.AppendLine($"first_person_camera_enabled={Boolean(FirstPersonCameraEnabled)}");
+        text.AppendLine($"first_person_hide_head={Boolean(FirstPersonHideHead)}");
+        text.AppendLine($"first_person_fill_neck_hole={Boolean(FirstPersonFillNeckHole)}");
+        text.AppendLine($"first_person_neck_plug_scale={Number(FirstPersonNeckPlugScale)}");
+        text.AppendLine($"first_person_fov={Number(FirstPersonFieldOfView)}");
+        text.AppendLine($"first_person_hotkey={FirstPersonHotkey}");
         text.AppendLine($"toggle_hotkey={FreeCameraToggleHotkey}");
         text.AppendLine($"pause_hotkey={WorldPauseToggleHotkey}");
         text.AppendLine($"movement_speed={Number(FreeCameraMovementSpeed)}");

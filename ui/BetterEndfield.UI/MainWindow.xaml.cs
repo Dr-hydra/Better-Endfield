@@ -382,6 +382,13 @@ public sealed partial class MainWindow : Window
         await SaveCameraEnhancementAsync();
     }
 
+    private async void FirstPersonHotkeyBox_LostFocus(
+        object sender,
+        RoutedEventArgs e)
+    {
+        await SaveCameraEnhancementAsync();
+    }
+
     private async void ActionsToggle_Toggled(object sender, RoutedEventArgs e) => await SaveActionsAsync();
 
     private async Task SaveActionsAsync()
@@ -443,7 +450,30 @@ public sealed partial class MainWindow : Window
                 InfoBarSeverity.Error);
             return;
         }
+        if (!TryNormalizeCameraHotkey(
+                FirstPersonHotkeyBox.Text, out string firstPersonHotkey))
+        {
+            ShowStatus(
+                "第一人称热键无效",
+                "请输入单个字母、数字、减号（-）、F1-F24，或 NUMPAD0-NUMPAD9。",
+                InfoBarSeverity.Error);
+            return;
+        }
+        if (string.Equals(toggleHotkey, pauseHotkey,
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(toggleHotkey, firstPersonHotkey,
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(pauseHotkey, firstPersonHotkey,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            ShowStatus(
+                "相机热键不能重复",
+                "自由视角热键、时间冻结热键和第一人称热键必须设置为不同按键。",
+                InfoBarSeverity.Error);
+            return;
+        }
         PauseWorldHotkeyBox.Text = pauseHotkey;
+        FirstPersonHotkeyBox.Text = firstPersonHotkey;
 
         try
         {
@@ -454,10 +484,16 @@ public sealed partial class MainWindow : Window
                 toggleHotkey,
                 pauseHotkey,
                 Value(FreeCameraMovementSpeedNumberBox, 5.0),
-                Value(FreeCameraFieldOfViewNumberBox, 60.0));
+                Value(FreeCameraFieldOfViewNumberBox, 60.0),
+                FirstPersonCameraToggle.IsOn,
+                FirstPersonHideHeadToggle.IsOn,
+                firstPersonHotkey,
+                Value(FirstPersonFieldOfViewNumberBox, 75.0),
+                FirstPersonNeckPlugToggle.IsOn,
+                Value(FirstPersonNeckPlugScaleNumberBox, 100.0) / 100.0);
             ShowStatus(
                 "相机增强设置已更新",
-                $"配置已保存；按 {toggleHotkey} 切换自由视角，按 {pauseHotkey} 冻结或恢复世界时间。",
+                $"配置已保存；按 {toggleHotkey} 自由视角，按 {pauseHotkey} 冻结世界，按 {firstPersonHotkey} 第一人称。",
                 InfoBarSeverity.Success);
         }
         catch (Exception exception) when (
@@ -2251,6 +2287,12 @@ public sealed partial class MainWindow : Window
             error = "HUD 热键必须为单个字母/数字、F1-F24 或 NUMPAD0-NUMPAD9。";
             return false;
         }
+        if (!TryNormalizeCameraHotkey(
+                FirstPersonHotkeyBox.Text, out string firstPersonHotkey))
+        {
+            error = "第一人称热键必须为单个字母/数字、减号（-）、F1-F24 或 NUMPAD0-NUMPAD9。";
+            return false;
+        }
 
         if (MusicReplacementToggle.IsOn &&
             !OmniMixRegistrationService.IsValidBackendPath(
@@ -2339,7 +2381,13 @@ public sealed partial class MainWindow : Window
             FreeCameraToggleHotkey = cameraToggleHotkey,
             WorldPauseToggleHotkey = PauseWorldHotkeyBox.Text,
             FreeCameraMovementSpeed = FreeCameraMovementSpeedNumberBox.Value,
-            FreeCameraFieldOfView = FreeCameraFieldOfViewNumberBox.Value
+            FreeCameraFieldOfView = FreeCameraFieldOfViewNumberBox.Value,
+            FirstPersonCameraEnabled = FirstPersonCameraToggle.IsOn,
+            FirstPersonHideHead = FirstPersonHideHeadToggle.IsOn,
+            FirstPersonHotkey = firstPersonHotkey,
+            FirstPersonFieldOfView = FirstPersonFieldOfViewNumberBox.Value,
+            FirstPersonFillNeckHole = FirstPersonNeckPlugToggle.IsOn,
+            FirstPersonNeckPlugScale = FirstPersonNeckPlugScaleNumberBox.Value / 100.0
         };
         return true;
     }
@@ -2411,6 +2459,12 @@ public sealed partial class MainWindow : Window
         PauseWorldHotkeyBox.Text = configuration.WorldPauseToggleHotkey;
         FreeCameraMovementSpeedNumberBox.Value = configuration.FreeCameraMovementSpeed;
         FreeCameraFieldOfViewNumberBox.Value = configuration.FreeCameraFieldOfView;
+        FirstPersonCameraToggle.IsOn = configuration.FirstPersonCameraEnabled;
+        FirstPersonHideHeadToggle.IsOn = configuration.FirstPersonHideHead;
+        FirstPersonHotkeyBox.Text = configuration.FirstPersonHotkey;
+        FirstPersonFieldOfViewNumberBox.Value = configuration.FirstPersonFieldOfView;
+        FirstPersonNeckPlugToggle.IsOn = configuration.FirstPersonFillNeckHole;
+        FirstPersonNeckPlugScaleNumberBox.Value = configuration.FirstPersonNeckPlugScale * 100.0;
 
         _initializing = wasInitializing;
         UpdateCrossfadePanel();
@@ -2636,6 +2690,16 @@ public sealed partial class MainWindow : Window
     private static bool TryNormalizeCameraHotkey(string value, out string normalized)
     {
         normalized = value.Trim().Replace(" ", string.Empty).ToUpperInvariant();
+        if (normalized is "-" or "MINUS" or "OEM_MINUS")
+        {
+            normalized = "-";
+            return true;
+        }
+        if (normalized is "SUBTRACT" or "NUMPAD-" or "NUMPAD_MINUS" or "NUMPADSUBTRACT")
+        {
+            normalized = "-";
+            return true;
+        }
         if (normalized.Length == 1 && char.IsAsciiLetterOrDigit(normalized[0]))
         {
             return true;
@@ -3475,6 +3539,23 @@ public sealed partial class MainWindow : Window
         PauseWorldHotkeyBox.Header = isZh ? "时间冻结热键" : "World Pause Hotkey";
         PauseWorldHotkeyBox.PlaceholderText = isZh ? "例如 8、F8、NUMPAD8" : "e.g. 8, F8, NUMPAD8";
         FreeCameraFieldOfViewNumberBox.Header = isZh ? "视野（FOV）" : "Field of View (FOV)";
+        CameraFirstPersonSectionTitle.Text = isZh ? "第一人称视角" : "First-Person Camera";
+        CameraFirstPersonSectionHint.Text = isZh
+            ? "将视点固定到当前操控角色的头部。隐藏头部时使用独立网格副本，保留身体、手臂和原始阴影；可选填补颈部开口。"
+            : "Positions the camera at the controlled character’s head. Head hiding uses a separate mesh copy while preserving the body, arms and original shadows, with optional neck opening coverage.";
+        FirstPersonCameraToggle.Header = isZh ? "启用第一人称视角功能" : "Enable First-Person Camera";
+        FirstPersonCameraToggle.OffContent = isZh ? "关闭" : "Disabled";
+        FirstPersonCameraToggle.OnContent = isZh ? "允许热键切换" : "Enabled";
+        FirstPersonHideHeadToggle.Header = isZh ? "隐藏头部（第一人称）" : "Hide Head (First-Person)";
+        FirstPersonHideHeadToggle.OffContent = isZh ? "保持头部可见" : "Keep the head visible";
+        FirstPersonHideHeadToggle.OnContent = isZh ? "隐藏头部与头饰" : "Hide head and accessories";
+        FirstPersonNeckPlugToggle.Header = isZh ? "填补颈部开口" : "Fill the Neck Opening";
+        FirstPersonNeckPlugToggle.OffContent = isZh ? "保留空心" : "Leave the opening open";
+        FirstPersonNeckPlugToggle.OnContent = isZh ? "用补面遮挡颈部" : "Cover the neck opening";
+        FirstPersonNeckPlugScaleNumberBox.Header = isZh ? "颈部开口识别范围（%）" : "Neck Opening Detection Range (%)";
+        FirstPersonHotkeyBox.Header = isZh ? "第一人称切换热键" : "First-Person Hotkey";
+        FirstPersonHotkeyBox.PlaceholderText = isZh ? "默认 -（减号），支持 -、F7、NUMPAD-" : "Default - (minus), e.g. -, F7, NUMPAD-";
+        FirstPersonFieldOfViewNumberBox.Header = isZh ? "第一人称视野（FOV）" : "First-Person Field of View";
         CameraVisualSectionTitle.Text = isZh ? "镜头画面" : "Visual & Occlusion";
         CameraVisualSectionHint.Text = isZh
             ? "调用游戏自身的清理逻辑，移除镜头贴近角色时出现的半透明虚化。"

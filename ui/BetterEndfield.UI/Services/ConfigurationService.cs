@@ -211,7 +211,13 @@ internal static class ConfigurationService
         string freeCameraHotkey,
         string pauseHotkey,
         double movementSpeed,
-        double fieldOfView)
+        double fieldOfView,
+        bool firstPersonEnabled = false,
+        bool firstPersonHideHead = true,
+        string firstPersonHotkey = "-",
+        double firstPersonFieldOfView = 75.0,
+        bool firstPersonFillNeckHole = true,
+        double firstPersonNeckPlugScale = 1.0)
     {
         static string Boolean(bool value) => value ? "true" : "false";
         static string Number(double value) =>
@@ -228,10 +234,16 @@ internal static class ConfigurationService
             string section =
                 "[betterendfield.camera]" + Environment.NewLine +
                 "schema_version=4" + Environment.NewLine +
-                "enabled=" + Boolean(freeCameraEnabled || disableDitherEnabled) + Environment.NewLine +
+                "enabled=" + Boolean(freeCameraEnabled || disableDitherEnabled || firstPersonEnabled) + Environment.NewLine +
                 "free_camera_enabled=" + Boolean(freeCameraEnabled) + Environment.NewLine +
                 "disable_dither_enabled=" + Boolean(disableDitherEnabled) + Environment.NewLine +
                 "pause_enabled=" + Boolean(pauseEnabled) + Environment.NewLine +
+                "first_person_camera_enabled=" + Boolean(firstPersonEnabled) + Environment.NewLine +
+                "first_person_hide_head=" + Boolean(firstPersonHideHead) + Environment.NewLine +
+                "first_person_fill_neck_hole=" + Boolean(firstPersonFillNeckHole) + Environment.NewLine +
+                "first_person_neck_plug_scale=" + Number(firstPersonNeckPlugScale) + Environment.NewLine +
+                "first_person_fov=" + Number(firstPersonFieldOfView) + Environment.NewLine +
+                "first_person_hotkey=" + firstPersonHotkey + Environment.NewLine +
                 "toggle_hotkey=" + freeCameraHotkey + Environment.NewLine +
                 "pause_hotkey=" + pauseHotkey + Environment.NewLine +
                 "movement_speed=" + Number(movementSpeed) + Environment.NewLine +
@@ -586,6 +598,19 @@ internal static class ConfigurationService
             values, "movement_speed", configuration.FreeCameraMovementSpeed);
         configuration.FreeCameraFieldOfView = Number(
             values, "field_of_view", configuration.FreeCameraFieldOfView);
+        configuration.FirstPersonCameraEnabled = Boolean(
+            values, "first_person_camera_enabled",
+            Boolean(values, "first_person_enabled", configuration.FirstPersonCameraEnabled));
+        configuration.FirstPersonHideHead = Boolean(
+            values, "first_person_hide_head", configuration.FirstPersonHideHead);
+        configuration.FirstPersonFillNeckHole = Boolean(
+            values, "first_person_fill_neck_hole", configuration.FirstPersonFillNeckHole);
+        configuration.FirstPersonNeckPlugScale = Number(
+            values, "first_person_neck_plug_scale", configuration.FirstPersonNeckPlugScale);
+        configuration.FirstPersonHotkey = Text(
+            values, "first_person_hotkey", configuration.FirstPersonHotkey);
+        configuration.FirstPersonFieldOfView = Number(
+            values, "first_person_fov", configuration.FirstPersonFieldOfView);
         if (cameraSectionPresent && cameraSchemaVersion < 4)
         {
             // Migrate the old auto-pause setting to an independent pause
@@ -609,7 +634,13 @@ internal static class ConfigurationService
                 configuration.FreeCameraToggleHotkey,
                 configuration.WorldPauseToggleHotkey,
                 configuration.FreeCameraMovementSpeed,
-                configuration.FreeCameraFieldOfView);
+                configuration.FreeCameraFieldOfView,
+                configuration.FirstPersonCameraEnabled,
+                configuration.FirstPersonHideHead,
+                configuration.FirstPersonHotkey,
+                configuration.FirstPersonFieldOfView,
+                configuration.FirstPersonFillNeckHole,
+                configuration.FirstPersonNeckPlugScale);
         }
         return configuration;
     }

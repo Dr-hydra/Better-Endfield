@@ -1,4 +1,4 @@
-﻿<Window
+<Window
     x:Class="BetterEndfield.UI.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -1311,6 +1311,77 @@
                                                 SmallChange="1"
                                                 SpinButtonPlacementMode="Compact"
                                                 Value="60"
+                                                ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="18">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Name="CameraFirstPersonSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="第一人称视角" />
+                                            <TextBlock
+                                                x:Name="CameraFirstPersonSectionHint"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="将视点固定到当前操控角色的头部。隐藏头部时使用独立网格副本，保留身体、手臂和原始阴影；可选填补颈部开口。"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ToggleSwitch
+                                            x:Name="FirstPersonCameraToggle"
+                                            Header="启用第一人称视角功能"
+                                            OffContent="关闭"
+                                            OnContent="允许热键切换"
+                                            Toggled="CameraEnhancementToggle_Toggled" />
+                                        <ToggleSwitch
+                                            x:Name="FirstPersonHideHeadToggle"
+                                            Header="隐藏头部（第一人称）"
+                                            OffContent="保持头部可见"
+                                            OnContent="隐藏头部与头饰"
+                                            IsOn="True"
+                                            Toggled="CameraEnhancementToggle_Toggled" />
+                                        <ToggleSwitch
+                                            x:Name="FirstPersonNeckPlugToggle"
+                                            Header="填补颈部开口"
+                                            OffContent="保留空心"
+                                            OnContent="用补面遮挡颈部"
+                                            IsOn="True"
+                                            Toggled="CameraEnhancementToggle_Toggled" />
+                                        <Grid ColumnSpacing="12" RowSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <NumberBox
+                                                x:Name="FirstPersonNeckPlugScaleNumberBox"
+                                                Header="颈部开口识别范围（%）"
+                                                Minimum="20"
+                                                Maximum="300"
+                                                SmallChange="5"
+                                                SpinButtonPlacementMode="Compact"
+                                                Value="100"
+                                                ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                        </Grid>
+                                        <Grid ColumnSpacing="12" RowSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox
+                                                x:Name="FirstPersonHotkeyBox"
+                                                Header="第一人称切换热键"
+                                                LostFocus="FirstPersonHotkeyBox_LostFocus"
+                                                MaxLength="8"
+                                                PlaceholderText="默认 -（减号），支持 -、F7、NUMPAD-"
+                                                Text="-" />
+                                            <NumberBox
+                                                x:Name="FirstPersonFieldOfViewNumberBox"
+                                                Grid.Column="1"
+                                                Header="第一人称视野（FOV）"
+                                                Minimum="30"
+                                                Maximum="130"
+                                                SmallChange="1"
+                                                SpinButtonPlacementMode="Compact"
+                                                Value="75"
                                                 ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
                                         </Grid>
                                     </StackPanel>
