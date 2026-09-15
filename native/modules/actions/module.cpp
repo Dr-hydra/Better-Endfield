@@ -29,6 +29,7 @@ constexpr char kComplex[] = "ComplexAnimatorComponent";
 constexpr char kBrain[] = "CharacterSpecialDashBrain";
 constexpr char kPerformNs[] = "Beyond.Gameplay.Core.CharInteractPerform";
 constexpr char kHandle[] = "CharPerformHandleBase";
+constexpr size_t kEffectSlotCount = 22;
 
 // Everything character specific lives here; the hooks themselves are shared.
 // A character with no continuous VFX or deferred prop hide simply leaves those
@@ -41,7 +42,7 @@ struct CharacterProfile {
     LoopConstants loop;
     // Perform effects whose own lifetime is shorter than a held dash, indexed by
     // the actorIndex the perform creates them under. Empty slots are skipped.
-    const char* effects[4];
+    const char* effects[kEffectSlotCount];
     // Aglina's second effect is a single 3 s burst inside a 5 s system; renewing
     // it needs a shorter particle duration. No other character has that shape.
     bool renew_short_glow;
@@ -57,10 +58,21 @@ constexpr CharacterProfile kCharacters[]{
      {"P_fxbat_aglina_sprint_dash_sp_01", "P_fxbat_aglina_sprint_dash_sp_02", nullptr, nullptr}, true,
      "Aglina_SprintDashSp_Flying_Stop", kAglinaPropHide, false},
     // Liino's board glow is one prefab mounted under each foot (actor 0 and 1)
-    // plus the trail at actor 2; all three expire at 2.884 s without a hold.
+    // plus the trail at actor 2. Keep the mounted weapon exhaust/glow (8-13)
+    // and pulse (20/21), never the body-wide accents or teardown effects.
     {"liino", "chr_0035_liino", "CharIntPerform_Liino_Spdash", L"pose_liino.bin", kLiinoLoop,
      {"P_fxbat_liino_sprint_dash_sp_01", "P_fxbat_liino_sprint_dash_sp_01",
-      "P_fxbat_liino_sprint_dash_sp_02", nullptr}, false,
+      "P_fxbat_liino_sprint_dash_sp_02",
+      nullptr, nullptr, nullptr, nullptr, nullptr, // 3-7: material/foot entry accents
+      "P_fxbat_liino_sprint_dash_sp_weapons_base_L_a_01_jnt_start_01",
+      "P_fxbat_liino_sprint_dash_sp_weapons_base_R_a_01_jnt_start_01",
+      "P_fxbat_liino_sprint_dash_sp_weapons_base_L_a_01_jnt_start_02",
+      "P_fxbat_liino_sprint_dash_sp_weapons_base_R_a_01_jnt_start_02",
+      "P_fxbat_liino_sprint_dash_sp_slot_L_potentialEffect_01_vfx_start_01",
+      "P_fxbat_liino_sprint_dash_sp_slot_R_potentialEffect_01_vfx_start_01",
+      nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 14-19: exit/body accents
+      "P_fxbat_liino_sprint_dash_sp_weapons_base_L_a_01_jnt_lvdong",
+      "P_fxbat_liino_sprint_dash_sp_weapons_base_R_a_01_jnt_lvdong"}, false,
      nullptr, {}, true},
 };
 constexpr size_t kCharacterCount = std::size(kCharacters);
@@ -279,7 +291,7 @@ struct Session {
     uint32_t hidden_deferrals = 0;
     uint32_t prop_hide_deferrals = 0;
     uint32_t mesh_group_calls = 0;
-    EffectHold effects[4]{};
+    EffectHold effects[kEffectSlotCount]{};
     bool effect_error_logged = false;
     uint32_t visual_teardowns_skipped = 0;
     uint32_t effect_follow_frames = 0;
@@ -615,9 +627,9 @@ void RefreshLiinoEffectsAfterPose(void* component) {
     void* dictionary = FieldObject(Effects, handle);
     if (!dictionary) return;
     unsigned refreshed = 0;
-    // Include the short entry accents, not just the three sustained particles.
+    // Include the short entry accents as well as the sustained particles.
     // Re-lock ObjectPtr each frame: finished/recycled effects must not be kept.
-    for (int slot = 0; slot < 22; ++slot) {
+    for (int slot = 0; slot < static_cast<int>(kEffectSlotCount); ++slot) {
         if (g_session.handle != handle || g_session.component != component) return;
         bool ok = true; void* args[]{&slot};
         if (!Unbox<bool>(InvokeNamed(dictionary, "ContainsKey", 1, args, ok), ok)) continue;
@@ -1379,7 +1391,7 @@ void BE_CALL Shutdown() {
     g_particle_type_root = 0;
     g_particle_type = nullptr;
 }
-const BE_ModuleApiV1 kApi{{kId, "Sustained Dash", "1.13.3", BETTER_ENDFIELD_MODULE_ABI_V1},
+const BE_ModuleApiV1 kApi{{kId, "Sustained Dash", "1.13.4", BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize, &Configure, &Shutdown};
 } // namespace
 } // namespace BetterEndfield::Actions

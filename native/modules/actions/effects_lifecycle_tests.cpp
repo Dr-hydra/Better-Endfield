@@ -10,6 +10,9 @@ struct Particle { bool alive = true; bool loop = true; float duration = 2.5f; in
 std::vector<uint32_t> freed;
 int unity_calls = 0, finish_calls = 0, stop_calls = 0;
 int follow_calls = 0, action_calls = 0, mesh_calls = 0;
+float duration_delta = -1;
+Particle* enumerated_particle = nullptr;
+const char* effect_name = nullptr;
 int visual_identity = 0, visual_handle = 0, visual_other = 0;
 void* action_handle = &visual_handle;
 unsigned visual_logic = 20;
@@ -42,9 +45,16 @@ void* BE_CALL InvokeFake(void*, const void* method, void* instance, void** args,
     case StateTime: { static float time = .5f; return &time; }
     case StateLength: { static float length = 173.f/60; return &length; }
     case EffectObject: return p;
+    case EffectName: return const_cast<char*>(effect_name);
+    case ComponentsInChildren: return enumerated_particle;
+    case ArrayLength: { static int count = 1; return &count; }
+    case ArrayItem: return enumerated_particle;
     case EffectManualFollow: ++follow_calls; return nullptr;
     case UnityAlive: return &static_cast<Particle*>(args[0])->alive;
     case ParticleMain: return p;
+    case ParticleLoop: return &p->loop;
+    case ParticleDuration: return &p->duration;
+    case ParticlePlay: return nullptr;
     case ParticleStop: ++p->stops; return nullptr;
     case ParticleSetLoop: p->loop = *static_cast<bool*>(args[0]); return nullptr;
     case ParticleSetDuration: p->duration = *static_cast<float*>(args[0]); return nullptr;
@@ -56,6 +66,7 @@ int BE_CALL CopyStringFake(void*, const void* value, char* output, size_t capaci
     return std::snprintf(output, capacity, "%s", static_cast<const char*>(value));
 }
 void BE_CALL FreeFake(void*, uint32_t handle) { freed.push_back(handle); }
+uint32_t BE_CALL PinFake(void*, void*, int) { return 101; }
 void* BE_CALL FieldFake(void*, const void* field, void*) {
     switch (static_cast<FieldId>(reinterpret_cast<uintptr_t>(field) - 1)) {
     case Request: return &visual_identity;
@@ -75,6 +86,7 @@ void __fastcall FinishFake(void*, bool, bool, const void*) {
     CHECK(!finish_particle->loop && finish_particle->duration == 5.0f);
 }
 void __fastcall StopFake(void*, const void*) { ++stop_calls; }
+void __fastcall DurationFake(void*, float delta, const void*) { duration_delta = delta; }
 EffectHold Held(Particle& p, void* instance) {
     EffectHold e;
     e.object = instance; e.root = 102; e.prepared = true; e.count = 1;
@@ -88,6 +100,7 @@ int main() {
     host.object_unbox = &UnboxFake;
     host.copy_managed_string = &CopyStringFake;
     host.gchandle_free = &FreeFake;
+    host.gchandle_new = &PinFake;
     host.field_get_value_object = &FieldFake;
     g_host = &host;
     g_game_thread = GetCurrentThreadId();
@@ -144,6 +157,38 @@ int main() {
     g_session.handle = &visual_handle; g_session.config = config;
     g_session.profile = &kCharacters[1]; g_session.policy.active = true;
     g_hashes[0] = 123; g_hashes[1] = 456; g_dash_mode = 20; g_sprint = 2;
+    // Exercise preparation, lifetime hold and restoration for both floating
+    // weapons, including the high actor indices that the old four-slot array missed.
+    config->diagnostics = false;
+    g_effect_duration = DurationFake;
+    for (int slot : {8, 9, 10, 11, 12, 13, 20, 21}) {
+        for (auto& held : g_session.effects) { held = {}; held.disabled = true; }
+        p = {}; p.loop = false; p.duration = 1.2f;
+        enumerated_particle = &p;
+        auto& held = g_session.effects[slot];
+        held = {}; held.object = &p; held.root = 102;
+        effect_name = kCharacters[1].effects[slot];
+        bool ok = true;
+        CHECK(effect_name && TargetEffectName(&p, slot, ok) && ok);
+        CHECK(!TargetEffectName(&p, 0, ok)); // A foot effect cannot borrow this slot.
+        MaintainEffects();
+        CHECK(held.prepared && held.count == 1 && p.loop && p.stops == 0);
+        EffectDurationDetour(&p, 10.0f, nullptr);
+        CHECK(duration_delta == 0);
+        EffectDurationDetour(&unrelated, 10.0f, nullptr);
+        CHECK(duration_delta == 10.0f);
+        airborne = true;
+        EffectDurationDetour(&p, 10.0f, nullptr);
+        CHECK(duration_delta == 10.0f);
+        airborne = false;
+        RestoreEffect(held, true);
+        CHECK(!p.loop && p.duration == 1.2f && p.stops == 1);
+    }
+    for (int slot : {3, 4, 5, 6, 7, 14, 15, 16, 17, 18, 19}) CHECK(!kCharacters[1].effects[slot]);
+    CHECK(std::strcmp(kCharacters[1].effects[8], "P_fxbat_liino_sprint_dash_sp_weapons_base_L_a_01_jnt_start_01") == 0);
+    CHECK(std::strcmp(kCharacters[1].effects[10], "P_fxbat_liino_sprint_dash_sp_weapons_base_L_a_01_jnt_start_02") == 0);
+    CHECK(std::strcmp(kCharacters[1].effects[12], "P_fxbat_liino_sprint_dash_sp_slot_L_potentialEffect_01_vfx_start_01") == 0);
+    CHECK(std::strcmp(kCharacters[1].effects[20], "P_fxbat_liino_sprint_dash_sp_weapons_base_L_a_01_jnt_lvdong") == 0);
     g_effect_action_play = ActionFake;
     EffectActionPlayDetour(&visual_identity, nullptr);
     CHECK(action_calls == 0 && g_session.visual_teardowns_skipped == 1);
@@ -174,6 +219,7 @@ int main() {
     // No animation session yet: native StartSpDash already executes cosmetic
     // actions here. Ownership must come from the actual perform, not a session.
     g_session = {}; config = std::make_shared<Configuration>(); config->enabled = true;
+    config->liino_clean = true; // This test exercises the optional clean mode.
     g_config.store(config); action_calls = mesh_calls = 0; airborne = false;
     for (int actor = 0; actor < 22; ++actor) {
         visual_actor = actor;
