@@ -1,6 +1,6 @@
-// Exercise the production lifecycle through a fake Host/Unity boundary. No game
+// Exercise the preserved legacy lifecycle through a fake Host/Unity boundary. No game
 // process, native graphics buffers or asset files are needed.
-#include "../modules/custom_model/module.cpp"
+#include "../modules/custom_model/module_legacy.cpp"
 #include <cstdlib>
 #include <iostream>
 #include <unordered_map>

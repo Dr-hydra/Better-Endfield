@@ -59,7 +59,13 @@ set_target_properties(BetterEndfield.Model PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
 )
 
-add_library(BetterEndfield.CustomModel SHARED modules/custom_model/module.cpp)
+add_library(BetterEndfield.CustomModel SHARED
+    modules/custom_model/module.cpp
+    modules/custom_model/bem.cpp
+    modules/custom_model/mod_registry.cpp
+    modules/custom_model/native_mesh_layout.cpp
+    shared/third_party/minhook/src/hde/hde64.c
+)
 better_endfield_target_defaults(BetterEndfield.CustomModel)
 set_target_properties(BetterEndfield.CustomModel PROPERTIES
     OUTPUT_NAME "BetterEndfield.CustomModel"

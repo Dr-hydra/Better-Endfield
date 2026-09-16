@@ -72,7 +72,7 @@ BE_Result HookBroker::ReleaseModule(const std::string& module_id) {
 
     std::vector<void*> targets;
     for (const auto& [target, record] : hooks_) {
-        if (record.module_id == module_id) {
+        if (record.module_id == module_id && !record.retired) {
             targets.push_back(target);
         }
     }
@@ -93,19 +93,37 @@ BE_Result HookBroker::ReleaseModule(const std::string& module_id) {
     return failed ? BE_Result_Failed : BE_Result_Ok;
 }
 
+BE_Result HookBroker::RetireModule(const std::string& module_id) {
+    std::lock_guard lock(mutex_);
+    if (!initialized_) return BE_Result_NotReady;
+    bool failed = false;
+    for (auto& [target, record] : hooks_) {
+        if (record.module_id != module_id) continue;
+        // Preserve the trampoline even if disabling reports an error. The
+        // module's disabled detour remains a safe pass-through in that case.
+        record.retired = true;
+        const auto status = MH_DisableHook(target);
+        if (status != MH_OK && status != MH_ERROR_DISABLED) failed = true;
+    }
+    return failed ? BE_Result_Failed : BE_Result_Ok;
+}
+
 void HookBroker::Shutdown() {
     std::lock_guard lock(mutex_);
     if (!initialized_) {
         return;
     }
 
-    for (const auto& [target, ignored] : hooks_) {
-        (void)ignored;
+    bool has_retired = false;
+    for (const auto& [target, record] : hooks_) {
         MH_DisableHook(target);
-        MH_RemoveHook(target);
+        if (record.retired) has_retired = true;
+        else MH_RemoveHook(target);
     }
     hooks_.clear();
-    MH_Uninitialize();
+    // Retired trampolines may still be reached by a previously dispatched
+    // pass-through callback. Their bounded executable storage lives until exit.
+    if (!has_retired) MH_Uninitialize();
     initialized_ = false;
 }
 

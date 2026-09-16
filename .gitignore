@@ -59,6 +59,7 @@ diagnostics/
 
 # CMake build tree and local tooling output.
 build/
+/build-delivery-ab/
 output/
 .playwright-cli/
 node_modules/

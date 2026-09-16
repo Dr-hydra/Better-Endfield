@@ -25,6 +25,7 @@ public:
     void RequestStop();
     const BE_HostApiV1& Api() const;
     BE_Result ReleaseHooks(const std::string& module_id);
+    BE_Result RetireHooks(const std::string& module_id);
     bool HasAssembly(const std::string& assembly_name) const;
 
 private:

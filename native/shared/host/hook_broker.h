@@ -20,12 +20,16 @@ public:
     BE_Result Create(const std::string& module_id, void* target, void* detour,
         void** original);
     BE_Result ReleaseModule(const std::string& module_id);
+    // Disable entry points while retaining trampolines for callbacks already
+    // dispatched into a process-pinned module. Retired targets cannot be reused.
+    BE_Result RetireModule(const std::string& module_id);
     void Shutdown();
 
 private:
     struct HookRecord {
         std::string module_id;
         void* target = nullptr;
+        bool retired = false;
     };
 
     Logger& logger_;
