@@ -26,6 +26,7 @@ $publishDir = if ([string]::IsNullOrWhiteSpace($PublishDir)) {
 else {
     [System.IO.Path]::GetFullPath($PublishDir)
 }
+$nativeStage = Join-Path $nativeBuild "stage\$Configuration"
 
 if (-not (Get-Command cmake.exe -ErrorAction SilentlyContinue)) {
     throw "cmake.exe was not found. Install CMake and the Visual Studio C++ workload."
@@ -82,6 +83,12 @@ if (Test-Path -LiteralPath $publishDir) {
 }
 New-Item -ItemType Directory -Force -Path $publishDir | Out-Null
 
+# The CMake stage is shared by successive builds in this working tree. Clear it
+# so targets removed from the current branch cannot leak into a release package.
+if (Test-Path -LiteralPath $nativeStage) {
+    Remove-Item -LiteralPath $nativeStage -Recurse -Force
+}
+
 & cmake -S $nativeRoot -B $nativeBuild -G "Visual Studio 17 2022" -A x64
 if ($LASTEXITCODE -ne 0) {
     throw "Better Endfield native configuration failed with exit code $LASTEXITCODE."
@@ -99,7 +106,6 @@ if ($LASTEXITCODE -ne 0) {
     throw "Better Endfield UI publish failed with exit code $LASTEXITCODE."
 }
 
-$nativeStage = Join-Path $nativeBuild "stage\$Configuration"
 if (-not (Test-Path -LiteralPath $nativeStage)) {
     throw "Native stage directory was not produced: $nativeStage"
 }

@@ -1620,25 +1620,11 @@
                                             Style="{StaticResource FieldHintStyle}"
                                             Text="参数将原样传给 Endfield.exe；-force-d3d11 会使用 Direct3D 11 启动。"
                                             TextWrapping="Wrap" />
-                                        <Grid ColumnSpacing="8">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBox
-                                                x:Name="InjectorPathBox"
-                                                Header="注入器"
-                                                PlaceholderText="BetterEndfield.Injector.exe"
-                                                TextChanged="InjectorPathBox_TextChanged" />
-                                            <Button
-                                                Grid.Column="1"
-                                                Margin="0,24,0,0"
-                                                Click="BrowseInjectorButton_Click"
-                                                Style="{StaticResource PathButtonStyle}"
-                                                ToolTipService.ToolTip="浏览注入器">
-                                                <SymbolIcon Symbol="OpenFile" />
-                                            </Button>
-                                        </Grid>
+                                        <TextBox
+                                            x:Name="InjectorPathBox"
+                                            Header="注入器"
+                                            IsReadOnly="True"
+                                            TextChanged="InjectorPathBox_TextChanged" />
                                         <TextBlock
                                             x:Name="InjectorPathStatusTextBlock"
                                             FontSize="12"

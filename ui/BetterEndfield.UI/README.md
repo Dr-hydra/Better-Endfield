@@ -15,7 +15,7 @@ Better Endfield 的 WinUI 3 中文控制器。应用负责编辑模块配置、�
 - 原生循环、强制循环和双 Playable 交叉淡化循环。
 - 各角色独立的中、英、日、韩配音语言规则，以及可独立开关的剧情语音与口型联动。
 - 保存时从本机已下载的语言 PCK 选择性生成角色 catalog；音频内容只写入 `%LocalAppData%\BetterEndfield\catalog`，不会进入发布包。
-- 游戏与注入器路径自动发现、有效性提示、手动重扫和日志入口。
+- 游戏路径自动发现、有效性提示和手动重扫；注入器固定从安装目录的 `loaders` 子目录加载。
 - 自定义游戏启动参数，例如使用 `-force-d3d11` 选择 Direct3D 11。
 - 独立相机增强模块：可配置热键的自由视角、方向键移动、原生鼠标旋转、速度/FOV 调节和近距离反虚化。
 - 界面增强支持隐藏 UID，以及通过原生 UI 相机遮罩和自定义热键隐藏或恢复游戏内全部界面，同时保留角色与镜头操作。
@@ -38,7 +38,7 @@ Better Endfield 的 WinUI 3 中文控制器。应用负责编辑模块配置、�
 构建中文 Inno Setup 安装器：
 
 ```powershell
-.\scripts\BuildInstaller.ps1 -Version 3.1.1
+.\scripts\BuildInstaller.ps1 -Version 3.2.2
 ```
 
 ## 开源许可
