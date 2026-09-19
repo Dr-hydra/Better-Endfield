@@ -1,0 +1,492 @@
+{
+  "schema": 1,
+  "ini": "洁尔配塔.ini",
+  "world_resource": "chr_0013_aglina_postmodel",
+  "ui_resource": "chr_0013_aglina_uimodel",
+  "evidence": "User-selected P-switch outfit B, other constants default; reviewed source draw ranges; 8 native observations; UINT32 indices authorized 2026-09-18",
+  "semantic_notes": [
+    "Static outfit B: swapkey9=1, all other persistent switches remain 0. No runtime panel/hotkeys.",
+    "C0 uses original cloth bones; five cross-entry skin ranges use native body material; later outfit surfaces retain native cloth shader and receive custom color/normal/packed texture.",
+    "Native body skin normal is disabled and unbound: preserve this state on body-material draws; no all-pass EFMI equivalence claim.",
+    "Hair base and added geometry each render through both native hair material slots; custom hair texture NormalMap maps to native SplitNormalMap, LightMap to MetallicGlossMap. Visual fidelity pending.",
+    "Components over 65536 vertices use UINT32 IB; smaller components retain UINT16. No mesh partition. Six unchanged native global textures preserve full mip chains."
+  ],
+  "source_program": "namespace = JierPeitaFreeMain\n[Present]\nResourcePrev_SRV = ResourceFakeT0_SRV\npost $active0 = 0\npost $active1 = 0\npost $active2 = 0\npost $active3 = 0\npost $active4 = 0\npost $active5 = 0\npost $active6 = 0\npost $active7 = 0\n[ResourceDumpedCB1_UAV]\ntype = RWStructuredBuffer\nstride = 16\narray = 4096\n[ResourceDumpedCB1_SRV]\ntype = Buffer\nstride = 16\narray = 4096\n[ResourceFakeCB1_UAV_167442]\ntype = RWStructuredBuffer\nstride = 16\narray = 4096\n[ResourceFakeCB1_167442]\ntype = Buffer\nstride = 16\nformat = R32G32B32A32_UINT\narray = 4096\n[ResourceFakeT0_UAV_167442]\ntype = RWStructuredBuffer\nstride = 16\narray = 200000\n[ResourceFakeT0_SRV_167442]\ntype = StructuredBuffer\nstride = 16\narray = 200000\n[ResourceFakeCB1_UAV_28863]\ntype = RWStructuredBuffer\nstride = 16\narray = 4096\n[ResourceFakeCB1_28863]\ntype = Buffer\nstride = 16\nformat = R32G32B32A32_UINT\narray = 4096\n[ResourceFakeT0_UAV_28863]\ntype = RWStructuredBuffer\nstride = 16\narray = 200000\n[ResourceFakeT0_SRV_28863]\ntype = StructuredBuffer\nstride = 16\narray = 200000\n[ResourceFakeCB1_UAV_3081]\ntype = RWStructuredBuffer\nstride = 16\narray = 4096\n[ResourceFakeCB1_3081]\ntype = Buffer\nstride = 16\nformat = R32G32B32A32_UINT\narray = 4096\n[ResourceFakeT0_UAV_3081]\ntype = RWStructuredBuffer\nstride = 16\narray = 200000\n[ResourceFakeT0_SRV_3081]\ntype = StructuredBuffer\nstride = 16\narray = 200000\n[ResourceFakeCB1_UAV_3945]\ntype = RWStructuredBuffer\nstride = 16\narray = 4096\n[ResourceFakeCB1_3945]\ntype = Buffer\nstride = 16\nformat = R32G32B32A32_UINT\narray = 4096\n[ResourceFakeT0_UAV_3945]\ntype = RWStructuredBuffer\nstride = 16\narray = 200000\n[ResourceFakeT0_SRV_3945]\ntype = StructuredBuffer\nstride = 16\narray = 200000\n[ResourceFakeCB1_UAV_51567]\ntype = RWStructuredBuffer\nstride = 16\narray = 4096\n[ResourceFakeCB1_51567]\ntype = Buffer\nstride = 16\nformat = R32G32B32A32_UINT\narray = 4096\n[ResourceFakeT0_UAV_51567]\ntype = RWStructuredBuffer\nstride = 16\narray = 200000\n[ResourceFakeT0_SRV_51567]\ntype = StructuredBuffer\nstride = 16\narray = 200000\n[ResourceFakeCB1_UAV_6123]\ntype = RWStructuredBuffer\nstride = 16\narray = 4096\n[ResourceFakeCB1_6123]\ntype = Buffer\nstride = 16\nformat = R32G32B32A32_UINT\narray = 4096\n[ResourceFakeT0_UAV_6123]\ntype = RWStructuredBuffer\nstride = 16\narray = 200000\n[ResourceFakeT0_SRV_6123]\ntype = StructuredBuffer\nstride = 16\narray = 200000\n[ResourceFakeCB1_UAV_65130]\ntype = RWStructuredBuffer\nstride = 16\narray = 4096\n[ResourceFakeCB1_65130]\ntype = Buffer\nstride = 16\nformat = R32G32B32A32_UINT\narray = 4096\n[ResourceFakeT0_UAV_65130]\ntype = RWStructuredBuffer\nstride = 16\narray = 200000\n[ResourceFakeT0_SRV_65130]\ntype = StructuredBuffer\nstride = 16\narray = 200000\n[ResourceFakeCB1_UAV_7080]\ntype = RWStructuredBuffer\nstride = 16\narray = 4096\n[ResourceFakeCB1_7080]\ntype = Buffer\nstride = 16\nformat = R32G32B32A32_UINT\narray = 4096\n[ResourceFakeT0_UAV_7080]\ntype = RWStructuredBuffer\nstride = 16\narray = 200000\n[ResourceFakeT0_SRV_7080]\ntype = StructuredBuffer\nstride = 16\narray = 200000\n[ResourceFakeT0_UAV]\ntype = RWStructuredBuffer\nstride = 16\narray = 200000\n[ResourceFakeT0_SRV]\ntype = StructuredBuffer\nstride = 16\narray = 200000\n[ResourcePrev_SRV]\ntype = StructuredBuffer\nstride = 16\narray = 200000\n[CustomShader_ExtractCB1]\nvs = ./res/extract_cb1_vs.hlsl\nps = ./res/extract_cb1_ps.hlsl\nps-u7 = ResourceDumpedCB1_UAV\ndepth_enable = false\nblend = ADD SRC_ALPHA INV_SRC_ALPHA\ncull = none\ntopology = point_list\ndraw = 4096, 0\nps-u7 = null\nResourceDumpedCB1_SRV = copy ResourceDumpedCB1_UAV\n[CustomShader_ExtractCaptureCB1]\nvs = ./res/extract_capture_cb1_vs.hlsl\nps = ./res/extract_cb1_ps.hlsl\nps-u7 = ResourceDumpedCB1_UAV\ndepth_enable = false\nblend = ADD SRC_ALPHA INV_SRC_ALPHA\ncull = none\ntopology = point_list\ndraw = 4096, 0\nps-u7 = null\nResourceDumpedCB1_SRV = copy ResourceDumpedCB1_UAV\n[CustomShader_RecordBones_167442]\ncs = ./res/record_bones_cs.hlsl\ncs-t0 = vs-t0\ncs-t1 = ResourceDumpedCB1_SRV\ncs-u1 = ResourceFakeT0_UAV_167442\ndispatch = 12, 1, 1\ncs-u1 = null\ncs-t0 = null\ncs-t1 = null\nResourceFakeT0_SRV_167442 = copy ResourceFakeT0_UAV_167442\n[CustomShader_RedirectCB1_167442]\ncs = ./res/redirect_cb1_cs.hlsl\ncs-t0 = ResourceDumpedCB1_SRV\nResourceFakeCB1_UAV_167442 = copy ResourceDumpedCB1_SRV\ncs-u0 = ResourceFakeCB1_UAV_167442\ndispatch = 4, 1, 1\ncs-u0 = null\ncs-t0 = null\nResourceFakeCB1_167442 = copy ResourceFakeCB1_UAV_167442\n[CustomShader_RecordBones_28863]\ncs = ./res/record_bones_cs.hlsl\ncs-t0 = vs-t0\ncs-t1 = ResourceDumpedCB1_SRV\ncs-u1 = ResourceFakeT0_UAV_28863\ndispatch = 12, 1, 1\ncs-u1 = null\ncs-t0 = null\ncs-t1 = null\nResourceFakeT0_SRV_28863 = copy ResourceFakeT0_UAV_28863\n[CustomShader_RedirectCB1_28863]\ncs = ./res/redirect_cb1_cs.hlsl\ncs-t0 = ResourceDumpedCB1_SRV\nResourceFakeCB1_UAV_28863 = copy ResourceDumpedCB1_SRV\ncs-u0 = ResourceFakeCB1_UAV_28863\ndispatch = 4, 1, 1\ncs-u0 = null\ncs-t0 = null\nResourceFakeCB1_28863 = copy ResourceFakeCB1_UAV_28863\n[CustomShader_RecordBones_3081]\ncs = ./res/record_bones_cs.hlsl\ncs-t0 = vs-t0\ncs-t1 = ResourceDumpedCB1_SRV\ncs-u1 = ResourceFakeT0_UAV_3081\ndispatch = 12, 1, 1\ncs-u1 = null\ncs-t0 = null\ncs-t1 = null\nResourceFakeT0_SRV_3081 = copy ResourceFakeT0_UAV_3081\n[CustomShader_RedirectCB1_3081]\ncs = ./res/redirect_cb1_cs.hlsl\ncs-t0 = ResourceDumpedCB1_SRV\nResourceFakeCB1_UAV_3081 = copy ResourceDumpedCB1_SRV\ncs-u0 = ResourceFakeCB1_UAV_3081\ndispatch = 4, 1, 1\ncs-u0 = null\ncs-t0 = null\nResourceFakeCB1_3081 = copy ResourceFakeCB1_UAV_3081\n[CustomShader_RecordBones_3945]\ncs = ./res/record_bones_cs.hlsl\ncs-t0 = vs-t0\ncs-t1 = ResourceDumpedCB1_SRV\ncs-u1 = ResourceFakeT0_UAV_3945\ndispatch = 12, 1, 1\ncs-u1 = null\ncs-t0 = null\ncs-t1 = null\nResourceFakeT0_SRV_3945 = copy ResourceFakeT0_UAV_3945\n[CustomShader_RedirectCB1_3945]\ncs = ./res/redirect_cb1_cs.hlsl\ncs-t0 = ResourceDumpedCB1_SRV\nResourceFakeCB1_UAV_3945 = copy ResourceDumpedCB1_SRV\ncs-u0 = ResourceFakeCB1_UAV_3945\ndispatch = 4, 1, 1\ncs-u0 = null\ncs-t0 = null\nResourceFakeCB1_3945 = copy ResourceFakeCB1_UAV_3945\n[CustomShader_RecordBones_51567]\ncs = ./res/record_bones_cs.hlsl\ncs-t0 = vs-t0\ncs-t1 = ResourceDumpedCB1_SRV\ncs-u1 = ResourceFakeT0_UAV_51567\ndispatch = 12, 1, 1\ncs-u1 = null\ncs-t0 = null\ncs-t1 = null\nResourceFakeT0_SRV_51567 = copy ResourceFakeT0_UAV_51567\n[CustomShader_RedirectCB1_51567]\ncs = ./res/redirect_cb1_cs.hlsl\ncs-t0 = ResourceDumpedCB1_SRV\nResourceFakeCB1_UAV_51567 = copy ResourceDumpedCB1_SRV\ncs-u0 = ResourceFakeCB1_UAV_51567\ndispatch = 4, 1, 1\ncs-u0 = null\ncs-t0 = null\nResourceFakeCB1_51567 = copy ResourceFakeCB1_UAV_51567\n[CustomShader_RecordBones_6123]\ncs = ./res/record_bones_cs.hlsl\ncs-t0 = vs-t0\ncs-t1 = ResourceDumpedCB1_SRV\ncs-u1 = ResourceFakeT0_UAV_6123\ndispatch = 12, 1, 1\ncs-u1 = null\ncs-t0 = null\ncs-t1 = null\nResourceFakeT0_SRV_6123 = copy ResourceFakeT0_UAV_6123\n[CustomShader_RedirectCB1_6123]\ncs = ./res/redirect_cb1_cs.hlsl\ncs-t0 = ResourceDumpedCB1_SRV\nResourceFakeCB1_UAV_6123 = copy ResourceDumpedCB1_SRV\ncs-u0 = ResourceFakeCB1_UAV_6123\ndispatch = 4, 1, 1\ncs-u0 = null\ncs-t0 = null\nResourceFakeCB1_6123 = copy ResourceFakeCB1_UAV_6123\n[CustomShader_RecordBones_65130]\ncs = ./res/record_bones_cs.hlsl\ncs-t0 = vs-t0\ncs-t1 = ResourceDumpedCB1_SRV\ncs-u1 = ResourceFakeT0_UAV_65130\ndispatch = 12, 1, 1\ncs-u1 = null\ncs-t0 = null\ncs-t1 = null\nResourceFakeT0_SRV_65130 = copy ResourceFakeT0_UAV_65130\n[CustomShader_RedirectCB1_65130]\ncs = ./res/redirect_cb1_cs.hlsl\ncs-t0 = ResourceDumpedCB1_SRV\nResourceFakeCB1_UAV_65130 = copy ResourceDumpedCB1_SRV\ncs-u0 = ResourceFakeCB1_UAV_65130\ndispatch = 4, 1, 1\ncs-u0 = null\ncs-t0 = null\nResourceFakeCB1_65130 = copy ResourceFakeCB1_UAV_65130\n[CustomShader_RecordBones_7080]\ncs = ./res/record_bones_cs.hlsl\ncs-t0 = vs-t0\ncs-t1 = ResourceDumpedCB1_SRV\ncs-u1 = ResourceFakeT0_UAV_7080\ndispatch = 12, 1, 1\ncs-u1 = null\ncs-t0 = null\ncs-t1 = null\nResourceFakeT0_SRV_7080 = copy ResourceFakeT0_UAV_7080\n[CustomShader_RedirectCB1_7080]\ncs = ./res/redirect_cb1_cs.hlsl\ncs-t0 = ResourceDumpedCB1_SRV\nResourceFakeCB1_UAV_7080 = copy ResourceDumpedCB1_SRV\ncs-u0 = ResourceFakeCB1_UAV_7080\ndispatch = 4, 1, 1\ncs-u0 = null\ncs-t0 = null\nResourceFakeCB1_7080 = copy ResourceFakeCB1_UAV_7080\n[ShaderOverridevs1000]\nhash = f11c7e1dbf876a69\nfilter_index = 200\nallow_duplicate_hash = overrule\n[ShaderOverridevs1001]\nhash = 303f45d5266d0369\nfilter_index = 201\nallow_duplicate_hash = overrule\n[ShaderOverridevs1002]\nhash = 7b3a141f99cd9b39\nfilter_index = 201\nallow_duplicate_hash = overrule\n[ShaderOverridevs1003]\nhash = 1479b2b594b9c91a\nfilter_index = 202\nallow_duplicate_hash = overrule\n[ShaderOverridevs1004]\nhash = c6e55aaa8f4b3218\nfilter_index = 202\nallow_duplicate_hash = overrule\n[ShaderOverridevs1005]\nhash = 784f11ae11c97112\nfilter_index = 203\nallow_duplicate_hash = overrule\n[ShaderOverridevs1006]\nhash = f1b10202c73c72c3\nfilter_index = 204\nallow_duplicate_hash = overrule\n[ShaderOverridevs1007]\nhash = 12ad3cc5f56f853c\nfilter_index = 204\nallow_duplicate_hash = overrule\n[ShaderOverridevs1008]\nhash = 86cb3bc0a3e2e013\nfilter_index = 204\nallow_duplicate_hash = overrule\n[ShaderOverridevs1009]\nhash = 906a3976f3e33cfb\nfilter_index = 204\nallow_duplicate_hash = overrule\n[ShaderOverridevs1010]\nhash = 0ba16985f9f74f8d\nfilter_index = 204\nallow_duplicate_hash = overrule\n[ShaderOverridevs1011]\nhash = 06c94dd56f447210\nfilter_index = 204\nallow_duplicate_hash = overrule\n[ShaderOverridevs1012]\nhash = f47b1f797f5831d0\nfilter_index = 204\nallow_duplicate_hash = overrule\n[ResourceID_167442]\ntype = Buffer\nformat = R32_FLOAT\ndata = 0.0\n[ResourceID_28863]\ntype = Buffer\nformat = R32_FLOAT\ndata = 1000.0\n[ResourceID_3081]\ntype = Buffer\nformat = R32_FLOAT\ndata = 2000.0\n[ResourceID_3945]\ntype = Buffer\nformat = R32_FLOAT\ndata = 3000.0\n[ResourceID_51567]\ntype = Buffer\nformat = R32_FLOAT\ndata = 4000.0\n[ResourceID_6123]\ntype = Buffer\nformat = R32_FLOAT\ndata = 5000.0\n[ResourceID_65130]\ntype = Buffer\nformat = R32_FLOAT\ndata = 6000.0\n[ResourceID_7080]\ntype = Buffer\nformat = R32_FLOAT\ndata = 7000.0\n[KeySwap_0]\ncondition = $active0 == 1\nkey = ALT no_ctrl no_shift 5\ntype = cycle\n$swapkey15 = 0,1,\n[KeySwap_1]\ncondition = $active0 == 1\nkey = ALT no_ctrl no_shift 6\ntype = cycle\n$swapkey16 = 0,1,\n[KeySwap_2]\ncondition = $active0 == 1\nkey = ALT no_ctrl no_shift 7\ntype = cycle\n$swapkey17 = 0,1,\n[KeySwap_3]\ncondition = $active0 == 1\nkey = ALT no_ctrl no_shift 8\ntype = cycle\n$swapkey18 = 0,1,\n[KeySwap_4]\ncondition = $active0 == 1\nkey = ALT no_ctrl no_shift 9\ntype = cycle\n$swapkey19 = 0,1,\n[KeySwap_5]\ncondition = $active0 == 1\nkey = CTRL no_alt no_shift 5\ntype = cycle\n$swapkey20 = 0,1,\n[KeySwap_6]\ncondition = $active0 == 1\nkey = CTRL no_alt no_shift 6\ntype = cycle\n$swapkey21 = 0,1,\n[KeySwap_7]\ncondition = $active0 == 1\nkey = CTRL no_alt no_shift 7\ntype = cycle\n$swapkey22 = 0,1,\n[KeySwap_8]\ncondition = $active0 == 1\nkey = CTRL no_alt no_shift 8\ntype = cycle\n$swapkey23 = 0,1,\n[KeySwap_9]\ncondition = $active0 == 1\nkey = SHIFT no_alt no_ctrl 5\ntype = cycle\n$swapkey24 = 0,1,\n[KeySwap_10]\ncondition = $active0 == 1\nkey = SHIFT no_alt no_ctrl 6\ntype = cycle\n$swapkey25 = 0,1,\n[KeySwap_11]\ncondition = $active0 == 1\nkey = CTRL no_alt no_shift 9\ntype = cycle\n$swapkey26 = 0,1,\n[KeySwap_12]\ncondition = $active0 == 1\nkey = SHIFT no_alt no_ctrl 7\ntype = cycle\n$swapkey27 = 0,1,\n[KeySwap_13]\ncondition = $active0 == 1\nkey = SHIFT no_alt no_ctrl 8\ntype = cycle\n$swapkey28 = 0,1,\n[KeySwap_14]\ncondition = $active0 == 1\nkey = SHIFT no_alt no_ctrl 9\ntype = cycle\n$swapkey29 = 0,1,\n[KeySwap_15]\ncondition = $active0 == 1\nkey = ALT CTRL no_shift 5\ntype = cycle\n$swapkey30 = 0,1,\n[KeySwap_16]\ncondition = $active0 == 1\nkey = ALT CTRL no_shift 6\ntype = cycle\n$swapkey31 = 0,1,\n[KeySwap_17]\ncondition = $active0 == 1\nkey = ALT CTRL no_shift 7\ntype = cycle\n$swapkey32 = 0,1,\n[KeySwap_18]\ncondition = $active0 == 1\nkey = ALT CTRL no_shift 8\ntype = cycle\n$swapkey33 = 0,1,\n[KeySwap_21]\ncondition = $active0 == 1\nkey = p\ntype = cycle\n$swapkey9 = 0,1,\n[KeySwap_22]\ncondition = $active0 == 1\nkey = ALT no_ctrl no_shift 7\ntype = cycle\n$swapkey0 = 0,1,\n[KeySwap_23]\ncondition = $active0 == 1\nkey = ALT no_ctrl no_shift 5\ntype = cycle\n$swapkey1 = 0,1,\n[KeySwap_24]\ncondition = $active0 == 1\nkey = ALT no_ctrl no_shift 6\ntype = cycle\n$swapkey2 = 0,1,\n[KeySwap_25]\ncondition = $active0 == 1\nkey = ALT no_ctrl no_shift 9\ntype = cycle\n$swapkey3 = 0,1,\n[KeySwap_26]\ncondition = $active0 == 1\nkey = CTRL no_alt no_shift 9\ntype = cycle\n$swapkey4 = 0,1,\n[KeySwap_27]\ncondition = $active0 == 1\nkey = SHIFT no_alt no_ctrl 6\ntype = cycle\n$swapkey5 = 0,1,\n[KeySwap_28]\ncondition = $active0 == 1\nkey = SHIFT no_alt no_ctrl 7\ntype = cycle\n$swapkey6 = 0,1,\n[KeySwap_29]\ncondition = $active0 == 1\nkey = ALT no_ctrl no_shift 8\ntype = cycle\n$swapkey8 = 0,1,\n[KeySwap_30]\ncondition = $active0 == 1\nkey = CTRL no_alt no_shift 7\ntype = cycle\n$swapkey10 = 0,1,\n[KeySwap_31]\ncondition = $active0 == 1\nkey = SHIFT no_alt no_ctrl 5\ntype = cycle\n$swapkey11 = 0,1,\n[KeySwap_32]\ncondition = $active0 == 1\nkey = CTRL no_alt no_shift 8\ntype = cycle\n$swapkey12 = 0,1,\n[KeySwap_33]\ncondition = $active0 == 1\nkey = CTRL no_alt no_shift 5\ntype = cycle\n$swapkey13 = 0,1,\n[KeySwap_34]\ncondition = $active0 == 1\nkey = CTRL no_alt no_shift 6\ntype = cycle\n$swapkey14 = 0,1,\n[Constants]\nglobal persist $swapkey15 = 0\nglobal persist $swapkey16 = 0\nglobal persist $swapkey17 = 0\nglobal persist $swapkey18 = 0\nglobal persist $swapkey19 = 0\nglobal persist $swapkey20 = 0\nglobal persist $swapkey21 = 0\nglobal persist $swapkey22 = 0\nglobal persist $swapkey23 = 0\nglobal persist $swapkey24 = 0\nglobal persist $swapkey25 = 0\nglobal persist $swapkey26 = 0\nglobal persist $swapkey27 = 0\nglobal persist $swapkey28 = 0\nglobal persist $swapkey29 = 0\nglobal persist $swapkey30 = 0\nglobal persist $swapkey31 = 0\nglobal persist $swapkey32 = 0\nglobal persist $swapkey33 = 0\nglobal persist $swapkey9 = 0\nglobal persist $swapkey0 = 0\nglobal persist $swapkey1 = 0\nglobal persist $swapkey2 = 0\nglobal persist $swapkey3 = 0\nglobal persist $swapkey4 = 0\nglobal persist $swapkey5 = 0\nglobal persist $swapkey6 = 0\nglobal persist $swapkey8 = 0\nglobal persist $swapkey10 = 0\nglobal persist $swapkey11 = 0\nglobal persist $swapkey12 = 0\nglobal persist $swapkey13 = 0\nglobal persist $swapkey14 = 0\nglobal $active0\nglobal $active1\nglobal $active2\nglobal $active3\nglobal $active4\nglobal $active5\nglobal $active6\nglobal $active7\n[TextureOverride_LOD0.8c41c63c_167442_0]\nhash = 8c41c63c\nmatch_first_index = 0\nmatch_index_count = 167442\nhandling = skip\nrun = CommandList\\EFMIv1\\OverrideTextures\nib = Resource_LOD0.8c41c63c_167442_0_Index\nvb0 = Resource_LOD0.8c41c63c_167442_0_Position\nvb1 = Resource_LOD0.8c41c63c_167442_0_Texcoord\nvb2 = Resource_LOD0.8c41c63c_167442_0_Blend\nvb3 = Resource_LOD0.8c41c63c_167442_0_Position\nif vs == 200 || vs == 201 || vs == 204\nif vs == 200\nrun = CustomShader_ExtractCaptureCB1\nelse\nrun = CustomShader_ExtractCB1\nendif\ncs-t2 = ResourceID_167442\nrun = CustomShader_RecordBones_167442\nrun = CustomShader_RedirectCB1_167442\nvs-t0 = ResourceFakeT0_SRV_167442\nif vs == 200\nvs-cb1 = ResourceFakeCB1_167442\nelse\nvs-cb2 = ResourceFakeCB1_167442\nendif\nif vs == 200 || vs == 201\nResourceJPTCrossIBBackupT0 = reference ps-t0\nResourceJPTCrossIBBackupT1 = reference ps-t1\nendif\nif $swapkey1 == 0 && $swapkey9 == 0\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 10704,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif $swapkey1 == 1 && $swapkey9 == 0\nrun = CommandListJPTCrossIBBindSkinAlt\ndrawindexedinstanced = 10704,INSTANCE_COUNT,10704,0,FIRST_INSTANCE\nendif\nif $swapkey2 == 0 && $swapkey9 == 0\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 20469,INSTANCE_COUNT,21408,0,FIRST_INSTANCE\nendif\nif $swapkey2 == 1 && $swapkey9 == 0\nrun = CommandListJPTCrossIBBindSkinAlt\ndrawindexedinstanced = 20469,INSTANCE_COUNT,41877,0,FIRST_INSTANCE\nendif\nif $swapkey3 == 1 && $swapkey9 == 0\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 15201,INSTANCE_COUNT,133320,0,FIRST_INSTANCE\nendif\nif $swapkey4 == 1 && $swapkey9 == 0\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 13674,INSTANCE_COUNT,244602,0,FIRST_INSTANCE\nendif\nif $swapkey5 == 1 && $swapkey6 == 0 && $swapkey9 == 0\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 12432,INSTANCE_COUNT,276231,0,FIRST_INSTANCE\nendif\nif $swapkey6 == 1 && $swapkey9 == 0\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 12432,INSTANCE_COUNT,276231,0,FIRST_INSTANCE\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 19896,INSTANCE_COUNT,315399,0,FIRST_INSTANCE\nendif\nif $swapkey15 == 0 && $swapkey9 == 1\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 10704,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif $swapkey15 == 1 && $swapkey9 == 1\nrun = CommandListJPTCrossIBBindSkinAlt\ndrawindexedinstanced = 10704,INSTANCE_COUNT,10704,0,FIRST_INSTANCE\nendif\nif $swapkey16 == 0 && $swapkey9 == 1\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 20469,INSTANCE_COUNT,21408,0,FIRST_INSTANCE\nendif\nif $swapkey16 == 1 && $swapkey9 == 1\nrun = CommandListJPTCrossIBBindSkinAlt\ndrawindexedinstanced = 20469,INSTANCE_COUNT,41877,0,FIRST_INSTANCE\nendif\nif $swapkey9 == 1\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 12432,INSTANCE_COUNT,276231,0,FIRST_INSTANCE\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 13674,INSTANCE_COUNT,244602,0,FIRST_INSTANCE\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 15201,INSTANCE_COUNT,133320,0,FIRST_INSTANCE\nendif\nif $swapkey33 == 1 && $swapkey9 == 1\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 19896,INSTANCE_COUNT,315399,0,FIRST_INSTANCE\nendif\nif vs == 200 || vs == 201\nps-t0 = reference ResourceJPTCrossIBBackupT0\nps-t1 = reference ResourceJPTCrossIBBackupT1\nendif\nendif\nif $swapkey3 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 26670,INSTANCE_COUNT,62346,0,FIRST_INSTANCE\nendif\nif $swapkey13 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 63381,INSTANCE_COUNT,148521,0,FIRST_INSTANCE\nendif\nif $swapkey14 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 14121,INSTANCE_COUNT,211902,0,FIRST_INSTANCE\nendif\nif $swapkey10 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 2769,INSTANCE_COUNT,226023,0,FIRST_INSTANCE\nendif\nif $swapkey12 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 4092,INSTANCE_COUNT,228792,0,FIRST_INSTANCE\nendif\nif $swapkey4 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 11718,INSTANCE_COUNT,232884,0,FIRST_INSTANCE\nendif\nif $swapkey11 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 2904,INSTANCE_COUNT,258276,0,FIRST_INSTANCE\nendif\nif $swapkey5 == 0 && $swapkey6 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 15051,INSTANCE_COUNT,261180,0,FIRST_INSTANCE\nendif\nif $swapkey6 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 26736,INSTANCE_COUNT,288663,0,FIRST_INSTANCE\nendif\nif $swapkey19 == 0 && $swapkey9 == 1\ndrawindexedinstanced = 2769,INSTANCE_COUNT,226023,0,FIRST_INSTANCE\nendif\nif $swapkey21 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 20256,INSTANCE_COUNT,335295,0,FIRST_INSTANCE\nendif\nif $swapkey22 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 135168,INSTANCE_COUNT,355551,0,FIRST_INSTANCE\nendif\nif $swapkey23 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 46632,INSTANCE_COUNT,490719,0,FIRST_INSTANCE\nendif\nif $swapkey26 == 0 && $swapkey23 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 7164,INSTANCE_COUNT,537351,0,FIRST_INSTANCE\nendif\nif $swapkey24 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 30918,INSTANCE_COUNT,544515,0,FIRST_INSTANCE\nendif\nif $swapkey25 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 61392,INSTANCE_COUNT,575433,0,FIRST_INSTANCE\nendif\nif $swapkey27 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 86544,INSTANCE_COUNT,636825,0,FIRST_INSTANCE\nendif\nif $swapkey28 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 52500,INSTANCE_COUNT,723369,0,FIRST_INSTANCE\nendif\nif $swapkey29 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 19374,INSTANCE_COUNT,775869,0,FIRST_INSTANCE\nendif\nif $swapkey30 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 8328,INSTANCE_COUNT,795243,0,FIRST_INSTANCE\nendif\nif $swapkey31 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 13146,INSTANCE_COUNT,803571,0,FIRST_INSTANCE\nendif\nif $swapkey32 == 0 && $swapkey33 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 22248,INSTANCE_COUNT,816717,0,FIRST_INSTANCE\nendif\nif $swapkey33 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 147528,INSTANCE_COUNT,838965,0,FIRST_INSTANCE\nendif\npost vs-cb1 = null\npost vs-cb2 = null\npost vs-t0 = null\npost cs-t2 = null\n$active0 = 1\nrun = CommandList\\JierPeitaFreePanel\\Activate\n[TextureOverride_LOD1.e8b8a8db_51567_0]\nhash = e8b8a8db\nmatch_first_index = 0\nmatch_index_count = 51567\nhandling = skip\nrun = CommandList\\EFMIv1\\OverrideTextures\nib = Resource_LOD1.e8b8a8db_51567_0_Index\nvb0 = Resource_LOD1.e8b8a8db_51567_0_Position\nvb1 = Resource_LOD1.e8b8a8db_51567_0_Texcoord\nvb2 = Resource_LOD1.e8b8a8db_51567_0_Blend\nvb3 = Resource_LOD1.e8b8a8db_51567_0_Position\nif vs == 200 || vs == 201 || vs == 204\nif vs == 200\nrun = CustomShader_ExtractCaptureCB1\nelse\nrun = CustomShader_ExtractCB1\nendif\ncs-t2 = ResourceID_51567\nrun = CustomShader_RecordBones_51567\nrun = CustomShader_RedirectCB1_51567\nvs-t0 = ResourceFakeT0_SRV_51567\nif vs == 200\nvs-cb1 = ResourceFakeCB1_51567\nelse\nvs-cb2 = ResourceFakeCB1_51567\nendif\nif vs == 200 || vs == 201\nResourceJPTCrossIBBackupT0 = reference ps-t0\nResourceJPTCrossIBBackupT1 = reference ps-t1\nendif\nif $swapkey1 == 0 && $swapkey9 == 0\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 10704,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif $swapkey1 == 1 && $swapkey9 == 0\nrun = CommandListJPTCrossIBBindSkinAlt\ndrawindexedinstanced = 10704,INSTANCE_COUNT,10704,0,FIRST_INSTANCE\nendif\nif $swapkey2 == 0 && $swapkey9 == 0\nrun = CommandListJPTCrossIBBindSkinAlt\ndrawindexedinstanced = 20469,INSTANCE_COUNT,21408,0,FIRST_INSTANCE\nendif\nif $swapkey2 == 1 && $swapkey9 == 0\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 20469,INSTANCE_COUNT,41877,0,FIRST_INSTANCE\nendif\nif $swapkey3 == 1 && $swapkey9 == 0\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 15201,INSTANCE_COUNT,133320,0,FIRST_INSTANCE\nendif\nif $swapkey4 == 1 && $swapkey9 == 0\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 13674,INSTANCE_COUNT,244602,0,FIRST_INSTANCE\nendif\nif $swapkey5 == 1 && $swapkey6 == 0 && $swapkey9 == 0\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 12432,INSTANCE_COUNT,276231,0,FIRST_INSTANCE\nendif\nif $swapkey6 == 1 && $swapkey9 == 0\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 12432,INSTANCE_COUNT,276231,0,FIRST_INSTANCE\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 19896,INSTANCE_COUNT,315399,0,FIRST_INSTANCE\nendif\nif $swapkey15 == 0 && $swapkey9 == 1\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 10704,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif $swapkey15 == 1 && $swapkey9 == 1\nrun = CommandListJPTCrossIBBindSkinAlt\ndrawindexedinstanced = 10704,INSTANCE_COUNT,10704,0,FIRST_INSTANCE\nendif\nif $swapkey16 == 0 && $swapkey9 == 1\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 20469,INSTANCE_COUNT,21408,0,FIRST_INSTANCE\nendif\nif $swapkey16 == 1 && $swapkey9 == 1\nrun = CommandListJPTCrossIBBindSkinAlt\ndrawindexedinstanced = 20469,INSTANCE_COUNT,41877,0,FIRST_INSTANCE\nendif\nif $swapkey9 == 1\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 12432,INSTANCE_COUNT,276231,0,FIRST_INSTANCE\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 13674,INSTANCE_COUNT,244602,0,FIRST_INSTANCE\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 15201,INSTANCE_COUNT,133320,0,FIRST_INSTANCE\nendif\nif $swapkey33 == 1 && $swapkey9 == 1\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 19896,INSTANCE_COUNT,315399,0,FIRST_INSTANCE\nendif\nif vs == 200 || vs == 201\nps-t0 = reference ResourceJPTCrossIBBackupT0\nps-t1 = reference ResourceJPTCrossIBBackupT1\nendif\nendif\nif $swapkey3 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 26670,INSTANCE_COUNT,62346,0,FIRST_INSTANCE\nendif\nif $swapkey13 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 63381,INSTANCE_COUNT,148521,0,FIRST_INSTANCE\nendif\nif $swapkey14 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 14121,INSTANCE_COUNT,211902,0,FIRST_INSTANCE\nendif\nif $swapkey10 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 2769,INSTANCE_COUNT,226023,0,FIRST_INSTANCE\nendif\nif $swapkey12 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 4092,INSTANCE_COUNT,228792,0,FIRST_INSTANCE\nendif\nif $swapkey4 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 11718,INSTANCE_COUNT,232884,0,FIRST_INSTANCE\nendif\nif $swapkey11 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 2904,INSTANCE_COUNT,258276,0,FIRST_INSTANCE\nendif\nif $swapkey5 == 0 && $swapkey6 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 15051,INSTANCE_COUNT,261180,0,FIRST_INSTANCE\nendif\nif $swapkey6 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 26736,INSTANCE_COUNT,288663,0,FIRST_INSTANCE\nendif\nif $swapkey19 == 0 && $swapkey9 == 1\ndrawindexedinstanced = 2769,INSTANCE_COUNT,226023,0,FIRST_INSTANCE\nendif\nif $swapkey21 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 20256,INSTANCE_COUNT,335295,0,FIRST_INSTANCE\nendif\nif $swapkey22 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 135168,INSTANCE_COUNT,355551,0,FIRST_INSTANCE\nendif\nif $swapkey23 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 46632,INSTANCE_COUNT,490719,0,FIRST_INSTANCE\nendif\nif $swapkey26 == 0 && $swapkey23 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 7164,INSTANCE_COUNT,537351,0,FIRST_INSTANCE\nendif\nif $swapkey24 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 30918,INSTANCE_COUNT,544515,0,FIRST_INSTANCE\nendif\nif $swapkey25 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 61392,INSTANCE_COUNT,575433,0,FIRST_INSTANCE\nendif\nif $swapkey27 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 86544,INSTANCE_COUNT,636825,0,FIRST_INSTANCE\nendif\nif $swapkey28 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 52500,INSTANCE_COUNT,723369,0,FIRST_INSTANCE\nendif\nif $swapkey29 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 19374,INSTANCE_COUNT,775869,0,FIRST_INSTANCE\nendif\nif $swapkey30 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 8328,INSTANCE_COUNT,795243,0,FIRST_INSTANCE\nendif\nif $swapkey31 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 13146,INSTANCE_COUNT,803571,0,FIRST_INSTANCE\nendif\nif $swapkey32 == 0 && $swapkey33 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 22248,INSTANCE_COUNT,816717,0,FIRST_INSTANCE\nendif\nif $swapkey33 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 147528,INSTANCE_COUNT,838965,0,FIRST_INSTANCE\nendif\npost vs-cb1 = null\npost vs-cb2 = null\npost vs-t0 = null\npost cs-t2 = null\n$active1 = 1\n[TextureOverride_LOD0.959671a1_7080_0]\nhash = 959671a1\nmatch_first_index = 0\nmatch_index_count = 7080\nhandling = skip\nrun = CommandList\\EFMIv1\\OverrideTextures\nib = Resource_LOD0.959671a1_7080_0_Index\nvb0 = Resource_LOD0.959671a1_7080_0_Position\nvb1 = Resource_LOD0.959671a1_7080_0_Texcoord\nvb2 = Resource_LOD0.959671a1_7080_0_Blend\nvb3 = Resource_LOD0.959671a1_7080_0_Position\nif $swapkey0 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 420,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif $swapkey8 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 6660,INSTANCE_COUNT,420,0,FIRST_INSTANCE\nendif\nif $swapkey17 == 0 && $swapkey9 == 1\ndrawindexedinstanced = 420,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif $swapkey18 == 0 && $swapkey9 == 1\ndrawindexedinstanced = 6660,INSTANCE_COUNT,420,0,FIRST_INSTANCE\nendif\n$active2 = 1\n[TextureOverride_LOD1.26443dcd_3945_0]\nhash = 26443dcd\nmatch_first_index = 0\nmatch_index_count = 3945\nhandling = skip\nrun = CommandList\\EFMIv1\\OverrideTextures\nib = Resource_LOD1.26443dcd_3945_0_Index\nvb0 = Resource_LOD1.26443dcd_3945_0_Position\nvb1 = Resource_LOD1.26443dcd_3945_0_Texcoord\nvb2 = Resource_LOD1.26443dcd_3945_0_Blend\nvb3 = Resource_LOD1.26443dcd_3945_0_Position\nif $swapkey0 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 420,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif $swapkey8 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 6660,INSTANCE_COUNT,420,0,FIRST_INSTANCE\nendif\nif $swapkey17 == 0 && $swapkey9 == 1\ndrawindexedinstanced = 420,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif $swapkey18 == 0 && $swapkey9 == 1\ndrawindexedinstanced = 6660,INSTANCE_COUNT,420,0,FIRST_INSTANCE\nendif\n$active3 = 1\n[TextureOverride_LOD0.80402392_65130_0]\nhash = 80402392\nmatch_first_index = 0\nmatch_index_count = 65130\nhandling = skip\nrun = CommandList\\EFMIv1\\OverrideTextures\nib = Resource_LOD0.80402392_65130_0_Index\nvb0 = Resource_LOD0.80402392_65130_0_Position\nvb1 = Resource_LOD0.80402392_65130_0_Texcoord\nvb2 = Resource_LOD0.80402392_65130_0_Blend\nvb3 = Resource_LOD0.80402392_65130_0_Position\nif $swapkey0 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 1680,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif $swapkey8 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 1359,INSTANCE_COUNT,1680,0,FIRST_INSTANCE\nendif\nif $swapkey9 == 0\ndrawindexedinstanced = 62091,INSTANCE_COUNT,3039,0,FIRST_INSTANCE\nendif\nif $swapkey17 == 0 && $swapkey9 == 1\ndrawindexedinstanced = 1680,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif $swapkey18 == 0 && $swapkey9 == 1\ndrawindexedinstanced = 1359,INSTANCE_COUNT,1680,0,FIRST_INSTANCE\nendif\nif $swapkey9 == 1\ndrawindexedinstanced = 62091,INSTANCE_COUNT,3039,0,FIRST_INSTANCE\nendif\nif $swapkey20 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 30594,INSTANCE_COUNT,65130,0,FIRST_INSTANCE\nendif\n$active4 = 1\n[TextureOverride_LOD1.8c388861_28863_0]\nhash = 8c388861\nmatch_first_index = 0\nmatch_index_count = 28863\nhandling = skip\nrun = CommandList\\EFMIv1\\OverrideTextures\nib = Resource_LOD1.8c388861_28863_0_Index\nvb0 = Resource_LOD1.8c388861_28863_0_Position\nvb1 = Resource_LOD1.8c388861_28863_0_Texcoord\nvb2 = Resource_LOD1.8c388861_28863_0_Blend\nvb3 = Resource_LOD1.8c388861_28863_0_Position\nif $swapkey0 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 1680,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif $swapkey8 == 0 && $swapkey9 == 0\ndrawindexedinstanced = 1359,INSTANCE_COUNT,1680,0,FIRST_INSTANCE\nendif\nif $swapkey9 == 0\ndrawindexedinstanced = 62091,INSTANCE_COUNT,3039,0,FIRST_INSTANCE\nendif\nif $swapkey17 == 0 && $swapkey9 == 1\ndrawindexedinstanced = 1680,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif $swapkey18 == 0 && $swapkey9 == 1\ndrawindexedinstanced = 1359,INSTANCE_COUNT,1680,0,FIRST_INSTANCE\nendif\nif $swapkey9 == 1\ndrawindexedinstanced = 62091,INSTANCE_COUNT,3039,0,FIRST_INSTANCE\nendif\nif $swapkey20 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\LightMap = ref Resource-Skin-LightMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\ndrawindexedinstanced = 30594,INSTANCE_COUNT,65130,0,FIRST_INSTANCE\nendif\n$active5 = 1\n[TextureOverride_LOD0.7233c71a_6123_0]\nhash = 7233c71a\nmatch_first_index = 0\nmatch_index_count = 6123\nhandling = skip\nanalyse_options = deferred_ctx_immediate dump_rt dump_cb dump_vb dump_ib buf txt dds dump_tex dds symlink\nrun = CommandList\\EFMIv1\\OverrideTextures\nib = Resource_LOD0.7233c71a_6123_0_Index\nvb0 = Resource_LOD0.7233c71a_6123_0_Position\nvb1 = Resource_LOD0.7233c71a_6123_0_Texcoord\nvb2 = Resource_LOD0.7233c71a_6123_0_Blend\nvb3 = Resource_LOD0.7233c71a_6123_0_Position\nrun = CommandListJPTCrossIBTargetSlotsSave\nif $swapkey9 == 0\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 588,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 588,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif vs == 202 || vs == 203\ncs-t2 = ResourceID_167442\nrun = CustomShader_RedirectCB1_167442\nvs-t0 = ResourceFakeT0_SRV_167442\nvs-cb2 = ResourceFakeCB1_167442\nvb0 = Resource_LOD0.8c41c63c_167442_0_Position\nvb1 = Resource_LOD0.8c41c63c_167442_0_Texcoord\nvb2 = Resource_LOD0.8c41c63c_167442_0_Blend\nvb3 = Resource_LOD0.8c41c63c_167442_0_Position\nib = Resource_LOD0.8c41c63c_167442_0_Index\nif $swapkey1 == 0 && $swapkey9 == 0\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 10704,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif $swapkey1 == 1 && $swapkey9 == 0\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap1\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkinAlt\ndrawindexedinstanced = 10704,INSTANCE_COUNT,10704,0,FIRST_INSTANCE\nendif\nif $swapkey2 == 0 && $swapkey9 == 0\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 20469,INSTANCE_COUNT,21408,0,FIRST_INSTANCE\nendif\nif $swapkey2 == 1 && $swapkey9 == 0\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap1\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkinAlt\ndrawindexedinstanced = 20469,INSTANCE_COUNT,41877,0,FIRST_INSTANCE\nendif\nif $swapkey3 == 1 && $swapkey9 == 0\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 15201,INSTANCE_COUNT,133320,0,FIRST_INSTANCE\nendif\nif $swapkey4 == 1 && $swapkey9 == 0\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 13674,INSTANCE_COUNT,244602,0,FIRST_INSTANCE\nendif\nif $swapkey5 == 1 && $swapkey6 == 0 && $swapkey9 == 0\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 12432,INSTANCE_COUNT,276231,0,FIRST_INSTANCE\nendif\nif $swapkey6 == 1 && $swapkey9 == 0\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 12432,INSTANCE_COUNT,276231,0,FIRST_INSTANCE\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 19896,INSTANCE_COUNT,315399,0,FIRST_INSTANCE\nendif\nif $swapkey15 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 10704,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif $swapkey15 == 1 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap1\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkinAlt\ndrawindexedinstanced = 10704,INSTANCE_COUNT,10704,0,FIRST_INSTANCE\nendif\nif $swapkey16 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 20469,INSTANCE_COUNT,21408,0,FIRST_INSTANCE\nendif\nif $swapkey16 == 1 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap1\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkinAlt\ndrawindexedinstanced = 20469,INSTANCE_COUNT,41877,0,FIRST_INSTANCE\nendif\nif $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 12432,INSTANCE_COUNT,276231,0,FIRST_INSTANCE\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 13674,INSTANCE_COUNT,244602,0,FIRST_INSTANCE\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 15201,INSTANCE_COUNT,133320,0,FIRST_INSTANCE\nendif\nif $swapkey33 == 1 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 19896,INSTANCE_COUNT,315399,0,FIRST_INSTANCE\nendif\nendif\nrun = CommandListJPTCrossIBTargetSlotsRestore\npost vs-cb2 = null\npost vs-t0 = null\npost cs-t2 = null\n$active6 = 1\n[TextureOverride_LOD1.46e229e8_3081_0]\nhash = 46e229e8\nmatch_first_index = 0\nmatch_index_count = 3081\nhandling = skip\nanalyse_options = deferred_ctx_immediate dump_rt dump_cb dump_vb dump_ib buf txt dds dump_tex dds symlink\nrun = CommandList\\EFMIv1\\OverrideTextures\nib = Resource_LOD1.46e229e8_3081_0_Index\nvb0 = Resource_LOD1.46e229e8_3081_0_Position\nvb1 = Resource_LOD1.46e229e8_3081_0_Texcoord\nvb2 = Resource_LOD1.46e229e8_3081_0_Blend\nvb3 = Resource_LOD1.46e229e8_3081_0_Position\nrun = CommandListJPTCrossIBTargetSlotsSave\nif $swapkey9 == 0\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 588,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 588,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif vs == 202 || vs == 203\ncs-t2 = ResourceID_51567\nrun = CustomShader_RedirectCB1_51567\nvs-t0 = ResourceFakeT0_SRV_51567\nvs-cb2 = ResourceFakeCB1_51567\nvb0 = Resource_LOD1.e8b8a8db_51567_0_Position\nvb1 = Resource_LOD1.e8b8a8db_51567_0_Texcoord\nvb2 = Resource_LOD1.e8b8a8db_51567_0_Blend\nvb3 = Resource_LOD1.e8b8a8db_51567_0_Position\nib = Resource_LOD1.e8b8a8db_51567_0_Index\nif $swapkey1 == 0 && $swapkey9 == 0\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 10704,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif $swapkey1 == 1 && $swapkey9 == 0\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap1\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkinAlt\ndrawindexedinstanced = 10704,INSTANCE_COUNT,10704,0,FIRST_INSTANCE\nendif\nif $swapkey2 == 0 && $swapkey9 == 0\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap1\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkinAlt\ndrawindexedinstanced = 20469,INSTANCE_COUNT,21408,0,FIRST_INSTANCE\nendif\nif $swapkey2 == 1 && $swapkey9 == 0\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 20469,INSTANCE_COUNT,41877,0,FIRST_INSTANCE\nendif\nif $swapkey3 == 1 && $swapkey9 == 0\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 15201,INSTANCE_COUNT,133320,0,FIRST_INSTANCE\nendif\nif $swapkey4 == 1 && $swapkey9 == 0\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 13674,INSTANCE_COUNT,244602,0,FIRST_INSTANCE\nendif\nif $swapkey5 == 1 && $swapkey6 == 0 && $swapkey9 == 0\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 12432,INSTANCE_COUNT,276231,0,FIRST_INSTANCE\nendif\nif $swapkey6 == 1 && $swapkey9 == 0\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 12432,INSTANCE_COUNT,276231,0,FIRST_INSTANCE\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 19896,INSTANCE_COUNT,315399,0,FIRST_INSTANCE\nendif\nif $swapkey15 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 10704,INSTANCE_COUNT,0,0,FIRST_INSTANCE\nendif\nif $swapkey15 == 1 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap1\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkinAlt\ndrawindexedinstanced = 10704,INSTANCE_COUNT,10704,0,FIRST_INSTANCE\nendif\nif $swapkey16 == 0 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 20469,INSTANCE_COUNT,21408,0,FIRST_INSTANCE\nendif\nif $swapkey16 == 1 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap1\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkinAlt\ndrawindexedinstanced = 20469,INSTANCE_COUNT,41877,0,FIRST_INSTANCE\nendif\nif $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 12432,INSTANCE_COUNT,276231,0,FIRST_INSTANCE\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 13674,INSTANCE_COUNT,244602,0,FIRST_INSTANCE\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 15201,INSTANCE_COUNT,133320,0,FIRST_INSTANCE\nendif\nif $swapkey33 == 1 && $swapkey9 == 1\nResource\\RabbitFx\\Diffuse = ref Resource-Skin-DiffuseMap\nResource\\RabbitFx\\NormalMap = ref Resource-Skin-NormalMap\nrun = CommandList\\RabbitFx\\SetTextures\nrun = CommandListJPTCrossIBBindSkin\ndrawindexedinstanced = 19896,INSTANCE_COUNT,315399,0,FIRST_INSTANCE\nendif\nendif\nrun = CommandListJPTCrossIBTargetSlotsRestore\npost vs-cb2 = null\npost vs-t0 = null\npost cs-t2 = null\n$active7 = 1\n[Resource_LOD0.8c41c63c_167442_0_Index]\ntype = Buffer\nformat = DXGI_FORMAT_R32_UINT\nfilename = Meshes0000\\LOD0.8c41c63c-167442-0-Index.buf\n[Resource_LOD0.8c41c63c_167442_0_Position]\ntype = Buffer\nstride = 16\nfilename = Meshes0000\\LOD0.8c41c63c-167442-0-Position.buf\n[Resource_LOD0.8c41c63c_167442_0_Texcoord]\ntype = Buffer\nstride = 12\nfilename = Meshes0000\\LOD0.8c41c63c-167442-0-Texcoord.buf\n[Resource_LOD0.8c41c63c_167442_0_Blend]\ntype = Buffer\nstride = 12\nfilename = Meshes0000\\LOD0.8c41c63c-167442-0-Blend.buf\n[Resource_LOD1.e8b8a8db_51567_0_Index]\ntype = Buffer\nformat = DXGI_FORMAT_R32_UINT\nfilename = Meshes0000\\LOD1.e8b8a8db-51567-0-Index.buf\n[Resource_LOD1.e8b8a8db_51567_0_Position]\ntype = Buffer\nstride = 16\nfilename = Meshes0000\\LOD1.e8b8a8db-51567-0-Position.buf\n[Resource_LOD1.e8b8a8db_51567_0_Texcoord]\ntype = Buffer\nstride = 8\nfilename = Meshes0000\\LOD1.e8b8a8db-51567-0-Texcoord.buf\n[Resource_LOD1.e8b8a8db_51567_0_Blend]\ntype = Buffer\nstride = 12\nfilename = Meshes0000\\LOD1.e8b8a8db-51567-0-Blend.buf\n[Resource_LOD0.959671a1_7080_0_Index]\ntype = Buffer\nformat = DXGI_FORMAT_R32_UINT\nfilename = Meshes0000\\LOD0.959671a1-7080-0-Index.buf\n[Resource_LOD0.959671a1_7080_0_Position]\ntype = Buffer\nstride = 16\nfilename = Meshes0000\\LOD0.959671a1-7080-0-Position.buf\n[Resource_LOD0.959671a1_7080_0_Texcoord]\ntype = Buffer\nstride = 12\nfilename = Meshes0000\\LOD0.959671a1-7080-0-Texcoord.buf\n[Resource_LOD0.959671a1_7080_0_Blend]\ntype = Buffer\nstride = 12\nfilename = Meshes0000\\LOD0.959671a1-7080-0-Blend.buf\n[Resource_LOD1.26443dcd_3945_0_Index]\ntype = Buffer\nformat = DXGI_FORMAT_R32_UINT\nfilename = Meshes0000\\LOD1.26443dcd-3945-0-Index.buf\n[Resource_LOD1.26443dcd_3945_0_Position]\ntype = Buffer\nstride = 16\nfilename = Meshes0000\\LOD1.26443dcd-3945-0-Position.buf\n[Resource_LOD1.26443dcd_3945_0_Texcoord]\ntype = Buffer\nstride = 8\nfilename = Meshes0000\\LOD1.26443dcd-3945-0-Texcoord.buf\n[Resource_LOD1.26443dcd_3945_0_Blend]\ntype = Buffer\nstride = 12\nfilename = Meshes0000\\LOD1.26443dcd-3945-0-Blend.buf\n[Resource_LOD0.80402392_65130_0_Index]\ntype = Buffer\nformat = DXGI_FORMAT_R32_UINT\nfilename = Meshes0000\\LOD0.80402392-65130-0-Index.buf\n[Resource_LOD0.80402392_65130_0_Position]\ntype = Buffer\nstride = 16\nfilename = Meshes0000\\LOD0.80402392-65130-0-Position.buf\n[Resource_LOD0.80402392_65130_0_Texcoord]\ntype = Buffer\nstride = 12\nfilename = Meshes0000\\LOD0.80402392-65130-0-Texcoord.buf\n[Resource_LOD0.80402392_65130_0_Blend]\ntype = Buffer\nstride = 12\nfilename = Meshes0000\\LOD0.80402392-65130-0-Blend.buf\n[Resource_LOD1.8c388861_28863_0_Index]\ntype = Buffer\nformat = DXGI_FORMAT_R32_UINT\nfilename = Meshes0000\\LOD1.8c388861-28863-0-Index.buf\n[Resource_LOD1.8c388861_28863_0_Position]\ntype = Buffer\nstride = 16\nfilename = Meshes0000\\LOD1.8c388861-28863-0-Position.buf\n[Resource_LOD1.8c388861_28863_0_Texcoord]\ntype = Buffer\nstride = 8\nfilename = Meshes0000\\LOD1.8c388861-28863-0-Texcoord.buf\n[Resource_LOD1.8c388861_28863_0_Blend]\ntype = Buffer\nstride = 12\nfilename = Meshes0000\\LOD1.8c388861-28863-0-Blend.buf\n[Resource_LOD0.7233c71a_6123_0_Index]\ntype = Buffer\nformat = DXGI_FORMAT_R32_UINT\nfilename = Meshes0000\\LOD0.7233c71a-6123-0-Index.buf\n[Resource_LOD0.7233c71a_6123_0_Position]\ntype = Buffer\nstride = 16\nfilename = Meshes0000\\LOD0.7233c71a-6123-0-Position.buf\n[Resource_LOD0.7233c71a_6123_0_Texcoord]\ntype = Buffer\nstride = 12\nfilename = Meshes0000\\LOD0.7233c71a-6123-0-Texcoord.buf\n[Resource_LOD0.7233c71a_6123_0_Blend]\ntype = Buffer\nstride = 12\nfilename = Meshes0000\\LOD0.7233c71a-6123-0-Blend.buf\n[Resource_LOD1.46e229e8_3081_0_Index]\ntype = Buffer\nformat = DXGI_FORMAT_R32_UINT\nfilename = Meshes0000\\LOD1.46e229e8-3081-0-Index.buf\n[Resource_LOD1.46e229e8_3081_0_Position]\ntype = Buffer\nstride = 16\nfilename = Meshes0000\\LOD1.46e229e8-3081-0-Position.buf\n[Resource_LOD1.46e229e8_3081_0_Texcoord]\ntype = Buffer\nstride = 8\nfilename = Meshes0000\\LOD1.46e229e8-3081-0-Texcoord.buf\n[Resource_LOD1.46e229e8_3081_0_Blend]\ntype = Buffer\nstride = 12\nfilename = Meshes0000\\LOD1.46e229e8-3081-0-Blend.buf\n[Resource_Texture_0169931c]\nfilename = Textures/8c41c63c-167442-0-DiffuseMap.dds\n[TextureOverride_0169931c]\nhash = 0169931c\nmatch_priority = 0\nthis = Resource_Texture_0169931c\n[Resource_Texture_a9335550]\nfilename = Textures/8c41c63c-167442-0-NormalMap.dds\n[TextureOverride_a9335550]\nhash = a9335550\nmatch_priority = 0\nthis = Resource_Texture_a9335550\n[Resource_Texture_2c44915a]\nfilename = Textures/e8b8a8db-51567-0-LightMap.dds\n[TextureOverride_2c44915a]\nhash = 2c44915a\nmatch_priority = 0\nthis = Resource_Texture_2c44915a\n[Resource_Texture_9982bf25]\nfilename = Textures/959671a1-7080-0-DiffuseMap.dds\n[TextureOverride_9982bf25]\nhash = 9982bf25\nmatch_priority = 0\nthis = Resource_Texture_9982bf25\n[Resource_Texture_7b8aa1bc]\nfilename = Textures/80402392-65130-0-LightMap.dds\n[TextureOverride_7b8aa1bc]\nhash = 7b8aa1bc\nmatch_priority = 0\nthis = Resource_Texture_7b8aa1bc\n[Resource_Texture_7fadc946]\nfilename = Textures/80402392-65130-0-NormalMap.dds\n[TextureOverride_7fadc946]\nhash = 7fadc946\nmatch_priority = 0\nthis = Resource_Texture_7fadc946\n[Resource_Texture_9580045f]\nfilename = Textures/7233c71a-6123-0-DiffuseMap.dds\n[TextureOverride_9580045f]\nhash = 9580045f\nmatch_priority = 0\nthis = Resource-Skin-DiffuseMap\n[CommandListJPTCrossIBBindSkin]\nif vs == 200 || vs == 201\nps-t0 = Resource-Skin-DiffuseMap\nps-t1 = Resource-Skin-NormalMap\nelif vs == 202\nps-t14 = Resource-Skin-DiffuseMap\nelif vs == 203\nps-t13 = Resource-Skin-DiffuseMap\nendif\n[CommandListJPTCrossIBBindSkinAlt]\nif vs == 200 || vs == 201\nps-t0 = Resource-Skin-DiffuseMap1\nps-t1 = Resource-Skin-NormalMap\nelif vs == 202\nps-t14 = Resource-Skin-DiffuseMap1\nelif vs == 203\nps-t13 = Resource-Skin-DiffuseMap1\nendif\n[CommandListJPTCrossIBTargetSlotsSave]\nif vs == 202\nResourceJPTCrossIBBackupT14 = reference ps-t14\nelif vs == 203\nResourceJPTCrossIBBackupT13 = reference ps-t13\nendif\n[CommandListJPTCrossIBTargetSlotsRestore]\nif vs == 202\nps-t14 = reference ResourceJPTCrossIBBackupT14\nelif vs == 203\nps-t13 = reference ResourceJPTCrossIBBackupT13\nendif\n[ResourceJPTCrossIBBackupT13]\n[ResourceJPTCrossIBBackupT14]\n[ResourceJPTCrossIBBackupT0]\n[ResourceJPTCrossIBBackupT1]\n[Resource-Skin-DiffuseMap]\nfilename = Textures\\Skin-DiffuseMap.dds\n[Resource-Skin-DiffuseMap1]\nfilename = Textures\\Skin-DiffuseMap1.dds\n[Resource-Skin-NormalMap]\nfilename = Textures\\Skin-NormalMap.dds\n[Resource-Skin-LightMap]\nfilename = Textures\\Skin-LightMap.dds",
+  "shader_programs": {
+    "res/extract_capture_cb1_vs.hlsl": "structV2P{float4pos:SV_Position;nointerpolationuintid:TEXCOORD0;nointerpolationuint4raw_bits:TEXCOORD1;};cbufferCaptureCB1:register(b1){float4capture_cb1_data[4096];};V2Pmain(uintid:SV_VertexID){V2Po;floatx=-0.98+(id%64)*0.03;floaty=-0.98+(id/64)*0.03;o.pos=float4(x,y,0.5,1.0);o.id=id;o.raw_bits=asuint(capture_cb1_data[id]);returno;}",
+    "res/extract_cb1_ps.hlsl": "structV2P{float4pos:SV_Position;nointerpolationuintid:TEXCOORD0;nointerpolationuint4raw_bits:TEXCOORD1;};RWStructuredBuffer<uint4>DumpedCB1_UAV:register(u7);float4main(V2Pi):SV_Target{DumpedCB1_UAV[i.id]=i.raw_bits;returnfloat4(0,0,0,0);}",
+    "res/extract_cb1_vs.hlsl": "structV2P{float4pos:SV_Position;nointerpolationuintid:TEXCOORD0;nointerpolationuint4raw_bits:TEXCOORD1;};cbufferCB2:register(b2){float4cb2_data[4096];};V2Pmain(uintid:SV_VertexID){V2Po;floatx=-0.98+(id%64)*0.03;floaty=-0.98+(id/64)*0.03;o.pos=float4(x,y,0.5,1.0);o.id=id;o.raw_bits=asuint(cb2_data[id]);returno;}",
+    "res/record_bones_cs.hlsl": "StructuredBuffer<uint4>OriginalT0:register(t0);StructuredBuffer<uint4>DumpedCB1:register(t1);Buffer<float>MyPartID:register(t2);RWStructuredBuffer<uint4>FakeT0_UAV:register(u1);[numthreads(64,1,1)]voidmain(uint3tid:SV_DispatchThreadID){uintid=tid.x;if(id>=768)return;uintmy_offset=(uint)MyPartID[0];uintoffset_current=DumpedCB1[5].x;uintoffset_prev=DumpedCB1[5].y;uintcur_idx=(offset_current+id)%600000;uintprev_idx=(offset_prev+id)%600000;FakeT0_UAV[my_offset+id]=OriginalT0[cur_idx];FakeT0_UAV[my_offset+100000+id]=OriginalT0[prev_idx];}",
+    "res/redirect_cb1_cs.hlsl": "StructuredBuffer<uint4>DumpedCB1:register(t0);Buffer<float>TargetPartID:register(t2);RWStructuredBuffer<uint4>FakeCB1_UAV:register(u0);[numthreads(1024,1,1)]voidmain(uint3tid:SV_DispatchThreadID){uintid=tid.x;if(id>=4096)return;uint4cb_data=DumpedCB1[id];if(id==5){uinttarget_offset=(uint)TargetPartID[0];cb_data.x=target_offset;cb_data.y=target_offset+100000;}FakeCB1_UAV[id]=cb_data;}"
+  },
+  "entries": [
+    {
+      "hash": "8c41c63c",
+      "original_index_count": 167442,
+      "native_mesh": "S_actor_aglina_cloth_01_lod0",
+      "buffers": {
+        "vb0": "Resource_LOD0.8c41c63c_167442_0_Position",
+        "vb1": "Resource_LOD0.8c41c63c_167442_0_Texcoord",
+        "vb2": "Resource_LOD0.8c41c63c_167442_0_Blend",
+        "ib": "Resource_LOD0.8c41c63c_167442_0_Index"
+      },
+      "draws": [
+        {
+          "start": 0,
+          "count": 10704,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap"
+          }
+        },
+        {
+          "start": 21408,
+          "count": 20469,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap"
+          }
+        },
+        {
+          "start": 276231,
+          "count": 12432,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap"
+          }
+        },
+        {
+          "start": 244602,
+          "count": 13674,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap"
+          }
+        },
+        {
+          "start": 133320,
+          "count": 15201,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap"
+          }
+        },
+        {
+          "start": 226023,
+          "count": 2769,
+          "bindings": {
+            "ps-t13": "Resource_Texture_0169931c"
+          }
+        },
+        {
+          "start": 335295,
+          "count": 20256,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap"
+          }
+        },
+        {
+          "start": 355551,
+          "count": 135168,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap"
+          }
+        },
+        {
+          "start": 490719,
+          "count": 46632,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap"
+          }
+        },
+        {
+          "start": 537351,
+          "count": 7164,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap"
+          }
+        },
+        {
+          "start": 544515,
+          "count": 30918,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap"
+          }
+        },
+        {
+          "start": 575433,
+          "count": 61392,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap"
+          }
+        },
+        {
+          "start": 636825,
+          "count": 86544,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap"
+          }
+        },
+        {
+          "start": 723369,
+          "count": 52500,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap"
+          }
+        },
+        {
+          "start": 775869,
+          "count": 19374,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap"
+          }
+        },
+        {
+          "start": 795243,
+          "count": 8328,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap"
+          }
+        },
+        {
+          "start": 803571,
+          "count": 13146,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap"
+          }
+        },
+        {
+          "start": 816717,
+          "count": 22248,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap"
+          }
+        },
+        {
+          "start": 838965,
+          "count": 147528,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap"
+          }
+        }
+      ],
+      "material_rules": [
+        {
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap"
+          },
+          "component": 3,
+          "slot": 0,
+          "evidence": "Source skin-color intent and live native body BaseMap; preserve disabled native normal state",
+          "textures": [
+            {
+              "resource": "Resource-Skin-DiffuseMap",
+              "property": "_BaseMap"
+            }
+          ],
+          "require_native_normal_disabled": true
+        },
+        {
+          "bindings": {
+            "ps-t13": "Resource_Texture_0169931c"
+          },
+          "component": 0,
+          "slot": 0,
+          "evidence": "Original native cloth material; source diffuse equals original mip bytes",
+          "textures": [],
+          "preserve_resources": {
+            "Resource_Texture_0169931c": "Global native mip byte equality is checked before conversion"
+          }
+        },
+        {
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap"
+          },
+          "component": 0,
+          "slot": 0,
+          "evidence": "Explicit selected RabbitFX color/LightMap/NormalMap resources mapped to original cloth BaseMap/MetallicGlossMap/BumpMap; native shader retained",
+          "textures": [
+            {
+              "resource": "Resource-Skin-DiffuseMap",
+              "property": "_BaseMap"
+            },
+            {
+              "resource": "Resource-Skin-LightMap",
+              "property": "_MetallicGlossMap"
+            },
+            {
+              "resource": "Resource-Skin-NormalMap",
+              "property": "_BumpMap"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "hash": "959671a1",
+      "original_index_count": 7080,
+      "native_mesh": "S_actor_aglina_hair_02_lod0",
+      "buffers": {
+        "vb0": "Resource_LOD0.959671a1_7080_0_Position",
+        "vb1": "Resource_LOD0.959671a1_7080_0_Texcoord",
+        "vb2": "Resource_LOD0.959671a1_7080_0_Blend",
+        "ib": "Resource_LOD0.959671a1_7080_0_Index"
+      },
+      "draws": [
+        {
+          "start": 0,
+          "count": 7080,
+          "bindings": {}
+        }
+      ],
+      "material_rules": [
+        {
+          "bindings": {},
+          "component": 1,
+          "slot": 0,
+          "evidence": "Contiguous default ranges with identical material state; preserve native textures",
+          "textures": []
+        }
+      ]
+    },
+    {
+      "hash": "80402392",
+      "original_index_count": 65130,
+      "native_mesh": "S_actor_aglina_hair_01_lod0",
+      "buffers": {
+        "vb0": "Resource_LOD0.80402392_65130_0_Position",
+        "vb1": "Resource_LOD0.80402392_65130_0_Texcoord",
+        "vb2": "Resource_LOD0.80402392_65130_0_Blend",
+        "ib": "Resource_LOD0.80402392_65130_0_Index"
+      },
+      "draws": [
+        {
+          "start": 0,
+          "count": 65130,
+          "bindings": {
+            "ps-t13": "Resource_Texture_9982bf25",
+            "ps-t14": "Resource_Texture_7b8aa1bc",
+            "ps-t15": "Resource_Texture_7fadc946",
+            "ps-t99": "Resource_Texture_9982bf25"
+          }
+        },
+        {
+          "start": 0,
+          "count": 65130,
+          "bindings": {
+            "ps-t13": "Resource_Texture_9982bf25",
+            "ps-t14": "Resource_Texture_7b8aa1bc",
+            "ps-t15": "Resource_Texture_7fadc946",
+            "ps-t99": "Resource_Texture_7b8aa1bc"
+          }
+        },
+        {
+          "start": 65130,
+          "count": 30594,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap",
+            "ps-t99": "Resource_Texture_9982bf25"
+          }
+        },
+        {
+          "start": 65130,
+          "count": 30594,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap",
+            "ps-t99": "Resource_Texture_7b8aa1bc"
+          }
+        }
+      ],
+      "material_rules": [
+        {
+          "bindings": {
+            "ps-t13": "Resource_Texture_9982bf25",
+            "ps-t14": "Resource_Texture_7b8aa1bc",
+            "ps-t15": "Resource_Texture_7fadc946",
+            "ps-t99": "Resource_Texture_9982bf25"
+          },
+          "component": 2,
+          "slot": 0,
+          "evidence": "Explicit static replay of native hair material slots; original vs added geometry states remain separate",
+          "textures": [],
+          "preserve_resources": {
+            "Resource_Texture_9982bf25": "Verified unchanged native global DDS",
+            "Resource_Texture_7b8aa1bc": "Verified unchanged native global DDS",
+            "Resource_Texture_7fadc946": "Verified unchanged native global DDS"
+          }
+        },
+        {
+          "bindings": {
+            "ps-t13": "Resource_Texture_9982bf25",
+            "ps-t14": "Resource_Texture_7b8aa1bc",
+            "ps-t15": "Resource_Texture_7fadc946",
+            "ps-t99": "Resource_Texture_7b8aa1bc"
+          },
+          "component": 2,
+          "slot": 1,
+          "evidence": "Explicit static replay of native hair material slots; original vs added geometry states remain separate",
+          "textures": [],
+          "preserve_resources": {
+            "Resource_Texture_7b8aa1bc": "Verified unchanged native global DDS",
+            "Resource_Texture_9982bf25": "Verified unchanged native global DDS",
+            "Resource_Texture_7fadc946": "Verified unchanged native global DDS"
+          }
+        },
+        {
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap",
+            "ps-t99": "Resource_Texture_9982bf25"
+          },
+          "component": 2,
+          "slot": 0,
+          "evidence": "Explicit static replay of native hair material slots; original vs added geometry states remain separate",
+          "textures": [
+            {
+              "resource": "Resource-Skin-DiffuseMap",
+              "property": "_BaseMap"
+            },
+            {
+              "resource": "Resource-Skin-LightMap",
+              "property": "_MetallicGlossMap"
+            },
+            {
+              "resource": "Resource-Skin-NormalMap",
+              "property": "_SplitNormalMap"
+            }
+          ],
+          "preserve_resources": {
+            "Resource_Texture_9982bf25": "Verified unchanged native DDS; slot selector only"
+          }
+        },
+        {
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap",
+            "ps-t99": "Resource_Texture_7b8aa1bc"
+          },
+          "component": 2,
+          "slot": 1,
+          "evidence": "Explicit static replay of native hair material slots; original vs added geometry states remain separate",
+          "textures": [
+            {
+              "resource": "Resource-Skin-DiffuseMap",
+              "property": "_BaseMap"
+            },
+            {
+              "resource": "Resource-Skin-LightMap",
+              "property": "_MetallicGlossMap"
+            },
+            {
+              "resource": "Resource-Skin-NormalMap",
+              "property": "_SplitNormalMap"
+            }
+          ],
+          "preserve_resources": {
+            "Resource_Texture_7b8aa1bc": "Verified unchanged native DDS; slot selector only"
+          }
+        }
+      ]
+    },
+    {
+      "hash": "7233c71a",
+      "original_index_count": 6123,
+      "native_mesh": "S_actor_aglina_body_01_lod0",
+      "buffers": {
+        "vb0": "Resource_LOD0.7233c71a_6123_0_Position",
+        "vb1": "Resource_LOD0.7233c71a_6123_0_Texcoord",
+        "vb2": "Resource_LOD0.7233c71a_6123_0_Blend",
+        "ib": "Resource_LOD0.7233c71a_6123_0_Index"
+      },
+      "draws": [
+        {
+          "start": 0,
+          "count": 588,
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap"
+          }
+        }
+      ],
+      "material_rules": [
+        {
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap"
+          },
+          "component": 3,
+          "slot": 0,
+          "evidence": "Source skin-color intent and live native body BaseMap; preserve disabled native normal state",
+          "textures": [
+            {
+              "resource": "Resource-Skin-DiffuseMap",
+              "property": "_BaseMap"
+            }
+          ],
+          "require_native_normal_disabled": true
+        }
+      ]
+    }
+  ],
+  "global_textures": {
+    "0169931c": {
+      "native_texture": "T_actor_aglina_cloth_01_D",
+      "disposition": "preserve_native"
+    },
+    "a9335550": {
+      "native_texture": "T_actor_aglina_cloth_01_N",
+      "disposition": "preserve_native"
+    },
+    "2c44915a": {
+      "native_texture": "T_actor_aglina_cloth_01_M",
+      "disposition": "preserve_native"
+    },
+    "9982bf25": {
+      "native_texture": "T_actor_aglina_hair_01_D",
+      "disposition": "preserve_native"
+    },
+    "7b8aa1bc": {
+      "native_texture": "T_actor_aglina_hair_01_P",
+      "disposition": "preserve_native"
+    },
+    "7fadc946": {
+      "native_texture": "T_actor_aglina_hair_01_HN",
+      "disposition": "preserve_native"
+    },
+    "9580045f": {
+      "native_texture": "T_actor_aglina_body_01_D",
+      "disposition": "material_rules"
+    }
+  },
+  "allow_uint32_indices": true,
+  "selected_constants": {
+    "$swapkey9": 1
+  }
+}

@@ -3,9 +3,7 @@ param(
     [ValidateSet("Debug", "Release")]
     [string]$Configuration = "Release",
 
-    [string]$PublishDir = "",
-
-    [switch]$Strict
+    [string]$PublishDir = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -26,68 +24,44 @@ $publishDir = if ([string]::IsNullOrWhiteSpace($PublishDir)) {
 else {
     [System.IO.Path]::GetFullPath($PublishDir)
 }
-$nativeStage = Join-Path $nativeBuild "stage\$Configuration"
 
 if (-not (Get-Command cmake.exe -ErrorAction SilentlyContinue)) {
     throw "cmake.exe was not found. Install CMake and the Visual Studio C++ workload."
 }
 
-if (-not (Test-Path -LiteralPath $voiceCatalogIndex -PathType Leaf)) {
-    throw "Embedded voice catalog index is missing: $voiceCatalogIndex. Run scripts\UpdateResourceManifests.ps1."
+if (-not (Test-Path -LiteralPath $voiceManifest -PathType Leaf) -or
+    -not (Test-Path -LiteralPath $voiceCatalogIndex -PathType Leaf)) {
+    throw "Voice manifest or embedded catalog index is missing. Run scripts\UpdateResourceManifests.ps1."
 }
-if (Test-Path -LiteralPath $voiceManifest -PathType Leaf) {
-    $catalogIndexMetadata = Get-Content -LiteralPath $voiceCatalogIndex -Raw |
-        ConvertFrom-Json
-    $voiceManifestSha256 = (Get-FileHash -LiteralPath $voiceManifest -Algorithm SHA256).Hash
-    if ($catalogIndexMetadata.kind -ne 'betterendfield-voice-catalog-index' -or
-        $catalogIndexMetadata.sourceManifestSha256 -ne $voiceManifestSha256) {
-        $msg = "The embedded voice catalog index hash differs from manifest (possibly due to line endings or manifest updates)."
-        if ($Strict) {
-            throw "$msg Run scripts\UpdateResourceManifests.ps1."
-        } else {
-            Write-Warning "$msg Continuing build..."
-        }
-    }
+$catalogIndexMetadata = Get-Content -LiteralPath $voiceCatalogIndex -Raw |
+    ConvertFrom-Json
+$voiceManifestSha256 = (Get-FileHash -LiteralPath $voiceManifest -Algorithm SHA256).Hash
+if ($catalogIndexMetadata.kind -ne 'betterendfield-voice-catalog-index' -or
+    $catalogIndexMetadata.sourceManifestSha256 -ne $voiceManifestSha256) {
+    throw "The embedded voice catalog index is stale. Run scripts\UpdateResourceManifests.ps1."
 }
-
-if (-not (Test-Path -LiteralPath $combatSemantics -PathType Leaf)) {
-    throw "Combat semantics catalogue is missing: $combatSemantics. Run scripts\BuildCombatSemantics.py."
+if (-not (Test-Path -LiteralPath $combatSemantics -PathType Leaf) -or
+    -not (Test-Path -LiteralPath $combatSemanticsReport -PathType Leaf)) {
+    throw "Combat semantics catalogue or build report is missing. Run scripts\BuildCombatSemantics.py."
 }
-if (-not (Test-Path -LiteralPath $buffSourceMap -PathType Leaf)) {
-    throw "Buff source map is missing: $buffSourceMap. Run tools\CombatDataExporter\export_combat_data.py."
+if (-not (Test-Path -LiteralPath $buffSourceMap -PathType Leaf) -or
+    (Get-Content -LiteralPath $buffSourceMap -TotalCount 1) -notin @("BESOURCE`t1", "BESOURCE`t2")) {
+    throw "Buff source map is missing or invalid. Run tools\CombatDataExporter\export_combat_data.py."
 }
-$buffSourceHeader = ((Get-Content -LiteralPath $buffSourceMap -TotalCount 1) -replace "`r", "")
-if ($buffSourceHeader -notin @("BESOURCE`t1", "BESOURCE`t2")) {
-    throw "Buff source map header is invalid: '$buffSourceHeader'. Run tools\CombatDataExporter\export_combat_data.py."
-}
-
-if (Test-Path -LiteralPath $combatSemanticsReport -PathType Leaf) {
-    $combatReportMetadata = Get-Content -LiteralPath $combatSemanticsReport -Raw |
-        ConvertFrom-Json
-    $combatSemanticsSha256 = (Get-FileHash -LiteralPath $combatSemantics `
-        -Algorithm SHA256).Hash
-    if ($combatReportMetadata.kind -ne 'betterendfield-combat-semantics-build-report' -or
-        $combatReportMetadata.schemaVersion -ne 1 -or
-        $combatReportMetadata.catalogueSha256 -ne $combatSemanticsSha256) {
-        $msg = "The bundled combat semantics catalogue hash differs from build report (possibly due to line endings or updates)."
-        if ($Strict) {
-            throw "$msg Run scripts\BuildCombatSemantics.py."
-        } else {
-            Write-Warning "$msg Continuing build..."
-        }
-    }
+$combatReportMetadata = Get-Content -LiteralPath $combatSemanticsReport -Raw |
+    ConvertFrom-Json
+$combatSemanticsSha256 = (Get-FileHash -LiteralPath $combatSemantics `
+    -Algorithm SHA256).Hash
+if ($combatReportMetadata.kind -ne 'betterendfield-combat-semantics-build-report' -or
+    $combatReportMetadata.schemaVersion -ne 1 -or
+    $combatReportMetadata.catalogueSha256 -ne $combatSemanticsSha256) {
+    throw "The bundled combat semantics catalogue is stale or invalid. Run scripts\BuildCombatSemantics.py."
 }
 
 if (Test-Path -LiteralPath $publishDir) {
     Remove-Item -LiteralPath $publishDir -Recurse -Force
 }
 New-Item -ItemType Directory -Force -Path $publishDir | Out-Null
-
-# The CMake stage is shared by successive builds in this working tree. Clear it
-# so targets removed from the current branch cannot leak into a release package.
-if (Test-Path -LiteralPath $nativeStage) {
-    Remove-Item -LiteralPath $nativeStage -Recurse -Force
-}
 
 & cmake -S $nativeRoot -B $nativeBuild -G "Visual Studio 17 2022" -A x64
 if ($LASTEXITCODE -ne 0) {
@@ -106,6 +80,17 @@ if ($LASTEXITCODE -ne 0) {
     throw "Better Endfield UI publish failed with exit code $LASTEXITCODE."
 }
 
+& (Join-Path $PSScriptRoot "BuildBemTools.ps1")
+$bemTools = Join-Path $repoRoot "artifacts\bem-tools\dist\BetterEndfield.BemConverter"
+New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "tools") | Out-Null
+Copy-Item -LiteralPath $bemTools -Destination (Join-Path $publishDir "tools\BemConverter") -Recurse -Force
+New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "docs") | Out-Null
+foreach ($document in @("BEM_V1_SPEC.md", "BEM_CREATOR_GUIDE.md")) {
+    Copy-Item -LiteralPath (Join-Path $repoRoot "docs\$document") -Destination (Join-Path $publishDir "docs") -Force
+}
+Copy-Item -LiteralPath (Join-Path $repoRoot "tools\CustomModel\examples") -Destination (Join-Path $publishDir "tools\BemConverter\examples") -Recurse -Force
+
+$nativeStage = Join-Path $nativeBuild "stage\$Configuration"
 if (-not (Test-Path -LiteralPath $nativeStage)) {
     throw "Native stage directory was not produced: $nativeStage"
 }
@@ -149,13 +134,16 @@ if ($runtimeMarkers) {
 }
 $requiredReleaseFiles = @(
     "BetterEndfield.exe",
+    "tools\BemConverter\BetterEndfield.BemConverter.exe",
+    "docs\BEM_CREATOR_GUIDE.md",
+    "modules\BetterEndfield.CustomModel.dll",
+    "modules\betterendfield.custom_model.module.ini",
     "runtime\BetterEndfield.Host.dll",
     "modules\BetterEndfield.Model.dll",
     "modules\BetterEndfield.Voice.dll",
     "modules\BetterEndfield.Music.dll",
     "modules\BetterEndfield.UiModule.dll",
     "modules\BetterEndfield.Camera.dll",
-    "modules\BetterEndfield.Actions.dll",
     "modules\BetterEndfield.Gacha.dll",
     "modules\BetterEndfield.CombatStats.dll",
     "modules\BetterEndfield.CombatOverlay.exe",
@@ -163,9 +151,6 @@ $requiredReleaseFiles = @(
     "modules\buff-sources.bemap",
     "modules\betterendfield.ui.module.ini",
     "modules\betterendfield.camera.module.ini",
-    "modules\betterendfield.actions.module.ini",
-    "modules\actions\pose_aglina.bin",
-    "modules\actions\pose_liino.bin",
     "modules\betterendfield.gacha.module.ini",
     "modules\betterendfield.music.module.ini",
     "modules\betterendfield.combat_stats.module.ini",

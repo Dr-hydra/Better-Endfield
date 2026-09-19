@@ -1,0 +1,4080 @@
+{
+  "schema": 1,
+  "kind": "bem-character-catalog",
+  "character_id": "chr_0027_tangtang",
+  "name": "汤汤",
+  "platform": "windows-x64",
+  "profile_id": "chr_0027_tangtang-pc",
+  "revision": "20260920-identities1",
+  "verified": true,
+  "world_resource": "chr_0027_tangtang_postmodel",
+  "ui_resource": "chr_0027_tangtang_uimodel",
+  "source_snapshot": {
+    "manifest_version": "2954fa80-23c1-1579-2b22-4ecfd6d70418"
+  },
+  "components": {
+    "0": {
+      "mesh_name": "S_actor_tangtang_body_01_lod0",
+      "original_index_count": 22587,
+      "bone_names": [
+        "Bip001_LUpArmTwist1",
+        "Bip001_L_UpperArm",
+        "Bip001_LUpArmTwist",
+        "Bip001_L_Clavicle",
+        "Bip001_R_Clavicle",
+        "Bip001_Spine2",
+        "Bip001_Spine1",
+        "Bip001_Spine",
+        "xiong_L_0_skin_jnt",
+        "Bip001_L_UpperArm_tz_minus",
+        "Bip001_Pelvis",
+        "Bip001_Neck",
+        "Bip001_Head",
+        "Bip001_L_Forearm",
+        "Bip001_L_ForeTwist1",
+        "Bip001_L_Hand",
+        "Bip001_L_ForeTwist",
+        "Bip001_L_Finger12",
+        "Bip001_L_Finger11",
+        "Bip001_L_Finger1",
+        "Bip001_L_Finger22",
+        "Bip001_L_Finger2",
+        "Bip001_L_Finger21",
+        "Bip001_L_Finger32",
+        "Bip001_L_Finger3",
+        "Bip001_L_Finger31",
+        "Bip001_L_Finger42",
+        "Bip001_L_Finger41",
+        "Bip001_L_Finger02",
+        "Bip001_L_Finger01",
+        "Bip001_L_Finger4",
+        "Bip001_RUpArmTwist1",
+        "Bip001_RUpArmTwist",
+        "Bip001_R_UpperArm",
+        "xiong_R_0_skin_jnt",
+        "Bip001_R_UpperArm_tz_minus",
+        "Bip001_R_Forearm",
+        "Bip001_R_Finger12",
+        "Bip001_R_Finger11",
+        "Bip001_R_Finger1",
+        "Bip001_R_Finger22",
+        "Bip001_R_Finger2",
+        "Bip001_R_Finger21",
+        "Bip001_R_Finger32",
+        "Bip001_R_Finger31",
+        "Bip001_R_Finger3",
+        "Bip001_R_Finger42",
+        "Bip001_R_Finger41",
+        "Bip001_R_Finger02",
+        "Bip001_R_Finger01",
+        "Bip001_R_Finger4",
+        "Bip_L_Calf_ty_plus",
+        "Bip001_LThighTwist1",
+        "Bip001_LThighTwist",
+        "Bip001_L_Thigh",
+        "Bip_L_Thigh_ty_minus",
+        "Bip_L_Thigh_ty_plus",
+        "Bip_L_Thigh_tz_minus",
+        "Bip001_L_Calf",
+        "Bip_L_Calf_ty_minus",
+        "Bip001_LCalfTwist",
+        "Bip001_LCalfTwist1",
+        "Bip001_RThighTwist1",
+        "Bip001_RThighTwist",
+        "Bip_R_Thigh_ty_minus",
+        "Bip001_R_Thigh",
+        "Bip_R_Thigh_ty_plus",
+        "Bip_R_Thigh_tz_minus",
+        "Bip_R_Calf_ty_plus",
+        "Bip001_R_Calf",
+        "Bip_R_Calf_ty_minus",
+        "Bip001_RCalfTwist",
+        "Bip001_RCalfTwist1",
+        "Bip001_R_Forearm_ty_minus",
+        "Bip001_R_Forearm_ty_plus",
+        "Bip001_R_ForeTwist",
+        "Bip001_R_ForeTwist1",
+        "Bip001_R_Hand",
+        "Bip001_L_Forearm_ty_minus",
+        "Bip001_L_Forearm_ty_plus"
+      ],
+      "materials": [
+        "M_actor_tangtang_body_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_tangtang_body_01_D",
+          "T_actor_tangtang_body_01_N",
+          "T_actor_common_face_01_RD",
+          "T_actor_common_femaleskincolor01_lut_D"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_tangtang_body_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_tangtang_body_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_face_01_RD"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_femaleskincolor01_lut_D"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [],
+      "layout_verified": true,
+      "source_layout_supported": false,
+      "vertex_count": 4825,
+      "submeshes": [
+        {
+          "index_count": 22587,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 4825,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-6b03d8de49248659fe634312bbbb43b0:7022400874128222414",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0027_tangtang_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-2d553694117db44ac5e9fa4ca0556e92:6139130199950426621",
+            "path": "chr_0027_tangtang_uimodel/Mesh_all/lod0/S_actor_tangtang_body_01_lod0"
+          },
+          "chr_0027_tangtang_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0027_tangtang_uimodel",
+            "renderer_id": "cab-d587783153d11683f5366c61bd82fb4a:-8884384848773556360",
+            "path": "chr_0027_tangtang_postmodel/Mesh_all/lod0/S_actor_tangtang_body_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "1": {
+      "mesh_name": "S_actor_tangtang_cloth_01_lod0",
+      "original_index_count": 110412,
+      "bone_names": [
+        "Bip001_L_ForeTwist1",
+        "Bip001_L_ForeTwist",
+        "Bip001_L_Forearm",
+        "Bip001_R_ForeTwist",
+        "Bip001_R_ForeTwist1",
+        "Bip001_R_Forearm",
+        "Bip001_Spine2",
+        "Bip001_L_Clavicle",
+        "xiong_L_0_skin_jnt",
+        "Bip001_R_Clavicle",
+        "xiong_R_0_skin_jnt",
+        "clothes_base_L_a_01_jnt",
+        "clothes_base_R_a_01_jnt",
+        "clothes_base_L_a_02_jnt",
+        "clothes_base_R_a_02_jnt",
+        "Bip001_R_UpperArm",
+        "Bip001_RUpArmTwist",
+        "Bip001_RUpArmTwist1",
+        "spring_base_R_a_02_jnt",
+        "spring_base_R_a_01_jnt",
+        "clothes_pf_R_a_01_jnt",
+        "hair_base_Back_a_02_jnt",
+        "hair_base_Back_a_03_jnt",
+        "hair_base_Back_a_04_jnt",
+        "hair_base_Back_a_01_jnt",
+        "hair_base_Back_a_05_jnt",
+        "Bip001_Head",
+        "ear_base_R_a_02_jnt",
+        "ear_base_R_a_01_jnt",
+        "ear_base_R_a_03_jnt",
+        "board_base_L_a_01_jnt",
+        "Bip001_LUpArmTwist",
+        "sleeve_base_L_a_01_jnt",
+        "sleeve_base_L_b_01_jnt",
+        "spring_base_M_a_01_jnt",
+        "spring_base_M_a_02_jnt",
+        "spring_base_L_a_02_jnt",
+        "spring_base_L_a_01_jnt",
+        "Bip001_Neck",
+        "xl_skin_M_a_07_jnt",
+        "xl_skin_M_a_08_jnt",
+        "xl_skin_M_a_06_jnt",
+        "lz_base_R_b_01_jnt",
+        "lz_base_R_a_01_jnt",
+        "lz_base_L_b_01_jnt",
+        "lz_base_L_a_01_jnt",
+        "Bip001_LUpArmTwist1",
+        "Bip001_L_UpperArm",
+        "Bip001_R_UpperArm_tz_minus",
+        "sleeve_base_R_a_01_jnt",
+        "strap_base_R_a_02_jnt",
+        "strap_base_R_a_01_jnt",
+        "strap_base_L_b_02_jnt",
+        "strap_base_L_b_03_jnt",
+        "strap_base_L_b_01_jnt",
+        "strap_root_L_a_01_jnt",
+        "strap_base_L_b_04_jnt",
+        "shawl_base_L_b_01_jnt",
+        "strap_root_L_a_02_jnt",
+        "pd_base_L_a_01_jnt",
+        "pd_base_R_a_01_jnt",
+        "strap_base_L_a_01_jnt",
+        "strap_base_L_a_02_jnt",
+        "strap_base_L_a_03_jnt",
+        "xl_skin_M_a_04_jnt",
+        "lingzi_base_M_a_01_jnt",
+        "clothes_base_L_a_04_jnt",
+        "clothes_base_L_a_03_jnt",
+        "clothes_base_R_a_04_jnt",
+        "clothes_base_R_a_03_jnt",
+        "spike_base_L_a_03_jnt",
+        "spike_base_L_a_02_jnt",
+        "spike_base_L_a_01_jnt",
+        "spike_base_R_a_02_jnt",
+        "spike_base_R_a_03_jnt",
+        "spike_base_R_a_01_jnt",
+        "Bip001_R_Thigh",
+        "Bip_R_Thigh_ty_plus",
+        "Bip001_RThighTwist",
+        "Bip001_RThighTwist1",
+        "spring_base_L_a_06_jnt",
+        "spring_base_L_a_04_jnt",
+        "spring_base_L_a_05_jnt",
+        "spring_base_L_a_07_jnt",
+        "spring_base_L_a_03_jnt",
+        "spring_base_R_a_06_jnt",
+        "spring_base_R_a_04_jnt",
+        "spring_base_R_a_05_jnt",
+        "spring_base_R_a_07_jnt",
+        "spring_base_R_a_03_jnt",
+        "xl_skin_M_a_01_jnt",
+        "xl_skin_M_a_02_jnt",
+        "xl_skin_M_a_05_jnt",
+        "Bip001_R_Calf",
+        "Bip001_RCalfTwist1",
+        "Bip001_RCalfTwist",
+        "Bip001_Spine",
+        "Bip001_Pelvis",
+        "Bip001_Spine1",
+        "skirt_base_L_a_01_jnt",
+        "skirt_base_L_b_01_jnt",
+        "skirt_base_R_a_01_jnt",
+        "skirt_base_R_b_01_jnt",
+        "skirt_base_R_a_02_jnt",
+        "skirt_base_L_a_02_jnt",
+        "skirt_base_R_b_02_jnt",
+        "skirt_base_L_b_02_jnt",
+        "Bip_R_Thigh_tz_minus",
+        "Bip_R_Thigh_ty_minus",
+        "Bip_L_Thigh_tz_minus",
+        "Bip_L_Thigh_ty_minus",
+        "Bip001_LThighTwist",
+        "Bip001_L_Hand",
+        "cuff_base_L_a_01_jnt",
+        "cuff_base_L_b_01_jnt",
+        "cuff_base_L_d_01_jnt",
+        "cuff_base_L_c_01_jnt",
+        "Bip001_L_Finger0",
+        "Bip001_L_Finger1",
+        "Bip001_L_Finger4",
+        "Bip001_L_Finger3",
+        "Bip001_L_Finger2",
+        "Bip001_L_Finger01",
+        "Bip001_R_Hand",
+        "cuff_base_R_a_01_jnt",
+        "cuff_base_R_b_01_jnt",
+        "cuff_base_R_d_01_jnt",
+        "cuff_base_R_c_01_jnt",
+        "Bip001_R_Finger0",
+        "Bip001_R_Finger1",
+        "Bip001_R_Finger4",
+        "Bip001_R_Finger3",
+        "Bip001_R_Finger2",
+        "Bip001_R_Finger01",
+        "Bip001_R_Hand_ty_minus",
+        "Bip001_R_Hand_ty_plus",
+        "Bip001_R_Finger02",
+        "Bip001_R_Finger11",
+        "Bip001_R_Finger31",
+        "Bip001_R_Finger21",
+        "Bip001_R_Finger41",
+        "Bip001_R_Finger42",
+        "strap_base_L_c_01_jnt",
+        "strap_base_L_c_02_jnt",
+        "Bip001_L_Foot",
+        "Bip001_L_Toe0",
+        "Bip001_R_Foot",
+        "Bip001_R_Toe0",
+        "Bip001_L_Foot_ty_plus",
+        "Bip001_L_Foot_ty_minus",
+        "Bip001_LCalfTwist1",
+        "Bip001_LCalfTwist",
+        "Bip001_L_Calf",
+        "Bip001_L_Thigh",
+        "Bip001_R_Foot_ty_plus",
+        "Bip001_R_Foot_ty_minus",
+        "Bip001_L_Hand_ty_minus",
+        "Bip001_L_Hand_ty_plus",
+        "Bip001_L_Finger02",
+        "Bip001_L_Finger11",
+        "Bip001_L_Finger31",
+        "Bip001_L_Finger21",
+        "Bip001_L_Finger41",
+        "Bip001_L_Finger42",
+        "mask_base_L_a_01_jnt",
+        "ornament_base_M_a_02_jnt",
+        "ornament_base_M_a_01_jnt",
+        "ornament_base_M_a_04_jnt",
+        "ornament_base_M_a_03_jnt",
+        "ornament_base_M_c_02_jnt",
+        "ornament_base_M_c_03_jnt",
+        "ornament_base_M_c_01_jnt",
+        "ornament_base_M_c_04_jnt",
+        "ornament_base_M_a_05_jnt",
+        "hair_base_R_a_02_jnt",
+        "hair_base_R_a_01_jnt",
+        "hair_base_Front_b_01_jnt",
+        "hair_base_Front_a_01_jnt",
+        "xl_skin_M_a_09_jnt",
+        "xl_skin_M_a_03_jnt",
+        "ornament_base_M_b_01_jnt",
+        "ornament_base_M_b_02_jnt",
+        "Bip_L_Thigh_ty_plus",
+        "Bip001_LThighTwist1"
+      ],
+      "materials": [
+        "M_actor_tangtang_cloth_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_tangtang_cloth_01_D",
+          "T_actor_tangtang_cloth_01_N",
+          "T_actor_common_cloth_03_RD",
+          "T_actor_tangtang_cloth_01_E",
+          "T_actor_tangtang_cloth_01_P",
+          "T_actor_tangtang_cloth_01_ST",
+          "T_fx_flow_161_M",
+          "T_actor_common_cloth_lut_01_D",
+          "T_actor_common_cloth_02_RS"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_tangtang_cloth_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_tangtang_cloth_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_cloth_03_RD"
+          },
+          {
+            "property": "_EmissionMap",
+            "name": "T_actor_tangtang_cloth_01_E"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_tangtang_cloth_01_P"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_tangtang_cloth_01_ST"
+          },
+          {
+            "property": "_ParallaxTex",
+            "name": "T_fx_flow_161_M"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_cloth_lut_01_D"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_cloth_02_RS"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [],
+      "layout_verified": true,
+      "source_layout_supported": false,
+      "vertex_count": 33069,
+      "submeshes": [
+        {
+          "index_count": 110412,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 33069,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-62a6125029f950c6ebba3016ffd24315:4321331014538388887",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0027_tangtang_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-2d553694117db44ac5e9fa4ca0556e92:-7278320047397273091",
+            "path": "chr_0027_tangtang_uimodel/Mesh_all/lod0/S_actor_tangtang_cloth_01_lod0"
+          },
+          "chr_0027_tangtang_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0027_tangtang_uimodel",
+            "renderer_id": "cab-d587783153d11683f5366c61bd82fb4a:3814908894868232056",
+            "path": "chr_0027_tangtang_postmodel/Mesh_all/lod0/S_actor_tangtang_cloth_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "2": {
+      "mesh_name": "S_actor_tangtang_cloth_02_lod0",
+      "original_index_count": 27039,
+      "bone_names": [
+        "Bip001_L_Foot",
+        "strap_base_L_b_04_jnt",
+        "Bip001_R_Foot",
+        "gun_base_R_a_01_jnt",
+        "ornament_base_M_b_02_jnt",
+        "ornament_base_M_b_01_jnt",
+        "Bip001_R_Clavicle",
+        "Bip001_Spine2",
+        "Bip001_L_Clavicle",
+        "lingzi_base_M_a_01_jnt",
+        "lz_base_L_b_01_jnt",
+        "clothes_base_L_a_03_jnt",
+        "clothes_base_L_a_02_jnt",
+        "clothes_base_L_a_01_jnt",
+        "xiong_L_0_skin_jnt",
+        "lz_base_R_b_01_jnt",
+        "clothes_base_R_a_03_jnt",
+        "clothes_base_R_a_02_jnt",
+        "clothes_base_R_a_01_jnt",
+        "xiong_R_0_skin_jnt",
+        "Bip001_RUpArmTwist",
+        "clothes_pf_R_a_01_jnt",
+        "sleeve_base_R_a_01_jnt",
+        "Bip001_RUpArmTwist1",
+        "Bip001_LUpArmTwist",
+        "sleeve_base_L_b_01_jnt",
+        "sleeve_base_L_a_01_jnt",
+        "Bip001_LUpArmTwist1",
+        "Bip001_L_UpperArm",
+        "ornament_base_M_a_04_jnt",
+        "ornament_base_M_a_02_jnt",
+        "ornament_base_M_a_01_jnt",
+        "ornament_base_M_a_03_jnt",
+        "ornament_base_M_c_03_jnt",
+        "ornament_base_M_c_02_jnt",
+        "ornament_base_M_c_01_jnt",
+        "Bip001_L_Foot_ty_plus",
+        "Bip001_L_Toe0",
+        "Bip001_R_Foot_ty_plus",
+        "Bip001_R_Toe0"
+      ],
+      "materials": [
+        "M_actor_tangtang_cloth_02"
+      ],
+      "material_textures": [
+        [
+          "T_actor_tangtang_cloth_02_D",
+          "T_actor_tangtang_cloth_02_N",
+          "T_actor_common_cloth_04_RD",
+          "T_actor_tangtang_cloth_02_P",
+          "T_actor_chen_cloth_01_ST",
+          "T_actor_common_cloth_lut_01_D",
+          "T_actor_common_cloth_02_RS"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_tangtang_cloth_02_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_tangtang_cloth_02_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_cloth_04_RD"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_tangtang_cloth_02_P"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_chen_cloth_01_ST"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_cloth_lut_01_D"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_cloth_02_RS"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [],
+      "layout_verified": true,
+      "source_layout_supported": false,
+      "vertex_count": 7888,
+      "submeshes": [
+        {
+          "index_count": 27039,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 7888,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-ec44d9f85eb21ef2fcf973052763ab7e:-3896947417960394537",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0027_tangtang_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-2d553694117db44ac5e9fa4ca0556e92:1638468150130573821",
+            "path": "chr_0027_tangtang_uimodel/Mesh_all/lod0/S_actor_tangtang_cloth_02_lod0"
+          },
+          "chr_0027_tangtang_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0027_tangtang_uimodel",
+            "renderer_id": "cab-d587783153d11683f5366c61bd82fb4a:8260822808141453176",
+            "path": "chr_0027_tangtang_postmodel/Mesh_all/lod0/S_actor_tangtang_cloth_02_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "3": {
+      "mesh_name": "S_actor_tangtang_cloth_03_lod0",
+      "original_index_count": 9504,
+      "bone_names": [
+        "Bip001_LUpArmTwist",
+        "Bip001_Spine2",
+        "Bip001_L_Clavicle",
+        "shawl_base_L_b_01_jnt",
+        "Bip001_R_Clavicle",
+        "shawl_base_L_b_02_jnt",
+        "spring_base_M_a_01_jnt",
+        "shawl_base_L_a_01_jnt",
+        "shawl_base_L_a_02_jnt",
+        "spring_base_L_a_06_jnt",
+        "spring_base_R_a_06_jnt",
+        "strap_base_L_b_04_jnt",
+        "board_base_L_a_01_jnt",
+        "Bip001_L_Foot",
+        "Bip001_L_Toe0",
+        "Bip001_R_Foot",
+        "Bip001_R_Toe0",
+        "spring_base_R_a_02_jnt",
+        "spring_base_R_a_04_jnt",
+        "spring_base_R_a_05_jnt",
+        "spring_base_R_a_03_jnt",
+        "spring_base_R_a_01_jnt",
+        "spring_base_M_a_02_jnt",
+        "Bip001_RUpArmTwist",
+        "clothes_pf_R_a_01_jnt",
+        "spring_base_L_a_03_jnt",
+        "spring_base_L_a_05_jnt",
+        "spring_base_L_a_04_jnt",
+        "spring_base_L_a_02_jnt",
+        "spring_base_L_a_01_jnt",
+        "sleeve_base_L_b_01_jnt",
+        "clothes_base_L_a_03_jnt",
+        "clothes_base_L_a_01_jnt",
+        "clothes_base_L_a_02_jnt",
+        "clothes_base_L_a_04_jnt",
+        "clothes_base_R_a_01_jnt",
+        "clothes_base_R_a_03_jnt",
+        "clothes_base_R_a_02_jnt",
+        "clothes_base_R_a_04_jnt",
+        "Bip001_L_Foot_ty_plus",
+        "Bip001_R_Foot_ty_plus",
+        "sleeve_base_L_a_01_jnt",
+        "sleeve_base_L_c_01_jnt",
+        "sleeve_base_L_d_01_jnt",
+        "Bip001_LUpArmTwist1",
+        "sleeve_base_R_a_01_jnt",
+        "sleeve_base_R_b_01_jnt",
+        "sleeve_base_R_d_01_jnt",
+        "sleeve_base_R_c_01_jnt",
+        "Bip001_RUpArmTwist1"
+      ],
+      "materials": [
+        "M_actor_tangtang_cloth_03"
+      ],
+      "material_textures": [
+        [
+          "T_actor_tangtang_cloth_02_D",
+          "T_actor_tangtang_cloth_02_N",
+          "T_actor_tangtang_cloth_02_M",
+          "T_actor_common_cloth_04_RD",
+          "T_actor_chen_cloth_01_E",
+          "T_actor_tangtang_cloth_02_P",
+          "T_actor_common_cloth_lut_01_D",
+          "T_actor_tangtang_cloth_03_RS"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_tangtang_cloth_02_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_tangtang_cloth_02_N"
+          },
+          {
+            "property": "_ClearCoatMask",
+            "name": "T_actor_tangtang_cloth_02_M"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_cloth_04_RD"
+          },
+          {
+            "property": "_EmissionMap",
+            "name": "T_actor_chen_cloth_01_E"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_tangtang_cloth_02_P"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_cloth_lut_01_D"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_tangtang_cloth_03_RS"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [],
+      "layout_verified": true,
+      "source_layout_supported": false,
+      "vertex_count": 2134,
+      "submeshes": [
+        {
+          "index_count": 9504,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 2134,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-bccf82e2a8c2e54c9ed407d3cc5c88d2:-7757670243259759955",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0027_tangtang_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-2d553694117db44ac5e9fa4ca0556e92:3467123522648932861",
+            "path": "chr_0027_tangtang_uimodel/Mesh_all/lod0/S_actor_tangtang_cloth_03_lod0"
+          },
+          "chr_0027_tangtang_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0027_tangtang_uimodel",
+            "renderer_id": "cab-d587783153d11683f5366c61bd82fb4a:-7868084786546124936",
+            "path": "chr_0027_tangtang_postmodel/Mesh_all/lod0/S_actor_tangtang_cloth_03_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "4": {
+      "mesh_name": "S_actor_tangtang_cloth_04_lod0",
+      "original_index_count": 13728,
+      "bone_names": [
+        "hat_base_M_a_01_jnt",
+        "lz_base_R_a_01_jnt",
+        "Bip001_RUpArmTwist",
+        "Bip001_R_Clavicle",
+        "Bip001_L_Clavicle",
+        "Bip001_LUpArmTwist",
+        "lz_base_L_a_01_jnt",
+        "spring_base_R_a_01_jnt",
+        "Bip001_Spine2",
+        "Bip001_Neck",
+        "spring_base_L_a_01_jnt",
+        "lz_base_R_b_01_jnt",
+        "lz_base_L_b_01_jnt",
+        "lingzi_base_M_a_01_jnt",
+        "xiong_L_0_skin_jnt",
+        "clothes_base_L_a_01_jnt",
+        "spring_base_M_a_01_jnt",
+        "spring_base_M_a_02_jnt",
+        "spring_base_L_a_02_jnt",
+        "sleeve_base_L_b_01_jnt",
+        "sleeve_base_L_a_01_jnt",
+        "Bip001_L_UpperArm",
+        "Bip001_LUpArmTwist1",
+        "clothes_base_L_a_02_jnt",
+        "clothes_base_L_a_03_jnt",
+        "xiong_R_0_skin_jnt",
+        "clothes_base_R_a_01_jnt",
+        "spring_base_R_a_02_jnt",
+        "clothes_pf_R_a_01_jnt",
+        "sleeve_base_R_a_01_jnt",
+        "Bip001_RUpArmTwist1",
+        "Bip001_R_UpperArm",
+        "clothes_base_R_a_02_jnt",
+        "clothes_base_R_a_03_jnt"
+      ],
+      "materials": [
+        "M_actor_tangtang_cloth_04"
+      ],
+      "material_textures": [
+        [
+          "T_actor_tangtang_cloth_01_D",
+          "T_actor_tangtang_cloth_01_N",
+          "T_actor_common_cloth_02_RD",
+          "T_actor_tangtang_cloth_01_P",
+          "T_actor_tangtang_cloth_01_ST",
+          "T_actor_common_cloth_lut_01_D",
+          "T_actor_tangtang_cloth_04_RS"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_tangtang_cloth_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_tangtang_cloth_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_cloth_02_RD"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_tangtang_cloth_01_P"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_tangtang_cloth_01_ST"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_cloth_lut_01_D"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_tangtang_cloth_04_RS"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 3352,
+      "submeshes": [
+        {
+          "index_count": 13728,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 3352,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-be481c1c664f2db0afdf3cdb85b25656:-7593933181067629223",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0027_tangtang_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-2d553694117db44ac5e9fa4ca0556e92:-5684490599788314115",
+            "path": "chr_0027_tangtang_uimodel/Mesh_all/lod0/S_actor_tangtang_cloth_04_lod0"
+          },
+          "chr_0027_tangtang_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0027_tangtang_uimodel",
+            "renderer_id": "cab-d587783153d11683f5366c61bd82fb4a:-4365874029192063112",
+            "path": "chr_0027_tangtang_postmodel/Mesh_all/lod0/S_actor_tangtang_cloth_04_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "5": {
+      "mesh_name": "S_actor_tangtang_eyebrow_01_lod0",
+      "original_index_count": 2148,
+      "bone_names": [
+        "eyeRt08Joint",
+        "eyeRt07Joint",
+        "eyeRt06Joint",
+        "browRt02Joint",
+        "browRt01Joint",
+        "browRt03Joint",
+        "browRt04Joint",
+        "browRt05Joint",
+        "eyeRt02EyelashJoint",
+        "eyeRt01EyelashJoint",
+        "eyeRt03EyelashJoint",
+        "eyeRt04EyelashJoint",
+        "eyeRt05EyelashJoint",
+        "eyeRt05Joint",
+        "browLineRt01Joint",
+        "browLineRt02Joint",
+        "browLineRt03Joint",
+        "eyeRt01Joint",
+        "eyeLf07Joint",
+        "eyeLf08Joint",
+        "eyeLf06Joint",
+        "browLf01Joint",
+        "browLf03Joint",
+        "browLf02Joint",
+        "browLf04Joint",
+        "browLf05Joint",
+        "eyeLf04EyelashJoint",
+        "eyeLf01EyelashJoint",
+        "eyeLf02EyelashJoint",
+        "eyeLf03EyelashJoint",
+        "eyeLf05EyelashJoint",
+        "eyeLf05Joint",
+        "browLineLf02Joint",
+        "browLineLf01Joint",
+        "browLineLf03Joint",
+        "eyeLf01Joint"
+      ],
+      "materials": [
+        "M_actor_tangtang_brow_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_tangtang_face_01_D",
+          "T_actor_common_body_01_RD",
+          "T_actor_common_femaleskincolor01_lut_D"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_tangtang_face_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_body_01_RD"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_femaleskincolor01_lut_D"
+          }
+        ]
+      ],
+      "strides": [
+        40,
+        8,
+        32
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          3,
+          0
+        ],
+        [
+          2,
+          0,
+          4,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          0,
+          4,
+          2
+        ],
+        [
+          13,
+          10,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [],
+      "layout_verified": true,
+      "source_layout_supported": false,
+      "vertex_count": 616,
+      "submeshes": [
+        {
+          "index_count": 2148,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 616,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-02cfe093d5d5ea333d4c6f8b8f9209e1:5164651717858295833",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0027_tangtang_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-2d553694117db44ac5e9fa4ca0556e92:6173760866551661053",
+            "path": "chr_0027_tangtang_uimodel/Mesh_all/lod0/S_actor_tangtang_eyebrow_01_lod0"
+          },
+          "chr_0027_tangtang_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0027_tangtang_uimodel",
+            "renderer_id": "cab-d587783153d11683f5366c61bd82fb4a:2214721064863356792",
+            "path": "chr_0027_tangtang_postmodel/Mesh_all/lod0/S_actor_tangtang_eyebrow_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "6": {
+      "mesh_name": "S_actor_tangtang_eyeshadow_01_lod0",
+      "original_index_count": 102,
+      "bone_names": [
+        "eyeRt03Joint",
+        "Bip001_Head",
+        "eyeRt05Joint",
+        "eyeRt06Joint",
+        "faceRtCheekOtUpJoint",
+        "eyeRt04Joint",
+        "eyeRt02Joint",
+        "eyeRt01Joint",
+        "eyeRt03IrissdJoint",
+        "eyeRt08Joint",
+        "eyeLf03Joint",
+        "eyeLf05Joint",
+        "faceLfCheekOtUpJoint",
+        "eyeLf06Joint",
+        "eyeLf04Joint",
+        "eyeLf01Joint",
+        "eyeLf02Joint",
+        "eyeLf03IrissdJoint",
+        "eyeLf08Joint"
+      ],
+      "materials": [
+        "M_eyeshadow_common_03",
+        "M_eyewhiteshadow_common_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_common_eyeshadow_02_M"
+        ],
+        [
+          "T_actor_common_eyeshadow_01_M"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_common_eyeshadow_02_M"
+          }
+        ],
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_common_eyeshadow_01_M"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 38,
+      "submeshes": [
+        {
+          "index_count": 102,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 38,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-02cfe093d5d5ea333d4c6f8b8f9209e1:2264893027977134105",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0027_tangtang_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-2d553694117db44ac5e9fa4ca0556e92:5625249971366461949",
+            "path": "chr_0027_tangtang_uimodel/Mesh_all/lod0/S_actor_tangtang_eyeshadow_01_lod0"
+          },
+          "chr_0027_tangtang_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0027_tangtang_uimodel",
+            "renderer_id": "cab-d587783153d11683f5366c61bd82fb4a:-8746709265932986504",
+            "path": "chr_0027_tangtang_postmodel/Mesh_all/lod0/S_actor_tangtang_eyeshadow_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "7": {
+      "mesh_name": "S_actor_tangtang_face_01_lod0",
+      "original_index_count": 11214,
+      "bone_names": [
+        "lipRdn4Joint",
+        "lipLdn4Joint",
+        "lipMdnJoint",
+        "Bip001_Head",
+        "faceRtCheekOtUpJoint",
+        "lipMupJoint",
+        "lipRup4Joint",
+        "lipRup2Joint",
+        "lipRup3Joint",
+        "lipRup1Joint",
+        "NoseMd01Joint",
+        "Bip001_Neck",
+        "faceMdJawDnJoint",
+        "lipLup4Joint",
+        "faceRtCheekOtJoint",
+        "faceRtCheekOtInJoint",
+        "eyeRt08Joint",
+        "eyeRt07Joint",
+        "lipRdn1Joint",
+        "faceRtCheekOtDnJoint",
+        "lipRdn3Joint",
+        "lipRdn2Joint",
+        "eyeRt03Joint",
+        "eyeRt01Joint",
+        "eyeRt02Joint",
+        "eyeRt04Joint",
+        "eyeRt05Joint",
+        "eyeRt06Joint",
+        "faceLfCheekOtUpJoint",
+        "lipLup1Joint",
+        "lipLup2Joint",
+        "lipLup3Joint",
+        "faceLfCheekOtJoint",
+        "faceLfCheekOtInJoint",
+        "eyeLf08Joint",
+        "eyeLf07Joint",
+        "faceLfCheekOtDnJoint",
+        "lipLdn1Joint",
+        "lipLdn3Joint",
+        "lipLdn2Joint",
+        "eyeLf03Joint",
+        "eyeLf01Joint",
+        "eyeLf02Joint",
+        "eyeLf04Joint",
+        "eyeLf05Joint",
+        "eyeLf06Joint",
+        "TongueMd03Joint",
+        "TongueMd04Joint",
+        "TongueMd02Joint",
+        "TongueMd01Joint",
+        "lineJoint",
+        "faceMdToothUpJoint",
+        "faceMdToothDnJoint",
+        "line_toothJoint"
+      ],
+      "materials": [
+        "M_actor_tangtang_face_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_tangtang_face_01_D",
+          "T_actor_pelica_face_01_N",
+          "T_actor_common_face_01_RD",
+          "common_deco_white",
+          "T_actor_common_female_emotion_atlas_01_D",
+          "T_actor_common_face_01_hl_M",
+          "T_actor_common_female_face_03_SDF",
+          "T_actor_common_female_face_03_cm_M",
+          "T_actor_common_femaleskincolor01_lut_D"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_tangtang_face_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_pelica_face_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_face_01_RD"
+          },
+          {
+            "property": "_EmissionMap",
+            "name": "common_deco_white"
+          },
+          {
+            "property": "_EmotionMap",
+            "name": "T_actor_common_female_emotion_atlas_01_D"
+          },
+          {
+            "property": "_HighlightMap",
+            "name": "T_actor_common_face_01_hl_M"
+          },
+          {
+            "property": "_SDFLightmap",
+            "name": "T_actor_common_female_face_03_SDF"
+          },
+          {
+            "property": "_SDFMask",
+            "name": "T_actor_common_female_face_03_cm_M"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_femaleskincolor01_lut_D"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 2171,
+      "submeshes": [
+        {
+          "index_count": 11214,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 2171,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-41c5274c743f39a1046d01c1892d5ad3:-4380927576504363598",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0027_tangtang_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-2d553694117db44ac5e9fa4ca0556e92:5152626259918848509",
+            "path": "chr_0027_tangtang_uimodel/Mesh_all/lod0/S_actor_tangtang_face_01_lod0"
+          },
+          "chr_0027_tangtang_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0027_tangtang_uimodel",
+            "renderer_id": "cab-d587783153d11683f5366c61bd82fb4a:-7262575496704731272",
+            "path": "chr_0027_tangtang_postmodel/Mesh_all/lod0/S_actor_tangtang_face_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "8": {
+      "mesh_name": "S_actor_tangtang_fur_01_lod0_20",
+      "original_index_count": 68880,
+      "bone_names": [
+        "tail_base_M_a_05_jnt",
+        "tail_base_M_a_06_jnt",
+        "tail_base_M_a_04_jnt",
+        "tail_base_M_a_03_jnt",
+        "tail_base_M_a_02_jnt",
+        "tail_base_M_a_01_jnt",
+        "Bip001_Spine",
+        "Bip001_Head",
+        "ear_base_R_b_01_jnt",
+        "ear_base_R_b_02_jnt",
+        "ear_base_L_b_01_jnt",
+        "ear_base_L_b_02_jnt"
+      ],
+      "materials": [
+        "M_actor_tangtang_furhair_01",
+        "M_actor_tangtang_fur_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_tangtang_hair_01_D",
+          "T_actor_common_hair_02_RD",
+          "T_actor_tangtang_cloth_01_ST",
+          "T_fx_flow_161_M",
+          "T_actor_common_cloth_lut_01_D",
+          "T_actor_common_hair_03_RS"
+        ],
+        [
+          "T_actor_tangtang_hair_01_D",
+          "T_actor_tangtang_hair_01_N",
+          "T_actor_common_hair_02_RD",
+          "T_actor_tangtang_hair_01_M",
+          "T_actor_tangtang_fur_01_M",
+          "T_actor_tangtang_hair_01_P",
+          "T_actor_common_hair_03_RS"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_tangtang_hair_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_hair_02_RD"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_tangtang_cloth_01_ST"
+          },
+          {
+            "property": "_ParallaxTex",
+            "name": "T_fx_flow_161_M"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_cloth_lut_01_D"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_hair_03_RS"
+          }
+        ],
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_tangtang_hair_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_tangtang_hair_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_hair_02_RD"
+          },
+          {
+            "property": "_FurDirMap",
+            "name": "T_actor_tangtang_hair_01_M"
+          },
+          {
+            "property": "_FurMap",
+            "name": "T_actor_tangtang_fur_01_M"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_tangtang_hair_01_P"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_hair_03_RS"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        16,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [],
+      "layout_verified": true,
+      "source_layout_supported": false,
+      "vertex_count": 13600,
+      "submeshes": [
+        {
+          "index_count": 3444,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 680,
+          "topology": "Triangles"
+        },
+        {
+          "index_count": 65436,
+          "first_byte": 13776,
+          "base_vertex": 0,
+          "first_vertex": 680,
+          "vertex_count": 12920,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-282d4b2039bb671857e9a00030a133d4:3768430207582457943",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0027_tangtang_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-2d553694117db44ac5e9fa4ca0556e92:-5224087217799888387",
+            "path": "chr_0027_tangtang_uimodel/Mesh_all/lod0/S_actor_tangtang_fur_01_lod0"
+          },
+          "chr_0027_tangtang_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0027_tangtang_uimodel",
+            "renderer_id": "cab-d587783153d11683f5366c61bd82fb4a:-230050638367139976",
+            "path": "chr_0027_tangtang_postmodel/Mesh_all/lod0/S_actor_tangtang_fur_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "9": {
+      "mesh_name": "S_actor_tangtang_hair_01_lod0",
+      "original_index_count": 34899,
+      "bone_names": [
+        "hair_base_Front_a_01_jnt",
+        "Bip001_Head",
+        "hair_base_Front_a_02_jnt",
+        "hair_base_Front_b_01_jnt",
+        "hair_base_Front_b_02_jnt",
+        "hair_base_R_a_01_jnt",
+        "hair_base_R_a_02_jnt",
+        "hair_base_R_a_03_jnt",
+        "hair_base_L_b_01_jnt",
+        "hair_base_L_b_03_jnt",
+        "hair_base_L_b_02_jnt",
+        "hair_base_Back_c_01_jnt",
+        "hair_base_Back_c_02_jnt",
+        "hair_base_Back_b_01_jnt",
+        "hair_base_Back_b_02_jnt",
+        "hair_base_L_a_02_jnt",
+        "hair_base_L_a_01_jnt",
+        "hair_base_L_a_03_jnt",
+        "hair_base_Up_a_02_jnt",
+        "hair_base_Up_a_01_jnt",
+        "hair_base_Back_a_01_jnt",
+        "hair_base_Back_a_02_jnt",
+        "hair_base_Back_a_03_jnt",
+        "hair_base_Back_a_05_jnt",
+        "hair_base_Back_a_04_jnt",
+        "ear_base_R_b_02_jnt",
+        "ear_base_R_b_01_jnt",
+        "ear_base_L_b_02_jnt",
+        "ear_base_L_b_01_jnt"
+      ],
+      "materials": [
+        "M_actor_tangtang_hair_01",
+        "M_actor_tangtang_hairt_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_tangtang_hair_01_D",
+          "T_actor_common_hair_02_RD",
+          "T_actor_common_hairline_03_M",
+          "T_actor_tangtang_hair_01_P",
+          "T_actor_tangtang_hair_01_ST",
+          "T_actor_common_hair_07_RS",
+          "T_actor_tangtang_hair_01_HN",
+          "T_actor_common_hairst_01_ST"
+        ],
+        [
+          "T_actor_tangtang_hair_01_D",
+          "T_actor_common_hair_02_RD",
+          "T_actor_common_hairline_03_M",
+          "T_actor_tangtang_hair_01_P",
+          "T_actor_tangtang_hair_01_ST",
+          "T_actor_common_hair_07_RS",
+          "T_actor_tangtang_hair_01_HN",
+          "T_actor_common_hairst_01_ST"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_tangtang_hair_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_hair_02_RD"
+          },
+          {
+            "property": "_LineMap",
+            "name": "T_actor_common_hairline_03_M"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_tangtang_hair_01_P"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_tangtang_hair_01_ST"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_hair_07_RS"
+          },
+          {
+            "property": "_SplitNormalMap",
+            "name": "T_actor_tangtang_hair_01_HN"
+          },
+          {
+            "property": "_StrokeMap",
+            "name": "T_actor_common_hairst_01_ST"
+          }
+        ],
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_tangtang_hair_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_hair_02_RD"
+          },
+          {
+            "property": "_LineMap",
+            "name": "T_actor_common_hairline_03_M"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_tangtang_hair_01_P"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_tangtang_hair_01_ST"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_hair_07_RS"
+          },
+          {
+            "property": "_SplitNormalMap",
+            "name": "T_actor_tangtang_hair_01_HN"
+          },
+          {
+            "property": "_StrokeMap",
+            "name": "T_actor_common_hairst_01_ST"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 9524,
+      "submeshes": [
+        {
+          "index_count": 34899,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 9524,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-13c4d971015f2958127d492cc0c09136:-6467875481469697382",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0027_tangtang_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-2d553694117db44ac5e9fa4ca0556e92:1219157697143964157",
+            "path": "chr_0027_tangtang_uimodel/Mesh_all/lod0/S_actor_tangtang_hair_01_lod0"
+          },
+          "chr_0027_tangtang_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0027_tangtang_uimodel",
+            "renderer_id": "cab-d587783153d11683f5366c61bd82fb4a:-3913883383516801160",
+            "path": "chr_0027_tangtang_postmodel/Mesh_all/lod0/S_actor_tangtang_hair_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "10": {
+      "mesh_name": "S_actor_tangtang_hairshadow_01_lod0",
+      "original_index_count": 303,
+      "bone_names": [
+        "Bip001_Head",
+        "hair_base_Front_a_01_jnt",
+        "hair_base_Front_a_02_jnt",
+        "hair_base_Front_b_01_jnt",
+        "hair_base_Front_b_02_jnt"
+      ],
+      "materials": [
+        "M_hairshadow_common_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_common_hairshadow_01_M"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_common_hairshadow_01_M"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 94,
+      "submeshes": [
+        {
+          "index_count": 303,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 94,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-02cfe093d5d5ea333d4c6f8b8f9209e1:4257999140686528537",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0027_tangtang_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-2d553694117db44ac5e9fa4ca0556e92:-7263599584204553731",
+            "path": "chr_0027_tangtang_uimodel/Mesh_all/lod0/S_actor_tangtang_hairshadow_01_lod0"
+          },
+          "chr_0027_tangtang_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0027_tangtang_uimodel",
+            "renderer_id": "cab-d587783153d11683f5366c61bd82fb4a:8354069125299197816",
+            "path": "chr_0027_tangtang_postmodel/Mesh_all/lod0/S_actor_tangtang_hairshadow_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "11": {
+      "mesh_name": "S_actor_tangtang_iris_01_lod0",
+      "original_index_count": 585,
+      "bone_names": [
+        "faceRtIrisJoint",
+        "faceRtPupilJoint",
+        "faceRtHighlightJoint",
+        "faceRtHighlightJoint_b",
+        "faceRtHighlightJoint_a"
+      ],
+      "materials": [
+        "M_actor_tangtang_iris_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_tangtang_iris_01_D",
+          "T_actor_common_body_01_RD",
+          "T_actor_common_matcap_tangtang_D"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_tangtang_iris_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_body_01_RD"
+          },
+          {
+            "property": "_MatcapTex",
+            "name": "T_actor_common_matcap_tangtang_D"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        4
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 130,
+      "submeshes": [
+        {
+          "index_count": 585,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 130,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-02cfe093d5d5ea333d4c6f8b8f9209e1:-1663967745142226919",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0027_tangtang_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-2d553694117db44ac5e9fa4ca0556e92:4031541512547729917",
+            "path": "chr_0027_tangtang_uimodel/Mesh_all/lod0/S_actor_tangtang_iris_01_lod0"
+          },
+          "chr_0027_tangtang_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0027_tangtang_uimodel",
+            "renderer_id": "cab-d587783153d11683f5366c61bd82fb4a:-646732432378931336",
+            "path": "chr_0027_tangtang_postmodel/Mesh_all/lod0/S_actor_tangtang_iris_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "12": {
+      "mesh_name": "S_actor_tangtang_iris_02_lod0",
+      "original_index_count": 585,
+      "bone_names": [
+        "faceLfHighlightJoint",
+        "faceLfHighlightJoint_b",
+        "faceLfHighlightJoint_a",
+        "faceLfIrisJoint",
+        "faceLfPupilJoint"
+      ],
+      "materials": [
+        "M_actor_tangtang_iris_02"
+      ],
+      "material_textures": [
+        [
+          "T_actor_tangtang_iris_02_D",
+          "T_actor_common_body_01_RD",
+          "T_actor_common_matcap_tangtang_D"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_tangtang_iris_02_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_body_01_RD"
+          },
+          {
+            "property": "_MatcapTex",
+            "name": "T_actor_common_matcap_tangtang_D"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        4
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 130,
+      "submeshes": [
+        {
+          "index_count": 585,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 130,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-02cfe093d5d5ea333d4c6f8b8f9209e1:-2254991904961986535",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0027_tangtang_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-2d553694117db44ac5e9fa4ca0556e92:-1844396087312514563",
+            "path": "chr_0027_tangtang_uimodel/Mesh_all/lod0/S_actor_tangtang_iris_02_lod0"
+          },
+          "chr_0027_tangtang_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0027_tangtang_uimodel",
+            "renderer_id": "cab-d587783153d11683f5366c61bd82fb4a:-6526499365063862408",
+            "path": "chr_0027_tangtang_postmodel/Mesh_all/lod0/S_actor_tangtang_iris_02_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    }
+  },
+  "entries": {
+    "a828d5fb": 0,
+    "eddaabb8": 1,
+    "8a76f261": 2,
+    "3f9d0528": 3,
+    "b5915079": 4,
+    "7289c46d": 5,
+    "b4266c30": 6,
+    "d696bdf6": 7,
+    "40e4dccb": 9,
+    "7dfd4cd1": 10,
+    "c1a5d542": 11,
+    "62deedd9": 12
+  },
+  "textures": {
+    "d4b51f22": {
+      "name": "T_actor_chen_cloth_01_E",
+      "evidence": {
+        "texture_id": "cab-e064b74c94bbcab72474aa8d019914ca:-7689099315196311821",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "2c2d70b1",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "b93656c7": {
+      "name": "T_actor_chen_cloth_01_ST",
+      "evidence": {
+        "texture_id": "cab-56b840a1b5146ca311255f85fa6cee0d:7201732395847765546",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "dd837864",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "172348f4": {
+      "name": "T_actor_common_body_01_RD",
+      "aliases": [
+        "T_actor_common_face_01_RD"
+      ],
+      "evidence": {
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "kind": "shared-source-hash",
+        "targets": [
+          {
+            "name": "T_actor_common_body_01_RD",
+            "evidence": {
+              "texture_id": "cab-f73bd58505faab842c266da5fd3ef559:9015086203897338725",
+              "policy": "efmi-dx11-region-texture0-fullchain-v1",
+              "descriptor": [
+                256,
+                1,
+                1,
+                1,
+                28,
+                1,
+                0,
+                0,
+                8,
+                0,
+                0
+              ],
+              "native_data_crc32c": "bb885ffb",
+              "runtime_graphics_format": 8,
+              "runtime_sizes": [
+                [
+                  256,
+                  1
+                ]
+              ]
+            }
+          },
+          {
+            "name": "T_actor_common_face_01_RD",
+            "evidence": {
+              "texture_id": "cab-52ea55afe624d7233f83d33f95137ebd:5848563174712869001",
+              "policy": "efmi-dx11-region-texture0-fullchain-v1",
+              "descriptor": [
+                256,
+                1,
+                1,
+                1,
+                28,
+                1,
+                0,
+                0,
+                8,
+                0,
+                0
+              ],
+              "native_data_crc32c": "bb885ffb",
+              "runtime_graphics_format": 8,
+              "runtime_sizes": [
+                [
+                  256,
+                  1
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "81bc6786": {
+      "name": "T_actor_common_cloth_02_RD",
+      "evidence": {
+        "texture_id": "cab-6a31964fd53ef37b84fe50334fe19268:-6214486337201364986",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          1,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "e7d2779a",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            1
+          ]
+        ]
+      }
+    },
+    "c30d3c7b": {
+      "name": "T_actor_common_cloth_02_RS",
+      "evidence": {
+        "texture_id": "cab-a5c0b9978b367709aeecaf6fcc43c75e:2174236443485968244",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "e235d821",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "c6a7235b": {
+      "name": "T_actor_common_cloth_03_RD",
+      "evidence": {
+        "texture_id": "cab-4de7caacbb16f58394d88b4804c0703d:7616793060396148846",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          1,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "464057a7",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            1
+          ]
+        ]
+      }
+    },
+    "c383b676": {
+      "name": "T_actor_common_cloth_04_RD",
+      "evidence": {
+        "texture_id": "cab-dda756238d04de89c59d562835d15c3a:2595675294308502756",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          1,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "5109626c",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            1
+          ]
+        ]
+      }
+    },
+    "6fe57c68": {
+      "name": "T_actor_common_cloth_lut_01_D",
+      "evidence": {
+        "texture_id": "cab-cab1380bc3ce4a243154e31f0dbfd25e:2755480022373394709",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          32,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "78a103e2",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            32
+          ]
+        ]
+      }
+    },
+    "d5906b6a": {
+      "name": "T_actor_common_eyeshadow_01_M",
+      "evidence": {
+        "texture_id": "cab-e0c2577d28432f83374490550edc6b0a:1943856218045776426",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          32,
+          32,
+          6,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "43a76c1d",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            32,
+            32
+          ]
+        ]
+      }
+    },
+    "6899d1a4": {
+      "name": "T_actor_common_eyeshadow_02_M",
+      "evidence": {
+        "texture_id": "cab-37cba2aef5da66859bb487a2e4639ab6:2400241694096528712",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          32,
+          32,
+          6,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "7c34adce",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            32,
+            32
+          ]
+        ]
+      }
+    },
+    "290f53c8": {
+      "name": "T_actor_common_face_01_hl_M",
+      "evidence": {
+        "texture_id": "cab-b6bb3cc4483165082b296844684c52da:-2443816471313249430",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "907e417b",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "9750205d": {
+      "name": "T_actor_common_female_emotion_atlas_01_D",
+      "evidence": {
+        "texture_id": "cab-4f49e420f74b0a444fa7929840edbe90:-5029632173409998771",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "db2f1ff8",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "de88be11": {
+      "name": "T_actor_common_female_face_03_SDF",
+      "evidence": {
+        "texture_id": "cab-71e905dd65182bd56ed2b41ef2a8dde5:-1914551387401438376",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "d155a089",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "dbf4f80f": {
+      "name": "T_actor_common_female_face_03_cm_M",
+      "evidence": {
+        "texture_id": "cab-2354cfa3ed49bea87907e51a1e2702fe:-5059011942471656554",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "50e2c347",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "59af8e82": {
+      "name": "T_actor_common_femaleskincolor01_lut_D",
+      "evidence": {
+        "texture_id": "cab-723dce01c8e13e166b3be200c5417013:4951544993205285082",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          32,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "ad349056",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            32
+          ]
+        ]
+      }
+    },
+    "9515ebaf": {
+      "name": "T_actor_common_hair_02_RD",
+      "evidence": {
+        "texture_id": "cab-acc38ac0a2aa37b101d87aff6b442657:-6417991950400342119",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          1,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "b872b190",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            1
+          ]
+        ]
+      }
+    },
+    "6f97d7e3": {
+      "name": "T_actor_common_hair_03_RS",
+      "evidence": {
+        "texture_id": "cab-27422f1931ca748f785c49ddd81a1ca3:1350157667734949200",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "9e1a3247",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "31df53ea": {
+      "name": "T_actor_common_hair_07_RS",
+      "evidence": {
+        "texture_id": "cab-62bc686dcc5dfbf565fcc2cb0cb21d88:8975600794099224062",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "e886e831",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "151c9982": {
+      "name": "T_actor_common_hairline_03_M",
+      "evidence": {
+        "texture_id": "cab-67dec3851d20abe31e69d62c821759b2:3012176911137855631",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "8fcf3b42",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "fb524ebd": {
+      "name": "T_actor_common_hairshadow_01_M",
+      "evidence": {
+        "texture_id": "cab-b95b327020df7ae0f1e7cd8e002482c8:4070306725172282955",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          32,
+          32,
+          6,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "021842a4",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            32,
+            32
+          ]
+        ]
+      }
+    },
+    "f18a7d64": {
+      "name": "T_actor_common_hairst_01_ST",
+      "evidence": {
+        "texture_id": "cab-4ec5d566ac4da93846f2e9bc00199929:-6833856728080991578",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          256,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "2d730321",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            256
+          ]
+        ]
+      }
+    },
+    "fb646a09": {
+      "name": "T_actor_common_matcap_tangtang_D",
+      "evidence": {
+        "texture_id": "cab-9a99624def6fcd32e1527a5b528a993b:9101704559362747016",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          9,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "1e2bb911",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "0a7b28f6": {
+      "name": "T_actor_pelica_face_01_N",
+      "evidence": {
+        "texture_id": "cab-0b8e2c1ea9f4db374c9078bf485dc156:-4866989330408428515",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "7472235e",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "516ca7b3": {
+      "name": "T_actor_tangtang_body_01_D",
+      "evidence": {
+        "texture_id": "cab-90a766f7d4bac46b97bb906741f88145:-9005950857200059027",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "99f44206",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "97881e6a": {
+      "name": "T_actor_tangtang_body_01_N",
+      "evidence": {
+        "texture_id": "cab-90a766f7d4bac46b97bb906741f88145:4751907711486255255",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "c21b996a",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "1ae2bd64": {
+      "name": "T_actor_tangtang_cloth_01_D",
+      "evidence": {
+        "texture_id": "cab-9ceccfa7878c6d22c71391b298f01a72:-525857159901876970",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "562bcbed",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "f9030180": {
+      "name": "T_actor_tangtang_cloth_01_E",
+      "evidence": {
+        "texture_id": "cab-9ceccfa7878c6d22c71391b298f01a72:-583110793125760440",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "7a14e14e",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "dc2bc034": {
+      "name": "T_actor_tangtang_cloth_01_N",
+      "evidence": {
+        "texture_id": "cab-9ceccfa7878c6d22c71391b298f01a72:-7137247934644157536",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "e9f01cdc",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "146e2a44": {
+      "name": "T_actor_tangtang_cloth_01_P",
+      "evidence": {
+        "texture_id": "cab-9ceccfa7878c6d22c71391b298f01a72:-4290304617964193842",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "a323ee10",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "169808bd": {
+      "name": "T_actor_tangtang_cloth_01_ST",
+      "evidence": {
+        "texture_id": "cab-c9194c3b7c6c99019406e91ec6d53fad:3720461718573279466",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "f5cba185",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "ba005551": {
+      "name": "T_actor_tangtang_cloth_02_D",
+      "evidence": {
+        "texture_id": "cab-e35da337119b542ff2ea634acb4d5abc:-4428590168671532603",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "5c76df6f",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "65f2636c": {
+      "name": "T_actor_tangtang_cloth_02_M",
+      "evidence": {
+        "texture_id": "cab-e35da337119b542ff2ea634acb4d5abc:-6769624548349941593",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "05dc218d",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "164aaeb2": {
+      "name": "T_actor_tangtang_cloth_02_N",
+      "evidence": {
+        "texture_id": "cab-e35da337119b542ff2ea634acb4d5abc:-4017691258873122827",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "2a91847c",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "7febdd50": {
+      "name": "T_actor_tangtang_cloth_02_P",
+      "evidence": {
+        "texture_id": "cab-e35da337119b542ff2ea634acb4d5abc:4939219836481684326",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "151e92dd",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "08cc87cd": {
+      "name": "T_actor_tangtang_cloth_03_RS",
+      "evidence": {
+        "texture_id": "cab-66e5eb4d3441b611987b8874b9d5bf44:1832023031203958095",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          1,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "b4702380",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            1
+          ]
+        ]
+      }
+    },
+    "d7b07445": {
+      "name": "T_actor_tangtang_cloth_04_RS",
+      "evidence": {
+        "texture_id": "cab-c269aed20e7eea57939db1ff69031b05:-3315045009787130319",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          1,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "b4e08dc9",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            1
+          ]
+        ]
+      }
+    },
+    "d596bae4": {
+      "name": "T_actor_tangtang_face_01_D",
+      "evidence": {
+        "texture_id": "cab-b51d5014bb0e0518ad38b8c10eaf2a17:-3977291374543387904",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "f63076ea",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "3ae73610": {
+      "name": "T_actor_tangtang_fur_01_M",
+      "evidence": {
+        "texture_id": "cab-f6de48e5a2f0a6c55e0398f3b00e4b6a:-8110627417508131640",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          128,
+          128,
+          8,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "45d8db40",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            128,
+            128
+          ]
+        ]
+      }
+    },
+    "eb725644": {
+      "name": "T_actor_tangtang_hair_01_D",
+      "evidence": {
+        "texture_id": "cab-64a81a92204e4cd517dc133174cd8ab0:3321561909581239024",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "7059d19a",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "e62179e6": {
+      "name": "T_actor_tangtang_hair_01_HN",
+      "evidence": {
+        "texture_id": "cab-55fd2969be2655c89a80c746411e8a37:-2989274934159635302",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "17219f67",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "17d42748": {
+      "name": "T_actor_tangtang_hair_01_M",
+      "evidence": {
+        "texture_id": "cab-64a81a92204e4cd517dc133174cd8ab0:6581391590081958167",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "4f5a95ec",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "9a268c52": {
+      "name": "T_actor_tangtang_hair_01_N",
+      "evidence": {
+        "texture_id": "cab-64a81a92204e4cd517dc133174cd8ab0:-1255457406163721051",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "1da380fe",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "b35e1677": {
+      "name": "T_actor_tangtang_hair_01_P",
+      "evidence": {
+        "texture_id": "cab-64a81a92204e4cd517dc133174cd8ab0:-8754144418603712424",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "619e8044",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "26e7a9cc": {
+      "name": "T_actor_tangtang_hair_01_ST",
+      "evidence": {
+        "texture_id": "cab-de4add3613a6a0b8b6d20e492a3a9f6e:-1290033783012931304",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "fcf6429d",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "0e04e25a": {
+      "name": "T_actor_tangtang_iris_01_D",
+      "evidence": {
+        "texture_id": "cab-e60b14884b9aed082b2df73c82e646c0:-7395696574601304363",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "5032062d",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "8a581b96": {
+      "name": "T_actor_tangtang_iris_02_D",
+      "evidence": {
+        "texture_id": "cab-1b1eef01737edfe546d758166f7537b4:-6439080367753337875",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "93112caa",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "294012ae": {
+      "name": "T_fx_flow_161_M",
+      "evidence": {
+        "texture_id": "cab-a31786dd7d5a659f58e58d831250fca8:5709892846881625069",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "0f3255bf",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "b1872d14": {
+      "name": "common_deco_white",
+      "evidence": {
+        "texture_id": "cab-f217e169ee1f06211c9412161331ea4b:3701457122332891076",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          68,
+          68,
+          1,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "ad16520c",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            68,
+            68
+          ]
+        ]
+      }
+    }
+  },
+  "preserved_globals": {
+    "7d330dbd": {
+      "name": "T_actor_common_rain_01_M",
+      "property": "_CharacterRainEffectTex",
+      "width": 1024,
+      "height": 1024,
+      "mips": 1,
+      "format": 25,
+      "source_payload_sha256": "6943a7c667cb53f778edf0179764cc72f23973a7dce8b04780adb6d107069865"
+    },
+    "908140d5": {
+      "name": "T_actor_common_snow_01_M",
+      "property": "_CharacterSnowEffectTex",
+      "width": 512,
+      "height": 512,
+      "mips": 1,
+      "format": 25,
+      "source_payload_sha256": "a0e3242e512cce6f4ee5fff3fd326cf0d870c6124f3cae3d596d48e71d12996d"
+    }
+  },
+  "mapping_status": "offline-resource-identities-partial",
+  "excluded_components": [],
+  "evidence": [
+    "CUSTOM_MODEL_RUNTIME_SWEEP_20260919.md"
+  ],
+  "note": "Native sweep plus offline identity join. EFMI identities recomputed from original game buffers and texture descriptors; custom source logic remains separate.",
+  "entry_identity_evidence": {
+    "0": {
+      "mesh_id": "cab-6b03d8de49248659fe634312bbbb43b0:7022400874128222414",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 45174,
+      "index_count": 22587,
+      "source_hash": "a828d5fb"
+    },
+    "1": {
+      "mesh_id": "cab-62a6125029f950c6ebba3016ffd24315:4321331014538388887",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 220824,
+      "index_count": 110412,
+      "source_hash": "eddaabb8"
+    },
+    "2": {
+      "mesh_id": "cab-ec44d9f85eb21ef2fcf973052763ab7e:-3896947417960394537",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 54078,
+      "index_count": 27039,
+      "source_hash": "8a76f261"
+    },
+    "3": {
+      "mesh_id": "cab-bccf82e2a8c2e54c9ed407d3cc5c88d2:-7757670243259759955",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 19008,
+      "index_count": 9504,
+      "source_hash": "3f9d0528"
+    },
+    "4": {
+      "mesh_id": "cab-be481c1c664f2db0afdf3cdb85b25656:-7593933181067629223",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 27456,
+      "index_count": 13728,
+      "source_hash": "b5915079"
+    },
+    "5": {
+      "mesh_id": "cab-02cfe093d5d5ea333d4c6f8b8f9209e1:5164651717858295833",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 4296,
+      "index_count": 2148,
+      "source_hash": "7289c46d"
+    },
+    "6": {
+      "mesh_id": "cab-02cfe093d5d5ea333d4c6f8b8f9209e1:2264893027977134105",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 204,
+      "index_count": 102,
+      "source_hash": "b4266c30"
+    },
+    "7": {
+      "mesh_id": "cab-41c5274c743f39a1046d01c1892d5ad3:-4380927576504363598",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 22428,
+      "index_count": 11214,
+      "source_hash": "d696bdf6"
+    },
+    "9": {
+      "mesh_id": "cab-13c4d971015f2958127d492cc0c09136:-6467875481469697382",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 69798,
+      "index_count": 34899,
+      "source_hash": "40e4dccb"
+    },
+    "10": {
+      "mesh_id": "cab-02cfe093d5d5ea333d4c6f8b8f9209e1:4257999140686528537",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 606,
+      "index_count": 303,
+      "source_hash": "7dfd4cd1"
+    },
+    "11": {
+      "mesh_id": "cab-02cfe093d5d5ea333d4c6f8b8f9209e1:-1663967745142226919",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 1170,
+      "index_count": 585,
+      "source_hash": "c1a5d542"
+    },
+    "12": {
+      "mesh_id": "cab-02cfe093d5d5ea333d4c6f8b8f9209e1:-2254991904961986535",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 1170,
+      "index_count": 585,
+      "source_hash": "62deedd9"
+    }
+  },
+  "identity_issues": [
+    {
+      "kind": "mesh",
+      "name": "S_actor_tangtang_fur_01_lod0_20",
+      "reason": "not a complete single-submesh index region"
+    }
+  ],
+  "identity_policy": "efmi-dx11-region-texture0-fullchain-v1"
+}

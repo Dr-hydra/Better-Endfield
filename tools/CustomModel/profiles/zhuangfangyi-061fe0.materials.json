@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "world_resource": "chr_0030_zhuangfy_postmodel",
+  "ui_resource": "chr_0030_zhuangfy_uimodel",
+  "evidence": "庄方宜 061fe0 Mod 默认 swapkey7=0；当前 VFS 引用图、八个实机布局/骨骼/材质观测、原始纹理 mip 字节比较及 Shader 参数表审计。",
+  "semantic_notes": [
+    "仅固定默认状态，未增加 Shader 改写或逐 pass 拦截。",
+    "身体首段源 INI 将颜色/法线写到 ps-t14/t15；后续段写到 ps-t13/t14。当前原生身体材质 BaseMap/BumpMap 在 ForwardLit 中为 t13/t14。适配器按颜色/法线真实用途统一为原生属性，不逐字复现首段将颜色送入法线槽的行为。该修正需实机目视验收。",
+    "后续身体段保留的 ps-t15 与已绑定法线 DDS 内容相同，按精确字节相等消除重复赋值。",
+    "10 项全局覆盖的 8 张 DDS 与原生 mip 字节和运行时色彩格式一致，保留原生完整 mip 链。",
+    "头发保持 hair/hairt 双材质；衣服第二块仅在有明确 t19/t20/t21 赋值的 draw 使用新纹理，首段保留原纹理。"
+  ],
+  "global_preserve": {
+    "c6e55aaa": "T_actor_zhuangfy_hair_01_D",
+    "cedd6050": "T_actor_zhuangfy_hair_01_D",
+    "9f38b3f9": "T_actor_zhuangfy_hair_01_P",
+    "427ffae8": "T_actor_zhuangfy_hair_01_HN",
+    "1ce1714c": "T_actor_zhuangfy_body_01_D",
+    "57d987b3": "T_actor_zhuangfy_body_01_N",
+    "1479b2b5": "T_actor_zhuangfy_cloth_01_D",
+    "5720cd8a": "T_actor_zhuangfy_cloth_01_D",
+    "9fc54dce": "T_actor_zhuangfy_cloth_01_P",
+    "741b956c": "T_actor_zhuangfy_cloth_01_N"
+  },
+  "entries": {
+    "6af95e58": [
+      {
+        "bindings": {},
+        "slot": 0,
+        "textures": [],
+        "evidence": "实机同一 hair Mesh 一个 submesh、hair/hairt 两个原生材质槽，保留原顺序重复绘制。",
+        "repeat_material_slots": [
+          1
+        ]
+      }
+    ],
+    "fe47dc61": [
+      {
+        "bindings": {
+          "ps-t14": "ResourceTexture_ps-t14.Body.001",
+          "ps-t15": "ResourceTexture_ps-t15.Body"
+        },
+        "slot": 0,
+        "textures": [
+          {
+            "resource": "ResourceTexture_ps-t14.Body.001",
+            "property": "_BaseMap"
+          },
+          {
+            "resource": "ResourceTexture_ps-t15.Body",
+            "property": "_BumpMap"
+          }
+        ],
+        "evidence": "身体两张自定义 DDS 按已核对的颜色/双通道法线语义固定到 _BaseMap/_BumpMap；首段旧 t14/t15 编号归一到当前原生属性，详见 semantic_notes。"
+      },
+      {
+        "bindings": {
+          "ps-t14": "ResourceTexture_ps-t14.Body",
+          "ps-t15": "ResourceTexture_ps-t15.Body",
+          "ps-t13": "ResourceTexture_ps-t13.Body"
+        },
+        "slot": 0,
+        "textures": [
+          {
+            "resource": "ResourceTexture_ps-t14.Body",
+            "property": "_BumpMap"
+          },
+          {
+            "resource": "ResourceTexture_ps-t13.Body",
+            "property": "_BaseMap"
+          }
+        ],
+        "evidence": "身体两张自定义 DDS 按已核对的颜色/双通道法线语义固定到 _BaseMap/_BumpMap；首段旧 t14/t15 编号归一到当前原生属性，详见 semantic_notes。",
+        "duplicate_resources": {
+          "ResourceTexture_ps-t15.Body": "ResourceTexture_ps-t14.Body"
+        }
+      }
+    ],
+    "0f9e1087": [
+      {
+        "bindings": {},
+        "slot": 0,
+        "textures": [],
+        "evidence": "原生材质和运行时 slot 顺序核对；按固定材质属性交付。"
+      }
+    ],
+    "a8b9073c": [
+      {
+        "bindings": {},
+        "slot": 0,
+        "textures": [],
+        "evidence": "原生材质和运行时 slot 顺序核对；按固定材质属性交付。"
+      },
+      {
+        "bindings": {
+          "ps-t19": "ResourceTexture_ps-t19_yifu",
+          "ps-t20": "ResourceTexture_ps-t20_yifu",
+          "ps-t21": "ResourceTexture_ps-t21_yifu"
+        },
+        "slot": 0,
+        "textures": [
+          {
+            "resource": "ResourceTexture_ps-t19_yifu",
+            "property": "_BaseMap"
+          },
+          {
+            "resource": "ResourceTexture_ps-t20_yifu",
+            "property": "_MetallicGlossMap"
+          },
+          {
+            "resource": "ResourceTexture_ps-t21_yifu",
+            "property": "_BumpMap"
+          }
+        ],
+        "evidence": "原生 CharacterNPR 透明衣服材质 _ALPHABLEND_ON 等关键词对应的参数表：ps-t19=_BaseMap、ps-t20=_MetallicGlossMap、ps-t21=_BumpMap。"
+      }
+    ]
+  }
+}

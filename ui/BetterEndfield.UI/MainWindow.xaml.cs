@@ -510,6 +510,11 @@ public sealed partial class MainWindow : Window
             : Visibility.Collapsed;
         ActionsPageScrollViewer.Visibility = page == "actions"
             ? Visibility.Visible : Visibility.Collapsed;
+        CustomModelPage.Visibility = page == "custom-model"
+            ? Visibility.Visible : Visibility.Collapsed;
+        CustomModelPage.InstallRootProvider = () =>
+            ConfigurationService.ResolveInstallRoot(
+                RuntimePathDiscoveryService.BundledInjectorPath);
         DisplayPageScrollViewer.Visibility = page == "display"
             ? Visibility.Visible
             : Visibility.Collapsed;
@@ -526,7 +531,7 @@ public sealed partial class MainWindow : Window
         AboutPageScrollViewer.Visibility = page == "about"
             ? Visibility.Visible
             : Visibility.Collapsed;
-        ActionBar.Visibility = page is "about" or "gacha"
+        ActionBar.Visibility = page is "about" or "gacha" or "custom-model"
             ? Visibility.Collapsed
             : Visibility.Visible;
         PageSelectionHintTextBlock.Text = page switch
@@ -539,6 +544,7 @@ public sealed partial class MainWindow : Window
             "camera" => "相机设置会立即保存；游戏内按配置的热键进入或退出自由视角。",
             "display" => "显示增强直接写入游戏目录，改动在下一次启动客户端时生效。",
             "gacha" => "寻访记录同步后仅在本机保存，登录会话不会写入磁盘。",
+            "custom-model" => "角色外观工具会读取当前安装根目录，转换与部署结果需要按报告核对。",
             _ => "角色与动画参数保存后在下一次注入时生效。"
         };
     }

@@ -13,6 +13,16 @@
 #include <thread>
 
 namespace BetterEndfield::Host {
+BE_Result HostRuntime::RetireHooks(const std::string& module_id) {
+    return hooks_ ? hooks_->RetireModule(module_id) : BE_Result_NotReady;
+}
+
+// Optional named capability leaves the BE_HostApiV1 layout unchanged. A module
+// must pin its DLL and stop accepting work before using this lifecycle path.
+BE_EXPORT BE_Result BE_CALL BetterEndfield_RetireModuleHooksV1(void* context, const char* module_id) {
+    if (!context || !module_id || !*module_id) return BE_Result_InvalidArgument;
+    return static_cast<HostRuntime*>(context)->RetireHooks(module_id);
+}
 namespace {
 
 constexpr auto kRuntimeWait = std::chrono::seconds(90);

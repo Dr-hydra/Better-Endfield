@@ -77,3 +77,17 @@ web/cloudbase/cloudbaserc.json
 # historical source snapshot, and gitignore does not untrack what is already in.
 __pycache__/
 *.pyc
+
+# Keep native tests and curated BEM research while excluding raw local databases.
+!native/tests/
+!scripts/BuildBemTools.ps1
+!/research/
+/research/*
+!/research/README.md
+!/research/custom-model/
+!/research/custom-model/**
+!/research/postmodel-focused/
+!/research/postmodel-focused/**
+/research/postmodel-focused/*.i64
+/research/postmodel-focused/__pycache__/
+/research/postmodel-focused/*.log

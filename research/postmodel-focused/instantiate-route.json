@@ -1,0 +1,396 @@
+{
+  "input": "E:\\Endfield Game\\GameAssembly.dll",
+  "selected_count": 1,
+  "functions": [
+    {
+      "name": "Object.Instantiate_pos_rot_parent",
+      "rva": "0x3bd3740",
+      "pdata_begin": "0x3bd3740",
+      "pdata_end": "0x3bd3775",
+      "calls": [
+        {
+          "at": "0x3bd3809",
+          "target": null,
+          "names": [],
+          "instruction": "call    rax ; qword_18DEAEC58"
+        },
+        {
+          "at": "0x4b80d07",
+          "target": "0x41260",
+          "names": [],
+          "instruction": "call    sub_180041260"
+        },
+        {
+          "at": "0x4b80d0f",
+          "target": "0x26060",
+          "names": [],
+          "instruction": "call    sub_180026060"
+        },
+        {
+          "at": "0x4b80d1c",
+          "target": "0xaae414",
+          "names": [],
+          "instruction": "call    sub_180AAE414"
+        },
+        {
+          "at": "0x4b80d29",
+          "target": "0x41260",
+          "names": [],
+          "instruction": "call    sub_180041260"
+        },
+        {
+          "at": "0x4b80d37",
+          "target": "0xa34f288",
+          "names": [
+            "UnityException..ctor",
+            "UnassignedReferenceException..ctor"
+          ],
+          "instruction": "call    sub_18A34F288"
+        },
+        {
+          "at": "0x4b80d43",
+          "target": "0x41260",
+          "names": [],
+          "instruction": "call    sub_180041260"
+        },
+        {
+          "at": "0x4b80d4e",
+          "target": "0x12530",
+          "names": [],
+          "instruction": "call    sub_180012530"
+        },
+        {
+          "at": "0x4b80d5d",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x4b80d8c",
+          "target": "0xa348cf4",
+          "names": [
+            "Object.Instantiate"
+          ],
+          "instruction": "call    sub_18A348CF4"
+        },
+        {
+          "at": "0x4b80d94",
+          "target": "0x3bd3849",
+          "names": [],
+          "instruction": "jmp     loc_183BD3849"
+        },
+        {
+          "at": "0x3bd3870",
+          "target": "0x3bd3841",
+          "names": [],
+          "instruction": "jmp     short loc_183BD3841"
+        },
+        {
+          "at": "0x3bd38fa",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x3bd38ff",
+          "target": "0x3bd3838",
+          "names": [],
+          "instruction": "jmp     loc_183BD3838"
+        },
+        {
+          "at": "0x3bd38e9",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x3bd38f5",
+          "target": "0x3bd3822",
+          "names": [],
+          "instruction": "jmp     loc_183BD3822"
+        },
+        {
+          "at": "0x3bd38cf",
+          "target": "0x1f1b0",
+          "names": [],
+          "instruction": "call    sub_18001F1B0"
+        },
+        {
+          "at": "0x3bd38e4",
+          "target": "0x3bd37f9",
+          "names": [],
+          "instruction": "jmp     loc_183BD37F9"
+        },
+        {
+          "at": "0x4b80cf0",
+          "target": "0x2d64c8",
+          "names": [],
+          "instruction": "call    near ptr unk_1802D64C8"
+        },
+        {
+          "at": "0x4b80cfa",
+          "target": "0x128c0",
+          "names": [],
+          "instruction": "call    sub_1800128C0"
+        },
+        {
+          "at": "0x3bd38be",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x3bd38c3",
+          "target": "0x3bd37e9",
+          "names": [],
+          "instruction": "jmp     loc_183BD37E9"
+        },
+        {
+          "at": "0x4b80ca1",
+          "target": "0x41260",
+          "names": [],
+          "instruction": "call    sub_180041260"
+        },
+        {
+          "at": "0x4b80ca9",
+          "target": "0x26060",
+          "names": [],
+          "instruction": "call    sub_180026060"
+        },
+        {
+          "at": "0x4b80cbf",
+          "target": "0x37fc140",
+          "names": [
+            "SystemException..ctor"
+          ],
+          "instruction": "call    sub_1837FC140"
+        },
+        {
+          "at": "0x4b80cd2",
+          "target": "0x41260",
+          "names": [],
+          "instruction": "call    sub_180041260"
+        },
+        {
+          "at": "0x4b80cdd",
+          "target": "0x12530",
+          "names": [],
+          "instruction": "call    sub_180012530"
+        },
+        {
+          "at": "0x4b80ce3",
+          "target": "0xaae414",
+          "names": [],
+          "instruction": "call    sub_180AAE414"
+        },
+        {
+          "at": "0x3bd38ad",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x3bd38b9",
+          "target": "0x3bd37b2",
+          "names": [],
+          "instruction": "jmp     loc_183BD37B2"
+        },
+        {
+          "at": "0x3bd3869",
+          "target": "0x3bd379d",
+          "names": [],
+          "instruction": "jmp     loc_183BD379D"
+        },
+        {
+          "at": "0x3bd389c",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x3bd38a8",
+          "target": "0x3bd3790",
+          "names": [],
+          "instruction": "jmp     loc_183BD3790"
+        },
+        {
+          "at": "0x3bd3872",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x3bd388b",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x3bd3897",
+          "target": "0x3bd3775",
+          "names": [],
+          "instruction": "jmp     loc_183BD3775"
+        }
+      ],
+      "asm": [
+        "0x3bd3740 mov     [rsp+10h], rbx",
+        "0x3bd3745 mov     [rsp+18h], rsi",
+        "0x3bd374a mov     [rsp+20h], rdi",
+        "0x3bd374f push    r14",
+        "0x3bd3751 sub     rsp, 40h",
+        "0x3bd3755 mov     rdi, rcx",
+        "0x3bd3758 mov     rbx, r9",
+        "0x3bd375b mov     rcx, cs:qword_18D0D8088",
+        "0x3bd3762 mov     r14, r8",
+        "0x3bd3765 mov     rsi, rdx",
+        "0x3bd3768 cmp     dword ptr [rcx+0E0h], 0",
+        "0x3bd376f jz      near ptr unk_183BD3872",
+        "0x3bd3775 mov     [rsp+50h], rbp",
+        "0x3bd377a test    rbx, rbx",
+        "0x3bd377d jz      near ptr unk_184B80D54",
+        "0x3bd3783 cmp     dword ptr [rcx+0E0h], 0",
+        "0x3bd378a jz      near ptr unk_183BD389C",
+        "0x3bd3790 cmp     qword ptr [rbx+10h], 0",
+        "0x3bd3795 jz      near ptr unk_183BD3867",
+        "0x3bd379b xor     al, al",
+        "0x3bd379d test    al, al",
+        "0x3bd379f jnz     near ptr unk_184B80D54",
+        "0x3bd37a5 cmp     dword ptr [rcx+0E0h], 0",
+        "0x3bd37ac jz      near ptr unk_183BD38AD",
+        "0x3bd37b2 mov     rbp, cs:qword_18D08EAD0",
+        "0x3bd37b9 test    rdi, rdi",
+        "0x3bd37bc jz      near ptr unk_184B80C9A",
+        "0x3bd37c2 movups  xmm0, xmmword ptr [r14]",
+        "0x3bd37c6 mov     eax, [rsi+8]",
+        "0x3bd37c9 movsd   xmm1, qword ptr [rsi]",
+        "0x3bd37cd movaps  xmmword ptr [rsp+30h], xmm0",
+        "0x3bd37d2 movsd   qword ptr [rsp+20h], xmm1",
+        "0x3bd37d8 mov     [rsp+28h], eax",
+        "0x3bd37dc cmp     dword ptr [rcx+0E0h], 0",
+        "0x3bd37e3 jz      near ptr unk_183BD38BE",
+        "0x3bd37e9 mov     rax, cs:qword_18DEAEC58",
+        "0x3bd37f0 test    rax, rax",
+        "0x3bd37f3 jz      near ptr unk_183BD38C8",
+        "0x3bd37f9 lea     r9, [rsp+30h]",
+        "0x3bd37fe mov     rdx, rbx",
+        "0x3bd3801 lea     r8, [rsp+20h]",
+        "0x3bd3806 mov     rcx, rdi",
+        "0x3bd3809 call    rax ; qword_18DEAEC58",
+        "0x3bd380b mov     rcx, cs:qword_18D0D8088",
+        "0x3bd3812 mov     rbx, rax",
+        "0x3bd3815 cmp     dword ptr [rcx+0E0h], 0",
+        "0x3bd381c jz      near ptr unk_183BD38E9",
+        "0x3bd3822 test    rbx, rbx",
+        "0x3bd3825 jz      near ptr unk_184B80D00",
+        "0x3bd382b cmp     dword ptr [rcx+0E0h], 0",
+        "0x3bd3832 jz      near ptr unk_183BD38FA",
+        "0x3bd3838 cmp     qword ptr [rbx+10h], 0",
+        "0x3bd383d jz      short near ptr unk_183BD386E",
+        "0x3bd383f xor     al, al",
+        "0x3bd3841 test    al, al",
+        "0x3bd3843 jnz     near ptr unk_184B80D00",
+        "0x3bd3849 mov     rbp, [rsp+50h]",
+        "0x3bd384e mov     rax, rbx",
+        "0x3bd3851 mov     rbx, [rsp+58h]",
+        "0x3bd3856 mov     rsi, [rsp+60h]",
+        "0x3bd385b mov     rdi, [rsp+68h]",
+        "0x3bd3860 add     rsp, 40h",
+        "0x3bd3864 pop     r14",
+        "0x3bd3866 retn",
+        "0x3bd3867 mov     al, 1",
+        "0x3bd3869 jmp     loc_183BD379D",
+        "0x3bd386e mov     al, 1",
+        "0x3bd3870 jmp     short loc_183BD3841",
+        "0x3bd3872 call    sub_1800262C0",
+        "0x3bd3877 mov     rcx, cs:qword_18D0D8088",
+        "0x3bd387e cmp     dword ptr [rcx+0E0h], 0",
+        "0x3bd3885 jnz     loc_183BD3775",
+        "0x3bd388b call    sub_1800262C0",
+        "0x3bd3890 mov     rcx, cs:qword_18D0D8088",
+        "0x3bd3897 jmp     loc_183BD3775",
+        "0x3bd389c call    sub_1800262C0",
+        "0x3bd38a1 mov     rcx, cs:qword_18D0D8088",
+        "0x3bd38a8 jmp     loc_183BD3790",
+        "0x3bd38ad call    sub_1800262C0",
+        "0x3bd38b2 mov     rcx, cs:qword_18D0D8088",
+        "0x3bd38b9 jmp     loc_183BD37B2",
+        "0x3bd38be call    sub_1800262C0",
+        "0x3bd38c3 jmp     loc_183BD37E9",
+        "0x3bd38c8 lea     rcx, aUnityengineObj_2; \"UnityEngine.Object::Internal_Instantiat\"...",
+        "0x3bd38cf call    sub_18001F1B0",
+        "0x3bd38d4 test    rax, rax",
+        "0x3bd38d7 jz      near ptr unk_184B80CE9",
+        "0x3bd38dd mov     cs:qword_18DEAEC58, rax",
+        "0x3bd38e4 jmp     loc_183BD37F9",
+        "0x3bd38e9 call    sub_1800262C0",
+        "0x3bd38ee mov     rcx, cs:qword_18D0D8088",
+        "0x3bd38f5 jmp     loc_183BD3822",
+        "0x3bd38fa call    sub_1800262C0",
+        "0x3bd38ff jmp     loc_183BD3838",
+        "0x4b80c9a lea     rcx, unk_18D08C868",
+        "0x4b80ca1 call    sub_180041260",
+        "0x4b80ca6 mov     rcx, rax",
+        "0x4b80ca9 call    sub_180026060",
+        "0x4b80cae mov     rbx, rax",
+        "0x4b80cb1 test    rax, rax",
+        "0x4b80cb4 jz      short near ptr unk_184B80CE3",
+        "0x4b80cb6 xor     r8d, r8d",
+        "0x4b80cb9 mov     rdx, rbp",
+        "0x4b80cbc mov     rcx, rax",
+        "0x4b80cbf call    sub_1837FC140 ; SystemException..ctor",
+        "0x4b80cc4 lea     rcx, unk_18CFDE9B8",
+        "0x4b80ccb mov     dword ptr [rbx+60h], 80070057h",
+        "0x4b80cd2 call    sub_180041260",
+        "0x4b80cd7 mov     rdx, rax",
+        "0x4b80cda mov     rcx, rbx",
+        "0x4b80cdd call    sub_180012530",
+        "0x4b80ce2 int     3; Trap to Debugger",
+        "0x4b80ce3 call    sub_180AAE414",
+        "0x4b80ce8 int     3; Trap to Debugger",
+        "0x4b80ce9 lea     rcx, aUnityengineObj_2; \"UnityEngine.Object::Internal_Instantiat\"...",
+        "0x4b80cf0 call    near ptr unk_1802D64C8",
+        "0x4b80cf5 mov     rcx, rax",
+        "0x4b80cf8 xor     edx, edx",
+        "0x4b80cfa call    sub_1800128C0",
+        "0x4b80cff int     3; Trap to Debugger",
+        "0x4b80d00 lea     rcx, unk_18D08EAE8",
+        "0x4b80d07 call    sub_180041260",
+        "0x4b80d0c mov     rcx, rax",
+        "0x4b80d0f call    sub_180026060",
+        "0x4b80d14 mov     rbx, rax",
+        "0x4b80d17 test    rax, rax",
+        "0x4b80d1a jnz     short near ptr unk_184B80D22",
+        "0x4b80d1c call    sub_180AAE414",
+        "0x4b80d21 int     3; Trap to Debugger",
+        "0x4b80d22 lea     rcx, unk_18D08EAE0",
+        "0x4b80d29 call    sub_180041260",
+        "0x4b80d2e xor     r8d, r8d",
+        "0x4b80d31 mov     rdx, rax",
+        "0x4b80d34 mov     rcx, rbx",
+        "0x4b80d37 call    sub_18A34F288 ; UnityException..ctor | UnassignedReferenceException..ctor",
+        "0x4b80d3c lea     rcx, unk_18CFDEC50",
+        "0x4b80d43 call    sub_180041260",
+        "0x4b80d48 mov     rdx, rax",
+        "0x4b80d4b mov     rcx, rbx",
+        "0x4b80d4e call    sub_180012530",
+        "0x4b80d53 int     3; Trap to Debugger",
+        "0x4b80d54 cmp     dword ptr [rcx+0E0h], 0",
+        "0x4b80d5b jnz     short near ptr unk_184B80D62",
+        "0x4b80d5d call    sub_1800262C0",
+        "0x4b80d62 movups  xmm0, xmmword ptr [r14]",
+        "0x4b80d66 lea     r8, [rsp+30h]",
+        "0x4b80d6b mov     eax, [rsi+8]",
+        "0x4b80d6e movsd   xmm1, qword ptr [rsi]",
+        "0x4b80d72 lea     rdx, [rsp+20h]",
+        "0x4b80d77 xor     r9d, r9d",
+        "0x4b80d7a movaps  xmmword ptr [rsp+30h], xmm0",
+        "0x4b80d7f mov     rcx, rdi",
+        "0x4b80d82 movsd   qword ptr [rsp+20h], xmm1",
+        "0x4b80d88 mov     [rsp+28h], eax",
+        "0x4b80d8c call    sub_18A348CF4 ; Object.Instantiate",
+        "0x4b80d91 mov     rbx, rax",
+        "0x4b80d94 jmp     loc_183BD3849"
+      ]
+    }
+  ]
+}

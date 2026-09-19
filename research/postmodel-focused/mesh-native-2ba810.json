@@ -1,0 +1,69 @@
+[
+  {
+    "name": "native_2ba810",
+    "rva": "0x2ba810",
+    "end": "0x2ba870",
+    "leaf": true,
+    "calls": [
+      {
+        "at": "0x2ba899",
+        "to": "0x2ba866",
+        "name": ""
+      },
+      {
+        "at": "0x2ba8a4",
+        "to": "0x2ba84f",
+        "name": ""
+      },
+      {
+        "at": "0x2ba89f",
+        "to": "0x2ba890",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0x2ba810 movsxd rax, edx",
+      "0x2ba813 xor edx, edx",
+      "0x2ba815 imul r10, rax, 0x38",
+      "0x2ba819 add r10, qword ptr [rcx + 0xd0]",
+      "0x2ba820 cmp dword ptr [r10 + 0x24], edx",
+      "0x2ba824 jbe 0x2ba89b",
+      "0x2ba826 cmp dword ptr [rcx + 0xc8], 1",
+      "0x2ba82d mov r9d, dword ptr [r10 + 0x24]",
+      "0x2ba831 mov eax, dword ptr [r10 + 0x20]",
+      "0x2ba835 je 0xef82d2",
+      "0x2ba83b cmp rax, qword ptr [rcx + 0xb8]",
+      "0x2ba842 jae 0x2ba8a1",
+      "0x2ba844 mov eax, dword ptr [r10 + 0x20]",
+      "0x2ba848 add rax, qword ptr [rcx + 0xa8]",
+      "0x2ba84f lea r9, [rax + r9*2]",
+      "0x2ba853 mov r8d, 0xffff",
+      "0x2ba859 cmp rax, r9",
+      "0x2ba85c jae 0x2ba877",
+      "0x2ba85e nop ",
+      "0x2ba860 cmp word ptr [rax], r8w",
+      "0x2ba864 jb 0x2ba895",
+      "0x2ba866 cmp dx, word ptr [rax]",
+      "0x2ba869 jae 0x2ba86e",
+      "0x2ba86b movzx edx, word ptr [rax]",
+      "0x2ba86e add rax, 2",
+      "0x2ba872 cmp rax, r9",
+      "0x2ba875 jb 0x2ba860",
+      "0x2ba877 movzx edx, dx",
+      "0x2ba87a movzx ecx, r8w",
+      "0x2ba87e mov eax, 0x30",
+      "0x2ba883 mov r8, r10",
+      "0x2ba886 mov dword ptr [r10 + rax], ecx",
+      "0x2ba88a sub edx, dword ptr [r10 + 0x30]",
+      "0x2ba88e inc edx",
+      "0x2ba890 mov dword ptr [r10 + 0x34], edx",
+      "0x2ba894 ret ",
+      "0x2ba895 movzx r8d, word ptr [rax]",
+      "0x2ba899 jmp 0x2ba866",
+      "0x2ba89b mov qword ptr [r10 + 0x2c], rdx",
+      "0x2ba89f jmp 0x2ba890",
+      "0x2ba8a1 mov rax, rdx",
+      "0x2ba8a4 jmp 0x2ba84f"
+    ]
+  }
+]

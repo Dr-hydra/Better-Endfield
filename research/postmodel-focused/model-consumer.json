@@ -1,0 +1,1830 @@
+{
+  "input": "E:\\Endfield Game\\GameAssembly.dll",
+  "selected_count": 5,
+  "functions": [
+    {
+      "name": "BaseModelViewPart._OnLoadUseHandleFinish",
+      "rva": "0x370b730",
+      "pdata_begin": "0x370b730",
+      "pdata_end": "0x370b844",
+      "calls": [
+        {
+          "at": "0x370b75c",
+          "target": "0x2c97970",
+          "names": [
+            "WrappersManagerImpl.IsPatched"
+          ],
+          "instruction": "call    sub_182C97970"
+        },
+        {
+          "at": "0x370b78a",
+          "target": "0x3c178e0",
+          "names": [],
+          "instruction": "call    sub_183C178E0"
+        },
+        {
+          "at": "0x370b7b5",
+          "target": "0x3d1a520",
+          "names": [],
+          "instruction": "call    sub_183D1A520"
+        },
+        {
+          "at": "0x370b7c2",
+          "target": "0x26b40",
+          "names": [],
+          "instruction": "call    loc_180026B40"
+        },
+        {
+          "at": "0x370b7cf",
+          "target": "0x370bac0",
+          "names": [
+            "BaseModelViewPart.OnLoadFinish"
+          ],
+          "instruction": "call    sub_18370BAC0"
+        },
+        {
+          "at": "0x370b83a",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x370b83f",
+          "target": "0x370b7a6",
+          "names": [],
+          "instruction": "jmp     loc_18370B7A6"
+        },
+        {
+          "at": "0x4e1cfc6",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x4e1cfde",
+          "target": "0x46508b0",
+          "names": [],
+          "instruction": "call    sub_1846508B0"
+        },
+        {
+          "at": "0x4e1cfeb",
+          "target": "0x370bac0",
+          "names": [
+            "BaseModelViewPart.OnLoadFinish"
+          ],
+          "instruction": "call    sub_18370BAC0"
+        },
+        {
+          "at": "0x4e1cff2",
+          "target": "0x370b7d6",
+          "names": [],
+          "instruction": "jmp     loc_18370B7D6"
+        },
+        {
+          "at": "0x4e1cffe",
+          "target": "0x64af4dc",
+          "names": [
+            "WrappersManagerImpl.GetPatch"
+          ],
+          "instruction": "call    sub_1864AF4DC"
+        },
+        {
+          "at": "0x4e1d00b",
+          "target": "0xaae414",
+          "names": [],
+          "instruction": "call    sub_180AAE414"
+        },
+        {
+          "at": "0x4e1d035",
+          "target": "0x1286640",
+          "names": [
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_1271"
+          ],
+          "instruction": "call    sub_181286640"
+        },
+        {
+          "at": "0x4e1d03b",
+          "target": "0x370b7d6",
+          "names": [],
+          "instruction": "jmp     loc_18370B7D6"
+        },
+        {
+          "at": "0x370b7ed",
+          "target": "0x41260",
+          "names": [],
+          "instruction": "call    sub_180041260"
+        },
+        {
+          "at": "0x370b7f9",
+          "target": "0x41260",
+          "names": [],
+          "instruction": "call    sub_180041260"
+        },
+        {
+          "at": "0x370b805",
+          "target": "0x41260",
+          "names": [],
+          "instruction": "call    sub_180041260"
+        },
+        {
+          "at": "0x370b811",
+          "target": "0x41260",
+          "names": [],
+          "instruction": "call    sub_180041260"
+        },
+        {
+          "at": "0x370b81d",
+          "target": "0x41260",
+          "names": [],
+          "instruction": "call    sub_180041260"
+        },
+        {
+          "at": "0x370b829",
+          "target": "0x41260",
+          "names": [],
+          "instruction": "call    sub_180041260"
+        },
+        {
+          "at": "0x370b835",
+          "target": "0x370b755",
+          "names": [],
+          "instruction": "jmp     loc_18370B755"
+        }
+      ],
+      "asm": [
+        "0x370b730 mov     [rsp+8], rbx",
+        "0x370b735 mov     [rsp+10h], rsi",
+        "0x370b73a push    rdi",
+        "0x370b73b sub     rsp, 50h",
+        "0x370b73f cmp     cs:byte_18DEA37E4, 0",
+        "0x370b746 mov     rsi, r8",
+        "0x370b749 movzx   edi, dl",
+        "0x370b74c mov     rbx, rcx",
+        "0x370b74f jz      loc_18370B7E6",
+        "0x370b755 xor     edx, edx",
+        "0x370b757 mov     ecx, 1154h",
+        "0x370b75c call    sub_182C97970 ; WrappersManagerImpl.IsPatched",
+        "0x370b761 test    al, al",
+        "0x370b763 jnz     loc_184E1CFF7",
+        "0x370b769 test    dil, dil",
+        "0x370b76c jz      loc_184E1CFB2",
+        "0x370b772 movups  xmm0, xmmword ptr [rsi]",
+        "0x370b775 mov     eax, [rsi+10h]",
+        "0x370b778 lea     rcx, [rbx+68h]",
+        "0x370b77c movups  xmmword ptr [rbx+68h], xmm0",
+        "0x370b780 mov     [rbx+78h], eax",
+        "0x370b783 mov     rdx, cs:qword_18D07CB58",
+        "0x370b78a call    sub_183C178E0",
+        "0x370b78f mov     rcx, cs:qword_18D0DF828",
+        "0x370b796 mov     rdi, rax",
+        "0x370b799 cmp     dword ptr [rcx+0E0h], 0",
+        "0x370b7a0 jz      loc_18370B83A",
+        "0x370b7a6 mov     r9, cs:qword_18D0F2AB0",
+        "0x370b7ad xor     r8d, r8d",
+        "0x370b7b0 xor     edx, edx",
+        "0x370b7b2 mov     rcx, rdi",
+        "0x370b7b5 call    sub_183D1A520",
+        "0x370b7ba lea     rcx, [rbx+60h]",
+        "0x370b7be mov     [rbx+60h], rax",
+        "0x370b7c2 call    loc_180026B40",
+        "0x370b7c7 xor     r8d, r8d",
+        "0x370b7ca mov     dl, 1",
+        "0x370b7cc mov     rcx, rbx",
+        "0x370b7cf call    sub_18370BAC0 ; BaseModelViewPart.OnLoadFinish",
+        "0x370b7d4 mov     al, 1",
+        "0x370b7d6 mov     rbx, [rsp+60h]",
+        "0x370b7db mov     rsi, [rsp+68h]",
+        "0x370b7e0 add     rsp, 50h",
+        "0x370b7e4 pop     rdi",
+        "0x370b7e5 retn",
+        "0x370b7e6 lea     rcx, qword_18D0B9788",
+        "0x370b7ed call    sub_180041260",
+        "0x370b7f2 lea     rcx, qword_18D0A5E60",
+        "0x370b7f9 call    sub_180041260",
+        "0x370b7fe lea     rcx, qword_18D07CB58",
+        "0x370b805 call    sub_180041260",
+        "0x370b80a lea     rcx, qword_18D0F2AB0",
+        "0x370b811 call    sub_180041260",
+        "0x370b816 lea     rcx, qword_18D0DF828",
+        "0x370b81d call    sub_180041260",
+        "0x370b822 lea     rcx, qword_18D0F81F8",
+        "0x370b829 call    sub_180041260",
+        "0x370b82e mov     cs:byte_18DEA37E4, 1",
+        "0x370b835 jmp     loc_18370B755",
+        "0x370b83a call    sub_1800262C0",
+        "0x370b83f jmp     loc_18370B7A6",
+        "0x4e1cfb2 mov     rcx, cs:qword_18D0A5E60",
+        "0x4e1cfb9 mov     rdi, [rbx+20h]",
+        "0x4e1cfbd cmp     dword ptr [rcx+0E0h], 0",
+        "0x4e1cfc4 jnz     short loc_184E1CFCB",
+        "0x4e1cfc6 call    sub_1800262C0",
+        "0x4e1cfcb mov     r9, cs:qword_18D0B9788",
+        "0x4e1cfd2 mov     r8, rdi",
+        "0x4e1cfd5 mov     rdx, cs:qword_18D0F81F8",
+        "0x4e1cfdc mov     cl, 1",
+        "0x4e1cfde call    sub_1846508B0",
+        "0x4e1cfe3 xor     r8d, r8d",
+        "0x4e1cfe6 xor     edx, edx",
+        "0x4e1cfe8 mov     rcx, rbx",
+        "0x4e1cfeb call    sub_18370BAC0 ; BaseModelViewPart.OnLoadFinish",
+        "0x4e1cff0 xor     al, al",
+        "0x4e1cff2 jmp     loc_18370B7D6",
+        "0x4e1cff7 xor     edx, edx",
+        "0x4e1cff9 mov     ecx, 1154h",
+        "0x4e1cffe call    sub_1864AF4DC ; WrappersManagerImpl.GetPatch",
+        "0x4e1d003 mov     rcx, rax",
+        "0x4e1d006 test    rax, rax",
+        "0x4e1d009 jnz     short loc_184E1D011",
+        "0x4e1d00b call    sub_180AAE414",
+        "0x4e1d010 int     3; Trap to Debugger",
+        "0x4e1d011 movups  xmm0, xmmword ptr [rsi]",
+        "0x4e1d014 mov     eax, [rsi+10h]",
+        "0x4e1d017 lea     r9, [rsp+30h]",
+        "0x4e1d01c movzx   r8d, dil",
+        "0x4e1d020 mov     [rsp+40h], eax",
+        "0x4e1d024 mov     rdx, rbx",
+        "0x4e1d027 movaps  xmmword ptr [rsp+30h], xmm0",
+        "0x4e1d02c mov     qword ptr [rsp+20h], 0",
+        "0x4e1d035 call    sub_181286640 ; ILFixDynamicMethodWrapper.__Gen_Wrap_1271",
+        "0x4e1d03a nop",
+        "0x4e1d03b jmp     loc_18370B7D6"
+      ]
+    },
+    {
+      "name": "BaseModelViewPart._OnLoadModelFinish",
+      "rva": "0x370b9d0",
+      "pdata_begin": "0x370b9d0",
+      "pdata_end": "0x370bab4",
+      "calls": [
+        {
+          "at": "0x370b9f6",
+          "target": "0x2c97970",
+          "names": [
+            "WrappersManagerImpl.IsPatched"
+          ],
+          "instruction": "call    sub_182C97970"
+        },
+        {
+          "at": "0x370ba41",
+          "target": "0x351cc80",
+          "names": [],
+          "instruction": "call    sub_18351CC80"
+        },
+        {
+          "at": "0x370ba57",
+          "target": "0x26b40",
+          "names": [],
+          "instruction": "call    loc_180026B40"
+        },
+        {
+          "at": "0x370ba64",
+          "target": "0x370bac0",
+          "names": [
+            "BaseModelViewPart.OnLoadFinish"
+          ],
+          "instruction": "call    sub_18370BAC0"
+        },
+        {
+          "at": "0x4b50a64",
+          "target": "0x4b50a7b",
+          "names": [],
+          "instruction": "jmp     short loc_184B50A7B"
+        },
+        {
+          "at": "0x4b50a8e",
+          "target": "0x6dc73b8",
+          "names": [],
+          "instruction": "call    sub_186DC73B8"
+        },
+        {
+          "at": "0x4b50a9b",
+          "target": "0x370bac0",
+          "names": [
+            "BaseModelViewPart.OnLoadFinish"
+          ],
+          "instruction": "call    sub_18370BAC0"
+        },
+        {
+          "at": "0x4b50aa2",
+          "target": "0x370ba6b",
+          "names": [],
+          "instruction": "jmp     loc_18370BA6B"
+        },
+        {
+          "at": "0x4b50a76",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x370ba82",
+          "target": "0x370ba35",
+          "names": [],
+          "instruction": "jmp     short loc_18370BA35"
+        },
+        {
+          "at": "0x370baaa",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x370baaf",
+          "target": "0x370ba2c",
+          "names": [],
+          "instruction": "jmp     loc_18370BA2C"
+        },
+        {
+          "at": "0x370ba84",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x370ba99",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x370baa5",
+          "target": "0x370ba1a",
+          "names": [],
+          "instruction": "jmp     loc_18370BA1A"
+        },
+        {
+          "at": "0x4b50aae",
+          "target": "0x64af4dc",
+          "names": [
+            "WrappersManagerImpl.GetPatch"
+          ],
+          "instruction": "call    sub_1864AF4DC"
+        },
+        {
+          "at": "0x4b50ab8",
+          "target": "0xaae414",
+          "names": [],
+          "instruction": "call    sub_180AAE414"
+        },
+        {
+          "at": "0x4b50ad8",
+          "target": "0x1285e90",
+          "names": [
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_1270"
+          ],
+          "instruction": "call    sub_181285E90"
+        },
+        {
+          "at": "0x4b50ade",
+          "target": "0x370ba6b",
+          "names": [],
+          "instruction": "jmp     loc_18370BA6B"
+        }
+      ],
+      "asm": [
+        "0x370b9d0 mov     [rsp+8], rbx",
+        "0x370b9d5 mov     [rsp+10h], rbp",
+        "0x370b9da mov     [rsp+18h], rsi",
+        "0x370b9df push    rdi",
+        "0x370b9e0 sub     rsp, 30h",
+        "0x370b9e4 mov     ebp, edx",
+        "0x370b9e6 mov     rdi, rcx",
+        "0x370b9e9 xor     edx, edx",
+        "0x370b9eb mov     ecx, 1152h",
+        "0x370b9f0 mov     rsi, r9",
+        "0x370b9f3 mov     rbx, r8",
+        "0x370b9f6 call    sub_182C97970 ; WrappersManagerImpl.IsPatched",
+        "0x370b9fb test    al, al",
+        "0x370b9fd jnz     loc_184B50AA7",
+        "0x370ba03 mov     dword ptr [rdi+7Ch], 0FFFFFFFFh",
+        "0x370ba0a mov     rcx, cs:qword_18D0D8088",
+        "0x370ba11 cmp     dword ptr [rcx+0E0h], 0",
+        "0x370ba18 jz      short loc_18370BA84",
+        "0x370ba1a test    rsi, rsi",
+        "0x370ba1d jz      loc_184B50A66",
+        "0x370ba23 cmp     dword ptr [rcx+0E0h], 0",
+        "0x370ba2a jz      short loc_18370BAAA",
+        "0x370ba2c cmp     qword ptr [rsi+10h], 0",
+        "0x370ba31 jz      short loc_18370BA80",
+        "0x370ba33 xor     al, al",
+        "0x370ba35 test    al, al",
+        "0x370ba37 jnz     loc_184B50A66",
+        "0x370ba3d mov     rcx, [rdi+20h]",
+        "0x370ba41 call    sub_18351CC80",
+        "0x370ba46 cmp     rax, rbx",
+        "0x370ba49 jnz     loc_184B50A54",
+        "0x370ba4f lea     rcx, [rdi+60h]",
+        "0x370ba53 mov     [rdi+60h], rsi",
+        "0x370ba57 call    loc_180026B40",
+        "0x370ba5c xor     r8d, r8d",
+        "0x370ba5f mov     dl, 1",
+        "0x370ba61 mov     rcx, rdi",
+        "0x370ba64 call    sub_18370BAC0 ; BaseModelViewPart.OnLoadFinish",
+        "0x370ba69 mov     al, 1",
+        "0x370ba6b mov     rbx, [rsp+40h]",
+        "0x370ba70 mov     rbp, [rsp+48h]",
+        "0x370ba75 mov     rsi, [rsp+50h]",
+        "0x370ba7a add     rsp, 30h",
+        "0x370ba7e pop     rdi",
+        "0x370ba7f retn",
+        "0x370ba80 mov     al, 1",
+        "0x370ba82 jmp     short loc_18370BA35",
+        "0x370ba84 call    sub_1800262C0",
+        "0x370ba89 mov     rcx, cs:qword_18D0D8088",
+        "0x370ba90 cmp     dword ptr [rcx+0E0h], 0",
+        "0x370ba97 jnz     short loc_18370BA1A",
+        "0x370ba99 call    sub_1800262C0",
+        "0x370ba9e mov     rcx, cs:qword_18D0D8088",
+        "0x370baa5 jmp     loc_18370BA1A",
+        "0x370baaa call    sub_1800262C0",
+        "0x370baaf jmp     loc_18370BA2C",
+        "0x4b50a54 mov     rcx, cs:qword_18D0A5E60",
+        "0x4b50a5b cmp     dword ptr [rcx+0E0h], 0",
+        "0x4b50a62 jz      short loc_184B50A76",
+        "0x4b50a64 jmp     short loc_184B50A7B",
+        "0x4b50a66 mov     rcx, cs:qword_18D0A5E60",
+        "0x4b50a6d cmp     dword ptr [rcx+0E0h], 0",
+        "0x4b50a74 jnz     short loc_184B50A7B",
+        "0x4b50a76 call    sub_1800262C0",
+        "0x4b50a7b mov     r9, cs:qword_18D0E3518",
+        "0x4b50a82 mov     r8, rbx",
+        "0x4b50a85 mov     rdx, cs:qword_18D0F8198",
+        "0x4b50a8c mov     cl, 1",
+        "0x4b50a8e call    sub_186DC73B8",
+        "0x4b50a93 xor     r8d, r8d",
+        "0x4b50a96 xor     edx, edx",
+        "0x4b50a98 mov     rcx, rdi",
+        "0x4b50a9b call    sub_18370BAC0 ; BaseModelViewPart.OnLoadFinish",
+        "0x4b50aa0 xor     al, al",
+        "0x4b50aa2 jmp     loc_18370BA6B",
+        "0x4b50aa7 xor     edx, edx",
+        "0x4b50aa9 mov     ecx, 1152h",
+        "0x4b50aae call    sub_1864AF4DC ; WrappersManagerImpl.GetPatch",
+        "0x4b50ab3 test    rax, rax",
+        "0x4b50ab6 jnz     short loc_184B50ABE",
+        "0x4b50ab8 call    sub_180AAE414",
+        "0x4b50abd int     3; Trap to Debugger",
+        "0x4b50abe mov     qword ptr [rsp+28h], 0",
+        "0x4b50ac7 mov     r9, rbx",
+        "0x4b50aca mov     r8d, ebp",
+        "0x4b50acd mov     [rsp+20h], rsi",
+        "0x4b50ad2 mov     rdx, rdi",
+        "0x4b50ad5 mov     rcx, rax",
+        "0x4b50ad8 call    sub_181285E90 ; ILFixDynamicMethodWrapper.__Gen_Wrap_1270",
+        "0x4b50add nop",
+        "0x4b50ade jmp     loc_18370BA6B"
+      ]
+    },
+    {
+      "name": "BaseModelViewPart.OnLoadFinish",
+      "rva": "0x370bac0",
+      "pdata_begin": "0x370bac0",
+      "pdata_end": "0x370bb31",
+      "calls": [
+        {
+          "at": "0x370bad7",
+          "target": "0x2c97970",
+          "names": [
+            "WrappersManagerImpl.IsPatched"
+          ],
+          "instruction": "call    sub_182C97970"
+        },
+        {
+          "at": "0x370baec",
+          "target": "0x3020",
+          "names": [],
+          "instruction": "call    sub_180003020"
+        },
+        {
+          "at": "0x370bb0a",
+          "target": "0x26b40",
+          "names": [],
+          "instruction": "call    loc_180026B40"
+        },
+        {
+          "at": "0x370bb21",
+          "target": "0x399f010",
+          "names": [],
+          "instruction": "call    sub_18399F010"
+        },
+        {
+          "at": "0x4e1d0cd",
+          "target": "0x64af4dc",
+          "names": [
+            "WrappersManagerImpl.GetPatch"
+          ],
+          "instruction": "call    sub_1864AF4DC"
+        },
+        {
+          "at": "0x4e1d0d7",
+          "target": "0xaae414",
+          "names": [],
+          "instruction": "call    sub_180AAE414"
+        },
+        {
+          "at": "0x4e1d0ea",
+          "target": "0x5cb92c4",
+          "names": [
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_33",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_35",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_51",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_8",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_5",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_3",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_5",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_29",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_3"
+          ],
+          "instruction": "call    sub_185CB92C4"
+        },
+        {
+          "at": "0x4e1d0f0",
+          "target": "0x370bb26",
+          "names": [],
+          "instruction": "jmp     loc_18370BB26"
+        }
+      ],
+      "asm": [
+        "0x370bac0 mov     [rsp+8], rbx",
+        "0x370bac5 push    rdi",
+        "0x370bac6 sub     rsp, 20h",
+        "0x370baca movzx   edi, dl",
+        "0x370bacd mov     rbx, rcx",
+        "0x370bad0 xor     edx, edx",
+        "0x370bad2 mov     ecx, 10F4h",
+        "0x370bad7 call    sub_182C97970 ; WrappersManagerImpl.IsPatched",
+        "0x370badc test    al, al",
+        "0x370bade jnz     loc_184E1D0C6",
+        "0x370bae4 mov     ecx, 16h",
+        "0x370bae9 mov     rdx, rbx",
+        "0x370baec call    sub_180003020",
+        "0x370baf1 mov     r10, [rbx+80h]",
+        "0x370baf8 lea     rcx, [rbx+80h]",
+        "0x370baff mov     qword ptr [rbx+80h], 0",
+        "0x370bb0a call    loc_180026B40",
+        "0x370bb0f test    r10, r10",
+        "0x370bb12 jz      short loc_18370BB26",
+        "0x370bb14 xor     r9d, r9d",
+        "0x370bb17 mov     r8, rbx",
+        "0x370bb1a movzx   edx, dil",
+        "0x370bb1e mov     rcx, r10",
+        "0x370bb21 call    sub_18399F010",
+        "0x370bb26 mov     rbx, [rsp+30h]",
+        "0x370bb2b add     rsp, 20h",
+        "0x370bb2f pop     rdi",
+        "0x370bb30 retn",
+        "0x4e1d0c6 xor     edx, edx",
+        "0x4e1d0c8 mov     ecx, 10F4h",
+        "0x4e1d0cd call    sub_1864AF4DC ; WrappersManagerImpl.GetPatch",
+        "0x4e1d0d2 test    rax, rax",
+        "0x4e1d0d5 jnz     short loc_184E1D0DD",
+        "0x4e1d0d7 call    sub_180AAE414",
+        "0x4e1d0dc int     3; Trap to Debugger",
+        "0x4e1d0dd xor     r9d, r9d",
+        "0x4e1d0e0 movzx   r8d, dil",
+        "0x4e1d0e4 mov     rdx, rbx",
+        "0x4e1d0e7 mov     rcx, rax",
+        "0x4e1d0ea call    sub_185CB92C4 ; ILFixDynamicMethodWrapper.__Gen_Wrap_33 | ILFixDynamicMethodWrapper.__Gen_Wrap_35 | ILFixDynamicMethodWrapper.__Gen_Wrap_51 | ILFixDynamicMethodWrapper.__Gen_Wrap_8",
+        "0x4e1d0ef nop",
+        "0x4e1d0f0 jmp     loc_18370BB26"
+      ]
+    },
+    {
+      "name": "ComplexModelViewPart.PostDealLoadedModel",
+      "rva": "0x372e200",
+      "pdata_begin": "0x372e200",
+      "pdata_end": "0x372e380",
+      "calls": [
+        {
+          "at": "0x372e214",
+          "target": "0x2c97970",
+          "names": [
+            "WrappersManagerImpl.IsPatched"
+          ],
+          "instruction": "call    sub_182C97970"
+        },
+        {
+          "at": "0x372e226",
+          "target": "0x372e700",
+          "names": [
+            "BaseModelViewPart.PostDealLoadedModel"
+          ],
+          "instruction": "call    sub_18372E700"
+        },
+        {
+          "at": "0x372e230",
+          "target": "0x2e8ac90",
+          "names": [
+            "BaseModelViewPart.get_model"
+          ],
+          "instruction": "call    sub_182E8AC90"
+        },
+        {
+          "at": "0x372e27c",
+          "target": "0x372e570",
+          "names": [
+            "ComplexModelViewPart._InternalEffectSetting"
+          ],
+          "instruction": "call    sub_18372E570"
+        },
+        {
+          "at": "0x372e286",
+          "target": "0x372e460",
+          "names": [
+            "ComplexModelViewPart._GetRenderHelper"
+          ],
+          "instruction": "call    sub_18372E460"
+        },
+        {
+          "at": "0x372e290",
+          "target": "0x2e8ac90",
+          "names": [
+            "BaseModelViewPart.get_model"
+          ],
+          "instruction": "call    sub_182E8AC90"
+        },
+        {
+          "at": "0x372e2a8",
+          "target": "0x3494090",
+          "names": [],
+          "instruction": "call    sub_183494090"
+        },
+        {
+          "at": "0x372e2bb",
+          "target": "0x26b40",
+          "names": [],
+          "instruction": "call    loc_180026B40"
+        },
+        {
+          "at": "0x372e2e0",
+          "target": "0x2d54b70",
+          "names": [
+            "Object.op_Implicit"
+          ],
+          "instruction": "call    sub_182D54B70"
+        },
+        {
+          "at": "0x372e2f9",
+          "target": "0x26b40",
+          "names": [],
+          "instruction": "call    loc_180026B40"
+        },
+        {
+          "at": "0x372e303",
+          "target": "0x372e380",
+          "names": [
+            "ComplexModelViewPart._ApplyCacheVFX"
+          ],
+          "instruction": "call    sub_18372E380"
+        },
+        {
+          "at": "0x372e310",
+          "target": "0x3020",
+          "names": [],
+          "instruction": "call    sub_180003020"
+        },
+        {
+          "at": "0x372e32e",
+          "target": "0x3231e00",
+          "names": [
+            "Animator.get_runtimeAnimatorController"
+          ],
+          "instruction": "call    sub_183231E00"
+        },
+        {
+          "at": "0x372e333",
+          "target": "0x372e2eb",
+          "names": [],
+          "instruction": "jmp     short loc_18372E2EB"
+        },
+        {
+          "at": "0x372e37a",
+          "target": "0xaae414",
+          "names": [],
+          "instruction": "call    sub_180AAE414"
+        },
+        {
+          "at": "0x372e370",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x372e375",
+          "target": "0x372e2db",
+          "names": [],
+          "instruction": "jmp     loc_18372E2DB"
+        },
+        {
+          "at": "0x372e337",
+          "target": "0x372e26f",
+          "names": [],
+          "instruction": "jmp     loc_18372E26F"
+        },
+        {
+          "at": "0x372e366",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x372e36b",
+          "target": "0x372e262",
+          "names": [],
+          "instruction": "jmp     loc_18372E262"
+        },
+        {
+          "at": "0x372e33c",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x372e355",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x372e361",
+          "target": "0x372e24c",
+          "names": [],
+          "instruction": "jmp     loc_18372E24C"
+        },
+        {
+          "at": "0x4e21035",
+          "target": "0x64af4dc",
+          "names": [
+            "WrappersManagerImpl.GetPatch"
+          ],
+          "instruction": "call    sub_1864AF4DC"
+        },
+        {
+          "at": "0x4e2104c",
+          "target": "0x56a6b44",
+          "names": [
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_4",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_2",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_13",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_0",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_0",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_12",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_5",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_2",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_3",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_9",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_1",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_13",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_1",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_7",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_7",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_4",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_10"
+          ],
+          "instruction": "call    sub_1856A6B44"
+        },
+        {
+          "at": "0x4e21052",
+          "target": "0x372e315",
+          "names": [],
+          "instruction": "jmp     loc_18372E315"
+        }
+      ],
+      "asm": [
+        "0x372e200 mov     [rsp+8], rbx",
+        "0x372e205 push    rdi",
+        "0x372e206 sub     rsp, 20h",
+        "0x372e20a mov     rbx, rcx",
+        "0x372e20d xor     edx, edx",
+        "0x372e20f mov     ecx, 0B498h",
+        "0x372e214 call    sub_182C97970 ; WrappersManagerImpl.IsPatched",
+        "0x372e219 xor     edx, edx",
+        "0x372e21b test    al, al",
+        "0x372e21d jnz     near ptr unk_184E21030",
+        "0x372e223 mov     rcx, rbx",
+        "0x372e226 call    sub_18372E700 ; BaseModelViewPart.PostDealLoadedModel",
+        "0x372e22b xor     edx, edx",
+        "0x372e22d mov     rcx, rbx",
+        "0x372e230 call    sub_182E8AC90 ; BaseModelViewPart.get_model",
+        "0x372e235 mov     rcx, cs:qword_18D0D8088",
+        "0x372e23c mov     rdi, rax",
+        "0x372e23f cmp     dword ptr [rcx+0E0h], 0",
+        "0x372e246 jz      near ptr unk_18372E33C",
+        "0x372e24c test    rdi, rdi",
+        "0x372e24f jz      near ptr unk_18372E315",
+        "0x372e255 cmp     dword ptr [rcx+0E0h], 0",
+        "0x372e25c jz      near ptr unk_18372E366",
+        "0x372e262 cmp     qword ptr [rdi+10h], 0",
+        "0x372e267 jz      near ptr unk_18372E335",
+        "0x372e26d xor     al, al",
+        "0x372e26f test    al, al",
+        "0x372e271 jnz     near ptr unk_18372E315",
+        "0x372e277 xor     edx, edx",
+        "0x372e279 mov     rcx, rbx",
+        "0x372e27c call    sub_18372E570 ; ComplexModelViewPart._InternalEffectSetting",
+        "0x372e281 xor     edx, edx",
+        "0x372e283 mov     rcx, rbx",
+        "0x372e286 call    sub_18372E460 ; ComplexModelViewPart._GetRenderHelper",
+        "0x372e28b xor     edx, edx",
+        "0x372e28d mov     rcx, rbx",
+        "0x372e290 call    sub_182E8AC90 ; BaseModelViewPart.get_model",
+        "0x372e295 test    rax, rax",
+        "0x372e298 jz      near ptr unk_18372E37A",
+        "0x372e29e mov     rdx, cs:qword_18D0DEA70",
+        "0x372e2a5 mov     rcx, rax",
+        "0x372e2a8 call    sub_183494090",
+        "0x372e2ad lea     rcx, [rbx+100h]",
+        "0x372e2b4 mov     [rbx+100h], rax",
+        "0x372e2bb call    loc_180026B40",
+        "0x372e2c0 mov     rcx, cs:qword_18D0D8088",
+        "0x372e2c7 mov     rdi, [rbx+100h]",
+        "0x372e2ce cmp     dword ptr [rcx+0E0h], 0",
+        "0x372e2d5 jz      near ptr unk_18372E370",
+        "0x372e2db xor     edx, edx",
+        "0x372e2dd mov     rcx, rdi",
+        "0x372e2e0 call    sub_182D54B70 ; Object.op_Implicit",
+        "0x372e2e5 test    al, al",
+        "0x372e2e7 jnz     short near ptr unk_18372E320",
+        "0x372e2e9 xor     eax, eax",
+        "0x372e2eb lea     rcx, [rbx+108h]",
+        "0x372e2f2 mov     [rbx+108h], rax",
+        "0x372e2f9 call    loc_180026B40",
+        "0x372e2fe xor     edx, edx",
+        "0x372e300 mov     rcx, rbx",
+        "0x372e303 call    sub_18372E380 ; ComplexModelViewPart._ApplyCacheVFX",
+        "0x372e308 mov     ecx, 1Ah",
+        "0x372e30d mov     rdx, rbx",
+        "0x372e310 call    sub_180003020",
+        "0x372e315 mov     rbx, [rsp+30h]",
+        "0x372e31a add     rsp, 20h",
+        "0x372e31e pop     rdi",
+        "0x372e31f retn",
+        "0x372e320 mov     rcx, [rbx+100h]",
+        "0x372e327 test    rcx, rcx",
+        "0x372e32a jz      short near ptr unk_18372E37A",
+        "0x372e32c xor     edx, edx",
+        "0x372e32e call    sub_183231E00 ; Animator.get_runtimeAnimatorController",
+        "0x372e333 jmp     short loc_18372E2EB",
+        "0x372e335 mov     al, 1",
+        "0x372e337 jmp     loc_18372E26F",
+        "0x372e33c call    sub_1800262C0",
+        "0x372e341 mov     rcx, cs:qword_18D0D8088",
+        "0x372e348 cmp     dword ptr [rcx+0E0h], 0",
+        "0x372e34f jnz     loc_18372E24C",
+        "0x372e355 call    sub_1800262C0",
+        "0x372e35a mov     rcx, cs:qword_18D0D8088",
+        "0x372e361 jmp     loc_18372E24C",
+        "0x372e366 call    sub_1800262C0",
+        "0x372e36b jmp     loc_18372E262",
+        "0x372e370 call    sub_1800262C0",
+        "0x372e375 jmp     loc_18372E2DB",
+        "0x372e37a call    sub_180AAE414",
+        "0x372e37f int     3; Trap to Debugger",
+        "0x4e21030 mov     ecx, 0B498h",
+        "0x4e21035 call    sub_1864AF4DC ; WrappersManagerImpl.GetPatch",
+        "0x4e2103a test    rax, rax",
+        "0x4e2103d jz      loc_18372E37A",
+        "0x4e21043 xor     r8d, r8d",
+        "0x4e21046 mov     rdx, rbx",
+        "0x4e21049 mov     rcx, rax",
+        "0x4e2104c call    sub_1856A6B44 ; ILFixDynamicMethodWrapper.__Gen_Wrap_4 | ILFixDynamicMethodWrapper.__Gen_Wrap_2 | ILFixDynamicMethodWrapper.__Gen_Wrap_13 | ILFixDynamicMethodWrapper.__Gen_Wrap_0",
+        "0x4e21051 nop",
+        "0x4e21052 jmp     loc_18372E315"
+      ]
+    },
+    {
+      "name": "BaseModelViewPart.PostDealLoadedModel",
+      "rva": "0x372e700",
+      "pdata_begin": "0x372e700",
+      "pdata_end": "0x372eb94",
+      "calls": [
+        {
+          "at": "0x372e71c",
+          "target": "0x2c97970",
+          "names": [
+            "WrappersManagerImpl.IsPatched"
+          ],
+          "instruction": "call    sub_182C97970"
+        },
+        {
+          "at": "0x372e784",
+          "target": "0x2e8b310",
+          "names": [
+            "GameObject.get_transform"
+          ],
+          "instruction": "call    sub_182E8B310"
+        },
+        {
+          "at": "0x372e79f",
+          "target": "0x2f01710",
+          "names": [
+            "Transform.SetParent"
+          ],
+          "instruction": "call    sub_182F01710"
+        },
+        {
+          "at": "0x372e7b3",
+          "target": "0x2e8b310",
+          "names": [
+            "GameObject.get_transform"
+          ],
+          "instruction": "call    sub_182E8B310"
+        },
+        {
+          "at": "0x372e7ee",
+          "target": null,
+          "names": [],
+          "instruction": "call    rax ; qword_18DEAEFF0"
+        },
+        {
+          "at": "0x372e7ff",
+          "target": "0x2e8b310",
+          "names": [
+            "GameObject.get_transform"
+          ],
+          "instruction": "call    sub_182E8B310"
+        },
+        {
+          "at": "0x372e82a",
+          "target": "0x30134c0",
+          "names": [],
+          "instruction": "call    sub_1830134C0"
+        },
+        {
+          "at": "0x372e83e",
+          "target": "0x2e8b310",
+          "names": [
+            "GameObject.get_transform"
+          ],
+          "instruction": "call    sub_182E8B310"
+        },
+        {
+          "at": "0x372e879",
+          "target": null,
+          "names": [],
+          "instruction": "call    rax ; qword_18DEAF020"
+        },
+        {
+          "at": "0x372e89b",
+          "target": "0x3494980",
+          "names": [],
+          "instruction": "call    sub_183494980"
+        },
+        {
+          "at": "0x372e8ae",
+          "target": "0x26b40",
+          "names": [],
+          "instruction": "call    loc_180026B40"
+        },
+        {
+          "at": "0x372e8ce",
+          "target": "0x25e60",
+          "names": [],
+          "instruction": "call    sub_180025E60"
+        },
+        {
+          "at": "0x372e8e1",
+          "target": "0x26b40",
+          "names": [],
+          "instruction": "call    loc_180026B40"
+        },
+        {
+          "at": "0x372e939",
+          "target": null,
+          "names": [],
+          "instruction": "call    rax ; qword_18DEAE330"
+        },
+        {
+          "at": "0x372e956",
+          "target": "0x372e8f0",
+          "names": [],
+          "instruction": "jmp     short loc_18372E8F0"
+        },
+        {
+          "at": "0x372eb88",
+          "target": "0x124d0",
+          "names": [],
+          "instruction": "call    sub_1800124D0"
+        },
+        {
+          "at": "0x372eb8e",
+          "target": "0xaae414",
+          "names": [],
+          "instruction": "call    sub_180AAE414"
+        },
+        {
+          "at": "0x4e21323",
+          "target": "0x1f1b0",
+          "names": [],
+          "instruction": "call    sub_18001F1B0"
+        },
+        {
+          "at": "0x4e21334",
+          "target": "0x372e936",
+          "names": [],
+          "instruction": "jmp     loc_18372E936"
+        },
+        {
+          "at": "0x4e21340",
+          "target": "0x2d64c8",
+          "names": [],
+          "instruction": "call    near ptr unk_1802D64C8"
+        },
+        {
+          "at": "0x4e2134a",
+          "target": "0x128c0",
+          "names": [],
+          "instruction": "call    sub_1800128C0"
+        },
+        {
+          "at": "0x4e21350",
+          "target": "0xaae414",
+          "names": [],
+          "instruction": "call    sub_180AAE414"
+        },
+        {
+          "at": "0x4e2135d",
+          "target": "0x64af4dc",
+          "names": [
+            "WrappersManagerImpl.GetPatch"
+          ],
+          "instruction": "call    sub_1864AF4DC"
+        },
+        {
+          "at": "0x4e21374",
+          "target": "0x56a6b44",
+          "names": [
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_4",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_2",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_13",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_0",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_0",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_12",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_5",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_2",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_3",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_9",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_1",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_13",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_1",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_7",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_7",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_4",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_10"
+          ],
+          "instruction": "call    sub_1856A6B44"
+        },
+        {
+          "at": "0x4e2137a",
+          "target": "0x372eaeb",
+          "names": [],
+          "instruction": "jmp     loc_18372EAEB"
+        },
+        {
+          "at": "0x372e96e",
+          "target": "0x3494980",
+          "names": [],
+          "instruction": "call    sub_183494980"
+        },
+        {
+          "at": "0x372e981",
+          "target": "0x26b40",
+          "names": [],
+          "instruction": "call    loc_180026B40"
+        },
+        {
+          "at": "0x372e9a1",
+          "target": "0x25e60",
+          "names": [],
+          "instruction": "call    sub_180025E60"
+        },
+        {
+          "at": "0x372e9b4",
+          "target": "0x26b40",
+          "names": [],
+          "instruction": "call    loc_180026B40"
+        },
+        {
+          "at": "0x372e9f8",
+          "target": "0x2e6db60",
+          "names": [
+            "Renderer.get_enabled"
+          ],
+          "instruction": "call    sub_182E6DB60"
+        },
+        {
+          "at": "0x372ea18",
+          "target": "0x372e9c0",
+          "names": [],
+          "instruction": "jmp     short loc_18372E9C0"
+        },
+        {
+          "at": "0x372ea30",
+          "target": "0x3494980",
+          "names": [],
+          "instruction": "call    sub_183494980"
+        },
+        {
+          "at": "0x372ea43",
+          "target": "0x26b40",
+          "names": [],
+          "instruction": "call    loc_180026B40"
+        },
+        {
+          "at": "0x372ea5c",
+          "target": "0x3dd24b0",
+          "names": [],
+          "instruction": "call    sub_183DD24B0"
+        },
+        {
+          "at": "0x372ea6f",
+          "target": "0x26b40",
+          "names": [],
+          "instruction": "call    loc_180026B40"
+        },
+        {
+          "at": "0x372ea8a",
+          "target": "0x3494980",
+          "names": [],
+          "instruction": "call    sub_183494980"
+        },
+        {
+          "at": "0x372ea9d",
+          "target": "0x26b40",
+          "names": [],
+          "instruction": "call    loc_180026B40"
+        },
+        {
+          "at": "0x372eabd",
+          "target": "0x25e60",
+          "names": [],
+          "instruction": "call    sub_180025E60"
+        },
+        {
+          "at": "0x372ead0",
+          "target": "0x26b40",
+          "names": [],
+          "instruction": "call    loc_180026B40"
+        },
+        {
+          "at": "0x372eb22",
+          "target": "0x2e9ca30",
+          "names": [
+            "Behaviour.get_enabled"
+          ],
+          "instruction": "call    sub_182E9CA30"
+        },
+        {
+          "at": "0x372eb3c",
+          "target": "0x372ead5",
+          "names": [],
+          "instruction": "jmp     short loc_18372EAD5"
+        },
+        {
+          "at": "0x372eb44",
+          "target": "0x31f6830",
+          "names": [],
+          "instruction": "call    sub_1831F6830"
+        },
+        {
+          "at": "0x372eb49",
+          "target": "0x372e885",
+          "names": [],
+          "instruction": "jmp     loc_18372E885"
+        },
+        {
+          "at": "0x4e21155",
+          "target": "0x1f1b0",
+          "names": [],
+          "instruction": "call    sub_18001F1B0"
+        },
+        {
+          "at": "0x4e21166",
+          "target": "0x2d64c8",
+          "names": [],
+          "instruction": "call    near ptr unk_1802D64C8"
+        },
+        {
+          "at": "0x4e21170",
+          "target": "0x128c0",
+          "names": [],
+          "instruction": "call    sub_1800128C0"
+        },
+        {
+          "at": "0x4e2117d",
+          "target": "0x372e871",
+          "names": [],
+          "instruction": "jmp     loc_18372E871"
+        },
+        {
+          "at": "0x372eb82",
+          "target": "0xaae414",
+          "names": [],
+          "instruction": "call    sub_180AAE414"
+        },
+        {
+          "at": "0x4e21121",
+          "target": "0x1f1b0",
+          "names": [],
+          "instruction": "call    sub_18001F1B0"
+        },
+        {
+          "at": "0x4e21132",
+          "target": "0x2d64c8",
+          "names": [],
+          "instruction": "call    near ptr unk_1802D64C8"
+        },
+        {
+          "at": "0x4e2113c",
+          "target": "0x128c0",
+          "names": [],
+          "instruction": "call    sub_1800128C0"
+        },
+        {
+          "at": "0x4e21149",
+          "target": "0x372e7e6",
+          "names": [],
+          "instruction": "jmp     loc_18372E7E6"
+        },
+        {
+          "at": "0x4e2118d",
+          "target": "0x2e8b310",
+          "names": [
+            "GameObject.get_transform"
+          ],
+          "instruction": "call    sub_182E8B310"
+        },
+        {
+          "at": "0x4e211a6",
+          "target": "0x2d4de80",
+          "names": [
+            "Transform.get_localPosition"
+          ],
+          "instruction": "call    sub_182D4DE80"
+        },
+        {
+          "at": "0x4e211ca",
+          "target": "0x2e8b310",
+          "names": [
+            "GameObject.get_transform"
+          ],
+          "instruction": "call    sub_182E8B310"
+        },
+        {
+          "at": "0x4e211e3",
+          "target": "0x356d550",
+          "names": [
+            "Transform.get_localEulerAngles"
+          ],
+          "instruction": "call    sub_18356D550"
+        },
+        {
+          "at": "0x4e21207",
+          "target": "0x2e8b310",
+          "names": [
+            "GameObject.get_transform"
+          ],
+          "instruction": "call    sub_182E8B310"
+        },
+        {
+          "at": "0x4e21220",
+          "target": "0x2e61030",
+          "names": [
+            "Transform.get_localScale"
+          ],
+          "instruction": "call    sub_182E61030"
+        },
+        {
+          "at": "0x4e21241",
+          "target": "0x2e8b310",
+          "names": [
+            "GameObject.get_transform"
+          ],
+          "instruction": "call    sub_182E8B310"
+        },
+        {
+          "at": "0x4e2125c",
+          "target": "0x2f01710",
+          "names": [
+            "Transform.SetParent"
+          ],
+          "instruction": "call    sub_182F01710"
+        },
+        {
+          "at": "0x4e21270",
+          "target": "0x2e8b310",
+          "names": [
+            "GameObject.get_transform"
+          ],
+          "instruction": "call    sub_182E8B310"
+        },
+        {
+          "at": "0x4e2129c",
+          "target": "0x3c97bb0",
+          "names": [
+            "Transform.set_localPosition_Injected"
+          ],
+          "instruction": "call    sub_183C97BB0"
+        },
+        {
+          "at": "0x4e212b0",
+          "target": "0x2e8b310",
+          "names": [
+            "GameObject.get_transform"
+          ],
+          "instruction": "call    sub_182E8B310"
+        },
+        {
+          "at": "0x4e212dc",
+          "target": "0x30134c0",
+          "names": [],
+          "instruction": "call    sub_1830134C0"
+        },
+        {
+          "at": "0x4e212ec",
+          "target": "0x2e8b310",
+          "names": [
+            "GameObject.get_transform"
+          ],
+          "instruction": "call    sub_182E8B310"
+        },
+        {
+          "at": "0x4e21311",
+          "target": "0x3916710",
+          "names": [
+            "Transform.set_localScale_Injected"
+          ],
+          "instruction": "call    sub_183916710"
+        },
+        {
+          "at": "0x4e21317",
+          "target": "0x372e87b",
+          "names": [],
+          "instruction": "jmp     loc_18372E87B"
+        },
+        {
+          "at": "0x372eb02",
+          "target": "0x372e764",
+          "names": [],
+          "instruction": "jmp     loc_18372E764"
+        },
+        {
+          "at": "0x372eb78",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x372eb7d",
+          "target": "0x372e757",
+          "names": [],
+          "instruction": "jmp     loc_18372E757"
+        },
+        {
+          "at": "0x372eb4e",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x372eb67",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x372eb73",
+          "target": "0x372e741",
+          "names": [],
+          "instruction": "jmp     loc_18372E741"
+        }
+      ],
+      "asm": [
+        "0x372e700 mov     [rsp+8], rbx",
+        "0x372e705 mov     [rsp+10h], rbp",
+        "0x372e70a push    rsi",
+        "0x372e70b push    rdi",
+        "0x372e70c push    r14",
+        "0x372e70e sub     rsp, 60h",
+        "0x372e712 mov     rdi, rcx",
+        "0x372e715 xor     edx, edx",
+        "0x372e717 mov     ecx, 10F5h",
+        "0x372e71c call    sub_182C97970 ; WrappersManagerImpl.IsPatched",
+        "0x372e721 test    al, al",
+        "0x372e723 jnz     loc_184E21356",
+        "0x372e729 mov     rcx, cs:qword_18D0D8088",
+        "0x372e730 mov     rbx, [rdi+60h]",
+        "0x372e734 cmp     dword ptr [rcx+0E0h], 0",
+        "0x372e73b jz      loc_18372EB4E",
+        "0x372e741 test    rbx, rbx",
+        "0x372e744 jz      loc_18372EAEB",
+        "0x372e74a cmp     dword ptr [rcx+0E0h], 0",
+        "0x372e751 jz      loc_18372EB78",
+        "0x372e757 cmp     qword ptr [rbx+10h], 0",
+        "0x372e75c jz      loc_18372EB00",
+        "0x372e762 xor     al, al",
+        "0x372e764 test    al, al",
+        "0x372e766 jnz     loc_18372EAEB",
+        "0x372e76c mov     rcx, [rdi+60h]",
+        "0x372e770 cmp     [rdi+1Bh], al",
+        "0x372e773 jnz     loc_184E21182",
+        "0x372e779 test    rcx, rcx",
+        "0x372e77c jz      loc_18372EB82",
+        "0x372e782 xor     edx, edx",
+        "0x372e784 call    sub_182E8B310 ; GameObject.get_transform",
+        "0x372e789 test    rax, rax",
+        "0x372e78c jz      loc_18372EB82",
+        "0x372e792 mov     rdx, [rdi+28h]",
+        "0x372e796 xor     r9d, r9d",
+        "0x372e799 xor     r8d, r8d",
+        "0x372e79c mov     rcx, rax",
+        "0x372e79f call    sub_182F01710 ; Transform.SetParent",
+        "0x372e7a4 mov     rcx, [rdi+60h]",
+        "0x372e7a8 test    rcx, rcx",
+        "0x372e7ab jz      loc_18372EB82",
+        "0x372e7b1 xor     edx, edx",
+        "0x372e7b3 call    sub_182E8B310 ; GameObject.get_transform",
+        "0x372e7b8 mov     rbx, rax",
+        "0x372e7bb test    rax, rax",
+        "0x372e7be jz      loc_18372EB82",
+        "0x372e7c4 mov     rax, cs:qword_18DEAEFF0",
+        "0x372e7cb movsd   xmm0, qword ptr [rdi+30h]",
+        "0x372e7d0 mov     ecx, [rdi+38h]",
+        "0x372e7d3 movsd   qword ptr [rsp+20h], xmm0",
+        "0x372e7d9 mov     [rsp+28h], ecx",
+        "0x372e7dd test    rax, rax",
+        "0x372e7e0 jz      loc_184E2111A",
+        "0x372e7e6 lea     rdx, [rsp+20h]",
+        "0x372e7eb mov     rcx, rbx",
+        "0x372e7ee call    rax ; qword_18DEAEFF0",
+        "0x372e7f0 mov     rcx, [rdi+60h]",
+        "0x372e7f4 test    rcx, rcx",
+        "0x372e7f7 jz      loc_18372EB82",
+        "0x372e7fd xor     edx, edx",
+        "0x372e7ff call    sub_182E8B310 ; GameObject.get_transform",
+        "0x372e804 test    rax, rax",
+        "0x372e807 jz      loc_18372EB82",
+        "0x372e80d mov     ecx, [rdi+44h]",
+        "0x372e810 lea     rdx, [rsp+30h]",
+        "0x372e815 movsd   xmm0, qword ptr [rdi+3Ch]",
+        "0x372e81a xor     r8d, r8d",
+        "0x372e81d mov     [rsp+38h], ecx",
+        "0x372e821 mov     rcx, rax",
+        "0x372e824 movsd   qword ptr [rsp+30h], xmm0",
+        "0x372e82a call    sub_1830134C0",
+        "0x372e82f mov     rcx, [rdi+60h]",
+        "0x372e833 test    rcx, rcx",
+        "0x372e836 jz      loc_18372EB82",
+        "0x372e83c xor     edx, edx",
+        "0x372e83e call    sub_182E8B310 ; GameObject.get_transform",
+        "0x372e843 mov     rbx, rax",
+        "0x372e846 test    rax, rax",
+        "0x372e849 jz      loc_18372EB82",
+        "0x372e84f mov     rax, cs:qword_18DEAF020",
+        "0x372e856 movsd   xmm0, qword ptr [rdi+48h]",
+        "0x372e85b mov     ecx, [rdi+50h]",
+        "0x372e85e movsd   qword ptr [rsp+40h], xmm0",
+        "0x372e864 mov     [rsp+48h], ecx",
+        "0x372e868 test    rax, rax",
+        "0x372e86b jz      loc_184E2114E",
+        "0x372e871 lea     rdx, [rsp+40h]",
+        "0x372e876 mov     rcx, rbx",
+        "0x372e879 call    rax ; qword_18DEAF020",
+        "0x372e87b cmp     byte ptr [rdi+58h], 0",
+        "0x372e87f jnz     loc_18372EB3E",
+        "0x372e885 mov     rcx, [rdi+60h]",
+        "0x372e889 test    rcx, rcx",
+        "0x372e88c jz      loc_18372EB8E",
+        "0x372e892 mov     r8, cs:qword_18D030E40",
+        "0x372e899 mov     dl, 1",
+        "0x372e89b call    sub_183494980",
+        "0x372e8a0 lea     rcx, [rdi+88h]",
+        "0x372e8a7 mov     [rdi+88h], rax",
+        "0x372e8ae call    loc_180026B40",
+        "0x372e8b3 mov     r9, [rdi+88h]",
+        "0x372e8ba test    r9, r9",
+        "0x372e8bd jz      loc_18372EB8E",
+        "0x372e8c3 mov     edx, [r9+18h]",
+        "0x372e8c7 mov     rcx, cs:qword_18D09CBB8",
+        "0x372e8ce call    sub_180025E60",
+        "0x372e8d3 lea     rcx, [rdi+90h]",
+        "0x372e8da mov     [rdi+90h], rax",
+        "0x372e8e1 call    loc_180026B40",
+        "0x372e8e6 xor     r14d, r14d",
+        "0x372e8e9 mov     ebx, r14d",
+        "0x372e8ec nop     dword ptr [rax+00h]",
+        "0x372e8f0 mov     rax, [rdi+88h]",
+        "0x372e8f7 test    rax, rax",
+        "0x372e8fa jz      loc_18372EB8E",
+        "0x372e900 cmp     ebx, [rax+18h]",
+        "0x372e903 jge     short loc_18372E958",
+        "0x372e905 mov     rsi, [rdi+90h]",
+        "0x372e90c mov     rcx, rax",
+        "0x372e90f jnb     loc_18372EB88",
+        "0x372e915 movsxd  rax, ebx",
+        "0x372e918 mov     rbp, [rcx+rax*8+20h]",
+        "0x372e91d test    rbp, rbp",
+        "0x372e920 jz      loc_18372EB8E",
+        "0x372e926 mov     rax, cs:qword_18DEAE330",
+        "0x372e92d test    rax, rax",
+        "0x372e930 jz      loc_184E2131C",
+        "0x372e936 mov     rcx, rbp",
+        "0x372e939 call    rax ; qword_18DEAE330",
+        "0x372e93b test    rsi, rsi",
+        "0x372e93e jz      loc_18372EB8E",
+        "0x372e944 cmp     ebx, [rsi+18h]",
+        "0x372e947 jnb     loc_18372EB88",
+        "0x372e94d movsxd  rcx, ebx",
+        "0x372e950 inc     ebx",
+        "0x372e952 mov     [rcx+rsi+20h], al",
+        "0x372e956 jmp     short loc_18372E8F0",
+        "0x372e958 mov     rcx, [rdi+60h]",
+        "0x372e95c test    rcx, rcx",
+        "0x372e95f jz      loc_18372EB8E",
+        "0x372e965 mov     r8, cs:qword_18D0DEA60",
+        "0x372e96c mov     dl, 1",
+        "0x372e96e call    sub_183494980",
+        "0x372e973 lea     rcx, [rdi+0A8h]",
+        "0x372e97a mov     [rdi+0A8h], rax",
+        "0x372e981 call    loc_180026B40",
+        "0x372e986 mov     r9, [rdi+0A8h]",
+        "0x372e98d test    r9, r9",
+        "0x372e990 jz      loc_18372EB8E",
+        "0x372e996 mov     edx, [r9+18h]",
+        "0x372e99a mov     rcx, cs:qword_18D09CBB8",
+        "0x372e9a1 call    sub_180025E60",
+        "0x372e9a6 lea     rcx, [rdi+0B8h]",
+        "0x372e9ad mov     [rdi+0B8h], rax",
+        "0x372e9b4 call    loc_180026B40",
+        "0x372e9b9 mov     ebx, r14d",
+        "0x372e9bc nop     dword ptr [rax+00h]",
+        "0x372e9c0 mov     rax, [rdi+0A8h]",
+        "0x372e9c7 test    rax, rax",
+        "0x372e9ca jz      loc_18372EB8E",
+        "0x372e9d0 cmp     ebx, [rax+18h]",
+        "0x372e9d3 jge     short loc_18372EA1A",
+        "0x372e9d5 mov     rsi, [rdi+0B8h]",
+        "0x372e9dc mov     rcx, rax",
+        "0x372e9df jnb     loc_18372EB88",
+        "0x372e9e5 movsxd  rax, ebx",
+        "0x372e9e8 mov     rcx, [rcx+rax*8+20h]",
+        "0x372e9ed test    rcx, rcx",
+        "0x372e9f0 jz      loc_18372EB8E",
+        "0x372e9f6 xor     edx, edx",
+        "0x372e9f8 call    sub_182E6DB60 ; Renderer.get_enabled",
+        "0x372e9fd test    rsi, rsi",
+        "0x372ea00 jz      loc_18372EB8E",
+        "0x372ea06 cmp     ebx, [rsi+18h]",
+        "0x372ea09 jnb     loc_18372EB88",
+        "0x372ea0f movsxd  rcx, ebx",
+        "0x372ea12 inc     ebx",
+        "0x372ea14 mov     [rcx+rsi+20h], al",
+        "0x372ea18 jmp     short loc_18372E9C0",
+        "0x372ea1a mov     rcx, [rdi+60h]",
+        "0x372ea1e test    rcx, rcx",
+        "0x372ea21 jz      loc_18372EB8E",
+        "0x372ea27 mov     r8, cs:qword_18D0F8A78",
+        "0x372ea2e mov     dl, 1",
+        "0x372ea30 call    sub_183494980",
+        "0x372ea35 lea     rcx, [rdi+0C0h]",
+        "0x372ea3c mov     [rdi+0C0h], rax",
+        "0x372ea43 call    loc_180026B40",
+        "0x372ea48 mov     rcx, [rdi+60h]",
+        "0x372ea4c test    rcx, rcx",
+        "0x372ea4f jz      loc_18372EB8E",
+        "0x372ea55 mov     rdx, cs:qword_18D04EA18",
+        "0x372ea5c call    sub_183DD24B0",
+        "0x372ea61 lea     rcx, [rdi+0B0h]",
+        "0x372ea68 mov     [rdi+0B0h], rax",
+        "0x372ea6f call    loc_180026B40",
+        "0x372ea74 mov     rcx, [rdi+60h]",
+        "0x372ea78 test    rcx, rcx",
+        "0x372ea7b jz      loc_18372EB8E",
+        "0x372ea81 mov     r8, cs:qword_18D0F81B8",
+        "0x372ea88 mov     dl, 1",
+        "0x372ea8a call    sub_183494980",
+        "0x372ea8f lea     rcx, [rdi+98h]",
+        "0x372ea96 mov     [rdi+98h], rax",
+        "0x372ea9d call    loc_180026B40",
+        "0x372eaa2 mov     r9, [rdi+98h]",
+        "0x372eaa9 test    r9, r9",
+        "0x372eaac jz      loc_18372EB8E",
+        "0x372eab2 mov     edx, [r9+18h]",
+        "0x372eab6 mov     rcx, cs:qword_18D09CBB8",
+        "0x372eabd call    sub_180025E60",
+        "0x372eac2 lea     rcx, [rdi+0A0h]",
+        "0x372eac9 mov     [rdi+0A0h], rax",
+        "0x372ead0 call    loc_180026B40",
+        "0x372ead5 mov     rax, [rdi+98h]",
+        "0x372eadc test    rax, rax",
+        "0x372eadf jz      loc_18372EB8E",
+        "0x372eae5 cmp     r14d, [rax+18h]",
+        "0x372eae9 jl      short loc_18372EB07",
+        "0x372eaeb lea     r11, [rsp+60h]",
+        "0x372eaf0 mov     rbx, [r11+20h]",
+        "0x372eaf4 mov     rbp, [r11+28h]",
+        "0x372eaf8 mov     rsp, r11",
+        "0x372eafb pop     r14",
+        "0x372eafd pop     rdi",
+        "0x372eafe pop     rsi",
+        "0x372eaff retn",
+        "0x372eb00 mov     al, 1",
+        "0x372eb02 jmp     loc_18372E764",
+        "0x372eb07 mov     rbx, [rdi+0A0h]",
+        "0x372eb0e mov     rcx, rax",
+        "0x372eb11 jnb     short loc_18372EB88",
+        "0x372eb13 movsxd  rax, r14d",
+        "0x372eb16 mov     rcx, [rcx+rax*8+20h]",
+        "0x372eb1b test    rcx, rcx",
+        "0x372eb1e jz      short loc_18372EB8E",
+        "0x372eb20 xor     edx, edx",
+        "0x372eb22 call    sub_182E9CA30 ; Behaviour.get_enabled",
+        "0x372eb27 test    rbx, rbx",
+        "0x372eb2a jz      short loc_18372EB8E",
+        "0x372eb2c cmp     r14d, [rbx+18h]",
+        "0x372eb30 jnb     short loc_18372EB88",
+        "0x372eb32 movsxd  rcx, r14d",
+        "0x372eb35 inc     r14d",
+        "0x372eb38 mov     [rcx+rbx+20h], al",
+        "0x372eb3c jmp     short loc_18372EAD5",
+        "0x372eb3e mov     rcx, [rdi+60h]",
+        "0x372eb42 mov     dl, 1",
+        "0x372eb44 call    sub_1831F6830",
+        "0x372eb49 jmp     loc_18372E885",
+        "0x372eb4e call    sub_1800262C0",
+        "0x372eb53 mov     rcx, cs:qword_18D0D8088",
+        "0x372eb5a cmp     dword ptr [rcx+0E0h], 0",
+        "0x372eb61 jnz     loc_18372E741",
+        "0x372eb67 call    sub_1800262C0",
+        "0x372eb6c mov     rcx, cs:qword_18D0D8088",
+        "0x372eb73 jmp     loc_18372E741",
+        "0x372eb78 call    sub_1800262C0",
+        "0x372eb7d jmp     loc_18372E757",
+        "0x372eb82 call    sub_180AAE414",
+        "0x372eb87 int     3; Trap to Debugger",
+        "0x372eb88 call    sub_1800124D0",
+        "0x372eb8d int     3; Trap to Debugger",
+        "0x372eb8e call    sub_180AAE414",
+        "0x372eb93 int     3; Trap to Debugger",
+        "0x372eb94 int     3; Trap to Debugger",
+        "0x372eb95 int     3; Trap to Debugger",
+        "0x372eb96 int     3; Trap to Debugger",
+        "0x372eb97 int     3; Trap to Debugger",
+        "0x372eb98 int     3; Trap to Debugger",
+        "0x372eb99 int     3; Trap to Debugger",
+        "0x372eb9a int     3; Trap to Debugger",
+        "0x372eb9b int     3; Trap to Debugger",
+        "0x372eb9c int     3; Trap to Debugger",
+        "0x372eb9d int     3; Trap to Debugger",
+        "0x372eb9e int     3; Trap to Debugger",
+        "0x372eb9f int     3; Trap to Debugger",
+        "0x4e2111a lea     rcx, aUnityengineTra_1; \"UnityEngine.Transform::set_localPositio\"...",
+        "0x4e21121 call    sub_18001F1B0",
+        "0x4e21126 test    rax, rax",
+        "0x4e21129 jnz     short loc_184E21142",
+        "0x4e2112b lea     rcx, aUnityengineTra_1; \"UnityEngine.Transform::set_localPositio\"...",
+        "0x4e21132 call    near ptr unk_1802D64C8",
+        "0x4e21137 mov     rcx, rax",
+        "0x4e2113a xor     edx, edx",
+        "0x4e2113c call    sub_1800128C0",
+        "0x4e21141 int     3; Trap to Debugger",
+        "0x4e21142 mov     cs:qword_18DEAEFF0, rax",
+        "0x4e21149 jmp     loc_18372E7E6",
+        "0x4e2114e lea     rcx, aUnityengineTra_4; \"UnityEngine.Transform::set_localScale_I\"...",
+        "0x4e21155 call    sub_18001F1B0",
+        "0x4e2115a test    rax, rax",
+        "0x4e2115d jnz     short loc_184E21176",
+        "0x4e2115f lea     rcx, aUnityengineTra_4; \"UnityEngine.Transform::set_localScale_I\"...",
+        "0x4e21166 call    near ptr unk_1802D64C8",
+        "0x4e2116b mov     rcx, rax",
+        "0x4e2116e xor     edx, edx",
+        "0x4e21170 call    sub_1800128C0",
+        "0x4e21175 int     3; Trap to Debugger",
+        "0x4e21176 mov     cs:qword_18DEAF020, rax",
+        "0x4e2117d jmp     loc_18372E871",
+        "0x4e21182 test    rcx, rcx",
+        "0x4e21185 jz      loc_18372EB8E",
+        "0x4e2118b xor     edx, edx",
+        "0x4e2118d call    sub_182E8B310 ; GameObject.get_transform",
+        "0x4e21192 test    rax, rax",
+        "0x4e21195 jz      loc_18372EB8E",
+        "0x4e2119b xor     r8d, r8d",
+        "0x4e2119e lea     rcx, [rsp+50h]",
+        "0x4e211a3 mov     rdx, rax",
+        "0x4e211a6 call    sub_182D4DE80 ; Transform.get_localPosition",
+        "0x4e211ab mov     rcx, [rdi+60h]",
+        "0x4e211af movsd   xmm0, qword ptr [rax]",
+        "0x4e211b3 mov     esi, [rax+8]",
+        "0x4e211b6 movsd   qword ptr [rsp+90h], xmm0",
+        "0x4e211bf test    rcx, rcx",
+        "0x4e211c2 jz      loc_18372EB8E",
+        "0x4e211c8 xor     edx, edx",
+        "0x4e211ca call    sub_182E8B310 ; GameObject.get_transform",
+        "0x4e211cf test    rax, rax",
+        "0x4e211d2 jz      loc_18372EB8E",
+        "0x4e211d8 xor     r8d, r8d",
+        "0x4e211db lea     rcx, [rsp+50h]",
+        "0x4e211e0 mov     rdx, rax",
+        "0x4e211e3 call    sub_18356D550 ; Transform.get_localEulerAngles",
+        "0x4e211e8 mov     rcx, [rdi+60h]",
+        "0x4e211ec movsd   xmm0, qword ptr [rax]",
+        "0x4e211f0 mov     ebp, [rax+8]",
+        "0x4e211f3 movsd   qword ptr [rsp+98h], xmm0",
+        "0x4e211fc test    rcx, rcx",
+        "0x4e211ff jz      loc_18372EB8E",
+        "0x4e21205 xor     edx, edx",
+        "0x4e21207 call    sub_182E8B310 ; GameObject.get_transform",
+        "0x4e2120c test    rax, rax",
+        "0x4e2120f jz      loc_18372EB8E",
+        "0x4e21215 xor     r8d, r8d",
+        "0x4e21218 lea     rcx, [rsp+50h]",
+        "0x4e2121d mov     rdx, rax",
+        "0x4e21220 call    sub_182E61030 ; Transform.get_localScale",
+        "0x4e21225 mov     rcx, [rdi+60h]",
+        "0x4e21229 movsd   xmm0, qword ptr [rax]",
+        "0x4e2122d mov     ebx, [rax+8]",
+        "0x4e21230 movsd   qword ptr [rsp+20h], xmm0",
+        "0x4e21236 test    rcx, rcx",
+        "0x4e21239 jz      loc_184E21350",
+        "0x4e2123f xor     edx, edx",
+        "0x4e21241 call    sub_182E8B310 ; GameObject.get_transform",
+        "0x4e21246 test    rax, rax",
+        "0x4e21249 jz      loc_184E21350",
+        "0x4e2124f mov     rdx, [rdi+28h]",
+        "0x4e21253 xor     r9d, r9d",
+        "0x4e21256 xor     r8d, r8d",
+        "0x4e21259 mov     rcx, rax",
+        "0x4e2125c call    sub_182F01710 ; Transform.SetParent",
+        "0x4e21261 mov     rcx, [rdi+60h]",
+        "0x4e21265 test    rcx, rcx",
+        "0x4e21268 jz      loc_184E21350",
+        "0x4e2126e xor     edx, edx",
+        "0x4e21270 call    sub_182E8B310 ; GameObject.get_transform",
+        "0x4e21275 test    rax, rax",
+        "0x4e21278 jz      loc_184E21350",
+        "0x4e2127e movsd   xmm0, qword ptr [rsp+90h]",
+        "0x4e21287 lea     rdx, [rsp+40h]",
+        "0x4e2128c xor     r8d, r8d",
+        "0x4e2128f movsd   qword ptr [rsp+40h], xmm0",
+        "0x4e21295 mov     rcx, rax",
+        "0x4e21298 mov     [rsp+48h], esi",
+        "0x4e2129c call    sub_183C97BB0 ; Transform.set_localPosition_Injected",
+        "0x4e212a1 mov     rcx, [rdi+60h]",
+        "0x4e212a5 test    rcx, rcx",
+        "0x4e212a8 jz      loc_184E21350",
+        "0x4e212ae xor     edx, edx",
+        "0x4e212b0 call    sub_182E8B310 ; GameObject.get_transform",
+        "0x4e212b5 test    rax, rax",
+        "0x4e212b8 jz      loc_184E21350",
+        "0x4e212be movsd   xmm0, qword ptr [rsp+98h]",
+        "0x4e212c7 lea     rdx, [rsp+30h]",
+        "0x4e212cc xor     r8d, r8d",
+        "0x4e212cf movsd   qword ptr [rsp+30h], xmm0",
+        "0x4e212d5 mov     rcx, rax",
+        "0x4e212d8 mov     [rsp+38h], ebp",
+        "0x4e212dc call    sub_1830134C0",
+        "0x4e212e1 mov     rcx, [rdi+60h]",
+        "0x4e212e5 test    rcx, rcx",
+        "0x4e212e8 jz      short loc_184E21350",
+        "0x4e212ea xor     edx, edx",
+        "0x4e212ec call    sub_182E8B310 ; GameObject.get_transform",
+        "0x4e212f1 test    rax, rax",
+        "0x4e212f4 jz      short loc_184E21350",
+        "0x4e212f6 movsd   xmm0, qword ptr [rsp+20h]",
+        "0x4e212fc lea     rdx, [rsp+50h]",
+        "0x4e21301 xor     r8d, r8d",
+        "0x4e21304 movsd   qword ptr [rsp+50h], xmm0",
+        "0x4e2130a mov     rcx, rax",
+        "0x4e2130d mov     [rsp+58h], ebx",
+        "0x4e21311 call    sub_183916710 ; Transform.set_localScale_Injected",
+        "0x4e21316 nop",
+        "0x4e21317 jmp     loc_18372E87B",
+        "0x4e2131c lea     rcx, aUnityengineRen; \"UnityEngine.Renderer::get_enabled()\"",
+        "0x4e21323 call    sub_18001F1B0",
+        "0x4e21328 test    rax, rax",
+        "0x4e2132b jz      short loc_184E21339",
+        "0x4e2132d mov     cs:qword_18DEAE330, rax",
+        "0x4e21334 jmp     loc_18372E936",
+        "0x4e21339 lea     rcx, aUnityengineRen; \"UnityEngine.Renderer::get_enabled()\"",
+        "0x4e21340 call    near ptr unk_1802D64C8",
+        "0x4e21345 mov     rcx, rax",
+        "0x4e21348 xor     edx, edx",
+        "0x4e2134a call    sub_1800128C0",
+        "0x4e2134f int     3; Trap to Debugger",
+        "0x4e21350 call    sub_180AAE414",
+        "0x4e21355 int     3; Trap to Debugger",
+        "0x4e21356 xor     edx, edx",
+        "0x4e21358 mov     ecx, 10F5h",
+        "0x4e2135d call    sub_1864AF4DC ; WrappersManagerImpl.GetPatch",
+        "0x4e21362 test    rax, rax",
+        "0x4e21365 jz      loc_18372EB8E",
+        "0x4e2136b xor     r8d, r8d",
+        "0x4e2136e mov     rdx, rdi",
+        "0x4e21371 mov     rcx, rax",
+        "0x4e21374 call    sub_1856A6B44 ; ILFixDynamicMethodWrapper.__Gen_Wrap_4 | ILFixDynamicMethodWrapper.__Gen_Wrap_2 | ILFixDynamicMethodWrapper.__Gen_Wrap_13 | ILFixDynamicMethodWrapper.__Gen_Wrap_0",
+        "0x4e21379 nop",
+        "0x4e2137a jmp     loc_18372EAEB"
+      ]
+    }
+  ]
+}

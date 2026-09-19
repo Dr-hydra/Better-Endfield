@@ -1,0 +1,279 @@
+[
+  {
+    "name": "UnityEngine.SkinnedMeshRenderer::get_sharedMesh",
+    "rva": "0x199bd0",
+    "end": "0x199c96",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0x199beb",
+        "to": "0x12c900",
+        "name": ""
+      },
+      {
+        "at": "0x199bfa",
+        "to": "0x332250",
+        "name": ""
+      },
+      {
+        "at": "0x199c14",
+        "to": "0xbe9b0",
+        "name": ""
+      },
+      {
+        "at": "0x199c22",
+        "to": "0xbe9d0",
+        "name": ""
+      },
+      {
+        "at": "0x199c2e",
+        "to": "0x5ff70",
+        "name": ""
+      },
+      {
+        "at": "0x199c4b",
+        "to": "0x157220",
+        "name": ""
+      },
+      {
+        "at": "0x199c61",
+        "to": "0xf4f990",
+        "name": ""
+      },
+      {
+        "at": "0x199c6e",
+        "to": "0xf718d4",
+        "name": ""
+      },
+      {
+        "at": "0x199c7b",
+        "to": "0xf4f6fc",
+        "name": ""
+      },
+      {
+        "at": "0x199c90",
+        "to": "0x126211c",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0x199bd0 mov qword ptr [rsp + 8], rcx",
+      "0x199bd5 push rbx",
+      "0x199bd6 sub rsp, 0x60",
+      "0x199bda mov rbx, rcx",
+      "0x199bdd xorps xmm0, xmm0",
+      "0x199be0 lea rcx, [rsp + 0x40]",
+      "0x199be5 movdqa xmmword ptr [rsp + 0x20], xmm0",
+      "0x199beb call 0x12c900",
+      "0x199bf0 lea rdx, [rsp + 0x70]",
+      "0x199bf5 lea rcx, [rsp + 0x40]",
+      "0x199bfa call 0x332250",
+      "0x199bff cmp qword ptr [rsp + 0x20], 0",
+      "0x199c05 jne 0x199c80",
+      "0x199c07 cmp qword ptr [rsp + 0x28], 0",
+      "0x199c0d jne 0x199c80",
+      "0x199c0f lea rcx, [rsp + 0x40]",
+      "0x199c14 call 0xbe9b0",
+      "0x199c19 test al, al",
+      "0x199c1b jne 0x199c59",
+      "0x199c1d lea rcx, [rsp + 0x40]",
+      "0x199c22 call 0xbe9d0",
+      "0x199c27 lea rcx, [rax + 0x290]",
+      "0x199c2e call 0x5ff70",
+      "0x199c33 lea rdx, [rsp + 0x78]",
+      "0x199c38 mov qword ptr [rsp + 0x30], rax",
+      "0x199c3d lea rcx, [rsp + 0x30]",
+      "0x199c42 mov qword ptr [rsp + 0x38], 0",
+      "0x199c4b call 0x157220",
+      "0x199c50 mov rax, qword ptr [rax]",
+      "0x199c53 add rsp, 0x60",
+      "0x199c57 pop rbx",
+      "0x199c58 ret ",
+      "0x199c59 mov rdx, rbx",
+      "0x199c5c lea rcx, [rsp + 0x78]",
+      "0x199c61 call 0xf4f990",
+      "0x199c66 lea rcx, [rsp + 0x30]",
+      "0x199c6b mov rdx, qword ptr [rax]",
+      "0x199c6e call 0xf718d4",
+      "0x199c73 mov rdx, rax",
+      "0x199c76 lea rcx, [rsp + 0x20]",
+      "0x199c7b call 0xf4f6fc",
+      "0x199c80 movaps xmm0, xmmword ptr [rsp + 0x20]",
+      "0x199c85 lea rcx, [rsp + 0x30]",
+      "0x199c8a movdqa xmmword ptr [rsp + 0x30], xmm0",
+      "0x199c90 call 0x126211c",
+      "0x199c95 int3 "
+    ]
+  },
+  {
+    "name": "UnityEngine.SkinnedMeshRenderer::set_sharedMesh",
+    "rva": "0x199920",
+    "end": "0x1999f9",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0x199940",
+        "to": "0x12c900",
+        "name": ""
+      },
+      {
+        "at": "0x19994a",
+        "to": "0x12c900",
+        "name": ""
+      },
+      {
+        "at": "0x19995c",
+        "to": "0x332250",
+        "name": ""
+      },
+      {
+        "at": "0x19996e",
+        "to": "0x332250",
+        "name": ""
+      },
+      {
+        "at": "0x199988",
+        "to": "0xbe9b0",
+        "name": ""
+      },
+      {
+        "at": "0x199996",
+        "to": "0xbe9d0",
+        "name": ""
+      },
+      {
+        "at": "0x1999a3",
+        "to": "0x1c2dd0",
+        "name": ""
+      },
+      {
+        "at": "0x1999ae",
+        "to": "0x199e10",
+        "name": ""
+      },
+      {
+        "at": "0x1999c4",
+        "to": "0xf4f990",
+        "name": ""
+      },
+      {
+        "at": "0x1999d1",
+        "to": "0xf718d4",
+        "name": ""
+      },
+      {
+        "at": "0x1999de",
+        "to": "0xf4f6fc",
+        "name": ""
+      },
+      {
+        "at": "0x1999f3",
+        "to": "0x126211c",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0x199920 mov qword ptr [rsp + 0x10], rdx",
+      "0x199925 mov qword ptr [rsp + 8], rcx",
+      "0x19992a push rbx",
+      "0x19992b sub rsp, 0x70",
+      "0x19992f mov rbx, rcx",
+      "0x199932 xorps xmm0, xmm0",
+      "0x199935 lea rcx, [rsp + 0x40]",
+      "0x19993a movdqa xmmword ptr [rsp + 0x20], xmm0",
+      "0x199940 call 0x12c900",
+      "0x199945 lea rcx, [rsp + 0x58]",
+      "0x19994a call 0x12c900",
+      "0x19994f lea rdx, [rsp + 0x80]",
+      "0x199957 lea rcx, [rsp + 0x40]",
+      "0x19995c call 0x332250",
+      "0x199961 lea rdx, [rsp + 0x88]",
+      "0x199969 lea rcx, [rsp + 0x58]",
+      "0x19996e call 0x332250",
+      "0x199973 cmp qword ptr [rsp + 0x20], 0",
+      "0x199979 jne 0x1999e3",
+      "0x19997b cmp qword ptr [rsp + 0x28], 0",
+      "0x199981 jne 0x1999e3",
+      "0x199983 lea rcx, [rsp + 0x40]",
+      "0x199988 call 0xbe9b0",
+      "0x19998d test al, al",
+      "0x19998f jne 0x1999b9",
+      "0x199991 lea rcx, [rsp + 0x40]",
+      "0x199996 call 0xbe9d0",
+      "0x19999b lea rcx, [rsp + 0x58]",
+      "0x1999a0 mov r8, rax",
+      "0x1999a3 call 0x1c2dd0",
+      "0x1999a8 mov rdx, rax",
+      "0x1999ab mov rcx, r8",
+      "0x1999ae call 0x199e10",
+      "0x1999b3 add rsp, 0x70",
+      "0x1999b7 pop rbx",
+      "0x1999b8 ret ",
+      "0x1999b9 mov rdx, rbx",
+      "0x1999bc lea rcx, [rsp + 0x90]",
+      "0x1999c4 call 0xf4f990",
+      "0x1999c9 lea rcx, [rsp + 0x30]",
+      "0x1999ce mov rdx, qword ptr [rax]",
+      "0x1999d1 call 0xf718d4",
+      "0x1999d6 mov rdx, rax",
+      "0x1999d9 lea rcx, [rsp + 0x20]",
+      "0x1999de call 0xf4f6fc",
+      "0x1999e3 movaps xmm0, xmmword ptr [rsp + 0x20]",
+      "0x1999e8 lea rcx, [rsp + 0x30]",
+      "0x1999ed movdqa xmmword ptr [rsp + 0x30], xmm0",
+      "0x1999f3 call 0x126211c",
+      "0x1999f8 int3 "
+    ]
+  },
+  {
+    "name": "native_ebd53c",
+    "rva": "0xebd53c",
+    "end": "0xebd599",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0xebd557",
+        "to": "0x77d40",
+        "name": ""
+      },
+      {
+        "at": "0xebd584",
+        "to": "0x31dff0",
+        "name": ""
+      },
+      {
+        "at": "0xebd58e",
+        "to": "0x74910",
+        "name": ""
+      },
+      {
+        "at": "0xebd594",
+        "to": "0xeeb9d",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0xebd53c mov rax, qword ptr [rbx]",
+      "0xebd53f mov rcx, rbx",
+      "0xebd542 call qword ptr [rax + 0x48]",
+      "0xebd545 mov r9d, ebp",
+      "0xebd548 lea rdx, [rip + 0xc06ea1]",
+      "0xebd54f mov r8, rax",
+      "0xebd552 lea rcx, [rsp + 0x50]",
+      "0xebd557 call 0x77d40",
+      "0xebd55c mov rcx, rax",
+      "0xebd55f lea rdx, [rip + 0x9a7bf4]",
+      "0xebd566 xor eax, eax",
+      "0xebd568 mov r9d, 0xffffffff",
+      "0xebd56e mov dword ptr [rsp + 0x30], eax",
+      "0xebd572 mov r8d, 0x486",
+      "0xebd578 mov dword ptr [rsp + 0x28], eax",
+      "0xebd57c mov dword ptr [rsp + 0x20], 1",
+      "0xebd584 call 0x31dff0",
+      "0xebd589 lea rcx, [rsp + 0x50]",
+      "0xebd58e call 0x74910",
+      "0xebd593 nop ",
+      "0xebd594 jmp 0xeeb9d"
+    ]
+  }
+]

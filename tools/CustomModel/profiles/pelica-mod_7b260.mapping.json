@@ -1,0 +1,157 @@
+{
+  "character_id": "chr_0004_pelica",
+  "evidence": "User identified Pelica. Extracted installed VFS overlay postmodel main/ca788b482b3c7b99d02c5057.ab and 64 manifest dependencies on 2026-09-15. Mesh JSON plus raw type-tree dumps; shader parse errors do not establish shader compatibility. Serialized layout is not yet a runtime binding/slot validation.",
+  "components": {
+    "0": {
+      "mesh_name": "S_actor_pelica_hair_01_lod0",
+      "evidence": "Unique original index count among Pelica lod0 exports, compatible skin slot bounds; semantic bone order still needs runtime confirmation.",
+      "runtime_layout": {
+        "evidence": "Live client 2026-09-15 21:49:40: C0 rejected 16/8/12 against live 16/12/12. LogVertexDeclaration records TexCoord0 Float32 dim2 stream1 plus TexCoord2 SNorm8 dim4 stream1. Runtime layout supersedes serialized export; retain all 12 source bytes.",
+        "streams": {
+          "1": {
+            "semantics": [
+              {
+                "name": "TEXCOORD",
+                "index": 0,
+                "format": "R32G32_FLOAT",
+                "stride": 8
+              },
+              {
+                "name": "TEXCOORD",
+                "index": 2,
+                "format": "R8G8B8A8_SNORM",
+                "stride": 4
+              }
+            ],
+            "source_channels": [
+              {
+                "attribute": 4,
+                "offset": 0,
+                "format": 0,
+                "dimension_raw": 2
+              },
+              {
+                "attribute": 6,
+                "offset": 8,
+                "format": 3,
+                "dimension_raw": 4
+              }
+            ]
+          }
+        }
+      }
+    },
+    "1": {
+      "mesh_name": "S_actor_pelica_face_01_lod0",
+      "evidence": "Unique original index count among Pelica lod0 exports, compatible skin slot bounds; semantic bone order still needs runtime confirmation.",
+      "runtime_layout": {
+        "evidence": "Live client 2026-09-15 21:49:40: C1 rejected 16/8/12 against live 16/12/12. LogVertexDeclaration records TexCoord0 Float32 dim2 stream1 plus TexCoord2 SNorm8 dim4 stream1. Runtime layout supersedes serialized export; retain all 12 source bytes.",
+        "streams": {
+          "1": {
+            "semantics": [
+              {
+                "name": "TEXCOORD",
+                "index": 0,
+                "format": "R32G32_FLOAT",
+                "stride": 8
+              },
+              {
+                "name": "TEXCOORD",
+                "index": 2,
+                "format": "R8G8B8A8_SNORM",
+                "stride": 4
+              }
+            ],
+            "source_channels": [
+              {
+                "attribute": 4,
+                "offset": 0,
+                "format": 0,
+                "dimension_raw": 2
+              },
+              {
+                "attribute": 6,
+                "offset": 8,
+                "format": 3,
+                "dimension_raw": 4
+              }
+            ]
+          }
+        }
+      }
+    },
+    "2": {
+      "mesh_name": "S_actor_pelica_body_01_lod0",
+      "evidence": "Unique original index count among Pelica lod0 exports, compatible skin slot bounds; semantic bone order still needs runtime confirmation."
+    },
+    "3": {
+      "mesh_name": "S_actor_pelica_hairshadow_01_lod0",
+      "evidence": "Unique original index count among Pelica lod0 exports, compatible skin slot bounds; semantic bone order still needs runtime confirmation."
+    },
+    "4": {
+      "mesh_name": "S_actor_pelica_cloth_01_lod0",
+      "evidence": "Unique original index count among Pelica lod0 exports, compatible skin slot bounds; semantic bone order still needs runtime confirmation."
+    },
+    "5": {
+      "mesh_name": "S_actor_pelica_iris_01_lod0",
+      "evidence": "Unique original index count among Pelica lod0 exports, compatible skin slot bounds; semantic bone order still needs runtime confirmation."
+    },
+    "6": {
+      "mesh_name": "S_actor_pelica_eyeshadow_01_lod0",
+      "evidence": "INI omits original count. Eyeshadow has 36 vertices and 96 indices; entire IB equals source; position maximum absolute delta 5.55e-8 (JSON float rounding)."
+    },
+    "7": {
+      "mesh_name": "S_actor_pelica_cloth_02_lod0",
+      "evidence": "Unique original index count among Pelica lod0 exports, compatible skin slot bounds; semantic bone order still needs runtime confirmation.",
+      "draw_correction": {
+        "declared_count": 43524,
+        "actual_count": 43518,
+        "evidence": "Single zero-offset draw; full R16 IB is 87036 bytes, triangle-aligned with all indices in range. Import all available triangles; missing author triangles cannot be reconstructed."
+      }
+    },
+    "8": {
+      "mesh_name": "S_actor_pelica_cloth_04_lod0",
+      "evidence": "Unique original index count among Pelica lod0 exports, compatible skin slot bounds; semantic bone order still needs runtime confirmation."
+    },
+    "9": {
+      "mesh_name": "S_actor_pelica_cloth_03_lod0",
+      "evidence": "Unique original index count among Pelica lod0 exports, compatible skin slot bounds; semantic bone order still needs runtime confirmation.",
+      "runtime_layout": {
+        "evidence": "Live client 2026-09-15 21:49:40: C9 rejected 16/8/12 against live 16/12/12. LogVertexDeclaration records TexCoord0 Float32 dim2 stream1 plus TexCoord2 SNorm8 dim4 stream1. Runtime layout supersedes serialized export; retain all 12 source bytes.",
+        "streams": {
+          "1": {
+            "semantics": [
+              {
+                "name": "TEXCOORD",
+                "index": 0,
+                "format": "R32G32_FLOAT",
+                "stride": 8
+              },
+              {
+                "name": "TEXCOORD",
+                "index": 2,
+                "format": "R8G8B8A8_SNORM",
+                "stride": 4
+              }
+            ],
+            "source_channels": [
+              {
+                "attribute": 4,
+                "offset": 0,
+                "format": 0,
+                "dimension_raw": 2
+              },
+              {
+                "attribute": 6,
+                "offset": 8,
+                "format": 3,
+                "dimension_raw": 4
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "requires_material_profile": true
+}

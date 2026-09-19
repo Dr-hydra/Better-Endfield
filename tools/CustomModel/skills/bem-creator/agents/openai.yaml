@@ -1,0 +1,4 @@
+interface:
+  display_name: "BEM 创作者工具"
+  short_description: "转换与校验 BEM 模型包，解包项目和制作多 Mod ZIP"
+  default_prompt: "使用 $bem-creator 检查并处理这个 BEM 项目或源 Mod，说明转换结果与缺项。"

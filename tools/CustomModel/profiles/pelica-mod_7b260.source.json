@@ -1,0 +1,1188 @@
+{
+  "schema": 1,
+  "character_id": "chr_0004_pelica",
+  "evidence": "User identified Pelica. Extracted installed VFS overlay postmodel main/ca788b482b3c7b99d02c5057.ab and 64 manifest dependencies on 2026-09-15. Mesh JSON plus raw type-tree dumps; shader parse errors do not establish shader compatibility. Serialized layout is not yet a runtime binding/slot validation.",
+  "components": {
+    "0": {
+      "mesh_name": "S_actor_pelica_hair_01_lod0",
+      "mapping_evidence": "Unique original index count among Pelica lod0 exports, compatible skin slot bounds; semantic bone order still needs runtime confirmation.",
+      "original_index_count": 45003,
+      "bone_count": 31,
+      "streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 0,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 3
+            },
+            {
+              "attribute": 1,
+              "offset": 12,
+              "format": 0,
+              "dimension_raw": 49
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "TEXCOORD",
+              "index": 2,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 4,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 2
+            },
+            {
+              "attribute": 6,
+              "offset": 8,
+              "format": 3,
+              "dimension_raw": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 12,
+              "offset": 0,
+              "format": 4,
+              "dimension_raw": 4
+            },
+            {
+              "attribute": 13,
+              "offset": 8,
+              "format": 6,
+              "dimension_raw": 4
+            }
+          ]
+        }
+      ],
+      "serialized_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 0,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 3
+            },
+            {
+              "attribute": 1,
+              "offset": 12,
+              "format": 0,
+              "dimension_raw": 49
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 4,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 2
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 12,
+              "offset": 0,
+              "format": 4,
+              "dimension_raw": 4
+            },
+            {
+              "attribute": 13,
+              "offset": 8,
+              "format": 6,
+              "dimension_raw": 4
+            }
+          ]
+        }
+      ],
+      "runtime_layout_evidence": "Live client 2026-09-15 21:49:40: C0 rejected 16/8/12 against live 16/12/12. LogVertexDeclaration records TexCoord0 Float32 dim2 stream1 plus TexCoord2 SNorm8 dim4 stream1. Runtime layout supersedes serialized export; retain all 12 source bytes."
+    },
+    "1": {
+      "mesh_name": "S_actor_pelica_face_01_lod0",
+      "mapping_evidence": "Unique original index count among Pelica lod0 exports, compatible skin slot bounds; semantic bone order still needs runtime confirmation.",
+      "original_index_count": 9186,
+      "bone_count": 53,
+      "streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 0,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 3
+            },
+            {
+              "attribute": 1,
+              "offset": 12,
+              "format": 0,
+              "dimension_raw": 49
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "TEXCOORD",
+              "index": 2,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 4,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 2
+            },
+            {
+              "attribute": 6,
+              "offset": 8,
+              "format": 3,
+              "dimension_raw": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 12,
+              "offset": 0,
+              "format": 4,
+              "dimension_raw": 4
+            },
+            {
+              "attribute": 13,
+              "offset": 8,
+              "format": 6,
+              "dimension_raw": 4
+            }
+          ]
+        }
+      ],
+      "serialized_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 0,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 3
+            },
+            {
+              "attribute": 1,
+              "offset": 12,
+              "format": 0,
+              "dimension_raw": 49
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 4,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 2
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 12,
+              "offset": 0,
+              "format": 4,
+              "dimension_raw": 4
+            },
+            {
+              "attribute": 13,
+              "offset": 8,
+              "format": 6,
+              "dimension_raw": 4
+            }
+          ]
+        }
+      ],
+      "runtime_layout_evidence": "Live client 2026-09-15 21:49:40: C1 rejected 16/8/12 against live 16/12/12. LogVertexDeclaration records TexCoord0 Float32 dim2 stream1 plus TexCoord2 SNorm8 dim4 stream1. Runtime layout supersedes serialized export; retain all 12 source bytes."
+    },
+    "2": {
+      "mesh_name": "S_actor_pelica_body_01_lod0",
+      "mapping_evidence": "Unique original index count among Pelica lod0 exports, compatible skin slot bounds; semantic bone order still needs runtime confirmation.",
+      "original_index_count": 5922,
+      "bone_count": 26,
+      "streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 0,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 3
+            },
+            {
+              "attribute": 1,
+              "offset": 12,
+              "format": 0,
+              "dimension_raw": 49
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 4,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 2
+            },
+            {
+              "attribute": 6,
+              "offset": 8,
+              "format": 3,
+              "dimension_raw": 36
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 12,
+              "offset": 0,
+              "format": 4,
+              "dimension_raw": 4
+            },
+            {
+              "attribute": 13,
+              "offset": 8,
+              "format": 6,
+              "dimension_raw": 4
+            }
+          ]
+        }
+      ]
+    },
+    "3": {
+      "mesh_name": "S_actor_pelica_hairshadow_01_lod0",
+      "mapping_evidence": "Unique original index count among Pelica lod0 exports, compatible skin slot bounds; semantic bone order still needs runtime confirmation.",
+      "original_index_count": 525,
+      "bone_count": 6,
+      "streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 0,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 3
+            },
+            {
+              "attribute": 1,
+              "offset": 12,
+              "format": 0,
+              "dimension_raw": 49
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 4,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 2
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 12,
+              "offset": 0,
+              "format": 4,
+              "dimension_raw": 4
+            },
+            {
+              "attribute": 13,
+              "offset": 8,
+              "format": 6,
+              "dimension_raw": 4
+            }
+          ]
+        }
+      ]
+    },
+    "4": {
+      "mesh_name": "S_actor_pelica_cloth_01_lod0",
+      "mapping_evidence": "Unique original index count among Pelica lod0 exports, compatible skin slot bounds; semantic bone order still needs runtime confirmation.",
+      "original_index_count": 78186,
+      "bone_count": 83,
+      "streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 0,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 3
+            },
+            {
+              "attribute": 1,
+              "offset": 12,
+              "format": 0,
+              "dimension_raw": 49
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 4,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 2
+            },
+            {
+              "attribute": 6,
+              "offset": 8,
+              "format": 3,
+              "dimension_raw": 36
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 12,
+              "offset": 0,
+              "format": 4,
+              "dimension_raw": 4
+            },
+            {
+              "attribute": 13,
+              "offset": 8,
+              "format": 6,
+              "dimension_raw": 4
+            }
+          ]
+        }
+      ]
+    },
+    "5": {
+      "mesh_name": "S_actor_pelica_iris_01_lod0",
+      "mapping_evidence": "Unique original index count among Pelica lod0 exports, compatible skin slot bounds; semantic bone order still needs runtime confirmation.",
+      "original_index_count": 480,
+      "bone_count": 6,
+      "streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 0,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 3
+            },
+            {
+              "attribute": 1,
+              "offset": 12,
+              "format": 0,
+              "dimension_raw": 49
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 4,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 2
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 13,
+              "offset": 0,
+              "format": 6,
+              "dimension_raw": 20
+            }
+          ]
+        }
+      ]
+    },
+    "6": {
+      "mesh_name": "S_actor_pelica_eyeshadow_01_lod0",
+      "mapping_evidence": "INI omits original count. Eyeshadow has 36 vertices and 96 indices; entire IB equals source; position maximum absolute delta 5.55e-8 (JSON float rounding).",
+      "original_index_count": 96,
+      "bone_count": 18,
+      "streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 0,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 3
+            },
+            {
+              "attribute": 1,
+              "offset": 12,
+              "format": 0,
+              "dimension_raw": 49
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 4,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 2
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 12,
+              "offset": 0,
+              "format": 4,
+              "dimension_raw": 4
+            },
+            {
+              "attribute": 13,
+              "offset": 8,
+              "format": 6,
+              "dimension_raw": 4
+            }
+          ]
+        }
+      ]
+    },
+    "7": {
+      "mesh_name": "S_actor_pelica_cloth_02_lod0",
+      "mapping_evidence": "Unique original index count among Pelica lod0 exports, compatible skin slot bounds; semantic bone order still needs runtime confirmation.",
+      "original_index_count": 70656,
+      "bone_count": 67,
+      "streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 0,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 3
+            },
+            {
+              "attribute": 1,
+              "offset": 12,
+              "format": 0,
+              "dimension_raw": 49
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 4,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 2
+            },
+            {
+              "attribute": 6,
+              "offset": 8,
+              "format": 3,
+              "dimension_raw": 36
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 12,
+              "offset": 0,
+              "format": 4,
+              "dimension_raw": 4
+            },
+            {
+              "attribute": 13,
+              "offset": 8,
+              "format": 6,
+              "dimension_raw": 4
+            }
+          ]
+        }
+      ],
+      "draw_correction": {
+        "declared_count": 43524,
+        "actual_count": 43518,
+        "evidence": "Single zero-offset draw; full R16 IB is 87036 bytes, triangle-aligned with all indices in range. Import all available triangles; missing author triangles cannot be reconstructed."
+      }
+    },
+    "8": {
+      "mesh_name": "S_actor_pelica_cloth_04_lod0",
+      "mapping_evidence": "Unique original index count among Pelica lod0 exports, compatible skin slot bounds; semantic bone order still needs runtime confirmation.",
+      "original_index_count": 8460,
+      "bone_count": 23,
+      "streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 0,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 3
+            },
+            {
+              "attribute": 1,
+              "offset": 12,
+              "format": 0,
+              "dimension_raw": 49
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 4,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 2
+            },
+            {
+              "attribute": 6,
+              "offset": 8,
+              "format": 3,
+              "dimension_raw": 36
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 12,
+              "offset": 0,
+              "format": 4,
+              "dimension_raw": 4
+            },
+            {
+              "attribute": 13,
+              "offset": 8,
+              "format": 6,
+              "dimension_raw": 4
+            }
+          ]
+        }
+      ]
+    },
+    "9": {
+      "mesh_name": "S_actor_pelica_cloth_03_lod0",
+      "mapping_evidence": "Unique original index count among Pelica lod0 exports, compatible skin slot bounds; semantic bone order still needs runtime confirmation.",
+      "original_index_count": 2178,
+      "bone_count": 24,
+      "streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 0,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 3
+            },
+            {
+              "attribute": 1,
+              "offset": 12,
+              "format": 0,
+              "dimension_raw": 49
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "TEXCOORD",
+              "index": 2,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 4,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 2
+            },
+            {
+              "attribute": 6,
+              "offset": 8,
+              "format": 3,
+              "dimension_raw": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 12,
+              "offset": 0,
+              "format": 4,
+              "dimension_raw": 4
+            },
+            {
+              "attribute": 13,
+              "offset": 8,
+              "format": 6,
+              "dimension_raw": 4
+            }
+          ]
+        }
+      ],
+      "serialized_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 0,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 3
+            },
+            {
+              "attribute": 1,
+              "offset": 12,
+              "format": 0,
+              "dimension_raw": 49
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 4,
+              "offset": 0,
+              "format": 0,
+              "dimension_raw": 2
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ],
+          "source_channels": [
+            {
+              "attribute": 12,
+              "offset": 0,
+              "format": 4,
+              "dimension_raw": 4
+            },
+            {
+              "attribute": 13,
+              "offset": 8,
+              "format": 6,
+              "dimension_raw": 4
+            }
+          ]
+        }
+      ],
+      "runtime_layout_evidence": "Live client 2026-09-15 21:49:40: C9 rejected 16/8/12 against live 16/12/12. LogVertexDeclaration records TexCoord0 Float32 dim2 stream1 plus TexCoord2 SNorm8 dim4 stream1. Runtime layout supersedes serialized export; retain all 12 source bytes."
+    }
+  },
+  "requires_material_profile": true
+}

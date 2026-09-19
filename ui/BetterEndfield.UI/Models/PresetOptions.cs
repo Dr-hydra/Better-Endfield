@@ -269,7 +269,13 @@ internal static class PresetOptions
                 {
                     foreach (var (key, value) in fallback)
                     {
-                        names.TryAdd(key, value);
+                        // The game dictionary gives both protagonists the same
+                        // name. Keep the shared display catalog's sex labels in
+                        // every list that uses CharacterNames/GetCharacterName.
+                        if (key is "chr_0002_endminm" or "chr_0003_endminf")
+                            names[key] = value;
+                        else
+                            names.TryAdd(key, value);
                     }
                 }
             }
