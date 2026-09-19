@@ -1,6 +1,5 @@
 #pragma once
-// BEMPC24 wire layout migrated from module_poc2_part_00.inc (84b88bfb).
-// Deliberately independent of Unity, Host globals and character adapters.
+// Runtime mesh upload representation. These structs are NOT the BEMv1 wire format.
 #include <array>
 #include <cstdint>
 #include <filesystem>
@@ -40,7 +39,7 @@ struct BemComponentHeaderRaw {
     uint32_t stride0;
     uint32_t stride1;
     uint32_t stride2;
-    uint32_t index_element_size;
+    uint32_t index_element_size; // v24: 2; v25: 2 or 4 (explicit UInt32 extension)
     uint32_t reserved0;
     uint32_t flags;
     uint32_t reserved1;
@@ -72,11 +71,7 @@ struct BemTextureEntryRaw {
     // texture EFMI saw in exactly components {1,4} is the one texture both the
     // face and the eyebrow material bind.
     uint32_t component_mask;
-    // Non-zero pins this texture to one slot, for the cases the component set
-    // cannot separate. `reserved` says how to read it: 0 or 1 means the value
-    // is the material property id, 2 means it is the CRC-32 of the original
-    // texture's own object name. Both are set by the converter from the
-    // payload's bem-slots.json.
+    // Internal compatibility fields used by upload helpers, never serialized by BEMv1.
     int32_t explicit_slot;
     uint32_t name_length;
     uint32_t reserved;
@@ -88,16 +83,25 @@ struct BemTexture {
     BemTextureEntryRaw info{};
     std::string name;
     std::vector<uint8_t> data;  // complete block-compressed mip chain
+    std::string original_name;
 };
 
-// PoC-2.4 carries each component's three EFMI vertex streams and index buffer
-// verbatim. Nothing is decoded, renormalized or repacked: the runtime declares
-// the live source mesh's own layout and writes these bytes into it.
+// BEMv1 resources lowered into the established native upload representation.
 struct BemComponent {
     BemComponentHeaderRaw info{};
     std::array<std::vector<uint8_t>, 3> streams;
     std::vector<uint8_t> indices;
+    uint32_t layout_crc=0; // v25 exact native VertexAttributeDescriptor sequence
+    // v25: palette indices in the packed skin stream address this table.
+    struct BoneSource { uint32_t component, index, name_crc; };
+    struct Draw { uint32_t start, count, material_component, material_slot, material_crc, textures; };
+    std::vector<BoneSource> bones;
+    std::vector<Draw> draws;
+    std::vector<std::array<int32_t,4>> attributes;
+    std::vector<std::string> bone_names, material_names;
 };
+static_assert(sizeof(BemComponent::BoneSource) == 12);
+static_assert(sizeof(BemComponent::Draw) == 24);
 
 struct BemPocData {
     BemFileHeader header{};
@@ -105,10 +109,19 @@ struct BemPocData {
     std::vector<BemTexture> textures;
 };
 
+struct BemPackageInfo {
+    std::string package_id, name, author, version, character_id;
+    std::string world_resource, ui_resource, default_appearance;
+    std::vector<std::string> appearances, component_names;
+    std::vector<uint32_t> original_counts;
+};
+bool ReadBemPackageInfo(const std::filesystem::path&, BemPackageInfo&, std::string& error);
+
 constexpr uint32_t kBemStreamCount = 3;
 constexpr int32_t kIndexElementSize = 2;
 
 
 bool ParseBem(std::span<const uint8_t> bytes, BemPocData& output, std::string& error);
-bool LoadBem(const std::filesystem::path& path, BemPocData& output, std::string& error);
+bool LoadBem(const std::filesystem::path& path, BemPocData& output, std::string& error,
+    std::string_view appearance = {});
 } // namespace BetterEndfield::CustomModel

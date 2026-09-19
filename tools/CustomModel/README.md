@@ -1,4 +1,62 @@
-# EFMI 转换与源模型校验
+# BEMv1 创作工具与源模型校验
+
+当前能力边界和兼容性矩阵见[CustomModel 能力与兼容性声明](../../docs/CUSTOM_MODEL_CAPABILITY_COMPATIBILITY_20260918.md)。
+
+正式入口：`bem_tool.py inspect/convert/unpack/pack/validate/bundle`。单包输出 `.bem`，分发合集为标准 `.zip`。
+独立工具链由 `scripts/BuildBemTools.ps1` 打包，无需玩家安装 Python；GUI 复用同一核心。
+[格式规范](../../docs/BEM_V1_SPEC.md) · [创作者指南](../../docs/BEM_CREATOR_GUIDE.md)。
+下文旧工具是转换后端/研究命令，它们的 v24/v25 中间产物不被正式运行时接受。
+旧运行时 PoC 已移至 [research/custom-model](../../research/custom-model/README.md)；
+本目录保留仍被当前转换流程使用的代码，包括名称带 `poc` 的转换器。
+
+## ComponentN 自动转换
+
+`bem_tool.py convert SOURCE -o OUTPUT.bem` 在角色资料和标准声明完整时不再需要配方。
+女管理员已跑通无配方转换；佩丽卡只依据游戏资源接入资料，不引入样包专用规则。
+1.1.3 已接入 32 角色、370 个可复用 LOD0 部件，补齐 360 个单子网格入口与 1,181 项纹理身份。原生资料与 EFMI 原资源对应分开记录，不能把入库数量当作任意源包兼容数量。范围及官方来源见[角色资料说明](../../docs/BEM_CHARACTER_CATALOG_20260919.md)和[EFMI 身份补全](../../docs/BEM_EFMI_IDENTITIES_20260920.md)。
+规则、证据及限制见 `docs/BEM_COMPONENTN_AUTOMATION_20260919.md`。资料放在 `catalog/`，由工具自动匹配。
+逐绘制段和 RabbitFX 的样本分层、自动化边界见 `docs/BEM_PER_DRAW_COMPATIBILITY_20260920.md` 与 `docs/BEM_RABBITFX_COMPATIBILITY_20260920.md`。当前只做识别和报告，尚未放行 RabbitFX Stable Textures 的通用转换。
+
+## 通用原生角色资料解析器
+
+运行时采集开发入口集中于 `developer-tools/`：`Probe.ps1` 启用/查看/停止跨重启采集，`BuildProbe.ps1` 构建和部署探针；唯一原生探针源码为该目录的 `native_probe.inl`。游戏版本更新后按其中说明重建资料，普通转换工具无需这些开发依赖。
+
+批量离线解析用 `prepare_sweep_offline.py`，与运行时观测合并入库用 `import_runtime_catalog.py`；后者先验证同版本、完整身份、骨骼、材质、bindpose 与布局，区分直接观测和等价复用，保留已有核实的源资源映射。
+
+新增 `extract_native_bundles.py` → `NativeAssetReader` → `parse_native_models.py`：
+按角色从当前 VFS 提取世界/详情资源及依赖，保留文件＋PathID 身份，解析原生 Mesh、顶点存储声明、
+bones/bindposes、材质与贴图绑定。已读取佩丽卡和庄方宜，缺失引用明确保留，未自动标记可转换。
+构建、命令、数据格式与已知缺口见 [解析器文档](../../docs/CUSTOM_MODEL_NATIVE_PARSER_20260917.md)。
+`prepare_native_backend.py` 在独立源码副本修复公共高光包的解压检查；庄方宜 64 个 renderer 引用现已完整。
+`prepare_native_profile.py` 对照 Mod 入口与原生资料，核对骨骼映射并生成未放行的 profile 草稿。
+庄方宜八组合并骨架及世界/UI 八个运行时声明已核对。
+`finalize_native_profile.py` 结合真实观测、原生纹理字节和显式材质配方生成最终 profile，
+区分资料核实的 `verified` 与实机渲染的 `render_verified`。准备阶段草稿仍不自动放行。
+`runtime_native_probe.py arm/collect` 配合一次性资源交付探针采集 world/UI 原生声明与材质绑定，
+用户操作及开发命令见 [运行时探测](../../docs/CUSTOM_MODEL_RUNTIME_PROBE_20260917.md)。
+
+## Hash/LOD 格式的新入口（2026-09-17）
+
+`LOD0.<hash>-<index count>-<first index>` 类型的包走独立入口
+`convert_hash_lod.py`，不套用下文的 ComponentN 转换器。现支持在已核实的 schema=2
+profile 下输出 BEMPC25：默认绘制段、独立材质来源、合并骨架及 16 位输入骨骼索引重映射。
+庄方宜首个默认状态测试包已生成并部署，四组件、七项纹理，用户已确认整体显示正常。
+生成命令、材质取舍和验证范围见[庄方宜验证记录](../../docs/CUSTOM_MODEL_ZHUANGFANGYI_VALIDATION_20260917.md)。
+洁尔佩塔默认外观已通过 `convert_reviewed_draws.py` 和明确审阅的源程序配方生成测试包，
+跨入口绘制归并到现有运行时。此入口严格核对主 INI 和五份骨骼 Shader 的有效文本，
+不解释任意 GPU 程序。2026-09-18 用户指定 P 键另一套服装并放宽索引限制，
+新增 `gilberta-12.outfit-b.reviewed.json`，大组件用 UInt32 索引，已部署；
+不支持运行时面板切换。当前状态见[Outfit B 修正记录](../../docs/CUSTOM_MODEL_GILBERTA_OUTFIT_B_20260918.md)。
+详见 [独立转换器与样本检查](../../docs/CUSTOM_MODEL_HASH_LOD_CONVERTER_20260917.md)。
+
+```powershell
+python tools/CustomModel/convert_hash_lod.py path/to/extracted-mod --report artifacts/hash-lod-report.json
+python tools/CustomModel/convert_hash_lod.py path/to/extracted-mod --profile path/to/verified-native.json --report artifacts/converted-report.json -o artifacts/model.bempoc
+```
+
+RAR 先解压；可直接读取目录或 ZIP。入口配置名无需为 `mod.ini`，有多个主配置时用 `--ini` 指定。
+退出码 2 和报告中的 `conversion_ready=false` 表示缺少适配资料或超出转换范围。
+完整 schema、包格式及当前验证边界见 [四项能力实现](../../docs/CUSTOM_MODEL_V25_BINDING_IMPLEMENTATION_20260917.md)。
 
 `convert_efmi_poc.py` 生成现有 BEM PoC-2.4 文件。支持 ALPHA-12 的
 `TextureOverride_EntryPoint_ComponentN` 和 ALPHA-4 的

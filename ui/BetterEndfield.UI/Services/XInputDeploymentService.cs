@@ -195,7 +195,9 @@ internal static class XInputDeploymentService
             Models.AppSettings settings = await ConfigurationService.LoadAppSettingsAsync();
             if (RuntimePathDiscoveryService.IsGameExecutable(settings.GameExecutablePath))
             {
-                await UninstallAsync(settings.GameExecutablePath, settings.InjectorPath);
+                await UninstallAsync(
+                    settings.GameExecutablePath,
+                    RuntimePathDiscoveryService.BundledInjectorPath);
             }
         }
         catch (Exception exception) when (

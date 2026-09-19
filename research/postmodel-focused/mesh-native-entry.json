@@ -1,0 +1,1369 @@
+[
+  {
+    "name": "UnityEngine.Mesh::Internal_Create",
+    "rva": "0x464710",
+    "end": "0x464773",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0x46472c",
+        "to": "0x1fe7b0",
+        "name": ""
+      },
+      {
+        "at": "0x46473b",
+        "to": "0xf51964",
+        "name": ""
+      },
+      {
+        "at": "0x464745",
+        "to": "0x64cd0",
+        "name": ""
+      },
+      {
+        "at": "0x464753",
+        "to": "0x464780",
+        "name": ""
+      },
+      {
+        "at": "0x46476d",
+        "to": "0x126211c",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0x464710 mov qword ptr [rsp + 8], rcx",
+      "0x464715 sub rsp, 0x68",
+      "0x464719 movaps xmmword ptr [rsp + 0x50], xmm6",
+      "0x46471e lea rcx, [rsp + 0x30]",
+      "0x464723 xorps xmm6, xmm6",
+      "0x464726 movdqa xmmword ptr [rsp + 0x20], xmm6",
+      "0x46472c call 0x1fe7b0",
+      "0x464731 lea rdx, [rsp + 0x70]",
+      "0x464736 lea rcx, [rsp + 0x30]",
+      "0x46473b call 0xf51964",
+      "0x464740 lea rcx, [rsp + 0x20]",
+      "0x464745 call 0x64cd0",
+      "0x46474a test al, al",
+      "0x46474c jne 0x464762",
+      "0x46474e mov rcx, qword ptr [rsp + 0x30]",
+      "0x464753 call 0x464780",
+      "0x464758 movaps xmm6, xmmword ptr [rsp + 0x50]",
+      "0x46475d add rsp, 0x68",
+      "0x464761 ret ",
+      "0x464762 lea rcx, [rsp + 0x20]",
+      "0x464767 movdqa xmmword ptr [rsp + 0x20], xmm6",
+      "0x46476d call 0x126211c",
+      "0x464772 int3 "
+    ]
+  },
+  {
+    "name": "UnityEngine.Mesh::InternalSetIndexBufferData",
+    "rva": "0xf99194",
+    "end": "0xf99295",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0xf991c9",
+        "to": "0x12c900",
+        "name": ""
+      },
+      {
+        "at": "0xf991d6",
+        "to": "0x332250",
+        "name": ""
+      },
+      {
+        "at": "0xf991f5",
+        "to": "0x1c2ea0",
+        "name": ""
+      },
+      {
+        "at": "0xf99205",
+        "to": "0xf4f990",
+        "name": ""
+      },
+      {
+        "at": "0xf99211",
+        "to": "0xf718d4",
+        "name": ""
+      },
+      {
+        "at": "0xf9921d",
+        "to": "0xf4f6fc",
+        "name": ""
+      },
+      {
+        "at": "0xf99222",
+        "to": "0xf99282",
+        "name": ""
+      },
+      {
+        "at": "0xf9928f",
+        "to": "0x126211c",
+        "name": ""
+      },
+      {
+        "at": "0xf99228",
+        "to": "0x1c2dd0",
+        "name": ""
+      },
+      {
+        "at": "0xf99257",
+        "to": "0x1199ef8",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0xf99194 mov qword ptr [rsp + 0x18], rbx",
+      "0xf99199 mov qword ptr [rsp + 0x20], rsi",
+      "0xf9919e mov qword ptr [rsp + 8], rcx",
+      "0xf991a3 push rbp",
+      "0xf991a4 push rdi",
+      "0xf991a5 push r14",
+      "0xf991a7 mov rbp, rsp",
+      "0xf991aa sub rsp, 0x80",
+      "0xf991b1 mov rbx, rcx",
+      "0xf991b4 xorps xmm0, xmm0",
+      "0xf991b7 lea rcx, [rbp - 0x20]",
+      "0xf991bb movdqa xmmword ptr [rbp - 0x40], xmm0",
+      "0xf991c0 mov edi, r9d",
+      "0xf991c3 mov esi, r8d",
+      "0xf991c6 mov r14, rdx",
+      "0xf991c9 call 0x12c900",
+      "0xf991ce lea rdx, [rbp + 0x20]",
+      "0xf991d2 lea rcx, [rbp - 0x20]",
+      "0xf991d6 call 0x332250",
+      "0xf991db cmp qword ptr [rbp - 0x40], 0",
+      "0xf991e0 jne 0xf99282",
+      "0xf991e6 cmp qword ptr [rbp - 0x38], 0",
+      "0xf991eb jne 0xf99282",
+      "0xf991f1 lea rcx, [rbp - 0x20]",
+      "0xf991f5 call 0x1c2ea0",
+      "0xf991fa test al, al",
+      "0xf991fc je 0xf99224",
+      "0xf991fe mov rdx, rbx",
+      "0xf99201 lea rcx, [rbp + 0x28]",
+      "0xf99205 call 0xf4f990",
+      "0xf9920a lea rcx, [rbp - 0x30]",
+      "0xf9920e mov rdx, qword ptr [rax]",
+      "0xf99211 call 0xf718d4",
+      "0xf99216 mov rdx, rax",
+      "0xf99219 lea rcx, [rbp - 0x40]",
+      "0xf9921d call 0xf4f6fc",
+      "0xf99222 jmp 0xf99282",
+      "0xf99224 lea rcx, [rbp - 0x20]",
+      "0xf99228 call 0x1c2dd0",
+      "0xf9922d lea rcx, [rbp - 0x40]",
+      "0xf99231 mov r9d, edi",
+      "0xf99234 mov qword ptr [rsp + 0x38], rcx",
+      "0xf99239 mov r8d, esi",
+      "0xf9923c mov ecx, dword ptr [rbp + 0x50]",
+      "0xf9923f mov rdx, r14",
+      "0xf99242 mov dword ptr [rsp + 0x30], ecx",
+      "0xf99246 mov ecx, dword ptr [rbp + 0x48]",
+      "0xf99249 mov dword ptr [rsp + 0x28], ecx",
+      "0xf9924d mov ecx, dword ptr [rbp + 0x40]",
+      "0xf99250 mov dword ptr [rsp + 0x20], ecx",
+      "0xf99254 mov rcx, rax",
+      "0xf99257 call 0x1199ef8",
+      "0xf9925c cmp qword ptr [rbp - 0x40], 0",
+      "0xf99261 jne 0xf99282",
+      "0xf99263 cmp qword ptr [rbp - 0x38], 0",
+      "0xf99268 jne 0xf99282",
+      "0xf9926a lea r11, [rsp + 0x80]",
+      "0xf99272 mov rbx, qword ptr [r11 + 0x30]",
+      "0xf99276 mov rsi, qword ptr [r11 + 0x38]",
+      "0xf9927a mov rsp, r11",
+      "0xf9927d pop r14",
+      "0xf9927f pop rdi",
+      "0xf99280 pop rbp",
+      "0xf99281 ret ",
+      "0xf99282 movaps xmm0, xmmword ptr [rbp - 0x40]",
+      "0xf99286 lea rcx, [rbp - 0x30]",
+      "0xf9928a movdqa xmmword ptr [rbp - 0x30], xmm0",
+      "0xf9928f call 0x126211c",
+      "0xf99294 int3 "
+    ]
+  },
+  {
+    "name": "UnityEngine.Mesh::SetVertexBufferParamsFromPtr",
+    "rva": "0xf9a170",
+    "end": "0xf9a24c",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0xf9a1a2",
+        "to": "0xf4e118",
+        "name": ""
+      },
+      {
+        "at": "0xf9a1af",
+        "to": "0xf4e130",
+        "name": ""
+      },
+      {
+        "at": "0xf9a1b8",
+        "to": "0x64cd0",
+        "name": ""
+      },
+      {
+        "at": "0xf9a1c5",
+        "to": "0x1c2ea0",
+        "name": ""
+      },
+      {
+        "at": "0xf9a1d5",
+        "to": "0xf4f990",
+        "name": ""
+      },
+      {
+        "at": "0xf9a1e1",
+        "to": "0xf718d4",
+        "name": ""
+      },
+      {
+        "at": "0xf9a1ed",
+        "to": "0xf4f6fc",
+        "name": ""
+      },
+      {
+        "at": "0xf9a1f2",
+        "to": "0xf9a239",
+        "name": ""
+      },
+      {
+        "at": "0xf9a246",
+        "to": "0x126211c",
+        "name": ""
+      },
+      {
+        "at": "0xf9a1f8",
+        "to": "0xf504f0",
+        "name": ""
+      },
+      {
+        "at": "0xf9a212",
+        "to": "0x119adc8",
+        "name": ""
+      },
+      {
+        "at": "0xf9a21b",
+        "to": "0x64cd0",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0xf9a170 mov qword ptr [rsp + 0x10], rbx",
+      "0xf9a175 mov qword ptr [rsp + 0x20], rsi",
+      "0xf9a17a mov qword ptr [rsp + 8], rcx",
+      "0xf9a17f push rbp",
+      "0xf9a180 push rdi",
+      "0xf9a181 push r14",
+      "0xf9a183 mov rbp, rsp",
+      "0xf9a186 sub rsp, 0x70",
+      "0xf9a18a mov rbx, rcx",
+      "0xf9a18d xorps xmm0, xmm0",
+      "0xf9a190 lea rcx, [rbp - 0x20]",
+      "0xf9a194 movdqa xmmword ptr [rbp - 0x40], xmm0",
+      "0xf9a199 mov edi, r9d",
+      "0xf9a19c mov rsi, r8",
+      "0xf9a19f mov r14d, edx",
+      "0xf9a1a2 call 0xf4e118",
+      "0xf9a1a7 lea rdx, [rbp + 0x20]",
+      "0xf9a1ab lea rcx, [rbp - 0x20]",
+      "0xf9a1af call 0xf4e130",
+      "0xf9a1b4 lea rcx, [rbp - 0x40]",
+      "0xf9a1b8 call 0x64cd0",
+      "0xf9a1bd test al, al",
+      "0xf9a1bf jne 0xf9a239",
+      "0xf9a1c1 lea rcx, [rbp - 0x20]",
+      "0xf9a1c5 call 0x1c2ea0",
+      "0xf9a1ca test al, al",
+      "0xf9a1cc je 0xf9a1f4",
+      "0xf9a1ce mov rdx, rbx",
+      "0xf9a1d1 lea rcx, [rbp + 0x30]",
+      "0xf9a1d5 call 0xf4f990",
+      "0xf9a1da lea rcx, [rbp - 0x30]",
+      "0xf9a1de mov rdx, qword ptr [rax]",
+      "0xf9a1e1 call 0xf718d4",
+      "0xf9a1e6 mov rdx, rax",
+      "0xf9a1e9 lea rcx, [rbp - 0x40]",
+      "0xf9a1ed call 0xf4f6fc",
+      "0xf9a1f2 jmp 0xf9a239",
+      "0xf9a1f4 lea rcx, [rbp - 0x20]",
+      "0xf9a1f8 call 0xf504f0",
+      "0xf9a1fd lea rcx, [rbp - 0x40]",
+      "0xf9a201 mov r9d, edi",
+      "0xf9a204 mov qword ptr [rsp + 0x20], rcx",
+      "0xf9a209 mov r8, rsi",
+      "0xf9a20c mov rcx, rax",
+      "0xf9a20f mov edx, r14d",
+      "0xf9a212 call 0x119adc8",
+      "0xf9a217 lea rcx, [rbp - 0x40]",
+      "0xf9a21b call 0x64cd0",
+      "0xf9a220 test al, al",
+      "0xf9a222 jne 0xf9a239",
+      "0xf9a224 lea r11, [rsp + 0x70]",
+      "0xf9a229 mov rbx, qword ptr [r11 + 0x28]",
+      "0xf9a22d mov rsi, qword ptr [r11 + 0x38]",
+      "0xf9a231 mov rsp, r11",
+      "0xf9a234 pop r14",
+      "0xf9a236 pop rdi",
+      "0xf9a237 pop rbp",
+      "0xf9a238 ret ",
+      "0xf9a239 movaps xmm0, xmmword ptr [rbp - 0x40]",
+      "0xf9a23d lea rcx, [rbp - 0x30]",
+      "0xf9a241 movdqa xmmword ptr [rbp - 0x30], xmm0",
+      "0xf9a246 call 0x126211c",
+      "0xf9a24b int3 "
+    ]
+  },
+  {
+    "name": "UnityEngine.Mesh::InternalSetVertexBufferData",
+    "rva": "0xf993b0",
+    "end": "0xf99496",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0xf993e5",
+        "to": "0xf4e118",
+        "name": ""
+      },
+      {
+        "at": "0xf993f2",
+        "to": "0xf4e130",
+        "name": ""
+      },
+      {
+        "at": "0xf993fb",
+        "to": "0x64cd0",
+        "name": ""
+      },
+      {
+        "at": "0xf99408",
+        "to": "0x1c2ea0",
+        "name": ""
+      },
+      {
+        "at": "0xf99415",
+        "to": "0xf504f0",
+        "name": ""
+      },
+      {
+        "at": "0xf99442",
+        "to": "0x119a034",
+        "name": ""
+      },
+      {
+        "at": "0xf99466",
+        "to": "0xf4f990",
+        "name": ""
+      },
+      {
+        "at": "0xf99472",
+        "to": "0xf718d4",
+        "name": ""
+      },
+      {
+        "at": "0xf9947e",
+        "to": "0xf4f6fc",
+        "name": ""
+      },
+      {
+        "at": "0xf99490",
+        "to": "0x126211c",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0xf993b0 mov qword ptr [rsp + 0x10], rbx",
+      "0xf993b5 mov qword ptr [rsp + 0x20], rsi",
+      "0xf993ba mov qword ptr [rsp + 8], rcx",
+      "0xf993bf push rbp",
+      "0xf993c0 push rdi",
+      "0xf993c1 push r14",
+      "0xf993c3 mov rbp, rsp",
+      "0xf993c6 sub rsp, 0x80",
+      "0xf993cd mov rbx, rcx",
+      "0xf993d0 xorps xmm0, xmm0",
+      "0xf993d3 lea rcx, [rbp - 0x20]",
+      "0xf993d7 movdqa xmmword ptr [rbp - 0x40], xmm0",
+      "0xf993dc mov edi, r9d",
+      "0xf993df mov rsi, r8",
+      "0xf993e2 mov r14d, edx",
+      "0xf993e5 call 0xf4e118",
+      "0xf993ea lea rdx, [rbp + 0x20]",
+      "0xf993ee lea rcx, [rbp - 0x20]",
+      "0xf993f2 call 0xf4e130",
+      "0xf993f7 lea rcx, [rbp - 0x40]",
+      "0xf993fb call 0x64cd0",
+      "0xf99400 test al, al",
+      "0xf99402 jne 0xf99483",
+      "0xf99404 lea rcx, [rbp - 0x20]",
+      "0xf99408 call 0x1c2ea0",
+      "0xf9940d test al, al",
+      "0xf9940f jne 0xf9945f",
+      "0xf99411 lea rcx, [rbp - 0x20]",
+      "0xf99415 call 0xf504f0",
+      "0xf9941a mov ecx, dword ptr [rbp + 0x58]",
+      "0xf9941d mov r9d, edi",
+      "0xf99420 mov dword ptr [rsp + 0x38], ecx",
+      "0xf99424 mov r8, rsi",
+      "0xf99427 mov ecx, dword ptr [rbp + 0x50]",
+      "0xf9942a mov edx, r14d",
+      "0xf9942d mov dword ptr [rsp + 0x30], ecx",
+      "0xf99431 mov ecx, dword ptr [rbp + 0x48]",
+      "0xf99434 mov dword ptr [rsp + 0x28], ecx",
+      "0xf99438 mov ecx, dword ptr [rbp + 0x40]",
+      "0xf9943b mov dword ptr [rsp + 0x20], ecx",
+      "0xf9943f mov rcx, rax",
+      "0xf99442 call 0x119a034",
+      "0xf99447 lea r11, [rsp + 0x80]",
+      "0xf9944f mov rbx, qword ptr [r11 + 0x28]",
+      "0xf99453 mov rsi, qword ptr [r11 + 0x38]",
+      "0xf99457 mov rsp, r11",
+      "0xf9945a pop r14",
+      "0xf9945c pop rdi",
+      "0xf9945d pop rbp",
+      "0xf9945e ret ",
+      "0xf9945f mov rdx, rbx",
+      "0xf99462 lea rcx, [rbp + 0x30]",
+      "0xf99466 call 0xf4f990",
+      "0xf9946b lea rcx, [rbp - 0x30]",
+      "0xf9946f mov rdx, qword ptr [rax]",
+      "0xf99472 call 0xf718d4",
+      "0xf99477 mov rdx, rax",
+      "0xf9947a lea rcx, [rbp - 0x40]",
+      "0xf9947e call 0xf4f6fc",
+      "0xf99483 movaps xmm0, xmmword ptr [rbp - 0x40]",
+      "0xf99487 lea rcx, [rbp - 0x30]",
+      "0xf9948b movdqa xmmword ptr [rbp - 0x30], xmm0",
+      "0xf99490 call 0x126211c",
+      "0xf99495 int3 "
+    ]
+  },
+  {
+    "name": "UnityEngine.Mesh::HasBoneWeights",
+    "rva": "0xf9901c",
+    "end": "0xf990c1",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0xf9903d",
+        "to": "0x12c900",
+        "name": ""
+      },
+      {
+        "at": "0xf9904a",
+        "to": "0x332250",
+        "name": ""
+      },
+      {
+        "at": "0xf99061",
+        "to": "0x1c2ea0",
+        "name": ""
+      },
+      {
+        "at": "0xf9906e",
+        "to": "0x1c2dd0",
+        "name": ""
+      },
+      {
+        "at": "0xf99077",
+        "to": "0x4179e0",
+        "name": ""
+      },
+      {
+        "at": "0xf99091",
+        "to": "0xf4f990",
+        "name": ""
+      },
+      {
+        "at": "0xf9909d",
+        "to": "0xf718d4",
+        "name": ""
+      },
+      {
+        "at": "0xf990a9",
+        "to": "0xf4f6fc",
+        "name": ""
+      },
+      {
+        "at": "0xf990bb",
+        "to": "0x126211c",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0xf9901c mov qword ptr [rsp + 0x18], rbx",
+      "0xf99021 mov qword ptr [rsp + 8], rcx",
+      "0xf99026 push rbp",
+      "0xf99027 mov rbp, rsp",
+      "0xf9902a sub rsp, 0x60",
+      "0xf9902e mov rbx, rcx",
+      "0xf99031 xorps xmm0, xmm0",
+      "0xf99034 lea rcx, [rbp - 0x20]",
+      "0xf99038 movdqa xmmword ptr [rbp - 0x40], xmm0",
+      "0xf9903d call 0x12c900",
+      "0xf99042 lea rdx, [rbp + 0x10]",
+      "0xf99046 lea rcx, [rbp - 0x20]",
+      "0xf9904a call 0x332250",
+      "0xf9904f cmp qword ptr [rbp - 0x40], 0",
+      "0xf99054 jne 0xf990ae",
+      "0xf99056 cmp qword ptr [rbp - 0x38], 0",
+      "0xf9905b jne 0xf990ae",
+      "0xf9905d lea rcx, [rbp - 0x20]",
+      "0xf99061 call 0x1c2ea0",
+      "0xf99066 test al, al",
+      "0xf99068 jne 0xf9908a",
+      "0xf9906a lea rcx, [rbp - 0x20]",
+      "0xf9906e call 0x1c2dd0",
+      "0xf99073 mov rcx, qword ptr [rax + 0x38]",
+      "0xf99077 call 0x4179e0",
+      "0xf9907c mov rbx, qword ptr [rsp + 0x80]",
+      "0xf99084 add rsp, 0x60",
+      "0xf99088 pop rbp",
+      "0xf99089 ret ",
+      "0xf9908a mov rdx, rbx",
+      "0xf9908d lea rcx, [rbp + 0x18]",
+      "0xf99091 call 0xf4f990",
+      "0xf99096 lea rcx, [rbp - 0x30]",
+      "0xf9909a mov rdx, qword ptr [rax]",
+      "0xf9909d call 0xf718d4",
+      "0xf990a2 mov rdx, rax",
+      "0xf990a5 lea rcx, [rbp - 0x40]",
+      "0xf990a9 call 0xf4f6fc",
+      "0xf990ae movaps xmm0, xmmword ptr [rbp - 0x40]",
+      "0xf990b2 lea rcx, [rbp - 0x30]",
+      "0xf990b6 movdqa xmmword ptr [rbp - 0x30], xmm0",
+      "0xf990bb call 0x126211c",
+      "0xf990c0 int3 "
+    ]
+  },
+  {
+    "name": "UnityEngine.Mesh::InternalSetBoneWeights",
+    "rva": "0xf990c4",
+    "end": "0xf99192",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0xf990f6",
+        "to": "0x12c900",
+        "name": ""
+      },
+      {
+        "at": "0xf99103",
+        "to": "0x332250",
+        "name": ""
+      },
+      {
+        "at": "0xf9911a",
+        "to": "0x1c2ea0",
+        "name": ""
+      },
+      {
+        "at": "0xf99127",
+        "to": "0x1c2dd0",
+        "name": ""
+      },
+      {
+        "at": "0xf99141",
+        "to": "0x1709910",
+        "name": ""
+      },
+      {
+        "at": "0xf99162",
+        "to": "0xf4f990",
+        "name": ""
+      },
+      {
+        "at": "0xf9916e",
+        "to": "0xf718d4",
+        "name": ""
+      },
+      {
+        "at": "0xf9917a",
+        "to": "0xf4f6fc",
+        "name": ""
+      },
+      {
+        "at": "0xf9918c",
+        "to": "0x126211c",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0xf990c4 mov qword ptr [rsp + 0x18], rbx",
+      "0xf990c9 mov qword ptr [rsp + 0x20], rsi",
+      "0xf990ce mov qword ptr [rsp + 8], rcx",
+      "0xf990d3 push rbp",
+      "0xf990d4 push rdi",
+      "0xf990d5 push r14",
+      "0xf990d7 mov rbp, rsp",
+      "0xf990da sub rsp, 0x70",
+      "0xf990de mov rbx, rcx",
+      "0xf990e1 xorps xmm0, xmm0",
+      "0xf990e4 lea rcx, [rbp - 0x20]",
+      "0xf990e8 movdqa xmmword ptr [rbp - 0x40], xmm0",
+      "0xf990ed mov rdi, r9",
+      "0xf990f0 mov esi, r8d",
+      "0xf990f3 mov r14, rdx",
+      "0xf990f6 call 0x12c900",
+      "0xf990fb lea rdx, [rbp + 0x20]",
+      "0xf990ff lea rcx, [rbp - 0x20]",
+      "0xf99103 call 0x332250",
+      "0xf99108 cmp qword ptr [rbp - 0x40], 0",
+      "0xf9910d jne 0xf9917f",
+      "0xf9910f cmp qword ptr [rbp - 0x38], 0",
+      "0xf99114 jne 0xf9917f",
+      "0xf99116 lea rcx, [rbp - 0x20]",
+      "0xf9911a call 0x1c2ea0",
+      "0xf9911f test al, al",
+      "0xf99121 jne 0xf9915b",
+      "0xf99123 lea rcx, [rbp - 0x20]",
+      "0xf99127 call 0x1c2dd0",
+      "0xf9912c movsxd rcx, dword ptr [rbp + 0x40]",
+      "0xf99130 mov r9, rdi",
+      "0xf99133 mov qword ptr [rsp + 0x20], rcx",
+      "0xf99138 mov r8d, esi",
+      "0xf9913b mov rcx, rax",
+      "0xf9913e mov rdx, r14",
+      "0xf99141 call 0x1709910",
+      "0xf99146 lea r11, [rsp + 0x70]",
+      "0xf9914b mov rbx, qword ptr [r11 + 0x30]",
+      "0xf9914f mov rsi, qword ptr [r11 + 0x38]",
+      "0xf99153 mov rsp, r11",
+      "0xf99156 pop r14",
+      "0xf99158 pop rdi",
+      "0xf99159 pop rbp",
+      "0xf9915a ret ",
+      "0xf9915b mov rdx, rbx",
+      "0xf9915e lea rcx, [rbp + 0x28]",
+      "0xf99162 call 0xf4f990",
+      "0xf99167 lea rcx, [rbp - 0x30]",
+      "0xf9916b mov rdx, qword ptr [rax]",
+      "0xf9916e call 0xf718d4",
+      "0xf99173 mov rdx, rax",
+      "0xf99176 lea rcx, [rbp - 0x40]",
+      "0xf9917a call 0xf4f6fc",
+      "0xf9917f movaps xmm0, xmmword ptr [rbp - 0x40]",
+      "0xf99183 lea rcx, [rbp - 0x30]",
+      "0xf99187 movdqa xmmword ptr [rbp - 0x30], xmm0",
+      "0xf9918c call 0x126211c",
+      "0xf99191 int3 "
+    ]
+  },
+  {
+    "name": "UnityEngine.Mesh::GetAllBoneWeightsArraySize",
+    "rva": "0xf970c0",
+    "end": "0xf9717c",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0xf970e1",
+        "to": "0x12c900",
+        "name": ""
+      },
+      {
+        "at": "0xf970ee",
+        "to": "0x332250",
+        "name": ""
+      },
+      {
+        "at": "0xf97106",
+        "to": "0x1c2ea0",
+        "name": ""
+      },
+      {
+        "at": "0xf97113",
+        "to": "0x1c2dd0",
+        "name": ""
+      },
+      {
+        "at": "0xf9711f",
+        "to": "0x4179e0",
+        "name": ""
+      },
+      {
+        "at": "0xf9712b",
+        "to": "0x17091f0",
+        "name": ""
+      },
+      {
+        "at": "0xf9714c",
+        "to": "0xf4f990",
+        "name": ""
+      },
+      {
+        "at": "0xf97158",
+        "to": "0xf718d4",
+        "name": ""
+      },
+      {
+        "at": "0xf97164",
+        "to": "0xf4f6fc",
+        "name": ""
+      },
+      {
+        "at": "0xf97176",
+        "to": "0x126211c",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0xf970c0 mov qword ptr [rsp + 0x18], rbx",
+      "0xf970c5 mov qword ptr [rsp + 8], rcx",
+      "0xf970ca push rbp",
+      "0xf970cb mov rbp, rsp",
+      "0xf970ce sub rsp, 0x60",
+      "0xf970d2 mov rbx, rcx",
+      "0xf970d5 xorps xmm0, xmm0",
+      "0xf970d8 lea rcx, [rbp - 0x20]",
+      "0xf970dc movdqa xmmword ptr [rbp - 0x40], xmm0",
+      "0xf970e1 call 0x12c900",
+      "0xf970e6 lea rdx, [rbp + 0x10]",
+      "0xf970ea lea rcx, [rbp - 0x20]",
+      "0xf970ee call 0x332250",
+      "0xf970f3 xor r11d, r11d",
+      "0xf970f6 cmp qword ptr [rbp - 0x40], r11",
+      "0xf970fa jne 0xf97169",
+      "0xf970fc cmp qword ptr [rbp - 0x38], r11",
+      "0xf97100 jne 0xf97169",
+      "0xf97102 lea rcx, [rbp - 0x20]",
+      "0xf97106 call 0x1c2ea0",
+      "0xf9710b test al, al",
+      "0xf9710d jne 0xf97145",
+      "0xf9710f lea rcx, [rbp - 0x20]",
+      "0xf97113 call 0x1c2dd0",
+      "0xf97118 mov rbx, rax",
+      "0xf9711b mov rcx, qword ptr [rax + 0x38]",
+      "0xf9711f call 0x4179e0",
+      "0xf97124 test al, al",
+      "0xf97126 je 0xf97134",
+      "0xf97128 mov rcx, rbx",
+      "0xf9712b call 0x17091f0",
+      "0xf97130 mov r11d, dword ptr [rax + 0x10]",
+      "0xf97134 mov rbx, qword ptr [rsp + 0x80]",
+      "0xf9713c mov eax, r11d",
+      "0xf9713f add rsp, 0x60",
+      "0xf97143 pop rbp",
+      "0xf97144 ret ",
+      "0xf97145 mov rdx, rbx",
+      "0xf97148 lea rcx, [rbp + 0x18]",
+      "0xf9714c call 0xf4f990",
+      "0xf97151 lea rcx, [rbp - 0x30]",
+      "0xf97155 mov rdx, qword ptr [rax]",
+      "0xf97158 call 0xf718d4",
+      "0xf9715d mov rdx, rax",
+      "0xf97160 lea rcx, [rbp - 0x40]",
+      "0xf97164 call 0xf4f6fc",
+      "0xf97169 movaps xmm0, xmmword ptr [rbp - 0x40]",
+      "0xf9716d lea rcx, [rbp - 0x30]",
+      "0xf97171 movdqa xmmword ptr [rbp - 0x30], xmm0",
+      "0xf97176 call 0x126211c",
+      "0xf9717b int3 "
+    ]
+  },
+  {
+    "name": "UnityEngine.Mesh::GetBonesPerVertexValue",
+    "rva": "0x545490",
+    "end": "0x545532",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0x5454ab",
+        "to": "0x12c900",
+        "name": ""
+      },
+      {
+        "at": "0x5454ba",
+        "to": "0x332250",
+        "name": ""
+      },
+      {
+        "at": "0x5454d4",
+        "to": "0x1c2ea0",
+        "name": ""
+      },
+      {
+        "at": "0x5454e2",
+        "to": "0x1c2dd0",
+        "name": ""
+      },
+      {
+        "at": "0x5454ea",
+        "to": "0x19d2d0",
+        "name": ""
+      },
+      {
+        "at": "0x5454fd",
+        "to": "0xf4f990",
+        "name": ""
+      },
+      {
+        "at": "0x54550a",
+        "to": "0xf718d4",
+        "name": ""
+      },
+      {
+        "at": "0x545517",
+        "to": "0xf4f6fc",
+        "name": ""
+      },
+      {
+        "at": "0x54552c",
+        "to": "0x126211c",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0x545490 mov qword ptr [rsp + 8], rcx",
+      "0x545495 push rbx",
+      "0x545496 sub rsp, 0x60",
+      "0x54549a mov rbx, rcx",
+      "0x54549d xorps xmm0, xmm0",
+      "0x5454a0 lea rcx, [rsp + 0x40]",
+      "0x5454a5 movdqa xmmword ptr [rsp + 0x20], xmm0",
+      "0x5454ab call 0x12c900",
+      "0x5454b0 lea rdx, [rsp + 0x70]",
+      "0x5454b5 lea rcx, [rsp + 0x40]",
+      "0x5454ba call 0x332250",
+      "0x5454bf cmp qword ptr [rsp + 0x20], 0",
+      "0x5454c5 jne 0x54551c",
+      "0x5454c7 cmp qword ptr [rsp + 0x28], 0",
+      "0x5454cd jne 0x54551c",
+      "0x5454cf lea rcx, [rsp + 0x40]",
+      "0x5454d4 call 0x1c2ea0",
+      "0x5454d9 test al, al",
+      "0x5454db jne 0x5454f5",
+      "0x5454dd lea rcx, [rsp + 0x40]",
+      "0x5454e2 call 0x1c2dd0",
+      "0x5454e7 mov rcx, rax",
+      "0x5454ea call 0x19d2d0",
+      "0x5454ef add rsp, 0x60",
+      "0x5454f3 pop rbx",
+      "0x5454f4 ret ",
+      "0x5454f5 mov rdx, rbx",
+      "0x5454f8 lea rcx, [rsp + 0x78]",
+      "0x5454fd call 0xf4f990",
+      "0x545502 lea rcx, [rsp + 0x30]",
+      "0x545507 mov rdx, qword ptr [rax]",
+      "0x54550a call 0xf718d4",
+      "0x54550f mov rdx, rax",
+      "0x545512 lea rcx, [rsp + 0x20]",
+      "0x545517 call 0xf4f6fc",
+      "0x54551c movaps xmm0, xmmword ptr [rsp + 0x20]",
+      "0x545521 lea rcx, [rsp + 0x30]",
+      "0x545526 movdqa xmmword ptr [rsp + 0x30], xmm0",
+      "0x54552c call 0x126211c",
+      "0x545531 int3 "
+    ]
+  },
+  {
+    "name": "UnityEngine.Mesh::set_bindposes",
+    "rva": "0xf9af0c",
+    "end": "0xf9b000",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0xf9af36",
+        "to": "0xf4e118",
+        "name": ""
+      },
+      {
+        "at": "0xf9af3f",
+        "to": "0xcc240",
+        "name": ""
+      },
+      {
+        "at": "0xf9af4c",
+        "to": "0xf4e130",
+        "name": ""
+      },
+      {
+        "at": "0xf9af59",
+        "to": "0xf575a4",
+        "name": ""
+      },
+      {
+        "at": "0xf9af62",
+        "to": "0x64cd0",
+        "name": ""
+      },
+      {
+        "at": "0xf9af6f",
+        "to": "0x1c2ea0",
+        "name": ""
+      },
+      {
+        "at": "0xf9af7c",
+        "to": "0xf504f0",
+        "name": ""
+      },
+      {
+        "at": "0xf9af8c",
+        "to": "0xf5667c",
+        "name": ""
+      },
+      {
+        "at": "0xf9af98",
+        "to": "0xfb0c98",
+        "name": ""
+      },
+      {
+        "at": "0xf9afa1",
+        "to": "0x757a0",
+        "name": ""
+      },
+      {
+        "at": "0xf9afaa",
+        "to": "0x53fe10",
+        "name": ""
+      },
+      {
+        "at": "0xf9afc7",
+        "to": "0xf4f990",
+        "name": ""
+      },
+      {
+        "at": "0xf9afd3",
+        "to": "0xf718d4",
+        "name": ""
+      },
+      {
+        "at": "0xf9afdf",
+        "to": "0xf4f6fc",
+        "name": ""
+      },
+      {
+        "at": "0xf9afe8",
+        "to": "0x53fe10",
+        "name": ""
+      },
+      {
+        "at": "0xf9affa",
+        "to": "0x126211c",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0xf9af0c mov rax, rsp",
+      "0xf9af0f mov qword ptr [rax + 0x20], rbx",
+      "0xf9af13 mov qword ptr [rax + 0x10], rdx",
+      "0xf9af17 mov qword ptr [rax + 8], rcx",
+      "0xf9af1b push rbp",
+      "0xf9af1c lea rbp, [rax - 0x5f]",
+      "0xf9af20 sub rsp, 0x90",
+      "0xf9af27 mov rbx, rcx",
+      "0xf9af2a xorps xmm0, xmm0",
+      "0xf9af2d lea rcx, [rbp + 0x17]",
+      "0xf9af31 movdqa xmmword ptr [rbp - 0x19], xmm0",
+      "0xf9af36 call 0xf4e118",
+      "0xf9af3b lea rcx, [rbp + 0x2f]",
+      "0xf9af3f call 0xcc240",
+      "0xf9af44 lea rdx, [rbp + 0x67]",
+      "0xf9af48 lea rcx, [rbp + 0x17]",
+      "0xf9af4c call 0xf4e130",
+      "0xf9af51 lea rdx, [rbp + 0x6f]",
+      "0xf9af55 lea rcx, [rbp + 0x2f]",
+      "0xf9af59 call 0xf575a4",
+      "0xf9af5e lea rcx, [rbp - 0x19]",
+      "0xf9af62 call 0x64cd0",
+      "0xf9af67 test al, al",
+      "0xf9af69 jne 0xf9afe4",
+      "0xf9af6b lea rcx, [rbp + 0x17]",
+      "0xf9af6f call 0x1c2ea0",
+      "0xf9af74 test al, al",
+      "0xf9af76 jne 0xf9afc0",
+      "0xf9af78 lea rcx, [rbp + 0x17]",
+      "0xf9af7c call 0xf504f0",
+      "0xf9af81 lea rdx, [rbp - 9]",
+      "0xf9af85 mov rbx, rax",
+      "0xf9af88 lea rcx, [rbp + 0x2f]",
+      "0xf9af8c call 0xf5667c",
+      "0xf9af91 lea rdx, [rbp - 9]",
+      "0xf9af95 mov rcx, rbx",
+      "0xf9af98 call 0xfb0c98",
+      "0xf9af9d lea rcx, [rbp - 9]",
+      "0xf9afa1 call 0x757a0",
+      "0xf9afa6 lea rcx, [rbp + 0x2f]",
+      "0xf9afaa call 0x53fe10",
+      "0xf9afaf mov rbx, qword ptr [rsp + 0xb8]",
+      "0xf9afb7 add rsp, 0x90",
+      "0xf9afbe pop rbp",
+      "0xf9afbf ret ",
+      "0xf9afc0 mov rdx, rbx",
+      "0xf9afc3 lea rcx, [rbp + 0x77]",
+      "0xf9afc7 call 0xf4f990",
+      "0xf9afcc lea rcx, [rbp - 9]",
+      "0xf9afd0 mov rdx, qword ptr [rax]",
+      "0xf9afd3 call 0xf718d4",
+      "0xf9afd8 mov rdx, rax",
+      "0xf9afdb lea rcx, [rbp - 0x19]",
+      "0xf9afdf call 0xf4f6fc",
+      "0xf9afe4 lea rcx, [rbp + 0x2f]",
+      "0xf9afe8 call 0x53fe10",
+      "0xf9afed movaps xmm0, xmmword ptr [rbp - 0x19]",
+      "0xf9aff1 lea rcx, [rbp - 9]",
+      "0xf9aff5 movdqa xmmword ptr [rbp - 9], xmm0",
+      "0xf9affa call 0x126211c",
+      "0xf9afff int3 "
+    ]
+  },
+  {
+    "name": "UnityEngine.Mesh::MarkModified",
+    "rva": "0xf995a0",
+    "end": "0xf9965f",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0xf995c1",
+        "to": "0x12c900",
+        "name": ""
+      },
+      {
+        "at": "0xf995ce",
+        "to": "0x332250",
+        "name": ""
+      },
+      {
+        "at": "0xf995e5",
+        "to": "0x1c2ea0",
+        "name": ""
+      },
+      {
+        "at": "0xf995f2",
+        "to": "0x1c2dd0",
+        "name": ""
+      },
+      {
+        "at": "0xf99604",
+        "to": "0x1c3d20",
+        "name": ""
+      },
+      {
+        "at": "0xf99615",
+        "to": "0x2ba7d0",
+        "name": ""
+      },
+      {
+        "at": "0xf9962f",
+        "to": "0xf4f990",
+        "name": ""
+      },
+      {
+        "at": "0xf9963b",
+        "to": "0xf718d4",
+        "name": ""
+      },
+      {
+        "at": "0xf99647",
+        "to": "0xf4f6fc",
+        "name": ""
+      },
+      {
+        "at": "0xf99659",
+        "to": "0x126211c",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0xf995a0 mov qword ptr [rsp + 0x18], rbx",
+      "0xf995a5 mov qword ptr [rsp + 8], rcx",
+      "0xf995aa push rbp",
+      "0xf995ab mov rbp, rsp",
+      "0xf995ae sub rsp, 0x60",
+      "0xf995b2 mov rbx, rcx",
+      "0xf995b5 xorps xmm0, xmm0",
+      "0xf995b8 lea rcx, [rbp - 0x20]",
+      "0xf995bc movdqa xmmword ptr [rbp - 0x40], xmm0",
+      "0xf995c1 call 0x12c900",
+      "0xf995c6 lea rdx, [rbp + 0x10]",
+      "0xf995ca lea rcx, [rbp - 0x20]",
+      "0xf995ce call 0x332250",
+      "0xf995d3 cmp qword ptr [rbp - 0x40], 0",
+      "0xf995d8 jne 0xf9964c",
+      "0xf995da cmp qword ptr [rbp - 0x38], 0",
+      "0xf995df jne 0xf9964c",
+      "0xf995e1 lea rcx, [rbp - 0x20]",
+      "0xf995e5 call 0x1c2ea0",
+      "0xf995ea test al, al",
+      "0xf995ec jne 0xf99628",
+      "0xf995ee lea rcx, [rbp - 0x20]",
+      "0xf995f2 call 0x1c2dd0",
+      "0xf995f7 lea rdx, [rip + 0xd552b2]",
+      "0xf995fe mov rcx, rax",
+      "0xf99601 mov rbx, rax",
+      "0xf99604 call 0x1c3d20",
+      "0xf99609 lea rcx, [rbx + 0x168]",
+      "0xf99610 mov edx, 1",
+      "0xf99615 call 0x2ba7d0",
+      "0xf9961a mov rbx, qword ptr [rsp + 0x80]",
+      "0xf99622 add rsp, 0x60",
+      "0xf99626 pop rbp",
+      "0xf99627 ret ",
+      "0xf99628 mov rdx, rbx",
+      "0xf9962b lea rcx, [rbp + 0x18]",
+      "0xf9962f call 0xf4f990",
+      "0xf99634 lea rcx, [rbp - 0x30]",
+      "0xf99638 mov rdx, qword ptr [rax]",
+      "0xf9963b call 0xf718d4",
+      "0xf99640 mov rdx, rax",
+      "0xf99643 lea rcx, [rbp - 0x40]",
+      "0xf99647 call 0xf4f6fc",
+      "0xf9964c movaps xmm0, xmmword ptr [rbp - 0x40]",
+      "0xf99650 lea rcx, [rbp - 0x30]",
+      "0xf99654 movdqa xmmword ptr [rbp - 0x30], xmm0",
+      "0xf99659 call 0x126211c",
+      "0xf9965e int3 "
+    ]
+  },
+  {
+    "name": "UnityEngine.Mesh::UploadMeshDataImpl",
+    "rva": "0x19bcc0",
+    "end": "0x19bd78",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0x19bce3",
+        "to": "0x12c900",
+        "name": ""
+      },
+      {
+        "at": "0x19bcf2",
+        "to": "0x332250",
+        "name": ""
+      },
+      {
+        "at": "0x19bd0c",
+        "to": "0x1c2ea0",
+        "name": ""
+      },
+      {
+        "at": "0x19bd1a",
+        "to": "0x1c2dd0",
+        "name": ""
+      },
+      {
+        "at": "0x19bd28",
+        "to": "0x19bd80",
+        "name": ""
+      },
+      {
+        "at": "0x19bd43",
+        "to": "0xf4f990",
+        "name": ""
+      },
+      {
+        "at": "0x19bd50",
+        "to": "0xf718d4",
+        "name": ""
+      },
+      {
+        "at": "0x19bd5d",
+        "to": "0xf4f6fc",
+        "name": ""
+      },
+      {
+        "at": "0x19bd72",
+        "to": "0x126211c",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0x19bcc0 mov qword ptr [rsp + 0x10], rbx",
+      "0x19bcc5 mov qword ptr [rsp + 8], rcx",
+      "0x19bcca push rdi",
+      "0x19bccb sub rsp, 0x60",
+      "0x19bccf mov rbx, rcx",
+      "0x19bcd2 xorps xmm0, xmm0",
+      "0x19bcd5 lea rcx, [rsp + 0x40]",
+      "0x19bcda movdqa xmmword ptr [rsp + 0x20], xmm0",
+      "0x19bce0 movzx edi, dl",
+      "0x19bce3 call 0x12c900",
+      "0x19bce8 lea rdx, [rsp + 0x70]",
+      "0x19bced lea rcx, [rsp + 0x40]",
+      "0x19bcf2 call 0x332250",
+      "0x19bcf7 cmp qword ptr [rsp + 0x20], 0",
+      "0x19bcfd jne 0x19bd62",
+      "0x19bcff cmp qword ptr [rsp + 0x28], 0",
+      "0x19bd05 jne 0x19bd62",
+      "0x19bd07 lea rcx, [rsp + 0x40]",
+      "0x19bd0c call 0x1c2ea0",
+      "0x19bd11 test al, al",
+      "0x19bd13 jne 0x19bd38",
+      "0x19bd15 lea rcx, [rsp + 0x40]",
+      "0x19bd1a call 0x1c2dd0",
+      "0x19bd1f test dil, dil",
+      "0x19bd22 mov rcx, rax",
+      "0x19bd25 setne dl",
+      "0x19bd28 call 0x19bd80",
+      "0x19bd2d mov rbx, qword ptr [rsp + 0x78]",
+      "0x19bd32 add rsp, 0x60",
+      "0x19bd36 pop rdi",
+      "0x19bd37 ret ",
+      "0x19bd38 mov rdx, rbx",
+      "0x19bd3b lea rcx, [rsp + 0x80]",
+      "0x19bd43 call 0xf4f990",
+      "0x19bd48 lea rcx, [rsp + 0x30]",
+      "0x19bd4d mov rdx, qword ptr [rax]",
+      "0x19bd50 call 0xf718d4",
+      "0x19bd55 mov rdx, rax",
+      "0x19bd58 lea rcx, [rsp + 0x20]",
+      "0x19bd5d call 0xf4f6fc",
+      "0x19bd62 movaps xmm0, xmmword ptr [rsp + 0x20]",
+      "0x19bd67 lea rcx, [rsp + 0x30]",
+      "0x19bd6c movdqa xmmword ptr [rsp + 0x30], xmm0",
+      "0x19bd72 call 0x126211c",
+      "0x19bd77 int3 "
+    ]
+  },
+  {
+    "name": "UnityEngine.HyperGryph.HGMeshBufferAllocator::GarbageCollect",
+    "rva": "0x55c870",
+    "end": "0x55c89f",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0x55c880",
+        "to": "0x55c8a0",
+        "name": ""
+      },
+      {
+        "at": "0x55c894",
+        "to": "0x55c8a0",
+        "name": ""
+      },
+      {
+        "at": "0x55c8c9",
+        "to": "0x79000",
+        "name": ""
+      },
+      {
+        "at": "0x55c939",
+        "to": "0x206650",
+        "name": ""
+      },
+      {
+        "at": "0x55c947",
+        "to": "0x12a41a8",
+        "name": ""
+      },
+      {
+        "at": "0x55c98b",
+        "to": "0x1624638",
+        "name": ""
+      },
+      {
+        "at": "0x55c9b3",
+        "to": "0xb39a0",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0x55c870 push rbx",
+      "0x55c872 sub rsp, 0x20",
+      "0x55c876 mov rbx, qword ptr [rip + 0x179943b]",
+      "0x55c87d mov rcx, qword ptr [rbx]",
+      "0x55c880 call 0x55c8a0",
+      "0x55c885 cmp byte ptr [rbx + 0x14], 0",
+      "0x55c889 jne 0x55c899",
+      "0x55c88b mov rcx, qword ptr [rbx + 8]",
+      "0x55c88f add rsp, 0x20",
+      "0x55c893 pop rbx",
+      "0x55c894 jmp 0x55c8a0",
+      "0x55c899 add rsp, 0x20",
+      "0x55c89d pop rbx",
+      "0x55c89e ret ",
+      "0x55c8a0 push rbp",
+      "0x55c8a2 push rsi",
+      "0x55c8a3 push r12",
+      "0x55c8a5 push r13",
+      "0x55c8a7 push r15",
+      "0x55c8a9 sub rsp, 0x20",
+      "0x55c8ad mov rbp, rcx",
+      "0x55c8b0 add rcx, 0xa8",
+      "0x55c8b7 mov qword ptr [rsp + 0x50], rcx",
+      "0x55c8bc call qword ptr [rip + 0x12feace]",
+      "0x55c8c2 mov r15d, dword ptr [rbp + 0x98]",
+      "0x55c8c9 call 0x79000",
+      "0x55c8ce xor r13d, r13d",
+      "0x55c8d1 mov r12, rax",
+      "0x55c8d4 mov esi, r13d",
+      "0x55c8d7 test r15d, r15d",
+      "0x55c8da je 0x55c9ae",
+      "0x55c8e0 mov qword ptr [rsp + 0x60], rdi",
+      "0x55c8e5 mov qword ptr [rsp + 0x68], r14",
+      "0x55c8ea mov r14d, r13d",
+      "0x55c8ed mov qword ptr [rsp + 0x58], rbx",
+      "0x55c8f2 mov rdi, qword ptr [rbp + 0xa0]",
+      "0x55c8f9 cmp qword ptr [r14 + rdi + 8], r13",
+      "0x55c8fe je 0x55c990",
+      "0x55c904 cmp dword ptr [r14 + rdi + 0x58], r13d",
+      "0x55c909 jne 0x55c990",
+      "0x55c90f cmp qword ptr [r14 + rdi + 0x10], r13",
+      "0x55c914 je 0x55c943",
+      "0x55c916 mov rax, qword ptr [r14 + rdi + 8]",
+      "0x55c91b mov rbx, qword ptr [rax + 0x48]",
+      "0x55c91f mov rax, qword ptr [rbp + 0xd0]",
+      "0x55c926 mov rcx, rax",
+      "0x55c929 mov r8, qword ptr [rax]",
+      "0x55c92c call qword ptr [r8 + 0xd78]",
+      "0x55c933 mov rcx, rax",
+      "0x55c936 mov rdx, rbx",
+      "0x55c939 call 0x206650",
+      "0x55c93e mov qword ptr [r14 + rdi + 0x10], r13",
+      "0x55c943 mov rcx, qword ptr [r14 + rdi]",
+      "0x55c947 call 0x12a41a8",
+      "0x55c94c mov rbx, qword ptr [r14 + rdi + 8]",
+      "0x55c951 mov rcx, r12",
+      "0x55c954 mov rdx, qword ptr [r14 + rdi + 8]",
+      "0x55c959 mov qword ptr [r14 + rdi], r13",
+      "0x55c95d mov rax, qword ptr [r12]",
+      "0x55c961 mov ebx, dword ptr [rbx + 0x30]",
+      "0x55c964 call qword ptr [rax + 0x350]",
+      "0x55c96a mov rax, qword ptr [r12]",
+      "0x55c96e mov edx, ebx",
+      "0x55c970 mov rcx, r12",
+      "0x55c973 call qword ptr [rax + 0x670]",
+      "0x55c979 mov qword ptr [r14 + rdi + 8], r13",
+      "0x55c97e lea edx, [rsi + 1]",
+      "0x55c981 dec dword ptr [rbp + 0x9c]",
+      "0x55c987 lea rcx, [rbp + 0x50]",
+      "0x55c98b call 0x1624638",
+      "0x55c990 inc esi",
+      "0x55c992 add r14, 0x68",
+      "0x55c996 cmp esi, r15d",
+      "0x55c999 jb 0x55c8f2",
+      "0x55c99f mov r14, qword ptr [rsp + 0x68]",
+      "0x55c9a4 mov rdi, qword ptr [rsp + 0x60]",
+      "0x55c9a9 mov rbx, qword ptr [rsp + 0x58]",
+      "0x55c9ae lea rcx, [rsp + 0x50]",
+      "0x55c9b3 call 0xb39a0",
+      "0x55c9b8 add rsp, 0x20",
+      "0x55c9bc pop r15",
+      "0x55c9be pop r13",
+      "0x55c9c0 pop r12",
+      "0x55c9c2 pop rsi",
+      "0x55c9c3 pop rbp",
+      "0x55c9c4 ret "
+    ]
+  },
+  {
+    "name": "UnityEngine.HyperGryph.HGGraphicsUtils::PrepareGeometryJobRenderersForRendering",
+    "rva": "0x4b4900",
+    "end": "0x4b4960",
+    "leaf": true,
+    "calls": [
+      {
+        "at": "0x4b4900",
+        "to": "0x16fa20",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0x4b4900 jmp 0x16fa20"
+    ]
+  }
+]

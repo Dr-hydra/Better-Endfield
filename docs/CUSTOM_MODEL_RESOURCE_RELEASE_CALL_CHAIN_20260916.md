@@ -156,6 +156,8 @@ ResolveEngineBindings
 
 #### 2026-09-16 补充：`m_BonesPerVertex` 现有实现核对
 
+> **2026-09-20 状态修正：** 本节记录的是当时的固定偏移实现和调查结论。当前生产版已经加入 `native_mesh_layout.cpp`，会在 Windows x64 的映射 `UnityPlayer.dll` 中依据 `m_BonesPerVertex` 字符串引用和多个序列化函数动态解析位移，因此不能再把“当前代码固定使用 `+0x1C8`”作为现状描述。`+0x1C8` 仍是历史客户端的观测值，保留在本文仅用于原生研究追溯。当前实现仍是 Windows 私有原生字段的直接读写，尚未成为 Android 的方法级 Hook 路径；完整结论见 [`CUSTOM_MODEL_BONES_PER_VERTEX_ANDROID_20260920.md`](CUSTOM_MODEL_BONES_PER_VERTEX_ANDROID_20260920.md)。
+
 结论：当前实现使用固定的原生字段偏移 `+0x1C8`；从对应原 Mesh 动态读取的是字段值，没有在运行时计算该字段偏移。
 
 - `module_poc2_part_02.inc` 的 `ResolveEngineBindings` 通过 Host `resolve_field` 查询托管 `UnityEngine.Object.m_CachedPtr` 的偏移；查询失败仍回退到固定 `0x10`。`GetNativeObjectPointer` 据此取得原生对象指针。这一步解析的不是 `m_BonesPerVertex`。

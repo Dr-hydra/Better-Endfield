@@ -1,0 +1,224 @@
+[
+  {
+    "name": "UnityEngine.Mesh::SetSubMesh_Injected",
+    "rva": "0xf99f9c",
+    "end": "0xf9a084",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0xf99fd1",
+        "to": "0x12c900",
+        "name": ""
+      },
+      {
+        "at": "0xf99fde",
+        "to": "0x332250",
+        "name": ""
+      },
+      {
+        "at": "0xf99ff9",
+        "to": "0x1c2ea0",
+        "name": ""
+      },
+      {
+        "at": "0xf9a009",
+        "to": "0xf4f990",
+        "name": ""
+      },
+      {
+        "at": "0xf9a015",
+        "to": "0xf718d4",
+        "name": ""
+      },
+      {
+        "at": "0xf9a021",
+        "to": "0xf4f6fc",
+        "name": ""
+      },
+      {
+        "at": "0xf9a026",
+        "to": "0xf9a071",
+        "name": ""
+      },
+      {
+        "at": "0xf9a07e",
+        "to": "0x126211c",
+        "name": ""
+      },
+      {
+        "at": "0xf9a02c",
+        "to": "0x1c2dd0",
+        "name": ""
+      },
+      {
+        "at": "0xf9a046",
+        "to": "0x119a69c",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0xf99f9c mov qword ptr [rsp + 0x10], rbx",
+      "0xf99fa1 mov qword ptr [rsp + 0x18], rsi",
+      "0xf99fa6 mov qword ptr [rsp + 8], rcx",
+      "0xf99fab push rbp",
+      "0xf99fac push rdi",
+      "0xf99fad push r14",
+      "0xf99faf mov rbp, rsp",
+      "0xf99fb2 sub rsp, 0x80",
+      "0xf99fb9 mov rbx, rcx",
+      "0xf99fbc xorps xmm0, xmm0",
+      "0xf99fbf lea rcx, [rbp - 0x20]",
+      "0xf99fc3 movdqa xmmword ptr [rbp - 0x40], xmm0",
+      "0xf99fc8 mov edi, r9d",
+      "0xf99fcb mov rsi, r8",
+      "0xf99fce mov r14d, edx",
+      "0xf99fd1 call 0x12c900",
+      "0xf99fd6 lea rdx, [rbp + 0x20]",
+      "0xf99fda lea rcx, [rbp - 0x20]",
+      "0xf99fde call 0x332250",
+      "0xf99fe3 cmp qword ptr [rbp - 0x40], 0",
+      "0xf99fe8 jne 0xf9a071",
+      "0xf99fee cmp qword ptr [rbp - 0x38], 0",
+      "0xf99ff3 jne 0xf9a071",
+      "0xf99ff5 lea rcx, [rbp - 0x20]",
+      "0xf99ff9 call 0x1c2ea0",
+      "0xf99ffe test al, al",
+      "0xf9a000 je 0xf9a028",
+      "0xf9a002 mov rdx, rbx",
+      "0xf9a005 lea rcx, [rbp - 0x50]",
+      "0xf9a009 call 0xf4f990",
+      "0xf9a00e lea rcx, [rbp - 0x30]",
+      "0xf9a012 mov rdx, qword ptr [rax]",
+      "0xf9a015 call 0xf718d4",
+      "0xf9a01a mov rdx, rax",
+      "0xf9a01d lea rcx, [rbp - 0x40]",
+      "0xf9a021 call 0xf4f6fc",
+      "0xf9a026 jmp 0xf9a071",
+      "0xf9a028 lea rcx, [rbp - 0x20]",
+      "0xf9a02c call 0x1c2dd0",
+      "0xf9a031 lea rcx, [rbp - 0x40]",
+      "0xf9a035 mov r9d, edi",
+      "0xf9a038 mov qword ptr [rsp + 0x20], rcx",
+      "0xf9a03d mov r8, rsi",
+      "0xf9a040 mov rcx, rax",
+      "0xf9a043 mov edx, r14d",
+      "0xf9a046 call 0x119a69c",
+      "0xf9a04b cmp qword ptr [rbp - 0x40], 0",
+      "0xf9a050 jne 0xf9a071",
+      "0xf9a052 cmp qword ptr [rbp - 0x38], 0",
+      "0xf9a057 jne 0xf9a071",
+      "0xf9a059 lea r11, [rsp + 0x80]",
+      "0xf9a061 mov rbx, qword ptr [r11 + 0x28]",
+      "0xf9a065 mov rsi, qword ptr [r11 + 0x30]",
+      "0xf9a069 mov rsp, r11",
+      "0xf9a06c pop r14",
+      "0xf9a06e pop rdi",
+      "0xf9a06f pop rbp",
+      "0xf9a070 ret ",
+      "0xf9a071 movaps xmm0, xmmword ptr [rbp - 0x40]",
+      "0xf9a075 lea rcx, [rbp - 0x50]",
+      "0xf9a079 movdqa xmmword ptr [rbp - 0x50], xmm0",
+      "0xf9a07e call 0x126211c",
+      "0xf9a083 int3 "
+    ]
+  },
+  {
+    "name": "UnityEngine.Mesh::RecalculateBoundsImpl",
+    "rva": "0x1c2800",
+    "end": "0x1c28b3",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0x1c2822",
+        "to": "0x12c900",
+        "name": ""
+      },
+      {
+        "at": "0x1c2831",
+        "to": "0x332250",
+        "name": ""
+      },
+      {
+        "at": "0x1c284b",
+        "to": "0x1c2ea0",
+        "name": ""
+      },
+      {
+        "at": "0x1c2859",
+        "to": "0x1c2dd0",
+        "name": ""
+      },
+      {
+        "at": "0x1c2863",
+        "to": "0xf3d60",
+        "name": ""
+      },
+      {
+        "at": "0x1c287e",
+        "to": "0xf4f990",
+        "name": ""
+      },
+      {
+        "at": "0x1c288b",
+        "to": "0xf718d4",
+        "name": ""
+      },
+      {
+        "at": "0x1c2898",
+        "to": "0xf4f6fc",
+        "name": ""
+      },
+      {
+        "at": "0x1c28ad",
+        "to": "0x126211c",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0x1c2800 mov qword ptr [rsp + 0x10], rbx",
+      "0x1c2805 mov qword ptr [rsp + 8], rcx",
+      "0x1c280a push rdi",
+      "0x1c280b sub rsp, 0x60",
+      "0x1c280f mov rbx, rcx",
+      "0x1c2812 xorps xmm0, xmm0",
+      "0x1c2815 lea rcx, [rsp + 0x40]",
+      "0x1c281a movdqa xmmword ptr [rsp + 0x20], xmm0",
+      "0x1c2820 mov edi, edx",
+      "0x1c2822 call 0x12c900",
+      "0x1c2827 lea rdx, [rsp + 0x70]",
+      "0x1c282c lea rcx, [rsp + 0x40]",
+      "0x1c2831 call 0x332250",
+      "0x1c2836 cmp qword ptr [rsp + 0x20], 0",
+      "0x1c283c jne 0x1c289d",
+      "0x1c283e cmp qword ptr [rsp + 0x28], 0",
+      "0x1c2844 jne 0x1c289d",
+      "0x1c2846 lea rcx, [rsp + 0x40]",
+      "0x1c284b call 0x1c2ea0",
+      "0x1c2850 test al, al",
+      "0x1c2852 jne 0x1c2873",
+      "0x1c2854 lea rcx, [rsp + 0x40]",
+      "0x1c2859 call 0x1c2dd0",
+      "0x1c285e mov edx, edi",
+      "0x1c2860 mov rcx, rax",
+      "0x1c2863 call 0xf3d60",
+      "0x1c2868 mov rbx, qword ptr [rsp + 0x78]",
+      "0x1c286d add rsp, 0x60",
+      "0x1c2871 pop rdi",
+      "0x1c2872 ret ",
+      "0x1c2873 mov rdx, rbx",
+      "0x1c2876 lea rcx, [rsp + 0x80]",
+      "0x1c287e call 0xf4f990",
+      "0x1c2883 lea rcx, [rsp + 0x30]",
+      "0x1c2888 mov rdx, qword ptr [rax]",
+      "0x1c288b call 0xf718d4",
+      "0x1c2890 mov rdx, rax",
+      "0x1c2893 lea rcx, [rsp + 0x20]",
+      "0x1c2898 call 0xf4f6fc",
+      "0x1c289d movaps xmm0, xmmword ptr [rsp + 0x20]",
+      "0x1c28a2 lea rcx, [rsp + 0x30]",
+      "0x1c28a7 movdqa xmmword ptr [rsp + 0x30], xmm0",
+      "0x1c28ad call 0x126211c",
+      "0x1c28b2 int3 "
+    ]
+  }
+]

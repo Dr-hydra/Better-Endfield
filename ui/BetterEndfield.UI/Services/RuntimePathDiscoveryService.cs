@@ -11,38 +11,23 @@ internal static class RuntimePathDiscoveryService
     private const string GameExecutableName = "Endfield.exe";
     private const string InjectorExecutableName = "BetterEndfield.Injector.exe";
 
+    // IncludeAllContentForSelfExtract makes BaseDirectory point at the temporary
+    // bundle extraction directory. Native payloads remain beside the launcher EXE.
+    public static string BundledInjectorPath { get; } = Path.GetFullPath(Path.Combine(
+        Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory,
+        "loaders",
+        InjectorExecutableName));
+
     public static Task<RuntimePathDiscoveryResult> DiscoverAsync(
-        string preferredGamePath,
-        string preferredInjectorPath) => Task.Run(() => new RuntimePathDiscoveryResult(
+        string preferredGamePath) => Task.Run(() => new RuntimePathDiscoveryResult(
             DiscoverGamePath(preferredGamePath),
-            DiscoverInjectorPath(preferredInjectorPath)));
+            BundledInjectorPath));
 
     public static string DiscoverGamePath(string preferredPath)
     {
         foreach (string candidate in EnumerateGameCandidates(preferredPath))
         {
             if (IsGameExecutable(candidate))
-            {
-                return Path.GetFullPath(candidate);
-            }
-        }
-        return string.Empty;
-    }
-
-    public static string DiscoverInjectorPath(string preferredPath)
-    {
-        foreach (string candidate in EnumerateInjectorCandidates(preferredPath))
-        {
-            if (!File.Exists(candidate))
-            {
-                continue;
-            }
-            string? loaderDirectory = Path.GetDirectoryName(candidate);
-            string? installRoot = loaderDirectory is null
-                ? null
-                : Directory.GetParent(loaderDirectory)?.FullName;
-            if (!string.IsNullOrWhiteSpace(installRoot) &&
-                ConfigurationService.IsCompleteInstallRoot(installRoot))
             {
                 return Path.GetFullPath(candidate);
             }
@@ -122,47 +107,6 @@ internal static class RuntimePathDiscoveryService
                         yield return path;
                     }
                 }
-            }
-        }
-    }
-
-    private static IEnumerable<string> EnumerateInjectorCandidates(string preferredPath)
-    {
-        var emitted = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (string candidate in AddCandidate(preferredPath, emitted))
-        {
-            yield return candidate;
-        }
-
-        var roots = new List<string>
-        {
-            AppContext.BaseDirectory,
-            Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Programs",
-                "Better Endfield"),
-            Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-                "Better Endfield")
-        };
-        string current = AppContext.BaseDirectory;
-        for (int level = 0; level < 8; level++)
-        {
-            roots.Add(current);
-            DirectoryInfo? parent = Directory.GetParent(current);
-            if (parent is null)
-            {
-                break;
-            }
-            current = parent.FullName;
-        }
-
-        foreach (string root in roots.Where(root => !string.IsNullOrWhiteSpace(root)))
-        {
-            foreach (string candidate in AddCandidate(
-                Path.Combine(root, "loaders", InjectorExecutableName), emitted))
-            {
-                yield return candidate;
             }
         }
     }

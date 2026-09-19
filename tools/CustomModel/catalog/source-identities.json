@@ -1,0 +1,323 @@
+{
+  "schema": 1,
+  "kind": "bem-source-identity-coverage",
+  "policy": "efmi-dx11-region-texture0-fullchain-v1",
+  "manifest_version": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+  "characters": [
+    {
+      "character_id": "chr_0002_endminm",
+      "name": "管理员（男）",
+      "entries": 11,
+      "textures": 39,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0005_chen",
+      "name": "陈千语",
+      "entries": 10,
+      "textures": 31,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0006_wolfgd",
+      "name": "狼卫",
+      "entries": 15,
+      "textures": 45,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0007_ikut",
+      "name": "弧光",
+      "entries": 9,
+      "textures": 30,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0009_azrila",
+      "name": "余烬",
+      "entries": 11,
+      "textures": 36,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0011_seraph",
+      "name": "赛希",
+      "entries": 13,
+      "textures": 37,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0012_avywen",
+      "name": "艾维文娜",
+      "entries": 8,
+      "textures": 27,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0013_aglina",
+      "name": "洁尔佩塔",
+      "entries": 9,
+      "textures": 30,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0014_aurora",
+      "name": "昼雪",
+      "entries": 11,
+      "textures": 41,
+      "mapping_status": "offline-resource-identities-partial",
+      "issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_aurora_fur_01_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
+    },
+    {
+      "character_id": "chr_0015_lifeng",
+      "name": "黎风",
+      "entries": 10,
+      "textures": 34,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0016_laevat",
+      "name": "莱万汀",
+      "entries": 12,
+      "textures": 45,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0017_yvonne",
+      "name": "伊冯",
+      "entries": 11,
+      "textures": 36,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0018_dapan",
+      "name": "大潘",
+      "entries": 7,
+      "textures": 19,
+      "mapping_status": "offline-resource-identities-partial",
+      "issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_dapan_eyebrow_01_lod0",
+          "reason": "not a complete single-submesh index region"
+        },
+        {
+          "kind": "mesh",
+          "name": "S_actor_dapan_fur_01_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
+    },
+    {
+      "character_id": "chr_0019_karin",
+      "name": "秋栗",
+      "entries": 9,
+      "textures": 31,
+      "mapping_status": "offline-resource-identities-partial",
+      "issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_karin_fur_01_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
+    },
+    {
+      "character_id": "chr_0020_meurs",
+      "name": "卡契尔",
+      "entries": 12,
+      "textures": 33,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0021_whiten",
+      "name": "埃特拉",
+      "entries": 9,
+      "textures": 36,
+      "mapping_status": "offline-resource-identities-partial",
+      "issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_whiten_fur_01_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
+    },
+    {
+      "character_id": "chr_0022_bounda",
+      "name": "萤石",
+      "entries": 12,
+      "textures": 34,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0023_antal",
+      "name": "安塔尔",
+      "entries": 7,
+      "textures": 17,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0024_deepfin",
+      "name": "阿列什",
+      "entries": 9,
+      "textures": 32,
+      "mapping_status": "offline-resource-identities-partial",
+      "issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_deepfin_fur_01_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
+    },
+    {
+      "character_id": "chr_0025_ardelia",
+      "name": "艾尔黛拉",
+      "entries": 13,
+      "textures": 57,
+      "mapping_status": "offline-resource-identities-partial",
+      "issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_ardelia_fur_01_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
+    },
+    {
+      "character_id": "chr_0026_lastrite",
+      "name": "别礼",
+      "entries": 13,
+      "textures": 42,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0027_tangtang",
+      "name": "汤汤",
+      "entries": 12,
+      "textures": 48,
+      "mapping_status": "offline-resource-identities-partial",
+      "issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_tangtang_fur_01_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
+    },
+    {
+      "character_id": "chr_0028_wulfa",
+      "name": "洛茜",
+      "entries": 15,
+      "textures": 43,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0029_pograni",
+      "name": "骏卫",
+      "entries": 13,
+      "textures": 39,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0030_zhuangfy",
+      "name": "庄方宜",
+      "entries": 9,
+      "textures": 32,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0031_mifu",
+      "name": "弭弗",
+      "entries": 11,
+      "textures": 40,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0032_lizhiyan",
+      "name": "决",
+      "entries": 13,
+      "textures": 37,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0033_camille",
+      "name": "卡缪",
+      "entries": 14,
+      "textures": 40,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0034_typhoea",
+      "name": "提弗洛斯",
+      "entries": 12,
+      "textures": 49,
+      "mapping_status": "offline-resource-identities-partial",
+      "issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_typhoea_brow_01_lod0",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
+    },
+    {
+      "character_id": "chr_0035_liino",
+      "name": "梨诺",
+      "entries": 17,
+      "textures": 49,
+      "mapping_status": "offline-resource-identities-partial",
+      "issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_liino_brow_01_lod0",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
+    },
+    {
+      "character_id": "chr_0003_endminf",
+      "name": "管理员（女）",
+      "entries": 11,
+      "textures": 35,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0004_pelica",
+      "name": "佩丽卡",
+      "entries": 12,
+      "textures": 37,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    }
+  ]
+}

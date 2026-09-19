@@ -1,0 +1,94 @@
+[
+  {
+    "name": "native_2ba780",
+    "rva": "0x2ba780",
+    "end": "0x2ba7cd",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0x2ba797",
+        "to": "0x2ba930",
+        "name": ""
+      },
+      {
+        "at": "0x2ba7ac",
+        "to": "0x1c3d20",
+        "name": ""
+      },
+      {
+        "at": "0x2ba7bd",
+        "to": "0x2ba7d0",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0x2ba780 mov qword ptr [rsp + 8], rbx",
+      "0x2ba785 push rdi",
+      "0x2ba786 sub rsp, 0x20",
+      "0x2ba78a mov edi, r8d",
+      "0x2ba78d mov rbx, rcx",
+      "0x2ba790 mov r8, rcx",
+      "0x2ba793 mov rcx, qword ptr [rcx + 0x38]",
+      "0x2ba797 call 0x2ba930",
+      "0x2ba79c test dil, 4",
+      "0x2ba7a0 jne 0x2ba7c2",
+      "0x2ba7a2 lea rdx, [rip + 0x1a34107]",
+      "0x2ba7a9 mov rcx, rbx",
+      "0x2ba7ac call 0x1c3d20",
+      "0x2ba7b1 lea rcx, [rbx + 0x168]",
+      "0x2ba7b8 mov edx, 1",
+      "0x2ba7bd call 0x2ba7d0",
+      "0x2ba7c2 mov rbx, qword ptr [rsp + 0x30]",
+      "0x2ba7c7 add rsp, 0x20",
+      "0x2ba7cb pop rdi",
+      "0x2ba7cc ret "
+    ]
+  },
+  {
+    "name": "native_2ba8b0",
+    "rva": "0x2ba8b0",
+    "end": "0x2ba8d9",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0x2ba8bf",
+        "to": "0x1c3c00",
+        "name": ""
+      },
+      {
+        "at": "0x2ba8d4",
+        "to": "0x2ba810",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0x2ba8b0 mov qword ptr [rsp + 8], rbx",
+      "0x2ba8b5 push rdi",
+      "0x2ba8b6 sub rsp, 0x20",
+      "0x2ba8ba mov ebx, edx",
+      "0x2ba8bc mov rdi, rcx",
+      "0x2ba8bf call 0x1c3c00",
+      "0x2ba8c4 mov rcx, qword ptr [rdi + 0x38]",
+      "0x2ba8c8 mov edx, ebx",
+      "0x2ba8ca mov rbx, qword ptr [rsp + 0x30]",
+      "0x2ba8cf add rsp, 0x20",
+      "0x2ba8d3 pop rdi",
+      "0x2ba8d4 jmp 0x2ba810"
+    ]
+  },
+  {
+    "name": "native_203260",
+    "rva": "0x203260",
+    "end": "0x2032c0",
+    "leaf": true,
+    "calls": [],
+    "asm": [
+      "0x203260 test edx, ecx",
+      "0x203262 jne 0x203267",
+      "0x203264 xor al, al",
+      "0x203266 ret ",
+      "0x203267 mov al, 1",
+      "0x203269 ret "
+    ]
+  }
+]

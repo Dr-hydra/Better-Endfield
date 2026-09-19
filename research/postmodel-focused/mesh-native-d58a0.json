@@ -1,0 +1,162 @@
+[
+  {
+    "name": "native_d58a0",
+    "rva": "0xd58a0",
+    "end": "0xd5930",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0xd58b0",
+        "to": "0x74bf0",
+        "name": ""
+      },
+      {
+        "at": "0xd58c8",
+        "to": "0x19bd80",
+        "name": ""
+      },
+      {
+        "at": "0xd58cd",
+        "to": "0xd58e1",
+        "name": ""
+      },
+      {
+        "at": "0xd58f6",
+        "to": "0x43fe80",
+        "name": ""
+      },
+      {
+        "at": "0xd5925",
+        "to": "0xd5930",
+        "name": ""
+      },
+      {
+        "at": "0xd595b",
+        "to": "0xdd390",
+        "name": ""
+      },
+      {
+        "at": "0xd5988",
+        "to": "0x676d0",
+        "name": ""
+      },
+      {
+        "at": "0xd59ab",
+        "to": "0x5ff70",
+        "name": ""
+      },
+      {
+        "at": "0xd59e7",
+        "to": "0xd5a30",
+        "name": ""
+      },
+      {
+        "at": "0xd59f4",
+        "to": "0xd5ba0",
+        "name": ""
+      },
+      {
+        "at": "0xd5a19",
+        "to": "0x15cc20",
+        "name": ""
+      },
+      {
+        "at": "0xd58dc",
+        "to": "0xd66c0",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0xd58a0 push rbx",
+      "0xd58a2 sub rsp, 0x20",
+      "0xd58a6 mov rbx, rcx",
+      "0xd58a9 add rcx, 0x198",
+      "0xd58b0 call 0x74bf0",
+      "0xd58b5 test rax, rax",
+      "0xd58b8 jne 0xd58cf",
+      "0xd58ba cmp byte ptr [rbx + 0x7c], al",
+      "0xd58bd jne 0xd58e1",
+      "0xd58bf cmp byte ptr [rbx + 0x79], al",
+      "0xd58c2 mov rcx, rbx",
+      "0xd58c5 sete dl",
+      "0xd58c8 call 0x19bd80",
+      "0xd58cd jmp 0xd58e1",
+      "0xd58cf cmp qword ptr [rbx + 0x180], 0",
+      "0xd58d7 je 0xd58e1",
+      "0xd58d9 mov rcx, rbx",
+      "0xd58dc call 0xd66c0",
+      "0xd58e1 cmp dword ptr [rbx + 0x154], 0",
+      "0xd58e8 jne 0xd5909",
+      "0xd58ea mov rcx, qword ptr [rip + 0x1c9d44f]",
+      "0xd58f1 lea rdx, [rsp + 0x30]",
+      "0xd58f6 call 0x43fe80",
+      "0xd58fb mov ecx, dword ptr [rax]",
+      "0xd58fd and ecx, 0xffffff",
+      "0xd5903 mov dword ptr [rbx + 0x154], ecx",
+      "0xd5909 cmp byte ptr [rbx + 0x7c], 0",
+      "0xd590d jne 0xd592a",
+      "0xd590f mov rax, qword ptr [rip + 0x1c425aa]",
+      "0xd5916 mov edx, dword ptr [rbx + 8]",
+      "0xd5919 mov rcx, qword ptr [rax + 0xa0]",
+      "0xd5920 add rsp, 0x20",
+      "0xd5924 pop rbx",
+      "0xd5925 jmp 0xd5930",
+      "0xd592a add rsp, 0x20",
+      "0xd592e pop rbx",
+      "0xd592f ret ",
+      "0xd5930 mov qword ptr [rsp + 0x20], rbx",
+      "0xd5935 mov dword ptr [rsp + 0x10], edx",
+      "0xd5939 push rdi",
+      "0xd593a sub rsp, 0xc0",
+      "0xd5941 cmp byte ptr [rcx + 0xf0], 0",
+      "0xd5948 mov ebx, edx",
+      "0xd594a mov rdi, rcx",
+      "0xd594d jne 0xd5a1e",
+      "0xd5953 lea rcx, [rsp + 0xd8]",
+      "0xd595b call 0xdd390",
+      "0xd5960 test al, al",
+      "0xd5962 jne 0xd5a1e",
+      "0xd5968 test ebx, ebx",
+      "0xd596a je 0xd5a1e",
+      "0xd5970 lea rcx, [rdi + 8]",
+      "0xd5974 mov dword ptr [rsp + 0xd0], ebx",
+      "0xd597b lea r8, [rsp + 0xd0]",
+      "0xd5983 lea rdx, [rsp + 0x20]",
+      "0xd5988 call 0x676d0",
+      "0xd598d mov eax, dword ptr [rdi + 0x10]",
+      "0xd5990 add rax, 4",
+      "0xd5994 lea rcx, [rax + rax*2]",
+      "0xd5998 add rcx, qword ptr [rdi + 8]",
+      "0xd599c cmp rcx, qword ptr [rsp + 0x20]",
+      "0xd59a1 jne 0xd5a1e",
+      "0xd59a3 lea rcx, [rsp + 0xd8]",
+      "0xd59ab call 0x5ff70",
+      "0xd59b0 xorps xmm0, xmm0",
+      "0xd59b3 lea rcx, [rdi + 0x28]",
+      "0xd59b7 mov rbx, rax",
+      "0xd59ba movaps xmmword ptr [rsp + 0x40], xmm0",
+      "0xd59bf xor eax, eax",
+      "0xd59c1 movaps xmmword ptr [rsp + 0x50], xmm0",
+      "0xd59c6 mov qword ptr [rsp + 0xb0], rax",
+      "0xd59ce lea rdx, [rsp + 0x40]",
+      "0xd59d3 movaps xmmword ptr [rsp + 0x60], xmm0",
+      "0xd59d8 movsd xmm0, qword ptr [rsp + 0xb0]",
+      "0xd59e1 movsd qword ptr [rsp + 0x70], xmm0",
+      "0xd59e7 call 0xd5a30",
+      "0xd59ec mov r8, rbx",
+      "0xd59ef mov edx, eax",
+      "0xd59f1 mov rcx, rdi",
+      "0xd59f4 call 0xd5ba0",
+      "0xd59f9 lea rcx, [rdi + 8]",
+      "0xd59fd mov dword ptr [rsp + 0xe0], eax",
+      "0xd5a04 lea r9, [rsp + 0xe0]",
+      "0xd5a0c lea r8, [rsp + 0xd0]",
+      "0xd5a14 lea rdx, [rsp + 0x20]",
+      "0xd5a19 call 0x15cc20",
+      "0xd5a1e mov rbx, qword ptr [rsp + 0xe8]",
+      "0xd5a26 add rsp, 0xc0",
+      "0xd5a2d pop rdi",
+      "0xd5a2e ret "
+    ]
+  }
+]

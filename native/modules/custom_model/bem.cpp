@@ -1,301 +1,255 @@
 #include "bem.h"
+#include "../../shared/third_party/nlohmann/json.hpp"
+#include "../../shared/third_party/zstd/lib/zstd.h"
 #include <algorithm>
 #include <cstring>
 #include <fstream>
-#include <limits>
-// Parsing and BCn size validation migrated from module_poc2_part_01.inc.
-// New checks: unique IDs, component references, skin stride and triangle bounds.
+#include <map>
+#include <set>
+#include <stdexcept>
+#include <functional>
+
 namespace BetterEndfield::CustomModel {
 namespace {
-struct Reader {
-    std::string& error;
-    void Log(const std::string& message) { error = message; }
-bool CheckedAdvance(size_t& cursor, size_t amount, size_t limit) {
-    if (amount > limit || cursor > limit - amount) return false;
-    cursor += amount;
-    return true;
+using J = nlohmann::json;
+constexpr uint64_t MiB=1024*1024, Budget=512*MiB;
+#pragma pack(push,1)
+struct Header { char magic[8]; uint16_t major,minor; uint32_t size; uint64_t file,manifest; uint32_t count,flags; };
+struct Entry { uint32_t codec,reserved; uint64_t offset,stored,decoded; };
+#pragma pack(pop)
+static_assert(sizeof(Header)==40 && sizeof(Entry)==32);
+void Check(bool ok,const std::string& message) { if(!ok) throw std::runtime_error(message); }
+uint32_t U(const J& j) {
+    Check(j.is_number_unsigned() || j.is_number_integer(),"Expected unsigned integer");
+    auto n=j.get<int64_t>(); Check(n>=0 && n<=UINT32_MAX,"Integer out of range"); return static_cast<uint32_t>(n);
 }
-
-// Block-compressed mip chain size, used to prove the payload's declared
-// dimensions agree with the number of bytes actually carried. Nothing here
-// decodes or reinterprets the surface; it is uploaded exactly as stored.
-size_t BlockCompressedChainSize(
-    uint32_t width, uint32_t height, uint32_t mip_count, uint32_t block_bytes) {
-    size_t total = 0;
-    for (uint32_t level = 0; level < mip_count; ++level) {
-        const uint32_t level_width = std::max(width >> level, 1u);
-        const uint32_t level_height = std::max(height >> level, 1u);
-        total += static_cast<size_t>((level_width + 3) / 4) *
-            static_cast<size_t>((level_height + 3) / 4) * block_bytes;
-    }
-    return total;
+std::string S(const J& j,size_t limit=256) {
+    auto s=j.get<std::string>(); Check(!s.empty() && s.size()<=limit && s.find('\0')==s.npos,"Invalid string"); return s;
 }
-
-// Bytes per 4x4 block for the UnityEngine.TextureFormat values the converter is
-// allowed to emit. An unlisted format is refused rather than guessed at.
-bool BlockBytesForTextureFormat(int32_t format, uint32_t& block_bytes) {
-    switch (format) {
-    case 10:  // DXT1
-    case 26:  // BC4
-        block_bytes = 8;
-        return true;
-    case 12:  // DXT5
-    case 25:  // BC7
-    case 27:  // BC5
-        block_bytes = 16;
-        return true;
-    default:
-        return false;
-    }
+std::string Id(const J& j) {
+    auto s=S(j,96); Check(std::all_of(s.begin(),s.end(),[](unsigned char c){return
+        (c>='A'&&c<='Z')||(c>='a'&&c<='z')||(c>='0'&&c<='9')||c=='_'||c=='-'||c=='.';}),"Invalid stable ID");
+    Check(s[0]!='.' && s[0]!='-' && s[0]!='_',"Invalid stable ID start"); return s;
 }
-
-bool LoadBemTextures(
-    std::span<const uint8_t> bytes, size_t& cursor, BemPocData& output) {
-    const uint32_t texture_count = output.header.texture_count;
-    if (texture_count == 0) {
-        return true;
-    }
-    if (texture_count > kMaxBemTextures) {
-        Log("BEM PoC-2.4 declares an implausible texture count: " +
-            std::to_string(texture_count));
-        return false;
-    }
-
-    output.textures.reserve(texture_count);
-    for (uint32_t index = 0; index < texture_count; ++index) {
-        const std::string label =
-            "BEM PoC-2.4 texture[" + std::to_string(index) + "]";
-        BemTexture texture;
-        if (bytes.size() - cursor < sizeof(BemTextureEntryRaw)) {
-            Log(label + " header is truncated.");
-            return false;
-        }
-        std::memcpy(
-            &texture.info, bytes.data() + cursor, sizeof(BemTextureEntryRaw));
-        if (!CheckedAdvance(cursor, sizeof(BemTextureEntryRaw), bytes.size())) {
-            return false;
-        }
-
-        const BemTextureEntryRaw& info = texture.info;
-        uint32_t block_bytes = 0;
-        if (!BlockBytesForTextureFormat(info.create_format, block_bytes)) {
-            Log(label + " uses unsupported TextureFormat " +
-                std::to_string(info.create_format));
-            return false;
-        }
-        if (info.width == 0 || info.height == 0 || info.width % 4 != 0 ||
-            info.height % 4 != 0 || info.width > 32768 || info.height > 32768 || info.mip_count == 0 ||
-            info.mip_count > 16 || info.name_length > 256 ||
-            info.component_mask == 0 || info.data_size == 0 ||
-            info.data_size > kMaxBemTextureBytes) {
-            Log(label + " has implausible dimensions, sizes or component set.");
-            return false;
-        }
-        const size_t expected = BlockCompressedChainSize(
-            info.width, info.height, info.mip_count, block_bytes);
-        if (expected != info.data_size) {
-            Log(label + " declares " + std::to_string(info.data_size) +
-                " bytes but " + std::to_string(info.width) + "x" +
-                std::to_string(info.height) + " with " +
-                std::to_string(info.mip_count) + " mip level(s) needs " +
-                std::to_string(expected));
-            return false;
-        }
-        if (bytes.size() - cursor < info.name_length ||
-            bytes.size() - cursor - info.name_length < info.data_size) {
-            Log(label + " payload is truncated.");
-            return false;
-        }
-
-        texture.name.assign(
-            reinterpret_cast<const char*>(bytes.data() + cursor),
-            info.name_length);
-        if (!CheckedAdvance(cursor, info.name_length, bytes.size())) {
-            return false;
-        }
-        texture.data.resize(info.data_size);
-        std::memcpy(
-            texture.data.data(), bytes.data() + cursor, info.data_size);
-        if (!CheckedAdvance(cursor, info.data_size, bytes.size())) {
-            return false;
-        }
-        output.textures.push_back(std::move(texture));
-    }
-    return true;
+uint32_t Crc(std::string_view s) {
+    uint32_t n=0xffffffff;
+    for(auto b:s) { n^=static_cast<uint8_t>(b); for(int i=0;i<8;++i) n=(n>>1)^(0xedb88320u & (0u-(n&1))); }
+    return n^0xffffffff;
 }
-
-bool LoadBemComponent(
-    std::span<const uint8_t> bytes, size_t& cursor, BemComponent& output) {
-    if (bytes.size() - cursor < sizeof(BemComponentHeaderRaw)) {
-        Log("BEM PoC-2.4 component header is truncated.");
-        return false;
-    }
-    std::memcpy(
-        &output.info, bytes.data() + cursor, sizeof(BemComponentHeaderRaw));
-    if (!CheckedAdvance(
-            cursor, sizeof(BemComponentHeaderRaw), bytes.size())) {
-        return false;
-    }
-
-    const BemComponentHeaderRaw& info = output.info;
-    const std::string label =
-        "BEM PoC-2.4 C" + std::to_string(info.component_id);
-    if (info.component_id >= kMaxBemComponents || info.original_index_count == 0 ||
-        info.original_index_count % 3 != 0) {
-        Log(label + " declares an implausible original index count.");
-        return false;
-    }
-    if ((info.flags & kComponentFlagNoGeometry) != 0) {
-        return info.vertex_count == 0 && info.index_count == 0;
-    }
-
-    if (info.stream_count != kBemStreamCount ||
-        info.index_element_size != kIndexElementSize ||
-        info.vertex_count == 0 || info.vertex_count > (1u << 20) ||
-        info.index_count == 0 || info.index_count % 3 != 0 ||
-        info.stride0 == 0 || info.stride1 == 0 || info.stride2 == 0 ||
-        info.stride0 > 64 || info.stride1 > 64 ||
-        (info.stride2 != 4 && info.stride2 != 12)) {
-        Log(label + " has an implausible geometry description.");
-        return false;
-    }
-
-    const std::array<uint32_t, 3> strides{
-        info.stride0, info.stride1, info.stride2};
-    for (uint32_t stream = 0; stream < kBemStreamCount; ++stream) {
-        const size_t size =
-            static_cast<size_t>(info.vertex_count) * strides[stream];
-        if (bytes.size() - cursor < size) {
-            Log(label + " stream " + std::to_string(stream) +
-                " is truncated.");
-            return false;
+struct Container {
+    J manifest;
+    std::vector<Entry> directory;
+    std::function<std::vector<uint8_t>(uint64_t,size_t)> read;
+    BemPackageInfo info;
+    void Open(uint64_t size) {
+        Check(size>=sizeof(Header) && size<=2ull*1024*MiB,"Invalid BEM file size");
+        auto raw=read(0,sizeof(Header)); Header h{}; std::memcpy(&h,raw.data(),sizeof(h));
+        Check(std::memcmp(h.magic,"BEM\0PKG\0",8)==0 && h.major==1 && h.minor==0 && h.size==sizeof(h) && !h.flags,
+            "Only BEM 1.0 packages are supported; convert source Mod in creator tools");
+        Check(h.file==size && h.manifest>0 && h.manifest<=4*MiB && h.count<=4096 &&
+            h.manifest+sizeof(h)+uint64_t(h.count)*sizeof(Entry)<=size,"Invalid BEM directory sizes");
+        auto json=read(sizeof(h),static_cast<size_t>(h.manifest));
+        // Reject duplicate keys, including nested objects, instead of accepting last-wins metadata.
+        std::vector<std::set<std::string>> keys;
+        auto callback=[&](int depth,nlohmann::json::parse_event_t event,J& value) {
+            Check(depth<=48,"Manifest nesting exceeds 48");
+            if(event==J::parse_event_t::object_start) keys.emplace_back();
+            if(event==J::parse_event_t::key) Check(keys.back().insert(value.get<std::string>()).second,"Duplicate manifest key");
+            if(event==J::parse_event_t::object_end) keys.pop_back();
+            return true;
+        };
+        manifest=J::parse(json.begin(),json.end(),callback);
+        auto table=read(sizeof(h)+h.manifest,h.count*sizeof(Entry)); directory.resize(h.count);
+        if(!table.empty()) std::memcpy(directory.data(),table.data(),table.size());
+        uint64_t end=sizeof(h)+h.manifest+table.size();
+        for(const auto& e:directory) {
+            Check(e.codec<=1 && !e.reserved && e.offset==end && e.stored>0 && e.stored<=Budget &&
+                e.decoded>0 && e.decoded<=Budget && e.stored<=size-end,"Invalid payload extent/codec/budget");
+            Check(e.codec || e.stored==e.decoded,"Raw payload size differs"); end+=e.stored;
         }
-        output.streams[stream].resize(size);
-        std::memcpy(
-            output.streams[stream].data(), bytes.data() + cursor, size);
-        if (!CheckedAdvance(cursor, size, bytes.size())) return false;
+        Check(end==size,"Trailing or missing BEM bytes");
+        Metadata();
     }
-
-    const size_t index_bytes =
-        static_cast<size_t>(info.index_count) * kIndexElementSize;
-    if (bytes.size() - cursor < index_bytes) {
-        Log(label + " index buffer is truncated.");
-        return false;
-    }
-    output.indices.resize(index_bytes);
-    std::memcpy(output.indices.data(), bytes.data() + cursor, index_bytes);
-    if (!CheckedAdvance(cursor, index_bytes, bytes.size())) return false;
-
-    const uint16_t* indices =
-        reinterpret_cast<const uint16_t*>(output.indices.data());
-    for (uint32_t i = 0; i < info.index_count; ++i) {
-        if (indices[i] >= info.vertex_count) {
-            Log(label + " index " + std::to_string(indices[i]) +
-                " is outside vertexCount " +
-                std::to_string(info.vertex_count));
-            return false;
+    void Metadata() {
+        const auto& m=manifest;
+        Check(U(m.at("schema"))==1,"Unknown manifest schema");
+        info.package_id=Id(m.at("package_id")); info.name=S(m.at("name")); info.author=S(m.at("author"));
+        info.version=S(m.at("version")); info.default_appearance=Id(m.at("default_appearance_id"));
+        const std::set<std::string> caps{"native-materials","palette-u8","indices-u32","fixed-appearances"};
+        for(const auto& c:m.at("required_capabilities")) Check(caps.contains(S(c)),"Unsupported required capability");
+        const auto& t=m.at("target"); Check(S(t.at("platform"))=="windows-x64","Unsupported target platform");
+        info.character_id=Id(t.at("character_id")); Id(t.at("profile_id")); Id(t.at("revision"));
+        info.world_resource=Id(t.at("world_resource")); info.ui_resource=Id(t.at("ui_resource"));
+        Check(info.world_resource!=info.ui_resource,"Duplicate resource roots");
+        const auto& cs=t.at("components"); Check(cs.is_array() && !cs.empty() && cs.size()<=64,"Invalid target components");
+        std::set<std::string> names;
+        for(size_t i=0;i<cs.size();++i) {
+            const auto& c=cs[i]; auto name=S(c.at("mesh_name")); auto count=U(c.at("original_index_count"));
+            Check(U(c.at("id"))==i && names.insert(name).second && count && count%3==0,"Invalid target identity");
+            Check(c.at("bone_names").is_array() && c.at("bone_names").size()<=65536 &&
+                c.at("materials").is_array() && c.at("materials").size()<=256,"Invalid target donor tables");
+            info.component_names.push_back(name); info.original_counts.push_back(count);
         }
-    }
-
-    // Bone indices are the last four bytes of every stream 2 element in every
-    // declaration this format allows, with or without preceding weights.
-    for (size_t i = 0; i < output.indices.size(); i += 2) {
-        uint16_t index = 0;
-        std::memcpy(&index, output.indices.data() + i, sizeof(index));
-        if (index >= info.vertex_count) { Log(label + " triangle index out of range."); return false; }
-    }
-    uint32_t max_bone = 0;
-    for (uint32_t i = 0; i < info.vertex_count; ++i) {
-        const uint8_t* bones = output.streams[2].data() +
-            static_cast<size_t>(i) * info.stride2 + (info.stride2 - 4);
-        for (int k = 0; k < 4; ++k) {
-            max_bone = std::max(max_bone, static_cast<uint32_t>(bones[k]));
+        const auto& apps=m.at("appearances"); Check(apps.is_array() && !apps.empty() && apps.size()<=64,"Invalid appearances");
+        std::set<std::string> ids;
+        for(const auto& a:apps) {
+            auto id=Id(a.at("id")); S(a.at("name")); Check(ids.insert(id).second,"Duplicate appearance ID");
+            info.appearances.push_back(id);
+            const auto& ops=a.at("components"); Check(ops.is_array() && ops.size()==cs.size(),"Incomplete appearance");
+            for(size_t i=0;i<ops.size();++i) {
+                const auto& op=ops[i]; auto action=S(op.at("operation"));
+                Check(U(op.at("target"))==i && (action=="keep"||action=="hide"||action=="replace"),"Invalid component operation");
+                if(action=="replace") Check(U(op.at("mesh"))<m.at("meshes").size(),"Missing mesh reference");
+            }
+            if(a.contains("preview")) Check(U(a.at("preview"))<directory.size(),"Missing preview payload");
         }
-    }
-    if (max_bone != info.max_bone) {
-        Log(label + " stream 2 max bone " + std::to_string(max_bone) +
-            " disagrees with the header's " + std::to_string(info.max_bone));
-        return false;
-    }
-    return true;
-}
-
-bool Parse(std::span<const uint8_t> bytes, BemPocData& output) {
-    if (bytes.size() < sizeof(BemFileHeader) || bytes.size() > 512u * 1024u * 1024u) {
-        Log("Invalid BEM size."); return false;
-    }
-    std::memcpy(&output.header, bytes.data(), sizeof(output.header));
-    const std::array<char, 8> expected_magic{
-        'B','E','M','P','C','2','4','\0'};
-    if (std::memcmp(output.header.magic, expected_magic.data(),
-            expected_magic.size()) != 0 ||
-        output.header.version != 24) {
-        Log("BEM payload is not a PoC-2.4 file; regenerate it with "
-            "tools/CustomModel/convert_efmi_poc.py.");
-        return false;
-    }
-    if (output.header.component_count == 0 ||
-        output.header.component_count > kMaxBemComponents) {
-        Log("BEM payload declares an implausible component count: " +
-            std::to_string(output.header.component_count));
-        return false;
-    }
-
-    size_t cursor = sizeof(BemFileHeader);
-    output.components.resize(output.header.component_count);
-    for (BemComponent& component : output.components) {
-        if (!LoadBemComponent(bytes, cursor, component)) return false;
-    }
-    if (!LoadBemTextures(bytes, cursor, output)) return false;
-    if (cursor != bytes.size()) {
-        Log("BEM payload has " + std::to_string(bytes.size() - cursor) +
-            " trailing bytes.");
-        return false;
-    }
-
-    uint64_t ids = 0;
-    for (const auto& component : output.components) {
-        const uint64_t bit = uint64_t{1} << component.info.component_id;
-        if (ids & bit) { Log("Duplicate BEM component id."); return false; }
-        ids |= bit;
-    }
-    for (const auto& texture : output.textures) {
-        if ((texture.info.component_mask & ids) != texture.info.component_mask ||
-            texture.info.reserved > 2) {
-            Log("Texture references missing components or an unknown pin type."); return false;
+        Check(ids.contains(info.default_appearance),"Default appearance missing");
+        Check(m.at("meshes").is_array() && m.at("meshes").size()<=4096 &&
+            m.at("textures").is_array() && m.at("textures").size()<=4096,"Invalid resource tables");
+        for(const auto& mesh:m.at("meshes")) {
+            Check(mesh.at("streams").is_array() && mesh.at("streams").size()==3,"Three streams required");
+            for(const auto& s:mesh.at("streams")) Check(U(s.at("payload"))<directory.size(),"Missing stream payload");
+            Check(U(mesh.at("indices"))<directory.size(),"Missing index payload");
+            for(const auto& d:mesh.at("draws")) for(const auto& tx:d.at("textures"))
+                Check(U(tx)<m.at("textures").size(),"Missing texture reference");
         }
+        for(const auto& texture:m.at("textures")) Check(U(texture.at("payload"))<directory.size(),"Missing texture payload");
     }
-    return true;
-}
+    uint64_t decoded=0;
+    std::map<uint32_t,std::vector<uint8_t>> cache;
+    const std::vector<uint8_t>& Payload(const J& reference,uint64_t expected) {
+        auto id=U(reference); Check(id<directory.size(),"Missing payload"); const auto& e=directory[id];
+        Check(e.decoded==expected,"Payload decoded size differs from resource description");
+        auto it=cache.find(id); if(it!=cache.end()) return it->second;
+        Check(decoded<=Budget-e.decoded,"Selected appearance exceeds 512 MiB decoded budget"); decoded+=e.decoded;
+        auto bytes=read(e.offset,static_cast<size_t>(e.stored));
+        if(e.codec) {
+            Check(ZSTD_findFrameCompressedSize(bytes.data(),bytes.size())==bytes.size() &&
+                ZSTD_getFrameContentSize(bytes.data(),bytes.size())==e.decoded,"Zstd frame extent/content size differs");
+            std::vector<uint8_t> result(static_cast<size_t>(e.decoded));
+            auto n=ZSTD_decompress(result.data(),result.size(),bytes.data(),bytes.size());
+            Check(!ZSTD_isError(n) && n==result.size(),"Invalid Zstd payload"); bytes=std::move(result);
+        }
+        return cache.emplace(id,std::move(bytes)).first->second;
+    }
+    void Decode(std::string_view requested,BemPocData& out) {
+        const auto& m=manifest; const J* selected=nullptr;
+        const auto choice=requested.empty()?info.default_appearance:std::string(requested);
+        for(const auto& a:m.at("appearances")) if(a.at("id")==choice) selected=&a;
+        Check(selected!=nullptr,"Selected appearance missing; select an available appearance in Mod manager");
+        out.header.version=1;
+        out.header.component_count=static_cast<uint32_t>(info.component_names.size());
+        std::map<uint32_t,uint32_t> textures;
+        uint64_t resident=0;
+        auto reserve=[&](uint64_t bytes) { Check(bytes<=Budget-resident,"Appearance exceeds runtime memory budget"); resident+=bytes; };
+        for(const auto& op:selected->at("components")) {
+            BemComponent c; auto cid=U(op.at("target")); c.info.component_id=cid; c.info.original_index_count=info.original_counts[cid];
+            const auto action=S(op.at("operation"));
+            if(action!="replace") { c.info.flags=kComponentFlagNoGeometry|(action=="hide"?kComponentFlagHidden:0); out.components.push_back(std::move(c)); continue; }
+            const auto& mesh=m.at("meshes").at(U(op.at("mesh")));
+            auto& h=c.info; h.vertex_count=U(mesh.at("vertex_count")); h.index_count=U(mesh.at("index_count"));
+            h.index_element_size=U(mesh.at("index_size")); h.stream_count=3;
+            Check(h.vertex_count && h.vertex_count<=1048576 && h.index_count && h.index_count<=16777216 && h.index_count%3==0 &&
+                (h.index_element_size==2||h.index_element_size==4),"Invalid geometry counts/index type");
+            std::array<uint32_t,3> strides{};
+            for(size_t s=0;s<3;++s) {
+                const auto& stream=mesh.at("streams")[s]; strides[s]=U(stream.at("stride"));
+                Check(strides[s] && strides[s]<=64,"Invalid stream stride");
+                const auto size=uint64_t(h.vertex_count)*strides[s]; reserve(size); c.streams[s]=Payload(stream.at("payload"),size);
+            }
+            h.stride0=strides[0]; h.stride1=strides[1]; h.stride2=strides[2];
+            Check(h.stride2==4||h.stride2==12,"Unsupported skin layout");
+            const auto& attrs=mesh.at("attributes"); Check(attrs.is_array() && !attrs.empty() && attrs.size()<=16,"Invalid attributes");
+            std::array<uint32_t,3> offsets{}; std::set<uint32_t> semantics;
+            constexpr uint32_t sizes[]{4,2,1,1,2,2,1,1,2,2,4,4};
+            for(const auto& a:attrs) {
+                Check(a.is_array() && a.size()==5,"Attribute needs semantic/format/dimension/stream/offset");
+                auto sem=U(a[0]),fmt=U(a[1]),dim=U(a[2]),stream=U(a[3]),off=U(a[4]);
+                Check(sem<=13 && semantics.insert(sem).second && fmt<12 && dim>=1 && dim<=4 && stream<3,"Invalid vertex attribute");
+                Check(off==offsets[stream],"Invalid vertex attribute offset"); offsets[stream]+=sizes[fmt]*dim;
+                c.attributes.push_back({int32_t(sem),int32_t(fmt),int32_t(dim),int32_t(stream)});
+            }
+            Check(offsets==strides && c.attributes.back()==std::array<int32_t,4>{13,6,4,2},"Declaration/stride or skin indices differ");
+            std::vector<std::array<int32_t,4>> skinAttributes;
+            for(const auto& a:c.attributes) if(a[3]==2) skinAttributes.push_back(a);
+            const std::vector<std::array<int32_t,4>> expectedSkin=h.stride2==4?
+                std::vector<std::array<int32_t,4>>{{13,6,4,2}}:
+                std::vector<std::array<int32_t,4>>{{12,4,4,2},{13,6,4,2}};
+            Check(skinAttributes==expectedSkin,"Unsupported skin declaration");
+            c.layout_crc=Crc(std::string_view(reinterpret_cast<const char*>(c.attributes.data()),c.attributes.size()*16));
+            auto indexBytes=uint64_t(h.index_count)*h.index_element_size; reserve(indexBytes); c.indices=Payload(mesh.at("indices"),indexBytes);
+            for(size_t n=0;n<h.index_count;++n) { uint32_t index=0; std::memcpy(&index,c.indices.data()+n*h.index_element_size,h.index_element_size); Check(index<h.vertex_count,"Index outside vertex buffer"); }
+            const auto& bones=mesh.at("bones"); Check(bones.is_array() && !bones.empty() && bones.size()<=256,"Invalid palette");
+            for(const auto& b:bones) {
+                auto donor=U(b.at("component")), index=U(b.at("index")); auto name=S(b.at("name"));
+                Check(donor<info.component_names.size() && index<65536 && m.at("target").at("components").at(donor).at("bone_names").at(index)==name,"Bone identity differs");
+                c.bones.push_back({donor,index,Crc(name)}); c.bone_names.push_back(name);
+            }
+            for(uint32_t n=0;n<h.vertex_count;++n) for(uint32_t k=0;k<4;++k) {
+                auto b=c.streams[2][size_t(n)*h.stride2+h.stride2-4+k]; Check(b<c.bones.size(),"Skin index outside palette"); h.max_bone=std::max(h.max_bone,uint32_t(b));
+            }
+            if(h.stride2==12) for(uint32_t n=0;n<h.vertex_count;++n) {
+                uint16_t w[4]; std::memcpy(w,c.streams[2].data()+size_t(n)*12,8);
+                const uint32_t sum=uint32_t(w[0])+w[1]+w[2]+w[3];
+                Check(sum>=64880 && sum<=66190,"Invalid skin weight sum");
+            }
+            const auto& draws=mesh.at("draws"); Check(draws.is_array() && !draws.empty() && draws.size()<=256,"Invalid draws");
+            uint64_t end=0;
+            for(const auto& d:draws) {
+                auto start=U(d.at("start")),count=U(d.at("count")),donor=U(d.at("material_component")),slot=U(d.at("material_slot")); auto name=S(d.at("material_name"));
+                Check(start==end && count && count%3==0 && donor<info.component_names.size() && slot<256 &&
+                    m.at("target").at("components").at(donor).at("materials").at(slot)==name,"Invalid material draw"); end+=count;
+                uint32_t mask=0;
+                for(const auto& ref:d.at("textures")) {
+                    auto id=U(ref); auto found=textures.find(id); uint32_t tid;
+                    if(found==textures.end()) {
+                        Check(textures.size()<32,"Appearance exceeds 32 texture bindings");
+                        const auto& t=m.at("textures").at(id); BemTexture tex;
+                        auto& ti=tex.info; ti.width=U(t.at("width")); ti.height=U(t.at("height")); ti.mip_count=U(t.at("mips"));
+                        ti.create_format=int32_t(U(t.at("format"))); ti.create_srgb=t.at("srgb").get<bool>()?1:0;
+                        uint32_t block=0,pixel=0; switch(ti.create_format) {case 4:pixel=4;break;case 63:pixel=1;Check(!ti.create_srgb,"R8 texture must be linear");break;case 10:case 26:block=8;break;case 12:case 25:case 27:block=16;break;default:Check(false,"Unsupported texture format");}
+                        Check(ti.width && ti.height && ti.width<=32768 && ti.height<=32768 && (pixel || (ti.width%4==0 && ti.height%4==0)) && ti.mip_count && ti.mip_count<=16,"Invalid texture dimensions");
+                        uint64_t size=0; for(uint32_t level=0;level<ti.mip_count;++level) {
+                            const uint64_t mipWidth=std::max(ti.width>>level,1u),mipHeight=std::max(ti.height>>level,1u);
+                            size+=pixel?mipWidth*mipHeight*pixel:((mipWidth+3)/4)*((mipHeight+3)/4)*block;
+                        }
+                        Check(size<=64*MiB,"Texture exceeds 64 MiB"); reserve(size); tex.data=Payload(t.at("payload"),size);
+                        ti.data_size=static_cast<uint32_t>(size); ti.reserved=2; tex.original_name=S(t.at("original_name")); tex.name=tex.original_name;
+                        ti.explicit_slot=static_cast<int32_t>(Crc(tex.original_name));
+                        tid=static_cast<uint32_t>(out.textures.size()); textures[id]=tid; out.textures.push_back(std::move(tex));
+                    } else tid=found->second;
+                    Check(!(mask&(uint32_t{1}<<tid)),"Duplicate draw texture"); mask|=uint32_t{1}<<tid;
+                }
+                c.draws.push_back({start,count,donor,slot,Crc(name),mask}); c.material_names.push_back(name);
+            }
+            Check(end==h.index_count,"Draws must partition IB"); h.reserved0=static_cast<uint32_t>(c.bones.size()); h.reserved1=static_cast<uint32_t>(c.draws.size());
+            out.components.push_back(std::move(c));
+        }
+        out.header.texture_count=static_cast<uint32_t>(out.textures.size());
+    }
 };
+template<class F> bool File(const std::filesystem::path& path,std::string& error,F action) {
+    error.clear(); try {
+        std::ifstream in(path,std::ios::binary|std::ios::ate); Check(bool(in),"BEM package cannot be opened");
+        auto size=in.tellg(); Check(size>=0,"BEM size unavailable"); Container c;
+        c.read=[&](uint64_t off,size_t count) { std::vector<uint8_t> bytes(count); in.seekg(static_cast<std::streamoff>(off));
+            Check(bool(in.read(reinterpret_cast<char*>(bytes.data()),static_cast<std::streamsize>(count))),"BEM read failed"); return bytes; };
+        c.Open(static_cast<uint64_t>(size)); action(c); return true;
+    } catch(const std::exception& e) { error=e.what(); return false; }
 }
-bool ParseBem(std::span<const uint8_t> bytes, BemPocData& output, std::string& error) {
-    output = {}; error.clear();
-    BemPocData parsed;
-    try {
-        if (!Reader{error}.Parse(bytes, parsed)) {
-            if (error.empty()) error = "Invalid BEM payload.";
-            return false;
-        }
-        output = std::move(parsed);
-        return true;
-    } catch (const std::exception& e) { error = e.what(); return false; }
 }
-bool LoadBem(const std::filesystem::path& path, BemPocData& output, std::string& error) {
-    output = {}; error.clear();
-    try {
-        std::ifstream input(path, std::ios::binary | std::ios::ate);
-        if (!input) { error = "BEM package cannot be opened."; return false; }
-        const auto size = input.tellg();
-        if (size < static_cast<std::streamoff>(sizeof(BemFileHeader)) || size > 512 * 1024 * 1024) {
-            error = "Invalid BEM file size."; return false;
-        }
-        std::vector<uint8_t> bytes(static_cast<size_t>(size));
-        input.seekg(0);
-        if (!input.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()))) {
-            error = "BEM read failed."; return false;
-        }
-        return ParseBem(bytes, output, error);
-    } catch (const std::exception& e) { error = e.what(); return false; }
+bool ReadBemPackageInfo(const std::filesystem::path& path,BemPackageInfo& out,std::string& error) {
+    out={}; return File(path,error,[&](Container& c){out=c.info;});
 }
-} // namespace BetterEndfield::CustomModel
+bool LoadBem(const std::filesystem::path& path,BemPocData& out,std::string& error,std::string_view appearance) {
+    out={}; BemPocData parsed; if(!File(path,error,[&](Container& c){c.Decode(appearance,parsed);})) return false;
+    out=std::move(parsed); return true;
+}
+bool ParseBem(std::span<const uint8_t> bytes,BemPocData& out,std::string& error) {
+    out={}; error.clear(); try {
+        Container c; c.read=[&](uint64_t off,size_t n) { Check(off<=bytes.size() && n<=bytes.size()-off,"Truncated BEM");
+            return std::vector<uint8_t>(bytes.begin()+off,bytes.begin()+off+n); };
+        c.Open(bytes.size()); BemPocData parsed; c.Decode({},parsed); out=std::move(parsed); return true;
+    } catch(const std::exception& e) {error=e.what(); return false;}
+}
+}

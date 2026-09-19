@@ -4,8 +4,6 @@ internal sealed class AppSettings
 {
     public string GameExecutablePath { get; set; } = string.Empty;
 
-    public string InjectorPath { get; set; } = string.Empty;
-
     public string LoaderMode { get; set; } = "injector";
 
     public string GameLaunchArguments { get; set; } = string.Empty;

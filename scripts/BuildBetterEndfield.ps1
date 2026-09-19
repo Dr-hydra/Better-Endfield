@@ -80,6 +80,16 @@ if ($LASTEXITCODE -ne 0) {
     throw "Better Endfield UI publish failed with exit code $LASTEXITCODE."
 }
 
+& (Join-Path $PSScriptRoot "BuildBemTools.ps1")
+$bemTools = Join-Path $repoRoot "artifacts\bem-tools\dist\BetterEndfield.BemConverter"
+New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "tools") | Out-Null
+Copy-Item -LiteralPath $bemTools -Destination (Join-Path $publishDir "tools\BemConverter") -Recurse -Force
+New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "docs") | Out-Null
+foreach ($document in @("BEM_V1_SPEC.md", "BEM_CREATOR_GUIDE.md")) {
+    Copy-Item -LiteralPath (Join-Path $repoRoot "docs\$document") -Destination (Join-Path $publishDir "docs") -Force
+}
+Copy-Item -LiteralPath (Join-Path $repoRoot "tools\CustomModel\examples") -Destination (Join-Path $publishDir "tools\BemConverter\examples") -Recurse -Force
+
 $nativeStage = Join-Path $nativeBuild "stage\$Configuration"
 if (-not (Test-Path -LiteralPath $nativeStage)) {
     throw "Native stage directory was not produced: $nativeStage"
@@ -124,6 +134,10 @@ if ($runtimeMarkers) {
 }
 $requiredReleaseFiles = @(
     "BetterEndfield.exe",
+    "tools\BemConverter\BetterEndfield.BemConverter.exe",
+    "docs\BEM_CREATOR_GUIDE.md",
+    "modules\BetterEndfield.CustomModel.dll",
+    "modules\betterendfield.custom_model.module.ini",
     "runtime\BetterEndfield.Host.dll",
     "modules\BetterEndfield.Model.dll",
     "modules\BetterEndfield.Voice.dll",

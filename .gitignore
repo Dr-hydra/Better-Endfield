@@ -80,3 +80,18 @@ web/cloudbase/cloudbaserc.json
 # historical source snapshot, and gitignore does not untrack what is already in.
 __pycache__/
 *.pyc
+
+# BEM creator distribution build and curated research source.
+!scripts/BuildBemTools.ps1
+!/research/
+/research/*
+!/research/README.md
+!/research/custom-model/
+!/research/custom-model/**
+!/research/postmodel-focused/
+!/research/postmodel-focused/**
+
+# Raw reverse-engineering databases and generated traces stay local.
+/research/postmodel-focused/*.i64
+/research/postmodel-focused/__pycache__/
+/research/postmodel-focused/*.log

@@ -1,0 +1,389 @@
+[
+  {
+    "name": "native_ef200",
+    "rva": "0xef200",
+    "end": "0xef22e",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0xef214",
+        "to": "0xef230",
+        "name": ""
+      },
+      {
+        "at": "0xef22c",
+        "to": "0xef222",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0xef200 sub rsp, 0x28",
+      "0xef204 mov rax, qword ptr [rip + 0x1c0524d]",
+      "0xef20b cmp dword ptr [rax + 0x158], 0",
+      "0xef212 je 0xef227",
+      "0xef214 call 0xef230",
+      "0xef219 test al, al",
+      "0xef21b je 0xef227",
+      "0xef21d mov eax, 0x200000",
+      "0xef222 add rsp, 0x28",
+      "0xef226 ret ",
+      "0xef227 mov eax, 0x100000",
+      "0xef22c jmp 0xef222"
+    ]
+  },
+  {
+    "name": "native_157220",
+    "rva": "0x157220",
+    "end": "0x15725b",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0x157237",
+        "to": "0x768f0",
+        "name": ""
+      },
+      {
+        "at": "0x157259",
+        "to": "0x15723c",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0x157220 push rbx",
+      "0x157222 sub rsp, 0x20",
+      "0x157226 cmp qword ptr [rcx], 0",
+      "0x15722a mov rbx, rdx",
+      "0x15722d je 0x15724b",
+      "0x15722f mov rdx, qword ptr [rcx]",
+      "0x157232 lea rcx, [rsp + 0x30]",
+      "0x157237 call 0x768f0",
+      "0x15723c mov rax, qword ptr [rax]",
+      "0x15723f mov qword ptr [rbx], rax",
+      "0x157242 mov rax, rbx",
+      "0x157245 add rsp, 0x20",
+      "0x157249 pop rbx",
+      "0x15724a ret ",
+      "0x15724b mov rax, qword ptr [rcx + 8]",
+      "0x15724f mov qword ptr [rsp + 0x30], rax",
+      "0x157254 lea rax, [rsp + 0x30]",
+      "0x157259 jmp 0x15723c"
+    ]
+  },
+  {
+    "name": "native_199e10",
+    "rva": "0x199e10",
+    "end": "0x199e53",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0x199e2a",
+        "to": "0x128580",
+        "name": ""
+      },
+      {
+        "at": "0x199e49",
+        "to": "0x19a380",
+        "name": ""
+      },
+      {
+        "at": "0x19a390",
+        "to": "0x5ff70",
+        "name": ""
+      },
+      {
+        "at": "0x19a3a1",
+        "to": "0x1ca790",
+        "name": ""
+      },
+      {
+        "at": "0x19a3ae",
+        "to": "0x19a430",
+        "name": ""
+      },
+      {
+        "at": "0x19a47c",
+        "to": "0x19b5d0",
+        "name": ""
+      },
+      {
+        "at": "0x19a496",
+        "to": "0x64b70",
+        "name": ""
+      },
+      {
+        "at": "0x19a4a2",
+        "to": "0xbcb40",
+        "name": ""
+      },
+      {
+        "at": "0x19a4bc",
+        "to": "0x128580",
+        "name": ""
+      },
+      {
+        "at": "0x19a4c1",
+        "to": "0x19a443",
+        "name": ""
+      },
+      {
+        "at": "0x19a4d2",
+        "to": "0x19a48b",
+        "name": ""
+      },
+      {
+        "at": "0x19a4d8",
+        "to": "0x19a486",
+        "name": ""
+      },
+      {
+        "at": "0x19a3bd",
+        "to": "0x1ca6e0",
+        "name": ""
+      },
+      {
+        "at": "0x19a3c9",
+        "to": "0x166a60",
+        "name": ""
+      },
+      {
+        "at": "0x19a3ed",
+        "to": "0x166a20",
+        "name": ""
+      },
+      {
+        "at": "0x19a411",
+        "to": "0x19a4e0",
+        "name": ""
+      },
+      {
+        "at": "0x19a41c",
+        "to": "0x19a39e",
+        "name": ""
+      },
+      {
+        "at": "0x19a420",
+        "to": "0x19a416",
+        "name": ""
+      },
+      {
+        "at": "0x199e51",
+        "to": "0x199e36",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0x199e10 mov qword ptr [rsp + 8], rbx",
+      "0x199e15 push rdi",
+      "0x199e16 sub rsp, 0x20",
+      "0x199e1a mov rdi, rdx",
+      "0x199e1d mov rbx, rcx",
+      "0x199e20 mov rdx, rcx",
+      "0x199e23 mov rcx, qword ptr [rip + 0x1b5a62e]",
+      "0x199e2a call 0x128580",
+      "0x199e2f test rdi, rdi",
+      "0x199e32 jne 0x199e4e",
+      "0x199e34 xor eax, eax",
+      "0x199e36 mov rcx, rbx",
+      "0x199e39 mov dword ptr [rbx + 0x290], eax",
+      "0x199e3f mov rbx, qword ptr [rsp + 0x30]",
+      "0x199e44 add rsp, 0x20",
+      "0x199e48 pop rdi",
+      "0x199e49 jmp 0x19a380",
+      "0x199e4e mov eax, dword ptr [rdi + 8]",
+      "0x199e51 jmp 0x199e36",
+      "0x19a380 push rbx",
+      "0x19a382 sub rsp, 0x20",
+      "0x19a386 mov rbx, rcx",
+      "0x19a389 add rcx, 0x290",
+      "0x19a390 call 0x5ff70",
+      "0x19a395 cmp rax, qword ptr [rbx + 0x298]",
+      "0x19a39c jne 0x19a3b3",
+      "0x19a39e mov rcx, rbx",
+      "0x19a3a1 call 0x1ca790",
+      "0x19a3a6 mov rcx, rbx",
+      "0x19a3a9 add rsp, 0x20",
+      "0x19a3ad pop rbx",
+      "0x19a3ae jmp 0x19a430",
+      "0x19a3b3 mov rcx, rbx",
+      "0x19a3b6 mov qword ptr [rbx + 0x298], rax",
+      "0x19a3bd call 0x1ca6e0",
+      "0x19a3c2 lea rcx, [rbx + 0x430]",
+      "0x19a3c9 call 0x166a60",
+      "0x19a3ce cmp qword ptr [rbx + 0x298], 0",
+      "0x19a3d6 je 0x19a3f2",
+      "0x19a3d8 mov rdx, qword ptr [rbx + 0x298]",
+      "0x19a3df lea rcx, [rbx + 0x430]",
+      "0x19a3e6 add rdx, 0x158",
+      "0x19a3ed call 0x166a20",
+      "0x19a3f2 cmp qword ptr [rbx + 0x410], 0",
+      "0x19a3fa jne 0xead622",
+      "0x19a400 cmp qword ptr [rbx + 0x298], 0",
+      "0x19a408 je 0x19a41e",
+      "0x19a40a mov rcx, qword ptr [rbx + 0x298]",
+      "0x19a411 call 0x19a4e0",
+      "0x19a416 mov dword ptr [rbx + 0x428], eax",
+      "0x19a41c jmp 0x19a39e",
+      "0x19a41e xor eax, eax",
+      "0x19a420 jmp 0x19a416",
+      "0x19a430 push rbx",
+      "0x19a432 sub rsp, 0x20",
+      "0x19a436 cmp qword ptr [rcx + 0x328], 0",
+      "0x19a43e mov rbx, rcx",
+      "0x19a441 jne 0x19a449",
+      "0x19a443 add rsp, 0x20",
+      "0x19a447 pop rbx",
+      "0x19a448 ret ",
+      "0x19a449 mov r9, qword ptr [rcx + 0x328]",
+      "0x19a450 xor r11d, r11d",
+      "0x19a453 mov r8, qword ptr [r9 + 0x10]",
+      "0x19a457 mov rcx, r8",
+      "0x19a45a test r8, r8",
+      "0x19a45d je 0x19a4cf",
+      "0x19a45f lea rax, [rip + 0x119a]",
+      "0x19a466 cmp qword ptr [rcx + 0x10], rax",
+      "0x19a46a jne 0x19a4c3",
+      "0x19a46c cmp qword ptr [rcx], rbx",
+      "0x19a46f jne 0x19a4c3",
+      "0x19a471 mov rdx, qword ptr [rip + 0x1b38508]",
+      "0x19a478 mov r10, qword ptr [rcx + 8]",
+      "0x19a47c call 0x19b5d0",
+      "0x19a481 test r11, r11",
+      "0x19a484 jne 0x19a4d4",
+      "0x19a486 cmp r8, rcx",
+      "0x19a489 jne 0x19a4cf",
+      "0x19a48b lea rcx, [rbx + 0x270]",
+      "0x19a492 mov qword ptr [r9 + 0x10], r10",
+      "0x19a496 call 0x64b70",
+      "0x19a49b lea rcx, [rbx + 0x300]",
+      "0x19a4a2 call 0xbcb40",
+      "0x19a4a7 mov rcx, qword ptr [rip + 0x1b59faa]",
+      "0x19a4ae mov rdx, rbx",
+      "0x19a4b1 mov qword ptr [rbx + 0x328], 0",
+      "0x19a4bc call 0x128580",
+      "0x19a4c1 jmp 0x19a443",
+      "0x19a4c3 mov r11, rcx",
+      "0x19a4c6 mov rcx, qword ptr [rcx + 8]",
+      "0x19a4ca test rcx, rcx",
+      "0x19a4cd jne 0x19a466",
+      "0x19a4cf mov r10, r8",
+      "0x19a4d2 jmp 0x19a48b",
+      "0x19a4d4 mov qword ptr [r11 + 8], r10",
+      "0x19a4d8 jmp 0x19a486"
+    ]
+  },
+  {
+    "name": "native_464780",
+    "rva": "0x464780",
+    "end": "0x46486e",
+    "leaf": false,
+    "calls": [
+      {
+        "at": "0x464793",
+        "to": "0xd9e30",
+        "name": ""
+      },
+      {
+        "at": "0x46479b",
+        "to": "0x1fe9c0",
+        "name": ""
+      },
+      {
+        "at": "0x4647b7",
+        "to": "0xbe670",
+        "name": ""
+      },
+      {
+        "at": "0x4647da",
+        "to": "0x74bf0",
+        "name": ""
+      },
+      {
+        "at": "0x4647f2",
+        "to": "0x19bd80",
+        "name": ""
+      },
+      {
+        "at": "0x4647f7",
+        "to": "0x46480b",
+        "name": ""
+      },
+      {
+        "at": "0x464820",
+        "to": "0x43fe80",
+        "name": ""
+      },
+      {
+        "at": "0x464854",
+        "to": "0xd5930",
+        "name": ""
+      },
+      {
+        "at": "0x464806",
+        "to": "0xd66c0",
+        "name": ""
+      }
+    ],
+    "asm": [
+      "0x464780 mov qword ptr [rsp + 0x10], rbx",
+      "0x464785 push rdi",
+      "0x464786 sub rsp, 0x20",
+      "0x46478a mov rbx, rcx",
+      "0x46478d mov ecx, dword ptr [rip + 0x15c4159]",
+      "0x464793 call 0xd9e30",
+      "0x464798 mov rcx, rax",
+      "0x46479b call 0x1fe9c0",
+      "0x4647a0 mov rcx, rax",
+      "0x4647a3 mov rdi, rax",
+      "0x4647a6 mov rdx, qword ptr [rax]",
+      "0x4647a9 call qword ptr [rdx + 0x28]",
+      "0x4647ac mov r8, rdi",
+      "0x4647af lea rcx, [rsp + 0x30]",
+      "0x4647b4 mov rdx, rbx",
+      "0x4647b7 call 0xbe670",
+      "0x4647bc mov rcx, qword ptr [rdi]",
+      "0x4647bf mov rax, qword ptr [rcx + 0x10]",
+      "0x4647c3 lea rcx, [rip - 0x38ef2a]",
+      "0x4647ca cmp rax, rcx",
+      "0x4647cd jne 0x464859",
+      "0x4647d3 lea rcx, [rdi + 0x198]",
+      "0x4647da call 0x74bf0",
+      "0x4647df test rax, rax",
+      "0x4647e2 jne 0x4647f9",
+      "0x4647e4 cmp byte ptr [rdi + 0x7c], al",
+      "0x4647e7 jne 0x46480b",
+      "0x4647e9 cmp byte ptr [rdi + 0x79], al",
+      "0x4647ec mov rcx, rdi",
+      "0x4647ef sete dl",
+      "0x4647f2 call 0x19bd80",
+      "0x4647f7 jmp 0x46480b",
+      "0x4647f9 cmp qword ptr [rdi + 0x180], 0",
+      "0x464801 je 0x46480b",
+      "0x464803 mov rcx, rdi",
+      "0x464806 call 0xd66c0",
+      "0x46480b cmp dword ptr [rdi + 0x154], 0",
+      "0x464812 jne 0x464833",
+      "0x464814 mov rcx, qword ptr [rip + 0x190e525]",
+      "0x46481b lea rdx, [rsp + 0x30]",
+      "0x464820 call 0x43fe80",
+      "0x464825 mov ecx, dword ptr [rax]",
+      "0x464827 and ecx, 0xffffff",
+      "0x46482d mov dword ptr [rdi + 0x154], ecx",
+      "0x464833 cmp byte ptr [rdi + 0x7c], 0",
+      "0x464837 jne 0x464863",
+      "0x464839 mov rax, qword ptr [rip + 0x18b3680]",
+      "0x464840 mov edx, dword ptr [rdi + 8]",
+      "0x464843 mov rcx, qword ptr [rax + 0xa0]",
+      "0x46484a mov rbx, qword ptr [rsp + 0x38]",
+      "0x46484f add rsp, 0x20",
+      "0x464853 pop rdi",
+      "0x464854 jmp 0xd5930",
+      "0x464859 mov edx, 4",
+      "0x46485e mov rcx, rdi",
+      "0x464861 call rax",
+      "0x464863 mov rbx, qword ptr [rsp + 0x38]",
+      "0x464868 add rsp, 0x20",
+      "0x46486c pop rdi",
+      "0x46486d ret "
+    ]
+  }
+]

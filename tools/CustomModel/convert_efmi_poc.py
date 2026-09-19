@@ -137,12 +137,17 @@ TAG_FORMATS = {
 class Source:
     def __init__(self, path: Path):
         self.path = path
+        self._archive = None
         self._zip = (
             zipfile.ZipFile(path)
             if path.is_file() and path.suffix.lower() == ".zip"
             else None
         )
-        if self._zip:
+        if path.is_file() and path.suffix.lower() in ('.rar', '.7z'):
+            from source_archive import PackedSource
+            self._archive = PackedSource(path)
+            self.names = self._archive.names
+        elif self._zip:
             self.names = self._zip.namelist()
         elif path.is_dir():
             self.names = [
@@ -154,6 +159,8 @@ class Source:
             raise ValueError(f"source must be an EFMI mod folder or .zip: {path}")
 
     def close(self) -> None:
+        if self._archive:
+            self._archive.close()
         if self._zip:
             self._zip.close()
 
@@ -174,9 +181,20 @@ class Source:
         return self.read_exact(name)
 
     def read_exact(self, name: str) -> bytes:
+        from pathlib import PurePosixPath
+        relative = PurePosixPath(name.replace('\\', '/'))
+        if relative.is_absolute() or '..' in relative.parts or ':' in str(relative) or name not in self.names:
+            raise ValueError(f"unsafe or missing source resource: {name}")
+        if self._archive:
+            return self._archive.read(name)
         if self._zip:
+            if self._zip.getinfo(name).file_size > 512 * 1024 * 1024:
+                raise ValueError("source resource exceeds 512 MiB")
             return self._zip.read(name)
-        return (self.path / Path(name)).read_bytes()
+        resolved = (self.path / Path(name)).resolve()
+        if not resolved.is_relative_to(self.path.resolve()) or resolved.stat().st_size > 512 * 1024 * 1024:
+            raise ValueError("source resource escapes directory or exceeds 512 MiB")
+        return resolved.read_bytes()
 
 
 def parse_ini_constants(text: str) -> dict[str, int]:
@@ -295,44 +313,71 @@ def mip_chain_size(width: int, height: int, mips: int, block_bytes: int) -> int:
 
 
 def parse_dds(name: str, raw: bytes) -> tuple[int, int, int, int, bool, bytes]:
-    """Reads a block-compressed DDS and returns its surface bytes verbatim."""
+    """Read BC or tightly packed RGBA32/R8 DDS; normalize BGRA to RGBA."""
     if raw[:4] != b"DDS " or len(raw) < 128:
         raise ValueError(f"{name}: not a DDS file")
-    header_size, _, height, width, _, _, mips = struct.unpack_from("<7I", raw, 4)
+    header_size, flags, height, width, pitch, depth, mips = struct.unpack_from("<7I", raw, 4)
     if header_size != 124:
         raise ValueError(f"{name}: unexpected DDS header size {header_size}")
     fourcc = raw[84:88]
+    caps2 = struct.unpack_from('<I',raw,112)[0]
+    if depth>1 or caps2 & (0xFE00 | 0x200000):
+        raise ValueError(f'DDS_FORMAT: {name}: 暂不支持立方体或体积 DDS')
+    pixel_bytes=0;swap_rb=False
 
     if fourcc == b"DX10":
         if len(raw) < 148:
             raise ValueError(f"{name}: truncated DX10 header")
-        dxgi = struct.unpack_from("<I", raw, 128)[0]
-        if dxgi not in DXGI_FORMATS:
-            raise ValueError(f"{name}: unsupported DXGI format {dxgi}")
-        texture_format, srgb, block_bytes = DXGI_FORMATS[dxgi]
+        dxgi,dimension,misc,array_size,_ = struct.unpack_from('<5I',raw,128)
+        if dimension!=3 or array_size!=1 or misc&4:
+            raise ValueError(f'DDS_FORMAT: {name}: 只支持单层二维 DDS')
+        if dxgi in (28,29,87,91):
+            texture_format,srgb,pixel_bytes=4,dxgi in (29,91),4
+            swap_rb=dxgi in (87,91)
+        elif dxgi==61:
+            texture_format,srgb,pixel_bytes=63,False,1
+        elif dxgi in DXGI_FORMATS:
+            texture_format, srgb, block_bytes = DXGI_FORMATS[dxgi]
+        else:
+            raise ValueError(f'DDS_FORMAT: {name}: 暂不支持 DDS DXGI 格式 {dxgi}')
         payload_offset = 148
     elif fourcc in FOURCC_FORMATS:
         texture_format, srgb, block_bytes = FOURCC_FORMATS[fourcc]
         payload_offset = 128
+    elif fourcc==bytes(4):
+        pf_size,pf_flags,_,bits,r,g,b,a=struct.unpack_from('<8I',raw,76)
+        if pf_size==32 and pf_flags==0x41 and bits==32 and (r,g,b,a) in (
+                (0xff,0xff00,0xff0000,0xff000000),(0xff0000,0xff00,0xff,0xff000000)):
+            texture_format,srgb,pixel_bytes=4,False,4;swap_rb=r==0xff0000
+        elif pf_size==32 and pf_flags==0x20000 and bits==8 and (r,g,b,a)==(0xff,0,0,0):
+            # DirectX DDS loaders map legacy L8 to DXGI_R8_UNORM.
+            texture_format,srgb,pixel_bytes=63,False,1
+        else:
+            raise ValueError(f'DDS_FORMAT: {name}: 暂不支持此 DDS 像素声明（flags=0x{pf_flags:x}, bits={bits}）')
+        payload_offset=128
     else:
-        raise ValueError(
-            f"{name}: unsupported DDS pixel format {fourcc!r}; the runtime "
-            f"uploads these bytes without reinterpreting them"
-        )
+        raise ValueError(f'DDS_FORMAT: {name}: 暂不支持 DDS FourCC {fourcc!r}')
 
     mips = max(mips, 1)
-    if width % 4 or height % 4:
+    if not (0<width<=32768 and 0<height<=32768 and 0<mips<=16):
+        raise ValueError(f'DDS_FORMAT: {name}: 非法纹理尺寸或 mip 数')
+    if not pixel_bytes and (width % 4 or height % 4):
         raise ValueError(
             f"{name}: {width}x{height} is not a whole number of 4x4 blocks"
         )
 
-    expected = mip_chain_size(width, height, mips, block_bytes)
+    if pixel_bytes and flags&8 and pitch!=width*pixel_bytes:
+        raise ValueError(f'DDS_FORMAT: {name}: 暂不支持带行填充的未压缩 DDS')
+    expected = (sum(max(width>>i,1)*max(height>>i,1)*pixel_bytes for i in range(mips))
+                if pixel_bytes else mip_chain_size(width, height, mips, block_bytes))
     data = raw[payload_offset:]
     if len(data) != expected:
         raise ValueError(
             f"{name}: surface is {len(data)} bytes, expected {expected} for "
             f"{width}x{height} with {mips} mip level(s)"
         )
+    if swap_rb:
+        rgba=bytearray(data);rgba[0::4]=data[2::4];rgba[2::4]=data[0::4];data=bytes(rgba)
     return width, height, mips, texture_format, srgb, data
 
 

@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "package": {"id":"creator.character.outfits","name":"外观合集","author":"作者名","version":"1.0.0"},
+  "target": {"character_id":"chr_0013_aglina","world_resource":"chr_0013_aglina_postmodel","ui_resource":"chr_0013_aglina_uimodel","profile_id":"aglina.windows","revision":"20260918"},
+  "default_appearance_id":"default",
+  "appearances":[{"id":"default","name":"默认外观","description":"修改为实际资料路径后使用","format":"hash-lod","profile":"profiles/verified-native.json","ini":"角色.ini"}]
+}

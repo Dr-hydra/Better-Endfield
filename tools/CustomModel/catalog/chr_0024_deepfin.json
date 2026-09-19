@@ -1,0 +1,2933 @@
+{
+  "schema": 1,
+  "kind": "bem-character-catalog",
+  "character_id": "chr_0024_deepfin",
+  "name": "阿列什",
+  "platform": "windows-x64",
+  "profile_id": "chr_0024_deepfin-pc",
+  "revision": "20260920-identities1",
+  "verified": true,
+  "world_resource": "chr_0024_deepfin_postmodel",
+  "ui_resource": "chr_0024_deepfin_uimodel",
+  "source_snapshot": {
+    "manifest_version": "2954fa80-23c1-1579-2b22-4ecfd6d70418"
+  },
+  "components": {
+    "0": {
+      "mesh_name": "S_actor_deepfin_body_01_lod0",
+      "original_index_count": 1866,
+      "bone_names": [
+        "Bip001_Neck",
+        "Bip001_Spine2",
+        "Bip001_L_Clavicle",
+        "Bip001_R_Clavicle",
+        "Bip001_Head",
+        "Bip001_L_Forearm",
+        "Bip001_L_ForeTwist1",
+        "Bip001_L_ForeTwist",
+        "Bip001_L_UpperArm",
+        "Bip001_L_Hand",
+        "Bip001_L_Hand_ty_plus",
+        "Bip001_R_UpperArm",
+        "Bip001_R_ForeTwist",
+        "Bip001_R_ForeTwist1",
+        "Bip001_R_Hand",
+        "Bip001_R_Hand_ty_plus"
+      ],
+      "materials": [
+        "M_actor_deepfin_body_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_deepfin_body_01_D",
+          "T_actor_deepfin_body_01_N",
+          "T_actor_common_face_01_RD"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_deepfin_body_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_deepfin_body_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_face_01_RD"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 402,
+      "submeshes": [
+        {
+          "index_count": 1866,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 402,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-e5ae85bb7891c7af45e5804326b983c7:-1001480416160231815",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0024_deepfin_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-a28463da7cc1eff1c650ac91f027d4d9:-6563891250840519422",
+            "path": "chr_0024_deepfin_uimodel/Mesh_all/lod0/S_actor_deepfin_body_01_lod0"
+          },
+          "chr_0024_deepfin_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0024_deepfin_uimodel",
+            "renderer_id": "cab-f984efe1826e8a092750b9dd4014a245:348169179005776424",
+            "path": "chr_0024_deepfin_postmodel/Mesh_all/lod0/S_actor_deepfin_body_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "1": {
+      "mesh_name": "S_actor_deepfin_brow_01_lod0",
+      "original_index_count": 1320,
+      "bone_names": [
+        "eyeLf02EyelashJoint",
+        "eyeLf01EyelashJoint",
+        "eyeLf03EyelashJoint",
+        "eyeLf05EyelashJoint",
+        "eyeLf04EyelashJoint",
+        "eyeLf05Joint",
+        "eyeLf06Joint",
+        "faceLfIrisJoint",
+        "Bip001_Head",
+        "eyeLf07Joint",
+        "eyeLf08Joint",
+        "browLf01Joint",
+        "browLf02Joint",
+        "browLf03Joint",
+        "browLf04Joint",
+        "browLf05Joint",
+        "browLineLf01Joint",
+        "browLineLf02Joint",
+        "browLineLf03Joint",
+        "eyeRt02EyelashJoint",
+        "eyeRt01EyelashJoint",
+        "eyeRt03EyelashJoint",
+        "eyeRt04EyelashJoint",
+        "eyeRt05EyelashJoint",
+        "faceRtIrisJoint",
+        "eyeRt06Joint",
+        "eyeRt05Joint",
+        "eyeRt07Joint",
+        "eyeRt08Joint",
+        "browRt01Joint",
+        "browRt03Joint",
+        "browRt02Joint",
+        "browRt04Joint",
+        "browRt05Joint",
+        "browLineRt01Joint",
+        "browLineRt03Joint",
+        "browLineRt02Joint"
+      ],
+      "materials": [
+        "M_actor_deepfin_brow_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_deepfin_face_01_D",
+          "T_actor_common_body_01_RD"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_deepfin_face_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_body_01_RD"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 458,
+      "submeshes": [
+        {
+          "index_count": 1320,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 458,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-1afc929e8da275732be0cbe9f602fc53:4952257789465511712",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0024_deepfin_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-a28463da7cc1eff1c650ac91f027d4d9:2907143780595416322",
+            "path": "chr_0024_deepfin_uimodel/Mesh_all/lod0/S_actor_deepfin_brow_01_lod0"
+          },
+          "chr_0024_deepfin_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0024_deepfin_uimodel",
+            "renderer_id": "cab-f984efe1826e8a092750b9dd4014a245:1086551029962764840",
+            "path": "chr_0024_deepfin_postmodel/Mesh_all/lod0/S_actor_deepfin_brow_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "2": {
+      "mesh_name": "S_actor_deepfin_cloth_01_lod0",
+      "original_index_count": 125835,
+      "bone_names": [
+        "Bip001_L_Clavicle",
+        "Bip001_Spine1",
+        "Bip001_Spine2",
+        "Bip001_LUpArmTwist",
+        "Bip001_R_Clavicle",
+        "Bip001_RUpArmTwist",
+        "Bip001_Head",
+        "ear_base_R_b_01_jnt",
+        "glasses_base_M_a_01_jnt",
+        "Bip001_L_Foot",
+        "Bip001_L_Foot_ty_plus",
+        "Bip001_LCalfTwist1",
+        "Bip001_LCalfTwist",
+        "Bip001_L_Foot_ty_minus",
+        "Bip001_L_Toe0",
+        "Bip001_R_Foot",
+        "Bip001_R_Foot_ty_plus",
+        "Bip001_RCalfTwist1",
+        "Bip001_RCalfTwist",
+        "Bip001_R_Foot_ty_minus",
+        "Bip001_R_Toe0",
+        "gs_base_R_a_01_jnt",
+        "Bip001_L_Thigh_tz_minus",
+        "Bip001_Pelvis",
+        "Bip001_L_Thigh_ty_plus",
+        "Bip001_Spine",
+        "clothes_base_L_c_02_jnt",
+        "clothes_base_L_c_01_jnt",
+        "clothes_base_L_b_01_jnt",
+        "clothes_base_L_b_02_jnt",
+        "clothes_base_R_c_01_jnt",
+        "bottle_base_L_a_01_jnt",
+        "Ribbon_base_M_a_01_jnt",
+        "Ribbon_base_M_a_02_jnt",
+        "Ribbon_base_M_a_03_jnt",
+        "Bip001_Neck",
+        "Bip001_LThighTwist",
+        "Bip001_R_Thigh_ty_plus",
+        "Bip001_RThighTwist",
+        "Bip001_R_Thigh_tz_minus",
+        "gs_base_R_b_01_jnt",
+        "Bip001_R_UpperArm_ty_minus",
+        "Bip001_L_UpperArm",
+        "Bip001_LUpArmTwist1",
+        "Bip001_R_UpperArm_ty_plus",
+        "feather_base_R_b_01_jnt",
+        "Bip001_R_Thigh",
+        "Bip001_R_Calf",
+        "Bip001_R_Calf_ty_minus",
+        "Bip001_RThighTwist1",
+        "Bip001_R_Calf_ty_plus",
+        "Bip001_LThighTwist1",
+        "Bip001_L_Thigh",
+        "Bip001_RUpArmTwist1",
+        "Bip001_R_UpperArm",
+        "Bip001_L_UpperArm_ty_minus",
+        "clothes_base_R_b_01_jnt",
+        "clothes_base_R_c_02_jnt",
+        "clothes_base_R_b_02_jnt",
+        "Bip001_L_Forearm",
+        "Bip001_L_Forearm_ty_minus",
+        "Bip001_L_ForeTwist1",
+        "Bip001_L_Hand",
+        "Bip001_L_Hand_ty_minus",
+        "Bip001_L_Finger0",
+        "Bip001_L_Finger01",
+        "Bip001_L_Hand_ty_plus",
+        "Bip001_L_Finger4",
+        "Bip001_L_Finger3",
+        "Bip001_L_ForeTwist",
+        "Bip001_L_Finger1",
+        "Bip001_L_Finger2",
+        "Bip001_L_Finger11",
+        "Bip001_L_Finger12",
+        "Bip001_L_Finger41",
+        "Bip001_L_Finger42",
+        "Bip001_L_Finger31",
+        "Bip001_L_Finger32",
+        "Bip001_L_Finger22",
+        "Bip001_L_Finger21",
+        "Bip001_L_Finger02",
+        "Bip001_L_Forearm_ty_plus",
+        "BD_base_L_a_01_jnt",
+        "Bip001_L_Thigh_ty_minus",
+        "Bip001_R_Thigh_ty_minus",
+        "feather_base_R_d_01_jnt",
+        "clothes_base_L_a_01_jnt",
+        "clothes_base_L_a_02_jnt",
+        "Bip001_R_ForeTwist1",
+        "Bip001_R_Hand",
+        "Bip001_R_Hand_ty_minus",
+        "Bip001_R_Finger0",
+        "Bip001_R_Finger01",
+        "Bip001_R_Hand_ty_plus",
+        "Bip001_R_Finger4",
+        "Bip001_R_Finger3",
+        "Bip001_R_ForeTwist",
+        "Bip001_R_Finger1",
+        "Bip001_R_Finger2",
+        "Bip001_R_Finger12",
+        "Bip001_R_Finger11",
+        "Bip001_R_Finger41",
+        "Bip001_R_Finger42",
+        "Bip001_R_Finger31",
+        "Bip001_R_Finger32",
+        "Bip001_R_Finger22",
+        "Bip001_R_Finger21",
+        "Bip001_R_Finger02",
+        "Bip001_R_Forearm",
+        "feather_base_R_c_01_jnt",
+        "Bip001_L_UpperArm_ty_plus",
+        "Bip001_R_UpperArm_tz_plus",
+        "Bip001_L_UpperArm_tz_plus",
+        "Bip001_L_Calf_ty_plus",
+        "Bip001_L_Calf",
+        "Bip001_L_Calf_ty_minus",
+        "clothes_base_R_a_01_jnt",
+        "clothes_base_R_a_02_jnt",
+        "feather_base_R_a_01_jnt",
+        "hair_base_M_a_01_jnt",
+        "hair_base_M_a_02_jnt",
+        "hair_base_M_a_03_jnt",
+        "Bip001_R_Forearm_ty_plus",
+        "Bip001_R_Forearm_ty_minus",
+        "cheast_base_R_a_01_jnt"
+      ],
+      "materials": [
+        "M_actor_deepfin_cloth_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_deepfin_cloth_01_D",
+          "T_actor_deepfin_cloth_01_N",
+          "T_actor_common_cloth_04_RD",
+          "T_actor_deepfin_cloth_01_P",
+          "T_actor_common_cloth_02_RS"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_deepfin_cloth_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_deepfin_cloth_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_cloth_04_RD"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_deepfin_cloth_01_P"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_cloth_02_RS"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 34230,
+      "submeshes": [
+        {
+          "index_count": 125835,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 34230,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-ea9066e05e52ac5067d3a78c1798647c:-4122683182132474247",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0024_deepfin_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-a28463da7cc1eff1c650ac91f027d4d9:8436196189641194754",
+            "path": "chr_0024_deepfin_uimodel/Mesh_all/lod0/S_actor_deepfin_cloth_01_lod0"
+          },
+          "chr_0024_deepfin_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0024_deepfin_uimodel",
+            "renderer_id": "cab-f984efe1826e8a092750b9dd4014a245:1265325070313910824",
+            "path": "chr_0024_deepfin_postmodel/Mesh_all/lod0/S_actor_deepfin_cloth_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "3": {
+      "mesh_name": "S_actor_deepfin_eyeshadow_01_lod0",
+      "original_index_count": 102,
+      "bone_names": [
+        "eyeLf01Joint",
+        "eyeLf02Joint",
+        "eyeLf05Joint",
+        "eyeLf04Joint",
+        "eyeLf03Joint",
+        "eyeLf03IrissdJoint",
+        "eyeLf06Joint",
+        "eyeRt01Joint",
+        "eyeRt02Joint",
+        "eyeRt03IrissdJoint",
+        "eyeRt05Joint",
+        "eyeRt04Joint",
+        "eyeRt06Joint",
+        "eyeRt03Joint"
+      ],
+      "materials": [
+        "M_eyewhiteshadow_common_01",
+        "M_eyeshadow_common_02"
+      ],
+      "material_textures": [
+        [
+          "T_actor_common_eyeshadow_01_M"
+        ],
+        [
+          "T_actor_common_eyeshadow_02_M"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_common_eyeshadow_01_M"
+          }
+        ],
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_common_eyeshadow_02_M"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 38,
+      "submeshes": [
+        {
+          "index_count": 102,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 38,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-1afc929e8da275732be0cbe9f602fc53:4250321817486214944",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0024_deepfin_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-a28463da7cc1eff1c650ac91f027d4d9:-5773866754328675070",
+            "path": "chr_0024_deepfin_uimodel/Mesh_all/lod0/S_actor_deepfin_eyeshadow_01_lod0"
+          },
+          "chr_0024_deepfin_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0024_deepfin_uimodel",
+            "renderer_id": "cab-f984efe1826e8a092750b9dd4014a245:7496588189411111464",
+            "path": "chr_0024_deepfin_postmodel/Mesh_all/lod0/S_actor_deepfin_eyeshadow_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "4": {
+      "mesh_name": "S_actor_deepfin_face_01_lod0",
+      "original_index_count": 12210,
+      "bone_names": [
+        "lipLdn4Joint",
+        "lipMdnJoint",
+        "lineJoint",
+        "lipLdn1Joint",
+        "lipLdn2Joint",
+        "lipLdn3Joint",
+        "lipRdn4Joint",
+        "lipRdn1Joint",
+        "lipRdn2Joint",
+        "lipRdn3Joint",
+        "lipLup3Joint",
+        "lipLup4Joint",
+        "lipMupJoint",
+        "lipLup1Joint",
+        "lipLup2Joint",
+        "faceMdJawDnJoint",
+        "Bip001_Head",
+        "Bip001_Neck",
+        "browMd01Joint",
+        "browLf02Joint",
+        "browLf01Joint",
+        "faceLfCheekOtDnJoint",
+        "NoseMd01Joint",
+        "faceLfCheekOtJoint",
+        "faceLfCheekOtInJoint",
+        "faceLfCheekOtUpJoint",
+        "browLf03Joint",
+        "browRt01Joint",
+        "eyeLf06Joint",
+        "eyeLf07Joint",
+        "eyeLf05Joint",
+        "eyeLf08Joint",
+        "eyeLf01Joint",
+        "eyeLf02Joint",
+        "browLf04Joint",
+        "eyeLf04Joint",
+        "eyeLf03Joint",
+        "browLf05Joint",
+        "lipRup2Joint",
+        "lipRup3Joint",
+        "lipRup4Joint",
+        "browRt02Joint",
+        "faceRtCheekOtDnJoint",
+        "faceRtCheekOtJoint",
+        "lipRup1Joint",
+        "faceRtCheekOtUpJoint",
+        "faceRtCheekOtInJoint",
+        "browRt03Joint",
+        "eyeRt06Joint",
+        "eyeRt07Joint",
+        "eyeRt05Joint",
+        "eyeRt08Joint",
+        "eyeRt01Joint",
+        "eyeRt02Joint",
+        "eyeRt04Joint",
+        "eyeRt03Joint",
+        "browRt04Joint",
+        "browRt05Joint",
+        "line_toothJoint",
+        "faceMdToothUpJoint",
+        "faceMdToothDnJoint",
+        "TongueMd01Joint",
+        "TongueMd02Joint",
+        "TongueMd03Joint",
+        "faceLfIrisJoint",
+        "faceRtIrisJoint"
+      ],
+      "materials": [
+        "M_actor_deepfin_face_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_deepfin_face_01_D",
+          "T_actor_common_face_01_N",
+          "T_actor_common_face_01_RD",
+          "T_actor_common_male_face_01_ST",
+          "T_actor_common_male_face_04_SDF",
+          "T_actor_common_male_face_04_cm_M"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_deepfin_face_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_common_face_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_face_01_RD"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_common_male_face_01_ST"
+          },
+          {
+            "property": "_SDFLightmap",
+            "name": "T_actor_common_male_face_04_SDF"
+          },
+          {
+            "property": "_SDFMask",
+            "name": "T_actor_common_male_face_04_cm_M"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 2382,
+      "submeshes": [
+        {
+          "index_count": 12210,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 2382,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-5ea46fba0c17363709db2479e9dfcf32:-7904706156638991472",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0024_deepfin_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-a28463da7cc1eff1c650ac91f027d4d9:297049143520869634",
+            "path": "chr_0024_deepfin_uimodel/Mesh_all/lod0/S_actor_deepfin_face_01_lod0"
+          },
+          "chr_0024_deepfin_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0024_deepfin_uimodel",
+            "renderer_id": "cab-f984efe1826e8a092750b9dd4014a245:-2632048731148717528",
+            "path": "chr_0024_deepfin_postmodel/Mesh_all/lod0/S_actor_deepfin_face_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "5": {
+      "mesh_name": "S_actor_deepfin_fur_01_lod0_20",
+      "original_index_count": 21600,
+      "bone_names": [
+        "Bip001_Pelvis",
+        "tail_base_M_a_01_jnt",
+        "tail_base_M_a_04_jnt",
+        "tail_base_M_a_05_jnt",
+        "tail_base_M_a_03_jnt",
+        "tail_base_M_a_02_jnt"
+      ],
+      "materials": [
+        "M_actor_deepfin_fur_01",
+        "M_actor_deepfin_fur_02"
+      ],
+      "material_textures": [
+        [
+          "T_actor_deepfin_tail_01_D",
+          "T_actor_common_hair_03_RD",
+          "T_actor_aurora_fur_01_M",
+          "T_actor_deepfin_hair_01_ST",
+          "T_actor_common_hair_08_RS"
+        ],
+        [
+          "T_actor_deepfin_tail_01_D",
+          "T_actor_common_hair_03_RD",
+          "T_actor_common_fur_01_M",
+          "T_actor_deepfin_hair_01_ST",
+          "T_actor_common_hair_08_RS"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_deepfin_tail_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_hair_03_RD"
+          },
+          {
+            "property": "_FurMap",
+            "name": "T_actor_aurora_fur_01_M"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_deepfin_hair_01_ST"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_hair_08_RS"
+          }
+        ],
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_deepfin_tail_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_hair_03_RD"
+          },
+          {
+            "property": "_FurMap",
+            "name": "T_actor_common_fur_01_M"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_deepfin_hair_01_ST"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_hair_08_RS"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        16,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [],
+      "layout_verified": true,
+      "source_layout_supported": false,
+      "vertex_count": 4880,
+      "submeshes": [
+        {
+          "index_count": 1080,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 244,
+          "topology": "Triangles"
+        },
+        {
+          "index_count": 20520,
+          "first_byte": 4320,
+          "base_vertex": 0,
+          "first_vertex": 244,
+          "vertex_count": 4636,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-daecff96422c78832ed79428fb8cad2d:-502215102147225969",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0024_deepfin_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-a28463da7cc1eff1c650ac91f027d4d9:6031430156844023042",
+            "path": "chr_0024_deepfin_uimodel/Mesh_all/lod0/S_actor_deepfin_fur_01_lod0"
+          },
+          "chr_0024_deepfin_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0024_deepfin_uimodel",
+            "renderer_id": "cab-f984efe1826e8a092750b9dd4014a245:-3269768386097057240",
+            "path": "chr_0024_deepfin_postmodel/Mesh_all/lod0/S_actor_deepfin_fur_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "6": {
+      "mesh_name": "S_actor_deepfin_gouweicao_01_lod0",
+      "original_index_count": 2460,
+      "bone_names": [
+        "grass_base_F_a_02_jnt",
+        "grass_base_F_a_01_jnt",
+        "grass_base_F_a_03_jnt",
+        "grass_base_F_a_05_jnt",
+        "grass_base_F_a_04_jnt"
+      ],
+      "materials": [
+        "M_actor_deepfin_gouweicao_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_deepfin_gouweicao_01_D",
+          "T_actor_deepfin_gouweicao_01_P"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_deepfin_gouweicao_01_D"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_deepfin_gouweicao_01_P"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 753,
+      "submeshes": [
+        {
+          "index_count": 2460,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 753,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-1afc929e8da275732be0cbe9f602fc53:-3513164391362869472",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0024_deepfin_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-a28463da7cc1eff1c650ac91f027d4d9:-9177946414754611966",
+            "path": "chr_0024_deepfin_uimodel/Mesh_all/lod0/S_actor_deepfin_gouweicao_01_lod0"
+          },
+          "chr_0024_deepfin_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0024_deepfin_uimodel",
+            "renderer_id": "cab-f984efe1826e8a092750b9dd4014a245:6558116996125028904",
+            "path": "chr_0024_deepfin_postmodel/Mesh_all/lod0/S_actor_deepfin_gouweicao_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "7": {
+      "mesh_name": "S_actor_deepfin_hair_01_lod0",
+      "original_index_count": 38520,
+      "bone_names": [
+        "Bip001_Head",
+        "hair_base_L_b_01_jnt",
+        "hair_base_L_b_02_jnt",
+        "hair_base_L_a_01_jnt",
+        "hair_base_L_a_02_jnt",
+        "hair_base_L_b_03_jnt",
+        "hair_base_L_c_01_jnt",
+        "hair_base_L_c_02_jnt",
+        "hair_base_R_a_02_jnt",
+        "hair_base_R_a_01_jnt",
+        "hair_base_L_d_03_jnt",
+        "hair_base_L_d_02_jnt",
+        "hair_base_L_d_01_jnt",
+        "hair_base_Up_a_01_jnt",
+        "hair_base_Back_a_01_jnt",
+        "hair_base_Back_b_02_jnt",
+        "hair_base_Back_b_01_jnt",
+        "hair_base_Back_a_02_jnt",
+        "hair_base_Back_c_01_jnt",
+        "hair_base_Back_c_02_jnt",
+        "hair_base_M_a_01_jnt",
+        "hair_base_M_a_02_jnt",
+        "hair_base_M_a_03_jnt",
+        "ear_base_R_a_01_jnt",
+        "ear_base_R_a_02_jnt",
+        "ear_base_L_a_01_jnt",
+        "ear_base_L_a_02_jnt",
+        "Bip001_Neck",
+        "Bip001_Spine2"
+      ],
+      "materials": [
+        "M_actor_deepfin_hair_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_deepfin_hair_01_D",
+          "T_actor_common_hair_01_RD",
+          "T_actor_common_hairline_03_M",
+          "T_actor_deepfin_hair_01_P",
+          "T_actor_deepfin_hair_01_ST",
+          "T_actor_common_hair_08_RS",
+          "T_actor_deepfin_hair_01_HN",
+          "T_actor_common_hairst_01_ST"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_deepfin_hair_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_hair_01_RD"
+          },
+          {
+            "property": "_LineMap",
+            "name": "T_actor_common_hairline_03_M"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_deepfin_hair_01_P"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_deepfin_hair_01_ST"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_hair_08_RS"
+          },
+          {
+            "property": "_SplitNormalMap",
+            "name": "T_actor_deepfin_hair_01_HN"
+          },
+          {
+            "property": "_StrokeMap",
+            "name": "T_actor_common_hairst_01_ST"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 11364,
+      "submeshes": [
+        {
+          "index_count": 38520,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 11364,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-31d031b5ba3153eb045021ea5ba99174:4792739115457055737",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0024_deepfin_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-a28463da7cc1eff1c650ac91f027d4d9:-4766176795965309694",
+            "path": "chr_0024_deepfin_uimodel/Mesh_all/lod0/S_actor_deepfin_hair_01_lod0"
+          },
+          "chr_0024_deepfin_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0024_deepfin_uimodel",
+            "renderer_id": "cab-f984efe1826e8a092750b9dd4014a245:-2594939722464890328",
+            "path": "chr_0024_deepfin_postmodel/Mesh_all/lod0/S_actor_deepfin_hair_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "8": {
+      "mesh_name": "S_actor_deepfin_hairshadow_01_lod0",
+      "original_index_count": 435,
+      "bone_names": [
+        "hair_base_L_a_02_jnt",
+        "hair_base_L_a_01_jnt",
+        "hair_base_L_c_01_jnt",
+        "Bip001_Head",
+        "hair_base_L_c_02_jnt",
+        "hair_base_L_d_03_jnt",
+        "hair_base_L_d_02_jnt",
+        "hair_base_L_d_01_jnt"
+      ],
+      "materials": [
+        "M_hairshadow_common_06"
+      ],
+      "material_textures": [
+        [
+          "T_actor_common_hairshadow_01_M"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_common_hairshadow_01_M"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 132,
+      "submeshes": [
+        {
+          "index_count": 435,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 132,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-1afc929e8da275732be0cbe9f602fc53:9125840553925461792",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0024_deepfin_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-a28463da7cc1eff1c650ac91f027d4d9:330306554162199810",
+            "path": "chr_0024_deepfin_uimodel/Mesh_all/lod0/S_actor_deepfin_hairshadow_01_lod0"
+          },
+          "chr_0024_deepfin_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0024_deepfin_uimodel",
+            "renderer_id": "cab-f984efe1826e8a092750b9dd4014a245:-5647913687885483480",
+            "path": "chr_0024_deepfin_postmodel/Mesh_all/lod0/S_actor_deepfin_hairshadow_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "9": {
+      "mesh_name": "S_actor_deepfin_iris_01_lod0",
+      "original_index_count": 816,
+      "bone_names": [
+        "faceLfPupilJoint",
+        "faceLfIrisJoint",
+        "faceRtPupilJoint",
+        "faceRtIrisJoint",
+        "faceLfHighlightJoint",
+        "faceRtHighlightJoint"
+      ],
+      "materials": [
+        "M_actor_deepfin_iris_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_deepfin_iris_01_D",
+          "T_actor_common_body_01_RD",
+          "T_actor_common_matcap_02_D"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_deepfin_iris_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_body_01_RD"
+          },
+          {
+            "property": "_MatcapTex",
+            "name": "T_actor_common_matcap_02_D"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        4
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 180,
+      "submeshes": [
+        {
+          "index_count": 816,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 180,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-1afc929e8da275732be0cbe9f602fc53:-7844950754274392288",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0024_deepfin_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-a28463da7cc1eff1c650ac91f027d4d9:4053031188061568258",
+            "path": "chr_0024_deepfin_uimodel/Mesh_all/lod0/S_actor_deepfin_iris_01_lod0"
+          },
+          "chr_0024_deepfin_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0024_deepfin_uimodel",
+            "renderer_id": "cab-f984efe1826e8a092750b9dd4014a245:5217912715434586664",
+            "path": "chr_0024_deepfin_postmodel/Mesh_all/lod0/S_actor_deepfin_iris_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    }
+  },
+  "entries": {
+    "bcf74f8e": 0,
+    "218c9f50": 1,
+    "00532aa6": 2,
+    "3f818b3f": 3,
+    "c59e0bbd": 4,
+    "8b6961fa": 6,
+    "d9f9149d": 7,
+    "309d81d3": 8,
+    "057b76e4": 9
+  },
+  "textures": {
+    "c87d2ad7": {
+      "name": "T_actor_aurora_fur_01_M",
+      "evidence": {
+        "texture_id": "cab-19b905ce3cf051d673503f726ea06589:-1981095157092322514",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          128,
+          128,
+          8,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "79cd6d1e",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            128,
+            128
+          ]
+        ]
+      }
+    },
+    "172348f4": {
+      "name": "T_actor_common_body_01_RD",
+      "aliases": [
+        "T_actor_common_face_01_RD"
+      ],
+      "evidence": {
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "kind": "shared-source-hash",
+        "targets": [
+          {
+            "name": "T_actor_common_body_01_RD",
+            "evidence": {
+              "texture_id": "cab-f73bd58505faab842c266da5fd3ef559:9015086203897338725",
+              "policy": "efmi-dx11-region-texture0-fullchain-v1",
+              "descriptor": [
+                256,
+                1,
+                1,
+                1,
+                28,
+                1,
+                0,
+                0,
+                8,
+                0,
+                0
+              ],
+              "native_data_crc32c": "bb885ffb",
+              "runtime_graphics_format": 8,
+              "runtime_sizes": [
+                [
+                  256,
+                  1
+                ]
+              ]
+            }
+          },
+          {
+            "name": "T_actor_common_face_01_RD",
+            "evidence": {
+              "texture_id": "cab-52ea55afe624d7233f83d33f95137ebd:5848563174712869001",
+              "policy": "efmi-dx11-region-texture0-fullchain-v1",
+              "descriptor": [
+                256,
+                1,
+                1,
+                1,
+                28,
+                1,
+                0,
+                0,
+                8,
+                0,
+                0
+              ],
+              "native_data_crc32c": "bb885ffb",
+              "runtime_graphics_format": 8,
+              "runtime_sizes": [
+                [
+                  256,
+                  1
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "c30d3c7b": {
+      "name": "T_actor_common_cloth_02_RS",
+      "evidence": {
+        "texture_id": "cab-a5c0b9978b367709aeecaf6fcc43c75e:2174236443485968244",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "e235d821",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "c383b676": {
+      "name": "T_actor_common_cloth_04_RD",
+      "evidence": {
+        "texture_id": "cab-dda756238d04de89c59d562835d15c3a:2595675294308502756",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          1,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "5109626c",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            1
+          ]
+        ]
+      }
+    },
+    "d5906b6a": {
+      "name": "T_actor_common_eyeshadow_01_M",
+      "evidence": {
+        "texture_id": "cab-e0c2577d28432f83374490550edc6b0a:1943856218045776426",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          32,
+          32,
+          6,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "43a76c1d",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            32,
+            32
+          ]
+        ]
+      }
+    },
+    "6899d1a4": {
+      "name": "T_actor_common_eyeshadow_02_M",
+      "evidence": {
+        "texture_id": "cab-37cba2aef5da66859bb487a2e4639ab6:2400241694096528712",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          32,
+          32,
+          6,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "7c34adce",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            32,
+            32
+          ]
+        ]
+      }
+    },
+    "0a7b28f6": {
+      "name": "T_actor_common_face_01_N",
+      "evidence": {
+        "texture_id": "cab-0ff6231885250a40d3cd35cc84db11bf:-8662053986207253963",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "7472235e",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "91776af3": {
+      "name": "T_actor_common_fur_01_M",
+      "evidence": {
+        "texture_id": "cab-ea9049f99d38581407cbe90817c242b1:7465576206237075746",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          128,
+          128,
+          1,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "57d71033",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            128,
+            128
+          ]
+        ]
+      }
+    },
+    "9515ebaf": {
+      "name": "T_actor_common_hair_01_RD",
+      "evidence": {
+        "texture_id": "cab-0dba6b3a8686ca225fea99cb2ce9ac8b:-6227453272663763460",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          1,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "b872b190",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            1
+          ]
+        ]
+      }
+    },
+    "62aeb468": {
+      "name": "T_actor_common_hair_03_RD",
+      "evidence": {
+        "texture_id": "cab-f6fcbbe390ce7be65b251151737dc1c5:7448402756121317154",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          1,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "010045c0",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            1
+          ]
+        ]
+      }
+    },
+    "7cc9cca9": {
+      "name": "T_actor_common_hair_08_RS",
+      "evidence": {
+        "texture_id": "cab-3cf771f652248046d4eff02b0ebc0a0c:9121228933552860259",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "6ab4b6d0",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "151c9982": {
+      "name": "T_actor_common_hairline_03_M",
+      "evidence": {
+        "texture_id": "cab-67dec3851d20abe31e69d62c821759b2:3012176911137855631",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "8fcf3b42",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "fb524ebd": {
+      "name": "T_actor_common_hairshadow_01_M",
+      "evidence": {
+        "texture_id": "cab-b95b327020df7ae0f1e7cd8e002482c8:4070306725172282955",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          32,
+          32,
+          6,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "021842a4",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            32,
+            32
+          ]
+        ]
+      }
+    },
+    "f18a7d64": {
+      "name": "T_actor_common_hairst_01_ST",
+      "evidence": {
+        "texture_id": "cab-4ec5d566ac4da93846f2e9bc00199929:-6833856728080991578",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          256,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "2d730321",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            256
+          ]
+        ]
+      }
+    },
+    "1bea5aca": {
+      "name": "T_actor_common_male_face_01_ST",
+      "evidence": {
+        "texture_id": "cab-b3622b7dc02032dacbca9c8fe425fcd8:-1853090554769604769",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "66387375",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "3927f53c": {
+      "name": "T_actor_common_male_face_04_SDF",
+      "evidence": {
+        "texture_id": "cab-174439324d9075d5c0ef3383b7e0de83:4780319975685239362",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "b8d361cb",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "cad71e4e": {
+      "name": "T_actor_common_male_face_04_cm_M",
+      "evidence": {
+        "texture_id": "cab-c4f419293489a2b6fbb99eb15ca9570d:4587308344033011327",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "eee3c1b8",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "f9e6f3c4": {
+      "name": "T_actor_common_matcap_02_D",
+      "evidence": {
+        "texture_id": "cab-19623edbeff949cf274546755b793384:5044540118891500695",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          9,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "446285d3",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "5ec99d37": {
+      "name": "T_actor_deepfin_body_01_D",
+      "evidence": {
+        "texture_id": "cab-646e9b0f271abc00a26e4c20be71cdf2:-7469955335801322602",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "3a3b04bc",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "2a3744e8": {
+      "name": "T_actor_deepfin_body_01_N",
+      "evidence": {
+        "texture_id": "cab-646e9b0f271abc00a26e4c20be71cdf2:7928519629217790431",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "e4372b98",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "96527c50": {
+      "name": "T_actor_deepfin_cloth_01_D",
+      "evidence": {
+        "texture_id": "cab-11b33542d7f908d133e97d2b6ff55e86:7868417850211835683",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "0de2375e",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "05b90e92": {
+      "name": "T_actor_deepfin_cloth_01_N",
+      "evidence": {
+        "texture_id": "cab-11b33542d7f908d133e97d2b6ff55e86:6803561022486052882",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "9e974809",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "5617b999": {
+      "name": "T_actor_deepfin_cloth_01_P",
+      "evidence": {
+        "texture_id": "cab-11b33542d7f908d133e97d2b6ff55e86:-6716895721014600086",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "5f0a7c8e",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "4eb686b9": {
+      "name": "T_actor_deepfin_face_01_D",
+      "evidence": {
+        "texture_id": "cab-ccf08416bdc0be039c2bdd619ed2f005:1262431332922370472",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "b04b3572",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "052c3531": {
+      "name": "T_actor_deepfin_gouweicao_01_D",
+      "evidence": {
+        "texture_id": "cab-3a399b4d69d48d68201a9967779118cb:9207576212899842954",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "0346b6c1",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "39986b7c": {
+      "name": "T_actor_deepfin_gouweicao_01_P",
+      "evidence": {
+        "texture_id": "cab-3a399b4d69d48d68201a9967779118cb:6021506044707542915",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "c506cc19",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "56f77659": {
+      "name": "T_actor_deepfin_hair_01_D",
+      "evidence": {
+        "texture_id": "cab-8731dc589cf3e13acc24b1958c0a2026:6456098919604880426",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "c5bf0faa",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "70ff6a87": {
+      "name": "T_actor_deepfin_hair_01_HN",
+      "evidence": {
+        "texture_id": "cab-368c97d842eb0f66642e66f91cdc8885:-3496498468981039189",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "72b874ff",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "730ca36a": {
+      "name": "T_actor_deepfin_hair_01_P",
+      "evidence": {
+        "texture_id": "cab-8731dc589cf3e13acc24b1958c0a2026:8319918697648806909",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "856a42b4",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "17a3a5a2": {
+      "name": "T_actor_deepfin_hair_01_ST",
+      "evidence": {
+        "texture_id": "cab-8d7312778bc9011791a5e1f1bdd2d1bb:4264967711670227465",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          9,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "66545264",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "4d10585a": {
+      "name": "T_actor_deepfin_iris_01_D",
+      "evidence": {
+        "texture_id": "cab-62f9a90f9307bff060d66c71aa7282f8:2114827800978269299",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "37f446a3",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "e17bedea": {
+      "name": "T_actor_deepfin_tail_01_D",
+      "evidence": {
+        "texture_id": "cab-aa8831b131bcafb370bcc36a13d29ebe:-6835056684818756436",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          9,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "13439d49",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    }
+  },
+  "preserved_globals": {
+    "7d330dbd": {
+      "name": "T_actor_common_rain_01_M",
+      "property": "_CharacterRainEffectTex",
+      "width": 1024,
+      "height": 1024,
+      "mips": 1,
+      "format": 25,
+      "source_payload_sha256": "6943a7c667cb53f778edf0179764cc72f23973a7dce8b04780adb6d107069865"
+    },
+    "908140d5": {
+      "name": "T_actor_common_snow_01_M",
+      "property": "_CharacterSnowEffectTex",
+      "width": 512,
+      "height": 512,
+      "mips": 1,
+      "format": 25,
+      "source_payload_sha256": "a0e3242e512cce6f4ee5fff3fd326cf0d870c6124f3cae3d596d48e71d12996d"
+    }
+  },
+  "mapping_status": "offline-resource-identities-partial",
+  "excluded_components": [],
+  "evidence": [
+    "CUSTOM_MODEL_RUNTIME_SWEEP_20260919.md"
+  ],
+  "note": "Native sweep plus offline identity join. EFMI identities recomputed from original game buffers and texture descriptors; custom source logic remains separate.",
+  "entry_identity_evidence": {
+    "0": {
+      "mesh_id": "cab-e5ae85bb7891c7af45e5804326b983c7:-1001480416160231815",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 3732,
+      "index_count": 1866,
+      "source_hash": "bcf74f8e"
+    },
+    "1": {
+      "mesh_id": "cab-1afc929e8da275732be0cbe9f602fc53:4952257789465511712",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 2640,
+      "index_count": 1320,
+      "source_hash": "218c9f50"
+    },
+    "2": {
+      "mesh_id": "cab-ea9066e05e52ac5067d3a78c1798647c:-4122683182132474247",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 251670,
+      "index_count": 125835,
+      "source_hash": "00532aa6"
+    },
+    "3": {
+      "mesh_id": "cab-1afc929e8da275732be0cbe9f602fc53:4250321817486214944",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 204,
+      "index_count": 102,
+      "source_hash": "3f818b3f"
+    },
+    "4": {
+      "mesh_id": "cab-5ea46fba0c17363709db2479e9dfcf32:-7904706156638991472",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 24420,
+      "index_count": 12210,
+      "source_hash": "c59e0bbd"
+    },
+    "6": {
+      "mesh_id": "cab-1afc929e8da275732be0cbe9f602fc53:-3513164391362869472",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 4920,
+      "index_count": 2460,
+      "source_hash": "8b6961fa"
+    },
+    "7": {
+      "mesh_id": "cab-31d031b5ba3153eb045021ea5ba99174:4792739115457055737",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 77040,
+      "index_count": 38520,
+      "source_hash": "d9f9149d"
+    },
+    "8": {
+      "mesh_id": "cab-1afc929e8da275732be0cbe9f602fc53:9125840553925461792",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 870,
+      "index_count": 435,
+      "source_hash": "309d81d3"
+    },
+    "9": {
+      "mesh_id": "cab-1afc929e8da275732be0cbe9f602fc53:-7844950754274392288",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 1632,
+      "index_count": 816,
+      "source_hash": "057b76e4"
+    }
+  },
+  "identity_issues": [
+    {
+      "kind": "mesh",
+      "name": "S_actor_deepfin_fur_01_lod0_20",
+      "reason": "not a complete single-submesh index region"
+    }
+  ],
+  "identity_policy": "efmi-dx11-region-texture0-fullchain-v1"
+}

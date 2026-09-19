@@ -1,0 +1,3538 @@
+{
+  "schema": 1,
+  "kind": "bem-character-catalog",
+  "character_id": "chr_0004_pelica",
+  "name": "佩丽卡",
+  "platform": "windows-x64",
+  "profile_id": "pelica-pc",
+  "revision": "20260920-identities1",
+  "verified": true,
+  "world_resource": "chr_0004_pelica_postmodel",
+  "ui_resource": "chr_0004_pelica_uimodel",
+  "source_snapshot": {
+    "manifest_version": "2954fa80-23c1-1579-2b22-4ecfd6d70418"
+  },
+  "components": {
+    "0": {
+      "mesh_name": "S_actor_pelica_hair_01_lod0",
+      "original_index_count": 45003,
+      "bone_names": [
+        "hair_base_Front_c_01_jnt_ctrl",
+        "hair_base_Front_c_02_jnt_ctrl",
+        "Bip001_Head",
+        "hair_base_Front_b_01_jnt_ctrl",
+        "hair_base_Front_b_02_jnt_ctrl",
+        "hair_base_L_b_03_jnt_ctrl",
+        "hair_base_L_b_04_jnt_ctrl",
+        "hair_base_L_b_01_jnt_ctrl",
+        "hair_base_L_b_02_jnt_ctrl",
+        "hair_base_Back_b_01_jnt_ctrl",
+        "hair_base_Back_c_01_jnt_ctrl",
+        "hair_base_Back_c_02_jnt_ctrl",
+        "hair_base_Back_b_02_jnt_ctrl",
+        "hair_base_Back_c_03_jnt_ctrl",
+        "hair_base_Back_b_03_jnt_ctrl",
+        "hair_base_Back_a_02_jnt_ctrl",
+        "hair_base_Back_a_03_jnt_ctrl",
+        "hair_base_Back_a_01_jnt_ctrl",
+        "hair_base_L_a_01_jnt_ctrl",
+        "hair_base_L_a_02_jnt_ctrl",
+        "hair_base_L_a_03_jnt_ctrl",
+        "hair_base_Front_a_01_jnt_ctrl",
+        "hair_base_Front_a_02_jnt_ctrl",
+        "ear_base_L_a_02_jnt_ctrl",
+        "ear_base_L_a_00_jnt_ctrl",
+        "ear_base_R_a_02_jnt_ctrl",
+        "ear_base_R_a_00_jnt_ctrl",
+        "hair_base_R_a_02_jnt_ctrl",
+        "hair_base_R_a_03_jnt_ctrl",
+        "hair_base_R_a_04_jnt_ctrl",
+        "hair_base_R_a_01_jnt_ctrl"
+      ],
+      "materials": [
+        "M_actor_pelica_hair_01",
+        "M_actor_pelica_hairt_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_pelica_hair_01_D",
+          "T_actor_common_hair_01_RD",
+          "T_actor_pelica_hair_01_sw_M",
+          "T_actor_common_hairline_03_M",
+          "T_actor_pelica_hair_01_P",
+          "T_actor_pelica_hair_01_ST",
+          "T_actor_common_hair_07_RS",
+          "T_actor_pelica_hair_01_HN"
+        ],
+        [
+          "T_actor_pelica_hair_01_D",
+          "T_actor_common_hair_01_RD",
+          "T_actor_pelica_hair_01_sw_M",
+          "T_actor_common_hairline_03_M",
+          "T_actor_pelica_hair_01_P",
+          "T_actor_pelica_hair_01_ST",
+          "T_actor_common_hair_07_RS",
+          "T_actor_pelica_hair_01_HN"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_pelica_hair_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_hair_01_RD"
+          },
+          {
+            "property": "_HairBrowMask",
+            "name": "T_actor_pelica_hair_01_sw_M"
+          },
+          {
+            "property": "_LineMap",
+            "name": "T_actor_common_hairline_03_M"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_pelica_hair_01_P"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_pelica_hair_01_ST"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_hair_07_RS"
+          },
+          {
+            "property": "_SplitNormalMap",
+            "name": "T_actor_pelica_hair_01_HN"
+          }
+        ],
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_pelica_hair_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_hair_01_RD"
+          },
+          {
+            "property": "_HairBrowMask",
+            "name": "T_actor_pelica_hair_01_sw_M"
+          },
+          {
+            "property": "_LineMap",
+            "name": "T_actor_common_hairline_03_M"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_pelica_hair_01_P"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_pelica_hair_01_ST"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_hair_07_RS"
+          },
+          {
+            "property": "_SplitNormalMap",
+            "name": "T_actor_pelica_hair_01_HN"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "TEXCOORD",
+              "index": 2,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 11584,
+      "submeshes": [
+        {
+          "index_count": 45003,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 11584,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-7a7cc1f4894c134167dd9dc8546841f0:-1793129314373740748",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0004_pelica_postmodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-7139156166c22abd7e0120462a056c74:-2784397864118598421",
+            "path": "chr_0004_pelica_postmodel/Mesh_all/lod0/S_actor_pelica_hair_01_lod0"
+          },
+          "chr_0004_pelica_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-5d12f215aad792b95515715be8303fa4:2124112335716685635",
+            "path": "chr_0004_pelica_uimodel/Mesh_all/lod0/S_actor_pelica_hair_01_lod0"
+          }
+        }
+      }
+    },
+    "1": {
+      "mesh_name": "S_actor_pelica_face_01_lod0",
+      "original_index_count": 9186,
+      "bone_names": [
+        "lipMdnJoint",
+        "lipLdn4Joint",
+        "line_jnt",
+        "lipLdn3Joint",
+        "lipLdn2Joint",
+        "lipLdn1Joint",
+        "faceLfCheekOtDnJoint",
+        "jawJoint",
+        "lipRdn4Joint",
+        "lipRdn3Joint",
+        "lipRdn2Joint",
+        "faceRtCheekOtDnJoint",
+        "lipRdn1Joint",
+        "head_dn_jnt",
+        "NoseMd01Joint",
+        "head_mid_jnt",
+        "lipMupJoint",
+        "faceMdJawDnJoint",
+        "head_up_jnt",
+        "faceRtCheekOtJoint",
+        "Bip001_Neck",
+        "Bip001_Head",
+        "lipRup1Joint",
+        "lipRup2Joint",
+        "lipRup4Joint",
+        "eyeRt03Joint",
+        "eyeRt02Joint",
+        "eyeRt01Joint",
+        "eyeRt05Joint",
+        "eyeRt04Joint",
+        "eyeRt07Joint",
+        "eyeRt06Joint",
+        "eyeRt08Joint",
+        "lipRup3Joint",
+        "lipLup4Joint",
+        "eyeRtJoint",
+        "faceLfCheekOtJoint",
+        "lipLup3Joint",
+        "lipLup2Joint",
+        "lipLup1Joint",
+        "eyeLf06Joint",
+        "eyeLf05Joint",
+        "eyeLf02Joint",
+        "eyeLf03Joint",
+        "eyeLf01Joint",
+        "eyeLf08Joint",
+        "eyeLf04Joint",
+        "eyeLf07Joint",
+        "eyeLfJoint",
+        "faceMdToothUpJoint",
+        "faceMdToothDnJoint",
+        "TongueMd02Joint",
+        "TongueMd01Joint"
+      ],
+      "materials": [
+        "M_actor_pelica_face_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_pelica_face_01_D",
+          "T_actor_pelica_face_01_N",
+          "T_actor_common_face_01_RD",
+          "common_deco_white",
+          "T_actor_common_female_emotion_atlas_01_D",
+          "T_actor_common_face_01_hl_M",
+          "T_actor_common_female_face_01_ST",
+          "T_actor_common_female_face_01_SDF",
+          "T_actor_common_female_face_01_cm_M",
+          "T_actor_common_femaleskincolor01_lut_D"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_pelica_face_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_pelica_face_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_face_01_RD"
+          },
+          {
+            "property": "_EmissionMap",
+            "name": "common_deco_white"
+          },
+          {
+            "property": "_EmotionMap",
+            "name": "T_actor_common_female_emotion_atlas_01_D"
+          },
+          {
+            "property": "_HighlightMap",
+            "name": "T_actor_common_face_01_hl_M"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_common_female_face_01_ST"
+          },
+          {
+            "property": "_SDFLightmap",
+            "name": "T_actor_common_female_face_01_SDF"
+          },
+          {
+            "property": "_SDFMask",
+            "name": "T_actor_common_female_face_01_cm_M"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_femaleskincolor01_lut_D"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "TEXCOORD",
+              "index": 2,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 1733,
+      "submeshes": [
+        {
+          "index_count": 9186,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 1733,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-17f4da1f2f34acf9136799abe780ba94:-4662013043618702843",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0004_pelica_postmodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-7139156166c22abd7e0120462a056c74:-4948157199616391957",
+            "path": "chr_0004_pelica_postmodel/Mesh_all/lod0/S_actor_pelica_face_01_lod0"
+          },
+          "chr_0004_pelica_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-5d12f215aad792b95515715be8303fa4:-8053723125344037053",
+            "path": "chr_0004_pelica_uimodel/Mesh_all/lod0/S_actor_pelica_face_01_lod0"
+          }
+        }
+      }
+    },
+    "2": {
+      "mesh_name": "S_actor_pelica_body_01_lod0",
+      "original_index_count": 5922,
+      "bone_names": [
+        "Bip001_Neck",
+        "Bip001_Spine2",
+        "Bip001_Head",
+        "head_dn_jnt",
+        "Bip001_L_Clavicle",
+        "head_up_jnt",
+        "head_mid_jnt",
+        "Bip001_R_Clavicle",
+        "xiong_R_0_skin_jnt",
+        "xiong_L_0_skin_jnt",
+        "Bip001_L_UpperArm",
+        "Bip001_LUpArmTwist1",
+        "corrective_Elbow_L_ty_plus",
+        "corrective_Elbow_L_ty_minus",
+        "Bip001_L_ForeTwist",
+        "Bip001_L_ForeTwist1",
+        "Bip001_L_Forearm",
+        "Bip001_LUpArmTwist",
+        "Bip001_R_UpperArm",
+        "corrective_Elbow_R_ty_minus",
+        "Bip001_RUpArmTwist1",
+        "corrective_Elbow_R_ty_plus",
+        "Bip001_R_ForeTwist1",
+        "Bip001_R_ForeTwist",
+        "Bip001_R_Forearm",
+        "Bip001_RUpArmTwist"
+      ],
+      "materials": [
+        "M_actor_pelica_body_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_pelica_body_01_D",
+          "T_actor_pelica_body_01_N",
+          "T_actor_common_face_01_RD",
+          "T_actor_common_femaleskincolor01_lut_D"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_pelica_body_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_pelica_body_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_face_01_RD"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_femaleskincolor01_lut_D"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 1158,
+      "submeshes": [
+        {
+          "index_count": 5922,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 1158,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-4d3b6094023b68683eff277e9dc3bfa8:1039383356713753500",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0004_pelica_postmodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-7139156166c22abd7e0120462a056c74:2546325105373070571",
+            "path": "chr_0004_pelica_postmodel/Mesh_all/lod0/S_actor_pelica_body_01_lod0"
+          },
+          "chr_0004_pelica_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-5d12f215aad792b95515715be8303fa4:-8757538599597828285",
+            "path": "chr_0004_pelica_uimodel/Mesh_all/lod0/S_actor_pelica_body_01_lod0"
+          }
+        }
+      }
+    },
+    "3": {
+      "mesh_name": "S_actor_pelica_hairshadow_01_lod0",
+      "original_index_count": 525,
+      "bone_names": [
+        "hair_base_Front_b_02_jnt_ctrl",
+        "hair_base_Front_c_02_jnt_ctrl",
+        "Bip001_Head",
+        "hair_base_Front_c_01_jnt_ctrl",
+        "hair_base_Front_b_01_jnt_ctrl",
+        "hair_base_Front_a_02_jnt_ctrl"
+      ],
+      "materials": [
+        "M_hairshadow_common_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_common_hairshadow_01_M"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_common_hairshadow_01_M"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 145,
+      "submeshes": [
+        {
+          "index_count": 525,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 145,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-99e2787fd148e9debecf0263cc8f17c8:-1836908013809651680",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0004_pelica_postmodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-7139156166c22abd7e0120462a056c74:-8734840507806399253",
+            "path": "chr_0004_pelica_postmodel/Mesh_all/lod0/S_actor_pelica_hairshadow_01_lod0"
+          },
+          "chr_0004_pelica_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-5d12f215aad792b95515715be8303fa4:1848775603874633539",
+            "path": "chr_0004_pelica_uimodel/Mesh_all/lod0/S_actor_pelica_hairshadow_01_lod0"
+          }
+        }
+      }
+    },
+    "4": {
+      "mesh_name": "S_actor_pelica_cloth_01_lod0",
+      "original_index_count": 78186,
+      "bone_names": [
+        "maozi_base_M_a_01_jnt_ctrl",
+        "maozi_base_L_a_01_jnt_ctrl",
+        "Bip001_Spine2",
+        "yibai02_01_M_a_01_jnt_ctrl",
+        "sleeve_base_L_a_01_jnt",
+        "collar_base_L_a_01_jnt",
+        "yibai02_01_L_b_01_jnt_ctrl",
+        "collar_base_L_b_01_jnt",
+        "yibai01_01_L_a_00_jnt_ctrl1_ctrl",
+        "yibai01_01_L_a_01_jnt_ctrl",
+        "yibai02_01_L_b_02_jnt_ctrl",
+        "maozi_base_R_a_01_jnt_ctrl",
+        "sleeve_base_R_a_01_jnt",
+        "collar_base_R_a_01_jnt",
+        "yibai02_01_R_b_01_jnt_ctrl",
+        "collar_base_R_b_01_jnt",
+        "yibai02_01_R_a_00_jnt_ctrl1_ctrl",
+        "yibai02_01_R_a_01_jnt_ctrl",
+        "yibai02_01_R_b_02_jnt_ctrl",
+        "yibai02_01_M_a_02_jnt_ctrl",
+        "lalian_base_L_a_01_jnt_ctrl",
+        "corrective_Elbow_R_ty_minus",
+        "Bip001_R_ForeTwist",
+        "corrective_Elbow_R_ty_plus",
+        "clothes_spring_R_a_02_jnt_ctrl",
+        "Bip001_L_ForeTwist",
+        "corrective_Elbow_L_ty_plus",
+        "corrective_Elbow_L_ty_minus",
+        "lalian_base_L_a_03_jnt_ctrl",
+        "lalian_base_L_a_04_jnt_ctrl",
+        "Bip001_L_Finger21",
+        "Bip001_L_Finger22",
+        "Bip001_L_ForeTwist1",
+        "corrective_Wrist_L_tz_minus",
+        "Bip001_L_Hand",
+        "corrective_Wrist_L_tz_plus",
+        "Bip001_L_Finger01",
+        "Bip001_L_Finger0",
+        "Bip001_L_Finger11",
+        "Bip001_L_Finger1",
+        "Bip001_L_Finger12",
+        "Bip001_L_Finger2",
+        "Bip001_L_Finger42",
+        "Bip001_L_Finger41",
+        "Bip001_L_Finger4",
+        "Bip001_L_Finger3",
+        "Bip001_L_Finger31",
+        "Bip001_L_Finger32",
+        "Bip001_L_Finger02",
+        "Bip001_R_Finger22",
+        "Bip001_R_Finger21",
+        "Bip001_R_ForeTwist1",
+        "corrective_Wrist_R_tz_plus",
+        "Bip001_R_Hand",
+        "corrective_Wrist_R_tz_minus",
+        "Bip001_R_Finger01",
+        "Bip001_R_Finger0",
+        "Bip001_R_Finger11",
+        "Bip001_R_Finger1",
+        "Bip001_R_Finger12",
+        "Bip001_R_Finger2",
+        "Bip001_R_Finger4",
+        "Bip001_R_Finger42",
+        "Bip001_R_Finger41",
+        "Bip001_R_Finger3",
+        "Bip001_R_Finger31",
+        "Bip001_R_Finger32",
+        "Bip001_R_Finger02",
+        "clothes_spring_R_b_02_jnt_ctrl",
+        "clothes_spring_R_b_01_jnt_ctrl",
+        "beidai_bnd_M_a_01_jnt_ctrl",
+        "beidai_bnd_L_a_01_jnt_ctrl",
+        "prop_base_L_a_01_jnt",
+        "beidai_bnd_R_a_01_jnt_ctrl",
+        "clothes_spring_L_c_01_jnt_ctrl",
+        "clothes_spring_L_c_02_jnt_ctrl",
+        "yibai02_01_L_b_06_jnt_ctrl",
+        "yibai02_01_L_b_05_jnt_ctrl",
+        "yibai02_01_L_b_04_jnt_ctrl",
+        "yibai02_01_R_b_04_jnt_ctrl",
+        "yibai02_01_R_b_05_jnt_ctrl",
+        "ear_base_R_a_00_jnt_ctrl",
+        "ear_base_R_a_02_jnt_ctrl"
+      ],
+      "materials": [
+        "M_actor_pelica_cloth_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_pelica_cloth_01_D",
+          "T_actor_pelica_cloth_01_N",
+          "T_actor_common_cloth_04_RD",
+          "T_actor_pelica_cloth_01_E",
+          "T_actor_pelica_cloth_01_P",
+          "T_actor_pelica_cloth_01_ST",
+          "T_actor_common_cloth_04_RS"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_pelica_cloth_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_pelica_cloth_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_cloth_04_RD"
+          },
+          {
+            "property": "_EmissionMap",
+            "name": "T_actor_pelica_cloth_01_E"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_pelica_cloth_01_P"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_pelica_cloth_01_ST"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_cloth_04_RS"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 19393,
+      "submeshes": [
+        {
+          "index_count": 78186,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 19393,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-2ced6297c7806e7c081e4bfa8f29abca:8112934207774603425",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0004_pelica_postmodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-7139156166c22abd7e0120462a056c74:-8159964795766061845",
+            "path": "chr_0004_pelica_postmodel/Mesh_all/lod0/S_actor_pelica_cloth_01_lod0"
+          },
+          "chr_0004_pelica_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-5d12f215aad792b95515715be8303fa4:-3109401338622044349",
+            "path": "chr_0004_pelica_uimodel/Mesh_all/lod0/S_actor_pelica_cloth_01_lod0"
+          }
+        }
+      }
+    },
+    "5": {
+      "mesh_name": "S_actor_pelica_iris_01_lod0",
+      "original_index_count": 480,
+      "bone_names": [
+        "faceLfHighlightJoint",
+        "faceRtHighlightJoint",
+        "faceLfIrisJoint",
+        "faceLfPupilJoint",
+        "faceRtPupilJoint",
+        "faceRtIrisJoint"
+      ],
+      "materials": [
+        "M_actor_pelica_iris_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_pelica_iris_01_D",
+          "T_actor_common_body_01_RD",
+          "T_actor_common_matcap_10_D"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_pelica_iris_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_body_01_RD"
+          },
+          {
+            "property": "_MatcapTex",
+            "name": "T_actor_common_matcap_10_D"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        4
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 116,
+      "submeshes": [
+        {
+          "index_count": 480,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 116,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-99e2787fd148e9debecf0263cc8f17c8:-5360918969602232288",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0004_pelica_postmodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-7139156166c22abd7e0120462a056c74:3000459224707679467",
+            "path": "chr_0004_pelica_postmodel/Mesh_all/lod0/S_actor_pelica_iris_01_lod0"
+          },
+          "chr_0004_pelica_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-5d12f215aad792b95515715be8303fa4:-8733931486152026301",
+            "path": "chr_0004_pelica_uimodel/Mesh_all/lod0/S_actor_pelica_iris_01_lod0"
+          }
+        }
+      }
+    },
+    "6": {
+      "mesh_name": "S_actor_pelica_eyeshadow_01_lod0",
+      "original_index_count": 96,
+      "bone_names": [
+        "eyeLf03IrissdJoint",
+        "eyeLf07Joint",
+        "eyeLf05Joint",
+        "eyeLf06Joint",
+        "eyeLf04Joint",
+        "eyeLf03Joint",
+        "eyeLf01Joint",
+        "eyeLf02Joint",
+        "eyeLf08Joint",
+        "eyeRt04Joint",
+        "eyeRt05Joint",
+        "eyeRt06Joint",
+        "eyeRt07Joint",
+        "eyeRt03IrissdJoint",
+        "eyeRt03Joint",
+        "eyeRt02Joint",
+        "eyeRt01Joint",
+        "eyeRt08Joint"
+      ],
+      "materials": [
+        "M_eyewhiteshadow_common_01",
+        "M_eyeshadow_common_03"
+      ],
+      "material_textures": [
+        [
+          "T_actor_common_eyeshadow_01_M"
+        ],
+        [
+          "T_actor_common_eyeshadow_02_M"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_common_eyeshadow_01_M"
+          }
+        ],
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_common_eyeshadow_02_M"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 36,
+      "submeshes": [
+        {
+          "index_count": 96,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 36,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-99e2787fd148e9debecf0263cc8f17c8:740906136397787168",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0004_pelica_postmodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-7139156166c22abd7e0120462a056c74:4454929636394124523",
+            "path": "chr_0004_pelica_postmodel/Mesh_all/lod0/S_actor_pelica_eyeshadow_01_lod0"
+          },
+          "chr_0004_pelica_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-5d12f215aad792b95515715be8303fa4:-8052104558923933885",
+            "path": "chr_0004_pelica_uimodel/Mesh_all/lod0/S_actor_pelica_eyeshadow_01_lod0"
+          }
+        }
+      }
+    },
+    "7": {
+      "mesh_name": "S_actor_pelica_cloth_02_lod0",
+      "original_index_count": 70656,
+      "bone_names": [
+        "Bip001_Spine2",
+        "Bip001_R_Clavicle",
+        "yibai02_01_M_a_01_jnt_ctrl",
+        "Bip001_RUpArmTwist",
+        "xiong_R_0_skin_jnt",
+        "xiong_L_0_skin_jnt",
+        "Bip001_Spine1",
+        "Bip001_Neck",
+        "Bip001_L_Clavicle",
+        "Bip001_LUpArmTwist",
+        "qunbai02_01_L_a_02_jnt_ctrl",
+        "qunbai02_01_M_a_01_jnt_ctrl",
+        "qunbai02_01_L_a_01_jnt_ctrl",
+        "qunbai02_01_M_a_02_jnt_ctrl",
+        "qunbai02_01_R_c_01_jnt_ctrl",
+        "qunbai02_01_R_c_02_jnt_ctrl",
+        "qunbai02_01_R_b_01_jnt_ctrl",
+        "qunbai02_01_R_b_02_jnt_ctrl",
+        "qunbai02_01_L_c_02_jnt_ctrl",
+        "qunbai02_01_L_c_01_jnt_ctrl",
+        "qunbai02_01_L_b_01_jnt_ctrl",
+        "qunbai02_01_L_b_02_jnt_ctrl",
+        "qunbai02_01_R_a_02_jnt_ctrl",
+        "qunbai02_01_R_a_01_jnt_ctrl",
+        "qunbai02_01_M_b_02_jnt_ctrl",
+        "qunbai02_01_M_b_01_jnt_ctrl",
+        "Bip001_Pelvis",
+        "qunbai02_01_M_a_03_jnt_ctrl",
+        "qunbai02_01_L_a_03_jnt_ctrl",
+        "qunbai02_01_R_c_03_jnt_ctrl",
+        "qunbai02_01_R_b_03_jnt_ctrl",
+        "qunbai02_01_L_b_03_jnt_ctrl",
+        "qunbai02_01_L_c_03_jnt_ctrl",
+        "qunbai02_01_R_a_03_jnt_ctrl",
+        "qunbai02_01_M_b_03_jnt_ctrl",
+        "clothes_ribbon_R_c_01_jnt_ctrl",
+        "clothes_ribbon_R_c_02_jnt_ctrl",
+        "clothes_ribbon_R_c_03_jnt_ctrl",
+        "clothes_ribbon_L_c_01_jnt_ctrl",
+        "clothes_ribbon_L_c_02_jnt_ctrl",
+        "clothes_ribbon_L_c_03_jnt_ctrl",
+        "clothes_ribbon_L_c_04_jnt_ctrl",
+        "clothes_ribbon_R_c_04_jnt_ctrl",
+        "qunbai02_01_R_d_06_jnt_ctrl",
+        "qunbai02_01_R_d_05_jnt_ctrl",
+        "qunbai02_01_R_d_04_jnt_ctrl",
+        "qunbai03_01_R_e_06_jnt",
+        "qunbai03_01_R_e_04_jnt",
+        "qunbai03_01_R_e_05_jnt",
+        "pointer_base_M_a_01_jnt",
+        "pai_base_R_c_01_jnt_ctrl",
+        "pai_base_R_b_01_jnt_ctrl",
+        "pai_base_R_a_01_jnt_ctrl",
+        "Bip001_L_ForeTwist1",
+        "Bip001_RThighTwist",
+        "Bip001_RThighTwist1",
+        "Bip001_R_Thigh",
+        "corrective_Knee_R_ty_plus",
+        "prop_base_L_a_01_jnt",
+        "phone_base_L_a_01_jnt",
+        "Bip001_R_Foot",
+        "Bip001_R_Toe0",
+        "Bip001_RCalfTwist1",
+        "Bip001_L_Toe0",
+        "Bip001_L_Foot",
+        "Bip001_LCalfTwist1",
+        "Bip001_LCalfTwist"
+      ],
+      "materials": [
+        "M_actor_pelica_cloth_02"
+      ],
+      "material_textures": [
+        [
+          "T_actor_pelica_cloth_02_D",
+          "T_actor_pelica_cloth_02_N",
+          "T_actor_common_cloth_04_RD",
+          "T_actor_pelica_cloth_02_E",
+          "T_actor_pelica_cloth_02_P",
+          "T_actor_common_cloth_04_RS"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_pelica_cloth_02_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_pelica_cloth_02_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_cloth_04_RD"
+          },
+          {
+            "property": "_EmissionMap",
+            "name": "T_actor_pelica_cloth_02_E"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_pelica_cloth_02_P"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_cloth_04_RS"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 20442,
+      "submeshes": [
+        {
+          "index_count": 70656,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 20442,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-87b28622e291fd0f3c1b9ad58848c084:5896718004405768528",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0004_pelica_postmodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-7139156166c22abd7e0120462a056c74:-8680176620774308629",
+            "path": "chr_0004_pelica_postmodel/Mesh_all/lod0/S_actor_pelica_cloth_02_lod0"
+          },
+          "chr_0004_pelica_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-5d12f215aad792b95515715be8303fa4:8600500470002751299",
+            "path": "chr_0004_pelica_uimodel/Mesh_all/lod0/S_actor_pelica_cloth_02_lod0"
+          }
+        }
+      }
+    },
+    "8": {
+      "mesh_name": "S_actor_pelica_cloth_04_lod0",
+      "original_index_count": 8460,
+      "bone_names": [
+        "Bip001_Spine1",
+        "Bip001_Spine",
+        "Bip001_Pelvis",
+        "Bip001_LCalfTwist",
+        "Bip001_L_Calf",
+        "Bip001_LCalfTwist1",
+        "Bip001_L_Foot",
+        "corrective_Knee_L_ty_minus",
+        "Bip001_L_Thigh",
+        "Bip001_LThighTwist1",
+        "Bip001_LThighTwist",
+        "corrective_Knee_L_ty_plus",
+        "Bip001_RThighTwist",
+        "Bip001_L_Toe0",
+        "Bip001_RCalfTwist",
+        "Bip001_RCalfTwist1",
+        "Bip001_R_Calf",
+        "Bip001_R_Foot",
+        "corrective_Knee_R_ty_plus",
+        "Bip001_R_Thigh",
+        "Bip001_RThighTwist1",
+        "corrective_Knee_R_ty_minus",
+        "Bip001_R_Toe0"
+      ],
+      "materials": [
+        "M_actor_pelica_cloth_04"
+      ],
+      "material_textures": [
+        [
+          "T_actor_pelica_cloth_01_D",
+          "T_actor_pelica_cloth_01_N",
+          "T_actor_common_cloth_03_RD",
+          "T_actor_pelica_cloth_01_E",
+          "T_actor_pelica_cloth_01_P",
+          "T_actor_common_cloth_04_RS"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_pelica_cloth_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_pelica_cloth_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_cloth_03_RD"
+          },
+          {
+            "property": "_EmissionMap",
+            "name": "T_actor_pelica_cloth_01_E"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_pelica_cloth_01_P"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_cloth_04_RS"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 1596,
+      "submeshes": [
+        {
+          "index_count": 8460,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 1596,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-55fb60b664c8e2d56cd7020bba5e7d58:6036074280315204002",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0004_pelica_postmodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-7139156166c22abd7e0120462a056c74:-4354616298389453589",
+            "path": "chr_0004_pelica_postmodel/Mesh_all/lod0/S_actor_pelica_cloth_04_lod0"
+          },
+          "chr_0004_pelica_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-5d12f215aad792b95515715be8303fa4:-2685787817806784701",
+            "path": "chr_0004_pelica_uimodel/Mesh_all/lod0/S_actor_pelica_cloth_04_lod0"
+          }
+        }
+      }
+    },
+    "9": {
+      "mesh_name": "S_actor_pelica_cloth_03_lod0",
+      "original_index_count": 2178,
+      "bone_names": [
+        "qunbai02_01_M_a_02_jnt_ctrl",
+        "qunbai02_01_M_a_03_jnt_ctrl",
+        "qunbai02_01_L_a_02_jnt_ctrl",
+        "qunbai02_01_L_a_03_jnt_ctrl",
+        "qunbai02_01_R_c_02_jnt_ctrl",
+        "qunbai02_01_R_c_03_jnt_ctrl",
+        "qunbai02_01_M_a_01_jnt_ctrl",
+        "qunbai02_01_L_a_01_jnt_ctrl",
+        "qunbai02_01_R_c_01_jnt_ctrl",
+        "qunbai02_01_R_b_01_jnt_ctrl",
+        "qunbai02_01_R_b_02_jnt_ctrl",
+        "qunbai02_01_L_b_02_jnt_ctrl",
+        "qunbai02_01_L_c_01_jnt_ctrl",
+        "qunbai02_01_L_c_02_jnt_ctrl",
+        "qunbai02_01_L_b_01_jnt_ctrl",
+        "qunbai02_01_R_a_02_jnt_ctrl",
+        "qunbai02_01_R_a_01_jnt_ctrl",
+        "qunbai02_01_M_b_02_jnt_ctrl",
+        "qunbai02_01_M_b_01_jnt_ctrl",
+        "qunbai02_01_M_b_03_jnt_ctrl",
+        "qunbai02_01_L_c_03_jnt_ctrl",
+        "qunbai02_01_L_b_03_jnt_ctrl",
+        "qunbai02_01_R_b_03_jnt_ctrl",
+        "qunbai02_01_R_a_03_jnt_ctrl"
+      ],
+      "materials": [
+        "M_actor_pelica_cloth_03"
+      ],
+      "material_textures": [
+        [
+          "T_actor_pelica_cloth_02_D",
+          "T_actor_pelica_cloth_02_N",
+          "T_actor_common_cloth_04_RD",
+          "T_actor_pelica_cloth_02_P",
+          "T_actor_common_cloth_04_RS"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_pelica_cloth_02_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_pelica_cloth_02_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_cloth_04_RD"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_pelica_cloth_02_P"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_cloth_04_RS"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "TEXCOORD",
+              "index": 2,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 481,
+      "submeshes": [
+        {
+          "index_count": 2178,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 481,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-083250b1923949862d97010377544f49:1322269581982536016",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0004_pelica_postmodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-7139156166c22abd7e0120462a056c74:5618947284931298539",
+            "path": "chr_0004_pelica_postmodel/Mesh_all/lod0/S_actor_pelica_cloth_03_lod0"
+          },
+          "chr_0004_pelica_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-5d12f215aad792b95515715be8303fa4:6979995719222171459",
+            "path": "chr_0004_pelica_uimodel/Mesh_all/lod0/S_actor_pelica_cloth_03_lod0"
+          }
+        }
+      }
+    },
+    "10": {
+      "mesh_name": "S_actor_pelica_eyebrow_l_01_lod0",
+      "original_index_count": 870,
+      "bone_names": [
+        "eyeLf07Joint",
+        "eyeLf08Joint",
+        "eyeLf06Joint",
+        "browLf01Joint",
+        "browLf02Joint",
+        "browLf03Joint",
+        "browLf04Joint",
+        "browLf05Joint",
+        "eyeLf03EyelashJoint",
+        "eyeLf02EyelashJoint",
+        "eyeLf01EyelashJoint",
+        "eyeLf04EyelashJoint",
+        "eyeLf05EyelashJoint",
+        "browLineLf01Joint",
+        "browLineLf02Joint",
+        "browLineLf03Joint"
+      ],
+      "materials": [
+        "M_actor_pelica_brow_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_pelica_face_01_D",
+          "T_actor_common_body_01_RD",
+          "T_actor_common_femaleskincolor01_lut_D"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_pelica_face_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_body_01_RD"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_femaleskincolor01_lut_D"
+          }
+        ]
+      ],
+      "strides": [
+        40,
+        8,
+        32
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          3,
+          0
+        ],
+        [
+          2,
+          0,
+          4,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          0,
+          4,
+          2
+        ],
+        [
+          13,
+          10,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [],
+      "layout_verified": true,
+      "source_layout_supported": false,
+      "vertex_count": 260,
+      "submeshes": [
+        {
+          "index_count": 870,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 260,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-99e2787fd148e9debecf0263cc8f17c8:-4200331347614060512",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0004_pelica_postmodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-7139156166c22abd7e0120462a056c74:3343737094838469867",
+            "path": "chr_0004_pelica_postmodel/Mesh_all/lod0/S_actor_pelica_eyebrow_l_01_lod0"
+          },
+          "chr_0004_pelica_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-5d12f215aad792b95515715be8303fa4:1213892941627529027",
+            "path": "chr_0004_pelica_uimodel/Mesh_all/lod0/S_actor_pelica_eyebrow_l_01_lod0"
+          }
+        }
+      }
+    },
+    "11": {
+      "mesh_name": "S_actor_pelica_eyebrow_r_01_lod0",
+      "original_index_count": 870,
+      "bone_names": [
+        "eyeRt07Joint",
+        "eyeRt08Joint",
+        "eyeRt06Joint",
+        "browRt01Joint",
+        "browRt02Joint",
+        "browRt03Joint",
+        "browRt04Joint",
+        "browRt05Joint",
+        "eyeRt02EyelashJoint",
+        "eyeRt03EyelashJoint",
+        "eyeRt01EyelashJoint",
+        "eyeRt04EyelashJoint",
+        "eyeRt05EyelashJoint",
+        "browLineRt02Joint",
+        "browLineRt01Joint",
+        "browLineRt03Joint"
+      ],
+      "materials": [
+        "M_actor_pelica_brow_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_pelica_face_01_D",
+          "T_actor_common_body_01_RD",
+          "T_actor_common_femaleskincolor01_lut_D"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_pelica_face_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_body_01_RD"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_femaleskincolor01_lut_D"
+          }
+        ]
+      ],
+      "strides": [
+        40,
+        8,
+        32
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          3,
+          0
+        ],
+        [
+          2,
+          0,
+          4,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          0,
+          4,
+          2
+        ],
+        [
+          13,
+          10,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [],
+      "layout_verified": true,
+      "source_layout_supported": false,
+      "vertex_count": 260,
+      "submeshes": [
+        {
+          "index_count": 870,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 260,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-99e2787fd148e9debecf0263cc8f17c8:6060281627221864480",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0004_pelica_postmodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-7139156166c22abd7e0120462a056c74:-3092996703500253973",
+            "path": "chr_0004_pelica_postmodel/Mesh_all/lod0/S_actor_pelica_eyebrow_r_01_lod0"
+          },
+          "chr_0004_pelica_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-5d12f215aad792b95515715be8303fa4:3985097168664270659",
+            "path": "chr_0004_pelica_uimodel/Mesh_all/lod0/S_actor_pelica_eyebrow_r_01_lod0"
+          }
+        }
+      }
+    }
+  },
+  "entries": {
+    "614a8c60": 0,
+    "b9767716": 1,
+    "ced53e5a": 2,
+    "e7022b54": 3,
+    "28847e3b": 4,
+    "f4f4158a": 5,
+    "a85118c1": 6,
+    "5eeb63d5": 7,
+    "40e3cc9b": 8,
+    "80252467": 9,
+    "e2838015": 10,
+    "85355a53": 11
+  },
+  "textures": {
+    "172348f4": {
+      "name": "T_actor_common_body_01_RD",
+      "aliases": [
+        "T_actor_common_face_01_RD"
+      ],
+      "evidence": {
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "kind": "shared-source-hash",
+        "targets": [
+          {
+            "name": "T_actor_common_body_01_RD",
+            "evidence": {
+              "texture_id": "cab-f73bd58505faab842c266da5fd3ef559:9015086203897338725",
+              "policy": "efmi-dx11-region-texture0-fullchain-v1",
+              "descriptor": [
+                256,
+                1,
+                1,
+                1,
+                28,
+                1,
+                0,
+                0,
+                8,
+                0,
+                0
+              ],
+              "native_data_crc32c": "bb885ffb",
+              "runtime_graphics_format": 8,
+              "runtime_sizes": [
+                [
+                  256,
+                  1
+                ]
+              ]
+            }
+          },
+          {
+            "name": "T_actor_common_face_01_RD",
+            "evidence": {
+              "texture_id": "cab-52ea55afe624d7233f83d33f95137ebd:5848563174712869001",
+              "policy": "efmi-dx11-region-texture0-fullchain-v1",
+              "descriptor": [
+                256,
+                1,
+                1,
+                1,
+                28,
+                1,
+                0,
+                0,
+                8,
+                0,
+                0
+              ],
+              "native_data_crc32c": "bb885ffb",
+              "runtime_graphics_format": 8,
+              "runtime_sizes": [
+                [
+                  256,
+                  1
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "c6a7235b": {
+      "name": "T_actor_common_cloth_03_RD",
+      "evidence": {
+        "texture_id": "cab-4de7caacbb16f58394d88b4804c0703d:7616793060396148846",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          1,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "464057a7",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            1
+          ]
+        ]
+      }
+    },
+    "c383b676": {
+      "name": "T_actor_common_cloth_04_RD",
+      "evidence": {
+        "texture_id": "cab-dda756238d04de89c59d562835d15c3a:2595675294308502756",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          1,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "5109626c",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            1
+          ]
+        ]
+      }
+    },
+    "9529b478": {
+      "name": "T_actor_common_cloth_04_RS",
+      "evidence": {
+        "texture_id": "cab-37f059e6a93378657725edd285796b84:4523718382697154697",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "d2decd4c",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "d5906b6a": {
+      "name": "T_actor_common_eyeshadow_01_M",
+      "evidence": {
+        "texture_id": "cab-e0c2577d28432f83374490550edc6b0a:1943856218045776426",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          32,
+          32,
+          6,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "43a76c1d",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            32,
+            32
+          ]
+        ]
+      }
+    },
+    "6899d1a4": {
+      "name": "T_actor_common_eyeshadow_02_M",
+      "evidence": {
+        "texture_id": "cab-37cba2aef5da66859bb487a2e4639ab6:2400241694096528712",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          32,
+          32,
+          6,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "7c34adce",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            32,
+            32
+          ]
+        ]
+      }
+    },
+    "290f53c8": {
+      "name": "T_actor_common_face_01_hl_M",
+      "evidence": {
+        "texture_id": "cab-b6bb3cc4483165082b296844684c52da:-2443816471313249430",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "907e417b",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "9750205d": {
+      "name": "T_actor_common_female_emotion_atlas_01_D",
+      "evidence": {
+        "texture_id": "cab-4f49e420f74b0a444fa7929840edbe90:-5029632173409998771",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "db2f1ff8",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "5b42ffc1": {
+      "name": "T_actor_common_female_face_01_SDF",
+      "evidence": {
+        "texture_id": "cab-20d640f62add09c9b2c5303e5101637d:-8871778439397823920",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "1ee48e86",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "eb57e65d": {
+      "name": "T_actor_common_female_face_01_ST",
+      "evidence": {
+        "texture_id": "cab-15b9177ba6391c8cbd62cec2a3ae1f5e:7112440902861254514",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          128,
+          128,
+          8,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "670e666c",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            128,
+            128
+          ]
+        ]
+      }
+    },
+    "e3a1caa2": {
+      "name": "T_actor_common_female_face_01_cm_M",
+      "evidence": {
+        "texture_id": "cab-7e98ea052b73e925d9a37327a2e289e1:5056732087567382100",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          9,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "5c307dd9",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "59af8e82": {
+      "name": "T_actor_common_femaleskincolor01_lut_D",
+      "evidence": {
+        "texture_id": "cab-723dce01c8e13e166b3be200c5417013:4951544993205285082",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          32,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "ad349056",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            32
+          ]
+        ]
+      }
+    },
+    "9515ebaf": {
+      "name": "T_actor_common_hair_01_RD",
+      "evidence": {
+        "texture_id": "cab-0dba6b3a8686ca225fea99cb2ce9ac8b:-6227453272663763460",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          1,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "b872b190",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            1
+          ]
+        ]
+      }
+    },
+    "31df53ea": {
+      "name": "T_actor_common_hair_07_RS",
+      "evidence": {
+        "texture_id": "cab-62bc686dcc5dfbf565fcc2cb0cb21d88:8975600794099224062",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "e886e831",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "151c9982": {
+      "name": "T_actor_common_hairline_03_M",
+      "evidence": {
+        "texture_id": "cab-67dec3851d20abe31e69d62c821759b2:3012176911137855631",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "8fcf3b42",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "fb524ebd": {
+      "name": "T_actor_common_hairshadow_01_M",
+      "evidence": {
+        "texture_id": "cab-b95b327020df7ae0f1e7cd8e002482c8:4070306725172282955",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          32,
+          32,
+          6,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "021842a4",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            32,
+            32
+          ]
+        ]
+      }
+    },
+    "729762d4": {
+      "name": "T_actor_common_matcap_10_D",
+      "evidence": {
+        "texture_id": "cab-54874f74a2ed8d10f0afc1b1c37e1ada:9171294409212959332",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          9,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "039d06e7",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "e70c7687": {
+      "name": "T_actor_pelica_body_01_D",
+      "evidence": {
+        "texture_id": "cab-f5e54dfac3f2118b5e4525baa7d520b1:-620982078112527549",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "a464b371",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "f3ee56b5": {
+      "name": "T_actor_pelica_body_01_N",
+      "evidence": {
+        "texture_id": "cab-f5e54dfac3f2118b5e4525baa7d520b1:2019999653719577856",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "d048b6bc",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "93fcbc2a": {
+      "name": "T_actor_pelica_cloth_01_D",
+      "evidence": {
+        "texture_id": "cab-bc7b5e9b2c463416ba6972edb163b020:-5221895030293316876",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "b22fdba6",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "4afe427a": {
+      "name": "T_actor_pelica_cloth_01_E",
+      "evidence": {
+        "texture_id": "cab-bc7b5e9b2c463416ba6972edb163b020:-4001512737168125190",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "9670158d",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "568c19f5": {
+      "name": "T_actor_pelica_cloth_01_N",
+      "evidence": {
+        "texture_id": "cab-bc7b5e9b2c463416ba6972edb163b020:7554166254701442928",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "5287ce8a",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "0681184e": {
+      "name": "T_actor_pelica_cloth_01_P",
+      "evidence": {
+        "texture_id": "cab-bc7b5e9b2c463416ba6972edb163b020:2931808099112306887",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "50c78dba",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "404669d7": {
+      "name": "T_actor_pelica_cloth_01_ST",
+      "evidence": {
+        "texture_id": "cab-c4e99320fe4daff576d1fcec0432bd20:-1786123707135043828",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "fc74992b",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "c419885b": {
+      "name": "T_actor_pelica_cloth_02_D",
+      "evidence": {
+        "texture_id": "cab-3cb253c3a037ea143a9d45751404b0b9:-916405443911604181",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "68952b62",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "e1ae93d8": {
+      "name": "T_actor_pelica_cloth_02_E",
+      "evidence": {
+        "texture_id": "cab-3cb253c3a037ea143a9d45751404b0b9:-1931056332258455556",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "7f4e9299",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "bdb1cd29": {
+      "name": "T_actor_pelica_cloth_02_N",
+      "evidence": {
+        "texture_id": "cab-3cb253c3a037ea143a9d45751404b0b9:-9134530594288987385",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "dffcdccb",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "ad53c86f": {
+      "name": "T_actor_pelica_cloth_02_P",
+      "evidence": {
+        "texture_id": "cab-3cb253c3a037ea143a9d45751404b0b9:-2244597390901813050",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "39e28b30",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "b78ceea6": {
+      "name": "T_actor_pelica_face_01_D",
+      "evidence": {
+        "texture_id": "cab-0b8e2c1ea9f4db374c9078bf485dc156:-2024261820607097841",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "fc3118c0",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "0a7b28f6": {
+      "name": "T_actor_pelica_face_01_N",
+      "evidence": {
+        "texture_id": "cab-0b8e2c1ea9f4db374c9078bf485dc156:-4866989330408428515",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "7472235e",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "e3746997": {
+      "name": "T_actor_pelica_hair_01_D",
+      "evidence": {
+        "texture_id": "cab-4577aefeb2536fe82a195a72100ed236:-5421743549750748212",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "1dcaf8dd",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "81d42fb3": {
+      "name": "T_actor_pelica_hair_01_HN",
+      "evidence": {
+        "texture_id": "cab-006308a09bc05e7007ad98297433a364:-5253135419161050069",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "cb3d0b6b",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "f571c377": {
+      "name": "T_actor_pelica_hair_01_P",
+      "evidence": {
+        "texture_id": "cab-4577aefeb2536fe82a195a72100ed236:8567891852198151735",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "b091ab7c",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "5de83238": {
+      "name": "T_actor_pelica_hair_01_ST",
+      "evidence": {
+        "texture_id": "cab-8ba81afa304df4b18ef99352b55dd952:4039278575333472985",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "c1056f56",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "03d1ed8e": {
+      "name": "T_actor_pelica_hair_01_sw_M",
+      "evidence": {
+        "texture_id": "cab-29111379c86d30e5a6972821996bf82b:1995991273578056555",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "551defba",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "1f4e3bca": {
+      "name": "T_actor_pelica_iris_01_D",
+      "evidence": {
+        "texture_id": "cab-78cfd8e38cf7876e2a5e902594ae49cf:5862872382855335138",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "f05d2ddb",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "b1872d14": {
+      "name": "common_deco_white",
+      "evidence": {
+        "texture_id": "cab-f217e169ee1f06211c9412161331ea4b:3701457122332891076",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          68,
+          68,
+          1,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "ad16520c",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            68,
+            68
+          ]
+        ]
+      }
+    }
+  },
+  "preserved_globals": {
+    "7d330dbd": {
+      "name": "T_actor_common_rain_01_M",
+      "property": "_CharacterRainEffectTex",
+      "width": 1024,
+      "height": 1024,
+      "mips": 1,
+      "format": 25,
+      "source_payload_sha256": "6943a7c667cb53f778edf0179764cc72f23973a7dce8b04780adb6d107069865"
+    },
+    "908140d5": {
+      "name": "T_actor_common_snow_01_M",
+      "property": "_CharacterSnowEffectTex",
+      "width": 512,
+      "height": 512,
+      "mips": 1,
+      "format": 25,
+      "source_payload_sha256": "a0e3242e512cce6f4ee5fff3fd326cf0d870c6124f3cae3d596d48e71d12996d"
+    }
+  },
+  "mapping_status": "offline-resource-identities",
+  "excluded_components": [],
+  "evidence": [
+    "CUSTOM_MODEL_RUNTIME_SWEEP_20260919.md"
+  ],
+  "note": "Native sweep plus offline identity join. EFMI identities recomputed from original game buffers and texture descriptors; custom source logic remains separate.",
+  "entry_identity_evidence": {
+    "0": {
+      "mesh_id": "cab-7a7cc1f4894c134167dd9dc8546841f0:-1793129314373740748",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 90006,
+      "index_count": 45003,
+      "source_hash": "614a8c60"
+    },
+    "1": {
+      "mesh_id": "cab-17f4da1f2f34acf9136799abe780ba94:-4662013043618702843",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 18372,
+      "index_count": 9186,
+      "source_hash": "b9767716"
+    },
+    "2": {
+      "mesh_id": "cab-4d3b6094023b68683eff277e9dc3bfa8:1039383356713753500",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 11844,
+      "index_count": 5922,
+      "source_hash": "ced53e5a"
+    },
+    "3": {
+      "mesh_id": "cab-99e2787fd148e9debecf0263cc8f17c8:-1836908013809651680",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 1050,
+      "index_count": 525,
+      "source_hash": "e7022b54"
+    },
+    "4": {
+      "mesh_id": "cab-2ced6297c7806e7c081e4bfa8f29abca:8112934207774603425",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 156372,
+      "index_count": 78186,
+      "source_hash": "28847e3b"
+    },
+    "5": {
+      "mesh_id": "cab-99e2787fd148e9debecf0263cc8f17c8:-5360918969602232288",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 960,
+      "index_count": 480,
+      "source_hash": "f4f4158a"
+    },
+    "6": {
+      "mesh_id": "cab-99e2787fd148e9debecf0263cc8f17c8:740906136397787168",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 192,
+      "index_count": 96,
+      "source_hash": "a85118c1"
+    },
+    "7": {
+      "mesh_id": "cab-87b28622e291fd0f3c1b9ad58848c084:5896718004405768528",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 141312,
+      "index_count": 70656,
+      "source_hash": "5eeb63d5"
+    },
+    "8": {
+      "mesh_id": "cab-55fb60b664c8e2d56cd7020bba5e7d58:6036074280315204002",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 16920,
+      "index_count": 8460,
+      "source_hash": "40e3cc9b"
+    },
+    "9": {
+      "mesh_id": "cab-083250b1923949862d97010377544f49:1322269581982536016",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 4356,
+      "index_count": 2178,
+      "source_hash": "80252467"
+    },
+    "10": {
+      "mesh_id": "cab-99e2787fd148e9debecf0263cc8f17c8:-4200331347614060512",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 1740,
+      "index_count": 870,
+      "source_hash": "e2838015"
+    },
+    "11": {
+      "mesh_id": "cab-99e2787fd148e9debecf0263cc8f17c8:6060281627221864480",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 1740,
+      "index_count": 870,
+      "source_hash": "85355a53"
+    }
+  },
+  "identity_issues": [],
+  "identity_policy": "efmi-dx11-region-texture0-fullchain-v1"
+}

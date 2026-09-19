@@ -1,0 +1,27 @@
+<UserControl
+    x:Class="BetterEndfield.UI.Views.CustomModelPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="18" Padding="24">
+            <TextBlock Text="角色外观 · BEM" FontSize="28" FontWeight="SemiBold" />
+            <TextBlock Text="导入 BEMv1 模型包，为每个角色选择一个包和一种外观。修改自动保存，下次启动游戏生效。" TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <Button x:Name="ImportButton" Content="导入 BEM / ZIP" Click="Import_Click" />
+                <Button Content="其他来源 Mod 转换…" Click="Convert_Click" />
+                <Button Content="刷新" Click="Refresh_Click" />
+                <Button Content="打开包目录" Click="OpenFolder_Click" />
+            </StackPanel>
+            <Border Padding="16" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <StackPanel Spacing="8">
+                    <ToggleSwitch x:Name="LodToggle" Header="锁定高精度 LOD" Toggled="Lod_Toggled" />
+                    <TextBlock x:Name="LodHint" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+            <InfoBar x:Name="Status" IsOpen="False" IsClosable="True" />
+            <ProgressRing x:Name="Busy" IsActive="False" Visibility="Collapsed" HorizontalAlignment="Left" />
+            <TextBlock x:Name="EmptyHint" Text="尚未导入模型包。已有其他格式？打开转换窗口查看支持范围与缺少的资料。" TextWrapping="Wrap" />
+            <StackPanel x:Name="PackageCards" Spacing="12" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

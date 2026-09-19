@@ -59,6 +59,12 @@ set_target_properties(BetterEndfield.Model PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
 )
 
+# Pinned Zstd 1.5.7 decoder, statically linked; no game-local DLL dependencies.
+file(GLOB BEM_ZSTD_COMMON CONFIGURE_DEPENDS shared/third_party/zstd/lib/common/*.c)
+file(GLOB BEM_ZSTD_DECODE CONFIGURE_DEPENDS shared/third_party/zstd/lib/decompress/*.c)
+add_library(BetterEndfield.BemZstd STATIC ${BEM_ZSTD_COMMON} ${BEM_ZSTD_DECODE})
+target_compile_definitions(BetterEndfield.BemZstd PRIVATE ZSTD_DISABLE_ASM)
+
 add_library(BetterEndfield.CustomModel SHARED
     modules/custom_model/module.cpp
     modules/custom_model/bem.cpp
@@ -67,6 +73,7 @@ add_library(BetterEndfield.CustomModel SHARED
     shared/third_party/minhook/src/hde/hde64.c
 )
 better_endfield_target_defaults(BetterEndfield.CustomModel)
+target_link_libraries(BetterEndfield.CustomModel PRIVATE BetterEndfield.BemZstd)
 set_target_properties(BetterEndfield.CustomModel PROPERTIES
     OUTPUT_NAME "BetterEndfield.CustomModel"
     RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
@@ -166,10 +173,26 @@ add_executable(BetterEndfield.CombatSemanticsTests EXCLUDE_FROM_ALL
 )
 better_endfield_target_defaults(BetterEndfield.CombatSemanticsTests)
 
-add_executable(BetterEndfield.CustomModelLifecycleTests EXCLUDE_FROM_ALL
-    tests/custom_model_lifecycle_tests.cpp
+option(BETTER_ENDFIELD_BUILD_LEGACY_CUSTOM_MODEL_RESEARCH
+    "Expose archived CustomModel PoC lifecycle tests" OFF)
+if(BETTER_ENDFIELD_BUILD_LEGACY_CUSTOM_MODEL_RESEARCH)
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../research/custom-model/legacy-runtime"
+        "${CMAKE_CURRENT_BINARY_DIR}/research/custom-model-legacy")
+endif()
+
+add_executable(BetterEndfield.CustomModelBindingTests EXCLUDE_FROM_ALL
+    tests/custom_model_binding_tests.cpp
+    modules/custom_model/bem.cpp
+    modules/custom_model/mod_registry.cpp
+    modules/custom_model/native_mesh_layout.cpp
+    shared/third_party/minhook/src/hde/hde64.c
 )
-better_endfield_target_defaults(BetterEndfield.CustomModelLifecycleTests)
+better_endfield_target_defaults(BetterEndfield.CustomModelBindingTests)
+target_link_libraries(BetterEndfield.CustomModelBindingTests PRIVATE BetterEndfield.BemZstd)
+
+add_executable(BetterEndfield.BemValidate EXCLUDE_FROM_ALL tests/bem_v1_validate.cpp modules/custom_model/bem.cpp modules/custom_model/mod_registry.cpp)
+better_endfield_target_defaults(BetterEndfield.BemValidate)
+target_link_libraries(BetterEndfield.BemValidate PRIVATE BetterEndfield.BemZstd)
 
 # Read-only research utility. It is deliberately excluded from the default
 # build and release layout; build the target explicitly when runtime metadata

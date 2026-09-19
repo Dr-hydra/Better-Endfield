@@ -1,0 +1,662 @@
+{
+  "schema": 1,
+  "kind": "bem-catalog-coverage",
+  "manifest_version": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+  "runs": [
+    {
+      "run": "characters-20260919-202150-881718",
+      "process_ids": [
+        19900
+      ]
+    },
+    {
+      "run": "characters-20260919-205128-125595",
+      "process_ids": [
+        27564,
+        31300,
+        32916,
+        34160
+      ]
+    }
+  ],
+  "characters": [
+    {
+      "character_id": "chr_0002_endminm",
+      "name": "管理员（男）",
+      "components": 11,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [],
+      "observations": {
+        "chr_0002_endminm_postmodel": 11,
+        "chr_0002_endminm_uimodel": 0
+      },
+      "source_entries": 11,
+      "source_textures": 39,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0003_endminf",
+      "name": "管理员（女）",
+      "components": 11,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [],
+      "observations": {
+        "chr_0003_endminf_postmodel": 11,
+        "chr_0003_endminf_uimodel": 11
+      },
+      "source_entries": 11,
+      "source_textures": 35,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0004_pelica",
+      "name": "佩丽卡",
+      "components": 12,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_pelica_eyebrow_l_01_lod0",
+        "S_actor_pelica_eyebrow_r_01_lod0"
+      ],
+      "observations": {
+        "chr_0004_pelica_postmodel": 12,
+        "chr_0004_pelica_uimodel": 12
+      },
+      "source_entries": 12,
+      "source_textures": 37,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0005_chen",
+      "name": "陈千语",
+      "components": 10,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_chen_cloth_03_lod0",
+        "S_actor_chen_eyebrow_01_lod0",
+        "S_actor_chen_face_01_lod0"
+      ],
+      "observations": {
+        "chr_0005_chen_postmodel": 0,
+        "chr_0005_chen_uimodel": 10
+      },
+      "source_entries": 10,
+      "source_textures": 31,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0006_wolfgd",
+      "name": "狼卫",
+      "components": 15,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_wolfgd_furcard_01_lod0"
+      ],
+      "observations": {
+        "chr_0006_wolfgd_postmodel": 0,
+        "chr_0006_wolfgd_uimodel": 15
+      },
+      "source_entries": 15,
+      "source_textures": 45,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0007_ikut",
+      "name": "弧光",
+      "components": 9,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_ikut_eyebrow_01_lod0"
+      ],
+      "observations": {
+        "chr_0007_ikut_postmodel": 0,
+        "chr_0007_ikut_uimodel": 9
+      },
+      "source_entries": 9,
+      "source_textures": 30,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0009_azrila",
+      "name": "余烬",
+      "components": 11,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [],
+      "observations": {
+        "chr_0009_azrila_postmodel": 0,
+        "chr_0009_azrila_uimodel": 11
+      },
+      "source_entries": 11,
+      "source_textures": 36,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0011_seraph",
+      "name": "赛希",
+      "components": 13,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [],
+      "observations": {
+        "chr_0011_seraph_postmodel": 0,
+        "chr_0011_seraph_uimodel": 13
+      },
+      "source_entries": 13,
+      "source_textures": 37,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0012_avywen",
+      "name": "艾维文娜",
+      "components": 8,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_avywen_hair_01_lod0"
+      ],
+      "observations": {
+        "chr_0012_avywen_postmodel": 0,
+        "chr_0012_avywen_uimodel": 8
+      },
+      "source_entries": 8,
+      "source_textures": 27,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0013_aglina",
+      "name": "洁尔佩塔",
+      "components": 9,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [],
+      "observations": {
+        "chr_0013_aglina_postmodel": 9,
+        "chr_0013_aglina_uimodel": 9
+      },
+      "source_entries": 9,
+      "source_textures": 30,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0014_aurora",
+      "name": "昼雪",
+      "components": 12,
+      "mapping_status": "offline-resource-identities-partial",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_aurora_eyebrow_01_lod0",
+        "S_actor_aurora_eyeshadow_01_lod0",
+        "S_actor_aurora_fur_01_lod0_20",
+        "S_actor_aurora_iris_01_lod0"
+      ],
+      "observations": {
+        "chr_0014_aurora_postmodel": 0,
+        "chr_0014_aurora_uimodel": 12
+      },
+      "source_entries": 11,
+      "source_textures": 41,
+      "identity_issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_aurora_fur_01_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
+    },
+    {
+      "character_id": "chr_0015_lifeng",
+      "name": "黎风",
+      "components": 10,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [],
+      "observations": {
+        "chr_0015_lifeng_postmodel": 0,
+        "chr_0015_lifeng_uimodel": 10
+      },
+      "source_entries": 10,
+      "source_textures": 34,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0016_laevat",
+      "name": "莱万汀",
+      "components": 12,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_laevat_cloth_02_lod0",
+        "S_actor_laevat_cloth_04_lod0",
+        "S_actor_laevat_cloth_05_lod0",
+        "S_actor_laevat_eyebrow_01_lod0"
+      ],
+      "observations": {
+        "chr_0016_laevat_postmodel": 0,
+        "chr_0016_laevat_uimodel": 12
+      },
+      "source_entries": 12,
+      "source_textures": 45,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0017_yvonne",
+      "name": "伊冯",
+      "components": 11,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_yvonne_brow_01_lod0",
+        "S_actor_yvonne_cloth_01_lod0",
+        "S_actor_yvonne_cloth_04_lod0"
+      ],
+      "observations": {
+        "chr_0017_yvonne_postmodel": 11,
+        "chr_0017_yvonne_uimodel": 0
+      },
+      "source_entries": 11,
+      "source_textures": 36,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0018_dapan",
+      "name": "大潘",
+      "components": 9,
+      "mapping_status": "offline-resource-identities-partial",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_dapan_eyebrow_01_lod0",
+        "S_actor_dapan_fur_01_lod0_20",
+        "S_actor_dapan_furcard_01_lod0"
+      ],
+      "observations": {
+        "chr_0018_dapan_postmodel": 0,
+        "chr_0018_dapan_uimodel": 9
+      },
+      "source_entries": 7,
+      "source_textures": 19,
+      "identity_issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_dapan_eyebrow_01_lod0",
+          "reason": "not a complete single-submesh index region"
+        },
+        {
+          "kind": "mesh",
+          "name": "S_actor_dapan_fur_01_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
+    },
+    {
+      "character_id": "chr_0019_karin",
+      "name": "秋栗",
+      "components": 10,
+      "mapping_status": "offline-resource-identities-partial",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_karin_fur_01_lod0_20"
+      ],
+      "observations": {
+        "chr_0019_karin_postmodel": 0,
+        "chr_0019_karin_uimodel": 10
+      },
+      "source_entries": 9,
+      "source_textures": 31,
+      "identity_issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_karin_fur_01_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
+    },
+    {
+      "character_id": "chr_0020_meurs",
+      "name": "卡契尔",
+      "components": 12,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_meurs_cloth_02_lod0",
+        "S_actor_meurs_face_01_lod0",
+        "S_actor_meurs_hair_01_lod0",
+        "S_actor_meurs_hair_02_lod0"
+      ],
+      "observations": {
+        "chr_0020_meurs_postmodel": 0,
+        "chr_0020_meurs_uimodel": 12
+      },
+      "source_entries": 12,
+      "source_textures": 33,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0021_whiten",
+      "name": "埃特拉",
+      "components": 10,
+      "mapping_status": "offline-resource-identities-partial",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_whiten_fur_01_lod0_20"
+      ],
+      "observations": {
+        "chr_0021_whiten_postmodel": 0,
+        "chr_0021_whiten_uimodel": 10
+      },
+      "source_entries": 9,
+      "source_textures": 36,
+      "identity_issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_whiten_fur_01_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
+    },
+    {
+      "character_id": "chr_0022_bounda",
+      "name": "萤石",
+      "components": 12,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [],
+      "observations": {
+        "chr_0022_bounda_postmodel": 0,
+        "chr_0022_bounda_uimodel": 12
+      },
+      "source_entries": 12,
+      "source_textures": 34,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0023_antal",
+      "name": "安塔尔",
+      "components": 7,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [],
+      "observations": {
+        "chr_0023_antal_postmodel": 0,
+        "chr_0023_antal_uimodel": 7
+      },
+      "source_entries": 7,
+      "source_textures": 17,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0024_deepfin",
+      "name": "阿列什",
+      "components": 10,
+      "mapping_status": "offline-resource-identities-partial",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_deepfin_fur_01_lod0_20"
+      ],
+      "observations": {
+        "chr_0024_deepfin_postmodel": 0,
+        "chr_0024_deepfin_uimodel": 10
+      },
+      "source_entries": 9,
+      "source_textures": 32,
+      "identity_issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_deepfin_fur_01_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
+    },
+    {
+      "character_id": "chr_0025_ardelia",
+      "name": "艾尔黛拉",
+      "components": 14,
+      "mapping_status": "offline-resource-identities-partial",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_ardelia_fur_01_lod0_20"
+      ],
+      "observations": {
+        "chr_0025_ardelia_postmodel": 0,
+        "chr_0025_ardelia_uimodel": 14
+      },
+      "source_entries": 13,
+      "source_textures": 57,
+      "identity_issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_ardelia_fur_01_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
+    },
+    {
+      "character_id": "chr_0026_lastrite",
+      "name": "别礼",
+      "components": 13,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_lastrite_brow_01_lod0"
+      ],
+      "observations": {
+        "chr_0026_lastrite_postmodel": 13,
+        "chr_0026_lastrite_uimodel": 0
+      },
+      "source_entries": 13,
+      "source_textures": 42,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0027_tangtang",
+      "name": "汤汤",
+      "components": 13,
+      "mapping_status": "offline-resource-identities-partial",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_tangtang_body_01_lod0",
+        "S_actor_tangtang_cloth_01_lod0",
+        "S_actor_tangtang_cloth_02_lod0",
+        "S_actor_tangtang_cloth_03_lod0",
+        "S_actor_tangtang_eyebrow_01_lod0",
+        "S_actor_tangtang_fur_01_lod0_20"
+      ],
+      "observations": {
+        "chr_0027_tangtang_postmodel": 0,
+        "chr_0027_tangtang_uimodel": 13
+      },
+      "source_entries": 12,
+      "source_textures": 48,
+      "identity_issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_tangtang_fur_01_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
+    },
+    {
+      "character_id": "chr_0028_wulfa",
+      "name": "洛茜",
+      "components": 15,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_wulfa_cloth_01_lod0",
+        "S_actor_wulfa_cloth_02_lod0",
+        "S_actor_wulfa_cloth_04_lod0",
+        "S_actor_wulfa_cloth_05_lod0",
+        "S_actor_wulfa_cloth_06_lod0",
+        "S_actor_wulfa_eyebrow_01_lod0"
+      ],
+      "observations": {
+        "chr_0028_wulfa_postmodel": 0,
+        "chr_0028_wulfa_uimodel": 15
+      },
+      "source_entries": 15,
+      "source_textures": 43,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0029_pograni",
+      "name": "骏卫",
+      "components": 13,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_pograni_cloth_01_lod0",
+        "S_actor_pograni_cloth_02_lod0",
+        "S_actor_pograni_cloth_03_lod0",
+        "S_actor_pograni_cloth_04_lod0",
+        "S_actor_pograni_hair_01_lod0",
+        "S_actor_pograni_hair_02_lod0",
+        "S_actor_pograni_hairshadow_01_lod0"
+      ],
+      "observations": {
+        "chr_0029_pograni_postmodel": 0,
+        "chr_0029_pograni_uimodel": 13
+      },
+      "source_entries": 13,
+      "source_textures": 39,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0030_zhuangfy",
+      "name": "庄方宜",
+      "components": 9,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_zhuangfy_body_01_lod0",
+        "S_actor_zhuangfy_cloth_01_lod0",
+        "S_actor_zhuangfy_cloth_02_lod0"
+      ],
+      "observations": {
+        "chr_0030_zhuangfy_postmodel": 0,
+        "chr_0030_zhuangfy_uimodel": 9
+      },
+      "source_entries": 9,
+      "source_textures": 32,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0031_mifu",
+      "name": "弭弗",
+      "components": 11,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_mifu_eyebrow_01_lod0"
+      ],
+      "observations": {
+        "chr_0031_mifu_postmodel": 0,
+        "chr_0031_mifu_uimodel": 11
+      },
+      "source_entries": 11,
+      "source_textures": 40,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0032_lizhiyan",
+      "name": "决",
+      "components": 13,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_lizhiyan_cloth_01_lod0",
+        "S_actor_lizhiyan_cloth_02_lod0",
+        "S_actor_lizhiyan_cloth_04_lod0",
+        "S_actor_lizhiyan_eyebrow_01_lod0"
+      ],
+      "observations": {
+        "chr_0032_lizhiyan_postmodel": 13,
+        "chr_0032_lizhiyan_uimodel": 13
+      },
+      "source_entries": 13,
+      "source_textures": 37,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0033_camille",
+      "name": "卡缪",
+      "components": 14,
+      "mapping_status": "offline-resource-identities",
+      "excluded": [
+        {
+          "mesh_name": "S_actor_camille_skill_01_lod0",
+          "reasons": [
+            "world/UI material slots differ"
+          ]
+        }
+      ],
+      "unsupported_source_layouts": [],
+      "observations": {
+        "chr_0033_camille_postmodel": 14,
+        "chr_0033_camille_uimodel": 0
+      },
+      "source_entries": 14,
+      "source_textures": 40,
+      "identity_issues": []
+    },
+    {
+      "character_id": "chr_0034_typhoea",
+      "name": "提弗洛斯",
+      "components": 13,
+      "mapping_status": "offline-resource-identities-partial",
+      "excluded": [
+        {
+          "mesh_name": "S_actor_typhoea_cloth_01_lod0",
+          "reasons": [
+            "world/UI bone path/order differs"
+          ]
+        }
+      ],
+      "unsupported_source_layouts": [
+        "S_actor_typhoea_brow_01_lod0"
+      ],
+      "observations": {
+        "chr_0034_typhoea_postmodel": 0,
+        "chr_0034_typhoea_uimodel": 13
+      },
+      "source_entries": 12,
+      "source_textures": 49,
+      "identity_issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_typhoea_brow_01_lod0",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
+    },
+    {
+      "character_id": "chr_0035_liino",
+      "name": "梨诺",
+      "components": 18,
+      "mapping_status": "offline-resource-identities-partial",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_liino_brow_01_lod0",
+        "S_actor_liino_skill_01_lod0",
+        "S_actor_liino_skill_02_lod0"
+      ],
+      "observations": {
+        "chr_0035_liino_postmodel": 18,
+        "chr_0035_liino_uimodel": 18
+      },
+      "source_entries": 17,
+      "source_textures": 49,
+      "identity_issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_liino_brow_01_lod0",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
+    }
+  ]
+}

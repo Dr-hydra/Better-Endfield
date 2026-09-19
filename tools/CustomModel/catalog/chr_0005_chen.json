@@ -1,0 +1,3066 @@
+{
+  "schema": 1,
+  "kind": "bem-character-catalog",
+  "character_id": "chr_0005_chen",
+  "name": "陈千语",
+  "platform": "windows-x64",
+  "profile_id": "chr_0005_chen-pc",
+  "revision": "20260920-identities1",
+  "verified": true,
+  "world_resource": "chr_0005_chen_postmodel",
+  "ui_resource": "chr_0005_chen_uimodel",
+  "source_snapshot": {
+    "manifest_version": "2954fa80-23c1-1579-2b22-4ecfd6d70418"
+  },
+  "components": {
+    "0": {
+      "mesh_name": "S_actor_chen_body_01_lod0",
+      "original_index_count": 4524,
+      "bone_names": [
+        "Bip001_Neck",
+        "Head_Bone01",
+        "Head_Bone02",
+        "jawJoint",
+        "faceMdJawDnJoint",
+        "Bip001_Spine2",
+        "faceRtCheekOtJoint",
+        "faceRtCheekJoint",
+        "faceRtCheekOtDnJoint",
+        "Bip001_R_ForeTwist",
+        "Bip001_R_ForeTwist1",
+        "Bip001_R_Forearm",
+        "Bip001_R_Hand",
+        "corrective_Wrist_R_tz_minus",
+        "corrective_Wrist_R_tz_plus",
+        "Bip001_R_Finger0",
+        "Bip001_Spine1",
+        "Bip001_Pelvis",
+        "Bip001_Spine",
+        "Bip001_R_Clavicle",
+        "Bip001_L_Clavicle",
+        "Bip001_RThighTwist",
+        "Bip001_LThighTwist",
+        "Bip001_R_Thigh",
+        "Bip001_RThighTwist1",
+        "Bip001_RUpArmTwist",
+        "corrective_Shoulder_R_tz_minus",
+        "Bip001_R_Calf",
+        "Bip001_RCalfTwist",
+        "clotch_jiake_c_01_jnt_R",
+        "faceLfCheekOtJoint",
+        "faceLfCheekJoint",
+        "faceLfCheekOtDnJoint",
+        "Bip001_L_ForeTwist1",
+        "Bip001_L_ForeTwist",
+        "Bip001_L_Forearm",
+        "Bip001_L_Hand",
+        "corrective_Wrist_L_tz_minus",
+        "corrective_Wrist_L_tz_plus",
+        "Bip001_L_Finger0",
+        "Bip001_LThighTwist1",
+        "Bip001_L_Thigh",
+        "Bip001_LUpArmTwist",
+        "corrective_Shoulder_L_tz_minus",
+        "Bip001_L_Calf",
+        "Bip001_LCalfTwist",
+        "clotch_jiake_c_01_jnt_L",
+        "clotch_qunzi_b_01_jnt_M",
+        "clotch_qunzi_a_01_jnt_L",
+        "clotch_qunzi_d_01_jnt_L",
+        "clotch_qunzi_d_02_jnt_L",
+        "clotch_qunzi_c_01_jnt_L",
+        "clotch_qunzi_e_01_jnt_M",
+        "clotch_qunzi_a_01_jnt_R",
+        "clotch_qunzi_d_01_jnt_R",
+        "clotch_qunzi_d_02_jnt_R",
+        "clotch_qunzi_c_01_jnt_R"
+      ],
+      "materials": [
+        "M_actor_chen_body_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_chen_body_01_D",
+          "T_actor_common_face_01_RD",
+          "T_actor_common_femaleskincolor02_lut_D"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_chen_body_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_face_01_RD"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_femaleskincolor02_lut_D"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 1040,
+      "submeshes": [
+        {
+          "index_count": 4524,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 1040,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-b6a82e6142945e9814d2c7abd6d410d7:-1365113279606458331",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0005_chen_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-45b02c5794f4ad28c5b8834079c597b8:1125548219132075204",
+            "path": "chr_0005_chen_uimodel/Mesh_all/lod0/S_actor_chen_body_01_lod0"
+          },
+          "chr_0005_chen_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0005_chen_uimodel",
+            "renderer_id": "cab-33d19675505279eb9f33508aeab97f80:4489621411344489610",
+            "path": "chr_0005_chen_postmodel/Mesh_all/lod0/S_actor_chen_body_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "1": {
+      "mesh_name": "S_actor_chen_cloth_01_lod0",
+      "original_index_count": 139392,
+      "bone_names": [
+        "Bip001_Head",
+        "Bip001_L_Calf",
+        "Bip001_LCalfTwist1",
+        "corrective_Knee_L_ty_plus",
+        "Bip001_L_Thigh",
+        "Bip001_RUpArmTwist",
+        "clothes_xiuzi_R_b_1_ctrl_jnt",
+        "clothes_xiuzi_R_c_1_ctrl_jnt",
+        "clothes_xiuzi_R_c_2_ctrl_jnt",
+        "clothes_xiuzi_R_b_2_ctrl_jnt",
+        "corrective_Shoulder_R_tz_minus",
+        "clothes_xiuzi_R_b_3_ctrl_jnt",
+        "hair_mawei_L_a_01_jnt_L",
+        "hair_mawei_R_a_01_jnt_R",
+        "Bip001_Spine2",
+        "xiong_L_0_skin_jnt",
+        "Bip001_Spine",
+        "Bip001_Spine1",
+        "piaodai_c_5_skin_jnt",
+        "piaodai_c_4_skin_jnt",
+        "xiong_R_0_skin_jnt",
+        "Bip001_R_Clavicle",
+        "Bip001_LUpArmTwist",
+        "clothes_xiuzi_L_b_3_ctrl_jnt",
+        "clothes_xiuzi_L_c_1_ctrl_jnt",
+        "clothes_xiuzi_L_c_2_ctrl_jnt",
+        "clothes_xiuzi_L_a_2_ctrl_jnt",
+        "clothes_xiuzi_L_a_3_ctrl_jnt",
+        "clothes_xiuzi_L_a_1_ctrl_jnt",
+        "clothes_xiuzi_L_b_2_ctrl_jnt",
+        "Bip001_L_Clavicle",
+        "corrective_Shoulder_L_tz_plus",
+        "Bip001_LUpArmTwist1",
+        "corrective_Shoulder_L_tz_minus",
+        "clothes_xiuzi_R_a_2_ctrl_jnt",
+        "clothes_xiuzi_R_a_3_ctrl_jnt",
+        "clothes_xiuzi_R_a_1_ctrl_jnt",
+        "corrective_Shoulder_R_tz_plus",
+        "Bip001_RUpArmTwist1",
+        "piaodai_c_0_skin_jnt",
+        "piaodai_c_1_skin_jnt",
+        "piaodai_c_3_skin_jnt",
+        "piaodai_c_2_skin_jnt",
+        "Bip001_R_Forearm",
+        "Bip001_R_ForeTwist1",
+        "Bip001_R_ForeTwist",
+        "Bip001_Pelvis",
+        "clotch_qunzi_c_01_jnt_L",
+        "clotch_qunzi_d_01_jnt_L",
+        "piaodai_a_0_skin_jnt",
+        "Bip001_L_Hand",
+        "corrective_Wrist_L_tz_minus",
+        "Bip001_L_ForeTwist",
+        "Bip001_L_ForeTwist1",
+        "Bip001_R_Hand",
+        "corrective_Wrist_R_tz_minus",
+        "Head_Bone03",
+        "Head_Bone02",
+        "Head_Bone01",
+        "Bip001_L_Forearm",
+        "clotch_qunzi_c_01_jnt_R",
+        "clotch_qunzi_d_01_jnt_R",
+        "Bip001_R_Finger0",
+        "Bip001_L_Finger0",
+        "Bip001_R_Calf",
+        "Bip001_R_Thigh",
+        "corrective_Knee_R_ty_minus",
+        "corrective_Knee_R_ty_plus",
+        "Bip001_RCalfTwist1",
+        "corrective_Knee_L_ty_minus",
+        "lalian_a_2_jnt",
+        "Bip001_L_Foot",
+        "Bip001_L_Toe0",
+        "Bip001_R_Foot",
+        "Bip001_R_Toe0",
+        "Bip001_RThighTwist1",
+        "Bip001_LThighTwist1",
+        "piaodai_a_3_skin_jnt",
+        "piaodai_a_2_skin_jnt",
+        "Bip001_Neck",
+        "bao_b_jnt",
+        "clotch_qunzi_e_01_jnt_M",
+        "clotch_qunzi_d_02_jnt_R",
+        "clotch_qunzi_d_02_jnt_L",
+        "clotch_qunzi_e_02_jnt_M",
+        "piaodai_a_1_skin_jnt",
+        "bao_piaodai_b_1_jnt",
+        "bao_piaodai_b_2_jnt",
+        "clotch_qunzi_a_01_jnt_L",
+        "clotch_qunzi_a_01_jnt_R",
+        "clotch_jiake_a_01_jnt_R",
+        "clotch_jiake_a_02_jnt_R",
+        "clotch_jiake_b_02_jnt_R",
+        "clotch_jiake_b_01_jnt_R",
+        "clotch_jiake_a_03_jnt_R",
+        "clotch_jiake_b_03_jnt_R",
+        "piaodai_b_0_skin_jnt",
+        "piaodai_b_1_skin_jnt",
+        "jianjia_a_1_jnt",
+        "jianjia_a_2_jnt",
+        "jianjia_b_1_jnt",
+        "piaodai_b_2_skin_jnt",
+        "bao_piaodai_a_1_jnt",
+        "clotch_qunzi_d_03_jnt_L",
+        "clotch_qunzi_e_03_jnt_M",
+        "clotch_qunzi_d_03_jnt_R",
+        "clotch_jiake_a_03_jnt_L",
+        "clotch_jiake_b_02_jnt_L",
+        "clotch_jiake_b_03_jnt_L",
+        "clotch_jiake_a_02_jnt_L",
+        "tail1_M",
+        "tail2_M",
+        "tail3_M",
+        "tail11_M",
+        "tail12_M",
+        "tail4_M",
+        "tail5_M",
+        "tail6_M",
+        "tail9_M",
+        "tail7_M",
+        "tail8_M",
+        "tail10_M",
+        "corrective_Wrist_L_tz_plus",
+        "Bip001_R_UpperArm",
+        "clotch_jiake_d_02_jnt_M",
+        "clotch_jiake_d_03_jnt_M",
+        "clotch_jiake_d_01_jnt_M",
+        "clotch_jiake_a_01_jnt_L",
+        "clotch_jiake_c_02_jnt_L",
+        "clotch_jiake_c_03_jnt_L",
+        "clotch_jiake_b_01_jnt_L",
+        "clotch_jiake_c_01_jnt_L",
+        "clotch_jiake_c_02_jnt_R",
+        "clotch_jiake_c_03_jnt_R",
+        "clotch_jiake_c_01_jnt_R",
+        "lalian_a_1_jnt",
+        "Bip001_L_UpperArm",
+        "corrective_Elbow_L_ty_minus",
+        "corrective_Elbow_L_ty_plus",
+        "corrective_Elbow_R_ty_minus",
+        "corrective_Elbow_R_ty_plus",
+        "Bip001_L_Finger22",
+        "Bip001_L_Finger21",
+        "Bip001_L_Finger01",
+        "Bip001_L_Finger11",
+        "Bip001_L_Finger12",
+        "Bip001_L_Finger1",
+        "Bip001_L_Finger41",
+        "Bip001_L_Finger42",
+        "Bip001_L_Finger4",
+        "Bip001_L_Finger2",
+        "Bip001_L_Finger3",
+        "Bip001_L_Finger31",
+        "Bip001_L_Finger32",
+        "Bip001_L_Finger02",
+        "corrective_Wrist_R_tz_plus",
+        "Bip001_R_Finger22",
+        "Bip001_R_Finger21",
+        "Bip001_R_Finger01",
+        "Bip001_R_Finger11",
+        "Bip001_R_Finger12",
+        "Bip001_R_Finger1",
+        "Bip001_R_Finger41",
+        "Bip001_R_Finger42",
+        "Bip001_R_Finger4",
+        "Bip001_R_Finger2",
+        "Bip001_R_Finger3",
+        "Bip001_R_Finger31",
+        "Bip001_R_Finger32",
+        "Bip001_R_Finger02",
+        "bao_a_jnt",
+        "clotch_qunzi_b_01_jnt_M"
+      ],
+      "materials": [
+        "M_actor_chen_cloth_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_chen_cloth_01_D",
+          "T_actor_chen_cloth_01_N",
+          "T_actor_common_cloth_04_RD",
+          "T_actor_chen_cloth_01_E",
+          "T_actor_chen_cloth_01_P",
+          "T_actor_chen_cloth_01_ST",
+          "T_actor_common_cloth_lut_01_D",
+          "T_actor_common_cloth_04_RS"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_chen_cloth_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_chen_cloth_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_cloth_04_RD"
+          },
+          {
+            "property": "_EmissionMap",
+            "name": "T_actor_chen_cloth_01_E"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_chen_cloth_01_P"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_chen_cloth_01_ST"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_cloth_lut_01_D"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_cloth_04_RS"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 34714,
+      "submeshes": [
+        {
+          "index_count": 139392,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 34714,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-5f6ccd8aa39744f938641266c9e1d54f:4469276053121351434",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0005_chen_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-45b02c5794f4ad28c5b8834079c597b8:8999202654246067396",
+            "path": "chr_0005_chen_uimodel/Mesh_all/lod0/S_actor_chen_cloth_01_lod0"
+          },
+          "chr_0005_chen_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0005_chen_uimodel",
+            "renderer_id": "cab-33d19675505279eb9f33508aeab97f80:-9115068356740113270",
+            "path": "chr_0005_chen_postmodel/Mesh_all/lod0/S_actor_chen_cloth_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "2": {
+      "mesh_name": "S_actor_chen_cloth_02_lod0",
+      "original_index_count": 15138,
+      "bone_names": [
+        "tail4_M",
+        "tail5_M",
+        "tail6_M",
+        "tail3_M",
+        "tail7_M",
+        "tail8_M",
+        "tail9_M",
+        "tail10_M",
+        "tail11_M",
+        "tail12_M"
+      ],
+      "materials": [
+        "M_actor_chen_cloth_02"
+      ],
+      "material_textures": [
+        [
+          "T_actor_chen_cloth_01_D",
+          "T_actor_chen_cloth_01_N",
+          "T_actor_common_hair_01_RD",
+          "T_actor_common_hairline_01_M",
+          "T_actor_chen_cloth_01_P",
+          "T_actor_common_hairst_01_ST"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_chen_cloth_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_chen_cloth_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_hair_01_RD"
+          },
+          {
+            "property": "_LineMap",
+            "name": "T_actor_common_hairline_01_M"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_chen_cloth_01_P"
+          },
+          {
+            "property": "_StrokeMap",
+            "name": "T_actor_common_hairst_01_ST"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 3746,
+      "submeshes": [
+        {
+          "index_count": 15138,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 3746,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-72b6e2c508c4a34ddd9bbf071c785a8c:199258016829145750",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0005_chen_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-45b02c5794f4ad28c5b8834079c597b8:-2142821570040898364",
+            "path": "chr_0005_chen_uimodel/Mesh_all/lod0/S_actor_chen_cloth_02_lod0"
+          },
+          "chr_0005_chen_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0005_chen_uimodel",
+            "renderer_id": "cab-33d19675505279eb9f33508aeab97f80:-1661367428762362742",
+            "path": "chr_0005_chen_postmodel/Mesh_all/lod0/S_actor_chen_cloth_02_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "3": {
+      "mesh_name": "S_actor_chen_cloth_03_lod0",
+      "original_index_count": 9477,
+      "bone_names": [
+        "clotch_qunzi_a_03_jnt_R",
+        "clotch_qunzi_a_02_jnt_R",
+        "clotch_qunzi_c_02_jnt_R",
+        "clotch_qunzi_c_03_jnt_R",
+        "clotch_qunzi_a_01_jnt_R",
+        "clotch_qunzi_c_01_jnt_R",
+        "Bip001_Pelvis",
+        "Bip001_Spine",
+        "clotch_qunzi_c_02_jnt_L",
+        "clotch_qunzi_c_03_jnt_L",
+        "clotch_qunzi_d_02_jnt_L",
+        "clotch_qunzi_d_03_jnt_L",
+        "clotch_qunzi_c_01_jnt_L",
+        "clotch_qunzi_d_01_jnt_L",
+        "clotch_qunzi_a_01_jnt_L",
+        "clotch_qunzi_a_02_jnt_L",
+        "clotch_qunzi_a_03_jnt_L",
+        "clotch_qunzi_b_03_jnt_M",
+        "clotch_qunzi_b_02_jnt_M",
+        "clotch_qunzi_b_01_jnt_M",
+        "clotch_qunzi_d_03_jnt_R",
+        "clotch_qunzi_d_02_jnt_R",
+        "clotch_qunzi_d_01_jnt_R",
+        "clotch_qunzi_e_01_jnt_M",
+        "clotch_qunzi_e_02_jnt_M",
+        "clotch_qunzi_e_03_jnt_M"
+      ],
+      "materials": [
+        "M_actor_chen_cloth_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_chen_cloth_01_D",
+          "T_actor_chen_cloth_01_N",
+          "T_actor_common_cloth_04_RD",
+          "T_actor_chen_cloth_01_E",
+          "T_actor_chen_cloth_01_P",
+          "T_actor_chen_cloth_01_ST",
+          "T_actor_common_cloth_lut_01_D",
+          "T_actor_common_cloth_04_RS"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_chen_cloth_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_chen_cloth_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_cloth_04_RD"
+          },
+          {
+            "property": "_EmissionMap",
+            "name": "T_actor_chen_cloth_01_E"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_chen_cloth_01_P"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_chen_cloth_01_ST"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_cloth_lut_01_D"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_cloth_04_RS"
+          }
+        ]
+      ],
+      "strides": [
+        40,
+        16,
+        32
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          3,
+          0
+        ],
+        [
+          2,
+          0,
+          4,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          0,
+          4,
+          2
+        ],
+        [
+          13,
+          10,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [],
+      "layout_verified": true,
+      "source_layout_supported": false,
+      "vertex_count": 2479,
+      "submeshes": [
+        {
+          "index_count": 9477,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 2479,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-ea8b557d4c24eb943253315a247ea3c8:-4707444740872796043",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0005_chen_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-45b02c5794f4ad28c5b8834079c597b8:6840057609956940996",
+            "path": "chr_0005_chen_uimodel/Mesh_all/lod0/S_actor_chen_cloth_03_lod0"
+          },
+          "chr_0005_chen_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0005_chen_uimodel",
+            "renderer_id": "cab-33d19675505279eb9f33508aeab97f80:-1657162300013273974",
+            "path": "chr_0005_chen_postmodel/Mesh_all/lod0/S_actor_chen_cloth_03_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "4": {
+      "mesh_name": "S_actor_chen_eyebrow_01_lod0",
+      "original_index_count": 1242,
+      "bone_names": [
+        "eyeLf06Joint",
+        "eyeLf07Joint",
+        "faceLfCheekJoint",
+        "eyeLf05Joint",
+        "eyeLf01Joint",
+        "eyeLf08Joint",
+        "Bip001_Head",
+        "eyeLf04EyelashJoint",
+        "eyeLf05EyelashJoint",
+        "browLineLf01Joint",
+        "browLineLf04Joint",
+        "browLineLf02Joint",
+        "browLineLf03Joint",
+        "eyeLf01EyelashJoint",
+        "eyeLf02EyelashJoint",
+        "eyeLf03EyelashJoint",
+        "browLf03Joint",
+        "browLf04Joint",
+        "browLf05Joint",
+        "browLf02Joint",
+        "browLf01Joint",
+        "eyeRt07Joint",
+        "eyeRt08Joint",
+        "eyeRt01Joint",
+        "faceRtCheekJoint",
+        "eyeRt06Joint",
+        "eyeRt05Joint",
+        "eyeRt04EyelashJoint",
+        "eyeRt05EyelashJoint",
+        "browLineRt01Joint",
+        "browLineRt04Joint",
+        "browLineRt02Joint",
+        "browLineRt03Joint",
+        "eyeRt01EyelashJoint",
+        "eyeRt02EyelashJoint",
+        "eyeRt03EyelashJoint",
+        "browRt05Joint",
+        "browRt03Joint",
+        "browRt04Joint",
+        "browRt02Joint",
+        "browRt01Joint"
+      ],
+      "materials": [
+        "M_actor_chen_brow_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_chen_face_01_D",
+          "T_actor_common_body_01_RD",
+          "T_actor_common_femaleskincolor02_lut_D"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_chen_face_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_body_01_RD"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_femaleskincolor02_lut_D"
+          }
+        ]
+      ],
+      "strides": [
+        40,
+        8,
+        32
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          3,
+          0
+        ],
+        [
+          2,
+          0,
+          4,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          0,
+          4,
+          2
+        ],
+        [
+          13,
+          10,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [],
+      "layout_verified": true,
+      "source_layout_supported": false,
+      "vertex_count": 396,
+      "submeshes": [
+        {
+          "index_count": 1242,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 396,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-3e3292ab6bcaf82592d4754706fc0277:-3534255748629444633",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0005_chen_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-45b02c5794f4ad28c5b8834079c597b8:7638837207724776644",
+            "path": "chr_0005_chen_uimodel/Mesh_all/lod0/S_actor_chen_eyebrow_01_lod0"
+          },
+          "chr_0005_chen_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0005_chen_uimodel",
+            "renderer_id": "cab-33d19675505279eb9f33508aeab97f80:-3627990338348114806",
+            "path": "chr_0005_chen_postmodel/Mesh_all/lod0/S_actor_chen_eyebrow_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "5": {
+      "mesh_name": "S_actor_chen_eyeshadow_01_lod0",
+      "original_index_count": 96,
+      "bone_names": [
+        "eyeLf04IrissdJoint",
+        "eyeLf05Joint",
+        "eyeLf06Joint",
+        "eyeLf03IrissdJoint",
+        "eyeLf04Joint",
+        "eyeLf03Joint",
+        "eyeLf02IrissdJoint",
+        "eyeLf01Joint",
+        "eyeLf02Joint",
+        "eyeRt04IrissdJoint",
+        "eyeRt05Joint",
+        "eyeRt06Joint",
+        "eyeRt03IrissdJoint",
+        "eyeRt04Joint",
+        "eyeRt03Joint",
+        "eyeRt02IrissdJoint",
+        "eyeRt01Joint",
+        "eyeRt02Joint"
+      ],
+      "materials": [
+        "M_eyewhiteshadow_common_01",
+        "M_eyeshadow_common_03"
+      ],
+      "material_textures": [
+        [
+          "T_actor_common_eyeshadow_01_M"
+        ],
+        [
+          "T_actor_common_eyeshadow_02_M"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_common_eyeshadow_01_M"
+          }
+        ],
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_common_eyeshadow_02_M"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 36,
+      "submeshes": [
+        {
+          "index_count": 96,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 36,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-3e3292ab6bcaf82592d4754706fc0277:-6465188344288491545",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0005_chen_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-45b02c5794f4ad28c5b8834079c597b8:-3175428370273084220",
+            "path": "chr_0005_chen_uimodel/Mesh_all/lod0/S_actor_chen_eyeshadow_01_lod0"
+          },
+          "chr_0005_chen_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0005_chen_uimodel",
+            "renderer_id": "cab-33d19675505279eb9f33508aeab97f80:-2017698869072487286",
+            "path": "chr_0005_chen_postmodel/Mesh_all/lod0/S_actor_chen_eyeshadow_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "6": {
+      "mesh_name": "S_actor_chen_face_01_lod0",
+      "original_index_count": 8460,
+      "bone_names": [
+        "faceMdToothUpJoint",
+        "faceMdToothDnJoint",
+        "TongueMd01Joint",
+        "TongueMd03Joint",
+        "lipLup2Joint",
+        "Head_Bone02",
+        "lipLup1Joint",
+        "lipLdn2Joint",
+        "lipLup3Joint",
+        "lipLup4Joint",
+        "lipMupJoint",
+        "lipRup4Joint",
+        "lipRup3Joint",
+        "lipRup2Joint",
+        "lipRup1Joint",
+        "lipRdn2Joint",
+        "jawJoint",
+        "lipRdn1Joint",
+        "lipMdnJoint",
+        "lipRdn4Joint",
+        "lipRdn3Joint",
+        "faceRtCheekOtDnJoint",
+        "faceMdJawDnJoint",
+        "lipLdn4Joint",
+        "lipLdn3Joint",
+        "faceLfCheekOtDnJoint",
+        "lipLdn1Joint",
+        "Head_Bone03",
+        "faceRtCheekJoint",
+        "Bip001_Neck",
+        "faceRtCheekOtJoint",
+        "Head_Bone01",
+        "eyeRt06Joint",
+        "faceLfCheekOtJoint",
+        "faceLfCheekJoint",
+        "eyeLf06Joint",
+        "eyeLf07Joint",
+        "eyeLf08Joint",
+        "eyeLf05Joint",
+        "eyeLf04Joint",
+        "eyeLf03Joint",
+        "eyeLf01Joint",
+        "eyeLf02Joint",
+        "NoseMd01Joint",
+        "NoseMd02Joint",
+        "eyeRt08Joint",
+        "eyeRt01Joint",
+        "eyeRt07Joint",
+        "eyeRt02Joint",
+        "eyeRt03Joint",
+        "eyeRt04Joint",
+        "eyeRt05Joint",
+        "lineJoint",
+        "browLineLf01Joint",
+        "browLineLf04Joint",
+        "browLineLf02Joint",
+        "browLineLf03Joint",
+        "browLineRt01Joint",
+        "browLineRt04Joint",
+        "browLineRt02Joint",
+        "browLineRt03Joint"
+      ],
+      "materials": [
+        "M_actor_chen_face_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_chen_face_01_D",
+          "T_actor_common_face_01_RD",
+          "T_actor_common_female_emotion_atlas_01_D",
+          "T_actor_common_face_01_hl_M",
+          "T_actor_common_female_face_01_ST",
+          "T_actor_common_female_face_03_SDF",
+          "T_actor_common_female_face_03_cm_M",
+          "T_actor_common_femaleskincolor02_lut_D"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_chen_face_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_face_01_RD"
+          },
+          {
+            "property": "_EmotionMap",
+            "name": "T_actor_common_female_emotion_atlas_01_D"
+          },
+          {
+            "property": "_HighlightMap",
+            "name": "T_actor_common_face_01_hl_M"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_common_female_face_01_ST"
+          },
+          {
+            "property": "_SDFLightmap",
+            "name": "T_actor_common_female_face_03_SDF"
+          },
+          {
+            "property": "_SDFMask",
+            "name": "T_actor_common_female_face_03_cm_M"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_femaleskincolor02_lut_D"
+          }
+        ]
+      ],
+      "strides": [
+        40,
+        16,
+        32
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          3,
+          0
+        ],
+        [
+          2,
+          0,
+          4,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          0,
+          4,
+          2
+        ],
+        [
+          13,
+          10,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [],
+      "layout_verified": true,
+      "source_layout_supported": false,
+      "vertex_count": 1701,
+      "submeshes": [
+        {
+          "index_count": 8460,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 1701,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-028be1bb1c0da3b1f2528e07d5e10397:1922858841742151144",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0005_chen_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-45b02c5794f4ad28c5b8834079c597b8:-5969062848175022908",
+            "path": "chr_0005_chen_uimodel/Mesh_all/lod0/S_actor_chen_face_01_lod0"
+          },
+          "chr_0005_chen_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0005_chen_uimodel",
+            "renderer_id": "cab-33d19675505279eb9f33508aeab97f80:-8834709694857405302",
+            "path": "chr_0005_chen_postmodel/Mesh_all/lod0/S_actor_chen_face_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "7": {
+      "mesh_name": "S_actor_chen_hair_01_lod0",
+      "original_index_count": 46728,
+      "bone_names": [
+        "hair_liuhai_R_a_01_jnt_R",
+        "hair_liuhai_R_a_02_jnt_R",
+        "hair_liuhai_R_a_03_jnt_R",
+        "Bip001_Head",
+        "hair_cefa_L_b_03_jnt_L",
+        "hair_cefa_L_b_02_jnt_L",
+        "hair_cefa_L_b_01_jnt_L",
+        "hair_liuhai_L_b_01_jnt_L",
+        "hair_liuhai_L_b_02_jnt_L",
+        "hair_liuhai_L_b_03_jnt_L",
+        "hair_cefa_L_a_01_jnt_L",
+        "hair_cefa_L_a_02_jnt_L",
+        "hair_cefa_L_a_03_jnt_L",
+        "hair_cefa_L_a_04_jnt_L",
+        "hair_cefa_R_b_02_jnt_R",
+        "hair_cefa_R_b_03_jnt_R",
+        "hair_cefa_R_b_01_jnt_R",
+        "hair_cefa_R_a_02_jnt_R",
+        "hair_cefa_R_a_03_jnt_R",
+        "hair_cefa_R_a_01_jnt_R",
+        "hair_bingfa_L_a_03_jnt_L",
+        "hair_bingfa_L_a_02_jnt_L",
+        "hair_bingfa_L_a_01_jnt_L",
+        "Head_Bone02",
+        "Head_Bone01",
+        "hair_bingfa_R_a_03_jnt_R",
+        "hair_bingfa_R_a_02_jnt_R",
+        "hair_bingfa_R_a_01_jnt_R",
+        "hair_mawei_L_a_04_jnt_L",
+        "hair_mawei_L_a_05_jnt_L",
+        "hair_mawei_L_a_06_jnt_L",
+        "hair_mawei_L_a_03_jnt_L",
+        "hair_mawei_L_a_07_jnt_L",
+        "hair_mawei_L_a_08_jnt_L",
+        "hair_mawei_L_a_02_jnt_L",
+        "hair_mawei_L_a_01_jnt_L",
+        "hair_mawei_L_a_09_jnt_L",
+        "hair_mawei_R_a_04_jnt_R",
+        "hair_mawei_R_a_05_jnt_R",
+        "hair_mawei_R_a_06_jnt_R",
+        "hair_mawei_R_a_03_jnt_R",
+        "hair_mawei_R_a_02_jnt_R",
+        "hair_mawei_R_a_07_jnt_R",
+        "hair_mawei_R_a_08_jnt_R",
+        "hair_mawei_R_a_01_jnt_R",
+        "hair_mawei_R_a_09_jnt_R"
+      ],
+      "materials": [
+        "M_actor_chen_hair_01",
+        "M_actor_chen_hairt_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_chen_hair_01_D",
+          "T_actor_common_hair_01_RD",
+          "T_actor_chen_hair_01_sw_M",
+          "T_actor_common_hairline_03_M",
+          "T_actor_chen_hair_01_P",
+          "T_actor_chen_hair_01_ST",
+          "T_actor_common_hair_08_RS",
+          "T_actor_chen_hair_01_HN",
+          "T_actor_common_hairst_01_ST"
+        ],
+        [
+          "T_actor_chen_hair_01_D",
+          "T_actor_common_hair_01_RD",
+          "T_actor_chen_hair_01_sw_M",
+          "T_actor_common_hairline_03_M",
+          "T_actor_chen_hair_01_P",
+          "T_actor_chen_hair_01_ST",
+          "T_actor_common_hair_08_RS",
+          "T_actor_chen_hair_01_HN",
+          "T_actor_common_hairst_01_ST"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_chen_hair_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_hair_01_RD"
+          },
+          {
+            "property": "_HairBrowMask",
+            "name": "T_actor_chen_hair_01_sw_M"
+          },
+          {
+            "property": "_LineMap",
+            "name": "T_actor_common_hairline_03_M"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_chen_hair_01_P"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_chen_hair_01_ST"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_hair_08_RS"
+          },
+          {
+            "property": "_SplitNormalMap",
+            "name": "T_actor_chen_hair_01_HN"
+          },
+          {
+            "property": "_StrokeMap",
+            "name": "T_actor_common_hairst_01_ST"
+          }
+        ],
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_chen_hair_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_hair_01_RD"
+          },
+          {
+            "property": "_HairBrowMask",
+            "name": "T_actor_chen_hair_01_sw_M"
+          },
+          {
+            "property": "_LineMap",
+            "name": "T_actor_common_hairline_03_M"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_chen_hair_01_P"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_chen_hair_01_ST"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_hair_08_RS"
+          },
+          {
+            "property": "_SplitNormalMap",
+            "name": "T_actor_chen_hair_01_HN"
+          },
+          {
+            "property": "_StrokeMap",
+            "name": "T_actor_common_hairst_01_ST"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 11924,
+      "submeshes": [
+        {
+          "index_count": 46728,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 11924,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-6a0466c15cf3f0dc8271ad52c4dfe02d:-4766633188508894485",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0005_chen_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-45b02c5794f4ad28c5b8834079c597b8:-5109954811467539260",
+            "path": "chr_0005_chen_uimodel/Mesh_all/lod0/S_actor_chen_hair_01_lod0"
+          },
+          "chr_0005_chen_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0005_chen_uimodel",
+            "renderer_id": "cab-33d19675505279eb9f33508aeab97f80:4452555824581188746",
+            "path": "chr_0005_chen_postmodel/Mesh_all/lod0/S_actor_chen_hair_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "8": {
+      "mesh_name": "S_actor_chen_hs_01_lod0",
+      "original_index_count": 714,
+      "bone_names": [
+        "hair_liuhai_L_b_02_jnt_L",
+        "hair_liuhai_L_b_03_jnt_L",
+        "hair_liuhai_L_b_01_jnt_L",
+        "Bip001_Head",
+        "hair_cefa_R_b_02_jnt_R",
+        "hair_cefa_R_b_03_jnt_R",
+        "hair_cefa_R_b_01_jnt_R",
+        "hair_cefa_L_b_01_jnt_L",
+        "hair_cefa_L_b_02_jnt_L",
+        "hair_cefa_L_b_03_jnt_L",
+        "hair_cefa_L_a_02_jnt_L",
+        "hair_cefa_L_a_01_jnt_L",
+        "hair_cefa_L_a_03_jnt_L",
+        "hair_cefa_L_a_04_jnt_L",
+        "hair_cefa_R_a_02_jnt_R",
+        "hair_cefa_R_a_03_jnt_R"
+      ],
+      "materials": [
+        "M_hairshadow_common_03"
+      ],
+      "material_textures": [
+        []
+      ],
+      "material_texture_properties": [
+        []
+      ],
+      "strides": [
+        16,
+        8,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 246,
+      "submeshes": [
+        {
+          "index_count": 714,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 246,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-3e3292ab6bcaf82592d4754706fc0277:-8007524393603938329",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0005_chen_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-45b02c5794f4ad28c5b8834079c597b8:747210207415229636",
+            "path": "chr_0005_chen_uimodel/Mesh_all/lod0/S_actor_chen_hs_01_lod0"
+          },
+          "chr_0005_chen_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0005_chen_uimodel",
+            "renderer_id": "cab-33d19675505279eb9f33508aeab97f80:-2588731161903162230",
+            "path": "chr_0005_chen_postmodel/Mesh_all/lod0/S_actor_chen_hs_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    },
+    "9": {
+      "mesh_name": "S_actor_chen_iris_01_lod0",
+      "original_index_count": 888,
+      "bone_names": [
+        "faceLfHighlight_c_Control_jnt",
+        "faceRtHighlight_c_Control_jnt",
+        "faceLfIrisJoint",
+        "faceLfPupilJoint",
+        "faceLfHighlightJoint",
+        "faceRtIrisJoint",
+        "faceRtPupilJoint",
+        "faceRtHighlightJoint",
+        "faceLfHighlight_b_Control_jnt",
+        "faceRtHighlight_b_Control_jnt"
+      ],
+      "materials": [
+        "M_actor_chen_iris_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_chen_iris_01_D",
+          "T_actor_common_body_01_RD",
+          "T_actor_common_matcap_06_D"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_chen_iris_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_body_01_RD"
+          },
+          {
+            "property": "_MatcapTex",
+            "name": "T_actor_common_matcap_06_D"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        4
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 208,
+      "submeshes": [
+        {
+          "index_count": 888,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 208,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-3e3292ab6bcaf82592d4754706fc0277:2217230031293532135",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0005_chen_uimodel": {
+            "kind": "direct",
+            "run": "characters-20260919-202150-881718",
+            "file": "characters-20260919-202150-881718.jsonl",
+            "process_id": 19900,
+            "renderer_id": "cab-45b02c5794f4ad28c5b8834079c597b8:2128369662301035716",
+            "path": "chr_0005_chen_uimodel/Mesh_all/lod0/S_actor_chen_iris_01_lod0"
+          },
+          "chr_0005_chen_postmodel": {
+            "kind": "equivalent-reuse",
+            "from_resource": "chr_0005_chen_uimodel",
+            "renderer_id": "cab-33d19675505279eb9f33508aeab97f80:-6802216527165186934",
+            "path": "chr_0005_chen_postmodel/Mesh_all/lod0/S_actor_chen_iris_01_lod0",
+            "reason": "identical Mesh identity, relative bone paths/order and materials"
+          }
+        }
+      }
+    }
+  },
+  "entries": {
+    "d52ade91": 0,
+    "f80227f2": 1,
+    "0c94b618": 2,
+    "ae154b07": 3,
+    "3c26bc82": 4,
+    "65b4653a": 5,
+    "680e6a51": 6,
+    "7682fa9c": 7,
+    "573c7681": 8,
+    "b284ad1e": 9
+  },
+  "textures": {
+    "91a468ed": {
+      "name": "T_actor_chen_body_01_D",
+      "evidence": {
+        "texture_id": "cab-b28bde27c5af65b30906937d1493e298:-5588589339048142859",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "03bf1feb",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "c84302ec": {
+      "name": "T_actor_chen_cloth_01_D",
+      "evidence": {
+        "texture_id": "cab-e064b74c94bbcab72474aa8d019914ca:2472217550714066130",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "5ed40544",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "d4b51f22": {
+      "name": "T_actor_chen_cloth_01_E",
+      "evidence": {
+        "texture_id": "cab-e064b74c94bbcab72474aa8d019914ca:-7689099315196311821",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "2c2d70b1",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "7a3eb477": {
+      "name": "T_actor_chen_cloth_01_N",
+      "evidence": {
+        "texture_id": "cab-e064b74c94bbcab72474aa8d019914ca:1980912855067727226",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "6664b7bb",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "a9426510": {
+      "name": "T_actor_chen_cloth_01_P",
+      "evidence": {
+        "texture_id": "cab-e064b74c94bbcab72474aa8d019914ca:4809289076087975040",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "a7dbfb9b",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "b93656c7": {
+      "name": "T_actor_chen_cloth_01_ST",
+      "evidence": {
+        "texture_id": "cab-56b840a1b5146ca311255f85fa6cee0d:7201732395847765546",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "dd837864",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "34cb3117": {
+      "name": "T_actor_chen_face_01_D",
+      "evidence": {
+        "texture_id": "cab-4255840d931dc808e348d52e7db6a3a9:-6042233165419994306",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "5e2aebd0",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "c9909a5f": {
+      "name": "T_actor_chen_hair_01_D",
+      "evidence": {
+        "texture_id": "cab-d74d927d4e9d9c64ff955d369aa74e7b:7175961814534197203",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "8511d1a5",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "8ac318b6": {
+      "name": "T_actor_chen_hair_01_HN",
+      "evidence": {
+        "texture_id": "cab-6a2f61d8ada89445bc475aec390904b0:-5864906475375282803",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "528a0d5e",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "89e6a0f7": {
+      "name": "T_actor_chen_hair_01_P",
+      "evidence": {
+        "texture_id": "cab-d74d927d4e9d9c64ff955d369aa74e7b:-7801454423293684367",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "f5cda52b",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "61ec05d6": {
+      "name": "T_actor_chen_hair_01_ST",
+      "evidence": {
+        "texture_id": "cab-5f2d91bb1c90c136ea82cf5fcb97a157:-6194109575291758850",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "ab92dbb9",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "402c7ca1": {
+      "name": "T_actor_chen_hair_01_sw_M",
+      "evidence": {
+        "texture_id": "cab-b7db3bbb1e999710c913c10e5ef5f073:-2868558097284829994",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "96a8c558",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "0cc60b53": {
+      "name": "T_actor_chen_iris_01_D",
+      "evidence": {
+        "texture_id": "cab-c4d4ff0da2d3872244bbeed578455aab:1056781506447073869",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "adf91dea",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "172348f4": {
+      "name": "T_actor_common_body_01_RD",
+      "aliases": [
+        "T_actor_common_face_01_RD"
+      ],
+      "evidence": {
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "kind": "shared-source-hash",
+        "targets": [
+          {
+            "name": "T_actor_common_body_01_RD",
+            "evidence": {
+              "texture_id": "cab-f73bd58505faab842c266da5fd3ef559:9015086203897338725",
+              "policy": "efmi-dx11-region-texture0-fullchain-v1",
+              "descriptor": [
+                256,
+                1,
+                1,
+                1,
+                28,
+                1,
+                0,
+                0,
+                8,
+                0,
+                0
+              ],
+              "native_data_crc32c": "bb885ffb",
+              "runtime_graphics_format": 8,
+              "runtime_sizes": [
+                [
+                  256,
+                  1
+                ]
+              ]
+            }
+          },
+          {
+            "name": "T_actor_common_face_01_RD",
+            "evidence": {
+              "texture_id": "cab-52ea55afe624d7233f83d33f95137ebd:5848563174712869001",
+              "policy": "efmi-dx11-region-texture0-fullchain-v1",
+              "descriptor": [
+                256,
+                1,
+                1,
+                1,
+                28,
+                1,
+                0,
+                0,
+                8,
+                0,
+                0
+              ],
+              "native_data_crc32c": "bb885ffb",
+              "runtime_graphics_format": 8,
+              "runtime_sizes": [
+                [
+                  256,
+                  1
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "c383b676": {
+      "name": "T_actor_common_cloth_04_RD",
+      "evidence": {
+        "texture_id": "cab-dda756238d04de89c59d562835d15c3a:2595675294308502756",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          1,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "5109626c",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            1
+          ]
+        ]
+      }
+    },
+    "9529b478": {
+      "name": "T_actor_common_cloth_04_RS",
+      "evidence": {
+        "texture_id": "cab-37f059e6a93378657725edd285796b84:4523718382697154697",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "d2decd4c",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "6fe57c68": {
+      "name": "T_actor_common_cloth_lut_01_D",
+      "evidence": {
+        "texture_id": "cab-cab1380bc3ce4a243154e31f0dbfd25e:2755480022373394709",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          32,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "78a103e2",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            32
+          ]
+        ]
+      }
+    },
+    "d5906b6a": {
+      "name": "T_actor_common_eyeshadow_01_M",
+      "evidence": {
+        "texture_id": "cab-e0c2577d28432f83374490550edc6b0a:1943856218045776426",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          32,
+          32,
+          6,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "43a76c1d",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            32,
+            32
+          ]
+        ]
+      }
+    },
+    "6899d1a4": {
+      "name": "T_actor_common_eyeshadow_02_M",
+      "evidence": {
+        "texture_id": "cab-37cba2aef5da66859bb487a2e4639ab6:2400241694096528712",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          32,
+          32,
+          6,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "7c34adce",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            32,
+            32
+          ]
+        ]
+      }
+    },
+    "290f53c8": {
+      "name": "T_actor_common_face_01_hl_M",
+      "evidence": {
+        "texture_id": "cab-b6bb3cc4483165082b296844684c52da:-2443816471313249430",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "907e417b",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "9750205d": {
+      "name": "T_actor_common_female_emotion_atlas_01_D",
+      "evidence": {
+        "texture_id": "cab-4f49e420f74b0a444fa7929840edbe90:-5029632173409998771",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "db2f1ff8",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "eb57e65d": {
+      "name": "T_actor_common_female_face_01_ST",
+      "evidence": {
+        "texture_id": "cab-15b9177ba6391c8cbd62cec2a3ae1f5e:7112440902861254514",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          128,
+          128,
+          8,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "670e666c",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            128,
+            128
+          ]
+        ]
+      }
+    },
+    "de88be11": {
+      "name": "T_actor_common_female_face_03_SDF",
+      "evidence": {
+        "texture_id": "cab-71e905dd65182bd56ed2b41ef2a8dde5:-1914551387401438376",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "d155a089",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "dbf4f80f": {
+      "name": "T_actor_common_female_face_03_cm_M",
+      "evidence": {
+        "texture_id": "cab-2354cfa3ed49bea87907e51a1e2702fe:-5059011942471656554",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "50e2c347",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "afd96318": {
+      "name": "T_actor_common_femaleskincolor02_lut_D",
+      "evidence": {
+        "texture_id": "cab-0fbd014367b9d1ac9f7f940a3d1c8f80:7838960105793206527",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          32,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "32f45ae9",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            32
+          ]
+        ]
+      }
+    },
+    "9515ebaf": {
+      "name": "T_actor_common_hair_01_RD",
+      "evidence": {
+        "texture_id": "cab-0dba6b3a8686ca225fea99cb2ce9ac8b:-6227453272663763460",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          1,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "b872b190",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            1
+          ]
+        ]
+      }
+    },
+    "7cc9cca9": {
+      "name": "T_actor_common_hair_08_RS",
+      "evidence": {
+        "texture_id": "cab-3cf771f652248046d4eff02b0ebc0a0c:9121228933552860259",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "6ab4b6d0",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "e69d7088": {
+      "name": "T_actor_common_hairline_01_M",
+      "evidence": {
+        "texture_id": "cab-dfa90062e0be93a2aa56dcaca31c6ddb:3764872191841657352",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          1,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "e6d14f65",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "151c9982": {
+      "name": "T_actor_common_hairline_03_M",
+      "evidence": {
+        "texture_id": "cab-67dec3851d20abe31e69d62c821759b2:3012176911137855631",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "8fcf3b42",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "f18a7d64": {
+      "name": "T_actor_common_hairst_01_ST",
+      "evidence": {
+        "texture_id": "cab-4ec5d566ac4da93846f2e9bc00199929:-6833856728080991578",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          256,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "2d730321",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            256
+          ]
+        ]
+      }
+    },
+    "a4f99adc": {
+      "name": "T_actor_common_matcap_06_D",
+      "evidence": {
+        "texture_id": "cab-74bdb8872dfdbb4b04b36624b0cd9a9f:2497234729097177744",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          9,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "13fb61e4",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    }
+  },
+  "preserved_globals": {
+    "7d330dbd": {
+      "name": "T_actor_common_rain_01_M",
+      "property": "_CharacterRainEffectTex",
+      "width": 1024,
+      "height": 1024,
+      "mips": 1,
+      "format": 25,
+      "source_payload_sha256": "6943a7c667cb53f778edf0179764cc72f23973a7dce8b04780adb6d107069865"
+    },
+    "908140d5": {
+      "name": "T_actor_common_snow_01_M",
+      "property": "_CharacterSnowEffectTex",
+      "width": 512,
+      "height": 512,
+      "mips": 1,
+      "format": 25,
+      "source_payload_sha256": "a0e3242e512cce6f4ee5fff3fd326cf0d870c6124f3cae3d596d48e71d12996d"
+    }
+  },
+  "mapping_status": "offline-resource-identities",
+  "excluded_components": [],
+  "evidence": [
+    "CUSTOM_MODEL_RUNTIME_SWEEP_20260919.md"
+  ],
+  "note": "Native sweep plus offline identity join. EFMI identities recomputed from original game buffers and texture descriptors; custom source logic remains separate.",
+  "entry_identity_evidence": {
+    "0": {
+      "mesh_id": "cab-b6a82e6142945e9814d2c7abd6d410d7:-1365113279606458331",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 9048,
+      "index_count": 4524,
+      "source_hash": "d52ade91"
+    },
+    "1": {
+      "mesh_id": "cab-5f6ccd8aa39744f938641266c9e1d54f:4469276053121351434",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 278784,
+      "index_count": 139392,
+      "source_hash": "f80227f2"
+    },
+    "2": {
+      "mesh_id": "cab-72b6e2c508c4a34ddd9bbf071c785a8c:199258016829145750",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 30276,
+      "index_count": 15138,
+      "source_hash": "0c94b618"
+    },
+    "3": {
+      "mesh_id": "cab-ea8b557d4c24eb943253315a247ea3c8:-4707444740872796043",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 18954,
+      "index_count": 9477,
+      "source_hash": "ae154b07"
+    },
+    "4": {
+      "mesh_id": "cab-3e3292ab6bcaf82592d4754706fc0277:-3534255748629444633",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 2484,
+      "index_count": 1242,
+      "source_hash": "3c26bc82"
+    },
+    "5": {
+      "mesh_id": "cab-3e3292ab6bcaf82592d4754706fc0277:-6465188344288491545",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 192,
+      "index_count": 96,
+      "source_hash": "65b4653a"
+    },
+    "6": {
+      "mesh_id": "cab-028be1bb1c0da3b1f2528e07d5e10397:1922858841742151144",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 16920,
+      "index_count": 8460,
+      "source_hash": "680e6a51"
+    },
+    "7": {
+      "mesh_id": "cab-6a0466c15cf3f0dc8271ad52c4dfe02d:-4766633188508894485",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 93456,
+      "index_count": 46728,
+      "source_hash": "7682fa9c"
+    },
+    "8": {
+      "mesh_id": "cab-3e3292ab6bcaf82592d4754706fc0277:-8007524393603938329",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 1428,
+      "index_count": 714,
+      "source_hash": "573c7681"
+    },
+    "9": {
+      "mesh_id": "cab-3e3292ab6bcaf82592d4754706fc0277:2217230031293532135",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 1776,
+      "index_count": 888,
+      "source_hash": "b284ad1e"
+    }
+  },
+  "identity_issues": [],
+  "identity_policy": "efmi-dx11-region-texture0-fullchain-v1"
+}

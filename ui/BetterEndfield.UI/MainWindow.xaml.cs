@@ -166,14 +166,15 @@ public sealed partial class MainWindow : Window
             }
 
             GamePathBox.Text = _appSettings.GameExecutablePath;
-            InjectorPathBox.Text = _appSettings.InjectorPath;
+            InjectorPathBox.Text = RuntimePathDiscoveryService.BundledInjectorPath;
             GameLaunchArgumentsBox.Text = _appSettings.GameLaunchArguments;
             SelectLoaderMode(_appSettings.LoaderMode);
             await ScanRuntimePathsAsync(showResult: false);
             RefreshRuntimeAnimationDurations();
 
             ModConfiguration configuration =
-                await ConfigurationService.LoadModConfigurationAsync(InjectorPathBox.Text);
+                await ConfigurationService.LoadModConfigurationAsync(
+                    RuntimePathDiscoveryService.BundledInjectorPath);
             ApplyConfiguration(configuration);
             RefreshCombatSessions();
             _initializing = false;
@@ -211,32 +212,11 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private async void BrowseInjectorButton_Click(object sender, RoutedEventArgs e)
-    {
-        string? selectedPath = await PickExecutableAsync("选择 BetterEndfield.Injector.exe");
-        if (selectedPath is null)
-        {
-            return;
-        }
-
-        InjectorPathBox.Text = selectedPath;
-        try
-        {
-            ModConfiguration configuration =
-                await ConfigurationService.LoadModConfigurationAsync(selectedPath);
-            ApplyConfiguration(configuration);
-            await RefreshXInputStatusAsync();
-        }
-        catch (IOException exception)
-        {
-            ShowStatus("读取配置失败", exception.Message, InfoBarSeverity.Error);
-        }
-    }
-
     private void InjectorPathBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         ConfigurationPathTextBlock.Text =
-            ConfigurationService.GetNativeConfigurationPath(InjectorPathBox.Text);
+            ConfigurationService.GetNativeConfigurationPath(
+                RuntimePathDiscoveryService.BundledInjectorPath);
         RefreshRuntimeAnimationDurations();
         RefreshRuntimeStatus();
         UpdatePathStatusText();
@@ -431,6 +411,8 @@ public sealed partial class MainWindow : Window
         string page = args.IsSettingsSelected
             ? "settings"
             : args.SelectedItemContainer?.Tag as string ?? "model";
+        CustomModelPage.Visibility = page == "custom-model" ? Visibility.Visible : Visibility.Collapsed;
+        CustomModelPage.InstallRootProvider = () => ConfigurationService.ResolveInstallRoot(RuntimePathDiscoveryService.BundledInjectorPath);
         ModelPageScrollViewer.Visibility = page == "model"
             ? Visibility.Visible
             : Visibility.Collapsed;
@@ -465,7 +447,7 @@ public sealed partial class MainWindow : Window
         AboutPageScrollViewer.Visibility = page == "about"
             ? Visibility.Visible
             : Visibility.Collapsed;
-        ActionBar.Visibility = page is "about" or "gacha"
+        ActionBar.Visibility = page is "about" or "gacha" or "custom-model"
             ? Visibility.Collapsed
             : Visibility.Visible;
         PageSelectionHintTextBlock.Text = page switch
@@ -1280,7 +1262,7 @@ public sealed partial class MainWindow : Window
             {
                 await XInputDeploymentService.InstallAsync(
                     GamePathBox.Text.Trim(),
-                    InjectorPathBox.Text.Trim());
+                    RuntimePathDiscoveryService.BundledInjectorPath);
                 startInfo = new ProcessStartInfo
                 {
                     FileName = GamePathBox.Text.Trim(),
@@ -1293,8 +1275,9 @@ public sealed partial class MainWindow : Window
             {
                 startInfo = new ProcessStartInfo
                 {
-                    FileName = InjectorPathBox.Text.Trim(),
-                    WorkingDirectory = Path.GetDirectoryName(InjectorPathBox.Text.Trim()) ?? string.Empty,
+                    FileName = RuntimePathDiscoveryService.BundledInjectorPath,
+                    WorkingDirectory = Path.GetDirectoryName(
+                        RuntimePathDiscoveryService.BundledInjectorPath) ?? string.Empty,
                     UseShellExecute = true,
                     Verb = "runas",
                     Arguments = BuildInjectorArguments(
@@ -1340,7 +1323,8 @@ public sealed partial class MainWindow : Window
     private void OpenConfigurationFolderButton_Click(object sender, RoutedEventArgs e)
     {
         string configPath =
-            ConfigurationService.GetNativeConfigurationPath(InjectorPathBox.Text);
+            ConfigurationService.GetNativeConfigurationPath(
+                RuntimePathDiscoveryService.BundledInjectorPath);
         string? directory = Path.GetDirectoryName(configPath);
         if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory))
         {
@@ -1353,7 +1337,8 @@ public sealed partial class MainWindow : Window
 
     private void OpenLogButton_Click(object sender, RoutedEventArgs e)
     {
-        string logPath = ConfigurationService.GetLogPath(InjectorPathBox.Text);
+        string logPath = ConfigurationService.GetLogPath(
+            RuntimePathDiscoveryService.BundledInjectorPath);
         if (!File.Exists(logPath))
         {
             ShowStatus(
@@ -1421,11 +1406,11 @@ public sealed partial class MainWindow : Window
             {
                 await XInputDeploymentService.InstallAsync(
                     GamePathBox.Text.Trim(),
-                    InjectorPathBox.Text.Trim());
+                    RuntimePathDiscoveryService.BundledInjectorPath);
             }
             string shortcutPath = ShortcutService.CreateGameShortcut(
                 loaderMode,
-                InjectorPathBox.Text,
+                RuntimePathDiscoveryService.BundledInjectorPath,
                 GamePathBox.Text,
                 GameLaunchArgumentsBox.Text);
             ShowStatus(
@@ -1549,7 +1534,7 @@ public sealed partial class MainWindow : Window
             return false;
         }
 
-        string injectorPath = InjectorPathBox.Text.Trim();
+        string injectorPath = RuntimePathDiscoveryService.BundledInjectorPath;
         if (!File.Exists(injectorPath))
         {
             ShowStatus(
@@ -1620,7 +1605,6 @@ public sealed partial class MainWindow : Window
                 configuration);
             await VoiceCatalogService.CommitAsync(catalogPreparation);
             _appSettings.GameExecutablePath = gamePath;
-            _appSettings.InjectorPath = injectorPath;
             _appSettings.LoaderMode = GetSelectedLoaderMode();
             _appSettings.GameLaunchArguments = GameLaunchArgumentsBox.Text.Trim();
             _appSettings.Theme = GetSelectedTheme();
@@ -1690,23 +1674,20 @@ public sealed partial class MainWindow : Window
         {
             RuntimePathDiscoveryResult result =
                 await RuntimePathDiscoveryService.DiscoverAsync(
-                    GamePathBox.Text,
-                    InjectorPathBox.Text);
+                    GamePathBox.Text);
             if (!string.IsNullOrWhiteSpace(result.GameExecutablePath))
             {
                 GamePathBox.Text = result.GameExecutablePath;
             }
-            if (!string.IsNullOrWhiteSpace(result.InjectorPath))
-            {
-                InjectorPathBox.Text = result.InjectorPath;
-            }
+            InjectorPathBox.Text = result.InjectorPath;
             UpdatePathStatusText();
             await RefreshXInputStatusAsync();
             if (showResult)
             {
                 bool gameFound = RuntimePathDiscoveryService.IsGameExecutable(
                     GamePathBox.Text);
-                bool injectorFound = File.Exists(InjectorPathBox.Text.Trim());
+                bool injectorFound = File.Exists(
+                    RuntimePathDiscoveryService.BundledInjectorPath);
                 ShowStatus(
                     gameFound && injectorFound ? "路径扫描完成" : "路径扫描未完成",
                     gameFound && injectorFound
@@ -1739,7 +1720,7 @@ public sealed partial class MainWindow : Window
         try
         {
             ConfigurationService.ResolveInstallRoot(
-                InjectorPathBox.Text.Trim(),
+                RuntimePathDiscoveryService.BundledInjectorPath,
                 GetSelectedLoaderMode());
             injectorValid = true;
         }
@@ -1895,7 +1876,7 @@ public sealed partial class MainWindow : Window
         int revision = Interlocked.Increment(ref _displayStatusRevision);
         OptiScalerDeploymentStatus status = await OptiScalerDeploymentService.InspectAsync(
             GamePathBox.Text.Trim(),
-            InjectorPathBox.Text.Trim());
+            RuntimePathDiscoveryService.BundledInjectorPath);
         if (revision != _displayStatusRevision)
         {
             return;
@@ -1948,7 +1929,7 @@ public sealed partial class MainWindow : Window
         {
             OptiScalerDeploymentStatus status = await OptiScalerDeploymentService.InstallAsync(
                 GamePathBox.Text.Trim(),
-                InjectorPathBox.Text.Trim());
+                RuntimePathDiscoveryService.BundledInjectorPath);
             await ApplyDisplayConfigurationAsync(silent: true);
             await RefreshDisplayStatusAsync();
             ShowStatus(isZh ? "显示增强已部署" : "Display Enhancement Deployed", status.Message, InfoBarSeverity.Success);
@@ -1983,7 +1964,7 @@ public sealed partial class MainWindow : Window
             await ConfigurationService.SaveDisplayConfigurationAsync(_displayConfiguration);
             IReadOnlyList<string> notes = await OptiScalerConfigurationService.ApplyAsync(
                 GamePathBox.Text.Trim(),
-                InjectorPathBox.Text.Trim(),
+                RuntimePathDiscoveryService.BundledInjectorPath,
                 _displayConfiguration,
                 _displayGpu);
             DisplayNotesTextBlock.Text = string.Join(
@@ -2019,7 +2000,7 @@ public sealed partial class MainWindow : Window
         {
             await OptiScalerDeploymentService.UninstallAsync(
                 GamePathBox.Text.Trim(),
-                InjectorPathBox.Text.Trim());
+                RuntimePathDiscoveryService.BundledInjectorPath);
             DisplayNotesTextBlock.Visibility = Visibility.Collapsed;
             await RefreshDisplayStatusAsync();
             ShowStatus(
@@ -2044,7 +2025,7 @@ public sealed partial class MainWindow : Window
         int revision = Interlocked.Increment(ref _xInputStatusRevision);
         XInputDeploymentStatus status = await XInputDeploymentService.InspectAsync(
             GamePathBox.Text.Trim(),
-            InjectorPathBox.Text.Trim());
+            RuntimePathDiscoveryService.BundledInjectorPath);
         if (revision != _xInputStatusRevision)
         {
             return;
@@ -2089,7 +2070,7 @@ public sealed partial class MainWindow : Window
         {
             XInputDeploymentStatus status = await XInputDeploymentService.InstallAsync(
                 GamePathBox.Text.Trim(),
-                InjectorPathBox.Text.Trim());
+                RuntimePathDiscoveryService.BundledInjectorPath);
             await RefreshXInputStatusAsync();
             ShowStatus(isZh ? "XInput 已安装" : "XInput Installed", status.Message, InfoBarSeverity.Success);
         }
@@ -2112,7 +2093,7 @@ public sealed partial class MainWindow : Window
         {
             await XInputDeploymentService.UninstallAsync(
                 GamePathBox.Text.Trim(),
-                InjectorPathBox.Text.Trim());
+                RuntimePathDiscoveryService.BundledInjectorPath);
             await RefreshXInputStatusAsync();
             ShowStatus(
                 "XInput 已卸载",
@@ -3017,7 +2998,8 @@ public sealed partial class MainWindow : Window
             ? new SolidColorBrush(Microsoft.UI.Colors.LimeGreen)
             : (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"];
 
-        string logPath = ConfigurationService.GetLogPath(InjectorPathBox.Text);
+        string logPath = ConfigurationService.GetLogPath(
+            RuntimePathDiscoveryService.BundledInjectorPath);
         if (File.Exists(logPath))
         {
             DateTime updated = File.GetLastWriteTime(logPath);
@@ -3027,7 +3009,8 @@ public sealed partial class MainWindow : Window
         }
         else
         {
-            LogStatusTextBlock.Text = File.Exists(InjectorPathBox.Text.Trim())
+            LogStatusTextBlock.Text = File.Exists(
+                RuntimePathDiscoveryService.BundledInjectorPath)
                 ? (isZh ? "注入器已就绪 · 尚无日志" : "Injector ready · No logs yet")
                 : (isZh ? "未找到注入器" : "Injector not found");
         }
@@ -3035,7 +3018,8 @@ public sealed partial class MainWindow : Window
 
     private void RefreshRuntimeAnimationDurations()
     {
-        string logPath = ConfigurationService.GetLogPath(InjectorPathBox.Text);
+        string logPath = ConfigurationService.GetLogPath(
+            RuntimePathDiscoveryService.BundledInjectorPath);
         if (!logPath.Equals(_durationLogPath, StringComparison.OrdinalIgnoreCase))
         {
             _durationLogPath = logPath;
@@ -3504,7 +3488,7 @@ public sealed partial class MainWindow : Window
         GameLaunchArgumentsHintTextBlock.Text = isZh
             ? "参数将原样传给 Endfield.exe；-force-d3d11 会使用 Direct3D 11 启动。"
             : "Arguments are passed directly to Endfield.exe. E.g. -force-d3d11 forces Direct3D 11 backend.";
-        InjectorPathBox.Header = isZh ? "注入器" : "Mod Injector Path";
+        InjectorPathBox.Header = isZh ? "内置注入器（固定）" : "Bundled Injector (Fixed)";
         CurrentConfigLabelTextBlock.Text = isZh ? "当前配置文件" : "Active Configuration File";
         OpenConfigFolderButtonTextBlock.Text = isZh ? "配置目录" : "Config Directory";
         OpenLogButtonTextBlock.Text = isZh ? "运行日志" : "Runtime Logs";

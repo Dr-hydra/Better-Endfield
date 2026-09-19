@@ -1,0 +1,1635 @@
+{
+  "input": "E:\\Endfield Game\\GameAssembly.dll",
+  "selected_count": 3,
+  "functions": [
+    {
+      "name": "AssetProxy.UpdateLoading",
+      "rva": "0x2c8df00",
+      "pdata_begin": "0x2c8df00",
+      "pdata_end": "0x2c8df24",
+      "calls": [
+        {
+          "at": "0x2c8df75",
+          "target": null,
+          "names": [],
+          "instruction": "call    rax ; qword_18DEAEA50"
+        },
+        {
+          "at": "0x2c8dfdf",
+          "target": "0x4b90",
+          "names": [],
+          "instruction": "call    near ptr unk_180004B90"
+        },
+        {
+          "at": "0x2c8e018",
+          "target": null,
+          "names": [],
+          "instruction": "call    rax ; qword_18DEADC20"
+        },
+        {
+          "at": "0x2c8e023",
+          "target": "0x3825490",
+          "names": [
+            "AssetProxy._FinishWithAsset"
+          ],
+          "instruction": "call    sub_183825490"
+        },
+        {
+          "at": "0x2c8e02d",
+          "target": "0x3170b60",
+          "names": [
+            "AssetProxy._OnAsyncCompleted"
+          ],
+          "instruction": "call    sub_183170B60"
+        },
+        {
+          "at": "0x2c8e032",
+          "target": "0x2c8df7b",
+          "names": [],
+          "instruction": "jmp     loc_182C8DF7B"
+        },
+        {
+          "at": "0x2c8e0cd",
+          "target": "0x1f030",
+          "names": [],
+          "instruction": "call    sub_18001F030"
+        },
+        {
+          "at": "0x2c8e0d9",
+          "target": "0x2c8e015",
+          "names": [],
+          "instruction": "jmp     loc_182C8E015"
+        },
+        {
+          "at": "0x4c21a24",
+          "target": null,
+          "names": [],
+          "instruction": "call    r8"
+        },
+        {
+          "at": "0x4c21a28",
+          "target": "0x2c8e01a",
+          "names": [],
+          "instruction": "jmp     loc_182C8E01A"
+        },
+        {
+          "at": "0x2c8e0f1",
+          "target": "0xaae414",
+          "names": [],
+          "instruction": "call    sub_180AAE414"
+        },
+        {
+          "at": "0x4c21a3b",
+          "target": "0x5080b94",
+          "names": [
+            "AssetBundleRequest.get_asset"
+          ],
+          "instruction": "call    sub_185080B94"
+        },
+        {
+          "at": "0x4c21a6a",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x4c21a77",
+          "target": "0x2d54bc0",
+          "names": [
+            "Object.op_Inequality"
+          ],
+          "instruction": "call    sub_182D54BC0"
+        },
+        {
+          "at": "0x4c21a96",
+          "target": "0x3494060",
+          "names": [
+            "GameObject.GetComponent"
+          ],
+          "instruction": "call    sub_183494060"
+        },
+        {
+          "at": "0x4c21aa1",
+          "target": "0x2c8e01d",
+          "names": [],
+          "instruction": "jmp     loc_182C8E01D"
+        },
+        {
+          "at": "0x4c219c7",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x4c219f3",
+          "target": "0x2c8e080",
+          "names": [],
+          "instruction": "jmp     near ptr unk_182C8E080"
+        },
+        {
+          "at": "0x2c8e080",
+          "target": "0x124d0",
+          "names": [],
+          "instruction": "call    sub_1800124D0"
+        },
+        {
+          "at": "0x2c8e086",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x2c8e092",
+          "target": "0x2c8e051",
+          "names": [],
+          "instruction": "jmp     short near ptr unk_182C8E051"
+        },
+        {
+          "at": "0x2c8e07b",
+          "target": "0x4c2197e",
+          "names": [],
+          "instruction": "jmp     near ptr unk_184C2197E"
+        },
+        {
+          "at": "0x4c21985",
+          "target": "0x5b901c0",
+          "names": [
+            "WrappersManagerImpl.GetPatch"
+          ],
+          "instruction": "call    sub_185B901C0"
+        },
+        {
+          "at": "0x4c2199c",
+          "target": "0xd18410",
+          "names": [
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_24",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_7"
+          ],
+          "instruction": "call    sub_180D18410"
+        },
+        {
+          "at": "0x4c219a2",
+          "target": "0x2c8df7b",
+          "names": [],
+          "instruction": "jmp     loc_182C8DF7B"
+        },
+        {
+          "at": "0x2c8e0ec",
+          "target": "0x4c219f8",
+          "names": [],
+          "instruction": "jmp     near ptr unk_184C219F8"
+        },
+        {
+          "at": "0x4c219ff",
+          "target": "0x5b901c0",
+          "names": [
+            "WrappersManagerImpl.GetPatch"
+          ],
+          "instruction": "call    sub_185B901C0"
+        },
+        {
+          "at": "0x4c21a16",
+          "target": "0xd18410",
+          "names": [
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_24",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_7"
+          ],
+          "instruction": "call    sub_180D18410"
+        },
+        {
+          "at": "0x4c21a1c",
+          "target": "0x2c8e028",
+          "names": [],
+          "instruction": "jmp     loc_182C8E028"
+        },
+        {
+          "at": "0x2c8e0b5",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x2c8e0c1",
+          "target": "0x2c8df9f",
+          "names": [],
+          "instruction": "jmp     loc_182C8DF9F"
+        },
+        {
+          "at": "0x2c8e09b",
+          "target": "0x1f1b0",
+          "names": [],
+          "instruction": "call    sub_18001F1B0"
+        },
+        {
+          "at": "0x2c8e0b0",
+          "target": "0x2c8df72",
+          "names": [],
+          "instruction": "jmp     loc_182C8DF72"
+        },
+        {
+          "at": "0x4c219ae",
+          "target": "0x2d64c8",
+          "names": [],
+          "instruction": "call    near ptr unk_1802D64C8"
+        },
+        {
+          "at": "0x4c219b8",
+          "target": "0x128c0",
+          "names": [],
+          "instruction": "call    sub_1800128C0"
+        },
+        {
+          "at": "0x4c21aab",
+          "target": "0x3520c70",
+          "names": [
+            "AssetProxy.get_logName"
+          ],
+          "instruction": "call    sub_183520C70"
+        },
+        {
+          "at": "0x4c21abd",
+          "target": "0x2f52c40",
+          "names": [
+            "String.Concat"
+          ],
+          "instruction": "call    sub_182F52C40"
+        },
+        {
+          "at": "0x4c21acb",
+          "target": "0x5ae8638",
+          "names": [
+            "AssetProxy._FinishWithError"
+          ],
+          "instruction": "call    sub_185AE8638"
+        },
+        {
+          "at": "0x4c21ad1",
+          "target": "0x2c8e028",
+          "names": [],
+          "instruction": "jmp     loc_182C8E028"
+        },
+        {
+          "at": "0x2c8e037",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x2c8e043",
+          "target": "0x2c8df1d",
+          "names": [],
+          "instruction": "jmp     loc_182C8DF1D"
+        }
+      ],
+      "asm": [
+        "0x2c8df00 push    rbx",
+        "0x2c8df02 sub     rsp, 20h",
+        "0x2c8df06 mov     rbx, rcx",
+        "0x2c8df09 mov     rcx, cs:qword_18D0D1078",
+        "0x2c8df10 cmp     dword ptr [rcx+0E0h], 0",
+        "0x2c8df17 jz      near ptr unk_182C8E037",
+        "0x2c8df1d mov     rax, [rcx+0B8h]",
+        "0x2c8df24 mov     [rsp+30h], rsi",
+        "0x2c8df29 mov     [rsp+38h], rdi",
+        "0x2c8df2e mov     rdx, [rax]",
+        "0x2c8df31 test    rdx, rdx",
+        "0x2c8df34 jz      near ptr unk_182C8E0F1",
+        "0x2c8df3a cmp     dword ptr [rdx+18h], 0C9Eh",
+        "0x2c8df41 jg      near ptr unk_182C8E048",
+        "0x2c8df47 cmp     dword ptr [rbx+38h], 1",
+        "0x2c8df4b jnz     short near ptr unk_182C8DF7B",
+        "0x2c8df4d cmp     qword ptr [rbx+0D8h], 0",
+        "0x2c8df55 jz      near ptr unk_184C21AA6",
+        "0x2c8df5b mov     rax, cs:qword_18DEAEA50",
+        "0x2c8df62 mov     rdi, [rbx+0D8h]",
+        "0x2c8df69 test    rax, rax",
+        "0x2c8df6c jz      near ptr unk_182C8E094",
+        "0x2c8df72 mov     rcx, rdi",
+        "0x2c8df75 call    rax ; qword_18DEAEA50",
+        "0x2c8df77 test    al, al",
+        "0x2c8df79 jnz     short near ptr unk_182C8DF8B",
+        "0x2c8df7b mov     rdi, [rsp+38h]",
+        "0x2c8df80 mov     rsi, [rsp+30h]",
+        "0x2c8df85 add     rsp, 20h",
+        "0x2c8df89 pop     rbx",
+        "0x2c8df8a retn",
+        "0x2c8df8b mov     rcx, cs:qword_18D0D1078",
+        "0x2c8df92 cmp     dword ptr [rcx+0E0h], 0",
+        "0x2c8df99 jz      near ptr unk_182C8E0B5",
+        "0x2c8df9f mov     rax, [rcx+0B8h]",
+        "0x2c8dfa6 mov     rdx, [rax]",
+        "0x2c8dfa9 test    rdx, rdx",
+        "0x2c8dfac jz      near ptr unk_182C8E0F1",
+        "0x2c8dfb2 cmp     dword ptr [rdx+18h], 0C97h",
+        "0x2c8dfb9 jg      near ptr unk_184C219BE",
+        "0x2c8dfbf cmp     byte ptr [rbx+98h], 0",
+        "0x2c8dfc6 mov     rdi, [rbx+0D8h]",
+        "0x2c8dfcd jnz     near ptr unk_184C21A2D",
+        "0x2c8dfd3 test    rdi, rdi",
+        "0x2c8dfd6 jz      near ptr unk_182C8E0F1",
+        "0x2c8dfdc mov     rcx, [rdi]",
+        "0x2c8dfdf call    near ptr unk_180004B90",
+        "0x2c8dfe4 mov     rax, [rdi]",
+        "0x2c8dfe7 mov     r8, [rax+180h]",
+        "0x2c8dfee mov     rdx, [rax+188h]",
+        "0x2c8dff5 lea     rax, sub_1838259E0",
+        "0x2c8dffc cmp     r8, rax",
+        "0x2c8dfff jnz     near ptr unk_184C21A21",
+        "0x2c8e005 mov     rax, cs:qword_18DEADC20",
+        "0x2c8e00c test    rax, rax",
+        "0x2c8e00f jz      near ptr unk_182C8E0C6",
+        "0x2c8e015 mov     rcx, rdi",
+        "0x2c8e018 call    rax ; qword_18DEADC20",
+        "0x2c8e01a mov     rdx, rax",
+        "0x2c8e01d xor     r8d, r8d",
+        "0x2c8e020 mov     rcx, rbx",
+        "0x2c8e023 call    sub_183825490 ; AssetProxy._FinishWithAsset",
+        "0x2c8e028 xor     edx, edx",
+        "0x2c8e02a mov     rcx, rbx",
+        "0x2c8e02d call    sub_183170B60 ; AssetProxy._OnAsyncCompleted",
+        "0x2c8e032 jmp     loc_182C8DF7B",
+        "0x2c8e037 call    sub_1800262C0",
+        "0x2c8e03c mov     rcx, cs:qword_18D0D1078",
+        "0x2c8e043 jmp     loc_182C8DF1D",
+        "0x2c8e048 cmp     dword ptr [rcx+0E0h], 0",
+        "0x2c8e04f jz      short loc_182C8E086",
+        "0x2c8e051 mov     rax, [rcx+0B8h]",
+        "0x2c8e058 mov     rdx, [rax]",
+        "0x2c8e05b test    rdx, rdx",
+        "0x2c8e05e jz      loc_182C8E0F1",
+        "0x2c8e064 cmp     dword ptr [rdx+18h], 0C9Eh",
+        "0x2c8e06b jbe     short loc_182C8E080",
+        "0x2c8e06d cmp     qword ptr [rdx+6510h], 0",
+        "0x2c8e075 jz      loc_182C8DF47",
+        "0x2c8e07b jmp     near ptr unk_184C2197E",
+        "0x2c8e080 call    sub_1800124D0",
+        "0x2c8e085 int     3; Trap to Debugger",
+        "0x2c8e086 call    sub_1800262C0",
+        "0x2c8e08b mov     rcx, cs:qword_18D0D1078",
+        "0x2c8e092 jmp     short near ptr unk_182C8E051",
+        "0x2c8e094 lea     rcx, aUnityengineAsy; \"UnityEngine.AsyncOperation::get_isDone(\"...",
+        "0x2c8e09b call    sub_18001F1B0",
+        "0x2c8e0a0 test    rax, rax",
+        "0x2c8e0a3 jz      near ptr unk_184C219A7",
+        "0x2c8e0a9 mov     cs:qword_18DEAEA50, rax",
+        "0x2c8e0b0 jmp     loc_182C8DF72",
+        "0x2c8e0b5 call    sub_1800262C0",
+        "0x2c8e0ba mov     rcx, cs:qword_18D0D1078",
+        "0x2c8e0c1 jmp     loc_182C8DF9F",
+        "0x2c8e0c6 lea     rcx, aUnityengineAss_0; \"UnityEngine.AssetBundleRequest::GetResu\"...",
+        "0x2c8e0cd call    sub_18001F030",
+        "0x2c8e0d2 mov     cs:qword_18DEADC20, rax",
+        "0x2c8e0d9 jmp     loc_182C8E015",
+        "0x2c8e0de cmp     qword ptr [rcx+64D8h], 0",
+        "0x2c8e0e6 jz      loc_182C8DFBF",
+        "0x2c8e0ec jmp     near ptr unk_184C219F8",
+        "0x2c8e0f1 call    sub_180AAE414",
+        "0x2c8e0f6 int     3; Trap to Debugger",
+        "0x2c8e0f7 int     3; Trap to Debugger",
+        "0x2c8e0f8 int     3; Trap to Debugger",
+        "0x2c8e0f9 int     3; Trap to Debugger",
+        "0x2c8e0fa int     3; Trap to Debugger",
+        "0x2c8e0fb int     3; Trap to Debugger",
+        "0x2c8e0fc int     3; Trap to Debugger",
+        "0x2c8e0fd int     3; Trap to Debugger",
+        "0x2c8e0fe int     3; Trap to Debugger",
+        "0x2c8e0ff int     3; Trap to Debugger",
+        "0x4c2197e xor     edx, edx",
+        "0x4c21980 mov     ecx, 0C9Eh",
+        "0x4c21985 call    sub_185B901C0 ; WrappersManagerImpl.GetPatch",
+        "0x4c2198a test    rax, rax",
+        "0x4c2198d jz      loc_182C8E0F1",
+        "0x4c21993 xor     r8d, r8d",
+        "0x4c21996 mov     rdx, rbx",
+        "0x4c21999 mov     rcx, rax",
+        "0x4c2199c call    sub_180D18410 ; ILFixDynamicMethodWrapper.__Gen_Wrap_24 | ILFixDynamicMethodWrapper.__Gen_Wrap_7",
+        "0x4c219a1 nop",
+        "0x4c219a2 jmp     loc_182C8DF7B",
+        "0x4c219a7 lea     rcx, aUnityengineAsy; \"UnityEngine.AsyncOperation::get_isDone(\"...",
+        "0x4c219ae call    near ptr unk_1802D64C8",
+        "0x4c219b3 mov     rcx, rax",
+        "0x4c219b6 xor     edx, edx",
+        "0x4c219b8 call    sub_1800128C0",
+        "0x4c219bd int     3; Trap to Debugger",
+        "0x4c219be cmp     dword ptr [rcx+0E0h], 0",
+        "0x4c219c5 jnz     short near ptr unk_184C219D3",
+        "0x4c219c7 call    sub_1800262C0",
+        "0x4c219cc mov     rcx, cs:qword_18D0D1078",
+        "0x4c219d3 mov     rax, [rcx+0B8h]",
+        "0x4c219da mov     rcx, [rax]",
+        "0x4c219dd test    rcx, rcx",
+        "0x4c219e0 jz      loc_182C8E0F1",
+        "0x4c219e6 cmp     dword ptr [rcx+18h], 0C97h",
+        "0x4c219ed ja      near ptr unk_182C8E0DE",
+        "0x4c219f3 jmp     near ptr unk_182C8E080",
+        "0x4c219f8 xor     edx, edx",
+        "0x4c219fa mov     ecx, 0C97h",
+        "0x4c219ff call    sub_185B901C0 ; WrappersManagerImpl.GetPatch",
+        "0x4c21a04 test    rax, rax",
+        "0x4c21a07 jz      loc_182C8E0F1",
+        "0x4c21a0d xor     r8d, r8d",
+        "0x4c21a10 mov     rdx, rbx",
+        "0x4c21a13 mov     rcx, rax",
+        "0x4c21a16 call    sub_180D18410 ; ILFixDynamicMethodWrapper.__Gen_Wrap_24 | ILFixDynamicMethodWrapper.__Gen_Wrap_7",
+        "0x4c21a1b nop",
+        "0x4c21a1c jmp     loc_182C8E028",
+        "0x4c21a21 mov     rcx, rdi",
+        "0x4c21a24 call    r8",
+        "0x4c21a27 nop",
+        "0x4c21a28 jmp     loc_182C8E01A",
+        "0x4c21a2d test    rdi, rdi",
+        "0x4c21a30 jz      loc_182C8E0F1",
+        "0x4c21a36 xor     edx, edx",
+        "0x4c21a38 mov     rcx, rdi",
+        "0x4c21a3b call    sub_185080B94 ; AssetBundleRequest.get_asset",
+        "0x4c21a40 xor     esi, esi",
+        "0x4c21a42 mov     rcx, rax",
+        "0x4c21a45 mov     edi, esi",
+        "0x4c21a47 test    rax, rax",
+        "0x4c21a4a jz      short near ptr unk_184C21A5A",
+        "0x4c21a4c mov     rax, cs:qword_18D0DB700",
+        "0x4c21a53 cmp     [rcx], rax",
+        "0x4c21a56 cmovz   rdi, rcx",
+        "0x4c21a5a mov     rcx, cs:qword_18D0D8088",
+        "0x4c21a61 cmp     dword ptr [rcx+0E0h], 0",
+        "0x4c21a68 jnz     short near ptr unk_184C21A6F",
+        "0x4c21a6a call    sub_1800262C0",
+        "0x4c21a6f xor     r8d, r8d",
+        "0x4c21a72 xor     edx, edx",
+        "0x4c21a74 mov     rcx, rdi",
+        "0x4c21a77 call    sub_182D54BC0 ; Object.op_Inequality",
+        "0x4c21a7c test    al, al",
+        "0x4c21a7e jz      short near ptr unk_184C21A9E",
+        "0x4c21a80 test    rdi, rdi",
+        "0x4c21a83 jz      loc_182C8E0F1",
+        "0x4c21a89 mov     rdx, [rbx+90h]",
+        "0x4c21a90 xor     r8d, r8d",
+        "0x4c21a93 mov     rcx, rdi",
+        "0x4c21a96 call    sub_183494060 ; GameObject.GetComponent",
+        "0x4c21a9b mov     rsi, rax",
+        "0x4c21a9e mov     rdx, rsi",
+        "0x4c21aa1 jmp     loc_182C8E01D",
+        "0x4c21aa6 xor     edx, edx",
+        "0x4c21aa8 mov     rcx, rbx",
+        "0x4c21aab call    sub_183520C70 ; AssetProxy.get_logName",
+        "0x4c21ab0 mov     rcx, cs:qword_18D0A0EC8",
+        "0x4c21ab7 xor     r8d, r8d",
+        "0x4c21aba mov     rdx, rax",
+        "0x4c21abd call    sub_182F52C40 ; String.Concat",
+        "0x4c21ac2 xor     r8d, r8d",
+        "0x4c21ac5 mov     rdx, rax",
+        "0x4c21ac8 mov     rcx, rbx",
+        "0x4c21acb call    sub_185AE8638 ; AssetProxy._FinishWithError",
+        "0x4c21ad0 nop",
+        "0x4c21ad1 jmp     loc_182C8E028"
+      ]
+    },
+    {
+      "name": "Manager.LoadAsset",
+      "rva": "0x303a9d0",
+      "pdata_begin": "0x303a9d0",
+      "pdata_end": "0x303aa2d",
+      "calls": [
+        {
+          "at": "0x303aa6b",
+          "target": "0x303beb0",
+          "names": [
+            "Manager.GenOperationGroupID"
+          ],
+          "instruction": "call    sub_18303BEB0"
+        },
+        {
+          "at": "0x303aa8e",
+          "target": "0x303c7d0",
+          "names": [
+            "BundleProxyContainer.GetOrCreateAssetProxy"
+          ],
+          "instruction": "call    sub_18303C7D0"
+        },
+        {
+          "at": "0x303ab3f",
+          "target": "0x303abf0",
+          "names": [
+            "Manager._LoadAssetProxy"
+          ],
+          "instruction": "call    sub_18303ABF0"
+        },
+        {
+          "at": "0x4ce019c",
+          "target": "0x2c919e0",
+          "names": [
+            "BundleAssetProxy.get_isDone"
+          ],
+          "instruction": "call    sub_182C919E0"
+        },
+        {
+          "at": "0x4ce01bc",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x4ce022d",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x4ce0238",
+          "target": "0x3821270",
+          "names": [
+            "AssetInfoPack.get_assetPath"
+          ],
+          "instruction": "call    sub_183821270"
+        },
+        {
+          "at": "0x4ce0253",
+          "target": "0x54c0",
+          "names": [],
+          "instruction": "call    sub_1800054C0"
+        },
+        {
+          "at": "0x4ce026b",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x4ce029b",
+          "target": "0x6db852c",
+          "names": [],
+          "instruction": "call    sub_186DB852C"
+        },
+        {
+          "at": "0x4ce02a1",
+          "target": "0x303ab21",
+          "names": [],
+          "instruction": "jmp     loc_18303AB21"
+        },
+        {
+          "at": "0x303abe5",
+          "target": "0xaae414",
+          "names": [],
+          "instruction": "call    sub_180AAE414"
+        },
+        {
+          "at": "0x303abaf",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x303abbb",
+          "target": "0x303ab10",
+          "names": [],
+          "instruction": "jmp     loc_18303AB10"
+        },
+        {
+          "at": "0x4ce0079",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x4ce00ea",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x4ce00f5",
+          "target": "0x3821270",
+          "names": [
+            "AssetInfoPack.get_assetPath"
+          ],
+          "instruction": "call    sub_183821270"
+        },
+        {
+          "at": "0x4ce0110",
+          "target": "0x54c0",
+          "names": [],
+          "instruction": "call    sub_1800054C0"
+        },
+        {
+          "at": "0x4ce0127",
+          "target": "0x2c919e0",
+          "names": [
+            "BundleAssetProxy.get_isDone"
+          ],
+          "instruction": "call    sub_182C919E0"
+        },
+        {
+          "at": "0x4ce013f",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x4ce0179",
+          "target": "0x6db8430",
+          "names": [],
+          "instruction": "call    sub_186DB8430"
+        },
+        {
+          "at": "0x4ce0185",
+          "target": "0x303ab03",
+          "names": [],
+          "instruction": "jmp     loc_18303AB03"
+        },
+        {
+          "at": "0x303ab9b",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x303aba7",
+          "target": "0x303aaf2",
+          "names": [],
+          "instruction": "jmp     loc_18303AAF2"
+        },
+        {
+          "at": "0x4ce0008",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x4ce0013",
+          "target": "0x3821270",
+          "names": [
+            "AssetInfoPack.get_assetPath"
+          ],
+          "instruction": "call    sub_183821270"
+        },
+        {
+          "at": "0x4ce002a",
+          "target": "0x30383b0",
+          "names": [
+            "AssetProxy.get_pathOrNameHash"
+          ],
+          "instruction": "call    sub_1830383B0"
+        },
+        {
+          "at": "0x4ce0042",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x4ce0062",
+          "target": "0x6dc1aec",
+          "names": [],
+          "instruction": "call    sub_186DC1AEC"
+        },
+        {
+          "at": "0x4ce0068",
+          "target": "0x303aade",
+          "names": [],
+          "instruction": "jmp     loc_18303AADE"
+        },
+        {
+          "at": "0x4cdff6f",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x4cdff9b",
+          "target": "0x124d0",
+          "names": [],
+          "instruction": "call    sub_1800124D0"
+        },
+        {
+          "at": "0x4cdffa8",
+          "target": "0x5b901c0",
+          "names": [
+            "WrappersManagerImpl.GetPatch"
+          ],
+          "instruction": "call    sub_185B901C0"
+        },
+        {
+          "at": "0x4cdffbf",
+          "target": "0x56a6a74",
+          "names": [
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_49",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_20",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_0",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_14",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_2",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_95",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_1",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_0",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_14",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_2",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_25",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_6",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_35",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_1",
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_8"
+          ],
+          "instruction": "call    sub_1856A6A74"
+        },
+        {
+          "at": "0x303abe0",
+          "target": "0x4cdffa1",
+          "names": [],
+          "instruction": "jmp     loc_184CDFFA1"
+        },
+        {
+          "at": "0x303ab87",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x303ab93",
+          "target": "0x303aab4",
+          "names": [],
+          "instruction": "jmp     loc_18303AAB4"
+        },
+        {
+          "at": "0x4ce02a8",
+          "target": "0x303ab44",
+          "names": [],
+          "instruction": "jmp     loc_18303AB44"
+        },
+        {
+          "at": "0x303ab7d",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x303ab82",
+          "target": "0x303aa69",
+          "names": [],
+          "instruction": "jmp     loc_18303AA69"
+        },
+        {
+          "at": "0x4cdfefc",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x4cdff24",
+          "target": "0x303abc0",
+          "names": [],
+          "instruction": "jmp     near ptr unk_18303ABC0"
+        },
+        {
+          "at": "0x303abcd",
+          "target": "0x4cdff29",
+          "names": [],
+          "instruction": "jmp     near ptr unk_184CDFF29"
+        },
+        {
+          "at": "0x4cdff30",
+          "target": "0x5b901c0",
+          "names": [
+            "WrappersManagerImpl.GetPatch"
+          ],
+          "instruction": "call    sub_185B901C0"
+        },
+        {
+          "at": "0x4cdff5b",
+          "target": "0xc352d0",
+          "names": [
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_1037"
+          ],
+          "instruction": "call    sub_180C352D0"
+        },
+        {
+          "at": "0x4cdff61",
+          "target": "0x303ab44",
+          "names": [],
+          "instruction": "jmp     loc_18303AB44"
+        },
+        {
+          "at": "0x303ab6c",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x303ab78",
+          "target": "0x303aa26",
+          "names": [],
+          "instruction": "jmp     loc_18303AA26"
+        }
+      ],
+      "asm": [
+        "0x303a9d0 mov     [rsp+18h], rbx",
+        "0x303a9d5 push    rbp",
+        "0x303a9d6 push    rdi",
+        "0x303a9d7 push    r12",
+        "0x303a9d9 push    r14",
+        "0x303a9db push    r15",
+        "0x303a9dd lea     rbp, [rsp-27h]",
+        "0x303a9e2 sub     rsp, 0D0h",
+        "0x303a9e9 xorps   xmm0, xmm0",
+        "0x303a9ec xor     ebx, ebx",
+        "0x303a9ee mov     rdi, rcx",
+        "0x303a9f1 mov     [rbp-51h], rbx",
+        "0x303a9f5 mov     rcx, cs:qword_18D0D1078",
+        "0x303a9fc movzx   r12d, r9b",
+        "0x303aa00 movups  xmmword ptr [rbp-29h], xmm0",
+        "0x303aa04 mov     r15, r8",
+        "0x303aa07 mov     r14, rdx",
+        "0x303aa0a movups  xmmword ptr [rbp-19h], xmm0",
+        "0x303aa0e movups  xmmword ptr [rbp-9], xmm0",
+        "0x303aa12 movups  xmmword ptr [rbp+7], xmm0",
+        "0x303aa16 movups  xmmword ptr [rbp+17h], xmm0",
+        "0x303aa1a cmp     [rcx+0E0h], ebx",
+        "0x303aa20 jz      near ptr unk_18303AB6C",
+        "0x303aa26 mov     rax, [rcx+0B8h]",
+        "0x303aa2d mov     [rsp+100h], rsi",
+        "0x303aa35 mov     [rsp+108h], r13",
+        "0x303aa3d mov     rdx, [rax]",
+        "0x303aa40 test    rdx, rdx",
+        "0x303aa43 jz      near ptr unk_18303ABE5",
+        "0x303aa49 cmp     dword ptr [rdx+18h], 0B67h",
+        "0x303aa50 jg      near ptr unk_184CDFEF4",
+        "0x303aa56 mov     rcx, cs:qword_18D0A0C70",
+        "0x303aa5d cmp     [rcx+0E0h], ebx",
+        "0x303aa63 jz      near ptr unk_18303AB7D",
+        "0x303aa69 xor     ecx, ecx",
+        "0x303aa6b call    sub_18303BEB0 ; Manager.GenOperationGroupID",
+        "0x303aa70 mov     rcx, [rdi+10h]",
+        "0x303aa74 mov     esi, eax",
+        "0x303aa76 test    rcx, rcx",
+        "0x303aa79 jz      near ptr unk_18303ABE5",
+        "0x303aa7f lea     r9, [rbp-51h]",
+        "0x303aa83 mov     [rsp+20h], rbx",
+        "0x303aa88 mov     r8, r15",
+        "0x303aa8b mov     rdx, r14",
+        "0x303aa8e call    sub_18303C7D0 ; BundleProxyContainer.GetOrCreateAssetProxy",
+        "0x303aa93 mov     rbx, [rbp-51h]",
+        "0x303aa97 test    rbx, rbx",
+        "0x303aa9a jz      near ptr unk_184CE02A6",
+        "0x303aaa0 mov     rcx, cs:qword_18D0D1078",
+        "0x303aaa7 cmp     dword ptr [rcx+0E0h], 0",
+        "0x303aaae jz      near ptr unk_18303AB87",
+        "0x303aab4 mov     rax, [rcx+0B8h]",
+        "0x303aabb mov     rdx, [rax]",
+        "0x303aabe test    rdx, rdx",
+        "0x303aac1 jz      near ptr unk_18303ABE5",
+        "0x303aac7 cmp     dword ptr [rdx+18h], 0B3Bh",
+        "0x303aace jg      near ptr unk_184CDFF66",
+        "0x303aad4 cmp     dword ptr [rbx+38h], 4",
+        "0x303aad8 jz      near ptr unk_184CDFFCC",
+        "0x303aade mov     rax, cs:qword_18D0A0DE8",
+        "0x303aae5 cmp     dword ptr [rax+0E0h], 0",
+        "0x303aaec jz      near ptr unk_18303AB98",
+        "0x303aaf2 mov     rcx, [rax+0B8h]",
+        "0x303aaf9 cmp     byte ptr [rcx+12h], 0",
+        "0x303aafd jnz     near ptr unk_184CE006D",
+        "0x303ab03 cmp     dword ptr [rax+0E0h], 0",
+        "0x303ab0a jz      near ptr unk_18303ABAC",
+        "0x303ab10 mov     rcx, [rax+0B8h]",
+        "0x303ab17 cmp     byte ptr [rcx+40h], 0",
+        "0x303ab1b jnz     near ptr unk_184CE018A",
+        "0x303ab21 mov     eax, [rbp+77h]",
+        "0x303ab24 movzx   r9d, r12b",
+        "0x303ab28 mov     rdx, [rbp-51h]",
+        "0x303ab2c mov     r8d, esi",
+        "0x303ab2f mov     qword ptr [rsp+28h], 0",
+        "0x303ab38 mov     rcx, rdi",
+        "0x303ab3b mov     [rsp+20h], eax",
+        "0x303ab3f call    sub_18303ABF0 ; Manager._LoadAssetProxy",
+        "0x303ab44 mov     r13, [rsp+108h]",
+        "0x303ab4c mov     rsi, [rsp+100h]",
+        "0x303ab54 mov     rbx, [rsp+110h]",
+        "0x303ab5c add     rsp, 0D0h",
+        "0x303ab63 pop     r15",
+        "0x303ab65 pop     r14",
+        "0x303ab67 pop     r12",
+        "0x303ab69 pop     rdi",
+        "0x303ab6a pop     rbp",
+        "0x303ab6b retn",
+        "0x303ab6c call    sub_1800262C0",
+        "0x303ab71 mov     rcx, cs:qword_18D0D1078",
+        "0x303ab78 jmp     loc_18303AA26",
+        "0x303ab7d call    sub_1800262C0",
+        "0x303ab82 jmp     loc_18303AA69",
+        "0x303ab87 call    sub_1800262C0",
+        "0x303ab8c mov     rcx, cs:qword_18D0D1078",
+        "0x303ab93 jmp     loc_18303AAB4",
+        "0x303ab98 mov     rcx, rax",
+        "0x303ab9b call    sub_1800262C0",
+        "0x303aba0 mov     rax, cs:qword_18D0A0DE8",
+        "0x303aba7 jmp     loc_18303AAF2",
+        "0x303abac mov     rcx, rax",
+        "0x303abaf call    sub_1800262C0",
+        "0x303abb4 mov     rax, cs:qword_18D0A0DE8",
+        "0x303abbb jmp     loc_18303AB10",
+        "0x303abc0 cmp     [rdx+5B58h], rbx",
+        "0x303abc7 jz      loc_18303AA56",
+        "0x303abcd jmp     near ptr unk_184CDFF29",
+        "0x303abd2 cmp     qword ptr [rcx+59F8h], 0",
+        "0x303abda jz      loc_18303AAD4",
+        "0x303abe0 jmp     loc_184CDFFA1",
+        "0x303abe5 call    sub_180AAE414",
+        "0x303abea int     3; Trap to Debugger",
+        "0x303abeb int     3; Trap to Debugger",
+        "0x303abec int     3; Trap to Debugger",
+        "0x303abed int     3; Trap to Debugger",
+        "0x303abee int     3; Trap to Debugger",
+        "0x303abef int     3; Trap to Debugger",
+        "0x4cdfef4 cmp     [rcx+0E0h], ebx",
+        "0x4cdfefa jnz     short near ptr unk_184CDFF08",
+        "0x4cdfefc call    sub_1800262C0",
+        "0x4cdff01 mov     rcx, cs:qword_18D0D1078",
+        "0x4cdff08 mov     rax, [rcx+0B8h]",
+        "0x4cdff0f mov     rdx, [rax]",
+        "0x4cdff12 test    rdx, rdx",
+        "0x4cdff15 jz      loc_18303ABE5",
+        "0x4cdff1b cmp     dword ptr [rdx+18h], 0B67h",
+        "0x4cdff22 jbe     short loc_184CDFF9B",
+        "0x4cdff24 jmp     near ptr unk_18303ABC0",
+        "0x4cdff29 xor     edx, edx",
+        "0x4cdff2b mov     ecx, 0B67h",
+        "0x4cdff30 call    sub_185B901C0 ; WrappersManagerImpl.GetPatch",
+        "0x4cdff35 test    rax, rax",
+        "0x4cdff38 jz      loc_18303ABE5",
+        "0x4cdff3e mov     ecx, [rbp+77h]",
+        "0x4cdff41 mov     r9, r15",
+        "0x4cdff44 mov     [rsp+30h], rbx",
+        "0x4cdff49 mov     r8, r14",
+        "0x4cdff4c mov     [rsp+28h], ecx",
+        "0x4cdff50 mov     rdx, rdi",
+        "0x4cdff53 mov     rcx, rax",
+        "0x4cdff56 mov     [rsp+20h], r12b",
+        "0x4cdff5b call    sub_180C352D0 ; ILFixDynamicMethodWrapper.__Gen_Wrap_1037",
+        "0x4cdff60 nop",
+        "0x4cdff61 jmp     loc_18303AB44",
+        "0x4cdff66 cmp     dword ptr [rcx+0E0h], 0",
+        "0x4cdff6d jnz     short near ptr unk_184CDFF7B",
+        "0x4cdff6f call    sub_1800262C0",
+        "0x4cdff74 mov     rcx, cs:qword_18D0D1078",
+        "0x4cdff7b mov     rax, [rcx+0B8h]",
+        "0x4cdff82 mov     rcx, [rax]",
+        "0x4cdff85 test    rcx, rcx",
+        "0x4cdff88 jz      loc_18303ABE5",
+        "0x4cdff8e cmp     dword ptr [rcx+18h], 0B3Bh",
+        "0x4cdff95 ja      near ptr unk_18303ABD2",
+        "0x4cdff9b call    sub_1800124D0",
+        "0x4cdffa0 int     3; Trap to Debugger",
+        "0x4cdffa1 xor     edx, edx",
+        "0x4cdffa3 mov     ecx, 0B3Bh",
+        "0x4cdffa8 call    sub_185B901C0 ; WrappersManagerImpl.GetPatch",
+        "0x4cdffad test    rax, rax",
+        "0x4cdffb0 jz      loc_18303ABE5",
+        "0x4cdffb6 xor     r8d, r8d",
+        "0x4cdffb9 mov     rdx, rbx",
+        "0x4cdffbc mov     rcx, rax",
+        "0x4cdffbf call    sub_1856A6A74 ; ILFixDynamicMethodWrapper.__Gen_Wrap_49 | ILFixDynamicMethodWrapper.__Gen_Wrap_20 | ILFixDynamicMethodWrapper.__Gen_Wrap_0 | ILFixDynamicMethodWrapper.__Gen_Wrap_14",
+        "0x4cdffc4 test    al, al",
+        "0x4cdffc6 jz      loc_18303AADE",
+        "0x4cdffcc movups  xmm0, xmmword ptr [r14]",
+        "0x4cdffd0 mov     rcx, cs:qword_18D0A1040",
+        "0x4cdffd7 movups  xmm1, xmmword ptr [r14+10h]",
+        "0x4cdffdc movaps  xmmword ptr [rbp-29h], xmm0",
+        "0x4cdffe0 movups  xmm0, xmmword ptr [r14+20h]",
+        "0x4cdffe5 movaps  xmmword ptr [rbp-19h], xmm1",
+        "0x4cdffe9 movups  xmm1, xmmword ptr [r14+30h]",
+        "0x4cdffee movaps  xmmword ptr [rbp-9], xmm0",
+        "0x4cdfff2 movups  xmm0, xmmword ptr [r14+40h]",
+        "0x4cdfff7 movaps  xmmword ptr [rbp+7], xmm1",
+        "0x4cdfffb movaps  xmmword ptr [rbp+17h], xmm0",
+        "0x4cdffff cmp     dword ptr [rcx+0E0h], 0",
+        "0x4ce0006 jnz     short near ptr unk_184CE000D",
+        "0x4ce0008 call    sub_1800262C0",
+        "0x4ce000d xor     edx, edx",
+        "0x4ce000f lea     rcx, [rbp-29h]",
+        "0x4ce0013 call    sub_183821270 ; AssetInfoPack.get_assetPath",
+        "0x4ce0018 mov     rcx, [rbp-51h]",
+        "0x4ce001c mov     r13, rax",
+        "0x4ce001f test    rcx, rcx",
+        "0x4ce0022 jz      loc_18303ABE5",
+        "0x4ce0028 xor     edx, edx",
+        "0x4ce002a call    sub_1830383B0 ; AssetProxy.get_pathOrNameHash",
+        "0x4ce002f mov     rcx, cs:qword_18D0A5E60",
+        "0x4ce0036 mov     rbx, rax",
+        "0x4ce0039 cmp     dword ptr [rcx+0E0h], 0",
+        "0x4ce0040 jnz     short near ptr unk_184CE0047",
+        "0x4ce0042 call    sub_1800262C0",
+        "0x4ce0047 mov     rcx, cs:qword_18D0A0E58",
+        "0x4ce004e mov     r9, rbx",
+        "0x4ce0051 mov     rdx, cs:qword_18D0A0A90",
+        "0x4ce0058 mov     r8, r13",
+        "0x4ce005b mov     [rsp+20h], rcx",
+        "0x4ce0060 mov     cl, 1",
+        "0x4ce0062 call    sub_186DC1AEC",
+        "0x4ce0067 nop",
+        "0x4ce0068 jmp     loc_18303AADE",
+        "0x4ce006d cmp     dword ptr [rax+0E0h], 0",
+        "0x4ce0074 jnz     short near ptr unk_184CE0085",
+        "0x4ce0076 mov     rcx, rax",
+        "0x4ce0079 call    sub_1800262C0",
+        "0x4ce007e mov     rax, cs:qword_18D0A0DE8",
+        "0x4ce0085 mov     rcx, [rax+0B8h]",
+        "0x4ce008c mov     r13, cs:qword_18D0A0A80",
+        "0x4ce0093 mov     rbx, cs:qword_18D0A0A88",
+        "0x4ce009a mov     rax, [rcx+38h]",
+        "0x4ce009e mov     [rbp-39h], rax",
+        "0x4ce00a2 test    r12b, r12b",
+        "0x4ce00a5 jnz     short near ptr unk_184CE00AE",
+        "0x4ce00a7 mov     rbx, cs:qword_18D0A5F70",
+        "0x4ce00ae movups  xmm0, xmmword ptr [r14]",
+        "0x4ce00b2 mov     rcx, cs:qword_18D0A1040",
+        "0x4ce00b9 movups  xmm1, xmmword ptr [r14+10h]",
+        "0x4ce00be movaps  xmmword ptr [rbp-29h], xmm0",
+        "0x4ce00c2 movups  xmm0, xmmword ptr [r14+20h]",
+        "0x4ce00c7 movaps  xmmword ptr [rbp-19h], xmm1",
+        "0x4ce00cb movups  xmm1, xmmword ptr [r14+30h]",
+        "0x4ce00d0 movaps  xmmword ptr [rbp-9], xmm0",
+        "0x4ce00d4 movups  xmm0, xmmword ptr [r14+40h]",
+        "0x4ce00d9 movaps  xmmword ptr [rbp+7], xmm1",
+        "0x4ce00dd movaps  xmmword ptr [rbp+17h], xmm0",
+        "0x4ce00e1 cmp     dword ptr [rcx+0E0h], 0",
+        "0x4ce00e8 jnz     short near ptr unk_184CE00EF",
+        "0x4ce00ea call    sub_1800262C0",
+        "0x4ce00ef xor     edx, edx",
+        "0x4ce00f1 lea     rcx, [rbp-29h]",
+        "0x4ce00f5 call    sub_183821270 ; AssetInfoPack.get_assetPath",
+        "0x4ce00fa mov     rdx, [rbp-51h]",
+        "0x4ce00fe mov     [rbp-41h], rax",
+        "0x4ce0102 test    rdx, rdx",
+        "0x4ce0105 jz      loc_18303ABE5",
+        "0x4ce010b mov     ecx, 0Ch",
+        "0x4ce0110 call    sub_1800054C0",
+        "0x4ce0115 mov     rcx, [rbp-51h]",
+        "0x4ce0119 mov     [rbp-49h], eax",
+        "0x4ce011c test    rcx, rcx",
+        "0x4ce011f jz      loc_18303ABE5",
+        "0x4ce0125 xor     edx, edx",
+        "0x4ce0127 call    sub_182C919E0 ; BundleAssetProxy.get_isDone",
+        "0x4ce012c mov     rcx, cs:qword_18D0A5E60",
+        "0x4ce0133 mov     [rbp-59h], al",
+        "0x4ce0136 cmp     dword ptr [rcx+0E0h], 0",
+        "0x4ce013d jnz     short near ptr unk_184CE0148",
+        "0x4ce013f call    sub_1800262C0",
+        "0x4ce0144 movzx   eax, byte ptr [rbp-59h]",
+        "0x4ce0148 mov     rcx, cs:qword_18D0A0A68",
+        "0x4ce014f mov     r9, rbx",
+        "0x4ce0152 mov     r8, [rbp-39h]",
+        "0x4ce0156 mov     rdx, r13",
+        "0x4ce0159 mov     [rsp+40h], rcx",
+        "0x4ce015e mov     cl, 1",
+        "0x4ce0160 mov     [rsp+38h], al",
+        "0x4ce0164 mov     eax, [rbp-49h]",
+        "0x4ce0167 mov     [rsp+30h], eax",
+        "0x4ce016b mov     rax, [rbp-41h]",
+        "0x4ce016f mov     [rsp+28h], r15",
+        "0x4ce0174 mov     [rsp+20h], rax",
+        "0x4ce0179 call    sub_186DB8430",
+        "0x4ce017e mov     rax, cs:qword_18D0A0DE8",
+        "0x4ce0185 jmp     loc_18303AB03",
+        "0x4ce018a mov     rbx, [rbp-51h]",
+        "0x4ce018e test    rbx, rbx",
+        "0x4ce0191 jz      near ptr unk_18303ABE5",
+        "0x4ce0197 xor     edx, edx",
+        "0x4ce0199 mov     rcx, rbx",
+        "0x4ce019c call    sub_182C919E0 ; BundleAssetProxy.get_isDone",
+        "0x4ce01a1 test    al, al",
+        "0x4ce01a3 jnz     loc_18303AB21",
+        "0x4ce01a9 mov     rax, cs:qword_18D0A0DE8",
+        "0x4ce01b0 cmp     dword ptr [rax+0E0h], 0",
+        "0x4ce01b7 jnz     short near ptr unk_184CE01C8",
+        "0x4ce01b9 mov     rcx, rax",
+        "0x4ce01bc call    sub_1800262C0",
+        "0x4ce01c1 mov     rax, cs:qword_18D0A0DE8",
+        "0x4ce01c8 mov     rax, [rax+0B8h]",
+        "0x4ce01cf mov     r13, cs:qword_18D0A0A78",
+        "0x4ce01d6 mov     rbx, cs:qword_18D0A0A88",
+        "0x4ce01dd mov     rax, [rax+48h]",
+        "0x4ce01e1 mov     [rbp-41h], rax",
+        "0x4ce01e5 test    r12b, r12b",
+        "0x4ce01e8 jnz     short near ptr unk_184CE01F1",
+        "0x4ce01ea mov     rbx, cs:qword_18D0A5F70",
+        "0x4ce01f1 movups  xmm0, xmmword ptr [r14]",
+        "0x4ce01f5 mov     rcx, cs:qword_18D0A1040",
+        "0x4ce01fc movups  xmm1, xmmword ptr [r14+10h]",
+        "0x4ce0201 movaps  xmmword ptr [rbp-29h], xmm0",
+        "0x4ce0205 movups  xmm0, xmmword ptr [r14+20h]",
+        "0x4ce020a movaps  xmmword ptr [rbp-19h], xmm1",
+        "0x4ce020e movups  xmm1, xmmword ptr [r14+30h]",
+        "0x4ce0213 movaps  xmmword ptr [rbp-9], xmm0",
+        "0x4ce0217 movups  xmm0, xmmword ptr [r14+40h]",
+        "0x4ce021c movaps  xmmword ptr [rbp+7], xmm1",
+        "0x4ce0220 movaps  xmmword ptr [rbp+17h], xmm0",
+        "0x4ce0224 cmp     dword ptr [rcx+0E0h], 0",
+        "0x4ce022b jnz     short near ptr unk_184CE0232",
+        "0x4ce022d call    sub_1800262C0",
+        "0x4ce0232 xor     edx, edx",
+        "0x4ce0234 lea     rcx, [rbp-29h]",
+        "0x4ce0238 call    sub_183821270 ; AssetInfoPack.get_assetPath",
+        "0x4ce023d mov     rdx, [rbp-51h]",
+        "0x4ce0241 mov     [rbp-39h], rax",
+        "0x4ce0245 test    rdx, rdx",
+        "0x4ce0248 jz      near ptr unk_18303ABE5",
+        "0x4ce024e mov     ecx, 0Ch",
+        "0x4ce0253 call    sub_1800054C0",
+        "0x4ce0258 mov     rcx, cs:qword_18D0A5E60",
+        "0x4ce025f mov     r14d, eax",
+        "0x4ce0262 cmp     dword ptr [rcx+0E0h], 0",
+        "0x4ce0269 jnz     short near ptr unk_184CE0270",
+        "0x4ce026b call    sub_1800262C0",
+        "0x4ce0270 mov     rcx, cs:qword_18D0A0A60",
+        "0x4ce0277 mov     r9, rbx",
+        "0x4ce027a mov     rax, [rbp-39h]",
+        "0x4ce027e mov     rdx, r13",
+        "0x4ce0281 mov     r8, [rbp-41h]",
+        "0x4ce0285 mov     [rsp+38h], rcx",
+        "0x4ce028a mov     cl, 1",
+        "0x4ce028c mov     [rsp+30h], r14d",
+        "0x4ce0291 mov     [rsp+28h], r15",
+        "0x4ce0296 mov     [rsp+20h], rax",
+        "0x4ce029b call    sub_186DB852C",
+        "0x4ce02a0 nop",
+        "0x4ce02a1 jmp     loc_18303AB21",
+        "0x4ce02a6 xor     eax, eax",
+        "0x4ce02a8 jmp     loc_18303AB44"
+      ]
+    },
+    {
+      "name": "NPCAvatarCreatorUtils.CreateSMSInfoForPostModel",
+      "rva": "0x3dc51f0",
+      "pdata_begin": "0x3dc51f0",
+      "pdata_end": "0x3dc5213",
+      "calls": [
+        {
+          "at": "0x3dc5239",
+          "target": "0x2c97970",
+          "names": [
+            "WrappersManagerImpl.IsPatched"
+          ],
+          "instruction": "call    sub_182C97970"
+        },
+        {
+          "at": "0x3dc525d",
+          "target": "0x32780c0",
+          "names": [],
+          "instruction": "call    sub_1832780C0"
+        },
+        {
+          "at": "0x3dc5278",
+          "target": "0x25e60",
+          "names": [],
+          "instruction": "call    sub_180025E60"
+        },
+        {
+          "at": "0x3dc528c",
+          "target": "0x26b40",
+          "names": [],
+          "instruction": "call    loc_180026B40"
+        },
+        {
+          "at": "0x3dc529c",
+          "target": "0x25e60",
+          "names": [],
+          "instruction": "call    sub_180025E60"
+        },
+        {
+          "at": "0x3dc52af",
+          "target": "0x26b40",
+          "names": [],
+          "instruction": "call    loc_180026B40"
+        },
+        {
+          "at": "0x3dc52eb",
+          "target": "0x397f0",
+          "names": [],
+          "instruction": "call    sub_1800397F0"
+        },
+        {
+          "at": "0x3dc52f9",
+          "target": "0x397f0",
+          "names": [],
+          "instruction": "call    sub_1800397F0"
+        },
+        {
+          "at": "0x3dc5301",
+          "target": "0x26b40",
+          "names": [],
+          "instruction": "call    loc_180026B40"
+        },
+        {
+          "at": "0x3dc5318",
+          "target": "0x397f0",
+          "names": [],
+          "instruction": "call    sub_1800397F0"
+        },
+        {
+          "at": "0x3dc5358",
+          "target": "0x2d0ff90",
+          "names": [],
+          "instruction": "call    sub_182D0FF90"
+        },
+        {
+          "at": "0x3dc538c",
+          "target": "0x3ab0",
+          "names": [],
+          "instruction": "call    sub_180003AB0"
+        },
+        {
+          "at": "0x3dc53a2",
+          "target": "0x4d170",
+          "names": [],
+          "instruction": "call    sub_18004D170"
+        },
+        {
+          "at": "0x3dc53a9",
+          "target": "0x3dc52b4",
+          "names": [],
+          "instruction": "jmp     loc_183DC52B4"
+        },
+        {
+          "at": "0x3dc5452",
+          "target": "0x4f163c0",
+          "names": [],
+          "instruction": "jmp     near ptr unk_184F163C0"
+        },
+        {
+          "at": "0x4f163c3",
+          "target": "0x4f50",
+          "names": [],
+          "instruction": "call    near ptr il2cpp_class_is_interface"
+        },
+        {
+          "at": "0x4f163e3",
+          "target": "0x2829d0",
+          "names": [],
+          "instruction": "call    sub_1802829D0"
+        },
+        {
+          "at": "0x4f16416",
+          "target": "0x13740",
+          "names": [],
+          "instruction": "call    sub_180013740"
+        },
+        {
+          "at": "0x4f16420",
+          "target": "0x12530",
+          "names": [],
+          "instruction": "call    sub_180012530"
+        },
+        {
+          "at": "0x4f1642d",
+          "target": "0x64af4dc",
+          "names": [
+            "WrappersManagerImpl.GetPatch"
+          ],
+          "instruction": "call    sub_1864AF4DC"
+        },
+        {
+          "at": "0x4f16491",
+          "target": "0x1358820",
+          "names": [
+            "ILFixDynamicMethodWrapper.__Gen_Wrap_1616"
+          ],
+          "instruction": "call    sub_181358820"
+        },
+        {
+          "at": "0x4f16497",
+          "target": "0x3dc53ae",
+          "names": [],
+          "instruction": "jmp     near ptr unk_183DC53AE"
+        },
+        {
+          "at": "0x3dc545d",
+          "target": "0xaae414",
+          "names": [],
+          "instruction": "call    sub_180AAE414"
+        },
+        {
+          "at": "0x4f16375",
+          "target": "0x5eb5710",
+          "names": [
+            "SubMeshInfo.GetAvailablePlatformLayers"
+          ],
+          "instruction": "call    sub_185EB5710"
+        },
+        {
+          "at": "0x4f1637e",
+          "target": "0x32783f0",
+          "names": [
+            "PlatformLayer.GetPlatformLayer"
+          ],
+          "instruction": "call    sub_1832783F0"
+        },
+        {
+          "at": "0x4f1639f",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x4f163b5",
+          "target": "0x6dc63c4",
+          "names": [],
+          "instruction": "call    sub_186DC63C4"
+        },
+        {
+          "at": "0x4f163bb",
+          "target": "0x3dc5365",
+          "names": [],
+          "instruction": "jmp     loc_183DC5365"
+        },
+        {
+          "at": "0x3dc5434",
+          "target": "0x262c0",
+          "names": [],
+          "instruction": "call    sub_1800262C0"
+        },
+        {
+          "at": "0x3dc5440",
+          "target": "0x3dc5334",
+          "names": [],
+          "instruction": "jmp     loc_183DC5334"
+        },
+        {
+          "at": "0x3dc5457",
+          "target": "0x124d0",
+          "names": [],
+          "instruction": "call    sub_1800124D0"
+        },
+        {
+          "at": "0x3dc53d8",
+          "target": "0x41260",
+          "names": [],
+          "instruction": "call    sub_180041260"
+        },
+        {
+          "at": "0x3dc53e4",
+          "target": "0x41260",
+          "names": [],
+          "instruction": "call    sub_180041260"
+        },
+        {
+          "at": "0x3dc53f0",
+          "target": "0x41260",
+          "names": [],
+          "instruction": "call    sub_180041260"
+        },
+        {
+          "at": "0x3dc53fc",
+          "target": "0x41260",
+          "names": [],
+          "instruction": "call    sub_180041260"
+        },
+        {
+          "at": "0x3dc5408",
+          "target": "0x41260",
+          "names": [],
+          "instruction": "call    sub_180041260"
+        },
+        {
+          "at": "0x3dc5414",
+          "target": "0x41260",
+          "names": [],
+          "instruction": "call    sub_180041260"
+        },
+        {
+          "at": "0x3dc5420",
+          "target": "0x41260",
+          "names": [],
+          "instruction": "call    sub_180041260"
+        },
+        {
+          "at": "0x3dc542c",
+          "target": "0x3dc5213",
+          "names": [],
+          "instruction": "jmp     loc_183DC5213"
+        }
+      ],
+      "asm": [
+        "0x3dc51f0 push    rbx",
+        "0x3dc51f2 push    rbp",
+        "0x3dc51f3 push    rsi",
+        "0x3dc51f4 push    rdi",
+        "0x3dc51f5 push    r14",
+        "0x3dc51f7 sub     rsp, 70h",
+        "0x3dc51fb cmp     cs:byte_18DEA3381, 0",
+        "0x3dc5202 mov     rbp, r9",
+        "0x3dc5205 mov     r14, r8",
+        "0x3dc5208 mov     esi, edx",
+        "0x3dc520a mov     rdi, rcx",
+        "0x3dc520d jz      near ptr unk_183DC53D1",
+        "0x3dc5213 mov     [rsp+0A0h], r12",
+        "0x3dc521b xor     ebx, ebx",
+        "0x3dc521d mov     [rsp+0A8h], r13",
+        "0x3dc5225 xor     edx, edx",
+        "0x3dc5227 mov     ecx, 167Eh",
+        "0x3dc522c mov     [rsp+0B0h], r15",
+        "0x3dc5234 mov     [rsp+60h], rbx",
+        "0x3dc5239 call    sub_182C97970 ; WrappersManagerImpl.IsPatched",
+        "0x3dc523e test    al, al",
+        "0x3dc5240 jnz     near ptr unk_184F16426",
+        "0x3dc5246 test    rdi, rdi",
+        "0x3dc5249 jz      near ptr unk_183DC545D",
+        "0x3dc524f movzx   r8d, byte ptr [rsp+0E0h]",
+        "0x3dc5258 mov     edx, esi",
+        "0x3dc525a mov     rcx, rdi",
+        "0x3dc525d call    sub_1832780C0",
+        "0x3dc5262 mov     r14, rax",
+        "0x3dc5265 test    rax, rax",
+        "0x3dc5268 jz      near ptr unk_183DC545D",
+        "0x3dc526e mov     edx, [rax+18h]",
+        "0x3dc5271 mov     rcx, cs:qword_18CFE1110",
+        "0x3dc5278 call    sub_180025E60",
+        "0x3dc527d mov     r12, [rsp+0D0h]",
+        "0x3dc5285 mov     rcx, r12",
+        "0x3dc5288 mov     [r12], rax",
+        "0x3dc528c call    loc_180026B40",
+        "0x3dc5291 mov     edx, [r14+18h]",
+        "0x3dc5295 mov     rcx, cs:qword_18CFE1108",
+        "0x3dc529c call    sub_180025E60",
+        "0x3dc52a1 mov     r15, [rsp+0D8h]",
+        "0x3dc52a9 mov     rcx, r15",
+        "0x3dc52ac mov     [r15], rax",
+        "0x3dc52af call    loc_180026B40",
+        "0x3dc52b4 cmp     ebx, [r14+18h]",
+        "0x3dc52b8 jge     near ptr unk_183DC53AE",
+        "0x3dc52be jnb     near ptr unk_183DC5457",
+        "0x3dc52c4 mov     rbp, [r15]",
+        "0x3dc52c7 test    rbp, rbp",
+        "0x3dc52ca jz      near ptr unk_183DC545D",
+        "0x3dc52d0 movsxd  rax, ebx",
+        "0x3dc52d3 mov     rsi, [r14+rax*8+20h]",
+        "0x3dc52d8 test    rsi, rsi",
+        "0x3dc52db jz      near ptr unk_183DC545D",
+        "0x3dc52e1 mov     rdi, [rsi+60h]",
+        "0x3dc52e5 mov     rcx, rbp",
+        "0x3dc52e8 movsxd  rdx, ebx",
+        "0x3dc52eb call    sub_1800397F0",
+        "0x3dc52f0 movsxd  rdx, ebx",
+        "0x3dc52f3 mov     rcx, rbp",
+        "0x3dc52f6 mov     [rax], rdi",
+        "0x3dc52f9 call    sub_1800397F0",
+        "0x3dc52fe mov     rcx, rax",
+        "0x3dc5301 call    loc_180026B40",
+        "0x3dc5306 mov     rcx, [r15]",
+        "0x3dc5309 test    rcx, rcx",
+        "0x3dc530c jz      near ptr unk_183DC545D",
+        "0x3dc5312 mov     edi, [rsi+68h]",
+        "0x3dc5315 movsxd  rdx, ebx",
+        "0x3dc5318 call    sub_1800397F0",
+        "0x3dc531d mov     [rax+8], edi",
+        "0x3dc5320 mov     rax, cs:qword_18D04EC30",
+        "0x3dc5327 cmp     dword ptr [rax+0E0h], 0",
+        "0x3dc532e jz      near ptr unk_183DC5431",
+        "0x3dc5334 mov     rax, [rax+0B8h]",
+        "0x3dc533b mov     rcx, [rax+48h]",
+        "0x3dc533f test    rcx, rcx",
+        "0x3dc5342 jz      near ptr unk_183DC545D",
+        "0x3dc5348 mov     r9, cs:qword_18CFE1128",
+        "0x3dc534f lea     r8, [rsp+60h]",
+        "0x3dc5354 mov     rdx, [rsi+30h]",
+        "0x3dc5358 call    sub_182D0FF90",
+        "0x3dc535d test    al, al",
+        "0x3dc535f jz      near ptr unk_184F16370",
+        "0x3dc5365 mov     rsi, [r12]",
+        "0x3dc5369 mov     rdi, [rsp+60h]",
+        "0x3dc536e test    rsi, rsi",
+        "0x3dc5371 jz      near ptr unk_183DC545D",
+        "0x3dc5377 test    rdi, rdi",
+        "0x3dc537a jz      short near ptr unk_183DC5399",
+        "0x3dc537c mov     rax, [rsi]",
+        "0x3dc537f mov     rbp, [rdi]",
+        "0x3dc5382 mov     rdx, rbp",
+        "0x3dc5385 mov     r13, [rax+40h]",
+        "0x3dc5389 mov     rcx, r13",
+        "0x3dc538c call    sub_180003AB0",
+        "0x3dc5391 test    al, al",
+        "0x3dc5393 jz      near ptr unk_183DC5445",
+        "0x3dc5399 movsxd  rdx, ebx",
+        "0x3dc539c mov     r8, rdi",
+        "0x3dc539f mov     rcx, rsi",
+        "0x3dc53a2 call    sub_18004D170",
+        "0x3dc53a7 inc     ebx",
+        "0x3dc53a9 jmp     loc_183DC52B4",
+        "0x3dc53ae mov     r15, [rsp+0B0h]",
+        "0x3dc53b6 mov     r13, [rsp+0A8h]",
+        "0x3dc53be mov     r12, [rsp+0A0h]",
+        "0x3dc53c6 add     rsp, 70h",
+        "0x3dc53ca pop     r14",
+        "0x3dc53cc pop     rdi",
+        "0x3dc53cd pop     rsi",
+        "0x3dc53ce pop     rbp",
+        "0x3dc53cf pop     rbx",
+        "0x3dc53d0 retn",
+        "0x3dc53d1 lea     rcx, qword_18D095E28",
+        "0x3dc53d8 call    sub_180041260",
+        "0x3dc53dd lea     rcx, qword_18D0A5E60",
+        "0x3dc53e4 call    sub_180041260",
+        "0x3dc53e9 lea     rcx, qword_18CFE1128",
+        "0x3dc53f0 call    sub_180041260",
+        "0x3dc53f5 lea     rcx, qword_18D04EC30",
+        "0x3dc53fc call    sub_180041260",
+        "0x3dc5401 lea     rcx, qword_18CFE1108",
+        "0x3dc5408 call    sub_180041260",
+        "0x3dc540d lea     rcx, qword_18CFE1110",
+        "0x3dc5414 call    sub_180041260",
+        "0x3dc5419 lea     rcx, qword_18CFE10A0",
+        "0x3dc5420 call    sub_180041260",
+        "0x3dc5425 mov     cs:byte_18DEA3381, 1",
+        "0x3dc542c jmp     loc_183DC5213",
+        "0x3dc5431 mov     rcx, rax",
+        "0x3dc5434 call    sub_1800262C0",
+        "0x3dc5439 mov     rax, cs:qword_18D04EC30",
+        "0x3dc5440 jmp     loc_183DC5334",
+        "0x3dc5445 test    byte ptr [rbp+139h], 10h",
+        "0x3dc544c jz      near ptr unk_184F163FE",
+        "0x3dc5452 jmp     near ptr unk_184F163C0",
+        "0x3dc5457 call    sub_1800124D0",
+        "0x3dc545c int     3; Trap to Debugger",
+        "0x3dc545d call    sub_180AAE414",
+        "0x3dc5462 int     3; Trap to Debugger",
+        "0x3dc5463 int     3; Trap to Debugger",
+        "0x3dc5464 int     3; Trap to Debugger",
+        "0x3dc5465 int     3; Trap to Debugger",
+        "0x3dc5466 int     3; Trap to Debugger",
+        "0x3dc5467 int     3; Trap to Debugger",
+        "0x3dc5468 int     3; Trap to Debugger",
+        "0x3dc5469 int     3; Trap to Debugger",
+        "0x3dc546a int     3; Trap to Debugger",
+        "0x3dc546b int     3; Trap to Debugger",
+        "0x3dc546c int     3; Trap to Debugger",
+        "0x3dc546d int     3; Trap to Debugger",
+        "0x3dc546e int     3; Trap to Debugger",
+        "0x3dc546f int     3; Trap to Debugger",
+        "0x4f16370 xor     edx, edx",
+        "0x4f16372 mov     rcx, rsi",
+        "0x4f16375 call    sub_185EB5710 ; SubMeshInfo.GetAvailablePlatformLayers",
+        "0x4f1637a xor     ecx, ecx",
+        "0x4f1637c mov     edi, eax",
+        "0x4f1637e call    sub_1832783F0 ; PlatformLayer.GetPlatformLayer",
+        "0x4f16383 test    edi, eax",
+        "0x4f16385 jz      loc_183DC5365",
+        "0x4f1638b mov     rcx, cs:qword_18D0A5E60",
+        "0x4f16392 mov     rdi, [rsi+30h]",
+        "0x4f16396 cmp     dword ptr [rcx+0E0h], 0",
+        "0x4f1639d jnz     short near ptr unk_184F163A4",
+        "0x4f1639f call    sub_1800262C0",
+        "0x4f163a4 mov     r8, cs:qword_18D095E28",
+        "0x4f163ab mov     rdx, rdi",
+        "0x4f163ae mov     rcx, cs:qword_18CFE10A0",
+        "0x4f163b5 call    sub_186DC63C4",
+        "0x4f163ba nop",
+        "0x4f163bb jmp     loc_183DC5365",
+        "0x4f163c0 mov     rcx, r13",
+        "0x4f163c3 call    near ptr il2cpp_class_is_interface",
+        "0x4f163c8 test    al, al",
+        "0x4f163ca jz      short near ptr unk_184F163F1",
+        "0x4f163cc cmp     qword ptr [r13+70h], 0",
+        "0x4f163d1 jz      short near ptr unk_184F163F1",
+        "0x4f163d3 mov     rax, [r13+70h]",
+        "0x4f163d7 mov     rdx, [rax+28h]",
+        "0x4f163db test    rdx, rdx",
+        "0x4f163de jz      short near ptr unk_184F163F1",
+        "0x4f163e0 mov     rcx, rdi",
+        "0x4f163e3 call    sub_1802829D0",
+        "0x4f163e8 test    rax, rax",
+        "0x4f163eb jnz     loc_183DC5399",
+        "0x4f163f1 cmp     r13, cs:qword_18DE9F470",
+        "0x4f163f8 jz      loc_183DC5399",
+        "0x4f163fe mov     rcx, cs:qword_18DE9F460",
+        "0x4f16405 lea     r8, aArraytypemisma; \"ArrayTypeMismatchException\"",
+        "0x4f1640c xor     r9d, r9d",
+        "0x4f1640f lea     rdx, aSystem; \"System\"",
+        "0x4f16416 call    sub_180013740",
+        "0x4f1641b xor     edx, edx",
+        "0x4f1641d mov     rcx, rax",
+        "0x4f16420 call    sub_180012530",
+        "0x4f16425 int     3; Trap to Debugger",
+        "0x4f16426 xor     edx, edx",
+        "0x4f16428 mov     ecx, 167Eh",
+        "0x4f1642d call    sub_1864AF4DC ; WrappersManagerImpl.GetPatch",
+        "0x4f16432 mov     rcx, rax",
+        "0x4f16435 test    rax, rax",
+        "0x4f16438 jz      near ptr unk_183DC545D",
+        "0x4f1643e movzx   eax, byte ptr [rsp+0E0h]",
+        "0x4f16446 mov     r9, r14",
+        "0x4f16449 mov     [rsp+50h], rbx",
+        "0x4f1644e mov     r8d, esi",
+        "0x4f16451 mov     [rsp+48h], al",
+        "0x4f16455 mov     rdx, rdi",
+        "0x4f16458 mov     rax, [rsp+0D8h]",
+        "0x4f16460 mov     [rsp+40h], rax",
+        "0x4f16465 mov     rax, [rsp+0D0h]",
+        "0x4f1646d mov     [rsp+38h], rax",
+        "0x4f16472 mov     rax, [rsp+0C8h]",
+        "0x4f1647a mov     [rsp+30h], rax",
+        "0x4f1647f mov     rax, [rsp+0C0h]",
+        "0x4f16487 mov     [rsp+28h], rax",
+        "0x4f1648c mov     [rsp+20h], rbp",
+        "0x4f16491 call    sub_181358820 ; ILFixDynamicMethodWrapper.__Gen_Wrap_1616",
+        "0x4f16496 nop",
+        "0x4f16497 jmp     near ptr unk_183DC53AE"
+      ]
+    }
+  ]
+}
