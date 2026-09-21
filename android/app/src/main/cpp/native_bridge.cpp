@@ -1,9 +1,12 @@
 #include "core/log.h"
 #include "core/runtime.h"
+#include "core/command_pump.h"
 #include "modules/module.h"
 #include "modules/character_voice/character_voice_module.h"
 #include "modules/enhancement/enhancement_module.h"
 #include "modules/login_model/login_model_module.h"
+#include "modules/custom_model/resource_probe.h"
+#include "modules/custom_model/custom_model_module.h"
 
 #include <jni.h>
 
@@ -13,6 +16,7 @@
 #include <memory>
 #include <thread>
 #include <vector>
+#include <string>
 
 namespace betterendfield {
 namespace {
@@ -51,6 +55,14 @@ void RunModules() {
     }
 
     const char* voice_rules = std::getenv("BETTER_ENDFIELD_VOICE_RULES");
+    const char* custom_probe = std::getenv("BETTER_ENDFIELD_CUSTOM_MODEL_PROBE");
+    const char* custom_model_config = std::getenv("BETTER_ENDFIELD_CUSTOM_MODEL_CONFIG");
+    if (custom_model_config && *custom_model_config != '\0') {
+        g_modules.emplace_back(std::make_unique<CustomModelModule>());
+    }
+    if (custom_probe && std::string(custom_probe) == "1") {
+        g_modules.emplace_back(std::make_unique<CustomModelResourceProbe>());
+    }
     if (voice_rules != nullptr && *voice_rules != '\0') {
         g_modules.emplace_back(std::make_unique<CharacterVoiceModule>());
     }
@@ -85,8 +97,11 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM*, void*) {
         std::getenv("BETTER_ENDFIELD_ENHANCEMENT_CONFIG");
     const bool enhancement_requested = configured_enhancement != nullptr &&
         configured_enhancement[0] != '\0';
+    const char* custom_probe = std::getenv("BETTER_ENDFIELD_CUSTOM_MODEL_PROBE");
+    const char* custom_model_config = std::getenv("BETTER_ENDFIELD_CUSTOM_MODEL_CONFIG");
     const bool any_requested = character_voice_requested || model_requested ||
-        enhancement_requested;
+        enhancement_requested || (custom_probe && std::string(custom_probe) == "1") ||
+        (custom_model_config && custom_model_config[0] != '\0');
     if (any_requested &&
         !betterendfield::g_runtime_started.exchange(true, std::memory_order_acq_rel)) {
         std::thread(betterendfield::RunModules).detach();
@@ -96,4 +111,23 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM*, void*) {
             "no Android modules selected; IL2CPP worker not started");
     }
     return JNI_VERSION_1_6;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_submit(
+        JNIEnv* environment, jclass, jstring payload) {
+    if (!environment || !payload) return JNI_FALSE;
+    const char* text = environment->GetStringUTFChars(payload, nullptr);
+    if (!text) return JNI_FALSE;
+    const bool accepted = betterendfield::SubmitRuntimeCommand(text, std::strlen(text));
+    environment->ReleaseStringUTFChars(payload, text);
+    return accepted ? JNI_TRUE : JNI_FALSE;
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_status(
+        JNIEnv* environment, jclass) {
+    if (!environment) return nullptr;
+    const std::string status = betterendfield::CopyRuntimeCommandStatus();
+    return environment->NewStringUTF(status.c_str());
 }

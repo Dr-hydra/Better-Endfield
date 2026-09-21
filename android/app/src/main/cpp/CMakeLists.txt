@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22.1)
-project(BetterEndfieldAndroid LANGUAGES CXX)
+project(BetterEndfieldAndroid LANGUAGES C CXX)
 
 get_filename_component(BETTER_ENDFIELD_ROOT
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../../.." ABSOLUTE)
@@ -18,16 +18,34 @@ set(Plugin.LinkerLoadCallback OFF CACHE BOOL "" FORCE)
 set(Plugin.ApplicationEventMonitor OFF CACHE BOOL "" FORCE)
 set(Plugin.Android.BionicLinkerRestriction OFF CACHE BOOL "" FORCE)
 add_subdirectory("${DOBBY_ROOT}" "${CMAKE_CURRENT_BINARY_DIR}/dobby")
+add_subdirectory("${BETTER_ENDFIELD_ROOT}/native/modules/custom_model"
+    "${CMAKE_CURRENT_BINARY_DIR}/custom_model")
 
 add_library(betterendfield_android SHARED
     native_bridge.cpp
     core/hook_broker.cpp
     core/log.cpp
     core/runtime.cpp
+    core/command_pump.cpp
+    modules/custom_model/resource_probe.cpp
+    modules/custom_model/mesh_layout_probe.cpp
+    modules/custom_model/mesh_skin_metadata_adapter.cpp
+    modules/custom_model/custom_model_module.cpp
+    modules/custom_model/android_mesh_builder.cpp
+    "${BETTER_ENDFIELD_ROOT}/native/modules/custom_model/module.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/modules/custom_model/native_mesh_layout_android.cpp"
     modules/character_voice/character_voice_module.cpp
     modules/enhancement/enhancement_module.cpp
     modules/login_model/login_model_module.cpp
     "${BETTER_ENDFIELD_ROOT}/native/modules/model/module.cpp")
+
+# The Android runtime currently uses its own Module interface. Compile the
+# shared PC custom-model translation unit as a private implementation target so
+# its exported desktop module symbol cannot collide with the login-model module.
+set_source_files_properties(
+    "${BETTER_ENDFIELD_ROOT}/native/modules/custom_model/module.cpp"
+    PROPERTIES COMPILE_DEFINITIONS
+    "BetterEndfield_GetModuleApiV1=BetterEndfield_GetCustomModelModuleApiV1")
 
 target_include_directories(betterendfield_android PRIVATE
     .
@@ -51,5 +69,6 @@ target_link_libraries(betterendfield_android PRIVATE
     c++_static
     c++abi
     dobby
+    BetterEndfield.CustomModelCore
     ${log_library}
     ${dl_library})

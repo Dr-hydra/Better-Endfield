@@ -1,6 +1,7 @@
 #include "runtime.h"
 
 #include <dlfcn.h>
+#include <link.h>
 
 #include <cstdint>
 #include <cstdio>
@@ -30,6 +31,7 @@ bool IsExecutableAddress(const void* pointer) {
 
     char line[512]{};
     bool executable = false;
+    bool readable = false;
     while (std::fgets(line, sizeof(line), maps) != nullptr) {
         uintptr_t start = 0;
         uintptr_t end = 0;
@@ -37,11 +39,31 @@ bool IsExecutableAddress(const void* pointer) {
         if (std::sscanf(line, "%lx-%lx %4s", &start, &end, permissions) == 3 &&
             address >= start && address < end) {
             executable = permissions[2] == 'x';
+            readable = permissions[0] == 'r';
             break;
         }
     }
     std::fclose(maps);
-    return executable;
+    if (executable || !readable) return executable;
+    // Native-bridge emulators translate ARM64 code from host-readable mappings
+    // without host PROT_EXEC. Still require a loaded ELF executable PT_LOAD;
+    // never accept an arbitrary readable pointer as a callable engine method.
+    struct Search { uintptr_t address; bool found; } search{address, false};
+    dl_iterate_phdr([](dl_phdr_info* info, size_t, void* opaque) {
+        auto& query = *static_cast<Search*>(opaque);
+        for (size_t i = 0; i < info->dlpi_phnum; ++i) {
+            const auto& segment = info->dlpi_phdr[i];
+            if (segment.p_type != PT_LOAD || !(segment.p_flags & PF_X) ||
+                    segment.p_vaddr > UINTPTR_MAX - info->dlpi_addr) continue;
+            uintptr_t start = info->dlpi_addr + segment.p_vaddr;
+            if (query.address >= start && query.address - start < segment.p_memsz) {
+                query.found = true;
+                return 1;
+            }
+        }
+        return 0;
+    }, &search);
+    return search.found;
 }
 
 void AppendUtf8(std::string& output, uint32_t codepoint) {
@@ -138,6 +160,12 @@ bool Il2CppRuntime::Connect() {
         library, "il2cpp_string_new");
     const auto object_new = ResolveExport<decltype(object_new_)>(
         library, "il2cpp_object_new");
+    const auto value_box = ResolveExport<decltype(value_box_)>(
+        library, "il2cpp_value_box");
+    const auto array_new = ResolveExport<decltype(array_new_)>(
+        library, "il2cpp_array_new");
+    const auto array_new_specific = ResolveExport<decltype(array_new_specific_)>(
+        library, "il2cpp_array_new_specific");
     const auto object_unbox = ResolveExport<decltype(object_unbox_)>(
         library, "il2cpp_object_unbox");
     const auto gchandle_new = ResolveExport<decltype(gchandle_new_)>(
@@ -171,6 +199,11 @@ bool Il2CppRuntime::Connect() {
     domain_assembly_open_ = domain_assembly_open;
     assembly_get_image_ = assembly_get_image;
     class_from_name_ = class_from_name;
+    class_get_array_class_ = ResolveExport<decltype(class_get_array_class_)>(
+        library, "il2cpp_class_get_array_class");
+    class_get_nested_types_ = ResolveExport<decltype(class_get_nested_types_)>(
+        library, "il2cpp_class_get_nested_types");
+    class_get_name_ = ResolveExport<decltype(class_get_name_)>(library, "il2cpp_class_get_name");
     class_get_method_from_name_ = class_get_method_from_name;
     class_get_methods_ = class_get_methods;
     method_get_name_ = method_get_name;
@@ -178,6 +211,7 @@ bool Il2CppRuntime::Connect() {
     method_get_parameter_ = method_get_parameter;
     method_get_return_type_ = method_get_return_type;
     type_get_name_ = type_get_name;
+    free_ = ResolveExport<decltype(free_)>(library, "il2cpp_free");
     class_get_type_ = class_get_type;
     type_get_object_ = type_get_object;
     class_get_field_from_name_ = class_get_field_from_name;
@@ -187,6 +221,9 @@ bool Il2CppRuntime::Connect() {
     string_length_ = string_length;
     string_new_ = string_new;
     object_new_ = object_new;
+    value_box_ = value_box;
+    array_new_ = array_new;
+    array_new_specific_ = array_new_specific;
     object_unbox_ = object_unbox;
     gchandle_new_ = gchandle_new;
     gchandle_free_ = gchandle_free;
@@ -227,6 +264,29 @@ void* Il2CppRuntime::NewString(const char* value) const {
 
 void* Il2CppRuntime::NewObject(const Il2CppClass* klass) const {
     return klass == nullptr || object_new_ == nullptr ? nullptr : object_new_(klass);
+}
+
+void* Il2CppRuntime::BoxValue(const Il2CppClass* klass, const void* value) const {
+    return klass == nullptr || value == nullptr || value_box_ == nullptr
+        ? nullptr : value_box_(const_cast<Il2CppClass*>(klass), const_cast<void*>(value));
+}
+
+void* Il2CppRuntime::NewArray(const Il2CppClass* element_class, uintptr_t length) const {
+    return element_class == nullptr || array_new_ == nullptr
+        ? nullptr : array_new_(const_cast<Il2CppClass*>(element_class), length);
+}
+
+void* Il2CppRuntime::NewArraySpecific(const Il2CppClass* element_class, uintptr_t length) const {
+    if (element_class == nullptr) return nullptr;
+    if (array_new_specific_ != nullptr && class_get_array_class_ != nullptr) {
+        Il2CppClass* array_class = class_get_array_class_(
+            const_cast<Il2CppClass*>(element_class), 1);
+        if (array_class != nullptr) return array_new_specific_(array_class, length);
+    }
+    // Some stripped players omit class_get_array_class/array_new_specific;
+    // il2cpp_array_new is the equivalent element-type path.
+    return array_new_ == nullptr ? nullptr : array_new_(
+        const_cast<Il2CppClass*>(element_class), length);
 }
 
 void* Il2CppRuntime::Unbox(void* value) const {
@@ -278,16 +338,8 @@ ResolvedMethod Il2CppRuntime::ResolveMethod(
         return {};
     }
 
-    Il2CppDomain* domain = domain_get_();
-    const Il2CppAssembly* target_assembly = domain == nullptr
-        ? nullptr
-        : domain_assembly_open_(domain, assembly);
-    const Il2CppImage* image = target_assembly == nullptr
-        ? nullptr
-        : assembly_get_image_(target_assembly);
-    Il2CppClass* target_class = image == nullptr
-        ? nullptr
-        : class_from_name_(image, namespaze, klass);
+    const ResolvedClass resolved = ResolveClass(assembly, namespaze, klass);
+    Il2CppClass* target_class = resolved.info;
     const MethodInfo* info = target_class == nullptr
         ? nullptr
         : class_get_method_from_name_(target_class, method, parameter_count);
@@ -330,7 +382,9 @@ ResolvedMethod Il2CppRuntime::ResolveMethodExact(
         bool matches = true;
         for (uint32_t index = 0; index < expected_parameters.size(); ++index) {
             char* actual = type_get_name_(method_get_parameter_(candidate, index));
-            if (actual == nullptr || expected_parameters[index] != actual) {
+            const bool equal = actual != nullptr && expected_parameters[index] == actual;
+            if (actual && free_) free_(actual);
+            if (!equal) {
                 matches = false;
                 break;
             }
@@ -338,6 +392,7 @@ ResolvedMethod Il2CppRuntime::ResolveMethodExact(
         if (matches && return_type != nullptr && *return_type != '\0') {
             char* actual = type_get_name_(method_get_return_type_(candidate));
             matches = actual != nullptr && std::string_view(actual) == return_type;
+            if (actual && free_) free_(actual);
         }
         if (!matches) {
             continue;
@@ -346,6 +401,54 @@ ResolvedMethod Il2CppRuntime::ResolveMethodExact(
         return IsExecutableAddress(entry) ? ResolvedMethod{candidate, entry} : ResolvedMethod{};
     }
     return {};
+}
+
+std::string Il2CppRuntime::DescribeMethod(const char* assembly, const char* namespaze,
+        const char* klass, const char* method) const {
+    std::string result = std::string(assembly) + ":" + namespaze + "." + klass + "." + method;
+    auto target = ResolveClass(assembly, namespaze, klass);
+    if (!target.info) return result + " class unavailable";
+    result += " class found;";
+    auto type_name = [&](const Il2CppType* type) {
+        char* raw = type ? type_get_name_(type) : nullptr;
+        std::string text = raw ? raw : "?";
+        if (raw && free_) free_(raw);
+        return text;
+    };
+    void* iterator = nullptr;
+    size_t matches = 0;
+    while (const MethodInfo* candidate = class_get_methods_(target.info, &iterator)) {
+        const char* name = method_get_name_(candidate);
+        if (!name || std::strcmp(name, method) != 0) continue;
+        result += " (";
+        auto count = method_get_parameter_count_(candidate);
+        for (uint32_t i = 0; i < count; ++i) {
+            if (i) result += "|";
+            result += type_name(method_get_parameter_(candidate, i));
+        }
+        result += ")->" + type_name(method_get_return_type_(candidate));
+        void* entry = reinterpret_cast<const Il2CppMethodInfoPrefix*>(candidate)->method_pointer;
+        char state[96];
+        std::snprintf(state, sizeof(state), " entry=%p engine_code=%s;", entry,
+            IsExecutableAddress(entry) ? "yes" : "no");
+        result += state;
+        if (++matches == 8) break;
+    }
+    return result + " overloads=" + std::to_string(matches);
+}
+
+bool Il2CppRuntime::IsInstanceOf(void* value, const ResolvedClass& type) const {
+    if (!library_ || !value || !type.info) return false;
+    auto object_class = ResolveExport<Il2CppClass*(*)(void*)>(library_, "il2cpp_object_get_class");
+    auto assignable = ResolveExport<bool(*)(Il2CppClass*, Il2CppClass*)>(library_, "il2cpp_class_is_assignable_from");
+    return object_class && assignable && assignable(type.info, object_class(value));
+}
+
+void* Il2CppRuntime::ResolveIcall(const char* name) const {
+    if (!library_ || !name) return nullptr;
+    auto resolve = ResolveExport<void*(*)(const char*)>(library_, "il2cpp_resolve_icall");
+    void* entry = resolve ? resolve(name) : nullptr;
+    return IsExecutableAddress(entry) ? entry : nullptr;
 }
 
 ResolvedClass Il2CppRuntime::ResolveClass(
@@ -362,6 +465,27 @@ ResolvedClass Il2CppRuntime::ResolveClass(
         ? nullptr : assembly_get_image_(target_assembly);
     Il2CppClass* target_class = image == nullptr
         ? nullptr : class_from_name_(image, namespaze, klass);
+    // class_from_name only guarantees top-level lookup. Resource delivery uses
+    // BundleLoader.AssetProxy; resolve its nested types through metadata exports.
+    if (!target_class && image && klass && class_get_nested_types_ && class_get_name_) {
+        std::string path(klass);
+        size_t separator = path.find_first_of("./+");
+        if (separator != std::string::npos) {
+            target_class = class_from_name_(image, namespaze, path.substr(0, separator).c_str());
+            while (target_class && separator != std::string::npos) {
+                size_t start = separator + 1;
+                separator = path.find_first_of("./+", start);
+                std::string part = path.substr(start, separator - start);
+                void* iterator = nullptr;
+                Il2CppClass* match = nullptr;
+                while (auto* nested = class_get_nested_types_(target_class, &iterator)) {
+                    const char* name = class_get_name_(nested);
+                    if (name && part == name) { match = nested; break; }
+                }
+                target_class = match;
+            }
+        }
+    }
     const Il2CppType* type = target_class == nullptr
         ? nullptr : class_get_type_(target_class);
     void* type_object = type == nullptr ? nullptr : type_get_object_(type);
@@ -376,13 +500,8 @@ ResolvedField Il2CppRuntime::ResolveField(
     if (library_ == nullptr) {
         return {};
     }
-    Il2CppDomain* domain = domain_get_();
-    const Il2CppAssembly* target_assembly = domain == nullptr
-        ? nullptr : domain_assembly_open_(domain, assembly);
-    const Il2CppImage* image = target_assembly == nullptr
-        ? nullptr : assembly_get_image_(target_assembly);
-    Il2CppClass* target_class = image == nullptr
-        ? nullptr : class_from_name_(image, namespaze, klass);
+    const ResolvedClass resolved = ResolveClass(assembly, namespaze, klass);
+    Il2CppClass* target_class = resolved.info;
     const FieldInfo* info = target_class == nullptr
         ? nullptr : class_get_field_from_name_(target_class, field);
     if (info == nullptr) {

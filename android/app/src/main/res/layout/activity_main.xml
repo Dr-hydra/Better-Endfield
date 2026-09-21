@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/responsive_scroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/app_background"
@@ -8,6 +9,7 @@
     android:overScrollMode="never">
 
     <LinearLayout
+        android:id="@+id/responsive_content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -124,6 +126,22 @@
                 android:minWidth="0dp"
                 android:padding="0dp"
                 android:text="@string/enhancement_page"
+                android:textAllCaps="false"
+                android:textColor="@color/tab_text"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/show_diagnostics_button"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_tab"
+                android:fontFamily="sans-serif-medium"
+                android:minHeight="0dp"
+                android:minWidth="0dp"
+                android:padding="0dp"
+                android:text="@string/diagnostics_page"
                 android:textAllCaps="false"
                 android:textColor="@color/tab_text"
                 android:textSize="14sp" />
@@ -425,6 +443,13 @@
                     android:layout_marginTop="10dp"
                     android:text="@string/enhancement_disable_dither" />
                 <TextView style="@style/BodyText" android:text="@string/enhancement_disable_dither_hint" />
+
+                <Switch
+                    android:id="@+id/overlay_enabled"
+                    style="@style/SettingSwitch"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/overlay_enable" />
+                <TextView style="@style/BodyText" android:text="@string/overlay_enable_hint" />
             </LinearLayout>
 
             <Button
@@ -437,6 +462,60 @@
                 android:id="@+id/enhancement_status"
                 style="@style/SelectionSummary"
                 android:layout_marginTop="12dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/diagnostics_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:padding="18dp">
+
+                <TextView style="@style/SectionEyebrow" android:text="@string/diagnostics_eyebrow" />
+                <TextView style="@style/SectionTitle" android:text="@string/diagnostics_title" />
+                <TextView
+                    style="@style/BodyText"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/diagnostics_description" />
+                <TextView
+                    android:id="@+id/diagnostics_status"
+                    style="@style/StatusPill"
+                    android:layout_marginTop="14dp"
+                    android:text="@string/diagnostics_ready" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:padding="18dp">
+
+                <TextView
+                    style="@style/BodyText"
+                    android:text="@string/diagnostics_framework" />
+                <TextView
+                    android:id="@+id/diagnostics_overlay_status"
+                    style="@style/BodyText"
+                    android:layout_marginTop="12dp" />
+                <TextView
+                    android:id="@+id/diagnostics_model_status"
+                    style="@style/BodyText"
+                    android:layout_marginTop="12dp" />
+                <TextView
+                    style="@style/BodyText"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/diagnostics_mesh" />
+            </LinearLayout>
         </LinearLayout>
 
         <TextView

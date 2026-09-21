@@ -50,7 +50,7 @@ bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,Mod
             if(!enabled) continue;
             auto file=get("package");
             auto path=std::filesystem::path(std::u8string_view(reinterpret_cast<const char8_t*>(file.data()),file.size()));
-            if(file.empty()||path.extension()!=L".bem") {parsed.diagnostics.push_back("Refused non-BEMv1 package: "+name);continue;}
+            if(file.empty()||path.extension()!=".bem") {parsed.diagnostics.push_back("Refused non-BEMv1 package: "+name);continue;}
             if(path.is_relative()) path=root/path;
             BemPackageInfo info; std::string why;
             if(!ReadBemPackageInfo(path,info,why)) {parsed.diagnostics.push_back("Package refused: "+name+": "+why);continue;}

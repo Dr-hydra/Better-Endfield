@@ -55,6 +55,8 @@ public:
         const char* parameter_types,
         const char* return_type,
         int parameter_count) const;
+    std::string DescribeMethod(const char* assembly, const char* namespaze,
+        const char* klass, const char* method) const;
     ResolvedClass ResolveClass(
         const char* assembly,
         const char* namespaze,
@@ -69,7 +71,12 @@ public:
     std::string CopyString(void* value) const;
     void* NewString(const char* value) const;
     void* NewObject(const Il2CppClass* klass) const;
+    void* BoxValue(const Il2CppClass* klass, const void* value) const;
+    void* NewArray(const Il2CppClass* element_class, uintptr_t length) const;
+    void* NewArraySpecific(const Il2CppClass* element_class, uintptr_t length) const;
     void* Unbox(void* value) const;
+    bool IsInstanceOf(void* value, const ResolvedClass& type) const;
+    void* ResolveIcall(const char* name) const;
     uint32_t NewGcHandle(void* value, bool pinned) const;
     void FreeGcHandle(uint32_t handle) const;
     void* Invoke(
@@ -86,6 +93,9 @@ private:
     const Il2CppAssembly* (*domain_assembly_open_)(Il2CppDomain*, const char*) = nullptr;
     const Il2CppImage* (*assembly_get_image_)(const Il2CppAssembly*) = nullptr;
     Il2CppClass* (*class_from_name_)(const Il2CppImage*, const char*, const char*) = nullptr;
+    Il2CppClass* (*class_get_array_class_)(Il2CppClass*, uint32_t) = nullptr;
+    Il2CppClass* (*class_get_nested_types_)(Il2CppClass*, void**) = nullptr;
+    const char* (*class_get_name_)(Il2CppClass*) = nullptr;
     const MethodInfo* (*class_get_method_from_name_)(Il2CppClass*, const char*, int) = nullptr;
     const MethodInfo* (*class_get_methods_)(Il2CppClass*, void**) = nullptr;
     const char* (*method_get_name_)(const MethodInfo*) = nullptr;
@@ -93,6 +103,7 @@ private:
     const Il2CppType* (*method_get_parameter_)(const MethodInfo*, uint32_t) = nullptr;
     const Il2CppType* (*method_get_return_type_)(const MethodInfo*) = nullptr;
     char* (*type_get_name_)(const Il2CppType*) = nullptr;
+    void (*free_)(void*) = nullptr;
     const Il2CppType* (*class_get_type_)(Il2CppClass*) = nullptr;
     void* (*type_get_object_)(const Il2CppType*) = nullptr;
     const FieldInfo* (*class_get_field_from_name_)(Il2CppClass*, const char*) = nullptr;
@@ -102,6 +113,9 @@ private:
     int32_t (*string_length_)(void*) = nullptr;
     void* (*string_new_)(const char*) = nullptr;
     void* (*object_new_)(const Il2CppClass*) = nullptr;
+    void* (*value_box_)(Il2CppClass*, void*) = nullptr;
+    void* (*array_new_)(Il2CppClass*, uintptr_t) = nullptr;
+    void* (*array_new_specific_)(void*, uintptr_t) = nullptr;
     void* (*object_unbox_)(void*) = nullptr;
     uint32_t (*gchandle_new_)(void*, bool) = nullptr;
     void (*gchandle_free_)(uint32_t) = nullptr;

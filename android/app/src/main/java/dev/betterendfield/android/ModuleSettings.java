@@ -23,6 +23,7 @@ final class ModuleSettings {
     private static final String ENHANCEMENT_HIDE_UID = "enhancement_hide_uid";
     private static final String ENHANCEMENT_DISABLE_DITHER = "enhancement_disable_dither";
     private static final String ENHANCEMENT_CONFIGURATION = "enhancement_configuration";
+    private static final String OVERLAY_ENABLED = "overlay_enabled";
 
     private ModuleSettings() {}
 
@@ -33,6 +34,9 @@ final class ModuleSettings {
     static boolean isDisableDitherEnabled(Context context) {
         return preferences(context).getBoolean(ENHANCEMENT_DISABLE_DITHER, false);
     }
+
+    static boolean isOverlayEnabled(Context context) { return preferences(context).getBoolean(OVERLAY_ENABLED, false); }
+    static void setOverlayEnabled(Context context, boolean enabled) { preferences(context).edit().putBoolean(OVERLAY_ENABLED, enabled).commit(); }
 
     static void setEnhancementSettings(
             Context context,
@@ -175,14 +179,6 @@ final class ModuleSettings {
     }
 
     private static SharedPreferences preferences(Context context) {
-        try {
-            // LSPosed redirects this module-only mode to its protected shared
-            // preference store when xposedsharedprefs is declared.
-            return context.getSharedPreferences(
-                    PREFERENCES,
-                    Context.MODE_WORLD_READABLE);
-        } catch (SecurityException unavailableOutsideLsposed) {
-            return context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
-        }
+        return FrameworkSettings.open(context);
     }
 }

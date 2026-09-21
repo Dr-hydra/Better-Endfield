@@ -4,6 +4,9 @@ import android.app.Activity;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.content.Intent;
+import android.provider.Settings;
+import android.net.Uri;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -75,18 +78,22 @@ public final class MainActivity extends Activity {
         setupModelPage();
         setupVoicePage();
         setupEnhancementPage();
+        setupDiagnosticsPage();
+        applyResponsiveShell();
     }
 
     private void setupPageNavigation() {
         View[] sections = {
                 findViewById(R.id.model_section),
                 findViewById(R.id.voice_section),
-                findViewById(R.id.enhancement_section)
+                findViewById(R.id.enhancement_section),
+                findViewById(R.id.diagnostics_section)
         };
         View[] buttons = {
                 findViewById(R.id.show_model_button),
                 findViewById(R.id.show_voice_button),
-                findViewById(R.id.show_enhancement_button)
+                findViewById(R.id.show_enhancement_button),
+                findViewById(R.id.show_diagnostics_button)
         };
         for (int index = 0; index < buttons.length; ++index) {
             final int page = index;
@@ -592,14 +599,56 @@ public final class MainActivity extends Activity {
         enhancementStatus = findViewById(R.id.enhancement_status);
         enhancementHideUid.setChecked(ModuleSettings.isHideUidEnabled(this));
         enhancementDisableDither.setChecked(ModuleSettings.isDisableDitherEnabled(this));
+        android.widget.Switch overlay = findViewById(R.id.overlay_enabled);
+        overlay.setChecked(ModuleSettings.isOverlayEnabled(this));
         updateEnhancementStatus();
         enhancementHideUid.setOnCheckedChangeListener(
                 (button, checked) -> saveEnhancementSettings());
         enhancementDisableDither.setOnCheckedChangeListener(
                 (button, checked) -> saveEnhancementSettings());
+        overlay.setOnCheckedChangeListener((button, checked) -> setOverlayEnabled(checked));
         findViewById(R.id.save_enhancement_settings).setOnClickListener(
                 view -> saveEnhancementSettings());
         initializingEnhancement = false;
+    }
+
+    private void setupDiagnosticsPage() {
+        TextView overlay = findViewById(R.id.diagnostics_overlay_status);
+        TextView model = findViewById(R.id.diagnostics_model_status);
+        overlay.setText(getString(R.string.diagnostics_overlay,
+                ModuleSettings.isOverlayEnabled(this) ? getString(R.string.state_on) : getString(R.string.state_off),
+                Settings.canDrawOverlays(this) ? getString(R.string.state_on) : getString(R.string.state_off)));
+        model.setText(getString(R.string.diagnostics_model,
+                ModuleSettings.isModelEnabled(this) ? getString(R.string.state_on) : getString(R.string.state_off)));
+        findViewById(R.id.diagnostics_status).setContentDescription(
+                getString(R.string.diagnostics_ready));
+    }
+
+    private void setOverlayEnabled(boolean enabled) {
+        ModuleSettings.setOverlayEnabled(this, enabled);
+        if (!enabled) { stopService(new Intent(this, OverlayService.class)); return; }
+        if (!Settings.canDrawOverlays(this)) {
+            startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:" + getPackageName())));
+            ((android.widget.Switch) findViewById(R.id.overlay_enabled)).setChecked(false);
+            ModuleSettings.setOverlayEnabled(this, false);
+            return;
+        }
+        if (android.os.Build.VERSION.SDK_INT >= 26) startForegroundService(new Intent(this, OverlayService.class));
+        else startService(new Intent(this, OverlayService.class));
+    }
+
+    private void applyResponsiveShell() {
+        View content = findViewById(R.id.responsive_content);
+        int widthDp = getResources().getConfiguration().screenWidthDp;
+        if (widthDp >= 600) {
+            int width = Math.round(Math.min(widthDp - 32, 840) * getResources().getDisplayMetrics().density);
+            android.widget.ScrollView.LayoutParams params = new android.widget.ScrollView.LayoutParams(
+                    width, ViewGroup.LayoutParams.WRAP_CONTENT, android.view.Gravity.CENTER_HORIZONTAL);
+            content.setLayoutParams(params);
+            int screenWidth = getResources().getDisplayMetrics().widthPixels;
+            content.setTranslationX(Math.max(0, (screenWidth - width) / 2f));
+        }
     }
 
     private void saveEnhancementSettings() {

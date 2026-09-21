@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace = "dev.betterendfield.android"
-    compileSdk = 35
+    compileSdk = 37
     ndkVersion = "27.2.12479018"
 
     buildFeatures {
@@ -44,6 +44,15 @@ android {
         }
     }
 
+    flavorDimensions += "framework"
+    productFlavors {
+        create("legacy") { dimension = "framework" }
+        create("modern") {
+            dimension = "framework"
+            minSdk = 29
+        }
+    }
+
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
@@ -64,7 +73,7 @@ android {
 
     sourceSets {
         getByName("main").assets.srcDir(
-            layout.buildDirectory.dir("generated/androidResourceAssets"))
+            layout.buildDirectory.dir("generated/androidResourceAssets").get().asFile)
     }
 }
 
@@ -119,5 +128,7 @@ tasks.named("preBuild").configure {
 }
 
 dependencies {
-    compileOnly("de.robv.android.xposed:api:82")
+    "legacyCompileOnly"("de.robv.android.xposed:api:82")
+    "modernCompileOnly"("io.github.libxposed:api:102.0.0")
+    "modernImplementation"("io.github.libxposed:service:102.0.0")
 }

@@ -3,7 +3,11 @@
 #include <iostream>
 #include <fstream>
 using namespace BetterEndfield::CustomModel;
+#ifdef _WIN32
 int wmain(int argc,wchar_t** argv) {
+#else
+int main(int argc,char** argv) {
+#endif
     if(argc<2) return 2;
     std::string error; BemPackageInfo info;
     if(!ReadBemPackageInfo(argv[1],info,error)) {std::cerr<<error;return 1;}
