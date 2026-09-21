@@ -19,6 +19,7 @@
         android:paddingBottom="32dp">
 
         <LinearLayout
+            android:id="@+id/app_header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_header"
@@ -76,6 +77,7 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/page_navigation"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
@@ -94,6 +96,21 @@
                 android:minWidth="0dp"
                 android:padding="0dp"
                 android:text="@string/model_page"
+                android:textAllCaps="false"
+                android:textColor="@color/tab_text"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/show_custom_model_button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/bg_tab"
+                android:fontFamily="sans-serif-medium"
+                android:minHeight="48dp"
+                android:minWidth="0dp"
+                android:padding="0dp"
+                android:text="@string/custom_model_page"
                 android:textAllCaps="false"
                 android:textColor="@color/tab_text"
                 android:textSize="14sp" />
@@ -145,6 +162,30 @@
                 android:textAllCaps="false"
                 android:textColor="@color/tab_text"
                 android:textSize="14sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/custom_model_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_header"
+                android:orientation="vertical"
+                android:padding="18dp">
+                <TextView style="@style/SectionEyebrow" android:text="CUSTOM MODEL" />
+                <TextView style="@style/SectionTitle" android:text="@string/custom_model_title" />
+                <TextView style="@style/BodyText" android:layout_marginTop="8dp"
+                    android:text="@string/custom_model_description" />
+                <Button android:id="@+id/install_bem" style="@style/PrimaryButton"
+                    android:layout_marginTop="14dp" android:text="@string/custom_model_install" />
+            </LinearLayout>
+
         </LinearLayout>
 
         <LinearLayout
@@ -403,66 +444,20 @@
                 android:orientation="vertical" />
         </LinearLayout>
 
+        <!--
+          The three ported desktop features are built in MainActivity from
+          SectionCard/SettingRow/ValueSlider rather than spelled out here. Twenty
+          switches, each needing a title, a description and sometimes a hotkey
+          badge, is where hand-written XML stops being readable and starts letting
+          rows drift apart in padding and contrast.
+        -->
         <LinearLayout
             android:id="@+id/enhancement_section"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
             android:orientation="vertical"
-            android:visibility="gone">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_card"
-                android:orientation="vertical"
-                android:padding="18dp">
-
-                <TextView style="@style/SectionEyebrow" android:text="@string/enhancement_eyebrow" />
-                <TextView style="@style/SectionTitle" android:text="@string/enhancement_title" />
-                <TextView style="@style/BodyText" android:layout_marginTop="8dp" android:text="@string/enhancement_description" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/bg_card"
-                android:orientation="vertical"
-                android:padding="18dp">
-
-                <Switch
-                    android:id="@+id/enhancement_hide_uid"
-                    style="@style/SettingSwitch"
-                    android:text="@string/enhancement_hide_uid" />
-                <TextView style="@style/BodyText" android:text="@string/enhancement_hide_uid_hint" />
-
-                <Switch
-                    android:id="@+id/enhancement_disable_dither"
-                    style="@style/SettingSwitch"
-                    android:layout_marginTop="10dp"
-                    android:text="@string/enhancement_disable_dither" />
-                <TextView style="@style/BodyText" android:text="@string/enhancement_disable_dither_hint" />
-
-                <Switch
-                    android:id="@+id/overlay_enabled"
-                    style="@style/SettingSwitch"
-                    android:layout_marginTop="10dp"
-                    android:text="@string/overlay_enable" />
-                <TextView style="@style/BodyText" android:text="@string/overlay_enable_hint" />
-            </LinearLayout>
-
-            <Button
-                android:id="@+id/save_enhancement_settings"
-                style="@style/PrimaryButton"
-                android:layout_marginTop="14dp"
-                android:text="@string/enhancement_save" />
-
-            <TextView
-                android:id="@+id/enhancement_status"
-                style="@style/SelectionSummary"
-                android:layout_marginTop="12dp" />
-        </LinearLayout>
+            android:visibility="gone" />
 
         <LinearLayout
             android:id="@+id/diagnostics_section"

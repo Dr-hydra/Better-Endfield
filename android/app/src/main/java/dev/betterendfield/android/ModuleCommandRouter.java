@@ -5,11 +5,9 @@ import android.content.Context;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.atomic.AtomicLong;
 
 /** Atomic, versioned command drop for the game process. Native consumes it on its Unity pump. */
 final class ModuleCommandRouter {
-    private static final AtomicLong GENERATION = new AtomicLong();
     private ModuleCommandRouter() {}
 
     static boolean issue(Context context, String command, String value) {
@@ -17,7 +15,10 @@ final class ModuleCommandRouter {
                 || value.length() > 512) return false;
         File directory = new File(context.getFilesDir(), "betterendfield/commands");
         if (!directory.isDirectory() && !directory.mkdirs()) return false;
-        long generation = GENERATION.incrementAndGet();
+        // Persist the generation across service restarts.  The native pump
+        // rejects stale generations, and an in-memory counter would reset to
+        // zero whenever Android recreates the overlay service.
+        long generation = ModuleSettings.nextCommandGeneration(context);
         String payload = "BE_COMMAND_V1\n" + generation + "\n" + command + "\n" + value + "\n";
         if (FrameworkSettings.writeRemoteCommand(payload)) return true;
         File temporary = new File(directory, "next.tmp");

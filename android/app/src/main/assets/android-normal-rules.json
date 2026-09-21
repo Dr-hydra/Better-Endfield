@@ -1,0 +1,42 @@
+{
+  "chr_0003_endminf": {
+    "T_actor_endminf_cloth_03_N": {},
+    "T_actor_endminf_cloth_04_N": {},
+    "T_actor_endminf_body_01_N": {},
+    "T_actor_endminf_cloth_01_N": {
+      "bc7_encoding": "xy-unorm",
+      "evidence": "Reviewed PC _BumpMap with BC5_UNORM (DXGI 83): RG normal; BC7 B is not used as Z."
+    }
+  },
+  "chr_0004_pelica": {
+    "T_actor_pelica_face_01_N": {},
+    "T_actor_pelica_body_01_N": {
+      "bc7_encoding": "xy-unorm",
+      "evidence": "Reviewed PC _BumpMap with BC5_UNORM (DXGI 83): RG normal; BC7 B is not used as Z."
+    },
+    "T_actor_pelica_cloth_01_N": {
+      "bc7_encoding": "xy-unorm",
+      "evidence": "Reviewed PC _BumpMap with BC5_UNORM (DXGI 83): RG normal; BC7 B is not used as Z."
+    },
+    "T_actor_pelica_cloth_02_N": {
+      "bc7_encoding": "xy-unorm",
+      "evidence": "Reviewed PC _BumpMap with BC5_UNORM (DXGI 83): RG normal; BC7 B is not used as Z."
+    }
+  },
+  "chr_0030_zhuangfy": {
+    "T_actor_zhuangfy_body_01_N": {
+      "bc7_encoding": "xy-unorm",
+      "evidence": "Reviewed PC _BumpMap with BC5_UNORM (DXGI 83): RG normal; BC7 B is not used as Z."
+    },
+    "T_actor_zhuangfy_cloth_01_N": {
+      "bc7_encoding": "xy-unorm",
+      "evidence": "Reviewed PC _BumpMap with BC5_UNORM (DXGI 83): RG normal; BC7 B is not used as Z."
+    }
+  },
+  "chr_0013_aglina": {
+    "T_actor_aglina_cloth_01_N": {
+      "bc7_encoding": "xy-unorm",
+      "evidence": "Reviewed PC _BumpMap with BC5_UNORM (DXGI 83): RG normal; BC7 B is not used as Z."
+    }
+  }
+}

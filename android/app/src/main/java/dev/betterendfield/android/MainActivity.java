@@ -1,15 +1,14 @@
 package dev.betterendfield.android;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.content.Intent;
-import android.provider.Settings;
-import android.net.Uri;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
@@ -22,6 +21,10 @@ import java.util.Locale;
 import java.util.Map;
 
 public final class MainActivity extends Activity {
+    static final String EXTRA_PAGE = "settings_page";
+    private static final int CUSTOM_MODEL_PAGE = 4;
+    private static final int ENHANCEMENT_PAGE = 2;
+    private static final int DIAGNOSTICS_PAGE = 3;
     private static final int[] THEME_COLOR_VIEW_IDS = {
             R.id.theme_color_amber,
             R.id.theme_color_cyan,
@@ -63,23 +66,74 @@ public final class MainActivity extends Activity {
     private TextView modelSelectionStatus;
     private boolean initializingModel = true;
 
-    private Switch enhancementHideUid;
-    private Switch enhancementDisableDither;
-    private TextView enhancementStatus;
-    private boolean initializingEnhancement = true;
+    private int currentPage;
+    private GameOverlay overlayPreview;
+
+    // The enhancement page is assembled in buildEnhancementPage() from
+    // SectionCard/SettingRow/ValueSlider, so its controls are fields rather than
+    // findViewById lookups.
+    private SectionCard interfaceCard;
+    private SectionCard cameraCard;
+    private SectionCard dashCard;
+    private SettingRow hideUidRow;
+    private SettingRow hideHudRow;
+    private SettingRow ditherRow;
+    private SettingRow freeCameraRow;
+    private SettingRow worldPauseRow;
+    private SettingRow firstPersonRow;
+    private SettingRow hideHeadRow;
+    private SettingRow fillNeckRow;
+    private ValueSlider cameraSpeed;
+    private ValueSlider cameraFov;
+    private ValueSlider firstPersonFov;
+    private SettingRow dashRow;
+    private SettingRow dashAglinaRow;
+    private SettingRow dashLiinoRow;
+    private SettingRow dashLiinoCleanRow;
+    private SettingRow overlayRow;
+    private boolean populatingEnhancement = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        String requestedPage = getIntent().getStringExtra(EXTRA_PAGE);
+        currentPage = savedInstanceState == null
+                ? ("custom_model".equals(requestedPage) ? CUSTOM_MODEL_PAGE
+                        : ("enhancement".equals(requestedPage) ? ENHANCEMENT_PAGE : 0))
+                : savedInstanceState.getInt("page", 0);
+        currentPage = Math.max(0, Math.min(CUSTOM_MODEL_PAGE, currentPage));
 
         status = findViewById(R.id.restart_status);
         setupPageNavigation();
         setupModelPage();
+        setupCustomModelPage();
         setupVoicePage();
         setupEnhancementPage();
         setupDiagnosticsPage();
         applyResponsiveShell();
+    }
+
+    private void setupCustomModelPage() {
+        findViewById(R.id.install_bem).setOnClickListener(view ->
+                startActivity(new Intent(this, BemInstallActivity.class)));
+    }
+
+    private void showOverlayPreview() {
+        if (overlayPreview != null) overlayPreview.remove();
+        overlayPreview = new GameOverlay(this, true);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (overlayRow != null) overlayRow.initialize(ModuleSettings.isOverlayEnabled(this));
+        setupDiagnosticsPage();
+    }
+
+    @Override protected void onSaveInstanceState(Bundle state) {
+        state.putInt("page", currentPage);
+        super.onSaveInstanceState(state);
     }
 
     private void setupPageNavigation() {
@@ -87,19 +141,29 @@ public final class MainActivity extends Activity {
                 findViewById(R.id.model_section),
                 findViewById(R.id.voice_section),
                 findViewById(R.id.enhancement_section),
-                findViewById(R.id.diagnostics_section)
+                findViewById(R.id.diagnostics_section),
+                findViewById(R.id.custom_model_section)
         };
         View[] buttons = {
                 findViewById(R.id.show_model_button),
                 findViewById(R.id.show_voice_button),
                 findViewById(R.id.show_enhancement_button),
-                findViewById(R.id.show_diagnostics_button)
+                findViewById(R.id.show_diagnostics_button),
+                findViewById(R.id.show_custom_model_button)
         };
+        android.widget.ScrollView scroll = findViewById(R.id.responsive_scroll);
         for (int index = 0; index < buttons.length; ++index) {
             final int page = index;
-            buttons[index].setOnClickListener(view -> showPage(sections, buttons, page));
+            buttons[index].setOnClickListener(view -> {
+                currentPage = page;
+                // The diagnostics page reports which modules the game will load,
+                // which the enhancement page can have changed since it was built.
+                if (page == DIAGNOSTICS_PAGE) setupDiagnosticsPage();
+                showPage(sections, buttons, page);
+                scroll.post(() -> scroll.smoothScrollTo(0, 0));
+            });
         }
-        showPage(sections, buttons, 0);
+        showPage(sections, buttons, currentPage);
     }
 
     private static void showPage(View[] sections, View[] buttons, int page) {
@@ -551,6 +615,15 @@ public final class MainActivity extends Activity {
         ruleSpinners.put(choice.characterId(), spinner);
         row.addView(spinner, new LinearLayout.LayoutParams(
                 dp(132), ViewGroup.LayoutParams.WRAP_CONTENT));
+        spinner.setMinimumHeight(dp(48));
+        row.addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob) -> {
+            boolean narrow = r-l < dp(340) || getResources().getConfiguration().fontScale >= 1.3f;
+            int orientation = narrow ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL;
+            if (row.getOrientation() == orientation) return;
+            row.setOrientation(orientation);
+            label.setLayoutParams(new LinearLayout.LayoutParams(narrow ? -1 : 0, -2, narrow ? 0 : 1));
+            spinner.setLayoutParams(new LinearLayout.LayoutParams(narrow ? -1 : dp(132), -2));
+        });
         LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -594,83 +667,362 @@ public final class MainActivity extends Activity {
     }
 
     private void setupEnhancementPage() {
-        enhancementHideUid = findViewById(R.id.enhancement_hide_uid);
-        enhancementDisableDither = findViewById(R.id.enhancement_disable_dither);
-        enhancementStatus = findViewById(R.id.enhancement_status);
-        enhancementHideUid.setChecked(ModuleSettings.isHideUidEnabled(this));
-        enhancementDisableDither.setChecked(ModuleSettings.isDisableDitherEnabled(this));
-        android.widget.Switch overlay = findViewById(R.id.overlay_enabled);
-        overlay.setChecked(ModuleSettings.isOverlayEnabled(this));
-        updateEnhancementStatus();
-        enhancementHideUid.setOnCheckedChangeListener(
-                (button, checked) -> saveEnhancementSettings());
-        enhancementDisableDither.setOnCheckedChangeListener(
-                (button, checked) -> saveEnhancementSettings());
-        overlay.setOnCheckedChangeListener((button, checked) -> setOverlayEnabled(checked));
-        findViewById(R.id.save_enhancement_settings).setOnClickListener(
-                view -> saveEnhancementSettings());
-        initializingEnhancement = false;
+        // Rewrites every module configuration from the stored switches once per
+        // launch. That is what carries a pre-3.3 "enhancement" choice over to the
+        // ui/camera modules, and what publishes a key added by an update without
+        // asking the user to re-toggle anything.
+        ModuleSettings.republishConfigurations(this);
+        buildEnhancementPage();
+    }
+
+    private void buildEnhancementPage() {
+        LinearLayout page = findViewById(R.id.enhancement_section);
+        page.removeAllViews();
+        populatingEnhancement = true;
+
+        TextView intro = new TextView(this);
+        intro.setText(R.string.enhancement_description);
+        intro.setTextSize(13);
+        intro.setLineSpacing(dp(3), 1f);
+        intro.setTextColor(getColor(R.color.text_secondary));
+        page.addView(intro, SectionCard.stacked(this, 0));
+
+        page.addView(buildInterfaceCard(), SectionCard.stacked(this, 14));
+        page.addView(buildCameraCard(), SectionCard.stacked(this, 12));
+        page.addView(buildDashCard(), SectionCard.stacked(this, 12));
+        page.addView(buildOverlayCard(), SectionCard.stacked(this, 12));
+
+        populatingEnhancement = false;
+        refreshEnhancementAvailability();
+        refreshEnhancementStatus();
+    }
+
+    private SectionCard buildInterfaceCard() {
+        interfaceCard = new SectionCard(this,
+                getString(R.string.ui_card_eyebrow),
+                getString(R.string.ui_card_title),
+                getString(R.string.ui_card_subtitle));
+        hideUidRow = row(R.string.ui_hide_uid, R.string.ui_hide_uid_hint, null);
+        hideUidRow.initialize(ModuleSettings.isHideUidEnabled(this));
+        hideUidRow.onChanged((button, checked) -> saveInterfaceSettings());
+        interfaceCard.add(hideUidRow);
+
+        hideHudRow = row(R.string.ui_hide_hud, R.string.ui_hide_hud_hint,
+                getString(R.string.badge_overlay));
+        hideHudRow.initialize(ModuleSettings.isHideHudEnabled(this));
+        hideHudRow.onChanged((button, checked) -> saveInterfaceSettings());
+        interfaceCard.add(hideHudRow);
+        return interfaceCard;
+    }
+
+    private SectionCard buildCameraCard() {
+        cameraCard = new SectionCard(this,
+                getString(R.string.camera_card_eyebrow),
+                getString(R.string.camera_card_title),
+                getString(R.string.camera_card_subtitle));
+
+        ditherRow = row(R.string.camera_dither, R.string.camera_dither_hint, null);
+        ditherRow.initialize(ModuleSettings.isDisableDitherEnabled(this));
+        ditherRow.onChanged((button, checked) -> saveCameraSettings());
+        cameraCard.add(ditherRow);
+
+        freeCameraRow = row(R.string.camera_free, R.string.camera_free_hint,
+                getString(R.string.badge_overlay));
+        freeCameraRow.initialize(ModuleSettings.isFreeCameraEnabled(this));
+        freeCameraRow.onChanged((button, checked) -> saveCameraSettings());
+        cameraCard.add(freeCameraRow);
+
+        worldPauseRow = row(R.string.camera_pause, R.string.camera_pause_hint,
+                getString(R.string.badge_overlay));
+        worldPauseRow.initialize(ModuleSettings.isWorldPauseEnabled(this));
+        worldPauseRow.onChanged((button, checked) -> saveCameraSettings());
+        cameraCard.add(worldPauseRow);
+
+        firstPersonRow = row(R.string.camera_first_person, R.string.camera_first_person_hint,
+                getString(R.string.badge_overlay));
+        firstPersonRow.initialize(ModuleSettings.isFirstPersonEnabled(this));
+        firstPersonRow.onChanged((button, checked) -> saveCameraSettings());
+        cameraCard.add(firstPersonRow);
+
+        hideHeadRow = row(R.string.camera_hide_head, R.string.camera_hide_head_hint, null);
+        hideHeadRow.initialize(ModuleSettings.isFirstPersonHideHead(this));
+        hideHeadRow.onChanged((button, checked) -> saveCameraSettings());
+        cameraCard.add(hideHeadRow);
+
+        fillNeckRow = row(R.string.camera_fill_neck, R.string.camera_fill_neck_hint, null);
+        fillNeckRow.initialize(ModuleSettings.isFirstPersonFillNeck(this));
+        fillNeckRow.onChanged((button, checked) -> saveCameraSettings());
+        cameraCard.add(fillNeckRow);
+
+        cameraCard.addGroupLabel(getString(R.string.camera_group_values));
+        cameraSpeed = new ValueSlider(this, getString(R.string.camera_speed_label), "",
+                ModuleSettings.SPEED_MINIMUM, ModuleSettings.SPEED_MAXIMUM);
+        cameraSpeed.setValue((float) ModuleSettings.parse(
+                ModuleSettings.getCameraSpeed(this), 5.0));
+        cameraSpeed.onChanged(this::saveCameraSettings);
+        cameraCard.add(cameraSpeed);
+
+        cameraFov = new ValueSlider(this, getString(R.string.camera_fov_label),
+                getString(R.string.degree_suffix),
+                ModuleSettings.FOV_MINIMUM, ModuleSettings.FOV_MAXIMUM);
+        cameraFov.setValue((float) ModuleSettings.parse(
+                ModuleSettings.getCameraFieldOfView(this), 60.0));
+        cameraFov.onChanged(this::saveCameraSettings);
+        cameraCard.add(cameraFov);
+
+        firstPersonFov = new ValueSlider(this, getString(R.string.camera_fp_fov_label),
+                getString(R.string.degree_suffix),
+                ModuleSettings.FOV_MINIMUM, ModuleSettings.FOV_MAXIMUM);
+        firstPersonFov.setValue((float) ModuleSettings.parse(
+                ModuleSettings.getFirstPersonFieldOfView(this), 75.0));
+        firstPersonFov.onChanged(this::saveCameraSettings);
+        cameraCard.add(firstPersonFov);
+        return cameraCard;
+    }
+
+    private SectionCard buildDashCard() {
+        dashCard = new SectionCard(this,
+                getString(R.string.dash_card_eyebrow),
+                getString(R.string.dash_card_title),
+                getString(R.string.dash_card_subtitle));
+
+        dashRow = row(R.string.dash_enable, R.string.dash_enable_hint, null);
+        dashRow.initialize(ModuleSettings.isSustainedDashEnabled(this));
+        dashRow.onChanged((button, checked) -> saveDashSettings());
+        dashCard.add(dashRow);
+
+        dashCard.addGroupLabel(getString(R.string.dash_group_characters));
+        dashAglinaRow = row(R.string.dash_aglina, R.string.dash_aglina_hint, null);
+        dashAglinaRow.initialize(ModuleSettings.isDashCharacterEnabled(this, "aglina"));
+        dashAglinaRow.onChanged((button, checked) -> saveDashSettings());
+        dashCard.add(dashAglinaRow);
+
+        dashLiinoRow = row(R.string.dash_liino, R.string.dash_liino_hint, null);
+        dashLiinoRow.initialize(ModuleSettings.isDashCharacterEnabled(this, "liino"));
+        dashLiinoRow.onChanged((button, checked) -> saveDashSettings());
+        dashCard.add(dashLiinoRow);
+
+        dashCard.addGroupLabel(getString(R.string.dash_group_options));
+        dashLiinoCleanRow = row(R.string.dash_liino_clean, R.string.dash_liino_clean_hint, null);
+        dashLiinoCleanRow.initialize(ModuleSettings.isLiinoCleanDashEnabled(this));
+        dashLiinoCleanRow.onChanged((button, checked) -> saveDashSettings());
+        dashCard.add(dashLiinoCleanRow);
+
+        return dashCard;
+    }
+
+    private SectionCard buildOverlayCard() {
+        SectionCard card = new SectionCard(this,
+                getString(R.string.overlay_card_eyebrow),
+                getString(R.string.overlay_card_title),
+                getString(R.string.overlay_card_subtitle));
+        overlayRow = row(R.string.overlay_enable, R.string.overlay_enable_hint, null);
+        overlayRow.initialize(ModuleSettings.isOverlayEnabled(this));
+        overlayRow.onChanged((button, checked) -> {
+            if (populatingEnhancement) return;
+            ModuleSettings.setOverlayEnabled(this, checked);
+            status.setText(checked
+                    ? R.string.overlay_turned_on : R.string.overlay_turned_off);
+        });
+        card.add(overlayRow);
+
+        Button preview = new Button(this);
+        preview.setText(R.string.overlay_preview);
+        preview.setTextSize(15);
+        preview.setAllCaps(false);
+        preview.setMinHeight(0);
+        preview.setMinimumHeight(dp(52));
+        preview.setTextColor(getColor(R.color.text_primary));
+        preview.setBackgroundResource(R.drawable.bg_ghost_button);
+        preview.setContentDescription(getString(R.string.overlay_preview_hint));
+        preview.setOnClickListener(view -> showOverlayPreview());
+        card.add(preview);
+        return card;
+    }
+
+    private SettingRow row(int titleId, int descriptionId, String badge) {
+        return new SettingRow(this, getString(titleId), getString(descriptionId), badge);
+    }
+
+    private void saveInterfaceSettings() {
+        if (populatingEnhancement) return;
+        ModuleSettings.setInterfaceSettings(
+                this, hideUidRow.isChecked(), hideHudRow.isChecked());
+        afterEnhancementChange();
+    }
+
+    private void saveCameraSettings() {
+        if (populatingEnhancement) return;
+        ModuleSettings.setCameraSettings(
+                this,
+                ditherRow.isChecked(),
+                freeCameraRow.isChecked(),
+                worldPauseRow.isChecked(),
+                firstPersonRow.isChecked(),
+                hideHeadRow.isChecked(),
+                fillNeckRow.isChecked(),
+                cameraSpeed.getValue(),
+                cameraFov.getValue(),
+                firstPersonFov.getValue());
+        afterEnhancementChange();
+    }
+
+    private void saveDashSettings() {
+        if (populatingEnhancement) return;
+        ModuleSettings.setSustainedDashSettings(
+                this,
+                dashRow.isChecked(),
+                dashLiinoCleanRow.isChecked(),
+                dashAglinaRow.isChecked(),
+                dashLiinoRow.isChecked());
+        afterEnhancementChange();
+    }
+
+    private void afterEnhancementChange() {
+        refreshEnhancementAvailability();
+        refreshEnhancementStatus();
+        status.setText(R.string.enhancement_restart_required);
+    }
+
+    /**
+     * Greys out the options that only mean something while their parent feature is
+     * on. World pause is a free-camera sub-mode on desktop, the first-person mesh
+     * options only apply in first person, and the clean-exhaust option is Liino's.
+     */
+    private void refreshEnhancementAvailability() {
+        boolean free = freeCameraRow.isChecked();
+        boolean firstPerson = firstPersonRow.isChecked();
+        worldPauseRow.setAvailable(free);
+        cameraSpeed.setAvailable(free);
+        cameraFov.setAvailable(free);
+        hideHeadRow.setAvailable(firstPerson);
+        fillNeckRow.setAvailable(firstPerson && hideHeadRow.isChecked());
+        firstPersonFov.setAvailable(firstPerson);
+
+        boolean dash = dashRow.isChecked();
+        dashAglinaRow.setAvailable(dash);
+        dashLiinoRow.setAvailable(dash);
+        dashLiinoCleanRow.setAvailable(dash && dashLiinoRow.isChecked());
+    }
+
+    private void refreshEnhancementStatus() {
+        interfaceCard.setStatus(moduleStatus("betterendfield.ui",
+                ModuleSettings.isHideUidEnabled(this) || ModuleSettings.isHideHudEnabled(this)));
+        cameraCard.setStatus(moduleStatus("betterendfield.camera",
+                ModuleSettings.isDisableDitherEnabled(this)
+                        || ModuleSettings.isFreeCameraEnabled(this)
+                        || ModuleSettings.isFirstPersonEnabled(this)));
+        dashCard.setStatus(getString(R.string.dash_pose_note, "pose_*.bin") + "\n"
+                + moduleStatus("betterendfield.actions",
+                ModuleSettings.isSustainedDashEnabled(this)
+                        && (ModuleSettings.isDashCharacterEnabled(this, "aglina")
+                                || ModuleSettings.isDashCharacterEnabled(this, "liino"))));
+    }
+
+    /**
+     * Says whether the module will be loaded at all, which is the one thing this
+     * screen can state for certain. Whether each Hook resolved is only knowable
+     * inside the game, and is reported there.
+     */
+    private String moduleStatus(String moduleId, boolean loaded) {
+        return moduleId + "  ·  " + getString(loaded
+                ? R.string.module_will_load : R.string.module_will_not_load);
     }
 
     private void setupDiagnosticsPage() {
         TextView overlay = findViewById(R.id.diagnostics_overlay_status);
-        TextView model = findViewById(R.id.diagnostics_model_status);
+        TextView modules = findViewById(R.id.diagnostics_model_status);
         overlay.setText(getString(R.string.diagnostics_overlay,
-                ModuleSettings.isOverlayEnabled(this) ? getString(R.string.state_on) : getString(R.string.state_off),
-                Settings.canDrawOverlays(this) ? getString(R.string.state_on) : getString(R.string.state_off)));
-        model.setText(getString(R.string.diagnostics_model,
-                ModuleSettings.isModelEnabled(this) ? getString(R.string.state_on) : getString(R.string.state_off)));
+                state(ModuleSettings.isOverlayEnabled(this)), "无需系统悬浮权限"));
+        modules.setText(getString(R.string.diagnostics_modules, loadedModules()));
         findViewById(R.id.diagnostics_status).setContentDescription(
                 getString(R.string.diagnostics_ready));
     }
 
-    private void setOverlayEnabled(boolean enabled) {
-        ModuleSettings.setOverlayEnabled(this, enabled);
-        if (!enabled) { stopService(new Intent(this, OverlayService.class)); return; }
-        if (!Settings.canDrawOverlays(this)) {
-            startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:" + getPackageName())));
-            ((android.widget.Switch) findViewById(R.id.overlay_enabled)).setChecked(false);
-            ModuleSettings.setOverlayEnabled(this, false);
-            return;
-        }
-        if (android.os.Build.VERSION.SDK_INT >= 26) startForegroundService(new Intent(this, OverlayService.class));
-        else startService(new Intent(this, OverlayService.class));
+    /**
+     * The module ids the game process will actually start, read back from the same
+     * configuration strings it reads. An empty configuration is how a module is
+     * kept out of the process, so "absent from this list" is the real state rather
+     * than a guess.
+     */
+    private String loadedModules() {
+        StringBuilder loaded = new StringBuilder();
+        appendModule(loaded, "voice.character", !ModuleSettings.getVoiceRules(this).isEmpty());
+        appendModule(loaded, "model", ModuleSettings.isModelEnabled(this)
+                || ModuleSettings.isLogoEnabled(this));
+        appendModule(loaded, "ui", ModuleSettings.isHideUidEnabled(this)
+                || ModuleSettings.isHideHudEnabled(this));
+        appendModule(loaded, "camera", ModuleSettings.isDisableDitherEnabled(this)
+                || ModuleSettings.isFreeCameraEnabled(this)
+                || ModuleSettings.isFirstPersonEnabled(this));
+        appendModule(loaded, "actions", ModuleSettings.isSustainedDashEnabled(this));
+        return loaded.length() == 0 ? getString(R.string.state_none) : loaded.toString();
+    }
+
+    private void appendModule(StringBuilder text, String name, boolean loaded) {
+        if (!loaded) return;
+        if (text.length() > 0) text.append(" · ");
+        text.append(name);
+    }
+
+    private String state(boolean on) {
+        return getString(on ? R.string.state_on : R.string.state_off);
     }
 
     private void applyResponsiveShell() {
-        View content = findViewById(R.id.responsive_content);
-        int widthDp = getResources().getConfiguration().screenWidthDp;
-        if (widthDp >= 600) {
-            int width = Math.round(Math.min(widthDp - 32, 840) * getResources().getDisplayMetrics().density);
-            android.widget.ScrollView.LayoutParams params = new android.widget.ScrollView.LayoutParams(
-                    width, ViewGroup.LayoutParams.WRAP_CONTENT, android.view.Gravity.CENTER_HORIZONTAL);
-            content.setLayoutParams(params);
-            int screenWidth = getResources().getDisplayMetrics().widthPixels;
-            content.setTranslationX(Math.max(0, (screenWidth - width) / 2f));
+        android.widget.ScrollView scroll = findViewById(R.id.responsive_scroll);
+        LinearLayout content = findViewById(R.id.responsive_content);
+        LinearLayout navigation = findViewById(R.id.page_navigation);
+        View header = findViewById(R.id.app_header);
+        content.removeView(header);
+        content.removeView(navigation);
+        ((ViewGroup) scroll.getParent()).removeView(scroll);
+        LinearLayout shell = new LinearLayout(this);
+        shell.setBackgroundColor(getColor(R.color.app_background));
+        boolean wide = getResources().getConfiguration().screenWidthDp >= 720
+                && getResources().getConfiguration().fontScale < 1.5f;
+        shell.setOrientation(wide ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
+        if (wide) {
+            LinearLayout rail = new LinearLayout(this);
+            rail.setOrientation(LinearLayout.VERTICAL);
+            rail.setPadding(dp(12), dp(16), dp(12), dp(12));
+            rail.addView(header, new LinearLayout.LayoutParams(-1, -2));
+            navigation.setOrientation(LinearLayout.VERTICAL);
+            for (int i = 0; i < navigation.getChildCount(); i++) {
+                View tab = navigation.getChildAt(i);
+                LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, -2);
+                p.topMargin = dp(6);
+                tab.setLayoutParams(p); tab.setMinimumHeight(dp(52));
+            }
+            rail.addView(navigation, new LinearLayout.LayoutParams(-1, -2));
+            shell.addView(rail, new LinearLayout.LayoutParams(dp(240), -1));
+            shell.addView(scroll, new LinearLayout.LayoutParams(0, -1, 1));
+        } else {
+            shell.addView(header, new LinearLayout.LayoutParams(-1, -2));
+            shell.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
+            shell.addView(navigation, new LinearLayout.LayoutParams(-1, -2));
+            for (int i = 0; i < navigation.getChildCount(); i++) {
+                View tab = navigation.getChildAt(i);
+                LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, -2, 1);
+                tab.setLayoutParams(p); tab.setMinimumHeight(dp(56));
+                ((TextView) tab).setTextSize(13);
+            }
         }
-    }
-
-    private void saveEnhancementSettings() {
-        if (initializingEnhancement) return;
-        boolean hideUid = enhancementHideUid.isChecked();
-        boolean disableDither = enhancementDisableDither.isChecked();
-        // An empty configuration keeps the native runtime from starting the
-        // module at all, mirroring how the model configuration behaves.
-        String configuration = hideUid || disableDither
-                ? "hide_uid=" + hideUid + '\n' + "disable_dither=" + disableDither + '\n'
-                : "";
-        ModuleSettings.setEnhancementSettings(this, hideUid, disableDither, configuration);
-        updateEnhancementStatus();
-        status.setText(R.string.enhancement_restart_required);
-    }
-
-    private void updateEnhancementStatus() {
-        enhancementStatus.setText(getString(
-                R.string.enhancement_status,
-                getString(enhancementHideUid.isChecked() ? R.string.state_on : R.string.state_off),
-                getString(enhancementDisableDither.isChecked()
-                        ? R.string.state_on : R.string.state_off)));
+        setContentView(shell);
+        shell.setOnApplyWindowInsetsListener((view, insets) -> {
+            view.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
+                    insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
+            return insets;
+        });
+        shell.requestApplyInsets();
+        scroll.addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob) -> {
+            int maxWidth = Math.min(r-l, dp(860));
+            android.widget.FrameLayout.LayoutParams p = (android.widget.FrameLayout.LayoutParams) content.getLayoutParams();
+            if (p.width != maxWidth) {
+                p.width = maxWidth; p.gravity = android.view.Gravity.CENTER_HORIZONTAL;
+                content.setLayoutParams(p);
+            }
+        });
     }
 
     private int dp(int value) {

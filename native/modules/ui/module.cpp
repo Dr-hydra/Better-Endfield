@@ -390,6 +390,7 @@ bool Unbox(void* boxed, T& value) {
 }
 
 void* SafeGetObjectName(void* instance) {
+#if defined(_WIN32)
     __try {
         return g_object_get_name(
             instance, const_cast<void*>(g_object_get_name_method));
@@ -397,6 +398,13 @@ void* SafeGetObjectName(void* instance) {
     __except (EXCEPTION_EXECUTE_HANDLER) {
         return nullptr;
     }
+#else
+    // Structured exception handling is Windows-only. Android calls the resolved
+    // getter directly, as the rest of the Android port does; the caller has
+    // already checked that the binding and the instance are present.
+    return g_object_get_name(
+        instance, const_cast<void*>(g_object_get_name_method));
+#endif
 }
 
 std::string NormalizedObjectName(void* instance) {

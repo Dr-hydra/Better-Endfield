@@ -8,8 +8,8 @@ $ErrorActionPreference = 'Stop'
 $taskRepo = Split-Path $PSScriptRoot -Parent
 $taskOutput = Join-Path $taskRepo ('artifacts/android-refactor/probe-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
 New-Item -ItemType Directory -Force $taskOutput | Out-Null
-$taskApk = Join-Path $PSScriptRoot 'app/build/outputs/apk/modern/debug/app-modern-debug.apk'
-if (-not (Test-Path -LiteralPath $taskApk)) { throw 'Build :app:assembleModernDebug first.' }
+$taskApk = Join-Path $PSScriptRoot 'app/build/outputs/apk/debug/app-debug.apk'
+if (-not (Test-Path -LiteralPath $taskApk)) { throw 'Build :app:assembleDebug first.' }
 & $Adb -s $Serial get-state
 if ($LASTEXITCODE -ne 0) { throw 'ADB target unavailable.' }
 $taskUid = & $Adb -s $Serial shell id -u

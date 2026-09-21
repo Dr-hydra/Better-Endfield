@@ -74,6 +74,12 @@ void AbandonExternalOwner(ExternalOwner& owner) {
 }
 void TraceExternalLoad(const std::filesystem::path& file, const char* message) {
     Log(message);
+#if !defined(_WIN32)
+    // The durable milestone file exists because a Unity access violation can
+    // erase the buffered host log. Android reaches this route through logcat,
+    // which is already written per line, so there is nothing to mirror.
+    (void)file;
+#else
     // The host logger is buffered. Persist sparse load milestones before native calls,
     // so a Unity access violation cannot erase the last known load stage.
     const auto path = file.parent_path() / L"aglina_native_return_v2.load.log";
@@ -86,6 +92,7 @@ void TraceExternalLoad(const std::filesystem::path& file, const char* message) {
         time.wYear, time.wMonth, time.wDay, time.wHour, time.wMinute, time.wSecond, message);
     DWORD written = 0; WriteFile(handle, line, static_cast<DWORD>(std::strlen(line)), &written, nullptr);
     FlushFileBuffers(handle); CloseHandle(handle);
+#endif
 }
 void* LoadNativeExternalClip(int side, void* type, bool& ok) {
     if (side < 0 || side > 1 || !type) { ok = false; return nullptr; }
@@ -98,6 +105,13 @@ bool LoadExternalAssets() {
     if (g_external_assets.attempted) return g_external_assets.ready;
     g_external_assets.attempted = true;
     if (!g_external_contract) { Log("Sustained dash v11: optional external API contract unavailable; using v9 loop."); return false; }
+#if !defined(_WIN32)
+    // v11 replaced the Animator controller from a desktop-authored AssetBundle.
+    // v12 superseded it with the bone-pose overlay, which is what the Android
+    // build ships; no bundle is packaged, so this route stays off.
+    Log("Sustained dash v11: the external AssetBundle loop is desktop-only; using the v12 bone-pose overlay.");
+    return false;
+#else
     wchar_t module_path[32768]{}; HMODULE module = nullptr;
     if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
         reinterpret_cast<LPCWSTR>(&g_external_assets), &module) ||
@@ -172,6 +186,7 @@ bool LoadExternalAssets() {
     g_external_assets.ready = true;
     TraceExternalLoad(file, "Sustained dash v11: native Humanoid clips loaded: BE_Aglina_Return_L/R, length=3.466667.");
     return true;
+#endif
 }
 bool InstallExternal(void* component) {
     if (!LoadExternalAssets()) return false;

@@ -235,6 +235,10 @@ MethodContract g_methods[]{
     {"texture.get_width",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Texture", "get_width",
             nullptr, "System.Int32", 0}, true},
+#ifdef __ANDROID__
+    {"android.texture_supported", {"UnityEngine.CoreModule.dll","UnityEngine","SystemInfo",
+        "SupportsTextureFormat","UnityEngine.TextureFormat","System.Boolean",1},true},
+#endif
     {"texture.get_height",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Texture", "get_height",
             nullptr, "System.Int32", 0}, true},
@@ -1454,6 +1458,14 @@ bool CopySamplerState(void* source, void* destination) {
 
 void* CreateTextureFromBem(const BemTexture& texture) {
     const BemTextureEntryRaw& info = texture.info;
+#ifdef __ANDROID__
+    // Installation probes EGL; confirm against the game's actual graphics backend as well.
+    int32_t supported_format=info.create_format; uint8_t supported=0;
+    void* supported_args[]{&supported_format};
+    if(!InvokeValue(Contract("android.texture_supported"),nullptr,supported_args,supported) || !supported) {
+        Log("Texture format unsupported by game backend: "+texture.name);return nullptr;
+    }
+#endif
     void* object =
         NewAsset(g_texture2d_class.class_info);
     if (!object) {

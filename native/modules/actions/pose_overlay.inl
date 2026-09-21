@@ -56,10 +56,21 @@ void ReleasePoseOverlay(bool restore){
 bool LoadPoseBank(const CharacterProfile* profile){
     if(g_pose_data_profile==profile)return g_pose_data_ready;
     g_pose_data_profile=profile;g_pose_data_ready=false;
+#if defined(_WIN32)
     wchar_t name[32768]{};HMODULE module=nullptr;
     if(!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS|GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,reinterpret_cast<LPCWSTR>(&g_pose_bank),&module)||
        !GetModuleFileNameW(module,name,static_cast<DWORD>(std::size(name))))return false;
     const auto file=std::filesystem::path(name).parent_path()/L"actions"/profile->pose_file;
+#else
+    // Android has no per-module DLL to locate the banks next to. The host
+    // publishes the directory it materialized them into; the file names are the
+    // same ASCII names the desktop layout uses.
+    const char* root=std::getenv("BETTER_ENDFIELD_ACTIONS_ASSET_ROOT");
+    if(root==nullptr||*root=='\0'){Log("Sustained dash v12: no bone-pose directory was published; native v9 hold only.");return false;}
+    std::string file(root);
+    if(!file.empty()&&file.back()!='/')file.push_back('/');
+    for(const wchar_t* c=profile->pose_file;c&&*c;++c)file.push_back(static_cast<char>(*c));
+#endif
     std::ifstream input(file,std::ios::binary);std::string error;
     if(!input){Log(("Sustained dash v12: bone-pose file absent for "+std::string(profile->codename)+"; native v9 hold only.").c_str());return false;}
     try {g_pose_data_ready=g_pose_bank.Load(input,error);}catch(const std::exception& ex){error=ex.what();}

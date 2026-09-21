@@ -30,29 +30,35 @@ final class RuntimeBootstrap {
     }
 
     static void prepare(Application application, Context context, ClassLoader loader,
-            String voice, String model, String enhancement, FrameTrigger trigger,
-            Consumer<String> log) {
-        if (voice.isEmpty() && model.isEmpty() && enhancement.isEmpty()
-                && !debugResourceProbe() && debugCustomModelConfig().isEmpty()) {
+            ModuleConfigurations configs, FrameTrigger trigger, Consumer<String> log) {
+        if (configs.none() && !debugResourceProbe() && customModelConfig().isEmpty()) {
             log.accept("no modules selected; native runtime skipped");
             return;
         }
         if (!PREPARED.compareAndSet(false, true)) return;
         Thread worker = new Thread(() -> {
-            if (!voice.isEmpty()) {
+            String poseRoot = "";
+            if (!configs.voice().isEmpty() || configs.needsActionPoses()) {
                 try {
                     Context module = context.createPackageContext(MODULE_PACKAGE,
                             Context.CONTEXT_IGNORE_SECURITY | Context.CONTEXT_INCLUDE_CODE);
-                    VoiceCatalogMaterializer.Result result =
-                            VoiceCatalogMaterializer.prepare(context, module, voice);
-                    log.accept("catalog prepared: " + result.summary());
-                    for (String failure : result.failures()) log.accept(failure);
+                    if (!configs.voice().isEmpty()) {
+                        VoiceCatalogMaterializer.Result result =
+                                VoiceCatalogMaterializer.prepare(context, module, configs.voice());
+                        log.accept("catalog prepared: " + result.summary());
+                        for (String failure : result.failures()) log.accept(failure);
+                    }
+                    if (configs.needsActionPoses()) {
+                        poseRoot = ActionPoseAssets.materialize(context, module, log);
+                    }
                 } catch (Throwable error) {
-                    log.accept("catalog preparation failed: " + error);
+                    log.accept("asset preparation failed: " + error);
                 }
             }
+            String actionPoseRoot = poseRoot;
             try {
-                trigger.install(loader, () -> load(application, context, voice, model, enhancement, log));
+                trigger.install(loader,
+                        () -> load(application, context, configs, actionPoseRoot, log));
                 log.accept("waiting for first successful Unity frame");
             } catch (Throwable error) {
                 log.accept("Unity frame trigger unavailable: " + error);
@@ -63,7 +69,7 @@ final class RuntimeBootstrap {
     }
 
     private static boolean load(Application application, Context context,
-            String voice, String model, String enhancement, Consumer<String> log) {
+            ModuleConfigurations configs, String actionPoseRoot, Consumer<String> log) {
         if (loaded || ATTEMPTS.get() >= 3) return true;
         if (!LOADING.compareAndSet(false, true)) return false;
         try {
@@ -75,19 +81,21 @@ final class RuntimeBootstrap {
             File library = new File(module.getApplicationInfo().nativeLibraryDir,
                     "libbetterendfield_android.so");
             if (!library.isFile()) throw new IllegalStateException("missing library: " + library);
-            Os.setenv("BETTER_ENDFIELD_VOICE_RULES", voice, true);
-            Os.setenv("BETTER_ENDFIELD_MODEL_CONFIG", model, true);
-            Os.setenv("BETTER_ENDFIELD_ENHANCEMENT_CONFIG", enhancement, true);
+            Os.setenv("BETTER_ENDFIELD_VOICE_RULES", configs.voice(), true);
+            Os.setenv("BETTER_ENDFIELD_MODEL_CONFIG", configs.model(), true);
+            Os.setenv("BETTER_ENDFIELD_UI_CONFIG", configs.ui(), true);
+            Os.setenv("BETTER_ENDFIELD_CAMERA_CONFIG", configs.camera(), true);
+            Os.setenv("BETTER_ENDFIELD_ACTIONS_CONFIG", configs.actions(), true);
+            Os.setenv("BETTER_ENDFIELD_ACTIONS_ASSET_ROOT", actionPoseRoot, true);
             Os.setenv("BETTER_ENDFIELD_CUSTOM_MODEL_PROBE", debugResourceProbe() ? "1" : "0", true);
-            Os.setenv("BETTER_ENDFIELD_CUSTOM_MODEL_CONFIG", debugCustomModelConfig(), true);
+            Os.setenv("BETTER_ENDFIELD_CUSTOM_MODEL_CONFIG", customModelConfig(), true);
             Os.setenv("BETTER_ENDFIELD_VOICE_CATALOG_ROOT",
                     new File(context.getFilesDir(), "betterendfield/catalog").getAbsolutePath(), true);
             if (BuildConfig.DEBUG) Os.setenv("BETTER_ENDFIELD_DIAGNOSTICS_PATH",
                     new File(context.getCacheDir(), "betterendfield-diagnostics.log").getAbsolutePath(), true);
             loadIntoTargetNamespace(library.getAbsolutePath(), context.getClassLoader(), application.getClass());
             loaded = true;
-            log.accept("native runtime loaded; voice=" + !voice.isEmpty()
-                    + " model=" + !model.isEmpty() + " enhancement=" + !enhancement.isEmpty());
+            log.accept("native runtime loaded; " + configs.summary());
         } catch (Throwable error) {
             log.accept("native runtime load attempt " + ATTEMPTS.get() + "/3 failed: " + error);
         } finally {
@@ -121,7 +129,7 @@ final class RuntimeBootstrap {
         } catch (ReflectiveOperationException unavailable) { return false; }
     }
 
-    private static String debugCustomModelConfig() {
+    static String debugCustomModelConfig() {
         if (!BuildConfig.DEBUG) return "";
         try {
             Method get = Class.forName("android.os.SystemProperties")
@@ -130,5 +138,10 @@ final class RuntimeBootstrap {
             android.util.Log.i("BetterEndfield.Debug", "custom model config present=" + (value != null && !value.isEmpty()));
             return value == null ? "" : value;
         } catch (ReflectiveOperationException unavailable) { return ""; }
+    }
+
+    static String customModelConfig() {
+        String debug=debugCustomModelConfig();
+        return debug.isEmpty()?BemInstalledResources.configuration:debug;
     }
 }

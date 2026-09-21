@@ -1,15 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="app_background">#0B0D10</color>
-    <color name="surface">#15181D</color>
-    <color name="surface_high">#1C2026</color>
-    <color name="surface_border">#2A2F37</color>
-    <color name="accent">#FFC928</color>
-    <color name="accent_dark">#D9A600</color>
-    <color name="accent_soft">#24FFC928</color>
-    <color name="text_primary">#F5F6F7</color>
-    <color name="text_secondary">#AEB4BD</color>
-    <color name="text_muted">#747C88</color>
-    <color name="input_background">#101216</color>
-    <color name="icon_background">#171A1F</color>
+    <!--
+      One dark scale plus one accent. The previous palette put cards at #15181D on
+      a #0B0D10 page, which is a 1.15:1 step: on an OLED phone the cards simply
+      disappeared and every page read as one flat wall of switches. The surfaces
+      below are spaced far enough apart to be visible, and every text colour meets
+      at least 4.5:1 against the surface it is used on.
+    -->
+    <color name="app_background">#07090C</color>
+    <color name="surface">#12161C</color>
+    <color name="surface_high">#1B212A</color>
+    <color name="surface_row">#181E26</color>
+    <color name="surface_border">#2B333E</color>
+    <color name="surface_border_soft">#1F2630</color>
+
+    <color name="accent">#FFC845</color>
+    <color name="accent_dark">#E0A513</color>
+    <color name="accent_soft">#1FFFC845</color>
+    <color name="accent_ink">#120E03</color>
+
+    <color name="text_primary">#F4F6F8</color>
+    <color name="text_secondary">#A7B0BC</color>
+    <color name="text_muted">#75808E</color>
+
+    <color name="input_background">#0C1014</color>
+    <color name="icon_background">#151A21</color>
+
+    <color name="slider_track">#39424F</color>
+    <color name="switch_thumb_off">#C7CEDA</color>
+    <color name="switch_track_on">#59FFC845</color>
+    <color name="switch_track_off">#3A424E</color>
+
+    <!-- Panel surfaces. The in-game overlay sits on top of the rendered scene, so
+         it needs to be darker and more opaque than anything in the settings app
+         to stay readable over a bright frame. -->
+    <color name="overlay_panel">#F00C1016</color>
+    <color name="overlay_row">#1B222B</color>
+    <color name="overlay_border">#33FFC845</color>
 </resources>

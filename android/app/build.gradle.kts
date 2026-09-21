@@ -13,10 +13,13 @@ android {
 
     defaultConfig {
         applicationId = "dev.betterendfield.android"
-        minSdk = 27
+        // The libxposed API 102 service is the only framework entry point, and it
+        // needs Android 10. The legacy API 82 build was dropped in 3.3.0.
+        minSdk = 29
         targetSdk = 35
         versionCode = 30202
         versionName = "3.2.2"
+        testInstrumentationRunner = "dev.betterendfield.android.BemInstallerTest"
 
         ndk {
             abiFilters += "arm64-v8a"
@@ -44,15 +47,6 @@ android {
         }
     }
 
-    flavorDimensions += "framework"
-    productFlavors {
-        create("legacy") { dimension = "framework" }
-        create("modern") {
-            dimension = "framework"
-            minSdk = 29
-        }
-    }
-
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
@@ -64,6 +58,13 @@ android {
         jniLibs {
             useLegacyPackaging = true
         }
+    }
+
+    androidResources {
+        // The sustained-dash bone-pose banks are copied out to the game's files
+        // directory once and then skipped on a size match. Storing them
+        // uncompressed is what makes the asset's reported length the real one.
+        noCompress += "bin"
     }
 
     compileOptions {
@@ -81,6 +82,12 @@ val prepareAndroidResourceAssets by tasks.registering(Copy::class) {
     from(rootProject.file("resources/voice-catalog-index.json"))
     from(rootProject.file("resources/character-names.json"))
     from(rootProject.file("resources/character-presets.json"))
+    // Same layout the desktop module reads from beside its DLL, so one set of
+    // bone-pose banks serves both platforms.
+    from(rootProject.file("../native/modules/actions/assets")) {
+        include("pose_*.bin")
+        into("actions")
+    }
     into(layout.buildDirectory.dir("generated/androidResourceAssets"))
 }
 
@@ -128,7 +135,6 @@ tasks.named("preBuild").configure {
 }
 
 dependencies {
-    "legacyCompileOnly"("de.robv.android.xposed:api:82")
-    "modernCompileOnly"("io.github.libxposed:api:102.0.0")
-    "modernImplementation"("io.github.libxposed:service:102.0.0")
+    compileOnly("io.github.libxposed:api:102.0.0")
+    implementation("io.github.libxposed:service:102.0.0")
 }

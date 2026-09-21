@@ -5,33 +5,27 @@
     <string name="settings_subtitle">终末地增强模块 · Android</string>
     <string name="app_icon_description">Better Endfield 图标</string>
     <string name="runtime_badge">ROOT · LSPOSED</string>
-    <string name="model_page">模型替换</string>
+    <string name="model_page">开屏模型</string>
+    <string name="custom_model_page">第三方模型</string>
+    <string name="custom_model_title">第三方模型替换</string>
+    <string name="custom_model_description">安装和管理第三方 BEM 模型包，替换游戏内角色资源。此模块拥有独立的模型包与外观配置。</string>
+    <string name="custom_model_install">安装 / 管理 BEM 模型包</string>
     <string name="voice_page">角色配音</string>
     <string name="enhancement_page">画面增强</string>
     <string name="diagnostics_page">诊断</string>
     <string name="diagnostics_eyebrow">DIAGNOSTICS</string>
     <string name="diagnostics_title">运行状态</string>
     <string name="diagnostics_description">只显示当前配置和已验证的运行边界；字段写入在 Android 证据不足时会自动保持关闭。</string>
-    <string name="diagnostics_framework">框架入口：modern API 102 / legacy API 82 独立构建</string>
+    <string name="diagnostics_framework">框架入口：libxposed API 102</string>
     <string name="diagnostics_overlay">悬浮窗：%1$s（权限：%2$s）</string>
     <string name="diagnostics_model">模型配置：%1$s</string>
     <string name="diagnostics_mesh">Mesh 字段：只读动态扫描；候选写入关闭</string>
     <string name="diagnostics_ready">诊断页已加载</string>
     <string name="enhancement_eyebrow">ENHANCEMENTS</string>
     <string name="enhancement_title">界面与画面增强</string>
-    <string name="enhancement_description">移植桌面端 UI 与镜头模块中不依赖键盘的两项功能，Hook 入口与桌面端一致。设置在下次启动游戏时生效。</string>
-    <string name="enhancement_hide_uid">隐藏 UID 与水印</string>
-    <string name="enhancement_hide_uid_hint">拦截 UIDPanel / WaterMark 面板的激活，并每 2 秒补扫一次已存在的面板。</string>
-    <string name="enhancement_disable_dither">移除角色近距离虚化</string>
-    <string name="enhancement_disable_dither_hint">调用游戏自身的清理逻辑，移除镜头贴近角色时出现的半透明虚化。</string>
-    <string name="overlay_enable">启用悬浮控制窗</string>
-    <string name="overlay_enable_hint">只显示模型开关和隐藏按钮；复杂设置仍在主界面完成。</string>
-    <string name="enhancement_save">保存增强设置</string>
-    <string name="enhancement_status">当前：隐藏 UID %1$s · 反虚化 %2$s</string>
-    <string name="enhancement_restart_required">增强设置已保存。请强制停止并重新启动游戏。</string>
     <string name="state_on">开</string>
     <string name="state_off">关</string>
-    <string name="model_title">登录模型替换</string>
+    <string name="model_title">开屏模型替换</string>
     <string name="model_eyebrow">MODEL REPLACEMENT</string>
     <string name="model_description">直接复用桌面端模型模块、角色预设和动画序列。模型设置在下次启动游戏时生效。</string>
     <string name="model_table_ready">桌面预设已加载：%1$d 名角色，%2$d 个可选动作；14 个 Hook 入口同源编译。</string>
@@ -65,4 +59,71 @@
     <string name="current_setting_ready">当前设置已加载。修改后需强制停止并重新启动游戏。模型替换、动画序列、Logo 和登录色带已通过实机验证。</string>
     <string name="restart_required">设置已保存。请强制停止并重新启动游戏；首次使用新的配音规则时会自动生成手机专用 catalog。</string>
     <string name="model_restart_required">模型设置已保存。请强制停止并重新启动游戏。</string>
+    <string name="enhancement_description">界面增强、持续冲刺和相机增强统一在这里配置。需要在游戏运行中即时触发的动作放在悬浮窗里，其余开关都在这一页。</string>
+
+    <!-- betterendfield.ui -->
+    <string name="ui_card_eyebrow">INTERFACE · betterendfield.ui</string>
+    <string name="ui_card_title">界面增强</string>
+    <string name="ui_card_subtitle">与桌面端同源编译。隐藏 UID 是常驻开关；隐藏全部 HUD 需要在游戏里即时切换，开关在这里，触发按钮在悬浮窗。</string>
+    <string name="ui_hide_uid">隐藏 UID 水印</string>
+    <string name="ui_hide_uid_hint">隐藏游戏画面中的账号 UID 水印，并每 2 秒补扫一次已存在的面板。</string>
+    <string name="ui_hide_hud">启用隐藏全部 HUD</string>
+    <string name="ui_hide_hud_hint">隐藏或恢复游戏内 MainHudRoot 下的全部 HUD 画布，不影响菜单和设置界面。由悬浮窗的按钮切换。</string>
+
+    <!-- betterendfield.camera -->
+    <string name="camera_card_eyebrow">CAMERA · betterendfield.camera</string>
+    <string name="camera_card_title">相机增强</string>
+    <string name="camera_card_subtitle">自由视角、世界暂停和第一人称都要在游戏里即时触发，按钮在悬浮窗；这里只决定哪些功能装载、以及它们的参数。</string>
+    <string name="camera_dither">移除角色近距离虚化</string>
+    <string name="camera_dither_hint">调用游戏自身的 ForceClearDither，移除镜头贴近角色时的半透明虚化。无需热键。</string>
+    <string name="camera_free">启用自由视角功能</string>
+    <string name="camera_free_hint">进入时捕获主相机的位置和视野，退出后恢复原值。悬浮窗展开后会出现方向键与升降键。</string>
+    <string name="camera_pause">启用时间冻结功能</string>
+    <string name="camera_pause_hint">冻结游戏时间但保留镜头移动。桌面端同样把它挂在自由视角下，因此需要先启用自由视角。</string>
+    <string name="camera_first_person">启用第一人称视角功能</string>
+    <string name="camera_first_person_hint">将视点固定到当前操控角色的头部。与自由视角相互独立，可单独启用。</string>
+    <string name="camera_hide_head">隐藏头部（第一人称）</string>
+    <string name="camera_hide_head_hint">使用独立网格副本隐藏头部，保留身体、手臂和原始阴影。</string>
+    <string name="camera_fill_neck">填补颈部开口</string>
+    <string name="camera_fill_neck_hint">隐藏头部后会露出颈部开口，用一小块补面遮住。</string>
+    <string name="camera_group_values">参数</string>
+    <string name="camera_speed_label">移动速度</string>
+    <string name="camera_fov_label">视野（FOV）</string>
+    <string name="camera_fp_fov_label">第一人称视野（FOV）</string>
+
+    <!-- betterendfield.actions -->
+    <string name="dash_card_eyebrow">SPRINT · betterendfield.actions</string>
+    <string name="dash_card_title">冲刺持续</string>
+    <string name="dash_card_subtitle">分角色开启特殊冲刺动作的持续播放。循环段由随包附带的骨骼姿态数据接管，桌面端不用热键，因此这一页就是全部设置。</string>
+    <string name="dash_enable">启用冲刺持续</string>
+    <string name="dash_enable_hint">保留游戏本次选中的左或右特殊冲刺动作，在持续冲刺时循环播放，延后自然结束；停止或被打断时结束。</string>
+    <string name="dash_group_characters">适用角色</string>
+    <string name="dash_aglina">洁尔佩塔</string>
+    <string name="dash_aglina_hint">续接 sprint_dash_sp 特效并重新点燃 3 秒的高光。</string>
+    <string name="dash_liino">梨诺</string>
+    <string name="dash_liino_hint">保留脚下滑板与武器尾焰，推迟游戏在 2.2 秒收板的动作。</string>
+    <string name="dash_group_options">可选项</string>
+    <string name="dash_pose_note">循环段使用随模块附带的骨骼姿态数据，动画由 %1$s 接管；原生动作与移动逻辑保持不变。</string>
+    <string name="dash_liino_clean">隐藏机甲与光效</string>
+    <string name="dash_liino_clean_hint">梨诺冲刺全程隐藏机甲（含腿甲）与光效，保留飞行动画。</string>
+
+    <!-- overlay -->
+    <string name="overlay_card_eyebrow">IN-GAME PANEL</string>
+    <string name="overlay_card_title">悬浮窗</string>
+    <string name="overlay_card_subtitle">游戏里的一个可拖动小图标，点开就是需要热键的那些动作。不需要系统悬浮窗权限，也不需要后台服务。</string>
+    <string name="overlay_enable">在游戏中显示悬浮窗</string>
+    <string name="overlay_enable_hint">首次启用后需重启游戏。面板随游戏页面显示和隐藏。</string>
+    <string name="overlay_preview">预览悬浮窗</string>
+    <string name="overlay_preview_hint">在本机直接查看面板外观与布局，不需要注入游戏。</string>
+
+    <string name="enhancement_restart_required">增强设置已保存。请强制停止并重新启动游戏后生效。</string>
+    <string name="enhancement_summary">界面 %1$s · 相机 %2$s · 冲刺持续 %3$s</string>
+    <string name="diagnostics_modules">已装载模块：%1$s</string>
+    <string name="state_none">未启用</string>
+    <string name="badge_overlay">悬浮窗触发</string>
+    <string name="degree_suffix">°</string>
+    <string name="module_will_load">会随游戏启动</string>
+    <string name="module_will_not_load">不会装载</string>
+    <string name="overlay_turned_on">悬浮窗已启用。首次启用请重启游戏；面板随游戏页面显示和隐藏。</string>
+    <string name="overlay_turned_off">悬浮窗已关闭。重新进入游戏页面后生效。</string>
 </resources>

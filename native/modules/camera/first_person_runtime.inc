@@ -2,19 +2,35 @@
 // Engine bindings are resolved by name; no Unity native object layouts are read.
 namespace FpMesh = BetterEndfield::FirstPersonMesh;
 
+// Structured exception handling is a Windows-only facility and clang/AArch64 has
+// no equivalent. On Android these calls run unguarded, like every other managed
+// call in the Android port; the non-null check on the resolved binding is what
+// keeps an unresolved contract from being called at all.
 template<class Fn,class... Args>
 bool FpCall(Fn fn,Args... args) {
     if(!fn) return false;
+#if defined(_WIN32)
     __try {fn(args...);return true;} __except(EXCEPTION_EXECUTE_HANDLER) {return false;}
+#else
+    fn(args...);return true;
+#endif
 }
 template<class T,class Fn,class... Args>
 T FpValue(T fallback,Fn fn,Args... args) {
     if(!fn) return fallback;
+#if defined(_WIN32)
     __try {return fn(args...);} __except(EXCEPTION_EXECUTE_HANDLER) {return fallback;}
+#else
+    (void)fallback;return fn(args...);
+#endif
 }
 bool FpCopy(void* destination,const void* source,size_t size) {
     if(!destination||!source) return false;
+#if defined(_WIN32)
     __try {std::memcpy(destination,source,size);return true;} __except(EXCEPTION_EXECUTE_HANDLER) {return false;}
+#else
+    std::memcpy(destination,source,size);return true;
+#endif
 }
 struct FpRoot {
     void* object=nullptr; uint32_t handle=0;

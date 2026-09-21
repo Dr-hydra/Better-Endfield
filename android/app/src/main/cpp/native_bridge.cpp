@@ -3,20 +3,30 @@
 #include "core/command_pump.h"
 #include "modules/module.h"
 #include "modules/character_voice/character_voice_module.h"
-#include "modules/enhancement/enhancement_module.h"
+#include "modules/desktop/desktop_module.h"
 #include "modules/login_model/login_model_module.h"
 #include "modules/custom_model/resource_probe.h"
 #include "modules/custom_model/custom_model_module.h"
+
+#include "android_virtual_keys.h"
 
 #include <jni.h>
 
 #include <atomic>
 #include <chrono>
 #include <cstdlib>
+#include <cstring>
 #include <memory>
 #include <thread>
 #include <vector>
 #include <string>
+
+// Each desktop feature module keeps its own entry point; the Android CMake build
+// renames the shared BetterEndfield_GetModuleApiV1 symbol per translation unit so
+// all of them can live in this one shared library.
+extern "C" const BE_ModuleApiV1* BetterEndfield_GetUiModuleApiV1();
+extern "C" const BE_ModuleApiV1* BetterEndfield_GetCameraModuleApiV1();
+extern "C" const BE_ModuleApiV1* BetterEndfield_GetActionsModuleApiV1();
 
 namespace betterendfield {
 namespace {
@@ -27,6 +37,11 @@ constexpr int kMaximumAttempts = 1200;
 std::atomic_bool g_runtime_started{false};
 std::vector<std::unique_ptr<Module>> g_modules;
 std::unique_ptr<Il2CppRuntime> g_il2cpp_runtime;
+
+const char* Configured(const char* variable) {
+    const char* value = std::getenv(variable);
+    return value != nullptr && value[0] != '\0' ? value : nullptr;
+}
 
 void RunModules() {
     // libil2cpp.so is mapped before the IL2CPP domain is safe to enter. The
@@ -54,26 +69,42 @@ void RunModules() {
         return;
     }
 
-    const char* voice_rules = std::getenv("BETTER_ENDFIELD_VOICE_RULES");
     const char* custom_probe = std::getenv("BETTER_ENDFIELD_CUSTOM_MODEL_PROBE");
-    const char* custom_model_config = std::getenv("BETTER_ENDFIELD_CUSTOM_MODEL_CONFIG");
-    if (custom_model_config && *custom_model_config != '\0') {
+    if (Configured("BETTER_ENDFIELD_CUSTOM_MODEL_CONFIG") != nullptr) {
         g_modules.emplace_back(std::make_unique<CustomModelModule>());
     }
-    if (custom_probe && std::string(custom_probe) == "1") {
+    if (custom_probe != nullptr && std::string(custom_probe) == "1") {
         g_modules.emplace_back(std::make_unique<CustomModelResourceProbe>());
     }
-    if (voice_rules != nullptr && *voice_rules != '\0') {
+    if (Configured("BETTER_ENDFIELD_VOICE_RULES") != nullptr) {
         g_modules.emplace_back(std::make_unique<CharacterVoiceModule>());
     }
-    const char* model_configuration = std::getenv("BETTER_ENDFIELD_MODEL_CONFIG");
-    if (model_configuration != nullptr && *model_configuration != '\0') {
+    if (Configured("BETTER_ENDFIELD_MODEL_CONFIG") != nullptr) {
         g_modules.emplace_back(std::make_unique<LoginModelModule>());
     }
-    const char* enhancement_configuration =
-        std::getenv("BETTER_ENDFIELD_ENHANCEMENT_CONFIG");
-    if (enhancement_configuration != nullptr && *enhancement_configuration != '\0') {
-        g_modules.emplace_back(std::make_unique<EnhancementModule>());
+    // The three ported desktop modules. Their configurations are independent, so
+    // a user who only wants one of them never has the others in the process.
+    if (Configured("BETTER_ENDFIELD_UI_CONFIG") != nullptr) {
+        g_modules.emplace_back(std::make_unique<DesktopModule>(
+            "betterendfield.ui",
+            "BETTER_ENDFIELD_UI_CONFIG",
+            &BetterEndfield_GetUiModuleApiV1,
+            "same-source desktop UI module active (hide UID/watermark, all-HUD toggle)"));
+    }
+    if (Configured("BETTER_ENDFIELD_CAMERA_CONFIG") != nullptr) {
+        g_modules.emplace_back(std::make_unique<DesktopModule>(
+            "betterendfield.camera",
+            "BETTER_ENDFIELD_CAMERA_CONFIG",
+            &BetterEndfield_GetCameraModuleApiV1,
+            "same-source desktop camera module active (free camera, world pause, "
+            "first person, near-camera dither)"));
+    }
+    if (Configured("BETTER_ENDFIELD_ACTIONS_CONFIG") != nullptr) {
+        g_modules.emplace_back(std::make_unique<DesktopModule>(
+            "betterendfield.actions",
+            "BETTER_ENDFIELD_ACTIONS_CONFIG",
+            &BetterEndfield_GetActionsModuleApiV1,
+            "same-source desktop sustained-dash module active"));
     }
 
     for (const auto& module : g_modules) {
@@ -82,33 +113,33 @@ void RunModules() {
     }
 }
 
+bool AnyModuleRequested() {
+    static constexpr const char* kVariables[]{
+        "BETTER_ENDFIELD_VOICE_RULES",
+        "BETTER_ENDFIELD_MODEL_CONFIG",
+        "BETTER_ENDFIELD_UI_CONFIG",
+        "BETTER_ENDFIELD_CAMERA_CONFIG",
+        "BETTER_ENDFIELD_ACTIONS_CONFIG",
+        "BETTER_ENDFIELD_CUSTOM_MODEL_CONFIG",
+    };
+    for (const char* variable : kVariables) {
+        if (Configured(variable) != nullptr) return true;
+    }
+    const char* custom_probe = std::getenv("BETTER_ENDFIELD_CUSTOM_MODEL_PROBE");
+    return custom_probe != nullptr && std::string(custom_probe) == "1";
+}
+
 }  // namespace
 }  // namespace betterendfield
 
 extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM*, void*) {
-    const char* configured_rules = std::getenv(
-        "BETTER_ENDFIELD_VOICE_RULES");
-    const bool character_voice_requested = configured_rules != nullptr &&
-        configured_rules[0] != '\0';
-    const char* configured_model = std::getenv("BETTER_ENDFIELD_MODEL_CONFIG");
-    const bool model_requested = configured_model != nullptr &&
-        configured_model[0] != '\0';
-    const char* configured_enhancement =
-        std::getenv("BETTER_ENDFIELD_ENHANCEMENT_CONFIG");
-    const bool enhancement_requested = configured_enhancement != nullptr &&
-        configured_enhancement[0] != '\0';
-    const char* custom_probe = std::getenv("BETTER_ENDFIELD_CUSTOM_MODEL_PROBE");
-    const char* custom_model_config = std::getenv("BETTER_ENDFIELD_CUSTOM_MODEL_CONFIG");
-    const bool any_requested = character_voice_requested || model_requested ||
-        enhancement_requested || (custom_probe && std::string(custom_probe) == "1") ||
-        (custom_model_config && custom_model_config[0] != '\0');
-    if (any_requested &&
-        !betterendfield::g_runtime_started.exchange(true, std::memory_order_acq_rel)) {
-        std::thread(betterendfield::RunModules).detach();
-    } else if (!any_requested) {
+    if (!betterendfield::AnyModuleRequested()) {
         betterendfield::LogInfo(
-            "runtime",
-            "no Android modules selected; IL2CPP worker not started");
+            "runtime", "no Android modules selected; IL2CPP worker not started");
+        return JNI_VERSION_1_6;
+    }
+    if (!betterendfield::g_runtime_started.exchange(true, std::memory_order_acq_rel)) {
+        std::thread(betterendfield::RunModules).detach();
     }
     return JNI_VERSION_1_6;
 }
@@ -130,4 +161,22 @@ Java_dev_betterendfield_android_NativeCommandBridge_status(
     if (!environment) return nullptr;
     const std::string status = betterendfield::CopyRuntimeCommandStatus();
     return environment->NewStringUTF(status.c_str());
+}
+
+// The in-game panel's controls. This deliberately bypasses the runtime command
+// pump: the pump is a single-slot, generation-checked queue drained on a Unity
+// hook, which is right for configuration but would drop the release event of a
+// press-and-hold control such as the free-camera movement pad. The latch is a
+// plain atomic, so a press is visible to the desktop polling code immediately.
+extern "C" JNIEXPORT jboolean JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_key(
+        JNIEnv*, jclass, jint virtual_key, jint action) {
+    return betterendfield::SetVirtualKey(
+        static_cast<int>(virtual_key),
+        static_cast<betterendfield::VirtualKeyAction>(action)) ? JNI_TRUE : JNI_FALSE;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_releaseKeys(JNIEnv*, jclass) {
+    betterendfield::ReleaseAllVirtualKeys();
 }

@@ -17,6 +17,7 @@ ENTRY = struct.Struct('<IIQQQ')
 LIMIT = 512 * 1024 * 1024
 ID = re.compile(r'^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$')
 CAPABILITIES = ['native-materials', 'palette-u8', 'indices-u32', 'fixed-appearances']
+SUPPORTED_CAPABILITIES = CAPABILITIES + ['texture-astc']
 
 
 def require(ok, message):
@@ -71,7 +72,7 @@ def validate_manifest(m, payload_count):
         identity(m[key])
     for key in ('name', 'author', 'version'):
         require(isinstance(m[key], str) and 0 < len(m[key].encode('utf-8')) <= 256, f'Invalid {key}')
-    require(set(m['required_capabilities']) <= set(CAPABILITIES), 'Unsupported required capability')
+    require(set(m['required_capabilities']) <= set(SUPPORTED_CAPABILITIES), 'Unsupported required capability')
     t = m['target']
     for key in ('character_id', 'profile_id', 'revision', 'world_resource', 'ui_resource'):
         identity(t[key])
@@ -128,7 +129,7 @@ def validate_manifest(m, payload_count):
         require(end == mesh['index_count'], 'Draws do not cover IB')
     for t in m['textures']:
         ref(t['payload'])
-        require(t['format'] in (4, 10, 12, 25, 26, 27, 63), 'Unsupported texture format')
+        require(t['format'] in (4, 10, 12, 25, 26, 27, 48, 49, 50, 63), 'Unsupported texture format')
         require(t['format'] != 63 or t['srgb'] is False, 'R8 texture must be linear')
         require(type(t['srgb']) is bool, 'Texture srgb must be boolean')
         require(isinstance(t['original_name'], str) and 0 < len(t['original_name']) <= 256, 'Missing texture identity')

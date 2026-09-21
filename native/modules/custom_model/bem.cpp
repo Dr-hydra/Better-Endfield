@@ -1,4 +1,5 @@
 #include "bem.h"
+#include "bem_rewrite.h"
 #include "../../shared/third_party/nlohmann/json.hpp"
 #include "../../shared/third_party/zstd/lib/zstd.h"
 #include <algorithm>
@@ -75,7 +76,7 @@ struct Container {
         Check(U(m.at("schema"))==1,"Unknown manifest schema");
         info.package_id=Id(m.at("package_id")); info.name=S(m.at("name")); info.author=S(m.at("author"));
         info.version=S(m.at("version")); info.default_appearance=Id(m.at("default_appearance_id"));
-        const std::set<std::string> caps{"native-materials","palette-u8","indices-u32","fixed-appearances"};
+        const std::set<std::string> caps{"native-materials","palette-u8","indices-u32","fixed-appearances","texture-astc"};
         for(const auto& c:m.at("required_capabilities")) Check(caps.contains(S(c)),"Unsupported required capability");
         const auto& t=m.at("target"); Check(S(t.at("platform"))=="windows-x64","Unsupported target platform");
         info.character_id=Id(t.at("character_id")); Id(t.at("profile_id")); Id(t.at("revision"));
@@ -207,11 +208,11 @@ struct Container {
                         const auto& t=m.at("textures").at(id); BemTexture tex;
                         auto& ti=tex.info; ti.width=U(t.at("width")); ti.height=U(t.at("height")); ti.mip_count=U(t.at("mips"));
                         ti.create_format=int32_t(U(t.at("format"))); ti.create_srgb=t.at("srgb").get<bool>()?1:0;
-                        uint32_t block=0,pixel=0; switch(ti.create_format) {case 4:pixel=4;break;case 63:pixel=1;Check(!ti.create_srgb,"R8 texture must be linear");break;case 10:case 26:block=8;break;case 12:case 25:case 27:block=16;break;default:Check(false,"Unsupported texture format");}
-                        Check(ti.width && ti.height && ti.width<=32768 && ti.height<=32768 && (pixel || (ti.width%4==0 && ti.height%4==0)) && ti.mip_count && ti.mip_count<=16,"Invalid texture dimensions");
+                        uint32_t block=0,pixel=0,blockWidth=4; switch(ti.create_format) {case 4:pixel=4;break;case 63:pixel=1;Check(!ti.create_srgb,"R8 texture must be linear");break;case 10:case 26:block=8;break;case 12:case 25:case 27:block=16;break;case 48:block=16;break;case 49:block=16;blockWidth=5;break;case 50:block=16;blockWidth=6;break;default:Check(false,"Unsupported texture format");}
+                        Check(ti.width && ti.height && ti.width<=32768 && ti.height<=32768 && (pixel || ti.create_format>=48 || (ti.width%4==0 && ti.height%4==0)) && ti.mip_count && ti.mip_count<=16,"Invalid texture dimensions");
                         uint64_t size=0; for(uint32_t level=0;level<ti.mip_count;++level) {
                             const uint64_t mipWidth=std::max(ti.width>>level,1u),mipHeight=std::max(ti.height>>level,1u);
-                            size+=pixel?mipWidth*mipHeight*pixel:((mipWidth+3)/4)*((mipHeight+3)/4)*block;
+                            size+=pixel?mipWidth*mipHeight*pixel:((mipWidth+blockWidth-1)/blockWidth)*((mipHeight+blockWidth-1)/blockWidth)*block;
                         }
                         Check(size<=64*MiB,"Texture exceeds 64 MiB"); reserve(size); tex.data=Payload(t.at("payload"),size);
                         ti.data_size=static_cast<uint32_t>(size); ti.reserved=2; tex.original_name=S(t.at("original_name")); tex.name=tex.original_name;
@@ -251,5 +252,78 @@ bool ParseBem(std::span<const uint8_t> bytes,BemPocData& out,std::string& error)
             return std::vector<uint8_t>(bytes.begin()+off,bytes.begin()+off+n); };
         c.Open(bytes.size()); BemPocData parsed; c.Decode({},parsed); out=std::move(parsed); return true;
     } catch(const std::exception& e) {error=e.what(); return false;}
+}
+bool RewriteBemTextures(const std::filesystem::path& input,const std::filesystem::path& output,
+    const TextureTransform& transform,const std::function<void()>& checkpoint,std::string& report,std::string& error) {
+    // Caller owns a unique staging directory. Never overwrite a published package.
+    if (std::filesystem::exists(output)) { error="Output already exists"; return false; }
+    auto spool=output; spool += ".payloads";
+    if (std::filesystem::exists(spool)) { error="Staging payload file already exists"; return false; }
+    bool ok=File(input,error,[&](Container& c) {
+        for(const auto& appearance:c.info.appearances) {
+            checkpoint(); BemPocData parsed; c.cache.clear(); c.decoded=0;
+            c.Decode(appearance,parsed);
+        }
+        c.cache.clear(); c.decoded=0;
+        std::ofstream data(spool,std::ios::binary); Check(bool(data),"Cannot create staging payloads");
+        std::vector<Entry> entries;
+        auto append=[&](uint32_t codec,uint64_t decoded,const std::vector<uint8_t>& bytes) {
+            Check(entries.size()<4096,"Installed payload directory exceeds limit");
+            auto id=entries.size(); entries.push_back({codec,0,0,bytes.size(),decoded});
+            data.write(reinterpret_cast<const char*>(bytes.data()),bytes.size()); Check(bool(data),"Staging disk write failed");
+            return id;
+        };
+        std::map<uint32_t,size_t> copied;
+        auto copy=[&](BemJson& ref) {
+            auto old=U(ref); auto it=copied.find(old);
+            if(it==copied.end()) { checkpoint(); const auto& e=c.directory.at(old);
+                it=copied.emplace(old,append(e.codec,e.decoded,c.read(e.offset,static_cast<size_t>(e.stored)))).first; }
+            ref=it->second;
+        };
+        auto manifest=c.manifest;
+        for(auto& mesh:manifest["meshes"]) {for(auto& stream:mesh["streams"]) copy(stream["payload"]); copy(mesh["indices"]);}
+        for(auto& appearance:manifest["appearances"]) if(appearance.contains("preview")) copy(appearance["preview"]);
+        BemJson changes=BemJson::array();
+        // Identical texture descriptors share converted output; geometry/texture aliases are kept separate.
+        std::map<std::string,BemJson> converted;
+        for(auto& texture:manifest["textures"]) {
+            checkpoint(); auto key=texture.dump(); auto found=converted.find(key);
+            if(found!=converted.end()) { texture=found->second; continue; }
+            auto original=texture; auto id=U(texture.at("payload"));
+            c.cache.clear(); c.decoded=0;
+            auto bytes=c.Payload(id,c.directory.at(id).decoded); c.cache.clear();
+            Check(bytes.size()<=64*MiB,"Texture exceeds 64 MiB");
+            transform(c.manifest,texture,bytes);
+            Check(!bytes.empty() && bytes.size()<=64*MiB,"Converted texture exceeds 64 MiB");
+            texture["payload"]=append(0,bytes.size(),bytes);
+            converted.emplace(key,texture);
+            changes.push_back({{"name",texture.at("original_name")},{"source_format",original.at("format")},
+                {"format",texture.at("format")},{"bytes",bytes.size()}});
+        }
+        data.close(); Check(bool(data),"Payload flush failed"); checkpoint();
+        bool astc=false; for(const auto& t:manifest["textures"]) if(U(t["format"])>=48 && U(t["format"])<=50) astc=true;
+        if(astc && std::find(manifest["required_capabilities"].begin(),manifest["required_capabilities"].end(),"texture-astc")==manifest["required_capabilities"].end())
+            manifest["required_capabilities"].push_back("texture-astc");
+        manifest["android_install"]={{"revision",1},{"source_platform",manifest["target"]["platform"]}};
+        auto json=manifest.dump(); Check(json.size()<=4*MiB,"Installed manifest exceeds limit");
+        uint64_t offset=sizeof(Header)+json.size()+entries.size()*sizeof(Entry);
+        for(auto& e:entries) {e.offset=offset;offset+=e.stored;}
+        Check(offset<=2ull*1024*MiB,"Installed package exceeds 2 GiB");
+        Header header{}; std::memcpy(header.magic,"BEM\0PKG\0",8); header.major=1;header.size=sizeof(Header);
+        header.file=offset;header.manifest=json.size();header.count=static_cast<uint32_t>(entries.size());
+        std::ofstream out(output,std::ios::binary); Check(bool(out),"Cannot create installed package");
+        out.write(reinterpret_cast<const char*>(&header),sizeof(header)); out.write(json.data(),json.size());
+        out.write(reinterpret_cast<const char*>(entries.data()),entries.size()*sizeof(Entry));
+        std::ifstream payloads(spool,std::ios::binary); std::array<char,65536> buffer{};
+        while(payloads) {checkpoint();payloads.read(buffer.data(),buffer.size());out.write(buffer.data(),payloads.gcount());}
+        Check(payloads.eof(),"Staging read failed"); out.close(); Check(bool(out),"Installed package flush failed");
+        for(const auto& appearance:c.info.appearances) {checkpoint();BemPocData parsed;std::string failure;
+            Check(LoadBem(output,parsed,failure,appearance),"Installed validation: "+failure);}
+        report=BemJson({{"package_id",c.info.package_id},{"character_id",c.info.character_id},{"name",c.info.name},
+            {"default_appearance",c.info.default_appearance},{"appearances",c.info.appearances},{"textures",changes},{"bytes",offset},{"revision",1}}).dump();
+    });
+    std::error_code ignored; std::filesystem::remove(spool,ignored);
+    if(!ok) std::filesystem::remove(output,ignored);
+    return ok;
 }
 }

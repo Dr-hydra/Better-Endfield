@@ -102,10 +102,12 @@ def check_geometry(m, payloads):
     for t in m['textures']:
         w,h,n=t['width'],t['height'],t['mips']
         pixel={4:4,63:1}.get(t['format'],0)
-        bem.require(0<w<=32768 and 0<h<=32768 and (pixel or (w%4==0 and h%4==0)) and 0<n<=16, 'Invalid texture dimensions')
+        astc = t['format'] in (48,49,50)
+        bem.require(0<w<=32768 and 0<h<=32768 and (pixel or astc or (w%4==0 and h%4==0)) and 0<n<=16, 'Invalid texture dimensions')
         block=8 if t['format'] in (10,26) else 16
+        bw=t['format']-44 if astc else 4
         size=(sum(max(w>>i,1)*max(h>>i,1)*pixel for i in range(n)) if pixel else
-              sum(((max(w>>i,1)+3)//4)*((max(h>>i,1)+3)//4)*block for i in range(n)))
+              sum(((max(w>>i,1)+bw-1)//bw)*((max(h>>i,1)+bw-1)//bw)*block for i in range(n)))
         bem.require(size<=64*1024**2 and len(payloads[t['payload']])==size, 'Texture mip payload mismatch')
     for a in m['appearances']:
         if 'preview' in a:

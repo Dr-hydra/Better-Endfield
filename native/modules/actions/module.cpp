@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstring>
 #include <memory>
+#include <mutex>
 #include <filesystem>
 #include <string>
 #include <string_view>
@@ -87,7 +88,34 @@ struct Configuration {
     uint32_t characters = (1u << kCharacterCount) - 1;
     bool operator==(const Configuration&) const = default;
 };
-std::atomic<std::shared_ptr<const Configuration>> g_config{std::make_shared<Configuration>()};
+#if defined(_WIN32)
+using ConfigurationSlot = std::atomic<std::shared_ptr<const Configuration>>;
+#else
+// libc++ on the Android NDK does not ship the C++20 std::atomic<shared_ptr>
+// specialization, so the primary template rejects a non-trivially-copyable type.
+// This slot has the same two operations the module uses: a store from
+// configuration_changed, and a load from the detours. Publishes are rare (one per
+// settings change) and a load is a handful of times per dashing frame, so the
+// mutex is not on any path where its cost is measurable.
+class ConfigurationSlot {
+public:
+    explicit ConfigurationSlot(std::shared_ptr<const Configuration> initial)
+        : value_(std::move(initial)) {}
+    std::shared_ptr<const Configuration> load() const {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return value_;
+    }
+    void store(std::shared_ptr<const Configuration> next) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        value_ = std::move(next);
+    }
+
+private:
+    mutable std::mutex mutex_;
+    std::shared_ptr<const Configuration> value_;
+};
+#endif
+ConfigurationSlot g_config{std::make_shared<Configuration>()};
 const BE_HostApiV1* g_host = nullptr;
 std::atomic_bool g_stopping{false};
 std::atomic<DWORD> g_game_thread{0};

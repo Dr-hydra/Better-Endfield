@@ -109,25 +109,115 @@ working again. The 3.0.1 improvements that remain (Animator enumeration, avatar
 copy fallback, full rollback on failure, no actor capture during login scene
 release) were verified in the same run.
 
-## Enhancement module
+## Interface, camera and sustained dash
 
-Version 3.0.2 adds `betterendfield.enhancement`, a port of the two desktop
-features that do not depend on a keyboard: hide UID/watermark (from
-`BetterEndfield.UI`) and disable near-camera character dither (from
-`BetterEndfield.Camera`). Hook points are identical to desktop:
-`GameObject.SetActive` plus a 2-second `GameObject.Find` sweep driven by
-`UIStyleByState.Awake`, `UIStyleByState.UpdateStyle` and
-`EventSystem.Update` for the UID panels, and
-`CameraMono._ProcessDitherByPitch` followed by the game's own
-`CameraMono.ForceClearDither` for the dither. Both switches live on the
-Enhancements page and are passed to the native library through
-`BETTER_ENDFIELD_ENHANCEMENT_CONFIG`; leaving both off keeps the module out of
-the process entirely.
+Version 3.3.0 ports `BetterEndfield.UI`, `BetterEndfield.Camera` and
+`BetterEndfield.Actions` the same way the login-model module was ported: CMake
+compiles the desktop sources
+(`native/modules/{ui,camera,actions}/module.cpp`) straight into the Android
+ARM64 library. There is no second Android implementation of any of them, and no
+game offsets are introduced - every method is still resolved by assembly,
+namespace, class, name, parameter types, return type and parameter count.
+
+`native/shared/android_compat` holds everything platform specific:
+
+- `include/Windows.h` -> `android_win32.h`, the Win32 surface those three
+  sources use. Most of it is a direct POSIX equivalent (`GetTickCount64`,
+  `GetCurrentThreadId`, `GetModuleHandleW`/`GetProcAddress` over
+  `libil2cpp.so`, `QueryPerformanceCounter`). `GetForegroundWindow` reports this
+  process, because the library is only ever mapped inside the running game, and
+  `CaptureStackBackTrace` reports no frames rather than inventing addresses that
+  would be read as real GameAssembly offsets.
+- `android_virtual_keys.h`, the latch behind `GetAsyncKeyState`. The desktop UI
+  and camera modules decide what to do by polling virtual keys; rather than fork
+  those code paths for a device with no keyboard, the in-game panel presses the
+  keys. `Pulse` auto-releases after 180 ms so one tap is exactly one rising
+  edge; `Press`/`Release` back the free-camera movement pad.
+- `touch_input_android.cpp`, the stand-in for the desktop mouse-to-touch
+  injector. An Android client already has a real Touchscreen device.
+
+Three desktop-only facilities could not be represented honestly and carry an
+explicit `#if defined(_WIN32)` at their call site instead: structured exception
+handling (`__try`/`__except`, which clang/AArch64 has no equivalent for, so
+those calls run unguarded here), the module's own DLL directory (Android reads
+the bone-pose directory from the configuration), and the v11 AssetBundle trace
+file. The desktop build of all three modules was rebuilt and is unaffected.
+
+`DesktopModule` (`modules/desktop/desktop_module.*`) is the shared
+`BE_HostApiV1` adapter all three use, so the login-model adapter's boilerplate
+is not copied per module.
+
+### What is wired where
+
+Anything that needs a keypress on desktop is on the in-game panel; everything
+else is on the settings screen.
+
+| Feature | Desktop hotkey | Android |
+| --- | --- | --- |
+| Hide UID watermark | none | Enhancements page |
+| Hide all HUD | `0` | switch on the page, button on the panel |
+| Remove near-camera dither | none | Enhancements page |
+| Free camera | `9` | switch on the page, button on the panel |
+| Time freeze | `8` | switch on the page, button on the panel |
+| First person | `-` | switch on the page, button on the panel |
+| Free-camera movement | arrows, PageUp/PageDown | press-and-hold pad on the panel |
+| Movement speed, both FOVs, head/neck options | ini values | sliders and switches on the page |
+| Sustained special dash | none | Enhancements page only |
+
+The panel only offers a control whose module was actually configured to load. A
+button that presses a key nothing reads is worse than a button that is not
+there.
+
+Each module has its own configuration string and its own environment variable
+(`BETTER_ENDFIELD_UI_CONFIG`, `BETTER_ENDFIELD_CAMERA_CONFIG`,
+`BETTER_ENDFIELD_ACTIONS_CONFIG`). An empty string keeps that module out of the
+game process entirely, which is also what the diagnostics page reports.
+
+The Android-only `betterendfield.enhancement` module that 3.0.2 through 3.2.2
+shipped is gone: its two switches (hide UID, disable dither) are now served by
+the shared desktop sources, and keeping both would have installed two hooks on
+`GameObject.SetActive` from two different brokers. The old preference keys are
+read once on upgrade so the user's choice carries over.
+
+### Sustained dash bone-pose banks
+
+The sustained dash always drives its looping segment from the bone-pose banks,
+not the native-only hold: `external_loop` is written as `true` whenever the
+module is configured. `native/modules/actions/assets/pose_*.bin` - the same
+files the desktop module reads from beside its DLL - are packaged into the APK
+uncompressed and copied into the game's own files directory on first launch,
+and the native side is pointed at them through
+`BETTER_ENDFIELD_ACTIONS_ASSET_ROOT`.
+
+Character names, the clean-exhaust option and the camera/interface labels use
+the desktop UI's wording (洁尔佩塔, 梨诺, 隐藏机甲与光效, 启用时间冻结功能,
+视野（FOV）) so the two platforms describe the same switch the same way.
+
+### Contract evidence
+
+Every distinctive contract these three modules need was checked against the
+1.5.3 client's own `global-metadata.dat`, pulled from the installed APK:
+`UIStyleByState.UpdateStyle`, `CameraUtils.get_cameraManager`,
+`CameraManager.AddUICamCullingMaskConfig` / `RemoveUICamCullingMaskConfig`,
+`CameraMono._ProcessDitherByPitch` / `ForceClearDither`,
+`CameraManager.TailLateTick`, `PlayerController.GetMainCharacter`,
+`Entity.get_modelCom`, `BaseModelComponent.GetModelGo`,
+`CinemachineBrain.PushStateToUnityCamera`,
+`SnapshotCameraController.SetFirstPerson` / `_ShowChar`,
+`Animator.GetBoneTransform`, `CharacterAnimationComponent.StartSpDash` /
+`PreLateTick` / `InterruptSpDashPerform` / `ForceStopSpDashPerform` and
+`CharacterSpecialDashBrain.ShouldInterruptSpDash` are all present.
+
+Note that `CinemachineBrain.PushStateToUnityCamera` is **absent** from the
+1.4.3 snapshot under `android/research/device-1.4.3` and present in 1.5.3. Free
+camera and first person rewrite the camera pose there, so those two features
+need a 1.5-series client; the module reports the contract as unavailable rather
+than pretending on an older one.
 
 ## Android settings UI
 
-The settings screen is split into Model Replacement, Character Voice and
-Enhancements pages.
+The settings screen is split into Model Replacement, Third-party Models,
+Character Voice, Enhancements and Diagnostics pages.
 It uses a dependency-free native Android dark card layout with the desktop
 amber accent, a segmented page switcher, and the existing desktop
 `Assets/shared/gilberta.png` artwork as both the launcher icon and settings
@@ -203,6 +293,13 @@ Research catalogs and source PCK/CHK files stay under ignored
   calls, and the active global PCK is preserved while mounting the auxiliary
   Japanese package.
 - Rule changes require force-stopping and restarting the game.
+- The in-game panel's controls are wired: hide-HUD, free camera, time freeze,
+  first person and the free-camera movement pad all press the virtual keys the
+  ported desktop modules poll. BEM hot switching is still not connected.
+- The three ported modules are build-verified for ARM64 and their settings and
+  panel were exercised on a local emulator. The emulator has no LSPosed, so
+  their in-game behaviour has not been run against the injected client; the
+  contract evidence above is a metadata check, not a device test.
 - The first launch after selecting a new character/language waits for its
   device-local catalog preparation before arming the native hooks. Missing or
   stale language packages are reported in LSPosed logs; external-source routing
@@ -234,11 +331,25 @@ The repository-local toolchain is under `tools/android-toolchain`. Build without
 network access from the repository root:
 
 ```powershell
-.\tools\android-toolchain\gradle\gradle-8.9\bin\gradle.bat `
-  -p android :app:assembleDebug --offline --no-daemon
+.\android\gradlew.bat -p android :app:assembleDebug --offline --no-daemon
 ```
 
 The APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`.
+
+Version 3.3.0 dropped the legacy API 82 build variant. libxposed API 102 is the
+only framework entry point, so there are no longer two flavors and `minSdk` is
+29, the version that service requires.
+
+The settings page uses bottom navigation on phones and a navigation rail at
+720 dp and above, with a bounded content width and system-bar insets. The BEM
+entry is separate from login-model settings. The enhancement page owns the
+overlay switch and preview; the BEM page only manages packages. The framework
+entry attaches a collapsed BE icon directly to the scoped Unity application's
+Activity. Tapping it expands the panel, dragging repositions it, and the panel
+follows pause/resume/destroy. It does not require
+SYSTEM_ALERT_WINDOW permission or a foreground service. After first enabling
+the option, restart the scoped game. Panel display in an injected game still
+requires device verification; an ordinary emulator can verify the preview.
 
 After installing or updating the APK, disable and re-enable the module once in
 LSPosed. This makes LSPosed register the module's protected shared-preference
@@ -255,9 +366,17 @@ is also zip-aligned for Android 16 page-size compatibility.
 
 ## LSPosed scope troubleshooting
 
+Third-party BEM packages are managed from the separate `第三方模型` page.
+Import validates every appearance and preserves the original package bytes;
+texture conversion is optional. If textures look wrong in game, choose
+`转换手机纹理` on that package's management card. A successful conversion
+publishes a new generation while preserving its enabled state and selected
+appearance. Failure or cancellation leaves the active package intact. Packages
+without verified normal-map encoding can still be imported, but conversion
+requires that metadata. Restart the game after changing packages or appearances.
+
 If Endfield is missing from every module's scope list, open the scope page's
 overflow menu, choose `Hide`, and turn off the `Games` filter. LSPosed applies
 that filter globally and Android classifies Endfield as a game.
 
-The module declares the same recommended scope in both
-`META-INF/xposed/scope.list` and the legacy-compatible `assets/xposed_scope`.
+The module declares its recommended scope in `META-INF/xposed/scope.list`.
