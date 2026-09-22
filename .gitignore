@@ -26,8 +26,10 @@ tools/CombatDataExporter/.icon-cache/
 
 # Keep only the scripts needed to build the distributable mod.
 scripts/*
+!scripts/BuildBemTools.ps1
 !scripts/BuildBetterEndfield.ps1
 !scripts/BuildInstaller.ps1
+!scripts/PrepareBemArchiveBackend.ps1
 !scripts/BuildVoiceCatalog.py
 !scripts/GenerateVoiceCatalogIndex.py
 !scripts/GenerateModCharacterPresets.py
