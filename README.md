@@ -2,7 +2,9 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-Better Endfield 是一个面向《终末地》Windows 客户端的模块化运行时。模型、语音、OmniMix 音乐、战斗数据和移动端界面分别由独立 DLL 提供，Host 负责动态 IL2CPP 解析、Hook 生命周期、配置和模块发现。
+Better Endfield 是一个面向《终末地》的模块化运行时。自定义角色外观、模型、语音、OmniMix 音乐、战斗数据和移动端界面分别由独立 DLL 提供，Host 负责动态 IL2CPP 解析、Hook 生命周期、配置和模块发现。
+
+Windows 桌面端与 Android/LSPosed 端共用同一份模块源码。自 3.3.0 起，自定义角色外观（BEM）在两端使用同一个标准包。
 
 ## 架构
 
@@ -10,32 +12,46 @@ Better Endfield 是一个面向《终末地》Windows 客户端的模块化运�
 BetterEndfield.exe
   runtime/BetterEndfield.Host.dll
   modules/BetterEndfield.Model.dll
+  modules/BetterEndfield.CustomModel.dll
   modules/BetterEndfield.Voice.dll
   modules/BetterEndfield.Music.dll
   modules/BetterEndfield.CombatStats.dll
   modules/BetterEndfield.UiModule.dll
+  modules/BetterEndfield.Camera.dll
+  modules/BetterEndfield.Actions.dll
+  modules/BetterEndfield.Gacha.dll
   loaders/BetterEndfield.Injector.exe
   payloads/xinput1_4.dll
 ```
 
 - `BetterEndfield.Host.dll`：唯一的进程内宿主、动态解析器和 HookBroker。
 - `BetterEndfield.Model.dll`：开屏视觉、登录演员、模型资源和动画功能模块。
+- `BetterEndfield.CustomModel.dll`：自定义角色外观（BEM）装配、材质与纹理绑定和 LOD 锁定模块。
 - `BetterEndfield.Voice.dll`：语音语言、Wwise 媒体和口型功能模块。
 - `BetterEndfield.Music.dll`：OmniMix PCM、Wwise Audio Input 和原游戏音乐回退模块。
 - `BetterEndfield.CombatStats.dll`：伤害数字隐藏、战斗伤害统计、快捷键会话和本地结果模块。
 - `BetterEndfield.UiModule.dll`：移动端界面布局与鼠标转触控输入模块。
+- `BetterEndfield.Camera.dll`：自由相机、视场角缩放、第一人称与近景抖动处理模块。
+- `BetterEndfield.Actions.dll`：持续冲刺与分角色动作外观模块，默认关闭。
+- `BetterEndfield.Gacha.dll`：寻访记录查询与本地统计模块。
 - `BetterEndfield.Injector.exe`：默认加载方式，Host 和模块均从软件目录加载。
 - `payloads/xinput1_4.dll`：可选的 XInput 自启动代理，仅在用户确认后部署到游戏目录。
+
+「显示增强」页不提供原生模块，它部署并配置 OptiScaler（DLSS/FSR/XeSS 超分与帧生成），改动直接写入游戏目录，下次启动客户端生效。
 
 ## 源码布局
 
 ```text
 ui/BetterEndfield.UI/          WinUI 控制器与按领域分类的内嵌资源
 native/modules/model/          开屏视觉、角色模型与动画模块
+native/modules/custom_model/   自定义角色外观（BEM）装配与解析模块
 native/modules/voice/          配音语言、Wwise 媒体与口型模块
 native/modules/music/          OmniMix 音乐集成模块
 native/modules/combat_stats/   战斗数据与伤害显示模块
 native/modules/ui/             移动端界面与触控输入模块
+native/modules/camera/         自由相机与第一人称视角模块
+native/modules/actions/        持续冲刺与角色动作外观模块
+native/modules/gacha/          寻访记录查询模块
 native/loaders/injector/       外部启动注入器
 native/loaders/xinput/         XInput 代理与进程内 Bootstrap
 native/shared/                 Host、公共 ABI 头文件与第三方原生依赖
@@ -47,6 +63,7 @@ manifests/shared/              跨模块资源生成报告
 resources/voice/               语音映射生成器的维护输入
 android/                       Android/LSPosed 正式版本
 scripts/                       公共构建、清单生成与资源扫描工具
+tools/CustomModel/             BEM 转换、校验与角色资料工具链
 tools/                         本地分析工具和工具链（不进入发布包）
 docs/                          运行时接口、研究结论与集成交接文档
 ```
@@ -102,6 +119,42 @@ B 服不通过官服 `GameAssembly.dll` 哈希判定。Host 在运行时解析 I
 当前战斗记录使用 schema 11，只保存可验证的操作、原子结果、队伍快照和会话摘要；历史排行、技能统计、Buff 区间与时间轴均在读取时派生，不兼容更早的开发格式。64 位实例 ID 使用十进制字符串，避免浏览器解析时丢失精度。
 字段和方法均按 IL2CPP 元数据描述解析，契约缺失时只停用该模块。schema 11 不按时间或 ID 前缀猜测归属，无法唯一验证的来源明确记录为未知。
 
+## 自定义角色外观（BEM）
+
+自定义外观默认关闭。正式扩展名为 `.bem`，一个包对应一个角色，可包含多种固定外观；玩家只需导入包，不需要 Python、原 Mod 注入框架、角色数据库或手写 `runtime.ini`。
+
+自 3.3.0 起该功能在 Windows 与 Android 双端可用，两端使用**同一个标准 BEMv1 包**。Android 直接编译 `native/modules/custom_model` 的桌面源码，不存在第二套实现，也不引入任何游戏偏移；包的解析与校验路径两端一致。
+
+桌面端的包与状态位于软件配置目录，发布包不携带任何外观资源：
+
+```text
+%LocalAppData%\BetterEndfield\catalog\custom-model\
+  runtime.ini
+  packages\*.bem
+```
+
+`runtime.ini` 由「角色外观」页写入，运行时只读：
+
+```ini
+[CustomModel]
+standalone_lod=false
+
+[Mod.<package_id>]
+enabled=true
+package=packages/<文件名>.bem
+appearance=<外观 ID>
+```
+
+同一角色同时只允许一个启用包；出现重复启用时界面会全部停用并提示重新选择。包与外观的选择在下次启动游戏时生效，导入、更新和删除请在关闭游戏后进行，避免延迟加载读取正在变动的文件。更新使用相同 `package_id`，保留本机启用状态与仍存在的外观 ID，被移除的外观会提示并回退默认项。启用任意包时运行时会锁定 LOD；全部停用后恢复独立 LOD 偏好。
+
+「其他来源 Mod 转换」可直接读取已解压目录及 ZIP、RAR、7z 源包，不需要预先解压或安装解压软件，也不执行包内程序。工具用源资源身份匹配随工具发布的角色资料，核对索引数、顶点流、骨骼与材质，完整检查通过后才允许导出 BEM；未适配的源包会输出待适配原因报告。RAR 与 7z 读取使用随工具附带的 7-Zip，许可证见工具目录下的 `7zip/NOTICE.txt`。
+
+能力边界：支持部件替换/保留/隐藏、分离骨骼与材质来源、合并骨骼 palette、按绘制段使用游戏材质、替换指定原生纹理，以及 UInt16/UInt32 几何索引。每部件最多 256 个局部骨骼和 256 个 draw，每个选定外观最多 32 个纹理绑定、512 MiB 上传数据预算，超限直接报告失败。不执行源热键脚本与任意 Shader，不支持运行时形态切换、形态键、自动低模生成或自动分片。转换成功不等于实机验证，仍需在世界、详情页等场景核对。
+
+Android 端在「第三方模型」页管理同样的包，导入时同样逐个外观校验并保留原始包字节。差异在于纹理：手机 GPU 的纹理格式与桌面不同，包内纹理在实机显示异常时可对该包执行「转换手机纹理」，成功后发布新一代并保留启用状态与已选外观，失败或取消则保持当前包不变；缺少已验证法线编码信息的包可以导入，但无法转换。两端都需要在切换包或外观后重启游戏。
+
+创作者流程、转换自动化边界与完整字段见 [`docs/BEM_CREATOR_GUIDE.md`](docs/BEM_CREATOR_GUIDE.md) 与 [`docs/BEM_V1_SPEC.md`](docs/BEM_V1_SPEC.md)。
+
 ## 移动端界面与触控输入
 
 移动端界面默认关闭。启用后模块挂接 `DeviceInfo` 的输入类型与设备类型访问器，让客户端按触屏布局构建 UI：虚拟摇杆、技能轮盘和触控专用控件会出现在 PC 客户端上。该模块主要面向串流到手机、平板或掌机的场景。
@@ -155,7 +208,7 @@ Catalog 只包含目标角色需要的 WEM，重复目标 Media 只存储一次�
 
 ```powershell
 pwsh -File .\scripts\BuildBetterEndfield.ps1
-pwsh -File .\scripts\BuildInstaller.ps1 -Version 3.1.1
+pwsh -File .\scripts\BuildInstaller.ps1 -Version 3.3.0
 ```
 
 原生构建入口是 `native/CMakeLists.txt`。MinHook 只由 Host 链接，模块不得自行初始化或卸载 Hook 引擎。
@@ -206,6 +259,8 @@ mobile_ui_enabled=false
 install_root=C:\Path\To\Better Endfield
 load_host=true
 ```
+
+自定义角色外观不在主配置中。包文件与启用状态位于 `%LocalAppData%\BetterEndfield\catalog\custom-model`，由「角色外观」页维护，格式见上文「自定义角色外观（BEM）」。
 
 ## 许可与风险
 

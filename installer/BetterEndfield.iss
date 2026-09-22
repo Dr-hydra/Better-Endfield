@@ -5,7 +5,7 @@
   #error OutputDir must be supplied by BuildInstaller.ps1
 #endif
 #ifndef AppVersion
-#define AppVersion "3.2.2"
+#define AppVersion "3.3.0"
 #endif
 
 #define AppName "Better Endfield"
