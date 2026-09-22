@@ -18,11 +18,25 @@ internal static partial class UpdateService
 
     private static readonly HttpClient Client = CreateClient();
 
-    public static string CurrentVersion =>
-        (Assembly.GetExecutingAssembly()
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-            .InformationalVersion ?? "3.2.2")
-        .Split('+')[0];
+    // Never fall back to a literal: a hardcoded version silently goes stale and
+    // then reports the wrong build forever. AssemblyVersion comes from the same
+    // Directory.Build.props property and is always present.
+    public static string CurrentVersion
+    {
+        get
+        {
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            string? informational = assembly
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+                .InformationalVersion?
+                .Split('+')[0];
+            if (!string.IsNullOrWhiteSpace(informational)) return informational;
+            Version? version = assembly.GetName().Version;
+            return version is null
+                ? "0.0.0"
+                : $"{version.Major}.{version.Minor}.{version.Build}";
+        }
+    }
 
     public static async Task<UpdateCheckResult> CheckAsync(CancellationToken cancellationToken)
     {

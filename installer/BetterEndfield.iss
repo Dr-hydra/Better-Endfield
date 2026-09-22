@@ -5,7 +5,9 @@
   #error OutputDir must be supplied by BuildInstaller.ps1
 #endif
 #ifndef AppVersion
-#define AppVersion "3.3.0"
+  ; Supplied by BuildInstaller.ps1 from Directory.Build.props, so that the
+  ; installer and the running application always report the same version.
+  #error AppVersion must be supplied by BuildInstaller.ps1
 #endif
 
 #define AppName "Better Endfield"
@@ -22,6 +24,12 @@ AppUpdatesURL=https://github.com/Dr-hydra/Better-Endfield/releases
 DefaultDirName={localappdata}\Programs\Better Endfield
 DefaultGroupName=Better Endfield
 DisableProgramGroupPage=yes
+; An upgrade must land on top of the existing installation. Without this the
+; wizard still offers the directory page, and a user who installed to another
+; drive can confirm the default location instead, leaving the old copy — and
+; the shortcuts pointing at it — untouched while the new files go elsewhere.
+UsePreviousAppDir=yes
+DisableDirPage=auto
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible

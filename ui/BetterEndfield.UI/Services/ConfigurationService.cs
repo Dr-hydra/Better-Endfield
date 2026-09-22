@@ -562,6 +562,8 @@ internal static class ConfigurationService
             values, "hide_damage_numbers", configuration.HideDamageNumbers);
         configuration.CombatOverlayEnabled = Boolean(
             values, "overlay_enabled", configuration.CombatOverlayEnabled);
+        configuration.CombatOverlayVisible = Boolean(
+            values, "overlay_visible", configuration.CombatOverlayVisible);
         configuration.CombatRdpsDisplay = Boolean(
             values, "rdps_display", configuration.CombatRdpsDisplay);
         string legacyCombatHotkey = Text(

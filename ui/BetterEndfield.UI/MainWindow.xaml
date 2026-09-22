@@ -780,6 +780,12 @@
                                             OffContent="不启动悬浮窗"
                                             OnContent="随模块自动启动" />
                                         <ToggleSwitch
+                                            x:Name="CombatOverlayVisibleToggle"
+                                            Header="悬浮窗初始可见性"
+                                            IsOn="True"
+                                            OffContent="启动后隐藏，按热键显示"
+                                            OnContent="启动后直接显示" />
+                                        <ToggleSwitch
                                             x:Name="CombatRdpsDisplayToggle"
                                             Header="悬浮窗与本地排行口径"
                                             OffContent="DPS"

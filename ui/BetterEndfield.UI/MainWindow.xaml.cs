@@ -2347,6 +2347,7 @@ public sealed partial class MainWindow : Window
             CombatStatsEnabled = CombatStatsToggle.IsOn,
             HideDamageNumbers = HideDamageNumbersToggle.IsOn,
             CombatOverlayEnabled = CombatOverlayToggle.IsOn,
+            CombatOverlayVisible = CombatOverlayVisibleToggle.IsOn,
             CombatRdpsDisplay = CombatRdpsDisplayToggle.IsOn,
             CombatToggleHotkey = toggleHotkey,
             CombatOverlayHotkey = overlayHotkey,
@@ -2426,6 +2427,7 @@ public sealed partial class MainWindow : Window
         CombatStatsToggle.IsOn = configuration.CombatStatsEnabled;
         HideDamageNumbersToggle.IsOn = configuration.HideDamageNumbers;
         CombatOverlayToggle.IsOn = configuration.CombatOverlayEnabled;
+        CombatOverlayVisibleToggle.IsOn = configuration.CombatOverlayVisible;
         CombatRdpsDisplayToggle.IsOn = configuration.CombatRdpsDisplay;
         CombatToggleHotkeyBox.Text = configuration.CombatToggleHotkey;
         CombatOverlayHotkeyBox.Text = configuration.CombatOverlayHotkey;
@@ -3441,6 +3443,11 @@ public sealed partial class MainWindow : Window
         CombatOverlayToggle.Header = isZh ? "显示战斗悬浮窗" : "Show In-Game HUD Overlay";
         CombatOverlayToggle.OffContent = isZh ? "不启动悬浮窗" : "Do not launch overlay";
         CombatOverlayToggle.OnContent = isZh ? "随模块自动启动" : "Launch automatically";
+        CombatOverlayVisibleToggle.Header = isZh ? "悬浮窗初始可见性" : "Overlay Startup Visibility";
+        CombatOverlayVisibleToggle.OffContent = isZh
+            ? "启动后隐藏，按热键显示"
+            : "Start hidden, show with the hotkey";
+        CombatOverlayVisibleToggle.OnContent = isZh ? "启动后直接显示" : "Start visible";
         CombatRdpsDisplayToggle.Header = isZh ? "悬浮窗与本地排行口径" : "Ranking & Overlay Metric";
         CombatToggleHotkeyBox.Header = isZh ? "开始/停止记录快捷键" : "Start/Stop Recording Hotkey";
         CombatOverlayHotkeyBox.Header = isZh ? "显示/隐藏悬浮窗快捷键" : "Show/Hide Overlay Hotkey";

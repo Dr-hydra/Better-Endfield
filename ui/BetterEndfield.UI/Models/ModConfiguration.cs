@@ -111,6 +111,8 @@ internal sealed class ModConfiguration
 
     public bool CombatOverlayEnabled { get; set; } = true;
 
+    public bool CombatOverlayVisible { get; set; } = true;
+
     public bool CombatRdpsDisplay { get; set; } = false;
 
     public string CombatToggleHotkey { get; set; } = "F11";
@@ -281,6 +283,7 @@ internal sealed class ModConfiguration
         text.AppendLine($"combat_stats_enabled={Boolean(CombatStatsEnabled)}");
         text.AppendLine($"hide_damage_numbers={Boolean(HideDamageNumbers)}");
         text.AppendLine($"overlay_enabled={Boolean(CombatOverlayEnabled)}");
+        text.AppendLine($"overlay_visible={Boolean(CombatOverlayVisible)}");
         text.AppendLine($"rdps_display={Boolean(CombatRdpsDisplay)}");
         text.AppendLine($"hotkey_toggle={CombatToggleHotkey}");
         text.AppendLine($"overlay_hotkey={CombatOverlayHotkey}");

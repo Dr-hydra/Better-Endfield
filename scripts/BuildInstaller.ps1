@@ -3,11 +3,30 @@ param(
     [ValidateSet("Debug", "Release")]
     [string]$Configuration = "Release",
 
-    [string]$Version = "3.3.0"
+    [string]$Version = ""
 )
 
 $ErrorActionPreference = "Stop"
 $repoRoot = [System.IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
+
+# Directory.Build.props is the single source of truth: it is what the assembly
+# — and therefore the About page — reports at runtime. Deriving the installer
+# version from it keeps the number shown in Apps & Features, the Setup file
+# name and the About page from ever drifting apart.
+$propsPath = Join-Path $repoRoot "Directory.Build.props"
+$assemblyVersion = ([xml](Get-Content -LiteralPath $propsPath -Raw)).
+    SelectSingleNode("//Version").InnerText.Trim()
+if (-not $assemblyVersion) {
+    throw "Directory.Build.props does not define <Version>."
+}
+if (-not $Version) {
+    $Version = $assemblyVersion
+}
+elseif ($Version -ne $assemblyVersion) {
+    throw ("-Version $Version does not match <Version>$assemblyVersion</Version> " +
+        "in Directory.Build.props. The installer and the About page would " +
+        "report different versions; update Directory.Build.props instead.")
+}
 $artifactsRoot = Join-Path $repoRoot "artifacts"
 $stagingDir = Join-Path $artifactsRoot ".installer-staging"
 $outputDir = Join-Path $artifactsRoot "installer"

@@ -154,6 +154,7 @@ struct Configuration {
     bool diagnostics = false;
     bool rdps_display = false;
     bool overlay_enabled = true;
+    bool overlay_visible = true;
     bool auto_dungeon_session = true;
     int toggle_vk = VK_F11;
     int overlay_vk = VK_F12;
@@ -580,6 +581,12 @@ std::atomic<uint64_t> g_attribution_attack_unlinked{0};
 std::atomic<uint64_t> g_rdps_flow_sequence{0};
 std::atomic<uint64_t> g_rdps_flow_generation{0};
 std::atomic_bool g_overlay_visible{true};
+// The last visibility the configuration asked for. The hotkey moves
+// g_overlay_visible without touching this, so an unrelated configuration push
+// (any other combat setting the user saves mid-session) replays the same value
+// and leaves the hotkey's choice standing. Only an actual change of the
+// configured value overrides the hotkey.
+std::atomic_bool g_overlay_visible_configured{true};
 
 std::mutex g_config_mutex;
 Configuration g_configuration;
@@ -974,6 +981,7 @@ Configuration ParseConfiguration(const char* text) {
     result.diagnostics = ParseBool(values, "diagnostics", false);
     result.rdps_display = ParseBool(values, "rdps_display", false);
     result.overlay_enabled = ParseBool(values, "overlay_enabled", true);
+    result.overlay_visible = ParseBool(values, "overlay_visible", true);
     result.auto_dungeon_session = ParseBool(values, "auto_dungeon_session", true);
     if (const auto found = values.find("hotkey_toggle"); found != values.end()) {
         result.toggle_vk = ParseVirtualKey(found->second, VK_F11, result.toggle_ctrl);
@@ -7955,10 +7963,17 @@ BE_Result BE_CALL ConfigurationChanged(const char* text) {
         std::scoped_lock lock(g_config_mutex);
         g_configuration = next;
     }
+    const bool visibility_changed = g_overlay_visible_configured.exchange(
+        next.overlay_visible, std::memory_order_relaxed) != next.overlay_visible;
+    if (visibility_changed) {
+        g_overlay_visible.store(next.overlay_visible, std::memory_order_relaxed);
+    }
     Log(std::string("[combat-config] enabled=") + (next.enabled ? "true" : "false") +
         " stats=" + (next.stats_enabled ? "true" : "false") +
         " hide=" + (next.hide_damage_numbers ? "true" : "false") +
         " overlay=" + (next.overlay_enabled ? "true" : "false") +
+        " visible=" + (next.overlay_visible ? "true" : "false") +
+        (visibility_changed ? " (applied)" : " (unchanged; hotkey state kept)") +
         " metric=" + (next.rdps_display ? "rdps" : "dps") +
         " toggle=" + std::to_string(next.toggle_vk) +
         " overlayHotkey=" + std::to_string(next.overlay_vk));

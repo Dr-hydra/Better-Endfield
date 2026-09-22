@@ -107,7 +107,8 @@ B 服不通过官服 `GameAssembly.dll` 哈希判定。Host 在运行时解析 I
 结果写入 `%LocalAppData%\\BetterEndfield\\combat-sessions`，UI 的“战斗数据”页可刷新历史文件并显示总伤害排行。
 模块会按需启动随软件分发的 `BetterEndfield.CombatOverlay.exe`，通过当前进程专属共享内存展示
 角色头像、伤害排行、DPS 和按普攻、战技、终结技、连携技等技能分类分色的横向柱状图；F12（可配置）显示或隐藏，按住 Ctrl
-并用鼠标左键拖动可保存相对游戏窗口的位置。悬浮窗不依赖 Better Endfield 主界面常驻，也不会联网读取头像。
+并用鼠标左键拖动可保存相对游戏窗口的位置。「悬浮窗初始可见性」决定悬浮窗随模块启动后是直接显示还是先隐藏；
+该项只在改变时生效，游戏内按热键切换的状态不会被其他设置的保存动作覆盖。悬浮窗不依赖 Better Endfield 主界面常驻，也不会联网读取头像。
 伤害数字从一万起按每 10 倍切换“万、×10万、×100万、×1000万、亿”等显示单位。每次会话还会保存
 0.25 秒粒度的技能分类与角色双维度时间桶；历史页默认显示最近三条，可按日期和最多四名参战角色筛选、删除记录，
 并在角色排行与可拖动双端点的时间轴柱状图之间切换。时间轴可按技能类型或角色显示，并随模式显示对应图例。
@@ -208,7 +209,7 @@ Catalog 只包含目标角色需要的 WEM，重复目标 Media 只存储一次�
 
 ```powershell
 pwsh -File .\scripts\BuildBetterEndfield.ps1
-pwsh -File .\scripts\BuildInstaller.ps1 -Version 3.3.0
+pwsh -File .\scripts\BuildInstaller.ps1
 ```
 
 原生构建入口是 `native/CMakeLists.txt`。MinHook 只由 Host 链接，模块不得自行初始化或卸载 Hook 引擎。
@@ -246,6 +247,7 @@ enabled=false
 combat_stats_enabled=false
 hide_damage_numbers=false
 overlay_enabled=true
+overlay_visible=true
 hotkey_toggle=F11
 overlay_hotkey=F12
 rdps_display=false
