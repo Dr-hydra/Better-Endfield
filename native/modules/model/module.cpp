@@ -154,6 +154,7 @@ struct RuntimeMethods {
     RuntimeMethod raw_image_set_texture;
     RuntimeMethod sprite_get_texture;
     RuntimeMethod sprite_get_rect;
+    RuntimeMethod sprite_get_texture_rect;
     RuntimeMethod sprite_get_pivot;
     RuntimeMethod sprite_get_pixels_per_unit;
     RuntimeMethod sprite_get_border;
@@ -1374,6 +1375,12 @@ bool ResolveRuntimeContract() {
     sprite_required(Resolve(g_methods.sprite_get_rect,
         "unity.sprite.rect.login_band", "UnityEngine.CoreModule.dll",
         "UnityEngine", "Sprite", "get_rect", nullptr, "UnityEngine.Rect", 0));
+    // `Sprite.rect` is authoring-space; only `textureRect` tracks where the
+    // sprite actually lives once it has been packed into an atlas page. Keep it
+    // optional so a build without the property still themes non-atlased sprites.
+    Resolve(g_methods.sprite_get_texture_rect,
+        "unity.sprite.texture_rect.login_band", "UnityEngine.CoreModule.dll",
+        "UnityEngine", "Sprite", "get_textureRect", nullptr, "UnityEngine.Rect", 0);
     sprite_required(Resolve(g_methods.sprite_get_pivot,
         "unity.sprite.pivot.login_band", "UnityEngine.CoreModule.dll",
         "UnityEngine", "Sprite", "get_pivot", nullptr, "UnityEngine.Vector2", 0));
@@ -1860,6 +1867,33 @@ size_t DesaturateColor32Array(void* array, int expected_count, size_t& opaque) {
     return changed;
 }
 
+// Formats a few RGBA texels of a Color32 array as hex, so a readback that
+// produced a flat block can be told apart from one that produced real art
+// (and opaque white from opaque black) without another instrumented build.
+std::string SampleTexels(void* array, int width, int height) {
+    const int count = ManagedArrayLength(array);
+    if (!array || count <= 0 || width <= 0 || height <= 0) {
+        return "<none>";
+    }
+    const auto* texels = reinterpret_cast<const uint8_t*>(array) + 32;
+    auto texel_at = [&](int x, int y) -> std::string {
+        const long long index = static_cast<long long>(y) * width + x;
+        if (x < 0 || y < 0 || x >= width || y >= height || index >= count) {
+            return "--------";
+        }
+        static const char* const digits = "0123456789ABCDEF";
+        const uint8_t* texel = texels + index * 4;
+        std::string formatted;
+        for (int channel = 0; channel < 4; ++channel) {
+            formatted += digits[texel[channel] >> 4];
+            formatted += digits[texel[channel] & 0x0F];
+        }
+        return formatted;
+    };
+    return texel_at(width / 2, height / 2) + "/" + texel_at(width / 4, height / 2) +
+        "/" + texel_at(width / 2, height / 4) + "/" + texel_at(0, 0);
+}
+
 // Reads `rect` of `source` back into a fresh readable RGBA32 Texture2D and
 // desaturates its accent-colored texels. Returns false (nothing allocated)
 // when the readback fails or when the visible texels carry no accent color, in
@@ -1887,6 +1921,24 @@ bool CreateNeutralTextureCopy(void* source, const Rect& rect, const char* label,
         width > 4096 || height > 4096) {
         return false;
     }
+    // ReadPixels silently clamps instead of failing, so a rect that runs past
+    // the blitted source yields solid edge color (an opaque white block) rather
+    // than an error. Reject it here so the caller keeps the original asset and
+    // the reason is visible.
+    const int rect_x = static_cast<int>(std::lround(rect.x));
+    const int rect_y = static_cast<int>(std::lround(rect.y));
+    if (rect_x < 0 || rect_y < 0 || rect_x + width > source_width ||
+        rect_y + height > source_height) {
+        if (g_diagnostics.load()) {
+            Log("[login-band-sprite] readback-rect-out-of-bounds " +
+                std::string(label ? label : "") +
+                " rect=" + std::to_string(rect_x) + "," + std::to_string(rect_y) +
+                "," + std::to_string(width) + "x" + std::to_string(height) +
+                " source=" + std::to_string(source_width) + "x" +
+                std::to_string(source_height));
+        }
+        return false;
+    }
 
     // GPU copy of the (possibly compressed / non-readable) source into a
     // temporary RenderTexture, then a CPU readback of just the wanted rect.
@@ -1906,7 +1958,28 @@ bool CreateNeutralTextureCopy(void* source, const Rect& rect, const char* label,
     const bool activated = blitted && InvokeVoid(g_methods.render_texture_set_active,
         nullptr, activate_parameters, "RenderTexture.set_active(login band)");
 
-    bool read = false;
+    // A sprite rect is texture space (origin bottom-left); ReadPixels addresses
+    // the active render target, whose vertical origin follows the graphics API.
+    // The two agree for a sprite that covers its whole texture, which is why
+    // only atlas-packed sub-rects misread - they land on unused atlas padding
+    // and come back as a flat opaque block. Read the row as given, and only if
+    // that carries no accent color try the mirrored row. For a full-rect sprite
+    // the mirrored row is the same row, so nothing that works today changes.
+    const int mirrored_y = source_height - (rect_y + height);
+    auto has_accent = [](size_t visible, size_t colored) {
+        return visible != 0 && colored * 100 >= visible * 15;
+    };
+
+    struct BandRead {
+        bool ok = false;
+        int y = 0;
+        size_t opaque = 0;
+        size_t changed = 0;
+        void* pixels = nullptr;
+    };
+
+    BandRead chosen{};
+    BandRead mirrored{};
     if (activated) {
         texture = g_host->object_new(g_host->context, g_classes.texture2d.class_info);
         int texture_format = 4;  // TextureFormat.RGBA32
@@ -1916,13 +1989,37 @@ bool CreateNeutralTextureCopy(void* source, const Rect& rect, const char* label,
                 ctor_parameters, "Texture2D..ctor(login band)")) {
             texture = nullptr;
         }
-        Rect read_rect{rect.x, rect.y, static_cast<float>(width),
-            static_cast<float>(height)};
         int destination_x = 0;
         int destination_y = 0;
-        void* read_parameters[3]{&read_rect, &destination_x, &destination_y};
-        read = texture && InvokeVoid(g_methods.texture2d_read_pixels, texture,
-            read_parameters, "Texture2D.ReadPixels(login band)");
+        auto read_band = [&](int band_y) {
+            BandRead result{};
+            result.y = band_y;
+            Rect read_rect{static_cast<float>(rect_x), static_cast<float>(band_y),
+                static_cast<float>(width), static_cast<float>(height)};
+            void* read_parameters[3]{&read_rect, &destination_x, &destination_y};
+            if (!texture || !InvokeVoid(g_methods.texture2d_read_pixels, texture,
+                    read_parameters, "Texture2D.ReadPixels(login band)")) {
+                return result;
+            }
+            result.pixels = Invoke(g_methods.texture2d_get_pixels32, texture,
+                nullptr, "Texture2D.GetPixels32(login band)");
+            if (!result.pixels) {
+                return result;
+            }
+            result.changed = DesaturateColor32Array(result.pixels, width * height,
+                result.opaque);
+            result.ok = true;
+            return result;
+        };
+
+        chosen = read_band(rect_y);
+        if (chosen.ok && mirrored_y != rect_y && mirrored_y >= 0 &&
+            !has_accent(chosen.opaque, chosen.changed)) {
+            mirrored = read_band(mirrored_y);
+            if (mirrored.ok && has_accent(mirrored.opaque, mirrored.changed)) {
+                chosen = mirrored;
+            }
+        }
     }
     void* restore_parameters[1]{previous_active};
     InvokeVoid(g_methods.render_texture_set_active, nullptr, restore_parameters,
@@ -1930,7 +2027,7 @@ bool CreateNeutralTextureCopy(void* source, const Rect& rect, const char* label,
     void* release_parameters[1]{render_texture};
     InvokeVoid(g_methods.render_texture_release_temporary, nullptr,
         release_parameters, "RenderTexture.ReleaseTemporary(login band)");
-    if (!read) {
+    if (!chosen.ok) {
         if (texture) {
             DestroyObject(texture);
             texture = nullptr;
@@ -1938,20 +2035,40 @@ bool CreateNeutralTextureCopy(void* source, const Rect& rect, const char* label,
         return false;
     }
 
-    void* pixels = Invoke(g_methods.texture2d_get_pixels32, texture, nullptr,
-        "Texture2D.GetPixels32(login band)");
-    changed = DesaturateColor32Array(pixels, width * height, opaque);
+    void* pixels = chosen.pixels;
+    opaque = chosen.opaque;
+    changed = chosen.changed;
     // Visible texels that are (almost) all gray or white carry no baked accent
     // color; leave the original in place rather than swap in an identical copy.
-    if (opaque == 0 || changed * 100 < opaque * 15) {
+    if (!has_accent(opaque, changed)) {
         DestroyObject(texture);
         texture = nullptr;
         if (g_diagnostics.load()) {
-            Log("[login-band-sprite] neutral " + std::string(label ? label : "") +
+            std::string detail = "[login-band-sprite] neutral " +
+                std::string(label ? label : "") +
+                " rect=" + std::to_string(rect_x) + "," + std::to_string(rect_y) +
+                "," + std::to_string(width) + "x" + std::to_string(height) +
+                " source=" + std::to_string(source_width) + "x" +
+                std::to_string(source_height) +
+                " sourceName=" + VisualObjectName(source) +
                 " opaque=" + std::to_string(opaque) +
-                " colored=" + std::to_string(changed) + " result=kept-original");
+                " colored=" + std::to_string(changed) +
+                " texels=" + SampleTexels(chosen.pixels, width, height);
+            if (mirrored.ok) {
+                detail += " mirroredY=" + std::to_string(mirrored.y) +
+                    " mirroredOpaque=" + std::to_string(mirrored.opaque) +
+                    " mirroredColored=" + std::to_string(mirrored.changed) +
+                    " mirroredTexels=" +
+                    SampleTexels(mirrored.pixels, width, height);
+            }
+            Log(detail + " result=kept-original");
         }
         return false;
+    }
+    if (chosen.y != rect_y) {
+        Log("[login-band-sprite] readback-used-mirrored-row " +
+            std::string(label ? label : "") + " rect=" + std::to_string(rect_x) +
+            "," + std::to_string(rect_y) + " mirroredY=" + std::to_string(chosen.y));
     }
     void* set_parameters[1]{pixels};
     if (!pixels ||
@@ -1991,12 +2108,30 @@ bool CreateNeutralSpriteCopy(void* sprite, LoginBandSpriteCopy& output) {
         return false;
     }
     const std::string name = VisualObjectName(sprite);
+
+    // `rect` is where the sprite sits on its *original* texture. Once the
+    // sprite has been packed into an atlas page, `texture` is that page and the
+    // live location is `textureRect`; reading `rect` off the page lands on
+    // unrelated padding, which reads back as an opaque white block. Only adopt
+    // the translation when the size agrees, so tight-packed sprites (whose
+    // textureRect is trimmed) keep the pivot/border math below intact.
+    Rect read_rect = rect;
+    if (g_methods.sprite_get_texture_rect.method_info) {
+        Rect texture_rect{};
+        if (Unbox(Invoke(g_methods.sprite_get_texture_rect, sprite, nullptr,
+                "Sprite.get_textureRect(login band)"), texture_rect) &&
+            std::lround(texture_rect.width) == std::lround(rect.width) &&
+            std::lround(texture_rect.height) == std::lround(rect.height)) {
+            read_rect = texture_rect;
+        }
+    }
+
     void* texture = nullptr;
     size_t opaque = 0;
     size_t changed = 0;
     int width = 0;
     int height = 0;
-    if (!CreateNeutralTextureCopy(source, rect, ("sprite=" + name).c_str(),
+    if (!CreateNeutralTextureCopy(source, read_rect, ("sprite=" + name).c_str(),
             texture, opaque, changed, width, height)) {
         return false;
     }
