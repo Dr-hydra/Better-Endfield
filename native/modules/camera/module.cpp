@@ -1,4 +1,5 @@
 #include "BetterEndfield/ModuleApi.h"
+#include "BetterEndfield/vmd_parser.h"
 #include "first_person_mesh.h"
 #include "first_person_retry.h"
 

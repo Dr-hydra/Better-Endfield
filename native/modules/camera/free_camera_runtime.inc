@@ -534,82 +534,21 @@ bool LoadVmdCamera(const std::string& path, std::vector<VmdCameraKey>& keys,
         return false;
     }
 
-    size_t offset = 0;
-    const auto remaining = [&] { return data.size() - offset; };
-    const auto read_u32 = [&](uint32_t& value) {
-        if (remaining() < 4) return false;
-        std::memcpy(&value, data.data() + offset, 4);
-        offset += 4;
-        return true;
-    };
-    const auto skip_records = [&](size_t record) {
-        uint32_t count = 0;
-        if (!read_u32(count)) return false;
-        if (count > remaining() / record) return false;
-        offset += count * record;
-        return true;
-    };
-    if (data.size() < 30) {
-        error = "the file is not a VMD motion";
-        return false;
-    }
-    const std::string_view header(reinterpret_cast<const char*>(data.data()), 30);
-    if (header.starts_with("Vocaloid Motion Data 0002")) {
-        offset = 30 + 20;
-    } else if (header.starts_with("Vocaloid Motion Data file")) {
-        offset = 30 + 10;
-    } else {
-        error = "the file is not a VMD motion";
-        return false;
-    }
-    if (offset > data.size() || !skip_records(111)) {
-        error = "the VMD bone section is truncated";
-        return false;
-    }
-    uint32_t camera_count = 0;
-    if (!skip_records(23) || !read_u32(camera_count) || camera_count == 0) {
-        error = "the VMD file has no camera keyframes";
-        return false;
-    }
-    constexpr size_t kCameraRecord = 61;
-    if (camera_count > remaining() / kCameraRecord) {
-        error = "the VMD camera section is truncated";
-        return false;
-    }
-    keys.reserve(camera_count);
-    for (uint32_t index = 0; index < camera_count; ++index) {
-        const uint8_t* record = data.data() + offset;
-        offset += kCameraRecord;
+    BetterEndfield::Vmd::Document document;
+    if (!BetterEndfield::Vmd::Parse(data, document, error)) return false;
+    keys.reserve(document.cameras.size());
+    for (const auto& source : document.cameras) {
         VmdCameraKey key;
-        float values[7]{};
-        uint32_t fov = 0;
-        std::memcpy(&key.frame, record, 4);
-        std::memcpy(values, record + 4, sizeof(values));
-        std::memcpy(key.interp, record + 32, sizeof(key.interp));
-        std::memcpy(&fov, record + 56, 4);
-        bool finite = true;
-        for (float value : values) finite = finite && std::isfinite(value);
-        if (!finite || fov == 0 || fov > 180) {
-            continue;
-        }
-        key.distance = values[0];
-        key.interest = {values[1], values[2], values[3]};
-        key.euler = {values[4], values[5], values[6]};
-        key.fov = static_cast<float>(fov);
+        key.frame = source.frame;
+        key.distance = source.distance;
+        key.interest = {source.interest[0], source.interest[1], source.interest[2]};
+        key.euler = {source.euler[0], source.euler[1], source.euler[2]};
+        std::copy(source.interpolation.begin(), source.interpolation.end(), key.interp);
+        key.fov = source.fov;
         keys.push_back(key);
     }
-    // Sort by frame; a later record for the same frame wins, like MMD.
-    std::stable_sort(keys.begin(), keys.end(),
-        [](const VmdCameraKey& a, const VmdCameraKey& b) { return a.frame < b.frame; });
-    std::vector<VmdCameraKey> unique;
-    unique.reserve(keys.size());
-    for (const VmdCameraKey& key : keys) {
-        if (!unique.empty() && unique.back().frame == key.frame) unique.back() = key;
-        else unique.push_back(key);
-    }
-    keys.swap(unique);
     if (keys.empty()) {
-        error = "the VMD camera keyframes are all invalid";
+        error = "the VMD file has no valid camera keyframes";
         return false;
     }
     return true;
