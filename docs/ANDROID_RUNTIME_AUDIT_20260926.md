@@ -40,6 +40,12 @@ evidence.
 - Defer overlay setup to Activity resume, support Android 11+ system-bar and
   cutout insets, preserve the handle position across Activity recreation, and
   keep held virtual keys released on lifecycle transitions.
+- Refactor the overlay around its actual role as a touch replacement for PC
+  hotkeys: independent actions use two-column, large touch cards with their
+  matching key labels, while free-camera movement uses a dedicated held-key
+  direction pad. The panel now communicates “tap to trigger” versus “hold to
+  keep pressed”, and adds a compact status header, touch feedback, and open/
+  close animation instead of presenting as a settings page.
 - Add startup milestone logs for camera and actions contract/hook phases.
 
 ## Verification

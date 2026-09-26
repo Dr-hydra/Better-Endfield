@@ -16,6 +16,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Space;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -37,9 +38,11 @@ import java.util.function.Supplier;
 final class GameOverlay {
     private static final int ACCENT = 0xFFFFC845;
     private static final int ACCENT_INK = 0xFF120E03;
-    private static final int PANEL = 0xF00C1016;
-    private static final int ROW = 0xFF1B222B;
-    private static final int ROW_PRESSED = 0xFF2A3341;
+    private static final int CYAN = 0xFF73D5D2;
+    private static final int PANEL = 0xF50C141C;
+    private static final int PANEL_TOP = 0xFF14212B;
+    private static final int ROW = 0xFF17232D;
+    private static final int ROW_PRESSED = 0xFF263746;
     private static final int TEXT = 0xFFF4F6F8;
     private static final int TEXT_DIM = 0xFFA7B0BC;
     private static final int TEXT_MUTED = 0xFF75808E;
@@ -160,12 +163,14 @@ final class GameOverlay {
 
         panel = new ScrollView(activity);
         panel.setFillViewport(false);
-        panel.setBackground(surface(PANEL, 20, BORDER));
+        panel.setVerticalScrollBarEnabled(false);
+        panel.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        panel.setBackground(surface(PANEL, 24, 0x663C4B59));
         panel.setElevation(dp(16));
         panel.setClipToOutline(true);
         content = new LinearLayout(activity);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(14), dp(14), dp(14), dp(14));
+        content.setPadding(dp(15), dp(12), dp(15), dp(17));
         panel.addView(content);
 
         footer = label("", 11, TEXT_MUTED);
@@ -184,18 +189,23 @@ final class GameOverlay {
     // ------------------------------------------------------------------ handle
 
     private View buildHandle() {
-        TextView view = new TextView(activity);
-        view.setText("BE");
-        view.setTextSize(15);
-        view.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
-        view.setTextColor(ACCENT);
-        view.setGravity(Gravity.CENTER);
-        view.setElevation(dp(10));
+        FrameLayout view = new FrameLayout(activity);
+        view.setElevation(dp(12));
         GradientDrawable background = new GradientDrawable();
-        background.setColor(0xE60B1016);
-        background.setCornerRadius(dp(16));
-        background.setStroke(dp(2), ACCENT);
+        background.setColor(0xF20D1821);
+        background.setCornerRadius(dp(18));
+        background.setStroke(dp(1), 0xCCFFC845);
         view.setBackground(background);
+        TextView mark = label("BE", 14, ACCENT);
+        mark.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+        mark.setGravity(Gravity.CENTER);
+        view.addView(mark, new FrameLayout.LayoutParams(-1, -1));
+        View status = new View(activity);
+        status.setBackground(surface(CYAN, 8, Color.TRANSPARENT));
+        FrameLayout.LayoutParams statusParams = new FrameLayout.LayoutParams(dp(8), dp(8),
+                Gravity.TOP | Gravity.RIGHT);
+        statusParams.setMargins(0, dp(5), dp(5), 0);
+        view.addView(status, statusParams);
         view.setContentDescription("Better Endfield 控制面板：点击展开，拖动可移动");
         return view;
     }
@@ -221,31 +231,46 @@ final class GameOverlay {
         shown = current;
         content.removeAllViews();
 
-        content.addView(header());
+        content.addView(header(current));
 
+        java.util.ArrayList<View> quickActions = new java.util.ArrayList<>();
         if (current.hideHud()) {
-            group("界面");
-            content.addView(action("隐藏 / 恢复 HUD", Hotkeys.HIDE_HUD_NAME,
-                    Hotkeys.HIDE_HUD, "通过游戏自己的 UI 相机遮罩隐藏整个 HUD"));
+            quickActions.add(action("隐藏 / 恢复 HUD", Hotkeys.HIDE_HUD_NAME,
+                    Hotkeys.HIDE_HUD, "切换游戏界面"));
+        }
+        if (current.freeCamera()) {
+            quickActions.add(action("自由视角", Hotkeys.FREE_CAMERA_NAME,
+                    Hotkeys.FREE_CAMERA, "进入 / 退出镜头"));
+        }
+        if (current.worldPause()) {
+            quickActions.add(action("时间冻结", Hotkeys.WORLD_PAUSE_NAME,
+                    Hotkeys.WORLD_PAUSE, "冻结 / 恢复时间"));
+        }
+        if (current.firstPerson()) {
+            quickActions.add(action("第一人称", Hotkeys.FIRST_PERSON_NAME,
+                    Hotkeys.FIRST_PERSON, "进入 / 退出视角"));
+        }
+        if (!quickActions.isEmpty()) {
+            group("触控热键");
+            LinearLayout grid = new LinearLayout(activity);
+            grid.setOrientation(LinearLayout.VERTICAL);
+            for (int index = 0; index < quickActions.size(); index += 2) {
+                LinearLayout row = new LinearLayout(activity);
+                row.setOrientation(LinearLayout.HORIZONTAL);
+                row.addView(quickActions.get(index), gridCardParams(0));
+                if (index + 1 < quickActions.size()) {
+                    row.addView(quickActions.get(index + 1), gridCardParams(7));
+                } else {
+                    row.addView(new Space(activity), gridCardParams(7));
+                }
+                grid.addView(row, stacked(index == 0 ? 8 : 7));
+            }
+            content.addView(grid);
         }
 
-        if (current.freeCamera() || current.firstPerson()) {
-            group("相机");
-            if (current.freeCamera()) {
-                content.addView(action("自由视角", Hotkeys.FREE_CAMERA_NAME,
-                        Hotkeys.FREE_CAMERA, "脱离角色自由移动镜头"));
-            }
-            if (current.worldPause()) {
-                content.addView(action("时间冻结", Hotkeys.WORLD_PAUSE_NAME,
-                        Hotkeys.WORLD_PAUSE, "冻结游戏时间，镜头仍可移动"));
-            }
-            if (current.firstPerson()) {
-                content.addView(action("第一人称", Hotkeys.FIRST_PERSON_NAME,
-                        Hotkeys.FIRST_PERSON, "把镜头移到角色头部"));
-            }
-            if (current.freeCamera()) {
-                content.addView(movementPad());
-            }
+        if (current.freeCamera()) {
+            group("自由视角移动");
+            content.addView(movementPad());
         }
 
         if (!current.anyControl()) {
@@ -273,10 +298,17 @@ final class GameOverlay {
         host.post(this::layout);
     }
 
-    private View header() {
+    private View header(OverlayFeatures current) {
+        LinearLayout block = new LinearLayout(activity);
+        block.setOrientation(LinearLayout.VERTICAL);
+        View accent = new View(activity);
+        accent.setBackground(surface(ACCENT, 3, Color.TRANSPARENT));
+        block.addView(accent, new LinearLayout.LayoutParams(-1, dp(3)));
+
         LinearLayout header = new LinearLayout(activity);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setPadding(dp(2), dp(11), dp(1), dp(2));
 
         LinearLayout titles = new LinearLayout(activity);
         titles.setOrientation(LinearLayout.VERTICAL);
@@ -287,22 +319,41 @@ final class GameOverlay {
         TextView title = label(preview ? "悬浮窗预览" : "游戏内控制", 18, TEXT);
         title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         titles.addView(title);
+        titles.addView(label(preview ? "只展示布局，不会发送按键" : "点按发送热键 · 按住保持按键",
+                10, TEXT_MUTED));
         header.addView(titles, new LinearLayout.LayoutParams(0, -2, 1f));
 
-        TextView collapse = new TextView(activity);
-        collapse.setText("收起");
-        collapse.setTextSize(12);
-        collapse.setTextColor(TEXT_DIM);
+        TextView badge = label(preview ? "预览" : current.anyControl()
+                ? (currentCount(current) + " 项已启用") : "待配置", 10,
+                preview ? CYAN : TEXT_DIM);
+        badge.setGravity(Gravity.CENTER);
+        badge.setPadding(dp(8), dp(5), dp(8), dp(5));
+        badge.setBackground(surface(preview ? 0x2436D9D4 : 0x1FFFFFFF, 10, Color.TRANSPARENT));
+        LinearLayout.LayoutParams badgeParams = new LinearLayout.LayoutParams(-2, -2);
+        badgeParams.rightMargin = dp(7);
+        header.addView(badge, badgeParams);
+
+        TextView collapse = label("×", 22, TEXT_DIM);
         collapse.setGravity(Gravity.CENTER);
-        collapse.setMinimumWidth(dp(52));
-        collapse.setMinimumHeight(dp(36));
-        collapse.setBackground(surface(ROW, 12, BORDER));
+        collapse.setMinimumWidth(dp(38));
+        collapse.setMinimumHeight(dp(38));
+        collapse.setBackground(pressable(ROW, ROW_PRESSED, 12));
         collapse.setContentDescription("收起控制面板");
         collapse.setOnClickListener(view -> {
             if (preview) remove(); else panel.setVisibility(View.GONE);
         });
         header.addView(collapse);
-        return header;
+        block.addView(header, new LinearLayout.LayoutParams(-1, -2));
+        return block;
+    }
+
+    private int currentCount(OverlayFeatures current) {
+        int count = 0;
+        if (current.hideHud()) count++;
+        if (current.freeCamera()) count++;
+        if (current.worldPause()) count++;
+        if (current.firstPerson()) count++;
+        return count;
     }
 
     private void group(String name) {
@@ -321,35 +372,62 @@ final class GameOverlay {
      */
     private View action(String title, String keyName, int virtualKey, String hint) {
         LinearLayout row = new LinearLayout(activity);
-        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setOrientation(LinearLayout.VERTICAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(dp(13), dp(11), dp(11), dp(11));
+        row.setPadding(dp(10), dp(10), dp(10), dp(10));
         row.setBackground(pressable(ROW, ROW_PRESSED, 13));
-        row.setMinimumHeight(dp(58));
+        row.setMinimumHeight(dp(94));
 
-        LinearLayout text = new LinearLayout(activity);
-        text.setOrientation(LinearLayout.VERTICAL);
-        TextView name = label(title, 15, TEXT);
+        LinearLayout top = new LinearLayout(activity);
+        top.setOrientation(LinearLayout.HORIZONTAL);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+        TextView icon = label(actionGlyph(title), 17, ACCENT);
+        icon.setGravity(Gravity.CENTER);
+        icon.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        icon.setBackground(surface(0x1FFFC845, 10, Color.TRANSPARENT));
+        top.addView(icon, new LinearLayout.LayoutParams(dp(34), dp(34)));
+
+        TextView name = label(title, 14, TEXT);
         name.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        text.addView(name);
-        text.addView(label(hint, 11, TEXT_DIM));
-        row.addView(text, new LinearLayout.LayoutParams(0, -2, 1f));
+        name.setMaxLines(2);
+        LinearLayout.LayoutParams nameParams = new LinearLayout.LayoutParams(0, -2, 1f);
+        nameParams.leftMargin = dp(7);
+        top.addView(name, nameParams);
 
-        TextView key = label(keyName, 11, ACCENT);
+        TextView key = label(keyName, 10, ACCENT);
         key.setTypeface(Typeface.MONOSPACE);
         key.setGravity(Gravity.CENTER);
-        key.setMinimumWidth(dp(28));
-        key.setPadding(dp(7), dp(3), dp(7), dp(3));
-        key.setBackground(surface(0x1FFFC845, 7, Color.TRANSPARENT));
+        key.setMinimumWidth(dp(34));
+        key.setPadding(dp(8), dp(5), dp(8), dp(5));
+        key.setBackground(surface(0x1FFFC845, 8, 0x55FFC845));
         LinearLayout.LayoutParams keyParams = new LinearLayout.LayoutParams(-2, -2);
-        keyParams.leftMargin = dp(10);
-        row.addView(key, keyParams);
+        keyParams.leftMargin = dp(5);
+        top.addView(key, keyParams);
+        row.addView(top, new LinearLayout.LayoutParams(-1, -2));
 
-        row.setContentDescription(title + "。" + hint);
+        TextView summary = label(hint, 10, TEXT_DIM);
+        summary.setMaxLines(2);
+        LinearLayout.LayoutParams summaryParams = new LinearLayout.LayoutParams(-1, -2);
+        summaryParams.topMargin = dp(7);
+        row.addView(summary, summaryParams);
+
+        row.setContentDescription(title + "，对应 " + keyName + "。点按触发。");
         row.setOnClickListener(view -> pulse(virtualKey, title));
-        LinearLayout.LayoutParams params = stacked(8);
-        row.setLayoutParams(params);
         return row;
+    }
+
+    private LinearLayout.LayoutParams gridCardParams(int leftMarginDp) {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, -2, 1f);
+        params.leftMargin = dp(leftMarginDp);
+        return params;
+    }
+
+    private String actionGlyph(String title) {
+        if (title.contains("HUD")) return "◌";
+        if (title.contains("自由")) return "✦";
+        if (title.contains("冻结")) return "Ⅱ";
+        if (title.contains("第一")) return "◎";
+        return "•";
     }
 
     /**
@@ -359,28 +437,49 @@ final class GameOverlay {
     private View movementPad() {
         LinearLayout pad = new LinearLayout(activity);
         pad.setOrientation(LinearLayout.VERTICAL);
-        pad.setPadding(dp(10), dp(10), dp(10), dp(10));
-        pad.setBackground(surface(0xFF141A22, 13, BORDER));
+        pad.setPadding(dp(11), dp(11), dp(11), dp(11));
+        pad.setBackground(surface(PANEL_TOP, 16, 0x553C4B59));
 
-        pad.addView(label("移动（按住）", 11, TEXT_MUTED));
+        LinearLayout padHeader = new LinearLayout(activity);
+        padHeader.setGravity(Gravity.CENTER_VERTICAL);
+        TextView padTitle = label("移动", 12, TEXT);
+        padTitle.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        padHeader.addView(padTitle, new LinearLayout.LayoutParams(0, -2, 1f));
+        padHeader.addView(label("按住", 10, TEXT_MUTED));
+        pad.addView(padHeader);
 
         LinearLayout plane = new LinearLayout(activity);
-        plane.setOrientation(LinearLayout.HORIZONTAL);
-        plane.addView(hold("←", Hotkeys.MOVE_LEFT, "左移"), padCell(0));
-        plane.addView(hold("↑", Hotkeys.MOVE_FORWARD, "前进"), padCell(8));
-        plane.addView(hold("↓", Hotkeys.MOVE_BACK, "后退"), padCell(8));
-        plane.addView(hold("→", Hotkeys.MOVE_RIGHT, "右移"), padCell(8));
-        pad.addView(plane, stacked(8));
+        plane.setOrientation(LinearLayout.VERTICAL);
+        plane.addView(movementRow(emptyCell(), hold("↑", Hotkeys.MOVE_FORWARD, "前进"),
+                emptyCell()), stacked(8));
+        plane.addView(movementRow(hold("←", Hotkeys.MOVE_LEFT, "左移"),
+                hold("↓", Hotkeys.MOVE_BACK, "后退"),
+                hold("→", Hotkeys.MOVE_RIGHT, "右移")), stacked(6));
+        pad.addView(plane);
 
         LinearLayout vertical = new LinearLayout(activity);
         vertical.setOrientation(LinearLayout.HORIZONTAL);
-        vertical.addView(hold("升 ⤒", Hotkeys.MOVE_UP, "上升"), padCell(0));
-        vertical.addView(hold("降 ⤓", Hotkeys.MOVE_DOWN, "下降"), padCell(8));
-        pad.addView(vertical, stacked(8));
+        vertical.addView(hold("升", Hotkeys.MOVE_UP, "上升"), padCell(0));
+        vertical.addView(hold("降", Hotkeys.MOVE_DOWN, "下降"), padCell(8));
+        pad.addView(vertical, stacked(9));
 
         LinearLayout.LayoutParams params = stacked(8);
         pad.setLayoutParams(params);
         return pad;
+    }
+
+    private LinearLayout movementRow(View left, View center, View right) {
+        LinearLayout row = new LinearLayout(activity);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER);
+        row.addView(left, padCell(0));
+        row.addView(center, padCell(7));
+        row.addView(right, padCell(7));
+        return row;
+    }
+
+    private View emptyCell() {
+        return new Space(activity);
     }
 
     private LinearLayout.LayoutParams padCell(int leftMarginDp) {
@@ -392,10 +491,12 @@ final class GameOverlay {
     private View hold(String glyph, int virtualKey, String description) {
         TextView view = new TextView(activity);
         view.setText(glyph);
-        view.setTextSize(16);
+        view.setTextSize(17);
         view.setTextColor(TEXT);
         view.setGravity(Gravity.CENTER);
-        view.setBackground(pressable(ROW, ROW_PRESSED, 12));
+        view.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        view.setBackground(pressable(ROW, ROW_PRESSED, 14));
+        view.setMinimumHeight(dp(50));
         view.setContentDescription(description + "，按住生效");
         view.setOnTouchListener((v, event) -> {
             switch (event.getActionMasked()) {
@@ -502,7 +603,9 @@ final class GameOverlay {
         handle.setX(left + xFraction * Math.max(0, width - dp(50)));
         handle.setY(top + yFraction * Math.max(0, height - dp(50)));
 
-        int panelWidth = Math.min(dp(320), width);
+        // The panel is intentionally wider than a settings card: two large
+        // touch targets make the desktop hotkeys usable without precision taps.
+        int panelWidth = Math.min(dp(360), width);
         panel.measure(View.MeasureSpec.makeMeasureSpec(panelWidth, View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.AT_MOST));
         int panelHeight = Math.min(height, panel.getMeasuredHeight());
@@ -562,9 +665,23 @@ final class GameOverlay {
 
     private void togglePanel() {
         boolean opening = panel.getVisibility() != View.VISIBLE;
-        if (opening) refresh();
-        panel.setVisibility(opening ? View.VISIBLE : View.GONE);
-        layout();
+        if (opening) {
+            refresh();
+            panel.setVisibility(View.VISIBLE);
+            panel.setAlpha(0f);
+            panel.setScaleX(0.96f);
+            panel.setScaleY(0.96f);
+            layout();
+            panel.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(150).start();
+        } else {
+            panel.animate().alpha(0f).scaleX(0.96f).scaleY(0.96f).setDuration(110)
+                    .withEndAction(() -> {
+                        panel.setVisibility(View.GONE);
+                        panel.setAlpha(1f);
+                        panel.setScaleX(1f);
+                        panel.setScaleY(1f);
+                    }).start();
+        }
     }
 
     void remove() {
@@ -586,6 +703,7 @@ final class GameOverlay {
         view.setText(text);
         view.setTextSize(size);
         view.setTextColor(color);
+        view.setIncludeFontPadding(false);
         return view;
     }
 
