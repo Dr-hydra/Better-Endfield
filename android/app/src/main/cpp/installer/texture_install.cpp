@@ -63,6 +63,35 @@ std::vector<uint8_t> decode(const uint8_t* source,int format,unsigned w,unsigned
     }
     return pixels;
 }
+// Box-filtered 1/factor decode, processed in row bands so an oversized single-level
+// texture (BEM 1.2 allows 256 MiB) never needs a full-resolution RGBA copy.
+std::vector<uint8_t> decodeScaled(const uint8_t* source,int format,unsigned w,unsigned h,unsigned factor,
+    const std::function<void()>& checkpoint) {
+    if(factor==1) return decode(source,format,w,h,checkpoint);
+    const unsigned ow=std::max(w/factor,1u),oh=std::max(h/factor,1u),band=std::max(factor,4u);
+    std::vector<uint8_t> out(size_t(ow)*oh*4);
+    for(unsigned y=0;y<h;y+=band) {
+        const unsigned rows=std::min(band,h-y);
+        const auto pixels=decode(source+mipSize(format,w,y),format,w,rows,checkpoint);
+        for(unsigned oy=y/factor;oy<oh && oy*factor<y+rows;++oy) for(unsigned ox=0;ox<ow;++ox) {
+            unsigned sum[4]{},count=0;
+            for(unsigned dy=0;dy<factor;++dy) {
+                const unsigned sy=oy*factor+dy; if(sy<y || sy>=y+rows) continue;
+                for(unsigned dx=0;dx<factor;++dx) {
+                    const unsigned sx=ox*factor+dx; if(sx>=w) continue;
+                    const auto* p=pixels.data()+(size_t(sy-y)*w+sx)*4;
+                    for(unsigned c=0;c<4;++c) sum[c]+=p[c];
+                    ++count;
+                }
+            }
+            auto* q=out.data()+(size_t(oy)*ow+ox)*4;
+            for(unsigned c=0;c<4;++c) q[c]=uint8_t((sum[c]+count/2)/count);
+        }
+    }
+    return out;
+}
+constexpr size_t kInstalledTextureLimit=64ull*1024*1024;
+constexpr unsigned kInstalledTextureSize=8192;
 }
 void CancelTextureCompression() {
     std::lock_guard<std::mutex> lock(activeMutex);
@@ -73,10 +102,14 @@ void ConvertInstalledTexture(const J& manifest,J& texture,std::vector<uint8_t>& 
     const std::function<void(unsigned, unsigned, float)>& progress) {
     const auto w=texture.at("width").get<unsigned>(), h=texture.at("height").get<unsigned>(), mips=texture.at("mips").get<unsigned>();
     int format=texture.at("format").get<int>(); bool srgb=texture.at("srgb").get<bool>();
-    require(w && h && w<=8192 && h<=8192 && mips && mips<=16,"Installer supports textures up to 8192 and 16 mips");
+    require(w && h && w<=32768 && h<=32768 && mips && mips<=16,"Invalid texture dimensions");
     size_t size=0;for(unsigned m=0;m<mips;++m) size+=mipSize(format,std::max(w>>m,1u),std::max(h>>m,1u));
     require(size==bytes.size(),"Texture mip byte count mismatch");
-    if(format>=48 && format<=50) {require(astc,"ASTC package requires an ASTC capable device");return;}
+    const bool installable=w<=kInstalledTextureSize && h<=kInstalledTextureSize && size<=kInstalledTextureLimit;
+    if(format>=48 && format<=50) {
+        require(astc,"ASTC package requires an ASTC capable device");
+        require(installable,"ASTC texture exceeds the Android 8192/64 MiB install limit");return;
+    }
     std::string encoding=texture.value("normal_encoding",std::string{});
     std::string semantic=texture.value("semantic",std::string{});
     bool normal=semantic=="normal";
@@ -93,9 +126,29 @@ void ConvertInstalledTexture(const J& manifest,J& texture,std::vector<uint8_t>& 
     require(!normal || !encoding.empty(),"Normal slot has no verified source encoding; add normal_encoding metadata");
     require(encoding.empty() || encoding=="xy-unorm" || encoding=="xyz-unorm","Unsupported normal encoding");
     if(!encoding.empty()) {normal=true;require(!srgb,"Normal texture must be linear");}
-    if(format==63) {require(!normal,"Single-channel normal unsupported");return;}
+    if(format==63) {
+        require(!normal,"Single-channel normal unsupported");
+        require(installable,"R8 texture exceeds the Android 8192/64 MiB install limit");return;
+    }
     // Conservative 4x4 for linear data preserves packed channels; color maps use 6x6.
     unsigned block=srgb?6:4;
+    // BEM 1.2 PC textures may exceed the Android install limits. Drop top mips
+    // (or box-filter a single-level texture) until the converted chain fits.
+    auto converted=[&](unsigned tw,unsigned th,unsigned levels) {
+        size_t total=0;
+        for(unsigned m=0;m<levels;++m) {
+            const auto lw=std::max(tw>>m,1u),lh=std::max(th>>m,1u);
+            total+=astc?size_t((lw+block-1)/block)*((lh+block-1)/block)*16:size_t(lw)*lh*4;
+        }
+        return total;
+    };
+    unsigned skip=0;
+    auto levelsAfter=[&](unsigned s) {return s<mips?mips-s:1u;};
+    while(std::max(std::max(w>>skip,1u),std::max(h>>skip,1u))>kInstalledTextureSize ||
+          converted(std::max(w>>skip,1u),std::max(h>>skip,1u),levelsAfter(skip))>kInstalledTextureLimit) {
+        require(++skip<16,"Texture cannot be reduced to the Android install limit");
+    }
+    const unsigned base=std::min(skip,mips-1),factor=1u<<(skip-base),levels=levelsAfter(skip);
     astcenc_config config{};
     std::unique_ptr<astcenc_context,decltype(&astcenc_context_free)> context(nullptr,astcenc_context_free);
     if(astc) {
@@ -104,10 +157,14 @@ void ConvertInstalledTexture(const J& manifest,J& texture,std::vector<uint8_t>& 
         astcenc_context* raw=nullptr;check(astcenc_context_alloc(&config,1,&raw));context.reset(raw);
     }
     std::vector<uint8_t> output;size_t pos=0;
-    for(unsigned m=0;m<mips;++m) {
-        checkpoint();auto lw=std::max(w>>m,1u),lh=std::max(h>>m,1u);
-        if(progress) progress(m+1,mips,0);
-        auto rgba=decode(bytes.data()+pos,format,lw,lh,checkpoint);pos+=mipSize(format,lw,lh);
+    for(unsigned m=0;m<base;++m) pos+=mipSize(format,std::max(w>>m,1u),std::max(h>>m,1u));
+    for(unsigned m=0;m<levels;++m) {
+        checkpoint();const unsigned level=base+m;
+        const auto sw=std::max(w>>level,1u),sh=std::max(h>>level,1u);
+        const unsigned scale=m?1u:factor;
+        const auto lw=std::max(sw/scale,1u),lh=std::max(sh/scale,1u);
+        if(progress) progress(m+1,levels,0);
+        auto rgba=decodeScaled(bytes.data()+pos,format,sw,sh,scale,checkpoint);pos+=mipSize(format,sw,sh);
         if(encoding=="xy-unorm") {
             // Reviewed PC BC5 _BumpMap slots consume RG. BC7 replacements may
             // carry arbitrary B data/padding; its value does not define encoding.
@@ -118,12 +175,12 @@ void ConvertInstalledTexture(const J& manifest,J& texture,std::vector<uint8_t>& 
             }
         }
         size_t count=astc?size_t((lw+block-1)/block)*((lh+block-1)/block)*16:rgba.size();
-        require(output.size()+count<=64ull*1024*1024,"Converted texture exceeds 64 MiB; use ASTC or a smaller texture");
+        require(output.size()+count<=kInstalledTextureLimit,"Converted texture exceeds 64 MiB; use ASTC or a smaller texture");
         auto offset=output.size();output.resize(offset+count);
         if(astc) {
             void* slice=rgba.data();astcenc_image image{lw,lh,1,ASTCENC_TYPE_U8,&slice};
             const astcenc_swizzle swizzle{ASTCENC_SWZ_R,ASTCENC_SWZ_G,ASTCENC_SWZ_B,ASTCENC_SWZ_A};
-            const std::function<void(float)> report=[&](float percent) {if(progress) progress(m+1,mips,percent);};
+            const std::function<void(float)> report=[&](float percent) {if(progress) progress(m+1,levels,percent);};
             {
                 CompressionScope scope(context.get(),report);
                 checkpoint();
@@ -132,9 +189,13 @@ void ConvertInstalledTexture(const J& manifest,J& texture,std::vector<uint8_t>& 
             }
             check(astcenc_compress_reset(context.get()));
         } else std::memcpy(output.data()+offset,rgba.data(),count);
-        if(progress) progress(m+1,mips,100);
+        if(progress) progress(m+1,levels,100);
     }
     checkpoint();bytes=std::move(output);texture["format"]=astc?(block==6?50:48):4;
+    if(skip) {
+        texture["width"]=std::max(w>>skip,1u);texture["height"]=std::max(h>>skip,1u);texture["mips"]=levels;
+        texture["android_install_mip_skip"]=skip;
+    }
     if(normal) {texture["semantic"]="normal";texture["normal_encoding"]="xyz-unorm";}
 }
 }

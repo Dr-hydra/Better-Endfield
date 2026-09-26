@@ -14,6 +14,11 @@ set_target_properties(BetterEndfield.CustomModelCore PROPERTIES POSITION_INDEPEN
 
 add_executable(BetterEndfield.BemValidate EXCLUDE_FROM_ALL ../../tests/bem_v1_validate.cpp)
 target_link_libraries(BetterEndfield.BemValidate PRIVATE BetterEndfield.CustomModelCore)
+add_executable(BetterEndfield.BemV11CapacityTests EXCLUDE_FROM_ALL ../../tests/bem_v11_capacity_tests.cpp)
+add_executable(BetterEndfield.BemKeepTextureValidate EXCLUDE_FROM_ALL ../../tests/bem_keep_texture_validate.cpp)
+target_link_libraries(BetterEndfield.BemKeepTextureValidate PRIVATE BetterEndfield.CustomModelCore)
+target_link_libraries(BetterEndfield.BemV11CapacityTests PRIVATE BetterEndfield.CustomModelCore)
 if(ANDROID)
     target_link_libraries(BetterEndfield.BemValidate PRIVATE c++_static c++abi)
+    target_link_libraries(BetterEndfield.BemV11CapacityTests PRIVATE c++_static c++abi)
 endif()

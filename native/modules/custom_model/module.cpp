@@ -1049,7 +1049,7 @@ static_assert(sizeof(BoneWeight1Raw) == 8);
 bool DecodeComponentSkin(const BemComponent& component,
     std::vector<uint8_t>& counts, std::vector<BoneWeight1Raw>& weights) {
     const auto& info = component.info;
-    if ((info.stride2 != 4 && info.stride2 != 12) ||
+    if ((info.stride2 != 4 && info.stride2 != 12 && info.stride2 != 32) ||
         component.streams[2].size() != static_cast<size_t>(info.vertex_count) * info.stride2)
         return false;
     counts.reserve(info.vertex_count);
@@ -1061,11 +1061,23 @@ bool DecodeComponentSkin(const BemComponent& component,
         uint8_t count = 0;
         float sum = 0;
         for (int k = 0; k < (info.stride2 == 4 ? 1 : 4); ++k) {
-            uint16_t packed = 65535;
-            if (info.stride2 == 12) std::memcpy(&packed, data + k * 2, sizeof(packed));
-            if (!packed) continue;
-            const float weight = static_cast<float>(packed) / 65535.0f;
-            influences[count++] = {weight, indices[k]};
+            float weight = 1.0f; int32_t bone = 0;
+            if (info.stride2 == 32) {
+                // BEM 1.2 uncompressed layout: float32 weights, UInt32 indices.
+                uint32_t index = 0;
+                std::memcpy(&weight, data + k * 4, sizeof(weight));
+                std::memcpy(&index, data + 16 + k * 4, sizeof(index));
+                if (!(weight > 0.0f)) continue;
+                if (!std::isfinite(weight) || index > 255) return false;
+                bone = static_cast<int32_t>(index);
+            } else {
+                uint16_t packed = 65535;
+                if (info.stride2 == 12) std::memcpy(&packed, data + k * 2, sizeof(packed));
+                if (!packed) continue;
+                weight = static_cast<float>(packed) / 65535.0f;
+                bone = indices[k];
+            }
+            influences[count++] = {weight, bone};
             sum += weight;
         }
         if (!count || std::abs(sum - 1.0f) > 0.01f) {
@@ -1674,35 +1686,23 @@ bool PreparePalette(const BemComponent& component,PreparedBinding& target,
             ref.index>=static_cast<uint32_t>(ArrayLength(donor_poses))) return false;
         void* bone=ArrayValue(donor->original_bones,ref.index);
         void* pose=ArrayValue(donor_poses,ref.index); Matrix4x4Raw matrix{};
-        if (!IsNativeObjectAlive(bone) || ObjectName(bone)!=component.bone_names[i] || !Unbox(pose,matrix)) return false;
+        // BEM 1.2 aliases cover a bone this resource names differently (e.g. a
+        // world-skeleton typo); the palette still binds the donor's bone object.
+        if (!IsNativeObjectAlive(bone) || !component.BoneNameMatches(i,ObjectName(bone)) || !Unbox(pose,matrix)) return false;
         float magnitude=0;
         for (float f:matrix.m) { if (!std::isfinite(f)) return false; magnitude+=std::abs(f); }
         if (!magnitude || !SetArrayValue(target.custom_bones,static_cast<int>(i),bone) ||
             !SetArrayValue(poses,static_cast<int>(i),pose)) return false;
-        target.bone_names.push_back(component.bone_names[i]);
+        target.bone_names.push_back(ObjectName(bone));
     }
     std::vector<uint8_t> counts; std::vector<BoneWeight1Raw> weights;
     return DecodeComponentSkin(component,counts,weights);
 }
-bool PrepareDrawMaterials(const BemComponent& component,PreparedBinding& target,
-    const std::vector<PreparedBinding>& bindings,const BemPocData& bem) {
-    std::map<std::pair<size_t,void*>,void*> texture_cache;
-    target.custom_materials=NewArrayLike(target.original_materials,static_cast<int>(component.draws.size()));
-    if (!target.custom_materials) return false;
-    for (size_t i=0;i<component.draws.size();++i) {
-        const auto& draw=component.draws[i]; const auto* donor=FindPrepared(bindings,draw.material_component);
-        if (!donor || draw.material_slot>=static_cast<uint32_t>(ArrayLength(donor->original_materials))) return false;
-        void* material=ArrayValue(donor->original_materials,draw.material_slot);
-        if (!material || ObjectName(material)!=component.material_names[i]) return false;
-        void* copy=NewAsset(g_material_class.class_info); void* ctor[]{material};
-        if (!copy || !InvokeVoid(Contract("material.copy"),copy,ctor) ||
-            !SetArrayValue(target.custom_materials,static_cast<int>(i),copy)) return false;
-#if defined(__ANDROID__)
-        if (!betterendfield::AndroidAuditMaterialCopy(material,copy)) return false;
-#endif
+bool ApplyTextureMask(void* copy,uint64_t mask,const BemPocData& bem,
+    std::map<std::pair<size_t,void*>,void*>& texture_cache) {
         const auto slots=ReadMaterialTextureSlots(copy);
         std::vector<int32_t> assigned;
-        for (size_t t=0;t<bem.textures.size();++t) if (draw.textures&(uint32_t{1}<<t)) {
+        for (size_t t=0;t<bem.textures.size();++t) if (mask&(uint64_t{1}<<t)) {
             const auto& tex=bem.textures[t]; const MaterialTextureSlot* match=nullptr;
             for (const auto& slot:slots) if (ObjectName(slot.texture)==tex.original_name) {
                 if (match) { Log("Ambiguous v25 texture name pin."); return false; } match=&slot;
@@ -1722,6 +1722,39 @@ bool PrepareDrawMaterials(const BemComponent& component,PreparedBinding& target,
             if (!InvokeVoid(Contract("material.set_texture_by_id"),copy,args) ||
                 Invoke(Contract("material.get_texture_by_id"),copy,read)!=texture) return false;
         }
+    return true;
+}
+bool PrepareDrawMaterials(const BemComponent& component,PreparedBinding& target,
+    const std::vector<PreparedBinding>& bindings,const BemPocData& bem) {
+    std::map<std::pair<size_t,void*>,void*> texture_cache;
+    target.custom_materials=NewArrayLike(target.original_materials,static_cast<int>(component.draws.size()));
+    if (!target.custom_materials) return false;
+    for (size_t i=0;i<component.draws.size();++i) {
+        const auto& draw=component.draws[i]; const auto* donor=FindPrepared(bindings,draw.material_component);
+        if (!donor || draw.material_slot>=static_cast<uint32_t>(ArrayLength(donor->original_materials))) return false;
+        void* material=ArrayValue(donor->original_materials,draw.material_slot);
+        if (!material || ObjectName(material)!=component.material_names[i]) return false;
+        void* copy=NewAsset(g_material_class.class_info); void* ctor[]{material};
+        if (!copy || !InvokeVoid(Contract("material.copy"),copy,ctor) ||
+            !SetArrayValue(target.custom_materials,static_cast<int>(i),copy)) return false;
+#if defined(__ANDROID__)
+        if (!betterendfield::AndroidAuditMaterialCopy(material,copy)) return false;
+#endif
+        if (!ApplyTextureMask(copy,draw.textures,bem,texture_cache)) return false;
+    }
+    return true;
+}
+bool PrepareKeepMaterials(const BemComponent& component,PreparedBinding& target,const BemPocData& bem) {
+    if (!CopyMaterials(target)) return false;
+    std::map<std::pair<size_t,void*>,void*> texture_cache;
+    for (size_t i=0;i<component.keep_material_overrides.size();++i) {
+        const auto& override=component.keep_material_overrides[i];
+        if (override.material_slot>=static_cast<uint32_t>(ArrayLength(target.original_materials)) ||
+            override.material_slot>=static_cast<uint32_t>(ArrayLength(target.custom_materials))) return false;
+        void* source=ArrayValue(target.original_materials,override.material_slot);
+        void* copy=ArrayValue(target.custom_materials,override.material_slot);
+        if (!source || !copy || ObjectName(source)!=component.keep_material_names[i] ||
+            !ApplyTextureMask(copy,override.textures,bem,texture_cache)) return false;
     }
     return true;
 }
@@ -1832,7 +1865,7 @@ bool PrepareResource(const CharacterAdapter& adapter,const BemPocData& bem,void*
                 !BuildMeshFromComponent(component,binding.original_mesh,binding.custom_mesh,poses) ||
                 !PrepareDrawMaterials(component,binding,bindings,bem)) return false;
         } else {
-            if (!CopyMaterials(binding)) return false;
+            if (!PrepareKeepMaterials(component,binding,bem)) return false;
         }
     }
     return !g_construction->failed;
@@ -2231,8 +2264,12 @@ bool ReadCompletedAndroidDonor(const CharacterAdapter& adapter,const BemPocData&
         if (component.info.flags&kComponentFlagNoGeometry) binding.original_mesh=binding.custom_mesh;
         else {
             binding.custom_bones=Invoke(Contract("skinned.get_bones"),binding.renderer,nullptr);
-            binding.bone_names=component.bone_names;
-            if (ArrayLength(binding.custom_bones)!=static_cast<int>(binding.bone_names.size())) return false;
+            if (ArrayLength(binding.custom_bones)!=static_cast<int>(component.bone_names.size())) return false;
+            for (size_t b=0;b<component.bone_names.size();++b) {
+                const auto name=ObjectName(ArrayValue(binding.custom_bones,static_cast<int>(b)));
+                if (!component.BoneNameMatches(b,name)) return false;
+                binding.bone_names.push_back(name);
+            }
         }
         bindings.push_back(binding);
     }
@@ -2468,7 +2505,7 @@ bool ReadRuntimeRegistry() {
     // Android modules do not have permission to create a sibling directory
     // below /data/local/tmp.  The host supplies the generated registry in
     // memory while package paths may still point at readable absolute files.
-    std::array<char,65536> configured{};
+    std::vector<char> configured(1024*1024+1);
     const int configured_size = g_host->copy_module_configuration(
         g_host->context, kModuleId, configured.data(), configured.size());
     if (configured_size > 0) text.assign(configured.data(),
@@ -2477,7 +2514,7 @@ bool ReadRuntimeRegistry() {
     std::ifstream stream(root/"runtime.ini",std::ios::binary|std::ios::ate);
     if (stream) {
         const auto size=stream.tellg();
-        if (size<0 || size>65536) return false;
+        if (size<0 || size>1024*1024) return false;
         text.resize(static_cast<size_t>(size)); stream.seekg(0);
         if (!stream.read(text.data(),static_cast<std::streamsize>(text.size()))) return false;
     } else if (std::filesystem::exists(root/"runtime.ini")) return false;

@@ -7,6 +7,10 @@ var autoReady = BemInspectionSummary.Read("""{"format":"component-n","conversion
 Check(autoReady.CanAutoConvert && !autoReady.CanProvideRecipe && autoReady.Detail.Contains("女管理员"), "verified automatic conversion must expose direct action without recipe");
 var ready = BemInspectionSummary.Read("""{"format":"BEMv1"}""");
 Check(ready.AlreadyPackaged && !ready.CanProvideRecipe && ready.NextStep.Contains("导入"), "finished BEM should route to import");
+var composable = BemInspectionSummary.Read("""{"format":"BEMv1.1"}""");
+Check(composable.AlreadyPackaged, "BEM 1.1 should route to import");
+Check(BemReportPresentation.Package("""{"package":{"name":"组合包","option_groups":[{"name":"服装"}]},"size":1000}""").Contains("选项组：服装"),
+    "BEM 1.1 creator report should show groups");
 var ambiguous = BemInspectionSummary.Read("""{"format":"unknown","entries":[{},{}]}""");
 Check(ambiguous.CanProvideRecipe && ambiguous.Title.Contains("多个"), "ambiguous entry guidance");
 Check(BemReportPresentation.Failure("""{"issues":[{"message":"Missing verified profile"}]}""") == "Missing verified profile", "failure report should expose message without JSON wrapper");
@@ -15,6 +19,25 @@ Check(manual.Title.Contains("不能自动转换") && !manual.AlreadyPackaged, "c
 var mapping = BemInspectionSummary.Read("""{"format":"hash-lod","automation":{"status":"requires_mapping","reasons":["Material mapping required"]},"analysis":{"components":[],"textures":0,"errors":[]}}""");
 Check(mapping.Title.Contains("暂不能承诺"), "hash/LOD support must not imply full automatic conversion");
 if (args is ["--presentation"]) { Console.WriteLine("PASS: source readiness, direct import, ambiguity and readable failure guidance"); return; }
+if (args is ["--v11", var packagePath])
+{
+    var package = BemPackageService.ReadMetadata(packagePath);
+    Check(package.IsComposable && package.OptionGroups.Count > 0, "BEM 1.1 metadata/groups not loaded");
+    var group = package.OptionGroups[0];
+    string alternate = group.Choices.First(c => c.Id != group.Default).Id;
+    package.RestoreOptions(group.Id + ":" + alternate);
+    Check(package.SelectedOptions[group.Id] == alternate && package.OptionsValid(), "BEM 1.1 selection not restored");
+    var service = new BemPackageService(); service.Packages.Add(package);
+    await service.SaveAsync();
+    string ini = File.ReadAllText(Path.Combine(service.Root, "runtime.ini"));
+    Check(ini.Contains("options=" + group.Id + ":" + alternate) && !ini.Contains("appearance="),
+        "BEM 1.1 runtime configuration not written");
+    string temporary = Path.GetFullPath(ConfigurationService.SettingsDirectory);
+    if (temporary.StartsWith(Path.GetFullPath(Path.GetTempPath()), StringComparison.OrdinalIgnoreCase) &&
+        Path.GetFileName(temporary).StartsWith("BemManagerChecks-")) Directory.Delete(temporary, true);
+    Console.WriteLine("PASS: BEM 1.1 groups, selection restore and runtime options");
+    return;
+}
 if (args.Length != 4) throw new ArgumentException("install-root, original.bem, second-package.bem, updated.bem");
 try
 {

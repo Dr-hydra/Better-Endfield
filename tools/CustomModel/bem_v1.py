@@ -1,4 +1,4 @@
-"""BEM 1.0 container and migration. See docs/BEM_V1_SPEC.md.
+"""BEM 1.0/1.1/1.2 container and v1.0 migration.
 
 The manifest is data, never executable. Payload IDs are directory indices.
 """
@@ -53,7 +53,8 @@ def atomic_write(path, data):
             os.unlink(tmp)
 
 
-def validate_manifest(m, payload_count):
+def validate_manifest(m, payload_count, minor=None):
+    """`minor` is the header minor; None validates composable content under the newest limits."""
     # Match native numeric/string bounds before Python indexing (negative indexes
     # must never silently select the last donor or resource).
     def tree(value, depth=0):
@@ -67,6 +68,9 @@ def validate_manifest(m, payload_count):
         elif isinstance(value, str):
             require('\0' not in value, 'NUL in manifest string')
     tree(m)
+    if 'option_groups' in m:
+        import bem_v11
+        return bem_v11.validate_manifest(m, payload_count, minor)
     require(m['schema'] == 1, 'Unsupported manifest schema')
     for key in ('package_id', 'default_appearance_id'):
         identity(m[key])
@@ -143,6 +147,7 @@ def validate_manifest(m, payload_count):
                 'Appearance must specify every target component in order')
         for c in a['components']:
             require(c['operation'] in ('keep', 'hide', 'replace'), 'Unknown component operation')
+            require('material_overrides' not in c, 'Keep material overrides require BEM 1.1')
             if c['operation'] == 'replace':
                 require(0 <= c['mesh'] < len(m['meshes']), 'Missing mesh')
         if 'preview' in a:
@@ -158,18 +163,32 @@ def write_package(path, manifest, payloads):
         if index is None:
             index = len(unique); unique.append(data)
         mapping.append(index)
+    composable = 'option_groups' in manifest
+    minor = 0
+    if composable:
+        import bem_v11
+        summary = bem_v11.analyze_selection_space(manifest, payloads)
+        minor = bem_v11.required_minor(manifest, summary, len(unique))
+        # Re-check under the limits of the header actually written.
+        validate_manifest(manifest, len(unique), minor)
     for mesh in manifest['meshes']:
-        mesh['indices'] = mapping[mesh['indices']]
+        if composable:
+            for draw in mesh['draws']:
+                draw['indices'] = mapping[draw['indices']]
+        else:
+            mesh['indices'] = mapping[mesh['indices']]
         for stream in mesh['streams']:
             stream['payload'] = mapping[stream['payload']]
     for texture in manifest['textures']:
         texture['payload'] = mapping[texture['payload']]
-    for appearance in manifest['appearances']:
-        if 'preview' in appearance:
-            appearance['preview'] = mapping[appearance['preview']]
+    if not composable:
+        for appearance in manifest['appearances']:
+            if 'preview' in appearance:
+                appearance['preview'] = mapping[appearance['preview']]
     payloads = unique
     raw = json.dumps(manifest, ensure_ascii=False, separators=(',', ':'), allow_nan=False).encode('utf-8')
-    require(len(raw) <= 4 * 1024 * 1024 and len(payloads) <= 4096, 'Manifest/directory too large')
+    require(len(raw) <= 4 * 1024 * 1024 and len(payloads) <= (16384 if minor == 2 else 4096),
+            'Manifest/directory too large')
     pos = HEADER.size + len(raw) + ENTRY.size * len(payloads)
     entries, blocks = [], []
     compressor = zstd.ZstdCompressor(level=9)
@@ -182,8 +201,18 @@ def write_package(path, manifest, payloads):
         blocks.append(block)
         pos += len(block)
     require(pos <= 2 * 1024**3, 'Package exceeds 2 GiB')
-    atomic_write(path, HEADER.pack(MAGIC, 1, 0, HEADER.size, pos, len(raw), len(entries), 0)
+    atomic_write(path, HEADER.pack(MAGIC, 1, minor, HEADER.size, pos, len(raw), len(entries), 0)
                  + raw + b''.join(entries) + b''.join(blocks))
+
+
+def package_minor(path):
+    """Header minor version (0: 1.0, 1: 1.1, 2: 1.2) without reading the manifest."""
+    with Path(path).open('rb') as f:
+        h = f.read(HEADER.size)
+    require(len(h) == HEADER.size, 'Truncated BEM header')
+    magic, major, minor = HEADER.unpack(h)[:3]
+    require(magic == MAGIC and major == 1 and minor in (0, 1, 2), 'Unsupported BEM header/version')
+    return minor
 
 
 def read_package(path, decode=True):
@@ -192,10 +221,10 @@ def read_package(path, decode=True):
         h = f.read(HEADER.size)
         require(len(h) == HEADER.size, 'Truncated BEM header')
         magic, major, minor, hs, fs, ms, count, flags = HEADER.unpack(h)
-        require(magic == MAGIC and major == 1 and minor == 0 and hs == HEADER.size and not flags,
+        require(magic == MAGIC and major == 1 and minor in (0, 1, 2) and hs == HEADER.size and not flags,
                 'Unsupported BEM header/version')
-        require(fs == size and fs <= 2 * 1024**3 and 0 < ms <= 4 * 1024**2 and count <= 4096,
-                'Invalid BEM sizes')
+        require(fs == size and fs <= 2 * 1024**3 and 0 < ms <= 4 * 1024**2 and
+                count <= (16384 if minor == 2 else 4096), 'Invalid BEM sizes')
         def no_duplicates(pairs):
             d = {}
             for k, v in pairs:
@@ -203,6 +232,7 @@ def read_package(path, decode=True):
                 d[k] = v
             return d
         m = json.loads(f.read(ms).decode('utf-8'), object_pairs_hook=no_duplicates)
+        require(('option_groups' in m) == (minor >= 1), 'BEM version/manifest mismatch')
         table = f.read(count * ENTRY.size)
         require(len(table) == count * ENTRY.size, 'Truncated payload directory')
         entries = list(ENTRY.iter_unpack(table))
@@ -213,7 +243,7 @@ def read_package(path, decode=True):
             require(codec or stored == decoded, 'Raw payload size mismatch')
             end += stored
         require(end == fs, 'Trailing/missing package bytes')
-        validate_manifest(m, count)
+        validate_manifest(m, count, minor or None)
         payloads = []
         if decode:
             require(sum(e[4] for e in entries) <= 2 * 1024**3, 'Decoded package exceeds tool budget')
@@ -326,8 +356,12 @@ def target_from_profile(profile, character_id, world, ui, profile_id, revision):
     require(profile.get('verified') is True, 'A verified native profile is required')
     components = []
     for key, c in sorted(profile['components'].items(), key=lambda kv: int(kv[0])):
-        components.append(dict(id=int(key), mesh_name=c['mesh_name'], original_index_count=c['original_index_count'],
-                               bone_names=c['bone_names'], materials=c['materials']))
+        component = dict(id=int(key), mesh_name=c['mesh_name'], original_index_count=c['original_index_count'],
+                         bone_names=c['bone_names'], materials=c['materials'])
+        if c.get('bone_name_aliases'):
+            # BEM 1.2: the manifest must also declare 'resource-bone-aliases'.
+            component['bone_name_aliases'] = c['bone_name_aliases']
+        components.append(component)
     return dict(character_id=character_id, platform='windows-x64', profile_id=profile_id, revision=revision,
                 snapshot=profile.get('source_snapshot', {}).get('manifest_version', ''),
                 world_resource=world, ui_resource=ui, components=components)

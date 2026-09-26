@@ -15,14 +15,20 @@ extern "C" JNIEXPORT jstring JNICALL Java_dev_betterendfield_android_BemInstalle
         using namespace BetterEndfield::CustomModel;
         BemPackageInfo info; std::string error;
         if(!ReadBemPackageInfo(input.data,info,error)) throw std::runtime_error(error);
-        for(const auto& appearance:info.appearances) {
+        auto selections=info.appearances;
+        if(info.minor) selections.push_back(info.default_options);
+        for(const auto& appearance:selections) {
             BemPocData parsed;
             if(!LoadBem(input.data,parsed,error,appearance)) throw std::runtime_error(error);
         }
-        auto report=BemJson({{"package_id",info.package_id},{"character_id",info.character_id},{"name",info.name},
-            {"default_appearance",info.default_appearance},{"appearances",info.appearances},
-            {"bytes",std::filesystem::file_size(input.data)}}).dump();
-        return env->NewStringUTF(report.c_str());
+        BemJson report={{"package_id",info.package_id},{"character_id",info.character_id},{"name",info.name},
+            {"bytes",std::filesystem::file_size(input.data)},{"bem_minor",info.minor}};
+        if(info.minor) {report["default_options"]=info.default_options;
+            report["option_groups"]=BemJson::parse(info.option_groups_json);
+            report["selection_constraints"]=BemJson::parse(info.selection_constraints_json);}
+        else {report["default_appearance"]=info.default_appearance;report["appearances"]=info.appearances;}
+        auto encoded=report.dump();
+        return env->NewStringUTF(encoded.c_str());
     } catch(const std::exception& error) {env->ThrowNew(env->FindClass("java/io/IOException"),error.what());return nullptr;}
 }
 extern "C" JNIEXPORT jstring JNICALL Java_dev_betterendfield_android_BemInstaller_convertNative(JNIEnv* env,jclass owner,jstring src,jstring dst,jstring rules,jboolean astc) {

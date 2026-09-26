@@ -5,11 +5,13 @@
 #include <filesystem>
 #include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 namespace BetterEndfield::CustomModel {
 constexpr uint32_t kMaxBemComponents = 64;
-constexpr uint32_t kMaxBemTextures = 32;
-constexpr uint32_t kMaxBemTextureBytes = 64u * 1024u * 1024u;
+// BEM 1.2 limits; 1.0/1.1 packages keep their own tighter limits in bem.cpp.
+constexpr uint32_t kMaxBemTextures = 64;
+constexpr uint32_t kMaxBemTextureBytes = 256u * 1024u * 1024u;
 constexpr uint32_t kBemFlagIndex16 = 1u << 2;
 constexpr uint32_t kBemFlagRawStream0 = 1u << 5;
 constexpr uint32_t kBemFlagRawStream1 = 1u << 6;
@@ -94,14 +96,28 @@ struct BemComponent {
     uint32_t layout_crc=0; // v25 exact native VertexAttributeDescriptor sequence
     // v25: palette indices in the packed skin stream address this table.
     struct BoneSource { uint32_t component, index, name_crc; };
-    struct Draw { uint32_t start, count, material_component, material_slot, material_crc, textures; };
+    // `textures` is a bit mask over BemPocData::textures (at most kMaxBemTextures).
+    struct Draw { uint32_t start, count, material_component, material_slot, material_crc, reserved; uint64_t textures; };
+    struct KeepMaterialOverride { uint32_t material_slot, material_crc; uint64_t textures; };
     std::vector<BoneSource> bones;
     std::vector<Draw> draws;
+    std::vector<KeepMaterialOverride> keep_material_overrides;
+    std::vector<std::string> keep_material_names;
     std::vector<std::array<int32_t,4>> attributes;
     std::vector<std::string> bone_names, material_names;
+    // BEM 1.2: other names a resource's renderer may carry for palette bone i
+    // (a bone the game names differently in its world and UI skeletons).
+    std::vector<std::vector<std::string>> bone_aliases;
+    bool BoneNameMatches(size_t i, std::string_view name) const {
+        if (bone_names[i] == name) return true;
+        if (i < bone_aliases.size())
+            for (const auto& alias : bone_aliases[i]) if (alias == name) return true;
+        return false;
+    }
 };
 static_assert(sizeof(BemComponent::BoneSource) == 12);
-static_assert(sizeof(BemComponent::Draw) == 24);
+static_assert(sizeof(BemComponent::Draw) == 32);
+static_assert(sizeof(BemComponent::KeepMaterialOverride) == 16);
 
 struct BemPocData {
     BemFileHeader header{};
@@ -110,11 +126,14 @@ struct BemPocData {
 };
 
 struct BemPackageInfo {
+    uint16_t minor = 0;
     std::string package_id, name, author, version, character_id;
     std::string world_resource, ui_resource, default_appearance;
+    std::string default_options, option_groups_json, selection_constraints_json;
     std::vector<std::string> appearances, component_names;
     std::vector<uint32_t> original_counts;
 };
+struct BemLoadStats { std::vector<uint32_t> payload_ids; };
 bool ReadBemPackageInfo(const std::filesystem::path&, BemPackageInfo&, std::string& error);
 
 constexpr uint32_t kBemStreamCount = 3;
@@ -123,5 +142,5 @@ constexpr int32_t kIndexElementSize = 2;
 
 bool ParseBem(std::span<const uint8_t> bytes, BemPocData& output, std::string& error);
 bool LoadBem(const std::filesystem::path& path, BemPocData& output, std::string& error,
-    std::string_view appearance = {});
+    std::string_view appearance = {}, BemLoadStats* stats = nullptr);
 } // namespace BetterEndfield::CustomModel

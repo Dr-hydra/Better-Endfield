@@ -72,3 +72,36 @@ IL2CPP 数组长度、字节长度和头部大小通过导出函数获取，避�
 失败日志包含接口缺失、ABI mismatch、GPU capture failed、unsupported vertex encoding、clone verification failed 或 renderer binding failed。
 
 参考接口签名：Unity 官方 2021.3 `Mesh.bindings.cs`、`GraphicsBuffer.bindings.cs`、`AsyncGPUReadback.bindings.cs`。
+
+## 用户反馈排查（2026-09-26，待实机测试）
+
+反馈：① 头发挡视线；② 视角可以 360 度转，有点奇怪。本节只记录离线排查结论和待做方案，代码未改。
+
+### 头发挡视线
+
+- 隐藏规则（`first_person_mesh.h` `Build`）：
+  - 部件名或网格名含 head/face/hair/brow/eyelid/eyes/iris/mouth/horn 时整块隐藏；
+  - 其余部件按焊接后的连通网格块统计头骨及其子骨骼的权重，超过一半的整块隐藏。
+- 离线复现（`F:/zmd_bem/tmp/fp_sim.py`、`fp_parts.py`，数据取自 `F:/zmd_bem/research/identities/roles/<角色>/`）：
+  - **提弗洛斯**：`hair_01`/`hairshadow_01` 名字命中，整块隐藏。侧发、发根和蝴蝶结在 `cloth_02`/`cloth_01` 里，名字没命中，但权重规则分别隐藏 2610/196 个三角形，主要跟头骨动的网格块没有遗漏。身体只保留颈部顶端 89 个三角形（有意保留）。
+  - **Aglina**：`hair_01`/`hair_02` 名字命中，整块隐藏。
+  - 所有角色的头发骨骼都在 `Bip001_Head` 之下；按运行时同样的深度 6、256 节点上限，提弗洛斯的扫描能访问到全部部件（共 177 个节点）。
+- 结论：这两个角色不是名字没命中。游戏里仍能看到头发，更可能是运行时隐藏没生效，例如：
+  - `SupportsAsyncGPUReadback` 返回 false，此时会直接跳过，不写日志；
+  - GPU 读回或克隆校验失败；
+  - 3DMigoto/BEM 改模替换了网格；
+  - 运行时实际画头发的不是 SkinnedMeshRenderer。
+- 需要反馈用户提供 `BetterEndfield.log` 中 `First person mesh:` 开头的行，确认每个部件是成功、失败还是没被扫到。
+- 发现的副作用：Aglina 的尾巴骨骼（`tail_base_M_a_*`，挂在 Pelvis 下）包在 `hair_01`/`hair_02` 网格里，整块隐藏会让尾巴一起消失。
+- 待做方案：
+  1. 整块隐藏的部件（名字命中、hide_all）改用 `Renderer.shadowCastingMode = ShadowsOnly`，不再依赖网格读回；只有需要局部切除的部件（身体颈部、衣服上的头发块）才走克隆网格。读回失败时也用它兜底。
+  2. 名字命中的部件如果含大量非头骨权重（如 Aglina 的尾巴），不要整块隐藏，改走权重规则，只去掉跟头骨动的部分。
+  3. 近裁剪面从 0.05 调到约 0.1；眼睛前移 0.10、上移 0.06 做成可调设置。
+
+### 视角 360 度转
+
+- 原因：第一人称直接沿用第三人称环绕相机的朝向（`ApplyFirstPersonState` 只改位置），身体不跟着转，俯仰范围也是第三人称的。
+- 方案：
+  1. 限制俯仰角（例如向下 70°、向上 80°），只改显示朝向，不影响移动方向。改动小。
+  2. 站立时视角偏离身体朝向超过约 90° 就原地转身，需要先找到安全设置角色朝向的接口。
+  3. 不建议只在画面上卡住水平视角：游戏内部的相机仍在转，移动方向会和画面不一致。

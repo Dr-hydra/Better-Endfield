@@ -11,7 +11,7 @@ from pathlib import Path
 
 from runtime_native_probe import read,write
 from runtime_sweep import records,summarize,summarize_campaign
-from prepare_native_profile import paired_resource,equal_matrix
+from prepare_native_profile import paired_resource,equal_matrix,bone_name_aliases
 
 RULES={
     (0,0,3,0):dict(name='POSITION',index=0,format='R32G32B32_FLOAT',stride=12),
@@ -88,6 +88,12 @@ def build_role(database,observations,character,name,version,old=None):
     for w in primary:
         label=w['mesh_name'];peers=[r for r in native_rows if r['resource_root']==ui and '/lod0/' in (r['path'] or '') and r['mesh_name']==label]
         errors=paired_resource(w,peers[0],meshes) if len(peers)==1 else ['UI counterpart absent/ambiguous']
+        aliases=[]
+        if errors==['world/UI bone path/order differs']:
+            # Same Mesh, only a leaf bone name differs (e.g. a world-skeleton typo):
+            # BEM 1.2 keeps the UI name and declares the world name as an alias.
+            aliases=bone_name_aliases(w,peers[0])
+            if aliases:errors=[]
         if sum(r['mesh_name']==label for r in primary)!=1:errors.append('world renderer identity ambiguous')
         if errors:
             excluded.append(dict(mesh_name=label,reasons=errors));continue
@@ -100,6 +106,11 @@ def build_role(database,observations,character,name,version,old=None):
                 evidence[native['resource_root']]=dict(kind='direct',run=source['run'],file=source['file'],
                     process_id=source['process_id'],renderer_id=native['id'],path=native['path'])
         if not direct:
+            reviewed=[c for c in (old or {}).get('components',{}).values() if c['mesh_name']==label and
+                      c.get('evidence',{}).get('mesh_id')==w['mesh_id'] and c.get('bone_name_aliases')==aliases]
+            if aliases and reviewed:
+                # Offline-reviewed BEM 1.2 component (layout from serialized channels).
+                candidates[label]=copy.deepcopy(reviewed[0]);continue
             excluded.append(dict(mesh_name=label,reasons=['no runtime observation for either equivalent root']));continue
         observed=direct[0]['row']
         if any(d['row']['attributes']!=observed['attributes'] or d['row']['strides']!=observed['strides'] for d in direct[1:]):
@@ -110,13 +121,14 @@ def build_role(database,observations,character,name,version,old=None):
                     renderer_id=native['id'],path=native['path'],reason='identical Mesh identity, relative bone paths/order and materials')
         streams,supported=source_layout(observed)
         candidates[label]=dict(mesh_name=label,original_index_count=w['original_index_count'],
-            bone_names=[b['name'] for b in w['bones']],materials=[m['name'] for m in w['materials']],
+            bone_names=[b['name'] for b in (u['bones'] if aliases else w['bones'])],materials=[m['name'] for m in w['materials']],
             material_textures=[list(dict.fromkeys(t['name'] for t in m['textures'] if t['name'])) for m in w['materials']],
             material_texture_properties=[[dict(property=t['property'],name=t['name']) for t in m['textures'] if t['name']] for m in w['materials']],
             strides=observed['strides'],attributes=observed['attributes'],source_streams=streams,
             layout_verified=True,source_layout_supported=supported and len(meshes[w['mesh_id']]['submeshes'])==1,
             vertex_count=observed['vertex_count'],submeshes=meshes[w['mesh_id']]['submeshes'],
             evidence=dict(mesh_id=w['mesh_id'],world_ui='offline-equivalent',observations=evidence))
+        if aliases:candidates[label]['bone_name_aliases']=aliases
     # Preserve IDs used by reviewed resource mappings; new native parts append.
     ordered=[]
     if old:

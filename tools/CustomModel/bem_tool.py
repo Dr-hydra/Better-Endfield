@@ -1,4 +1,4 @@
-"""Creator CLI: inspect, convert, pack, validate BEM 1.0. Never executes source INI/shaders."""
+"""Creator CLI: inspect, convert, pack, validate BEM 1.0/1.1/1.2. Never executes source INI/shaders."""
 from __future__ import annotations
 import argparse
 import contextlib
@@ -11,7 +11,8 @@ from pathlib import Path
 import bem_v1 as bem
 import bem_projects
 
-TOOL_VERSION = "1.1.4"
+TOOL_VERSION = "1.3.0"
+FORMAT_VERSIONS = {0: '1.0', 1: '1.1', 2: '1.2'}
 from convert_efmi_poc import Source
 from efmi_source import sections, analyze_source
 from efmi_lod_source import ENTRY, inspect_lod_source
@@ -22,7 +23,9 @@ def inspect_source(path, explicit=None, *, prepared=None):
     path = Path(path)
     if path.suffix.lower() == '.bem':
         m, _ = bem.read_package(path, decode=False)
-        return dict(format='BEMv1', package=m, entries=[], issues=[], conversion_ready=False)
+        version = FORMAT_VERSIONS[bem.package_minor(path)]
+        return dict(format='BEMv' + version, format_version=version,
+                    package=m, entries=[], issues=[], conversion_ready=False)
     if path.is_file() and path.suffix.lower() not in ('.zip','.rar','.7z'):
         raise ValueError('ARCHIVE_FORMAT: 源 Mod 支持目录、ZIP、RAR 和 7z。')
     if path.suffix.lower() == '.zip' and bem_projects.has_bem_members(path):
@@ -84,8 +87,17 @@ def inspect_source(path, explicit=None, *, prepared=None):
         src.close()
 
 
-def check_geometry(m, payloads):
-    """Creator-side data checks; runtime independently checks selected dependencies."""
+def check_geometry(m, payloads, minor=None):
+    """Creator-side data checks; runtime independently checks selected dependencies.
+
+    `minor` is the package header minor when validating a written package.
+    """
+    if 'option_groups' in m:
+        import bem_v11
+        summary = bem_v11.check_geometry(m, payloads, minor)
+        bem.require(minor is None or minor >= summary['required_minor'],
+                    'Package content needs BEM 1.2 but the header is BEM 1.1')
+        return summary
     import struct
     for mesh in m['meshes']:
         for s in mesh['streams']:
@@ -211,7 +223,7 @@ def convert_automatic(source, output, ini=None):
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command',choices=['inspect','convert','validate','pack','unpack','bundle'])
-    parser.add_argument('--version', action='version', version='BEM Tools '+TOOL_VERSION+' / BEM 1.0')
+    parser.add_argument('--version', action='version', version='BEM Tools '+TOOL_VERSION+' / BEM 1.0+1.1+1.2')
     parser.add_argument('source',type=Path)
     parser.add_argument('additional',type=Path,nargs='*',help='Additional BEM files for bundle only')
     parser.add_argument('--recipe',type=Path)
@@ -219,7 +231,7 @@ def main(argv=None):
     parser.add_argument('-o','--output',type=Path)
     parser.add_argument('--report',type=Path)
     args=parser.parse_args(argv)
-    result=dict(tool_version=TOOL_VERSION,format_version='1.0',command=args.command,source=str(args.source),success=False,conversion_ready=False,render_verified=False,issues=[])
+    result=dict(tool_version=TOOL_VERSION,format_version='1.0/1.1/1.2',command=args.command,source=str(args.source),success=False,conversion_ready=False,render_verified=False,issues=[])
     try:
         bem.require(not args.additional or args.command=='bundle', 'Additional inputs are only valid for bundle')
         if args.report:
@@ -227,8 +239,11 @@ def main(argv=None):
             bem.require(all(args.report.resolve()!=p.resolve() for p in paths), 'Report cannot overwrite input/output/recipe')
         if args.command=='inspect': result.update(inspect_source(args.source,args.ini))
         elif args.command=='validate':
-            m,payloads=bem.read_package(args.source); check_geometry(m,payloads)
-            result.update(package=m,size=args.source.stat().st_size)
+            minor=bem.package_minor(args.source)
+            m,payloads=bem.read_package(args.source); selection_space=check_geometry(m,payloads,minor or None)
+            result.update(package=m,size=args.source.stat().st_size,format_version=FORMAT_VERSIONS[minor])
+            if 'option_groups' in m:
+                result['selection_space']=selection_space
         elif args.command in ('pack','unpack','bundle'):
             bem.require(args.output, 'OUTPUT: 缺少输出路径')
             if args.command=='pack': result.update(bem_projects.pack_project(args.source,args.output))
@@ -238,6 +253,7 @@ def main(argv=None):
             bem.require(args.output,'OUTPUT: 请选择输出文件')
             bem.require(args.source.resolve()!=args.output.resolve(),'OUTPUT: 不能覆盖源文件')
             result.update(convert(args.source,args.recipe,args.output) if args.recipe else convert_automatic(args.source,args.output,args.ini))
+            result['format_version']='1.0'
         result['success']=True
     except Exception as exc:
         result['issues'].append(dict(code='CONVERSION_FAILED',message=str(exc),

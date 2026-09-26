@@ -13,6 +13,22 @@ internal sealed class BemAppearance
     public override string ToString() => Name;
 }
 
+internal sealed class BemOptionChoice
+{
+    public string Id { get; init; } = "";
+    public string Name { get; init; } = "";
+    public override string ToString() => Name;
+}
+
+internal sealed class BemOptionGroup
+{
+    public string Id { get; init; } = "";
+    public string Name { get; init; } = "";
+    public string Default { get; init; } = "";
+    public List<BemOptionChoice> Choices { get; init; } = [];
+    public JsonElement? AvailableWhen { get; init; }
+}
+
 internal sealed class BemPackage
 {
     public string Id { get; init; } = "";
@@ -26,6 +42,52 @@ internal sealed class BemPackage
     public List<BemAppearance> Appearances { get; init; } = [];
     public bool Enabled { get; set; }
     public string SelectedAppearance { get; set; } = "";
+    public bool IsComposable { get; init; }
+    public List<BemOptionGroup> OptionGroups { get; init; } = [];
+    public List<JsonElement> SelectionConstraints { get; init; } = [];
+    public Dictionary<string, string> SelectedOptions { get; } = new(StringComparer.Ordinal);
+
+    public Dictionary<string, string> EffectiveOptions()
+    {
+        var active = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var group in OptionGroups)
+            if (group.AvailableWhen is null || Evaluate(group.AvailableWhen.Value, active))
+                active[group.Id] = SelectedOptions[group.Id];
+        return active;
+    }
+
+    public bool OptionsValid() => SelectionConstraints.All(rule => Evaluate(rule, EffectiveOptions()));
+
+    private static bool Evaluate(JsonElement condition, IReadOnlyDictionary<string, string> active)
+    {
+        if (condition.ValueKind is JsonValueKind.True or JsonValueKind.False) return condition.GetBoolean();
+        if (condition.TryGetProperty("eq", out var eq))
+            return active.TryGetValue(eq[0].GetString() ?? "", out string? value) && value == eq[1].GetString();
+        if (condition.TryGetProperty("all", out var all)) return all.EnumerateArray().All(child => Evaluate(child, active));
+        if (condition.TryGetProperty("any", out var any)) return any.EnumerateArray().Any(child => Evaluate(child, active));
+        if (condition.TryGetProperty("not", out var negated)) return !Evaluate(negated, active);
+        throw new InvalidDataException("BEM 选项条件不合法。");
+    }
+
+    public string EncodedOptions() => string.Join("&", OptionGroups.Select(g => g.Id + ":" + SelectedOptions[g.Id]));
+
+    public void RestoreOptions(string saved)
+    {
+        var parsed = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (string pair in saved.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            string[] parts = pair.Split(':');
+            if (parts.Length != 2 || !parsed.TryAdd(parts[0], parts[1])) throw new InvalidDataException("BEM 选项设置不合法。");
+        }
+        if (parsed.Keys.Any(id => OptionGroups.All(group => group.Id != id))) throw new InvalidDataException("BEM 选项组已移除。");
+        foreach (var group in OptionGroups)
+        {
+            string choice = parsed.GetValueOrDefault(group.Id, group.Default);
+            if (group.Choices.All(item => item.Id != choice)) throw new InvalidDataException("BEM 选项值已移除。");
+            SelectedOptions[group.Id] = choice;
+        }
+        if (!OptionsValid()) throw new InvalidDataException("BEM 选项组合不可达。");
+    }
 }
 
 internal sealed class BemPackageService
@@ -49,31 +111,54 @@ internal sealed class BemPackageService
     {
         using var stream = System.IO.File.OpenRead(path);
         using var r = new BinaryReader(stream, Encoding.UTF8);
-        if (!r.ReadBytes(8).SequenceEqual(new byte[] { 66, 69, 77, 0, 80, 75, 71, 0 }) || r.ReadUInt16() != 1 || r.ReadUInt16() != 0 || r.ReadUInt32() != 40)
-            throw new InvalidDataException("仅支持正式 BEMv1 包；请使用转换工具生成 .bem。");
+        if (!r.ReadBytes(8).SequenceEqual(new byte[] { 66, 69, 77, 0, 80, 75, 71, 0 }))
+            throw new InvalidDataException("BEM 包头不合法。");
+        ushort major = r.ReadUInt16(), minor = r.ReadUInt16();
+        if (major != 1 || minor > 2 || r.ReadUInt32() != 40)
+            throw new InvalidDataException("仅支持 BEM 1.0/1.1/1.2 包。");
         ulong fileSize = r.ReadUInt64(), manifestSize = r.ReadUInt64();
         uint count = r.ReadUInt32(), flags = r.ReadUInt32();
-        if (fileSize != (ulong)stream.Length || fileSize > 2UL * 1024 * 1024 * 1024 || manifestSize is 0 or > 4194304 || count > 4096 || flags != 0 || 40 + manifestSize + count * 32UL > fileSize)
+        if (fileSize != (ulong)stream.Length || fileSize > 2UL * 1024 * 1024 * 1024 || manifestSize is 0 or > 4194304 || count > (minor >= 2 ? 16384u : 4096u) || flags != 0 || 40 + manifestSize + count * 32UL > fileSize)
             throw new InvalidDataException("BEM 文件长度或目录不合法。");
         using var document = JsonDocument.Parse(r.ReadBytes((int)manifestSize));
         var m = document.RootElement;
         if (m.GetProperty("schema").GetInt32() != 1 || m.GetProperty("target").GetProperty("platform").GetString() != "windows-x64")
             throw new InvalidDataException("不支持的 BEM schema 或目标平台。");
-        var appearances = m.GetProperty("appearances").EnumerateArray().Select(a => new BemAppearance
+        var appearances = minor == 0 ? m.GetProperty("appearances").EnumerateArray().Select(a => new BemAppearance
         {
             Id = StableId(a, "id"), Name = a.GetProperty("name").GetString() ?? "",
             Description = a.TryGetProperty("description", out var d) ? d.GetString() ?? "" : ""
-        }).ToList();
-        string def = StableId(m, "default_appearance_id");
-        if (appearances.Count is < 1 or > 64 || appearances.Select(a => a.Id).Distinct().Count() != appearances.Count || !appearances.Any(a => a.Id == def))
+        }).ToList() : [];
+        string def = minor == 0 ? StableId(m, "default_appearance_id") : "";
+        if (minor == 0 && (appearances.Count is < 1 or > 64 || appearances.Select(a => a.Id).Distinct().Count() != appearances.Count || !appearances.Any(a => a.Id == def)))
             throw new InvalidDataException("BEM 外观目录不合法。");
-        return new BemPackage
+        var groups = minor >= 1 ? m.GetProperty("option_groups").EnumerateArray().Select(g => new BemOptionGroup
+        {
+            Id = StableId(g, "id"), Name = g.GetProperty("name").GetString() ?? "",
+            Default = StableId(g, "default"),
+            Choices = g.GetProperty("choices").EnumerateArray().Select(c => new BemOptionChoice
+            {
+                Id = StableId(c, "id"), Name = c.GetProperty("name").GetString() ?? ""
+            }).ToList(),
+            AvailableWhen = g.TryGetProperty("available_when", out var condition) ? condition.Clone() : null
+        }).ToList() : [];
+        int maxChoices = minor >= 2 ? 64 : 16;
+        if (minor >= 1 && (groups.Count is < 1 or > 64 || groups.Select(g => g.Id).Distinct().Count() != groups.Count ||
+            groups.Any(g => g.Choices.Count < 1 || g.Choices.Count > maxChoices || g.Choices.Select(c => c.Id).Distinct().Count() != g.Choices.Count ||
+                            g.Choices.All(c => c.Id != g.Default))))
+            throw new InvalidDataException("BEM 选项组目录不合法。");
+        var package = new BemPackage
         {
             Id = StableId(m, "package_id"), Name = m.GetProperty("name").GetString() ?? "",
             Author = m.GetProperty("author").GetString() ?? "", Version = m.GetProperty("version").GetString() ?? "",
             Character = StableId(m.GetProperty("target"), "character_id"), File = path, Size = stream.Length,
-            Appearances = appearances, DefaultAppearance = def, SelectedAppearance = def
+            Appearances = appearances, DefaultAppearance = def, SelectedAppearance = def,
+            IsComposable = minor >= 1, OptionGroups = groups,
+            SelectionConstraints = minor >= 1 && m.TryGetProperty("selection_constraints", out var constraints)
+                ? constraints.EnumerateArray().Select(c => c.Clone()).ToList() : []
         };
+        if (minor >= 1) package.RestoreOptions("");
+        return package;
     }
 
     public void Load()
@@ -104,9 +189,17 @@ internal sealed class BemPackageService
                 if (settings.TryGetValue("Mod." + p.Id, out var state))
                 {
                     p.Enabled = state.GetValueOrDefault("enabled") is "true" or "1";
-                    string selected = state.GetValueOrDefault("appearance", p.DefaultAppearance);
-                    if (p.Appearances.Any(a => a.Id == selected)) p.SelectedAppearance = selected;
-                    else Notices.Add($"{p.Name}：原外观已移除，回退到默认外观。");
+                    if (p.IsComposable)
+                    {
+                        try { p.RestoreOptions(state.GetValueOrDefault("options", "")); }
+                        catch (InvalidDataException) { p.RestoreOptions(""); Notices.Add($"{p.Name}：原选项已移除或不可达，回退默认组合。"); }
+                    }
+                    else
+                    {
+                        string selected = state.GetValueOrDefault("appearance", p.DefaultAppearance);
+                        if (p.Appearances.Any(a => a.Id == selected)) p.SelectedAppearance = selected;
+                        else Notices.Add($"{p.Name}：原外观已移除，回退到默认外观。");
+                    }
                 }
                 Packages.Add(p);
             }
@@ -129,8 +222,9 @@ internal sealed class BemPackageService
             var text = new StringBuilder("[CustomModel]\nstandalone_lod=").Append(StandaloneLod ? "true" : "false").Append('\n');
             foreach (var p in Packages)
                 text.Append("\n[Mod.").Append(p.Id).Append("]\nenabled=").Append(p.Enabled ? "true" : "false")
-                    .Append("\npackage=packages/").Append(Path.GetFileName(p.File)).Append("\nappearance=").Append(p.SelectedAppearance).Append('\n');
-            if (Encoding.UTF8.GetByteCount(text.ToString()) > 65536) throw new InvalidOperationException("包管理配置超过运行时 64 KiB 上限。");
+                    .Append("\npackage=packages/").Append(Path.GetFileName(p.File))
+                    .Append(p.IsComposable ? "\noptions=" + p.EncodedOptions() : "\nappearance=" + p.SelectedAppearance).Append('\n');
+            if (Encoding.UTF8.GetByteCount(text.ToString()) > 1024 * 1024) throw new InvalidOperationException("包管理配置超过运行时 1 MiB 上限。");
             string temp = Path.Combine(Root, Guid.NewGuid() + ".tmp");
             try { await System.IO.File.WriteAllTextAsync(temp, text.ToString(), new UTF8Encoding(false)); System.IO.File.Move(temp, Path.Combine(Root, "runtime.ini"), true); }
             finally { if (System.IO.File.Exists(temp)) System.IO.File.Delete(temp); }

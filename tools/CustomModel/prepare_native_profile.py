@@ -54,6 +54,26 @@ def paired_resource(source, target, meshes):
     return errors
 
 
+def bone_name_aliases(world, ui):
+    """BEM 1.2 aliases when world/UI bones differ only by leaf name at the same parent.
+
+    Returns a list (possibly empty) of world-resource aliases, or None when the
+    hierarchies really differ. The UI name is canonical.
+    """
+    relative = lambda path: path.split('/', 1)[-1]
+    if len(world['bones']) != len(ui['bones']):
+        return None
+    aliases = []
+    for index, (w, u) in enumerate(zip(world['bones'], ui['bones'])):
+        wp, up = relative(w['path']), relative(u['path'])
+        if wp == up:
+            continue
+        if wp.rsplit('/', 1)[0] != up.rsplit('/', 1)[0]:
+            return None
+        aliases.append(dict(index=index, resource='world', name=w['name']))
+    return aliases
+
+
 def prepare(database, sec, world, ui):
     if world not in database['resources'] or ui not in database['resources']:
         raise ValueError('world/UI resource roots must both exist in the database')

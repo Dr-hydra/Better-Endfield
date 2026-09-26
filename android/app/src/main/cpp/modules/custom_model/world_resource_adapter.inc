@@ -61,8 +61,25 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
             !GetRendererEnabled(renderer,target.original_enabled)) return false;
         target.custom_enabled=(bem.components[i].info.flags&kComponentFlagHidden)?false:target.original_enabled;
         target.custom_mesh=source.custom_mesh==source.original_mesh?target.original_mesh:source.custom_mesh;
+        // A keep override cloned from UI LOD0 may be reused by world LOD1 only
+        // when the same native material and original texture pins are present.
+        for (size_t k=0;k<bem.components[i].keep_material_overrides.size();++k) {
+            const auto& override=bem.components[i].keep_material_overrides[k];
+            if (override.material_slot>=static_cast<uint32_t>(ArrayLength(target.original_materials)) ||
+                override.material_slot>=static_cast<uint32_t>(ArrayLength(source.original_materials))) return false;
+            void* world_material=ArrayValue(target.original_materials,override.material_slot);
+            void* ui_material=ArrayValue(source.original_materials,override.material_slot);
+            if (!world_material || !ui_material ||
+                ObjectName(world_material)!=bem.components[i].keep_material_names[k] ||
+                ObjectName(ui_material)!=ObjectName(world_material)) return false;
+            const auto pins=ReadMaterialTextureSlots(world_material);
+            for (size_t t=0;t<bem.textures.size();++t) if (override.textures&(uint64_t{1}<<t)) {
+                size_t matches=0;
+                for (const auto& pin:pins) matches+=ObjectName(pin.texture)==bem.textures[t].original_name;
+                if (matches!=1) return false;
+            }
+        }
         target.custom_materials=source.custom_materials;
-        target.bone_names=source.bone_names;
         if (source.custom_mesh!=source.original_mesh) {
             target.change_shadow=true;
             target.custom_shadow=1; // ShadowCastingMode.On, using the new visible mesh.
@@ -73,11 +90,21 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
             const int bones=ArrayLength(source.custom_bones);
             target.custom_bones=NewArrayLike(target.original_bones,bones);
             if (!target.custom_bones) return false;
+            const auto& component=bem.components[source.component_id];
             for (int b=0;b<bones;++b) {
                 void* ui_bone=ArrayValue(source.custom_bones,b);
                 const auto path=relative(ui_bone);
                 auto found=world_bones.find(path);
-                if (found==world_bones.end() || ObjectName(ui_bone)!=ObjectName(found->second)) {
+                // BEM 1.2 aliases: the world skeleton may name this bone differently
+                // at the same parent path; accept only a declared alias there.
+                if (found==world_bones.end() && static_cast<size_t>(b)<component.bone_aliases.size()) {
+                    const auto parent=path.rfind('/');
+                    for (const auto& alias:component.bone_aliases[b]) {
+                        found=world_bones.find(parent==path.npos?alias:path.substr(0,parent+1)+alias);
+                        if (found!=world_bones.end()) break;
+                    }
+                }
+                if (found==world_bones.end() || !component.BoneNameMatches(static_cast<size_t>(b),ObjectName(found->second))) {
                     Log("Android world bone path missing: "+path); return false;
                 }
                 Matrix4x4Raw ui_matrix{},world_matrix{};
@@ -94,6 +121,7 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
                     Log("Android world bone rest space differs; matched path retained: "+path);
                 }
                 if (!SetArrayValue(target.custom_bones,b,found->second)) return false;
+                target.bone_names.push_back(ObjectName(found->second));
             }
         }
         bindings.push_back(target);

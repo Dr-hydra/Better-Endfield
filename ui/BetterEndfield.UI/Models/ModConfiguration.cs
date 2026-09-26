@@ -175,6 +175,8 @@ internal sealed class ModConfiguration
 
     public double FreeCameraFieldOfView { get; set; } = 60.0;
 
+    public FreeCameraExtras FreeCameraExtras { get; set; } = new();
+
     public bool FirstPersonCameraEnabled { get; set; } = false;
 
     public bool FirstPersonHideHead { get; set; } = true;
@@ -314,6 +316,7 @@ internal sealed class ModConfiguration
         text.AppendLine($"pause_hotkey={WorldPauseToggleHotkey}");
         text.AppendLine($"movement_speed={Number(FreeCameraMovementSpeed)}");
         text.AppendLine($"field_of_view={Number(FreeCameraFieldOfView)}");
+        text.Append(FreeCameraExtras.ToIniLines());
         text.AppendLine("diagnostics=true");
         text.AppendLine();
         text.AppendLine(ToActionsIniSection());

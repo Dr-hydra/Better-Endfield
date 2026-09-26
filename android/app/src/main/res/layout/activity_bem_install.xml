@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/bem_scroll"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/app_background"
+    android:fillViewport="true"
+    android:overScrollMode="never">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingTop="20dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="32dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_header"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                style="@style/SectionEyebrow"
+                android:text="BEM · PACKAGE MANAGER" />
+
+            <TextView
+                style="@style/SectionTitle"
+                android:text="第三方模型"
+                android:textSize="26sp" />
+
+            <TextView
+                style="@style/BodyText"
+                android:layout_marginTop="8dp"
+                android:text="一个包管理全部外观。选择与启用状态保存后，下次启动游戏生效。" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/bem_import"
+            style="@style/PrimaryButton"
+            android:layout_marginTop="18dp"
+            android:text="导入 BEM 包" />
+
+        <Button
+            android:id="@+id/bem_save"
+            style="@style/GhostButton"
+            android:layout_marginTop="10dp"
+            android:text="保存模型选择" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                style="@style/ListCaption"
+                android:text="处理状态" />
+
+            <TextView
+                android:id="@+id/bem_status"
+                style="@style/BodyText"
+                android:layout_marginTop="9dp"
+                android:text="就绪" />
+
+            <ProgressBar
+                android:id="@+id/bem_progress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:layout_marginTop="14dp"
+                android:max="100"
+                android:progressTint="@color/accent"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/bem_progress_label"
+                style="@style/BodyText"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/bem_cancel"
+                style="@style/GhostButton"
+                android:layout_marginTop="12dp"
+                android:text="取消当前操作"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <TextView
+            style="@style/BodyText"
+            android:layout_marginTop="14dp"
+            android:text="导入时保留原始纹理。只有贴图在游戏中异常时，才需要单独转换手机纹理。" />
+
+        <TextView
+            style="@style/SectionEyebrow"
+            android:layout_marginTop="28dp"
+            android:text="已安装的模型包" />
+
+        <LinearLayout
+            android:id="@+id/bem_entries"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </LinearLayout>
+</ScrollView>

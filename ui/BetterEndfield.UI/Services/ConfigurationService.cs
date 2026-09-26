@@ -217,7 +217,8 @@ internal static class ConfigurationService
         string firstPersonHotkey = "-",
         double firstPersonFieldOfView = 75.0,
         bool firstPersonFillNeckHole = true,
-        double firstPersonNeckPlugScale = 1.0)
+        double firstPersonNeckPlugScale = 1.0,
+        FreeCameraExtras? extras = null)
     {
         static string Boolean(bool value) => value ? "true" : "false";
         static string Number(double value) =>
@@ -231,6 +232,8 @@ internal static class ConfigurationService
             string existing = File.Exists(path)
                 ? await File.ReadAllTextAsync(path)
                 : string.Empty;
+            // Callers that do not edit the extras keep the values already saved.
+            extras ??= FreeCameraExtras.FromValues(ReadIniSection(existing, "betterendfield.camera"));
             string section =
                 "[betterendfield.camera]" + Environment.NewLine +
                 "schema_version=4" + Environment.NewLine +
@@ -248,6 +251,7 @@ internal static class ConfigurationService
                 "pause_hotkey=" + pauseHotkey + Environment.NewLine +
                 "movement_speed=" + Number(movementSpeed) + Environment.NewLine +
                 "field_of_view=" + Number(fieldOfView) + Environment.NewLine +
+                extras.ToIniLines() +
                 "diagnostics=true" + Environment.NewLine;
             string updated = UpsertIniSection(existing, "betterendfield.camera", section);
             string temporary = path + ".camera.tmp";
@@ -613,6 +617,7 @@ internal static class ConfigurationService
             values, "first_person_hotkey", configuration.FirstPersonHotkey);
         configuration.FirstPersonFieldOfView = Number(
             values, "first_person_fov", configuration.FirstPersonFieldOfView);
+        configuration.FreeCameraExtras = FreeCameraExtras.FromValues(values);
         if (cameraSectionPresent && cameraSchemaVersion < 4)
         {
             // Migrate the old auto-pause setting to an independent pause
@@ -642,9 +647,30 @@ internal static class ConfigurationService
                 configuration.FirstPersonHotkey,
                 configuration.FirstPersonFieldOfView,
                 configuration.FirstPersonFillNeckHole,
-                configuration.FirstPersonNeckPlugScale);
+                configuration.FirstPersonNeckPlugScale,
+                configuration.FreeCameraExtras);
         }
         return configuration;
+    }
+
+    private static Dictionary<string, string> ReadIniSection(string contents, string sectionName)
+    {
+        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        bool inSection = false;
+        foreach (string sourceLine in contents.Replace("\r\n", "\n").Split('\n'))
+        {
+            string line = sourceLine.Trim();
+            if (line.Length == 0 || line.StartsWith(';') || line.StartsWith('#')) continue;
+            if (line.StartsWith('[') && line.EndsWith(']'))
+            {
+                inSection = line.Equals($"[{sectionName}]", StringComparison.OrdinalIgnoreCase);
+                continue;
+            }
+            int equals = line.IndexOf('=');
+            if (inSection && equals > 0)
+                values[line[..equals].Trim()] = line[(equals + 1)..].Trim();
+        }
+        return values;
     }
 
     private static string UpsertIniSection(

@@ -25,7 +25,7 @@ const EnabledMod* ModRegistry::Match(std::string_view resource) const {
 bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,ModRegistry& output,std::string& error) {
     output={}; error.clear();
     try {
-        if(ini.size()>65536) {error="Runtime configuration exceeds 64 KiB";return false;}
+        if(ini.size()>1024*1024) {error="Runtime configuration exceeds 1 MiB";return false;}
         if(ini.starts_with("\xef\xbb\xbf")) ini.remove_prefix(3);
         std::map<std::string,std::map<std::string,std::string>> sections; std::string section;
         while(!ini.empty()) {
@@ -54,9 +54,9 @@ bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,Mod
             if(path.is_relative()) path=root/path;
             BemPackageInfo info; std::string why;
             if(!ReadBemPackageInfo(path,info,why)) {parsed.diagnostics.push_back("Package refused: "+name+": "+why);continue;}
-            auto appearance=get("appearance");
-            if(appearance.empty()) appearance=info.default_appearance;
-            if(std::find(info.appearances.begin(),info.appearances.end(),appearance)==info.appearances.end()) {
+            auto appearance=info.minor?get("options"):get("appearance");
+            if(appearance.empty()) appearance=info.minor?info.default_options:info.default_appearance;
+            if(!info.minor && std::find(info.appearances.begin(),info.appearances.end(),appearance)==info.appearances.end()) {
                 parsed.diagnostics.push_back("Appearance removed; using package default: "+name);appearance=info.default_appearance;
             }
             if(!roles.insert(info.character_id).second || resources.contains(info.world_resource)||resources.contains(info.ui_resource)) {

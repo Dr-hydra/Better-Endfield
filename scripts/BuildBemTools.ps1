@@ -11,6 +11,7 @@ if ([string]::IsNullOrWhiteSpace($Destination)) {
 if ($LASTEXITCODE -ne 0) { throw "Install tools/CustomModel/requirements-build.txt into the build Python environment first." }
 & python -m PyInstaller --noconfirm --clean --onedir --console `
     --name BetterEndfield.BemConverter `
+    --hidden-import bem_v11 `
     --distpath (Join-Path $Destination "dist") `
     --workpath (Join-Path $Destination "work") `
     --specpath $Destination `

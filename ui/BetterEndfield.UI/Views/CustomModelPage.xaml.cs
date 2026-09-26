@@ -69,22 +69,67 @@ public sealed partial class CustomModelPage : UserControl
                     catch (Exception ex) { Reload(); Message("保存失败", ex.Message, InfoBarSeverity.Error); }
                 };
                 controls.Children.Add(enabled);
-                var appearance = new ComboBox { Header = "外观", ItemsSource = p.Appearances, SelectedItem = p.Appearances.First(a => a.Id == p.SelectedAppearance), MinWidth = 220 };
-                var description = new TextBlock { Text = p.Appearances.First(a => a.Id == p.SelectedAppearance).Description, TextWrapping = TextWrapping.Wrap };
-                appearance.SelectionChanged += async (_, _) =>
+                if (!p.IsComposable)
                 {
-                    if (_rendering || appearance.SelectedItem is not BemAppearance selected) return;
-                    try { p.SelectedAppearance = selected.Id; await _service.SaveAsync(); description.Text = selected.Description; Message("外观已保存", "下次启动游戏生效。"); }
-                    catch (Exception ex) { Reload(); Message("保存失败", ex.Message, InfoBarSeverity.Error); }
-                };
-                controls.Children.Add(appearance);
+                    var appearance = new ComboBox { Header = "外观", ItemsSource = p.Appearances, SelectedItem = p.Appearances.First(a => a.Id == p.SelectedAppearance), MinWidth = 220 };
+                    var description = new TextBlock { Text = p.Appearances.First(a => a.Id == p.SelectedAppearance).Description, TextWrapping = TextWrapping.Wrap };
+                    appearance.SelectionChanged += async (_, _) =>
+                    {
+                        if (_rendering || appearance.SelectedItem is not BemAppearance selected) return;
+                        try { p.SelectedAppearance = selected.Id; await _service.SaveAsync(); description.Text = selected.Description; Message("外观已保存", "下次启动游戏生效。"); }
+                        catch (Exception ex) { Reload(); Message("保存失败", ex.Message, InfoBarSeverity.Error); }
+                    };
+                    controls.Children.Add(appearance);
+                    stack.Children.Add(description);
+                }
                 var remove = new Button { Content = "移除", VerticalAlignment = VerticalAlignment.Bottom };
                 remove.Click += async (_, _) =>
                 {
                     try { await _service.RemoveAsync(p); Render(); Message("已移除", p.Name); }
                     catch (Exception ex) { Message("无法移除", ex.Message, InfoBarSeverity.Error); }
                 };
-                controls.Children.Add(remove); stack.Children.Add(controls); stack.Children.Add(description);
+                controls.Children.Add(remove); stack.Children.Add(controls);
+                if (p.IsComposable)
+                {
+                    var optionPanel = new StackPanel { Spacing = 8 };
+                    var selectors = new List<(BemOptionGroup Group, ComboBox Box)>();
+                    foreach (var group in p.OptionGroups)
+                    {
+                        var box = new ComboBox
+                        {
+                            Header = group.Name, ItemsSource = group.Choices,
+                            SelectedItem = group.Choices.First(choice => choice.Id == p.SelectedOptions[group.Id]),
+                            MinWidth = 220
+                        };
+                        selectors.Add((group, box)); optionPanel.Children.Add(box);
+                    }
+                    void RefreshAvailability()
+                    {
+                        var active = p.EffectiveOptions();
+                        foreach (var (group, box) in selectors)
+                            box.Visibility = active.ContainsKey(group.Id) ? Visibility.Visible : Visibility.Collapsed;
+                    }
+                    foreach (var (group, box) in selectors)
+                    {
+                        box.SelectionChanged += async (_, _) =>
+                        {
+                            if (_rendering || box.SelectedItem is not BemOptionChoice selected) return;
+                            string previous = p.SelectedOptions[group.Id];
+                            if (previous == selected.Id) return;
+                            p.SelectedOptions[group.Id] = selected.Id;
+                            if (!p.OptionsValid())
+                            {
+                                p.SelectedOptions[group.Id] = previous;
+                                box.SelectedItem = group.Choices.First(choice => choice.Id == previous);
+                                Message("组合不可达", "这个选项组合不符合包内约束。", InfoBarSeverity.Warning);
+                                return;
+                            }
+                            try { RefreshAvailability(); await _service.SaveAsync(); Message("选项已保存", "下次启动游戏生效。"); }
+                            catch (Exception ex) { Reload(); Message("保存失败", ex.Message, InfoBarSeverity.Error); }
+                        };
+                    }
+                    RefreshAvailability(); stack.Children.Add(optionPanel);
+                }
                 PackageCards.Children.Add(new Border { Child = stack, Padding = new Thickness(16), CornerRadius = new CornerRadius(8), Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"] });
             }
         }
@@ -104,7 +149,7 @@ public sealed partial class CustomModelPage : UserControl
                 await ImportBundleAsync(file.Path); return;
             }
             await _service.ImportAsync(file.Path, InstallRoot); Render();
-            Message("导入完成", "已校验全部外观。新包默认停用；请选择外观并启用。同 ID 更新保留启用状态与仍存在的外观选择。", InfoBarSeverity.Success);
+            Message("导入完成", "已校验模型包。新包默认停用；请选择外观或选项组并启用。同 ID 更新保留仍有效的选择。", InfoBarSeverity.Success);
             if (_service.Notices.Count > 0) Message("导入完成，需注意", string.Join("\n", _service.Notices), InfoBarSeverity.Warning);
         }
         catch (Exception ex) { Message("导入失败", ex.Message, InfoBarSeverity.Error); }
@@ -124,7 +169,9 @@ public sealed partial class CustomModelPage : UserControl
                 IsChecked = true,
                 Content = new TextBlock
                 {
-                    Text = $"{PresetOptions.GetCharacterName(package.Character)} · {package.Name}\n{package.Version} · {package.Size / 1_000_000.0:F1} MB · {(update ? "更新已有包" : "新包")}\n外观：{string.Join("、", package.Appearances.Select(a => a.Name))}",
+                    Text = $"{PresetOptions.GetCharacterName(package.Character)} · {package.Name}\n{package.Version} · {package.Size / 1_000_000.0:F1} MB · {(update ? "更新已有包" : "新包")}\n"+
+                        (package.IsComposable ? "选项组：" + string.Join("、", package.OptionGroups.Select(g => g.Name)) :
+                            "外观：" + string.Join("、", package.Appearances.Select(a => a.Name))),
                     TextWrapping = TextWrapping.Wrap
                 }
             };
@@ -150,7 +197,7 @@ public sealed partial class CustomModelPage : UserControl
             catch (Exception ex) { issues.Add(choice.Package.Name + "：" + ex.Message); }
         }
         Render();
-        Message($"已导入 {count} 个包", issues.Count > 0 ? string.Join("\n", issues) : "可分别选择外观并启用；同角色同时启用一个包。",
+        Message($"已导入 {count} 个包", issues.Count > 0 ? string.Join("\n", issues) : "可分别选择外观或选项组并启用；同角色同时启用一个包。",
             issues.Count > 0 ? InfoBarSeverity.Warning : InfoBarSeverity.Success);
     }
     private async void Lod_Toggled(object sender, RoutedEventArgs e)

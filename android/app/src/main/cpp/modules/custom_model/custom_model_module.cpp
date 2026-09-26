@@ -49,10 +49,11 @@ std::vector<std::filesystem::path> ConfigPackages(std::string_view value) {
 }
 std::vector<std::string> ConfigStrings(std::string_view value) {
     std::vector<std::string> result;
-    while (!value.empty()) {
+    if (value.empty()) return result;
+    while (true) {
         const size_t comma = value.find(',');
         auto item = value.substr(0, comma);
-        if (!item.empty()) result.emplace_back(item);
+        result.emplace_back(item);
         if (comma == std::string_view::npos) break;
         value.remove_prefix(comma + 1);
     }
@@ -214,12 +215,15 @@ bool CustomModelModule::InitializeSharedReplacement(const std::string& config) {
     }
     replacement_config_ = "[CustomModel]\nstandalone_lod=false\n";
     const auto configured_appearances=ConfigStrings(ConfigValue(config,"appearances"));
+    const auto configured_options=ConfigStrings(ConfigValue(config,"options"));
     for (size_t i = 0; i < package_paths_.size(); ++i) {
         replacement_config_ += "[Mod.android" + std::to_string(i) + "]\nenabled=true\npackage=" +
             package_paths_[i].string() + "\n";
         const std::string selected = i < configured_appearances.size() ? configured_appearances[i] :
             (i == 0 ? appearance_ : std::string{});
         if (!selected.empty()) replacement_config_ += "appearance=" + selected + "\n";
+        if(i<configured_options.size() && !configured_options[i].empty())
+            replacement_config_ += "options=" + configured_options[i] + "\n";
     }
     host_ = {};
     host_.abi_version = BETTER_ENDFIELD_MODULE_ABI_V1; host_.context = this;
@@ -401,9 +405,16 @@ ModuleResult CustomModelModule::Start(Il2CppRuntime& runtime) {
     world_resource_=info.world_resource; ui_resource_=info.ui_resource;
     detached_probe_=ConfigValue(config,"mesh_probe")=="1";
     LogInfo(Id(), ("BEM target world="+world_resource_+" ui="+ui_resource_).c_str());
-    if (appearance_.empty()) appearance_ = info.default_appearance;
-    if (!LoadBem(package_path_, package_, error, appearance_)) return {false, "BEM package rejected: " + error};
-    if (package_.components.empty()) return {false, "BEM package has no components"};
+    if (info.minor) {
+        const auto configured_options=ConfigStrings(ConfigValue(config,"options"));
+        appearance_=configured_options.empty()?ConfigValue(config,"options"):configured_options.front();
+        if(appearance_.empty()) appearance_=info.default_options;
+    } else if (appearance_.empty()) appearance_ = info.default_appearance;
+    const bool sharedReplacement=ConfigValue(config,"replace")=="1";
+    if (!sharedReplacement) {
+        if (!LoadBem(package_path_, package_, error, appearance_)) return {false, "BEM package rejected: " + error};
+        if (package_.components.empty()) return {false, "BEM package has no components"};
+    }
     runtime_ = &runtime;
     ConfigureAndroidMeshBuilder(runtime, ConfigValue(config, "rollback") == "1", ConfigValue(config,"lod_pipeline")=="1",
         ConfigValue(config,"lod_npc")=="1",ConfigValue(config,"inspect")=="1");
@@ -411,7 +422,7 @@ ModuleResult CustomModelModule::Start(Il2CppRuntime& runtime) {
     const std::string mesh_data_mode = ConfigValue(config, "mesh_data_probe");
     mesh_data_probe_ = mesh_data_mode == "1" || mesh_data_mode == "2";
     mesh_data_write_probe_ = mesh_data_mode == "2";
-    if (ConfigValue(config, "replace") == "1") {
+    if (sharedReplacement) {
         const bool ready = InitializeSharedReplacement(std::string(config));
         return {ready, ready ? "Android MeshData replacement transaction ready" :
             "Android replacement contracts unavailable; original resources retained"};

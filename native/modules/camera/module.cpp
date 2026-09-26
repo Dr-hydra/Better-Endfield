@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -52,6 +53,32 @@ struct CameraConfiguration {
     int toggle_key = '9';
     int pause_key = '8';
     int first_person_key = VK_OEM_MINUS;
+    // Free camera look, motion presets, keyframes and VMD camera playback.
+    bool mouse_look = true;
+    bool mouse_invert_y = false;
+    float mouse_sensitivity = 0.1f;
+    float smoothing = 0.3f;
+    int motion_preset = 0;
+    float motion_speed = 1.0f;
+    float orbit_speed = 20.0f;
+    float motion_duration = 0.0f;
+    float motion_target_height = 1.2f;
+    float keyframe_segment_seconds = 3.0f;
+    bool keyframe_loop = false;
+    std::string vmd_camera_file;
+    float vmd_camera_scale = 0.07f;
+    float vmd_camera_fov_bias = 5.0f;
+    bool vmd_camera_loop = false;
+    int roll_left_key = VK_NUMPAD7;
+    int roll_right_key = VK_NUMPAD9;
+    int fov_wide_key = VK_NUMPAD1;
+    int fov_narrow_key = VK_NUMPAD3;
+    int view_reset_key = VK_NUMPAD5;
+    int motion_key = VK_NUMPAD8;
+    int keyframe_add_key = VK_NUMPAD0;
+    int keyframe_play_key = VK_NUMPAD2;
+    int keyframe_clear_key = VK_NUMPAD4;
+    int vmd_play_key = VK_NUMPAD6;
 };
 
 struct Vector3 {
@@ -102,6 +129,32 @@ std::atomic<float> g_first_person_neck_plug_scale{1.0f};
 std::atomic_int g_toggle_key{'9'};
 std::atomic_int g_pause_key{'8'};
 std::atomic_int g_first_person_key{VK_OEM_MINUS};
+std::atomic_bool g_mouse_look_enabled{true};
+std::atomic_bool g_mouse_invert_y{false};
+std::atomic<float> g_mouse_sensitivity{0.1f};
+std::atomic<float> g_free_smoothing{0.3f};
+std::atomic_int g_motion_preset{0};
+std::atomic<float> g_motion_speed{1.0f};
+std::atomic<float> g_orbit_speed{20.0f};
+std::atomic<float> g_motion_duration{0.0f};
+std::atomic<float> g_motion_target_height{1.2f};
+std::atomic<float> g_keyframe_segment_seconds{3.0f};
+std::atomic_bool g_keyframe_loop{false};
+std::atomic<float> g_vmd_camera_scale{0.07f};
+std::atomic<float> g_vmd_camera_fov_bias{5.0f};
+std::atomic_bool g_vmd_camera_loop{false};
+std::mutex g_vmd_path_mutex;
+std::string g_vmd_camera_file;
+std::atomic_int g_roll_left_key{VK_NUMPAD7};
+std::atomic_int g_roll_right_key{VK_NUMPAD9};
+std::atomic_int g_fov_wide_key{VK_NUMPAD1};
+std::atomic_int g_fov_narrow_key{VK_NUMPAD3};
+std::atomic_int g_view_reset_key{VK_NUMPAD5};
+std::atomic_int g_motion_key{VK_NUMPAD8};
+std::atomic_int g_keyframe_add_key{VK_NUMPAD0};
+std::atomic_int g_keyframe_play_key{VK_NUMPAD2};
+std::atomic_int g_keyframe_clear_key{VK_NUMPAD4};
+std::atomic_int g_vmd_play_key{VK_NUMPAD6};
 
 using CameraTickFn = void(__fastcall*)(void* instance, void* method);
 CameraTickFn g_original_camera_tick = nullptr;
@@ -130,6 +183,17 @@ bool g_free_camera_active = false;
 std::atomic_bool g_toggle_request{false};
 std::atomic_bool g_pause_request{false};
 std::atomic_bool g_force_exit_request{false};
+std::atomic_bool g_motion_request{false};
+std::atomic_bool g_keyframe_add_request{false};
+std::atomic_bool g_keyframe_play_request{false};
+std::atomic_bool g_keyframe_clear_request{false};
+std::atomic_bool g_vmd_play_request{false};
+// Mouse look input, accumulated by the input thread's low-level mouse hook.
+std::atomic_bool g_free_camera_running{false};
+std::atomic_bool g_mouse_capture{false};
+std::atomic_int g_mouse_dx{0};
+std::atomic_int g_mouse_dy{0};
+std::atomic_int g_mouse_wheel{0};
 
 std::atomic_bool g_first_person_active{false};
 std::atomic_bool g_first_person_toggle_request{false};
@@ -138,11 +202,9 @@ std::atomic_bool g_first_person_exit_request{false};
 std::atomic_bool g_input_thread_stop{false};
 std::thread g_input_thread;
 
-uint64_t g_last_tick = 0;
 void* g_active_camera = nullptr;
 uint32_t g_active_camera_root = 0;
 Vector3 g_original_position{};
-Vector3 g_free_position{};
 float g_original_fov = 60.0f;
 float g_original_time_scale = 1.0f;
 bool g_changed_time_scale = false;
@@ -302,6 +364,12 @@ MethodContract g_contracts[]{
     {"unity.transform.position.set",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Transform", "set_position",
             "UnityEngine.Vector3", "System.Void", 1}},
+    {"unity.transform.rotation.get",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Transform", "get_rotation",
+            nullptr, "UnityEngine.Quaternion", 0}},
+    {"unity.transform.rotation.set",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Transform", "set_rotation",
+            "UnityEngine.Quaternion", "System.Void", 1}},
     {"unity.transform.forward",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Transform", "get_forward",
             nullptr, "UnityEngine.Vector3", 0}},
@@ -548,7 +616,23 @@ bool GameWindowHasFocus() {
     return process_id == GetCurrentProcessId();
 }
 
+LRESULT CALLBACK FreeCameraMouseHook(int code, WPARAM message, LPARAM data);
+
+struct HotkeyRequest {
+    std::atomic_int* key;
+    std::atomic_bool* request;
+    bool was_down = false;
+};
+
 void InputThreadMain() {
+    HotkeyRequest playback_keys[]{
+        {&g_motion_key, &g_motion_request},
+        {&g_keyframe_add_key, &g_keyframe_add_request},
+        {&g_keyframe_play_key, &g_keyframe_play_request},
+        {&g_keyframe_clear_key, &g_keyframe_clear_request},
+        {&g_vmd_play_key, &g_vmd_play_request},
+    };
+    HHOOK mouse_hook = nullptr;
     bool toggle_was_down = false;
     bool pause_was_down = false;
     bool first_person_was_down = false;
@@ -581,7 +665,38 @@ void InputThreadMain() {
         toggle_was_down = toggle_down;
         pause_was_down = pause_down;
         first_person_was_down = first_person_down;
-        Sleep(5);
+        for (HotkeyRequest& binding : playback_keys) {
+            const bool down = focused && free_enabled &&
+                KeyDown(binding.key->load(std::memory_order_relaxed));
+            if (down && !binding.was_down) {
+                binding.request->store(true, std::memory_order_release);
+            }
+            binding.was_down = down;
+        }
+
+        // The low-level mouse hook only exists while the free camera runs in the
+        // focused game window; its callbacks arrive through this thread's queue.
+        const bool capture = focused && free_enabled &&
+            g_mouse_look_enabled.load(std::memory_order_relaxed) &&
+            g_free_camera_running.load(std::memory_order_acquire);
+        g_mouse_capture.store(capture, std::memory_order_relaxed);
+        if (capture && !mouse_hook) {
+            mouse_hook = SetWindowsHookExW(WH_MOUSE_LL, &FreeCameraMouseHook,
+                GetModuleHandleW(nullptr), 0);
+        } else if (!capture && mouse_hook) {
+            UnhookWindowsHookEx(mouse_hook);
+            mouse_hook = nullptr;
+        }
+        MsgWaitForMultipleObjects(0, nullptr, FALSE, 5, QS_ALLINPUT);
+        MSG message{};
+        while (PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE)) {
+            TranslateMessage(&message);
+            DispatchMessageW(&message);
+        }
+    }
+    g_mouse_capture.store(false, std::memory_order_relaxed);
+    if (mouse_hook) {
+        UnhookWindowsHookEx(mouse_hook);
     }
 }
 
@@ -608,95 +723,11 @@ void RestoreWorldPause(const char* reason) {
 
 void ExitFirstPerson(const char* reason);
 
-void ExitFreeCamera(const char* reason) {
-    if (!g_free_camera_active) {
-        return;
-    }
-
-    void* transform = Invoke(Contract("unity.component.transform"),
-        g_active_camera, nullptr);
-    if (transform) {
-        SetValue(Contract("unity.transform.position.set"), transform,
-            g_original_position);
-    }
-    SetValue(Contract("unity.camera.fov.set"), g_active_camera, g_original_fov);
-    RestoreWorldPause("free camera exit");
-
-    g_free_camera_active = false;
-    g_changed_time_scale = false;
-    ReleaseCameraRoot();
-    Log(std::string("Free camera disabled: ") + reason);
-}
-
-bool EnterFreeCamera() {
-    if (g_first_person_active.load(std::memory_order_acquire)) {
-        ExitFirstPerson("switching to free camera");
-    }
-    void* camera = Invoke(Contract("unity.camera.main"), nullptr, nullptr);
-    void* transform = Invoke(Contract("unity.component.transform"), camera, nullptr);
-    if (!camera || !transform ||
-        !GetValue(Contract("unity.transform.position.get"), transform,
-            g_original_position) ||
-        !GetValue(Contract("unity.camera.fov.get"), camera, g_original_fov)) {
-        Log("Free camera could not capture the active Unity camera.");
-        return false;
-    }
-
-    g_active_camera = camera;
-    g_active_camera_root = g_host && g_host->gchandle_new
-        ? g_host->gchandle_new(g_host->context, camera, 0)
-        : 0;
-    g_free_position = g_original_position;
-    g_last_tick = GetTickCount64();
-
-    g_free_camera_active = true;
-    Log("Free camera enabled (arrow keys move, PageUp/PageDown change height).");
-    return true;
-}
-
-void ApplyFreeCamera() {
-    void* current_camera = Invoke(Contract("unity.camera.main"), nullptr, nullptr);
-    if (!current_camera || current_camera != g_active_camera) {
-        ExitFreeCamera("active camera changed");
-        return;
-    }
-    void* transform = Invoke(Contract("unity.component.transform"),
-        g_active_camera, nullptr);
-    if (!transform) {
-        ExitFreeCamera("camera transform unavailable");
-        return;
-    }
-
-    const uint64_t now = GetTickCount64();
-    const float delta_seconds = std::clamp(
-        static_cast<float>(now - g_last_tick) / 1000.0f, 0.0f, 0.05f);
-    g_last_tick = now;
-
-    Vector3 forward{};
-    Vector3 right{};
-    Vector3 up{};
-    if (!GetValue(Contract("unity.transform.forward"), transform, forward) ||
-        !GetValue(Contract("unity.transform.right"), transform, right) ||
-        !GetValue(Contract("unity.transform.up"), transform, up)) {
-        return;
-    }
-
-    Vector3 direction{};
-    if (KeyDown(VK_UP)) direction = Add(direction, forward);
-    if (KeyDown(VK_DOWN)) direction = Add(direction, Scale(forward, -1.0f));
-    if (KeyDown(VK_RIGHT)) direction = Add(direction, right);
-    if (KeyDown(VK_LEFT)) direction = Add(direction, Scale(right, -1.0f));
-    if (KeyDown(VK_PRIOR)) direction = Add(direction, up);
-    if (KeyDown(VK_NEXT)) direction = Add(direction, Scale(up, -1.0f));
-    direction = Normalize(direction);
-
-    const float speed = g_movement_speed.load(std::memory_order_relaxed);
-    g_free_position = Add(g_free_position, Scale(direction, speed * delta_seconds));
-
-    SetValue(Contract("unity.transform.position.set"), transform, g_free_position);
-    SetValue(Contract("unity.camera.fov.set"), g_active_camera,
-        g_field_of_view.load(std::memory_order_relaxed));
-}
+// Implemented in free_camera_runtime.inc.
+void ExitFreeCamera(const char* reason);
+bool EnterFreeCamera();
+void ApplyFreeCamera();
+void PumpFreeCameraRequests();
 
 void PumpFreeCameraControl() {
     const bool allowed = g_free_camera_enabled.load(std::memory_order_acquire) &&
@@ -737,6 +768,7 @@ void PumpFreeCameraControl() {
             }
         }
     }
+    PumpFreeCameraRequests();
 }
 
 void PumpFreeCamera() {
@@ -1003,6 +1035,7 @@ void* FindModelTransform() {
 }
 
 #include "first_person_runtime.inc"
+#include "free_camera_runtime.inc"
 
 void ReleaseHeadTransform() {
     if (g_first_person.head_handle && g_host && g_host->gchandle_free) {
@@ -1376,12 +1409,22 @@ void PumpFirstPerson() {
     }
 }
 
+// Time.unscaledDeltaTime keeps being read while Time.timeScale is 0, so it is
+// the heartbeat for the hotkeys and for the free camera while the world is
+// frozen. The guard stops managed calls made from here from re-entering.
+thread_local bool t_in_heartbeat = false;
+
 float __fastcall DetourTimeUnscaledDelta(void* method) {
     const float result = g_original_time_unscaled_delta
         ? g_original_time_unscaled_delta(method)
         : 0.0f;
-    if (g_time_heartbeat_contract_ready) {
+    if (g_time_heartbeat_contract_ready && !t_in_heartbeat) {
+        t_in_heartbeat = true;
         PumpFreeCameraControl();
+        if (g_free_camera_active) {
+            ApplyFreeCameraHeartbeat();
+        }
+        t_in_heartbeat = false;
     }
     return result;
 }
@@ -1390,6 +1433,9 @@ void __fastcall DetourPushState(void* instance, void* state, void* method) {
     g_push_state_calls.fetch_add(1, std::memory_order_relaxed);
     if (state && g_first_person_active.load(std::memory_order_acquire)) {
         ApplyFirstPersonState(state);
+    } else if (state && g_free_camera_active && g_state_layout.ready &&
+        BrainDrivesActiveCamera(instance)) {
+        ApplyFreeCameraState(state);
     }
     if (g_original_push_state) {
         g_original_push_state(instance, state, method);
@@ -1488,6 +1534,25 @@ int ParseVirtualKey(std::string_view value, int fallback) {
     return fallback;
 }
 
+int ParseMotionPreset(std::string_view value, int fallback) {
+    std::string text = Trim(value);
+    std::transform(text.begin(), text.end(), text.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    if (text == "orbit") return 0;
+    if (text == "dolly_zoom" || text == "dolly") return 1;
+    if (text == "crane") return 2;
+    if (text == "truck" || text == "pan") return 3;
+    return fallback;
+}
+
+std::string Unquote(std::string_view value) {
+    std::string text = Trim(value);
+    if (text.size() >= 2 && text.front() == '"' && text.back() == '"') {
+        text = text.substr(1, text.size() - 2);
+    }
+    return text;
+}
+
 CameraConfiguration ParseConfiguration(const char* raw_configuration) {
     CameraConfiguration config;
     if (!raw_configuration) {
@@ -1527,12 +1592,46 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
         else if (key == "toggle_hotkey") config.toggle_key = ParseVirtualKey(value, config.toggle_key);
         else if (key == "pause_hotkey") config.pause_key = ParseVirtualKey(value, config.pause_key);
         else if (key == "first_person_hotkey") config.first_person_key = ParseVirtualKey(value, config.first_person_key);
+        else if (key == "free_camera_mouse_look") config.mouse_look = ParseBoolean(value, config.mouse_look);
+        else if (key == "mouse_invert_y") config.mouse_invert_y = ParseBoolean(value, config.mouse_invert_y);
+        else if (key == "mouse_sensitivity") config.mouse_sensitivity = ParseFloat(value, config.mouse_sensitivity);
+        else if (key == "free_camera_smoothing") config.smoothing = ParseFloat(value, config.smoothing);
+        else if (key == "motion_preset") config.motion_preset = ParseMotionPreset(value, config.motion_preset);
+        else if (key == "motion_speed") config.motion_speed = ParseFloat(value, config.motion_speed);
+        else if (key == "orbit_speed") config.orbit_speed = ParseFloat(value, config.orbit_speed);
+        else if (key == "motion_duration") config.motion_duration = ParseFloat(value, config.motion_duration);
+        else if (key == "motion_target_height") config.motion_target_height = ParseFloat(value, config.motion_target_height);
+        else if (key == "keyframe_segment_seconds") config.keyframe_segment_seconds = ParseFloat(value, config.keyframe_segment_seconds);
+        else if (key == "keyframe_loop") config.keyframe_loop = ParseBoolean(value, config.keyframe_loop);
+        else if (key == "vmd_camera_file") config.vmd_camera_file = Unquote(value);
+        else if (key == "vmd_camera_scale") config.vmd_camera_scale = ParseFloat(value, config.vmd_camera_scale);
+        else if (key == "vmd_camera_fov_bias") config.vmd_camera_fov_bias = ParseFloat(value, config.vmd_camera_fov_bias);
+        else if (key == "vmd_camera_loop") config.vmd_camera_loop = ParseBoolean(value, config.vmd_camera_loop);
+        else if (key == "roll_left_hotkey") config.roll_left_key = ParseVirtualKey(value, config.roll_left_key);
+        else if (key == "roll_right_hotkey") config.roll_right_key = ParseVirtualKey(value, config.roll_right_key);
+        else if (key == "fov_wide_hotkey") config.fov_wide_key = ParseVirtualKey(value, config.fov_wide_key);
+        else if (key == "fov_narrow_hotkey") config.fov_narrow_key = ParseVirtualKey(value, config.fov_narrow_key);
+        else if (key == "view_reset_hotkey") config.view_reset_key = ParseVirtualKey(value, config.view_reset_key);
+        else if (key == "motion_hotkey") config.motion_key = ParseVirtualKey(value, config.motion_key);
+        else if (key == "keyframe_add_hotkey") config.keyframe_add_key = ParseVirtualKey(value, config.keyframe_add_key);
+        else if (key == "keyframe_play_hotkey") config.keyframe_play_key = ParseVirtualKey(value, config.keyframe_play_key);
+        else if (key == "keyframe_clear_hotkey") config.keyframe_clear_key = ParseVirtualKey(value, config.keyframe_clear_key);
+        else if (key == "vmd_play_hotkey") config.vmd_play_key = ParseVirtualKey(value, config.vmd_play_key);
     }
     config.movement_speed = std::clamp(config.movement_speed, 0.5f, 100.0f);
     config.field_of_view = std::clamp(config.field_of_view, 20.0f, 120.0f);
     config.first_person_fov = std::clamp(config.first_person_fov, 20.0f, 120.0f);
     config.first_person_neck_plug_scale =
         std::clamp(config.first_person_neck_plug_scale, 0.2f, 3.0f);
+    config.mouse_sensitivity = std::clamp(config.mouse_sensitivity, 0.01f, 2.0f);
+    config.smoothing = std::clamp(config.smoothing, 0.0f, 0.95f);
+    config.motion_speed = std::clamp(config.motion_speed, -20.0f, 20.0f);
+    config.orbit_speed = std::clamp(config.orbit_speed, -180.0f, 180.0f);
+    config.motion_duration = std::clamp(config.motion_duration, 0.0f, 600.0f);
+    config.motion_target_height = std::clamp(config.motion_target_height, -5.0f, 5.0f);
+    config.keyframe_segment_seconds = std::clamp(config.keyframe_segment_seconds, 0.2f, 60.0f);
+    config.vmd_camera_scale = std::clamp(config.vmd_camera_scale, 0.001f, 10.0f);
+    config.vmd_camera_fov_bias = std::clamp(config.vmd_camera_fov_bias, -60.0f, 60.0f);
     return config;
 }
 
@@ -1633,7 +1732,8 @@ bool ResolveContracts() {
         ready("unity.transform.position.get") &&
         ready("unity.transform.position.set") &&
         ready("unity.transform.forward") && ready("unity.transform.right") &&
-        ready("unity.transform.up") && ready("unity.time.scale.get") &&
+        ready("unity.transform.up") && ready("unity.transform.rotation.set") &&
+        ready("unity.time.scale.get") &&
         ready("unity.time.scale.set");
     g_time_heartbeat_contract_ready = ready("unity.time.unscaled_delta.get");
     g_first_person_contract_ready =
@@ -1775,6 +1875,35 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
     g_toggle_key.store(config.toggle_key, std::memory_order_release);
     g_pause_key.store(config.pause_key, std::memory_order_release);
     g_first_person_key.store(config.first_person_key, std::memory_order_release);
+    g_mouse_look_enabled.store(config.mouse_look, std::memory_order_release);
+    g_mouse_invert_y.store(config.mouse_invert_y, std::memory_order_release);
+    g_mouse_sensitivity.store(config.mouse_sensitivity, std::memory_order_release);
+    g_free_smoothing.store(config.smoothing, std::memory_order_release);
+    g_motion_preset.store(config.motion_preset, std::memory_order_release);
+    g_motion_speed.store(config.motion_speed, std::memory_order_release);
+    g_orbit_speed.store(config.orbit_speed, std::memory_order_release);
+    g_motion_duration.store(config.motion_duration, std::memory_order_release);
+    g_motion_target_height.store(config.motion_target_height, std::memory_order_release);
+    g_keyframe_segment_seconds.store(config.keyframe_segment_seconds,
+        std::memory_order_release);
+    g_keyframe_loop.store(config.keyframe_loop, std::memory_order_release);
+    g_vmd_camera_scale.store(config.vmd_camera_scale, std::memory_order_release);
+    g_vmd_camera_fov_bias.store(config.vmd_camera_fov_bias, std::memory_order_release);
+    g_vmd_camera_loop.store(config.vmd_camera_loop, std::memory_order_release);
+    {
+        std::lock_guard<std::mutex> lock(g_vmd_path_mutex);
+        g_vmd_camera_file = config.vmd_camera_file;
+    }
+    g_roll_left_key.store(config.roll_left_key, std::memory_order_release);
+    g_roll_right_key.store(config.roll_right_key, std::memory_order_release);
+    g_fov_wide_key.store(config.fov_wide_key, std::memory_order_release);
+    g_fov_narrow_key.store(config.fov_narrow_key, std::memory_order_release);
+    g_view_reset_key.store(config.view_reset_key, std::memory_order_release);
+    g_motion_key.store(config.motion_key, std::memory_order_release);
+    g_keyframe_add_key.store(config.keyframe_add_key, std::memory_order_release);
+    g_keyframe_play_key.store(config.keyframe_play_key, std::memory_order_release);
+    g_keyframe_clear_key.store(config.keyframe_clear_key, std::memory_order_release);
+    g_vmd_play_key.store(config.vmd_play_key, std::memory_order_release);
 
     if (was_free && !free_camera) {
         g_force_exit_request.store(true, std::memory_order_release);
@@ -1800,6 +1929,15 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
         anti_dither ? "true" : "false",
         config.pause_enabled ? "true" : "false", config.toggle_key,
         config.first_person_key, config.first_person_fov);
+    Log(buffer);
+    std::snprintf(buffer, sizeof(buffer),
+        "Free camera extras: mouse_look=%s, sensitivity=%.2f, smoothing=%.2f, "
+        "motion_preset=%d, motion_speed=%.2f, orbit_speed=%.1f, keyframe_segment=%.1f, "
+        "vmd_file=%s, vmd_scale=%.3f",
+        config.mouse_look ? "true" : "false", config.mouse_sensitivity,
+        config.smoothing, config.motion_preset, config.motion_speed,
+        config.orbit_speed, config.keyframe_segment_seconds,
+        config.vmd_camera_file.empty() ? "<none>" : "set", config.vmd_camera_scale);
     Log(buffer);
     return BE_Result_Ok;
 }
@@ -1830,7 +1968,7 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Camera Enhancements", "1.5.0", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Camera Enhancements", "1.6.0", BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};

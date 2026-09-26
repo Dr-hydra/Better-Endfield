@@ -5,7 +5,7 @@
   "name": "提弗洛斯",
   "platform": "windows-x64",
   "profile_id": "chr_0034_typhoea-pc",
-  "revision": "20260920-identities1",
+  "revision": "20260926-bem12-cloth01",
   "verified": true,
   "world_resource": "chr_0034_typhoea_postmodel",
   "ui_resource": "chr_0034_typhoea_uimodel",
@@ -2613,6 +2613,261 @@
           }
         }
       }
+    },
+    "13": {
+      "mesh_name": "S_actor_typhoea_cloth_01_lod0",
+      "original_index_count": 94791,
+      "bone_names": [
+        "Bip001_RThighTwist1",
+        "Bip001_R_Thigh",
+        "Bip001_RThighTwist",
+        "Bip001_L_Clavicle",
+        "Bip001_L_UpperArm_corrective_ty_minus",
+        "Bip001_Neck",
+        "Bip001_Spine2",
+        "Bip001_R_Clavicle",
+        "Bip001_Pelvis",
+        "Bip001_Spine",
+        "Bip001_Spine1",
+        "Bip001_LThighTwist",
+        "Bip001_L_Thigh_corrective_tz_minus",
+        "Bip001_L_Thigh_corrective_ty_plus",
+        "Bip001_L_Thigh_corrective_ty_minus",
+        "Bip001_LThighTwist1",
+        "Bip001_R_Thigh_corrective_ty_plus",
+        "Bip001_R_Thigh_corrective_tz_minus",
+        "Bip001_R_Thigh_corrective_ty_minus",
+        "cloth_R_cuff_b_01_jnt",
+        "cloth_R_cuff_c_01_jnt",
+        "cloth_R_cuff_c_02_jnt",
+        "cloth_R_cuff_d_01_jnt",
+        "cloth_R_UpperArm_c_01_jnt",
+        "skirt_base_L_c_03_jnt",
+        "skirt_base_M_a_03_jnt",
+        "skirt_base_L_c_02_jnt",
+        "skirt_base_L_a_03_jnt",
+        "skirt_base_L_a_02_jnt",
+        "skirt_base_L_b_03_jnt",
+        "skirt_base_L_b_02_jnt",
+        "skirt_base_M_a_02_jnt",
+        "acc_M_pouch_a_01_jnt",
+        "cloth_R_UpperArm_a_01_jnt",
+        "cloth_R_sleeve_b_01_jnt",
+        "cloth_R_sleeve_c_01_jnt",
+        "cloth_R_sleeve_d_01_jnt",
+        "cloth_R_sleeve_a_01_jnt",
+        "cloth_R_cuff_e_01_jnt",
+        "cloth_R_cuff_d_02_jnt",
+        "cloth_R_cuff_e_02_jnt",
+        "cloth_R_cuff_b_02_jnt",
+        "Bip001_R_Forearm_corrective_ty_minus",
+        "Bip001_L_Foot",
+        "Bip001_L_Toe0",
+        "Bip001_RCalfTwist1",
+        "Bip001_RCalfTwist",
+        "Bip001_R_Calf",
+        "Bip001_R_Foot",
+        "Bip001_R_Foot_corrective_ty_minus",
+        "Bip001_R_Foot_corrective_ty_plus",
+        "Bip001_R_Toe0",
+        "Bip001_Head",
+        "cloth_R_bag_a_01_jnt",
+        "cloth_R_bag_a_02_jnt",
+        "cloth_L_sleeve_b_01_jnt",
+        "cloth_L_UpperArm_c_01_jnt",
+        "cloth_L_sleeve_c_01_jnt",
+        "cloth_L_UpperArm_a_01_jnt",
+        "cloth_L_sleeve_d_01_jnt",
+        "cloth_L_sleeve_a_01_jnt",
+        "cloth_L_cuff_e_01_jnt",
+        "cloth_L_cuff_d_01_jnt",
+        "cloth_L_cuff_c_01_jnt",
+        "cloth_L_cuff_d_02_jnt",
+        "cloth_L_cuff_e_02_jnt",
+        "cloth_L_cuff_c_02_jnt",
+        "cloth_L_cuff_b_01_jnt",
+        "cloth_L_cuff_b_02_jnt",
+        "Bip001_L_Forearm_corrective_ty_minus",
+        "Bip001_L_Thigh",
+        "breast_base_R_a_01_jnt",
+        "breast_base_L_a_01_jnt",
+        "skirt_base_R_c_02_jnt",
+        "skirt_base_R_b_02_jnt",
+        "skirt_base_R_b_03_jnt",
+        "skirt_base_R_c_03_jnt",
+        "cloth_L_bag_a_01_jnt",
+        "cloth_L_bag_a_02_jnt",
+        "skirt_base_R_a_02_jnt",
+        "skirt_base_R_a_03_jnt",
+        "skirt_base_R_a_01_jnt",
+        "Bip001_R_UpperArm_corrective_ty_minus",
+        "Bip001_LCalfTwist1",
+        "Bip001_LCalfTwist",
+        "Bip001_L_Calf",
+        "skirt_base_L_a_01_jnt",
+        "Bip001_L_Foot_corrective_ty_minus",
+        "Bip001_L_Foot_corrective_ty_plus",
+        "Bip001_L_UpperArm_corrective_tz_plus",
+        "Bip001_LUpArmTwist",
+        "cloth_L_coat_c_01_jnt",
+        "cloth_L_coat_b_01_jnt",
+        "Bip001_L_UpperArm_corrective_ty_plus",
+        "cloth_L_coat_a_01_jnt",
+        "cloth_R_coat_a_01_jnt",
+        "Bip001_R_UpperArm_corrective_tz_plus",
+        "cloth_R_coat_c_01_jnt",
+        "Bip001_RUpArmTwist",
+        "cloth_R_coat_b_01_jnt",
+        "Bip001_R_UpperArm_corrective_ty_plus",
+        "Bip001_R_Calf_corrective_ty_minus",
+        "Bip001_R_Calf_corrective_ty_plus",
+        "Bip001_LUpArmTwist1",
+        "skirt_base_L_c_01_jnt",
+        "skirt_base_M_a_01_jnt",
+        "skirt_base_L_b_01_jnt",
+        "skirt_base_R_b_01_jnt",
+        "skirt_base_R_c_01_jnt",
+        "Bip001_RUpArmTwist1",
+        "hair_R_side_a_03_jnt",
+        "hair_R_side_a_04_jnt",
+        "hair_R_side_a_02_jnt",
+        "hair_R_side_a_01_jnt",
+        "Bip001_L_Calf_corrective_ty_minus",
+        "Bip001_L_Calf_corrective_ty_plus",
+        "hair_L_side_a_03_jnt",
+        "hair_L_side_a_02_jnt",
+        "hair_L_side_a_04_jnt",
+        "hair_L_side_a_01_jnt"
+      ],
+      "bone_name_aliases": [
+        {
+          "index": 24,
+          "resource": "world",
+          "name": "skirt_base_R_c_03_jnt"
+        }
+      ],
+      "materials": [
+        "M_actor_typhoea_cloth_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_typhoea_cloth_01_D",
+          "T_actor_typhoea_cloth_01_N",
+          "T_actor_common_cloth_04_RD",
+          "T_actor_wulfa_cloth_02_E",
+          "T_actor_typhoea_cloth_01_P",
+          "T_actor_typhoea_cloth_01_ST",
+          "T_actor_common_cloth_04_RS",
+          "T_pipe_water_noise_01"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_typhoea_cloth_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_typhoea_cloth_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_cloth_04_RD"
+          },
+          {
+            "property": "_EmissionMap",
+            "name": "T_actor_wulfa_cloth_02_E"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_typhoea_cloth_01_P"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_typhoea_cloth_01_ST"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_cloth_04_RS"
+          },
+          {
+            "property": "_VertexAnimationNoise",
+            "name": "T_pipe_water_noise_01"
+          }
+        ]
+      ],
+      "strides": [
+        40,
+        16,
+        32
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          3,
+          0
+        ],
+        [
+          2,
+          0,
+          4,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          0,
+          4,
+          2
+        ],
+        [
+          13,
+          10,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [],
+      "layout_verified": false,
+      "source_layout_supported": false,
+      "vertex_count": 23758,
+      "submeshes": [
+        {
+          "index_count": 94791,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 23758,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-73cdff303d049b85ecf099b3419f158a:4411933801208500242",
+        "world_ui": "offline-equivalent-with-bone-name-alias",
+        "layout": "offline serialized Mesh channels (uncompressed float layout, BEM 1.2 skin stride 32); no runtime sweep observation; runtime declaration check refuses a mismatch",
+        "bone_alias": "world skeleton names the joint under skirt_base_L_c_02_jnt \"skirt_base_R_c_03_jnt\" (its collider child is skirt_base_L_c_03_jnt_collider; local position equals UI skirt_base_L_c_03_jnt); canonical name is the UI one",
+        "world_renderer": "cab-f859e4fe0ae8ddbe9e3aac716c534e11:-663226771543666897",
+        "ui_renderer": "cab-154fc956a6f46a2d7f453e56128af022:-2971798094558078087"
+      }
     }
   },
   "entries": {
@@ -2627,7 +2882,8 @@
     "0b3895fa": 9,
     "ddc92b8b": 10,
     "c98b8957": 11,
-    "b6843935": 12
+    "b6843935": 12,
+    "a4bb34f9": 13
   },
   "textures": {
     "d4b51f22": {
@@ -4064,18 +4320,11 @@
     }
   },
   "mapping_status": "offline-resource-identities-partial",
-  "excluded_components": [
-    {
-      "mesh_name": "S_actor_typhoea_cloth_01_lod0",
-      "reasons": [
-        "world/UI bone path/order differs"
-      ]
-    }
-  ],
+  "excluded_components": [],
   "evidence": [
     "CUSTOM_MODEL_RUNTIME_SWEEP_20260919.md"
   ],
-  "note": "Native sweep plus offline identity join. EFMI identities recomputed from original game buffers and texture descriptors; custom source logic remains separate.",
+  "note": "Native sweep plus offline identity join. EFMI identities recomputed from original game buffers and texture descriptors; custom source logic remains separate. 2026-09-26: cloth_01 added for BEM 1.2 with a world bone name alias (index 24).",
   "entry_identity_evidence": {
     "0": {
       "mesh_id": "cab-68655008b9cb0e259477f69daccc30fb:-745475360072380908",
@@ -4172,6 +4421,14 @@
       "byte_width": 1236,
       "index_count": 618,
       "source_hash": "b6843935"
+    },
+    "13": {
+      "mesh_id": "cab-73cdff303d049b85ecf099b3419f158a:4411933801208500242",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 189582,
+      "index_count": 94791,
+      "source_hash": "a4bb34f9"
     }
   },
   "identity_issues": [

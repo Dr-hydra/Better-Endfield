@@ -102,6 +102,15 @@ def selected_draws(sec, name, *, static_constants=None):
             if not active: continue
             if m := re.fullmatch(r"(vb[0-3]|ib)\s*=\s*(?:ref\s+)?(Resource\S+)", line):
                 buffers[m[1]] = m[2]; continue
+            # Some EFMI exports spell the optional fourth vertex slot as an
+            # explicit alias (`vb3=vb0`).  It is safe only when vb0 has
+            # already been bound; normalize that alias to the same resource
+            # and let the downstream layout checks prove the rest.
+            if re.fullmatch(r"vb3\s*=\s*vb0", line, re.I):
+                if "vb0" not in buffers:
+                    raise ValueError("unsupported draw statement: vb3=vb0 before vb0 binding")
+                buffers["vb3"] = buffers["vb0"]
+                continue
             if m := re.fullmatch(r"(ps-t\d+|Resource\\RabbitFX\\\w+)\s*=\s*(?:ref\s+)?(Resource\S+)", line, re.I):
                 textures[m[1].lower()] = m[2]; continue
             if m := re.fullmatch(r"run\s*=\s*(\S+)", line):
@@ -173,7 +182,9 @@ def texture_overrides(sec):
     return result
 
 
-def convert(src, ini, profile):
+def convert(src, ini, profile, *, max_output_bytes=512 * 1024 * 1024):
+    if not 512 * 1024 * 1024 <= max_output_bytes <= 1024 * 1024 * 1024:
+        raise ValueError("Unsupported transient BEMPC25 carrier limit")
     if profile.get("schema") != 2 or not profile.get("evidence") or profile.get("verified") is not True:
         raise ValueError("requires verified schema=2 native profile with evidence")
     natives = {int(k): v for k, v in profile["components"].items()}
@@ -395,5 +406,5 @@ def convert(src, ini, profile):
         output.write(TEXTURE_ENTRY.pack(tex["width"], tex["height"], tex["mips"], len(tex["data"]), tex["format"],
                                        tex["srgb"], tex["format"], tex["srgb"], tex["mask"], pin, len(name), 2))
         output.write(name); output.write(tex["data"])
-    if len(output.getbuffer()) > 512 * 1024 * 1024: raise ValueError("BEM package too large")
+    if len(output.getbuffer()) > max_output_bytes: raise ValueError("BEM package too large")
     return output.getvalue(), {"version": 25, "components": summary, "textures": len(texture_entries)}

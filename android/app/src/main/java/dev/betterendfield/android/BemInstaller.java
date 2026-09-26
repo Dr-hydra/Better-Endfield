@@ -103,7 +103,11 @@ final class BemInstaller {
                         JSONObject latest=findEntry(previous,previousGeneration);
                         if(latest==null) throw new IOException("模型包已被替换，原配置保持不变");
                         result.put("enabled",latest.optBoolean("enabled",true));
-                        result.put("selected_appearance",latest.optString("selected_appearance",latest.getString("default_appearance")));
+                        if(result.optInt("bem_minor",0)>=1) {
+                            String saved=latest.optString("selected_options",result.getString("default_options"));
+                            try {result.put("selected_options",BemOptions.encode(BemOptions.parse(result,saved)));}
+                            catch(Exception removedChoice) {result.put("selected_options",result.getString("default_options"));}
+                        } else result.put("selected_appearance",latest.optString("selected_appearance",latest.getString("default_appearance")));
                     }
                     for(int i=0;i<previous.length();++i) {
                         JSONObject old=previous.getJSONObject(i);
@@ -189,11 +193,17 @@ final class BemInstaller {
             JSONObject change=changes.getJSONObject(i);
             JSONObject entry=findEntry(entries,change.getString("generation"));
             if(entry==null) throw new IOException("模型包列表已更新，请重新选择后保存");
-            String appearance=change.getString("appearance");boolean valid=false;
-            JSONArray choices=entry.getJSONArray("appearances");
-            for(int j=0;j<choices.length();++j) valid |= appearance.equals(choices.getString(j));
-            if(!valid) throw new IOException("无效的外观选项");
-            entry.put("selected_appearance",appearance).put("enabled",change.getBoolean("enabled"));
+            if(entry.optInt("bem_minor",0)>=1) {
+                String options=BemOptions.encode(BemOptions.parse(entry,change.getString("options")));
+                entry.put("selected_options",options);
+            } else {
+                String appearance=change.getString("appearance");boolean valid=false;
+                JSONArray choices=entry.getJSONArray("appearances");
+                for(int j=0;j<choices.length();++j) valid |= appearance.equals(choices.getString(j));
+                if(!valid) throw new IOException("无效的外观选项");
+                entry.put("selected_appearance",appearance);
+            }
+            entry.put("enabled",change.getBoolean("enabled"));
         }
         if(!FrameworkSettings.open(app).edit().putString(INDEX,entries.toString()).commit()) throw new IOException("保存失败");
     }

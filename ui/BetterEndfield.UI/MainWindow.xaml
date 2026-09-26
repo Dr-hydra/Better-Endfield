@@ -1253,7 +1253,7 @@
                                     x:Name="CameraFreeInfoBar"
                                     IsClosable="False"
                                     IsOpen="True"
-                                    Message="启用后按设置的热键进入或退出。方向键前后左右移动，PageUp/PageDown 升降；视角旋转继续使用游戏原生鼠标控制。切换场景或主相机时会自动退出。"
+                                    Message="启用后按设置的热键进入或退出。鼠标转向，方向键前后左右移动，PageUp/PageDown 升降，Shift 加速、Ctrl 减速；冻结时间后仍可移动。切换场景或主相机时会自动退出。"
                                     Severity="Informational"
                                     Title="自由视角操作" />
 
@@ -1264,7 +1264,7 @@
                                             <TextBlock
                                                 x:Name="CameraFreeSectionHint"
                                                 Style="{StaticResource FieldHintStyle}"
-                                                Text="进入时捕获主相机的位置和视野，退出后恢复原值。模块只接管相机位置，鼠标旋转仍由游戏原生相机逻辑处理。"
+                                                Text="进入时捕获主相机的位置、朝向和视野，退出后恢复原值。自由视角期间位置和朝向都由模块控制，不受时间冻结影响。"
                                                 TextWrapping="Wrap" />
                                         </StackPanel>
                                         <ToggleSwitch
@@ -1323,6 +1323,182 @@
                                                 Value="60"
                                                 ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
                                         </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="18">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Name="CameraMotionSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="运镜与镜头导入" />
+                                            <TextBlock
+                                                x:Name="CameraMotionSectionHint"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="自由视角中可用。默认小键盘热键（需开启 NumLock）：7/9 滚转，1/3 缩放视野，5 复位滚转和视野，8 开始/停止运镜，0 记录关键帧，2 播放/停止关键帧，4 清空关键帧，6 播放/停止 VMD 镜头（未进入自由视角时会自动进入）。滚轮也可缩放视野。热键可在配置文件中修改。"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ToggleSwitch
+                                            x:Name="FreeCameraMouseLookToggle"
+                                            Header="鼠标转向"
+                                            OffContent="关闭"
+                                            OnContent="自由视角中用鼠标转动镜头"
+                                            IsOn="True"
+                                            Toggled="CameraEnhancementToggle_Toggled" />
+                                        <ToggleSwitch
+                                            x:Name="FreeCameraInvertYToggle"
+                                            Header="反转鼠标上下"
+                                            OffContent="不反转"
+                                            OnContent="反转"
+                                            Toggled="CameraEnhancementToggle_Toggled" />
+                                        <Grid ColumnSpacing="12" RowSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <NumberBox
+                                                x:Name="FreeCameraMouseSensitivityNumberBox"
+                                                Header="鼠标灵敏度（度/像素）"
+                                                Minimum="0.01"
+                                                Maximum="2"
+                                                SmallChange="0.01"
+                                                SpinButtonPlacementMode="Compact"
+                                                Value="0.1"
+                                                ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                            <NumberBox
+                                                x:Name="FreeCameraSmoothingNumberBox"
+                                                Grid.Column="1"
+                                                Header="镜头平滑（%，0 为关闭）"
+                                                Minimum="0"
+                                                Maximum="95"
+                                                SmallChange="5"
+                                                SpinButtonPlacementMode="Compact"
+                                                Value="30"
+                                                ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                            <ComboBox
+                                                x:Name="MotionPresetComboBox"
+                                                Grid.Row="1"
+                                                HorizontalAlignment="Stretch"
+                                                Header="运镜类型"
+                                                SelectedIndex="0"
+                                                SelectionChanged="MotionPresetComboBox_SelectionChanged">
+                                                <ComboBoxItem Content="环绕角色" />
+                                                <ComboBoxItem Content="推拉变焦（希区柯克）" />
+                                                <ComboBoxItem Content="升降（看向角色）" />
+                                                <ComboBoxItem Content="横向平移" />
+                                            </ComboBox>
+                                            <NumberBox
+                                                x:Name="MotionSpeedNumberBox"
+                                                Grid.Row="1"
+                                                Grid.Column="1"
+                                                Header="推拉/升降/平移速度（米/秒，可为负）"
+                                                Minimum="-20"
+                                                Maximum="20"
+                                                SmallChange="0.1"
+                                                SpinButtonPlacementMode="Compact"
+                                                Value="1"
+                                                ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                            <NumberBox
+                                                x:Name="OrbitSpeedNumberBox"
+                                                Grid.Row="2"
+                                                Header="环绕速度（度/秒，负数反向）"
+                                                Minimum="-180"
+                                                Maximum="180"
+                                                SmallChange="5"
+                                                SpinButtonPlacementMode="Compact"
+                                                Value="20"
+                                                ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                            <NumberBox
+                                                x:Name="MotionDurationNumberBox"
+                                                Grid.Row="2"
+                                                Grid.Column="1"
+                                                Header="运镜时长（秒，0 为不限）"
+                                                Minimum="0"
+                                                Maximum="600"
+                                                SmallChange="1"
+                                                SpinButtonPlacementMode="Compact"
+                                                Value="0"
+                                                ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                            <NumberBox
+                                                x:Name="MotionTargetHeightNumberBox"
+                                                Grid.Row="3"
+                                                Header="注视点高度（米，相对角色脚底）"
+                                                Minimum="-5"
+                                                Maximum="5"
+                                                SmallChange="0.1"
+                                                SpinButtonPlacementMode="Compact"
+                                                Value="1.2"
+                                                ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                            <NumberBox
+                                                x:Name="KeyframeSegmentNumberBox"
+                                                Grid.Row="3"
+                                                Grid.Column="1"
+                                                Header="关键帧间隔（秒）"
+                                                Minimum="0.2"
+                                                Maximum="60"
+                                                SmallChange="0.5"
+                                                SpinButtonPlacementMode="Compact"
+                                                Value="3"
+                                                ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                        </Grid>
+                                        <ToggleSwitch
+                                            x:Name="KeyframeLoopToggle"
+                                            Header="关键帧循环播放"
+                                            OffContent="播放一次（首尾缓动）"
+                                            OnContent="循环播放"
+                                            Toggled="CameraEnhancementToggle_Toggled" />
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox
+                                                x:Name="VmdCameraFileBox"
+                                                Header="VMD 镜头文件"
+                                                LostFocus="VmdCameraFileBox_LostFocus"
+                                                PlaceholderText="选择 MMD 镜头 .vmd 文件" />
+                                            <Button
+                                                x:Name="VmdCameraBrowseButton"
+                                                Grid.Column="1"
+                                                VerticalAlignment="Bottom"
+                                                Click="VmdCameraBrowseButton_Click"
+                                                Content="浏览" />
+                                        </Grid>
+                                        <Grid ColumnSpacing="12" RowSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <NumberBox
+                                                x:Name="VmdCameraScaleNumberBox"
+                                                Header="VMD 缩放（米/MMD 单位）"
+                                                Minimum="0.001"
+                                                Maximum="10"
+                                                SmallChange="0.005"
+                                                SpinButtonPlacementMode="Compact"
+                                                Value="0.07"
+                                                ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                            <NumberBox
+                                                x:Name="VmdCameraFovBiasNumberBox"
+                                                Grid.Column="1"
+                                                Header="VMD 视野修正（度）"
+                                                Minimum="-60"
+                                                Maximum="60"
+                                                SmallChange="1"
+                                                SpinButtonPlacementMode="Compact"
+                                                Value="5"
+                                                ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                        </Grid>
+                                        <ToggleSwitch
+                                            x:Name="VmdCameraLoopToggle"
+                                            Header="VMD 镜头循环播放"
+                                            OffContent="播放一次"
+                                            OnContent="循环播放"
+                                            Toggled="CameraEnhancementToggle_Toggled" />
                                     </StackPanel>
                                 </Border>
 

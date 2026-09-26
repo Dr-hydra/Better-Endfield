@@ -17,7 +17,7 @@ MAX_PACKAGE = 2 * 1024**3
 def validated(path):
     from bem_tool import check_geometry
     m, payloads = bem.read_package(path)
-    check_geometry(m, payloads)
+    check_geometry(m, payloads, bem.package_minor(path) or None)
     return m, payloads
 
 
@@ -26,7 +26,7 @@ def pack_project(source, output):
     project = bem.load_json(source)
     root = source.parent.resolve()
     payloads, total = [], 0
-    bem.require(len(project['payload_files']) <= 4096, 'Too many payload files')
+    bem.require(len(project['payload_files']) <= 16384, 'Too many payload files')
     for name in project['payload_files']:
         rel = PurePosixPath(name.replace('\\', '/'))
         bem.require(not rel.is_absolute() and '..' not in rel.parts and ':' not in name, 'Payload path must stay inside project')
@@ -41,7 +41,9 @@ def pack_project(source, output):
     bem.validate_manifest(project['manifest'], len(payloads))
     check_geometry(project['manifest'], payloads)
     bem.write_package(output, project['manifest'], payloads)
-    return dict(package=project['manifest'], conversion_ready=True, size=output.stat().st_size)
+    from bem_tool import FORMAT_VERSIONS
+    return dict(package=project['manifest'], conversion_ready=True, size=output.stat().st_size,
+                format_version=FORMAT_VERSIONS[bem.package_minor(output)])
 
 
 def unpack(source, output):
@@ -61,7 +63,9 @@ def unpack(source, output):
                 name = f'payloads/{i:04d}.bin'
                 (staging / name).write_bytes(raw); names.append(name)
             (staging / 'project.json').write_text(json.dumps(dict(manifest=m, payload_files=names), ensure_ascii=False, indent=2), encoding='utf-8')
-            result = dict(format='BEM-project', package=m, project='project.json', payload_count=len(names), issues=[])
+            from bem_tool import FORMAT_VERSIONS
+            result = dict(format='BEM-project', package=m, project='project.json', payload_count=len(names), issues=[],
+                          format_version=FORMAT_VERSIONS[bem.package_minor(source)])
         os.replace(staging, output)
     return dict(result, output=str(output))
 

@@ -2318,7 +2318,8 @@
     "96da0da8": 7,
     "fd10876c": 8,
     "9c51fcb7": 9,
-    "d5a9594f": 10
+    "d5a9594f": 10,
+    "1e3266c6": 5
   },
   "textures": {
     "3d22f6dc": {
@@ -3487,5 +3488,22 @@
     }
   },
   "identity_issues": [],
-  "identity_policy": "efmi-dx11-region-texture0-fullchain-v1"
+  "identity_policy": "efmi-dx11-region-texture0-fullchain-v1",
+  "legacy_source_aliases": {
+    "1e3266c6": {
+      "native_component": 5,
+      "canonical_catalog_identity": "14530240",
+      "evidence_file": "F:\\zmd_bem\\research\\identities\\verified-legacy-aliases.json",
+      "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+      "task_ids": [
+        "M0050",
+        "M0052",
+        "M0053",
+        "M0058",
+        "M0061",
+        "M0063"
+      ],
+      "note": "Legacy EFMI hash alias for S_actor_azrila_eyeShadow_01_lod0; exact IB/VB0 anchor."
+    }
+  }
 }

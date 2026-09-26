@@ -93,6 +93,7 @@ public sealed partial class MainWindow : Window
     };
 
     private bool _initializing = true;
+    private FreeCameraExtras _freeCameraExtras = new();
     private string _durationLogPath = string.Empty;
     private DateTime _durationLogWriteUtc;
     private readonly ObservableCollection<VoiceRuleEntry> _voiceRules = [];
@@ -348,6 +349,125 @@ public sealed partial class MainWindow : Window
         await SaveCameraEnhancementAsync();
     }
 
+    private async void MotionPresetComboBox_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        await SaveCameraEnhancementAsync();
+    }
+
+    private async void VmdCameraFileBox_LostFocus(object sender, RoutedEventArgs e)
+    {
+        await SaveCameraEnhancementAsync();
+    }
+
+    private async void VmdCameraBrowseButton_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = new FileOpenPicker
+        {
+            SuggestedStartLocation = PickerLocationId.ComputerFolder
+        };
+        picker.FileTypeFilter.Add(".vmd");
+        WinRT.Interop.InitializeWithWindow.Initialize(
+            picker,
+            WinRT.Interop.WindowNative.GetWindowHandle(this));
+        Windows.Storage.StorageFile? file = await picker.PickSingleFileAsync();
+        if (file is null)
+        {
+            return;
+        }
+        VmdCameraFileBox.Text = file.Path;
+        await SaveCameraEnhancementAsync();
+    }
+
+    // Everything except the hotkeys comes from the camera page; hotkeys keep the
+    // values loaded from the configuration file.
+    private FreeCameraExtras ReadFreeCameraExtras()
+    {
+        static double Value(NumberBox numberBox, double fallback) =>
+            double.IsFinite(numberBox.Value) ? numberBox.Value : fallback;
+        FreeCameraExtras extras = _freeCameraExtras;
+        extras.MouseLook = FreeCameraMouseLookToggle.IsOn;
+        extras.MouseInvertY = FreeCameraInvertYToggle.IsOn;
+        extras.MouseSensitivity = Value(FreeCameraMouseSensitivityNumberBox, 0.1);
+        extras.Smoothing = Value(FreeCameraSmoothingNumberBox, 30.0) / 100.0;
+        int preset = MotionPresetComboBox.SelectedIndex;
+        extras.MotionPreset = FreeCameraExtras.MotionPresets[
+            preset >= 0 && preset < FreeCameraExtras.MotionPresets.Length ? preset : 0];
+        extras.MotionSpeed = Value(MotionSpeedNumberBox, 1.0);
+        extras.OrbitSpeed = Value(OrbitSpeedNumberBox, 20.0);
+        extras.MotionDuration = Value(MotionDurationNumberBox, 0.0);
+        extras.MotionTargetHeight = Value(MotionTargetHeightNumberBox, 1.2);
+        extras.KeyframeSegmentSeconds = Value(KeyframeSegmentNumberBox, 3.0);
+        extras.KeyframeLoop = KeyframeLoopToggle.IsOn;
+        extras.VmdCameraFile = VmdCameraFileBox.Text.Trim().Trim('"');
+        extras.VmdCameraScale = Value(VmdCameraScaleNumberBox, 0.07);
+        extras.VmdCameraFovBias = Value(VmdCameraFovBiasNumberBox, 5.0);
+        extras.VmdCameraLoop = VmdCameraLoopToggle.IsOn;
+        return extras;
+    }
+
+    private void ApplyFreeCameraExtras(FreeCameraExtras extras)
+    {
+        _freeCameraExtras = extras;
+        FreeCameraMouseLookToggle.IsOn = extras.MouseLook;
+        FreeCameraInvertYToggle.IsOn = extras.MouseInvertY;
+        FreeCameraMouseSensitivityNumberBox.Value = extras.MouseSensitivity;
+        FreeCameraSmoothingNumberBox.Value = extras.Smoothing * 100.0;
+        MotionPresetComboBox.SelectedIndex = Math.Max(0,
+            Array.IndexOf(FreeCameraExtras.MotionPresets, extras.MotionPreset));
+        MotionSpeedNumberBox.Value = extras.MotionSpeed;
+        OrbitSpeedNumberBox.Value = extras.OrbitSpeed;
+        MotionDurationNumberBox.Value = extras.MotionDuration;
+        MotionTargetHeightNumberBox.Value = extras.MotionTargetHeight;
+        KeyframeSegmentNumberBox.Value = extras.KeyframeSegmentSeconds;
+        KeyframeLoopToggle.IsOn = extras.KeyframeLoop;
+        VmdCameraFileBox.Text = extras.VmdCameraFile;
+        VmdCameraScaleNumberBox.Value = extras.VmdCameraScale;
+        VmdCameraFovBiasNumberBox.Value = extras.VmdCameraFovBias;
+        VmdCameraLoopToggle.IsOn = extras.VmdCameraLoop;
+    }
+
+    private void LocalizeFreeCameraExtras(bool isZh)
+    {
+        CameraMotionSectionTitle.Text = isZh ? "运镜与镜头导入" : "Camera Moves & Import";
+        CameraMotionSectionHint.Text = isZh
+            ? "自由视角中可用。默认小键盘热键（需开启 NumLock）：7/9 滚转，1/3 缩放视野，5 复位滚转和视野，8 开始/停止运镜，0 记录关键帧，2 播放/停止关键帧，4 清空关键帧，6 播放/停止 VMD 镜头（未进入自由视角时会自动进入）。滚轮也可缩放视野。热键可在配置文件中修改。"
+            : "Available in the free camera. Default numpad hotkeys (NumLock on): 7/9 roll, 1/3 zoom, 5 reset roll and FOV, 8 start/stop the camera move, 0 record a keyframe, 2 play/stop keyframes, 4 clear keyframes, 6 play/stop the VMD camera (enters the free camera if needed). The mouse wheel also zooms. Hotkeys can be changed in the configuration file.";
+        FreeCameraMouseLookToggle.Header = isZh ? "鼠标转向" : "Mouse Look";
+        FreeCameraMouseLookToggle.OffContent = isZh ? "关闭" : "Disabled";
+        FreeCameraMouseLookToggle.OnContent = isZh ? "自由视角中用鼠标转动镜头" : "Turn the free camera with the mouse";
+        FreeCameraInvertYToggle.Header = isZh ? "反转鼠标上下" : "Invert Mouse Y";
+        FreeCameraInvertYToggle.OffContent = isZh ? "不反转" : "Normal";
+        FreeCameraInvertYToggle.OnContent = isZh ? "反转" : "Inverted";
+        FreeCameraMouseSensitivityNumberBox.Header = isZh ? "鼠标灵敏度（度/像素）" : "Mouse Sensitivity (degrees/pixel)";
+        FreeCameraSmoothingNumberBox.Header = isZh ? "镜头平滑（%，0 为关闭）" : "Camera Smoothing (%, 0 = off)";
+        MotionPresetComboBox.Header = isZh ? "运镜类型" : "Camera Move";
+        string[] presets = isZh
+            ? ["环绕角色", "推拉变焦（希区柯克）", "升降（看向角色）", "横向平移"]
+            : ["Orbit the character", "Dolly zoom", "Crane (looking at the character)", "Truck (sideways)"];
+        for (int index = 0; index < presets.Length && index < MotionPresetComboBox.Items.Count; index++)
+        {
+            if (MotionPresetComboBox.Items[index] is ComboBoxItem item) item.Content = presets[index];
+        }
+        MotionSpeedNumberBox.Header = isZh ? "推拉/升降/平移速度（米/秒，可为负）" : "Dolly/Crane/Truck Speed (m/s, may be negative)";
+        OrbitSpeedNumberBox.Header = isZh ? "环绕速度（度/秒，负数反向）" : "Orbit Speed (degrees/s, negative reverses)";
+        MotionDurationNumberBox.Header = isZh ? "运镜时长（秒，0 为不限）" : "Move Duration (s, 0 = unlimited)";
+        MotionTargetHeightNumberBox.Header = isZh ? "注视点高度（米，相对角色脚底）" : "Target Height (m above the character's feet)";
+        KeyframeSegmentNumberBox.Header = isZh ? "关键帧间隔（秒）" : "Keyframe Interval (s)";
+        KeyframeLoopToggle.Header = isZh ? "关键帧循环播放" : "Loop Keyframes";
+        KeyframeLoopToggle.OffContent = isZh ? "播放一次（首尾缓动）" : "Play once (eased)";
+        KeyframeLoopToggle.OnContent = isZh ? "循环播放" : "Loop";
+        VmdCameraFileBox.Header = isZh ? "VMD 镜头文件" : "VMD Camera File";
+        VmdCameraFileBox.PlaceholderText = isZh ? "选择 MMD 镜头 .vmd 文件" : "Choose an MMD camera .vmd file";
+        VmdCameraBrowseButton.Content = isZh ? "浏览" : "Browse";
+        VmdCameraScaleNumberBox.Header = isZh ? "VMD 缩放（米/MMD 单位）" : "VMD Scale (m per MMD unit)";
+        VmdCameraFovBiasNumberBox.Header = isZh ? "VMD 视野修正（度）" : "VMD FOV Offset (degrees)";
+        VmdCameraLoopToggle.Header = isZh ? "VMD 镜头循环播放" : "Loop the VMD Camera";
+        VmdCameraLoopToggle.OffContent = isZh ? "播放一次" : "Play once";
+        VmdCameraLoopToggle.OnContent = isZh ? "循环播放" : "Loop";
+    }
+
     private async void FreeCameraHotkeyBox_LostFocus(
         object sender,
         RoutedEventArgs e)
@@ -470,7 +590,8 @@ public sealed partial class MainWindow : Window
                 firstPersonHotkey,
                 Value(FirstPersonFieldOfViewNumberBox, 75.0),
                 FirstPersonNeckPlugToggle.IsOn,
-                Value(FirstPersonNeckPlugScaleNumberBox, 100.0) / 100.0);
+                Value(FirstPersonNeckPlugScaleNumberBox, 100.0) / 100.0,
+                ReadFreeCameraExtras());
             ShowStatus(
                 "相机增强设置已更新",
                 $"配置已保存；按 {toggleHotkey} 自由视角，按 {pauseHotkey} 冻结世界，按 {firstPersonHotkey} 第一人称。",
@@ -2373,7 +2494,8 @@ public sealed partial class MainWindow : Window
             FirstPersonHotkey = firstPersonHotkey,
             FirstPersonFieldOfView = FirstPersonFieldOfViewNumberBox.Value,
             FirstPersonFillNeckHole = FirstPersonNeckPlugToggle.IsOn,
-            FirstPersonNeckPlugScale = FirstPersonNeckPlugScaleNumberBox.Value / 100.0
+            FirstPersonNeckPlugScale = FirstPersonNeckPlugScaleNumberBox.Value / 100.0,
+            FreeCameraExtras = ReadFreeCameraExtras()
         };
         return true;
     }
@@ -2452,6 +2574,7 @@ public sealed partial class MainWindow : Window
         FirstPersonFieldOfViewNumberBox.Value = configuration.FirstPersonFieldOfView;
         FirstPersonNeckPlugToggle.IsOn = configuration.FirstPersonFillNeckHole;
         FirstPersonNeckPlugScaleNumberBox.Value = configuration.FirstPersonNeckPlugScale * 100.0;
+        ApplyFreeCameraExtras(configuration.FreeCameraExtras);
 
         _initializing = wasInitializing;
         UpdateCrossfadePanel();
@@ -3516,12 +3639,12 @@ public sealed partial class MainWindow : Window
             : "Free camera control and visual tuning. Disabled by default; changes apply immediately.";
         CameraFreeInfoBar.Title = isZh ? "自由视角操作" : "Free Camera Controls";
         CameraFreeInfoBar.Message = isZh
-            ? "按自由视角热键进入或退出，按时间冻结热键冻结或恢复世界。方向键前后左右移动，PageUp/PageDown 升降；视角旋转继续使用游戏原生鼠标控制。切换场景或主相机时会自动退出。"
-            : "Use the free-camera hotkey to enter/exit and the pause hotkey to freeze/resume the world. Arrow keys move camera, PageUp/PageDown elevates; mouse rotates native view. Exits automatically on scene transitions.";
+            ? "按自由视角热键进入或退出，按时间冻结热键冻结或恢复世界。鼠标转向，方向键前后左右移动，PageUp/PageDown 升降，Shift 加速、Ctrl 减速；冻结时间后仍可移动。切换场景或主相机时会自动退出。"
+            : "Use the free-camera hotkey to enter/exit and the pause hotkey to freeze/resume the world. The mouse turns the camera, arrow keys move it, PageUp/PageDown change height, Shift/Ctrl change speed; it keeps moving while the world is frozen. Exits automatically on scene transitions.";
         CameraFreeSectionTitle.Text = isZh ? "自由视角" : "Free Camera";
         CameraFreeSectionHint.Text = isZh
-            ? "进入时捕获主相机的位置和视野，退出后恢复原值。模块只接管相机位置，鼠标旋转仍由游戏原生相机逻辑处理。"
-            : "Captures main camera transform on entry and restores on exit. Mod handles translation while mouse rotates.";
+            ? "进入时捕获主相机的位置、朝向和视野，退出后恢复原值。自由视角期间位置和朝向都由模块控制，不受时间冻结影响。"
+            : "Captures the main camera position, rotation and FOV on entry and restores them on exit. While active the mod controls both position and rotation, independent of the world time freeze.";
         FreeCameraToggle.Header = isZh ? "启用自由视角功能" : "Enable Free Camera";
         FreeCameraToggle.OffContent = isZh ? "关闭" : "Disabled";
         FreeCameraToggle.OnContent = isZh ? "允许热键切换" : "Enabled";
@@ -3551,6 +3674,7 @@ public sealed partial class MainWindow : Window
         FirstPersonHotkeyBox.Header = isZh ? "第一人称切换热键" : "First-Person Hotkey";
         FirstPersonHotkeyBox.PlaceholderText = isZh ? "默认 -（减号），支持 -、F7、NUMPAD-" : "Default - (minus), e.g. -, F7, NUMPAD-";
         FirstPersonFieldOfViewNumberBox.Header = isZh ? "第一人称视野（FOV）" : "First-Person Field of View";
+        LocalizeFreeCameraExtras(isZh);
         CameraVisualSectionTitle.Text = isZh ? "镜头画面" : "Visual & Occlusion";
         CameraVisualSectionHint.Text = isZh
             ? "调用游戏自身的清理逻辑，移除镜头贴近角色时出现的半透明虚化。"

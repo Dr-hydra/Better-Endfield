@@ -10,7 +10,7 @@ def main():
     repo = Path(__file__).resolve().parents[2]
     target = args.directory.resolve()
     if not (target/'BetterEndfield.BemConverter.exe').is_file(): raise ValueError('Build CLI first')
-    docs = ['BEM_V1_SPEC.md', 'BEM_CREATOR_GUIDE.md', 'BEM_CHARACTER_CATALOG_20260919.md', 'BEM_EFMI_IDENTITIES_20260920.md', 'BEM_PER_DRAW_COMPATIBILITY_20260920.md', 'BEM_RABBITFX_COMPATIBILITY_20260920.md']
+    docs = ['BEM_V1_SPEC.md', 'BEM_V1_1_SPEC.md', 'BEM_CREATOR_GUIDE.md', 'BEM_CHARACTER_CATALOG_20260919.md', 'BEM_EFMI_IDENTITIES_20260920.md', 'BEM_PER_DRAW_COMPATIBILITY_20260920.md', 'BEM_RABBITFX_COMPATIBILITY_20260920.md']
     (target/'docs').mkdir(exist_ok=True)
     for name in docs: shutil.copyfile(repo/'docs'/name, target/'docs'/name)
     shutil.copytree(repo/'tools/CustomModel/examples', target/'examples', dirs_exist_ok=True)
