@@ -19,6 +19,10 @@
 namespace BetterEndfield::Vmd {
 
 struct BoneKey {
+    // VMD stores the source name as a fixed-width byte string.  Keep those
+    // bytes instead of decoding them in the portable parser; the runtime can
+    // choose the correct managed-runtime encoding for the current platform.
+    std::string name;
     uint32_t frame = 0;
     std::array<float, 3> position{};
     std::array<float, 4> rotation{0.0f, 0.0f, 0.0f, 1.0f};
@@ -26,6 +30,7 @@ struct BoneKey {
 };
 
 struct MorphKey {
+    std::string name;
     uint32_t frame = 0;
     float weight = 0.0f;
 };
@@ -175,11 +180,39 @@ void SortAndKeepLast(std::vector<T>& keys) {
 }
 
 inline void SortAndUnique(std::vector<BoneKey>& keys) {
-    SortAndKeepLast(keys);
+    std::stable_sort(keys.begin(), keys.end(),
+        [](const BoneKey& a, const BoneKey& b) {
+            if (a.name != b.name) return a.name < b.name;
+            return a.frame < b.frame;
+        });
+    size_t output = 0;
+    for (size_t i = 0; i < keys.size();) {
+        size_t end = i + 1;
+        while (end < keys.size() && keys[end].name == keys[i].name &&
+            keys[end].frame == keys[i].frame) ++end;
+        if (output != end - 1) keys[output] = std::move(keys[end - 1]);
+        ++output;
+        i = end;
+    }
+    keys.resize(output);
 }
 
 inline void SortAndUnique(std::vector<MorphKey>& keys) {
-    SortAndKeepLast(keys);
+    std::stable_sort(keys.begin(), keys.end(),
+        [](const MorphKey& a, const MorphKey& b) {
+            if (a.name != b.name) return a.name < b.name;
+            return a.frame < b.frame;
+        });
+    size_t output = 0;
+    for (size_t i = 0; i < keys.size();) {
+        size_t end = i + 1;
+        while (end < keys.size() && keys[end].name == keys[i].name &&
+            keys[end].frame == keys[i].frame) ++end;
+        if (output != end - 1) keys[output] = std::move(keys[end - 1]);
+        ++output;
+        i = end;
+    }
+    keys.resize(output);
 }
 
 inline void SortAndUnique(std::vector<CameraKey>& keys) {
@@ -236,8 +269,7 @@ inline bool Parse(std::span<const uint8_t> bytes, Document& document, std::strin
     document.bones.reserve(count);
     for (uint32_t i = 0; i < count; ++i) {
         BoneKey key;
-        std::string ignored_name;
-        if (!reader.ReadFixedString(15, ignored_name) || !reader.ReadU32(key.frame) ||
+        if (!reader.ReadFixedString(15, key.name) || !reader.ReadU32(key.frame) ||
             !detail::ReadFloatArray(reader, key.position) ||
             !detail::ReadFloatArray(reader, key.rotation) ||
             !reader.ReadBytes(key.interpolation.data(), key.interpolation.size())) {
@@ -251,8 +283,7 @@ inline bool Parse(std::span<const uint8_t> bytes, Document& document, std::strin
     document.morphs.reserve(count);
     for (uint32_t i = 0; i < count; ++i) {
         MorphKey key;
-        std::string ignored_name;
-        if (!reader.ReadFixedString(15, ignored_name) || !reader.ReadU32(key.frame) ||
+        if (!reader.ReadFixedString(15, key.name) || !reader.ReadU32(key.frame) ||
             !reader.ReadFloat(key.weight)) {
             error = "truncated morph keyframe section";
             return false;

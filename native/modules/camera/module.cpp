@@ -1,4 +1,5 @@
 #include "BetterEndfield/ModuleApi.h"
+#include "BetterEndfield/vmd_motion.h"
 #include "BetterEndfield/vmd_parser.h"
 #include "first_person_mesh.h"
 #include "first_person_retry.h"
@@ -13,6 +14,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <mutex>
 #include <string>
 #include <string_view>
@@ -80,6 +82,10 @@ struct CameraConfiguration {
     int keyframe_play_key = VK_NUMPAD2;
     int keyframe_clear_key = VK_NUMPAD4;
     int vmd_play_key = VK_NUMPAD6;
+    std::string vmd_body_file;
+    float vmd_body_scale = 1.0f;
+    bool vmd_body_loop = false;
+    int vmd_body_play_key = VK_F8;
 };
 
 struct Vector3 {
@@ -156,6 +162,12 @@ std::atomic_int g_keyframe_add_key{VK_NUMPAD0};
 std::atomic_int g_keyframe_play_key{VK_NUMPAD2};
 std::atomic_int g_keyframe_clear_key{VK_NUMPAD4};
 std::atomic_int g_vmd_play_key{VK_NUMPAD6};
+std::mutex g_vmd_body_path_mutex;
+std::string g_vmd_body_file;
+std::atomic<float> g_vmd_body_scale{1.0f};
+std::atomic_bool g_vmd_body_loop{false};
+std::atomic_int g_vmd_body_play_key{VK_F8};
+std::atomic_bool g_vmd_body_play_request{false};
 
 using CameraTickFn = void(__fastcall*)(void* instance, void* method);
 CameraTickFn g_original_camera_tick = nullptr;
@@ -179,6 +191,7 @@ bool g_free_camera_contract_ready = false;
 bool g_dither_contract_ready = false;
 bool g_time_heartbeat_contract_ready = false;
 bool g_first_person_contract_ready = false;
+bool g_vmd_body_contract_ready = false;
 
 bool g_free_camera_active = false;
 std::atomic_bool g_toggle_request{false};
@@ -370,6 +383,18 @@ MethodContract g_contracts[]{
             nullptr, "UnityEngine.Quaternion", 0}},
     {"unity.transform.rotation.set",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Transform", "set_rotation",
+            "UnityEngine.Quaternion", "System.Void", 1}},
+    {"unity.transform.local_position.get",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Transform", "get_localPosition",
+            nullptr, "UnityEngine.Vector3", 0}},
+    {"unity.transform.local_position.set",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Transform", "set_localPosition",
+            "UnityEngine.Vector3", "System.Void", 1}},
+    {"unity.transform.local_rotation.get",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Transform", "get_localRotation",
+            nullptr, "UnityEngine.Quaternion", 0}},
+    {"unity.transform.local_rotation.set",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Transform", "set_localRotation",
             "UnityEngine.Quaternion", "System.Void", 1}},
     {"unity.transform.forward",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Transform", "get_forward",
@@ -632,6 +657,7 @@ void InputThreadMain() {
         {&g_keyframe_play_key, &g_keyframe_play_request},
         {&g_keyframe_clear_key, &g_keyframe_clear_request},
         {&g_vmd_play_key, &g_vmd_play_request},
+        {&g_vmd_body_play_key, &g_vmd_body_play_request},
     };
     HHOOK mouse_hook = nullptr;
     bool toggle_was_down = false;
@@ -645,7 +671,13 @@ void InputThreadMain() {
         const int toggle_key = g_toggle_key.load(std::memory_order_relaxed);
         const int pause_key = g_pause_key.load(std::memory_order_relaxed);
         const int first_person_key = g_first_person_key.load(std::memory_order_relaxed);
-        const bool focused = (free_enabled || first_person_enabled) && GameWindowHasFocus();
+        bool body_enabled = false;
+        {
+            std::lock_guard<std::mutex> lock(g_vmd_body_path_mutex);
+            body_enabled = !g_vmd_body_file.empty();
+        }
+        const bool focused = (free_enabled || first_person_enabled || body_enabled) &&
+            GameWindowHasFocus();
 
         const bool toggle_down = focused && free_enabled && KeyDown(toggle_key);
         const bool pause_down = focused && free_enabled && KeyDown(pause_key);
@@ -667,7 +699,7 @@ void InputThreadMain() {
         pause_was_down = pause_down;
         first_person_was_down = first_person_down;
         for (HotkeyRequest& binding : playback_keys) {
-            const bool down = focused && free_enabled &&
+            const bool down = focused && (free_enabled || body_enabled) &&
                 KeyDown(binding.key->load(std::memory_order_relaxed));
             if (down && !binding.was_down) {
                 binding.request->store(true, std::memory_order_release);
@@ -1037,6 +1069,7 @@ void* FindModelTransform() {
 
 #include "first_person_runtime.inc"
 #include "free_camera_runtime.inc"
+#include "vmd_body_runtime.inc"
 
 void ReleaseHeadTransform() {
     if (g_first_person.head_handle && g_host && g_host->gchandle_free) {
@@ -1422,6 +1455,7 @@ float __fastcall DetourTimeUnscaledDelta(void* method) {
     if (g_time_heartbeat_contract_ready && !t_in_heartbeat) {
         t_in_heartbeat = true;
         PumpFreeCameraControl();
+        PumpVmdBody();
         if (g_free_camera_active) {
             ApplyFreeCameraHeartbeat();
         }
@@ -1452,6 +1486,7 @@ void __fastcall DetourTailLateTick(void* instance, float deltaTime, void* method
     // the eye anchor bookkeeping and the free camera.
     (void)instance;
     PumpFreeCameraControl();
+    PumpVmdBody();
     PumpFirstPerson();
     if (g_free_camera_active) {
         ApplyFreeCamera();
@@ -1470,6 +1505,7 @@ void __fastcall DetourCameraTick(void* instance, void* method) {
     if (!g_original_tail_late_tick) {
         PumpFreeCamera();
         PumpFirstPerson();
+        PumpVmdBody();
     }
 }
 
@@ -1608,6 +1644,10 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
         else if (key == "vmd_camera_scale") config.vmd_camera_scale = ParseFloat(value, config.vmd_camera_scale);
         else if (key == "vmd_camera_fov_bias") config.vmd_camera_fov_bias = ParseFloat(value, config.vmd_camera_fov_bias);
         else if (key == "vmd_camera_loop") config.vmd_camera_loop = ParseBoolean(value, config.vmd_camera_loop);
+        else if (key == "vmd_body_file") config.vmd_body_file = Unquote(value);
+        else if (key == "vmd_body_scale") config.vmd_body_scale = ParseFloat(value, config.vmd_body_scale);
+        else if (key == "vmd_body_loop") config.vmd_body_loop = ParseBoolean(value, config.vmd_body_loop);
+        else if (key == "vmd_body_play_hotkey") config.vmd_body_play_key = ParseVirtualKey(value, config.vmd_body_play_key);
         else if (key == "roll_left_hotkey") config.roll_left_key = ParseVirtualKey(value, config.roll_left_key);
         else if (key == "roll_right_hotkey") config.roll_right_key = ParseVirtualKey(value, config.roll_right_key);
         else if (key == "fov_wide_hotkey") config.fov_wide_key = ParseVirtualKey(value, config.fov_wide_key);
@@ -1633,6 +1673,7 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
     config.keyframe_segment_seconds = std::clamp(config.keyframe_segment_seconds, 0.2f, 60.0f);
     config.vmd_camera_scale = std::clamp(config.vmd_camera_scale, 0.001f, 10.0f);
     config.vmd_camera_fov_bias = std::clamp(config.vmd_camera_fov_bias, -60.0f, 60.0f);
+    config.vmd_body_scale = std::clamp(config.vmd_body_scale, 0.01f, 10.0f);
     return config;
 }
 
@@ -1752,13 +1793,22 @@ bool ResolveContracts() {
         ready("unity.camera.main") &&
         ready("unity.camera.fov.get") &&
         g_state_layout.ready;
+    g_vmd_body_contract_ready = ready("player_controller.get_main_character") &&
+        ready("entity.get_model_com") && ready("base_model_component.get_model_go") &&
+        ready("unity.game_object.transform") && ready("unity.object.name.get") &&
+        ready("unity.transform.child_count.get") && ready("unity.transform.get_child") &&
+        ready("unity.transform.local_position.get") &&
+        ready("unity.transform.local_position.set") &&
+        ready("unity.transform.local_rotation.get") &&
+        ready("unity.transform.local_rotation.set");
 
     Log(std::string("Camera feature contracts: free_camera=") +
         (g_free_camera_contract_ready ? "ready" : "unavailable") +
         ", first_person=" + (g_first_person_contract_ready ? "ready" : "unavailable") +
         ", anti_dither=" + (g_dither_contract_ready ? "ready" : "unavailable") +
         ", time_heartbeat=" +
-        (g_time_heartbeat_contract_ready ? "ready" : "unavailable"));
+        (g_time_heartbeat_contract_ready ? "ready" : "unavailable") +
+        ", vmd_body=" + (g_vmd_body_contract_ready ? "ready" : "unavailable"));
     const FieldContract* first_person_flag = Field("snapshot.is_first_person");
     const bool photo_mode_exit_ready = ready("snapshot.set_first_person") &&
         ready("snapshot.show_char") && ready("unity.object.find_object_of_type") &&
@@ -1895,6 +1945,12 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
         std::lock_guard<std::mutex> lock(g_vmd_path_mutex);
         g_vmd_camera_file = config.vmd_camera_file;
     }
+    {
+        std::lock_guard<std::mutex> lock(g_vmd_body_path_mutex);
+        g_vmd_body_file = config.vmd_body_file;
+    }
+    g_vmd_body_scale.store(config.vmd_body_scale, std::memory_order_release);
+    g_vmd_body_loop.store(config.vmd_body_loop, std::memory_order_release);
     g_roll_left_key.store(config.roll_left_key, std::memory_order_release);
     g_roll_right_key.store(config.roll_right_key, std::memory_order_release);
     g_fov_wide_key.store(config.fov_wide_key, std::memory_order_release);
@@ -1905,6 +1961,7 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
     g_keyframe_play_key.store(config.keyframe_play_key, std::memory_order_release);
     g_keyframe_clear_key.store(config.keyframe_clear_key, std::memory_order_release);
     g_vmd_play_key.store(config.vmd_play_key, std::memory_order_release);
+    g_vmd_body_play_key.store(config.vmd_body_play_key, std::memory_order_release);
 
     if (was_free && !free_camera) {
         g_force_exit_request.store(true, std::memory_order_release);
@@ -1951,6 +2008,7 @@ void BE_CALL Shutdown() {
     if (g_input_thread.joinable()) {
         g_input_thread.join();
     }
+    StopVmdBody("shutdown");
     ExitFirstPerson("shutdown");
     ExitFreeCamera("shutdown");
     ReleaseCameraRoot();

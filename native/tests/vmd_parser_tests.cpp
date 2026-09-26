@@ -106,6 +106,8 @@ int main() {
         Check(BetterEndfield::Vmd::Parse(minimal, document, error), "minimal VMD rejected");
         Check(document.version_2 && document.model_name == "parser-test", "header was not parsed");
         Check(document.bones.size() == 1 && document.morphs.size() == 1, "bone/morph records missing");
+        Check(document.bones[0].name == "center" && document.morphs[0].name == "smile",
+            "bone/morph names were not preserved");
         Check(document.cameras.size() == 2, "invalid camera or duplicate was not filtered");
         Check(document.cameras[0].frame == 10 && std::fabs(document.cameras[0].distance - 11.0f) < 1e-6f,
             "duplicate camera frame did not keep the last record");

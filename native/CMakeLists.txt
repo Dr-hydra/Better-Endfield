@@ -24,6 +24,8 @@ add_executable(BetterEndfield.FirstPersonMeshTests EXCLUDE_FROM_ALL tests/first_
 
 add_executable(BetterEndfield.VmdParserTests EXCLUDE_FROM_ALL tests/vmd_parser_tests.cpp)
 
+add_executable(BetterEndfield.VmdMotionTests EXCLUDE_FROM_ALL tests/vmd_motion_tests.cpp)
+
 add_subdirectory(
     "${CMAKE_CURRENT_SOURCE_DIR}/shared/third_party/minhook"
     "${CMAKE_BINARY_DIR}/minhook"
@@ -39,6 +41,7 @@ function(better_endfield_target_defaults target)
 endfunction()
 
 better_endfield_target_defaults(BetterEndfield.VmdParserTests)
+better_endfield_target_defaults(BetterEndfield.VmdMotionTests)
 
 add_library(BetterEndfield.Host SHARED
     shared/host/bootstrap.cpp
