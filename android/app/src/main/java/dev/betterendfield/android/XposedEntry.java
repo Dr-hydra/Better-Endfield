@@ -37,7 +37,7 @@ public final class XposedEntry extends XposedModule {
             hook(Application.class.getDeclaredMethod("attach", Context.class)).intercept(chain -> {
                 Object result = chain.proceed();
                 try {
-                    GameOverlay.install((Application) chain.getThisObject(), param.getClassLoader(),
+                    GameOverlay.install((Application) chain.getThisObject(),
                             () -> {
                                 // The service-backed preferences proxy can be
                                 // stale after the settings Activity commits a
@@ -69,7 +69,28 @@ public final class XposedEntry extends XposedModule {
     }
 
     private void installFrames(ClassLoader loader, java.util.function.BooleanSupplier callback) throws Throwable {
-        Class<?> unity = Class.forName("com.unity3d.player.UnityPlayer", false, loader);
+        Class<?> unity = null;
+        Throwable last = null;
+        // Application.attach() can run before Unity's Java glue is loaded.  A
+        // one-shot lookup loses the entire native bootstrap in that case, so
+        // wait briefly for the class instead of making launch order a race.
+        for (int attempt = 0; attempt < 120 && !Thread.currentThread().isInterrupted(); ++attempt) {
+            try {
+                unity = Class.forName("com.unity3d.player.UnityPlayer", false, loader);
+                break;
+            } catch (ClassNotFoundException unavailable) {
+                last = unavailable;
+                try { Thread.sleep(100L); }
+                catch (InterruptedException stopped) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+        if (unity == null) {
+            if (last != null) throw last;
+            throw new ClassNotFoundException("com.unity3d.player.UnityPlayer");
+        }
         CopyOnWriteArrayList<HookHandle> hooks = new CopyOnWriteArrayList<>();
         AtomicBoolean complete = new AtomicBoolean();
         try {

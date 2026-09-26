@@ -91,7 +91,12 @@ final class RuntimeBootstrap {
             Os.setenv("BETTER_ENDFIELD_CUSTOM_MODEL_CONFIG", customModelConfig(), true);
             Os.setenv("BETTER_ENDFIELD_VOICE_CATALOG_ROOT",
                     new File(context.getFilesDir(), "betterendfield/catalog").getAbsolutePath(), true);
-            if (BuildConfig.DEBUG) Os.setenv("BETTER_ENDFIELD_DIAGNOSTICS_PATH",
+            // Keep the native startup trace on release builds as well.  Android
+            // logd may rate-limit an injected game process, which otherwise
+            // makes a module that stalls during metadata resolution appear to
+            // have never started.  The cache file is private to the game and is
+            // discarded by the OS when its cache is cleared.
+            Os.setenv("BETTER_ENDFIELD_DIAGNOSTICS_PATH",
                     new File(context.getCacheDir(), "betterendfield-diagnostics.log").getAbsolutePath(), true);
             loadIntoTargetNamespace(library.getAbsolutePath(), context.getClassLoader(), application.getClass());
             loaded = true;

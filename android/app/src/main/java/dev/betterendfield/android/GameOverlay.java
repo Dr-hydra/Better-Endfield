@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -43,6 +44,8 @@ final class GameOverlay {
     private static final int TEXT_DIM = 0xFFA7B0BC;
     private static final int TEXT_MUTED = 0xFF75808E;
     private static final int BORDER = 0xFF2B333E;
+    private static volatile float lastXFraction = 0.02f;
+    private static volatile float lastYFraction = 0.28f;
 
     private final Activity activity;
     private final FrameLayout host;
@@ -64,12 +67,12 @@ final class GameOverlay {
     private OverlayFeatures shown = OverlayFeatures.off();
     private boolean bridgeMissing;
 
-    static void install(Application app, ClassLoader loader, Supplier<OverlayFeatures> features) {
-        try {
-            Class.forName("com.unity3d.player.UnityPlayer", false, loader);
-        } catch (ClassNotFoundException notUnity) {
-            return;
-        }
+    static void install(Application app, Supplier<OverlayFeatures> features) {
+        // Do not probe UnityPlayer during Application.attach().  On some
+        // Android builds the class is loaded lazily after attach; returning here
+        // would permanently disable the overlay for the whole process.  The
+        // callback is already installed only in the scoped target process, so it
+        // is safe to defer all view work until an Activity is resumed.
         app.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             private final java.util.Map<Activity, GameOverlay> surfaces = new java.util.HashMap<>();
 
@@ -129,6 +132,8 @@ final class GameOverlay {
         this.activity = activity;
         this.preview = preview;
         this.features = features;
+        this.xFraction = lastXFraction;
+        this.yFraction = lastYFraction;
 
         host = new FrameLayout(activity);
         host.setClipChildren(false);
@@ -137,8 +142,15 @@ final class GameOverlay {
         // the handle and the panel goes straight through to the game.
         activity.addContentView(host, new ViewGroup.LayoutParams(-1, -1));
         host.setOnApplyWindowInsetsListener((view, insets) -> {
-            host.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
-                    insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
+            if (Build.VERSION.SDK_INT >= 30) {
+                android.graphics.Insets bars = insets.getInsets(
+                        android.view.WindowInsets.Type.systemBars()
+                                | android.view.WindowInsets.Type.displayCutout());
+                host.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            } else {
+                host.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
+                        insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
+            }
             host.post(this::layout);
             return insets;
         });
@@ -530,6 +542,8 @@ final class GameOverlay {
                     int h = host.getHeight() - top - host.getPaddingBottom() - dp(58);
                     xFraction = clamp((startX + dx - left) / Math.max(1, w));
                     yFraction = clamp((startY + dy - top) / Math.max(1, h));
+                    lastXFraction = xFraction;
+                    lastYFraction = yFraction;
                     layout();
                 }
                 return true;

@@ -17,6 +17,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <memory>
+#include <future>
 #include <thread>
 #include <vector>
 #include <string>
@@ -43,6 +44,44 @@ const char* Configured(const char* variable) {
     return value != nullptr && value[0] != '\0' ? value : nullptr;
 }
 
+void StartModuleAsync(Module* module, Il2CppRuntime* runtime) {
+    if (module == nullptr || runtime == nullptr) return;
+
+    // A managed assembly lookup or a Dobby patch can block while Unity is still
+    // loading hot-update metadata.  Starting every module on the same worker
+    // made one stalled camera initialization prevent actions (and every module
+    // after it) from ever running.  Give each module its own attached thread so
+    // a slow/unsupported feature is isolated from the rest of the process.
+    auto entered = std::make_shared<std::promise<void>>();
+    std::future<void> entered_future = entered->get_future();
+    std::thread([module, runtime, entered] {
+        entered->set_value();
+        try {
+            Il2CppThreadScope thread(*runtime);
+            if (!thread.attached()) {
+                LogError(module->Id(), "module startup thread could not attach to IL2CPP");
+                return;
+            }
+            LogInfo(module->Id(), "module startup entered");
+            const ModuleResult result = module->Start(*runtime);
+            LogInfo(module->Id(), result.message.c_str());
+            if (!result.active) {
+                LogError(module->Id(), "module startup did not become active");
+            }
+        } catch (const std::exception& error) {
+            LogError(module->Id(), error.what());
+        } catch (...) {
+            LogError(module->Id(), "module startup failed with an unknown exception");
+        }
+    }).detach();
+
+    // Do not let thread scheduling put the camera ahead of the preceding
+    // module.  This wait only covers worker creation; it deliberately does not
+    // wait for thread attachment or Start(), so a module that blocks while
+    // attaching or resolving metadata cannot hold up the next module.
+    entered_future.wait();
+}
+
 void RunModules() {
     // libil2cpp.so is mapped before the IL2CPP domain is safe to enter. The
     // proven read-only POC used this guard; connecting immediately can call
@@ -61,12 +100,6 @@ void RunModules() {
             return;
         }
         std::this_thread::sleep_for(kPollInterval);
-    }
-
-    Il2CppThreadScope thread(runtime);
-    if (!thread.attached()) {
-        LogError("runtime", "failed to attach worker to the IL2CPP domain");
-        return;
     }
 
     const char* custom_probe = std::getenv("BETTER_ENDFIELD_CUSTOM_MODEL_PROBE");
@@ -91,6 +124,16 @@ void RunModules() {
             &BetterEndfield_GetUiModuleApiV1,
             "same-source desktop UI module active (hide UID/watermark, all-HUD toggle)"));
     }
+    if (Configured("BETTER_ENDFIELD_ACTIONS_CONFIG") != nullptr) {
+        g_modules.emplace_back(std::make_unique<DesktopModule>(
+            "betterendfield.actions",
+            "BETTER_ENDFIELD_ACTIONS_CONFIG",
+            &BetterEndfield_GetActionsModuleApiV1,
+            "same-source desktop sustained-dash module active"));
+    }
+    // Start actions before the camera worker.  The workers are independent, but
+    // this ordering gives the dash module the first chance to resolve its
+    // contracts on clients whose hot-update assemblies are still settling.
     if (Configured("BETTER_ENDFIELD_CAMERA_CONFIG") != nullptr) {
         g_modules.emplace_back(std::make_unique<DesktopModule>(
             "betterendfield.camera",
@@ -99,18 +142,8 @@ void RunModules() {
             "same-source desktop camera module active (free camera, world pause, "
             "first person, near-camera dither)"));
     }
-    if (Configured("BETTER_ENDFIELD_ACTIONS_CONFIG") != nullptr) {
-        g_modules.emplace_back(std::make_unique<DesktopModule>(
-            "betterendfield.actions",
-            "BETTER_ENDFIELD_ACTIONS_CONFIG",
-            &BetterEndfield_GetActionsModuleApiV1,
-            "same-source desktop sustained-dash module active"));
-    }
 
-    for (const auto& module : g_modules) {
-        const ModuleResult result = module->Start(runtime);
-        LogInfo(module->Id(), result.message.c_str());
-    }
+    for (const auto& module : g_modules) StartModuleAsync(module.get(), &runtime);
 }
 
 bool AnyModuleRequested() {

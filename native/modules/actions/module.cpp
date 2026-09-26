@@ -1224,12 +1224,14 @@ BE_Result BE_CALL Configure(const char* raw) {
 }
 
 BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
+    Log("Actions initialize entered.");
     if (!host || host->abi_version != BETTER_ENDFIELD_MODULE_ABI_V1 ||
         !host->resolve_method || !host->resolve_field || !host->resolve_class || !host->runtime_invoke ||
         !host->object_unbox || !host->field_get_value_object ||
         !host->copy_managed_string || !host->gchandle_new || !host->gchandle_free ||
         !host->create_hook || !host->release_module_hooks) return BE_Result_InvalidArgument;
     g_host = host;
+    g_stopping.store(false, std::memory_order_release);
     for (auto& method : g_methods) {
         if (host->resolve_method(host->context, &method.desc, &method.resolved) != BE_Result_Ok) {
             Log((std::string("Missing action method: ") + method.desc.class_name + "." + method.desc.method_name).c_str());
@@ -1242,6 +1244,7 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
             return BE_Result_ContractMismatch;
         }
     }
+    Log("Actions method contract resolution completed.");
     for (auto& field : g_fields) {
         if (host->resolve_field(host->context, &field.desc, &field.resolved) != BE_Result_Ok) {
             Log((std::string("Missing action field: ") + field.desc.field_name).c_str());
@@ -1249,6 +1252,7 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
             return BE_Result_ContractMismatch;
         }
     }
+    Log("Actions field contract resolution completed.");
     // Protect against the easy-to-miss static ShouldInterruptSpDash ABI.
     using FlagsFn = uint32_t(*)(const void*, uint32_t*);
     auto flags = reinterpret_cast<FlagsFn>(GetProcAddress(GetModuleHandleW(L"GameAssembly.dll"), "il2cpp_method_get_flags"));

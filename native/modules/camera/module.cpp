@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cctype>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -1726,7 +1727,7 @@ bool ResolveContracts() {
     };
     g_dither_contract_ready = ready("camera.process_dither") &&
         ready("camera.force_clear_dither");
-    g_free_camera_contract_ready = ready("camera.process_dither") &&
+    g_free_camera_contract_ready =
         ready("unity.camera.main") && ready("unity.camera.fov.get") &&
         ready("unity.camera.fov.set") && ready("unity.component.transform") &&
         ready("unity.transform.position.get") &&
@@ -1781,22 +1782,30 @@ bool ResolveContracts() {
         g_first_person_contract_ready;
 }
 
-bool InstallHook() {
+bool InstallDitherHook() {
     MethodContract* tick = Contract("camera.process_dither");
-    if (!tick || !tick->resolved || !g_host || !g_host->create_hook) {
-        return false;
-    }
+    if (!g_host || !g_host->create_hook || !tick || !tick->resolved) return false;
     if (g_host->create_hook(g_host->context, kModuleId, tick->pointer,
         reinterpret_cast<void*>(&DetourCameraTick),
-        reinterpret_cast<void**>(&g_original_camera_tick)) != BE_Result_Ok) {
-        return false;
+        reinterpret_cast<void**>(&g_original_camera_tick)) == BE_Result_Ok) {
+        Log("Successfully installed CameraMono dither hook.");
+        return true;
     }
+    Log("Warning: CameraMono dither hook unavailable; late-tick camera controls remain active.");
+    return false;
+}
+
+bool InstallHook() {
+    bool installed = false;
+    MethodContract* tick = Contract("camera.process_dither");
+    if (!g_host || !g_host->create_hook) return false;
 
     MethodContract* tail_tick = Contract("camera_manager.tail_late_tick");
     if (tail_tick && tail_tick->resolved) {
         if (g_host->create_hook(g_host->context, kModuleId, tail_tick->pointer,
             reinterpret_cast<void*>(&DetourTailLateTick),
             reinterpret_cast<void**>(&g_original_tail_late_tick)) == BE_Result_Ok) {
+            installed = true;
             Log("Successfully installed CameraManager::TailLateTick hook.");
         } else {
             Log("Warning: Failed to install CameraManager::TailLateTick hook; using CameraMono tick fallback.");
@@ -1808,6 +1817,7 @@ bool InstallHook() {
         if (g_host->create_hook(g_host->context, kModuleId, push_state->pointer,
             reinterpret_cast<void*>(&DetourPushState),
             reinterpret_cast<void**>(&g_original_push_state)) == BE_Result_Ok) {
+            installed = true;
             g_push_state_hook_ready = true;
             Log("Successfully installed CinemachineBrain::PushStateToUnityCamera hook.");
         } else {
@@ -1822,12 +1832,32 @@ bool InstallHook() {
             reinterpret_cast<void*>(&DetourTimeUnscaledDelta),
             reinterpret_cast<void**>(&g_original_time_unscaled_delta)) != BE_Result_Ok) {
             Log("Failed to install unscaled time heartbeat hook; camera hook fallback remains active.");
+        } else {
+            installed = true;
         }
     }
-    return true;
+
+    // On Android, a client-side dither method may still be held by Unity's
+    // metadata/hook machinery while the camera manager hooks are already safe to
+    // use.  Install this optional path off the initialization critical path so
+    // a stall cannot keep the input thread (and therefore the overlay controls)
+    // from starting.  Desktop keeps the original synchronous behavior.
+#if defined(_WIN32)
+    if (tick && tick->resolved) installed = InstallDitherHook() || installed;
+#else
+    if (tick && tick->resolved) {
+        installed = true; // dither is optional; the core camera path is active.
+        std::thread([] {
+            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+            if (g_host != nullptr) InstallDitherHook();
+        }).detach();
+    }
+#endif
+    return installed;
 }
 
 BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
+    Log("Camera initialize entered.");
     if (!host || host->abi_version != BETTER_ENDFIELD_MODULE_ABI_V1 ||
         !host->resolve_method || !host->create_hook || !host->runtime_invoke ||
         !host->object_unbox || !host->log) {
@@ -1839,11 +1869,13 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
         g_state.store(ModuleState::ContractMismatch, std::memory_order_release);
         return BE_Result_ContractMismatch;
     }
+    Log("Camera contract resolution completed.");
     if (!InstallHook()) {
         g_state.store(ModuleState::Failed, std::memory_order_release);
         Log("Failed to install camera update hook.");
         return BE_Result_Failed;
     }
+    Log("Camera hook installation completed.");
     g_input_thread_stop.store(false, std::memory_order_release);
     g_input_thread = std::thread(InputThreadMain);
     g_state.store(ModuleState::Ready, std::memory_order_release);
