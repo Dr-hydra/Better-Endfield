@@ -15,9 +15,18 @@ struct BodyBinding {
     Quaternion base_rotation{};
 };
 
+struct FaceBinding {
+    std::string vmd_name;
+    void* renderer = nullptr;
+    uint32_t handle = 0;
+    int index = -1;
+    float base_weight = 0.0f;
+};
+
 struct BodyPlayback {
     BetterEndfield::Vmd::Motion motion;
     std::vector<BodyBinding> bindings;
+    std::vector<FaceBinding> face_bindings;
     uint64_t started_ms = 0;
     double last_frame = 0.0;
     uint32_t frame_count = 0;
@@ -104,6 +113,12 @@ void ReleaseBodyBindings() {
         }
     }
     g_vmd_body.bindings.clear();
+    for (FaceBinding& binding : g_vmd_body.face_bindings) {
+        if (binding.handle && g_host && g_host->gchandle_free) {
+            g_host->gchandle_free(g_host->context, binding.handle);
+        }
+    }
+    g_vmd_body.face_bindings.clear();
 }
 
 void StopVmdBody(const char* reason) {
@@ -114,6 +129,12 @@ void StopVmdBody(const char* reason) {
             binding.base_position);
         SetValue(Contract("unity.transform.local_rotation.set"), binding.transform,
             binding.base_rotation);
+    }
+    for (FaceBinding& binding : g_vmd_body.face_bindings) {
+        if (!binding.renderer || !IsObjectAlive(binding.renderer)) continue;
+        void* parameters[2]{&binding.index, &binding.base_weight};
+        InvokeVoid(Contract("unity.skinned_mesh_renderer.set_blend_shape_weight"),
+            binding.renderer, parameters);
     }
     ReleaseBodyBindings();
     g_vmd_body.motion = {};
@@ -198,6 +219,42 @@ bool LoadVmdBody() {
         Log("VMD body: no VMD bone names matched the live model hierarchy.");
         return false;
     }
+    for (const auto& morph : g_vmd_body.motion.morphs) {
+        const std::string decoded = DecodeVmdName(morph.first);
+        void* managed_name = g_host && g_host->string_new
+            ? g_host->string_new(g_host->context,
+                decoded.empty() ? morph.first.c_str() : decoded.c_str()) : nullptr;
+        if (!managed_name) continue;
+        for (const BodyNode& node : nodes) {
+            if (!node.transform) continue;
+            void* game_object = Invoke(Contract("unity.component.game_object"),
+                node.transform, nullptr);
+            if (!game_object) continue;
+            if (!g_skinned_mesh_renderer_class.type_object) continue;
+            void* renderer_parameters[1]{g_skinned_mesh_renderer_class.type_object};
+            void* renderer = Invoke(Contract("unity.game_object.get_component"),
+                game_object, renderer_parameters);
+            if (!renderer) continue;
+            void* mesh = Invoke(Contract("unity.skinned_mesh_renderer.shared_mesh.get"),
+                renderer, nullptr);
+            if (!mesh) continue;
+            void* index_parameters[1]{managed_name};
+            int index = -1;
+            if (!Unbox(Invoke(Contract("unity.mesh.get_blend_shape_index"), mesh,
+                    index_parameters), index) ||
+                index < 0) continue;
+            FaceBinding binding;
+            binding.vmd_name = morph.first;
+            binding.renderer = renderer;
+            binding.index = index;
+            void* weight_parameters[1]{&index};
+            Unbox(Invoke(Contract("unity.skinned_mesh_renderer.get_blend_shape_weight"),
+                renderer, weight_parameters), binding.base_weight);
+            binding.handle = g_host && g_host->gchandle_new
+                ? g_host->gchandle_new(g_host->context, renderer, 0) : 0;
+            g_vmd_body.face_bindings.push_back(std::move(binding));
+        }
+    }
     for (const auto& entry : g_vmd_body.motion.bones) {
         if (!entry.second.empty()) {
             g_vmd_body.frame_count = (std::max)(g_vmd_body.frame_count,
@@ -244,6 +301,16 @@ void ApplyVmdBody() {
             {sample.rotation.x, sample.rotation.y, sample.rotation.z, sample.rotation.w});
         SetValue(Contract("unity.transform.local_position.set"), binding.transform, position);
         SetValue(Contract("unity.transform.local_rotation.set"), binding.transform, rotation);
+    }
+    for (FaceBinding& binding : g_vmd_body.face_bindings) {
+        if (!binding.renderer || !IsObjectAlive(binding.renderer)) continue;
+        BetterEndfield::Vmd::MorphSample sample;
+        if (!BetterEndfield::Vmd::SampleMorph(g_vmd_body.motion, binding.vmd_name,
+                frame, sample)) continue;
+        float weight = (std::max)(0.0f, (std::min)(100.0f, sample.weight * 100.0f));
+        void* parameters[2]{&binding.index, &weight};
+        InvokeVoid(Contract("unity.skinned_mesh_renderer.set_blend_shape_weight"),
+            binding.renderer, parameters);
     }
 }
 
