@@ -380,3 +380,19 @@ overflow menu, choose `Hide`, and turn off the `Games` filter. LSPosed applies
 that filter globally and Android classifies Endfield as a game.
 
 The module declares its recommended scope in `META-INF/xposed/scope.list`.
+
+## Open a BEM package from another app
+
+The Android package manager accepts a local BEM document through **Open with →
+Better Endfield · 导入 BEM** or single-file **Share**. It reuses the normal importer
+and preserves original textures. The sender must supply a readable `content://`
+URI. File managers that assign an incompatible MIME type can use the existing
+in-app **导入 BEM 包** document picker instead.
+
+If another import/conversion/removal is active, the new document is retained as
+one pending request with explicit retry/dismiss controls, without interrupting
+the running task. Opening a new document replaces that pending request. The
+imported file's contents are validated; an extension alone is not trusted.
+Publication still requires the configured modern LSPosed service, and changes
+become active on game restart. See `../docs/ANDROID_BEM_OPEN_WITH_20260927.md` for
+supported routing, tests and outstanding device acceptance.

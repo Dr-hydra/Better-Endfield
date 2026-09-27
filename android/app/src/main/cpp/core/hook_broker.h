@@ -13,7 +13,7 @@ public:
         void** original,
         void*& stub,
         std::string& error);
-    void Remove(void*& stub);
+    bool Remove(void*& stub);
 };
 
 }  // namespace betterendfield

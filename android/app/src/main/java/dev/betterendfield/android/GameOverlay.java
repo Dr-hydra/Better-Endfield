@@ -1,12 +1,17 @@
 package dev.betterendfield.android;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Application;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.StateListDrawable;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -18,102 +23,68 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Supplier;
 
-/**
- * The in-game control panel: a draggable handle that opens the actions which need
- * to be triggered while playing.
- *
- * Division of labour with the settings app: anything that needs a keypress on
- * desktop lives here, everything else lives on the settings screen. The buttons do
- * not talk to the modules directly - they press the same Windows virtual keys the
- * ported desktop modules already poll for (see {@link Hotkeys}), which is why the
- * desktop UI and camera code paths needed no Android-specific branch.
- *
- * Attached straight to the scoped game's Activity, so it needs no
- * SYSTEM_ALERT_WINDOW permission, no foreground service and no second process.
- */
+/** In-Activity hotkey deck, not a second settings screen or overlay service. */
 final class GameOverlay {
-    private static final int ACCENT = 0xFFFFC845;
-    private static final int ACCENT_INK = 0xFF120E03;
-    private static final int PANEL = 0xF00C1016;
-    private static final int ROW = 0xFF1B222B;
-    private static final int ROW_PRESSED = 0xFF2A3341;
-    private static final int TEXT = 0xFFF4F6F8;
-    private static final int TEXT_DIM = 0xFFA7B0BC;
-    private static final int TEXT_MUTED = 0xFF75808E;
-    private static final int BORDER = 0xFF2B333E;
-
+    private static final int INK = 0xFFF2F2EF, MUTED = 0xFF9DA6AC, GOLD = 0xFFE6CD82;
+    private static final int SURFACE = 0xF2161B20, TILE = 0xFF242B31, EDGE = 0xFF3B434A;
+    private static float savedX = 0.02f, savedY = 0.32f;
     private final Activity activity;
+    private final boolean preview;
+    private final Supplier<OverlayFeatures> features;
+    private final Handler main = new Handler(Looper.getMainLooper());
     private final FrameLayout host;
     private final View handle;
     private final ScrollView panel;
-    private final LinearLayout content;
-    private final TextView footer;
-    private final boolean preview;
-    private final Supplier<OverlayFeatures> features;
-
-    private boolean closed;
-    private float xFraction = 0.02f;
-    private float yFraction = 0.28f;
-    private float downX;
-    private float downY;
-    private float startX;
-    private float startY;
-    private boolean dragged;
+    private final LinearLayout body;
+    private final TextView status;
+    private final ArrayList<Tile> tiles = new ArrayList<>();
+    private final ArrayList<View> heldControls = new ArrayList<>();
+    private RuntimeSnapshot snapshot = RuntimeSnapshot.offline();
     private OverlayFeatures shown = OverlayFeatures.off();
-    private boolean bridgeMissing;
-
-    static void install(Application app, ClassLoader loader, Supplier<OverlayFeatures> features) {
-        try {
-            Class.forName("com.unity3d.player.UnityPlayer", false, loader);
-        } catch (ClassNotFoundException notUnity) {
-            return;
+    private boolean resumed, closed, expanded, details, bridgeError, movementAllowed;
+    private float x = savedX, y = savedY;
+    private final Runnable pulse = new Runnable() {
+        @Override public void run() {
+            if (!resumed || closed) return;
+            reconcileHost();
+            refreshState();
+            main.postDelayed(this, 500);
         }
+    };
+
+    static void install(Application app, ClassLoader ignored, Supplier<OverlayFeatures> features) {
+        // Don't gate Activity lifecycle registration on Unity's lazy class loading.
         app.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
-            private final java.util.Map<Activity, GameOverlay> surfaces = new java.util.HashMap<>();
-
+            final Map<Activity, GameOverlay> surfaces = new HashMap<>();
             @Override public void onActivityResumed(Activity activity) {
-                OverlayFeatures current;
                 try {
-                    current = features.get();
-                } catch (RuntimeException unavailable) {
-                    current = OverlayFeatures.off();
-                }
-                GameOverlay surface = surfaces.get(activity);
-                if (current.panel() && surface == null) {
-                    try {
-                        surface = new GameOverlay(activity, false, features);
-                        surfaces.put(activity, surface);
-                    } catch (RuntimeException error) {
-                        android.util.Log.e("BetterEndfield.Overlay", "Unable to attach panel", error);
+                    OverlayFeatures current = features.get();
+                    GameOverlay deck = surfaces.get(activity);
+                    if (current.panel() && deck == null) {
+                        deck = new GameOverlay(activity, false, features);
+                        surfaces.put(activity, deck);
                     }
+                    if (deck != null) deck.resume(current.panel());
+                    if (RuntimeBootstrap.loaded()) NativeCommandBridge.foreground(true);
+                } catch (RuntimeException | LinkageError error) {
+                    android.util.Log.e("BetterEndfield.Overlay", "resume failed", error);
                 }
-                if (surface == null) return;
-                // A setting changed while the game was in the background has to
-                // reach the controls, not just the panel's visibility.
-                surface.refresh();
-                surface.host.setVisibility(
-                        current.panel() && !surface.closed ? View.VISIBLE : View.GONE);
             }
-
             @Override public void onActivityPaused(Activity activity) {
-                GameOverlay surface = surfaces.get(activity);
-                if (surface == null) return;
-                // Leaving a held movement key latched would keep the camera
-                // drifting for as long as the game stays in the background.
-                surface.releaseHeldKeys();
-                surface.host.setVisibility(View.GONE);
+                GameOverlay deck = surfaces.get(activity);
+                if (deck != null) deck.pause();
+                try { if (RuntimeBootstrap.loaded()) NativeCommandBridge.foreground(false); }
+                catch (LinkageError error) { android.util.Log.e("BetterEndfield.Overlay", "suspend bridge failed", error); }
             }
-
             @Override public void onActivityDestroyed(Activity activity) {
-                GameOverlay surface = surfaces.remove(activity);
-                if (surface != null) {
-                    surface.releaseHeldKeys();
-                    surface.remove();
-                }
+                GameOverlay deck = surfaces.remove(activity);
+                if (deck != null) deck.remove();
             }
-
             @Override public void onActivityCreated(Activity a, Bundle b) { }
             @Override public void onActivityStarted(Activity a) { }
             @Override public void onActivityStopped(Activity a) { }
@@ -123,483 +94,326 @@ final class GameOverlay {
 
     GameOverlay(Activity activity, boolean preview) {
         this(activity, preview, () -> OverlayFeatures.read(FrameworkSettings.open(activity)));
+        resume(true);
     }
-
     private GameOverlay(Activity activity, boolean preview, Supplier<OverlayFeatures> features) {
-        this.activity = activity;
-        this.preview = preview;
-        this.features = features;
-
-        host = new FrameLayout(activity);
+        this.activity = activity; this.preview = preview; this.features = features;
+        host = new FrameLayout(activity) {
+            @Override public void onWindowFocusChanged(boolean focused) {
+                super.onWindowFocusChanged(focused);
+                if (!focused) releaseHeldKeys();
+                // Focus can leave for our diagnostics dialog: release input,
+                // but only Activity pause suspends the camera/world state.
+            }
+        };
         host.setClipChildren(false);
-        host.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-        // The host has no click listener of its own, so a touch anywhere except
-        // the handle and the panel goes straight through to the game.
-        activity.addContentView(host, new ViewGroup.LayoutParams(-1, -1));
+        host.setClickable(false); // Outside the deck, touches belong to the game.
+        host.setMotionEventSplittingEnabled(true);
+        handle = new ControlIcon(activity, ControlIcon.HANDLE, GOLD);
+        handle.setBackground(surface(SURFACE, 16, EDGE));
+        handle.setElevation(dp(8));
+        handle.setPadding(dp(11), dp(11), dp(11), dp(11));
+        handle.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+        handle.setContentDescription("快捷控制，点按展开，拖动移动");
+        handle.setOnClickListener(view -> toggle());
+        handle.setOnTouchListener(new View.OnTouchListener() {
+            float downX, downY, originX, originY; boolean moved;
+            @Override public boolean onTouch(View view, MotionEvent event) {
+                switch (event.getActionMasked()) {
+                    case MotionEvent.ACTION_DOWN:
+                        downX = event.getRawX(); downY = event.getRawY();
+                        originX = handle.getX(); originY = handle.getY(); moved = false;
+                        return true;
+                    case MotionEvent.ACTION_MOVE:
+                        float dx = event.getRawX() - downX, dy = event.getRawY() - downY;
+                        moved |= Math.hypot(dx, dy) > ViewConfiguration.get(activity).getScaledTouchSlop();
+                        if (moved) {
+                            x = clamp((originX + dx - host.getPaddingLeft() - dp(8)) / Math.max(1, usableWidth() - dp(48)));
+                            y = clamp((originY + dy - host.getPaddingTop() - dp(8)) / Math.max(1, usableHeight() - dp(48)));
+                            savedX = x; savedY = y; position();
+                        }
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        if (!moved) view.performClick();
+                        return true;
+                    case MotionEvent.ACTION_CANCEL: return true;
+                    default: return true;
+                }
+            }
+        });
+        host.addView(handle, new FrameLayout.LayoutParams(dp(48), dp(48)));
+        body = new LinearLayout(activity); body.setOrientation(LinearLayout.VERTICAL);
+        body.setPadding(dp(12), dp(10), dp(12), dp(12));
+        panel = new ScrollView(activity); panel.setFillViewport(false);
+        panel.setBackground(surface(SURFACE, 20, EDGE)); panel.setElevation(dp(12));
+        panel.setClipToOutline(true); panel.setVerticalScrollBarEnabled(false);
+        panel.addView(body); panel.setVisibility(preview ? View.VISIBLE : View.GONE);
+        host.addView(panel, new FrameLayout.LayoutParams(dp(320), -2));
+        status = text("", 11, MUTED);
+        status.setPadding(dp(2), dp(10), 0, 0);
+        status.setOnLongClickListener(v -> { showDiagnostics(); return true; });
         host.setOnApplyWindowInsetsListener((view, insets) -> {
-            host.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
+            if (Build.VERSION.SDK_INT >= 30) {
+                android.graphics.Insets safe = insets.getInsets(android.view.WindowInsets.Type.systemBars()
+                        | android.view.WindowInsets.Type.displayCutout());
+                host.setPadding(safe.left, safe.top, safe.right, safe.bottom);
+            } else host.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
                     insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
-            host.post(this::layout);
-            return insets;
+            host.post(this::position); return insets;
         });
-
-        handle = buildHandle();
-        host.addView(handle, new FrameLayout.LayoutParams(dp(50), dp(50)));
-
-        panel = new ScrollView(activity);
-        panel.setFillViewport(false);
-        panel.setBackground(surface(PANEL, 20, BORDER));
-        panel.setElevation(dp(16));
-        panel.setClipToOutline(true);
-        content = new LinearLayout(activity);
-        content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(14), dp(14), dp(14), dp(14));
-        panel.addView(content);
-
-        footer = label("", 11, TEXT_MUTED);
-        footer.setLineSpacing(dp(2), 1f);
-
-        host.addView(panel, new FrameLayout.LayoutParams(dp(300), -2));
-        panel.setVisibility(preview ? View.VISIBLE : View.GONE);
-        refresh();
-
-        handle.setOnTouchListener(this::drag);
-        host.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> layout());
-        host.requestApplyInsets();
-        host.post(this::layout);
+        host.addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob) -> position());
+        rebuild();
     }
 
-    // ------------------------------------------------------------------ handle
-
-    private View buildHandle() {
-        TextView view = new TextView(activity);
-        view.setText("BE");
-        view.setTextSize(15);
-        view.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
-        view.setTextColor(ACCENT);
-        view.setGravity(Gravity.CENTER);
-        view.setElevation(dp(10));
-        GradientDrawable background = new GradientDrawable();
-        background.setColor(0xE60B1016);
-        background.setCornerRadius(dp(16));
-        background.setStroke(dp(2), ACCENT);
-        view.setBackground(background);
-        view.setContentDescription("Better Endfield 控制面板：点击展开，拖动可移动");
-        return view;
+    private void resume(boolean visible) {
+        resumed = visible; host.setVisibility(visible ? View.VISIBLE : View.GONE);
+        main.removeCallbacks(pulse);
+        if (visible) { rebuild(); main.post(pulse); }
+        else releaseHeldKeys();
     }
-
-    // ------------------------------------------------------------------- panel
-
-    /** Rebuilds the panel body for the currently configured features. */
-    private void refresh() {
-        OverlayFeatures current;
-        try {
-            current = features.get();
-        } catch (RuntimeException unavailable) {
-            current = OverlayFeatures.off();
+    private void pause() {
+        resumed = false; main.removeCallbacks(pulse); releaseHeldKeys(); host.setVisibility(View.GONE);
+    }
+    private void reconcileHost() {
+        if (!(activity.getWindow().getDecorView() instanceof ViewGroup)) return;
+        ViewGroup root = (ViewGroup) activity.getWindow().getDecorView();
+        if (host.getParent() != root) {
+            releaseHeldKeys();
+            if (host.getParent() instanceof ViewGroup) ((ViewGroup) host.getParent()).removeView(host);
+            root.addView(host, new ViewGroup.LayoutParams(-1, -1)); host.requestApplyInsets();
         }
-        if (preview) {
-            // The preview runs inside the settings app, where the panel switch is
-            // what the user is about to turn on. Show the controls their other
-            // choices selected rather than an empty panel.
-            current = new OverlayFeatures(true, current.hideHud(), current.freeCamera(),
-                    current.worldPause(), current.firstPerson());
+        // SDKs can replace Activity content or append their own surface later.
+        // This check only runs while resumed, not from an immortal background task.
+        if (root.indexOfChild(host) != root.getChildCount() - 1) host.bringToFront();
+    }
+    private void toggle() {
+        releaseHeldKeys(); panel.animate().cancel();
+        boolean open = panel.getVisibility() != View.VISIBLE;
+        panel.setVisibility(open ? View.VISIBLE : View.GONE);
+        if (open) { rebuild(); panel.setAlpha(0); panel.animate().alpha(1).setDuration(120).start(); }
+        else panel.setAlpha(1);
+        position();
+    }
+
+    private void rebuild() {
+        releaseHeldKeys(); tiles.clear(); heldControls.clear(); body.removeAllViews();
+        try { shown = features.get(); } catch (RuntimeException unavailable) { shown = OverlayFeatures.off(); }
+        if (preview && !shown.anyControl()) shown = new OverlayFeatures(true, true, true, true, true);
+        LinearLayout heading = row();
+        LinearLayout title = column();
+        TextView brand = text("BETTER ENDFIELD", 9, GOLD); brand.setLetterSpacing(0.14f);
+        title.addView(brand); title.addView(text("快捷控制", 18, INK));
+        heading.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView close = smallButton(preview ? "完成" : "收起");
+        close.setOnClickListener(v -> { if (preview) remove(); else toggle(); });
+        heading.addView(close, new LinearLayout.LayoutParams(dp(48), dp(48))); body.addView(heading);
+        LinearLayout shortcuts = row();
+        if (shown.hideHud()) shortcuts.addView(tile("HUD", "0", ControlIcon.HUD, Hotkeys.HIDE_HUD, 0), weighted(0));
+        if (shown.freeCamera()) shortcuts.addView(tile("自由镜头", "9", ControlIcon.CAMERA, Hotkeys.FREE_CAMERA, 1), weighted(shortcuts.getChildCount()));
+        if (shown.worldPause()) shortcuts.addView(tile("冻结", "8", ControlIcon.PAUSE, Hotkeys.WORLD_PAUSE, 8), weighted(shortcuts.getChildCount()));
+        if (shown.firstPerson()) shortcuts.addView(tile("第一人称", "−", ControlIcon.EYE, Hotkeys.FIRST_PERSON, 2), weighted(shortcuts.getChildCount()));
+        body.addView(shortcuts, stacked(10));
+        if (!shown.anyControl()) body.addView(text("尚未配置热键功能。请在增强设置中选择。", 12, MUTED), stacked(14));
+        if (shown.freeCamera()) {
+            TextView expand = smallButton(expanded ? "镜头控制  −" : "镜头控制  +");
+            expand.setTextColor(GOLD); expand.setOnClickListener(v -> { expanded = !expanded; rebuild(); });
+            body.addView(expand, stacked(8));
+            if (expanded) addCameraControls();
         }
-        if (content.getChildCount() > 0 && current.equals(shown)) return;
-        shown = current;
-        content.removeAllViews();
-
-        content.addView(header());
-
-        if (current.hideHud()) {
-            group("界面");
-            content.addView(action("隐藏 / 恢复 HUD", Hotkeys.HIDE_HUD_NAME,
-                    Hotkeys.HIDE_HUD, "通过游戏自己的 UI 相机遮罩隐藏整个 HUD"));
+        LinearLayout foot = row();
+        TextView settings = text("增强设置", 11, MUTED); settings.setMinimumHeight(dp(40));
+        settings.setGravity(Gravity.CENTER_VERTICAL); settings.setOnClickListener(v -> openSettings());
+        foot.addView(settings, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView info = text("状态", 11, MUTED); info.setMinimumHeight(dp(40)); info.setGravity(Gravity.CENTER);
+        info.setOnClickListener(v -> showDiagnostics()); foot.addView(info, new LinearLayout.LayoutParams(dp(48), -2));
+        body.addView(foot, stacked(2));
+        View rule = new View(activity); rule.setBackgroundColor(EDGE); body.addView(rule, new LinearLayout.LayoutParams(-1, dp(1)));
+        body.addView(status); refreshState(); host.post(this::position);
+    }
+    private Tile tile(String title, String keyName, int icon, int key, int capability) {
+        Tile tile = new Tile(title, keyName, icon, key, capability); tiles.add(tile); return tile;
+    }
+    private final class Tile extends LinearLayout {
+        final int key, capability; final ControlIcon icon;
+        Tile(String title, String keyName, int kind, int key, int capability) {
+            super(activity); this.key = key; this.capability = capability;
+            setOrientation(VERTICAL); setGravity(Gravity.CENTER); setPadding(dp(2), dp(8), dp(2), dp(8));
+            setMinimumHeight(dp(78)); setBackground(buttonBackground());
+            icon = new ControlIcon(activity, kind, MUTED); addView(icon, new LinearLayout.LayoutParams(dp(24), dp(24)));
+            TextView name = text(title, 11, INK); name.setGravity(Gravity.CENTER); addView(name, stacked(5));
+            TextView keycap = text(keyName, 9, MUTED); keycap.setTypeface(Typeface.MONOSPACE); keycap.setGravity(Gravity.CENTER);
+            addView(keycap, stacked(2)); setContentDescription(title + "，对应热键 " + keyName);
+            setOnClickListener(v -> send(key, NativeCommandBridge.KEY_PULSE));
         }
-
-        if (current.freeCamera() || current.firstPerson()) {
-            group("相机");
-            if (current.freeCamera()) {
-                content.addView(action("自由视角", Hotkeys.FREE_CAMERA_NAME,
-                        Hotkeys.FREE_CAMERA, "脱离角色自由移动镜头"));
-            }
-            if (current.worldPause()) {
-                content.addView(action("时间冻结", Hotkeys.WORLD_PAUSE_NAME,
-                        Hotkeys.WORLD_PAUSE, "冻结游戏时间，镜头仍可移动"));
-            }
-            if (current.firstPerson()) {
-                content.addView(action("第一人称", Hotkeys.FIRST_PERSON_NAME,
-                        Hotkeys.FIRST_PERSON, "把镜头移到角色头部"));
-            }
-            if (current.freeCamera()) {
-                content.addView(movementPad());
-            }
+        void update() {
+            boolean available = preview || (capability == 0 ? snapshot.ready("betterendfield.ui") : snapshot.cameraAvailable(capability));
+            if (capability == 8 && !preview) available &= snapshot.cameraActive(1) || snapshot.cameraActive(8);
+            setEnabled(available); setAlpha(available ? 1 : 0.38f);
+            boolean active = !preview && (capability == 0 ? snapshot.hudHidden() : snapshot.cameraActive(capability));
+            setSelected(active); icon.tint(active ? GOLD : INK);
         }
-
-        if (!current.anyControl()) {
-            content.addView(notice("还没有需要即时操作的功能。\n"
-                    + "在「画面增强」页启用隐藏 HUD、自由视角或第一人称后，按钮会出现在这里。"));
-        }
-
-        content.addView(ghost(preview ? "结束预览" : "打开增强设置",
-                view -> {
-                    if (preview) {
-                        remove();
-                    } else {
-                        openSettings();
-                    }
-                }), stacked(14));
-
-        footer.setText(preview
-                ? "预览模式：按钮不会发送指令。"
-                : "按钮按下的是桌面端同一套热键，模块在游戏内自行响应。");
-        LinearLayout.LayoutParams footerParams = stacked(10);
-        if (footer.getParent() instanceof ViewGroup) {
-            ((ViewGroup) footer.getParent()).removeView(footer);
-        }
-        content.addView(footer, footerParams);
-        host.post(this::layout);
     }
-
-    private View header() {
-        LinearLayout header = new LinearLayout(activity);
-        header.setOrientation(LinearLayout.HORIZONTAL);
-        header.setGravity(Gravity.CENTER_VERTICAL);
-
-        LinearLayout titles = new LinearLayout(activity);
-        titles.setOrientation(LinearLayout.VERTICAL);
-        TextView eyebrow = label("BETTER ENDFIELD", 10, ACCENT);
-        eyebrow.setLetterSpacing(0.14f);
-        eyebrow.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        titles.addView(eyebrow);
-        TextView title = label(preview ? "悬浮窗预览" : "游戏内控制", 18, TEXT);
-        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        titles.addView(title);
-        header.addView(titles, new LinearLayout.LayoutParams(0, -2, 1f));
-
-        TextView collapse = new TextView(activity);
-        collapse.setText("收起");
-        collapse.setTextSize(12);
-        collapse.setTextColor(TEXT_DIM);
-        collapse.setGravity(Gravity.CENTER);
-        collapse.setMinimumWidth(dp(52));
-        collapse.setMinimumHeight(dp(36));
-        collapse.setBackground(surface(ROW, 12, BORDER));
-        collapse.setContentDescription("收起控制面板");
-        collapse.setOnClickListener(view -> {
-            if (preview) remove(); else panel.setVisibility(View.GONE);
-        });
-        header.addView(collapse);
-        return header;
-    }
-
-    private void group(String name) {
-        TextView view = label(name, 11, TEXT_MUTED);
-        view.setLetterSpacing(0.08f);
-        view.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        LinearLayout.LayoutParams params = stacked(content.getChildCount() > 1 ? 16 : 14);
-        params.leftMargin = dp(2);
-        params.bottomMargin = dp(2);
-        content.addView(view, params);
-    }
-
-    /**
-     * A tap control. Sends a pulse rather than a press so that one tap is exactly
-     * one rising edge, which is what the desktop modules' edge detection expects.
-     */
-    private View action(String title, String keyName, int virtualKey, String hint) {
-        LinearLayout row = new LinearLayout(activity);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(dp(13), dp(11), dp(11), dp(11));
-        row.setBackground(pressable(ROW, ROW_PRESSED, 13));
-        row.setMinimumHeight(dp(58));
-
-        LinearLayout text = new LinearLayout(activity);
-        text.setOrientation(LinearLayout.VERTICAL);
-        TextView name = label(title, 15, TEXT);
-        name.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        text.addView(name);
-        text.addView(label(hint, 11, TEXT_DIM));
-        row.addView(text, new LinearLayout.LayoutParams(0, -2, 1f));
-
-        TextView key = label(keyName, 11, ACCENT);
-        key.setTypeface(Typeface.MONOSPACE);
-        key.setGravity(Gravity.CENTER);
-        key.setMinimumWidth(dp(28));
-        key.setPadding(dp(7), dp(3), dp(7), dp(3));
-        key.setBackground(surface(0x1FFFC845, 7, Color.TRANSPARENT));
-        LinearLayout.LayoutParams keyParams = new LinearLayout.LayoutParams(-2, -2);
-        keyParams.leftMargin = dp(10);
-        row.addView(key, keyParams);
-
-        row.setContentDescription(title + "。" + hint);
-        row.setOnClickListener(view -> pulse(virtualKey, title));
-        LinearLayout.LayoutParams params = stacked(8);
-        row.setLayoutParams(params);
-        return row;
-    }
-
-    /**
-     * Free-camera movement. These are held, not tapped: the desktop module reads
-     * the arrow keys every 5 ms for as long as they are down.
-     */
-    private View movementPad() {
-        LinearLayout pad = new LinearLayout(activity);
-        pad.setOrientation(LinearLayout.VERTICAL);
-        pad.setPadding(dp(10), dp(10), dp(10), dp(10));
-        pad.setBackground(surface(0xFF141A22, 13, BORDER));
-
-        pad.addView(label("移动（按住）", 11, TEXT_MUTED));
-
-        LinearLayout plane = new LinearLayout(activity);
-        plane.setOrientation(LinearLayout.HORIZONTAL);
-        plane.addView(hold("←", Hotkeys.MOVE_LEFT, "左移"), padCell(0));
-        plane.addView(hold("↑", Hotkeys.MOVE_FORWARD, "前进"), padCell(8));
-        plane.addView(hold("↓", Hotkeys.MOVE_BACK, "后退"), padCell(8));
-        plane.addView(hold("→", Hotkeys.MOVE_RIGHT, "右移"), padCell(8));
-        pad.addView(plane, stacked(8));
-
-        LinearLayout vertical = new LinearLayout(activity);
-        vertical.setOrientation(LinearLayout.HORIZONTAL);
-        vertical.addView(hold("升 ⤒", Hotkeys.MOVE_UP, "上升"), padCell(0));
-        vertical.addView(hold("降 ⤓", Hotkeys.MOVE_DOWN, "下降"), padCell(8));
-        pad.addView(vertical, stacked(8));
-
-        LinearLayout.LayoutParams params = stacked(8);
-        pad.setLayoutParams(params);
-        return pad;
-    }
-
-    private LinearLayout.LayoutParams padCell(int leftMarginDp) {
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, dp(50), 1f);
-        params.leftMargin = dp(leftMarginDp);
-        return params;
-    }
-
-    private View hold(String glyph, int virtualKey, String description) {
-        TextView view = new TextView(activity);
-        view.setText(glyph);
-        view.setTextSize(16);
-        view.setTextColor(TEXT);
-        view.setGravity(Gravity.CENTER);
-        view.setBackground(pressable(ROW, ROW_PRESSED, 12));
-        view.setContentDescription(description + "，按住生效");
-        view.setOnTouchListener((v, event) -> {
-            switch (event.getActionMasked()) {
-                case MotionEvent.ACTION_DOWN:
-                    v.setPressed(true);
-                    sendKey(virtualKey, NativeCommandBridge.KEY_PRESS, description);
-                    return true;
-                case MotionEvent.ACTION_UP:
-                case MotionEvent.ACTION_CANCEL:
-                    v.setPressed(false);
-                    sendKey(virtualKey, NativeCommandBridge.KEY_RELEASE, description);
-                    return true;
-                default:
-                    return false;
+    private void addCameraControls() {
+        LinearLayout controls = row(); LinearLayout pad = column();
+        pad.addView(padRow(hold("升", Hotkeys.MOVE_UP), hold("↑", Hotkeys.MOVE_FORWARD), hold("降", Hotkeys.MOVE_DOWN)));
+        pad.addView(padRow(hold("←", Hotkeys.MOVE_LEFT), stopButton(), hold("→", Hotkeys.MOVE_RIGHT)), stacked(4));
+        pad.addView(padRow(hold("慢", 0x11), hold("↓", Hotkeys.MOVE_BACK), hold("快", 0x10)), stacked(4));
+        controls.addView(pad, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView look = smallButton("划动转向\nLOOK"); look.setTextSize(12); look.setTextColor(MUTED);
+        look.setOnTouchListener(new View.OnTouchListener() {
+            float px, py;
+            @Override public boolean onTouch(View v, MotionEvent e) {
+                if (!preview && !snapshot.cameraActive(1)) return false;
+                switch (e.getActionMasked()) {
+                    case MotionEvent.ACTION_DOWN:
+                        px = e.getX(); py = e.getY(); v.setPressed(true);
+                        v.getParent().requestDisallowInterceptTouchEvent(true); return true;
+                    case MotionEvent.ACTION_MOVE:
+                        float dx = e.getX() - px, dy = e.getY() - py; px = e.getX(); py = e.getY();
+                        if (!preview && RuntimeBootstrap.loaded()) {
+                            try { NativeCommandBridge.look(Math.round(dx), Math.round(dy)); }
+                            catch (LinkageError error) { bridgeError = true; }
+                        }
+                        return true;
+                    case MotionEvent.ACTION_UP: v.performClick();
+                    case MotionEvent.ACTION_CANCEL:
+                        v.setPressed(false); v.getParent().requestDisallowInterceptTouchEvent(false); return true;
+                    default: return true;
+                }
             }
         });
-        return view;
+        LinearLayout.LayoutParams lookParams = new LinearLayout.LayoutParams(0, dp(152), 1); lookParams.leftMargin = dp(10);
+        controls.addView(look, lookParams); heldControls.add(look); body.addView(controls, stacked(4));
+        body.addView(padRow(hold("左滚", 0x67), tap("复位", 0x65), hold("右滚", 0x69)), stacked(8));
+        body.addView(padRow(hold("广角", 0x61), tap("运镜", 0x68), hold("长焦", 0x63)), stacked(4));
+        TextView more = smallButton(details ? "收起关键帧" : "关键帧热键");
+        more.setOnClickListener(v -> { details = !details; rebuild(); }); body.addView(more, stacked(6));
+        if (details) body.addView(padRow(tap("添加帧", 0x60), tap("播放帧", 0x62), tap("清空帧", 0x64)), stacked(4));
     }
-
-    private View notice(String message) {
-        TextView view = label(message, 12, TEXT_DIM);
-        view.setLineSpacing(dp(3), 1f);
-        view.setPadding(dp(13), dp(12), dp(13), dp(12));
-        view.setBackground(surface(0xFF11161C, 13, BORDER));
-        view.setLayoutParams(stacked(12));
-        return view;
+    private LinearLayout padRow(View a, View b, View c) {
+        LinearLayout row = row(); row.setMotionEventSplittingEnabled(true);
+        row.addView(a, cell(0)); row.addView(b, cell(4)); row.addView(c, cell(4)); return row;
     }
-
-    private View ghost(String title, View.OnClickListener listener) {
-        TextView view = new TextView(activity);
-        view.setText(title);
-        view.setTextSize(14);
-        view.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        view.setTextColor(ACCENT_INK);
-        view.setGravity(Gravity.CENTER);
-        view.setMinimumHeight(dp(48));
-        view.setBackground(pressable(ACCENT, 0xFFE0A513, 14));
-        view.setOnClickListener(listener);
-        return view;
+    private View stopButton() {
+        TextView stop = smallButton("停"); stop.setOnClickListener(v -> releaseHeldKeys()); heldControls.add(stop); return stop;
     }
-
-    // ------------------------------------------------------------------ actions
-
-    private void pulse(int virtualKey, String title) {
-        sendKey(virtualKey, NativeCommandBridge.KEY_PULSE, title);
+    private View tap(String label, int key) {
+        TextView view = smallButton(label); view.setOnClickListener(v -> send(key, NativeCommandBridge.KEY_PULSE));
+        heldControls.add(view); return view;
     }
-
-    private void sendKey(int virtualKey, int action, String description) {
-        if (preview) {
-            if (action != NativeCommandBridge.KEY_RELEASE) {
-                toast("预览模式：不会发送「" + description + "」");
+    private View hold(String label, int key) {
+        TextView view = smallButton(label); view.setContentDescription(label + "，按住生效"); heldControls.add(view);
+        view.setOnTouchListener(new View.OnTouchListener() {
+            int pointer = -1;
+            @Override public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getActionMasked()) {
+                    case MotionEvent.ACTION_DOWN:
+                        pointer = event.getPointerId(0); v.setPressed(true);
+                        v.getParent().requestDisallowInterceptTouchEvent(true);
+                        send(key, NativeCommandBridge.KEY_PRESS); return true;
+                    case MotionEvent.ACTION_POINTER_UP:
+                        if (event.getPointerId(event.getActionIndex()) != pointer) return true;
+                        // The finger owning this button left, even if another remains.
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        pointer = -1; v.setPressed(false);
+                        send(key, NativeCommandBridge.KEY_RELEASE);
+                        v.getParent().requestDisallowInterceptTouchEvent(false); return true;
+                    default: return true;
+                }
             }
-            return;
-        }
-        try {
-            if (!NativeCommandBridge.key(virtualKey, action)) {
-                toast("无法发送「" + description + "」");
-            }
-            bridgeMissing = false;
-        } catch (UnsatisfiedLinkError | NoSuchMethodError unavailable) {
-            // Before the first Unity frame the runtime is not loaded yet, and if a
-            // module was never configured it never will be. Say so once.
-            if (!bridgeMissing) {
-                bridgeMissing = true;
-                toast("增强运行时尚未载入，请稍后重试");
-            }
-        }
+        }); return view;
     }
 
-    private void releaseHeldKeys() {
+    private void refreshState() {
+        if (preview) { status.setText("预览模式 · 不发送任何游戏指令"); }
+        else if (RuntimeBootstrap.loaded()) {
+            try { snapshot = RuntimeSnapshot.parse(NativeCommandBridge.runtimeStatus()); bridgeError = false; }
+            catch (LinkageError error) { snapshot = RuntimeSnapshot.offline(); bridgeError = true; }
+            status.setText(bridgeError ? "控制桥绑定失败 · 请查看日志" : snapshot.summary());
+        } else status.setText(RuntimeBootstrap.failure());
+        for (Tile tile : tiles) tile.update();
+        boolean movable = preview || snapshot.cameraActive(1);
+        if (movementAllowed && !movable) releaseHeldKeys();
+        movementAllowed = movable;
+        for (View view : heldControls) { view.setEnabled(movable); view.setAlpha(movable ? 1 : 0.35f); }
+    }
+    private void send(int key, int action) {
         if (preview) return;
+        if (!RuntimeBootstrap.loaded()) { toast(RuntimeBootstrap.failure()); return; }
         try {
-            NativeCommandBridge.releaseKeys();
-        } catch (UnsatisfiedLinkError | NoSuchMethodError ignored) {
-            // Nothing is latched if the runtime was never loaded.
+            if (!NativeCommandBridge.key(key, action)) toast("输入队列已满或键位无效");
+        } catch (LinkageError error) { toast("控制桥绑定失败，请查看运行日志"); }
+    }
+    private void releaseHeldKeys() {
+        for (View view : heldControls) view.setPressed(false);
+        if (!preview && RuntimeBootstrap.loaded()) {
+            try { NativeCommandBridge.releaseKeys(); }
+            catch (LinkageError error) { android.util.Log.e("BetterEndfield.Overlay", "key release bridge failed", error); }
         }
     }
-
+    private void showDiagnostics() {
+        StringBuilder text = new StringBuilder();
+        if (preview) text.append("预览模式，不读取游戏运行状态。");
+        else if (!snapshot.connected) text.append(RuntimeBootstrap.failure());
+        else snapshot.values.forEach((key, value) -> text.append(key).append(": ").append(value).append('\n'));
+        text.append("\n设置只表示配置意图。修改模块开关后需要重新启动游戏。");
+        new AlertDialog.Builder(activity).setTitle("运行状态").setMessage(text).setPositiveButton("关闭", null).show();
+    }
     private void openSettings() {
-        Intent intent = new Intent()
-                .setClassName(RuntimeBootstrap.MODULE_PACKAGE,
-                        RuntimeBootstrap.MODULE_PACKAGE + ".MainActivity")
-                .putExtra(MainActivity.EXTRA_PAGE, "enhancement")
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        try {
-            activity.startActivity(intent);
-        } catch (RuntimeException unavailable) {
-            toast("无法打开增强设置");
-        }
+        releaseHeldKeys();
+        if (preview) { remove(); return; }
+        try { activity.startActivity(new Intent().setClassName(RuntimeBootstrap.MODULE_PACKAGE,
+                RuntimeBootstrap.MODULE_PACKAGE + ".MainActivity").putExtra(MainActivity.EXTRA_PAGE, "enhancement")); }
+        catch (RuntimeException error) { toast("无法打开增强设置"); }
     }
-
-    private void toast(String message) {
-        Toast.makeText(activity, message, Toast.LENGTH_SHORT).show();
+    void remove() {
+        closed = true; pause(); panel.animate().cancel();
+        if (host.getParent() instanceof ViewGroup) ((ViewGroup) host.getParent()).removeView(host);
     }
-
-    // ------------------------------------------------------------------- layout
-
-    private void layout() {
+    private void position() {
         if (closed || host.getWidth() == 0) return;
-        int left = host.getPaddingLeft() + dp(8);
-        int top = host.getPaddingTop() + dp(8);
-        int width = Math.max(1, host.getWidth() - left - host.getPaddingRight() - dp(8));
-        int height = Math.max(1, host.getHeight() - top - host.getPaddingBottom() - dp(8));
-        handle.setX(left + xFraction * Math.max(0, width - dp(50)));
-        handle.setY(top + yFraction * Math.max(0, height - dp(50)));
-
-        int panelWidth = Math.min(dp(320), width);
-        panel.measure(View.MeasureSpec.makeMeasureSpec(panelWidth, View.MeasureSpec.EXACTLY),
+        int left = host.getPaddingLeft() + dp(8), top = host.getPaddingTop() + dp(8);
+        int width = usableWidth(), height = usableHeight();
+        handle.setX(left + x * Math.max(0, width - dp(48)));
+        handle.setY(top + y * Math.max(0, height - dp(48)));
+        int pw = Math.min(dp(320), width);
+        panel.measure(View.MeasureSpec.makeMeasureSpec(pw, View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.AT_MOST));
-        int panelHeight = Math.min(height, panel.getMeasuredHeight());
+        int ph = Math.min(height, panel.getMeasuredHeight());
         FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) panel.getLayoutParams();
-        if (params.width != panelWidth || params.height != panelHeight) {
-            params.width = panelWidth;
-            params.height = panelHeight;
-            panel.setLayoutParams(params);
-        }
-        // Prefer opening to the right of the handle, and flip to its left when the
-        // panel would run off the screen.
-        float beside = handle.getX() + dp(58);
-        if (beside + panelWidth > left + width) beside = handle.getX() - panelWidth - dp(8);
-        panel.setX(Math.max(left, Math.min(beside, left + width - panelWidth)));
-        panel.setY(Math.max(top, Math.min(handle.getY(), top + height - panelHeight)));
+        if (params.width != pw || params.height != ph) { params.width = pw; params.height = ph; panel.setLayoutParams(params); }
+        float beside = handle.getX() + dp(56);
+        if (beside + pw > left + width) beside = handle.getX() - pw - dp(8);
+        panel.setX(Math.max(left, Math.min(beside, left + width - pw)));
+        panel.setY(Math.max(top, Math.min(handle.getY(), top + height - ph)));
         handle.bringToFront();
     }
-
-    private boolean drag(View view, MotionEvent event) {
-        switch (event.getActionMasked()) {
-            case MotionEvent.ACTION_DOWN:
-                downX = event.getRawX();
-                downY = event.getRawY();
-                startX = handle.getX();
-                startY = handle.getY();
-                dragged = false;
-                handle.setAlpha(0.75f);
-                return true;
-            case MotionEvent.ACTION_MOVE: {
-                float dx = event.getRawX() - downX;
-                float dy = event.getRawY() - downY;
-                dragged |= Math.hypot(dx, dy) > ViewConfiguration.get(activity).getScaledTouchSlop();
-                if (dragged) {
-                    int left = host.getPaddingLeft() + dp(8);
-                    int top = host.getPaddingTop() + dp(8);
-                    int w = host.getWidth() - left - host.getPaddingRight() - dp(58);
-                    int h = host.getHeight() - top - host.getPaddingBottom() - dp(58);
-                    xFraction = clamp((startX + dx - left) / Math.max(1, w));
-                    yFraction = clamp((startY + dy - top) / Math.max(1, h));
-                    layout();
-                }
-                return true;
-            }
-            case MotionEvent.ACTION_UP:
-                handle.setAlpha(1f);
-                if (!dragged) togglePanel();
-                return true;
-            case MotionEvent.ACTION_CANCEL:
-                handle.setAlpha(1f);
-                return true;
-            default:
-                return false;
-        }
+    private int usableWidth() { return Math.max(1, host.getWidth() - host.getPaddingLeft() - host.getPaddingRight() - dp(16)); }
+    private int usableHeight() { return Math.max(1, host.getHeight() - host.getPaddingTop() - host.getPaddingBottom() - dp(16)); }
+    private int dp(int n) { return Math.round(n * activity.getResources().getDisplayMetrics().density); }
+    private static float clamp(float value) { return Math.max(0, Math.min(1, value)); }
+    private void toast(String text) { Toast.makeText(activity, text, Toast.LENGTH_SHORT).show(); }
+    private LinearLayout column() { LinearLayout v = new LinearLayout(activity); v.setOrientation(LinearLayout.VERTICAL); return v; }
+    private LinearLayout row() { LinearLayout v = new LinearLayout(activity); v.setOrientation(LinearLayout.HORIZONTAL); v.setGravity(Gravity.CENTER_VERTICAL); return v; }
+    private LinearLayout.LayoutParams stacked(int margin) { LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, -2); p.topMargin = dp(margin); return p; }
+    private LinearLayout.LayoutParams weighted(int index) { LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, -2, 1); if (index > 0) p.leftMargin = dp(5); return p; }
+    private LinearLayout.LayoutParams cell(int margin) { LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, dp(48), 1); p.leftMargin = dp(margin); return p; }
+    private TextView text(String value, int size, int color) {
+        TextView v = new TextView(activity); v.setText(value); v.setTextSize(size); v.setTextColor(color);
+        v.setIncludeFontPadding(false); v.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL)); return v;
     }
-
-    private void togglePanel() {
-        boolean opening = panel.getVisibility() != View.VISIBLE;
-        if (opening) refresh();
-        panel.setVisibility(opening ? View.VISIBLE : View.GONE);
-        layout();
+    private TextView smallButton(String title) {
+        TextView v = text(title, 12, INK); v.setGravity(Gravity.CENTER); v.setMinimumHeight(dp(48));
+        v.setBackground(buttonBackground()); return v;
     }
-
-    void remove() {
-        closed = true;
-        releaseHeldKeys();
-        if (host.getParent() instanceof ViewGroup) {
-            ((ViewGroup) host.getParent()).removeView(host);
-        }
+    private GradientDrawable surface(int color, int radius, int border) {
+        GradientDrawable d = new GradientDrawable(); d.setColor(color); d.setCornerRadius(dp(radius)); d.setStroke(dp(1), border); return d;
     }
-
-    // -------------------------------------------------------------------- atoms
-
-    private static float clamp(float value) {
-        return Math.max(0f, Math.min(1f, value));
-    }
-
-    private TextView label(String text, int size, int color) {
-        TextView view = new TextView(activity);
-        view.setText(text);
-        view.setTextSize(size);
-        view.setTextColor(color);
-        return view;
-    }
-
-    private LinearLayout.LayoutParams stacked(int topMarginDp) {
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
-        params.topMargin = dp(topMarginDp);
-        return params;
-    }
-
-    private GradientDrawable surface(int color, int radius, int stroke) {
-        GradientDrawable drawable = new GradientDrawable();
-        drawable.setColor(color);
-        drawable.setCornerRadius(dp(radius));
-        if (stroke != Color.TRANSPARENT) drawable.setStroke(dp(1), stroke);
-        return drawable;
-    }
-
-    private android.graphics.drawable.StateListDrawable pressable(
-            int color, int pressedColor, int radius) {
-        android.graphics.drawable.StateListDrawable states =
-                new android.graphics.drawable.StateListDrawable();
-        states.addState(new int[]{android.R.attr.state_pressed},
-                surface(pressedColor, radius, ACCENT));
-        states.addState(new int[]{}, surface(color, radius, BORDER));
-        return states;
-    }
-
-    private int dp(int value) {
-        return Math.round(value * activity.getResources().getDisplayMetrics().density);
+    private StateListDrawable buttonBackground() {
+        StateListDrawable d = new StateListDrawable();
+        d.addState(new int[]{android.R.attr.state_pressed}, surface(0xFF454339, 12, GOLD));
+        d.addState(new int[]{android.R.attr.state_selected}, surface(0xFF35342B, 12, 0xFF82744E));
+        d.addState(new int[]{}, surface(TILE, 12, Color.TRANSPARENT)); return d;
     }
 }

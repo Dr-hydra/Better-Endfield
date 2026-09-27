@@ -69,7 +69,12 @@ public final class XposedEntry extends XposedModule {
     }
 
     private void installFrames(ClassLoader loader, java.util.function.BooleanSupplier callback) throws Throwable {
-        Class<?> unity = Class.forName("com.unity3d.player.UnityPlayer", false, loader);
+        Class<?> unity = null;
+        for (int attempt = 0; attempt < 120; ++attempt) {
+            try { unity = Class.forName("com.unity3d.player.UnityPlayer", false, loader); break; }
+            catch (ClassNotFoundException missing) { Thread.sleep(100); }
+        }
+        if (unity == null) throw new ClassNotFoundException("UnityPlayer did not become available");
         CopyOnWriteArrayList<HookHandle> hooks = new CopyOnWriteArrayList<>();
         AtomicBoolean complete = new AtomicBoolean();
         try {
@@ -77,14 +82,20 @@ public final class XposedEntry extends XposedModule {
                 if (!method.getName().equals("nativeRender") || method.getReturnType() != boolean.class) continue;
                 HookHandle handle = hook(method).intercept(chain -> {
                     Object result = chain.proceed();
-                    if (Boolean.TRUE.equals(result) && !complete.get() && callback.getAsBoolean()) {
-                        complete.set(true);
-                        hooks.forEach(HookHandle::unhook);
+                    if (Boolean.TRUE.equals(result)) {
+                        if (!complete.get() && callback.getAsBoolean()) complete.set(true);
+                        if (RuntimeBootstrap.loaded()) {
+                            // Already on Unity's nativeRender thread. Never use a
+                            // background watchdog to invoke Unity APIs for unpause.
+                            NativeCommandBridge.frame();
+                        } else if (complete.get()) {
+                            hooks.forEach(HookHandle::unhook);
+                        }
                     }
                     return result;
                 });
                 hooks.add(handle);
-                if (complete.get()) handle.unhook();
+                if (complete.get() && !RuntimeBootstrap.loaded()) handle.unhook();
             }
             if (hooks.isEmpty()) throw new NoSuchMethodException("UnityPlayer.nativeRender");
         } catch (Throwable error) {

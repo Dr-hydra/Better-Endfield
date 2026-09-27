@@ -2,6 +2,7 @@ package dev.betterendfield.android;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.*;
 import android.view.View;
 import android.widget.*;
@@ -10,6 +11,12 @@ import org.json.*;
 /** Import and startup-selection screen for installed BEM packages. */
 public final class BemInstallActivity extends Activity {
     private static final int PICK=101;
+    private static final String STATE_PENDING_URI="bem.pending_uri";
+    private static final String STATE_INCOMING_NOTICE="bem.incoming_notice";
+    private Uri pendingImport;
+    private View incoming;
+    private TextView incomingNotice;
+    private Button incomingRetry;
     private final Handler handler=new Handler(Looper.getMainLooper());
     private TextView status;private LinearLayout entries;private String displayed="";
     private Button importButton,cancel;
@@ -20,6 +27,7 @@ public final class BemInstallActivity extends Activity {
     private final java.util.List<Button> packageActions=new java.util.ArrayList<>();
     private final Runnable refresh=new Runnable(){public void run(){
         status.setText(BemInstaller.status);importButton.setEnabled(!BemInstaller.busy);cancel.setEnabled(BemInstaller.busy && !BemInstaller.removing);
+        incomingRetry.setEnabled(pendingImport!=null && !BemInstaller.busy);
         progress.setVisibility(BemInstaller.busy?View.VISIBLE:View.GONE);
         progressLabel.setVisibility(BemInstaller.busy?View.VISIBLE:View.GONE);
         cancel.setVisibility(BemInstaller.busy?View.VISIBLE:View.GONE);
@@ -51,6 +59,14 @@ public final class BemInstallActivity extends Activity {
         cancel=findViewById(R.id.bem_cancel);
         saveAll=findViewById(R.id.bem_save);
         entries=findViewById(R.id.bem_entries);
+        incoming=findViewById(R.id.bem_incoming);
+        incomingNotice=findViewById(R.id.bem_incoming_notice);
+        incomingRetry=findViewById(R.id.bem_incoming_retry);
+        incomingRetry.setOnClickListener(v -> startPendingImport());
+        findViewById(R.id.bem_incoming_dismiss).setOnClickListener(v -> {
+            pendingImport=null;
+            incoming.setVisibility(View.GONE);
+        });
         saveAll.setOnClickListener(v -> {
             try {
                 JSONArray changes=new JSONArray();
@@ -60,15 +76,76 @@ public final class BemInstallActivity extends Activity {
         });
         importButton.setOnClickListener(v -> startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("*/*").addCategory(Intent.CATEGORY_OPENABLE),PICK));
         cancel.setOnClickListener(v -> BemInstaller.cancel());
-        // Explicit URI grant is still required; no arbitrary filesystem path extra.
-        if(Intent.ACTION_VIEW.equals(getIntent().getAction()) && getIntent().getData()!=null && "content".equals(getIntent().getData().getScheme()))
-            BemInstaller.start(this,getIntent().getData());
+        if(state==null) {
+            receiveImport(getIntent());
+        } else {
+            // A rotation/recreated task must not replay an already accepted Intent.
+            // Only an explicitly pending (busy) request is restored for manual retry.
+            String pending=state.getString(STATE_PENDING_URI);
+            if(pending!=null) {
+                try {pendingImport=BemImportRequest.requireContentUri(Uri.parse(pending));}
+                catch(IllegalArgumentException invalid) {pendingImport=null;}
+            }
+            String notice=state.getString(STATE_INCOMING_NOTICE);
+            if(notice!=null) showIncoming(notice);
+        }
+    }
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        receiveImport(intent);
+    }
+    @Override protected void onSaveInstanceState(Bundle state) {
+        if(pendingImport!=null) state.putString(STATE_PENDING_URI,pendingImport.toString());
+        if(incoming.getVisibility()==View.VISIBLE)
+            state.putString(STATE_INCOMING_NOTICE,incomingNotice.getText().toString());
+        super.onSaveInstanceState(state);
+    }
+    private void receiveImport(Intent intent) {
+        try {
+            Uri uri=BemImportRequest.fromIntent(intent);
+            if(uri!=null) {
+                pendingImport=uri;
+                startPendingImport();
+            }
+        } catch(RuntimeException error) {
+            // Do not overwrite a different operation's global progress/status.
+            pendingImport=null;
+            showIncoming(error.getMessage()==null?"无法打开此文件，请重新选择 BEM 包。":error.getMessage());
+        }
+    }
+    private void startPendingImport() {
+        if(pendingImport==null) return;
+        try {
+            if(BemInstaller.start(this,pendingImport)) {
+                pendingImport=null;
+                incoming.setVisibility(View.GONE);
+                // An Activity kept on the back stack retains the temporary URI grant
+                // while the worker streams the file. Never finish() a relay Activity.
+            } else {
+                showIncoming("已有导入、转换或移除任务正在进行。此文件尚未导入；任务结束后可点下方按钮继续。再次打开文件会替换这条待处理请求。");
+            }
+        } catch(RuntimeException error) {
+            showIncoming(error.getMessage()==null?"无法开始导入，请重新选择 BEM 包。":error.getMessage());
+        }
+    }
+    private void showIncoming(String message) {
+        incomingNotice.setText(message);
+        incomingRetry.setVisibility(pendingImport==null?View.GONE:View.VISIBLE);
+        incomingRetry.setEnabled(pendingImport!=null && !BemInstaller.busy);
+        incoming.setVisibility(View.VISIBLE);
     }
     @Override protected void onActivityResult(int request,int result,Intent data) {
         super.onActivityResult(request,result,data);
-        if(request==PICK&&result==RESULT_OK&&data!=null&&data.getData()!=null) BemInstaller.start(this,data.getData());
+        if(request==PICK && result==RESULT_OK && data!=null) {
+            // Reuse the same validation for the in-app picker. Only URI-bearing
+            // fields are forwarded, never arbitrary paths or filenames.
+            Intent selected=new Intent(Intent.ACTION_VIEW).setData(data.getData());
+            selected.setClipData(data.getClipData());
+            receiveImport(selected);
+        }
     }
-    @Override protected void onResume(){super.onResume();handler.post(refresh);}
+    @Override protected void onResume(){super.onResume();handler.removeCallbacks(refresh);handler.post(refresh);}
     @Override protected void onPause(){handler.removeCallbacks(refresh);super.onPause();}
     private void showEntries() {
         java.util.Map<String,JSONObject> drafts=new java.util.HashMap<>();

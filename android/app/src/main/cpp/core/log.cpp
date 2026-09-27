@@ -4,6 +4,8 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <mutex>
+#include <unistd.h>
 
 namespace betterendfield {
 namespace {
@@ -14,8 +16,15 @@ void Write(int priority, const char* component, const char* message) {
     __android_log_print(priority, kLogTag, "[%s] %s", component, message);
     const char* diagnostics = std::getenv("BETTER_ENDFIELD_DIAGNOSTICS_PATH");
     if (diagnostics != nullptr && *diagnostics != '\0') {
+        static std::mutex mutex;
+        std::lock_guard lock(mutex);
         if (FILE* file = std::fopen(diagnostics, "a")) {
-            std::fprintf(file, "[%s] %s\n", component, message);
+            if (std::fseek(file, 0, SEEK_END) == 0 && std::ftell(file) > 1024 * 1024) {
+                std::fclose(file);
+                file = std::fopen(diagnostics, "w");
+                if (!file) return;
+            }
+            std::fprintf(file, "[tid=%d][%s] %s\n", static_cast<int>(gettid()), component, message);
             std::fclose(file);
         }
     }

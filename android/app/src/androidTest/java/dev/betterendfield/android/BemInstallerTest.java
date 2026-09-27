@@ -116,4 +116,85 @@ public final class BemInstallerTest extends Instrumentation {
         assertFalse(new File(root,target).exists());assertFalse(new File(root,old).exists());
         assertTrue(new File(root,other+"/installed.bem").isFile());
     }
+    /** Android framework tests: compile locally, execute with the installed test APK. */
+    public void testIncomingBemOpenAndShareRequests() throws Exception {
+        android.net.Uri uri=android.net.Uri.parse("content://bem.test.provider/document/123");
+        android.content.Intent view=new android.content.Intent(android.content.Intent.ACTION_VIEW,uri);
+        assertTrue(uri.equals(BemImportRequest.fromIntent(view)));
+        android.content.Intent share=new android.content.Intent(android.content.Intent.ACTION_SEND)
+                .setType("application/octet-stream").putExtra(android.content.Intent.EXTRA_STREAM,uri);
+        assertTrue(uri.equals(BemImportRequest.fromIntent(share)));
+        share.setClipData(android.content.ClipData.newRawUri("opaque",uri));
+        assertTrue(uri.equals(BemImportRequest.fromIntent(share)));
+        android.content.Intent clipOnly=new android.content.Intent(android.content.Intent.ACTION_SEND);
+        clipOnly.setClipData(android.content.ClipData.newRawUri("fixture.BEM",uri));
+        assertTrue(uri.equals(BemImportRequest.fromIntent(clipOnly)));
+        assertTrue(BemImportRequest.fromIntent(new android.content.Intent())==null);
+        assertTrue(BemImportRequest.fromIntent(new android.content.Intent(android.content.Intent.ACTION_MAIN))==null);
+        for(String raw:new String[]{"file:///sdcard/model.bem","https://example.com/model.bem","content:/missing-authority"}) {
+            try {BemImportRequest.fromIntent(new android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse(raw)));fail("Accepted unsafe URI");}
+            catch(IllegalArgumentException expected) {}
+        }
+        android.content.Intent text=new android.content.Intent(android.content.Intent.ACTION_SEND)
+                .putExtra(android.content.Intent.EXTRA_TEXT,uri.toString());
+        try {BemImportRequest.fromIntent(text);fail("Accepted text instead of a grant-bearing URI");}
+        catch(IllegalArgumentException expected) {}
+        android.content.Intent wrongType=new android.content.Intent(android.content.Intent.ACTION_SEND)
+                .putExtra(android.content.Intent.EXTRA_STREAM,"not a Uri");
+        try {BemImportRequest.fromIntent(wrongType);fail("Accepted malformed stream extra");}
+        catch(IllegalArgumentException expected) {}
+        android.content.ClipData multiple=android.content.ClipData.newRawUri("first",uri);
+        multiple.addItem(new android.content.ClipData.Item(android.net.Uri.parse("content://bem.test.provider/second")));
+        clipOnly.setClipData(multiple);
+        try {BemImportRequest.fromIntent(clipOnly);fail("Silently selected from multiple documents");}
+        catch(IllegalArgumentException expected) {}
+        share.setClipData(android.content.ClipData.newRawUri("conflict",android.net.Uri.parse("content://bem.test.provider/other")));
+        try {BemImportRequest.fromIntent(share);fail("Accepted conflicting URI fields");}
+        catch(IllegalArgumentException expected) {}
+    }
+    public void testBemImportBusyResult() throws Exception {
+        // Do not touch storage/native parsing; verify that busy is observable and
+        // the running operation's status is not overwritten by another request.
+        synchronized(BemInstaller.class) {
+            if(BemInstaller.busy) fail("Run installer tests with no active import");
+            String previous=BemInstaller.status;
+            BemInstaller.busy=true;
+            try {
+                assertFalse(BemInstaller.start(getTargetContext(),android.net.Uri.parse("content://bem.test.provider/document/123")));
+                assertTrue(previous.equals(BemInstaller.status));
+            } finally {BemInstaller.busy=false;}
+        }
+    }
+    public void testBemOpenWithManifestResolution() throws Exception {
+        android.content.Context context=getTargetContext();
+        android.content.pm.PackageManager pm=context.getPackageManager();
+        android.content.ComponentName component=new android.content.ComponentName(context,BemInstallActivity.class);
+        android.content.pm.ActivityInfo info=pm.getActivityInfo(component,0);
+        assertTrue(info.exported);
+        assertEquals(android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP,info.launchMode);
+        android.net.Uri content=android.net.Uri.parse("content://bem.test.provider/document/123");
+        for(String mime:new String[]{"application/x-bem","application/vnd.betterendfield.bem","application/octet-stream","application/x-binary"}) {
+            android.content.Intent view=new android.content.Intent(android.content.Intent.ACTION_VIEW)
+                    .setDataAndType(content,mime).setPackage(context.getPackageName());
+            assertTrue(resolvesBem(pm,view));
+            android.content.Intent send=new android.content.Intent(android.content.Intent.ACTION_SEND)
+                    .setType(mime).putExtra(android.content.Intent.EXTRA_STREAM,content).setPackage(context.getPackageName());
+            assertTrue(resolvesBem(pm,send));
+        }
+        for(String mime:new String[]{"image/png","application/pdf","text/plain"}) {
+            android.content.Intent unrelated=new android.content.Intent(android.content.Intent.ACTION_VIEW)
+                    .setDataAndType(content,mime).setPackage(context.getPackageName());
+            assertFalse(resolvesBem(pm,unrelated));
+        }
+        android.content.Intent path=new android.content.Intent(android.content.Intent.ACTION_VIEW)
+                .setDataAndType(android.net.Uri.parse("file:///sdcard/model.bem"),"application/octet-stream")
+                .setPackage(context.getPackageName());
+        assertFalse(resolvesBem(pm,path));
+    }
+    private static boolean resolvesBem(android.content.pm.PackageManager pm,android.content.Intent intent) {
+        for(android.content.pm.ResolveInfo info:pm.queryIntentActivities(intent,android.content.pm.PackageManager.MATCH_DEFAULT_ONLY))
+            if(BemInstallActivity.class.getName().equals(info.activityInfo.name)) return true;
+        return false;
+    }
+
 }

@@ -3,6 +3,9 @@
 #include "touch_input.h"
 
 #include <Windows.h>
+#if defined(__ANDROID__)
+#include "android_frame.h"
+#endif
 
 #include <algorithm>
 #include <array>
@@ -1287,6 +1290,11 @@ bool InstallHooks() {
         void** original = nullptr;
 
         std::string_view key(contract.key);
+#if defined(__ANDROID__)
+        // No device/platform spoofing is needed to hide native Android HUDs.
+        if (key.starts_with("device.") || key.starts_with("app.") ||
+            key.starts_with("cloud_")) continue;
+#endif
         if (key == "device.is_mobile") {
             detour = reinterpret_cast<void*>(&DetourGetIsMobile);
             original = reinterpret_cast<void**>(&g_original_get_is_mobile);
@@ -1396,6 +1404,18 @@ void StopHooks() {
     }
 }
 
+#if defined(__ANDROID__)
+void AndroidUiFrame(bool suspend) {
+    if (!betterendfield::OnAndroidFrameThread()) return;
+    const auto state = g_state.load(std::memory_order_acquire);
+    if (state != ModuleState::Ready && state != ModuleState::Active && state != ModuleState::Disabled) return;
+    if (!suspend) {
+        PumpUidVisibility();
+        PumpHudVisibility();
+    }
+    betterendfield::PublishAndroidHudState(g_hud_hidden);
+}
+#endif
 BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     if (!host || host->abi_version != BETTER_ENDFIELD_MODULE_ABI_V1) {
         return BE_Result_InvalidArgument;
@@ -1420,6 +1440,9 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     TouchInput::Start([](const char* message) { Log(message); });
 
     g_state.store(ModuleState::Ready);
+#if defined(__ANDROID__)
+    betterendfield::SetAndroidFrameClient(betterendfield::FrameClient::Ui, &AndroidUiFrame);
+#endif
     Log("BetterEndfield.UI module initialized successfully.");
     return BE_Result_Ok;
 }
@@ -1465,6 +1488,10 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
 }
 
 void BE_CALL Shutdown() {
+#if defined(__ANDROID__)
+    betterendfield::SetAndroidFrameClient(betterendfield::FrameClient::Ui, nullptr);
+    betterendfield::PublishAndroidHudState(false);
+#endif
     TouchInput::SetEnabled(false);
     TouchInput::Stop();
     g_hide_uid_enabled.store(false, std::memory_order_release);

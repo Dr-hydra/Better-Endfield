@@ -76,12 +76,17 @@ ModuleResult DesktopModule::Start(Il2CppRuntime& runtime) {
     }
     const BE_Result initialize = api_->initialize(&host_);
     if (initialize != BE_Result_Ok) {
+        if (api_->shutdown) api_->shutdown();
+        ReleaseHooksCallback(this, id_);
         return {false, "desktop contract initialization failed: " +
             std::to_string(static_cast<int>(initialize))};
     }
     initialized_ = true;
     const BE_Result applied = api_->configuration_changed(configuration_.c_str());
     if (applied != BE_Result_Ok) {
+        if (api_->shutdown) api_->shutdown();
+        ReleaseHooksCallback(this, id_);
+        initialized_ = false;
         return {false, "desktop configuration rejected: " +
             std::to_string(static_cast<int>(applied))};
     }
@@ -149,13 +154,16 @@ BE_Result DesktopModule::CreateHookCallback(
     if (self == nullptr || target == nullptr || detour == nullptr || original == nullptr) {
         return BE_Result_InvalidArgument;
     }
+    HookRecord record{module_id == nullptr ? self->id_ : module_id, nullptr};
+    self->hooks_.reserve(self->hooks_.size() + 1);
     void* stub = nullptr;
     std::string error;
     if (!self->hook_broker_.Install(target, detour, original, stub, error)) {
         LogError(self->id_, error.c_str());
         return BE_Result_Failed;
     }
-    self->hooks_.push_back({module_id == nullptr ? self->id_ : module_id, stub});
+    record.stub = stub;
+    self->hooks_.push_back(std::move(record));
     return BE_Result_Ok;
 }
 
@@ -168,7 +176,6 @@ BE_Result DesktopModule::ReleaseHooksCallback(void* context, const char* module_
     for (HookRecord& hook : self->hooks_) {
         if (requested.empty() || hook.module_id == requested) {
             self->hook_broker_.Remove(hook.stub);
-            hook.stub = nullptr;
         }
     }
     self->hooks_.erase(

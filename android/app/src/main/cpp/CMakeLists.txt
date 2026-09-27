@@ -17,7 +17,16 @@ set(Plugin.GlobalOffsetTableHook OFF CACHE BOOL "" FORCE)
 set(Plugin.LinkerLoadCallback OFF CACHE BOOL "" FORCE)
 set(Plugin.ApplicationEventMonitor OFF CACHE BOOL "" FORCE)
 set(Plugin.Android.BionicLinkerRestriction OFF CACHE BOOL "" FORCE)
-add_subdirectory("${DOBBY_ROOT}" "${CMAKE_CURRENT_BINARY_DIR}/dobby")
+set(DOBBY_BUILD_KERNEL OFF CACHE BOOL "" FORCE)
+# Do not build upstream examples (they depend on disabled Dobby plugins).
+add_subdirectory("${DOBBY_ROOT}" "${CMAKE_CURRENT_BINARY_DIR}/dobby" EXCLUDE_FROM_ALL)
+if(TARGET dobby_static)
+    set(BETTER_ENDFIELD_DOBBY_TARGET dobby_static)
+elseif(TARGET dobby)
+    set(BETTER_ENDFIELD_DOBBY_TARGET dobby)
+else()
+    message(FATAL_ERROR "Dobby did not provide a supported library target")
+endif()
 add_subdirectory("${BETTER_ENDFIELD_ROOT}/native/modules/custom_model"
     "${CMAKE_CURRENT_BINARY_DIR}/custom_model")
 
@@ -47,6 +56,7 @@ target_link_options(betterendfield_installer PRIVATE -Wl,-z,max-page-size=16384 
 # runtime sources can never pick it up.
 add_library(betterendfield_desktop_features STATIC
     "${BETTER_ENDFIELD_ROOT}/native/shared/android_compat/android_win32.cpp"
+    "${BETTER_ENDFIELD_ROOT}/native/shared/android_compat/android_frame.cpp"
     "${BETTER_ENDFIELD_ROOT}/native/shared/android_compat/touch_input_android.cpp"
     "${BETTER_ENDFIELD_ROOT}/native/modules/ui/module.cpp"
     "${BETTER_ENDFIELD_ROOT}/native/modules/camera/module.cpp"
@@ -128,7 +138,7 @@ find_library(dl_library dl REQUIRED)
 target_link_libraries(betterendfield_android PRIVATE
     c++_static
     c++abi
-    dobby
+    ${BETTER_ENDFIELD_DOBBY_TARGET}
     BetterEndfield.CustomModelCore
     betterendfield_desktop_features
     ${log_library}

@@ -1,4 +1,6 @@
 #include "android_win32.h"
+#include "loaded_il2cpp.h"
+#include <mutex>
 
 #include <atomic>
 #include <chrono>
@@ -10,53 +12,42 @@ namespace betterendfield {
 namespace {
 
 constexpr int kVirtualKeyCount = 256;
-constexpr std::uint64_t kHeldForever = ~std::uint64_t{0};
-
-// Zero means released, kHeldForever means held until an explicit release, and
-// anything else is the monotonic millisecond at which a pulse expires.
-std::atomic<std::uint64_t> g_key_deadline[kVirtualKeyCount];
-
+constexpr uint32_t kHeld = 1, kGap = 2, kPulse = 4, kMaxPulses = 32;
+std::atomic<uint32_t> g_keys[kVirtualKeyCount]{};
 std::uint64_t NowMilliseconds() {
-    return static_cast<std::uint64_t>(
-        std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::steady_clock::now().time_since_epoch())
-            .count());
+    return static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count());
 }
-
-}  // namespace
-
-bool SetVirtualKey(int virtual_key, VirtualKeyAction action) {
-    if (virtual_key <= 0 || virtual_key >= kVirtualKeyCount) return false;
-    std::uint64_t deadline = 0;
+} // namespace
+bool SetVirtualKey(int key, VirtualKeyAction action) {
+    if (key <= 0 || key >= kVirtualKeyCount) return false;
+    auto& state = g_keys[key];
     switch (action) {
-        case VirtualKeyAction::Release: deadline = 0; break;
-        case VirtualKeyAction::Press: deadline = kHeldForever; break;
-        case VirtualKeyAction::Pulse:
-            deadline = NowMilliseconds() + kVirtualKeyPulseMs;
-            break;
+        case VirtualKeyAction::Press: state.fetch_or(kHeld, std::memory_order_acq_rel); return true;
+        case VirtualKeyAction::Release: state.fetch_and(~kHeld, std::memory_order_acq_rel); return true;
+        case VirtualKeyAction::Pulse: {
+            auto value = state.load(std::memory_order_acquire);
+            do {
+                if (value / kPulse >= kMaxPulses) return false;
+            } while (!state.compare_exchange_weak(value, value + kPulse, std::memory_order_acq_rel));
+            return true;
+        }
         default: return false;
     }
-    g_key_deadline[virtual_key].store(deadline, std::memory_order_release);
-    return true;
 }
-
 void ReleaseAllVirtualKeys() {
-    for (auto& key : g_key_deadline) key.store(0, std::memory_order_release);
+    for (auto& state : g_keys) state.store(0, std::memory_order_release);
 }
-
-bool VirtualKeyDown(int virtual_key) {
-    if (virtual_key <= 0 || virtual_key >= kVirtualKeyCount) return false;
-    const std::uint64_t deadline =
-        g_key_deadline[virtual_key].load(std::memory_order_acquire);
-    if (deadline == 0) return false;
-    if (deadline == kHeldForever) return true;
-    if (NowMilliseconds() < deadline) return true;
-    // Clear the expired pulse so the next tap is a fresh rising edge. The
-    // compare_exchange leaves a deadline a racing writer has just re-armed.
-    std::uint64_t expected = deadline;
-    g_key_deadline[virtual_key].compare_exchange_strong(
-        expected, 0, std::memory_order_acq_rel, std::memory_order_acquire);
-    return false;
+bool VirtualKeyDown(int key) {
+    if (key <= 0 || key >= kVirtualKeyCount) return false;
+    auto& state = g_keys[key];
+    auto value = state.load(std::memory_order_acquire);
+    for (;;) {
+        if (value & kHeld) return true;
+        const bool down = !(value & kGap) && value >= kPulse;
+        const uint32_t next = value & kGap ? value & ~kGap : down ? (value - kPulse) | kGap : 0;
+        if (state.compare_exchange_weak(value, next, std::memory_order_acq_rel)) return down;
+    }
 }
 
 namespace win32 {
@@ -79,9 +70,10 @@ std::uint32_t ThreadId() { return static_cast<std::uint32_t>(gettid()); }
 std::uint32_t ProcessId() { return static_cast<std::uint32_t>(getpid()); }
 
 void* Il2CppImage() {
-    // RTLD_NOLOAD: the client maps libil2cpp.so long before any module starts,
-    // and loading a second copy would resolve exports against the wrong image.
-    static void* image = dlopen("libil2cpp.so", RTLD_NOLOAD | RTLD_NOW);
+    static std::mutex mutex;
+    static void* image = nullptr;
+    std::lock_guard lock(mutex);
+    if (!image) image = OpenLoadedIl2Cpp();
     return image;
 }
 

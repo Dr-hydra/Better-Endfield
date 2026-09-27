@@ -20,4 +20,9 @@ final class NativeCommandBridge {
     static native boolean key(int virtualKey, int action);
 
     static native void releaseKeys();
+    static native int protocolVersion();
+    static native String runtimeStatus();
+    static native void frame();
+    static native void foreground(boolean visible);
+    static native void look(int dx, int dy);
 }

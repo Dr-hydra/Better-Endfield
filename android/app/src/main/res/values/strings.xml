@@ -126,4 +126,5 @@
     <string name="module_will_not_load">不会装载</string>
     <string name="overlay_turned_on">悬浮窗已启用。首次启用请重启游戏；面板随游戏页面显示和隐藏。</string>
     <string name="overlay_turned_off">悬浮窗已关闭。重新进入游戏页面后生效。</string>
+    <string name="bem_import_activity_label">Better Endfield · 导入 BEM</string>
 </resources>

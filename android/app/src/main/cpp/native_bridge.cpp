@@ -1,4 +1,11 @@
 #include "core/log.h"
+#include "core/jni_binding.h"
+#include "core/runtime_status.h"
+#include "android_frame.h"
+#include <fcntl.h>
+#include <sys/file.h>
+#include <unistd.h>
+#include <exception>
 #include "core/runtime.h"
 #include "core/command_pump.h"
 #include "modules/module.h"
@@ -32,11 +39,19 @@ namespace betterendfield {
 namespace {
 
 constexpr auto kPollInterval = std::chrono::milliseconds(100);
-constexpr auto kInitialDelay = std::chrono::seconds(1);
+
 constexpr int kMaximumAttempts = 1200;
-std::atomic_bool g_runtime_started{false};
-std::vector<std::unique_ptr<Module>> g_modules;
-std::unique_ptr<Il2CppRuntime> g_il2cpp_runtime;
+struct Session {
+    std::atomic_bool started{false};
+    std::atomic_bool connected{false};
+    RuntimeStatus status;
+    Il2CppRuntime runtime;
+    std::vector<std::unique_ptr<Module>> modules;
+    int lock_fd = -1;
+};
+// One session lives for the process lifetime. Detached bootstrap and installed
+// hooks must never race static destruction / dlclose at application shutdown.
+Session& State() { static auto* state = new Session; return *state; }
 
 const char* Configured(const char* variable) {
     const char* value = std::getenv(variable);
@@ -44,55 +59,49 @@ const char* Configured(const char* variable) {
 }
 
 void RunModules() {
-    // libil2cpp.so is mapped before the IL2CPP domain is safe to enter. The
-    // proven read-only POC used this guard; connecting immediately can call
-    // il2cpp_thread_attach while domain initialization is still in progress.
-    std::this_thread::sleep_for(kInitialDelay);
-    LogInfo("runtime", "Android module runtime started");
-
-    g_il2cpp_runtime = std::make_unique<Il2CppRuntime>();
-    Il2CppRuntime& runtime = *g_il2cpp_runtime;
-    for (int attempt = 1; attempt <= kMaximumAttempts; ++attempt) {
-        if (runtime.Connect()) {
-            break;
-        }
-        if (attempt == kMaximumAttempts) {
-            LogError("runtime", "timed out waiting for libil2cpp.so");
+    auto& state = State();
+    auto& runtime = state.runtime;
+    state.status.Set("runtime", "waiting_il2cpp");
+    for (int attempt = 0; attempt < kMaximumAttempts; ++attempt) {
+        if (runtime.Connect() && runtime.HasAssembly("mscorlib.dll") && betterendfield::HasAndroidFrameBridge()) break;
+        if (attempt + 1 == kMaximumAttempts) {
+            state.status.Set("runtime", "failed_il2cpp_timeout");
+            LogError("runtime", "IL2CPP exports/domain/loaded images did not become ready");
             return;
         }
         std::this_thread::sleep_for(kPollInterval);
     }
-
+    state.connected.store(true, std::memory_order_release);
     Il2CppThreadScope thread(runtime);
     if (!thread.attached()) {
-        LogError("runtime", "failed to attach worker to the IL2CPP domain");
+        state.status.Set("runtime", "failed_thread_attach");
         return;
     }
-
+    state.status.Set("runtime", "starting_modules");
     const char* custom_probe = std::getenv("BETTER_ENDFIELD_CUSTOM_MODEL_PROBE");
     if (Configured("BETTER_ENDFIELD_CUSTOM_MODEL_CONFIG") != nullptr) {
-        g_modules.emplace_back(std::make_unique<CustomModelModule>());
+        state.modules.emplace_back(std::make_unique<CustomModelModule>());
     }
     if (custom_probe != nullptr && std::string(custom_probe) == "1") {
-        g_modules.emplace_back(std::make_unique<CustomModelResourceProbe>());
+        state.modules.emplace_back(std::make_unique<CustomModelResourceProbe>());
     }
     if (Configured("BETTER_ENDFIELD_VOICE_RULES") != nullptr) {
-        g_modules.emplace_back(std::make_unique<CharacterVoiceModule>());
+        state.modules.emplace_back(std::make_unique<CharacterVoiceModule>());
     }
     if (Configured("BETTER_ENDFIELD_MODEL_CONFIG") != nullptr) {
-        g_modules.emplace_back(std::make_unique<LoginModelModule>());
+        state.modules.emplace_back(std::make_unique<LoginModelModule>());
     }
     // The three ported desktop modules. Their configurations are independent, so
     // a user who only wants one of them never has the others in the process.
     if (Configured("BETTER_ENDFIELD_UI_CONFIG") != nullptr) {
-        g_modules.emplace_back(std::make_unique<DesktopModule>(
+        state.modules.emplace_back(std::make_unique<DesktopModule>(
             "betterendfield.ui",
             "BETTER_ENDFIELD_UI_CONFIG",
             &BetterEndfield_GetUiModuleApiV1,
             "same-source desktop UI module active (hide UID/watermark, all-HUD toggle)"));
     }
     if (Configured("BETTER_ENDFIELD_CAMERA_CONFIG") != nullptr) {
-        g_modules.emplace_back(std::make_unique<DesktopModule>(
+        state.modules.emplace_back(std::make_unique<DesktopModule>(
             "betterendfield.camera",
             "BETTER_ENDFIELD_CAMERA_CONFIG",
             &BetterEndfield_GetCameraModuleApiV1,
@@ -100,17 +109,58 @@ void RunModules() {
             "first person, near-camera dither)"));
     }
     if (Configured("BETTER_ENDFIELD_ACTIONS_CONFIG") != nullptr) {
-        g_modules.emplace_back(std::make_unique<DesktopModule>(
+        state.modules.emplace_back(std::make_unique<DesktopModule>(
             "betterendfield.actions",
             "BETTER_ENDFIELD_ACTIONS_CONFIG",
             &BetterEndfield_GetActionsModuleApiV1,
             "same-source desktop sustained-dash module active"));
     }
 
-    for (const auto& module : g_modules) {
-        const ModuleResult result = module->Start(runtime);
-        LogInfo(module->Id(), result.message.c_str());
+    // Missing hot-update metadata delays only the affected module. The actual
+    // Start calls remain serialized; abandoning a timed-out C++ thread is unsafe
+    // and parallel Dobby patches are not a substitute for fixing JNI/ABI errors.
+    std::vector<bool> finished(state.modules.size(), false);
+    for (const auto& module : state.modules) state.status.Set(module->Id(), "waiting_metadata");
+    auto dependencies_ready = [&runtime](const char* id) {
+        const std::string name(id);
+        if (name == "voice.character") return runtime.HasAssembly("Audio.Beyond.dll") &&
+            runtime.HasAssembly("AK.Wwise.Unity.API.dll");
+        if (name == "betterendfield.ui") return runtime.HasAssembly("Common.Beyond.dll") &&
+            runtime.HasAssembly("UI.Beyond.dll") && runtime.HasAssembly("Gameplay.Beyond.dll") &&
+            runtime.HasAssembly("UnityEngine.UI.dll");
+        if (name == "betterendfield.camera") return runtime.HasAssembly("Gameplay.Beyond.dll") &&
+            runtime.HasAssembly("Cinemachine.dll");
+        if (name == "betterendfield.actions") return runtime.HasAssembly("Gameplay.Beyond.dll") &&
+            runtime.HasAssembly("Audio.Beyond.dll");
+        return runtime.HasAssembly("Gameplay.Beyond.dll");
+    };
+    size_t remaining = state.modules.size();
+    for (int attempt = 0; remaining && attempt < kMaximumAttempts; ++attempt) {
+        for (size_t i = 0; i < state.modules.size(); ++i) {
+            if (finished[i] || !dependencies_ready(state.modules[i]->Id())) continue;
+            Module& module = *state.modules[i];
+            state.status.Set(module.Id(), "starting");
+            LogInfo(module.Id(), "startup entered");
+            try {
+                const auto result = module.Start(runtime);
+                state.status.Set(module.Id(), result.active ? "ready" : "failed");
+                LogInfo(module.Id(), result.message.c_str());
+            } catch (const std::exception& error) {
+                state.status.Set(module.Id(), "failed_exception");
+                LogError(module.Id(), error.what());
+            } catch (...) {
+                state.status.Set(module.Id(), "failed_exception");
+                LogError(module.Id(), "unknown startup exception");
+            }
+            finished[i] = true;
+            --remaining;
+        }
+        if (remaining) std::this_thread::sleep_for(kPollInterval);
     }
+    for (size_t i = 0; i < finished.size(); ++i) {
+        if (!finished[i]) state.status.Set(state.modules[i]->Id(), "failed_metadata_timeout");
+    }
+    state.status.Set("runtime", "startup_complete");
 }
 
 bool AnyModuleRequested() {
@@ -131,18 +181,6 @@ bool AnyModuleRequested() {
 
 }  // namespace
 }  // namespace betterendfield
-
-extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM*, void*) {
-    if (!betterendfield::AnyModuleRequested()) {
-        betterendfield::LogInfo(
-            "runtime", "no Android modules selected; IL2CPP worker not started");
-        return JNI_VERSION_1_6;
-    }
-    if (!betterendfield::g_runtime_started.exchange(true, std::memory_order_acq_rel)) {
-        std::thread(betterendfield::RunModules).detach();
-    }
-    return JNI_VERSION_1_6;
-}
 
 extern "C" JNIEXPORT jboolean JNICALL
 Java_dev_betterendfield_android_NativeCommandBridge_submit(
@@ -179,4 +217,85 @@ Java_dev_betterendfield_android_NativeCommandBridge_key(
 extern "C" JNIEXPORT void JNICALL
 Java_dev_betterendfield_android_NativeCommandBridge_releaseKeys(JNIEnv*, jclass) {
     betterendfield::ReleaseAllVirtualKeys();
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_protocolVersion(JNIEnv*, jclass) { return 1; }
+extern "C" JNIEXPORT void JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_frame(JNIEnv*, jclass) {
+    auto& state = betterendfield::State();
+    try {
+        if (state.connected.load(std::memory_order_acquire)) {
+            betterendfield::Il2CppThreadScope thread(state.runtime);
+            if (!thread.attached()) return;
+            betterendfield::DispatchAndroidFrame();
+        } else {
+            // Publish the render-thread identity before the worker starts.
+            // No module callback can be installed before connected is published.
+            betterendfield::DispatchAndroidFrame();
+        }
+    } catch (const std::exception& error) {
+        betterendfield::LogError("runtime.frame", error.what());
+    } catch (...) {
+        betterendfield::LogError("runtime.frame", "frame callback failed");
+    }
+}
+extern "C" JNIEXPORT void JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_foreground(JNIEnv*, jclass, jboolean visible) {
+    betterendfield::SetAndroidForeground(visible == JNI_TRUE);
+}
+extern "C" JNIEXPORT jstring JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_runtimeStatus(JNIEnv* env, jclass) {
+    const auto status = betterendfield::State().status.Copy() +
+        "camera.capabilities=" + std::to_string(betterendfield::AndroidCameraCapabilities()) + "\n" +
+        "camera.active=" + std::to_string(betterendfield::AndroidCameraActive()) + "\n" +
+        "ui.hud_hidden=" + (betterendfield::AndroidHudHidden() ? "1\n" : "0\n");
+    return env->NewStringUTF(status.c_str());
+}
+extern "C" JNIEXPORT void JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_look(JNIEnv*, jclass, jint dx, jint dy) {
+    betterendfield::AddAndroidLook(dx, dy);
+}
+extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
+    JNIEnv* env = nullptr;
+    if (!vm || vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) return JNI_ERR;
+    auto& state = betterendfield::State();
+    // flock is shared across library copies/namespaces, unlike a C++ static.
+    // The private game cache path is set before nativeLoad. Keep the descriptor
+    // open for the process lifetime; the kernel releases it on process death.
+    const char* lock_path = std::getenv("BETTER_ENDFIELD_RUNTIME_LOCK");
+    if (!lock_path || !*lock_path) return JNI_ERR;
+    int fd = open(lock_path, O_CREAT | O_RDWR | O_CLOEXEC | O_NOFOLLOW, 0600);
+    if (fd < 0) return JNI_ERR;
+    if (flock(fd, LOCK_EX | LOCK_NB) != 0) { close(fd); return JNI_ERR; }
+#define BE_NATIVE(name, signature) {const_cast<char*>(#name), const_cast<char*>(signature), \
+    reinterpret_cast<void*>(&Java_dev_betterendfield_android_NativeCommandBridge_##name)}
+    const JNINativeMethod methods[]{
+        BE_NATIVE(submit, "(Ljava/lang/String;)Z"), BE_NATIVE(status, "()Ljava/lang/String;"),
+        BE_NATIVE(key, "(II)Z"), BE_NATIVE(releaseKeys, "()V"), BE_NATIVE(protocolVersion, "()I"),
+        BE_NATIVE(frame, "()V"), BE_NATIVE(foreground, "(Z)V"), BE_NATIVE(look, "(II)V"), BE_NATIVE(runtimeStatus, "()Ljava/lang/String;")
+    };
+#undef BE_NATIVE
+    if (!betterendfield::BindContextLoaderNatives(env, "dev.betterendfield.android.NativeCommandBridge",
+            methods, static_cast<jint>(sizeof(methods) / sizeof(methods[0])))) {
+        close(fd);
+        return JNI_ERR;
+    }
+    state.lock_fd = fd;
+    state.status.Set("runtime", "loaded");
+    if (betterendfield::AnyModuleRequested() && !state.started.exchange(true)) {
+        // Once registered, do not unload the library on worker creation failure:
+        // published JNI pointers must remain valid so status can report it.
+        try {
+            std::thread([] {
+                try { betterendfield::RunModules(); }
+                catch (const std::exception& e) {
+                    betterendfield::State().status.Set("runtime", "failed_exception");
+                    betterendfield::LogError("runtime", e.what());
+                }
+                catch (...) { betterendfield::State().status.Set("runtime", "failed_exception"); }
+            }).detach();
+        } catch (...) { state.status.Set("runtime", "failed_worker_creation"); }
+    }
+    return JNI_VERSION_1_6;
 }

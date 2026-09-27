@@ -1,4 +1,5 @@
 #include "runtime.h"
+#include "loaded_il2cpp.h"
 
 #include <dlfcn.h>
 #include <link.h>
@@ -114,7 +115,7 @@ bool Il2CppRuntime::Connect() {
         return true;
     }
 
-    void* library = dlopen("libil2cpp.so", RTLD_NOW | RTLD_NOLOAD);
+    void* library = OpenLoadedIl2Cpp();
     if (library == nullptr) {
         return false;
     }
@@ -192,6 +193,17 @@ bool Il2CppRuntime::Connect() {
         return false;
     }
 
+    domain_get_assemblies_ = ResolveExport<decltype(domain_get_assemblies_)>(library, "il2cpp_domain_get_assemblies");
+    image_get_name_ = ResolveExport<decltype(image_get_name_)>(library, "il2cpp_image_get_name");
+    thread_current_ = ResolveExport<decltype(thread_current_)>(library, "il2cpp_thread_current");
+    field_get_flags_ = ResolveExport<decltype(field_get_flags_)>(library, "il2cpp_field_get_flags");
+    field_get_parent_ = ResolveExport<decltype(field_get_parent_)>(library, "il2cpp_field_get_parent");
+    field_get_name_ = ResolveExport<decltype(field_get_name_)>(library, "il2cpp_field_get_name");
+    class_is_enum_ = ResolveExport<decltype(class_is_enum_)>(library, "il2cpp_class_is_enum");
+    if (!domain_get_assemblies_ || !image_get_name_ || !thread_current_ || !field_get_flags_) {
+        dlclose(library);
+        return false;
+    }
     library_ = library;
     domain_get_ = domain_get;
     thread_attach_ = thread_attach;
@@ -316,6 +328,27 @@ void* Il2CppRuntime::Invoke(
         ? nullptr
         : runtime_invoke_(method, instance, parameters, exception);
 }
+
+const Il2CppImage* Il2CppRuntime::FindLoadedImage(const char* name) const {
+    if (!library_ || !name || !domain_get_assemblies_ || !image_get_name_) return nullptr;
+    auto* domain = domain_get_();
+    if (!domain) return nullptr;
+    size_t count = 0;
+    const auto** assemblies = domain_get_assemblies_(domain, &count);
+    if (!assemblies) return nullptr;
+    auto normalized = [](std::string_view value) {
+        if (value.ends_with(".dll")) value.remove_suffix(4);
+        return value;
+    };
+    for (size_t i = 0; i < count; ++i) {
+        const auto* image = assembly_get_image_(assemblies[i]);
+        const char* candidate = image ? image_get_name_(image) : nullptr;
+        if (candidate && normalized(candidate) == normalized(name)) return image;
+    }
+    return nullptr;
+}
+bool Il2CppRuntime::HasAssembly(const char* name) const { return FindLoadedImage(name) != nullptr; }
+void* Il2CppRuntime::CurrentThread() const { return thread_current_ ? thread_current_() : nullptr; }
 
 void* Il2CppRuntime::AttachCurrentThread() const {
     Il2CppDomain* domain = domain_get_ == nullptr ? nullptr : domain_get_();
@@ -458,11 +491,9 @@ ResolvedClass Il2CppRuntime::ResolveClass(
     if (library_ == nullptr) {
         return {};
     }
-    Il2CppDomain* domain = domain_get_();
-    const Il2CppAssembly* target_assembly = domain == nullptr
-        ? nullptr : domain_assembly_open_(domain, assembly);
-    const Il2CppImage* image = target_assembly == nullptr
-        ? nullptr : assembly_get_image_(target_assembly);
+    // Only query already published metadata. Do not initiate assembly loading
+    // from a module worker while Unity is installing hot-update images.
+    const Il2CppImage* image = FindLoadedImage(assembly);
     Il2CppClass* target_class = image == nullptr
         ? nullptr : class_from_name_(image, namespaze, klass);
     // class_from_name only guarantees top-level lookup. Resource delivery uses
@@ -512,23 +543,42 @@ ResolvedField Il2CppRuntime::ResolveField(
         ? ResolvedField{} : ResolvedField{info, static_cast<int32_t>(offset)};
 }
 
-void* Il2CppRuntime::ReadFieldObject(
-    const ResolvedField& field, void* instance) const {
-    return field.info == nullptr || instance == nullptr ||
-        field_get_value_object_ == nullptr
-        ? nullptr : field_get_value_object_(field.info, instance);
+void* Il2CppRuntime::ReadFieldObject(const ResolvedField& field, void* instance) const {
+    return ReadFieldObject(field.info, instance);
 }
-
 void* Il2CppRuntime::ReadFieldObject(const FieldInfo* field, void* instance) const {
-    return field == nullptr || instance == nullptr || field_get_value_object_ == nullptr
-        ? nullptr : field_get_value_object_(field, instance);
+    if (!field || !field_get_value_object_ || !field_get_flags_) return nullptr;
+    constexpr int kStatic = 0x10, kLiteral = 0x40;
+    const int flags = field_get_flags_(field);
+    if (!(flags & kStatic) && !instance) return nullptr;
+    if (void* boxed = field_get_value_object_(field, instance)) return boxed;
+    // Some players cannot box enum literals through FieldInfo. A named enum
+    // reflection lookup is a fallback, never a hard-coded numeric value.
+    if (!(flags & kStatic) || !(flags & kLiteral) || !field_get_parent_ ||
+            !field_get_name_ || !class_is_enum_) return nullptr;
+    auto* owner = field_get_parent_(field);
+    const char* name = field_get_name_(field);
+    if (!owner || !name || !class_is_enum_(owner)) return nullptr;
+    auto parse = ResolveMethodExact("mscorlib.dll", "System", "Enum", "Parse",
+        "System.Type|System.String", "System.Object", 2);
+    if (!parse.info) return nullptr;
+    const auto* type = class_get_type_(owner);
+    void* type_object = type ? type_get_object_(type) : nullptr;
+    void* text = NewString(name);
+    if (!type_object || !text) return nullptr;
+    void* args[]{type_object, text};
+    void* exception = nullptr;
+    void* result = Invoke(parse.info, nullptr, args, &exception);
+    return exception ? nullptr : result;
 }
-
-Il2CppThreadScope::Il2CppThreadScope(const Il2CppRuntime& runtime)
-    : runtime_(runtime), thread_(runtime.AttachCurrentThread()) {}
-
+Il2CppThreadScope::Il2CppThreadScope(const Il2CppRuntime& runtime) : runtime_(runtime) {
+    thread_ = runtime.CurrentThread();
+    if (!thread_) {
+        thread_ = runtime.AttachCurrentThread();
+        owns_attachment_ = thread_ != nullptr;
+    }
+}
 Il2CppThreadScope::~Il2CppThreadScope() {
-    runtime_.DetachCurrentThread(thread_);
+    if (owns_attachment_) runtime_.DetachCurrentThread(thread_);
 }
-
-}  // namespace betterendfield
+} // namespace betterendfield

@@ -3,11 +3,16 @@
 #include "first_person_retry.h"
 
 #include <Windows.h>
+#if defined(__ANDROID__)
+#include "android_frame.h"
+#endif
 
 #include <algorithm>
 #include <atomic>
 #include <cctype>
 #include <cmath>
+#include <chrono>
+#include <fstream>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -178,6 +183,15 @@ bool g_free_camera_contract_ready = false;
 bool g_dither_contract_ready = false;
 bool g_time_heartbeat_contract_ready = false;
 bool g_first_person_contract_ready = false;
+#if defined(__ANDROID__)
+uint64_t g_android_pump_generation = 0; // Unity thread only
+bool AndroidCameraReady() {
+    const auto state = g_state.load(std::memory_order_acquire);
+    return betterendfield::OnAndroidFrameThread() &&
+        (state == ModuleState::Ready || state == ModuleState::Active || state == ModuleState::Disabled);
+}
+void AndroidCameraFrame(bool suspend);
+#endif
 
 bool g_free_camera_active = false;
 std::atomic_bool g_toggle_request{false};
@@ -599,7 +613,7 @@ bool IsObjectAlive(void* object) {
 }
 
 bool KeyDown(int key) {
-    if (key == VK_OEM_MINUS) {
+    if (key == VK_OEM_MINUS || key == VK_SUBTRACT) {
         return ((GetAsyncKeyState(VK_OEM_MINUS) & 0x8000) != 0) ||
                ((GetAsyncKeyState(VK_SUBTRACT) & 0x8000) != 0);
     }
@@ -616,7 +630,9 @@ bool GameWindowHasFocus() {
     return process_id == GetCurrentProcessId();
 }
 
+#if defined(_WIN32)
 LRESULT CALLBACK FreeCameraMouseHook(int code, WPARAM message, LPARAM data);
+#endif
 
 struct HotkeyRequest {
     std::atomic_int* key;
@@ -632,7 +648,9 @@ void InputThreadMain() {
         {&g_keyframe_clear_key, &g_keyframe_clear_request},
         {&g_vmd_play_key, &g_vmd_play_request},
     };
+#if defined(_WIN32)
     HHOOK mouse_hook = nullptr;
+#endif
     bool toggle_was_down = false;
     bool pause_was_down = false;
     bool first_person_was_down = false;
@@ -646,11 +664,12 @@ void InputThreadMain() {
         const int first_person_key = g_first_person_key.load(std::memory_order_relaxed);
         const bool focused = (free_enabled || first_person_enabled) && GameWindowHasFocus();
 
-        const bool toggle_down = focused && free_enabled && KeyDown(toggle_key);
-        const bool pause_down = focused && free_enabled && KeyDown(pause_key);
-        const bool first_person_key_down = KeyDown(first_person_key) ||
-            (first_person_key == VK_OEM_MINUS && KeyDown(VK_SUBTRACT)) ||
-            (first_person_key == VK_SUBTRACT && KeyDown(VK_OEM_MINUS));
+        const bool toggle_down = focused && free_enabled &&
+            (g_toggle_request.load(std::memory_order_acquire) ? toggle_was_down : KeyDown(toggle_key));
+        const bool pause_down = focused && free_enabled &&
+            (g_pause_request.load(std::memory_order_acquire) ? pause_was_down : KeyDown(pause_key));
+        const bool first_person_key_down = g_first_person_toggle_request.load(std::memory_order_acquire)
+            ? first_person_was_down : KeyDown(first_person_key);
         const bool first_person_down = focused && first_person_enabled && first_person_key_down;
 
         if (toggle_down && !toggle_was_down) {
@@ -667,7 +686,8 @@ void InputThreadMain() {
         first_person_was_down = first_person_down;
         for (HotkeyRequest& binding : playback_keys) {
             const bool down = focused && free_enabled &&
-                KeyDown(binding.key->load(std::memory_order_relaxed));
+                (binding.request->load(std::memory_order_acquire) ? binding.was_down :
+                    KeyDown(binding.key->load(std::memory_order_relaxed)));
             if (down && !binding.was_down) {
                 binding.request->store(true, std::memory_order_release);
             }
@@ -680,6 +700,7 @@ void InputThreadMain() {
             g_mouse_look_enabled.load(std::memory_order_relaxed) &&
             g_free_camera_running.load(std::memory_order_acquire);
         g_mouse_capture.store(capture, std::memory_order_relaxed);
+#if defined(_WIN32)
         if (capture && !mouse_hook) {
             mouse_hook = SetWindowsHookExW(WH_MOUSE_LL, &FreeCameraMouseHook,
                 GetModuleHandleW(nullptr), 0);
@@ -693,11 +714,16 @@ void InputThreadMain() {
             TranslateMessage(&message);
             DispatchMessageW(&message);
         }
+#else
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+#endif
     }
     g_mouse_capture.store(false, std::memory_order_relaxed);
+#if defined(_WIN32)
     if (mouse_hook) {
         UnhookWindowsHookEx(mouse_hook);
     }
+#endif
 }
 
 void ReleaseCameraRoot() {
@@ -716,7 +742,7 @@ void RestoreWorldPause(const char* reason) {
     }
     const bool restored = SetValue(Contract("unity.time.scale.set"), nullptr,
         g_original_time_scale);
-    g_changed_time_scale = false;
+    if (restored) g_changed_time_scale = false;
     Log(std::string("World time restored: ") + reason +
         (restored ? " (ok)" : " (failed)"));
 }
@@ -730,6 +756,9 @@ void ApplyFreeCamera();
 void PumpFreeCameraRequests();
 
 void PumpFreeCameraControl() {
+#if defined(__ANDROID__)
+    ++g_android_pump_generation;
+#endif
     const bool allowed = g_free_camera_enabled.load(std::memory_order_acquire) &&
         g_free_camera_contract_ready;
 
@@ -1418,6 +1447,9 @@ float __fastcall DetourTimeUnscaledDelta(void* method) {
     const float result = g_original_time_unscaled_delta
         ? g_original_time_unscaled_delta(method)
         : 0.0f;
+#if defined(__ANDROID__)
+    if (!AndroidCameraReady()) return result;
+#endif
     if (g_time_heartbeat_contract_ready && !t_in_heartbeat) {
         t_in_heartbeat = true;
         PumpFreeCameraControl();
@@ -1430,6 +1462,12 @@ float __fastcall DetourTimeUnscaledDelta(void* method) {
 }
 
 void __fastcall DetourPushState(void* instance, void* state, void* method) {
+#if defined(__ANDROID__)
+    if (!AndroidCameraReady()) {
+        if (g_original_push_state) g_original_push_state(instance, state, method);
+        return;
+    }
+#endif
     g_push_state_calls.fetch_add(1, std::memory_order_relaxed);
     if (state && g_first_person_active.load(std::memory_order_acquire)) {
         ApplyFirstPersonState(state);
@@ -1446,6 +1484,9 @@ void __fastcall DetourTailLateTick(void* instance, float deltaTime, void* method
     if (g_original_tail_late_tick) {
         g_original_tail_late_tick(instance, deltaTime, method);
     }
+#if defined(__ANDROID__)
+    if (!AndroidCameraReady()) return;
+#endif
     // TailLateTick runs at the very tail of the frame. The first-person pose is
     // applied inside the Cinemachine push itself, so this only drives the toggle,
     // the eye anchor bookkeeping and the free camera.
@@ -1461,6 +1502,9 @@ void __fastcall DetourCameraTick(void* instance, void* method) {
     if (g_original_camera_tick) {
         g_original_camera_tick(instance, method);
     }
+#if defined(__ANDROID__)
+    if (!AndroidCameraReady()) return;
+#endif
     if (g_disable_dither_enabled.load(std::memory_order_acquire) &&
         g_dither_contract_ready) {
         InvokeVoid(Contract("camera.force_clear_dither"), instance, nullptr);
@@ -1471,6 +1515,40 @@ void __fastcall DetourCameraTick(void* instance, void* method) {
         PumpFirstPerson();
     }
 }
+
+#if defined(__ANDROID__)
+void AndroidCameraFrame(bool suspend) {
+    if (!AndroidCameraReady()) return;
+    static uint64_t previous_generation = 0;
+    if (suspend) {
+        g_toggle_request.store(false);
+        g_pause_request.store(false);
+        g_first_person_toggle_request.store(false);
+        g_motion_request.store(false);
+        g_keyframe_add_request.store(false);
+        g_keyframe_play_request.store(false);
+        g_keyframe_clear_request.store(false);
+        g_vmd_play_request.store(false);
+        ExitFirstPerson("Android Activity lost focus");
+        ExitFreeCamera("Android Activity lost focus");
+        RestoreWorldPause("Android Activity lost focus");
+    } else if (previous_generation == g_android_pump_generation) {
+        // No game-side pump ran since the last rendered frame. This remains on
+        // Unity's thread even when gameplay ticks stop at timeScale == 0.
+        PumpFreeCameraControl();
+        PumpFirstPerson();
+        if (g_free_camera_active) ApplyFreeCameraHeartbeat();
+    }
+    previous_generation = g_android_pump_generation;
+    const unsigned capabilities = (g_free_camera_contract_ready && g_free_camera_enabled.load() ? 1u : 0u) |
+        (g_free_camera_contract_ready && g_free_camera_enabled.load() && g_pause_enabled.load() ? 8u : 0u) |
+        (g_first_person_contract_ready && g_first_person_camera_enabled.load() ? 2u : 0u) |
+        (g_dither_contract_ready && g_disable_dither_enabled.load() ? 4u : 0u);
+    const unsigned active = (g_free_camera_active ? 1u : 0u) |
+        (g_first_person_active.load() ? 2u : 0u) | (g_changed_time_scale ? 8u : 0u);
+    betterendfield::PublishAndroidCameraState(capabilities, active);
+}
+#endif
 
 std::string Trim(std::string_view value) {
     while (!value.empty() && std::isspace(static_cast<unsigned char>(value.front()))) {
@@ -1726,7 +1804,7 @@ bool ResolveContracts() {
     };
     g_dither_contract_ready = ready("camera.process_dither") &&
         ready("camera.force_clear_dither");
-    g_free_camera_contract_ready = ready("camera.process_dither") &&
+    g_free_camera_contract_ready =
         ready("unity.camera.main") && ready("unity.camera.fov.get") &&
         ready("unity.camera.fov.set") && ready("unity.component.transform") &&
         ready("unity.transform.position.get") &&
@@ -1737,7 +1815,9 @@ bool ResolveContracts() {
         ready("unity.time.scale.set");
     g_time_heartbeat_contract_ready = ready("unity.time.unscaled_delta.get");
     g_first_person_contract_ready =
+#if !defined(__ANDROID__)
         (ready("camera_manager.tail_late_tick") || ready("camera.process_dither")) &&
+#endif
         ready("cinemachine.push_state") &&
         ready("player_controller.get_main_character") &&
         ready("entity.get_model_com") &&
@@ -1781,6 +1861,40 @@ bool ResolveContracts() {
         g_first_person_contract_ready;
 }
 
+#if defined(__ANDROID__)
+bool InstallHook() {
+    if (!g_host || !g_host->create_hook) return false;
+    auto install = [](const char* key, void* detour, void** original) {
+        auto* contract = Contract(key);
+        if (!contract || !contract->resolved) return false;
+        const bool installed = g_host->create_hook(g_host->context, kModuleId,
+            contract->pointer, detour, original) == BE_Result_Ok;
+        Log(std::string(installed ? "Installed camera hook: " : "Camera hook unavailable: ") + key);
+        return installed;
+    };
+    const bool late = install("camera_manager.tail_late_tick",
+        reinterpret_cast<void*>(&DetourTailLateTick), reinterpret_cast<void**>(&g_original_tail_late_tick));
+    const bool push = install("cinemachine.push_state",
+        reinterpret_cast<void*>(&DetourPushState), reinterpret_cast<void**>(&g_original_push_state));
+    const bool heartbeat = install("unity.time.unscaled_delta.get",
+        reinterpret_cast<void*>(&DetourTimeUnscaledDelta), reinterpret_cast<void**>(&g_original_time_unscaled_delta));
+    const bool dither = install("camera.process_dither",
+        reinterpret_cast<void*>(&DetourCameraTick), reinterpret_cast<void**>(&g_original_camera_tick));
+    bool control_pump = late || dither;
+#if defined(__ANDROID__)
+    // The Java nativeRender hook has already called our explicitly registered
+    // bridge. This is a real control entry, not a scheduled-but-uninstalled hook.
+    control_pump = control_pump || betterendfield::HasAndroidFrameBridge();
+#endif
+    g_push_state_hook_ready = push;
+    g_dither_contract_ready = g_dither_contract_ready && dither;
+    g_time_heartbeat_contract_ready = g_time_heartbeat_contract_ready && heartbeat;
+    g_free_camera_contract_ready = g_free_camera_contract_ready && push && g_state_layout.ready && (control_pump || heartbeat);
+    g_first_person_contract_ready = g_first_person_contract_ready && push && control_pump;
+    return g_free_camera_contract_ready || g_first_person_contract_ready || g_dither_contract_ready;
+}
+
+#else
 bool InstallHook() {
     MethodContract* tick = Contract("camera.process_dither");
     if (!tick || !tick->resolved || !g_host || !g_host->create_hook) {
@@ -1827,6 +1941,8 @@ bool InstallHook() {
     return true;
 }
 
+#endif
+
 BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     if (!host || host->abi_version != BETTER_ENDFIELD_MODULE_ABI_V1 ||
         !host->resolve_method || !host->create_hook || !host->runtime_invoke ||
@@ -1847,15 +1963,18 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     g_input_thread_stop.store(false, std::memory_order_release);
     g_input_thread = std::thread(InputThreadMain);
     g_state.store(ModuleState::Ready, std::memory_order_release);
+#if defined(__ANDROID__)
+    betterendfield::SetAndroidFrameClient(betterendfield::FrameClient::Camera, &AndroidCameraFrame);
+#endif
     Log("BetterEndfield.Camera module initialized successfully.");
     return BE_Result_Ok;
 }
 
 BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
     const CameraConfiguration config = ParseConfiguration(raw_configuration);
-    const bool free_camera = config.enabled && config.free_camera_enabled;
-    const bool anti_dither = config.enabled && config.disable_dither_enabled;
-    const bool first_person = config.enabled && config.first_person_camera_enabled;
+    const bool free_camera = config.enabled && config.free_camera_enabled && g_free_camera_contract_ready;
+    const bool anti_dither = config.enabled && config.disable_dither_enabled && g_dither_contract_ready;
+    const bool first_person = config.enabled && config.first_person_camera_enabled && g_first_person_contract_ready;
     const bool was_free = g_free_camera_enabled.load(std::memory_order_acquire);
     const bool was_first_person = g_first_person_camera_enabled.load(std::memory_order_acquire);
 
@@ -1943,6 +2062,10 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
 }
 
 void BE_CALL Shutdown() {
+#if defined(__ANDROID__)
+    betterendfield::SetAndroidFrameClient(betterendfield::FrameClient::Camera, nullptr);
+    betterendfield::PublishAndroidCameraState(0, 0);
+#endif
     g_free_camera_enabled.store(false, std::memory_order_release);
     g_disable_dither_enabled.store(false, std::memory_order_release);
     g_first_person_camera_enabled.store(false, std::memory_order_release);

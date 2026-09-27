@@ -44,6 +44,35 @@
             android:layout_marginTop="18dp"
             android:text="导入 BEM 包" />
 
+        <!-- A busy installer must not silently lose a second external document. -->
+        <LinearLayout
+            android:id="@+id/bem_incoming"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/bem_incoming_notice"
+                style="@style/BodyText"
+                android:accessibilityLiveRegion="polite" />
+
+            <Button
+                android:id="@+id/bem_incoming_retry"
+                style="@style/PrimaryButton"
+                android:layout_marginTop="10dp"
+                android:text="导入收到的文件" />
+
+            <Button
+                android:id="@+id/bem_incoming_dismiss"
+                style="@style/GhostButton"
+                android:layout_marginTop="6dp"
+                android:text="忽略此次打开" />
+        </LinearLayout>
+
         <Button
             android:id="@+id/bem_save"
             style="@style/GhostButton"
@@ -95,7 +124,7 @@
         <TextView
             style="@style/BodyText"
             android:layout_marginTop="14dp"
-            android:text="导入时保留原始纹理。只有贴图在游戏中异常时，才需要单独转换手机纹理。" />
+            android:text="也可以在文件管理器中打开或分享 BEM 文件，选择 Better Endfield 直接导入。导入时保留原始纹理；贴图异常时才需要单独转换手机纹理。" />
 
         <TextView
             style="@style/SectionEyebrow"

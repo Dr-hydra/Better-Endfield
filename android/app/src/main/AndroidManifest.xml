@@ -9,7 +9,42 @@
         android:label="@string/app_name"
         android:roundIcon="@drawable/gilberta"
         android:supportsRtl="true">
-        <activity android:name=".BemInstallActivity" android:exported="false" android:theme="@style/AppTheme" />
+        <activity
+            android:name=".BemInstallActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:label="@string/bem_import_activity_label"
+            android:theme="@style/AppTheme">
+            <!-- Document URIs often contain opaque IDs, not filenames. Use MIME
+                 routing, then validate the actual BEM bytes in the installer. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/x-bem" />
+                <data android:mimeType="application/vnd.betterendfield.bem" />
+                <data android:mimeType="application/octet-stream" />
+                <data android:mimeType="application/x-binary" />
+            </intent-filter>
+            <!-- Providers which report no MIME type at all. This does not match
+                 resolved image/PDF/text types, and never accepts http or file URIs. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+            </intent-filter>
+            <!-- SEND stores the URI in EXTRA_STREAM/ClipData, not Intent.data. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/x-bem" />
+                <data android:mimeType="application/vnd.betterendfield.bem" />
+                <data android:mimeType="application/octet-stream" />
+                <data android:mimeType="application/x-binary" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -17,15 +17,10 @@ enum class VirtualKeyAction : int {
     Release = 0,
     // Held until an explicit Release. Used by the free-camera movement pad.
     Press = 1,
-    // Auto-releases after kVirtualKeyPulseMs. Used by every toggle, so one tap
-    // produces exactly one rising edge no matter how the game is polling.
+    // Queued edge for one logical key consumer: one observed high followed
+    // by one observed low. Rapid taps cannot extend/merge a timed pulse.
     Pulse = 2,
 };
-
-// Long enough for the UI module's per-frame pump and the camera module's 5 ms
-// input thread to both observe the press, short enough that a second tap is
-// never swallowed.
-constexpr std::uint64_t kVirtualKeyPulseMs = 180;
 
 // Returns false for an out-of-range code so a malformed command cannot index
 // outside the table.

@@ -38,18 +38,20 @@ final class BemInstaller {
         try { return new JSONArray(FrameworkSettings.open(context).getString(INDEX,"[]")); }
         catch (Exception e) { throw new IllegalStateException("安装索引损坏",e); }
     }
-    static synchronized void start(Context context, Uri uri) {
-        run(context, uri, null);
+    /** Returns false when another operation owns the worker; never drops a request silently. */
+    static synchronized boolean start(Context context, Uri uri) {
+        return run(context, BemImportRequest.requireContentUri(uri), null);
     }
     static synchronized void convert(Context context, String generation) {
         run(context, null, generation);
     }
-    private static synchronized void run(Context context, Uri uri, String previousGeneration) {
-        if(busy) return;
+    private static synchronized boolean run(Context context, Uri uri, String previousGeneration) {
+        if(busy) return false;
         boolean converting=previousGeneration!=null;
         progressPercent=-1;startedAt=android.os.SystemClock.elapsedRealtime();
         busy=true; cancelled=false; status=converting?"正在准备纹理转换…":"正在读取并校验包（不转换纹理）…";
         Context app=context.getApplicationContext();
+        try {
         worker.execute(() -> {
             File stage=null;
             try {
@@ -70,7 +72,9 @@ final class BemInstaller {
                         ?new FileInputStream(new File(new File(root,previousGeneration),"installed.bem"))
                         :app.getContentResolver().openInputStream(uri); FileOutputStream out=new FileOutputStream(source)) {
                     if(in==null) throw new IOException("无法打开包");
-                    copy(in,out,2L*1024*1024*1024);out.getFD().sync();
+                    if(converting) copy(in,out,BemImportStream.MAX_BYTES);
+                    else BemImportStream.copy(in,out,BemImportStream.MAX_BYTES,BemInstaller::checkpoint);
+                    out.getFD().sync();
                 }
                 loadCodec();checkpoint();
                 JSONObject result;
@@ -119,7 +123,10 @@ final class BemInstaller {
                 // Old generations remain until explicit removal; a running game can still be reading them.
                 stage=null;status=(converting?"已转换：":"已原样导入：")+result.getString("name")+"。重启游戏后生效。";
             } catch(Throwable error) {
-                String reason=error.getMessage();
+                String reason=error instanceof SecurityException
+                        ?"没有读取权限或临时授权已失效，请从文件管理器重新打开，或使用应用内文件选择器。"
+                        :error.getMessage();
+                if(reason==null || reason.isEmpty()) reason=error.getClass().getSimpleName();
                 if(reason!=null && reason.contains("Normal slot has no verified source encoding"))
                     reason="此包缺少已确认的法线贴图编码信息，暂时无法转换；可继续使用原包。";
                 status=(converting?"转换未完成，原包和启用状态已保留：":"导入未完成：")+reason;
@@ -127,6 +134,12 @@ final class BemInstaller {
             }
             finally {if(stage!=null) deleteOwned(stage);busy=false;}
         });
+        return true;
+        } catch(RuntimeException rejected) {
+            busy=false;
+            status="无法启动导入任务，请重试。";
+            throw rejected;
+        }
     }
     private static JSONObject findEntry(JSONArray entries,String generation) throws Exception {
         for(int i=0;i<entries.length();++i) {

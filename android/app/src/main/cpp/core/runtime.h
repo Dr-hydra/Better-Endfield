@@ -39,6 +39,8 @@ public:
     Il2CppRuntime& operator=(const Il2CppRuntime&) = delete;
 
     bool Connect();
+    bool HasAssembly(const char* name) const;
+    void* CurrentThread() const;
     void* AttachCurrentThread() const;
     void DetachCurrentThread(void* thread) const;
     ResolvedMethod ResolveMethod(
@@ -86,7 +88,15 @@ public:
         void** exception) const;
 
 private:
+    const Il2CppImage* FindLoadedImage(const char* name) const;
     void* library_ = nullptr;
+    const Il2CppAssembly** (*domain_get_assemblies_)(Il2CppDomain*, size_t*) = nullptr;
+    const char* (*image_get_name_)(const Il2CppImage*) = nullptr;
+    void* (*thread_current_)() = nullptr;
+    int (*field_get_flags_)(const FieldInfo*) = nullptr;
+    Il2CppClass* (*field_get_parent_)(const FieldInfo*) = nullptr;
+    const char* (*field_get_name_)(const FieldInfo*) = nullptr;
+    bool (*class_is_enum_)(const Il2CppClass*) = nullptr;
     Il2CppDomain* (*domain_get_)() = nullptr;
     void* (*thread_attach_)(Il2CppDomain*) = nullptr;
     void (*thread_detach_)(void*) = nullptr;
@@ -132,6 +142,7 @@ public:
 private:
     const Il2CppRuntime& runtime_;
     void* thread_ = nullptr;
+    bool owns_attachment_ = false;
 };
 
 }  // namespace betterendfield

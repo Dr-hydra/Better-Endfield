@@ -232,6 +232,7 @@ VmdPlayback g_vmd;
 // cursor. The hook only exists while the free camera runs in a focused window.
 // ---------------------------------------------------------------------------
 
+#if defined(_WIN32)
 LRESULT CALLBACK FreeCameraMouseHook(int code, WPARAM message, LPARAM data) {
     if (code == HC_ACTION && g_mouse_capture.load(std::memory_order_relaxed)) {
         const auto* info = reinterpret_cast<const MSLLHOOKSTRUCT*>(data);
@@ -251,7 +252,13 @@ LRESULT CALLBACK FreeCameraMouseHook(int code, WPARAM message, LPARAM data) {
     return CallNextHookEx(nullptr, code, message, data);
 }
 
+#endif
+
 void ClearMouseInput() {
+#if defined(__ANDROID__)
+    int ignored_x = 0, ignored_y = 0;
+    betterendfield::TakeAndroidLook(ignored_x, ignored_y);
+#endif
     g_mouse_dx.store(0, std::memory_order_relaxed);
     g_mouse_dy.store(0, std::memory_order_relaxed);
     g_mouse_wheel.store(0, std::memory_order_relaxed);
@@ -505,6 +512,7 @@ void StepKeyframes(double now) {
 bool LoadVmdCamera(const std::string& path, std::vector<VmdCameraKey>& keys,
     std::string& error) {
     keys.clear();
+#if defined(_WIN32)
     const int wide_length = MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, nullptr, 0);
     if (wide_length <= 1) {
         error = "no VMD camera file is configured";
@@ -529,6 +537,19 @@ bool LoadVmdCamera(const std::string& path, std::vector<VmdCameraKey>& keys,
             nullptr) && read == data.size();
     }
     CloseHandle(file);
+#else
+    // UTF-8 paths are native on Android; no Windows file-handle emulation.
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    const auto size = file ? file.tellg() : std::streampos(-1);
+    std::vector<uint8_t> data;
+    bool read_ok = size > 0 && static_cast<uint64_t>(size) <= kMaxVmdFileBytes;
+    if (read_ok) {
+        data.resize(static_cast<size_t>(size));
+        file.seekg(0);
+        read_ok = static_cast<bool>(file.read(reinterpret_cast<char*>(data.data()),
+            static_cast<std::streamsize>(data.size())));
+    }
+#endif
     if (!read_ok) {
         error = "the VMD file is empty, larger than 64 MiB or unreadable";
         return false;
@@ -759,14 +780,20 @@ void StepFreeCamera() {
 
     FreeCameraControl& control = g_free_target;
     const float sensitivity = g_mouse_sensitivity.load(std::memory_order_relaxed);
-    const int dx = g_mouse_dx.exchange(0, std::memory_order_relaxed);
-    const int dy = g_mouse_dy.exchange(0, std::memory_order_relaxed);
+    int dx = g_mouse_dx.exchange(0, std::memory_order_relaxed);
+    int dy = g_mouse_dy.exchange(0, std::memory_order_relaxed);
+#if defined(__ANDROID__)
+    int touch_x = 0, touch_y = 0;
+    betterendfield::TakeAndroidLook(touch_x, touch_y);
+    dx += touch_x;
+    dy += touch_y;
+#endif
     const int wheel = g_mouse_wheel.exchange(0, std::memory_order_relaxed);
     control.yaw += static_cast<float>(dx) * sensitivity;
     control.pitch += static_cast<float>(g_mouse_invert_y.load(std::memory_order_relaxed)
         ? -dy : dy) * sensitivity;
     control.pitch = std::clamp(control.pitch, -kFreePitchLimit, kFreePitchLimit);
-    control.fov -= static_cast<float>(wheel) / WHEEL_DELTA * kFreeFovWheelStep;
+    control.fov -= static_cast<float>(wheel) / 120.0f * kFreeFovWheelStep;
 
     Vector3 direction{};
     float speed = g_movement_speed.load(std::memory_order_relaxed);

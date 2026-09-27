@@ -18,14 +18,19 @@ final class RuntimeBootstrap {
     private static final AtomicBoolean LOADING = new AtomicBoolean();
     private static final AtomicInteger ATTEMPTS = new AtomicInteger();
     private static volatile boolean loaded;
+    private static volatile String failure = "等待游戏首帧";
+
+    static boolean loaded() { return loaded; }
+    static String failure() { return failure; }
 
     interface FrameTrigger {
-        // Remove the hook when callback returns true (loaded or retries exhausted).
+        // Keep a successful frame hook for the Unity-thread control pump;
+        // remove it only when loading permanently fails.
         void install(ClassLoader loader, BooleanSupplier callback) throws Throwable;
     }
 
     static boolean isTarget(String packageName, String processName) {
-        return packageName.equals(processName) && !MODULE_PACKAGE.equals(packageName)
+        return packageName != null && packageName.equals(processName) && !MODULE_PACKAGE.equals(packageName)
                 && !"android".equals(packageName);
     }
 
@@ -61,6 +66,7 @@ final class RuntimeBootstrap {
                         () -> load(application, context, configs, actionPoseRoot, log));
                 log.accept("waiting for first successful Unity frame");
             } catch (Throwable error) {
+                failure = "Unity 首帧入口不可用";
                 log.accept("Unity frame trigger unavailable: " + error);
             }
         }, "BetterEndfield-Catalog");
@@ -91,12 +97,26 @@ final class RuntimeBootstrap {
             Os.setenv("BETTER_ENDFIELD_CUSTOM_MODEL_CONFIG", customModelConfig(), true);
             Os.setenv("BETTER_ENDFIELD_VOICE_CATALOG_ROOT",
                     new File(context.getFilesDir(), "betterendfield/catalog").getAbsolutePath(), true);
-            if (BuildConfig.DEBUG) Os.setenv("BETTER_ENDFIELD_DIAGNOSTICS_PATH",
+            Os.setenv("BETTER_ENDFIELD_DIAGNOSTICS_PATH",
                     new File(context.getCacheDir(), "betterendfield-diagnostics.log").getAbsolutePath(), true);
-            loadIntoTargetNamespace(library.getAbsolutePath(), context.getClassLoader(), application.getClass());
+            Os.setenv("BETTER_ENDFIELD_RUNTIME_LOCK",
+                    new File(context.getCacheDir(), "betterendfield-runtime.lock").getAbsolutePath(), true);
+            Thread current = Thread.currentThread();
+            ClassLoader previous = current.getContextClassLoader();
+            try {
+                // JNI_OnLoad uses this *explicit* loader to RegisterNatives on
+                // the bridge class, while the library stays in the game namespace.
+                current.setContextClassLoader(NativeCommandBridge.class.getClassLoader());
+                loadIntoTargetNamespace(library.getAbsolutePath(), context.getClassLoader(), application.getClass());
+            } finally {
+                current.setContextClassLoader(previous);
+            }
+            if (NativeCommandBridge.protocolVersion() != 1) throw new LinkageError("bridge protocol mismatch");
             loaded = true;
+            failure = "";
             log.accept("native runtime loaded; " + configs.summary());
         } catch (Throwable error) {
+            failure = "运行时载入失败：" + error.getClass().getSimpleName();
             log.accept("native runtime load attempt " + ATTEMPTS.get() + "/3 failed: " + error);
         } finally {
             LOADING.set(false);
