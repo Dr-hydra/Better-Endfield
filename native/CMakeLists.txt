@@ -38,6 +38,7 @@ endfunction()
 
 add_library(BetterEndfield.Host SHARED
     shared/host/bootstrap.cpp
+    shared/host/pose_lease.cpp
     shared/host/dynamic_resolver.cpp
     shared/host/hook_broker.cpp
     shared/host/host_runtime.cpp

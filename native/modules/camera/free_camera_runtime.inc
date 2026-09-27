@@ -22,7 +22,6 @@ constexpr double kPushStateStaleSeconds = 0.05;
 constexpr double kCameraValidateSeconds = 0.1;
 constexpr float kMotionEaseSeconds = 0.6f;
 constexpr size_t kMaxCameraKeyframes = 64;
-constexpr size_t kMaxVmdFileBytes = 64u << 20;
 constexpr double kVmdFramesPerSecond = 30.0;
 
 double NowSeconds() {
@@ -189,14 +188,7 @@ struct CameraKeyframe {
     float fov = 60.0f;
 };
 
-struct VmdCameraKey {
-    uint32_t frame = 0;
-    float distance = 0.0f;
-    Vector3 interest{};
-    Vector3 euler{};
-    uint8_t interp[24]{};
-    float fov = 30.0f;
-};
+using VmdCameraKey = Vmd::CameraKey;
 
 struct VmdPlayback {
     std::vector<VmdCameraKey> keys;
@@ -224,6 +216,11 @@ double g_playback_start = 0.0;
 MotionSession g_motion;
 std::vector<CameraKeyframe> g_keyframes;
 VmdPlayback g_vmd;
+CameraPath::Path g_keyframe_playback; // immutable for the current play session
+CameraFiles::Worker g_camera_files;
+uint64_t g_file_generation = 0; // game-thread session/edit epoch, never touched by I/O
+bool g_vmd_load_pending = false;
+uint64_t g_load_config_generation = 0;
 
 // ---------------------------------------------------------------------------
 // Mouse look: a low-level mouse hook on the input thread. The delta is the hook
@@ -447,6 +444,9 @@ void StepMotion(double now, float dt) {
 }
 
 void AddKeyframe() {
+    if (g_playback == FreePlayback::Keyframes) StopPlayback("recording a keyframe");
+    ++g_file_generation;
+    g_vmd_load_pending = false;
     if (g_keyframes.size() >= kMaxCameraKeyframes) {
         Log("Free camera keyframes: the limit of 64 keyframes is reached.");
         return;
@@ -455,227 +455,56 @@ void AddKeyframe() {
     Log("Free camera keyframe " + std::to_string(g_keyframes.size()) + " recorded.");
 }
 
+CameraPath::Path CaptureKeyframePath() {
+    CameraPath::Path path;
+    path.segment_seconds = g_keyframe_segment_seconds.load(std::memory_order_relaxed);
+    path.loop = g_keyframe_loop.load(std::memory_order_relaxed);
+    for (const auto& key : g_keyframes) {
+        path.keys.push_back({{key.position.x,key.position.y,key.position.z},
+            {key.rotation.x,key.rotation.y,key.rotation.z,key.rotation.w},key.fov});
+    }
+    return path;
+}
+
 void StartKeyframes() {
     if (g_keyframes.size() < 2) {
         Log("Free camera keyframes: record at least two keyframes before playing.");
         return;
     }
+    CameraPath::Path next = CaptureKeyframePath();
+    std::string error;
+    if (!CameraPath::Validate(next,error)) {
+        Log("Free camera keyframes: " + error);
+        return;
+    }
+    g_keyframe_playback = std::move(next);
     g_playback = FreePlayback::Keyframes;
     g_playback_start = NowSeconds();
     Log("Free camera keyframe playback started (" +
-        std::to_string(g_keyframes.size()) + " keyframes).");
+        std::to_string(g_keyframe_playback.keys.size()) + " keyframes).");
 }
 
 void StepKeyframes(double now) {
-    const size_t count = g_keyframes.size();
-    const float segment = g_keyframe_segment_seconds.load(std::memory_order_relaxed);
-    const float total = segment * static_cast<float>(count - 1);
-    float elapsed = static_cast<float>(now - g_playback_start);
-    const bool loop = g_keyframe_loop.load(std::memory_order_relaxed);
-    if (!loop && elapsed >= total) {
-        const CameraKeyframe& last = g_keyframes.back();
-        g_free_view = {last.position, last.rotation, last.fov};
-        StopPlayback("keyframes finished");
+    CameraPath::Key key;
+    bool finished = false;
+    if (!CameraPath::Sample(g_keyframe_playback,now-g_playback_start,key,finished)) {
+        StopPlayback("invalid keyframe path");
         return;
     }
-    if (loop) {
-        elapsed = std::fmod(elapsed, total);
-    }
-    // One-shot paths ease in and out over the whole path; loops keep a constant pace.
-    const float progress = loop ? elapsed / total : SmoothStep(elapsed / total);
-    const float scaled = progress * static_cast<float>(count - 1);
-    const size_t index = std::min(static_cast<size_t>(scaled), count - 2);
-    const float t = scaled - static_cast<float>(index);
-    const auto at = [&](ptrdiff_t i) -> const CameraKeyframe& {
-        return g_keyframes[static_cast<size_t>(std::clamp<ptrdiff_t>(i, 0,
-            static_cast<ptrdiff_t>(count - 1)))];
-    };
-    const ptrdiff_t i = static_cast<ptrdiff_t>(index);
-    g_free_view.position = CatmullRom(at(i - 1).position, at(i).position,
-        at(i + 1).position, at(i + 2).position, t);
-    g_free_view.rotation = Slerp(at(i).rotation, at(i + 1).rotation, t);
-    g_free_view.fov = std::clamp(CatmullRom(at(i - 1).fov, at(i).fov, at(i + 1).fov,
-        at(i + 2).fov, t), kFreeMinFov, kFreeMaxFov);
+    g_free_view = {{key.position.x,key.position.y,key.position.z},
+        {key.rotation.x,key.rotation.y,key.rotation.z,key.rotation.w},key.fov};
+    if (finished) StopPlayback("keyframes finished");
 }
 
-// VMD camera section: header "Vocaloid Motion Data 0002" (20 byte model name) or
-// "Vocaloid Motion Data file" (10 byte name), then bone (111 bytes each), morph
-// (23 bytes each) and camera (61 bytes each) records. Missing trailing sections
-// simply mean there is no camera data.
-bool LoadVmdCamera(const std::string& path, std::vector<VmdCameraKey>& keys,
-    std::string& error) {
-    keys.clear();
-    const int wide_length = MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, nullptr, 0);
-    if (wide_length <= 1) {
-        error = "no VMD camera file is configured";
-        return false;
-    }
-    std::wstring wide(static_cast<size_t>(wide_length), L'\0');
-    MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, wide.data(), wide_length);
-    HANDLE file = CreateFileW(wide.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
-        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (file == INVALID_HANDLE_VALUE) {
-        error = "the VMD file could not be opened";
-        return false;
-    }
-    LARGE_INTEGER size{};
-    std::vector<uint8_t> data;
-    bool read_ok = GetFileSizeEx(file, &size) && size.QuadPart > 0 &&
-        static_cast<uint64_t>(size.QuadPart) <= kMaxVmdFileBytes;
-    if (read_ok) {
-        data.resize(static_cast<size_t>(size.QuadPart));
-        DWORD read = 0;
-        read_ok = ReadFile(file, data.data(), static_cast<DWORD>(data.size()), &read,
-            nullptr) && read == data.size();
-    }
-    CloseHandle(file);
-    if (!read_ok) {
-        error = "the VMD file is empty, larger than 64 MiB or unreadable";
-        return false;
-    }
-
-    size_t offset = 0;
-    const auto remaining = [&] { return data.size() - offset; };
-    const auto read_u32 = [&](uint32_t& value) {
-        if (remaining() < 4) return false;
-        std::memcpy(&value, data.data() + offset, 4);
-        offset += 4;
-        return true;
-    };
-    const auto skip_records = [&](size_t record) {
-        uint32_t count = 0;
-        if (!read_u32(count)) return false;
-        if (count > remaining() / record) return false;
-        offset += count * record;
-        return true;
-    };
-    if (data.size() < 30) {
-        error = "the file is not a VMD motion";
-        return false;
-    }
-    const std::string_view header(reinterpret_cast<const char*>(data.data()), 30);
-    if (header.starts_with("Vocaloid Motion Data 0002")) {
-        offset = 30 + 20;
-    } else if (header.starts_with("Vocaloid Motion Data file")) {
-        offset = 30 + 10;
-    } else {
-        error = "the file is not a VMD motion";
-        return false;
-    }
-    if (offset > data.size() || !skip_records(111)) {
-        error = "the VMD bone section is truncated";
-        return false;
-    }
-    uint32_t camera_count = 0;
-    if (!skip_records(23) || !read_u32(camera_count) || camera_count == 0) {
-        error = "the VMD file has no camera keyframes";
-        return false;
-    }
-    constexpr size_t kCameraRecord = 61;
-    if (camera_count > remaining() / kCameraRecord) {
-        error = "the VMD camera section is truncated";
-        return false;
-    }
-    keys.reserve(camera_count);
-    for (uint32_t index = 0; index < camera_count; ++index) {
-        const uint8_t* record = data.data() + offset;
-        offset += kCameraRecord;
-        VmdCameraKey key;
-        float values[7]{};
-        uint32_t fov = 0;
-        std::memcpy(&key.frame, record, 4);
-        std::memcpy(values, record + 4, sizeof(values));
-        std::memcpy(key.interp, record + 32, sizeof(key.interp));
-        std::memcpy(&fov, record + 56, 4);
-        bool finite = true;
-        for (float value : values) finite = finite && std::isfinite(value);
-        if (!finite || fov == 0 || fov > 180) {
-            continue;
-        }
-        key.distance = values[0];
-        key.interest = {values[1], values[2], values[3]};
-        key.euler = {values[4], values[5], values[6]};
-        key.fov = static_cast<float>(fov);
-        keys.push_back(key);
-    }
-    // Sort by frame; a later record for the same frame wins, like MMD.
-    std::stable_sort(keys.begin(), keys.end(),
-        [](const VmdCameraKey& a, const VmdCameraKey& b) { return a.frame < b.frame; });
-    std::vector<VmdCameraKey> unique;
-    unique.reserve(keys.size());
-    for (const VmdCameraKey& key : keys) {
-        if (!unique.empty() && unique.back().frame == key.frame) unique.back() = key;
-        else unique.push_back(key);
-    }
-    keys.swap(unique);
-    if (keys.empty()) {
-        error = "the VMD camera keyframes are all invalid";
-        return false;
-    }
-    return true;
-}
-
-// MMD interpolation: a cubic Bezier from (0,0) to (1,1) with control points in
-// 0..127, solved for x with Newton iterations (EIEM CamBezierEval).
-float VmdBezier(uint8_t bx1, uint8_t bx2, uint8_t by1, uint8_t by2, float t) {
-    const float x1 = bx1 / 127.0f, x2 = bx2 / 127.0f;
-    const float y1 = by1 / 127.0f, y2 = by2 / 127.0f;
-    if (std::fabs(x1 - y1) < 1e-4f && std::fabs(x2 - y2) < 1e-4f) return t;
-    if (t <= 0.0f) return 0.0f;
-    if (t >= 1.0f) return 1.0f;
-    const auto curve = [](float p1, float p2, float s) {
-        const float u = 1.0f - s;
-        return 3.0f * u * u * s * p1 + 3.0f * u * s * s * p2 + s * s * s;
-    };
-    float s = t;
-    for (int iteration = 0; iteration < 12; ++iteration) {
-        const float x = curve(x1, x2, s) - t;
-        if (std::fabs(x) < 1e-5f) break;
-        const float u = 1.0f - s;
-        const float dx = 3.0f * u * u * x1 + 6.0f * u * s * (x2 - x1) +
-            3.0f * s * s * (1.0f - x2);
-        if (std::fabs(dx) < 1e-6f) break;
-        s = std::clamp(s - x / dx, 0.0f, 1.0f);
-    }
-    return curve(y1, y2, s);
-}
-
-void SampleVmdCamera(double frame, Vector3& position, Quaternion& rotation, float& fov) {
-    const std::vector<VmdCameraKey>& keys = g_vmd.keys;
-    const auto next = std::upper_bound(keys.begin(), keys.end(), frame,
-        [](double value, const VmdCameraKey& key) { return value < key.frame; });
-    const VmdCameraKey* k0 = nullptr;
-    const VmdCameraKey* k1 = nullptr;
-    if (next == keys.begin()) {
-        k0 = k1 = &keys.front();
-    } else if (next == keys.end()) {
-        k0 = k1 = &keys.back();
-    } else {
-        k1 = &*next;
-        k0 = &*(next - 1);
-    }
-    Vector3 interest = k0->interest;
-    Vector3 euler = k0->euler;
-    float distance = k0->distance;
-    float view_angle = k0->fov;
-    // Adjacent keyframes are a camera cut in MMD: hold the first one instead of
-    // blending across the cut at render rates above 30 fps.
-    if (k1 != k0 && k1->frame - k0->frame > 1) {
-        const float t = static_cast<float>((frame - k0->frame) /
-            static_cast<double>(k1->frame - k0->frame));
-        const uint8_t* ip = k1->interp;
-        const auto curve = [&](int group) {
-            return VmdBezier(ip[group * 4], ip[group * 4 + 1], ip[group * 4 + 2],
-                ip[group * 4 + 3], t);
-        };
-        const float rotation_t = curve(3);
-        interest = {Lerp(k0->interest.x, k1->interest.x, curve(0)),
-            Lerp(k0->interest.y, k1->interest.y, curve(1)),
-            Lerp(k0->interest.z, k1->interest.z, curve(2))};
-        euler = Lerp(k0->euler, k1->euler, rotation_t);
-        distance = Lerp(k0->distance, k1->distance, curve(4));
-        view_angle = Lerp(k0->fov, k1->fov, curve(5));
-    }
+// Parsing and disk I/O live in CameraFiles::Worker, not a Unity hook.
+// Sampling shares the same timeline conventions as body/morph/IK consumers.
+bool SampleVmdCamera(double frame, Vector3& position, Quaternion& rotation, float& fov) {
+    Vmd::CameraSample sample;
+    if (!Vmd::SampleCamera(g_vmd.keys,frame,sample)) return false;
+    const Vector3 interest{sample.interest.x,sample.interest.y,sample.interest.z};
+    const Vector3 euler{sample.euler.x,sample.euler.y,sample.euler.z};
+    const float distance = sample.distance;
+    const float view_angle = sample.fov;
     // MMD camera: Euler angles in radians with all three signs flipped, composed
     // Y * X * Z; the eye sits `distance` along the camera's local Z from the
     // interest point. The MMD space is turned 180 degrees about Y so the model
@@ -686,53 +515,111 @@ void SampleVmdCamera(double frame, Vector3& position, Quaternion& rotation, floa
     const Quaternion basis{0.0f, 1.0f, 0.0f, 0.0f};
     const float scale = g_vmd_camera_scale.load(std::memory_order_relaxed);
     const Vector3 local = Scale(RotateVector(basis, eye), scale);
-    position = Add(g_vmd.anchor, RotateVector(g_vmd.anchor_rotation, local));
-    rotation = NormalizeRotation(Multiply(g_vmd.anchor_rotation, Multiply(basis, source)));
+    const Vector3 next_position = Add(g_vmd.anchor, RotateVector(g_vmd.anchor_rotation, local));
+    const Quaternion next_rotation = NormalizeRotation(Multiply(g_vmd.anchor_rotation, Multiply(basis, source)));
+    if (!IsFinite(next_position) || !IsUnitQuaternion(next_rotation)) return false;
+    position = next_position;
+    rotation = next_rotation;
     fov = std::clamp(view_angle + g_vmd_camera_fov_bias.load(std::memory_order_relaxed),
         1.0f, 179.0f);
+    return true;
 }
 
-void StartVmd() {
-    std::string path;
+void QueueCameraFile(CameraFiles::Kind kind) {
+    CameraFiles::Job job;
+    job.kind = kind;
+    uint64_t config_generation = 0;
     {
         std::lock_guard<std::mutex> lock(g_vmd_path_mutex);
-        path = g_vmd_camera_file;
+        job.path = kind == CameraFiles::Kind::LoadVmd ? g_vmd_camera_file : g_keyframe_file;
+        config_generation = g_asset_config_generation.load(std::memory_order_acquire);
     }
-    VmdPlayback playback;
-    std::string error;
-    if (!LoadVmdCamera(path, playback.keys, error)) {
-        Log("VMD camera: " + error + ".");
+    if (job.path.empty()) {
+        Log(kind == CameraFiles::Kind::LoadVmd ? "Set vmd_camera_file before loading."
+            : "Set keyframe_file before saving/loading a camera path.");
         return;
     }
-    float yaw = 0.0f;
-    if (!CharacterPose(playback.anchor, yaw)) {
-        playback.anchor = g_free_target.position;
-        yaw = g_free_target.yaw;
-        Log("VMD camera: the main character is unavailable; anchoring at the camera.");
+    if (kind == CameraFiles::Kind::SavePath) job.snapshot = CaptureKeyframePath();
+    job.generation = g_file_generation + 1;
+    if (!g_camera_files.Submit(std::move(job))) {
+        Log("Camera file worker is busy or unavailable; current playback is unchanged.");
+        return;
     }
-    playback.anchor_rotation = AxisAngle({0.0f, 1.0f, 0.0f}, yaw);
-    playback.duration = playback.keys.back().frame / kVmdFramesPerSecond;
-    g_vmd = std::move(playback);
+    ++g_file_generation;
+    g_load_config_generation = config_generation;
+    g_vmd_load_pending = kind == CameraFiles::Kind::LoadVmd;
+    Log("Camera file request queued (disk work is off the game thread).");
+}
+
+void StartVmd() { QueueCameraFile(CameraFiles::Kind::LoadVmd); }
+
+void PollCameraFileResults() {
+    auto result = g_camera_files.Poll();
+    if (!result) return;
+    if (result->kind == CameraFiles::Kind::SavePath) {
+        Log(result->error.empty() ? "Camera keyframe file saved."
+            : "Camera keyframe save failed: " + result->error);
+        return;
+    }
+    // A late load cannot resurrect a session after exit/disable/clear/another play.
+    if (result->generation != g_file_generation) return;
+    g_vmd_load_pending = false;
+    if (!g_free_camera_enabled.load(std::memory_order_acquire) ||
+        g_load_config_generation != g_asset_config_generation.load(std::memory_order_acquire)) return;
+    if (!result->error.empty()) {
+        Log("Camera file rejected; current path/playback retained: " + result->error);
+        return;
+    }
+    if (result->kind == CameraFiles::Kind::LoadPath) {
+        if (g_playback == FreePlayback::Keyframes) StopPlayback("loaded a new path");
+        std::vector<CameraKeyframe> keys;
+        for (const auto& k : result->path.keys) {
+            keys.push_back({{k.position.x,k.position.y,k.position.z},
+                {k.rotation.x,k.rotation.y,k.rotation.z,k.rotation.w},k.fov});
+        }
+        g_keyframes = std::move(keys);
+        g_keyframe_segment_seconds.store(float(result->path.segment_seconds),std::memory_order_release);
+        g_keyframe_loop.store(result->path.loop,std::memory_order_release);
+        Log("Camera path loaded: " + std::to_string(g_keyframes.size()) +
+            " keys. Press the keyframe playback hotkey to play.");
+        return;
+    }
+    if (!g_free_camera_active) return;
+    VmdPlayback next;
+    next.keys = std::move(result->cameras);
+    if (next.keys.empty()) return;
+    float yaw = 0;
+    if (!CharacterPose(next.anchor,yaw)) {
+        next.anchor = g_free_view.position;
+        float pitch = 0, roll = 0;
+        ToEuler(g_free_view.rotation,pitch,yaw,roll);
+        Log("VMD camera: main character unavailable; anchoring at the current camera.");
+    }
+    next.anchor_rotation = AxisAngle({0.0f,1.0f,0.0f},yaw);
+    next.duration = next.keys.back().frame/kVmdFramesPerSecond;
+    if (!g_free_camera_active || result->generation != g_file_generation ||
+        g_load_config_generation != g_asset_config_generation.load(std::memory_order_acquire)) return;
+    StopPlayback("VMD load completed");
+    g_vmd = std::move(next);
     g_playback = FreePlayback::Vmd;
     g_playback_start = NowSeconds();
-    char buffer[160];
-    std::snprintf(buffer, sizeof(buffer),
-        "VMD camera playback started: %zu keyframes, %.1f s.",
-        g_vmd.keys.size(), g_vmd.duration);
-    Log(buffer);
+    Log("VMD camera playback started: " + std::to_string(g_vmd.keys.size()) + " keys.");
 }
 
 void StepVmd(double now) {
-    double elapsed = now - g_playback_start;
-    if (elapsed > g_vmd.duration) {
-        if (!g_vmd_camera_loop.load(std::memory_order_relaxed) || g_vmd.duration <= 0.0) {
-            StopPlayback("VMD camera finished");
-            return;
-        }
-        elapsed = std::fmod(elapsed, g_vmd.duration);
+    double elapsed = std::max(0.0,now-g_playback_start);
+    const bool ended = elapsed >= g_vmd.duration;
+    if (ended && g_vmd.duration > 0 && g_vmd_camera_loop.load(std::memory_order_relaxed))
+        elapsed = std::fmod(elapsed,g_vmd.duration);
+    else if (ended) elapsed = g_vmd.duration;
+    // Always sample the final frame, even when a slow frame jumps past the end.
+    if (!SampleVmdCamera(elapsed*kVmdFramesPerSecond,g_free_view.position,
+        g_free_view.rotation,g_free_view.fov)) {
+        StopPlayback("invalid VMD world pose");
+        return;
     }
-    SampleVmdCamera(elapsed * kVmdFramesPerSecond, g_free_view.position,
-        g_free_view.rotation, g_free_view.fov);
+    if (ended && (g_vmd.duration <= 0 || !g_vmd_camera_loop.load(std::memory_order_relaxed)))
+        StopPlayback("VMD camera finished");
 }
 
 // ---------------------------------------------------------------------------
@@ -841,6 +728,8 @@ void ApplyFreeCameraState(void* state) {
 }
 
 void ExitFreeCamera(const char* reason) {
+    ++g_file_generation;
+    g_vmd_load_pending = false;
     if (!g_free_camera_active) {
         return;
     }
@@ -966,33 +855,37 @@ void ApplyFreeCameraHeartbeat() {
 
 // Edge-triggered playback hotkeys. The VMD hotkey also enters the free camera.
 void PumpFreeCameraRequests() {
-    const bool motion = g_motion_request.exchange(false, std::memory_order_acq_rel);
-    const bool add = g_keyframe_add_request.exchange(false, std::memory_order_acq_rel);
-    const bool play = g_keyframe_play_request.exchange(false, std::memory_order_acq_rel);
-    const bool clear = g_keyframe_clear_request.exchange(false, std::memory_order_acq_rel);
-    const bool vmd = g_vmd_play_request.exchange(false, std::memory_order_acq_rel);
-    if (vmd && !g_free_camera_active && !EnterFreeCamera()) {
-        return;
-    }
-    if (!g_free_camera_active) {
-        return;
-    }
+    const bool motion = g_motion_request.exchange(false,std::memory_order_acq_rel);
+    const bool add = g_keyframe_add_request.exchange(false,std::memory_order_acq_rel);
+    const bool play = g_keyframe_play_request.exchange(false,std::memory_order_acq_rel);
+    const bool clear = g_keyframe_clear_request.exchange(false,std::memory_order_acq_rel);
+    const bool vmd = g_vmd_play_request.exchange(false,std::memory_order_acq_rel);
+    const bool save = g_keyframe_save_request.exchange(false,std::memory_order_acq_rel);
+    const bool load = g_keyframe_load_request.exchange(false,std::memory_order_acq_rel);
+    if (load) QueueCameraFile(CameraFiles::Kind::LoadPath);
+    if (save) QueueCameraFile(CameraFiles::Kind::SavePath);
+    if (vmd && !g_free_camera_active && !EnterFreeCamera()) return;
+    if (!g_free_camera_active) return;
     if (clear) {
+        ++g_file_generation; g_vmd_load_pending = false;
+        if (g_playback == FreePlayback::Keyframes) StopPlayback("keyframes cleared");
         g_keyframes.clear();
         Log("Free camera keyframes cleared.");
     }
-    if (add) {
-        AddKeyframe();
-    }
+    if (add) AddKeyframe();
     const auto toggle = [](FreePlayback kind, void (*start)()) {
-        if (g_playback == kind) {
-            StopPlayback("hotkey");
-        } else {
-            StopPlayback("switching playback");
-            start();
-        }
+        ++g_file_generation; g_vmd_load_pending = false;
+        if (g_playback == kind) StopPlayback("hotkey");
+        else { StopPlayback("switching playback"); start(); }
     };
-    if (motion) toggle(FreePlayback::Motion, &StartMotion);
-    if (play) toggle(FreePlayback::Keyframes, &StartKeyframes);
-    if (vmd) toggle(FreePlayback::Vmd, &StartVmd);
+    if (motion) toggle(FreePlayback::Motion,&StartMotion);
+    if (play) toggle(FreePlayback::Keyframes,&StartKeyframes);
+    if (vmd) {
+        if (g_vmd_load_pending) {
+            ++g_file_generation; g_vmd_load_pending = false;
+            Log("Pending VMD load cancelled.");
+        } else if (g_playback == FreePlayback::Vmd) {
+            ++g_file_generation; StopPlayback("VMD hotkey");
+        } else StartVmd(); // keep existing playback until a valid file is ready
+    }
 }

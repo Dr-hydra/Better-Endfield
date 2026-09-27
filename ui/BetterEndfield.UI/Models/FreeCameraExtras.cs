@@ -21,6 +21,19 @@ public sealed class FreeCameraExtras
     public double MotionTargetHeight { get; set; } = 1.2;
     public double KeyframeSegmentSeconds { get; set; } = 3.0;
     public bool KeyframeLoop { get; set; } = false;
+    public string KeyframeFile { get; set; } = string.Empty;
+    public string KeyframeSaveHotkey { get; set; } = "F6";
+    public string KeyframeLoadHotkey { get; set; } = "F7";
+    // Experimental relative character FK preview. Disabled unless explicitly configured.
+    public string VmdMotionFile { get; set; } = string.Empty;
+    public bool VmdBodyEnabled { get; set; }
+    public bool VmdEyesEnabled { get; set; }
+    public bool VmdFaceEnabled { get; set; }
+    public bool VmdMotionLoop { get; set; }
+    public double VmdMotionWeight { get; set; } = 1.0;
+    public string VmdMotionHotkey { get; set; } = "F8";
+    public string VmdMotionPauseHotkey { get; set; } = "F9";
+    public string VmdMotionStopHotkey { get; set; } = "F10";
     public string VmdCameraFile { get; set; } = string.Empty;
     public double VmdCameraScale { get; set; } = 0.07;
     public double VmdCameraFovBias { get; set; } = 5.0;
@@ -55,6 +68,18 @@ public sealed class FreeCameraExtras
         Line("motion_target_height", Number(MotionTargetHeight));
         Line("keyframe_segment_seconds", Number(KeyframeSegmentSeconds));
         Line("keyframe_loop", Boolean(KeyframeLoop));
+        Line("keyframe_file", KeyframeFile.Trim().Replace("\r", string.Empty).Replace("\n", string.Empty));
+        Line("keyframe_save_hotkey", KeyframeSaveHotkey);
+        Line("keyframe_load_hotkey", KeyframeLoadHotkey);
+        Line("vmd_motion_file", VmdMotionFile.Trim());
+        Line("vmd_body_enabled", Boolean(VmdBodyEnabled));
+        Line("vmd_eyes_enabled", Boolean(VmdEyesEnabled));
+        Line("vmd_face_enabled", Boolean(VmdFaceEnabled));
+        Line("vmd_motion_loop", Boolean(VmdMotionLoop));
+        Line("vmd_motion_weight", Number(VmdMotionWeight));
+        Line("vmd_motion_hotkey", VmdMotionHotkey);
+        Line("vmd_motion_pause_hotkey", VmdMotionPauseHotkey);
+        Line("vmd_motion_stop_hotkey", VmdMotionStopHotkey);
         Line("vmd_camera_file", VmdCameraFile.Trim());
         Line("vmd_camera_scale", Number(VmdCameraScale));
         Line("vmd_camera_fov_bias", Number(VmdCameraFovBias));
@@ -102,6 +127,18 @@ public sealed class FreeCameraExtras
         extras.MotionTargetHeight = Number("motion_target_height", extras.MotionTargetHeight);
         extras.KeyframeSegmentSeconds = Number("keyframe_segment_seconds", extras.KeyframeSegmentSeconds);
         extras.KeyframeLoop = Boolean("keyframe_loop", extras.KeyframeLoop);
+        extras.KeyframeFile = Text("keyframe_file", string.Empty);
+        extras.KeyframeSaveHotkey = Text("keyframe_save_hotkey", extras.KeyframeSaveHotkey);
+        extras.KeyframeLoadHotkey = Text("keyframe_load_hotkey", extras.KeyframeLoadHotkey);
+        extras.VmdMotionFile = values.TryGetValue("vmd_motion_file", out string? motionFile) ? motionFile.Trim() : string.Empty;
+        extras.VmdBodyEnabled = Boolean("vmd_body_enabled", false);
+        extras.VmdEyesEnabled = Boolean("vmd_eyes_enabled", false);
+        extras.VmdFaceEnabled = Boolean("vmd_face_enabled", false);
+        extras.VmdMotionLoop = Boolean("vmd_motion_loop", false);
+        extras.VmdMotionWeight = System.Math.Clamp(Number("vmd_motion_weight", 1), 0, 1);
+        extras.VmdMotionHotkey = Text("vmd_motion_hotkey", "F8");
+        extras.VmdMotionPauseHotkey = Text("vmd_motion_pause_hotkey", "F9");
+        extras.VmdMotionStopHotkey = Text("vmd_motion_stop_hotkey", "F10");
         extras.VmdCameraFile = values.TryGetValue("vmd_camera_file", out string? file) ? file.Trim() : string.Empty;
         extras.VmdCameraScale = Number("vmd_camera_scale", extras.VmdCameraScale);
         extras.VmdCameraFovBias = Number("vmd_camera_fov_bias", extras.VmdCameraFovBias);

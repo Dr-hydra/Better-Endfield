@@ -1,6 +1,8 @@
 // Main-thread, character-scoped visual overlay. No controller replacement,
 // Animator disable, world-root movement, scale writes or AssetBundle calls.
 bool g_pose_contract = true;
+const BE_PoseLeaseApiV1* g_pose_leases = nullptr;
+std::atomic_bool g_pose_lease_ready{false};
 TickFn g_pose_tail = nullptr;
 PoseBank g_pose_bank;
 const CharacterProfile* g_pose_data_profile = nullptr;
@@ -13,6 +15,7 @@ struct PoseBinding {
 struct PoseOwner {
     void* component=nullptr;void* animator=nullptr;void* root=nullptr;
     uint32_t component_pin=0,animator_pin=0,root_pin=0;
+    uint64_t lease=0;
     std::vector<PoseBinding> bindings;
     PoseClock clock;uint32_t writes=0;double microseconds=0;uint32_t missing=0;
 } g_pose_owner;
@@ -26,6 +29,7 @@ bool PoseWriteLocal(void* transform,const BonePose& value){
     bool ok=true;BonePose copy=value;void* args[]{&copy.position,&copy.rotation};Invoke(PoseSetLocal,transform,args,ok);return ok;
 }
 void FreePoseOwner(PoseOwner& owner){
+    if(owner.lease && g_pose_leases) g_pose_leases->release(owner.root,kId,owner.lease);
     for(auto& bone:owner.bindings)if(bone.pin)g_host->gchandle_free(g_host->context,bone.pin);
     for(auto pin:{owner.component_pin,owner.animator_pin,owner.root_pin})if(pin)g_host->gchandle_free(g_host->context,pin);
     owner={};
@@ -37,6 +41,7 @@ bool PoseOwnerMatches(const PoseOwner& owner){
 void ReleasePoseOverlay(bool restore){
     ++g_pose_generation;
     auto old=std::move(g_pose_owner);g_pose_owner={};
+    if(old.lease && g_pose_leases && !g_pose_leases->owns(old.root,kId,old.lease))restore=false;
     if(restore&&PoseOwnerMatches(old))for(auto& bone:old.bindings){
         if(g_pose_owner.component)break; // Reentrant new session owns any future writes.
         if(!bone.wrote||!UnityObjectAlive(bone.transform))continue;
@@ -92,6 +97,14 @@ bool BeginPoseOverlay(void* component,const CharacterProfile* profile){
     owner.animator_pin=g_host->gchandle_new(g_host->context,owner.animator,1);
     owner.root_pin=g_host->gchandle_new(g_host->context,owner.root,1);
     if(!owner.component_pin||!owner.animator_pin||!owner.root_pin){FreePoseOwner(owner);return false;}
+#if defined(_WIN32) || defined(BE_TEST_PC_POSE)
+    // The registry is in Host, not in this DLL's private static storage.
+    // Fail closed for the optional bone overlay on an old Host. Native dash stays available.
+    if(!g_pose_leases || !(owner.lease=g_pose_leases->acquire(owner.root,kId))) {
+        Log("Sustained dash pose: ownership unavailable or another visual writer is active; native dash only.");
+        FreePoseOwner(owner); return false;
+    }
+#endif
     unsigned missing_required=0;
     for(size_t i=0;i<g_pose_bank.bones.size();i++){
         const auto& spec=g_pose_bank.bones[i];auto path=string_new(spec.path.c_str());
@@ -112,6 +125,11 @@ bool BeginPoseOverlay(void* component,const CharacterProfile* profile){
 }
 void ApplyPoseOverlay(void* component,float delta){
     if(component!=g_pose_owner.component||GetCurrentThreadId()!=g_game_thread.load(std::memory_order_relaxed))return;
+#if defined(_WIN32) || defined(BE_TEST_PC_POSE)
+    if(!g_pose_leases || !g_pose_leases->owns(g_pose_owner.root,kId,g_pose_owner.lease)) {
+        ReleasePoseOverlay(false); return;
+    }
+#endif
     const uint64_t generation=g_pose_generation;
     if(g_stopping||!PoseOwnerMatches(g_pose_owner)){ReleasePoseOverlay(false);return;}
     if(generation!=g_pose_generation)return;

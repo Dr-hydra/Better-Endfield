@@ -1,6 +1,10 @@
 #include "BetterEndfield/ModuleApi.h"
 #include "first_person_mesh.h"
 #include "first_person_retry.h"
+#include "BetterEndfield/PoseLease.h"
+#include "../../shared/motion/character_pose.h"
+#include "../../shared/motion/character_mapping.h"
+#include "camera_file_worker.h"
 
 #include <Windows.h>
 
@@ -65,7 +69,14 @@ struct CameraConfiguration {
     float motion_target_height = 1.2f;
     float keyframe_segment_seconds = 3.0f;
     bool keyframe_loop = false;
+    std::string keyframe_file;
+    int keyframe_save_key = VK_F1 + 5; // F6
+    int keyframe_load_key = VK_F1 + 6; // F7
     std::string vmd_camera_file;
+    std::string vmd_motion_file;
+    bool vmd_body_enabled=false, vmd_eyes_enabled=false, vmd_face_enabled=false, vmd_motion_loop=false;
+    float vmd_motion_weight=1;
+    int vmd_motion_key=VK_F1+7, vmd_motion_pause_key=VK_F1+8, vmd_motion_stop_key=VK_F1+9;
     float vmd_camera_scale = 0.07f;
     float vmd_camera_fov_bias = 5.0f;
     bool vmd_camera_loop = false;
@@ -145,6 +156,12 @@ std::atomic<float> g_vmd_camera_fov_bias{5.0f};
 std::atomic_bool g_vmd_camera_loop{false};
 std::mutex g_vmd_path_mutex;
 std::string g_vmd_camera_file;
+std::string g_keyframe_file; // guarded by g_vmd_path_mutex
+std::atomic_uint64_t g_asset_config_generation{0};
+std::atomic_int g_keyframe_save_key{VK_F1 + 5};
+std::atomic_int g_keyframe_load_key{VK_F1 + 6};
+std::atomic_bool g_keyframe_save_request{false};
+std::atomic_bool g_keyframe_load_request{false};
 std::atomic_int g_roll_left_key{VK_NUMPAD7};
 std::atomic_int g_roll_right_key{VK_NUMPAD9};
 std::atomic_int g_fov_wide_key{VK_NUMPAD1};
@@ -199,6 +216,9 @@ std::atomic_bool g_first_person_active{false};
 std::atomic_bool g_first_person_toggle_request{false};
 std::atomic_bool g_first_person_exit_request{false};
 
+std::atomic_bool g_character_preview_enabled{false};
+std::atomic_int g_character_play_key{VK_F1+7},g_character_pause_key{VK_F1+8},g_character_stop_key{VK_F1+9};
+void RequestCharacterMotion(unsigned bits);
 std::atomic_bool g_input_thread_stop{false};
 std::thread g_input_thread;
 
@@ -630,12 +650,16 @@ void InputThreadMain() {
         {&g_keyframe_add_key, &g_keyframe_add_request},
         {&g_keyframe_play_key, &g_keyframe_play_request},
         {&g_keyframe_clear_key, &g_keyframe_clear_request},
+        {&g_keyframe_save_key, &g_keyframe_save_request},
+        {&g_keyframe_load_key, &g_keyframe_load_request},
         {&g_vmd_play_key, &g_vmd_play_request},
     };
     HHOOK mouse_hook = nullptr;
     bool toggle_was_down = false;
     bool pause_was_down = false;
     bool first_person_was_down = false;
+    bool character_keys[3]{};
+    bool character_focused=false;
     while (!g_input_thread_stop.load(std::memory_order_acquire)) {
         const bool free_enabled = g_free_camera_enabled.load(std::memory_order_acquire) &&
             g_free_camera_contract_ready;
@@ -644,7 +668,16 @@ void InputThreadMain() {
         const int toggle_key = g_toggle_key.load(std::memory_order_relaxed);
         const int pause_key = g_pause_key.load(std::memory_order_relaxed);
         const int first_person_key = g_first_person_key.load(std::memory_order_relaxed);
-        const bool focused = (free_enabled || first_person_enabled) && GameWindowHasFocus();
+        const bool body_enabled=g_character_preview_enabled.load(std::memory_order_acquire);
+        const bool focused = (free_enabled || first_person_enabled || body_enabled) && GameWindowHasFocus();
+        const int body_keys[]{g_character_play_key.load(),g_character_pause_key.load(),g_character_stop_key.load()};
+        if(character_focused && (!focused || !body_enabled))RequestCharacterMotion(4);
+        character_focused=focused&&body_enabled;
+        for(int i=0;i<3;++i) {
+            const bool down=character_focused&&KeyDown(body_keys[i]);
+            if(down&&!character_keys[i])RequestCharacterMotion(1u<<i);
+            character_keys[i]=down;
+        }
 
         const bool toggle_down = focused && free_enabled && KeyDown(toggle_key);
         const bool pause_down = focused && free_enabled && KeyDown(pause_key);
@@ -729,11 +762,21 @@ bool EnterFreeCamera();
 void ApplyFreeCamera();
 void PumpFreeCameraRequests();
 
+void PollCameraFileResults();
+
 void PumpFreeCameraControl() {
+    PollCameraFileResults();
     const bool allowed = g_free_camera_enabled.load(std::memory_order_acquire) &&
         g_free_camera_contract_ready;
 
     if (!allowed) {
+        g_keyframe_save_request.store(false,std::memory_order_release);
+        g_keyframe_load_request.store(false,std::memory_order_release);
+        g_motion_request.store(false,std::memory_order_release);
+        g_keyframe_add_request.store(false,std::memory_order_release);
+        g_keyframe_play_request.store(false,std::memory_order_release);
+        g_keyframe_clear_request.store(false,std::memory_order_release);
+        g_vmd_play_request.store(false,std::memory_order_release);
         g_toggle_request.store(false, std::memory_order_release);
         g_pause_request.store(false, std::memory_order_release);
         if (g_free_camera_active ||
@@ -1036,6 +1079,15 @@ void* FindModelTransform() {
 
 #include "first_person_runtime.inc"
 #include "free_camera_runtime.inc"
+#if !defined(__ANDROID__)
+#include "character_motion_runtime.inc"
+#else
+void PumpCharacterMotion(bool = true) {}
+void PublishCharacterConfiguration(const CameraConfiguration&) {}
+void StopCharacterMotion() {}
+void StartCharacterMotion() {}
+void RequestCharacterMotion(unsigned) {}
+#endif
 
 void ReleaseHeadTransform() {
     if (g_first_person.head_handle && g_host && g_host->gchandle_free) {
@@ -1420,6 +1472,7 @@ float __fastcall DetourTimeUnscaledDelta(void* method) {
         : 0.0f;
     if (g_time_heartbeat_contract_ready && !t_in_heartbeat) {
         t_in_heartbeat = true;
+        PumpCharacterMotion(false); // only the thread previously observed at TailLateTick
         PumpFreeCameraControl();
         if (g_free_camera_active) {
             ApplyFreeCameraHeartbeat();
@@ -1450,6 +1503,7 @@ void __fastcall DetourTailLateTick(void* instance, float deltaTime, void* method
     // applied inside the Cinemachine push itself, so this only drives the toggle,
     // the eye anchor bookkeeping and the free camera.
     (void)instance;
+    PumpCharacterMotion();
     PumpFreeCameraControl();
     PumpFirstPerson();
     if (g_free_camera_active) {
@@ -1603,6 +1657,18 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
         else if (key == "motion_target_height") config.motion_target_height = ParseFloat(value, config.motion_target_height);
         else if (key == "keyframe_segment_seconds") config.keyframe_segment_seconds = ParseFloat(value, config.keyframe_segment_seconds);
         else if (key == "keyframe_loop") config.keyframe_loop = ParseBoolean(value, config.keyframe_loop);
+        else if (key == "keyframe_file") config.keyframe_file = Unquote(value);
+        else if (key == "keyframe_save_hotkey") config.keyframe_save_key = ParseVirtualKey(value, config.keyframe_save_key);
+        else if (key == "keyframe_load_hotkey") config.keyframe_load_key = ParseVirtualKey(value, config.keyframe_load_key);
+        else if (key == "vmd_motion_file") config.vmd_motion_file = Unquote(value);
+        else if (key == "vmd_body_enabled") config.vmd_body_enabled = ParseBoolean(value);
+        else if (key == "vmd_eyes_enabled") config.vmd_eyes_enabled = ParseBoolean(value);
+        else if (key == "vmd_face_enabled") config.vmd_face_enabled = ParseBoolean(value);
+        else if (key == "vmd_motion_loop") config.vmd_motion_loop = ParseBoolean(value);
+        else if (key == "vmd_motion_weight") config.vmd_motion_weight = ParseFloat(value,1);
+        else if (key == "vmd_motion_hotkey") config.vmd_motion_key = ParseVirtualKey(value,config.vmd_motion_key);
+        else if (key == "vmd_motion_pause_hotkey") config.vmd_motion_pause_key = ParseVirtualKey(value,config.vmd_motion_pause_key);
+        else if (key == "vmd_motion_stop_hotkey") config.vmd_motion_stop_key = ParseVirtualKey(value,config.vmd_motion_stop_key);
         else if (key == "vmd_camera_file") config.vmd_camera_file = Unquote(value);
         else if (key == "vmd_camera_scale") config.vmd_camera_scale = ParseFloat(value, config.vmd_camera_scale);
         else if (key == "vmd_camera_fov_bias") config.vmd_camera_fov_bias = ParseFloat(value, config.vmd_camera_fov_bias);
@@ -1618,6 +1684,7 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
         else if (key == "keyframe_clear_hotkey") config.keyframe_clear_key = ParseVirtualKey(value, config.keyframe_clear_key);
         else if (key == "vmd_play_hotkey") config.vmd_play_key = ParseVirtualKey(value, config.vmd_play_key);
     }
+    config.vmd_motion_weight = std::clamp(config.vmd_motion_weight,0.0f,1.0f);
     config.movement_speed = std::clamp(config.movement_speed, 0.5f, 100.0f);
     config.field_of_view = std::clamp(config.field_of_view, 20.0f, 120.0f);
     config.first_person_fov = std::clamp(config.first_person_fov, 20.0f, 120.0f);
@@ -1844,8 +1911,23 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
         Log("Failed to install camera update hook.");
         return BE_Result_Failed;
     }
+    try {
+        g_camera_files.Start();
+    } catch (const std::exception& e) {
+        // Free/manual camera remains usable when optional file I/O is unavailable.
+        Log(std::string("Camera file worker unavailable: ") + e.what());
+    }
+    StartCharacterMotion();
     g_input_thread_stop.store(false, std::memory_order_release);
-    g_input_thread = std::thread(InputThreadMain);
+    try {
+        g_input_thread = std::thread(InputThreadMain);
+    } catch (const std::exception& error) {
+        g_camera_files.Stop();
+        g_state.store(ModuleState::Failed,std::memory_order_release);
+        if (g_host->release_module_hooks) g_host->release_module_hooks(g_host->context,kModuleId);
+        Log(std::string("Camera input thread failed to start: ") + error.what());
+        return BE_Result_Failed;
+    }
     g_state.store(ModuleState::Ready, std::memory_order_release);
     Log("BetterEndfield.Camera module initialized successfully.");
     return BE_Result_Ok;
@@ -1853,6 +1935,10 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
 
 BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
     const CameraConfiguration config = ParseConfiguration(raw_configuration);
+    PublishCharacterConfiguration(config);
+    g_character_play_key=config.vmd_motion_key;
+    g_character_pause_key=config.vmd_motion_pause_key;
+    g_character_stop_key=config.vmd_motion_stop_key;
     const bool free_camera = config.enabled && config.free_camera_enabled;
     const bool anti_dither = config.enabled && config.disable_dither_enabled;
     const bool first_person = config.enabled && config.first_person_camera_enabled;
@@ -1887,12 +1973,16 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
     g_keyframe_segment_seconds.store(config.keyframe_segment_seconds,
         std::memory_order_release);
     g_keyframe_loop.store(config.keyframe_loop, std::memory_order_release);
+    g_keyframe_save_key.store(config.keyframe_save_key, std::memory_order_release);
+    g_keyframe_load_key.store(config.keyframe_load_key, std::memory_order_release);
     g_vmd_camera_scale.store(config.vmd_camera_scale, std::memory_order_release);
     g_vmd_camera_fov_bias.store(config.vmd_camera_fov_bias, std::memory_order_release);
     g_vmd_camera_loop.store(config.vmd_camera_loop, std::memory_order_release);
     {
         std::lock_guard<std::mutex> lock(g_vmd_path_mutex);
         g_vmd_camera_file = config.vmd_camera_file;
+        g_keyframe_file = config.keyframe_file;
+        g_asset_config_generation.fetch_add(1,std::memory_order_acq_rel);
     }
     g_roll_left_key.store(config.roll_left_key, std::memory_order_release);
     g_roll_right_key.store(config.roll_right_key, std::memory_order_release);
@@ -1912,7 +2002,7 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
         g_first_person_exit_request.store(true, std::memory_order_release);
     }
 
-    g_state.store(free_camera || anti_dither || first_person
+    g_state.store(free_camera || anti_dither || first_person || g_character_preview_enabled.load()
         ? ModuleState::Active
         : ModuleState::Disabled, std::memory_order_release);
 
@@ -1943,6 +2033,8 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
 }
 
 void BE_CALL Shutdown() {
+    g_character_preview_enabled=false;
+    StopCharacterMotion();
     g_free_camera_enabled.store(false, std::memory_order_release);
     g_disable_dither_enabled.store(false, std::memory_order_release);
     g_first_person_camera_enabled.store(false, std::memory_order_release);
@@ -1950,6 +2042,7 @@ void BE_CALL Shutdown() {
     if (g_input_thread.joinable()) {
         g_input_thread.join();
     }
+    g_camera_files.Stop();
     ExitFirstPerson("shutdown");
     ExitFreeCamera("shutdown");
     ReleaseCameraRoot();
@@ -1968,7 +2061,7 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Camera Enhancements", "1.6.0", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Camera Enhancements", "1.8.0-preview", BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};
