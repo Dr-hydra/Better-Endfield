@@ -32,23 +32,23 @@ int main() {
     Morph m;m.target=3;m.index=0;m.sources={"blink","wink"};
     Session s;std::string error;
     CHECK(s.Start(Clip(),{b},{m},f,error));
-    CHECK(s.Apply(0,1,f,error));CHECK(Same(f.rotations[1],{}));CHECK(near(f.weights[{3,0}],0));
-    CHECK(s.Apply(30,1,f,error));CHECK(near(f.rotations[1].z,.70710678));CHECK(near(f.weights[{3,0}],100));
-    CHECK(s.Apply(30,1,f,error));CHECK(near(f.rotations[1].z,.70710678)); // no accumulated output
-    s.Stop(f);CHECK(Same(f.rotations[1],{}));CHECK(near(f.weights[{3,0}],15));
+    CHECK(s.Apply(0,1,f,error));CHECK(Same(f.rotations[1],{}));CHECK(nearly(f.weights[{3,0}],0));
+    CHECK(s.Apply(30,1,f,error));CHECK(nearly(f.rotations[1].z,.70710678));CHECK(nearly(f.weights[{3,0}],100));
+    CHECK(s.Apply(30,1,f,error));CHECK(nearly(f.rotations[1].z,.70710678)); // no accumulated output
+    s.Stop(f);CHECK(Same(f.rotations[1],{}));CHECK(nearly(f.weights[{3,0}],15));
     CHECK(!s.Active());
     CHECK(s.Start(Clip(),{b},{m},f,error));CHECK(s.Apply(30,1,f,error));
     Quaternion native{.70710678f,0,0,.70710678f};
     f.rotations[1]=native;f.weights[{3,0}]=33;s.Stop(f);
-    CHECK(Same(f.rotations[1],native));CHECK(near(f.weights[{3,0}],33)); // external writer wins
+    CHECK(Same(f.rotations[1],native));CHECK(nearly(f.weights[{3,0}],33)); // external writer wins
     f.rotations[1]={};f.weights[{3,0}]=15;
-    CHECK(s.Start(Clip(),{b},{m},f,error));CHECK(s.Apply(15,0,f,error));CHECK(Same(f.rotations[1],{}));CHECK(near(f.weights[{3,0}],15));
-    CHECK(s.Apply(30,.5f,f,error));CHECK(near(f.rotations[1].z,std::sin(3.141592653589793/8)));CHECK(near(f.weights[{3,0}],57.5));
+    CHECK(s.Start(Clip(),{b},{m},f,error));CHECK(s.Apply(15,0,f,error));CHECK(Same(f.rotations[1],{}));CHECK(nearly(f.weights[{3,0}],15));
+    CHECK(s.Apply(30,.5f,f,error));CHECK(nearly(f.rotations[1].z,std::sin(3.141592653589793/8)));CHECK(nearly(f.weights[{3,0}],57.5));
     s.Stop(f);
     Bone b2=b;b2.target=2;
     CHECK(!s.Start(Clip(),{b,b},{},f,error));
     CHECK(s.Start(Clip(),{b,b2},{m},f,error));f.fail_at=f.writes+2;
-    CHECK(!s.Apply(30,1,f,error));CHECK(!s.Active());CHECK(Same(f.rotations[1],{}));CHECK(Same(f.rotations[2],{}));CHECK(near(f.weights[{3,0}],15));
+    CHECK(!s.Apply(30,1,f,error));CHECK(!s.Active());CHECK(Same(f.rotations[1],{}));CHECK(Same(f.rotations[2],{}));CHECK(nearly(f.weights[{3,0}],15));
     f.fail_at=-1;
     CHECK(s.Start(Clip(),{b},{m},f,error));CHECK(s.Apply(30,1,f,error));f.weights.erase({3,0});
     CHECK(!s.Apply(15,1,f,error));CHECK(!s.Active());CHECK(Same(f.rotations[1],{})); // mesh replacement restores remaining owned channels
@@ -59,13 +59,13 @@ int main() {
     CHECK(Same(RelativeRotation(native,source0,source0,source0,1),native));
     // Basis conjugation changes axes, not quaternion byte order.
     auto rotated=RelativeRotation({},source0,{},Quaternion{0,0,.70710678f,.70710678f},1);
-    CHECK(near(std::abs(rotated.x),.70710678));CHECK(near(rotated.z,0));
+    CHECK(nearly(std::abs(rotated.x),.70710678));CHECK(nearly(rotated.z,0));
     Clock clock;double t=-1;clock.Start(1,2,false);
-    CHECK(clock.Advance(2,t)&&near(t,1));clock.Pause(true,2);
-    CHECK(clock.Advance(20,t)&&near(t,1));clock.Pause(false,20);
-    CHECK(clock.Advance(30,t)&&near(t,2));CHECK(!clock.Advance(31,t));
+    CHECK(clock.Advance(2,t)&&nearly(t,1));clock.Pause(true,2);
+    CHECK(clock.Advance(20,t)&&nearly(t,1));clock.Pause(false,20);
+    CHECK(clock.Advance(30,t)&&nearly(t,2));CHECK(!clock.Advance(31,t));
     clock.Start(1,0,false);CHECK(clock.Advance(1,t)&&t==0);CHECK(!clock.Advance(2,t));
-    clock.Start(0,2,true);CHECK(clock.Advance(11,t)&&near(t,1));CHECK(!clock.Advance(10,t));CHECK(!clock.Advance(NAN,t));
+    clock.Start(0,2,true);CHECK(clock.Advance(11,t)&&nearly(t,1));CHECK(!clock.Advance(10,t));CHECK(!clock.Advance(NAN,t));
     CHECK(DefaultRig().size()==46);CHECK(DefaultMorphs().size()==9);
     std::set<std::string> targets;for(auto& spec:DefaultRig())CHECK(targets.insert(spec.target).second);
     Motion::PoseLeaseRegistry leases;

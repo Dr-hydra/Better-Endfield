@@ -45,9 +45,9 @@ int main() {
     CHECK(motion.duplicate_keys==4);CHECK(motion.last_frame==20);
     CHECK(motion.ik.at("right").size()==1 && motion.ik.at("left").back().enabled);
     CHECK(Vmd::SampleSwitch(motion.visibility,2));CHECK(!Vmd::SampleSwitch(motion.visibility,3));
-    CHECK(near(Vmd::SampleMorph(motion.morphs.at("mouth"),5),0.5));
-    Vmd::BoneSample bone;CHECK(Vmd::SampleBone(motion.bones.at(center),5,bone));CHECK(near(bone.position.x,1));
-    Vmd::CameraSample camera;CHECK(Vmd::SampleCamera(motion.cameras,5,camera));CHECK(near(camera.interest.x,10));
+    CHECK(nearly(Vmd::SampleMorph(motion.morphs.at("mouth"),5),0.5));
+    Vmd::BoneSample bone;CHECK(Vmd::SampleBone(motion.bones.at(center),5,bone));CHECK(nearly(bone.position.x,1));
+    Vmd::CameraSample camera;CHECK(Vmd::SampleCamera(motion.cameras,5,camera));CHECK(nearly(camera.interest.x,10));
     // Only complete section boundaries may omit trailing sections.
     for(size_t i=0;i<all.bytes.size();++i) {
         bool valid=i==bone_end||i==morph_end||i==camera_end||i==light_end||i==shadow_end;
@@ -79,20 +79,20 @@ int main() {
     Vmd::CameraKey a,b;a.frame=0;b.frame=10;b.interest={10,20,30};b.fov=90;
     for(size_t i=0;i<6;++i){ b.interpolation[i*4]=12;b.interpolation[i*4+1]=100;b.interpolation[i*4+2]=110;b.interpolation[i*4+3]=120; }
     CHECK(Vmd::SampleCamera({a,b},5,camera));
-    CHECK(near(camera.interest.x,10*Vmd::Bezier(12,110,100,120,0.5)));
-    CHECK(!near(camera.interest.x,10*Vmd::Bezier(12,100,110,120,0.5),0.1));
+    CHECK(nearly(camera.interest.x,10*Vmd::Bezier(12,110,100,120,0.5)));
+    CHECK(!nearly(camera.interest.x,10*Vmd::Bezier(12,100,110,120,0.5),0.1));
     b.frame=1;CHECK(Vmd::SampleCamera({a,b},0.9,camera));CHECK(camera.interest.x==0);
     CHECK(Vmd::SampleCamera({a,b},1,camera));CHECK(camera.interest.x==10);
     CHECK(Vmd::SampleCamera({a,b},std::numeric_limits<double>::infinity(),camera));CHECK(camera.interest.x==10);
     CHECK(Vmd::SampleCamera({a,b},std::numeric_limits<double>::quiet_NaN(),camera));CHECK(camera.interest.x==0);
     CHECK(!Vmd::SampleCamera({},0,camera));CHECK(!Vmd::SampleBone({},0,bone));
-    auto q=Vmd::Slerp({0,0,0,1},{0,0,0,-1},0.5);CHECK(near(std::abs(q.w),1));
+    auto q=Vmd::Slerp({0,0,0,1},{0,0,0,-1},0.5);CHECK(nearly(std::abs(q.w),1));
     for(int i=0;i<=100;++i) {
         const double t=i/100.0;
-        CHECK(near(Vmd::Bezier(20,20,107,107,t),t));
+        CHECK(nearly(Vmd::Bezier(20,20,107,107,t),t));
         double lo=0,hi=1;
         for(int j=0;j<60;++j){const double m=(lo+hi)/2;if(m*m*m<t)lo=m;else hi=m;}
-        const double s=(lo+hi)/2;CHECK(near(Vmd::Bezier(0,127,0,127,t),1-std::pow(1-s,3),2e-5));
+        const double s=(lo+hi)/2;CHECK(nearly(Vmd::Bezier(0,127,0,127,t),1-std::pow(1-s,3),2e-5));
     }
     std::mt19937 rng(42);
     for(int i=0;i<3000;++i) {

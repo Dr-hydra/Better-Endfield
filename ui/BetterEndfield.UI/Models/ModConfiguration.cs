@@ -267,8 +267,10 @@ internal sealed class ModConfiguration
         text.AppendLine();
         text.AppendLine("[betterendfield.music]");
         text.AppendLine("schema_version=1");
-        text.AppendLine($"enabled={Boolean(MusicReplacementEnabled)}");
+        // "enabled" loads the module; MMD music uses it without OmniMix.
+        text.AppendLine($"enabled={Boolean(MusicReplacementEnabled || FreeCameraExtras.RequiresMusicModule)}");
         text.AppendLine($"music_replacement_enabled={Boolean(MusicReplacementEnabled)}");
+        text.AppendLine($"local_playback_enabled={Boolean(FreeCameraExtras.RequiresMusicModule)}");
         text.AppendLine($"backend_exe={OmniMixBackendExe}");
         text.AppendLine($"client_id={OmniMixClientId}");
         text.AppendLine($"replace_login={Boolean(ReplaceLoginMusic)}");
@@ -302,7 +304,7 @@ internal sealed class ModConfiguration
         text.AppendLine();
         text.AppendLine("[betterendfield.camera]");
         text.AppendLine("schema_version=4");
-        text.AppendLine($"enabled={Boolean(FreeCameraEnabled || DisableDitherEnabled || FirstPersonCameraEnabled)}");
+        text.AppendLine($"enabled={Boolean(FreeCameraEnabled || DisableDitherEnabled || FirstPersonCameraEnabled || FreeCameraExtras.RequiresCameraModule)}");
         text.AppendLine($"free_camera_enabled={Boolean(FreeCameraEnabled)}");
         text.AppendLine($"disable_dither_enabled={Boolean(DisableDitherEnabled)}");
         text.AppendLine($"pause_enabled={Boolean(PauseGameInFreeCamera)}");

@@ -221,6 +221,11 @@ CameraFiles::Worker g_camera_files;
 uint64_t g_file_generation = 0; // game-thread session/edit epoch, never touched by I/O
 bool g_vmd_load_pending = false;
 uint64_t g_load_config_generation = 0;
+// The MMD director drives g_vmd from its own clock (mmd_director_runtime.inc).
+bool g_vmd_director = false;
+constexpr uint64_t kMmdGenerationBit = 1ull << 63;
+double MmdDirectorSeconds();
+void MmdCameraLoaded(CameraFiles::Result&& result);
 
 // ---------------------------------------------------------------------------
 // Mouse look: a low-level mouse hook on the input thread. The delta is the hook
@@ -347,6 +352,7 @@ void StopPlayback(const char* reason) {
         return;
     }
     g_playback = FreePlayback::None;
+    g_vmd_director = false;
     ControlFromView();
     ClearMouseInput();
     Log(std::string("Free camera playback stopped: ") + reason);
@@ -498,6 +504,10 @@ void StepKeyframes(double now) {
 
 // Parsing and disk I/O live in CameraFiles::Worker, not a Unity hook.
 // Sampling shares the same timeline conventions as body/morph/IK consumers.
+// MMD director with EIEM bodies: the camera follows the dancer's stage anchor
+// and scale instead of the fixed anchor/0.07 (defined in mmd_director_runtime.inc).
+bool MmdCameraReference(Vector3& anchor, Quaternion& anchor_rotation, float& scale, Vector3& offset);
+
 bool SampleVmdCamera(double frame, Vector3& position, Quaternion& rotation, float& fov) {
     Vmd::CameraSample sample;
     if (!Vmd::SampleCamera(g_vmd.keys,frame,sample)) return false;
@@ -513,10 +523,13 @@ bool SampleVmdCamera(double frame, Vector3& position, Quaternion& rotation, floa
         -euler.z * kRadToDeg);
     const Vector3 eye = Add(interest, RotateVector(source, {0.0f, 0.0f, distance}));
     const Quaternion basis{0.0f, 1.0f, 0.0f, 0.0f};
-    const float scale = g_vmd_camera_scale.load(std::memory_order_relaxed);
+    float scale = g_vmd_camera_scale.load(std::memory_order_relaxed);
+    Vector3 anchor = g_vmd.anchor, offset{};
+    Quaternion anchor_rotation = g_vmd.anchor_rotation;
+    MmdCameraReference(anchor, anchor_rotation, scale, offset);
     const Vector3 local = Scale(RotateVector(basis, eye), scale);
-    const Vector3 next_position = Add(g_vmd.anchor, RotateVector(g_vmd.anchor_rotation, local));
-    const Quaternion next_rotation = NormalizeRotation(Multiply(g_vmd.anchor_rotation, Multiply(basis, source)));
+    const Vector3 next_position = Add(Add(anchor, RotateVector(anchor_rotation, local)), offset);
+    const Quaternion next_rotation = NormalizeRotation(Multiply(anchor_rotation, Multiply(basis, source)));
     if (!IsFinite(next_position) || !IsUnitQuaternion(next_rotation)) return false;
     position = next_position;
     rotation = next_rotation;
@@ -556,6 +569,10 @@ void StartVmd() { QueueCameraFile(CameraFiles::Kind::LoadVmd); }
 void PollCameraFileResults() {
     auto result = g_camera_files.Poll();
     if (!result) return;
+    if (result->generation & kMmdGenerationBit) {
+        MmdCameraLoaded(std::move(*result));
+        return;
+    }
     if (result->kind == CameraFiles::Kind::SavePath) {
         Log(result->error.empty() ? "Camera keyframe file saved."
             : "Camera keyframe save failed: " + result->error);
@@ -601,12 +618,22 @@ void PollCameraFileResults() {
         g_load_config_generation != g_asset_config_generation.load(std::memory_order_acquire)) return;
     StopPlayback("VMD load completed");
     g_vmd = std::move(next);
+    g_vmd_director = false;
     g_playback = FreePlayback::Vmd;
     g_playback_start = NowSeconds();
     Log("VMD camera playback started: " + std::to_string(g_vmd.keys.size()) + " keys.");
 }
 
 void StepVmd(double now) {
+    if (g_vmd_director) {
+        // The director owns the timeline, including pause, seek, loop and end.
+        const double t = std::clamp(MmdDirectorSeconds(), 0.0, std::max(0.0, g_vmd.duration));
+        if (!SampleVmdCamera(t*kVmdFramesPerSecond,g_free_view.position,
+            g_free_view.rotation,g_free_view.fov)) {
+            StopPlayback("invalid VMD world pose");
+        }
+        return;
+    }
     double elapsed = std::max(0.0,now-g_playback_start);
     const bool ended = elapsed >= g_vmd.duration;
     if (ended && g_vmd.duration > 0 && g_vmd_camera_loop.load(std::memory_order_relaxed))
@@ -734,6 +761,7 @@ void ExitFreeCamera(const char* reason) {
         return;
     }
     g_playback = FreePlayback::None;
+    g_vmd_director = false;
     g_free_camera_running.store(false, std::memory_order_release);
     ClearMouseInput();
     RestoreWorldPause("free camera exit");

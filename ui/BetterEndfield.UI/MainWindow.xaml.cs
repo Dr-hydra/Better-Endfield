@@ -312,7 +312,7 @@ public sealed partial class MainWindow : Window
         {
             ShowStatus(
                 "HUD 热键无效",
-                "请输入单个字母、数字、F1-F24，或 NUMPAD0-NUMPAD9。",
+                "请输入单个字母、数字或 F1-F24（小键盘已留给 MMD）。",
                 InfoBarSeverity.Error);
             return;
         }
@@ -345,6 +345,13 @@ public sealed partial class MainWindow : Window
     private async void CameraEnhancementNumberBox_ValueChanged(
         NumberBox sender,
         NumberBoxValueChangedEventArgs args)
+    {
+        await SaveCameraEnhancementAsync();
+    }
+
+    private async void MmdClothComboBox_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
     {
         await SaveCameraEnhancementAsync();
     }
@@ -404,6 +411,20 @@ public sealed partial class MainWindow : Window
         extras.VmdCameraScale = Value(VmdCameraScaleNumberBox, 0.07);
         extras.VmdCameraFovBias = Value(VmdCameraFovBiasNumberBox, 5.0);
         extras.VmdCameraLoop = VmdCameraLoopToggle.IsOn;
+        extras.MmdEnabled = MmdEnabledToggle.IsOn;
+        extras.VmdBodyEnabled = MmdBodyToggle.IsOn;
+        extras.VmdTerrainEnabled = MmdTerrainToggle.IsOn;
+        int cloth = MmdClothComboBox.SelectedIndex;
+        extras.VmdClothMode = FreeCameraExtras.ClothModes[
+            cloth >= 0 && cloth < FreeCameraExtras.ClothModes.Length ? cloth : 0];
+        extras.VmdFaceEnabled = MmdFaceToggle.IsOn;
+        extras.MmdMusicEnabled = MmdMusicToggle.IsOn;
+        extras.MmdOverlayEnabled = MmdOverlayToggle.IsOn;
+        extras.MmdOverlayVisible = MmdOverlayVisibleToggle.IsOn;
+        extras.MmdLoop = MmdLoopToggle.IsOn;
+        extras.VmdMotionScale = Math.Clamp(Value(MmdMotionScaleNumberBox, 100.0) / 100.0, 0.05, 5.0);
+        extras.MmdMusicGain = Math.Clamp(Value(MmdMusicGainNumberBox, 100.0) / 100.0, 0.0, 2.0);
+        extras.MmdSeekSeconds = Math.Clamp(Value(MmdSeekNumberBox, 5.0), 0.5, 60.0);
         return extras;
     }
 
@@ -426,14 +447,271 @@ public sealed partial class MainWindow : Window
         VmdCameraScaleNumberBox.Value = extras.VmdCameraScale;
         VmdCameraFovBiasNumberBox.Value = extras.VmdCameraFovBias;
         VmdCameraLoopToggle.IsOn = extras.VmdCameraLoop;
+        MmdEnabledToggle.IsOn = extras.MmdEnabled;
+        MmdBodyToggle.IsOn = extras.VmdBodyEnabled;
+        MmdTerrainToggle.IsOn = extras.VmdTerrainEnabled;
+        MmdClothComboBox.SelectedIndex = Math.Max(0,
+            Array.IndexOf(FreeCameraExtras.ClothModes, extras.VmdClothMode));
+        MmdFaceToggle.IsOn = extras.VmdFaceEnabled;
+        MmdMusicToggle.IsOn = extras.MmdMusicEnabled;
+        MmdOverlayToggle.IsOn = extras.MmdOverlayEnabled;
+        MmdOverlayVisibleToggle.IsOn = extras.MmdOverlayVisible;
+        MmdLoopToggle.IsOn = extras.MmdLoop;
+        MmdMotionScaleNumberBox.Value = extras.VmdMotionScale * 100.0;
+        MmdMusicGainNumberBox.Value = extras.MmdMusicGain * 100.0;
+        MmdSeekNumberBox.Value = extras.MmdSeekSeconds;
+        RefreshMmdWorks();
+    }
+
+    // ---------------------------------------------------------------------
+    // MMD library: files are copied into <install>\mmd, which the camera
+    // module and the in-game overlay read.
+    // ---------------------------------------------------------------------
+    private void RefreshMmdWorks()
+    {
+        bool isZh = LocalizationService.Instance.IsChinese;
+        MmdLibraryPathTextBlock.Text = (isZh ? "位置：" : "Location: ") + MmdLibraryService.LibraryRoot;
+        IReadOnlyList<MmdWork> works;
+        try
+        {
+            works = MmdLibraryService.List();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            works = [];
+            ShowStatus(isZh ? "无法读取作品库" : "Cannot read the MMD library", exception.Message, InfoBarSeverity.Error);
+        }
+        string? selected = (MmdWorksListView.SelectedItem as MmdWork)?.Folder;
+        MmdWorksListView.ItemsSource = works;
+        MmdWork? keep = works.FirstOrDefault(work => work.Folder == selected) ??
+            works.FirstOrDefault(work => work.Folder == _freeCameraExtras.MmdWork);
+        if (keep is not null) MmdWorksListView.SelectedItem = keep;
+        MmdWork? current = works.FirstOrDefault(work => work.Folder == _freeCameraExtras.MmdWork);
+        MmdDefaultWorkTextBlock.Text = current is not null
+            ? (isZh ? "默认作品（悬浮窗可随时切换）：" : "Default work (switch any time in the overlay): ") + current.Name
+            : (isZh ? "未设置默认作品；在悬浮窗里选择，或选中后点“设为默认”。" : "No default work; pick one in the overlay or select it and press Set default.");
+    }
+
+    private MmdWork? SelectedMmdWork()
+    {
+        if (MmdWorksListView.SelectedItem is MmdWork work) return work;
+        ShowStatus(LocalizationService.Instance.IsChinese ? "请先选择作品" : "Select a work first",
+            string.Empty, InfoBarSeverity.Warning);
+        return null;
+    }
+
+    private void MmdRefreshButton_Click(object sender, RoutedEventArgs e) => RefreshMmdWorks();
+
+    private void MmdOpenFolderButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            string root = MmdLibraryService.LibraryRoot;
+            Directory.CreateDirectory(root);
+            Process.Start(new ProcessStartInfo { FileName = root, UseShellExecute = true });
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or Win32Exception)
+        {
+            ShowStatus(LocalizationService.Instance.IsChinese ? "无法打开文件夹" : "Cannot open the folder",
+                exception.Message, InfoBarSeverity.Error);
+        }
+    }
+
+    private async void MmdSetDefaultButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (SelectedMmdWork() is not MmdWork work) return;
+        _freeCameraExtras.MmdWork = work.Folder;
+        await SaveCameraEnhancementAsync();
+        RefreshMmdWorks();
+    }
+
+    private async void MmdDeleteButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (SelectedMmdWork() is not MmdWork work) return;
+        bool isZh = LocalizationService.Instance.IsChinese;
+        var dialog = new ContentDialog
+        {
+            XamlRoot = Content.XamlRoot,
+            Title = isZh ? "删除作品" : "Delete work",
+            Content = (isZh ? "将删除作品库里的副本（原文件不受影响）：" : "Removes the library copy (your original files stay): ") + work.Name,
+            PrimaryButtonText = isZh ? "删除" : "Delete",
+            CloseButtonText = isZh ? "取消" : "Cancel",
+            DefaultButton = ContentDialogButton.Close
+        };
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+        try
+        {
+            MmdLibraryService.Delete(work);
+            if (_freeCameraExtras.MmdWork == work.Folder)
+            {
+                _freeCameraExtras.MmdWork = string.Empty;
+                await SaveCameraEnhancementAsync();
+            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            ShowStatus(isZh ? "删除失败（游戏可能正在使用）" : "Delete failed (the game may be using it)",
+                exception.Message, InfoBarSeverity.Error);
+        }
+        RefreshMmdWorks();
+    }
+
+    private async void MmdOffsetButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (SelectedMmdWork() is not MmdWork work) return;
+        bool isZh = LocalizationService.Instance.IsChinese;
+        var box = new NumberBox
+        {
+            Header = isZh ? "音乐偏移（秒；正数表示音乐比动作早开始）" : "Music offset (s; positive starts the music earlier)",
+            Minimum = -600,
+            Maximum = 600,
+            SmallChange = 0.05,
+            SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact,
+            Value = work.AudioOffset
+        };
+        var dialog = new ContentDialog
+        {
+            XamlRoot = Content.XamlRoot,
+            Title = work.Name,
+            Content = box,
+            PrimaryButtonText = isZh ? "保存" : "Save",
+            CloseButtonText = isZh ? "取消" : "Cancel",
+            DefaultButton = ContentDialogButton.Primary
+        };
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary || !double.IsFinite(box.Value)) return;
+        try
+        {
+            MmdLibraryService.UpdateOffset(work, box.Value);
+            ShowStatus(isZh ? "音乐偏移已保存" : "Music offset saved",
+                isZh ? "下次开始播放时生效。" : "Applies the next time playback starts.", InfoBarSeverity.Success);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            ShowStatus(isZh ? "保存失败" : "Save failed", exception.Message, InfoBarSeverity.Error);
+        }
+        RefreshMmdWorks();
+    }
+
+    private async void MmdImportButton_Click(object sender, RoutedEventArgs e)
+    {
+        bool isZh = LocalizationService.Instance.IsChinese;
+        var name = new TextBox { Header = isZh ? "作品名称（可留空）" : "Name (optional)" };
+        var panel = new StackPanel { Spacing = 12, MinWidth = 460 };
+        panel.Children.Add(name);
+        TextBox FileRow(string header, string placeholder, params string[] extensions) =>
+            FileRowIn(panel, header, placeholder, extensions);
+        TextBox FileRowIn(StackPanel target, string header, string placeholder, params string[] extensions)
+        {
+            var box = new TextBox { Header = header, PlaceholderText = placeholder };
+            var browse = new Button
+            {
+                Content = isZh ? "浏览" : "Browse",
+                VerticalAlignment = VerticalAlignment.Bottom
+            };
+            browse.Click += async (_, _) =>
+            {
+                var picker = new FileOpenPicker { SuggestedStartLocation = PickerLocationId.ComputerFolder };
+                foreach (string extension in extensions) picker.FileTypeFilter.Add(extension);
+                WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
+                Windows.Storage.StorageFile? file = await picker.PickSingleFileAsync();
+                if (file is null) return;
+                box.Text = file.Path;
+                if (string.IsNullOrWhiteSpace(name.Text) && extensions.Contains(".vmd"))
+                    name.Text = Path.GetFileNameWithoutExtension(file.Path);
+            };
+            var row = new Grid { ColumnSpacing = 8 };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.Children.Add(box);
+            Grid.SetColumn(browse, 1);
+            row.Children.Add(browse);
+            target.Children.Add(row);
+            return box;
+        }
+        TextBox motion = FileRow(isZh ? "动作 VMD（身体/表情，可包含镜头）" : "Motion VMD (body/face, may include the camera)",
+            isZh ? "必选（或只导入镜头）" : "Required (or import a camera only)", ".vmd");
+        TextBox camera = FileRow(isZh ? "镜头 VMD（可选）" : "Camera VMD (optional)",
+            isZh ? "留空时使用动作 VMD 里的镜头" : "Empty uses the motion's camera keys", ".vmd");
+        TextBox face = FileRow(isZh ? "表情 VMD（可选）" : "Face VMD (optional)",
+            isZh ? "留空时使用动作 VMD 里的表情" : "Empty uses the motion's morph keys", ".vmd");
+        TextBox music = FileRow(isZh ? "音乐（可选）" : "Music (optional)", "WAV / MP3 / M4A / AAC / FLAC / WMA",
+            ".wav", ".mp3", ".m4a", ".aac", ".flac", ".wma");
+        var offset = new NumberBox
+        {
+            Header = isZh ? "音乐偏移（秒；正数表示音乐比动作早开始）" : "Music offset (s; positive starts the music earlier)",
+            Minimum = -600,
+            Maximum = 600,
+            SmallChange = 0.05,
+            SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact,
+            Value = 0
+        };
+        panel.Children.Add(offset);
+        // Squad playback: the 2nd..4th squad members in the field dance these.
+        var squadPanel = new StackPanel { Spacing = 12 };
+        squadPanel.Children.Add(new TextBlock
+        {
+            Text = isZh
+                ? "第 1 人是当前操控角色，第 2–4 人按小队顺序取场上的队员。所有人以第 1 人的位置和朝向为舞台原点。"
+                : "Dancer 1 is the controlled character; dancers 2–4 are the next squad members in the field. Everyone uses dancer 1's position and facing as the stage origin.",
+            TextWrapping = TextWrapping.Wrap
+        });
+        var extraMotionBoxes = new TextBox[MmdWork.ExtraDancers];
+        var extraFaceBoxes = new TextBox[MmdWork.ExtraDancers];
+        for (int index = 0; index < MmdWork.ExtraDancers; index++)
+        {
+            extraMotionBoxes[index] = FileRowIn(squadPanel,
+                isZh ? $"第 {index + 2} 人动作 VMD" : $"Dancer {index + 2} motion VMD", string.Empty, ".vmd");
+            extraFaceBoxes[index] = FileRowIn(squadPanel,
+                isZh ? $"第 {index + 2} 人表情 VMD（可选）" : $"Dancer {index + 2} face VMD (optional)", string.Empty, ".vmd");
+        }
+        panel.Children.Add(new Expander
+        {
+            Header = isZh ? "多人同台（可选）" : "Squad dance (optional)",
+            Content = squadPanel,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Stretch
+        });
+        var dialog = new ContentDialog
+        {
+            XamlRoot = Content.XamlRoot,
+            Title = isZh ? "导入 MMD 作品" : "Import MMD work",
+            Content = new ScrollViewer { Content = panel, MaxHeight = 560 },
+            PrimaryButtonText = isZh ? "导入" : "Import",
+            CloseButtonText = isZh ? "取消" : "Cancel",
+            DefaultButton = ContentDialogButton.Primary
+        };
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+        try
+        {
+            MmdWorksListView.IsEnabled = false;
+            MmdImportButton.IsEnabled = false;
+            MmdWork work = await MmdLibraryService.ImportAsync(new MmdImportRequest(
+                name.Text, motion.Text, camera.Text, face.Text, music.Text,
+                double.IsFinite(offset.Value) ? offset.Value : 0.0,
+                extraMotionBoxes.Select(box => box.Text).ToArray(),
+                extraFaceBoxes.Select(box => box.Text).ToArray()));
+            if (string.IsNullOrEmpty(_freeCameraExtras.MmdWork))
+            {
+                _freeCameraExtras.MmdWork = work.Folder;
+                await SaveCameraEnhancementAsync();
+            }
+            ShowStatus(isZh ? "作品已导入" : "Work imported", work.Name, InfoBarSeverity.Success);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            ShowStatus(isZh ? "导入失败" : "Import failed", exception.Message, InfoBarSeverity.Error);
+        }
+        finally
+        {
+            MmdWorksListView.IsEnabled = true;
+            MmdImportButton.IsEnabled = true;
+        }
+        RefreshMmdWorks();
     }
 
     private void LocalizeFreeCameraExtras(bool isZh)
     {
         CameraMotionSectionTitle.Text = isZh ? "运镜与镜头导入" : "Camera Moves & Import";
-        CameraMotionSectionHint.Text = isZh
-            ? "自由视角中可用。默认小键盘热键（需开启 NumLock）：7/9 滚转，1/3 缩放视野，5 复位滚转和视野，8 开始/停止运镜，0 记录关键帧，2 播放/停止关键帧，4 清空关键帧，6 播放/停止 VMD 镜头（未进入自由视角时会自动进入）。滚轮也可缩放视野。热键可在配置文件中修改。"
-            : "Available in the free camera. Default numpad hotkeys (NumLock on): 7/9 roll, 1/3 zoom, 5 reset roll and FOV, 8 start/stop the camera move, 0 record a keyframe, 2 play/stop keyframes, 4 clear keyframes, 6 play/stop the VMD camera (enters the free camera if needed). The mouse wheel also zooms. Hotkeys can be changed in the configuration file.";
         FreeCameraMouseLookToggle.Header = isZh ? "鼠标转向" : "Mouse Look";
         FreeCameraMouseLookToggle.OffContent = isZh ? "关闭" : "Disabled";
         FreeCameraMouseLookToggle.OnContent = isZh ? "自由视角中用鼠标转动镜头" : "Turn the free camera with the mouse";
@@ -466,6 +744,61 @@ public sealed partial class MainWindow : Window
         VmdCameraLoopToggle.Header = isZh ? "VMD 镜头循环播放" : "Loop the VMD Camera";
         VmdCameraLoopToggle.OffContent = isZh ? "播放一次" : "Play once";
         VmdCameraLoopToggle.OnContent = isZh ? "循环播放" : "Loop";
+        CameraMotionSectionHint.Text = isZh
+            ? "自由视角中可用。小键盘（不需要开启 NumLock）：7/9 滚转，8 复位，1/3 缩放视野，2 开始/停止运镜，0 记录关键帧，. 播放关键帧。滚轮也可缩放视野。清空、保存、读取关键帧在 MMD 悬浮窗里。"
+            : "Available in the free camera. Numpad (NumLock not required): 7/9 roll, 8 reset, 1/3 zoom, 2 start/stop the camera move, 0 record a keyframe, . play keyframes. The mouse wheel also zooms. Clear, save and load keyframes in the MMD overlay.";
+        MmdSectionTitle.Text = isZh ? "MMD 播放与作品库" : "MMD Playback & Library";
+        MmdSectionHint.Text = isZh
+            ? "动作、镜头和音乐共用一个时钟。小键盘：Enter 播放/暂停，+ 停止，4/6 后退/前进，5 切换镜头（VMD/自由/游戏），- 显示/隐藏悬浮窗。VMD 镜头不需要开启自由视角（切到“自由”模式才需要）；音乐通过音乐模块播放（不需要 OmniMix）。"
+            : "Motion, camera and music share one clock. Numpad: Enter play/pause, + stop, 4/6 back/forward, 5 camera mode (VMD/free/game), - show/hide the overlay. The VMD camera works without the free camera (only the \"free\" mode needs it); music plays through the Music module (OmniMix not required).";
+        MmdEnabledToggle.Header = isZh ? "启用 MMD 播放" : "MMD Playback";
+        MmdEnabledToggle.OffContent = isZh ? "关闭" : "Disabled";
+        MmdEnabledToggle.OnContent = isZh ? "用小键盘和悬浮窗控制" : "Controlled from the numpad and overlay";
+        MmdBodyToggle.Header = isZh ? "身体动作" : "Body Motion";
+        MmdTerrainToggle.Header = isZh ? "地形贴合（实验）" : "Terrain Follow (experimental)";
+        MmdFaceToggle.Header = isZh ? "表情" : "Face";
+        MmdClothComboBox.Header = isZh ? "衣物物理" : "Cloth Physics";
+        string[] clothModes = isZh
+            ? ["稳定（推荐）：完整模拟，不被原动作拉回", "游戏原样：不做处理", "冻结：关闭模拟，衣物随身体硬动"]
+            : ["Stable (recommended): full simulation, no pull back to the native pose", "Game original: untouched", "Freeze: simulation off, cloth follows the body rigidly"];
+        for (int index = 0; index < clothModes.Length && index < MmdClothComboBox.Items.Count; index++)
+        {
+            if (MmdClothComboBox.Items[index] is ComboBoxItem item) item.Content = clothModes[index];
+        }
+        MmdClothHint.Text = isZh
+            ? "作用于衣服、头发和尾巴的游戏物理，每位跳舞的队员各自处理，停止播放后恢复原设置。在下次开始播放时生效。碰撞体仍是游戏原值，大幅度动作可能穿模。"
+            : "Applies to the game's cloth, hair and tail physics, per dancing member; stopping playback restores the original settings. Takes effect at the next play. Colliders keep the game's values, so large moves may still clip.";
+        foreach (ToggleSwitch toggle in new[] { MmdBodyToggle, MmdTerrainToggle, MmdFaceToggle })
+        {
+            toggle.OffContent = isZh ? "关闭" : "Off";
+            toggle.OnContent = isZh ? "开启" : "On";
+        }
+        MmdMusicToggle.Header = isZh ? "音乐" : "Music";
+        MmdMusicToggle.OffContent = isZh ? "不播放" : "Off";
+        MmdMusicToggle.OnContent = isZh ? "通过音乐模块播放" : "Through the Music module";
+        MmdOverlayToggle.Header = isZh ? "悬浮窗" : "Overlay";
+        MmdOverlayToggle.OffContent = isZh ? "关闭" : "Off";
+        MmdOverlayToggle.OnContent = isZh ? "小键盘 - 显示/隐藏" : "Numpad - toggles";
+        MmdOverlayVisibleToggle.Header = isZh ? "进入游戏时显示悬浮窗" : "Show the Overlay at Start";
+        MmdOverlayVisibleToggle.OffContent = isZh ? "隐藏" : "Hidden";
+        MmdOverlayVisibleToggle.OnContent = isZh ? "显示" : "Shown";
+        MmdLoopToggle.Header = isZh ? "循环播放" : "Loop";
+        MmdLoopToggle.OffContent = isZh ? "播放一次" : "Play once";
+        MmdLoopToggle.OnContent = isZh ? "循环" : "Loop";
+        MmdMotionScaleNumberBox.Header = isZh ? "位移幅度（%）" : "Displacement Scale (%)";
+        MmdMusicGainNumberBox.Header = isZh ? "音乐音量（%）" : "Music Volume (%)";
+        MmdSeekNumberBox.Header = isZh ? "快进/快退（秒）" : "Seek Step (s)";
+        MmdLibraryTitle.Text = isZh ? "作品库" : "Library";
+        MmdLibraryHint.Text = isZh
+            ? "导入时会把文件复制到软件目录下的 mmd 文件夹，悬浮窗直接从这里读取。"
+            : "Imported files are copied into the mmd folder of the installation; the overlay reads them from there.";
+        MmdImportButton.Content = isZh ? "导入作品" : "Import";
+        MmdSetDefaultButton.Content = isZh ? "设为默认" : "Set default";
+        MmdOffsetButton.Content = isZh ? "音乐偏移" : "Music offset";
+        MmdDeleteButton.Content = isZh ? "删除" : "Delete";
+        MmdOpenFolderButton.Content = isZh ? "打开文件夹" : "Open folder";
+        MmdRefreshButton.Content = isZh ? "刷新" : "Refresh";
+        RefreshMmdWorks();
     }
 
     private async void FreeCameraHotkeyBox_LostFocus(
@@ -527,7 +860,7 @@ public sealed partial class MainWindow : Window
         {
             ShowStatus(
                 "相机热键无效",
-                "请输入单个字母、数字、F1-F24，或 NUMPAD0-NUMPAD9。",
+                "请输入单个字母、数字或 F1-F24（小键盘已留给 MMD）。",
                 InfoBarSeverity.Error);
             return;
         }
@@ -537,7 +870,7 @@ public sealed partial class MainWindow : Window
         {
             ShowStatus(
                 "时间冻结热键无效",
-                "请输入单个字母、数字、F1-F24，或 NUMPAD0-NUMPAD9。",
+                "请输入单个字母、数字或 F1-F24（小键盘已留给 MMD）。",
                 InfoBarSeverity.Error);
             return;
         }
@@ -555,7 +888,7 @@ public sealed partial class MainWindow : Window
         {
             ShowStatus(
                 "第一人称热键无效",
-                "请输入单个字母、数字、减号（-）、F1-F24，或 NUMPAD0-NUMPAD9。",
+                "请输入单个字母、数字、减号（-）或 F1-F24（小键盘已留给 MMD）。",
                 InfoBarSeverity.Error);
             return;
         }
@@ -2814,10 +3147,10 @@ public sealed partial class MainWindow : Window
         {
             return true;
         }
-        if (normalized.StartsWith("NUMPAD", StringComparison.Ordinal) &&
-            normalized.Length == 7 && char.IsAsciiDigit(normalized[^1]))
+        // The numpad is reserved for MMD playback (hotkey layout 2).
+        if (normalized.StartsWith("NUMPAD", StringComparison.Ordinal))
         {
-            return true;
+            return false;
         }
         return normalized.Length >= 2 && normalized[0] == 'F' &&
             int.TryParse(normalized[1..], NumberStyles.None,

@@ -1,6 +1,7 @@
 // Include the production TU to exercise actual request handling and end states.
 // No game is loaded; host callbacks and Win32 on non-Windows are test fixtures.
 #include "../../modules/camera/module.cpp"
+#include "eiem_body_fake.h"
 #include "test_support.h"
 #include <filesystem>
 #include <fstream>
@@ -26,11 +27,11 @@ int main() {
     StepKeyframes(g_playback_start+4);CHECK(g_playback==FreePlayback::None && g_free_view.fov==90);
     g_vmd={}; VmdCameraKey a,b;a.frame=0;b.frame=30;b.fov=80;b.distance=-10;
     g_vmd.keys={a,b};g_vmd.duration=1;g_playback=FreePlayback::Vmd;g_playback_start=0;
-    StepVmd(3);CHECK(g_playback==FreePlayback::None);CHECK(near(g_free_view.fov,85));
+    StepVmd(3);CHECK(g_playback==FreePlayback::None);CHECK(nearly(g_free_view.fov,85));
     g_vmd.keys={b};g_vmd.keys[0].frame=0;g_vmd.duration=0;g_playback=FreePlayback::Vmd;g_playback_start=0;
-    StepVmd(0);CHECK(g_playback==FreePlayback::None && near(g_free_view.fov,85));
+    StepVmd(0);CHECK(g_playback==FreePlayback::None && nearly(g_free_view.fov,85));
     // Configuration keys are consumed by the actual native parser.
-    auto config=ParseConfiguration("enabled=true\nkeyframe_file=\"C:/camera path/test.becamera\"\nkeyframe_save_hotkey=F10\nkeyframe_load_hotkey=F11\n");
+    auto config=ParseConfiguration("enabled=true\nkeyframe_file=\"C:/camera path/test.becamera\"\nkeyframe_save_hotkey=F10\nkeyframe_load_hotkey=F11\nhotkey_layout=2\n");
     CHECK(config.keyframe_file=="C:/camera path/test.becamera");
     CHECK(config.keyframe_save_key==VK_F1+9 && config.keyframe_load_key==VK_F1+10);
     g_camera_files.Start();
@@ -69,6 +70,20 @@ int main() {
     g_keyframe_save_request=true;g_keyframe_load_request=true;
     PumpFreeCameraControl();CHECK(!g_keyframe_save_request && !g_keyframe_load_request);
     g_camera_files.Stop();g_playback=FreePlayback::None;
+    // Library works: squad parts motion2..motion4 / face2..face4, plain names only.
+    {
+        const auto work_dir=dir/"work";std::filesystem::create_directories(work_dir);
+        {std::ofstream(work_dir/"set.ini")<<"[set]\nname=Duo\nmotion=a.vmd\nmotion2=b.vmd\nface2=bf.vmd\nmotion4=d.vmd\n";}
+        MmdLibrary::Work work;std::string error;
+        CHECK(MmdLibrary::LoadWork(work_dir,work,error));
+        CHECK(work.extra_motion[0].filename()=="b.vmd"&&work.extra_face[0].filename()=="bf.vmd");
+        CHECK(work.extra_motion[1].empty()&&work.extra_motion[2].filename()=="d.vmd");
+        {std::ofstream(work_dir/"set.ini")<<"motion=a.vmd\nmotion3=../x.vmd\n";}
+        CHECK(!MmdLibrary::LoadWork(work_dir,work,error));
+        {std::ofstream(work_dir/"set.ini")<<"motion=a.vmd\nmotion5=e.vmd\n";}
+        CHECK(MmdLibrary::LoadWork(work_dir,work,error));
+        for(const auto& extra:work.extra_motion)CHECK(extra.empty());
+    }
     std::filesystem::remove_all(dir);
     std::cout<<"PASS production camera callbacks: "<<checks<<" checks\n";
 }

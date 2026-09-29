@@ -22,3 +22,21 @@
 reviewed against Sasye/EIEM `src/bone_map.h` and `src/smc_face.h` at
 `8b46b76b33e3f61825b6b8c55d983bcf2c1bc94c` (AGPL-3.0).
 No upstream executable, private SMC memory layout, hash constant, or game asset is included.
+
+### DirectVmd body playback (2026-09-29)
+
+`native/modules/camera/eiem/upstream/` is a source snapshot of Sasye/EIEM at
+commit `1bc9baa` (AGPL-3.0, copy in `native/modules/camera/eiem/LICENSE.EIEM`):
+VMD parser, DirectVmd sampling/source rig/PMX reference, ghost rig with FinalIK
+leg and knee handling, terrain follow and SkeletalMorphCore face code. It is
+compiled into `BetterEndfield.Camera.dll` through `eiem/eiem_body.cpp`, which
+replaces EIEM's loader, GUI, audio and hook installation. Local modifications
+are listed in `native/modules/camera/eiem/UPSTREAM.md`.
+
+## Endfield-Poser
+
+- Source: https://github.com/honxi1/Endfield-Poser (reviewed read-only)
+- Used as a design reference only for squad playback in the Camera module:
+  reading the current squad through `GameInstance.get_player` →
+  `GamePlayer.squadManager` → `SquadManager.GetMemberBySlot`, and sharing one
+  stage origin between dancers. No Endfield-Poser source code is included.

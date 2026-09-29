@@ -1,16 +1,36 @@
-// PC-only, opt-in character preview. Called only after CameraManager.TailLateTick.
-// No extra hook, root/controller write, Animator disable, private SMC offset or
-// FinalIK call. A changed/destroyed hierarchy stops the session instead of rebinding.
+// PC-only character motion. Bodies are driven by the EIEM DirectVmd port
+// (eiem/eiem_body.cpp): hidden ghost rig, FK + twist + FinalIK legs, optional
+// terrain follow and SkeletalMorphCore face. This file picks the characters,
+// holds their pose leases against the Actions module, feeds the clock and
+// reports state to the MMD director. Called after CameraManager.TailLateTick.
+//
+// Squad playback: a work with motion2..motion4 also drives the other members
+// of the current squad that are in the field, in squad slot order. They share
+// the controlled character's position and facing as the stage origin, so the
+// formation authored in multi-dancer VMDs is kept.
+double MmdDirectorSeconds();
+bool MmdDirectorPlaying();
+namespace Mmd {std::filesystem::path ModuleDirectory();}
 namespace CharacterMotion {
-using namespace CharacterPose;
 constexpr char kOwner[] = "betterendfield.camera.character";
+constexpr int kMaxActors = EiemBody::kMaxActors;
 struct Config {
-    bool enabled=false, body=false, eyes=false, morphs=false, loop=false;
-    float weight=1;
+    bool enabled=false, face=false, terrain=false, loop=false;
+    float motion_scale=1;
+    EiemBody::ClothMode cloth=EiemBody::ClothMode::Stable;
     std::string file;
 };
+struct Part {std::string motion, face;};
 std::atomic<std::shared_ptr<const Config>> config{std::make_shared<const Config>()};
-std::atomic_uint requests{0}; // 1 play/stop, 2 pause/resume, 4 stop
+std::atomic_uint requests{0}; // 1 play/stop, 2 pause/resume, 4 stop, 8 MMD load, 16 MMD stop
+// MMD director link: the director asks for a load (bit 8) with these files and
+// then drives the pose from MmdDirectorSeconds() instead of the local clock.
+enum DirectorPhase : int { DirectorIdle = 0, DirectorLoading = 1, DirectorBound = 2, DirectorFailed = 3 };
+std::mutex director_mutex;
+std::vector<Part> director_parts; // guarded by director_mutex; [0] is the controlled character
+std::atomic_int director_phase{DirectorIdle};
+std::atomic<double> director_duration{0.0};
+std::atomic_int director_dancers{0};
 std::atomic_bool stopping{false};
 std::recursive_mutex gate;
 thread_local bool in_callback=false;
@@ -20,29 +40,26 @@ struct Method {
     BE_ResolvedMethodV1 value{};
 };
 constexpr const char* kCore="UnityEngine.CoreModule.dll";
+constexpr const char* kGame="Gameplay.Beyond.dll";
 Method methods[]{
     {{kCore,"UnityEngine","Object","op_Implicit","UnityEngine.Object","System.Boolean",1}},
     {{kCore,"UnityEngine","Component","get_transform",nullptr,"UnityEngine.Transform",0}},
-    {{kCore,"UnityEngine","Component","get_gameObject",nullptr,"UnityEngine.GameObject",0}},
     {{kCore,"UnityEngine","GameObject","GetComponentsInChildren","System.Type|System.Boolean","UnityEngine.Component[]",2}},
     {{"mscorlib.dll","System","Array","GetLength","System.Int32","System.Int32",1}},
     {{"mscorlib.dll","System","Array","GetValue","System.Int32","System.Object",1}},
-    {{kCore,"UnityEngine","Transform","get_localRotation",nullptr,"UnityEngine.Quaternion",0}},
-    {{kCore,"UnityEngine","Transform","set_localRotation","UnityEngine.Quaternion","System.Void",1}},
-    {{kCore,"UnityEngine","Transform","get_rotation",nullptr,"UnityEngine.Quaternion",0}},
     {{kCore,"UnityEngine","Transform","IsChildOf","UnityEngine.Transform","System.Boolean",1}},
-    {{kCore,"UnityEngine","Transform","get_childCount",nullptr,"System.Int32",0}},
-    {{kCore,"UnityEngine","Transform","GetChild","System.Int32","UnityEngine.Transform",1}},
-    {{kCore,"UnityEngine","Object","get_name",nullptr,"System.String",0}},
-    {{kCore,"UnityEngine","Time","get_frameCount",nullptr,"System.Int32",0}},
-    {{kCore,"UnityEngine","SkinnedMeshRenderer","get_sharedMesh",nullptr,"UnityEngine.Mesh",0}},
-    {{kCore,"UnityEngine","Mesh","GetBlendShapeIndex","System.String","System.Int32",1}},
-    {{kCore,"UnityEngine","Mesh","get_blendShapeCount",nullptr,"System.Int32",0}},
-    {{kCore,"UnityEngine","SkinnedMeshRenderer","GetBlendShapeWeight","System.Int32","System.Single",1}},
-    {{kCore,"UnityEngine","SkinnedMeshRenderer","SetBlendShapeWeight","System.Int32|System.Single","System.Void",2}},
+    // Optional: without it EIEM runs without grounder/terrain support.
+    {{kGame,"Beyond.Gameplay.Core","Entity","get_movementComponent",nullptr,"Beyond.Gameplay.Core.MovementComponent",0}},
+    // Optional squad access (GameInstance.player.squadManager), as in Endfield-Poser.
+    {{kGame,"Beyond.Gameplay","GameInstance","get_player",nullptr,"Beyond.Gameplay.GamePlayer",0}},
+    {{kGame,"Beyond.Gameplay.Core","SquadManager","get_isSquadLoading",nullptr,"System.Boolean",0}},
+    {{kGame,"Beyond.Gameplay.Core","SquadManager","get_slotCount",nullptr,"System.Int32",0}},
+    {{kGame,"Beyond.Gameplay.Core","SquadManager","GetMemberBySlot","System.Int32","Beyond.Gameplay.Core.Entity",1}},
+    // Optional: picks the body rig when the model carries more than one Animator.
+    {{"UnityEngine.AnimationModule.dll","UnityEngine","Animator","get_isHuman",nullptr,"System.Boolean",0}},
+    {{kCore,"UnityEngine","Behaviour","get_isActiveAndEnabled",nullptr,"System.Boolean",0}},
 };
-enum Id {Alive,Transform,GameObject,Children,ArrayLength,ArrayValue,LocalGet,LocalSet,
-    WorldGet,IsChild,ChildCount,ChildAt,Name,FrameCount,SharedMesh,ShapeIndex,ShapeCount,WeightGet,WeightSet};
+enum Id {Alive,Transform,Children,ArrayLength,ArrayValue,IsChild,Movement,Player,SquadLoading,SquadCount,SquadMember,IsHuman,ActiveEnabled};
 void* Call(Id id,void* self,void** args=nullptr,bool* success=nullptr) {
     if(success)*success=false;
     if(!g_host || !g_host->runtime_invoke || !methods[id].value.method_info)return nullptr;
@@ -59,103 +76,105 @@ bool AliveObject(void* object) {
     if(!object)return false;
     bool alive=false;void* args[]{object};return Value(Alive,nullptr,alive,args)&&alive;
 }
-void* Model() {
-    void* character=Invoke(Contract("player_controller.get_main_character"),nullptr,nullptr);
-    void* model=character?Invoke(Contract("entity.get_model_com"),character,nullptr):nullptr;
+void* Character() {return Invoke(Contract("player_controller.get_main_character"),nullptr,nullptr);}
+void* ModelOf(void* entity) {
+    void* model=entity?Invoke(Contract("entity.get_model_com"),entity,nullptr):nullptr;
     return model?Invoke(Contract("base_model_component.get_model_go"),model,nullptr):nullptr;
 }
-struct Runtime final : Backend {
-    CameraFiles::Worker files;
-    const BE_PoseLeaseApiV1* leases=nullptr;
-    BE_ResolvedClassV1 animator_class{},renderer_class{};
-    std::shared_ptr<const Config> applied;
-    Session session;
-    Clock clock;
-    uint64_t generation=0,lease=0;
-    DWORD thread_id=0;
-    int last_frame=-1;
-    void* root=nullptr;
+void* Model() {return ModelOf(Character());}
+std::wstring EiemLogPath() {
+    // <install>\modules\ -> <install>\logs\ when present, else <install>\.
+    const std::filesystem::path modules=Mmd::ModuleDirectory();
+    if(modules.empty())return {};
+    const auto install=modules.parent_path();
+    std::error_code error;
+    const auto logs=install/L"logs";
+    return ((std::filesystem::is_directory(logs,error)?logs:install)/L"BetterEndfield.EiemBody.log").wstring();
+}
+struct Actor {
+    void* entity=nullptr;
     void* model=nullptr;
-    void* model_root=nullptr;
     void* animator=nullptr;
-    void* pending_model=nullptr;
-    uint32_t pending_pin=0;
+    void* root=nullptr;
+    uint64_t lease=0;
     std::vector<uint32_t> pins;
-    std::map<void*,void*> meshes;
-    bool loading=false,ready=false,morph_ready=false;
-    uint32_t frames=0;
-    bool Pin(void* object) {
+    bool loading=false,active=false;
+    bool Bound()const{return lease!=0;}
+};
+struct Runtime final {
+    const BE_PoseLeaseApiV1* leases=nullptr;
+    BE_ResolvedClassV1 animator_class{};
+    int squad_manager_offset=-1;
+    std::shared_ptr<const Config> applied;
+    CharacterPose::Clock clock;
+    DWORD thread_id=0;
+    Actor actors[kMaxActors];
+    bool resolved=false,eiem_tried=false;
+    bool director=false,director_stopping=false;
+    bool Pin(Actor& actor,void* object) {
         if(!object || !g_host || !g_host->gchandle_new)return false;
         auto pin=g_host->gchandle_new(g_host->context,object,1);
         if(!pin)return false;
-        try {pins.push_back(pin);}catch(...){g_host->gchandle_free(g_host->context,pin);throw;}
+        try {actor.pins.push_back(pin);}catch(...){g_host->gchandle_free(g_host->context,pin);throw;}
         return true;
     }
-    void ClearPending() {
-        if(pending_pin && g_host && g_host->gchandle_free)g_host->gchandle_free(g_host->context,pending_pin);
-        pending_pin=0;pending_model=nullptr;loading=false;
+    bool RootValid(const Actor& actor) {
+        if(!AliveObject(actor.model)||!AliveObject(actor.animator)||!AliveObject(actor.root)||Call(Transform,actor.animator)!=actor.root)return false;
+        void* model_root=Invoke(Contract("unity.game_object.transform"),actor.model,nullptr);
+        bool inside=false;void* args[]{model_root};return model_root&&Value(IsChild,actor.root,inside,args)&&inside;
     }
-    bool RootValid() {
-        if(!AliveObject(root)||!AliveObject(model_root)||!AliveObject(animator)||Call(Transform,animator)!=root)return false;
-        bool inside=false;void* args[]{model_root};return Value(IsChild,root,inside,args)&&inside;
+    bool Loading()const{for(const auto& a:actors)if(a.loading)return true;return false;}
+    bool Playing()const{for(const auto& a:actors)if(a.active)return true;return false;}
+    int Dancers()const{int n=0;for(const auto& a:actors)if(a.active||a.loading)++n;return n;}
+    // main_thread=false: shutdown on Host's thread; Unity must not be touched.
+    void Release(int index,bool main_thread,const char* reason) {
+        Actor& actor=actors[index];
+        if(main_thread && thread_id==GetCurrentThreadId())EiemBody::Stop(index,reason);
+        if(actor.lease && leases)leases->release(actor.root,kOwner,actor.lease);
+        for(auto pin:actor.pins)if(g_host&&g_host->gchandle_free)g_host->gchandle_free(g_host->context,pin);
+        actor=Actor{};
     }
-    bool Within(void* bone) {
-        if(!RootValid() || !AliveObject(bone))return false;
-        bool inside=false;void* args[]{root};return Value(IsChild,bone,inside,args)&&inside;
-    }
-    bool ValidBone(uintptr_t target)override{return Within(reinterpret_cast<void*>(target));}
-    bool ReadRotation(uintptr_t target,CharacterPose::Quaternion& out)override {
-        if(!Value(LocalGet,reinterpret_cast<void*>(target),out)||!Finite(out))return false;
-        out=Vmd::Normalize(out);return true;
-    }
-    bool WriteRotation(uintptr_t target,CharacterPose::Quaternion value)override {
-        if(!Finite(value) || !ValidBone(target))return false;
-        void* args[]{&value};bool ok=false;Call(LocalSet,reinterpret_cast<void*>(target),args,&ok);return ok;
-    }
-    bool ValidMorph(uintptr_t target,int index)override {
-        auto renderer=reinterpret_cast<void*>(target);
-        auto it=meshes.find(renderer);
-        if(it==meshes.end() || !AliveObject(renderer) || !AliveObject(it->second) ||
-            Call(SharedMesh,renderer)!=it->second || !Within(Call(Transform,renderer)))return false;
-        int count=0;return Value(ShapeCount,it->second,count)&&index>=0&&index<count&&count<=4096;
-    }
-    bool ReadMorph(uintptr_t target,int index,float& value)override {
-        void* args[]{&index};return Value(WeightGet,reinterpret_cast<void*>(target),value,args);
-    }
-    bool WriteMorph(uintptr_t target,int index,float value)override {
-        if(!std::isfinite(value) || !ValidMorph(target,index))return false;
-        void* args[]{&index,&value};bool ok=false;Call(WeightSet,reinterpret_cast<void*>(target),args,&ok);return ok;
-    }
-    void Stop(bool restore,const char* reason) {
-        ++generation;
-        const bool active=session.Active();
-        session.Stop(*this,restore && thread_id==GetCurrentThreadId() && leases && leases->owns(root,kOwner,lease));
-        if(lease && leases)leases->release(root,kOwner,lease);
-        lease=0;root=nullptr;model=nullptr;model_root=nullptr;animator=nullptr;meshes.clear();
-        for(auto pin:pins)if(g_host&&g_host->gchandle_free)g_host->gchandle_free(g_host->context,pin);
-        pins.clear();ClearPending();
-        if(active)Log(std::string("Character VMD stopped: ")+reason+"; frames="+std::to_string(frames));
-        frames=0;
+    void Stop(bool main_thread,const char* reason) {
+        const bool was=Loading()||Playing();
+        for(int i=0;i<kMaxActors;++i)Release(i,main_thread,reason);
+        if(main_thread && thread_id==GetCurrentThreadId())EiemBody::SetSharedAnchor(false,nullptr,nullptr);
+        if(was)Log(std::string("Character VMD stopped: ")+reason);
+        director_dancers.store(0);
+        if(director){director=false;director_phase.store(director_stopping?DirectorIdle:DirectorFailed);}
     }
     bool Resolve() {
-        if(ready)return true;
-        if(!g_host || !g_host->resolve_method || !g_host->resolve_class || !g_host->gchandle_new || !g_host->gchandle_free || !g_host->string_new)return false;
+        if(resolved)return true;
+        if(!g_host || !g_host->resolve_method || !g_host->resolve_class || !g_host->gchandle_new || !g_host->gchandle_free)return false;
         auto get=reinterpret_cast<BE_GetPoseLeaseApiV1Fn>(GetProcAddress(
             GetModuleHandleW(L"BetterEndfield.Host.dll"),"BetterEndfield_GetPoseLeaseApiV1"));
         leases=get?get():nullptr;
         if(!leases || leases->version!=1 || !leases->acquire || !leases->owns || !leases->release) {
             Log("Character VMD unavailable: install the matching Host with pose leases.");return false;
         }
-        bool core=true;morph_ready=true;
+        bool core=true;
         for(size_t i=0;i<std::size(methods);++i) {
             if(g_host->resolve_method(g_host->context,&methods[i].spec,&methods[i].value)!=BE_Result_Ok) {
-                if(i<SharedMesh)core=false;else morph_ready=false;
+                if(i<Movement)core=false;
                 Log(std::string("Character VMD contract missing: ")+methods[i].spec.class_name+"."+methods[i].spec.method_name);
             }
         }
+        if(g_host->resolve_field) {
+            const BE_FieldDescriptorV1 field{kGame,"Beyond.Gameplay","GamePlayer","squadManager","Beyond.Gameplay.Core.SquadManager"};
+            BE_ResolvedFieldV1 value{};
+            if(g_host->resolve_field(g_host->context,&field,&value)==BE_Result_Ok && value.offset>=16 && value.offset<0x4000)
+                squad_manager_offset=value.offset;
+        }
         core &= g_host->resolve_class(g_host->context,"UnityEngine.AnimationModule.dll","UnityEngine","Animator",&animator_class)==BE_Result_Ok && animator_class.type_object;
-        morph_ready &= g_host->resolve_class(g_host->context,kCore,"UnityEngine","SkinnedMeshRenderer",&renderer_class)==BE_Result_Ok && renderer_class.type_object;
-        ready=core;return ready;
+        resolved=core;return resolved;
+    }
+    bool SquadReady()const {
+        return squad_manager_offset>=16 && methods[Player].value.method_info && methods[SquadLoading].value.method_info &&
+            methods[SquadCount].value.method_info && methods[SquadMember].value.method_info;
+    }
+    bool Eiem() {
+        if(!eiem_tried){eiem_tried=true;EiemBody::Initialize(g_host,EiemLogPath());}
+        if(!EiemBody::Available()){Log("Character VMD unavailable: EIEM body port could not resolve this client (see BetterEndfield.EiemBody.log).");return false;}
+        return true;
     }
     bool CooperativeActions() {
         auto actions=GetModuleHandleW(L"BetterEndfield.Actions.dll");
@@ -165,125 +184,195 @@ struct Runtime final : Backend {
         if(version&&version()==1)return true;
         Log("Character VMD refused: Actions DLL lacks the pose-lease handshake; replace Host/Actions/Camera together.");return false;
     }
-    std::vector<void*> Components(void* go,void* type,size_t limit) {
-        bool inactive=true;void* args[]{type,&inactive};auto array=Call(Children,go,args);
-        if(!Pin(array))return {};
+    // The model's body Animator. With several (weapons, props, effect rigs) the
+    // only active humanoid one is taken; anything more ambiguous is refused, as
+    // picking the first could silently animate a sub-rig. Candidates are logged.
+    void* SingleAnimator(Actor& actor) {
+        bool inactive=true;void* args[]{animator_class.type_object,&inactive};auto array=Call(Children,actor.model,args);
+        if(!Pin(actor,array))return nullptr;
         int dim=0,count=0;void* length_args[]{&dim};
-        if(!Value(ArrayLength,array,count,length_args)||count<0||size_t(count)>limit)return {};
-        std::vector<void*> objects;
-        for(int i=0;i<count;++i){void* index_args[]{&i};auto object=Call(ArrayValue,array,index_args);if(!Pin(object))return {};objects.push_back(object);}
-        return objects;
+        if(!Value(ArrayLength,array,count,length_args)||count<1){Log("Character VMD: the model has no Animator.");return nullptr;}
+        std::vector<void*> animators;
+        for(int index=0;index<std::min(count,16);++index) {
+            void* index_args[]{&index};
+            if(auto object=Call(ArrayValue,array,index_args))animators.push_back(object);
+        }
+        if(count==1)return !animators.empty()&&Pin(actor,animators[0])?animators[0]:nullptr;
+        void* active_human=nullptr;void* human=nullptr;int active_humans=0,humans=0;
+        std::string names;
+        for(void* animator:animators) {
+            bool is_human=false,enabled=false;
+            const bool human_known=methods[IsHuman].value.method_info&&Value(IsHuman,animator,is_human);
+            const bool enabled_known=methods[ActiveEnabled].value.method_info&&Value(ActiveEnabled,animator,enabled);
+            if(human_known&&is_human){++humans;human=animator;if(enabled_known&&enabled){++active_humans;active_human=animator;}}
+            names+=(names.empty()?"'":", '")+ObjectName(animator)+"' human="+(human_known?(is_human?"1":"0"):"?")+
+                " active="+(enabled_known?(enabled?"1":"0"):"?");
+        }
+        void* pick=active_humans==1?active_human:active_humans==0&&humans==1?human:nullptr;
+        Log("Character VMD: the model has "+std::to_string(count)+" Animators ("+names+"); "+
+            (pick?"using '"+ObjectName(pick)+"'.":"no single active humanoid one."));
+        return pick&&Pin(actor,pick)?pick:nullptr;
     }
-    bool Bind(std::shared_ptr<const Vmd::Motion> motion) {
-        if(!CooperativeActions() || !AliveObject(pending_model) || Model()!=pending_model)return false;
-        model=pending_model;
-        if(!Pin(model))return false;
-        auto animators=Components(model,animator_class.type_object,32);
-        // Selecting the first of several rigs would silently animate a weapon or sub-rig.
-        if(animators.size()!=1){Log("Character VMD binding requires exactly one Animator under the current model.");return false;}
-        animator=animators.front();
-        model_root=Invoke(Contract("unity.game_object.transform"),model,nullptr);
-        if(!Pin(model_root))return false;
-        root=Call(Transform,animator);
-        if(!Pin(root)||!RootValid())return false;
-        lease=leases->acquire(root,kOwner);
-        if(!lease){Log("Character VMD waiting for no writer: sustained-dash pose already owns this rig. Stop dash and press F8 again.");return false;}
-        std::map<std::string,void*> names;
-        std::vector<std::pair<void*,unsigned>> pending{{root,0}};
-        std::unordered_set<void*> visited;
-        for(size_t i=0;i<pending.size();++i) {
-            auto [node,depth]=pending[i];
-            if(depth>64 || pending.size()>4096 || !visited.insert(node).second || !Pin(node))return false;
-            auto name=ReadManagedString(Call(Name,node));
-            auto [it,inserted]=names.emplace(name,node);if(!inserted)it->second=nullptr;
-            int count=0;if(!Value(ChildCount,node,count)||count<0||count>512)return false;
-            for(int n=0;n<count;++n){void* args[]{&n};auto child=Call(ChildAt,node,args);if(!child || !Pin(child))return false;pending.emplace_back(child,depth+1);}
+    // Squad members in slot order, the controlled character excluded.
+    std::vector<void*> SquadMembers(void* leader) {
+        std::vector<void*> members;
+        if(!SquadReady())return members;
+        void* player=Call(Player,nullptr);
+        if(!player)return members;
+        void* manager=*reinterpret_cast<void**>(static_cast<char*>(player)+squad_manager_offset);
+        bool loading=true;int count=0;
+        if(!manager||!Value(SquadLoading,manager,loading)||loading||!Value(SquadCount,manager,count))return members;
+        for(int slot=0;slot<std::min(count,8);++slot) {
+            void* args[]{&slot};void* entity=Call(SquadMember,manager,args);
+            if(entity&&entity!=leader)members.push_back(entity);
         }
-        CharacterPose::Quaternion root_rotation;
-        if(!Value(WorldGet,root,root_rotation)||!Finite(root_rotation))return false;
-        std::vector<Bone> bones;std::vector<Morph> morphs;size_t body_count=0;
-        for(const auto& spec:DefaultRig()) {
-            if(spec.eye?!applied->eyes:!applied->body)continue;
-            auto it=names.find(spec.target);if(it==names.end()||!it->second)continue;
-            Bone bone;bone.target=reinterpret_cast<uintptr_t>(it->second);
-            for(const auto& source:spec.sources)if(motion->bones.contains(source))bone.sources.push_back(source);
-            if(bone.sources.empty())continue;
-            CharacterPose::Quaternion world;
-            if(!Value(WorldGet,it->second,world)||!Finite(world))return false;
-            bone.basis=CharacterPose::Multiply(CharacterPose::Inverse(world),root_rotation);
-            if(!spec.eye)++body_count;
-            bones.push_back(std::move(bone));
-        }
-        if(applied->body && body_count<4) {Log("Character VMD: insufficient mapped body tracks for a preview; at least four channels are required.");return false;}
-        if(applied->morphs && morph_ready) {
-            for(auto renderer:Components(model,renderer_class.type_object,64)) {
-                auto mesh=Call(SharedMesh,renderer);if(!Pin(mesh))continue;
-                int count=0;if(!Value(ShapeCount,mesh,count)||count<0||count>4096)continue;
-                meshes[renderer]=mesh;
-                for(const auto& spec:DefaultMorphs()) {
-                    Morph morph;morph.target=reinterpret_cast<uintptr_t>(renderer);
-                    for(const auto& source:spec.sources)if(motion->morphs.contains(source))morph.sources.push_back(source);
-                    if(morph.sources.empty())continue;
-                    auto name=g_host->string_new(g_host->context,spec.target);if(!Pin(name))return false;
-                    void* args[]{name};if(!Value(ShapeIndex,mesh,morph.index,args)||morph.index<0||morph.index>=count)continue;
-                    morphs.push_back(std::move(morph));
+        return members;
+    }
+    // Takes the pose lease on an entity's rig and hands the rig to EIEM.
+    bool Bind(int index,void* entity) {
+        Actor& actor=actors[index];
+        actor.entity=entity;actor.model=ModelOf(entity);
+        if(!AliveObject(actor.model)||!Pin(actor,entity)||!Pin(actor,actor.model))return false;
+        actor.animator=SingleAnimator(actor);
+        if(!actor.animator){Log("Character VMD: no usable body Animator under the model '"+ObjectName(actor.model)+"'.");return false;}
+        actor.root=Call(Transform,actor.animator);
+        if(!Pin(actor,actor.root)||!RootValid(actor))return false;
+        actor.lease=leases->acquire(actor.root,kOwner);
+        if(!actor.lease){Log("Character VMD waiting for no writer: sustained-dash pose already owns this rig. Stop dash and press play again.");return false;}
+        if(!EiemBody::EnsureActor(index))return false;
+        void* movement=methods[Movement].value.method_info?Call(Movement,entity):nullptr;
+        if(movement&&!Pin(actor,movement))movement=nullptr;
+        EiemBody::SetTarget(index,entity,actor.animator,movement);
+        if(!movement&&index==0)Log("Character VMD: MovementComponent unavailable; terrain follow disabled.");
+        return true;
+    }
+    bool SharedAnchor() {
+        Vector3 position{};Quaternion rotation{};
+        if(!GetValue(Contract("unity.transform.position.get"),actors[0].root,position)||
+            !Unbox(Invoke(Contract("unity.transform.rotation.get"),actors[0].root,nullptr),rotation))return false;
+        const float p[3]{position.x,position.y,position.z},q[4]{rotation.x,rotation.y,rotation.z,rotation.w};
+        for(float v:p)if(!std::isfinite(v))return false;
+        for(float v:q)if(!std::isfinite(v))return false;
+        EiemBody::SetSharedAnchor(true,p,q);
+        return true;
+    }
+    bool BeginLoad(const std::vector<Part>& parts) {
+        if(parts.empty()||parts[0].motion.empty())return false;
+        if(!Resolve()||!CooperativeActions()||!Eiem())return false;
+        void* leader=Character();
+        if(!leader||!Bind(0,leader)){Log("Character VMD: enter the playable world first.");Release(0,true,"bind failed");return false;}
+        int bound=1;
+        std::vector<int> cast{0};
+        if(parts.size()>1) {
+            if(!SquadReady())Log("Character VMD: squad contracts unavailable; only the controlled character dances.");
+            auto members=SquadMembers(leader);
+            size_t next=0;
+            for(size_t part=1;part<parts.size()&&bound<kMaxActors;++part) {
+                if(parts[part].motion.empty())continue;
+                bool placed=false;
+                while(next<members.size()&&!placed) {
+                    void* entity=members[next++];
+                    if(Bind(bound,entity)){cast.push_back(int(part));placed=true;++bound;}
+                    else Release(bound,true,"member unavailable");
                 }
+                if(!placed){Log("Character VMD: not enough squad members in the field for motion"+std::to_string(part+1)+".");break;}
             }
         }
-        if(applied->morphs && morphs.empty())Log("Character VMD: no supported named BlendShapes. Private SMC face arrays are intentionally not modified.");
-        std::string error;
-        const auto bone_count=bones.size(),morph_count=morphs.size();
-        // Duration is based on participating tracks, not unrelated camera/light keys.
-        uint32_t last=0;
-        for(const auto& b:bones)for(const auto& name:b.sources)last=std::max(last,motion->bones.at(name).back().frame);
-        for(const auto& m:morphs)for(const auto& name:m.sources)last=std::max(last,motion->morphs.at(name).back().frame);
-        if(!session.Start(motion,std::move(bones),std::move(morphs),*this,error)){Log("Character VMD bind failed: "+error);return false;}
-        clock.Start(NowSeconds(),last/Vmd::FramesPerSecond,applied->loop);frames=0;
-        Log("Character VMD relative FK preview bound: bones="+std::to_string(bone_count)+", morphs="+std::to_string(morph_count)+". Calibrated to current pose/source frame 0; no root translation, leg IK, Twist or cloth writes.");
+        EiemBody::Options options;
+        options.face=applied->face;options.terrain=applied->terrain;options.motion_scale=applied->motion_scale;
+        options.cloth=applied->cloth;
+        EiemBody::SetOptions(options);
+        if(bound>1&&!SharedAnchor()){Log("Character VMD: could not read the stage origin; squad playback cancelled.");return false;}
+        if(bound==1)EiemBody::SetSharedAnchor(false,nullptr,nullptr);
+        for(int i=0;i<bound;++i) {
+            const Part& part=parts[size_t(cast[size_t(i)])];
+            EiemBody::Load(i,part.motion,applied->face?part.face:std::string());
+            actors[i].loading=true;
+        }
+        director_dancers.store(bound);
+        Log("Character VMD loading (EIEM DirectVmd), dancers="+std::to_string(bound)+".");
         return true;
+    }
+    void PublishClock() {
+        if(director){EiemBody::PublishClock(MmdDirectorSeconds(),MmdDirectorPlaying());return;}
+        double seconds=0;
+        if(!clock.Advance(NowSeconds(),seconds)){Stop(true,"end of clip");return;}
+        EiemBody::PublishClock(seconds,!clock.Paused());
+    }
+    // All loads settled: start every ready actor on the same clock.
+    void Started() {
+        double duration=0;
+        for(int i=0;i<kMaxActors;++i)if(actors[i].Bound())duration=std::max(duration,EiemBody::DurationSeconds(i));
+        if(!director)clock.Start(NowSeconds(),duration,applied->loop);
+        PublishClock();
+        int started=0;
+        for(int i=0;i<kMaxActors;++i) {
+            if(!actors[i].Bound())continue;
+            if(EiemBody::Start(i,director?"mmd-director":"camera-hotkey")){actors[i].active=true;++started;}
+            else if(i==0){Stop(true,"EIEM refused to enter DirectVmd");return;}
+            else Release(i,true,"EIEM refused to enter DirectVmd");
+        }
+        if(director){director_duration.store(duration);director_phase.store(DirectorBound);}
+        director_dancers.store(started);
+        Log("Character VMD bound (EIEM DirectVmd): "+std::to_string(started)+" dancer(s), "+std::to_string(duration)+" s.");
+    }
+    void Validate() {
+        const Actor& leader=actors[0];
+        if(!AliveObject(leader.model)||Model()!=leader.model||!RootValid(leader)||!leases->owns(leader.root,kOwner,leader.lease)||!CooperativeActions()) {
+            Stop(true,"character/rig/ownership changed");return;
+        }
+        for(int i=1;i<kMaxActors;++i) {
+            const Actor& actor=actors[i];
+            if(!actor.Bound())continue;
+            if(!AliveObject(actor.model)||ModelOf(actor.entity)!=actor.model||!RootValid(actor)||!leases->owns(actor.root,kOwner,actor.lease)) {
+                Release(i,true,"squad member left");Log("Character VMD: squad member "+std::to_string(i+1)+" stopped (left the field or rig changed).");
+            }
+        }
     }
     void Pump() {
         if(!thread_id)thread_id=GetCurrentThreadId();
         if(thread_id!=GetCurrentThreadId())return;
-        // Reject foreign callbacks before consuming the one-slot completion.
-        auto completed=files.Poll();
         auto next=config.load(std::memory_order_acquire);
         if(next!=applied){Stop(true,"configuration changed");applied=std::move(next);}
         const unsigned wanted=requests.exchange(0,std::memory_order_acq_rel);
-        if(!applied->enabled){if(session.Active()||loading)Stop(true,"disabled");return;}
+        if(!applied->enabled){
+            if(Playing()||Loading())Stop(true,"disabled");
+            if(wanted&8)director_phase.store(DirectorFailed);
+            return;
+        }
+        if(wanted&16){director_stopping=true;Stop(true,"MMD stop");director_stopping=false;director=false;director_phase.store(DirectorIdle);}
         if(wanted&4){Stop(true,"stop key");return;}
-        if(wanted&1) {
-            if(session.Active()||loading){Stop(true,"play/stop key");return;}
-            if(!Resolve()||!CooperativeActions())return;
-            pending_model=Model();
-            if(!AliveObject(pending_model)){Log("Character VMD: enter the playable world first.");return;}
-            pending_pin=g_host->gchandle_new(g_host->context,pending_model,1);
-            if(!pending_pin){ClearPending();return;}
-            files.Start();++generation;
-            if(!files.Submit({CameraFiles::Kind::LoadMotion,applied->file,generation,{}})) {
-                Log("Character VMD file worker busy; retry after pending I/O completes.");ClearPending();
-            } else {loading=true;Log("Character VMD loading on file worker.");}
+        if(wanted&8) {
+            director_stopping=true;Stop(true,"MMD load");director_stopping=false;
+            std::vector<Part> parts;
+            {std::lock_guard lock(director_mutex);parts=director_parts;}
+            director=true;director_duration.store(0.0);director_phase.store(DirectorLoading);
+            if(!BeginLoad(parts))Stop(true,"MMD load unavailable");
+        } else if(wanted&1) {
+            if(Playing()||Loading()){Stop(true,"play/stop key");return;}
+            if(!BeginLoad({Part{applied->file,{}}}))Stop(true,"load unavailable");
         }
-        if(auto& result=completed; result) {
-            if(loading && result->generation==generation) {
-                if(!result->error.empty()){Log("Character VMD file rejected: "+result->error);ClearPending();}
-                else if(!Bind(std::make_shared<const Vmd::Motion>(std::move(result->motion))))Stop(true,"bind unavailable");
-                else ClearPending();
+        if(!actors[0].Bound())return;
+        Validate();
+        if(!actors[0].Bound())return;
+        if(Loading()) {
+            for(int i=0;i<kMaxActors;++i) {
+                Actor& actor=actors[i];
+                if(!actor.loading)continue;
+                switch(EiemBody::LoadStatus(i)) {
+                case EiemBody::LoadState::Ready: actor.loading=false;break;
+                case EiemBody::LoadState::Loading: break;
+                default:
+                    Log("Character VMD file rejected for dancer "+std::to_string(i+1)+" (see BetterEndfield.EiemBody.log).");
+                    if(i==0){Stop(true,"load failed");return;}
+                    Release(i,true,"load failed");break;
+                }
             }
+            if(!Loading())Started();
+            return;
         }
-        if(!session.Active())return;
-        if(!AliveObject(model)||Model()!=model||!RootValid()||!leases->owns(root,kOwner,lease)||!CooperativeActions()) {
-            Stop(true,"character/rig/ownership changed");return;
-        }
-        int frame=0;if(!Value(FrameCount,nullptr,frame)){Stop(true,"frame contract failed");return;}
-        if(wanted&2) {clock.Pause(!clock.Paused(),NowSeconds());Log(clock.Paused()?"Character VMD paused.":"Character VMD resumed.");}
-        if(frame==last_frame)return;
-        last_frame=frame;
-        double seconds=0;
-        if(!clock.Advance(NowSeconds(),seconds)){Stop(true,"end of clip");return;}
-        std::string error;
-        if(!session.Apply(seconds*Vmd::FramesPerSecond,applied->weight,*this,error)){Log("Character VMD apply failed: "+error);Stop(true,"write failure");return;}
-        ++frames;
+        if((wanted&2) && !director) {clock.Pause(!clock.Paused(),NowSeconds());Log(clock.Paused()?"Character VMD paused.":"Character VMD resumed.");}
+        PublishClock();
     }
 };
 Runtime runtime;
@@ -302,21 +391,33 @@ void PumpCharacterMotion(bool allow_capture=true) {
 }
 void PublishCharacterConfiguration(const CameraConfiguration& value) {
     auto next=std::make_shared<CharacterMotion::Config>();
-    next->body=value.vmd_body_enabled;next->eyes=value.vmd_eyes_enabled;next->morphs=value.vmd_face_enabled;
-    next->enabled=value.enabled&&(next->body||next->eyes||next->morphs);
+    // EIEM drives the whole rig; face and eyes ride on the body session.
+    next->enabled=value.enabled&&value.vmd_body_enabled;
+    next->face=value.vmd_face_enabled;next->terrain=value.vmd_terrain_enabled;next->motion_scale=value.vmd_motion_scale;
+    next->cloth=static_cast<EiemBody::ClothMode>(std::clamp(value.vmd_cloth_mode,0,2));
     if(next->enabled && !g_original_tail_late_tick) {
         next->enabled=false;Log("Character VMD unavailable: a successfully installed CameraManager.TailLateTick is required.");
     }
-    next->file=value.vmd_motion_file;next->loop=value.vmd_motion_loop;next->weight=value.vmd_motion_weight;
+    next->file=value.vmd_motion_file;next->loop=value.vmd_motion_loop;
     CharacterMotion::config.store(next,std::memory_order_release);
     g_character_preview_enabled.store(next->enabled,std::memory_order_release);
 }
 void StopCharacterMotion() {
     CharacterMotion::stopping.store(true,std::memory_order_release);
     std::lock_guard lock(CharacterMotion::gate);
-    // Shutdown may run on Host's worker. Never touch Transform/BlendShape APIs here.
-    CharacterMotion::runtime.Stop(false,"shutdown");CharacterMotion::runtime.files.Stop();
+    // Shutdown may run on Host's worker. Never touch Transform/Animator APIs here.
+    CharacterMotion::runtime.Stop(false,"shutdown");
+    EiemBody::Shutdown();
 }
 
 void RequestCharacterMotion(unsigned bits) {CharacterMotion::requests.fetch_or(bits,std::memory_order_release);}
+// parts[0] drives the controlled character, parts[1..3] the next squad members.
+void RequestCharacterDirectorLoad(const std::vector<CharacterMotion::Part>& parts) {
+    {std::lock_guard lock(CharacterMotion::director_mutex);CharacterMotion::director_parts=parts;}
+    CharacterMotion::director_phase.store(CharacterMotion::DirectorLoading);
+    RequestCharacterMotion(8);
+}
+void RequestCharacterDirectorLoad(const std::string& motion,const std::string& face) {
+    RequestCharacterDirectorLoad(std::vector<CharacterMotion::Part>{{motion,face}});
+}
 void StartCharacterMotion() {CharacterMotion::stopping.store(false,std::memory_order_release);}

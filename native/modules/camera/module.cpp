@@ -5,6 +5,10 @@
 #include "../../shared/motion/character_pose.h"
 #include "../../shared/motion/character_mapping.h"
 #include "camera_file_worker.h"
+#include "BetterEndfield/LocalMusic.h"
+#include "mmd_library.h"
+#include "mmd_overlay_protocol.h"
+#include "eiem/eiem_body.h"
 
 #include <Windows.h>
 
@@ -16,7 +20,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <mutex>
+#include <new>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -70,26 +76,49 @@ struct CameraConfiguration {
     float keyframe_segment_seconds = 3.0f;
     bool keyframe_loop = false;
     std::string keyframe_file;
-    int keyframe_save_key = VK_F1 + 5; // F6
-    int keyframe_load_key = VK_F1 + 6; // F7
+    int keyframe_save_key = 0; // overlay only by default
+    int keyframe_load_key = 0;
     std::string vmd_camera_file;
     std::string vmd_motion_file;
     bool vmd_body_enabled=false, vmd_eyes_enabled=false, vmd_face_enabled=false, vmd_motion_loop=false;
+    bool vmd_terrain_enabled=false; // EIEM grounder terrain follow
+    int vmd_cloth_mode=1;           // EiemBody::ClothMode: 0 game, 1 stable, 2 freeze
+    float vmd_motion_scale=1;       // EIEM displacement multiplier on top of leg-length scaling
     float vmd_motion_weight=1;
-    int vmd_motion_key=VK_F1+7, vmd_motion_pause_key=VK_F1+8, vmd_motion_stop_key=VK_F1+9;
+    int vmd_motion_key=0, vmd_motion_pause_key=0, vmd_motion_stop_key=0;
     float vmd_camera_scale = 0.07f;
     float vmd_camera_fov_bias = 5.0f;
     bool vmd_camera_loop = false;
+    // MMD numpad layout (hotkey_layout=2). Layout 1 numpad keys are ignored.
+    int hotkey_layout = 1;
     int roll_left_key = VK_NUMPAD7;
     int roll_right_key = VK_NUMPAD9;
     int fov_wide_key = VK_NUMPAD1;
     int fov_narrow_key = VK_NUMPAD3;
-    int view_reset_key = VK_NUMPAD5;
-    int motion_key = VK_NUMPAD8;
+    int view_reset_key = VK_NUMPAD8;
+    int motion_key = VK_NUMPAD2;
     int keyframe_add_key = VK_NUMPAD0;
-    int keyframe_play_key = VK_NUMPAD2;
-    int keyframe_clear_key = VK_NUMPAD4;
-    int vmd_play_key = VK_NUMPAD6;
+    int keyframe_play_key = VK_DECIMAL;
+    int keyframe_clear_key = 0;
+    int vmd_play_key = 0;
+    // MMD playback: one clock for motion, VMD camera and music.
+    bool mmd_enabled = true;
+    bool mmd_overlay_enabled = true;
+    bool mmd_overlay_visible = false;
+    bool mmd_loop = false;
+    bool mmd_music_enabled = true;
+    float mmd_seek_seconds = 5.0f;
+    float mmd_music_gain = 1.0f;
+    float mmd_audio_offset = 0.0f;
+    std::string mmd_work;
+    std::string mmd_music_file;
+    std::string mmd_face_file;
+    int mmd_play_key = 0x100 | VK_RETURN; // numpad Enter
+    int mmd_stop_key = VK_ADD;
+    int mmd_seek_back_key = VK_NUMPAD4;
+    int mmd_seek_forward_key = VK_NUMPAD6;
+    int mmd_camera_mode_key = VK_NUMPAD5;
+    int mmd_overlay_key = VK_SUBTRACT;
 };
 
 struct Vector3 {
@@ -158,20 +187,50 @@ std::mutex g_vmd_path_mutex;
 std::string g_vmd_camera_file;
 std::string g_keyframe_file; // guarded by g_vmd_path_mutex
 std::atomic_uint64_t g_asset_config_generation{0};
-std::atomic_int g_keyframe_save_key{VK_F1 + 5};
-std::atomic_int g_keyframe_load_key{VK_F1 + 6};
+std::atomic_int g_keyframe_save_key{0};
+std::atomic_int g_keyframe_load_key{0};
 std::atomic_bool g_keyframe_save_request{false};
 std::atomic_bool g_keyframe_load_request{false};
 std::atomic_int g_roll_left_key{VK_NUMPAD7};
 std::atomic_int g_roll_right_key{VK_NUMPAD9};
 std::atomic_int g_fov_wide_key{VK_NUMPAD1};
 std::atomic_int g_fov_narrow_key{VK_NUMPAD3};
-std::atomic_int g_view_reset_key{VK_NUMPAD5};
-std::atomic_int g_motion_key{VK_NUMPAD8};
+std::atomic_int g_view_reset_key{VK_NUMPAD8};
+std::atomic_int g_motion_key{VK_NUMPAD2};
 std::atomic_int g_keyframe_add_key{VK_NUMPAD0};
-std::atomic_int g_keyframe_play_key{VK_NUMPAD2};
-std::atomic_int g_keyframe_clear_key{VK_NUMPAD4};
-std::atomic_int g_vmd_play_key{VK_NUMPAD6};
+std::atomic_int g_keyframe_play_key{VK_DECIMAL};
+std::atomic_int g_keyframe_clear_key{0};
+std::atomic_int g_vmd_play_key{0};
+
+// MMD playback settings and requests (see mmd_director_runtime.inc).
+constexpr int kVkNumpadEnter = 0x100 | VK_RETURN;
+enum MmdRequest : uint32_t {
+    MmdRequestPlayPause = 1u << 0,
+    MmdRequestStop = 1u << 1,
+    MmdRequestCameraMode = 1u << 2,
+};
+std::atomic_bool g_mmd_enabled{true};
+std::atomic_bool g_mmd_overlay_enabled{true};
+std::atomic_bool g_mmd_loop_default{false};
+std::atomic_bool g_mmd_music_enabled{true};
+std::atomic<float> g_mmd_seek_seconds{5.0f};
+std::atomic<float> g_mmd_music_gain{1.0f};
+std::atomic<float> g_mmd_audio_offset{0.0f};
+std::string g_mmd_work;       // guarded by g_vmd_path_mutex
+std::string g_mmd_music_file; // guarded by g_vmd_path_mutex
+std::string g_mmd_face_file;  // guarded by g_vmd_path_mutex
+std::string g_vmd_motion_file; // guarded by g_vmd_path_mutex
+std::atomic_uint64_t g_mmd_work_generation{0};
+std::atomic_uint32_t g_mmd_requests{0};
+std::atomic_int g_mmd_seek_steps{0};
+std::atomic_bool g_mmd_overlay_toggle_request{false};
+std::atomic_bool g_mmd_overlay_initial_visible{false};
+std::atomic_int g_mmd_play_key{kVkNumpadEnter};
+std::atomic_int g_mmd_stop_key{VK_ADD};
+std::atomic_int g_mmd_seek_back_key{VK_NUMPAD4};
+std::atomic_int g_mmd_seek_forward_key{VK_NUMPAD6};
+std::atomic_int g_mmd_camera_mode_key{VK_NUMPAD5};
+std::atomic_int g_mmd_overlay_key{VK_SUBTRACT};
 
 using CameraTickFn = void(__fastcall*)(void* instance, void* method);
 CameraTickFn g_original_camera_tick = nullptr;
@@ -217,7 +276,7 @@ std::atomic_bool g_first_person_toggle_request{false};
 std::atomic_bool g_first_person_exit_request{false};
 
 std::atomic_bool g_character_preview_enabled{false};
-std::atomic_int g_character_play_key{VK_F1+7},g_character_pause_key{VK_F1+8},g_character_stop_key{VK_F1+9};
+std::atomic_int g_character_play_key{0},g_character_pause_key{0},g_character_stop_key{0};
 void RequestCharacterMotion(unsigned bits);
 std::atomic_bool g_input_thread_stop{false};
 std::thread g_input_thread;
@@ -618,12 +677,94 @@ bool IsObjectAlive(void* object) {
     return !destroyed;
 }
 
-bool KeyDown(int key) {
-    if (key == VK_OEM_MINUS) {
-        return ((GetAsyncKeyState(VK_OEM_MINUS) & 0x8000) != 0) ||
-               ((GetAsyncKeyState(VK_SUBTRACT) & 0x8000) != 0);
+// Numpad keys are read by scan code from a low-level keyboard hook, so they
+// work with NumLock on or off and numpad Enter is distinct from the main Enter.
+// The navigation cluster is tracked the same way: with NumLock off the numpad
+// sends VK_UP etc. too, which must not move the free camera.
+constexpr int kPadVirtualKeys[]{VK_NUMPAD0, VK_NUMPAD1, VK_NUMPAD2, VK_NUMPAD3,
+    VK_NUMPAD4, VK_NUMPAD5, VK_NUMPAD6, VK_NUMPAD7, VK_NUMPAD8, VK_NUMPAD9,
+    VK_DECIMAL, VK_ADD, VK_SUBTRACT, VK_MULTIPLY, VK_DIVIDE, kVkNumpadEnter};
+constexpr int kNavVirtualKeys[]{VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, VK_PRIOR, VK_NEXT};
+std::atomic_uint32_t g_pad_down{0};
+std::atomic_uint32_t g_nav_down{0};
+std::atomic_bool g_keyboard_hook_active{false};
+
+int IndexOf(const int* keys, size_t count, int key) {
+    for (size_t index = 0; index < count; ++index) {
+        if (keys[index] == key) return static_cast<int>(index);
     }
-    return (GetAsyncKeyState(key) & 0x8000) != 0;
+    return -1;
+}
+
+int PadIndexFromScan(DWORD scan, bool extended) {
+    if (extended) return scan == 0x35 ? 14 : (scan == 0x1C ? 15 : -1);
+    switch (scan) {
+    case 0x52: return 0;
+    case 0x4F: return 1;
+    case 0x50: return 2;
+    case 0x51: return 3;
+    case 0x4B: return 4;
+    case 0x4C: return 5;
+    case 0x4D: return 6;
+    case 0x47: return 7;
+    case 0x48: return 8;
+    case 0x49: return 9;
+    case 0x53: return 10;
+    case 0x4E: return 11;
+    case 0x4A: return 12;
+    case 0x37: return 13;
+    default: return -1;
+    }
+}
+
+int NavIndexFromScan(DWORD scan, bool extended) {
+    if (!extended) return -1;
+    switch (scan) {
+    case 0x48: return 0;
+    case 0x50: return 1;
+    case 0x4B: return 2;
+    case 0x4D: return 3;
+    case 0x49: return 4;
+    case 0x51: return 5;
+    default: return -1;
+    }
+}
+
+LRESULT CALLBACK KeyboardHook(int code, WPARAM message, LPARAM data) {
+    if (code == HC_ACTION && data) {
+        const auto* info = reinterpret_cast<const KBDLLHOOKSTRUCT*>(data);
+        const bool down = message == WM_KEYDOWN || message == WM_SYSKEYDOWN;
+        const bool up = message == WM_KEYUP || message == WM_SYSKEYUP;
+        if (down || up) {
+            const bool extended = (info->flags & LLKHF_EXTENDED) != 0;
+            const auto apply = [down](std::atomic_uint32_t& bits, int index) {
+                if (index < 0) return;
+                const uint32_t mask = 1u << index;
+                if (down) bits.fetch_or(mask, std::memory_order_acq_rel);
+                else bits.fetch_and(~mask, std::memory_order_acq_rel);
+            };
+            apply(g_pad_down, PadIndexFromScan(info->scanCode, extended));
+            apply(g_nav_down, NavIndexFromScan(info->scanCode, extended));
+        }
+    }
+    return CallNextHookEx(nullptr, code, message, data);
+}
+
+bool KeyDown(int key) {
+    if (key <= 0) {
+        return false;
+    }
+    const bool hooked = g_keyboard_hook_active.load(std::memory_order_acquire);
+    const int pad = IndexOf(kPadVirtualKeys, std::size(kPadVirtualKeys), key);
+    if (pad >= 0) {
+        if (hooked) return ((g_pad_down.load(std::memory_order_acquire) >> pad) & 1u) != 0;
+        return key != kVkNumpadEnter && (GetAsyncKeyState(key) & 0x8000) != 0;
+    }
+    const int nav = IndexOf(kNavVirtualKeys, std::size(kNavVirtualKeys), key);
+    if (nav >= 0 && hooked) {
+        return ((g_nav_down.load(std::memory_order_acquire) >> nav) & 1u) != 0;
+    }
+    return key < 0x100 && (GetAsyncKeyState(key) & 0x8000) != 0;
 }
 
 bool GameWindowHasFocus() {
@@ -637,6 +778,8 @@ bool GameWindowHasFocus() {
 }
 
 LRESULT CALLBACK FreeCameraMouseHook(int code, WPARAM message, LPARAM data);
+void PumpMmdOverlayHost(bool mmd_enabled); // input thread, mmd_director_runtime.inc
+bool MmdDirectorCameraActive();             // game thread, mmd_director_runtime.inc
 
 struct HotkeyRequest {
     std::atomic_int* key;
@@ -654,7 +797,16 @@ void InputThreadMain() {
         {&g_keyframe_load_key, &g_keyframe_load_request},
         {&g_vmd_play_key, &g_vmd_play_request},
     };
+    HotkeyRequest mmd_keys[]{
+        {&g_mmd_play_key, nullptr},
+        {&g_mmd_stop_key, nullptr},
+        {&g_mmd_camera_mode_key, nullptr},
+        {&g_mmd_seek_back_key, nullptr},
+        {&g_mmd_seek_forward_key, nullptr},
+        {&g_mmd_overlay_key, nullptr},
+    };
     HHOOK mouse_hook = nullptr;
+    HHOOK keyboard_hook = nullptr;
     bool toggle_was_down = false;
     bool pause_was_down = false;
     bool first_person_was_down = false;
@@ -669,9 +821,26 @@ void InputThreadMain() {
         const int pause_key = g_pause_key.load(std::memory_order_relaxed);
         const int first_person_key = g_first_person_key.load(std::memory_order_relaxed);
         const bool body_enabled=g_character_preview_enabled.load(std::memory_order_acquire);
-        const bool focused = (free_enabled || first_person_enabled || body_enabled) && GameWindowHasFocus();
+        const bool mmd_enabled=g_mmd_enabled.load(std::memory_order_acquire);
+        const bool focused = (free_enabled || first_person_enabled || body_enabled || mmd_enabled) &&
+            GameWindowHasFocus();
+        // The keyboard hook exists while the game is focused, so numpad and
+        // navigation keys are read by scan code (see KeyDown).
+        if (focused && !keyboard_hook) {
+            keyboard_hook = SetWindowsHookExW(WH_KEYBOARD_LL, &KeyboardHook,
+                GetModuleHandleW(nullptr), 0);
+            g_keyboard_hook_active.store(keyboard_hook != nullptr, std::memory_order_release);
+        } else if (!focused && keyboard_hook) {
+            UnhookWindowsHookEx(keyboard_hook);
+            keyboard_hook = nullptr;
+            g_keyboard_hook_active.store(false, std::memory_order_release);
+            g_pad_down.store(0, std::memory_order_release);
+            g_nav_down.store(0, std::memory_order_release);
+        }
         const int body_keys[]{g_character_play_key.load(),g_character_pause_key.load(),g_character_stop_key.load()};
-        if(character_focused && (!focused || !body_enabled))RequestCharacterMotion(4);
+        // Losing focus no longer stops a session (the overlay and recording
+        // tools take focus); disabling the feature still does.
+        if(character_focused && !body_enabled)RequestCharacterMotion(4);
         character_focused=focused&&body_enabled;
         for(int i=0;i<3;++i) {
             const bool down=character_focused&&KeyDown(body_keys[i]);
@@ -681,9 +850,9 @@ void InputThreadMain() {
 
         const bool toggle_down = focused && free_enabled && KeyDown(toggle_key);
         const bool pause_down = focused && free_enabled && KeyDown(pause_key);
-        const bool first_person_key_down = KeyDown(first_person_key) ||
-            (first_person_key == VK_OEM_MINUS && KeyDown(VK_SUBTRACT)) ||
-            (first_person_key == VK_SUBTRACT && KeyDown(VK_OEM_MINUS));
+        // The numpad minus belongs to the MMD overlay; only the main-row key
+        // toggles first person.
+        const bool first_person_key_down = KeyDown(first_person_key);
         const bool first_person_down = focused && first_person_enabled && first_person_key_down;
 
         if (toggle_down && !toggle_was_down) {
@@ -706,6 +875,23 @@ void InputThreadMain() {
             }
             binding.was_down = down;
         }
+        for (size_t index = 0; index < std::size(mmd_keys); ++index) {
+            HotkeyRequest& binding = mmd_keys[index];
+            const bool down = focused && mmd_enabled &&
+                KeyDown(binding.key->load(std::memory_order_relaxed));
+            if (down && !binding.was_down) {
+                switch (index) {
+                case 0: g_mmd_requests.fetch_or(MmdRequestPlayPause, std::memory_order_acq_rel); break;
+                case 1: g_mmd_requests.fetch_or(MmdRequestStop, std::memory_order_acq_rel); break;
+                case 2: g_mmd_requests.fetch_or(MmdRequestCameraMode, std::memory_order_acq_rel); break;
+                case 3: g_mmd_seek_steps.fetch_sub(1, std::memory_order_acq_rel); break;
+                case 4: g_mmd_seek_steps.fetch_add(1, std::memory_order_acq_rel); break;
+                default: g_mmd_overlay_toggle_request.store(true, std::memory_order_release); break;
+                }
+            }
+            binding.was_down = down;
+        }
+        PumpMmdOverlayHost(mmd_enabled);
 
         // The low-level mouse hook only exists while the free camera runs in the
         // focused game window; its callbacks arrive through this thread's queue.
@@ -731,6 +917,12 @@ void InputThreadMain() {
     if (mouse_hook) {
         UnhookWindowsHookEx(mouse_hook);
     }
+    if (keyboard_hook) {
+        UnhookWindowsHookEx(keyboard_hook);
+    }
+    g_keyboard_hook_active.store(false, std::memory_order_release);
+    g_pad_down.store(0, std::memory_order_release);
+    g_nav_down.store(0, std::memory_order_release);
 }
 
 void ReleaseCameraRoot() {
@@ -779,8 +971,10 @@ void PumpFreeCameraControl() {
         g_vmd_play_request.store(false,std::memory_order_release);
         g_toggle_request.store(false, std::memory_order_release);
         g_pause_request.store(false, std::memory_order_release);
-        if (g_free_camera_active ||
-            g_force_exit_request.exchange(false, std::memory_order_acq_rel)) {
+        // The MMD director runs its VMD camera on this machinery even while the
+        // free camera feature (hotkeys, controls) is off.
+        const bool forced = g_force_exit_request.exchange(false, std::memory_order_acq_rel);
+        if (!MmdDirectorCameraActive() && (g_free_camera_active || forced)) {
             ExitFreeCamera("feature disabled");
         }
         return;
@@ -1081,12 +1275,22 @@ void* FindModelTransform() {
 #include "free_camera_runtime.inc"
 #if !defined(__ANDROID__)
 #include "character_motion_runtime.inc"
+#include "mmd_director_runtime.inc"
 #else
 void PumpCharacterMotion(bool = true) {}
 void PublishCharacterConfiguration(const CameraConfiguration&) {}
 void StopCharacterMotion() {}
 void StartCharacterMotion() {}
 void RequestCharacterMotion(unsigned) {}
+double MmdDirectorSeconds() { return 0.0; }
+bool MmdDirectorPlaying() { return false; }
+bool MmdDirectorCameraActive() { return false; }
+bool MmdCameraReference(Vector3&, Quaternion&, float&, Vector3&) { return false; }
+void MmdCameraLoaded(CameraFiles::Result&&) {}
+void PumpMmdDirector(bool = true) {}
+void PumpMmdOverlayHost(bool) {}
+void StartMmd() {}
+void StopMmd() {}
 #endif
 
 void ReleaseHeadTransform() {
@@ -1472,6 +1676,7 @@ float __fastcall DetourTimeUnscaledDelta(void* method) {
         : 0.0f;
     if (g_time_heartbeat_contract_ready && !t_in_heartbeat) {
         t_in_heartbeat = true;
+        PumpMmdDirector(false);
         PumpCharacterMotion(false); // only the thread previously observed at TailLateTick
         PumpFreeCameraControl();
         if (g_free_camera_active) {
@@ -1503,6 +1708,7 @@ void __fastcall DetourTailLateTick(void* instance, float deltaTime, void* method
     // applied inside the Cinemachine push itself, so this only drives the toggle,
     // the eye anchor bookkeeping and the free camera.
     (void)instance;
+    PumpMmdDirector();
     PumpCharacterMotion();
     PumpFreeCameraControl();
     PumpFirstPerson();
@@ -1571,6 +1777,12 @@ int ParseVirtualKey(std::string_view value, int fallback) {
     if (key == "SUBTRACT" || key == "NUMPAD-" || key == "NUMPAD_MINUS" || key == "NUMPADSUBTRACT") {
         return VK_SUBTRACT;
     }
+    if (key == "NONE" || key == "OFF" || key == "DISABLED") return 0;
+    if (key == "ADD" || key == "NUMPAD+" || key == "NUMPAD_PLUS" || key == "NUMPADADD") return VK_ADD;
+    if (key == "MULTIPLY" || key == "NUMPAD*" || key == "NUMPADMULTIPLY") return VK_MULTIPLY;
+    if (key == "DIVIDE" || key == "NUMPAD/" || key == "NUMPADDIVIDE") return VK_DIVIDE;
+    if (key == "DECIMAL" || key == "NUMPAD." || key == "NUMPAD_DECIMAL" || key == "NUMPADDECIMAL") return VK_DECIMAL;
+    if (key == "NUMPAD_ENTER" || key == "NUMPADENTER" || key == "NUMPAD_RETURN") return kVkNumpadEnter;
     if (key.size() == 1 && std::isalnum(static_cast<unsigned char>(key[0]))) {
         return static_cast<unsigned char>(key[0]);
     }
@@ -1665,6 +1877,12 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
         else if (key == "vmd_eyes_enabled") config.vmd_eyes_enabled = ParseBoolean(value);
         else if (key == "vmd_face_enabled") config.vmd_face_enabled = ParseBoolean(value);
         else if (key == "vmd_motion_loop") config.vmd_motion_loop = ParseBoolean(value);
+        else if (key == "vmd_terrain_enabled") config.vmd_terrain_enabled = ParseBoolean(value);
+        else if (key == "vmd_cloth_mode") {
+            const std::string mode = LowerAscii(Unquote(value));
+            config.vmd_cloth_mode = mode == "game" ? 0 : mode == "freeze" ? 2 : 1;
+        }
+        else if (key == "vmd_motion_scale") config.vmd_motion_scale = ParseFloat(value,1);
         else if (key == "vmd_motion_weight") config.vmd_motion_weight = ParseFloat(value,1);
         else if (key == "vmd_motion_hotkey") config.vmd_motion_key = ParseVirtualKey(value,config.vmd_motion_key);
         else if (key == "vmd_motion_pause_hotkey") config.vmd_motion_pause_key = ParseVirtualKey(value,config.vmd_motion_pause_key);
@@ -1683,8 +1901,50 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
         else if (key == "keyframe_play_hotkey") config.keyframe_play_key = ParseVirtualKey(value, config.keyframe_play_key);
         else if (key == "keyframe_clear_hotkey") config.keyframe_clear_key = ParseVirtualKey(value, config.keyframe_clear_key);
         else if (key == "vmd_play_hotkey") config.vmd_play_key = ParseVirtualKey(value, config.vmd_play_key);
+        else if (key == "hotkey_layout") config.hotkey_layout = std::atoi(value.c_str());
+        else if (key == "mmd_enabled") config.mmd_enabled = ParseBoolean(value, config.mmd_enabled);
+        else if (key == "mmd_overlay_enabled") config.mmd_overlay_enabled = ParseBoolean(value, config.mmd_overlay_enabled);
+        else if (key == "mmd_overlay_visible") config.mmd_overlay_visible = ParseBoolean(value, config.mmd_overlay_visible);
+        else if (key == "mmd_loop") config.mmd_loop = ParseBoolean(value, config.mmd_loop);
+        else if (key == "mmd_music_enabled") config.mmd_music_enabled = ParseBoolean(value, config.mmd_music_enabled);
+        else if (key == "mmd_seek_seconds") config.mmd_seek_seconds = ParseFloat(value, config.mmd_seek_seconds);
+        else if (key == "mmd_music_gain") config.mmd_music_gain = ParseFloat(value, config.mmd_music_gain);
+        else if (key == "mmd_audio_offset") config.mmd_audio_offset = ParseFloat(value, config.mmd_audio_offset);
+        else if (key == "mmd_work") config.mmd_work = Unquote(value);
+        else if (key == "mmd_music_file") config.mmd_music_file = Unquote(value);
+        else if (key == "mmd_face_file") config.mmd_face_file = Unquote(value);
+        else if (key == "mmd_play_hotkey") config.mmd_play_key = ParseVirtualKey(value, config.mmd_play_key);
+        else if (key == "mmd_stop_hotkey") config.mmd_stop_key = ParseVirtualKey(value, config.mmd_stop_key);
+        else if (key == "mmd_seek_back_hotkey") config.mmd_seek_back_key = ParseVirtualKey(value, config.mmd_seek_back_key);
+        else if (key == "mmd_seek_forward_hotkey") config.mmd_seek_forward_key = ParseVirtualKey(value, config.mmd_seek_forward_key);
+        else if (key == "mmd_camera_mode_hotkey") config.mmd_camera_mode_key = ParseVirtualKey(value, config.mmd_camera_mode_key);
+        else if (key == "mmd_overlay_hotkey") config.mmd_overlay_key = ParseVirtualKey(value, config.mmd_overlay_key);
     }
+    if (config.hotkey_layout < 2) {
+        // Layout 1 put different actions on the numpad; its saved keys would
+        // collide with the MMD layout, so the defaults win until re-saved.
+        const CameraConfiguration defaults;
+        config.roll_left_key = defaults.roll_left_key;
+        config.roll_right_key = defaults.roll_right_key;
+        config.fov_wide_key = defaults.fov_wide_key;
+        config.fov_narrow_key = defaults.fov_narrow_key;
+        config.view_reset_key = defaults.view_reset_key;
+        config.motion_key = defaults.motion_key;
+        config.keyframe_add_key = defaults.keyframe_add_key;
+        config.keyframe_play_key = defaults.keyframe_play_key;
+        config.keyframe_clear_key = defaults.keyframe_clear_key;
+        config.keyframe_save_key = defaults.keyframe_save_key;
+        config.keyframe_load_key = defaults.keyframe_load_key;
+        config.vmd_play_key = defaults.vmd_play_key;
+        config.vmd_motion_key = defaults.vmd_motion_key;
+        config.vmd_motion_pause_key = defaults.vmd_motion_pause_key;
+        config.vmd_motion_stop_key = defaults.vmd_motion_stop_key;
+    }
+    config.mmd_seek_seconds = std::clamp(config.mmd_seek_seconds, 0.5f, 60.0f);
+    config.mmd_music_gain = std::clamp(config.mmd_music_gain, 0.0f, 2.0f);
+    config.mmd_audio_offset = std::clamp(config.mmd_audio_offset, -600.0f, 600.0f);
     config.vmd_motion_weight = std::clamp(config.vmd_motion_weight,0.0f,1.0f);
+    config.vmd_motion_scale = std::isfinite(config.vmd_motion_scale) ? std::clamp(config.vmd_motion_scale,0.05f,5.0f) : 1.0f;
     config.movement_speed = std::clamp(config.movement_speed, 0.5f, 100.0f);
     config.field_of_view = std::clamp(config.field_of_view, 20.0f, 120.0f);
     config.first_person_fov = std::clamp(config.first_person_fov, 20.0f, 120.0f);
@@ -1918,6 +2178,7 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
         Log(std::string("Camera file worker unavailable: ") + e.what());
     }
     StartCharacterMotion();
+    StartMmd();
     g_input_thread_stop.store(false, std::memory_order_release);
     try {
         g_input_thread = std::thread(InputThreadMain);
@@ -1982,8 +2243,29 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
         std::lock_guard<std::mutex> lock(g_vmd_path_mutex);
         g_vmd_camera_file = config.vmd_camera_file;
         g_keyframe_file = config.keyframe_file;
+        g_vmd_motion_file = config.vmd_motion_file;
+        g_mmd_music_file = config.mmd_music_file;
+        g_mmd_face_file = config.mmd_face_file;
+        if (g_mmd_work != config.mmd_work) {
+            g_mmd_work = config.mmd_work;
+            g_mmd_work_generation.fetch_add(1, std::memory_order_acq_rel);
+        }
         g_asset_config_generation.fetch_add(1,std::memory_order_acq_rel);
     }
+    g_mmd_enabled.store(config.enabled && config.mmd_enabled, std::memory_order_release);
+    g_mmd_overlay_enabled.store(config.mmd_overlay_enabled, std::memory_order_release);
+    g_mmd_overlay_initial_visible.store(config.mmd_overlay_visible, std::memory_order_release);
+    g_mmd_loop_default.store(config.mmd_loop, std::memory_order_release);
+    g_mmd_music_enabled.store(config.mmd_music_enabled, std::memory_order_release);
+    g_mmd_seek_seconds.store(config.mmd_seek_seconds, std::memory_order_release);
+    g_mmd_music_gain.store(config.mmd_music_gain, std::memory_order_release);
+    g_mmd_audio_offset.store(config.mmd_audio_offset, std::memory_order_release);
+    g_mmd_play_key.store(config.mmd_play_key, std::memory_order_release);
+    g_mmd_stop_key.store(config.mmd_stop_key, std::memory_order_release);
+    g_mmd_seek_back_key.store(config.mmd_seek_back_key, std::memory_order_release);
+    g_mmd_seek_forward_key.store(config.mmd_seek_forward_key, std::memory_order_release);
+    g_mmd_camera_mode_key.store(config.mmd_camera_mode_key, std::memory_order_release);
+    g_mmd_overlay_key.store(config.mmd_overlay_key, std::memory_order_release);
     g_roll_left_key.store(config.roll_left_key, std::memory_order_release);
     g_roll_right_key.store(config.roll_right_key, std::memory_order_release);
     g_fov_wide_key.store(config.fov_wide_key, std::memory_order_release);
@@ -2002,7 +2284,8 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
         g_first_person_exit_request.store(true, std::memory_order_release);
     }
 
-    g_state.store(free_camera || anti_dither || first_person || g_character_preview_enabled.load()
+    g_state.store(free_camera || anti_dither || first_person || g_character_preview_enabled.load() ||
+            g_mmd_enabled.load()
         ? ModuleState::Active
         : ModuleState::Disabled, std::memory_order_release);
 
@@ -2038,10 +2321,12 @@ void BE_CALL Shutdown() {
     g_free_camera_enabled.store(false, std::memory_order_release);
     g_disable_dither_enabled.store(false, std::memory_order_release);
     g_first_person_camera_enabled.store(false, std::memory_order_release);
+    g_mmd_enabled.store(false, std::memory_order_release);
     g_input_thread_stop.store(true, std::memory_order_release);
     if (g_input_thread.joinable()) {
         g_input_thread.join();
     }
+    StopMmd();
     g_camera_files.Stop();
     ExitFirstPerson("shutdown");
     ExitFreeCamera("shutdown");
@@ -2061,7 +2346,7 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Camera Enhancements", "1.8.0-preview", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Camera Enhancements", "1.9.0-preview", BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};

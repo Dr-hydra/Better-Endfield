@@ -19,7 +19,7 @@ int main() {
     CHECK(CameraPath::Decode("\xEF\xBB\xBF"+text,copy,error));
     CameraPath::Key key;bool ended=false;
     CHECK(!CameraPath::Sample({},0,key,ended));
-    CHECK(CameraPath::Sample(path,1.5,key,ended));CHECK(near(key.position.x,1) && near(key.fov,75) && !ended);
+    CHECK(CameraPath::Sample(path,1.5,key,ended));CHECK(nearly(key.position.x,1) && nearly(key.fov,75) && !ended);
     CHECK(CameraPath::Sample(path,100,key,ended));CHECK(key.position.z==4 && ended);
     CHECK(CameraPath::Sample(path,-1,key,ended));CHECK(key.position.x==0);
     CHECK(CameraPath::Sample(path,std::numeric_limits<double>::quiet_NaN(),key,ended));CHECK(key.position.x==0);

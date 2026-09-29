@@ -21,6 +21,7 @@ struct Job {
     std::string path; // UTF-8, never interpreted as shell commands
     uint64_t generation = 0;
     CameraPath::Path snapshot;
+    std::string face_path; // LoadMotion: optional VMD whose morphs replace the motion's
 };
 struct Result {
     Kind kind = Kind::LoadVmd;
@@ -117,6 +118,19 @@ inline Result Process(const Job& job) {
             Vmd::Motion motion;
             if (!Vmd::Parse(bytes,motion,result.error)) return result;
             if (job.kind == Kind::LoadMotion) {
+                if (!job.face_path.empty()) {
+                    std::vector<uint8_t> face_bytes;
+                    Vmd::Motion face;
+                    const auto face_file = std::filesystem::path(std::u8string(job.face_path.begin(),job.face_path.end()));
+                    if (!ReadBounded(face_file,Vmd::Limits{}.file_bytes,face_bytes,result.error) ||
+                        !Vmd::Parse(face_bytes,face,result.error)) {
+                        result.error = "face VMD: " + result.error; return result;
+                    }
+                    if (!face.morphs.empty()) {
+                        motion.morphs = std::move(face.morphs);
+                        motion.last_frame = std::max(motion.last_frame,face.last_frame);
+                    }
+                }
                 if (motion.bones.empty() && motion.morphs.empty()) result.error = "VMD contains no bone or morph keys";
                 else result.motion = std::move(motion);
                 return result;
