@@ -3,10 +3,10 @@
   "kind": "endfield-action-manifest",
   "generatorVersion": 2,
   "manifestVersion": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
-  "manifestHash": "6933a7d5b377d93d18aeb7c1515a1b7f",
+  "manifestHash": "8b9cf90e2097d4b4767c76ae00807eb6",
   "source": {
     "path": "research/current-inputs/character-presets.json",
-    "sha256": "C9DAC2CB17DBAA1EB432CD8F510BABF1B4420B3718DE2A4CE22459C1D588006B"
+    "sha256": "1760BE227D05CBCE42C65255C57E0F279256692C48D7C98FF97F2626C2BB4782"
   },
   "stats": {
     "characterCount": 32,
@@ -34628,5 +34628,27 @@
       "characterId": "chr_0036_jsspsi",
       "reason": "incomplete model/sit chain"
     }
-  ]
+  ],
+  "versionInputs": {
+    "snapshot": {
+      "path": "research/current-inputs/input-snapshot.json",
+      "sha256": "24493615312649511840ACD4DC40E8859D3CFC80A60F2C1D730DD1C932604FE3"
+    },
+    "overlayOrder": [
+      "StreamingAssets",
+      "Persistent"
+    ],
+    "files": [
+      {
+        "path": "Bundles/Windows/manifest.hgmmap",
+        "size": 50247007,
+        "sha256": "2D574A52028B64C943156D134472E2B31F8B0A99ABC6D1DA0B5BE2CBF9648F24"
+      },
+      {
+        "path": "TableCfg/AudioDialog.bytes",
+        "size": 4875268,
+        "sha256": "48EF3EFB67D417A38EDA94B04C1309E88162049F28750CAD941AD803DD82AC7E"
+      }
+    ]
+  }
 }
