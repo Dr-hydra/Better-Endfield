@@ -1,6 +1,7 @@
 #include "BetterEndfield/ModuleApi.h"
 
 #include "touch_input.h"
+#include "../../shared/input/hotkey.h"
 
 #include <Windows.h>
 
@@ -718,9 +719,8 @@ std::string HudVisibilityStatus(const HudVisibilityResult& result) {
 
 void PumpHudVisibility() {
     const bool allowed = g_hide_hud_enabled.load(std::memory_order_acquire);
-    const bool hotkey_down = allowed &&
-        (GetAsyncKeyState(g_hide_hud_hotkey.load(std::memory_order_relaxed)) &
-            0x8000) != 0;
+    const bool hotkey_down = allowed && BetterEndfield::Input::IsDown(
+        g_hide_hud_hotkey.load(std::memory_order_relaxed));
     const bool hotkey_pressed = hotkey_down && !g_hud_hotkey_was_down;
     g_hud_hotkey_was_down = hotkey_down;
 
@@ -1101,24 +1101,7 @@ bool ParseBoolean(std::string_view value, bool default_value = false) {
 }
 
 int ParseVirtualKey(std::string_view value, int fallback) {
-    std::string key = Trim(value);
-    std::transform(key.begin(), key.end(), key.begin(),
-        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
-    if (key.size() == 1 && std::isalnum(static_cast<unsigned char>(key[0]))) {
-        return static_cast<unsigned char>(key[0]);
-    }
-    if (key.size() > 1 && key.front() == 'F') {
-        const int number = std::atoi(key.c_str() + 1);
-        if (number >= 1 && number <= 24) {
-            return VK_F1 + number - 1;
-        }
-    }
-    constexpr std::string_view numpad_prefix = "NUMPAD";
-    if (key.size() == numpad_prefix.size() + 1 &&
-        key.starts_with(numpad_prefix) && key.back() >= '0' && key.back() <= '9') {
-        return VK_NUMPAD0 + key.back() - '0';
-    }
-    return fallback;
+    return BetterEndfield::Input::ParseKey(value, fallback);
 }
 
 UiConfiguration ParseConfigurationText(const char* raw_configuration) {

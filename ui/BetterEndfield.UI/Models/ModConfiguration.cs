@@ -6,6 +6,7 @@ namespace BetterEndfield.UI.Models;
 
 internal sealed class ModConfiguration
 {
+    public bool GachaEnabled { get; set; }
     public string Character { get; set; } = "chr_0013_aglina";
 
     public string FinalAction { get; set; } =
@@ -322,6 +323,10 @@ internal sealed class ModConfiguration
         text.AppendLine("diagnostics=true");
         text.AppendLine();
         text.AppendLine(ToActionsIniSection());
+        text.AppendLine();
+        text.AppendLine("[betterendfield.gacha]");
+        text.AppendLine($"enabled={Boolean(GachaEnabled)}");
+        text.AppendLine();
         text.AppendLine("[Launcher]");
         text.AppendLine($"Language={(LocalizationService.Instance.IsChinese ? "zh_CN" : "en_US")}");
         return text.ToString();

@@ -299,7 +299,7 @@ bool FpPalette(void* renderer,void* mesh,std::vector<void*>& bones,std::vector<u
 struct FpPatch {
     FpRoot renderer,source,copy,shadow;
     std::vector<void*> bones;
-    bool offscreen=false,assigned=false;
+    bool offscreen=false,assigned=false,direct_hidden=false,renderer_enabled=true;
 };
 struct FpMeshSession {
     std::vector<FpPatch> patches;
@@ -312,6 +312,16 @@ FpMeshSession g_fp_mesh_session;
 
 void FpDestroy(void* mesh) {if(mesh&&IsObjectAlive(mesh)){void* p[]={mesh};InvokeVoid(Contract("unity.object.destroy"),nullptr,p);}}
 bool FpRestore(FpPatch& patch) {
+    if (patch.direct_hidden) {
+        if (patch.renderer && IsObjectAlive(patch.renderer.object)) {
+            bool enabled = patch.renderer_enabled;
+            void* parameters[1]{&enabled};
+            if (!InvokeVoid(Contract("unity.renderer.enabled.set"),
+                    patch.renderer.object, parameters)) return false;
+        }
+        patch.renderer.Reset();
+        return true;
+    }
     auto& e=g_fp_engine;
     if(patch.assigned&&patch.renderer&&IsObjectAlive(patch.renderer.object)) {
         void* current=FpValue<void*>(nullptr,e.get_mesh,patch.renderer.object);
@@ -333,6 +343,50 @@ void ReleaseNeckCap() {
     for(auto& patch:g_fp_mesh_session.patches)if(!FpRestore(patch))retained.push_back(std::move(patch));
     g_fp_mesh_session.patches=std::move(retained);g_fp_mesh_session.attempts.Clear();g_fp_mesh_session.scanned=false;
     if(!g_fp_mesh_session.patches.empty())Log("First person mesh: restoration deferred; keeping assigned meshes alive.");
+}
+bool IsUnderHead(void* transform) {
+    for (int depth = 0; transform && depth < 48; ++depth) {
+        if (transform == g_first_person.head) return true;
+        transform = Invoke(Contract("unity.transform.parent.get"), transform, nullptr);
+    }
+    return false;
+}
+bool FpTryDirectNamedHide(const HeadPartProbe& part, FpPatch& patch) {
+    if (!part.matched || !part.renderer || !g_first_person.head ||
+        !Contract("unity.renderer.enabled.get")->resolved ||
+        !Contract("unity.renderer.enabled.set")->resolved) return false;
+    bool all_head = true;
+    bool has_bone = false;
+    void* bones = Invoke(Contract("unity.skinned_mesh_renderer.bones.get"),
+        part.renderer, nullptr);
+    const int count = std::min(ManagedArrayLength(bones), 256);
+    for (int i = 0; i < count; ++i) {
+        void* bone = ManagedArrayValue(bones, i);
+        if (!bone) continue;
+        has_bone = true;
+        if (!IsUnderHead(bone)) all_head = false;
+    }
+    // A named renderer with no foreign bones is a standalone head/hair part.
+    // Mixed meshes (for example hair plus a tail) remain on the topology path.
+    if (!all_head || (has_bone && !all_head)) return false;
+    bool enabled = true;
+    if (!GetValue(Contract("unity.renderer.enabled.get"), part.renderer, enabled)) return false;
+    patch.renderer = FpRoot(part.renderer);
+    patch.renderer_enabled = enabled;
+    patch.direct_hidden = true;
+    patch.assigned = true;
+    bool hidden = false;
+    void* parameters[1]{&hidden};
+    if (!InvokeVoid(Contract("unity.renderer.enabled.set"), part.renderer, parameters)) {
+        patch.renderer.Reset();
+        patch.direct_hidden = false;
+        patch.assigned = false;
+        return false;
+    }
+    Log("First person mesh: direct renderer hide, object=" + part.object_name +
+        ", renderer=" + part.renderer_name + ", mesh=" + part.mesh_name +
+        ", reason=named standalone head part.");
+    return true;
 }
 bool FpSameVertices(const FpSnapshot& a,const FpSnapshot& b) {
     return a.count==b.count&&a.strides==b.strides&&a.offsets==b.offsets&&a.attributes.size()==b.attributes.size()&&
@@ -397,21 +451,24 @@ bool FpBuildPatch(const HeadPartProbe& part,FpPatch& patch,bool fill,float range
         FpCall(e.set_offscreen,part.renderer,true)&&FpCall(e.set_mesh,part.renderer,patch.copy.object)&&
         FpValue<void*>(nullptr,e.get_mesh,part.renderer)==patch.copy.object;
     if(!ok){Log("First person mesh: renderer binding failed for "+part.object_name);FpRestore(patch);return false;}
-    Log("First person mesh: "+part.object_name+", hidden="+std::to_string(result.hidden_triangles)+
+    Log("First person mesh: "+part.object_name+", renderer="+part.renderer_name+
+        ", mesh="+part.mesh_name+", hidden="+std::to_string(result.hidden_triangles)+
         ", cap="+std::to_string(result.cap_triangles)+", rings="+std::to_string(result.rings)+", GPU verified, original shadow retained.");
     return true;
 }
 void EnsureNeckCap() {
-    if(!g_first_person_hide_head.load()||!g_first_person.head||!g_fp_engine.Init())return;
+    if(!g_first_person_hide_head.load()||!g_first_person.head)return;
     auto& state=g_fp_mesh_session;auto& e=g_fp_engine;
-    if(!FpValue<bool>(false,e.supports_readback))return;
+    const bool gpu_ready=g_fp_engine.Init()&&FpValue<bool>(false,e.supports_readback);
     const bool fill=g_first_person_fill_neck_hole.load();const float range=g_first_person_neck_plug_scale.load();
     if(state.scanned&&(fill!=state.fill||range!=state.range))ReleaseNeckCap();
     if(state.scanned&&g_first_person_pump_frames-state.last_scan<30)return;
     state.scanned=true;state.last_scan=g_first_person_pump_frames;state.fill=fill;state.range=range;
     for(auto it=state.patches.begin();it!=state.patches.end();) {
-        bool stale=!IsObjectAlive(it->renderer.object)||FpValue<void*>(nullptr,e.get_mesh,it->renderer.object)!=it->copy.object;
-        if(!stale) {
+        bool stale=!IsObjectAlive(it->renderer.object);
+        if(!stale&&!it->direct_hidden) stale=e.get_mesh==nullptr||
+            FpValue<void*>(nullptr,e.get_mesh,it->renderer.object)!=it->copy.object;
+        if(!stale&&!it->direct_hidden) {
             FpRoot bones(Invoke(Contract("unity.skinned_mesh_renderer.bones.get"),it->renderer.object,nullptr));
             std::vector<void*> current;stale=!bones||!FpArray(bones.object,current)||current!=it->bones;
         }
@@ -423,14 +480,29 @@ void EnsureNeckCap() {
     auto model=FindModelTransform();if(!model)return;
     std::vector<HeadPartProbe> parts;std::string tree;int visited=0,logged=kMaxPartLogEntries;
     ScanPartNodes(model,0,visited,parts,tree,logged);
+    if (!tree.empty() && g_diagnostics_enabled.load(std::memory_order_relaxed)) {
+        Log("First person mesh scan: visited=" + std::to_string(visited) + tree);
+    }
     state.attempts.Prune([&](void* renderer) {
         return std::any_of(parts.begin(),parts.end(),[&](const auto& part) {
             return part.renderer==renderer;
         });
     });
     for(const auto& part:parts) {
-        if(!part.renderer||part.vertex_count<=0)continue;
+        if(!part.renderer)continue;
+        if(part.vertex_count<=0&&!part.matched)continue;
         if(std::any_of(state.patches.begin(),state.patches.end(),[&](const auto& p){return p.renderer.object==part.renderer;}))continue;
+        FpPatch direct;
+        if(part.matched&&state.attempts.Try(part.renderer,part.renderer)&&
+            FpTryDirectNamedHide(part,direct)) {
+            state.patches.push_back(std::move(direct));
+            state.last_scan=g_first_person_pump_frames-30;
+            break;
+        }
+        if(!gpu_ready) {
+            if(part.matched) Log("First person mesh: named part requires topology fallback, but GPU readback is unavailable: "+part.object_name);
+            continue;
+        }
         auto source=FpValue<void*>(nullptr,e.get_mesh,part.renderer);if(!source)continue;
         if(!state.attempts.Try(part.renderer,source))continue;
         FpPatch patch;

@@ -12,10 +12,12 @@ using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
 using Windows.Storage.Pickers;
+using Windows.System;
 using Windows.UI;
 
 namespace BetterEndfield.UI;
@@ -91,6 +93,7 @@ public sealed partial class MainWindow : Window
     {
         Interval = TimeSpan.FromSeconds(1)
     };
+    private readonly DispatcherTimer _autoSaveTimer = new() { Interval = TimeSpan.FromMilliseconds(700) };
 
     private bool _initializing = true;
     private FreeCameraExtras _freeCameraExtras = new();
@@ -109,10 +112,14 @@ public sealed partial class MainWindow : Window
     private string _latestReleaseUrl = UpdateService.ReleasesUrl;
     private bool _pathScanRunning;
     private int _xInputStatusRevision;
+    private bool _autoSaveRunning;
 
     public MainWindow()
     {
         InitializeComponent();
+        GachaPage.EnabledChanged += GachaPage_EnabledChanged;
+        RegisterReactiveControls(MainRoot);
+        RegisterHotkeyControls(MainRoot);
         Title = "Better Endfield";
         SystemBackdrop = new MicaBackdrop();
         TrySetWindowIcon();
@@ -137,7 +144,83 @@ public sealed partial class MainWindow : Window
         UpdateVoiceRulesEmptyState();
         UpdateLocalizedUI();
         _statusTimer.Tick += StatusTimer_Tick;
+        _autoSaveTimer.Tick += AutoSaveTimer_Tick;
         Closed += MainWindow_Closed;
+    }
+
+    private void RegisterReactiveControls(DependencyObject root)
+    {
+        int count = VisualTreeHelper.GetChildrenCount(root);
+        for (int index = 0; index < count; index++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(root, index);
+            switch (child)
+            {
+                case ToggleSwitch toggle: toggle.Toggled += ReactiveControlChanged; break;
+                case TextBox textBox: textBox.TextChanged += ReactiveTextChanged; break;
+                case NumberBox numberBox: numberBox.ValueChanged += ReactiveNumberChanged; break;
+                case ComboBox comboBox: comboBox.SelectionChanged += ReactiveSelectionChanged; break;
+            }
+            RegisterReactiveControls(child);
+        }
+    }
+
+    private void RegisterHotkeyControls(DependencyObject root)
+    {
+        int count = VisualTreeHelper.GetChildrenCount(root);
+        for (int index = 0; index < count; index++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(root, index);
+            if (child is TextBox textBox && textBox.Name.Contains("Hotkey", StringComparison.OrdinalIgnoreCase))
+                textBox.KeyDown += HotkeyTextBox_KeyDown;
+            RegisterHotkeyControls(child);
+        }
+    }
+
+    private void ReactiveControlChanged(object sender, RoutedEventArgs e) => ScheduleAutoSave();
+    private void ReactiveTextChanged(object sender, TextChangedEventArgs e) => ScheduleAutoSave();
+    private void ReactiveNumberChanged(NumberBox sender, NumberBoxValueChangedEventArgs args) => ScheduleAutoSave();
+    private void ReactiveSelectionChanged(object sender, SelectionChangedEventArgs e) => ScheduleAutoSave();
+
+    private void ScheduleAutoSave()
+    {
+        if (_initializing || _autoSaveRunning) return;
+        _autoSaveTimer.Stop();
+        _autoSaveTimer.Start();
+    }
+
+    private async void AutoSaveTimer_Tick(object? sender, object e)
+    {
+        _autoSaveTimer.Stop();
+        if (_initializing || _autoSaveRunning ||
+            !RuntimePathDiscoveryService.IsGameExecutable(GamePathBox.Text.Trim()) ||
+            !File.Exists(RuntimePathDiscoveryService.BundledInjectorPath)) return;
+        _autoSaveRunning = true;
+        try { await SaveAsync(showSuccess: false); }
+        finally { _autoSaveRunning = false; }
+    }
+
+    private void HotkeyTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (sender is not TextBox box) return;
+        if (e.Key is VirtualKey.Back or VirtualKey.Delete)
+        {
+            box.Text = "NONE";
+            e.Handled = true;
+            ScheduleAutoSave();
+            return;
+        }
+        if (HotkeyService.IsModifier(e.Key))
+        {
+            e.Handled = true;
+            return;
+        }
+        string captured = HotkeyService.Capture(e.Key, e.KeyStatus.IsExtendedKey);
+        if (captured.Length == 0) return;
+        box.Text = captured;
+        box.SelectAll();
+        e.Handled = true;
+        ScheduleAutoSave();
     }
 
     private async void MainRoot_Loaded(object sender, RoutedEventArgs e)
@@ -177,13 +260,13 @@ public sealed partial class MainWindow : Window
                 await ConfigurationService.LoadModConfigurationAsync(
                     RuntimePathDiscoveryService.BundledInjectorPath);
             ApplyConfiguration(configuration);
+            GachaPage.SetEnabled(_appSettings.GachaEnabled);
             RefreshCombatSessions();
             _initializing = false;
             UpdateCrossfadePanel();
             UpdateLoaderModePanel();
             UpdatePathStatusText();
             await RefreshXInputStatusAsync();
-            await InitializeDisplayPageAsync();
             RefreshRuntimeStatus();
             _statusTimer.Start();
         }
@@ -425,6 +508,27 @@ public sealed partial class MainWindow : Window
         extras.VmdMotionScale = Math.Clamp(Value(MmdMotionScaleNumberBox, 100.0) / 100.0, 0.05, 5.0);
         extras.MmdMusicGain = Math.Clamp(Value(MmdMusicGainNumberBox, 100.0) / 100.0, 0.0, 2.0);
         extras.MmdSeekSeconds = Math.Clamp(Value(MmdSeekNumberBox, 5.0), 0.5, 60.0);
+        extras.MmdPlayHotkey = MmdPlayHotkeyBox.Text;
+        extras.MmdStopHotkey = MmdStopHotkeyBox.Text;
+        extras.MmdSeekBackHotkey = MmdSeekBackHotkeyBox.Text;
+        extras.MmdSeekForwardHotkey = MmdSeekForwardHotkeyBox.Text;
+        extras.MmdCameraModeHotkey = MmdCameraModeHotkeyBox.Text;
+        extras.MmdOverlayHotkey = MmdOverlayHotkeyBox.Text;
+        extras.MotionHotkey = MmdMotionHotkeyBox.Text;
+        extras.RollLeftHotkey = MmdRollLeftHotkeyBox.Text;
+        extras.RollRightHotkey = MmdRollRightHotkeyBox.Text;
+        extras.FovWideHotkey = MmdFovWideHotkeyBox.Text;
+        extras.FovNarrowHotkey = MmdFovNarrowHotkeyBox.Text;
+        extras.ViewResetHotkey = MmdViewResetHotkeyBox.Text;
+        extras.KeyframeAddHotkey = MmdKeyframeAddHotkeyBox.Text;
+        extras.KeyframePlayHotkey = MmdKeyframePlayHotkeyBox.Text;
+        extras.KeyframeClearHotkey = MmdKeyframeClearHotkeyBox.Text;
+        extras.VmdPlayHotkey = MmdVmdPlayHotkeyBox.Text;
+        extras.VmdMotionHotkey = MmdVmdMotionHotkeyBox.Text;
+        extras.VmdMotionPauseHotkey = MmdVmdMotionPauseHotkeyBox.Text;
+        extras.VmdMotionStopHotkey = MmdVmdMotionStopHotkeyBox.Text;
+        extras.KeyframeSaveHotkey = MmdKeyframeSaveHotkeyBox.Text;
+        extras.KeyframeLoadHotkey = MmdKeyframeLoadHotkeyBox.Text;
         return extras;
     }
 
@@ -460,6 +564,27 @@ public sealed partial class MainWindow : Window
         MmdMotionScaleNumberBox.Value = extras.VmdMotionScale * 100.0;
         MmdMusicGainNumberBox.Value = extras.MmdMusicGain * 100.0;
         MmdSeekNumberBox.Value = extras.MmdSeekSeconds;
+        MmdPlayHotkeyBox.Text = extras.MmdPlayHotkey;
+        MmdStopHotkeyBox.Text = extras.MmdStopHotkey;
+        MmdSeekBackHotkeyBox.Text = extras.MmdSeekBackHotkey;
+        MmdSeekForwardHotkeyBox.Text = extras.MmdSeekForwardHotkey;
+        MmdCameraModeHotkeyBox.Text = extras.MmdCameraModeHotkey;
+        MmdOverlayHotkeyBox.Text = extras.MmdOverlayHotkey;
+        MmdMotionHotkeyBox.Text = extras.MotionHotkey;
+        MmdRollLeftHotkeyBox.Text = extras.RollLeftHotkey;
+        MmdRollRightHotkeyBox.Text = extras.RollRightHotkey;
+        MmdFovWideHotkeyBox.Text = extras.FovWideHotkey;
+        MmdFovNarrowHotkeyBox.Text = extras.FovNarrowHotkey;
+        MmdViewResetHotkeyBox.Text = extras.ViewResetHotkey;
+        MmdKeyframeAddHotkeyBox.Text = extras.KeyframeAddHotkey;
+        MmdKeyframePlayHotkeyBox.Text = extras.KeyframePlayHotkey;
+        MmdKeyframeClearHotkeyBox.Text = extras.KeyframeClearHotkey;
+        MmdVmdPlayHotkeyBox.Text = extras.VmdPlayHotkey;
+        MmdVmdMotionHotkeyBox.Text = extras.VmdMotionHotkey;
+        MmdVmdMotionPauseHotkeyBox.Text = extras.VmdMotionPauseHotkey;
+        MmdVmdMotionStopHotkeyBox.Text = extras.VmdMotionStopHotkey;
+        MmdKeyframeSaveHotkeyBox.Text = extras.KeyframeSaveHotkey;
+        MmdKeyframeLoadHotkeyBox.Text = extras.KeyframeLoadHotkey;
         RefreshMmdWorks();
     }
 
@@ -788,6 +913,10 @@ public sealed partial class MainWindow : Window
         MmdMotionScaleNumberBox.Header = isZh ? "位移幅度（%）" : "Displacement Scale (%)";
         MmdMusicGainNumberBox.Header = isZh ? "音乐音量（%）" : "Music Volume (%)";
         MmdSeekNumberBox.Header = isZh ? "快进/快退（秒）" : "Seek Step (s)";
+        MmdHotkeysTitle.Text = isZh ? "MMD 快捷键" : "MMD Hotkeys";
+        MmdHotkeysHint.Text = isZh
+            ? "点击输入框后直接按下按键，可使用 Ctrl、Alt、Shift、Win 组合键；修改会自动保存。"
+            : "Focus a field and press a key directly. Ctrl, Alt, Shift and Win combinations are supported; changes save automatically.";
         MmdLibraryTitle.Text = isZh ? "作品库" : "Library";
         MmdLibraryHint.Text = isZh
             ? "导入时会把文件复制到软件目录下的 mmd 文件夹，悬浮窗直接从这里读取。"
@@ -1001,6 +1130,13 @@ public sealed partial class MainWindow : Window
             "custom-model" => "角色外观工具会读取当前安装根目录，转换与部署结果需要按报告核对。",
             _ => "角色与动画参数保存后在下一次注入时生效。"
         };
+    }
+
+    private async void GachaPage_EnabledChanged(bool enabled)
+    {
+        _appSettings.GachaEnabled = enabled;
+        await ConfigurationService.SaveAppSettingsAsync(_appSettings);
+        ScheduleAutoSave();
     }
 
     private void RefreshCombatSessionsButton_Click(object sender, RoutedEventArgs e)
@@ -2750,6 +2886,7 @@ public sealed partial class MainWindow : Window
 
         configuration = new ModConfiguration
         {
+            GachaEnabled = _appSettings.GachaEnabled,
             Character = character.Id,
             FinalAction = action.Id,
             ModelPath = character.Model.Path,
@@ -3115,48 +3252,10 @@ public sealed partial class MainWindow : Window
     }
 
     private static bool TryNormalizeCombatHotkey(string value, out string normalized)
-    {
-        normalized = value.Trim().Replace(" ", string.Empty).ToUpperInvariant();
-        string key = normalized.StartsWith("CTRL+", StringComparison.Ordinal)
-            ? normalized[5..]
-            : normalized;
-        if (key.Length == 1 && char.IsAsciiLetterOrDigit(key[0]))
-        {
-            return true;
-        }
-        return key.Length >= 2 && key[0] == 'F' &&
-            int.TryParse(key[1..], NumberStyles.None, CultureInfo.InvariantCulture,
-                out int functionKey) &&
-            functionKey is >= 1 and <= 24;
-    }
+        => HotkeyService.TryNormalize(value, out normalized);
 
     private static bool TryNormalizeCameraHotkey(string value, out string normalized)
-    {
-        normalized = value.Trim().Replace(" ", string.Empty).ToUpperInvariant();
-        if (normalized is "-" or "MINUS" or "OEM_MINUS")
-        {
-            normalized = "-";
-            return true;
-        }
-        if (normalized is "SUBTRACT" or "NUMPAD-" or "NUMPAD_MINUS" or "NUMPADSUBTRACT")
-        {
-            normalized = "-";
-            return true;
-        }
-        if (normalized.Length == 1 && char.IsAsciiLetterOrDigit(normalized[0]))
-        {
-            return true;
-        }
-        // The numpad is reserved for MMD playback (hotkey layout 2).
-        if (normalized.StartsWith("NUMPAD", StringComparison.Ordinal))
-        {
-            return false;
-        }
-        return normalized.Length >= 2 && normalized[0] == 'F' &&
-            int.TryParse(normalized[1..], NumberStyles.None,
-                CultureInfo.InvariantCulture, out int functionKey) &&
-            functionKey is >= 1 and <= 24;
-    }
+        => HotkeyService.TryNormalize(value, out normalized);
 
     private static bool TryNormalizeVoiceLanguageRules(
         string source,
@@ -4130,11 +4229,11 @@ public sealed partial class MainWindow : Window
 
         // Bottom Action Bar
         PageSelectionHintTextBlock.Text = isZh
-            ? "保存后在下一次注入时生效。"
-            : "Changes will take effect on next game launch/injection.";
+            ? "设置会自动保存；启动按钮会写入最新配置并启动游戏。"
+            : "Settings save automatically; Launch writes the latest configuration and starts the game.";
         ResetButtonTextBlock.Text = isZh ? "恢复默认" : "Reset to Defaults";
         SaveButtonTextBlock.Text = isZh ? "保存" : "Save";
-        LaunchButtonTextBlock.Text = isZh ? "保存并启动" : "Save & Launch";
+        LaunchButtonTextBlock.Text = isZh ? "启动" : "Launch";
 
         if (FinalActionComboBox.SelectedItem is ActionOption selectedAction)
         {
@@ -4161,8 +4260,29 @@ public sealed partial class MainWindow : Window
         RebuildCombatCharacterFilters();
         ApplyCombatFilters(_selectedCombatSession?.Path);
         UpdatePathStatusText();
-        _ = RefreshDisplayStatusAsync();
+        NormalizeExplanationTextStyles(MainRoot);
         _ = RefreshXInputStatusAsync();
+    }
+
+    private void NormalizeExplanationTextStyles(DependencyObject root)
+    {
+        int count = VisualTreeHelper.GetChildrenCount(root);
+        for (int index = 0; index < count; index++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(root, index);
+            if (child is TextBlock textBlock)
+            {
+                string name = (child as FrameworkElement)?.Name ?? string.Empty;
+                if (name.Contains("Hint", StringComparison.OrdinalIgnoreCase) ||
+                    name.Contains("Description", StringComparison.OrdinalIgnoreCase) ||
+                    name.Contains("Tradeoff", StringComparison.OrdinalIgnoreCase) ||
+                    name.Contains("Experimental", StringComparison.OrdinalIgnoreCase))
+                {
+                    textBlock.Style = (Style)MainRoot.Resources["FieldHintStyle"];
+                }
+            }
+            NormalizeExplanationTextStyles(child);
+        }
     }
 
     private void MainWindow_Closed(object sender, WindowEventArgs args)

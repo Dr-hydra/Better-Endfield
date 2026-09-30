@@ -7,6 +7,8 @@
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <mutex>
+#include <sstream>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -41,7 +43,8 @@ MethodContract g_methods[] = {
 
 const BE_HostApiV1* g_host = nullptr;
 std::jthread g_worker;
-std::atomic<bool> g_enabled{true};
+std::atomic<bool> g_enabled{false};
+std::mutex g_worker_mutex;
 Il2CppDomainGetFn g_domain_get = nullptr;
 Il2CppThreadAttachFn g_thread_attach = nullptr;
 Il2CppThreadDetachFn g_thread_detach = nullptr;
@@ -224,16 +227,33 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     g_thread_detach = reinterpret_cast<Il2CppThreadDetachFn>(
         GetProcAddress(game_assembly, "il2cpp_thread_detach"));
     if (!g_domain_get || !g_thread_attach || !g_thread_detach) return BE_Result_ContractMismatch;
-    g_worker = std::jthread(WorkerMain);
     return BE_Result_Ok;
 }
 
-BE_Result BE_CALL ConfigurationChanged(const char*) {
-    g_enabled.store(true, std::memory_order_release);
+BE_Result BE_CALL ConfigurationChanged(const char* configuration) {
+    bool enabled = false;
+    std::istringstream input(configuration ? configuration : "");
+    std::string line;
+    while (std::getline(input, line)) {
+        line.erase(std::remove_if(line.begin(), line.end(), [](unsigned char c) { return std::isspace(c); }), line.end());
+        if (line == "enabled=true" || line == "enabled=1") enabled = true;
+    }
+    std::scoped_lock lock(g_worker_mutex);
+    const bool was = g_enabled.exchange(enabled, std::memory_order_acq_rel);
+    if (!enabled && g_worker.joinable()) {
+        g_worker.request_stop();
+        CancelSynchronousIo(g_worker.native_handle());
+        g_worker.join();
+        Log("Gacha session bridge disabled; cached credentials cleared.");
+    } else if (enabled && !was && !g_worker.joinable()) {
+        g_worker = std::jthread(WorkerMain);
+        Log("Gacha session bridge explicitly enabled.");
+    }
     return BE_Result_Ok;
 }
 
 void BE_CALL Shutdown() {
+    std::scoped_lock lock(g_worker_mutex);
     g_enabled.store(false, std::memory_order_release);
     if (g_worker.joinable()) {
         g_worker.request_stop();

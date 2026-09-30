@@ -131,7 +131,8 @@
                 <NavigationViewItem
                     x:Name="DisplayNavigationItem"
                     Content="显示增强"
-                    Tag="display">
+                    Tag="display"
+                    Visibility="Collapsed">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE7F4;" />
                     </NavigationViewItem.Icon>
@@ -1582,6 +1583,43 @@
                                                     OnContent="循环"
                                                     Toggled="CameraEnhancementToggle_Toggled" />
                                         </Grid>
+                                        <Border Style="{StaticResource SettingsRowStyle}">
+                                            <StackPanel Spacing="12">
+                                                <StackPanel Spacing="3">
+                                                    <TextBlock x:Name="MmdHotkeysTitle" Style="{StaticResource SectionTitleStyle}" FontSize="16" Text="MMD 快捷键" />
+                                                    <TextBlock x:Name="MmdHotkeysHint" Style="{StaticResource FieldHintStyle}" Text="点击输入框后直接按下按键，可使用 Ctrl、Alt、Shift、Win 组合键；修改会自动保存。" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                                <Grid ColumnSpacing="12" RowSpacing="10">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                                    <TextBox x:Name="MmdPlayHotkeyBox" Header="播放/暂停" Text="NUMPAD_ENTER" />
+                                                    <TextBox x:Name="MmdStopHotkeyBox" Grid.Column="1" Header="停止" Text="ADD" />
+                                                    <TextBox x:Name="MmdCameraModeHotkeyBox" Grid.Column="2" Header="镜头模式" Text="NUMPAD5" />
+                                                    <TextBox x:Name="MmdSeekBackHotkeyBox" Grid.Row="1" Header="后退" Text="NUMPAD4" />
+                                                    <TextBox x:Name="MmdSeekForwardHotkeyBox" Grid.Row="1" Grid.Column="1" Header="前进" Text="NUMPAD6" />
+                                                    <TextBox x:Name="MmdOverlayHotkeyBox" Grid.Row="1" Grid.Column="2" Header="悬浮窗" Text="SUBTRACT" />
+                                                    <TextBox x:Name="MmdMotionHotkeyBox" Grid.Row="2" Header="运镜" Text="NUMPAD2" />
+                                                    <TextBox x:Name="MmdRollLeftHotkeyBox" Grid.Row="2" Grid.Column="1" Header="左滚转" Text="NUMPAD7" />
+                                                    <TextBox x:Name="MmdRollRightHotkeyBox" Grid.Row="2" Grid.Column="2" Header="右滚转" Text="NUMPAD9" />
+                                                    <TextBox x:Name="MmdFovWideHotkeyBox" Grid.Row="3" Header="放大视野" Text="NUMPAD1" />
+                                                    <TextBox x:Name="MmdFovNarrowHotkeyBox" Grid.Row="3" Grid.Column="1" Header="缩小视野" Text="NUMPAD3" />
+                                                    <TextBox x:Name="MmdViewResetHotkeyBox" Grid.Row="3" Grid.Column="2" Header="视野复位" Text="NUMPAD8" />
+                                                    <TextBox x:Name="MmdKeyframeAddHotkeyBox" Grid.Row="4" Header="记录机位" Text="NUMPAD0" />
+                                                    <TextBox x:Name="MmdKeyframePlayHotkeyBox" Grid.Row="4" Grid.Column="1" Header="播放机位" Text="DECIMAL" />
+                                                    <TextBox x:Name="MmdKeyframeClearHotkeyBox" Grid.Row="4" Grid.Column="2" Header="清空机位" Text="NONE" />
+                                                </Grid>
+                                                <Grid ColumnSpacing="12" RowSpacing="10">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                                    <TextBox x:Name="MmdVmdPlayHotkeyBox" Header="VMD 镜头" Text="NONE" />
+                                                    <TextBox x:Name="MmdVmdMotionHotkeyBox" Grid.Column="1" Header="身体动作" Text="NONE" />
+                                                    <TextBox x:Name="MmdVmdMotionPauseHotkeyBox" Grid.Column="2" Header="动作暂停" Text="NONE" />
+                                                    <TextBox x:Name="MmdVmdMotionStopHotkeyBox" Grid.Row="1" Header="动作停止" Text="NONE" />
+                                                    <TextBox x:Name="MmdKeyframeSaveHotkeyBox" Grid.Row="1" Grid.Column="1" Header="保存机位" Text="NONE" />
+                                                    <TextBox x:Name="MmdKeyframeLoadHotkeyBox" Grid.Row="1" Grid.Column="2" Header="读取机位" Text="NONE" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
                                         <StackPanel Spacing="4">
                                             <ComboBox
                                                 x:Name="MmdClothComboBox"
@@ -2365,7 +2403,7 @@
                                     <TextBlock x:Name="ResetButtonTextBlock" Text="恢复默认" />
                                 </StackPanel>
                             </Button>
-                            <Button x:Name="SaveButton" Grid.Column="2" Click="SaveButton_Click">
+                            <Button x:Name="SaveButton" Grid.Column="2" Click="SaveButton_Click" Visibility="Collapsed">
                                 <StackPanel Orientation="Horizontal" Spacing="7">
                                     <SymbolIcon Symbol="Save" />
                                     <TextBlock x:Name="SaveButtonTextBlock" Text="保存" />
@@ -2384,7 +2422,7 @@
                                         IsActive="False"
                                         Visibility="Collapsed" />
                                     <SymbolIcon Symbol="Play" />
-                                    <TextBlock x:Name="LaunchButtonTextBlock" Text="保存并启动" />
+                                    <TextBlock x:Name="LaunchButtonTextBlock" Text="启动" />
                                 </StackPanel>
                             </Button>
                         </Grid>

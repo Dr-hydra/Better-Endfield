@@ -4,6 +4,7 @@
 #include "BetterEndfield/PoseLease.h"
 #include "../../shared/motion/character_pose.h"
 #include "../../shared/motion/character_mapping.h"
+#include "../../shared/input/hotkey.h"
 #include "camera_file_worker.h"
 #include "BetterEndfield/LocalMusic.h"
 #include "mmd_library.h"
@@ -60,6 +61,8 @@ struct CameraConfiguration {
     float field_of_view = 60.0f;
     float first_person_fov = 75.0f;
     float first_person_neck_plug_scale = 1.0f;
+    float first_person_side_look_limit = 90.0f;
+    float first_person_turn_speed = 360.0f;
     int toggle_key = '9';
     int pause_key = '8';
     int first_person_key = VK_OEM_MINUS;
@@ -166,6 +169,8 @@ std::atomic<float> g_movement_speed{5.0f};
 std::atomic<float> g_field_of_view{60.0f};
 std::atomic<float> g_first_person_fov{75.0f};
 std::atomic<float> g_first_person_neck_plug_scale{1.0f};
+std::atomic<float> g_first_person_side_look_limit{90.0f};
+std::atomic<float> g_first_person_turn_speed{360.0f};
 std::atomic_int g_toggle_key{'9'};
 std::atomic_int g_pause_key{'8'};
 std::atomic_int g_first_person_key{VK_OEM_MINUS};
@@ -203,7 +208,7 @@ std::atomic_int g_keyframe_clear_key{0};
 std::atomic_int g_vmd_play_key{0};
 
 // MMD playback settings and requests (see mmd_director_runtime.inc).
-constexpr int kVkNumpadEnter = 0x100 | VK_RETURN;
+constexpr int kVkNumpadEnter = BetterEndfield::Input::kNumpadEnter | VK_RETURN;
 enum MmdRequest : uint32_t {
     MmdRequestPlayPause = 1u << 0,
     MmdRequestStop = 1u << 1,
@@ -274,6 +279,8 @@ std::atomic_int g_mouse_wheel{0};
 std::atomic_bool g_first_person_active{false};
 std::atomic_bool g_first_person_toggle_request{false};
 std::atomic_bool g_first_person_exit_request{false};
+Vector3 g_first_person_view_forward{0.0f, 0.0f, 1.0f};
+bool g_first_person_view_forward_valid = false;
 
 std::atomic_bool g_character_preview_enabled{false};
 std::atomic_int g_character_play_key{0},g_character_pause_key{0},g_character_stop_key{0};
@@ -327,6 +334,7 @@ BE_ResolvedClassV1 g_skinned_mesh_renderer_class{};
 // rebuild character parts (clothes, hair, LOD levels) at any time.
 struct HeadPartProbe {
     std::string object_name;
+    std::string renderer_name;
     std::string mesh_name;
     int32_t vertex_count = -1;
     bool skinned = false;
@@ -338,6 +346,8 @@ struct FirstPersonSession {
     void* character = nullptr;
     void* head = nullptr;
     uint32_t head_handle = 0;
+    void* body = nullptr;
+    uint32_t body_handle = 0;
     void* neck = nullptr;
     uint32_t neck_handle = 0;
     void* snapshot_controller = nullptr;
@@ -403,6 +413,21 @@ MethodContract g_contracts[]{
     {"unity.game_object.get_component",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "GameObject", "GetComponent",
             "System.Type", "UnityEngine.Component", 1}},
+    {"unity.game_object.get_components",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "GameObject", "GetComponents",
+            "System.Type", "UnityEngine.Component[]", 1}},
+    {"system.array.get_length",
+        {"mscorlib.dll", "System", "Array", "GetLength",
+            "System.Int32", "System.Int32", 1}},
+    {"system.array.get_value",
+        {"mscorlib.dll", "System", "Array", "GetValue",
+            "System.Int32", "System.Object", 1}},
+    {"unity.renderer.enabled.get",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Renderer", "get_enabled",
+            nullptr, "System.Boolean", 0}},
+    {"unity.renderer.enabled.set",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Renderer", "set_enabled",
+            "System.Boolean", "System.Void", 1}},
     {"unity.game_object.find_with_tag",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "GameObject", "FindWithTag",
             "System.String", "UnityEngine.GameObject", 1}},
@@ -584,6 +609,21 @@ bool GetValue(const MethodContract* method, void* instance, bool& value) {
     return Unbox(Invoke(method, instance, nullptr), value);
 }
 
+int ManagedArrayLength(void* array) {
+    if (!array) return 0;
+    int dimension = 0;
+    void* parameters[1]{&dimension};
+    int length = 0;
+    return Unbox(Invoke(Contract("system.array.get_length"), array, parameters), length)
+        ? length : 0;
+}
+
+void* ManagedArrayValue(void* array, int index) {
+    if (!array) return nullptr;
+    void* parameters[1]{&index};
+    return Invoke(Contract("system.array.get_value"), array, parameters);
+}
+
 bool SetValue(const MethodContract* method, void* instance, Vector3 value) {
     void* parameters[1]{&value};
     return InvokeVoid(method, instance, parameters);
@@ -754,17 +794,22 @@ bool KeyDown(int key) {
     if (key <= 0) {
         return false;
     }
+    if (!BetterEndfield::Input::ModifiersDown(key)) return false;
+    const int base_key = BetterEndfield::Input::BaseKey(key);
     const bool hooked = g_keyboard_hook_active.load(std::memory_order_acquire);
-    const int pad = IndexOf(kPadVirtualKeys, std::size(kPadVirtualKeys), key);
+    if (BetterEndfield::Input::IsNumpadEnter(key)) {
+        return hooked && ((g_pad_down.load(std::memory_order_acquire) >> 15) & 1u) != 0;
+    }
+    const int pad = IndexOf(kPadVirtualKeys, std::size(kPadVirtualKeys), base_key);
     if (pad >= 0) {
         if (hooked) return ((g_pad_down.load(std::memory_order_acquire) >> pad) & 1u) != 0;
-        return key != kVkNumpadEnter && (GetAsyncKeyState(key) & 0x8000) != 0;
+        return (GetAsyncKeyState(base_key) & 0x8000) != 0;
     }
-    const int nav = IndexOf(kNavVirtualKeys, std::size(kNavVirtualKeys), key);
+    const int nav = IndexOf(kNavVirtualKeys, std::size(kNavVirtualKeys), base_key);
     if (nav >= 0 && hooked) {
         return ((g_nav_down.load(std::memory_order_acquire) >> nav) & 1u) != 0;
     }
-    return key < 0x100 && (GetAsyncKeyState(key) & 0x8000) != 0;
+    return base_key < 0x100 && (GetAsyncKeyState(base_key) & 0x8000) != 0;
 }
 
 bool GameWindowHasFocus() {
@@ -1139,11 +1184,13 @@ void* FindSnapshotCameraController() {
 // ---------------------------------------------------------------------------
 
 constexpr const char* kHeadPartTokens[]{
-    "head", "face", "hair", "brow", "eyelid", "eyes", "iris", "mouth", "horn"};
+    "head", "face", "hair", "hair_base", "hairshadow", "front_hair",
+    "back_hair", "side_hair", "brow", "eyelid", "eyelash", "eyes", "iris",
+    "pupil", "mouth", "lip", "teeth", "tongue", "horn"};
 
-constexpr int kMaxPartScanDepth = 6;
-constexpr int kMaxPartScanNodes = 256;
-constexpr int kMaxPartLogEntries = 32;
+constexpr int kMaxPartScanDepth = 16;
+constexpr int kMaxPartScanNodes = 4096;
+constexpr int kMaxPartLogEntries = 128;
 
 std::string LowerAscii(std::string value) {
     std::transform(value.begin(), value.end(), value.begin(),
@@ -1179,25 +1226,47 @@ void ReadMeshProbe(void* mesh, HeadPartProbe& probe) {
     }
 }
 
-// Only skinned renderers are probed: the head, the hair and the head
-// accessories are skinned parts, and leaving the other component types out keeps
-// the probe independent of the prefab layout.
-void ReadPartComponents(void* game_object, HeadPartProbe& probe) {
-    const MethodContract* get_component = Contract("unity.game_object.get_component");
-    if (!game_object || !get_component || !get_component->resolved ||
-        !g_skinned_mesh_renderer_class.type_object) {
-        return;
-    }
-    void* parameters[1]{g_skinned_mesh_renderer_class.type_object};
-    void* renderer = Invoke(get_component, game_object, parameters);
-    if (!renderer) {
-        return;
-    }
+void AddRendererProbe(void* renderer, const std::string& object_name,
+    std::vector<HeadPartProbe>& parts) {
+    if (!renderer) return;
+    HeadPartProbe probe;
+    probe.object_name = object_name;
+    probe.renderer_name = ObjectName(renderer);
     probe.skinned = true;
     probe.renderer = renderer;
     ReadMeshProbe(Invoke(
         Contract("unity.skinned_mesh_renderer.shared_mesh.get"), renderer, nullptr),
         probe);
+    probe.matched = MatchesHeadPartToken(probe.object_name) ||
+        MatchesHeadPartToken(probe.renderer_name) ||
+        MatchesHeadPartToken(probe.mesh_name);
+    parts.push_back(std::move(probe));
+}
+
+// GetComponents(Type) is used instead of GetComponent(Type), because a custom
+// model or prefab can put multiple SkinnedMeshRenderers on one GameObject.
+void ReadPartComponents(void* game_object, const std::string& object_name,
+    std::vector<HeadPartProbe>& parts) {
+    const MethodContract* get_component = Contract("unity.game_object.get_component");
+    if (!game_object || !get_component || !get_component->resolved ||
+        !g_skinned_mesh_renderer_class.type_object) {
+        return;
+    }
+    const MethodContract* get_components = Contract("unity.game_object.get_components");
+    if (get_components && get_components->resolved &&
+        Contract("system.array.get_length")->resolved &&
+        Contract("system.array.get_value")->resolved) {
+        void* parameters[1]{g_skinned_mesh_renderer_class.type_object};
+        void* array = Invoke(get_components, game_object, parameters);
+        const int count = std::min(ManagedArrayLength(array), 32);
+        for (int i = 0; i < count; ++i) {
+            AddRendererProbe(ManagedArrayValue(array, i), object_name, parts);
+        }
+        if (count > 0) return;
+    }
+    void* parameters[1]{g_skinned_mesh_renderer_class.type_object};
+    void* renderer = Invoke(get_component, game_object, parameters);
+    AddRendererProbe(renderer, object_name, parts);
 }
 
 void ScanPartNodes(void* transform, int depth, int& visited,
@@ -1206,36 +1275,23 @@ void ScanPartNodes(void* transform, int depth, int& visited,
         return;
     }
     ++visited;
-    HeadPartProbe probe;
-    probe.object_name = ObjectName(transform);
-    ReadPartComponents(
-        Invoke(Contract("unity.component.game_object"), transform, nullptr), probe);
-    probe.matched = MatchesHeadPartToken(probe.object_name) ||
-        MatchesHeadPartToken(probe.mesh_name);
+    const std::string object_name = ObjectName(transform);
+    const size_t before = parts.size();
+    ReadPartComponents(Invoke(Contract("unity.component.game_object"), transform, nullptr),
+        object_name, parts);
 
-    if (probe.renderer || probe.matched) {
+    if (parts.size() > before) {
         if (logged < kMaxPartLogEntries) {
             ++logged;
             std::string line(static_cast<size_t>(depth) * 2, ' ');
-            line += probe.object_name;
-            if (!probe.mesh_name.empty()) {
-                line += " [mesh='" + probe.mesh_name + "'";
-                if (probe.vertex_count >= 0) {
-                    line += ", " + std::to_string(probe.vertex_count) + " vertices";
-                }
-                line += "]";
-            }
-            if (probe.matched) {
-                line += " <-- head part";
-            }
+            line += object_name + " [renderers=" +
+                std::to_string(parts.size() - before) + "]";
             tree += "\n  " + line;
         } else if (logged == kMaxPartLogEntries) {
             ++logged;
             tree += "\n  ...";
         }
     }
-    parts.push_back(probe);
-
     const MethodContract* child_count = Contract("unity.transform.child_count.get");
     const MethodContract* get_child = Contract("unity.transform.get_child");
     int children = 0;
@@ -1299,6 +1355,11 @@ void ReleaseHeadTransform() {
     }
     g_first_person.head_handle = 0;
     g_first_person.head = nullptr;
+    if (g_first_person.body_handle && g_host && g_host->gchandle_free) {
+        g_host->gchandle_free(g_host->context, g_first_person.body_handle);
+    }
+    g_first_person.body_handle = 0;
+    g_first_person.body = nullptr;
     if (g_first_person.neck_handle && g_host && g_host->gchandle_free) {
         g_host->gchandle_free(g_host->context, g_first_person.neck_handle);
     }
@@ -1442,7 +1503,67 @@ void TryBindHeadTransform() {
         ? g_host->gchandle_new(g_host->context, head, 0)
         : 0;
     BindNeckBone(head);
+    if (!g_first_person.body) {
+        void* character = g_first_person.character;
+        void* body = character
+            ? Invoke(Contract("unity.component.transform"), character, nullptr)
+            : nullptr;
+        if (!body) {
+            body = Invoke(Contract("unity.game_object.transform"), FindModelObject(), nullptr);
+        }
+        if (body) {
+            g_first_person.body = body;
+            g_first_person.body_handle = g_host && g_host->gchandle_new
+                ? g_host->gchandle_new(g_host->context, body, 0)
+                : 0;
+            Log("First person: body facing anchor bound to \"" + ObjectName(body) + "\".");
+        }
+    }
     Log("First person: head anchor bound to \"" + ObjectName(head) + "\".");
+}
+
+float NormalizeAngle(float angle) {
+    while (angle > 180.0f) angle -= 360.0f;
+    while (angle < -180.0f) angle += 360.0f;
+    return angle;
+}
+
+void ApplyFirstPersonFacing() {
+    if (!g_first_person.body || !g_first_person_view_forward_valid) return;
+    Vector3 desired = g_first_person_view_forward;
+    desired.y = 0.0f;
+    desired = Normalize(desired);
+    if (Magnitude(desired) < 0.001f) return;
+
+    Quaternion current_rotation{};
+    if (!Unbox(Invoke(Contract("unity.transform.rotation.get"),
+            g_first_person.body, nullptr), current_rotation) ||
+        !IsUnitQuaternion(current_rotation)) return;
+    Vector3 current = RotateVector(current_rotation, {0.0f, 0.0f, 1.0f});
+    current.y = 0.0f;
+    current = Normalize(current);
+    if (Magnitude(current) < 0.001f) return;
+
+    const float current_yaw = std::atan2(current.x, current.z) * 57.2957795f;
+    const float desired_yaw = std::atan2(desired.x, desired.z) * 57.2957795f;
+    const float delta = NormalizeAngle(desired_yaw - current_yaw);
+    const float limit = g_first_person_side_look_limit.load(std::memory_order_relaxed);
+    if (std::abs(delta) <= limit) return;
+
+    float dt = 1.0f / 60.0f;
+    GetValue(Contract("unity.time.unscaled_delta.get"), nullptr, dt);
+    dt = std::clamp(dt, 0.001f, 0.1f);
+    const float max_step = g_first_person_turn_speed.load(std::memory_order_relaxed) * dt;
+    const float step = std::clamp(delta, -max_step, max_step);
+    const float yaw = (current_yaw + step) * 0.01745329252f;
+    const Quaternion next{0.0f, std::sin(yaw * 0.5f), 0.0f, std::cos(yaw * 0.5f)};
+    void* parameters[1]{const_cast<Quaternion*>(&next)};
+    if (InvokeVoid(Contract("unity.transform.rotation.set"), g_first_person.body, parameters)) {
+        if (g_diagnostics_enabled.load(std::memory_order_relaxed)) {
+            Log("First person: body turned toward camera (delta=" +
+                std::to_string(delta) + ", step=" + std::to_string(step) + ").");
+        }
+    }
 }
 
 // Rewrites the CameraState that Cinemachine is about to push to the Unity
@@ -1468,6 +1589,8 @@ void ApplyFirstPersonState(void* state) {
 
     const Vector3 forward = RotateVector(orientation, Vector3{0.0f, 0.0f, 1.0f});
     const Vector3 up = RotateVector(orientation, Vector3{0.0f, 1.0f, 0.0f});
+    g_first_person_view_forward = forward;
+    g_first_person_view_forward_valid = IsFinite(forward);
     const Vector3 eye = Add(head,
         Add(Scale(forward, kFirstPersonEyeForward), Scale(up, kFirstPersonEyeUp)));
 
@@ -1566,6 +1689,7 @@ bool EnterFirstPerson() {
     }
 
     g_first_person.last_eye_valid = false;
+    g_first_person_view_forward_valid = false;
     g_first_person_reassert_frames = 0;
     g_first_person_health_warned = false;
     g_first_person_active.store(true, std::memory_order_release);
@@ -1594,6 +1718,7 @@ void ExitFirstPerson(const char* reason) {
     g_first_person.snapshot_controller = nullptr;
     ReleaseHeadTransform();
     g_first_person.character = nullptr;
+    g_first_person_view_forward_valid = false;
     const uint64_t patches = g_push_state_patches.load(std::memory_order_relaxed);
     ReleaseCameraRoot();
     Log(std::string("First person camera disabled: ") + reason +
@@ -1624,6 +1749,7 @@ void RefreshFirstPersonTarget() {
         ReleaseHeadTransform();
     }
     TryBindHeadTransform();
+    ApplyFirstPersonFacing();
 }
 
 void PumpFirstPerson() {
@@ -1768,36 +1894,7 @@ float ParseFloat(std::string_view value, float default_value) {
 }
 
 int ParseVirtualKey(std::string_view value, int fallback) {
-    std::string key = Trim(value);
-    std::transform(key.begin(), key.end(), key.begin(),
-        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
-    if (key == "-" || key == "MINUS" || key == "OEM_MINUS") {
-        return VK_OEM_MINUS;
-    }
-    if (key == "SUBTRACT" || key == "NUMPAD-" || key == "NUMPAD_MINUS" || key == "NUMPADSUBTRACT") {
-        return VK_SUBTRACT;
-    }
-    if (key == "NONE" || key == "OFF" || key == "DISABLED") return 0;
-    if (key == "ADD" || key == "NUMPAD+" || key == "NUMPAD_PLUS" || key == "NUMPADADD") return VK_ADD;
-    if (key == "MULTIPLY" || key == "NUMPAD*" || key == "NUMPADMULTIPLY") return VK_MULTIPLY;
-    if (key == "DIVIDE" || key == "NUMPAD/" || key == "NUMPADDIVIDE") return VK_DIVIDE;
-    if (key == "DECIMAL" || key == "NUMPAD." || key == "NUMPAD_DECIMAL" || key == "NUMPADDECIMAL") return VK_DECIMAL;
-    if (key == "NUMPAD_ENTER" || key == "NUMPADENTER" || key == "NUMPAD_RETURN") return kVkNumpadEnter;
-    if (key.size() == 1 && std::isalnum(static_cast<unsigned char>(key[0]))) {
-        return static_cast<unsigned char>(key[0]);
-    }
-    if (key.size() > 1 && key.front() == 'F') {
-        const int number = std::atoi(key.c_str() + 1);
-        if (number >= 1 && number <= 24) {
-            return VK_F1 + number - 1;
-        }
-    }
-    constexpr std::string_view numpad_prefix = "NUMPAD";
-    if (key.size() == numpad_prefix.size() + 1 &&
-        key.starts_with(numpad_prefix) && key.back() >= '0' && key.back() <= '9') {
-        return VK_NUMPAD0 + key.back() - '0';
-    }
-    return fallback;
+    return BetterEndfield::Input::ParseKey(value, fallback);
 }
 
 int ParseMotionPreset(std::string_view value, int fallback) {
@@ -1851,6 +1948,8 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
         else if (key == "first_person_hide_head") config.first_person_hide_head = ParseBoolean(value, config.first_person_hide_head);
         else if (key == "first_person_fill_neck_hole") config.first_person_fill_neck_hole = ParseBoolean(value, config.first_person_fill_neck_hole);
         else if (key == "first_person_neck_plug_scale") config.first_person_neck_plug_scale = ParseFloat(value, config.first_person_neck_plug_scale);
+        else if (key == "first_person_side_look_limit") config.first_person_side_look_limit = ParseFloat(value, config.first_person_side_look_limit);
+        else if (key == "first_person_turn_speed") config.first_person_turn_speed = ParseFloat(value, config.first_person_turn_speed);
         else if (key == "diagnostics") config.diagnostics = ParseBoolean(value, config.diagnostics);
         else if (key == "movement_speed") config.movement_speed = ParseFloat(value, config.movement_speed);
         else if (key == "field_of_view") config.field_of_view = ParseFloat(value, config.field_of_view);
@@ -1950,6 +2049,10 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
     config.first_person_fov = std::clamp(config.first_person_fov, 20.0f, 120.0f);
     config.first_person_neck_plug_scale =
         std::clamp(config.first_person_neck_plug_scale, 0.2f, 3.0f);
+    config.first_person_side_look_limit =
+        std::clamp(config.first_person_side_look_limit, 30.0f, 170.0f);
+    config.first_person_turn_speed =
+        std::clamp(config.first_person_turn_speed, 30.0f, 1080.0f);
     config.mouse_sensitivity = std::clamp(config.mouse_sensitivity, 0.01f, 2.0f);
     config.smoothing = std::clamp(config.smoothing, 0.0f, 0.95f);
     config.motion_speed = std::clamp(config.motion_speed, -20.0f, 20.0f);
@@ -2219,6 +2322,10 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
     g_first_person_fov.store(config.first_person_fov, std::memory_order_release);
     g_first_person_neck_plug_scale.store(config.first_person_neck_plug_scale,
         std::memory_order_release);
+    g_first_person_side_look_limit.store(config.first_person_side_look_limit,
+        std::memory_order_release);
+    g_first_person_turn_speed.store(config.first_person_turn_speed,
+        std::memory_order_release);
     g_toggle_key.store(config.toggle_key, std::memory_order_release);
     g_pause_key.store(config.pause_key, std::memory_order_release);
     g_first_person_key.store(config.first_person_key, std::memory_order_release);
@@ -2292,13 +2399,15 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
     char buffer[384];
     std::snprintf(buffer, sizeof(buffer),
         "Camera configuration applied: enabled=%s, free_camera=%s, first_person=%s, "
-        "hide_head=%s, fill_neck_hole=%s, neck_plug_scale=%.2f, anti_dither=%s, "
+        "hide_head=%s, fill_neck_hole=%s, neck_plug_scale=%.2f, "
+        "side_look_limit=%.1f, turn_speed=%.1f, anti_dither=%s, "
         "pause_enabled=%s, free_hotkey_vk=%d, fp_hotkey_vk=%d, fp_fov=%.1f",
         config.enabled ? "true" : "false", free_camera ? "true" : "false",
         first_person ? "true" : "false",
         config.first_person_hide_head ? "true" : "false",
         config.first_person_fill_neck_hole ? "true" : "false",
         config.first_person_neck_plug_scale,
+        config.first_person_side_look_limit, config.first_person_turn_speed,
         anti_dither ? "true" : "false",
         config.pause_enabled ? "true" : "false", config.toggle_key,
         config.first_person_key, config.first_person_fov);

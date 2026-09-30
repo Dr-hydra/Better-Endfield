@@ -12,5 +12,7 @@ internal sealed class AppSettings
 
     public string Language { get; set; } = "System";
 
+    public bool GachaEnabled { get; set; } = false;
+
     public string DisclaimerAcceptedVersion { get; set; } = string.Empty;
 }

@@ -5,212 +5,258 @@
     {
       "id": "chr_0025_ardelia",
       "name": "艾尔黛拉",
-      "source": "/images/characters/chr_0025_ardelia.avif?v=65118889",
+      "nameEn": "Ardelia",
+      "source": "/images/characters/chr_0025_ardelia.avif?v=dd6e6716",
       "resourceId": 1000,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0025_ardelia.avif?v=65118889"
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0025_ardelia.avif?v=dd6e6716"
     },
     {
       "id": "chr_0026_lastrite",
       "name": "别礼",
-      "source": "/images/characters/chr_0026_lastrite.avif?v=31714f43",
+      "nameEn": "Lastrite",
+      "source": "/images/characters/chr_0026_lastrite.avif?v=d3b26357",
       "resourceId": 1001,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0026_lastrite.avif?v=31714f43"
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0026_lastrite.avif?v=d3b26357"
     },
     {
       "id": "chr_9000_endmin",
       "name": "管理员",
-      "source": "/images/characters/chr_9000_endmin.avif?v=b4cc2ee4",
+      "nameEn": "Endministrator",
+      "source": "/images/characters/chr_9000_endmin-female.avif?v=f4cb383c",
       "resourceId": 1002,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_9000_endmin.avif?v=b4cc2ee4"
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_9000_endmin-female.avif?v=f4cb383c"
     },
     {
       "id": "chr_0013_aglina",
       "name": "洁尔佩塔",
-      "source": "/images/characters/chr_0013_aglina.avif?v=420f9947",
+      "nameEn": "Gilberta",
+      "source": "/images/characters/chr_0013_aglina.avif?v=a0e4d051",
       "resourceId": 1003,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0013_aglina.avif?v=420f9947"
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0013_aglina.avif?v=a0e4d051"
     },
     {
       "id": "chr_0032_lizhiyan",
       "name": "诀",
-      "source": "/images/characters/chr_0032_lizhiyan.avif?v=2cc62ba8",
+      "nameEn": "Li Zhiyan",
+      "source": "/images/characters/chr_0032_lizhiyan.avif?v=d01c817f",
       "resourceId": 1004,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0032_lizhiyan.avif?v=2cc62ba8"
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0032_lizhiyan.avif?v=d01c817f"
     },
     {
       "id": "chr_0029_pograni",
       "name": "骏卫",
-      "source": "/images/characters/chr_0029_pograni.avif?v=09ff4fcf",
+      "nameEn": "Pograni",
+      "source": "/images/characters/chr_0029_pograni.avif?v=6148866a",
       "resourceId": 1005,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0029_pograni.avif?v=09ff4fcf"
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0029_pograni.avif?v=6148866a"
     },
     {
       "id": "chr_0033_camille",
       "name": "卡缪",
-      "source": "/images/characters/chr_0033_camille.avif?v=95abc95a",
+      "nameEn": "Camille",
+      "source": "/images/characters/chr_0033_camille.avif?v=141e6c1b",
       "resourceId": 1006,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0033_camille.avif?v=95abc95a"
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0033_camille.avif?v=141e6c1b"
     },
     {
       "id": "chr_0016_laevat",
       "name": "莱万汀",
-      "source": "/images/characters/chr_0016_laevat.avif?v=617f2794",
+      "nameEn": "Laevatain",
+      "source": "/images/characters/chr_0016_laevat.avif?v=f6562b9e",
       "resourceId": 1007,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0016_laevat.avif?v=617f2794"
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0016_laevat.avif?v=f6562b9e"
     },
     {
       "id": "chr_0035_liino",
       "name": "梨诺",
-      "source": "/images/characters/chr_0035_liino.avif?v=1ff5da82",
+      "nameEn": "Reno",
+      "source": "/images/characters/chr_0035_liino.avif?v=173d48a9",
       "resourceId": 1008,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0035_liino.avif?v=1ff5da82"
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0035_liino.avif?v=173d48a9"
     },
     {
       "id": "chr_0015_lifeng",
       "name": "黎风",
-      "source": "/images/characters/chr_0015_lifeng.avif?v=7481f3e1",
+      "nameEn": "Lifeng",
+      "source": "/images/characters/chr_0015_lifeng.avif?v=203123bd",
       "resourceId": 1009,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0015_lifeng.avif?v=7481f3e1"
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0015_lifeng.avif?v=203123bd"
     },
     {
       "id": "chr_0028_wulfa",
       "name": "洛茜",
-      "source": "/images/characters/chr_0028_wulfa.avif?v=20a99fa5",
+      "nameEn": "Wulfa",
+      "source": "/images/characters/chr_0028_wulfa.avif?v=19ffc65f",
       "resourceId": 1010,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0028_wulfa.avif?v=20a99fa5"
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0028_wulfa.avif?v=19ffc65f"
     },
     {
       "id": "chr_0031_mifu",
       "name": "弭弗",
-      "source": "/images/characters/chr_0031_mifu.avif?v=1f2e27a5",
+      "nameEn": "Mifu",
+      "source": "/images/characters/chr_0031_mifu.avif?v=77df9da0",
       "resourceId": 1011,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0031_mifu.avif?v=1f2e27a5"
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0031_mifu.avif?v=77df9da0"
     },
     {
       "id": "chr_0027_tangtang",
       "name": "汤汤",
-      "source": "/images/characters/chr_0027_tangtang.avif?v=1083cd4b",
+      "nameEn": "Tangtang",
+      "source": "/images/characters/chr_0027_tangtang.avif?v=4f6da06b",
       "resourceId": 1012,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0027_tangtang.avif?v=1083cd4b"
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0027_tangtang.avif?v=4f6da06b"
+    },
+    {
+      "id": "chr_0034_typhoea",
+      "name": "提弗洛斯",
+      "nameEn": "Typhoea",
+      "source": "/images/characters/chr_0034_typhoea.avif?v=2d3847b8",
+      "resourceId": 1013,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0034_typhoea.avif?v=2d3847b8"
     },
     {
       "id": "chr_0017_yvonne",
       "name": "伊冯",
-      "source": "/images/characters/chr_0017_yvonne.avif?v=0a363b36",
-      "resourceId": 1013,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0017_yvonne.avif?v=0a363b36"
+      "nameEn": "Yvonne",
+      "source": "/images/characters/chr_0017_yvonne.avif?v=39330d9b",
+      "resourceId": 1014,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0017_yvonne.avif?v=39330d9b"
     },
     {
       "id": "chr_0009_azrila",
       "name": "余烬",
-      "source": "/images/characters/chr_0009_azrila.avif?v=e050fd4a",
-      "resourceId": 1014,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0009_azrila.avif?v=e050fd4a"
+      "nameEn": "Ember",
+      "source": "/images/characters/chr_0009_azrila.avif?v=d5df5e5e",
+      "resourceId": 1015,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0009_azrila.avif?v=d5df5e5e"
     },
     {
       "id": "chr_0030_zhuangfy",
       "name": "庄方宜",
-      "source": "/images/characters/chr_0030_zhuangfy.avif?v=eb6cffcb",
-      "resourceId": 1015,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0030_zhuangfy.avif?v=eb6cffcb"
+      "nameEn": "Zhuang Fangyi",
+      "source": "/images/characters/chr_0030_zhuangfy.avif?v=0b039cbf",
+      "resourceId": 1016,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0030_zhuangfy.avif?v=0b039cbf"
     },
     {
       "id": "chr_0024_deepfin",
       "name": "阿列什",
-      "source": "/images/characters/chr_0024_deepfin.avif?v=12e3a602",
-      "resourceId": 1016,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0024_deepfin.avif?v=12e3a602"
+      "nameEn": "Alesh",
+      "source": "/images/characters/chr_0024_deepfin.avif?v=8f4188b4",
+      "resourceId": 1017,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0024_deepfin.avif?v=8f4188b4"
     },
     {
       "id": "chr_0012_avywen",
       "name": "艾维文娜",
-      "source": "/images/characters/chr_0012_avywen.avif?v=1bb3a741",
-      "resourceId": 1017,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0012_avywen.avif?v=1bb3a741"
+      "nameEn": "艾维文娜",
+      "source": "/images/characters/chr_0012_avywen.avif?v=38ab53fa",
+      "resourceId": 1018,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0012_avywen.avif?v=38ab53fa"
     },
     {
       "id": "chr_0005_chen",
       "name": "陈千语",
-      "source": "/images/characters/chr_0005_chen.avif?v=d13c9cad",
-      "resourceId": 1018,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0005_chen.avif?v=d13c9cad"
+      "nameEn": "Chen Qianyu",
+      "source": "/images/characters/chr_0005_chen.avif?v=8df192ba",
+      "resourceId": 1019,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0005_chen.avif?v=8df192ba"
     },
     {
       "id": "chr_0018_dapan",
       "name": "大潘",
-      "source": "/images/characters/chr_0018_dapan.avif?v=23e6d7c8",
-      "resourceId": 1019,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0018_dapan.avif?v=23e6d7c8"
+      "nameEn": "Da Pan",
+      "source": "/images/characters/chr_0018_dapan.avif?v=82f7ed49",
+      "resourceId": 1020,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0018_dapan.avif?v=82f7ed49"
     },
     {
       "id": "chr_0007_ikut",
       "name": "弧光",
-      "source": "/images/characters/chr_0007_ikut.avif?v=9023c82b",
-      "resourceId": 1020,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0007_ikut.avif?v=9023c82b"
+      "nameEn": "Ikut",
+      "source": "/images/characters/chr_0007_ikut.avif?v=54d91c04",
+      "resourceId": 1021,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0007_ikut.avif?v=54d91c04"
     },
     {
       "id": "chr_0006_wolfgd",
       "name": "狼卫",
-      "source": "/images/characters/chr_0006_wolfgd.avif?v=f13e3d3e",
-      "resourceId": 1021,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0006_wolfgd.avif?v=f13e3d3e"
+      "nameEn": "Wulfgard",
+      "source": "/images/characters/chr_0006_wolfgd.avif?v=5eab4402",
+      "resourceId": 1022,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0006_wolfgd.avif?v=5eab4402"
     },
     {
       "id": "chr_0004_pelica",
       "name": "佩丽卡",
-      "source": "/images/characters/chr_0004_pelica.avif?v=6a5ccb2a",
-      "resourceId": 1022,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0004_pelica.avif?v=6a5ccb2a"
+      "nameEn": "Perlica",
+      "source": "/images/characters/chr_0004_pelica.avif?v=97f5337e",
+      "resourceId": 1023,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0004_pelica.avif?v=97f5337e"
+    },
+    {
+      "id": "chr_0038_purrche",
+      "name": "噗切娜",
+      "nameEn": "Purrche",
+      "source": "/images/characters/chr_0038_purrche.avif?v=b6d4f443",
+      "resourceId": 1024,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0038_purrche.avif?v=b6d4f443"
     },
     {
       "id": "chr_0011_seraph",
       "name": "赛希",
-      "source": "/images/characters/chr_0011_seraph.avif?v=5a68f0cc",
-      "resourceId": 1023,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0011_seraph.avif?v=5a68f0cc"
+      "nameEn": "Xaihi",
+      "source": "/images/characters/chr_0011_seraph.avif?v=26d3b3ae",
+      "resourceId": 1025,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0011_seraph.avif?v=26d3b3ae"
     },
     {
       "id": "chr_0014_aurora",
       "name": "昼雪",
-      "source": "/images/characters/chr_0014_aurora.avif?v=49ebcc97",
-      "resourceId": 1024,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0014_aurora.avif?v=49ebcc97"
+      "nameEn": "Snowshine",
+      "source": "/images/characters/chr_0014_aurora.avif?v=bb5d6ede",
+      "resourceId": 1026,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0014_aurora.avif?v=bb5d6ede"
     },
     {
       "id": "chr_0021_whiten",
       "name": "埃特拉",
-      "source": "/images/characters/chr_0021_whiten.avif?v=85903445",
-      "resourceId": 1025,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0021_whiten.avif?v=85903445"
+      "nameEn": "Aethel",
+      "source": "/images/characters/chr_0021_whiten.avif?v=df9bca90",
+      "resourceId": 1027,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0021_whiten.avif?v=df9bca90"
     },
     {
       "id": "chr_0023_antal",
       "name": "安塔尔",
-      "source": "/images/characters/chr_0023_antal.avif?v=128b1ec9",
-      "resourceId": 1026,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0023_antal.avif?v=128b1ec9"
+      "nameEn": "Antal",
+      "source": "/images/characters/chr_0023_antal.avif?v=464693d5",
+      "resourceId": 1028,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0023_antal.avif?v=464693d5"
     },
     {
       "id": "chr_0020_meurs",
       "name": "卡契尔",
-      "source": "/images/characters/chr_0020_meurs.avif?v=d8f42cf1",
-      "resourceId": 1027,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0020_meurs.avif?v=d8f42cf1"
+      "nameEn": "Catcher",
+      "source": "/images/characters/chr_0020_meurs.avif?v=5bd7f821",
+      "resourceId": 1029,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0020_meurs.avif?v=5bd7f821"
     },
     {
       "id": "chr_0019_karin",
       "name": "秋栗",
-      "source": "/images/characters/chr_0019_karin.avif?v=e88d5bf7",
-      "resourceId": 1028,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0019_karin.avif?v=e88d5bf7"
+      "nameEn": "Karin",
+      "source": "/images/characters/chr_0019_karin.avif?v=d9037276",
+      "resourceId": 1030,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0019_karin.avif?v=d9037276"
     },
     {
       "id": "chr_0022_bounda",
       "name": "萤石",
-      "source": "/images/characters/chr_0022_bounda.avif?v=daea56fe",
-      "resourceId": 1029,
-      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0022_bounda.avif?v=daea56fe"
+      "nameEn": "Fluorite",
+      "source": "/images/characters/chr_0022_bounda.avif?v=b8672814",
+      "resourceId": 1031,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0022_bounda.avif?v=b8672814"
     }
   ]
 }

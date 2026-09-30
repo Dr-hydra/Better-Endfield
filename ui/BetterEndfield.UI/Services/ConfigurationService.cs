@@ -418,6 +418,8 @@ internal static class ConfigurationService
         bool inSection = false;
         bool inActionsSection = false;
         var actionValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        bool inGachaSection = false;
+        var gachaValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         bool cameraSectionPresent = false;
         bool inCameraSection = false;
         int cameraSchemaVersion = 0;
@@ -433,6 +435,7 @@ internal static class ConfigurationService
             {
                 string section = line[1..^1];
                 inActionsSection = section.Equals("betterendfield.actions", StringComparison.OrdinalIgnoreCase);
+                inGachaSection = section.Equals("betterendfield.gacha", StringComparison.OrdinalIgnoreCase);
                 inCameraSection = section.Equals(
                     "betterendfield.camera", StringComparison.OrdinalIgnoreCase);
                 cameraSectionPresent |= inCameraSection;
@@ -447,6 +450,8 @@ internal static class ConfigurationService
                     section.Equals("betterendfield.ui",
                         StringComparison.OrdinalIgnoreCase) ||
                     section.Equals("betterendfield.camera",
+                        StringComparison.OrdinalIgnoreCase) ||
+                    section.Equals("betterendfield.gacha",
                         StringComparison.OrdinalIgnoreCase);
                 continue;
             }
@@ -456,6 +461,14 @@ internal static class ConfigurationService
                 int actionSeparator = line.IndexOf('=');
                 if (actionSeparator > 0)
                     actionValues[line[..actionSeparator].Trim()] = line[(actionSeparator + 1)..].Trim();
+                continue;
+            }
+
+            if (inGachaSection)
+            {
+                int gachaSeparator = line.IndexOf('=');
+                if (gachaSeparator > 0)
+                    gachaValues[line[..gachaSeparator].Trim()] = line[(gachaSeparator + 1)..].Trim();
                 continue;
             }
             if (!inSection)
@@ -630,6 +643,7 @@ internal static class ConfigurationService
         configuration.FirstPersonFieldOfView = Number(
             values, "first_person_fov", configuration.FirstPersonFieldOfView);
         configuration.FreeCameraExtras = FreeCameraExtras.FromValues(values);
+        configuration.GachaEnabled = Boolean(gachaValues, "enabled", configuration.GachaEnabled);
         if (cameraSectionPresent && cameraSchemaVersion < 4)
         {
             // Migrate the old auto-pause setting to an independent pause
