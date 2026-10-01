@@ -76,6 +76,8 @@ public final class MainActivity extends Activity {
 
     private int currentPage;
     private AboutPage aboutPage;
+    private BemInstallPage bemPage;
+    private boolean resumed;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,8 +89,11 @@ public final class MainActivity extends Activity {
                         : ("enhancement".equals(requestedPage) ? ENHANCEMENT_PAGE
                                 : ("about".equals(requestedPage) ? ABOUT_PAGE : 0)))
                 : savedInstanceState.getInt("page", 0);
-        boolean openModels = currentPage == CUSTOM_MODEL_PAGE;
-        currentPage = Math.max(0, Math.min(ABOUT_PAGE, openModels ? 0 : currentPage));
+        currentPage = Math.max(0, Math.min(CUSTOM_MODEL_PAGE, currentPage));
+
+        View bemContent = findViewById(R.id.bem_content);
+        bemContent.setPadding(0, 0, 0, 0);
+        bemPage = new BemInstallPage(this, bemContent, savedInstanceState);
 
         setupPageNavigation();
         setupModelPage();
@@ -97,10 +102,17 @@ public final class MainActivity extends Activity {
         setupAboutPage();
         findViewById(R.id.sponsor_button).setOnClickListener(view -> SponsorDialog.show(this));
         applyResponsiveShell();
-        if (openModels) startActivity(new Intent(this, BemInstallActivity.class));
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        resumed = true;
+        updateBemRefresh();
     }
 
     @Override protected void onPause() {
+        resumed = false;
+        if (bemPage != null) bemPage.pause();
         flushModelEdits();
         refreshModelEdits();
         super.onPause();
@@ -109,7 +121,19 @@ public final class MainActivity extends Activity {
     @Override protected void onDestroy() {
         saveHandler.removeCallbacksAndMessages(null);
         if (aboutPage != null) aboutPage.close();
+        if (bemPage != null) bemPage.close();
         super.onDestroy();
+    }
+
+    private void updateBemRefresh() {
+        if (bemPage == null) return;
+        if (resumed && currentPage == CUSTOM_MODEL_PAGE) bemPage.resume();
+        else bemPage.pause();
+    }
+
+    @Override protected void onActivityResult(int request, int result, Intent data) {
+        super.onActivityResult(request, result, data);
+        if (bemPage != null) bemPage.onActivityResult(request, result, data);
     }
 
     private void flushModelEdits() {
@@ -149,6 +173,7 @@ public final class MainActivity extends Activity {
 
     @Override protected void onSaveInstanceState(Bundle state) {
         state.putInt("page", currentPage);
+        if (bemPage != null) bemPage.saveState(state);
         super.onSaveInstanceState(state);
     }
 
@@ -157,13 +182,15 @@ public final class MainActivity extends Activity {
                 findViewById(R.id.model_section),
                 findViewById(R.id.voice_section),
                 findViewById(R.id.enhancement_section),
-                findViewById(R.id.about_section)
+                findViewById(R.id.about_section),
+                findViewById(R.id.custom_model_section)
         };
         View[] buttons = {
                 findViewById(R.id.show_model_button),
                 findViewById(R.id.show_voice_button),
                 findViewById(R.id.show_enhancement_button),
-                findViewById(R.id.show_about_button)
+                findViewById(R.id.show_about_button),
+                findViewById(R.id.show_custom_model_button)
         };
         android.widget.ScrollView scroll = findViewById(R.id.responsive_scroll);
         for (int index = 0; index < buttons.length; ++index) {
@@ -173,13 +200,10 @@ public final class MainActivity extends Activity {
                 if (currentPage == 0 && page != 0) refreshModelEdits();
                 currentPage = page;
                 showPage(sections, buttons, page);
+                updateBemRefresh();
                 scroll.post(() -> scroll.smoothScrollTo(0, 0));
             });
         }
-        findViewById(R.id.show_custom_model_button).setOnClickListener(view -> {
-            flushModelEdits();
-            startActivity(new Intent(this, BemInstallActivity.class));
-        });
         showPage(sections, buttons, currentPage);
     }
 

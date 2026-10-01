@@ -6,6 +6,8 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -57,7 +59,14 @@ final class SponsorDialog {
 
     private static void showWechat(Activity activity) {
         ImageView image = new ImageView(activity);
-        image.setImageResource(R.drawable.sponsor_wechat);
+        try (InputStream input = activity.getResources().openRawResource(R.raw.sponsor_wechat)) {
+            Bitmap bitmap = BitmapFactory.decodeStream(input);
+            if (bitmap == null) throw new IOException("Image decoding failed");
+            image.setImageBitmap(bitmap);
+        } catch (IOException | RuntimeException failure) {
+            Toast.makeText(activity, R.string.sponsor_load_failed, Toast.LENGTH_SHORT).show();
+            return;
+        }
         image.setContentDescription(activity.getString(R.string.sponsor_wechat));
         image.setAdjustViewBounds(true);
         image.setScaleType(ImageView.ScaleType.FIT_CENTER);
@@ -103,7 +112,7 @@ final class SponsorDialog {
             values.put(MediaStore.Images.Media.IS_PENDING, 1);
             image = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
             if (image == null) throw new IOException("Image destination unavailable");
-            try (InputStream input = context.getResources().openRawResource(R.drawable.sponsor_wechat);
+            try (InputStream input = context.getResources().openRawResource(R.raw.sponsor_wechat);
                  OutputStream output = resolver.openOutputStream(image)) {
                 if (output == null) throw new IOException("Image output unavailable");
                 byte[] buffer = new byte[8192];

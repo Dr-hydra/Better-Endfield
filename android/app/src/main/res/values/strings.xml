@@ -20,6 +20,7 @@
     <string name="sponsor_saving">保存中…</string>
     <string name="sponsor_saved">已保存到相册，可在微信扫一扫中选择该图片</string>
     <string name="sponsor_save_failed">赞赏码保存失败，请重试</string>
+    <string name="sponsor_load_failed">赞赏码读取失败，请重试</string>
     <string name="sponsor_open_failed">无法打开链接</string>
     <string name="voice_page">角色配音</string>
     <string name="enhancement_page">增强功能</string>

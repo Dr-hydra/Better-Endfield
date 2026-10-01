@@ -6,7 +6,7 @@
 - PC：左侧底部「给作者充一点token」，位于「关于／设置」上方。提供浅色、深色和高对比主题配色，中英文标签及收起侧栏提示。点击打开可关闭、可滚动的赞助面板，保留当前页面选中状态；微信码支持另存为 PNG。
 - 爱发电：`https://afdian.com/u/e9a7e6ac6fa411ed980752540025c377`，从用户提供的二维码识别并移除推广参数。
 - PayPal：`https://paypal.me/hydra405`，由用户提供。
-- 微信原始赞赏图片分别保存于安卓 `res/drawable-nodpi/sponsor_wechat.png`、PC `Assets/sponsor/wechat-appreciation.png`，完整复制原图。PC 图片作为嵌入资源加载，兼容单文件发布，不依赖临时附件目录。
+- 微信原始赞赏图片分别保存于安卓 `res/raw/sponsor_wechat.png`、PC `Assets/sponsor/wechat-appreciation.png`，完整复制原图。安卓直接解码原图并保存原始 PNG 字节，避免密度缩放和资源类型检查错误；PC 图片作为嵌入资源加载，兼容单文件发布，不依赖临时附件目录。
 
 链接通过系统浏览器或关联应用打开；不增加应用内支付、赞助记录或自动提示。
 
