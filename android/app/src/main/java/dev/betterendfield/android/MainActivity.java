@@ -95,6 +95,7 @@ public final class MainActivity extends Activity {
         setupVoicePage();
         setupEnhancementPage();
         setupAboutPage();
+        findViewById(R.id.sponsor_button).setOnClickListener(view -> SponsorDialog.show(this));
         applyResponsiveShell();
         if (openModels) startActivity(new Intent(this, BemInstallActivity.class));
     }

@@ -18,6 +18,9 @@
     <color name="accent_dark">#E0A513</color>
     <color name="accent_soft">#1FFFC845</color>
     <color name="accent_ink">#120E03</color>
+    <color name="sponsor_background">#FFCFA3</color>
+    <color name="sponsor_pressed">#F3B880</color>
+    <color name="sponsor_ink">#4A2B18</color>
 
     <color name="text_primary">#F4F6F8</color>
     <color name="text_secondary">#A7B0BC</color>

@@ -31,6 +31,9 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
     <EmbeddedResource
+      Include="Assets\sponsor\wechat-appreciation.png"
+      LogicalName="BetterEndfield.UI.Assets.sponsor.wechat-appreciation.png" />
+    <EmbeddedResource
       Include="Assets\shared\gilberta.ico"
       LogicalName="BetterEndfield.UI.Assets.shared.gilberta.ico" />
     <EmbeddedResource

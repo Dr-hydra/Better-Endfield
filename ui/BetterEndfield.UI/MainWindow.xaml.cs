@@ -1071,6 +1071,7 @@ public sealed partial class MainWindow : Window
         NavigationView sender,
         NavigationViewSelectionChangedEventArgs args)
     {
+        if (args.SelectedItemContainer?.Tag as string == "sponsor") return;
         string page = args.IsSettingsSelected
             ? "settings"
             : args.SelectedItemContainer?.Tag as string ?? "model";
@@ -3857,6 +3858,10 @@ public sealed partial class MainWindow : Window
             settingsItem.Content = isZh ? "设置" : "Settings";
         }
         AboutNavigationItem.Content = isZh ? "关于" : "About";
+        SponsorNavigationItem.Content = isZh ? "给作者充一点token" : "Give the author some tokens";
+        ToolTipService.SetToolTip(SponsorNavigationItem, SponsorNavigationItem.Content);
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            SponsorNavigationItem, (string)SponsorNavigationItem.Content);
 
         // Model Page
         ModelPageTitleTextBlock.Text = isZh ? "开屏" : "Title Screen";

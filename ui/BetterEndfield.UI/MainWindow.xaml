@@ -54,6 +54,7 @@
             IsSettingsVisible="True"
             OpenPaneLength="220"
             PaneDisplayMode="Auto"
+            ItemInvoked="FeatureNavigation_ItemInvoked"
             SelectionChanged="FeatureNavigation_SelectionChanged">
             <NavigationView.PaneHeader>
                 <Grid Margin="4,8,8,12" ColumnSpacing="10">
@@ -151,6 +152,43 @@
             </NavigationView.MenuItems>
 
             <NavigationView.FooterMenuItems>
+                <NavigationViewItem
+                    x:Name="SponsorNavigationItem"
+                    Content="给作者充一点token"
+                    Foreground="{ThemeResource SponsorForegroundBrush}"
+                    Background="{ThemeResource SponsorBackgroundBrush}"
+                    SelectsOnInvoked="False"
+                    Tag="sponsor">
+                    <NavigationViewItem.Resources>
+                        <ResourceDictionary>
+                            <ResourceDictionary.ThemeDictionaries>
+                                <ResourceDictionary x:Key="Light">
+                                    <SolidColorBrush x:Key="SponsorForegroundBrush" Color="#FF4A2B18" />
+                                    <SolidColorBrush x:Key="SponsorBackgroundBrush" Color="#FFFFCFA3" />
+                                    <SolidColorBrush x:Key="NavigationViewItemBackgroundPointerOver" Color="#FFFFC79A" />
+                                    <SolidColorBrush x:Key="NavigationViewItemBackgroundPressed" Color="#FFF3B880" />
+                                    <SolidColorBrush x:Key="NavigationViewItemForegroundPointerOver" Color="#FF4A2B18" />
+                                    <SolidColorBrush x:Key="NavigationViewItemForegroundPressed" Color="#FF4A2B18" />
+                                </ResourceDictionary>
+                                <ResourceDictionary x:Key="Default">
+                                    <SolidColorBrush x:Key="SponsorForegroundBrush" Color="#FFFFCFA3" />
+                                    <SolidColorBrush x:Key="SponsorBackgroundBrush" Color="#FF4A2B18" />
+                                    <SolidColorBrush x:Key="NavigationViewItemBackgroundPointerOver" Color="#FF603A22" />
+                                    <SolidColorBrush x:Key="NavigationViewItemBackgroundPressed" Color="#FF75472A" />
+                                    <SolidColorBrush x:Key="NavigationViewItemForegroundPointerOver" Color="#FFFFCFA3" />
+                                    <SolidColorBrush x:Key="NavigationViewItemForegroundPressed" Color="#FFFFCFA3" />
+                                </ResourceDictionary>
+                                <ResourceDictionary x:Key="HighContrast">
+                                    <SolidColorBrush x:Key="SponsorForegroundBrush" Color="{ThemeResource SystemColorButtonTextColor}" />
+                                    <SolidColorBrush x:Key="SponsorBackgroundBrush" Color="{ThemeResource SystemColorButtonFaceColor}" />
+                                </ResourceDictionary>
+                            </ResourceDictionary.ThemeDictionaries>
+                        </ResourceDictionary>
+                    </NavigationViewItem.Resources>
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xEB52;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItem
                     x:Name="AboutNavigationItem"
                     Content="关于"
