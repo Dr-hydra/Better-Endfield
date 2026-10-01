@@ -30,6 +30,7 @@ final class AboutPage extends LinearLayout {
     private static final String REPOSITORY = "https://github.com/Dr-hydra/Better-Endfield";
     private static final String RELEASES = REPOSITORY + "/releases";
     private static final String QQ_GROUP = "851586605";
+    private static final String DISCORD_COMMUNITY = "https://discord.gg/Hadjs5XvS";
     private static final String DISCLAIMER =
             "本软件会将本机代码注入游戏进程，并在运行时修改模型、动画和语音资源选择。\n\n"
             + "可能的风险包括游戏崩溃、存档或配置异常、更新后失效，以及被游戏安全或反作弊系统识别。使用在线账号可能产生账号限制风险。\n\n"
@@ -87,6 +88,7 @@ final class AboutPage extends LinearLayout {
             if (clipboard != null) clipboard.setPrimaryClip(ClipData.newPlainText("QQ群", QQ_GROUP));
         }));
         author.add(group);
+        author.add(button("Discord 社区", () -> open(DISCORD_COMMUNITY)));
 
         SectionCard disclaimer = card("风险与免责声明");
         disclaimer.add(text("本项目为非官方实验工具，与鹰角网络、峘形山工作室及 GRYPHLINE 无关。注入和运行时修改可能造成游戏崩溃、版本不兼容或账号风险。", 14));

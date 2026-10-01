@@ -55,6 +55,7 @@ public sealed partial class MainWindow : Window
     private const string XiaoheiheProfileUrl =
         "https://www.xiaoheihe.cn/app/user/profile/38080236";
     private const string QqGroupNumber = "851586605";
+    private const string DiscordCommunityUrl = "https://discord.gg/Hadjs5XvS";
 
     private static readonly Dictionary<string, string> VoiceLanguageNames = new(
         StringComparer.OrdinalIgnoreCase)
@@ -2173,6 +2174,9 @@ public sealed partial class MainWindow : Window
     private void OpenXiaoheiheButton_Click(object sender, RoutedEventArgs e) =>
         OpenWithShell(XiaoheiheProfileUrl);
 
+    private void OpenDiscordButton_Click(object sender, RoutedEventArgs e) =>
+        OpenWithShell(DiscordCommunityUrl);
+
     private void CopyQqGroupButton_Click(object sender, RoutedEventArgs e)
     {
         bool isZh = LocalizationService.Instance.IsChinese;
@@ -4219,6 +4223,7 @@ public sealed partial class MainWindow : Window
         OpenBilibiliButtonTextBlock.Text = isZh ? "打开 B站主页" : "Bilibili Space";
         XiaoheiheLabelTextBlock.Text = isZh ? "小黑盒" : "Heybox";
         OpenXiaoheiheButtonTextBlock.Text = isZh ? "打开小黑盒主页" : "Heybox Profile";
+        OpenDiscordButtonTextBlock.Text = isZh ? "Discord 社区" : "Discord Community";
         QqGroupLabelTextBlock.Text = isZh ? "QQ群" : "QQ Group";
         ToolTipService.SetToolTip(CopyQqGroupButton, isZh ? "复制QQ群号" : "Copy QQ Group Number");
         AboutDisclaimerSectionTitle.Text = isZh ? "风险与免责声明" : "Disclaimer & Terms";

@@ -2312,6 +2312,7 @@
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
                                             </Grid.RowDefinitions>
 
                                             <TextBlock x:Name="BilibiliLabelTextBlock" VerticalAlignment="Center" Text="B站" />
@@ -2355,6 +2356,17 @@
                                                 Click="CopyQqGroupButton_Click"
                                                 ToolTipService.ToolTip="复制QQ群号">
                                                 <SymbolIcon Symbol="Copy" />
+                                            </Button>
+                                            <TextBlock Grid.Row="3" VerticalAlignment="Center" Text="Discord" />
+                                            <Button
+                                                Grid.Row="3"
+                                                Grid.Column="1"
+                                                HorizontalAlignment="Left"
+                                                Click="OpenDiscordButton_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <SymbolIcon Symbol="Link" />
+                                                    <TextBlock x:Name="OpenDiscordButtonTextBlock" Text="Discord 社区" />
+                                                </StackPanel>
                                             </Button>
                                         </Grid>
                                     </StackPanel>
