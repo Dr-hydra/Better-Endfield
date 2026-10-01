@@ -67,6 +67,8 @@ public final class BemInstallActivity extends Activity {
             incoming.setVisibility(View.GONE);
         });
         importButton.setOnClickListener(v -> startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("*/*").addCategory(Intent.CATEGORY_OPENABLE),PICK));
+        findViewById(R.id.bem_models_quark).setOnClickListener(v -> openModelSource("https://pan.quark.cn/s/97a9ca8f9bf2"));
+        findViewById(R.id.bem_models_baidu).setOnClickListener(v -> openModelSource("https://pan.baidu.com/s/5ekaAiiLmZKXHZ7pHH0W-Vw"));
         cancel.setOnClickListener(v -> BemInstaller.cancel());
         if(state==null) {
             receiveImport(getIntent());
@@ -82,6 +84,17 @@ public final class BemInstallActivity extends Activity {
             }
             String notice=state.getString(STATE_INCOMING_NOTICE);
             if(notice!=null) showIncoming(notice);
+        }
+    }
+    private void openModelSource(String url) {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE));
+        } catch(RuntimeException error) {
+            String detail=error.getMessage();
+            new android.app.AlertDialog.Builder(this)
+                    .setTitle("无法打开模型链接")
+                    .setMessage(error.getClass().getSimpleName()+(detail==null || detail.isEmpty()?"":"："+detail))
+                    .setPositiveButton("确定",null).show();
         }
     }
     @Override protected void onNewIntent(Intent intent) {

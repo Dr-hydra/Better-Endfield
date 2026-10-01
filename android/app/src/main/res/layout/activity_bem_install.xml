@@ -5,6 +5,11 @@
             <TextView style="@style/SectionTitle" android:text="第三方模型" android:textSize="20sp" />
         </LinearLayout>
         <Button android:id="@+id/bem_import" style="@style/PrimaryButton" android:layout_marginTop="18dp" android:text="导入 BEM 包" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="16dp">
+            <TextView style="@style/CardTitle" android:text="获取模型" />
+            <Button android:id="@+id/bem_models_quark" style="@style/GhostButton" android:layout_marginTop="8dp" android:text="夸克网盘" />
+            <Button android:id="@+id/bem_models_baidu" style="@style/GhostButton" android:layout_marginTop="6dp" android:text="百度网盘" />
+        </LinearLayout>
         <LinearLayout android:id="@+id/bem_incoming" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="16dp" android:visibility="gone">
             <TextView android:id="@+id/bem_incoming_notice" style="@style/BodyText" android:accessibilityLiveRegion="polite" />
             <Button android:id="@+id/bem_incoming_retry" style="@style/PrimaryButton" android:layout_marginTop="10dp" android:text="导入收到的文件" />

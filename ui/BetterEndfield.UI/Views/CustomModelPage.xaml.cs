@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.ComponentModel;
 using BetterEndfield.UI.Models;
 using BetterEndfield.UI.Services;
 using Microsoft.UI.Xaml;
@@ -21,7 +22,38 @@ public sealed partial class CustomModelPage : UserControl
     public CustomModelPage()
     {
         InitializeComponent();
-        Loaded += (_, _) => Reload();
+        UpdateModelSourceLanguage();
+        Loaded += (_, _) =>
+        {
+            LocalizationService.Instance.PropertyChanged += ModelSourceLanguageChanged;
+            UpdateModelSourceLanguage();
+            Reload();
+        };
+        Unloaded += (_, _) => LocalizationService.Instance.PropertyChanged -= ModelSourceLanguageChanged;
+    }
+
+    private void ModelSourceLanguageChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(LocalizationService.IsChinese)) UpdateModelSourceLanguage();
+    }
+
+    private void UpdateModelSourceLanguage()
+    {
+        bool isZh = LocalizationService.Instance.IsChinese;
+        GetModelsTitle.Text = isZh ? "获取模型" : "Get models";
+        QuarkModelsButton.Content = isZh ? "夸克网盘" : "Quark Drive";
+        BaiduModelsButton.Content = isZh ? "百度网盘" : "Baidu Netdisk";
+    }
+
+    private void ModelSource_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string url }) return;
+        try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
+        catch (Exception ex)
+        {
+            Message(LocalizationService.Instance.IsChinese ? "无法打开模型链接" : "Could not open model link",
+                ex.Message, InfoBarSeverity.Error);
+        }
     }
 
     private void Message(string title, string detail, InfoBarSeverity severity = InfoBarSeverity.Informational)
