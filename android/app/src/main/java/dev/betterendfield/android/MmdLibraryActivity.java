@@ -27,7 +27,6 @@ import java.util.List;
 
 /** Settings and SAF imports live in the module app; playback lives in the game. */
 public final class MmdLibraryActivity extends Activity {
-    private static final int PICK_WORK = 41;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final List<String> folders = new ArrayList<>();
     private final List<Button> workButtons = new ArrayList<>();
@@ -39,7 +38,7 @@ public final class MmdLibraryActivity extends Activity {
     private EditText motionScale, smoothing, motionSpeed, orbitSpeed, duration, targetHeight, segmentSeconds;
     private int selectedClothMode;
     private String selectedPreset;
-    private TextView status, savedStatus;
+    private TextView status;
     private LinearLayout works;
     private Button importButton;
     private boolean initializing = true;
@@ -71,7 +70,10 @@ public final class MmdLibraryActivity extends Activity {
             motionPreset.setEnabled(available);
             keyframeLoop.setAvailable(available);
             for (EditText field : advancedEdits()) field.setEnabled(available);
-            status.setText(indexError == null ? MmdInstaller.status : indexError);
+            String message = indexError == null ? MmdInstaller.status : indexError;
+            boolean error = indexError != null || message.contains("失败") || message.contains("未完成");
+            status.setText(message);
+            status.setVisibility(MmdInstaller.busy || error ? View.VISIBLE : View.GONE);
             handler.postDelayed(this, 500);
         }
     };
@@ -98,7 +100,7 @@ public final class MmdLibraryActivity extends Activity {
         enabled.onChanged((button, checked) -> {
             if (initializing) return;
             ModuleSettings.setMmdEnabled(this, checked);
-            savedStatus.setText(R.string.mmd_saved);
+
         });
         settings.add(enabled);
         settings.add(label(R.string.mmd_active_work));
@@ -129,9 +131,6 @@ public final class MmdLibraryActivity extends Activity {
         clothMode = selection(settings, R.string.mmd_cloth_mode,
                 new String[]{getString(R.string.mmd_cloth_game), getString(R.string.mmd_cloth_stable),
                         getString(R.string.mmd_cloth_freeze)}, selectedClothMode);
-        settings.add(label(R.string.mmd_cloth_hint));
-        savedStatus = label(R.string.mmd_saved);
-        settings.add(savedStatus);
         page.addView(settings, SectionCard.stacked(this, 12));
 
         SectionCard advanced = new SectionCard(this, "CAMERA", getString(R.string.camera_advanced_title),
@@ -149,26 +148,17 @@ public final class MmdLibraryActivity extends Activity {
                 ModuleSettings.number(extras.segmentSeconds()), false);
         keyframeLoop = toggle(advanced, R.string.camera_keyframe_loop,
                 R.string.camera_keyframe_loop_hint, extras.keyframeLoop());
-        advanced.add(label(R.string.camera_keyframe_file_hint));
         page.addView(advanced, SectionCard.stacked(this, 12));
 
-        SectionCard library = new SectionCard(this, "LIBRARY", "导入与管理",
-                "选择作品文件夹根部；set.ini 使用 UTF-8，motion / face / camera / music "
-                        + "填写同目录文件名。支持 motion2–4、face2–4；每个作品至少包含动作或相机 VMD。"
-                        + "单文件最多 512 MiB，作品最多 1 GiB。");
+        SectionCard library = new SectionCard(this, "LIBRARY", "导入与管理", "");
         importButton = button(getString(R.string.mmd_import));
         importButton.setOnClickListener(view -> {
             flushEdits();
-            Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-            picker.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
-            try { startActivityForResult(picker, PICK_WORK); }
-            catch (android.content.ActivityNotFoundException error) {
-                toast("设备没有可用的系统目录选择器");
-            }
+            startActivity(new Intent(this, MmdImportActivity.class));
         });
         library.add(importButton);
         status = label(0);
+        status.setVisibility(View.GONE);
         status.setTextIsSelectable(true);
         library.add(status);
         works = new LinearLayout(this);
@@ -226,15 +216,6 @@ public final class MmdLibraryActivity extends Activity {
     @Override protected void onDestroy() {
         handler.removeCallbacksAndMessages(null);
         super.onDestroy();
-    }
-
-    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode != PICK_WORK || resultCode != RESULT_OK || data == null || data.getData() == null) return;
-        try {
-            // Copy immediately under the grant. No external directory is needed after install.
-            if (!MmdInstaller.start(this, data.getData())) toast("请等待当前作品操作完成");
-        } catch (RuntimeException error) { toast(error.getMessage()); }
     }
 
     private EditText edit(SectionCard card, int label, String value, boolean signed) {
@@ -307,7 +288,7 @@ public final class MmdLibraryActivity extends Activity {
                 valid(seek, 0.5, 60, ModuleSettings.getMmdSeekSeconds(this), 5),
                 valid(gain, 0, 1, ModuleSettings.getMmdMusicGain(this), 1),
                 valid(offset, -600, 600, ModuleSettings.getMmdAudioOffset(this), 0), extras);
-        savedStatus.setText(R.string.mmd_saved);
+
     }
 
     private double valid(EditText field, double minimum, double maximum, String previous, double fallback) {
@@ -377,7 +358,7 @@ public final class MmdLibraryActivity extends Activity {
                     folders.add(folder); names.add(entry.getString("name"));
                     if (folder.equals(configured)) position = i + 1;
                     TextView title = label(0);
-                    title.setText(entry.getString("name") + " · " + entry.getJSONArray("files").length() + " 个文件");
+                    title.setText(entry.getString("name"));
                     works.addView(title, SectionCard.stacked(this, 12));
                     String generation = entry.getString("generation");
                     Button publish = button(getString(R.string.mmd_publish));
@@ -396,7 +377,11 @@ public final class MmdLibraryActivity extends Activity {
                             }).show());
                     works.addView(remove, SectionCard.stacked(this, 6)); workButtons.add(remove);
                 }
-                if (entries.length() == 0) works.addView(label(R.string.mmd_no_works));
+                if (entries.length() == 0) {
+                    TextView empty = label(0);
+                    empty.setText("暂无作品");
+                    works.addView(empty);
+                }
                 ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                         android.R.layout.simple_spinner_item, names);
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);

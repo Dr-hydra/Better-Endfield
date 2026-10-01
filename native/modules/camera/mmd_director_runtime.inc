@@ -193,6 +193,7 @@ bool ResolveSources(Sources& out) {
         next.camera = next.motion; // MMD motion files often carry the camera too
         next.camera_from_motion = true;
     }
+    if (!next.motion.empty() && next.camera == next.motion) next.camera_from_motion = true;
     if (next.motion.empty() && next.camera.empty()) {
         Say(Proto::MessageCode::NoWork, "select a work in the overlay or set vmd_motion_file");
         return false;

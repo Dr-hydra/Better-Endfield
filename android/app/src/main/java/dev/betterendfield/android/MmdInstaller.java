@@ -1,27 +1,19 @@
 package dev.betterendfield.android;
 
 import android.content.Context;
-import android.database.Cursor;
-import android.net.Uri;
-import android.provider.DocumentsContract;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,8 +25,7 @@ final class MmdInstaller {
     // The game adapter materializes files beneath its own mmd/<folder>/ directory.
     static final String INDEX = "installed_mmd_works";
     static volatile boolean busy;
-    static volatile String status = "请选择包含 set.ini 的作品目录。";
-    private static final long MAX_FILE_BYTES = 512L * 1024 * 1024;
+    static volatile String status = "";
     private static final long MAX_WORK_BYTES = 1024L * 1024 * 1024;
     private static final ExecutorService WORKER = Executors.newSingleThreadExecutor();
 
@@ -48,35 +39,22 @@ final class MmdInstaller {
         }
     }
 
-    static synchronized boolean start(Context context, Uri tree) {
-        if (tree == null || !"content".equals(tree.getScheme())
-                || !DocumentsContract.isTreeUri(tree))
-            throw new IllegalArgumentException("请选择作品目录");
-        if (busy) return false;
+    static synchronized boolean start(Context context, MmdImportSession session,
+                                      String name, Map<String, String> slots,
+                                      Map<String, String> settings) {
+        if (busy || session.busy || session.plan == null || session.cancelled) return false;
         Context app = context.getApplicationContext();
-        boolean ownedGrant = false;
-        try {
-            boolean existing = false;
-            for (android.content.UriPermission permission : app.getContentResolver().getPersistedUriPermissions())
-                if (tree.equals(permission.getUri()) && permission.isReadPermission()) existing = true;
-            if (!existing) {
-                app.getContentResolver().takePersistableUriPermission(tree,
-                        android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                ownedGrant = true;
-            }
-        } catch (SecurityException unsupported) {
-            // Some providers offer only the temporary grant; copy while it lasts.
-        }
-        final boolean releaseGrant = ownedGrant;
+        MmdImportPlan plan = session.plan;
+        Map<String, String> selected = new LinkedHashMap<>(slots);
+        Map<String, String> options = new LinkedHashMap<>(settings);
+        session.busy = true;
         try {
             return run(() -> {
-                try { install(app, tree); }
-                finally { if (releaseGrant) releaseGrant(app, tree); }
+                try { install(app, session, plan, name, selected, options); session.installed = true; }
+                catch (Exception error) { session.status = "导入失败：" + error.getMessage(); throw error; }
+                finally { session.busy = false; if (session.cancelled) session.dispose(); }
             });
-        } catch (RuntimeException rejected) {
-            if (releaseGrant) releaseGrant(app, tree);
-            throw rejected;
-        }
+        } catch (RuntimeException error) { session.busy = false; throw error; }
     }
 
     static synchronized boolean republish(Context context, String generation) {
@@ -98,7 +76,7 @@ final class MmdInstaller {
             }
             // Re-publish the configuration snapshot after the files are available.
             ModuleSettings.republishCameraConfiguration(app);
-            status = "作品已重新发布。重启游戏后装载。";
+            status = "作品已重新发布";
         });
     }
 
@@ -126,7 +104,7 @@ final class MmdInstaller {
             for (int i = 0; i < files.length(); i++)
                 complete &= FrameworkSettings.removeMmd(files.getJSONObject(i).getString("remote"));
             complete &= deleteOwned(ownedFolder(app, removed.getString("folder")));
-            status = "作品已移除。重启游戏后刷新。"
+            status = "作品已移除"
                     + (complete ? "" : "部分文件暂未清理，但该作品已停止发布。");
         });
     }
@@ -155,49 +133,20 @@ final class MmdInstaller {
         }
     }
 
-    private static void releaseGrant(Context app, Uri tree) {
-        try {
-            app.getContentResolver().releasePersistableUriPermission(tree,
-                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        } catch (SecurityException ignored) { }
-    }
-
-    private static void install(Context app, Uri tree) throws Exception {
-        if (index(app).length() >= 512) throw new IOException("作品库最多支持 512 个作品");
-        Map<String, Uri> children = children(app, tree);
-        Uri setUri = children.get("set.ini");
-        if (setUri == null) throw new IOException("目录根部缺少 set.ini");
-        byte[] setBytes;
-        try (InputStream input = app.getContentResolver().openInputStream(setUri)) {
-            if (input == null) throw new IOException("无法读取 set.ini");
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
-            copy(input, output, 16 * 1024);
-            setBytes = output.toByteArray();
+    private static void install(Context app, MmdImportSession session, MmdImportPlan plan,
+                                String name, Map<String, String> slots,
+                                Map<String, String> settings) throws Exception {
+        if (index(app).length() >= 512) throw new IOException("作品库最多 512 个作品");
+        plan.validate(name, slots);
+        Map<String, String> filenames = new LinkedHashMap<>();
+        for (String slot : MmdImportPlan.SLOTS) {
+            String path = slots.get(slot);
+            if (path != null && !path.isEmpty() && !filenames.containsKey(path)) {
+                String extension = "music".equals(slot) ? extension(path) : ".vmd";
+                filenames.put(path, "f" + filenames.size() + extension);
+            }
         }
-        String text = StandardCharsets.UTF_8.newDecoder()
-                .onMalformedInput(CodingErrorAction.REPORT)
-                .onUnmappableCharacter(CodingErrorAction.REPORT)
-                .decode(ByteBuffer.wrap(setBytes)).toString();
-        if (text.startsWith("\uFEFF")) text = text.substring(1);
-        Map<String, String> settings = parseSet(text);
-        if (settings.getOrDefault("motion", "").isEmpty()
-                && settings.getOrDefault("camera", "").isEmpty())
-            throw new IOException("set.ini 至少需要 motion 或 camera VMD");
-        Set<String> required = new LinkedHashSet<>();
-        required.add("set.ini");
-        Set<String> vmdFiles = new LinkedHashSet<>();
-        for (Map.Entry<String, String> setting : settings.entrySet()) {
-            String key = setting.getKey();
-            boolean vmd = key.matches("motion[2-4]?|face[2-4]?|camera");
-            if (!vmd && !"music".equals(key)) continue;
-            String name = setting.getValue();
-            if (name.isEmpty()) continue;
-            requirePlainName(name);
-            if ("set.ini".equals(name)) throw new IOException("资源不能引用 set.ini");
-            if (!children.containsKey(name)) throw new IOException("缺少引用文件：" + name);
-            required.add(name);
-            if (vmd) vmdFiles.add(name);
-        }
+        byte[] setBytes = plan.generate(name, slots, settings, filenames);
         String generation = UUID.randomUUID().toString();
         File root = new File(app.getFilesDir(), "mmd");
         if (!root.isDirectory() && !root.mkdirs()) throw new IOException("无法创建作品库目录");
@@ -206,107 +155,65 @@ final class MmdInstaller {
         JSONArray files = new JSONArray();
         boolean advertised = false;
         try {
-            long total = 0;
-            int ordinal = 0;
-            for (String name : required) {
-                status = "正在复制 " + (ordinal + 1) + "/" + required.size() + "：" + name;
-                File destination = new File(stage, name);
+            long total = setBytes.length;
+            try (FileOutputStream output = new FileOutputStream(new File(stage, "set.ini"))) {
+                output.write(setBytes); output.getFD().sync();
+            }
+            files.put(payload(generation, "set.ini", setBytes.length));
+            for (Map.Entry<String, String> item : filenames.entrySet()) {
+                String path = item.getKey(), filename = item.getValue();
+                session.check("复制：" + path); status = session.status;
+                File source = MmdImportArchive.target(plan.root, path), destination = new File(stage, filename);
                 long bytes;
-                try (FileOutputStream output = new FileOutputStream(destination)) {
-                    if ("set.ini".equals(name)) {
-                        output.write(setBytes);
-                        bytes = setBytes.length;
-                    } else {
-                        try (InputStream input = app.getContentResolver().openInputStream(children.get(name))) {
-                            if (input == null) throw new IOException("无法读取：" + name);
-                            bytes = copy(input, output, Math.min(MAX_FILE_BYTES, MAX_WORK_BYTES - total));
-                        }
-                    }
+                try (InputStream input = new FileInputStream(source); FileOutputStream output = new FileOutputStream(destination)) {
+                    bytes = copy(input, output, Math.min(MmdImportArchive.limit(path), MAX_WORK_BYTES - total), session);
+                    if (bytes != source.length() || bytes == 0) throw new IOException("资料长度异常：" + path);
                     output.getFD().sync();
                 }
-                if (bytes == 0) throw new IOException("文件为空：" + name);
-                total += bytes;
-                if (vmdFiles.contains(name)) verifyVmd(destination);
-                String tag = "set.ini".equals(name) ? "set.ini"
-                        : "f" + Integer.toHexString(ordinal) + (vmdFiles.contains(name) ? ".vmd" : ".audio");
-                files.put(new JSONObject().put("remote", "mmd-" + generation + "-" + tag)
-                        .put("name", name).put("bytes", bytes));
-                ordinal++;
+                if (filename.endsWith(".vmd")) {
+                    MmdVmdParser.Sections sections = MmdVmdParser.read(destination);
+                    for (Map.Entry<String, String> slot : slots.entrySet())
+                        if (path.equals(slot.getValue()) && !sections.supports(slot.getKey())) throw new IOException("VMD 类型不符");
+                }
+                total += bytes; files.put(payload(generation, filename, bytes));
             }
+            session.check("正在发布…");
             File installed = ownedFolder(app, generation);
             if (!stage.renameTo(installed)) throw new IOException("无法发布本地作品目录");
             stage = installed;
             for (int i = 0; i < files.length(); i++) {
                 JSONObject file = files.getJSONObject(i);
-                status = "正在发布 " + (i + 1) + "/" + files.length() + "：" + file.getString("name");
-                if (!FrameworkSettings.publishMmd(new File(installed, file.getString("name")),
-                        file.getString("remote")))
-                    throw new IOException("框架服务未连接或发布失败；请启用模块后重新导入");
+                session.check("发布：" + (i + 1) + "/" + files.length()); status = session.status;
+                if (!FrameworkSettings.publishMmd(new File(installed, file.getString("name")), file.getString("remote")))
+                    throw new IOException("框架服务未连接或发布失败");
             }
-            String name = settings.getOrDefault("name", "");
-            if (name.isEmpty()) name = treeName(app, tree);
             JSONObject entry = new JSONObject().put("generation", generation).put("folder", generation)
-                    .put("name", name).put("files", files);
-            JSONArray next = index(app);
-            next.put(entry);
-            if (!FrameworkSettings.open(app).edit().putString(INDEX, next.toString()).commit())
-                throw new IOException("作品索引保存失败");
-            advertised = true;
-            status = "已导入：" + name + "。请选择启动作品，重启游戏后装载。";
+                    .put("name", name.trim()).put("files", files);
+            JSONArray next = index(app); next.put(entry);
+            synchronized (session) {
+                session.check("正在完成…");
+                if (!FrameworkSettings.open(app).edit().putString(INDEX, next.toString()).commit())
+                    throw new IOException("作品索引保存失败");
+                advertised = true;
+                session.installed = true;
+            }
+            session.status = status = "已导入：" + name.trim();
         } finally {
             if (!advertised) {
-                for (int i = 0; i < files.length(); i++)
-                    FrameworkSettings.removeMmd(files.getJSONObject(i).getString("remote"));
+                for (int i = 0; i < files.length(); i++) FrameworkSettings.removeMmd(files.getJSONObject(i).getString("remote"));
                 deleteOwned(stage);
             }
         }
     }
 
-    private static Map<String, Uri> children(Context app, Uri tree) throws IOException {
-        Uri listing = DocumentsContract.buildChildDocumentsUriUsingTree(tree,
-                DocumentsContract.getTreeDocumentId(tree));
-        Map<String, Uri> result = new LinkedHashMap<>();
-        String[] projection = {DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-                DocumentsContract.Document.COLUMN_DISPLAY_NAME, DocumentsContract.Document.COLUMN_MIME_TYPE};
-        try (Cursor cursor = app.getContentResolver().query(listing, projection, null, null, null)) {
-            if (cursor == null) throw new IOException("无法列出目录文件");
-            int count = 0;
-            while (cursor.moveToNext()) {
-                if (++count > 4096) throw new IOException("作品目录文件过多");
-                if (DocumentsContract.Document.MIME_TYPE_DIR.equals(cursor.getString(2))) continue;
-                String name = cursor.getString(1);
-                Uri child = DocumentsContract.buildDocumentUriUsingTree(tree, cursor.getString(0));
-                if (result.put(name, child) != null) throw new IOException("目录包含重名文件：" + name);
-            }
-        }
-        return result;
+    private static JSONObject payload(String generation, String name, long bytes) throws Exception {
+        return new JSONObject().put("remote", "mmd-" + generation + "-" + name).put("name", name).put("bytes", bytes);
     }
-
-    private static String treeName(Context app, Uri tree) {
-        Uri document = DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree));
-        try (Cursor cursor = app.getContentResolver().query(document,
-                new String[]{DocumentsContract.Document.COLUMN_DISPLAY_NAME}, null, null, null)) {
-            if (cursor != null && cursor.moveToFirst() && cursor.getString(0) != null)
-                return cursor.getString(0);
-        } catch (RuntimeException ignored) { }
-        return "MMD 作品";
+    private static String extension(String path) {
+        String name = MmdImportPlan.base(path); int dot = name.lastIndexOf('.');
+        return dot < 0 ? ".audio" : name.substring(dot).toLowerCase(Locale.ROOT);
     }
-
-    static Map<String, String> parseSet(String text) throws IOException {
-        Map<String, String> values = new LinkedHashMap<>();
-        for (String raw : text.split("\n")) {
-            String line = raw.trim();
-            if (line.isEmpty() || line.startsWith(";") || line.startsWith("#") || line.startsWith("[")) continue;
-            int equals = line.indexOf('=');
-            if (equals < 0) continue;
-            String key = line.substring(0, equals).trim().toLowerCase(Locale.ROOT);
-            String value = line.substring(equals + 1).trim();
-            if (key.matches("motion[0-9]+|face[0-9]+") && !key.matches("motion[2-4]|face[2-4]"))
-                throw new IOException("最多支持 motion、motion2–4 和对应表情文件");
-            if (values.put(key, value) != null) throw new IOException("set.ini 包含重复字段：" + key);
-        }
-        return values;
-    }
+    static Map<String, String> parseSet(String text) throws IOException { return MmdImportPlan.parseSet(text); }
 
     static void requirePlainName(String name) throws IOException {
         if (name == null || name.isEmpty() || name.equals(".") || name.equals("..")
@@ -319,24 +226,11 @@ final class MmdInstaller {
         }
     }
 
-    private static void verifyVmd(File file) throws IOException {
-        byte[] header = new byte[30];
-        try (InputStream input = new FileInputStream(file)) {
-            int count = 0, read;
-            while (count < header.length && (read = input.read(header, count, header.length - count)) != -1)
-                count += read;
-            String signature = new String(header, StandardCharsets.US_ASCII);
-            if (count != header.length || file.length() < 50 || !signature.startsWith("Vocaloid Motion Data"))
-                throw new IOException("不是有效的 VMD 文件：" + file.getName());
-        }
-    }
-
-    private static long copy(InputStream input, java.io.OutputStream output, long limit) throws IOException {
-        byte[] buffer = new byte[65536];
-        long bytes = 0;
-        int count;
+    private static long copy(InputStream input, java.io.OutputStream output, long limit,
+                             MmdImportSession session) throws IOException {
+        byte[] buffer = new byte[65536]; long bytes = 0; int count;
         while ((count = input.read(buffer)) != -1) {
-            bytes += count;
+            session.check(session.status); bytes += count;
             if (bytes > limit) throw new IOException("作品文件超过大小限制");
             output.write(buffer, 0, count);
         }

@@ -26,7 +26,8 @@ public final class BemInstallActivity extends Activity {
     private TextView progressLabel;
     private final java.util.List<View> packageActions=new java.util.ArrayList<>();
     private final Runnable refresh=new Runnable(){public void run(){
-        status.setText(BemInstaller.status);importButton.setEnabled(!BemInstaller.busy);cancel.setEnabled(BemInstaller.busy && !BemInstaller.removing);
+        status.setText(BemInstaller.status);
+        findViewById(R.id.bem_operation_state).setVisibility(BemInstaller.busy || BemInstaller.status.contains("未完成") || BemInstaller.status.contains("失败") ? View.VISIBLE : View.GONE);importButton.setEnabled(!BemInstaller.busy);cancel.setEnabled(BemInstaller.busy && !BemInstaller.removing);
         incomingRetry.setEnabled(pendingImport!=null && !BemInstaller.busy);
         progress.setVisibility(BemInstaller.busy?View.VISIBLE:View.GONE);
         progressLabel.setVisibility(BemInstaller.busy?View.VISIBLE:View.GONE);
@@ -149,7 +150,7 @@ public final class BemInstallActivity extends Activity {
             displayed=list.toString();
             if(list.length()==0) {
                 TextView empty=new TextView(this);
-                empty.setText("还没有模型包\n点击上方「导入 BEM 包」添加模型。");
+                empty.setText("暂无模型包");
                 empty.setTextColor(getColor(R.color.text_secondary));empty.setTextSize(14);
                 empty.setGravity(android.view.Gravity.CENTER);empty.setPadding(dp(18),dp(32),dp(18),dp(32));
                 empty.setBackgroundResource(R.drawable.bg_card);
@@ -174,8 +175,6 @@ public final class BemInstallActivity extends Activity {
                     catch(Exception error) {saveError(error);}
                 });
                 String mode=entry.optString("texture_mode","converted");
-                TextView textureState=new TextView(this);textureState.setText("original".equals(mode)?"原始纹理 · 可按需转换":"手机纹理已就绪");
-                textureState.setTextColor(getColor(R.color.text_secondary));textureState.setTextSize(12);card.addView(textureState);
                 Button details=actionButton(expanded.contains(generation)?"收起详细选项 ▴":"详细组件 / 外观选项 ▾");
                 card.addView(details,new LinearLayout.LayoutParams(-1,dp(44)));
                 LinearLayout detailPanel=new LinearLayout(this);detailPanel.setOrientation(LinearLayout.VERTICAL);

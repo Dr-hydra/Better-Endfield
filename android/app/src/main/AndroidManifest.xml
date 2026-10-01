@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:name=".ModuleApplication"
         android:description="@string/xposed_description"
@@ -9,6 +10,15 @@
         android:label="@string/app_name"
         android:roundIcon="@drawable/gilberta"
         android:supportsRtl="true">
+        <activity
+            android:name=".EnhancementSettingsActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme" />
+        <activity
+            android:name=".MmdImportActivity"
+            android:exported="false"
+            android:label="导入 MMD 作品"
+            android:theme="@style/AppTheme" />
         <activity
             android:name=".MmdLibraryActivity"
             android:exported="false"

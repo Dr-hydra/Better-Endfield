@@ -10,20 +10,9 @@ import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
 
-/**
- * One switch in a settings card: a title, the sentence that explains what it
- * does, an optional badge for the control that triggers it in game, and the
- * switch itself.
- *
- * Built in code rather than as a layout because there are twenty of these across
- * three feature cards, and a shared widget is what keeps them from drifting apart
- * in padding, contrast and touch-target size. The whole row is clickable, so the
- * target is the row height rather than the switch thumb.
- */
+/** Title and switch; the whole row is a touch target. */
 final class SettingRow extends LinearLayout {
     private final TextView title;
-    private final TextView description;
-    private final TextView badge;
     private final Switch toggle;
     private boolean silent;
 
@@ -48,27 +37,7 @@ final class SettingRow extends LinearLayout {
         title.setTextColor(context.getColor(R.color.text_primary));
         heading.addView(title);
 
-        badge = new TextView(context);
-        badge.setTextSize(10);
-        badge.setAllCaps(false);
-        badge.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        badge.setTextColor(context.getColor(R.color.accent));
-        badge.setBackgroundResource(R.drawable.bg_chip);
-        badge.setPadding(dp(7), dp(3), dp(7), dp(3));
-        LayoutParams badgeParams = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-        badgeParams.leftMargin = dp(8);
-        heading.addView(badge, badgeParams);
-        setBadge(badgeText);
         text.addView(heading);
-
-        description = new TextView(context);
-        description.setText(descriptionText);
-        description.setTextSize(12);
-        description.setLineSpacing(dp(2), 1f);
-        description.setTextColor(context.getColor(R.color.text_secondary));
-        LayoutParams descriptionParams = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-        descriptionParams.topMargin = dp(3);
-        text.addView(description, descriptionParams);
         addView(text, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
 
         toggle = new Switch(context);
@@ -86,18 +55,7 @@ final class SettingRow extends LinearLayout {
         addView(toggle, toggleParams);
 
         setOnClickListener(view -> toggle.setChecked(!toggle.isChecked()));
-        setContentDescription(titleText + "。" + descriptionText);
-    }
-
-    void setBadge(String badgeText) {
-        boolean visible = badgeText != null && !badgeText.isEmpty();
-        badge.setText(visible ? badgeText : "");
-        badge.setVisibility(visible ? VISIBLE : GONE);
-    }
-
-    void setDescription(String value) {
-        description.setText(value);
-        setContentDescription(title.getText() + "。" + value);
+        setContentDescription(titleText);
     }
 
     boolean isChecked() {

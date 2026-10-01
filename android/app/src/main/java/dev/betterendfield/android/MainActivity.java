@@ -28,7 +28,7 @@ public final class MainActivity extends Activity {
     static final String EXTRA_PAGE = "settings_page";
     private static final int CUSTOM_MODEL_PAGE = 4;
     private static final int ENHANCEMENT_PAGE = 2;
-    private static final int DIAGNOSTICS_PAGE = 3;
+    private static final int ABOUT_PAGE = 3;
     private static final int[] THEME_COLOR_VIEW_IDS = {
             R.id.theme_color_amber,
             R.id.theme_color_cyan,
@@ -48,7 +48,6 @@ public final class MainActivity extends Activity {
     };
 
     private final Map<String, Spinner> ruleSpinners = new LinkedHashMap<>();
-    private TextView status;
     private boolean initializingRules = true;
     private String lastSavedRules = "";
 
@@ -67,7 +66,6 @@ public final class MainActivity extends Activity {
     private EditText logoColor;
     private ColorWheelView logoColorWheel;
     private View logoColorPreview;
-    private TextView modelSelectionStatus;
     private boolean initializingModel = true;
     private final Handler saveHandler = new Handler(Looper.getMainLooper());
     private boolean pendingModelSave;
@@ -77,37 +75,7 @@ public final class MainActivity extends Activity {
     };
 
     private int currentPage;
-    private GameOverlay overlayPreview;
-
-    // The enhancement page is assembled in buildEnhancementPage() from
-    // SectionCard/SettingRow/ValueSlider, so its controls are fields rather than
-    // findViewById lookups.
-    private SectionCard interfaceCard;
-    private SectionCard cameraCard;
-    private SectionCard dashCard;
-    private SettingRow hideUidRow;
-    private SettingRow hideHudRow;
-    private SettingRow pcUiRow;
-    private SettingRow ditherRow;
-    private SettingRow freeCameraRow;
-    private SettingRow worldPauseRow;
-    private SettingRow firstPersonRow;
-    private SettingRow hideHeadRow;
-    private SettingRow fillNeckRow;
-    private ValueSlider cameraSpeed;
-    private ValueSlider cameraFov;
-    private ValueSlider firstPersonFov;
-    private ValueSlider firstPersonSideLimit;
-    private ValueSlider firstPersonTurnSpeed;
-    private double cameraSpeedValue, cameraFovValue, firstPersonFovValue;
-    private double sideLookLimitValue, turnSpeedValue;
-    private SettingRow mmdRow;
-    private SettingRow dashRow;
-    private SettingRow dashAglinaRow;
-    private SettingRow dashLiinoRow;
-    private SettingRow dashLiinoCleanRow;
-    private SettingRow overlayRow;
-    private boolean populatingEnhancement = true;
+    private AboutPage aboutPage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,37 +84,19 @@ public final class MainActivity extends Activity {
         String requestedPage = getIntent().getStringExtra(EXTRA_PAGE);
         currentPage = savedInstanceState == null
                 ? ("custom_model".equals(requestedPage) ? CUSTOM_MODEL_PAGE
-                        : ("enhancement".equals(requestedPage) ? ENHANCEMENT_PAGE : 0))
+                        : ("enhancement".equals(requestedPage) ? ENHANCEMENT_PAGE
+                                : ("about".equals(requestedPage) ? ABOUT_PAGE : 0)))
                 : savedInstanceState.getInt("page", 0);
-        currentPage = Math.max(0, Math.min(CUSTOM_MODEL_PAGE, currentPage));
+        boolean openModels = currentPage == CUSTOM_MODEL_PAGE;
+        currentPage = Math.max(0, Math.min(ABOUT_PAGE, openModels ? 0 : currentPage));
 
-        status = findViewById(R.id.restart_status);
         setupPageNavigation();
         setupModelPage();
-        setupCustomModelPage();
         setupVoicePage();
         setupEnhancementPage();
-        setupDiagnosticsPage();
+        setupAboutPage();
         applyResponsiveShell();
-    }
-
-    private void setupCustomModelPage() {
-        findViewById(R.id.install_bem).setOnClickListener(view ->
-                startActivity(new Intent(this, BemInstallActivity.class)));
-    }
-
-    private void showOverlayPreview() {
-        if (overlayPreview != null) overlayPreview.remove();
-        overlayPreview = new GameOverlay(this, true);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (overlayRow != null) overlayRow.initialize(ModuleSettings.isOverlayEnabled(this));
-        if (mmdRow != null) mmdRow.initialize(ModuleSettings.isMmdEnabled(this));
-        if (cameraCard != null) refreshEnhancementStatus();
-        setupDiagnosticsPage();
+        if (openModels) startActivity(new Intent(this, BemInstallActivity.class));
     }
 
     @Override protected void onPause() {
@@ -157,7 +107,7 @@ public final class MainActivity extends Activity {
 
     @Override protected void onDestroy() {
         saveHandler.removeCallbacksAndMessages(null);
-        if (overlayPreview != null) overlayPreview.remove();
+        if (aboutPage != null) aboutPage.close();
         super.onDestroy();
     }
 
@@ -206,15 +156,13 @@ public final class MainActivity extends Activity {
                 findViewById(R.id.model_section),
                 findViewById(R.id.voice_section),
                 findViewById(R.id.enhancement_section),
-                findViewById(R.id.diagnostics_section),
-                findViewById(R.id.custom_model_section)
+                findViewById(R.id.about_section)
         };
         View[] buttons = {
                 findViewById(R.id.show_model_button),
                 findViewById(R.id.show_voice_button),
                 findViewById(R.id.show_enhancement_button),
-                findViewById(R.id.show_diagnostics_button),
-                findViewById(R.id.show_custom_model_button)
+                findViewById(R.id.show_about_button)
         };
         android.widget.ScrollView scroll = findViewById(R.id.responsive_scroll);
         for (int index = 0; index < buttons.length; ++index) {
@@ -223,13 +171,14 @@ public final class MainActivity extends Activity {
                 flushModelEdits();
                 if (currentPage == 0 && page != 0) refreshModelEdits();
                 currentPage = page;
-                // The diagnostics page reports which modules the game will load,
-                // which the enhancement page can have changed since it was built.
-                if (page == DIAGNOSTICS_PAGE) setupDiagnosticsPage();
                 showPage(sections, buttons, page);
                 scroll.post(() -> scroll.smoothScrollTo(0, 0));
             });
         }
+        findViewById(R.id.show_custom_model_button).setOnClickListener(view -> {
+            flushModelEdits();
+            startActivity(new Intent(this, BemInstallActivity.class));
+        });
         showPage(sections, buttons, currentPage);
     }
 
@@ -242,7 +191,6 @@ public final class MainActivity extends Activity {
 
     private void setupModelPage() {
         TextView tableStatus = findViewById(R.id.model_table_status);
-        modelSelectionStatus = findViewById(R.id.model_selection_status);
         modelCharacter = findViewById(R.id.model_character);
         modelAction = findViewById(R.id.model_action);
         modelEnabled = findViewById(R.id.model_enabled);
@@ -288,16 +236,13 @@ public final class MainActivity extends Activity {
                     ModuleSettings.getModelCharacter(this));
             modelCharacter.setSelection(characterPosition, false);
             refreshActionOptions(ModuleSettings.getModelAction(this));
-            updateModelSelectionStatus();
-            tableStatus.setText(getString(
-                    R.string.model_table_ready,
-                    modelIndex.characters().size(),
-                    modelIndex.actionCount()));
+
 
             installModelListeners();
             initializingModel = false;
         } catch (Exception error) {
             tableStatus.setText(getString(R.string.model_table_failed, error.getMessage()));
+            tableStatus.setVisibility(View.VISIBLE);
             modelEnabled.setEnabled(false);
             logoEnabled.setEnabled(false);
         }
@@ -401,7 +346,7 @@ public final class MainActivity extends Activity {
             }
         }
         modelAction.setSelection(selected, false);
-        updateModelSelectionStatus();
+
     }
 
     private ModelPresetIndex.Character selectedCharacter() {
@@ -412,17 +357,6 @@ public final class MainActivity extends Activity {
     private ModelPresetIndex.Action selectedAction() {
         return modelAction == null || modelAction.getSelectedItem() == null
                 ? null : (ModelPresetIndex.Action) modelAction.getSelectedItem();
-    }
-
-    private void updateModelSelectionStatus() {
-        ModelPresetIndex.Character character = selectedCharacter();
-        ModelPresetIndex.Action action = selectedAction();
-        if (character != null && action != null) {
-            modelSelectionStatus.setText(getString(
-                    R.string.model_selection_ready,
-                    character.id(),
-                    action.id()));
-        }
     }
 
     private void saveModelSettings() {
@@ -501,8 +435,7 @@ public final class MainActivity extends Activity {
                 enableLogo,
                 color,
                 configuration);
-        updateModelSelectionStatus();
-        status.setText(R.string.model_restart_required);
+
     }
 
     private void installThemeColorPalette() {
@@ -621,14 +554,10 @@ public final class MainActivity extends Activity {
             }
             // Spinner selection notifications are posted during first layout.
             rows.post(() -> initializingRules = false);
-            tableStatus.setText(getString(
-                    R.string.voice_table_ready,
-                    index.characters().size() - 1,
-                    index.catalogCount()));
         } catch (Exception error) {
             tableStatus.setText(getString(
                     R.string.voice_table_failed, error.getMessage()));
-            status.setText(R.string.voice_table_unavailable);
+            tableStatus.setVisibility(View.VISIBLE);
         }
     }
 
@@ -705,7 +634,6 @@ public final class MainActivity extends Activity {
         if (serialized.equals(lastSavedRules)) return;
         ModuleSettings.setVoiceRules(this, serialized);
         lastSavedRules = serialized;
-        status.setText(R.string.restart_required);
     }
 
     private static Map<String, String> parseRules(String value) {
@@ -728,370 +656,52 @@ public final class MainActivity extends Activity {
     }
 
     private void setupEnhancementPage() {
-        // Rewrites every module configuration from the stored switches once per
-        // launch. That is what carries a pre-3.3 "enhancement" choice over to the
-        // ui/camera modules, and what publishes a key added by an update without
-        // asking the user to re-toggle anything.
         ModuleSettings.republishConfigurations(this);
-        buildEnhancementPage();
-    }
-
-    private void buildEnhancementPage() {
         LinearLayout page = findViewById(R.id.enhancement_section);
         page.removeAllViews();
-        populatingEnhancement = true;
-
-        TextView intro = new TextView(this);
-        intro.setText(R.string.enhancement_description);
-        intro.setTextSize(13);
-        intro.setLineSpacing(dp(3), 1f);
-        intro.setTextColor(getColor(R.color.text_secondary));
-        page.addView(intro, SectionCard.stacked(this, 0));
-
-        page.addView(buildInterfaceCard(), SectionCard.stacked(this, 14));
-        page.addView(buildCameraCard(), SectionCard.stacked(this, 12));
-        page.addView(buildDashCard(), SectionCard.stacked(this, 12));
-        page.addView(buildOverlayCard(), SectionCard.stacked(this, 12));
-
-        populatingEnhancement = false;
-        refreshEnhancementAvailability();
-        refreshEnhancementStatus();
-    }
-
-    private SectionCard buildInterfaceCard() {
-        interfaceCard = new SectionCard(this,
-                getString(R.string.ui_card_eyebrow),
-                getString(R.string.ui_card_title),
-                getString(R.string.ui_card_subtitle));
-        hideUidRow = row(R.string.ui_hide_uid, R.string.ui_hide_uid_hint, null);
-        hideUidRow.initialize(ModuleSettings.isHideUidEnabled(this));
-        hideUidRow.onChanged((button, checked) -> saveInterfaceSettings());
-        interfaceCard.add(hideUidRow);
-
-        hideHudRow = row(R.string.ui_hide_hud, R.string.ui_hide_hud_hint,
-                getString(R.string.badge_overlay));
-        hideHudRow.initialize(ModuleSettings.isHideHudEnabled(this));
-        hideHudRow.onChanged((button, checked) -> saveInterfaceSettings());
-        interfaceCard.add(hideHudRow);
-        pcUiRow = row(R.string.ui_pc, R.string.ui_pc_hint, null);
-        pcUiRow.initialize(ModuleSettings.isPcUiEnabled(this));
-        pcUiRow.onChanged((button, checked) -> {
-            if (populatingEnhancement) return;
-            ModuleSettings.setPcUiEnabled(this, checked);
-            afterEnhancementChange();
-        });
-        interfaceCard.add(pcUiRow);
-        return interfaceCard;
-    }
-
-    private SectionCard buildCameraCard() {
-        cameraCard = new SectionCard(this,
-                getString(R.string.camera_card_eyebrow),
-                getString(R.string.camera_card_title),
-                getString(R.string.camera_card_subtitle));
-
-        ditherRow = row(R.string.camera_dither, R.string.camera_dither_hint, null);
-        ditherRow.initialize(ModuleSettings.isDisableDitherEnabled(this));
-        ditherRow.onChanged((button, checked) -> saveCameraSettings());
-        cameraCard.add(ditherRow);
-
-        freeCameraRow = row(R.string.camera_free, R.string.camera_free_hint,
-                getString(R.string.badge_overlay));
-        freeCameraRow.initialize(ModuleSettings.isFreeCameraEnabled(this));
-        freeCameraRow.onChanged((button, checked) -> saveCameraSettings());
-        cameraCard.add(freeCameraRow);
-
-        worldPauseRow = row(R.string.camera_pause, R.string.camera_pause_hint,
-                getString(R.string.badge_overlay));
-        worldPauseRow.initialize(ModuleSettings.isWorldPauseEnabled(this));
-        worldPauseRow.onChanged((button, checked) -> saveCameraSettings());
-        cameraCard.add(worldPauseRow);
-
-        firstPersonRow = row(R.string.camera_first_person, R.string.camera_first_person_hint,
-                getString(R.string.badge_overlay));
-        firstPersonRow.initialize(ModuleSettings.isFirstPersonEnabled(this));
-        firstPersonRow.onChanged((button, checked) -> saveCameraSettings());
-        cameraCard.add(firstPersonRow);
-
-        hideHeadRow = row(R.string.camera_hide_head, R.string.camera_hide_head_hint, null);
-        hideHeadRow.initialize(ModuleSettings.isFirstPersonHideHead(this));
-        hideHeadRow.onChanged((button, checked) -> saveCameraSettings());
-        cameraCard.add(hideHeadRow);
-
-        fillNeckRow = row(R.string.camera_fill_neck, R.string.camera_fill_neck_hint, null);
-        fillNeckRow.initialize(ModuleSettings.isFirstPersonFillNeck(this));
-        fillNeckRow.onChanged((button, checked) -> saveCameraSettings());
-        cameraCard.add(fillNeckRow);
-
-        cameraCard.addGroupLabel(getString(R.string.camera_group_values));
-        cameraSpeed = new ValueSlider(this, getString(R.string.camera_speed_label), "",
-                ModuleSettings.SPEED_MINIMUM, ModuleSettings.SPEED_MAXIMUM);
-        cameraSpeedValue = ModuleSettings.parse(ModuleSettings.getCameraSpeed(this), 5.0);
-        cameraSpeed.setValue((float) cameraSpeedValue);
-        cameraSpeed.onChanged(() -> {
-            cameraSpeedValue = cameraSpeed.getValue();
-            saveCameraSettings();
-        });
-        cameraCard.add(cameraSpeed);
-
-        cameraFov = new ValueSlider(this, getString(R.string.camera_fov_label),
-                getString(R.string.degree_suffix),
-                ModuleSettings.FOV_MINIMUM, ModuleSettings.FOV_MAXIMUM);
-        cameraFovValue = ModuleSettings.parse(ModuleSettings.getCameraFieldOfView(this), 60.0);
-        cameraFov.setValue((float) cameraFovValue);
-        cameraFov.onChanged(() -> {
-            cameraFovValue = cameraFov.getValue();
-            saveCameraSettings();
-        });
-        cameraCard.add(cameraFov);
-
-        firstPersonFov = new ValueSlider(this, getString(R.string.camera_fp_fov_label),
-                getString(R.string.degree_suffix),
-                ModuleSettings.FOV_MINIMUM, ModuleSettings.FOV_MAXIMUM);
-        firstPersonFovValue = ModuleSettings.parse(ModuleSettings.getFirstPersonFieldOfView(this), 75.0);
-        firstPersonFov.setValue((float) firstPersonFovValue);
-        firstPersonFov.onChanged(() -> {
-            firstPersonFovValue = firstPersonFov.getValue();
-            saveCameraSettings();
-        });
-        cameraCard.add(firstPersonFov);
-
-        firstPersonSideLimit = new ValueSlider(this, getString(R.string.camera_fp_side_limit),
-                getString(R.string.degree_suffix), 30, 170);
-        sideLookLimitValue = ModuleSettings.parse(ModuleSettings.getFirstPersonSideLookLimit(this), 90);
-        firstPersonSideLimit.setValue((float) sideLookLimitValue);
-        firstPersonSideLimit.onChanged(() -> {
-            sideLookLimitValue = firstPersonSideLimit.getValue();
-            saveCameraSettings();
-        });
-        cameraCard.add(firstPersonSideLimit);
-        firstPersonTurnSpeed = new ValueSlider(this, getString(R.string.camera_fp_turn_speed),
-                getString(R.string.degree_per_second), 30, 1080);
-        turnSpeedValue = ModuleSettings.parse(ModuleSettings.getFirstPersonTurnSpeed(this), 360);
-        firstPersonTurnSpeed.setValue((float) turnSpeedValue);
-        firstPersonTurnSpeed.onChanged(() -> {
-            turnSpeedValue = firstPersonTurnSpeed.getValue();
-            saveCameraSettings();
-        });
-        cameraCard.add(firstPersonTurnSpeed);
-
-        cameraCard.addGroupLabel(getString(R.string.mmd_title));
-        mmdRow = row(R.string.mmd_enable, R.string.mmd_enable_hint,
-                getString(R.string.badge_overlay));
-        mmdRow.initialize(ModuleSettings.isMmdEnabled(this));
-        mmdRow.onChanged((button, checked) -> {
-            if (populatingEnhancement) return;
-            ModuleSettings.setMmdEnabled(this, checked);
-            afterEnhancementChange();
-        });
-        cameraCard.add(mmdRow);
-        Button mmdSettings = new Button(this);
-        mmdSettings.setText(R.string.mmd_manage);
-        mmdSettings.setAllCaps(false);
-        mmdSettings.setTextColor(getColor(R.color.text_primary));
-        mmdSettings.setBackgroundResource(R.drawable.bg_ghost_button);
-        mmdSettings.setMinimumHeight(dp(52));
-        mmdSettings.setOnClickListener(view -> {
+        addEnhancementEntry(page, getString(R.string.ui_card_title),
+                EnhancementSettingsActivity.INTERFACE);
+        addEnhancementEntry(page, getString(R.string.camera_card_title),
+                EnhancementSettingsActivity.CAMERA);
+        addEnhancementEntry(page, "持续冲刺", EnhancementSettingsActivity.DASH);
+        addEnhancementEntry(page, getString(R.string.overlay_card_title),
+                EnhancementSettingsActivity.OVERLAY);
+        Button mmd = enhancementButton(getString(R.string.mmd_title));
+        mmd.setOnClickListener(view -> {
             flushModelEdits();
             startActivity(new Intent(this, MmdLibraryActivity.class));
         });
-        cameraCard.add(mmdSettings);
-        return cameraCard;
+        page.addView(mmd, SectionCard.stacked(this, 12));
     }
 
-    private SectionCard buildDashCard() {
-        dashCard = new SectionCard(this,
-                getString(R.string.dash_card_eyebrow),
-                getString(R.string.dash_card_title),
-                getString(R.string.dash_card_subtitle));
-
-        dashRow = row(R.string.dash_enable, R.string.dash_enable_hint, null);
-        dashRow.initialize(ModuleSettings.isSustainedDashEnabled(this));
-        dashRow.onChanged((button, checked) -> saveDashSettings());
-        dashCard.add(dashRow);
-
-        dashCard.addGroupLabel(getString(R.string.dash_group_characters));
-        dashAglinaRow = row(R.string.dash_aglina, R.string.dash_aglina_hint, null);
-        dashAglinaRow.initialize(ModuleSettings.isDashCharacterEnabled(this, "aglina"));
-        dashAglinaRow.onChanged((button, checked) -> saveDashSettings());
-        dashCard.add(dashAglinaRow);
-
-        dashLiinoRow = row(R.string.dash_liino, R.string.dash_liino_hint, null);
-        dashLiinoRow.initialize(ModuleSettings.isDashCharacterEnabled(this, "liino"));
-        dashLiinoRow.onChanged((button, checked) -> saveDashSettings());
-        dashCard.add(dashLiinoRow);
-
-        dashCard.addGroupLabel(getString(R.string.dash_group_options));
-        dashLiinoCleanRow = row(R.string.dash_liino_clean, R.string.dash_liino_clean_hint, null);
-        dashLiinoCleanRow.initialize(ModuleSettings.isLiinoCleanDashEnabled(this));
-        dashLiinoCleanRow.onChanged((button, checked) -> saveDashSettings());
-        dashCard.add(dashLiinoCleanRow);
-
-        return dashCard;
-    }
-
-    private SectionCard buildOverlayCard() {
-        SectionCard card = new SectionCard(this,
-                getString(R.string.overlay_card_eyebrow),
-                getString(R.string.overlay_card_title),
-                getString(R.string.overlay_card_subtitle));
-        overlayRow = row(R.string.overlay_enable, R.string.overlay_enable_hint, null);
-        overlayRow.initialize(ModuleSettings.isOverlayEnabled(this));
-        overlayRow.onChanged((button, checked) -> {
-            if (populatingEnhancement) return;
-            ModuleSettings.setOverlayEnabled(this, checked);
-            status.setText(checked
-                    ? R.string.overlay_turned_on : R.string.overlay_turned_off);
+    private void addEnhancementEntry(LinearLayout page, String title, String feature) {
+        Button entry = enhancementButton(title);
+        entry.setOnClickListener(view -> {
+            flushModelEdits();
+            startActivity(new Intent(this, EnhancementSettingsActivity.class)
+                    .putExtra(EnhancementSettingsActivity.EXTRA_FEATURE, feature));
         });
-        card.add(overlayRow);
-
-        Button preview = new Button(this);
-        preview.setText(R.string.overlay_preview);
-        preview.setTextSize(15);
-        preview.setAllCaps(false);
-        preview.setMinHeight(0);
-        preview.setMinimumHeight(dp(52));
-        preview.setTextColor(getColor(R.color.text_primary));
-        preview.setBackgroundResource(R.drawable.bg_ghost_button);
-        preview.setContentDescription(getString(R.string.overlay_preview_hint));
-        preview.setOnClickListener(view -> showOverlayPreview());
-        card.add(preview);
-        return card;
+        page.addView(entry, SectionCard.stacked(this, page.getChildCount() == 0 ? 0 : 12));
     }
 
-    private SettingRow row(int titleId, int descriptionId, String badge) {
-        return new SettingRow(this, getString(titleId), getString(descriptionId), badge);
+    private Button enhancementButton(String title) {
+        Button button = new Button(this);
+        button.setText(title);
+        button.setTextSize(15);
+        button.setAllCaps(false);
+        button.setMinHeight(0);
+        button.setMinimumHeight(dp(56));
+        button.setPadding(dp(16), dp(12), dp(16), dp(12));
+        button.setGravity(android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL);
+        button.setTextColor(getColor(R.color.text_primary));
+        button.setBackgroundResource(R.drawable.bg_ghost_button);
+        return button;
     }
 
-    private void saveInterfaceSettings() {
-        if (populatingEnhancement) return;
-        ModuleSettings.setInterfaceSettings(
-                this, hideUidRow.isChecked(), hideHudRow.isChecked());
-        afterEnhancementChange();
-    }
-
-    private void saveCameraSettings() {
-        if (populatingEnhancement) return;
-        ModuleSettings.setCameraSettings(
-                this,
-                ditherRow.isChecked(),
-                freeCameraRow.isChecked(),
-                worldPauseRow.isChecked(),
-                firstPersonRow.isChecked(),
-                hideHeadRow.isChecked(),
-                fillNeckRow.isChecked(),
-                cameraSpeedValue,
-                cameraFovValue,
-                firstPersonFovValue,
-                sideLookLimitValue,
-                turnSpeedValue);
-        afterEnhancementChange();
-    }
-
-    private void saveDashSettings() {
-        if (populatingEnhancement) return;
-        ModuleSettings.setSustainedDashSettings(
-                this,
-                dashRow.isChecked(),
-                dashLiinoCleanRow.isChecked(),
-                dashAglinaRow.isChecked(),
-                dashLiinoRow.isChecked());
-        afterEnhancementChange();
-    }
-
-    private void afterEnhancementChange() {
-        refreshEnhancementAvailability();
-        refreshEnhancementStatus();
-        status.setText(R.string.enhancement_restart_required);
-    }
-
-    /**
-     * Greys out the options that only mean something while their parent feature is
-     * on. The mesh options apply in first person, and the clean-exhaust option is Liino's.
-     */
-    private void refreshEnhancementAvailability() {
-        boolean free = freeCameraRow.isChecked();
-        boolean firstPerson = firstPersonRow.isChecked();
-        cameraSpeed.setAvailable(free);
-        cameraFov.setAvailable(free);
-        hideHeadRow.setAvailable(firstPerson);
-        fillNeckRow.setAvailable(firstPerson && hideHeadRow.isChecked());
-        firstPersonFov.setAvailable(firstPerson);
-        firstPersonSideLimit.setAvailable(firstPerson);
-        firstPersonTurnSpeed.setAvailable(firstPerson);
-
-        boolean dash = dashRow.isChecked();
-        dashAglinaRow.setAvailable(dash);
-        dashLiinoRow.setAvailable(dash);
-        dashLiinoCleanRow.setAvailable(dash && dashLiinoRow.isChecked());
-    }
-
-    private void refreshEnhancementStatus() {
-        interfaceCard.setStatus(moduleStatus("betterendfield.ui",
-                ModuleSettings.isHideUidEnabled(this) || ModuleSettings.isHideHudEnabled(this)
-                        || ModuleSettings.isPcUiEnabled(this)));
-        cameraCard.setStatus(moduleStatus("betterendfield.camera",
-                ModuleSettings.isDisableDitherEnabled(this)
-                        || ModuleSettings.isFreeCameraEnabled(this)
-                        || ModuleSettings.isWorldPauseEnabled(this)
-                        || ModuleSettings.isFirstPersonEnabled(this)
-                        || ModuleSettings.isMmdEnabled(this)));
-        dashCard.setStatus(getString(R.string.dash_pose_note, "pose_*.bin") + "\n"
-                + moduleStatus("betterendfield.actions",
-                ModuleSettings.isSustainedDashEnabled(this)
-                        && (ModuleSettings.isDashCharacterEnabled(this, "aglina")
-                                || ModuleSettings.isDashCharacterEnabled(this, "liino"))));
-    }
-
-    /**
-     * Says whether the module will be loaded at all, which is the one thing this
-     * screen can state for certain. Whether each Hook resolved is only knowable
-     * inside the game, and is reported there.
-     */
-    private String moduleStatus(String moduleId, boolean loaded) {
-        return moduleId + "  ·  " + getString(loaded
-                ? R.string.module_will_load : R.string.module_will_not_load);
-    }
-
-    private void setupDiagnosticsPage() {
-        TextView overlay = findViewById(R.id.diagnostics_overlay_status);
-        TextView modules = findViewById(R.id.diagnostics_model_status);
-        overlay.setText(getString(R.string.diagnostics_overlay,
-                state(ModuleSettings.isOverlayEnabled(this)), "无需系统悬浮权限"));
-        modules.setText(getString(R.string.diagnostics_modules, loadedModules()));
-        findViewById(R.id.diagnostics_status).setContentDescription(
-                getString(R.string.diagnostics_ready));
-    }
-
-    /**
-     * The module ids the game process will actually start, read back from the same
-     * configuration strings it reads. An empty configuration is how a module is
-     * kept out of the process, so "absent from this list" is the real state rather
-     * than a guess.
-     */
-    private String loadedModules() {
-        StringBuilder loaded = new StringBuilder();
-        appendModule(loaded, "voice.character", !ModuleSettings.getVoiceRules(this).isEmpty());
-        appendModule(loaded, "model", ModuleSettings.isModelEnabled(this)
-                || ModuleSettings.isLogoEnabled(this));
-        appendModule(loaded, "ui", ModuleSettings.isHideUidEnabled(this)
-                || ModuleSettings.isHideHudEnabled(this) || ModuleSettings.isPcUiEnabled(this));
-        appendModule(loaded, "camera", ModuleSettings.isDisableDitherEnabled(this)
-                || ModuleSettings.isFreeCameraEnabled(this)
-                || ModuleSettings.isWorldPauseEnabled(this)
-                || ModuleSettings.isFirstPersonEnabled(this) || ModuleSettings.isMmdEnabled(this));
-        appendModule(loaded, "actions", ModuleSettings.isSustainedDashEnabled(this));
-        return loaded.length() == 0 ? getString(R.string.state_none) : loaded.toString();
-    }
-
-    private void appendModule(StringBuilder text, String name, boolean loaded) {
-        if (!loaded) return;
-        if (text.length() > 0) text.append(" · ");
-        text.append(name);
-    }
-
-    private String state(boolean on) {
-        return getString(on ? R.string.state_on : R.string.state_off);
+    private void setupAboutPage() {
+        LinearLayout page = findViewById(R.id.about_section);
+        aboutPage = new AboutPage(this);
+        page.addView(aboutPage);
     }
 
     private void applyResponsiveShell() {
