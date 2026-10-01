@@ -96,6 +96,9 @@ internal sealed class BemPackageService
     public List<BemPackage> Packages { get; } = [];
     public List<string> Notices { get; } = [];
     public bool StandaloneLod { get; set; }
+    public bool SkipValidation { get; set; }
+    public bool HotSwitch { get; set; }
+    public bool LoadingOptimization { get; set; }
     public bool EffectiveLod => StandaloneLod || Packages.Any(p => p.Enabled);
     private readonly SemaphoreSlim _gate = new(1, 1);
 
@@ -107,7 +110,7 @@ internal sealed class BemPackageService
         return value;
     }
 
-    public static BemPackage ReadMetadata(string path)
+    public static BemPackage ReadMetadata(string path, bool skipValidation = false)
     {
         using var stream = System.IO.File.OpenRead(path);
         using var r = new BinaryReader(stream, Encoding.UTF8);
@@ -118,11 +121,13 @@ internal sealed class BemPackageService
             throw new InvalidDataException("仅支持 BEM 1.0/1.1/1.2 包。");
         ulong fileSize = r.ReadUInt64(), manifestSize = r.ReadUInt64();
         uint count = r.ReadUInt32(), flags = r.ReadUInt32();
-        if (fileSize != (ulong)stream.Length || fileSize > 2UL * 1024 * 1024 * 1024 || manifestSize is 0 or > 4194304 || count > (minor >= 2 ? 16384u : 4096u) || flags != 0 || 40 + manifestSize + count * 32UL > fileSize)
+        if (fileSize != (ulong)stream.Length || manifestSize == 0 || manifestSize > int.MaxValue || flags != 0 ||
+            manifestSize > fileSize - 40 || count > (fileSize - 40 - manifestSize) / 32 ||
+            (!skipValidation && (fileSize > 2UL * 1024 * 1024 * 1024 || manifestSize > 4194304 || count > (minor >= 2 ? 16384u : 4096u))))
             throw new InvalidDataException("BEM 文件长度或目录不合法。");
         using var document = JsonDocument.Parse(r.ReadBytes((int)manifestSize));
         var m = document.RootElement;
-        if (m.GetProperty("schema").GetInt32() != 1 || m.GetProperty("target").GetProperty("platform").GetString() != "windows-x64")
+        if (m.GetProperty("schema").GetInt32() != 1 || (!skipValidation && m.GetProperty("target").GetProperty("platform").GetString() != "windows-x64"))
             throw new InvalidDataException("不支持的 BEM schema 或目标平台。");
         var appearances = minor == 0 ? m.GetProperty("appearances").EnumerateArray().Select(a => new BemAppearance
         {
@@ -130,7 +135,7 @@ internal sealed class BemPackageService
             Description = a.TryGetProperty("description", out var d) ? d.GetString() ?? "" : ""
         }).ToList() : [];
         string def = minor == 0 ? StableId(m, "default_appearance_id") : "";
-        if (minor == 0 && (appearances.Count is < 1 or > 64 || appearances.Select(a => a.Id).Distinct().Count() != appearances.Count || !appearances.Any(a => a.Id == def)))
+        if (minor == 0 && (appearances.Count < 1 || (!skipValidation && appearances.Count > 64) || appearances.Select(a => a.Id).Distinct().Count() != appearances.Count || !appearances.Any(a => a.Id == def)))
             throw new InvalidDataException("BEM 外观目录不合法。");
         var groups = minor >= 1 ? m.GetProperty("option_groups").EnumerateArray().Select(g => new BemOptionGroup
         {
@@ -143,8 +148,8 @@ internal sealed class BemPackageService
             AvailableWhen = g.TryGetProperty("available_when", out var condition) ? condition.Clone() : null
         }).ToList() : [];
         int maxChoices = minor >= 2 ? 64 : 16;
-        if (minor >= 1 && (groups.Count is < 1 or > 64 || groups.Select(g => g.Id).Distinct().Count() != groups.Count ||
-            groups.Any(g => g.Choices.Count < 1 || g.Choices.Count > maxChoices || g.Choices.Select(c => c.Id).Distinct().Count() != g.Choices.Count ||
+        if (minor >= 1 && (groups.Count < 1 || (!skipValidation && groups.Count > 64) || groups.Select(g => g.Id).Distinct().Count() != groups.Count ||
+            groups.Any(g => g.Choices.Count < 1 || (!skipValidation && g.Choices.Count > maxChoices) || g.Choices.Select(c => c.Id).Distinct().Count() != g.Choices.Count ||
                             g.Choices.All(c => c.Id != g.Default))))
             throw new InvalidDataException("BEM 选项组目录不合法。");
         var package = new BemPackage
@@ -163,7 +168,8 @@ internal sealed class BemPackageService
 
     public void Load()
     {
-        Packages.Clear(); Notices.Clear(); StandaloneLod = false;
+        Packages.Clear(); Notices.Clear(); StandaloneLod = false; SkipValidation = false;
+        HotSwitch = false; LoadingOptimization = false;
         var settings = new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
         string ini = Path.Combine(Root, "runtime.ini");
         if (System.IO.File.Exists(ini))
@@ -178,13 +184,16 @@ internal sealed class BemPackageService
             }
         }
         if (settings.TryGetValue("CustomModel", out var common)) StandaloneLod = common.GetValueOrDefault("standalone_lod") is "true" or "1";
+        if (common != null) SkipValidation = common.GetValueOrDefault("skip_validation") is "true" or "1";
+        if (common != null) HotSwitch = common.GetValueOrDefault("hot_switch") is "true" or "1";
+        if (common != null) LoadingOptimization = common.GetValueOrDefault("loading_optimization") is "true" or "1";
         string dir = Path.Combine(Root, "packages");
         if (!Directory.Exists(dir)) return;
         foreach (string path in Directory.EnumerateFiles(dir, "*.bem").Order())
         {
             try
             {
-                var p = ReadMetadata(path);
+                var p = ReadMetadata(path, SkipValidation);
                 if (Packages.Any(x => x.Id == p.Id)) throw new InvalidDataException("重复包 ID");
                 if (settings.TryGetValue("Mod." + p.Id, out var state))
                 {
@@ -220,6 +229,9 @@ internal sealed class BemPackageService
         {
             Directory.CreateDirectory(Root);
             var text = new StringBuilder("[CustomModel]\nstandalone_lod=").Append(StandaloneLod ? "true" : "false").Append('\n');
+            text.Append("skip_validation=").Append(SkipValidation ? "true" : "false").Append('\n');
+            text.Append("hot_switch=").Append(HotSwitch ? "true" : "false").Append('\n');
+            text.Append("loading_optimization=").Append(LoadingOptimization ? "true" : "false").Append('\n');
             foreach (var p in Packages)
                 text.Append("\n[Mod.").Append(p.Id).Append("]\nenabled=").Append(p.Enabled ? "true" : "false")
                     .Append("\npackage=packages/").Append(Path.GetFileName(p.File))
@@ -246,6 +258,25 @@ internal sealed class BemPackageService
         var result = new BemBundleImport(staging);
         try
         {
+            if (SkipValidation)
+            {
+                Directory.CreateDirectory(staging);
+                using var archive = System.IO.Compression.ZipFile.OpenRead(source);
+                foreach (var entry in archive.Entries.Where(e => e.FullName.EndsWith(".bem", StringComparison.OrdinalIgnoreCase)))
+                {
+                    token.ThrowIfCancellationRequested();
+                    string path = Path.Combine(staging, Guid.NewGuid() + ".bem");
+                    try
+                    {
+                        if (entry.Length > 2L * 1024 * 1024 * 1024) throw new InvalidDataException("ZIP 内模型包超过导入文件上限。");
+                        await using (var input = entry.Open())
+                        await using (var output = System.IO.File.Create(path)) await input.CopyToAsync(output, token);
+                        result.Packages.Add(ReadMetadata(path, true));
+                    }
+                    catch (Exception ex) when (ex is not OperationCanceledException) { result.Issues.Add($"{entry.FullName}：{ex.Message}"); }
+                }
+                return result;
+            }
             string raw = await BemToolService.RunAsync(installRoot, ["unpack", source, "-o", staging], token);
             using var json = JsonDocument.Parse(raw);
             if (json.RootElement.GetProperty("format").GetString() != "BEM-ZIP") throw new InvalidDataException("请选择包含 BEM 模型包的 ZIP。");
@@ -253,7 +284,7 @@ internal sealed class BemPackageService
             {
                 string name = item.GetProperty("file").GetString() ?? "";
                 if (Path.GetFileName(name) != name || !name.EndsWith(".bem", StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("转换器返回无效文件名。");
-                result.Packages.Add(ReadMetadata(Path.Combine(staging, name)));
+                result.Packages.Add(ReadMetadata(Path.Combine(staging, name), SkipValidation));
             }
             foreach (var issue in json.RootElement.GetProperty("issues").EnumerateArray())
                 result.Issues.Add($"{issue.GetProperty("entry").GetString()}：{issue.GetProperty("message").GetString()}");
@@ -273,8 +304,8 @@ internal sealed class BemPackageService
             await using (var input = System.IO.File.OpenRead(source))
             await using (var output = System.IO.File.Create(temp)) await input.CopyToAsync(output, token);
             // Validate the exact staged bytes before exposing them to the library/runtime.
-            await BemToolService.RunAsync(installRoot, ["validate", temp], token);
-            var p = ReadMetadata(temp);
+            if (!SkipValidation) await BemToolService.RunAsync(installRoot, ["validate", temp], token);
+            var p = ReadMetadata(temp, SkipValidation);
             var old = Packages.FirstOrDefault(x => x.Id == p.Id);
             var caseCollision = Packages.FirstOrDefault(x => x.Id.Equals(p.Id, StringComparison.OrdinalIgnoreCase) && x.Id != p.Id);
             if (caseCollision != null) throw new InvalidDataException("包 ID 与现有包仅大小写不同，不能安全存储。");

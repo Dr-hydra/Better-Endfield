@@ -32,6 +32,19 @@ if (args is ["--v11", var packagePath])
     string ini = File.ReadAllText(Path.Combine(service.Root, "runtime.ini"));
     Check(ini.Contains("options=" + group.Id + ":" + alternate) && !ini.Contains("appearance="),
         "BEM 1.1 runtime configuration not written");
+    Check(!service.SkipValidation, "developer option must default off");
+    Check(!service.HotSwitch && !service.LoadingOptimization, "experiments must default off");
+    service.HotSwitch = true; await service.SaveAsync(); service.Load();
+    Check(service.HotSwitch && !service.LoadingOptimization, "hot-switch option not persisted independently");
+    service.LoadingOptimization = true; await service.SaveAsync(); service.Load();
+    Check(service.HotSwitch && service.LoadingOptimization, "loading optimization option not persisted");
+    service.HotSwitch = false; service.LoadingOptimization = false; await service.SaveAsync(); service.Load();
+    Check(!service.HotSwitch && !service.LoadingOptimization, "experiment options not disabled");
+    service.SkipValidation = true; await service.SaveAsync(); service.Load();
+    Check(service.SkipValidation && File.ReadAllText(Path.Combine(service.Root, "runtime.ini")).Contains("skip_validation=true"),
+        "developer option not restored from runtime configuration");
+    service.SkipValidation = false; await service.SaveAsync(); service.Load();
+    Check(!service.SkipValidation, "normal validation not restored");
     string temporary = Path.GetFullPath(ConfigurationService.SettingsDirectory);
     if (temporary.StartsWith(Path.GetFullPath(Path.GetTempPath()), StringComparison.OrdinalIgnoreCase) &&
         Path.GetFileName(temporary).StartsWith("BemManagerChecks-")) Directory.Delete(temporary, true);
@@ -81,6 +94,26 @@ try
         Check(service.Packages.Count == 2 && !service.Packages.Single(p => p.Id == selected.Id).Enabled, "selected ZIP import state");
     }
     Check(!File.Exists(stagedFile), "ZIP staging cleanup");
+    service.SkipValidation = true; await service.SaveAsync();
+    using (var bundle = await service.PrepareBundleAsync(zip, args[0]))
+        Check(bundle.Packages.Count == 2 && bundle.Issues.Count == 1, "developer ZIP import lost structural checks");
+    try { await service.ImportAsync(corrupt, args[0]); throw new InvalidOperationException("developer mode accepted a truncated header"); }
+    catch (InvalidDataException) { }
+    var uncheckedFile = Path.Combine(ConfigurationService.SettingsDirectory, "unchecked.bem");
+    byte[] uncheckedBytes = File.ReadAllBytes(args[1]);
+    byte[] capability = System.Text.Encoding.UTF8.GetBytes("\"native-materials\"");
+    byte[] unknownCapability = System.Text.Encoding.UTF8.GetBytes("\"unknown-featurex\"");
+    int capabilityOffset = uncheckedBytes.AsSpan(40, checked((int)BitConverter.ToUInt64(uncheckedBytes, 24))).IndexOf(capability);
+    Check(capabilityOffset >= 0 && capability.Length == unknownCapability.Length, "capability fixture mismatch");
+    Array.Copy(unknownCapability, 0, uncheckedBytes, 40 + capabilityOffset, unknownCapability.Length);
+    File.WriteAllBytes(uncheckedFile, uncheckedBytes);
+    service.SkipValidation = false; await service.SaveAsync();
+    try { await service.ImportAsync(uncheckedFile, args[0]); throw new InvalidOperationException("normal import skipped capability validation"); }
+    catch (InvalidDataException) { }
+    service.SkipValidation = true; await service.SaveAsync();
+    await service.ImportAsync(uncheckedFile, args[0]); service.Load();
+    Check(service.SkipValidation && service.Packages.Count == 2, "developer import was revalidated or flag lost");
+    service.SkipValidation = false; await service.SaveAsync();
     Console.WriteLine("PASS: staged validation, import/update/remove, appearance fallback, same-role selection and LOD persistence");
 }
 finally

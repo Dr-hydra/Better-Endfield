@@ -9,17 +9,17 @@ extern "C" JNIEXPORT void JNICALL Java_dev_betterendfield_android_BemInstaller_c
     cancelled=true;betterendfield::CancelTextureCompression();
 }
 // Import validates every appearance but leaves the selected package byte-for-byte intact.
-extern "C" JNIEXPORT jstring JNICALL Java_dev_betterendfield_android_BemInstaller_inspectNative(JNIEnv* env,jclass,jstring src) {
+extern "C" JNIEXPORT jstring JNICALL Java_dev_betterendfield_android_BemInstaller_inspectNativeWithOptions(JNIEnv* env,jclass,jstring src,jboolean skip_validation) {
     try {
         Utf input(env,src);
         using namespace BetterEndfield::CustomModel;
         BemPackageInfo info; std::string error;
-        if(!ReadBemPackageInfo(input.data,info,error)) throw std::runtime_error(error);
+        if(!ReadBemPackageInfo(input.data,info,error,skip_validation)) throw std::runtime_error(error);
         auto selections=info.appearances;
         if(info.minor) selections.push_back(info.default_options);
         for(const auto& appearance:selections) {
             BemPocData parsed;
-            if(!LoadBem(input.data,parsed,error,appearance)) throw std::runtime_error(error);
+            if(!LoadBem(input.data,parsed,error,appearance,nullptr,skip_validation)) throw std::runtime_error(error);
         }
         BemJson report={{"package_id",info.package_id},{"character_id",info.character_id},{"name",info.name},
             {"bytes",std::filesystem::file_size(input.data)},{"bem_minor",info.minor}};

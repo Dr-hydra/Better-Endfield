@@ -5,6 +5,7 @@ are parsed as data; no Python eval, shader execution or arbitrary command runs.
 """
 import ast
 import io
+import math
 import re
 import struct
 import zlib
@@ -31,7 +32,8 @@ def layout_crc(native):
         strides[stream] += sizes[fmt]*dim
     if strides != native["strides"]:
         raise ValueError("native descriptor/stride mismatch")
-    expected = [[13, 6, 4, 2]] if strides[2]==4 else [[12, 4, 4, 2], [13, 6, 4, 2]]
+    expected = {4: [[13, 6, 4, 2]], 12: [[12, 4, 4, 2], [13, 6, 4, 2]],
+                32: [[12, 0, 4, 2], [13, 10, 4, 2]]}.get(strides[2])
     if [a for a in attrs if a[3]==2] != expected:
         raise ValueError("unsupported native skin declaration")
     return zlib.crc32(b"".join(struct.pack("<4i", *a) for a in attrs)) & 0xffffffff
@@ -275,8 +277,8 @@ def convert(src, ini, profile, *, max_output_bytes=512 * 1024 * 1024):
         streams = [bytearray(), bytearray(), bytearray()]
         ib, draw_table, bones, bone_ids, vertex_ids = [], [], [], {}, {}
         strides = native["strides"]
-        if len(strides) != 3 or strides[2] not in (4, 12): raise ValueError("unsupported native skin layout")
-        if mapping.get("skin") not in ("unorm16x4_uint16x4", "unorm16x4_uint8x4", "rigid_uint8x4"):
+        if len(strides) != 3 or strides[2] not in (4, 12, 32): raise ValueError("unsupported native skin layout")
+        if mapping.get("skin") not in ("unorm16x4_uint16x4", "unorm16x4_uint8x4", "rigid_uint8x4", "float32x4_uint32x4"):
             raise ValueError("explicit input skin declaration required")
         for draw in draws:
             rules = [r for r in mapping["material_rules"] if r["bindings"] == draw["bindings"]]
@@ -316,7 +318,10 @@ def convert(src, ini, profile, *, max_output_bytes=512 * 1024 * 1024):
                 texture_mask |= 1 << t
             bufs = [resource(draw["buffers"][f"vb{i}"]) for i in range(3)]
             input_strides = [int(value(d, "stride")) for _, d, _ in bufs]
-            expected_skin = {"unorm16x4_uint16x4": 16, "unorm16x4_uint8x4": 12, "rigid_uint8x4": 4}[mapping["skin"]]
+            expected_skin = {"unorm16x4_uint16x4": 16, "unorm16x4_uint8x4": 12, "rigid_uint8x4": 4,
+                             "float32x4_uint32x4": 32}[mapping["skin"]]
+            if expected_skin == 32 and strides[2] != 32:
+                raise ValueError('float skin requires the verified native float32/UInt32 layout')
             if input_strides != mapping["input_strides"] or input_strides[:2] != strides[:2] or input_strides[2] != expected_skin:
                 raise ValueError("input/native vertex declarations require an unsupported adaptation")
             sizes = [len(raw) // stride for (raw, _, _), stride in zip(bufs, input_strides)]
@@ -343,9 +348,15 @@ def convert(src, ini, profile, *, max_output_bytes=512 * 1024 * 1024):
                         stride = input_strides[s]
                         streams[s].extend(bufs[s][0][original * stride:(original + 1) * stride])
                     skin = bufs[2][0][original * expected_skin:(original + 1) * expected_skin]
-                    weights = (65535, 0, 0, 0) if expected_skin == 4 else struct.unpack_from("<4H", skin)
-                    source_bones = struct.unpack_from("<4H" if expected_skin == 16 else "<4B", skin, 8 if expected_skin != 4 else 0)
-                    if abs(sum(weights) - 65535) > 655: raise ValueError("invalid skin weight sum")
+                    if expected_skin == 32:
+                        weights = struct.unpack_from('<4f', skin)
+                        source_bones = struct.unpack_from('<4I', skin, 16)
+                        if any(not math.isfinite(w) or w < 0 for w in weights) or abs(sum(weights) - 1) > .01:
+                            raise ValueError('invalid skin weight sum')
+                    else:
+                        weights = (65535, 0, 0, 0) if expected_skin == 4 else struct.unpack_from("<4H", skin)
+                        source_bones = struct.unpack_from("<4H" if expected_skin == 16 else "<4B", skin, 8 if expected_skin != 4 else 0)
+                        if abs(sum(weights) - 65535) > 655: raise ValueError("invalid skin weight sum")
                     mapped = []
                     for weight, source_index in zip(weights, source_bones):
                         if not weight: mapped.append(0); continue
@@ -359,6 +370,9 @@ def convert(src, ini, profile, *, max_output_bytes=512 * 1024 * 1024):
                         if sum(w > 0 for w in weights) != 1 or weights[0] != 65535:
                             raise ValueError("weighted mesh cannot use rigid native layout")
                         streams[2].extend(bytes(mapped))
+                    elif strides[2] == 32:
+                        normalized = weights if expected_skin == 32 else [w / 65535. for w in weights]
+                        streams[2].extend(struct.pack('<4f4I', *normalized, *mapped))
                     else:
                         streams[2].extend(struct.pack("<4H4B", *weights, *mapped))
                 ib.append(vertex_ids[key])

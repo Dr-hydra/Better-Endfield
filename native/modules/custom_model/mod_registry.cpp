@@ -15,6 +15,19 @@ bool Boolean(std::string_view s,bool& out) {
     if(s=="false"||s=="0") {out=false;return true;}
     return false;
 }
+std::string FileTimeIdentity(std::filesystem::file_time_type time) {
+    // libc++ uses a 128-bit file-clock representation on Android. Preserve the
+    // complete tick count without an ambiguous to_string or narrowing cast.
+    auto ticks=time.time_since_epoch().count();
+    if (!ticks) return "0";
+    const bool negative=ticks<0; std::string digits;
+    while (ticks) {
+        const int digit=static_cast<int>(ticks%10);
+        digits.push_back(static_cast<char>('0'+(digit<0?-digit:digit))); ticks/=10;
+    }
+    if (negative) digits.push_back('-');
+    std::reverse(digits.begin(),digits.end()); return digits;
+}
 }
 std::span<const CharacterAdapter> CharacterAdapters() { return {}; }
 const EnabledMod* ModRegistry::Match(std::string_view resource) const {
@@ -41,6 +54,16 @@ bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,Mod
         if(auto i=sections["CustomModel"].find("standalone_lod");i!=sections["CustomModel"].end()&&!Boolean(i->second,parsed.standalone_lod)) {
             error="standalone_lod must be boolean";return false;
         }
+        if(auto i=sections["CustomModel"].find("skip_validation");i!=sections["CustomModel"].end()&&!Boolean(i->second,parsed.skip_validation)) {
+            error="skip_validation must be boolean";return false;
+        }
+        if(auto i=sections["CustomModel"].find("hot_switch");i!=sections["CustomModel"].end()&&!Boolean(i->second,parsed.hot_switch)) {
+            error="hot_switch must be boolean";return false;
+        }
+        if(auto i=sections["CustomModel"].find("loading_optimization");i!=sections["CustomModel"].end()&&!Boolean(i->second,parsed.loading_optimization)) {
+            error="loading_optimization must be boolean";return false;
+        }
+        if(parsed.skip_validation) parsed.diagnostics.push_back("Developer mode: model validation disabled; crashes and incorrect rendering are possible.");
         std::set<std::string> roles,resources,conflicts;
         for(const auto& [name,values]:sections) {
             if(!name.starts_with("Mod.")) continue;
@@ -53,7 +76,7 @@ bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,Mod
             if(file.empty()||path.extension()!=".bem") {parsed.diagnostics.push_back("Refused non-BEMv1 package: "+name);continue;}
             if(path.is_relative()) path=root/path;
             BemPackageInfo info; std::string why;
-            if(!ReadBemPackageInfo(path,info,why)) {parsed.diagnostics.push_back("Package refused: "+name+": "+why);continue;}
+            if(!ReadBemPackageInfo(path,info,why,parsed.skip_validation)) {parsed.diagnostics.push_back("Package refused: "+name+": "+why);continue;}
             auto appearance=info.minor?get("options"):get("appearance");
             if(appearance.empty()) appearance=info.minor?info.default_options:info.default_appearance;
             if(!info.minor && std::find(info.appearances.begin(),info.appearances.end(),appearance)==info.appearances.end()) {
@@ -63,11 +86,20 @@ bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,Mod
                 conflicts.insert(info.character_id); parsed.diagnostics.push_back("Conflicting enabled package: "+info.character_id); continue;
             }
             resources.insert(info.world_resource); resources.insert(info.ui_resource);
-            auto own=std::make_unique<OwnedCharacterAdapter>(); own->id=info.character_id;
+            auto own=std::make_shared<OwnedCharacterAdapter>(); own->id=info.character_id;
             own->world=info.world_resource; own->ui=info.ui_resource; own->names=info.component_names;
             for(size_t i=0;i<own->names.size();++i) own->components.push_back({own->names[i].c_str(),info.original_counts[i]});
             own->adapter={own->id.c_str(),own->world.c_str(),own->ui.c_str(),"",false,own->components};
-            parsed.enabled.push_back({&own->adapter,path.lexically_normal(),appearance}); parsed.owned_adapters.push_back(std::move(own));
+            std::error_code file_error;
+            const auto stamp=std::filesystem::last_write_time(path,file_error);
+            const auto bytes=std::filesystem::file_size(path,file_error);
+            const auto canonical=path.lexically_normal();
+            const std::string key=canonical.string()+"\n"+appearance+"\n"+
+                (parsed.skip_validation?"unchecked":"checked")+"\n"+
+                (parsed.loading_optimization?"optimized":"normal")+"\n"+
+                FileTimeIdentity(stamp)+":"+std::to_string(bytes);
+            parsed.enabled.push_back({&own->adapter,canonical,appearance,parsed.skip_validation,parsed.loading_optimization,key});
+            parsed.owned_adapters.push_back(std::move(own));
         }
         std::erase_if(parsed.enabled,[&](const auto& m){return conflicts.contains(m.adapter->id);});
         output=std::move(parsed);return true;

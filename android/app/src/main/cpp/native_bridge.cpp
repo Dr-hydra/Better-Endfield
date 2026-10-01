@@ -223,6 +223,14 @@ Java_dev_betterendfield_android_NativeCommandBridge_releaseKeys(JNIEnv*, jclass)
 
 extern "C" JNIEXPORT jint JNICALL
 Java_dev_betterendfield_android_NativeCommandBridge_protocolVersion(JNIEnv*, jclass) { return 1; }
+extern "C" JNIEXPORT jboolean JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_updateCustomModelConfig(JNIEnv* env,jclass,jstring configuration) {
+    if (!env || !configuration || env->GetStringUTFLength(configuration)>1024*1024) return JNI_FALSE;
+    const char* text=env->GetStringUTFChars(configuration,nullptr); if (!text) return JNI_FALSE;
+    const bool queued=betterendfield::CustomModelModule::QueueConfiguration(text);
+    env->ReleaseStringUTFChars(configuration,text);
+    return queued?JNI_TRUE:JNI_FALSE;
+}
 extern "C" JNIEXPORT void JNICALL
 Java_dev_betterendfield_android_NativeCommandBridge_frame(JNIEnv*, jclass) {
     auto& state = betterendfield::State();
@@ -230,6 +238,7 @@ Java_dev_betterendfield_android_NativeCommandBridge_frame(JNIEnv*, jclass) {
         if (state.connected.load(std::memory_order_acquire)) {
             betterendfield::Il2CppThreadScope thread(state.runtime);
             if (!thread.attached()) return;
+            betterendfield::CustomModelModule::ApplyPendingConfiguration();
             betterendfield::DispatchAndroidFrame();
         } else {
             // Publish the render-thread identity before the worker starts.
@@ -296,6 +305,7 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
         BE_NATIVE(key, "(II)Z"), BE_NATIVE(releaseKeys, "()V"), BE_NATIVE(protocolVersion, "()I"),
         BE_NATIVE(frame, "()V"), BE_NATIVE(foreground, "(Z)V"), BE_NATIVE(look, "(II)V"), BE_NATIVE(runtimeStatus, "()Ljava/lang/String;"),
         BE_NATIVE(cameraValues, "(FF)V"), BE_NATIVE(mmdStatus, "()Ljava/lang/String;"),
+        BE_NATIVE(updateCustomModelConfig, "(Ljava/lang/String;)Z"),
         BE_NATIVE(mmd, "(IIDLjava/lang/String;)Z")
     };
 #undef BE_NATIVE

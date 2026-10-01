@@ -318,6 +318,47 @@
       "textures": 37,
       "mapping_status": "offline-resource-identities",
       "issues": []
+    },
+    {
+      "character_id": "chr_0038_purrche",
+      "name": "噗切娜",
+      "entries": 9,
+      "textures": 29,
+      "mapping_status": "offline-resource-identities-partial",
+      "issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_purrchena_fur_01_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        },
+        {
+          "kind": "mesh",
+          "name": "S_actor_purrchena_fur_02_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        },
+        {
+          "kind": "mesh",
+          "name": "S_actor_purrchena_fur_03_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        },
+        {
+          "kind": "mesh_collision",
+          "hash": "6bf2ba87",
+          "components": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13
+          ],
+          "reason": "same IB identity for multiple native parts"
+        }
+      ]
     }
   ]
 }

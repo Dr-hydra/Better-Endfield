@@ -53,16 +53,26 @@ public final class XposedEntry extends XposedModule {
                     Application application=(Application) chain.getThisObject();
                     Context context=(Context) chain.getArg(0);
                     new Thread(() -> {
+                        String initialIndex=settings.getString(BemInstaller.INDEX,"[]");
+                        boolean skipValidation=settings.getBoolean(BemInstaller.SKIP_VALIDATION,false);
+                        boolean hotSwitch=settings.getBoolean(BemInstaller.HOT_SWITCH,false);
+                        boolean loadingOptimization=settings.getBoolean(BemInstaller.LOADING_OPTIMIZATION,false);
+                        boolean installedPrepared=false;
+                        BemInstalledResources.Source modelSource=
+                            name -> new ParcelFileDescriptor.AutoCloseInputStream(openRemoteFile(name));
                         try {
                             BemInstalledResources.configuration=BemInstalledResources.prepare(context,
-                                settings.getString(BemInstaller.INDEX,"[]"),
-                                name -> new ParcelFileDescriptor.AutoCloseInputStream(openRemoteFile(name)),this::report);
+                                initialIndex,modelSource,this::report,skipValidation,hotSwitch,loadingOptimization);
+                            installedPrepared=true;
                         } catch(Exception error) {report("Installed BEM preparation failed: "+error);}
                         if (settings.getBoolean(ModuleSettings.MMD_ENABLED, false)) try {
                             MmdInstalledResources.prepare(context, settings.getString(MmdInstaller.INDEX, "[]"),
                                     name -> new ParcelFileDescriptor.AutoCloseInputStream(openRemoteFile(name)), this::report);
                         } catch (Exception error) { report("MMD preparation failed: " + error); }
                         RuntimeBootstrap.prepare(application,context,param.getClassLoader(),configs,this::installFrames,this::report);
+                        if(installedPrepared) BemHotSwitchUpdater.start(context,
+                            ()->getRemotePreferences("module_settings"),modelSource,initialIndex,
+                            skipValidation,hotSwitch,loadingOptimization,this::report);
                     },"BetterEndfield-InstalledModels").start();
                 } catch (Throwable error) { report("bootstrap failed: " + error); }
                 return result;

@@ -144,6 +144,7 @@ const void* g_input_type_field = nullptr;
 std::atomic_uint32_t g_desired_generation{0};
 std::atomic_uint32_t g_applied_generation{0};
 std::atomic_int32_t g_restore_input_type{-1};
+std::atomic_uint64_t g_next_input_type_check_tick{0};
 std::atomic_uint32_t g_uid_desired_generation{0};
 std::atomic_uint32_t g_uid_applied_generation{0};
 std::atomic_uint64_t g_next_uid_scan_tick{0};
@@ -980,7 +981,11 @@ bool TryReadInputType(int32_t& value) {
 // touch or desktop layout; overriding the getters cannot reach them.
 void PumpInputType() {
     const uint32_t desired = g_desired_generation.load(std::memory_order_acquire);
-    if (g_applied_generation.load(std::memory_order_relaxed) == desired) {
+    const bool mobile = g_mobile_ui_enabled.load(std::memory_order_acquire);
+    const bool pc = g_pc_ui_enabled.load(std::memory_order_acquire);
+    const bool active = mobile || pc;
+    const bool pending = g_applied_generation.load(std::memory_order_relaxed) != desired;
+    if (!pending && !active) {
         return;
     }
     // The switch re-enters through every UIStyleByState it refreshes; let the
@@ -994,14 +999,28 @@ void PumpInputType() {
         bool& flag;
         ~Guard() { flag = false; }
     } guard{in_progress};
+    // Initialization and direct field writes can change the real input state
+    // without a new settings generation. Recheck an enabled override, while
+    // bounding boxing and rejected requests to four per second.
+    const uint64_t now = GetTickCount64();
+    if (now < g_next_input_type_check_tick.load(std::memory_order_acquire)) return;
+    g_next_input_type_check_tick.store(now + 250, std::memory_order_release);
+    auto report_status = [&](const char* reason) {
+        static thread_local uint32_t reported_generation = 0;
+        static thread_local const char* reported_reason = nullptr;
+        if (!g_diagnostics_enabled.load(std::memory_order_relaxed) ||
+            (reported_generation == desired && reported_reason == reason)) return;
+        reported_generation = desired;
+        reported_reason = reason;
+        Log(std::string("UI layout request generation=") + std::to_string(desired) +
+            ", mode=" + (pc ? "Keyboard" : mobile ? "Touch" : "restore") + ": " + reason);
+    };
     if (!g_host || !g_host->runtime_invoke || !g_change_input_type_method) {
+        if (active) report_status("ChangeInputType invocation unavailable");
         g_applied_generation.store(desired, std::memory_order_release);
         return;
     }
 
-    const bool mobile = g_mobile_ui_enabled.load(std::memory_order_acquire);
-    const bool pc = g_pc_ui_enabled.load(std::memory_order_acquire);
-    const bool active = mobile || pc;
     // Default must preserve the game's own input choice. A module which only
     // hides HUD/UID must never implicitly select keyboard mode on a phone.
     const int32_t restore = g_restore_input_type.load(std::memory_order_acquire);
@@ -1011,17 +1030,23 @@ void PumpInputType() {
     }
     int32_t current = 0;
     const bool have_current = TryReadInputType(current);
-    if (active && have_current && restore < 0)
-        g_restore_input_type.store(current, std::memory_order_release);
-    if (active && !have_current && restore < 0) return; // restoration cannot be guaranteed
+    if (active && !have_current && restore < 0) {
+        report_status("waiting for readable inputType backing field");
+        return; // restoration cannot be guaranteed
+    }
     int32_t target = active ? (pc ? g_keyboard_input_type : kInputTypeTouch) : restore;
     if (target < 0) return;
 
     if (have_current && current == target) {
+        if (pending && active) report_status("backing field already matches; monitoring subsequent changes");
         if (!active) g_restore_input_type.store(-1, std::memory_order_release);
         g_applied_generation.store(desired, std::memory_order_release);
         return;
     }
+    // An initial default already equal to the target is not a state we changed.
+    // Capture restoration only when we actually override the game's choice.
+    if (active && have_current && restore < 0)
+        g_restore_input_type.store(current, std::memory_order_release);
 
     void* parameters[1] = {&target};
     void* exception = nullptr;
@@ -1038,6 +1063,17 @@ void PumpInputType() {
         // Read back: the game can refuse a switch, so "sent" is not "applied".
         int32_t observed = -1;
         TryReadInputType(observed);
+        static thread_local uint32_t logged_generation = 0;
+        static thread_local int32_t logged_target = -1, logged_observed = -1;
+        static thread_local bool logged_exception = false, have_logged = false;
+        const bool managed_exception = exception != nullptr;
+        if (have_logged && logged_generation == desired && logged_target == target &&
+            logged_observed == observed && logged_exception == managed_exception) return;
+        have_logged = true;
+        logged_generation = desired;
+        logged_target = target;
+        logged_observed = observed;
+        logged_exception = managed_exception;
         char buffer[200];
         std::snprintf(buffer, sizeof(buffer),
             "Input type pushed to %d (was %d, now %d, active=%s)%s%s",
@@ -1485,6 +1521,9 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
 
     Log(std::string("UI Configuration applied: enabled=") + (config.enabled ? "true" : "false") +
         ", mobile_ui_enabled=" + (config.mobile_ui_enabled ? "true" : "false") +
+        ", pc_ui_enabled=" + (config.pc_ui_enabled ? "true" : "false") +
+        ", pc_ui_effective=" + (pc_active ? "true" : "false") +
+        ", keyboard_input_type=" + std::to_string(g_keyboard_input_type) +
         ", hide_uid_enabled=" + (config.hide_uid_enabled ? "true" : "false") +
         ", hide_hud_enabled=" + (config.hide_hud_enabled ? "true" : "false") +
         ", hide_hud_hotkey_vk=" + std::to_string(config.hide_hud_hotkey) +
@@ -1495,6 +1534,7 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
     // into managed code.  Record the request and let the UI-thread pump raise
     // the actual input-type switch.
     g_desired_generation.fetch_add(1, std::memory_order_acq_rel);
+    g_next_input_type_check_tick.store(0, std::memory_order_release);
     g_uid_desired_generation.fetch_add(1, std::memory_order_acq_rel);
     g_next_uid_scan_tick.store(0, std::memory_order_release);
     g_next_hud_scan_tick.store(0, std::memory_order_release);

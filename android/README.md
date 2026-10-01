@@ -1,11 +1,14 @@
 # Better Endfield Android
 
-## Android 3.4.0
+## Android 3.4.1
 
 The current branch includes the MMD library/player, responsive in-game deck,
 independent world pause, first-person updates and multiple BEM packages per
 character. Settings save automatically; restarting the game loads the updated
-module configuration and installed works. In-game controls take effect
+module configuration and installed works. Experimental model hot-switching and
+loading optimization are off by default. Enable the switches before restarting
+the game; hot-switching then picks up model selections on normal resource reloads
+such as team changes or reopening character details. In-game controls take effect
 immediately. See [the integration record](../docs/ANDROID_CAMERA_MMD_20261001.md)
 for validation results and platform limits.
 
@@ -18,7 +21,7 @@ private `betterendfield/camera-path.becam`.
 
 Third-party BEM packages are managed directly in the main navigation tab,
 including import, per-character exclusive activation and expandable component
-options. The model download buttons open the author's Quark and Baidu mirrors.
+options. The model download buttons open the author's Quark, Baidu and Katfile mirrors.
 The header's support button offers WeChat appreciation, Afdian and PayPal.
 
 The optional PC layout uses the game's input-mode switch. It is off by default

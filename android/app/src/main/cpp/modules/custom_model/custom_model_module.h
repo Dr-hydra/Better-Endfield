@@ -20,6 +20,8 @@ public:
     const char* Id() const override { return "betterendfield.custom_model"; }
     ModuleResult Start(Il2CppRuntime& runtime) override;
     BE_Result RetireSharedHooks(const char* module_id);
+    static bool QueueConfiguration(const std::string& configuration);
+    static void ApplyPendingConfiguration();
 
 private:
     static CustomModelModule* instance_;
@@ -49,6 +51,7 @@ private:
     static void HostGcHandleFree(void*, uint32_t);
     static void* HostFieldGetValueObject(void*, const void*, void*);
     bool InitializeSharedReplacement(const std::string& config);
+    bool UpdateSharedReplacement(const std::string& config);
 
     using FinishFn = void(*)(void*, void*, void*);
     using CopyFn = void(*)(void*, void*);

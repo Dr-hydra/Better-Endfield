@@ -10,6 +10,13 @@ final class BemInstalledResources {
     interface Source {InputStream open(String name) throws Exception;}
     static volatile String configuration="";
     static String prepare(Context context,String index,Source source,Consumer<String> log) throws Exception {
+        return prepare(context,index,source,log,false);
+    }
+    static String prepare(Context context,String index,Source source,Consumer<String> log,boolean skipValidation) throws Exception {
+        return prepare(context,index,source,log,skipValidation,false,false);
+    }
+    static String prepare(Context context,String index,Source source,Consumer<String> log,
+            boolean skipValidation,boolean hotSwitch,boolean loadingOptimization) throws Exception {
         JSONArray entries=BemOptions.exclusive(new JSONArray(index));StringBuilder paths=new StringBuilder(),appearances=new StringBuilder(),options=new StringBuilder();
         File root=new File(context.getFilesDir(),"betterendfield/installed-models");
         if(!root.isDirectory()&&!root.mkdirs()) throw new IOException("Cannot create game model directory");
@@ -36,6 +43,8 @@ final class BemInstalledResources {
             paths.append(output.getAbsolutePath());appearances.append(appearance);options.append(selection);
             log.accept("Installed BEM ready: "+entry.getString("package_id")+" selection="+(composable?selection:appearance));
         }
-        return paths.length()==0?"":"resource=auto;replace=1;lod_pipeline=1;lod_npc=1;packages="+paths+";appearances="+appearances+";options="+options;
+        return paths.length()==0&&!hotSwitch?"":"resource=auto;replace=1;lod_pipeline=1;lod_npc=1;packages="+paths
+            +";appearances="+appearances+";options="+options+";skip_validation="+(skipValidation?"1":"0")
+            +";hot_switch="+(hotSwitch?"1":"0")+";loading_optimization="+(loadingOptimization?"1":"0");
     }
 }

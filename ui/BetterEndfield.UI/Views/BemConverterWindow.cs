@@ -26,6 +26,8 @@ internal sealed class BemConverterWindow : Window
     private string _source = "", _report = "", _scratch = "", _prepared = "", _exported = "";
     private string Mode => (_task.SelectedItem as ComboBoxItem)?.Tag as string ?? "convert";
     private bool _closed;
+    private BemExportProject _project = new();
+    private string? _projectFile;
 
     public BemConverterWindow(string installRoot)
     {
@@ -34,7 +36,7 @@ internal sealed class BemConverterWindow : Window
         var body = new StackPanel { Spacing = 18, Padding = new Thickness(28), MaxWidth = 840, HorizontalAlignment = HorizontalAlignment.Stretch };
         body.Children.Add(Text("BEM 创作者工具", 28));
         body.Children.Add(Text("先选任务。只想使用下载的 BEM / ZIP？回到“角色外观”直接导入即可。"));
-        foreach (var item in new[] { ("转换其他来源的 Mod", "convert"), ("解包 BEM / ZIP", "unpack"), ("将项目打包为 BEM", "pack"), ("制作多 Mod ZIP 合集", "bundle") })
+        foreach (var item in new[] { ("创建 / 打开导出工程", "build"), ("转换其他来源的 Mod", "convert"), ("解包 BEM / ZIP", "unpack"), ("将项目打包为 BEM", "pack"), ("制作多 Mod ZIP 合集", "bundle") })
             _task.Items.Add(new ComboBoxItem { Content = item.Item1, Tag = item.Item2 });
         body.Children.Add(_task); body.Children.Add(_intro); body.Children.Add(_steps);
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
@@ -83,7 +85,12 @@ internal sealed class BemConverterWindow : Window
         if (_operation != null) return;
         ClearPrepared(); _source = _exported = _report = ""; _steps.Children.Clear(); _result.Children.Clear(); _result.Visibility = Visibility.Collapsed;
         _status.IsOpen = false; _saveReport.IsEnabled = false; _detailPanel.Visibility = Visibility.Collapsed; _detailPanel.IsExpanded = false;
-        if (Mode == "convert")
+        if (Mode == "build")
+        {
+            _intro.Text = "保存输入、转换配方、包信息与输出参数；打开工程后可修改参数并重复导出。路径相对工程文件所在目录。";
+            RenderExportProject();
+        }
+        else if (Mode == "convert")
         {
             _intro.Text = "选源 Mod → 自动检查 → 转换并导出 BEM。角色资料由工具管理；无法转换时会列出具体缺项。";
             var choices = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
@@ -102,6 +109,82 @@ internal sealed class BemConverterWindow : Window
             _steps.Children.Add(Card("1  选择输入", Text(Mode == "pack" ? "需要 project.json 及其引用的 payloads 文件。不是转换配方 JSON。" : Mode == "unpack" ? "解包不会还原 Blender 工程或源 Mod 脚本。" : "可包含不同角色；每个 BEM 内的多外观会完整保留。"),
                 Button(Mode == "pack" ? "选择 project.json…" : Mode == "unpack" ? "选择 BEM / ZIP…" : "选择 BEM（可多选）…", SelectProjectInput, true)));
         }
+    }
+    private TextBox ProjectField(string label, string initial, Action<string> change)
+    {
+        var field = new TextBox { Header = label, Text = initial, HorizontalAlignment = HorizontalAlignment.Stretch };
+        field.TextChanged += (_, _) => change(field.Text);
+        return field;
+    }
+    private void RenderExportProject()
+    {
+        _steps.Children.Clear();
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        actions.Children.Add(Button("新建工程", () => { _project = new(); _projectFile = null; RenderExportProject(); return Task.CompletedTask; }));
+        actions.Children.Add(Button("打开工程…", OpenExportProject));
+        actions.Children.Add(Button("保存工程…", () => SaveExportProject(true)));
+        _steps.Children.Add(Card(_projectFile ?? "尚未保存的导出工程", actions));
+        var mode = new ComboBox { Header = "输入类型", HorizontalAlignment = HorizontalAlignment.Stretch };
+        mode.Items.Add(new ComboBoxItem { Content = "源 Mod（自动匹配或使用转换配方）", Tag = "convert" });
+        mode.Items.Add(new ComboBoxItem { Content = "BEM 可编辑项目（project.json + payloads）", Tag = "pack" });
+        mode.SelectedIndex = _project.Mode == "pack" ? 1 : 0;
+        mode.SelectionChanged += (_, _) => { _project.Mode = (mode.SelectedItem as ComboBoxItem)?.Tag as string ?? "convert"; };
+        var inputActions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        inputActions.Children.Add(Button("选择输入文件…", () => SelectExportInput(false)));
+        inputActions.Children.Add(Button("选择源目录…", () => SelectExportInput(true)));
+        var recipeActions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        recipeActions.Children.Add(Button("选择转换配方…", async () =>
+        {
+            string? file = await OpenPath(".json"); if (file == null) return;
+            _project.Recipe = _projectFile == null ? file : BemExportProject.PortablePath(file, _projectFile);
+            RenderExportProject();
+        }));
+        _steps.Children.Add(Card("输入和导出参数", mode,
+            ProjectField("源文件或目录", _project.Source, value => _project.Source = value), inputActions,
+            ProjectField("转换配方（自动转换可留空；打包模式留空）", _project.Recipe, value => _project.Recipe = value), recipeActions,
+            ProjectField("BEM 输出路径", _project.Output, value => _project.Output = value),
+            ProjectField("报告路径（可留空）", _project.Report, value => _project.Report = value)));
+        _steps.Children.Add(Card("包信息", Text("包 ID 在工程中保持不变；再次导出同 ID 可更新已发布包。别名、骨架、纹理与外观规则保存在配方/输入项目中。"),
+            ProjectField("包 ID", _project.Package["id"], value => _project.Package["id"] = value),
+            ProjectField("名称", _project.Package["name"], value => _project.Package["name"] = value),
+            ProjectField("作者", _project.Package["author"], value => _project.Package["author"] = value),
+            ProjectField("包版本", _project.Package["version"], value => _project.Package["version"] = value),
+            Button("保存参数并导出 BEM", BuildExportProject, true)));
+    }
+    private async Task OpenExportProject()
+    {
+        string? file = await OpenPath(".json"); if (file == null) return;
+        var project = BemExportProject.Load(file);
+        _project = project; _projectFile = file; RenderExportProject();
+        Status("工程已打开", "修改参数后点击“保存参数并导出 BEM”。");
+    }
+    private async Task SelectExportInput(bool folder)
+    {
+        string? file = folder ? await FolderPath() : await OpenPath(_project.Mode == "pack" ? [".json"] : [".zip", ".rar", ".7z"]);
+        if (file == null) return;
+        if (_project.Mode == "pack") _project.ReadPackMetadata(file);
+        _project.Source = _projectFile == null ? file : BemExportProject.PortablePath(file, _projectFile);
+        RenderExportProject();
+    }
+    private async Task SaveExportProject(bool chooseLocation)
+    {
+        string? file = _projectFile;
+        if (file == null || chooseLocation) file = await SavePath(".json", "BEM 导出工程", file == null ? "character.bemproj" : Path.GetFileNameWithoutExtension(file));
+        if (file == null) return;
+        _project.Save(file, _projectFile); _projectFile = file; RenderExportProject();
+        Status("工程已保存", file);
+    }
+    private async Task BuildExportProject()
+    {
+        await SaveExportProject(false);
+        if (_projectFile == null) return;
+        string projectFile = _projectFile;
+        await Run("正在按工程参数导出", async token =>
+        {
+            string raw = await BemToolService.RunAsync(_installRoot, ["build", projectFile], token); Report(raw);
+            string output = BemExportProject.Resolve(_project.Output, projectFile);
+            Completed(output, BemReportPresentation.Package(raw) + "\n工程已保留，可修改参数后再次导出。导出校验通过，游戏显示效果仍需实机确认。");
+        });
     }
     private void SetStepButtons(bool enabled)
     {

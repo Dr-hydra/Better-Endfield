@@ -316,6 +316,12 @@ bool AndroidSubmitMesh(void* mesh, const BetterEndfield::CustomModel::BemCompone
         }
         void* apply_args[]{runtime->Unbox(writable.box),mesh,&flags};
         calls.Call(api.apply,nullptr,apply_args); writable.consumed = true;
+        if(component.skip_validation) {
+            LogInfo(kLog,("developer submit C"+std::to_string(component.info.component_id)+
+                " vertices="+std::to_string(vertices)+" indices="+std::to_string(indices)+
+                " submeshes="+std::to_string(subs)).c_str());
+            return true;
+        }
         if (calls.Value<int32_t>(api.attribute_count,mesh) != attr_count)
             throw std::runtime_error("submitted attribute count differs");
         for (int32_t i = 0; i < attr_count; ++i) {

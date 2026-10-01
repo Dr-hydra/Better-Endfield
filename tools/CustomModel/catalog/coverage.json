@@ -17,6 +17,12 @@
         32916,
         34160
       ]
+    },
+    {
+      "run": "purrche-pc-20261001-225354",
+      "process_ids": [
+        6340
+      ]
     }
   ],
   "characters": [
@@ -655,6 +661,59 @@
           "kind": "mesh",
           "name": "S_actor_liino_brow_01_lod0",
           "reason": "not a complete single-submesh index region"
+        }
+      ]
+    },
+    {
+      "character_id": "chr_0038_purrche",
+      "name": "噗切娜",
+      "components": 22,
+      "mapping_status": "offline-resource-identities-partial",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_purrchena_fur_01_lod0_20",
+        "S_actor_purrchena_fur_02_lod0_20",
+        "S_actor_purrchena_fur_03_lod0_20",
+        "S_actor_purrchena_furcard_01_lod0"
+      ],
+      "observations": {
+        "chr_0038_purrche_postmodel": 22,
+        "chr_0038_purrche_uimodel": 22
+      },
+      "source_entries": 9,
+      "source_textures": 29,
+      "identity_issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_purrchena_fur_01_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        },
+        {
+          "kind": "mesh",
+          "name": "S_actor_purrchena_fur_02_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        },
+        {
+          "kind": "mesh",
+          "name": "S_actor_purrchena_fur_03_lod0_20",
+          "reason": "not a complete single-submesh index region"
+        },
+        {
+          "kind": "mesh_collision",
+          "hash": "6bf2ba87",
+          "components": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13
+          ],
+          "reason": "same IB identity for multiple native parts"
         }
       ]
     }

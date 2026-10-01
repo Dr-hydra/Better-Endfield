@@ -22,6 +22,8 @@ final class NativeCommandBridge {
     static native void releaseKeys();
     static native int protocolVersion();
     static native String runtimeStatus();
+    /** Queues a prepared BEM snapshot; Unity applies it on a later frame. */
+    static native boolean updateCustomModelConfig(String configuration);
     static native void frame();
     static native void foreground(boolean visible);
     static native void look(int dx, int dy);

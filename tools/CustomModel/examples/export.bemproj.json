@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "kind": "bem-export-task",
+  "mode": "pack",
+  "source": "editable/project.json",
+  "output": "dist/character.bem",
+  "report": "reports/build.json",
+  "package": {
+    "id": "creator.character.outfits",
+    "name": "外观合集",
+    "author": "作者名",
+    "version": "1.0.0"
+  }
+}

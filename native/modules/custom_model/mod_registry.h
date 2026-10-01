@@ -21,6 +21,9 @@ struct EnabledMod {
     const CharacterAdapter* adapter = nullptr;
     std::filesystem::path package;
     std::string appearance;
+    bool skip_validation = false;
+    bool loading_optimization = false;
+    std::string selection_key;
 };
 struct OwnedCharacterAdapter {
     std::string id, world, ui;
@@ -30,9 +33,12 @@ struct OwnedCharacterAdapter {
 };
 struct ModRegistry {
     bool standalone_lod = false;
+    bool skip_validation = false;
+    bool hot_switch = false;
+    bool loading_optimization = false;
     std::vector<EnabledMod> enabled;
     std::vector<std::string> diagnostics;
-    std::vector<std::unique_ptr<OwnedCharacterAdapter>> owned_adapters;
+    std::vector<std::shared_ptr<OwnedCharacterAdapter>> owned_adapters;
     const EnabledMod* Match(std::string_view resource) const;
 };
 std::span<const CharacterAdapter> CharacterAdapters();

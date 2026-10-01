@@ -12,16 +12,19 @@ struct Fake {
     void* bones=nullptr; void* poses=nullptr; void* materials=nullptr; void* mesh=nullptr;
     bool enabled=true;
     void* parent=nullptr;
+    void* transforms=nullptr;
     Matrix4x4Raw matrix{};
     uint64_t scalar=0;
     std::map<int32_t,void*> textures;
     std::vector<uint8_t> data;
     int width=4, height=4, format=10;
+    size_t destroy_calls=0;
 };
 std::vector<std::unique_ptr<Fake>> objects;
 void* reject_material_renderer=nullptr;
 bool rejected=false;
 size_t roots=0;
+void* fake_transform_type=nullptr;
 Fake* Make(std::string name={}) {
     auto p=std::make_unique<Fake>(); p->name=std::move(name);
     for (int i=0;i<4;++i) p->matrix.m[i*5]=1;
@@ -35,7 +38,7 @@ void* BE_CALL InvokeFake(void*,const void* method,void* object,void** args,void*
     auto* n=static_cast<Fake*>(object);
     if (key=="object.get_type" || key=="type.get_element_type" || key=="component.get_transform") return object;
     if (key=="transform.get_parent") return n->parent;
-    if (key=="game_object.renderers") return object;
+    if (key=="game_object.renderers") return fake_transform_type && args[0]==fake_transform_type?n->transforms:object;
     if (key=="mesh.get_vertex_count") return Scalar(3);
     if (key=="mesh.get_sub_mesh_count") return Scalar(1);
     if (key=="mesh.get_index_count") return Scalar(6);
@@ -48,6 +51,7 @@ void* BE_CALL InvokeFake(void*,const void* method,void* object,void** args,void*
     if (key=="array.set_value") { n->array.at(*static_cast<int*>(args[1]))=args[0]; return nullptr; }
     if (key=="array.clone") { auto* a=Make(); a->array=n->array; return a; }
     if (key=="object.get_name") return object;
+    if (key=="object.instance_id") return Scalar(reinterpret_cast<uintptr_t>(object)&0x7fffffff);
     if (key=="object.is_alive") return Scalar(args[0]!=nullptr);
     if (key=="transform.local_to_world") return object;
     if (key=="mesh.get_bindposes") return n->poses;
@@ -76,7 +80,7 @@ void* BE_CALL InvokeFake(void*,const void* method,void* object,void** args,void*
     if (key=="graphics_format_utility.get_graphics_format") return Scalar(*static_cast<int*>(args[0]));
     if (key.starts_with("texture.get_")) return Scalar(0);
     if (key.starts_with("texture.set_")) return nullptr;
-    if (key=="object.destroy") return nullptr;
+    if (key=="object.destroy") { ++static_cast<Fake*>(args[0])->destroy_calls; return nullptr; }
     std::cerr<<"Unhandled fake call "<<key<<'\n'; std::exit(1);
 }
 void* BE_CALL UnboxFake(void*,void* value) {
@@ -99,6 +103,21 @@ void ParserTests(const std::filesystem::path& path) {
     Check(!ParseBem(corrupt,bem,error) && bem.components.empty(),"truncation accepted");
     corrupt=bytes; corrupt[8]=2; Check(!ParseBem(corrupt,bem,error),"unsupported major accepted");
     Check(ParseBem(bytes,bem,error),"valid package rejected after malformed data");
+    BemPocData optimized; BemLoadStats baseline_stats,optimized_stats;
+    Check(LoadBem(path,bem,error,{},&baseline_stats),"baseline fixture load failed");
+    Check(LoadBem(path,optimized,error,{},&optimized_stats,false,true),"optimized fixture load failed");
+    Check(!bem.loading_optimization && optimized.loading_optimization,"loading optimization must be opt-in");
+    Check(optimized_stats.payload_ids==baseline_stats.payload_ids &&
+        optimized_stats.decoded_cache_remaining_bytes==0 && optimized_stats.payload_move_bytes>0 &&
+        optimized_stats.payload_copy_bytes<baseline_stats.payload_copy_bytes,"optimized decoder did not release/move payloads");
+    for(size_t i=0;i<bem.components.size();++i)
+        Check(bem.components[i].streams==optimized.components[i].streams && bem.components[i].indices==optimized.components[i].indices,
+            "optimized geometry bytes differ");
+    for(size_t i=0;i<bem.textures.size();++i)
+        Check(bem.textures[i].data==optimized.textures[i].data,"optimized texture bytes differ");
+    Check(ParseBem(bytes,optimized,error,false,true) && optimized.loading_optimization,"optimized memory reader failed");
+    corrupt=bytes; corrupt.pop_back();
+    Check(!ParseBem(corrupt,optimized,error,false,true) && optimized.components.empty(),"optimized decoder accepted truncation");
     BE_HostApiV1 host{};
     host.runtime_invoke=InvokeFake; host.object_unbox=UnboxFake; host.copy_managed_string=StringFake;
     host.object_new=NewFake; host.gchandle_new=RootFake; host.gchandle_free=FreeFake;
@@ -134,12 +153,74 @@ void ParserTests(const std::filesystem::path& path) {
         auto* tex_a=static_cast<Fake*>(static_cast<Fake*>(a)->textures[7]);
         auto* tex_b=static_cast<Fake*>(static_cast<Fake*>(b)->textures[7]);
         Check(tex_a!=tex_b && tex_a->data[0]==1 && tex_b->data[0]==2 && original_texture->data.empty(),"same-name per-draw textures leaked across materials");
+        // Typhoea cloth_05 shares one native mask between clear-coat and
+        // fresnel properties. Both slots must retain one replacement object.
+        auto* alias_material=Make("alias_material"); auto* unrelated=Make("unrelated");
+        alias_material->textures={{7,original_texture},{42,original_texture},{99,unrelated}};
+        std::map<std::pair<size_t,void*>,void*> alias_cache;
+        Check(ApplyTextureMask(alias_material,1,bem,alias_cache),"same source texture in multiple slots rejected");
+        Check(alias_material->textures[7]==alias_material->textures[42] &&
+            alias_material->textures[7]!=original_texture && alias_cache.size()==1,
+            "shared texture properties did not receive one replacement");
+        Check(alias_material->textures[99]==unrelated && original_texture->data.empty(),
+            "shared-slot replacement changed an unrelated slot or original texture");
+        auto* ambiguous_material=Make("ambiguous_material"); auto* other_original=Make("original");
+        ambiguous_material->textures={{7,original_texture},{42,other_original}};
+        std::map<std::pair<size_t,void*>,void*> refused_cache;
+        Check(!ApplyTextureMask(ambiguous_material,1,bem,refused_cache) && refused_cache.empty() &&
+            ambiguous_material->textures[7]==original_texture && ambiguous_material->textures[42]==other_original,
+            "distinct same-name source textures accepted or changed");
+        auto* missing_material=Make("missing_material"); missing_material->textures={{99,unrelated}};
+        Check(!ApplyTextureMask(missing_material,1,bem,refused_cache) && refused_cache.empty() &&
+            missing_material->textures[99]==unrelated,"missing texture name was guessed or changed");
+        auto* conflict_material=Make("conflict_material"); conflict_material->textures={{7,original_texture},{42,original_texture}};
+        Check(!ApplyTextureMask(conflict_material,3,bem,refused_cache),"two payloads for the same slots accepted");
+        auto unchecked_bem=bem; unchecked_bem.skip_validation=true;
+        auto* unchecked_material=Make("unchecked_material");
+        unchecked_material->textures={{7,original_texture},{42,other_original},{99,unrelated}};
+        std::map<std::pair<size_t,void*>,void*> unchecked_cache;
+        Check(ApplyTextureMask(unchecked_material,1,unchecked_bem,unchecked_cache) &&
+            unchecked_material->textures[7]==unchecked_material->textures[42] &&
+            unchecked_material->textures[7]!=original_texture,"developer mode still rejected ambiguous texture names");
+        Check(ApplyTextureMask(missing_material,1,unchecked_bem,unchecked_cache) &&
+            missing_material->textures[99]==unrelated,"developer mode changed an unmatched texture");
         auto repeated=bem.components[0]; repeated.draws[1]=repeated.draws[0]; repeated.material_names[1]=repeated.material_names[0];
         auto repeated_target=bindings[0];
         Check(PrepareDrawMaterials(repeated,repeated_target,bindings,bem),"repeated material preparation failed");
         auto* repeat_a=static_cast<Fake*>(ArrayValue(repeated_target.custom_materials,0));
         auto* repeat_b=static_cast<Fake*>(ArrayValue(repeated_target.custom_materials,1));
         Check(repeat_a!=repeat_b && repeat_a->textures[7]==repeat_b->textures[7],"same immutable payload/sampler not reused");
+        for(bool optimize:{false,true}) {
+            Fake* first_texture=nullptr; Fake* second_texture=nullptr;
+            {
+                ConstructionScope transaction;
+                auto experimental=bem; experimental.loading_optimization=optimize;
+                auto single=bem.components[0]; single.draws.resize(1); single.material_names.resize(1);
+                auto first_target=bindings[0],second_target=bindings[1];
+                std::map<std::pair<size_t,void*>,void*> cache;
+                Check(PrepareDrawMaterials(single,first_target,bindings,experimental,&cache) &&
+                    PrepareDrawMaterials(single,second_target,bindings,experimental,&cache),"transaction materials failed");
+                first_texture=static_cast<Fake*>(static_cast<Fake*>(ArrayValue(first_target.custom_materials,0))->textures[7]);
+                second_texture=static_cast<Fake*>(static_cast<Fake*>(ArrayValue(second_target.custom_materials,0))->textures[7]);
+                Check((first_texture==second_texture)==optimize,"cross-component texture reuse ignored experimental flag");
+                Check(cache.size()==(optimize?1:0),"disabled optimization populated shared cache");
+                // A different source Texture keeps its own copied sampler state.
+                auto* different_material=Make("material0"); different_material->textures={{7,other_original}};
+                auto distinct=bindings[0]; distinct.original_materials=Array({different_material}); distinct.donor_materials=nullptr;
+                auto keep=single; keep.keep_material_names={"material0"}; keep.keep_material_overrides={{0,0,1}};
+                Check(PrepareKeepMaterials(keep,distinct,experimental,&cache),"different source texture preparation failed");
+                auto* distinct_texture=static_cast<Fake*>(static_cast<Fake*>(ArrayValue(distinct.custom_materials,0))->textures[7]);
+                Check(distinct_texture!=first_texture,"different sampler source was incorrectly merged");
+                if(optimize) Check(cache.size()==2,"source Texture identity missing from transaction key");
+                auto invalid=single; invalid.material_names[0]="wrong";
+                Check(!PrepareDrawMaterials(invalid,second_target,bindings,experimental,&cache),"failure fixture unexpectedly prepared");
+                // Leave transaction unpublished to exercise shared asset cleanup.
+            }
+            Check(first_texture->destroy_calls==1 && second_texture->destroy_calls==1,
+                "failed transaction leaked or destroyed shared texture twice");
+            Check(original_texture->destroy_calls==0 && other_original->destroy_calls==0,
+                "failed texture transaction destroyed original assets");
+        }
         auto bad_component=bem.components[0]; bad_component.bone_names[1]="wrong";
         auto temporary=bindings[0];
         Check(!PreparePalette(bad_component,temporary,bindings,poses),"wrong bone identity accepted");
@@ -163,10 +244,156 @@ void RegistryTests(const std::filesystem::path& path) {
     Check(ParseModRegistry(config,path.parent_path(),registry,error),error.c_str());
     ModRegistry moved=std::move(registry);
     Check(moved.standalone_lod && moved.enabled.size()==1 && moved.enabled[0].appearance=="hidden","appearance/LOD selection lost");
+    Check(!moved.skip_validation && !moved.enabled[0].skip_validation,"validation must be enabled by default");
     Check(moved.Match("world(Clone)") && std::string(moved.Match("ui")->adapter->components[1].name)=="mesh1","owned adapter invalid after move");
     Check(ParseModRegistry(config+"[Mod.duplicate]\nenabled=true\npackage="+
         std::string(reinterpret_cast<const char*>(filename.data()),filename.size())+"\n",path.parent_path(),registry,error),error.c_str());
     Check(registry.enabled.empty(),"conflicting enabled packages were not disabled");
+    std::string unchecked_config=config;
+    unchecked_config.insert(unchecked_config.find('\n')+1,"skip_validation=true\n");
+    Check(ParseModRegistry(unchecked_config,path.parent_path(),registry,error) && registry.skip_validation &&
+        registry.enabled.size()==1 && registry.enabled[0].skip_validation,"developer option not passed to the package loader");
+    unchecked_config.replace(unchecked_config.find("skip_validation=true"),20,"skip_validation=invalid");
+    Check(!ParseModRegistry(unchecked_config,path.parent_path(),registry,error),"malformed developer option accepted");
+    std::string experimental=config;
+    experimental.insert(experimental.find('\n')+1,"hot_switch=true\nloading_optimization=true\n");
+    Check(ParseModRegistry(experimental,path.parent_path(),registry,error) && registry.hot_switch &&
+        registry.loading_optimization && registry.enabled[0].loading_optimization,"experimental flags not propagated");
+    auto owner=registry.owned_adapters[0]; auto key=registry.enabled[0].selection_key;
+    Check(ParseModRegistry(config,path.parent_path(),registry,error) && !registry.hot_switch && !registry.loading_optimization,
+        "experimental switches not disabled by default");
+    Check(std::string(owner->adapter.id)=="chr_test","old adapter lifetime lost across registry replacement");
+    Check(registry.enabled[0].selection_key!=key,"optimization absent from selection cache identity");
+    const auto default_key=registry.enabled[0].selection_key;
+    std::string default_selection=config; default_selection.replace(default_selection.find("appearance=hidden"),17,"appearance=default");
+    Check(ParseModRegistry(default_selection,path.parent_path(),registry,error) && registry.enabled[0].selection_key!=default_key,
+        "appearance/options absent from selection cache identity");
+    g_registry=std::move(registry); g_registry.hot_switch=true; g_registry_root=path.parent_path();
+    const auto working_key=g_registry.enabled[0].selection_key;
+    Check(!InstallRegistryUpdate("[CustomModel]\nhot_switch=true\n[Mod.bad]\nenabled=true\npackage=missing.bem\n") &&
+        g_registry.enabled.size()==1 && g_registry.enabled[0].selection_key==working_key,
+        "metadata-refused candidate was treated as disabling the working package");
+    Check(!InstallRegistryUpdate("[CustomModel]\nhot_switch=true\nloading_optimization=true\n") &&
+        g_registry.enabled.size()==1,"startup experiment flags changed during hot switch");
+    Check(InstallRegistryUpdate("[CustomModel]\nhot_switch=true\n") && g_registry.enabled.empty(),
+        "explicitly disabling all packages rejected");
+    std::string reenabling=default_selection; reenabling.insert(reenabling.find('\n')+1,"hot_switch=true\n");
+    Check(InstallRegistryUpdate(reenabling) && g_registry.enabled.size()==1,"re-enabling a valid package rejected");
+    g_registry={}; g_payload_cache.clear();
+    experimental.replace(experimental.find("hot_switch=true"),15,"hot_switch=invalid");
+    Check(!ParseModRegistry(experimental,path.parent_path(),registry,error),"invalid hot switch flag accepted");
+}
+std::map<uint32_t,void*> tracked_handles;
+uint32_t next_handle=1;
+uint32_t BE_CALL TrackedRoot(void*,void* object,int) { const auto handle=next_handle++; tracked_handles[handle]=object; ++roots; return handle; }
+void BE_CALL TrackedFree(void*,uint32_t handle) { Check(tracked_handles.erase(handle)==1,"invalid hot-switch handle release"); --roots; }
+void HotSwitchTests(const std::filesystem::path& path) {
+    BemPocData payload; std::string error; Check(LoadBem(path,payload,error),error.c_str());
+    // Keep geometry lets the fixture exercise the production donor/material,
+    // resource identity and rollback paths without a graphics device.
+    for (auto& component:payload.components) {
+        component.info.flags=kComponentFlagNoGeometry; component.info.original_index_count=6;
+        component.keep_material_overrides={{0,0,1}};
+        component.keep_material_names={"material"+std::to_string(component.info.component_id)};
+    }
+    BE_HostApiV1 host{}; host.runtime_invoke=InvokeFake; host.object_unbox=UnboxFake; host.copy_managed_string=StringFake;
+    host.object_new=NewFake; host.gchandle_new=TrackedRoot; host.gchandle_free=TrackedFree;
+    g_host=&host; g_material_class.class_info=&host; g_texture2d_class.class_info=&host;
+    fake_transform_type=Make("TransformType");
+    host.resolve_class=[](void*,const char*,const char*,const char* name,BE_ResolvedClassV1* type)->BE_Result {
+        if (std::string_view(name)!="Transform") return BE_Result_NotReady;
+        type->class_info=fake_transform_type; type->type_object=fake_transform_type; return BE_Result_Ok;
+    };
+    g_weak_new=[](void* object,bool)->uint32_t { return TrackedRoot(nullptr,object,0); };
+    g_weak_target=[](uint32_t handle)->void* { const auto found=tracked_handles.find(handle); return found==tracked_handles.end()?nullptr:found->second; };
+    g_object_class=[](void* array)->void* { return array; };
+    g_array_new_specific=[](void*,uintptr_t count)->void* { auto* a=Make(); a->array.resize(count); return a; };
+    for (auto& method:g_methods) { method.method_info=&method; method.resolved=true; }
+    auto owner=std::make_shared<OwnedCharacterAdapter>(); owner->id="chr_test"; owner->world="world"; owner->ui="ui";
+    owner->names={"mesh0","mesh1"}; for (const auto& name:owner->names) owner->components.push_back({name.c_str(),6});
+    owner->adapter={owner->id.c_str(),owner->world.c_str(),owner->ui.c_str(),"",false,owner->components};
+    g_registry={}; g_registry.hot_switch=true; g_registry.owned_adapters.push_back(owner); g_hot_switch_runtime=true;
+    auto* asset=Make("world"); auto* original_texture=Make("original");
+    std::array<Fake*,2> renderers{},original_materials{};
+    for (int i=0;i<2;++i) {
+        auto* renderer=Make("mesh"+std::to_string(i)); renderer->parent=asset;
+        renderer->mesh=Make(renderer->name); renderer->bones=Array({Make("bone"+std::to_string(i))});
+        static_cast<Fake*>(renderer->mesh)->poses=Array({Make()});
+        auto* material=Make("material"+std::to_string(i)); material->textures[7]=original_texture;
+        renderer->materials=original_materials[i]=Array({material}); renderers[i]=renderer; asset->array.push_back(renderer);
+    }
+    auto publish=[&](const char* key,uint8_t value,bool reject) {
+        ConstructionScope scope; payload.textures[0].data.assign(8,value);
+        std::vector<PreparedBinding> bindings;
+        Check(PrepareResource(owner->adapter,payload,asset,bindings),"hot switch could not rebuild from pristine donor");
+        if (!g_completed.empty()) Check(DonorMaterials(bindings[0])==original_materials[0],"hot switch used previous package as material donor");
+        CompletedResource record; Check(RememberResource(owner->adapter,asset,bindings,record,key),"hot switch original snapshot not saved");
+        reject_material_renderer=reject?renderers[1]:nullptr; rejected=false;
+        const auto result=CommitResource<PreparedBinding>(bindings,ApplyPreparedBinding,RestorePreparedBinding);
+        if (reject) { Check(result==CommitResult::Restored,"failed package switch not rolled back"); return; }
+        Check(result==CommitResult::Committed,"hot switch commit failed"); scope.published=true; PublishCompleted(std::move(record),asset);
+        Check(IsCompletedResource(owner->adapter,asset,key),"current selection not deduplicated");
+        Check(!IsCompletedResource(owner->adapter,asset,"other"),"previous selection blocked a new package");
+        Check(static_cast<Fake*>(static_cast<Fake*>(ArrayValue(renderers[0]->materials,0))->textures[7])->data[0]==value,
+            "wrong package texture after hot switch");
+        Check(std::count_if(g_completed.begin(),g_completed.end(),[&](const auto& record){return record.root.Get()==asset;})==1,
+            "cached-root switches accumulated active completed generations");
+    };
+    publish("A",1,false); auto* a_materials=renderers[0]->materials; auto* a_materials1=renderers[1]->materials;
+    publish("B",2,false); auto* b_materials=renderers[0]->materials;
+    Check(a_materials!=b_materials,"A to B reused generated materials");
+    {
+        ConstructionScope scope; auto* clone=Make("world(Clone)");
+        auto* clone0=Make("mesh0"); clone0->parent=clone; clone0->mesh=renderers[0]->mesh;
+        clone0->materials=a_materials; auto* bone=Make("bone0"); bone->parent=clone;
+        clone0->bones=Array({bone}); clone->array={clone0}; clone->transforms=Array({bone});
+        PreparedBinding binding; binding.component_id=1; binding.renderer=clone0;
+        binding.original_mesh=clone0->mesh; binding.original_bones=clone0->bones; binding.original_materials=clone0->materials;
+        Check(UseSavedOriginal(clone,binding) && binding.saved_original && DonorMaterials(binding)==original_materials[0] &&
+            ArrayValue(DonorBones(binding),0)==bone,
+            "old natural clone lost original renderer donor after template A to B");
+        Check(binding.original_materials==a_materials,"clone rollback stopped pointing at package A");
+        auto* clone1=Make("mesh1"); clone1->parent=clone; clone1->mesh=renderers[1]->mesh;
+        clone1->materials=a_materials1; clone1->bones=renderers[1]->bones; clone->array.push_back(clone1);
+        Check(IsCompletedResource(owner->adapter,clone,"A") && !IsCompletedResource(owner->adapter,clone,"B"),
+            "retired clone lineage confused old and current selection");
+    }
+    {
+        ConstructionScope scope; const auto mesh_before=renderers[0]->mesh,bones_before=renderers[0]->bones;
+        auto* previous_mesh=Make("previous-custom"); previous_mesh->poses=Array({Make("wrong-pose")});
+        renderers[0]->mesh=previous_mesh; renderers[0]->bones=Array({Make("wrong-bone")});
+        std::vector<PreparedBinding> rebinding(2);
+        for (int i=0;i<2;++i) {
+            auto& binding=rebinding[i]; binding.component_id=i; binding.renderer=renderers[i];
+            binding.original_mesh=renderers[i]->mesh; binding.original_bones=renderers[i]->bones;
+            binding.original_materials=renderers[i]->materials;
+            Check(UseSavedOriginal(asset,binding),"saved geometry donor unavailable");
+        }
+        auto reordered=rebinding[0]; reordered.component_id=1;
+        reordered.donor_mesh=nullptr; reordered.donor_materials=nullptr; reordered.donor_bones=nullptr;
+        reordered.saved_original.reset();
+        Check(UseSavedOriginal(asset,reordered) && reordered.saved_original &&
+            DonorMesh(reordered)==mesh_before && DonorMaterials(reordered)==original_materials[0],
+            "target component ID reorder lost the original renderer donor");
+        void* poses=nullptr;
+        Check(PreparePalette(payload.components[0],rebinding[0],rebinding,poses) &&
+            ObjectName(ArrayValue(rebinding[0].custom_bones,0))=="bone0" &&
+            ObjectName(ArrayValue(rebinding[0].custom_bones,1))=="bone1",
+            "new palette borrowed previous custom mesh/bones instead of pristine donors");
+        Check(rebinding[0].original_mesh==previous_mesh && DonorMesh(rebinding[0])==mesh_before,
+            "rollback and pristine geometry donors were conflated");
+        renderers[0]->mesh=mesh_before; renderers[0]->bones=bones_before;
+    }
+    publish("failed",3,true); Check(renderers[0]->materials==b_materials && IsCompletedResource(owner->adapter,asset,"B"),
+        "failed B replacement lost previous package");
+    publish("A",1,false);
+    { ConstructionScope scope; Check(RestoreDisabledResource(asset,"world",scope),"disabling cached package failed"); }
+    Check(renderers[0]->materials==original_materials[0] && renderers[1]->materials==original_materials[1],
+        "disable did not restore pristine materials");
+    publish("options-changed",2,false);
+    g_completed.clear(); g_registry={}; g_hot_switch_runtime=false; g_weak_new=nullptr; g_weak_target=nullptr; fake_transform_type=nullptr;
+    Check(roots==0 && tracked_handles.empty(),"hot switch original/weak handles leaked"); g_host=nullptr;
+    std::cout<<"PASS experimental hot switch: cached A-B-A, option identity, disable, rollback, original donor and ownership\n";
 }
 void ProbeTests(const std::filesystem::path& output) {
     Check(!Contract("probe.texture_names") && !Contract("probe.texture_by_name"),"probe still requires stripped name APIs");
@@ -308,6 +535,6 @@ int main(int argc,char** argv) {
     if(argc==4 && std::string_view(argv[1])=="--probe-dll") { ProbeDllStartup(argv[2],argv[3]); return 0; }
     if (argc==3 && std::string_view(argv[1])=="--probe") { ProbeTests(argv[2]); return 0; }
     Check(argc>=2,"pass synthetic BEMv1 package path");
-    ParserTests(argv[1]); RegistryTests(argv[1]);
+    ParserTests(argv[1]); RegistryTests(argv[1]); HotSwitchTests(argv[1]);
     std::cout<<"PASS: BEMv1 parser, exact donor identity, material isolation, rollback, ownership, appearance/LOD routing\n";
 }

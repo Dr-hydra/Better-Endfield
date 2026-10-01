@@ -78,7 +78,8 @@ def candidate_count(m):
 def required_minor(m, summary, payload_count=0):
     """Smallest header minor able to carry this composable manifest."""
     old = limits(1)
-    needs = (bool(m.get('texture_slots')) or
+    needs = (bool(set(m['required_capabilities']) & set(V12_CAPABILITIES)) or
+             bool(m.get('texture_slots')) or
              any(component.get('bone_name_aliases') for component in m['target']['components']) or
              any(len(group['choices']) > old['choices'] for group in m['option_groups']) or
              candidate_count(m) > old['rules'] or payload_count > old['directory'] or
@@ -576,7 +577,7 @@ def validate_manifest(m, payload_count, minor=None):
                        'Bone name alias repeats the canonical name')
             seen_aliases.add((alias['index'], alias['resource']))
     has_aliases = any(component.get('bone_name_aliases') for component in targets)
-    v1.require(('resource-bone-aliases' in caps) == has_aliases, 'Bone name alias capability mismatch')
+    v1.require(not has_aliases or 'resource-bone-aliases' in caps, 'Bone name alias capability mismatch')
 
     option_groups = m['option_groups']
     v1.require(isinstance(option_groups, list) and 0 < len(option_groups) <= MAX_GROUPS,
@@ -611,7 +612,7 @@ def validate_manifest(m, payload_count, minor=None):
     counted = 0
     slots = m.get('texture_slots', [])
     v1.require(isinstance(slots, list) and len(slots) <= MAX_TEXTURE_SLOTS, 'Invalid texture slots')
-    v1.require(('texture-slots' in caps) == bool(slots), 'Texture slot capability mismatch')
+    v1.require(not slots or 'texture-slots' in caps, 'Texture slot capability mismatch')
     slot_names = {}
     for slot in slots:
         v1.require(isinstance(slot, dict) and set(slot) == {'id', 'candidates'}, 'Invalid texture slot')
@@ -723,7 +724,7 @@ def validate_manifest(m, payload_count, minor=None):
                     texture_list(refs, 'keep material')
             _condition(candidate.get('when', True), groups)
     v1.require(counted <= limit['rules'], f'More than {limit["rules"]} candidate rules/draws')
-    v1.require(('keep-material-textures' in caps) == has_keep_textures,
+    v1.require(not has_keep_textures or 'keep-material-textures' in caps,
                'Keep material override capability mismatch')
     _symbolic_check(m, minor=minor)
 

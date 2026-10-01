@@ -5,9 +5,20 @@
         </LinearLayout>
         <Button android:id="@+id/bem_import" style="@style/PrimaryButton" android:layout_marginTop="18dp" android:text="导入 BEM 包" />
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="16dp">
+            <Switch android:id="@+id/bem_hot_switch" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:text="实验：模型热切换" />
+            <TextView style="@style/BodyText" android:layout_marginTop="8dp" android:text="开启后需重启游戏。之后切换包、外观或组件选项，在切换配队或重新打开详情时更新。会增加内存占用。" />
+            <Switch android:id="@+id/bem_loading_optimization" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:layout_marginTop="12dp" android:text="实验：模型加载优化" />
+            <TextView style="@style/BodyText" android:layout_marginTop="8dp" android:text="开启后需重启游戏。减少重复贴图构建和解压期间的内存占用。" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="16dp">
+            <Switch android:id="@+id/bem_skip_validation" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:text="开发者：关闭模型校验" />
+            <TextView style="@style/BodyText" android:layout_marginTop="8dp" android:text="仅供开发测试。开启后会跳过兼容性和容量校验，可能导致游戏崩溃或模型错乱，风险自行承担。重启游戏后生效。" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="16dp">
             <TextView style="@style/CardTitle" android:text="获取模型" />
             <Button android:id="@+id/bem_models_quark" style="@style/GhostButton" android:layout_marginTop="8dp" android:text="夸克网盘" />
             <Button android:id="@+id/bem_models_baidu" style="@style/GhostButton" android:layout_marginTop="6dp" android:text="百度网盘" />
+            <Button android:id="@+id/bem_models_katfile" style="@style/GhostButton" android:layout_marginTop="6dp" android:text="Katfile 网盘" />
         </LinearLayout>
         <LinearLayout android:id="@+id/bem_incoming" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="16dp" android:visibility="gone">
             <TextView android:id="@+id/bem_incoming_notice" style="@style/BodyText" android:accessibilityLiveRegion="polite" />

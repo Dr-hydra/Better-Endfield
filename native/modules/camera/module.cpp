@@ -22,6 +22,7 @@
 #include <cctype>
 #include <cmath>
 #include <chrono>
+#include <cstddef>
 #include <fstream>
 #include <cstdint>
 #include <cstdio>
@@ -290,9 +291,10 @@ std::atomic_bool g_keyframe_add_request{false};
 std::atomic_bool g_keyframe_play_request{false};
 std::atomic_bool g_keyframe_clear_request{false};
 std::atomic_bool g_vmd_play_request{false};
-// Mouse look input, accumulated by the input thread's low-level mouse hook.
+// Mouse look input, observed from the game's existing Raw Input reads on Windows.
 std::atomic_bool g_free_camera_running{false};
 std::atomic_bool g_mouse_capture{false};
+std::atomic_bool g_input_focused{false};
 std::atomic_int g_mouse_dx{0};
 std::atomic_int g_mouse_dy{0};
 std::atomic_int g_mouse_wheel{0};
@@ -738,7 +740,7 @@ bool IsObjectAlive(void* object) {
     return !destroyed;
 }
 
-// Numpad keys are read by scan code from a low-level keyboard hook, so they
+// Numpad keys are read by scan code from Raw Input and a keyboard hook, so they
 // work with NumLock on or off and numpad Enter is distinct from the main Enter.
 // The navigation cluster is tracked the same way: with NumLock off the numpad
 // sends VK_UP etc. too, which must not move the free camera.
@@ -749,6 +751,7 @@ constexpr int kNavVirtualKeys[]{VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, VK_PRIOR, VK_
 std::atomic_uint32_t g_pad_down{0};
 std::atomic_uint32_t g_nav_down{0};
 std::atomic_bool g_keyboard_hook_active{false};
+std::atomic_bool g_raw_keyboard_seen{false};
 
 int IndexOf(const int* keys, size_t count, int key) {
     for (size_t index = 0; index < count; ++index) {
@@ -792,6 +795,109 @@ int NavIndexFromScan(DWORD scan, bool extended) {
 }
 
 #if defined(_WIN32)
+void ApplyKeyboardScan(DWORD scan, bool extended, bool down) {
+    const auto apply = [down](std::atomic_uint32_t& bits, int index) {
+        if (index < 0) return;
+        const uint32_t mask = 1u << index;
+        if (down) bits.fetch_or(mask, std::memory_order_acq_rel);
+        else bits.fetch_and(~mask, std::memory_order_acq_rel);
+    };
+    apply(g_pad_down, PadIndexFromScan(scan, extended));
+    apply(g_nav_down, NavIndexFromScan(scan, extended));
+}
+
+HMODULE InputHookModule(HOOKPROC callback) {
+    HMODULE module = nullptr;
+    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+        reinterpret_cast<LPCWSTR>(callback), &module);
+    return module;
+}
+
+using RawInputDataFn = UINT (WINAPI*)(HRAWINPUT, UINT, LPVOID, PUINT, UINT);
+using RawInputBufferFn = UINT (WINAPI*)(PRAWINPUT, PUINT, UINT);
+RawInputDataFn g_original_raw_input_data = nullptr;
+RawInputBufferFn g_original_raw_input_buffer = nullptr;
+
+void ObserveRawCameraInput(const RAWINPUT& input, size_t bytes) {
+    if (!g_input_focused.load(std::memory_order_acquire) ||
+        bytes < sizeof(RAWINPUTHEADER) || input.header.dwSize > bytes) return;
+    const size_t payload_bytes = input.header.dwSize >= offsetof(RAWINPUT, data)
+        ? input.header.dwSize - offsetof(RAWINPUT, data) : 0;
+    if (input.header.dwType == RIM_TYPEKEYBOARD && payload_bytes >= sizeof(RAWKEYBOARD)) {
+        const RAWKEYBOARD& key = input.data.keyboard;
+        // E1 sequences (Pause etc.) are not navigation or numpad keys.
+        if (key.MakeCode && key.VKey != 0xFF && !(key.Flags & RI_KEY_E1)) {
+            ApplyKeyboardScan(key.MakeCode, (key.Flags & RI_KEY_E0) != 0,
+                (key.Flags & RI_KEY_BREAK) == 0);
+            g_raw_keyboard_seen.store(true, std::memory_order_release);
+        }
+    } else if (input.header.dwType == RIM_TYPEMOUSE && payload_bytes >= sizeof(RAWMOUSE) &&
+        g_mouse_capture.load(std::memory_order_relaxed)) {
+        const RAWMOUSE& mouse = input.data.mouse;
+        // Relative counts remain valid when Unity locks/recentres the cursor.
+        // Absolute tablet coordinates must never be interpreted as deltas.
+        if (!(mouse.usFlags & MOUSE_MOVE_ABSOLUTE)) {
+            g_mouse_dx.fetch_add(mouse.lLastX, std::memory_order_relaxed);
+            g_mouse_dy.fetch_add(mouse.lLastY, std::memory_order_relaxed);
+        }
+        if (mouse.usButtonFlags & RI_MOUSE_WHEEL) {
+            g_mouse_wheel.fetch_add(static_cast<short>(mouse.usButtonData),
+                std::memory_order_relaxed);
+        }
+    }
+}
+
+UINT WINAPI DetourRawInputData(HRAWINPUT handle, UINT command, LPVOID data,
+    PUINT size, UINT header_size) {
+    const UINT result = g_original_raw_input_data(handle, command, data, size, header_size);
+    if (command == RID_INPUT && data && result != UINT(-1) &&
+        header_size == sizeof(RAWINPUTHEADER) && result >= sizeof(RAWINPUTHEADER)) {
+        ObserveRawCameraInput(*static_cast<const RAWINPUT*>(data), result);
+    }
+    return result;
+}
+
+UINT WINAPI DetourRawInputBuffer(PRAWINPUT data, PUINT size, UINT header_size) {
+    const UINT capacity = size ? *size : 0;
+    const UINT count = g_original_raw_input_buffer(data, size, header_size);
+    if (!data || count == UINT(-1) || header_size != sizeof(RAWINPUTHEADER)) return count;
+    const auto* begin = reinterpret_cast<const BYTE*>(data);
+    const auto* end = begin + capacity;
+    for (UINT index = 0; index < count; ++index) {
+        const auto* current = reinterpret_cast<const BYTE*>(data);
+        if (current > end || static_cast<size_t>(end - current) < sizeof(RAWINPUTHEADER) ||
+            data->header.dwSize < sizeof(RAWINPUTHEADER) ||
+            data->header.dwSize > static_cast<size_t>(end - current)) break;
+        ObserveRawCameraInput(*data, data->header.dwSize);
+        if (index + 1 < count) {
+            // The SDK's x64 NEXTRAWINPUTBLOCK macro relies on a QWORD typedef
+            // that Windows.h alone does not provide. Use its pointer alignment.
+            const uintptr_t next = (reinterpret_cast<uintptr_t>(data) +
+                data->header.dwSize + sizeof(void*) - 1) & ~(uintptr_t(sizeof(void*) - 1));
+            if (next > reinterpret_cast<uintptr_t>(end)) break;
+            data = reinterpret_cast<PRAWINPUT>(next);
+        }
+    }
+    return count;
+}
+
+void InstallRawCameraInputHooks() {
+    // Observe successful reads without registering devices or consuming messages:
+    // a DLL registering a mouse would replace Unity's own per-process target.
+    const HMODULE user32 = GetModuleHandleW(L"user32.dll");
+    const auto install = [user32](const char* name, void* detour, void** original) {
+        void* target = user32 ? reinterpret_cast<void*>(GetProcAddress(user32, name)) : nullptr;
+        const bool ready = target && g_host->create_hook(g_host->context, kModuleId,
+            target, detour, original) == BE_Result_Ok;
+        Log(std::string("Camera input: ") + name + (ready ? " hook ready." : " hook unavailable."));
+    };
+    install("GetRawInputData", reinterpret_cast<void*>(&DetourRawInputData),
+        reinterpret_cast<void**>(&g_original_raw_input_data));
+    install("GetRawInputBuffer", reinterpret_cast<void*>(&DetourRawInputBuffer),
+        reinterpret_cast<void**>(&g_original_raw_input_buffer));
+}
+
 LRESULT CALLBACK KeyboardHook(int code, WPARAM message, LPARAM data) {
     if (code == HC_ACTION && data) {
         const auto* info = reinterpret_cast<const KBDLLHOOKSTRUCT*>(data);
@@ -799,14 +905,7 @@ LRESULT CALLBACK KeyboardHook(int code, WPARAM message, LPARAM data) {
         const bool up = message == WM_KEYUP || message == WM_SYSKEYUP;
         if (down || up) {
             const bool extended = (info->flags & LLKHF_EXTENDED) != 0;
-            const auto apply = [down](std::atomic_uint32_t& bits, int index) {
-                if (index < 0) return;
-                const uint32_t mask = 1u << index;
-                if (down) bits.fetch_or(mask, std::memory_order_acq_rel);
-                else bits.fetch_and(~mask, std::memory_order_acq_rel);
-            };
-            apply(g_pad_down, PadIndexFromScan(info->scanCode, extended));
-            apply(g_nav_down, NavIndexFromScan(info->scanCode, extended));
+            ApplyKeyboardScan(info->scanCode, extended, down);
         }
     }
     return CallNextHookEx(nullptr, code, message, data);
@@ -820,7 +919,8 @@ bool KeyDown(int key) {
     }
     if (!BetterEndfield::Input::ModifiersDown(key)) return false;
     const int base_key = BetterEndfield::Input::BaseKey(key);
-    const bool hooked = g_keyboard_hook_active.load(std::memory_order_acquire);
+    const bool hooked = g_keyboard_hook_active.load(std::memory_order_acquire) ||
+        g_raw_keyboard_seen.load(std::memory_order_acquire);
     if (BetterEndfield::Input::IsNumpadEnter(key)) {
 #if defined(__ANDROID__)
         return (GetAsyncKeyState(VK_RETURN) & 0x8000) != 0;
@@ -850,9 +950,6 @@ bool GameWindowHasFocus() {
     return process_id == GetCurrentProcessId();
 }
 
-#if defined(_WIN32)
-LRESULT CALLBACK FreeCameraMouseHook(int code, WPARAM message, LPARAM data);
-#endif
 void PumpMmdOverlayHost(bool mmd_enabled); // input thread, mmd_director_runtime.inc
 bool MmdDirectorCameraActive();             // game thread, mmd_director_runtime.inc
 
@@ -881,8 +978,9 @@ void InputThreadMain() {
         {&g_mmd_overlay_key, nullptr},
     };
 #if defined(_WIN32)
-    HHOOK mouse_hook = nullptr;
     HHOOK keyboard_hook = nullptr;
+    DWORD keyboard_error = 0;
+    uint64_t keyboard_retry_at = 0;
 #endif
     bool toggle_was_down = false;
     bool pause_was_down = false;
@@ -902,17 +1000,35 @@ void InputThreadMain() {
         const bool pause_enabled = g_pause_enabled.load(std::memory_order_acquire);
         const bool focused = (free_enabled || first_person_enabled || body_enabled || mmd_enabled || pause_enabled) &&
             GameWindowHasFocus();
+        g_input_focused.store(focused, std::memory_order_release);
         // The keyboard hook exists while the game is focused, so numpad and
         // navigation keys are read by scan code (see KeyDown).
 #if defined(_WIN32)
-        if (focused && !keyboard_hook) {
-            keyboard_hook = SetWindowsHookExW(WH_KEYBOARD_LL, &KeyboardHook,
-                GetModuleHandleW(nullptr), 0);
+        if (focused && !keyboard_hook && GetTickCount64() >= keyboard_retry_at) {
+            const HMODULE module = InputHookModule(&KeyboardHook);
+            keyboard_hook = module ? SetWindowsHookExW(WH_KEYBOARD_LL, &KeyboardHook, module, 0) : nullptr;
             g_keyboard_hook_active.store(keyboard_hook != nullptr, std::memory_order_release);
+            if (!keyboard_hook) {
+                const DWORD error = GetLastError();
+                if (!keyboard_error || keyboard_error != error) {
+                    Log("Camera keyboard hook failed: error=" + std::to_string(error));
+                }
+                keyboard_error = error;
+                keyboard_retry_at = GetTickCount64() + 1000;
+            } else {
+                Log("Camera keyboard scan-code hook ready.");
+                keyboard_error = 0;
+                keyboard_retry_at = 0;
+            }
         } else if (!focused && keyboard_hook) {
             UnhookWindowsHookEx(keyboard_hook);
             keyboard_hook = nullptr;
             g_keyboard_hook_active.store(false, std::memory_order_release);
+            g_pad_down.store(0, std::memory_order_release);
+            g_nav_down.store(0, std::memory_order_release);
+        }
+        if (!focused) {
+            g_raw_keyboard_seen.store(false, std::memory_order_release);
             g_pad_down.store(0, std::memory_order_release);
             g_nav_down.store(0, std::memory_order_release);
         }
@@ -983,20 +1099,12 @@ void InputThreadMain() {
         }
         PumpMmdOverlayHost(mmd_enabled);
 
-        // The low-level mouse hook only exists while the free camera runs in the
-        // focused game window; its callbacks arrive through this thread's queue.
+        // Raw mouse reads only feed the camera while it owns the focused view.
         const bool capture = focused && free_enabled &&
             g_mouse_look_enabled.load(std::memory_order_relaxed) &&
             g_free_camera_running.load(std::memory_order_acquire);
         g_mouse_capture.store(capture, std::memory_order_relaxed);
 #if defined(_WIN32)
-        if (capture && !mouse_hook) {
-            mouse_hook = SetWindowsHookExW(WH_MOUSE_LL, &FreeCameraMouseHook,
-                GetModuleHandleW(nullptr), 0);
-        } else if (!capture && mouse_hook) {
-            UnhookWindowsHookEx(mouse_hook);
-            mouse_hook = nullptr;
-        }
         MsgWaitForMultipleObjects(0, nullptr, FALSE, 5, QS_ALLINPUT);
         MSG message{};
         while (PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE)) {
@@ -1008,14 +1116,13 @@ void InputThreadMain() {
 #endif
     }
     g_mouse_capture.store(false, std::memory_order_relaxed);
+    g_input_focused.store(false, std::memory_order_release);
 #if defined(_WIN32)
-    if (mouse_hook) {
-        UnhookWindowsHookEx(mouse_hook);
-    }
     if (keyboard_hook) {
         UnhookWindowsHookEx(keyboard_hook);
     }
     g_keyboard_hook_active.store(false, std::memory_order_release);
+    g_raw_keyboard_seen.store(false, std::memory_order_release);
     g_pad_down.store(0, std::memory_order_release);
     g_nav_down.store(0, std::memory_order_release);
 #endif
@@ -2407,6 +2514,9 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
         Log("Failed to install camera update hook.");
         return BE_Result_Failed;
     }
+#if defined(_WIN32)
+    InstallRawCameraInputHooks();
+#endif
     try {
         g_camera_files.Start();
     } catch (const std::exception& e) {
@@ -2594,6 +2704,10 @@ void BE_CALL Shutdown() {
     g_original_tail_late_tick = nullptr;
     g_original_camera_tick = nullptr;
     g_original_time_unscaled_delta = nullptr;
+#if defined(_WIN32)
+    g_original_raw_input_data = nullptr;
+    g_original_raw_input_buffer = nullptr;
+#endif
     g_free_camera_active = false;
     g_first_person_active.store(false, std::memory_order_release);
     g_state.store(ModuleState::Stopped, std::memory_order_release);

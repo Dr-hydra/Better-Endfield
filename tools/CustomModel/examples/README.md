@@ -2,7 +2,9 @@
 
 `conversion.recipe.json` 是需要填写真实角色资料路径的模板，不是可直接用于任何角色的放行配方。
 可在 appearances 数组添加固定外观。各外观 target 契约必须一致。
-这是 BEM 1.0 的固定外观配方；`convert` 当前仍以此路线生成默认静态包。
+这是固定外观配方；普通资源仍输出 BEM 1.0，目标需要骨骼别名或 32 字节蒙皮时会正规升级为 BEM 1.2 的外观选项组与组件规则。
+
+`export.bemproj.json` 是可保存、重复导出的任务工程模板，与底层 `project.json` 分开。将输入路径改为真实可编辑 BEM 项目后运行 `build export.bemproj.json`；也可在创作者 GUI 的“创建 / 打开导出工程”中打开、改参数并导出。`mode` 可为 `pack` 或 `convert`，后者可另设 `recipe`。所有路径相对任务工程目录，`package.id` 在反复导出时保持不变。
 
 BEM 1.1 的组合外观由可编辑项目的 `manifest.option_groups`、`component_rules` 和带独立索引 payload 的条件 draw 表达，不能只在旧配方里增加热键名字。组可用条件、可达性约束及每个候选资源的原生身份需审阅后填写；同包保留全部候选资源以供未来热切换，但当前 UI 保存后下次启动才应用。
 

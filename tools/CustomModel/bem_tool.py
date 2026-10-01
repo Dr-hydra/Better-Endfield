@@ -11,7 +11,7 @@ from pathlib import Path
 import bem_v1 as bem
 import bem_projects
 
-TOOL_VERSION = "1.3.0"
+TOOL_VERSION = "1.4.0"
 FORMAT_VERSIONS = {0: '1.0', 1: '1.1', 2: '1.2'}
 from convert_efmi_poc import Source
 from efmi_source import sections, analyze_source
@@ -135,7 +135,7 @@ def check_geometry(m, payloads, minor=None):
         bem.require(len(textures)<=32 and resident<=bem.LIMIT, 'Appearance exceeds 32 texture bindings / 512 MiB budget')
 
 
-def convert(source, recipe_path, output):
+def convert(source, recipe_path, output, package=None):
     recipe_path=Path(recipe_path); recipe=bem.load_json(recipe_path); root=recipe_path.parent
     bem.require(recipe['schema']==1, 'Unsupported conversion recipe schema')
     def path(v):
@@ -204,25 +204,32 @@ def convert(source, recipe_path, output):
             builder.m['appearances'][-1]['preview']=builder.payload(data)
     bem.require(builder is not None,'No appearances')
     builder.m['default_appearance_id']=recipe.get('default_appearance_id',builder.m['default_appearance_id'])
+    from bem_export import prepare_builder, package_overrides
+    prepare_builder(builder)
+    package_overrides(builder.m, package)
     bem.validate_manifest(builder.m,len(builder.payloads)); check_geometry(builder.m,builder.payloads)
     builder.write(output)
     return dict(package=builder.m,evidence=evidence,size=Path(output).stat().st_size,
+                format_version=FORMAT_VERSIONS[bem.package_minor(output)],
                 conversion_ready=True,render_verified=False,issues=[])
 
 
-def convert_automatic(source, output, ini=None):
+def convert_automatic(source, output, ini=None, package=None):
     prepared=[]
     inspection=inspect_source(source,ini,prepared=prepared)
     bem.require(inspection.get('conversion_ready') and len(prepared)==1,
         '\n'.join(i['message'] for i in inspection.get('issues',[])) or 'AUTO_CONVERSION: 此来源暂不能自动转换')
-    builder=prepared[0]; builder.write(output)
+    builder=prepared[0]
+    from bem_export import prepare_builder, package_overrides
+    prepare_builder(builder); package_overrides(builder.m, package)
+    builder.write(output)
     return dict(package=builder.m,matching=inspection['matching'],issues=inspection['issues'],
-        size=Path(output).stat().st_size,conversion_ready=True,render_verified=False)
+        size=Path(output).stat().st_size,format_version=FORMAT_VERSIONS[bem.package_minor(output)],conversion_ready=True,render_verified=False)
 
 
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command',choices=['inspect','convert','validate','pack','unpack','bundle'])
+    parser.add_argument('command',choices=['inspect','convert','validate','pack','unpack','bundle','new-project','build'])
     parser.add_argument('--version', action='version', version='BEM Tools '+TOOL_VERSION+' / BEM 1.0+1.1+1.2')
     parser.add_argument('source',type=Path)
     parser.add_argument('additional',type=Path,nargs='*',help='Additional BEM files for bundle only')
@@ -230,14 +237,37 @@ def main(argv=None):
     parser.add_argument('--ini')
     parser.add_argument('-o','--output',type=Path)
     parser.add_argument('--report',type=Path)
+    parser.add_argument('--mode', choices=['convert', 'pack'], default='convert', help='Export mode for new-project')
+    parser.add_argument('--export-output', type=Path, help='BEM output saved in new-project')
+    parser.add_argument('--package-id')
+    parser.add_argument('--name')
+    parser.add_argument('--author')
+    parser.add_argument('--package-version')
     args=parser.parse_args(argv)
     result=dict(tool_version=TOOL_VERSION,format_version='1.0/1.1/1.2',command=args.command,source=str(args.source),success=False,conversion_ready=False,render_verified=False,issues=[])
+    report_path = args.report
+    protected_paths = [args.source, *args.additional] + ([args.output] if args.output else []) + ([args.recipe] if args.recipe else [])
     try:
         bem.require(not args.additional or args.command=='bundle', 'Additional inputs are only valid for bundle')
         if args.report:
             paths=[args.source,*args.additional]+([args.output] if args.output else [])+([args.recipe] if args.recipe else [])
             bem.require(all(args.report.resolve()!=p.resolve() for p in paths), 'Report cannot overwrite input/output/recipe')
-        if args.command=='inspect': result.update(inspect_source(args.source,args.ini))
+        if args.command == 'new-project':
+            import bem_tasks
+            bem.require(args.output, 'OUTPUT: 缺少工程文件路径')
+            package = {key: value for key, value in (('id', args.package_id), ('name', args.name),
+                       ('author', args.author), ('version', args.package_version)) if value is not None}
+            result.update(bem_tasks.new_project(args.source, args.output, args.mode, args.recipe, package, args.export_output))
+        elif args.command == 'build':
+            import bem_tasks
+            bem.require(not args.output and not args.recipe, 'BUILD: 输出和配方由工程文件保存，请编辑工程')
+            task = bem_tasks.load_task(args.source)
+            protected_paths.extend([*task['input_paths'], task['output']])
+            report_path = args.report or task['report']
+            bem.require(report_path is None or report_path.resolve() not in {p.resolve() for p in protected_paths},
+                        'Report cannot overwrite project/input/output/recipe')
+            result.update(bem_tasks.build_task(task))
+        elif args.command=='inspect': result.update(inspect_source(args.source,args.ini))
         elif args.command=='validate':
             minor=bem.package_minor(args.source)
             m,payloads=bem.read_package(args.source); selection_space=check_geometry(m,payloads,minor or None)
@@ -253,14 +283,13 @@ def main(argv=None):
             bem.require(args.output,'OUTPUT: 请选择输出文件')
             bem.require(args.source.resolve()!=args.output.resolve(),'OUTPUT: 不能覆盖源文件')
             result.update(convert(args.source,args.recipe,args.output) if args.recipe else convert_automatic(args.source,args.output,args.ini))
-            result['format_version']='1.0'
         result['success']=True
     except Exception as exc:
         result['issues'].append(dict(code='CONVERSION_FAILED',message=str(exc),
             hint='核对入口、已验证角色 profile、骨骼/材质映射和源文件版本；特殊 Shader 需要审阅配方。'))
     encoded=json.dumps(result,ensure_ascii=False,indent=2,allow_nan=False)
-    if args.report and all(args.report.resolve()!=p.resolve() for p in [args.source,*args.additional]+([args.output] if args.output else [])+([args.recipe] if args.recipe else [])):
-        bem.atomic_write(args.report,encoded.encode('utf-8'))
+    if report_path and all(report_path.resolve()!=p.resolve() for p in protected_paths):
+        bem.atomic_write(report_path,encoded.encode('utf-8'))
     print(encoded)
     return 0 if result['success'] else 2
 

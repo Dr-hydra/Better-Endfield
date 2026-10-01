@@ -90,6 +90,7 @@ struct BemTexture {
 
 // BEMv1 resources lowered into the established native upload representation.
 struct BemComponent {
+    bool skip_validation = false;
     BemComponentHeaderRaw info{};
     std::array<std::vector<uint8_t>, 3> streams;
     std::vector<uint8_t> indices;
@@ -123,6 +124,8 @@ struct BemPocData {
     BemFileHeader header{};
     std::vector<BemComponent> components;
     std::vector<BemTexture> textures;
+    bool skip_validation = false; // Developer option, never read from a package.
+    bool loading_optimization = false; // Experimental runtime option, never read from a package.
 };
 
 struct BemPackageInfo {
@@ -133,14 +136,20 @@ struct BemPackageInfo {
     std::vector<std::string> appearances, component_names;
     std::vector<uint32_t> original_counts;
 };
-struct BemLoadStats { std::vector<uint32_t> payload_ids; };
-bool ReadBemPackageInfo(const std::filesystem::path&, BemPackageInfo&, std::string& error);
+struct BemLoadStats {
+    std::vector<uint32_t> payload_ids;
+    uint64_t decoded_cache_peak_bytes = 0, decoded_cache_remaining_bytes = 0;
+    uint64_t payload_copy_bytes = 0, payload_move_bytes = 0;
+};
+bool ReadBemPackageInfo(const std::filesystem::path&, BemPackageInfo&, std::string& error, bool skip_validation = false);
 
 constexpr uint32_t kBemStreamCount = 3;
 constexpr int32_t kIndexElementSize = 2;
 
 
-bool ParseBem(std::span<const uint8_t> bytes, BemPocData& output, std::string& error);
+bool ParseBem(std::span<const uint8_t> bytes, BemPocData& output, std::string& error,
+    bool skip_validation = false, bool loading_optimization = false);
 bool LoadBem(const std::filesystem::path& path, BemPocData& output, std::string& error,
-    std::string_view appearance = {}, BemLoadStats* stats = nullptr);
+    std::string_view appearance = {}, BemLoadStats* stats = nullptr, bool skip_validation = false,
+    bool loading_optimization = false);
 } // namespace BetterEndfield::CustomModel

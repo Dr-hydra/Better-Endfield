@@ -26,7 +26,11 @@ final class FrameworkSettings {
         local.registerOnSharedPreferenceChangeListener(listener);
         XposedServiceHelper.registerListener(new XposedServiceHelper.OnServiceListener() {
             @Override public void onServiceBind(XposedService connected) {
-                synchronized (FrameworkSettings.class) { service = connected; remoteService = connected; publish(); }
+                synchronized (FrameworkSettings.class) {
+                    service = connected; remoteService = connected;
+                    FrameworkSettings.class.notifyAll();
+                    publish();
+                }
             }
             @Override public void onServiceDied(XposedService disconnected) {
                 synchronized (FrameworkSettings.class) { if (service == disconnected) { service = null; remoteService = null; } }
@@ -74,6 +78,14 @@ final class FrameworkSettings {
         return context.getSharedPreferences("module_settings", Context.MODE_PRIVATE);
     }
 
+    static synchronized boolean isConnected() { return remoteService != null; }
+
+    static void awaitConnection() throws java.io.IOException {
+        if (!FrameworkServiceWait.await(FrameworkSettings.class, () -> remoteService != null,
+                10_000, BemInstaller::checkpoint))
+            throw new java.io.IOException("框架服务未连接；请确认已在框架中启用模块后重试");
+    }
+
     static synchronized boolean removeBem(String name) {
         if(remoteService==null || !name.matches("bem-[a-f0-9-]{36}\\.bem")) return false;
         try {
@@ -81,14 +93,19 @@ final class FrameworkSettings {
             return !java.util.Arrays.asList(remoteService.listRemoteFiles()).contains(name);
         } catch(RuntimeException error) {Log.e("BetterEndfield.Install","Removing shared package failed",error);return false;}
     }
-    static synchronized boolean publishBem(java.io.File file,String name) {
-        if(remoteService==null || !name.matches("bem-[a-f0-9-]+\\.bem")) return false;
+    static synchronized void publishBem(java.io.File file,String name) throws java.io.IOException {
+        if(remoteService==null) throw new java.io.IOException("框架服务已断开，请重试");
+        if(!name.matches("bem-[a-f0-9-]+\\.bem") || !file.isFile())
+            throw new java.io.IOException("无效的模型包发布文件");
         try(ParcelFileDescriptor descriptor=remoteService.openRemoteFile(name);
             java.io.FileInputStream in=new java.io.FileInputStream(file);
             FileOutputStream out=new FileOutputStream(descriptor.getFileDescriptor())) {
             out.getChannel().truncate(0);
-            BemInstaller.copy(in,out,2L*1024*1024*1024);out.getFD().sync();return true;
-        } catch(Exception error) {Log.e("BetterEndfield.Install","Publishing failed",error);return false;}
+            BemInstaller.copy(in,out,2L*1024*1024*1024);out.getFD().sync();
+        } catch(java.io.IOException | RuntimeException error) {
+            Log.e("BetterEndfield.Install","Publishing failed",error);
+            throw new java.io.IOException("模型包发布失败："+error.getMessage(),error);
+        }
     }
 
     static boolean validMmdRemote(String name) {

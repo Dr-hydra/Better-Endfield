@@ -23,6 +23,7 @@ final class BemInstallPage {
     private final Handler handler=new Handler(Looper.getMainLooper());
     private TextView status;private LinearLayout entries;private String displayed="";
     private Button importButton,cancel;
+    private Switch skipValidation,hotSwitch,loadingOptimization;
     private final java.util.Set<String> expanded=new java.util.HashSet<>();
     private int renderVersion;
     private ProgressBar progress;
@@ -30,6 +31,10 @@ final class BemInstallPage {
     private final java.util.List<View> packageActions=new java.util.ArrayList<>();
     private final Runnable refresh=new Runnable(){public void run(){
         if(!active) return;
+        skipValidation.setEnabled(!BemInstaller.busy);
+        skipValidation.setChecked(FrameworkSettings.open(activity).getBoolean(BemInstaller.SKIP_VALIDATION,false));
+        refreshExperiment(hotSwitch,BemInstaller.HOT_SWITCH);
+        refreshExperiment(loadingOptimization,BemInstaller.LOADING_OPTIMIZATION);
         status.setText(BemInstaller.status);
         root.findViewById(R.id.bem_operation_state).setVisibility(BemInstaller.busy || BemInstaller.status.contains("未完成") || BemInstaller.status.contains("失败") ? View.VISIBLE : View.GONE);importButton.setEnabled(!BemInstaller.busy);cancel.setEnabled(BemInstaller.busy && !BemInstaller.removing);
         incomingRetry.setEnabled(pendingImport!=null && !BemInstaller.busy);
@@ -56,6 +61,20 @@ final class BemInstallPage {
         progressLabel=root.findViewById(R.id.bem_progress_label);
         importButton=root.findViewById(R.id.bem_import);
         cancel=root.findViewById(R.id.bem_cancel);
+        skipValidation=root.findViewById(R.id.bem_skip_validation);
+        hotSwitch=root.findViewById(R.id.bem_hot_switch);
+        loadingOptimization=root.findViewById(R.id.bem_loading_optimization);
+        bindExperiment(hotSwitch,BemInstaller.HOT_SWITCH);
+        bindExperiment(loadingOptimization,BemInstaller.LOADING_OPTIMIZATION);
+        skipValidation.setChecked(FrameworkSettings.open(activity).getBoolean(BemInstaller.SKIP_VALIDATION,false));
+        skipValidation.setOnCheckedChangeListener((button,checked)->{
+            android.content.SharedPreferences settings=FrameworkSettings.open(activity);
+            if(settings.getBoolean(BemInstaller.SKIP_VALIDATION,false)==checked) return;
+            if(!settings.edit().putBoolean(BemInstaller.SKIP_VALIDATION,checked).commit()) {
+                skipValidation.setChecked(!checked);
+                saveError(new IllegalStateException("开发者选项保存失败"));
+            }
+        });
         entries=root.findViewById(R.id.bem_entries);
         incoming=root.findViewById(R.id.bem_incoming);
         incomingNotice=root.findViewById(R.id.bem_incoming_notice);
@@ -68,6 +87,7 @@ final class BemInstallPage {
         importButton.setOnClickListener(v -> activity.startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("*/*").addCategory(Intent.CATEGORY_OPENABLE),PICK));
         root.findViewById(R.id.bem_models_quark).setOnClickListener(v -> openModelSource("https://pan.quark.cn/s/97a9ca8f9bf2"));
         root.findViewById(R.id.bem_models_baidu).setOnClickListener(v -> openModelSource("https://pan.baidu.com/s/5ekaAiiLmZKXHZ7pHH0W-Vw"));
+        root.findViewById(R.id.bem_models_katfile).setOnClickListener(v -> openModelSource("https://katfile.biz/users/hydra405/"));
         cancel.setOnClickListener(v -> BemInstaller.cancel());
         if(state!=null) {
             java.util.ArrayList<String> restored=state.getStringArrayList("bem.expanded");
@@ -236,9 +256,29 @@ final class BemInstallPage {
     }
     private void saveChange(JSONObject change) throws Exception {
         BemInstaller.saveAll(activity,new JSONArray().put(change));
-        BemInstaller.status="设置已保存，重启游戏后生效。同一角色最多启用一个包。";
+        BemInstaller.status=FrameworkSettings.open(activity).getBoolean(BemInstaller.HOT_SWITCH,false)
+            ? "设置已保存；已启用实验热切换的游戏将在下次切换配队或重新打开详情时更新。首次开启需重启游戏。"
+            : "设置已保存，重启游戏后生效。同一角色最多启用一个包。";
         status.setText(BemInstaller.status);
         showEntries();
+    }
+    private void refreshExperiment(Switch control,String key) {
+        control.setEnabled(!BemInstaller.busy);
+        control.setChecked(FrameworkSettings.open(activity).getBoolean(key,false));
+    }
+    private void bindExperiment(Switch control,String key) {
+        refreshExperiment(control,key);
+        control.setOnCheckedChangeListener((button,checked)->{
+            android.content.SharedPreferences settings=FrameworkSettings.open(activity);
+            if(settings.getBoolean(key,false)==checked) return;
+            if(!settings.edit().putBoolean(key,checked).commit()) {
+                control.setChecked(!checked);
+                saveError(new IllegalStateException("实验选项保存失败"));
+                return;
+            }
+            BemInstaller.status="实验设置已保存，重启游戏后生效。";
+            status.setText(BemInstaller.status);
+        });
     }
     private void saveError(Exception error) {
         String message="设置未保存："+error.getMessage();

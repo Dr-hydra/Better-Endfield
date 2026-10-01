@@ -163,25 +163,18 @@
                         <ResourceDictionary>
                             <ResourceDictionary.ThemeDictionaries>
                                 <ResourceDictionary x:Key="Light">
-                                    <SolidColorBrush x:Key="SponsorForegroundBrush" Color="#FF4A2B18" />
-                                    <SolidColorBrush x:Key="SponsorBackgroundBrush" Color="#FFFFCFA3" />
                                     <SolidColorBrush x:Key="NavigationViewItemBackgroundPointerOver" Color="#FFFFC79A" />
                                     <SolidColorBrush x:Key="NavigationViewItemBackgroundPressed" Color="#FFF3B880" />
                                     <SolidColorBrush x:Key="NavigationViewItemForegroundPointerOver" Color="#FF4A2B18" />
                                     <SolidColorBrush x:Key="NavigationViewItemForegroundPressed" Color="#FF4A2B18" />
                                 </ResourceDictionary>
                                 <ResourceDictionary x:Key="Default">
-                                    <SolidColorBrush x:Key="SponsorForegroundBrush" Color="#FFFFCFA3" />
-                                    <SolidColorBrush x:Key="SponsorBackgroundBrush" Color="#FF4A2B18" />
                                     <SolidColorBrush x:Key="NavigationViewItemBackgroundPointerOver" Color="#FF603A22" />
                                     <SolidColorBrush x:Key="NavigationViewItemBackgroundPressed" Color="#FF75472A" />
                                     <SolidColorBrush x:Key="NavigationViewItemForegroundPointerOver" Color="#FFFFCFA3" />
                                     <SolidColorBrush x:Key="NavigationViewItemForegroundPressed" Color="#FFFFCFA3" />
                                 </ResourceDictionary>
-                                <ResourceDictionary x:Key="HighContrast">
-                                    <SolidColorBrush x:Key="SponsorForegroundBrush" Color="{ThemeResource SystemColorButtonTextColor}" />
-                                    <SolidColorBrush x:Key="SponsorBackgroundBrush" Color="{ThemeResource SystemColorButtonFaceColor}" />
-                                </ResourceDictionary>
+                                <ResourceDictionary x:Key="HighContrast" />
                             </ResourceDictionary.ThemeDictionaries>
                         </ResourceDictionary>
                     </NavigationViewItem.Resources>

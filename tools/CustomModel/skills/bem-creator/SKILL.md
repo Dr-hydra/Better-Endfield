@@ -1,6 +1,6 @@
 ---
 name: bem-creator
-description: Convert supported Endfield source Mods to BEM 1.0/1.1, inspect and validate packages, unpack editable projects, repack them, and assemble multi-Mod ZIP distributions using the BEM creator CLI. Use for BEM creation and conversion diagnostics.
+description: Convert supported Endfield source Mods to BEM 1.0/1.1/1.2, save repeatable export task projects, inspect and validate packages, unpack editable projects, repack them, and assemble multi-Mod ZIP distributions using the BEM creator CLI. Use for BEM creation and conversion diagnostics.
 ---
 
 # BEM creator workflow

@@ -5,8 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Deterministic>true</Deterministic>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <Version>3.4.0</Version>
-    <InformationalVersion>3.4.0</InformationalVersion>
+    <Version>3.4.1</Version>
+    <InformationalVersion>3.4.1</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 </Project>

@@ -1,5 +1,7 @@
 import copy
+import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -25,15 +27,114 @@ class Bem12Tests(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def native(self, expected, path=None):
+    def native(self, expected, path=None, skip_validation=False):
         validator = os.environ.get('BEM_VALIDATOR')
         if validator:
-            result = subprocess.run([validator, str(path or self.path)], capture_output=True)
+            result = subprocess.run([validator, str(path or self.path), *(['--skip-validation'] if skip_validation else [])], capture_output=True)
             self.assertEqual(result.returncode == 0, expected, result.stdout + result.stderr)
+
+    def native_loading(self, enabled, expected=True, compare=True):
+        validator = os.environ.get('BEM_VALIDATOR')
+        if not validator:
+            self.skipTest('BEM_VALIDATOR is required for native loading optimization regression')
+        args = [validator, str(self.path)]
+        if enabled:
+            args.append('--loading-optimization')
+        if compare:
+            args.append('--compare-loading')
+        result = subprocess.run(args, capture_output=True, text=True)
+        self.assertEqual(result.returncode == 0, expected, result.stdout + result.stderr)
+        return [tuple(map(int, fields)) for fields in re.findall(
+            r'memory cache_peak=(\d+) cache_remaining=(\d+) copied=(\d+) moved=(\d+)', result.stdout)]
+
+    def test_loading_optimization_shared_payloads_and_concatenated_indices(self):
+        m = self.builder.m
+        mesh = m['meshes'][0]
+        # Equal-sized stream buffers can intentionally share a directory entry.
+        mesh['streams'][1]['payload'] = mesh['streams'][2]['payload']
+        for draw in mesh['draws']:
+            draw.pop('when', None)
+            draw['indices'] = mesh['draws'][0]['indices']
+        m['textures'][1]['payload'] = m['textures'][0]['payload']
+        self.write(m)
+        baseline = self.native_loading(False)
+        optimized = self.native_loading(True)
+        self.assertTrue(baseline and optimized)
+        self.assertEqual(len(baseline), len(optimized))
+        for before, after in zip(baseline, optimized):
+            self.assertEqual(after[1], 0, 'last consumer did not release decoded cache')
+            self.assertLess(after[0], before[0], 'decoded cache peak did not decrease')
+            self.assertLess(after[2], before[2], 'owned payload transfers did not decrease copying')
+            self.assertGreater(after[3], 0, 'no payload ownership was transferred')
+
+    def test_loading_optimization_keep_overrides_and_null_texture_slots(self):
+        m = self.slot_manifest()
+        m['required_capabilities'].append('keep-material-textures')
+        m['component_rules'][1]['candidates'][1]['material_overrides'] = [
+            dict(material_slot=0, material_name='material1', textures=[{'slot': 'dress_d'}])]
+        self.write(m)
+        self.native_loading(False)
+        self.native_loading(True)
+
+    def test_loading_optimization_preserves_v10_and_multi_component_references(self):
+        from test_bem_v1 import fixture as v10_fixture
+        builder = v10_fixture()
+        builder.m['appearances'][0]['components'][1] = dict(target=1, operation='replace', mesh=0)
+        builder.write(self.path)
+        self.native_loading(False)
+        self.native_loading(True)
+        self.path.write_bytes(self.path.read_bytes()[:-1])
+        self.native_loading(False, expected=False)
+        self.native_loading(True, expected=False)
 
     def write(self, m):
         bem.write_package(self.path, m, self.builder.payloads)
         return bem.package_minor(self.path)
+
+    def mutate_manifest(self, change):
+        raw = self.path.read_bytes()
+        header = list(bem.HEADER.unpack_from(raw))
+        begin = bem.HEADER.size
+        old_size, count = header[5], header[6]
+        manifest = json.loads(raw[begin:begin + old_size])
+        change(manifest)
+        encoded = json.dumps(manifest, separators=(',', ':')).encode()
+        delta = len(encoded) - old_size
+        table = bytearray()
+        for i in range(count):
+            entry = list(bem.ENTRY.unpack_from(raw, begin + old_size + i * bem.ENTRY.size))
+            entry[2] += delta
+            table.extend(bem.ENTRY.pack(*entry))
+        header[4] += delta
+        header[5] = len(encoded)
+        self.path.write_bytes(bem.HEADER.pack(*header) + encoded + table + raw[begin + old_size + count * bem.ENTRY.size:])
+
+    def test_developer_mode_allows_large_palette_and_draw_count(self):
+        for field in ('bones', 'draws'):
+            with self.subTest(field=field):
+                self.write(self.builder.m)
+                def enlarge(manifest):
+                    table = manifest['meshes'][0][field]
+                    # The fixture has two mutually exclusive draws, so 258
+                    # candidates yield 257 active draws for one outfit.
+                    table.extend(copy.deepcopy(table[0]) for _ in range(258 - len(table)))
+                self.mutate_manifest(enlarge)
+                self.native(False)
+                self.native(True, skip_validation=True)
+
+    def test_developer_mode_allows_invalid_vertex_indices(self):
+        import struct
+        mesh = self.builder.m['meshes'][0]
+        self.builder.payloads[mesh['draws'][0]['indices']] = struct.pack('<3H', 65535, 0, 1)
+        self.write(self.builder.m)
+        self.native(False)
+        self.native(True, skip_validation=True)
+
+    def test_developer_mode_still_requires_complete_payloads(self):
+        self.write(self.builder.m)
+        self.path.write_bytes(self.path.read_bytes()[:-1])
+        self.native(False)
+        self.native(False, skip_validation=True)
 
     def slot_manifest(self, colours=3):
         m = copy.deepcopy(self.builder.m)
@@ -52,6 +153,32 @@ class Bem12Tests(unittest.TestCase):
     def test_within_v11_limits_stays_v11(self):
         self.assertEqual(self.write(self.builder.m), 1)
         self.native(True)
+
+    def test_supported_unused_capabilities_are_allowed(self):
+        for capabilities, minor in ((['keep-material-textures'], 1),
+                                    (['texture-slots'], 2),
+                                    (['resource-bone-aliases'], 2),
+                                    (['keep-material-textures', 'texture-slots', 'resource-bone-aliases'], 2)):
+            with self.subTest(capabilities=capabilities):
+                manifest = copy.deepcopy(self.builder.m)
+                manifest['required_capabilities'].extend(capabilities)
+                self.assertEqual(self.write(manifest), minor)
+                self.native(True)
+                _, plan, _ = bem_v11.read_selected_payloads(self.path)
+                self.assertEqual(len(plan['components']), len(manifest['target']['components']))
+
+    def test_unknown_capability_is_still_rejected(self):
+        manifest = copy.deepcopy(self.builder.m)
+        manifest['required_capabilities'].append('unsupported-future-feature')
+        with self.assertRaisesRegex(ValueError, 'capabilities'):
+            bem.validate_manifest(manifest, len(self.builder.payloads))
+        manifest['required_capabilities'][-1] = 'texture-slots'
+        self.write(manifest)
+        # Equal-length metadata mutation keeps the directory intact, so this
+        # checks the native capability guard rather than a container size error.
+        self.path.write_bytes(self.path.read_bytes().replace(b'"texture-slots"', b'"unknown-slots"'))
+        self.native(False)
+        self.native(True, skip_validation=True)
 
     def test_more_than_sixteen_choices_needs_v12(self):
         m = copy.deepcopy(self.builder.m)

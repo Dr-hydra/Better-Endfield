@@ -96,7 +96,7 @@ int main() {
     Contract("unity.transform.rotation.get")->method_info=reinterpret_cast<void*>(1006);
     leader.Setup(3);member1.Setup(10);member2.Setup(20);
     player.manager=&manager;squad={&member1.entity,&leader.entity,&member2.entity};
-    auto& r=CM::runtime;r.resolved=true;r.leases=&leases;r.applied=Config();CM::config.store(r.applied);
+    auto& r=CM::runtime;r.resolved=true;r.leases=&leases;r.applied=Config();std::atomic_store(&CM::config,r.applied);
     r.squad_manager_offset=int(offsetof(PlayerFake,manager));
     r.animator_class.type_object=reinterpret_cast<void*>(201);r.thread_id=GetCurrentThreadId();
 
@@ -227,18 +227,18 @@ int main() {
     CM::requests.store(16);PumpCharacterMotion();
     CM::methods[CM::SquadMember].value.method_info=reinterpret_cast<void*>(size_t(CM::SquadMember)+1);
     // Face disabled: no face VMD is passed on.
-    {auto config=Config();config->face=false;r.applied=config;CM::config.store(r.applied);}
+    {auto config=Config();config->face=false;r.applied=config;std::atomic_store(&CM::config,r.applied);}
     RequestCharacterDirectorLoad(Cast(2));PumpCharacterMotion();
     CHECK(EiemFake::actors[0].face.empty()&&EiemFake::actors[1].face.empty());
     CM::requests.store(16);PumpCharacterMotion();
 
     // Configuration invalidation dominates a running session.
-    r.applied=Config();CM::config.store(r.applied);
+    r.applied=Config();std::atomic_store(&CM::config,r.applied);
     CM::requests.store(1);PumpCharacterMotion();Ready();CHECK(Dancing()==1);
-    CM::config.store(std::make_shared<const CM::Config>());PumpCharacterMotion();CHECK(!r.Playing());CHECK(pins.empty());
+    std::atomic_store(&CM::config,std::make_shared<const CM::Config>());PumpCharacterMotion();CHECK(!r.Playing());CHECK(pins.empty());
     // Disabled: a director load is refused immediately.
     RequestCharacterDirectorLoad("C:/w/motion.vmd","");PumpCharacterMotion();CHECK(CM::director_phase.load()==CM::DirectorFailed);
-    r.applied=Config();CM::config.store(r.applied);
+    r.applied=Config();std::atomic_store(&CM::config,r.applied);
 
     // Two Animators under the model: refuse rather than animate a sub-rig.
     leader.model.animators.push_back(&leader.animator);

@@ -239,6 +239,8 @@ def prepare(src, ini, database=None):
             attributes=attributes,bones=[dict(component=cid,index=i,name=n) for i,n in enumerate(native['bone_names'])],draws=output_draws))
     builder.m['default_appearance_id']='default'
     builder.m['appearances']=[dict(id='default',name='源包默认外观',description='按 INI 初始开关生成；不执行源脚本。',components=operations)]
+    from bem_export import prepare_builder
+    prepare_builder(builder)
     bem.validate_manifest(builder.m,len(builder.payloads))
     from bem_tool import check_geometry
     check_geometry(builder.m,builder.payloads)

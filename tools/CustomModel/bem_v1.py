@@ -71,6 +71,8 @@ def validate_manifest(m, payload_count, minor=None):
     if 'option_groups' in m:
         import bem_v11
         return bem_v11.validate_manifest(m, payload_count, minor)
+    require(not m.get('texture_slots') and not any(c.get('bone_name_aliases') for c in m['target']['components']),
+            'Extended resources require a BEM 1.2 composable project')
     require(m['schema'] == 1, 'Unsupported manifest schema')
     for key in ('package_id', 'default_appearance_id'):
         identity(m[key])

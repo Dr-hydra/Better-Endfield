@@ -3,7 +3,8 @@
 // rebind to world LOD1 only after matching renderer space and every bone path
 // and rest matrix. This never equates LOD0/LOD1 geometry or material tables.
 bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocData& bem,
-    void* asset,std::vector<PreparedBinding>& bindings) {
+    void* asset,std::vector<PreparedBinding>& bindings,
+    std::vector<PreparedBinding>* prepared_ui=nullptr,void** prepared_ui_asset=nullptr) {
     void* handle=nullptr; uint32_t handle_root=0;
     struct DonorLifetime {
         void*& handle; uint32_t& root;
@@ -15,6 +16,7 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
     if (!ReadCompletedAndroidDonor(adapter,bem,donor,sources)) {
         sources.clear();
         if (!PrepareResource(adapter,bem,donor,sources)) return false;
+        if (prepared_ui && prepared_ui_asset && g_hot_switch_runtime.load()) { *prepared_ui=sources; *prepared_ui_asset=donor; }
     }
     bool inactive=true;
     void* args[]{g_skinned_renderer_class.type_object,&inactive};
@@ -57,18 +59,20 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
         target.original_mesh=Invoke(Contract("skinned.get_shared_mesh"),renderer,nullptr);
         target.original_bones=Invoke(Contract("skinned.get_bones"),renderer,nullptr);
         target.original_materials=Invoke(Contract("renderer.get_shared_materials"),renderer,nullptr);
-        if (!target.original_mesh || ObjectName(target.original_mesh)!=target_name ||
-            !GetRendererEnabled(renderer,target.original_enabled)) return false;
-        target.custom_enabled=(bem.components[i].info.flags&kComponentFlagHidden)?false:target.original_enabled;
-        target.custom_mesh=source.custom_mesh==source.original_mesh?target.original_mesh:source.custom_mesh;
+        if (!GetRendererEnabled(renderer,target.original_enabled) || !UseSavedOriginal(asset,target) ||
+            !DonorMesh(target) || ObjectName(DonorMesh(target))!=target_name) return false;
+        target.custom_enabled=(bem.components[i].info.flags&kComponentFlagHidden)?false:
+            (target.saved_original?target.donor_enabled:target.original_enabled);
+        target.custom_mesh=source.custom_mesh==DonorMesh(source)?DonorMesh(target):source.custom_mesh;
+        if (target.saved_original) target.custom_bones=DonorBones(target);
         // A keep override cloned from UI LOD0 may be reused by world LOD1 only
         // when the same native material and original texture pins are present.
         for (size_t k=0;k<bem.components[i].keep_material_overrides.size();++k) {
             const auto& override=bem.components[i].keep_material_overrides[k];
-            if (override.material_slot>=static_cast<uint32_t>(ArrayLength(target.original_materials)) ||
-                override.material_slot>=static_cast<uint32_t>(ArrayLength(source.original_materials))) return false;
-            void* world_material=ArrayValue(target.original_materials,override.material_slot);
-            void* ui_material=ArrayValue(source.original_materials,override.material_slot);
+            if (override.material_slot>=static_cast<uint32_t>(ArrayLength(DonorMaterials(target))) ||
+                override.material_slot>=static_cast<uint32_t>(ArrayLength(DonorMaterials(source)))) return false;
+            void* world_material=ArrayValue(DonorMaterials(target),override.material_slot);
+            void* ui_material=ArrayValue(DonorMaterials(source),override.material_slot);
             if (!world_material || !ui_material ||
                 ObjectName(world_material)!=bem.components[i].keep_material_names[k] ||
                 ObjectName(ui_material)!=ObjectName(world_material)) return false;
@@ -80,7 +84,7 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
             }
         }
         target.custom_materials=source.custom_materials;
-        if (source.custom_mesh!=source.original_mesh) {
+        if (source.custom_mesh!=DonorMesh(source)) {
             target.change_shadow=true;
             target.custom_shadow=1; // ShadowCastingMode.On, using the new visible mesh.
             if (!InvokeValue(Contract("android.shadow_get"),renderer,nullptr,target.original_shadow)) return false;
@@ -88,7 +92,7 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
         }
         if (source.custom_bones) {
             const int bones=ArrayLength(source.custom_bones);
-            target.custom_bones=NewArrayLike(target.original_bones,bones);
+            target.custom_bones=NewArrayLike(DonorBones(target),bones);
             if (!target.custom_bones) return false;
             const auto& component=bem.components[source.component_id];
             for (int b=0;b<bones;++b) {
@@ -129,7 +133,7 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
     size_t proxies=0;
     for (const auto& source:sources) {
         const auto& component=bem.components[source.component_id];
-        if (source.custom_mesh==source.original_mesh && !(component.info.flags&kComponentFlagHidden)) continue;
+        if (source.custom_mesh==DonorMesh(source) && !(component.info.flags&kComponentFlagHidden)) continue;
         std::string stem=adapter.components[source.component_id].name;
         stem.resize(stem.size()-5); // Exact adapter name has the _lod0 suffix.
         const auto proxy_name=stem+"_shadowProxyMobile";
@@ -141,8 +145,9 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
             proxy.component_id=source.component_id; proxy.renderer=renderer;
             proxy.original_mesh=proxy.custom_mesh=Invoke(Contract("skinned.get_shared_mesh"),renderer,nullptr);
             proxy.original_materials=proxy.custom_materials=Invoke(Contract("renderer.get_shared_materials"),renderer,nullptr);
+            proxy.original_bones=Invoke(Contract("skinned.get_bones"),renderer,nullptr);
             if (!proxy.original_mesh || !proxy.original_materials ||
-                !GetRendererEnabled(renderer,proxy.original_enabled)) return false;
+                !GetRendererEnabled(renderer,proxy.original_enabled) || !UseSavedOriginal(asset,proxy)) return false;
             proxy.custom_enabled=false;
             bindings.push_back(proxy); ++proxies;
         }

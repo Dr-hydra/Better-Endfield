@@ -228,33 +228,8 @@ double MmdDirectorSeconds();
 void MmdCameraLoaded(CameraFiles::Result&& result);
 
 // ---------------------------------------------------------------------------
-// Mouse look: a low-level mouse hook on the input thread. The delta is the hook
-// position minus the current cursor position (the cursor has not moved yet when
-// the hook runs), which keeps working while the game locks and recentres the
-// cursor. The hook only exists while the free camera runs in a focused window.
+// Input reads feed atomic relative deltas; no cursor-position subtraction.
 // ---------------------------------------------------------------------------
-
-#if defined(_WIN32)
-LRESULT CALLBACK FreeCameraMouseHook(int code, WPARAM message, LPARAM data) {
-    if (code == HC_ACTION && g_mouse_capture.load(std::memory_order_relaxed)) {
-        const auto* info = reinterpret_cast<const MSLLHOOKSTRUCT*>(data);
-        if (info && (info->flags & LLMHF_INJECTED) == 0) {
-            if (message == WM_MOUSEMOVE) {
-                POINT cursor{};
-                if (GetCursorPos(&cursor)) {
-                    g_mouse_dx.fetch_add(info->pt.x - cursor.x, std::memory_order_relaxed);
-                    g_mouse_dy.fetch_add(info->pt.y - cursor.y, std::memory_order_relaxed);
-                }
-            } else if (message == WM_MOUSEWHEEL) {
-                g_mouse_wheel.fetch_add(static_cast<short>(HIWORD(info->mouseData)),
-                    std::memory_order_relaxed);
-            }
-        }
-    }
-    return CallNextHookEx(nullptr, code, message, data);
-}
-
-#endif
 
 void ClearMouseInput() {
 #if defined(__ANDROID__)

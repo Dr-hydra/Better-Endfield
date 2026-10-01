@@ -21,7 +21,7 @@ def validated(path):
     return m, payloads
 
 
-def pack_project(source, output):
+def pack_project(source, output, package=None):
     source, output = Path(source), Path(output)
     project = bem.load_json(source)
     root = source.parent.resolve()
@@ -37,6 +37,9 @@ def pack_project(source, output):
         bem.require(0 < size <= bem.LIMIT and total <= MAX_PACKAGE, 'Project decoded budget exceeded')
         payloads.append(path.read_bytes())
     bem.require(output.resolve() != source.resolve(), 'Output cannot overwrite project manifest')
+    from bem_export import prepare_export, package_overrides
+    project['manifest'], payloads = prepare_export(project['manifest'], payloads)
+    package_overrides(project['manifest'], package)
     from bem_tool import check_geometry
     bem.validate_manifest(project['manifest'], len(payloads))
     check_geometry(project['manifest'], payloads)

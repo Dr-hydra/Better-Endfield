@@ -9,6 +9,30 @@
 #include <set>
 #include <random>
 using namespace BetterEndfield::CustomModel;
+namespace {
+bool SamePayload(const BemPocData& a,const BemPocData& b) {
+    if(std::memcmp(&a.header,&b.header,sizeof(a.header)) || a.components.size()!=b.components.size() ||
+        a.textures.size()!=b.textures.size() || a.skip_validation!=b.skip_validation) return false;
+    auto sameRaw=[](const auto& left,const auto& right) {
+        return left.size()==right.size() && (left.empty() ||
+            std::memcmp(left.data(),right.data(),left.size()*sizeof(left[0]))==0);
+    };
+    for(size_t i=0;i<a.components.size();++i) {
+        const auto& x=a.components[i]; const auto& y=b.components[i];
+        if(std::memcmp(&x.info,&y.info,sizeof(x.info)) || x.streams!=y.streams || x.indices!=y.indices ||
+            x.layout_crc!=y.layout_crc || x.attributes!=y.attributes || x.bone_names!=y.bone_names ||
+            x.bone_aliases!=y.bone_aliases || x.material_names!=y.material_names ||
+            x.keep_material_names!=y.keep_material_names || !sameRaw(x.bones,y.bones) ||
+            !sameRaw(x.draws,y.draws) || !sameRaw(x.keep_material_overrides,y.keep_material_overrides)) return false;
+    }
+    for(size_t i=0;i<a.textures.size();++i) {
+        const auto& x=a.textures[i]; const auto& y=b.textures[i];
+        if(std::memcmp(&x.info,&y.info,sizeof(x.info)) || x.name!=y.name ||
+            x.original_name!=y.original_name || x.data!=y.data) return false;
+    }
+    return true;
+}
+}
 #ifdef _WIN32
 int wmain(int argc,wchar_t** argv) {
 #else
@@ -17,12 +41,23 @@ int main(int argc,char** argv) {
     if(argc<2) return 2;
     std::vector<std::string> explicitSelections;
     int rewriteArg=0;
+    bool skipValidation=false;
+    bool loadingOptimization=false,compareLoading=false;
     for(int i=2;i<argc;++i) {
 #ifdef _WIN32
         const bool isOption=std::wstring_view(argv[i])==L"--options";
+        const bool isSkip=std::wstring_view(argv[i])==L"--skip-validation";
+        const bool isLoading=std::wstring_view(argv[i])==L"--loading-optimization";
+        const bool isCompare=std::wstring_view(argv[i])==L"--compare-loading";
 #else
         const bool isOption=std::string_view(argv[i])=="--options";
+        const bool isSkip=std::string_view(argv[i])=="--skip-validation";
+        const bool isLoading=std::string_view(argv[i])=="--loading-optimization";
+        const bool isCompare=std::string_view(argv[i])=="--compare-loading";
 #endif
+        if(isSkip) {skipValidation=true;continue;}
+        if(isLoading) {loadingOptimization=true;continue;}
+        if(isCompare) {compareLoading=true;continue;}
         if(isOption) {
             if(++i>=argc) {std::cerr<<"--options needs a selection";return 2;}
 #ifdef _WIN32
@@ -40,7 +75,7 @@ int main(int argc,char** argv) {
         else {std::cerr<<"Unexpected argument";return 2;}
     }
     std::string error; BemPackageInfo info;
-    if(!ReadBemPackageInfo(argv[1],info,error)) {std::cerr<<error;return 1;}
+    if(!ReadBemPackageInfo(argv[1],info,error,skipValidation)) {std::cerr<<error;return 1;}
     if(!info.minor && !explicitSelections.empty()) {std::cerr<<"--options needs BEM 1.1";return 2;}
     std::vector<std::string> selections=info.appearances;
     if(!explicitSelections.empty()) selections=explicitSelections;
@@ -106,12 +141,12 @@ int main(int argc,char** argv) {
     }
     BemPocData first,second;
     const std::string firstSelection=explicitSelections.empty()?info.default_options:explicitSelections.front();
-    if(info.minor && !LoadBem(argv[1],first,error,firstSelection)) {std::cerr<<error;return 1;}
+    if(info.minor && !LoadBem(argv[1],first,error,firstSelection,nullptr,skipValidation,loadingOptimization)) {std::cerr<<error;return 1;}
     size_t accepted=0;
     bool capturedRepeat=false;
     for(const auto& appearance:selections) {
         BemPocData data;BemLoadStats stats;
-        if(!LoadBem(argv[1],data,error,appearance,&stats)) {
+        if(!LoadBem(argv[1],data,error,appearance,&stats,skipValidation,loadingOptimization)) {
             if(info.minor && explicitSelections.empty() && error=="Unreachable option combination") continue;
             std::cerr<<appearance<<": "<<error;return 1;
         }
@@ -120,11 +155,23 @@ int main(int argc,char** argv) {
         for(size_t i=0;i<stats.payload_ids.size();++i)
             std::cout<<(i?",":"")<<stats.payload_ids[i];
         std::cout<<'\n';
+        if(compareLoading) {
+            BemPocData other; BemLoadStats otherStats;
+            if(!LoadBem(argv[1],other,error,appearance,&otherStats,skipValidation,!loadingOptimization) ||
+                !SamePayload(data,other) || stats.payload_ids!=otherStats.payload_ids) {
+                std::cerr<<"Loading optimization changed selected bytes or payload accesses: "<<error;return 1;
+            }
+            const auto& optimized=loadingOptimization?stats:otherStats;
+            if(optimized.decoded_cache_remaining_bytes!=0) {std::cerr<<"Decoded cache was retained";return 1;}
+        }
+        if(loadingOptimization || compareLoading)
+            std::cout<<"memory cache_peak="<<stats.decoded_cache_peak_bytes<<" cache_remaining="<<stats.decoded_cache_remaining_bytes
+                <<" copied="<<stats.payload_copy_bytes<<" moved="<<stats.payload_move_bytes<<'\n';
         if(info.minor && appearance==firstSelection) {second=std::move(data);capturedRepeat=true;}
     }
     if(!accepted) {std::cerr<<"No reachable selection";return 1;}
     if(info.minor) {
-        if(!capturedRepeat && !LoadBem(argv[1],second,error,firstSelection)) {std::cerr<<error;return 1;}
+        if(!capturedRepeat && !LoadBem(argv[1],second,error,firstSelection,nullptr,skipValidation,loadingOptimization)) {std::cerr<<error;return 1;}
         if(std::memcmp(&first.header,&second.header,sizeof(first.header))!=0 ||
            first.components.size()!=second.components.size() || first.textures.size()!=second.textures.size()) return 1;
         for(size_t i=0;i<first.components.size();++i) {
@@ -144,7 +191,7 @@ int main(int argc,char** argv) {
                first.textures[i].data!=second.textures[i].data) return 1;
     }
     auto utf=std::filesystem::path(argv[1]).filename().u8string();
-    std::string ini="[CustomModel]\nstandalone_lod=false\n[Mod.test]\nenabled=true\npackage="+
+    std::string ini="[CustomModel]\nstandalone_lod=false\nskip_validation="+std::string(skipValidation?"true":"false")+"\n[Mod.test]\nenabled=true\npackage="+
         std::string(reinterpret_cast<const char*>(utf.data()),utf.size())+
         (info.minor?"\noptions="+info.default_options:"\nappearance="+info.default_appearance)+"\n";
     ModRegistry registry;

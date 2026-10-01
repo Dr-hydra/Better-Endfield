@@ -18,6 +18,9 @@ public sealed partial class CustomModelPage : UserControl
     private readonly HashSet<string> _expanded = [];
     public Func<string>? InstallRootProvider { get; set; }
     private string InstallRoot => InstallRootProvider?.Invoke() ?? (Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory);
+    private string SelectionAppliedHint => _service.HotSwitch
+        ? "已启用实验热切换的游戏将在下次切换配队或重新打开详情时更新；首次开启需重启游戏。"
+        : "下次启动游戏生效。";
 
     public CustomModelPage()
     {
@@ -43,6 +46,7 @@ public sealed partial class CustomModelPage : UserControl
         GetModelsTitle.Text = isZh ? "获取模型" : "Get models";
         QuarkModelsButton.Content = isZh ? "夸克网盘" : "Quark Drive";
         BaiduModelsButton.Content = isZh ? "百度网盘" : "Baidu Netdisk";
+        KatfileModelsButton.Content = isZh ? "Katfile 网盘" : "Katfile";
     }
 
     private void ModelSource_Click(object sender, RoutedEventArgs e)
@@ -74,6 +78,9 @@ public sealed partial class CustomModelPage : UserControl
         _rendering = true;
         try
         {
+            SkipValidationToggle.IsOn = _service.SkipValidation;
+            HotSwitchToggle.IsOn = _service.HotSwitch;
+            LoadingOptimizationToggle.IsOn = _service.LoadingOptimization;
             bool forced = _service.Packages.Any(p => p.Enabled);
             LodToggle.IsOn = _service.EffectiveLod; LodToggle.IsEnabled = !forced;
             LodHint.Text = forced
@@ -98,7 +105,7 @@ public sealed partial class CustomModelPage : UserControl
                     try
                     {
                         await _service.SetEnabledAsync(p, enabled.IsOn); Render();
-                        Message("已保存", "同角色只启用一个包，下次启动游戏生效。");
+                        Message("已保存", "同角色只启用一个包。" + SelectionAppliedHint);
                     }
                     catch (Exception ex) { Reload(); Message("保存失败", ex.Message, InfoBarSeverity.Error); }
                 };
@@ -110,7 +117,7 @@ public sealed partial class CustomModelPage : UserControl
                     appearance.SelectionChanged += async (_, _) =>
                     {
                         if (_rendering || appearance.SelectedItem is not BemAppearance selected) return;
-                        try { p.SelectedAppearance = selected.Id; await _service.SaveAsync(); description.Text = selected.Description; Message("外观已保存", "下次启动游戏生效。"); }
+                        try { p.SelectedAppearance = selected.Id; await _service.SaveAsync(); description.Text = selected.Description; Message("外观已保存", SelectionAppliedHint); }
                         catch (Exception ex) { Reload(); Message("保存失败", ex.Message, InfoBarSeverity.Error); }
                     };
                     controls.Children.Add(appearance);
@@ -177,7 +184,7 @@ public sealed partial class CustomModelPage : UserControl
                                 Message("组合不可达", "这个选项组合不符合包内约束。", InfoBarSeverity.Warning);
                                 return;
                             }
-                            try { RefreshAvailability(); await _service.SaveAsync(); Message("选项已保存", "下次启动游戏生效。"); }
+                            try { RefreshAvailability(); await _service.SaveAsync(); Message("选项已保存", SelectionAppliedHint); }
                             catch (Exception ex) { Reload(); Message("保存失败", ex.Message, InfoBarSeverity.Error); }
                         };
                     }
@@ -202,7 +209,7 @@ public sealed partial class CustomModelPage : UserControl
                 await ImportBundleAsync(file.Path); return;
             }
             await _service.ImportAsync(file.Path, InstallRoot); Render();
-            Message("导入完成", "已校验模型包。新包默认停用；请选择外观或选项组并启用。同 ID 更新保留仍有效的选择。", InfoBarSeverity.Success);
+            Message("导入完成", (_service.SkipValidation ? "开发者模式：已跳过模型校验。" : "已校验模型包。") + "新包默认停用；请选择外观或选项组并启用。同 ID 更新保留仍有效的选择。", InfoBarSeverity.Success);
             if (_service.Notices.Count > 0) Message("导入完成，需注意", string.Join("\n", _service.Notices), InfoBarSeverity.Warning);
         }
         catch (Exception ex) { Message("导入失败", ex.Message, InfoBarSeverity.Error); }
@@ -252,6 +259,31 @@ public sealed partial class CustomModelPage : UserControl
         Render();
         Message($"已导入 {count} 个包", issues.Count > 0 ? string.Join("\n", issues) : "可分别选择外观或选项组并启用；同角色同时启用一个包。",
             issues.Count > 0 ? InfoBarSeverity.Warning : InfoBarSeverity.Success);
+    }
+    private async void Experiments_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_rendering) return;
+        try
+        {
+            _service.HotSwitch = HotSwitchToggle.IsOn;
+            _service.LoadingOptimization = LoadingOptimizationToggle.IsOn;
+            await _service.SaveAsync();
+            Message("实验设置已保存", "两个开关相互独立，默认关闭；重启游戏后生效。");
+        }
+        catch (Exception ex) { Reload(); Message("保存失败", ex.Message, InfoBarSeverity.Error); }
+    }
+    private async void SkipValidation_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_rendering) return;
+        try
+        {
+            _service.SkipValidation = SkipValidationToggle.IsOn;
+            await _service.SaveAsync(); Reload();
+            Message(_service.SkipValidation ? "开发者模式已开启" : "模型校验已恢复",
+                _service.SkipValidation ? "兼容性和容量校验已关闭，可能导致游戏崩溃或模型错乱。下次启动游戏生效。" : "下次启动游戏使用正常校验。",
+                _service.SkipValidation ? InfoBarSeverity.Warning : InfoBarSeverity.Informational);
+        }
+        catch (Exception ex) { Reload(); Message("保存失败", ex.Message, InfoBarSeverity.Error); }
     }
     private async void Lod_Toggled(object sender, RoutedEventArgs e)
     {

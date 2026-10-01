@@ -11,6 +11,7 @@
 #include <set>
 #include <vector>
 #include <fstream>
+#include <mutex>
 #include <dlfcn.h>
 #include <sys/syscall.h>
 #include <unistd.h>
@@ -26,6 +27,10 @@ std::atomic<uint32_t> g_copy_probe_count{0};
 std::atomic<uint32_t> g_create_probe_count{0};
 
 namespace {
+std::mutex g_update_mutex;
+std::string g_pending_update;
+std::atomic_bool g_update_ready{false};
+std::vector<std::string> ConfigStrings(std::string_view value);
 std::string ConfigValue(std::string_view config, std::string_view key) {
     while (!config.empty()) {
         const size_t end = config.find_first_of("\n;");
@@ -35,6 +40,23 @@ std::string ConfigValue(std::string_view config, std::string_view key) {
         config.remove_prefix(end + 1);
     }
     return {};
+}
+std::string SharedRegistryText(std::string_view config,const std::vector<std::filesystem::path>& packages,
+    std::string_view appearance={}) {
+    std::string result="[CustomModel]\nstandalone_lod=false\nskip_validation="+
+        std::string(ConfigValue(config,"skip_validation")=="1"?"true":"false")+
+        "\nhot_switch="+(ConfigValue(config,"hot_switch")=="1"?"true":"false")+
+        "\nloading_optimization="+(ConfigValue(config,"loading_optimization")=="1"?"true":"false")+"\n";
+    const auto appearances=ConfigStrings(ConfigValue(config,"appearances"));
+    const auto options=ConfigStrings(ConfigValue(config,"options"));
+    for (size_t i=0;i<packages.size();++i) {
+        auto path=packages[i]; if (path.is_relative()) path=std::filesystem::path("/data/local/tmp")/path;
+        result+="[Mod.android"+std::to_string(i)+"]\nenabled=true\npackage="+path.string()+"\n";
+        const auto selected=i<appearances.size()?appearances[i]:(i==0?std::string(appearance):std::string{});
+        if (!selected.empty()) result+="appearance="+selected+"\n";
+        if (i<options.size() && !options[i].empty()) result+="options="+options[i]+"\n";
+    }
+    return result;
 }
 std::vector<std::filesystem::path> ConfigPackages(std::string_view value) {
     std::vector<std::filesystem::path> result;
@@ -213,18 +235,7 @@ bool CustomModelModule::InitializeSharedReplacement(const std::string& config) {
             << world_resource_ << '\n' << ui_resource_ << '\n';
         if (!request) return false;
     }
-    replacement_config_ = "[CustomModel]\nstandalone_lod=false\n";
-    const auto configured_appearances=ConfigStrings(ConfigValue(config,"appearances"));
-    const auto configured_options=ConfigStrings(ConfigValue(config,"options"));
-    for (size_t i = 0; i < package_paths_.size(); ++i) {
-        replacement_config_ += "[Mod.android" + std::to_string(i) + "]\nenabled=true\npackage=" +
-            package_paths_[i].string() + "\n";
-        const std::string selected = i < configured_appearances.size() ? configured_appearances[i] :
-            (i == 0 ? appearance_ : std::string{});
-        if (!selected.empty()) replacement_config_ += "appearance=" + selected + "\n";
-        if(i<configured_options.size() && !configured_options[i].empty())
-            replacement_config_ += "options=" + configured_options[i] + "\n";
-    }
+    replacement_config_=SharedRegistryText(config,package_paths_,appearance_);
     host_ = {};
     host_.abi_version = BETTER_ENDFIELD_MODULE_ABI_V1; host_.context = this;
     host_.log = &HostLog; host_.resolve_method = &HostResolveMethod;
@@ -245,8 +256,34 @@ bool CustomModelModule::InitializeSharedReplacement(const std::string& config) {
         LogError(Id(), "shared custom model initialization failed"); return false;
     }
     replacement_active_ = true;
+    instance_=this;
+    g_update_ready.store(ConfigValue(config,"hot_switch")=="1",std::memory_order_release);
     LogInfo(Id(), "shared PC replacement transaction active on Android");
     return true;
+}
+bool CustomModelModule::QueueConfiguration(const std::string& configuration) {
+    if (!g_update_ready.load(std::memory_order_acquire) || configuration.empty() || configuration.size()>1024*1024) return false;
+    std::lock_guard lock(g_update_mutex); g_pending_update=configuration;
+    return true;
+}
+void CustomModelModule::ApplyPendingConfiguration() {
+    if (!g_update_ready.load(std::memory_order_acquire)) return;
+    std::string config;
+    { std::lock_guard lock(g_update_mutex); config.swap(g_pending_update); }
+    if (!config.empty() && instance_) instance_->UpdateSharedReplacement(config);
+}
+bool CustomModelModule::UpdateSharedReplacement(const std::string& config) {
+    if (!replacement_active_ || !replacement_api_ || !replacement_api_->configuration_changed ||
+        ConfigValue(config,"replace")!="1") return false;
+    auto paths=ConfigPackages(ConfigValue(config,"packages"));
+    if (paths.empty()) {
+        const auto single=ConfigValue(config,"package"); if (!single.empty()) paths.push_back(std::filesystem::u8path(single));
+    }
+    const auto text=SharedRegistryText(config,paths,ConfigValue(config,"appearance"));
+    const auto result=replacement_api_->configuration_changed(text.c_str());
+    LogInfo(Id(),result==BE_Result_Ok?"Hot switch registry queued for the next resource delivery":
+        "Hot switch registry queue rejected; previous selection retained");
+    return result==BE_Result_Ok;
 }
 
 namespace {
@@ -398,11 +435,14 @@ ModuleResult CustomModelModule::Start(Il2CppRuntime& runtime) {
     appearance_ = ConfigValue(config, "appearance");
     const auto configured_appearances=ConfigStrings(ConfigValue(config,"appearances"));
     if (!configured_appearances.empty()) appearance_=configured_appearances.front();
-    if (resource_name_.empty() || package_paths_.empty()) return {false, "custom model config needs resource and package"};
+    const bool empty_hot_switch=package_paths_.empty() && ConfigValue(config,"hot_switch")=="1" && ConfigValue(config,"replace")=="1";
+    if (resource_name_.empty() || (package_paths_.empty() && !empty_hot_switch)) return {false, "custom model config needs resource and package"};
     std::string error;
     BemPackageInfo info;
-    if (!ReadBemPackageInfo(package_path_, info, error)) return {false, "BEM metadata rejected: " + error};
-    world_resource_=info.world_resource; ui_resource_=info.ui_resource;
+    if (!empty_hot_switch) {
+        if (!ReadBemPackageInfo(package_path_, info, error,ConfigValue(config,"skip_validation")=="1")) return {false, "BEM metadata rejected: " + error};
+        world_resource_=info.world_resource; ui_resource_=info.ui_resource;
+    }
     detached_probe_=ConfigValue(config,"mesh_probe")=="1";
     LogInfo(Id(), ("BEM target world="+world_resource_+" ui="+ui_resource_).c_str());
     if (info.minor) {
@@ -412,7 +452,7 @@ ModuleResult CustomModelModule::Start(Il2CppRuntime& runtime) {
     } else if (appearance_.empty()) appearance_ = info.default_appearance;
     const bool sharedReplacement=ConfigValue(config,"replace")=="1";
     if (!sharedReplacement) {
-        if (!LoadBem(package_path_, package_, error, appearance_)) return {false, "BEM package rejected: " + error};
+        if (!LoadBem(package_path_, package_, error, appearance_,nullptr,ConfigValue(config,"skip_validation")=="1")) return {false, "BEM package rejected: " + error};
         if (package_.components.empty()) return {false, "BEM package has no components"};
     }
     runtime_ = &runtime;

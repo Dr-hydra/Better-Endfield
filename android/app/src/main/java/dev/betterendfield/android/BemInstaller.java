@@ -12,6 +12,9 @@ import java.util.concurrent.Executors;
 /** Installation happens in the module app; the injected runtime never encodes textures. */
 final class BemInstaller {
     static final String INDEX = "installed_bem_packages";
+    static final String SKIP_VALIDATION = "bem_skip_validation";
+    static final String HOT_SWITCH = "bem_hot_switch";
+    static final String LOADING_OPTIMIZATION = "bem_loading_optimization";
     static volatile String status = "原样导入 BEM 包；贴图异常时，可在对应模型包下手动转换手机纹理。";
     static volatile boolean busy;
     static volatile boolean removing;
@@ -21,7 +24,8 @@ final class BemInstaller {
     private static boolean nativeLoaded;
     private static final java.util.concurrent.ExecutorService worker = Executors.newSingleThreadExecutor();
     static native String convertNative(String input, String output, String rules, boolean astc) throws IOException;
-    static native String inspectNative(String input) throws IOException;
+    static native String inspectNativeWithOptions(String input, boolean skipValidation) throws IOException;
+    static String inspectNative(String input) throws IOException { return inspectNativeWithOptions(input, false); }
     static native void cancelNative();
     // Called on the native conversion worker, consumed by the management UI.
     static void conversionProgress(String texture,int current,int total,int mip,int mips,float percent) {
@@ -71,6 +75,7 @@ final class BemInstaller {
         progressPercent=-1;startedAt=android.os.SystemClock.elapsedRealtime();
         busy=true; cancelled=false; status=converting?"正在准备纹理转换…":"正在读取并校验包（不转换纹理）…";
         Context app=context.getApplicationContext();
+        boolean skipValidation=FrameworkSettings.open(app).getBoolean(SKIP_VALIDATION,false);
         try {
         worker.execute(() -> {
             File stage=null;
@@ -112,7 +117,7 @@ final class BemInstaller {
                     result.put("texture_mode",astc?"astc":"rgba32");
                     source.delete();
                 } else {
-                    result=new JSONObject(inspectNative(source.getAbsolutePath()));
+                    result=new JSONObject(inspectNativeWithOptions(source.getAbsolutePath(),skipValidation));
                     result.put("texture_mode","original");
                 }
                 checkpoint();
@@ -124,9 +129,11 @@ final class BemInstaller {
                 result.put("generation",generation).put("remote","bem-"+generation+".bem").put("enabled",true);
                 // Validate all preserved selections before publishing a payload.
                 installedIndex(index(app),result,previousGeneration);
-                progressPercent=-1;status="正在发布给游戏…";
-                if(!FrameworkSettings.publishBem(new File(installed,"installed.bem"),result.getString("remote")))
-                    throw new IOException("框架服务未连接；请启用 modern 模块后重试");
+                progressPercent=-1;
+                if(!FrameworkSettings.isConnected()) status="正在等待框架服务连接…";
+                FrameworkSettings.awaitConnection();
+                checkpoint();status="正在发布给游戏…";
+                FrameworkSettings.publishBem(new File(installed,"installed.bem"),result.getString("remote"));
                 checkpoint();
                 synchronized(BemInstaller.class) {
                     checkpoint();
