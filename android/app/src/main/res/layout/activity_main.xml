@@ -394,12 +394,6 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <Button
-                android:id="@+id/save_model_settings"
-                style="@style/PrimaryButton"
-                android:layout_marginTop="14dp"
-                android:text="@string/model_save" />
-
             <TextView
                 android:id="@+id/model_selection_status"
                 style="@style/SelectionSummary"

@@ -131,7 +131,8 @@
                 <NavigationViewItem
                     x:Name="DisplayNavigationItem"
                     Content="显示增强"
-                    Tag="display">
+                    Tag="display"
+                    Visibility="Collapsed">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE7F4;" />
                     </NavigationViewItem.Icon>
@@ -1333,7 +1334,7 @@
                                             <TextBlock
                                                 x:Name="CameraMotionSectionHint"
                                                 Style="{StaticResource FieldHintStyle}"
-                                                Text="自由视角中可用。默认小键盘热键（需开启 NumLock）：7/9 滚转，1/3 缩放视野，5 复位滚转和视野，8 开始/停止运镜，0 记录关键帧，2 播放/停止关键帧，4 清空关键帧，6 播放/停止 VMD 镜头（未进入自由视角时会自动进入）。滚轮也可缩放视野。热键可在配置文件中修改。"
+                                                Text="自由视角中可用。小键盘（不需要开启 NumLock）：7/9 滚转，8 复位，1/3 缩放视野，2 开始/停止运镜，0 记录关键帧，. 播放关键帧。滚轮也可缩放视野。清空、保存、读取关键帧在 MMD 悬浮窗里。"
                                                 TextWrapping="Wrap" />
                                         </StackPanel>
                                         <ToggleSwitch
@@ -1499,6 +1500,211 @@
                                             OffContent="播放一次"
                                             OnContent="循环播放"
                                             Toggled="CameraEnhancementToggle_Toggled" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="18">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Name="MmdSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="MMD 播放与作品库" />
+                                            <TextBlock
+                                                x:Name="MmdSectionHint"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="动作、镜头和音乐共用一个时钟。小键盘：Enter 播放/暂停，+ 停止，4/6 后退/前进，5 切换镜头（VMD/自由/游戏），- 显示/隐藏悬浮窗。VMD 镜头不需要开启自由视角（切到“自由”模式才需要）；音乐通过音乐模块播放（不需要 OmniMix）。"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ToggleSwitch
+                                            x:Name="MmdEnabledToggle"
+                                            Header="启用 MMD 播放"
+                                            OffContent="关闭"
+                                            OnContent="用小键盘和悬浮窗控制"
+                                            Toggled="CameraEnhancementToggle_Toggled" />
+                                        <Grid ColumnSpacing="12" RowSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                                <ToggleSwitch
+                                                    x:Name="MmdBodyToggle"
+                                                    Header="身体动作"
+                                                    OffContent="关闭"
+                                                    OnContent="开启"
+                                                    Toggled="CameraEnhancementToggle_Toggled" />
+                                                <ToggleSwitch
+                                                    x:Name="MmdTerrainToggle"
+                                                    Grid.Column="1"
+                                                    Header="地形贴合（实验）"
+                                                    OffContent="关闭"
+                                                    OnContent="开启"
+                                                    Toggled="CameraEnhancementToggle_Toggled" />
+                                                <ToggleSwitch
+                                                    x:Name="MmdFaceToggle"
+                                                    Grid.Row="1"
+                                                    Header="表情"
+                                                    OffContent="关闭"
+                                                    OnContent="开启"
+                                                    Toggled="CameraEnhancementToggle_Toggled" />
+                                                <ToggleSwitch
+                                                    x:Name="MmdMusicToggle"
+                                                    Grid.Row="1"
+                                                    Grid.Column="1"
+                                                    Header="音乐"
+                                                    OffContent="不播放"
+                                                    OnContent="通过音乐模块播放"
+                                                    IsOn="True"
+                                                    Toggled="CameraEnhancementToggle_Toggled" />
+                                                <ToggleSwitch
+                                                    x:Name="MmdOverlayToggle"
+                                                    Grid.Row="2"
+                                                    Header="悬浮窗"
+                                                    OffContent="关闭"
+                                                    OnContent="小键盘 - 显示/隐藏"
+                                                    IsOn="True"
+                                                    Toggled="CameraEnhancementToggle_Toggled" />
+                                                <ToggleSwitch
+                                                    x:Name="MmdOverlayVisibleToggle"
+                                                    Grid.Row="2"
+                                                    Grid.Column="1"
+                                                    Header="进入游戏时显示悬浮窗"
+                                                    OffContent="隐藏"
+                                                    OnContent="显示"
+                                                    Toggled="CameraEnhancementToggle_Toggled" />
+                                                <ToggleSwitch
+                                                    x:Name="MmdLoopToggle"
+                                                    Grid.Row="3"
+                                                    Header="循环播放"
+                                                    OffContent="播放一次"
+                                                    OnContent="循环"
+                                                    Toggled="CameraEnhancementToggle_Toggled" />
+                                        </Grid>
+                                        <Border Style="{StaticResource SettingsRowStyle}">
+                                            <StackPanel Spacing="12">
+                                                <StackPanel Spacing="3">
+                                                    <TextBlock x:Name="MmdHotkeysTitle" Style="{StaticResource SectionTitleStyle}" FontSize="16" Text="MMD 快捷键" />
+                                                    <TextBlock x:Name="MmdHotkeysHint" Style="{StaticResource FieldHintStyle}" Text="点击输入框后直接按下按键，可使用 Ctrl、Alt、Shift、Win 组合键；修改会自动保存。" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                                <Grid ColumnSpacing="12" RowSpacing="10">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                                    <TextBox x:Name="MmdPlayHotkeyBox" Header="播放/暂停" Text="NUMPAD_ENTER" />
+                                                    <TextBox x:Name="MmdStopHotkeyBox" Grid.Column="1" Header="停止" Text="ADD" />
+                                                    <TextBox x:Name="MmdCameraModeHotkeyBox" Grid.Column="2" Header="镜头模式" Text="NUMPAD5" />
+                                                    <TextBox x:Name="MmdSeekBackHotkeyBox" Grid.Row="1" Header="后退" Text="NUMPAD4" />
+                                                    <TextBox x:Name="MmdSeekForwardHotkeyBox" Grid.Row="1" Grid.Column="1" Header="前进" Text="NUMPAD6" />
+                                                    <TextBox x:Name="MmdOverlayHotkeyBox" Grid.Row="1" Grid.Column="2" Header="悬浮窗" Text="SUBTRACT" />
+                                                    <TextBox x:Name="MmdMotionHotkeyBox" Grid.Row="2" Header="运镜" Text="NUMPAD2" />
+                                                    <TextBox x:Name="MmdRollLeftHotkeyBox" Grid.Row="2" Grid.Column="1" Header="左滚转" Text="NUMPAD7" />
+                                                    <TextBox x:Name="MmdRollRightHotkeyBox" Grid.Row="2" Grid.Column="2" Header="右滚转" Text="NUMPAD9" />
+                                                    <TextBox x:Name="MmdFovWideHotkeyBox" Grid.Row="3" Header="放大视野" Text="NUMPAD1" />
+                                                    <TextBox x:Name="MmdFovNarrowHotkeyBox" Grid.Row="3" Grid.Column="1" Header="缩小视野" Text="NUMPAD3" />
+                                                    <TextBox x:Name="MmdViewResetHotkeyBox" Grid.Row="3" Grid.Column="2" Header="视野复位" Text="NUMPAD8" />
+                                                    <TextBox x:Name="MmdKeyframeAddHotkeyBox" Grid.Row="4" Header="记录机位" Text="NUMPAD0" />
+                                                    <TextBox x:Name="MmdKeyframePlayHotkeyBox" Grid.Row="4" Grid.Column="1" Header="播放机位" Text="DECIMAL" />
+                                                    <TextBox x:Name="MmdKeyframeClearHotkeyBox" Grid.Row="4" Grid.Column="2" Header="清空机位" Text="NONE" />
+                                                </Grid>
+                                                <Grid ColumnSpacing="12" RowSpacing="10">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                                    <TextBox x:Name="MmdVmdPlayHotkeyBox" Header="VMD 镜头" Text="NONE" />
+                                                    <TextBox x:Name="MmdVmdMotionHotkeyBox" Grid.Column="1" Header="身体动作" Text="NONE" />
+                                                    <TextBox x:Name="MmdVmdMotionPauseHotkeyBox" Grid.Column="2" Header="动作暂停" Text="NONE" />
+                                                    <TextBox x:Name="MmdVmdMotionStopHotkeyBox" Grid.Row="1" Header="动作停止" Text="NONE" />
+                                                    <TextBox x:Name="MmdKeyframeSaveHotkeyBox" Grid.Row="1" Grid.Column="1" Header="保存机位" Text="NONE" />
+                                                    <TextBox x:Name="MmdKeyframeLoadHotkeyBox" Grid.Row="1" Grid.Column="2" Header="读取机位" Text="NONE" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+                                        <StackPanel Spacing="4">
+                                            <ComboBox
+                                                x:Name="MmdClothComboBox"
+                                                Header="衣物物理"
+                                                HorizontalAlignment="Stretch"
+                                                SelectedIndex="0"
+                                                SelectionChanged="MmdClothComboBox_SelectionChanged">
+                                                <ComboBoxItem Content="稳定（推荐）：完整模拟，不被原动作拉回" />
+                                                <ComboBoxItem Content="游戏原样：不做处理" />
+                                                <ComboBoxItem Content="冻结：关闭模拟，衣物随身体硬动" />
+                                            </ComboBox>
+                                            <TextBlock
+                                                x:Name="MmdClothHint"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="作用于衣服、头发和尾巴的游戏物理，每位跳舞的队员各自处理，停止播放后恢复原设置。在下次开始播放时生效。碰撞体仍是游戏原值，大幅度动作可能穿模。"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                                <NumberBox
+                                                    x:Name="MmdMotionScaleNumberBox"
+                                                    Header="位移幅度（%）"
+                                                    Minimum="5"
+                                                    Maximum="500"
+                                                    SmallChange="5"
+                                                    SpinButtonPlacementMode="Compact"
+                                                    Value="100"
+                                                    ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                                <NumberBox
+                                                    x:Name="MmdMusicGainNumberBox"
+                                                    Grid.Column="1"
+                                                    Header="音乐音量（%）"
+                                                    Minimum="0"
+                                                    Maximum="200"
+                                                    SmallChange="5"
+                                                    SpinButtonPlacementMode="Compact"
+                                                    Value="100"
+                                                    ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                                <NumberBox
+                                                    x:Name="MmdSeekNumberBox"
+                                                    Grid.Column="2"
+                                                    Header="快进/快退（秒）"
+                                                    Minimum="0.5"
+                                                    Maximum="60"
+                                                    SmallChange="1"
+                                                    SpinButtonPlacementMode="Compact"
+                                                    Value="5"
+                                                    ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                        </Grid>
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Name="MmdLibraryTitle" Style="{StaticResource SectionTitleStyle}" FontSize="16" Text="作品库" />
+                                            <TextBlock
+                                                x:Name="MmdLibraryHint"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="导入时会把文件复制到软件目录下的 mmd 文件夹，悬浮窗直接从这里读取。"
+                                                TextWrapping="Wrap" />
+                                            <TextBlock
+                                                x:Name="MmdLibraryPathTextBlock"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                IsTextSelectionEnabled="True"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ListView
+                                            x:Name="MmdWorksListView"
+                                            Height="200"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="6"
+                                            SelectionMode="Single" />
+                                        <TextBlock
+                                            x:Name="MmdDefaultWorkTextBlock"
+                                            Style="{StaticResource FieldHintStyle}"
+                                            TextWrapping="Wrap" />
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button x:Name="MmdImportButton" Click="MmdImportButton_Click" Content="导入作品" Style="{StaticResource AccentButtonStyle}" />
+                                            <Button x:Name="MmdSetDefaultButton" Click="MmdSetDefaultButton_Click" Content="设为默认" />
+                                            <Button x:Name="MmdOffsetButton" Click="MmdOffsetButton_Click" Content="音乐偏移" />
+                                            <Button x:Name="MmdDeleteButton" Click="MmdDeleteButton_Click" Content="删除" />
+                                            <Button x:Name="MmdOpenFolderButton" Click="MmdOpenFolderButton_Click" Content="打开文件夹" />
+                                            <Button x:Name="MmdRefreshButton" Click="MmdRefreshButton_Click" Content="刷新" />
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
 
@@ -2197,7 +2403,7 @@
                                     <TextBlock x:Name="ResetButtonTextBlock" Text="恢复默认" />
                                 </StackPanel>
                             </Button>
-                            <Button x:Name="SaveButton" Grid.Column="2" Click="SaveButton_Click">
+                            <Button x:Name="SaveButton" Grid.Column="2" Click="SaveButton_Click" Visibility="Collapsed">
                                 <StackPanel Orientation="Horizontal" Spacing="7">
                                     <SymbolIcon Symbol="Save" />
                                     <TextBlock x:Name="SaveButtonTextBlock" Text="保存" />
@@ -2216,7 +2422,7 @@
                                         IsActive="False"
                                         Visibility="Collapsed" />
                                     <SymbolIcon Symbol="Play" />
-                                    <TextBlock x:Name="LaunchButtonTextBlock" Text="保存并启动" />
+                                    <TextBlock x:Name="LaunchButtonTextBlock" Text="启动" />
                                 </StackPanel>
                             </Button>
                         </Grid>

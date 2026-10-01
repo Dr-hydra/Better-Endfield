@@ -15,7 +15,13 @@ record OverlayFeatures(
         boolean hideHud,
         boolean freeCamera,
         boolean worldPause,
-        boolean firstPerson) {
+        boolean firstPerson,
+        boolean mmd) {
+
+    OverlayFeatures(boolean panel, boolean hideHud, boolean freeCamera,
+            boolean worldPause, boolean firstPerson) {
+        this(panel, hideHud, freeCamera, worldPause, firstPerson, false);
+    }
 
     static OverlayFeatures read(SharedPreferences settings) {
         boolean freeCamera = settings.getBoolean(ModuleSettings.CAMERA_FREE, false);
@@ -23,10 +29,9 @@ record OverlayFeatures(
                 settings.getBoolean(ModuleSettings.OVERLAY_ENABLED, false),
                 settings.getBoolean(ModuleSettings.UI_HIDE_HUD, false),
                 freeCamera,
-                // World pause is a free-camera sub-mode: the desktop module only
-                // reads its hotkey while the free camera is armed.
-                freeCamera && settings.getBoolean(ModuleSettings.CAMERA_PAUSE, false),
-                settings.getBoolean(ModuleSettings.CAMERA_FIRST_PERSON, false));
+                settings.getBoolean(ModuleSettings.CAMERA_PAUSE, false),
+                settings.getBoolean(ModuleSettings.CAMERA_FIRST_PERSON, false),
+                settings.getBoolean(ModuleSettings.MMD_ENABLED, false));
     }
 
     static OverlayFeatures off() {
@@ -34,6 +39,6 @@ record OverlayFeatures(
     }
 
     boolean anyControl() {
-        return hideHud || freeCamera || firstPerson;
+        return hideHud || freeCamera || worldPause || firstPerson || mmd;
     }
 }

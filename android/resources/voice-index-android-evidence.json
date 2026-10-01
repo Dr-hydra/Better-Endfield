@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "kind": "betterendfield-android-four-language-voice-evidence",
+  "platform": "Android",
+  "validatedAtUtc": "2026-10-01T02:28:34.769222+00:00",
+  "device": "192.168.31.12:36477",
+  "currentManifestSha256": "170E152D2C5188B0F19CB3A7D186A7EBEDEF50E3E6FD1B8A043445AE8D5BF263",
+  "currentIndexSha256": "5F5D1609DF7A0D2306F459676DA3EDDA536B6682514AA06C58979F6A1F35EBE6",
+  "pckSnapshot": {
+    "path": "android/resources/.sources/20261001-wireless-192.168.31.12-36477/pck-snapshot-four-languages-korean-20261001-022224.json",
+    "sha256": "9937FACD93CF779BAED9382A552934CADE42F176E82069CA5DDBD67678D3A6F7"
+  },
+  "koreanSource": {
+    "path": "android/resources/.sources/20261001-wireless-192.168.31.12-36477/korean-20261001-022224/korean-source.json",
+    "sha256": "439E68F16A83EA40BCFE8E246CA8636A349607041F0964D0A7C2CD1940663430",
+    "blcSha256": "2F5E8A3D01E2CF9933C1EA5F04F4912F52CD1BE6047CAB86530FFC05A67E5BA3",
+    "selectedBnkCount": 638,
+    "selectedBnkBytes": 1057552,
+    "additionalReadBytesApprox": 1833347,
+    "streamPayloadRead": false
+  },
+  "unchangedCurrentDeviceBlcFiles": [
+    {
+      "devicePath": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/1CDDBF1F/1CDDBF1F.blc",
+      "sha256": "E416BAAF7A39B28288FCA8E1B75D5F92CC412A10636FEB5487B8086B217B44AC"
+    },
+    {
+      "devicePath": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/42A8FCA6/42A8FCA6.blc",
+      "sha256": "FE6C3156CB9CB72EC263B9B7B870F80B17BA1FE0C956DD8E1766FF82006A5AC5"
+    },
+    {
+      "devicePath": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/775A31D1/775A31D1.blc",
+      "sha256": "EDD369DBDBA802BC0FA2A376A08957F008CE3A202FE6F468DD09F564A08EA89F"
+    },
+    {
+      "devicePath": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/E1E7D7CE/E1E7D7CE.blc",
+      "sha256": "2A02876BA20EC14135130849AE71560C7BEE1B8B11E2A5F0319133F42851799E"
+    },
+    {
+      "devicePath": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/A31457D0/A31457D0.blc",
+      "sha256": "3C88B99D1C10881BBF2AB149DECF5787BF82DFB254FB1499BEF1E58EB2B2821D"
+    },
+    {
+      "devicePath": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/F668D4EE/F668D4EE.blc",
+      "sha256": "EBFBAF87A42252C6C43055E917F078C126B4C79A94005CAEBEFAE96FA924F9AF"
+    },
+    {
+      "devicePath": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/E9D31017/E9D31017.blc",
+      "sha256": "2F5E8A3D01E2CF9933C1EA5F04F4912F52CD1BE6047CAB86530FFC05A67E5BA3"
+    }
+  ],
+  "catalogCount": 136,
+  "validatedLanguages": [
+    "Chinese",
+    "English",
+    "Japanese",
+    "Korean"
+  ],
+  "previous135CatalogsRetained": true,
+  "previousRoutePairsRetained": 54172,
+  "sourceIdConflicts": 0,
+  "missingLanguages": [],
+  "missingNewCharacterCatalogs": [],
+  "staticMappedVoicesPerLanguage": 638,
+  "allReferencedTargetMediaPresent": true,
+  "playbackVerified": false
+}

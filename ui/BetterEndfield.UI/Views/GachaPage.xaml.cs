@@ -15,6 +15,8 @@ namespace BetterEndfield.UI.Views;
 
 public sealed partial class GachaPage : UserControl
 {
+    public event Action<bool>? EnabledChanged;
+    private bool _initializingEnabled = true;
     private const string GachaWebUrl = "https://www.bilibili.com/toy/endfield/index.html";
     private readonly GachaSessionClient _sessions = new();
     private readonly GachaApiClient _api = new();
@@ -37,6 +39,9 @@ public sealed partial class GachaPage : UserControl
         UpdateLocalizedUi();
         Loaded += async (_, _) =>
         {
+            AppSettings settings = await ConfigurationService.LoadAppSettingsAsync();
+            GachaEnabledToggle.IsOn = settings.GachaEnabled;
+            _initializingEnabled = false;
             if (Records.Count != 0) return;
             _poolInfos = GachaStaticPoolCatalog.Entries.ToDictionary(x => x.PoolId, StringComparer.Ordinal);
             foreach (KeyValuePair<string, GachaPoolInfo> item in await _store.LoadPoolInfosAsync())
@@ -69,6 +74,20 @@ public sealed partial class GachaPage : UserControl
         };
     }
 
+    public void SetEnabled(bool enabled)
+    {
+        _initializingEnabled = true;
+        GachaEnabledToggle.IsOn = enabled;
+        _initializingEnabled = false;
+    }
+
+    private void GachaEnabledToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_initializingEnabled) return;
+        EnabledChanged?.Invoke(GachaEnabledToggle.IsOn);
+        if (!GachaEnabledToggle.IsOn) SetStatus("not-connected", "寻访模块已关闭，不会读取游戏凭据");
+    }
+
     private void LocalizationChanged(object? sender, PropertyChangedEventArgs e)
     {
         DispatcherQueue.TryEnqueue(() =>
@@ -86,6 +105,9 @@ public sealed partial class GachaPage : UserControl
         ExportButtonText.Text = isZh ? "导出 JSON" : "Export JSON";
         OpenWebButtonText.Text = isZh ? "上传云端" : "Upload to Cloud";
         SyncButtonText.Text = isZh ? "同步" : "Sync";
+        GachaEnabledToggle.Header = isZh ? "启用寻访模块" : "Enable Gacha Module";
+        GachaEnabledToggle.OffContent = isZh ? "关闭：不探测游戏凭据" : "Off: do not inspect game credentials";
+        GachaEnabledToggle.OnContent = isZh ? "开启：允许从游戏同步记录" : "On: allow record sync from the game";
         LimitedButton.Content = isZh ? "限定池" : "Limited";
         WeaponButton.Content = isZh ? "武器池" : "Weapons";
         FestivalButton.Content = isZh ? "庆典池" : "Festival";
@@ -126,6 +148,11 @@ public sealed partial class GachaPage : UserControl
 
     private async void SyncButton_Click(object sender, RoutedEventArgs e)
     {
+        if (!GachaEnabledToggle.IsOn)
+        {
+            SetStatus("not-connected", "请先启用寻访模块");
+            return;
+        }
         SyncButton.IsEnabled = false;
         SetStatus("connecting");
         try

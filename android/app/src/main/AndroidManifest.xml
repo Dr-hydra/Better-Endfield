@@ -10,6 +10,11 @@
         android:roundIcon="@drawable/gilberta"
         android:supportsRtl="true">
         <activity
+            android:name=".MmdLibraryActivity"
+            android:exported="false"
+            android:label="@string/mmd_title"
+            android:theme="@style/AppTheme" />
+        <activity
             android:name=".BemInstallActivity"
             android:exported="true"
             android:launchMode="singleTop"

@@ -17,7 +17,9 @@ final class BemOptions {
         LinkedHashMap<String,String> values=new LinkedHashMap<>();
         for(int i=0;i<groups.length();++i) {
             JSONObject group=groups.getJSONObject(i);
-            values.put(group.getString("id"),group.getString("default"));
+            String id=group.getString("id"),value=group.getString("default");
+            requireToken(id);requireToken(value);
+            if(values.put(id,value)!=null) throw new IOException("重复的选项组");
         }
         HashSet<String> seen=new HashSet<>();
         if(!encoded.isEmpty()) for(String pair:encoded.split("&",-1)) {
@@ -28,12 +30,45 @@ final class BemOptions {
         for(int i=0;i<groups.length();++i) {
             JSONObject group=groups.getJSONObject(i);
             String value=values.get(group.getString("id"));
+            requireToken(value);
             JSONArray choices=group.getJSONArray("choices");boolean found=false;
-            for(int j=0;j<choices.length();++j) found |= value.equals(choices.getJSONObject(j).getString("id"));
+            HashSet<String> choiceIds=new HashSet<>();
+            for(int j=0;j<choices.length();++j) {
+                String id=choices.getJSONObject(j).getString("id");requireToken(id);
+                if(!choiceIds.add(id)) throw new IOException("重复的组件选项");
+                found |= value.equals(id);
+            }
             if(!found) throw new IOException("选项已从包中移除："+group.getString("name"));
         }
         if(!valid(entry,values)) throw new IOException("此选项组合在包内不可达");
         return values;
+    }
+
+    static void requireToken(String value) throws IOException {
+        if(value==null || !value.matches("[A-Za-z0-9][A-Za-z0-9_.-]{0,95}")) throw new IOException("无效的选项标识");
+    }
+
+    static String appearance(JSONObject entry,String value) throws Exception {
+        requireToken(value);
+        JSONArray choices=entry.getJSONArray("appearances");
+        for(int i=0;i<choices.length();++i) if(value.equals(choices.getString(i))) return value;
+        throw new IOException("无效的外观选项");
+    }
+
+    /** Newest enabled entry wins for legacy/corrupt snapshots; keep every package. */
+    static JSONArray exclusive(JSONArray entries) throws Exception {
+        JSONArray result=new JSONArray(entries.toString());
+        HashSet<String> characters=new HashSet<>(),generations=new HashSet<>();
+        for(int i=result.length()-1;i>=0;--i) {
+            JSONObject entry=result.getJSONObject(i);
+            if(!generations.add(entry.getString("generation"))) throw new IOException("重复的模型包版本");
+            String character=entry.getString("character_id");
+            if(character.isEmpty()) throw new IOException("模型包缺少角色标识");
+            if(entry.has("enabled") && !(entry.get("enabled") instanceof Boolean)) throw new IOException("无效的启用状态");
+            boolean enabled=entry.optBoolean("enabled",true);
+            entry.put("enabled",enabled && characters.add(character));
+        }
+        return result;
     }
 
     static String encode(Map<String,String> values) {

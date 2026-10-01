@@ -69,7 +69,8 @@ public final class BemInstallerTest extends Instrumentation {
     public void testGamePrivateMaterialization() throws Exception {
         File input=fixture();String generation="00000000-0000-0000-0000-000000000001";
         JSONObject entry=new JSONObject().put("generation",generation).put("remote","bem-"+generation+".bem")
-            .put("bytes",input.length()).put("package_id","test.package").put("default_appearance","hidden");
+            .put("bytes",input.length()).put("package_id","test.package").put("character_id","target")
+            .put("default_appearance","hidden").put("appearances",new JSONArray().put("hidden"));
         String config=BemInstalledResources.prepare(getInstrumentation().getTargetContext(),new JSONArray().put(entry).toString(),name->new FileInputStream(input),x->{});
         assertTrue(config.contains("appearances=hidden"));assertTrue(config.contains("replace=1"));
         entry.put("generation","../../bad");
@@ -102,8 +103,10 @@ public final class BemInstallerTest extends Instrumentation {
             Files.writeString(new File(folder,"installed.bem").toPath(),"test bytes");
             Files.writeString(new File(folder,"report.json").toPath(),"{\"character_id\":\""+(id.equals(other)?"other":"target")+"\"}");
         }
-        JSONObject keep=new JSONObject().put("generation",other).put("character_id","other").put("enabled",true).put("selected_appearance","alternate");
-        JSONArray entries=new JSONArray().put(new JSONObject().put("generation",target).put("character_id","target").put("name","Removal fixture")).put(keep);
+        JSONObject keep=new JSONObject().put("generation",other).put("character_id","target").put("enabled",true)
+                .put("default_appearance","alternate").put("appearances",new JSONArray().put("alternate")).put("selected_appearance","alternate");
+        JSONArray entries=new JSONArray().put(new JSONObject().put("generation",target).put("character_id","target").put("enabled",false)
+                .put("name","Removal fixture").put("default_appearance","default").put("appearances",new JSONArray().put("default"))).put(keep);
         FrameworkSettings.open(app).edit().putString(BemInstaller.INDEX,entries.toString()).commit();
         try {BemInstaller.remove(app,"../../bad");fail("Accepted unsafe generation");}catch(IOException expected){}
         assertEquals(2,BemInstaller.index(app).length());
@@ -113,8 +116,40 @@ public final class BemInstallerTest extends Instrumentation {
         assertFalse(BemInstaller.busy);
         JSONArray remaining=BemInstaller.index(app);
         assertEquals(1,remaining.length());assertTrue(keep.toString().equals(remaining.getJSONObject(0).toString()));
-        assertFalse(new File(root,target).exists());assertFalse(new File(root,old).exists());
+        assertFalse(new File(root,target).exists());assertTrue(new File(root,old).exists());
         assertTrue(new File(root,other+"/installed.bem").isFile());
+    }
+    public void testLegacyMigrationAndImmediateExclusiveSelection() throws Exception {
+        android.content.Context base=getTargetContext();String run=java.util.UUID.randomUUID().toString();
+        File isolated=new File(base.getCacheDir(),"selection-test-"+run);isolated.mkdirs();
+        android.content.Context app=new android.content.ContextWrapper(base) {
+            @Override public android.content.Context getApplicationContext(){return this;}
+            @Override public File getFilesDir(){return isolated;}
+            @Override public android.content.SharedPreferences getSharedPreferences(String name,int mode){return base.getSharedPreferences("selection-test-"+run,mode);}
+        };
+        JSONArray entries=new JSONArray();
+        for(int i=0;i<3;i++) entries.put(new JSONObject().put("generation",java.util.UUID.randomUUID().toString())
+                .put("character_id",i<2?"same":"other").put("name","Selection fixture")
+                .put("default_appearance","default").put("appearances",new JSONArray().put("default").put("alternate")));
+        assertTrue(FrameworkSettings.open(app).edit().putString(BemInstaller.INDEX,entries.toString()).commit());
+        JSONArray migrated=BemInstaller.index(app);
+        assertEquals(3,migrated.length());assertFalse(migrated.getJSONObject(0).getBoolean("enabled"));
+        assertTrue(migrated.getJSONObject(1).getBoolean("enabled"));assertTrue(migrated.getJSONObject(2).getBoolean("enabled"));
+        String first=migrated.getJSONObject(0).getString("generation"),second=migrated.getJSONObject(1).getString("generation");
+        BemInstaller.select(app,first,"alternate",true);
+        JSONArray saved=BemInstaller.index(app);
+        assertTrue(saved.getJSONObject(0).getBoolean("enabled"));assertFalse(saved.getJSONObject(1).getBoolean("enabled"));
+        assertTrue(saved.getJSONObject(0).getString("selected_appearance").equals("alternate"));
+        assertTrue(saved.getJSONObject(2).toString().equals(migrated.getJSONObject(2).toString()));
+        String durable=Files.readString(new File(isolated,"bem-index.json").toPath());
+        assertTrue(durable.equals(saved.toString()));
+        try {BemInstaller.select(app,second,"removed-choice",true);fail("Saved invalid appearance");}catch(IOException expected){}
+        assertTrue(saved.toString().equals(BemInstaller.index(app).toString()));
+        JSONObject converted=new JSONObject(saved.getJSONObject(0).toString()).put("generation",java.util.UUID.randomUUID().toString());
+        JSONArray next=BemInstaller.installedIndex(saved,converted,first);
+        assertEquals(3,next.length());assertTrue(next.getJSONObject(2).getBoolean("enabled"));
+        assertTrue(next.getJSONObject(2).getString("selected_appearance").equals("alternate"));
+        assertTrue(next.getJSONObject(0).getString("generation").equals(second));
     }
     /** Android framework tests: compile locally, execute with the installed test APK. */
     public void testIncomingBemOpenAndShareRequests() throws Exception {

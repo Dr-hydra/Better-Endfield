@@ -2,6 +2,8 @@
 #include "core/jni_binding.h"
 #include "core/runtime_status.h"
 #include "android_frame.h"
+#include "android_camera.h"
+#include "core/local_music_android.h"
 #include <fcntl.h>
 #include <sys/file.h>
 #include <unistd.h>
@@ -246,7 +248,7 @@ Java_dev_betterendfield_android_NativeCommandBridge_foreground(JNIEnv*, jclass, 
 }
 extern "C" JNIEXPORT jstring JNICALL
 Java_dev_betterendfield_android_NativeCommandBridge_runtimeStatus(JNIEnv* env, jclass) {
-    const auto status = betterendfield::State().status.Copy() +
+    const auto status = betterendfield::State().status.Copy() + betterendfield::AndroidCameraValuesStatus() +
         "camera.capabilities=" + std::to_string(betterendfield::AndroidCameraCapabilities()) + "\n" +
         "camera.active=" + std::to_string(betterendfield::AndroidCameraActive()) + "\n" +
         "ui.hud_hidden=" + (betterendfield::AndroidHudHidden() ? "1\n" : "0\n");
@@ -255,6 +257,25 @@ Java_dev_betterendfield_android_NativeCommandBridge_runtimeStatus(JNIEnv* env, j
 extern "C" JNIEXPORT void JNICALL
 Java_dev_betterendfield_android_NativeCommandBridge_look(JNIEnv*, jclass, jint dx, jint dy) {
     betterendfield::AddAndroidLook(dx, dy);
+}
+extern "C" JNIEXPORT void JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_cameraValues(JNIEnv*, jclass, jfloat speed, jfloat fov) {
+    betterendfield::AndroidCameraValues(speed, fov);
+}
+extern "C" JNIEXPORT jstring JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_mmdStatus(JNIEnv* env, jclass) {
+    return env->NewStringUTF(betterendfield::AndroidMmdStatus().c_str());
+}
+extern "C" JNIEXPORT jboolean JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_mmd(JNIEnv* env, jclass, jint type,
+        jint argument, jdouble value, jstring text) {
+    if (!text || env->GetStringUTFLength(text) >= 256) return JNI_FALSE;
+    const char* utf8 = env->GetStringUTFChars(text, nullptr);
+    if (!utf8) return JNI_FALSE;
+    const std::string command_text(utf8);
+    env->ReleaseStringUTFChars(text, utf8);
+    try { return betterendfield::AndroidMmdCommand(type, argument, value, command_text) ? JNI_TRUE : JNI_FALSE; }
+    catch (...) { return JNI_FALSE; }
 }
 extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
     JNIEnv* env = nullptr;
@@ -273,14 +294,19 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
     const JNINativeMethod methods[]{
         BE_NATIVE(submit, "(Ljava/lang/String;)Z"), BE_NATIVE(status, "()Ljava/lang/String;"),
         BE_NATIVE(key, "(II)Z"), BE_NATIVE(releaseKeys, "()V"), BE_NATIVE(protocolVersion, "()I"),
-        BE_NATIVE(frame, "()V"), BE_NATIVE(foreground, "(Z)V"), BE_NATIVE(look, "(II)V"), BE_NATIVE(runtimeStatus, "()Ljava/lang/String;")
+        BE_NATIVE(frame, "()V"), BE_NATIVE(foreground, "(Z)V"), BE_NATIVE(look, "(II)V"), BE_NATIVE(runtimeStatus, "()Ljava/lang/String;"),
+        BE_NATIVE(cameraValues, "(FF)V"), BE_NATIVE(mmdStatus, "()Ljava/lang/String;"),
+        BE_NATIVE(mmd, "(IIDLjava/lang/String;)Z")
     };
 #undef BE_NATIVE
+    jclass bridge_class = nullptr;
     if (!betterendfield::BindContextLoaderNatives(env, "dev.betterendfield.android.NativeCommandBridge",
-            methods, static_cast<jint>(sizeof(methods) / sizeof(methods[0])))) {
+            methods, static_cast<jint>(sizeof(methods) / sizeof(methods[0])), &bridge_class)) {
         close(fd);
         return JNI_ERR;
     }
+    if (!betterendfield::InitializeAndroidMusic(vm, env, bridge_class))
+        betterendfield::LogError("mmd.music", "Java media API unavailable; body and camera remain usable");
     state.lock_fd = fd;
     state.status.Set("runtime", "loaded");
     if (betterendfield::AnyModuleRequested() && !state.started.exchange(true)) {

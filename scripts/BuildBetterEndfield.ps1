@@ -147,6 +147,7 @@ $requiredReleaseFiles = @(
     "modules\BetterEndfield.Gacha.dll",
     "modules\BetterEndfield.CombatStats.dll",
     "modules\BetterEndfield.CombatOverlay.exe",
+    "modules\BetterEndfield.MmdOverlay.exe",
     "modules\combat-semantics.besem",
     "modules\buff-sources.bemap",
     "modules\betterendfield.ui.module.ini",

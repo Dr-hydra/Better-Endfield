@@ -6,7 +6,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 
@@ -34,8 +33,29 @@ final class BemInstaller {
     static synchronized void loadCodec() { if (!nativeLoaded) { System.loadLibrary("betterendfield_installer"); nativeLoaded=true; } }
     static synchronized void cancel() { if(removing || !busy) return; cancelled=true; if(nativeLoaded) cancelNative(); status="正在取消，保留原安装版本…"; }
     static void checkpoint() throws IOException { if(cancelled) throw new IOException("已取消安装"); }
-    static JSONArray index(Context context) {
-        try { return new JSONArray(FrameworkSettings.open(context).getString(INDEX,"[]")); }
+    static synchronized JSONArray index(Context context) {
+        try {
+            String stored=FrameworkSettings.open(context).getString(INDEX,"[]");
+            JSONArray entries=BemOptions.exclusive(new JSONArray(stored));
+            // Legacy entries had implicit enabled/default selections. Repair them on disk
+            // before the UI can advertise the normalized state.
+            for(int i=0;i<entries.length();++i) {
+                JSONObject entry=entries.getJSONObject(i);
+                if(entry.optInt("bem_minor",0)>=1) {
+                    String selection=entry.optString("selected_options",entry.getString("default_options"));
+                    try {selection=BemOptions.encode(BemOptions.parse(entry,selection));}
+                    catch(Exception stale) {selection=BemOptions.encode(BemOptions.parse(entry,entry.getString("default_options")));}
+                    entry.put("selected_options",selection);
+                } else {
+                    String selection=entry.optString("selected_appearance",entry.getString("default_appearance"));
+                    try {BemOptions.appearance(entry,selection);}
+                    catch(Exception stale) {selection=BemOptions.appearance(entry,entry.getString("default_appearance"));}
+                    entry.put("selected_appearance",selection);
+                }
+            }
+            if(!entries.toString().equals(stored)) commitIndex(context,stored,entries,"安装索引迁移保存失败");
+            return entries;
+        }
         catch (Exception e) { throw new IllegalStateException("安装索引损坏",e); }
     }
     /** Returns false when another operation owns the worker; never drops a request silently. */
@@ -97,28 +117,16 @@ final class BemInstaller {
                 if(!stage.renameTo(installed)) throw new IOException("安装结果发布失败");
                 stage=installed;
                 result.put("generation",generation).put("remote","bem-"+generation+".bem").put("enabled",true);
+                // Validate all preserved selections before publishing a payload.
+                installedIndex(index(app),result,previousGeneration);
                 progressPercent=-1;status="正在发布给游戏…";
                 if(!FrameworkSettings.publishBem(new File(installed,"installed.bem"),result.getString("remote")))
                     throw new IOException("框架服务未连接；请启用 modern 模块后重试");
                 checkpoint();
                 synchronized(BemInstaller.class) {
-                    JSONArray previous=index(app), next=new JSONArray();
-                    if(converting) {
-                        JSONObject latest=findEntry(previous,previousGeneration);
-                        if(latest==null) throw new IOException("模型包已被替换，原配置保持不变");
-                        result.put("enabled",latest.optBoolean("enabled",true));
-                        if(result.optInt("bem_minor",0)>=1) {
-                            String saved=latest.optString("selected_options",result.getString("default_options"));
-                            try {result.put("selected_options",BemOptions.encode(BemOptions.parse(result,saved)));}
-                            catch(Exception removedChoice) {result.put("selected_options",result.getString("default_options"));}
-                        } else result.put("selected_appearance",latest.optString("selected_appearance",latest.getString("default_appearance")));
-                    }
-                    for(int i=0;i<previous.length();++i) {
-                        JSONObject old=previous.getJSONObject(i);
-                        if(!old.getString("character_id").equals(result.getString("character_id"))) next.put(old);
-                    }
-                    next.put(result);
-                    if(!FrameworkSettings.open(app).edit().putString(INDEX,next.toString()).commit()) throw new IOException("安装索引保存失败");
+                    checkpoint();
+                    JSONArray previous=index(app),next=installedIndex(previous,result,previousGeneration);
+                    commitIndex(app,previous.toString(),next,"安装索引保存失败");
                 }
                 // Old generations remain until explicit removal; a running game can still be reading them.
                 stage=null;status=(converting?"已转换：":"已原样导入：")+result.getString("name")+"。重启游戏后生效。";
@@ -148,6 +156,59 @@ final class BemInstaller {
         }
         return null;
     }
+    /** Preserve immutable package identities; conversion replaces only its target. */
+    static JSONArray installedIndex(JSONArray previous,JSONObject report,String previousGeneration) throws Exception {
+        JSONArray entries=BemOptions.exclusive(previous),next=new JSONArray();
+        JSONObject result=new JSONObject(report.toString());
+        JSONObject latest=previousGeneration==null?null:findEntry(entries,previousGeneration);
+        if(previousGeneration!=null && latest==null) throw new IOException("模型包已被替换，原配置保持不变");
+        String character=result.getString("character_id");
+        if(latest!=null && !character.equals(latest.getString("character_id"))) throw new IOException("转换结果的角色不匹配");
+        if(findEntry(entries,result.getString("generation"))!=null) throw new IOException("模型包版本重复");
+        result.put("enabled",latest==null || latest.optBoolean("enabled",true));
+        if(result.optInt("bem_minor",0)>=1) {
+            String saved=latest==null?result.getString("default_options"):latest.optString("selected_options",result.getString("default_options"));
+            // Conversion may not silently discard a user's saved choice.
+            result.put("selected_options",BemOptions.encode(BemOptions.parse(result,saved)));
+        } else {
+            String saved=latest==null?result.getString("default_appearance"):latest.optString("selected_appearance",latest.getString("default_appearance"));
+            result.put("selected_appearance",BemOptions.appearance(result,saved));
+        }
+        for(int i=0;i<entries.length();++i) {
+            JSONObject old=entries.getJSONObject(i);
+            if(previousGeneration!=null && previousGeneration.equals(old.getString("generation"))) continue;
+            if(result.getBoolean("enabled") && character.equals(old.getString("character_id"))) old.put("enabled",false);
+            next.put(old);
+        }
+        next.put(result);
+        return next;
+    }
+    private static void commitIndex(Context app,String previous,JSONArray next,String message) throws IOException {
+        android.content.SharedPreferences prefs=FrameworkSettings.open(app);
+        String value=next.toString();
+        // SharedPreferences listeners can run before commit() reports disk failure.
+        // Keep a verified durable snapshot first, so the framework listener never
+        // publishes an index that exists only in an optimistic in-memory map.
+        durableIndex(app,value);
+        boolean committed=prefs.edit().putString(INDEX,value).commit();
+        if(!committed || !value.equals(prefs.getString(INDEX,"[]"))) {
+            // Android commit() may update the in-memory map even when disk I/O fails.
+            // Never let the next UI refresh mistake that map for a saved change.
+            try {durableIndex(app,previous);}
+            finally {prefs.edit().putString(INDEX,previous).commit();}
+            throw new IOException(committed?"安装索引校验失败":message);
+        }
+    }
+    private static void durableIndex(Context app,String value) throws IOException {
+        android.util.AtomicFile file=new android.util.AtomicFile(new File(app.getFilesDir(),"bem-index.json"));
+        FileOutputStream stream=null;
+        try {
+            stream=file.startWrite();
+            stream.write(value.getBytes(StandardCharsets.UTF_8));stream.getFD().sync();
+            file.finishWrite(stream);stream=null;
+            if(!value.equals(new String(file.readFully(),StandardCharsets.UTF_8))) throw new IOException("安装索引磁盘校验失败");
+        } catch(IOException error) {if(stream!=null) file.failWrite(stream);throw error;}
+    }
     static synchronized void remove(Context context,String generation) throws Exception {
         if(busy) throw new IOException("请等待当前操作完成，或取消后再移除");
         if(!generation.matches("[a-f0-9-]{36}")) throw new IOException("无效的模型包版本");
@@ -160,34 +221,22 @@ final class BemInstaller {
             if(!generation.equals(entry.getString("generation"))) next.put(entry);
         }
         // Stop advertising the package before touching its immutable files.
-        if(!FrameworkSettings.open(app).edit().putString(INDEX,next.toString()).commit()) throw new IOException("移除配置保存失败");
+        commitIndex(app,previous.toString(),next,"移除配置保存失败");
         busy=true;removing=true;cancelled=false;progressPercent=-1;startedAt=android.os.SystemClock.elapsedRealtime();
         status="已从列表移除，正在清理安装文件…";
-        worker.execute(()->{
+        try {worker.execute(()->{
             boolean complete=true;
             try {
                 File root=new File(app.getFilesDir(),"bem-installed").getCanonicalFile();
-                File[] versions=root.listFiles();
-                if(versions!=null) for(File version:versions) {
-                    if(!version.getName().matches("[a-f0-9-]{36}") || !version.getCanonicalFile().getParentFile().equals(root)) continue;
-                    if(findEntry(next,version.getName())!=null) continue;
-                    boolean belongs=version.getName().equals(generation);
-                    File report=new File(version,"report.json");
-                    if(!belongs && report.isFile()) {
-                        try {
-                            JSONObject metadata=new JSONObject(Files.readString(report.toPath()));
-                            belongs=removed.getString("character_id").equals(metadata.optString("character_id"));
-                        } catch(Exception ignored) {continue;}
-                    }
-                    if(!belongs) continue;
-                    complete &= FrameworkSettings.removeBem("bem-"+version.getName()+".bem");
-                    deleteOwned(version);complete &= !version.exists();
-                }
-                status="已移除："+removed.getString("name")+"。重启游戏后恢复原模型。"
+                File version=new File(root,generation);
+                if(!version.getCanonicalFile().getParentFile().equals(root)) throw new IOException("无效的安装目录");
+                complete &= FrameworkSettings.removeBem("bem-"+version.getName()+".bem");
+                deleteOwned(version);complete &= !version.exists();
+                status="已移除："+removed.getString("name")+"。其他包已保留，重启游戏后生效。"
                         +(complete?"":"部分残留文件未能清理，但该包已停用。");
             } catch(Exception error) {status="模型包已移除；部分文件清理失败："+error.getMessage();}
             finally {removing=false;busy=false;}
-        });
+        });} catch(RuntimeException rejected) {removing=false;busy=false;throw rejected;}
     }
     static void copy(InputStream in,OutputStream out,long limit) throws IOException {
         byte[] buffer=new byte[65536];long size=0;int count;
@@ -195,29 +244,32 @@ final class BemInstaller {
     }
     private static void deleteOwned(File file) {File[] children=file.listFiles();if(children!=null) for(File child:children) deleteOwned(child);file.delete();}
     static synchronized void select(Context app,String generation,String appearance,boolean enabled) throws Exception {
-        JSONArray entries=index(app);
-        for(int i=0;i<entries.length();++i) {JSONObject entry=entries.getJSONObject(i);if(entry.getString("generation").equals(generation)) {entry.put("selected_appearance",appearance);entry.put("enabled",enabled);}}
-        if(!FrameworkSettings.open(app).edit().putString(INDEX,entries.toString()).commit()) throw new IOException("保存失败");
+        saveAll(app,new JSONArray().put(new JSONObject().put("generation",generation).put("appearance",appearance).put("enabled",enabled)));
     }
     static synchronized void saveAll(Context app,JSONArray changes) throws Exception {
-        if(busy) throw new IOException("请等待当前操作完成后保存");
-        JSONArray entries=index(app);
+        if(busy) throw new IOException("请等待当前操作完成后修改");
+        JSONArray previous=index(app),entries=new JSONArray(previous.toString());
         for(int i=0;i<changes.length();++i) {
             JSONObject change=changes.getJSONObject(i);
             JSONObject entry=findEntry(entries,change.getString("generation"));
-            if(entry==null) throw new IOException("模型包列表已更新，请重新选择后保存");
-            if(entry.optInt("bem_minor",0)>=1) {
+            if(entry==null) throw new IOException("模型包列表已更新，请重新选择");
+            if((entry.optInt("bem_minor",0)>=1 && change.has("appearance")) ||
+                    (entry.optInt("bem_minor",0)<1 && change.has("options"))) throw new IOException("选项类型与模型包不匹配");
+            if(entry.optInt("bem_minor",0)>=1 && change.has("options")) {
                 String options=BemOptions.encode(BemOptions.parse(entry,change.getString("options")));
                 entry.put("selected_options",options);
-            } else {
-                String appearance=change.getString("appearance");boolean valid=false;
-                JSONArray choices=entry.getJSONArray("appearances");
-                for(int j=0;j<choices.length();++j) valid |= appearance.equals(choices.getString(j));
-                if(!valid) throw new IOException("无效的外观选项");
-                entry.put("selected_appearance",appearance);
+            } else if(entry.optInt("bem_minor",0)<1 && change.has("appearance")) {
+                entry.put("selected_appearance",BemOptions.appearance(entry,change.getString("appearance")));
             }
-            entry.put("enabled",change.getBoolean("enabled"));
+            if(change.has("enabled")) {
+                boolean enabled=change.getBoolean("enabled");
+                if(enabled) for(int j=0;j<entries.length();++j) {
+                    JSONObject other=entries.getJSONObject(j);
+                    if(entry.getString("character_id").equals(other.getString("character_id"))) other.put("enabled",false);
+                }
+                entry.put("enabled",enabled);
+            }
         }
-        if(!FrameworkSettings.open(app).edit().putString(INDEX,entries.toString()).commit()) throw new IOException("保存失败");
+        commitIndex(app,previous.toString(),entries,"保存失败");
     }
 }

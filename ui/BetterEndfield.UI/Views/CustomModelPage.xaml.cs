@@ -13,6 +13,8 @@ public sealed partial class CustomModelPage : UserControl
     private readonly BemPackageService _service = new();
     private bool _rendering;
     private BemConverterWindow? _converter;
+    // Packages whose component options are expanded; kept across Render().
+    private readonly HashSet<string> _expanded = [];
     public Func<string>? InstallRootProvider { get; set; }
     private string InstallRoot => InstallRootProvider?.Invoke() ?? (Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory);
 
@@ -103,11 +105,30 @@ public sealed partial class CustomModelPage : UserControl
                         };
                         selectors.Add((group, box)); optionPanel.Children.Add(box);
                     }
+                    // Collapsed by default so the package list stays short; the
+                    // header summarises the current selection.
+                    var expander = new Expander
+                    {
+                        Content = optionPanel, IsExpanded = _expanded.Contains(p.Id),
+                        HorizontalAlignment = HorizontalAlignment.Stretch,
+                        HorizontalContentAlignment = HorizontalAlignment.Stretch
+                    };
+                    expander.Expanding += (_, _) => _expanded.Add(p.Id);
+                    expander.Collapsed += (_, _) => _expanded.Remove(p.Id);
                     void RefreshAvailability()
                     {
                         var active = p.EffectiveOptions();
                         foreach (var (group, box) in selectors)
                             box.Visibility = active.ContainsKey(group.Id) ? Visibility.Visible : Visibility.Collapsed;
+                        var chosen = selectors.Where(s => active.ContainsKey(s.Group.Id))
+                            .Select(s => s.Group.Choices.FirstOrDefault(c => c.Id == p.SelectedOptions[s.Group.Id])?.Name)
+                            .Where(name => !string.IsNullOrEmpty(name)).ToList();
+                        string summary = string.Join("、", chosen.Take(4)) + (chosen.Count > 4 ? $" 等 {chosen.Count} 项" : "");
+                        expander.Header = new TextBlock
+                        {
+                            Text = $"组件选项（{active.Count} 组）" + (summary.Length > 0 ? "：" + summary : ""),
+                            TextTrimming = TextTrimming.CharacterEllipsis
+                        };
                     }
                     foreach (var (group, box) in selectors)
                     {
@@ -128,7 +149,7 @@ public sealed partial class CustomModelPage : UserControl
                             catch (Exception ex) { Reload(); Message("保存失败", ex.Message, InfoBarSeverity.Error); }
                         };
                     }
-                    RefreshAvailability(); stack.Children.Add(optionPanel);
+                    RefreshAvailability(); stack.Children.Add(expander);
                 }
                 PackageCards.Children.Add(new Border { Child = stack, Padding = new Thickness(16), CornerRadius = new CornerRadius(8), Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"] });
             }

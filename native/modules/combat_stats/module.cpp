@@ -1,6 +1,7 @@
 #include <BetterEndfield/ModuleApi.h>
 
 #include "combat_overlay_protocol.h"
+#include "../../shared/input/hotkey.h"
 #include "combat_semantics.h"
 #include "damage_category.h"
 #include "rdps_math.h"
@@ -940,21 +941,9 @@ double ParseNumber(const std::unordered_map<std::string, std::string>& values,
 }
 
 int ParseVirtualKey(std::string value, int fallback, bool& ctrl) {
-    std::transform(value.begin(), value.end(), value.begin(),
-        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
-    value = Trim(std::move(value));
-    ctrl = value.find("CTRL+") == 0 || value.find("CONTROL+") == 0;
-    const size_t plus = value.find('+');
-    if (plus != std::string::npos) value = value.substr(plus + 1);
-    if (value.size() > 1 && value[0] == 'F') {
-        const int number = std::atoi(value.c_str() + 1);
-        if (number >= 1 && number <= 24) return VK_F1 + number - 1;
-    }
-    if (value.size() == 1) return static_cast<unsigned char>(value[0]);
-    if (value == "SPACE") return VK_SPACE;
-    if (value == "ENTER") return VK_RETURN;
-    if (value == "NUMPAD0") return VK_NUMPAD0;
-    return fallback;
+    const int binding = BetterEndfield::Input::ParseKey(value, fallback);
+    ctrl = BetterEndfield::Input::HasCtrl(binding);
+    return binding;
 }
 
 Configuration ParseConfiguration(const char* text) {
@@ -6926,8 +6915,8 @@ struct HotkeyLatch {
 };
 
 bool KeyPressed(int vk, bool ctrl, HotkeyLatch& latch) {
-    const bool down = (GetAsyncKeyState(vk) & 0x8000) != 0 &&
-        (!ctrl || (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0);
+    const int binding = vk | (ctrl ? BetterEndfield::Input::kCtrl : 0);
+    const bool down = BetterEndfield::Input::IsDown(binding);
     if (down) {
         latch.released_samples = 0;
         if (latch.pressed) return false;

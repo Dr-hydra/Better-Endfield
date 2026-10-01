@@ -2,7 +2,7 @@
 #include <jni.h>
 namespace betterendfield {
 inline bool BindContextLoaderNatives(JNIEnv* env, const char* class_name,
-        const JNINativeMethod* methods, jint count) {
+        const JNINativeMethod* methods, jint count, jclass* bound_class = nullptr) {
     if (!env || env->PushLocalFrame(8) != JNI_OK) return false;
     bool bound = false;
     do {
@@ -24,6 +24,10 @@ inline bool BindContextLoaderNatives(JNIEnv* env, const char* class_name,
         jclass target = static_cast<jclass>(env->CallObjectMethod(loader, load, name));
         if (env->ExceptionCheck() || !target) break;
         bound = env->RegisterNatives(target, methods, count) == JNI_OK;
+        if (bound && bound_class) {
+            *bound_class = static_cast<jclass>(env->NewGlobalRef(target));
+            if (!*bound_class) bound = false;
+        }
         if (!bound) {
             jthrowable failure = env->ExceptionOccurred();
             env->ExceptionClear();

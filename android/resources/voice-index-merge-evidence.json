@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "kind": "betterendfield-android-voice-index-merge-evidence",
+  "platform": "Android",
+  "legacyIndex": {
+    "path": "android/resources/.sources/20261001-wireless-192.168.31.12-36477/legacy/voice-catalog-index-head.json",
+    "sha256": "C8DA2912B2A5814F17A6DEB7F2756EF18D10282F156938F7F0F05FBC13799124",
+    "gitCommit": "e547bae09e5b84a500a70158c36963d7ee795440",
+    "gitPath": "android/resources/voice-catalog-index.json",
+    "sourceManifestSha256": "DCD805B4143CCF48627950C81A5A7BDECAC6DD3381E2619CEB7CE332B2CD2B96"
+  },
+  "currentManifestSha256": "8267AC2B2CF35CA9460CC8D4830DE56203ED26A657191CBE00F67EFDAECCA6C1",
+  "inputs": [
+    {
+      "path": "android/research/device-1.5.3/persistent-vfs/E9D31017/E9D31017.blc",
+      "sha256": "B429E5C0D0DCAFE6BA99C45052B74DDAE9CD5369561DA8349B7449679452C430"
+    },
+    {
+      "path": "android/resources/.sources/20261001-wireless-192.168.31.12-36477/persistent-vfs/E9D31017/E9D31017.blc",
+      "sha256": "2F5E8A3D01E2CF9933C1EA5F04F4912F52CD1BE6047CAB86530FFC05A67E5BA3"
+    },
+    {
+      "path": "android/research/device-1.5.3/current-inputs/Table/AudioDialog.json",
+      "sha256": "33B85BBAC63F56B82A1AE18AFCF705EFA22458D46743E2703BF730AFA73886DA"
+    },
+    {
+      "path": "android/resources/.sources/20261001-wireless-192.168.31.12-36477/current-inputs/Table/AudioDialog.json",
+      "sha256": "55CDF48565286033B955CC930BBB1D5255B6F7AA83DEAE052A02BED052EBE550"
+    }
+  ],
+  "audioDialogComparison": {
+    "oldRows": 29991,
+    "currentRows": 30180,
+    "changedOldRows": 0,
+    "removedOldRows": 0,
+    "addedRows": 189
+  },
+  "unchangedKoreanResources": [
+    {
+      "vfsPath": "Audio/PCK/Android/Korean/default_korean_banks.pck",
+      "old": {
+        "chunkId": "A5CDA735E6E6081BD8BCB708EC1CB609",
+        "chunkContentMd5": "1184CF7419BF11BECD1A50E915559390",
+        "fileChunkMd5": "A5CDA735E6E6081BD8BCB708EC1CB609",
+        "fileDataMd5": "1184CF7419BF11BECD1A50E915559390",
+        "offset": 0,
+        "size": 1813710,
+        "encrypted": false
+      },
+      "current": {
+        "chunkId": "A5CDA735E6E6081BD8BCB708EC1CB609",
+        "chunkContentMd5": "1184CF7419BF11BECD1A50E915559390",
+        "fileChunkMd5": "A5CDA735E6E6081BD8BCB708EC1CB609",
+        "fileDataMd5": "1184CF7419BF11BECD1A50E915559390",
+        "offset": 0,
+        "size": 1813710,
+        "encrypted": false
+      }
+    },
+    {
+      "vfsPath": "Audio/PCK/Android/Korean/default_korean_stream.pck",
+      "old": {
+        "chunkId": "6C17D7CA48BD06744AD80660A538154D",
+        "chunkContentMd5": "C7F3252AF1EAAEEC43173F1E4EE9194B",
+        "fileChunkMd5": "6C17D7CA48BD06744AD80660A538154D",
+        "fileDataMd5": "C7F3252AF1EAAEEC43173F1E4EE9194B",
+        "offset": 0,
+        "size": 1520788196,
+        "encrypted": false
+      },
+      "current": {
+        "chunkId": "6C17D7CA48BD06744AD80660A538154D",
+        "chunkContentMd5": "C7F3252AF1EAAEEC43173F1E4EE9194B",
+        "fileChunkMd5": "6C17D7CA48BD06744AD80660A538154D",
+        "fileDataMd5": "C7F3252AF1EAAEEC43173F1E4EE9194B",
+        "offset": 0,
+        "size": 1520788196,
+        "encrypted": false
+      }
+    }
+  ],
+  "addedKoreanResources": [
+    "Audio/PCK/Android/Korean/sub_d4_korean_external_source.pck"
+  ],
+  "koreanPayloadRead": false,
+  "legacyDescriptorRole": "The retained shipped Korean package descriptors are historical partition hints, not newly verified Android payload descriptors.",
+  "newCharacterKoreanStatus": "chr_0038_purrche remains missing; no inferred Korean route is added."
+}

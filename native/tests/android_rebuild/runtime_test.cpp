@@ -38,6 +38,19 @@ int main(){
     rt.assembly_get_image_=[](const Il2CppAssembly*)->const Il2CppImage*{return &image;};
     rt.image_get_name_=[](const Il2CppImage*){return "mscorlib.dll";};
     assert(rt.HasAssembly("mscorlib")&&rt.HasAssembly("mscorlib.dll"));assert(!rt.HasAssembly("Gameplay.Beyond.dll"));
+    auto enumeration = rt.domain_get_assemblies_;
+    auto imageName = rt.image_get_name_;
+    rt.domain_assembly_open_=[](Il2CppDomain*,const char* name)->const Il2CppAssembly* {
+        // This synthetic player only recognizes the extensionless public name.
+        return std::strcmp(name,"mscorlib")==0 ? &assembly : nullptr;
+    };
+    rt.domain_get_assemblies_=nullptr;
+    assert(rt.HasAssembly("mscorlib.dll") && rt.HasAssembly("mscorlib"));
+    assert(!rt.HasAssembly("missing.dll"));
+    rt.domain_get_assemblies_=enumeration;
+    rt.image_get_name_=nullptr;
+    assert(rt.HasAssembly("mscorlib.dll") && !rt.HasAssembly("missing"));
+    rt.image_get_name_=imageName;
     rt.class_from_name_=[](const Il2CppImage*,const char*,const char*){return &klass;};
     rt.class_get_type_=[](Il2CppClass*)->const Il2CppType*{return &type;};rt.type_get_object_=[](const Il2CppType*)->void*{return &type;};
     rt.class_get_methods_=[](Il2CppClass*,void**iter)->const MethodInfo*{if(*iter)return nullptr;*iter=&method;return &method;};

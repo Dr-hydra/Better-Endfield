@@ -11,7 +11,7 @@ flags=(-std=c++20 -pthread -g -I"$A" -I"$S" -I"$S/include" -Inative/tests/androi
 "$BUILD/input"
 "$CXX" "${flags[@]}" native/tests/android_rebuild/hook_test.cpp "$A/core/hook_broker.cpp" -o "$BUILD/hooks"
 "$BUILD/hooks"
-"$CXX" "${flags[@]}" native/tests/android_rebuild/runtime_test.cpp "$A/core/runtime.cpp" -ldl -o "$BUILD/runtime"
+"$CXX" "${flags[@]}" native/tests/android_rebuild/runtime_test.cpp "$A/core/runtime.cpp" native/tests/android_rebuild/log_stub.cpp -ldl -o "$BUILD/runtime"
 "$BUILD/runtime"
 javac -d "$BUILD/classes" "$A/../java/dev/betterendfield/android/RuntimeSnapshot.java" native/tests/android_rebuild/snapshot_test.java
 java -ea -cp "$BUILD/classes" dev.betterendfield.android.SnapshotTest
@@ -25,6 +25,15 @@ for source in native/modules/{camera,ui,actions,model}/module.cpp; do
  "$CXX" "${flags[@]}" -D__ANDROID__ -Inative/shared/include -Inative/modules/ui -fsyntax-only "$source"
 done
 "$CXX" "${flags[@]}" -D__ANDROID__ -Inative/shared/include -Inative/modules/custom_model -I"$JAVA_HOME/include" -I"$JAVA_HOME/include/linux" -fsyntax-only "$A/native_bridge.cpp"
-"$CXX" "${flags[@]}" -D__ANDROID__ -Inative/shared/include -Inative/modules/ui native/tests/android_rebuild/camera_test.cpp "$S/android_win32.cpp" "$S/android_frame.cpp" -ldl -o "$BUILD/camera"
+eiem=(-Inative/modules/camera/eiem -Inative/modules/camera/eiem/upstream -Inative/modules/camera/eiem/compat)
+objects=()
+for source in native/modules/camera/eiem/eiem_body.cpp native/modules/camera/eiem/eiem_slot{0,1,2,3}.cpp; do
+ object="$BUILD/$(basename "$source").o"
+ "$CXX" "${flags[@]}" "${eiem[@]}" -D__ANDROID__ -fno-char8_t -Inative/shared/include -c "$source" -o "$object"
+ objects+=("$object")
+done
+"$CXX" "${flags[@]}" -D__ANDROID__ -Inative/shared/include -Inative/modules/ui native/tests/android_rebuild/camera_test.cpp "${objects[@]}" native/shared/host/pose_lease.cpp "$S/android_win32.cpp" "$S/android_frame.cpp" -ldl -o "$BUILD/camera"
 "$BUILD/camera"
+"$CXX" "${flags[@]}" -D__ANDROID__ -Inative/shared/include -Inative/modules/ui native/tests/android_rebuild/ui_layout_test.cpp "$S/android_win32.cpp" "$S/android_frame.cpp" "$S/touch_input_android.cpp" -ldl -o "$BUILD/ui"
+"$BUILD/ui"
 echo 'PASS Android shared-source syntax checks'

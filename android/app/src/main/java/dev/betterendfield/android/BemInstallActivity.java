@@ -20,11 +20,11 @@ public final class BemInstallActivity extends Activity {
     private final Handler handler=new Handler(Looper.getMainLooper());
     private TextView status;private LinearLayout entries;private String displayed="";
     private Button importButton,cancel;
-    private Button saveAll;
-    private final java.util.Map<String,java.util.function.Supplier<JSONObject>> selections=new java.util.LinkedHashMap<>();
+    private final java.util.Set<String> expanded=new java.util.HashSet<>();
+    private int renderVersion;
     private ProgressBar progress;
     private TextView progressLabel;
-    private final java.util.List<Button> packageActions=new java.util.ArrayList<>();
+    private final java.util.List<View> packageActions=new java.util.ArrayList<>();
     private final Runnable refresh=new Runnable(){public void run(){
         status.setText(BemInstaller.status);importButton.setEnabled(!BemInstaller.busy);cancel.setEnabled(BemInstaller.busy && !BemInstaller.removing);
         incomingRetry.setEnabled(pendingImport!=null && !BemInstaller.busy);
@@ -39,9 +39,8 @@ public final class BemInstallActivity extends Activity {
             progressLabel.setText((percent<0?"正在处理":"当前 mip 编码："+percent+"%")+" · 已用 "+(seconds/60)+"分"+(seconds%60)+"秒");
         }
         String index=FrameworkSettings.open(BemInstallActivity.this).getString(BemInstaller.INDEX,"[]");
-        if(!index.equals(displayed)){displayed=index;showEntries();}
-        for(Button action:packageActions) action.setEnabled(!BemInstaller.busy);
-        saveAll.setEnabled(!BemInstaller.busy && !selections.isEmpty());
+        if(!index.equals(displayed)) showEntries();
+        for(View action:packageActions) action.setEnabled(!BemInstaller.busy);
         handler.postDelayed(this,500);
     }};
     @Override public void onCreate(Bundle state) {
@@ -57,7 +56,6 @@ public final class BemInstallActivity extends Activity {
         progressLabel=findViewById(R.id.bem_progress_label);
         importButton=findViewById(R.id.bem_import);
         cancel=findViewById(R.id.bem_cancel);
-        saveAll=findViewById(R.id.bem_save);
         entries=findViewById(R.id.bem_entries);
         incoming=findViewById(R.id.bem_incoming);
         incomingNotice=findViewById(R.id.bem_incoming_notice);
@@ -67,18 +65,13 @@ public final class BemInstallActivity extends Activity {
             pendingImport=null;
             incoming.setVisibility(View.GONE);
         });
-        saveAll.setOnClickListener(v -> {
-            try {
-                JSONArray changes=new JSONArray();
-                for(java.util.function.Supplier<JSONObject> selection:selections.values()) changes.put(selection.get());
-                BemInstaller.saveAll(this,changes);BemInstaller.status="全部设置已保存，重启游戏后生效。";
-            } catch(Exception error) {BemInstaller.status="保存失败："+error.getMessage();}
-        });
         importButton.setOnClickListener(v -> startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("*/*").addCategory(Intent.CATEGORY_OPENABLE),PICK));
         cancel.setOnClickListener(v -> BemInstaller.cancel());
         if(state==null) {
             receiveImport(getIntent());
         } else {
+            java.util.ArrayList<String> restored=state.getStringArrayList("bem.expanded");
+            if(restored!=null) expanded.addAll(restored);
             // A rotation/recreated task must not replay an already accepted Intent.
             // Only an explicitly pending (busy) request is restored for manual retry.
             String pending=state.getString(STATE_PENDING_URI);
@@ -96,6 +89,7 @@ public final class BemInstallActivity extends Activity {
         receiveImport(intent);
     }
     @Override protected void onSaveInstanceState(Bundle state) {
+        state.putStringArrayList("bem.expanded",new java.util.ArrayList<>(expanded));
         if(pendingImport!=null) state.putString(STATE_PENDING_URI,pendingImport.toString());
         if(incoming.getVisibility()==View.VISIBLE)
             state.putString(STATE_INCOMING_NOTICE,incomingNotice.getText().toString());
@@ -148,11 +142,11 @@ public final class BemInstallActivity extends Activity {
     @Override protected void onResume(){super.onResume();handler.removeCallbacks(refresh);handler.post(refresh);}
     @Override protected void onPause(){handler.removeCallbacks(refresh);super.onPause();}
     private void showEntries() {
-        java.util.Map<String,JSONObject> drafts=new java.util.HashMap<>();
-        for(java.util.Map.Entry<String,java.util.function.Supplier<JSONObject>> item:selections.entrySet()) drafts.put(item.getKey(),item.getValue().get());
-        entries.removeAllViews();packageActions.clear();selections.clear();
+        final int version=++renderVersion;
+        entries.removeAllViews();packageActions.clear();
         try {
             JSONArray list=BemInstaller.index(this);
+            displayed=list.toString();
             if(list.length()==0) {
                 TextView empty=new TextView(this);
                 empty.setText("还没有模型包\n点击上方「导入 BEM 包」添加模型。");
@@ -164,12 +158,6 @@ public final class BemInstallActivity extends Activity {
             }
             for(int i=0;i<list.length();++i) {
                 JSONObject entry=list.getJSONObject(i);String generation=entry.getString("generation");
-                JSONObject draft=drafts.get(generation);
-                if(draft!=null) {
-                    entry.put("enabled",draft.getBoolean("enabled"));
-                    if(entry.optInt("bem_minor",0)>=1) entry.put("selected_options",draft.getString("options"));
-                    else entry.put("selected_appearance",draft.getString("appearance"));
-                }
                 LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(dp(16),dp(16),dp(16),dp(16));
                 card.setBackgroundResource(R.drawable.bg_card);
                 LinearLayout.LayoutParams cardLayout=new LinearLayout.LayoutParams(-1,-2);cardLayout.topMargin=dp(12);entries.addView(card,cardLayout);
@@ -179,19 +167,39 @@ public final class BemInstallActivity extends Activity {
                 heading.addView(name,new LinearLayout.LayoutParams(0,-2,1));
                 Switch enabled=new Switch(this);enabled.setChecked(entry.optBoolean("enabled",true));
                 enabled.setContentDescription("启用「"+entry.getString("name")+"」");enabled.setMinHeight(dp(48));heading.addView(enabled);
+                packageActions.add(enabled);enabled.setEnabled(!BemInstaller.busy);
+                enabled.setOnCheckedChangeListener((button,checked)->{
+                    if(version!=renderVersion) return;
+                    try {saveChange(new JSONObject().put("generation",generation).put("enabled",checked));}
+                    catch(Exception error) {saveError(error);}
+                });
                 String mode=entry.optString("texture_mode","converted");
                 TextView textureState=new TextView(this);textureState.setText("original".equals(mode)?"原始纹理 · 可按需转换":"手机纹理已就绪");
                 textureState.setTextColor(getColor(R.color.text_secondary));textureState.setTextSize(12);card.addView(textureState);
-                if(entry.optInt("bem_minor",0)>=1) selections.put(generation,addOptionControls(card,entry,generation,enabled));
+                Button details=actionButton(expanded.contains(generation)?"收起详细选项 ▴":"详细组件 / 外观选项 ▾");
+                card.addView(details,new LinearLayout.LayoutParams(-1,dp(44)));
+                LinearLayout detailPanel=new LinearLayout(this);detailPanel.setOrientation(LinearLayout.VERTICAL);
+                detailPanel.setVisibility(expanded.contains(generation)?View.VISIBLE:View.GONE);card.addView(detailPanel);
+                details.setOnClickListener(v->{
+                    boolean opening=detailPanel.getVisibility()!=View.VISIBLE;
+                    if(opening) expanded.add(generation);else expanded.remove(generation);
+                    detailPanel.setVisibility(opening?View.VISIBLE:View.GONE);
+                    details.setText(opening?"收起详细选项 ▴":"详细组件 / 外观选项 ▾");
+                });
+                if(entry.optInt("bem_minor",0)>=1) addOptionControls(detailPanel,entry,generation,version);
                 else {
                     JSONArray apps=entry.getJSONArray("appearances");String[] choices=new String[apps.length()];int selected=0;
                     String active=entry.optString("selected_appearance",entry.getString("default_appearance"));
                     for(int j=0;j<choices.length;++j){choices[j]=apps.getString(j);if(active.equals(choices[j])) selected=j;}
-                    TextView choiceLabel=fieldLabel("启动外观");card.addView(choiceLabel);
-                    Spinner spinner=choiceSpinner(choices,selected);card.addView(spinner,new LinearLayout.LayoutParams(-1,dp(52)));
-                    selections.put(generation,()->{
-                        try {return new JSONObject().put("generation",generation).put("appearance",choices[spinner.getSelectedItemPosition()]).put("enabled",enabled.isChecked());}
-                        catch(JSONException error) {throw new IllegalStateException(error);}
+                    TextView choiceLabel=fieldLabel("启动外观");detailPanel.addView(choiceLabel);
+                    Spinner spinner=choiceSpinner(choices,selected);detailPanel.addView(spinner,new LinearLayout.LayoutParams(-1,dp(52)));
+                    spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                        @Override public void onItemSelected(AdapterView<?> parent,View view,int position,long id) {
+                            if(version!=renderVersion || active.equals(choices[position])) return;
+                            try {saveChange(new JSONObject().put("generation",generation).put("appearance",choices[position]));}
+                            catch(Exception error) {saveError(error);}
+                        }
+                        @Override public void onNothingSelected(AdapterView<?> parent) {}
                     });
                 }
                 LinearLayout actions=new LinearLayout(this);actions.setOrientation(LinearLayout.HORIZONTAL);
@@ -211,17 +219,34 @@ public final class BemInstallActivity extends Activity {
                         .setNegativeButton("取消",null)
                         .setPositiveButton("移除",(dialog,which)->{
                             try {BemInstaller.remove(this,generation);}
-                            catch(Exception error) {BemInstaller.status=error.getMessage();}
+                            catch(Exception error) {saveError(error);}
                         }).show());
             }
-        } catch(Exception error){status.setText("安装列表读取失败："+error.getMessage());}
+        } catch(Exception error){
+            entries.removeAllViews();packageActions.clear();
+            String message="安装列表读取失败："+error.getMessage();
+            if(!BemInstaller.busy) BemInstaller.status=message;
+            status.setText(message);
+        }
     }
-    private java.util.function.Supplier<JSONObject> addOptionControls(LinearLayout card,JSONObject entry,String generation,Switch enabled) throws Exception {
+    private void saveChange(JSONObject change) throws Exception {
+        BemInstaller.saveAll(this,new JSONArray().put(change));
+        BemInstaller.status="设置已保存，重启游戏后生效。同一角色最多启用一个包。";
+        status.setText(BemInstaller.status);
+        showEntries();
+    }
+    private void saveError(Exception error) {
+        String message="设置未保存："+error.getMessage();
+        // Replace every control with the actual committed snapshot, including
+        // switches of other packages that an enable operation would disable.
+        showEntries();
+        if(!BemInstaller.busy) BemInstaller.status=message;
+        status.setText(message);
+        Toast.makeText(this,message,Toast.LENGTH_LONG).show();
+    }
+    private void addOptionControls(LinearLayout card,JSONObject entry,String generation,int version) throws Exception {
         String active=entry.optString("selected_options",entry.getString("default_options"));
-        java.util.LinkedHashMap<String,String> saved;
-        try {saved=BemOptions.parse(entry,active);}
-        catch(Exception stale) {saved=BemOptions.parse(entry,entry.getString("default_options"));}
-        final java.util.LinkedHashMap<String,String> values=saved;
+        final java.util.LinkedHashMap<String,String> values=BemOptions.parse(entry,active);
         JSONArray groups=entry.getJSONArray("option_groups");
         java.util.LinkedHashMap<String,LinearLayout> rows=new java.util.LinkedHashMap<>();
         for(int i=0;i<groups.length();++i) {
@@ -236,18 +261,12 @@ public final class BemInstallActivity extends Activity {
             Spinner spinner=choiceSpinner(labels,selected);row.addView(spinner,new LinearLayout.LayoutParams(-1,dp(52)));
             spinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
                 @Override public void onItemSelected(android.widget.AdapterView<?> parent,View view,int position,long selectedId) {
-                    String previous=values.put(id,ids[position]);
-                    if(ids[position].equals(previous)) return;
+                    if(version!=renderVersion || ids[position].equals(values.get(id))) return;
+                    java.util.LinkedHashMap<String,String> next=new java.util.LinkedHashMap<>(values);
+                    next.put(id,ids[position]);
                     try {
-                        if(!BemOptions.valid(entry,values)) {
-                            values.put(id,previous);status.setText("这个选项组合在包内不可达，请选择其他组合。");
-                            for(int j=0;j<ids.length;++j) if(ids[j].equals(previous)) spinner.setSelection(j);
-                            return;
-                        }
-                        java.util.Map<String,String> effective=BemOptions.effective(entry,values);
-                        for(java.util.Map.Entry<String,LinearLayout> item:rows.entrySet())
-                            item.getValue().setVisibility(effective.containsKey(item.getKey())?View.VISIBLE:View.GONE);
-                    } catch(Exception error) {values.put(id,previous);status.setText("选项错误："+error.getMessage());}
+                        saveChange(new JSONObject().put("generation",generation).put("options",BemOptions.encode(next)));
+                    } catch(Exception error) {saveError(error);}
                 }
                 @Override public void onNothingSelected(android.widget.AdapterView<?> parent) {}
             });
@@ -255,10 +274,6 @@ public final class BemInstallActivity extends Activity {
         java.util.Map<String,String> effective=BemOptions.effective(entry,values);
         for(java.util.Map.Entry<String,LinearLayout> item:rows.entrySet())
             item.getValue().setVisibility(effective.containsKey(item.getKey())?View.VISIBLE:View.GONE);
-        return ()->{
-            try {return new JSONObject().put("generation",generation).put("options",BemOptions.encode(values)).put("enabled",enabled.isChecked());}
-            catch(JSONException error) {throw new IllegalStateException(error);}
-        };
     }
     private TextView fieldLabel(String label) {
         TextView view=new TextView(this);view.setText(label);view.setTextColor(getColor(R.color.text_secondary));
@@ -268,12 +283,14 @@ public final class BemInstallActivity extends Activity {
         Spinner spinner=new Spinner(this);ArrayAdapter<String> adapter=new ArrayAdapter<>(this,R.layout.bem_spinner_item,labels);
         adapter.setDropDownViewResource(R.layout.bem_spinner_dropdown_item);spinner.setAdapter(adapter);
         spinner.setSelection(selected);spinner.setMinimumHeight(dp(52));spinner.setBackgroundResource(R.drawable.bg_input);
-        spinner.setPopupBackgroundResource(R.color.surface_high);return spinner;
+        spinner.setPopupBackgroundResource(R.color.surface_high);
+        packageActions.add(spinner);spinner.setEnabled(!BemInstaller.busy);return spinner;
     }
     private Button actionButton(String text) {
         Button button=new Button(this);button.setText(text);button.setTransformationMethod(null);
         button.setTextSize(13);button.setTextColor(getColor(R.color.text_primary));
         button.setBackgroundResource(R.drawable.bg_ghost_button);button.setMinHeight(0);button.setMinWidth(0);
+        button.setEnabled(!BemInstaller.busy);
         return button;
     }
     private int dp(int value) {return Math.round(value*getResources().getDisplayMetrics().density);}

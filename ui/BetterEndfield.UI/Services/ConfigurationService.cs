@@ -237,7 +237,8 @@ internal static class ConfigurationService
             string section =
                 "[betterendfield.camera]" + Environment.NewLine +
                 "schema_version=4" + Environment.NewLine +
-                "enabled=" + Boolean(freeCameraEnabled || disableDitherEnabled || firstPersonEnabled) + Environment.NewLine +
+                "enabled=" + Boolean(freeCameraEnabled || disableDitherEnabled || firstPersonEnabled ||
+                    extras.RequiresCameraModule) + Environment.NewLine +
                 "free_camera_enabled=" + Boolean(freeCameraEnabled) + Environment.NewLine +
                 "disable_dither_enabled=" + Boolean(disableDitherEnabled) + Environment.NewLine +
                 "pause_enabled=" + Boolean(pauseEnabled) + Environment.NewLine +
@@ -254,6 +255,7 @@ internal static class ConfigurationService
                 extras.ToIniLines() +
                 "diagnostics=true" + Environment.NewLine;
             string updated = UpsertIniSection(existing, "betterendfield.camera", section);
+            updated = LinkMusicModule(updated, extras.RequiresMusicModule);
             string temporary = path + ".camera.tmp";
             await File.WriteAllTextAsync(temporary, updated, Encoding.Unicode);
             File.Move(temporary, path, overwrite: true);
@@ -303,7 +305,7 @@ internal static class ConfigurationService
         string? installRoot = TryResolveInstallRootFromInjector(injectorPath);
         if (string.IsNullOrWhiteSpace(installRoot))
         {
-            installRoot = TryResolveInstallRoot(AppContext.BaseDirectory);
+            installRoot = TryResolveInstallRoot(LauncherDirectory);
         }
         if (string.IsNullOrWhiteSpace(installRoot) ||
             !File.Exists(Path.Combine(installRoot, "runtime", "BetterEndfield.Host.dll")) ||
@@ -338,6 +340,16 @@ internal static class ConfigurationService
             TryResolveInstallRoot(loaderDirectory);
         return installRoot;
     }
+
+    /// <summary>
+    /// 从管理器所在目录定位安装根目录（包含 runtime、modules 和 loaders）。找不到时返回 null。
+    /// </summary>
+    internal static string? TryGetInstallRoot() => TryResolveInstallRoot(LauncherDirectory);
+
+    // IncludeAllContentForSelfExtract makes AppContext.BaseDirectory the temporary
+    // bundle extraction directory; the install lives beside the launcher EXE.
+    private static string LauncherDirectory =>
+        Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory;
 
     private static string? TryResolveInstallRoot(string startDirectory)
     {
@@ -406,6 +418,8 @@ internal static class ConfigurationService
         bool inSection = false;
         bool inActionsSection = false;
         var actionValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        bool inGachaSection = false;
+        var gachaValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         bool cameraSectionPresent = false;
         bool inCameraSection = false;
         int cameraSchemaVersion = 0;
@@ -421,6 +435,7 @@ internal static class ConfigurationService
             {
                 string section = line[1..^1];
                 inActionsSection = section.Equals("betterendfield.actions", StringComparison.OrdinalIgnoreCase);
+                inGachaSection = section.Equals("betterendfield.gacha", StringComparison.OrdinalIgnoreCase);
                 inCameraSection = section.Equals(
                     "betterendfield.camera", StringComparison.OrdinalIgnoreCase);
                 cameraSectionPresent |= inCameraSection;
@@ -435,6 +450,8 @@ internal static class ConfigurationService
                     section.Equals("betterendfield.ui",
                         StringComparison.OrdinalIgnoreCase) ||
                     section.Equals("betterendfield.camera",
+                        StringComparison.OrdinalIgnoreCase) ||
+                    section.Equals("betterendfield.gacha",
                         StringComparison.OrdinalIgnoreCase);
                 continue;
             }
@@ -444,6 +461,14 @@ internal static class ConfigurationService
                 int actionSeparator = line.IndexOf('=');
                 if (actionSeparator > 0)
                     actionValues[line[..actionSeparator].Trim()] = line[(actionSeparator + 1)..].Trim();
+                continue;
+            }
+
+            if (inGachaSection)
+            {
+                int gachaSeparator = line.IndexOf('=');
+                if (gachaSeparator > 0)
+                    gachaValues[line[..gachaSeparator].Trim()] = line[(gachaSeparator + 1)..].Trim();
                 continue;
             }
             if (!inSection)
@@ -618,6 +643,7 @@ internal static class ConfigurationService
         configuration.FirstPersonFieldOfView = Number(
             values, "first_person_fov", configuration.FirstPersonFieldOfView);
         configuration.FreeCameraExtras = FreeCameraExtras.FromValues(values);
+        configuration.GachaEnabled = Boolean(gachaValues, "enabled", configuration.GachaEnabled);
         if (cameraSectionPresent && cameraSchemaVersion < 4)
         {
             // Migrate the old auto-pause setting to an independent pause
@@ -651,6 +677,30 @@ internal static class ConfigurationService
                 configuration.FreeCameraExtras);
         }
         return configuration;
+    }
+
+    // MMD music plays through the Music module, so its "enabled" (module load)
+    // follows either OmniMix replacement or MMD music; the replacement switch
+    // itself is kept in music_replacement_enabled.
+    private static string LinkMusicModule(string contents, bool mmdMusic)
+    {
+        Dictionary<string, string> music = ReadIniSection(contents, "betterendfield.music");
+        static bool Truthy(string? value) =>
+            value?.Trim().ToLowerInvariant() is "true" or "1" or "yes" or "on";
+        bool replacement = music.TryGetValue("music_replacement_enabled", out string? flag)
+            ? Truthy(flag)
+            : music.TryGetValue("enabled", out string? legacy) && Truthy(legacy);
+        music["enabled"] = replacement || mmdMusic ? "true" : "false";
+        music["music_replacement_enabled"] = replacement ? "true" : "false";
+        music["local_playback_enabled"] = mmdMusic ? "true" : "false";
+        if (!music.ContainsKey("schema_version")) music["schema_version"] = "1";
+        var section = new StringBuilder();
+        section.Append("[betterendfield.music]").Append(Environment.NewLine);
+        foreach ((string key, string value) in music)
+        {
+            section.Append(key).Append('=').Append(value).Append(Environment.NewLine);
+        }
+        return UpsertIniSection(contents, "betterendfield.music", section.ToString());
     }
 
     private static Dictionary<string, string> ReadIniSection(string contents, string sectionName)

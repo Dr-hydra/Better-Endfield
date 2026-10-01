@@ -38,6 +38,7 @@ endfunction()
 
 add_library(BetterEndfield.Host SHARED
     shared/host/bootstrap.cpp
+    shared/host/pose_lease.cpp
     shared/host/dynamic_resolver.cpp
     shared/host/hook_broker.cpp
     shared/host/host_runtime.cpp
@@ -88,8 +89,10 @@ add_library(BetterEndfield.Music SHARED
     modules/music/module.cpp
     modules/music/music_bank.h
     modules/music/omni_pcm_abi.h
+    modules/music/local_track.inc
 )
 better_endfield_target_defaults(BetterEndfield.Music)
+target_link_libraries(BetterEndfield.Music PRIVATE mfplat mfreadwrite mfuuid ole32)
 set_target_properties(BetterEndfield.Music PROPERTIES
     OUTPUT_NAME "BetterEndfield.Music"
     RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
@@ -110,12 +113,59 @@ set_target_properties(BetterEndfield.UiModule PROPERTIES
 
 add_library(BetterEndfield.Camera SHARED
     modules/camera/module.cpp
+    modules/camera/free_camera_runtime.inc
+    modules/camera/character_motion_runtime.inc
+    modules/camera/mmd_director_runtime.inc
+    modules/camera/mmd_library.h
+    modules/camera/mmd_overlay_protocol.h
 )
 better_endfield_target_defaults(BetterEndfield.Camera)
+
+# EIEM DirectVmd port (AGPL-3.0, see modules/camera/eiem/UPSTREAM.md). Built as
+# its own object library with EIEM's compile model: narrow Win32 APIs, min/max
+# macros, C++17-style u8 literals. One TU per dancing character (eiem_slot.h).
+# Only eiem_body.h is visible to module.cpp.
+add_library(BetterEndfield.CameraEiem OBJECT
+    modules/camera/eiem/eiem_body.cpp
+    modules/camera/eiem/eiem_body.h
+    modules/camera/eiem/eiem_slot.h
+    modules/camera/eiem/eiem_slot.inc
+    modules/camera/eiem/eiem_slot0.cpp
+    modules/camera/eiem/eiem_slot1.cpp
+    modules/camera/eiem/eiem_slot2.cpp
+    modules/camera/eiem/eiem_slot3.cpp
+)
+target_include_directories(BetterEndfield.CameraEiem PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/shared/third_party/minhook/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/modules/camera/eiem/compat"
+    "${CMAKE_CURRENT_SOURCE_DIR}/modules/camera/eiem/upstream"
+    "${CMAKE_CURRENT_SOURCE_DIR}/modules/camera/eiem"
+    "${BETTER_ENDFIELD_INCLUDE_DIR}"
+)
+if(MSVC)
+    target_compile_options(BetterEndfield.CameraEiem PRIVATE /W3 /utf-8 /EHsc /Zc:char8_t- /bigobj)
+endif()
+target_link_libraries(BetterEndfield.Camera PRIVATE BetterEndfield.CameraEiem winmm)
 set_target_properties(BetterEndfield.Camera PROPERTIES
     OUTPUT_NAME "BetterEndfield.Camera"
     RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
     LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
+)
+
+add_executable(BetterEndfield.MmdOverlay WIN32
+    modules/camera/overlay/main.cpp
+    modules/camera/overlay/mmd_overlay.rc
+    modules/camera/mmd_library.h
+    modules/camera/mmd_overlay_protocol.h
+)
+better_endfield_target_defaults(BetterEndfield.MmdOverlay)
+target_link_libraries(BetterEndfield.MmdOverlay PRIVATE gdiplus shell32)
+if(MSVC)
+    target_link_options(BetterEndfield.MmdOverlay PRIVATE "/MANIFEST:NO")
+endif()
+set_target_properties(BetterEndfield.MmdOverlay PROPERTIES
+    OUTPUT_NAME "BetterEndfield.MmdOverlay"
+    RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
 )
 
 add_library(BetterEndfield.Actions SHARED modules/actions/module.cpp)
@@ -365,6 +415,7 @@ add_custom_target(BetterEndfield.Layout ALL
         BetterEndfield.Gacha
         BetterEndfield.CombatStats
         BetterEndfield.CombatOverlay
+        BetterEndfield.MmdOverlay
         BetterEndfield.Injector
         BetterEndfield.Bootstrap
         BetterEndfield.XInput14Proxy

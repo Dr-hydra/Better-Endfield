@@ -91,6 +91,35 @@ final class FrameworkSettings {
         } catch(Exception error) {Log.e("BetterEndfield.Install","Publishing failed",error);return false;}
     }
 
+    static boolean validMmdRemote(String name) {
+        return name != null && name.length() <= 200
+                && name.matches("mmd-[a-f0-9-]{36}-[A-Za-z0-9_.-]+");
+    }
+    static synchronized boolean publishMmd(java.io.File file, String name) {
+        if (remoteService == null || !validMmdRemote(name) || !file.isFile()) return false;
+        try (ParcelFileDescriptor descriptor = remoteService.openRemoteFile(name);
+             java.io.FileInputStream in = new java.io.FileInputStream(file);
+             FileOutputStream out = new FileOutputStream(descriptor.getFileDescriptor())) {
+            out.getChannel().truncate(0);
+            byte[] buffer = new byte[65536]; long total = 0; int count;
+            while ((count = in.read(buffer)) != -1) {
+                total += count;
+                if (total > 512L * 1024 * 1024) throw new java.io.IOException("作品文件过大");
+                out.write(buffer, 0, count);
+            }
+            out.getFD().sync(); return true;
+        } catch (Exception error) {
+            Log.e("BetterEndfield.Mmd", "Publishing work failed", error); return false;
+        }
+    }
+    static synchronized boolean removeMmd(String name) {
+        if (remoteService == null || !validMmdRemote(name)) return false;
+        try {
+            return remoteService.deleteRemoteFile(name)
+                    || !java.util.Arrays.asList(remoteService.listRemoteFiles()).contains(name);
+        } catch (RuntimeException error) { return false; }
+    }
+
     @SuppressWarnings("unchecked")
     private static synchronized void publish() {
         if (service == null || local == null) return;

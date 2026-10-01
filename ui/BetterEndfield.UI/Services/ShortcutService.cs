@@ -20,7 +20,7 @@ internal static class ShortcutService
             shortcutPath,
             executablePath,
             string.Empty,
-            AppContext.BaseDirectory,
+            Path.GetDirectoryName(executablePath) ?? AppContext.BaseDirectory,
             executablePath,
             "打开 Better Endfield");
         return shortcutPath;

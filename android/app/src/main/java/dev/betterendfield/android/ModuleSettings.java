@@ -38,7 +38,31 @@ final class ModuleSettings {
     private static final String CAMERA_SPEED = "camera_movement_speed";
     private static final String CAMERA_FOV = "camera_field_of_view";
     private static final String CAMERA_FP_FOV = "camera_first_person_fov";
+    private static final String CAMERA_FP_SIDE_LIMIT = "camera_first_person_side_look_limit";
+    private static final String CAMERA_FP_TURN_SPEED = "camera_first_person_turn_speed";
+    static final String MMD_ENABLED = "mmd_enabled";
+    static final String MMD_WORK = "mmd_work";
+    static final String PC_UI_ENABLED = "pc_ui_enabled";
     static final String CAMERA_CONFIGURATION = "camera_configuration";
+    static final String[] MOTION_PRESETS = {"orbit", "dolly_zoom", "crane", "truck"};
+    static final String[] CLOTH_MODES = {"game", "stable", "freeze"};
+
+    record CameraExtras(boolean body, boolean face, boolean terrain, double motionScale,
+            int clothMode, String preset, double smoothing, double motionSpeed,
+            double orbitSpeed, double duration, double targetHeight,
+            double segmentSeconds, boolean keyframeLoop) {
+        CameraExtras {
+            motionScale = bounded(motionScale, 0.05, 5, 1);
+            clothMode = clothMode >= 0 && clothMode < CLOTH_MODES.length ? clothMode : 1;
+            preset = MOTION_PRESETS[choice(MOTION_PRESETS, preset, 0)];
+            smoothing = bounded(smoothing, 0, 0.95, 0.3);
+            motionSpeed = bounded(motionSpeed, -20, 20, 1);
+            orbitSpeed = bounded(orbitSpeed, -180, 180, 20);
+            duration = bounded(duration, 0, 600, 0);
+            targetHeight = bounded(targetHeight, -5, 5, 1.2);
+            segmentSeconds = bounded(segmentSeconds, 0.2, 60, 3);
+        }
+    }
 
     // betterendfield.actions — the desktop sustained special dash.
     private static final String DASH_ENABLED = "dash_enabled";
@@ -92,18 +116,27 @@ final class ModuleSettings {
         return preferences(context).getBoolean(UI_HIDE_HUD, false);
     }
 
+    static boolean isPcUiEnabled(Context context) {
+        return preferences(context).getBoolean(PC_UI_ENABLED, false);
+    }
+
+    static void setPcUiEnabled(Context context, boolean enabled) {
+        preferences(context).edit().putBoolean(PC_UI_ENABLED, enabled).commit();
+        setInterfaceSettings(context, isHideUidEnabled(context), isHideHudEnabled(context));
+    }
+
     static void setInterfaceSettings(Context context, boolean hideUid, boolean hideHud) {
         // An empty configuration is what keeps the module out of the game process,
         // so it has to be empty exactly when nothing is selected.
-        String configuration = hideUid || hideHud
+        String configuration = hideUid || hideHud || isPcUiEnabled(context)
                 ? "schema_version=1\n"
                         + "enabled=true\n"
                         + "diagnostics=true\n"
                         + "hide_uid_enabled=" + hideUid + "\n"
                         + "hide_hud_enabled=" + hideHud + "\n"
+                        + "pc_ui_enabled=" + isPcUiEnabled(context) + "\n"
                         + "hide_hud_hotkey=" + Hotkeys.HIDE_HUD_NAME + "\n"
-                // The touch layout and the Android/cloud platform claim only exist
-                // to make a desktop client look like a phone. This is a phone.
+                // PC UI changes only input type; it never spoofs the platform.
                         + "mobile_ui_enabled=false\n"
                         + "platform_spoof_enabled=false\n"
                 : "";
@@ -156,6 +189,133 @@ final class ModuleSettings {
         return preferences(context).getString(CAMERA_FP_FOV, "75");
     }
 
+    static String getFirstPersonSideLookLimit(Context context) {
+        return preferences(context).getString(CAMERA_FP_SIDE_LIMIT, "90");
+    }
+
+    static String getFirstPersonTurnSpeed(Context context) {
+        return preferences(context).getString(CAMERA_FP_TURN_SPEED, "360");
+    }
+
+    static boolean isMmdEnabled(Context context) {
+        return preferences(context).getBoolean(MMD_ENABLED, false);
+    }
+
+    static void setMmdEnabled(Context context, boolean enabled) {
+        preferences(context).edit().putBoolean(MMD_ENABLED, enabled).commit();
+        republishCameraConfiguration(context);
+    }
+
+    static boolean isMmdLoop(Context context) {
+        return preferences(context).getBoolean("mmd_loop", false);
+    }
+
+    static boolean isMmdMusicEnabled(Context context) {
+        return preferences(context).getBoolean("mmd_music_enabled", true);
+    }
+
+    static String getMmdWork(Context context) {
+        return preferences(context).getString(MMD_WORK, "");
+    }
+
+    static String getMmdSeekSeconds(Context context) {
+        return preferences(context).getString("mmd_seek_seconds", "5");
+    }
+
+    static String getMmdMusicGain(Context context) {
+        return preferences(context).getString("mmd_music_gain", "1");
+    }
+
+    static String getMmdAudioOffset(Context context) {
+        return preferences(context).getString("mmd_audio_offset", "0");
+    }
+
+    static CameraExtras getCameraExtras(Context context) {
+        SharedPreferences settings = preferences(context);
+        return new CameraExtras(
+                settings.getBoolean("vmd_body_enabled", true),
+                settings.getBoolean("vmd_face_enabled", true),
+                settings.getBoolean("vmd_terrain_enabled", false),
+                parse(settings.getString("vmd_motion_scale", "1"), 1),
+                choice(CLOTH_MODES, settings.getString("vmd_cloth_mode", "stable"), 1),
+                settings.getString("motion_preset", "orbit"),
+                parse(settings.getString("free_camera_smoothing", "0.3"), 0.3),
+                parse(settings.getString("motion_speed", "1"), 1),
+                parse(settings.getString("orbit_speed", "20"), 20),
+                parse(settings.getString("motion_duration", "0"), 0),
+                parse(settings.getString("motion_target_height", "1.2"), 1.2),
+                parse(settings.getString("keyframe_segment_seconds", "3"), 3),
+                settings.getBoolean("keyframe_loop", false));
+    }
+
+    static int choice(String[] choices, String value, int fallback) {
+        for (int i = 0; i < choices.length; i++) if (choices[i].equals(value)) return i;
+        return fallback;
+    }
+
+    private static double bounded(double value, double minimum, double maximum, double fallback) {
+        return Double.isFinite(value) ? Math.max(minimum, Math.min(maximum, value)) : fallback;
+    }
+
+    private static void writeCameraExtras(SharedPreferences.Editor edit, CameraExtras extras) {
+        edit.putBoolean("vmd_body_enabled", extras.body())
+                .putBoolean("vmd_face_enabled", extras.face())
+                .putBoolean("vmd_terrain_enabled", extras.terrain())
+                .putString("vmd_motion_scale", number(extras.motionScale()))
+                .putString("vmd_cloth_mode", CLOTH_MODES[extras.clothMode()])
+                .putString("motion_preset", extras.preset())
+                .putString("free_camera_smoothing", number(extras.smoothing()))
+                .putString("motion_speed", number(extras.motionSpeed()))
+                .putString("orbit_speed", number(extras.orbitSpeed()))
+                .putString("motion_duration", number(extras.duration()))
+                .putString("motion_target_height", number(extras.targetHeight()))
+                .putString("keyframe_segment_seconds", number(extras.segmentSeconds()))
+                .putBoolean("keyframe_loop", extras.keyframeLoop());
+    }
+
+    private static String cameraExtrasConfiguration(Context context) {
+        CameraExtras extras = getCameraExtras(context);
+        boolean mmd = isMmdEnabled(context);
+        return "vmd_body_enabled=" + (mmd && extras.body()) + "\n"
+                + "vmd_face_enabled=" + (mmd && extras.face()) + "\n"
+                + "vmd_terrain_enabled=" + (mmd && extras.terrain()) + "\n"
+                + "vmd_motion_scale=" + number(extras.motionScale()) + "\n"
+                + "vmd_motion_weight=1\n"
+                // Native parses names; its internal enum values are 0/1/2.
+                + "vmd_cloth_mode=" + CLOTH_MODES[extras.clothMode()] + "\n"
+                + "vmd_motion_loop=" + isMmdLoop(context) + "\n"
+                + "vmd_camera_loop=" + isMmdLoop(context) + "\n"
+                + "free_camera_smoothing=" + number(extras.smoothing()) + "\n"
+                + "motion_preset=" + extras.preset() + "\n"
+                + "motion_speed=" + number(extras.motionSpeed()) + "\n"
+                + "orbit_speed=" + number(extras.orbitSpeed()) + "\n"
+                + "motion_duration=" + number(extras.duration()) + "\n"
+                + "motion_target_height=" + number(extras.targetHeight()) + "\n"
+                + "keyframe_segment_seconds=" + number(extras.segmentSeconds()) + "\n"
+                + "keyframe_loop=" + extras.keyframeLoop() + "\n";
+        // keyframe_file is deliberately omitted: native supplies its persistent
+        // game-files default, rather than receiving the module app's private path.
+    }
+
+    static void setMmdSettings(Context context, String work, boolean loop, boolean music,
+            double seek, double gain, double offset) {
+        setMmdSettings(context, work, loop, music, seek, gain, offset, null);
+    }
+
+    static void setMmdSettings(Context context, String work, boolean loop, boolean music,
+            double seek, double gain, double offset, CameraExtras extras) {
+        if (!work.isEmpty() && !work.matches("[a-f0-9-]{36}"))
+            throw new IllegalArgumentException("无效的作品编号");
+        SharedPreferences.Editor edit = preferences(context).edit().putString(MMD_WORK, work)
+                .putBoolean("mmd_loop", loop).putBoolean("mmd_music_enabled", music)
+                .putString("mmd_seek_seconds", number(Math.max(0.5, Math.min(60, seek))))
+                .putString("mmd_music_gain", number(Math.max(0, Math.min(1, gain))))
+                .putString("mmd_audio_offset", number(Math.max(-600, Math.min(600, offset))));
+        if (extras != null) writeCameraExtras(edit, extras);
+        edit.commit();
+        republishCameraConfiguration(context);
+    }
+
     static void setCameraSettings(
             Context context,
             boolean disableDither,
@@ -167,11 +327,19 @@ final class ModuleSettings {
             double movementSpeed,
             double fieldOfView,
             double firstPersonFov) {
-        // World pause is a free-camera sub-mode on desktop: its hotkey is only
-        // read while the free camera is armed, so offering it alone would be a
-        // switch that does nothing.
-        boolean pause = worldPause && freeCamera;
-        boolean any = disableDither || freeCamera || firstPerson;
+        setCameraSettings(context, disableDither, freeCamera, worldPause, firstPerson,
+                hideHead, fillNeck, movementSpeed, fieldOfView, firstPersonFov,
+                parse(getFirstPersonSideLookLimit(context), 90),
+                parse(getFirstPersonTurnSpeed(context), 360));
+    }
+
+    static void setCameraSettings(Context context, boolean disableDither, boolean freeCamera,
+            boolean worldPause, boolean firstPerson, boolean hideHead, boolean fillNeck,
+            double movementSpeed, double fieldOfView, double firstPersonFov,
+            double sideLookLimit, double turnSpeed) {
+        boolean pause = worldPause;
+        boolean any = disableDither || freeCamera || worldPause || firstPerson
+                || isMmdEnabled(context);
         String configuration = any
                 ? "schema_version=2\n"
                         + "enabled=true\n"
@@ -185,6 +353,18 @@ final class ModuleSettings {
                         + "movement_speed=" + number(movementSpeed) + "\n"
                         + "field_of_view=" + number(fieldOfView) + "\n"
                         + "first_person_fov=" + number(firstPersonFov) + "\n"
+                        + "first_person_side_look_limit=" + number(sideLookLimit) + "\n"
+                        + "first_person_turn_speed=" + number(turnSpeed) + "\n"
+                        + "hotkey_layout=2\n"
+                        + "mmd_enabled=" + isMmdEnabled(context) + "\n"
+                        + "mmd_overlay_enabled=false\n"
+                        + "mmd_work=" + getMmdWork(context) + "\n"
+                        + "mmd_loop=" + isMmdLoop(context) + "\n"
+                        + "mmd_music_enabled=" + isMmdMusicEnabled(context) + "\n"
+                        + "mmd_seek_seconds=" + getMmdSeekSeconds(context) + "\n"
+                        + "mmd_music_gain=" + getMmdMusicGain(context) + "\n"
+                        + "mmd_audio_offset=" + getMmdAudioOffset(context) + "\n"
+                        + cameraExtrasConfiguration(context)
                         + "toggle_hotkey=" + Hotkeys.FREE_CAMERA_NAME + "\n"
                         + "pause_hotkey=" + Hotkeys.WORLD_PAUSE_NAME + "\n"
                         + "first_person_hotkey=" + Hotkeys.FIRST_PERSON_NAME + "\n"
@@ -200,6 +380,8 @@ final class ModuleSettings {
                 .putString(CAMERA_SPEED, number(movementSpeed))
                 .putString(CAMERA_FOV, number(fieldOfView))
                 .putString(CAMERA_FP_FOV, number(firstPersonFov))
+                .putString(CAMERA_FP_SIDE_LIMIT, number(sideLookLimit))
+                .putString(CAMERA_FP_TURN_SPEED, number(turnSpeed))
                 .putString(CAMERA_CONFIGURATION, configuration)
                 .commit();
     }
@@ -263,6 +445,16 @@ final class ModuleSettings {
      */
     static void republishConfigurations(Context context) {
         setInterfaceSettings(context, isHideUidEnabled(context), isHideHudEnabled(context));
+        republishCameraConfiguration(context);
+        setSustainedDashSettings(
+                context,
+                isSustainedDashEnabled(context),
+                isLiinoCleanDashEnabled(context),
+                isDashCharacterEnabled(context, "aglina"),
+                isDashCharacterEnabled(context, "liino"));
+    }
+
+    static void republishCameraConfiguration(Context context) {
         setCameraSettings(
                 context,
                 isDisableDitherEnabled(context),
@@ -274,12 +466,6 @@ final class ModuleSettings {
                 parse(getCameraSpeed(context), 5.0),
                 parse(getCameraFieldOfView(context), 60.0),
                 parse(getFirstPersonFieldOfView(context), 75.0));
-        setSustainedDashSettings(
-                context,
-                isSustainedDashEnabled(context),
-                isLiinoCleanDashEnabled(context),
-                isDashCharacterEnabled(context, "aglina"),
-                isDashCharacterEnabled(context, "liino"));
     }
 
     static double parse(String value, double fallback) {

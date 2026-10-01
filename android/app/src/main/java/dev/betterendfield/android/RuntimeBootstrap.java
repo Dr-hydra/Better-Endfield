@@ -91,6 +91,7 @@ final class RuntimeBootstrap {
             Os.setenv("BETTER_ENDFIELD_MODEL_CONFIG", configs.model(), true);
             Os.setenv("BETTER_ENDFIELD_UI_CONFIG", configs.ui(), true);
             Os.setenv("BETTER_ENDFIELD_CAMERA_CONFIG", configs.camera(), true);
+            Os.setenv("BETTER_ENDFIELD_MMD_ROOT", new File(context.getFilesDir(), "betterendfield/mmd").getAbsolutePath(), true);
             Os.setenv("BETTER_ENDFIELD_ACTIONS_CONFIG", configs.actions(), true);
             Os.setenv("BETTER_ENDFIELD_ACTIONS_ASSET_ROOT", actionPoseRoot, true);
             Os.setenv("BETTER_ENDFIELD_CUSTOM_MODEL_PROBE", debugResourceProbe() ? "1" : "0", true);
@@ -124,6 +125,10 @@ final class RuntimeBootstrap {
         return loaded || ATTEMPTS.get() >= 3;
     }
 
+    // This entry runs in the framework-authorized injected process. Unity's
+    // linker namespace is required for named engine exports; a denied/missing
+    // nativeLoad is caught by load(), reported, and leaves the runtime disabled.
+    @android.annotation.SuppressLint("BlockedPrivateApi")
     private static void loadIntoTargetNamespace(String path, ClassLoader loader,
             Class<?> caller) throws ReflectiveOperationException {
         Method method;

@@ -1,5 +1,6 @@
 #include "runtime.h"
 #include "loaded_il2cpp.h"
+#include "log.h"
 
 #include <dlfcn.h>
 #include <link.h>
@@ -200,9 +201,12 @@ bool Il2CppRuntime::Connect() {
     field_get_parent_ = ResolveExport<decltype(field_get_parent_)>(library, "il2cpp_field_get_parent");
     field_get_name_ = ResolveExport<decltype(field_get_name_)>(library, "il2cpp_field_get_name");
     class_is_enum_ = ResolveExport<decltype(class_is_enum_)>(library, "il2cpp_class_is_enum");
-    if (!domain_get_assemblies_ || !image_get_name_ || !thread_current_ || !field_get_flags_) {
+    if (!thread_current_ || !field_get_flags_) {
         dlclose(library);
         return false;
+    }
+    if (!domain_get_assemblies_ || !image_get_name_) {
+        LogInfo("runtime.il2cpp", "IL2CPP assembly enumeration unavailable; using named domain_assembly_open fallback");
     }
     library_ = library;
     domain_get_ = domain_get;
@@ -330,9 +334,23 @@ void* Il2CppRuntime::Invoke(
 }
 
 const Il2CppImage* Il2CppRuntime::FindLoadedImage(const char* name) const {
-    if (!library_ || !name || !domain_get_assemblies_ || !image_get_name_) return nullptr;
+    if (!library_ || !name || !*name || !domain_get_ || !assembly_get_image_) return nullptr;
     auto* domain = domain_get_();
     if (!domain) return nullptr;
+    if (!domain_get_assemblies_ || !image_get_name_) {
+        // Some builds omit enumeration exports. Resolve only the requested
+        // assembly by its public name; no ELF scanning, offsets or symbol guesses.
+        if (!domain_assembly_open_) return nullptr;
+        const auto open = [&](const std::string& candidate) -> const Il2CppImage* {
+            const auto* assembly = domain_assembly_open_(domain, candidate.c_str());
+            return assembly ? assembly_get_image_(assembly) : nullptr;
+        };
+        if (const auto* image = open(name)) return image;
+        std::string alternate(name);
+        if (alternate.ends_with(".dll")) alternate.resize(alternate.size() - 4);
+        else alternate += ".dll";
+        return open(alternate);
+    }
     size_t count = 0;
     const auto** assemblies = domain_get_assemblies_(domain, &count);
     if (!assemblies) return nullptr;

@@ -35,7 +35,7 @@
             <TextView
                 style="@style/BodyText"
                 android:layout_marginTop="8dp"
-                android:text="一个包管理全部外观。选择与启用状态保存后，下次启动游戏生效。" />
+                android:text="同一角色可保留多个包，最多启用一个。开关与选项即时保存，下次启动游戏生效。" />
         </LinearLayout>
 
         <Button
@@ -72,12 +72,6 @@
                 android:layout_marginTop="6dp"
                 android:text="忽略此次打开" />
         </LinearLayout>
-
-        <Button
-            android:id="@+id/bem_save"
-            style="@style/GhostButton"
-            android:layout_marginTop="10dp"
-            android:text="保存模型选择" />
 
         <LinearLayout
             android:layout_width="match_parent"

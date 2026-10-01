@@ -2,50 +2,50 @@
   "metadata": {
     "schemaVersion": 1,
     "generator": "CombatDataExporter v1.0",
-    "exportedAt": "2026-09-02T13:29:34.312931+00:00",
+    "exportedAt": "2026-09-29T15:26:27.842148+00:00",
     "source": {
       "kind": "persistent+base",
-      "refreshedAt": "2026-09-02T13:28:05.277080+00:00",
-      "gamePath": "E:\\Endfield Game",
-      "baseVfs": "E:\\Endfield Game\\Endfield_Data\\StreamingAssets",
-      "persistentVfs": "E:\\Endfield Game\\Endfield_Data\\Persistent",
+      "refreshedAt": "2026-09-29T15:16:44.689597+00:00",
+      "gamePath": "D:\\Arknights Endfield",
+      "baseVfs": "D:\\Arknights Endfield\\Endfield_Data\\StreamingAssets",
+      "persistentVfs": "D:\\Arknights Endfield\\Endfield_Data\\Persistent",
       "tableCount": 724,
       "requiredSha256": {
-        "CharacterTable.json": "037bff20503c6a562293885a5b6af2115307039d58c1d0699266b57b6e8db96f",
-        "CharGrowthTable.json": "78fbdff0d961fd19f0b394f7a74c2afbbcf5b5294111fb88ccd1d637625b0ff2",
-        "I18nTextTable_CN.json": "78868da25388a2c5b804b519f8d27ac999493f2524c82c0963d7277c685e9cd4",
-        "ItemTable.json": "fed97c346da9b22f5306ab9a7b7ccb02896a4154bcd0c6ef925a41e0a898d61d",
-        "WeaponBasicTable.json": "6998ff9a98fb3e68ceee326ea88dc4aa2ab12850e5881faa5cc96c097d48c56d",
+        "CharacterTable.json": "7a9f2aec88e424266567bc73e51f21ee0c18d1663ea022b8f786c80a96efea36",
+        "CharGrowthTable.json": "f949c8be7a3ba77f82015a54917770597715582077a8ca55005abc24e5376e4b",
+        "I18nTextTable_CN.json": "1e850d2455f815d54a43ae40ac7db8d5fe67907e2e54f57c90cfe1e62904a73b",
+        "ItemTable.json": "1aa73ec2e5a6fc40cb251d935119a1ae3d1fe8219dae65cec4ae9d725f2bf58e",
+        "WeaponBasicTable.json": "02e2467e54f2a6fa5aa77b90d1aa261ac59496ae70a2b1b0cc0567bcfb89dc38",
         "EquipTable.json": "ff511db7354ef0d4b37fb5d1226453e98afdbeb09753ed11fce34819770b0650",
         "EquipSuitTable.json": "b937764bec054fc2028a9d57d9105200c690dbb462227205326ba585e5e7a430",
-        "DungeonTable.json": "1be0a1bdcbdfbb821c4da34d1a02af5c0499afedb36c1c761264254e289e6c11"
+        "DungeonTable.json": "1315b8584cdd304bf3d2c83a2a803f2666bead223e975207fa84ce21e8b9c201"
       }
     },
     "counts": {
-      "characters": 33,
-      "skills": 257,
-      "talents": 127,
-      "weapons": 79,
+      "characters": 34,
+      "skills": 262,
+      "talents": 131,
+      "weapons": 80,
       "suits": 24,
       "equipment": 258,
-      "dungeons": 354,
-      "dungeonSeries": 82,
+      "dungeons": 363,
+      "dungeonSeries": 83,
       "buffs": 182,
-      "buffSourceMappings": 632,
-      "buffSourceCandidates": 1784
+      "buffSourceMappings": 669,
+      "buffSourceCandidates": 1883
     },
     "buffSourceIndex": {
       "schemaVersion": 2,
-      "sourceSha256": "81139cac85655e089f49dd4ac7c7142da7c6bc35fcc4d45d27eda9c6c9b6a82d",
-      "skillConfigs": 2621,
-      "buffConfigs": 2872,
-      "referenceEdges": 11423,
-      "sourceRoots": 710,
+      "sourceSha256": "fcef45d0ecedd675be85d3231e3ddd7c8c5e84ff85098bc39df5b39d6a0bf277",
+      "skillConfigs": 2648,
+      "buffConfigs": 2921,
+      "referenceEdges": 11683,
+      "sourceRoots": 724,
       "missingRoots": 0,
-      "mappedBuffs": 632,
-      "candidateRows": 1784,
-      "ambiguousBuffs": 263,
-      "skillBuffEdges": 2383
+      "mappedBuffs": 669,
+      "candidateRows": 1883,
+      "ambiguousBuffs": 283,
+      "skillBuffEdges": 2465
     }
   },
   "characters": {
@@ -400,6 +400,17 @@
       "department": "ENDFIELD INDUSTRIES",
       "defaultWeaponId": "wpn_lance_0009",
       "iconAvatar": "icon_head_chr_0035_liino"
+    },
+    "chr_0038_purrche": {
+      "name": "噗切娜",
+      "engName": "",
+      "rarity": 5,
+      "profession": 2,
+      "weaponType": 1,
+      "charTypeId": "Physical",
+      "department": "ENDFIELD INDUSTRIES",
+      "defaultWeaponId": "wpn_sword_0003",
+      "iconAvatar": "icon_head_chr_0038_purrche"
     },
     "chr_9000_endmin": {
       "name": "管理员",
@@ -1833,7 +1844,7 @@
       "characterId": "chr_0034_typhoea",
       "name": "风矢穿林",
       "category": "skill",
-      "desc": "跃入空中进入短暂<@ba.key>浮空</>状态，期间可施放5次空中普通攻击，每次可同时攻击至多2名目标，造成<@ba.natur>自然伤害</>。\n每次空中普通攻击若命中带有<#ba.naturalinflict>自然附着</>的敌人，则消耗目标身上的1层<#ba.naturalinflict>自然附着</>，获得1点<#ba.arrowenergy>启示</>，并额外获得终结技能量。\n若自身仍存有<#ba.arrownum>猎矢</>，则会消耗1枚<#ba.arrownum>猎矢</>，将空中普通攻击转化为<@ba.key>强化射击</>。\n<@ba.key>强化射击</>：命中后额外强制造成一次<#ba.naturalburst>自然爆发</>；若消耗了目标身上的<#ba.naturalinflict>自然附着</>，则将本次造成的<#ba.naturalburst>自然爆发</>伤害提升至原本的<@ba.vup>{enchence_burst_damage_rate:0.0}</>倍。\n<@ba.info>作为主控干员时，第五次空中普通攻击同时视为重击与强化射击，且无需消耗猎矢。</>",
+      "desc": "跃入空中进入短暂<@ba.key>浮空</>状态，期间可施放5次空中普通攻击，每次可同时攻击至多2名目标，造成<@ba.natur>自然伤害</>。\n每次空中普通攻击若命中带有<#ba.naturalinflict>自然附着</>的敌人，则消耗目标身上的1层<#ba.naturalinflict>自然附着</>，获得1点<#ba.arrowenergy>启示</>，并额外获得终结技能量。\n若自身仍存有<#ba.arrownum>猎矢</>，则会消耗1枚<#ba.arrownum>猎矢</>，将空中普通攻击转化为<@ba.key>强化射击</>。\n<@ba.key>强化射击</>：命中后额外强制造成一次<#ba.naturalburst>自然爆发</>；若消耗了目标身上的<#ba.naturalinflict>自然附着</>，则本次造成的<#ba.naturalburst>自然爆发</>伤害会提升。\n<@ba.info>作为主控干员时，第五次空中普通攻击同时视为重击与强化射击，且无需消耗猎矢。</>",
       "iconId": "icon_skill_typhoea_01",
       "skillIds": [
         "chr_0034_typhoea_normal_skill_floating_start",
@@ -1902,6 +1913,51 @@
       "iconId": "icon_ultimate_skill_liino_01",
       "skillIds": [
         "chr_0035_liino_ultimate_skill"
+      ]
+    },
+    "chr_0038_purrche_ComboSkill": {
+      "characterId": "chr_0038_purrche",
+      "name": "点心还是“礼物”",
+      "category": "combo",
+      "desc": "主控干员受到攻击后可以发动。\n向主控干员扔出一个<@ba.key>礼物匣子</>，<@ba.key>礼物匣子</>会在短暂延迟后开启，<@ba.heal>治疗</>范围内的干员，随机开出一个以下物品并触发对应效果：\n<@ba.key>炸弹</>：对范围内的敌人造成<@ba.pd>物理伤害</>并且额外造成一定失衡。\n<@ba.key>手工作业</>：持续吸引附近的敌人并对其造成<@ba.pd>物理伤害</>。\n<@ba.key>好吃的点心</>：<@ba.heal>治疗</>主控干员。\n意志可以额外提高治疗量。",
+      "iconId": "icon_combo_skill_purrche_01",
+      "skillIds": [
+        "chr_0038_purrche_combo_skill"
+      ]
+    },
+    "chr_0038_purrche_NormalAttack": {
+      "characterId": "chr_0038_purrche",
+      "name": "点心，尝尝！",
+      "category": "attack",
+      "desc": "普通攻击：\n对敌人进行至多3段攻击，造成<@ba.pd>物理伤害</>。作为主控干员时，<#ba.lastcombo>重击</>会造成<@ba.poise>{poise:0}</>点失衡。\n\n下落攻击：\n处于空中时使用普通攻击，会下落并攻击附近敌人，造成<@ba.pd>物理伤害</>。\n\n处决攻击：\n附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量<@ba.pd>物理伤害</>并恢复一定技力。",
+      "iconId": "icon_attack_sword",
+      "skillIds": [
+        "chr_0038_purrche_attack1",
+        "chr_0038_purrche_attack2",
+        "chr_0038_purrche_attack3",
+        "chr_0038_purrche_power_attack",
+        "chr_0038_purrche_plunging_attack_end"
+      ]
+    },
+    "chr_0038_purrche_NormalSkill": {
+      "characterId": "chr_0038_purrche",
+      "name": "我没有睡着！",
+      "category": "skill",
+      "desc": "架起盾牌格挡攻击，立盾期间使自身及周围干员获得<#ba.guard>庇护</>，并立即<#ba.return>返还</>一定技力。立盾期间首次成功格挡后延长立盾时间，并额外<#ba.return>返还</>一定技力。施放后战技在一段时间内替换为<@ba.key>离我的朋友远点！</>。\n<@ba.key>离我的朋友远点！</>：对面前的目标使用头槌撞击，造成<@ba.natur>自然伤害</>，并施加<#ba.naturalinflict>自然附着</>。\n<@ba.info>立盾期间提供的庇护效果会随格挡次数增加而降低</>。",
+      "iconId": "icon_skill_purrche_01",
+      "skillIds": [
+        "chr_0038_purrche_normal_skill",
+        "chr_0038_purrche_normal_skill_counter"
+      ]
+    },
+    "chr_0038_purrche_UltimateSkill": {
+      "characterId": "chr_0038_purrche",
+      "name": "不许干坏事！",
+      "category": "ultimate",
+      "desc": "打开三个<@ba.key>大菲林礼盒</>。每个<@ba.key>大菲林礼盒</>将随机开出<@ba.key>炸弹</>或<@ba.key>手工作业</>。\n有一定概率开出<@ba.key>代言人的特殊赠礼</>，对敌人造成<@ba.pd>物理伤害</>，额外造成一定失衡，并且施加<#ba.spellvul>法术脆弱</>。",
+      "iconId": "icon_ultimate_skill_purrche_01",
+      "skillIds": [
+        "chr_0038_purrche_ultimate_skill"
       ]
     },
     "chr_9000_endmin_ComboSkill": {
@@ -2347,6 +2403,11 @@
     },
     "sk_wpn_sword_0022": {
       "name": "切骨·群狼啃噬",
+      "category": "passive_patch",
+      "desc": ""
+    },
+    "sk_wpn_sword_0023": {
+      "name": "医疗·甜与梦",
       "category": "passive_patch",
       "desc": ""
     },
@@ -3325,6 +3386,30 @@
       "name": "一等星的鼓舞",
       "iconId": "icon_talent_liino_02"
     },
+    "chr_0038_purrche_talent_1_1": {
+      "characterId": "chr_0038_purrche",
+      "nodeId": "chr_0038_purrche_passive_skill_0_1",
+      "name": "道歉也来不及了！",
+      "iconId": "icon_talent_purrche_01"
+    },
+    "chr_0038_purrche_talent_1_2": {
+      "characterId": "chr_0038_purrche",
+      "nodeId": "chr_0038_purrche_passive_skill_0_2",
+      "name": "道歉也来不及了！",
+      "iconId": "icon_talent_purrche_01"
+    },
+    "chr_0038_purrche_talent_2_1": {
+      "characterId": "chr_0038_purrche",
+      "nodeId": "chr_0038_purrche_passive_skill_1_1",
+      "name": "代言人的职责",
+      "iconId": "icon_talent_purrche_02"
+    },
+    "chr_0038_purrche_talent_2_2": {
+      "characterId": "chr_0038_purrche",
+      "nodeId": "chr_0038_purrche_passive_skill_1_2",
+      "name": "代言人的职责",
+      "iconId": "icon_talent_purrche_02"
+    },
     "chr_9000_endmin_talent_1_1": {
       "characterId": "chr_9000_endmin",
       "nodeId": "chr_9000_endmin_passive_skill_0_1",
@@ -3974,6 +4059,14 @@
       "iconId": "wpn_sword_0022",
       "potentialSkillId": "sk_wpn_sword_0022",
       "potentialSkillName": "切骨·群狼啃噬"
+    },
+    "wpn_sword_0023": {
+      "name": "点心时刻",
+      "rarity": 5,
+      "weaponType": 1,
+      "iconId": "wpn_sword_0023",
+      "potentialSkillId": "sk_wpn_sword_0023",
+      "potentialSkillName": "医疗·甜与梦"
     },
     "wpn_sword_0026": {
       "name": "遥望",
@@ -16404,6 +16497,8 @@
       "subName": "",
       "seriesId": "dung01_group_activity01",
       "seriesName": "生存特训",
+      "category": "dungeon_actmonster",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16412,6 +16507,8 @@
       "subName": "",
       "seriesId": "dung01_group_activity01",
       "seriesName": "生存特训",
+      "category": "dungeon_actmonster",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16420,6 +16517,8 @@
       "subName": "",
       "seriesId": "dung01_group_activity01",
       "seriesName": "生存特训",
+      "category": "dungeon_actmonster",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16428,6 +16527,8 @@
       "subName": "",
       "seriesId": "dung01_group_activity01",
       "seriesName": "生存特训",
+      "category": "dungeon_actmonster",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16436,6 +16537,8 @@
       "subName": "",
       "seriesId": "dung01_group_activity01",
       "seriesName": "生存特训",
+      "category": "dungeon_actmonster",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16444,6 +16547,8 @@
       "subName": "",
       "seriesId": "dung01_group_activity01",
       "seriesName": "生存特训",
+      "category": "dungeon_actmonster",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16452,6 +16557,8 @@
       "subName": "",
       "seriesId": "dung01_group_activity01",
       "seriesName": "生存特训",
+      "category": "dungeon_actmonster",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16460,6 +16567,8 @@
       "subName": "",
       "seriesId": "dung01_group_activity01",
       "seriesName": "生存特训",
+      "category": "dungeon_actmonster",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16468,6 +16577,8 @@
       "subName": "",
       "seriesId": "dung01_group_bossrush01",
       "seriesName": "危境再现·罗丹",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16476,6 +16587,8 @@
       "subName": "",
       "seriesId": "dung01_group_bossrush01",
       "seriesName": "危境再现·罗丹",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16484,6 +16597,8 @@
       "subName": "",
       "seriesId": "dung01_group_bossrush01",
       "seriesName": "危境再现·罗丹",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16492,6 +16607,8 @@
       "subName": "",
       "seriesId": "dung01_group_bossrush01",
       "seriesName": "危境再现·罗丹",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16500,6 +16617,8 @@
       "subName": "",
       "seriesId": "dung01_group_bossrush02",
       "seriesName": "危境再现·三位一体",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16508,6 +16627,8 @@
       "subName": "",
       "seriesId": "dung01_group_bossrush02",
       "seriesName": "危境再现·三位一体",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16516,6 +16637,8 @@
       "subName": "",
       "seriesId": "dung01_group_bossrush02",
       "seriesName": "危境再现·三位一体",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16524,6 +16647,8 @@
       "subName": "",
       "seriesId": "dung01_group_bossrush03",
       "seriesName": "危境再现·白垩界卫",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16532,6 +16657,8 @@
       "subName": "",
       "seriesId": "dung01_group_bossrush03",
       "seriesName": "危境再现·白垩界卫",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16540,6 +16667,8 @@
       "subName": "",
       "seriesId": "dung01_group_bossrush03",
       "seriesName": "危境再现·白垩界卫",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16548,6 +16677,8 @@
       "subName": "",
       "seriesId": "dung01_group_charbreak01",
       "seriesName": "协议空间·干员进阶",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 40
     },
@@ -16556,6 +16687,8 @@
       "subName": "",
       "seriesId": "dung01_group_charbreak01",
       "seriesName": "协议空间·干员进阶",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 50
     },
@@ -16564,6 +16697,8 @@
       "subName": "",
       "seriesId": "dung01_group_charbreak01",
       "seriesName": "协议空间·干员进阶",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 60
     },
@@ -16572,6 +16707,8 @@
       "subName": "",
       "seriesId": "dung01_group_charbreak01",
       "seriesName": "协议空间·干员进阶",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 70
     },
@@ -16580,6 +16717,8 @@
       "subName": "",
       "seriesId": "dung01_group_charbreak01",
       "seriesName": "协议空间·干员进阶",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 80
     },
@@ -16588,6 +16727,8 @@
       "subName": "",
       "seriesId": "dung01_group_exp01",
       "seriesName": "协议空间·干员经验",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 40
     },
@@ -16596,6 +16737,8 @@
       "subName": "",
       "seriesId": "dung01_group_exp01",
       "seriesName": "协议空间·干员经验",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 50
     },
@@ -16604,6 +16747,8 @@
       "subName": "",
       "seriesId": "dung01_group_exp01",
       "seriesName": "协议空间·干员经验",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 60
     },
@@ -16612,6 +16757,8 @@
       "subName": "",
       "seriesId": "dung01_group_exp01",
       "seriesName": "协议空间·干员经验",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 70
     },
@@ -16620,6 +16767,8 @@
       "subName": "",
       "seriesId": "dung01_group_exp01",
       "seriesName": "协议空间·干员经验",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 80
     },
@@ -16628,6 +16777,8 @@
       "subName": "",
       "seriesId": "dung01_group_gold01",
       "seriesName": "协议空间·钱币收集",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 40
     },
@@ -16636,6 +16787,8 @@
       "subName": "",
       "seriesId": "dung01_group_gold01",
       "seriesName": "协议空间·钱币收集",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 50
     },
@@ -16644,6 +16797,8 @@
       "subName": "",
       "seriesId": "dung01_group_gold01",
       "seriesName": "协议空间·钱币收集",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 60
     },
@@ -16652,6 +16807,8 @@
       "subName": "",
       "seriesId": "dung01_group_gold01",
       "seriesName": "协议空间·钱币收集",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 70
     },
@@ -16660,6 +16817,8 @@
       "subName": "",
       "seriesId": "dung01_group_gold01",
       "seriesName": "协议空间·钱币收集",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 80
     },
@@ -16668,6 +16827,8 @@
       "subName": "",
       "seriesId": "dung01_group_puzzle01",
       "seriesName": "密境初显",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16676,6 +16837,8 @@
       "subName": "",
       "seriesId": "dung01_group_puzzle02",
       "seriesName": "密境初显",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16684,6 +16847,8 @@
       "subName": "",
       "seriesId": "dung01_group_puzzle04",
       "seriesName": "密境初显",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16692,6 +16857,8 @@
       "subName": "",
       "seriesId": "dung01_group_puzzle08",
       "seriesName": "密境初显",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16700,6 +16867,8 @@
       "subName": "",
       "seriesId": "dung01_group_puzzle05",
       "seriesName": "密境初显",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16708,6 +16877,8 @@
       "subName": "",
       "seriesId": "dung01_group_puzzle07",
       "seriesName": "密境初显",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16716,6 +16887,8 @@
       "subName": "",
       "seriesId": "dung01_group_puzzle09",
       "seriesName": "密境初显",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16724,6 +16897,8 @@
       "subName": "",
       "seriesId": "dung01_group_puzzle06",
       "seriesName": "密境初显",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16732,6 +16907,8 @@
       "subName": "",
       "seriesId": "dung01_group_puzzle03",
       "seriesName": "密境初显",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16740,6 +16917,8 @@
       "subName": "",
       "seriesId": "dung01_group_skill01",
       "seriesName": "协议空间·技能提升",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 40
     },
@@ -16748,6 +16927,8 @@
       "subName": "",
       "seriesId": "dung01_group_skill01",
       "seriesName": "协议空间·技能提升",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 50
     },
@@ -16756,6 +16937,8 @@
       "subName": "",
       "seriesId": "dung01_group_skill01",
       "seriesName": "协议空间·技能提升",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 60
     },
@@ -16764,6 +16947,8 @@
       "subName": "",
       "seriesId": "dung01_group_skill01",
       "seriesName": "协议空间·技能提升",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 70
     },
@@ -16772,6 +16957,8 @@
       "subName": "",
       "seriesId": "dung01_group_skill01",
       "seriesName": "协议空间·技能提升",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 80
     },
@@ -16780,6 +16967,8 @@
       "subName": "",
       "seriesId": "dung01_group_ttdg",
       "seriesName": "",
+      "category": "dungeon_takestwo",
+      "sortId": 1,
       "domainId": "",
       "costStamina": 0
     },
@@ -16788,6 +16977,8 @@
       "subName": "",
       "seriesId": "dung01_group_ttdg",
       "seriesName": "",
+      "category": "dungeon_takestwo",
+      "sortId": 9,
       "domainId": "",
       "costStamina": 0
     },
@@ -16796,6 +16987,8 @@
       "subName": "",
       "seriesId": "dung01_group_ttdg",
       "seriesName": "",
+      "category": "dungeon_takestwo",
+      "sortId": 2,
       "domainId": "",
       "costStamina": 0
     },
@@ -16804,6 +16997,8 @@
       "subName": "",
       "seriesId": "dung01_group_ttdg",
       "seriesName": "",
+      "category": "dungeon_takestwo",
+      "sortId": 10,
       "domainId": "",
       "costStamina": 0
     },
@@ -16812,6 +17007,8 @@
       "subName": "",
       "seriesId": "dung01_group_ttdg",
       "seriesName": "",
+      "category": "dungeon_takestwo",
+      "sortId": 3,
       "domainId": "",
       "costStamina": 0
     },
@@ -16820,6 +17017,8 @@
       "subName": "",
       "seriesId": "dung01_group_ttdg",
       "seriesName": "",
+      "category": "dungeon_takestwo",
+      "sortId": 11,
       "domainId": "",
       "costStamina": 0
     },
@@ -16828,6 +17027,8 @@
       "subName": "",
       "seriesId": "dung01_group_ttdg",
       "seriesName": "",
+      "category": "dungeon_takestwo",
+      "sortId": 4,
       "domainId": "",
       "costStamina": 0
     },
@@ -16836,6 +17037,8 @@
       "subName": "",
       "seriesId": "dung01_group_ttdg",
       "seriesName": "",
+      "category": "dungeon_takestwo",
+      "sortId": 12,
       "domainId": "",
       "costStamina": 0
     },
@@ -16844,6 +17047,8 @@
       "subName": "",
       "seriesId": "dung01_group_ttdg",
       "seriesName": "",
+      "category": "dungeon_takestwo",
+      "sortId": 5,
       "domainId": "",
       "costStamina": 0
     },
@@ -16852,6 +17057,8 @@
       "subName": "",
       "seriesId": "dung01_group_ttdg",
       "seriesName": "",
+      "category": "dungeon_takestwo",
+      "sortId": 13,
       "domainId": "",
       "costStamina": 0
     },
@@ -16860,6 +17067,8 @@
       "subName": "",
       "seriesId": "dung01_group_ttdg",
       "seriesName": "",
+      "category": "dungeon_takestwo",
+      "sortId": 6,
       "domainId": "",
       "costStamina": 0
     },
@@ -16868,6 +17077,8 @@
       "subName": "",
       "seriesId": "dung01_group_ttdg",
       "seriesName": "",
+      "category": "dungeon_takestwo",
+      "sortId": 14,
       "domainId": "",
       "costStamina": 0
     },
@@ -16876,6 +17087,8 @@
       "subName": "",
       "seriesId": "dung01_group_ttdg",
       "seriesName": "",
+      "category": "dungeon_takestwo",
+      "sortId": 7,
       "domainId": "",
       "costStamina": 0
     },
@@ -16884,6 +17097,8 @@
       "subName": "",
       "seriesId": "dung01_group_ttdg",
       "seriesName": "",
+      "category": "dungeon_takestwo",
+      "sortId": 15,
       "domainId": "",
       "costStamina": 0
     },
@@ -16892,6 +17107,8 @@
       "subName": "",
       "seriesId": "dung01_group_ttdg",
       "seriesName": "",
+      "category": "dungeon_takestwo",
+      "sortId": 8,
       "domainId": "",
       "costStamina": 0
     },
@@ -16900,6 +17117,8 @@
       "subName": "",
       "seriesId": "dung01_group_ttdg",
       "seriesName": "",
+      "category": "dungeon_takestwo",
+      "sortId": 16,
       "domainId": "",
       "costStamina": 0
     },
@@ -16908,6 +17127,8 @@
       "subName": "",
       "seriesId": "dung01_group_wpbreak01",
       "seriesName": "协议空间·武器进阶",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 40
     },
@@ -16916,6 +17137,8 @@
       "subName": "",
       "seriesId": "dung01_group_wpbreak01",
       "seriesName": "协议空间·武器进阶",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 50
     },
@@ -16924,6 +17147,8 @@
       "subName": "",
       "seriesId": "dung01_group_wpbreak01",
       "seriesName": "协议空间·武器进阶",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 60
     },
@@ -16932,6 +17157,8 @@
       "subName": "",
       "seriesId": "dung01_group_wpbreak01",
       "seriesName": "协议空间·武器进阶",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 70
     },
@@ -16940,6 +17167,8 @@
       "subName": "",
       "seriesId": "dung01_group_wpbreak01",
       "seriesName": "协议空间·武器进阶",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 80
     },
@@ -16948,6 +17177,8 @@
       "subName": "",
       "seriesId": "dung01_group_wpexp01",
       "seriesName": "协议空间·武器经验",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 40
     },
@@ -16956,6 +17187,8 @@
       "subName": "",
       "seriesId": "dung01_group_wpexp01",
       "seriesName": "协议空间·武器经验",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 50
     },
@@ -16964,6 +17197,8 @@
       "subName": "",
       "seriesId": "dung01_group_wpexp01",
       "seriesName": "协议空间·武器经验",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 60
     },
@@ -16972,6 +17207,8 @@
       "subName": "",
       "seriesId": "dung01_group_wpexp01",
       "seriesName": "协议空间·武器经验",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 70
     },
@@ -16980,6 +17217,8 @@
       "subName": "",
       "seriesId": "dung01_group_wpexp01",
       "seriesName": "协议空间·武器经验",
+      "category": "dungeon_resource",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 80
     },
@@ -16988,6 +17227,8 @@
       "subName": "",
       "seriesId": "dung01_group_wrdg001",
       "seriesName": "谷地像差",
+      "category": "dungeon_weeklyraid",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -16996,6 +17237,8 @@
       "subName": "",
       "seriesId": "dung01_group_wrdg001",
       "seriesName": "谷地像差",
+      "category": "dungeon_weeklyraid",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17004,6 +17247,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_archery",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17012,6 +17257,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_archery",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17020,6 +17267,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_archery",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17028,6 +17277,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_archery",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17036,6 +17287,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_archery",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17044,6 +17297,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_archery",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17052,6 +17307,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_archery",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17060,6 +17317,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_archery",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17068,6 +17327,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_archery",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17076,6 +17337,8 @@
       "subName": "",
       "seriesId": "dung02_group_bossrush01",
       "seriesName": "危境再现·阮一",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17084,6 +17347,8 @@
       "subName": "",
       "seriesId": "dung02_group_bossrush01",
       "seriesName": "危境再现·阮一",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17092,6 +17357,8 @@
       "subName": "",
       "seriesId": "dung02_group_bossrush01",
       "seriesName": "危境再现·阮一",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17100,6 +17367,8 @@
       "subName": "",
       "seriesId": "dung02_group_bossrush02",
       "seriesName": "危境再现·聂菲斯",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17108,6 +17377,8 @@
       "subName": "",
       "seriesId": "dung02_group_bossrush02",
       "seriesName": "危境再现·聂菲斯",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17116,6 +17387,8 @@
       "subName": "",
       "seriesId": "dung02_group_bossrush02",
       "seriesName": "危境再现·聂菲斯",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17124,6 +17397,8 @@
       "subName": "",
       "seriesId": "dung02_group_bossrush03",
       "seriesName": "危境再现·阿莱克琉斯",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17132,6 +17407,8 @@
       "subName": "",
       "seriesId": "dung02_group_bossrush03",
       "seriesName": "危境再现·阿莱克琉斯",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17140,6 +17417,8 @@
       "subName": "",
       "seriesId": "dung02_group_bossrush03",
       "seriesName": "危境再现·阿莱克琉斯",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17148,6 +17427,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_archery",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17156,6 +17437,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_archery",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17164,6 +17447,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_archery",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17172,6 +17457,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_archery",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17180,6 +17467,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_archery",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17188,6 +17477,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_archery",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17196,6 +17487,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_archery",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17204,6 +17497,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_archery",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17212,6 +17507,8 @@
       "subName": "",
       "seriesId": "dung02_group_minibossrush01",
       "seriesName": "危境碎片·巨山犼兽",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17220,6 +17517,8 @@
       "subName": "",
       "seriesId": "dung02_group_minibossrush01",
       "seriesName": "危境碎片·巨山犼兽",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17228,6 +17527,8 @@
       "subName": "",
       "seriesId": "dung02_group_minibossrush02",
       "seriesName": "危境碎片·蚀影噪雷",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17236,6 +17537,8 @@
       "subName": "",
       "seriesId": "dung02_group_minibossrush02",
       "seriesName": "危境碎片·蚀影噪雷",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17244,6 +17547,8 @@
       "subName": "",
       "seriesId": "dung02_group_minibossrush03",
       "seriesName": "危境碎片·幽林之怒",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17252,6 +17557,8 @@
       "subName": "",
       "seriesId": "dung02_group_minibossrush03",
       "seriesName": "危境碎片·幽林之怒",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17260,6 +17567,8 @@
       "subName": "",
       "seriesId": "dung02_group_puzzle01",
       "seriesName": "行探险窟",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17268,6 +17577,8 @@
       "subName": "",
       "seriesId": "dung02_group_puzzle02",
       "seriesName": "行探险窟",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17276,6 +17587,8 @@
       "subName": "",
       "seriesId": "dung02_group_puzzle03",
       "seriesName": "行探险窟",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17284,6 +17597,8 @@
       "subName": "",
       "seriesId": "dung02_group_puzzle04",
       "seriesName": "行探险窟",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17292,6 +17607,8 @@
       "subName": "",
       "seriesId": "dung02_group_puzzle05",
       "seriesName": "行探险窟",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17300,6 +17617,8 @@
       "subName": "",
       "seriesId": "dung02_group_puzzle06",
       "seriesName": "行探险窟",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17308,6 +17627,8 @@
       "subName": "",
       "seriesId": "dung02_group_puzzle07",
       "seriesName": "六方巧境",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17316,6 +17637,8 @@
       "subName": "",
       "seriesId": "dung02_group_puzzle08",
       "seriesName": "六方巧境",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17324,6 +17647,8 @@
       "subName": "",
       "seriesId": "dung02_group_puzzle09",
       "seriesName": "六方巧境",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17332,6 +17657,8 @@
       "subName": "",
       "seriesId": "dung02_group_puzzle10",
       "seriesName": "六方巧境",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17340,6 +17667,8 @@
       "subName": "",
       "seriesId": "dung02_group_puzzle11",
       "seriesName": "六方巧境",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17348,6 +17677,8 @@
       "subName": "",
       "seriesId": "dung02_group_puzzle12",
       "seriesName": "六方巧境",
+      "category": "dungeon_challenge",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17356,6 +17687,8 @@
       "subName": "",
       "seriesId": "dung02_group_rcdg01",
       "seriesName": "登楼阁",
+      "category": "dungeon_wuling_racing",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17364,6 +17697,8 @@
       "subName": "",
       "seriesId": "dung02_group_rcdg02",
       "seriesName": "蹈清风",
+      "category": "dungeon_wuling_racing",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17372,6 +17707,8 @@
       "subName": "",
       "seriesId": "dung02_group_rcdg03",
       "seriesName": "步流云",
+      "category": "dungeon_wuling_racing",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17380,6 +17717,8 @@
       "subName": "",
       "seriesId": "dung02_group_rcdg04",
       "seriesName": "赴雄城",
+      "category": "dungeon_wuling_racing",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17388,6 +17727,8 @@
       "subName": "",
       "seriesId": "dung_group_aglina01",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17396,6 +17737,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 13,
       "domainId": "",
       "costStamina": 0
     },
@@ -17404,6 +17747,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_chartrial",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17412,6 +17757,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 17,
       "domainId": "",
       "costStamina": 0
     },
@@ -17420,6 +17767,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 8,
       "domainId": "",
       "costStamina": 0
     },
@@ -17428,6 +17777,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 7,
       "domainId": "",
       "costStamina": 0
     },
@@ -17436,6 +17787,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 12,
       "domainId": "",
       "costStamina": 0
     },
@@ -17444,6 +17797,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 12,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17452,6 +17807,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 24,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17460,6 +17817,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 13,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17468,6 +17827,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 2,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17476,6 +17837,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 3,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17484,6 +17847,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 26,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17492,6 +17857,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 17,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17500,6 +17867,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 19,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17508,6 +17877,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 9,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17516,6 +17887,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 6,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17524,6 +17897,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 18,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17532,6 +17907,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 21,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17540,6 +17917,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 5,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17548,6 +17927,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 11,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17556,6 +17937,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 23,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17564,6 +17947,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 25,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17572,6 +17957,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 3,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17580,6 +17967,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 16,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17588,6 +17977,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 22,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17596,6 +17987,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 4,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17604,6 +17997,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 7,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17612,6 +18007,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 9,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17620,6 +18017,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 14,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17628,6 +18027,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 1,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17636,6 +18037,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 20,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17644,6 +18047,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 8,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17652,6 +18057,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 2,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17660,6 +18067,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 10,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17668,6 +18077,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 13,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17676,6 +18087,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 1,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17684,6 +18097,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 6,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17692,6 +18107,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 15,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17700,6 +18117,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 4,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17708,6 +18127,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 14,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17716,6 +18137,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 8,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17724,6 +18147,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 17,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17732,6 +18157,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 19,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17740,6 +18167,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 16,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17748,6 +18177,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 7,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17756,6 +18187,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 5,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17764,6 +18197,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 22,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17772,6 +18207,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 18,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17780,6 +18217,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 20,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17788,6 +18227,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 12,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17796,6 +18237,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 21,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17804,6 +18247,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 10,
       "domainId": "domain_1",
       "costStamina": 0
     },
@@ -17812,6 +18257,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 11,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17820,6 +18267,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 15,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17828,6 +18277,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_factory",
+      "sortId": 23,
       "domainId": "domain_2",
       "costStamina": 0
     },
@@ -17836,6 +18287,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 24,
       "domainId": "",
       "costStamina": 0
     },
@@ -17844,6 +18297,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_chartrial",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17852,6 +18307,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 3,
       "domainId": "",
       "costStamina": 0
     },
@@ -17860,6 +18317,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 9,
       "domainId": "",
       "costStamina": 0
     },
@@ -17868,6 +18327,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 10,
       "domainId": "",
       "costStamina": 0
     },
@@ -17876,6 +18337,8 @@
       "subName": "",
       "seriesId": "dung_group_e11m7",
       "seriesName": "",
+      "category": "dungeon_story",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17884,6 +18347,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 1,
       "domainId": "",
       "costStamina": 0
     },
@@ -17892,6 +18357,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 5,
       "domainId": "",
       "costStamina": 0
     },
@@ -17900,6 +18367,8 @@
       "subName": "",
       "seriesId": "dung_group_kamiu01",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17908,6 +18377,8 @@
       "subName": "",
       "seriesId": "dung_group_laevat01",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17916,6 +18387,8 @@
       "subName": "",
       "seriesId": "dung_group_laevat02",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17924,6 +18397,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 15,
       "domainId": "",
       "costStamina": 0
     },
@@ -17932,6 +18407,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_chartrial",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17940,6 +18417,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 18,
       "domainId": "",
       "costStamina": 0
     },
@@ -17948,6 +18427,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 14,
       "domainId": "",
       "costStamina": 0
     },
@@ -17956,6 +18437,8 @@
       "subName": "",
       "seriesId": "dung_group_liino_01",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17964,6 +18447,8 @@
       "subName": "",
       "seriesId": "dung_group_liino_02",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17972,6 +18457,8 @@
       "subName": "",
       "seriesId": "dung_group_liino_03",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17980,6 +18467,8 @@
       "subName": "",
       "seriesId": "dung_group_liino_04",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17988,6 +18477,8 @@
       "subName": "",
       "seriesId": "dung_group_liino_05",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -17996,6 +18487,8 @@
       "subName": "",
       "seriesId": "dung_group_liino_06",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18004,6 +18497,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 26,
       "domainId": "",
       "costStamina": 0
     },
@@ -18012,6 +18507,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_chartrial",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18020,6 +18517,8 @@
       "subName": "",
       "seriesId": "dung_group_lizhiyan01",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18028,6 +18527,8 @@
       "subName": "",
       "seriesId": "dung_group_lizhiyan02",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18036,6 +18537,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 25,
       "domainId": "",
       "costStamina": 0
     },
@@ -18044,6 +18547,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_chartrial",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18052,6 +18557,8 @@
       "subName": "",
       "seriesId": "dung_group_mifu01",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18060,6 +18567,8 @@
       "subName": "",
       "seriesId": "dung_group_mifu02",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18068,6 +18577,8 @@
       "subName": "",
       "seriesId": "dung_group_mifu03",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18076,6 +18587,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 23,
       "domainId": "",
       "costStamina": 0
     },
@@ -18084,6 +18597,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_chartrial",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18092,6 +18607,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 2,
       "domainId": "",
       "costStamina": 0
     },
@@ -18100,6 +18617,18 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 19,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung_purrche_chartrain01": {
+      "name": "干员教学·噗切娜",
+      "subName": "",
+      "seriesId": "dung_group_chartrain",
+      "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 27,
       "domainId": "",
       "costStamina": 0
     },
@@ -18108,6 +18637,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 6,
       "domainId": "",
       "costStamina": 0
     },
@@ -18116,6 +18647,8 @@
       "subName": "",
       "seriesId": "dung_group_ss01",
       "seriesName": "协议空间·高阶培养Ⅱ",
+      "category": "dungeon_ss",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18124,6 +18657,8 @@
       "subName": "",
       "seriesId": "dung_group_ss02",
       "seriesName": "协议空间·高阶培养Ⅰ",
+      "category": "dungeon_ss",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18132,6 +18667,8 @@
       "subName": "",
       "seriesId": "dung_group_ss03",
       "seriesName": "协议空间·高阶培养Ⅲ",
+      "category": "dungeon_ss",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18140,6 +18677,8 @@
       "subName": "",
       "seriesId": "dung_group_ss04",
       "seriesName": "协议空间·高阶培养Ⅳ",
+      "category": "dungeon_ss",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18148,6 +18687,8 @@
       "subName": "",
       "seriesId": "dung_group_ss05",
       "seriesName": "协议空间·高阶培养Ⅴ",
+      "category": "dungeon_ss",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18156,6 +18697,8 @@
       "subName": "",
       "seriesId": "dung_group_tangtang01",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18164,6 +18707,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 20,
       "domainId": "",
       "costStamina": 0
     },
@@ -18172,6 +18717,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_chartrial",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18180,6 +18727,8 @@
       "subName": "",
       "seriesId": "dung_group_train01",
       "seriesName": "基础训练",
+      "category": "dungeon_train",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18188,6 +18737,8 @@
       "subName": "",
       "seriesId": "dung_group_train01",
       "seriesName": "基础训练",
+      "category": "dungeon_train",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18196,6 +18747,8 @@
       "subName": "",
       "seriesId": "dung_group_train01",
       "seriesName": "基础训练",
+      "category": "dungeon_train",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18204,6 +18757,8 @@
       "subName": "",
       "seriesId": "dung_group_train01",
       "seriesName": "基础训练",
+      "category": "dungeon_train",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18212,6 +18767,8 @@
       "subName": "",
       "seriesId": "dung_group_train01",
       "seriesName": "基础训练",
+      "category": "dungeon_train",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18220,6 +18777,8 @@
       "subName": "",
       "seriesId": "dung_group_train01",
       "seriesName": "基础训练",
+      "category": "dungeon_train",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18228,6 +18787,8 @@
       "subName": "",
       "seriesId": "dung_group_train01",
       "seriesName": "基础训练",
+      "category": "dungeon_train",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18236,6 +18797,8 @@
       "subName": "",
       "seriesId": "dung_group_train01",
       "seriesName": "基础训练",
+      "category": "dungeon_train",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18244,6 +18807,8 @@
       "subName": "",
       "seriesId": "dung_group_train01",
       "seriesName": "基础训练",
+      "category": "dungeon_train",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18252,6 +18817,8 @@
       "subName": "",
       "seriesId": "dung_group_train01",
       "seriesName": "基础训练",
+      "category": "dungeon_train",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18260,6 +18827,8 @@
       "subName": "",
       "seriesId": "dung_group_train01",
       "seriesName": "基础训练",
+      "category": "dungeon_train",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18268,6 +18837,8 @@
       "subName": "",
       "seriesId": "dung_group_train01",
       "seriesName": "基础训练",
+      "category": "dungeon_train",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18276,6 +18847,8 @@
       "subName": "",
       "seriesId": "dung_group_typhoea_01",
       "seriesName": "",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18284,6 +18857,8 @@
       "subName": "",
       "seriesId": "dung_group_typhoea_02",
       "seriesName": "",
+      "category": "dungeon_story",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18292,6 +18867,8 @@
       "subName": "",
       "seriesId": "dung_group_typhoea_03",
       "seriesName": "",
+      "category": "dungeon_story",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18300,6 +18877,8 @@
       "subName": "",
       "seriesId": "dung_group_typhoea_04",
       "seriesName": "",
+      "category": "dungeon_story",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18308,6 +18887,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 28,
       "domainId": "",
       "costStamina": 0
     },
@@ -18316,6 +18897,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_chartrial",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18324,6 +18907,8 @@
       "subName": "",
       "seriesId": "dung_group_wolfgd01",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18332,6 +18917,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 4,
       "domainId": "",
       "costStamina": 0
     },
@@ -18340,6 +18927,8 @@
       "subName": "",
       "seriesId": "dung_group_wulfa01",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18348,6 +18937,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 21,
       "domainId": "",
       "costStamina": 0
     },
@@ -18356,6 +18947,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_chartrial",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18364,6 +18957,8 @@
       "subName": "",
       "seriesId": "dung_group_wuling01",
       "seriesName": "",
+      "category": "dungeon_wuling_A",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18372,6 +18967,8 @@
       "subName": "",
       "seriesId": "dung_group_wuling02",
       "seriesName": "",
+      "category": "dungeon_wuling_A",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18380,6 +18977,8 @@
       "subName": "",
       "seriesId": "dung_group_wuling04",
       "seriesName": "",
+      "category": "dungeon_wuling_B",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18388,6 +18987,8 @@
       "subName": "",
       "seriesId": "dung_group_wuling03",
       "seriesName": "",
+      "category": "dungeon_wuling_A",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18396,6 +18997,8 @@
       "subName": "",
       "seriesId": "dung_group_yvonne01",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18404,6 +19007,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 16,
       "domainId": "",
       "costStamina": 0
     },
@@ -18412,6 +19017,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_chartrial",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18420,6 +19027,8 @@
       "subName": "",
       "seriesId": "dung_group_zhuangfy01",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18428,6 +19037,8 @@
       "subName": "",
       "seriesId": "dung_group_zhuangfy02",
       "seriesName": "支线任务",
+      "category": "dungeon_char",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18436,6 +19047,8 @@
       "subName": "",
       "seriesId": "dung_group_chartrain",
       "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 22,
       "domainId": "",
       "costStamina": 0
     },
@@ -18444,6 +19057,8 @@
       "subName": "",
       "seriesId": "",
       "seriesName": "",
+      "category": "dungeon_chartrial",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18452,6 +19067,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18460,6 +19077,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18468,6 +19087,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18476,6 +19097,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18484,6 +19107,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18492,6 +19117,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18500,6 +19127,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18508,6 +19137,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18516,6 +19147,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18524,6 +19157,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18532,6 +19167,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18540,6 +19177,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18548,6 +19187,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18556,6 +19197,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18564,6 +19207,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18572,6 +19217,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18580,6 +19227,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18588,6 +19237,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18596,6 +19247,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18604,6 +19257,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18612,6 +19267,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18620,6 +19277,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18628,6 +19287,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18636,6 +19297,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18644,6 +19307,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18652,6 +19317,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18660,6 +19327,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18668,6 +19337,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18676,6 +19347,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18684,6 +19357,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18692,6 +19367,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18700,6 +19377,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18708,6 +19387,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18716,6 +19397,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18724,6 +19407,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18732,6 +19417,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18740,6 +19427,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18748,6 +19437,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18756,6 +19447,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18764,6 +19457,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18772,6 +19467,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18780,6 +19477,8 @@
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18788,6 +19487,8 @@
       "subName": "",
       "seriesId": "indie_group_ccdg",
       "seriesName": "",
+      "category": "dungeon_contract",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18796,6 +19497,8 @@
       "subName": "",
       "seriesId": "indie_group_h01",
       "seriesName": "无机造物",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18804,6 +19507,8 @@
       "subName": "",
       "seriesId": "indie_group_h01",
       "seriesName": "无机造物",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18812,6 +19517,8 @@
       "subName": "",
       "seriesId": "indie_group_h01",
       "seriesName": "无机造物",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18820,6 +19527,8 @@
       "subName": "",
       "seriesId": "indie_group_h01",
       "seriesName": "无机造物",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18828,6 +19537,8 @@
       "subName": "",
       "seriesId": "indie_group_h01",
       "seriesName": "无机造物",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18836,6 +19547,8 @@
       "subName": "",
       "seriesId": "indie_group_h01",
       "seriesName": "无机造物",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18844,6 +19557,8 @@
       "subName": "",
       "seriesId": "indie_group_h02",
       "seriesName": "大地的弃子",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18852,6 +19567,8 @@
       "subName": "",
       "seriesId": "indie_group_h02",
       "seriesName": "大地的弃子",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18860,6 +19577,8 @@
       "subName": "",
       "seriesId": "indie_group_h02",
       "seriesName": "大地的弃子",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18868,6 +19587,8 @@
       "subName": "",
       "seriesId": "indie_group_h02",
       "seriesName": "大地的弃子",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18876,6 +19597,8 @@
       "subName": "",
       "seriesId": "indie_group_h02",
       "seriesName": "大地的弃子",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18884,6 +19607,8 @@
       "subName": "",
       "seriesId": "indie_group_h02",
       "seriesName": "大地的弃子",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18892,6 +19617,8 @@
       "subName": "",
       "seriesId": "indie_group_h03",
       "seriesName": "灼痛疤痕",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18900,6 +19627,8 @@
       "subName": "",
       "seriesId": "indie_group_h03",
       "seriesName": "灼痛疤痕",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18908,6 +19637,8 @@
       "subName": "",
       "seriesId": "indie_group_h03",
       "seriesName": "灼痛疤痕",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18916,6 +19647,8 @@
       "subName": "",
       "seriesId": "indie_group_h03",
       "seriesName": "灼痛疤痕",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18924,6 +19657,8 @@
       "subName": "",
       "seriesId": "indie_group_h03",
       "seriesName": "灼痛疤痕",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18932,6 +19667,8 @@
       "subName": "",
       "seriesId": "indie_group_h03",
       "seriesName": "灼痛疤痕",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18940,6 +19677,8 @@
       "subName": "",
       "seriesId": "indie_group_h04",
       "seriesName": "浊流具现",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18948,6 +19687,8 @@
       "subName": "",
       "seriesId": "indie_group_h04",
       "seriesName": "浊流具现",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18956,6 +19697,8 @@
       "subName": "",
       "seriesId": "indie_group_h04",
       "seriesName": "浊流具现",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18964,6 +19707,8 @@
       "subName": "",
       "seriesId": "indie_group_h04",
       "seriesName": "浊流具现",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18972,6 +19717,8 @@
       "subName": "",
       "seriesId": "indie_group_h04",
       "seriesName": "浊流具现",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18980,6 +19727,8 @@
       "subName": "",
       "seriesId": "indie_group_h04",
       "seriesName": "浊流具现",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18988,6 +19737,8 @@
       "subName": "",
       "seriesId": "indie_group_h04",
       "seriesName": "浊流具现",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18996,6 +19747,8 @@
       "subName": "",
       "seriesId": "indie_group_h04",
       "seriesName": "浊流具现",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19004,6 +19757,8 @@
       "subName": "",
       "seriesId": "indie_group_h04",
       "seriesName": "浊流具现",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19012,6 +19767,8 @@
       "subName": "",
       "seriesId": "indie_group_h04",
       "seriesName": "浊流具现",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19020,6 +19777,8 @@
       "subName": "",
       "seriesId": "indie_group_h04",
       "seriesName": "浊流具现",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19028,6 +19787,8 @@
       "subName": "",
       "seriesId": "indie_group_h04",
       "seriesName": "浊流具现",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19036,6 +19797,8 @@
       "subName": "",
       "seriesId": "indie_group_h05",
       "seriesName": "死寂争鸣",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19044,6 +19807,8 @@
       "subName": "",
       "seriesId": "indie_group_h05",
       "seriesName": "死寂争鸣",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19052,6 +19817,8 @@
       "subName": "",
       "seriesId": "indie_group_h05",
       "seriesName": "死寂争鸣",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19060,6 +19827,8 @@
       "subName": "",
       "seriesId": "indie_group_h05",
       "seriesName": "死寂争鸣",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19068,6 +19837,8 @@
       "subName": "",
       "seriesId": "indie_group_h05",
       "seriesName": "死寂争鸣",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19076,6 +19847,8 @@
       "subName": "",
       "seriesId": "indie_group_h05",
       "seriesName": "死寂争鸣",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19084,6 +19857,8 @@
       "subName": "",
       "seriesId": "indie_group_h05",
       "seriesName": "死寂争鸣",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19092,6 +19867,8 @@
       "subName": "",
       "seriesId": "indie_group_h05",
       "seriesName": "死寂争鸣",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19100,6 +19877,8 @@
       "subName": "",
       "seriesId": "indie_group_h05",
       "seriesName": "死寂争鸣",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19108,6 +19887,8 @@
       "subName": "",
       "seriesId": "indie_group_h05",
       "seriesName": "死寂争鸣",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19116,6 +19897,8 @@
       "subName": "",
       "seriesId": "indie_group_h05",
       "seriesName": "死寂争鸣",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19124,6 +19907,8 @@
       "subName": "",
       "seriesId": "indie_group_h05",
       "seriesName": "死寂争鸣",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19132,6 +19917,8 @@
       "subName": "",
       "seriesId": "indie_group_h06",
       "seriesName": "山中见犼",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19140,6 +19927,8 @@
       "subName": "",
       "seriesId": "indie_group_h06",
       "seriesName": "山中见犼",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19148,6 +19937,8 @@
       "subName": "",
       "seriesId": "indie_group_h06",
       "seriesName": "山中见犼",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19156,6 +19947,8 @@
       "subName": "",
       "seriesId": "indie_group_h06",
       "seriesName": "山中见犼",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19164,6 +19957,8 @@
       "subName": "",
       "seriesId": "indie_group_h06",
       "seriesName": "山中见犼",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19172,6 +19967,8 @@
       "subName": "",
       "seriesId": "indie_group_h06",
       "seriesName": "山中见犼",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19180,6 +19977,8 @@
       "subName": "",
       "seriesId": "indie_group_h06",
       "seriesName": "山中见犼",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19188,6 +19987,88 @@
       "subName": "",
       "seriesId": "indie_group_h06",
       "seriesName": "山中见犼",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_hard026": {
+      "name": "兽影生杀",
+      "subName": "",
+      "seriesId": "indie_group_h07",
+      "seriesName": "幽影刻形",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_hard026_s": {
+      "name": "兽影生杀·苦难",
+      "subName": "",
+      "seriesId": "indie_group_h07",
+      "seriesName": "幽影刻形",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_hard027": {
+      "name": "暗曜白霆",
+      "subName": "",
+      "seriesId": "indie_group_h07",
+      "seriesName": "幽影刻形",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_hard027_s": {
+      "name": "暗曜白霆·苦难",
+      "subName": "",
+      "seriesId": "indie_group_h07",
+      "seriesName": "幽影刻形",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_hard028": {
+      "name": "沛然轰鸣",
+      "subName": "",
+      "seriesId": "indie_group_h07",
+      "seriesName": "幽影刻形",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_hard028_s": {
+      "name": "沛然轰鸣·苦难",
+      "subName": "",
+      "seriesId": "indie_group_h07",
+      "seriesName": "幽影刻形",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_hard029": {
+      "name": "三角定位",
+      "subName": "",
+      "seriesId": "indie_group_h07",
+      "seriesName": "幽影刻形",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_hard029_s": {
+      "name": "三角定位·苦难",
+      "subName": "",
+      "seriesId": "indie_group_h07",
+      "seriesName": "幽影刻形",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19196,6 +20077,8 @@
       "subName": "",
       "seriesId": "indie_group_levelcheck01",
       "seriesName": "协议空间·探索等级",
+      "category": "dungeon_worldlevel",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19204,6 +20087,8 @@
       "subName": "",
       "seriesId": "indie_group_levelcheck02",
       "seriesName": "协议空间·探索等级",
+      "category": "dungeon_worldlevel",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19212,6 +20097,8 @@
       "subName": "",
       "seriesId": "indie_group_levelcheck03",
       "seriesName": "协议空间·探索等级",
+      "category": "dungeon_worldlevel",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19220,6 +20107,8 @@
       "subName": "",
       "seriesId": "indie_group_levelcheck04",
       "seriesName": "协议空间·探索等级",
+      "category": "dungeon_worldlevel",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -19228,6 +20117,8 @@
       "subName": "",
       "seriesId": "dung01_group_race001",
       "seriesName": "根脉奇境",
+      "category": "dungeon_race",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     }
@@ -19310,6 +20201,7 @@
     "indie_group_h04": "浊流具现",
     "indie_group_h05": "死寂争鸣",
     "indie_group_h06": "山中见犼",
+    "indie_group_h07": "幽影刻形",
     "indie_group_levelcheck01": "协议空间·探索等级",
     "indie_group_levelcheck02": "协议空间·探索等级",
     "indie_group_levelcheck03": "协议空间·探索等级",

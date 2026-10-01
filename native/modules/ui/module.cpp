@@ -1,6 +1,7 @@
 #include "BetterEndfield/ModuleApi.h"
 
 #include "touch_input.h"
+#include "../../shared/input/hotkey.h"
 
 #include <Windows.h>
 #if defined(__ANDROID__)
@@ -39,6 +40,7 @@ enum class ModuleState : uint8_t {
 struct UiConfiguration {
     bool enabled = false;
     bool mobile_ui_enabled = false;
+    bool pc_ui_enabled = false;
     bool hide_uid_enabled = false;
     bool hide_hud_enabled = false;
     int hide_hud_hotkey = '0';
@@ -62,6 +64,8 @@ std::atomic<ModuleState> g_state{ModuleState::Created};
 UiConfiguration g_configuration;
 std::mutex g_configuration_mutex;
 std::atomic_bool g_mobile_ui_enabled{false};
+std::atomic_bool g_pc_ui_enabled{false};
+int32_t g_keyboard_input_type = -1;
 std::atomic_bool g_hide_uid_enabled{false};
 std::atomic_bool g_hide_hud_enabled{false};
 std::atomic_int g_hide_hud_hotkey{'0'};
@@ -721,9 +725,8 @@ std::string HudVisibilityStatus(const HudVisibilityResult& result) {
 
 void PumpHudVisibility() {
     const bool allowed = g_hide_hud_enabled.load(std::memory_order_acquire);
-    const bool hotkey_down = allowed &&
-        (GetAsyncKeyState(g_hide_hud_hotkey.load(std::memory_order_relaxed)) &
-            0x8000) != 0;
+    const bool hotkey_down = allowed && BetterEndfield::Input::IsDown(
+        g_hide_hud_hotkey.load(std::memory_order_relaxed));
     const bool hotkey_pressed = hotkey_down && !g_hud_hotkey_was_down;
     g_hud_hotkey_was_down = hotkey_down;
 
@@ -891,6 +894,7 @@ int32_t __fastcall DetourGetUserPlatform(void* method) {
 }
 
 void __fastcall DetourChangeInputType(int32_t type, void* method) {
+    if (g_pc_ui_enabled.load(std::memory_order_relaxed) && g_keyboard_input_type >= 0) type = g_keyboard_input_type;
     if (g_mobile_ui_enabled.load(std::memory_order_relaxed)) {
         type = kInputTypeTouch;
     }
@@ -995,22 +999,26 @@ void PumpInputType() {
         return;
     }
 
-    const bool active = g_mobile_ui_enabled.load(std::memory_order_acquire);
-
+    const bool mobile = g_mobile_ui_enabled.load(std::memory_order_acquire);
+    const bool pc = g_pc_ui_enabled.load(std::memory_order_acquire);
+    const bool active = mobile || pc;
+    // Default must preserve the game's own input choice. A module which only
+    // hides HUD/UID must never implicitly select keyboard mode on a phone.
+    const int32_t restore = g_restore_input_type.load(std::memory_order_acquire);
+    if (!active && restore < 0) {
+        g_applied_generation.store(desired, std::memory_order_release);
+        return;
+    }
     int32_t current = 0;
     const bool have_current = TryReadInputType(current);
-    if (active && have_current && current != kInputTypeTouch) {
-        // Remember what the game had picked so disabling can hand it back.
+    if (active && have_current && restore < 0)
         g_restore_input_type.store(current, std::memory_order_release);
-    }
-
-    int32_t target = kInputTypeTouch;
-    if (!active) {
-        const int32_t restore = g_restore_input_type.load(std::memory_order_acquire);
-        target = restore >= 0 ? restore : 0;
-    }
+    if (active && !have_current && restore < 0) return; // restoration cannot be guaranteed
+    int32_t target = active ? (pc ? g_keyboard_input_type : kInputTypeTouch) : restore;
+    if (target < 0) return;
 
     if (have_current && current == target) {
+        if (!active) g_restore_input_type.store(-1, std::memory_order_release);
         g_applied_generation.store(desired, std::memory_order_release);
         return;
     }
@@ -1020,7 +1028,11 @@ void PumpInputType() {
     g_host->runtime_invoke(g_host->context, g_change_input_type_method,
         nullptr, parameters, &exception);
 
-    g_applied_generation.store(desired, std::memory_order_release);
+    int32_t verified = -1;
+    if (!exception && TryReadInputType(verified) && verified == target) {
+        g_applied_generation.store(desired, std::memory_order_release);
+        if (!active) g_restore_input_type.store(-1, std::memory_order_release);
+    }
 
     if (g_diagnostics_enabled.load(std::memory_order_relaxed)) {
         // Read back: the game can refuse a switch, so "sent" is not "applied".
@@ -1104,24 +1116,7 @@ bool ParseBoolean(std::string_view value, bool default_value = false) {
 }
 
 int ParseVirtualKey(std::string_view value, int fallback) {
-    std::string key = Trim(value);
-    std::transform(key.begin(), key.end(), key.begin(),
-        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
-    if (key.size() == 1 && std::isalnum(static_cast<unsigned char>(key[0]))) {
-        return static_cast<unsigned char>(key[0]);
-    }
-    if (key.size() > 1 && key.front() == 'F') {
-        const int number = std::atoi(key.c_str() + 1);
-        if (number >= 1 && number <= 24) {
-            return VK_F1 + number - 1;
-        }
-    }
-    constexpr std::string_view numpad_prefix = "NUMPAD";
-    if (key.size() == numpad_prefix.size() + 1 &&
-        key.starts_with(numpad_prefix) && key.back() >= '0' && key.back() <= '9') {
-        return VK_NUMPAD0 + key.back() - '0';
-    }
-    return fallback;
+    return BetterEndfield::Input::ParseKey(value, fallback);
 }
 
 UiConfiguration ParseConfigurationText(const char* raw_configuration) {
@@ -1170,6 +1165,8 @@ UiConfiguration ParseConfigurationText(const char* raw_configuration) {
             config.enabled = ParseBoolean(value, config.enabled);
         } else if (key == "mobile_ui_enabled") {
             config.mobile_ui_enabled = ParseBoolean(value, config.mobile_ui_enabled);
+        } else if (key == "pc_ui_enabled") {
+            config.pc_ui_enabled = ParseBoolean(value, config.pc_ui_enabled);
         } else if (key == "hide_uid_enabled") {
             config.hide_uid_enabled = ParseBoolean(value, config.hide_uid_enabled);
         } else if (key == "hide_hud_enabled") {
@@ -1239,6 +1236,18 @@ bool ResolveContracts() {
     }
 
     if (g_host->resolve_field) {
+#if defined(__ANDROID__)
+        const BE_FieldDescriptorV1 keyboard{"Common.Beyond.dll", "Beyond", "DeviceInfo/InputType", "Keyboard", nullptr};
+        BE_ResolvedFieldV1 enum_field{};
+        if (g_host->resolve_field(g_host->context, &keyboard, &enum_field) == BE_Result_Ok &&
+            g_host->field_get_value_object &&
+            Unbox(g_host->field_get_value_object(g_host->context, enum_field.field_info, nullptr), g_keyboard_input_type)) {
+            Log("Android PC layout: resolved InputType.Keyboard by metadata.");
+        } else {
+            g_keyboard_input_type = -1;
+            Log("Android PC layout: Keyboard enum unavailable; leaving game layout unchanged.");
+        }
+#endif
         const BE_FieldDescriptorV1 descriptor{
             "Common.Beyond.dll", "Beyond", "DeviceInfo",
             "<inputType>k__BackingField", nullptr};
@@ -1292,7 +1301,7 @@ bool InstallHooks() {
         std::string_view key(contract.key);
 #if defined(__ANDROID__)
         // No device/platform spoofing is needed to hide native Android HUDs.
-        if (key.starts_with("device.") || key.starts_with("app.") ||
+        if ((key.starts_with("device.") && key != "device.change_input_type") || key.starts_with("app.") ||
             key.starts_with("cloud_")) continue;
 #endif
         if (key == "device.is_mobile") {
@@ -1410,6 +1419,7 @@ void AndroidUiFrame(bool suspend) {
     const auto state = g_state.load(std::memory_order_acquire);
     if (state != ModuleState::Ready && state != ModuleState::Active && state != ModuleState::Disabled) return;
     if (!suspend) {
+        PumpInputType();
         PumpUidVisibility();
         PumpHudVisibility();
     }
@@ -1457,7 +1467,13 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
     const bool mobile_active = config.enabled && config.mobile_ui_enabled;
     const bool uid_active = config.enabled && config.hide_uid_enabled;
     const bool hud_active = config.enabled && config.hide_hud_enabled;
-    const bool active = mobile_active || uid_active || hud_active;
+#if defined(__ANDROID__)
+    const bool pc_active = config.enabled && config.pc_ui_enabled && g_keyboard_input_type >= 0;
+#else
+    const bool pc_active = false;
+#endif
+    const bool active = mobile_active || pc_active || uid_active || hud_active;
+    g_pc_ui_enabled.store(pc_active, std::memory_order_release);
     g_mobile_ui_enabled.store(mobile_active, std::memory_order_release);
     g_hide_uid_enabled.store(uid_active, std::memory_order_release);
     g_hide_hud_enabled.store(hud_active, std::memory_order_release);
@@ -1501,6 +1517,7 @@ void BE_CALL Shutdown() {
     StopHooks();
     g_state.store(ModuleState::Stopped);
     g_mobile_ui_enabled.store(false, std::memory_order_release);
+    g_pc_ui_enabled.store(false, std::memory_order_release);
     g_host = nullptr;
 }
 

@@ -58,6 +58,10 @@ public final class XposedEntry extends XposedModule {
                                 settings.getString(BemInstaller.INDEX,"[]"),
                                 name -> new ParcelFileDescriptor.AutoCloseInputStream(openRemoteFile(name)),this::report);
                         } catch(Exception error) {report("Installed BEM preparation failed: "+error);}
+                        if (settings.getBoolean(ModuleSettings.MMD_ENABLED, false)) try {
+                            MmdInstalledResources.prepare(context, settings.getString(MmdInstaller.INDEX, "[]"),
+                                    name -> new ParcelFileDescriptor.AutoCloseInputStream(openRemoteFile(name)), this::report);
+                        } catch (Exception error) { report("MMD preparation failed: " + error); }
                         RuntimeBootstrap.prepare(application,context,param.getClassLoader(),configs,this::installFrames,this::report);
                     },"BetterEndfield-InstalledModels").start();
                 } catch (Throwable error) { report("bootstrap failed: " + error); }

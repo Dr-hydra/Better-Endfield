@@ -25,4 +25,20 @@ final class NativeCommandBridge {
     static native void frame();
     static native void foreground(boolean visible);
     static native void look(int dx, int dy);
+    static native void cameraValues(float speed, float fov);
+    static native String mmdStatus();
+    private static native boolean mmd(int type, int argument, double value, String text);
+    static boolean mmdCommand(String command) {
+        try {
+            org.json.JSONObject value = new org.json.JSONObject(command);
+            return mmd(value.getInt("type"), value.optInt("argument", -1),
+                    value.optDouble("value", 0), value.optString("text", ""));
+        } catch (org.json.JSONException invalid) { return false; }
+    }
+
+    // Called through the explicitly bound module ClassLoader from native.
+    static long audioOpen(String path) { return MmdAudio.open(path); }
+    static int audioControl(long token, int operation, double value) { return MmdAudio.control(token, operation, value); }
+    static double[] audioStatus(long token) { return MmdAudio.status(token); }
+    static String audioError(long token) { return MmdAudio.error(token); }
 }

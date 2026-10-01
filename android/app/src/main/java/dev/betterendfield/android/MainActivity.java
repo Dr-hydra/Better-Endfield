@@ -5,6 +5,10 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -65,6 +69,12 @@ public final class MainActivity extends Activity {
     private View logoColorPreview;
     private TextView modelSelectionStatus;
     private boolean initializingModel = true;
+    private final Handler saveHandler = new Handler(Looper.getMainLooper());
+    private boolean pendingModelSave;
+    private final Runnable debouncedModelSave = () -> {
+        pendingModelSave = false;
+        saveModelSettings();
+    };
 
     private int currentPage;
     private GameOverlay overlayPreview;
@@ -77,6 +87,7 @@ public final class MainActivity extends Activity {
     private SectionCard dashCard;
     private SettingRow hideUidRow;
     private SettingRow hideHudRow;
+    private SettingRow pcUiRow;
     private SettingRow ditherRow;
     private SettingRow freeCameraRow;
     private SettingRow worldPauseRow;
@@ -86,6 +97,11 @@ public final class MainActivity extends Activity {
     private ValueSlider cameraSpeed;
     private ValueSlider cameraFov;
     private ValueSlider firstPersonFov;
+    private ValueSlider firstPersonSideLimit;
+    private ValueSlider firstPersonTurnSpeed;
+    private double cameraSpeedValue, cameraFovValue, firstPersonFovValue;
+    private double sideLookLimitValue, turnSpeedValue;
+    private SettingRow mmdRow;
     private SettingRow dashRow;
     private SettingRow dashAglinaRow;
     private SettingRow dashLiinoRow;
@@ -128,7 +144,56 @@ public final class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         if (overlayRow != null) overlayRow.initialize(ModuleSettings.isOverlayEnabled(this));
+        if (mmdRow != null) mmdRow.initialize(ModuleSettings.isMmdEnabled(this));
+        if (cameraCard != null) refreshEnhancementStatus();
         setupDiagnosticsPage();
+    }
+
+    @Override protected void onPause() {
+        flushModelEdits();
+        refreshModelEdits();
+        super.onPause();
+    }
+
+    @Override protected void onDestroy() {
+        saveHandler.removeCallbacksAndMessages(null);
+        if (overlayPreview != null) overlayPreview.remove();
+        super.onDestroy();
+    }
+
+    private void flushModelEdits() {
+        saveHandler.removeCallbacks(debouncedModelSave);
+        if (pendingModelSave) debouncedModelSave.run();
+    }
+
+    private void watchModelEdit(EditText edit) {
+        edit.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override public void afterTextChanged(Editable text) {
+                if (initializingModel) return;
+                pendingModelSave = true;
+                saveHandler.removeCallbacks(debouncedModelSave);
+                saveHandler.postDelayed(debouncedModelSave, 450);
+            }
+        });
+        edit.setOnFocusChangeListener((view, focused) -> {
+            if (!focused) flushModelEdits();
+        });
+    }
+
+    private void refreshModelEdits() {
+        if (initializingModel || modelIndex == null) return;
+        initializingModel = true;
+        modelScale.setText(ModuleSettings.getModelScale(this));
+        modelLoopStart.setText(ModuleSettings.getModelLoopStart(this));
+        modelLoopEnd.setText(ModuleSettings.getModelLoopEnd(this));
+        modelCrossfadeDuration.setText(ModuleSettings.getModelCrossfadeDuration(this));
+        logoColor.setText(ModuleSettings.getLogoColor(this));
+        for (EditText edit : new EditText[]{modelScale, modelLoopStart, modelLoopEnd,
+                modelCrossfadeDuration, logoColor}) edit.setError(null);
+        updateThemeColorPalette(logoColor.getText().toString());
+        initializingModel = false;
     }
 
     @Override protected void onSaveInstanceState(Bundle state) {
@@ -155,6 +220,8 @@ public final class MainActivity extends Activity {
         for (int index = 0; index < buttons.length; ++index) {
             final int page = index;
             buttons[index].setOnClickListener(view -> {
+                flushModelEdits();
+                if (currentPage == 0 && page != 0) refreshModelEdits();
                 currentPage = page;
                 // The diagnostics page reports which modules the game will load,
                 // which the enhancement page can have changed since it was built.
@@ -246,6 +313,9 @@ public final class MainActivity extends Activity {
                             int position,
                             long id) {
                         if (initializingModel) return;
+                        ModelPresetIndex.Character selected = selectedCharacter();
+                        if (selected == null || selected.id().equalsIgnoreCase(
+                                ModuleSettings.getModelCharacter(MainActivity.this))) return;
                         refreshActionOptions("");
                         saveModelSettings();
                     }
@@ -269,29 +339,17 @@ public final class MainActivity extends Activity {
             saveModelSettings();
         });
         logoEnabled.setOnCheckedChangeListener((button, checked) -> saveModelSettings());
-        modelScale.setOnFocusChangeListener((view, hasFocus) -> {
-            if (!hasFocus) saveModelSettings();
-        });
-        modelLoopStart.setOnFocusChangeListener((view, hasFocus) -> {
-            if (!hasFocus) saveModelSettings();
-        });
-        modelLoopEnd.setOnFocusChangeListener((view, hasFocus) -> {
-            if (!hasFocus) saveModelSettings();
-        });
-        modelCrossfadeDuration.setOnFocusChangeListener((view, hasFocus) -> {
-            if (!hasFocus) saveModelSettings();
-        });
-        logoColor.setOnFocusChangeListener((view, hasFocus) -> {
-            if (!hasFocus) saveModelSettings();
-        });
+        watchModelEdit(modelScale);
+        watchModelEdit(modelLoopStart);
+        watchModelEdit(modelLoopEnd);
+        watchModelEdit(modelCrossfadeDuration);
+        watchModelEdit(logoColor);
         logoColorWheel.setOnColorChangedListener((rgb, committed) -> {
             String color = String.format(Locale.ROOT, "#%06X", rgb);
             logoColor.setText(color);
             updateThemeColorPalette(color);
             if (committed) saveModelSettings();
         });
-        findViewById(R.id.save_model_settings).setOnClickListener(
-                view -> saveModelSettings());
     }
 
     private android.widget.AdapterView.OnItemSelectedListener simpleModelSelectionListener() {
@@ -302,7 +360,9 @@ public final class MainActivity extends Activity {
                     View view,
                     int position,
                     long id) {
-                if (!initializingModel) saveModelSettings();
+                ModelPresetIndex.Action selected = selectedAction();
+                if (!initializingModel && selected != null && !selected.id().equalsIgnoreCase(
+                        ModuleSettings.getModelAction(MainActivity.this))) saveModelSettings();
             }
 
             @Override
@@ -367,6 +427,8 @@ public final class MainActivity extends Activity {
 
     private void saveModelSettings() {
         if (initializingModel || modelIndex == null) return;
+        saveHandler.removeCallbacks(debouncedModelSave);
+        pendingModelSave = false;
         ModelPresetIndex.Character character = selectedCharacter();
         ModelPresetIndex.Action action = selectedAction();
         if (character == null || action == null) return;
@@ -378,10 +440,10 @@ public final class MainActivity extends Activity {
             if (!Double.isFinite(scale) || scale < 0.05 || scale > 20.0) {
                 throw new NumberFormatException("范围 0.05–20");
             }
+            modelScale.setError(null);
         } catch (NumberFormatException error) {
-            modelSelectionStatus.setText(getString(
-                    R.string.model_settings_invalid, "模型缩放应为 0.05–20"));
-            return;
+            modelScale.setError("模型缩放应为 0.05–20；保留上次有效值");
+            scale = ModuleSettings.parse(ModuleSettings.getModelScale(this), 1);
         }
 
         double loopStart;
@@ -400,20 +462,22 @@ public final class MainActivity extends Activity {
                     crossfadeDuration > (loopEnd - loopStart) * 0.5) {
                 throw new NumberFormatException();
             }
+            modelLoopEnd.setError(null);
         } catch (NumberFormatException error) {
-            modelSelectionStatus.setText(getString(
-                    R.string.model_settings_invalid,
-                    "循环区间或混合时长无效"));
-            return;
+            modelLoopEnd.setError("循环区间或混合时长无效；保留上次有效值");
+            loopStart = ModuleSettings.parse(ModuleSettings.getModelLoopStart(this), 0.968);
+            loopEnd = ModuleSettings.parse(ModuleSettings.getModelLoopEnd(this), 2.3760002);
+            crossfadeDuration = ModuleSettings.parse(
+                    ModuleSettings.getModelCrossfadeDuration(this), 0.2);
         }
 
         String color = logoColor.getText().toString().trim().toUpperCase(Locale.ROOT);
         if (!color.matches("#[0-9A-F]{6}")) {
-            modelSelectionStatus.setText(getString(
-                    R.string.model_settings_invalid, "主题色应为 #RRGGBB"));
-            return;
+            logoColor.setError("主题色应为 #RRGGBB；保留上次有效值");
+            color = ModuleSettings.getLogoColor(this);
+        } else {
+            logoColor.setError(null);
         }
-        logoColor.setText(color);
         updateThemeColorPalette(color);
 
         boolean enableModel = modelEnabled.isChecked();
@@ -437,10 +501,6 @@ public final class MainActivity extends Activity {
                 enableLogo,
                 color,
                 configuration);
-        modelScale.setText(number(scale));
-        modelLoopStart.setText(number(loopStart));
-        modelLoopEnd.setText(number(loopEnd));
-        modelCrossfadeDuration.setText(number(crossfadeDuration));
         updateModelSelectionStatus();
         status.setText(R.string.model_restart_required);
     }
@@ -559,7 +619,8 @@ public final class MainActivity extends Activity {
                 addRuleRow(rows, choice, configured.getOrDefault(
                         choice.characterId(), "FollowGlobal"));
             }
-            initializingRules = false;
+            // Spinner selection notifications are posted during first layout.
+            rows.post(() -> initializingRules = false);
             tableStatus.setText(getString(
                     R.string.voice_table_ready,
                     index.characters().size() - 1,
@@ -632,7 +693,7 @@ public final class MainActivity extends Activity {
     }
 
     private void saveRules() {
-        if (ruleSpinners.isEmpty()) return;
+        if (initializingRules || ruleSpinners.isEmpty()) return;
         StringBuilder rules = new StringBuilder();
         for (Map.Entry<String, Spinner> entry : ruleSpinners.entrySet()) {
             int position = entry.getValue().getSelectedItemPosition();
@@ -712,6 +773,14 @@ public final class MainActivity extends Activity {
         hideHudRow.initialize(ModuleSettings.isHideHudEnabled(this));
         hideHudRow.onChanged((button, checked) -> saveInterfaceSettings());
         interfaceCard.add(hideHudRow);
+        pcUiRow = row(R.string.ui_pc, R.string.ui_pc_hint, null);
+        pcUiRow.initialize(ModuleSettings.isPcUiEnabled(this));
+        pcUiRow.onChanged((button, checked) -> {
+            if (populatingEnhancement) return;
+            ModuleSettings.setPcUiEnabled(this, checked);
+            afterEnhancementChange();
+        });
+        interfaceCard.add(pcUiRow);
         return interfaceCard;
     }
 
@@ -757,26 +826,76 @@ public final class MainActivity extends Activity {
         cameraCard.addGroupLabel(getString(R.string.camera_group_values));
         cameraSpeed = new ValueSlider(this, getString(R.string.camera_speed_label), "",
                 ModuleSettings.SPEED_MINIMUM, ModuleSettings.SPEED_MAXIMUM);
-        cameraSpeed.setValue((float) ModuleSettings.parse(
-                ModuleSettings.getCameraSpeed(this), 5.0));
-        cameraSpeed.onChanged(this::saveCameraSettings);
+        cameraSpeedValue = ModuleSettings.parse(ModuleSettings.getCameraSpeed(this), 5.0);
+        cameraSpeed.setValue((float) cameraSpeedValue);
+        cameraSpeed.onChanged(() -> {
+            cameraSpeedValue = cameraSpeed.getValue();
+            saveCameraSettings();
+        });
         cameraCard.add(cameraSpeed);
 
         cameraFov = new ValueSlider(this, getString(R.string.camera_fov_label),
                 getString(R.string.degree_suffix),
                 ModuleSettings.FOV_MINIMUM, ModuleSettings.FOV_MAXIMUM);
-        cameraFov.setValue((float) ModuleSettings.parse(
-                ModuleSettings.getCameraFieldOfView(this), 60.0));
-        cameraFov.onChanged(this::saveCameraSettings);
+        cameraFovValue = ModuleSettings.parse(ModuleSettings.getCameraFieldOfView(this), 60.0);
+        cameraFov.setValue((float) cameraFovValue);
+        cameraFov.onChanged(() -> {
+            cameraFovValue = cameraFov.getValue();
+            saveCameraSettings();
+        });
         cameraCard.add(cameraFov);
 
         firstPersonFov = new ValueSlider(this, getString(R.string.camera_fp_fov_label),
                 getString(R.string.degree_suffix),
                 ModuleSettings.FOV_MINIMUM, ModuleSettings.FOV_MAXIMUM);
-        firstPersonFov.setValue((float) ModuleSettings.parse(
-                ModuleSettings.getFirstPersonFieldOfView(this), 75.0));
-        firstPersonFov.onChanged(this::saveCameraSettings);
+        firstPersonFovValue = ModuleSettings.parse(ModuleSettings.getFirstPersonFieldOfView(this), 75.0);
+        firstPersonFov.setValue((float) firstPersonFovValue);
+        firstPersonFov.onChanged(() -> {
+            firstPersonFovValue = firstPersonFov.getValue();
+            saveCameraSettings();
+        });
         cameraCard.add(firstPersonFov);
+
+        firstPersonSideLimit = new ValueSlider(this, getString(R.string.camera_fp_side_limit),
+                getString(R.string.degree_suffix), 30, 170);
+        sideLookLimitValue = ModuleSettings.parse(ModuleSettings.getFirstPersonSideLookLimit(this), 90);
+        firstPersonSideLimit.setValue((float) sideLookLimitValue);
+        firstPersonSideLimit.onChanged(() -> {
+            sideLookLimitValue = firstPersonSideLimit.getValue();
+            saveCameraSettings();
+        });
+        cameraCard.add(firstPersonSideLimit);
+        firstPersonTurnSpeed = new ValueSlider(this, getString(R.string.camera_fp_turn_speed),
+                getString(R.string.degree_per_second), 30, 1080);
+        turnSpeedValue = ModuleSettings.parse(ModuleSettings.getFirstPersonTurnSpeed(this), 360);
+        firstPersonTurnSpeed.setValue((float) turnSpeedValue);
+        firstPersonTurnSpeed.onChanged(() -> {
+            turnSpeedValue = firstPersonTurnSpeed.getValue();
+            saveCameraSettings();
+        });
+        cameraCard.add(firstPersonTurnSpeed);
+
+        cameraCard.addGroupLabel(getString(R.string.mmd_title));
+        mmdRow = row(R.string.mmd_enable, R.string.mmd_enable_hint,
+                getString(R.string.badge_overlay));
+        mmdRow.initialize(ModuleSettings.isMmdEnabled(this));
+        mmdRow.onChanged((button, checked) -> {
+            if (populatingEnhancement) return;
+            ModuleSettings.setMmdEnabled(this, checked);
+            afterEnhancementChange();
+        });
+        cameraCard.add(mmdRow);
+        Button mmdSettings = new Button(this);
+        mmdSettings.setText(R.string.mmd_manage);
+        mmdSettings.setAllCaps(false);
+        mmdSettings.setTextColor(getColor(R.color.text_primary));
+        mmdSettings.setBackgroundResource(R.drawable.bg_ghost_button);
+        mmdSettings.setMinimumHeight(dp(52));
+        mmdSettings.setOnClickListener(view -> {
+            flushModelEdits();
+            startActivity(new Intent(this, MmdLibraryActivity.class));
+        });
+        cameraCard.add(mmdSettings);
         return cameraCard;
     }
 
@@ -861,9 +980,11 @@ public final class MainActivity extends Activity {
                 firstPersonRow.isChecked(),
                 hideHeadRow.isChecked(),
                 fillNeckRow.isChecked(),
-                cameraSpeed.getValue(),
-                cameraFov.getValue(),
-                firstPersonFov.getValue());
+                cameraSpeedValue,
+                cameraFovValue,
+                firstPersonFovValue,
+                sideLookLimitValue,
+                turnSpeedValue);
         afterEnhancementChange();
     }
 
@@ -886,18 +1007,18 @@ public final class MainActivity extends Activity {
 
     /**
      * Greys out the options that only mean something while their parent feature is
-     * on. World pause is a free-camera sub-mode on desktop, the first-person mesh
-     * options only apply in first person, and the clean-exhaust option is Liino's.
+     * on. The mesh options apply in first person, and the clean-exhaust option is Liino's.
      */
     private void refreshEnhancementAvailability() {
         boolean free = freeCameraRow.isChecked();
         boolean firstPerson = firstPersonRow.isChecked();
-        worldPauseRow.setAvailable(free);
         cameraSpeed.setAvailable(free);
         cameraFov.setAvailable(free);
         hideHeadRow.setAvailable(firstPerson);
         fillNeckRow.setAvailable(firstPerson && hideHeadRow.isChecked());
         firstPersonFov.setAvailable(firstPerson);
+        firstPersonSideLimit.setAvailable(firstPerson);
+        firstPersonTurnSpeed.setAvailable(firstPerson);
 
         boolean dash = dashRow.isChecked();
         dashAglinaRow.setAvailable(dash);
@@ -907,11 +1028,14 @@ public final class MainActivity extends Activity {
 
     private void refreshEnhancementStatus() {
         interfaceCard.setStatus(moduleStatus("betterendfield.ui",
-                ModuleSettings.isHideUidEnabled(this) || ModuleSettings.isHideHudEnabled(this)));
+                ModuleSettings.isHideUidEnabled(this) || ModuleSettings.isHideHudEnabled(this)
+                        || ModuleSettings.isPcUiEnabled(this)));
         cameraCard.setStatus(moduleStatus("betterendfield.camera",
                 ModuleSettings.isDisableDitherEnabled(this)
                         || ModuleSettings.isFreeCameraEnabled(this)
-                        || ModuleSettings.isFirstPersonEnabled(this)));
+                        || ModuleSettings.isWorldPauseEnabled(this)
+                        || ModuleSettings.isFirstPersonEnabled(this)
+                        || ModuleSettings.isMmdEnabled(this)));
         dashCard.setStatus(getString(R.string.dash_pose_note, "pose_*.bin") + "\n"
                 + moduleStatus("betterendfield.actions",
                 ModuleSettings.isSustainedDashEnabled(this)
@@ -951,10 +1075,11 @@ public final class MainActivity extends Activity {
         appendModule(loaded, "model", ModuleSettings.isModelEnabled(this)
                 || ModuleSettings.isLogoEnabled(this));
         appendModule(loaded, "ui", ModuleSettings.isHideUidEnabled(this)
-                || ModuleSettings.isHideHudEnabled(this));
+                || ModuleSettings.isHideHudEnabled(this) || ModuleSettings.isPcUiEnabled(this));
         appendModule(loaded, "camera", ModuleSettings.isDisableDitherEnabled(this)
                 || ModuleSettings.isFreeCameraEnabled(this)
-                || ModuleSettings.isFirstPersonEnabled(this));
+                || ModuleSettings.isWorldPauseEnabled(this)
+                || ModuleSettings.isFirstPersonEnabled(this) || ModuleSettings.isMmdEnabled(this));
         appendModule(loaded, "actions", ModuleSettings.isSustainedDashEnabled(this));
         return loaded.length() == 0 ? getString(R.string.state_none) : loaded.toString();
     }

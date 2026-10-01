@@ -8,7 +8,7 @@ import android.view.View;
 
 /** Small, resolution-independent line icons; no emoji/font-dependent symbols. */
 final class ControlIcon extends View {
-    static final int HUD = 0, CAMERA = 1, PAUSE = 2, EYE = 3, HANDLE = 4;
+    static final int HUD = 0, CAMERA = 1, PAUSE = 2, EYE = 3, HANDLE = 4, MMD = 5;
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final int kind;
     private int color;
@@ -34,6 +34,14 @@ final class ControlIcon extends View {
         paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setStrokeJoin(Paint.Join.ROUND);
         switch (kind) {
+            case MMD:
+                canvas.drawCircle(12, 5, 2.3f, paint);
+                canvas.drawLine(12, 8, 12, 14, paint);
+                canvas.drawLine(12, 10, 5, 7, paint);
+                canvas.drawLine(12, 10, 19, 7, paint);
+                canvas.drawLine(12, 14, 7, 21, paint);
+                canvas.drawLine(12, 14, 17, 21, paint);
+                break;
             case CAMERA:
                 canvas.drawRoundRect(3, 7, 21, 20, 3, 3, paint);
                 canvas.drawCircle(12, 13.5f, 3.2f, paint);

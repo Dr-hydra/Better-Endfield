@@ -1,10 +1,20 @@
 #include "BetterEndfield/ModuleApi.h"
 #include "first_person_mesh.h"
 #include "first_person_retry.h"
+#include "BetterEndfield/PoseLease.h"
+#include "../../shared/motion/character_pose.h"
+#include "../../shared/motion/character_mapping.h"
+#include "../../shared/input/hotkey.h"
+#include "camera_file_worker.h"
+#include "BetterEndfield/LocalMusic.h"
+#include "mmd_library.h"
+#include "mmd_overlay_protocol.h"
+#include "eiem/eiem_body.h"
 
 #include <Windows.h>
 #if defined(__ANDROID__)
 #include "android_frame.h"
+#include "android_camera.h"
 #endif
 
 #include <algorithm>
@@ -17,7 +27,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
+#include <deque>
+#include <sstream>
 #include <mutex>
+#include <new>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -55,6 +69,8 @@ struct CameraConfiguration {
     float field_of_view = 60.0f;
     float first_person_fov = 75.0f;
     float first_person_neck_plug_scale = 1.0f;
+    float first_person_side_look_limit = 90.0f;
+    float first_person_turn_speed = 360.0f;
     int toggle_key = '9';
     int pause_key = '8';
     int first_person_key = VK_OEM_MINUS;
@@ -70,20 +86,50 @@ struct CameraConfiguration {
     float motion_target_height = 1.2f;
     float keyframe_segment_seconds = 3.0f;
     bool keyframe_loop = false;
+    std::string keyframe_file;
+    int keyframe_save_key = 0; // overlay only by default
+    int keyframe_load_key = 0;
     std::string vmd_camera_file;
+    std::string vmd_motion_file;
+    bool vmd_body_enabled=false, vmd_eyes_enabled=false, vmd_face_enabled=false, vmd_motion_loop=false;
+    bool vmd_terrain_enabled=false; // EIEM grounder terrain follow
+    int vmd_cloth_mode=1;           // EiemBody::ClothMode: 0 game, 1 stable, 2 freeze
+    float vmd_motion_scale=1;       // EIEM displacement multiplier on top of leg-length scaling
+    float vmd_motion_weight=1;
+    int vmd_motion_key=0, vmd_motion_pause_key=0, vmd_motion_stop_key=0;
     float vmd_camera_scale = 0.07f;
     float vmd_camera_fov_bias = 5.0f;
     bool vmd_camera_loop = false;
+    // MMD numpad layout (hotkey_layout=2). Layout 1 numpad keys are ignored.
+    int hotkey_layout = 1;
     int roll_left_key = VK_NUMPAD7;
     int roll_right_key = VK_NUMPAD9;
     int fov_wide_key = VK_NUMPAD1;
     int fov_narrow_key = VK_NUMPAD3;
-    int view_reset_key = VK_NUMPAD5;
-    int motion_key = VK_NUMPAD8;
+    int view_reset_key = VK_NUMPAD8;
+    int motion_key = VK_NUMPAD2;
     int keyframe_add_key = VK_NUMPAD0;
-    int keyframe_play_key = VK_NUMPAD2;
-    int keyframe_clear_key = VK_NUMPAD4;
-    int vmd_play_key = VK_NUMPAD6;
+    int keyframe_play_key = VK_DECIMAL;
+    int keyframe_clear_key = 0;
+    int vmd_play_key = 0;
+    // MMD playback: one clock for motion, VMD camera and music.
+    bool mmd_enabled = true;
+    bool mmd_overlay_enabled = true;
+    bool mmd_overlay_visible = false;
+    bool mmd_loop = false;
+    bool mmd_music_enabled = true;
+    float mmd_seek_seconds = 5.0f;
+    float mmd_music_gain = 1.0f;
+    float mmd_audio_offset = 0.0f;
+    std::string mmd_work;
+    std::string mmd_music_file;
+    std::string mmd_face_file;
+    int mmd_play_key = 0x100 | VK_RETURN; // numpad Enter
+    int mmd_stop_key = VK_ADD;
+    int mmd_seek_back_key = VK_NUMPAD4;
+    int mmd_seek_forward_key = VK_NUMPAD6;
+    int mmd_camera_mode_key = VK_NUMPAD5;
+    int mmd_overlay_key = VK_SUBTRACT;
 };
 
 struct Vector3 {
@@ -129,8 +175,13 @@ std::atomic_bool g_first_person_fill_neck_hole{true};
 std::atomic_bool g_diagnostics_enabled{true};
 std::atomic<float> g_movement_speed{5.0f};
 std::atomic<float> g_field_of_view{60.0f};
+#if defined(__ANDROID__)
+std::atomic<float> g_android_fov_request{0.0f};
+#endif
 std::atomic<float> g_first_person_fov{75.0f};
 std::atomic<float> g_first_person_neck_plug_scale{1.0f};
+std::atomic<float> g_first_person_side_look_limit{90.0f};
+std::atomic<float> g_first_person_turn_speed{360.0f};
 std::atomic_int g_toggle_key{'9'};
 std::atomic_int g_pause_key{'8'};
 std::atomic_int g_first_person_key{VK_OEM_MINUS};
@@ -150,16 +201,52 @@ std::atomic<float> g_vmd_camera_fov_bias{5.0f};
 std::atomic_bool g_vmd_camera_loop{false};
 std::mutex g_vmd_path_mutex;
 std::string g_vmd_camera_file;
+std::string g_keyframe_file; // guarded by g_vmd_path_mutex
+std::atomic_uint64_t g_asset_config_generation{0};
+std::atomic_int g_keyframe_save_key{0};
+std::atomic_int g_keyframe_load_key{0};
+std::atomic_bool g_keyframe_save_request{false};
+std::atomic_bool g_keyframe_load_request{false};
 std::atomic_int g_roll_left_key{VK_NUMPAD7};
 std::atomic_int g_roll_right_key{VK_NUMPAD9};
 std::atomic_int g_fov_wide_key{VK_NUMPAD1};
 std::atomic_int g_fov_narrow_key{VK_NUMPAD3};
-std::atomic_int g_view_reset_key{VK_NUMPAD5};
-std::atomic_int g_motion_key{VK_NUMPAD8};
+std::atomic_int g_view_reset_key{VK_NUMPAD8};
+std::atomic_int g_motion_key{VK_NUMPAD2};
 std::atomic_int g_keyframe_add_key{VK_NUMPAD0};
-std::atomic_int g_keyframe_play_key{VK_NUMPAD2};
-std::atomic_int g_keyframe_clear_key{VK_NUMPAD4};
-std::atomic_int g_vmd_play_key{VK_NUMPAD6};
+std::atomic_int g_keyframe_play_key{VK_DECIMAL};
+std::atomic_int g_keyframe_clear_key{0};
+std::atomic_int g_vmd_play_key{0};
+
+// MMD playback settings and requests (see mmd_director_runtime.inc).
+constexpr int kVkNumpadEnter = BetterEndfield::Input::kNumpadEnter | VK_RETURN;
+enum MmdRequest : uint32_t {
+    MmdRequestPlayPause = 1u << 0,
+    MmdRequestStop = 1u << 1,
+    MmdRequestCameraMode = 1u << 2,
+};
+std::atomic_bool g_mmd_enabled{true};
+std::atomic_bool g_mmd_overlay_enabled{true};
+std::atomic_bool g_mmd_loop_default{false};
+std::atomic_bool g_mmd_music_enabled{true};
+std::atomic<float> g_mmd_seek_seconds{5.0f};
+std::atomic<float> g_mmd_music_gain{1.0f};
+std::atomic<float> g_mmd_audio_offset{0.0f};
+std::string g_mmd_work;       // guarded by g_vmd_path_mutex
+std::string g_mmd_music_file; // guarded by g_vmd_path_mutex
+std::string g_mmd_face_file;  // guarded by g_vmd_path_mutex
+std::string g_vmd_motion_file; // guarded by g_vmd_path_mutex
+std::atomic_uint64_t g_mmd_work_generation{0};
+std::atomic_uint32_t g_mmd_requests{0};
+std::atomic_int g_mmd_seek_steps{0};
+std::atomic_bool g_mmd_overlay_toggle_request{false};
+std::atomic_bool g_mmd_overlay_initial_visible{false};
+std::atomic_int g_mmd_play_key{kVkNumpadEnter};
+std::atomic_int g_mmd_stop_key{VK_ADD};
+std::atomic_int g_mmd_seek_back_key{VK_NUMPAD4};
+std::atomic_int g_mmd_seek_forward_key{VK_NUMPAD6};
+std::atomic_int g_mmd_camera_mode_key{VK_NUMPAD5};
+std::atomic_int g_mmd_overlay_key{VK_SUBTRACT};
 
 using CameraTickFn = void(__fastcall*)(void* instance, void* method);
 CameraTickFn g_original_camera_tick = nullptr;
@@ -183,6 +270,7 @@ bool g_free_camera_contract_ready = false;
 bool g_dither_contract_ready = false;
 bool g_time_heartbeat_contract_ready = false;
 bool g_first_person_contract_ready = false;
+bool g_pause_contract_ready = false;
 #if defined(__ANDROID__)
 uint64_t g_android_pump_generation = 0; // Unity thread only
 bool AndroidCameraReady() {
@@ -212,7 +300,12 @@ std::atomic_int g_mouse_wheel{0};
 std::atomic_bool g_first_person_active{false};
 std::atomic_bool g_first_person_toggle_request{false};
 std::atomic_bool g_first_person_exit_request{false};
+Vector3 g_first_person_view_forward{0.0f, 0.0f, 1.0f};
+bool g_first_person_view_forward_valid = false;
 
+std::atomic_bool g_character_preview_enabled{false};
+std::atomic_int g_character_play_key{0},g_character_pause_key{0},g_character_stop_key{0};
+void RequestCharacterMotion(unsigned bits);
 std::atomic_bool g_input_thread_stop{false};
 std::thread g_input_thread;
 
@@ -262,6 +355,7 @@ BE_ResolvedClassV1 g_skinned_mesh_renderer_class{};
 // rebuild character parts (clothes, hair, LOD levels) at any time.
 struct HeadPartProbe {
     std::string object_name;
+    std::string renderer_name;
     std::string mesh_name;
     int32_t vertex_count = -1;
     bool skinned = false;
@@ -273,6 +367,8 @@ struct FirstPersonSession {
     void* character = nullptr;
     void* head = nullptr;
     uint32_t head_handle = 0;
+    void* body = nullptr;
+    uint32_t body_handle = 0;
     void* neck = nullptr;
     uint32_t neck_handle = 0;
     void* snapshot_controller = nullptr;
@@ -338,6 +434,21 @@ MethodContract g_contracts[]{
     {"unity.game_object.get_component",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "GameObject", "GetComponent",
             "System.Type", "UnityEngine.Component", 1}},
+    {"unity.game_object.get_components",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "GameObject", "GetComponents",
+            "System.Type", "UnityEngine.Component[]", 1}},
+    {"system.array.get_length",
+        {"mscorlib.dll", "System", "Array", "GetLength",
+            "System.Int32", "System.Int32", 1}},
+    {"system.array.get_value",
+        {"mscorlib.dll", "System", "Array", "GetValue",
+            "System.Int32", "System.Object", 1}},
+    {"unity.renderer.enabled.get",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Renderer", "get_enabled",
+            nullptr, "System.Boolean", 0}},
+    {"unity.renderer.enabled.set",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Renderer", "set_enabled",
+            "System.Boolean", "System.Void", 1}},
     {"unity.game_object.find_with_tag",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "GameObject", "FindWithTag",
             "System.String", "UnityEngine.GameObject", 1}},
@@ -519,6 +630,21 @@ bool GetValue(const MethodContract* method, void* instance, bool& value) {
     return Unbox(Invoke(method, instance, nullptr), value);
 }
 
+int ManagedArrayLength(void* array) {
+    if (!array) return 0;
+    int dimension = 0;
+    void* parameters[1]{&dimension};
+    int length = 0;
+    return Unbox(Invoke(Contract("system.array.get_length"), array, parameters), length)
+        ? length : 0;
+}
+
+void* ManagedArrayValue(void* array, int index) {
+    if (!array) return nullptr;
+    void* parameters[1]{&index};
+    return Invoke(Contract("system.array.get_value"), array, parameters);
+}
+
 bool SetValue(const MethodContract* method, void* instance, Vector3 value) {
     void* parameters[1]{&value};
     return InvokeVoid(method, instance, parameters);
@@ -612,12 +738,106 @@ bool IsObjectAlive(void* object) {
     return !destroyed;
 }
 
-bool KeyDown(int key) {
-    if (key == VK_OEM_MINUS || key == VK_SUBTRACT) {
-        return ((GetAsyncKeyState(VK_OEM_MINUS) & 0x8000) != 0) ||
-               ((GetAsyncKeyState(VK_SUBTRACT) & 0x8000) != 0);
+// Numpad keys are read by scan code from a low-level keyboard hook, so they
+// work with NumLock on or off and numpad Enter is distinct from the main Enter.
+// The navigation cluster is tracked the same way: with NumLock off the numpad
+// sends VK_UP etc. too, which must not move the free camera.
+constexpr int kPadVirtualKeys[]{VK_NUMPAD0, VK_NUMPAD1, VK_NUMPAD2, VK_NUMPAD3,
+    VK_NUMPAD4, VK_NUMPAD5, VK_NUMPAD6, VK_NUMPAD7, VK_NUMPAD8, VK_NUMPAD9,
+    VK_DECIMAL, VK_ADD, VK_SUBTRACT, VK_MULTIPLY, VK_DIVIDE, kVkNumpadEnter};
+constexpr int kNavVirtualKeys[]{VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, VK_PRIOR, VK_NEXT};
+std::atomic_uint32_t g_pad_down{0};
+std::atomic_uint32_t g_nav_down{0};
+std::atomic_bool g_keyboard_hook_active{false};
+
+int IndexOf(const int* keys, size_t count, int key) {
+    for (size_t index = 0; index < count; ++index) {
+        if (keys[index] == key) return static_cast<int>(index);
     }
-    return (GetAsyncKeyState(key) & 0x8000) != 0;
+    return -1;
+}
+
+int PadIndexFromScan(DWORD scan, bool extended) {
+    if (extended) return scan == 0x35 ? 14 : (scan == 0x1C ? 15 : -1);
+    switch (scan) {
+    case 0x52: return 0;
+    case 0x4F: return 1;
+    case 0x50: return 2;
+    case 0x51: return 3;
+    case 0x4B: return 4;
+    case 0x4C: return 5;
+    case 0x4D: return 6;
+    case 0x47: return 7;
+    case 0x48: return 8;
+    case 0x49: return 9;
+    case 0x53: return 10;
+    case 0x4E: return 11;
+    case 0x4A: return 12;
+    case 0x37: return 13;
+    default: return -1;
+    }
+}
+
+int NavIndexFromScan(DWORD scan, bool extended) {
+    if (!extended) return -1;
+    switch (scan) {
+    case 0x48: return 0;
+    case 0x50: return 1;
+    case 0x4B: return 2;
+    case 0x4D: return 3;
+    case 0x49: return 4;
+    case 0x51: return 5;
+    default: return -1;
+    }
+}
+
+#if defined(_WIN32)
+LRESULT CALLBACK KeyboardHook(int code, WPARAM message, LPARAM data) {
+    if (code == HC_ACTION && data) {
+        const auto* info = reinterpret_cast<const KBDLLHOOKSTRUCT*>(data);
+        const bool down = message == WM_KEYDOWN || message == WM_SYSKEYDOWN;
+        const bool up = message == WM_KEYUP || message == WM_SYSKEYUP;
+        if (down || up) {
+            const bool extended = (info->flags & LLKHF_EXTENDED) != 0;
+            const auto apply = [down](std::atomic_uint32_t& bits, int index) {
+                if (index < 0) return;
+                const uint32_t mask = 1u << index;
+                if (down) bits.fetch_or(mask, std::memory_order_acq_rel);
+                else bits.fetch_and(~mask, std::memory_order_acq_rel);
+            };
+            apply(g_pad_down, PadIndexFromScan(info->scanCode, extended));
+            apply(g_nav_down, NavIndexFromScan(info->scanCode, extended));
+        }
+    }
+    return CallNextHookEx(nullptr, code, message, data);
+}
+
+#endif
+
+bool KeyDown(int key) {
+    if (key <= 0) {
+        return false;
+    }
+    if (!BetterEndfield::Input::ModifiersDown(key)) return false;
+    const int base_key = BetterEndfield::Input::BaseKey(key);
+    const bool hooked = g_keyboard_hook_active.load(std::memory_order_acquire);
+    if (BetterEndfield::Input::IsNumpadEnter(key)) {
+#if defined(__ANDROID__)
+        return (GetAsyncKeyState(VK_RETURN) & 0x8000) != 0;
+#else
+        return hooked && ((g_pad_down.load(std::memory_order_acquire) >> 15) & 1u) != 0;
+#endif
+    }
+    const int pad = IndexOf(kPadVirtualKeys, std::size(kPadVirtualKeys), base_key);
+    if (pad >= 0) {
+        if (hooked) return ((g_pad_down.load(std::memory_order_acquire) >> pad) & 1u) != 0;
+        return (GetAsyncKeyState(base_key) & 0x8000) != 0;
+    }
+    const int nav = IndexOf(kNavVirtualKeys, std::size(kNavVirtualKeys), base_key);
+    if (nav >= 0 && hooked) {
+        return ((g_nav_down.load(std::memory_order_acquire) >> nav) & 1u) != 0;
+    }
+    return base_key < 0x100 && (GetAsyncKeyState(base_key) & 0x8000) != 0;
 }
 
 bool GameWindowHasFocus() {
@@ -633,6 +853,8 @@ bool GameWindowHasFocus() {
 #if defined(_WIN32)
 LRESULT CALLBACK FreeCameraMouseHook(int code, WPARAM message, LPARAM data);
 #endif
+void PumpMmdOverlayHost(bool mmd_enabled); // input thread, mmd_director_runtime.inc
+bool MmdDirectorCameraActive();             // game thread, mmd_director_runtime.inc
 
 struct HotkeyRequest {
     std::atomic_int* key;
@@ -646,14 +868,27 @@ void InputThreadMain() {
         {&g_keyframe_add_key, &g_keyframe_add_request},
         {&g_keyframe_play_key, &g_keyframe_play_request},
         {&g_keyframe_clear_key, &g_keyframe_clear_request},
+        {&g_keyframe_save_key, &g_keyframe_save_request},
+        {&g_keyframe_load_key, &g_keyframe_load_request},
         {&g_vmd_play_key, &g_vmd_play_request},
+    };
+    HotkeyRequest mmd_keys[]{
+        {&g_mmd_play_key, nullptr},
+        {&g_mmd_stop_key, nullptr},
+        {&g_mmd_camera_mode_key, nullptr},
+        {&g_mmd_seek_back_key, nullptr},
+        {&g_mmd_seek_forward_key, nullptr},
+        {&g_mmd_overlay_key, nullptr},
     };
 #if defined(_WIN32)
     HHOOK mouse_hook = nullptr;
+    HHOOK keyboard_hook = nullptr;
 #endif
     bool toggle_was_down = false;
     bool pause_was_down = false;
     bool first_person_was_down = false;
+    bool character_keys[3]{};
+    bool character_focused=false;
     while (!g_input_thread_stop.load(std::memory_order_acquire)) {
         const bool free_enabled = g_free_camera_enabled.load(std::memory_order_acquire) &&
             g_free_camera_contract_ready;
@@ -662,14 +897,51 @@ void InputThreadMain() {
         const int toggle_key = g_toggle_key.load(std::memory_order_relaxed);
         const int pause_key = g_pause_key.load(std::memory_order_relaxed);
         const int first_person_key = g_first_person_key.load(std::memory_order_relaxed);
-        const bool focused = (free_enabled || first_person_enabled) && GameWindowHasFocus();
+        const bool body_enabled=g_character_preview_enabled.load(std::memory_order_acquire);
+        const bool mmd_enabled=g_mmd_enabled.load(std::memory_order_acquire);
+        const bool pause_enabled = g_pause_enabled.load(std::memory_order_acquire);
+        const bool focused = (free_enabled || first_person_enabled || body_enabled || mmd_enabled || pause_enabled) &&
+            GameWindowHasFocus();
+        // The keyboard hook exists while the game is focused, so numpad and
+        // navigation keys are read by scan code (see KeyDown).
+#if defined(_WIN32)
+        if (focused && !keyboard_hook) {
+            keyboard_hook = SetWindowsHookExW(WH_KEYBOARD_LL, &KeyboardHook,
+                GetModuleHandleW(nullptr), 0);
+            g_keyboard_hook_active.store(keyboard_hook != nullptr, std::memory_order_release);
+        } else if (!focused && keyboard_hook) {
+            UnhookWindowsHookEx(keyboard_hook);
+            keyboard_hook = nullptr;
+            g_keyboard_hook_active.store(false, std::memory_order_release);
+            g_pad_down.store(0, std::memory_order_release);
+            g_nav_down.store(0, std::memory_order_release);
+        }
+#endif
+        const int body_keys[]{g_character_play_key.load(),g_character_pause_key.load(),g_character_stop_key.load()};
+        // Losing focus no longer stops a session (the overlay and recording
+        // tools take focus); disabling the feature still does.
+        if(character_focused && !body_enabled)RequestCharacterMotion(4);
+        character_focused=focused&&body_enabled;
+        for(int i=0;i<3;++i) {
+            const bool down=character_focused&&KeyDown(body_keys[i]);
+            if(down&&!character_keys[i])RequestCharacterMotion(1u<<i);
+            character_keys[i]=down;
+        }
 
+#if defined(__ANDROID__)
         const bool toggle_down = focused && free_enabled &&
             (g_toggle_request.load(std::memory_order_acquire) ? toggle_was_down : KeyDown(toggle_key));
-        const bool pause_down = focused && free_enabled &&
+        const bool pause_down = focused && pause_enabled &&
             (g_pause_request.load(std::memory_order_acquire) ? pause_was_down : KeyDown(pause_key));
         const bool first_person_key_down = g_first_person_toggle_request.load(std::memory_order_acquire)
             ? first_person_was_down : KeyDown(first_person_key);
+#else
+        const bool toggle_down = focused && free_enabled && KeyDown(toggle_key);
+        const bool pause_down = focused && pause_enabled && KeyDown(pause_key);
+        // The numpad minus belongs to the MMD overlay; only the main-row key
+        // toggles first person.
+        const bool first_person_key_down = KeyDown(first_person_key);
+#endif
         const bool first_person_down = focused && first_person_enabled && first_person_key_down;
 
         if (toggle_down && !toggle_was_down) {
@@ -693,6 +965,23 @@ void InputThreadMain() {
             }
             binding.was_down = down;
         }
+        for (size_t index = 0; index < std::size(mmd_keys); ++index) {
+            HotkeyRequest& binding = mmd_keys[index];
+            const bool down = focused && mmd_enabled &&
+                KeyDown(binding.key->load(std::memory_order_relaxed));
+            if (down && !binding.was_down) {
+                switch (index) {
+                case 0: g_mmd_requests.fetch_or(MmdRequestPlayPause, std::memory_order_acq_rel); break;
+                case 1: g_mmd_requests.fetch_or(MmdRequestStop, std::memory_order_acq_rel); break;
+                case 2: g_mmd_requests.fetch_or(MmdRequestCameraMode, std::memory_order_acq_rel); break;
+                case 3: g_mmd_seek_steps.fetch_sub(1, std::memory_order_acq_rel); break;
+                case 4: g_mmd_seek_steps.fetch_add(1, std::memory_order_acq_rel); break;
+                default: g_mmd_overlay_toggle_request.store(true, std::memory_order_release); break;
+                }
+            }
+            binding.was_down = down;
+        }
+        PumpMmdOverlayHost(mmd_enabled);
 
         // The low-level mouse hook only exists while the free camera runs in the
         // focused game window; its callbacks arrive through this thread's queue.
@@ -723,6 +1012,12 @@ void InputThreadMain() {
     if (mouse_hook) {
         UnhookWindowsHookEx(mouse_hook);
     }
+    if (keyboard_hook) {
+        UnhookWindowsHookEx(keyboard_hook);
+    }
+    g_keyboard_hook_active.store(false, std::memory_order_release);
+    g_pad_down.store(0, std::memory_order_release);
+    g_nav_down.store(0, std::memory_order_release);
 #endif
 }
 
@@ -755,18 +1050,43 @@ bool EnterFreeCamera();
 void ApplyFreeCamera();
 void PumpFreeCameraRequests();
 
+void PollCameraFileResults();
+void ApplyAndroidCameraValues();
+
 void PumpFreeCameraControl() {
 #if defined(__ANDROID__)
     ++g_android_pump_generation;
 #endif
+    PollCameraFileResults();
+    ApplyAndroidCameraValues();
+    const bool pause_allowed = g_pause_enabled.load(std::memory_order_acquire);
+    const bool pause_pressed = g_pause_request.exchange(false, std::memory_order_acq_rel);
+    if (!pause_allowed) RestoreWorldPause("pause feature disabled");
+    else if (pause_pressed) {
+        if (g_changed_time_scale) RestoreWorldPause("toggle hotkey");
+        else if (GetValue(Contract("unity.time.scale.get"), nullptr, g_original_time_scale) &&
+                 SetValue(Contract("unity.time.scale.set"), nullptr, 0.0f)) {
+            g_changed_time_scale = true;
+            Log("World time paused independently of camera mode.");
+        }
+    }
     const bool allowed = g_free_camera_enabled.load(std::memory_order_acquire) &&
         g_free_camera_contract_ready;
 
     if (!allowed) {
+        g_keyframe_save_request.store(false,std::memory_order_release);
+        g_keyframe_load_request.store(false,std::memory_order_release);
+        g_motion_request.store(false,std::memory_order_release);
+        g_keyframe_add_request.store(false,std::memory_order_release);
+        g_keyframe_play_request.store(false,std::memory_order_release);
+        g_keyframe_clear_request.store(false,std::memory_order_release);
+        g_vmd_play_request.store(false,std::memory_order_release);
         g_toggle_request.store(false, std::memory_order_release);
         g_pause_request.store(false, std::memory_order_release);
-        if (g_free_camera_active ||
-            g_force_exit_request.exchange(false, std::memory_order_acq_rel)) {
+        // The MMD director runs its VMD camera on this machinery even while the
+        // free camera feature (hotkeys, controls) is off.
+        const bool forced = g_force_exit_request.exchange(false, std::memory_order_acq_rel);
+        if (!MmdDirectorCameraActive() && (g_free_camera_active || forced)) {
             ExitFreeCamera("feature disabled");
         }
         return;
@@ -778,23 +1098,6 @@ void PumpFreeCameraControl() {
             ExitFreeCamera("toggle hotkey");
         } else {
             EnterFreeCamera();
-        }
-    }
-    const bool pause_pressed = g_pause_request.exchange(false,
-        std::memory_order_acq_rel);
-    if (pause_pressed && g_free_camera_active) {
-        if (!g_pause_enabled.load(std::memory_order_acquire)) {
-            return;
-        }
-        if (g_changed_time_scale) {
-            RestoreWorldPause("toggle hotkey");
-        } else {
-            if (GetValue(Contract("unity.time.scale.get"), nullptr,
-                g_original_time_scale) &&
-                SetValue(Contract("unity.time.scale.set"), nullptr, 0.0f)) {
-                g_changed_time_scale = true;
-                Log("World time paused.");
-            }
         }
     }
     PumpFreeCameraRequests();
@@ -931,11 +1234,13 @@ void* FindSnapshotCameraController() {
 // ---------------------------------------------------------------------------
 
 constexpr const char* kHeadPartTokens[]{
-    "head", "face", "hair", "brow", "eyelid", "eyes", "iris", "mouth", "horn"};
+    "head", "face", "hair", "hair_base", "hairshadow", "front_hair",
+    "back_hair", "side_hair", "brow", "eyelid", "eyelash", "eyes", "iris",
+    "pupil", "mouth", "lip", "teeth", "tongue", "horn"};
 
-constexpr int kMaxPartScanDepth = 6;
-constexpr int kMaxPartScanNodes = 256;
-constexpr int kMaxPartLogEntries = 32;
+constexpr int kMaxPartScanDepth = 16;
+constexpr int kMaxPartScanNodes = 4096;
+constexpr int kMaxPartLogEntries = 128;
 
 std::string LowerAscii(std::string value) {
     std::transform(value.begin(), value.end(), value.begin(),
@@ -971,25 +1276,47 @@ void ReadMeshProbe(void* mesh, HeadPartProbe& probe) {
     }
 }
 
-// Only skinned renderers are probed: the head, the hair and the head
-// accessories are skinned parts, and leaving the other component types out keeps
-// the probe independent of the prefab layout.
-void ReadPartComponents(void* game_object, HeadPartProbe& probe) {
-    const MethodContract* get_component = Contract("unity.game_object.get_component");
-    if (!game_object || !get_component || !get_component->resolved ||
-        !g_skinned_mesh_renderer_class.type_object) {
-        return;
-    }
-    void* parameters[1]{g_skinned_mesh_renderer_class.type_object};
-    void* renderer = Invoke(get_component, game_object, parameters);
-    if (!renderer) {
-        return;
-    }
+void AddRendererProbe(void* renderer, const std::string& object_name,
+    std::vector<HeadPartProbe>& parts) {
+    if (!renderer) return;
+    HeadPartProbe probe;
+    probe.object_name = object_name;
+    probe.renderer_name = ObjectName(renderer);
     probe.skinned = true;
     probe.renderer = renderer;
     ReadMeshProbe(Invoke(
         Contract("unity.skinned_mesh_renderer.shared_mesh.get"), renderer, nullptr),
         probe);
+    probe.matched = MatchesHeadPartToken(probe.object_name) ||
+        MatchesHeadPartToken(probe.renderer_name) ||
+        MatchesHeadPartToken(probe.mesh_name);
+    parts.push_back(std::move(probe));
+}
+
+// GetComponents(Type) is used instead of GetComponent(Type), because a custom
+// model or prefab can put multiple SkinnedMeshRenderers on one GameObject.
+void ReadPartComponents(void* game_object, const std::string& object_name,
+    std::vector<HeadPartProbe>& parts) {
+    const MethodContract* get_component = Contract("unity.game_object.get_component");
+    if (!game_object || !get_component || !get_component->resolved ||
+        !g_skinned_mesh_renderer_class.type_object) {
+        return;
+    }
+    const MethodContract* get_components = Contract("unity.game_object.get_components");
+    if (get_components && get_components->resolved &&
+        Contract("system.array.get_length")->resolved &&
+        Contract("system.array.get_value")->resolved) {
+        void* parameters[1]{g_skinned_mesh_renderer_class.type_object};
+        void* array = Invoke(get_components, game_object, parameters);
+        const int count = std::min(ManagedArrayLength(array), 32);
+        for (int i = 0; i < count; ++i) {
+            AddRendererProbe(ManagedArrayValue(array, i), object_name, parts);
+        }
+        if (count > 0) return;
+    }
+    void* parameters[1]{g_skinned_mesh_renderer_class.type_object};
+    void* renderer = Invoke(get_component, game_object, parameters);
+    AddRendererProbe(renderer, object_name, parts);
 }
 
 void ScanPartNodes(void* transform, int depth, int& visited,
@@ -998,36 +1325,23 @@ void ScanPartNodes(void* transform, int depth, int& visited,
         return;
     }
     ++visited;
-    HeadPartProbe probe;
-    probe.object_name = ObjectName(transform);
-    ReadPartComponents(
-        Invoke(Contract("unity.component.game_object"), transform, nullptr), probe);
-    probe.matched = MatchesHeadPartToken(probe.object_name) ||
-        MatchesHeadPartToken(probe.mesh_name);
+    const std::string object_name = ObjectName(transform);
+    const size_t before = parts.size();
+    ReadPartComponents(Invoke(Contract("unity.component.game_object"), transform, nullptr),
+        object_name, parts);
 
-    if (probe.renderer || probe.matched) {
+    if (parts.size() > before) {
         if (logged < kMaxPartLogEntries) {
             ++logged;
             std::string line(static_cast<size_t>(depth) * 2, ' ');
-            line += probe.object_name;
-            if (!probe.mesh_name.empty()) {
-                line += " [mesh='" + probe.mesh_name + "'";
-                if (probe.vertex_count >= 0) {
-                    line += ", " + std::to_string(probe.vertex_count) + " vertices";
-                }
-                line += "]";
-            }
-            if (probe.matched) {
-                line += " <-- head part";
-            }
+            line += object_name + " [renderers=" +
+                std::to_string(parts.size() - before) + "]";
             tree += "\n  " + line;
         } else if (logged == kMaxPartLogEntries) {
             ++logged;
             tree += "\n  ...";
         }
     }
-    parts.push_back(probe);
-
     const MethodContract* child_count = Contract("unity.transform.child_count.get");
     const MethodContract* get_child = Contract("unity.transform.get_child");
     int children = 0;
@@ -1065,6 +1379,8 @@ void* FindModelTransform() {
 
 #include "first_person_runtime.inc"
 #include "free_camera_runtime.inc"
+#include "character_motion_runtime.inc"
+#include "mmd_director_runtime.inc"
 
 void ReleaseHeadTransform() {
     if (g_first_person.head_handle && g_host && g_host->gchandle_free) {
@@ -1072,6 +1388,11 @@ void ReleaseHeadTransform() {
     }
     g_first_person.head_handle = 0;
     g_first_person.head = nullptr;
+    if (g_first_person.body_handle && g_host && g_host->gchandle_free) {
+        g_host->gchandle_free(g_host->context, g_first_person.body_handle);
+    }
+    g_first_person.body_handle = 0;
+    g_first_person.body = nullptr;
     if (g_first_person.neck_handle && g_host && g_host->gchandle_free) {
         g_host->gchandle_free(g_host->context, g_first_person.neck_handle);
     }
@@ -1215,7 +1536,67 @@ void TryBindHeadTransform() {
         ? g_host->gchandle_new(g_host->context, head, 0)
         : 0;
     BindNeckBone(head);
+    if (!g_first_person.body) {
+        void* character = g_first_person.character;
+        void* body = character
+            ? Invoke(Contract("unity.component.transform"), character, nullptr)
+            : nullptr;
+        if (!body) {
+            body = Invoke(Contract("unity.game_object.transform"), FindModelObject(), nullptr);
+        }
+        if (body) {
+            g_first_person.body = body;
+            g_first_person.body_handle = g_host && g_host->gchandle_new
+                ? g_host->gchandle_new(g_host->context, body, 0)
+                : 0;
+            Log("First person: body facing anchor bound to \"" + ObjectName(body) + "\".");
+        }
+    }
     Log("First person: head anchor bound to \"" + ObjectName(head) + "\".");
+}
+
+float NormalizeAngle(float angle) {
+    while (angle > 180.0f) angle -= 360.0f;
+    while (angle < -180.0f) angle += 360.0f;
+    return angle;
+}
+
+void ApplyFirstPersonFacing() {
+    if (!g_first_person.body || !g_first_person_view_forward_valid) return;
+    Vector3 desired = g_first_person_view_forward;
+    desired.y = 0.0f;
+    desired = Normalize(desired);
+    if (Magnitude(desired) < 0.001f) return;
+
+    Quaternion current_rotation{};
+    if (!Unbox(Invoke(Contract("unity.transform.rotation.get"),
+            g_first_person.body, nullptr), current_rotation) ||
+        !IsUnitQuaternion(current_rotation)) return;
+    Vector3 current = RotateVector(current_rotation, {0.0f, 0.0f, 1.0f});
+    current.y = 0.0f;
+    current = Normalize(current);
+    if (Magnitude(current) < 0.001f) return;
+
+    const float current_yaw = std::atan2(current.x, current.z) * 57.2957795f;
+    const float desired_yaw = std::atan2(desired.x, desired.z) * 57.2957795f;
+    const float delta = NormalizeAngle(desired_yaw - current_yaw);
+    const float limit = g_first_person_side_look_limit.load(std::memory_order_relaxed);
+    if (std::abs(delta) <= limit) return;
+
+    float dt = 1.0f / 60.0f;
+    GetValue(Contract("unity.time.unscaled_delta.get"), nullptr, dt);
+    dt = std::clamp(dt, 0.001f, 0.1f);
+    const float max_step = g_first_person_turn_speed.load(std::memory_order_relaxed) * dt;
+    const float step = std::clamp(delta, -max_step, max_step);
+    const float yaw = (current_yaw + step) * 0.01745329252f;
+    const Quaternion next{0.0f, std::sin(yaw * 0.5f), 0.0f, std::cos(yaw * 0.5f)};
+    void* parameters[1]{const_cast<Quaternion*>(&next)};
+    if (InvokeVoid(Contract("unity.transform.rotation.set"), g_first_person.body, parameters)) {
+        if (g_diagnostics_enabled.load(std::memory_order_relaxed)) {
+            Log("First person: body turned toward camera (delta=" +
+                std::to_string(delta) + ", step=" + std::to_string(step) + ").");
+        }
+    }
 }
 
 // Rewrites the CameraState that Cinemachine is about to push to the Unity
@@ -1241,6 +1622,8 @@ void ApplyFirstPersonState(void* state) {
 
     const Vector3 forward = RotateVector(orientation, Vector3{0.0f, 0.0f, 1.0f});
     const Vector3 up = RotateVector(orientation, Vector3{0.0f, 1.0f, 0.0f});
+    g_first_person_view_forward = forward;
+    g_first_person_view_forward_valid = IsFinite(forward);
     const Vector3 eye = Add(head,
         Add(Scale(forward, kFirstPersonEyeForward), Scale(up, kFirstPersonEyeUp)));
 
@@ -1339,6 +1722,7 @@ bool EnterFirstPerson() {
     }
 
     g_first_person.last_eye_valid = false;
+    g_first_person_view_forward_valid = false;
     g_first_person_reassert_frames = 0;
     g_first_person_health_warned = false;
     g_first_person_active.store(true, std::memory_order_release);
@@ -1367,6 +1751,7 @@ void ExitFirstPerson(const char* reason) {
     g_first_person.snapshot_controller = nullptr;
     ReleaseHeadTransform();
     g_first_person.character = nullptr;
+    g_first_person_view_forward_valid = false;
     const uint64_t patches = g_push_state_patches.load(std::memory_order_relaxed);
     ReleaseCameraRoot();
     Log(std::string("First person camera disabled: ") + reason +
@@ -1397,6 +1782,7 @@ void RefreshFirstPersonTarget() {
         ReleaseHeadTransform();
     }
     TryBindHeadTransform();
+    ApplyFirstPersonFacing();
 }
 
 void PumpFirstPerson() {
@@ -1452,6 +1838,8 @@ float __fastcall DetourTimeUnscaledDelta(void* method) {
 #endif
     if (g_time_heartbeat_contract_ready && !t_in_heartbeat) {
         t_in_heartbeat = true;
+        PumpMmdDirector(false);
+        PumpCharacterMotion(false); // only the thread previously observed at TailLateTick
         PumpFreeCameraControl();
         if (g_free_camera_active) {
             ApplyFreeCameraHeartbeat();
@@ -1491,6 +1879,8 @@ void __fastcall DetourTailLateTick(void* instance, float deltaTime, void* method
     // applied inside the Cinemachine push itself, so this only drives the toggle,
     // the eye anchor bookkeeping and the free camera.
     (void)instance;
+    PumpMmdDirector();
+    PumpCharacterMotion();
     PumpFreeCameraControl();
     PumpFirstPerson();
     if (g_free_camera_active) {
@@ -1511,6 +1901,8 @@ void __fastcall DetourCameraTick(void* instance, void* method) {
     }
     // If TailLateTick is not hooked, fall back to the camera tick for the pumps.
     if (!g_original_tail_late_tick) {
+        PumpMmdDirector();
+        PumpCharacterMotion();
         PumpFreeCamera();
         PumpFirstPerson();
     }
@@ -1529,19 +1921,24 @@ void AndroidCameraFrame(bool suspend) {
         g_keyframe_play_request.store(false);
         g_keyframe_clear_request.store(false);
         g_vmd_play_request.store(false);
+        Mmd::Stop("Android Activity paused");
+        RequestCharacterMotion(4u);
+        PumpCharacterMotion();
         ExitFirstPerson("Android Activity lost focus");
         ExitFreeCamera("Android Activity lost focus");
         RestoreWorldPause("Android Activity lost focus");
     } else if (previous_generation == g_android_pump_generation) {
         // No game-side pump ran since the last rendered frame. This remains on
         // Unity's thread even when gameplay ticks stop at timeScale == 0.
+        PumpMmdDirector();
+        PumpCharacterMotion();
         PumpFreeCameraControl();
         PumpFirstPerson();
         if (g_free_camera_active) ApplyFreeCameraHeartbeat();
     }
     previous_generation = g_android_pump_generation;
     const unsigned capabilities = (g_free_camera_contract_ready && g_free_camera_enabled.load() ? 1u : 0u) |
-        (g_free_camera_contract_ready && g_free_camera_enabled.load() && g_pause_enabled.load() ? 8u : 0u) |
+        (g_pause_enabled.load() ? 8u : 0u) |
         (g_first_person_contract_ready && g_first_person_camera_enabled.load() ? 2u : 0u) |
         (g_dither_contract_ready && g_disable_dither_enabled.load() ? 4u : 0u);
     const unsigned active = (g_free_camera_active ? 1u : 0u) |
@@ -1586,30 +1983,7 @@ float ParseFloat(std::string_view value, float default_value) {
 }
 
 int ParseVirtualKey(std::string_view value, int fallback) {
-    std::string key = Trim(value);
-    std::transform(key.begin(), key.end(), key.begin(),
-        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
-    if (key == "-" || key == "MINUS" || key == "OEM_MINUS") {
-        return VK_OEM_MINUS;
-    }
-    if (key == "SUBTRACT" || key == "NUMPAD-" || key == "NUMPAD_MINUS" || key == "NUMPADSUBTRACT") {
-        return VK_SUBTRACT;
-    }
-    if (key.size() == 1 && std::isalnum(static_cast<unsigned char>(key[0]))) {
-        return static_cast<unsigned char>(key[0]);
-    }
-    if (key.size() > 1 && key.front() == 'F') {
-        const int number = std::atoi(key.c_str() + 1);
-        if (number >= 1 && number <= 24) {
-            return VK_F1 + number - 1;
-        }
-    }
-    constexpr std::string_view numpad_prefix = "NUMPAD";
-    if (key.size() == numpad_prefix.size() + 1 &&
-        key.starts_with(numpad_prefix) && key.back() >= '0' && key.back() <= '9') {
-        return VK_NUMPAD0 + key.back() - '0';
-    }
-    return fallback;
+    return BetterEndfield::Input::ParseKey(value, fallback);
 }
 
 int ParseMotionPreset(std::string_view value, int fallback) {
@@ -1663,6 +2037,8 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
         else if (key == "first_person_hide_head") config.first_person_hide_head = ParseBoolean(value, config.first_person_hide_head);
         else if (key == "first_person_fill_neck_hole") config.first_person_fill_neck_hole = ParseBoolean(value, config.first_person_fill_neck_hole);
         else if (key == "first_person_neck_plug_scale") config.first_person_neck_plug_scale = ParseFloat(value, config.first_person_neck_plug_scale);
+        else if (key == "first_person_side_look_limit") config.first_person_side_look_limit = ParseFloat(value, config.first_person_side_look_limit);
+        else if (key == "first_person_turn_speed") config.first_person_turn_speed = ParseFloat(value, config.first_person_turn_speed);
         else if (key == "diagnostics") config.diagnostics = ParseBoolean(value, config.diagnostics);
         else if (key == "movement_speed") config.movement_speed = ParseFloat(value, config.movement_speed);
         else if (key == "field_of_view") config.field_of_view = ParseFloat(value, config.field_of_view);
@@ -1681,6 +2057,24 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
         else if (key == "motion_target_height") config.motion_target_height = ParseFloat(value, config.motion_target_height);
         else if (key == "keyframe_segment_seconds") config.keyframe_segment_seconds = ParseFloat(value, config.keyframe_segment_seconds);
         else if (key == "keyframe_loop") config.keyframe_loop = ParseBoolean(value, config.keyframe_loop);
+        else if (key == "keyframe_file") config.keyframe_file = Unquote(value);
+        else if (key == "keyframe_save_hotkey") config.keyframe_save_key = ParseVirtualKey(value, config.keyframe_save_key);
+        else if (key == "keyframe_load_hotkey") config.keyframe_load_key = ParseVirtualKey(value, config.keyframe_load_key);
+        else if (key == "vmd_motion_file") config.vmd_motion_file = Unquote(value);
+        else if (key == "vmd_body_enabled") config.vmd_body_enabled = ParseBoolean(value);
+        else if (key == "vmd_eyes_enabled") config.vmd_eyes_enabled = ParseBoolean(value);
+        else if (key == "vmd_face_enabled") config.vmd_face_enabled = ParseBoolean(value);
+        else if (key == "vmd_motion_loop") config.vmd_motion_loop = ParseBoolean(value);
+        else if (key == "vmd_terrain_enabled") config.vmd_terrain_enabled = ParseBoolean(value);
+        else if (key == "vmd_cloth_mode") {
+            const std::string mode = LowerAscii(Unquote(value));
+            config.vmd_cloth_mode = mode == "game" ? 0 : mode == "freeze" ? 2 : 1;
+        }
+        else if (key == "vmd_motion_scale") config.vmd_motion_scale = ParseFloat(value,1);
+        else if (key == "vmd_motion_weight") config.vmd_motion_weight = ParseFloat(value,1);
+        else if (key == "vmd_motion_hotkey") config.vmd_motion_key = ParseVirtualKey(value,config.vmd_motion_key);
+        else if (key == "vmd_motion_pause_hotkey") config.vmd_motion_pause_key = ParseVirtualKey(value,config.vmd_motion_pause_key);
+        else if (key == "vmd_motion_stop_hotkey") config.vmd_motion_stop_key = ParseVirtualKey(value,config.vmd_motion_stop_key);
         else if (key == "vmd_camera_file") config.vmd_camera_file = Unquote(value);
         else if (key == "vmd_camera_scale") config.vmd_camera_scale = ParseFloat(value, config.vmd_camera_scale);
         else if (key == "vmd_camera_fov_bias") config.vmd_camera_fov_bias = ParseFloat(value, config.vmd_camera_fov_bias);
@@ -1695,12 +2089,63 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
         else if (key == "keyframe_play_hotkey") config.keyframe_play_key = ParseVirtualKey(value, config.keyframe_play_key);
         else if (key == "keyframe_clear_hotkey") config.keyframe_clear_key = ParseVirtualKey(value, config.keyframe_clear_key);
         else if (key == "vmd_play_hotkey") config.vmd_play_key = ParseVirtualKey(value, config.vmd_play_key);
+        else if (key == "hotkey_layout") config.hotkey_layout = std::atoi(value.c_str());
+        else if (key == "mmd_enabled") config.mmd_enabled = ParseBoolean(value, config.mmd_enabled);
+        else if (key == "mmd_overlay_enabled") config.mmd_overlay_enabled = ParseBoolean(value, config.mmd_overlay_enabled);
+        else if (key == "mmd_overlay_visible") config.mmd_overlay_visible = ParseBoolean(value, config.mmd_overlay_visible);
+        else if (key == "mmd_loop") config.mmd_loop = ParseBoolean(value, config.mmd_loop);
+        else if (key == "mmd_music_enabled") config.mmd_music_enabled = ParseBoolean(value, config.mmd_music_enabled);
+        else if (key == "mmd_seek_seconds") config.mmd_seek_seconds = ParseFloat(value, config.mmd_seek_seconds);
+        else if (key == "mmd_music_gain") config.mmd_music_gain = ParseFloat(value, config.mmd_music_gain);
+        else if (key == "mmd_audio_offset") config.mmd_audio_offset = ParseFloat(value, config.mmd_audio_offset);
+        else if (key == "mmd_work") config.mmd_work = Unquote(value);
+        else if (key == "mmd_music_file") config.mmd_music_file = Unquote(value);
+        else if (key == "mmd_face_file") config.mmd_face_file = Unquote(value);
+        else if (key == "mmd_play_hotkey") config.mmd_play_key = ParseVirtualKey(value, config.mmd_play_key);
+        else if (key == "mmd_stop_hotkey") config.mmd_stop_key = ParseVirtualKey(value, config.mmd_stop_key);
+        else if (key == "mmd_seek_back_hotkey") config.mmd_seek_back_key = ParseVirtualKey(value, config.mmd_seek_back_key);
+        else if (key == "mmd_seek_forward_hotkey") config.mmd_seek_forward_key = ParseVirtualKey(value, config.mmd_seek_forward_key);
+        else if (key == "mmd_camera_mode_hotkey") config.mmd_camera_mode_key = ParseVirtualKey(value, config.mmd_camera_mode_key);
+        else if (key == "mmd_overlay_hotkey") config.mmd_overlay_key = ParseVirtualKey(value, config.mmd_overlay_key);
     }
+    if (config.hotkey_layout < 2) {
+        // Layout 1 put different actions on the numpad; its saved keys would
+        // collide with the MMD layout, so the defaults win until re-saved.
+        const CameraConfiguration defaults;
+        config.roll_left_key = defaults.roll_left_key;
+        config.roll_right_key = defaults.roll_right_key;
+        config.fov_wide_key = defaults.fov_wide_key;
+        config.fov_narrow_key = defaults.fov_narrow_key;
+        config.view_reset_key = defaults.view_reset_key;
+        config.motion_key = defaults.motion_key;
+        config.keyframe_add_key = defaults.keyframe_add_key;
+        config.keyframe_play_key = defaults.keyframe_play_key;
+        config.keyframe_clear_key = defaults.keyframe_clear_key;
+        config.keyframe_save_key = defaults.keyframe_save_key;
+        config.keyframe_load_key = defaults.keyframe_load_key;
+        config.vmd_play_key = defaults.vmd_play_key;
+        config.vmd_motion_key = defaults.vmd_motion_key;
+        config.vmd_motion_pause_key = defaults.vmd_motion_pause_key;
+        config.vmd_motion_stop_key = defaults.vmd_motion_stop_key;
+    }
+    config.mmd_seek_seconds = std::clamp(config.mmd_seek_seconds, 0.5f, 60.0f);
+    config.mmd_music_gain = std::clamp(config.mmd_music_gain, 0.0f, 2.0f);
+    config.mmd_audio_offset = std::clamp(config.mmd_audio_offset, -600.0f, 600.0f);
+    config.vmd_motion_weight = std::clamp(config.vmd_motion_weight,0.0f,1.0f);
+    config.vmd_motion_scale = std::isfinite(config.vmd_motion_scale) ? std::clamp(config.vmd_motion_scale,0.05f,5.0f) : 1.0f;
+#if defined(__ANDROID__)
+    config.movement_speed = std::clamp(config.movement_speed, 0.2f, 60.0f);
+#else
     config.movement_speed = std::clamp(config.movement_speed, 0.5f, 100.0f);
+#endif
     config.field_of_view = std::clamp(config.field_of_view, 20.0f, 120.0f);
     config.first_person_fov = std::clamp(config.first_person_fov, 20.0f, 120.0f);
     config.first_person_neck_plug_scale =
         std::clamp(config.first_person_neck_plug_scale, 0.2f, 3.0f);
+    config.first_person_side_look_limit =
+        std::clamp(config.first_person_side_look_limit, 30.0f, 170.0f);
+    config.first_person_turn_speed =
+        std::clamp(config.first_person_turn_speed, 30.0f, 1080.0f);
     config.mouse_sensitivity = std::clamp(config.mouse_sensitivity, 0.01f, 2.0f);
     config.smoothing = std::clamp(config.smoothing, 0.0f, 0.95f);
     config.motion_speed = std::clamp(config.motion_speed, -20.0f, 20.0f);
@@ -1814,6 +2259,7 @@ bool ResolveContracts() {
         ready("unity.time.scale.get") &&
         ready("unity.time.scale.set");
     g_time_heartbeat_contract_ready = ready("unity.time.unscaled_delta.get");
+    g_pause_contract_ready = ready("unity.time.scale.get") && ready("unity.time.scale.set");
     g_first_person_contract_ready =
 #if !defined(__ANDROID__)
         (ready("camera_manager.tail_late_tick") || ready("camera.process_dither")) &&
@@ -1858,7 +2304,7 @@ bool ResolveContracts() {
             ready("unity.game_object.get_component") &&
             g_animator_class.type_object) ? "ready" : "unavailable"));
     return g_free_camera_contract_ready || g_dither_contract_ready ||
-        g_first_person_contract_ready;
+        g_first_person_contract_ready || g_pause_contract_ready;
 }
 
 #if defined(__ANDROID__)
@@ -1891,7 +2337,8 @@ bool InstallHook() {
     g_time_heartbeat_contract_ready = g_time_heartbeat_contract_ready && heartbeat;
     g_free_camera_contract_ready = g_free_camera_contract_ready && push && g_state_layout.ready && (control_pump || heartbeat);
     g_first_person_contract_ready = g_first_person_contract_ready && push && control_pump;
-    return g_free_camera_contract_ready || g_first_person_contract_ready || g_dither_contract_ready;
+    g_pause_contract_ready = g_pause_contract_ready && (control_pump || heartbeat);
+    return g_free_camera_contract_ready || g_first_person_contract_ready || g_dither_contract_ready || g_pause_contract_ready;
 }
 
 #else
@@ -1960,8 +2407,24 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
         Log("Failed to install camera update hook.");
         return BE_Result_Failed;
     }
+    try {
+        g_camera_files.Start();
+    } catch (const std::exception& e) {
+        // Free/manual camera remains usable when optional file I/O is unavailable.
+        Log(std::string("Camera file worker unavailable: ") + e.what());
+    }
+    StartCharacterMotion();
+    StartMmd();
     g_input_thread_stop.store(false, std::memory_order_release);
-    g_input_thread = std::thread(InputThreadMain);
+    try {
+        g_input_thread = std::thread(InputThreadMain);
+    } catch (const std::exception& error) {
+        g_camera_files.Stop();
+        g_state.store(ModuleState::Failed,std::memory_order_release);
+        if (g_host->release_module_hooks) g_host->release_module_hooks(g_host->context,kModuleId);
+        Log(std::string("Camera input thread failed to start: ") + error.what());
+        return BE_Result_Failed;
+    }
     g_state.store(ModuleState::Ready, std::memory_order_release);
 #if defined(__ANDROID__)
     betterendfield::SetAndroidFrameClient(betterendfield::FrameClient::Camera, &AndroidCameraFrame);
@@ -1972,6 +2435,10 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
 
 BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
     const CameraConfiguration config = ParseConfiguration(raw_configuration);
+    PublishCharacterConfiguration(config);
+    g_character_play_key=config.vmd_motion_key;
+    g_character_pause_key=config.vmd_motion_pause_key;
+    g_character_stop_key=config.vmd_motion_stop_key;
     const bool free_camera = config.enabled && config.free_camera_enabled && g_free_camera_contract_ready;
     const bool anti_dither = config.enabled && config.disable_dither_enabled && g_dither_contract_ready;
     const bool first_person = config.enabled && config.first_person_camera_enabled && g_first_person_contract_ready;
@@ -1980,7 +2447,7 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
 
     g_free_camera_enabled.store(free_camera, std::memory_order_release);
     g_disable_dither_enabled.store(anti_dither, std::memory_order_release);
-    g_pause_enabled.store(config.pause_enabled, std::memory_order_release);
+    g_pause_enabled.store(config.enabled && config.pause_enabled && g_pause_contract_ready, std::memory_order_release);
     g_first_person_camera_enabled.store(first_person, std::memory_order_release);
     g_first_person_hide_head.store(config.first_person_hide_head, std::memory_order_release);
     g_first_person_fill_neck_hole.store(config.first_person_fill_neck_hole,
@@ -1990,6 +2457,10 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
     g_field_of_view.store(config.field_of_view, std::memory_order_release);
     g_first_person_fov.store(config.first_person_fov, std::memory_order_release);
     g_first_person_neck_plug_scale.store(config.first_person_neck_plug_scale,
+        std::memory_order_release);
+    g_first_person_side_look_limit.store(config.first_person_side_look_limit,
+        std::memory_order_release);
+    g_first_person_turn_speed.store(config.first_person_turn_speed,
         std::memory_order_release);
     g_toggle_key.store(config.toggle_key, std::memory_order_release);
     g_pause_key.store(config.pause_key, std::memory_order_release);
@@ -2006,13 +2477,44 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
     g_keyframe_segment_seconds.store(config.keyframe_segment_seconds,
         std::memory_order_release);
     g_keyframe_loop.store(config.keyframe_loop, std::memory_order_release);
+    g_keyframe_save_key.store(config.keyframe_save_key, std::memory_order_release);
+    g_keyframe_load_key.store(config.keyframe_load_key, std::memory_order_release);
     g_vmd_camera_scale.store(config.vmd_camera_scale, std::memory_order_release);
     g_vmd_camera_fov_bias.store(config.vmd_camera_fov_bias, std::memory_order_release);
     g_vmd_camera_loop.store(config.vmd_camera_loop, std::memory_order_release);
     {
         std::lock_guard<std::mutex> lock(g_vmd_path_mutex);
         g_vmd_camera_file = config.vmd_camera_file;
+        g_keyframe_file = config.keyframe_file;
+#if defined(__ANDROID__)
+        if (g_keyframe_file.empty()) {
+            const char* root = std::getenv("BETTER_ENDFIELD_MMD_ROOT");
+            if (root && *root) g_keyframe_file = MmdLibrary::ToUtf8(MmdLibrary::FromUtf8(root).parent_path() / "camera-path.becam");
+        }
+#endif
+        g_vmd_motion_file = config.vmd_motion_file;
+        g_mmd_music_file = config.mmd_music_file;
+        g_mmd_face_file = config.mmd_face_file;
+        if (g_mmd_work != config.mmd_work) {
+            g_mmd_work = config.mmd_work;
+            g_mmd_work_generation.fetch_add(1, std::memory_order_acq_rel);
+        }
+        g_asset_config_generation.fetch_add(1,std::memory_order_acq_rel);
     }
+    g_mmd_enabled.store(config.enabled && config.mmd_enabled, std::memory_order_release);
+    g_mmd_overlay_enabled.store(config.mmd_overlay_enabled, std::memory_order_release);
+    g_mmd_overlay_initial_visible.store(config.mmd_overlay_visible, std::memory_order_release);
+    g_mmd_loop_default.store(config.mmd_loop, std::memory_order_release);
+    g_mmd_music_enabled.store(config.mmd_music_enabled, std::memory_order_release);
+    g_mmd_seek_seconds.store(config.mmd_seek_seconds, std::memory_order_release);
+    g_mmd_music_gain.store(config.mmd_music_gain, std::memory_order_release);
+    g_mmd_audio_offset.store(config.mmd_audio_offset, std::memory_order_release);
+    g_mmd_play_key.store(config.mmd_play_key, std::memory_order_release);
+    g_mmd_stop_key.store(config.mmd_stop_key, std::memory_order_release);
+    g_mmd_seek_back_key.store(config.mmd_seek_back_key, std::memory_order_release);
+    g_mmd_seek_forward_key.store(config.mmd_seek_forward_key, std::memory_order_release);
+    g_mmd_camera_mode_key.store(config.mmd_camera_mode_key, std::memory_order_release);
+    g_mmd_overlay_key.store(config.mmd_overlay_key, std::memory_order_release);
     g_roll_left_key.store(config.roll_left_key, std::memory_order_release);
     g_roll_right_key.store(config.roll_right_key, std::memory_order_release);
     g_fov_wide_key.store(config.fov_wide_key, std::memory_order_release);
@@ -2031,20 +2533,23 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
         g_first_person_exit_request.store(true, std::memory_order_release);
     }
 
-    g_state.store(free_camera || anti_dither || first_person
+    g_state.store(free_camera || anti_dither || first_person || g_character_preview_enabled.load() ||
+            g_mmd_enabled.load()
         ? ModuleState::Active
         : ModuleState::Disabled, std::memory_order_release);
 
     char buffer[384];
     std::snprintf(buffer, sizeof(buffer),
         "Camera configuration applied: enabled=%s, free_camera=%s, first_person=%s, "
-        "hide_head=%s, fill_neck_hole=%s, neck_plug_scale=%.2f, anti_dither=%s, "
+        "hide_head=%s, fill_neck_hole=%s, neck_plug_scale=%.2f, "
+        "side_look_limit=%.1f, turn_speed=%.1f, anti_dither=%s, "
         "pause_enabled=%s, free_hotkey_vk=%d, fp_hotkey_vk=%d, fp_fov=%.1f",
         config.enabled ? "true" : "false", free_camera ? "true" : "false",
         first_person ? "true" : "false",
         config.first_person_hide_head ? "true" : "false",
         config.first_person_fill_neck_hole ? "true" : "false",
         config.first_person_neck_plug_scale,
+        config.first_person_side_look_limit, config.first_person_turn_speed,
         anti_dither ? "true" : "false",
         config.pause_enabled ? "true" : "false", config.toggle_key,
         config.first_person_key, config.first_person_fov);
@@ -2066,13 +2571,18 @@ void BE_CALL Shutdown() {
     betterendfield::SetAndroidFrameClient(betterendfield::FrameClient::Camera, nullptr);
     betterendfield::PublishAndroidCameraState(0, 0);
 #endif
+    g_character_preview_enabled=false;
+    StopCharacterMotion();
     g_free_camera_enabled.store(false, std::memory_order_release);
     g_disable_dither_enabled.store(false, std::memory_order_release);
     g_first_person_camera_enabled.store(false, std::memory_order_release);
+    g_mmd_enabled.store(false, std::memory_order_release);
     g_input_thread_stop.store(true, std::memory_order_release);
     if (g_input_thread.joinable()) {
         g_input_thread.join();
     }
+    StopMmd();
+    g_camera_files.Stop();
     ExitFirstPerson("shutdown");
     ExitFreeCamera("shutdown");
     ReleaseCameraRoot();
@@ -2091,7 +2601,7 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Camera Enhancements", "1.6.0", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Camera Enhancements", "1.9.0-preview", BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};
@@ -2102,3 +2612,45 @@ const BE_ModuleApiV1 kApi{
 BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfield_GetModuleApiV1() {
     return &BetterEndfield::CameraModule::kApi;
 }
+
+#if defined(__ANDROID__)
+namespace betterendfield {
+void AndroidCameraValues(float speed, float fov) {
+    using namespace BetterEndfield;
+    using namespace BetterEndfield::CameraModule;
+    if (std::isfinite(speed)) g_movement_speed.store(std::clamp(speed, 0.2f, 60.0f));
+    if (std::isfinite(fov)) {
+        fov = std::clamp(fov, 20.0f, 120.0f);
+        g_field_of_view.store(fov);
+        g_android_fov_request.store(fov);
+    }
+}
+bool AndroidMmdCommand(unsigned type, int argument, double value, const std::string& text) {
+    using namespace BetterEndfield;
+    using namespace BetterEndfield::CameraModule;
+    const bool camera_tool = type >= 8 && type <= 14;
+    if ((!g_mmd_enabled.load() && !(camera_tool && g_free_camera_enabled.load())) ||
+        type == 0 || type > 15 || !std::isfinite(value) ||
+        text.size() >= MmdOverlayProtocol::kTextCapacity ||
+        (type == 6 && !text.empty() && !MmdLibrary::PlainFolderName(text))) return false;
+    MmdOverlayProtocol::Command command;
+    command.type = type; command.argument = argument; command.value = value;
+    std::memcpy(command.text, text.c_str(), text.size() + 1);
+    std::lock_guard lock(Mmd::android_mutex);
+    if (Mmd::android_commands.size() >= MmdOverlayProtocol::kCommandCapacity) return false;
+    Mmd::android_commands.push_back(command);
+    return true;
+}
+std::string AndroidMmdStatus() {
+    using namespace BetterEndfield;
+    using namespace BetterEndfield::CameraModule;
+    std::lock_guard lock(Mmd::android_mutex);
+    return Mmd::android_status;
+}
+std::string AndroidCameraValuesStatus() {
+    using namespace BetterEndfield::CameraModule;
+    return "camera.speed=" + std::to_string(g_movement_speed.load()) + "\n" +
+        "camera.fov=" + std::to_string(g_field_of_view.load()) + "\n";
+}
+}
+#endif

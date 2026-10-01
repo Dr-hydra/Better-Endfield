@@ -60,6 +60,12 @@ add_library(betterendfield_desktop_features STATIC
     "${BETTER_ENDFIELD_ROOT}/native/shared/android_compat/touch_input_android.cpp"
     "${BETTER_ENDFIELD_ROOT}/native/modules/ui/module.cpp"
     "${BETTER_ENDFIELD_ROOT}/native/modules/camera/module.cpp"
+    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/eiem_body.cpp"
+    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/eiem_slot0.cpp"
+    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/eiem_slot1.cpp"
+    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/eiem_slot2.cpp"
+    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/eiem_slot3.cpp"
+    "${BETTER_ENDFIELD_ROOT}/native/shared/host/pose_lease.cpp"
     "${BETTER_ENDFIELD_ROOT}/native/modules/actions/module.cpp")
 
 # Each desktop module exports the same BetterEndfield_GetModuleApiV1 entry point
@@ -82,6 +88,9 @@ target_include_directories(betterendfield_desktop_features PRIVATE
     "${BETTER_ENDFIELD_ROOT}/native/shared/android_compat/include"
     "${BETTER_ENDFIELD_ROOT}/native/shared/android_compat"
     "${BETTER_ENDFIELD_ROOT}/native/shared/include"
+    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem"
+    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/compat"
+    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/upstream"
     "${BETTER_ENDFIELD_ROOT}/native/modules/ui")
 target_compile_features(betterendfield_desktop_features PRIVATE cxx_std_20)
 # Shared desktop sources are not compiled with -Wpedantic on Windows either;
@@ -90,10 +99,18 @@ target_compile_options(betterendfield_desktop_features PRIVATE -Wall -O2)
 set_target_properties(betterendfield_desktop_features
     PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+set_source_files_properties(
+    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/eiem_slot0.cpp"
+    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/eiem_slot1.cpp"
+    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/eiem_slot2.cpp"
+    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/eiem_slot3.cpp"
+    PROPERTIES COMPILE_OPTIONS "-fno-char8_t")
+
 add_library(betterendfield_android SHARED
     native_bridge.cpp
     core/hook_broker.cpp
     core/log.cpp
+    core/local_music_android.cpp
     core/runtime.cpp
     core/command_pump.cpp
     modules/custom_model/resource_probe.cpp

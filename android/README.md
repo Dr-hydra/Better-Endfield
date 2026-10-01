@@ -1,5 +1,25 @@
 # Better Endfield Android
 
+## Android 3.4.0 development branch
+
+The current branch includes the MMD library/player, responsive in-game deck,
+independent world pause, first-person updates and multiple BEM packages per
+character. Settings save automatically; restarting the game loads the updated
+module configuration and installed works. In-game controls take effect
+immediately. See [the integration record](../docs/ANDROID_CAMERA_MMD_20261001.md)
+for validation results and platform limits.
+
+Import an MMD work with the system directory picker: select a folder containing
+`set.ini` and its motion/face/camera/music files. Files are copied to private
+storage and published through the framework. Up to four dancers use
+`motion2`–`motion4` and optional `face2`–`face4`. Camera paths save to the game's
+private `betterendfield/camera-path.becam`.
+
+The optional PC layout uses the game's input-mode switch. It is off by default
+and does not change the account platform. Keyboard or controller input is
+recommended when touch controls disappear. Closing the deck hides it for this
+game process; collapsing keeps the handle available.
+
 Android ARM64 and LSPosed workspace for Better Endfield. The Android port keeps
 the desktop project's module boundary: a small runtime owns IL2CPP access and
 independent feature modules implement game behavior.
@@ -20,8 +40,8 @@ voice language.
 Loading the native runtime during `Application.attach()` is too early for this
 client: `libil2cpp.so` may be mapped while its domain is still unsafe to enter.
 The Xposed entry therefore hooks `UnityPlayer.nativeRender()` and loads the
-runtime only after the first successful Unity frame. The one-shot render hook is
-removed immediately after loading.
+runtime only after the first successful Unity frame. The render hook remains
+registered to provide the Unity-thread control pump while game time is frozen.
 
 On the tested Android 1.4.3 client, all native targets are resolved from IL2CPP
 by assembly, namespace, class, method name, and parameter count. Dobby then

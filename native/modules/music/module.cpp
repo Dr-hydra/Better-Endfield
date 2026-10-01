@@ -1,14 +1,20 @@
 #include <BetterEndfield/ModuleApi.h>
+#include <BetterEndfield/LocalMusic.h>
 
 #include "music_bank.h"
 #include "omni_pcm_abi.h"
 
 #include <Windows.h>
+#include <mfapi.h>
+#include <mfidl.h>
+#include <mfreadwrite.h>
 
 #include <algorithm>
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
+#include <deque>
 #include <cmath>
 #include <cctype>
 #include <cstdint>
@@ -122,6 +128,7 @@ struct MusicConfig {
     uint32_t prebuffer_ms = 150;
     bool fallback_to_native = true;
     bool diagnostics = false;
+    bool local_playback = true;
 };
 
 std::mutex g_config_mutex;
@@ -188,7 +195,11 @@ MusicConfig ParseConfiguration(const char* configuration) {
     }
 
     MusicConfig result;
-    result.enabled = ParseBool(values, "enabled", false);
+    // "enabled" loads the module; OmniMix replacement has its own switch so the
+    // module can run for local playback only.
+    result.enabled = ParseBool(values, "music_replacement_enabled",
+        ParseBool(values, "enabled", false));
+    result.local_playback = ParseBool(values, "local_playback_enabled", true);
     if (const auto found = values.find("backend_exe"); found != values.end()) {
         result.backend_exe = Utf8ToWide(found->second);
     }
@@ -289,6 +300,30 @@ private:
 };
 
 StereoFrameRing g_ring;
+
+// The ring has one producer at a time. While a local track (LocalMusic.h) is
+// open it owns the ring and the OmniMix worker neither reads nor clears it.
+std::mutex g_ring_producer_mutex;
+std::atomic<bool> g_local_owns_ring{false};
+
+void OmniRingClear() noexcept {
+    std::scoped_lock lock(g_ring_producer_mutex);
+    if (!g_local_owns_ring.load(std::memory_order_acquire)) {
+        g_ring.Clear();
+    }
+}
+
+uint32_t OmniRingPush(const float* interleaved, uint32_t frames) noexcept {
+    std::scoped_lock lock(g_ring_producer_mutex);
+    return g_local_owns_ring.load(std::memory_order_acquire)
+        ? frames : g_ring.Push(interleaved, frames);
+}
+
+namespace LocalTrack {
+std::atomic<bool> playing{false};         // output wanted (not paused)
+std::atomic<uint64_t> consumed_frames{0}; // frames Wwise took since base
+std::atomic<bool> output_active{false};
+} // namespace LocalTrack
 
 class LinearStereoResampler {
 public:
@@ -769,6 +804,9 @@ bool __fastcall AudioInputSamplesHook(uint32_t playing_id, void* samples,
     uint32_t available = writable;
     if (need_block) {
         available = g_ring.Pop(g_callback_scratch.get(), writable);
+        if (g_local_owns_ring.load(std::memory_order_acquire)) {
+            LocalTrack::consumed_frames.fetch_add(available, std::memory_order_acq_rel);
+        }
         for (uint32_t frame = available; frame < writable; ++frame) {
             g_callback_scratch[static_cast<size_t>(frame) * 2u] = 0.0f;
             g_callback_scratch[static_cast<size_t>(frame) * 2u + 1u] = 0.0f;
@@ -1071,22 +1109,29 @@ bool HasSelectedNativeScope() noexcept {
     return false;
 }
 
-void PauseSelectedNativeMusic() noexcept {
+// all_slots pauses every native music slot (local playback); otherwise only
+// the scopes selected for OmniMix replacement.
+void PauseNativeMusic(bool all_slots) noexcept {
     for (size_t slot = 0; slot < g_native_playing_ids.size(); ++slot) {
         const uint32_t current = g_native_playing_ids[slot].load(
             std::memory_order_acquire);
+        const bool selected = all_slots || ShouldReplaceSlot(slot);
         uint32_t& paused = g_policy_paused_ids[slot];
-        if (paused && (paused != current || !ShouldReplaceSlot(slot))) {
+        if (paused && (paused != current || !selected)) {
             if (!g_game_pause_requested.load(std::memory_order_acquire)) {
                 ExecuteAction(2, paused);
             }
             paused = 0;
         }
-        if (current && ShouldReplaceSlot(slot) && paused != current) {
+        if (current && selected && paused != current) {
             ExecuteAction(1, current);
             paused = current;
         }
     }
+}
+
+void PauseSelectedNativeMusic() noexcept {
+    PauseNativeMusic(false);
 }
 
 void RestoreNativeMusic() noexcept {
@@ -1119,7 +1164,41 @@ void DisengageReplacement(const char* reason) {
     }
 }
 
+bool g_local_policy_engaged = false;
+
+// Local playback (LocalMusic.h) has priority over OmniMix and the game's music
+// while a track is open. Returns true when it handled this tick.
+bool PumpLocalMusicPolicy() {
+    if (!g_local_owns_ring.load(std::memory_order_acquire)) {
+        LocalTrack::output_active.store(false, std::memory_order_release);
+        if (g_local_policy_engaged) {
+            g_local_policy_engaged = false;
+            SetCustomPaused(true);
+            RestoreNativeMusic();
+            Log("[music.local] local track closed; native/OmniMix policy resumes");
+        }
+        return false;
+    }
+    if (!g_local_policy_engaged) {
+        g_local_policy_engaged = true;
+        DisengageReplacement("local_track");
+        Log("[music.local] local track owns the Audio Input channel");
+    }
+    const bool source = EnsureAudioInputSource();
+    const bool playing = LocalTrack::playing.load(std::memory_order_acquire);
+    SetCustomPaused(!source || !playing);
+    PauseNativeMusic(true);
+    const uint64_t last_callback = g_last_sample_callback_tick.load(
+        std::memory_order_acquire);
+    LocalTrack::output_active.store(source && last_callback &&
+        GetTickCount64() - last_callback < 500, std::memory_order_release);
+    return true;
+}
+
 void PumpMusicPolicy() {
+    if (PumpLocalMusicPolicy()) {
+        return;
+    }
     const bool enabled = g_enabled.load(std::memory_order_acquire);
     if (!enabled) {
         RestoreNativeMusic();
@@ -1387,7 +1466,7 @@ struct OmniSession {
         g_session_alive.store(false, std::memory_order_release);
         g_stream_active.store(false, std::memory_order_release);
         g_pcm_prebuffered.store(false, std::memory_order_release);
-        g_ring.Clear();
+        OmniRingClear();
     }
 
     void Unload() {
@@ -1634,7 +1713,7 @@ void WorkerMain() {
         if (observed_config_generation != UINT64_MAX &&
             observed_config_generation != generation) {
             session.Unload();
-            g_ring.Clear();
+            OmniRingClear();
             audible_delay.Reset();
             source_rate = 0;
             source_channels = 0;
@@ -1692,7 +1771,7 @@ void WorkerMain() {
             snapshot.state == Omni::Paused, std::memory_order_release);
         if (!active || (snapshot.flags & Omni::StreamError) != 0) {
             g_pcm_prebuffered.store(false, std::memory_order_release);
-            g_ring.Clear();
+            OmniRingClear();
             std::this_thread::sleep_for(std::chrono::milliseconds(20));
             continue;
         }
@@ -1717,7 +1796,7 @@ void WorkerMain() {
             local_read_cursor = snapshot.read_cursor;
             resampler.Configure(source_rate, source_channels, output_rate);
             audible_delay.Reset(snapshot.audible_cursor);
-            g_ring.Clear();
+            OmniRingClear();
             g_stream_id.store(snapshot.stream_id, std::memory_order_release);
             g_pcm_prebuffered.store(false, std::memory_order_release);
             g_stream_activation_pending.store(true, std::memory_order_release);
@@ -1733,7 +1812,8 @@ void WorkerMain() {
             continue;
         }
 
-        if (g_ring.AvailableWrite() >= 8192u) {
+        if (!g_local_owns_ring.load(std::memory_order_acquire) &&
+            g_ring.AvailableWrite() >= 8192u) {
             const int64_t read = session.api.read_frames(
                 session.pcm, input.data(), kWorkerReadFrames);
             if (read > 0) {
@@ -1741,7 +1821,7 @@ void WorkerMain() {
                 resampler.Convert(input.data(), static_cast<uint32_t>(read), converted);
                 const uint32_t converted_frames = static_cast<uint32_t>(
                     converted.size() / 2u);
-                if (g_ring.Push(converted.data(), converted_frames) !=
+                if (OmniRingPush(converted.data(), converted_frames) !=
                     converted_frames) {
                     g_underflow_callbacks.fetch_add(1, std::memory_order_relaxed);
                 }
@@ -1779,6 +1859,8 @@ void WorkerMain() {
     session.Unload();
     g_worker_started.store(false, std::memory_order_release);
 }
+
+#include "local_track.inc"
 
 bool ResolveContractsAndInstallHooks() {
     bool ok = true;
@@ -1892,6 +1974,7 @@ BE_Result BE_CALL ConfigurationChanged(const char* configuration) {
     g_fallback_to_native.store(
         parsed.fallback_to_native, std::memory_order_release);
     g_enabled.store(parsed.enabled, std::memory_order_release);
+    LocalTrack::enabled.store(parsed.local_playback, std::memory_order_release);
     g_config_generation.fetch_add(1, std::memory_order_acq_rel);
     Log(std::string("[music.config] enabled=") +
         (parsed.enabled ? "true" : "false") +
@@ -1899,13 +1982,15 @@ BE_Result BE_CALL ConfigurationChanged(const char* configuration) {
         " clientId=" + (parsed.client_id.empty() ? "missing" : "configured") +
         " scopes=" + (parsed.replace_login ? "L" : "-") +
         (parsed.replace_meta ? "M" : "-") +
-        (parsed.replace_gameplay ? "G" : "-"));
+        (parsed.replace_gameplay ? "G" : "-") +
+        " local=" + (parsed.local_playback ? "true" : "false"));
     return BE_Result_Ok;
 }
 
 void BE_CALL Shutdown() {
     g_enabled.store(false, std::memory_order_release);
     g_shutdown_requested.store(true, std::memory_order_release);
+    LocalTrack::Stop();
     if (g_worker.joinable()) {
         g_worker.join();
     }
@@ -1949,7 +2034,7 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Better Endfield Music", "3.1.1",
+    {kModuleId, "Better Endfield Music", "3.2.0",
         BETTER_ENDFIELD_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
@@ -1960,4 +2045,9 @@ const BE_ModuleApiV1 kApi{
 
 BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfield_GetModuleApiV1(void) {
     return &kApi;
+}
+
+// Named capability for Camera's MMD playback (LocalMusic.h).
+BE_EXPORT const BE_LocalMusicApiV1* BE_CALL BetterEndfield_GetLocalMusicApiV1(void) {
+    return &LocalTrack::kApi;
 }
