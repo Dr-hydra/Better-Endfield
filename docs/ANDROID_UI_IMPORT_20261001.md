@@ -31,4 +31,4 @@ Release 完整构建、Lint 和签名校验通过。MMD 导入八组宿主检查
 
 安装包：`artifacts/BetterEndfield-Android-3.4.0-20261001-ui.apk`。版本仍为 3.4.0 / 30400。
 
-后续主标签整合：共享 BEM 页面后，Release 构建与完整 `lintRelease` 检查通过，APK 签名校验通过。同步修复 Android 10–12 不支持 `InputStream.readAllBytes()` 的纹理转换规则读取问题，以及赞赏图片保存的资源类型检查问题；未改变纹理转换策略。新版位于 `artifacts/BetterEndfield-Android-3.4.0-20261001-inline-models.apk`。覆盖安装时原无线调试设备报告 offline，尚未确认本轮安装成功。没有启动游戏或自动操作用户页面，文件选择及标签切换实际效果由用户验收。
+后续主标签整合：共享 BEM 页面后，Release 构建与完整 `lintRelease` 检查通过，APK 签名校验通过。同步修复 Android 10–12 不支持 `InputStream.readAllBytes()` 的纹理转换规则读取问题，以及赞赏图片保存的资源类型检查问题；未改变纹理转换策略。新版位于 `artifacts/BetterEndfield-Android-3.4.0-20261001-inline-models.apk`。原无线调试设备离线后，使用用户提供的新端口 `192.168.31.12:43461` 重连，`adb install -r` 覆盖安装成功，保留应用数据。没有启动游戏或自动操作用户页面，文件选择及标签切换实际效果由用户验收。
