@@ -1,6 +1,6 @@
 # Better Endfield Android
 
-## Android 3.4.0 development branch
+## Android 3.4.0
 
 The current branch includes the MMD library/player, responsive in-game deck,
 independent world pause, first-person updates and multiple BEM packages per
@@ -9,11 +9,17 @@ module configuration and installed works. In-game controls take effect
 immediately. See [the integration record](../docs/ANDROID_CAMERA_MMD_20261001.md)
 for validation results and platform limits.
 
-Import an MMD work with the system directory picker: select a folder containing
-`set.ini` and its motion/face/camera/music files. Files are copied to private
-storage and published through the framework. Up to four dancers use
+Import an MMD work from a ZIP/7z archive, a folder, or individual
+motion/face/camera/music files. Existing `set.ini` files are recognized;
+otherwise, review the detected files and confirm the work before importing.
+Files are copied to private storage and published through the framework. Up to four dancers use
 `motion2`–`motion4` and optional `face2`–`face4`. Camera paths save to the game's
 private `betterendfield/camera-path.becam`.
+
+Third-party BEM packages are managed directly in the main navigation tab,
+including import, per-character exclusive activation and expandable component
+options. The model download buttons open the author's Quark and Baidu mirrors.
+The header's support button offers WeChat appreciation, Afdian and PayPal.
 
 The optional PC layout uses the game's input-mode switch. It is off by default
 and does not change the account platform. Keyboard or controller input is

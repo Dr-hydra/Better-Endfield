@@ -50,3 +50,11 @@ EIEM 原 PC 的 Windows/SEH 和原生对象布局不能直接用于 ARM64。安�
 Release 打包沿用现有 Gradle 工作目录；针对搬运后被设为只读的构建输出仅清除只读属性，没有删除项目或全量 clean。`RuntimeBootstrap.loadIntoTargetNamespace` 的非 SDK 调用仅对框架注入入口做局部 Lint 标注；被系统拒绝或接口不存在时仍由运行时记录失败并关闭，未对全项目关闭 Lint。
 
 真实游戏中的多人动作、表情、布料、冻结恢复、第一人称残留头发及触屏/键鼠布局效果需单独测试。本轮不会将未执行的游戏验证写成通过。
+
+## 合并 main 前检查（2026-10-01）
+
+远端 `main@3b285742` 是安卓开发分支的祖先，无独立新增提交，可快进合并且没有冲突。用户已检查外部页面，确认第三方模型在主界面切换可用。最终 APK 已通过 Release 构建、完整 `lintRelease`、签名检查及覆盖安装；PC 界面 Release 构建通过。
+
+为检查安卓共享代码对桌面的影响，使用当前 `F:/Better Endfield/native` 源码，在本机 SSD 的 `D:/work/BetterEndfield-checks/main-merge-20261001` 构建 Windows Release 的 `BetterEndfield.Camera`、`BetterEndfield.Actions`、`BetterEndfield.UiModule`，全部通过。没有使用来源路径仍指向旧盘的 CMake 缓存，也没有清理或全量复制外置硬盘项目。Camera 的 shared_ptr 原子自由函数有 C++20 弃用提示；这是兼容 NDK libc++ 的现有写法，未影响编译。
+
+本轮不重复已经通过且源码未变的宿主测试，不将编译或外部 UI 验收当作游戏内 MMD、物理及布局的效果验收。安卓 README 已同步压缩包/单项导入和主标签管理入口。
