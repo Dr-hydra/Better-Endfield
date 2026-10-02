@@ -1,7 +1,8 @@
 // Included inside the shared transaction implementation on Android only.
 // Android world prefabs omit LOD0. Build from the exact UI LOD0 resource and
-// rebind to world LOD1 only after matching renderer space and every bone path
-// and rest matrix. This never equates LOD0/LOD1 geometry or material tables.
+// rebind to world LOD1 using live world bones. Compatibility checks follow the
+// same developer setting as UI publication; required objects and array bounds
+// still have to exist. LOD0/LOD1 geometry and material tables remain distinct.
 bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocData& bem,
     void* asset,std::vector<PreparedBinding>& bindings,
     std::vector<PreparedBinding>* prepared_ui=nullptr,void** prepared_ui_asset=nullptr) {
@@ -11,7 +12,7 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
         ~DonorLifetime() { betterendfield::AndroidReleaseUiDonor(handle,root); }
     } lifetime{handle,handle_root};
     void* donor=RootTemporary(betterendfield::AndroidLoadUiDonor(adapter.ui_resource,handle,handle_root));
-    if (!donor || ObjectName(donor)!=adapter.ui_resource) { Log("Android UI donor unavailable."); return false; }
+    if (!donor || (!bem.skip_validation && ObjectName(donor)!=adapter.ui_resource)) { Log("Android UI donor unavailable."); return false; }
     std::vector<PreparedBinding> sources;
     if (!ReadCompletedAndroidDonor(adapter,bem,donor,sources)) {
         sources.clear();
@@ -23,12 +24,12 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
     void* renderers=Invoke(Contract("game_object.renderers"),asset,args);
     int count=ArrayLength(renderers);
     BE_ResolvedClassV1 transform_class{};
-    if (count<=0 || count>4096 || g_host->resolve_class(g_host->context,"UnityEngine.CoreModule.dll",
+    if (count<=0 || (!bem.skip_validation && count>4096) || g_host->resolve_class(g_host->context,"UnityEngine.CoreModule.dll",
         "UnityEngine","Transform",&transform_class)!=BE_Result_Ok || !transform_class.type_object) return false;
     void* transform_args[]{transform_class.type_object,&inactive};
     void* transforms=Invoke(Contract("game_object.renderers"),asset,transform_args);
     const int transform_count=ArrayLength(transforms);
-    if (transform_count<=0 || transform_count>8192) return false;
+    if (transform_count<=0 || (!bem.skip_validation && transform_count>8192)) return false;
     auto relative=[](void* object) {
         auto path=BuildTransformPath(object);
         const auto slash=path.find('/');
@@ -37,7 +38,7 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
     std::unordered_map<std::string,void*> world_bones;
     for (int i=0;i<transform_count;++i) {
         void* bone=ArrayValue(transforms,i); const auto path=relative(bone);
-        if (!path.empty() && !world_bones.emplace(path,bone).second) return false;
+        if (!path.empty() && !world_bones.emplace(path,bone).second && !bem.skip_validation) return false;
     }
     for (size_t i=0;i<sources.size();++i) {
         auto& source=sources[i];
@@ -48,10 +49,13 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
         for (int j=0;j<count;++j) {
             void* candidate=ArrayValue(renderers,j);
             if (ObjectName(candidate)!=target_name || relative(candidate)!=std::string("Mesh_all/lod1/")+target_name) continue;
-            if (renderer) return false;
+            if (renderer) {
+                if (bem.skip_validation) continue;
+                return false;
+            }
             renderer=candidate;
         }
-        if (!renderer || !SameMeshSpace(source.renderer,renderer)) {
+        if (!renderer || (!bem.skip_validation && !SameMeshSpace(source.renderer,renderer))) {
             Log("Android world renderer missing or mesh space differs: "+target_name); return false;
         }
         PreparedBinding target;
@@ -60,27 +64,31 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
         target.original_bones=Invoke(Contract("skinned.get_bones"),renderer,nullptr);
         target.original_materials=Invoke(Contract("renderer.get_shared_materials"),renderer,nullptr);
         if (!GetRendererEnabled(renderer,target.original_enabled) || !UseSavedOriginal(asset,target) ||
-            !DonorMesh(target) || ObjectName(DonorMesh(target))!=target_name) return false;
+            !DonorMesh(target) || (!bem.skip_validation && ObjectName(DonorMesh(target))!=target_name)) return false;
         target.custom_enabled=(bem.components[i].info.flags&kComponentFlagHidden)?false:
             (target.saved_original?target.donor_enabled:target.original_enabled);
         target.custom_mesh=source.custom_mesh==DonorMesh(source)?DonorMesh(target):source.custom_mesh;
         if (target.saved_original) target.custom_bones=DonorBones(target);
-        // A keep override cloned from UI LOD0 may be reused by world LOD1 only
-        // when the same native material and original texture pins are present.
+        // Validate keep overrides against the world material using the same
+        // shared-source texture policy used to prepare the UI material clone.
         for (size_t k=0;k<bem.components[i].keep_material_overrides.size();++k) {
             const auto& override=bem.components[i].keep_material_overrides[k];
             if (override.material_slot>=static_cast<uint32_t>(ArrayLength(DonorMaterials(target))) ||
                 override.material_slot>=static_cast<uint32_t>(ArrayLength(DonorMaterials(source)))) return false;
             void* world_material=ArrayValue(DonorMaterials(target),override.material_slot);
             void* ui_material=ArrayValue(DonorMaterials(source),override.material_slot);
-            if (!world_material || !ui_material ||
-                ObjectName(world_material)!=bem.components[i].keep_material_names[k] ||
-                ObjectName(ui_material)!=ObjectName(world_material)) return false;
+            if (!world_material || !ui_material || (!bem.skip_validation &&
+                (ObjectName(world_material)!=bem.components[i].keep_material_names[k] ||
+                ObjectName(ui_material)!=ObjectName(world_material)))) return false;
             const auto pins=ReadMaterialTextureSlots(world_material);
             for (size_t t=0;t<bem.textures.size();++t) if (override.textures&(uint64_t{1}<<t)) {
-                size_t matches=0;
-                for (const auto& pin:pins) matches+=ObjectName(pin.texture)==bem.textures[t].original_name;
-                if (matches!=1) return false;
+                const auto match=MatchTexturePins(pins,bem.textures[t].original_name,bem.skip_validation,ObjectName);
+                if (!bem.skip_validation && match.status!=TexturePinStatus::Matched) {
+                    LogTexturePinFailure(match.status==TexturePinStatus::Missing?
+                        "Android world texture pin missing.":"Android world texture pin ambiguous.",
+                        world_material,pins,bem.textures[t].original_name);
+                    return false;
+                }
             }
         }
         target.custom_materials=source.custom_materials;
@@ -92,7 +100,7 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
         }
         if (source.custom_bones) {
             const int bones=ArrayLength(source.custom_bones);
-            target.custom_bones=NewArrayLike(DonorBones(target),bones);
+            target.custom_bones=NewArrayLike(DonorBones(target),bones,bem.skip_validation);
             if (!target.custom_bones) return false;
             const auto& component=bem.components[source.component_id];
             for (int b=0;b<bones;++b) {
@@ -108,8 +116,11 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
                         if (found!=world_bones.end()) break;
                     }
                 }
-                if (found==world_bones.end() || !component.BoneNameMatches(static_cast<size_t>(b),ObjectName(found->second))) {
+                if (found==world_bones.end()) {
                     Log("Android world bone path missing: "+path); return false;
+                }
+                if (!bem.skip_validation && !component.BoneNameMatches(static_cast<size_t>(b),ObjectName(found->second))) {
+                    Log("Android world bone name differs from package: "+path); return false;
                 }
                 Matrix4x4Raw ui_matrix{},world_matrix{};
                 if (!InvokeValue(Contract("transform.local_to_world"),ui_bone,nullptr,ui_matrix) ||
@@ -153,7 +164,8 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
         }
     }
     Log("Android shadow transaction prepared: replacement meshes cast; matching mobile proxies="+std::to_string(proxies));
-    Log("Android UI LOD0 -> world LOD1 prepared with exact bone paths/rest matrices: "+
+    Log(std::string("Android UI LOD0 -> world LOD1 prepared (")+ (bem.skip_validation?"unchecked":"validated")+
+        ") with live world bones: "+
         std::to_string(bindings.size())+" components");
     return !g_construction->failed;
 }

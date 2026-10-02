@@ -7,6 +7,7 @@
 #include "native_mesh_layout.h"
 #include "mod_registry.h"
 #include "resource_policy.h"
+#include "texture_binding_policy.h"
 #if defined(__ANDROID__)
 #include "modules/custom_model/android_mesh_builder.h"
 #endif
@@ -1749,23 +1750,18 @@ bool ApplyTextureMask(void* copy,uint64_t mask,const BemPocData& bem,
         const auto slots=ReadMaterialTextureSlots(copy);
         std::vector<int32_t> assigned;
         for (size_t t=0;t<bem.textures.size();++t) if (mask&(uint64_t{1}<<t)) {
-            const auto& tex=bem.textures[t]; const MaterialTextureSlot* match=nullptr;
-            std::vector<const MaterialTextureSlot*> matches;
-            for (const auto& slot:slots) if (ObjectName(slot.texture)==tex.original_name) {
-                // One source texture can be shared by several shader properties.
-                // Preserve that sharing in the clone; distinct same-name objects
-                // still do not establish which source the package targets.
-                if (!bem.skip_validation && match && match->texture!=slot.texture) {
-                    LogTexturePinFailure("Ambiguous v25 texture name pin.",copy,slots,tex.original_name); return false;
-                }
-                if (!match) match=&slot;
-                matches.push_back(&slot);
+            const auto& tex=bem.textures[t];
+            const auto pins=MatchTexturePins(slots,tex.original_name,bem.skip_validation,ObjectName);
+            if (pins.status==TexturePinStatus::Ambiguous) {
+                LogTexturePinFailure("Ambiguous v25 texture name pin.",copy,slots,tex.original_name); return false;
             }
-            if (!match) {
+            if (pins.status==TexturePinStatus::Missing) {
                 LogTexturePinFailure(bem.skip_validation?"Developer mode: unmatched texture left unchanged.":"Texture name pin missing.",copy,slots,tex.original_name);
                 if(bem.skip_validation) continue;
                 return false;
             }
+            const auto& matches=pins.slots;
+            const auto* match=matches.front();
             for (const auto* matched:matches) {
                 if (!bem.skip_validation && std::find(assigned.begin(),assigned.end(),matched->slot_id)!=assigned.end()) {
                     LogTexturePinFailure("Duplicate texture slot assignment.",copy,slots,tex.original_name); return false;

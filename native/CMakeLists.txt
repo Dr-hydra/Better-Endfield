@@ -261,6 +261,11 @@ add_executable(BetterEndfield.CustomModelBindingTests EXCLUDE_FROM_ALL
 better_endfield_target_defaults(BetterEndfield.CustomModelBindingTests)
 target_link_libraries(BetterEndfield.CustomModelBindingTests PRIVATE BetterEndfield.CustomModelCore)
 
+add_executable(BetterEndfield.AndroidWorldBindingTests EXCLUDE_FROM_ALL
+    tests/android_world_binding_tests.cpp
+)
+better_endfield_target_defaults(BetterEndfield.AndroidWorldBindingTests)
+
 better_endfield_target_defaults(BetterEndfield.BemValidate)
 
 # Read-only research utility. It is deliberately excluded from the default
