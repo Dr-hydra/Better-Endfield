@@ -44,8 +44,8 @@
                     <TextBlock x:Name="HotSwitchHint" Text="开启后需重启游戏。之后切换包、外观、组件或应用滑条，在切换配队或重新打开详情时更新。会增加内存占用。" TextWrapping="Wrap" />
                     <ToggleSwitch x:Name="LoadingOptimizationToggle" Header="实验：模型加载优化" Toggled="Experiments_Toggled" />
                     <TextBlock x:Name="LoadingOptimizationHint" Text="开启后需重启游戏。减少重复贴图构建和解压期间的内存占用。" TextWrapping="Wrap" />
-                    <ToggleSwitch x:Name="SkipValidationToggle" Header="开发者：关闭模型校验" Toggled="SkipValidation_Toggled" />
-                    <TextBlock x:Name="SkipValidationHint" Text="仅供开发测试。开启后会跳过兼容性和容量校验，可能导致游戏崩溃或模型错乱，风险自行承担。重启游戏后生效。" TextWrapping="Wrap" />
+                    <ToggleSwitch x:Name="SkipValidationToggle" Header="实验：关闭模型校验" Toggled="SkipValidation_Toggled" />
+                    <TextBlock x:Name="SkipValidationHint" Text="开启后会跳过兼容性和容量校验，可能导致游戏崩溃或模型错乱，风险自行承担。重启游戏后生效。" TextWrapping="Wrap" />
                 </StackPanel>
             </Border>
             <InfoBar x:Name="Status" IsOpen="False" IsClosable="True" />

@@ -59,8 +59,8 @@ public sealed partial class CustomModelPage : UserControl
         HotSwitchHint.Text = BemText.Get("开启后需重启游戏。之后切换包、外观、组件或应用滑条，在切换配队或重新打开详情时更新。会增加内存占用。");
         LoadingOptimizationToggle.Header = BemText.Get("实验：模型加载优化");
         LoadingOptimizationHint.Text = BemText.Get("开启后需重启游戏。减少重复贴图构建和解压期间的内存占用。");
-        SkipValidationToggle.Header = BemText.Get("开发者：关闭模型校验");
-        SkipValidationHint.Text = BemText.Get("仅供开发测试。开启后会跳过兼容性和容量校验，可能导致游戏崩溃或模型错乱，风险自行承担。重启游戏后生效。");
+        SkipValidationToggle.Header = BemText.Get("实验：关闭模型校验");
+        SkipValidationHint.Text = BemText.Get("开启后会跳过兼容性和容量校验，可能导致游戏崩溃或模型错乱，风险自行承担。重启游戏后生效。");
         EmptyHint.Text = BemText.Get("尚未导入模型包。已有其他格式？打开转换窗口查看支持范围与缺少的资料。");
         foreach (var toggle in new[] { LodToggle, HotSwitchToggle, LoadingOptimizationToggle, SkipValidationToggle })
         {
@@ -388,7 +388,7 @@ public sealed partial class CustomModelPage : UserControl
             Render();
             Message(() => count > 0 || processed ? BemText.Format("已导入 {0} 个包", count) : BemText.Get("导入失败"),
                 () => issues.Count > 0 ? string.Join("\n", issues)
-                    : (_service.SkipValidation ? BemText.Get("开发者模式：已跳过模型校验。") : BemText.Get("已校验模型包。")) + BemText.Get("新包默认停用；请选择外观或选项组并启用。同 ID 更新保留仍有效的选择。"),
+                    : (_service.SkipValidation ? BemText.Get("已跳过模型校验（实验）。") : BemText.Get("已校验模型包。")) + BemText.Get("新包默认停用；请选择外观或选项组并启用。同 ID 更新保留仍有效的选择。"),
                 issues.Count > 0 ? (count > 0 ? InfoBarSeverity.Warning : InfoBarSeverity.Error) : InfoBarSeverity.Success);
         }
         catch (Exception ex) { Message(() => BemText.Get("导入失败"), () => ex.Message, InfoBarSeverity.Error); }
@@ -450,7 +450,7 @@ public sealed partial class CustomModelPage : UserControl
             _service.HotSwitch = HotSwitchToggle.IsOn;
             _service.LoadingOptimization = LoadingOptimizationToggle.IsOn;
             await _service.SaveAsync();
-            Message(() => BemText.Get("实验设置已保存"), () => BemText.Get("两个开关相互独立，默认关闭；重启游戏后生效。"));
+            Message(() => BemText.Get("实验设置已保存"), () => BemText.Get("各开关相互独立，默认关闭；重启游戏后生效。"));
         }
         catch (Exception ex) { Reload(); Message(() => BemText.Get("保存失败"), () => ex.Message, InfoBarSeverity.Error); }
     }
@@ -461,7 +461,7 @@ public sealed partial class CustomModelPage : UserControl
         {
             _service.SkipValidation = SkipValidationToggle.IsOn;
             await _service.SaveAsync(); Reload();
-            Message(() => _service.SkipValidation ? BemText.Get("开发者模式已开启") : BemText.Get("模型校验已恢复"),
+            Message(() => _service.SkipValidation ? BemText.Get("实验：模型校验已关闭") : BemText.Get("模型校验已恢复"),
                 () => _service.SkipValidation ? BemText.Get("兼容性和容量校验已关闭，可能导致游戏崩溃或模型错乱。下次启动游戏生效。") : BemText.Get("下次启动游戏使用正常校验。"),
                 _service.SkipValidation ? InfoBarSeverity.Warning : InfoBarSeverity.Informational);
         }

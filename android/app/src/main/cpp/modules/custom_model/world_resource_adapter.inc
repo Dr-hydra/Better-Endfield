@@ -6,6 +6,9 @@
 bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocData& bem,
     void* asset,std::vector<PreparedBinding>& bindings,
     std::vector<PreparedBinding>* prepared_ui=nullptr,void** prepared_ui_asset=nullptr) {
+    auto refuse=[](const std::string& reason) {
+        Log("Android world adapter refused: "+reason); return false;
+    };
     void* handle=nullptr; uint32_t handle_root=0;
     struct DonorLifetime {
         void*& handle; uint32_t& root;
@@ -16,7 +19,7 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
     std::vector<PreparedBinding> sources;
     if (!ReadCompletedAndroidDonor(adapter,bem,donor,sources)) {
         sources.clear();
-        if (!PrepareResource(adapter,bem,donor,sources)) return false;
+        if (!PrepareResource(adapter,bem,donor,sources)) return refuse("UI donor preparation failed");
         if (prepared_ui && prepared_ui_asset && g_hot_switch_runtime.load()) { *prepared_ui=sources; *prepared_ui_asset=donor; }
     }
     bool inactive=true;
@@ -25,11 +28,13 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
     int count=ArrayLength(renderers);
     BE_ResolvedClassV1 transform_class{};
     if (count<=0 || (!bem.skip_validation && count>4096) || g_host->resolve_class(g_host->context,"UnityEngine.CoreModule.dll",
-        "UnityEngine","Transform",&transform_class)!=BE_Result_Ok || !transform_class.type_object) return false;
+        "UnityEngine","Transform",&transform_class)!=BE_Result_Ok || !transform_class.type_object)
+        return refuse("renderer/Transform enumeration unavailable; renderers="+std::to_string(count));
     void* transform_args[]{transform_class.type_object,&inactive};
     void* transforms=Invoke(Contract("game_object.renderers"),asset,transform_args);
     const int transform_count=ArrayLength(transforms);
-    if (transform_count<=0 || (!bem.skip_validation && transform_count>8192)) return false;
+    if (transform_count<=0 || (!bem.skip_validation && transform_count>8192))
+        return refuse("world Transform count="+std::to_string(transform_count));
     auto relative=[](void* object) {
         auto path=BuildTransformPath(object);
         const auto slash=path.find('/');
@@ -38,12 +43,13 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
     std::unordered_map<std::string,void*> world_bones;
     for (int i=0;i<transform_count;++i) {
         void* bone=ArrayValue(transforms,i); const auto path=relative(bone);
-        if (!path.empty() && !world_bones.emplace(path,bone).second && !bem.skip_validation) return false;
+        if (!path.empty() && !world_bones.emplace(path,bone).second && !bem.skip_validation)
+            return refuse("duplicate world Transform path: "+path);
     }
     for (size_t i=0;i<sources.size();++i) {
         auto& source=sources[i];
         std::string target_name=adapter.components[source.component_id].name;
-        if (!target_name.ends_with("_lod0")) return false;
+        if (!target_name.ends_with("_lod0")) return refuse("unsupported source LOD name: "+target_name);
         target_name.back()='1';
         void* renderer=nullptr;
         for (int j=0;j<count;++j) {
@@ -51,7 +57,7 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
             if (ObjectName(candidate)!=target_name || relative(candidate)!=std::string("Mesh_all/lod1/")+target_name) continue;
             if (renderer) {
                 if (bem.skip_validation) continue;
-                return false;
+                return refuse("duplicate world renderer: "+target_name);
             }
             renderer=candidate;
         }
@@ -63,8 +69,10 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
         target.original_mesh=Invoke(Contract("skinned.get_shared_mesh"),renderer,nullptr);
         target.original_bones=Invoke(Contract("skinned.get_bones"),renderer,nullptr);
         target.original_materials=Invoke(Contract("renderer.get_shared_materials"),renderer,nullptr);
-        if (!GetRendererEnabled(renderer,target.original_enabled) || !UseSavedOriginal(asset,target) ||
-            !DonorMesh(target) || (!bem.skip_validation && ObjectName(DonorMesh(target))!=target_name)) return false;
+        if (!GetRendererEnabled(renderer,target.original_enabled) || !UseSavedOriginal(asset,target) || !DonorMesh(target))
+            return refuse("world renderer original binding unavailable: "+target_name);
+        if (!bem.skip_validation && ObjectName(DonorMesh(target))!=target_name)
+            return refuse("world mesh name differs: expected="+target_name+" actual="+ObjectName(DonorMesh(target)));
         target.custom_enabled=(bem.components[i].info.flags&kComponentFlagHidden)?false:
             (target.saved_original?target.donor_enabled:target.original_enabled);
         target.custom_mesh=source.custom_mesh==DonorMesh(source)?DonorMesh(target):source.custom_mesh;
@@ -74,12 +82,28 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
         for (size_t k=0;k<bem.components[i].keep_material_overrides.size();++k) {
             const auto& override=bem.components[i].keep_material_overrides[k];
             if (override.material_slot>=static_cast<uint32_t>(ArrayLength(DonorMaterials(target))) ||
-                override.material_slot>=static_cast<uint32_t>(ArrayLength(DonorMaterials(source)))) return false;
+                override.material_slot>=static_cast<uint32_t>(ArrayLength(DonorMaterials(source))))
+                return refuse("keep material slot outside world/UI arrays: "+target_name+" slot="+std::to_string(override.material_slot));
             void* world_material=ArrayValue(DonorMaterials(target),override.material_slot);
             void* ui_material=ArrayValue(DonorMaterials(source),override.material_slot);
+            const auto ui_name=ObjectName(ui_material),world_name=ObjectName(world_material);
+            // Android's lower-LOD face material is a native counterpart of the
+            // UI material, not a different character/material slot. The copied
+            // UI shader and its texture pins were already validated above.
+            constexpr std::string_view ui_prefix="M_actor_",world_prefix="M_actor_lod_";
+            const bool world_lod_variant=ui_name.starts_with(ui_prefix) && world_name.starts_with(world_prefix) &&
+                std::string_view(ui_name).substr(ui_prefix.size())==std::string_view(world_name).substr(world_prefix.size());
             if (!world_material || !ui_material || (!bem.skip_validation &&
-                (ObjectName(world_material)!=bem.components[i].keep_material_names[k] ||
-                ObjectName(ui_material)!=ObjectName(world_material)))) return false;
+                (ui_name!=bem.components[i].keep_material_names[k] ||
+                (ui_name!=world_name && !world_lod_variant))))
+                return refuse("keep material identity differs: "+target_name+" expected="+bem.components[i].keep_material_names[k]+
+                    " ui="+ui_name+" world="+world_name);
+            if (world_lod_variant) {
+                // The old lower-LOD shader may omit properties from the copied
+                // UI shader. Its texture table does not constrain that copy.
+                Log("Android world keep material LOD counterpart accepted: "+ui_name+" -> "+world_name);
+                continue;
+            }
             const auto pins=ReadMaterialTextureSlots(world_material);
             for (size_t t=0;t<bem.textures.size();++t) if (override.textures&(uint64_t{1}<<t)) {
                 const auto match=MatchTexturePins(pins,bem.textures[t].original_name,bem.skip_validation,ObjectName);
@@ -95,13 +119,14 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
         if (source.custom_mesh!=DonorMesh(source)) {
             target.change_shadow=true;
             target.custom_shadow=1; // ShadowCastingMode.On, using the new visible mesh.
-            if (!InvokeValue(Contract("android.shadow_get"),renderer,nullptr,target.original_shadow)) return false;
+            if (!InvokeValue(Contract("android.shadow_get"),renderer,nullptr,target.original_shadow))
+                return refuse("world shadow mode unavailable: "+target_name);
             target.original_shadow_mesh=Invoke(Contract("android.shadow_mesh_get"),renderer,nullptr);
         }
         if (source.custom_bones) {
             const int bones=ArrayLength(source.custom_bones);
             target.custom_bones=NewArrayLike(DonorBones(target),bones,bem.skip_validation);
-            if (!target.custom_bones) return false;
+            if (!target.custom_bones) return refuse("world bone array allocation rejected: "+target_name+" bones="+std::to_string(bones));
             const auto& component=bem.components[source.component_id];
             for (int b=0;b<bones;++b) {
                 void* ui_bone=ArrayValue(source.custom_bones,b);
@@ -124,7 +149,8 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
                 }
                 Matrix4x4Raw ui_matrix{},world_matrix{};
                 if (!InvokeValue(Contract("transform.local_to_world"),ui_bone,nullptr,ui_matrix) ||
-                    !InvokeValue(Contract("transform.local_to_world"),found->second,nullptr,world_matrix)) return false;
+                    !InvokeValue(Contract("transform.local_to_world"),found->second,nullptr,world_matrix))
+                    return refuse("bone matrix unavailable: "+path);
                 bool rest_match=true;
                 for (int n=0;n<16;++n) if (!std::isfinite(ui_matrix.m[n]) || !std::isfinite(world_matrix.m[n]) ||
                     std::abs(ui_matrix.m[n]-world_matrix.m[n])>0.0001f) { rest_match=false; break; }
@@ -135,7 +161,7 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
                     // visual deformation to the owner's runtime validation.
                     Log("Android world bone rest space differs; matched path retained: "+path);
                 }
-                if (!SetArrayValue(target.custom_bones,b,found->second)) return false;
+                if (!SetArrayValue(target.custom_bones,b,found->second)) return refuse("world bone assignment failed: "+path);
                 target.bone_names.push_back(ObjectName(found->second));
             }
         }
@@ -158,7 +184,8 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
             proxy.original_materials=proxy.custom_materials=Invoke(Contract("renderer.get_shared_materials"),renderer,nullptr);
             proxy.original_bones=Invoke(Contract("skinned.get_bones"),renderer,nullptr);
             if (!proxy.original_mesh || !proxy.original_materials ||
-                !GetRendererEnabled(renderer,proxy.original_enabled) || !UseSavedOriginal(asset,proxy)) return false;
+                !GetRendererEnabled(renderer,proxy.original_enabled) || !UseSavedOriginal(asset,proxy))
+                return refuse("shadow proxy original binding unavailable: "+proxy_name);
             proxy.custom_enabled=false;
             bindings.push_back(proxy); ++proxies;
         }
@@ -167,5 +194,5 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
     Log(std::string("Android UI LOD0 -> world LOD1 prepared (")+ (bem.skip_validation?"unchecked":"validated")+
         ") with live world bones: "+
         std::to_string(bindings.size())+" components");
-    return !g_construction->failed;
+    return !g_construction->failed || refuse("temporary object rooting failed");
 }

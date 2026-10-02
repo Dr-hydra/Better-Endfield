@@ -211,6 +211,26 @@ int main() {
             Check(fixture.Run(),"unchecked world still validates keep-material identity");
         }
         {
+            Fixture fixture; fixture.KeepTexture();
+            fixture.ui_material->name="M_actor_typhoea_face_01";
+            fixture.world_material->name="M_actor_lod_typhoea_face_01";
+            fixture.bem.components[0].keep_material_names={fixture.ui_material->name};
+            fixture.world_material->slots.clear();
+            Check(fixture.Run(),"validated world rejected the native Android face LOD counterpart");
+            Check(fixture.bindings[0].custom_materials==ui_sources[0].custom_materials,
+                "LOD counterpart did not receive the validated UI material copy");
+            fixture.world_material->name="M_actor_lod_other_face_01";
+            Check(!fixture.Run(),"LOD counterpart rule accepted a different character's material");
+        }
+        for (const auto* suffix:{"aglina_hair_01","pelica_body_01","purrche_cloth_01"}) {
+            Fixture fixture; fixture.KeepTexture();
+            fixture.ui_material->name=std::string("M_actor_")+suffix;
+            fixture.world_material->name=std::string("M_actor_lod_")+suffix;
+            fixture.bem.components[0].keep_material_names={fixture.ui_material->name};
+            fixture.world_material->slots.clear();
+            Check(fixture.Run(),"native LOD counterpart rule was restricted to Typhoea or the face component");
+        }
+        {
             Fixture fixture; fixture.bem.components[0].bone_names.resize(257,"Bone");
             static_cast<Object*>(ui_sources[0].custom_bones)->array.resize(257,fixture.ui_bone);
             Check(!fixture.Run(),"validated world ignored the palette capacity limit");

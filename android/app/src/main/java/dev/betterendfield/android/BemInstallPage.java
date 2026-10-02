@@ -73,7 +73,7 @@ final class BemInstallPage {
             if(settings.getBoolean(BemInstaller.SKIP_VALIDATION,false)==checked) return;
             if(!settings.edit().putBoolean(BemInstaller.SKIP_VALIDATION,checked).commit()) {
                 skipValidation.setChecked(!checked);
-                saveError(new IllegalStateException("开发者选项保存失败"));
+                saveError(new IllegalStateException("实验选项保存失败"));
             }
         });
         entries=root.findViewById(R.id.bem_entries);

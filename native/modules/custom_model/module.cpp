@@ -1150,38 +1150,27 @@ bool BuildMeshFromComponent(
     }
 
     VertexDeclaration declaration;
-    if (!ReadVertexDeclaration(source_mesh, declaration)) {
-        Log(label + " source declaration is unreadable; refusing.");
+    // The replacement owns its vertex declaration. The donor supplies bones,
+    // bindposes and materials, not the layout of the newly allocated buffers.
+    // In particular, Android may compress a native mesh differently from the
+    // Windows profile used to author an otherwise valid BEM package.
+    if (component.attributes.empty() || component.attributes.size()>declaration.entries.size()) {
+        Log(label + " replacement declaration is missing or too large; refusing.");
         return false;
     }
-    if (!component.skip_validation && (component.attributes.size()!=static_cast<size_t>(declaration.count) ||
-        std::memcmp(component.attributes.data(),declaration.entries.data(),component.attributes.size()*16)!=0 ||
-        (component.layout_crc && Crc32(std::string_view(
-        reinterpret_cast<const char*>(declaration.entries.data()),declaration.count*sizeof(VertexAttributeDescriptorRaw)))!=component.layout_crc))) {
-        Log(label+" native vertex declaration differs from verified profile."); return false;
-    }
-    if(component.skip_validation) {
-        if(component.attributes.empty() || component.attributes.size()>declaration.entries.size()) return false;
-        declaration.count=static_cast<int32_t>(component.attributes.size());
-        std::memcpy(declaration.entries.data(),component.attributes.data(),component.attributes.size()*16);
-    }
-    std::vector<int32_t> source_strides;
-    if (!ReadMeshStrides(source_mesh, source_strides)) {
-        Log(label + " source strides are unreadable; refusing.");
-        return false;
+    declaration.count=static_cast<int32_t>(component.attributes.size());
+    std::memcpy(declaration.entries.data(),component.attributes.data(),component.attributes.size()*16);
+    VertexDeclaration source_declaration;
+    if (ReadVertexDeclaration(source_mesh,source_declaration) &&
+        (source_declaration.count!=declaration.count ||
+        std::memcmp(source_declaration.entries.data(),declaration.entries.data(),component.attributes.size()*16)!=0)) {
+        Log(label + " native vertex layout differs; rebuilding from the BEM declaration.");
     }
 
     const std::vector<int32_t> payload_strides{
         static_cast<int32_t>(info.stride0),
         static_cast<int32_t>(info.stride1),
         static_cast<int32_t>(info.stride2)};
-    if (!component.skip_validation && source_strides != payload_strides) {
-        Log(label + " payload strides " + StrideText(payload_strides) +
-            " do not match the live mesh's " + StrideText(source_strides) +
-            "; refusing so the bytes cannot land on the wrong channels.");
-        LogVertexDeclaration(declaration);
-        return false;
-    }
 
     void* bindposes = prepared_bindposes ? prepared_bindposes : Invoke(
         Contract("mesh.get_bindposes"), source_mesh, nullptr);
@@ -1264,7 +1253,7 @@ bool BuildMeshFromComponent(
         return false;
     }
 
-    // The source declaration already exposes the packed BlendWeight and
+    // The BEM declaration already exposes the packed BlendWeight and
     // BlendIndices fields in stream 2. Keep that one authoritative storage:
     // InternalSetBoneWeights creates a second Unity skinning representation,
     // then the former second SetVertexBufferParams call replaced its layout
@@ -1369,9 +1358,9 @@ bool BuildMeshFromComponent(
     // Verify before assigning. The writer signatures are inferred from Unity's
     // published bindings, so a wrong one shows up here as a refusal rather
     // than as a corrupted renderer.
-    if (!component.skip_validation && !MatchesDeclaration(mesh, declaration, source_strides, label +
+    if (!component.skip_validation && !MatchesDeclaration(mesh, declaration, payload_strides, label +
             " built")) {
-        Log(label + " does not reproduce the source declaration; refusing.");
+        Log(label + " does not reproduce the BEM declaration; refusing.");
         DestroyUnityObject(mesh);
         return false;
     }

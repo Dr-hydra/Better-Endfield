@@ -135,9 +135,7 @@
     <string name="camera_fp_side_limit">第一人称侧看角度上限</string>
     <string name="camera_global_fov">修改全局视野</string>
     <string name="camera_global_fov_value">全局视野（FOV）</string>
-    <string name="camera_global_fov_hint">作用于普通主相机。自由视角、第一人称和导入运镜保留各自视野；关闭后随游戏下一次相机更新恢复。设置重启游戏后装载。</string>
     <string name="camera_follow_character">自由镜头跟随人物移动</string>
-    <string name="camera_follow_hint">手动自由视角中跟随人物平移，保持镜头方向。切人或传送后重新建立参考，运镜播放时暂停跟随。设置重启游戏后装载。</string>
     <string name="camera_fp_turn_speed">第一人称转身速度</string>
     <string name="degree_per_second">°/秒</string>
     <string name="mmd_title">MMD 作品库</string>
