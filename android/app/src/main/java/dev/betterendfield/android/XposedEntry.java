@@ -69,7 +69,12 @@ public final class XposedEntry extends XposedModule {
                             MmdInstalledResources.prepare(context, settings.getString(MmdInstaller.INDEX, "[]"),
                                     name -> new ParcelFileDescriptor.AutoCloseInputStream(openRemoteFile(name)), this::report);
                         } catch (Exception error) { report("MMD preparation failed: " + error); }
+                        try { ThirdPartyRuntimeMaterializer.prepare(context, configs.thirdParty(),
+                                name -> new ParcelFileDescriptor.AutoCloseInputStream(openRemoteFile(name)), this::report); }
+                        catch (Exception error) { report("Third-party preparation failed: " + error); }
                         RuntimeBootstrap.prepare(application,context,param.getClassLoader(),configs,this::installFrames,this::report);
+                        ThirdPartyRuntimeUpdater.start(context,()->getRemotePreferences("module_settings"),
+                            name -> new ParcelFileDescriptor.AutoCloseInputStream(openRemoteFile(name)), configs.thirdParty(), this::report);
                         if(installedPrepared) BemHotSwitchUpdater.start(context,
                             ()->getRemotePreferences("module_settings"),modelSource,initialIndex,
                             skipValidation,hotSwitch,loadingOptimization,this::report);

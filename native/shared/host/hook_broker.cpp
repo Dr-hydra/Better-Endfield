@@ -5,6 +5,7 @@
 #include <MinHook.h>
 
 #include <algorithm>
+#include "../hooks/hook_chain.h"
 
 namespace BetterEndfield::Host {
 
@@ -26,6 +27,13 @@ bool HookBroker::Initialize() {
         return false;
     }
     initialized_ = true;
+    chains_=std::make_unique<BetterEndfield::Hooks::Chain>(BetterEndfield::Hooks::Backend{
+        [](void* target,void* entry,void** original){return MH_CreateHook(target,entry,original)==MH_OK;},
+        [](void* target){return MH_EnableHook(target)==MH_OK;},
+        [](void* target){MH_RemoveHook(target);},
+        [](void* target){MH_DisableHook(target);}});
+    chain_api_={sizeof(BE_HookChainApiV1),BETTER_ENDFIELD_HOOK_CHAIN_ABI_V1,this,
+        &CreateChain,&DisableChain,&DisableModuleChain};
     return true;
 }
 
@@ -39,6 +47,7 @@ BE_Result HookBroker::Create(const std::string& module_id, void* target,
     if (!initialized_) {
         return BE_Result_NotReady;
     }
+    if (chains_&&chains_->Contains(target))return BE_Result_Conflict;
     if (hooks_.contains(target)) {
         logger_.Write("host.hooks", "Hook conflict at a target already owned by " +
             hooks_.at(target).module_id + ".");
@@ -70,6 +79,8 @@ BE_Result HookBroker::ReleaseModule(const std::string& module_id) {
         return BE_Result_NotReady;
     }
 
+    if(chains_)chains_->DisableModule(module_id.c_str());
+
     std::vector<void*> targets;
     for (const auto& [target, record] : hooks_) {
         if (record.module_id == module_id && !record.retired) {
@@ -96,6 +107,7 @@ BE_Result HookBroker::ReleaseModule(const std::string& module_id) {
 BE_Result HookBroker::RetireModule(const std::string& module_id) {
     std::lock_guard lock(mutex_);
     if (!initialized_) return BE_Result_NotReady;
+    if(chains_)chains_->DisableModule(module_id.c_str());
     bool failed = false;
     for (auto& [target, record] : hooks_) {
         if (record.module_id != module_id) continue;
@@ -114,7 +126,8 @@ void HookBroker::Shutdown() {
         return;
     }
 
-    bool has_retired = false;
+    bool has_retired = chains_&&chains_->HasTargets();
+    if(chains_)chains_->Shutdown();
     for (const auto& [target, record] : hooks_) {
         MH_DisableHook(target);
         if (record.retired) has_retired = true;
@@ -125,6 +138,26 @@ void HookBroker::Shutdown() {
     // pass-through callback. Their bounded executable storage lives until exit.
     if (!has_retired) MH_Uninitialize();
     initialized_ = false;
+}
+
+const BE_HookChainApiV1* HookBroker::ChainApi() {return &chain_api_;}
+BE_Result BE_CALL HookBroker::CreateChain(void* context,const char* module,void* target,
+        void* detour,void** next,uint64_t* handle) {
+    auto* self=static_cast<HookBroker*>(context);if(!self)return BE_Result_InvalidArgument;
+    std::lock_guard lock(self->mutex_);
+    if(!self->initialized_||!self->chains_)return BE_Result_NotReady;
+    if(self->hooks_.contains(target))return BE_Result_Conflict;
+    return self->chains_->Create(module,target,detour,next,handle);
+}
+BE_Result BE_CALL HookBroker::DisableChain(void* context,uint64_t handle) {
+    auto* self=static_cast<HookBroker*>(context);if(!self)return BE_Result_InvalidArgument;
+    std::lock_guard lock(self->mutex_);
+    return self->chains_?self->chains_->Disable(handle):BE_Result_NotReady;
+}
+BE_Result BE_CALL HookBroker::DisableModuleChain(void* context,const char* module) {
+    auto* self=static_cast<HookBroker*>(context);if(!self)return BE_Result_InvalidArgument;
+    std::lock_guard lock(self->mutex_);
+    return self->chains_?self->chains_->DisableModule(module):BE_Result_NotReady;
 }
 
 } // namespace BetterEndfield::Host

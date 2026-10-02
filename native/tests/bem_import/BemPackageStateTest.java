@@ -185,8 +185,82 @@ public final class BemPackageStateTest {
         check(new File(root,stale+"/installed.bem").isFile(),"Removal swept unindexed same-character generation");
         System.out.println("PASS runtime duplicate/selection defenses and generation-only removal");
     }
+    private static JSONObject parameterEntry(String character) throws Exception {
+        JSONObject value=optionsEntry(character).put("bem_minor",3);
+        value.put("parameters",new JSONArray("[{\"id\":\"size\",\"name\":\"Size\",\"min\":0,\"max\":1000,\"step\":10,\"default\":500,\"neutral\":0},{\"id\":\"trim_size\",\"name\":\"Trim size\",\"min\":100,\"max\":900,\"step\":20,\"default\":500,\"neutral\":100,\"available_when\":{\"eq\":[\"body\",\"on\"]}}]"));
+        value.put("default_parameters","size:500&trim_size:500");
+        return value;
+    }
+    private static void continuousParameters() throws Exception {
+        App app=new App();JSONObject value=parameterEntry("shape");app.seed(new JSONArray().put(value));
+        JSONObject current=BemInstaller.index(app).getJSONObject(0);
+        check(current.getString("selected_parameters").equals("size:500&trim_size:500"),"BEM 1.3 defaults did not persist");
+        int commits=app.prefs.commits;BemInstaller.index(app);check(commits==app.prefs.commits,"BEM 1.3 migration is not idempotent");
+        BemInstaller.saveAll(app,new JSONArray().put(change(value,"parameters","trim_size:740&size:820")).put(change(value,"options","body:off&trim:red")));
+        current=BemInstaller.index(app).getJSONObject(0);
+        check(current.getString("selected_parameters").equals("size:820&trim_size:740"),"Parameter selection was not canonical/atomic with options");
+        java.util.Map<String,Integer> saved=BemParameters.parse(current,current.getString("selected_parameters"));
+        java.util.Map<String,Integer> effective=BemParameters.effective(current,saved,BemOptions.parse(current,current.getString("selected_options")));
+        check(effective.get("trim_size")==100 && saved.get("trim_size")==740,"Hidden parameter did not use neutral/preserve saved value");
+        String before=app.prefs.value;
+        for(String invalid:new String[]{"size:821","size:1001","size:-1","size:0.5","size:20&size:30","missing:100"})
+            rejects(()->BemInstaller.saveAll(app,new JSONArray().put(change(value,"parameters",invalid))),"Accepted invalid BEM 1.3 parameter "+invalid);
+        check(before.equals(app.prefs.value),"Rejected parameter changed persisted snapshot");
+        JSONObject downgrade=optionsEntry("shape");
+        JSONArray downgraded=BemInstaller.installedIndex(BemInstaller.index(app),downgrade,value.getString("generation"));
+        check(downgraded.getJSONObject(0).getString("selected_parameters").isEmpty(),"Downgrade advertised unsupported parameters");
+        check(downgraded.getJSONObject(0).getString("remembered_parameters").equals("size:820&trim_size:740"),"Downgrade lost remembered parameters");
+        JSONObject upgrade=parameterEntry("shape");
+        JSONArray upgraded=BemInstaller.installedIndex(downgraded,upgrade,downgrade.getString("generation"));
+        check(upgraded.getJSONObject(0).getString("selected_parameters").equals("size:820&trim_size:740"),"Upgrade did not restore parameter values");
+        JSONArray reimported=BemInstaller.installedIndex(upgraded,parameterEntry("shape"),null);
+        check(reimported.getJSONObject(reimported.length()-1).getString("selected_parameters").equals("size:820&trim_size:740"),"Same-package reimport discarded slider values");
+        JSONObject resized=parameterEntry("shape");resized.getJSONArray("parameters").getJSONObject(0).put("max",600);
+        JSONArray adapted=BemInstaller.installedIndex(upgraded,resized,upgrade.getString("generation"));
+        check(adapted.getJSONObject(0).getString("selected_parameters").equals("size:500&trim_size:740"),"Range change did not repair only invalid parameter");
+        JSONObject malformed=parameterEntry("shape");malformed.getJSONArray("parameters").getJSONObject(0).put("step",0);
+        rejects(()->BemParameters.parse(malformed,""),"Accepted zero step metadata");
+        malformed.getJSONArray("parameters").getJSONObject(0).put("step",10).put("min",0.0);
+        rejects(()->BemParameters.parse(malformed,""),"Coerced floating point metadata ticks");
+        App game=new App();java.util.List<String> opened=new java.util.ArrayList<>();
+        BemInstalledResources.Source source=name->{opened.add(name);return new ByteArrayInputStream(new byte[4]);};
+        JSONObject first=upgraded.getJSONObject(0),legacy=entry("legacy",true);
+        String runtime=BemInstalledResources.prepare(game,new JSONArray().put(first).put(legacy).toString(),source,message->{},false,true,false);
+        check(runtime.contains(";parameters=size:820&trim_size:740,;skip_validation="),"Runtime parameter slots did not align with legacy package");
+        String next=BemInstalledResources.prepare(game,new JSONArray().put(new JSONObject(first.toString()).put("selected_parameters","size:800&trim_size:740")).put(legacy).toString(),source,message->{},false,true,false);
+        check(!next.equals(runtime) && opened.size()==2,"Parameter-only update recopied immutable generations or left configuration unchanged");
+        JSONObject corrupt=new JSONObject(first.toString()).put("selected_parameters","size:821");
+        rejects(()->BemInstalledResources.prepare(game,new JSONArray().put(corrupt).toString(),source,message->{},true,true,false),"Skip validation bypassed parameter wire validation");
+        check(opened.size()==2,"Invalid parameter opened payload before validation");
+        byte[] original=Files.readAllBytes(new File(game.root,"betterendfield/installed-models/"+first.getString("generation")+".bem").toPath());
+        check(java.util.Arrays.equals(original,new byte[4]),"Runtime materialization rewrote package payload");
+        System.out.println("PASS BEM 1.3 defaults, atomic saves, hidden weights, upgrades, runtime payload preservation and selection updates");
+    }
+    private static void realShapePayload(String path) throws Exception {
+        byte[] bytes=Files.readAllBytes(java.nio.file.Path.of(path));
+        java.nio.ByteBuffer header=java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+        check(bytes.length>=40 && header.getShort(8)==1 && header.getShort(10)==3,"Expected real BEM 1.3 fixture header");
+        int manifestSize=Math.toIntExact(header.getLong(24));
+        JSONObject manifest=new JSONObject(new String(bytes,40,manifestSize,java.nio.charset.StandardCharsets.UTF_8));
+        JSONObject entry=parameterEntry(manifest.getJSONObject("target").getString("character_id"));
+        entry.put("package_id",manifest.getString("package_id")).put("name",manifest.getString("name")).put("bytes",bytes.length)
+             .put("option_groups",manifest.getJSONArray("option_groups")).put("parameters",manifest.getJSONArray("parameters"))
+             .put("selection_constraints",manifest.optJSONArray("selection_constraints"));
+        entry.put("default_options",BemOptions.encode(BemOptions.parse(entry,"")));
+        entry.put("default_parameters",BemParameters.encode(BemParameters.parse(entry,"")));
+        App app=new App();app.seed(new JSONArray().put(entry));JSONObject installed=BemInstaller.index(app).getJSONObject(0);
+        java.util.Map<String,Integer> weights=BemParameters.parse(installed,installed.getString("selected_parameters"));
+        JSONObject parameter=installed.getJSONArray("parameters").getJSONObject(0);String id=parameter.getString("id");
+        weights.put(id,BemParameters.snap(parameter,500));
+        BemInstaller.saveAll(app,new JSONArray().put(change(installed,"parameters",BemParameters.encode(weights))));
+        String config=BemInstalledResources.prepare(app,BemInstaller.index(app).toString(),name->new ByteArrayInputStream(bytes),message->{},false,true,false);
+        check(config.contains(";parameters="+BemParameters.encode(weights)),"Real package selection not handed to native configuration");
+        File copied=new File(app.root,"betterendfield/installed-models/"+installed.getString("generation")+".bem");
+        check(java.util.Arrays.equals(bytes,Files.readAllBytes(copied.toPath())),"Materialization altered real 1.3 manifest or deformation payload");
+        System.out.println("PASS real BEM 1.3 manifest/deformation bytes preserved through installed index and private materialization ("+bytes.length+" bytes)");
+    }
     public static void main(String[] args) {
-        try {coexistenceAndConversion();migrationAndImmediateSave();componentValidation();runtimeDefenseAndRemoval();System.out.println("PASS "+checks+" BEM package state checks");System.exit(0);}
+        try {coexistenceAndConversion();migrationAndImmediateSave();componentValidation();continuousParameters();runtimeDefenseAndRemoval();if(args.length>0)realShapePayload(args[0]);System.out.println("PASS "+checks+" BEM package state checks");System.exit(0);}
         catch(Throwable error){error.printStackTrace();System.exit(1);}
     }
 }

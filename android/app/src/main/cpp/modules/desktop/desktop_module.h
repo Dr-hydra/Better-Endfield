@@ -35,6 +35,7 @@ public:
 
     const char* Id() const override;
     ModuleResult Start(Il2CppRuntime& runtime) override;
+    const BE_HostApiV1* OptionalHostApi() const { return initialized_?&host_:nullptr; }
 
 private:
     struct HookRecord {

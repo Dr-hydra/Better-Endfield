@@ -17,7 +17,9 @@ def prepare_export(manifest, payloads):
     skin32 = any(m['streams'][2]['stride'] == 32 for m in manifest['meshes'])
     overrides = any(c.get('material_overrides') for a in manifest.get('appearances', []) for c in a['components'])
     extended_caps = any(c in ('texture-slots', 'resource-bone-aliases') for c in manifest['required_capabilities'])
-    if 'option_groups' not in manifest and (aliases or slots or skin32 or overrides or extended_caps):
+    shapes = bool(manifest.get('parameters') or manifest.get('mesh_deformations') or
+                  any(c in ('body-parameters', 'mesh-position-deltas') for c in manifest['required_capabilities']))
+    if 'option_groups' not in manifest and (aliases or slots or skin32 or overrides or extended_caps or shapes):
         appearances = manifest.pop('appearances')
         default = manifest.pop('default_appearance_id')
         bem.require(0 < len(appearances) <= 64, 'Expected 1..64 appearances')

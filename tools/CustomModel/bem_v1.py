@@ -1,4 +1,4 @@
-"""BEM 1.0/1.1/1.2 container and v1.0 migration.
+"""BEM 1.0/1.1/1.2/1.3 container and v1.0 migration.
 
 The manifest is data, never executable. Payload IDs are directory indices.
 """
@@ -69,8 +69,13 @@ def validate_manifest(m, payload_count, minor=None):
             require('\0' not in value, 'NUL in manifest string')
     tree(m)
     if 'option_groups' in m:
+        import bem_v13
+        if minor == 3 or bem_v13.used(m):
+            return bem_v13.validate_manifest(m, payload_count, minor)
         import bem_v11
         return bem_v11.validate_manifest(m, payload_count, minor)
+    require(not m.get('parameters') and not m.get('mesh_deformations'),
+            'Body parameters require a BEM 1.3 composable project')
     require(not m.get('texture_slots') and not any(c.get('bone_name_aliases') for c in m['target']['components']),
             'Extended resources require a BEM 1.2 composable project')
     require(m['schema'] == 1, 'Unsupported manifest schema')
@@ -171,8 +176,6 @@ def write_package(path, manifest, payloads):
         import bem_v11
         summary = bem_v11.analyze_selection_space(manifest, payloads)
         minor = bem_v11.required_minor(manifest, summary, len(unique))
-        # Re-check under the limits of the header actually written.
-        validate_manifest(manifest, len(unique), minor)
     for mesh in manifest['meshes']:
         if composable:
             for draw in mesh['draws']:
@@ -183,13 +186,20 @@ def write_package(path, manifest, payloads):
             stream['payload'] = mapping[stream['payload']]
     for texture in manifest['textures']:
         texture['payload'] = mapping[texture['payload']]
+    for channel in manifest.get('mesh_deformations', []):
+        for frame in channel['frames']:
+            if 'payload' in frame:
+                frame['payload'] = mapping[frame['payload']]
     if not composable:
         for appearance in manifest['appearances']:
             if 'preview' in appearance:
                 appearance['preview'] = mapping[appearance['preview']]
     payloads = unique
+    # Deduplication changes directory IDs; validate the remapped manifest under
+    # the actual header limits, rather than comparing old IDs with the new count.
+    if composable: validate_manifest(manifest, len(payloads), minor)
     raw = json.dumps(manifest, ensure_ascii=False, separators=(',', ':'), allow_nan=False).encode('utf-8')
-    require(len(raw) <= 4 * 1024 * 1024 and len(payloads) <= (16384 if minor == 2 else 4096),
+    require(len(raw) <= 4 * 1024 * 1024 and len(payloads) <= (16384 if minor >= 2 else 4096),
             'Manifest/directory too large')
     pos = HEADER.size + len(raw) + ENTRY.size * len(payloads)
     entries, blocks = [], []
@@ -208,12 +218,12 @@ def write_package(path, manifest, payloads):
 
 
 def package_minor(path):
-    """Header minor version (0: 1.0, 1: 1.1, 2: 1.2) without reading the manifest."""
+    """Header minor version (0..3: 1.0..1.3) without reading the manifest."""
     with Path(path).open('rb') as f:
         h = f.read(HEADER.size)
     require(len(h) == HEADER.size, 'Truncated BEM header')
     magic, major, minor = HEADER.unpack(h)[:3]
-    require(magic == MAGIC and major == 1 and minor in (0, 1, 2), 'Unsupported BEM header/version')
+    require(magic == MAGIC and major == 1 and minor in (0, 1, 2, 3), 'Unsupported BEM header/version')
     return minor
 
 
@@ -223,10 +233,10 @@ def read_package(path, decode=True):
         h = f.read(HEADER.size)
         require(len(h) == HEADER.size, 'Truncated BEM header')
         magic, major, minor, hs, fs, ms, count, flags = HEADER.unpack(h)
-        require(magic == MAGIC and major == 1 and minor in (0, 1, 2) and hs == HEADER.size and not flags,
+        require(magic == MAGIC and major == 1 and minor in (0, 1, 2, 3) and hs == HEADER.size and not flags,
                 'Unsupported BEM header/version')
         require(fs == size and fs <= 2 * 1024**3 and 0 < ms <= 4 * 1024**2 and
-                count <= (16384 if minor == 2 else 4096), 'Invalid BEM sizes')
+                count <= (16384 if minor >= 2 else 4096), 'Invalid BEM sizes')
         def no_duplicates(pairs):
             d = {}
             for k, v in pairs:

@@ -28,6 +28,18 @@ public final class BemHotSwitchUpdateTest {
         check(transaction.update(reader,preparer,publisher),"latest selection after superseded preparation");
         index[0]="[]";
         check(transaction.update(reader,preparer,publisher),"disable all packages");
+        String[] shapeIndex={"{\"selected_options\":\"body:on\",\"selected_parameters\":\"shape:400\"}"};
+        BemHotSwitchUpdate shapeTransaction=new BemHotSwitchUpdate(shapeIndex[0]);
+        java.util.List<String> queuedShapes=new java.util.ArrayList<>();
+        shapeIndex[0]="{\"selected_options\":\"body:on\",\"selected_parameters\":\"shape:450\"}";
+        check(shapeTransaction.update(()->shapeIndex[0],value->value,value->{queuedShapes.add(value);return true;}),"parameter-only update");
+        check(queuedShapes.size()==1 && queuedShapes.get(0).contains("shape:450") && queuedShapes.get(0).contains("body:on"),"parameter update lost merged options");
+        shapeIndex[0]="{\"selected_options\":\"body:off\",\"selected_parameters\":\"shape:460\"}";
+        check(!shapeTransaction.update(()->shapeIndex[0],value->{
+            shapeIndex[0]="{\"selected_options\":\"body:off\",\"selected_parameters\":\"shape:470\"}";return value;
+        },value->{queuedShapes.add(value);return true;}),"superseded slider apply");
+        check(queuedShapes.size()==1,"superseded slider state reached native bridge");
+        check(shapeTransaction.update(()->shapeIndex[0],value->value,value->{queuedShapes.add(value);return true;}) && queuedShapes.get(1).contains("shape:470"),"latest slider state after superseded apply");
         System.out.println("PASS BEM hot-switch transaction: changes, retries, superseded candidates and empty selection");
     }
     private static void check(boolean condition,String message) {

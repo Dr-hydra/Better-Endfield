@@ -44,6 +44,7 @@ def choose_default_action(actions: list[dict[str, Any]], character_id: str) -> s
     preferred_names = {
         "chr_0013_aglina": "a_actor_aglina_dialog_state_shy2_walk_loop",
         "chr_0032_lizhiyan": "a_actor_lizhiyan_dialog_virtual_single_walk_l",
+        "chr_0038_purrche": "a_actor_purrchena_interact_sit_loop",
     }
     preferred = preferred_names.get(character_id)
     if preferred and any(action["id"] == preferred for action in actions):

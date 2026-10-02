@@ -2,158 +2,162 @@
 
 [English](README.en.md) | [简体中文](README.md)
 
-Better Endfield is a modular modding runtime for *Arknights: Endfield*. Features such as custom character appearances (BEM), title screen models & choreography, per-character voice language routing, OmniMix dynamic music replacement, real-time combat stats & rDPS metering, display enhancement (OptiScaler DLSS/FSR/XeSS) and mobile touch HUD emulation are provided as decoupled native DLL modules. The core Host handles dynamic IL2CPP runtime symbol resolution, Hook lifecycle management, configuration persistence, and module discovery.
+Better Endfield is an open-source modular toolkit for *Arknights: Endfield*. It provides third-party character models, MMD playback, camera and UI controls, per-character voice languages, title-screen customization, and PC combat/gacha tools. Windows and Android share the main native feature sources; standard BEM model packages and MMD works can be used on both platforms. An experimental loader also supports third-party native modules and a web UI container.
 
-The Windows desktop build and the Android/LSPosed build share one set of module sources. As of 3.3.0, custom character appearances use the same standard BEM package on both platforms.
+[Download](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [Release notes](CHANGELOG.md) · [Android setup/build guide](android/README.md) · [BEM creator guide](docs/BEM_CREATOR_GUIDE.md) · [Module developer guide](docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
 
----
+The current version is **3.4.2**, with standalone BEM Tools **1.4.1**. Version 3.4.2 adds cross-platform BEM 1.3 sliders, global FOV, character-follow free camera and experimental third-party modules, and updates first-person restoration/hair handling and Purrche title-screen resources.
 
-## Architecture
+## Feature overview
 
-```text
-BetterEndfield.exe
-  runtime/BetterEndfield.Host.dll
-  modules/BetterEndfield.Model.dll
-  modules/BetterEndfield.CustomModel.dll
-  modules/BetterEndfield.Voice.dll
-  modules/BetterEndfield.Music.dll
-  modules/BetterEndfield.CombatStats.dll
-  modules/BetterEndfield.UiModule.dll
-  modules/BetterEndfield.Camera.dll
-  modules/BetterEndfield.Actions.dll
-  modules/BetterEndfield.Gacha.dll
-  loaders/BetterEndfield.Injector.exe
-  payloads/xinput1_4.dll
-```
+Supported means an implementation and controls exist; it does not mean every character, work, device or game version has been tested in game.
 
-- `BetterEndfield.Host.dll`: The in-process host, runtime symbol resolver, and HookBroker.
-- `BetterEndfield.Model.dll`: Title screen choreography, custom login characters, asset substitution, and camera animation controls.
-- `BetterEndfield.CustomModel.dll`: Custom character appearance (BEM) assembly, material and texture binding, and LOD locking.
-- `BetterEndfield.Voice.dll`: Per-character audio routing (Chinese/English/Japanese/Korean), Wwise media redirection, and lip-sync synchronization.
-- `BetterEndfield.Music.dll`: OmniMix PCM stream injection, Wwise Audio Input integration, and native game music fallback.
-- `BetterEndfield.CombatStats.dll`: Damage number toggles, real-time DirectX combat overlay, team rDPS attribution, and session history recording.
-- `BetterEndfield.UiModule.dll`: Native mobile touch UI layout and mouse-to-touch injection.
-- `BetterEndfield.Camera.dll`: Free camera, field of view (FOV) scaling, and near-object dither disabling.
-- `BetterEndfield.Actions.dll`: Sustained dash and per-character action appearance toggles; disabled by default.
-- `BetterEndfield.Gacha.dll`: Gacha record lookup and local statistics.
-- `BetterEndfield.Injector.exe`: Default external loader; Host and all modules load directly from the application folder without modifying game files.
-- `payloads/xinput1_4.dll`: Optional XInput DLL hijack loader, deployed to the game directory only upon user confirmation.
+| Feature | Windows x64 | Android ARM64 | Details |
+| --- | --- | --- | --- |
+| Third-party models (BEM) | Supported | Supported | Same standard package; import/update, multiple installed packages, per-character activation, appearance and component options |
+| BEM 1.3 shape sliders | Supported (3.4.2) | Supported (3.4.2) | Author-supplied position deltas, interpolation, additive parameters, conditional availability and saved values |
+| Third-party native modules and web UI | Experimental (3.4.2) | Experimental (3.4.2) | Dedicated import/management entry; game Host loads DLL/SO, with author-defined pages and features |
+| Model hot switching | Experimental | Experimental | Enable before game startup; selections apply on normal game resource reloads |
+| Model loading optimization | Experimental | Experimental | Fewer decode copies and reuse of equivalent textures within one build; no quality reduction |
+| Title-screen models, animation and colors | Supported | Supported | Character/action selection, stage speeds, scale, turning, looping and crossfades |
+| Per-character voice languages | Supported | Supported | Chinese, English, Japanese and Korean, with optional story voice and lip-sync routing |
+| Free camera, first person and world pause | Supported | Supported | Independent controls, FOV, camera motion, keyframes, VMD cameras and near-camera dither handling |
+| Global FOV and character-follow free camera | Supported (3.4.2) | Supported (3.4.2) | Override the ordinary main camera FOV; translate free camera with the character while retaining manual offsets |
+| MMD library and multiple dancers | Supported | Supported | Up to four dancers, motion/face/camera/local music, timeline and cloth options |
+| UID/HUD visibility and UI layouts | Supported | Supported | Touch layout and mouse-to-touch on PC; PC-style layout on Android |
+| Sustained special dash | Supported | Supported | Individual Gilberta/Liino toggles; optional Liino mech/VFX hiding |
+| Combat stats and rDPS | Supported | — | In-game overlay, character/skill rankings, timelines, history filters and web-analysis entry |
+| Gacha records | Supported | — | Game sync, local statistics, JSON import/export and optional cloud sharing |
+| OmniMix music integration | Supported | — | External backend audio routed into Wwise, with native-music fallback |
+| OptiScaler display enhancements | Supported | — | DLSS/FSR/XeSS upscaling, frame generation and sharpening; availability depends on hardware/backend/rendering path |
 
----
+The Windows app includes Chinese/English localization, light/dark themes, runtime status and logs, game-path discovery, launch arguments, shortcuts, update checks and XInput autostart management. Android has automatically saved category pages, package import and a collapsible in-game control deck.
 
-## Source Directory Layout
+## Install and start
 
-```text
-ui/BetterEndfield.UI/          WinUI 3 desktop controller application
-native/modules/model/          Title screen visual, model, and animation module
-native/modules/custom_model/   Custom character appearance (BEM) assembly module
-native/modules/voice/          Voice language routing and Wwise media module
-native/modules/music/          OmniMix music integration module
-native/modules/combat_stats/   Combat data metering and in-game DirectX HUD
-native/modules/ui/             Mobile touch UI and input injection module
-native/modules/camera/         Free camera and viewport enhancement module
-native/modules/actions/        Sustained dash and character action module
-native/modules/gacha/          Gacha record lookup module
-native/loaders/injector/       External standalone injector
-native/loaders/xinput/         XInput DLL proxy and in-process bootstrap
-native/shared/                 Host, public ABI headers, and third-party dependencies
-manifests/                     Resource manifests for models, voices, and dependencies
-resources/                     Maintenance inputs for voice and catalog generators
-installer/                     Inno Setup installer scripts and localization files
-scripts/                       Build, manifest generation, and asset scanning scripts
-tools/CustomModel/             BEM conversion, validation, and character profile tooling
-android/                       Android/LSPosed release build
-docs/                          Runtime interfaces, reverse engineering notes, and docs
-```
+### Windows
 
----
+Download the Windows installer from [Releases](https://github.com/Dr-hydra/Better-Endfield/releases), open Better Endfield, check the game path, enable the features you need and launch the game. Windows 10/11 x64 is required.
 
-## Key Features
+- **Built-in injector:** the default mode. Better Endfield launches the game and loads Host/modules from the application directory, without deploying Better Endfield runtime files into the game directory.
+- **XInput autostart:** optionally install the `xinput1_4.dll` proxy in Settings to load through the official launcher or a game shortcut. Installation/removal checks ownership and does not overwrite another tool's existing file.
 
-1. **Custom Character Appearances (BEM)**: Import `.bem` packages to replace in-game character appearances. One standard package works on both Windows and Android. See [Custom Character Appearances](#custom-character-appearances-bem).
-2. **Title Screen Customization**: Replace the default title screen character with any operator, select custom animations/poses, tweak camera angles, and apply custom theme accent colors.
-3. **Voice Language Routing**: Assign custom voice languages (Chinese, English, Japanese, Korean) individually for each character in both combat and story dialogue.
-4. **OmniMix Audio Engine**: Dynamically replace in-game music with custom audio sources via OmniMix.
-5. **Real-Time Combat Stats Overlay**: High-performance DirectX in-game HUD displaying damage metering, team rDPS contribution, hit counts, crits, and skill breakdown.
-6. **Display & Pipeline (OptiScaler)**: Upscaling with DLSS, FSR, or XeSS, frame generation, sharpness control, and free camera adjustments.
-7. **Mobile Touch Emulation**: Experience the mobile touch UI on PC with mouse-to-touch conversion (`Ctrl+Alt+T`) and HUD toggling.
-8. **Gacha Record Lookup**: Query and locally aggregate gacha history.
-9. **Bilingual Localization**: Built-in support for both English (US) and Simplified Chinese with instant, runtime language switching.
+OptiScaler is a separate deployment feature that writes to the game directory and applies on the next launch. Launch arguments also apply to generated one-click shortcuts.
 
----
+### Android
 
-## Custom Character Appearances (BEM)
+The APK is an **LSPosed/libxposed API 102 module**, requiring Android 10+, ARM64 and a compatible framework that can inject the target game. Installing the APK alone does not activate game features.
 
-Custom appearances are disabled by default. The release extension is `.bem`; one package targets one character and may carry several fixed appearances. Players only import the package - no Python, no source mod injection framework, no character database, and no hand-written `runtime.ini`.
+Enable the module in your framework, scope it to the Endfield client you actually use, configure features in the module app, then fully stop and restart the game. The in-game deck is attached to the target Activity and does not require overlay permission. Use it for camera, pause, first-person and MMD controls. See the [Android README](android/README.md) for setup, scope troubleshooting and build requirements.
 
-Since 3.3.0 this works on both Windows and Android using **the same standard BEMv1 package**. Android compiles the desktop `native/modules/custom_model` sources directly, so there is no second implementation and no game offsets are introduced; parsing and validation follow the same path on both platforms.
+## BEM models and creator tools
 
-On desktop, packages and their state live in the configuration directory. The distribution ships no appearance assets:
+**Players only need a `.bem` package.** No Python, source Mod framework, character database or hand-written runtime configuration is required. A package targets one character and can contain fixed appearances, configurable components and material/texture replacements. Multiple packages can be installed for one character; activating one disables the others. Updates preserve valid saved selections.
 
-```text
-%LocalAppData%\BetterEndfield\catalog\custom-model\
-  runtime.ini
-  packages\*.bem
-```
+Both platforms use the same BEM parser/assembly core and support 1.0–1.3. **Version 3.4.2 adds BEM 1.3 position morphs**: authors define sliders and deformation data, and the runtime interpolates/adds deltas to immutable base positions while preserving bones, skinning and base normals/tangents. Old packages do not gain automatic body sliders. Source hotkey scripts, arbitrary GUI expressions and arbitrary shaders are not executed.
 
-`runtime.ini` is written by the Character Appearance page and is read-only at runtime:
+Normal selections apply after a game restart. With experimental hot switching enabled, package/component/1.3 parameter changes apply when the game **normally reloads the resource**, such as changing the team or reopening character details. Slider dragging does not instantly rebuild an already displayed mesh. Importing, replacing package files and deleting packages should still be done with the game closed.
 
-```ini
-[CustomModel]
-standalone_lod=false
+Hot switching and loading optimization are independent and disabled by default. Hot switching retains original model resources for cache rebuilding, increasing memory use. Loading optimization reduces decode copies and duplicate resources; it does not guarantee a lower in-game VRAM peak on every device.
 
-[Mod.<package_id>]
-enabled=true
-package=packages/<file>.bem
-appearance=<appearance_id>
-```
+Android provides optional mobile texture conversion for packages with incorrect-looking textures. Success publishes a new generation and preserves selections; failure/cancellation keeps the old package. Conversion requires verified normal-map encoding metadata. A portable model format does not guarantee that desktop texture formats display correctly on every mobile GPU.
 
-Only one package per character may be enabled at a time; duplicates are disabled in the UI with a prompt to reselect. Package and appearance choices take effect on the next game launch, so import, update and delete with the game closed. Updates reuse the same `package_id`, preserving the local enabled state and any appearance IDs that still exist; removed appearances fall back to the default with a notice. Enabling any package locks LOD at runtime; disabling all of them restores the standalone LOD preference.
+**Creator tools** offer a graphical export workflow and standalone CLI, directory/ZIP/RAR/7z inputs, conversion reports, validation, saved `.bemproj.json` tasks and reproducible builds. Profiles for 33 characters ship with the tools; the app also bundles title-screen resource indexes. BEM Tools 1.4.1 exports BEM 1.3 with matching-topology targets, sparse deltas and explicitly bound official EFMI ShapeKey buffers. It does not reconstruct arbitrary source GUIs or guess vertex correspondence.
 
-The conversion tool reads unpacked directories as well as ZIP, RAR and 7z source packages directly, without pre-extraction or a separate archiver, and never runs programs contained in them. It matches source asset identity against the character profiles shipped with the tool, checking index counts, vertex streams, bones and materials; export is offered only after the full check passes. Unsupported sources produce a report explaining what is missing.
-
-Capability boundaries: component replace/keep/hide, separate bone and material sources, merged bone palettes, per-draw game materials, replacement of explicitly bound native textures, and UInt16/UInt32 geometry indices. Limits are 256 local bones and 256 draws per part, and 32 texture bindings plus a 512 MiB upload budget per selected appearance; exceeding them fails with a report. Source hotkey scripts and arbitrary shaders are not executed, and runtime form switching, blend shapes, automatic LOD generation and automatic splitting are not supported. A successful conversion is not in-game verification.
-
-Android manages the same packages from its own third-party model page, validating every appearance on import and preserving the original package bytes. The one platform difference is textures: mobile GPUs use different texture formats, so a package that looks wrong in game can be run through the mobile texture conversion on its management card. A successful conversion publishes a new generation while preserving the enabled state and selected appearance; failure or cancellation leaves the active package untouched. Packages without verified normal-map encoding metadata can still be imported, but cannot be converted. Both platforms require a game restart after changing packages or appearances.
-
-For the authoring workflow, conversion automation boundaries and the full field reference see [`docs/BEM_CREATOR_GUIDE.md`](docs/BEM_CREATOR_GUIDE.md) and [`docs/BEM_V1_SPEC.md`](docs/BEM_V1_SPEC.md).
-
----
-
-## Loader Modes
-
-1. **Injector Mode (Recommended)**:
-   - Starts the game from the Better Endfield controller or command line.
-   - Zero files written to the game directory.
-2. **XInput Autostart Mode**:
-   - Deploys `xinput1_4.dll` to the game folder for automatic loading when launching the game via official launchers or desktop shortcuts.
-   - Clean uninstall supported directly from the Settings page.
-
----
-
-## Building from Source
-
-### Prerequisites
-- Windows 10/11 (x64)
-- Visual Studio 2022 / MSBuild with C++ (v143) and .NET 9 SDK
-- CMake 3.20+
-- Inno Setup 6 (for installer packaging)
-
-### Build Steps
 ```powershell
-# 1. Build all native modules and loaders
-cmake -B build -S native -A x64
-cmake --build build --config Release
-
-# 2. Build the WinUI 3 Controller
-dotnet build ui/BetterEndfield.UI/BetterEndfield.UI.csproj -c Release
-
-# 3. Package the full distribution
-.\scripts\BuildBetterEndfield.ps1
+BetterEndfield.BemConverter.exe new-project editable/project.json --mode pack -o character.bemproj.json
+BetterEndfield.BemConverter.exe build character.bemproj.json
 ```
 
----
+Both platforms also have an off-by-default developer option to disable model validation. It bypasses compatibility/policy checks while retaining the decoding and representation requirements needed to read the file; it does not add new encodings. Developer tests may render incorrectly or crash the game.
 
-## Disclaimer
+- [Creator workflow and conversion boundaries](docs/BEM_CREATOR_GUIDE.md)
+- [BEM 1.0](docs/BEM_V1_SPEC.md) / [1.1 component options](docs/BEM_V1_1_SPEC.md) / [1.2 skinning and bone aliases](docs/BEM_V1_2_SPEC.md)
+- [BEM 1.3 specification](docs/BEM_V1_3_SPEC.md), [slider authoring guide](docs/BEM_V1_3_CREATOR_GUIDE.md) and [runnable format example](tools/CustomModel/examples/body-slider/)
+- [Experimental hot-switch/loading behavior](docs/RELEASE_3_4_1_20261001.md)
 
-Better Endfield is an unofficial, experimental open-source project. It is not affiliated with, endorsed by, or associated with Hypergryph, Mountain Contour, or GRYPHLINE. Please use responsibly and adhere to all relevant terms of service.
+## Third-party modules (experimental, 3.4.2)
+
+Both apps have a dedicated Third-party Modules entry for importing author-supplied ZIP packages, managing enabled state/order, and opening each module's page; newly imported modules start disabled. A package contains `module.json`, a Windows x64 DLL / Android ARM64 SO for its target platforms, and optional HTML/CSS/JS. It can target one platform or provide only a web UI. Modules are managed separately from `.bem` model packages.
+
+The **Host inside the game process** loads native code. Windows uses WebView2 and Android uses WebView for author-written pages. A generic bridge reads/saves the module's JSON configuration, sends business messages, receives results and queries status. Configuration can be saved without a game connection; messages to a native module require a running Host connection.
+
+The loader provides the entry ABI, lifecycle, configuration and message transport. Authors maintain their own game function tables, version adaptation, calling threads, feature implementation and restoration. They can resolve interfaces themselves or optionally use available Host helpers; initialization does not require IL2CPP readiness. Host callbacks run on a worker, not the Unity main thread. Configuration and activation of already-loaded modules can update at runtime. Native libraries remain resident; binary updates, removal and order changes require a game restart rather than arbitrary hot unloading.
+
+Updating/removing a package retires its old installation generation while retaining the old directory; Android also retains its old ZIP. There is currently no automatic garbage collection or deletion after restart, so an active library or page can continue reading its files.
+
+Android phone navigation scrolls horizontally, while large screens retain a side rail. Each module's web UI opens in its own screen instead of a small management card. Bundle static resources for portable pages: Android serves only package-local offline resources; authors can handle network functionality in their native module.
+
+Shared Hooks are optional: chain participants share a target and call `next`. Existing exclusive Hooks still report conflicts and are not automatically converted into chains. Participants coordinate function signatures, arguments/results and feature interactions. Successful loading does not establish compatibility with every built-in or third-party module.
+
+Start with the [module creator guide](docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md), then [ThirdPartyModule.h](native/shared/include/BetterEndfield/ThirdPartyModule.h), [HookChain.h](native/shared/include/BetterEndfield/HookChain.h) and the [Echo example](tools/ThirdPartyModules/echo/). Echo builds for Windows/Android; messaging and lifecycle have isolated regression coverage. Authors still test and document their real game modules' behavior, stability and compatibility.
+
+## Cameras, first person and MMD
+
+Free camera offers position/orientation, roll/FOV, mouse rotation, orbit/dolly/crane/truck motion, saved keyframe paths and VMD cameras. World pause is independent of free camera. First person includes head hiding, neck-hole filling, side-view limits and smooth turning. Windows controls support the main keyboard, numpad, mouse and configurable key combinations; Android uses the in-game deck.
+
+The global FOV setting added in 3.4.2 affects the ordinary main camera; free camera, first person and imported cameras keep their own FOV. Character follow translates free camera without changing orientation/manual offsets, reanchors after character changes and teleports, and pauses during camera-motion playback. [Implementation boundaries](docs/CAMERA_FOV_FOLLOW_IMPLEMENTATION_20261002.md)
+
+First-person hair removal in 3.4.2 classifies **live bone weights and actual drawn geometry**, rather than hiding an entire mixed head/clothing mesh. BEM replacement geometry can supply CPU data. Unknown characters use generic live-skeleton fallback without a second mandatory character catalog. Separate parts attempt shadow-only rendering; mixed parts retain full shadow geometry. Uncertain parts remain when no geometry source is available. Shadows and residual hair still need in-game validation. [Implementation and verification scope](docs/BEM_HAIR_SHADOW_IMPLEMENTATION_20261002.md)
+
+The MMD library groups motion, face, camera and local music, with `set.ini` work descriptions. It includes play/pause/stop, seeking, loops, game/free/VMD camera modes, up to four dancers, cloth physics and experimental terrain fitting. Windows local music does not require OmniMix. Android plays local media alongside game BGM; turn down the game's BGM when needed. Body/face, cloth and terrain capabilities depend on the client interfaces; successful builds/imports do not establish in-game visual correctness. [Cross-platform integration record](docs/ANDROID_CAMERA_MMD_20261001.md)
+
+## Other modules
+
+**Title screen:** replace the login actor, choose each character's sitting chain and final action, adjust scale/initial angle/turning/stage speeds, and use native loops, forced loops or dual-Playable blending. Logo and login-band colors can be changed independently. There are 33 characters and 4,262 final-action entries; 3.4.2 adds the missing Purrche resources. [New-character resource fix](docs/TITLE_MODEL_PURRCHE_FIX_20261002.md)
+
+**Voice:** set Chinese/English/Japanese/Korean individually while keeping the game's global voice language. Optional routing covers story dialogue, duration and lip-sync. Download the required language pack in the game first; catalogs are generated from local game resources. PCK/BNK/WEM audio is not shipped. [Voice routing](docs/VOICE_CUSTOM_LANGUAGE_SYSTEM.md)
+
+**UI and actions:** hide UID and toggle HUD through a hotkey/deck. PC touch layout with mouse-to-touch conversion is intended for streaming/touch devices; the default conversion toggle is `Ctrl+Alt+T`. Android can enable PC-style layout, preferably with a keyboard/controller. Layout is independent of account-platform identity. Sustained special dash currently targets Gilberta and Liino, with an additional Liino mech/VFX option. [Action module](native/modules/actions/README.md)
+
+**PC combat data:** manual and automatic dungeon sessions, damage-number visibility, damage/DPS overlays, skill categories, character/skill timelines, history filtering and web analysis. rDPS uses validated Buff/skill semantics bundled with the software to reattribute confirmed teammate contributions; unverified candidates do not participate. Records stay local unless the user opens web analysis. [Combat contracts](docs/COMBAT_RUNTIME_CONTRACTS.md)
+
+**PC gacha:** opt-in sync through the game connection, pool statistics, six-star/UP results, pity and free pulls, JSON import/export and user-initiated cloud sharing. [Web functionality](web/docs/GACHA_WEB_PLAN.md)
+
+**PC music/display:** OmniMix uses the user's existing backend without copying its program or library. Login, main/base and gameplay music can be replaced separately, with native fallback on stream failure. OptiScaler supplies upscaling, frame generation and sharpening according to the actual GPU/backend. [OmniMix integration](docs/OMNIMIX_INTEGRATION_HANDOFF.md) · [Display pipeline](docs/DISPLAY_PIPELINE.md)
+
+## Architecture and compatibility
+
+Windows Host loads individual native feature DLLs. Android compiles shared feature sources into the game runtime with platform adapters. Host owns discovery, lifecycle, configuration, dynamic IL2CPP resolution and Hook management. Built-in modules identify interfaces through assembly/type/method/signature/field descriptions instead of a single official-client address set or `GameAssembly.dll` identity whitelist.
+
+This enables shared code across clients, but **does not guarantee automatic compatibility with every game update**. Method signatures, assets, renderer layouts and device interfaces may still require adaptation. Missing built-in contracts disable the affected capability and produce logs. Scope Android to the actual client; world/detail/title and desktop/mobile resource layouts are not assumed identical.
+
+Windows stores its main configuration at `%LocalAppData%\BetterEndfield\BetterEndfield.ini`, UI settings in `ui-settings.json`, and BEM packages/state in `catalog\custom-model`. Android publishes settings through the framework and copies resources into the game's private storage. Resource/voice indexes ship with the software; original game payloads are read locally as needed and are not distributed.
+
+| Directory | Contents |
+| --- | --- |
+| `ui/BetterEndfield.UI/` | WinUI desktop controller and assets |
+| `native/modules/` | Model, BEM, voice, music, combat, UI, camera, actions and gacha modules |
+| `native/shared/` | Host, public C ABI, platform compatibility and native dependencies |
+| `native/loaders/` | Windows injector and XInput proxy |
+| `android/` | Android app, framework entry, runtime and in-game deck |
+| `tools/CustomModel/` | BEM exports, conversion, validation, projects and character profiles |
+| `manifests/`, `resources/` | Model/action/voice/combat indexes and generation inputs |
+| `web/` | Combat/gacha web-analysis and sharing sources |
+| `scripts/`, `docs/` | Build/resource scripts, interfaces and research records |
+
+See [GAME_INTERFACES.md](docs/GAME_INTERFACES.md) for internal protocols. Research directories and historical records do not represent shipped features.
+
+## Build from source
+
+Windows requires Visual Studio 2022 C++ tools, CMake, .NET SDK 9 and PowerShell; installer packaging also requires Inno Setup 6. BEM tool build dependencies are in [`requirements-build.txt`](tools/CustomModel/requirements-build.txt).
+
+```powershell
+pwsh -File .\scripts\BuildBetterEndfield.ps1
+pwsh -File .\scripts\BuildInstaller.ps1
+pwsh -File .\scripts\BuildBemTools.ps1
+```
+
+Android requires JDK 17+, SDK, NDK and CMake; use the versions declared in [`android/app/build.gradle.kts`](android/app/build.gradle.kts). With the toolchain configured:
+
+```powershell
+.\android\gradlew.bat -p android :app:assembleRelease --no-daemon
+```
+
+Build scripts consume generated repository indexes. Refresh affected data after game updates; local research outputs and original game payloads must not be packaged as release assets.
+
+## License
+
+Better Endfield is licensed under [AGPL-3.0-only](LICENSE). It is an independent, unofficial project and is not affiliated with the game developers/publishers. Dependencies/references including MinHook, Dobby, EIEM and 7-Zip retain their own licenses and attribution. Creators are responsible for distribution rights to their models, motion, audio and modules.
+
+Behavior depends on the client, device and imported content. Review the applicable service rules and account/client risks before use. Disable affected features when a game update breaks a contract and wait for adaptation.

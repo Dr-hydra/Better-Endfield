@@ -24,6 +24,7 @@ struct EnabledMod {
     bool skip_validation = false;
     bool loading_optimization = false;
     std::string selection_key;
+    std::string parameters;
 };
 struct OwnedCharacterAdapter {
     std::string id, world, ui;

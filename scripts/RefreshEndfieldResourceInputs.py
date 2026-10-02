@@ -221,6 +221,25 @@ def sha256(path: Path) -> str:
     return digest.hexdigest().upper()
 
 
+def is_character_prefab(data: dict[str, Any], filename: str) -> bool:
+    if data.get("correspondingCharId"):
+        return True
+    # Some playable prefabs omit correspondingCharId. Require their own
+    # character postmodel and an explicit humanoid animation configuration.
+    match = re.fullmatch(r"npc_(chr_[0-9]{4}_[a-z0-9]+)\.json", filename, re.I)
+    if not match:
+        return False
+    parts = data.get("partNameIdList", [])
+    animation = data.get("cpuAnimationTempletName", "")
+    return (
+        isinstance(parts, list)
+        and f"{match.group(1)}_postmodel" in parts
+        and isinstance(animation, str)
+        and re.fullmatch(r"NPC/AnimationConfig/Humanoid/[^/]+/[^/]+", animation, re.I)
+        is not None
+    )
+
+
 def convert_inputs(
     unpacker_root: Path, resconv: Path, staging: Path, platform: str
 ) -> tuple[dict[str, int], set[str]]:
@@ -259,7 +278,7 @@ def convert_inputs(
         parsed = json.loads(result)
         if not isinstance(parsed, dict):
             raise ValueError(f"PrefabInfo decode failed: {source.name}")
-        if not parsed.get("correspondingCharId"):
+        if not is_character_prefab(parsed, source.name):
             excluded_prefabs.add(
                 source.relative_to(staging).as_posix().casefold()
             )

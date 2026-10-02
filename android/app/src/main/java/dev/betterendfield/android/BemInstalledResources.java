@@ -17,7 +17,7 @@ final class BemInstalledResources {
     }
     static String prepare(Context context,String index,Source source,Consumer<String> log,
             boolean skipValidation,boolean hotSwitch,boolean loadingOptimization) throws Exception {
-        JSONArray entries=BemOptions.exclusive(new JSONArray(index));StringBuilder paths=new StringBuilder(),appearances=new StringBuilder(),options=new StringBuilder();
+        JSONArray entries=BemOptions.exclusive(new JSONArray(index));StringBuilder paths=new StringBuilder(),appearances=new StringBuilder(),options=new StringBuilder(),parameters=new StringBuilder();
         File root=new File(context.getFilesDir(),"betterendfield/installed-models");
         if(!root.isDirectory()&&!root.mkdirs()) throw new IOException("Cannot create game model directory");
         for(int i=0;i<entries.length();++i) {
@@ -25,6 +25,7 @@ final class BemInstalledResources {
             boolean composable=entry.optInt("bem_minor",0)>=1;
             String appearance=composable?"":BemOptions.appearance(entry,entry.optString("selected_appearance",entry.getString("default_appearance")));
             String selection=composable?BemOptions.encode(BemOptions.parse(entry,entry.optString("selected_options",entry.getString("default_options")))):"";
+            String parameterSelection=BemParameters.encode(BemParameters.parse(entry,entry.optString("selected_parameters",entry.optString("default_parameters",""))));
             String generation=entry.getString("generation"),remote=entry.getString("remote");
             if(!generation.matches("[a-f0-9-]{36}")||!remote.equals("bem-"+generation+".bem")) throw new IOException("Invalid installed generation");
             long expected=entry.getLong("bytes");if(expected<=0||expected>2L*1024*1024*1024) throw new IOException("Invalid installed size");
@@ -39,12 +40,12 @@ final class BemInstalledResources {
                     android.system.Os.rename(temp.getAbsolutePath(),output.getAbsolutePath());
                 } finally {temp.delete();}
             }
-            if(paths.length()>0) {paths.append(',');appearances.append(',');options.append(',');}
-            paths.append(output.getAbsolutePath());appearances.append(appearance);options.append(selection);
+            if(paths.length()>0) {paths.append(',');appearances.append(',');options.append(',');parameters.append(',');}
+            paths.append(output.getAbsolutePath());appearances.append(appearance);options.append(selection);parameters.append(parameterSelection);
             log.accept("Installed BEM ready: "+entry.getString("package_id")+" selection="+(composable?selection:appearance));
         }
         return paths.length()==0&&!hotSwitch?"":"resource=auto;replace=1;lod_pipeline=1;lod_npc=1;packages="+paths
-            +";appearances="+appearances+";options="+options+";skip_validation="+(skipValidation?"1":"0")
+            +";appearances="+appearances+";options="+options+";parameters="+parameters+";skip_validation="+(skipValidation?"1":"0")
             +";hot_switch="+(hotSwitch?"1":"0")+";loading_optimization="+(loadingOptimization?"1":"0");
     }
 }

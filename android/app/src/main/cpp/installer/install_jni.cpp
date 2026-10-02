@@ -27,6 +27,9 @@ extern "C" JNIEXPORT jstring JNICALL Java_dev_betterendfield_android_BemInstalle
             report["option_groups"]=BemJson::parse(info.option_groups_json);
             report["selection_constraints"]=BemJson::parse(info.selection_constraints_json);}
         else {report["default_appearance"]=info.default_appearance;report["appearances"]=info.appearances;}
+        report["parameters"]=BemJson::parse(info.parameter_groups_json);
+        report["parameter_groups_json"]=info.parameter_groups_json;
+        report["default_parameters"]=info.default_parameters;
         auto encoded=report.dump();
         return env->NewStringUTF(encoded.c_str());
     } catch(const std::exception& error) {env->ThrowNew(env->FindClass("java/io/IOException"),error.what());return nullptr;}

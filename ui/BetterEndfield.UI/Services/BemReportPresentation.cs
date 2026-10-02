@@ -16,7 +16,7 @@ internal sealed record BemInspectionSummary(string Title, string Detail, string 
             return new("已匹配角色，可以转换", $"{matched.GetProperty("character_name").GetString()} · ComponentN · 源包默认外观\n骨骼、顶点流、材质和绘制范围已校验。" +
                 (warnings.Length > 0 ? "\n" + warnings : ""), "点击“转换为 BEM”，完成后选择保存位置。游戏内切换键不随包转换。", false, false) { CanAutoConvert = true };
         }
-        if (format is "BEMv1" or "BEMv1.0" or "BEMv1.1" or "BEMv1.2")
+        if (format is "BEMv1" or "BEMv1.0" or "BEMv1.1" or "BEMv1.2" or "BEMv1.3")
             return new("这是可直接导入的 BEM 包", "无需再做格式转换。", "回到“角色外观”，点击“导入 BEM / ZIP”安装此文件。", false, true);
         if (format == "BEM-ZIP")
         {
@@ -81,6 +81,8 @@ internal static class BemReportPresentation
                 lines.Add("选项组：" + string.Join("、", groups.EnumerateArray().Select(g => g.GetProperty("name").GetString())));
             else
                 lines.Add("外观：" + string.Join("、", p.GetProperty("appearances").EnumerateArray().Select(a => a.GetProperty("name").GetString())));
+            if (p.TryGetProperty("parameters", out var parameters) && parameters.GetArrayLength() > 0)
+                lines.Add("形态滑条：" + string.Join("、", parameters.EnumerateArray().Select(parameter => parameter.GetProperty("name").GetString())));
         }
         if (root.TryGetProperty("size", out var size)) lines.Add($"大小：{size.GetInt64() / 1_000_000.0:F1} MB");
         if (root.TryGetProperty("packages", out var packages)) lines.Add($"包含 {packages.GetArrayLength()} 个有效包");

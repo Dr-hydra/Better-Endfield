@@ -82,6 +82,11 @@ bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,Mod
             if(!info.minor && std::find(info.appearances.begin(),info.appearances.end(),appearance)==info.appearances.end()) {
                 parsed.diagnostics.push_back("Appearance removed; using package default: "+name);appearance=info.default_appearance;
             }
+            std::string parameters;
+            if(!ResolveBemParameters(info,get("parameters"),parameters,why)) {
+                parsed.diagnostics.push_back("Parameters removed or invalid; using package defaults: "+name+": "+why);
+                parameters=info.default_parameters;
+            }
             if(!roles.insert(info.character_id).second || resources.contains(info.world_resource)||resources.contains(info.ui_resource)) {
                 conflicts.insert(info.character_id); parsed.diagnostics.push_back("Conflicting enabled package: "+info.character_id); continue;
             }
@@ -94,11 +99,11 @@ bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,Mod
             const auto stamp=std::filesystem::last_write_time(path,file_error);
             const auto bytes=std::filesystem::file_size(path,file_error);
             const auto canonical=path.lexically_normal();
-            const std::string key=canonical.string()+"\n"+appearance+"\n"+
+            const std::string key=canonical.string()+"\n"+appearance+"\n"+parameters+"\n"+
                 (parsed.skip_validation?"unchecked":"checked")+"\n"+
                 (parsed.loading_optimization?"optimized":"normal")+"\n"+
                 FileTimeIdentity(stamp)+":"+std::to_string(bytes);
-            parsed.enabled.push_back({&own->adapter,canonical,appearance,parsed.skip_validation,parsed.loading_optimization,key});
+            parsed.enabled.push_back({&own->adapter,canonical,appearance,parsed.skip_validation,parsed.loading_optimization,key,parameters});
             parsed.owned_adapters.push_back(std::move(own));
         }
         std::erase_if(parsed.enabled,[&](const auto& m){return conflicts.contains(m.adapter->id);});

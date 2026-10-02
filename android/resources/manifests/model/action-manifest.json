@@ -6,11 +6,19 @@
   "manifestHash": "664d17e6f5f4fd44513249dbeabf4c53",
   "source": {
     "path": "android/resources/.sources/20261001-wireless-192.168.31.12-36477/generated/character-presets.json",
-    "sha256": "3CD48F58425C31AD59A936CB8D03CBFB07A6E0573F9D4FBE70B170FE5E1F3AC0"
+    "sha256": "3CD48F58425C31AD59A936CB8D03CBFB07A6E0573F9D4FBE70B170FE5E1F3AC0",
+    "updates": [
+      {
+        "characterId": "chr_0038_purrche",
+        "presetPath": "android/resources/character-presets.json",
+        "evidence": "docs/TITLE_MODEL_PURRCHE_FIX_20261002.md",
+        "manifestHash": "664d17e6f5f4fd44513249dbeabf4c53"
+      }
+    ]
   },
   "stats": {
-    "characterCount": 32,
-    "actionCount": 4210,
+    "characterCount": 33,
+    "actionCount": 4262,
     "skippedCharacterCount": 1
   },
   "characters": [
@@ -34617,6 +34625,451 @@
           "displayName": "a_actor_liino_interact_sit_sp.fbx##a_actor_liino_interact_sit_sp",
           "path": "assets/beyond/arts/entity/actor/girl/liino/animations/interact/a_actor_liino_interact_sit_sp.fbx##a_actor_liino_interact_sit_sp",
           "pathHash": "0x031CC2946361E4EB",
+          "nativeLoop": false,
+          "duration": null
+        }
+      ]
+    },
+    {
+      "characterId": "chr_0038_purrche",
+      "displayName": "chr_0038_purrche_postmodel.prefab",
+      "model": {
+        "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0038_purrche_postmodel.prefab",
+        "pathHash": "0x044527ED1A1CC77C",
+        "bundleHash": "0xE7722DB90A0B9723"
+      },
+      "introSequence": {
+        "sitLoop": {
+          "displayName": "a_actor_purrchena_interact_sit.fbx##a_actor_purrchena_interact_sit_loop",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_sit.fbx##a_actor_purrchena_interact_sit_loop",
+          "pathHash": "0x041AD9AE74520A2B"
+        },
+        "sitSpecial": {
+          "displayName": "a_actor_purrchena_interact_sit_sp.fbx##a_actor_purrchena_interact_sit_sp",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_sit_sp.fbx##a_actor_purrchena_interact_sit_sp",
+          "pathHash": "0x035D5CBAB4BA9C52"
+        },
+        "sitToWalk": {
+          "displayName": "a_actor_purrchena_interact_sit.fbx##a_actor_purrchena_interact_sit_end",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_sit.fbx##a_actor_purrchena_interact_sit_end",
+          "pathHash": "0x0C6A17700B7635A4"
+        },
+        "finalActionId": "a_actor_purrchena_interact_sit_loop"
+      },
+      "actions": [
+        {
+          "id": "a_actor_purrchena_battle_air_atk_end",
+          "displayName": "a_actor_purrchena_battle_air_atk_end.fbx##a_actor_purrchena_battle_air_atk_end",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_air_atk_end.fbx##a_actor_purrchena_battle_air_atk_end",
+          "pathHash": "0x077A77A1221A3FAE",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_air_atk_loop",
+          "displayName": "a_actor_purrchena_battle_air_atk_loop.fbx##a_actor_purrchena_battle_air_atk_loop",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_air_atk_loop.fbx##a_actor_purrchena_battle_air_atk_loop",
+          "pathHash": "0x076E41C829E24A92",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_air_atk_start",
+          "displayName": "a_actor_purrchena_battle_air_atk_start.fbx##a_actor_purrchena_battle_air_atk_start",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_air_atk_start.fbx##a_actor_purrchena_battle_air_atk_start",
+          "pathHash": "0x0F0E11C718F0834E",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_attack_01",
+          "displayName": "a_actor_purrchena_battle_attack_01.fbx##a_actor_purrchena_battle_attack_01",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_attack_01.fbx##a_actor_purrchena_battle_attack_01",
+          "pathHash": "0x0C72153868C9254E",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_attack_02",
+          "displayName": "a_actor_purrchena_battle_attack_02.fbx##a_actor_purrchena_battle_attack_02",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_attack_02.fbx##a_actor_purrchena_battle_attack_02",
+          "pathHash": "0x00D6B56534511C4E",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_attack_03",
+          "displayName": "a_actor_purrchena_battle_attack_03.fbx##a_actor_purrchena_battle_attack_03",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_attack_03.fbx##a_actor_purrchena_battle_attack_03",
+          "pathHash": "0x0DB4469C98D1FA4E",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_combo_skill",
+          "displayName": "a_actor_purrchena_battle_combo_skill.fbx##a_actor_purrchena_battle_combo_skill",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_combo_skill.fbx##a_actor_purrchena_battle_combo_skill",
+          "pathHash": "0x004EB40D1A0DF0CE",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_combo_skill_1",
+          "displayName": "a_actor_purrchena_battle_combo_skill_1.fbx##a_actor_purrchena_battle_combo_skill_1",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_combo_skill_1.fbx##a_actor_purrchena_battle_combo_skill_1",
+          "pathHash": "0x01F1C006B07C8B4E",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_combo_skill_2",
+          "displayName": "a_actor_purrchena_battle_combo_skill_2.fbx##a_actor_purrchena_battle_combo_skill_2",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_combo_skill_2.fbx##a_actor_purrchena_battle_combo_skill_2",
+          "pathHash": "0x0B3ACAD0F7E62ECE",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_normal_skill_attack",
+          "displayName": "a_actor_purrchena_battle_normal_skill_attack.fbx##a_actor_purrchena_battle_normal_skill_attack",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_normal_skill_attack.fbx##a_actor_purrchena_battle_normal_skill_attack",
+          "pathHash": "0x0A9E6708248CFB0E",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_normal_skill_end_01",
+          "displayName": "a_actor_purrchena_battle_normal_skill_end_01.fbx##a_actor_purrchena_battle_normal_skill_end_01",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_normal_skill_end_01.fbx##a_actor_purrchena_battle_normal_skill_end_01",
+          "pathHash": "0x0E3034F2E88F87AE",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_normal_skill_end_02",
+          "displayName": "a_actor_purrchena_battle_normal_skill_end_02.fbx##a_actor_purrchena_battle_normal_skill_end_02",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_normal_skill_end_02.fbx##a_actor_purrchena_battle_normal_skill_end_02",
+          "pathHash": "0x08BD86F140CDE24E",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_normal_skill_loop_01",
+          "displayName": "a_actor_purrchena_battle_normal_skill_loop_01.fbx##a_actor_purrchena_battle_normal_skill_loop_01",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_normal_skill_loop_01.fbx##a_actor_purrchena_battle_normal_skill_loop_01",
+          "pathHash": "0x051ABFADCFE51CC2",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_normal_skill_loop_02",
+          "displayName": "a_actor_purrchena_battle_normal_skill_loop_02.fbx##a_actor_purrchena_battle_normal_skill_loop_02",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_normal_skill_loop_02.fbx##a_actor_purrchena_battle_normal_skill_loop_02",
+          "pathHash": "0x044CF144B03C89B0",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_normal_skill_start",
+          "displayName": "a_actor_purrchena_battle_normal_skill_start.fbx##a_actor_purrchena_battle_normal_skill_start",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_normal_skill_start.fbx##a_actor_purrchena_battle_normal_skill_start",
+          "pathHash": "0x02BD61B5A66E5B56",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_normal_skill_start_01",
+          "displayName": "a_actor_purrchena_battle_normal_skill_start_01.fbx##a_actor_purrchena_battle_normal_skill_start_01",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_normal_skill_start_01.fbx##a_actor_purrchena_battle_normal_skill_start_01",
+          "pathHash": "0x025DE79309A5960E",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_normal_skill_start_02",
+          "displayName": "a_actor_purrchena_battle_normal_skill_start_02.fbx##a_actor_purrchena_battle_normal_skill_start_02",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_normal_skill_start_02.fbx##a_actor_purrchena_battle_normal_skill_start_02",
+          "pathHash": "0x033F03E2E8FEDA8E",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_power_attack",
+          "displayName": "a_actor_purrchena_battle_power_attack.fbx##a_actor_purrchena_battle_power_attack",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_power_attack.fbx##a_actor_purrchena_battle_power_attack",
+          "pathHash": "0x0751DC6752C3D772",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_skill_ult_01",
+          "displayName": "a_actor_purrchena_battle_skill_ult_01.fbx##a_actor_purrchena_battle_skill_ult_01",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_skill_ult_01.fbx##a_actor_purrchena_battle_skill_ult_01",
+          "pathHash": "0x07EAB23BEFFFD784",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_skill_ult_02",
+          "displayName": "a_actor_purrchena_battle_skill_ult_02.fbx##a_actor_purrchena_battle_skill_ult_02",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_skill_ult_02.fbx##a_actor_purrchena_battle_skill_ult_02",
+          "pathHash": "0x0E7351B1F02FFEBE",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_skill_ult_03",
+          "displayName": "a_actor_purrchena_battle_skill_ult_03.fbx##a_actor_purrchena_battle_skill_ult_03",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_skill_ult_03.fbx##a_actor_purrchena_battle_skill_ult_03",
+          "pathHash": "0x0ACF2135E2D492F8",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_battle_skill_ult_cam",
+          "displayName": "a_actor_purrchena_battle_skill_ult_cam.fbx##a_actor_purrchena_battle_skill_ult_cam",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/battle/a_actor_purrchena_battle_skill_ult_cam.fbx##a_actor_purrchena_battle_skill_ult_cam",
+          "pathHash": "0x01E4F3681F01D3CE",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_call",
+          "displayName": "a_actor_purrchena_interact_call.fbx##a_actor_purrchena_interact_call",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_call.fbx##a_actor_purrchena_interact_call",
+          "pathHash": "0x0409DFFE1D8424D2",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_check_end_like",
+          "displayName": "a_actor_purrchena_interact_check.fbx##a_actor_purrchena_interact_check_end_like",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_check.fbx##a_actor_purrchena_interact_check_end_like",
+          "pathHash": "0x0A55509E62462AE2",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_check_loop",
+          "displayName": "a_actor_purrchena_interact_check.fbx##a_actor_purrchena_interact_check_loop",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_check.fbx##a_actor_purrchena_interact_check_loop",
+          "pathHash": "0x082629E4FFB609AB",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_check_start",
+          "displayName": "a_actor_purrchena_interact_check.fbx##a_actor_purrchena_interact_check_start",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_check.fbx##a_actor_purrchena_interact_check_start",
+          "pathHash": "0x0CAB16B336237B2B",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_check_end_dislike",
+          "displayName": "a_actor_purrchena_interact_check_end_dislike.fbx##a_actor_purrchena_interact_check_end_dislike",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_check_end_dislike.fbx##a_actor_purrchena_interact_check_end_dislike",
+          "pathHash": "0x04258BD39E19E2DA",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_drown",
+          "displayName": "a_actor_purrchena_interact_drown.fbx##a_actor_purrchena_interact_drown",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_drown.fbx##a_actor_purrchena_interact_drown",
+          "pathHash": "0x0897044133EABDDA",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_operate_end",
+          "displayName": "a_actor_purrchena_interact_operate_end.fbx##a_actor_purrchena_interact_operate_end",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_operate_end.fbx##a_actor_purrchena_interact_operate_end",
+          "pathHash": "0x0A86A9DE7F4F6C1A",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_operate_loop",
+          "displayName": "a_actor_purrchena_interact_operate_loop.fbx##a_actor_purrchena_interact_operate_loop",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_operate_loop.fbx##a_actor_purrchena_interact_operate_loop",
+          "pathHash": "0x06A2F91816D807EC",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_operate_start",
+          "displayName": "a_actor_purrchena_interact_operate_start.fbx##a_actor_purrchena_interact_operate_start",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_operate_start.fbx##a_actor_purrchena_interact_operate_start",
+          "pathHash": "0x0052F580B75D89BA",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_receive_gift",
+          "displayName": "a_actor_purrchena_interact_receive_gift.fbx##a_actor_purrchena_interact_receive_gift",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_receive_gift.fbx##a_actor_purrchena_interact_receive_gift",
+          "pathHash": "0x0D23F2D21F6BFAC6",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_rope_d_end",
+          "displayName": "a_actor_purrchena_interact_rope_d_end.fbx##a_actor_purrchena_interact_rope_d_end",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_rope_d_end.fbx##a_actor_purrchena_interact_rope_d_end",
+          "pathHash": "0x00BAA66791980AAC",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_rope_end",
+          "displayName": "a_actor_purrchena_interact_rope_end.fbx##a_actor_purrchena_interact_rope_end",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_rope_end.fbx##a_actor_purrchena_interact_rope_end",
+          "pathHash": "0x0D8CB74A2AAD6306",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_rope_loop",
+          "displayName": "a_actor_purrchena_interact_rope_loop.fbx##a_actor_purrchena_interact_rope_loop",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_rope_loop.fbx##a_actor_purrchena_interact_rope_loop",
+          "pathHash": "0x03F2D92B2C548FBA",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_rope_start",
+          "displayName": "a_actor_purrchena_interact_rope_start.fbx##a_actor_purrchena_interact_rope_start",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_rope_start.fbx##a_actor_purrchena_interact_rope_start",
+          "pathHash": "0x043BA4A3487FF154",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_sit_end",
+          "displayName": "a_actor_purrchena_interact_sit.fbx##a_actor_purrchena_interact_sit_end",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_sit.fbx##a_actor_purrchena_interact_sit_end",
+          "pathHash": "0x0C6A17700B7635A4",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_sit_loop",
+          "displayName": "a_actor_purrchena_interact_sit.fbx##a_actor_purrchena_interact_sit_loop",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_sit.fbx##a_actor_purrchena_interact_sit_loop",
+          "pathHash": "0x041AD9AE74520A2B",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_sit_start",
+          "displayName": "a_actor_purrchena_interact_sit.fbx##a_actor_purrchena_interact_sit_start",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_sit.fbx##a_actor_purrchena_interact_sit_start",
+          "pathHash": "0x09AD0F3392D7572B",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_sit_sp",
+          "displayName": "a_actor_purrchena_interact_sit_sp.fbx##a_actor_purrchena_interact_sit_sp",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_sit_sp.fbx##a_actor_purrchena_interact_sit_sp",
+          "pathHash": "0x035D5CBAB4BA9C52",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_thinkship_end",
+          "displayName": "a_actor_purrchena_interact_thinkship_end.fbx##a_actor_purrchena_interact_thinkship_end",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_thinkship_end.fbx##a_actor_purrchena_interact_thinkship_end",
+          "pathHash": "0x07DC64ABCA0AD81A",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_thinkship_loop",
+          "displayName": "a_actor_purrchena_interact_thinkship_loop.fbx##a_actor_purrchena_interact_thinkship_loop",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_thinkship_loop.fbx##a_actor_purrchena_interact_thinkship_loop",
+          "pathHash": "0x0C39E4CDA369CDA0",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_thinkship_start",
+          "displayName": "a_actor_purrchena_interact_thinkship_start.fbx##a_actor_purrchena_interact_thinkship_start",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_thinkship_start.fbx##a_actor_purrchena_interact_thinkship_start",
+          "pathHash": "0x010971B8609AAADA",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_touch_end",
+          "displayName": "a_actor_purrchena_interact_touch_end.fbx##a_actor_purrchena_interact_touch_end",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_touch_end.fbx##a_actor_purrchena_interact_touch_end",
+          "pathHash": "0x0F95A470F8A2727A",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_touch_loop",
+          "displayName": "a_actor_purrchena_interact_touch_loop.fbx##a_actor_purrchena_interact_touch_loop",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_touch_loop.fbx##a_actor_purrchena_interact_touch_loop",
+          "pathHash": "0x05C67D38FD9AE95A",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_touch_start",
+          "displayName": "a_actor_purrchena_interact_touch_start.fbx##a_actor_purrchena_interact_touch_start",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_touch_start.fbx##a_actor_purrchena_interact_touch_start",
+          "pathHash": "0x091353011BD2FF9A",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_zipline_loop",
+          "displayName": "a_actor_purrchena_interact_zipline_loop.fbx##a_actor_purrchena_interact_zipline_loop",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_zipline_loop.fbx##a_actor_purrchena_interact_zipline_loop",
+          "pathHash": "0x0960A4CCF920329A",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_zipline_start",
+          "displayName": "a_actor_purrchena_interact_zipline_start.fbx##a_actor_purrchena_interact_zipline_start",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_zipline_start.fbx##a_actor_purrchena_interact_zipline_start",
+          "pathHash": "0x0EA38C9C633C949A",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_zipline_startup_end",
+          "displayName": "a_actor_purrchena_interact_zipline_startup_end.fbx##a_actor_purrchena_interact_zipline_startup_end",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_zipline_startup_end.fbx##a_actor_purrchena_interact_zipline_startup_end",
+          "pathHash": "0x0D25C2C05DEA9C1A",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_zipline_startup_f",
+          "displayName": "a_actor_purrchena_interact_zipline_startup_f.fbx##a_actor_purrchena_interact_zipline_startup_f",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_zipline_startup_f.fbx##a_actor_purrchena_interact_zipline_startup_f",
+          "pathHash": "0x09F2CC2AACD485DA",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_zipline_startup_loop",
+          "displayName": "a_actor_purrchena_interact_zipline_startup_loop.fbx##a_actor_purrchena_interact_zipline_startup_loop",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_zipline_startup_loop.fbx##a_actor_purrchena_interact_zipline_startup_loop",
+          "pathHash": "0x01979B6EA896208E",
+          "nativeLoop": false,
+          "duration": null
+        },
+        {
+          "id": "a_actor_purrchena_interact_zipline_stop",
+          "displayName": "a_actor_purrchena_interact_zipline_stop.fbx##a_actor_purrchena_interact_zipline_stop",
+          "path": "assets/beyond/arts/entity/actor/panda/purrchena/animations/interact/a_actor_purrchena_interact_zipline_stop.fbx##a_actor_purrchena_interact_zipline_stop",
+          "pathHash": "0x095425C8C6B34F12",
           "nativeLoop": false,
           "duration": null
         }

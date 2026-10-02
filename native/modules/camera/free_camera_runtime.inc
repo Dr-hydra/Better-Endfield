@@ -210,6 +210,7 @@ double g_free_last_heartbeat = 0.0;
 bool g_free_transform_fallback_logged = false;
 void* g_free_brain = nullptr;
 bool g_free_brain_matches = false;
+CameraFollow::Anchor<Vector3> g_free_follow_anchor;
 
 FreePlayback g_playback = FreePlayback::None;
 double g_playback_start = 0.0;
@@ -312,6 +313,33 @@ bool CharacterPose(Vector3& position, float& yaw) {
         yaw = std::atan2(forward.x, forward.z) * kRadToDeg;
     }
     return true;
+}
+
+void FollowCharacterTranslation() {
+    const bool enabled = g_free_camera_follow_character.load(std::memory_order_relaxed);
+    if (!enabled || g_playback != FreePlayback::None) {
+        g_free_follow_anchor.Reset();
+        return;
+    }
+    void* character = Invoke(Contract("player_controller.get_main_character"), nullptr, nullptr);
+    void* model_component = character
+        ? Invoke(Contract("entity.get_model_com"), character, nullptr) : nullptr;
+    void* model_object = model_component
+        ? Invoke(Contract("base_model_component.get_model_go"), model_component, nullptr) : nullptr;
+    void* transform = model_object && IsObjectAlive(model_object)
+        ? Invoke(Contract("unity.game_object.transform"), model_object, nullptr) : nullptr;
+    Vector3 position{}, delta{};
+    const bool valid = transform && IsObjectAlive(transform) &&
+        GetValue(Contract("unity.transform.position.get"), transform, position) &&
+        character == Invoke(Contract("player_controller.get_main_character"), nullptr, nullptr);
+    if (g_free_follow_anchor.Sample(enabled, true,
+        reinterpret_cast<uintptr_t>(character), reinterpret_cast<uintptr_t>(transform),
+        valid, position, delta)) {
+        // Move the smoothing origin as well, so following adds no extra lag.
+        g_free_target.position = Add(g_free_target.position, delta);
+        g_free_smoothed.position = Add(g_free_smoothed.position, delta);
+        g_free_view.position = Add(g_free_view.position, delta);
+    }
 }
 
 Vector3 MotionAnchor() {
@@ -642,6 +670,7 @@ void StepFreeCamera() {
     if (dt <= 0.0f) {
         return;
     }
+    FollowCharacterTranslation();
     switch (g_playback) {
     case FreePlayback::Motion: StepMotion(now, dt); break;
     case FreePlayback::Keyframes: StepKeyframes(now); break;
@@ -732,6 +761,43 @@ bool BrainDrivesActiveCamera(void* brain) {
     return g_free_brain_matches;
 }
 
+// Only override the value delivered to the current main camera. Restoring the
+// upstream CameraState after the push avoids retaining the override in the
+// game's own state when the switch is disabled or a camera changes.
+class ScopedGlobalFovState {
+public:
+    ScopedGlobalFovState(void* brain, void* state) {
+        if (!state || !brain || !g_state_layout.ready ||
+            !g_global_fov_enabled.load(std::memory_order_relaxed) ||
+            g_first_person_active.load(std::memory_order_acquire) || g_free_camera_active)
+            return;
+        void* camera = Invoke(Contract("unity.camera.main"), nullptr, nullptr);
+        bool orthographic = true;
+        if (!camera || !IsObjectAlive(camera) || !IsObjectAlive(brain) ||
+            !GetValue(Contract("unity.camera.orthographic.get"), camera, orthographic) || orthographic)
+            return;
+        void* brain_object = Invoke(Contract("unity.component.game_object"), brain, nullptr);
+        void* camera_object = Invoke(Contract("unity.component.game_object"), camera, nullptr);
+        if (!brain_object || brain_object != camera_object) return;
+        offset_ = g_state_layout.lens + g_state_layout.lens_field_of_view;
+        const float requested = g_global_fov.load(std::memory_order_relaxed);
+        if (!std::isfinite(requested) || requested < kFreeMinFov || requested > kFreeMaxFov ||
+            !ReadBytes(state, offset_, &original_, sizeof(original_)) ||
+            !std::isfinite(original_) || original_ <= 0.0f || original_ >= 180.0f)
+            return;
+        if (WriteBytes(state, offset_, &requested, sizeof(requested))) state_ = state;
+    }
+    ~ScopedGlobalFovState() {
+        if (state_) WriteBytes(state_, offset_, &original_, sizeof(original_));
+    }
+    ScopedGlobalFovState(const ScopedGlobalFovState&) = delete;
+    ScopedGlobalFovState& operator=(const ScopedGlobalFovState&) = delete;
+private:
+    void* state_ = nullptr;
+    int32_t offset_ = -1;
+    float original_ = 60.0f;
+};
+
 void ApplyFreeCameraState(void* state) {
     StepFreeCamera();
     WriteFreeCameraState(state);
@@ -743,6 +809,7 @@ void ApplyFreeCameraState(void* state) {
 }
 
 void ExitFreeCamera(const char* reason) {
+    g_free_follow_anchor.Reset();
     ++g_file_generation;
     g_vmd_load_pending = false;
     if (!g_free_camera_active) {
@@ -774,6 +841,7 @@ void ExitFreeCamera(const char* reason) {
 }
 
 bool EnterFreeCamera() {
+    g_free_follow_anchor.Reset();
     if (g_first_person_active.load(std::memory_order_acquire)) {
         ExitFirstPerson("switching to free camera");
     }

@@ -20,6 +20,9 @@ public sealed class FreeCameraExtras
     public bool MouseInvertY { get; set; } = false;
     public double MouseSensitivity { get; set; } = 0.1;
     public double Smoothing { get; set; } = 0.3;
+    public bool GlobalFovEnabled { get; set; }
+    public double GlobalFieldOfView { get; set; } = 60.0;
+    public bool FollowCharacter { get; set; }
     public string MotionPreset { get; set; } = "orbit";
     public double MotionSpeed { get; set; } = 1.0;
     public double OrbitSpeed { get; set; } = 20.0;
@@ -74,7 +77,7 @@ public sealed class FreeCameraExtras
     public string MmdOverlayHotkey { get; set; } = "SUBTRACT";
 
     // The camera module must load for MMD playback even without the free camera.
-    public bool RequiresCameraModule => MmdEnabled;
+    public bool RequiresCameraModule => MmdEnabled || GlobalFovEnabled;
 
     // MMD music plays through the Music module's local channel.
     public bool RequiresMusicModule => MmdEnabled && MmdMusicEnabled;
@@ -94,6 +97,9 @@ public sealed class FreeCameraExtras
         Line("mouse_invert_y", Boolean(MouseInvertY));
         Line("mouse_sensitivity", Number(MouseSensitivity));
         Line("free_camera_smoothing", Number(Smoothing));
+        Line("global_fov_enabled", Boolean(GlobalFovEnabled));
+        Line("global_fov", Number(GlobalFieldOfView));
+        Line("free_camera_follow_character", Boolean(FollowCharacter));
         Line("motion_preset", MotionPreset);
         Line("motion_speed", Number(MotionSpeed));
         Line("orbit_speed", Number(OrbitSpeed));
@@ -172,6 +178,9 @@ public sealed class FreeCameraExtras
         extras.MouseInvertY = Boolean("mouse_invert_y", extras.MouseInvertY);
         extras.MouseSensitivity = Number("mouse_sensitivity", extras.MouseSensitivity);
         extras.Smoothing = Number("free_camera_smoothing", extras.Smoothing);
+        extras.GlobalFovEnabled = Boolean("global_fov_enabled", false);
+        extras.GlobalFieldOfView = System.Math.Clamp(Number("global_fov", 60), 5, 150);
+        extras.FollowCharacter = Boolean("free_camera_follow_character", false);
         string preset = Text("motion_preset", extras.MotionPreset).ToLowerInvariant();
         extras.MotionPreset = System.Array.IndexOf(MotionPresets, preset) >= 0 ? preset : "orbit";
         extras.MotionSpeed = Number("motion_speed", extras.MotionSpeed);

@@ -1,0 +1,6 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Echo / Counter</title><link rel="stylesheet" href="style.css"><script src="app.js" defer></script></head>
+<body><main><header><p class="eyebrow">BETTER ENDFIELD · CREATOR EXAMPLE</p><h1>Echo / Counter</h1><p>Your own HTML, CSS and JavaScript. The host connects this page to its own module.</p><span id="connection">Checking connection…</span></header>
+<section><h2>Local configuration</h2><label for="label">Display label</label><input id="label" placeholder="Echo"><button id="save">Save configuration</button><p>Configuration stays on this device and survives package updates.</p></section>
+<section><h2>Native messages <output id="count">0</output></h2><label for="body">JSON to echo</label><textarea id="body" rows="5">{"message":"Hello from my module UI","amount":1}</textarea><button id="send">Send to native module</button><button id="refresh" class="secondary">Refresh status</button><p>Enable this module and start the game to receive replies and events.</p></section>
+<section><h2>Replies and events</h2><pre id="log" aria-live="polite"></pre></section></main></body></html>

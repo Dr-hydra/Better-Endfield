@@ -149,6 +149,9 @@
                 <NavigationViewItem Content="角色外观" Tag="custom-model">
                     <NavigationViewItem.Icon><FontIcon Glyph="&#xE771;" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem Content="第三方模块" Tag="third-party-modules">
+                    <NavigationViewItem.Icon><FontIcon Glyph="&#xE74C;" /></NavigationViewItem.Icon>
+                </NavigationViewItem>
             </NavigationView.MenuItems>
 
             <NavigationView.FooterMenuItems>
@@ -240,6 +243,7 @@
                     <Grid Grid.Row="1">
                         <views:GachaPage x:Name="GachaPage" Visibility="Collapsed" />
                         <views:CustomModelPage x:Name="CustomModelPage" Visibility="Collapsed" />
+                        <views:ThirdPartyModulesPage x:Name="ThirdPartyModulesPage" Visibility="Collapsed" />
                         <ScrollViewer
                             x:Name="ModelPageScrollViewer"
                             HorizontalScrollBarVisibility="Disabled"
@@ -1306,6 +1310,17 @@
                                             OnContent="允许热键切换"
                                             Toggled="CameraEnhancementToggle_Toggled" />
                                         <ToggleSwitch
+                                            x:Name="FreeCameraFollowCharacterToggle"
+                                            Header="自由镜头跟随人物移动"
+                                            OffContent="固定世界位置"
+                                            OnContent="保持相对位置，可手动调整"
+                                            Toggled="CameraEnhancementToggle_Toggled" />
+                                        <TextBlock
+                                            x:Name="FreeCameraFollowHint"
+                                            Style="{StaticResource FieldHintStyle}"
+                                            Text="手动自由视角中跟随人物平移，保持镜头方向。切人、传送后重新建立参考；运镜播放时暂停跟随。"
+                                            TextWrapping="Wrap" />
+                                        <ToggleSwitch
                                             x:Name="PauseGameInFreeCameraToggle"
                                             Header="启用时间冻结功能"
                                             OffContent="不冻结世界"
@@ -1355,6 +1370,26 @@
                                                 Value="60"
                                                 ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
                                         </Grid>
+                                        <ToggleSwitch
+                                            x:Name="GlobalFovToggle"
+                                            Header="修改全局视野"
+                                            OffContent="使用游戏视野"
+                                            OnContent="覆盖普通主相机视野"
+                                            Toggled="CameraEnhancementToggle_Toggled" />
+                                        <NumberBox
+                                            x:Name="GlobalFieldOfViewNumberBox"
+                                            Header="全局视野（FOV）"
+                                            Minimum="5"
+                                            Maximum="150"
+                                            SmallChange="1"
+                                            SpinButtonPlacementMode="Compact"
+                                            Value="60"
+                                            ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                        <TextBlock
+                                            x:Name="GlobalFovHint"
+                                            Style="{StaticResource FieldHintStyle}"
+                                            Text="作用于普通主相机。自由视角、第一人称和导入运镜保留各自的视野；关闭后随游戏下一次相机更新恢复。"
+                                            TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Border>
 

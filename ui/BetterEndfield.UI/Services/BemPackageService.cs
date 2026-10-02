@@ -29,6 +29,21 @@ internal sealed class BemOptionGroup
     public JsonElement? AvailableWhen { get; init; }
 }
 
+// Wire values use fixed ticks so both platforms serialize exactly the same weight.
+internal sealed class BemParameterGroup
+{
+    public string Id { get; init; } = "";
+    public string Name { get; init; } = "";
+    public uint Min { get; init; }
+    public uint Max { get; init; }
+    public uint Default { get; init; }
+    public uint Neutral { get; init; }
+    public uint Step { get; init; }
+    public JsonElement? AvailableWhen { get; init; }
+    public bool Accepts(uint value) => value >= Min && value <= Max && (value - Min) % Step == 0;
+    public uint Snap(double value) => (uint)Math.Clamp(Min + Math.Round((value - Min) / Step) * Step, Min, Max);
+}
+
 internal sealed class BemPackage
 {
     public string Id { get; init; } = "";
@@ -46,6 +61,38 @@ internal sealed class BemPackage
     public List<BemOptionGroup> OptionGroups { get; init; } = [];
     public List<JsonElement> SelectionConstraints { get; init; } = [];
     public Dictionary<string, string> SelectedOptions { get; } = new(StringComparer.Ordinal);
+    public List<BemParameterGroup> Parameters { get; init; } = [];
+    public Dictionary<string, uint> SelectedParameters { get; } = new(StringComparer.Ordinal);
+    // Kept separately from runtime selection, so downgrading then upgrading a package
+    // does not lose sliders which are temporarily absent from its metadata.
+    private readonly Dictionary<string, uint> _rememberedParameters = new(StringComparer.Ordinal);
+
+    public bool ParameterAvailable(BemParameterGroup parameter) => parameter.AvailableWhen is null || Evaluate(parameter.AvailableWhen.Value, EffectiveOptions());
+    public string EncodedParameters() => string.Join("&", Parameters.Select(p => p.Id + ":" + SelectedParameters[p.Id]));
+    public string RememberedParameters()
+    {
+        foreach (var item in SelectedParameters) _rememberedParameters[item.Key] = item.Value;
+        return string.Join("&", _rememberedParameters.Select(p => p.Key + ":" + p.Value));
+    }
+    public bool RestoreParameters(string saved)
+    {
+        _rememberedParameters.Clear(); SelectedParameters.Clear();
+        foreach (string pair in saved.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            string[] parts = pair.Split(':');
+            if (parts.Length != 2 || !Regex.IsMatch(parts[0], @"\A[A-Za-z0-9][A-Za-z0-9_.-]{0,95}\z") ||
+                !Regex.IsMatch(parts[1], @"\A[0-9]+\z") || !uint.TryParse(parts[1], out uint tick) || tick > 1000 ||
+                !_rememberedParameters.TryAdd(parts[0], tick)) throw new InvalidDataException("BEM 滑条设置不合法。");
+        }
+        bool repaired = false;
+        foreach (var parameter in Parameters)
+        {
+            uint value = _rememberedParameters.GetValueOrDefault(parameter.Id, parameter.Default);
+            if (!parameter.Accepts(value)) { value = parameter.Default; repaired = true; }
+            SelectedParameters[parameter.Id] = value;
+        }
+        return repaired;
+    }
 
     public Dictionary<string, string> EffectiveOptions()
     {
@@ -101,6 +148,7 @@ internal sealed class BemPackageService
     public bool LoadingOptimization { get; set; }
     public bool EffectiveLod => StandaloneLod || Packages.Any(p => p.Enabled);
     private readonly SemaphoreSlim _gate = new(1, 1);
+    private Dictionary<string, Dictionary<string, string>> _settings = new(StringComparer.Ordinal);
 
     private static string StableId(JsonElement e, string key)
     {
@@ -117,8 +165,8 @@ internal sealed class BemPackageService
         if (!r.ReadBytes(8).SequenceEqual(new byte[] { 66, 69, 77, 0, 80, 75, 71, 0 }))
             throw new InvalidDataException("BEM 包头不合法。");
         ushort major = r.ReadUInt16(), minor = r.ReadUInt16();
-        if (major != 1 || minor > 2 || r.ReadUInt32() != 40)
-            throw new InvalidDataException("仅支持 BEM 1.0/1.1/1.2 包。");
+        if (major != 1 || minor > 3 || r.ReadUInt32() != 40)
+            throw new InvalidDataException("仅支持 BEM 1.0/1.1/1.2/1.3 包。");
         ulong fileSize = r.ReadUInt64(), manifestSize = r.ReadUInt64();
         uint count = r.ReadUInt32(), flags = r.ReadUInt32();
         if (fileSize != (ulong)stream.Length || manifestSize == 0 || manifestSize > int.MaxValue || flags != 0 ||
@@ -148,21 +196,34 @@ internal sealed class BemPackageService
             AvailableWhen = g.TryGetProperty("available_when", out var condition) ? condition.Clone() : null
         }).ToList() : [];
         int maxChoices = minor >= 2 ? 64 : 16;
-        if (minor >= 1 && (groups.Count < 1 || (!skipValidation && groups.Count > 64) || groups.Select(g => g.Id).Distinct().Count() != groups.Count ||
+        if (minor >= 1 && ((minor < 3 && groups.Count < 1) || (!skipValidation && groups.Count > 64) || groups.Select(g => g.Id).Distinct().Count() != groups.Count ||
             groups.Any(g => g.Choices.Count < 1 || (!skipValidation && g.Choices.Count > maxChoices) || g.Choices.Select(c => c.Id).Distinct().Count() != g.Choices.Count ||
                             g.Choices.All(c => c.Id != g.Default))))
             throw new InvalidDataException("BEM 选项组目录不合法。");
+        var parameters = minor >= 3 ? m.GetProperty("parameters").EnumerateArray().Select(p => new BemParameterGroup
+        {
+            Id = StableId(p, "id"), Name = p.GetProperty("name").GetString() ?? "",
+            Min = p.GetProperty("min").GetUInt32(), Max = p.GetProperty("max").GetUInt32(),
+            Default = p.GetProperty("default").GetUInt32(), Neutral = p.GetProperty("neutral").GetUInt32(),
+            Step = p.GetProperty("step").GetUInt32(),
+            AvailableWhen = p.TryGetProperty("available_when", out var condition) ? condition.Clone() : null
+        }).ToList() : [];
+        if ((!skipValidation && parameters.Count > 64) || parameters.Select(p => p.Id).Distinct().Count() != parameters.Count ||
+            parameters.Any(p => p.Min > p.Max || p.Max > 1000 || p.Step == 0 || p.Step > 1000 ||
+                (p.Max - p.Min) % p.Step != 0 || !p.Accepts(p.Default) || !p.Accepts(p.Neutral)))
+            throw new InvalidDataException("BEM 滑条目录不合法。");
         var package = new BemPackage
         {
             Id = StableId(m, "package_id"), Name = m.GetProperty("name").GetString() ?? "",
             Author = m.GetProperty("author").GetString() ?? "", Version = m.GetProperty("version").GetString() ?? "",
             Character = StableId(m.GetProperty("target"), "character_id"), File = path, Size = stream.Length,
             Appearances = appearances, DefaultAppearance = def, SelectedAppearance = def,
-            IsComposable = minor >= 1, OptionGroups = groups,
+            IsComposable = minor >= 1, OptionGroups = groups, Parameters = parameters,
             SelectionConstraints = minor >= 1 && m.TryGetProperty("selection_constraints", out var constraints)
                 ? constraints.EnumerateArray().Select(c => c.Clone()).ToList() : []
         };
         if (minor >= 1) package.RestoreOptions("");
+        package.RestoreParameters("");
         return package;
     }
 
@@ -170,7 +231,7 @@ internal sealed class BemPackageService
     {
         Packages.Clear(); Notices.Clear(); StandaloneLod = false; SkipValidation = false;
         HotSwitch = false; LoadingOptimization = false;
-        var settings = new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
+        var settings = _settings = new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
         string ini = Path.Combine(Root, "runtime.ini");
         if (System.IO.File.Exists(ini))
         {
@@ -198,6 +259,12 @@ internal sealed class BemPackageService
                 if (settings.TryGetValue("Mod." + p.Id, out var state))
                 {
                     p.Enabled = state.GetValueOrDefault("enabled") is "true" or "1";
+                    try
+                    {
+                        if (p.RestoreParameters(state.GetValueOrDefault("parameters_saved", state.GetValueOrDefault("parameters", ""))))
+                            Notices.Add($"{p.Name}：部分滑条范围已变化，回退作者默认值。");
+                    }
+                    catch (InvalidDataException) { p.RestoreParameters(""); Notices.Add($"{p.Name}：滑条设置损坏，回退作者默认值。"); }
                     if (p.IsComposable)
                     {
                         try { p.RestoreOptions(state.GetValueOrDefault("options", "")); }
@@ -212,7 +279,7 @@ internal sealed class BemPackageService
                 }
                 Packages.Add(p);
             }
-            catch (Exception ex) when (ex is IOException or JsonException or InvalidOperationException or KeyNotFoundException)
+            catch (Exception ex) when (ex is IOException or InvalidDataException or JsonException or InvalidOperationException or KeyNotFoundException or OverflowException or FormatException)
             { Notices.Add($"{Path.GetFileName(path)}：{ex.Message}"); }
         }
         foreach (var group in Packages.Where(p => p.Enabled).GroupBy(p => p.Character).Where(g => g.Count() > 1))
@@ -228,14 +295,27 @@ internal sealed class BemPackageService
         try
         {
             Directory.CreateDirectory(Root);
-            var text = new StringBuilder("[CustomModel]\nstandalone_lod=").Append(StandaloneLod ? "true" : "false").Append('\n');
-            text.Append("skip_validation=").Append(SkipValidation ? "true" : "false").Append('\n');
-            text.Append("hot_switch=").Append(HotSwitch ? "true" : "false").Append('\n');
-            text.Append("loading_optimization=").Append(LoadingOptimization ? "true" : "false").Append('\n');
+            if (!_settings.TryGetValue("CustomModel", out var common)) _settings["CustomModel"] = common = new(StringComparer.Ordinal);
+            common["standalone_lod"] = StandaloneLod ? "true" : "false";
+            common["skip_validation"] = SkipValidation ? "true" : "false";
+            common["hot_switch"] = HotSwitch ? "true" : "false";
+            common["loading_optimization"] = LoadingOptimization ? "true" : "false";
             foreach (var p in Packages)
-                text.Append("\n[Mod.").Append(p.Id).Append("]\nenabled=").Append(p.Enabled ? "true" : "false")
-                    .Append("\npackage=packages/").Append(Path.GetFileName(p.File))
-                    .Append(p.IsComposable ? "\noptions=" + p.EncodedOptions() : "\nappearance=" + p.SelectedAppearance).Append('\n');
+            {
+                if (!_settings.TryGetValue("Mod." + p.Id, out var values)) _settings["Mod." + p.Id] = values = new(StringComparer.Ordinal);
+                values["enabled"] = p.Enabled ? "true" : "false";
+                values["package"] = "packages/" + Path.GetFileName(p.File);
+                values[p.IsComposable ? "options" : "appearance"] = p.IsComposable ? p.EncodedOptions() : p.SelectedAppearance;
+                values["parameters"] = p.EncodedParameters();
+                values["parameters_saved"] = p.RememberedParameters();
+            }
+            var text = new StringBuilder();
+            foreach (var section in _settings)
+            {
+                text.Append('[').Append(section.Key).Append("]\n");
+                foreach (var item in section.Value) text.Append(item.Key).Append('=').Append(item.Value).Append('\n');
+                text.Append('\n');
+            }
             if (Encoding.UTF8.GetByteCount(text.ToString()) > 1024 * 1024) throw new InvalidOperationException("包管理配置超过运行时 1 MiB 上限。");
             string temp = Path.Combine(Root, Guid.NewGuid() + ".tmp");
             try { await System.IO.File.WriteAllTextAsync(temp, text.ToString(), new UTF8Encoding(false)); System.IO.File.Move(temp, Path.Combine(Root, "runtime.ini"), true); }
@@ -320,7 +400,7 @@ internal sealed class BemPackageService
     public async Task RemoveAsync(BemPackage package)
     {
         RequireGameClosed();
-        System.IO.File.Delete(package.File); Packages.Remove(package); await SaveAsync();
+        System.IO.File.Delete(package.File); Packages.Remove(package); _settings.Remove("Mod." + package.Id); await SaveAsync();
     }
 
     public async Task SetEnabledAsync(BemPackage package, bool enabled)

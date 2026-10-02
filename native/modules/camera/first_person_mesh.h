@@ -137,21 +137,16 @@ inline Result Build(const std::vector<Vertex>& vertices,const std::vector<Part>&
         for(auto id:part.indices) if(id>=vertices.size()) {result.error="index out of range";return result;}
     }
     auto canonical=Weld(vertices,1e-5);
-    std::vector<uint32_t> parents=canonical;
-    auto root=[&](uint32_t id) {while(parents[id]!=id) {parents[id]=parents[parents[id]];id=parents[id];} return id;};
-    for(const auto& part:parts) for(size_t i=0;i<part.indices.size();i+=3) {
-        auto a=root(part.indices[i]),b=root(part.indices[i+1]),c=root(part.indices[i+2]);parents[b]=a;parents[c]=a;
-    }
-    std::vector<double> total(vertices.size()),head(vertices.size());
-    for(uint32_t i=0;i<vertices.size();++i) for(int j=0;j<4;++j) {
-        auto w=vertices[i].weight[j]; if(w==0) continue;
-        total[root(i)]+=w;
-        if(bone_kind[vertices[i].bone[j]]==1) head[root(i)]+=w;
-    }
+    // Classify the influences of drawn vertices, rather than the majority of a
+    // welded component. A connected hair/coat mesh can contain both. Any body
+    // or Neck influence keeps its triangle; unused palette entries do not count.
+    std::vector<uint8_t> removable(vertices.size(),1);
+    for(uint32_t i=0;i<vertices.size();++i)for(int j=0;j<4;++j)
+        if(vertices[i].weight[j]>0&&bone_kind[vertices[i].bone[j]]!=1)removable[i]=0;
     for(auto& part:result.parts) for(size_t i=0;i<part.indices.size();i+=3) {
         auto a=part.indices[i],b=part.indices[i+1],c=part.indices[i+2];
         if(a==b||a==c||b==c) continue;
-        if(hide_all||head[root(a)]>0.5*total[root(a)]) {
+        if(hide_all||(removable[a]&&removable[b]&&removable[c])) {
             part.indices[i+1]=a;part.indices[i+2]=a;++result.hidden_triangles;
         }
     }

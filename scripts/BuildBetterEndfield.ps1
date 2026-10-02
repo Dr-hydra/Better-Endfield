@@ -58,6 +58,14 @@ if ($combatReportMetadata.kind -ne 'betterendfield-combat-semantics-build-report
     throw "The bundled combat semantics catalogue is stale or invalid. Run scripts\BuildCombatSemantics.py."
 }
 
+# Validate the resolved target before any recursive removal. The publish path
+# can be supplied explicitly, but must never resolve to the workspace itself
+# or a drive root.
+$publishDir = [System.IO.Path]::GetFullPath($publishDir)
+if ($publishDir.TrimEnd('\') -eq $repoRoot.TrimEnd('\') -or
+    $publishDir.TrimEnd('\') -eq [System.IO.Path]::GetPathRoot($publishDir).TrimEnd('\')) {
+    throw "Refusing to reset the workspace or drive root: $publishDir"
+}
 if (Test-Path -LiteralPath $publishDir) {
     Remove-Item -LiteralPath $publishDir -Recurse -Force
 }
@@ -85,10 +93,9 @@ $bemTools = Join-Path $repoRoot "artifacts\bem-tools\dist\BetterEndfield.BemConv
 New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "tools") | Out-Null
 Copy-Item -LiteralPath $bemTools -Destination (Join-Path $publishDir "tools\BemConverter") -Recurse -Force
 New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "docs") | Out-Null
-foreach ($document in @("BEM_V1_SPEC.md", "BEM_CREATOR_GUIDE.md")) {
+foreach ($document in @("BEM_V1_SPEC.md", "BEM_V1_1_SPEC.md", "BEM_V1_2_SPEC.md", "BEM_V1_3_SPEC.md", "BEM_CREATOR_GUIDE.md", "BEM_V1_3_CREATOR_GUIDE.md", "THIRD_PARTY_MODULE_CREATOR_GUIDE.md")) {
     Copy-Item -LiteralPath (Join-Path $repoRoot "docs\$document") -Destination (Join-Path $publishDir "docs") -Force
 }
-Copy-Item -LiteralPath (Join-Path $repoRoot "tools\CustomModel\examples") -Destination (Join-Path $publishDir "tools\BemConverter\examples") -Recurse -Force
 
 $nativeStage = Join-Path $nativeBuild "stage\$Configuration"
 if (-not (Test-Path -LiteralPath $nativeStage)) {

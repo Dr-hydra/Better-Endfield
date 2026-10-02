@@ -27,6 +27,7 @@ import java.util.Map;
 public final class MainActivity extends Activity {
     static final String EXTRA_PAGE = "settings_page";
     private static final int CUSTOM_MODEL_PAGE = 4;
+    private static final int THIRD_PARTY_PAGE = 5;
     private static final int ENHANCEMENT_PAGE = 2;
     private static final int ABOUT_PAGE = 3;
     private static final int[] THEME_COLOR_VIEW_IDS = {
@@ -77,6 +78,8 @@ public final class MainActivity extends Activity {
     private int currentPage;
     private AboutPage aboutPage;
     private BemInstallPage bemPage;
+    private ThirdPartyModulesPage thirdPartyPage;
+    private android.widget.HorizontalScrollView navigationScroll;
     private boolean resumed;
 
     @Override
@@ -85,15 +88,16 @@ public final class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         String requestedPage = getIntent().getStringExtra(EXTRA_PAGE);
         currentPage = savedInstanceState == null
-                ? ("custom_model".equals(requestedPage) ? CUSTOM_MODEL_PAGE
+                ? ("third_party_modules".equals(requestedPage) ? THIRD_PARTY_PAGE : "custom_model".equals(requestedPage) ? CUSTOM_MODEL_PAGE
                         : ("enhancement".equals(requestedPage) ? ENHANCEMENT_PAGE
                                 : ("about".equals(requestedPage) ? ABOUT_PAGE : 0)))
                 : savedInstanceState.getInt("page", 0);
-        currentPage = Math.max(0, Math.min(CUSTOM_MODEL_PAGE, currentPage));
+        currentPage = Math.max(0, Math.min(THIRD_PARTY_PAGE, currentPage));
 
         View bemContent = findViewById(R.id.bem_content);
         bemContent.setPadding(0, 0, 0, 0);
         bemPage = new BemInstallPage(this, bemContent, savedInstanceState);
+        thirdPartyPage = new ThirdPartyModulesPage(this, findViewById(R.id.third_party_section));
 
         setupPageNavigation();
         setupModelPage();
@@ -108,6 +112,7 @@ public final class MainActivity extends Activity {
         super.onResume();
         resumed = true;
         updateBemRefresh();
+        if(currentPage==THIRD_PARTY_PAGE)thirdPartyPage.render();
     }
 
     @Override protected void onPause() {
@@ -122,6 +127,7 @@ public final class MainActivity extends Activity {
         saveHandler.removeCallbacksAndMessages(null);
         if (aboutPage != null) aboutPage.close();
         if (bemPage != null) bemPage.close();
+        if (thirdPartyPage != null) thirdPartyPage.close();
         super.onDestroy();
     }
 
@@ -134,6 +140,7 @@ public final class MainActivity extends Activity {
     @Override protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
         if (bemPage != null) bemPage.onActivityResult(request, result, data);
+        if (thirdPartyPage != null) thirdPartyPage.onActivityResult(request, result, data);
     }
 
     private void flushModelEdits() {
@@ -183,14 +190,16 @@ public final class MainActivity extends Activity {
                 findViewById(R.id.voice_section),
                 findViewById(R.id.enhancement_section),
                 findViewById(R.id.about_section),
-                findViewById(R.id.custom_model_section)
+                findViewById(R.id.custom_model_section),
+                findViewById(R.id.third_party_section)
         };
         View[] buttons = {
                 findViewById(R.id.show_model_button),
                 findViewById(R.id.show_voice_button),
                 findViewById(R.id.show_enhancement_button),
                 findViewById(R.id.show_about_button),
-                findViewById(R.id.show_custom_model_button)
+                findViewById(R.id.show_custom_model_button),
+                findViewById(R.id.show_third_party_button)
         };
         android.widget.ScrollView scroll = findViewById(R.id.responsive_scroll);
         for (int index = 0; index < buttons.length; ++index) {
@@ -201,6 +210,8 @@ public final class MainActivity extends Activity {
                 currentPage = page;
                 showPage(sections, buttons, page);
                 updateBemRefresh();
+                if(page==THIRD_PARTY_PAGE)thirdPartyPage.render();
+                scrollSelectedNavigation();
                 scroll.post(() -> scroll.smoothScrollTo(0, 0));
             });
         }
@@ -760,11 +771,15 @@ public final class MainActivity extends Activity {
         } else {
             shell.addView(header, new LinearLayout.LayoutParams(-1, -2));
             shell.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
-            shell.addView(navigation, new LinearLayout.LayoutParams(-1, -2));
+            navigationScroll=new android.widget.HorizontalScrollView(this);
+            navigationScroll.setHorizontalScrollBarEnabled(false);navigationScroll.setFillViewport(false);
+            navigationScroll.addView(navigation,new android.widget.FrameLayout.LayoutParams(-2,-2));
+            shell.addView(navigationScroll, new LinearLayout.LayoutParams(-1, -2));
             for (int i = 0; i < navigation.getChildCount(); i++) {
                 View tab = navigation.getChildAt(i);
-                LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, -2, 1);
-                tab.setLayoutParams(p); tab.setMinimumHeight(dp(56));
+                LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-2, -2);
+                p.setMarginStart(dp(4));tab.setLayoutParams(p); tab.setMinimumHeight(dp(56));tab.setMinimumWidth(dp(92));
+                tab.setPadding(dp(14),dp(8),dp(14),dp(8));
                 ((TextView) tab).setTextSize(13);
             }
         }
@@ -775,6 +790,7 @@ public final class MainActivity extends Activity {
             return insets;
         });
         shell.requestApplyInsets();
+        scrollSelectedNavigation();
         scroll.addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob) -> {
             int maxWidth = Math.min(r-l, dp(860));
             android.widget.FrameLayout.LayoutParams p = (android.widget.FrameLayout.LayoutParams) content.getLayoutParams();
@@ -787,5 +803,12 @@ public final class MainActivity extends Activity {
 
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+    private void scrollSelectedNavigation() {
+        if(navigationScroll==null)return;
+        LinearLayout navigation=findViewById(R.id.page_navigation);
+        navigationScroll.post(()->{for(int i=0;i<navigation.getChildCount();++i)if(navigation.getChildAt(i).isSelected()) {
+            navigationScroll.smoothScrollTo(Math.max(0,navigation.getChildAt(i).getLeft()-dp(16)),0);break;
+        }});
     }
 }

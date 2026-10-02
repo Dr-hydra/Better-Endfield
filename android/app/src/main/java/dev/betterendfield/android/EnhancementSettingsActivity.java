@@ -11,6 +11,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.TextView;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -144,6 +145,14 @@ public final class EnhancementSettingsActivity extends Activity {
         SectionCard card = card(getString(R.string.camera_card_title));
         addCameraToggle(card, R.string.camera_dither, () -> ModuleSettings.isDisableDitherEnabled(this));
         addCameraToggle(card, R.string.camera_free, () -> ModuleSettings.isFreeCameraEnabled(this));
+        addToggle(card, R.string.camera_follow_character,
+                () -> ModuleSettings.isCameraFollowCharacter(this),
+                checked -> ModuleSettings.setCameraFollowCharacter(this, checked));
+        addCameraHint(card, R.string.camera_follow_hint);
+        addToggle(card, R.string.camera_global_fov,
+                () -> ModuleSettings.isGlobalFovEnabled(this),
+                checked -> ModuleSettings.setGlobalFovEnabled(this, checked));
+        addCameraHint(card, R.string.camera_global_fov_hint);
         addCameraToggle(card, R.string.camera_pause, () -> ModuleSettings.isWorldPauseEnabled(this));
         addCameraToggle(card, R.string.camera_first_person, () -> ModuleSettings.isFirstPersonEnabled(this));
         addCameraToggle(card, R.string.camera_hide_head, () -> ModuleSettings.isFirstPersonHideHead(this));
@@ -157,6 +166,8 @@ public final class EnhancementSettingsActivity extends Activity {
         addCameraSlider(card, R.string.camera_fp_fov_label, getString(R.string.degree_suffix),
                 ModuleSettings.FOV_MINIMUM, ModuleSettings.FOV_MAXIMUM,
                 () -> ModuleSettings.parse(ModuleSettings.getFirstPersonFieldOfView(this), 75));
+        addCameraSlider(card, R.string.camera_global_fov_value, getString(R.string.degree_suffix),
+                5, 150, () -> ModuleSettings.parse(ModuleSettings.getGlobalFieldOfView(this), 60));
         addCameraSlider(card, R.string.camera_fp_side_limit, getString(R.string.degree_suffix), 30, 170,
                 () -> ModuleSettings.parse(ModuleSettings.getFirstPersonSideLookLimit(this), 90));
         addCameraSlider(card, R.string.camera_fp_turn_speed, getString(R.string.degree_per_second), 30, 1080,
@@ -221,6 +232,15 @@ public final class EnhancementSettingsActivity extends Activity {
         addToggle(card, title, current, checked -> saveCameraSetting(title, checked, 0));
     }
 
+    private void addCameraHint(SectionCard card, int text) {
+        TextView hint = new TextView(this);
+        hint.setText(text);
+        hint.setTextSize(13);
+        hint.setTextColor(getColor(R.color.text_muted));
+        hint.setPadding(dp(4), 0, dp(4), dp(4));
+        card.add(hint);
+    }
+
     private void addDashToggle(SectionCard card, int title, BooleanSupplier current) {
         addToggle(card, title, current, checked -> saveDashSetting(title, checked));
     }
@@ -275,6 +295,10 @@ public final class EnhancementSettingsActivity extends Activity {
     }
 
     private void saveCameraSetting(int option, boolean checked, double value) {
+        if (option == R.string.camera_global_fov_value) {
+            ModuleSettings.setGlobalFieldOfView(this, value);
+            return;
+        }
         ModuleSettings.setCameraSettings(this,
                 option == R.string.camera_dither ? checked : ModuleSettings.isDisableDitherEnabled(this),
                 option == R.string.camera_free ? checked : ModuleSettings.isFreeCameraEnabled(this),

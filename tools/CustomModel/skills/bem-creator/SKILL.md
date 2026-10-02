@@ -1,6 +1,6 @@
 ---
 name: bem-creator
-description: Convert supported Endfield source Mods to BEM 1.0/1.1/1.2, save repeatable export task projects, inspect and validate packages, unpack editable projects, repack them, and assemble multi-Mod ZIP distributions using the BEM creator CLI. Use for BEM creation and conversion diagnostics.
+description: Convert supported Endfield source Mods to BEM 1.0–1.3, configure author position sliders and official EFMI ShapeKey buffer bindings, save repeatable export task projects, inspect and validate packages, unpack editable projects, repack them, and assemble multi-Mod ZIP distributions using the BEM creator CLI. Use for BEM creation and conversion diagnostics.
 ---
 
 # BEM creator workflow
@@ -15,6 +15,13 @@ Read [the creator guide](references/BEM_CREATOR_GUIDE.md) for conversion recipes
 source-format support and profile requirements. Read [the 1.0 wire specification](references/BEM_V1_SPEC.md)
 or [the 1.1 combination specification](references/BEM_V1_1_SPEC.md) when editing a project manifest
 or diagnosing resource validation failures.
+
+Read [the 1.3 position specification](references/BEM_V1_3_SPEC.md) and
+[the slider author guide](references/BEM_V1_3_CREATOR_GUIDE.md) before adding a slider.
+Use the existing task's optional `deformations` input; do not invent a second
+export task format. Targets must match the final exported vertex correspondence.
+Official EFMI buffers need explicit component/key and vertex bindings; source
+GUI/INI programs are never executed and shape features cannot be silently discarded.
 
 ## Choose the operation
 
@@ -50,11 +57,13 @@ contain several independently managed packages. Multiple packages for one charac
 may be installed, but only one enabled. Source key combinations need reviewed reachability
 and resource mapping; do not blindly enumerate them as complete appearances.
 
-The Windows and Android runtimes support BEM 1.0 and 1.1. The package retains native shaders and
+The Windows and Android runtimes support BEM 1.0–1.3. The package retains native shaders and
 uses original materials selected per draw. Local skin indices remain UINT8 with at most
 256 palette entries per component, even when input bone indices are 16 bit.
-The 1.1 package preserves all candidate payloads for future hot switching, but the current UI
-only saves a selection for the next game start. Runtime loading reads only selected payloads.
+Composable packages preserve all candidate payloads for future selections. Experimental
+hot switching applies on the next normal resource delivery; otherwise selections apply
+on the next game start. Runtime loading reads only selected payloads and interpolation
+endpoints. 1.3 moves positions while retaining base normals/tangents and original bones.
 
 ## Report the outcome
 

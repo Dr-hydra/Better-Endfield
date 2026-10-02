@@ -80,6 +80,24 @@ final class FrameworkSettings {
 
     static synchronized boolean isConnected() { return remoteService != null; }
 
+    static void awaitThirdPartyConnection() throws java.io.IOException {
+        if(!FrameworkServiceWait.await(FrameworkSettings.class,()->remoteService!=null,10_000,()->{}))
+            throw new java.io.IOException("框架服务未连接；模块 ZIP 尚未发布，请启用框架模块后重试");
+    }
+    static synchronized void publishThirdParty(java.io.File file,String name) throws java.io.IOException {
+        if(remoteService==null || !name.matches("tpm-[a-f0-9-]{36}\\.zip") || !file.isFile())throw new java.io.IOException("无效的模块 ZIP 发布请求");
+        try(ParcelFileDescriptor descriptor=remoteService.openRemoteFile(name);java.io.FileInputStream input=new java.io.FileInputStream(file);
+            FileOutputStream output=new FileOutputStream(descriptor.getFileDescriptor())) {
+            output.getChannel().truncate(0);byte[] buffer=new byte[65536];long total=0;int count;
+            while((count=input.read(buffer))!=-1){total+=count;if(total>ThirdPartyModulePackage.LIMIT)throw new java.io.IOException("模块 ZIP 过大");output.write(buffer,0,count);}output.getFD().sync();
+        }
+    }
+    static synchronized boolean removeThirdParty(String name) {
+        if(remoteService==null || !name.matches("tpm-[a-f0-9-]{36}\\.zip"))return false;
+        try {return remoteService.deleteRemoteFile(name)||!java.util.Arrays.asList(remoteService.listRemoteFiles()).contains(name);}
+        catch(RuntimeException error){return false;}
+    }
+
     static void awaitConnection() throws java.io.IOException {
         if (!FrameworkServiceWait.await(FrameworkSettings.class, () -> remoteService != null,
                 10_000, BemInstaller::checkpoint))

@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <functional>
 #include <optional>
+#include <charconv>
 
 namespace BetterEndfield::CustomModel {
 namespace {
@@ -72,6 +73,31 @@ bool Evaluate(const J& node,const std::map<std::string,std::string>& effective) 
     if(item.key()=="any") return std::any_of(value.begin(),value.end(),[&](const J& child){return Evaluate(child,effective);});
     return !Evaluate(value,effective);
 }
+using ParameterTicks=std::map<std::string,uint32_t>;
+ParameterTicks ParseParameters(const J& definitions,std::string_view requested,std::string* canonical=nullptr) {
+    ParameterTicks saved,result;
+    while(!requested.empty()) {
+        const auto end=requested.find('&'); const auto token=requested.substr(0,end); const auto colon=token.find(':');
+        Check(colon!=token.npos && colon>0 && colon+1<token.size() && token.find(':',colon+1)==token.npos,"Invalid parameter selection");
+        auto id=Id(J(std::string(token.substr(0,colon)))); const auto text=token.substr(colon+1);
+        uint32_t tick=0; const auto parsed=std::from_chars(text.data(),text.data()+text.size(),tick);
+        Check(parsed.ec==std::errc{} && parsed.ptr==text.data()+text.size(),"Parameter value must be an unsigned integer tick");
+        Check(saved.emplace(id,tick).second,"Duplicate parameter selection");
+        requested=end==requested.npos?std::string_view{}:requested.substr(end+1);
+        Check(end==std::string_view::npos || !requested.empty(),"Trailing parameter separator");
+    }
+    if(canonical) canonical->clear();
+    for(const auto& parameter:definitions) {
+        const auto id=parameter.at("id").get<std::string>();
+        const auto tick=saved.contains(id)?saved.at(id):U(parameter.at("default"));
+        const auto min=U(parameter.at("min")),max=U(parameter.at("max")),step=U(parameter.at("step"));
+        Check(tick>=min && tick<=max && (tick-min)%step==0,"Parameter tick is outside range or step");
+        result.emplace(id,tick);
+        if(canonical) { if(!canonical->empty()) *canonical+='&'; *canonical+=id+":"+std::to_string(tick); }
+    }
+    for(const auto& [id,_]:saved) Check(result.contains(id),"Unknown parameter");
+    return result;
+}
 struct Container {
     bool skip_validation=false;
     bool loading_optimization=false;
@@ -86,12 +112,13 @@ struct Container {
     std::vector<Entry> directory;
     std::function<std::vector<uint8_t>(uint64_t,size_t)> read;
     BemPackageInfo info;
+    J parameters=J::array();
     void Open(uint64_t size) {
         Check(size>=sizeof(Header),"Invalid BEM file size");
         Validate(size<=2ull*1024*MiB,"Invalid BEM file size");
         auto raw=read(0,sizeof(Header)); Header h{}; std::memcpy(&h,raw.data(),sizeof(h));
-        Check(std::memcmp(h.magic,"BEM\0PKG\0",8)==0 && h.major==1 && h.minor<=2 && h.size==sizeof(h) && !h.flags,
-            "Only BEM 1.0/1.1/1.2 packages are supported");
+        Check(std::memcmp(h.magic,"BEM\0PKG\0",8)==0 && h.major==1 && h.minor<=3 && h.size==sizeof(h) && !h.flags,
+            "Only BEM 1.0/1.1/1.2/1.3 packages are supported");
         minor=h.minor; limits=LimitsFor(minor);
         if(skip_validation) {
             limits.choices=SIZE_MAX; limits.rules=SIZE_MAX; limits.textures=kMaxBemTextures;
@@ -143,6 +170,7 @@ struct Container {
         if(!minor) info.default_appearance=Id(m.at("default_appearance_id"));
         std::set<std::string> caps{"native-materials","palette-u8","indices-u32","fixed-appearances","texture-astc","composable-options","keep-material-textures"};
         if(minor>=2) caps.insert({"texture-slots","resource-bone-aliases"});
+        if(minor>=3) caps.insert({"body-parameters","mesh-position-deltas"});
         bool composable=false,fixed=false,keepTextureCapability=false,slotCapability=false,aliasCapability=false;
         std::set<std::string> declared;
         for(const auto& c:m.at("required_capabilities")) {auto cap=S(c);Validate(caps.contains(cap),"Unsupported required capability");
@@ -197,7 +225,7 @@ struct Container {
             }
             Check(ids.contains(info.default_appearance),"Default appearance missing");
         } else {
-            const auto& groups=m.at("option_groups");Check(groups.is_array() && !groups.empty(),"Invalid option groups"); Validate(groups.size()<=64,"Invalid option groups");
+            const auto& groups=m.at("option_groups");Check(groups.is_array() && (!groups.empty() || minor>=3),"Invalid option groups"); Validate(groups.size()<=64,"Invalid option groups");
             std::set<std::string> earlier;
             for(const auto& group:groups) {
                 auto id=Id(group.at("id"));S(group.at("name"));
@@ -283,6 +311,67 @@ struct Container {
         }
         if(minor) Check(candidateCount<=limits.rules,"More than "+std::to_string(limits.rules)+" candidate rules/draws");
         for(const auto& texture:m.at("textures")) Check(U(texture.at("payload"))<directory.size(),"Missing texture payload");
+        if(m.contains("parameters")) {
+            Check(minor>=3 && m.at("parameters").is_array(),"Parameters require BEM 1.3");
+            Validate(m.at("parameters").size()<=64,"More than 64 body parameters");
+            std::set<std::string> ids;
+            for(auto parameter:m.at("parameters")) {
+                const auto id=Id(parameter.at("id")); S(parameter.at("name"));
+                Check(ids.insert(id).second,"Duplicate body parameter");
+                if(!parameter.contains("min")) parameter["min"]=0;
+                if(!parameter.contains("max")) parameter["max"]=1000;
+                if(!parameter.contains("neutral")) parameter["neutral"]=0;
+                if(!parameter.contains("default")) parameter["default"]=parameter.at("neutral");
+                if(!parameter.contains("step")) parameter["step"]=1;
+                const auto min=U(parameter.at("min")),max=U(parameter.at("max")),neutral=U(parameter.at("neutral")),def=U(parameter.at("default")),step=U(parameter.at("step"));
+                Check(min<max && max<=1000 && step>0 && (max-min)%step==0 && neutral>=min && neutral<=max && def>=min && def<=max &&
+                    (neutral-min)%step==0 && (def-min)%step==0,"Invalid body parameter range/default/neutral/step");
+                if(parameter.contains("available_when")) Condition(parameter.at("available_when"),optionChoices);
+                parameters.push_back(std::move(parameter));
+            }
+        }
+        Validate(parameters.empty() || declared.contains("body-parameters"),"Body parameter capability mismatch");
+        info.parameter_groups_json=parameters.dump();
+        info.parameter_frame_values.resize(parameters.size());
+        ParseParameters(parameters,{},&info.default_parameters);
+        if(m.contains("mesh_deformations")) {
+            Check(minor>=3 && m.at("mesh_deformations").is_array(),"Mesh deformations require BEM 1.3");
+            Validate(m.at("mesh_deformations").size()<=4096,"More than 4096 mesh deformation channels");
+            std::set<std::pair<uint32_t,std::string>> channels;
+            for(const auto& channel:m.at("mesh_deformations")) {
+                const auto mesh=U(channel.at("mesh")); const auto id=Id(channel.at("parameter"));
+                Check(mesh<m.at("meshes").size() && channels.emplace(mesh,id).second,"Missing mesh or duplicate deformation channel");
+                const J* parameter=nullptr;size_t parameterIndex=0;
+                for(size_t index=0;index<parameters.size();++index) if(parameters.at(index).at("id")==id) {parameter=&parameters.at(index);parameterIndex=index;}
+                Check(parameter,"Unknown deformation parameter");
+                const auto min=U(parameter->at("min")),max=U(parameter->at("max")),neutral=U(parameter->at("neutral")),step=U(parameter->at("step"));
+                const auto& frames=channel.at("frames");
+                Check(frames.is_array() && frames.size()>=2 && frames.size()<=64,"Invalid deformation frame count");
+                bool hasNeutral=false; uint32_t previous=0;
+                for(size_t i=0;i<frames.size();++i) {
+                    const auto& frame=frames.at(i); const auto value=U(frame.at("value"));
+                    Check(value>=min && value<=max && (value-min)%step==0 && (!i || value>previous),"Deformation frame values must be ordered and in parameter range");
+                    previous=value;
+                    auto& samples=info.parameter_frame_values.at(parameterIndex);
+                    if(std::find(samples.begin(),samples.end(),value)==samples.end()) samples.push_back(value);
+                    if(frame.value("neutral",false)) {
+                        Check(value==neutral && !hasNeutral && !frame.contains("payload") && !frame.contains("count") && !frame.contains("encoding"),"Invalid neutral deformation frame");
+                        hasNeutral=true;
+                    } else {
+                        Check(value!=neutral && U(frame.at("payload"))<directory.size() &&
+                            U(frame.at("count"))<=U(m.at("meshes").at(mesh).at("vertex_count")) && S(frame.at("encoding"))=="sparse-position-f32","Invalid deformation payload reference/count/encoding");
+                        const auto id=U(frame.at("payload"));
+                        Check(directory[id].decoded>=4ull+16ull*U(frame.at("count")),"Truncated position delta payload");
+                    }
+                }
+                Check(hasNeutral && U(frames.front().at("value"))==min && U(frames.back().at("value"))==max,"Deformation frames must include neutral and range endpoints");
+                const auto& meshDefinition=m.at("meshes").at(mesh); bool validPosition=false;
+                for(const auto& a:meshDefinition.at("attributes")) if(a.is_array() && a.size()==5 && U(a.at(0))==0)
+                    validPosition=U(a.at(1))==0 && U(a.at(2))==3;
+                Check(validPosition,"Position deformations require Float32 XYZ position attribute");
+            }
+            Validate(m.at("mesh_deformations").empty() || declared.contains("mesh-position-deltas"),"Position delta capability mismatch");
+        }
     }
     uint64_t decoded=0;
     std::map<uint32_t,std::vector<uint8_t>> cache;
@@ -386,10 +475,72 @@ struct Container {
         }
         return result;
     }
-    void Decode(std::string_view requested,BemPocData& out) {
+    struct WeightedFrame { const J* frame; double weight; };
+    std::vector<WeightedFrame> MorphFrames(uint32_t mesh,const ParameterTicks& ticks) const {
+        std::vector<WeightedFrame> result;
+        if(!manifest.contains("mesh_deformations")) return result;
+        for(const auto& channel:manifest.at("mesh_deformations")) {
+            if(U(channel.at("mesh"))!=mesh) continue;
+            const auto tick=ticks.at(channel.at("parameter").get<std::string>());
+            const auto& frames=channel.at("frames");
+            auto right=std::lower_bound(frames.begin(),frames.end(),tick,[](const J& frame,uint32_t value){return U(frame.at("value"))<value;});
+            Check(right!=frames.end(),"Deformation interpolation outside parameter range");
+            auto add=[&](const J& frame,double weight) {if(weight>0 && !frame.value("neutral",false)) result.push_back({&frame,weight});};
+            if(U(right->at("value"))==tick) {add(*right,1);continue;}
+            Check(right!=frames.begin(),"Deformation interpolation outside parameter range");
+            const auto& left=*(right-1);
+            const double blend=double(tick-U(left.at("value")))/double(U(right->at("value"))-U(left.at("value")));
+            add(left,1-blend);add(*right,blend);
+        }
+        return result;
+    }
+    void ApplyMorph(uint32_t mesh,const ParameterTicks& ticks,BemComponent& component) {
+        const auto frames=MorphFrames(mesh,ticks); if(frames.empty()) return;
+        uint32_t stream=0,offset=0;bool found=false;
+        for(const auto& attribute:manifest.at("meshes").at(mesh).at("attributes")) if(U(attribute.at(0))==0) {
+            Check(!found && U(attribute.at(1))==0 && U(attribute.at(2))==3,"Position deformations require one Float32 XYZ position attribute");
+            stream=U(attribute.at(3));offset=U(attribute.at(4));found=true;
+        }
+        Check(found && stream<3,"Missing morph position stream");
+        const uint32_t strides[]{component.info.stride0,component.info.stride1,component.info.stride2};
+        Check(offset<=strides[stream] && 12<=strides[stream]-offset,"Morph position attribute exceeds stream stride");
+        // Each load starts with immutable package bytes. Channels only add position
+        // deltas; skin, directions, UVs, indices and material ownership are unchanged.
+        for(const auto& selected:frames) {
+            const auto& frame=*selected.frame; const auto id=U(frame.at("payload"));
+            const auto& bytes=Payload(frame.at("payload"),directory.at(id).decoded);
+            uint32_t jsonLength=0; Check(bytes.size()>=4,"Truncated position delta header");
+            std::memcpy(&jsonLength,bytes.data(),4);
+            const auto count=U(frame.at("count"));
+            Check(jsonLength>0 && jsonLength<=MiB && uint64_t(jsonLength)+4+uint64_t(count)*16==bytes.size(),"Position delta payload extent differs");
+            const auto header=J::parse(bytes.begin()+4,bytes.begin()+4+jsonLength);
+            Check(header.is_object() && header.size()==2 && U(header.at("count"))==count &&
+                S(header.at("encoding"))=="sparse-position-f32","Position delta header differs from frame");
+            std::set<uint32_t> vertices;
+            for(uint32_t n=0;n<count;++n) {
+                const auto* record=bytes.data()+4+jsonLength+size_t(n)*16;
+                uint32_t vertex=0;float delta[3];std::memcpy(&vertex,record,4);std::memcpy(delta,record+4,12);
+                Check(vertex<component.info.vertex_count && vertices.insert(vertex).second,"Position delta vertex is outside mesh or duplicated");
+                const auto address=size_t(vertex)*strides[stream]+offset;
+                auto* target=component.streams[stream].data()+address;float position[3];std::memcpy(position,target,12);
+                for(size_t axis=0;axis<3;++axis) {
+                    Check(std::isfinite(delta[axis]) && std::isfinite(position[axis]),"Non-finite morph position/delta");
+                    const double next=double(position[axis])+selected.weight*double(delta[axis]);
+                    position[axis]=static_cast<float>(next);
+                    Check(std::isfinite(position[axis]),"Morphed position overflow");
+                }
+                std::memcpy(target,position,12);
+            }
+            ReleasePayload(id);
+        }
+    }
+    void Decode(std::string_view requested,BemPocData& out,std::string_view parameterSelection={}) {
         out.skip_validation=skip_validation;
         out.loading_optimization=loading_optimization;
         const auto& m=manifest;auto selection=Select(requested);
+        auto ticks=ParseParameters(parameters,parameterSelection);
+        for(const auto& parameter:parameters) if(parameter.contains("available_when") && !Evaluate(parameter.at("available_when"),selection.effective))
+            ticks.at(parameter.at("id").get<std::string>())=U(parameter.at("neutral"));
         out.header.version=1;
         out.header.component_count=static_cast<uint32_t>(info.component_names.size());
         std::map<uint32_t,uint32_t> textures;
@@ -422,6 +573,7 @@ struct Container {
                     for(const auto& material:op.at("material_overrides")) addTextures(material.at("textures"));
                 if(action!="replace") continue;
                 const auto& mesh=m.at("meshes").at(U(op.at("mesh")));
+                for(const auto& frame:MorphFrames(U(op.at("mesh")),ticks)) add(frame.frame->at("payload"));
                 for(const auto& stream:mesh.at("streams")) add(stream.at("payload"));
                 if(!minor) add(mesh.at("indices"));
                 for(const auto& draw:mesh.at("draws")) {
@@ -531,6 +683,7 @@ struct Container {
                 std::vector<std::array<int32_t,4>>{{12,4,4,2},{13,6,4,2}};
             Validate(skinAttributes==expectedSkin,"Unsupported skin declaration");
             c.layout_crc=Crc(std::string_view(reinterpret_cast<const char*>(c.attributes.data()),c.attributes.size()*16));
+            ApplyMorph(U(op.at("mesh")),ticks,c);
             auto indexBytes=uint64_t(h.index_count)*h.index_element_size; reserve(indexBytes);
             if(minor) {
                 if(loading_optimization && chosenDraws.size()==1)
@@ -602,9 +755,14 @@ template<class F> bool File(const std::filesystem::path& path,std::string& error
 bool ReadBemPackageInfo(const std::filesystem::path& path,BemPackageInfo& out,std::string& error,bool skip_validation) {
     out={}; return File(path,error,[&](Container& c){out=c.info;},skip_validation);
 }
-bool LoadBem(const std::filesystem::path& path,BemPocData& out,std::string& error,std::string_view appearance,BemLoadStats* stats,bool skip_validation,bool loading_optimization) {
+bool ResolveBemParameters(const BemPackageInfo& info,std::string_view requested,std::string& canonical,std::string& error) {
+    canonical.clear();error.clear();
+    try { ParseParameters(info.parameter_groups_json.empty()?J::array():J::parse(info.parameter_groups_json),requested,&canonical);return true; }
+    catch(const std::exception& e) {error=e.what();canonical.clear();return false;}
+}
+bool LoadBem(const std::filesystem::path& path,BemPocData& out,std::string& error,std::string_view appearance,BemLoadStats* stats,bool skip_validation,bool loading_optimization,std::string_view parameters) {
     out={}; if(stats) *stats={};BemPocData parsed;
-    if(!File(path,error,[&](Container& c){c.stats=stats;c.Decode(appearance,parsed);},skip_validation,loading_optimization)) return false;
+    if(!File(path,error,[&](Container& c){c.stats=stats;c.Decode(appearance,parsed,parameters);},skip_validation,loading_optimization)) return false;
     out=std::move(parsed); return true;
 }
 bool ParseBem(std::span<const uint8_t> bytes,BemPocData& out,std::string& error,bool skip_validation,bool loading_optimization) {
@@ -649,6 +807,8 @@ bool RewriteBemTextures(const std::filesystem::path& input,const std::filesystem
             if(c.minor) for(auto& draw:mesh["draws"]) copy(draw["indices"]);
             else copy(mesh["indices"]);
         }
+        if(manifest.contains("mesh_deformations")) for(auto& channel:manifest["mesh_deformations"])
+            for(auto& frame:channel["frames"]) if(frame.contains("payload")) copy(frame["payload"]);
         if(!c.minor) for(auto& appearance:manifest["appearances"]) if(appearance.contains("preview")) copy(appearance["preview"]);
         BemJson changes=BemJson::array();
         // Identical texture descriptors share converted output; geometry/texture aliases are kept separate.
@@ -692,6 +852,9 @@ bool RewriteBemTextures(const std::filesystem::path& input,const std::filesystem
             summary["option_groups"]=manifest.at("option_groups");
             summary["selection_constraints"]=manifest.value("selection_constraints",J::array());}
         else {summary["default_appearance"]=c.info.default_appearance;summary["appearances"]=c.info.appearances;}
+        summary["parameters"]=c.parameters;
+        summary["parameter_groups_json"]=c.info.parameter_groups_json;
+        summary["default_parameters"]=c.info.default_parameters;
         report=summary.dump();
     });
     std::error_code ignored; std::filesystem::remove(spool,ignored);

@@ -2,6 +2,7 @@
 // Mesh, material and texture algorithms migrated from the 84b88bfb PoC;
 // all object ownership below is restricted to a single delivery transaction.
 #include "BetterEndfield/ModuleApi.h"
+#include "BetterEndfield/CustomModelGeometry.h"
 #include "bem.h"
 #include "native_mesh_layout.h"
 #include "mod_registry.h"
@@ -1135,6 +1136,7 @@ bool ValidateRendererSkin(const BemComponent& component, void* renderer, void* s
 }
 
 uint32_t Crc32(std::string_view text);
+void RememberCpuGeometry(void* mesh,const BemComponent& component);
 bool BuildMeshFromComponent(
     const BemComponent& component, void* source_mesh, void*& new_mesh, void* prepared_bindposes=nullptr) {
     new_mesh = nullptr;
@@ -1397,6 +1399,7 @@ bool BuildMeshFromComponent(
     }
 
     new_mesh = mesh;
+    RememberCpuGeometry(mesh,component);
     return true;
 }
 
@@ -1982,6 +1985,81 @@ struct WeakObject {
             InvokeValue(Contract("object.instance_id"),object,nullptr,id) && id==instance_id?object:nullptr;
     }
 };
+struct CpuGeometry {
+    WeakObject mesh;
+    std::vector<float> positions;
+    std::vector<uint8_t> skin;
+    std::vector<uint32_t> indices;
+    std::vector<BE_CustomModelDrawV1> draws;
+    uint32_t vertices=0,stride=0;
+    uint64_t used=0;
+    size_t Bytes() const {return positions.size()*4+skin.size()+indices.size()*4+draws.size()*sizeof(BE_CustomModelDrawV1);}
+};
+constexpr size_t kCpuGeometryBudget=64u*1024u*1024u;
+std::vector<std::unique_ptr<CpuGeometry>> g_cpu_geometry;
+size_t g_cpu_geometry_bytes=0;
+uint64_t g_cpu_geometry_serial=0;
+void PruneCpuGeometry() {
+    std::erase_if(g_cpu_geometry,[](const auto& entry){
+        if(entry->mesh.Get()) return false;
+        g_cpu_geometry_bytes-=entry->Bytes();return true;
+    });
+}
+void RememberCpuGeometry(void* mesh,const BemComponent& component) {
+    // Optional bounded cache for camera masking. Cache failure never rejects a
+    // valid replacement. No textures, TBN streams or strong engine references.
+    try {
+        const auto& info=component.info;
+        const uint64_t bytes=uint64_t(info.vertex_count)*(12+info.stride2)+uint64_t(info.index_count)*4+
+            std::max<size_t>(component.draws.size(),1)*sizeof(BE_CustomModelDrawV1);
+        if(bytes>kCpuGeometryBudget || !info.vertex_count || (info.stride2!=4 && info.stride2!=12 && info.stride2!=32) ||
+            component.streams[2].size()!=uint64_t(info.vertex_count)*info.stride2 ||
+            (info.index_element_size!=2 && info.index_element_size!=4) ||
+            component.indices.size()!=uint64_t(info.index_count)*info.index_element_size) return;
+        constexpr uint32_t sizes[]{4,2,1,1,2,2,1,1,2,2,4,4};
+        uint32_t positionStream=0,positionOffset=0; bool found=false;std::array<uint32_t,3> offsets{};
+        for(const auto& attribute:component.attributes) {
+            if(attribute[1]<0 || attribute[1]>=12 || attribute[2]<=0 || attribute[2]>4 || attribute[3]<0 || attribute[3]>=3) return;
+            const auto stream=static_cast<uint32_t>(attribute[3]);
+            if(attribute[0]==0) {
+                if(found || attribute[1]!=0 || attribute[2]!=3) return;
+                found=true;positionStream=stream;positionOffset=offsets[stream];
+            }
+            offsets[stream]+=sizes[attribute[1]]*attribute[2];
+        }
+        const uint32_t strides[]{info.stride0,info.stride1,info.stride2};
+        if(!found || positionOffset>strides[positionStream] || 12>strides[positionStream]-positionOffset ||
+            component.streams[positionStream].size()!=uint64_t(info.vertex_count)*strides[positionStream]) return;
+        auto entry=std::make_unique<CpuGeometry>();
+        if(!entry->mesh.Set(mesh)) return;
+        PruneCpuGeometry();
+        std::erase_if(g_cpu_geometry,[&](const auto& previous){
+            if(previous->mesh.Get()!=mesh) return false;
+            g_cpu_geometry_bytes-=previous->Bytes();return true;
+        });
+        while(g_cpu_geometry_bytes+bytes>kCpuGeometryBudget && !g_cpu_geometry.empty()) {
+            auto oldest=std::min_element(g_cpu_geometry.begin(),g_cpu_geometry.end(),[](const auto& a,const auto& b){return a->used<b->used;});
+            g_cpu_geometry_bytes-=(*oldest)->Bytes();g_cpu_geometry.erase(oldest);
+        }
+        entry->vertices=info.vertex_count;entry->stride=info.stride2;entry->positions.resize(size_t(info.vertex_count)*3);
+        for(uint32_t vertex=0;vertex<info.vertex_count;++vertex) {
+            std::memcpy(entry->positions.data()+size_t(vertex)*3,component.streams[positionStream].data()+size_t(vertex)*strides[positionStream]+positionOffset,12);
+            for(size_t axis=0;axis<3;++axis) if(!std::isfinite(entry->positions[size_t(vertex)*3+axis])) return;
+        }
+        entry->skin=component.streams[2];entry->indices.resize(info.index_count);
+        for(uint32_t index=0;index<info.index_count;++index) {
+            entry->indices[index]=0;
+            std::memcpy(&entry->indices[index],component.indices.data()+size_t(index)*info.index_element_size,info.index_element_size);
+            if(entry->indices[index]>=info.vertex_count) return;
+        }
+        if(component.draws.empty()) entry->draws.push_back({0,info.index_count});
+        else for(const auto& draw:component.draws) {
+            if(draw.start>info.index_count || draw.count>info.index_count-draw.start) return;
+            entry->draws.push_back({draw.start,draw.count});
+        }
+        entry->used=++g_cpu_geometry_serial;g_cpu_geometry_bytes+=entry->Bytes();g_cpu_geometry.push_back(std::move(entry));
+    } catch(...) { /* The camera retains its generic path when memory is unavailable. */ }
+}
 struct StrongReference {
     uint32_t handle=0;
     StrongReference()=default;
@@ -2480,7 +2558,7 @@ std::shared_ptr<const BemPocData> AcquirePayload(const EnabledMod& mod) {
         entry.expires=now+kPayloadCacheTtlMs; return entry.payload;
     }
     auto payload=std::make_shared<BemPocData>(); std::string error;
-    if (!LoadBem(mod.package,*payload,error,mod.appearance,nullptr,mod.skip_validation,mod.loading_optimization) || !ValidatePayloadAdapter(*mod.adapter,*payload)) {
+    if (!LoadBem(mod.package,*payload,error,mod.appearance,nullptr,mod.skip_validation,mod.loading_optimization,mod.parameters) || !ValidatePayloadAdapter(*mod.adapter,*payload)) {
         Log("Package refused for "+std::string(mod.adapter->id)+": "+error); return {};
     }
     size_t size=0;
@@ -3039,6 +3117,7 @@ void BE_CALL ShutdownResourceModule() {
         Log("Hook disable reported failure; pinned inactive detours remain pass-through.");
     std::lock_guard lock(g_state_mutex);
     g_payload_cache.clear(); g_completed.clear(); g_lod.pipeline.Reset();
+    g_cpu_geometry.clear();g_cpu_geometry_bytes=0;g_cpu_geometry_serial=0;
     g_hot_switch_runtime.store(false);
     // Model bindings are intentionally not rolled back on module shutdown.
 }
@@ -3048,6 +3127,25 @@ const BE_ModuleApiV1 kResourceApi{
 };
 }
 BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfield_GetModuleApiV1() { return &kResourceApi; }
+BE_EXPORT BE_Result BE_CALL BetterEndfield_QueryCustomModelGeometryV1(void* mesh,
+    BE_CustomModelGeometryVisitorV1 visitor,void* context) {
+    if(!mesh || !visitor) return BE_Result_InvalidArgument;
+    if(!g_host || !g_enabled.load() || g_stopping.load() || g_in_delivery || g_pump_thread.load()!=GetCurrentThreadId()) return BE_Result_NotReady;
+    try {
+        std::unique_lock lock(g_state_mutex,std::try_to_lock);
+        if(!lock.owns_lock()) return BE_Result_NotReady;
+        ConstructionScope temporary;
+        PruneCpuGeometry();
+        for(const auto& entry:g_cpu_geometry) if(entry->mesh.Get()==mesh) {
+            entry->used=++g_cpu_geometry_serial;
+            const BE_CustomModelGeometryV1 view{sizeof(BE_CustomModelGeometryV1),BETTER_ENDFIELD_CUSTOM_MODEL_GEOMETRY_V1,
+                entry->vertices,static_cast<uint32_t>(entry->indices.size()),entry->positions.data(),entry->skin.data(),entry->stride,
+                entry->indices.data(),entry->draws.data(),static_cast<uint32_t>(entry->draws.size())};
+            return visitor(context,&view);
+        }
+        return BE_Result_NotFound;
+    } catch(...) {return BE_Result_Failed;}
+}
 }
 BOOL WINAPI DllMain(HINSTANCE instance,DWORD reason,LPVOID reserved) {
     if (reason==DLL_PROCESS_ATTACH) DisableThreadLibraryCalls(instance);

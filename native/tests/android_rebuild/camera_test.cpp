@@ -53,6 +53,23 @@ int main() {
     g_pause_request=true;PumpFreeCameraControl();assert(clockScale==0.75f&&!g_changed_time_scale);
     g_pause_request=true;PumpFreeCameraControl();assert(clockScale==0&&g_changed_time_scale);
     g_pause_enabled=false;PumpFreeCameraControl();assert(clockScale==0.75f&&!g_changed_time_scale);
+    // Free-camera heartbeat must not claim that first-person cleanup has run.
+    // No TailLateTick or CameraTick executes during these rendered frames.
+    g_state.store(ModuleState::Ready);
+    g_first_person_camera_enabled=false;g_first_person_active=true;
+    PumpFreeCameraControl();AndroidCameraFrame(false);
+    assert(!g_first_person_active.load());
+    g_first_person_active=true;PumpFreeCameraControl();AndroidCameraFrame(false);
+    assert(!g_first_person_active.load());
+    // A config exit queued after a prior FP pump still wins this rendered frame.
+    PumpFirstPerson();g_first_person_active=true;g_first_person_exit_request=true;
+    PumpFreeCameraControl();AndroidCameraFrame(false);
+    assert(!g_first_person_active.load()&&!g_first_person_exit_request.load());
+    const auto full_frame_generation=g_android_first_person_pump_generation;
+    PumpFirstPerson(false,false);
+    assert(g_android_first_person_pump_generation==full_frame_generation);
+    PumpFirstPerson();
+    assert(g_android_first_person_pump_generation==full_frame_generation+1);
     g_host=nullptr;
     std::cout<<"PASS camera: hook capabilities, pause-only frame pump, independent freeze, camera mode preservation and exact time restoration\n";
 }

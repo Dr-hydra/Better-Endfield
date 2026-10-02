@@ -166,10 +166,12 @@ def main() -> int:
             continue
         data = load_json(path)
         character_id = data.get("correspondingCharId") or match.group(1)
-        codename = character_id.split("_", 2)[-1]
         animation_config = data.get("cpuAnimationTempletName", "")
         animation_parts = animation_config.split("/")
         rig_family = animation_parts[-2] if len(animation_parts) >= 2 else ""
+        # The character ID and art/animation codename can differ (for example,
+        # purrche uses purrchena). PrefabInfo supplies the actual folder name.
+        codename = animation_parts[-1] or character_id.split("_", 2)[-1]
         art_root = f"assets/beyond/arts/entity/actor/{rig_family.casefold()}/{codename}"
         animation_prefix = f"{art_root}/animations/"
         model_prefix = f"{art_root}/models/"

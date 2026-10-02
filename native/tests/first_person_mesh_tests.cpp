@@ -47,6 +47,17 @@ int main() {
         auto hidden=Build(split,{components},{0,1},{},false,false);
         Check(hidden.hidden_triangles==1&&hidden.parts[0].indices==std::vector<uint32_t>({0,1,2,3,3,3}),"component hide damaged body");
         auto all=Build(split,{components},{0,1},{},true,false);Check(all.hidden_triangles==2,"named head renderer not hidden");
+        std::vector<Vertex> connected{V(0,0,0,1),V(1,0,0,1),V(0,1,0,1),V(1,1,0,0)};
+        Part mixed{{0,1,2,1,2,3}};
+        auto precise=Build(connected,{mixed},{0,1,2},{},false,false);
+        Check(precise.hidden_triangles==1&&precise.parts[0].indices==std::vector<uint32_t>({0,0,0,1,2,3}),
+            "head majority erased connected clothing triangle");
+        connected[0].bone[1]=0;connected[0].weight[0]=.999;connected[0].weight[1]=.001;
+        Check(Build(connected,{mixed},{0,1},{},false,false).hidden_triangles==0,
+            "nonzero body influence was discarded");
+        connected[0]=V(0,0,0,2);
+        Check(Build(connected,{mixed},{0,1,2},{},false,false).hidden_triangles==0,
+            "Neck influence was globally hidden");
         // Concave neck outlines require ear clipping, not a centre triangle fan.
         std::vector<Vertex> concave{V(0,0,0),V(2,0,0),V(2,2,0),V(1,1,0),V(0,2,0)};
         std::vector<uint32_t> triangles;

@@ -482,6 +482,9 @@ public sealed partial class MainWindow : Window
         extras.MouseInvertY = FreeCameraInvertYToggle.IsOn;
         extras.MouseSensitivity = Value(FreeCameraMouseSensitivityNumberBox, 0.1);
         extras.Smoothing = Value(FreeCameraSmoothingNumberBox, 30.0) / 100.0;
+        extras.GlobalFovEnabled = GlobalFovToggle.IsOn;
+        extras.GlobalFieldOfView = Value(GlobalFieldOfViewNumberBox, 60.0);
+        extras.FollowCharacter = FreeCameraFollowCharacterToggle.IsOn;
         int preset = MotionPresetComboBox.SelectedIndex;
         extras.MotionPreset = FreeCameraExtras.MotionPresets[
             preset >= 0 && preset < FreeCameraExtras.MotionPresets.Length ? preset : 0];
@@ -540,6 +543,9 @@ public sealed partial class MainWindow : Window
         FreeCameraInvertYToggle.IsOn = extras.MouseInvertY;
         FreeCameraMouseSensitivityNumberBox.Value = extras.MouseSensitivity;
         FreeCameraSmoothingNumberBox.Value = extras.Smoothing * 100.0;
+        GlobalFovToggle.IsOn = extras.GlobalFovEnabled;
+        GlobalFieldOfViewNumberBox.Value = extras.GlobalFieldOfView;
+        FreeCameraFollowCharacterToggle.IsOn = extras.FollowCharacter;
         MotionPresetComboBox.SelectedIndex = Math.Max(0,
             Array.IndexOf(FreeCameraExtras.MotionPresets, extras.MotionPreset));
         MotionSpeedNumberBox.Value = extras.MotionSpeed;
@@ -839,6 +845,19 @@ public sealed partial class MainWindow : Window
     {
         CameraMotionSectionTitle.Text = isZh ? "运镜与镜头导入" : "Camera Moves & Import";
         FreeCameraMouseLookToggle.Header = isZh ? "鼠标转向" : "Mouse Look";
+        GlobalFovToggle.Header = isZh ? "修改全局视野" : "Override Global FOV";
+        GlobalFovToggle.OffContent = isZh ? "使用游戏视野" : "Use the game FOV";
+        GlobalFovToggle.OnContent = isZh ? "覆盖普通主相机视野" : "Override the normal main camera FOV";
+        GlobalFieldOfViewNumberBox.Header = isZh ? "全局视野（FOV）" : "Global Field of View (FOV)";
+        GlobalFovHint.Text = isZh
+            ? "作用于普通主相机。自由视角、第一人称和导入运镜保留各自的视野；关闭后随游戏下一次相机更新恢复。"
+            : "Applies to the normal main camera. Free camera, first person and imported camera moves keep their own FOV. Disabling restores the game FOV on its next camera update.";
+        FreeCameraFollowCharacterToggle.Header = isZh ? "自由镜头跟随人物移动" : "Follow Character Movement";
+        FreeCameraFollowCharacterToggle.OffContent = isZh ? "固定世界位置" : "Stay in world space";
+        FreeCameraFollowCharacterToggle.OnContent = isZh ? "保持相对位置，可手动调整" : "Keep the relative position; allow manual adjustment";
+        FreeCameraFollowHint.Text = isZh
+            ? "手动自由视角中跟随人物平移，保持镜头方向。切人、传送后重新建立参考；运镜播放时暂停跟随。"
+            : "Follows character translation in manual free camera and keeps the camera direction. Reanchors after character changes or teleports; pauses during camera playback.";
         FreeCameraMouseLookToggle.OffContent = isZh ? "关闭" : "Disabled";
         FreeCameraMouseLookToggle.OnContent = isZh ? "自由视角中用鼠标转动镜头" : "Turn the free camera with the mouse";
         FreeCameraInvertYToggle.Header = isZh ? "反转鼠标上下" : "Invert Mouse Y";
@@ -1097,6 +1116,8 @@ public sealed partial class MainWindow : Window
             ? Visibility.Visible : Visibility.Collapsed;
         CustomModelPage.Visibility = page == "custom-model"
             ? Visibility.Visible : Visibility.Collapsed;
+        ThirdPartyModulesPage.Visibility = page == "third-party-modules"
+            ? Visibility.Visible : Visibility.Collapsed;
         CustomModelPage.InstallRootProvider = () =>
             ConfigurationService.ResolveInstallRoot(
                 RuntimePathDiscoveryService.BundledInjectorPath);
@@ -1116,7 +1137,7 @@ public sealed partial class MainWindow : Window
         AboutPageScrollViewer.Visibility = page == "about"
             ? Visibility.Visible
             : Visibility.Collapsed;
-        ActionBar.Visibility = page is "about" or "gacha" or "custom-model"
+        ActionBar.Visibility = page is "about" or "gacha" or "custom-model" or "third-party-modules"
             ? Visibility.Collapsed
             : Visibility.Visible;
         PageSelectionHintTextBlock.Text = page switch
@@ -1130,6 +1151,7 @@ public sealed partial class MainWindow : Window
             "display" => "显示增强直接写入游戏目录，改动在下一次启动客户端时生效。",
             "gacha" => "寻访记录同步后仅在本机保存，登录会话不会写入磁盘。",
             "custom-model" => "角色外观工具会读取当前安装根目录，转换与部署结果需要按报告核对。",
+            "third-party-modules" => "第三方模块的配置保存在本机；加载列表变化在重启游戏后生效。",
             _ => "角色与动画参数保存后在下一次注入时生效。"
         };
     }
@@ -2813,7 +2835,8 @@ public sealed partial class MainWindow : Window
             MusicTargetLatencyNumberBox,
             MusicPrebufferNumberBox,
             FreeCameraMovementSpeedNumberBox,
-            FreeCameraFieldOfViewNumberBox
+            FreeCameraFieldOfViewNumberBox,
+            GlobalFieldOfViewNumberBox
         ];
         if (numberBoxes.Any(box => !double.IsFinite(box.Value)))
         {
@@ -4302,5 +4325,6 @@ public sealed partial class MainWindow : Window
         // outlive the app.
         CombatWebHandoff.CloseCurrent();
         Views.ToyAnalysisWindow.CloseAll();
+        Views.ThirdPartyModuleWindow.CloseAll();
     }
 }

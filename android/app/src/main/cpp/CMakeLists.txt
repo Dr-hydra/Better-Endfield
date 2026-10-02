@@ -108,6 +108,7 @@ set_source_files_properties(
 
 add_library(betterendfield_android SHARED
     native_bridge.cpp
+    "${BETTER_ENDFIELD_ROOT}/native/shared/third_party_modules/third_party_host.cpp"
     core/hook_broker.cpp
     core/log.cpp
     core/local_music_android.cpp

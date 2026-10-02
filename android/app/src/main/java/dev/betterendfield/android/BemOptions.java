@@ -99,7 +99,7 @@ final class BemOptions {
         return true;
     }
 
-    private static boolean test(Object condition, Map<String,String> active) throws Exception {
+    static boolean test(Object condition, Map<String,String> active) throws Exception {
         if(condition==null || condition==JSONObject.NULL) return true;
         if(condition instanceof Boolean) return (Boolean)condition;
         JSONObject rule=(JSONObject)condition;

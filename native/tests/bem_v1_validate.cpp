@@ -43,21 +43,38 @@ int main(int argc,char** argv) {
     int rewriteArg=0;
     bool skipValidation=false;
     bool loadingOptimization=false,compareLoading=false;
+    std::string explicitParameters;
+    bool hasParameters=false;
     for(int i=2;i<argc;++i) {
 #ifdef _WIN32
         const bool isOption=std::wstring_view(argv[i])==L"--options";
         const bool isSkip=std::wstring_view(argv[i])==L"--skip-validation";
         const bool isLoading=std::wstring_view(argv[i])==L"--loading-optimization";
         const bool isCompare=std::wstring_view(argv[i])==L"--compare-loading";
+        const bool isParameters=std::wstring_view(argv[i])==L"--parameters";
 #else
         const bool isOption=std::string_view(argv[i])=="--options";
         const bool isSkip=std::string_view(argv[i])=="--skip-validation";
         const bool isLoading=std::string_view(argv[i])=="--loading-optimization";
         const bool isCompare=std::string_view(argv[i])=="--compare-loading";
+        const bool isParameters=std::string_view(argv[i])=="--parameters";
 #endif
         if(isSkip) {skipValidation=true;continue;}
         if(isLoading) {loadingOptimization=true;continue;}
         if(isCompare) {compareLoading=true;continue;}
+        if(isParameters) {
+            if(hasParameters || ++i>=argc) {std::cerr<<"--parameters needs one tick selection";return 2;}
+            hasParameters=true;
+#ifdef _WIN32
+            for(wchar_t c:std::wstring_view(argv[i])) {
+                if(c<0 || c>127) {std::cerr<<"--parameters must use ASCII stable IDs";return 2;}
+                explicitParameters.push_back(static_cast<char>(c));
+            }
+#else
+            explicitParameters=argv[i];
+#endif
+            continue;
+        }
         if(isOption) {
             if(++i>=argc) {std::cerr<<"--options needs a selection";return 2;}
 #ifdef _WIN32
@@ -141,12 +158,12 @@ int main(int argc,char** argv) {
     }
     BemPocData first,second;
     const std::string firstSelection=explicitSelections.empty()?info.default_options:explicitSelections.front();
-    if(info.minor && !LoadBem(argv[1],first,error,firstSelection,nullptr,skipValidation,loadingOptimization)) {std::cerr<<error;return 1;}
+    if(info.minor && !LoadBem(argv[1],first,error,firstSelection,nullptr,skipValidation,loadingOptimization,explicitParameters)) {std::cerr<<error;return 1;}
     size_t accepted=0;
     bool capturedRepeat=false;
     for(const auto& appearance:selections) {
         BemPocData data;BemLoadStats stats;
-        if(!LoadBem(argv[1],data,error,appearance,&stats,skipValidation,loadingOptimization)) {
+        if(!LoadBem(argv[1],data,error,appearance,&stats,skipValidation,loadingOptimization,explicitParameters)) {
             if(info.minor && explicitSelections.empty() && error=="Unreachable option combination") continue;
             std::cerr<<appearance<<": "<<error;return 1;
         }
@@ -157,7 +174,7 @@ int main(int argc,char** argv) {
         std::cout<<'\n';
         if(compareLoading) {
             BemPocData other; BemLoadStats otherStats;
-            if(!LoadBem(argv[1],other,error,appearance,&otherStats,skipValidation,!loadingOptimization) ||
+            if(!LoadBem(argv[1],other,error,appearance,&otherStats,skipValidation,!loadingOptimization,explicitParameters) ||
                 !SamePayload(data,other) || stats.payload_ids!=otherStats.payload_ids) {
                 std::cerr<<"Loading optimization changed selected bytes or payload accesses: "<<error;return 1;
             }
@@ -171,7 +188,7 @@ int main(int argc,char** argv) {
     }
     if(!accepted) {std::cerr<<"No reachable selection";return 1;}
     if(info.minor) {
-        if(!capturedRepeat && !LoadBem(argv[1],second,error,firstSelection,nullptr,skipValidation,loadingOptimization)) {std::cerr<<error;return 1;}
+        if(!capturedRepeat && !LoadBem(argv[1],second,error,firstSelection,nullptr,skipValidation,loadingOptimization,explicitParameters)) {std::cerr<<error;return 1;}
         if(std::memcmp(&first.header,&second.header,sizeof(first.header))!=0 ||
            first.components.size()!=second.components.size() || first.textures.size()!=second.textures.size()) return 1;
         for(size_t i=0;i<first.components.size();++i) {
@@ -189,6 +206,25 @@ int main(int argc,char** argv) {
                first.textures[i].name!=second.textures[i].name ||
                first.textures[i].original_name!=second.textures[i].original_name ||
                first.textures[i].data!=second.textures[i].data) return 1;
+    }
+    if(info.minor>=3 && !hasParameters) {
+        const auto parameters=nlohmann::json::parse(info.parameter_groups_json);
+        size_t samples=0;
+        for(size_t index=0;index<parameters.size();++index) {
+            const auto& parameter=parameters.at(index);auto values=info.parameter_frame_values.at(index);
+            const auto min=parameter.at("min").get<uint32_t>(),max=parameter.at("max").get<uint32_t>(),step=parameter.at("step").get<uint32_t>();
+            values.push_back(min);values.push_back(max);values.push_back(parameter.at("neutral").get<uint32_t>());
+            values.push_back(min+((max-min)/step/2)*step);
+            std::sort(values.begin(),values.end());values.erase(std::unique(values.begin(),values.end()),values.end());
+            for(const auto tick:values) {
+                const auto selection=parameter.at("id").get<std::string>()+":"+std::to_string(tick);BemPocData sample;
+                if(!LoadBem(argv[1],sample,error,firstSelection,nullptr,skipValidation,loadingOptimization,selection)) {
+                    std::cerr<<"Parameter sample "<<selection<<": "<<error;return 1;
+                }
+                ++samples;
+            }
+        }
+        std::cout<<"Position parameters: "<<samples<<" authored frame/range/interpolation samples accepted\n";
     }
     auto utf=std::filesystem::path(argv[1]).filename().u8string();
     std::string ini="[CustomModel]\nstandalone_lod=false\nskip_validation="+std::string(skipValidation?"true":"false")+"\n[Mod.test]\nenabled=true\npackage="+

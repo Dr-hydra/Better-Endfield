@@ -49,8 +49,8 @@ def limits(minor=None):
         return dict(minor=1, choices=MAX_CHOICES, rules=MAX_RULES, textures=MAX_SELECTED_TEXTURES,
                     texture_bytes=MAX_TEXTURE_BYTES, resident=MAX_SELECTED_RESIDENT,
                     decoded=MAX_SELECTED_DECODED, directory=MAX_DIRECTORY)
-    v1.require(minor in (None, 2), 'Unsupported BEM minor version')
-    return dict(minor=2, choices=MAX_CHOICES_V12, rules=MAX_RULES_V12, textures=MAX_SELECTED_TEXTURES_V12,
+    v1.require(minor in (None, 2, 3), 'Unsupported BEM minor version')
+    return dict(minor=3 if minor in (None, 3) else 2, choices=MAX_CHOICES_V12, rules=MAX_RULES_V12, textures=MAX_SELECTED_TEXTURES_V12,
                 texture_bytes=MAX_TEXTURE_BYTES_V12, resident=MAX_SELECTED_RESIDENT_V12,
                 decoded=MAX_SELECTED_DECODED_V12, directory=MAX_DIRECTORY_V12)
 
@@ -77,6 +77,8 @@ def candidate_count(m):
 
 def required_minor(m, summary, payload_count=0):
     """Smallest header minor able to carry this composable manifest."""
+    import bem_v13
+    if bem_v13.used(m): return 3
     old = limits(1)
     needs = (bool(set(m['required_capabilities']) & set(V12_CAPABILITIES)) or
              bool(m.get('texture_slots')) or
@@ -401,6 +403,18 @@ def analyze_selection_space(m, payloads=None, minor=None):
             for stream in mesh['streams']:
                 payload_id = stream['payload']
                 payload_predicates[payload_id] = logic.either(payload_predicates[payload_id], active)
+            # Prove every selectable shape tick without enumerating the sliders.
+            # All frames of an active channel form a safe upper bound; runtime
+            # needs only the one/two interpolation endpoints at a saved tick.
+            for channel in m.get('mesh_deformations', []):
+                if channel['mesh'] != mesh_id: continue
+                parameter = next(p for p in m['parameters'] if p['id'] == channel['parameter'])
+                predicate = logic.both(active, logic.condition(parameter.get('available_when', True)))
+                for frame in channel['frames']:
+                    if 'payload' not in frame: continue
+                    pid = frame['payload']
+                    payload_predicates[pid] = logic.either(payload_predicates[pid], predicate)
+                    resident_terms.append((predicate, len(payloads[pid])))
     for used, slot, predicates in zip(slot_used, slots, slot_predicates):
         for candidate, predicate in zip(slot['candidates'], predicates):
             if candidate['texture'] is not None:
@@ -465,7 +479,7 @@ def _resolve_refs(refs, resolved):
     return textures
 
 
-def selection_plan(manifest, options=None, minor=None):
+def selection_plan(manifest, options=None, minor=None, parameters=None):
     """Pure, repeatable plan. Payload IDs are returned without reading bytes.
 
     Texture slot references are returned already resolved to texture indices.
@@ -515,8 +529,15 @@ def selection_plan(manifest, options=None, minor=None):
         operations.append(planned)
     v1.require(len(textures) <= limit['textures'], 'Selected texture binding limit exceeded')
     payloads.update(manifest['textures'][index]['payload'] for index in textures)
-    return dict(saved=saved, effective=effective, components=operations, texture_slots=resolved,
+    plan = dict(saved=saved, effective=effective, components=operations, texture_slots=resolved,
                 textures=sorted(textures), payloads=sorted(payloads))
+    if manifest.get('parameters'):
+        import bem_v13
+        values, channels = bem_v13.selected_deformations(manifest, plan, parameters)
+        for _, frames in channels:
+            payloads.update(f['payload'] for f, _ in frames if 'payload' in f)
+        plan.update(parameters=values, payloads=sorted(payloads))
+    return plan
 
 
 def reachable_plans(manifest):
@@ -544,6 +565,8 @@ def validate_manifest(m, payload_count, minor=None):
     allowed = set(v1.SUPPORTED_CAPABILITIES) | {'composable-options', 'keep-material-textures'}
     if limit['minor'] >= 2:
         allowed |= set(V12_CAPABILITIES)
+    if limit['minor'] >= 3:
+        allowed |= {'body-parameters', 'mesh-position-deltas'}
     v1.require(isinstance(caps, list) and 'composable-options' in caps and
                'fixed-appearances' not in caps and len(caps) == len(set(caps)) and set(caps) <= allowed,
                'Invalid BEM 1.1/1.2 capabilities')
@@ -580,7 +603,8 @@ def validate_manifest(m, payload_count, minor=None):
     v1.require(not has_aliases or 'resource-bone-aliases' in caps, 'Bone name alias capability mismatch')
 
     option_groups = m['option_groups']
-    v1.require(isinstance(option_groups, list) and 0 < len(option_groups) <= MAX_GROUPS,
+    v1.require(isinstance(option_groups, list) and len(option_groups) <= MAX_GROUPS and
+               (len(option_groups) > 0 or limit['minor'] >= 3),
                'Invalid option groups')
     groups, earlier = {}, set()
     for group in option_groups:
@@ -776,11 +800,11 @@ def check_geometry(m, payloads, minor=None):
     return summary
 
 
-def read_selected_payloads(path, options=None, on_payload=None):
+def read_selected_payloads(path, options=None, on_payload=None, parameters=None):
     """Reference lazy reader for A→B→A and exact payload-access tests."""
     m, _ = v1.read_package(path, decode=False)
     v1.require('option_groups' in m, 'Expected BEM 1.1 package')
-    plan = selection_plan(m, options)
+    plan = selection_plan(m, options, parameters=parameters)
     with Path(path).open('rb') as source:
         header = v1.HEADER.unpack(source.read(v1.HEADER.size))
         source.seek(v1.HEADER.size + header[5])

@@ -12,6 +12,7 @@ internal sealed class BemExportProject
     [JsonPropertyName("mode")] public string Mode { get; set; } = "convert";
     [JsonPropertyName("source")] public string Source { get; set; } = "";
     [JsonPropertyName("recipe")] public string Recipe { get; set; } = "";
+    [JsonPropertyName("deformations")] public string Deformations { get; set; } = "";
     [JsonPropertyName("output")] public string Output { get; set; } = "dist/appearance.bem";
     [JsonPropertyName("report")] public string Report { get; set; } = "reports/build.json";
     [JsonPropertyName("package")] public Dictionary<string, string> Package { get; set; } = new()
@@ -53,26 +54,29 @@ internal sealed class BemExportProject
         string pathBase = previousFile ?? file;
         string source = Resolve(Source, pathBase), output = Resolve(Output, pathBase);
         string recipe = string.IsNullOrWhiteSpace(Recipe) ? "" : Resolve(Recipe, pathBase);
+        string deformations = string.IsNullOrWhiteSpace(Deformations) ? "" : Resolve(Deformations, pathBase);
         string report = string.IsNullOrWhiteSpace(Report) ? "" : Resolve(Report, pathBase);
         if (string.IsNullOrWhiteSpace(Source) || !(File.Exists(source) || Directory.Exists(source)))
             throw new InvalidDataException("请选择存在的源 Mod 或 BEM project.json。");
         if (!output.EndsWith(".bem", StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("输出文件必须使用 .bem 扩展名。");
         if (recipe.Length > 0 && (Mode != "convert" || !File.Exists(recipe))) throw new InvalidDataException("转换配方必须是存在的 JSON；打包模式请清空配方。");
+        if (deformations.Length > 0 && !File.Exists(deformations)) throw new InvalidDataException("形态参数配置必须是存在的 JSON 文件。");
         var comparer = StringComparer.OrdinalIgnoreCase;
-        if (new[] { source, recipe, output, report }.Where(p => p.Length > 0).Any(p => comparer.Equals(p, file)) ||
-            new[] { source, recipe, report }.Where(p => p.Length > 0).Any(p => comparer.Equals(p, output)) ||
-            report.Length > 0 && new[] { source, recipe }.Where(p => p.Length > 0).Any(p => comparer.Equals(p, report)))
-            throw new InvalidDataException("工程、输入、配方、输出和报告不能相互覆盖。");
+        if (new[] { source, recipe, deformations, output, report }.Where(p => p.Length > 0).Any(p => comparer.Equals(p, file)) ||
+            new[] { source, recipe, deformations, report }.Where(p => p.Length > 0).Any(p => comparer.Equals(p, output)) ||
+            report.Length > 0 && new[] { source, recipe, deformations }.Where(p => p.Length > 0).Any(p => comparer.Equals(p, report)))
+            throw new InvalidDataException("工程、输入、配方、形态配置、输出和报告不能相互覆盖。");
         var stored = new BemExportProject
         {
             Mode = Mode, Package = new(Package), Source = PortablePath(source, file), Output = PortablePath(output, file),
-            Recipe = recipe.Length == 0 ? "" : PortablePath(recipe, file), Report = report.Length == 0 ? "" : PortablePath(report, file)
+            Recipe = recipe.Length == 0 ? "" : PortablePath(recipe, file), Report = report.Length == 0 ? "" : PortablePath(report, file),
+            Deformations = deformations.Length == 0 ? "" : PortablePath(deformations, file)
         };
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
         string temporary = file + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try { File.WriteAllText(temporary, JsonSerializer.Serialize(stored, JsonOptions), new UTF8Encoding(false)); File.Move(temporary, file, true); }
         finally { if (File.Exists(temporary)) File.Delete(temporary); }
-        Source = stored.Source; Output = stored.Output; Recipe = stored.Recipe; Report = stored.Report;
+        Source = stored.Source; Output = stored.Output; Recipe = stored.Recipe; Report = stored.Report; Deformations = stored.Deformations;
     }
 
     public void ReadPackMetadata(string source)

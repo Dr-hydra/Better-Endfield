@@ -56,6 +56,9 @@ final class BemInstaller {
                     catch(Exception stale) {selection=BemOptions.appearance(entry,entry.getString("default_appearance"));}
                     entry.put("selected_appearance",selection);
                 }
+                String parameters=entry.optString("remembered_parameters",entry.optString("selected_parameters",entry.optString("default_parameters","")));
+                try {BemParameters.restore(entry,parameters);}
+                catch(IOException stale) {BemParameters.restore(entry,entry.optString("default_parameters",""));}
             }
             if(!entries.toString().equals(stored)) commitIndex(context,stored,entries,"安装索引迁移保存失败");
             return entries;
@@ -186,6 +189,16 @@ final class BemInstaller {
             String saved=latest==null?result.getString("default_appearance"):latest.optString("selected_appearance",latest.getString("default_appearance"));
             result.put("selected_appearance",BemOptions.appearance(result,saved));
         }
+        JSONObject parameterSource=latest;
+        if(parameterSource==null) for(int i=entries.length()-1;i>=0;--i) {
+            JSONObject candidate=entries.getJSONObject(i);
+            if(character.equals(candidate.getString("character_id")) && result.getString("package_id").equals(candidate.getString("package_id"))) {
+                parameterSource=candidate;break;
+            }
+        }
+        String savedParameters=parameterSource==null?result.optString("default_parameters",""):
+                parameterSource.optString("remembered_parameters",parameterSource.optString("selected_parameters",result.optString("default_parameters","")));
+        BemParameters.restore(result,savedParameters);
         for(int i=0;i<entries.length();++i) {
             JSONObject old=entries.getJSONObject(i);
             if(previousGeneration!=null && previousGeneration.equals(old.getString("generation"))) continue;
@@ -266,13 +279,15 @@ final class BemInstaller {
             JSONObject entry=findEntry(entries,change.getString("generation"));
             if(entry==null) throw new IOException("模型包列表已更新，请重新选择");
             if((entry.optInt("bem_minor",0)>=1 && change.has("appearance")) ||
-                    (entry.optInt("bem_minor",0)<1 && change.has("options"))) throw new IOException("选项类型与模型包不匹配");
+                    (entry.optInt("bem_minor",0)<1 && change.has("options")) ||
+                    (entry.optInt("bem_minor",0)<3 && change.has("parameters"))) throw new IOException("选项类型与模型包不匹配");
             if(entry.optInt("bem_minor",0)>=1 && change.has("options")) {
                 String options=BemOptions.encode(BemOptions.parse(entry,change.getString("options")));
                 entry.put("selected_options",options);
             } else if(entry.optInt("bem_minor",0)<1 && change.has("appearance")) {
                 entry.put("selected_appearance",BemOptions.appearance(entry,change.getString("appearance")));
             }
+            if(change.has("parameters")) BemParameters.select(entry,change.getString("parameters"));
             if(change.has("enabled")) {
                 boolean enabled=change.getBoolean("enabled");
                 if(enabled) for(int j=0;j<entries.length();++j) {

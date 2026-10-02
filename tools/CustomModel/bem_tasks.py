@@ -32,14 +32,22 @@ def load_task(path):
     task = dict(data, project_file=path)
     for key in ('source', 'output'):
         task[key] = resolve(root, data[key])
-    for key in ('recipe', 'report'):
+    for key in ('recipe', 'report', 'deformations'):
         task[key] = resolve(root, data[key]) if data.get(key) else None
     bem.require(task['source'].exists(), 'Project source does not exist: ' + str(task['source']))
     if task['recipe']:
         bem.require(task['mode'] == 'convert' and task['recipe'].is_file(), 'Invalid project conversion recipe')
+        if task['deformations'] is None:
+            recipe_data = bem.load_json(task['recipe'])
+            if recipe_data.get('deformations'):
+                task['deformations'] = resolve(task['recipe'].parent, recipe_data['deformations'])
     bem.require(task['output'].suffix.lower() == '.bem', 'Project output must end in .bem')
     inputs = {path, task['source']}
     if task['recipe']: inputs.add(task['recipe'])
+    if task['deformations']:
+        from bem_v13 import author_input_paths
+        bem.require(task['deformations'].is_file(), 'Missing position morph inputs')
+        inputs.update(author_input_paths(task['deformations']))
     if task['mode'] == 'pack':
         source = bem.load_json(task['source'])
         inputs.update(resolve(task['source'].parent, n) for n in source['payload_files'])
@@ -50,7 +58,7 @@ def load_task(path):
     return task
 
 
-def new_project(source, project_path, mode='convert', recipe=None, package=None, export_output=None):
+def new_project(source, project_path, mode='convert', recipe=None, package=None, export_output=None, deformations=None):
     source, project_path = Path(source).resolve(), Path(project_path).resolve()
     bem.require(mode in ('convert', 'pack') and source.exists(), 'Invalid project source/mode')
     bem.require(project_path != source, 'Project cannot overwrite source')
@@ -59,7 +67,10 @@ def new_project(source, project_path, mode='convert', recipe=None, package=None,
     if recipe:
         recipe = Path(recipe).resolve()
         bem.require(recipe != project_path, 'Project cannot overwrite recipe')
-        metadata = dict(bem.load_json(recipe)['package'])
+        recipe_data = bem.load_json(recipe)
+        metadata = dict(recipe_data['package'])
+        if deformations is None and recipe_data.get('deformations'):
+            deformations = resolve(recipe.parent, recipe_data['deformations'])
     elif mode == 'pack':
         manifest = bem.load_json(source)['manifest']
         metadata = dict(id=manifest['package_id'], name=manifest['name'], author=manifest['author'], version=manifest['version'])
@@ -72,6 +83,11 @@ def new_project(source, project_path, mode='convert', recipe=None, package=None,
                 output=relative(root, Path(export_output).resolve()) if export_output else 'dist/' + source.stem + '.bem',
                 report='reports/build.json', package=metadata)
     if recipe: data['recipe'] = relative(root, recipe)
+    if deformations:
+        from bem_v13 import author_input_paths
+        deformations = Path(deformations).resolve()
+        bem.require(project_path not in author_input_paths(deformations), 'Project cannot overwrite shape input')
+        data['deformations'] = relative(root, deformations)
     bem.atomic_write(project_path, json.dumps(data, ensure_ascii=False, indent=2).encode('utf-8'))
     return dict(project=data, output=str(project_path), conversion_ready=False)
 
@@ -79,9 +95,9 @@ def new_project(source, project_path, mode='convert', recipe=None, package=None,
 def build_task(task):
     if task['mode'] == 'pack':
         from bem_projects import pack_project
-        result = pack_project(task['source'], task['output'], task['package'])
+        result = pack_project(task['source'], task['output'], task['package'], task['deformations'])
     else:
         from bem_tool import convert, convert_automatic
-        result = (convert(task['source'], task['recipe'], task['output'], task['package']) if task['recipe'] else
-                  convert_automatic(task['source'], task['output'], package=task['package']))
+        result = (convert(task['source'], task['recipe'], task['output'], task['package'], task['deformations']) if task['recipe'] else
+                  convert_automatic(task['source'], task['output'], package=task['package'], deformations=task['deformations']))
     return dict(result, output=str(task['output']), project_file=str(task['project_file']))

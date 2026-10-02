@@ -10,17 +10,18 @@ def main():
     repo = Path(__file__).resolve().parents[2]
     target = args.directory.resolve()
     if not (target/'BetterEndfield.BemConverter.exe').is_file(): raise ValueError('Build CLI first')
-    docs = ['BEM_V1_SPEC.md', 'BEM_V1_1_SPEC.md', 'BEM_V1_2_SPEC.md', 'BEM_CREATOR_GUIDE.md', 'BEM_CHARACTER_CATALOG_20260919.md', 'BEM_EFMI_IDENTITIES_20260920.md', 'CUSTOM_MODEL_PURRCHE_20261001.md', 'BEM_PER_DRAW_COMPATIBILITY_20260920.md', 'BEM_RABBITFX_COMPATIBILITY_20260920.md']
+    docs = ['BEM_V1_SPEC.md', 'BEM_V1_1_SPEC.md', 'BEM_V1_2_SPEC.md', 'BEM_V1_3_SPEC.md', 'BEM_CREATOR_GUIDE.md', 'BEM_V1_3_CREATOR_GUIDE.md', 'EFMI_BODY_SLIDER_RESEARCH_20261002.md', 'BEM_CHARACTER_CATALOG_20260919.md', 'BEM_EFMI_IDENTITIES_20260920.md', 'CUSTOM_MODEL_PURRCHE_20261001.md', 'BEM_PER_DRAW_COMPATIBILITY_20260920.md', 'BEM_RABBITFX_COMPATIBILITY_20260920.md']
     (target/'docs').mkdir(exist_ok=True)
     for name in docs: shutil.copyfile(repo/'docs'/name, target/'docs'/name)
-    shutil.copytree(repo/'tools/CustomModel/examples', target/'examples', dirs_exist_ok=True)
+    source_ignore = shutil.ignore_patterns('__pycache__', '*.pyc')
+    shutil.copytree(repo/'tools/CustomModel/examples', target/'examples', dirs_exist_ok=True, ignore=source_ignore)
     shutil.copytree(repo/'tools/CustomModel/catalog', target/'catalog', dirs_exist_ok=True)
     shutil.copytree(repo/'artifacts/bem-archive-backend/7zip', target/'7zip', dirs_exist_ok=True)
     (target/'7zip/NOTICE.txt').write_text(
         'This tool uses unmodified 7-Zip 26.03 by Igor Pavlov, licensed under GNU LGPL '
         'with additional license terms including the unRAR restriction. See License.txt.\n'
         'Source code and releases: https://www.7-zip.org/ and https://github.com/ip7z/7zip/tree/26.03\n', encoding='utf-8')
-    shutil.copytree(repo/'tools/CustomModel/skills', target/'skills', dirs_exist_ok=True)
+    shutil.copytree(repo/'tools/CustomModel/skills', target/'skills', dirs_exist_ok=True, ignore=source_ignore)
     refs = target/'skills/bem-creator/references'; refs.mkdir(exist_ok=True)
     for name in docs: shutil.copyfile(repo/'docs'/name, refs/name)
     shutil.copyfile(repo/'LICENSE', target/'LICENSE.txt')

@@ -1,8 +1,20 @@
 # Better Endfield Android
 
-## Android 3.4.1
+See the [main feature matrix](../README.en.md#feature-overview) for Windows/Android
+coverage. The current APK version is **3.4.2**. In-game rendering and real
+third-party modules still require device testing; build and isolated regression
+results are not gameplay validation.
 
-The current branch includes the MMD library/player, responsive in-game deck,
+## Android 3.4.2
+
+Version 3.4.2 adds BEM 1.3 shape sliders, experimental third-party native
+modules/web UI, global FOV, character-follow free camera, first-person
+restoration/hair updates and Purrche title-screen resources. BEM 1.3 authoring
+uses BEM Tools **1.4.1**; the same standard package works on both platforms.
+See the [BEM 1.3 creator guide](../docs/BEM_V1_3_CREATOR_GUIDE.md) and
+[third-party module creator guide](../docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md).
+
+The app also includes the MMD library/player, responsive in-game deck,
 independent world pause, first-person updates and multiple BEM packages per
 character. Settings save automatically; restarting the game loads the updated
 module configuration and installed works. Experimental model hot-switching and
@@ -23,6 +35,15 @@ Third-party BEM packages are managed directly in the main navigation tab,
 including import, per-character exclusive activation and expandable component
 options. The model download buttons open the author's Quark, Baidu and Katfile mirrors.
 The header's support button offers WeChat appreciation, Afdian and PayPal.
+
+Experimental native modules use a separate Third-party Modules entry: import
+the author's ZIP, enable it and open its optional web UI in its own Activity.
+The game Host loads ARM64 SO libraries; modules can also provide only an
+offline HTML/CSS/JS page. Configuration and already-loaded module activation
+can update at runtime. Binary updates, removal and order changes require a
+game restart; libraries remain resident for the game process. Retired
+installation directories and old ZIPs are retained without automatic cleanup.
+Authors maintain their game interfaces, thread handling and restoration.
 
 The optional PC layout uses the game's input-mode switch. It is off by default
 and does not change the account platform. Keyboard or controller input is
@@ -245,15 +266,19 @@ than pretending on an older one.
 
 ## Android settings UI
 
-The settings screen is split into Model Replacement, Third-party Models,
-Character Voice, Enhancements and Diagnostics pages.
+The settings screen separates Model Replacement, Third-party Models,
+Character Voice, Enhancements, About/diagnostics and experimental Third-party
+Modules. The latter is distinct from BEM model packages.
+Phone navigation scrolls horizontally to keep each item readable; large screens
+retain a side rail. A module's complete web UI opens in a separate Activity,
+using bundled offline HTML/CSS/JS rather than a small embedded management card.
 It uses a dependency-free native Android dark card layout with the desktop
 amber accent, a segmented page switcher, and the existing desktop
 `Assets/shared/gilberta.png` artwork as both the launcher icon and settings
 header mark.
 The model page reads the generated Android `character-presets.json` and
-`character-names.json` resources and currently exposes 32 replacement models and
-4,210 final actions, plus final-action looping, model scale, and the desktop
+`character-names.json` resources; the app exposes 33 replacement models and
+4,262 final actions, plus final-action looping, model scale, and the desktop
 Logo/login-band theme switch. Saving a preset serializes the same schema-5
 model configuration consumed by the desktop module. The voice page retains the
 per-character language table and Android catalog materializer workflow.
@@ -271,7 +296,7 @@ Chinese, English, Japanese, Korean, or Follow Global. The generated files under
 `android/resources` are copied into the APK at build time. Model bundle hashes
 come from the Android manifest, while voice route IDs may be shared with the
 desktop table only after the current `AudioDialog` and device PCK indexes agree.
-The current table contains 32 model presets and 132 character/language catalog
+The table contains 33 model presets and 136 character/language catalog
 entries.
 
 ## Android catalog materialization
@@ -324,11 +349,11 @@ Research catalogs and source PCK/CHK files stay under ignored
 - Rule changes require force-stopping and restarting the game.
 - The in-game panel's controls are wired: hide-HUD, free camera, time freeze,
   first person and the free-camera movement pad all press the virtual keys the
-  ported desktop modules poll. BEM hot switching is still not connected.
-- The three ported modules are build-verified for ARM64 and their settings and
-  panel were exercised on a local emulator. The emulator has no LSPosed, so
-  their in-game behaviour has not been run against the injected client; the
-  contract evidence above is a metadata check, not a device test.
+  ported desktop modules poll. BEM hot switching is opt-in: enable before
+  restarting the game, then apply selections through normal resource reloads.
+- Compilation, isolated lifecycle tests and UI previews do not prove actual
+  camera, MMD, cloth or shadow behavior in the injected game. Validation records
+  identify which capabilities were tested on device and which remain unverified.
 - The first launch after selecting a new character/language waits for its
   device-local catalog preparation before arming the native hooks. Missing or
   stale language packages are reported in LSPosed logs; external-source routing
@@ -340,9 +365,9 @@ Research catalogs and source PCK/CHK files stay under ignored
   exist, and every native hook is resolved by name through `libil2cpp.so`'s
   exports rather than by offset. So 官服 (`com.hypergryph.endfield`), 国际服
   (`com.gryphline.endfield.gp`) and channel builds such as the bilibili one are
-  all supported without a per-variant build, and a client update does not
-  invalidate the hooks unless the managed type or method names themselves
-  change. Only the first two are declared in `xposed_scope`, because the
+  can use the same build when the required interfaces and resources match.
+  Method signatures, assets and renderer layouts can still require adaptation
+  after game updates. Only the first two are declared in `xposed_scope`, because the
   bilibili package name has no authoritative source; tick it by hand.
 - Model, animation, Logo, and login-band behavior is verified on the connected
   Android client with `chr_0013_aglina` and its default final action. Other
@@ -352,7 +377,7 @@ Research catalogs and source PCK/CHK files stay under ignored
 ## Requirements
 
 - JDK 17 or newer
-- Android SDK platform 35 and build-tools 35.0.0
+- Android SDK platform 37; build-tools selected by the Android Gradle plugin
 - Android NDK 27.2.12479018
 - CMake 3.22.1
 
@@ -402,7 +427,8 @@ texture conversion is optional. If textures look wrong in game, choose
 publishes a new generation while preserving its enabled state and selected
 appearance. Failure or cancellation leaves the active package intact. Packages
 without verified normal-map encoding can still be imported, but conversion
-requires that metadata. Restart the game after changing packages or appearances.
+requires that metadata. Restart after changes unless experimental hot switching
+was enabled before launch; that mode applies selections on normal resource reloads.
 
 If Endfield is missing from every module's scope list, open the scope page's
 overflow menu, choose `Hide`, and turn off the `Games` filter. LSPosed applies

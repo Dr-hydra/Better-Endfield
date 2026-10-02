@@ -2,270 +2,162 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-Better Endfield 是一个面向《终末地》的模块化运行时。自定义角色外观、模型、语音、OmniMix 音乐、战斗数据和移动端界面分别由独立 DLL 提供，Host 负责动态 IL2CPP 解析、Hook 生命周期、配置和模块发现。
+Better Endfield 是面向《明日方舟：终末地》的开源模块化工具，提供第三方角色模型、MMD 播放、相机和界面增强、按角色配音、开屏自定义，以及 PC 战斗统计和寻访记录管理。Windows 和 Android 共用主要原生功能源码；BEM 模型包和 MMD 作品可以跨端使用。另提供实验性的第三方原生模块加载与网页界面容器。
 
-Windows 桌面端与 Android/LSPosed 端共用同一份模块源码。自 3.3.0 起，自定义角色外观（BEM）在两端使用同一个标准包。
+[下载正式版](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [更新说明](CHANGELOG.md) · [Android 使用与构建](android/README.md) · [BEM 创作者指南](docs/BEM_CREATOR_GUIDE.md) · [模块开发指南](docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
 
-## 架构
+当前版本为 **3.4.2**，独立 BEM Tools 为 **1.4.1**。3.4.2 新增双端 BEM 1.3 形态滑条、全局 FOV、自由相机人物跟随和实验性第三方模块，并更新第一人称恢复/去头发逻辑与噗切娜开屏资源。
 
-```text
-BetterEndfield.exe
-  runtime/BetterEndfield.Host.dll
-  modules/BetterEndfield.Model.dll
-  modules/BetterEndfield.CustomModel.dll
-  modules/BetterEndfield.Voice.dll
-  modules/BetterEndfield.Music.dll
-  modules/BetterEndfield.CombatStats.dll
-  modules/BetterEndfield.UiModule.dll
-  modules/BetterEndfield.Camera.dll
-  modules/BetterEndfield.Actions.dll
-  modules/BetterEndfield.Gacha.dll
-  loaders/BetterEndfield.Injector.exe
-  payloads/xinput1_4.dll
-```
+## 功能一览
 
-- `BetterEndfield.Host.dll`：唯一的进程内宿主、动态解析器和 HookBroker。
-- `BetterEndfield.Model.dll`：开屏视觉、登录演员、模型资源和动画功能模块。
-- `BetterEndfield.CustomModel.dll`：自定义角色外观（BEM）装配、材质与纹理绑定和 LOD 锁定模块。
-- `BetterEndfield.Voice.dll`：语音语言、Wwise 媒体和口型功能模块。
-- `BetterEndfield.Music.dll`：OmniMix PCM、Wwise Audio Input 和原游戏音乐回退模块。
-- `BetterEndfield.CombatStats.dll`：伤害数字隐藏、战斗伤害统计、快捷键会话和本地结果模块。
-- `BetterEndfield.UiModule.dll`：移动端界面布局与鼠标转触控输入模块。
-- `BetterEndfield.Camera.dll`：自由相机、视场角缩放、第一人称与近景抖动处理模块。
-- `BetterEndfield.Actions.dll`：持续冲刺与分角色动作外观模块，默认关闭。
-- `BetterEndfield.Gacha.dll`：寻访记录查询与本地统计模块。
-- `BetterEndfield.Injector.exe`：默认加载方式，Host 和模块均从软件目录加载。
-- `payloads/xinput1_4.dll`：可选的 XInput 自启动代理，仅在用户确认后部署到游戏目录。
+「支持」表示有对应实现和入口，不表示每个角色、作品、设备或游戏版本均经过实机验证。
 
-「显示增强」页不提供原生模块，它部署并配置 OptiScaler（DLSS/FSR/XeSS 超分与帧生成），改动直接写入游戏目录，下次启动客户端生效。
+| 功能 | Windows x64 | Android ARM64 | 说明 |
+| --- | --- | --- | --- |
+| 第三方模型（BEM） | 支持 | 支持 | 同一标准包；导入、更新、多包管理、按角色启用、外观与部件选项 |
+| BEM 1.3 形态滑条 | 支持（3.4.2） | 支持（3.4.2） | 作者提供顶点形变数据；插值、叠加、条件可用与参数保存 |
+| 第三方原生模块与网页容器 | 实验（3.4.2） | 实验（3.4.2） | 统一导入/管理入口；游戏内 Host 加载 DLL/SO，作者自定义网页与功能 |
+| 模型热切换 | 实验 | 实验 | 游戏启动前开启，选择变化随游戏正常重载资源生效 |
+| 模型加载优化 | 实验 | 实验 | 减少解码副本并复用同次构建的等价贴图；不降低画质 |
+| 开屏模型、动画与主题色 | 支持 | 支持 | 角色、最终动作、分阶段速度、缩放、转身、循环与交叉混合 |
+| 角色配音语言 | 支持 | 支持 | 单独指定中文、英语、日语、韩语；可应用于剧情语音与口型 |
+| 自由相机、第一人称、时间冻结 | 支持 | 支持 | 独立控制、FOV、运镜、关键帧、VMD 镜头、近景透明效果处理 |
+| 全局 FOV、自由相机人物跟随 | 支持（3.4.2） | 支持（3.4.2） | 普通主相机 FOV 覆盖；自由相机跟随人物平移并保留手动偏移 |
+| MMD 作品库与多人同台 | 支持 | 支持 | 最多四人，动作、表情、镜头、本地音乐、时间轴与衣物物理选项 |
+| UID/HUD 显隐、界面布局 | 支持 | 支持 | PC 可用触屏布局与鼠标转触控；Android 可切换 PC 风格布局 |
+| 持续特殊冲刺 | 支持 | 支持 | 洁尔佩塔、梨诺分角色开关；梨诺可隐藏机甲和光效 |
+| 战斗统计与 rDPS | 支持 | — | 游戏内悬浮窗、角色/技能排行、时间轴、历史筛选与网页分析入口 |
+| 寻访记录 | 支持 | — | 游戏同步、本地统计、JSON 导入导出与云端分享入口 |
+| OmniMix 音乐集成 | 支持 | — | 外部后端音乐送入游戏 Wwise 总线，异常时回退原生音乐 |
+| OptiScaler 显示增强 | 支持 | — | DLSS/FSR/XeSS 超分、帧生成与锐化；具体能力依赖 GPU、后端和游戏渲染路径 |
 
-## 源码布局
+Windows 提供中文/英文界面、明暗主题、运行状态和日志、游戏路径发现、启动参数、快捷方式、更新检查和 XInput 自启动管理。Android 提供自动保存的分类设置、包导入和游戏内可收起控制面板。
 
-```text
-ui/BetterEndfield.UI/          WinUI 控制器与按领域分类的内嵌资源
-native/modules/model/          开屏视觉、角色模型与动画模块
-native/modules/custom_model/   自定义角色外观（BEM）装配与解析模块
-native/modules/voice/          配音语言、Wwise 媒体与口型模块
-native/modules/music/          OmniMix 音乐集成模块
-native/modules/combat_stats/   战斗数据与伤害显示模块
-native/modules/ui/             移动端界面与触控输入模块
-native/modules/camera/         自由相机与第一人称视角模块
-native/modules/actions/        持续冲刺与角色动作外观模块
-native/modules/gacha/          寻访记录查询模块
-native/loaders/injector/       外部启动注入器
-native/loaders/xinput/         XInput 代理与进程内 Bootstrap
-native/shared/                 Host、公共 ABI 头文件与第三方原生依赖
-native/research/music_probe/   不进入发布包的音乐诊断模块
-native/research/touch_probe/   不进入发布包的触控注入探针
-manifests/model/               模型与动作资源清单
-manifests/voice/               语音 Event/Media 映射清单
-manifests/shared/              跨模块资源生成报告
-resources/voice/               语音映射生成器的维护输入
-android/                       Android/LSPosed 正式版本
-scripts/                       公共构建、清单生成与资源扫描工具
-tools/CustomModel/             BEM 转换、校验与角色资料工具链
-tools/                         本地分析工具和工具链（不进入发布包）
-docs/                          运行时接口、研究结论与集成交接文档
-```
+## 安装与启动
 
-发布目录仍使用 `runtime/modules/loaders/payloads`，源码归类不会改变现有安装与加载路径。`artifacts`、`runs`、反编译结果和本地工具输出属于工作产物，不参与源码层级整理。
+### Windows
 
-## 模块 ABI
+从 [Releases](https://github.com/Dr-hydra/Better-Endfield/releases) 下载 Windows 安装包，启动 Better Endfield，检查游戏路径并开启需要的功能，然后保存并启动游戏。运行环境为 Windows 10/11 x64。
 
-模块 ABI 使用纯 C 接口。模块通过程序集、命名空间、类、方法、参数和字段描述符动态解析 IL2CPP；Hook 入口由当前进程的 IL2CPP ABI 与 PE 可执行区间共同验证，不保存客户端地址或文件哈希条件。
+- **内置注入器**：默认方式，由 Better Endfield 启动游戏，Host 和模块从软件目录加载，不把 Better Endfield 运行文件写入游戏目录。
+- **XInput 自启动**：设置页可安装可选的 `xinput1_4.dll` 代理，此后从官方启动器或游戏快捷方式启动也能加载。安装与卸载核对归属记录；已有其他工具的同名文件时不会覆盖。
 
-## 加载方式
+OptiScaler 是独立部署功能，会写入游戏目录并在下次启动时生效。游戏启动参数也会用于一键启动快捷方式。
 
-### 内置注入器
+### Android
 
-这是默认方式。UI 启动 `loaders/BetterEndfield.Injector.exe`，注入器启动目标游戏并加载 `runtime/BetterEndfield.Host.dll`。游戏目录不写入任何 Better Endfield 文件。
+Android 包是 **LSPosed/libxposed API 102 模块**，要求 Android 10 及以上、ARM64，以及能注入目标游戏的兼容框架；单独安装 APK 不会启用游戏功能。
 
-### XInput 自启动
+安装后在框架中启用模块并选择实际使用的终末地客户端，在模块应用中设置功能，然后彻底停止并重启游戏。游戏内面板通过目标 Activity 显示，无需悬浮窗权限；相机、冻结、第一人称和 MMD 使用面板控制。详细操作、作用域排查和构建要求见 [Android README](android/README.md)。
 
-当需要与其他加载器共同使用，或者希望通过官方启动器、桌面快捷方式直接启动时，可以安装 XInput 自启动代理。UI 会把 `payloads/xinput1_4.dll` 和一份归属记录写入 `Endfield.exe` 所在目录；游戏加载代理后，代理从 `%LocalAppData%\BetterEndfield\BetterEndfield.ini` 找到软件目录中的 Host。
+## 第三方角色模型与创作者工具
 
-安装器和设置页都提供卸载。卸载前会验证文件哈希和归属记录，不会覆盖或删除未知的同名 `xinput1_4.dll`；如果其他工具也占用该文件名，请改用内置注入器。项目不包含任何反作弊停用、规避或对抗逻辑。
+**玩家使用 `.bem` 标准包即可**，无需安装 Python、原 Mod 框架、角色数据库或编辑运行配置。一个包对应一个角色，支持固定外观、可组合部件和材质/纹理替换。同一角色可以安装多个包，启用其中一个时停用其他包；更新保留仍有效的外观和参数选择。
 
-## 路径与启动参数
+PC 和 Android 使用同一 BEM 解析与装配核心，支持 1.0–1.3；**3.4.2 新增 BEM 1.3 位置形变**。包内滑条由作者定义，运行时在基础顶点上插值并叠加增量，沿用原骨骼、蒙皮和基础法线/切线。它不会自动给旧模型生成体型滑条，也不执行源 Mod 的热键脚本、GUI 表达式或任意 Shader。
 
-UI 会优先验证已保存的游戏路径，再检查 Windows 卸载信息、常见安装目录和固定磁盘根目录下的有限候选，不递归扫描整块磁盘。设置页可随时重新扫描或手动选择 `Endfield.exe`；注入器固定使用软件目录下的 `loaders/BetterEndfield.Injector.exe`，不可另行指定。
+常规选择在重启游戏后生效。实验热切换开启后，包、部件及 1.3 参数变化在切换配队、重新打开详情等**正常资源重载**时应用；没有每次拖动滑条立即更新当前网格的承诺。导入、更新包文件和删除仍建议在游戏关闭时进行。
 
-游戏启动参数会同时用于“保存并启动”和一键启动快捷方式。例如填写 `-force-d3d11` 可要求 Unity 使用 Direct3D 11。内置注入器会把这些参数放在自身 `--` 分隔符之后再传给游戏。
+热切换与加载优化相互独立，默认关闭。热切换为重建缓存保留原始模型资源，会增加内存占用；加载优化减少的是解析副本及重复资源，不保证所有设备的游戏显存峰值都会下降。
 
-## B 服兼容
+Android 可对贴图异常的包执行「转换手机纹理」；转换成功发布新一代并保留选择，失败或取消保留原包。该操作需要已验证的法线编码信息，模型本身的跨端标准不代表桌面纹理在所有手机 GPU 上均可直接显示。
 
-B 服不通过官服 `GameAssembly.dll` 哈希判定。Host 在运行时解析 IL2CPP 元数据，模块只验证自己声明的类、方法、字段和资源契约。登录 SDK 或登录资源差异不会被当作全局失败条件。
-
-模型和语音资源目录由当前游戏目录生成，PCK、BNK/HIRC 和 `AudioDialog` 不编译进 DLL。开屏模块分别解析模型替换、Logo 与登录色带契约；某个视觉契约缺失只停用对应能力，不会阻断其他功能，也不会套用官服地址。
-
-音乐模块同样不验证 `GameAssembly.dll` 身份。它按完整 IL2CPP 元数据签名解析 `AudioMusicSystem`、`AkAudioInputManager` 与 Unity 主线程入口；官服/B 服登录 SDK 和登录资源差异不参与音乐契约。
-
-战斗数据模块默认关闭。启用后按 `hotkey_toggle`（默认 F11）开始或停止一次统计会话，动态挂接
-`BattleRecorder.RecordDamage(ref AbilitySystem.Modifier)`，从普通地图和关卡共用的结算后路径读取
-攻击者、技能、伤害类型、伤害值和暴击字段；隐藏数字只挂接最终 UI 层的
-`DamageTextCtrl/DamageTextCtrlV2._OnHpChanged`，不会阻断伤害计算、生命值或韧性流程。
-结果写入 `%LocalAppData%\\BetterEndfield\\combat-sessions`，UI 的“战斗数据”页可刷新历史文件并显示总伤害排行。
-模块会按需启动随软件分发的 `BetterEndfield.CombatOverlay.exe`，通过当前进程专属共享内存展示
-角色头像、伤害排行、DPS 和按普攻、战技、终结技、连携技等技能分类分色的横向柱状图；F12（可配置）显示或隐藏，按住 Ctrl
-并用鼠标左键拖动可保存相对游戏窗口的位置。「悬浮窗初始可见性」决定悬浮窗随模块启动后是直接显示还是先隐藏；
-该项只在改变时生效，游戏内按热键切换的状态不会被其他设置的保存动作覆盖。悬浮窗不依赖 Better Endfield 主界面常驻，也不会联网读取头像。
-伤害数字从一万起按每 10 倍切换“万、×10万、×100万、×1000万、亿”等显示单位。每次会话还会保存
-0.25 秒粒度的技能分类与角色双维度时间桶；历史页默认显示最近三条，可按日期和最多四名参战角色筛选、删除记录，
-并在角色排行与可拖动双端点的时间轴柱状图之间切换。时间轴可按技能类型或角色显示，并随模式显示对应图例。
-开启 rDPS 口径后，模块按单次伤害实际扣血量守恒分配“直伤、攻击力、增伤、增幅、脆弱、承伤易伤、
-减防/减抗、连携增益、法术强度、其他”十类贡献。跨乘区按乘数对数权重分配，同一乘区内按实际观测增量分配；
-角色自身效果保留在直伤，只有其他角色提供且语义已验证的效果才转移贡献。随版本发布的
-`modules/combat-semantics.besem` 提供 Buff、技能、元素和乘区语义，运行时不读取独立更新目录；软件升级时随模块一并更新。
-每条新记录保存目录版本、验证覆盖率和有界未解析项审计，历史页可直接查看，无法验证的候选项不会参与 rDPS。
-当前战斗记录使用 schema 11，只保存可验证的操作、原子结果、队伍快照和会话摘要；历史排行、技能统计、Buff 区间与时间轴均在读取时派生，不兼容更早的开发格式。64 位实例 ID 使用十进制字符串，避免浏览器解析时丢失精度。
-字段和方法均按 IL2CPP 元数据描述解析，契约缺失时只停用该模块。schema 11 不按时间或 ID 前缀猜测归属，无法唯一验证的来源明确记录为未知。
-
-## 自定义角色外观（BEM）
-
-自定义外观默认关闭。正式扩展名为 `.bem`，一个包对应一个角色，可包含多种固定外观；玩家只需导入包，不需要 Python、原 Mod 注入框架、角色数据库或手写 `runtime.ini`。
-
-自 3.3.0 起该功能在 Windows 与 Android 双端可用，两端使用**同一个标准 BEMv1 包**。Android 直接编译 `native/modules/custom_model` 的桌面源码，不存在第二套实现，也不引入任何游戏偏移；包的解析与校验路径两端一致。
-
-桌面端的包与状态位于软件配置目录，发布包不携带任何外观资源：
-
-```text
-%LocalAppData%\BetterEndfield\catalog\custom-model\
-  runtime.ini
-  packages\*.bem
-```
-
-`runtime.ini` 由「角色外观」页写入，运行时只读：
-
-```ini
-[CustomModel]
-standalone_lod=false
-
-[Mod.<package_id>]
-enabled=true
-package=packages/<文件名>.bem
-appearance=<外观 ID>
-```
-
-同一角色同时只允许一个启用包；出现重复启用时界面会全部停用并提示重新选择。包与外观的选择在下次启动游戏时生效，导入、更新和删除请在关闭游戏后进行，避免延迟加载读取正在变动的文件。更新使用相同 `package_id`，保留本机启用状态与仍存在的外观 ID，被移除的外观会提示并回退默认项。启用任意包时运行时会锁定 LOD；全部停用后恢复独立 LOD 偏好。
-
-「其他来源 Mod 转换」可直接读取已解压目录及 ZIP、RAR、7z 源包，不需要预先解压或安装解压软件，也不执行包内程序。工具用源资源身份匹配随工具发布的角色资料，核对索引数、顶点流、骨骼与材质，完整检查通过后才允许导出 BEM；未适配的源包会输出待适配原因报告。RAR 与 7z 读取使用随工具附带的 7-Zip，许可证见工具目录下的 `7zip/NOTICE.txt`。
-
-能力边界：支持部件替换/保留/隐藏、分离骨骼与材质来源、合并骨骼 palette、按绘制段使用游戏材质、替换指定原生纹理，以及 UInt16/UInt32 几何索引。每部件最多 256 个局部骨骼和 256 个 draw，每个选定外观最多 32 个纹理绑定、512 MiB 上传数据预算，超限直接报告失败。不执行源热键脚本与任意 Shader，不支持运行时形态切换、形态键、自动低模生成或自动分片。转换成功不等于实机验证，仍需在世界、详情页等场景核对。
-
-Android 端在「第三方模型」页管理同样的包，导入时同样逐个外观校验并保留原始包字节。差异在于纹理：手机 GPU 的纹理格式与桌面不同，包内纹理在实机显示异常时可对该包执行「转换手机纹理」，成功后发布新一代并保留启用状态与已选外观，失败或取消则保持当前包不变；缺少已验证法线编码信息的包可以导入，但无法转换。两端都需要在切换包或外观后重启游戏。
-
-创作者流程、转换自动化边界与完整字段见 [`docs/BEM_CREATOR_GUIDE.md`](docs/BEM_CREATOR_GUIDE.md) 与 [`docs/BEM_V1_SPEC.md`](docs/BEM_V1_SPEC.md)。
-
-## 移动端界面与触控输入
-
-移动端界面默认关闭。启用后模块挂接 `DeviceInfo` 的输入类型与设备类型访问器，让客户端按触屏布局构建 UI：虚拟摇杆、技能轮盘和触控专用控件会出现在 PC 客户端上。该模块主要面向串流到手机、平板或掌机的场景。
-
-界面和输入是两条互不相通的链路，只改布局并不会让触控控件响应。客户端的触控读取全部经过 `EnhancedTouch.Touch.activeTouches`，而该集合只由 Unity 的 `Touchscreen` 设备填充，普通鼠标事件永远不会进入。因此模块同时提供鼠标转触控：通过 `CreateSyntheticPointerDevice` / `InjectSyntheticPointerInput` 注入合成触点，由 Unity 的 Windows 后端识别为真实 `Touchscreen`。鼠标左键即手指，按下、拖动、抬起对应触点的按下、移动和抬起；`Ctrl+Alt+T` 随时开关转换，关闭时立即释放当前触点。转换只在游戏窗口处于前台时生效，其余时间鼠标行为不变。
-
-合成注入需要 Windows 10 1809 或更新版本；系统不支持时模块只记录一条日志并保持转换关闭，不影响界面部分。注入的输入受 UIPI 约束，Better Endfield 与游戏同进程运行，因此不存在完整性级别不匹配的问题。转换按 `dwExtraInfo` 的触控签名过滤自身回声，但不过滤 `LLMHF_INJECTED`——串流客户端正是通过 `SendInput` 投递鼠标事件的，那些才是需要转换的输入。
-
-已知限制：注入使用屏幕绝对坐标，串流客户端需要工作在绝对坐标或触控透传模式，相对鼠标模式会让触点落在错误位置。触屏布局下客户端会改写键盘绑定掩码，除 WASD 移动外的键盘按键不生效——移动是唯一不经过触控链路的输入，由摇杆自带的键盘回退字段直接读取。向账号声明 Android/云游戏平台身份是独立于布局的能力，默认关闭且不由 UI 写入配置。
-
-## OmniMix 音乐集成
-
-音乐集成默认关闭。Better Endfield 只保存用户选择的 `OmniMixPlayer.Backend.exe` 绝对路径，并从该后端的 `native\x64` 目录动态加载兼容的 `OmniPcmShared.dll`；不会复制曲库、音频或 OmniMix 程序。注册和运行时都会验证 OmniPcmShared ABI `2.x`、共享协议 `2` 与交错 `float32` 能力。后端路径缺失、ABI 不兼容、心跳中断或 PCM 缓冲不足时，模块保持或恢复原游戏音乐。
-
-正式链路为：
-
-```text
-OmniMix instance shared memory
-  -> BetterEndfield.Music 工作线程
-  -> 48 kHz 立体声 SPSC 缓冲
-  -> Wwise Audio Input Event
-  -> 游戏 Music Bus
-```
-
-只有共享流、预缓冲、格式回调和采样回调全部健康后，模块才按登录、主界面/基地、游戏内三个独立范围暂停对应原生 Playing ID。它不会静音全局 Music Bus；Audio Input 暂态失败会退避重试，可闻游标额外保留 100 ms 输出队列余量。OmniMix 项目组的完整对接契约见 [`docs/OMNIMIX_INTEGRATION_HANDOFF.md`](docs/OMNIMIX_INTEGRATION_HANDOFF.md)。
-
-Better Endfield 在实例握手中声明播放队列管理和 Seek 能力，因此可以直接在 OmniMix 中向该游戏实例添加、插入、移动和清空队列。
-
-## 资源目录
-
-UI 在保存配音规则时会从本机 PCK 选择性生成所需 Catalog。生成物位于
-`%LocalAppData%\BetterEndfield\catalog`，发布包不会携带 PCK、BNK、WEM 或
-`.becat`。角色规则写入配置前，UI 会先完成对应语言 Catalog 的原子更新；已删除
-规则所对应的旧文件只会在 UI 自己的生成记录范围内清理。
-
-开发或诊断时也可以手工生成：
+**创作者工具**包含图形导出入口和独立 CLI，支持目录、ZIP、RAR、7z 输入，转换报告、结构校验、可保存的 `.bemproj.json` 导出工程和重复构建。角色资料随工具分发，包含 33 名角色；软件另附开屏资源索引。BEM Tools 1.4.1 的 BEM 1.3 导出可使用同拓扑目标顶点、稀疏增量，以及作者显式绑定的官方 EFMI ShapeKey buffers；不会自动还原任意源 GUI 或猜测顶点对应关系。
 
 ```powershell
-py -3 .\scripts\BuildVoiceCatalog.py `
-  --game-path 'E:\Endfield Game' `
-  --language Japanese `
-  --character-id chr_0013_aglina `
-  --output "$env:LOCALAPPDATA\BetterEndfield\catalog\voice.japanese.chr_0013_aglina.becat"
+BetterEndfield.BemConverter.exe new-project editable/project.json --mode pack -o character.bemproj.json
+BetterEndfield.BemConverter.exe build character.bemproj.json
 ```
 
-Catalog 只包含目标角色需要的 WEM，重复目标 Media 只存储一次。运行时会把所有已配置角色的 Catalog 合并为一张常驻路由表，并在第一条已配置角色语音到达、Wwise 已就绪时通过 `SetMedia` 一次性注册；其他角色发声不会触发卸载或重新读取。嵌入 UI 的索引只包含 Media ID、语言包指纹和相对路径，不包含音频内容；若官服与 B 服的 PCK 内容相同，即使 `GameAssembly.dll` 不同也复用同一映射，路径变化时会按 PCK 大小和解密后头部哈希定位。
+两端还提供默认关闭的「开发者：关闭模型校验」。该选项放开兼容性和策略限制，仍要求文件能解码且能被当前表示方式读取；不增加新编码支持。用于作者测试时可能出现错误渲染或游戏崩溃。
 
-## 构建
+- [创作者流程与转换边界](docs/BEM_CREATOR_GUIDE.md)
+- [BEM 1.0](docs/BEM_V1_SPEC.md) / [1.1 组合外观](docs/BEM_V1_1_SPEC.md) / [1.2 蒙皮和骨骼别名](docs/BEM_V1_2_SPEC.md)
+- [BEM 1.3 规范](docs/BEM_V1_3_SPEC.md)、[形态滑条制作指南](docs/BEM_V1_3_CREATOR_GUIDE.md)与[可运行格式示例](tools/CustomModel/examples/body-slider/)
+- [实验热切换与加载优化说明](docs/RELEASE_3_4_1_20261001.md)
 
-环境要求：Windows 10/11 x64、Visual Studio 2022 C++ 工具集、CMake、.NET SDK 9.0 和 Inno Setup 6。
+## 第三方模块（实验，3.4.2）
+
+双端通过独立的「第三方模块」入口导入作者提供的 ZIP，管理启用状态、加载顺序和各模块的网页入口；新模块首次导入默认停用。一个包包含 `module.json`、对应平台的 Windows x64 DLL / Android ARM64 SO，以及可选 HTML/CSS/JS 资源；可以只提供一端，也可以只提供网页功能。第三方模块与 `.bem` 模型包分别管理。
+
+原生库由**游戏进程中的 Host**加载；Windows 网页使用 WebView2，Android 使用 WebView。作者可以自由编写页面，通过统一桥读取/保存自身 JSON 配置、发送业务消息、接收结果和查询状态。网页可在游戏未连接时保存配置；需要游戏模块的消息则要求运行中的 Host 连接。
+
+加载器提供入口 ABI、模块生命周期、配置和消息运输，游戏函数表、版本适配、调用线程、功能实现及停用恢复由作者维护。模块可以自行解析，也可选用 Host 已就绪的辅助接口；初始化不强制等待 IL2CPP。Host 回调在线程工作队列执行，不代表 Unity 主线程。配置与已加载模块启停可运行时更新；原生库仍随游戏进程驻留，二进制更新、删除和顺序调整需重启游戏，不做任意热卸载。
+
+更新或移除会退休旧安装代次，但旧目录仍保留，Android 的旧 ZIP 也会保留；当前没有自动垃圾回收，也不在重启后自动删除这些文件，避免破坏运行中的原生库或网页资源。
+
+Android 手机导航可横向滚动，大屏保留侧边导航；模块网页使用独立页面，完整编辑器不会挤在管理卡片里。跨端网页建议把静态资源随包分发；Android 容器只加载包内离线资源，网络业务可由作者原生模块处理。
+
+共享 Hook 是可选接口：采用 chain 的模块按同一目标串联并调用 `next`，已有 exclusive Hook 仍会报告冲突，不自动迁移成链。函数签名、参数/返回值处理和功能冲突由参与者协调。加载成功不等于与所有内置或第三方模块兼容。
+
+接入流程见 [第三方模块创作者指南](docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)，契约见 [ThirdPartyModule.h](native/shared/include/BetterEndfield/ThirdPartyModule.h)、[HookChain.h](native/shared/include/BetterEndfield/HookChain.h)与[Echo 示例](tools/ThirdPartyModules/echo/)。Echo 原生库已完成 Windows/Android 构建，消息桥与生命周期通过隔离回归；真实游戏模块的效果、稳定性和兼容性仍由作者测试和说明。
+
+## 相机、第一人称与 MMD
+
+自由相机支持位置/朝向、滚转和 FOV 调整、鼠标转向、环绕/推拉/升降/平移运镜，以及可保存的关键帧路径和 VMD 镜头。时间冻结独立于自由相机；第一人称支持头部隐藏、颈部补口、侧看角度与平滑转身。快捷键可配置，Windows 支持主键盘、小键盘、鼠标和组合键；Android 用游戏内控制面板操作。
+
+3.4.2 新增的全局 FOV 只覆盖普通主相机；自由相机、第一人称和导入镜头使用自己的 FOV。人物跟随仅平移自由相机，保留镜头朝向与手动偏移，在切人和传送后重新建立参考，并在运镜播放时暂停。[实现边界](docs/CAMERA_FOV_FOLLOW_IMPLEMENTATION_20261002.md)
+
+3.4.2 的第一人称去头发逻辑按**现场骨骼权重和实际绘制数据**分类，避免把含头部与衣物的混合网格整体隐藏；替换网格可使用 BEM 的 CPU 数据。未知角色走通用现场骨骼回退，不依赖另维护一整套必需角色表。独立部件尝试仅投影模式，混合部件保留完整投影网格；缺少可用几何数据时保留不确定部件。实际阴影和残留头发效果需要游戏验收。[方案与验证范围](docs/BEM_HAIR_SHADOW_IMPLEMENTATION_20261002.md)
+
+MMD 作品库管理动作、表情、镜头和本地音乐，可通过 `set.ini` 描述作品；支持播放/暂停/停止、跳转、循环、游戏/自由/VMD 镜头切换，最多四名队员同台，以及衣物物理和实验地形贴合。Windows 音轨走本地音乐接口，不要求 OmniMix；Android 使用本地媒体播放，会与游戏 BGM 叠加，可在游戏设置中关闭原背景音乐。双端身体/表情、布料和地形能力依赖实际客户端接口，作品转换或编译通过不能代替实机效果验证。[双端整合记录](docs/ANDROID_CAMERA_MMD_20261001.md)
+
+## 其他模块
+
+**开屏**：替换登录演员，按角色资源选择坐姿链和最终动作，调整缩放、起始角度、转正时间、各阶段速度、原生/强制循环和双 Playable 混合；Logo 与登录色带可独立设置主题色。收录 33 名角色、4,262 条最终动作索引，3.4.2 补齐噗切娜资源。[新角色资源修复](docs/TITLE_MODEL_PURRCHE_FIX_20261002.md)
+
+**配音**：在游戏全局语言不变的情况下分别指定角色中文、英语、日语或韩语，可扩展到剧情语音、时长和口型。先在游戏中下载对应语言包，软件从本机资源生成所需目录；发布包不携带 PCK、BNK 或 WEM 音频。[语音路由说明](docs/VOICE_CUSTOM_LANGUAGE_SYSTEM.md)
+
+**界面与动作**：隐藏 UID、通过快捷键/面板切换 HUD；PC 触屏布局搭配鼠标转触控，适用于串流或触控设备，转换默认快捷键为 `Ctrl+Alt+T`。Android 可启用 PC 风格布局，建议搭配键盘或手柄。布局切换与账号平台声明独立。持续冲刺当前适配洁尔佩塔和梨诺，梨诺另有隐藏机甲与光效选项。[动作模块](native/modules/actions/README.md)
+
+**PC 战斗数据**：手动会话和关卡自动会话，伤害数字显隐、悬浮伤害/DPS 排行、技能分类、角色与技能时间轴、历史筛选和网页分析。rDPS 使用随软件更新的已验证 Buff/技能语义，将可确认的队友增益贡献重新归属；无法确认的项不参与贡献转移。数据保存在本机，网页分析由用户主动打开。[战斗契约](docs/COMBAT_RUNTIME_CONTRACTS.md)
+
+**PC 寻访记录**：启用后从游戏连接同步记录，按卡池展示统计、六星、UP/非 UP、保底和免费抽信息，支持 JSON 导入导出及用户主动发起的云端分享。[网页功能说明](web/docs/GACHA_WEB_PLAN.md)
+
+**PC 音乐与显示**：OmniMix 集成使用用户现有后端，不复制其程序或曲库；可分别替换登录、主界面/基地、游戏内音乐，流异常时保留或恢复原生音乐。OptiScaler 负责超分、帧生成和锐化，硬件/后端兼容性依实际环境。[OmniMix 对接](docs/OMNIMIX_INTEGRATION_HANDOFF.md) · [显示管线](docs/DISPLAY_PIPELINE.md)
+
+## 模块架构与兼容性
+
+Windows 的 Host 加载独立功能 DLL；Android 的游戏内运行时编译共用模块源码并提供平台适配。Host 负责模块发现、生命周期、配置、动态 IL2CPP 解析和 Hook 管理。内置功能按程序集、类型、方法、签名和字段描述解析运行时接口，不依赖一套官服固定地址或 `GameAssembly.dll` 身份白名单。
+
+这允许不同客户端共用代码，但**不保证任意游戏版本自动兼容**：方法签名、资源、渲染布局或设备接口变化仍可能要求更新。内置模块的契约缺失会禁用对应能力并记录日志。Android 应将作用域选到实际客户端；世界、详情和开屏以及 PC/手机资源布局也不能互相假定相同。
+
+Windows 主配置位于 `%LocalAppData%\BetterEndfield\BetterEndfield.ini`，UI 设置为同目录的 `ui-settings.json`，BEM 包与状态位于 `catalog\custom-model`。Android 设置通过框架发布，资源复制到游戏自己的私有目录。角色/语音索引随软件分发，原游戏资源按需要从本机读取，不随仓库或安装包分发。
+
+| 目录 | 内容 |
+| --- | --- |
+| `ui/BetterEndfield.UI/` | WinUI 桌面管理界面与资源 |
+| `native/modules/` | 模型、BEM、配音、音乐、战斗、界面、相机、动作与寻访模块 |
+| `native/shared/` | Host、公共 C ABI、平台兼容层与原生依赖 |
+| `native/loaders/` | Windows 内置注入器与 XInput 自启动代理 |
+| `android/` | Android 应用、框架入口、运行时与游戏内面板 |
+| `tools/CustomModel/` | BEM 导出、转换、校验、工程与角色资料工具 |
+| `manifests/`、`resources/` | 模型/动作/语音/战斗索引及生成输入 |
+| `web/` | 战斗与寻访的网页分析/分享相关源码 |
+| `scripts/`、`docs/` | 构建和资源生成脚本、接口文档与研究记录 |
+
+内部运行时协议见 [GAME_INTERFACES.md](docs/GAME_INTERFACES.md)。研究目录和历史记录不代表全部已发布功能。
+
+## 从源码构建
+
+Windows 需要 Visual Studio 2022 C++ 工具集、CMake、.NET SDK 9 和 PowerShell；构建安装程序另需 Inno Setup 6。BEM 工具构建依赖见 [`requirements-build.txt`](tools/CustomModel/requirements-build.txt)。
 
 ```powershell
 pwsh -File .\scripts\BuildBetterEndfield.ps1
 pwsh -File .\scripts\BuildInstaller.ps1
+pwsh -File .\scripts\BuildBemTools.ps1
 ```
 
-原生构建入口是 `native/CMakeLists.txt`。MinHook 只由 Host 链接，模块不得自行初始化或卸载 Hook 引擎。
+Android 使用 JDK 17 及以上、SDK、NDK 和 CMake，版本以 [`android/app/build.gradle.kts`](android/app/build.gradle.kts) 为准；配置好工具链后：
 
-## 配置
-
-主配置位于 `%LocalAppData%\BetterEndfield\BetterEndfield.ini`，使用 UTF-16LE BOM 以保证 Windows Profile API 能无损读取中文路径；UI 设置位于同目录的 `ui-settings.json`。配置按模块分节：
-
-```ini
-[betterendfield.model]
-enabled=false
-model_replacement_enabled=false
-logo_theme_enabled=false
-logo_theme_color=#FFC928
-
-[betterendfield.voice]
-enabled=false
-voice_router_enabled=false
-voice_language_rules=*:Japanese
-
-[betterendfield.music]
-enabled=false
-music_replacement_enabled=false
-backend_exe=C:\Path\To\OmniMixPlayer.Backend.exe
-client_id=better-endfield-example
-replace_login=true
-replace_meta=true
-replace_gameplay=true
-target_latency=0.4
-prebuffer_ms=150
-fallback_to_native=true
-
-[betterendfield.combat_stats]
-enabled=false
-combat_stats_enabled=false
-hide_damage_numbers=false
-overlay_enabled=true
-overlay_visible=true
-hotkey_toggle=F11
-overlay_hotkey=F12
-rdps_display=false
-auto_dungeon_session=true
-
-[betterendfield.ui]
-enabled=false
-mobile_ui_enabled=false
-
-[Loader]
-install_root=C:\Path\To\Better Endfield
-load_host=true
+```powershell
+.\android\gradlew.bat -p android :app:assembleRelease --no-daemon
 ```
 
-自定义角色外观不在主配置中。包文件与启用状态位于 `%LocalAppData%\BetterEndfield\catalog\custom-model`，由「角色外观」页维护，格式见上文「自定义角色外观（BEM）」。
+构建脚本使用仓库内已生成的资源索引；游戏更新后需先更新相应资料，不应把本机研究输出或游戏资源载荷打入发布包。
 
-## 许可与风险
+## 许可
 
-本项目以 [AGPL-3.0-only](LICENSE) 发布。第三方 MinHook 保留其原许可证，副本位于 `native/shared/third_party/minhook`。
+Better Endfield 使用 [AGPL-3.0-only](LICENSE)，是独立的非官方项目，与游戏开发商及发行商无关联。MinHook、Dobby、EIEM、7-Zip 等依赖或引用保留各自许可证和来源说明；创作者应自行确认第三方模型、动作、音频和模块的分发授权。
 
-Better Endfield 与游戏发行商无关。使用前请备份配置并自行评估账号、客户端完整性和第三方 Mod 冲突风险。游戏更新后如果动态契约不满足，请停止使用对应模块并等待适配。
+功能效果取决于客户端、设备和用户导入内容。使用前请了解相关服务规则及账号/客户端风险；游戏更新后遇到契约失败，应关闭受影响功能并等待适配。

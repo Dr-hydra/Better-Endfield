@@ -1,7 +1,9 @@
 #include "BetterEndfield/ModuleApi.h"
 #include "first_person_mesh.h"
 #include "first_person_retry.h"
+#include "camera_follow.h"
 #include "BetterEndfield/PoseLease.h"
+#include "BetterEndfield/CustomModelGeometry.h"
 #include "../../shared/motion/character_pose.h"
 #include "../../shared/motion/character_mapping.h"
 #include "../../shared/input/hotkey.h"
@@ -40,6 +42,11 @@
 #include <unordered_set>
 #include <vector>
 
+#if defined(__ANDROID__)
+extern "C" BE_Result BE_CALL BetterEndfield_QueryCustomModelGeometryV1(void*,
+    BE_CustomModelGeometryVisitorV1,void*) __attribute__((weak));
+#endif
+
 namespace BetterEndfield::CameraModule {
 namespace {
 
@@ -63,6 +70,9 @@ struct CameraConfiguration {
     bool disable_dither_enabled = false;
     bool pause_enabled = false;
     bool first_person_camera_enabled = false;
+    bool global_fov_enabled = false;
+    float global_fov = 60.0f;
+    bool free_camera_follow_character = false;
     bool first_person_hide_head = true;
     bool first_person_fill_neck_hole = true;
     bool diagnostics = true;
@@ -171,6 +181,9 @@ std::atomic_bool g_free_camera_enabled{false};
 std::atomic_bool g_disable_dither_enabled{false};
 std::atomic_bool g_pause_enabled{false};
 std::atomic_bool g_first_person_camera_enabled{false};
+std::atomic_bool g_global_fov_enabled{false};
+std::atomic<float> g_global_fov{60.0f};
+std::atomic_bool g_free_camera_follow_character{false};
 std::atomic_bool g_first_person_hide_head{true};
 std::atomic_bool g_first_person_fill_neck_hole{true};
 std::atomic_bool g_diagnostics_enabled{true};
@@ -274,6 +287,7 @@ bool g_first_person_contract_ready = false;
 bool g_pause_contract_ready = false;
 #if defined(__ANDROID__)
 uint64_t g_android_pump_generation = 0; // Unity thread only
+uint64_t g_android_first_person_pump_generation = 0;
 bool AndroidCameraReady() {
     const auto state = g_state.load(std::memory_order_acquire);
     return betterendfield::OnAndroidFrameThread() &&
@@ -367,6 +381,9 @@ struct HeadPartProbe {
 
 struct FirstPersonSession {
     void* character = nullptr;
+    uint32_t character_handle = 0;
+    void* model = nullptr;
+    uint32_t model_handle = 0;
     void* head = nullptr;
     uint32_t head_handle = 0;
     void* body = nullptr;
@@ -375,6 +392,11 @@ struct FirstPersonSession {
     uint32_t neck_handle = 0;
     void* snapshot_controller = nullptr;
     uint32_t snapshot_handle = 0;
+    bool snapshot_exit_owned = false;
+    bool target_valid = false;
+    Quaternion original_body_rotation{};
+    Quaternion written_body_rotation{};
+    bool body_rotation_owned = false;
     bool head_hide_applied = false;
     Vector3 last_eye{};
     bool last_eye_valid = false;
@@ -385,6 +407,9 @@ uint64_t g_first_person_pump_frames = 0;
 uint64_t g_first_person_reassert_frames = 0;
 bool g_first_person_head_logged = false;
 bool g_first_person_health_warned = false;
+std::atomic<DWORD> g_camera_unity_thread_id{0};
+uint64_t g_first_person_binding_generation = 0;
+double g_first_person_last_heartbeat = -1.0;
 
 MethodContract g_contracts[]{
     {"camera.process_dither",
@@ -415,9 +440,15 @@ MethodContract g_contracts[]{
     {"snapshot.show_char",
         {"Gameplay.Beyond.dll", "Beyond.Gameplay.View", "SnapshotCameraController",
             "_ShowChar", nullptr, "System.Void", 0}},
+    {"snapshot.clear_first_person",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.View", "SnapshotCameraController",
+            "_ClearFirstPersonStatus", nullptr, "System.Void", 0}},
     {"unity.camera.main",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Camera", "get_main",
             nullptr, "UnityEngine.Camera", 0}},
+    {"unity.camera.orthographic.get",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Camera", "get_orthographic",
+            nullptr, "System.Boolean", 0}},
     {"unity.camera.fov.get",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Camera", "get_fieldOfView",
             nullptr, "System.Single", 0}},
@@ -451,6 +482,12 @@ MethodContract g_contracts[]{
     {"unity.renderer.enabled.set",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Renderer", "set_enabled",
             "System.Boolean", "System.Void", 1}},
+    {"unity.renderer.shadow_mode.get",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Renderer", "get_shadowCastingMode",
+            nullptr, "UnityEngine.Rendering.ShadowCastingMode", 0}},
+    {"unity.renderer.shadow_mode.set",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Renderer", "set_shadowCastingMode",
+            "UnityEngine.Rendering.ShadowCastingMode", "System.Void", 1}},
     {"unity.game_object.find_with_tag",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "GameObject", "FindWithTag",
             "System.String", "UnityEngine.GameObject", 1}},
@@ -557,6 +594,15 @@ FieldContract g_fields[]{
     {"snapshot.is_first_person",
         {"Gameplay.Beyond.dll", "Beyond.Gameplay.View", "SnapshotCameraController",
             "<isFirstPerson>k__BackingField", "System.Boolean"}},
+    {"snapshot.pending_first_person_exit",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.View", "SnapshotCameraController",
+            "m_hasPendingFirstPersonExit", "System.Boolean"}},
+    {"snapshot.post_rotation",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.View", "SnapshotCameraController",
+            "m_postRotation", "Beyond.Gameplay.View.CameraPostRotation"}},
+    {"snapshot.camera_offset",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.View", "SnapshotCameraController",
+            "m_cameraOffset", "CinemachineCameraOffset"}},
 };
 
 MethodContract* Contract(std::string_view key) {
@@ -1223,9 +1269,8 @@ void PumpFreeCamera() {
 // The pose is applied at the very last stage of the Cinemachine pipeline, in
 // CinemachineBrain::PushStateToUnityCamera(Cinemachine.CameraState&): the state
 // that is about to be handed to the Unity camera is rewritten in place, so no
-// later system can overwrite it. Head hiding uses the game's own first-person
-// path (SnapshotCameraController) instead of touching meshes, which keeps the
-// feature independent from renderer and vertex layout changes.
+// later system can overwrite it. Head meshes are restored independently of the
+// camera session; the game's Snapshot first-person mode is never enabled here.
 // ---------------------------------------------------------------------------
 
 bool ReadBytes(const void* base, int32_t offset, void* destination, size_t size) {
@@ -1299,6 +1344,26 @@ bool ReadBoolField(void* instance, std::string_view key, bool& value) {
     return true;
 }
 
+void* ReadObjectField(void* instance, std::string_view key) {
+    const FieldContract* field = Field(key);
+    if (!instance || !field || !field->ready || field->resolved.offset <= 0 ||
+        static_cast<size_t>(field->resolved.offset) > kMaxFieldOffset) return nullptr;
+    void* value = nullptr;
+    std::memcpy(&value, static_cast<const uint8_t*>(instance) + field->resolved.offset,
+        sizeof(value));
+    return value;
+}
+
+bool OnCameraUnityThread(bool allow_capture) {
+    const DWORD thread = GetCurrentThreadId();
+    DWORD expected = 0;
+    if (allow_capture) {
+        g_camera_unity_thread_id.compare_exchange_strong(expected, thread,
+            std::memory_order_acq_rel);
+    }
+    return g_camera_unity_thread_id.load(std::memory_order_acquire) == thread;
+}
+
 void* FindSnapshotCameraController() {
     if (g_first_person.snapshot_controller) {
         if (IsObjectAlive(g_first_person.snapshot_controller)) {
@@ -1331,17 +1396,14 @@ void* FindSnapshotCameraController() {
 // ---------------------------------------------------------------------------
 // First-person head hiding
 //
-// The reference implementation hides the head, the hair and the head
-// accessories, while the body, the arms, the equipment and the shadows of the
-// character stay untouched. The game exposes exactly that granularity:
-// BaseModelComponent.SetVisibleByNameContainsStr keeps its own hidden-name set
-// and re-applies it whenever parts or LOD levels change. Driving the feature by
-// part names instead of mesh buffers keeps it free of vertex, index and field
-// layout assumptions, so it keeps working across game updates.
+// Classify the live skeleton and drawn skin influences. Standalone head/tail
+// renderers keep casting shadows; mixed meshes retain their complete shadow
+// source while a private index buffer removes only confirmed head triangles.
+// Names are scan hints, never permission to hide a mixed body/clothing mesh.
 // ---------------------------------------------------------------------------
 
 constexpr const char* kHeadPartTokens[]{
-    "head", "face", "hair", "hair_base", "hairshadow", "front_hair",
+    "head", "face", "hair", "hair_base", "front_hair",
     "back_hair", "side_hair", "brow", "eyelid", "eyelash", "eyes", "iris",
     "pupil", "mouth", "lip", "teeth", "tongue", "horn"};
 
@@ -1469,12 +1531,18 @@ void* FindModelComponent() {
                   : nullptr;
 }
 
-void* FindModelObject() {
-    void* model_component = FindModelComponent();
+void* FindModelObjectForCharacter(void* character) {
+    void* model_component = character
+        ? Invoke(Contract("entity.get_model_com"), character, nullptr) : nullptr;
     return model_component
         ? Invoke(Contract("base_model_component.get_model_go"), model_component,
             nullptr)
         : nullptr;
+}
+
+void* FindModelObject() {
+    return FindModelObjectForCharacter(Invoke(
+        Contract("player_controller.get_main_character"), nullptr, nullptr));
 }
 
 void* FindModelTransform() {
@@ -1489,7 +1557,26 @@ void* FindModelTransform() {
 #include "character_motion_runtime.inc"
 #include "mmd_director_runtime.inc"
 
+void RestoreFirstPersonFacing() {
+    if(!g_first_person.body_rotation_owned)return;
+    g_first_person.body_rotation_owned=false;
+    if(!IsObjectAlive(g_first_person.body))return;
+    Quaternion current{};
+    if(!Unbox(Invoke(Contract("unity.transform.rotation.get"),g_first_person.body,nullptr),current)||
+       !IsUnitQuaternion(current))return;
+    const auto& written=g_first_person.written_body_rotation;
+    const float dot=current.x*written.x+current.y*written.y+
+        current.z*written.z+current.w*written.w;
+    // The game may have taken over facing during movement or an action.
+    if(std::abs(dot)<0.999999f)return;
+    SetValue(Contract("unity.transform.rotation.set"),g_first_person.body,
+        g_first_person.original_body_rotation);
+}
+
 void ReleaseHeadTransform() {
+    g_first_person.target_valid=false;
+    g_first_person_view_forward_valid=false;
+    RestoreFirstPersonFacing();
     if (g_first_person.head_handle && g_host && g_host->gchandle_free) {
         g_host->gchandle_free(g_host->context, g_first_person.head_handle);
     }
@@ -1505,6 +1592,14 @@ void ReleaseHeadTransform() {
     }
     g_first_person.neck_handle = 0;
     g_first_person.neck = nullptr;
+    if(g_first_person.model_handle&&g_host&&g_host->gchandle_free)
+        g_host->gchandle_free(g_host->context,g_first_person.model_handle);
+    if(g_first_person.character_handle&&g_host&&g_host->gchandle_free)
+        g_host->gchandle_free(g_host->context,g_first_person.character_handle);
+    g_first_person.model_handle=0;
+    g_first_person.model=nullptr;
+    g_first_person.character_handle=0;
+    g_first_person.character=nullptr;
     g_first_person.last_eye_valid = false;
     g_first_person_head_logged = false;
 }
@@ -1540,7 +1635,7 @@ bool LooksLikeHeadBone(void* transform) {
 }
 
 void* FindHeadBoneRecursive(void* current, int depth) {
-    if (!current || depth > 12) {
+    if (!current || depth > 12 || !IsObjectAlive(current)) {
         return nullptr;
     }
     if (LooksLikeHeadBone(current)) {
@@ -1584,29 +1679,8 @@ void* TryHumanoidHeadBone(void* model_root) {
     return head && LooksLikeHeadBone(head) ? head : nullptr;
 }
 
-void* ResolvePlayerHeadTransform() {
-    void* model_root = nullptr;
-    void* entity = Invoke(Contract("player_controller.get_main_character"), nullptr, nullptr);
-    if (entity) {
-        void* model_component = Invoke(Contract("entity.get_model_com"), entity, nullptr);
-        void* model_object = model_component
-            ? Invoke(Contract("base_model_component.get_model_go"), model_component, nullptr)
-            : nullptr;
-        if (model_object) {
-            model_root = Invoke(Contract("unity.game_object.transform"),
-                model_object, nullptr);
-        }
-    }
-    if (!model_root) {
-        void* player_tag = g_host->string_new(g_host->context, "Player");
-        void* parameters[1]{player_tag};
-        void* player = Invoke(Contract("unity.game_object.find_with_tag"), nullptr, parameters);
-        if (player) {
-            model_root = Invoke(Contract("unity.game_object.transform"),
-                player, nullptr);
-        }
-    }
-    if (!model_root) {
+void* ResolvePlayerHeadTransform(void* model_root) {
+    if (!model_root || !IsObjectAlive(model_root)) {
         return nullptr;
     }
 
@@ -1622,15 +1696,16 @@ void* ResolvePlayerHeadTransform() {
     if (void* head = FindHeadBoneRecursive(model_root, 0)) {
         return head;
     }
-    // Last resort: anchor to the model root so the view still follows the body.
-    return model_root;
+    // A model-root fallback would classify every skinned bone as head-owned.
+    // Wait for the actual skeleton rather than binding a different player tag.
+    return nullptr;
 }
 
 void TryBindHeadTransform() {
     if (g_first_person.head) {
         return;
     }
-    void* head = ResolvePlayerHeadTransform();
+    void* head = ResolvePlayerHeadTransform(g_first_person.body);
     if (!head) {
         if (!g_first_person_head_logged) {
             g_first_person_head_logged = true;
@@ -1643,22 +1718,6 @@ void TryBindHeadTransform() {
         ? g_host->gchandle_new(g_host->context, head, 0)
         : 0;
     BindNeckBone(head);
-    if (!g_first_person.body) {
-        void* character = g_first_person.character;
-        void* body = character
-            ? Invoke(Contract("unity.component.transform"), character, nullptr)
-            : nullptr;
-        if (!body) {
-            body = Invoke(Contract("unity.game_object.transform"), FindModelObject(), nullptr);
-        }
-        if (body) {
-            g_first_person.body = body;
-            g_first_person.body_handle = g_host && g_host->gchandle_new
-                ? g_host->gchandle_new(g_host->context, body, 0)
-                : 0;
-            Log("First person: body facing anchor bound to \"" + ObjectName(body) + "\".");
-        }
-    }
     Log("First person: head anchor bound to \"" + ObjectName(head) + "\".");
 }
 
@@ -1669,7 +1728,11 @@ float NormalizeAngle(float angle) {
 }
 
 void ApplyFirstPersonFacing() {
-    if (!g_first_person.body || !g_first_person_view_forward_valid) return;
+    if (!g_first_person.target_valid || !g_first_person.body ||
+        !g_first_person_view_forward_valid ||
+        !g_first_person_camera_enabled.load(std::memory_order_acquire) ||
+        g_first_person_exit_request.load(std::memory_order_acquire) ||
+        !IsObjectAlive(g_first_person.body)) return;
     Vector3 desired = g_first_person_view_forward;
     desired.y = 0.0f;
     desired = Normalize(desired);
@@ -1699,6 +1762,10 @@ void ApplyFirstPersonFacing() {
     const Quaternion next{0.0f, std::sin(yaw * 0.5f), 0.0f, std::cos(yaw * 0.5f)};
     void* parameters[1]{const_cast<Quaternion*>(&next)};
     if (InvokeVoid(Contract("unity.transform.rotation.set"), g_first_person.body, parameters)) {
+        if(!g_first_person.body_rotation_owned)
+            g_first_person.original_body_rotation=current_rotation;
+        g_first_person.written_body_rotation=next;
+        g_first_person.body_rotation_owned=true;
         if (g_diagnostics_enabled.load(std::memory_order_relaxed)) {
             Log("First person: body turned toward camera (delta=" +
                 std::to_string(delta) + ", step=" + std::to_string(step) + ").");
@@ -1712,7 +1779,10 @@ void ApplyFirstPersonFacing() {
 // the eye anchor. The corrections are cleared so the pushed pose equals the raw
 // pose instead of being nudged back by the collider/damping stages.
 void ApplyFirstPersonState(void* state) {
-    if (!g_state_layout.ready || !IsObjectAlive(g_first_person.head)) {
+    if (!g_state_layout.ready || !g_first_person.target_valid ||
+        !g_first_person_camera_enabled.load(std::memory_order_acquire) ||
+        g_first_person_exit_request.load(std::memory_order_acquire) ||
+        !IsObjectAlive(g_first_person.head)) {
         return;
     }
 
@@ -1755,6 +1825,33 @@ void ApplyFirstPersonState(void* state) {
     g_push_state_patches.fetch_add(1, std::memory_order_relaxed);
 }
 
+// PushState takes a ref to Cinemachine's cached state. Restore the input after
+// the original push so leaving first person cannot retain our lens/corrections.
+struct ScopedFirstPersonState {
+    void* state=nullptr;
+    Vector3 position{},correction{};
+    Quaternion orientation_correction{};
+    float fov=0,near_clip=0;
+    explicit ScopedFirstPersonState(void* value,bool capture) {
+        if(!capture||!g_state_layout.ready)return;
+        const int lens=g_state_layout.lens;
+        if(ReadBytes(value,g_state_layout.raw_position,&position,sizeof(position))&&
+           ReadBytes(value,g_state_layout.position_correction,&correction,sizeof(correction))&&
+           ReadBytes(value,g_state_layout.orientation_correction,&orientation_correction,sizeof(orientation_correction))&&
+           ReadBytes(value,lens+g_state_layout.lens_field_of_view,&fov,sizeof(fov))&&
+           ReadBytes(value,lens+g_state_layout.lens_near_clip,&near_clip,sizeof(near_clip)))state=value;
+    }
+    ~ScopedFirstPersonState() {
+        if(!state)return;
+        const int lens=g_state_layout.lens;
+        WriteBytes(state,g_state_layout.raw_position,&position,sizeof(position));
+        WriteBytes(state,g_state_layout.position_correction,&correction,sizeof(correction));
+        WriteBytes(state,g_state_layout.orientation_correction,&orientation_correction,sizeof(orientation_correction));
+        WriteBytes(state,lens+g_state_layout.lens_field_of_view,&fov,sizeof(fov));
+        WriteBytes(state,lens+g_state_layout.lens_near_clip,&near_clip,sizeof(near_clip));
+    }
+};
+
 // Confirms that the patched state actually reached the Unity camera. A large
 // distance means the offsets or the hook are wrong on this game build, which is
 // reported instead of silently producing a broken view.
@@ -1795,6 +1892,8 @@ void FirstPersonHealthCheck() {
     }
 }
 
+void RefreshFirstPersonTarget(bool apply_facing = true);
+
 bool EnterFirstPerson() {
     if (!g_state_layout.ready || !g_push_state_hook_ready) {
         Log("First person camera is unavailable: the Cinemachine CameraState hook "
@@ -1805,7 +1904,7 @@ bool EnterFirstPerson() {
         ExitFreeCamera("switching to first person");
     }
     void* camera = Invoke(Contract("unity.camera.main"), nullptr, nullptr);
-    if (!camera) {
+    if (!camera || !IsObjectAlive(camera)) {
         Log("First person camera could not capture the active Unity camera.");
         return false;
     }
@@ -1819,11 +1918,14 @@ bool EnterFirstPerson() {
     g_first_person.character = nullptr;
     g_first_person_head_logged = false;
     g_first_person_pump_frames = 0;
-    TryBindHeadTransform();
+    g_first_person_active.store(true, std::memory_order_release);
+    RefreshFirstPersonTarget(false);
     if (g_first_person_hide_head.load(std::memory_order_relaxed)) {
         ExitGameFirstPersonMode();
-        ApplyHeadPartHide();
-        EnsureNeckCap();
+        if(g_first_person.target_valid) {
+            ApplyHeadPartHide();
+            EnsureNeckCap();
+        }
     } else {
         Log("First person: head hiding is disabled in the configuration.");
     }
@@ -1845,17 +1947,16 @@ bool EnterFirstPerson() {
 }
 
 void ExitFirstPerson(const char* reason) {
-    if (!g_first_person_active.load(std::memory_order_acquire)) {
+    const bool was_active=g_first_person_active.exchange(false,std::memory_order_acq_rel);
+    FinishGameFirstPersonExit();
+    if(!was_active) {
+        if(!g_fp_mesh_session.patches.empty())ReleaseNeckCap();
+        if(!g_first_person.snapshot_exit_owned)ReleaseSnapshotController();
         return;
     }
-    g_first_person_active.store(false, std::memory_order_release);
     ReleaseHeadPartHide();
     ReleaseNeckCap();
-    if (g_first_person.snapshot_handle && g_host && g_host->gchandle_free) {
-        g_host->gchandle_free(g_host->context, g_first_person.snapshot_handle);
-    }
-    g_first_person.snapshot_handle = 0;
-    g_first_person.snapshot_controller = nullptr;
+    if(!g_first_person.snapshot_exit_owned)ReleaseSnapshotController();
     ReleaseHeadTransform();
     g_first_person.character = nullptr;
     g_first_person_view_forward_valid = false;
@@ -1865,45 +1966,106 @@ void ExitFirstPerson(const char* reason) {
         " (patched frames=" + std::to_string(patches) + ").");
 }
 
-// Follows leader switches and respawns: the head anchor and the game's own
-// first-person state belong to a character, so both are rebound.
-void RefreshFirstPersonTarget() {
-    void* character = Invoke(Contract("player_controller.get_main_character"),
-        nullptr, nullptr);
-    if (character && character != g_first_person.character) {
-        if (g_first_person.character) {
-            Log("First person: main character changed; rebinding the eye anchor.");
-            ReleaseHeadTransform();
-            ReleaseHeadPartHide();
-            ReleaseNeckCap();
-        }
-        g_first_person.character = character;
-        if (g_first_person_hide_head.load(std::memory_order_relaxed)) {
-            ExitGameFirstPersonMode();
-            ApplyHeadPartHide();
-            EnsureNeckCap();
-        }
+// Never invoke methods on a cached Entity after a leader change. Entity is not
+// a Component; the verified Entity -> ModelCom -> ModelGo route supplies bones.
+bool FirstPersonBoneBelongsToBody(void* bone, void* body) {
+    if (!bone || !body) return false;
+    for (int depth = 0; bone && depth < 48; ++depth) {
+        if (!IsObjectAlive(bone)) return false;
+        if (bone == body) return true;
+        bone = Invoke(Contract("unity.transform.parent.get"), bone, nullptr);
     }
-    if (g_first_person.head && !IsObjectAlive(g_first_person.head)) {
-        Log("First person: the eye anchor was destroyed; rebinding.");
-        ReleaseHeadTransform();
-    }
-    TryBindHeadTransform();
-    ApplyFirstPersonFacing();
+    return false;
 }
 
-void PumpFirstPerson() {
+void RefreshFirstPersonTarget(bool apply_facing) {
+    void* character = Invoke(Contract("player_controller.get_main_character"),
+        nullptr, nullptr);
+    void* model=FindModelObjectForCharacter(character);
+    if(model&&!IsObjectAlive(model))model=nullptr;
+    const bool anchors_lost=(g_first_person.head&&!IsObjectAlive(g_first_person.head))||
+        (g_first_person.body&&!IsObjectAlive(g_first_person.body))||
+        (g_first_person.neck&&!IsObjectAlive(g_first_person.neck))||
+        (g_first_person.head&&!FirstPersonBoneBelongsToBody(g_first_person.head,g_first_person.body))||
+        (g_first_person.neck&&!FirstPersonBoneBelongsToBody(g_first_person.neck,g_first_person.body));
+    if(character!=g_first_person.character||model!=g_first_person.model||anchors_lost) {
+        g_first_person.target_valid=false;
+        ReleaseHeadPartHide();
+        ReleaseHeadTransform();
+        ++g_first_person_binding_generation;
+        if(g_diagnostics_enabled.load(std::memory_order_relaxed))
+            Log("First person: target invalidated/rebound, generation="+
+                std::to_string(g_first_person_binding_generation));
+    }
+    if(!character||!model) return;
+    if(!g_first_person.model) {
+        void* body=Invoke(Contract("unity.game_object.transform"),model,nullptr);
+        if(!body||!IsObjectAlive(body))return;
+        g_first_person.character=character;
+        g_first_person.model=model;
+        g_first_person.body=body;
+        if(g_host&&g_host->gchandle_new) {
+            g_first_person.character_handle=g_host->gchandle_new(g_host->context,character,0);
+            g_first_person.model_handle=g_host->gchandle_new(g_host->context,model,0);
+            g_first_person.body_handle=g_host->gchandle_new(g_host->context,body,0);
+        }
+        if(g_first_person_hide_head.load(std::memory_order_relaxed))ExitGameFirstPersonMode();
+    }
+    TryBindHeadTransform();
+    g_first_person.target_valid=g_first_person.head&&IsObjectAlive(g_first_person.head)&&
+        IsObjectAlive(g_first_person.body)&&
+        FirstPersonBoneBelongsToBody(g_first_person.head,g_first_person.body)&&
+        (!g_first_person.neck||FirstPersonBoneBelongsToBody(g_first_person.neck,g_first_person.body));
+    if(g_first_person.target_valid&&apply_facing)ApplyFirstPersonFacing();
+}
+
+bool FirstPersonTargetIsCurrent() {
+    if(!g_first_person.target_valid)return false;
+    void* character=Invoke(Contract("player_controller.get_main_character"),nullptr,nullptr);
+    const bool valid=character&&character==g_first_person.character&&
+        FindModelObjectForCharacter(character)==g_first_person.model&&
+        IsObjectAlive(g_first_person.model)&&IsObjectAlive(g_first_person.head)&&
+        IsObjectAlive(g_first_person.body)&&
+        FirstPersonBoneBelongsToBody(g_first_person.head,g_first_person.body)&&
+        (!g_first_person.neck||FirstPersonBoneBelongsToBody(g_first_person.neck,g_first_person.body));
+    if(!valid) {
+        g_first_person.target_valid=false;
+        g_first_person_view_forward_valid=false;
+    }
+    return valid;
+}
+
+bool FirstPersonBrainDrivesCamera(void* brain) {
+    const MethodContract* game_object=Contract("unity.component.game_object");
+    if(!brain||!game_object||!game_object->resolved||!IsObjectAlive(brain))return false;
+    void* brain_object=Invoke(game_object,brain,nullptr);
+    void* camera_object=Invoke(game_object,g_active_camera,nullptr);
+    return brain_object&&brain_object==camera_object;
+}
+
+thread_local bool t_in_first_person_pump=false;
+void PumpFirstPerson(bool allow_thread_capture = true,bool full_frame = true) {
+    if(t_in_first_person_pump||!OnCameraUnityThread(allow_thread_capture))return;
+    struct PumpGuard {
+        PumpGuard(){t_in_first_person_pump=true;}
+        ~PumpGuard(){t_in_first_person_pump=false;}
+    } guard;
+#if defined(__ANDROID__)
+    if (full_frame) ++g_android_first_person_pump_generation;
+#endif
+    FinishGameFirstPersonExit();
+    if(!g_first_person_active.load(std::memory_order_acquire)) {
+        if(!g_fp_mesh_session.patches.empty())ReleaseNeckCap();
+        if(!g_first_person.snapshot_exit_owned)ReleaseSnapshotController();
+    }
     const bool allowed = g_first_person_camera_enabled.load(std::memory_order_acquire) &&
         g_first_person_contract_ready;
-    if (!allowed) {
+    const bool exit_requested=g_first_person_exit_request.exchange(false,std::memory_order_acq_rel);
+    if (!allowed || exit_requested) {
         g_first_person_toggle_request.store(false, std::memory_order_release);
-        if (g_first_person_active.load(std::memory_order_acquire) ||
-            g_first_person_exit_request.exchange(false, std::memory_order_acq_rel)) {
-            ExitFirstPerson("feature disabled");
-        }
+        ExitFirstPerson(exit_requested?"requested exit":"feature disabled");
         return;
     }
-    g_first_person_exit_request.store(false, std::memory_order_release);
     if (g_first_person_toggle_request.exchange(false, std::memory_order_acq_rel)) {
         if (g_first_person_active.load(std::memory_order_acquire)) {
             ExitFirstPerson("toggle hotkey");
@@ -1914,9 +2076,17 @@ void PumpFirstPerson() {
     if (!g_first_person_active.load(std::memory_order_acquire)) {
         return;
     }
-    RefreshFirstPersonTarget();
+    void* camera=Invoke(Contract("unity.camera.main"),nullptr,nullptr);
+    if(!camera||camera!=g_active_camera||!IsObjectAlive(g_active_camera)) {
+        ExitFirstPerson("active camera changed");
+        return;
+    }
+    RefreshFirstPersonTarget(full_frame);
+    if(!g_first_person.target_valid)return;
     if (!g_first_person_hide_head.load(std::memory_order_relaxed)) {
         if (g_first_person.head_hide_applied) ReleaseHeadPartHide();
+    } else if (!full_frame) {
+        return;
     } else if (!g_first_person.head_hide_applied) {
         ApplyHeadPartHide();
     }
@@ -1948,6 +2118,15 @@ float __fastcall DetourTimeUnscaledDelta(void* method) {
         PumpMmdDirector(false);
         PumpCharacterMotion(false); // only the thread previously observed at TailLateTick
         PumpFreeCameraControl();
+        const double now=NowSeconds();
+        if(g_first_person_exit_request.load(std::memory_order_acquire)||
+           g_first_person_toggle_request.load(std::memory_order_acquire)||
+           (g_first_person_active.load(std::memory_order_acquire)&&
+            !g_first_person_camera_enabled.load(std::memory_order_acquire))||
+           now-g_first_person_last_heartbeat>=0.003) {
+            PumpFirstPerson(false,false);
+            g_first_person_last_heartbeat=now;
+        }
         if (g_free_camera_active) {
             ApplyFreeCameraHeartbeat();
         }
@@ -1964,7 +2143,24 @@ void __fastcall DetourPushState(void* instance, void* state, void* method) {
     }
 #endif
     g_push_state_calls.fetch_add(1, std::memory_order_relaxed);
-    if (state && g_first_person_active.load(std::memory_order_acquire)) {
+    const bool unity_thread=OnCameraUnityThread(true);
+    if(unity_thread&&(g_first_person_toggle_request.load(std::memory_order_acquire)||
+       g_first_person_exit_request.load(std::memory_order_acquire)||
+       (g_first_person_active.load(std::memory_order_acquire)&&
+        !g_first_person_camera_enabled.load(std::memory_order_acquire))))PumpFirstPerson(true,false);
+    if(unity_thread&&g_first_person_active.load(std::memory_order_acquire)) {
+        void* camera=Invoke(Contract("unity.camera.main"),nullptr,nullptr);
+        if(!camera||camera!=g_active_camera||!IsObjectAlive(g_active_camera))
+            ExitFirstPerson("active camera changed before push");
+    }
+    const bool first_person=state&&unity_thread&&
+        g_first_person_active.load(std::memory_order_acquire)&&
+        g_first_person_camera_enabled.load(std::memory_order_acquire)&&
+        !g_first_person_exit_request.load(std::memory_order_acquire)&&
+        FirstPersonTargetIsCurrent()&&FirstPersonBrainDrivesCamera(instance);
+    ScopedGlobalFovState global_fov_scope(instance,state);
+    ScopedFirstPersonState first_person_scope(state,first_person);
+    if (first_person && first_person_scope.state) {
         ApplyFirstPersonState(state);
     } else if (state && g_free_camera_active && g_state_layout.ready &&
         BrainDrivesActiveCamera(instance)) {
@@ -2019,6 +2215,7 @@ void __fastcall DetourCameraTick(void* instance, void* method) {
 void AndroidCameraFrame(bool suspend) {
     if (!AndroidCameraReady()) return;
     static uint64_t previous_generation = 0;
+    static uint64_t previous_first_person_generation = 0;
     if (suspend) {
         g_toggle_request.store(false);
         g_pause_request.store(false);
@@ -2034,16 +2231,24 @@ void AndroidCameraFrame(bool suspend) {
         ExitFirstPerson("Android Activity lost focus");
         ExitFreeCamera("Android Activity lost focus");
         RestoreWorldPause("Android Activity lost focus");
-    } else if (previous_generation == g_android_pump_generation) {
+    } else {
+      if (previous_generation == g_android_pump_generation) {
         // No game-side pump ran since the last rendered frame. This remains on
         // Unity's thread even when gameplay ticks stop at timeScale == 0.
         PumpMmdDirector();
         PumpCharacterMotion();
         PumpFreeCameraControl();
-        PumpFirstPerson();
         if (g_free_camera_active) ApplyFreeCameraHeartbeat();
+      }
+      if(previous_first_person_generation==g_android_first_person_pump_generation||
+         g_first_person_exit_request.load(std::memory_order_acquire)||
+         g_first_person_toggle_request.load(std::memory_order_acquire)||
+         (g_first_person_active.load(std::memory_order_acquire)&&
+          !g_first_person_camera_enabled.load(std::memory_order_acquire)))
+          PumpFirstPerson();
     }
     previous_generation = g_android_pump_generation;
+    previous_first_person_generation = g_android_first_person_pump_generation;
     const unsigned capabilities = (g_free_camera_contract_ready && g_free_camera_enabled.load() ? 1u : 0u) |
         (g_pause_enabled.load() ? 8u : 0u) |
         (g_first_person_contract_ready && g_first_person_camera_enabled.load() ? 2u : 0u) |
@@ -2141,6 +2346,9 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
         else if (key == "disable_dither_enabled") config.disable_dither_enabled = ParseBoolean(value, config.disable_dither_enabled);
         else if (key == "pause_enabled") config.pause_enabled = ParseBoolean(value, config.pause_enabled);
         else if (key == "first_person_camera_enabled" || key == "first_person_enabled") config.first_person_camera_enabled = ParseBoolean(value, config.first_person_camera_enabled);
+        else if (key == "global_fov_enabled") config.global_fov_enabled = ParseBoolean(value, config.global_fov_enabled);
+        else if (key == "global_fov") config.global_fov = ParseFloat(value, config.global_fov);
+        else if (key == "free_camera_follow_character") config.free_camera_follow_character = ParseBoolean(value, config.free_camera_follow_character);
         else if (key == "first_person_hide_head") config.first_person_hide_head = ParseBoolean(value, config.first_person_hide_head);
         else if (key == "first_person_fill_neck_hole") config.first_person_fill_neck_hole = ParseBoolean(value, config.first_person_fill_neck_hole);
         else if (key == "first_person_neck_plug_scale") config.first_person_neck_plug_scale = ParseFloat(value, config.first_person_neck_plug_scale);
@@ -2246,6 +2454,8 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
     config.movement_speed = std::clamp(config.movement_speed, 0.5f, 100.0f);
 #endif
     config.field_of_view = std::clamp(config.field_of_view, 20.0f, 120.0f);
+    config.global_fov = std::isfinite(config.global_fov) ?
+        std::clamp(config.global_fov,5.0f,150.0f) : 60.0f;
     config.first_person_fov = std::clamp(config.first_person_fov, 20.0f, 120.0f);
     config.first_person_neck_plug_scale =
         std::clamp(config.first_person_neck_plug_scale, 0.2f, 3.0f);
@@ -2377,6 +2587,9 @@ bool ResolveContracts() {
         ready("base_model_component.get_model_go") &&
         ready("unity.game_object.transform") &&
         ready("unity.object.name.get") &&
+        ready("unity.object.op_equality") &&
+        ready("unity.component.game_object") &&
+        ready("unity.transform.parent.get") &&
         ready("unity.transform.position.get") &&
         ready("unity.transform.child_count.get") &&
         ready("unity.transform.get_child") &&
@@ -2559,6 +2772,11 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
     g_disable_dither_enabled.store(anti_dither, std::memory_order_release);
     g_pause_enabled.store(config.enabled && config.pause_enabled && g_pause_contract_ready, std::memory_order_release);
     g_first_person_camera_enabled.store(first_person, std::memory_order_release);
+    g_global_fov_enabled.store(config.enabled&&config.global_fov_enabled,
+        std::memory_order_release);
+    g_global_fov.store(config.global_fov,std::memory_order_release);
+    g_free_camera_follow_character.store(config.free_camera_follow_character,
+        std::memory_order_release);
     g_first_person_hide_head.store(config.first_person_hide_head, std::memory_order_release);
     g_first_person_fill_neck_hole.store(config.first_person_fill_neck_hole,
         std::memory_order_release);
@@ -2643,7 +2861,7 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
         g_first_person_exit_request.store(true, std::memory_order_release);
     }
 
-    g_state.store(free_camera || anti_dither || first_person || g_character_preview_enabled.load() ||
+    g_state.store(free_camera || anti_dither || first_person || g_global_fov_enabled.load() || g_character_preview_enabled.load() ||
             g_mmd_enabled.load()
         ? ModuleState::Active
         : ModuleState::Disabled, std::memory_order_release);
@@ -2686,6 +2904,8 @@ void BE_CALL Shutdown() {
     g_free_camera_enabled.store(false, std::memory_order_release);
     g_disable_dither_enabled.store(false, std::memory_order_release);
     g_first_person_camera_enabled.store(false, std::memory_order_release);
+    g_global_fov_enabled.store(false,std::memory_order_release);
+    g_free_camera_follow_character.store(false,std::memory_order_release);
     g_mmd_enabled.store(false, std::memory_order_release);
     g_input_thread_stop.store(true, std::memory_order_release);
     if (g_input_thread.joinable()) {

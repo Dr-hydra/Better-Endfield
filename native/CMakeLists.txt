@@ -45,9 +45,16 @@ add_library(BetterEndfield.Host SHARED
     shared/host/logging.cpp
     shared/host/module_manager.cpp
     shared/host/settings_store.cpp
+    shared/third_party_modules/third_party_host.cpp
 )
 better_endfield_target_defaults(BetterEndfield.Host)
-target_link_libraries(BetterEndfield.Host PRIVATE minhook)
+target_link_libraries(BetterEndfield.Host PRIVATE minhook ws2_32)
+add_executable(BetterEndfield.ThirdPartyHostTests EXCLUDE_FROM_ALL tests/third_party_host_test.cpp shared/third_party_modules/third_party_host.cpp)
+better_endfield_target_defaults(BetterEndfield.ThirdPartyHostTests)
+target_link_libraries(BetterEndfield.ThirdPartyHostTests PRIVATE ws2_32)
+add_library(BetterEndfield.ThirdPartyEcho SHARED EXCLUDE_FROM_ALL ../tools/ThirdPartyModules/echo/native/echo.cpp)
+better_endfield_target_defaults(BetterEndfield.ThirdPartyEcho)
+set_target_properties(BetterEndfield.ThirdPartyEcho PROPERTIES OUTPUT_NAME "example.echo")
 set_target_properties(BetterEndfield.Host PROPERTIES
     OUTPUT_NAME "BetterEndfield.Host"
     RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/runtime"

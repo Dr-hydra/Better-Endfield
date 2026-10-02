@@ -4,6 +4,7 @@ using BetterEndfield.UI.Models;
 using BetterEndfield.UI.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
 
@@ -13,6 +14,7 @@ public sealed partial class CustomModelPage : UserControl
 {
     private readonly BemPackageService _service = new();
     private bool _rendering;
+    private bool _importing;
     private BemConverterWindow? _converter;
     // Packages whose component options are expanded; kept across Render().
     private readonly HashSet<string> _expanded = [];
@@ -47,6 +49,9 @@ public sealed partial class CustomModelPage : UserControl
         QuarkModelsButton.Content = isZh ? "夸克网盘" : "Quark Drive";
         BaiduModelsButton.Content = isZh ? "百度网盘" : "Baidu Netdisk";
         KatfileModelsButton.Content = isZh ? "Katfile 网盘" : "Katfile";
+        ModelDropTitle.Text = isZh ? "将 BEM 或 ZIP 模型包拖到这里" : "Drop BEM or ZIP model packages here";
+        ModelDropHint.Text = isZh ? "支持同时拖入多个文件，按顺序导入；ZIP 内可选择要导入的包。"
+            : "Drop multiple files to import them in order. Choose which packages to import from each ZIP.";
     }
 
     private void ModelSource_Click(object sender, RoutedEventArgs e)
@@ -144,6 +149,50 @@ public sealed partial class CustomModelPage : UserControl
                         };
                         selectors.Add((group, box)); optionPanel.Children.Add(box);
                     }
+                    var parameterRows = new List<(BemParameterGroup Parameter, StackPanel Row)>();
+                    var pendingParameters = new Dictionary<string, uint>(p.SelectedParameters, StringComparer.Ordinal);
+                    var parameterSliders = new List<(BemParameterGroup Parameter, Slider Slider)>();
+                    foreach (var parameter in p.Parameters)
+                    {
+                        var row = new StackPanel { Spacing = 4 };
+                        var label = new TextBlock { TextWrapping = TextWrapping.Wrap };
+                        var slider = new Slider
+                        {
+                            Minimum = parameter.Min, Maximum = parameter.Max,
+                            Value = pendingParameters[parameter.Id], StepFrequency = parameter.Step,
+                            TickFrequency = parameter.Step, SnapsTo = Microsoft.UI.Xaml.Controls.Primitives.SliderSnapsTo.StepValues,
+                            IsThumbToolTipEnabled = false, MinWidth = 220
+                        };
+                        void RefreshLabel() => label.Text = $"{parameter.Name}：{pendingParameters[parameter.Id] / 1000.0:0.###} " +
+                            $"（{parameter.Min / 1000.0:0.###}–{parameter.Max / 1000.0:0.###}，步长 {parameter.Step / 1000.0:0.###}，默认 {parameter.Default / 1000.0:0.###}，原形 {parameter.Neutral / 1000.0:0.###}）";
+                        slider.ValueChanged += (_, args) =>
+                        {
+                            pendingParameters[parameter.Id] = parameter.Snap(args.NewValue);
+                            RefreshLabel();
+                        };
+                        RefreshLabel(); row.Children.Add(label); row.Children.Add(slider);
+                        parameterRows.Add((parameter, row)); parameterSliders.Add((parameter, slider)); optionPanel.Children.Add(row);
+                    }
+                    if (p.Parameters.Count > 0)
+                    {
+                        optionPanel.Children.Add(new TextBlock { Text = "滑条调整后点击应用。隐藏的滑条会按原形生效，并保留你保存的数值。" + SelectionAppliedHint, TextWrapping = TextWrapping.Wrap });
+                        var parameterActions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+                        var apply = new Button { Content = "应用滑条" };
+                        apply.Click += async (_, _) =>
+                        {
+                            apply.IsEnabled = false;
+                            try
+                            {
+                                foreach (var parameter in p.Parameters) p.SelectedParameters[parameter.Id] = pendingParameters[parameter.Id];
+                                await _service.SaveAsync(); Message("滑条已保存", SelectionAppliedHint);
+                            }
+                            catch (Exception ex) { Reload(); Message("保存失败", ex.Message, InfoBarSeverity.Error); }
+                            finally { apply.IsEnabled = true; }
+                        };
+                        var defaults = new Button { Content = "恢复作者默认值" };
+                        defaults.Click += (_, _) => { foreach (var (parameter, slider) in parameterSliders) slider.Value = parameter.Default; };
+                        parameterActions.Children.Add(apply); parameterActions.Children.Add(defaults); optionPanel.Children.Add(parameterActions);
+                    }
                     // Collapsed by default so the package list stays short; the
                     // header summarises the current selection.
                     var expander = new Expander
@@ -159,13 +208,15 @@ public sealed partial class CustomModelPage : UserControl
                         var active = p.EffectiveOptions();
                         foreach (var (group, box) in selectors)
                             box.Visibility = active.ContainsKey(group.Id) ? Visibility.Visible : Visibility.Collapsed;
+                        foreach (var (parameter, row) in parameterRows)
+                            row.Visibility = p.ParameterAvailable(parameter) ? Visibility.Visible : Visibility.Collapsed;
                         var chosen = selectors.Where(s => active.ContainsKey(s.Group.Id))
                             .Select(s => s.Group.Choices.FirstOrDefault(c => c.Id == p.SelectedOptions[s.Group.Id])?.Name)
                             .Where(name => !string.IsNullOrEmpty(name)).ToList();
                         string summary = string.Join("、", chosen.Take(4)) + (chosen.Count > 4 ? $" 等 {chosen.Count} 项" : "");
                         expander.Header = new TextBlock
                         {
-                            Text = $"组件选项（{active.Count} 组）" + (summary.Length > 0 ? "：" + summary : ""),
+                            Text = $"组件选项（{active.Count} 组）" + (p.Parameters.Count > 0 ? $" · {p.Parameters.Count} 个滑条" : "") + (summary.Length > 0 ? "：" + summary : ""),
                             TextTrimming = TextTrimming.CharacterEllipsis
                         };
                     }
@@ -198,24 +249,109 @@ public sealed partial class CustomModelPage : UserControl
 
     private async void Import_Click(object sender, RoutedEventArgs e)
     {
-        var picker = new FileOpenPicker(); picker.FileTypeFilter.Add(".bem"); picker.FileTypeFilter.Add(".zip");
-        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindowInstance));
+        await ImportFilesAsync(async () =>
+        {
+            var picker = new FileOpenPicker(); picker.FileTypeFilter.Add(".bem"); picker.FileTypeFilter.Add(".zip");
+            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindowInstance));
+            var file = await picker.PickSingleFileAsync();
+            return file == null ? [] : [file.Path];
+        });
+    }
+
+    private void ModelDropArea_DragOver(object sender, DragEventArgs e)
+    {
+        bool accept = !_importing && e.DataView.Contains(StandardDataFormats.StorageItems);
+        e.AcceptedOperation = accept ? DataPackageOperation.Copy : DataPackageOperation.None;
+        ModelDropHighlight.Visibility = accept ? Visibility.Visible : Visibility.Collapsed;
+        if (accept)
+        {
+            e.DragUIOverride.Caption = LocalizationService.Instance.IsChinese ? "导入 BEM / ZIP 模型包" : "Import BEM / ZIP model packages";
+            e.DragUIOverride.IsCaptionVisible = true;
+        }
+        e.Handled = true;
+    }
+
+    private void ModelDropArea_DragLeave(object sender, DragEventArgs e)
+    {
+        ModelDropHighlight.Visibility = Visibility.Collapsed;
+        e.Handled = true;
+    }
+
+    private async void ModelDropArea_Drop(object sender, DragEventArgs e)
+    {
+        ModelDropHighlight.Visibility = Visibility.Collapsed;
+        e.Handled = true;
+        if (_importing || !e.DataView.Contains(StandardDataFormats.StorageItems)) return;
+        var deferral = e.GetDeferral();
+        await ImportFilesAsync(async () =>
+        {
+            try
+            {
+                var items = await e.DataView.GetStorageItemsAsync();
+                // File paths use the same importer as the picker; folders are
+                // passed through for an explicit rejection instead of recursion.
+                return items.Select(item => item.Path).ToArray();
+            }
+            finally { deferral.Complete(); }
+        });
+    }
+
+    private async Task ImportFilesAsync(Func<Task<IReadOnlyList<string>>> selectFiles)
+    {
+        if (_importing) return;
+        _importing = true;
+        ImportButton.IsEnabled = false; ModelDropArea.AllowDrop = false;
+        ModelDropHighlight.Visibility = Visibility.Collapsed;
+        Busy.IsActive = true; Busy.Visibility = Visibility.Visible;
         try
         {
-            var file = await picker.PickSingleFileAsync(); if (file == null) return;
-            ImportButton.IsEnabled = false; Busy.IsActive = true; Busy.Visibility = Visibility.Visible;
-            if (Path.GetExtension(file.Path).Equals(".zip", StringComparison.OrdinalIgnoreCase))
+            var paths = await selectFiles();
+            if (paths.Count == 0) return;
+            int count = 0;
+            bool processed = false;
+            var issues = new List<string>();
+            foreach (string path in paths.Distinct(StringComparer.OrdinalIgnoreCase))
             {
-                await ImportBundleAsync(file.Path); return;
+                string extension = Path.GetExtension(path);
+                if (Directory.Exists(path) || !(extension.Equals(".bem", StringComparison.OrdinalIgnoreCase)
+                    || extension.Equals(".zip", StringComparison.OrdinalIgnoreCase)))
+                {
+                    issues.Add(Path.GetFileName(path) + "：仅支持 BEM 或 ZIP 文件，不支持文件夹。");
+                    continue;
+                }
+                try
+                {
+                    if (extension.Equals(".zip", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var result = await ImportBundleAsync(path);
+                        if (result.Cancelled) continue;
+                        count += result.Count; issues.AddRange(result.Issues);
+                    }
+                    else
+                    {
+                        await _service.ImportAsync(path, InstallRoot);
+                        count++; issues.AddRange(_service.Notices);
+                    }
+                    processed = true;
+                }
+                catch (Exception ex) { issues.Add(Path.GetFileName(path) + "：" + ex.Message); }
             }
-            await _service.ImportAsync(file.Path, InstallRoot); Render();
-            Message("导入完成", (_service.SkipValidation ? "开发者模式：已跳过模型校验。" : "已校验模型包。") + "新包默认停用；请选择外观或选项组并启用。同 ID 更新保留仍有效的选择。", InfoBarSeverity.Success);
-            if (_service.Notices.Count > 0) Message("导入完成，需注意", string.Join("\n", _service.Notices), InfoBarSeverity.Warning);
+            if (!processed && issues.Count == 0) return;
+            Render();
+            Message(count > 0 || processed ? $"已导入 {count} 个包" : "导入失败",
+                issues.Count > 0 ? string.Join("\n", issues)
+                    : (_service.SkipValidation ? "开发者模式：已跳过模型校验。" : "已校验模型包。") + "新包默认停用；请选择外观或选项组并启用。同 ID 更新保留仍有效的选择。",
+                issues.Count > 0 ? (count > 0 ? InfoBarSeverity.Warning : InfoBarSeverity.Error) : InfoBarSeverity.Success);
         }
         catch (Exception ex) { Message("导入失败", ex.Message, InfoBarSeverity.Error); }
-        finally { ImportButton.IsEnabled = true; Busy.IsActive = false; Busy.Visibility = Visibility.Collapsed; }
+        finally
+        {
+            _importing = false;
+            ImportButton.IsEnabled = true; ModelDropArea.AllowDrop = true;
+            Busy.IsActive = false; Busy.Visibility = Visibility.Collapsed;
+        }
     }
-    private async Task ImportBundleAsync(string source)
+    private async Task<(int Count, IReadOnlyList<string> Issues, bool Cancelled)> ImportBundleAsync(string source)
     {
         using var bundle = await _service.PrepareBundleAsync(source, InstallRoot);
         var body = new StackPanel { Spacing = 12, MaxWidth = 600 };
@@ -244,7 +380,7 @@ public sealed partial class CustomModelPage : UserControl
             XamlRoot = XamlRoot, Title = "导入 ZIP 中的模型包", PrimaryButtonText = "导入所选", CloseButtonText = "取消",
             Content = new ScrollViewer { Content = body, MaxHeight = 500, VerticalScrollBarVisibility = ScrollBarVisibility.Auto }
         };
-        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return (0, [], true);
         int count = 0;
         var issues = new List<string>(bundle.Issues);
         foreach (var choice in choices.Where(c => c.Check.IsChecked == true))
@@ -256,9 +392,7 @@ public sealed partial class CustomModelPage : UserControl
             }
             catch (Exception ex) { issues.Add(choice.Package.Name + "：" + ex.Message); }
         }
-        Render();
-        Message($"已导入 {count} 个包", issues.Count > 0 ? string.Join("\n", issues) : "可分别选择外观或选项组并启用；同角色同时启用一个包。",
-            issues.Count > 0 ? InfoBarSeverity.Warning : InfoBarSeverity.Success);
+        return (count, issues, false);
     }
     private async void Experiments_Toggled(object sender, RoutedEventArgs e)
     {

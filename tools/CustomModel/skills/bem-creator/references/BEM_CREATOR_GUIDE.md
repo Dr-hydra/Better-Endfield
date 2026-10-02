@@ -1,7 +1,9 @@
-# BEM 1.0/1.1 创作者指南
+# BEM 1.0–1.3 创作者指南
 
 正式扩展名 `.bem`。玩家只需安装包，不需要 Python、原 Mod 注入框架、角色数据库或手工 runtime.ini。
-Windows 与 Android 使用同一个标准包：Android 编译共用的 `native/modules/custom_model` 读取器，作者无需另出一份手机包。包头 `target.platform` 仍固定为 `windows-x64`，这是现有格式常量。手机纹理不兼容时，Android 可对安装包执行「转换手机纹理」；法线编码缺少已验证声明时不能转换。两端保存选项后均在下次启动游戏时应用。1.0 字段见 `BEM_V1_SPEC.md`，组合外观的 1.1 字段见 `BEM_V1_1_SPEC.md`。
+Windows 与 Android 使用同一个标准包：Android 编译共用的 `native/modules/custom_model` 读取器，作者无需另出一份手机包。包头 `target.platform` 仍固定为 `windows-x64`，这是现有格式常量。手机纹理不兼容时，Android 可对安装包执行「转换手机纹理」；法线编码缺少已验证声明时不能转换。启用实验性热切换时，保存选项随游戏下一次正常资源交付应用；否则下次启动游戏应用。1.0 字段见 `BEM_V1_SPEC.md`，组合外观见 `BEM_V1_1_SPEC.md`，扩展资源见 `BEM_V1_2_SPEC.md`。
+
+**BEM 1.3 增加连续体型滑条。** 作者提供同拓扑目标或稀疏位置增量，工具生成参数、关键帧和 payload；双端沿用原骨骼、蒙皮、材质、法线及切线。现有 `.bemproj.json` 可保存 `deformations` 配置路径，Windows 创作者窗口可选择、编辑并重复导出；官方 EFMI ShapeKey buffers 可显式绑定到参数，不执行源 GUI/INI/shader。详见 [1.3 作者工作流](BEM_V1_3_CREATOR_GUIDE.md) 与 [1.3 格式](BEM_V1_3_SPEC.md)。滑条不能凭空给无目标数据的原模型创建体型。
 
 ## 选择 1.0 还是 1.1
 
@@ -11,9 +13,9 @@ Windows 与 Android 使用同一个标准包：Android 编译共用的 `native/m
 
 1.1 的 `available_when` 只控制局部组选项是否适用。组暂时隐藏时，保存值仍在；切回原服装会恢复原局部选择。每个组件对任何可达组合必须恰好有一条 `keep`、`hide` 或 `replace` 规则成立。替换 mesh 的每条候选 draw 自带索引 payload，可用 `when` 决定是否使用。共享顶点流和真正相同的索引可去重；不要把未选 draw 独有索引与当前 draw 强行放到一个 payload，因为运行时按 payload 读取。详细条件语法、资源预算和 `project.json` 清单见 `BEM_V1_1_SPEC.md`。
 
-当前 `convert` 自动路线仍主要生成 1.0 的默认静态外观。制作 1.1 时先用已审阅的源 INI 状态、原游戏资料和 EFMI 身份映射准备可编辑项目，再用 `pack project.json -o 成品.bem` 与 `validate 成品.bem` 校验。普通项目的 `manifest` 放入 1.1 字段，`payload_files` 仍按 payload ID 指向项目目录内的二进制文件。`unpack` 后可以编辑再打包；不能把源脚本直接放进 manifest 当规则执行。
+`convert` 自动路线主要读取默认静态外观；无需扩展资源时保留 1.0。目标含骨骼名别名或非压缩 32 字节蒙皮时，转换器自动生成 BEM 1.2：固定外观改为一个“外观”选项组，各组件操作由对应选项条件决定，每条 draw 使用独立索引 payload，并声明需要的能力。不会执行源热键脚本。制作可独立组合的 1.1/1.2 时仍需先用已审阅的源 INI 状态、原游戏资料和 EFMI 身份映射准备可编辑项目，再用 `pack project.json -o 成品.bem` 与 `validate 成品.bem` 校验。普通项目的 `manifest` 放入组合规则，`payload_files` 按 payload ID 指向项目目录内的二进制文件。`pack` 会补齐已使用的别名、贴图槽、keep 贴图能力声明并选择正确版本；`validate` 与运行时仍独立校验。`unpack` 后可以编辑再打包；不能把源脚本直接放进 manifest 当规则执行。
 
-1.1 包保留所有可选内容，使同一个包以后能 A→B→A 热切换而不重新导入；现有管理 UI **没有热切换入口**，选择后仍需重启游戏。游戏加载时只读取所选组合引用的模型/贴图 payload；Android 首次安装时复制完整包到游戏私有**磁盘**目录，以便日后选择其他组合。这不等于运行时把整包读入内存。Shader/RabbitFX 效果、逐帧动画、连续滑块和任意 INI 命令不属于静态组合能力。源 INI 的广告、注释杂讯不得变成选项组；无法等价转换的效果须在报告中写明，不可悄悄忽略。
+组合包保留所有可选内容，使同一个包可以 A→B→A 热切换而不重新导入；实验性热切换更新下一次资源交付的选择。游戏加载时只读取所选组合及滑条帧引用的模型/贴图 payload；Android 首次安装时复制完整包到游戏私有**磁盘**目录，以便日后选择其他组合。这不等于运行时把整包读入内存。BEM 1.3 的位置滑条是显式声明的形态数据，Shader/RabbitFX 效果、逐帧动画和任意 INI 命令仍需要另外适配。源 INI 的广告、注释杂讯不得变成选项组；无法等价转换的效果须在报告中写明，不可悄悄忽略。
 
 转换现有 Mod 时，可以移除当前版本不支持的 Shader 特效、低模 LOD 和新增动画系统；逐包报告的 `excluded_features` 应具体列出移除的功能。选定角色 LOD0 的基础网格、活动基础材质贴图及全部有效静态外观仍须保留。若 RabbitFX 或自定义 Shader 负责基础绘制、骨骼变换或基础贴图绑定，应先把这些内容映射到受支持的 BEM 表达；不能仅因它们位于特效命令中就删除。仅通过离线校验的包应标明 `render_verified=false`。
 
@@ -35,6 +37,12 @@ Windows 与 Android 使用同一个标准包：Android 编译共用的 `native/m
 不执行源热键脚本、任意 Shader 或形态键。1.1 支持有限的静态选项组合，但当前游戏内不做实时切换；管理 UI 保存后下次启动生效。
 
 ## 使用软件界面
+
+创作者工具默认提供“创建 / 打开导出工程”：新建工程，选择源 Mod 或 BEM 可编辑项目，填写配方（自动匹配可留空）、包名称/作者/版本及输出路径，保存为 `*.bemproj.json` 后导出。以后打开该工程，修改参数，再点“保存参数并导出 BEM”即可重复构建；包 ID 自动保留，不会每次生成新包。选择 BEM `project.json` 输入时自动读取原包信息。路径相对任务工程所在目录；另存工程时会调整相对路径以继续引用同一输入和输出。
+
+底层 `project.json` 保存 manifest 与 payload 文件；`*.bemproj.json` 保存导出任务，不应相互混用。规则、原生资源身份、别名和纹理参数仍在底层项目/配方中维护，任务工程不直接导入 Blender/FBX。
+
+原来的一次性转换、解包、打包和制作合集入口仍可单独使用：
 
 1. 打开“角色外观”→“其他来源 Mod 转换”，先选择转换、解包、打包或制作 ZIP 合集中的一项。
 2. 转换任务选择已解压目录或 ZIP、RAR、7z 后自动读取并检查，不需要预先解压或安装解压软件，不直接运行包内程序。
@@ -142,6 +150,9 @@ ComponentN 额外支持 `source_profile` 和 `material_profile`。原生 profile
 发布目录入口：`tools/BemConverter/BetterEndfield.BemConverter.exe`；开发时可用 `python tools/CustomModel/bem_tool.py`。
 
 ```text
+BetterEndfield.BemConverter.exe new-project editable/project.json --mode pack -o character.bemproj.json
+BetterEndfield.BemConverter.exe new-project source --recipe conversion.recipe.json -o character.bemproj.json
+BetterEndfield.BemConverter.exe build character.bemproj.json
 BetterEndfield.BemConverter.exe inspect "mod目录" --report inspection.json
 BetterEndfield.BemConverter.exe convert "mod目录" --recipe conversion.recipe.json -o appearance.bem --report conversion.json
 BetterEndfield.BemConverter.exe pack project.json -o appearance.bem --report packing.json
@@ -153,6 +164,8 @@ BetterEndfield.BemConverter.exe inspect collection.zip --report inventory.json
 BetterEndfield.BemConverter.exe unpack collection.zip -o extracted-packages --report extracted.json
 BetterEndfield.BemConverter.exe --version
 ```
+
+`new-project` 首次保存稳定包信息：使用配方时继承配方 ID，打包时继承原项目 ID，自动转换时生成一次 ID 保存到工程。可用 `--package-id`、`--name`、`--author`、`--package-version` 显式设定；`--export-output` 指定工程保存的 BEM 输出位置。`build` 每次读取工程参数与源资源，输出和报告都按工程目录解析。需要改路径、作者或版本可在 GUI 或 JSON 中修改后再次执行。示例见 `examples/export.bemproj.json`。保存工程不会执行转换；导出失败保留原有成品。
 
 退出码 0 表示该操作完成；inspect 完成只代表检查结束。非零表示未完成，报告的 issues 给出原因。
 `conversion_ready` 与 `render_verified` 分开；新转换始终 `render_verified=false`。

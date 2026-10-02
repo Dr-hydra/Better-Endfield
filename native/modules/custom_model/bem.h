@@ -133,6 +133,10 @@ struct BemPackageInfo {
     std::string package_id, name, author, version, character_id;
     std::string world_resource, ui_resource, default_appearance;
     std::string default_options, option_groups_json, selection_constraints_json;
+    // BEM 1.3 position morph controls. Saved values are UInt32 ticks, not floats.
+    std::string default_parameters, parameter_groups_json;
+    // Authored frame ticks for bounded native validator sampling, parallel to parameters.
+    std::vector<std::vector<uint32_t>> parameter_frame_values;
     std::vector<std::string> appearances, component_names;
     std::vector<uint32_t> original_counts;
 };
@@ -142,6 +146,8 @@ struct BemLoadStats {
     uint64_t payload_copy_bytes = 0, payload_move_bytes = 0;
 };
 bool ReadBemPackageInfo(const std::filesystem::path&, BemPackageInfo&, std::string& error, bool skip_validation = false);
+bool ResolveBemParameters(const BemPackageInfo&, std::string_view requested,
+    std::string& canonical, std::string& error);
 
 constexpr uint32_t kBemStreamCount = 3;
 constexpr int32_t kIndexElementSize = 2;
@@ -151,5 +157,5 @@ bool ParseBem(std::span<const uint8_t> bytes, BemPocData& output, std::string& e
     bool skip_validation = false, bool loading_optimization = false);
 bool LoadBem(const std::filesystem::path& path, BemPocData& output, std::string& error,
     std::string_view appearance = {}, BemLoadStats* stats = nullptr, bool skip_validation = false,
-    bool loading_optimization = false);
+    bool loading_optimization = false, std::string_view parameters = {});
 } // namespace BetterEndfield::CustomModel

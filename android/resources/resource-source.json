@@ -5998,8 +5998,8 @@
   ],
   "missingReason": null,
   "coverage": {
-    "modelCount": 32,
-    "actionCount": 4210,
+    "modelCount": 33,
+    "actionCount": 4262,
     "catalogCount": 136,
     "namedVoiceCount": 996,
     "mappedVoiceCountPerAvailableLanguage": 638,
@@ -6014,7 +6014,8 @@
   "outputs": [
     {
       "path": "android/resources/character-presets.json",
-      "sha256": "3CD48F58425C31AD59A936CB8D03CBFB07A6E0573F9D4FBE70B170FE5E1F3AC0"
+      "size": 2048687,
+      "updateEvidence": "docs/TITLE_MODEL_PURRCHE_FIX_20261002.md"
     },
     {
       "path": "android/resources/voice-catalog-index.json",
@@ -6022,7 +6023,8 @@
     },
     {
       "path": "android/resources/manifests/model/action-manifest.json",
-      "sha256": "FF711FADF09A62E8E810288D9A7608C72C5E581D59E37C4CAB5BB70C688249C5"
+      "size": 2052409,
+      "updateEvidence": "docs/TITLE_MODEL_PURRCHE_FIX_20261002.md"
     },
     {
       "path": "android/resources/manifests/voice/voice-event-media-manifest.json",
@@ -6064,5 +6066,12 @@
     "path": "android/resources/voice-index-merge-evidence.json",
     "sha256": "F7D5288915F89D087A3E256FD032DD99CE21C6DD429D138CC44D45188547224B",
     "usedByCurrentIndex": false
+  },
+  "titleModelUpdate": {
+    "characterId": "chr_0038_purrche",
+    "manifestHash": "664d17e6f5f4fd44513249dbeabf4c53",
+    "device": "78572d34",
+    "evidence": "docs/TITLE_MODEL_PURRCHE_FIX_20261002.md",
+    "artifactHashesComputed": false
   }
 }

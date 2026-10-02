@@ -25,6 +25,7 @@ final class BemInstallPage {
     private Button importButton,cancel;
     private Switch skipValidation,hotSwitch,loadingOptimization;
     private final java.util.Set<String> expanded=new java.util.HashSet<>();
+    private final java.util.Map<String,java.util.LinkedHashMap<String,Integer>> parameterDrafts=new java.util.HashMap<>();
     private int renderVersion;
     private ProgressBar progress;
     private TextView progressLabel;
@@ -201,7 +202,8 @@ final class BemInstallPage {
                     catch(Exception error) {saveError(error);}
                 });
                 String mode=entry.optString("texture_mode","converted");
-                Button details=actionButton(expanded.contains(generation)?"收起详细选项 ▴":"详细组件 / 外观选项 ▾");
+                String detailsLabel=entry.optInt("bem_minor",0)>=3?"组件 / 形态滑条选项 ▾":"详细组件 / 外观选项 ▾";
+                Button details=actionButton(expanded.contains(generation)?"收起详细选项 ▴":detailsLabel);
                 card.addView(details,new LinearLayout.LayoutParams(-1,dp(44)));
                 LinearLayout detailPanel=new LinearLayout(activity);detailPanel.setOrientation(LinearLayout.VERTICAL);
                 detailPanel.setVisibility(expanded.contains(generation)?View.VISIBLE:View.GONE);card.addView(detailPanel);
@@ -209,9 +211,12 @@ final class BemInstallPage {
                     boolean opening=detailPanel.getVisibility()!=View.VISIBLE;
                     if(opening) expanded.add(generation);else expanded.remove(generation);
                     detailPanel.setVisibility(opening?View.VISIBLE:View.GONE);
-                    details.setText(opening?"收起详细选项 ▴":"详细组件 / 外观选项 ▾");
+                    details.setText(opening?"收起详细选项 ▴":detailsLabel);
                 });
-                if(entry.optInt("bem_minor",0)>=1) addOptionControls(detailPanel,entry,generation,version);
+                if(entry.optInt("bem_minor",0)>=1) {
+                    addOptionControls(detailPanel,entry,generation,version);
+                    if(entry.optInt("bem_minor",0)>=3) addParameterControls(detailPanel,entry,generation,version);
+                }
                 else {
                     JSONArray apps=entry.getJSONArray("appearances");String[] choices=new String[apps.length()];int selected=0;
                     String active=entry.optString("selected_appearance",entry.getString("default_appearance"));
@@ -319,6 +324,60 @@ final class BemInstallPage {
         java.util.Map<String,String> effective=BemOptions.effective(entry,values);
         for(java.util.Map.Entry<String,LinearLayout> item:rows.entrySet())
             item.getValue().setVisibility(effective.containsKey(item.getKey())?View.VISIBLE:View.GONE);
+    }
+    private void addParameterControls(LinearLayout card,JSONObject entry,String generation,int version) throws Exception {
+        JSONArray parameters=BemParameters.groups(entry);if(parameters.length()==0) return;
+        java.util.LinkedHashMap<String,Integer> saved=BemParameters.parse(entry,entry.optString("selected_parameters",entry.optString("default_parameters","")));
+        java.util.LinkedHashMap<String,Integer> previous=parameterDrafts.get(generation);
+        if(previous!=null) for(int i=0;i<parameters.length();++i) {
+            JSONObject parameter=parameters.getJSONObject(i);String id=parameter.getString("id");
+            if(previous.containsKey(id) && BemParameters.accepts(parameter,previous.get(id))) saved.put(id,previous.get(id));
+        }
+        final java.util.LinkedHashMap<String,Integer> values=saved;parameterDrafts.put(generation,values);
+        java.util.Map<String,String> options=BemOptions.parse(entry,entry.optString("selected_options",entry.getString("default_options")));
+        java.util.List<SeekBar> sliders=new java.util.ArrayList<>();
+        for(int i=0;i<parameters.length();++i) {
+            JSONObject parameter=parameters.getJSONObject(i);String id=parameter.getString("id");
+            int min=BemParameters.tick(parameter,"min"),max=BemParameters.tick(parameter,"max"),step=BemParameters.tick(parameter,"step");
+            LinearLayout row=new LinearLayout(activity);row.setOrientation(LinearLayout.VERTICAL);card.addView(row);
+            TextView label=fieldLabel(parameter.getString("name"));row.addView(label);
+            SeekBar slider=new SeekBar(activity);slider.setMax((max-min)/step);slider.setProgress((values.get(id)-min)/step);
+            row.addView(slider,new LinearLayout.LayoutParams(-1,dp(48)));packageActions.add(slider);sliders.add(slider);
+            slider.setEnabled(!BemInstaller.busy);
+            Runnable updateLabel=()->{
+                try {
+                    label.setText(parameter.getString("name")+"："+String.format(java.util.Locale.ROOT,"%.3f",values.get(id)/1000.0)+
+                        "（"+min/1000.0+"–"+max/1000.0+"，步长 "+step/1000.0+"，默认 "+BemParameters.tick(parameter,"default")/1000.0+
+                        "，原形 "+BemParameters.tick(parameter,"neutral")/1000.0+"）");
+                } catch(Exception error) {label.setText("滑条读取失败");}
+            };
+            updateLabel.run();
+            slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override public void onProgressChanged(SeekBar view,int progress,boolean fromUser) {
+                    if(version!=renderVersion) return;values.put(id,min+progress*step);updateLabel.run();
+                }
+                @Override public void onStartTrackingTouch(SeekBar view) {}
+                @Override public void onStopTrackingTouch(SeekBar view) {}
+            });
+            row.setVisibility(BemParameters.available(entry,parameter,options)?View.VISIBLE:View.GONE);
+        }
+        TextView hint=fieldLabel("调整后点击应用。隐藏的滑条按原形生效，并保留已保存数值。开启实验热切换后，下次切换配队或打开详情时更新；否则重启游戏生效。");
+        card.addView(hint);
+        LinearLayout actions=new LinearLayout(activity);actions.setOrientation(LinearLayout.HORIZONTAL);card.addView(actions);
+        Button apply=actionButton("应用滑条");actions.addView(apply,new LinearLayout.LayoutParams(0,dp(44),1));packageActions.add(apply);
+        apply.setOnClickListener(v->{
+            if(version!=renderVersion) return;
+            try {saveChange(new JSONObject().put("generation",generation).put("parameters",BemParameters.encode(values)));}
+            catch(Exception error) {parameterDrafts.remove(generation);saveError(error);}
+        });
+        Button reset=actionButton("作者默认值");actions.addView(reset,new LinearLayout.LayoutParams(0,dp(44),1));packageActions.add(reset);
+        reset.setOnClickListener(v->{
+            if(version!=renderVersion) return;
+            try {for(int i=0;i<parameters.length();++i) {
+                JSONObject parameter=parameters.getJSONObject(i);
+                sliders.get(i).setProgress((BemParameters.tick(parameter,"default")-BemParameters.tick(parameter,"min"))/BemParameters.tick(parameter,"step"));
+            }} catch(Exception error) {saveError(error);}
+        });
     }
     private TextView fieldLabel(String label) {
         TextView view=new TextView(activity);view.setText(label);view.setTextColor(activity.getColor(R.color.text_secondary));

@@ -21,7 +21,7 @@ def validated(path):
     return m, payloads
 
 
-def pack_project(source, output, package=None):
+def pack_project(source, output, package=None, deformations=None):
     source, output = Path(source), Path(output)
     project = bem.load_json(source)
     root = source.parent.resolve()
@@ -39,6 +39,10 @@ def pack_project(source, output, package=None):
     bem.require(output.resolve() != source.resolve(), 'Output cannot overwrite project manifest')
     from bem_export import prepare_export, package_overrides
     project['manifest'], payloads = prepare_export(project['manifest'], payloads)
+    from bem_v13 import apply_author_spec, author_input_paths
+    if deformations:
+        bem.require(output.resolve() not in author_input_paths(deformations), 'Output cannot overwrite shape input')
+    project['manifest'], payloads, deformation_report = apply_author_spec(project['manifest'], payloads, deformations)
     package_overrides(project['manifest'], package)
     from bem_tool import check_geometry
     bem.validate_manifest(project['manifest'], len(payloads))
@@ -46,6 +50,7 @@ def pack_project(source, output, package=None):
     bem.write_package(output, project['manifest'], payloads)
     from bem_tool import FORMAT_VERSIONS
     return dict(package=project['manifest'], conversion_ready=True, size=output.stat().st_size,
+                deformations=deformation_report,
                 format_version=FORMAT_VERSIONS[bem.package_minor(output)])
 
 

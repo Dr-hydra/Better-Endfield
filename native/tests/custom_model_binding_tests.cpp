@@ -287,6 +287,47 @@ std::map<uint32_t,void*> tracked_handles;
 uint32_t next_handle=1;
 uint32_t BE_CALL TrackedRoot(void*,void* object,int) { const auto handle=next_handle++; tracked_handles[handle]=object; ++roots; return handle; }
 void BE_CALL TrackedFree(void*,uint32_t handle) { Check(tracked_handles.erase(handle)==1,"invalid hot-switch handle release"); --roots; }
+void CpuGeometryTests() {
+    BE_HostApiV1 host{};host.runtime_invoke=InvokeFake;host.object_unbox=UnboxFake;
+    host.gchandle_new=TrackedRoot;host.gchandle_free=TrackedFree;g_host=&host;
+    for(auto& method:g_methods) {method.method_info=&method;method.resolved=true;}
+    g_weak_new=[](void* object,bool)->uint32_t{return TrackedRoot(nullptr,object,0);};
+    g_weak_target=[](uint32_t handle)->void*{const auto found=tracked_handles.find(handle);return found==tracked_handles.end()?nullptr:found->second;};
+    g_enabled=true;g_stopping=false;g_pump_thread=GetCurrentThreadId();
+    BemComponent component;component.info.vertex_count=3;component.info.index_count=3;
+    component.info.index_element_size=2;component.info.stride0=12;component.info.stride1=8;component.info.stride2=12;
+    component.attributes={{0,0,3,0},{4,0,2,1},{12,4,4,2},{13,6,4,2}};
+    component.streams[0].resize(36);component.streams[1].resize(24);component.streams[2].resize(36);component.indices.resize(6);
+    const float xyz[]{1,2,3,4,5,6,7,8,9};std::memcpy(component.streams[0].data(),xyz,sizeof(xyz));
+    const uint16_t indices[]{0,1,2};std::memcpy(component.indices.data(),indices,sizeof(indices));component.draws={{0,3,0,0,0,0,0}};
+    struct Copy {bool called=false;std::vector<float> positions;std::vector<uint32_t> indices;uint32_t stride=0;};
+    const auto visitor=[](void* context,const BE_CustomModelGeometryV1* view)->BE_Result {
+        auto& copy=*static_cast<Copy*>(context);
+        Check(view->version==1 && view->struct_size==sizeof(*view) && view->draw_count==1 && view->draws[0].index_count==3,"bad geometry bridge descriptor");
+        copy.called=true;copy.positions.assign(view->positions_xyz,view->positions_xyz+size_t(view->vertex_count)*3);
+        copy.indices.assign(view->indices,view->indices+view->index_count);copy.stride=view->skin_stride;return BE_Result_Ok;
+    };
+    auto* mesh=Make("custom-mesh");Copy copy;
+    {ConstructionScope scope;RememberCpuGeometry(mesh,component);}
+    Check(BetterEndfield_QueryCustomModelGeometryV1(mesh,visitor,&copy)==BE_Result_Ok && copy.called && copy.stride==12 && copy.positions[0]==1 && copy.indices==std::vector<uint32_t>({0,1,2}),"geometry bridge did not copy current positions/skin/index");
+    const float changed=11;std::memcpy(component.streams[0].data(),&changed,4);
+    {ConstructionScope scope;RememberCpuGeometry(mesh,component);}
+    copy={};Check(BetterEndfield_QueryCustomModelGeometryV1(mesh,visitor,&copy)==BE_Result_Ok && copy.positions[0]==11 && g_cpu_geometry.size()==1,"geometry bridge retained prior positions for the same mesh");
+    Check(BetterEndfield_QueryCustomModelGeometryV1(Make("unregistered"),visitor,&copy)==BE_Result_NotFound,"geometry bridge confused unregistered mesh identity");
+    Check(BetterEndfield_QueryCustomModelGeometryV1(mesh,nullptr,&copy)==BE_Result_InvalidArgument,"geometry bridge accepted missing visitor");
+    g_pump_thread=0;Check(BetterEndfield_QueryCustomModelGeometryV1(mesh,visitor,&copy)==BE_Result_NotReady,"geometry bridge allowed wrong thread");g_pump_thread=GetCurrentThreadId();
+    // A live managed address whose weak target now has another Unity instance ID
+    // must not inherit an old generated mesh's CPU data.
+    tracked_handles[g_cpu_geometry[0]->mesh.handle]=Make("reused-address");
+    Check(BetterEndfield_QueryCustomModelGeometryV1(mesh,visitor,&copy)==BE_Result_NotFound && g_cpu_geometry.empty() && !g_cpu_geometry_bytes,"geometry bridge accepted stale Unity identity");
+    auto oversized=component;oversized.info.vertex_count=UINT32_MAX;
+    {ConstructionScope scope;RememberCpuGeometry(mesh,oversized);}
+    Check(g_cpu_geometry.empty(),"geometry bridge exceeded memory budget");
+    g_cpu_geometry.clear();g_cpu_geometry_bytes=0;g_cpu_geometry_serial=0;g_enabled=false;g_pump_thread=0;
+    Check(roots==0 && tracked_handles.empty(),"geometry bridge leaked strong/weak references");
+    g_weak_new=nullptr;g_weak_target=nullptr;g_host=nullptr;
+    std::cout<<"PASS bounded CPU geometry bridge: current morph positions, stable draw indices, weak identity, fallback, thread and ownership\n";
+}
 void HotSwitchTests(const std::filesystem::path& path) {
     BemPocData payload; std::string error; Check(LoadBem(path,payload,error),error.c_str());
     // Keep geometry lets the fixture exercise the production donor/material,
@@ -504,6 +545,7 @@ void ProbeDllStartup(const std::filesystem::path& dll,const std::filesystem::pat
 }
 }
 int main(int argc,char** argv) {
+    if(argc==2 && std::string_view(argv[1])=="--geometry") {CpuGeometryTests();return 0;}
     if(argc==3 && std::string_view(argv[1])=="--index32") {
         std::ifstream file(argv[2],std::ios::binary);
         std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(file)),{});

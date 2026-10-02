@@ -35,13 +35,15 @@ def classify(family, documents):
         if re.search(r'ElementFormat\(BLENDINDICES,\s*0\)\s*=\s*R16G16B16A16_UINT', text): features.add('bone_indices_u16')
         if re.search(r'^\s*ps-t\d+\s*=', text, re.M | re.I): features.add('per_draw_texture_slots')
         if re.search(r'^\s*global\s+persist\s+\$', text, re.M): features.add('static_appearance_switches')
-        if re.search(r'^\s*run\s*=\s*\S*ShapeKeys?\S*', text, re.M | re.I): features.add('shape_keys')
+        if (re.search(r'^\s*run\s*=\s*\S*ShapeKeys?\S*', text, re.M | re.I) or
+            any(re.search(r'ShapeKey(?:BatchConfigs|VertexIds|VertexOffsets)', s, re.I) for s in sec)):
+            features.add('shape_keys')
     if 'custom_shader' in features:
         reasons.append('包含作者自定义 Shader 定义或调用，不能按标准 EFMI 规则自动转换；需要专门审阅。')
     if 'external_material_framework' in features:
         reasons.append('依赖外部材质框架，不能自动假定与游戏原生材质等价。')
     if 'shape_keys' in features:
-        reasons.append('包含形态键处理，超出当前 BEM 固定外观自动转换范围。')
+        reasons.append('包含形态键处理；BEM 1.3 支持位置形态，需在导出工程显式绑定参数和官方 buffers，自定义 GUI 不会执行。')
     if family == 'mixed': reasons.append('同一入口混合 ComponentN 与 Hash/LOD 声明，需要审阅。')
     if reasons:
         status, label = 'manual_only', '不能自动转换：需要专门适配'

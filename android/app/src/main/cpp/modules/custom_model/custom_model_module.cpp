@@ -49,12 +49,14 @@ std::string SharedRegistryText(std::string_view config,const std::vector<std::fi
         "\nloading_optimization="+(ConfigValue(config,"loading_optimization")=="1"?"true":"false")+"\n";
     const auto appearances=ConfigStrings(ConfigValue(config,"appearances"));
     const auto options=ConfigStrings(ConfigValue(config,"options"));
+    const auto parameters=ConfigStrings(ConfigValue(config,"parameters"));
     for (size_t i=0;i<packages.size();++i) {
         auto path=packages[i]; if (path.is_relative()) path=std::filesystem::path("/data/local/tmp")/path;
         result+="[Mod.android"+std::to_string(i)+"]\nenabled=true\npackage="+path.string()+"\n";
         const auto selected=i<appearances.size()?appearances[i]:(i==0?std::string(appearance):std::string{});
         if (!selected.empty()) result+="appearance="+selected+"\n";
         if (i<options.size() && !options[i].empty()) result+="options="+options[i]+"\n";
+        if (i<parameters.size() && !parameters[i].empty()) result+="parameters="+parameters[i]+"\n";
     }
     return result;
 }
@@ -452,7 +454,9 @@ ModuleResult CustomModelModule::Start(Il2CppRuntime& runtime) {
     } else if (appearance_.empty()) appearance_ = info.default_appearance;
     const bool sharedReplacement=ConfigValue(config,"replace")=="1";
     if (!sharedReplacement) {
-        if (!LoadBem(package_path_, package_, error, appearance_,nullptr,ConfigValue(config,"skip_validation")=="1")) return {false, "BEM package rejected: " + error};
+        const auto parameters=ConfigStrings(ConfigValue(config,"parameters"));
+        if (!LoadBem(package_path_, package_, error, appearance_,nullptr,ConfigValue(config,"skip_validation")=="1",false,
+            parameters.empty()?std::string_view{}:std::string_view(parameters.front()))) return {false, "BEM package rejected: " + error};
         if (package_.components.empty()) return {false, "BEM package has no components"};
     }
     runtime_ = &runtime;
