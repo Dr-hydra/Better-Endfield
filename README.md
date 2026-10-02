@@ -6,7 +6,7 @@ Better Endfield 是面向《明日方舟：终末地》的开源模块化工具�
 
 [下载正式版](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [更新说明](CHANGELOG.md) · [Android 使用与构建](android/README.md) · [BEM 创作者指南](docs/BEM_CREATOR_GUIDE.md) · [模块开发指南](docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
 
-当前版本为 **3.4.2**，独立 BEM Tools 为 **1.4.1**。3.4.2 新增双端 BEM 1.3 形态滑条、全局 FOV、自由相机人物跟随和实验性第三方模块，并更新第一人称恢复/去头发逻辑与噗切娜开屏资源。
+当前版本为 **3.4.3**，独立 BEM Tools 为 **1.4.1**。3.4.3 改善双端 BEM 顶点布局兼容性，修复 Android 部分模型仅在详情界面生效的问题，并统一模型实验功能入口、补齐桌面英文本地化。
 
 ## 功能一览
 
@@ -69,7 +69,7 @@ BetterEndfield.BemConverter.exe new-project editable/project.json --mode pack -o
 BetterEndfield.BemConverter.exe build character.bemproj.json
 ```
 
-两端还提供默认关闭的「开发者：关闭模型校验」。该选项放开兼容性和策略限制，仍要求文件能解码且能被当前表示方式读取；不增加新编码支持。用于作者测试时可能出现错误渲染或游戏崩溃。
+两端还提供默认关闭的「实验：关闭模型校验」。该选项放开兼容性和策略限制，仍要求文件能解码且能被当前表示方式读取；不增加新编码支持。用于作者测试时可能出现错误渲染或游戏崩溃。
 
 - [创作者流程与转换边界](docs/BEM_CREATOR_GUIDE.md)
 - [BEM 1.0](docs/BEM_V1_SPEC.md) / [1.1 组合外观](docs/BEM_V1_1_SPEC.md) / [1.2 蒙皮和骨骼别名](docs/BEM_V1_2_SPEC.md)

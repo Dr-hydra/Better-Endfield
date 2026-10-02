@@ -6,7 +6,7 @@ Better Endfield is an open-source modular toolkit for *Arknights: Endfield*. It 
 
 [Download](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [Release notes](CHANGELOG.md) · [Android setup/build guide](android/README.md) · [BEM creator guide](docs/BEM_CREATOR_GUIDE.md) · [Module developer guide](docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
 
-The current version is **3.4.2**, with standalone BEM Tools **1.4.1**. Version 3.4.2 adds cross-platform BEM 1.3 sliders, global FOV, character-follow free camera and experimental third-party modules, and updates first-person restoration/hair handling and Purrche title-screen resources.
+The current version is **3.4.3**, with standalone BEM Tools **1.4.1**. Version 3.4.3 improves BEM vertex-layout compatibility on both platforms, fixes Android models that only appeared on the character details screen, aligns model experimental controls, and completes desktop English localization.
 
 ## Feature overview
 
@@ -69,7 +69,7 @@ BetterEndfield.BemConverter.exe new-project editable/project.json --mode pack -o
 BetterEndfield.BemConverter.exe build character.bemproj.json
 ```
 
-Both platforms also have an off-by-default developer option to disable model validation. It bypasses compatibility/policy checks while retaining the decoding and representation requirements needed to read the file; it does not add new encodings. Developer tests may render incorrectly or crash the game.
+Both platforms also have an off-by-default experimental option to disable model validation. It bypasses compatibility/policy checks while retaining the decoding and representation requirements needed to read the file; it does not add new encodings. Developer tests may render incorrectly or crash the game.
 
 - [Creator workflow and conversion boundaries](docs/BEM_CREATOR_GUIDE.md)
 - [BEM 1.0](docs/BEM_V1_SPEC.md) / [1.1 component options](docs/BEM_V1_1_SPEC.md) / [1.2 skinning and bone aliases](docs/BEM_V1_2_SPEC.md)
