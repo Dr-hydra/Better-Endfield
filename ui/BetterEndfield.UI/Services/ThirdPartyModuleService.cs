@@ -32,53 +32,53 @@ internal sealed class ThirdPartyModuleService
     {
         if (!Regex.IsMatch(id, @"\A[A-Za-z0-9][A-Za-z0-9_.-]{0,95}\z") ||
             (package && (id.StartsWith("betterendfield.", StringComparison.OrdinalIgnoreCase) || id.Equals("voice.character", StringComparison.OrdinalIgnoreCase))))
-            throw new InvalidDataException("无效或与内置模块冲突的模块 ID。");
+            throw new InvalidDataException(LocalizationService.Instance["Modules_InvalidId"]);
     }
     internal static string Relative(string value)
     {
         if (value.Length == 0 || value.Length > 240 || value.Contains('\\') || value.Contains(':') || value.StartsWith('/'))
-            throw new InvalidDataException("模块包含不安全的资源路径。");
+            throw new InvalidDataException(LocalizationService.Instance["Modules_UnsafePath"]);
         foreach (string part in value.Split('/'))
             if (part.Length == 0 || part is "." or ".." || part.EndsWith('.') || part.EndsWith(' ') || part.Any(char.IsControl) ||
                 Regex.IsMatch(part.Split('.')[0], @"\A(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])\z", RegexOptions.IgnoreCase))
-                throw new InvalidDataException("模块包含不安全的资源路径。");
+                throw new InvalidDataException(LocalizationService.Instance["Modules_UnsafePath"]);
         return value;
     }
     internal static JsonObject ReadManifest(string directory)
     {
         string path = Path.Combine(directory, "module.json");
-        if (new FileInfo(path).Length > 256 * 1024) throw new InvalidDataException("模块声明过大。");
-        var manifest = JsonNode.Parse(File.ReadAllText(path, Encoding.UTF8))?.AsObject() ?? throw new InvalidDataException("缺少模块声明。");
-        if (manifest["format"]?.GetValue<int>() != 1 || manifest["abi"]?.GetValue<int>() != 1) throw new InvalidDataException("不支持的第三方模块格式或 ABI。");
+        if (new FileInfo(path).Length > 256 * 1024) throw new InvalidDataException(LocalizationService.Instance["Modules_ManifestSize"]);
+        var manifest = JsonNode.Parse(File.ReadAllText(path, Encoding.UTF8))?.AsObject() ?? throw new InvalidDataException(LocalizationService.Instance["Modules_NoManifest"]);
+        if (manifest["format"]?.GetValue<int>() != 1 || manifest["abi"]?.GetValue<int>() != 1) throw new InvalidDataException(LocalizationService.Instance["Modules_InvalidFormat"]);
         RequireId(manifest["id"]!.GetValue<string>());
         foreach (string key in new[] { "name", "author", "version" })
             if (manifest[key]?.GetValue<string>() is not string value || value.Length > 200 || (key == "name" && value.Length == 0))
-                throw new InvalidDataException("模块声明缺少有效的 " + key + "。");
-        var libraries = manifest["libraries"]?.AsObject() ?? throw new InvalidDataException("缺少模块平台目录。");
+                throw new InvalidDataException(LocalizationService.Instance.GetString("Modules_InvalidField", key));
+        var libraries = manifest["libraries"]?.AsObject() ?? throw new InvalidDataException(LocalizationService.Instance["Modules_NoLibraries"]);
         foreach (var library in libraries)
         {
             string relative = Relative(library.Value!.GetValue<string>());
             if (!File.Exists(Path.Combine(directory, relative)) ||
                 (library.Key == "windows-x64" && !relative.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)) ||
                 (library.Key == "android-arm64" && !relative.EndsWith(".so", StringComparison.Ordinal)))
-                throw new InvalidDataException("模块原生文件不存在或平台类型不正确。");
+                throw new InvalidDataException(LocalizationService.Instance["Modules_InvalidLibrary"]);
         }
         string ui = manifest["ui"]?.GetValue<string>() ?? "";
         if (ui.Length > 0 && (!Relative(ui).EndsWith(".html", StringComparison.OrdinalIgnoreCase) || !File.Exists(Path.Combine(directory, ui))))
-            throw new InvalidDataException("模块网页入口不存在或格式不正确。");
-        if (ui.Length == 0 && libraries.Count == 0) throw new InvalidDataException("模块必须提供原生库或网页入口。");
+            throw new InvalidDataException(LocalizationService.Instance["Modules_InvalidWebEntry"]);
+        if (ui.Length == 0 && libraries.Count == 0) throw new InvalidDataException(LocalizationService.Instance["Modules_NoEntry"]);
         if (manifest["default_configuration"] is not null && manifest["default_configuration"] is not JsonObject)
-            throw new InvalidDataException("模块默认配置必须是 JSON 对象。");
+            throw new InvalidDataException(LocalizationService.Instance["Modules_DefaultConfig"]);
         if (manifest["dependencies"] is JsonArray dependencies)
         {
-            if (dependencies.Count > 128) throw new InvalidDataException("模块依赖不能超过 128 项。");
+            if (dependencies.Count > 128) throw new InvalidDataException(LocalizationService.Instance["Modules_DependencyLimit"]);
             foreach (var dependency in dependencies)
             {
                 string dependencyId = dependency!.GetValue<string>(); RequireId(dependencyId);
-                if (dependencyId == manifest["id"]!.GetValue<string>()) throw new InvalidDataException("模块不能依赖自身。");
+                if (dependencyId == manifest["id"]!.GetValue<string>()) throw new InvalidDataException(LocalizationService.Instance["Modules_SelfDependency"]);
             }
         }
-        else if (manifest["dependencies"] is not null) throw new InvalidDataException("模块依赖必须是 ID 列表。");
+        else if (manifest["dependencies"] is not null) throw new InvalidDataException(LocalizationService.Instance["Modules_DependencyList"]);
         return manifest;
     }
     internal static JsonObject NewIndex()
@@ -91,28 +91,28 @@ internal sealed class ThirdPartyModuleService
     public JsonObject LoadIndex()
     {
         if (!File.Exists(IndexPath)) return NewIndex();
-        if (new FileInfo(IndexPath).Length > 1024 * 1024) throw new InvalidDataException("第三方模块索引过大。");
+        if (new FileInfo(IndexPath).Length > 1024 * 1024) throw new InvalidDataException(LocalizationService.Instance["Modules_IndexSize"]);
         var index = JsonNode.Parse(File.ReadAllText(IndexPath, Encoding.UTF8))!.AsObject();
         if (index["schema"]?.GetValue<int>() != 1 || index["port"]?.GetValue<int>() is not int port || port < 1024 || port > 65535 ||
             index["token"]?.GetValue<string>() is not string token || !Regex.IsMatch(token, @"\A[a-f0-9]{64}\z") || index["modules"] is not JsonArray modules)
-            throw new InvalidDataException("第三方模块索引不合法。");
+            throw new InvalidDataException(LocalizationService.Instance["Modules_InvalidIndex"]);
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var node in modules)
         {
             var state = node!.AsObject(); string id = state["id"]!.GetValue<string>(); RequireId(id);
             if (!ids.Add(id) || !Guid.TryParseExact(state["generation"]!.GetValue<string>(), "D", out _) || state["configuration"] is not JsonObject)
-                throw new InvalidDataException("第三方模块记录损坏。");
+                throw new InvalidDataException(LocalizationService.Instance["Modules_InvalidRecord"]);
             _ = state["enabled"]!.GetValue<bool>();
             string expected = Path.GetFullPath(Path.Combine(Root, "packages", state["generation"]!.GetValue<string>()));
             if (!Path.GetFullPath(state["directory"]!.GetValue<string>()).Equals(expected, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidDataException("模块目录不属于当前安装索引。");
+                throw new InvalidDataException(LocalizationService.Instance["Modules_InvalidDirectory"]);
         }
         return index;
     }
     private async Task WriteAsync(JsonObject index)
     {
         Directory.CreateDirectory(Root); string value = index.ToJsonString();
-        if (Encoding.UTF8.GetByteCount(value) > 1024 * 1024) throw new InvalidDataException("第三方模块配置超过 1 MiB。");
+        if (Encoding.UTF8.GetByteCount(value) > 1024 * 1024) throw new InvalidDataException(LocalizationService.Instance["Modules_ConfigLimit"]);
         string temp = Path.Combine(Root, Guid.NewGuid() + ".tmp");
         try { await File.WriteAllTextAsync(temp, value, new UTF8Encoding(false)); File.Move(temp, IndexPath, true); }
         finally { if (File.Exists(temp)) File.Delete(temp); }
@@ -132,7 +132,7 @@ internal sealed class ThirdPartyModuleService
         }
         return records;
     }
-    public ThirdPartyModuleRecord Record(string id) => Records().FirstOrDefault(record => record.Id == id) ?? throw new InvalidOperationException("模块已移除，请重新打开。");
+    public ThirdPartyModuleRecord Record(string id) => Records().FirstOrDefault(record => record.Id == id) ?? throw new InvalidOperationException(LocalizationService.Instance["Modules_RecordRemoved"]);
     private async Task ChangeAsync(Action<JsonObject, JsonArray> change)
     {
         await Gate.WaitAsync();
@@ -143,7 +143,7 @@ internal sealed class ThirdPartyModuleService
     {
         var state = modules.First(m => m!["id"]!.GetValue<string>() == id)!.AsObject();
         if (enabled && !new ThirdPartyModuleRecord(state, ReadManifest(state["directory"]!.GetValue<string>())).Supported)
-            throw new InvalidOperationException("此包没有 Windows 原生模块或网页入口。");
+            throw new InvalidOperationException(LocalizationService.Instance["Modules_NoWindowsEntry"]);
         state["enabled"] = enabled;
     });
     public Task SaveConfigurationAsync(string id, JsonObject configuration) => ChangeAsync((_, modules) =>
@@ -162,20 +162,20 @@ internal sealed class ThirdPartyModuleService
     });
     public async Task<ThirdPartyModuleRecord> ImportAsync(string source)
     {
-        if (new FileInfo(source).Length > ArchiveLimit) throw new InvalidDataException("模块 ZIP 超过 256 MiB。");
+        if (new FileInfo(source).Length > ArchiveLimit) throw new InvalidDataException(LocalizationService.Instance["Modules_ArchiveLimit"]);
         string generation = Guid.NewGuid().ToString(), directory = Path.Combine(Root, "packages", generation);
         Directory.CreateDirectory(directory);
         bool published = false;
         try
         {
             using var zip = ZipFile.OpenRead(source);
-            if (zip.Entries.Count > 4096) throw new InvalidDataException("模块 ZIP 文件数量超过 4096。");
+            if (zip.Entries.Count > 4096) throw new InvalidDataException(LocalizationService.Instance["Modules_FileCount"]);
             var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase); long declared = 0, actual = 0;
             foreach (var entry in zip.Entries)
             {
                 bool folder = entry.FullName.EndsWith('/'); string relative = Relative(folder ? entry.FullName[..^1] : entry.FullName);
                 if (!names.Add(relative) || ((entry.ExternalAttributes >> 16) & 0xF000) == 0xA000 || entry.Length > EntryLimit ||
-                    (declared += entry.Length) > ArchiveLimit) throw new InvalidDataException("模块 ZIP 存在重复路径、链接或过大资源。");
+                    (declared += entry.Length) > ArchiveLimit) throw new InvalidDataException(LocalizationService.Instance["Modules_InvalidArchive"]);
                 string destination = Path.Combine(directory, relative);
                 if (folder) { Directory.CreateDirectory(destination); continue; }
                 Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
@@ -184,18 +184,18 @@ internal sealed class ThirdPartyModuleService
                 while ((count = await input.ReadAsync(buffer)) > 0)
                 {
                     copied += count; actual += count;
-                    if (copied > EntryLimit || actual > ArchiveLimit) throw new InvalidDataException("模块 ZIP 解压超过限制。");
+                    if (copied > EntryLimit || actual > ArchiveLimit) throw new InvalidDataException(LocalizationService.Instance["Modules_ExtractionLimit"]);
                     await output.WriteAsync(buffer.AsMemory(0, count));
                 }
-                if (copied != entry.Length) throw new InvalidDataException("模块 ZIP 长度不一致。");
+                if (copied != entry.Length) throw new InvalidDataException(LocalizationService.Instance["Modules_LengthMismatch"]);
             }
-            if (!zip.Entries.Any(e => e.FullName == "module.json")) throw new InvalidDataException("ZIP 根目录必须包含 module.json。");
+            if (!zip.Entries.Any(e => e.FullName == "module.json")) throw new InvalidDataException(LocalizationService.Instance["Modules_ManifestRoot"]);
             var manifest = ReadManifest(directory); string id = manifest["id"]!.GetValue<string>();
             JsonObject? installed = null;
             await ChangeAsync((index, modules) =>
             {
                 var previous = modules.FirstOrDefault(m => m!["id"]!.GetValue<string>().Equals(id, StringComparison.OrdinalIgnoreCase));
-                if (previous is not null && previous["id"]!.GetValue<string>() != id) throw new InvalidDataException("模块 ID 仅大小写不同，不能安全更新。");
+                if (previous is not null && previous["id"]!.GetValue<string>() != id) throw new InvalidDataException(LocalizationService.Instance["Modules_IdCase"]);
                 installed = new JsonObject { ["id"] = id, ["enabled"] = previous?["enabled"]?.GetValue<bool>() ?? false,
                     ["directory"] = directory, ["generation"] = generation,
                     ["configuration"] = previous?["configuration"]?.DeepClone() ?? manifest["default_configuration"]?.DeepClone() ?? new JsonObject() };
@@ -230,7 +230,7 @@ internal sealed class ThirdPartyModuleService
         byte[] responseBuffer = new byte[8192]; int read;
         while ((read = await responseStream.ReadAsync(responseBuffer)) > 0)
         {
-            if (bytes.Length + read > 1024 * 1024) throw new InvalidDataException("模块桥响应超过限制。");
+            if (bytes.Length + read > 1024 * 1024) throw new InvalidDataException(LocalizationService.Instance["Modules_ResponseLimit"]);
             await bytes.WriteAsync(responseBuffer.AsMemory(0, read));
         }
         string text = Encoding.UTF8.GetString(bytes.ToArray());

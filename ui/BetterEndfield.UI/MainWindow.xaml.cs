@@ -937,6 +937,27 @@ public sealed partial class MainWindow : Window
         MmdHotkeysHint.Text = isZh
             ? "点击输入框后直接按下按键，可使用 Ctrl、Alt、Shift、Win 组合键；修改会自动保存。"
             : "Focus a field and press a key directly. Ctrl, Alt, Shift and Win combinations are supported; changes save automatically.";
+        MmdPlayHotkeyBox.Header = isZh ? "播放/暂停" : "Play / pause";
+        MmdStopHotkeyBox.Header = isZh ? "停止" : "Stop";
+        MmdCameraModeHotkeyBox.Header = isZh ? "镜头模式" : "Camera mode";
+        MmdSeekBackHotkeyBox.Header = isZh ? "后退" : "Seek backward";
+        MmdSeekForwardHotkeyBox.Header = isZh ? "前进" : "Seek forward";
+        MmdOverlayHotkeyBox.Header = isZh ? "悬浮窗" : "Overlay";
+        MmdMotionHotkeyBox.Header = isZh ? "运镜" : "Camera move";
+        MmdRollLeftHotkeyBox.Header = isZh ? "左滚转" : "Roll left";
+        MmdRollRightHotkeyBox.Header = isZh ? "右滚转" : "Roll right";
+        MmdFovWideHotkeyBox.Header = isZh ? "放大视野" : "Widen FOV";
+        MmdFovNarrowHotkeyBox.Header = isZh ? "缩小视野" : "Narrow FOV";
+        MmdViewResetHotkeyBox.Header = isZh ? "视野复位" : "Reset view";
+        MmdKeyframeAddHotkeyBox.Header = isZh ? "记录机位" : "Record keyframe";
+        MmdKeyframePlayHotkeyBox.Header = isZh ? "播放机位" : "Play keyframes";
+        MmdKeyframeClearHotkeyBox.Header = isZh ? "清空机位" : "Clear keyframes";
+        MmdVmdPlayHotkeyBox.Header = isZh ? "VMD 镜头" : "VMD camera";
+        MmdVmdMotionHotkeyBox.Header = isZh ? "身体动作" : "Body motion";
+        MmdVmdMotionPauseHotkeyBox.Header = isZh ? "动作暂停" : "Pause motion";
+        MmdVmdMotionStopHotkeyBox.Header = isZh ? "动作停止" : "Stop motion";
+        MmdKeyframeSaveHotkeyBox.Header = isZh ? "保存机位" : "Save keyframes";
+        MmdKeyframeLoadHotkeyBox.Header = isZh ? "读取机位" : "Load keyframes";
         MmdLibraryTitle.Text = isZh ? "作品库" : "Library";
         MmdLibraryHint.Text = isZh
             ? "导入时会把文件复制到软件目录下的 mmd 文件夹，悬浮窗直接从这里读取。"
@@ -1140,19 +1161,25 @@ public sealed partial class MainWindow : Window
         ActionBar.Visibility = page is "about" or "gacha" or "custom-model" or "third-party-modules"
             ? Visibility.Collapsed
             : Visibility.Visible;
+        UpdatePageSelectionHint(page);
+    }
+
+    private void UpdatePageSelectionHint(string page)
+    {
+        bool isZh = LocalizationService.Instance.IsChinese;
         PageSelectionHintTextBlock.Text = page switch
         {
-            "settings" => "路径与外观会随保存一起写入本机设置。",
-            "voice" => "角色配音规则保存后在下一次注入时生效。",
-            "music" => "首次启用在下一次注入时加载；已加载模块的设置会热更新。",
-            "combat" => "F11 切换记录，F12 切换悬浮窗；结果会保存到本机目录。",
-            "ui" => "界面模式设置将在保存后热更新或于下次注入时应用。",
-            "camera" => "相机设置会立即保存；游戏内按配置的热键进入或退出自由视角。",
-            "display" => "显示增强直接写入游戏目录，改动在下一次启动客户端时生效。",
-            "gacha" => "寻访记录同步后仅在本机保存，登录会话不会写入磁盘。",
-            "custom-model" => "角色外观工具会读取当前安装根目录，转换与部署结果需要按报告核对。",
-            "third-party-modules" => "第三方模块的配置保存在本机；加载列表变化在重启游戏后生效。",
-            _ => "角色与动画参数保存后在下一次注入时生效。"
+            "settings" => isZh ? "路径与外观会随保存一起写入本机设置。" : "Paths and appearance preferences are saved in local settings.",
+            "voice" => isZh ? "角色配音规则保存后在下一次注入时生效。" : "Saved character voice rules apply on the next injection.",
+            "music" => isZh ? "首次启用在下一次注入时加载；已加载模块的设置会热更新。" : "Music loads on the next injection when first enabled; settings update live once loaded.",
+            "combat" => isZh ? "F11 切换记录，F12 切换悬浮窗；结果会保存到本机目录。" : "F11 toggles recording, F12 toggles the overlay; results are saved locally.",
+            "ui" => isZh ? "界面模式设置将在保存后热更新或于下次注入时应用。" : "Saved UI settings update live or apply on the next injection.",
+            "camera" => isZh ? "相机设置会立即保存；游戏内按配置的热键进入或退出自由视角。" : "Camera settings save immediately; use the configured hotkey in game to toggle free camera.",
+            "display" => isZh ? "显示增强直接写入游戏目录，改动在下一次启动客户端时生效。" : "Display enhancements are written to the game directory and apply on the next launch.",
+            "gacha" => isZh ? "寻访记录同步后仅在本机保存，登录会话不会写入磁盘。" : "Synced gacha records are saved locally; login sessions are never written to disk.",
+            "custom-model" => isZh ? "角色外观工具会读取当前安装根目录，转换与部署结果需要按报告核对。" : "Model tools use the current installation directory. Check conversion and deployment reports.",
+            "third-party-modules" => isZh ? "第三方模块的配置保存在本机；加载列表变化在重启游戏后生效。" : "Third-party module settings are saved locally; load-order changes apply after restarting the game.",
+            _ => isZh ? "角色与动画参数保存后在下一次注入时生效。" : "Saved character and animation settings apply on the next injection."
         };
     }
 
@@ -3876,6 +3903,8 @@ public sealed partial class MainWindow : Window
         ActionsExperimentalInfo.Message = isZh ? "保留游戏本次选中的左或右特殊冲刺动作，在持续冲刺时循环播放，延后自然结束；停止或被打断时结束。" : "Preserves the left or right special dash chosen by the game and repeats it while sprinting, deferring natural completion. Stops on movement end or interruption.";
         DisplayNavigationItem.Content = isZh ? "显示增强" : "Display & Pipeline";
         GachaNavigationItem.Content = isZh ? "寻访查询" : "Gacha History";
+        CustomModelNavigationItem.Content = isZh ? "角色外观" : "Model Replacement";
+        ThirdPartyModulesNavigationItem.Content = isZh ? "第三方模块" : "Third-party Modules";
         if (FeatureNavigation.SettingsItem is NavigationViewItem settingsItem)
         {
             settingsItem.Content = isZh ? "设置" : "Settings";
@@ -4261,9 +4290,8 @@ public sealed partial class MainWindow : Window
         ViewDisclaimerButton.Content = isZh ? "查看完整说明" : "View Full Disclaimer";
 
         // Bottom Action Bar
-        PageSelectionHintTextBlock.Text = isZh
-            ? "设置会自动保存；启动按钮会写入最新配置并启动游戏。"
-            : "Settings save automatically; Launch writes the latest configuration and starts the game.";
+        UpdatePageSelectionHint(ReferenceEquals(FeatureNavigation.SelectedItem, FeatureNavigation.SettingsItem)
+            ? "settings" : (FeatureNavigation.SelectedItem as NavigationViewItem)?.Tag as string ?? "model");
         ResetButtonTextBlock.Text = isZh ? "恢复默认" : "Reset to Defaults";
         SaveButtonTextBlock.Text = isZh ? "保存" : "Save";
         LaunchButtonTextBlock.Text = isZh ? "启动" : "Launch";

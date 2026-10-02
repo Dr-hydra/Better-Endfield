@@ -82,7 +82,7 @@ internal sealed class BemPackage
             string[] parts = pair.Split(':');
             if (parts.Length != 2 || !Regex.IsMatch(parts[0], @"\A[A-Za-z0-9][A-Za-z0-9_.-]{0,95}\z") ||
                 !Regex.IsMatch(parts[1], @"\A[0-9]+\z") || !uint.TryParse(parts[1], out uint tick) || tick > 1000 ||
-                !_rememberedParameters.TryAdd(parts[0], tick)) throw new InvalidDataException("BEM 滑条设置不合法。");
+                !_rememberedParameters.TryAdd(parts[0], tick)) throw new InvalidDataException(BemText.Get("BEM 滑条设置不合法。"));
         }
         bool repaired = false;
         foreach (var parameter in Parameters)
@@ -113,7 +113,7 @@ internal sealed class BemPackage
         if (condition.TryGetProperty("all", out var all)) return all.EnumerateArray().All(child => Evaluate(child, active));
         if (condition.TryGetProperty("any", out var any)) return any.EnumerateArray().Any(child => Evaluate(child, active));
         if (condition.TryGetProperty("not", out var negated)) return !Evaluate(negated, active);
-        throw new InvalidDataException("BEM 选项条件不合法。");
+        throw new InvalidDataException(BemText.Get("BEM 选项条件不合法。"));
     }
 
     public string EncodedOptions() => string.Join("&", OptionGroups.Select(g => g.Id + ":" + SelectedOptions[g.Id]));
@@ -124,16 +124,16 @@ internal sealed class BemPackage
         foreach (string pair in saved.Split('&', StringSplitOptions.RemoveEmptyEntries))
         {
             string[] parts = pair.Split(':');
-            if (parts.Length != 2 || !parsed.TryAdd(parts[0], parts[1])) throw new InvalidDataException("BEM 选项设置不合法。");
+            if (parts.Length != 2 || !parsed.TryAdd(parts[0], parts[1])) throw new InvalidDataException(BemText.Get("BEM 选项设置不合法。"));
         }
-        if (parsed.Keys.Any(id => OptionGroups.All(group => group.Id != id))) throw new InvalidDataException("BEM 选项组已移除。");
+        if (parsed.Keys.Any(id => OptionGroups.All(group => group.Id != id))) throw new InvalidDataException(BemText.Get("BEM 选项组已移除。"));
         foreach (var group in OptionGroups)
         {
             string choice = parsed.GetValueOrDefault(group.Id, group.Default);
-            if (group.Choices.All(item => item.Id != choice)) throw new InvalidDataException("BEM 选项值已移除。");
+            if (group.Choices.All(item => item.Id != choice)) throw new InvalidDataException(BemText.Get("BEM 选项值已移除。"));
             SelectedOptions[group.Id] = choice;
         }
-        if (!OptionsValid()) throw new InvalidDataException("BEM 选项组合不可达。");
+        if (!OptionsValid()) throw new InvalidDataException(BemText.Get("BEM 选项组合不可达。"));
     }
 }
 
@@ -141,7 +141,8 @@ internal sealed class BemPackageService
 {
     public string Root { get; } = Path.Combine(ConfigurationService.SettingsDirectory, "catalog", "custom-model");
     public List<BemPackage> Packages { get; } = [];
-    public List<string> Notices { get; } = [];
+    private readonly List<Func<string>> _notices = [];
+    public IReadOnlyList<string> Notices => _notices.Select(notice => notice()).ToArray();
     public bool StandaloneLod { get; set; }
     public bool SkipValidation { get; set; }
     public bool HotSwitch { get; set; }
@@ -154,7 +155,7 @@ internal sealed class BemPackageService
     {
         string value = e.GetProperty(key).GetString() ?? "";
         if (!Regex.IsMatch(value, @"\A[A-Za-z0-9][A-Za-z0-9_.-]{0,95}\z"))
-            throw new InvalidDataException($"BEM: 无效的 {key}");
+            throw new InvalidDataException(BemText.Format("BEM: 无效的 {0}", key));
         return value;
     }
 
@@ -163,20 +164,20 @@ internal sealed class BemPackageService
         using var stream = System.IO.File.OpenRead(path);
         using var r = new BinaryReader(stream, Encoding.UTF8);
         if (!r.ReadBytes(8).SequenceEqual(new byte[] { 66, 69, 77, 0, 80, 75, 71, 0 }))
-            throw new InvalidDataException("BEM 包头不合法。");
+            throw new InvalidDataException(BemText.Get("BEM 包头不合法。"));
         ushort major = r.ReadUInt16(), minor = r.ReadUInt16();
         if (major != 1 || minor > 3 || r.ReadUInt32() != 40)
-            throw new InvalidDataException("仅支持 BEM 1.0/1.1/1.2/1.3 包。");
+            throw new InvalidDataException(BemText.Get("仅支持 BEM 1.0/1.1/1.2/1.3 包。"));
         ulong fileSize = r.ReadUInt64(), manifestSize = r.ReadUInt64();
         uint count = r.ReadUInt32(), flags = r.ReadUInt32();
         if (fileSize != (ulong)stream.Length || manifestSize == 0 || manifestSize > int.MaxValue || flags != 0 ||
             manifestSize > fileSize - 40 || count > (fileSize - 40 - manifestSize) / 32 ||
             (!skipValidation && (fileSize > 2UL * 1024 * 1024 * 1024 || manifestSize > 4194304 || count > (minor >= 2 ? 16384u : 4096u))))
-            throw new InvalidDataException("BEM 文件长度或目录不合法。");
+            throw new InvalidDataException(BemText.Get("BEM 文件长度或目录不合法。"));
         using var document = JsonDocument.Parse(r.ReadBytes((int)manifestSize));
         var m = document.RootElement;
         if (m.GetProperty("schema").GetInt32() != 1 || (!skipValidation && m.GetProperty("target").GetProperty("platform").GetString() != "windows-x64"))
-            throw new InvalidDataException("不支持的 BEM schema 或目标平台。");
+            throw new InvalidDataException(BemText.Get("不支持的 BEM schema 或目标平台。"));
         var appearances = minor == 0 ? m.GetProperty("appearances").EnumerateArray().Select(a => new BemAppearance
         {
             Id = StableId(a, "id"), Name = a.GetProperty("name").GetString() ?? "",
@@ -184,7 +185,7 @@ internal sealed class BemPackageService
         }).ToList() : [];
         string def = minor == 0 ? StableId(m, "default_appearance_id") : "";
         if (minor == 0 && (appearances.Count < 1 || (!skipValidation && appearances.Count > 64) || appearances.Select(a => a.Id).Distinct().Count() != appearances.Count || !appearances.Any(a => a.Id == def)))
-            throw new InvalidDataException("BEM 外观目录不合法。");
+            throw new InvalidDataException(BemText.Get("BEM 外观目录不合法。"));
         var groups = minor >= 1 ? m.GetProperty("option_groups").EnumerateArray().Select(g => new BemOptionGroup
         {
             Id = StableId(g, "id"), Name = g.GetProperty("name").GetString() ?? "",
@@ -199,7 +200,7 @@ internal sealed class BemPackageService
         if (minor >= 1 && ((minor < 3 && groups.Count < 1) || (!skipValidation && groups.Count > 64) || groups.Select(g => g.Id).Distinct().Count() != groups.Count ||
             groups.Any(g => g.Choices.Count < 1 || (!skipValidation && g.Choices.Count > maxChoices) || g.Choices.Select(c => c.Id).Distinct().Count() != g.Choices.Count ||
                             g.Choices.All(c => c.Id != g.Default))))
-            throw new InvalidDataException("BEM 选项组目录不合法。");
+            throw new InvalidDataException(BemText.Get("BEM 选项组目录不合法。"));
         var parameters = minor >= 3 ? m.GetProperty("parameters").EnumerateArray().Select(p => new BemParameterGroup
         {
             Id = StableId(p, "id"), Name = p.GetProperty("name").GetString() ?? "",
@@ -211,7 +212,7 @@ internal sealed class BemPackageService
         if ((!skipValidation && parameters.Count > 64) || parameters.Select(p => p.Id).Distinct().Count() != parameters.Count ||
             parameters.Any(p => p.Min > p.Max || p.Max > 1000 || p.Step == 0 || p.Step > 1000 ||
                 (p.Max - p.Min) % p.Step != 0 || !p.Accepts(p.Default) || !p.Accepts(p.Neutral)))
-            throw new InvalidDataException("BEM 滑条目录不合法。");
+            throw new InvalidDataException(BemText.Get("BEM 滑条目录不合法。"));
         var package = new BemPackage
         {
             Id = StableId(m, "package_id"), Name = m.GetProperty("name").GetString() ?? "",
@@ -229,7 +230,7 @@ internal sealed class BemPackageService
 
     public void Load()
     {
-        Packages.Clear(); Notices.Clear(); StandaloneLod = false; SkipValidation = false;
+        Packages.Clear(); _notices.Clear(); StandaloneLod = false; SkipValidation = false;
         HotSwitch = false; LoadingOptimization = false;
         var settings = _settings = new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
         string ini = Path.Combine(Root, "runtime.ini");
@@ -255,37 +256,37 @@ internal sealed class BemPackageService
             try
             {
                 var p = ReadMetadata(path, SkipValidation);
-                if (Packages.Any(x => x.Id == p.Id)) throw new InvalidDataException("重复包 ID");
+                if (Packages.Any(x => x.Id == p.Id)) throw new InvalidDataException(BemText.Get("重复包 ID"));
                 if (settings.TryGetValue("Mod." + p.Id, out var state))
                 {
                     p.Enabled = state.GetValueOrDefault("enabled") is "true" or "1";
                     try
                     {
                         if (p.RestoreParameters(state.GetValueOrDefault("parameters_saved", state.GetValueOrDefault("parameters", ""))))
-                            Notices.Add($"{p.Name}：部分滑条范围已变化，回退作者默认值。");
+                            _notices.Add(() => BemText.Format("{0}：部分滑条范围已变化，回退作者默认值。", p.Name));
                     }
-                    catch (InvalidDataException) { p.RestoreParameters(""); Notices.Add($"{p.Name}：滑条设置损坏，回退作者默认值。"); }
+                    catch (InvalidDataException) { p.RestoreParameters(""); _notices.Add(() => BemText.Format("{0}：滑条设置损坏，回退作者默认值。", p.Name)); }
                     if (p.IsComposable)
                     {
                         try { p.RestoreOptions(state.GetValueOrDefault("options", "")); }
-                        catch (InvalidDataException) { p.RestoreOptions(""); Notices.Add($"{p.Name}：原选项已移除或不可达，回退默认组合。"); }
+                        catch (InvalidDataException) { p.RestoreOptions(""); _notices.Add(() => BemText.Format("{0}：原选项已移除或不可达，回退默认组合。", p.Name)); }
                     }
                     else
                     {
                         string selected = state.GetValueOrDefault("appearance", p.DefaultAppearance);
                         if (p.Appearances.Any(a => a.Id == selected)) p.SelectedAppearance = selected;
-                        else Notices.Add($"{p.Name}：原外观已移除，回退到默认外观。");
+                        else _notices.Add(() => BemText.Format("{0}：原外观已移除，回退到默认外观。", p.Name));
                     }
                 }
                 Packages.Add(p);
             }
             catch (Exception ex) when (ex is IOException or InvalidDataException or JsonException or InvalidOperationException or KeyNotFoundException or OverflowException or FormatException)
-            { Notices.Add($"{Path.GetFileName(path)}：{ex.Message}"); }
+            { _notices.Add(() => Path.GetFileName(path) + BemText.Colon + ex.Message); }
         }
         foreach (var group in Packages.Where(p => p.Enabled).GroupBy(p => p.Character).Where(g => g.Count() > 1))
         {
             foreach (var p in group) p.Enabled = false;
-            Notices.Add($"{group.Key}：存在多个启用包，已在界面停用，请重新选择。");
+            _notices.Add(() => BemText.Format("{0}：存在多个启用包，已在界面停用，请重新选择。", group.Key));
         }
     }
 
@@ -316,7 +317,7 @@ internal sealed class BemPackageService
                 foreach (var item in section.Value) text.Append(item.Key).Append('=').Append(item.Value).Append('\n');
                 text.Append('\n');
             }
-            if (Encoding.UTF8.GetByteCount(text.ToString()) > 1024 * 1024) throw new InvalidOperationException("包管理配置超过运行时 1 MiB 上限。");
+            if (Encoding.UTF8.GetByteCount(text.ToString()) > 1024 * 1024) throw new InvalidOperationException(BemText.Get("包管理配置超过运行时 1 MiB 上限。"));
             string temp = Path.Combine(Root, Guid.NewGuid() + ".tmp");
             try { await System.IO.File.WriteAllTextAsync(temp, text.ToString(), new UTF8Encoding(false)); System.IO.File.Move(temp, Path.Combine(Root, "runtime.ini"), true); }
             finally { if (System.IO.File.Exists(temp)) System.IO.File.Delete(temp); }
@@ -327,7 +328,7 @@ internal sealed class BemPackageService
     private static void RequireGameClosed()
     {
         var processes = Process.GetProcessesByName("Endfield");
-        try { if (processes.Length > 0) throw new InvalidOperationException("请关闭游戏后导入、更新或删除包，避免资源延迟加载时读到变更文件。启停与外观选择可先保存，下次启动生效。"); }
+        try { if (processes.Length > 0) throw new InvalidOperationException(BemText.Get("请关闭游戏后导入、更新或删除包，避免资源延迟加载时读到变更文件。启停与外观选择可先保存，下次启动生效。")); }
         finally { foreach (var p in processes) p.Dispose(); }
     }
 
@@ -348,7 +349,7 @@ internal sealed class BemPackageService
                     string path = Path.Combine(staging, Guid.NewGuid() + ".bem");
                     try
                     {
-                        if (entry.Length > 2L * 1024 * 1024 * 1024) throw new InvalidDataException("ZIP 内模型包超过导入文件上限。");
+                        if (entry.Length > 2L * 1024 * 1024 * 1024) throw new InvalidDataException(BemText.Get("ZIP 内模型包超过导入文件上限。"));
                         await using (var input = entry.Open())
                         await using (var output = System.IO.File.Create(path)) await input.CopyToAsync(output, token);
                         result.Packages.Add(ReadMetadata(path, true));
@@ -359,11 +360,11 @@ internal sealed class BemPackageService
             }
             string raw = await BemToolService.RunAsync(installRoot, ["unpack", source, "-o", staging], token);
             using var json = JsonDocument.Parse(raw);
-            if (json.RootElement.GetProperty("format").GetString() != "BEM-ZIP") throw new InvalidDataException("请选择包含 BEM 模型包的 ZIP。");
+            if (json.RootElement.GetProperty("format").GetString() != "BEM-ZIP") throw new InvalidDataException(BemText.Get("请选择包含 BEM 模型包的 ZIP。"));
             foreach (var item in json.RootElement.GetProperty("packages").EnumerateArray())
             {
                 string name = item.GetProperty("file").GetString() ?? "";
-                if (Path.GetFileName(name) != name || !name.EndsWith(".bem", StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("转换器返回无效文件名。");
+                if (Path.GetFileName(name) != name || !name.EndsWith(".bem", StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException(BemText.Get("转换器返回无效文件名。"));
                 result.Packages.Add(ReadMetadata(Path.Combine(staging, name), SkipValidation));
             }
             foreach (var issue in json.RootElement.GetProperty("issues").EnumerateArray())
@@ -376,7 +377,7 @@ internal sealed class BemPackageService
     public async Task ImportAsync(string source, string installRoot, CancellationToken token = default)
     {
         RequireGameClosed();
-        if (new FileInfo(source).Length > 2L * 1024 * 1024 * 1024) throw new InvalidDataException("BEM 包超过 2 GiB 上限。");
+        if (new FileInfo(source).Length > 2L * 1024 * 1024 * 1024) throw new InvalidDataException(BemText.Get("BEM 包超过 2 GiB 上限。"));
         string dir = Path.Combine(Root, "packages"); Directory.CreateDirectory(dir);
         string temp = Path.Combine(dir, Guid.NewGuid() + ".tmp");
         try
@@ -388,8 +389,8 @@ internal sealed class BemPackageService
             var p = ReadMetadata(temp, SkipValidation);
             var old = Packages.FirstOrDefault(x => x.Id == p.Id);
             var caseCollision = Packages.FirstOrDefault(x => x.Id.Equals(p.Id, StringComparison.OrdinalIgnoreCase) && x.Id != p.Id);
-            if (caseCollision != null) throw new InvalidDataException("包 ID 与现有包仅大小写不同，不能安全存储。");
-            if (old != null && old.Character != p.Character) throw new InvalidDataException("同一个包 ID 不能更新为另一角色。");
+            if (caseCollision != null) throw new InvalidDataException(BemText.Get("包 ID 与现有包仅大小写不同，不能安全存储。"));
+            if (old != null && old.Character != p.Character) throw new InvalidDataException(BemText.Get("同一个包 ID 不能更新为另一角色。"));
             RequireGameClosed();
             System.IO.File.Move(temp, Path.Combine(dir, p.Id + ".bem"), true);
             Load(); await SaveAsync();
@@ -429,10 +430,10 @@ internal static class BemToolService
     {
         string tool = Path.Combine(installRoot, "tools", "BemConverter", "BetterEndfield.BemConverter.exe");
         if (!System.IO.File.Exists(tool)) tool = Path.Combine((Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory), "tools", "BemConverter", "BetterEndfield.BemConverter.exe");
-        if (!System.IO.File.Exists(tool)) throw new FileNotFoundException("缺少随软件提供的 BEM 转换工具。请使用包含 tools/BemConverter 的完整构建；开发环境运行 BuildBemTools.ps1。");
+        if (!System.IO.File.Exists(tool)) throw new FileNotFoundException(BemText.Get("缺少随软件提供的 BEM 转换工具。请使用包含 tools/BemConverter 的完整构建；开发环境运行 BuildBemTools.ps1。"));
         var info = new ProcessStartInfo(tool) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true, StandardOutputEncoding = Encoding.UTF8, StandardErrorEncoding = Encoding.UTF8 };
         foreach (string arg in args) info.ArgumentList.Add(arg);
-        using var process = Process.Start(info) ?? throw new InvalidOperationException("无法启动转换工具。");
+        using var process = Process.Start(info) ?? throw new InvalidOperationException(BemText.Get("无法启动转换工具。"));
         using var cancel = token.Register(() => { try { if (!process.HasExited) process.Kill(true); } catch (InvalidOperationException) { } });
         Task<string> stdout = process.StandardOutput.ReadToEndAsync(token), stderr = process.StandardError.ReadToEndAsync(token);
         await process.WaitForExitAsync(token);

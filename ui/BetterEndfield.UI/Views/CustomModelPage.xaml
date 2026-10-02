@@ -5,13 +5,13 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Spacing="18" Padding="24">
-            <TextBlock Text="角色外观 · BEM" FontSize="28" FontWeight="SemiBold" />
-            <TextBlock Text="支持 BEM 1.0–1.3 模型包，为每个角色选择外观、组件和作者提供的形态滑条。滑条点击应用后保存；可开启实验热切换。" TextWrapping="Wrap" />
+            <TextBlock x:Name="PageTitle" Text="角色外观 · BEM" FontSize="28" FontWeight="SemiBold" />
+            <TextBlock x:Name="PageIntro" Text="支持 BEM 1.0–1.3 模型包，为每个角色选择外观、组件和作者提供的形态滑条。滑条点击应用后保存；可开启实验热切换。" TextWrapping="Wrap" />
             <StackPanel Orientation="Horizontal" Spacing="12">
                 <Button x:Name="ImportButton" Content="导入 BEM / ZIP" Click="Import_Click" />
-                <Button Content="其他来源 Mod 转换…" Click="Convert_Click" />
-                <Button Content="刷新" Click="Refresh_Click" />
-                <Button Content="打开包目录" Click="OpenFolder_Click" />
+                <Button x:Name="ConvertButton" Content="其他来源 Mod 转换…" Click="Convert_Click" />
+                <Button x:Name="RefreshButton" Content="刷新" Click="Refresh_Click" />
+                <Button x:Name="PackageFolderButton" Content="打开包目录" Click="OpenFolder_Click" />
             </StackPanel>
             <Border x:Name="ModelDropArea" AllowDrop="True" Padding="20" CornerRadius="8"
                     BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
@@ -41,11 +41,11 @@
                     <ToggleSwitch x:Name="LodToggle" Header="锁定高精度 LOD" Toggled="Lod_Toggled" />
                     <TextBlock x:Name="LodHint" TextWrapping="Wrap" />
                     <ToggleSwitch x:Name="HotSwitchToggle" Header="实验：模型热切换" Toggled="Experiments_Toggled" />
-                    <TextBlock Text="开启后需重启游戏。之后切换包、外观、组件或应用滑条，在切换配队或重新打开详情时更新。会增加内存占用。" TextWrapping="Wrap" />
+                    <TextBlock x:Name="HotSwitchHint" Text="开启后需重启游戏。之后切换包、外观、组件或应用滑条，在切换配队或重新打开详情时更新。会增加内存占用。" TextWrapping="Wrap" />
                     <ToggleSwitch x:Name="LoadingOptimizationToggle" Header="实验：模型加载优化" Toggled="Experiments_Toggled" />
-                    <TextBlock Text="开启后需重启游戏。减少重复贴图构建和解压期间的内存占用。" TextWrapping="Wrap" />
+                    <TextBlock x:Name="LoadingOptimizationHint" Text="开启后需重启游戏。减少重复贴图构建和解压期间的内存占用。" TextWrapping="Wrap" />
                     <ToggleSwitch x:Name="SkipValidationToggle" Header="开发者：关闭模型校验" Toggled="SkipValidation_Toggled" />
-                    <TextBlock Text="仅供开发测试。开启后会跳过兼容性和容量校验，可能导致游戏崩溃或模型错乱，风险自行承担。重启游戏后生效。" TextWrapping="Wrap" />
+                    <TextBlock x:Name="SkipValidationHint" Text="仅供开发测试。开启后会跳过兼容性和容量校验，可能导致游戏崩溃或模型错乱，风险自行承担。重启游戏后生效。" TextWrapping="Wrap" />
                 </StackPanel>
             </Border>
             <InfoBar x:Name="Status" IsOpen="False" IsClosable="True" />

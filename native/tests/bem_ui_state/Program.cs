@@ -2,6 +2,15 @@ using System.Text;
 using System.Text.Json.Nodes;
 using BetterEndfield.UI.Services;
 
+// The host test exercises locale selection without the WinRT app-language API.
+namespace Windows.Globalization
+{
+    internal static class ApplicationLanguages
+    {
+        public static string PrimaryLanguageOverride { get; set; } = "";
+    }
+}
+
 namespace BetterEndfield.UI.Services
 {
     internal static class ConfigurationService
@@ -44,6 +53,7 @@ internal static class Program
 
     private static async Task Main(string[] args)
     {
+        LocalizationService.Instance.ApplyLanguage("zh-CN");
         string root = Path.Combine(Path.GetTempPath(), "bem-ui-state-" + Guid.NewGuid());
         Directory.CreateDirectory(root); ConfigurationService.SettingsDirectory = root;
         try
@@ -95,7 +105,16 @@ internal static class Program
                 Check(actual.EncodedParameters().Contains(":500"), "Creator fixture selection not represented in Windows wire format");
                 Check(original.SequenceEqual(await File.ReadAllBytesAsync(args[0])), "Windows metadata reader changed package bytes");
             }
-            Console.WriteLine($"PASS {_checks} Windows BEM 1.3 metadata/persistence/upgrade checks");
+            string remembered = service.Packages[0].EncodedParameters();
+            LocalizationService.Instance.ApplyLanguage("en-US");
+            Check(BemInspectionSummary.Read("{\"format\":\"BEMv1.3\"}").Title == "This BEM can be imported directly", "English inspection summary remained Chinese");
+            Check(BemReportPresentation.Package(report).Contains("Shape sliders: Size, Trim"), "English report did not localize labels/separators");
+            Check(service.Packages[0].EncodedParameters() == remembered, "Language switch changed saved shape parameters");
+            var authored = Manifest(); authored["name"] = "作者作品";
+            Check(BemReportPresentation.Package(new JsonObject { ["package"] = authored }.ToJsonString()).Contains("作者作品"), "Locale selection changed author metadata");
+            LocalizationService.Instance.ApplyLanguage("zh-CN");
+            Check(BemReportPresentation.Package(report).Contains("形态滑条：Size、Trim"), "Chinese report did not restore labels/separators");
+            Console.WriteLine($"PASS {_checks} Windows BEM metadata/persistence/upgrade and bilingual report checks");
         }
         finally { Directory.Delete(root, true); }
     }

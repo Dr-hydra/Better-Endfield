@@ -18,40 +18,72 @@ public sealed partial class CustomModelPage : UserControl
     private BemConverterWindow? _converter;
     // Packages whose component options are expanded; kept across Render().
     private readonly HashSet<string> _expanded = [];
+    private readonly List<Action> _localizeCards = [];
     public Func<string>? InstallRootProvider { get; set; }
     private string InstallRoot => InstallRootProvider?.Invoke() ?? (Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory);
     private string SelectionAppliedHint => _service.HotSwitch
-        ? "已启用实验热切换的游戏将在下次切换配队或重新打开详情时更新；首次开启需重启游戏。"
-        : "下次启动游戏生效。";
+        ? BemText.Get("已启用实验热切换的游戏将在下次切换配队或重新打开详情时更新；首次开启需重启游戏。")
+        : BemText.Get("下次启动游戏生效。");
 
     public CustomModelPage()
     {
         InitializeComponent();
-        UpdateModelSourceLanguage();
+        UpdatePageLanguage();
         Loaded += (_, _) =>
         {
-            LocalizationService.Instance.PropertyChanged += ModelSourceLanguageChanged;
-            UpdateModelSourceLanguage();
+            LocalizationService.Instance.PropertyChanged += PageLanguageChanged;
+            UpdatePageLanguage();
             Reload();
         };
-        Unloaded += (_, _) => LocalizationService.Instance.PropertyChanged -= ModelSourceLanguageChanged;
+        Unloaded += (_, _) => LocalizationService.Instance.PropertyChanged -= PageLanguageChanged;
     }
 
-    private void ModelSourceLanguageChanged(object? sender, PropertyChangedEventArgs e)
+    private void PageLanguageChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(LocalizationService.IsChinese)) UpdateModelSourceLanguage();
+        if (e.PropertyName != nameof(LocalizationService.IsChinese)) return;
+        UpdatePageLanguage();
+        BemLocalizedUI.Refresh(this);
+        foreach (var update in _localizeCards) update();
     }
 
-    private void UpdateModelSourceLanguage()
+    private void UpdatePageLanguage()
     {
+        PageTitle.Text = BemText.Get("角色外观 · BEM");
+        PageIntro.Text = BemText.Get("支持 BEM 1.0–1.3 模型包，为每个角色选择外观、组件和作者提供的形态滑条。滑条点击应用后保存；可开启实验热切换。");
+        ImportButton.Content = BemText.Get("导入 BEM / ZIP");
+        ConvertButton.Content = BemText.Get("其他来源 Mod 转换…");
+        RefreshButton.Content = BemText.Get("刷新");
+        PackageFolderButton.Content = BemText.Get("打开包目录");
+        LodToggle.Header = BemText.Get("锁定高精度 LOD");
+        HotSwitchToggle.Header = BemText.Get("实验：模型热切换");
+        HotSwitchHint.Text = BemText.Get("开启后需重启游戏。之后切换包、外观、组件或应用滑条，在切换配队或重新打开详情时更新。会增加内存占用。");
+        LoadingOptimizationToggle.Header = BemText.Get("实验：模型加载优化");
+        LoadingOptimizationHint.Text = BemText.Get("开启后需重启游戏。减少重复贴图构建和解压期间的内存占用。");
+        SkipValidationToggle.Header = BemText.Get("开发者：关闭模型校验");
+        SkipValidationHint.Text = BemText.Get("仅供开发测试。开启后会跳过兼容性和容量校验，可能导致游戏崩溃或模型错乱，风险自行承担。重启游戏后生效。");
+        EmptyHint.Text = BemText.Get("尚未导入模型包。已有其他格式？打开转换窗口查看支持范围与缺少的资料。");
+        foreach (var toggle in new[] { LodToggle, HotSwitchToggle, LoadingOptimizationToggle, SkipValidationToggle })
+        {
+            toggle.OnContent = BemText.Get("开启");
+            toggle.OffContent = BemText.Get("关闭");
+        }
+        UpdateLodHint();
         bool isZh = LocalizationService.Instance.IsChinese;
-        GetModelsTitle.Text = isZh ? "获取模型" : "Get models";
-        QuarkModelsButton.Content = isZh ? "夸克网盘" : "Quark Drive";
-        BaiduModelsButton.Content = isZh ? "百度网盘" : "Baidu Netdisk";
-        KatfileModelsButton.Content = isZh ? "Katfile 网盘" : "Katfile";
-        ModelDropTitle.Text = isZh ? "将 BEM 或 ZIP 模型包拖到这里" : "Drop BEM or ZIP model packages here";
-        ModelDropHint.Text = isZh ? "支持同时拖入多个文件，按顺序导入；ZIP 内可选择要导入的包。"
+        GetModelsTitle.Text = isZh ? BemText.Get("获取模型") : "Get models";
+        QuarkModelsButton.Content = isZh ? BemText.Get("夸克网盘") : "Quark Drive";
+        BaiduModelsButton.Content = isZh ? BemText.Get("百度网盘") : "Baidu Netdisk";
+        KatfileModelsButton.Content = isZh ? BemText.Get("Katfile 网盘") : "Katfile";
+        ModelDropTitle.Text = isZh ? BemText.Get("将 BEM 或 ZIP 模型包拖到这里") : "Drop BEM or ZIP model packages here";
+        ModelDropHint.Text = isZh ? BemText.Get("支持同时拖入多个文件，按顺序导入；ZIP 内可选择要导入的包。")
             : "Drop multiple files to import them in order. Choose which packages to import from each ZIP.";
+    }
+
+    private void UpdateLodHint()
+    {
+        LodHint.Text = _service.Packages.Any(p => p.Enabled)
+            ? BemText.Format("已启用 Mod，强制锁定 LOD。全部停用后恢复独立开关：{0}。",
+                _service.StandaloneLod ? BemText.Get("开启") : BemText.Get("关闭"))
+            : BemText.Get("没有 Mod 启用时可独立锁定高精度模型；AI 角色也会保持高精度 LOD。");
     }
 
     private void ModelSource_Click(object sender, RoutedEventArgs e)
@@ -60,22 +92,26 @@ public sealed partial class CustomModelPage : UserControl
         try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
         catch (Exception ex)
         {
-            Message(LocalizationService.Instance.IsChinese ? "无法打开模型链接" : "Could not open model link",
-                ex.Message, InfoBarSeverity.Error);
+            Message(() => LocalizationService.Instance.IsChinese ? BemText.Get("无法打开模型链接") : "Could not open model link",
+                () => ex.Message, InfoBarSeverity.Error);
         }
     }
 
-    private void Message(string title, string detail, InfoBarSeverity severity = InfoBarSeverity.Informational)
-    { Status.Title = title; Status.Message = detail; Status.Severity = severity; Status.IsOpen = true; }
+    private void Message(Func<string> title, Func<string> detail, InfoBarSeverity severity = InfoBarSeverity.Informational)
+    {
+        BemLocalizedUI.Set(Status, InfoBar.TitleProperty, title);
+        BemLocalizedUI.Set(Status, InfoBar.MessageProperty, detail);
+        Status.Severity = severity; Status.IsOpen = true;
+    }
 
     private void Reload()
     {
         try
         {
             _service.Load(); Render();
-            if (_service.Notices.Count != 0) Message("包管理提示", string.Join("\n", _service.Notices), InfoBarSeverity.Warning);
+            if (_service.Notices.Count != 0) Message(() => BemText.Get("包管理提示"), () => string.Join("\n", _service.Notices), InfoBarSeverity.Warning);
         }
-        catch (Exception ex) { Message("读取失败", ex.Message, InfoBarSeverity.Error); }
+        catch (Exception ex) { Message(() => BemText.Get("读取失败"), () => ex.Message, InfoBarSeverity.Error); }
     }
 
     private void Render()
@@ -88,51 +124,58 @@ public sealed partial class CustomModelPage : UserControl
             LoadingOptimizationToggle.IsOn = _service.LoadingOptimization;
             bool forced = _service.Packages.Any(p => p.Enabled);
             LodToggle.IsOn = _service.EffectiveLod; LodToggle.IsEnabled = !forced;
-            LodHint.Text = forced
-                ? $"已启用 Mod，强制锁定 LOD。全部停用后恢复独立开关：{(_service.StandaloneLod ? "开启" : "关闭")}。"
-                : "没有 Mod 启用时可独立锁定高精度模型；AI 角色也会保持高精度 LOD。";
+            UpdateLodHint();
             EmptyHint.Visibility = _service.Packages.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
             PackageCards.Children.Clear();
+            _localizeCards.Clear();
             foreach (var p in _service.Packages.OrderBy(p => p.Character).ThenBy(p => p.Name))
             {
                 var stack = new StackPanel { Spacing = 10 };
                 var header = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
                 header.Children.Add(new Image { Source = GachaIconService.Load(p.Character), Width = 56, Height = 56 });
                 var labels = new StackPanel { Spacing = 4 };
-                labels.Children.Add(new TextBlock { Text = PresetOptions.GetCharacterName(p.Character) + " · " + p.Name, FontSize = 20, TextWrapping = TextWrapping.Wrap });
+                var packageTitle = new TextBlock { FontSize = 20, TextWrapping = TextWrapping.Wrap };
+                BemLocalizedUI.Set(packageTitle, TextBlock.TextProperty,
+                    () => PresetOptions.GetCharacterName(p.Character) + " · " + p.Name);
+                labels.Children.Add(packageTitle);
                 labels.Children.Add(new TextBlock { Text = $"{p.Author}  /  {p.Version}  /  {p.Size / 1_000_000.0:F1} MB", Opacity = 0.7 });
                 header.Children.Add(labels); stack.Children.Add(header);
                 var controls = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 16 };
-                var enabled = new ToggleSwitch { Header = "启用此包", IsOn = p.Enabled };
+                var enabled = new ToggleSwitch { Header = BemText.Get("启用此包"), IsOn = p.Enabled };
+                BemLocalizedUI.Set(enabled, ToggleSwitch.HeaderProperty, () => BemText.Get("启用此包"));
+                BemLocalizedUI.Set(enabled, ToggleSwitch.OnContentProperty, () => BemText.Get("开启"));
+                BemLocalizedUI.Set(enabled, ToggleSwitch.OffContentProperty, () => BemText.Get("关闭"));
                 enabled.Toggled += async (_, _) =>
                 {
                     if (_rendering) return;
                     try
                     {
                         await _service.SetEnabledAsync(p, enabled.IsOn); Render();
-                        Message("已保存", "同角色只启用一个包。" + SelectionAppliedHint);
+                        Message(() => BemText.Get("已保存"), () => BemText.Get("同角色只启用一个包。") + SelectionAppliedHint);
                     }
-                    catch (Exception ex) { Reload(); Message("保存失败", ex.Message, InfoBarSeverity.Error); }
+                    catch (Exception ex) { Reload(); Message(() => BemText.Get("保存失败"), () => ex.Message, InfoBarSeverity.Error); }
                 };
                 controls.Children.Add(enabled);
                 if (!p.IsComposable)
                 {
-                    var appearance = new ComboBox { Header = "外观", ItemsSource = p.Appearances, SelectedItem = p.Appearances.First(a => a.Id == p.SelectedAppearance), MinWidth = 220 };
+                    var appearance = new ComboBox { Header = BemText.Get("外观"), ItemsSource = p.Appearances, SelectedItem = p.Appearances.First(a => a.Id == p.SelectedAppearance), MinWidth = 220 };
+                    BemLocalizedUI.Set(appearance, ComboBox.HeaderProperty, () => BemText.Get("外观"));
                     var description = new TextBlock { Text = p.Appearances.First(a => a.Id == p.SelectedAppearance).Description, TextWrapping = TextWrapping.Wrap };
                     appearance.SelectionChanged += async (_, _) =>
                     {
                         if (_rendering || appearance.SelectedItem is not BemAppearance selected) return;
-                        try { p.SelectedAppearance = selected.Id; await _service.SaveAsync(); description.Text = selected.Description; Message("外观已保存", SelectionAppliedHint); }
-                        catch (Exception ex) { Reload(); Message("保存失败", ex.Message, InfoBarSeverity.Error); }
+                        try { p.SelectedAppearance = selected.Id; await _service.SaveAsync(); description.Text = selected.Description; Message(() => BemText.Get("外观已保存"), () => SelectionAppliedHint); }
+                        catch (Exception ex) { Reload(); Message(() => BemText.Get("保存失败"), () => ex.Message, InfoBarSeverity.Error); }
                     };
                     controls.Children.Add(appearance);
                     stack.Children.Add(description);
                 }
-                var remove = new Button { Content = "移除", VerticalAlignment = VerticalAlignment.Bottom };
+                var remove = new Button { Content = BemText.Get("移除"), VerticalAlignment = VerticalAlignment.Bottom };
+                BemLocalizedUI.Set(remove, Button.ContentProperty, () => BemText.Get("移除"));
                 remove.Click += async (_, _) =>
                 {
-                    try { await _service.RemoveAsync(p); Render(); Message("已移除", p.Name); }
-                    catch (Exception ex) { Message("无法移除", ex.Message, InfoBarSeverity.Error); }
+                    try { await _service.RemoveAsync(p); Render(); Message(() => BemText.Get("已移除"), () => p.Name); }
+                    catch (Exception ex) { Message(() => BemText.Get("无法移除"), () => ex.Message, InfoBarSeverity.Error); }
                 };
                 controls.Children.Add(remove); stack.Children.Add(controls);
                 if (p.IsComposable)
@@ -163,8 +206,9 @@ public sealed partial class CustomModelPage : UserControl
                             TickFrequency = parameter.Step, SnapsTo = Microsoft.UI.Xaml.Controls.Primitives.SliderSnapsTo.StepValues,
                             IsThumbToolTipEnabled = false, MinWidth = 220
                         };
-                        void RefreshLabel() => label.Text = $"{parameter.Name}：{pendingParameters[parameter.Id] / 1000.0:0.###} " +
-                            $"（{parameter.Min / 1000.0:0.###}–{parameter.Max / 1000.0:0.###}，步长 {parameter.Step / 1000.0:0.###}，默认 {parameter.Default / 1000.0:0.###}，原形 {parameter.Neutral / 1000.0:0.###}）";
+                        void RefreshLabel() => BemLocalizedUI.Set(label, TextBlock.TextProperty,
+                            () => parameter.Name + BemText.Colon + $"{pendingParameters[parameter.Id] / 1000.0:0.###} " +
+                            BemText.Format("（{0:0.###}–{1:0.###}，步长 {2:0.###}，默认 {3:0.###}，原形 {4:0.###}）", parameter.Min / 1000.0, parameter.Max / 1000.0, parameter.Step / 1000.0, parameter.Default / 1000.0, parameter.Neutral / 1000.0));
                         slider.ValueChanged += (_, args) =>
                         {
                             pendingParameters[parameter.Id] = parameter.Snap(args.NewValue);
@@ -175,21 +219,25 @@ public sealed partial class CustomModelPage : UserControl
                     }
                     if (p.Parameters.Count > 0)
                     {
-                        optionPanel.Children.Add(new TextBlock { Text = "滑条调整后点击应用。隐藏的滑条会按原形生效，并保留你保存的数值。" + SelectionAppliedHint, TextWrapping = TextWrapping.Wrap });
+                        var parameterHint = new TextBlock { TextWrapping = TextWrapping.Wrap };
+                        BemLocalizedUI.Set(parameterHint, TextBlock.TextProperty, () => BemText.Get("滑条调整后点击应用。隐藏的滑条会按原形生效，并保留你保存的数值。") + SelectionAppliedHint);
+                        optionPanel.Children.Add(parameterHint);
                         var parameterActions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
-                        var apply = new Button { Content = "应用滑条" };
+                        var apply = new Button { Content = BemText.Get("应用滑条") };
+                        BemLocalizedUI.Set(apply, Button.ContentProperty, () => BemText.Get("应用滑条"));
                         apply.Click += async (_, _) =>
                         {
                             apply.IsEnabled = false;
                             try
                             {
                                 foreach (var parameter in p.Parameters) p.SelectedParameters[parameter.Id] = pendingParameters[parameter.Id];
-                                await _service.SaveAsync(); Message("滑条已保存", SelectionAppliedHint);
+                                await _service.SaveAsync(); Message(() => BemText.Get("滑条已保存"), () => SelectionAppliedHint);
                             }
-                            catch (Exception ex) { Reload(); Message("保存失败", ex.Message, InfoBarSeverity.Error); }
+                            catch (Exception ex) { Reload(); Message(() => BemText.Get("保存失败"), () => ex.Message, InfoBarSeverity.Error); }
                             finally { apply.IsEnabled = true; }
                         };
-                        var defaults = new Button { Content = "恢复作者默认值" };
+                        var defaults = new Button { Content = BemText.Get("恢复作者默认值") };
+                        BemLocalizedUI.Set(defaults, Button.ContentProperty, () => BemText.Get("恢复作者默认值"));
                         defaults.Click += (_, _) => { foreach (var (parameter, slider) in parameterSliders) slider.Value = parameter.Default; };
                         parameterActions.Children.Add(apply); parameterActions.Children.Add(defaults); optionPanel.Children.Add(parameterActions);
                     }
@@ -213,10 +261,10 @@ public sealed partial class CustomModelPage : UserControl
                         var chosen = selectors.Where(s => active.ContainsKey(s.Group.Id))
                             .Select(s => s.Group.Choices.FirstOrDefault(c => c.Id == p.SelectedOptions[s.Group.Id])?.Name)
                             .Where(name => !string.IsNullOrEmpty(name)).ToList();
-                        string summary = string.Join("、", chosen.Take(4)) + (chosen.Count > 4 ? $" 等 {chosen.Count} 项" : "");
+                        string summary = string.Join(BemText.ListSeparator, chosen.Take(4)) + (chosen.Count > 4 ? BemText.Format(" 等 {0} 项", chosen.Count) : "");
                         expander.Header = new TextBlock
                         {
-                            Text = $"组件选项（{active.Count} 组）" + (p.Parameters.Count > 0 ? $" · {p.Parameters.Count} 个滑条" : "") + (summary.Length > 0 ? "：" + summary : ""),
+                            Text = BemText.Format("组件选项（{0} 组）", active.Count) + (p.Parameters.Count > 0 ? BemText.Format(" · {0} 个滑条", p.Parameters.Count) : "") + (summary.Length > 0 ? BemText.Colon + summary : ""),
                             TextTrimming = TextTrimming.CharacterEllipsis
                         };
                     }
@@ -232,14 +280,14 @@ public sealed partial class CustomModelPage : UserControl
                             {
                                 p.SelectedOptions[group.Id] = previous;
                                 box.SelectedItem = group.Choices.First(choice => choice.Id == previous);
-                                Message("组合不可达", "这个选项组合不符合包内约束。", InfoBarSeverity.Warning);
+                                Message(() => BemText.Get("组合不可达"), () => BemText.Get("这个选项组合不符合包内约束。"), InfoBarSeverity.Warning);
                                 return;
                             }
-                            try { RefreshAvailability(); await _service.SaveAsync(); Message("选项已保存", SelectionAppliedHint); }
-                            catch (Exception ex) { Reload(); Message("保存失败", ex.Message, InfoBarSeverity.Error); }
+                            try { RefreshAvailability(); await _service.SaveAsync(); Message(() => BemText.Get("选项已保存"), () => SelectionAppliedHint); }
+                            catch (Exception ex) { Reload(); Message(() => BemText.Get("保存失败"), () => ex.Message, InfoBarSeverity.Error); }
                         };
                     }
-                    RefreshAvailability(); stack.Children.Add(expander);
+                    RefreshAvailability(); _localizeCards.Add(RefreshAvailability); stack.Children.Add(expander);
                 }
                 PackageCards.Children.Add(new Border { Child = stack, Padding = new Thickness(16), CornerRadius = new CornerRadius(8), Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"] });
             }
@@ -265,7 +313,7 @@ public sealed partial class CustomModelPage : UserControl
         ModelDropHighlight.Visibility = accept ? Visibility.Visible : Visibility.Collapsed;
         if (accept)
         {
-            e.DragUIOverride.Caption = LocalizationService.Instance.IsChinese ? "导入 BEM / ZIP 模型包" : "Import BEM / ZIP model packages";
+            e.DragUIOverride.Caption = LocalizationService.Instance.IsChinese ? BemText.Get("导入 BEM / ZIP 模型包") : "Import BEM / ZIP model packages";
             e.DragUIOverride.IsCaptionVisible = true;
         }
         e.Handled = true;
@@ -316,7 +364,7 @@ public sealed partial class CustomModelPage : UserControl
                 if (Directory.Exists(path) || !(extension.Equals(".bem", StringComparison.OrdinalIgnoreCase)
                     || extension.Equals(".zip", StringComparison.OrdinalIgnoreCase)))
                 {
-                    issues.Add(Path.GetFileName(path) + "：仅支持 BEM 或 ZIP 文件，不支持文件夹。");
+                    issues.Add(Path.GetFileName(path) + BemText.Get("：仅支持 BEM 或 ZIP 文件，不支持文件夹。"));
                     continue;
                 }
                 try
@@ -338,12 +386,12 @@ public sealed partial class CustomModelPage : UserControl
             }
             if (!processed && issues.Count == 0) return;
             Render();
-            Message(count > 0 || processed ? $"已导入 {count} 个包" : "导入失败",
-                issues.Count > 0 ? string.Join("\n", issues)
-                    : (_service.SkipValidation ? "开发者模式：已跳过模型校验。" : "已校验模型包。") + "新包默认停用；请选择外观或选项组并启用。同 ID 更新保留仍有效的选择。",
+            Message(() => count > 0 || processed ? BemText.Format("已导入 {0} 个包", count) : BemText.Get("导入失败"),
+                () => issues.Count > 0 ? string.Join("\n", issues)
+                    : (_service.SkipValidation ? BemText.Get("开发者模式：已跳过模型校验。") : BemText.Get("已校验模型包。")) + BemText.Get("新包默认停用；请选择外观或选项组并启用。同 ID 更新保留仍有效的选择。"),
                 issues.Count > 0 ? (count > 0 ? InfoBarSeverity.Warning : InfoBarSeverity.Error) : InfoBarSeverity.Success);
         }
-        catch (Exception ex) { Message("导入失败", ex.Message, InfoBarSeverity.Error); }
+        catch (Exception ex) { Message(() => BemText.Get("导入失败"), () => ex.Message, InfoBarSeverity.Error); }
         finally
         {
             _importing = false;
@@ -355,7 +403,7 @@ public sealed partial class CustomModelPage : UserControl
     {
         using var bundle = await _service.PrepareBundleAsync(source, InstallRoot);
         var body = new StackPanel { Spacing = 12, MaxWidth = 600 };
-        body.Children.Add(new TextBlock { Text = "勾选要导入的包。新包默认停用；同 ID 更新保留现有选择。", TextWrapping = TextWrapping.Wrap });
+        body.Children.Add(new TextBlock { Text = BemText.Get("勾选要导入的包。新包默认停用；同 ID 更新保留现有选择。"), TextWrapping = TextWrapping.Wrap });
         var choices = new List<(CheckBox Check, BemPackage Package)>();
         foreach (var package in bundle.Packages)
         {
@@ -365,19 +413,19 @@ public sealed partial class CustomModelPage : UserControl
                 IsChecked = true,
                 Content = new TextBlock
                 {
-                    Text = $"{PresetOptions.GetCharacterName(package.Character)} · {package.Name}\n{package.Version} · {package.Size / 1_000_000.0:F1} MB · {(update ? "更新已有包" : "新包")}\n"+
-                        (package.IsComposable ? "选项组：" + string.Join("、", package.OptionGroups.Select(g => g.Name)) :
-                            "外观：" + string.Join("、", package.Appearances.Select(a => a.Name))),
+                    Text = $"{PresetOptions.GetCharacterName(package.Character)} · {package.Name}\n{package.Version} · {package.Size / 1_000_000.0:F1} MB · {(update ? BemText.Get("更新已有包") : BemText.Get("新包"))}\n"+
+                        (package.IsComposable ? BemText.Get("选项组：") + string.Join(BemText.ListSeparator, package.OptionGroups.Select(g => g.Name)) :
+                            BemText.Get("外观：") + string.Join(BemText.ListSeparator, package.Appearances.Select(a => a.Name))),
                     TextWrapping = TextWrapping.Wrap
                 }
             };
             choices.Add((check, package)); body.Children.Add(check);
         }
         if (bundle.Issues.Count > 0)
-            body.Children.Add(new TextBlock { Text = "以下项未通过校验：\n" + string.Join("\n", bundle.Issues), TextWrapping = TextWrapping.Wrap });
+            body.Children.Add(new TextBlock { Text = BemText.Get("以下项未通过校验：\n") + string.Join("\n", bundle.Issues), TextWrapping = TextWrapping.Wrap });
         var dialog = new ContentDialog
         {
-            XamlRoot = XamlRoot, Title = "导入 ZIP 中的模型包", PrimaryButtonText = "导入所选", CloseButtonText = "取消",
+            XamlRoot = XamlRoot, Title = BemText.Get("导入 ZIP 中的模型包"), PrimaryButtonText = BemText.Get("导入所选"), CloseButtonText = BemText.Get("取消"),
             Content = new ScrollViewer { Content = body, MaxHeight = 500, VerticalScrollBarVisibility = ScrollBarVisibility.Auto }
         };
         if (await dialog.ShowAsync() != ContentDialogResult.Primary) return (0, [], true);
@@ -402,9 +450,9 @@ public sealed partial class CustomModelPage : UserControl
             _service.HotSwitch = HotSwitchToggle.IsOn;
             _service.LoadingOptimization = LoadingOptimizationToggle.IsOn;
             await _service.SaveAsync();
-            Message("实验设置已保存", "两个开关相互独立，默认关闭；重启游戏后生效。");
+            Message(() => BemText.Get("实验设置已保存"), () => BemText.Get("两个开关相互独立，默认关闭；重启游戏后生效。"));
         }
-        catch (Exception ex) { Reload(); Message("保存失败", ex.Message, InfoBarSeverity.Error); }
+        catch (Exception ex) { Reload(); Message(() => BemText.Get("保存失败"), () => ex.Message, InfoBarSeverity.Error); }
     }
     private async void SkipValidation_Toggled(object sender, RoutedEventArgs e)
     {
@@ -413,17 +461,17 @@ public sealed partial class CustomModelPage : UserControl
         {
             _service.SkipValidation = SkipValidationToggle.IsOn;
             await _service.SaveAsync(); Reload();
-            Message(_service.SkipValidation ? "开发者模式已开启" : "模型校验已恢复",
-                _service.SkipValidation ? "兼容性和容量校验已关闭，可能导致游戏崩溃或模型错乱。下次启动游戏生效。" : "下次启动游戏使用正常校验。",
+            Message(() => _service.SkipValidation ? BemText.Get("开发者模式已开启") : BemText.Get("模型校验已恢复"),
+                () => _service.SkipValidation ? BemText.Get("兼容性和容量校验已关闭，可能导致游戏崩溃或模型错乱。下次启动游戏生效。") : BemText.Get("下次启动游戏使用正常校验。"),
                 _service.SkipValidation ? InfoBarSeverity.Warning : InfoBarSeverity.Informational);
         }
-        catch (Exception ex) { Reload(); Message("保存失败", ex.Message, InfoBarSeverity.Error); }
+        catch (Exception ex) { Reload(); Message(() => BemText.Get("保存失败"), () => ex.Message, InfoBarSeverity.Error); }
     }
     private async void Lod_Toggled(object sender, RoutedEventArgs e)
     {
         if (_rendering) return;
-        try { _service.StandaloneLod = LodToggle.IsOn; await _service.SaveAsync(); Render(); Message("LOD 偏好已保存", "下次启动游戏生效。"); }
-        catch (Exception ex) { Reload(); Message("保存失败", ex.Message, InfoBarSeverity.Error); }
+        try { _service.StandaloneLod = LodToggle.IsOn; await _service.SaveAsync(); Render(); Message(() => BemText.Get("LOD 偏好已保存"), () => BemText.Get("下次启动游戏生效。")); }
+        catch (Exception ex) { Reload(); Message(() => BemText.Get("保存失败"), () => ex.Message, InfoBarSeverity.Error); }
     }
     private void Convert_Click(object sender, RoutedEventArgs e)
     {
@@ -432,12 +480,12 @@ public sealed partial class CustomModelPage : UserControl
             if (_converter == null) { _converter = new BemConverterWindow(InstallRoot); _converter.Closed += (_, _) => _converter = null; }
             _converter.Activate();
         }
-        catch (Exception ex) { Message("无法打开转换器", ex.Message, InfoBarSeverity.Error); }
+        catch (Exception ex) { Message(() => BemText.Get("无法打开转换器"), () => ex.Message, InfoBarSeverity.Error); }
     }
     private void Refresh_Click(object sender, RoutedEventArgs e) => Reload();
     private void OpenFolder_Click(object sender, RoutedEventArgs e)
     {
         try { Directory.CreateDirectory(_service.Root); Process.Start(new ProcessStartInfo(_service.Root) { UseShellExecute = true }); }
-        catch (Exception ex) { Message("无法打开目录", ex.Message, InfoBarSeverity.Error); }
+        catch (Exception ex) { Message(() => BemText.Get("无法打开目录"), () => ex.Message, InfoBarSeverity.Error); }
     }
 }
