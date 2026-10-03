@@ -6,7 +6,7 @@ Better Endfield is an open-source modular toolkit for *Arknights: Endfield*. It 
 
 [Download](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [Release notes](CHANGELOG.md) · [Android setup/build guide](android/README.md) · [BEM creator guide](docs/BEM_CREATOR_GUIDE.md) · [Module developer guide](docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
 
-The current version is **3.4.3**, with standalone BEM Tools **1.4.1**. Version 3.4.3 improves BEM vertex-layout compatibility on both platforms, fixes Android models that only appeared on the character details screen, aligns model experimental controls, and completes desktop English localization.
+The current version is **3.4.4**, with standalone BEM Tools **1.4.1**. Version 3.4.4 enables low-peak model loading by default with an optional "Prioritize loading speed" mode, extends experimental hot switching to in-world models, and adds per-character first-person profiles, shared hook chains on both platforms and model storage management.
 
 ## Feature overview
 

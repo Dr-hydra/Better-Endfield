@@ -6,7 +6,7 @@ Better Endfield 是面向《明日方舟：终末地》的开源模块化工具�
 
 [下载正式版](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [更新说明](CHANGELOG.md) · [Android 使用与构建](android/README.md) · [BEM 创作者指南](docs/BEM_CREATOR_GUIDE.md) · [模块开发指南](docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
 
-当前版本为 **3.4.3**，独立 BEM Tools 为 **1.4.1**。3.4.3 改善双端 BEM 顶点布局兼容性，修复 Android 部分模型仅在详情界面生效的问题，并统一模型实验功能入口、补齐桌面英文本地化。
+当前版本为 **3.4.4**，独立 BEM Tools 为 **1.4.1**。3.4.4 默认启用低峰值模型加载并新增「加载速度优先」，实验热切换支持场景模型，新增第一人称逐角色资料、双端同方法多模块 Hook 链和模型存储管理。
 
 ## 功能一览
 
