@@ -343,6 +343,10 @@ struct Session {
 Session g_session;
 bool g_liino_teardown_contract = true, g_effect_follow_contract = true;
 bool g_liino_clean_contract = true;
+// Optional: the 2026-09-03 PC client inlines _TickStatePerformInterrupt into
+// its only caller, PreLateTick, so the entry hook never fires there; the other
+// interrupt holds still apply. Builds that keep it out of line use the hook.
+bool g_state_interrupt_contract = true;
 int g_liino_mesh_groups[2]{-1, -1};
 VoidFn g_effect_action_play = nullptr;
 const void* g_hash_fields[2]{};
@@ -1246,6 +1250,7 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     for (auto& method : g_methods) {
         if (host->resolve_method(host->context, &method.desc, &method.resolved) != BE_Result_Ok) {
             Log((std::string("Missing action method: ") + method.desc.class_name + "." + method.desc.method_name).c_str());
+            if (&method == &g_methods[TickStateInterrupt]) { g_state_interrupt_contract = false; continue; }
             if (&method == &g_methods[MeshGroupShow]) { g_mesh_group_contract = false; continue; }
             if (&method == &g_methods[EffectActionPlay]) { g_liino_teardown_contract = false; continue; }
             if (&method == &g_methods[EffectManualFollow]) { g_effect_follow_contract = false; continue; }
@@ -1335,7 +1340,7 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     uint32_t impl = 0;
     if (!ok || !g_hash_fields[0] || !g_hash_fields[1] || !g_locomotion_fields[0] || !g_locomotion_fields[1] ||
         (flags(g_methods[SetDashing].resolved.method_info, &impl) & 0x10u)) return BE_Result_ContractMismatch;
-    for (MethodId id : {FlowTick, PerformClear, AddCommand, TickStateInterrupt, CrossFade, TryExit,
+    for (MethodId id : {FlowTick, PerformClear, AddCommand, CrossFade, TryExit,
         CheckTrackEnd, ShowObject, AudioMonoPost, AudioMonoComponent, EffectDuration, EffectFinish, EffectStop})
         if (flags(g_methods[id].resolved.method_info, &impl) & 0x10u) return BE_Result_ContractMismatch;
     for (MethodId id : {AudioEntityPost, AudioHash, UnityAlive})
@@ -1358,7 +1363,6 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     if (!g_particle_type_root) return BE_Result_Failed;
     struct Hook { MethodId id; void* detour; void** original; };
     Hook hooks[]{
-        {TickStateInterrupt, reinterpret_cast<void*>(&StateInterruptDetour), reinterpret_cast<void**>(&g_tick_state_interrupt)},
         {TryExit, reinterpret_cast<void*>(&TryExitDetour), reinterpret_cast<void**>(&g_try_exit)},
         {FlowTick, reinterpret_cast<void*>(&FlowDetour), reinterpret_cast<void**>(&g_flow_tick)},
         {CheckTrackEnd, reinterpret_cast<void*>(&TrackEndDetour), reinterpret_cast<void**>(&g_check_track)},
@@ -1390,6 +1394,12 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
             return BE_Result_Failed;
         }
     }
+    if (g_state_interrupt_contract &&
+        ((flags(g_methods[TickStateInterrupt].resolved.method_info, &impl) & 0x10u) ||
+         host->create_hook(host->context, kId, g_methods[TickStateInterrupt].resolved.method_pointer,
+             reinterpret_cast<void*>(&StateInterruptDetour), reinterpret_cast<void**>(&g_tick_state_interrupt)) != BE_Result_Ok))
+        g_state_interrupt_contract = false;
+    if (!g_state_interrupt_contract) Log("Sustained dash: _TickStatePerformInterrupt hook unavailable; the other interrupt holds remain.");
     if (g_liino_teardown_contract &&
         ((flags(g_methods[EffectActionPlay].resolved.method_info, &impl) & 0x10u) ||
          host->create_hook(host->context, kId, g_methods[EffectActionPlay].resolved.method_pointer,
