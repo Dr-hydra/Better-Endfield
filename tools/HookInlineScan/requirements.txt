@@ -1,0 +1,3 @@
+pefile>=2023.2.7
+capstone>=5.0
+numpy>=1.24
