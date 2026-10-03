@@ -95,6 +95,8 @@ val verifyDesktopModelHookParity by tasks.registering {
     val modelSource = rootProject.file("../native/modules/model/module.cpp")
     inputs.file(modelSource)
     doLast {
+        // CustomModel also hooks Internal_CloneSingleWithParent; the Host
+        // create_hook chains both modules on that target (2026-10-03).
         val source = modelSource.readText()
         val expected = linkedMapOf(
             "login_bind" to "LoginBindHook",

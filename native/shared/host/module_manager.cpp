@@ -206,6 +206,9 @@ ModuleManager::LoadResult ModuleManager::LoadManifest(
     const BE_Result result = api->initialize(&runtime_.Api());
     if (result != BE_Result_Ok) {
         logger_.Write("host.modules", "Module contract was rejected: " + module_id);
+        // A partially initialized module may have hooked targets shared with
+        // other modules; its nodes must become pass-throughs before unload.
+        runtime_.ReleaseHooks(module_id);
         FreeLibrary(library);
         rejected_modules_.insert(module_id);
         return LoadResult::Rejected;

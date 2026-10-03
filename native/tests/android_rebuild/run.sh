@@ -9,7 +9,7 @@ S=native/shared/android_compat
 flags=(-std=c++20 -pthread -g -I"$A" -I"$S" -I"$S/include" -Inative/tests/android_rebuild/stubs)
 "$CXX" "${flags[@]}" native/tests/android_rebuild/input_test.cpp "$S/android_win32.cpp" "$S/android_frame.cpp" -ldl -o "$BUILD/input"
 "$BUILD/input"
-"$CXX" "${flags[@]}" native/tests/android_rebuild/hook_test.cpp "$A/core/hook_broker.cpp" -o "$BUILD/hooks"
+"$CXX" "${flags[@]}" -Inative/shared/include native/tests/android_rebuild/hook_test.cpp "$A/core/hook_broker.cpp" -o "$BUILD/hooks"
 "$BUILD/hooks"
 "$CXX" "${flags[@]}" native/tests/android_rebuild/runtime_test.cpp "$A/core/runtime.cpp" native/tests/android_rebuild/log_stub.cpp -ldl -o "$BUILD/runtime"
 "$BUILD/runtime"

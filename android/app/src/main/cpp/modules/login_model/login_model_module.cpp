@@ -155,7 +155,8 @@ BE_Result LoginModelModule::CreateHookCallback(
     }
     void* stub = nullptr;
     std::string error;
-    if (!self->hook_broker_.Install(target, detour, original, stub, error)) {
+    if (!self->hook_broker_.Install(module_id == nullptr ? self->Id() : module_id,
+            target, detour, original, stub, error)) {
         LogError(self->Id(), error.c_str());
         return BE_Result_Failed;
     }

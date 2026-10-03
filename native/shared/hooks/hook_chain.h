@@ -22,15 +22,29 @@ namespace BetterEndfield::Hooks {
 struct Relay {
     void* code=nullptr;
     std::atomic<void*>* destination=nullptr;
+    // Tracked relays only: the relay code stores 1 here on its first dispatch.
+    std::atomic<uint8_t>* hit=nullptr;
     void Set(void* value) const {destination->store(value,std::memory_order_release);}
     explicit operator bool() const {return code&&destination;}
 };
 class RelayPool {
 public:
-    Relay Make() {
+    Relay Make() {return Make(false);}
+    // Same forwarding contract as Make(), plus a hit flag that tells the Host
+    // whether anything ever entered the patched target. x64 only; elsewhere it
+    // returns an empty relay and callers fall back to Make().
+    Relay MakeTracked() {return Make(true);}
+    static RelayPool& Instance() {static auto* pool=new RelayPool;return *pool;}
+private:
+    Relay Make(bool tracked) {
+#if !defined(_M_X64)&&!defined(__x86_64__)
+        if(tracked)return {};
+#endif
         std::lock_guard lock(mutex_);
         if(issued_>=32768)return {};
-        if(pages_.empty()||pages_.back()->used==pages_.back()->count) {
+        auto& pages=tracked?tracked_pages_:pages_;
+        const size_t slot=tracked?64:32;
+        if(pages.empty()||pages.back()->used==pages.back()->count) {
             auto page=std::make_unique<Page>();
 #if defined(_WIN32)
             SYSTEM_INFO info{};GetSystemInfo(&info);page->size=info.dwPageSize;
@@ -41,12 +55,27 @@ public:
             if(page->code==MAP_FAILED)page->code=nullptr;
 #endif
             if(!page->code)return {};
-            page->count=page->size/32;
+            page->count=page->size/slot;
             page->cells=std::make_unique<std::atomic<void*>[]>(page->count);
+            if(tracked)page->hits=std::make_unique<std::atomic<uint8_t>[]>(page->count);
             for(size_t i=0;i<page->count;++i) {
-                auto* code=static_cast<uint8_t*>(page->code)+i*32;
+                auto* code=static_cast<uint8_t*>(page->code)+i*slot;
                 const uintptr_t cell=reinterpret_cast<uintptr_t>(&page->cells[i]);
 #if defined(_M_X64)||defined(__x86_64__)
+                if(tracked) {
+                    // ENDBR64; mov r11, hit; cmp byte [r11], 0; jne +4;
+                    // mov byte [r11], 1; mov r11, cell; jmp [r11]. The flag is
+                    // written once, later calls only read it. R11 and flags
+                    // are ABI scratch at a call boundary.
+                    const uintptr_t hit=reinterpret_cast<uintptr_t>(&page->hits[i]);
+                    const uint8_t head[]{0xF3,0x0F,0x1E,0xFA,0x49,0xBB};
+                    const uint8_t mark[]{0x41,0x80,0x3B,0x00,0x75,0x04,0x41,0xC6,0x03,0x01,0x49,0xBB};
+                    const uint8_t jump[]{0x41,0xFF,0x23};
+                    std::memcpy(code,head,sizeof(head));std::memcpy(code+6,&hit,8);
+                    std::memcpy(code+14,mark,sizeof(mark));std::memcpy(code+26,&cell,8);
+                    std::memcpy(code+34,jump,sizeof(jump));
+                    continue;
+                }
                 // ENDBR64; mov r11, cell; jmp [r11]. R11 is ABI scratch.
                 const uint8_t prefix[]{0xF3,0x0F,0x1E,0xFA,0x49,0xBB};
                 const uint8_t suffix[]{0x41,0xFF,0x23};
@@ -69,16 +98,16 @@ public:
             __builtin___clear_cache(static_cast<char*>(page->code),static_cast<char*>(page->code)+page->size);
             if(mprotect(page->code,page->size,PROT_READ|PROT_EXEC)!=0)return {};
 #endif
-            pages_.push_back(std::move(page));
+            pages.push_back(std::move(page));
         }
-        auto& page=*pages_.back();const size_t index=page.used++;++issued_;
-        return {static_cast<uint8_t*>(page.code)+index*32,&page.cells[index]};
+        auto& page=*pages.back();const size_t index=page.used++;++issued_;
+        return {static_cast<uint8_t*>(page.code)+index*slot,&page.cells[index],
+            tracked?&page.hits[index]:nullptr};
     }
-    static RelayPool& Instance() {static auto* pool=new RelayPool;return *pool;}
-private:
     struct Page {
         void* code=nullptr;size_t size=0,count=0,used=0;
         std::unique_ptr<std::atomic<void*>[]> cells;
+        std::unique_ptr<std::atomic<uint8_t>[]> hits;
         ~Page() {
             if(!code)return;
 #if defined(_WIN32)
@@ -89,7 +118,7 @@ private:
         }
     };
     std::mutex mutex_;size_t issued_=0;
-    std::vector<std::unique_ptr<Page>> pages_;
+    std::vector<std::unique_ptr<Page>> pages_,tracked_pages_;
 };
 static_assert(std::atomic<void*>::is_always_lock_free&&sizeof(void*)==8);
 
@@ -99,17 +128,33 @@ struct Backend {
     std::function<void(void*)> abort;
     std::function<void(void*)> retire; // Must retain the original trampoline.
 };
+// One patched target, many owners. Nodes run in first-registration order: the
+// earliest registered detour is entered first and its next reaches the second
+// one, the last next reaches the game's original code. A disabled node keeps
+// its position as a pass-through; reactivating the same module/detour pair
+// restores it in place, any other registration is appended at the end.
 class Chain {
 public:
+    // Same module registering the same target again while its node is active:
+    // Reuse returns the existing next/handle (third-party chain ABI), Reject
+    // returns BE_Result_Conflict (built-in create_hook kept its exclusive
+    // per-module contract; a module still cannot hook one entry twice).
+    enum class Duplicate {Reuse,Reject};
     explicit Chain(Backend backend):backend_(std::move(backend)) {}
-    BE_Result Create(const char* module,void* target,void* detour,void** next,uint64_t* handle) {
+    BE_Result Create(const char* module,void* target,void* detour,void** next,uint64_t* handle,
+            Duplicate duplicate=Duplicate::Reuse) {
         if(!module||!*module||!target||!detour||!next||!handle||target==detour)return BE_Result_InvalidArgument;
-        *next=nullptr;*handle=0;
         static std::atomic<uint64_t> serial{1};
         try {
             std::lock_guard lock(mutex_);
-            if(stopped_)return BE_Result_NotReady;
             auto found=targets_.find(target);
+            // A rejected duplicate leaves next/handle untouched: the caller may
+            // pass the variable its live hook still calls through.
+            if(!stopped_&&found!=targets_.end()&&duplicate==Duplicate::Reject)
+                for(auto* existing:found->second->nodes)
+                    if(existing->active&&existing->module==module)return BE_Result_Conflict;
+            *next=nullptr;*handle=0;
+            if(stopped_)return BE_Result_NotReady;
             if(found!=targets_.end())for(auto* existing:found->second->nodes)
                 if(existing->module==module&&existing->detour==detour) {
                     if(!existing->active) {
@@ -121,8 +166,8 @@ public:
                     }else {*next=existing->next.code;*handle=existing->handle;}
                     return BE_Result_Ok;
                 }
-            if(nodes_.size()>=1024||(found==targets_.end()&&targets_.size()>=256))return BE_Result_Failed;
-            auto node=std::make_unique<Node>();node->module=module;node->detour=detour;
+            if(nodes_.size()>=4096||(found==targets_.end()&&targets_.size()>=1024))return BE_Result_Failed;
+            auto node=std::make_unique<Node>();node->module=module;node->target=target;node->detour=detour;
             node->entry=RelayPool::Instance().Make();node->next=RelayPool::Instance().Make();
             if(!node->entry||!node->next)return BE_Result_Failed;
             node->handle=serial.fetch_add(1);
@@ -179,6 +224,18 @@ public:
         return BE_Result_Ok;
     }
     bool Contains(void* target) const {std::lock_guard lock(mutex_);return targets_.contains(target);}
+    // Active owners of target in call order; empty when every node is a pass-through.
+    std::vector<std::string> Modules(void* target) const {
+        std::lock_guard lock(mutex_);std::vector<std::string> modules;
+        const auto found=targets_.find(target);if(found==targets_.end())return modules;
+        for(const auto* node:found->second->nodes)if(node->active)modules.push_back(node->module);
+        return modules;
+    }
+    // Patched target of a live handle, nullptr when the handle is unknown.
+    void* TargetOf(uint64_t handle) const {
+        std::lock_guard lock(mutex_);const auto found=nodes_.find(handle);
+        return found==nodes_.end()?nullptr:found->second->target;
+    }
     bool HasTargets() const {std::lock_guard lock(mutex_);return !targets_.empty();}
     void Shutdown() {
         std::lock_guard lock(mutex_);if(stopped_)return;stopped_=true;
@@ -187,7 +244,7 @@ public:
         // RX relays/cells and original trampolines remain process-pinned.
     }
 private:
-    struct Node {std::string module;void* detour=nullptr;uint64_t handle=0;Relay entry,next;bool active=true;};
+    struct Node {std::string module;void* target=nullptr;void* detour=nullptr;uint64_t handle=0;Relay entry,next;bool active=true;};
     struct Target {Relay head;void* original=nullptr;std::vector<Node*> nodes;};
     Backend backend_;mutable std::mutex mutex_;bool stopped_=false;
     std::unordered_map<void*,std::unique_ptr<Target>> targets_;

@@ -3,8 +3,10 @@
 
 #define BETTER_ENDFIELD_HOOK_CHAIN_ABI_V1 1u
 
-// Optional Host facility. It does not change BE_HostApiV1 or the exclusive
-// create_hook contract. Detours and next must use the target's platform ABI.
+// Optional Host facility; BE_HostApiV1 is unchanged. Built-in create_hook
+// registrations and this API share one chain per target, so neither conflicts
+// with the other. Nodes run in first-registration order. Detours and next must
+// use the target's platform ABI.
 // Next is a stable forwarding entry, not a promise to bypass other modules.
 typedef struct BE_HookChainApiV1 {
     uint32_t struct_size;

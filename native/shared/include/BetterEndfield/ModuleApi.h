@@ -79,6 +79,12 @@ typedef struct BE_HostApiV1 {
         void* context,
         const BE_FieldDescriptorV1* descriptor,
         BE_ResolvedFieldV1* result);
+    // Several modules may hook the same target. Each registration becomes a
+    // node of the target's shared chain (also used by third-party modules);
+    // nodes run in first-registration order and *original is the next node,
+    // ending at the game function. A module that already actively hooks target
+    // gets BE_Result_Conflict with *original untouched. release_module_hooks
+    // turns the module's nodes into pass-throughs without affecting others.
     BE_Result(BE_CALL* create_hook)(
         void* context,
         const char* module_id,

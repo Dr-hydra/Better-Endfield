@@ -158,7 +158,7 @@ BE_Result DesktopModule::CreateHookCallback(
     self->hooks_.reserve(self->hooks_.size() + 1);
     void* stub = nullptr;
     std::string error;
-    if (!self->hook_broker_.Install(target, detour, original, stub, error)) {
+    if (!self->hook_broker_.Install(record.module_id.c_str(), target, detour, original, stub, error)) {
         LogError(self->id_, error.c_str());
         return BE_Result_Failed;
     }

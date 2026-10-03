@@ -30,6 +30,20 @@ constexpr auto kRuntimeWait = std::chrono::seconds(90);
 constexpr auto kRuntimePoll = std::chrono::milliseconds(100);
 constexpr auto kRuntimeSettle = std::chrono::seconds(3);
 
+// "Namespace.Class::Method(parameter types)" for hook diagnostics.
+std::string MethodLabel(const BE_MethodDescriptorV1& descriptor) {
+    std::string label;
+    if (descriptor.namespace_name && *descriptor.namespace_name) {
+        label = std::string(descriptor.namespace_name) + ".";
+    }
+    label += std::string(descriptor.class_name ? descriptor.class_name : "?") + "::" +
+        (descriptor.method_name ? descriptor.method_name : "?") + "(";
+    label += descriptor.parameter_types
+        ? std::string(descriptor.parameter_types)
+        : std::to_string(descriptor.parameter_count) + " args";
+    return label + ")";
+}
+
 } // namespace
 
 HostRuntime::HostRuntime(HMODULE host_module, const void* bootstrap_data)
@@ -145,6 +159,7 @@ void HostRuntime::Run() {
     uint64_t configuration_token = settings_->ChangeToken();
     while (!stop_requested_.load(std::memory_order_acquire)) {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        hooks_->Poll();
         const uint64_t next_token = settings_->ChangeToken();
         if (next_token != configuration_token) {
             configuration_token = next_token;
@@ -196,6 +211,9 @@ BE_Result BE_CALL HostRuntime::ResolveMethodCallback(void* context,
     const BE_Result status = runtime->resolver_->ResolveMethod(*descriptor, *result, error);
     if (status != BE_Result_Ok && runtime->logger_) {
         runtime->logger_->Write("host.resolver", error);
+    }
+    if (status == BE_Result_Ok && runtime->hooks_) {
+        runtime->hooks_->DescribeEntry(result->method_pointer, MethodLabel(*descriptor));
     }
     return status;
 }
