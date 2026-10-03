@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bem_filter_character">Filter by character</string>
+    <string name="bem_all_characters">All characters</string>
+    <string name="bem_disable_all">Disable all models</string>
+    <string name="bem_all_disabled">All models disabled</string>
+    <string name="bem_fast_loading">Prioritize loading speed</string>
+    <string name="bem_storage">Storage</string>
+    <string name="bem_keep_local_copies">Keep local copies</string>
+    <string name="bem_clean_unused">Clean up unused data</string>
+</resources>

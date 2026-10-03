@@ -186,6 +186,21 @@ public final class EnhancementSettingsActivity extends Activity {
         SectionCard card = card(getString(R.string.overlay_card_title));
         addToggle(card, R.string.overlay_enable, () -> ModuleSettings.isOverlayEnabled(this),
                 checked -> ModuleSettings.setOverlayEnabled(this, checked));
+        addToggle(card, R.string.overlay_auto_snap, () -> ModuleSettings.isOverlayAutoSnap(this),
+                checked -> {
+                    ModuleSettings.setOverlayAutoSnap(this, checked);
+                    refreshOverlayPreview();
+                });
+        ValueSlider transparency = new ValueSlider(this, getString(R.string.overlay_transparency),
+                "%", 0, ModuleSettings.OVERLAY_TRANSPARENCY_MAXIMUM);
+        transparency.setValue(ModuleSettings.getOverlayTransparency(this));
+        transparency.onChanged(() -> {
+            ModuleSettings.setOverlayTransparency(this, transparency.getValue());
+            refreshOverlayPreview();
+        });
+        sliders.put(R.string.overlay_transparency, transparency);
+        sliderValues.put(R.string.overlay_transparency, () -> ModuleSettings.getOverlayTransparency(this));
+        card.add(transparency);
         Button preview = button(getString(R.string.overlay_preview));
         preview.setOnClickListener(view -> {
             removeOverlayPreview();
@@ -319,6 +334,10 @@ public final class EnhancementSettingsActivity extends Activity {
         if (overlayPreview == null) return;
         overlayPreview.remove();
         overlayPreview = null;
+    }
+
+    private void refreshOverlayPreview() {
+        if (overlayPreview != null) overlayPreview.refreshAppearance();
     }
 
     private int dp(int value) {

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bem_filter_character">キャラクターで絞り込み</string>
+    <string name="bem_all_characters">すべてのキャラクター</string>
+    <string name="bem_disable_all">すべてのモデルを無効化</string>
+    <string name="bem_all_disabled">すべてのモデルを無効化しました</string>
+    <string name="bem_fast_loading">読み込み速度を優先</string>
+    <string name="bem_storage">ストレージ</string>
+    <string name="bem_keep_local_copies">ローカルコピーを保持</string>
+    <string name="bem_clean_unused">未使用データを削除</string>
+</resources>

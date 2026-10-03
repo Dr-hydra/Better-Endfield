@@ -42,12 +42,12 @@ public final class XposedEntry extends XposedModule {
                                 // The service-backed preferences proxy can be
                                 // stale after the settings Activity commits a
                                 // new snapshot. Re-acquire it when an Activity
-                                // resumes instead of caching the old values.
+                                // resumes or the visible deck polls, so appearance
+                                // changes also reach the already running game.
                                 try {
-                                    return OverlayFeatures.read(
-                                            getRemotePreferences("module_settings"));
+                                    return getRemotePreferences("module_settings");
                                 } catch (RuntimeException unavailable) {
-                                    return OverlayFeatures.read(settings);
+                                    return settings;
                                 }
                             });
                     Application application=(Application) chain.getThisObject();
@@ -56,13 +56,13 @@ public final class XposedEntry extends XposedModule {
                         String initialIndex=settings.getString(BemInstaller.INDEX,"[]");
                         boolean skipValidation=settings.getBoolean(BemInstaller.SKIP_VALIDATION,false);
                         boolean hotSwitch=settings.getBoolean(BemInstaller.HOT_SWITCH,false);
-                        boolean loadingOptimization=settings.getBoolean(BemInstaller.LOADING_OPTIMIZATION,false);
+                        boolean fastLoading=settings.getBoolean(BemInstaller.FAST_LOADING,false);
                         boolean installedPrepared=false;
                         BemInstalledResources.Source modelSource=
                             name -> new ParcelFileDescriptor.AutoCloseInputStream(openRemoteFile(name));
                         try {
                             BemInstalledResources.configuration=BemInstalledResources.prepare(context,
-                                initialIndex,modelSource,this::report,skipValidation,hotSwitch,loadingOptimization);
+                                initialIndex,modelSource,this::report,skipValidation,hotSwitch,fastLoading,true);
                             installedPrepared=true;
                         } catch(Exception error) {report("Installed BEM preparation failed: "+error);}
                         if (settings.getBoolean(ModuleSettings.MMD_ENABLED, false)) try {
@@ -77,7 +77,7 @@ public final class XposedEntry extends XposedModule {
                             name -> new ParcelFileDescriptor.AutoCloseInputStream(openRemoteFile(name)), configs.thirdParty(), this::report);
                         if(installedPrepared) BemHotSwitchUpdater.start(context,
                             ()->getRemotePreferences("module_settings"),modelSource,initialIndex,
-                            skipValidation,hotSwitch,loadingOptimization,this::report);
+                            skipValidation,hotSwitch,fastLoading,this::report);
                     },"BetterEndfield-InstalledModels").start();
                 } catch (Throwable error) { report("bootstrap failed: " + error); }
                 return result;

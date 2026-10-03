@@ -11,7 +11,7 @@ final class BemHotSwitchUpdater {
 
     static void start(Context context,Supplier<SharedPreferences> preferences,
             BemInstalledResources.Source source,String initialIndex,
-            boolean skipValidation,boolean hotSwitch,boolean loadingOptimization,
+            boolean skipValidation,boolean hotSwitch,boolean fastLoading,
             Consumer<String> log) {
         if(!hotSwitch) return;
         Thread worker=new Thread(()->{
@@ -23,7 +23,7 @@ final class BemHotSwitchUpdater {
                         boolean queued=transaction.update(
                             ()->preferences.get().getString(BemInstaller.INDEX,"[]"),
                             index->BemInstalledResources.prepare(context,index,source,log,
-                                skipValidation,true,loadingOptimization),
+                                skipValidation,true,fastLoading),
                             configuration->{
                                 if(!NativeCommandBridge.updateCustomModelConfig(configuration)) return false;
                                 BemInstalledResources.configuration=configuration;

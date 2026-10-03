@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="overlay_transparency">透明度</string>
+    <string name="overlay_auto_snap">自动贴边</string>
+</resources>

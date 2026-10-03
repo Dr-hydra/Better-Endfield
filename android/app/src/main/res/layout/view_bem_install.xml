@@ -6,8 +6,13 @@
         <Button android:id="@+id/bem_import" style="@style/PrimaryButton" android:layout_marginTop="18dp" android:text="导入 BEM 包" />
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="16dp">
             <Switch android:id="@+id/bem_hot_switch" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:text="实验：模型热切换" />
-            <Switch android:id="@+id/bem_loading_optimization" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:layout_marginTop="12dp" android:text="实验：模型加载优化" />
+            <Switch android:id="@+id/bem_fast_loading" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:layout_marginTop="12dp" android:text="@string/bem_fast_loading" />
             <Switch android:id="@+id/bem_skip_validation" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:layout_marginTop="12dp" android:text="实验：关闭模型校验" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="16dp">
+            <TextView style="@style/CardTitle" android:text="@string/bem_storage" />
+            <Switch android:id="@+id/bem_keep_local_copies" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:layout_marginTop="8dp" android:text="@string/bem_keep_local_copies" />
+            <Button android:id="@+id/bem_clean_unused" style="@style/GhostButton" android:layout_marginTop="8dp" android:text="@string/bem_clean_unused" />
         </LinearLayout>
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="16dp">
             <TextView style="@style/CardTitle" android:text="获取模型" />

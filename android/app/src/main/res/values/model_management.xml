@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bem_filter_character">按角色筛选</string>
+    <string name="bem_all_characters">全部角色</string>
+    <string name="bem_disable_all">关闭全部模型</string>
+    <string name="bem_all_disabled">已关闭全部模型</string>
+    <string name="bem_fast_loading">加载速度优先</string>
+    <string name="bem_storage">存储</string>
+    <string name="bem_keep_local_copies">保留本地副本</string>
+    <string name="bem_clean_unused">清理未使用数据</string>
+</resources>

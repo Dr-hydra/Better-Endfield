@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<!-- The existing interface intentionally falls back to its default language;
+     additional locale resources currently translate only the new controls. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <string name="app_name">Better Endfield</string>
     <string name="xposed_description">Modular Endfield model replacement and per-character voice routing</string>
     <string name="settings_subtitle">终末地增强模块 · Android</string>

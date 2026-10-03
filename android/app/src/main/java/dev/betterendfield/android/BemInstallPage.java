@@ -16,6 +16,7 @@ final class BemInstallPage {
     private static final int PICK=101;
     private static final String STATE_PENDING_URI="bem.pending_uri";
     private static final String STATE_INCOMING_NOTICE="bem.incoming_notice";
+    private static final String STATE_CHARACTER="bem.character_filter";
     private Uri pendingImport;
     private View incoming;
     private TextView incomingNotice;
@@ -23,7 +24,14 @@ final class BemInstallPage {
     private final Handler handler=new Handler(Looper.getMainLooper());
     private TextView status;private LinearLayout entries;private String displayed="";
     private Button importButton,cancel;
-    private Switch skipValidation,hotSwitch,loadingOptimization;
+    private Button disableAll;
+    private Spinner characterFilter;
+    private String selectedCharacter="";
+    private boolean updatingCharacterFilter,hasEnabledPackages;
+    private final java.util.List<String> characterIds=new java.util.ArrayList<>();
+    private JSONObject characterNames=new JSONObject();
+    private Switch skipValidation,hotSwitch,fastLoading,keepLocalCopies;
+    private Button cleanUnused;
     private final java.util.Set<String> expanded=new java.util.HashSet<>();
     private final java.util.Map<String,java.util.LinkedHashMap<String,Integer>> parameterDrafts=new java.util.HashMap<>();
     private int renderVersion;
@@ -35,9 +43,10 @@ final class BemInstallPage {
         skipValidation.setEnabled(!BemInstaller.busy);
         skipValidation.setChecked(FrameworkSettings.open(activity).getBoolean(BemInstaller.SKIP_VALIDATION,false));
         refreshExperiment(hotSwitch,BemInstaller.HOT_SWITCH);
-        refreshExperiment(loadingOptimization,BemInstaller.LOADING_OPTIMIZATION);
+        refreshExperiment(fastLoading,BemInstaller.FAST_LOADING);
+        keepLocalCopies.setEnabled(!BemInstaller.busy);cleanUnused.setEnabled(!BemInstaller.busy);
         status.setText(BemInstaller.status);
-        root.findViewById(R.id.bem_operation_state).setVisibility(BemInstaller.busy || BemInstaller.status.contains("未完成") || BemInstaller.status.contains("失败") ? View.VISIBLE : View.GONE);importButton.setEnabled(!BemInstaller.busy);cancel.setEnabled(BemInstaller.busy && !BemInstaller.removing);
+        root.findViewById(R.id.bem_operation_state).setVisibility(BemInstaller.busy || BemInstaller.status.contains("未完成") || BemInstaller.status.contains("失败") || BemInstaller.status.startsWith("已清理") || BemInstaller.status.contains("本地副本") ? View.VISIBLE : View.GONE);importButton.setEnabled(!BemInstaller.busy);cancel.setEnabled(BemInstaller.busy && !BemInstaller.removing);
         incomingRetry.setEnabled(pendingImport!=null && !BemInstaller.busy);
         progress.setVisibility(BemInstaller.busy?View.VISIBLE:View.GONE);
         progressLabel.setVisibility(BemInstaller.busy?View.VISIBLE:View.GONE);
@@ -52,6 +61,7 @@ final class BemInstallPage {
         String index=FrameworkSettings.open(activity).getString(BemInstaller.INDEX,"[]");
         if(!index.equals(displayed)) showEntries();
         for(View action:packageActions) action.setEnabled(!BemInstaller.busy);
+        disableAll.setEnabled(!BemInstaller.busy && hasEnabledPackages);
         handler.postDelayed(this,500);
     }};
     BemInstallPage(Activity activity, View root, Bundle state) {
@@ -64,9 +74,26 @@ final class BemInstallPage {
         cancel=root.findViewById(R.id.bem_cancel);
         skipValidation=root.findViewById(R.id.bem_skip_validation);
         hotSwitch=root.findViewById(R.id.bem_hot_switch);
-        loadingOptimization=root.findViewById(R.id.bem_loading_optimization);
+        fastLoading=root.findViewById(R.id.bem_fast_loading);
         bindExperiment(hotSwitch,BemInstaller.HOT_SWITCH);
-        bindExperiment(loadingOptimization,BemInstaller.LOADING_OPTIMIZATION);
+        bindExperiment(fastLoading,BemInstaller.FAST_LOADING);
+        keepLocalCopies=root.findViewById(R.id.bem_keep_local_copies);
+        cleanUnused=root.findViewById(R.id.bem_clean_unused);
+        keepLocalCopies.setChecked(FrameworkSettings.open(activity).getBoolean(BemInstaller.KEEP_LOCAL_COPIES,true));
+        keepLocalCopies.setOnCheckedChangeListener((button,checked)->{
+            android.content.SharedPreferences settings=FrameworkSettings.open(activity);
+            if(settings.getBoolean(BemInstaller.KEEP_LOCAL_COPIES,true)==checked) return;
+            if(BemInstaller.busy || !settings.edit().putBoolean(BemInstaller.KEEP_LOCAL_COPIES,checked).commit()) {
+                keepLocalCopies.setChecked(!checked);
+                if(!BemInstaller.busy) saveError(new IllegalStateException("存储选项保存失败"));
+                return;
+            }
+            BemInstaller.applyLocalCopies(activity,checked);
+            handler.removeCallbacks(refresh);handler.post(refresh);
+        });
+        cleanUnused.setOnClickListener(v->{
+            if(BemInstaller.cleanUnused(activity)) {handler.removeCallbacks(refresh);handler.post(refresh);}
+        });
         skipValidation.setChecked(FrameworkSettings.open(activity).getBoolean(BemInstaller.SKIP_VALIDATION,false));
         skipValidation.setOnCheckedChangeListener((button,checked)->{
             android.content.SharedPreferences settings=FrameworkSettings.open(activity);
@@ -77,6 +104,7 @@ final class BemInstallPage {
             }
         });
         entries=root.findViewById(R.id.bem_entries);
+        addModelManagement();
         incoming=root.findViewById(R.id.bem_incoming);
         incomingNotice=root.findViewById(R.id.bem_incoming_notice);
         incomingRetry=root.findViewById(R.id.bem_incoming_retry);
@@ -91,6 +119,7 @@ final class BemInstallPage {
         root.findViewById(R.id.bem_models_katfile).setOnClickListener(v -> openModelSource("https://katfile.biz/users/hydra405/"));
         cancel.setOnClickListener(v -> BemInstaller.cancel());
         if(state!=null) {
+            selectedCharacter=state.getString(STATE_CHARACTER,"");
             java.util.ArrayList<String> restored=state.getStringArrayList("bem.expanded");
             if(restored!=null) expanded.addAll(restored);
             // A rotation/recreated task must not replay an already accepted Intent.
@@ -102,6 +131,74 @@ final class BemInstallPage {
             }
             String notice=state.getString(STATE_INCOMING_NOTICE);
             if(notice!=null) showIncoming(notice);
+        }
+    }
+    private void addModelManagement() {
+        try(java.io.InputStream input=activity.getAssets().open("character-names.json");
+                java.io.ByteArrayOutputStream output=new java.io.ByteArrayOutputStream()) {
+            byte[] buffer=new byte[8192];int count;
+            while((count=input.read(buffer))!=-1) output.write(buffer,0,count);
+            characterNames=new JSONObject(new String(output.toByteArray(),java.nio.charset.StandardCharsets.UTF_8));
+        } catch(Exception unavailable) { /* Unknown characters still use their stable IDs. */ }
+        LinearLayout management=new LinearLayout(activity);management.setOrientation(LinearLayout.VERTICAL);
+        management.setPadding(dp(16),dp(16),dp(16),dp(16));management.setBackgroundResource(R.drawable.bg_card);
+        management.addView(fieldLabel(activity.getString(R.string.bem_filter_character)));
+        characterFilter=new Spinner(activity);characterFilter.setMinimumHeight(dp(52));
+        characterFilter.setBackgroundResource(R.drawable.bg_input);characterFilter.setPopupBackgroundResource(R.color.surface_high);
+        characterFilter.setContentDescription(activity.getString(R.string.bem_filter_character));
+        management.addView(characterFilter,new LinearLayout.LayoutParams(-1,dp(52)));
+        characterFilter.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent,View view,int position,long id) {
+                if(updatingCharacterFilter || position<0 || position>=characterIds.size()) return;
+                String selected=characterIds.get(position);
+                if(selected.equals(selectedCharacter)) return;
+                selectedCharacter=selected;applyCharacterFilter();
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
+        disableAll=actionButton(activity.getString(R.string.bem_disable_all));disableAll.setEnabled(false);
+        LinearLayout.LayoutParams buttonLayout=new LinearLayout.LayoutParams(-1,dp(44));buttonLayout.topMargin=dp(12);
+        management.addView(disableAll,buttonLayout);
+        disableAll.setOnClickListener(v->{
+            try {
+                BemInstaller.disableAll(activity);
+                BemInstaller.status=activity.getString(R.string.bem_all_disabled);status.setText(BemInstaller.status);
+                showEntries();
+                Toast.makeText(activity,R.string.bem_all_disabled,Toast.LENGTH_SHORT).show();
+            } catch(Exception error) {saveError(error);}
+        });
+        LinearLayout parent=(LinearLayout)entries.getParent();
+        LinearLayout.LayoutParams layout=new LinearLayout.LayoutParams(-1,-2);layout.topMargin=dp(18);
+        parent.addView(management,parent.indexOfChild(entries),layout);
+    }
+    private void updateCharacterFilter(JSONArray list) throws JSONException {
+        java.util.Set<String> installed=new java.util.TreeSet<>();hasEnabledPackages=false;
+        for(int i=0;i<list.length();++i) {
+            JSONObject entry=list.getJSONObject(i);installed.add(entry.getString("character_id"));
+            hasEnabledPackages |= entry.optBoolean("enabled",true);
+        }
+        if(!installed.contains(selectedCharacter)) selectedCharacter="";
+        java.util.List<String> next=new java.util.ArrayList<>();next.add("");next.addAll(installed);
+        updatingCharacterFilter=true;
+        try {
+            if(!next.equals(characterIds)) {
+                characterIds.clear();characterIds.addAll(next);
+                String[] labels=new String[characterIds.size()];labels[0]=activity.getString(R.string.bem_all_characters);
+                for(int i=1;i<labels.length;++i) {
+                    String id=characterIds.get(i);labels[i]=characterNames.optString(id,id);
+                }
+                ArrayAdapter<String> adapter=new ArrayAdapter<>(activity,R.layout.bem_spinner_item,labels);
+                adapter.setDropDownViewResource(R.layout.bem_spinner_dropdown_item);characterFilter.setAdapter(adapter);
+            }
+            characterFilter.setSelection(characterIds.indexOf(selectedCharacter));
+            characterFilter.setEnabled(!installed.isEmpty());
+        } finally {updatingCharacterFilter=false;}
+        disableAll.setEnabled(!BemInstaller.busy && hasEnabledPackages);
+    }
+    private void applyCharacterFilter() {
+        for(int i=0;i<entries.getChildCount();++i) {
+            View card=entries.getChildAt(i);
+            card.setVisibility(selectedCharacter.isEmpty() || card.getTag()==null || selectedCharacter.equals(card.getTag()) ? View.VISIBLE : View.GONE);
         }
     }
     private void openModelSource(String url) {
@@ -116,6 +213,7 @@ final class BemInstallPage {
         }
     }
     void saveState(Bundle state) {
+        state.putString(STATE_CHARACTER,selectedCharacter);
         state.putStringArrayList("bem.expanded",new java.util.ArrayList<>(expanded));
         if(pendingImport!=null) state.putString(STATE_PENDING_URI,pendingImport.toString());
         if(incoming.getVisibility()==View.VISIBLE)
@@ -175,6 +273,7 @@ final class BemInstallPage {
         try {
             JSONArray list=BemInstaller.index(activity);
             displayed=list.toString();
+            updateCharacterFilter(list);
             if(list.length()==0) {
                 TextView empty=new TextView(activity);
                 empty.setText("暂无模型包");
@@ -187,6 +286,7 @@ final class BemInstallPage {
             for(int i=0;i<list.length();++i) {
                 JSONObject entry=list.getJSONObject(i);String generation=entry.getString("generation");
                 LinearLayout card=new LinearLayout(activity);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(dp(16),dp(16),dp(16),dp(16));
+                card.setTag(entry.getString("character_id"));
                 card.setBackgroundResource(R.drawable.bg_card);
                 LinearLayout.LayoutParams cardLayout=new LinearLayout.LayoutParams(-1,-2);cardLayout.topMargin=dp(12);entries.addView(card,cardLayout);
                 LinearLayout heading=new LinearLayout(activity);heading.setGravity(android.view.Gravity.CENTER_VERTICAL);card.addView(heading);
@@ -252,8 +352,10 @@ final class BemInstallPage {
                             catch(Exception error) {saveError(error);}
                         }).show());
             }
+            applyCharacterFilter();
         } catch(Exception error){
             entries.removeAllViews();packageActions.clear();
+            hasEnabledPackages=false;disableAll.setEnabled(false);
             String message="安装列表读取失败："+error.getMessage();
             if(!BemInstaller.busy) BemInstaller.status=message;
             status.setText(message);

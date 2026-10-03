@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bem_filter_character">캐릭터별 필터</string>
+    <string name="bem_all_characters">모든 캐릭터</string>
+    <string name="bem_disable_all">모든 모델 끄기</string>
+    <string name="bem_all_disabled">모든 모델을 껐습니다</string>
+    <string name="bem_fast_loading">로딩 속도 우선</string>
+    <string name="bem_storage">저장 공간</string>
+    <string name="bem_keep_local_copies">로컬 사본 보관</string>
+    <string name="bem_clean_unused">사용하지 않는 데이터 정리</string>
+</resources>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="overlay_transparency">투명도</string>
+    <string name="overlay_auto_snap">가장자리에 자동 붙이기</string>
+</resources>

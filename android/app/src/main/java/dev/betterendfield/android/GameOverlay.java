@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Application;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -47,7 +48,7 @@ final class GameOverlay {
     private static final int HUD = 0, CAMERA = 1, PAUSE = 2, FIRST_PERSON = 3, MMD = 4;
     private final Activity activity;
     private final boolean preview;
-    private final Supplier<OverlayFeatures> features;
+    private final Supplier<SharedPreferences> settings;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final FrameLayout host;
     private final View handle;
@@ -76,6 +77,8 @@ final class GameOverlay {
     private RuntimeSnapshot snapshot = RuntimeSnapshot.offline();
     private OverlayFeatures shown = OverlayFeatures.off();
     private boolean resumed, closed, details, bridgeError, movementAllowed;
+    private boolean autoSnap, docked;
+    private OverlayGeometry.Rect lastSafeArea;
     private float x = savedX, y = savedY;
     private final Runnable pulse = new Runnable() {
         @Override public void run() {
@@ -90,16 +93,16 @@ final class GameOverlay {
         }
     };
 
-    static void install(Application app, ClassLoader ignored, Supplier<OverlayFeatures> features) {
+    static void install(Application app, ClassLoader ignored, Supplier<SharedPreferences> settings) {
         // Don't gate Activity lifecycle registration on Unity's lazy class loading.
         app.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             final Map<Activity, GameOverlay> surfaces = new HashMap<>();
             @Override public void onActivityResumed(Activity activity) {
                 try {
-                    OverlayFeatures current = features.get();
+                    OverlayFeatures current = OverlayFeatures.read(settings.get());
                     GameOverlay deck = surfaces.get(activity);
                     if (current.panel() && !sessionDismissed && deck == null) {
-                        deck = new GameOverlay(activity, false, features);
+                        deck = new GameOverlay(activity, false, settings);
                         surfaces.put(activity, deck);
                     }
                     if (deck != null) deck.resume(current.panel());
@@ -126,11 +129,11 @@ final class GameOverlay {
     }
 
     GameOverlay(Activity activity, boolean preview) {
-        this(activity, preview, () -> OverlayFeatures.read(FrameworkSettings.open(activity)));
+        this(activity, preview, () -> FrameworkSettings.open(activity));
         resume(true);
     }
-    private GameOverlay(Activity activity, boolean preview, Supplier<OverlayFeatures> features) {
-        this.activity = activity; this.preview = preview; this.features = features;
+    private GameOverlay(Activity activity, boolean preview, Supplier<SharedPreferences> settings) {
+        this.activity = activity; this.preview = preview; this.settings = settings;
         host = new FrameLayout(activity) {
             @Override public void onWindowFocusChanged(boolean focused) {
                 super.onWindowFocusChanged(focused);
@@ -219,8 +222,13 @@ final class GameOverlay {
         releaseHeldKeys(); panel.animate().cancel();
         boolean open = panel.getVisibility() != View.VISIBLE;
         panel.setVisibility(open ? View.VISIBLE : View.GONE);
-        if (open) { rebuild(); panel.setAlpha(0); panel.animate().alpha(1).setDuration(120).start(); }
-        else panel.setAlpha(1);
+        if (open) {
+            setDocked(false);
+            rebuild(); panel.setAlpha(0); panel.animate().alpha(1).setDuration(120).start();
+        } else {
+            panel.setAlpha(1);
+            if (autoSnap) snapToEdge();
+        }
         position();
     }
 
@@ -283,24 +291,75 @@ final class GameOverlay {
         body.addView(status); refreshState(); host.post(this::position);
     }
     private OverlayFeatures readFeatures() {
-        try { OverlayFeatures current = features.get(); return current == null ? OverlayFeatures.off() : current; }
+        try {
+            SharedPreferences current = settings.get();
+            if (current == null) return OverlayFeatures.off();
+            applyAppearance(ModuleSettings.getOverlayAppearance(current));
+            return OverlayFeatures.read(current);
+        }
         catch (RuntimeException unavailable) { return OverlayFeatures.off(); }
+    }
+    void refreshAppearance() {
+        if (closed) return;
+        try { applyAppearance(ModuleSettings.getOverlayAppearance(settings.get())); }
+        catch (RuntimeException unavailable) { /* Retain the last usable appearance. */ }
+    }
+    private void applyAppearance(ModuleSettings.OverlayAppearance appearance) {
+        // The host alpha also covers the icon; panel's expand animation remains relative to it.
+        host.setAlpha(appearance.alpha());
+        boolean enableSnap = appearance.autoSnap() && !autoSnap;
+        boolean disableSnap = !appearance.autoSnap() && autoSnap;
+        autoSnap = appearance.autoSnap();
+        if (enableSnap && dragGestures.stream().noneMatch(gesture -> gesture.pointer >= 0)) snapToEdge();
+        if (disableSnap) { setDocked(false); position(); }
+    }
+    private void snapToEdge() {
+        if (!autoSnap || dragGestures.stream().anyMatch(gesture -> gesture.pointer >= 0)) return;
+        releaseHeldKeys();
+        savedX = x = OverlayGeometry.nearestHorizontalEdge(x);
+        panel.animate().cancel(); panel.setAlpha(1); panel.setVisibility(View.GONE);
+        setDocked(true);
+        position();
+    }
+    private void setDocked(boolean compact) {
+        if (docked == compact) return;
+        docked = compact;
+        // ControlIcon draws within the padding, so the tag's mark scales down to 16dp.
+        int horizontal = dp(compact ? 4 : 11), vertical = dp(compact ? 12 : 11);
+        handle.setPadding(horizontal, vertical, horizontal, vertical);
+        handle.setBackground(surface(SURFACE, compact ? 8 : 16, EDGE));
     }
     private final class DragTouch implements View.OnTouchListener {
         final boolean clickable;
         float downX, downY, originX, originY; boolean moved; int pointer = -1;
         DragTouch(boolean clickable) { this.clickable = clickable; dragGestures.add(this); }
         void cancel() { pointer = -1; }
+        void finish(View view, boolean allowClick) {
+            boolean click = pointer >= 0 && !moved && clickable && allowClick;
+            boolean drag = pointer >= 0 && moved;
+            pointer = -1;
+            if (view.getParent() != null) view.getParent().requestDisallowInterceptTouchEvent(false);
+            if (drag) snapToEdge();
+            if (click) view.performClick();
+        }
         @Override public boolean onTouch(View view, MotionEvent event) {
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
                     pointer = event.getPointerId(0); downX = event.getRawX(); downY = event.getRawY();
-                    originX = handle.getX(); originY = handle.getY(); moved = false;
+                    OverlayGeometry.Rect start = geometry().handle();
+                    originX = start.left(); originY = start.top(); moved = false;
                     view.getParent().requestDisallowInterceptTouchEvent(true); return true;
                 case MotionEvent.ACTION_MOVE:
                     if (pointer < 0 || event.findPointerIndex(pointer) != 0) return true;
                     float dx = event.getRawX() - downX, dy = event.getRawY() - downY;
-                    moved |= Math.hypot(dx, dy) > ViewConfiguration.get(activity).getScaledTouchSlop();
+                    if (!moved && Math.hypot(dx, dy) > ViewConfiguration.get(activity).getScaledTouchSlop()) {
+                        moved = true;
+                        if (docked) {
+                            setDocked(false); position();
+                            OverlayGeometry.Rect restored = geometry().handle();
+                            originX = restored.left(); originY = restored.top();
+                        }
+                    }
                     if (moved) {
                         OverlayGeometry.Layout geometry = geometry();
                         x = OverlayGeometry.normalized(originX + dx, geometry.safe().left(), geometry.safe().width(), geometry.handle().width());
@@ -310,11 +369,11 @@ final class GameOverlay {
                     return true;
                 case MotionEvent.ACTION_POINTER_UP:
                     if (event.getPointerId(event.getActionIndex()) != pointer) return true;
-                    pointer = -1; view.getParent().requestDisallowInterceptTouchEvent(false); return true;
+                    finish(view, false); return true;
                 case MotionEvent.ACTION_UP:
-                    if (pointer >= 0 && !moved && clickable) view.performClick();
+                    finish(view, true); return true;
                 case MotionEvent.ACTION_CANCEL:
-                    pointer = -1; view.getParent().requestDisallowInterceptTouchEvent(false); return true;
+                    finish(view, false); return true;
                 default: return true;
             }
         }
@@ -744,6 +803,21 @@ final class GameOverlay {
     private void position() {
         if (closed || host.getWidth() == 0) return;
         OverlayGeometry.Layout geometry = geometry();
+        OverlayGeometry.Rect previousSafeArea = lastSafeArea;
+        // Compare the actual viewport, not the margins changed by docking/undocking.
+        lastSafeArea = OverlayGeometry.usableArea(host.getWidth(), host.getHeight(),
+                host.getPaddingLeft(), host.getPaddingTop(), host.getPaddingRight(), host.getPaddingBottom());
+        if (previousSafeArea != null && !previousSafeArea.equals(lastSafeArea)) {
+            // A rotation/inset change invalidates pixel drag origins and held input.
+            boolean interruptedDrag = dragGestures.stream().anyMatch(gesture -> gesture.pointer >= 0 && gesture.moved);
+            releaseHeldKeys();
+            if (autoSnap && interruptedDrag) {
+                savedX = x = OverlayGeometry.nearestHorizontalEdge(x);
+                panel.animate().cancel(); panel.setAlpha(1); panel.setVisibility(View.GONE);
+                setDocked(true);
+                geometry = geometry();
+            }
+        }
         place(handle, geometry.handle()); place(panel, geometry.panel());
         LinearLayout.LayoutParams rail = (LinearLayout.LayoutParams) panel.getChildAt(0).getLayoutParams();
         int railWidth = Math.min(dp(76), geometry.panel().width() / 4);
@@ -754,7 +828,8 @@ final class GameOverlay {
     }
     private OverlayGeometry.Layout geometry() {
         return OverlayGeometry.layout(host.getWidth(), host.getHeight(), host.getPaddingLeft(), host.getPaddingTop(),
-                host.getPaddingRight(), host.getPaddingBottom(), dp(8), dp(48), dp(480), dp(560), dp(8), x, y);
+                host.getPaddingRight(), host.getPaddingBottom(), dp(8), dp(docked ? 24 : 48),
+                dp(docked ? 40 : 48), dp(480), dp(560), dp(8), x, y, docked);
     }
     private void place(View view, OverlayGeometry.Rect rect) {
         FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) view.getLayoutParams();

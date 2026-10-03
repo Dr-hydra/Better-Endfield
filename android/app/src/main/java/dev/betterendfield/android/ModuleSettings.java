@@ -82,8 +82,11 @@ final class ModuleSettings {
     private static final String LEGACY_DISABLE_DITHER = "enhancement_disable_dither";
 
     static final String OVERLAY_ENABLED = "overlay_enabled";
+    private static final String OVERLAY_TRANSPARENCY = "overlay_transparency";
+    private static final String OVERLAY_AUTO_SNAP = "overlay_auto_snap";
     private static final String COMMAND_GENERATION = "command_generation";
 
+    static final float OVERLAY_TRANSPARENCY_MAXIMUM = 80f;
     static final float SPEED_MINIMUM = 0.2f;
     static final float SPEED_MAXIMUM = 60.0f;
     static final float FOV_MINIMUM = 20.0f;
@@ -97,6 +100,37 @@ final class ModuleSettings {
 
     static void setOverlayEnabled(Context context, boolean enabled) {
         preferences(context).edit().putBoolean(OVERLAY_ENABLED, enabled).commit();
+    }
+
+    record OverlayAppearance(float transparency, boolean autoSnap) {
+        OverlayAppearance {
+            transparency = Float.isFinite(transparency)
+                    ? Math.max(0f, Math.min(OVERLAY_TRANSPARENCY_MAXIMUM, transparency)) : 0f;
+        }
+
+        float alpha() { return 1f - transparency / 100f; }
+    }
+
+    static OverlayAppearance getOverlayAppearance(SharedPreferences settings) {
+        return new OverlayAppearance(settings.getFloat(OVERLAY_TRANSPARENCY, 0f),
+                settings.getBoolean(OVERLAY_AUTO_SNAP, false));
+    }
+
+    static float getOverlayTransparency(Context context) {
+        return getOverlayAppearance(preferences(context)).transparency();
+    }
+
+    static boolean isOverlayAutoSnap(Context context) {
+        return getOverlayAppearance(preferences(context)).autoSnap();
+    }
+
+    static void setOverlayTransparency(Context context, float transparency) {
+        float bounded = new OverlayAppearance(transparency, false).transparency();
+        preferences(context).edit().putFloat(OVERLAY_TRANSPARENCY, bounded).commit();
+    }
+
+    static void setOverlayAutoSnap(Context context, boolean enabled) {
+        preferences(context).edit().putBoolean(OVERLAY_AUTO_SNAP, enabled).commit();
     }
 
     static long nextCommandGeneration(Context context) {

@@ -14,7 +14,8 @@ final class BemInstaller {
     static final String INDEX = "installed_bem_packages";
     static final String SKIP_VALIDATION = "bem_skip_validation";
     static final String HOT_SWITCH = "bem_hot_switch";
-    static final String LOADING_OPTIMIZATION = "bem_loading_optimization";
+    static final String FAST_LOADING = "bem_fast_loading";
+    static final String KEEP_LOCAL_COPIES = "bem_keep_local_copies";
     static volatile String status = "原样导入 BEM 包；贴图异常时，可在对应模型包下手动转换手机纹理。";
     static volatile boolean busy;
     static volatile boolean removing;
@@ -96,8 +97,14 @@ final class BemInstaller {
                     previousEntry=findEntry(index(app),previousGeneration);
                     if(previousEntry==null) throw new IOException("模型包已被替换，请刷新后重试");
                 }
+                File localSource=converting?new File(new File(root,previousGeneration),"installed.bem"):null;
+                if(converting && !localSource.isFile()) {
+                    if(!FrameworkSettings.isConnected()) status="正在等待框架服务连接…";
+                    FrameworkSettings.awaitConnection();
+                    status="正在准备纹理转换…";
+                }
                 try(InputStream in=converting
-                        ?new FileInputStream(new File(new File(root,previousGeneration),"installed.bem"))
+                        ?(localSource.isFile()?new FileInputStream(localSource):FrameworkSettings.openBem("bem-"+previousGeneration+".bem"))
                         :app.getContentResolver().openInputStream(uri); FileOutputStream out=new FileOutputStream(source)) {
                     if(in==null) throw new IOException("无法打开包");
                     if(converting) copy(in,out,BemImportStream.MAX_BYTES);
@@ -143,7 +150,9 @@ final class BemInstaller {
                     JSONArray previous=index(app),next=installedIndex(previous,result,previousGeneration);
                     commitIndex(app,previous.toString(),next,"安装索引保存失败");
                 }
-                // Old generations remain until explicit removal; a running game can still be reading them.
+                // The game reads its private copy, so a replaced conversion source is unreachable.
+                if(converting) discardGeneration(root,previousGeneration);
+                if(!FrameworkSettings.open(app).getBoolean(KEEP_LOCAL_COPIES,true)) new File(installed,"installed.bem").delete();
                 stage=null;status=(converting?"已转换：":"已原样导入：")+result.getString("name")+"。重启游戏后生效。";
             } catch(Throwable error) {
                 String reason=error instanceof SecurityException
@@ -252,16 +261,110 @@ final class BemInstaller {
         try {worker.execute(()->{
             boolean complete=true;
             try {
-                File root=new File(app.getFilesDir(),"bem-installed").getCanonicalFile();
-                File version=new File(root,generation);
-                if(!version.getCanonicalFile().getParentFile().equals(root)) throw new IOException("无效的安装目录");
-                complete &= FrameworkSettings.removeBem("bem-"+version.getName()+".bem");
-                deleteOwned(version);complete &= !version.exists();
+                complete=discardGeneration(new File(app.getFilesDir(),"bem-installed"),generation);
                 status="已移除："+removed.getString("name")+"。其他包已保留，重启游戏后生效。"
                         +(complete?"":"部分残留文件未能清理，但该包已停用。");
             } catch(Exception error) {status="模型包已移除；部分文件清理失败："+error.getMessage();}
             finally {removing=false;busy=false;}
         });} catch(RuntimeException rejected) {removing=false;busy=false;throw rejected;}
+    }
+    private static boolean discardGeneration(File installed,String generation) throws IOException {
+        File root=installed.getCanonicalFile(),version=new File(root,generation);
+        if(!generation.matches("[a-f0-9-]{36}") || !version.getCanonicalFile().getParentFile().equals(root))
+            throw new IOException("无效的安装目录");
+        boolean complete=FrameworkSettings.removeBem("bem-"+generation+".bem");
+        deleteOwned(version);
+        return complete && !version.exists();
+    }
+    private static java.util.Set<String> referencedGenerations(Context app) throws Exception {
+        java.util.Set<String> keep=new java.util.HashSet<>();
+        JSONArray entries=index(app);
+        for(int i=0;i<entries.length();++i) keep.add(entries.getJSONObject(i).getString("generation"));
+        // The durable mirror is consulted too; a generation either copy references is never discarded.
+        File durable=new File(app.getFilesDir(),"bem-index.json");
+        if(durable.isFile()) {
+            JSONArray saved=new JSONArray(new String(new android.util.AtomicFile(durable).readFully(),StandardCharsets.UTF_8));
+            for(int i=0;i<saved.length();++i) keep.add(saved.getJSONObject(i).getString("generation"));
+        }
+        return keep;
+    }
+    private static long sizeOf(File file) {
+        File[] children=file.listFiles();if(children==null) return file.length();
+        long total=0;for(File child:children) total+=sizeOf(child);return total;
+    }
+    private static String megabytes(long bytes) {return String.format(java.util.Locale.ROOT,"%.1f MB",bytes/1048576.0);}
+    /** Removes data no installed package references: superseded generations, shared copies and interrupted stages. */
+    static synchronized boolean cleanUnused(Context context) {
+        if(busy) return false;
+        Context app=context.getApplicationContext();
+        busy=true;cancelled=false;progressPercent=-1;startedAt=android.os.SystemClock.elapsedRealtime();
+        status="正在清理未使用数据…";
+        try {worker.execute(()->{
+            try {
+                FrameworkSettings.awaitConnection();
+                java.util.Set<String> keep=referencedGenerations(app);
+                long freed=0;
+                File root=new File(app.getFilesDir(),"bem-installed");
+                File[] children=root.listFiles();
+                if(children!=null) for(File child:children) {
+                    String name=child.getName();
+                    if(name.startsWith("stage-") || name.matches("[a-f0-9-]{36}") && !keep.contains(name)) {
+                        freed+=sizeOf(child);deleteOwned(child);
+                    }
+                }
+                for(String remote:FrameworkSettings.listBem()) {
+                    if(keep.contains(remote.substring(4,remote.length()-4))) continue;
+                    long size=FrameworkSettings.bemSize(remote);
+                    if(FrameworkSettings.removeBem(remote)) freed+=Math.max(0,size);
+                }
+                status="已清理 "+megabytes(freed)+"。游戏目录中未启用的模型会在下次启动游戏时清理。";
+            } catch(Exception error) {status="清理未完成："+error.getMessage();}
+            finally {busy=false;}
+        });} catch(RuntimeException rejected) {busy=false;status="无法启动清理任务，请重试。";throw rejected;}
+        return true;
+    }
+    /** Local copies are optional; the framework copy remains the source the game and conversion read. */
+    static synchronized boolean applyLocalCopies(Context context,boolean keepLocal) {
+        if(busy) return false;
+        Context app=context.getApplicationContext();
+        busy=true;cancelled=false;progressPercent=-1;startedAt=android.os.SystemClock.elapsedRealtime();
+        status=keepLocal?"正在恢复本地副本…":"正在移除本地副本…";
+        try {worker.execute(()->{
+            try {
+                FrameworkSettings.awaitConnection();
+                File root=new File(app.getFilesDir(),"bem-installed");
+                JSONArray entries=index(app);
+                java.util.List<String> shared=java.util.Arrays.asList(FrameworkSettings.listBem());
+                long changed=0;StringBuilder missing=new StringBuilder();
+                for(int i=0;i<entries.length();++i) {
+                    checkpoint();
+                    JSONObject entry=entries.getJSONObject(i);
+                    String generation=entry.getString("generation"),remote="bem-"+generation+".bem";
+                    long bytes=entry.getLong("bytes");
+                    File local=new File(new File(root,generation),"installed.bem");
+                    boolean published=shared.contains(remote) && FrameworkSettings.bemSize(remote)==bytes;
+                    if(keepLocal) {
+                        if(local.isFile() && local.length()==bytes) continue;
+                        if(!published) {missing.append(missing.length()>0?"、":"").append(entry.getString("name"));continue;}
+                        File folder=local.getParentFile(),temp=new File(folder,"installed.tmp");
+                        if(!folder.isDirectory() && !folder.mkdirs()) throw new IOException("无法创建安装目录");
+                        try(InputStream in=FrameworkSettings.openBem(remote);FileOutputStream out=new FileOutputStream(temp)) {
+                            copy(in,out,bytes);out.getFD().sync();
+                        }
+                        if(temp.length()!=bytes || !temp.renameTo(local)) {temp.delete();throw new IOException("本地副本写入失败");}
+                        changed+=bytes;
+                    } else if(local.isFile()) {
+                        // Never drop the last copy of a package.
+                        if(!published) {missing.append(missing.length()>0?"、":"").append(entry.getString("name"));continue;}
+                        if(local.delete()) changed+=bytes;
+                    }
+                }
+                status=(keepLocal?"已恢复本地副本 ":"已移除本地副本 ")+megabytes(changed)+"。"
+                        +(missing.length()==0?"":(keepLocal?"框架中缺少文件，需重新导入：":"框架中缺少文件，已保留本地副本：")+missing);
+            } catch(Exception error) {status=(keepLocal?"恢复本地副本未完成：":"移除本地副本未完成：")+error.getMessage();}
+            finally {busy=false;}
+        });} catch(RuntimeException rejected) {busy=false;status="无法启动任务，请重试。";throw rejected;}
+        return true;
     }
     static void copy(InputStream in,OutputStream out,long limit) throws IOException {
         byte[] buffer=new byte[65536];long size=0;int count;
@@ -270,6 +373,13 @@ final class BemInstaller {
     private static void deleteOwned(File file) {File[] children=file.listFiles();if(children!=null) for(File child:children) deleteOwned(child);file.delete();}
     static synchronized void select(Context app,String generation,String appearance,boolean enabled) throws Exception {
         saveAll(app,new JSONArray().put(new JSONObject().put("generation",generation).put("appearance",appearance).put("enabled",enabled)));
+    }
+    static synchronized void disableAll(Context app) throws Exception {
+        if(busy) throw new IOException("请等待当前操作完成后修改");
+        JSONArray entries=index(app),changes=new JSONArray();
+        for(int i=0;i<entries.length();++i)
+            changes.put(new JSONObject().put("generation",entries.getJSONObject(i).getString("generation")).put("enabled",false));
+        saveAll(app,changes);
     }
     static synchronized void saveAll(Context app,JSONArray changes) throws Exception {
         if(busy) throw new IOException("请等待当前操作完成后修改");
