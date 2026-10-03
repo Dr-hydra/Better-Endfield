@@ -140,13 +140,16 @@ internal sealed class BemPackage
 internal sealed class BemPackageService
 {
     public string Root { get; } = Path.Combine(ConfigurationService.SettingsDirectory, "catalog", "custom-model");
+    private string LegacyPackageDirectory => Path.Combine(Root, "packages");
+    // Packages live beside the program when its directory is writable; settings stay in the profile.
+    public string PackageDirectory { get; private set; } = Path.Combine(ConfigurationService.SettingsDirectory, "catalog", "custom-model", "packages");
     public List<BemPackage> Packages { get; } = [];
     private readonly List<Func<string>> _notices = [];
     public IReadOnlyList<string> Notices => _notices.Select(notice => notice()).ToArray();
     public bool StandaloneLod { get; set; }
     public bool SkipValidation { get; set; }
     public bool HotSwitch { get; set; }
-    public bool LoadingOptimization { get; set; }
+    public bool FastLoading { get; set; }
     public bool EffectiveLod => StandaloneLod || Packages.Any(p => p.Enabled);
     private readonly SemaphoreSlim _gate = new(1, 1);
     private Dictionary<string, Dictionary<string, string>> _settings = new(StringComparer.Ordinal);
@@ -228,10 +231,64 @@ internal sealed class BemPackageService
         return package;
     }
 
+    public void UseInstallRoot(string? installRoot)
+    {
+        string? candidate = string.IsNullOrEmpty(installRoot) ? null : Path.Combine(installRoot, "models");
+        PackageDirectory = candidate != null && CanWrite(candidate) ? Path.GetFullPath(candidate) : LegacyPackageDirectory;
+    }
+
+    private static bool CanWrite(string directory)
+    {
+        try
+        {
+            Directory.CreateDirectory(directory);
+            string probe = Path.Combine(directory, Guid.NewGuid() + ".tmp");
+            System.IO.File.WriteAllBytes(probe, []); System.IO.File.Delete(probe);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
+    }
+
+    private bool UsesLegacyDirectory => SameDirectory(PackageDirectory, LegacyPackageDirectory);
+    private static bool SameDirectory(string a, string b) =>
+        string.Equals(Path.GetFullPath(a).TrimEnd('\\'), Path.GetFullPath(b).TrimEnd('\\'), StringComparison.OrdinalIgnoreCase);
+
+    public bool HasLegacyPackages => !UsesLegacyDirectory && Directory.Exists(LegacyPackageDirectory)
+        && Directory.EnumerateFiles(LegacyPackageDirectory, "*.bem").Any();
+
+    /// <summary>Moves profile-stored packages beside the program. Skipped while the game may read them.</summary>
+    public async Task<int> MigrateLegacyPackagesAsync(CancellationToken token = default)
+    {
+        if (!HasLegacyPackages) return 0;
+        RequireGameClosed();
+        int moved = 0;
+        await Task.Run(() =>
+        {
+            Directory.CreateDirectory(PackageDirectory);
+            foreach (string source in Directory.EnumerateFiles(LegacyPackageDirectory, "*.bem").ToArray())
+            {
+                token.ThrowIfCancellationRequested();
+                string target = Path.Combine(PackageDirectory, Path.GetFileName(source));
+                if (System.IO.File.Exists(target)) continue;
+                string temp = Path.Combine(PackageDirectory, Guid.NewGuid() + ".tmp");
+                try
+                {
+                    System.IO.File.Copy(source, temp);
+                    if (new FileInfo(temp).Length != new FileInfo(source).Length) throw new IOException(BemText.Get("模型包迁移校验失败。"));
+                    System.IO.File.Move(temp, target);
+                    System.IO.File.Delete(source); moved++;
+                }
+                finally { if (System.IO.File.Exists(temp)) System.IO.File.Delete(temp); }
+            }
+        }, token);
+        Load(); await SaveAsync();
+        return moved;
+    }
+
     public void Load()
     {
         Packages.Clear(); _notices.Clear(); StandaloneLod = false; SkipValidation = false;
-        HotSwitch = false; LoadingOptimization = false;
+        HotSwitch = false; FastLoading = false;
         var settings = _settings = new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
         string ini = Path.Combine(Root, "runtime.ini");
         if (System.IO.File.Exists(ini))
@@ -248,14 +305,18 @@ internal sealed class BemPackageService
         if (settings.TryGetValue("CustomModel", out var common)) StandaloneLod = common.GetValueOrDefault("standalone_lod") is "true" or "1";
         if (common != null) SkipValidation = common.GetValueOrDefault("skip_validation") is "true" or "1";
         if (common != null) HotSwitch = common.GetValueOrDefault("hot_switch") is "true" or "1";
-        if (common != null) LoadingOptimization = common.GetValueOrDefault("loading_optimization") is "true" or "1";
-        string dir = Path.Combine(Root, "packages");
-        if (!Directory.Exists(dir)) return;
-        foreach (string path in Directory.EnumerateFiles(dir, "*.bem").Order())
+        if (common != null) FastLoading = common.GetValueOrDefault("fast_loading") is "true" or "1";
+        var directories = new List<string> { PackageDirectory };
+        if (!UsesLegacyDirectory) directories.Add(LegacyPackageDirectory);
+        var files = directories.Where(Directory.Exists).SelectMany(dir => Directory.EnumerateFiles(dir, "*.bem").Order()).ToArray();
+        foreach (string path in files)
         {
             try
             {
                 var p = ReadMetadata(path, SkipValidation);
+                // A copy not yet migrated from the profile yields to the one beside the program.
+                bool legacy = !UsesLegacyDirectory && SameDirectory(Path.GetDirectoryName(path)!, LegacyPackageDirectory);
+                if (legacy && Packages.Any(x => x.Id == p.Id)) continue;
                 if (Packages.Any(x => x.Id == p.Id)) throw new InvalidDataException(BemText.Get("重复包 ID"));
                 if (settings.TryGetValue("Mod." + p.Id, out var state))
                 {
@@ -300,12 +361,14 @@ internal sealed class BemPackageService
             common["standalone_lod"] = StandaloneLod ? "true" : "false";
             common["skip_validation"] = SkipValidation ? "true" : "false";
             common["hot_switch"] = HotSwitch ? "true" : "false";
-            common["loading_optimization"] = LoadingOptimization ? "true" : "false";
+            common["fast_loading"] = FastLoading ? "true" : "false";
+            common.Remove("loading_optimization");
             foreach (var p in Packages)
             {
                 if (!_settings.TryGetValue("Mod." + p.Id, out var values)) _settings["Mod." + p.Id] = values = new(StringComparer.Ordinal);
                 values["enabled"] = p.Enabled ? "true" : "false";
-                values["package"] = "packages/" + Path.GetFileName(p.File);
+                values["package"] = SameDirectory(Path.GetDirectoryName(p.File)!, LegacyPackageDirectory)
+                    ? "packages/" + Path.GetFileName(p.File) : Path.GetFullPath(p.File);
                 values[p.IsComposable ? "options" : "appearance"] = p.IsComposable ? p.EncodedOptions() : p.SelectedAppearance;
                 values["parameters"] = p.EncodedParameters();
                 values["parameters_saved"] = p.RememberedParameters();
@@ -378,7 +441,7 @@ internal sealed class BemPackageService
     {
         RequireGameClosed();
         if (new FileInfo(source).Length > 2L * 1024 * 1024 * 1024) throw new InvalidDataException(BemText.Get("BEM 包超过 2 GiB 上限。"));
-        string dir = Path.Combine(Root, "packages"); Directory.CreateDirectory(dir);
+        string dir = PackageDirectory; Directory.CreateDirectory(dir);
         string temp = Path.Combine(dir, Guid.NewGuid() + ".tmp");
         try
         {
@@ -393,6 +456,7 @@ internal sealed class BemPackageService
             if (old != null && old.Character != p.Character) throw new InvalidDataException(BemText.Get("同一个包 ID 不能更新为另一角色。"));
             RequireGameClosed();
             System.IO.File.Move(temp, Path.Combine(dir, p.Id + ".bem"), true);
+            if (old != null && !SameDirectory(Path.GetDirectoryName(old.File)!, dir)) System.IO.File.Delete(old.File);
             Load(); await SaveAsync();
         }
         finally { if (System.IO.File.Exists(temp)) System.IO.File.Delete(temp); }
@@ -409,6 +473,12 @@ internal sealed class BemPackageService
         if (enabled)
             foreach (var other in Packages.Where(p => p.Character == package.Character)) other.Enabled = false;
         package.Enabled = enabled;
+        await SaveAsync();
+    }
+
+    public async Task DisableAllAsync()
+    {
+        foreach (var package in Packages) package.Enabled = false;
         await SaveAsync();
     }
 }

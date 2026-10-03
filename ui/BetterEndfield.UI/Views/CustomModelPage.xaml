@@ -42,14 +42,17 @@
                     <TextBlock x:Name="LodHint" TextWrapping="Wrap" />
                     <ToggleSwitch x:Name="HotSwitchToggle" Header="实验：模型热切换" Toggled="Experiments_Toggled" />
                     <TextBlock x:Name="HotSwitchHint" Text="开启后需重启游戏。之后切换包、外观、组件或应用滑条，在切换配队或重新打开详情时更新。会增加内存占用。" TextWrapping="Wrap" />
-                    <ToggleSwitch x:Name="LoadingOptimizationToggle" Header="实验：模型加载优化" Toggled="Experiments_Toggled" />
-                    <TextBlock x:Name="LoadingOptimizationHint" Text="开启后需重启游戏。减少重复贴图构建和解压期间的内存占用。" TextWrapping="Wrap" />
+                    <ToggleSwitch x:Name="FastLoadingToggle" Header="加载速度优先" Toggled="Experiments_Toggled" />
                     <ToggleSwitch x:Name="SkipValidationToggle" Header="实验：关闭模型校验" Toggled="SkipValidation_Toggled" />
                     <TextBlock x:Name="SkipValidationHint" Text="开启后会跳过兼容性和容量校验，可能导致游戏崩溃或模型错乱，风险自行承担。重启游戏后生效。" TextWrapping="Wrap" />
                 </StackPanel>
             </Border>
             <InfoBar x:Name="Status" IsOpen="False" IsClosable="True" />
             <ProgressRing x:Name="Busy" IsActive="False" Visibility="Collapsed" HorizontalAlignment="Left" />
+            <controls:WrapPanel HorizontalSpacing="12" VerticalSpacing="8">
+                <ComboBox x:Name="CharacterFilter" Header="按角色筛选" MinWidth="220" SelectionChanged="CharacterFilter_SelectionChanged" />
+                <Button x:Name="DisableAllButton" Content="关闭全部模型" VerticalAlignment="Bottom" Click="DisableAll_Click" />
+            </controls:WrapPanel>
             <TextBlock x:Name="EmptyHint" Text="尚未导入模型包。已有其他格式？打开转换窗口查看支持范围与缺少的资料。" TextWrapping="Wrap" />
             <StackPanel x:Name="PackageCards" Spacing="12" />
         </StackPanel>

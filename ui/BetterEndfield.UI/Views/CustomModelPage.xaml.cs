@@ -15,6 +15,9 @@ public sealed partial class CustomModelPage : UserControl
     private readonly BemPackageService _service = new();
     private bool _rendering;
     private bool _importing;
+    private bool _disablingAll;
+    private bool _updatingCharacterFilter;
+    private string _selectedCharacter = "";
     private BemConverterWindow? _converter;
     // Packages whose component options are expanded; kept across Render().
     private readonly HashSet<string> _expanded = [];
@@ -54,15 +57,17 @@ public sealed partial class CustomModelPage : UserControl
         ConvertButton.Content = BemText.Get("其他来源 Mod 转换…");
         RefreshButton.Content = BemText.Get("刷新");
         PackageFolderButton.Content = BemText.Get("打开包目录");
+        CharacterFilter.Header = BemText.Get("按角色筛选");
+        DisableAllButton.Content = BemText.Get("关闭全部模型");
+        UpdateCharacterFilter();
         LodToggle.Header = BemText.Get("锁定高精度 LOD");
         HotSwitchToggle.Header = BemText.Get("实验：模型热切换");
         HotSwitchHint.Text = BemText.Get("开启后需重启游戏。之后切换包、外观、组件或应用滑条，在切换配队或重新打开详情时更新。会增加内存占用。");
-        LoadingOptimizationToggle.Header = BemText.Get("实验：模型加载优化");
-        LoadingOptimizationHint.Text = BemText.Get("开启后需重启游戏。减少重复贴图构建和解压期间的内存占用。");
+        FastLoadingToggle.Header = BemText.Get("加载速度优先");
         SkipValidationToggle.Header = BemText.Get("实验：关闭模型校验");
         SkipValidationHint.Text = BemText.Get("开启后会跳过兼容性和容量校验，可能导致游戏崩溃或模型错乱，风险自行承担。重启游戏后生效。");
         EmptyHint.Text = BemText.Get("尚未导入模型包。已有其他格式？打开转换窗口查看支持范围与缺少的资料。");
-        foreach (var toggle in new[] { LodToggle, HotSwitchToggle, LoadingOptimizationToggle, SkipValidationToggle })
+        foreach (var toggle in new[] { LodToggle, HotSwitchToggle, FastLoadingToggle, SkipValidationToggle })
         {
             toggle.OnContent = BemText.Get("开启");
             toggle.OffContent = BemText.Get("关闭");
@@ -108,10 +113,77 @@ public sealed partial class CustomModelPage : UserControl
     {
         try
         {
+            string? root = null;
+            try { root = InstallRoot; } catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException) { }
+            _service.UseInstallRoot(root);
             _service.Load(); Render();
             if (_service.Notices.Count != 0) Message(() => BemText.Get("包管理提示"), () => string.Join("\n", _service.Notices), InfoBarSeverity.Warning);
+            if (_service.HasLegacyPackages && !_migrating) _ = MigrateLegacyPackagesAsync();
         }
         catch (Exception ex) { Message(() => BemText.Get("读取失败"), () => ex.Message, InfoBarSeverity.Error); }
+    }
+
+    private bool _migrating;
+    private async Task MigrateLegacyPackagesAsync()
+    {
+        _migrating = true;
+        try
+        {
+            int moved = await _service.MigrateLegacyPackagesAsync();
+            Render();
+            if (moved > 0) Message(() => BemText.Get("模型包已移到程序目录"), () => _service.PackageDirectory);
+        }
+        catch (InvalidOperationException) { /* The game is running; the next refresh retries. */ }
+        catch (Exception ex) { Message(() => BemText.Get("模型包迁移未完成"), () => ex.Message, InfoBarSeverity.Warning); }
+        finally { _migrating = false; }
+    }
+
+    private void UpdateCharacterFilter()
+    {
+        var characters = _service.Packages.Select(p => p.Character).Distinct(StringComparer.Ordinal).OrderBy(id => id).ToArray();
+        if (!characters.Contains(_selectedCharacter, StringComparer.Ordinal)) _selectedCharacter = "";
+        _updatingCharacterFilter = true;
+        try
+        {
+            CharacterFilter.Items.Clear();
+            CharacterFilter.Items.Add(new ComboBoxItem { Content = BemText.Get("全部角色"), Tag = "" });
+            foreach (string id in characters)
+                CharacterFilter.Items.Add(new ComboBoxItem { Content = PresetOptions.GetCharacterName(id), Tag = id });
+            CharacterFilter.SelectedItem = CharacterFilter.Items.Cast<ComboBoxItem>().First(item => (string)item.Tag == _selectedCharacter);
+            CharacterFilter.IsEnabled = characters.Length > 0;
+        }
+        finally { _updatingCharacterFilter = false; }
+        ApplyCharacterFilter();
+    }
+
+    private void CharacterFilter_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_updatingCharacterFilter || CharacterFilter.SelectedItem is not ComboBoxItem { Tag: string id }) return;
+        _selectedCharacter = id;
+        ApplyCharacterFilter();
+    }
+
+    private void ApplyCharacterFilter()
+    {
+        foreach (var card in PackageCards.Children.Cast<FrameworkElement>())
+            card.Visibility = _selectedCharacter.Length == 0 || Equals(card.Tag, _selectedCharacter) ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void UpdateDisableAllButton() => DisableAllButton.IsEnabled = !_importing && !_disablingAll && _service.Packages.Any(p => p.Enabled);
+
+    private async void DisableAll_Click(object sender, RoutedEventArgs e)
+    {
+        if (_importing || _disablingAll) return;
+        _disablingAll = true;
+        UpdateDisableAllButton();
+        try
+        {
+            await _service.DisableAllAsync();
+            Render();
+            Message(() => BemText.Get("已关闭全部模型"), () => "", InfoBarSeverity.Success);
+        }
+        catch (Exception ex) { Reload(); Message(() => BemText.Get("保存失败"), () => ex.Message, InfoBarSeverity.Error); }
+        finally { _disablingAll = false; UpdateDisableAllButton(); }
     }
 
     private void Render()
@@ -121,10 +193,12 @@ public sealed partial class CustomModelPage : UserControl
         {
             SkipValidationToggle.IsOn = _service.SkipValidation;
             HotSwitchToggle.IsOn = _service.HotSwitch;
-            LoadingOptimizationToggle.IsOn = _service.LoadingOptimization;
+            FastLoadingToggle.IsOn = _service.FastLoading;
             bool forced = _service.Packages.Any(p => p.Enabled);
             LodToggle.IsOn = _service.EffectiveLod; LodToggle.IsEnabled = !forced;
             UpdateLodHint();
+            UpdateCharacterFilter();
+            UpdateDisableAllButton();
             EmptyHint.Visibility = _service.Packages.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
             PackageCards.Children.Clear();
             _localizeCards.Clear();
@@ -289,8 +363,9 @@ public sealed partial class CustomModelPage : UserControl
                     }
                     RefreshAvailability(); _localizeCards.Add(RefreshAvailability); stack.Children.Add(expander);
                 }
-                PackageCards.Children.Add(new Border { Child = stack, Padding = new Thickness(16), CornerRadius = new CornerRadius(8), Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"] });
+                PackageCards.Children.Add(new Border { Tag = p.Character, Child = stack, Padding = new Thickness(16), CornerRadius = new CornerRadius(8), Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"] });
             }
+            ApplyCharacterFilter();
         }
         finally { _rendering = false; }
     }
@@ -348,6 +423,7 @@ public sealed partial class CustomModelPage : UserControl
     {
         if (_importing) return;
         _importing = true;
+        UpdateDisableAllButton();
         ImportButton.IsEnabled = false; ModelDropArea.AllowDrop = false;
         ModelDropHighlight.Visibility = Visibility.Collapsed;
         Busy.IsActive = true; Busy.Visibility = Visibility.Visible;
@@ -395,6 +471,7 @@ public sealed partial class CustomModelPage : UserControl
         finally
         {
             _importing = false;
+            UpdateDisableAllButton();
             ImportButton.IsEnabled = true; ModelDropArea.AllowDrop = true;
             Busy.IsActive = false; Busy.Visibility = Visibility.Collapsed;
         }
@@ -448,7 +525,7 @@ public sealed partial class CustomModelPage : UserControl
         try
         {
             _service.HotSwitch = HotSwitchToggle.IsOn;
-            _service.LoadingOptimization = LoadingOptimizationToggle.IsOn;
+            _service.FastLoading = FastLoadingToggle.IsOn;
             await _service.SaveAsync();
             Message(() => BemText.Get("实验设置已保存"), () => BemText.Get("各开关相互独立，默认关闭；重启游戏后生效。"));
         }

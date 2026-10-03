@@ -33,13 +33,15 @@ if (args is ["--v11", var packagePath])
     Check(ini.Contains("options=" + group.Id + ":" + alternate) && !ini.Contains("appearance="),
         "BEM 1.1 runtime configuration not written");
     Check(!service.SkipValidation, "developer option must default off");
-    Check(!service.HotSwitch && !service.LoadingOptimization, "experiments must default off");
+    Check(!service.HotSwitch && !service.FastLoading, "experiments must default off");
     service.HotSwitch = true; await service.SaveAsync(); service.Load();
-    Check(service.HotSwitch && !service.LoadingOptimization, "hot-switch option not persisted independently");
-    service.LoadingOptimization = true; await service.SaveAsync(); service.Load();
-    Check(service.HotSwitch && service.LoadingOptimization, "loading optimization option not persisted");
-    service.HotSwitch = false; service.LoadingOptimization = false; await service.SaveAsync(); service.Load();
-    Check(!service.HotSwitch && !service.LoadingOptimization, "experiment options not disabled");
+    Check(service.HotSwitch && !service.FastLoading, "hot-switch option not persisted independently");
+    service.FastLoading = true; await service.SaveAsync(); service.Load();
+    Check(service.HotSwitch && service.FastLoading, "fast loading option not persisted");
+    ini = File.ReadAllText(Path.Combine(service.Root, "runtime.ini"));
+    Check(ini.Contains("fast_loading=true") && !ini.Contains("loading_optimization"), "fast loading key not written or legacy key kept");
+    service.HotSwitch = false; service.FastLoading = false; await service.SaveAsync(); service.Load();
+    Check(!service.HotSwitch && !service.FastLoading, "experiment options not disabled");
     service.SkipValidation = true; await service.SaveAsync(); service.Load();
     Check(service.SkipValidation && File.ReadAllText(Path.Combine(service.Root, "runtime.ini")).Contains("skip_validation=true"),
         "developer option not restored from runtime configuration");

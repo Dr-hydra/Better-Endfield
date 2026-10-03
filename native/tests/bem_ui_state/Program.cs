@@ -114,6 +114,13 @@ internal static class Program
             Check(BemReportPresentation.Package(new JsonObject { ["package"] = authored }.ToJsonString()).Contains("作者作品"), "Locale selection changed author metadata");
             LocalizationService.Instance.ApplyLanguage("zh-CN");
             Check(BemReportPresentation.Package(report).Contains("形态滑条：Size、Trim"), "Chinese report did not restore labels/separators");
+            string install = Path.Combine(root, "install");
+            service.UseInstallRoot(install); service.Load();
+            Check(service.HasLegacyPackages && service.Packages.Count == 1, "Profile package hidden before migration");
+            Check(await service.MigrateLegacyPackagesAsync() == 1 && !File.Exists(file), "Profile package not moved beside the program");
+            string moved = Path.Combine(install, "models", "shape.fixture.bem");
+            Check(File.Exists(moved) && service.Packages.Count == 1 && service.Packages[0].File == moved, "Migrated package not loaded from program folder");
+            Check((await File.ReadAllTextAsync(ini)).Contains("package=" + moved), "Runtime registry still points at the profile copy");
             Console.WriteLine($"PASS {_checks} Windows BEM metadata/persistence/upgrade and bilingual report checks");
         }
         finally { Directory.Delete(root, true); }
