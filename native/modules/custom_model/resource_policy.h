@@ -1,10 +1,17 @@
 #pragma once
 #include <cstddef>
 #include <span>
+#include <string_view>
 
 namespace BetterEndfield::CustomModel {
 constexpr bool EffectiveLodEnabled(bool has_enabled_mod, bool standalone_enabled) {
     return has_enabled_mod || standalone_enabled;
+}
+
+// Kept for source compatibility with diagnostics; matching uses the actual
+// sharedMesh/pristine identity and a checked ReceiverKey, never a role alias.
+constexpr std::string_view ComponentRendererName(std::string_view,std::string_view mesh_name) {
+    return mesh_name;
 }
 
 enum class CommitResult { Committed, Restored, RestoreFailed };

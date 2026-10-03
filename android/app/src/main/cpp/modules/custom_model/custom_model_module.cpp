@@ -46,7 +46,7 @@ std::string SharedRegistryText(std::string_view config,const std::vector<std::fi
     std::string result="[CustomModel]\nstandalone_lod=false\nskip_validation="+
         std::string(ConfigValue(config,"skip_validation")=="1"?"true":"false")+
         "\nhot_switch="+(ConfigValue(config,"hot_switch")=="1"?"true":"false")+
-        "\nloading_optimization="+(ConfigValue(config,"loading_optimization")=="1"?"true":"false")+"\n";
+        "\nfast_loading="+(ConfigValue(config,"fast_loading")=="1"?"true":"false")+"\n";
     const auto appearances=ConfigStrings(ConfigValue(config,"appearances"));
     const auto options=ConfigStrings(ConfigValue(config,"options"));
     const auto parameters=ConfigStrings(ConfigValue(config,"parameters"));
@@ -125,7 +125,7 @@ BE_Result CustomModelModule::HostCreateHook(void* context, const char* module_id
     auto* self = HostSelf(context);
     if (!self || !target || !detour || !original) return BE_Result_InvalidArgument;
     void* stub = nullptr; std::string error;
-    if (!self->replacement_broker_.Install(target, detour, original, stub, error)) {
+    if (!self->replacement_broker_.Install(module_id ? module_id : self->Id(), target, detour, original, stub, error)) {
         LogError(self->Id(), error.c_str()); return BE_Result_Failed;
     }
     self->replacement_hooks_.push_back({module_id ? module_id : self->Id(), stub});

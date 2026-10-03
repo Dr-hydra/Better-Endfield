@@ -31,7 +31,7 @@ std::string FileTimeIdentity(std::filesystem::file_time_type time) {
 }
 std::span<const CharacterAdapter> CharacterAdapters() { return {}; }
 const EnabledMod* ModRegistry::Match(std::string_view resource) const {
-    if(resource.ends_with("(Clone)")) resource.remove_suffix(7);
+    resource=ResourceBaseName(resource);
     for(const auto& mod:enabled) if(resource==mod.adapter->world_resource||resource==mod.adapter->ui_resource) return &mod;
     return nullptr;
 }
@@ -60,8 +60,9 @@ bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,Mod
         if(auto i=sections["CustomModel"].find("hot_switch");i!=sections["CustomModel"].end()&&!Boolean(i->second,parsed.hot_switch)) {
             error="hot_switch must be boolean";return false;
         }
-        if(auto i=sections["CustomModel"].find("loading_optimization");i!=sections["CustomModel"].end()&&!Boolean(i->second,parsed.loading_optimization)) {
-            error="loading_optimization must be boolean";return false;
+        // The former experimental loading_optimization key is now always on and ignored.
+        if(auto i=sections["CustomModel"].find("fast_loading");i!=sections["CustomModel"].end()&&!Boolean(i->second,parsed.fast_loading)) {
+            error="fast_loading must be boolean";return false;
         }
         if(parsed.skip_validation) parsed.diagnostics.push_back("Developer mode: model validation disabled; crashes and incorrect rendering are possible.");
         std::set<std::string> roles,resources,conflicts;

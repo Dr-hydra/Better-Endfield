@@ -101,6 +101,9 @@ ParameterTicks ParseParameters(const J& definitions,std::string_view requested,s
 struct Container {
     bool skip_validation=false;
     bool loading_optimization=false;
+    // Texture payloads are described, not read; their decoded bytes are
+    // excluded from consumer counts and from the load-plan reservation.
+    bool deferTextures=false;
     void Validate(bool ok,const std::string& message) const { if(!skip_validation) Check(ok,message); }
     uint16_t minor=0;
     Limits limits=LimitsFor(0);
@@ -534,7 +537,7 @@ struct Container {
             ReleasePayload(id);
         }
     }
-    void Decode(std::string_view requested,BemPocData& out,std::string_view parameterSelection={}) {
+    void Decode(std::string_view requested,BemPocData& out,std::string_view parameterSelection={},BemLoadPlan* plan=nullptr) {
         out.skip_validation=skip_validation;
         out.loading_optimization=loading_optimization;
         const auto& m=manifest;auto selection=Select(requested);
@@ -555,12 +558,16 @@ struct Container {
             const auto& texture=selected->at("texture");
             slots[slot.at("id").get<std::string>()]=texture.is_null()?std::nullopt:std::optional<uint32_t>(U(texture));
         }
-        if(loading_optimization) {
+        if(loading_optimization || plan) {
             // Count exactly the selected consumers before decoding any payload.
             // A payload may back several streams, textures or concatenated draws;
             // only its last consumer may take ownership of the cached vector.
             std::set<uint32_t> selectedTextures;
-            auto add=[&](const J& reference) { ++payloadUses[U(reference)]; };
+            auto add=[&](const J& reference,std::optional<uint64_t> expected=std::nullopt) {
+                const auto id=U(reference);Check(id<directory.size(),"Missing payload");
+                if(expected) Check(directory[id].decoded==*expected,"Payload decoded size differs from resource description");
+                ++payloadUses[id];
+            };
             auto addTextures=[&](const J& refs) {
                 for(const auto& ref:refs) {
                     const auto id=ref.is_object()?slots.at(ref.at("slot").get<std::string>()):std::optional<uint32_t>(U(ref));
@@ -574,15 +581,34 @@ struct Container {
                 if(action!="replace") continue;
                 const auto& mesh=m.at("meshes").at(U(op.at("mesh")));
                 for(const auto& frame:MorphFrames(U(op.at("mesh")),ticks)) add(frame.frame->at("payload"));
-                for(const auto& stream:mesh.at("streams")) add(stream.at("payload"));
-                if(!minor) add(mesh.at("indices"));
+                for(const auto& stream:mesh.at("streams"))
+                    add(stream.at("payload"),uint64_t(U(mesh.at("vertex_count")))*U(stream.at("stride")));
+                if(!minor) add(mesh.at("indices"),uint64_t(U(mesh.at("index_count")))*U(mesh.at("index_size")));
                 for(const auto& draw:mesh.at("draws")) {
                     if(minor && draw.contains("when") && !Evaluate(draw.at("when"),selection.effective)) continue;
-                    if(minor) add(draw.at("indices"));
+                    if(minor) add(draw.at("indices"),uint64_t(U(draw.at("count")))*U(mesh.at("index_size")));
                     addTextures(draw.at("textures"));
                 }
             }
-            for(auto id:selectedTextures) add(m.at("textures").at(id).at("payload"));
+            if(!deferTextures) for(auto id:selectedTextures) add(m.at("textures").at(id).at("payload"));
+        }
+        if(plan) {
+            plan->package=info;
+            for(const auto& [id,uses]:payloadUses) {
+                Check(id<directory.size(),"Missing payload");
+                const auto bytes=directory[id].decoded;
+                Check(bytes<=limits.budget && plan->decoded_payload_bytes<=limits.budget-bytes,
+                    "Selected appearance exceeds decoded payload budget");
+                plan->decoded_payload_bytes+=bytes;
+                // One cached allocation plus every selected consumer. This also
+                // safely covers repeated references and temporary morph backing.
+                Check(uses<UINT64_MAX && bytes<=UINT64_MAX/(uses+1),"Decoded reservation overflow");
+                const auto bound=bytes*(uses+1);
+                Check(plan->reservation_bytes<=UINT64_MAX-bound,"Decoded reservation overflow");
+                plan->reservation_bytes+=bound;
+                plan->payload_ids.push_back(id);
+            }
+            return; // Metadata and directory only; no payload reads/decompression.
         }
         uint64_t resident=0;
         const uint64_t selectedBudget=limits.budget;
@@ -603,7 +629,13 @@ struct Container {
                             const uint64_t unitBytes=pixel?pixel:block;
                             Check(units<=(UINT32_MAX-size)/unitBytes,"Texture exceeds upload size representation"); size+=units*unitBytes;
                         }
-                        Check(size<=limits.textureBytes,"Texture exceeds "+std::to_string(limits.textureBytes/MiB)+" MiB"); reserve(size); tex.data=TakePayload(t.at("payload"),size);
+                        Check(size<=limits.textureBytes,"Texture exceeds "+std::to_string(limits.textureBytes/MiB)+" MiB"); reserve(size);
+                        if(deferTextures) {
+                            const auto pid=U(t.at("payload")); Check(pid<directory.size(),"Missing payload");
+                            const auto& e=directory[pid];
+                            Check(e.decoded==size,"Payload decoded size differs from resource description");
+                            tex.payload_id=pid; tex.payload_codec=e.codec; tex.payload_offset=e.offset; tex.payload_stored=e.stored;
+                        } else tex.data=TakePayload(t.at("payload"),size);
                         ti.data_size=static_cast<uint32_t>(size); ti.reserved=2; tex.original_name=S(t.at("original_name")); tex.name=tex.original_name;
                         ti.explicit_slot=static_cast<int32_t>(Crc(tex.original_name));
                         tid=static_cast<uint32_t>(out.textures.size()); textures[id]=tid; out.textures.push_back(std::move(tex));
@@ -740,10 +772,11 @@ struct Container {
             "Selected payload consumers were not exhausted");
     }
 };
-template<class F> bool File(const std::filesystem::path& path,std::string& error,F action,bool skip_validation=false,bool loading_optimization=false) {
+template<class F> bool File(const std::filesystem::path& path,std::string& error,F action,bool skip_validation=false,bool loading_optimization=false,bool defer_textures=false) {
     error.clear(); try {
         std::ifstream in(path,std::ios::binary|std::ios::ate); Check(bool(in),"BEM package cannot be opened");
         auto size=in.tellg(); Check(size>=0,"BEM size unavailable"); Container c; c.skip_validation=skip_validation; c.loading_optimization=loading_optimization;
+        c.deferTextures=defer_textures;
         c.read=[&](uint64_t off,size_t count) {
             Check(off<=static_cast<uint64_t>(size) && count<=static_cast<uint64_t>(size)-off,"Truncated BEM");
             std::vector<uint8_t> bytes(count); in.seekg(static_cast<std::streamoff>(off));
@@ -760,10 +793,87 @@ bool ResolveBemParameters(const BemPackageInfo& info,std::string_view requested,
     try { ParseParameters(info.parameter_groups_json.empty()?J::array():J::parse(info.parameter_groups_json),requested,&canonical);return true; }
     catch(const std::exception& e) {error=e.what();canonical.clear();return false;}
 }
-bool LoadBem(const std::filesystem::path& path,BemPocData& out,std::string& error,std::string_view appearance,BemLoadStats* stats,bool skip_validation,bool loading_optimization,std::string_view parameters) {
+bool ReadBemLoadPlan(const std::filesystem::path& path,BemLoadPlan& out,std::string& error,std::string_view appearance,bool skip_validation,std::string_view parameters,bool defer_texture_payloads) {
+    out={};BemLoadPlan plan;
+    if(!File(path,error,[&](Container& c){BemPocData unused;c.Decode(appearance,unused,parameters,&plan);},skip_validation,false,defer_texture_payloads)) return false;
+    out=std::move(plan);return true;
+}
+bool LoadBem(const std::filesystem::path& path,BemPocData& out,std::string& error,std::string_view appearance,BemLoadStats* stats,bool skip_validation,bool loading_optimization,std::string_view parameters,uint64_t max_decoded_reservation,bool defer_texture_payloads) {
     out={}; if(stats) *stats={};BemPocData parsed;
-    if(!File(path,error,[&](Container& c){c.stats=stats;c.Decode(appearance,parsed,parameters);},skip_validation,loading_optimization)) return false;
+    std::shared_ptr<BemPayloadSource> source;
+    if(defer_texture_payloads) {
+        std::error_code size_error,time_error; source=std::make_shared<BemPayloadSource>(); source->path=path;
+        source->file_size=std::filesystem::file_size(path,size_error);
+        source->write_time=static_cast<int64_t>(std::filesystem::last_write_time(path,time_error).time_since_epoch().count());
+        if(size_error || time_error) { error="BEM package generation unavailable"; return false; }
+    }
+    if(!File(path,error,[&](Container& c){
+        if(max_decoded_reservation!=UINT64_MAX) {
+            BemLoadPlan plan;BemPocData unused;c.Decode(appearance,unused,parameters,&plan);
+            Check(plan.reservation_bytes<=max_decoded_reservation,"Decoded reservation changed before load");
+            c.payloadUses.clear();
+        }
+        c.stats=stats;c.Decode(appearance,parsed,parameters);
+    },skip_validation,loading_optimization,defer_texture_payloads)) return false;
+    if(source) {
+        // The parsed directory belongs to the generation recorded above.
+        std::error_code size_error,time_error;
+        const auto size=std::filesystem::file_size(path,size_error);
+        const auto time=std::filesystem::last_write_time(path,time_error);
+        if(size_error || time_error || size!=source->file_size ||
+            static_cast<int64_t>(time.time_since_epoch().count())!=source->write_time) {
+            error="BEM package changed while loading"; return false;
+        }
+    }
+    parsed.payload_source=std::move(source);
     out=std::move(parsed); return true;
+}
+bool DecodeBemTexturePayload(const BemPayloadSource& source,const BemTexture& texture,std::vector<uint8_t>& out,std::string& error) {
+    out.clear(); error.clear();
+    try {
+        const uint64_t expected=texture.info.data_size;
+        Check(texture.payload_id!=UINT32_MAX && texture.payload_codec<=1 && expected && texture.payload_stored &&
+            texture.payload_stored<=Budget && expected<=Budget && (texture.payload_codec || texture.payload_stored==expected),
+            "Invalid deferred texture payload extent");
+        std::error_code ec;
+        const auto size=std::filesystem::file_size(source.path,ec);
+        Check(!ec && size==source.file_size,"BEM package changed since the selection was loaded");
+        const auto time=std::filesystem::last_write_time(source.path,ec);
+        Check(!ec && static_cast<int64_t>(time.time_since_epoch().count())==source.write_time,"BEM package changed since the selection was loaded");
+        Check(texture.payload_offset<=size && texture.payload_stored<=size-texture.payload_offset,"Truncated BEM");
+        std::ifstream in(source.path,std::ios::binary); Check(bool(in),"BEM package cannot be opened");
+        in.seekg(static_cast<std::streamoff>(texture.payload_offset));
+        out.resize(static_cast<size_t>(expected));
+        if(!texture.payload_codec) {
+            Check(bool(in.read(reinterpret_cast<char*>(out.data()),static_cast<std::streamsize>(expected))),"BEM read failed");
+            return true;
+        }
+        // Stream the frame: the stored bytes and the decoded texture are never held whole together.
+        struct Stream { ZSTD_DStream* s=ZSTD_createDStream(); ~Stream(){ ZSTD_freeDStream(s); } } stream;
+        Check(stream.s && !ZSTD_isError(ZSTD_initDStream(stream.s)),"Zstd stream unavailable");
+        std::vector<uint8_t> chunk(static_cast<size_t>(std::min<uint64_t>(texture.payload_stored,MiB)));
+        uint64_t remaining=texture.payload_stored; ZSTD_outBuffer output{out.data(),out.size(),0}; size_t status=1; bool first=true;
+        while(remaining) {
+            const auto count=static_cast<size_t>(std::min<uint64_t>(remaining,chunk.size()));
+            Check(bool(in.read(reinterpret_cast<char*>(chunk.data()),static_cast<std::streamsize>(count))),"BEM read failed");
+            remaining-=count;
+            if(first) {
+                first=false;
+                Check(ZSTD_getFrameContentSize(chunk.data(),count)==expected,"Zstd frame extent/content size differs");
+            }
+            ZSTD_inBuffer input{chunk.data(),count,0};
+            while(input.pos<input.size) {
+                Check(status!=0,"Trailing bytes after Zstd frame");
+                const auto consumed=input.pos,produced=output.pos;
+                status=ZSTD_decompressStream(stream.s,&output,&input);
+                Check(!ZSTD_isError(status),"Invalid Zstd payload");
+                // No progress with a full output buffer: the frame is larger than declared.
+                Check(status==0 || input.pos!=consumed || output.pos!=produced,"Zstd frame exceeds texture size");
+            }
+        }
+        Check(status==0 && output.pos==out.size(),"Invalid Zstd payload");
+        return true;
+    } catch(const std::exception& e) { out.clear(); out.shrink_to_fit(); error=e.what(); return false; }
 }
 bool ParseBem(std::span<const uint8_t> bytes,BemPocData& out,std::string& error,bool skip_validation,bool loading_optimization) {
     out={}; error.clear(); try {

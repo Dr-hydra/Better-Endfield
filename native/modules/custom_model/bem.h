@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <memory>
 #include <span>
 #include <string>
 #include <string_view>
@@ -86,6 +87,19 @@ struct BemTexture {
     std::string name;
     std::vector<uint8_t> data;  // complete block-compressed mip chain
     std::string original_name;
+    // LoadBem(..., defer_texture_payloads=true) leaves `data` empty and records
+    // the package extent of this entry. DecodeBemTexturePayload decodes exactly
+    // one texture on demand, so a caller can release it right after upload.
+    uint32_t payload_id = UINT32_MAX, payload_codec = 0;
+    uint64_t payload_offset = 0, payload_stored = 0;
+    bool Deferred() const { return data.empty() && payload_id != UINT32_MAX; }
+};
+// Package generation a deferred texture belongs to. Decoding refuses a file
+// whose size or write time changed after the selection was loaded.
+struct BemPayloadSource {
+    std::filesystem::path path;
+    uint64_t file_size = 0;
+    int64_t write_time = 0;
 };
 
 // BEMv1 resources lowered into the established native upload representation.
@@ -126,6 +140,8 @@ struct BemPocData {
     std::vector<BemTexture> textures;
     bool skip_validation = false; // Developer option, never read from a package.
     bool loading_optimization = false; // Experimental runtime option, never read from a package.
+    // Set only for deferred texture payloads. Metadata only (path/size/time).
+    std::shared_ptr<const BemPayloadSource> payload_source;
 };
 
 struct BemPackageInfo {
@@ -145,6 +161,17 @@ struct BemLoadStats {
     uint64_t decoded_cache_peak_bytes = 0, decoded_cache_remaining_bytes = 0;
     uint64_t payload_copy_bytes = 0, payload_move_bytes = 0;
 };
+// Conservative selected decoded backing bound (cache plus output copies).
+// Excludes compressed input, decoder workspace and metadata allocations.
+struct BemLoadPlan {
+    BemPackageInfo package;
+    uint64_t decoded_payload_bytes = 0;
+    uint64_t reservation_bytes = 0;
+    std::vector<uint32_t> payload_ids;
+};
+bool ReadBemLoadPlan(const std::filesystem::path&, BemLoadPlan&, std::string& error,
+    std::string_view appearance = {}, bool skip_validation = false,
+    std::string_view parameters = {}, bool defer_texture_payloads = false);
 bool ReadBemPackageInfo(const std::filesystem::path&, BemPackageInfo&, std::string& error, bool skip_validation = false);
 bool ResolveBemParameters(const BemPackageInfo&, std::string_view requested,
     std::string& canonical, std::string& error);
@@ -157,5 +184,10 @@ bool ParseBem(std::span<const uint8_t> bytes, BemPocData& output, std::string& e
     bool skip_validation = false, bool loading_optimization = false);
 bool LoadBem(const std::filesystem::path& path, BemPocData& output, std::string& error,
     std::string_view appearance = {}, BemLoadStats* stats = nullptr, bool skip_validation = false,
-    bool loading_optimization = false, std::string_view parameters = {});
+    bool loading_optimization = false, std::string_view parameters = {},
+    uint64_t max_decoded_reservation = UINT64_MAX, bool defer_texture_payloads = false);
+// Reads and decodes one deferred texture entry (streaming Zstd; the stored
+// bytes are never held whole). `output` receives exactly info.data_size bytes.
+bool DecodeBemTexturePayload(const BemPayloadSource& source, const BemTexture& texture,
+    std::vector<uint8_t>& output, std::string& error);
 } // namespace BetterEndfield::CustomModel
