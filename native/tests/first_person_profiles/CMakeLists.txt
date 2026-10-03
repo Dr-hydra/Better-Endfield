@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.25)
+project(BetterEndfieldFirstPersonProfilesTests LANGUAGES CXX)
+# The production project uses C++20; this standalone helper is also C++17
+# compatible and has no Unity/Windows/Android SDK dependency.
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+enable_testing()
+add_executable(first_person_profiles_tests profiles_tests.cpp)
+if(MSVC)
+    target_compile_options(first_person_profiles_tests PRIVATE /W4 /utf-8 /permissive-)
+else()
+    target_compile_options(first_person_profiles_tests PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+add_test(NAME first_person_profiles COMMAND first_person_profiles_tests)

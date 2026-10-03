@@ -4,12 +4,14 @@
 #include "eiem_body_fake.h"
 #include "test_support.h"
 #include <array>
+#include <limits>
 #include <thread>
 using namespace BetterEndfield;
 using namespace BetterEndfield::CameraModule;
 namespace {
 struct Object {
-    enum Kind { Entity, GameObject, Transform, Camera, Brain, Extension } kind;
+    enum Kind { Entity, GameObject, Transform, Camera, Brain, Extension,
+        Rotator, Movement, Ability, RootMotion } kind;
     bool alive=true;
     const char* name="test";
     Object* object=nullptr;
@@ -17,6 +19,12 @@ struct Object {
     Object* model=nullptr;
     Object* head=nullptr;
     Object* parent=nullptr;
+    Object* owner=nullptr;
+    Object* rotator=nullptr;
+    Object* movement=nullptr;
+    Object* ability=nullptr;
+    Object* root_motion=nullptr;
+    bool active=false,in_air=false,root_rotation=false,locked=false,immobilized=false;
     Vector3 position{};
     Quaternion rotation{0,0,0,1};
     int position_reads=0,rotation_writes=0;
@@ -30,6 +38,9 @@ struct Snapshot {
 Object model_a{Object::GameObject},body_a{Object::Transform},head_a{Object::Transform};
 Object model_b{Object::GameObject},body_b{Object::Transform},head_b{Object::Transform};
 Object entity_a{Object::Entity},entity_b{Object::Entity};
+Object rotator_a{Object::Rotator},rotator_b{Object::Rotator};
+Object movement_a{Object::Movement},movement_b{Object::Movement};
+Object ability_a{Object::Ability},ability_b{Object::Ability},root_motion{Object::RootMotion};
 Object camera_go{Object::GameObject},other_go{Object::GameObject};
 Object camera{Object::Camera},other_camera{Object::Camera};
 Object brain{Object::Brain},other_brain{Object::Brain};
@@ -39,13 +50,14 @@ Object* main_camera=&camera;
 float dt=1.0f/60.0f,fov=60;
 bool boolean=false,post_override=false;
 int integer=0,snapshot_clear_calls=0,original_push_calls=0;
+bool root_motion_getter_fails=false;
 uint32_t next_handle=1;
 struct Lens {float fov=60,near_clip=0.3f,dutch=0;};
 struct State {
     Vector3 position{1,2,3};
     Quaternion orientation{0,0,0,1};
     Vector3 correction{0.1f,0.2f,0.3f};
-    Quaternion orientation_correction{0,0.1f,0,0.995f};
+    Quaternion orientation_correction{0,0.70710678f,0,0.70710678f};
     Lens lens;
 } pushed_state;
 
@@ -76,6 +88,40 @@ void* InvokeFake(void*,const void* method,void* instance,void** args,void** exce
         return nullptr;
     }
     if(key=="entity.get_model_com") {CHECK(object&&object->kind==Object::Entity);return object->model;}
+    if(key=="fp.entity.rotation") {CHECK(object&&object->kind==Object::Entity);return &object->rotation;}
+    if(key=="fp.entity.alive") {CHECK(object&&object->kind==Object::Entity);return &object->alive;}
+    if(key=="fp.entity.in_cinematic") {CHECK(object&&object->kind==Object::Entity);return &object->active;}
+    if(key=="fp.entity.rotator") {CHECK(object&&object->kind==Object::Entity);return object->rotator;}
+    if(key=="fp.entity.movement") {CHECK(object&&object->kind==Object::Entity);return object->movement;}
+    if(key=="fp.entity.ability") {CHECK(object&&object->kind==Object::Entity);return object->ability;}
+    if(key=="fp.model.id")return nullptr;
+    if(key=="fp.rotator.is_rotating") {CHECK(object&&object->kind==Object::Rotator);return &object->active;}
+    if(key=="fp.rotator.lock_to_camera") {CHECK(object&&object->kind==Object::Rotator);return &object->locked;}
+    if(key=="fp.movement.is_moving") {CHECK(object&&object->kind==Object::Movement);return &object->active;}
+    if(key=="fp.movement.is_in_air") {CHECK(object&&object->kind==Object::Movement);return &object->in_air;}
+    if(key=="fp.movement.root_motion_rotation") {CHECK(object&&object->kind==Object::Movement);return &object->root_rotation;}
+    if(key=="fp.ability.in_skill") {CHECK(object&&object->kind==Object::Ability);return &object->active;}
+    if(key=="fp.ability.immobilized") {CHECK(object&&object->kind==Object::Ability);return &object->immobilized;}
+    if(key=="fp.movement.root_motion_data") {
+        CHECK(object&&object->kind==Object::Movement);
+        if(root_motion_getter_fails)*exception=reinterpret_cast<void*>(1);
+        return object->root_motion;
+    }
+    if(key=="fp.root_motion.has_motion") {CHECK(object&&object->kind==Object::RootMotion);return &object->active;}
+    if(key=="fp.rotator.set_rotation") {
+        CHECK(object&&object->kind==Object::Rotator&&object->owner);
+        CHECK(!object->active&&!object->locked); // SetRotation stops a game rotation task.
+        ++object->rotation_writes;
+        auto* entity=object->owner;
+        const Quaternion next=*static_cast<Quaternion*>(args[0]);
+        const Quaternion change=Multiply(next,Conjugate(entity->rotation));
+        entity->rotation=next;
+        auto* body=entity->model->transform;
+        body->rotation=Multiply(change,body->rotation);
+        if(body->head)body->head->position=Add(body->position,
+            RotateVector(change,Subtract(body->head->position,body->position)));
+        return nullptr;
+    }
     if(key=="base_model_component.get_model_go")return object;
     if(key=="unity.component.transform"||key=="unity.component.game_object") {
         CHECK(object&&object->kind!=Object::Entity&&object->kind!=Object::GameObject&&object->alive);
@@ -130,7 +176,12 @@ void Setup(BE_HostApiV1& host) {
     head_a.object=&model_a;head_b.object=&model_b;
     head_a.name="Bip001_Head";head_b.name="Bip001_Head";
     head_a.position={0,1.7f,0};head_b.position={3,1.8f,0};
+    body_b.position={3,0,0};
     entity_a.model=&model_a;entity_b.model=&model_b;
+    entity_a.rotator=&rotator_a;entity_b.rotator=&rotator_b;
+    entity_a.movement=&movement_a;entity_b.movement=&movement_b;
+    entity_a.ability=&ability_a;entity_b.ability=&ability_b;
+    rotator_a.owner=&entity_a;rotator_b.owner=&entity_b;
     camera.object=&camera_go;brain.object=&camera_go;
     other_camera.object=&other_go;other_brain.object=&other_go;
     snapshot.rotation=&post_rotation;snapshot.offset=&camera_offset;
@@ -173,7 +224,7 @@ int main() {
     PumpFirstPerson();CHECK(!g_first_person.character&&!g_first_person.head&&!g_first_person.body);
     main_character=&entity_b;PumpFirstPerson();
     CHECK(g_first_person.target_valid&&g_first_person.head==&head_b&&g_first_person.body==&body_b);
-    DetourPushState(&brain,&state,nullptr);CHECK(nearly(pushed_state.position.x,3));
+    DetourPushState(&brain,&state,nullptr);CHECK(nearly(pushed_state.position.x,3+kFirstPersonEyeForward));
     // Destroyed anchors are rejected before any Transform method can execute.
     body_b.alive=false;head_b.alive=false;main_character=nullptr;
     DetourPushState(&brain,&state,nullptr);PumpFirstPerson();
@@ -185,13 +236,13 @@ int main() {
     CHECK(g_first_person.model==&model_b&&g_first_person.head==&head_b);
     entity_a.model=&model_a;PumpFirstPerson();
 
-    // Restore only a model-facing rotation that is still owned by this session.
+    // Restore only an entity-facing rotation that is still owned by this session.
     g_first_person_view_forward={-1,0,0};g_first_person_view_forward_valid=true;
     g_first_person_side_look_limit=30;ApplyFirstPersonFacing();
     CHECK(g_first_person.body_rotation_owned&&body_a.rotation.y!=0);
     ExitFirstPerson("test");CHECK(nearly(body_a.rotation.y,0));
     CHECK(EnterFirstPerson());g_first_person_view_forward={-1,0,0};g_first_person_view_forward_valid=true;
-    ApplyFirstPersonFacing();body_a.rotation={0,0.38268343f,0,0.92387953f};
+    ApplyFirstPersonFacing();entity_a.rotation=body_a.rotation={0,0.38268343f,0,0.92387953f};
     ExitFirstPerson("game took over facing");CHECK(nearly(body_a.rotation.y,0.38268343f));
 
     // Captured camera identity owns the session; a new main camera closes it.
@@ -239,6 +290,117 @@ int main() {
     ExitFirstPerson("same model skeleton replacement");
     body_a.head=&head_a;head_a.parent=&body_a;
     CHECK(original_push_calls>=7);
+
+    // Final view: raw yaw 90, local correction pitch 90, Dutch roll 90.
+    // The noncommuting combination points forward down and up along +Z.
+    entity_a.rotation=body_a.rotation={0,0,0,1};
+    head_a.position={0,1.7f,0};
+    CHECK(EnterFirstPerson());
+    State tilted;
+    tilted.orientation={0,0.70710678f,0,0.70710678f};
+    tilted.orientation_correction={0.70710678f,0,0,0.70710678f};
+    tilted.lens.dutch=90;
+    const State tilted_original=tilted;
+    DetourPushState(&brain,&tilted,nullptr);
+    CHECK(nearly(pushed_state.position.x,0));
+    CHECK(nearly(pushed_state.position.y,1.7f-kFirstPersonEyeForward));
+    CHECK(nearly(pushed_state.position.z,kFirstPersonEyeUp));
+    CHECK(std::memcmp(&pushed_state.orientation,&tilted.orientation,sizeof(Quaternion))==0);
+    CHECK(std::memcmp(&pushed_state.orientation_correction,&tilted.orientation_correction,sizeof(Quaternion))==0);
+    CHECK(pushed_state.lens.dutch==90&&std::memcmp(&tilted,&tilted_original,sizeof(tilted))==0);
+
+    // Tail/lifecycle refresh queues one turn. The next push uses its current
+    // view, not the previous frame's view, and samples the head after turning.
+    State facing;
+    facing.orientation_correction={0,0,0,1};
+    facing.orientation={0,-0.70710678f,0,0.70710678f}; // current view left
+    g_first_person_view_forward={1,0,0};g_first_person_view_forward_valid=true; // stale view right
+    head_a.position={0,1.7f,0.2f};
+    const int writes_before=rotator_a.rotation_writes;
+    PumpFirstPerson();
+    CHECK(rotator_a.rotation_writes==writes_before);
+    DetourPushState(&other_brain,&facing,nullptr);
+    CHECK(rotator_a.rotation_writes==writes_before&&g_first_person.facing_pending);
+    DetourPushState(&brain,&facing,nullptr);
+    CHECK(entity_a.rotation.y<0&&rotator_a.rotation_writes==writes_before+1);
+    CHECK(nearly(pushed_state.position.x,head_a.position.x-kFirstPersonEyeForward));
+    CHECK(nearly(pushed_state.position.z,head_a.position.z));
+    DetourPushState(&brain,&facing,nullptr);
+    CHECK(rotator_a.rotation_writes==writes_before+1); // repeated push cannot accelerate turning
+    ExitFirstPerson("current push facing");
+    CHECK(nearly(entity_a.rotation.y,0));
+
+    // Invalid current orientation cannot reuse the previous view to turn.
+    CHECK(EnterFirstPerson());
+    State invalid_states[3];
+    invalid_states[0].orientation={0,0,0,0};
+    invalid_states[1].orientation_correction={0,0,0,0};
+    invalid_states[2].lens.dutch=std::numeric_limits<float>::quiet_NaN();
+    const int invalid_writes=rotator_a.rotation_writes;
+    for(auto& invalid:invalid_states) {
+        const State cached=invalid;
+        PumpFirstPerson();DetourPushState(&brain,&invalid,nullptr);
+        CHECK(!g_first_person_view_forward_valid&&rotator_a.rotation_writes==invalid_writes);
+        CHECK(pushed_state.lens.fov==60&&std::memcmp(&invalid,&cached,sizeof(invalid))==0);
+    }
+    ExitFirstPerson("invalid view");
+
+    // An authored model yaw offset survives entity turning and restoration.
+    body_a.rotation={0,0.38268343f,0,0.92387953f}; // visual model differs from entity
+    CHECK(EnterFirstPerson());
+    g_first_person_view_forward={-1,0,0};g_first_person_view_forward_valid=true;
+    ApplyFirstPersonFacing();
+    CHECK(entity_a.rotation.y<0&&body_a.rotation.y>0&&body_a.rotation_writes==0);
+    ExitFirstPerson("preserve authored model offset");
+    CHECK(nearly(entity_a.rotation.y,0)&&nearly(body_a.rotation.y,0.38268343f));
+    body_a.rotation={0,0,0,1};
+
+    // Movement, airborne actions, skills, root motion, camera locking and
+    // cinematic/immobilized states all retain the game's entity/model facing.
+    CHECK(EnterFirstPerson());
+    bool* activity_flags[]{&movement_a.active,&movement_a.in_air,&movement_a.root_rotation,
+        &ability_a.active,&ability_a.immobilized,&rotator_a.active,&rotator_a.locked,&entity_a.active};
+    for(bool* flag:activity_flags) {
+        const int before=rotator_a.rotation_writes;
+        *flag=true;
+        PumpFirstPerson();DetourPushState(&brain,&facing,nullptr);
+        CHECK(rotator_a.rotation_writes==before&&!g_first_person.body_rotation_owned);
+        CHECK(nearly(entity_a.rotation.y,0)&&nearly(body_a.rotation.y,0));
+        *flag=false;
+    }
+    movement_a.root_motion=&root_motion;root_motion.active=true;
+    const int guarded_writes=rotator_a.rotation_writes;
+    PumpFirstPerson();DetourPushState(&brain,&facing,nullptr);
+    CHECK(rotator_a.rotation_writes==guarded_writes);
+    root_motion.active=false;root_motion_getter_fails=true;
+    PumpFirstPerson();DetourPushState(&brain,&facing,nullptr);
+    CHECK(rotator_a.rotation_writes==guarded_writes); // getter failure is unknown
+    root_motion_getter_fails=false;movement_a.root_motion=nullptr;
+    auto* guard=Contract("fp.ability.in_skill");const void* saved_method=guard->method_info;
+    guard->method_info=nullptr;
+    PumpFirstPerson();DetourPushState(&brain,&facing,nullptr);
+    CHECK(rotator_a.rotation_writes==guarded_writes&&pushed_state.lens.fov==75);
+    guard->method_info=saved_method;
+
+    // A game-authored facing change between pushes wins even if idle flags
+    // have already cleared. It must not be overwritten or restored on exit.
+    PumpFirstPerson();DetourPushState(&brain,&facing,nullptr);
+    CHECK(g_first_person.body_rotation_owned);
+    entity_a.rotation=body_a.rotation={0,0.38268343f,0,0.92387953f};
+    const int takeover_writes=rotator_a.rotation_writes;
+    PumpFirstPerson();DetourPushState(&brain,&facing,nullptr);
+    CHECK(rotator_a.rotation_writes==takeover_writes&&!g_first_person.body_rotation_owned);
+    ExitFirstPerson("game facing between pushes");
+    CHECK(nearly(entity_a.rotation.y,0.38268343f));
+
+    // Exit during a stationary skill must not call SetRotation/StopRotate.
+    CHECK(EnterFirstPerson());g_first_person_view_forward={-1,0,0};g_first_person_view_forward_valid=true;
+    ApplyFirstPersonFacing();CHECK(g_first_person.body_rotation_owned);
+    ability_a.active=true;const Quaternion skill_facing=entity_a.rotation;
+    const int skill_writes=rotator_a.rotation_writes;
+    ExitFirstPerson("skill owns facing on exit");
+    CHECK(rotator_a.rotation_writes==skill_writes&&FirstPersonSameRotation(entity_a.rotation,skill_facing));
+    ability_a.active=false;
     g_host=nullptr;
     std::cout<<"PASS production first-person lifecycle: "<<checks<<" checks\n";
 }

@@ -119,8 +119,10 @@ inline bool Triangulate(const std::vector<uint32_t>& loop,const std::vector<Vert
     triangles=std::move(candidate); return true;
 }
 inline Result Build(const std::vector<Vertex>& vertices,const std::vector<Part>& parts,
-    const std::vector<uint8_t>& bone_kind,const Frame& neck,bool hide_all,bool fill,double range=1.0) {
+    const std::vector<uint8_t>& bone_kind,const Frame& neck,bool hide_all,bool fill,double range=1.0,
+    const std::vector<uint8_t>* local_removable=nullptr) {
     Result result; result.parts=parts;
+    if(local_removable&&local_removable->size()!=vertices.size()){result.error="invalid local visibility mask";return result;}
     if(vertices.empty()||vertices.size()>200000||bone_kind.empty()) {result.error="invalid vertex or bone count";return result;}
     for(const auto& v:vertices) {
         if(!Finite(v.position)||Length(v.position)>100000) {result.error="invalid vertex position";return result;}
@@ -143,6 +145,7 @@ inline Result Build(const std::vector<Vertex>& vertices,const std::vector<Part>&
     std::vector<uint8_t> removable(vertices.size(),1);
     for(uint32_t i=0;i<vertices.size();++i)for(int j=0;j<4;++j)
         if(vertices[i].weight[j]>0&&bone_kind[vertices[i].bone[j]]!=1)removable[i]=0;
+    if(local_removable)for(size_t i=0;i<vertices.size();++i)if((*local_removable)[i])removable[i]=1;
     for(auto& part:result.parts) for(size_t i=0;i<part.indices.size();i+=3) {
         auto a=part.indices[i],b=part.indices[i+1],c=part.indices[i+2];
         if(a==b||a==c||b==c) continue;

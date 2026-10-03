@@ -1,6 +1,7 @@
 #include "BetterEndfield/ModuleApi.h"
 #include "first_person_mesh.h"
 #include "first_person_retry.h"
+#include "first_person_profiles.h"
 #include "camera_follow.h"
 #include "BetterEndfield/PoseLease.h"
 #include "BetterEndfield/CustomModelGeometry.h"
@@ -365,6 +366,8 @@ CameraStateLayout g_state_layout;
 BE_ResolvedClassV1 g_snapshot_controller_class{};
 BE_ResolvedClassV1 g_animator_class{};
 BE_ResolvedClassV1 g_skinned_mesh_renderer_class{};
+// Private zero-scale collapse anchors for the no-geometry palette fallback.
+BE_ResolvedClassV1 g_fp_game_object_class{};
 
 // Renderer pointers inside a probe are only valid during the scan that produced
 // them. Bound mesh patches keep GC handles separately because the game can
@@ -380,6 +383,7 @@ struct HeadPartProbe {
 };
 
 struct FirstPersonSession {
+    std::string model_id;
     void* character = nullptr;
     uint32_t character_handle = 0;
     void* model = nullptr;
@@ -394,9 +398,11 @@ struct FirstPersonSession {
     uint32_t snapshot_handle = 0;
     bool snapshot_exit_owned = false;
     bool target_valid = false;
+    // Entity root rotations; ModelGo may have a separate authored offset.
     Quaternion original_body_rotation{};
     Quaternion written_body_rotation{};
     bool body_rotation_owned = false;
+    bool facing_pending = false;
     bool head_hide_applied = false;
     Vector3 last_eye{};
     bool last_eye_valid = false;
@@ -430,6 +436,55 @@ MethodContract g_contracts[]{
     {"base_model_component.get_model_go",
         {"Gameplay.Beyond.dll", "Beyond.Gameplay.View", "BaseModelComponent",
             "GetModelGo", nullptr, "UnityEngine.GameObject", 0}},
+    // Optional idle-facing contracts. Missing state disables body turning only.
+    {"fp.entity.rotation",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "Entity",
+            "get_rotation", nullptr, "UnityEngine.Quaternion", 0}},
+    {"fp.entity.alive",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "Entity",
+            "get_alive", nullptr, "System.Boolean", 0}},
+    {"fp.entity.in_cinematic",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "Entity",
+            "get_inCinematic", nullptr, "System.Boolean", 0}},
+    {"fp.entity.rotator",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "Entity",
+            "get_rotateCom", nullptr, "Beyond.Gameplay.Core.RotatorComponent", 0}},
+    {"fp.entity.movement",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "Entity",
+            "get_movementComponent", nullptr, "Beyond.Gameplay.Core.MovementComponent", 0}},
+    {"fp.entity.ability",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "Entity",
+            "get_abilityCom", nullptr, "Beyond.Gameplay.Core.AbilitySystem", 0}},
+    {"fp.rotator.is_rotating",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "RotatorComponent",
+            "get_isRotating", nullptr, "System.Boolean", 0}},
+    {"fp.rotator.lock_to_camera",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "RotatorComponent",
+            "get_lockToCamera", nullptr, "System.Boolean", 0}},
+    {"fp.rotator.set_rotation",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "RotatorComponent",
+            "SetRotation", "UnityEngine.Quaternion", "System.Void", 1}},
+    {"fp.movement.is_moving",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "MovementComponent",
+            "get_isMoving", nullptr, "System.Boolean", 0}},
+    {"fp.movement.is_in_air",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "MovementComponent",
+            "get_isInAir", nullptr, "System.Boolean", 0}},
+    {"fp.movement.root_motion_rotation",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "MovementComponent",
+            "get_appliedRootMotionRotLastFrame", nullptr, "System.Boolean", 0}},
+    {"fp.movement.root_motion_data",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "MovementComponent",
+            "get_rootMotionData", nullptr, "Beyond.Gameplay.Core.MovementComponent.RootMotionData", 0}},
+    {"fp.root_motion.has_motion",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "MovementComponent.RootMotionData",
+            "get_hasRootMotion", nullptr, "System.Boolean", 0}},
+    {"fp.ability.in_skill",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "AbilitySystem",
+            "get_inSkill", nullptr, "System.Boolean", 0}},
+    {"fp.ability.immobilized",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.Core", "AbilitySystem",
+            "get_isImmobilized", nullptr, "System.Boolean", 0}},
     {"cinemachine.push_state",
         {"Cinemachine.dll", "Cinemachine", "CinemachineBrain",
             "PushStateToUnityCamera", "Cinemachine.CameraState&", "System.Void", 1},
@@ -503,6 +558,66 @@ MethodContract g_contracts[]{
     {"unity.mesh.vertex_count.get",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "get_vertexCount",
             nullptr, "System.Int32", 0}},
+    {"fp.model.id",
+        {"Gameplay.Beyond.dll", "Beyond.Gameplay.View", "BaseModelComponent",
+            "get_modelId", nullptr, "System.String", 0}},
+    {"fp.mesh.attributes.count",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "get_vertexAttributeCount", nullptr, "System.Int32", 0}},
+    {"fp.mesh.attribute",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "GetVertexAttribute", "System.Int32", "UnityEngine.Rendering.VertexAttributeDescriptor", 1}},
+    {"fp.mesh.submeshes.get",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "get_subMeshCount", nullptr, "System.Int32", 0}},
+    {"fp.mesh.submeshes.set",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "set_subMeshCount", "System.Int32", "System.Void", 1}},
+    {"fp.mesh.index_format.get",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "get_indexFormat", nullptr, "UnityEngine.Rendering.IndexFormat", 0}},
+    {"fp.mesh.index_format.set",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "set_indexFormat", "UnityEngine.Rendering.IndexFormat", "System.Void", 1}},
+    {"fp.mesh.submesh",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "GetSubMesh", "System.Int32", "UnityEngine.Rendering.SubMeshDescriptor", 1}},
+    {"fp.mesh.indices.set",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "SetIndices", "System.Int32[]|UnityEngine.MeshTopology|System.Int32|System.Boolean|System.Int32", "System.Void", 5}},
+    {"fp.mesh.indices.get",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "GetIndices", "System.Int32|System.Boolean", "System.Int32[]", 2}},
+    {"fp.mesh.upload",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "UploadMeshData", "System.Boolean", "System.Void", 1}},
+    {"fp.object.clone",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Object", "Internal_CloneSingle", "UnityEngine.Object", "UnityEngine.Object", 1}},
+    {"fp.array.create",
+        {"mscorlib.dll", "System", "Array", "CreateInstance", "System.Type|System.Int32", "System.Array", 2}},
+    // Optional: Android IL2CPP strips Mesh.GetSubMesh. These public wrappers
+    // (or GetIndices lengths) recover the same contiguous submesh ranges.
+    {"fp.mesh.index_start",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "GetIndexStart", "System.Int32", "System.UInt32", 1}},
+    {"fp.mesh.index_count",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "GetIndexCount", "System.Int32", "System.UInt32", 1}},
+    {"fp.mesh.base_vertex",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "GetBaseVertex", "System.Int32", "System.UInt32", 1}},
+    // Optional palette fallback for mixed renderers whose geometry is unreadable.
+    {"fp.renderer.bones.set",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "SkinnedMeshRenderer", "set_bones",
+            "UnityEngine.Transform[]", "System.Void", 1}},
+    {"fp.array.clone",
+        {"mscorlib.dll", "System", "Array", "Clone", nullptr, "System.Object", 0}},
+    {"fp.array.set_value",
+        {"mscorlib.dll", "System", "Array", "SetValue", "System.Object|System.Int32", "System.Void", 2}},
+    {"fp.game_object.ctor",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "GameObject", ".ctor", "System.String", "System.Void", 1}},
+    {"fp.transform.set_parent",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Transform", "SetParent",
+            "UnityEngine.Transform|System.Boolean", "System.Void", 2}},
+    {"fp.transform.local_position.set",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Transform", "set_localPosition",
+            "UnityEngine.Vector3", "System.Void", 1}},
+    {"fp.transform.local_rotation.set",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Transform", "set_localRotation",
+            "UnityEngine.Quaternion", "System.Void", 1}},
+    {"fp.transform.local_scale.get",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Transform", "get_localScale",
+            nullptr, "UnityEngine.Vector3", 0}},
+    {"fp.transform.local_scale.set",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Transform", "set_localScale",
+            "UnityEngine.Vector3", "System.Void", 1}},
     {"unity.object.destroy",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Object", "Destroy",
             "UnityEngine.Object", "System.Void", 1}},
@@ -1557,25 +1672,68 @@ void* FindModelTransform() {
 #include "character_motion_runtime.inc"
 #include "mmd_director_runtime.inc"
 
+bool FirstPersonFacingIsIdle(void*& rotator) {
+    if (!g_first_person.character) return false;
+    bool alive = false;
+    if (!GetValue(Contract("fp.entity.alive"), g_first_person.character, alive) || !alive)
+        return false;
+    rotator = Invoke(Contract("fp.entity.rotator"), g_first_person.character, nullptr);
+    void* movement = Invoke(Contract("fp.entity.movement"), g_first_person.character, nullptr);
+    void* ability = Invoke(Contract("fp.entity.ability"), g_first_person.character, nullptr);
+    const auto* setter = Contract("fp.rotator.set_rotation");
+    if (!rotator || !movement || !ability || !setter || !setter->resolved) return false;
+    const struct { const char* key; void* instance; } checks[]{
+        {"fp.entity.in_cinematic", g_first_person.character},
+        {"fp.rotator.is_rotating", rotator},
+        {"fp.rotator.lock_to_camera", rotator},
+        {"fp.movement.is_moving", movement},
+        {"fp.movement.is_in_air", movement},
+        {"fp.movement.root_motion_rotation", movement},
+        {"fp.ability.in_skill", ability},
+        {"fp.ability.immobilized", ability},
+    };
+    for (const auto& check : checks) {
+        bool active = false;
+        if (!GetValue(Contract(check.key), check.instance, active) || active) return false;
+    }
+    // A null data object is idle; a failed getter is unknown, not idle.
+    const auto* getter = Contract("fp.movement.root_motion_data");
+    if (!getter || !getter->method_info || !g_host || !g_host->runtime_invoke) return false;
+    void* exception = nullptr;
+    void* root_motion = g_host->runtime_invoke(g_host->context, getter->method_info,
+        movement, nullptr, &exception);
+    if (exception) return false;
+    bool has_motion = false;
+    return !root_motion || (GetValue(Contract("fp.root_motion.has_motion"), root_motion,
+        has_motion) && !has_motion);
+}
+
+bool FirstPersonSameRotation(Quaternion a, Quaternion b) {
+    if (!IsUnitQuaternion(a) || !IsUnitQuaternion(b)) return false;
+    a = NormalizeRotation(a);
+    b = NormalizeRotation(b);
+    return std::abs(a.x*b.x + a.y*b.y + a.z*b.z + a.w*b.w) >= 0.999999f;
+}
+
 void RestoreFirstPersonFacing() {
     if(!g_first_person.body_rotation_owned)return;
     g_first_person.body_rotation_owned=false;
     if(!IsObjectAlive(g_first_person.body))return;
+    void* rotator = nullptr;
+    if (!FirstPersonFacingIsIdle(rotator)) return;
     Quaternion current{};
-    if(!Unbox(Invoke(Contract("unity.transform.rotation.get"),g_first_person.body,nullptr),current)||
-       !IsUnitQuaternion(current))return;
-    const auto& written=g_first_person.written_body_rotation;
-    const float dot=current.x*written.x+current.y*written.y+
-        current.z*written.z+current.w*written.w;
+    if(!Unbox(Invoke(Contract("fp.entity.rotation"),g_first_person.character,nullptr),current))return;
     // The game may have taken over facing during movement or an action.
-    if(std::abs(dot)<0.999999f)return;
-    SetValue(Contract("unity.transform.rotation.set"),g_first_person.body,
-        g_first_person.original_body_rotation);
+    if(!FirstPersonSameRotation(current,g_first_person.written_body_rotation))return;
+    void* parameters[]{&g_first_person.original_body_rotation};
+    InvokeVoid(Contract("fp.rotator.set_rotation"),rotator,parameters);
 }
 
 void ReleaseHeadTransform() {
+    g_first_person.model_id.clear();
     g_first_person.target_valid=false;
     g_first_person_view_forward_valid=false;
+    g_first_person.facing_pending=false;
     RestoreFirstPersonFacing();
     if (g_first_person.head_handle && g_host && g_host->gchandle_free) {
         g_host->gchandle_free(g_host->context, g_first_person.head_handle);
@@ -1739,9 +1897,20 @@ void ApplyFirstPersonFacing() {
     if (Magnitude(desired) < 0.001f) return;
 
     Quaternion current_rotation{};
-    if (!Unbox(Invoke(Contract("unity.transform.rotation.get"),
-            g_first_person.body, nullptr), current_rotation) ||
+    void* rotator = nullptr;
+    if (!FirstPersonFacingIsIdle(rotator)) {
+        g_first_person.body_rotation_owned = false;
+        return;
+    }
+    if (!Unbox(Invoke(Contract("fp.entity.rotation"),
+            g_first_person.character, nullptr), current_rotation) ||
         !IsUnitQuaternion(current_rotation)) return;
+    if (g_first_person.body_rotation_owned &&
+        !FirstPersonSameRotation(current_rotation, g_first_person.written_body_rotation)) {
+        g_first_person.body_rotation_owned = false;
+        return;
+    }
+    current_rotation = NormalizeRotation(current_rotation);
     Vector3 current = RotateVector(current_rotation, {0.0f, 0.0f, 1.0f});
     current.y = 0.0f;
     current = Normalize(current);
@@ -1755,13 +1924,17 @@ void ApplyFirstPersonFacing() {
 
     float dt = 1.0f / 60.0f;
     GetValue(Contract("unity.time.unscaled_delta.get"), nullptr, dt);
+    if (!std::isfinite(dt)) return;
     dt = std::clamp(dt, 0.001f, 0.1f);
     const float max_step = g_first_person_turn_speed.load(std::memory_order_relaxed) * dt;
     const float step = std::clamp(delta, -max_step, max_step);
-    const float yaw = (current_yaw + step) * 0.01745329252f;
-    const Quaternion next{0.0f, std::sin(yaw * 0.5f), 0.0f, std::cos(yaw * 0.5f)};
+    const float yaw = step * 0.01745329252f;
+    const Quaternion delta_rotation{0.0f, std::sin(yaw * 0.5f), 0.0f, std::cos(yaw * 0.5f)};
+    const Quaternion next = Multiply(delta_rotation, current_rotation);
     void* parameters[1]{const_cast<Quaternion*>(&next)};
-    if (InvokeVoid(Contract("unity.transform.rotation.set"), g_first_person.body, parameters)) {
+    // Rotator updates the entity root and its forward, preserving model offsets.
+    // SetRotation also stops a rotating task, hence the mandatory idle checks.
+    if (InvokeVoid(Contract("fp.rotator.set_rotation"), rotator, parameters)) {
         if(!g_first_person.body_rotation_owned)
             g_first_person.original_body_rotation=current_rotation;
         g_first_person.written_body_rotation=next;
@@ -1776,9 +1949,10 @@ void ApplyFirstPersonFacing() {
 // Rewrites the CameraState that Cinemachine is about to push to the Unity
 // camera. The orientation is kept exactly as the game produced it (so aim
 // offsets and look input stay authoritative) and only the position is moved to
-// the eye anchor. The corrections are cleared so the pushed pose equals the raw
-// pose instead of being nudged back by the collider/damping stages.
+// the eye anchor. Only position correction is cleared; orientation correction
+// and Dutch remain game-owned and define the final eye basis.
 void ApplyFirstPersonState(void* state) {
+    g_first_person_view_forward_valid = false;
     if (!g_state_layout.ready || !g_first_person.target_valid ||
         !g_first_person_camera_enabled.load(std::memory_order_acquire) ||
         g_first_person_exit_request.load(std::memory_order_acquire) ||
@@ -1786,35 +1960,44 @@ void ApplyFirstPersonState(void* state) {
         return;
     }
 
-    Quaternion orientation{};
-    if (!ReadBytes(state, g_state_layout.raw_orientation, &orientation,
-            sizeof(orientation)) || !IsUnitQuaternion(orientation)) {
+    Quaternion raw{}, correction{};
+    float dutch = 0;
+    if (!ReadBytes(state, g_state_layout.raw_orientation, &raw, sizeof(raw)) ||
+        !ReadBytes(state, g_state_layout.orientation_correction, &correction, sizeof(correction)) ||
+        !ReadBytes(state, g_state_layout.lens + g_state_layout.lens_dutch, &dutch, sizeof(dutch)) ||
+        !IsUnitQuaternion(raw) || !IsUnitQuaternion(correction) || !std::isfinite(dutch)) {
         return;
     }
+    const float roll = dutch * 0.00872664626f;
+    const Quaternion orientation = NormalizeRotation(Multiply(Multiply(raw, correction),
+        Quaternion{0, 0, std::sin(roll), std::cos(roll)}));
+    const Vector3 forward = RotateVector(orientation, Vector3{0.0f, 0.0f, 1.0f});
+    const Vector3 up = RotateVector(orientation, Vector3{0.0f, 1.0f, 0.0f});
+    g_first_person_view_forward = forward;
+    g_first_person_view_forward_valid = IsFinite(forward);
+    if (g_first_person.facing_pending) {
+        g_first_person.facing_pending = false;
+        ApplyFirstPersonFacing();
+    }
+    // Turning the entity moves its head in world space. Read the anchor after
+    // facing, in the same push, rather than turning after the camera was placed.
     Vector3 head{};
     if (!GetValue(Contract("unity.transform.position.get"),
             g_first_person.head, head) || !IsFinite(head)) {
         return;
     }
 
-    const Vector3 forward = RotateVector(orientation, Vector3{0.0f, 0.0f, 1.0f});
-    const Vector3 up = RotateVector(orientation, Vector3{0.0f, 1.0f, 0.0f});
-    g_first_person_view_forward = forward;
-    g_first_person_view_forward_valid = IsFinite(forward);
     const Vector3 eye = Add(head,
         Add(Scale(forward, kFirstPersonEyeForward), Scale(up, kFirstPersonEyeUp)));
 
     const float field_of_view = g_first_person_fov.load(std::memory_order_relaxed);
     const float near_clip = kFirstPersonNearClip;
     const Vector3 no_correction{};
-    const Quaternion no_rotation_correction{0.0f, 0.0f, 0.0f, 1.0f};
     const int32_t lens = g_state_layout.lens;
 
     WriteBytes(state, g_state_layout.raw_position, &eye, sizeof(eye));
     WriteBytes(state, g_state_layout.position_correction, &no_correction,
         sizeof(no_correction));
-    WriteBytes(state, g_state_layout.orientation_correction,
-        &no_rotation_correction, sizeof(no_rotation_correction));
     WriteBytes(state, lens + g_state_layout.lens_field_of_view, &field_of_view,
         sizeof(field_of_view));
     WriteBytes(state, lens + g_state_layout.lens_near_clip, &near_clip,
@@ -1892,7 +2075,7 @@ void FirstPersonHealthCheck() {
     }
 }
 
-void RefreshFirstPersonTarget(bool apply_facing = true);
+void RefreshFirstPersonTarget(bool queue_facing = true);
 
 bool EnterFirstPerson() {
     if (!g_state_layout.ready || !g_push_state_hook_ready) {
@@ -1978,7 +2161,7 @@ bool FirstPersonBoneBelongsToBody(void* bone, void* body) {
     return false;
 }
 
-void RefreshFirstPersonTarget(bool apply_facing) {
+void RefreshFirstPersonTarget(bool queue_facing) {
     void* character = Invoke(Contract("player_controller.get_main_character"),
         nullptr, nullptr);
     void* model=FindModelObjectForCharacter(character);
@@ -2016,7 +2199,7 @@ void RefreshFirstPersonTarget(bool apply_facing) {
         IsObjectAlive(g_first_person.body)&&
         FirstPersonBoneBelongsToBody(g_first_person.head,g_first_person.body)&&
         (!g_first_person.neck||FirstPersonBoneBelongsToBody(g_first_person.neck,g_first_person.body));
-    if(g_first_person.target_valid&&apply_facing)ApplyFirstPersonFacing();
+    if(g_first_person.target_valid&&queue_facing)g_first_person.facing_pending=true;
 }
 
 bool FirstPersonTargetIsCurrent() {
@@ -2554,6 +2737,11 @@ bool ResolveContracts() {
             Log("Resolved class: UnityEngine.SkinnedMeshRenderer");
         } else {
             Log("Class not found: UnityEngine.SkinnedMeshRenderer");
+        }
+        BE_ResolvedClassV1 game_object_class{};
+        if (g_host->resolve_class(g_host->context, "UnityEngine.CoreModule.dll",
+                "UnityEngine", "GameObject", &game_object_class) == BE_Result_Ok) {
+            g_fp_game_object_class = game_object_class;
         }
 
     }
