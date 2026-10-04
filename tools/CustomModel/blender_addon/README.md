@@ -23,6 +23,12 @@ appearances, and explicit texture identities. For a texture replacement, set
 `bem_semantic=normal` and `bem_normal_encoding=xyz-unorm` may be set for normal
 maps. Unsupported layouts and missing bone weights are rejected during export.
 
+For advanced packages, set the scene properties `bem_option_groups_json`,
+`bem_component_rules_json`, and optionally
+`bem_selection_constraints_json`. An existing BEM 1.3 deformation JSON can be
+selected with `bem_deformations_path`; the add-on copies it into the task
+workspace and lets the normal CLI validate it.
+
 The exporter does not include game character reference models. Authors provide
 their own Blender reference or local template. Option groups and shape sliders
 remain advanced project features for now.

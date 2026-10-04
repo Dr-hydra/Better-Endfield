@@ -20,7 +20,7 @@ BEM (`.bem`) is Better Endfield's character model replacement package. One packa
 | Android model page | Better Endfield App | Importing, enabling, choosing, and converting textures on the phone |
 | AI skill `bem-creator` | Standalone `skills/bem-creator` package | Helps prepare recipes and explain reports; it does not replace validation |
 
-The current BEM Tools version is 1.4.1 and it reads and writes BEM 1.0–1.3. When running from source, use `python tools/CustomModel/bem_tool.py` instead of the executable.
+The current BEM Tools version is 1.5.0 and it reads and writes BEM 1.0–1.3. When running from source, use `python tools/CustomModel/bem_tool.py` instead of the executable.
 
 ## Three authoring workflows
 

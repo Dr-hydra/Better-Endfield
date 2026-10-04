@@ -247,12 +247,40 @@ def export_scene(scene):
                     meshes=meshes, textures=textures, default_appearance_id="default",
                     appearances=[dict(id="default", name="Default", components=[replacements.get(i, dict(target=i, operation="keep"))
                                                                                      for i, _ in _components(catalog)])])
+    options_text = scene.bem_option_groups_json.strip()
+    rules_text = scene.bem_component_rules_json.strip()
+    if options_text:
+        options = json.loads(options_text)
+        if not isinstance(options, list): _fail("Option groups JSON must be an array")
+        if rules_text:
+            rules = json.loads(rules_text)
+        else:
+            rules = []
+            for i, _ in _components(catalog):
+                candidate = dict(replacements.get(i, dict(target=i, operation="keep")))
+                candidate.pop("target", None)
+                rules.append(dict(target=i, candidates=[candidate]))
+        if not isinstance(rules, list): _fail("Component rules JSON must be an array")
+        manifest.pop("default_appearance_id", None); manifest.pop("appearances", None)
+        manifest["option_groups"] = options; manifest["component_rules"] = rules
+        if scene.bem_selection_constraints_json.strip():
+            constraints = json.loads(scene.bem_selection_constraints_json)
+            if not isinstance(constraints, list): _fail("Selection constraints JSON must be an array")
+            manifest["selection_constraints"] = constraints
     names = []
     for index, raw in enumerate(payloads):
         name = f"payloads/{index:04d}.bin"; (project_root / name).write_bytes(raw); names.append(name)
     (project_root / "project.json").write_text(json.dumps(dict(manifest=manifest, payload_files=names), ensure_ascii=False, indent=2), encoding="utf-8")
+    deformation_path = ""
+    if scene.bem_deformations_path:
+        source_deformation = Path(scene.bem_deformations_path).resolve()
+        if not source_deformation.is_file(): _fail("BEM deformation file does not exist: " + str(source_deformation))
+        target_deformation = project_root / source_deformation.name
+        target_deformation.write_bytes(source_deformation.read_bytes())
+        deformation_path = target_deformation.name
     task = dict(schema=1, kind="bem-export-task", mode="pack", source="project.json", output="dist/" + project_root.name + ".bem",
                 report="reports/build.json", package=dict(id=manifest["package_id"], name=manifest["name"], author=manifest["author"], version=manifest["version"]))
+    if deformation_path: task["deformations"] = deformation_path
     (project_root / "export.bemproj.json").write_text(json.dumps(task, ensure_ascii=False, indent=2), encoding="utf-8")
     return str(project_root / "export.bemproj.json")
 
@@ -282,6 +310,8 @@ class BEM_PT_exporter(bpy.types.Panel):
         layout.prop(scene, "bem_output_directory"); layout.prop(scene, "bem_project_name")
         layout.prop(scene, "bem_package_id"); layout.prop(scene, "bem_package_name")
         layout.prop(scene, "bem_package_author"); layout.prop(scene, "bem_package_version")
+        layout.prop(scene, "bem_option_groups_json"); layout.prop(scene, "bem_component_rules_json")
+        layout.prop(scene, "bem_selection_constraints_json"); layout.prop(scene, "bem_deformations_path")
         layout.operator(BEM_OT_export_project.bl_idname)
 
 
@@ -299,12 +329,18 @@ def register():
     bpy.types.Scene.bem_package_name = StringProperty(name="Package name", default="Blender Outfit")
     bpy.types.Scene.bem_package_author = StringProperty(name="Author", default="Author")
     bpy.types.Scene.bem_package_version = StringProperty(name="Version", default="1.0.0")
+    bpy.types.Scene.bem_option_groups_json = StringProperty(name="Option groups JSON", default="")
+    bpy.types.Scene.bem_component_rules_json = StringProperty(name="Component rules JSON", default="")
+    bpy.types.Scene.bem_selection_constraints_json = StringProperty(name="Selection constraints JSON", default="")
+    bpy.types.Scene.bem_deformations_path = StringProperty(name="BEM 1.3 deformation JSON", subtype="FILE_PATH")
 
 
 def unregister():
     if bpy is None: return
     for name in ("bem_catalog_path", "bem_character_id", "bem_output_directory", "bem_project_name",
-                 "bem_package_id", "bem_package_name", "bem_package_author", "bem_package_version"):
+                 "bem_package_id", "bem_package_name", "bem_package_author", "bem_package_version",
+                 "bem_option_groups_json", "bem_component_rules_json", "bem_selection_constraints_json",
+                 "bem_deformations_path"):
         if hasattr(bpy.types.Scene, name): delattr(bpy.types.Scene, name)
     for cls in reversed(_CLASSES): bpy.utils.unregister_class(cls)
 

@@ -19,7 +19,7 @@ BEM（`.bem`）是 Better Endfield 的角色模型替换包。一个包对应一
 | Android 模型页 | Better Endfield App | 导入、启用、选择，以及手机纹理转换 |
 | AI Skill `bem-creator` | 独立工具包 `skills/bem-creator` | 复制到 AI 工具的技能目录（Codex 为 `~/.codex/skills`），用 `$bem-creator` 调用。只辅助准备配方和解释报告，不能代替校验 |
 
-当前 BEM Tools 版本 1.4.1，支持写入和读取 BEM 1.0–1.3。从源码运行时，用 `python tools/CustomModel/bem_tool.py` 代替 exe。
+当前 BEM Tools 版本 1.5.0，支持写入和读取 BEM 1.0–1.3。从源码运行时，用 `python tools/CustomModel/bem_tool.py` 代替 exe。
 
 ## 三种制作方式
 

@@ -6,7 +6,7 @@ Better Endfield is an open-source modular toolkit for *Arknights: Endfield*. It 
 
 [Download](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [Release notes](CHANGELOG.md) · [Android setup/build guide](android/README.md) · [BEM creator guide](docs/BEM_CREATOR_GUIDE.en.md) · [Module developer guide](docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
 
-The current version is **3.4.4**, with standalone BEM Tools **1.4.1**. Version 3.4.4 enables low-peak model loading by default with an optional "Prioritize loading speed" mode, extends experimental hot switching to in-world models, and adds per-character first-person profiles, shared hook chains on both platforms and model storage management.
+The current version is **3.5.0**, with standalone BEM Tools **1.5.0**. Version 3.5.0 adds Android cross-LOD asset compatibility, English BEM creator documentation, portable creator workspaces and the first Blender exporter.
 
 ## Feature overview
 
@@ -62,7 +62,7 @@ Hot switching and loading optimization are independent and disabled by default. 
 
 Android provides optional mobile texture conversion for packages with incorrect-looking textures. Success publishes a new generation and preserves selections; failure/cancellation keeps the old package. Conversion requires verified normal-map encoding metadata. A portable model format does not guarantee that desktop texture formats display correctly on every mobile GPU.
 
-**Creator tools** offer a graphical export workflow and standalone CLI, directory/ZIP/RAR/7z inputs, conversion reports, validation, saved `.bemproj.json` tasks and reproducible builds. Profiles for 33 characters ship with the tools; the app also bundles title-screen resource indexes. BEM Tools 1.4.1 exports BEM 1.3 with matching-topology targets, sparse deltas and explicitly bound official EFMI ShapeKey buffers. It does not reconstruct arbitrary source GUIs or guess vertex correspondence.
+**Creator tools** offer a graphical export workflow and standalone CLI, directory/ZIP/RAR/7z inputs, conversion reports, validation, saved `.bemproj.json` tasks, portable workspaces and reproducible builds. Profiles for 33 characters ship with the tools; the app also bundles title-screen resource indexes. BEM Tools 1.5.0 adds the first Blender project exporter. BEM 1.3 still supports matching-topology targets, sparse deltas and explicitly bound official EFMI ShapeKey buffers; it does not reconstruct arbitrary source GUIs or guess vertex correspondence.
 
 ```powershell
 BetterEndfield.BemConverter.exe new-project editable/project.json --mode pack -o character.bemproj.json

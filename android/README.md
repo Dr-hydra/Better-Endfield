@@ -10,7 +10,7 @@ results are not gameplay validation.
 Version 3.4.2 adds BEM 1.3 shape sliders, experimental third-party native
 modules/web UI, global FOV, character-follow free camera, first-person
 restoration/hair updates and Purrche title-screen resources. BEM 1.3 authoring
-uses BEM Tools **1.4.1**; the same standard package works on both platforms.
+uses BEM Tools **1.5.0**; the same standard package works on both platforms.
 See the [BEM creator guide](../docs/BEM_CREATOR_GUIDE.en.md) and
 [third-party module creator guide](../docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md).
 
