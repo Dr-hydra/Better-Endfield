@@ -3055,7 +3055,7 @@ bool ReadCompletedAndroidDonor(const CharacterAdapter& adapter,const BemPocData&
             if (ArrayLength(binding.custom_bones)!=static_cast<int>(component.bone_names.size())) return false;
             for (size_t b=0;b<component.bone_names.size();++b) {
                 const auto name=ObjectName(ArrayValue(binding.custom_bones,static_cast<int>(b)));
-                if (!bem.skip_validation && !component.BoneNameMatches(b,name)) return false;
+                if (!bem.skip_validation && !component.BoneNameMatchesForResource(b,name,1)) return false;
                 binding.bone_names.push_back(name);
             }
         }

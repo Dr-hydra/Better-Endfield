@@ -282,6 +282,7 @@ std::shared_ptr<SmallModelPlan> MakeSmallModelPlan(const BemPocData& data) {
         c.bones=component.bones;c.draws=component.draws;c.keep_material_overrides=component.keep_material_overrides;
         c.attributes=component.attributes;c.bone_names=component.bone_names;c.material_names=component.material_names;
         c.keep_material_names=component.keep_material_names;c.bone_aliases=component.bone_aliases;
+        c.bone_aliases_by_resource=component.bone_aliases_by_resource;
         uint64_t bytes=component.indices.size();for (const auto& stream:component.streams) bytes+=stream.size();
         plan->mesh_bytes.push_back(bytes);small.components.push_back(std::move(c));
     }

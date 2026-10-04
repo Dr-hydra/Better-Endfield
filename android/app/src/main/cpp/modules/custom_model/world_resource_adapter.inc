@@ -253,7 +253,7 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
                 if (found==world_bones.end()) {
                     Log("Android world bone path missing: "+path); return false;
                 }
-                if (!bem.skip_validation && !component.BoneNameMatches(static_cast<size_t>(b),ObjectName(found->second))) {
+                if (!bem.skip_validation && !component.BoneNameMatchesForResource(static_cast<size_t>(b),ObjectName(found->second),0)) {
                     Log("Android world bone name differs from package: "+path); return false;
                 }
                 Matrix4x4Raw ui_matrix{},world_matrix{};

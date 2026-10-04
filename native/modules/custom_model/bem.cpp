@@ -110,6 +110,7 @@ struct Container {
     BemLoadStats* stats=nullptr;
     // BEM 1.2: target component -> bone index -> alias names.
     std::vector<std::map<uint32_t,std::vector<std::string>>> boneAliases;
+    std::vector<std::map<uint32_t,std::array<std::vector<std::string>,2>>> boneAliasResources;
     std::set<std::string> slotIds;
     J manifest;
     std::vector<Entry> directory;
@@ -188,7 +189,7 @@ struct Container {
         Validate(info.world_resource!=info.ui_resource,"Duplicate resource roots");
         const auto& cs=t.at("components"); Check(cs.is_array() && !cs.empty(),"Invalid target components");
         Validate(cs.size()<=64,"Invalid target components");
-        std::set<std::string> names; bool hasAliases=false; boneAliases.assign(cs.size(),{});
+        std::set<std::string> names; bool hasAliases=false; boneAliases.assign(cs.size(),{}); boneAliasResources.assign(cs.size(),{});
         for(size_t i=0;i<cs.size();++i) {
             const auto& c=cs[i]; auto name=S(c.at("mesh_name")); auto count=U(c.at("original_index_count"));
             Check(U(c.at("id"))==i && count,"Invalid target identity");
@@ -203,7 +204,8 @@ struct Container {
                     auto index=U(alias.at("index")); auto resource=S(alias.at("resource")); auto aliasName=S(alias.at("name"));
                     Check(index<c.at("bone_names").size() && (resource=="world"||resource=="ui") &&
                         seen.emplace(index,resource).second && c.at("bone_names").at(index)!=aliasName,"Invalid bone name alias");
-                    boneAliases[i][index].push_back(aliasName); hasAliases=true;
+                    boneAliases[i][index].push_back(aliasName);
+                    boneAliasResources[i][index][resource=="world"?0:1].push_back(aliasName); hasAliases=true;
                 }
             }
             info.component_names.push_back(name); info.original_counts.push_back(count);
@@ -737,6 +739,10 @@ struct Container {
                 c.bones.push_back({donor,index,Crc(name)}); c.bone_names.push_back(name);
                 const auto& aliases=boneAliases.at(donor); auto alias=aliases.find(index);
                 c.bone_aliases.push_back(alias==aliases.end()?std::vector<std::string>{}:alias->second);
+                std::array<std::vector<std::string>,2> resourceAliases{};
+                const auto& resourceTable=boneAliasResources.at(donor); auto resourceAlias=resourceTable.find(index);
+                if(resourceAlias!=resourceTable.end()) resourceAliases=resourceAlias->second;
+                c.bone_aliases_by_resource.push_back(std::move(resourceAliases));
             }
             for(uint32_t n=0;n<h.vertex_count;++n) for(uint32_t k=0;k<4;++k) {
                 uint32_t b=0;

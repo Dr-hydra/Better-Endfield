@@ -123,10 +123,19 @@ struct BemComponent {
     // BEM 1.2: other names a resource's renderer may carry for palette bone i
     // (a bone the game names differently in its world and UI skeletons).
     std::vector<std::vector<std::string>> bone_aliases;
+    // Alias names split by resource: [0] world, [1] UI.
+    std::vector<std::array<std::vector<std::string>,2>> bone_aliases_by_resource;
     bool BoneNameMatches(size_t i, std::string_view name) const {
         if (bone_names[i] == name) return true;
         if (i < bone_aliases.size())
             for (const auto& alias : bone_aliases[i]) if (alias == name) return true;
+        return false;
+    }
+    bool BoneNameMatchesForResource(size_t i, std::string_view name, size_t resource) const {
+        if (i >= bone_names.size()) return false;
+        if (bone_names[i] == name) return true;
+        if (i < bone_aliases_by_resource.size() && resource < 2)
+            for (const auto& alias : bone_aliases_by_resource[i][resource]) if (alias == name) return true;
         return false;
     }
 };
