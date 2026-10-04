@@ -67,6 +67,24 @@ class ExportTaskTests(unittest.TestCase):
         self.assertEqual(bem.load_json(task), saved)
         self.native(package)
 
+    def test_workspace_init_copies_pack_inputs_and_builds(self):
+        source = self.project()
+        workspace = self.root / 'workspace'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(main(['workspace', 'init', str(workspace), '--source', str(source), '--mode', 'pack']), 0)
+            self.assertEqual(main(['build', str(workspace / 'export.bemproj.json')]), 0)
+        for directory in ('source', 'recipe', 'project', 'textures', 'dist', 'reports'):
+            self.assertTrue((workspace / directory).is_dir())
+        self.assertTrue((workspace / 'project' / 'project.json').is_file())
+        self.assertTrue((workspace / 'dist' / 'project.bem').is_file())
+
+    def test_workspace_init_refuses_non_empty_target(self):
+        source = self.project()
+        workspace = self.root / 'workspace'
+        workspace.mkdir(); (workspace / 'keep.txt').write_text('keep', encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'new or empty'):
+            bem_tasks.init_workspace(workspace, source, mode='pack')
+
     def test_parameters_override_without_modifying_source(self):
         source = self.project()
         original = source.read_bytes()

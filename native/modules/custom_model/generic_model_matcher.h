@@ -110,6 +110,63 @@ struct LodCounterpart {
     uint64_t target_indices=0;
     bool target_indices_known=false;
 };
+inline std::string_view StripKnownMeshSuffix(std::string_view name) {
+    if (name.ends_with("_8")) return name.substr(0,name.size()-2);
+    if (name.ends_with("_20")) return name.substr(0,name.size()-3);
+    return name;
+}
+inline std::string CanonicalLodLeaf(std::string_view name,Region lod) {
+    name=StripKnownMeshSuffix(name);
+    const auto suffix=lod==Region::Lod0?std::string_view{"_lod0"}:std::string_view{"_lod1"};
+    const auto other=lod==Region::Lod0?std::string_view{"_lod1"}:std::string_view{"_lod0"};
+    if (!name.ends_with(suffix) && !name.ends_with(other)) return {};
+    auto result=std::string(name);
+    if (result.ends_with(other)) result.replace(result.size()-other.size(),other.size(),suffix);
+    return result;
+}
+struct FuzzyLodRequest {
+    std::string_view character, target_resource, source_path, source_mesh;
+};
+// Bounded fallback used only by the existing unchecked/developer route. It
+// keeps the component parent path and LOD region fixed, and only removes the
+// known Unity mesh suffixes _8/_20 before comparing the LOD leaf.
+template<class Validate>
+Match SelectBoundedAndroidLod1(std::span<const Candidate> candidates,
+    const FuzzyLodRequest& request,Validate&& validate) {
+    Match result;
+    if (request.character.empty() || request.target_resource.empty() ||
+        ClassifyReceiver(request.source_path)!=Region::Lod0 || request.source_mesh.empty()) {
+        result.status=MatchStatus::InvalidIndex; return result;
+    }
+    const auto source_slash=request.source_path.rfind('/');
+    if (source_slash==request.source_path.npos) { result.status=MatchStatus::InvalidIndex; return result; }
+    const auto source_leaf=request.source_path.substr(source_slash+1);
+    const auto expected_leaf=CanonicalLodLeaf(source_leaf,Region::Lod1);
+    const auto expected_mesh=CanonicalLodLeaf(request.source_mesh,Region::Lod1);
+    if (expected_leaf.empty() || expected_mesh.empty()) { result.status=MatchStatus::Missing; return result; }
+    std::string expected_parent{request.source_path.substr(0,source_slash)};
+    constexpr std::string_view from="Mesh_all/lod0",to="Mesh_all/lod1";
+    if (!expected_parent.starts_with(from)) { result.status=MatchStatus::InvalidIndex; return result; }
+    expected_parent.replace(0,from.size(),to);
+    for (size_t i=0;i<candidates.size();++i) {
+        const auto& c=candidates[i];
+        if (!c.renderer || c.key.character!=request.character || c.key.resource!=request.target_resource ||
+            c.key.region!=Region::Lod1 || ClassifyReceiver(c.key.path)!=Region::Lod1 ||
+            !c.pristine.mesh || (c.pristine.origin!=DonorOrigin::Pristine &&
+            c.pristine.origin!=DonorOrigin::SavedOriginal) || !c.pristine.indices_known || !validate(c)) continue;
+        const auto slash=c.key.path.rfind('/');
+        if (slash==c.key.path.npos || c.key.path.substr(0,slash)!=expected_parent ||
+            CanonicalLodLeaf(c.key.path.substr(slash+1),Region::Lod1)!=expected_leaf ||
+            CanonicalLodLeaf(c.pristine.name,Region::Lod1)!=expected_mesh) continue;
+        for (size_t j=0;j<i;++j) if (candidates[j].key==c.key) {
+            result.status=MatchStatus::InvalidIndex; return result;
+        }
+        result.index=i; ++result.valid_count;
+    }
+    result.status=result.valid_count==1?MatchStatus::Matched:
+        result.valid_count?MatchStatus::Ambiguous:MatchStatus::Missing;
+    return result;
+}
 enum class RelationStatus { Matched, Missing, Ambiguous };
 inline RelationStatus FindExactAndroidLod1Relation(std::span<const ExactLodRelation> relations,
     const AssetScope& scope,std::string_view character,std::string_view source_resource,

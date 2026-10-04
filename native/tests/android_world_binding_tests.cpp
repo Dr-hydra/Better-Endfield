@@ -308,16 +308,27 @@ int main() {
             static_cast<Object*>(fixture.world_renderer->mesh)->name="Body_lod1_8";
             Check(!fixture.Run(),"Android world accepted an unverified _8 target identity by stripping digits");
             Check(fixture.bindings.empty(),"failed world identity check returned partial bindings");
+            Fixture unchecked;
+            unchecked.bem.skip_validation=true;
+            static_cast<Object*>(unchecked.world_renderer->mesh)->name="Body_lod1_8";
+            Check(unchecked.Run(),"unchecked Android world did not use the bounded _8 fallback");
+            auto* ambiguous=Make("Body_lod1_20",unchecked.world->path+"/Mesh_all/lod1/Body_lod1_20");
+            ambiguous->mesh=Make("Body_lod1_20"); ambiguous->bones=Array({unchecked.world_bone});
+            ambiguous->materials=Array({unchecked.world_material});
+            static_cast<Object*>(unchecked.world->renderers)->array.push_back(ambiguous);
+            Check(!unchecked.Run(),"unchecked Android world accepted an ambiguous bounded fallback");
+            Fixture relation_fixture;
+            static_cast<Object*>(relation_fixture.world_renderer->mesh)->name="Body_lod1_8";
             GenericMatching::ExactLodRelation relation{{"Android","test-snapshot"},"chr_test",
                 fixture.adapter.ui_resource,fixture.adapter.world_resource,"Mesh_all/lod0/Body_lod0","Body_lod0",
                 "Mesh_all/lod1/Body_lod1","Body_lod1_8",true,true,7,true};
             const auto rows=std::span<const GenericMatching::ExactLodRelation>(&relation,1);
             auto run=[&](GenericMatching::AssetScope scope) {
-                fixture.bindings.clear();
-                return PrepareAndroidWorldResource(fixture.adapter,fixture.bem,fixture.world,fixture.bindings,
+                relation_fixture.bindings.clear();
+                return PrepareAndroidWorldResource(relation_fixture.adapter,relation_fixture.bem,relation_fixture.world,relation_fixture.bindings,
                     nullptr,nullptr,rows,scope);
             };
-            Check(run({"Android","test-snapshot"}) && fixture.bindings[0].renderer==fixture.world_renderer,
+            Check(run({"Android","test-snapshot"}) && relation_fixture.bindings[0].renderer==relation_fixture.world_renderer,
                 "validated exact Android relationship could not use an independent _8 Mesh identity");
             Check(!run({"Android",""}) && !run({"Windows","test-snapshot"}) && !run({"Android","old-snapshot"}),
                 "unknown/foreign/stale asset scope enabled an Android _8 relationship");
@@ -325,7 +336,7 @@ int main() {
             Check(!run({"Android","test-snapshot"}),"world original count mismatch ignored in exact relationship");
             relation.target_indices=7;
             relation.target_path="Mesh_all/lod1/x";
-            fixture.world_renderer->name="x"; fixture.world_renderer->path=fixture.world->path+"/Mesh_all/lod1/x";
+            relation_fixture.world_renderer->name="x"; relation_fixture.world_renderer->path=relation_fixture.world->path+"/Mesh_all/lod1/x";
             Check(run({"Android","test-snapshot"}),"exact real relationship still required a guessed target Renderer suffix");
         }
         {

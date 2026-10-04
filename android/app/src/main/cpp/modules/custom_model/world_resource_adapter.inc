@@ -59,6 +59,8 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
             return refuse("duplicate world Transform path: "+path);
     }
     std::vector<void*> visible_pristine_meshes;
+    std::vector<const GenericRendererCandidate*> lod_candidates;
+    std::vector<GenericMatching::Candidate> lod_match_candidates;
     std::vector<std::string> expected_proxy_paths;
     std::vector<bool> changes_shadow;
     std::vector<void*> used_receivers;
@@ -73,6 +75,8 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
             return refuse("world pristine Mesh unavailable: "+candidate.key.path+
                 (identity.detail.empty()?std::string{}:" ("+identity.detail+")"));
         visible_pristine_meshes.push_back(identity.mesh);
+        lod_candidates.push_back(&candidate);
+        lod_match_candidates.push_back({candidate.key,candidate.renderer,std::move(identity)});
     }
     std::vector<PreparedBinding> targets;
     std::vector<size_t> target_visible_indices;
@@ -93,7 +97,36 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
             adapter.components[source.component_id].name,relation);
         if (relation_status==GenericMatching::RelationStatus::Ambiguous)
             return refuse("ambiguous exact Android LOD relation: "+source_path);
-        if (relation_status!=GenericMatching::RelationStatus::Matched &&
+        bool fuzzy_relation=false;
+        if (relation_status!=GenericMatching::RelationStatus::Matched && bem.skip_validation) {
+            const auto fuzzy=GenericMatching::SelectBoundedAndroidLod1(lod_match_candidates,
+                {adapter.id,adapter.world_resource,source_path,adapter.components[source.component_id].name},
+                [&](const auto& candidate) {
+                    auto it=std::find_if(lod_candidates.begin(),lod_candidates.end(),
+                        [&](const auto* value) { return value->renderer==candidate.renderer; });
+                    return it!=lod_candidates.end() && (*it)->materials && (*it)->bones &&
+                        ArrayLength((*it)->materials)>0 && ArrayLength((*it)->bones)>0;
+                });
+            if (fuzzy.status==GenericMatching::MatchStatus::Ambiguous ||
+                fuzzy.status==GenericMatching::MatchStatus::InvalidIndex)
+                return refuse("ambiguous or invalid bounded Android LOD fallback: "+source_path);
+            if (fuzzy.status==GenericMatching::MatchStatus::Matched) {
+                const auto& selected=lod_match_candidates[fuzzy.index];
+                relation.target_path=selected.key.path;
+                relation.target_renderer=selected.key.path.substr(selected.key.path.rfind('/')+1);
+                relation.target_mesh=selected.pristine.name;
+                relation.target_indices=selected.pristine.indices;
+                relation.target_indices_known=selected.pristine.indices_known;
+                fuzzy_relation=true;
+                Log("Android bounded LOD fallback accepted: source="+source_path+
+                    " target="+relation.target_path+" mesh="+relation.target_mesh+
+                    " reason=exact relation missing; same component parent/LOD and _8/_20-canonical identity");
+            } else if (fuzzy.status==GenericMatching::MatchStatus::Missing) {
+                Log("Android bounded LOD fallback missing: source="+source_path+
+                    " reason=no unique live candidate; retaining legacy unchecked route");
+            }
+        }
+        if (!fuzzy_relation && relation_status!=GenericMatching::RelationStatus::Matched &&
             !GenericMatching::AndroidLod1Counterpart(source_path,relation))
             return refuse("unsupported UI receiver path: "+source_path);
         const auto& target_name=relation.target_renderer;
@@ -101,7 +134,7 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
         size_t visible_index=0,matched_visible_index=0;
         for (const auto& candidate:candidates) {
             if (candidate.key.region!=GenericMatching::Region::Lod1) continue;
-            if (candidate.key.path==relation.target_path && ObjectName(candidate.renderer)==target_name) {
+            if (candidate.key.path==relation.target_path) {
                 if (matched) return refuse("duplicate world renderer: "+relation.target_path);
                 matched=&candidate; matched_visible_index=visible_index;
             }

@@ -14,6 +14,7 @@
 #include "texture_binding_policy.h"
 #if defined(__ANDROID__)
 #include "modules/custom_model/android_mesh_builder.h"
+#include "android_lod_relations.generated.h"
 #endif
 #if defined(_WIN32)
 #include <Windows.h>
@@ -3490,7 +3491,8 @@ bool ProcessResource(void* asset,ConstructionScope& construction) {
     std::vector<PreparedBinding> paired_ui_bindings;
     void* paired_ui_asset=nullptr;
     if (base_name==mod->adapter->world_resource)
-        prepared=PrepareAndroidWorldResource(*mod->adapter,*payload,asset,bindings,&paired_ui_bindings,&paired_ui_asset);
+        prepared=PrepareAndroidWorldResource(*mod->adapter,*payload,asset,bindings,&paired_ui_bindings,&paired_ui_asset,
+            AndroidLodRelations(),AndroidLodAssetScope());
     else
 #endif
         prepared=PrepareResource(*mod->adapter,*payload,asset,bindings);
@@ -3530,7 +3532,8 @@ bool ProcessResource(void* asset,ConstructionScope& construction) {
                     ConstructionScope cache_probe;
                     std::vector<PreparedBinding> rebound;
                     cache_ready=PrepareAndroidWorldResource(*mod->adapter,*payload,
-                        g_android_test_world.Get(),rebound);
+                        g_android_test_world.Get(),rebound,nullptr,nullptr,
+                        AndroidLodRelations(),AndroidLodAssetScope());
                 } catch (...) { cache_ready=false; }
                 g_completed.pop_back();
                 Log(std::string("Android cached UI donor/world prepare ")+(cache_ready?"PASS":"FAIL"));

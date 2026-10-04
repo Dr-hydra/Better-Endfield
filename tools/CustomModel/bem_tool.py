@@ -245,12 +245,20 @@ def convert_automatic(source, output, ini=None, package=None, deformations=None)
 
 
 def main(argv=None):
+    raw_argv = list(sys.argv[1:] if argv is None else argv)
+    # Keep the established single-command CLI while also accepting the more
+    # discoverable `workspace init ROOT --source INPUT` spelling.
+    if len(raw_argv) >= 2 and raw_argv[0] == 'workspace' and raw_argv[1] == 'init':
+        raw_argv = ['init-workspace', *raw_argv[2:]]
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command',choices=['inspect','convert','validate','pack','unpack','bundle','new-project','build'])
+    parser.add_argument('command',choices=['inspect','convert','validate','pack','unpack','bundle','new-project','build',
+                                           'init-workspace','workspace-init'])
     parser.add_argument('--version', action='version', version='BEM Tools '+TOOL_VERSION+' / BEM 1.0+1.1+1.2+1.3')
     parser.add_argument('source',type=Path)
     parser.add_argument('additional',type=Path,nargs='*',help='Additional BEM files for bundle only')
     parser.add_argument('--recipe',type=Path)
+    parser.add_argument('--source',dest='workspace_source',type=Path,
+                        help='Input source for init-workspace; positional source is the workspace directory')
     parser.add_argument('--deformations',type=Path,help='Author position-morph inputs saved in the export project')
     parser.add_argument('--ini')
     parser.add_argument('-o','--output',type=Path)
@@ -261,7 +269,7 @@ def main(argv=None):
     parser.add_argument('--name')
     parser.add_argument('--author')
     parser.add_argument('--package-version')
-    args=parser.parse_args(argv)
+    args=parser.parse_args(raw_argv)
     result=dict(tool_version=TOOL_VERSION,format_version='1.0/1.1/1.2/1.3',command=args.command,source=str(args.source),success=False,conversion_ready=False,render_verified=False,issues=[])
     report_path = args.report
     protected_paths = [args.source, *args.additional] + ([args.output] if args.output else []) + ([args.recipe] if args.recipe else [])
@@ -279,7 +287,14 @@ def main(argv=None):
         if args.report:
             paths=protected_paths
             bem.require(all(args.report.resolve()!=p.resolve() for p in paths), 'Report cannot overwrite input/output/recipe')
-        if args.command == 'new-project':
+        if args.command in ('init-workspace', 'workspace-init'):
+            import bem_tasks
+            bem.require(args.workspace_source, 'SOURCE: workspace 初始化需要 --source 输入路径')
+            package = {key: value for key, value in (('id', args.package_id), ('name', args.name),
+                       ('author', args.author), ('version', args.package_version)) if value is not None}
+            result.update(bem_tasks.init_workspace(args.source, args.workspace_source, args.mode,
+                                                   args.recipe, package, args.deformations, args.export_output))
+        elif args.command == 'new-project':
             import bem_tasks
             bem.require(args.output, 'OUTPUT: 缺少工程文件路径')
             package = {key: value for key, value in (('id', args.package_id), ('name', args.name),

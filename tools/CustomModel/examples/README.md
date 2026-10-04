@@ -6,6 +6,8 @@
 
 `export.bemproj.json` 是可保存、重复导出的任务工程模板，与底层 `project.json` 分开。将输入路径改为真实可编辑 BEM 项目后运行 `build export.bemproj.json`；也可在创作者 GUI 的“创建 / 打开导出工程”中打开、改参数并导出。`mode` 可为 `pack` 或 `convert`，后者可另设 `recipe`。所有路径相对任务工程目录，`package.id` 在反复导出时保持不变。
 
+需要把源文件和输出目录整理成可移动工程时，可以运行 `BetterEndfield.BemConverter.exe workspace init <目录> --source <源文件或 project.json> --mode convert|pack`。它会复制输入、创建 `source/project/textures/dist/reports` 目录，并生成同样的 `export.bemproj.json`。
+
 `body-slider/create_project.py` 生成可运行的 BEM 1.3 位置滑条示例（只需 Python 标准库）：`python body-slider/create_project.py --output NEW_DIRECTORY`，再运行 `BetterEndfield.BemConverter.exe build NEW_DIRECTORY/export.bemproj.json`。任务使用同一工程的 `deformations` 字段，包含三角形 base、同拓扑 target 和 body 滑条；这是格式测试，不是游戏角色。详见 `docs/BEM_CREATOR_GUIDE.md` 的“形态滑条”一节和 `docs/BEM_SOURCE_MOD_CONVERSION.md` 的 ShapeKey 绑定。
 
 BEM 1.1 的组合外观由可编辑项目的 `manifest.option_groups`、`component_rules` 和带独立索引 payload 的条件 draw 表达，不能只在旧配方里增加热键名字。组可用条件、可达性约束及每个候选资源的原生身份需审阅后填写；同包保留全部候选资源；选择在下次启动游戏后生效，开启实验热切换时在下一次资源加载时生效。

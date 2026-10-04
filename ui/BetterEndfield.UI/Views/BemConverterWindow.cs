@@ -26,6 +26,7 @@ internal sealed class BemConverterWindow : Window
     private readonly StackPanel _result = new() { Spacing = 8, Visibility = Visibility.Collapsed };
     private CancellationTokenSource? _operation;
     private string _source = "", _report = "", _scratch = "", _prepared = "", _exported = "";
+    private string _workspaceSource = "", _workspaceDirectory = "", _workspaceRecipe = "", _workspaceMode = "convert";
     private string Mode => (_task.SelectedItem as ComboBoxItem)?.Tag as string ?? "convert";
     private bool _closed;
     private BemExportProject _project = new();
@@ -40,6 +41,7 @@ internal sealed class BemConverterWindow : Window
         body.Children.Add(Text(() => BemText.Get("先选任务。只想使用下载的 BEM / ZIP？回到“角色外观”直接导入即可。")));
         foreach (var item in new (Func<string> Label, string Mode)[] {
             (() => BemText.Get("创建 / 打开导出工程"), "build"),
+            (() => BemText.Get("创建标准工作区"), "workspace"),
             (() => BemText.Get("转换其他来源的 Mod"), "convert"),
             (() => BemText.Get("解包 BEM / ZIP"), "unpack"),
             (() => BemText.Get("将项目打包为 BEM"), "pack"),
@@ -143,7 +145,12 @@ internal sealed class BemConverterWindow : Window
         if (_operation != null) return;
         ClearPrepared(); _source = _exported = _report = ""; _steps.Children.Clear(); _result.Children.Clear(); _result.Visibility = Visibility.Collapsed;
         _status.IsOpen = false; _saveReport.IsEnabled = false; _detailPanel.Visibility = Visibility.Collapsed; _detailPanel.IsExpanded = false;
-        if (Mode == "build")
+        if (Mode == "workspace")
+        {
+            BemLocalizedUI.Set(_intro, TextBlock.TextProperty, () => BemText.Get("复制输入并创建可移动的 BEM 创作者工作区，继续使用 export.bemproj.json。"));
+            RenderWorkspace();
+        }
+        else if (Mode == "build")
         {
             BemLocalizedUI.Set(_intro, TextBlock.TextProperty, () => BemText.Get("保存输入、转换配方、体型滑条与输出参数；打开工程后可修改并重复导出。BEM 1.3 支持作者提供的位置形态，路径相对工程目录。"));
             RenderExportProject();
@@ -225,6 +232,74 @@ internal sealed class BemConverterWindow : Window
             ProjectField(() => BemText.Get("作者"), _project.Package["author"], value => _project.Package["author"] = value),
             ProjectField(() => BemText.Get("包版本"), _project.Package["version"], value => _project.Package["version"] = value),
             Button(() => BemText.Get("保存参数并导出 BEM"), BuildExportProject, true)));
+    }
+
+    private void RenderWorkspace()
+    {
+        _steps.Children.Clear();
+        var mode = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
+        BemLocalizedUI.Set(mode, ComboBox.HeaderProperty, () => BemText.Get("输入类型"));
+        mode.Items.Add(Choice(() => BemText.Get("源 Mod"), "convert"));
+        mode.Items.Add(Choice(() => BemText.Get("BEM 可编辑项目"), "pack"));
+        mode.SelectedIndex = _workspaceMode == "pack" ? 1 : 0;
+        mode.SelectionChanged += (_, _) => { _workspaceMode = (mode.SelectedItem as ComboBoxItem)?.Tag as string ?? "convert"; };
+
+        var sourceButtons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        sourceButtons.Children.Add(Button(() => BemText.Get("选择源文件…"), () => SelectWorkspaceSource(false)));
+        sourceButtons.Children.Add(Button(() => BemText.Get("选择源目录…"), () => SelectWorkspaceSource(true)));
+        var workspaceButtons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        workspaceButtons.Children.Add(Button(() => BemText.Get("选择工作区目录…"), SelectWorkspaceDirectory));
+        var recipeButtons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        recipeButtons.Children.Add(Button(() => BemText.Get("选择转换配方…"), SelectWorkspaceRecipe));
+
+        _steps.Children.Add(Card(() => BemText.Get("输入与工作区"), mode,
+            ProjectField(() => BemText.Get("源文件或目录"), _workspaceSource, value => _workspaceSource = value), sourceButtons,
+            ProjectField(() => BemText.Get("工作区目录"), _workspaceDirectory, value => _workspaceDirectory = value), workspaceButtons,
+            ProjectField(() => BemText.Get("转换配方（可留空）"), _workspaceRecipe, value => _workspaceRecipe = value), recipeButtons,
+            Button(() => BemText.Get("创建工作区"), CreateWorkspace, true)));
+    }
+
+    private async Task SelectWorkspaceSource(bool folder)
+    {
+        string? file = folder ? await FolderPath() : await OpenPath(".zip", ".rar", ".7z", ".json", ".bem");
+        if (file == null) return;
+        _workspaceSource = file;
+        if (_workspaceMode == "pack") _workspaceRecipe = "";
+        RenderWorkspace();
+    }
+
+    private async Task SelectWorkspaceDirectory()
+    {
+        string? folder = await FolderPath();
+        if (folder == null) return;
+        _workspaceDirectory = folder;
+        RenderWorkspace();
+    }
+
+    private async Task SelectWorkspaceRecipe()
+    {
+        string? file = await OpenPath(".json");
+        if (file == null) return;
+        _workspaceRecipe = file;
+        RenderWorkspace();
+    }
+
+    private async Task CreateWorkspace()
+    {
+        if (string.IsNullOrWhiteSpace(_workspaceSource) || string.IsNullOrWhiteSpace(_workspaceDirectory))
+        {
+            Status(() => BemText.Get("缺少工作区参数"), () => BemText.Get("请选择源文件和工作区目录。"), InfoBarSeverity.Warning);
+            return;
+        }
+        await Run(() => BemText.Get("正在创建工作区"), async token =>
+        {
+            List<string> args = ["workspace", "init", _workspaceDirectory, "--source", _workspaceSource, "--mode", _workspaceMode];
+            if (!string.IsNullOrWhiteSpace(_workspaceRecipe)) args.AddRange(["--recipe", _workspaceRecipe]);
+            string raw = await BemToolService.RunAsync(_installRoot, args, token);
+            Report(raw);
+            string output = Path.Combine(_workspaceDirectory, "export.bemproj.json");
+            Completed(output, () => BemText.Get("工作区已创建，可以修改工程文件后执行导出。"));
+        });
     }
     private async Task EditDeformations()
     {

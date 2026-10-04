@@ -2,7 +2,7 @@
 
 当前能力边界和兼容性矩阵见[CustomModel 能力与兼容性声明](../../docs/CUSTOM_MODEL_CAPABILITY_COMPATIBILITY_20260918.md)。
 
-正式入口：`bem_tool.py inspect/convert/unpack/pack/validate/bundle`。单包输出 `.bem`，分发合集为标准 `.zip`。
+正式入口：`bem_tool.py inspect/convert/unpack/pack/validate/bundle`，以及 `workspace init` 创建可移动的标准创作者工程。`blender_addon/bem_exporter/` 可从 Blender 导出可编辑 BEM 工程。单包输出 `.bem`，分发合集为标准 `.zip`。
 独立工具链由 `scripts/BuildBemTools.ps1` 打包，无需玩家安装 Python；GUI 复用同一核心。
 [格式规范](../../docs/BEM_FORMAT_SPEC.md) · [创作者指南](../../docs/BEM_CREATOR_GUIDE.md) · [其他来源 Mod 转换](../../docs/BEM_SOURCE_MOD_CONVERSION.md)。
 下文旧工具是转换后端/研究命令，它们的 v24/v25 中间产物不被正式运行时接受。

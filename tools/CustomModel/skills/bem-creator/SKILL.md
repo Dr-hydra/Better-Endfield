@@ -11,10 +11,10 @@ executable at its root; the player application places it under `tools/BemConvert
 Run `--version` and `--help` to check the available commands. Do not assume the
 game runtime or creator profiles support a newer format because the extension matches.
 
-Read [the creator guide](references/BEM_CREATOR_GUIDE.md) for tools, export task projects,
-editable projects, sliders, importing and distribution. Read [the format specification](references/BEM_FORMAT_SPEC.md)
-when editing a project manifest, [runtime compatibility](references/BEM_RUNTIME_COMPATIBILITY.md) when
-diagnosing in-game rejections, and [source Mod conversion](references/BEM_SOURCE_MOD_CONVERSION.md)
+Read [the creator guide](references/BEM_CREATOR_GUIDE.en.md) for tools, export task projects,
+editable projects, sliders, importing and distribution. Read [the format specification](references/BEM_FORMAT_SPEC.en.md)
+when editing a project manifest, [runtime compatibility](references/BEM_RUNTIME_COMPATIBILITY.en.md) when
+diagnosing in-game rejections, and [source Mod conversion](references/BEM_SOURCE_MOD_CONVERSION.en.md)
 for automation status, recipes, identity rules and ShapeKey bindings.
 
 Use the existing task's optional `deformations` input; do not invent a second
@@ -22,9 +22,19 @@ export task format. Targets must match the final exported vertex correspondence.
 Official EFMI buffers need explicit component/key and vertex bindings; source
 GUI/INI programs are never executed and shape features cannot be silently discarded.
 
+The creator workflow has two source routes:
+
+- EFMI / 3DMigoto source archive or directory -> inspect -> convert, optionally with a reviewed recipe.
+- Author-owned modelling project -> an exporter produces `project.json` and `payloads/` -> pack/build -> validate.
+
+The catalog supplies target identities and layouts, not complete character models. Do not expect it to provide a Blender reference scene. Keep author source files and generated payloads in a repeatable workspace, and distribute only the final `.bem` unless an editable project is intended.
+
+The bundled Blender exporter is a constrained first route for direct authoring: it accepts objects named `BEM_C<number>` or objects with `bem_component_id`, exports the verified 16/12/12 skin layout and explicit texture identities, and writes an editable project for `pack/build`. Do not claim support for arbitrary layouts, option groups, or shape sliders unless the resulting project passes validation.
+
 ## Choose the operation
 
 - `new-project SOURCE -o task.bemproj.json` then `build task.bemproj.json`: save and repeat an export with a stable package ID.
+- `workspace init DIRECTORY --source SOURCE --mode convert|pack` then `build DIRECTORY/export.bemproj.json`: create a portable standard workspace with copied inputs and output/report folders.
 - `inspect SOURCE --report report.json`: identify source Mod requirements, or list a BEM/ZIP inventory.
 - `convert SOURCE -o package.bem --report report.json`: automatically convert a standard ComponentN source after catalog matching and full preparation succeeds. Inspect must report `conversion_ready=true`.
 - `convert SOURCE --recipe recipe.json -o package.bem --report report.json`: use reviewed explicit source mappings for other supported routes.

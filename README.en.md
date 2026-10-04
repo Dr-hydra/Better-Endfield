@@ -4,7 +4,7 @@
 
 Better Endfield is an open-source modular toolkit for *Arknights: Endfield*. It provides third-party character models, MMD playback, camera and UI controls, per-character voice languages, title-screen customization, and PC combat/gacha tools. Windows and Android share the main native feature sources; standard BEM model packages and MMD works can be used on both platforms. An experimental loader also supports third-party native modules and a web UI container.
 
-[Download](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [Release notes](CHANGELOG.md) · [Android setup/build guide](android/README.md) · [BEM creator guide](docs/BEM_CREATOR_GUIDE.md) · [Module developer guide](docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
+[Download](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [Release notes](CHANGELOG.md) · [Android setup/build guide](android/README.md) · [BEM creator guide](docs/BEM_CREATOR_GUIDE.en.md) · [Module developer guide](docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
 
 The current version is **3.4.4**, with standalone BEM Tools **1.4.1**. Version 3.4.4 enables low-peak model loading by default with an optional "Prioritize loading speed" mode, extends experimental hot switching to in-world models, and adds per-character first-person profiles, shared hook chains on both platforms and model storage management.
 
@@ -71,10 +71,10 @@ BetterEndfield.BemConverter.exe build character.bemproj.json
 
 Both platforms also have an off-by-default experimental option to disable model validation. It bypasses compatibility/policy checks while retaining the decoding and representation requirements needed to read the file; it does not add new encodings. Developer tests may render incorrectly or crash the game.
 
-- [Creator guide](docs/BEM_CREATOR_GUIDE.md) (Chinese): tools, workflows, testing and distribution
-- [Format specification, 1.0–1.3](docs/BEM_FORMAT_SPEC.md) (Chinese)
-- [Runtime behavior and compatibility](docs/BEM_RUNTIME_COMPATIBILITY.md) (Chinese)
-- [Converting other Mods](docs/BEM_SOURCE_MOD_CONVERSION.md) (Chinese)
+- [Creator guide](docs/BEM_CREATOR_GUIDE.en.md): tools, workflows, testing and distribution
+- [Format specification, 1.0–1.3](docs/BEM_FORMAT_SPEC.en.md)
+- [Runtime behavior and compatibility](docs/BEM_RUNTIME_COMPATIBILITY.en.md)
+- [Converting other Mods](docs/BEM_SOURCE_MOD_CONVERSION.en.md)
 - [Runnable shape-slider example](tools/CustomModel/examples/body-slider/)
 - [Experimental hot-switch/loading behavior](docs/RELEASE_3_4_1_20261001.md)
 

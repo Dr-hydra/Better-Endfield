@@ -492,7 +492,8 @@ bool CommitModelJob(ModelBuildJob& job,uint64_t frame) {
             ReadyOverride(ModelBuildJob& j) {g_ready_resource=j.ui_asset;g_ready_bindings=&j.bindings;g_verified_mesh_space_roots={j.ui_asset,j.asset};}
             ~ReadyOverride() {g_ready_resource=nullptr;g_ready_bindings=nullptr;g_verified_mesh_space_roots={};}
         } ready(job);
-        if (!PrepareAndroidWorldResource(*job.mod.adapter,job.plan->data,job.asset,world,&ui,&paired_ui))
+        if (!PrepareAndroidWorldResource(*job.mod.adapter,job.plan->data,job.asset,world,&ui,&paired_ui,
+            AndroidLodRelations(),AndroidLodAssetScope()))
             return JobFail(job,"Android world LOD1 preparation refused (see preceding adapter log)");
         // Adapter's geometry is shared, but each receiver has private materials.
         for (auto& b:world) {

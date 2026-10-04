@@ -134,9 +134,34 @@ void LodProxyChecks() {
     Check(FindProxyOwner(&mesh_a,visible).status==ProxyOwnerStatus::Ambiguous,"shared visible Mesh owner selected by order");
     Check(FindProxyOwner(&proxy,visible).status==ProxyOwnerStatus::Missing,"dedicated proxy Mesh guessed owner by name");
 }
+void BoundedAndroidFallbackChecks() {
+    Candidate target{{"chr_test","chr_test_postmodel","Mesh_all/lod1/Body_lod1",Region::Lod1},&renderer_a,
+        {DonorOrigin::Pristine,&mesh_a,"Body_lod1_8",7,true}};
+    FuzzyLodRequest request{"chr_test","chr_test_postmodel","Mesh_all/lod0/Body_lod0","Body_lod0_20"};
+    auto validate=[](const auto&) { return true; };
+    std::vector<Candidate> candidates{target};
+    auto result=SelectBoundedAndroidLod1(candidates,request,validate);
+    Check(result.status==MatchStatus::Matched && result.index==0,"bounded Android _8 fallback did not match");
+    candidates[0].pristine.origin=DonorOrigin::CompletedWithoutOriginal;
+    Check(SelectBoundedAndroidLod1(candidates,request,validate).status==MatchStatus::Missing,
+        "bounded fallback reused a completed Mesh as pristine");
+    candidates[0]=target; candidates[0].pristine.indices_known=false;
+    Check(SelectBoundedAndroidLod1(candidates,request,validate).status==MatchStatus::Missing,
+        "bounded fallback accepted unknown index bounds");
+    candidates={target,{{"chr_test","chr_test_postmodel","Mesh_all/lod1/Body_lod1_20",Region::Lod1},&renderer_b,
+        {DonorOrigin::Pristine,&mesh_b,"Body_lod1_20",8,true}}};
+    Check(SelectBoundedAndroidLod1(candidates,request,validate).status==MatchStatus::Ambiguous,
+        "bounded fallback selected between _8/_20 candidates");
+    candidates[1].key.resource="other_postmodel";
+    Check(SelectBoundedAndroidLod1(candidates,request,validate).status==MatchStatus::Matched,
+        "bounded fallback let another resource create ambiguity");
+    candidates={target}; candidates[0].key.path="Mesh_all/lod1/Body_lod1/Child";
+    Check(SelectBoundedAndroidLod1(candidates,request,validate).status==MatchStatus::Missing,
+        "bounded fallback crossed the component path boundary");
+}
 }
 int main() {
-    try { PathChecks(); IdentityChecks(); KnownNameChecks(); LodProxyChecks();
+    try { PathChecks(); IdentityChecks(); KnownNameChecks(); LodProxyChecks(); BoundedAndroidFallbackChecks();
         std::cout<<"PASS "<<checks<<" generic matching identity, boundaries, lineage, uniqueness and proxy checks\n"; return 0;
     } catch (const std::exception& e) { std::cerr<<e.what()<<'\n'; return 1; }
 }

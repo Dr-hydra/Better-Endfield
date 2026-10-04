@@ -15,6 +15,7 @@ BEM（`.bem`）是 Better Endfield 的角色模型替换包。一个包对应一
 | --- | --- | --- |
 | BEM Tools 命令行 `BetterEndfield.BemConverter.exe` | 程序目录 `tools/BemConverter/`；也有独立包 `BEM-Tools-win-x64.zip`（解压即用，不需要 Python） | 转换、打包、校验、解包、合集，所有功能的核心 |
 | 桌面创作者窗口 | 角色外观页 →“其他来源 Mod 转换…” | 图形界面，调用同一个命令行 |
+| Blender 导出插件 | 独立工具包 `blender_addon/bem_exporter/` | 从带有 `BEM_C<number>` 对象的 Blender 工程导出可编辑 BEM 工程 |
 | 桌面模型管理页 | 角色外观页 | 导入、启用、选择外观和选项、调滑条 |
 | Android 模型页 | Better Endfield App | 导入、启用、选择，以及手机纹理转换 |
 | AI Skill `bem-creator` | 独立工具包 `skills/bem-creator` | 复制到 AI 工具的技能目录（Codex 为 `~/.codex/skills`），用 `$bem-creator` 调用。只辅助准备配方和解释报告，不能代替校验 |
@@ -28,6 +29,41 @@ BEM（`.bem`）是 Better Endfield 的角色模型替换包。一个包对应一
 3. **直接制作**：按[格式规范](BEM_FORMAT_SPEC.md)准备 `project.json` 和二进制 payload，再 `pack`。
 
 无论哪种方式，都建议用**导出工程**（`.bemproj.json`）保存参数，之后可以一键重复导出。
+
+## 直接制作 BEM 工程
+
+如果作者使用 Blender、Maya、3ds Max 或其他建模工具，可以跳过 EFMI 转换，直接准备 BEM 可编辑工程。作者自己的源文件通常包括：
+
+```text
+outfit.blend                 # 或其他建模工程
+textures/                    # PNG、TGA、DDS 等作者贴图
+project.json                 # BEM 工程清单
+payloads/*.bin               # 网格、索引和贴图的原始字节
+export.bemproj.json          # 可重复导出的任务工程
+```
+
+`project.json` 是低层 BEM 工程，适合由导出插件或高级工具生成，不建议手工从零编写。建模软件负责网格、权重、UV、法线和贴图；BEM Tools 负责版本选择、payload 去重、压缩、校验和最终打包。
+
+当前随工具提供的 Blender 导出器先支持经过核实的 16/12/12 蒙皮布局、固定外观和显式贴图身份。对象名使用 `BEM_C0`、`BEM_C1` 等，或者设置对象自定义属性 `bem_component_id`。特殊顶点布局、选项组和形态滑条仍应使用可编辑工程或配方流程。
+
+直接制作仍需要针对目标角色确认组件、骨骼名称、材质槽、贴图身份和世界/UI 资源关系。`catalog/` 提供这些身份与布局资料，但不包含随工具分发的完整角色模型。作者应自行准备建模参考或本地模板。
+
+BEM 不包含 Shader。每个绘制段仍需选择游戏中的原生材质作为 donor；作者自己的贴图替换原生材质上的明确纹理槽。Blender 中看起来正确，不代表没有完成材质身份映射。
+
+推荐的工程目录是：
+
+```text
+my-outfit/
+├─ source/                   # 作者自己的 blend、FBX 或其他源文件
+├─ textures/                # 作者贴图
+├─ project/                 # 导出插件生成的 project.json 和 payloads
+├─ recipe/                  # 可选的人工映射资料
+├─ dist/                    # 最终 .bem
+├─ reports/                 # inspect / validate 报告
+└─ character.bemproj.json   # 稳定的导出任务
+```
+
+最终给玩家分发 `.bem`；源工程、配方和 `project.json` 只在作者需要发布可编辑工程时一并提供。
 
 ## 导出工程
 
@@ -59,6 +95,15 @@ BetterEndfield.BemConverter.exe build character.bemproj.json
 ```
 
 `new-project` 可选参数：`--deformations`、`--export-output`、`--package-id`、`--name`、`--author`、`--package-version`。`build` 只读取工程文件，输出路径、配方、形态配置都在工程里修改。
+
+如果希望把输入文件和输出目录整理成可移动的完整工程，可以使用工作区初始化：
+
+```text
+BetterEndfield.BemConverter.exe workspace init 我的角色工程 --source 原始Mod.zip --mode convert
+BetterEndfield.BemConverter.exe build 我的角色工程/export.bemproj.json
+```
+
+工作区会复制源文件或 `project.json` 及其 payload，创建 `source`、`project`、`textures`、`dist`、`reports` 等目录，并继续使用同一个 `.bemproj.json` 格式。目标目录必须为空或不存在。
 
 ## 可编辑项目
 
@@ -194,6 +239,7 @@ BetterEndfield.BemConverter.exe validate pkg.bem [--report r.json]
 BetterEndfield.BemConverter.exe unpack   pkg.bem|collection.zip -o 新目录 [--report r.json]
 BetterEndfield.BemConverter.exe bundle   a.bem b.bem ... -o collection.zip [--report r.json]
 BetterEndfield.BemConverter.exe new-project <源|project.json> -o task.bemproj.json [--mode convert|pack] [--recipe r.json] [...]
+BetterEndfield.BemConverter.exe workspace init <目录> --source <源|project.json> [--mode convert|pack] [--recipe r.json]
 BetterEndfield.BemConverter.exe build    task.bemproj.json [--report r.json]
 BetterEndfield.BemConverter.exe --version
 ```

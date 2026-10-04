@@ -34,7 +34,7 @@ Windows 与 Android 使用同一套原生读取与构建代码（`native/modules
 **Android**：手机上的场景模型使用 LOD1，替换数据从详情模型的 LOD0 构建：
 1. 先准备（或复用）同一选择下的详情模型 LOD0 替换结果。
 2. 详情模型的 `Mesh_all/lod0/X_lod0` 对应场景模型的 `Mesh_all/lod1/X_lod1`。详情 Renderer 名不以 `_lod0` 结尾的部件不能映射，日志为 `unsupported UI receiver path`。
-3. 场景 LOD1 的 Mesh 名必须**恰好**是 `X_lod1`；名称带其他后缀的角色目前会被拒绝（`world mesh identity differs`）。
+3. 严格校验时，场景 LOD1 的 Mesh 名必须**恰好**是 `X_lod1`；名称带其他后缀的角色会被拒绝（`world mesh identity differs`）。关闭模型校验后，会在同一角色、资源根和 LOD 区域内尝试受限的 `_8` / `_20` 后缀匹配；候选不唯一或资源结构不符仍会拒绝。
 4. 详情与场景 Renderer 的局部空间必须一致，否则拒绝（`Android world mesh space differs`）。
 5. 骨骼按相对资源根的完整路径映射到场景骨架；路径找不到时，只在同一父节点下尝试包里声明的骨骼别名。名称必须与包一致。
 6. 详情模型与场景模型在同一事务中提交，失败时一起回滚。
@@ -135,7 +135,7 @@ Windows 与 Android 使用同一套原生读取与构建代码（`native/modules
 
 ## 10. 关闭模型校验（实验）
 
-关闭后跳过兼容性校验，例如能力声明、上限、骨骼名、索引数、Mesh 空间、权重、影响数，以及 Android 提交后的回读。容器边界、payload 完整性、贴图格式、蒙皮布局和**源 Mesh 完整名称**仍然检查。找不到的贴图保留原贴图，同名的多个贴图会全部替换。
+关闭后跳过兼容性校验，例如能力声明、上限、骨骼名、索引数、Mesh 空间、权重、影响数，以及 Android 提交后的回读。容器边界、payload 完整性、贴图格式、蒙皮布局和资源根/接收器边界仍然检查。Android 可以在同一角色、资源根、组件路径和 LOD 区域内使用受限的 `_8` / `_20` Mesh 名回退；候选不唯一时仍拒绝。找不到的贴图保留原贴图，同名的多个贴图会全部替换。
 
 这个选项只用于开发测试，可能导致渲染错误或游戏崩溃。日志会出现 `Developer mode: model validation disabled`。
 

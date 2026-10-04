@@ -10,11 +10,13 @@ def main():
     repo = Path(__file__).resolve().parents[2]
     target = args.directory.resolve()
     if not (target/'BetterEndfield.BemConverter.exe').is_file(): raise ValueError('Build CLI first')
-    docs = ['BEM_CREATOR_GUIDE.md', 'BEM_FORMAT_SPEC.md', 'BEM_RUNTIME_COMPATIBILITY.md', 'BEM_SOURCE_MOD_CONVERSION.md']
+    docs = ['BEM_CREATOR_GUIDE.md', 'BEM_FORMAT_SPEC.md', 'BEM_RUNTIME_COMPATIBILITY.md', 'BEM_SOURCE_MOD_CONVERSION.md',
+            'BEM_CREATOR_GUIDE.en.md', 'BEM_FORMAT_SPEC.en.md', 'BEM_RUNTIME_COMPATIBILITY.en.md', 'BEM_SOURCE_MOD_CONVERSION.en.md']
     (target/'docs').mkdir(exist_ok=True)
     for name in docs: shutil.copyfile(repo/'docs'/name, target/'docs'/name)
     source_ignore = shutil.ignore_patterns('__pycache__', '*.pyc')
     shutil.copytree(repo/'tools/CustomModel/examples', target/'examples', dirs_exist_ok=True, ignore=source_ignore)
+    shutil.copytree(repo/'tools/CustomModel/blender_addon', target/'blender_addon', dirs_exist_ok=True, ignore=source_ignore)
     shutil.copytree(repo/'tools/CustomModel/catalog', target/'catalog', dirs_exist_ok=True)
     shutil.copytree(repo/'artifacts/bem-archive-backend/7zip', target/'7zip', dirs_exist_ok=True)
     (target/'7zip/NOTICE.txt').write_text(
