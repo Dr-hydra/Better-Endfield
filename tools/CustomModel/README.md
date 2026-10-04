@@ -4,7 +4,7 @@
 
 正式入口：`bem_tool.py inspect/convert/unpack/pack/validate/bundle`。单包输出 `.bem`，分发合集为标准 `.zip`。
 独立工具链由 `scripts/BuildBemTools.ps1` 打包，无需玩家安装 Python；GUI 复用同一核心。
-[格式规范](../../docs/BEM_V1_SPEC.md) · [创作者指南](../../docs/BEM_CREATOR_GUIDE.md)。
+[格式规范](../../docs/BEM_FORMAT_SPEC.md) · [创作者指南](../../docs/BEM_CREATOR_GUIDE.md) · [其他来源 Mod 转换](../../docs/BEM_SOURCE_MOD_CONVERSION.md)。
 下文旧工具是转换后端/研究命令，它们的 v24/v25 中间产物不被正式运行时接受。
 旧运行时 PoC 已移至 [research/custom-model](../../research/custom-model/README.md)；
 本目录保留仍被当前转换流程使用的代码，包括名称带 `poc` 的转换器。
@@ -13,9 +13,8 @@
 
 `bem_tool.py convert SOURCE -o OUTPUT.bem` 在角色资料和标准声明完整时不再需要配方。
 女管理员已跑通无配方转换；佩丽卡只依据游戏资源接入资料，不引入样包专用规则。
-1.1.3 已接入 32 角色、370 个可复用 LOD0 部件，补齐 360 个单子网格入口与 1,181 项纹理身份。原生资料与 EFMI 原资源对应分开记录，不能把入库数量当作任意源包兼容数量。范围及官方来源见[角色资料说明](../../docs/BEM_CHARACTER_CATALOG_20260919.md)和[EFMI 身份补全](../../docs/BEM_EFMI_IDENTITIES_20260920.md)。
-规则、证据及限制见 `docs/BEM_COMPONENTN_AUTOMATION_20260919.md`。资料放在 `catalog/`，由工具自动匹配。
-逐绘制段和 RabbitFX 的样本分层、自动化边界见 `docs/BEM_PER_DRAW_COMPATIBILITY_20260920.md` 与 `docs/BEM_RABBITFX_COMPATIBILITY_20260920.md`。当前只做识别和报告，尚未放行 RabbitFX Stable Textures 的通用转换。
+1.1.3 已接入 32 角色、370 个可复用 LOD0 部件，补齐 360 个单子网格入口与 1,181 项纹理身份。原生资料与 EFMI 原资源对应分开记录，不能把入库数量当作任意源包兼容数量。范围及官方来源见[角色资料说明](../../docs/archive/bem/BEM_CHARACTER_CATALOG_20260919.md)和[EFMI 身份补全](../../docs/archive/bem/BEM_EFMI_IDENTITIES_20260920.md)。
+当前支持范围与规则见[其他来源 Mod 转换](../../docs/BEM_SOURCE_MOD_CONVERSION.md)。资料放在 `catalog/`，由工具自动匹配。RabbitFX 目前只做识别和报告，不自动转换。
 
 ## 通用原生角色资料解析器
 

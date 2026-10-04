@@ -71,9 +71,11 @@ BetterEndfield.BemConverter.exe build character.bemproj.json
 
 两端还提供默认关闭的「实验：关闭模型校验」。该选项放开兼容性和策略限制，仍要求文件能解码且能被当前表示方式读取；不增加新编码支持。用于作者测试时可能出现错误渲染或游戏崩溃。
 
-- [创作者流程与转换边界](docs/BEM_CREATOR_GUIDE.md)
-- [BEM 1.0](docs/BEM_V1_SPEC.md) / [1.1 组合外观](docs/BEM_V1_1_SPEC.md) / [1.2 蒙皮和骨骼别名](docs/BEM_V1_2_SPEC.md)
-- [BEM 1.3 规范](docs/BEM_V1_3_SPEC.md)、[形态滑条制作指南](docs/BEM_V1_3_CREATOR_GUIDE.md)与[可运行格式示例](tools/CustomModel/examples/body-slider/)
+- [创作者指南](docs/BEM_CREATOR_GUIDE.md)：工具、制作流程、导入测试、分发
+- [格式规范（1.0–1.3）](docs/BEM_FORMAT_SPEC.md)
+- [运行时行为与兼容性](docs/BEM_RUNTIME_COMPATIBILITY.md)
+- [其他来源 Mod 转换](docs/BEM_SOURCE_MOD_CONVERSION.md)
+- [形态滑条可运行示例](tools/CustomModel/examples/body-slider/)
 - [实验热切换与加载优化说明](docs/RELEASE_3_4_1_20261001.md)
 
 ## 第三方模块（实验，3.4.2）

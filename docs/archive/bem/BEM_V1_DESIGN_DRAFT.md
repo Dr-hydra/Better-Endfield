@@ -1,4 +1,4 @@
-> 2026-09-18：本文件保留讨论历史。正式实现与当前边界以 [BEM_V1_SPEC.md](BEM_V1_SPEC.md) 和 [BEM_CREATOR_GUIDE.md](BEM_CREATOR_GUIDE.md) 为准；旧实验包不兼容。全角色采样计划继续保留。
+> 2026-09-18：本文件保留讨论历史。正式实现与当前边界以 [BEM_V1_SPEC.md](BEM_V1_SPEC.md) 和 [BEM_CREATOR_GUIDE.md](../../BEM_CREATOR_GUIDE.md) 为准；旧实验包不兼容。全角色采样计划继续保留。
 
 # BEM 第一版数据结构讨论稿
 

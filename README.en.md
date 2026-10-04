@@ -71,9 +71,11 @@ BetterEndfield.BemConverter.exe build character.bemproj.json
 
 Both platforms also have an off-by-default experimental option to disable model validation. It bypasses compatibility/policy checks while retaining the decoding and representation requirements needed to read the file; it does not add new encodings. Developer tests may render incorrectly or crash the game.
 
-- [Creator workflow and conversion boundaries](docs/BEM_CREATOR_GUIDE.md)
-- [BEM 1.0](docs/BEM_V1_SPEC.md) / [1.1 component options](docs/BEM_V1_1_SPEC.md) / [1.2 skinning and bone aliases](docs/BEM_V1_2_SPEC.md)
-- [BEM 1.3 specification](docs/BEM_V1_3_SPEC.md), [slider authoring guide](docs/BEM_V1_3_CREATOR_GUIDE.md) and [runnable format example](tools/CustomModel/examples/body-slider/)
+- [Creator guide](docs/BEM_CREATOR_GUIDE.md) (Chinese): tools, workflows, testing and distribution
+- [Format specification, 1.0–1.3](docs/BEM_FORMAT_SPEC.md) (Chinese)
+- [Runtime behavior and compatibility](docs/BEM_RUNTIME_COMPATIBILITY.md) (Chinese)
+- [Converting other Mods](docs/BEM_SOURCE_MOD_CONVERSION.md) (Chinese)
+- [Runnable shape-slider example](tools/CustomModel/examples/body-slider/)
 - [Experimental hot-switch/loading behavior](docs/RELEASE_3_4_1_20261001.md)
 
 ## Third-party modules (experimental, 3.4.2)

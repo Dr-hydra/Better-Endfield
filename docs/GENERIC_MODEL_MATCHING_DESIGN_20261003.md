@@ -219,4 +219,4 @@ platform 与 asset snapshot 是游戏资源身份，不是 BEM 文件 generation
 - 新增关系推导脚本只运行一次，读取已完成 audit JSON，没有再跑原盘点、原生读取器、BEM 转换或旧回归测试；上述新计数不属于游戏实测。
 - 本文路径/引用、UTF-8 和尾空白检查通过；`git diff --no-index --check -- NUL docs/GENERIC_MODEL_MATCHING_DESIGN_20261003.md` 通过，ignored 辅助文件状态已确认。文件保持未提交，其他共享工作区改动不回滚。
 
-相关说明：[原始 donor 与热切换](MODEL_HOT_SWITCH_REVIEW_20261001.md)、[已有匹配政策](BEM_MATCHING_REVIEW_20261001.md)、[Android 阴影与 LOD](ANDROID_LIGHTING_SHADOW_LOD_20260921.md)、[原资源身份资料及限制](BEM_EFMI_IDENTITIES_20260920.md)。这些文档记录的既有构建或实机结果不是本轮新增验证。
+相关说明：[原始 donor 与热切换](MODEL_HOT_SWITCH_REVIEW_20261001.md)、[已有匹配政策](archive/bem/BEM_MATCHING_REVIEW_20261001.md)、[Android 阴影与 LOD](ANDROID_LIGHTING_SHADOW_LOD_20260921.md)、[原资源身份资料及限制](archive/bem/BEM_EFMI_IDENTITIES_20260920.md)。这些文档记录的既有构建或实机结果不是本轮新增验证。

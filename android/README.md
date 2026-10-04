@@ -11,7 +11,7 @@ Version 3.4.2 adds BEM 1.3 shape sliders, experimental third-party native
 modules/web UI, global FOV, character-follow free camera, first-person
 restoration/hair updates and Purrche title-screen resources. BEM 1.3 authoring
 uses BEM Tools **1.4.1**; the same standard package works on both platforms.
-See the [BEM 1.3 creator guide](../docs/BEM_V1_3_CREATOR_GUIDE.md) and
+See the [BEM creator guide](../docs/BEM_CREATOR_GUIDE.md) and
 [third-party module creator guide](../docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md).
 
 The app also includes the MMD library/player, responsive in-game deck,
@@ -449,5 +449,5 @@ one pending request with explicit retry/dismiss controls, without interrupting
 the running task. Opening a new document replaces that pending request. The
 imported file's contents are validated; an extension alone is not trusted.
 Publication still requires the configured modern LSPosed service, and changes
-become active on game restart. See `../docs/ANDROID_BEM_OPEN_WITH_20260927.md` for
+become active on game restart. See `../docs/archive/bem/ANDROID_BEM_OPEN_WITH_20260927.md` for
 supported routing, tests and outstanding device acceptance.

@@ -1,10 +1,10 @@
-> 2026-09-18：本文件保留讨论历史。正式实现与当前边界以 [BEM_V1_SPEC.md](BEM_V1_SPEC.md) 和 [BEM_CREATOR_GUIDE.md](BEM_CREATOR_GUIDE.md) 为准；旧实验包不兼容。全角色采样计划继续保留。
+> 2026-09-18：本文件保留讨论历史。正式实现与当前边界以 [BEM_V1_SPEC.md](BEM_V1_SPEC.md) 和 [BEM_CREATOR_GUIDE.md](../../BEM_CREATOR_GUIDE.md) 为准；旧实验包不兼容。全角色采样计划继续保留。
 
 # BEM 创作者指南（第一版草案）
 
 状态：正式 BEM 1.0 尚未实现。本文先约定创作流程和兼容边界，不能作为现有二进制格式规范。
-现用转换命令见 [转换工具 README](../tools/CustomModel/README.md)，
-已支持能力见 [当前兼容性声明](CUSTOM_MODEL_CAPABILITY_COMPATIBILITY_20260918.md)。
+现用转换命令见 [转换工具 README](../../../tools/CustomModel/README.md)，
+已支持能力见 [当前兼容性声明](../../CUSTOM_MODEL_CAPABILITY_COMPATIBILITY_20260918.md)。
 
 ## BEM 的用途
 

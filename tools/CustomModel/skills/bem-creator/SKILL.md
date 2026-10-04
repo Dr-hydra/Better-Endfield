@@ -11,13 +11,12 @@ executable at its root; the player application places it under `tools/BemConvert
 Run `--version` and `--help` to check the available commands. Do not assume the
 game runtime or creator profiles support a newer format because the extension matches.
 
-Read [the creator guide](references/BEM_CREATOR_GUIDE.md) for conversion recipes,
-source-format support and profile requirements. Read [the 1.0 wire specification](references/BEM_V1_SPEC.md)
-or [the 1.1 combination specification](references/BEM_V1_1_SPEC.md) when editing a project manifest
-or diagnosing resource validation failures.
+Read [the creator guide](references/BEM_CREATOR_GUIDE.md) for tools, export task projects,
+editable projects, sliders, importing and distribution. Read [the format specification](references/BEM_FORMAT_SPEC.md)
+when editing a project manifest, [runtime compatibility](references/BEM_RUNTIME_COMPATIBILITY.md) when
+diagnosing in-game rejections, and [source Mod conversion](references/BEM_SOURCE_MOD_CONVERSION.md)
+for automation status, recipes, identity rules and ShapeKey bindings.
 
-Read [the 1.3 position specification](references/BEM_V1_3_SPEC.md) and
-[the slider author guide](references/BEM_V1_3_CREATOR_GUIDE.md) before adding a slider.
 Use the existing task's optional `deformations` input; do not invent a second
 export task format. Targets must match the final exported vertex correspondence.
 Official EFMI buffers need explicit component/key and vertex bindings; source
@@ -25,6 +24,7 @@ GUI/INI programs are never executed and shape features cannot be silently discar
 
 ## Choose the operation
 
+- `new-project SOURCE -o task.bemproj.json` then `build task.bemproj.json`: save and repeat an export with a stable package ID.
 - `inspect SOURCE --report report.json`: identify source Mod requirements, or list a BEM/ZIP inventory.
 - `convert SOURCE -o package.bem --report report.json`: automatically convert a standard ComponentN source after catalog matching and full preparation succeeds. Inspect must report `conversion_ready=true`.
 - `convert SOURCE --recipe recipe.json -o package.bem --report report.json`: use reviewed explicit source mappings for other supported routes.

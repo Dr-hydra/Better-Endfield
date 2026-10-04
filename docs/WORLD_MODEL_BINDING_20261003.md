@@ -73,7 +73,7 @@ assets/beyond/dynamicassets/gameplay/prefabs/uimodels/chr_0025_ardelia_uimodel.p
   `brow` 与 `eyebrow` 是当前不同角色的准确资源名称；没有三者眉毛的 PC/Android 名称差异证据，不新增通用替换。当前艾尔黛拉已证缺陷是 **fur Renderer 与 Mesh 的 `_20` 差异**。
 - `510e83ba` 对齐 UI/world 的共享 Texture 对象匹配和校验开关；同一 Texture 被多个属性引用可以接受，多个不同的同名 Texture 在正常模式仍拒绝。
 - `cf468234` 已接受 `M_actor_*` → `M_actor_lod_*` 的精确同后缀材质对应，既有回归包含 `M_actor_typhoea_face_01` → `M_actor_lod_typhoea_face_01`。没有从本次仅 prefab 的读取重新推导材质规则。
-- `docs/BEM_MATCHING_REVIEW_20261001.md` 另记校园包共享 Texture pin、逆兔 `cloth_03` 错误贴图元数据的定点修复；这与资源根命名及裙骨 alias 是不同问题。
+- `docs/archive/bem/BEM_MATCHING_REVIEW_20261001.md` 另记校园包共享 Texture pin、逆兔 `cloth_03` 错误贴图元数据的定点修复；这与资源根命名及裙骨 alias 是不同问题。
 - 主代理提供的 `artifacts/model-upload-20261003/device-diagnostics.log:324–434` 有两组各 8 条 `8192x8192` 的 `built t=`。第 382 行 world committed 后，第 386 行开始再次构建，第 433 行 UI committed、第 434 行 paired publication PASS。旧 adapter 只在 hot switch 模式返回 paired UI，解释了普通模式该重复构建。本任务仅读取指定窗口，未重复抓全量日志。
 - 主代理后续报告 `artifacts/model-upload-20261003/device-current-peak-diagnostics.log`：world 首轮 8 张约 370 MiB，紧接的 `ensure_ui` 零再构建，说明已安装 APK 的首轮 paired 修复生效；后续 3561/3619 两次独立 UI 又各构建 8 张，属于另一条首次 UI delivery 重复路径。本任务未改该性能路径，也未重复抓日志。
 

@@ -18,4 +18,4 @@
 - 已生成洁尔佩塔 ZIP 样本 37,816,398 字节；内层 BEM 37,816,260 字节。
 
 未执行游戏实机测试或 UI 点击测试，由用户负责。没有计算产物哈希。
-完整功能说明见 [创作者指南](BEM_CREATOR_GUIDE.md)，协议见 [BEMv1 规范](BEM_V1_SPEC.md)。
+完整功能说明见 [创作者指南](../../BEM_CREATOR_GUIDE.md)，协议见 [BEMv1 规范](BEM_V1_SPEC.md)。

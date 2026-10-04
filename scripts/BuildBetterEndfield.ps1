@@ -93,7 +93,7 @@ $bemTools = Join-Path $repoRoot "artifacts\bem-tools\dist\BetterEndfield.BemConv
 New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "tools") | Out-Null
 Copy-Item -LiteralPath $bemTools -Destination (Join-Path $publishDir "tools\BemConverter") -Recurse -Force
 New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "docs") | Out-Null
-foreach ($document in @("BEM_V1_SPEC.md", "BEM_V1_1_SPEC.md", "BEM_V1_2_SPEC.md", "BEM_V1_3_SPEC.md", "BEM_CREATOR_GUIDE.md", "BEM_V1_3_CREATOR_GUIDE.md", "THIRD_PARTY_MODULE_CREATOR_GUIDE.md")) {
+foreach ($document in @("BEM_CREATOR_GUIDE.md", "BEM_FORMAT_SPEC.md", "BEM_RUNTIME_COMPATIBILITY.md", "BEM_SOURCE_MOD_CONVERSION.md", "THIRD_PARTY_MODULE_CREATOR_GUIDE.md")) {
     Copy-Item -LiteralPath (Join-Path $repoRoot "docs\$document") -Destination (Join-Path $publishDir "docs") -Force
 }
 
