@@ -51,11 +51,12 @@ Object* transform_type=Make("TransformType");
 Object* renderer_type=Make("RendererType");
 bool cached=false;
 size_t ui_prepare_calls=0;
+size_t ui_load_calls=0;
 size_t checks=0;
 void Check(bool value,const char* message) { ++checks; if (!value) throw std::runtime_error(message); }
 }
 namespace betterendfield {
-void* AndroidLoadUiDonor(const char*,void*&,uint32_t&) { return ui_donor; }
+void* AndroidLoadUiDonor(const char*,void*&,uint32_t&) { ++ui_load_calls; return ui_donor; }
 void AndroidReleaseUiDonor(void*&,uint32_t&) {}
 }
 namespace BetterEndfield::CustomModel {
@@ -207,7 +208,7 @@ struct Fixture {
     Object* world_material=Make("Material");
     std::vector<PreparedBinding> bindings;
     Fixture() {
-        ui_donor=Make(adapter.ui_resource); cached=false; ui_prepare_calls=0; g_hot_switch_runtime=false;
+        ui_donor=Make(adapter.ui_resource); cached=false; ui_prepare_calls=0; ui_load_calls=0; g_hot_switch_runtime=false;
         pristine_meshes.clear(); saved_shadow_states.clear(); known_custom_receivers.clear();
         world->path=world->name; ui_donor->path=ui_donor->name;
         resource_roots[world->path]=world; resource_roots[ui_donor->path]=ui_donor;
@@ -253,7 +254,10 @@ struct Fixture {
         static_cast<Object*>(world->renderers)->array.push_back(value); return value;
     }
     void Explicit() {
-        adapter.explicit_resource=true;adapter.ui_resource=adapter.world_resource;
+        adapter.explicit_resource=true;adapter.ui_resource=adapter.world_resource;adapter.receiver_lod=1;
+        identities[0]={"Body_lod1",static_cast<Object*>(world_renderer->mesh)->indices,"Mesh_all/lod1/Body_lod1",world_renderer->static_renderer};
+        bem.components[0].static_mesh=world_renderer->static_renderer;
+        bem.components[0].info.original_index_count=identities[0].indices;
         PreparedBinding b;b.renderer=world_renderer;b.original_mesh=world_renderer->mesh;
         b.original_bones=world_renderer->bones;b.original_materials=b.custom_materials=world_renderer->materials;
         b.original_enabled=world_renderer->enabled;b.custom_enabled=!(bem.components[0].info.flags&kComponentFlagHidden);
@@ -261,6 +265,39 @@ struct Fixture {
         b.custom_mesh=(bem.components[0].info.flags&kComponentFlagNoGeometry)?DonorMesh(b):Make("Explicit replacement");bindings={b};
     }
 };
+void ExplicitAndroidLod1Checks() {
+    // These are synthetic Android layouts. They prove the LOD1 route without
+    // asserting that any Windows prefab describes a real mobile game asset.
+    for (const bool static_mesh:{false,true}) {
+        Fixture f;f.world_renderer->static_renderer=static_mesh;
+        static_cast<Object*>(f.world_renderer->mesh)->indices=6;
+        if (static_mesh) {f.world_renderer->bones=nullptr;f.bem.components[0].bone_names.clear();}
+        f.Explicit();
+        Check(f.adapter.receiver_lod==1 && GenericMatching::ReceiverLodAgrees(f.identities[0].receiver_path,1),
+            "explicit Android fixture does not declare its actual LOD1 receiver");
+        Check(!GenericMatching::ReceiverLodAgrees(f.identities[0].receiver_path,0),
+            "Android LOD1 evidence was silently interpreted as LOD0");
+        std::vector<GenericRendererCandidate> index;
+        Check(BuildGenericRendererIndex(f.adapter,f.world,f.world->renderers,index) && index.size()==1,
+            "explicit Android LOD1 receiver was filtered out of the production index");
+        GenericMatching::Candidate candidate;candidate.key=index[0].key;candidate.renderer=index[0].renderer;
+        Check(ReadGenericPristineMesh(f.adapter,f.world,index[0],candidate.pristine),"Android LOD1 source Mesh identity unavailable");
+        const GenericMatching::Request request{f.adapter.id,f.adapter.world_resource,f.identities[0].name,
+            GenericMatching::Region::Explicit,f.identities[0].indices,true,f.identities[0].receiver_path};
+        const auto match=GenericMatching::SelectUnique(std::span<const GenericMatching::Candidate>(&candidate,1),request,
+            [&](const auto& row){return row.renderer==f.world_renderer && IsStaticRenderer(row.renderer)==static_mesh;});
+        Check(match.status==GenericMatching::MatchStatus::Matched && candidate.pristine.mesh==f.world_renderer->mesh,
+            "explicit Android LOD1 did not bind its own native Mesh");
+        Check(static_mesh?!index[0].bones:(ArrayValue(index[0].bones,0)==f.world_bone && ArrayValue(index[0].bones,0)!=f.ui_bone),
+            "explicit Android receiver borrowed UI bones or gave static geometry a skin palette");
+        auto* proxy=f.Proxy("synthetic_mobile_proxy");proxy->static_renderer=static_mesh;
+        if (static_mesh) proxy->bones=nullptr;
+        Check(PrepareExplicitAndroidShadows(f.adapter,f.bem,f.world,f.bindings) && f.bindings.size()==2 &&
+            f.bindings[1].renderer==proxy && !f.bindings[1].custom_enabled,
+            "explicit Android LOD1 shadow mapping failed for its own renderer kind");
+        Check(ui_load_calls==0 && ui_prepare_calls==0,"explicit Android LOD1 unexpectedly requested a UI LOD0 donor");
+    }
+}
 void ExplicitShadowChecks() {
     const auto run=[](Fixture& f){return PrepareExplicitAndroidShadows(f.adapter,f.bem,f.world,f.bindings);};
     {
@@ -370,6 +407,7 @@ int main() {
             type->type_object=transform_type; return BE_Result_Ok;
         };
         g_skinned_renderer_class.type_object=renderer_type;
+        ExplicitAndroidLod1Checks();
         ExplicitShadowChecks();
         {
             Fixture fixture; Check(fixture.Run(),"baseline world binding failed");

@@ -74,7 +74,11 @@
 
 Windows 初版只执行 `lod=0` 的显式资源，依赖已有 LOD0 锁定机制；其他 LOD 会被明确拒绝。协议允许 LOD 0–3 不代表当前各平台均已实现所有组合。
 
-Android 的显式资源从自身接收器取得网格、材质和骨骼 donor，不经过旧角色包的 UI LOD0 → world LOD1 转接。制作前必须取得该平台真实资源及顶点声明证据；Windows 草稿不自动添加 `android-arm64`。
+Android 普通角色使用 LOD1 接收是既有设计，旧包仍走 UI LOD0 donor → world LOD1 转接。1.4 显式资源也支持 `lod=1`，但从声明的 LOD1 接收器自身取得网格、材质和骨骼 donor，不能拿 LOD0 的骨骼编号直接充作 LOD1 合同。Windows 的 LOD0 限制不会应用到 Android。
+
+所有启用的 Android 模型包都参与既有管线 LOD 偏置维护，继续受 `lod_pipeline` 设置控制。游戏入口虽名为 `EnableForceLOD0`，其作用是设置最高可用层级偏置，不是强制 Android 存在或使用 LOD0；该分支不写 `QualitySettings.maximumLODLevel`。独立武器和大招包也不能绕过这项维护，否则可能随距离切换到未替换的层级。
+
+制作 Android 显式目标仍需对应资源、LOD1 donor 和顶点声明证据；Windows 草稿不自动添加 `android-arm64`。这项资料要求不表示 Android LOD1 路径不受支持。
 
 Android 替换或隐藏部件时，在同一提交/恢复事务中处理其 `shadowProxyMesh`。独立 `SP_Mobile` 代理只有在原网格或实际 shadow mesh 引用、骨骼对象顺序和网格空间能够唯一证明归属时才关闭；有关但归属不明的代理会导致替换拒绝。未改动部件及无关代理保持原状态，不依靠名称猜测归属。
 

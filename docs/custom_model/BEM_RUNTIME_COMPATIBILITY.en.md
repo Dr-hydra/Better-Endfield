@@ -2,6 +2,8 @@
 
 The sections below describe the legacy 1.0–1.3 character world/UI route. The development branch adds [BEM 1.4 resource targets](BEM_V1_4_SPEC.md), with explicit receiver paths and platform declarations. The initial Windows implementation executes LOD0 targets; Android uses the declared resource itself as donor. New game targets still require platform evidence and in-game validation.
 
+Android world LOD1 is the existing design: legacy packages use UI LOD0 donors with world LOD1 receivers, while 1.4 packages can explicitly declare their own LOD1 receivers and donors. The Windows LOD0 restriction does not apply to Android. All enabled Android model packages participate in the existing `lod_pipeline` bias maintenance without changing QualitySettings. The function name `EnableForceLOD0` does not require Android to render LOD0.
+
 This document describes what the game actually does when loading a BEM package: how replacement components are found, what geometry and texture requirements apply, loading cost, when selections take effect, and what rejection messages mean. See the [Format Specification](BEM_FORMAT_SPEC.en.md) for fields and the [Creator Guide](BEM_CREATOR_GUIDE.en.md) for production workflow.
 
 Windows and Android use the same native reader and builder (`native/modules/custom_model`). Differences are limited to scene models, shadows, and texture formats, as marked below.

@@ -2597,137 +2597,8 @@ void AndroidRegisterLodBias(void* pipeline,void* method) {
     g_in_register_bias=false;
 }
 #endif
-struct LodState {
-    bool active=false;
-    bool applied=false;
-#if defined(__ANDROID__)
-    bool npc_snapshot=false;
-#endif
-    int32_t original_max_lod=0;
-    WeakManagedReference pipeline;
-    std::array<LodField,5> fields{{
-        {"s_visibleModelDistance","UnityEngine.Vector2",8},
-        {"s_visibileAtmosphericModelDistance","UnityEngine.Vector2",8},
-        {"s_maxNPCRenderNum","System.Int32",4},
-        {"s_cameraCullRenderIdx","System.Int32",4},
-        {"s_enableCameraPhysicCull","System.Boolean",1}
-    }};
-    bool Resolve() {
-        const Float2 distance{1000,1000}; const int32_t number=100,cull=0; const bool physic=false;
-        std::memcpy(fields[0].desired.data(),&distance,8); std::memcpy(fields[1].desired.data(),&distance,8);
-        std::memcpy(fields[2].desired.data(),&number,4); std::memcpy(fields[3].desired.data(),&cull,4);
-        std::memcpy(fields[4].desired.data(),&physic,1);
-        for (auto& field:fields) {
-            const BE_FieldDescriptorV1 descriptor{"Gameplay.Beyond.dll","Beyond.NPC.Lod","NPCCrowdLODSetting",field.name,field.type};
-            if (g_host->resolve_field(g_host->context,&descriptor,&field.resolved)!=BE_Result_Ok || !field.resolved.field_info) return false;
-        }
-        return g_static_get && g_static_set;
-    }
-    bool Write(LodField& field,std::array<uint8_t,8>& bytes) {
-        std::array<uint8_t,8> read{};
-        return SafeStaticField(g_static_set,field.resolved.field_info,bytes.data()) &&
-            SafeStaticField(g_static_get,field.resolved.field_info,read.data()) &&
-            std::equal(bytes.begin(),bytes.begin()+field.size,read.begin());
-    }
-    bool Restore() {
-        // DisableForceLOD0 must be able to restore the current game settings.
-        g_lod_bias_locked.store(false,std::memory_order_release);
-        if (!active) return true;
-        applied=false;
-        bool success=true;
-#if defined(__ANDROID__)
-        if (npc_snapshot) for (auto& field:fields) if (!Write(field,field.original)) success=false;
-#endif
-#if !defined(__ANDROID__)
-        for (auto& field:fields) if (!Write(field,field.original)) success=false;
-        void* args[]{&original_max_lod}; int32_t read=-1;
-        if (!InvokeVoid(Contract("quality.set_max_lod"),nullptr,args) ||
-            !InvokeValue(Contract("quality.get_max_lod"),nullptr,nullptr,read) || read!=original_max_lod) success=false;
-#endif
-        if (void* object=pipeline.Get()) {
-            if (!InvokeVoid(Contract("pipeline.disable_force_lod0"),object,nullptr)) success=false;
-            else pipeline.Reset();
-        }
-        if (success) {
-            active=false; pipeline.Reset();
-#if defined(__ANDROID__)
-            npc_snapshot=false;
-#endif
-        }
-        return success;
-    }
-    bool MaintainParameters() {
-        int32_t read=-1;
-        if (!InvokeValue(Contract("quality.get_max_lod"),nullptr,nullptr,read)) return false;
-        if (read!=0) {
-            int32_t zero=0; void* args[]{&zero};
-            if (!InvokeVoid(Contract("quality.set_max_lod"),nullptr,args) ||
-                !InvokeValue(Contract("quality.get_max_lod"),nullptr,nullptr,read) || read!=0) return false;
-        }
-        for (auto& field:fields) {
-            std::array<uint8_t,8> value{};
-            if (!SafeStaticField(g_static_get,field.resolved.field_info,value.data())) return false;
-            if (!std::equal(field.desired.begin(),field.desired.begin()+field.size,value.begin())) {
-                if (!Write(field,field.desired)) return false;
-            }
-        }
-        return true;
-    }
-    bool Update(bool desired) {
-        if (!desired) return Restore();
-#if defined(__ANDROID__)
-        void* current=Invoke(Contract("pipeline.current"),nullptr,nullptr);
-        if (!current) return false;
-        if (active && pipeline.Get()==current && applied) {
-            if (npc_snapshot) for (auto& field:fields) {
-                std::array<uint8_t,8> value{};
-                if (!SafeStaticField(g_static_get,field.resolved.field_info,value.data())) return false;
-                if (!std::equal(field.desired.begin(),field.desired.begin()+field.size,value.begin()) && !Write(field,field.desired)) return false;
-            }
-            return true;
-        }
-        if (active && !Restore()) return false;
-        if (betterendfield::AndroidNpcParametersEnabled()) {
-            for (auto& field:fields) if (!SafeStaticField(g_static_get,field.resolved.field_info,field.original.data())) return false;
-            npc_snapshot=true;
-        }
-        if (!pipeline.Set(current)) return false;
-        // Pipeline bias only. Mobile NPC and quality/culling configuration
-        // must remain untouched, even while character replacements are active.
-        active=true;
-        if (!InvokeVoid(Contract("pipeline.enable_force_lod0"),current,nullptr)) { Restore(); return false; }
-        if (npc_snapshot) for (auto& field:fields) if (!Write(field,field.desired)) { Restore(); return false; }
-        applied=true;
-        g_lod_bias_locked.store(true,std::memory_order_release);
-        Log(npc_snapshot?"Android pipeline LOD bias + NPC parameters applied/readback PASS; QualitySettings unchanged":
-            "Android pipeline LOD bias applied; quality/NPC/camera culling unchanged");
-        return true;
-#else
-        void* current=Invoke(Contract("pipeline.current"),nullptr,nullptr);
-        if (!current) return false;
-        if (active && applied && pipeline.Get()==current) {
-            if (MaintainParameters()) return true;
-            Restore(); return false;
-        }
-        if (active && !Restore()) return false;
-        if (!InvokeValue(Contract("quality.get_max_lod"),nullptr,nullptr,original_max_lod)) return false;
-        for (auto& field:fields) if (!SafeStaticField(g_static_get,field.resolved.field_info,field.original.data())) return false;
-        if (!pipeline.Set(current)) return false;
-        if (!InvokeVoid(Contract("pipeline.enable_force_lod0"),current,nullptr)) { pipeline.Reset(); return false; }
-        active=true; applied=false;
-        int32_t zero=0,read=-1; void* args[]{&zero};
-        bool success=InvokeVoid(Contract("quality.set_max_lod"),nullptr,args) &&
-            InvokeValue(Contract("quality.get_max_lod"),nullptr,nullptr,read) && read==0;
-        for (auto& field:fields) if (!Write(field,field.desired)) success=false;
-        if (!success) Restore();
-        else {
-            applied=true;
-            g_lod_bias_locked.store(true,std::memory_order_release);
-        }
-        return success;
-#endif
-    }
-};
+#include "model_lod_state.inc"
+
 struct CompletedBinding {
     GenericMatching::ReceiverKey receiver_key;
     uint32_t component_id=0;
@@ -3779,10 +3650,10 @@ void __fastcall ResourcePump(void* method) {
         if (!stop) { ReloadRegistryAtDelivery(); if (frame_known) PumpModelJobs(static_cast<uint64_t>(frame)); }
         else CancelModelJobs();
 #if defined(__ANDROID__)
-        // Mobile world resources start at LOD1. Preserve the game's LOD and
-        // culling state; the Android adapter binds the actual resource LOD.
-        const bool legacy_lod=std::any_of(g_registry.enabled.begin(),g_registry.enabled.end(),[](const auto& mod){return !mod.adapter->explicit_resource;});
-        const bool ready=g_lod.Update(!stop && legacy_lod && betterendfield::AndroidPipelineLodEnabled());
+        // Keep the configured highest-available-LOD bias for every enabled
+        // mobile model, including explicit LOD1 resources. QualitySettings is
+        // untouched; the binding contract still targets the actual mobile LOD.
+        const bool ready=g_lod.MaintainAndroid(stop,g_registry);
 #else
         const bool desired=!stop && EffectiveLodEnabled(!g_registry.enabled.empty(),g_standalone_lod.load());
         const bool ready=g_lod.Update(desired);
