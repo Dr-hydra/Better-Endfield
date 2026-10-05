@@ -1,5 +1,7 @@
 # BEM Runtime Behavior and Compatibility
 
+The sections below describe the legacy 1.0–1.3 character world/UI route. The development branch adds [BEM 1.4 resource targets](BEM_V1_4_SPEC.md), with explicit receiver paths and platform declarations. The initial Windows implementation executes LOD0 targets; Android uses the declared resource itself as donor. New game targets still require platform evidence and in-game validation.
+
 This document describes what the game actually does when loading a BEM package: how replacement components are found, what geometry and texture requirements apply, loading cost, when selections take effect, and what rejection messages mean. See the [Format Specification](BEM_FORMAT_SPEC.en.md) for fields and the [Creator Guide](BEM_CREATOR_GUIDE.en.md) for production workflow.
 
 Windows and Android use the same native reader and builder (`native/modules/custom_model`). Differences are limited to scene models, shadows, and texture formats, as marked below.

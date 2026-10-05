@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="bem_filter_character">캐릭터별 필터</string>
-    <string name="bem_all_characters">모든 캐릭터</string>
+    <string name="bem_filter_character">캐릭터 또는 무기별 필터</string>
+    <string name="bem_all_characters">모든 모델</string>
     <string name="bem_disable_all">모든 모델 끄기</string>
     <string name="bem_all_disabled">모든 모델을 껐습니다</string>
     <string name="bem_fast_loading">로딩 속도 우선</string>

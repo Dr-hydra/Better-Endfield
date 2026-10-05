@@ -1,0 +1,24 @@
+--- tools/CustomModel/NativeAssetReader/Program.cs
++++ research-only/ReaderProbe/Program.cs
+@@ -68,6 +68,12 @@
+                 row["game_object"] = Ref(r.m_GameObject,r); row["mesh"] = Ref(r.m_Mesh,r);
+                 row["bones"] = r.m_Bones.Select(p => Ref(p,r)).ToArray(); row["root_bone"] = Ref(r.m_RootBone,r);
+                 row["materials"] = r.m_Materials.Select(p => Ref(p,r)).ToArray(); break;
++            case MeshRenderer r:
++                row["game_object"] = Ref(r.m_GameObject,r);
++                row["materials"] = r.m_Materials.Select(p => Ref(p,r)).ToArray();
++                row["additional_vertex_streams"] = Ref(r.m_AdditionalVertexStreams,r); break;
++            case MeshFilter f:
++                row["game_object"] = Ref(f.m_GameObject,f); row["mesh"] = Ref(f.m_Mesh,f); break;
+             case Mesh m:
+                 row["vertex_count"] = m.m_VertexCount;
+                 row["submeshes"] = m.m_SubMeshes.Select(s => new { index_count=s.indexCount,
+@@ -121,7 +127,7 @@
+         if (files.Length==0) throw new InvalidDataException("No .ab bundles in input directory");
+         var logger=new ReportLogger(); Logger.Default=logger; Logger.Flags=LoggerEvent.Error|LoggerEvent.Warning;
+         foreach (ClassIDType type in Enum.GetValues<ClassIDType>()) TypeFlags.SetType(type,false,false);
+-        var supported=new[] { ClassIDType.GameObject,ClassIDType.Transform,ClassIDType.SkinnedMeshRenderer,
++        var supported=new[] { ClassIDType.GameObject,ClassIDType.Transform,ClassIDType.SkinnedMeshRenderer,ClassIDType.MeshRenderer,ClassIDType.MeshFilter,
+             ClassIDType.Mesh,ClassIDType.Material,ClassIDType.Texture2D,ClassIDType.AssetBundle };
+         foreach (var type in supported) TypeFlags.SetType(type,true,false);
+         var manager=new AssetsManager { Game=GameManager.GetGameByType(GameType.ArknightsEndfield)

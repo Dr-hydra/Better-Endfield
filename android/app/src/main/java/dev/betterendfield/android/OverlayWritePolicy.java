@@ -81,9 +81,10 @@ final class OverlayWritePolicy {
             if (change.has("parameters")) BemParameters.select(entry, change.getString("parameters"));
             if (change.has("enabled")) {
                 boolean enabled = change.getBoolean("enabled");
+                if (enabled) BemOptions.requireAndroid(entry);
                 if (enabled) for (int j = 0; j < entries.length(); ++j) {
                     JSONObject other = entries.getJSONObject(j);
-                    if (entry.getString("character_id").equals(other.getString("character_id"))) other.put("enabled", false);
+                    if (BemOptions.conflicts(entry, other)) other.put("enabled", false);
                 }
                 entry.put("enabled", enabled);
             }

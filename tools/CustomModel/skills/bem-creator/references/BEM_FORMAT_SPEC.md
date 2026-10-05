@@ -1,8 +1,8 @@
-# BEM 格式规范（1.0–1.3）
+# BEM 格式规范（1.0–1.4）
 
-BEM（Better Endfield Model）是《终末地》角色模型替换包，扩展名 `.bem`。Windows 与 Android 读取同一个文件。本文合并 1.0–1.3 的全部协议内容；各版本只在下文标注的地方不同。制作流程见 [创作者指南](BEM_CREATOR_GUIDE.md)，游戏内的匹配与限制见 [运行时行为与兼容性](BEM_RUNTIME_COMPATIBILITY.md)。
+BEM（Better Endfield Model）是《终末地》角色模型替换包，扩展名 `.bem`。Windows 与 Android 读取同一个文件。[BEM 1.4 扩展规范](BEM_V1_4_SPEC.md)定义多资源目标和静态武器。下文保留 1.0–1.3 的协议内容；各版本只在下文标注的地方不同。制作流程见 [创作者指南](BEM_CREATOR_GUIDE.md)，游戏内的匹配与限制见 [运行时行为与兼容性](BEM_RUNTIME_COMPATIBILITY.md)。
 
-参考实现：写入与校验 `tools/CustomModel/bem_v1.py`、`bem_v11.py`、`bem_v13.py`；读取 `native/modules/custom_model/bem.cpp`。
+参考实现：写入与校验 `tools/CustomModel/bem_v1.py`、`bem_v11.py`、`bem_v13.py`、`bem_v14.py`；读取 `native/modules/custom_model/bem.cpp`。
 
 ## 1. 版本
 
@@ -12,9 +12,10 @@ BEM（Better Endfield Model）是《终末地》角色模型替换包，扩展�
 | 1.1 | 组合选项 `option_groups` + `component_rules`，按条件选择 draw；keep 部件贴图覆盖 | `composable-options`；覆盖贴图时加 `keep-material-textures` |
 | 1.2 | 贴图槽 `texture_slots`、按资源区分的骨骼名别名、32 字节非压缩蒙皮，以及更高的资源上限 | 按使用加 `texture-slots`、`resource-bone-aliases` |
 | 1.3 | 连续形态参数 `parameters` + 位置增量 `mesh_deformations` | `body-parameters`、`mesh-position-deltas` |
+| 1.4 | 显式资源／平台目标、静态 MeshRenderer 网格，见扩展规范 | `multi-resource-targets`；使用静态目标时加 `static-meshes` |
 
 - 写入器按内容选择**能表达该包的最低版本**：不需要新特性的包仍写成旧版本，让旧运行时可读。不能把高版本内容写进低版本头部，读取器会拒绝。
-- 读取器按头部版本执行对应的上限和语义；当前运行时接受 1.0–1.3。
+- 读取器按头部版本执行对应的上限和语义；当前开发分支运行时接受 1.0–1.4。
 - 所有版本都要求能力 `native-materials`、`palette-u8`、`indices-u32`。未知能力、重复能力，或使用了某项功能却没声明对应能力，一律拒绝。只声明不使用是允许的。
 
 ## 2. 容器

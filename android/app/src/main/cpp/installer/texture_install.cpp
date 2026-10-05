@@ -113,10 +113,12 @@ void ConvertInstalledTexture(const J& manifest,J& texture,std::vector<uint8_t>& 
     std::string encoding=texture.value("normal_encoding",std::string{});
     std::string semantic=texture.value("semantic",std::string{});
     bool normal=semantic=="normal";
-    auto character=manifest.at("target").at("character_id").get<std::string>();
+    const auto& target=manifest.at("target");
+    const bool characterTarget=target.value("kind",std::string{"character"})=="character";
+    auto owner=target.at(target.contains("kind")?"id":"character_id").get<std::string>();
     auto name=texture.at("original_name").get<std::string>();
     const J* rule=nullptr;
-    if(rules.contains(character) && rules.at(character).contains(name)) {rule=&rules.at(character).at(name);normal=true;}
+    if(characterTarget && rules.contains(owner) && rules.at(owner).contains(name)) {rule=&rules.at(owner).at(name);normal=true;}
     // Known original material slots establish semantics; never infer from a filename suffix.
     if(encoding.empty() && rule) {
         if(format==27) encoding="xy-unorm";

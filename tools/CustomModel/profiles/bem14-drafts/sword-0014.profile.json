@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "kind": "bem-target-profile",
+  "bem_format": "1.4",
+  "target": {
+    "id": "wpn_sword_0014",
+    "profile_id": "draft.sword-0014.win",
+    "revision": "1",
+    "snapshot": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+    "kind": "weapon",
+    "platform": "windows-x64",
+    "resources": [
+      {
+        "id": "weapon",
+        "name": "wpn_sword_0014",
+        "asset_path": "assets/beyond/dynamicassets/gameplay/prefabs/weapons/wpn_sword_0014.prefab",
+        "platforms": [
+          "windows-x64"
+        ],
+        "lod": 0
+      }
+    ],
+    "components": [
+      {
+        "id": 0,
+        "resource": "weapon",
+        "renderer_kind": "static",
+        "renderer_path": "Mesh_all/lod0/S_wpn_sword_0014_01_lod0",
+        "mesh_name": "S_wpn_sword_0014_01_lod0",
+        "original_index_count": 27804,
+        "bone_names": [],
+        "materials": [
+          "M_wpn_sword_0014_01"
+        ]
+      }
+    ]
+  },
+  "required_capabilities": [
+    "native-materials",
+    "composable-options",
+    "multi-resource-targets",
+    "static-meshes"
+  ],
+  "evidence": [
+    {
+      "component": 0,
+      "renderer_id": "cab-742eee69f78757f7ce52ac4f070cba06:-7169968686628020976",
+      "mesh_id": "cab-1db14b8f946f57e57279ec907d0d9356:-8455875670346343402",
+      "resource": "weapon",
+      "renderer_path": "Mesh_all/lod0/S_wpn_sword_0014_01_lod0",
+      "runtime_layout_observed": false
+    }
+  ],
+  "source_snapshot": {
+    "manifest_version": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+    "perforce_cl": ""
+  },
+  "backend_warning_count": 2,
+  "runtime_verified": false,
+  "conversion_ready": false,
+  "render_verified": false,
+  "limitations": [
+    "Offline identities only; replacement stream layouts, source mappings and runtime lifecycle remain unverified."
+  ]
+}

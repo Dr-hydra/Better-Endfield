@@ -6,5 +6,7 @@
   <ItemGroup>
     <Compile Include="../../../ui/BetterEndfield.UI/Services/BemPackageService.cs" Link="BemPackageService.cs" />
     <Compile Include="../../../ui/BetterEndfield.UI/Services/BemReportPresentation.cs" Link="BemReportPresentation.cs" />
+    <Compile Include="../../../ui/BetterEndfield.UI/Services/BemRuntimeSettings.cs" Link="BemRuntimeSettings.cs" />
+    <Compile Include="../../../ui/BetterEndfield.UI/Services/BemText.cs" Link="BemText.cs" />
   </ItemGroup>
 </Project>

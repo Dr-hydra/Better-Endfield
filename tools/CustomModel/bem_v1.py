@@ -1,4 +1,4 @@
-"""BEM 1.0/1.1/1.2/1.3 container and v1.0 migration.
+"""BEM 1.0/1.1/1.2/1.3/1.4 container and v1.0 migration.
 
 The manifest is data, never executable. Payload IDs are directory indices.
 """
@@ -68,6 +68,9 @@ def validate_manifest(m, payload_count, minor=None):
         elif isinstance(value, str):
             require('\0' not in value, 'NUL in manifest string')
     tree(m)
+    import bem_v14
+    if minor == 4 or bem_v14.used(m):
+        return bem_v14.validate_manifest(m, payload_count, minor)
     if 'option_groups' in m:
         import bem_v13
         if minor == 3 or bem_v13.used(m):
@@ -218,12 +221,12 @@ def write_package(path, manifest, payloads):
 
 
 def package_minor(path):
-    """Header minor version (0..3: 1.0..1.3) without reading the manifest."""
+    """Header minor version (0..4: 1.0..1.4) without reading the manifest."""
     with Path(path).open('rb') as f:
         h = f.read(HEADER.size)
     require(len(h) == HEADER.size, 'Truncated BEM header')
     magic, major, minor = HEADER.unpack(h)[:3]
-    require(magic == MAGIC and major == 1 and minor in (0, 1, 2, 3), 'Unsupported BEM header/version')
+    require(magic == MAGIC and major == 1 and minor in (0, 1, 2, 3, 4), 'Unsupported BEM header/version')
     return minor
 
 
@@ -233,7 +236,7 @@ def read_package(path, decode=True):
         h = f.read(HEADER.size)
         require(len(h) == HEADER.size, 'Truncated BEM header')
         magic, major, minor, hs, fs, ms, count, flags = HEADER.unpack(h)
-        require(magic == MAGIC and major == 1 and minor in (0, 1, 2, 3) and hs == HEADER.size and not flags,
+        require(magic == MAGIC and major == 1 and minor in (0, 1, 2, 3, 4) and hs == HEADER.size and not flags,
                 'Unsupported BEM header/version')
         require(fs == size and fs <= 2 * 1024**3 and 0 < ms <= 4 * 1024**2 and
                 count <= (16384 if minor >= 2 else 4096), 'Invalid BEM sizes')

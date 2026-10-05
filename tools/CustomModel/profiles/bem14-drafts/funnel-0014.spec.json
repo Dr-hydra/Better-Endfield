@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "kind": "bem-resource-target-spec",
+  "target_kind": "weapon",
+  "id": "wpn_funnel_0014",
+  "profile_id": "draft.funnel-0014.win",
+  "revision": "1",
+  "snapshot": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+  "resources": [
+    {"id": "weapon", "asset_path": "assets/beyond/dynamicassets/gameplay/prefabs/weapons/wpn_funnel_0014.prefab", "platforms": ["windows-x64"], "lod": 0}
+  ]
+}

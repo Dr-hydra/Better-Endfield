@@ -166,16 +166,17 @@ final class OverlaySettingsPage {
         try {
             JSONArray entries = new JSONArray(index); TreeSet<String> characters = new TreeSet<>(); boolean enabled = false;
             for (int i = 0; i < entries.length(); ++i) {
-                JSONObject entry = entries.getJSONObject(i); characters.add(entry.getString("character_id"));
+                JSONObject entry = entries.getJSONObject(i); characters.add(BemOptions.targetKey(entry));
                 enabled |= entry.optBoolean("enabled", true);
             }
             if (!characters.contains(character)) character = "";
-            TextView filter = button(character.isEmpty() ? "全部角色 ▾" : character + " ▾"); root.addView(filter, height(44));
+            TextView filter = button(character.isEmpty() ? "全部模型 ▾" : BemOptions.targetLabel(character) + " ▾"); root.addView(filter, height(44));
             filter.setOnClickListener(v -> {
                 String[] ids = new String[characters.size() + 1]; ids[0] = ""; int i = 1;
                 for (String id : characters) ids[i++] = id;
-                String[] names = ids.clone(); names[0] = "全部角色";
-                new android.app.AlertDialog.Builder(activity).setTitle("角色筛选").setItems(names, (dialog, which) -> {
+                String[] names = ids.clone(); names[0] = "全部模型";
+                for (int n = 1; n < names.length; ++n) names[n] = BemOptions.targetLabel(ids[n]);
+                new android.app.AlertDialog.Builder(activity).setTitle("角色或武器筛选").setItems(names, (dialog, which) -> {
                     character = ids[which]; renderModels();
                 }).show();
             });
@@ -185,7 +186,7 @@ final class OverlaySettingsPage {
             if (entries.length() == 0) root.addView(label("无已安装模型"));
             for (int i = 0; i < entries.length(); ++i) {
                 JSONObject entry = entries.getJSONObject(i);
-                if (!character.isEmpty() && !character.equals(entry.getString("character_id"))) continue;
+                if (!character.isEmpty() && !character.equals(BemOptions.targetKey(entry))) continue;
                 addModel(entry);
             }
             updateEnabled();
@@ -197,7 +198,7 @@ final class OverlaySettingsPage {
         LinearLayout.LayoutParams space = new LinearLayout.LayoutParams(-1, -2); space.topMargin = dp(10); root.addView(card, space);
         card.addView(label(entry.getString("name")));
         Switch enabled = new Switch(activity); enabled.setTextColor(INK); enabled.setTextSize(13); enabled.setMinimumHeight(dp(48));
-        enabled.setText(entry.getString("character_id") + " · " + (hot ? "启用（下次加载生效）" : "启用（重启后生效）"));
+        enabled.setText(BemOptions.targetLabel(BemOptions.targetKey(entry)) + " · " + (hot ? "启用（下次加载生效）" : "启用（重启后生效）"));
         enabled.setChecked(entry.optBoolean("enabled", true)); card.addView(enabled); mutations.add(enabled);
         enabled.setOnCheckedChangeListener((v, checked) -> { if (version == render) modelPatch(generation, "enabled", checked); });
         TextView details = button(expanded.contains(generation) ? "收起详细选项 ▴" : "详细选项 ▾"); card.addView(details, height(44));

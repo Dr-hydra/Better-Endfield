@@ -22,7 +22,8 @@ struct Temporary {
 #pragma pack(push,1)
 struct Header {char magic[8];uint16_t major,minor;uint32_t size;uint64_t file,manifest;uint32_t count,flags;};
 #pragma pack(pop)
-void Package(const std::filesystem::path& path,std::string id,std::string role,bool broken_directory=false) {
+void Package(const std::filesystem::path& path,std::string id,std::string role,bool broken_directory=false,
+    std::string resource={},std::string kind="character",std::string platform="windows-x64") {
     const auto eq=[](const char* group,const char* value){return Json{{"eq",Json::array({group,value})}};};
     Json m={{"schema",1},{"package_id",id},{"name",id},{"author","Tests"},{"version","1"},
         {"required_capabilities",Json::array({"composable-options","body-parameters"})},
@@ -38,11 +39,59 @@ void Package(const std::filesystem::path& path,std::string id,std::string role,b
         {"meshes",Json::array()},{"textures",Json::array()},
         {"parameters",Json::array({{{"id","width"},{"name","Width"},{"min",100},{"max",900},{"neutral",100},{"default",500},{"step",100},{"available_when",eq("style","on")}},
             {{"id","height"},{"name","Height"},{"min",0},{"max",1000},{"neutral",0},{"default",300},{"step",10}}})}};
-    const auto json=m.dump();Header h{};std::memcpy(h.magic,"BEM\0PKG\0",8);h.major=1;h.minor=3;h.size=40;h.manifest=json.size();
+    if(!resource.empty()) {
+        auto& target=m["target"];target.erase("character_id");target.erase("world_resource");target.erase("ui_resource");
+        target["kind"]=kind;target["id"]=role;target["snapshot"]="synthetic-overlay-test";
+        target["resources"]=Json::array({{{"id","main"},{"name",resource},{"asset_path","assets/test/"+resource+".prefab"},
+            {"platforms",Json::array({platform})},{"lod",0}}});
+        auto& component=target["components"][0];component["resource"]="main";component["renderer_kind"]="static";component["renderer_path"]="Mesh";
+        m["required_capabilities"].push_back("multi-resource-targets");m["required_capabilities"].push_back("static-meshes");
+    }
+    const auto json=m.dump();Header h{};std::memcpy(h.magic,"BEM\0PKG\0",8);h.major=1;h.minor=resource.empty()?3:4;h.size=40;h.manifest=json.size();
     h.count=broken_directory?1:0;h.file=40+json.size()+(broken_directory?48:0);
     std::ofstream file(path,std::ios::binary);file.write(reinterpret_cast<const char*>(&h),40);file<<json;
     if(broken_directory) {const std::string garbage(48,'X');file<<garbage;}
     Check(bool(file),"Fixture write failed");
+}
+void ResourceTargetTests(const std::filesystem::path& parent) {
+    const auto root=parent/"resource-targets";std::filesystem::create_directories(root/"packages");
+    Package(root/"packages/normal.bem","pkg.normal","chr_one");
+    Package(root/"packages/ultimate.bem","pkg.ultimate","chr_one",false,"ultimate");
+    Package(root/"packages/weapon.bem","pkg.weapon","chr_one",false,"sword","weapon");
+    Package(root/"packages/android.bem","pkg.android","chr_one",false,"ultimate","character","android-arm64");
+    Package(root/"packages/overlap.bem","pkg.overlap","chr_other",false,"ultimate");
+    Package(root/"packages/replacement.bem","pkg.ultimate","chr_one",false,"replacement");
+    Management::Library library;library.root=root;Settings::Ini ini;
+    for(const auto* name:{"normal","ultimate","weapon","android","overlap","replacement"}) {
+        const auto section=std::string("Mod.pkg.")+name;
+        ini.Set(section,"package",Management::PathUtf8(root/"packages"/(std::string(name)+".bem")));
+        ini.Set(section,"enabled","false");
+    }
+    for(const auto* name:{"normal","ultimate","weapon"})
+        library.Apply(ini,{Management::ActionKind::Enable,std::string("Mod.pkg.")+name,{},{}});
+    for(const auto* name:{"normal","ultimate","weapon"})
+        Check(ini.Flag(std::string("Mod.pkg.")+name,"enabled"),"Non-overlapping resources were disabled by empty legacy roots or shared owner");
+    bool unavailable=false;
+    try {library.Apply(ini,{Management::ActionKind::Enable,"Mod.pkg.android",{},{}});} catch(const std::exception& error) {
+        unavailable=std::string(error.what()).find("Windows resource targets")!=std::string::npos;
+    }
+    Check(unavailable&&!ini.Flag("Mod.pkg.android","enabled"),"Android-only package silently enabled on Windows");
+    library.Apply(ini,{Management::ActionKind::Enable,"Mod.pkg.overlap",{},{}});
+    Check(!ini.Flag("Mod.pkg.ultimate","enabled")&&ini.Flag("Mod.pkg.overlap","enabled"),"Cross-owner resource overlap not disabled");
+    for(const auto* name:{"normal","weapon"})
+        Check(ini.Flag(std::string("Mod.pkg.")+name,"enabled"),"Resource selection disabled another platform or distinct resource");
+    library.Apply(ini,{Management::ActionKind::Enable,"Mod.pkg.ultimate",{},{}});
+    library.Apply(ini,{Management::ActionKind::Enable,"Mod.pkg.replacement",{},{}});
+    Check(!ini.Flag("Mod.pkg.ultimate","enabled")&&ini.Flag("Mod.pkg.replacement","enabled"),"Duplicate package generations were enabled together");
+    library.Refresh(ini);
+    const auto legacy=library.Find("Mod.pkg.normal")->metadata->info;
+    auto otherLegacy=legacy;otherLegacy.package_id="pkg.legacy.other";otherLegacy.resource_keys={"windows-x64:other_world","windows-x64:other_ui"};
+    Check(Management::Conflicts(legacy,otherLegacy),"Two old packages must retain same-character exclusivity");
+    const auto& weapon=library.Find("Mod.pkg.weapon")->metadata->info;
+    Check(Management::TargetKey(legacy)!=Management::TargetKey(weapon),"Weapon and character owner filters collided");
+    auto sharedAndroid=weapon;sharedAndroid.package_id="pkg.shared.android";sharedAndroid.resource_keys={"windows-x64:other_sword","android-arm64:sword"};
+    auto dualPlatform=weapon;dualPlatform.resource_keys.push_back("android-arm64:sword");
+    Check(!Management::Conflicts(dualPlatform,sharedAndroid),"Windows overlay conflict included another platform");
 }
 }
 int main() {try {
@@ -112,6 +161,7 @@ int main() {try {
     Check(apply({Management::ActionKind::DisableAll,{},{},{}}),error);
     Check(!Settings::Ini(Settings::ReadLocked(runtime)).Flag("Mod.missing","enabled"),"Close all tried to validate unreadable/malformed package states first");
     bool duplicate=false;try {Settings::Ini invalid("[CustomModel]\nx=1\nx=2\n");}catch(...) {duplicate=true;}Check(duplicate,"Duplicate INI keys silently accepted");
-    std::cout<<"PASS model overlay: "<<checks<<" checks (selection, availability, constraints, step, mutual exclusion, defaults, unknown fields, conflict rebase, atomic writers, metadata cache, OEM hotkeys)\n";
+    ResourceTargetTests(temp.root);
+    std::cout<<"PASS model overlay: "<<checks<<" checks (selection, availability, constraints, step, resource/platform and legacy conflicts, defaults, unknown fields, conflict rebase, atomic writers, metadata cache, OEM hotkeys)\n";
     return 0;
 } catch(const std::exception& e) {std::cerr<<e.what()<<'\n';return 1;}}

@@ -171,10 +171,10 @@ final class BemInstallPage {
         LinearLayout.LayoutParams layout=new LinearLayout.LayoutParams(-1,-2);layout.topMargin=dp(18);
         parent.addView(management,parent.indexOfChild(entries),layout);
     }
-    private void updateCharacterFilter(JSONArray list) throws JSONException {
+    private void updateCharacterFilter(JSONArray list) throws Exception {
         java.util.Set<String> installed=new java.util.TreeSet<>();hasEnabledPackages=false;
         for(int i=0;i<list.length();++i) {
-            JSONObject entry=list.getJSONObject(i);installed.add(entry.getString("character_id"));
+            JSONObject entry=list.getJSONObject(i);installed.add(BemOptions.targetKey(entry));
             hasEnabledPackages |= entry.optBoolean("enabled",true);
         }
         if(!installed.contains(selectedCharacter)) selectedCharacter="";
@@ -185,7 +185,8 @@ final class BemInstallPage {
                 characterIds.clear();characterIds.addAll(next);
                 String[] labels=new String[characterIds.size()];labels[0]=activity.getString(R.string.bem_all_characters);
                 for(int i=1;i<labels.length;++i) {
-                    String id=characterIds.get(i);labels[i]=characterNames.optString(id,id);
+                    String key=characterIds.get(i),id=key.substring(key.indexOf(':')+1);
+                    labels[i]=key.startsWith("character:")?characterNames.optString(id,id):BemOptions.targetLabel(key);
                 }
                 ArrayAdapter<String> adapter=new ArrayAdapter<>(activity,R.layout.bem_spinner_item,labels);
                 adapter.setDropDownViewResource(R.layout.bem_spinner_dropdown_item);characterFilter.setAdapter(adapter);
@@ -286,11 +287,11 @@ final class BemInstallPage {
             for(int i=0;i<list.length();++i) {
                 JSONObject entry=list.getJSONObject(i);String generation=entry.getString("generation");
                 LinearLayout card=new LinearLayout(activity);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(dp(16),dp(16),dp(16),dp(16));
-                card.setTag(entry.getString("character_id"));
+                card.setTag(BemOptions.targetKey(entry));
                 card.setBackgroundResource(R.drawable.bg_card);
                 LinearLayout.LayoutParams cardLayout=new LinearLayout.LayoutParams(-1,-2);cardLayout.topMargin=dp(12);entries.addView(card,cardLayout);
                 LinearLayout heading=new LinearLayout(activity);heading.setGravity(android.view.Gravity.CENTER_VERTICAL);card.addView(heading);
-                TextView name=new TextView(activity);name.setText(entry.getString("name"));name.setTextColor(activity.getColor(R.color.text_primary));
+                TextView name=new TextView(activity);name.setText((BemOptions.targetKind(entry).equals("weapon")?"武器 · ":"")+entry.getString("name"));name.setTextColor(activity.getColor(R.color.text_primary));
                 name.setTextSize(17);name.setTypeface(null,android.graphics.Typeface.BOLD);
                 heading.addView(name,new LinearLayout.LayoutParams(0,-2,1));
                 Switch enabled=new Switch(activity);enabled.setChecked(entry.optBoolean("enabled",true));
@@ -365,7 +366,7 @@ final class BemInstallPage {
         BemInstaller.saveAll(activity,new JSONArray().put(change));
         BemInstaller.status=FrameworkSettings.open(activity).getBoolean(BemInstaller.HOT_SWITCH,false)
             ? "设置已保存；已启用实验热切换的游戏将在下次切换配队或重新打开详情时更新。首次开启需重启游戏。"
-            : "设置已保存，重启游戏后生效。同一角色最多启用一个包。";
+            : "设置已保存，重启游戏后生效。资源目标重叠的其他包已自动停用。";
         status.setText(BemInstaller.status);
         showEntries();
     }

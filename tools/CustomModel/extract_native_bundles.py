@@ -1,4 +1,4 @@
-"""Extract a character's world/UI bundle closure from the installed VFS overlay.
+"""Extract character world/UI or explicit prefab bundle closures from the VFS overlay.
 
 Reuses the project's VFS reader; only writes to a new output directory. No
 asset hashes are computed and no installed game file is modified.
@@ -22,16 +22,24 @@ def load(name, path):
     return module
 
 
-def select_bundles(manifest, character, extra_assets=()):
-    paths = [f"assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/{character}_postmodel.prefab",
-             f"assets/beyond/dynamicassets/gameplay/prefabs/uimodels/{character}_uimodel.prefab", *extra_assets]
+def select_bundles(manifest, character=None, extra_assets=()):
+    paths = [p.lower() for p in extra_assets]
+    if character:
+        paths[:0] = [f"assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/{character}_postmodel.prefab",
+                     f"assets/beyond/dynamicassets/gameplay/prefabs/uimodels/{character}_uimodel.prefab"]
+    if not paths: raise ValueError("at least one explicit asset is required without a character")
+    if len(paths) != len(set(paths)): raise ValueError("duplicate requested asset identity")
+    for path in paths:
+        pure = PurePosixPath(path)
+        if not path.startswith("assets/") or pure.is_absolute() or ".." in pure.parts or "\\" in path or ":" in path:
+            raise ValueError("invalid requested asset path")
     assets = {}
     for asset in manifest["Assets"]:
         if asset["path"].lower() in paths:
             if asset["path"].lower() in assets: raise ValueError("duplicate asset identity")
             assets[asset["path"].lower()] = asset
     missing = set(paths) - set(assets)
-    if missing: raise ValueError(f"required character assets not found: {sorted(missing)}")
+    if missing: raise ValueError(f"required assets not found: {sorted(missing)}")
     bundles = {b["bundleIndex"]: b for b in manifest["Bundles"]}
     pending = [a["bundleIndex"] for a in assets.values()]
     selected = set()
@@ -40,7 +48,7 @@ def select_bundles(manifest, character, extra_assets=()):
         if index in selected: continue
         if index not in bundles: raise ValueError(f"missing dependency bundle {index}")
         selected.add(index)
-        if len(selected) > 512: raise ValueError("character dependency closure exceeds 512 bundles")
+        if len(selected) > 512: raise ValueError("asset dependency closure exceeds 512 bundles")
         bundle = bundles[index]
         pending.extend(bundle.get("dependencies", []))
         pending.extend(bundle.get("directDependencies", []))
@@ -57,13 +65,16 @@ def select_bundles(manifest, character, extra_assets=()):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--game", required=True, type=Path)
-    parser.add_argument("--character", required=True)
+    selection = parser.add_mutually_exclusive_group(required=True)
+    selection.add_argument("--character", help="Include the normal character world and UI prefabs")
+    selection.add_argument("--asset-only", action="store_true", help="Extract only explicit --extra-asset prefabs (weapons/forms)")
     parser.add_argument("--unpacker", required=True, type=Path)
     parser.add_argument("--resconv", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--extra-asset", action="append", default=[], help="Exact extra prefab asset path, e.g. a transformed state")
     args = parser.parse_args()
-    if not re.fullmatch(r"chr_\d{4}_[a-z0-9]+", args.character): parser.error("invalid character ID")
+    if args.character and not re.fullmatch(r"chr_\d{4}_[a-z0-9]+", args.character): parser.error("invalid character ID")
+    if args.asset_only and not args.extra_asset: parser.error("--asset-only requires at least one --extra-asset")
     game, out = args.game.resolve(), args.output.resolve()
     if out == game or out.is_relative_to(game): parser.error("output must be outside the game directory")
     if out.exists() and any(out.iterdir()): parser.error("output directory must be empty to avoid stale bundles")

@@ -1,0 +1,10 @@
+{
+  "scope": "Python container/manifest/geometry validation only; not a playable Mod",
+  "minor": 3,
+  "alternate_two_root_names": "accepted",
+  "negative_cases": {
+    "two_stream_static_mesh": "Three streams required",
+    "empty_bone_palette": "Palette/draw candidate limit exceeded",
+    "missing_ui_resource": "'ui_resource'"
+  }
+}

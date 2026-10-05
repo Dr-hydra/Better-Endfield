@@ -23,7 +23,7 @@ struct BemRequest {
     std::filesystem::path path;
     uint64_t generation = 0;
     LoadPriority priority = LoadPriority::Foreground;
-    std::string appearance, parameters;
+    std::string appearance, parameters, resource_id;
     bool skip_validation = false, loading_optimization = false;
     // Texture payloads stay in the package (BemTexture::Deferred) and are
     // decoded one at a time by TexturePayloadStreamer; excluded from the plan.
@@ -158,7 +158,7 @@ inline std::string AsyncBemLoader::Identity(const BemRequest& r) {
     std::string key;
     auto add = [&](const std::string& field) { key += std::to_string(field.size()) + ':' + field; };
     add(r.key); add(r.revision); add(r.path.lexically_normal().generic_string());
-    add(r.appearance); add(r.parameters);
+    add(r.appearance); add(r.parameters); add(r.resource_id);
     key += r.skip_validation ? '1' : '0';
     key += r.loading_optimization ? '1' : '0';
     key += r.defer_texture_payloads ? '1' : '0';
@@ -230,11 +230,11 @@ inline AsyncBemLoader::AsyncBemLoader(Config config, Backend backend) : state_(s
     config.workers = std::clamp<size_t>(config.workers, 1, 2);
     if (!backend.plan) backend.plan = [](const BemRequest& r, BemLoadPlan& p, std::string& error) {
         return ReadBemLoadPlan(r.path, p, error, r.appearance, r.skip_validation, r.parameters,
-            r.defer_texture_payloads);
+            r.defer_texture_payloads,r.resource_id);
     };
     if (!backend.load) backend.load = [](const BemRequest& r, uint64_t bytes, BemPocData& data, BemLoadStats& stats, std::string& error) {
         return LoadBem(r.path, data, error, r.appearance, &stats, r.skip_validation,
-            r.loading_optimization, r.parameters, bytes, r.defer_texture_payloads);
+            r.loading_optimization, r.parameters, bytes, r.defer_texture_payloads,r.resource_id);
     };
     state_->config = config; state_->backend = std::move(backend);
     try {

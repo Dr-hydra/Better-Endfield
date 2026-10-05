@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "kind": "bem-resource-target-spec",
+  "target_kind": "character",
+  "id": "chr_0030_zhuangfy",
+  "profile_id": "draft.zhuangfy.ultimate.win",
+  "revision": "1",
+  "snapshot": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+  "resources": [
+    {"id": "ultimate", "asset_path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0030_zhuangfy_ult_postmodel.prefab", "platforms": ["windows-x64"], "lod": 0},
+    {"id": "ability", "asset_path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/abilityentities/abilityentity_chr_0030_zhuangfy_ult_postmodel.prefab", "platforms": ["windows-x64"], "lod": 0},
+    {"id": "mirror", "asset_path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/abilityentities/abilityentity_chr_0030_zhuangfy_ult_mirror_postmodel.prefab", "platforms": ["windows-x64"], "lod": 0}
+  ]
+}

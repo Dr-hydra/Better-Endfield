@@ -45,12 +45,16 @@ bool BuildGenericRendererIndex(const CharacterAdapter& adapter,void* asset,void*
     for (int i=0;i<count;++i) {
         GenericRendererCandidate c; c.renderer=ArrayValue(renderers,i);
         std::string path;
-        if (!c.renderer || !IsNativeObjectAlive(c.renderer) || !ResourceRelativePath(asset,c.renderer,path) || path.empty() ||
+        if (!IsModelRenderer(c.renderer) || (!adapter.explicit_resource && IsStaticRenderer(c.renderer))) continue;
+        if (!IsNativeObjectAlive(c.renderer) || !ResourceRelativePath(asset,c.renderer,path) || (!adapter.explicit_resource && path.empty()) ||
             !paths.emplace(path,c.renderer).second) return false;
-        c.key={adapter.id,resource,path,GenericMatching::ClassifyReceiver(path)};
-        c.mesh=Invoke(Contract("skinned.get_shared_mesh"),c.renderer,nullptr);
+        if (adapter.explicit_resource && std::none_of(adapter.components.begin(),adapter.components.end(),[&](const auto& identity){
+            return path==identity.receiver_path && identity.static_mesh==IsStaticRenderer(c.renderer);
+        })) continue;
+        c.key={adapter.id,resource,path,adapter.explicit_resource?GenericMatching::Region::Explicit:GenericMatching::ClassifyReceiver(path)};
+        c.mesh=GetRendererMesh(c.renderer);
         c.materials=Invoke(Contract("renderer.get_shared_materials"),c.renderer,nullptr);
-        c.bones=Invoke(Contract("skinned.get_bones"),c.renderer,nullptr);
+        c.bones=GetRendererBones(c.renderer);
         if (!GetRendererEnabled(c.renderer,c.enabled)) return false;
         candidates.push_back(std::move(c));
     }

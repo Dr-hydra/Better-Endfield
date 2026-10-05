@@ -29,11 +29,16 @@ struct Object {
     void* transforms=nullptr;
     Matrix4x4Raw matrix{};
     int32_t submeshes=1;
+    int32_t shadow_mode=0;
+    void* shadow_mesh=nullptr;
+    bool static_renderer=false;
+    bool enabled=true;
     uint32_t indices=7;
 };
 std::vector<std::unique_ptr<Object>> objects;
 std::unordered_map<std::string,Object*> resource_roots,transform_nodes;
 std::unordered_map<void*,void*> pristine_meshes;
+std::unordered_map<void*,std::pair<int32_t,void*>> saved_shadow_states;
 std::vector<void*> known_custom_receivers;
 Object* Make(std::string name={},std::string path={}) {
     auto value=std::make_unique<Object>(); value->name=std::move(name); value->path=std::move(path);
@@ -55,6 +60,7 @@ void AndroidReleaseUiDonor(void*&,uint32_t&) {}
 }
 namespace BetterEndfield::CustomModel {
 struct PreparedBinding {
+    GenericMatching::ReceiverKey receiver_key;
     uint32_t component_id=0;
     void* renderer=nullptr;
     void* original_mesh=nullptr;
@@ -69,6 +75,7 @@ struct PreparedBinding {
     bool change_shadow=false;
     int32_t original_shadow=0,custom_shadow=0;
     void* original_shadow_mesh=nullptr;
+    void* custom_shadow_mesh=nullptr;
     std::vector<std::string> bone_names;
 };
 std::vector<PreparedBinding> ui_sources;
@@ -76,6 +83,11 @@ std::atomic_bool g_hot_switch_runtime{false};
 BE_HostApiV1 host{};
 const BE_HostApiV1* g_host=&host;
 BE_ResolvedClassV1 g_skinned_renderer_class{};
+bool IsStaticRenderer(void* object) {return object && static_cast<Object*>(object)->static_renderer;}
+bool IsModelRenderer(void* object) {return object!=nullptr;}
+void* ModelRendererType() {return renderer_type;}
+void* GetRendererMesh(void* object) {return static_cast<Object*>(object)->mesh;}
+void* GetRendererBones(void* object) {return IsStaticRenderer(object)?nullptr:static_cast<Object*>(object)->bones;}
 struct Construction { bool failed=false; } construction;
 Construction* g_construction=&construction;
 void Log(const std::string&) {}
@@ -109,10 +121,11 @@ template<class T> bool InvokeValue(const char* key,void* value,void**,T& output)
     if constexpr(std::is_same_v<T,Matrix4x4Raw>) output=static_cast<Object*>(value)->matrix;
     else if (std::string_view(key)=="mesh.get_sub_mesh_count") output=static_cast<T>(static_cast<Object*>(value)->submeshes);
     else if (std::string_view(key)=="mesh.get_index_count") output=static_cast<T>(static_cast<Object*>(value)->indices);
+    else if (std::string_view(key)=="android.shadow_get") output=static_cast<T>(static_cast<Object*>(value)->shadow_mode);
     else output=0;
     return true;
 }
-bool GetRendererEnabled(void*,bool& enabled) { enabled=true; return true; }
+bool GetRendererEnabled(void* value,bool& enabled) { enabled=static_cast<Object*>(value)->enabled; return true; }
 bool IsNativeObjectAlive(void* value) { return value!=nullptr; }
 bool saved_world_materials_unloaded=false;
 bool UseSavedOriginal(void*,PreparedBinding& binding,bool require_materials=true) {
@@ -165,6 +178,18 @@ bool ReadGenericPristineMesh(const CharacterAdapter&,void*,const GenericRenderer
     return ReadGenericMeshIdentity(mesh,origin,identity);
 }
 #include "../../android/app/src/main/cpp/modules/custom_model/world_resource_adapter.inc"
+bool shadow_contracts=true,shadow_getter=true;
+bool AndroidShadowContractsAvailable() {return shadow_contracts;}
+bool ReadNullableObject(const char*,void* object,void*& value) {value=static_cast<Object*>(object)->shadow_mesh;return shadow_getter;}
+void* PristineShadowMesh(const PreparedBinding& binding) {
+    if (auto it=saved_shadow_states.find(binding.renderer);it!=saved_shadow_states.end()) return it->second.second;
+    return binding.original_shadow_mesh;
+}
+bool RestoreSavedShadowState(PreparedBinding& binding) {
+    auto it=saved_shadow_states.find(binding.renderer);if (it==saved_shadow_states.end()) return false;
+    binding.change_shadow=true;binding.custom_shadow=it->second.first;binding.custom_shadow_mesh=it->second.second;return true;
+}
+#include "../modules/custom_model/explicit_android_shadows.inc"
 }
 namespace {
 using namespace BetterEndfield::CustomModel;
@@ -183,7 +208,7 @@ struct Fixture {
     std::vector<PreparedBinding> bindings;
     Fixture() {
         ui_donor=Make(adapter.ui_resource); cached=false; ui_prepare_calls=0; g_hot_switch_runtime=false;
-        pristine_meshes.clear(); known_custom_receivers.clear();
+        pristine_meshes.clear(); saved_shadow_states.clear(); known_custom_receivers.clear();
         world->path=world->name; ui_donor->path=ui_donor->name;
         resource_roots[world->path]=world; resource_roots[ui_donor->path]=ui_donor;
         world->renderers=Array({world_renderer}); world->transforms=Array({world_bone});
@@ -227,7 +252,116 @@ struct Fixture {
         value->bones=Array({world_bone}); value->materials=Array({world_material});
         static_cast<Object*>(world->renderers)->array.push_back(value); return value;
     }
+    void Explicit() {
+        adapter.explicit_resource=true;adapter.ui_resource=adapter.world_resource;
+        PreparedBinding b;b.renderer=world_renderer;b.original_mesh=world_renderer->mesh;
+        b.original_bones=world_renderer->bones;b.original_materials=b.custom_materials=world_renderer->materials;
+        b.original_enabled=world_renderer->enabled;b.custom_enabled=!(bem.components[0].info.flags&kComponentFlagHidden);
+        UseSavedOriginal(world,b);
+        b.custom_mesh=(bem.components[0].info.flags&kComponentFlagNoGeometry)?DonorMesh(b):Make("Explicit replacement");bindings={b};
+    }
 };
+void ExplicitShadowChecks() {
+    const auto run=[](Fixture& f){return PrepareExplicitAndroidShadows(f.adapter,f.bem,f.world,f.bindings);};
+    {
+        Fixture f;f.Explicit();auto* original=Make("proxy field");f.world_renderer->shadow_mesh=original;f.world_renderer->shadow_mode=2;
+        Check(run(f) && f.bindings[0].change_shadow && f.bindings[0].original_shadow_mesh==original &&
+            !f.bindings[0].custom_shadow_mesh && f.bindings[0].custom_shadow==2,"explicit receiver proxy was not snapshotted/cleared with original mode");
+        Check(f.world_renderer->shadow_mesh==original,"shadow preparation mutated a live receiver");
+        auto apply=[](PreparedBinding& b){auto* r=static_cast<Object*>(b.renderer);r->shadow_mesh=b.custom_shadow_mesh;r->shadow_mode=b.custom_shadow;return false;};
+        auto restore=[](PreparedBinding& b){auto* r=static_cast<Object*>(b.renderer);r->shadow_mesh=b.original_shadow_mesh;r->shadow_mode=b.original_shadow;return true;};
+        Check(CommitResource<PreparedBinding>(f.bindings,apply,restore)==CommitResult::Restored &&
+            f.world_renderer->shadow_mesh==original && f.world_renderer->shadow_mode==2,"explicit shadow snapshots did not restore after partial failure");
+    }
+    {
+        Fixture f;f.Explicit();auto* proxy=f.Proxy("arbitrary_name");
+        Check(run(f) && f.bindings.size()==2 && f.bindings[1].renderer==proxy && !f.bindings[1].custom_enabled &&
+            f.bindings[0].custom_shadow==1,"same-object Mesh/bones/space proxy owner was not prepared for transactional disable");
+    }
+    {
+        Fixture f;f.Explicit();f.Proxy("Body_shadowProxyMobile",false);
+        Check(!run(f) && f.bindings.size()==1 && !f.bindings[0].change_shadow,"reduced proxy was guessed from a matching name or changed a refused transaction");
+    }
+    {
+        Fixture f;f.Explicit();auto* proxy=f.Proxy("reduced",false);f.world_renderer->shadow_mesh=proxy->mesh;
+        Check(run(f) && f.bindings.size()==2,"live shadowProxyMesh reference did not prove reduced proxy ownership");
+    }
+    {
+        Fixture f;f.Explicit();f.Proxy();f.bindings.push_back(f.bindings[0]);f.bem.components.push_back(f.bem.components[0]);
+        Check(!run(f),"shared proxy Mesh with two receiver owners was resolved by order");
+    }
+    {
+        Fixture f;f.Explicit();f.Proxy();auto* sibling=Make("other",f.world->path+"/Mesh_all/lod1/other");
+        sibling->mesh=f.world_renderer->mesh;sibling->bones=f.world_renderer->bones;
+        static_cast<Object*>(f.world->renderers)->array.push_back(sibling);
+        Check(!run(f),"proxy owner uniqueness ignored a receiver outside the package component subset");
+    }
+    {
+        Fixture f;f.Explicit();auto* proxy=f.Proxy("unrelated",false);proxy->bones=Array({Make("other bone")});
+        Check(run(f) && f.bindings.size()==1,"unrelated skeleton's proxy blocked the explicit resource");
+    }
+    {
+        Fixture f;f.Explicit();auto* proxy=f.Proxy();proxy->bones=Array({Make("wrong bone")});
+        Check(!run(f),"shared Mesh accepted a proxy with different bones");
+    }
+    {
+        Fixture f;f.Explicit();auto* proxy=f.Proxy();proxy->matrix.m[12]=1;
+        Check(!run(f),"shared Mesh accepted a proxy in another mesh space");
+    }
+    {
+        Fixture f;f.Explicit();auto* proxy=f.Proxy("kept-part",false);
+        auto* kept=Make("kept",f.world->path+"/Mesh_all/lod1/kept");kept->mesh=proxy->mesh;kept->bones=proxy->bones;
+        PreparedBinding b=f.bindings[0];b.renderer=kept;b.original_mesh=kept->mesh;b.original_bones=kept->bones;f.bindings.push_back(b);
+        BemComponent c;c.info.flags=kComponentFlagNoGeometry;f.bem.components.push_back(c);
+        Check(run(f) && f.bindings.size()==2,"proxy proven to belong to an unchanged component blocked a different replacement");
+    }
+    {
+        Fixture f;f.Explicit();auto* proxy=f.Proxy();f.world_renderer->static_renderer=proxy->static_renderer=true;
+        f.bindings[0].original_bones=nullptr;proxy->bones=nullptr;
+        Check(run(f) && f.bindings.size()==2,"static proxy identity wrongly required a skin palette");
+    }
+    {
+        Fixture f;f.Explicit();shadow_getter=false;
+        Check(!run(f) && !f.bindings[0].change_shadow,"unreadable nullable shadow getter accepted as an empty proxy");shadow_getter=true;
+        shadow_contracts=false;Check(!run(f),"missing shadow setters accepted");shadow_contracts=true;
+    }
+    {
+        Fixture f;auto* proxy=f.Proxy("shared-shape");auto* source_mesh=f.world_renderer->mesh;
+        f.world_renderer->shadow_mesh=proxy->mesh;f.world_renderer->shadow_mode=2;f.Explicit();
+        const auto apply=[](PreparedBinding& b) {
+            auto* r=static_cast<Object*>(b.renderer);r->mesh=b.custom_mesh;r->enabled=b.custom_enabled;
+            if (b.change_shadow) {r->shadow_mode=b.custom_shadow;r->shadow_mesh=b.custom_shadow_mesh;}return true;
+        };
+        const auto restore=[](PreparedBinding& b) {
+            auto* r=static_cast<Object*>(b.renderer);r->mesh=b.original_mesh;r->enabled=b.original_enabled;
+            if (b.change_shadow) {r->shadow_mode=b.original_shadow;r->shadow_mesh=b.original_shadow_mesh;}return true;
+        };
+        const auto publish=[&] {
+            Check(run(f),"explicit shadow transition preparation refused");
+            for (const auto& b:f.bindings) {
+                pristine_meshes.emplace(b.renderer,b.original_mesh);
+                if (b.change_shadow) saved_shadow_states.emplace(b.renderer,std::pair{b.original_shadow,b.original_shadow_mesh});
+            }
+            Check(CommitResource<PreparedBinding>(f.bindings,apply,restore)==CommitResult::Committed,"explicit shadow transition did not commit");
+        };
+        publish();auto first_transaction=f.bindings;
+        Check(!proxy->enabled && !f.world_renderer->shadow_mesh,"replace did not clear old shadows");
+        f.bem.components[0].info.flags=kComponentFlagNoGeometry;f.Explicit();publish();
+        Check(proxy->enabled && f.world_renderer->shadow_mesh==source_mesh && f.world_renderer->shadow_mode==2,
+            "replace to keep left old proxy disabled or shadowProxyMesh cleared");
+        f.bem.components[0].info.flags=0;f.Explicit();publish();
+        f.bem.components[0].info.flags=kComponentFlagNoGeometry|kComponentFlagHidden;f.Explicit();publish();
+        Check(!proxy->enabled && !f.world_renderer->enabled,"hide left a source shadow caster enabled");
+        f.bem.components[0].info.flags=kComponentFlagNoGeometry;f.Explicit();publish();
+        Check(proxy->enabled && f.world_renderer->enabled && f.world_renderer->shadow_mesh==source_mesh,
+            "replace to hide to keep did not restore original shadow state");
+        // The Original snapshots retained on first publication are also the
+        // data consumed by disable; verify they survive all appearances.
+        for (auto& b:first_transaction) restore(b);
+        Check(proxy->enabled && f.world_renderer->mesh==source_mesh && f.world_renderer->shadow_mesh==source_mesh &&
+            f.world_renderer->shadow_mode==2,"original shadow snapshots no longer restore after appearance transitions");
+    }
+}
 }
 int main() {
     try {
@@ -236,6 +370,7 @@ int main() {
             type->type_object=transform_type; return BE_Result_Ok;
         };
         g_skinned_renderer_class.type_object=renderer_type;
+        ExplicitShadowChecks();
         {
             Fixture fixture; Check(fixture.Run(),"baseline world binding failed");
             Check(ArrayValue(fixture.bindings[0].custom_bones,0)==fixture.world_bone,"world renderer retained UI bones");
@@ -516,6 +651,8 @@ int main() {
             fixture.bem.components[0].bone_names={fixture.ui_bone->name};
             Check(!fixture.Run(),"Typhoea skirt bone was guessed without a declared alias");
             fixture.bem.components[0].bone_aliases={{fixture.world_bone->name}};
+            fixture.bem.components[0].bone_aliases_by_resource.resize(1);
+            fixture.bem.components[0].bone_aliases_by_resource[0][0]={fixture.world_bone->name};
             Check(fixture.Run(),"declared Typhoea skirt alias did not bind at its captured parent path");
             Check(ArrayValue(fixture.bindings[0].custom_bones,0)==fixture.world_bone,"Typhoea skirt retained a UI bone");
             fixture.world_bone->path=fixture.world_name+"/Unrelated/"+fixture.world_bone->name;
@@ -546,6 +683,8 @@ int main() {
             Fixture fixture; fixture.world_bone->name="WorldBone";
             fixture.world_bone->path="chr_test_postmodel/Root/WorldBone";
             fixture.bem.components[0].bone_aliases={{"WorldBone"}};
+            fixture.bem.components[0].bone_aliases_by_resource.resize(1);
+            fixture.bem.components[0].bone_aliases_by_resource[0][0]={"WorldBone"};
             Check(fixture.Run(),"validated world stopped resolving declared BEM bone aliases");
             Check(ArrayValue(fixture.bindings[0].custom_bones,0)==fixture.world_bone,"declared alias did not bind the live world bone");
         }
@@ -555,6 +694,8 @@ int main() {
             auto* other=Make("OtherAlias","chr_test_postmodel/Root/OtherAlias");
             fixture.world->transforms=Array({fixture.world_bone,other});
             fixture.bem.components[0].bone_aliases={{"WorldBone","OtherAlias"}};
+            fixture.bem.components[0].bone_aliases_by_resource.resize(1);
+            fixture.bem.components[0].bone_aliases_by_resource[0][0]={"WorldBone","OtherAlias"};
             Check(!fixture.Run(),"two valid world aliases were selected by alias order");
             fixture.bem.skip_validation=true;
             Check(!fixture.Run(),"unchecked world selected a live bone from ambiguous alias paths");

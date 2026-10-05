@@ -1,0 +1,9 @@
+# Keep the small research evidence; never commit extracted game bundles or tools.
+*
+!.gitignore
+!README.md
+!audit.py
+!summary.json
+!protocol_probe.py
+!protocol-probe.json
+!reader-probe.patch

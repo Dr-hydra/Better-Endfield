@@ -14,12 +14,14 @@ def prepare_export(manifest, payloads):
     payloads = list(payloads)
     aliases = any(c.get('bone_name_aliases') for c in manifest['target']['components'])
     slots = bool(manifest.get('texture_slots'))
-    skin32 = any(m['streams'][2]['stride'] == 32 for m in manifest['meshes'])
+    skin32 = any(len(m['streams']) == 3 and m['streams'][2]['stride'] == 32 for m in manifest['meshes'])
+    import bem_v14
+    targets = bem_v14.used(manifest)
     overrides = any(c.get('material_overrides') for a in manifest.get('appearances', []) for c in a['components'])
     extended_caps = any(c in ('texture-slots', 'resource-bone-aliases') for c in manifest['required_capabilities'])
     shapes = bool(manifest.get('parameters') or manifest.get('mesh_deformations') or
                   any(c in ('body-parameters', 'mesh-position-deltas') for c in manifest['required_capabilities']))
-    if 'option_groups' not in manifest and (aliases or slots or skin32 or overrides or extended_caps or shapes):
+    if 'option_groups' not in manifest and (aliases or slots or skin32 or overrides or extended_caps or shapes or targets):
         appearances = manifest.pop('appearances')
         default = manifest.pop('default_appearance_id')
         bem.require(0 < len(appearances) <= 64, 'Expected 1..64 appearances')
@@ -61,6 +63,11 @@ def prepare_export(manifest, payloads):
             manifest['required_capabilities'].append('composable-options')
     if 'option_groups' in manifest:
         caps = manifest['required_capabilities']
+        if targets:
+            if 'multi-resource-targets' not in caps: caps.append('multi-resource-targets')
+            if (any(c.get('renderer_kind') == 'static' for c in manifest['target']['components']) or
+                    any(mesh.get('renderer_kind') == 'static' for mesh in manifest['meshes'])) and 'static-meshes' not in caps:
+                caps.append('static-meshes')
         for capability, used in (('resource-bone-aliases', aliases), ('texture-slots', slots),
             ('keep-material-textures', any(c.get('material_overrides') for r in manifest['component_rules'] for c in r['candidates']))):
             if used and capability not in caps: caps.append(capability)

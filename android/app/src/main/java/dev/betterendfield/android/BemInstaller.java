@@ -186,8 +186,15 @@ final class BemInstaller {
         JSONObject result=new JSONObject(report.toString());
         JSONObject latest=previousGeneration==null?null:findEntry(entries,previousGeneration);
         if(previousGeneration!=null && latest==null) throw new IOException("模型包已被替换，原配置保持不变");
-        String character=result.getString("character_id");
-        if(latest!=null && !character.equals(latest.getString("character_id"))) throw new IOException("转换结果的角色不匹配");
+        String target=BemOptions.targetKey(result);BemOptions.resourceKeys(result);BemOptions.requireAndroid(result);
+        for(int i=0;i<entries.length();++i) {
+            JSONObject existing=entries.getJSONObject(i);
+            if(result.has("package_id") && existing.has("package_id") && result.getString("package_id").equals(existing.getString("package_id")) && !target.equals(BemOptions.targetKey(existing)))
+                throw new IOException("同一个包 ID 不能更新为另一目标");
+        }
+        if(latest!=null && !target.equals(BemOptions.targetKey(latest))) throw new IOException("转换结果的目标不匹配");
+        if(latest!=null && !BemOptions.resourceKeys(result).equals(BemOptions.resourceKeys(latest)) && latest.has("resource_keys"))
+            throw new IOException("转换结果的资源目标不匹配");
         if(findEntry(entries,result.getString("generation"))!=null) throw new IOException("模型包版本重复");
         result.put("enabled",latest==null || latest.optBoolean("enabled",true));
         if(result.optInt("bem_minor",0)>=1) {
@@ -201,7 +208,7 @@ final class BemInstaller {
         JSONObject parameterSource=latest;
         if(parameterSource==null) for(int i=entries.length()-1;i>=0;--i) {
             JSONObject candidate=entries.getJSONObject(i);
-            if(character.equals(candidate.getString("character_id")) && result.getString("package_id").equals(candidate.getString("package_id"))) {
+            if(target.equals(BemOptions.targetKey(candidate)) && result.getString("package_id").equals(candidate.getString("package_id"))) {
                 parameterSource=candidate;break;
             }
         }
@@ -211,7 +218,7 @@ final class BemInstaller {
         for(int i=0;i<entries.length();++i) {
             JSONObject old=entries.getJSONObject(i);
             if(previousGeneration!=null && previousGeneration.equals(old.getString("generation"))) continue;
-            if(result.getBoolean("enabled") && character.equals(old.getString("character_id"))) old.put("enabled",false);
+            if(result.getBoolean("enabled") && BemOptions.conflicts(result,old)) old.put("enabled",false);
             next.put(old);
         }
         next.put(result);

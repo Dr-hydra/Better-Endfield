@@ -1,0 +1,857 @@
+{
+  "schema": 1,
+  "scope": "Windows offline metadata; no game/device runtime verification",
+  "manifest_version": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+  "selected_assets": [
+    "assets/beyond/dynamicassets/gameplay/actors/postmodels/abilityentities/abilityentity_chr_0030_zhuangfy_sword_postmodel.prefab",
+    "assets/beyond/dynamicassets/gameplay/prefabs/weapons/wpn_sword_0014.prefab",
+    "assets/beyond/dynamicassets/gameplay/actors/postmodels/abilityentities/abilityentity_chr_0030_zhuangfy_ult_mirror_postmodel.prefab",
+    "assets/beyond/dynamicassets/gameplay/prefabs/weapons/wpn_funnel_0014.prefab",
+    "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0030_zhuangfy_ult_postmodel.prefab",
+    "assets/beyond/dynamicassets/gameplay/actors/postmodels/abilityentities/abilityentity_chr_0030_zhuangfy_ult_postmodel.prefab",
+    "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0030_zhuangfy_postmodel.prefab",
+    "assets/beyond/dynamicassets/gameplay/prefabs/uimodels/chr_0030_zhuangfy_uimodel.prefab"
+  ],
+  "bundle_count": 133,
+  "missing_bundles": [],
+  "object_types": {
+    "Material": 40,
+    "Mesh": 162,
+    "Texture2D": 84,
+    "Shader": 7,
+    "Transform": 2497,
+    "SkinnedMeshRenderer": 233,
+    "GameObject": 2497,
+    "MeshFilter": 4,
+    "MeshRenderer": 4
+  },
+  "backend_issue_first_lines": [
+    "[UnityCN] Failed to read CNKeys.json file, creating a new one.",
+    "Error while reading file G:\\Better Endfield\\research\\custom_model\\1.5.3\\Windows\\weapon-ultimate-bem\\inputs\\Bundles\\Windows\\initial\\00000000 from 9f92bbd1e0f2191cffd3be18.ab"
+  ],
+  "skinned_parse_summary": {
+    "meshes": 162,
+    "renderers": 233,
+    "offline_complete": 233,
+    "runtime_layout_observed": 0
+  },
+  "roots_without_skinned_renderers": [
+    "abilityentity_chr_0030_zhuangfy_sword_postmodel",
+    "wpn_sword_0014"
+  ],
+  "resources": {
+    "abilityentity_chr_0030_zhuangfy_ult_mirror_postmodel": {
+      "skinned_renderers": 52,
+      "references_complete": 52,
+      "lod0_components": [
+        {
+          "mesh": "S_actor_zhuangfy_body_04_lod0",
+          "indices": 7014,
+          "bones": 61,
+          "materials": [
+            "M_actor_zhuangfy_body_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_cloth_03_lod0",
+          "indices": 151632,
+          "bones": 207,
+          "materials": [
+            "M_actor_zhuangfy_cloth_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_cloth_04_lod0",
+          "indices": 18138,
+          "bones": 63,
+          "materials": [
+            "M_actor_zhuangfy_cloth_02"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_eyebrow_03_lod0",
+          "indices": 3234,
+          "bones": 34,
+          "materials": [
+            "M_actor_zhuangfy_brow_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_eyeshadow_03_lod0",
+          "indices": 120,
+          "bones": 18,
+          "materials": [
+            "M_eyeshadow_common_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_face_03_lod0",
+          "indices": 11538,
+          "bones": 54,
+          "materials": [
+            "M_actor_zhuangfy_face_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_hair_03_lod0",
+          "indices": 52332,
+          "bones": 53,
+          "materials": [
+            "M_actor_zhuangfy_hair_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_hairshadow_03_lod0",
+          "indices": 957,
+          "bones": 13,
+          "materials": [
+            "M_hairshadow_common_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_iris_03_lod0",
+          "indices": 1032,
+          "bones": 5,
+          "materials": [
+            "M_actor_zhuangfy_iris_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_vfxpart_01_lod0",
+          "indices": 2379,
+          "bones": 2,
+          "materials": [
+            "M_fx_ui_zhuangfy_toppotential_01_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_vfxpart_02_lod0",
+          "indices": 528,
+          "bones": 2,
+          "materials": [
+            "M_fx_ui_zhuangfy_toppotential_01_02"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_vfxpart_03_lod0",
+          "indices": 12435,
+          "bones": 24,
+          "materials": [
+            "M_fx_ui_zhuangfy_toppotential_03"
+          ],
+          "runtime_layout_observed": false
+        }
+      ]
+    },
+    "abilityentity_chr_0030_zhuangfy_ult_postmodel": {
+      "skinned_renderers": 51,
+      "references_complete": 51,
+      "lod0_components": [
+        {
+          "mesh": "S_actor_zhuangfy_body_02_lod0",
+          "indices": 75147,
+          "bones": 127,
+          "materials": [
+            "M_actor_zhuangfy_cloth_03"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_body_03_lod0",
+          "indices": 8532,
+          "bones": 48,
+          "materials": [
+            "M_actor_zhuangfy_body_03"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_eyebrow_02_lod0",
+          "indices": 3234,
+          "bones": 34,
+          "materials": [
+            "M_actor_zhuangfy_brow_02"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_eyeshadow_02_lod0",
+          "indices": 120,
+          "bones": 18,
+          "materials": [
+            "M_eyeshadow_common_05",
+            "M_eyewhiteshadow_common_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_face_02_lod0",
+          "indices": 11346,
+          "bones": 54,
+          "materials": [
+            "M_actor_zhuangfy_face_02"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_hair_02_lod0",
+          "indices": 52332,
+          "bones": 53,
+          "materials": [
+            "M_actor_zhuangfy_hair_02",
+            "M_actor_zhuangfy_hairt_02"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_hairshadow_02_lod0",
+          "indices": 957,
+          "bones": 13,
+          "materials": [
+            "M_hairshadow_common_09"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_iris_02_lod0",
+          "indices": 1032,
+          "bones": 8,
+          "materials": [
+            "M_actor_zhuangfy_iris_02"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_tail_02_lod0",
+          "indices": 11469,
+          "bones": 8,
+          "materials": [
+            "M_actor_zhuangfy_cloth_04"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_vfxbody_01_lod0",
+          "indices": 5088,
+          "bones": 22,
+          "materials": [
+            "M_fx_actor_zhuangfy_vfxbody_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_vfxbody_02_lod0",
+          "indices": 8154,
+          "bones": 31,
+          "materials": [
+            "M_fx_actor_zhuangfy_vfxbody_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_vfxbody_03_lod0",
+          "indices": 4512,
+          "bones": 56,
+          "materials": [
+            "M_fx_actor_zhuangfy_vfxbody_01"
+          ],
+          "runtime_layout_observed": false
+        }
+      ]
+    },
+    "chr_0030_zhuangfy_postmodel": {
+      "skinned_renderers": 52,
+      "references_complete": 52,
+      "lod0_components": [
+        {
+          "mesh": "S_actor_zhuangfy_body_01_lod0",
+          "indices": 7014,
+          "bones": 61,
+          "materials": [
+            "M_actor_zhuangfy_body_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_cloth_01_lod0",
+          "indices": 156318,
+          "bones": 207,
+          "materials": [
+            "M_actor_zhuangfy_cloth_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_cloth_02_lod0",
+          "indices": 13452,
+          "bones": 22,
+          "materials": [
+            "M_actor_zhuangfy_cloth_02"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_eyebrow_01_lod0",
+          "indices": 3234,
+          "bones": 34,
+          "materials": [
+            "M_actor_zhuangfy_brow_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_eyeshadow_01_lod0",
+          "indices": 120,
+          "bones": 18,
+          "materials": [
+            "M_eyeshadow_common_05",
+            "M_eyewhiteshadow_common_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_face_01_lod0",
+          "indices": 11538,
+          "bones": 54,
+          "materials": [
+            "M_actor_zhuangfy_face_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_hair_01_lod0",
+          "indices": 52332,
+          "bones": 53,
+          "materials": [
+            "M_actor_zhuangfy_hair_01",
+            "M_actor_zhuangfy_hairt_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_hairshadow_01_lod0",
+          "indices": 957,
+          "bones": 13,
+          "materials": [
+            "M_hairshadow_common_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_iris_01_lod0",
+          "indices": 1032,
+          "bones": 8,
+          "materials": [
+            "M_actor_zhuangfy_iris_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_vfxpart_01_lod0",
+          "indices": 2379,
+          "bones": 2,
+          "materials": [
+            "M_fx_ui_zhuangfy_toppotential_01_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_vfxpart_02_lod0",
+          "indices": 528,
+          "bones": 2,
+          "materials": [
+            "M_fx_ui_zhuangfy_toppotential_01_02"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_vfxpart_03_lod0",
+          "indices": 12435,
+          "bones": 24,
+          "materials": [
+            "M_fx_ui_zhuangfy_toppotential_03"
+          ],
+          "runtime_layout_observed": false
+        }
+      ]
+    },
+    "chr_0030_zhuangfy_uimodel": {
+      "skinned_renderers": 12,
+      "references_complete": 12,
+      "lod0_components": [
+        {
+          "mesh": "S_actor_zhuangfy_body_01_lod0",
+          "indices": 7014,
+          "bones": 61,
+          "materials": [
+            "M_actor_zhuangfy_body_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_cloth_01_lod0",
+          "indices": 156318,
+          "bones": 207,
+          "materials": [
+            "M_actor_zhuangfy_cloth_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_cloth_02_lod0",
+          "indices": 13452,
+          "bones": 22,
+          "materials": [
+            "M_actor_zhuangfy_cloth_02"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_eyebrow_01_lod0",
+          "indices": 3234,
+          "bones": 34,
+          "materials": [
+            "M_actor_zhuangfy_brow_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_eyeshadow_01_lod0",
+          "indices": 120,
+          "bones": 18,
+          "materials": [
+            "M_eyeshadow_common_05",
+            "M_eyewhiteshadow_common_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_face_01_lod0",
+          "indices": 11538,
+          "bones": 54,
+          "materials": [
+            "M_actor_zhuangfy_face_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_hair_01_lod0",
+          "indices": 52332,
+          "bones": 53,
+          "materials": [
+            "M_actor_zhuangfy_hair_01",
+            "M_actor_zhuangfy_hairt_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_hairshadow_01_lod0",
+          "indices": 957,
+          "bones": 13,
+          "materials": [
+            "M_hairshadow_common_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_iris_01_lod0",
+          "indices": 1032,
+          "bones": 8,
+          "materials": [
+            "M_actor_zhuangfy_iris_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_vfxpart_01_lod0",
+          "indices": 2379,
+          "bones": 2,
+          "materials": [
+            "M_fx_ui_zhuangfy_toppotential_01_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_vfxpart_02_lod0",
+          "indices": 528,
+          "bones": 2,
+          "materials": [
+            "M_fx_ui_zhuangfy_toppotential_01_02"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_vfxpart_03_lod0",
+          "indices": 12435,
+          "bones": 24,
+          "materials": [
+            "M_fx_ui_zhuangfy_toppotential_03"
+          ],
+          "runtime_layout_observed": false
+        }
+      ]
+    },
+    "chr_0030_zhuangfy_ult_postmodel": {
+      "skinned_renderers": 51,
+      "references_complete": 51,
+      "lod0_components": [
+        {
+          "mesh": "S_actor_zhuangfy_body_02_lod0",
+          "indices": 75147,
+          "bones": 127,
+          "materials": [
+            "M_actor_zhuangfy_cloth_03"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_body_03_lod0",
+          "indices": 8532,
+          "bones": 48,
+          "materials": [
+            "M_actor_zhuangfy_body_03"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_eyebrow_02_lod0",
+          "indices": 3234,
+          "bones": 34,
+          "materials": [
+            "M_actor_zhuangfy_brow_02"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_eyeshadow_02_lod0",
+          "indices": 120,
+          "bones": 18,
+          "materials": [
+            "M_eyeshadow_common_05",
+            "M_eyewhiteshadow_common_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_face_02_lod0",
+          "indices": 11346,
+          "bones": 54,
+          "materials": [
+            "M_actor_zhuangfy_face_02"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_hair_02_lod0",
+          "indices": 52332,
+          "bones": 53,
+          "materials": [
+            "M_actor_zhuangfy_hair_02",
+            "M_actor_zhuangfy_hairt_02"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_hairshadow_02_lod0",
+          "indices": 957,
+          "bones": 13,
+          "materials": [
+            "M_hairshadow_common_09"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_iris_02_lod0",
+          "indices": 1032,
+          "bones": 8,
+          "materials": [
+            "M_actor_zhuangfy_iris_02"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_tail_02_lod0",
+          "indices": 11469,
+          "bones": 8,
+          "materials": [
+            "M_actor_zhuangfy_cloth_04"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_vfxbody_01_lod0",
+          "indices": 5088,
+          "bones": 22,
+          "materials": [
+            "M_fx_actor_zhuangfy_vfxbody_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_vfxbody_02_lod0",
+          "indices": 8154,
+          "bones": 31,
+          "materials": [
+            "M_fx_actor_zhuangfy_vfxbody_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_actor_zhuangfy_vfxbody_03_lod0",
+          "indices": 4512,
+          "bones": 56,
+          "materials": [
+            "M_fx_actor_zhuangfy_vfxbody_01"
+          ],
+          "runtime_layout_observed": false
+        }
+      ]
+    },
+    "wpn_funnel_0014": {
+      "skinned_renderers": 15,
+      "references_complete": 15,
+      "lod0_components": [
+        {
+          "mesh": "S_wpn_funnel_0014_01_lod0",
+          "indices": 12492,
+          "bones": 3,
+          "materials": [
+            "M_wpn_funnel_0014_01"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_wpn_funnel_0014_02_lod0",
+          "indices": 1296,
+          "bones": 1,
+          "materials": [
+            "M_wpn_funnel_0002_02"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_wpn_funnel_0014_03_lod0",
+          "indices": 960,
+          "bones": 1,
+          "materials": [
+            "M_wpn_funnel_0002_03"
+          ],
+          "runtime_layout_observed": false
+        },
+        {
+          "mesh": "S_wpn_sword_0014_vfx_01_lod0",
+          "indices": 144,
+          "bones": 1,
+          "materials": [
+            "DefaultHGMaterial"
+          ],
+          "runtime_layout_observed": false
+        }
+      ]
+    }
+  },
+  "static_renderers": [
+    {
+      "path": "wpn_sword_0014/Mesh_all/lod0/S_wpn_sword_0014_01_lod0",
+      "mesh": "S_wpn_sword_0014_01_lod0",
+      "vertices": 9829,
+      "indices": 27804,
+      "bindposes": 0,
+      "channels": [
+        {
+          "attribute": 0,
+          "stream": 0,
+          "format": 0,
+          "dimension_raw": 3
+        },
+        {
+          "attribute": 1,
+          "stream": 0,
+          "format": 0,
+          "dimension_raw": 3
+        },
+        {
+          "attribute": 2,
+          "stream": 0,
+          "format": 0,
+          "dimension_raw": 4
+        },
+        {
+          "attribute": 4,
+          "stream": 1,
+          "format": 0,
+          "dimension_raw": 2
+        }
+      ],
+      "materials": [
+        "M_wpn_sword_0014_01"
+      ]
+    },
+    {
+      "path": "wpn_sword_0014/Mesh_all/lod1/S_wpn_sword_0014_01_lod1",
+      "mesh": "S_wpn_sword_0014_01_lod1",
+      "vertices": 5757,
+      "indices": 13785,
+      "bindposes": 0,
+      "channels": [
+        {
+          "attribute": 0,
+          "stream": 0,
+          "format": 0,
+          "dimension_raw": 3
+        },
+        {
+          "attribute": 1,
+          "stream": 0,
+          "format": 0,
+          "dimension_raw": 3
+        },
+        {
+          "attribute": 2,
+          "stream": 0,
+          "format": 0,
+          "dimension_raw": 4
+        },
+        {
+          "attribute": 4,
+          "stream": 1,
+          "format": 0,
+          "dimension_raw": 2
+        }
+      ],
+      "materials": [
+        "M_wpn_sword_0014_01"
+      ]
+    },
+    {
+      "path": "wpn_sword_0014/Mesh_all/lod2/S_wpn_sword_0014_01_lod2",
+      "mesh": "S_wpn_sword_0014_01_lod2",
+      "vertices": 2711,
+      "indices": 5928,
+      "bindposes": 0,
+      "channels": [
+        {
+          "attribute": 0,
+          "stream": 0,
+          "format": 0,
+          "dimension_raw": 3
+        },
+        {
+          "attribute": 1,
+          "stream": 0,
+          "format": 0,
+          "dimension_raw": 3
+        },
+        {
+          "attribute": 2,
+          "stream": 0,
+          "format": 0,
+          "dimension_raw": 4
+        },
+        {
+          "attribute": 4,
+          "stream": 1,
+          "format": 0,
+          "dimension_raw": 2
+        }
+      ],
+      "materials": [
+        "M_wpn_sword_0014_01"
+      ]
+    },
+    {
+      "path": "wpn_sword_0014/Mesh_all/lod3/S_wpn_sword_0014_01_lod3",
+      "mesh": "S_wpn_sword_0014_01_lod3",
+      "vertices": 1399,
+      "indices": 2958,
+      "bindposes": 0,
+      "channels": [
+        {
+          "attribute": 0,
+          "stream": 0,
+          "format": 0,
+          "dimension_raw": 3
+        },
+        {
+          "attribute": 1,
+          "stream": 0,
+          "format": 0,
+          "dimension_raw": 3
+        },
+        {
+          "attribute": 2,
+          "stream": 0,
+          "format": 0,
+          "dimension_raw": 4
+        },
+        {
+          "attribute": 4,
+          "stream": 1,
+          "format": 0,
+          "dimension_raw": 2
+        }
+      ],
+      "materials": [
+        "M_wpn_sword_0014_01"
+      ]
+    }
+  ],
+  "ultimate_actor_entity_pair": {
+    "component_count": 12,
+    "errors": {}
+  },
+  "model_table": {
+    "abilityentity_chr_0030_zhuangfy_sword_postmodel": {
+      "modelId": "abilityentity_chr_0030_zhuangfy_sword_postmodel",
+      "path": "Assets/Beyond/DynamicAssets/Gameplay/Actors/PostModels/AbilityEntities/abilityentity_chr_0030_zhuangfy_sword_postmodel.prefab",
+      "type": 4,
+      "scaleFactor": 1.0,
+      "hasModelViewData": false,
+      "usePersistentPool": false
+    },
+    "abilityentity_chr_0030_zhuangfy_ult_mirror_postmodel": {
+      "modelId": "abilityentity_chr_0030_zhuangfy_ult_mirror_postmodel",
+      "path": "Assets/Beyond/DynamicAssets/Gameplay/Actors/PostModels/AbilityEntities/abilityentity_chr_0030_zhuangfy_ult_mirror_postmodel.prefab",
+      "type": 4,
+      "scaleFactor": 1.0,
+      "hasModelViewData": false,
+      "usePersistentPool": true
+    },
+    "abilityentity_chr_0030_zhuangfy_ult_postmodel": {
+      "modelId": "abilityentity_chr_0030_zhuangfy_ult_postmodel",
+      "path": "Assets/Beyond/DynamicAssets/Gameplay/Actors/PostModels/AbilityEntities/abilityentity_chr_0030_zhuangfy_ult_postmodel.prefab",
+      "type": 4,
+      "scaleFactor": 1.0,
+      "hasModelViewData": false,
+      "usePersistentPool": true
+    },
+    "chr_0030_zhuangfy_postmodel": {
+      "modelId": "chr_0030_zhuangfy_postmodel",
+      "path": "Assets/Beyond/DynamicAssets/Gameplay/Actors/PostModels/Characters/chr_0030_zhuangfy_postmodel.prefab",
+      "type": 2,
+      "scaleFactor": 1.0,
+      "hasModelViewData": false,
+      "usePersistentPool": false
+    },
+    "chr_0030_zhuangfy_ult_postmodel": {
+      "modelId": "chr_0030_zhuangfy_ult_postmodel",
+      "path": "Assets/Beyond/DynamicAssets/Gameplay/Actors/PostModels/Characters/chr_0030_zhuangfy_ult_postmodel.prefab",
+      "type": 2,
+      "scaleFactor": 1.0,
+      "hasModelViewData": false,
+      "usePersistentPool": true
+    }
+  },
+  "artifact_hashes_computed": false
+}

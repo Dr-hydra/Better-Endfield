@@ -22,6 +22,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_dev_betterendfield_android_BemInstalle
             if(!LoadBem(input.data,parsed,error,appearance,nullptr,skip_validation)) throw std::runtime_error(error);
         }
         BemJson report={{"package_id",info.package_id},{"character_id",info.character_id},{"name",info.name},
+            {"target_kind",info.target_kind},{"target_id",info.target_id},{"resource_keys",info.resource_keys},
             {"bytes",std::filesystem::file_size(input.data)},{"bem_minor",info.minor}};
         if(info.minor) {report["default_options"]=info.default_options;
             report["option_groups"]=BemJson::parse(info.option_groups_json);

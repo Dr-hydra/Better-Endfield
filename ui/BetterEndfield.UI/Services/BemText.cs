@@ -8,6 +8,19 @@ internal static class BemText
 {
     private static readonly Dictionary<string, string> English = new(StringComparer.Ordinal)
     {
+        ["角色与武器 · BEM"] = "Characters and weapons · BEM",
+        ["支持 BEM 1.0–1.4 模型包，管理角色、武器和技能形态。资源目标不重叠的模型包可以同时启用。"] = "Supports BEM 1.0–1.4 packages for characters, weapons and skill forms. Packages with distinct resource targets can be enabled together.",
+        ["按角色或武器筛选"] = "Filter by character or weapon",
+        ["全部模型"] = "All models",
+        ["武器"] = "Weapon",
+        ["资源目标重叠的其他包会自动停用。"] = "Other packages with overlapping resource targets are disabled automatically.",
+        ["仅支持 BEM 1.0–1.4 包。"] = "Only BEM 1.0–1.4 packages are supported.",
+        ["BEM 资源目标不合法。"] = "Invalid BEM resource targets.",
+        ["BEM 目标类别不合法。"] = "Invalid BEM target kind.",
+        ["{0}：资源目标与其他启用包重叠，已在界面停用，请重新选择。"] = "{0}: resource targets overlap with another enabled package. Disabled in the manager; select a package again.",
+        ["同一个包 ID 不能更新为另一目标。"] = "A package ID cannot be updated to a different target.",
+        ["此模型包没有 Windows 资源目标，无法在当前平台导入或启用。"] = "This package has no Windows resource targets and cannot be imported or enabled on this platform.",
+        ["{0}：模型包没有 Windows 资源目标，已停用。"] = "{0}: this package has no Windows resource targets and has been disabled.",
         ["已启用实验热切换的游戏将在下次切换配队或重新打开详情时更新；首次开启需重启游戏。"] = "With experimental hot-switching enabled, changes apply on the next team change or character-detail reload. Restart the game when first enabling it.",
         ["下次启动游戏生效。"] = "Applies the next time you start the game.",
         ["获取模型"] = "Get models",

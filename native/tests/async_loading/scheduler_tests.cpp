@@ -133,6 +133,19 @@ void FairnessAndIdentity() {
     Check(backend.order[backgroundOpportunities[0]].ends_with("b0"), "Prewarm starved behind visible requests");
     Check(backend.loads["f0"] == 2, "Different immutable revision incorrectly merged");
 }
+void ResourceSelectionIdentity() {
+    ControlledBackend backend;backend.blockPlan=true;
+    AsyncBemLoader loader({1000,1,64},backend.Make());Unblock unblock{backend};
+    auto body=RequestFor("same-package");body.resource_id="body";
+    auto weapon=body;weapon.resource_id="weapon";
+    auto first=loader.Request(body);auto second=loader.Request(weapon);auto duplicate=loader.Request(body);
+    backend.ReleaseAll();
+    Await([&]{return loader.Poll(first).status==AsyncLoadStatus::Ready && loader.Poll(second).status==AsyncLoadStatus::Ready &&
+        loader.Poll(duplicate).status==AsyncLoadStatus::Ready;},"resource-selected loads did not complete");
+    Check(backend.Loads("same-package")==2,"same-package resources shared incompatible decoded component plans");
+    Check(loader.Poll(first).result==loader.Poll(duplicate).result && loader.Poll(first).result!=loader.Poll(second).result,
+        "resource identity did not isolate decoded results while merging identical subscribers");
+}
 void FrameAdmission() {
     FrameBudget budget;
     auto first = budget.TryBegin(10, {16 * kLoadingMiB, 1, true, true});
@@ -414,7 +427,7 @@ void TextureStreamerAdmission() {
 }
 int main() {
     try {
-        ConcurrencyAndMerge(); ExclusiveLargeAndLateCancellation(); FairnessAndIdentity(); PriorityUpdateAndQueuedCancellation(); FrameAdmission(); FailureAndShutdownOwnership(); ProductionCpuIntegration();
+        ConcurrencyAndMerge(); ExclusiveLargeAndLateCancellation(); FairnessAndIdentity(); ResourceSelectionIdentity(); PriorityUpdateAndQueuedCancellation(); FrameAdmission(); FailureAndShutdownOwnership(); ProductionCpuIntegration();
         DeferredTexturePayloads(); TextureStreamerAdmission();
         std::cout << "PASS: async loading concurrency/merge/fairness/generations/lifetimes/large escape/frame budget/production BEM/deferred texture entries/texture streamer (" << checks << " checks)\n";
         return 0;

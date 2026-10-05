@@ -54,6 +54,9 @@ final class FrameworkSettings {
 static android.content.SharedPreferences open(android.content.Context app){return app.getSharedPreferences("module_settings",0);}
 static boolean publishBem(java.io.File file,String name){throw new UnsupportedOperationException("Native import is outside host test scope");}
 static boolean isConnected(){return true;}static void awaitConnection(){}
+static java.io.InputStream openBem(String name)throws java.io.IOException{throw new java.io.IOException("Remote payload is outside host test scope");}
+static String[] listBem(){return new String[0];}
+static long bemSize(String name){return -1;}
 static String lastThirdPartyRemote;static byte[] lastThirdPartyBytes;
 static void awaitThirdPartyConnection(){}
 static void publishThirdParty(java.io.File file,String name)throws java.io.IOException{lastThirdPartyRemote=name;lastThirdPartyBytes=java.nio.file.Files.readAllBytes(file.toPath());}
@@ -72,9 +75,10 @@ final class BemImportRequest {static android.net.Uri requireContentUri(android.n
             urllib.request.urlretrieve('https://repo.maven.apache.org/maven2/org/json/json/20240303/json-20240303.jar', jar)
         if not jar.is_file():
             parser.error('org.json jar does not exist')
-        sources = [java / f'{name}.java' for name in ('BemInstaller', 'BemOptions', 'BemParameters', 'BemInstalledResources', 'BemImportStream', 'BemHotSwitchUpdate', 'ThirdPartyModulePackage', 'ThirdPartyModuleStore')]
+        sources = [java / f'{name}.java' for name in ('BemInstaller', 'BemOptions', 'BemParameters', 'BemInstalledResources', 'BemImportStream', 'BemHotSwitchUpdate', 'OverlayWritePolicy', 'ThirdPartyModulePackage', 'ThirdPartyModuleStore')]
         sources.append(Path(__file__).with_name('BemPackageStateTest.java'))
         sources.append(root / 'android/app/src/test/java/dev/betterendfield/android/BemHotSwitchUpdateTest.java')
+        sources.append(root / 'android/app/src/test/java/dev/betterendfield/android/OverlayWritePolicyTest.java')
         sources.append(root / 'native/tests/third_party_ui/ThirdPartyAndroidTest.java')
         for name, text in stubs.items():
             file = build / 'stubs' / name
@@ -87,6 +91,7 @@ final class BemImportRequest {static android.net.Uri requireContentUri(android.n
         fixture_args = [] if args.bem_fixture is None else [str(args.bem_fixture.resolve())]
         subprocess.run(['java', '-cp', os.pathsep.join((str(classes), str(jar.resolve()))), 'dev.betterendfield.android.BemPackageStateTest', *fixture_args], check=True)
         subprocess.run(['java', '-cp', os.pathsep.join((str(classes), str(jar.resolve()))), 'dev.betterendfield.android.BemHotSwitchUpdateTest'], check=True)
+        subprocess.run(['java', '-cp', os.pathsep.join((str(classes), str(jar.resolve()))), 'dev.betterendfield.android.OverlayWritePolicyTest'], check=True)
         third_party_args = [] if args.third_party_fixture is None else [str(args.third_party_fixture.resolve())]
         subprocess.run(['java', '-cp', os.pathsep.join((str(classes), str(jar.resolve()))), 'dev.betterendfield.android.ThirdPartyAndroidTest', *third_party_args], check=True)
 

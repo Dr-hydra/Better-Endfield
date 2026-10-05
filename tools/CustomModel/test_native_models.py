@@ -34,6 +34,52 @@ def fixture():
 
 
 class NativeParserTests(unittest.TestCase):
+    def static_fixture(self):
+        raw = fixture()
+        mesh, renderer = raw["objects"][6:8]
+        mesh["bindposes"] = []
+        mesh["serialized_channels"] = mesh["serialized_channels"][:3]
+        renderer["type"] = "MeshRenderer"
+        renderer.pop("bones"); renderer.pop("root_bone")
+        raw["objects"].append({"id": "scene:8", "type": "MeshFilter", "name": "", "game_object": ref("scene:2"),
+                               "mesh": renderer.pop("mesh")})
+        return raw
+
+    def test_static_renderer_resolves_mesh_filter_without_bindposes(self):
+        row = parse(self.static_fixture())["renderers"][0]
+        self.assertTrue(row["offline_references_complete"], row["errors"])
+        self.assertEqual(row["renderer_kind"], "static")
+        self.assertEqual(row["mesh_filter_id"], "scene:8")
+        self.assertEqual(row["mesh_id"], "meshes:1")
+        self.assertEqual(row["bones"], [])
+        self.assertEqual(row["materials"][0]["name"], "material")
+        self.assertFalse(row["conversion_ready"])
+
+    def test_static_mesh_filter_missing_ambiguous_or_wrong_owner_fails(self):
+        raw = self.static_fixture(); raw["objects"].pop()
+        self.assertIn("exactly one MeshFilter", parse(raw)["renderers"][0]["errors"][0])
+        raw = self.static_fixture(); other = copy.deepcopy(raw["objects"][-1]); other["id"] = "other:8"
+        raw["objects"].append(other)
+        self.assertIn("exactly one MeshFilter", parse(raw)["renderers"][0]["errors"][0])
+        raw = self.static_fixture(); raw["objects"][-1]["game_object"] = ref("scene:3")
+        self.assertIn("exactly one MeshFilter", parse(raw)["renderers"][0]["errors"][0])
+
+    def test_static_mesh_filter_unresolved_and_additional_streams_fail(self):
+        raw = self.static_fixture(); raw["objects"][-1]["mesh"] = ref("absent:9")
+        self.assertIn("unresolved Mesh", parse(raw)["renderers"][0]["errors"][0])
+        raw = self.static_fixture(); raw["objects"][7]["additional_vertex_streams"] = ref("meshes:1")
+        self.assertIn("additional vertex streams", parse(raw)["renderers"][0]["errors"][0])
+
+    def test_static_observation_accepts_two_streams_and_rejects_skin(self):
+        observation = {"schema": 1, "evidence": "synthetic static observation", "renderers": [{
+            "id": "scene:7", "resource_root": "character", "path": "character/mesh", "mesh_name": "mesh",
+            "original_index_count": 3, "strides": [12, 8], "attributes": [[0, 0, 3, 0], [4, 0, 2, 1]]}]}
+        row = parse(self.static_fixture(), observation)["renderers"][0]
+        self.assertEqual(row["runtime_layout"]["strides"], [12, 8])
+        observation["renderers"][0]["attributes"].append([13, 6, 4, 1])
+        with self.assertRaisesRegex(ValueError, "skin attributes"):
+            parse(self.static_fixture(), observation)
+
     def test_resolves_file_and_path_identity_in_bone_order(self):
         result = parse(fixture())
         row = result["renderers"][0]
@@ -45,6 +91,17 @@ class NativeParserTests(unittest.TestCase):
         self.assertFalse(row["conversion_ready"])
         raw = fixture(); raw["snapshot"] = {"assets": [{"path": "characters/missing.prefab"}]}
         self.assertEqual(parse(raw)["missing_resources"], ["missing"])
+
+    def test_loaded_empty_prefab_is_distinct_from_missing_resource(self):
+        raw = fixture()
+        raw['objects'][0]['asset_paths'] = ['assets/test/character.prefab']
+        raw['objects'].append(dict(id='empty:1', type='GameObject', name='empty',
+                                   asset_paths=['assets/test/empty.prefab']))
+        raw['snapshot'] = {'assets': [{'path': 'assets/test/empty.prefab'}, {'path': 'assets/test/absent.prefab'}]}
+        result = parse(raw)
+        self.assertEqual(result['empty_resources'], ['empty'])
+        self.assertEqual(result['missing_resources'], ['absent'])
+        self.assertEqual(result['renderers'][0]['resource_asset_paths'], ['assets/test/character.prefab'])
 
     def test_same_names_and_same_path_id_in_other_file_do_not_alias(self):
         raw = fixture()
@@ -119,6 +176,21 @@ class NativeParserTests(unittest.TestCase):
         manifest["Bundles"].pop(2)
         with self.assertRaisesRegex(ValueError, "missing dependency"):
             select_bundles(manifest, character)
+
+    def test_explicit_weapon_closure_omits_character_roots(self):
+        path = "assets/beyond/weapons/wpn_sword_0014.prefab"
+        manifest = {"Assets": [{"path": path, "bundleIndex": 1}],
+                    "Bundles": [{"bundleIndex": 1, "name": "main/1.ab", "dependencies": [2]},
+                                {"bundleIndex": 2, "name": "main/2.ab"}]}
+        assets, names = select_bundles(manifest, extra_assets=[path.upper()])
+        self.assertEqual(assets, manifest["Assets"])
+        self.assertEqual(len(names), 2)
+        with self.assertRaisesRegex(ValueError, "explicit asset"):
+            select_bundles(manifest)
+        with self.assertRaisesRegex(ValueError, "duplicate requested"):
+            select_bundles(manifest, extra_assets=[path, path])
+        with self.assertRaisesRegex(ValueError, "invalid requested"):
+            select_bundles(manifest, extra_assets=["assets/../outside.prefab"])
 
 
 if __name__ == "__main__": unittest.main()

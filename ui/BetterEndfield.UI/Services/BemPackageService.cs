@@ -51,6 +51,15 @@ internal sealed class BemPackage
     public string Author { get; init; } = "";
     public string Version { get; init; } = "";
     public string Character { get; init; } = "";
+    public string TargetKind { get; init; } = "character";
+    public string TargetId => Character;
+    public string TargetKey => TargetKind + ":" + TargetId;
+    public ushort FormatMinor { get; init; }
+    public IReadOnlySet<string> ResourceKeys { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+    public bool SupportsCurrentPlatform => FormatMinor < 4 || ResourceKeys.Any(key => key.StartsWith("windows-x64:", StringComparison.Ordinal));
+    public bool ConflictsWith(BemPackage other) => Id.Length > 0 && Id == other.Id ||
+        (FormatMinor < 4 && other.FormatMinor < 4 && TargetKey == other.TargetKey) ||
+        (ResourceKeys.Count > 0 && other.ResourceKeys.Count > 0 ? ResourceKeys.Any(key => key.StartsWith("windows-x64:", StringComparison.Ordinal) && other.ResourceKeys.Contains(key)) : TargetKey == other.TargetKey);
     public string File { get; init; } = "";
     public long Size { get; init; }
     public string DefaultAppearance { get; init; } = "";
@@ -188,6 +197,51 @@ internal sealed class BemPackageService
         return value;
     }
 
+    private static (string Kind, string Id, HashSet<string> Resources) ReadTarget(JsonElement target, ushort minor)
+    {
+        var keys = new HashSet<string>(StringComparer.Ordinal);
+        if (minor < 4)
+        {
+            if (target.TryGetProperty("kind", out _) || target.TryGetProperty("id", out _) || target.TryGetProperty("resources", out _))
+                throw new InvalidDataException(BemText.Get("BEM 资源目标不合法。"));
+            string id = StableId(target, "character_id");
+            foreach (string platform in new[] { "windows-x64", "android-arm64" })
+                foreach (string field in new[] { "world_resource", "ui_resource" })
+                    keys.Add(platform + ":" + StableId(target, field));
+            if (keys.Count != 4) throw new InvalidDataException(BemText.Get("BEM 资源目标不合法。"));
+            return ("character", id, keys);
+        }
+        string kind = target.GetProperty("kind").GetString() ?? "";
+        if (kind is not ("character" or "weapon")) throw new InvalidDataException(BemText.Get("BEM 目标类别不合法。"));
+        string owner = StableId(target, "id");
+        var resources = target.GetProperty("resources");
+        if (resources.ValueKind != JsonValueKind.Array || resources.GetArrayLength() is < 1 or > 32)
+            throw new InvalidDataException(BemText.Get("BEM 资源目标不合法。"));
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        var paths = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var resource in resources.EnumerateArray())
+        {
+            string id = StableId(resource, "id"), name = StableId(resource, "name");
+            string path = resource.GetProperty("asset_path").GetString() ?? "";
+            int lod = resource.GetProperty("lod").GetInt32();
+            if (!ids.Add(id) || name != name.ToLowerInvariant() || lod is < 0 or > 3 || !path.StartsWith("assets/", StringComparison.Ordinal) ||
+                !path.EndsWith(".prefab", StringComparison.Ordinal) || path.Contains('\\') || path.Contains(':') ||
+                path != path.ToLowerInvariant() || Encoding.UTF8.GetByteCount(path) > 1024 || Path.GetFileNameWithoutExtension(path) != name ||
+                path.Any(char.IsControl) || path.Split('/').Any(part => part is "" or "." or ".."))
+                throw new InvalidDataException(BemText.Get("BEM 资源目标不合法。"));
+            var platforms = resource.GetProperty("platforms");
+            if (platforms.ValueKind != JsonValueKind.Array || platforms.GetArrayLength() is < 1 or > 2)
+                throw new InvalidDataException(BemText.Get("BEM 资源目标不合法。"));
+            foreach (var value in platforms.EnumerateArray())
+            {
+                string platform = value.GetString() ?? "";
+                if (platform is not ("windows-x64" or "android-arm64") || !keys.Add(platform + ":" + name) || !paths.Add(platform + ":" + path))
+                    throw new InvalidDataException(BemText.Get("BEM 资源目标不合法。"));
+            }
+        }
+        return (kind, owner, keys);
+    }
+
     public static BemPackage ReadMetadata(string path, bool skipValidation = false)
     {
         using var stream = System.IO.File.OpenRead(path);
@@ -195,8 +249,8 @@ internal sealed class BemPackageService
         if (!r.ReadBytes(8).SequenceEqual(new byte[] { 66, 69, 77, 0, 80, 75, 71, 0 }))
             throw new InvalidDataException(BemText.Get("BEM 包头不合法。"));
         ushort major = r.ReadUInt16(), minor = r.ReadUInt16();
-        if (major != 1 || minor > 3 || r.ReadUInt32() != 40)
-            throw new InvalidDataException(BemText.Get("仅支持 BEM 1.0/1.1/1.2/1.3 包。"));
+        if (major != 1 || minor > 4 || r.ReadUInt32() != 40)
+            throw new InvalidDataException(BemText.Get("仅支持 BEM 1.0–1.4 包。"));
         ulong fileSize = r.ReadUInt64(), manifestSize = r.ReadUInt64();
         uint count = r.ReadUInt32(), flags = r.ReadUInt32();
         if (fileSize != (ulong)stream.Length || manifestSize == 0 || manifestSize > int.MaxValue || flags != 0 ||
@@ -207,6 +261,7 @@ internal sealed class BemPackageService
         var m = document.RootElement;
         if (m.GetProperty("schema").GetInt32() != 1 || (!skipValidation && m.GetProperty("target").GetProperty("platform").GetString() != "windows-x64"))
             throw new InvalidDataException(BemText.Get("不支持的 BEM schema 或目标平台。"));
+        var target = ReadTarget(m.GetProperty("target"), minor);
         var appearances = minor == 0 ? m.GetProperty("appearances").EnumerateArray().Select(a => new BemAppearance
         {
             Id = StableId(a, "id"), Name = a.GetProperty("name").GetString() ?? "",
@@ -230,7 +285,7 @@ internal sealed class BemPackageService
             groups.Any(g => g.Choices.Count < 1 || (!skipValidation && g.Choices.Count > maxChoices) || g.Choices.Select(c => c.Id).Distinct().Count() != g.Choices.Count ||
                             g.Choices.All(c => c.Id != g.Default))))
             throw new InvalidDataException(BemText.Get("BEM 选项组目录不合法。"));
-        var parameters = minor >= 3 ? m.GetProperty("parameters").EnumerateArray().Select(p => new BemParameterGroup
+        var parameters = minor >= 3 && m.TryGetProperty("parameters", out var parameterList) ? parameterList.EnumerateArray().Select(p => new BemParameterGroup
         {
             Id = StableId(p, "id"), Name = p.GetProperty("name").GetString() ?? "",
             Min = p.GetProperty("min").GetUInt32(), Max = p.GetProperty("max").GetUInt32(),
@@ -246,7 +301,7 @@ internal sealed class BemPackageService
         {
             Id = StableId(m, "package_id"), Name = m.GetProperty("name").GetString() ?? "",
             Author = m.GetProperty("author").GetString() ?? "", Version = m.GetProperty("version").GetString() ?? "",
-            Character = StableId(m.GetProperty("target"), "character_id"), File = path, Size = stream.Length,
+            Character = target.Id, TargetKind = target.Kind, FormatMinor = minor, ResourceKeys = target.Resources, File = path, Size = stream.Length,
             Appearances = appearances, DefaultAppearance = def, SelectedAppearance = def,
             IsComposable = minor >= 1, OptionGroups = groups, Parameters = parameters,
             SelectionConstraints = minor >= 1 && m.TryGetProperty("selection_constraints", out var constraints)
@@ -356,10 +411,16 @@ internal sealed class BemPackageService
             catch (Exception ex) when (ex is IOException or InvalidDataException or JsonException or InvalidOperationException or KeyNotFoundException or OverflowException or FormatException)
             { _notices.Add(() => Path.GetFileName(path) + BemText.Colon + ex.Message); }
         }
-        foreach (var group in Packages.Where(p => p.Enabled).GroupBy(p => p.Character).Where(g => g.Count() > 1))
+        foreach (var p in Packages.Where(p => p.Enabled && !p.SupportsCurrentPlatform))
         {
-            foreach (var p in group) p.Enabled = false;
-            _notices.Add(() => BemText.Format("{0}：存在多个启用包，已在界面停用，请重新选择。", group.Key));
+            p.Enabled = false;
+            _notices.Add(() => BemText.Format("{0}：模型包没有 Windows 资源目标，已停用。", p.Name));
+        }
+        var enabledPackages = Packages.Where(p => p.Enabled).ToArray();
+        foreach (var p in enabledPackages.Where(p => enabledPackages.Any(other => other != p && p.ConflictsWith(other))))
+        {
+            p.Enabled = false;
+            _notices.Add(() => BemText.Format("{0}：资源目标与其他启用包重叠，已在界面停用，请重新选择。", p.Name));
         }
         _baseline = BuildDesiredSettings();
         _settingsStamp = stamp;
@@ -507,10 +568,11 @@ internal sealed class BemPackageService
             // Validate the exact staged bytes before exposing them to the library/runtime.
             if (!SkipValidation) await BemToolService.RunAsync(installRoot, ["validate", temp], token);
             var p = ReadMetadata(temp, SkipValidation);
+            if (!p.SupportsCurrentPlatform) throw new InvalidDataException(BemText.Get("此模型包没有 Windows 资源目标，无法在当前平台导入或启用。"));
             var old = Packages.FirstOrDefault(x => x.Id == p.Id);
             var caseCollision = Packages.FirstOrDefault(x => x.Id.Equals(p.Id, StringComparison.OrdinalIgnoreCase) && x.Id != p.Id);
             if (caseCollision != null) throw new InvalidDataException(BemText.Get("包 ID 与现有包仅大小写不同，不能安全存储。"));
-            if (old != null && old.Character != p.Character) throw new InvalidDataException(BemText.Get("同一个包 ID 不能更新为另一角色。"));
+            if (old != null && old.TargetKey != p.TargetKey) throw new InvalidDataException(BemText.Get("同一个包 ID 不能更新为另一目标。"));
             RequireGameClosed();
             System.IO.File.Move(temp, Path.Combine(dir, p.Id + ".bem"), true);
             if (old != null && !SameDirectory(Path.GetDirectoryName(old.File)!, dir)) System.IO.File.Delete(old.File);
@@ -527,10 +589,11 @@ internal sealed class BemPackageService
 
     public async Task SetEnabledAsync(BemPackage package, bool enabled)
     {
+        if (enabled && !package.SupportsCurrentPlatform) throw new InvalidOperationException(BemText.Get("此模型包没有 Windows 资源目标，无法在当前平台导入或启用。"));
         if (enabled)
-            foreach (var other in Packages.Where(p => p.Character == package.Character)) other.Enabled = false;
+            foreach (var other in Packages.Where(p => p.ConflictsWith(package))) other.Enabled = false;
         package.Enabled = enabled;
-        await SaveCoreAsync((enabled ? Packages.Where(p => p.Character == package.Character) : new[] { package }).Select(p => p.Id).ToHashSet(StringComparer.Ordinal));
+        await SaveCoreAsync((enabled ? Packages.Where(p => p == package || p.ConflictsWith(package)) : new[] { package }).Select(p => p.Id).ToHashSet(StringComparer.Ordinal));
     }
 
     public async Task DisableAllAsync()

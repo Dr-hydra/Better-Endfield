@@ -91,7 +91,13 @@ bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,Mod
             error="fast_loading must be boolean";return false;
         }
         if(parsed.skip_validation) parsed.diagnostics.push_back("Developer mode: model validation disabled; crashes and incorrect rendering are possible.");
-        std::set<std::string> roles,resources,conflicts;
+        std::map<std::string,std::string> legacyRoles,resourceOwners;
+        std::set<std::string> packageIds,conflicts;
+#if defined(__ANDROID__)
+        constexpr std::string_view platform="android-arm64";
+#else
+        constexpr std::string_view platform="windows-x64";
+#endif
         for(const auto& [name,values]:sections) {
             if(!name.starts_with("Mod.")) continue;
             auto get=[&](const char* key) {auto i=values.find(key);return i==values.end()?std::string{}:i->second;};
@@ -114,14 +120,25 @@ bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,Mod
                 parsed.diagnostics.push_back("Parameters removed or invalid; using package defaults: "+name+": "+why);
                 parameters=info.default_parameters;
             }
-            if(!roles.insert(info.character_id).second || resources.contains(info.world_resource)||resources.contains(info.ui_resource)) {
-                conflicts.insert(info.character_id); parsed.diagnostics.push_back("Conflicting enabled package: "+info.character_id); continue;
+            std::vector<const BemResourceInfo*> selectedResources;
+            std::vector<std::string> keys;
+            if(info.minor>=4) {
+                for(const auto& resource:info.resources) if(std::find(resource.platforms.begin(),resource.platforms.end(),platform)!=resource.platforms.end()) {
+                    selectedResources.push_back(&resource); keys.push_back(std::string(platform)+":"+resource.name);
+                }
+                if(selectedResources.empty()) { parsed.diagnostics.push_back("Package has no resource for "+std::string(platform)+": "+info.package_id); continue; }
+            } else {
+                selectedResources.push_back(nullptr);
+                keys={std::string(platform)+":"+info.world_resource,std::string(platform)+":"+info.ui_resource};
+                if(auto old=legacyRoles.find(info.character_id);old!=legacyRoles.end()) {
+                    conflicts.insert(old->second); conflicts.insert(info.package_id);
+                } else legacyRoles.emplace(info.character_id,info.package_id);
             }
-            resources.insert(info.world_resource); resources.insert(info.ui_resource);
-            auto own=std::make_shared<OwnedCharacterAdapter>(); own->id=info.character_id;
-            own->world=info.world_resource; own->ui=info.ui_resource; own->names=info.component_names;
-            for(size_t i=0;i<own->names.size();++i) own->components.push_back({own->names[i].c_str(),info.original_counts[i]});
-            own->adapter={own->id.c_str(),own->world.c_str(),own->ui.c_str(),"",false,own->components};
+            if(!packageIds.insert(info.package_id).second) conflicts.insert(info.package_id);
+            for(const auto& resourceKey:keys) {
+                auto [old,inserted]=resourceOwners.emplace(resourceKey,info.package_id);
+                if(!inserted) { conflicts.insert(old->second); conflicts.insert(info.package_id); }
+            }
             std::error_code file_error;
             const auto stamp=std::filesystem::last_write_time(path,file_error);
             const auto bytes=std::filesystem::file_size(path,file_error);
@@ -130,10 +147,36 @@ bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,Mod
                 (parsed.skip_validation?"unchecked":"checked")+"\n"+
                 (parsed.loading_optimization?"optimized":"normal")+"\n"+
                 FileTimeIdentity(stamp)+":"+std::to_string(bytes);
-            parsed.enabled.push_back({&own->adapter,canonical,appearance,parsed.skip_validation,parsed.loading_optimization,key,parameters});
-            parsed.owned_adapters.push_back(std::move(own));
+            for(const auto* resource:selectedResources) {
+                auto own=std::make_shared<OwnedCharacterAdapter>(); own->id=info.target_id;
+                std::vector<uint32_t> ids;
+                if(resource) {
+                    own->world=resource->name; own->ui=resource->name; own->resource_id=resource->id;
+                    own->asset_path=resource->asset_path; ids=resource->component_ids;
+                } else {
+                    own->world=info.world_resource; own->ui=info.ui_resource;
+                    for(uint32_t id=0;id<info.component_names.size();++id) ids.push_back(id);
+                }
+                own->names.reserve(ids.size()); own->receiver_paths.reserve(ids.size());
+                for(auto id:ids) {
+                    own->names.push_back(info.component_names.at(id));
+                    own->receiver_paths.push_back(resource?info.component_paths.at(id):std::string{});
+                }
+                for(size_t local=0;local<ids.size();++local) {
+                    const auto id=ids[local];
+                    own->components.push_back({own->names[local].c_str(),info.original_counts.at(id),
+                        own->receiver_paths[local].c_str(),resource && info.component_static.at(id)});
+                }
+                own->adapter={own->id.c_str(),own->world.c_str(),own->ui.c_str(),"",false,own->components,
+                    own->resource_id.c_str(),own->asset_path.c_str(),resource?resource->lod:0,resource!=nullptr};
+                const auto resourceKey=resource?key+"\nresource:"+resource->id:key;
+                parsed.enabled.push_back({&own->adapter,canonical,appearance,parsed.skip_validation,
+                    parsed.loading_optimization,resourceKey,parameters,own->resource_id,info.package_id});
+                parsed.owned_adapters.push_back(std::move(own));
+            }
         }
-        std::erase_if(parsed.enabled,[&](const auto& m){return conflicts.contains(m.adapter->id);});
+        for(const auto& id:conflicts) parsed.diagnostics.push_back("Conflicting enabled package: "+id);
+        std::erase_if(parsed.enabled,[&](const auto& m){return conflicts.contains(m.package_id);});
         output=std::move(parsed);return true;
     } catch(const std::exception& e) {error=e.what();return false;}
 }

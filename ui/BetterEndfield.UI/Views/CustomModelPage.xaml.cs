@@ -64,13 +64,13 @@ public sealed partial class CustomModelPage : UserControl
 
     private void UpdatePageLanguage()
     {
-        PageTitle.Text = BemText.Get("角色外观 · BEM");
-        PageIntro.Text = BemText.Get("支持 BEM 1.0–1.3 模型包，为每个角色选择外观、组件和作者提供的形态滑条。滑条点击应用后保存；可开启实验热切换。");
+        PageTitle.Text = BemText.Get("角色与武器 · BEM");
+        PageIntro.Text = BemText.Get("支持 BEM 1.0–1.4 模型包，管理角色、武器和技能形态。资源目标不重叠的模型包可以同时启用。");
         ImportButton.Content = BemText.Get("导入 BEM / ZIP");
         ConvertButton.Content = BemText.Get("其他来源 Mod 转换…");
         RefreshButton.Content = BemText.Get("刷新");
         PackageFolderButton.Content = BemText.Get("打开包目录");
-        CharacterFilter.Header = BemText.Get("按角色筛选");
+        CharacterFilter.Header = BemText.Get("按角色或武器筛选");
         DisableAllButton.Content = BemText.Get("关闭全部模型");
         bool chinese = LocalizationService.Instance.IsChinese;
         ModelOverlayToggle.Header = chinese ? "模型悬浮窗" : "Model overlay";
@@ -155,19 +155,22 @@ public sealed partial class CustomModelPage : UserControl
         finally { _migrating = false; }
     }
 
+    private static string TargetLabel(BemPackage package) => package.TargetKind == "weapon"
+        ? BemText.Get("武器") + " · " + package.TargetId : PresetOptions.GetCharacterName(package.TargetId);
+
     private void UpdateCharacterFilter()
     {
-        var characters = _service.Packages.Select(p => p.Character).Distinct(StringComparer.Ordinal).OrderBy(id => id).ToArray();
-        if (!characters.Contains(_selectedCharacter, StringComparer.Ordinal)) _selectedCharacter = "";
+        var targets = _service.Packages.DistinctBy(p => p.TargetKey).OrderBy(p => p.TargetKey).ToArray();
+        if (!targets.Any(p => p.TargetKey == _selectedCharacter)) _selectedCharacter = "";
         _updatingCharacterFilter = true;
         try
         {
             CharacterFilter.Items.Clear();
-            CharacterFilter.Items.Add(new ComboBoxItem { Content = BemText.Get("全部角色"), Tag = "" });
-            foreach (string id in characters)
-                CharacterFilter.Items.Add(new ComboBoxItem { Content = PresetOptions.GetCharacterName(id), Tag = id });
+            CharacterFilter.Items.Add(new ComboBoxItem { Content = BemText.Get("全部模型"), Tag = "" });
+            foreach (var target in targets)
+                CharacterFilter.Items.Add(new ComboBoxItem { Content = TargetLabel(target), Tag = target.TargetKey });
             CharacterFilter.SelectedItem = CharacterFilter.Items.Cast<ComboBoxItem>().First(item => (string)item.Tag == _selectedCharacter);
-            CharacterFilter.IsEnabled = characters.Length > 0;
+            CharacterFilter.IsEnabled = targets.Length > 0;
         }
         finally { _updatingCharacterFilter = false; }
         ApplyCharacterFilter();
@@ -223,15 +226,15 @@ public sealed partial class CustomModelPage : UserControl
             EmptyHint.Visibility = _service.Packages.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
             PackageCards.Children.Clear();
             _localizeCards.Clear();
-            foreach (var p in _service.Packages.OrderBy(p => p.Character).ThenBy(p => p.Name))
+            foreach (var p in _service.Packages.OrderBy(p => p.TargetKey).ThenBy(p => p.Name))
             {
                 var stack = new StackPanel { Spacing = 10 };
                 var header = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
-                header.Children.Add(new Image { Source = GachaIconService.Load(p.Character), Width = 56, Height = 56 });
+                if (p.TargetKind == "character") header.Children.Add(new Image { Source = GachaIconService.Load(p.TargetId), Width = 56, Height = 56 });
                 var labels = new StackPanel { Spacing = 4 };
                 var packageTitle = new TextBlock { FontSize = 20, TextWrapping = TextWrapping.Wrap };
                 BemLocalizedUI.Set(packageTitle, TextBlock.TextProperty,
-                    () => PresetOptions.GetCharacterName(p.Character) + " · " + p.Name);
+                    () => TargetLabel(p) + " · " + p.Name);
                 labels.Children.Add(packageTitle);
                 labels.Children.Add(new TextBlock { Text = $"{p.Author}  /  {p.Version}  /  {p.Size / 1_000_000.0:F1} MB", Opacity = 0.7 });
                 header.Children.Add(labels); stack.Children.Add(header);
@@ -246,7 +249,7 @@ public sealed partial class CustomModelPage : UserControl
                     try
                     {
                         await _service.SetEnabledAsync(p, enabled.IsOn); Render();
-                        Message(() => BemText.Get("已保存"), () => BemText.Get("同角色只启用一个包。") + SelectionAppliedHint);
+                        Message(() => BemText.Get("已保存"), () => BemText.Get("资源目标重叠的其他包会自动停用。") + SelectionAppliedHint);
                     }
                     catch (Exception ex) { Reload(); Message(() => BemText.Get("保存失败"), () => ex.Message, InfoBarSeverity.Error); }
                 };
@@ -385,7 +388,7 @@ public sealed partial class CustomModelPage : UserControl
                     }
                     RefreshAvailability(); _localizeCards.Add(RefreshAvailability); stack.Children.Add(expander);
                 }
-                PackageCards.Children.Add(new Border { Tag = p.Character, Child = stack, Padding = new Thickness(16), CornerRadius = new CornerRadius(8), Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"] });
+                PackageCards.Children.Add(new Border { Tag = p.TargetKey, Child = stack, Padding = new Thickness(16), CornerRadius = new CornerRadius(8), Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"] });
             }
             ApplyCharacterFilter();
         }
@@ -512,7 +515,7 @@ public sealed partial class CustomModelPage : UserControl
                 IsChecked = true,
                 Content = new TextBlock
                 {
-                    Text = $"{PresetOptions.GetCharacterName(package.Character)} · {package.Name}\n{package.Version} · {package.Size / 1_000_000.0:F1} MB · {(update ? BemText.Get("更新已有包") : BemText.Get("新包"))}\n"+
+                    Text = $"{TargetLabel(package)} · {package.Name}\n{package.Version} · {package.Size / 1_000_000.0:F1} MB · {(update ? BemText.Get("更新已有包") : BemText.Get("新包"))}\n"+
                         (package.IsComposable ? BemText.Get("选项组：") + string.Join(BemText.ListSeparator, package.OptionGroups.Select(g => g.Name)) :
                             BemText.Get("外观：") + string.Join(BemText.ListSeparator, package.Appearances.Select(a => a.Name))),
                     TextWrapping = TextWrapping.Wrap

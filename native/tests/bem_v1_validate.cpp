@@ -20,7 +20,7 @@ bool SamePayload(const BemPocData& a,const BemPocData& b) {
     for(size_t i=0;i<a.components.size();++i) {
         const auto& x=a.components[i]; const auto& y=b.components[i];
         if(std::memcmp(&x.info,&y.info,sizeof(x.info)) || x.streams!=y.streams || x.indices!=y.indices ||
-            x.layout_crc!=y.layout_crc || x.attributes!=y.attributes || x.bone_names!=y.bone_names ||
+            x.static_mesh!=y.static_mesh || x.layout_crc!=y.layout_crc || x.attributes!=y.attributes || x.bone_names!=y.bone_names ||
             x.bone_aliases!=y.bone_aliases || x.material_names!=y.material_names ||
             x.keep_material_names!=y.keep_material_names || !sameRaw(x.bones,y.bones) ||
             !sameRaw(x.draws,y.draws) || !sameRaw(x.keep_material_overrides,y.keep_material_overrides)) return false;
@@ -194,7 +194,7 @@ int main(int argc,char** argv) {
         for(size_t i=0;i<first.components.size();++i) {
             const auto& a=first.components[i];const auto& b=second.components[i];
             if(std::memcmp(&a.info,&b.info,sizeof(a.info))!=0 || a.indices!=b.indices || a.streams!=b.streams ||
-               a.layout_crc!=b.layout_crc || a.attributes!=b.attributes || a.bone_names!=b.bone_names ||
+               a.static_mesh!=b.static_mesh || a.layout_crc!=b.layout_crc || a.attributes!=b.attributes || a.bone_names!=b.bone_names ||
                a.material_names!=b.material_names || a.bones.size()!=b.bones.size() || a.draws.size()!=b.draws.size()) return 1;
             for(size_t j=0;j<a.bones.size();++j)
                 if(std::memcmp(&a.bones[j],&b.bones[j],sizeof(BemComponent::BoneSource))!=0) return 1;
@@ -231,8 +231,24 @@ int main(int argc,char** argv) {
         std::string(reinterpret_cast<const char*>(utf.data()),utf.size())+
         (info.minor?"\noptions="+info.default_options:"\nappearance="+info.default_appearance)+"\n";
     ModRegistry registry;
-    if(!ParseModRegistry(ini,std::filesystem::path(argv[1]).parent_path(),registry,error) || registry.enabled.size()!=1 ||
-        !registry.Match(info.world_resource)||!registry.Match(info.ui_resource)) {std::cerr<<"Registry: "<<error;return 1;}
+    if(!ParseModRegistry(ini,std::filesystem::path(argv[1]).parent_path(),registry,error)) {std::cerr<<"Registry: "<<error;return 1;}
+    if(info.minor>=4) {
+#if defined(__ANDROID__)
+        const std::string platform="android-arm64";
+#else
+        const std::string platform="windows-x64";
+#endif
+        size_t expected=0;
+        for(const auto& resource:info.resources) if(std::find(resource.platforms.begin(),resource.platforms.end(),platform)!=resource.platforms.end()) {
+            ++expected;
+            const auto* mod=registry.Match(resource.name);
+            if(!mod || mod->resource_id!=resource.id || !mod->adapter->explicit_resource ||
+                mod->adapter->components.size()!=resource.component_ids.size()) {std::cerr<<"Explicit resource registry mismatch";return 1;}
+        }
+        if(registry.enabled.size()!=expected) {std::cerr<<"Resource registry count differs";return 1;}
+    } else if(registry.enabled.size()!=1 || !registry.Match(info.world_resource)||!registry.Match(info.ui_resource)) {
+        std::cerr<<"Registry: "<<error;return 1;
+    }
     if(rewriteArg) {
         std::string report;
         if(!RewriteBemTextures(argv[1],argv[rewriteArg],[](const BemJson&,BemJson&,std::vector<uint8_t>&){},
@@ -241,6 +257,6 @@ int main(int argc,char** argv) {
         if(!ReadBemPackageInfo(argv[rewriteArg],rewritten,error) || rewritten.minor!=info.minor ||
            rewritten.package_id!=info.package_id) {std::cerr<<"Rewritten metadata: "<<error;return 1;}
     }
-    std::cout<<"BEMv1 package and world/UI routing accepted\n";
+    std::cout<<"BEMv1 package and resource routing accepted\n";
     return 0;
 }

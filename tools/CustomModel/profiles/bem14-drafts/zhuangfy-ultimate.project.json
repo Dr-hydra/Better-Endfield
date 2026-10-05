@@ -1,0 +1,2299 @@
+{
+  "manifest": {
+    "schema": 1,
+    "package_id": "draft.zhuangfy.ultimate.win",
+    "name": "Unverified target scaffold",
+    "author": "BEM target tool",
+    "version": "1",
+    "required_capabilities": [
+      "native-materials",
+      "composable-options",
+      "multi-resource-targets"
+    ],
+    "target": {
+      "id": "chr_0030_zhuangfy",
+      "profile_id": "draft.zhuangfy.ultimate.win",
+      "revision": "1",
+      "snapshot": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+      "kind": "character",
+      "platform": "windows-x64",
+      "resources": [
+        {
+          "id": "ultimate",
+          "name": "chr_0030_zhuangfy_ult_postmodel",
+          "asset_path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0030_zhuangfy_ult_postmodel.prefab",
+          "platforms": [
+            "windows-x64"
+          ],
+          "lod": 0
+        },
+        {
+          "id": "ability",
+          "name": "abilityentity_chr_0030_zhuangfy_ult_postmodel",
+          "asset_path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/abilityentities/abilityentity_chr_0030_zhuangfy_ult_postmodel.prefab",
+          "platforms": [
+            "windows-x64"
+          ],
+          "lod": 0
+        },
+        {
+          "id": "mirror",
+          "name": "abilityentity_chr_0030_zhuangfy_ult_mirror_postmodel",
+          "asset_path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/abilityentities/abilityentity_chr_0030_zhuangfy_ult_mirror_postmodel.prefab",
+          "platforms": [
+            "windows-x64"
+          ],
+          "lod": 0
+        }
+      ],
+      "components": [
+        {
+          "id": 0,
+          "resource": "ultimate",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_body_02_lod0",
+          "mesh_name": "S_actor_zhuangfy_body_02_lod0",
+          "original_index_count": 75147,
+          "bone_names": [
+            "Bip001_L_Calf",
+            "Bip001_LCalfTwist1",
+            "Bip001_LCalfTwist",
+            "Bip001_L_Foot",
+            "Bip001_L_Thigh",
+            "Bip001_L_Calf_ty_plus",
+            "Bip001_LThighTwist1",
+            "Bip001_L_Calf_ty_minus",
+            "Bip001_LThighTwist",
+            "Bip001_RThighTwist",
+            "Bip001_Pelvis",
+            "Bip001_L_Thigh_ty_plus",
+            "Bip001_Spine",
+            "Bip001_L_Thigh_tz_minus",
+            "Bip001_L_Thigh_ty_minus",
+            "Bip001_Spine1",
+            "Bip001_Spine2",
+            "Bip001_LUpArmTwist1",
+            "Bip001_LUpArmTwist",
+            "Bip001_L_UpperArm",
+            "Bip001_L_Clavicle",
+            "Bip001_L_UpperArm_tz_plus",
+            "Bip001_L_UpperArm_ty_minus",
+            "Bip001_L_UpperArm_ty_plus",
+            "xiong_L_0_skin_jnt",
+            "Bip001_R_Clavicle",
+            "xiong_R_0_skin_jnt",
+            "Bip001_Neck",
+            "Bip001_Head",
+            "Bip001_L_Foot_ty_plus",
+            "Bip001_R_Thigh_ty_plus",
+            "Bip001_RThighTwist1",
+            "Bip001_R_Thigh_ty_minus",
+            "faceMdJawDnJoint",
+            "faceLfCheekOtDnJoint",
+            "Bip001_L_Forearm",
+            "Bip001_L_Forearm_ty_plus",
+            "Bip001_L_ForeTwist",
+            "Bip001_L_ForeTwist1",
+            "Bip001_L_Hand",
+            "Bip001_L_Forearm_ty_minus",
+            "Bip001_L_Hand_ty_plus",
+            "Bip001_L_Hand_ty_minus",
+            "Bip001_L_Finger0",
+            "Bip001_L_Finger12",
+            "Bip001_L_Finger11",
+            "Bip001_L_Finger1",
+            "Bip001_L_Finger2",
+            "Bip001_L_Finger22",
+            "Bip001_L_Finger21",
+            "Bip001_L_Finger3",
+            "Bip001_L_Finger32",
+            "Bip001_L_Finger31",
+            "Bip001_L_Finger4",
+            "Bip001_L_Finger42",
+            "Bip001_L_Finger41",
+            "Bip001_L_Finger02",
+            "Bip001_L_Finger01",
+            "Bip001_L_Foot_ty_minus",
+            "Bip001_L_Toe0",
+            "Bip001_RCalfTwist1",
+            "Bip001_RCalfTwist",
+            "Bip001_R_Calf",
+            "Bip001_R_Foot",
+            "Bip001_R_Calf_ty_plus",
+            "Bip001_R_Thigh",
+            "Bip001_R_Calf_ty_minus",
+            "Bip001_R_Thigh_tz_minus",
+            "Bip001_RUpArmTwist",
+            "Bip001_RUpArmTwist1",
+            "Bip001_R_UpperArm",
+            "Bip001_R_UpperArm_ty_plus",
+            "Bip001_R_UpperArm_ty_minus",
+            "Bip001_R_UpperArm_tz_plus",
+            "Bip001_R_Forearm",
+            "Bip001_R_Foot_ty_plus",
+            "faceRtCheekOtDnJoint",
+            "Bip001_R_Forearm_ty_plus",
+            "Bip001_R_ForeTwist",
+            "Bip001_R_ForeTwist1",
+            "Bip001_R_Hand",
+            "Bip001_R_Forearm_ty_minus",
+            "Bip001_R_Hand_ty_plus",
+            "Bip001_R_Hand_ty_minus",
+            "Bip001_R_Finger12",
+            "Bip001_R_Finger11",
+            "Bip001_R_Finger1",
+            "Bip001_R_Finger2",
+            "Bip001_R_Finger22",
+            "Bip001_R_Finger21",
+            "Bip001_R_Finger3",
+            "Bip001_R_Finger32",
+            "Bip001_R_Finger4",
+            "Bip001_R_Finger31",
+            "Bip001_R_Finger42",
+            "Bip001_R_Finger41",
+            "Bip001_R_Finger0",
+            "Bip001_R_Finger02",
+            "Bip001_R_Finger01",
+            "Bip001_R_Foot_ty_minus",
+            "Bip001_R_Toe0",
+            "hand_base_L_a_01_jnt",
+            "hand_base_L_a_02_jnt",
+            "hand_base_R_a_01_jnt",
+            "hand_base_R_a_02_jnt",
+            "hair_base_L_f_02_jnt",
+            "hair_base_L_f_01_jnt",
+            "hair_base_L_f_03_jnt",
+            "hair_base_L_a_01_jnt",
+            "hair_base_L_a_03_jnt",
+            "hair_base_L_a_02_jnt",
+            "hair_base_R_f_03_jnt",
+            "hair_base_R_f_01_jnt",
+            "hair_base_R_f_02_jnt",
+            "hair_base_R_a_02_jnt",
+            "hair_base_R_a_01_jnt",
+            "hair_base_R_a_03_jnt",
+            "band_base_Back_a_01_jnt",
+            "tail_base_M_a_02_jnt",
+            "tail_base_M_a_01_jnt",
+            "tail_base_M_a_03_jnt",
+            "tail_base_M_a_04_jnt",
+            "tail_base_M_a_06_jnt",
+            "tail_base_M_a_05_jnt",
+            "tail_base_M_a_07_jnt",
+            "tail_base_M_a_08_jnt",
+            "tail_base_M_a_09_jnt"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_cloth_03"
+          ]
+        },
+        {
+          "id": 1,
+          "resource": "ultimate",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_body_03_lod0",
+          "mesh_name": "S_actor_zhuangfy_body_03_lod0",
+          "original_index_count": 8532,
+          "bone_names": [
+            "arm_ribbon_L_b_01_jnt",
+            "arm_ribbon_L_a_01_jnt",
+            "arm_ribbon_L_a_02_jnt",
+            "arm_ribbon_L_a_04_jnt",
+            "arm_ribbon_L_a_03_jnt",
+            "arm_ribbon_L_c_01_jnt",
+            "arm_ribbon_L_c_02_jnt",
+            "arm_ribbon_L_c_03_jnt",
+            "arm_ribbon_L_c_04_jnt",
+            "arm_ribbon_L_c_05_jnt",
+            "arm_ribbon_L_c_06_jnt",
+            "arm_ribbon_L_c_07_jnt",
+            "arm_ribbon_L_c_08_jnt",
+            "arm_ribbon_L_a_05_jnt",
+            "arm_ribbon_L_a_07_jnt",
+            "arm_ribbon_L_a_06_jnt",
+            "arm_ribbon_R_b_01_jnt",
+            "arm_ribbon_R_a_01_jnt",
+            "arm_ribbon_R_a_02_jnt",
+            "arm_ribbon_R_a_03_jnt",
+            "arm_ribbon_R_a_04_jnt",
+            "arm_ribbon_R_c_01_jnt",
+            "arm_ribbon_R_c_02_jnt",
+            "arm_ribbon_R_c_03_jnt",
+            "arm_ribbon_R_c_05_jnt",
+            "arm_ribbon_R_c_04_jnt",
+            "arm_ribbon_R_c_06_jnt",
+            "arm_ribbon_R_c_07_jnt",
+            "arm_ribbon_R_c_08_jnt",
+            "arm_ribbon_R_a_06_jnt",
+            "arm_ribbon_R_a_05_jnt",
+            "arm_ribbon_R_a_07_jnt",
+            "clothes_ribbon_L_e_01_jnt",
+            "clothes_ribbon_L_e_02_jnt",
+            "clothes_ribbon_L_e_03_jnt",
+            "clothes_ribbon_L_e_04_jnt",
+            "clothes_ribbon_L_e_05_jnt",
+            "clothes_ribbon_L_e_06_jnt",
+            "Bip001_Spine",
+            "Bip001_Pelvis",
+            "Bip001_Spine1",
+            "Bip001_LThighTwist",
+            "clothes_ribbon_R_e_01_jnt",
+            "clothes_ribbon_R_e_02_jnt",
+            "clothes_ribbon_R_e_03_jnt",
+            "clothes_ribbon_R_e_04_jnt",
+            "clothes_ribbon_R_e_06_jnt",
+            "clothes_ribbon_R_e_05_jnt"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_body_03"
+          ]
+        },
+        {
+          "id": 2,
+          "resource": "ultimate",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_eyebrow_02_lod0",
+          "mesh_name": "S_actor_zhuangfy_eyebrow_02_lod0",
+          "original_index_count": 3234,
+          "bone_names": [
+            "eyeRt01EyelashJoint",
+            "eyeRt02EyelashJoint",
+            "eyeRt03EyelashJoint",
+            "eyeRt04EyelashJoint",
+            "eyeRt05EyelashJoint",
+            "eyeRt06Joint",
+            "eyeRt07Joint",
+            "eyeRt01Joint",
+            "eyeRt08Joint",
+            "browLineRt01Joint",
+            "browLineRt02Joint",
+            "browLineRt03Joint",
+            "browRt01Joint",
+            "browRt02Joint",
+            "browRt03Joint",
+            "browRt05Joint",
+            "browRt04Joint",
+            "eyeLf01EyelashJoint",
+            "eyeLf02EyelashJoint",
+            "eyeLf03EyelashJoint",
+            "eyeLf04EyelashJoint",
+            "eyeLf05EyelashJoint",
+            "eyeLf06Joint",
+            "eyeLf07Joint",
+            "eyeLf01Joint",
+            "eyeLf08Joint",
+            "browLineLf03Joint",
+            "browLineLf01Joint",
+            "browLineLf02Joint",
+            "browLf01Joint",
+            "browLf02Joint",
+            "browLf03Joint",
+            "browLf05Joint",
+            "browLf04Joint"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_brow_02"
+          ]
+        },
+        {
+          "id": 3,
+          "resource": "ultimate",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_eyeshadow_02_lod0",
+          "mesh_name": "S_actor_zhuangfy_eyeshadow_02_lod0",
+          "original_index_count": 120,
+          "bone_names": [
+            "eyeRt02Joint",
+            "eyeRt01Joint",
+            "eyeRt03Joint",
+            "eyeRt04Joint",
+            "eyeRt05Joint",
+            "eyeRt06Joint",
+            "eyeRt03IrissdJoint",
+            "eyeRt07Joint",
+            "eyeRt08Joint",
+            "eyeLf02Joint",
+            "eyeLf01Joint",
+            "eyeLf03Joint",
+            "eyeLf04Joint",
+            "eyeLf05Joint",
+            "eyeLf06Joint",
+            "eyeLf03IrissdJoint",
+            "eyeLf07Joint",
+            "eyeLf08Joint"
+          ],
+          "materials": [
+            "M_eyeshadow_common_05",
+            "M_eyewhiteshadow_common_01"
+          ]
+        },
+        {
+          "id": 4,
+          "resource": "ultimate",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_face_02_lod0",
+          "mesh_name": "S_actor_zhuangfy_face_02_lod0",
+          "original_index_count": 11346,
+          "bone_names": [
+            "lipRdn4Joint",
+            "lipMdnJoint",
+            "lipRup1Joint",
+            "lipRdn1Joint",
+            "Bip001_Head",
+            "lipLup4Joint",
+            "lipRup4Joint",
+            "lipMupJoint",
+            "lipRup3Joint",
+            "lipRup2Joint",
+            "lipLdn4Joint",
+            "faceMdJawDnJoint",
+            "NoseMd01Joint",
+            "faceLfCheekOtDnJoint",
+            "lipRdn3Joint",
+            "lipRdn2Joint",
+            "faceRtCheekOtDnJoint",
+            "Bip001_Neck",
+            "faceRtCheekOtJoint",
+            "faceRtCheekOtUpJoint",
+            "eyeRt06Joint",
+            "eyeRt05Joint",
+            "faceRtCheekOtInJoint",
+            "eyeRt04Joint",
+            "eyeRt07Joint",
+            "eyeRt08Joint",
+            "eyeLf06Joint",
+            "eyeRt03Joint",
+            "eyeRt02Joint",
+            "eyeRt01Joint",
+            "lipLup2Joint",
+            "lipLup3Joint",
+            "lipLup1Joint",
+            "lipLdn3Joint",
+            "lipLdn2Joint",
+            "faceLfCheekOtJoint",
+            "faceLfCheekOtUpJoint",
+            "lipLdn1Joint",
+            "eyeLf05Joint",
+            "faceLfCheekOtInJoint",
+            "eyeLf04Joint",
+            "eyeLf07Joint",
+            "eyeLf08Joint",
+            "eyeLf03Joint",
+            "eyeLf02Joint",
+            "eyeLf01Joint",
+            "line_toothJoint",
+            "TongueMd04Joint",
+            "TongueMd03Joint",
+            "TongueMd02Joint",
+            "TongueMd01Joint",
+            "faceMdToothUpJoint",
+            "faceMdToothDnJoint",
+            "lineJoint"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_face_02"
+          ]
+        },
+        {
+          "id": 5,
+          "resource": "ultimate",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_hair_02_lod0",
+          "mesh_name": "S_actor_zhuangfy_hair_02_lod0",
+          "original_index_count": 52332,
+          "bone_names": [
+            "Bip001_Head",
+            "Bip001_Neck",
+            "hair_base_R_b_01_jnt",
+            "hair_base_R_b_02_jnt",
+            "hair_base_R_b_03_jnt",
+            "hair_base_R_b_04_jnt",
+            "hair_base_R_b_05_jnt",
+            "hair_base_R_b_06_jnt",
+            "hair_base_L_b_01_jnt",
+            "hair_base_R_c_01_jnt",
+            "hair_base_R_c_02_jnt",
+            "hair_base_R_c_03_jnt",
+            "hair_base_R_c_04_jnt",
+            "hair_base_R_d_01_jnt",
+            "hair_base_R_d_02_jnt",
+            "hair_base_R_d_03_jnt",
+            "hair_base_R_d_04_jnt",
+            "hair_base_R_d_05_jnt",
+            "hair_base_L_b_02_jnt",
+            "hair_base_L_b_03_jnt",
+            "hair_base_L_b_04_jnt",
+            "hair_base_L_b_05_jnt",
+            "hair_base_L_b_06_jnt",
+            "hair_base_L_c_01_jnt",
+            "hair_base_L_c_03_jnt",
+            "hair_base_L_c_02_jnt",
+            "hair_base_L_c_04_jnt",
+            "hair_base_L_d_02_jnt",
+            "hair_base_L_d_01_jnt",
+            "hair_base_L_d_03_jnt",
+            "hair_base_L_d_04_jnt",
+            "hair_base_L_d_05_jnt",
+            "hair_base_R_f_01_jnt",
+            "hair_base_R_f_03_jnt",
+            "hair_base_R_f_02_jnt",
+            "hair_base_R_e_01_jnt",
+            "hair_base_R_a_03_jnt",
+            "hair_base_R_a_02_jnt",
+            "hair_base_R_a_01_jnt",
+            "hair_base_R_a_04_jnt",
+            "hair_base_L_f_01_jnt",
+            "hair_base_L_f_02_jnt",
+            "hair_base_L_f_03_jnt",
+            "hair_base_L_e_01_jnt",
+            "hair_base_L_a_01_jnt",
+            "hair_base_L_a_02_jnt",
+            "hair_base_L_a_03_jnt",
+            "hair_base_L_a_04_jnt",
+            "band_base_Back_a_01_jnt",
+            "hair_base_M_a_01_jnt",
+            "hair_base_M_a_02_jnt",
+            "hair_base_L_e_02_jnt",
+            "hair_base_R_e_02_jnt"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_hair_02",
+            "M_actor_zhuangfy_hairt_02"
+          ]
+        },
+        {
+          "id": 6,
+          "resource": "ultimate",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_hairshadow_02_lod0",
+          "mesh_name": "S_actor_zhuangfy_hairshadow_02_lod0",
+          "original_index_count": 957,
+          "bone_names": [
+            "hair_base_L_e_02_jnt",
+            "hair_base_M_a_02_jnt",
+            "hair_base_L_e_01_jnt",
+            "hair_base_M_a_01_jnt",
+            "Bip001_Head",
+            "hair_base_R_e_01_jnt",
+            "hair_base_R_e_02_jnt",
+            "hair_base_R_f_03_jnt",
+            "hair_base_R_f_01_jnt",
+            "hair_base_R_f_02_jnt",
+            "hair_base_L_f_02_jnt",
+            "hair_base_L_f_03_jnt",
+            "hair_base_L_f_01_jnt"
+          ],
+          "materials": [
+            "M_hairshadow_common_09"
+          ]
+        },
+        {
+          "id": 7,
+          "resource": "ultimate",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_iris_02_lod0",
+          "mesh_name": "S_actor_zhuangfy_iris_02_lod0",
+          "original_index_count": 1032,
+          "bone_names": [
+            "faceRtHighlightJoint",
+            "faceLfHighlightJoint",
+            "faceRtHighlightJoint_b",
+            "faceLfHighlightJoint_b",
+            "faceRtPupilJoint",
+            "faceRtIrisJoint",
+            "faceLfPupilJoint",
+            "faceLfIrisJoint"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_iris_02"
+          ]
+        },
+        {
+          "id": 8,
+          "resource": "ultimate",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_tail_02_lod0",
+          "mesh_name": "S_actor_zhuangfy_tail_02_lod0",
+          "original_index_count": 11469,
+          "bone_names": [
+            "tail_base_M_a_07_jnt",
+            "tail_base_M_a_08_jnt",
+            "tail_base_M_a_09_jnt",
+            "tail_base_M_a_06_jnt",
+            "tail_base_M_a_05_jnt",
+            "tail_base_M_a_04_jnt",
+            "tail_base_M_a_03_jnt",
+            "tail_base_M_a_02_jnt"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_cloth_04"
+          ]
+        },
+        {
+          "id": 9,
+          "resource": "ultimate",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_vfxbody_01_lod0",
+          "mesh_name": "S_actor_zhuangfy_vfxbody_01_lod0",
+          "original_index_count": 5088,
+          "bone_names": [
+            "Bip001_Spine",
+            "Bip001_Pelvis",
+            "Bip001_Spine1",
+            "Bip001_Spine2",
+            "Bip001_Neck",
+            "Bip001_Head",
+            "Bip001_L_Clavicle",
+            "Bip001_LUpArmTwist",
+            "Bip001_LUpArmTwist1",
+            "Bip001_L_UpperArm",
+            "Bip001_L_Forearm",
+            "Bip001_L_ForeTwist",
+            "Bip001_L_Hand",
+            "Bip001_L_ForeTwist1",
+            "Bip001_R_Clavicle",
+            "Bip001_RUpArmTwist1",
+            "Bip001_RUpArmTwist",
+            "Bip001_R_UpperArm",
+            "Bip001_R_Forearm",
+            "Bip001_R_ForeTwist",
+            "Bip001_R_Hand",
+            "Bip001_R_ForeTwist1"
+          ],
+          "materials": [
+            "M_fx_actor_zhuangfy_vfxbody_01"
+          ]
+        },
+        {
+          "id": 10,
+          "resource": "ultimate",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_vfxbody_02_lod0",
+          "mesh_name": "S_actor_zhuangfy_vfxbody_02_lod0",
+          "original_index_count": 8154,
+          "bone_names": [
+            "Bip001_L_Foot",
+            "Bip001_L_Toe0",
+            "Bip001_LCalfTwist1",
+            "Bip001_LCalfTwist",
+            "Bip001_L_Calf",
+            "Bip001_L_Thigh",
+            "Bip001_LThighTwist",
+            "Bip001_LThighTwist1",
+            "Bip001_Pelvis",
+            "Bip001_Spine",
+            "Bip001_Spine1",
+            "Bip001_Spine2",
+            "Bip001_R_Foot",
+            "Bip001_R_Toe0",
+            "Bip001_RCalfTwist1",
+            "Bip001_RCalfTwist",
+            "Bip001_R_Calf",
+            "Bip001_R_Thigh",
+            "Bip001_RThighTwist1",
+            "Bip001_RThighTwist",
+            "tail_base_M_a_01_jnt",
+            "tail_base_M_a_02_jnt",
+            "tail_base_M_a_03_jnt",
+            "tail_base_M_a_04_jnt",
+            "tail_base_M_a_05_jnt",
+            "tail_base_M_a_06_jnt",
+            "tail_base_M_a_07_jnt",
+            "tail_base_M_a_08_jnt",
+            "tail_base_M_a_09_jnt",
+            "Bip001_Neck",
+            "Bip001_Head"
+          ],
+          "materials": [
+            "M_fx_actor_zhuangfy_vfxbody_01"
+          ]
+        },
+        {
+          "id": 11,
+          "resource": "ultimate",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_vfxbody_03_lod0",
+          "mesh_name": "S_actor_zhuangfy_vfxbody_03_lod0",
+          "original_index_count": 4512,
+          "bone_names": [
+            "arm_ribbon_L_a_07_jnt",
+            "arm_ribbon_L_a_04_jnt",
+            "arm_ribbon_L_a_05_jnt",
+            "arm_ribbon_L_a_06_jnt",
+            "arm_ribbon_L_a_02_jnt",
+            "arm_ribbon_L_a_03_jnt",
+            "arm_ribbon_L_a_01_jnt",
+            "arm_ribbon_L_b_01_jnt",
+            "arm_ribbon_L_c_01_jnt",
+            "arm_ribbon_L_c_02_jnt",
+            "arm_ribbon_L_c_03_jnt",
+            "arm_ribbon_L_c_04_jnt",
+            "arm_ribbon_L_c_05_jnt",
+            "arm_ribbon_L_c_06_jnt",
+            "arm_ribbon_L_c_07_jnt",
+            "arm_ribbon_L_c_08_jnt",
+            "clothes_ribbon_L_e_06_jnt",
+            "clothes_ribbon_L_e_04_jnt",
+            "clothes_ribbon_L_e_05_jnt",
+            "clothes_ribbon_L_e_03_jnt",
+            "clothes_ribbon_L_e_02_jnt",
+            "clothes_ribbon_L_e_01_jnt",
+            "arm_ribbon_R_a_07_jnt",
+            "arm_ribbon_R_a_04_jnt",
+            "arm_ribbon_R_a_05_jnt",
+            "arm_ribbon_R_a_06_jnt",
+            "arm_ribbon_R_a_03_jnt",
+            "arm_ribbon_R_a_02_jnt",
+            "arm_ribbon_R_a_01_jnt",
+            "arm_ribbon_R_b_01_jnt",
+            "arm_ribbon_R_c_01_jnt",
+            "arm_ribbon_R_c_02_jnt",
+            "arm_ribbon_R_c_03_jnt",
+            "arm_ribbon_R_c_04_jnt",
+            "arm_ribbon_R_c_05_jnt",
+            "arm_ribbon_R_c_06_jnt",
+            "arm_ribbon_R_c_07_jnt",
+            "arm_ribbon_R_c_08_jnt",
+            "clothes_ribbon_R_e_06_jnt",
+            "clothes_ribbon_R_e_05_jnt",
+            "clothes_ribbon_R_e_04_jnt",
+            "clothes_ribbon_R_e_03_jnt",
+            "clothes_ribbon_R_e_02_jnt",
+            "clothes_ribbon_R_e_01_jnt",
+            "hair_base_L_b_01_jnt",
+            "hair_base_L_b_02_jnt",
+            "hair_base_L_b_03_jnt",
+            "hair_base_L_b_04_jnt",
+            "hair_base_L_b_05_jnt",
+            "hair_base_L_b_06_jnt",
+            "hair_base_R_b_01_jnt",
+            "hair_base_R_b_02_jnt",
+            "hair_base_R_b_03_jnt",
+            "hair_base_R_b_04_jnt",
+            "hair_base_R_b_05_jnt",
+            "hair_base_R_b_06_jnt"
+          ],
+          "materials": [
+            "M_fx_actor_zhuangfy_vfxbody_01"
+          ]
+        },
+        {
+          "id": 12,
+          "resource": "ability",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_body_02_lod0",
+          "mesh_name": "S_actor_zhuangfy_body_02_lod0",
+          "original_index_count": 75147,
+          "bone_names": [
+            "Bip001_L_Calf",
+            "Bip001_LCalfTwist1",
+            "Bip001_LCalfTwist",
+            "Bip001_L_Foot",
+            "Bip001_L_Thigh",
+            "Bip001_L_Calf_ty_plus",
+            "Bip001_LThighTwist1",
+            "Bip001_L_Calf_ty_minus",
+            "Bip001_LThighTwist",
+            "Bip001_RThighTwist",
+            "Bip001_Pelvis",
+            "Bip001_L_Thigh_ty_plus",
+            "Bip001_Spine",
+            "Bip001_L_Thigh_tz_minus",
+            "Bip001_L_Thigh_ty_minus",
+            "Bip001_Spine1",
+            "Bip001_Spine2",
+            "Bip001_LUpArmTwist1",
+            "Bip001_LUpArmTwist",
+            "Bip001_L_UpperArm",
+            "Bip001_L_Clavicle",
+            "Bip001_L_UpperArm_tz_plus",
+            "Bip001_L_UpperArm_ty_minus",
+            "Bip001_L_UpperArm_ty_plus",
+            "xiong_L_0_skin_jnt",
+            "Bip001_R_Clavicle",
+            "xiong_R_0_skin_jnt",
+            "Bip001_Neck",
+            "Bip001_Head",
+            "Bip001_L_Foot_ty_plus",
+            "Bip001_R_Thigh_ty_plus",
+            "Bip001_RThighTwist1",
+            "Bip001_R_Thigh_ty_minus",
+            "faceMdJawDnJoint",
+            "faceLfCheekOtDnJoint",
+            "Bip001_L_Forearm",
+            "Bip001_L_Forearm_ty_plus",
+            "Bip001_L_ForeTwist",
+            "Bip001_L_ForeTwist1",
+            "Bip001_L_Hand",
+            "Bip001_L_Forearm_ty_minus",
+            "Bip001_L_Hand_ty_plus",
+            "Bip001_L_Hand_ty_minus",
+            "Bip001_L_Finger0",
+            "Bip001_L_Finger12",
+            "Bip001_L_Finger11",
+            "Bip001_L_Finger1",
+            "Bip001_L_Finger2",
+            "Bip001_L_Finger22",
+            "Bip001_L_Finger21",
+            "Bip001_L_Finger3",
+            "Bip001_L_Finger32",
+            "Bip001_L_Finger31",
+            "Bip001_L_Finger4",
+            "Bip001_L_Finger42",
+            "Bip001_L_Finger41",
+            "Bip001_L_Finger02",
+            "Bip001_L_Finger01",
+            "Bip001_L_Foot_ty_minus",
+            "Bip001_L_Toe0",
+            "Bip001_RCalfTwist1",
+            "Bip001_RCalfTwist",
+            "Bip001_R_Calf",
+            "Bip001_R_Foot",
+            "Bip001_R_Calf_ty_plus",
+            "Bip001_R_Thigh",
+            "Bip001_R_Calf_ty_minus",
+            "Bip001_R_Thigh_tz_minus",
+            "Bip001_RUpArmTwist",
+            "Bip001_RUpArmTwist1",
+            "Bip001_R_UpperArm",
+            "Bip001_R_UpperArm_ty_plus",
+            "Bip001_R_UpperArm_ty_minus",
+            "Bip001_R_UpperArm_tz_plus",
+            "Bip001_R_Forearm",
+            "Bip001_R_Foot_ty_plus",
+            "faceRtCheekOtDnJoint",
+            "Bip001_R_Forearm_ty_plus",
+            "Bip001_R_ForeTwist",
+            "Bip001_R_ForeTwist1",
+            "Bip001_R_Hand",
+            "Bip001_R_Forearm_ty_minus",
+            "Bip001_R_Hand_ty_plus",
+            "Bip001_R_Hand_ty_minus",
+            "Bip001_R_Finger12",
+            "Bip001_R_Finger11",
+            "Bip001_R_Finger1",
+            "Bip001_R_Finger2",
+            "Bip001_R_Finger22",
+            "Bip001_R_Finger21",
+            "Bip001_R_Finger3",
+            "Bip001_R_Finger32",
+            "Bip001_R_Finger4",
+            "Bip001_R_Finger31",
+            "Bip001_R_Finger42",
+            "Bip001_R_Finger41",
+            "Bip001_R_Finger0",
+            "Bip001_R_Finger02",
+            "Bip001_R_Finger01",
+            "Bip001_R_Foot_ty_minus",
+            "Bip001_R_Toe0",
+            "hand_base_L_a_01_jnt",
+            "hand_base_L_a_02_jnt",
+            "hand_base_R_a_01_jnt",
+            "hand_base_R_a_02_jnt",
+            "hair_base_L_f_02_jnt",
+            "hair_base_L_f_01_jnt",
+            "hair_base_L_f_03_jnt",
+            "hair_base_L_a_01_jnt",
+            "hair_base_L_a_03_jnt",
+            "hair_base_L_a_02_jnt",
+            "hair_base_R_f_03_jnt",
+            "hair_base_R_f_01_jnt",
+            "hair_base_R_f_02_jnt",
+            "hair_base_R_a_02_jnt",
+            "hair_base_R_a_01_jnt",
+            "hair_base_R_a_03_jnt",
+            "band_base_Back_a_01_jnt",
+            "tail_base_M_a_02_jnt",
+            "tail_base_M_a_01_jnt",
+            "tail_base_M_a_03_jnt",
+            "tail_base_M_a_04_jnt",
+            "tail_base_M_a_06_jnt",
+            "tail_base_M_a_05_jnt",
+            "tail_base_M_a_07_jnt",
+            "tail_base_M_a_08_jnt",
+            "tail_base_M_a_09_jnt"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_cloth_03"
+          ]
+        },
+        {
+          "id": 13,
+          "resource": "ability",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_body_03_lod0",
+          "mesh_name": "S_actor_zhuangfy_body_03_lod0",
+          "original_index_count": 8532,
+          "bone_names": [
+            "arm_ribbon_L_b_01_jnt",
+            "arm_ribbon_L_a_01_jnt",
+            "arm_ribbon_L_a_02_jnt",
+            "arm_ribbon_L_a_04_jnt",
+            "arm_ribbon_L_a_03_jnt",
+            "arm_ribbon_L_c_01_jnt",
+            "arm_ribbon_L_c_02_jnt",
+            "arm_ribbon_L_c_03_jnt",
+            "arm_ribbon_L_c_04_jnt",
+            "arm_ribbon_L_c_05_jnt",
+            "arm_ribbon_L_c_06_jnt",
+            "arm_ribbon_L_c_07_jnt",
+            "arm_ribbon_L_c_08_jnt",
+            "arm_ribbon_L_a_05_jnt",
+            "arm_ribbon_L_a_07_jnt",
+            "arm_ribbon_L_a_06_jnt",
+            "arm_ribbon_R_b_01_jnt",
+            "arm_ribbon_R_a_01_jnt",
+            "arm_ribbon_R_a_02_jnt",
+            "arm_ribbon_R_a_03_jnt",
+            "arm_ribbon_R_a_04_jnt",
+            "arm_ribbon_R_c_01_jnt",
+            "arm_ribbon_R_c_02_jnt",
+            "arm_ribbon_R_c_03_jnt",
+            "arm_ribbon_R_c_05_jnt",
+            "arm_ribbon_R_c_04_jnt",
+            "arm_ribbon_R_c_06_jnt",
+            "arm_ribbon_R_c_07_jnt",
+            "arm_ribbon_R_c_08_jnt",
+            "arm_ribbon_R_a_06_jnt",
+            "arm_ribbon_R_a_05_jnt",
+            "arm_ribbon_R_a_07_jnt",
+            "clothes_ribbon_L_e_01_jnt",
+            "clothes_ribbon_L_e_02_jnt",
+            "clothes_ribbon_L_e_03_jnt",
+            "clothes_ribbon_L_e_04_jnt",
+            "clothes_ribbon_L_e_05_jnt",
+            "clothes_ribbon_L_e_06_jnt",
+            "Bip001_Spine",
+            "Bip001_Pelvis",
+            "Bip001_Spine1",
+            "Bip001_LThighTwist",
+            "clothes_ribbon_R_e_01_jnt",
+            "clothes_ribbon_R_e_02_jnt",
+            "clothes_ribbon_R_e_03_jnt",
+            "clothes_ribbon_R_e_04_jnt",
+            "clothes_ribbon_R_e_06_jnt",
+            "clothes_ribbon_R_e_05_jnt"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_body_03"
+          ]
+        },
+        {
+          "id": 14,
+          "resource": "ability",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_eyebrow_02_lod0",
+          "mesh_name": "S_actor_zhuangfy_eyebrow_02_lod0",
+          "original_index_count": 3234,
+          "bone_names": [
+            "eyeRt01EyelashJoint",
+            "eyeRt02EyelashJoint",
+            "eyeRt03EyelashJoint",
+            "eyeRt04EyelashJoint",
+            "eyeRt05EyelashJoint",
+            "eyeRt06Joint",
+            "eyeRt07Joint",
+            "eyeRt01Joint",
+            "eyeRt08Joint",
+            "browLineRt01Joint",
+            "browLineRt02Joint",
+            "browLineRt03Joint",
+            "browRt01Joint",
+            "browRt02Joint",
+            "browRt03Joint",
+            "browRt05Joint",
+            "browRt04Joint",
+            "eyeLf01EyelashJoint",
+            "eyeLf02EyelashJoint",
+            "eyeLf03EyelashJoint",
+            "eyeLf04EyelashJoint",
+            "eyeLf05EyelashJoint",
+            "eyeLf06Joint",
+            "eyeLf07Joint",
+            "eyeLf01Joint",
+            "eyeLf08Joint",
+            "browLineLf03Joint",
+            "browLineLf01Joint",
+            "browLineLf02Joint",
+            "browLf01Joint",
+            "browLf02Joint",
+            "browLf03Joint",
+            "browLf05Joint",
+            "browLf04Joint"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_brow_02"
+          ]
+        },
+        {
+          "id": 15,
+          "resource": "ability",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_eyeshadow_02_lod0",
+          "mesh_name": "S_actor_zhuangfy_eyeshadow_02_lod0",
+          "original_index_count": 120,
+          "bone_names": [
+            "eyeRt02Joint",
+            "eyeRt01Joint",
+            "eyeRt03Joint",
+            "eyeRt04Joint",
+            "eyeRt05Joint",
+            "eyeRt06Joint",
+            "eyeRt03IrissdJoint",
+            "eyeRt07Joint",
+            "eyeRt08Joint",
+            "eyeLf02Joint",
+            "eyeLf01Joint",
+            "eyeLf03Joint",
+            "eyeLf04Joint",
+            "eyeLf05Joint",
+            "eyeLf06Joint",
+            "eyeLf03IrissdJoint",
+            "eyeLf07Joint",
+            "eyeLf08Joint"
+          ],
+          "materials": [
+            "M_eyeshadow_common_05",
+            "M_eyewhiteshadow_common_01"
+          ]
+        },
+        {
+          "id": 16,
+          "resource": "ability",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_face_02_lod0",
+          "mesh_name": "S_actor_zhuangfy_face_02_lod0",
+          "original_index_count": 11346,
+          "bone_names": [
+            "lipRdn4Joint",
+            "lipMdnJoint",
+            "lipRup1Joint",
+            "lipRdn1Joint",
+            "Bip001_Head",
+            "lipLup4Joint",
+            "lipRup4Joint",
+            "lipMupJoint",
+            "lipRup3Joint",
+            "lipRup2Joint",
+            "lipLdn4Joint",
+            "faceMdJawDnJoint",
+            "NoseMd01Joint",
+            "faceLfCheekOtDnJoint",
+            "lipRdn3Joint",
+            "lipRdn2Joint",
+            "faceRtCheekOtDnJoint",
+            "Bip001_Neck",
+            "faceRtCheekOtJoint",
+            "faceRtCheekOtUpJoint",
+            "eyeRt06Joint",
+            "eyeRt05Joint",
+            "faceRtCheekOtInJoint",
+            "eyeRt04Joint",
+            "eyeRt07Joint",
+            "eyeRt08Joint",
+            "eyeLf06Joint",
+            "eyeRt03Joint",
+            "eyeRt02Joint",
+            "eyeRt01Joint",
+            "lipLup2Joint",
+            "lipLup3Joint",
+            "lipLup1Joint",
+            "lipLdn3Joint",
+            "lipLdn2Joint",
+            "faceLfCheekOtJoint",
+            "faceLfCheekOtUpJoint",
+            "lipLdn1Joint",
+            "eyeLf05Joint",
+            "faceLfCheekOtInJoint",
+            "eyeLf04Joint",
+            "eyeLf07Joint",
+            "eyeLf08Joint",
+            "eyeLf03Joint",
+            "eyeLf02Joint",
+            "eyeLf01Joint",
+            "line_toothJoint",
+            "TongueMd04Joint",
+            "TongueMd03Joint",
+            "TongueMd02Joint",
+            "TongueMd01Joint",
+            "faceMdToothUpJoint",
+            "faceMdToothDnJoint",
+            "lineJoint"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_face_02"
+          ]
+        },
+        {
+          "id": 17,
+          "resource": "ability",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_hair_02_lod0",
+          "mesh_name": "S_actor_zhuangfy_hair_02_lod0",
+          "original_index_count": 52332,
+          "bone_names": [
+            "Bip001_Head",
+            "Bip001_Neck",
+            "hair_base_R_b_01_jnt",
+            "hair_base_R_b_02_jnt",
+            "hair_base_R_b_03_jnt",
+            "hair_base_R_b_04_jnt",
+            "hair_base_R_b_05_jnt",
+            "hair_base_R_b_06_jnt",
+            "hair_base_L_b_01_jnt",
+            "hair_base_R_c_01_jnt",
+            "hair_base_R_c_02_jnt",
+            "hair_base_R_c_03_jnt",
+            "hair_base_R_c_04_jnt",
+            "hair_base_R_d_01_jnt",
+            "hair_base_R_d_02_jnt",
+            "hair_base_R_d_03_jnt",
+            "hair_base_R_d_04_jnt",
+            "hair_base_R_d_05_jnt",
+            "hair_base_L_b_02_jnt",
+            "hair_base_L_b_03_jnt",
+            "hair_base_L_b_04_jnt",
+            "hair_base_L_b_05_jnt",
+            "hair_base_L_b_06_jnt",
+            "hair_base_L_c_01_jnt",
+            "hair_base_L_c_03_jnt",
+            "hair_base_L_c_02_jnt",
+            "hair_base_L_c_04_jnt",
+            "hair_base_L_d_02_jnt",
+            "hair_base_L_d_01_jnt",
+            "hair_base_L_d_03_jnt",
+            "hair_base_L_d_04_jnt",
+            "hair_base_L_d_05_jnt",
+            "hair_base_R_f_01_jnt",
+            "hair_base_R_f_03_jnt",
+            "hair_base_R_f_02_jnt",
+            "hair_base_R_e_01_jnt",
+            "hair_base_R_a_03_jnt",
+            "hair_base_R_a_02_jnt",
+            "hair_base_R_a_01_jnt",
+            "hair_base_R_a_04_jnt",
+            "hair_base_L_f_01_jnt",
+            "hair_base_L_f_02_jnt",
+            "hair_base_L_f_03_jnt",
+            "hair_base_L_e_01_jnt",
+            "hair_base_L_a_01_jnt",
+            "hair_base_L_a_02_jnt",
+            "hair_base_L_a_03_jnt",
+            "hair_base_L_a_04_jnt",
+            "band_base_Back_a_01_jnt",
+            "hair_base_M_a_01_jnt",
+            "hair_base_M_a_02_jnt",
+            "hair_base_L_e_02_jnt",
+            "hair_base_R_e_02_jnt"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_hair_02",
+            "M_actor_zhuangfy_hairt_02"
+          ]
+        },
+        {
+          "id": 18,
+          "resource": "ability",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_hairshadow_02_lod0",
+          "mesh_name": "S_actor_zhuangfy_hairshadow_02_lod0",
+          "original_index_count": 957,
+          "bone_names": [
+            "hair_base_L_e_02_jnt",
+            "hair_base_M_a_02_jnt",
+            "hair_base_L_e_01_jnt",
+            "hair_base_M_a_01_jnt",
+            "Bip001_Head",
+            "hair_base_R_e_01_jnt",
+            "hair_base_R_e_02_jnt",
+            "hair_base_R_f_03_jnt",
+            "hair_base_R_f_01_jnt",
+            "hair_base_R_f_02_jnt",
+            "hair_base_L_f_02_jnt",
+            "hair_base_L_f_03_jnt",
+            "hair_base_L_f_01_jnt"
+          ],
+          "materials": [
+            "M_hairshadow_common_09"
+          ]
+        },
+        {
+          "id": 19,
+          "resource": "ability",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_iris_02_lod0",
+          "mesh_name": "S_actor_zhuangfy_iris_02_lod0",
+          "original_index_count": 1032,
+          "bone_names": [
+            "faceRtHighlightJoint",
+            "faceLfHighlightJoint",
+            "faceRtHighlightJoint_b",
+            "faceLfHighlightJoint_b",
+            "faceRtPupilJoint",
+            "faceRtIrisJoint",
+            "faceLfPupilJoint",
+            "faceLfIrisJoint"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_iris_02"
+          ]
+        },
+        {
+          "id": 20,
+          "resource": "ability",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_tail_02_lod0",
+          "mesh_name": "S_actor_zhuangfy_tail_02_lod0",
+          "original_index_count": 11469,
+          "bone_names": [
+            "tail_base_M_a_07_jnt",
+            "tail_base_M_a_08_jnt",
+            "tail_base_M_a_09_jnt",
+            "tail_base_M_a_06_jnt",
+            "tail_base_M_a_05_jnt",
+            "tail_base_M_a_04_jnt",
+            "tail_base_M_a_03_jnt",
+            "tail_base_M_a_02_jnt"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_cloth_04"
+          ]
+        },
+        {
+          "id": 21,
+          "resource": "ability",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_vfxbody_01_lod0",
+          "mesh_name": "S_actor_zhuangfy_vfxbody_01_lod0",
+          "original_index_count": 5088,
+          "bone_names": [
+            "Bip001_Spine",
+            "Bip001_Pelvis",
+            "Bip001_Spine1",
+            "Bip001_Spine2",
+            "Bip001_Neck",
+            "Bip001_Head",
+            "Bip001_L_Clavicle",
+            "Bip001_LUpArmTwist",
+            "Bip001_LUpArmTwist1",
+            "Bip001_L_UpperArm",
+            "Bip001_L_Forearm",
+            "Bip001_L_ForeTwist",
+            "Bip001_L_Hand",
+            "Bip001_L_ForeTwist1",
+            "Bip001_R_Clavicle",
+            "Bip001_RUpArmTwist1",
+            "Bip001_RUpArmTwist",
+            "Bip001_R_UpperArm",
+            "Bip001_R_Forearm",
+            "Bip001_R_ForeTwist",
+            "Bip001_R_Hand",
+            "Bip001_R_ForeTwist1"
+          ],
+          "materials": [
+            "M_fx_actor_zhuangfy_vfxbody_01"
+          ]
+        },
+        {
+          "id": 22,
+          "resource": "ability",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_vfxbody_02_lod0",
+          "mesh_name": "S_actor_zhuangfy_vfxbody_02_lod0",
+          "original_index_count": 8154,
+          "bone_names": [
+            "Bip001_L_Foot",
+            "Bip001_L_Toe0",
+            "Bip001_LCalfTwist1",
+            "Bip001_LCalfTwist",
+            "Bip001_L_Calf",
+            "Bip001_L_Thigh",
+            "Bip001_LThighTwist",
+            "Bip001_LThighTwist1",
+            "Bip001_Pelvis",
+            "Bip001_Spine",
+            "Bip001_Spine1",
+            "Bip001_Spine2",
+            "Bip001_R_Foot",
+            "Bip001_R_Toe0",
+            "Bip001_RCalfTwist1",
+            "Bip001_RCalfTwist",
+            "Bip001_R_Calf",
+            "Bip001_R_Thigh",
+            "Bip001_RThighTwist1",
+            "Bip001_RThighTwist",
+            "tail_base_M_a_01_jnt",
+            "tail_base_M_a_02_jnt",
+            "tail_base_M_a_03_jnt",
+            "tail_base_M_a_04_jnt",
+            "tail_base_M_a_05_jnt",
+            "tail_base_M_a_06_jnt",
+            "tail_base_M_a_07_jnt",
+            "tail_base_M_a_08_jnt",
+            "tail_base_M_a_09_jnt",
+            "Bip001_Neck",
+            "Bip001_Head"
+          ],
+          "materials": [
+            "M_fx_actor_zhuangfy_vfxbody_01"
+          ]
+        },
+        {
+          "id": 23,
+          "resource": "ability",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_vfxbody_03_lod0",
+          "mesh_name": "S_actor_zhuangfy_vfxbody_03_lod0",
+          "original_index_count": 4512,
+          "bone_names": [
+            "arm_ribbon_L_a_07_jnt",
+            "arm_ribbon_L_a_04_jnt",
+            "arm_ribbon_L_a_05_jnt",
+            "arm_ribbon_L_a_06_jnt",
+            "arm_ribbon_L_a_02_jnt",
+            "arm_ribbon_L_a_03_jnt",
+            "arm_ribbon_L_a_01_jnt",
+            "arm_ribbon_L_b_01_jnt",
+            "arm_ribbon_L_c_01_jnt",
+            "arm_ribbon_L_c_02_jnt",
+            "arm_ribbon_L_c_03_jnt",
+            "arm_ribbon_L_c_04_jnt",
+            "arm_ribbon_L_c_05_jnt",
+            "arm_ribbon_L_c_06_jnt",
+            "arm_ribbon_L_c_07_jnt",
+            "arm_ribbon_L_c_08_jnt",
+            "clothes_ribbon_L_e_06_jnt",
+            "clothes_ribbon_L_e_04_jnt",
+            "clothes_ribbon_L_e_05_jnt",
+            "clothes_ribbon_L_e_03_jnt",
+            "clothes_ribbon_L_e_02_jnt",
+            "clothes_ribbon_L_e_01_jnt",
+            "arm_ribbon_R_a_07_jnt",
+            "arm_ribbon_R_a_04_jnt",
+            "arm_ribbon_R_a_05_jnt",
+            "arm_ribbon_R_a_06_jnt",
+            "arm_ribbon_R_a_03_jnt",
+            "arm_ribbon_R_a_02_jnt",
+            "arm_ribbon_R_a_01_jnt",
+            "arm_ribbon_R_b_01_jnt",
+            "arm_ribbon_R_c_01_jnt",
+            "arm_ribbon_R_c_02_jnt",
+            "arm_ribbon_R_c_03_jnt",
+            "arm_ribbon_R_c_04_jnt",
+            "arm_ribbon_R_c_05_jnt",
+            "arm_ribbon_R_c_06_jnt",
+            "arm_ribbon_R_c_07_jnt",
+            "arm_ribbon_R_c_08_jnt",
+            "clothes_ribbon_R_e_06_jnt",
+            "clothes_ribbon_R_e_05_jnt",
+            "clothes_ribbon_R_e_04_jnt",
+            "clothes_ribbon_R_e_03_jnt",
+            "clothes_ribbon_R_e_02_jnt",
+            "clothes_ribbon_R_e_01_jnt",
+            "hair_base_L_b_01_jnt",
+            "hair_base_L_b_02_jnt",
+            "hair_base_L_b_03_jnt",
+            "hair_base_L_b_04_jnt",
+            "hair_base_L_b_05_jnt",
+            "hair_base_L_b_06_jnt",
+            "hair_base_R_b_01_jnt",
+            "hair_base_R_b_02_jnt",
+            "hair_base_R_b_03_jnt",
+            "hair_base_R_b_04_jnt",
+            "hair_base_R_b_05_jnt",
+            "hair_base_R_b_06_jnt"
+          ],
+          "materials": [
+            "M_fx_actor_zhuangfy_vfxbody_01"
+          ]
+        },
+        {
+          "id": 24,
+          "resource": "mirror",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_body_04_lod0",
+          "mesh_name": "S_actor_zhuangfy_body_04_lod0",
+          "original_index_count": 7014,
+          "bone_names": [
+            "Bip001_RUpArmTwist1",
+            "Bip001_R_Thigh_ty_plus",
+            "Bip001_LThighTwist1",
+            "Bip001_RCalfTwist",
+            "Bip001_Neck",
+            "Bip001_R_ForeTwist1",
+            "Bip001_R_Forearm",
+            "Bip001_RThighTwist1",
+            "Bip001_L_Thigh_ty_plus",
+            "Bip001_R_Clavicle",
+            "faceRtCheekOtDnJoint",
+            "Bip001_R_UpperArm_tz_minus",
+            "Bip001_L_Thigh_tz_minus",
+            "Bip001_L_Thigh",
+            "Bip001_R_Hand",
+            "Bip001_L_Calf",
+            "Bip001_L_Hand_ty_plus",
+            "Bip001_R_Hand_ty_minus",
+            "Bip001_RUpArmTwist",
+            "xiong_R_0_skin_jnt",
+            "Bip001_Spine2",
+            "Bip001_LCalfTwist",
+            "Bip001_L_Hand",
+            "Bip001_LCalfTwist1",
+            "Bip001_R_Thigh_ty_minus",
+            "Bip001_R_Calf",
+            "Bip001_R_UpperArm_ty_minus",
+            "Bip001_L_UpperArm",
+            "Bip001_Spine1",
+            "xiong_L_0_skin_jnt",
+            "Bip001_R_Hand_ty_plus",
+            "Bip001_LUpArmTwist",
+            "Bip001_R_Thigh_tz_minus",
+            "Bip001_L_Calf_ty_plus",
+            "Bip001_L_ForeTwist",
+            "Bip001_L_Calf_ty_minus",
+            "Bip001_L_UpperArm_tz_minus",
+            "Bip001_LThighTwist",
+            "Bip001_LUpArmTwist1",
+            "Bip001_R_Calf_ty_plus",
+            "Bip001_R_ForeTwist",
+            "Bip001_R_Thigh",
+            "Bip001_Pelvis",
+            "Bip001_L_Thigh_ty_minus",
+            "Bip001_L_Clavicle",
+            "Bip001_L_UpperArm_ty_plus",
+            "faceLfCheekOtDnJoint",
+            "Bip001_L_Hand_ty_minus",
+            "Bip001_Spine",
+            "Bip001_L_UpperArm_ty_minus",
+            "Bip001_L_Forearm",
+            "Bip001_R_UpperArm_ty_plus",
+            "faceMdJawDnJoint",
+            "Bip001_L_UpperArm_tz_plus",
+            "Bip001_RCalfTwist1",
+            "Bip001_Head",
+            "Bip001_L_ForeTwist1",
+            "Bip001_RThighTwist",
+            "Bip001_R_UpperArm",
+            "Bip001_R_UpperArm_tz_plus",
+            "Bip001_R_Calf_ty_minus"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_body_01"
+          ]
+        },
+        {
+          "id": 25,
+          "resource": "mirror",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_cloth_03_lod0",
+          "mesh_name": "S_actor_zhuangfy_cloth_03_lod0",
+          "original_index_count": 151632,
+          "bone_names": [
+            "prop_base_L_a_01_jnt",
+            "Bip001_R_ForeTwist1",
+            "Bip001_Neck",
+            "Bip001_R_Forearm_ty_plus",
+            "Bip001_L_Thigh_tz_minus",
+            "hair_sf_Back_a_02_jnt",
+            "Bip001_R_Hand_ty_minus",
+            "Bip001_Spine2",
+            "L_trousersUp_05_jnt",
+            "clothes_base_L_a_02_jnt",
+            "R_trousersDn_A_02_jnt",
+            "hairpin_base_L_a_02_jnt",
+            "Bip001_R_Forearm_ty_minus",
+            "Bip001_L_UpperArm",
+            "clothes_base_L_a_03_jnt",
+            "Bip001_R_Thigh_ty_minus",
+            "Bip001_Spine1",
+            "Bip001_R_Hand_ty_plus",
+            "Bip001_R_Thigh_tz_minus",
+            "clothes_base_L_a_05_jnt",
+            "fj_base_L_a_01_jnt",
+            "tag_base_M_a_02_jnt",
+            "L_trousersUp_02_jnt",
+            "Bip001_R_ForeTwist",
+            "Bip001_R_Finger01",
+            "L_trousersUp_04_jnt",
+            "fj_base_R_b_01_jnt",
+            "Bip001_L_Forearm",
+            "Bip001_L_Finger1",
+            "L_trousersUp_07_jnt",
+            "sleeve_base_R_a_01_jnt",
+            "clothes_ribbon_R_b_03_jnt",
+            "Bip001_RThighTwist",
+            "clothes_base_R_b_00_jnt",
+            "Bip001_R_Toe0",
+            "clothes_ribbon_R_b_02_jnt",
+            "clothes_ribbon_R_a_01_jnt",
+            "hair_base_L_f_02_jnt",
+            "L_trousersUp_06_jnt",
+            "Bip001_R_Thigh_ty_plus",
+            "tail_base_M_a_09_jnt",
+            "clothes_base_R_b_03_jnt",
+            "L_trousersUp_08_jnt",
+            "sleeve_base_R_b_01_jnt",
+            "R_trousersUp_03_jnt",
+            "clothes_ribbon_R_a_02_jnt",
+            "pz_base_L_b_01_jnt",
+            "clothes_base_R_b_01_jnt",
+            "Bip001_R_Foot",
+            "hair_base_L_f_03_jnt",
+            "fj_base_L_b_01_jnt",
+            "L_trousersUp_03_jnt",
+            "Bip001_L_Hand",
+            "ornament_base_R_a_01_jnt",
+            "R_trousersUp_08_jnt",
+            "Bip001_R_Calf",
+            "fj_base_R_a_01_jnt",
+            "sleeve_base_L_a_01_jnt",
+            "Bip001_L_Finger01",
+            "ornament_base_L_a_01_jnt",
+            "R_trousersUp_05_jnt",
+            "tag_base_M_a_01_jnt",
+            "pz_base_R_a_01_jnt",
+            "Bip001_L_ForeTwist",
+            "Bip001_L_Finger02",
+            "pz_base_L_a_01_jnt",
+            "R_trousersUp_02_jnt",
+            "Bip001_L_Hand_ty_minus",
+            "clothes_base_R_a_00_jnt",
+            "sleeve_base_R_d_01_jnt",
+            "pz_base_R_b_01_jnt",
+            "R_trousersUp_06_jnt",
+            "clothes_ribbon_R_b_01_jnt",
+            "clothes_base_R_a_01_jnt",
+            "hair_base_L_f_01_jnt",
+            "Bip001_R_Finger02",
+            "tail_base_M_a_08_jnt",
+            "R_trousersUp_01_jnt",
+            "Bip001_L_Finger0",
+            "Bip001_R_Foot_ty_plus",
+            "Bip001_R_UpperArm",
+            "sleeve_base_R_c_01_jnt",
+            "clothes_ribbon_L_b_01_jnt",
+            "hair_base_R_a_01_jnt",
+            "Bip001_L_ForeTwist1",
+            "clothes_base_R_a_02_jnt",
+            "R_trousersUp_04_jnt",
+            "Bip001_R_Finger22",
+            "clothes_base_R_b_02_jnt",
+            "hair_base_R_a_03_jnt",
+            "clothes_ribbon_R_c_01_jnt",
+            "scapula_base_R_a_01_jnt",
+            "clothes_base_R_a_03_jnt",
+            "Bip001_RUpArmTwist1",
+            "Bip001_L_Forearm_ty_plus",
+            "Bip001_R_Finger3",
+            "Bip001_L_Finger12",
+            "R_trousersUp_07_jnt",
+            "Bip001_L_Finger22",
+            "Bip001_R_Clavicle",
+            "Bip001_L_Forearm_ty_minus",
+            "clothes_base_R_a_04_jnt",
+            "clothes_base_R_a_05_jnt",
+            "Bip001_R_Finger1",
+            "Bip001_R_Foot_ty_minus",
+            "hair_base_R_f_02_jnt",
+            "Bip001_L_Calf",
+            "Bip001_L_Finger31",
+            "R_trousersDn_B_02_jnt",
+            "Bip001_RUpArmTwist",
+            "Bip001_L_Hand_ty_plus",
+            "Bip001_R_Finger12",
+            "L_trousersDn_C_01_jnt",
+            "clothes_base_L_b_01_jnt",
+            "R_trousersDn_C_01_jnt",
+            "Bip001_R_UpperArm_ty_minus",
+            "Bip001_L_Foot_ty_minus",
+            "L_trousersDn_C_02_jnt",
+            "sleeve_base_L_d_01_jnt",
+            "prop_base_R_a_01_jnt",
+            "Bip001_L_Finger4",
+            "clothes_ribbon_R_c_02_jnt",
+            "Bip001_R_Finger21",
+            "Bip001_LUpArmTwist",
+            "L_trousersDn_A_02_jnt",
+            "hairpin_base_R_a_02_jnt",
+            "ornament_base_R_b_01_jnt",
+            "Bip001_L_Finger42",
+            "Bip001_R_Finger11",
+            "L_trousersDn_D_01_jnt",
+            "band_base_Back_a_01_jnt",
+            "Bip001_L_Finger21",
+            "clothes_base_L_b_00_jnt",
+            "Bip001_RCalfTwist1",
+            "Bip001_R_Finger2",
+            "Bip001_Spine",
+            "Bip001_L_UpperArm_ty_minus",
+            "band_base_Back_b_01_jnt",
+            "clothes_base_L_b_02_jnt",
+            "Bip001_L_Toe0",
+            "sleeve_base_L_c_01_jnt",
+            "clothes_ribbon_L_b_02_jnt",
+            "Bip001_R_UpperArm_tz_plus",
+            "L_trousersDn_A_01_jnt",
+            "hair_base_R_a_02_jnt",
+            "Bip001_L_Finger2",
+            "Bip001_RCalfTwist",
+            "Bip001_L_Foot_ty_plus",
+            "clothes_base_L_b_03_jnt",
+            "Bip001_R_Forearm",
+            "clothes_ribbon_L_b_03_jnt",
+            "sleeve_base_L_b_01_jnt",
+            "hair_base_R_f_01_jnt",
+            "Bip001_L_Thigh_ty_plus",
+            "Bip001_R_Hand",
+            "R_trousersDn_B_01_jnt",
+            "Bip001_L_Foot",
+            "tail_base_M_a_06_jnt",
+            "Bip001_L_Finger3",
+            "Bip001_R_Finger32",
+            "clothes_base_L_a_01_jnt",
+            "tail_base_M_a_01_jnt",
+            "Bip001_L_Finger32",
+            "Bip001_LCalfTwist",
+            "xiong_R_0_skin_jnt",
+            "hairpin_base_R_a_01_jnt",
+            "Bip001_R_Finger31",
+            "L_trousersUp_01_jnt",
+            "hair_base_L_a_01_jnt",
+            "R_trousersDn_D_02_jnt",
+            "clothes_base_L_a_00_jnt",
+            "Bip001_LCalfTwist1",
+            "xiong_L_0_skin_jnt",
+            "tail_base_M_a_02_jnt",
+            "hairpin_base_L_a_01_jnt",
+            "Bip001_LThighTwist",
+            "R_trousersDn_C_02_jnt",
+            "Bip001_L_Finger41",
+            "clothes_base_L_a_04_jnt",
+            "tail_base_M_a_03_jnt",
+            "hair_base_R_f_03_jnt",
+            "Bip001_R_Finger4",
+            "Bip001_LUpArmTwist1",
+            "clothes_ribbon_L_a_01_jnt",
+            "Bip001_L_Finger11",
+            "Bip001_L_Thigh_ty_minus",
+            "hair_base_L_a_02_jnt",
+            "L_trousersDn_B_02_jnt",
+            "R_trousersDn_D_01_jnt",
+            "Bip001_L_Clavicle",
+            "Bip001_R_Finger41",
+            "tail_base_M_a_04_jnt",
+            "Bip001_Pelvis",
+            "clothes_ribbon_L_a_02_jnt",
+            "Bip001_L_UpperArm_tz_plus",
+            "ornament_base_L_b_01_jnt",
+            "Bip001_R_Finger0",
+            "hair_sf_Back_a_01_jnt",
+            "L_trousersDn_B_01_jnt",
+            "R_trousersDn_A_01_jnt",
+            "L_trousersDn_D_02_jnt",
+            "tail_base_M_a_07_jnt",
+            "Bip001_R_Finger42",
+            "Bip001_Head",
+            "hair_base_L_a_03_jnt",
+            "tail_base_M_a_05_jnt",
+            "hair_sf_Back_a_03_jnt"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_cloth_01"
+          ]
+        },
+        {
+          "id": 26,
+          "resource": "mirror",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_cloth_04_lod0",
+          "mesh_name": "S_actor_zhuangfy_cloth_04_lod0",
+          "original_index_count": 18138,
+          "bone_names": [
+            "Bip001_R_Thigh_ty_plus",
+            "L_trousersUp_06_jnt",
+            "tail_base_M_a_09_jnt",
+            "Bip001_Neck",
+            "R_trousersUp_07_jnt",
+            "R_trousersUp_03_jnt",
+            "Bip001_L_Thigh_ty_plus",
+            "Bip001_R_Clavicle",
+            "L_trousersUp_08_jnt",
+            "Bip001_L_Thigh_tz_minus",
+            "R_trousersDn_B_01_jnt",
+            "tail_base_M_a_06_jnt",
+            "L_trousersDn_C_01_jnt",
+            "R_trousersDn_B_02_jnt",
+            "Bip001_RUpArmTwist",
+            "xiong_R_0_skin_jnt",
+            "L_trousersUp_05_jnt",
+            "L_trousersUp_03_jnt",
+            "L_trousersUp_01_jnt",
+            "Bip001_Spine2",
+            "R_trousersUp_08_jnt",
+            "R_trousersDn_A_02_jnt",
+            "Bip001_R_Thigh_ty_minus",
+            "R_trousersDn_D_02_jnt",
+            "R_trousersDn_C_01_jnt",
+            "R_trousersUp_05_jnt",
+            "Bip001_R_UpperArm_ty_minus",
+            "L_trousersDn_C_02_jnt",
+            "tail_base_M_a_02_jnt",
+            "xiong_L_0_skin_jnt",
+            "Bip001_Spine1",
+            "Bip001_R_Thigh_tz_minus",
+            "Bip001_LUpArmTwist",
+            "R_trousersUp_02_jnt",
+            "L_trousersDn_A_02_jnt",
+            "tail_base_M_a_03_jnt",
+            "Bip001_LThighTwist",
+            "R_trousersDn_C_02_jnt",
+            "tail_base_M_a_04_jnt",
+            "L_trousersUp_02_jnt",
+            "Bip001_L_Thigh_ty_minus",
+            "Bip001_Pelvis",
+            "Bip001_L_Clavicle",
+            "R_trousersUp_06_jnt",
+            "L_trousersDn_B_02_jnt",
+            "L_trousersDn_D_01_jnt",
+            "R_trousersDn_D_01_jnt",
+            "tail_base_M_a_08_jnt",
+            "Bip001_Spine",
+            "L_trousersUp_04_jnt",
+            "Bip001_L_UpperArm_ty_minus",
+            "R_trousersUp_01_jnt",
+            "L_trousersDn_B_01_jnt",
+            "Bip001_L_UpperArm_tz_plus",
+            "R_trousersDn_A_01_jnt",
+            "L_trousersDn_D_02_jnt",
+            "tail_base_M_a_07_jnt",
+            "L_trousersDn_A_01_jnt",
+            "R_trousersUp_04_jnt",
+            "tail_base_M_a_05_jnt",
+            "Bip001_RThighTwist",
+            "Bip001_R_UpperArm_tz_plus",
+            "L_trousersUp_07_jnt"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_cloth_02"
+          ]
+        },
+        {
+          "id": 27,
+          "resource": "mirror",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_eyebrow_03_lod0",
+          "mesh_name": "S_actor_zhuangfy_eyebrow_03_lod0",
+          "original_index_count": 3234,
+          "bone_names": [
+            "eyeLf08Joint",
+            "eyeRt01EyelashJoint",
+            "browLf03Joint",
+            "browLineRt03Joint",
+            "eyeRt07Joint",
+            "eyeLf01Joint",
+            "eyeLf06Joint",
+            "eyeRt02EyelashJoint",
+            "eyeRt03EyelashJoint",
+            "browLineLf01Joint",
+            "eyeLf02EyelashJoint",
+            "browRt02Joint",
+            "browLineRt02Joint",
+            "eyeLf03EyelashJoint",
+            "browRt04Joint",
+            "browLineLf02Joint",
+            "eyeLf01EyelashJoint",
+            "browRt01Joint",
+            "browRt05Joint",
+            "eyeRt01Joint",
+            "eyeRt04EyelashJoint",
+            "browLf01Joint",
+            "browRt03Joint",
+            "browLineLf03Joint",
+            "eyeLf04EyelashJoint",
+            "eyeRt06Joint",
+            "browLf04Joint",
+            "browLf02Joint",
+            "browLineRt01Joint",
+            "eyeRt08Joint",
+            "browLf05Joint",
+            "eyeLf07Joint",
+            "eyeLf05EyelashJoint",
+            "eyeRt05EyelashJoint"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_brow_01"
+          ]
+        },
+        {
+          "id": 28,
+          "resource": "mirror",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_eyeshadow_03_lod0",
+          "mesh_name": "S_actor_zhuangfy_eyeshadow_03_lod0",
+          "original_index_count": 120,
+          "bone_names": [
+            "eyeRt06Joint",
+            "eyeRt04Joint",
+            "eyeLf05Joint",
+            "eyeRt02Joint",
+            "eyeLf08Joint",
+            "eyeLf03IrissdJoint",
+            "eyeRt03IrissdJoint",
+            "eyeRt01Joint",
+            "eyeRt03Joint",
+            "eyeRt08Joint",
+            "eyeLf04Joint",
+            "eyeLf06Joint",
+            "eyeLf07Joint",
+            "eyeRt07Joint",
+            "eyeLf03Joint",
+            "eyeLf02Joint",
+            "eyeRt05Joint",
+            "eyeLf01Joint"
+          ],
+          "materials": [
+            "M_eyeshadow_common_01"
+          ]
+        },
+        {
+          "id": 29,
+          "resource": "mirror",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_face_03_lod0",
+          "mesh_name": "S_actor_zhuangfy_face_03_lod0",
+          "original_index_count": 11538,
+          "bone_names": [
+            "lipLdn1Joint",
+            "lipLdn3Joint",
+            "eyeLf08Joint",
+            "faceLfCheekOtJoint",
+            "eyeLf06Joint",
+            "faceRtCheekOtUpJoint",
+            "eyeRt07Joint",
+            "lipMupJoint",
+            "eyeLf01Joint",
+            "line_toothJoint",
+            "TongueMd02Joint",
+            "faceMdToothDnJoint",
+            "eyeRt04Joint",
+            "lipLup4Joint",
+            "Bip001_Head",
+            "lipLup1Joint",
+            "faceRtCheekOtDnJoint",
+            "faceLfCheekOtUpJoint",
+            "eyeLf03Joint",
+            "lipLdn2Joint",
+            "faceMdJawDnJoint",
+            "lipRup4Joint",
+            "eyeRt05Joint",
+            "NoseMd01Joint",
+            "lipRdn1Joint",
+            "faceRtCheekOtJoint",
+            "lipRup1Joint",
+            "lipRdn2Joint",
+            "faceLfCheekOtInJoint",
+            "lipLup3Joint",
+            "TongueMd01Joint",
+            "Bip001_Neck",
+            "eyeLf04Joint",
+            "lipRdn3Joint",
+            "eyeRt01Joint",
+            "lipRup2Joint",
+            "eyeLf02Joint",
+            "TongueMd03Joint",
+            "lineJoint",
+            "lipLup2Joint",
+            "eyeRt06Joint",
+            "lipRdn4Joint",
+            "eyeLf05Joint",
+            "eyeRt02Joint",
+            "lipRup3Joint",
+            "TongueMd04Joint",
+            "eyeRt03Joint",
+            "eyeRt08Joint",
+            "lipLdn4Joint",
+            "eyeLf07Joint",
+            "lipMdnJoint",
+            "faceLfCheekOtDnJoint",
+            "faceRtCheekOtInJoint",
+            "faceMdToothUpJoint"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_face_01"
+          ]
+        },
+        {
+          "id": 30,
+          "resource": "mirror",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_hair_03_lod0",
+          "mesh_name": "S_actor_zhuangfy_hair_03_lod0",
+          "original_index_count": 52332,
+          "bone_names": [
+            "hair_base_R_a_03_jnt",
+            "hair_base_R_b_01_jnt",
+            "hair_base_L_e_01_jnt",
+            "hair_base_R_d_01_jnt",
+            "hair_base_L_b_01_jnt",
+            "hair_base_R_c_02_jnt",
+            "hair_base_R_d_03_jnt",
+            "hair_base_M_a_01_jnt",
+            "hair_base_L_c_01_jnt",
+            "hair_base_R_a_04_jnt",
+            "hair_base_L_a_02_jnt",
+            "hair_base_L_d_03_jnt",
+            "hair_base_R_e_01_jnt",
+            "hair_base_L_c_02_jnt",
+            "hair_base_L_c_04_jnt",
+            "hair_base_R_b_04_jnt",
+            "Bip001_Head",
+            "hair_base_R_a_01_jnt",
+            "hair_base_R_c_04_jnt",
+            "hair_base_M_a_02_jnt",
+            "hair_base_L_f_02_jnt",
+            "hair_base_R_f_02_jnt",
+            "hair_base_R_c_03_jnt",
+            "hair_base_R_d_04_jnt",
+            "hair_base_R_e_02_jnt",
+            "hair_base_L_b_02_jnt",
+            "hair_base_R_f_03_jnt",
+            "hair_base_L_a_01_jnt",
+            "hair_base_R_c_01_jnt",
+            "hair_base_L_b_06_jnt",
+            "hair_base_R_b_02_jnt",
+            "hair_base_L_d_01_jnt",
+            "hair_base_R_f_01_jnt",
+            "hair_base_L_b_04_jnt",
+            "hair_base_R_b_03_jnt",
+            "hair_base_L_a_03_jnt",
+            "hair_base_R_b_05_jnt",
+            "hair_base_L_e_02_jnt",
+            "Bip001_Neck",
+            "hair_base_L_d_02_jnt",
+            "hair_base_R_b_06_jnt",
+            "hair_base_L_f_01_jnt",
+            "hair_base_L_d_04_jnt",
+            "hair_base_L_b_05_jnt",
+            "hair_base_L_a_04_jnt",
+            "hair_base_R_d_05_jnt",
+            "hair_base_R_a_02_jnt",
+            "hair_base_L_d_05_jnt",
+            "hair_base_R_d_02_jnt",
+            "hair_base_L_c_03_jnt",
+            "hair_base_L_b_03_jnt",
+            "band_base_Back_a_01_jnt",
+            "hair_base_L_f_03_jnt"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_hair_01"
+          ]
+        },
+        {
+          "id": 31,
+          "resource": "mirror",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_hairshadow_03_lod0",
+          "mesh_name": "S_actor_zhuangfy_hairshadow_03_lod0",
+          "original_index_count": 957,
+          "bone_names": [
+            "hair_base_R_f_03_jnt",
+            "hair_base_L_e_01_jnt",
+            "Bip001_Head",
+            "hair_base_L_f_01_jnt",
+            "hair_base_M_a_01_jnt",
+            "hair_base_R_e_01_jnt",
+            "hair_base_L_e_02_jnt",
+            "hair_base_L_f_03_jnt",
+            "hair_base_L_f_02_jnt",
+            "hair_base_R_f_01_jnt",
+            "hair_base_R_e_02_jnt",
+            "hair_base_R_f_02_jnt",
+            "hair_base_M_a_02_jnt"
+          ],
+          "materials": [
+            "M_hairshadow_common_01"
+          ]
+        },
+        {
+          "id": 32,
+          "resource": "mirror",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_iris_03_lod0",
+          "mesh_name": "S_actor_zhuangfy_iris_03_lod0",
+          "original_index_count": 1032,
+          "bone_names": [
+            "faceRtIrisJoint",
+            "faceLfPupilJoint",
+            "faceRtHighlightJoint",
+            "faceLfHighlightJoint",
+            "faceRtPupilJoint"
+          ],
+          "materials": [
+            "M_actor_zhuangfy_iris_01"
+          ]
+        },
+        {
+          "id": 33,
+          "resource": "mirror",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_vfxpart_01_lod0",
+          "mesh_name": "S_actor_zhuangfy_vfxpart_01_lod0",
+          "original_index_count": 2379,
+          "bone_names": [
+            "band_base_Back_a_01_jnt",
+            "band_base_Back_b_01_jnt"
+          ],
+          "materials": [
+            "M_fx_ui_zhuangfy_toppotential_01_01"
+          ]
+        },
+        {
+          "id": 34,
+          "resource": "mirror",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_vfxpart_02_lod0",
+          "mesh_name": "S_actor_zhuangfy_vfxpart_02_lod0",
+          "original_index_count": 528,
+          "bone_names": [
+            "hairpin_base_L_a_02_jnt",
+            "hairpin_base_R_a_02_jnt"
+          ],
+          "materials": [
+            "M_fx_ui_zhuangfy_toppotential_01_02"
+          ]
+        },
+        {
+          "id": 35,
+          "resource": "mirror",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_zhuangfy_vfxpart_03_lod0",
+          "mesh_name": "S_actor_zhuangfy_vfxpart_03_lod0",
+          "original_index_count": 12435,
+          "bone_names": [
+            "hair_base_R_c_02_jnt",
+            "hair_base_R_d_03_jnt",
+            "hair_base_L_c_01_jnt",
+            "hair_base_L_d_03_jnt",
+            "hair_base_L_c_02_jnt",
+            "hair_base_R_b_04_jnt",
+            "hair_base_R_c_04_jnt",
+            "hair_base_L_c_04_jnt",
+            "hair_base_R_d_04_jnt",
+            "hair_base_R_c_03_jnt",
+            "hair_base_L_b_02_jnt",
+            "hair_base_L_b_06_jnt",
+            "hair_base_R_b_02_jnt",
+            "hair_base_R_c_01_jnt",
+            "hair_base_R_b_03_jnt",
+            "hair_base_R_b_05_jnt",
+            "hair_base_L_b_04_jnt",
+            "hair_base_L_b_05_jnt",
+            "hair_base_R_b_06_jnt",
+            "hair_base_R_d_05_jnt",
+            "hair_base_L_d_04_jnt",
+            "hair_base_L_c_03_jnt",
+            "hair_base_L_d_05_jnt",
+            "hair_base_L_b_03_jnt"
+          ],
+          "materials": [
+            "M_fx_ui_zhuangfy_toppotential_03"
+          ]
+        }
+      ]
+    },
+    "meshes": [],
+    "textures": [],
+    "option_groups": [],
+    "component_rules": [
+      {
+        "target": 0,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 1,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 2,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 3,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 4,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 5,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 6,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 7,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 8,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 9,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 10,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 11,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 12,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 13,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 14,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 15,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 16,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 17,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 18,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 19,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 20,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 21,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 22,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 23,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 24,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 25,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 26,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 27,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 28,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 29,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 30,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 31,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 32,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 33,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 34,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 35,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      }
+    ]
+  },
+  "payload_files": []
+}

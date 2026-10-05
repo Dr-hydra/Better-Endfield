@@ -20,13 +20,80 @@ public final class BemPackageStateTest {
         String generation=UUID.randomUUID().toString();
         return new JSONObject().put("generation",generation).put("remote","bem-"+generation+".bem")
                 .put("character_id",character).put("enabled",enabled).put("name","Fixture")
-                .put("package_id","test.package").put("bytes",4).put("bem_minor",0)
+                .put("package_id","test."+character).put("bytes",4).put("bem_minor",0)
                 .put("appearances",new JSONArray().put("default").put("alternate"))
                 .put("default_appearance","default").put("selected_appearance","alternate");
     }
     private static JSONObject find(JSONArray entries,String id) throws Exception {
         for(int i=0;i<entries.length();i++) if(id.equals(entries.getJSONObject(i).getString("generation"))) return entries.getJSONObject(i);
         return null;
+    }
+
+    private static JSONObject resourceEntry(String kind,String owner,String platform,String resource,boolean enabled) throws Exception {
+        JSONObject value=entry(owner,enabled).put("bem_minor",4).put("target_kind",kind).put("target_id",owner)
+                .put("package_id","test."+UUID.randomUUID()).put("resource_keys",new JSONArray().put(platform+":"+resource))
+                .put("option_groups",new JSONArray()).put("default_options","").put("selected_options","")
+                .put("parameters",new JSONArray()).put("default_parameters","");
+        value.remove("character_id");return value;
+    }
+
+    private static void resourceTargets() throws Exception {
+        JSONObject normal=entry("zhuangfy",true).put("resource_keys",new JSONArray()
+                .put("windows-x64:normal").put("android-arm64:normal").put("windows-x64:ui").put("android-arm64:ui"));
+        JSONObject ultimate=resourceEntry("character","zhuangfy","android-arm64","ultimate",true);
+        JSONObject weapon=resourceEntry("weapon","zhuangfy","android-arm64","sword",true);
+        JSONObject android=resourceEntry("character","zhuangfy","android-arm64","another_form",true);
+        ultimate.getJSONArray("resource_keys").put("windows-x64:shared_windows");
+        weapon.getJSONArray("resource_keys").put("windows-x64:shared_windows");
+        JSONArray all=new JSONArray().put(normal).put(ultimate).put(weapon).put(android);
+        String original=all.toString();
+        JSONArray normalized=BemOptions.exclusive(all);
+        for(int i=0;i<normalized.length();++i) check(normalized.getJSONObject(i).getBoolean("enabled"),"Distinct resource scopes must coexist");
+        check(original.equals(all.toString()),"Target normalization mutated source");
+        JSONObject overlap=resourceEntry("character","other","android-arm64","ultimate",true);
+        JSONArray installed=BemInstaller.installedIndex(all,overlap,null);
+        check(!find(installed,ultimate.getString("generation")).getBoolean("enabled"),"Overlap with another owner was not disabled");
+        check(find(installed,normal.getString("generation")).getBoolean("enabled"),"Normal model disabled by ultimate");
+        check(find(installed,weapon.getString("generation")).getBoolean("enabled"),"Weapon disabled by ultimate");
+        check(find(installed,android.getString("generation")).getBoolean("enabled"),"Another platform disabled by ultimate");
+        JSONObject oldIndex=entry("zhuangfy",true);
+        check(BemOptions.conflicts(oldIndex,ultimate),"Legacy index without resources must conflict conservatively");
+        check(!BemOptions.conflicts(oldIndex,weapon),"Owner ID must include target kind");
+        JSONObject otherLegacy=entry("zhuangfy",true).put("package_id","test.otherlegacy")
+                .put("resource_keys",new JSONArray().put("windows-x64:different_world").put("windows-x64:different_ui"));
+        check(BemOptions.conflicts(normal,otherLegacy),"Two legacy packages must retain same-owner exclusivity even with disjoint roots");
+        JSONObject updated=resourceEntry("character","zhuangfy","android-arm64","different_root",true)
+                .put("package_id",ultimate.getString("package_id"));
+        check(BemOptions.conflicts(updated,ultimate),"Same package ID generations must not be enabled together");
+        JSONObject malformed=new JSONObject(ultimate.toString());malformed.remove("resource_keys");
+        rejects(()->BemOptions.exclusive(new JSONArray().put(malformed)),"Missing v1.4 resources accepted");
+        JSONObject duplicate=new JSONObject(ultimate.toString()).put("resource_keys",new JSONArray()
+                .put("windows-x64:ultimate").put("windows-x64:ultimate"));
+        rejects(()->BemOptions.exclusive(new JSONArray().put(duplicate)),"Duplicate resource accepted");
+        JSONObject invalid=new JSONObject(ultimate.toString()).put("resource_keys",new JSONArray().put("windows-x64:../bad"));
+        rejects(()->BemOptions.exclusive(new JSONArray().put(invalid)),"Unsafe resource key accepted");
+        JSONObject unknown=new JSONObject(ultimate.toString()).put("target_kind","unknown");
+        rejects(()->BemOptions.exclusive(new JSONArray().put(unknown)),"Unknown target kind accepted");
+        JSONObject converted=new JSONObject(ultimate.toString()).put("generation",UUID.randomUUID().toString());
+        JSONArray conversion=BemInstaller.installedIndex(all,converted,ultimate.getString("generation"));
+        check(find(conversion,normal.getString("generation")).getBoolean("enabled") &&
+                find(conversion,converted.getString("generation")).getBoolean("enabled"),"Conversion lost disjoint enabled state");
+        converted.put("resource_keys",new JSONArray().put("android-arm64:changed"));
+        rejects(()->BemInstaller.installedIndex(all,converted,ultimate.getString("generation")),"Conversion changed resource identity");
+        JSONObject changedKind=new JSONObject(ultimate.toString()).put("generation",UUID.randomUUID().toString()).put("target_kind","weapon");
+        rejects(()->BemInstaller.installedIndex(all,changedKind,null),"Same package ID imported with another target kind");
+        JSONObject changedOwner=new JSONObject(ultimate.toString()).put("generation",UUID.randomUUID().toString()).put("target_id","other");
+        rejects(()->BemInstaller.installedIndex(all,changedOwner,null),"Same package ID imported with another target owner");
+        JSONObject windowsOnly=resourceEntry("character","zhuangfy","windows-x64","ultimate",true);
+        rejects(()->BemInstaller.installedIndex(all,windowsOnly,null),"Windows-only draft imported on Android");
+        check(!BemOptions.exclusive(new JSONArray().put(windowsOnly)).getJSONObject(0).getBoolean("enabled"),"Windows-only persisted enabled flag was advertised as active");
+        rejects(()->OverlayWritePolicy.apply(new JSONArray().put(windowsOnly),new JSONArray().put(change(windowsOnly,"enabled",true))),"Windows-only draft enabled through overlay");
+        App app=new App();app.seed(all);
+        BemInstaller.saveAll(app,new JSONArray().put(change(ultimate,"enabled",true)));
+        JSONArray saved=BemInstaller.index(app);
+        for(int i=0;i<saved.length();++i) check(saved.getJSONObject(i).getBoolean("enabled"),"Saved selection lost disjoint target");
+        check(original.equals(all.toString()),"Install or conversion modified source metadata");
+        System.out.println("PASS BEM 1.4 resource targets, owner kinds, platform overlap, legacy index fallback and conversion identity");
     }
     private static JSONObject optionsEntry(String character) throws Exception {
         JSONObject value=entry(character,true);value.put("bem_minor",1).remove("selected_appearance");
@@ -260,7 +327,7 @@ public final class BemPackageStateTest {
         System.out.println("PASS real BEM 1.3 manifest/deformation bytes preserved through installed index and private materialization ("+bytes.length+" bytes)");
     }
     public static void main(String[] args) {
-        try {coexistenceAndConversion();migrationAndImmediateSave();componentValidation();continuousParameters();runtimeDefenseAndRemoval();if(args.length>0)realShapePayload(args[0]);System.out.println("PASS "+checks+" BEM package state checks");System.exit(0);}
+        try {coexistenceAndConversion();migrationAndImmediateSave();componentValidation();continuousParameters();runtimeDefenseAndRemoval();resourceTargets();if(args.length>0)realShapePayload(args[0]);System.out.println("PASS "+checks+" BEM package state checks");System.exit(0);}
         catch(Throwable error){error.printStackTrace();System.exit(1);}
     }
 }

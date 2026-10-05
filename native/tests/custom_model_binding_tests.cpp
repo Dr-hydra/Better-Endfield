@@ -16,6 +16,9 @@ struct Fake {
     void* parent=nullptr;
     void* transforms=nullptr;
     void* shader=nullptr;
+    void* runtime_class=nullptr;
+    void* filter=nullptr;
+    void* transform=nullptr;
     Matrix4x4Raw matrix{};
     uint64_t scalar=0;
     std::map<int32_t,void*> textures;
@@ -47,7 +50,9 @@ bool SameMaterialSet(void* actual,void* expected) {
 void* BE_CALL InvokeFake(void*,const void* method,void* object,void** args,void** exception) {
     const auto key=std::string_view(static_cast<const MethodContract*>(method)->key);
     auto* n=static_cast<Fake*>(object);
-    if (key=="object.get_type" || key=="type.get_element_type" || key=="component.get_transform" || key=="game_object.get_transform") return object;
+    if (key=="component.get_transform") return n->transform?n->transform:object;
+    if (key=="object.get_type" || key=="type.get_element_type" || key=="game_object.get_transform") return object;
+    if (key=="component.get_component") return n->filter;
     if (key=="time.frame_count") return Scalar(fake_frame);
     if (key=="transform.get_parent") return n->parent;
     if (key=="game_object.renderers") return fake_transform_type && args[0]==fake_transform_type?n->transforms:object;
@@ -74,6 +79,10 @@ void* BE_CALL InvokeFake(void*,const void* method,void* object,void** args,void*
         inverse->matrix.m[12]=-n->matrix.m[12];inverse->matrix.m[13]=-n->matrix.m[13];inverse->matrix.m[14]=-n->matrix.m[14];return inverse;
     }
     if (key=="mesh.get_bindposes") return n->poses;
+    if (key.starts_with("skinned.") && n && n->runtime_class==g_static_renderer_class.class_info && n->runtime_class)
+        Check(false,"static renderer reached a SkinnedMeshRenderer API");
+    if (key=="filter.get_shared_mesh") return n->mesh;
+    if (key=="filter.set_shared_mesh") { n->mesh=args[0]; return nullptr; }
     if (key=="skinned.get_bones") return n->bones;
     if (key=="skinned.set_bones") { n->bones=args[0]; return nullptr; }
     if (key=="skinned.get_shared_mesh") return n->mesh;
@@ -378,6 +387,76 @@ void CpuGeometryTests() {
     Check(roots==0 && tracked_handles.empty(),"geometry bridge leaked strong/weak references");
     g_weak_new=nullptr;g_weak_target=nullptr;g_host=nullptr;
     std::cout<<"PASS bounded CPU geometry bridge: current morph positions, stable draw indices, weak identity, fallback, thread and ownership\n";
+}
+void StaticResourceTests() {
+    BE_HostApiV1 host{};host.runtime_invoke=InvokeFake;host.object_unbox=UnboxFake;host.copy_managed_string=StringFake;
+    host.object_new=NewFake;host.gchandle_new=TrackedRoot;host.gchandle_free=TrackedFree;g_host=&host;
+    g_weak_new=TrackedWeak;
+    g_weak_target=[](uint32_t handle)->void* {const auto it=tracked_handles.find(handle);return it==tracked_handles.end()?nullptr:it->second;};
+    g_object_class=[](void* object)->void* {auto* n=static_cast<Fake*>(object);return n->runtime_class?n->runtime_class:object;};
+    g_array_new_specific=[](void*,uintptr_t count)->void* {auto* n=Make();n->array.resize(count);return n;};
+    for (auto& method:g_methods) {method.method_info=&method;method.resolved=true;}
+    g_renderer_class.type_object=Make("Renderer");g_static_renderer_class.class_info=Make("MeshRenderer");
+    g_mesh_filter_class.type_object=Make("MeshFilter");g_material_class.class_info=Make("Material");
+    auto owner=std::make_shared<OwnedCharacterAdapter>();owner->id="wpn_test";owner->world=owner->ui="wpn_test_postmodel";
+    owner->names={"blade_mesh"};owner->components={{owner->names[0].c_str(),6,"Meshes/blade",true}};
+    owner->adapter={owner->id.c_str(),owner->world.c_str(),owner->ui.c_str(),"",false,owner->components,"weapon","assets/test/wpn_test_postmodel.prefab",0,true};
+    g_registry={};g_registry.owned_adapters.push_back(owner);g_hot_switch_runtime=true;
+    auto* asset=Make(owner->world);auto* group=Make("Meshes");group->parent=asset;
+    auto* renderer=Make("blade");renderer->parent=group;renderer->runtime_class=const_cast<void*>(g_static_renderer_class.class_info);
+    auto* filter=Make("filter");renderer->filter=filter;filter->mesh=Make("blade_mesh");
+    renderer->materials=Array({Make("blade_material")});asset->array={renderer};
+    BemPocData bem;BemComponent component;component.static_mesh=true;component.info.component_id=0;
+    component.info.original_index_count=6;bem.components.push_back(component);
+    {
+        ConstructionScope scope;
+        Check(MakeSmallModelPlan(bem)->data.components[0].static_mesh,"job plan lost static renderer kind");
+        auto lower_lod=owner->adapter;lower_lod.receiver_lod=1;
+        Check(!ValidatePayloadAdapter(lower_lod,bem),"unsupported Windows explicit nonzero LOD silently accepted");
+        auto contradictory=owner->adapter;const std::array<ComponentIdentity,1> wrong_lod{{{"blade_mesh",6,"Mesh_all/lod1/blade",true}}};
+        contradictory.components=wrong_lod;bem.skip_validation=true;
+        Check(!ValidatePayloadAdapter(contradictory,bem),"developer validation flag bypassed explicit receiver LOD contradiction");bem.skip_validation=false;
+        std::vector<PreparedBinding> bindings;
+        Check(CaptureGenericResourceBindings(owner->adapter,bem,asset,bindings) && bindings.size()==1,"explicit static receiver capture failed");
+        Check(bindings[0].original_mesh==filter->mesh && !bindings[0].original_bones,"static capture did not use the same-object MeshFilter");
+        void* poses=reinterpret_cast<void*>(1);
+        Check(PreparePalette(component,bindings[0],bindings,poses) && !poses && !bindings[0].custom_bones,"static palette required bones");
+        auto malformed=component;malformed.bones.push_back({0,0,0});
+        Check(!PreparePalette(malformed,bindings[0],bindings,poses),"static palette accepted bones");
+        auto* original=filter->mesh;auto* replacement=Make("replacement_blade");
+        bindings[0].custom_mesh=replacement;bindings[0].custom_materials=renderer->materials;
+        reject_material_renderer=renderer;rejected=false;
+        Check(CommitResource<PreparedBinding>(bindings,ApplyPreparedBinding,RestorePreparedBinding)==CommitResult::Restored && filter->mesh==original,
+            "static MeshFilter was not rolled back after material failure");
+        reject_material_renderer=nullptr;rejected=false;
+        CompletedResource record;
+        Check(RememberResource(owner->adapter,asset,bindings,record,"static",true),"static Original record required a bone array");
+        Check(CommitResource<PreparedBinding>(bindings,ApplyPreparedBinding,RestorePreparedBinding)==CommitResult::Committed && filter->mesh==replacement,
+            "static MeshFilter commit failed");
+        g_completed.push_back(std::move(record));
+        Check(IsCompletedResource(owner->adapter,asset,"static"),"static completion identity did not match");
+        auto* clone=Make(owner->world+"(Clone)#7");auto* clone_group=Make("Meshes");clone_group->parent=clone;
+        auto* clone_renderer=Make("blade");clone_renderer->parent=clone_group;clone_renderer->runtime_class=const_cast<void*>(g_static_renderer_class.class_info);
+        auto* clone_filter=Make("filter");clone_filter->mesh=replacement;clone_renderer->filter=clone_filter;
+        clone_renderer->materials=renderer->materials;clone->array={clone_renderer};
+        Check(IsCompletedResource(owner->adapter,clone,"static"),"pooled static clone was not recognized");
+        std::vector<PreparedBinding> restore;
+        Check(PrepareDisabledResource(clone,&owner->adapter,restore),"static clone Original recovery failed");
+        Check(CommitResource<PreparedBinding>(restore,ApplyPreparedBinding,RestorePreparedBinding)==CommitResult::Committed && clone_filter->mesh==original,
+            "static clone disable failed to restore Original MeshFilter");
+        auto root_adapter=owner->adapter;const std::array<ComponentIdentity,1> root_components{{{"blade_mesh",6,"",true}}};
+        root_adapter.components=root_components;renderer->transform=asset;GenericMatching::ReceiverKey root_key;
+        Check(MakeReceiverKey(root_adapter,asset,renderer,root_key) && root_key.path.empty(),"explicit root renderer was rejected");
+        renderer->transform=nullptr;renderer->filter=nullptr;bindings.clear();
+        Check(!CaptureGenericResourceBindings(owner->adapter,bem,asset,bindings),"static receiver without MeshFilter accepted");
+        renderer->filter=filter;
+        auto nested=owner->adapter;const std::array<ComponentIdentity,1> other_path{{{"blade_mesh",6,"Weapon/Meshes/blade",true}}};nested.components=other_path;
+        Check(!CaptureGenericResourceBindings(nested,bem,asset,bindings),"explicit static receiver fell back to matching mesh name outside declared path");
+    }
+    g_completed.clear();g_original_mesh_pins.clear();g_registry={};g_hot_switch_runtime=false;
+    Check(roots==0 && tracked_handles.empty(),"static resource test leaked handles");
+    g_renderer_class={};g_static_renderer_class={};g_mesh_filter_class={};g_weak_new=nullptr;g_weak_target=nullptr;g_host=nullptr;
+    std::cout<<"PASS static MeshFilter capture, exact path, rollback, pooled clone, disable and no-skin contract\n";
 }
 void HotSwitchTests(const std::filesystem::path& path) {
     BemPocData payload; std::string error; Check(LoadBem(path,payload,error),error.c_str());
@@ -1180,6 +1259,7 @@ void AsyncGeometryAndFallbackTests(const std::filesystem::path& path) {
     std::cout<<"PASS async geometry Job commit, pump-not-started/stalled synchronous fallback, chained clone hooks/refusal fallback, early clone replaced by frame-sliced commit, natural clone reuse, Job-failure fallback, per-texture synchronous decode and diagnostics\n";
 }
 int main(int argc,char** argv) {
+    if(argc==2 && std::string_view(argv[1])=="--static-resource") {StaticResourceTests();return 0;}
     if(argc==3 && std::string_view(argv[1])=="--async") {AsyncJobsTests(argv[2]);AsyncGeometryAndFallbackTests(argv[2]);return 0;}
     if(argc==2 && std::string_view(argv[1])=="--geometry") {CpuGeometryTests();return 0;}
     if(argc==3 && std::string_view(argv[1])=="--index32") {
@@ -1232,6 +1312,6 @@ int main(int argc,char** argv) {
     if(argc==4 && std::string_view(argv[1])=="--probe-dll") { ProbeDllStartup(argv[2],argv[3]); return 0; }
     if (argc==3 && std::string_view(argv[1])=="--probe") { ProbeTests(argv[2]); return 0; }
     Check(argc>=2,"pass synthetic BEMv1 package path");
-    ParserTests(argv[1]); RegistryTests(argv[1]); HotSwitchTests(argv[1]);
+    ParserTests(argv[1]); RegistryTests(argv[1]); HotSwitchTests(argv[1]); StaticResourceTests();
     std::cout<<"PASS: BEMv1 parser, exact donor identity, material isolation, rollback, ownership, appearance/LOD routing\n";
 }

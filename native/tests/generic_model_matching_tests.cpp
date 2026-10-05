@@ -82,6 +82,26 @@ void IdentityChecks() {
     used.push_back(&renderer_a);
     Check(!DistinctReceivers(used),"two components allowed to claim one receiver");
 }
+void ExplicitResourceChecks() {
+    Check(ReceiverLodAgrees("Mesh_all/lod1/body",1) && ReceiverLodAgrees("Mesh_all/lod1",1),"matching known receiver LOD rejected");
+    Check(!ReceiverLodAgrees("Mesh_all/lod1/body",0) && !ReceiverLodAgrees("Mesh_all/lod1",0),"declared LOD contradicted known receiver path");
+    for (const auto* path:{"","Mesh_all/lod10/body","Weapon/Mesh_all/lod1/body","Shadow_Proxy/SP_Mobile/body","Meshes/body"})
+        Check(ReceiverLodAgrees(path,0),"LOD inferred from an unknown or nested path");
+    auto candidate=Body("Weapon/Meshes/blade");candidate.key.region=Region::Explicit;
+    auto request=BodyRequest();request.region=Region::Explicit;request.verified_receiver_path="Weapon/Meshes/blade";
+    std::vector<Candidate> candidates{candidate};
+    Check(Find(candidates,request).status==MatchStatus::Matched,"explicit non-character path rejected");
+    request.verified_receiver_path="Meshes/blade";
+    Check(Find(candidates,request).status==MatchStatus::Missing,"explicit path fell back to nested weapon name");
+    request.verified_receiver_path="";
+    Check(Find(candidates,request).status==MatchStatus::Missing,"empty root path matched a nested receiver");
+    candidates[0].key.path="";
+    Check(Find(candidates,request).status==MatchStatus::Matched,"explicit root renderer rejected");
+    candidates[0].key.resource="other_resource";
+    Check(Find(candidates,request).status==MatchStatus::Missing,"explicit root path crossed resources");
+    candidates={candidate};request=BodyRequest();
+    Check(Find(candidates,request).status==MatchStatus::Missing,"legacy contract acquired explicitly scoped nested geometry");
+}
 void KnownNameChecks() {
     // Names in the existing Windows reference audit. These verify same-LOD
     // matching only, and do not certify Android lower-LOD Mesh names.
@@ -161,7 +181,7 @@ void BoundedAndroidFallbackChecks() {
 }
 }
 int main() {
-    try { PathChecks(); IdentityChecks(); KnownNameChecks(); LodProxyChecks(); BoundedAndroidFallbackChecks();
+    try { PathChecks(); IdentityChecks(); ExplicitResourceChecks(); KnownNameChecks(); LodProxyChecks(); BoundedAndroidFallbackChecks();
         std::cout<<"PASS "<<checks<<" generic matching identity, boundaries, lineage, uniqueness and proxy checks\n"; return 0;
     } catch (const std::exception& e) { std::cerr<<e.what()<<'\n'; return 1; }
 }

@@ -30,7 +30,7 @@ def position_attribute(mesh):
 
 
 def validate_manifest(m, payload_count, minor=None):
-    bem.require(minor in (None, 3), 'Body parameters require BEM 1.3')
+    bem.require(minor in (None, 3, 4), 'Body parameters require BEM 1.3 or newer')
     params, channels = m.get('parameters', []), m.get('mesh_deformations', [])
     bem.require(isinstance(params, list) and len(params) <= MAX_PARAMETERS, 'Invalid parameters')
     bem.require(isinstance(channels, list) and len(channels) <= MAX_CHANNELS, 'Invalid mesh deformations')
@@ -85,7 +85,7 @@ def validate_manifest(m, payload_count, minor=None):
         bem.require(values == sorted(set(values)) and values[0] == p['min'] and
                     values[-1] == p['max'] and neutral_count == 1,
                     'Morph frames must cover min/max and contain one neutral frame')
-    options.validate_manifest(m, payload_count, 3)
+    options.validate_manifest(m, payload_count, 4 if minor == 4 else 3)
 
 
 def encode_deltas(records, vertex_count):
@@ -203,7 +203,7 @@ def check_geometry(m, payloads, minor=None):
         bem.require(all(math.isfinite(v) for i in range(mesh['vertex_count'])
                         for v in struct.unpack_from('<3f', payloads[s['payload']], i * s['stride'] + a[4])),
                     'Non-finite base morph position')
-    summary['required_minor'] = 3
+    summary['required_minor'] = max(3, summary['required_minor'])
     summary['parameters'] = len(m.get('parameters', []))
     summary['mesh_deformations'] = len(m.get('mesh_deformations', []))
     return summary

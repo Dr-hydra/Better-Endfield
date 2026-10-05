@@ -16,7 +16,7 @@ internal sealed record BemInspectionSummary(string Title, string Detail, string 
             return new(BemText.Get("已匹配角色，可以转换"), BemText.Format("{0} · ComponentN · 源包默认外观\n骨骼、顶点流、材质和绘制范围已校验。", matched.GetProperty("character_name").GetString()) +
                 (warnings.Length > 0 ? "\n" + warnings : ""), BemText.Get("点击“转换为 BEM”，完成后选择保存位置。游戏内切换键不随包转换。"), false, false) { CanAutoConvert = true };
         }
-        if (format is "BEMv1" or "BEMv1.0" or "BEMv1.1" or "BEMv1.2" or "BEMv1.3")
+        if (format is "BEMv1" or "BEMv1.0" or "BEMv1.1" or "BEMv1.2" or "BEMv1.3" or "BEMv1.4")
             return new(BemText.Get("这是可直接导入的 BEM 包"), BemText.Get("无需再做格式转换。"), BemText.Get("回到“角色外观”，点击“导入 BEM / ZIP”安装此文件。"), false, true);
         if (format == "BEM-ZIP")
         {

@@ -51,6 +51,7 @@ std::atomic_bool g_hot_switch_runtime{false};
 ModelOverlayHost g_model_overlay;
 #endif
 BE_ResolvedClassV1 g_skinned_renderer_class{},g_mesh_class{},g_texture2d_class{},g_material_class{};
+BE_ResolvedClassV1 g_renderer_class{},g_static_renderer_class{},g_mesh_filter_class{};
 using ObjectClassFn=void*(*)(void*);
 using ArrayNewSpecificFn=void*(*)(void*,uintptr_t);
 ObjectClassFn g_object_class=nullptr;
@@ -213,6 +214,12 @@ MethodContract g_methods[]{
     {"skinned.get_shared_mesh",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "SkinnedMeshRenderer",
             "get_sharedMesh", nullptr, "UnityEngine.Mesh", 0}, true},
+    {"component.get_component", {"UnityEngine.CoreModule.dll","UnityEngine","Component",
+        "GetComponent","System.Type","UnityEngine.Component",1},true},
+    {"filter.get_shared_mesh", {"UnityEngine.CoreModule.dll","UnityEngine","MeshFilter",
+        "get_sharedMesh",nullptr,"UnityEngine.Mesh",0},true},
+    {"filter.set_shared_mesh", {"UnityEngine.CoreModule.dll","UnityEngine","MeshFilter",
+        "set_sharedMesh","UnityEngine.Mesh","System.Void",1},true},
     {"skinned.set_shared_mesh",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "SkinnedMeshRenderer",
             "set_sharedMesh", "UnityEngine.Mesh", "System.Void", 1}, true},
@@ -484,6 +491,13 @@ void* Invoke(const MethodContract* method, void* instance, void** parameters,
     }
     return exception ? nullptr : RootTemporary(result);
 }
+bool ReadNullableObject(const MethodContract* method,void* instance,void*& value) {
+    value=nullptr;
+    if (!method || !method->resolved || !method->method_info || !g_host || !g_host->runtime_invoke) return false;
+    void* exception=nullptr;void* result=g_host->runtime_invoke(g_host->context,method->method_info,instance,nullptr,&exception);
+    if (exception) return false;
+    value=RootTemporary(result);return !result || value;
+}
 
 template <typename T>
 bool Unbox(void* boxed, T& value) {
@@ -604,10 +618,39 @@ bool ApplyRendererMaterials(void* renderer, void* materials) {
     void* args[]{materials};
     return InvokeVoid(Contract("renderer.set_shared_materials"),renderer,args) && RendererMaterialsMatch(renderer,materials);
 }
+bool IsStaticRenderer(void* renderer) {
+    return renderer && g_object_class && g_static_renderer_class.class_info &&
+        g_object_class(renderer)==g_static_renderer_class.class_info;
+}
+bool IsModelRenderer(void* renderer);
+void* RendererMeshHolder(void* renderer) {
+    if (!IsModelRenderer(renderer)) return nullptr;
+    if (!IsStaticRenderer(renderer)) return renderer;
+    void* args[]{g_mesh_filter_class.type_object};
+    void* filter=Invoke(Contract("component.get_component"),renderer,args);
+    return filter && IsNativeObjectAlive(filter)?filter:nullptr;
+}
+void* GetRendererMesh(void* renderer) {
+    void* holder=RendererMeshHolder(renderer);
+    return holder?Invoke(Contract(IsStaticRenderer(renderer)?"filter.get_shared_mesh":"skinned.get_shared_mesh"),holder,nullptr):nullptr;
+}
+void* GetRendererBones(void* renderer) {
+    return !IsModelRenderer(renderer) || IsStaticRenderer(renderer)?nullptr:Invoke(Contract("skinned.get_bones"),renderer,nullptr);
+}
+// Query only renderer types with a supported Mesh owner. Exact resource/path
+// matching remains mandatory; discovering a nested weapon never authorizes it.
+void* ModelRendererType() { return g_renderer_class.type_object?g_renderer_class.type_object:g_skinned_renderer_class.type_object; }
+bool IsModelRenderer(void* renderer) {
+    if (!renderer) return false;
+    if (!g_renderer_class.type_object || !g_object_class) return true;
+    const auto type=g_object_class(renderer);
+    return type==g_skinned_renderer_class.class_info || type==g_static_renderer_class.class_info;
+}
 bool SetSharedMesh(void* renderer, void* mesh) {
+    void* holder=RendererMeshHolder(renderer);
     void* args[]{mesh};
-    return InvokeVoid(Contract("skinned.set_shared_mesh"),renderer,args) &&
-        Invoke(Contract("skinned.get_shared_mesh"),renderer,nullptr)==mesh;
+    return holder && InvokeVoid(Contract(IsStaticRenderer(renderer)?"filter.set_shared_mesh":"skinned.set_shared_mesh"),holder,args) &&
+        GetRendererMesh(renderer)==mesh;
 }
 
 constexpr int32_t kVertexPosition = 0;
@@ -1250,15 +1293,20 @@ bool BuildMeshFromComponent(
         Log(label + " native vertex layout differs; rebuilding from the BEM declaration.");
     }
 
-    const std::vector<int32_t> payload_strides{
+    std::vector<int32_t> payload_strides{
         static_cast<int32_t>(info.stride0),
         static_cast<int32_t>(info.stride1),
         static_cast<int32_t>(info.stride2)};
+    while (!payload_strides.empty() && !payload_strides.back()) payload_strides.pop_back();
+    if (component.static_mesh && (!component.bones.empty() || !component.bone_names.empty() ||
+        std::any_of(component.attributes.begin(),component.attributes.end(),[](const auto& a){return a[0]==12 || a[0]==13;}))) {
+        Log(label+" static Mesh carries a skin contract; refusing."); return false;
+    }
 
-    void* bindposes = prepared_bindposes ? prepared_bindposes : Invoke(
-        Contract("mesh.get_bindposes"), source_mesh, nullptr);
+    void* bindposes = component.static_mesh?nullptr:(prepared_bindposes ? prepared_bindposes : Invoke(
+        Contract("mesh.get_bindposes"), source_mesh, nullptr));
     const int bindpose_count = ArrayLength(bindposes);
-    if (!bindposes || (!component.skip_validation && bindpose_count <= static_cast<int>(info.max_bone))) {
+    if (!component.static_mesh && (!bindposes || (!component.skip_validation && bindpose_count <= static_cast<int>(info.max_bone)))) {
         Log(label + " bindpose palette too small: bindposes=" +
             std::to_string(bindpose_count) + " maxBone=" +
             std::to_string(info.max_bone));
@@ -1285,7 +1333,10 @@ bool BuildMeshFromComponent(
     const uintptr_t source_native = GetNativeObjectPointer(source_mesh);
     const uintptr_t new_native = GetNativeObjectPointer(mesh);
     uint32_t source_native_influences = 0;
-    if (source_native && new_native) {
+    if (component.static_mesh) {
+        // A MeshRenderer has no skin palette. Do not read or manufacture HG's
+        // private skin metadata from its donor.
+    } else if (source_native && new_native) {
         const bool read_source_ok = TryReadNativeUInt32(source_native + g_native_layout.bones_per_vertex_offset, source_native_influences);
         if (read_source_ok &&
             (component.skip_validation || source_native_influences == 1 || source_native_influences == 2 || source_native_influences == 4)) {
@@ -1344,7 +1395,7 @@ bool BuildMeshFromComponent(
     // which leaves the draw in bind pose when they disagree. Upload the exact
     // source layout and its raw skin stream once instead.
 
-    for (int32_t stream = 0; stream < static_cast<int32_t>(kBemStreamCount);
+    for (int32_t stream = 0; stream < static_cast<int32_t>(payload_strides.size());
             ++stream) {
         const std::vector<uint8_t>& data =
             component.streams[static_cast<size_t>(stream)];
@@ -1392,7 +1443,7 @@ bool BuildMeshFromComponent(
 
 #endif
     void* p_bindposes[1]{bindposes};
-    if (!InvokeVoid(Contract("mesh.set_bindposes"), mesh, p_bindposes)) {
+    if (!component.static_mesh && !InvokeVoid(Contract("mesh.set_bindposes"), mesh, p_bindposes)) {
         Log(label + " failed to install the original bindpose palette.");
         DestroyUnityObject(mesh);
         return false;
@@ -1452,9 +1503,10 @@ bool BuildMeshFromComponent(
     // setters populate CPU mesh storage; otherwise upload is left until a
     // later render after the resource has already been delivered.
     uint8_t has_skin = 0;
-    const bool skin_ready = InvokeValue(Contract("mesh.has_bone_weights"), mesh, nullptr, has_skin) && has_skin;
-    if (!component.skip_validation && !skin_ready) {
-        Log(label + " packed stream did not activate skin metadata; original mesh retained.");
+    const bool skin_read = InvokeValue(Contract("mesh.has_bone_weights"), mesh, nullptr, has_skin);
+    if (!component.skip_validation && (!skin_read || static_cast<bool>(has_skin)==component.static_mesh)) {
+        Log(label + (component.static_mesh?" static Mesh skin metadata is unexpected or unreadable; original mesh retained.":
+            " packed stream did not activate skin metadata; original mesh retained."));
         DestroyUnityObject(mesh);
         return false;
     }
@@ -1472,8 +1524,8 @@ bool BuildMeshFromComponent(
     }
 
     uint32_t final_influences = 0;
-    if (!TryReadNativeUInt32(new_native + g_native_layout.bones_per_vertex_offset,final_influences) ||
-        final_influences != source_native_influences) {
+    if (!component.static_mesh && (!TryReadNativeUInt32(new_native + g_native_layout.bones_per_vertex_offset,final_influences) ||
+        final_influences != source_native_influences)) {
         Log(label + " native skin field changed after upload; refusing.");
         DestroyUnityObject(mesh); return false;
     }
@@ -1859,9 +1911,15 @@ bool ReadGenericPristineMesh(const CharacterAdapter&,void*,const GenericRenderer
 bool MakeReceiverKey(const CharacterAdapter& adapter,void* asset,void* renderer,GenericMatching::ReceiverKey& key) {
     std::string resource=ObjectName(asset),path;
     resource=std::string(ResourceBaseName(resource));
-    if ((resource!=adapter.world_resource && resource!=adapter.ui_resource) || !ResourceRelativePath(asset,renderer,path)) return false;
-    key={adapter.id,std::move(resource),path,GenericMatching::ClassifyReceiver(path)};
-    return !path.empty() && key.region!=GenericMatching::Region::Unknown;
+    if (!IsModelRenderer(renderer) || (!adapter.explicit_resource && IsStaticRenderer(renderer)) ||
+        (resource!=adapter.world_resource && resource!=adapter.ui_resource) || !ResourceRelativePath(asset,renderer,path)) return false;
+    const auto region=GenericMatching::ClassifyReceiver(path);
+    const bool declared=std::any_of(adapter.components.begin(),adapter.components.end(),[&](const auto& identity){
+        return path==identity.receiver_path && identity.static_mesh==IsStaticRenderer(renderer);
+    });
+    if (adapter.explicit_resource && !declared && region!=GenericMatching::Region::MobileProxy) return false;
+    key={adapter.id,std::move(resource),path,adapter.explicit_resource?GenericMatching::Region::Explicit:region};
+    return (adapter.explicit_resource || !path.empty()) && key.region!=GenericMatching::Region::Unknown;
 }
 bool MaterialCopyCompatible(void* source,void* copy) {
     void* shader=Invoke(Contract("material.get_shader"),source,nullptr);
@@ -1956,6 +2014,10 @@ ModelMeshBuildFn g_model_build_mesh=&BuildModelMesh;
 // the decoded payload before it builds a Mesh (see AdvanceModelJob Mesh phase).
 bool PreparePalette(const BemComponent& component,PreparedBinding& target,
     const std::vector<PreparedBinding>& bindings,void*& poses,bool skip_validation=false,bool validate_skin=true) {
+    if (component.static_mesh) {
+        poses=nullptr; target.custom_bones=nullptr;
+        return IsStaticRenderer(target.renderer) && component.bones.empty() && component.bone_names.empty();
+    }
     void* template_poses=Invoke(Contract("mesh.get_bindposes"),DonorMesh(target),nullptr);
     target.custom_bones=NewArrayLike(DonorBones(target),static_cast<int>(component.bones.size()),skip_validation);
     poses=NewArrayLike(template_poses,static_cast<int>(component.bones.size()),skip_validation);
@@ -2147,11 +2209,11 @@ bool SetRendererBones(void* renderer,void* bones) {
 bool ApplyPreparedBinding(PreparedBinding& binding) {
 #if defined(__ANDROID__)
     if (binding.change_shadow) {
-        void* mode[]{&binding.custom_shadow}; void* mesh[]{binding.custom_shadow_mesh}; int32_t read=-1;
+        void* mode[]{&binding.custom_shadow}; void* mesh[]{binding.custom_shadow_mesh}; int32_t read=-1;void* read_mesh=nullptr;
         if (!InvokeVoid(Contract("android.shadow_set"),binding.renderer,mode) ||
             !InvokeValue(Contract("android.shadow_get"),binding.renderer,nullptr,read) || read!=binding.custom_shadow ||
             !InvokeVoid(Contract("android.shadow_mesh_set"),binding.renderer,mesh) ||
-            Invoke(Contract("android.shadow_mesh_get"),binding.renderer,nullptr)!=binding.custom_shadow_mesh) return false;
+            !ReadNullableObject(Contract("android.shadow_mesh_get"),binding.renderer,read_mesh) || read_mesh!=binding.custom_shadow_mesh) return false;
     }
 #endif
     if (binding.custom_bones && !SetRendererBones(binding.renderer,binding.custom_bones)) return false;
@@ -2172,20 +2234,31 @@ bool RestorePreparedBinding(PreparedBinding& binding) {
     bool shadow=true;
 #if defined(__ANDROID__)
     if (binding.change_shadow) {
-        void* mode[]{&binding.original_shadow}; void* proxy[]{binding.original_shadow_mesh}; int32_t read=-1;
+        void* mode[]{&binding.original_shadow}; void* proxy[]{binding.original_shadow_mesh}; int32_t read=-1;void* read_mesh=nullptr;
         const bool restored_mode=InvokeVoid(Contract("android.shadow_set"),binding.renderer,mode) &&
             InvokeValue(Contract("android.shadow_get"),binding.renderer,nullptr,read) && read==binding.original_shadow;
         const bool restored_proxy=InvokeVoid(Contract("android.shadow_mesh_set"),binding.renderer,proxy) &&
-            Invoke(Contract("android.shadow_mesh_get"),binding.renderer,nullptr)==binding.original_shadow_mesh;
+            ReadNullableObject(Contract("android.shadow_mesh_get"),binding.renderer,read_mesh) && read_mesh==binding.original_shadow_mesh;
         shadow=restored_mode && restored_proxy;
     }
 #endif
     return mesh && bones && materials && enabled && shadow;
 }
 bool ValidatePayloadAdapter(const CharacterAdapter& adapter,const BemPocData& bem) {
+    if (adapter.explicit_resource && std::any_of(adapter.components.begin(),adapter.components.end(),[&](const auto& c){
+        return !GenericMatching::ReceiverLodAgrees(c.receiver_path,adapter.receiver_lod);
+    })) {
+        Log("Explicit receiver path disagrees with resource LOD: "+std::string(adapter.world_resource));return false;
+    }
+#if !defined(__ANDROID__)
+    if (adapter.explicit_resource && adapter.receiver_lod!=0) {
+        Log("Explicit Windows resource requires LOD0: "+std::string(adapter.world_resource)); return false;
+    }
+#endif
     if (bem.components.size()!=adapter.components.size()) return false;
     for (const auto& component:bem.components) {
         if (component.info.component_id>=adapter.components.size() ||
+            component.static_mesh!=adapter.components[component.info.component_id].static_mesh ||
             (!bem.skip_validation && adapter.components[component.info.component_id].indices!=component.info.original_index_count)) return false;
     }
     for (const auto& texture:bem.textures) if (texture.original_name.empty()) return false;
@@ -2194,6 +2267,9 @@ bool ValidatePayloadAdapter(const CharacterAdapter& adapter,const BemPocData& be
 thread_local void* g_ready_resource=nullptr;
 thread_local const std::vector<PreparedBinding>* g_ready_bindings=nullptr;
 bool CaptureGenericResourceBindings(const CharacterAdapter&,const BemPocData&,void*,std::vector<PreparedBinding>&);
+#if defined(__ANDROID__)
+bool PrepareExplicitAndroidShadows(const CharacterAdapter&,const BemPocData&,void*,std::vector<PreparedBinding>&);
+#endif
 bool PrepareResource(const CharacterAdapter& adapter,const BemPocData& bem,void* asset,
     std::vector<PreparedBinding>& bindings,bool capture_only=false) {
     if (!capture_only && asset==g_ready_resource && g_ready_bindings) { bindings=*g_ready_bindings; return true; }
@@ -2215,6 +2291,9 @@ bool PrepareResource(const CharacterAdapter& adapter,const BemPocData& bem,void*
             if (!PrepareKeepMaterials(component,binding,bem,&transaction_textures)) return false;
         }
     }
+    #if defined(__ANDROID__)
+    if (!PrepareExplicitAndroidShadows(adapter,bem,asset,bindings)) return false;
+    #endif
     return !g_construction->failed;
 }
 #if defined(__ANDROID__)
@@ -2418,6 +2497,7 @@ struct SavedOriginalBinding {
     bool change_shadow=false;
     int32_t shadow=0;
     StrongReference shadow_mesh;
+    std::shared_ptr<OriginalMeshPin> shadow_mesh_pin;
 #endif
     // The live Original Mesh. `current` (a receiver's Mesh) resolves it when
     // only its identity survives (unpinned and the managed wrapper recycled).
@@ -2447,6 +2527,7 @@ struct SavedOriginalBinding {
         enabled=other.enabled; bone_paths=other.bone_paths;
 #if defined(__ANDROID__)
         change_shadow=other.change_shadow; shadow=other.shadow;
+        shadow_mesh_pin=other.shadow_mesh_pin;
 #endif
     }
 };
@@ -2659,6 +2740,7 @@ struct CompletedBinding {
 #if defined(__ANDROID__)
     bool check_shadow=false;
     int32_t shadow=0;
+    WeakObject shadow_mesh;
 #endif
     std::vector<std::string> bone_names;
     std::vector<std::string> bone_paths;
@@ -2679,7 +2761,8 @@ std::shared_ptr<OwnedCharacterAdapter> OwnAdapter(const CharacterAdapter& adapte
 std::string ActiveSelectionKey(const CharacterAdapter& adapter);
 bool SameAdapter(const CharacterAdapter& a,const CharacterAdapter& b) {
     return std::string_view(a.id)==b.id && std::string_view(a.world_resource)==b.world_resource &&
-        std::string_view(a.ui_resource)==b.ui_resource;
+        std::string_view(a.ui_resource)==b.ui_resource && std::string_view(a.resource_id)==b.resource_id &&
+        a.explicit_resource==b.explicit_resource && a.receiver_lod==b.receiver_lod;
 }
 std::string RelativeBonePath(void* bone) {
     auto path=BuildTransformPath(bone); const auto slash=path.find('/');
@@ -2693,7 +2776,7 @@ std::string RelativeBonePath(void* bone) {
 // guessed; when the Original is gone the caller refuses with `why`.
 bool CollectLiveMaterials(void* root,const std::vector<const WeakObject*>& wanted,std::vector<void*>& found) {
     if (!root || !IsNativeObjectAlive(root)) return false;
-    bool inactive=true; void* args[]{g_skinned_renderer_class.type_object,&inactive};
+    bool inactive=true; void* args[]{ModelRendererType(),&inactive};
     void* renderers=Invoke(Contract("game_object.renderers"),root,args);
     const int count=ArrayLength(renderers);
     if (count<=0 || count>4096) return false;
@@ -2725,7 +2808,7 @@ void* ResolveOriginalMaterials(const SavedOriginalBinding& original,void* type_t
         for (const auto& record:g_completed) if (!complete && SameAdapter(*record.adapter,adapter))
             if (void* root=record.root.Get(); root && root!=asset) complete=CollectLiveMaterials(root,wanted,live);
 #if defined(__ANDROID__)
-        if (!complete) {
+        if (!complete && !adapter.explicit_resource) {
             void* handle=nullptr; uint32_t handle_root=0;
             struct Release { void*& handle; uint32_t& root; ~Release(){ betterendfield::AndroidReleaseUiDonor(handle,root); } } release{handle,handle_root};
             if (void* donor=RootTemporary(betterendfield::AndroidLoadUiDonor(adapter.ui_resource,handle,handle_root)); donor && donor!=asset)
@@ -2812,7 +2895,7 @@ bool UseSavedOriginal(void* asset,PreparedBinding& binding,bool require_material
 #endif
                 binding.saved_original=std::move(local_original);
             }
-            if (!binding.donor_bones) return false;
+            if (!binding.donor_bones && !IsStaticRenderer(binding.renderer)) return false;
             return true;
         }
     }
@@ -2836,7 +2919,7 @@ bool RememberResource(const CharacterAdapter& adapter,void* asset,
         if (!completed.original && (retain_original || g_hot_switch_runtime.load())) {
             auto original=std::make_shared<SavedOriginalBinding>();
             if (!original->mesh.Set(DonorMesh(binding)) || !original->SetMaterials(DonorMaterials(binding)) ||
-                !original->bones.Set(DonorBones(binding))) return false;
+                (!IsStaticRenderer(binding.renderer) && !original->bones.Set(DonorBones(binding)))) return false;
             original->enabled=binding.original_enabled;
             for (int i=0;i<ArrayLength(DonorBones(binding));++i) {
                 std::string path;
@@ -2846,13 +2929,24 @@ bool RememberResource(const CharacterAdapter& adapter,void* asset,
 #if defined(__ANDROID__)
             original->change_shadow=binding.change_shadow; original->shadow=binding.original_shadow;
             if (!original->shadow_mesh.Set(binding.original_shadow_mesh)) return false;
+            if (binding.change_shadow && binding.original_shadow_mesh && binding.original_shadow_mesh!=binding.custom_shadow_mesh) {
+                original->shadow_mesh_pin=AcquireOriginalMeshPin(binding.original_shadow_mesh);
+                if (!original->shadow_mesh_pin) return false;
+            }
 #endif
             completed.original=std::move(original);
         }
         // Pin only an Original the receiver is about to stop referencing.
         if (completed.original && binding.custom_mesh!=DonorMesh(binding)) completed.original->EnsurePinned(DonorMesh(binding));
 #if defined(__ANDROID__)
+        if (completed.original && binding.change_shadow && !completed.original->shadow_mesh_pin) {
+            if (void* original=completed.original->shadow_mesh.Get();original && original!=binding.custom_shadow_mesh) {
+                completed.original->shadow_mesh_pin=AcquireOriginalMeshPin(original);
+                if (!completed.original->shadow_mesh_pin) return false;
+            }
+        }
         completed.check_shadow=binding.change_shadow; completed.shadow=binding.custom_shadow;
+        if (binding.change_shadow && binding.custom_shadow_mesh && !completed.shadow_mesh.Set(binding.custom_shadow_mesh)) return false;
 #endif
         completed.bone_names=binding.bone_names;
         void* bones=binding.custom_bones?binding.custom_bones:binding.original_bones;
@@ -2877,7 +2971,7 @@ bool RememberResource(const CharacterAdapter& adapter,void* asset,
 bool IsCompletedResource(const CharacterAdapter& adapter,void* asset,std::string_view selection_key={}) {
     // Natural clones may share the completed template's meshes/materials. The
     // full per-component identity must agree; names alone never prove completion.
-    bool inactive=true; void* args[]{g_skinned_renderer_class.type_object,&inactive};
+    bool inactive=true; void* args[]{ModelRendererType(),&inactive};
     void* renderers=Invoke(Contract("game_object.renderers"),asset,args);
     const int count=ArrayLength(renderers);
     if (!renderers || count<=0 || count>4096) return false;
@@ -2895,13 +2989,14 @@ bool IsCompletedResource(const CharacterAdapter& adapter,void* asset,std::string
                 }
             }
             bool enabled=false;
-            if (!renderer || !binding.mesh.Is(Invoke(Contract("skinned.get_shared_mesh"),renderer,nullptr)) ||
+            if (!renderer || !binding.mesh.Is(GetRendererMesh(renderer)) ||
                 !GetRendererEnabled(renderer,enabled) || enabled!=binding.enabled) { matches=false; break; }
 #if defined(__ANDROID__)
             if (binding.check_shadow) {
-                int32_t mode=-1;
+                int32_t mode=-1;void* proxy=nullptr;
                 if (!InvokeValue(Contract("android.shadow_get"),renderer,nullptr,mode) || mode!=binding.shadow ||
-                    Invoke(Contract("android.shadow_mesh_get"),renderer,nullptr)!=nullptr) { matches=false; break; }
+                    !ReadNullableObject(Contract("android.shadow_mesh_get"),renderer,proxy) ||
+                    (proxy?!binding.shadow_mesh.Is(proxy):binding.shadow_mesh.instance_id!=0)) { matches=false; break; }
             }
 #endif
             if (!binding.bone_paths.empty()) {
@@ -2931,7 +3026,7 @@ void IndexLivePublishedTextures(const CharacterAdapter& adapter,std::unordered_m
     for (const auto& record:g_completed) {
         if (!SameAdapter(*record.adapter,adapter)) continue;
         void* root=record.root.Get(); if (!root) continue;
-        bool inactive=true; void* args[]{g_skinned_renderer_class.type_object,&inactive};
+        bool inactive=true; void* args[]{ModelRendererType(),&inactive};
         void* renderers=Invoke(Contract("game_object.renderers"),root,args);
         const int count=ArrayLength(renderers);
         if (count<=0 || count>4096) continue;
@@ -2999,7 +3094,7 @@ void InspectAndroidRenderers() {
     static uint64_t next=0;
     if (!betterendfield::AndroidInspectionEnabled() || GetTickCount64()<next || g_completed.empty()) return;
     next=GetTickCount64()+5000;
-    void* args[]{g_skinned_renderer_class.type_object};
+    void* args[]{ModelRendererType()};
     void* renderers=Invoke(Contract("android.all_renderers"),nullptr,args);
     const int count=ArrayLength(renderers);
     if (count<0 || count>30000) return;
@@ -3014,13 +3109,13 @@ void InspectAndroidRenderers() {
         bool enabled=false,visible=false;
         if (!GetRendererEnabled(renderer,enabled) || !enabled ||
             !InvokeValue(Contract("android.renderer_visible"),renderer,nullptr,visible) || !visible) continue;
-        void* mesh=Invoke(Contract("skinned.get_shared_mesh"),renderer,nullptr); bool custom=false;
+        void* mesh=GetRendererMesh(renderer); bool custom=false;
         for (const auto& record:g_completed) for (const auto& binding:record.bindings)
             if (binding.generated_mesh && binding.mesh.Is(mesh)) custom=true;
         const size_t lod=name.back()-'0';
         if (custom) ++customs[lod]; else ++originals[lod];
         if (!custom && examples++<3) Log("Android visible source renderer: "+BuildTransformPath(renderer)+
-            " bones="+std::to_string(ArrayLength(Invoke(Contract("skinned.get_bones"),renderer,nullptr))));
+            " bones="+std::to_string(ArrayLength(GetRendererBones(renderer))));
     }
     std::string status="Android visible renderer audit";
     for (size_t i=0;i<4;++i) status+=" LOD"+std::to_string(i)+" custom/source="+
@@ -3033,7 +3128,7 @@ bool ReadCompletedAndroidDonor(const CharacterAdapter& adapter,const BemPocData&
     std::vector<PreparedBinding>& bindings) {
     if (asset==g_ready_resource && g_ready_bindings) {bindings=*g_ready_bindings;return true;}
     if (!IsCompletedResource(adapter,asset,ActiveSelectionKey(adapter))) return false;
-    bool inactive=true; void* args[]{g_skinned_renderer_class.type_object,&inactive};
+    bool inactive=true; void* args[]{ModelRendererType(),&inactive};
     void* renderers=Invoke(Contract("game_object.renderers"),asset,args);
     for (const auto& component:bem.components) {
         PreparedBinding binding; binding.component_id=component.info.component_id;
@@ -3050,13 +3145,13 @@ bool ReadCompletedAndroidDonor(const CharacterAdapter& adapter,const BemPocData&
         }
         if (!binding.renderer) return false;
         binding.receiver_key=expected;
-        binding.custom_mesh=Invoke(Contract("skinned.get_shared_mesh"),binding.renderer,nullptr);
+        binding.custom_mesh=GetRendererMesh(binding.renderer);
         binding.custom_materials=Invoke(Contract("renderer.get_shared_materials"),binding.renderer,nullptr);
         if (!binding.custom_mesh || !binding.custom_materials ||
             !GetRendererEnabled(binding.renderer,binding.original_enabled)) return false;
         if (component.info.flags&kComponentFlagNoGeometry) binding.original_mesh=binding.custom_mesh;
         else {
-            binding.custom_bones=Invoke(Contract("skinned.get_bones"),binding.renderer,nullptr);
+            binding.custom_bones=GetRendererBones(binding.renderer);
             if (ArrayLength(binding.custom_bones)!=static_cast<int>(component.bone_names.size())) return false;
             for (size_t b=0;b<component.bone_names.size();++b) {
                 const auto name=ObjectName(ArrayValue(binding.custom_bones,static_cast<int>(b)));
@@ -3065,7 +3160,7 @@ bool ReadCompletedAndroidDonor(const CharacterAdapter& adapter,const BemPocData&
             }
         }
         binding.original_materials=binding.custom_materials;
-        binding.original_bones=Invoke(Contract("skinned.get_bones"),binding.renderer,nullptr);
+        binding.original_bones=GetRendererBones(binding.renderer);
         if (!UseSavedOriginal(asset,binding)) return false;
         bindings.push_back(binding);
     }
@@ -3155,10 +3250,10 @@ bool ReadGenericPristineMesh(const CharacterAdapter& adapter,void* asset,
 bool CaptureGenericResourceBindings(const CharacterAdapter& adapter,const BemPocData& bem,void* asset,
     std::vector<PreparedBinding>& bindings) {
     if (!ValidatePayloadAdapter(adapter,bem)) return false;
-    bool inactive=true;void* args[]{g_skinned_renderer_class.type_object,&inactive};
+    bool inactive=true;void* args[]{ModelRendererType(),&inactive};
     void* renderers=Invoke(Contract("game_object.renderers"),asset,args);
     std::vector<GenericRendererCandidate> index;
-    if (!BuildGenericRendererIndex(adapter,asset,renderers,index)) return false;
+    if (!BuildGenericRendererIndex(adapter,asset,renderers,index) || index.empty()) return false;
     std::vector<GenericMatching::Candidate> candidates;
     for (const auto& candidate:index) {
         GenericMatching::Candidate c;c.key=candidate.key;c.renderer=candidate.renderer;
@@ -3168,10 +3263,11 @@ bool CaptureGenericResourceBindings(const CharacterAdapter& adapter,const BemPoc
     for (const auto& component:bem.components) {
         const auto& identity=adapter.components[component.info.component_id];
         GenericMatching::Request request{adapter.id,candidates.front().key.resource,identity.name,
-            GenericMatching::Region::Lod0,identity.indices,!bem.skip_validation,{}};
+            adapter.explicit_resource?GenericMatching::Region::Explicit:GenericMatching::Region::Lod0,
+            identity.indices,!bem.skip_validation,adapter.explicit_resource?identity.receiver_path:""};
         const auto match=GenericMatching::SelectUnique(candidates,request,[&](const auto& c) {
             const auto found=std::find_if(index.begin(),index.end(),[&](const auto& entry){return entry.renderer==c.renderer;});
-            if (found==index.end() || !c.pristine.mesh) return false;
+            if (found==index.end() || !c.pristine.mesh || component.static_mesh!=IsStaticRenderer(found->renderer)) return false;
             const int materials=ArrayLength(found->materials),bones=ArrayLength(found->bones);
             if (materials<=0 || materials>256 || bones<0 || bones>256) return false;
             for(int i=0;i<materials;++i) {
@@ -3205,6 +3301,25 @@ bool CaptureGenericResourceBindings(const CharacterAdapter& adapter,const BemPoc
     }
     return !g_construction->failed;
 }
+#if defined(__ANDROID__)
+bool AndroidShadowContractsAvailable() {
+    for (const auto* key:{"android.shadow_get","android.shadow_set","android.shadow_mesh_get","android.shadow_mesh_set"}) {
+        const auto* method=Contract(key);if (!method || !method->resolved) return false;
+    }
+    return true;
+}
+void* PristineShadowMesh(const PreparedBinding& binding) {
+    if (binding.saved_original && binding.saved_original->change_shadow)
+        return binding.saved_original->shadow_mesh.Get();
+    return binding.original_shadow_mesh;
+}
+bool RestoreSavedShadowState(PreparedBinding& binding) {
+    if (!binding.saved_original || !binding.saved_original->change_shadow) return false;
+    binding.change_shadow=true;binding.custom_shadow=binding.saved_original->shadow;
+    binding.custom_shadow_mesh=binding.saved_original->shadow_mesh.Get();return true;
+}
+#include "explicit_android_shadows.inc"
+#endif
 struct PayloadCacheEntry {
     std::filesystem::path path;
     std::string appearance;
@@ -3238,7 +3353,7 @@ std::shared_ptr<const BemPocData> AcquirePayload(const EnabledMod& mod) {
         entry.expires=now+kPayloadCacheTtlMs; return entry.payload;
     }
     auto payload=std::make_shared<BemPocData>(); std::string error;
-    if (!LoadBem(mod.package,*payload,error,mod.appearance,nullptr,mod.skip_validation,mod.loading_optimization,mod.parameters,UINT64_MAX,true) ||
+    if (!LoadBem(mod.package,*payload,error,mod.appearance,nullptr,mod.skip_validation,mod.loading_optimization,mod.parameters,UINT64_MAX,true,mod.resource_id) ||
         !ValidatePayloadAdapter(*mod.adapter,*payload)) {
         Log("Package refused for "+std::string(mod.adapter->id)+": "+error); return {};
     }
@@ -3352,10 +3467,14 @@ void PublishCompleted(CompletedResource&& record,void* asset) {
     std::erase_if(g_completed,[&](const auto& old){ return old.root.Is(asset); });
     // A receiver that shows its Original Mesh again keeps it alive itself.
     for (auto& binding:record.bindings) if (binding.original && !binding.generated_mesh) binding.original->mesh_pin.reset();
+#if defined(__ANDROID__)
+    for (auto& binding:record.bindings) if (binding.original && binding.check_shadow &&
+        binding.shadow_mesh.Is(binding.original->shadow_mesh.Get())) binding.original->shadow_mesh_pin.reset();
+#endif
     g_completed.push_back(std::move(record));
 }
 bool PrepareDisabledResource(void* asset,const CharacterAdapter* adapter,std::vector<PreparedBinding>& bindings) {
-    bool inactive=true; void* args[]{g_skinned_renderer_class.type_object,&inactive};
+    bool inactive=true; void* args[]{ModelRendererType(),&inactive};
     void* renderers=Invoke(Contract("game_object.renderers"),asset,args);
     for (int i=0;i<ArrayLength(renderers);++i) {
         PreparedBinding binding; binding.renderer=ArrayValue(renderers,i);
@@ -3370,9 +3489,9 @@ bool PrepareDisabledResource(void* asset,const CharacterAdapter* adapter,std::ve
         }
         if (!known) continue;
         binding.receiver_key=key;
-        binding.original_mesh=Invoke(Contract("skinned.get_shared_mesh"),binding.renderer,nullptr);
+        binding.original_mesh=GetRendererMesh(binding.renderer);
         binding.original_materials=Invoke(Contract("renderer.get_shared_materials"),binding.renderer,nullptr);
-        binding.original_bones=Invoke(Contract("skinned.get_bones"),binding.renderer,nullptr);
+        binding.original_bones=GetRendererBones(binding.renderer);
         if (!GetRendererEnabled(binding.renderer,binding.original_enabled) || !UseSavedOriginal(asset,binding,true,true) ||
             !binding.saved_original) return false;
         binding.custom_mesh=DonorMesh(binding); binding.custom_materials=DonorMaterials(binding);
@@ -3384,7 +3503,7 @@ bool PrepareDisabledResource(void* asset,const CharacterAdapter* adapter,std::ve
             binding.change_shadow=true; binding.custom_shadow=binding.saved_original->shadow;
             binding.custom_shadow_mesh=binding.saved_original->shadow_mesh.Get();
             if (!InvokeValue(Contract("android.shadow_get"),binding.renderer,nullptr,binding.original_shadow)) return false;
-            binding.original_shadow_mesh=Invoke(Contract("android.shadow_mesh_get"),binding.renderer,nullptr);
+            if (!ReadNullableObject(Contract("android.shadow_mesh_get"),binding.renderer,binding.original_shadow_mesh)) return false;
         }
 #endif
         bindings.push_back(std::move(binding));
@@ -3406,10 +3525,10 @@ bool RestoreDisabledResource(void* asset,std::string_view name,ConstructionScope
         }
         // A scene instance cloned from a committed template is identified by
         // a Mesh this module generated for that role (hot switch rebind).
-        bool inactive=true; void* args[]{g_skinned_renderer_class.type_object,&inactive};
+        bool inactive=true; void* args[]{ModelRendererType(),&inactive};
         void* renderers=Invoke(Contract("game_object.renderers"),asset,args);
         for (int i=0;!adapter && i<ArrayLength(renderers);++i) {
-            void* mesh=Invoke(Contract("skinned.get_shared_mesh"),ArrayValue(renderers,i),nullptr);
+            void* mesh=GetRendererMesh(ArrayValue(renderers,i));
             for (const auto& binding:record->bindings)
                 if (binding.generated_mesh && mesh && binding.mesh.Is(mesh)) {adapter=record->adapter;break;}
         }
@@ -3425,7 +3544,7 @@ bool RestoreDisabledResource(void* asset,std::string_view name,ConstructionScope
     void* paired_ui_asset=nullptr; void* handle=nullptr; uint32_t handle_root=0;
     struct ReleaseUi { void*& handle; uint32_t& root; ~ReleaseUi(){ betterendfield::AndroidReleaseUiDonor(handle,root); } } release{handle,handle_root};
     CompletedResource paired_completed; std::vector<PreparedBinding> ui_bindings,paired_transaction;
-    if (name==adapter->world_resource) {
+    if (!adapter->explicit_resource && name==adapter->world_resource) {
         paired_ui_asset=RootTemporary(betterendfield::AndroidLoadUiDonor(adapter->ui_resource,handle,handle_root));
         if (!paired_ui_asset) return false;
         bool paired_modified=false;
@@ -3466,7 +3585,7 @@ bool ProcessResource(void* asset,ConstructionScope& construction) {
     (void)base_name;
 #if defined(__ANDROID__)
     auto ensure_ui=[&]() {
-        if (base_name!=mod->adapter->world_resource) return true;
+        if (mod->adapter->explicit_resource || base_name!=mod->adapter->world_resource) return true;
         void* handle=nullptr; uint32_t root=0;
         struct ReleaseDonor {
             void*& handle; uint32_t& root;
@@ -3505,7 +3624,7 @@ bool ProcessResource(void* asset,ConstructionScope& construction) {
 #if defined(__ANDROID__)
     std::vector<PreparedBinding> paired_ui_bindings;
     void* paired_ui_asset=nullptr;
-    if (base_name==mod->adapter->world_resource)
+    if (!mod->adapter->explicit_resource && base_name==mod->adapter->world_resource)
         prepared=PrepareAndroidWorldResource(*mod->adapter,*payload,asset,bindings,&paired_ui_bindings,&paired_ui_asset,
             AndroidLodRelations(),AndroidLodAssetScope());
     else
@@ -3540,7 +3659,7 @@ bool ProcessResource(void* asset,ConstructionScope& construction) {
             // Exercise the opposite load order while the UI is still bound:
             // a subsequent world delivery must reuse the verified UI result,
             // not compare its replacement counts to the original BEM counts.
-            if (base_name==mod->adapter->ui_resource && g_android_test_world.Get()) {
+            if (!mod->adapter->explicit_resource && base_name==mod->adapter->ui_resource && g_android_test_world.Get()) {
                 g_completed.push_back(std::move(completed));
                 cache_ready=false;
                 try {
@@ -3557,7 +3676,7 @@ bool ProcessResource(void* asset,ConstructionScope& construction) {
             for (auto it=transaction->rbegin();it!=transaction->rend();++it)
                 if (!RestorePreparedBinding(*it)) restored=false;
             construction.published=!restored;
-            if (restored && base_name==mod->adapter->world_resource) g_android_test_world.Set(asset);
+            if (restored && !mod->adapter->explicit_resource && base_name==mod->adapter->world_resource) g_android_test_world.Set(asset);
             Log(std::string("Android renderer commit/restore ")+(restored?"PASS: ":"FAIL: ")+name+
                 " components="+std::to_string(bindings.size()));
             return restored && cache_ready && ensure_ui();
@@ -3662,7 +3781,8 @@ void __fastcall ResourcePump(void* method) {
 #if defined(__ANDROID__)
         // Mobile world resources start at LOD1. Preserve the game's LOD and
         // culling state; the Android adapter binds the actual resource LOD.
-        const bool ready=g_lod.Update(!stop && !g_registry.enabled.empty() && betterendfield::AndroidPipelineLodEnabled());
+        const bool legacy_lod=std::any_of(g_registry.enabled.begin(),g_registry.enabled.end(),[](const auto& mod){return !mod.adapter->explicit_resource;});
+        const bool ready=g_lod.Update(!stop && legacy_lod && betterendfield::AndroidPipelineLodEnabled());
 #else
         const bool desired=!stop && EffectiveLodEnabled(!g_registry.enabled.empty(),g_standalone_lod.load());
         const bool ready=g_lod.Update(desired);
@@ -3748,6 +3868,8 @@ bool ResolveRuntimeContracts() {
             result.class_info && result.type_object;
     };
     if (models && (!resolve_class("Mesh",g_mesh_class) || !resolve_class("SkinnedMeshRenderer",g_skinned_renderer_class) ||
+        !resolve_class("Renderer",g_renderer_class) || !resolve_class("MeshRenderer",g_static_renderer_class) ||
+        !resolve_class("MeshFilter",g_mesh_filter_class) ||
         !resolve_class("Texture2D",g_texture2d_class) || !resolve_class("Material",g_material_class))) return false;
     HMODULE game=GetModuleHandleW(L"GameAssembly.dll");
     if (!game) return false;

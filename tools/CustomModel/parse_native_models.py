@@ -44,6 +44,7 @@ class Graph:
         if raw.get("schema") != 1: raise ValueError("unsupported raw graph schema")
         self.objects = {}
         self.transforms = {}
+        self.mesh_filters = {}
         for obj in raw["objects"]:
             if obj["id"] in self.objects: raise ValueError(f"duplicate serialized identity: {obj['id']}")
             self.objects[obj["id"]] = obj
@@ -51,6 +52,8 @@ class Graph:
                 go = obj["game_object"].get("id")
                 if go in self.transforms: raise ValueError("multiple transforms for one GameObject")
                 self.transforms[go] = obj
+            elif obj["type"] == "MeshFilter":
+                self.mesh_filters.setdefault(obj["game_object"].get("id"), []).append(obj)
 
     def get(self, pointer, expected=None, nullable=False):
         key = pointer.get("id") if pointer else None
@@ -84,7 +87,7 @@ def parse(raw, observations=None):
         if not subs or any(s["topology"] != "Triangles" or s["index_count"] <= 0 or s["index_count"] % 3 for s in subs):
             errors.append("unsupported/empty submesh topology")
         poses = obj.get("bindposes", [])
-        if not poses or any(len(m) != 16 or any(not math.isfinite(x) for x in m) or not any(m) for m in poses):
+        if any(len(m) != 16 or any(not math.isfinite(x) for x in m) or not any(m) for m in poses):
             errors.append("invalid bindpose matrix array")
         meshes[obj["id"]] = {"id": obj["id"], "name": obj["name"], "vertex_count": obj["vertex_count"],
                               "asset_paths": obj.get("asset_paths", []),
@@ -94,8 +97,10 @@ def parse(raw, observations=None):
                               "errors": errors + ([obj["layout_error"]] if obj.get("layout_error") else [])}
     renderers = []
     for obj in graph.objects.values():
-        if obj["type"] != "SkinnedMeshRenderer": continue
+        if obj["type"] not in ("SkinnedMeshRenderer", "MeshRenderer"): continue
+        skinned = obj["type"] == "SkinnedMeshRenderer"
         result = {"id": obj["id"], "name": None, "path": None, "resource_root": None,
+                  "renderer_kind": "skinned" if skinned else "static",
                   "bones": [], "materials": [], "errors": [], "warnings": [], "runtime_layout": None}
         renderers.append(result)
         try:
@@ -104,15 +109,29 @@ def parse(raw, observations=None):
             transform = graph.transforms.get(go["id"])
             if transform is None: raise ValueError("renderer transform missing")
             path = graph.path(transform)
+            root_transform = graph.objects[path['ids'][0]]
+            root_object = graph.get(root_transform['game_object'], 'GameObject')
             result.update(path=path["path"], transform_ids=path["ids"], resource_root=path["names"][0],
+                          resource_asset_paths=root_object.get('asset_paths', []),
                           transform={k: transform[k] for k in ("position", "rotation", "scale")})
-            mesh = graph.get(obj["mesh"], "Mesh")
+            if skinned:
+                mesh_ref = obj["mesh"]
+            else:
+                filters = graph.mesh_filters.get(go["id"], [])
+                if len(filters) != 1: raise ValueError("static renderer requires exactly one MeshFilter on its GameObject")
+                result["mesh_filter_id"] = filters[0]["id"]
+                mesh_ref = filters[0]["mesh"]
+                additional = obj.get("additional_vertex_streams")
+                result["additional_vertex_streams"] = additional
+                if additional and (additional.get("id") or additional.get("path_id", "0") != "0"):
+                    raise ValueError("static additional vertex streams are not supported")
+            mesh = graph.get(mesh_ref, "Mesh")
             result["mesh_id"] = mesh["id"]
             result["mesh_name"] = mesh["name"]
             result["original_index_count"] = meshes[mesh["id"]]["original_index_count"]
             result["errors"].extend(meshes[mesh["id"]]["errors"])
             result["root_bone"] = obj.get("root_bone")
-            for index, ref in enumerate(obj["bones"]):
+            for index, ref in enumerate(obj.get("bones", []) if skinned else []):
                 try:
                     bone = graph.get(ref, "Transform")
                     bone_go = graph.get(bone["game_object"], "GameObject")
@@ -121,7 +140,9 @@ def parse(raw, observations=None):
                 except ValueError as exc:
                     result["bones"].append({"index": index, "id": ref.get("id"), "name": None})
                     result["errors"].append(f"bone {index}: {exc}")
-            if len(result["bones"]) != len(meshes[mesh["id"]]["bindposes"]):
+            if skinned and not meshes[mesh["id"]]["bindposes"]:
+                result["errors"].append("invalid bindpose matrix array")
+            if skinned and len(result["bones"]) != len(meshes[mesh["id"]]["bindposes"]):
                 result["errors"].append("bones/bindposes count mismatch")
             for slot, ref in enumerate(obj["materials"]):
                 material_row = {"slot": slot, "id": ref.get("id"), "textures": []}
@@ -158,6 +179,12 @@ def parse(raw, observations=None):
     if observations: apply_observations(result, observations)
     result["resources"] = {root: [r["id"] for r in renderers if r["resource_root"] == root]
                            for root in sorted({r["resource_root"] for r in renderers if r["resource_root"]})}
+    # A loaded prefab may intentionally contain no supported renderer (for
+    # example an effect holder). Distinguish that from a missing asset bundle.
+    for obj in graph.objects.values():
+        if obj['type'] == 'GameObject' and any(p.lower().endswith('.prefab') for p in obj.get('asset_paths', [])):
+            result['resources'].setdefault(obj['name'], [])
+    result['empty_resources'] = sorted(root for root, ids in result['resources'].items() if not ids)
     snapshot = raw.get("snapshot") or {}
     expected = {Path(a["path"]).stem for a in snapshot.get("assets", [])}
     result["missing_resources"] = sorted(expected - set(result["resources"]))
@@ -185,14 +212,16 @@ def apply_observations(database, observations):
         for field in ("resource_root", "path", "mesh_name", "original_index_count"):
             if observation[field] != row.get(field): raise ValueError(f"stale runtime observation: {field}")
         attributes, strides = observation["attributes"], observation["strides"]
-        if len(strides) != 3 or any(type(s) is not int or not 0 < s <= 64 for s in strides):
+        if (len(strides) != 3 if row.get("renderer_kind", "skinned") == "skinned" else not 1 <= len(strides) <= 3) or any(type(s) is not int or not 0 < s <= 64 for s in strides):
             raise ValueError("invalid runtime strides")
         if not attributes or [a[0] for a in attributes] != sorted({a[0] for a in attributes}):
             raise ValueError("runtime attributes must be unique and sorted")
-        actual = [0, 0, 0]
+        actual = [0] * len(strides)
         for attr, fmt, dim, stream in attributes:
-            if not 0 <= attr < 14 or not 0 <= fmt < len(FORMAT_BYTES) or not 1 <= dim <= 4 or not 0 <= stream < 3:
+            if not 0 <= attr < 14 or not 0 <= fmt < len(FORMAT_BYTES) or not 1 <= dim <= 4 or not 0 <= stream < len(strides):
                 raise ValueError("invalid runtime vertex descriptor")
+            if row.get("renderer_kind") == "static" and attr in (12, 13):
+                raise ValueError("static runtime descriptor contains skin attributes")
             actual[stream] += FORMAT_BYTES[fmt] * dim
         if actual != strides: raise ValueError("runtime descriptor/stride mismatch")
         row["runtime_layout"] = {"attributes": attributes, "strides": strides, "evidence": observations["evidence"]}

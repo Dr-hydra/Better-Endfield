@@ -5,8 +5,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Spacing="18" Padding="24">
-            <TextBlock x:Name="PageTitle" Text="角色外观 · BEM" FontSize="28" FontWeight="SemiBold" />
-            <TextBlock x:Name="PageIntro" Text="支持 BEM 1.0–1.3 模型包，为每个角色选择外观、组件和作者提供的形态滑条。滑条点击应用后保存；可开启实验热切换。" TextWrapping="Wrap" />
+            <TextBlock x:Name="PageTitle" Text="角色与武器 · BEM" FontSize="28" FontWeight="SemiBold" />
+            <TextBlock x:Name="PageIntro" Text="支持 BEM 1.0–1.4 模型包，管理角色、武器和技能形态。资源目标不重叠的模型包可以同时启用。" TextWrapping="Wrap" />
             <StackPanel Orientation="Horizontal" Spacing="12">
                 <Button x:Name="ImportButton" Content="导入 BEM / ZIP" Click="Import_Click" />
                 <Button x:Name="ConvertButton" Content="其他来源 Mod 转换…" Click="Convert_Click" />

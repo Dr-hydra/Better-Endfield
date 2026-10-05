@@ -42,6 +42,19 @@ inline bool CanChoose(const Package& package,const std::string& group,const std:
 }
 enum class ActionKind {Enable,Disable,DisableAll,Option,Appearance,Parameter,Defaults};
 struct Action {ActionKind kind;std::string section,id,value;};
+inline std::string TargetKey(const BemPackageInfo& info) {return info.target_kind+":"+info.target_id;}
+inline bool SupportsWindows(const BemPackageInfo& info) {
+    return info.minor<4 || std::any_of(info.resource_keys.begin(),info.resource_keys.end(),[](const auto& key){return key.starts_with("windows-x64:");});
+}
+inline bool Conflicts(const BemPackageInfo& first,const BemPackageInfo& second) {
+    if(!first.package_id.empty() && first.package_id==second.package_id) return true;
+    // Preserve the legacy character contract while allowing explicit forms to
+    // coexist with a normal character package when their resource roots differ.
+    if(first.minor<4 && second.minor<4 && !first.character_id.empty() && first.character_id==second.character_id) return true;
+    for(const auto& key:first.resource_keys)
+        if(key.starts_with("windows-x64:") && std::find(second.resource_keys.begin(),second.resource_keys.end(),key)!=second.resource_keys.end()) return true;
+    return false;
+}
 class Library {
 public:
     std::filesystem::path root,installed_directory;
@@ -71,8 +84,8 @@ public:
             }
         }
         std::sort(packages.begin(),packages.end(),[](const auto& a,const auto& b) {
-            return std::tie(a.metadata->info.character_id,a.metadata->info.name,a.section)<
-                std::tie(b.metadata->info.character_id,b.metadata->info.name,b.section);
+            return std::tie(a.metadata->info.target_kind,a.metadata->info.target_id,a.metadata->info.name,a.section)<
+                std::tie(b.metadata->info.target_kind,b.metadata->info.target_id,b.metadata->info.name,b.section);
         });
         std::erase_if(cache_,[&](const auto& item){return !used.contains(item.first);});
     }
@@ -111,13 +124,14 @@ public:
         }
         if(!ResolveBemSelection(info,options,remembered,next,why)) throw std::runtime_error(why);
         if(action.kind==ActionKind::Enable) {
+            if(!SupportsWindows(info)) throw std::runtime_error("This package has no Windows resource targets and cannot be enabled on this platform");
             for(const auto& [section,_]:ini.All()) if(section.starts_with("Mod.")&&ini.Flag(section,"enabled")&&!Find(section))
                 throw std::runtime_error("Enabled package has no readable metadata; disable it first");
             for(const auto& peer:packages) {
                 if(peer.section==action.section) continue;
                 if(peer.enabled&&!peer.metadata->error.empty()) throw std::runtime_error("Enabled package metadata unavailable; disable it first");
                 const auto& other=peer.metadata->info;
-                if(other.character_id==info.character_id||other.world_resource==info.world_resource||other.ui_resource==info.ui_resource)
+                if(Conflicts(info,other))
                     ini.Set(peer.section,"enabled","false");
             }
             ini.Set(action.section,"enabled","true");
@@ -150,7 +164,7 @@ private:
         cache_[path]=metadata;return metadata;
     }
     void Add(const Settings::Ini& ini,const std::string& section,std::shared_ptr<const Metadata> metadata) {
-        Package package{section,std::move(metadata)};package.enabled=ini.Flag(section,"enabled");
+        Package package{section,std::move(metadata)};package.enabled=ini.Flag(section,"enabled") && SupportsWindows(package.metadata->info);
         const auto& info=package.metadata->info;
         package.options_source=ini.Get(section,info.minor?"options":"appearance");
         package.parameters_source=ini.Get(section,"parameters_saved",ini.Get(section,"parameters"));

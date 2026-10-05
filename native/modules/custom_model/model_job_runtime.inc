@@ -267,7 +267,7 @@ const char* ModelJobPhaseName(ModelBuildJob::Phase phase) {
 AsyncBemLoader::Ticket RequestModelCpu(const EnabledMod& mod,const std::shared_ptr<ModelFileLease>& lease,LoadPriority priority) {
     BemRequest request;request.key=mod.selection_key;request.revision=mod.selection_key;
     request.path=mod.package;request.generation=g_model_revision;
-    request.appearance=mod.appearance;request.parameters=mod.parameters;
+    request.appearance=mod.appearance;request.parameters=mod.parameters;request.resource_id=mod.resource_id;
     request.skip_validation=mod.skip_validation;request.loading_optimization=mod.loading_optimization;
     request.defer_texture_payloads=true; // geometry + metadata; textures stream per entry
     request.file_lease=lease;request.revision+="\nlease="+std::to_string(lease->epoch);
@@ -279,6 +279,7 @@ std::shared_ptr<SmallModelPlan> MakeSmallModelPlan(const BemPocData& data) {
     small.header=data.header;small.skip_validation=data.skip_validation;small.loading_optimization=data.loading_optimization;
     for (const auto& component:data.components) {
         BemComponent c;c.info=component.info;c.skip_validation=component.skip_validation;c.layout_crc=component.layout_crc;
+        c.static_mesh=component.static_mesh;
         c.bones=component.bones;c.draws=component.draws;c.keep_material_overrides=component.keep_material_overrides;
         c.attributes=component.attributes;c.bone_names=component.bone_names;c.material_names=component.material_names;
         c.keep_material_names=component.keep_material_names;c.bone_aliases=component.bone_aliases;
@@ -443,7 +444,8 @@ bool AdvanceModelTexture(ModelBuildJob& job,uint64_t frame) {
 }
 std::string ModelMeshKey(ModelBuildJob& job,size_t index,void* poses,std::vector<void*>& donors) {
     const auto& c=job.plan->data.components[index];const auto& target=job.bindings[index];
-    std::string key="mesh-v1";AssetKeyText(key,job.mod.selection_key);AssetKeyValue(key,c.info);
+    std::string key="mesh-v2";AssetKeyText(key,job.mod.selection_key);AssetKeyValue(key,c.info);
+    AssetKeyValue(key,c.static_mesh);AssetKeyText(key,target.receiver_key.resource);AssetKeyText(key,target.receiver_key.path);
     AssetKeyValue(key,job.file_lease->epoch);
     for (const auto& a:c.attributes) AssetKeyValue(key,a);
     for (const auto& d:c.draws) AssetKeyValue(key,d);
@@ -468,14 +470,21 @@ bool ModelBindingsUnchanged(const std::vector<PreparedBinding>& bindings) {
     for (const auto& b:bindings) {
         bool enabled=false;
         if (!IsNativeObjectAlive(b.renderer) || !IsNativeObjectAlive(b.original_mesh) ||
-            Invoke(Contract("skinned.get_shared_mesh"),b.renderer,nullptr)!=b.original_mesh ||
+            GetRendererMesh(b.renderer)!=b.original_mesh ||
             !GetRendererEnabled(b.renderer,enabled) || enabled!=b.original_enabled) return false;
         void* materials=Invoke(Contract("renderer.get_shared_materials"),b.renderer,nullptr);
         if (ArrayLength(materials)!=ArrayLength(b.original_materials)) return false;
         for (int i=0;i<ArrayLength(materials);++i) if (ArrayValue(materials,i)!=ArrayValue(b.original_materials,i)) return false;
-        void* bones=Invoke(Contract("skinned.get_bones"),b.renderer,nullptr);
+        void* bones=GetRendererBones(b.renderer);
         if (ArrayLength(bones)!=ArrayLength(b.original_bones)) return false;
         for (int i=0;i<ArrayLength(bones);++i) if (ArrayValue(bones,i)!=ArrayValue(b.original_bones,i)) return false;
+#if defined(__ANDROID__)
+        if (b.change_shadow) {
+            int32_t mode=-1;void* proxy=nullptr;
+            if (!InvokeValue(Contract("android.shadow_get"),b.renderer,nullptr,mode) || mode!=b.original_shadow ||
+                !ReadNullableObject(Contract("android.shadow_mesh_get"),b.renderer,proxy) || proxy!=b.original_shadow_mesh) return false;
+        }
+#endif
     }
     return true;
 }
@@ -487,6 +496,8 @@ bool CommitModelJob(ModelBuildJob& job,uint64_t frame) {
     auto transaction=job.bindings;CompletedResource completed,ui_completed;
     void* paired_ui=nullptr;
 #if defined(__ANDROID__)
+    if (job.mod.adapter->explicit_resource && !PrepareExplicitAndroidShadows(*job.mod.adapter,job.plan->data,job.asset,transaction))
+        return JobFail(job,"explicit Android shadow ownership or transaction unavailable");
     if (job.asset!=job.ui_asset) {
         std::vector<PreparedBinding> world,ui;
         struct ReadyOverride {
@@ -559,7 +570,7 @@ bool AdvanceModelJob(ModelBuildJob& job,uint64_t frame) {
         job.asset=job.target.Get();if (!job.asset) return JobFail(job,"target released before capture");
         job.scope.resource_name=ObjectName(job.asset);job.ui_asset=job.asset;
 #if defined(__ANDROID__)
-        if (ResourceBaseName(job.scope.resource_name)==job.mod.adapter->world_resource) {
+        if (!job.mod.adapter->explicit_resource && ResourceBaseName(job.scope.resource_name)==job.mod.adapter->world_resource) {
             // g_in_delivery supplies OriginalOnly for this synchronous donor acquisition.
             job.ui_asset=RootTemporary(betterendfield::AndroidLoadUiDonor(job.mod.adapter->ui_resource,job.donor_handle,job.donor_handle_root));
             if (!job.ui_asset) return JobFail(job,"Android UI donor unavailable: "+std::string(job.mod.adapter->ui_resource));
@@ -587,7 +598,7 @@ bool AdvanceModelJob(ModelBuildJob& job,uint64_t frame) {
         if (b.custom_mesh) {++job.mesh_hits;++job.component;job.palette_poses=nullptr;return true;}
         if (!AwaitModelDecode(job)) return !job.invalid;
         const auto& decoded=job.decoded->data.components[job.component];
-        {
+        if (!decoded.static_mesh) {
             std::vector<uint8_t> counts;std::vector<BoneWeight1Raw> weights;
             if (!DecodeComponentSkin(decoded,counts,weights))
                 return JobFail(job,"decoded skin stream invalid C"+std::to_string(c.info.component_id));
@@ -664,7 +675,7 @@ KnownModelTarget* RememberModelTarget(void* asset,const EnabledMod& mod) {
     if (g_model_targets.size()>=128) return nullptr;
     KnownModelTarget target;target.owner=OwnAdapter(*mod.adapter);target.adapter=mod.adapter;
     if (!target.root.Set(asset)) return nullptr;
-    bool inactive=true;void* args[]{g_skinned_renderer_class.type_object,&inactive};
+    bool inactive=true;void* args[]{ModelRendererType(),&inactive};
     void* renderers=Invoke(Contract("game_object.renderers"),asset,args);
     const int count=ArrayLength(renderers);
     if (count<0 || count>4096) return nullptr;
@@ -684,7 +695,7 @@ void InitializeModelJobs() {
     AsyncBemLoader::Backend backend;
     backend.load=[](const BemRequest& request,uint64_t reservation,BemPocData& data,BemLoadStats& stats,std::string& error) {
         return LoadBem(request.path,data,error,request.appearance,&stats,request.skip_validation,
-            request.loading_optimization,request.parameters,reservation,request.defer_texture_payloads);
+            request.loading_optimization,request.parameters,reservation,request.defer_texture_payloads,request.resource_id);
     };
     g_model_loader=std::make_unique<AsyncBemLoader>(AsyncBemLoader::Config{},std::move(backend));
     if (!g_texture_streamer) g_texture_streamer=std::make_unique<TexturePayloadStreamer>();
@@ -764,7 +775,7 @@ void ScanSceneInstancesForRebind() {
             stale.emplace(binding.mesh.instance_id,record.adapter);
     }
     if (stale.empty()) return;
-    void* args[]{g_skinned_renderer_class.type_object};
+    void* args[]{ModelRendererType()};
     void* renderers=Invoke(find_all,nullptr,args);
     const int count=ArrayLength(renderers);
     if (count<0 || count>65536) {Log("Hot switch instance rebind skipped: renderer count "+std::to_string(count));return;}
@@ -787,7 +798,7 @@ void ScanSceneInstancesForRebind() {
             }
             if (!root) continue;
             auto& summary=roots[ModelInstanceId(root)];summary.name=root_name;++summary.renderers;
-            if (stale.contains(ModelInstanceId(Invoke(Contract("skinned.get_shared_mesh"),renderer,nullptr)))) ++summary.stale_hits;
+            if (stale.contains(ModelInstanceId(GetRendererMesh(renderer)))) ++summary.stale_hits;
         }
         for (const auto& [id,summary]:roots)
             Log("Hot switch instance scan root id="+std::to_string(id)+" name="+summary.name+" renderers="+
@@ -812,7 +823,7 @@ void ScanSceneInstancesForRebind() {
                 top=transform;transform=Invoke(Contract("transform.get_parent"),transform,nullptr);
             }
             if (known) continue;
-            void* mesh=Invoke(Contract("skinned.get_shared_mesh"),renderer,nullptr);
+            void* mesh=GetRendererMesh(renderer);
             const int32_t mesh_id=ModelInstanceId(mesh);
             Log("Hot switch instance scan other renderer="+name+" parents="+chain+" top="+ObjectName(top)+
                 " topId="+std::to_string(ModelInstanceId(top))+" mesh="+(mesh?ObjectName(mesh):std::string("null"))+
@@ -823,7 +834,7 @@ void ScanSceneInstancesForRebind() {
     }
     for (int i=0;i<count;++i) {
         void* renderer=ArrayValue(renderers,i);
-        const auto owner=stale.find(ModelInstanceId(Invoke(Contract("skinned.get_shared_mesh"),renderer,nullptr)));
+        const auto owner=stale.find(ModelInstanceId(GetRendererMesh(renderer)));
         if (owner==stale.end()) continue;
         // The instance root is the nearest ancestor named after the role's
         // world/UI resource (Unity appends "(Clone)" to instances).

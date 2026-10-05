@@ -8,7 +8,7 @@
 #include <vector>
 
 namespace BetterEndfield::CustomModel::GenericMatching {
-enum class Region { Unknown, Lod0, Lod1, Lod2, Lod3, MobileProxy, DesktopProxy };
+enum class Region { Unknown, Lod0, Lod1, Lod2, Lod3, MobileProxy, DesktopProxy, Explicit };
 struct ReceiverKey {
     std::string character, resource, path;
     Region region=Region::Unknown;
@@ -24,6 +24,13 @@ inline Region ClassifyReceiver(std::string_view path) {
         if (!leaf.empty() && leaf.find('/')==leaf.npos) return regions[i];
     }
     return Region::Unknown;
+}
+inline bool ReceiverLodAgrees(std::string_view path,uint32_t lod) {
+    constexpr std::string_view prefix="Mesh_all/lod";
+    if (!path.starts_with(prefix) || path.size()<=prefix.size()) return true;
+    const char digit=path[prefix.size()];
+    if (digit<'0' || digit>'3' || (path.size()>prefix.size()+1 && path[prefix.size()+1]!='/')) return true;
+    return uint32_t(digit-'0')==lod;
 }
 enum class PathStatus { Valid, OutsideRoot, Cycle, TooDeep, InvalidName };
 struct RelativePath { PathStatus status=PathStatus::OutsideRoot; std::string path; };
@@ -78,9 +85,9 @@ Match SelectUnique(std::span<const Candidate> candidates,const Request& request,
     for (size_t i=0;i<candidates.size();++i) {
         const auto& c=candidates[i];
         if (!c.renderer || c.key.character!=request.character || c.key.resource!=request.resource ||
-            c.key.region!=request.region || ClassifyReceiver(c.key.path)!=c.key.region) continue;
+            c.key.region!=request.region || (request.region!=Region::Explicit && ClassifyReceiver(c.key.path)!=c.key.region)) continue;
         for (size_t j=0;j<i;++j) if (candidates[j].key==c.key) return {MatchStatus::InvalidIndex,0,0};
-        if (!request.verified_receiver_path.empty() && c.key.path!=request.verified_receiver_path) continue;
+        if ((request.region==Region::Explicit || !request.verified_receiver_path.empty()) && c.key.path!=request.verified_receiver_path) continue;
         const auto& identity=c.pristine;
         if ((identity.origin!=DonorOrigin::Pristine && identity.origin!=DonorOrigin::SavedOriginal) ||
             !identity.mesh || identity.name!=request.mesh_name ||

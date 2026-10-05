@@ -1,8 +1,8 @@
-# BEM Format Specification (1.0–1.3)
+# BEM Format Specification (1.0–1.4)
 
-BEM (Better Endfield Model) is a character model replacement package with the `.bem` extension. Windows and Android read the same file. This document combines the 1.0–1.3 protocol; version-specific differences are marked below. See the [Creator Guide](BEM_CREATOR_GUIDE.en.md) for production workflow and [Runtime Behavior and Compatibility](BEM_RUNTIME_COMPATIBILITY.en.md) for in-game matching and restrictions.
+BEM (Better Endfield Model) is a character model replacement package with the `.bem` extension. Windows and Android read the same file. The [BEM 1.4 extension](BEM_V1_4_SPEC.md) defines explicit multi-resource targets and static weapons. The sections below describe the 1.0–1.3 contract; version-specific differences are marked below. See the [Creator Guide](BEM_CREATOR_GUIDE.en.md) for production workflow and [Runtime Behavior and Compatibility](BEM_RUNTIME_COMPATIBILITY.en.md) for in-game matching and restrictions.
 
-Reference implementations: writers and validators are `tools/CustomModel/bem_v1.py`, `bem_v11.py`, and `bem_v13.py`; the native reader is `native/modules/custom_model/bem.cpp`.
+Reference implementations: writers and validators are `tools/CustomModel/bem_v1.py`, `bem_v11.py`, `bem_v13.py`, and `bem_v14.py`; the native reader is `native/modules/custom_model/bem.cpp`.
 
 ## 1. Versions
 
@@ -12,9 +12,10 @@ Reference implementations: writers and validators are `tools/CustomModel/bem_v1.
 | 1.1 | Composable options, `option_groups` + `component_rules`, conditional draws, and texture overrides on keep components | `composable-options`; add `keep-material-textures` when used |
 | 1.2 | `texture_slots`, resource-specific bone aliases, 32-byte uncompressed skinning, and higher resource limits | Add `texture-slots` and/or `resource-bone-aliases` as used |
 | 1.3 | Continuous parameters, `parameters` + `mesh_deformations` | `body-parameters`, `mesh-position-deltas` |
+| 1.4 | Explicit resource/platform targets and static MeshRenderer meshes; see the linked extension | `multi-resource-targets`; `static-meshes` when used |
 
 - Writers choose the **lowest version that can express the package**. A package without newer features remains readable by older runtimes. Newer content in an older header is rejected.
-- Readers apply the limits and semantics for the header version. The current runtime accepts 1.0–1.3.
+- Readers apply the limits and semantics for the header version. The current development runtime accepts 1.0–1.4.
 - Every version requires `native-materials`, `palette-u8`, and `indices-u32`. Unknown or duplicate capabilities, and used features without their capability, are rejected. Declaring an unused capability is allowed.
 
 ## 2. Container

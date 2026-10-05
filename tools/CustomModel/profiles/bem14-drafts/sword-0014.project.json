@@ -1,0 +1,62 @@
+{
+  "manifest": {
+    "schema": 1,
+    "package_id": "draft.sword-0014.win",
+    "name": "Unverified target scaffold",
+    "author": "BEM target tool",
+    "version": "1",
+    "required_capabilities": [
+      "native-materials",
+      "composable-options",
+      "multi-resource-targets",
+      "static-meshes"
+    ],
+    "target": {
+      "id": "wpn_sword_0014",
+      "profile_id": "draft.sword-0014.win",
+      "revision": "1",
+      "snapshot": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+      "kind": "weapon",
+      "platform": "windows-x64",
+      "resources": [
+        {
+          "id": "weapon",
+          "name": "wpn_sword_0014",
+          "asset_path": "assets/beyond/dynamicassets/gameplay/prefabs/weapons/wpn_sword_0014.prefab",
+          "platforms": [
+            "windows-x64"
+          ],
+          "lod": 0
+        }
+      ],
+      "components": [
+        {
+          "id": 0,
+          "resource": "weapon",
+          "renderer_kind": "static",
+          "renderer_path": "Mesh_all/lod0/S_wpn_sword_0014_01_lod0",
+          "mesh_name": "S_wpn_sword_0014_01_lod0",
+          "original_index_count": 27804,
+          "bone_names": [],
+          "materials": [
+            "M_wpn_sword_0014_01"
+          ]
+        }
+      ]
+    },
+    "meshes": [],
+    "textures": [],
+    "option_groups": [],
+    "component_rules": [
+      {
+        "target": 0,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      }
+    ]
+  },
+  "payload_files": []
+}

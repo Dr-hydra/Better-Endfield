@@ -73,6 +73,10 @@ std::wstring CharacterName(const std::string& id) {
     const auto& names=IsEnglish()?english:chinese;
     const auto found=names.find(id);return UI::Wide(found==names.end()?id:found->second);
 }
+std::wstring TargetName(const std::string& key) {
+    const auto split=key.find(':');const auto id=split==key.npos?key:key.substr(split+1);
+    return key.starts_with("weapon:")?std::wstring(T(L"武器 · ",L"Weapon · "))+UI::Wide(id):CharacterName(id);
+}
 std::wstring StatusText() {
     if(IsEnglish()) {
         static const std::map<std::string,std::string> labels{
@@ -186,26 +190,26 @@ void Paint(Graphics& g) {
     UI::Label(g,T(L"模型管理",L"Models"),{30,10,160,30},text,18,true);
     UI::Label(g,shared->runtime_hot_switch?T(L"热切换",L"Hot switch"):T(L"重启后生效",L"Restart required"),{190,10,window.width-268,30},accent,14);
     Button(g,L"×",{window.width-48,10,30,30},[]{SetVisible(false);});
-    Button(g,filter.empty()?std::wstring(T(L"全部角色 ▾",L"All characters ▾")):CharacterName(filter)+L" ▾",{18,56,window.width-158,30},[]{filter_open=!filter_open;scroll=0;});
+    Button(g,filter.empty()?std::wstring(T(L"全部模型 ▾",L"All models ▾")):TargetName(filter)+L" ▾",{18,56,window.width-158,30},[]{filter_open=!filter_open;scroll=0;});
     Button(g,T(L"关闭全部",L"Disable all"),{window.width-130,56,112,30},[]{Save({ActionKind::DisableAll,{},{},{}});},false,!save_failed);
     const auto state=g.Save();g.SetClip(RectF(16,kContentTop,window.width-32,window.height-kContentTop-48));
     float y=kContentTop-scroll;
     if(filter_open) {
-        std::set<std::string> roles;for(const auto& package:library.packages) if(!package.metadata->info.character_id.empty()) roles.insert(package.metadata->info.character_id);
-        Button(g,T(L"全部角色",L"All characters"),{24,y,window.width-48,32},[]{filter={};filter_open=false;scroll=0;},filter.empty(),true,true);y+=38;
-        for(const auto& role:roles) {Button(g,CharacterName(role),{24,y,window.width-48,32},[role]{filter=role;filter_open=false;scroll=0;},filter==role,true,true);y+=38;}
+        std::set<std::string> roles;for(const auto& package:library.packages) if(!package.metadata->info.target_id.empty()) roles.insert(Management::TargetKey(package.metadata->info));
+        Button(g,T(L"全部模型",L"All models"),{24,y,window.width-48,32},[]{filter={};filter_open=false;scroll=0;},filter.empty(),true,true);y+=38;
+        for(const auto& role:roles) {Button(g,TargetName(role),{24,y,window.width-48,32},[role]{filter=role;filter_open=false;scroll=0;},filter==role,true,true);y+=38;}
     } else {
         for(const auto& package:library.packages) {
-            if(!filter.empty()&&package.metadata->info.character_id!=filter) continue;
+            if(!filter.empty()&&Management::TargetKey(package.metadata->info)!=filter) continue;
             const auto section=package.section;
             const auto title=package.metadata->info.name.empty()?Management::PathUtf8(package.metadata->path.filename()):package.metadata->info.name;
-            const auto role=package.metadata->info.character_id;
+            const auto role=Management::TargetKey(package.metadata->info);
             Button(g,(expanded.contains(section)?L"− ":L"+ ")+UI::Wide(title),{24,y,window.width-142,34},
                 [section]{if(!expanded.erase(section)) expanded.insert(section);},false,true,true);
             Button(g,package.enabled?T(L"已启用",L"Enabled"):T(L"启用",L"Enable"),{window.width-108,y,84,34},[section,enabled=package.enabled]{
                 Save({enabled?ActionKind::Disable:ActionKind::Enable,section,{},{}});
             },package.enabled,!save_failed&&(package.enabled||package.metadata->error.empty()),true);y+=38;
-            UI::Label(g,CharacterName(role),{32,y,window.width-64,26},Color(255,170,180,196),14);y+=30;
+            UI::Label(g,TargetName(role),{32,y,window.width-64,26},Color(255,170,180,196),14);y+=30;
             if(expanded.contains(section)) DrawDetails(g,package,y);
             y+=8;
         }

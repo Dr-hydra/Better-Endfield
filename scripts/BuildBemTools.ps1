@@ -34,6 +34,7 @@ if ($LASTEXITCODE -ne 0) { throw "Install tools/CustomModel/requirements-build.t
     --name BetterEndfield.BemConverter `
     --hidden-import bem_v11 `
     --hidden-import bem_v13 `
+    --hidden-import bem_v14 `
     --hidden-import efmi_shapes `
     --distpath (Join-Path $Destination "dist") `
     --workpath (Join-Path $Destination "work") `

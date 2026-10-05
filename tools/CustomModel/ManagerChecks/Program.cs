@@ -19,6 +19,17 @@ Check(manual.Title.Contains("不能自动转换") && !manual.AlreadyPackaged, "c
 var mapping = BemInspectionSummary.Read("""{"format":"hash-lod","automation":{"status":"requires_mapping","reasons":["Material mapping required"]},"analysis":{"components":[],"textures":0,"errors":[]}}""");
 Check(mapping.Title.Contains("暂不能承诺"), "hash/LOD support must not imply full automatic conversion");
 if (args is ["--presentation"]) { Console.WriteLine("PASS: source readiness, direct import, ambiguity and readable failure guidance"); return; }
+if (args is ["--v14"])
+{
+    try { await TargetChecks.Run(); }
+    finally
+    {
+        string temporary = Path.GetFullPath(ConfigurationService.SettingsDirectory);
+        if (temporary.StartsWith(Path.GetFullPath(Path.GetTempPath()), StringComparison.OrdinalIgnoreCase) &&
+            Path.GetFileName(temporary).StartsWith("BemManagerChecks-")) Directory.Delete(temporary, true);
+    }
+    return;
+}
 if (args is ["--v11", var packagePath])
 {
     var package = BemPackageService.ReadMetadata(packagePath);

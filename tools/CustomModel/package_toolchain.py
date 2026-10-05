@@ -8,6 +8,26 @@ import zipfile
 import sys
 
 
+def prepare_bem14_example(repo, target):
+    """Ship a runnable project; end users need no Python to generate fixtures."""
+    import importlib.util
+    path = repo/'tools/CustomModel/examples/multi-resource/create_project.py'
+    spec = importlib.util.spec_from_file_location('_bem14_packaged_example', path)
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module.create(target/'examples/multi-resource/project')
+
+
+def copy_documents(workspace, names, destination, draft_link):
+    for name in names:
+        source = workspace.document(name)
+        if name == 'BEM_V1_4_SPEC.md':
+            text = source.read_text(encoding='utf-8-sig').replace(
+                '../../tools/CustomModel/profiles/bem14-drafts/README.md', draft_link)
+            (destination/name).write_text(text, encoding='utf-8')
+        else:
+            shutil.copyfile(source, destination/name)
+
+
 def main():
     p = argparse.ArgumentParser(); p.add_argument('directory', type=Path)
     p.add_argument('--workspace-config', type=Path)
@@ -19,14 +39,19 @@ def main():
     workspace = load_workspace(args.workspace_config, repo)
     target = args.directory.resolve()
     if not (target/'BetterEndfield.BemConverter.exe').is_file(): raise ValueError('Build CLI first')
-    docs = ['BEM_CREATOR_GUIDE.md', 'BEM_FORMAT_SPEC.md', 'BEM_RUNTIME_COMPATIBILITY.md', 'BEM_SOURCE_MOD_CONVERSION.md',
+    docs = ['BEM_CREATOR_GUIDE.md', 'BEM_FORMAT_SPEC.md', 'BEM_V1_4_SPEC.md', 'BEM_RUNTIME_COMPATIBILITY.md', 'BEM_SOURCE_MOD_CONVERSION.md',
             'BEM_CREATOR_GUIDE.en.md', 'BEM_FORMAT_SPEC.en.md', 'BEM_RUNTIME_COMPATIBILITY.en.md', 'BEM_SOURCE_MOD_CONVERSION.en.md']
     (target/'docs').mkdir(exist_ok=True)
-    for name in docs: shutil.copyfile(workspace.document(name), target/'docs'/name)
+    copy_documents(workspace, docs, target/'docs', '../profiles/bem14-drafts/README.md')
     source_ignore = shutil.ignore_patterns('__pycache__', '*.pyc')
     shutil.copytree(repo/'tools/CustomModel/examples', target/'examples', dirs_exist_ok=True, ignore=source_ignore)
+    prepare_bem14_example(repo, target)
     shutil.copytree(repo/'tools/CustomModel/blender_addon', target/'blender_addon', dirs_exist_ok=True, ignore=source_ignore)
     shutil.copytree(repo/'tools/CustomModel/catalog', target/'catalog', dirs_exist_ok=True)
+    shutil.copytree(repo/'tools/CustomModel/profiles/bem14-drafts', target/'profiles/bem14-drafts', dirs_exist_ok=True)
+    draft_readme = target/'profiles/bem14-drafts/README.md'
+    draft_readme.write_text(draft_readme.read_text(encoding='utf-8').replace(
+        '../../../../docs/custom_model/BEM_V1_4_SPEC.md', '../../docs/BEM_V1_4_SPEC.md'), encoding='utf-8')
     archive_backend = args.archive_backend or workspace.path('tools.archive_backend')
     shutil.copytree(archive_backend, target/'7zip', dirs_exist_ok=True)
     if os.name == 'nt':
@@ -41,7 +66,7 @@ def main():
         'Source code and releases: https://www.7-zip.org/ and https://github.com/ip7z/7zip/tree/26.03\n', encoding='utf-8')
     shutil.copytree(repo/'tools/CustomModel/skills', target/'skills', dirs_exist_ok=True, ignore=source_ignore)
     refs = target/'skills/bem-creator/references'; refs.mkdir(exist_ok=True)
-    for name in docs: shutil.copyfile(workspace.document(name), refs/name)
+    copy_documents(workspace, docs, refs, '../../../profiles/bem14-drafts/README.md')
     shutil.copyfile(repo/'LICENSE', target/'LICENSE.txt')
     output = target.parent/'BEM-Tools-win-x64.zip'
     with zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=6) as z:

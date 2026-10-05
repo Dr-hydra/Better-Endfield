@@ -1,0 +1,131 @@
+{
+  "manifest": {
+    "schema": 1,
+    "package_id": "draft.funnel-0014.win",
+    "name": "Unverified target scaffold",
+    "author": "BEM target tool",
+    "version": "1",
+    "required_capabilities": [
+      "native-materials",
+      "composable-options",
+      "multi-resource-targets"
+    ],
+    "target": {
+      "id": "wpn_funnel_0014",
+      "profile_id": "draft.funnel-0014.win",
+      "revision": "1",
+      "snapshot": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+      "kind": "weapon",
+      "platform": "windows-x64",
+      "resources": [
+        {
+          "id": "weapon",
+          "name": "wpn_funnel_0014",
+          "asset_path": "assets/beyond/dynamicassets/gameplay/prefabs/weapons/wpn_funnel_0014.prefab",
+          "platforms": [
+            "windows-x64"
+          ],
+          "lod": 0
+        }
+      ],
+      "components": [
+        {
+          "id": 0,
+          "resource": "weapon",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_wpn_funnel_0014_01_lod0",
+          "mesh_name": "S_wpn_funnel_0014_01_lod0",
+          "original_index_count": 12492,
+          "bone_names": [
+            "Bone_parts_01",
+            "Bone_Parts_Up",
+            "Bone_Parts_Down"
+          ],
+          "materials": [
+            "M_wpn_funnel_0014_01"
+          ]
+        },
+        {
+          "id": 1,
+          "resource": "weapon",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_wpn_funnel_0014_02_lod0",
+          "mesh_name": "S_wpn_funnel_0014_02_lod0",
+          "original_index_count": 1296,
+          "bone_names": [
+            "Bone_Core_01"
+          ],
+          "materials": [
+            "M_wpn_funnel_0002_02"
+          ]
+        },
+        {
+          "id": 2,
+          "resource": "weapon",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_wpn_funnel_0014_03_lod0",
+          "mesh_name": "S_wpn_funnel_0014_03_lod0",
+          "original_index_count": 960,
+          "bone_names": [
+            "Bone_Core_01"
+          ],
+          "materials": [
+            "M_wpn_funnel_0002_03"
+          ]
+        },
+        {
+          "id": 3,
+          "resource": "weapon",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_wpn_sword_0014_vfx_01_lod0",
+          "mesh_name": "S_wpn_sword_0014_vfx_01_lod0",
+          "original_index_count": 144,
+          "bone_names": [
+            "Bone_parts_01"
+          ],
+          "materials": [
+            "DefaultHGMaterial"
+          ]
+        }
+      ]
+    },
+    "meshes": [],
+    "textures": [],
+    "option_groups": [],
+    "component_rules": [
+      {
+        "target": 0,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 1,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 2,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 3,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      }
+    ]
+  },
+  "payload_files": []
+}

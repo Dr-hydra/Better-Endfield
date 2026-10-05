@@ -16,7 +16,12 @@ inline std::string_view ResourceBaseName(std::string_view name) {
     if (name.ends_with("(Clone)")) name.remove_suffix(7);
     return name;
 }
-struct ComponentIdentity { const char* name; uint32_t indices; };
+struct ComponentIdentity {
+    const char* name;
+    uint32_t indices;
+    const char* receiver_path = "";
+    bool static_mesh = false;
+};
 struct CharacterAdapter {
     const char* id;
     const char* world_resource;
@@ -24,6 +29,10 @@ struct CharacterAdapter {
     const char* default_package;
     bool union_texture_masks;
     std::span<const ComponentIdentity> components;
+    const char* resource_id = "";
+    const char* asset_path = "";
+    uint32_t receiver_lod = 0;
+    bool explicit_resource = false;
 };
 struct EnabledMod {
     const CharacterAdapter* adapter = nullptr;
@@ -33,10 +42,14 @@ struct EnabledMod {
     bool loading_optimization = false;
     std::string selection_key;
     std::string parameters;
+    std::string resource_id;
+    std::string package_id; // Conflict/reload identity independent of owner ID.
 };
 struct OwnedCharacterAdapter {
     std::string id, world, ui;
+    std::string resource_id, asset_path;
     std::vector<std::string> names;
+    std::vector<std::string> receiver_paths;
     std::vector<ComponentIdentity> components;
     CharacterAdapter adapter{};
 };

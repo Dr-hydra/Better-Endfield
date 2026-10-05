@@ -1,6 +1,6 @@
 ---
 name: bem-creator
-description: Convert supported Endfield source Mods to BEM 1.0–1.3, configure author position sliders and official EFMI ShapeKey buffer bindings, save repeatable export task projects, inspect and validate packages, unpack editable projects, repack them, and assemble multi-Mod ZIP distributions using the BEM creator CLI. Use for BEM creation and conversion diagnostics.
+description: Convert supported Endfield source Mods to BEM 1.0–1.3, build explicit multi-resource and static-mesh BEM 1.4 projects, configure author position sliders and official EFMI ShapeKey buffer bindings, inspect and validate packages, unpack editable projects, repack them, and assemble multi-Mod ZIP distributions using the BEM creator CLI. Use for BEM creation and conversion diagnostics.
 ---
 
 # BEM creator workflow
@@ -61,13 +61,22 @@ guess from buffer stride, filenames or a similar character. Never change `verifi
 to true to suppress missing observations, truncate bone indices, or silently drop
 unsupported draw/effect requirements. Report exactly which mapping or observation is missing.
 
-One package targets one character. BEM 1.0 contains complete fixed appearances;
+Legacy BEM 1.0–1.3 packages target one character. BEM 1.0 contains complete fixed appearances;
 BEM 1.1 contains finite option groups and conditional component/draw rules. ZIP may
 contain several independently managed packages. Multiple packages for one character
-may be installed, but only one enabled. Source key combinations need reviewed reachability
+may be installed, but only one legacy package per character can be enabled. Source key combinations need reviewed reachability
 and resource mapping; do not blindly enumerate them as complete appearances.
 
-The Windows and Android runtimes support BEM 1.0–1.3. The package retains native shaders and
+The development branch also supports BEM 1.4 explicit resources and static meshes; see
+`references/BEM_V1_4_SPEC.md`. One 1.4 package owns a character or weapon ID and may declare
+multiple resource roots with separate component contracts. Conflict checks use resources
+on the current platform; updates preserve target kind/id. Windows currently executes only
+LOD0 explicit targets. Android uses the declared resource's own donors and requires Android
+evidence. `target-profile NATIVE_GRAPH.json --spec SPEC.json -o PROFILE.json --project PROJECT.json`
+creates an unverified, keep-only starting project. It does not establish conversion readiness
+or in-game rendering; ordinary character conversion profiles do not apply automatically.
+
+The Windows and Android runtimes retain BEM 1.0–1.3 compatibility. The package retains native shaders and
 uses original materials selected per draw. Local skin indices remain UINT8 with at most
 256 palette entries per component, even when input bone indices are 16 bit.
 Composable packages preserve all candidate payloads for future selections. Experimental

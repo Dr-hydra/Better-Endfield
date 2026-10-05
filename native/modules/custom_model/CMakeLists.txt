@@ -16,6 +16,8 @@ add_executable(BetterEndfield.BemValidate EXCLUDE_FROM_ALL ../../tests/bem_v1_va
 target_link_libraries(BetterEndfield.BemValidate PRIVATE BetterEndfield.CustomModelCore)
 add_executable(BetterEndfield.BemV11CapacityTests EXCLUDE_FROM_ALL ../../tests/bem_v11_capacity_tests.cpp)
 add_executable(BetterEndfield.BemV13MorphTests EXCLUDE_FROM_ALL ../../tests/bem_v13_morph_tests.cpp)
+add_executable(BetterEndfield.BemV14ResourceTests EXCLUDE_FROM_ALL ../../tests/bem_v14_resource_tests.cpp)
+target_link_libraries(BetterEndfield.BemV14ResourceTests PRIVATE BetterEndfield.CustomModelCore)
 target_link_libraries(BetterEndfield.BemV13MorphTests PRIVATE BetterEndfield.CustomModelCore)
 add_executable(BetterEndfield.BemKeepTextureValidate EXCLUDE_FROM_ALL ../../tests/bem_keep_texture_validate.cpp)
 target_link_libraries(BetterEndfield.BemKeepTextureValidate PRIVATE BetterEndfield.CustomModelCore)

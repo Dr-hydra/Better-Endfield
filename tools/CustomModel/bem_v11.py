@@ -49,8 +49,8 @@ def limits(minor=None):
         return dict(minor=1, choices=MAX_CHOICES, rules=MAX_RULES, textures=MAX_SELECTED_TEXTURES,
                     texture_bytes=MAX_TEXTURE_BYTES, resident=MAX_SELECTED_RESIDENT,
                     decoded=MAX_SELECTED_DECODED, directory=MAX_DIRECTORY)
-    v1.require(minor in (None, 2, 3), 'Unsupported BEM minor version')
-    return dict(minor=3 if minor in (None, 3) else 2, choices=MAX_CHOICES_V12, rules=MAX_RULES_V12, textures=MAX_SELECTED_TEXTURES_V12,
+    v1.require(minor in (None, 2, 3, 4), 'Unsupported BEM minor version')
+    return dict(minor=4 if minor is None else minor, choices=MAX_CHOICES_V12, rules=MAX_RULES_V12, textures=MAX_SELECTED_TEXTURES_V12,
                 texture_bytes=MAX_TEXTURE_BYTES_V12, resident=MAX_SELECTED_RESIDENT_V12,
                 decoded=MAX_SELECTED_DECODED_V12, directory=MAX_DIRECTORY_V12)
 
@@ -77,6 +77,8 @@ def candidate_count(m):
 
 def required_minor(m, summary, payload_count=0):
     """Smallest header minor able to carry this composable manifest."""
+    import bem_v14
+    if bem_v14.used(m): return 4
     import bem_v13
     if bem_v13.used(m): return 3
     old = limits(1)
@@ -86,7 +88,7 @@ def required_minor(m, summary, payload_count=0):
              any(len(group['choices']) > old['choices'] for group in m['option_groups']) or
              candidate_count(m) > old['rules'] or payload_count > old['directory'] or
              any(texture_bytes(texture) > old['texture_bytes'] for texture in m['textures']) or
-             any(mesh['streams'][2]['stride'] == 32 for mesh in m['meshes']) or
+             any(len(mesh['streams']) == 3 and mesh['streams'][2]['stride'] == 32 for mesh in m['meshes']) or
              summary['max_selected_textures'] > old['textures'] or
              summary.get('max_selected_decoded_bytes', 0) > old['decoded'] or
              summary.get('max_resident_bytes', 0) > old['resident'])
@@ -554,6 +556,9 @@ def reachable_plans(manifest):
 def validate_manifest(m, payload_count, minor=None):
     """Structural and symbolic checks under the limits of header `minor` (None: newest)."""
     limit = limits(minor)
+    import bem_v14
+    explicit = bem_v14.used(m) or minor == 4
+    v1.require(not explicit or limit['minor'] >= 4, 'Explicit resource targets require BEM 1.4')
     v1.require(m['schema'] == 1, 'Unsupported manifest schema')
     v1.require('appearances' not in m and 'default_appearance_id' not in m,
                'BEM 1.1 must not enumerate fixed appearances')
@@ -567,14 +572,19 @@ def validate_manifest(m, payload_count, minor=None):
         allowed |= set(V12_CAPABILITIES)
     if limit['minor'] >= 3:
         allowed |= {'body-parameters', 'mesh-position-deltas'}
+    if explicit:
+        allowed |= set(bem_v14.CAPABILITIES)
     v1.require(isinstance(caps, list) and 'composable-options' in caps and
                'fixed-appearances' not in caps and len(caps) == len(set(caps)) and set(caps) <= allowed,
-               'Invalid BEM 1.1/1.2 capabilities')
+               'Invalid BEM capabilities')
     target = m['target']
-    for key in ('character_id', 'profile_id', 'revision', 'world_resource', 'ui_resource'):
-        v1.identity(target[key])
-    v1.require(target['platform'] == 'windows-x64' and target['world_resource'] != target['ui_resource'],
-               'Invalid target platform/resources')
+    if explicit:
+        bem_v14.validate_target(m)
+    else:
+        for key in ('character_id', 'profile_id', 'revision', 'world_resource', 'ui_resource'):
+            v1.identity(target[key])
+        v1.require(target['platform'] == 'windows-x64' and target['world_resource'] != target['ui_resource'],
+                   'Invalid target platform/resources')
     targets = target['components']
     v1.require(isinstance(targets, list) and 0 < len(targets) <= 64, 'Invalid target components')
     names = set()
@@ -582,8 +592,9 @@ def validate_manifest(m, payload_count, minor=None):
         v1.require(component['id'] == index and component['original_index_count'] > 0 and
                    component['original_index_count'] % 3 == 0, 'Invalid target identity')
         _name(component['mesh_name'], 'mesh name')
-        v1.require(component['mesh_name'] not in names, 'Duplicate mesh identity')
-        names.add(component['mesh_name'])
+        mesh_identity = (component['resource'], component['mesh_name']) if explicit else component['mesh_name']
+        v1.require(mesh_identity not in names, 'Duplicate mesh identity')
+        names.add(mesh_identity)
         v1.require(len(component['bone_names']) <= 65536 and len(component['materials']) <= 256,
                    'Target donor table exceeds limit')
         seen_aliases = set()
@@ -669,31 +680,38 @@ def validate_manifest(m, payload_count, minor=None):
             originals = [textures[index]['original_name'] for index in fixed] + [slot_names[s] for s in named]
             v1.require(len(originals) == len(set(originals)), f'{label} textures replace one original twice')
     for mesh in meshes:
+        static = explicit and mesh['renderer_kind'] == 'static'
+        v1.require(not explicit or mesh['renderer_kind'] in bem_v14.KINDS, 'Invalid mesh renderer kind')
         v1.require(0 < mesh['vertex_count'] <= 1048576 and mesh['index_size'] in (2, 4),
                    'Invalid mesh counts/index size')
         streams = mesh['streams']
-        v1.require(len(streams) == 3, 'Three streams required')
+        v1.require(1 <= len(streams) <= 3 if static else len(streams) == 3,
+                   'Static mesh needs 1..3 streams; skinned mesh needs three streams')
         for stream in streams:
             payload(stream['payload'])
             v1.require(0 < stream['stride'] <= 64, 'Invalid stream stride')
-        attrs, offsets, seen = mesh['attributes'], [0, 0, 0], set()
+        attrs, offsets, seen = mesh['attributes'], [0] * len(streams), set()
         sizes = [4, 2, 1, 1, 2, 2, 1, 1, 2, 2, 4, 4]
         v1.require(0 < len(attrs) <= 16, 'Invalid attributes')
         for attr in attrs:
             v1.require(len(attr) == 5, 'Invalid attribute')
             sem, fmt, dim, stream, off = attr
             v1.require(0 <= sem <= 13 and sem not in seen and 0 <= fmt < len(sizes)
-                       and 1 <= dim <= 4 and 0 <= stream < 3 and off == offsets[stream],
+                       and 1 <= dim <= 4 and 0 <= stream < len(streams) and off == offsets[stream],
                        'Invalid attribute declaration')
             seen.add(sem)
             offsets[stream] += sizes[fmt] * dim
         skin_strides = (4, 12, 32) if limit['minor'] >= 2 else (4, 12)
-        v1.require(offsets == [stream['stride'] for stream in streams] and
-                   attrs[-1][:2] == [13, 10 if offsets[2] == 32 else 6] and attrs[-1][2:4] == [4, 2] and
-                   offsets[2] in skin_strides, 'Unsupported native declaration')
-        v1.require([attr for attr in attrs if attr[3] == 2] == SKIN_LAYOUTS[offsets[2]],
-                   'Unsupported skin declaration')
-        v1.require(0 < len(mesh['bones']) <= 256 and 0 < len(mesh['draws']) <= limit['rules'],
+        v1.require(offsets == [stream['stride'] for stream in streams], 'Unsupported native declaration')
+        if static:
+            v1.require(not seen & {12, 13} and not mesh['bones'], 'Static mesh must not have skin attributes or bones')
+        else:
+            v1.require(attrs[-1][:2] == [13, 10 if offsets[2] == 32 else 6] and attrs[-1][2:4] == [4, 2] and
+                       offsets[2] in skin_strides, 'Unsupported native declaration')
+            v1.require([attr for attr in attrs if attr[3] == 2] == SKIN_LAYOUTS[offsets[2]],
+                       'Unsupported skin declaration')
+        v1.require((not mesh['bones'] if static else 0 < len(mesh['bones']) <= 256) and
+                   0 < len(mesh['draws']) <= limit['rules'],
                    'Palette/draw candidate limit exceeded')
         for bone in mesh['bones']:
             v1.require(targets[bone['component']]['bone_names'][bone['index']] == bone['name'],
@@ -770,6 +788,7 @@ def check_geometry(m, payloads, minor=None):
             v1.require(all(index[0] < mesh['vertex_count'] for index in
                            struct.iter_unpack('<H' if index_size == 2 else '<I', raw)),
                        'Index outside vertices')
+        if mesh.get('renderer_kind') == 'static': continue
         skin = mesh['streams'][2]
         stride = skin['stride']
         buf = payloads[skin['payload']]
@@ -800,11 +819,16 @@ def check_geometry(m, payloads, minor=None):
     return summary
 
 
-def read_selected_payloads(path, options=None, on_payload=None, parameters=None):
+def read_selected_payloads(path, options=None, on_payload=None, parameters=None, *, resource=None, platform=None):
     """Reference lazy reader for A→B→A and exact payload-access tests."""
     m, _ = v1.read_package(path, decode=False)
     v1.require('option_groups' in m, 'Expected BEM 1.1 package')
-    plan = selection_plan(m, options, parameters=parameters)
+    if resource is not None or platform is not None:
+        import bem_v14
+        v1.require(bem_v14.used(m), 'Resource filtering requires BEM 1.4')
+        plan = bem_v14.selection_plan(m, options, resource=resource, platform=platform, parameters=parameters)
+    else:
+        plan = selection_plan(m, options, parameters=parameters)
     with Path(path).open('rb') as source:
         header = v1.HEADER.unpack(source.read(v1.HEADER.size))
         source.seek(v1.HEADER.size + header[5])

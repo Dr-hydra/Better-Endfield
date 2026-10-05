@@ -5,6 +5,7 @@
 正式入口：`bem_tool.py inspect/convert/unpack/pack/validate/bundle`，以及 `workspace init` 创建可移动的标准创作者工程。`blender_addon/bem_exporter/` 可从 Blender 导出可编辑 BEM 工程。单包输出 `.bem`，分发合集为标准 `.zip`。
 独立工具链由 `scripts/BuildBemTools.ps1` 打包，无需玩家安装 Python；GUI 复用同一核心。
 [格式规范](../../docs/custom_model/BEM_FORMAT_SPEC.md) · [创作者指南](../../docs/custom_model/BEM_CREATOR_GUIDE.md) · [其他来源 Mod 转换](../../docs/custom_model/BEM_SOURCE_MOD_CONVERSION.md)。
+开发分支的 `pack/unpack/build/validate` 已支持 BEM 1.4 的显式资源表和静态网格；精确契约、资源筛选命令及合成工程见 [BEM 1.4 规范](../../docs/custom_model/BEM_V1_4_SPEC.md)。现有 1.0–1.3 制作与读取流程保持兼容。武器和大招实际游戏资源仍需要各自验证过的 profile 与游戏内验收。
 下文旧工具是转换后端/研究命令，它们的 v24/v25 中间产物不被正式运行时接受。
 旧运行时 PoC 已移至 [research/custom-model](../../research/custom-model/README.md)；
 本目录保留仍被当前转换流程使用的代码，包括名称带 `poc` 的转换器。
