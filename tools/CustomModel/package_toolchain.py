@@ -2,6 +2,8 @@
 import argparse
 from pathlib import Path
 import shutil
+import os
+import stat
 import zipfile
 import sys
 
@@ -27,6 +29,12 @@ def main():
     shutil.copytree(repo/'tools/CustomModel/catalog', target/'catalog', dirs_exist_ok=True)
     archive_backend = args.archive_backend or workspace.path('tools.archive_backend')
     shutil.copytree(archive_backend, target/'7zip', dirs_exist_ok=True)
+    if os.name == 'nt':
+        # Administrative MSI extraction can mark the backend directory read-only.
+        # Keep the generated distribution rebuildable without changing its source.
+        copied_backend = target/'7zip'
+        for entry in [copied_backend, *copied_backend.rglob('*')]:
+            entry.chmod(entry.stat().st_mode | stat.S_IWRITE)
     (target/'7zip/NOTICE.txt').write_text(
         'This tool uses unmodified 7-Zip 26.03 by Igor Pavlov, licensed under GNU LGPL '
         'with additional license terms including the unRAR restriction. See License.txt.\n'

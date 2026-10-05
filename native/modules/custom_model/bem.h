@@ -153,6 +153,7 @@ struct BemPocData {
     std::shared_ptr<const BemPayloadSource> payload_source;
 };
 
+struct BemSelectionMetadata;
 struct BemPackageInfo {
     uint16_t minor = 0;
     std::string package_id, name, author, version, character_id;
@@ -164,7 +165,20 @@ struct BemPackageInfo {
     std::vector<std::vector<uint32_t>> parameter_frame_values;
     std::vector<std::string> appearances, component_names;
     std::vector<uint32_t> original_counts;
+    // Validated manifest for metadata-only management/selection. No payload bytes.
+    std::string manifest_json;
+    std::shared_ptr<const BemSelectionMetadata> selection_metadata;
 };
+struct BemSelection {
+    std::string options, parameters, parameters_saved;
+    std::vector<std::string> available_groups, available_parameters;
+};
+// Management reads exactly the header and manifest, never the payload directory.
+// Extent/decoded-byte validation remains the responsibility of the existing loader.
+bool ReadBemManagementInfo(const std::filesystem::path&, BemPackageInfo&, std::string& error,
+    bool skip_validation = false);
+bool ResolveBemSelection(const BemPackageInfo&, std::string_view options,
+    std::string_view parameters_saved, BemSelection&, std::string& error);
 struct BemLoadStats {
     std::vector<uint32_t> payload_ids;
     uint64_t decoded_cache_peak_bytes = 0, decoded_cache_remaining_bytes = 0;

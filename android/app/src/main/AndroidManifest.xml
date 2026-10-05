@@ -11,6 +11,9 @@
         android:label="@string/app_name"
         android:roundIcon="@drawable/gilberta"
         android:supportsRtl="true">
+        <provider android:name=".OverlaySettingsProvider"
+            android:authorities="dev.betterendfield.android.overlay.settings"
+            android:exported="true" android:grantUriPermissions="false" />
         <activity android:name=".ThirdPartyModuleActivity" android:exported="false" android:label="第三方模块" android:theme="@style/AppTheme" />
         <activity
             android:name=".EnhancementSettingsActivity"

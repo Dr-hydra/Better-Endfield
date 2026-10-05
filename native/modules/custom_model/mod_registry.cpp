@@ -3,6 +3,7 @@
 #include <map>
 #include <algorithm>
 #include <set>
+#include <mutex>
 
 namespace BetterEndfield::CustomModel {
 namespace {
@@ -27,6 +28,31 @@ std::string FileTimeIdentity(std::filesystem::file_time_type time) {
     }
     if (negative) digits.push_back('-');
     std::reverse(digits.begin(),digits.end()); return digits;
+}
+bool CachedPackageInfo(const std::filesystem::path& path,BemPackageInfo& info,std::string& error,bool unchecked) {
+    struct Cached {
+        std::filesystem::file_time_type mtime;
+        uintmax_t size;
+        bool unchecked;
+        BemPackageInfo info;
+    };
+    static std::mutex mutex;
+    static std::map<std::filesystem::path,Cached> cache;
+    const auto key=path.lexically_normal();std::error_code te,se;
+    const auto mtime=std::filesystem::last_write_time(key,te);const auto size=std::filesystem::file_size(key,se);
+    if(te||se) {error="Package file unavailable";return false;}
+    {
+        std::lock_guard lock(mutex);const auto entry=cache.find(key);
+        if(entry!=cache.end()&&entry->second.mtime==mtime&&entry->second.size==size&&entry->second.unchecked==unchecked) {
+            info=entry->second.info;return true;
+        }
+    }
+    if(!ReadBemPackageInfo(key,info,error,unchecked)) return false;
+    const auto after=std::filesystem::last_write_time(key,te);const auto after_size=std::filesystem::file_size(key,se);
+    if(te||se||after!=mtime||after_size!=size) {error="Package changed while reading metadata";return false;}
+    std::lock_guard lock(mutex);
+    if(cache.size()>=128) cache.clear();
+    cache.insert_or_assign(key,Cached{mtime,size,unchecked,info});return true;
 }
 }
 std::span<const CharacterAdapter> CharacterAdapters() { return {}; }
@@ -77,7 +103,7 @@ bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,Mod
             if(file.empty()||path.extension()!=".bem") {parsed.diagnostics.push_back("Refused non-BEMv1 package: "+name);continue;}
             if(path.is_relative()) path=root/path;
             BemPackageInfo info; std::string why;
-            if(!ReadBemPackageInfo(path,info,why,parsed.skip_validation)) {parsed.diagnostics.push_back("Package refused: "+name+": "+why);continue;}
+            if(!CachedPackageInfo(path,info,why,parsed.skip_validation)) {parsed.diagnostics.push_back("Package refused: "+name+": "+why);continue;}
             auto appearance=info.minor?get("options"):get("appearance");
             if(appearance.empty()) appearance=info.minor?info.default_options:info.default_appearance;
             if(!info.minor && std::find(info.appearances.begin(),info.appearances.end(),appearance)==info.appearances.end()) {

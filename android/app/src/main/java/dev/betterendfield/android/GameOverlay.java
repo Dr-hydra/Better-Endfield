@@ -45,7 +45,10 @@ final class GameOverlay {
     private static float savedX = 0.02f, savedY = 0.32f;
     // Deliberately process-local: Activity recreation must not undo "本次关闭".
     private static boolean sessionDismissed;
-    private static final int HUD = 0, CAMERA = 1, PAUSE = 2, FIRST_PERSON = 3, MMD = 4;
+    private static final int HUD = 0, CAMERA = 1, PAUSE = 2, FIRST_PERSON = 3, MMD = 4, GLOBAL_FOV = 5, MODELS = 6;
+    private OverlaySettingsPage settingsPage;
+    private final Set<String> expandedModels = new HashSet<>();
+    private String modelCharacter = "";
     private final Activity activity;
     private final boolean preview;
     private final Supplier<SharedPreferences> settings;
@@ -233,6 +236,7 @@ final class GameOverlay {
     }
 
     private void rebuild() {
+        if (settingsPage != null) { modelCharacter = settingsPage.character(); settingsPage.close(); settingsPage = null; }
         releaseHeldKeys(); tiles.clear(); heldControls.clear(); cancelGestures.clear();
         mmdButtons.clear(); workRows.clear(); workFolders.clear(); librarySignature = "";
         // Keep the handle gesture; drop listeners belonging to the old title.
@@ -243,13 +247,15 @@ final class GameOverlay {
         shown = readFeatures();
         if (!hasTab(selectedTab)) {
             selectedTab = -1;
-            for (int tab = 0; tab <= MMD; tab++) if (hasTab(tab)) { selectedTab = tab; break; }
+            for (int tab = 0; tab <= MODELS; tab++) if (hasTab(tab)) { selectedTab = tab; break; }
         }
         addNavigation(HUD, "界面", ControlIcon.HUD);
         addNavigation(CAMERA, "自由镜头", ControlIcon.CAMERA);
         addNavigation(PAUSE, "冻结时间", ControlIcon.PAUSE);
         addNavigation(FIRST_PERSON, "第一人称", ControlIcon.EYE);
         addNavigation(MMD, "MMD", ControlIcon.MMD);
+        addNavigation(GLOBAL_FOV, "游戏视野", ControlIcon.EYE);
+        addNavigation(MODELS, "模型管理", ControlIcon.MMD);
         TextView brand = text("BETTER ENDFIELD", 9, GOLD); brand.setLetterSpacing(0.14f);
         brand.setMinimumHeight(dp(32)); brand.setGravity(Gravity.CENTER_VERTICAL);
         brand.setContentDescription("拖动标题移动悬浮窗"); brand.setOnTouchListener(new DragTouch(false));
@@ -270,7 +276,7 @@ final class GameOverlay {
             case CAMERA:
                 body.addView(tile("启用 / 退出自由镜头", "9", ControlIcon.CAMERA, Hotkeys.FREE_CAMERA, 1), stacked(10));
                 speedSlider = new CameraSlider("移动速度", "", ModuleSettings.SPEED_MINIMUM, ModuleSettings.SPEED_MAXIMUM, true);
-                fovSlider = new CameraSlider("视野 FOV", "°", ModuleSettings.FOV_MINIMUM, ModuleSettings.FOV_MAXIMUM, false);
+                fovSlider = new CameraSlider("自由镜头 FOV", "°", ModuleSettings.FOV_MINIMUM, ModuleSettings.FOV_MAXIMUM, false);
                 body.addView(speedSlider, stacked(8)); body.addView(fovSlider, stacked(4));
                 addCameraControls(); break;
             case PAUSE:
@@ -278,6 +284,10 @@ final class GameOverlay {
                 body.addView(text("冻结时间可独立使用。关闭悬浮窗会保留冻结状态；请先点按恢复，或在设置中关闭后重启游戏。", 12, MUTED), stacked(10)); break;
             case FIRST_PERSON: body.addView(tile("启用 / 退出第一人称", "−", ControlIcon.EYE, Hotkeys.FIRST_PERSON, 2), stacked(10)); break;
             case MMD: addMmdControls(); break;
+            case GLOBAL_FOV:
+            case MODELS:
+                settingsPage = new OverlaySettingsPage(activity, selectedTab == MODELS, preview, expandedModels, modelCharacter);
+                body.addView(settingsPage.root, stacked(10)); break;
             default: body.addView(text("尚未配置功能。请在增强设置中选择。", 12, MUTED), stacked(14));
         }
         LinearLayout foot = row();
@@ -379,13 +389,15 @@ final class GameOverlay {
         }
     }
     private boolean hasTab(int tab) {
-        if (preview) return tab >= HUD && tab <= MMD;
+        if (preview) return tab >= HUD && tab <= MODELS;
         switch (tab) {
             case HUD: return shown.hideHud();
             case CAMERA: return shown.freeCamera();
             case PAUSE: return shown.worldPause();
             case FIRST_PERSON: return shown.firstPerson();
             case MMD: return shown.mmd();
+            case GLOBAL_FOV:
+            case MODELS: return true;
             default: return false;
         }
     }
@@ -396,6 +408,8 @@ final class GameOverlay {
             case PAUSE: return "冻结时间";
             case FIRST_PERSON: return "第一人称";
             case MMD: return "MMD 控制台";
+            case GLOBAL_FOV: return "游戏视野";
+            case MODELS: return "模型管理";
             default: return "快捷控制";
         }
     }
@@ -734,6 +748,10 @@ final class GameOverlay {
         cameraFov = finiteNumber(snapshot.values.get("camera.fov"), cameraFov, ModuleSettings.FOV_MINIMUM, ModuleSettings.FOV_MAXIMUM);
         if (speedSlider != null) speedSlider.update(); if (fovSlider != null) fovSlider.update();
         refreshMmd();
+        if (settingsPage != null) {
+            settingsPage.runtime(snapshot);
+            if (panel.getVisibility() == View.VISIBLE) settingsPage.refresh();
+        }
     }
     private View cameraAction(String label, int type) {
         TextView view = smallButton(label);
@@ -767,6 +785,7 @@ final class GameOverlay {
         }
     }
     private void releaseHeldKeys() {
+        if (settingsPage != null) settingsPage.finishGesture();
         for (View view : heldControls) view.setPressed(false);
         for (Runnable cancel : cancelGestures) cancel.run();
         for (DragTouch gesture : dragGestures) gesture.cancel();
@@ -797,6 +816,7 @@ final class GameOverlay {
         catch (RuntimeException error) { toast("无法打开增强设置"); }
     }
     void remove() {
+        if (settingsPage != null) { settingsPage.close(); settingsPage = null; }
         closed = true; pause(); panel.animate().cancel();
         if (host.getParent() instanceof ViewGroup) ((ViewGroup) host.getParent()).removeView(host);
     }

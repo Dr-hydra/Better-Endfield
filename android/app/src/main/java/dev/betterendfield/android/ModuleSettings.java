@@ -37,8 +37,8 @@ final class ModuleSettings {
     private static final String CAMERA_FP_FILL_NECK = "camera_first_person_fill_neck";
     private static final String CAMERA_SPEED = "camera_movement_speed";
     private static final String CAMERA_FOV = "camera_field_of_view";
-    private static final String CAMERA_GLOBAL_FOV_ENABLED = "camera_global_fov_enabled";
-    private static final String CAMERA_GLOBAL_FOV = "camera_global_fov";
+    static final String CAMERA_GLOBAL_FOV_ENABLED = "camera_global_fov_enabled";
+    static final String CAMERA_GLOBAL_FOV = "camera_global_fov";
     private static final String CAMERA_FOLLOW_CHARACTER = "camera_follow_character";
     private static final String CAMERA_FP_FOV = "camera_first_person_fov";
     private static final String CAMERA_FP_SIDE_LIMIT = "camera_first_person_side_look_limit";
@@ -234,16 +234,41 @@ final class ModuleSettings {
         return preferences(context).getBoolean(CAMERA_FOLLOW_CHARACTER, false);
     }
 
-    static void setGlobalFovEnabled(Context context, boolean enabled) {
-        preferences(context).edit().putBoolean(CAMERA_GLOBAL_FOV_ENABLED, enabled).commit();
-        republishCameraConfiguration(context);
+    static synchronized void setGlobalFovEnabled(Context context, boolean enabled) {
+        try { saveGlobalFov(context, enabled, null); }
+        catch (java.io.IOException error) { throw new IllegalStateException(error); }
     }
 
-    static void setGlobalFieldOfView(Context context, double value) {
+    static synchronized void setGlobalFieldOfView(Context context, double value) {
         if (!Double.isFinite(value)) return;
-        preferences(context).edit().putString(CAMERA_GLOBAL_FOV,
-                number(Math.max(5, Math.min(150, value)))).commit();
-        republishCameraConfiguration(context);
+        try { saveGlobalFov(context, null, Math.max(5, Math.min(150, value))); }
+        catch (java.io.IOException error) { throw new IllegalStateException(error); }
+    }
+
+    static synchronized void saveGlobalFov(Context context, Boolean enabled, Double value) throws java.io.IOException {
+        SharedPreferences prefs = preferences(context);
+        boolean nextEnabled = enabled == null ? isGlobalFovEnabled(context) : enabled;
+        String nextValue = value == null ? getGlobalFieldOfView(context) : number(value);
+        String config = cameraConfiguration(context, isDisableDitherEnabled(context), isFreeCameraEnabled(context),
+                isWorldPauseEnabled(context), isFirstPersonEnabled(context), isFirstPersonHideHead(context),
+                isFirstPersonFillNeck(context), parse(getCameraSpeed(context), 5), parse(getCameraFieldOfView(context), 60),
+                parse(getFirstPersonFieldOfView(context), 75), parse(getFirstPersonSideLookLimit(context), 90),
+                parse(getFirstPersonTurnSpeed(context), 360), nextEnabled, nextValue);
+        java.util.Map<String, ?> before = prefs.getAll();
+        boolean committed = prefs.edit().putBoolean(CAMERA_GLOBAL_FOV_ENABLED, nextEnabled)
+                .putString(CAMERA_GLOBAL_FOV, nextValue).putString(CAMERA_CONFIGURATION, config).commit();
+        if (!committed || prefs.getBoolean(CAMERA_GLOBAL_FOV_ENABLED, false) != nextEnabled
+                || !nextValue.equals(prefs.getString(CAMERA_GLOBAL_FOV, "60"))
+                || !config.equals(prefs.getString(CAMERA_CONFIGURATION, ""))) {
+            SharedPreferences.Editor rollback = prefs.edit();
+            for (String key : new String[]{CAMERA_GLOBAL_FOV_ENABLED, CAMERA_GLOBAL_FOV, CAMERA_CONFIGURATION}) {
+                Object old = before.get(key);
+                if (old == null) rollback.remove(key);
+                else if (old instanceof Boolean) rollback.putBoolean(key, (Boolean) old);
+                else rollback.putString(key, (String) old);
+            }
+            rollback.commit(); throw new java.io.IOException("FOV 保存失败");
+        }
     }
 
     static void setCameraFollowCharacter(Context context, boolean enabled) {
@@ -399,13 +424,29 @@ final class ModuleSettings {
                 parse(getFirstPersonTurnSpeed(context), 360));
     }
 
-    static void setCameraSettings(Context context, boolean disableDither, boolean freeCamera,
+    static synchronized void setCameraSettings(Context context, boolean disableDither, boolean freeCamera,
             boolean worldPause, boolean firstPerson, boolean hideHead, boolean fillNeck,
             double movementSpeed, double fieldOfView, double firstPersonFov,
             double sideLookLimit, double turnSpeed) {
+        String configuration = cameraConfiguration(context, disableDither, freeCamera, worldPause, firstPerson,
+                hideHead, fillNeck, movementSpeed, fieldOfView, firstPersonFov, sideLookLimit, turnSpeed,
+                isGlobalFovEnabled(context), getGlobalFieldOfView(context));
+        preferences(context).edit()
+                .putBoolean(CAMERA_DITHER, disableDither).putBoolean(CAMERA_FREE, freeCamera)
+                .putBoolean(CAMERA_PAUSE, worldPause).putBoolean(CAMERA_FIRST_PERSON, firstPerson)
+                .putBoolean(CAMERA_FP_HIDE_HEAD, hideHead).putBoolean(CAMERA_FP_FILL_NECK, fillNeck)
+                .putString(CAMERA_SPEED, number(movementSpeed)).putString(CAMERA_FOV, number(fieldOfView))
+                .putString(CAMERA_FP_FOV, number(firstPersonFov)).putString(CAMERA_FP_SIDE_LIMIT, number(sideLookLimit))
+                .putString(CAMERA_FP_TURN_SPEED, number(turnSpeed)).putString(CAMERA_CONFIGURATION, configuration).commit();
+    }
+
+    private static String cameraConfiguration(Context context, boolean disableDither, boolean freeCamera,
+            boolean worldPause, boolean firstPerson, boolean hideHead, boolean fillNeck,
+            double movementSpeed, double fieldOfView, double firstPersonFov,
+            double sideLookLimit, double turnSpeed, boolean globalFovEnabled, String globalFov) {
         boolean pause = worldPause;
         boolean any = disableDither || freeCamera || worldPause || firstPerson
-                || isMmdEnabled(context) || isGlobalFovEnabled(context);
+                || isMmdEnabled(context) || globalFovEnabled;
         String configuration = any
                 ? "schema_version=2\n"
                         + "enabled=true\n"
@@ -418,8 +459,8 @@ final class ModuleSettings {
                         + "first_person_fill_neck_hole=" + fillNeck + "\n"
                         + "movement_speed=" + number(movementSpeed) + "\n"
                         + "field_of_view=" + number(fieldOfView) + "\n"
-                        + "global_fov_enabled=" + isGlobalFovEnabled(context) + "\n"
-                        + "global_fov=" + getGlobalFieldOfView(context) + "\n"
+                        + "global_fov_enabled=" + globalFovEnabled + "\n"
+                        + "global_fov=" + globalFov + "\n"
                         + "free_camera_follow_character=" + isCameraFollowCharacter(context) + "\n"
                         + "first_person_fov=" + number(firstPersonFov) + "\n"
                         + "first_person_side_look_limit=" + number(sideLookLimit) + "\n"
@@ -438,21 +479,7 @@ final class ModuleSettings {
                         + "pause_hotkey=" + Hotkeys.WORLD_PAUSE_NAME + "\n"
                         + "first_person_hotkey=" + Hotkeys.FIRST_PERSON_NAME + "\n"
                 : "";
-        preferences(context)
-                .edit()
-                .putBoolean(CAMERA_DITHER, disableDither)
-                .putBoolean(CAMERA_FREE, freeCamera)
-                .putBoolean(CAMERA_PAUSE, pause)
-                .putBoolean(CAMERA_FIRST_PERSON, firstPerson)
-                .putBoolean(CAMERA_FP_HIDE_HEAD, hideHead)
-                .putBoolean(CAMERA_FP_FILL_NECK, fillNeck)
-                .putString(CAMERA_SPEED, number(movementSpeed))
-                .putString(CAMERA_FOV, number(fieldOfView))
-                .putString(CAMERA_FP_FOV, number(firstPersonFov))
-                .putString(CAMERA_FP_SIDE_LIMIT, number(sideLookLimit))
-                .putString(CAMERA_FP_TURN_SPEED, number(turnSpeed))
-                .putString(CAMERA_CONFIGURATION, configuration)
-                .commit();
+        return configuration;
     }
 
     // ----------------------------------------------------------- sustained dash
@@ -523,7 +550,7 @@ final class ModuleSettings {
                 isDashCharacterEnabled(context, "liino"));
     }
 
-    static void republishCameraConfiguration(Context context) {
+    static synchronized void republishCameraConfiguration(Context context) {
         setCameraSettings(
                 context,
                 isDisableDitherEnabled(context),

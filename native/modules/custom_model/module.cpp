@@ -18,6 +18,8 @@
 #endif
 #if defined(_WIN32)
 #include <Windows.h>
+#include "model_overlay_host.h"
+#include "runtime_ini_win32.h"
 #else
 #include "platform_compat.h"
 #endif
@@ -45,6 +47,9 @@ namespace {
 constexpr char kModuleId[]="betterendfield.custom_model";
 const BE_HostApiV1* g_host=nullptr;
 std::atomic_bool g_hot_switch_runtime{false};
+#if defined(_WIN32)
+ModelOverlayHost g_model_overlay;
+#endif
 BE_ResolvedClassV1 g_skinned_renderer_class{},g_mesh_class{},g_texture2d_class{},g_material_class{};
 using ObjectClassFn=void*(*)(void*);
 using ArrayNewSpecificFn=void*(*)(void*,uintptr_t);
@@ -3280,9 +3285,16 @@ bool InstallRegistryUpdate(std::string_view text) {
     }
     // Registry parsing validates metadata/selections. Payload work is admitted
     // by the global CPU queue; a failed Job preserves the currently bound model.
+    const bool selections_changed=candidate.enabled.size()!=g_registry.enabled.size() ||
+        !std::equal(candidate.enabled.begin(),candidate.enabled.end(),g_registry.enabled.begin(),
+            [](const EnabledMod& a,const EnabledMod& b){return a.selection_key==b.selection_key;});
     g_registry=std::move(candidate);
-    ++g_model_revision;
-    Log("Experimental hot switch selection accepted; registered resources queued for update.");
+    // Overlay visibility, unknown fields and dormant selections do not invalidate
+    // jobs/assets. Actual model edits keep the established generation path.
+    if(selections_changed) {
+        ++g_model_revision;
+        Log("Experimental hot switch selection accepted; registered resources queued for update.");
+    }
     return true;
 }
 void ReloadRegistryAtDelivery() {
@@ -3294,15 +3306,18 @@ void ReloadRegistryAtDelivery() {
 #else
     const uint64_t now=GetTickCount64(); if (now<g_next_registry_scan) return;
     g_next_registry_scan=now+500;
-    std::ifstream stream(g_registry_root/"runtime.ini",std::ios::binary|std::ios::ate);
-    if (!stream) return;
-    const auto size=stream.tellg(); if (size<0 || size>1024*1024) return;
-    text.resize(static_cast<size_t>(size)); stream.seekg(0);
-    if (!stream.read(text.data(),static_cast<std::streamsize>(text.size()))) return;
+    // Atomic writers may rename the file during this short read. Share DELETE
+    // and close before registry/manifest processing; never hold the settings
+    // mutex or a restrictive CRT stream across Unity maintenance.
+    try { text=Settings::ReadFile(g_registry_root/"runtime.ini"); }
+    catch(const std::exception&) {return;}
 #endif
     if (text==g_last_registry_text) return;
     g_last_registry_text=text;
-    InstallRegistryUpdate(text);
+    const bool accepted=InstallRegistryUpdate(text);
+#if defined(_WIN32)
+    g_model_overlay.Result(text,accepted);
+#endif
 }
 #include "../../../tools/CustomModel/developer-tools/native_probe.inl"
 LodState g_lod;
@@ -3624,6 +3639,9 @@ void __fastcall ResourceFinish(void* proxy,void* asset,void* method) {
 void __fastcall ResourcePump(void* method) {
     g_original_pump(method);
     if (!g_enabled.load(std::memory_order_acquire) || g_in_delivery) return;
+#if defined(_WIN32)
+    g_model_overlay.Tick(); // Win32 process lifetime only; no overlay-to-Unity calls
+#endif
     DWORD unconfirmed=0;
     g_pump_thread.compare_exchange_strong(unconfirmed,GetCurrentThreadId());
     if (g_pump_thread.load()!=GetCurrentThreadId()) return;
@@ -3683,13 +3701,8 @@ bool ReadRuntimeRegistry() {
     if (configured_size > 0) text.assign(configured.data(),
         static_cast<size_t>(configured_size));
 #else
-    std::ifstream stream(root/"runtime.ini",std::ios::binary|std::ios::ate);
-    if (stream) {
-        const auto size=stream.tellg();
-        if (size<0 || size>1024*1024) return false;
-        text.resize(static_cast<size_t>(size)); stream.seekg(0);
-        if (!stream.read(text.data(),static_cast<std::streamsize>(text.size()))) return false;
-    } else if (std::filesystem::exists(root/"runtime.ini")) return false;
+    try {text=Settings::ReadFile(root/"runtime.ini");}
+    catch(const std::exception&) {return false;}
 #endif
     std::string error;
     if (!ParseModRegistry(text,root,g_registry,error)) { Log(error); return false; }
@@ -3824,8 +3837,16 @@ BE_Result BE_CALL InitializeResourceModule(const BE_HostApiV1* host) {
             betterendfield::AndroidPipelineLodEnabled()?"; pipeline bias only; quality/NPC/camera culling unchanged":
                 "; global LOD/culling overrides disabled"));
 #endif
+#if defined(_WIN32)
+        if(!g_model_overlay.Start(g_registry_root,g_hot_switch_runtime.load(),
+            reinterpret_cast<const void*>(&InitializeResourceModule)))
+            Log("Model overlay IPC initialization failed; resource runtime remains available.");
+#endif
         return BE_Result_Ok;
     } catch (const std::exception& error) {
+#if defined(_WIN32)
+        g_model_overlay.Stop();
+#endif
         g_enabled.store(false);
         DisableModelCloneHooks();
         if (g_model_loader) g_model_loader->Shutdown();
@@ -3860,6 +3881,9 @@ BE_Result BE_CALL ResourceConfigurationChanged(const char* configuration) {
 }
 void BE_CALL ShutdownResourceModule() {
     if (!g_host) return;
+#if defined(_WIN32)
+    g_model_overlay.Stop();
+#endif
     g_stopping.store(true);
     bool need_restore=false;
     {

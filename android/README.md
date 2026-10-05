@@ -381,14 +381,19 @@ Research catalogs and source PCK/CHK files stay under ignored
 - Android NDK 27.2.12479018
 - CMake 3.22.1
 
-The repository-local toolchain is under `tools/android-toolchain`. Build without
-network access from the repository root:
+The repository-local toolchain is configured by `config/workspace.defaults.json`
+and `config/workspace.local.json`, normally under `toolchains/android/`. See
+[workspace build instructions](../docs/workspace/BUILDING.md) for environment
+setup. With dependencies already available, build without network access from
+the repository root:
 
 ```powershell
 .\android\gradlew.bat -p android :app:assembleDebug --offline --no-daemon
 ```
 
-The APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`.
+The APK is written to `build/android/gradle/app/outputs/apk/debug/app-debug.apk`
+under the configured build root. Release APKs are also retained in
+`releases/android/app-<version>/release/`.
 
 Version 3.3.0 dropped the legacy API 82 build variant. libxposed API 102 is the
 only framework entry point, so there are no longer two flavors and `minSdk` is

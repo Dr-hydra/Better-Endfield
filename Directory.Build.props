@@ -27,8 +27,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Deterministic>true</Deterministic>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <Version>3.5.0</Version>
-    <InformationalVersion>3.5.0</InformationalVersion>
+    <Version>3.5.1</Version>
+    <InformationalVersion>3.5.1</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 </Project>

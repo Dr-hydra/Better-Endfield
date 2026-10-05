@@ -14,6 +14,9 @@
 #include <charconv>
 
 namespace BetterEndfield::CustomModel {
+struct BemSelectionMetadata {
+    nlohmann::json manifest,parameters;
+};
 namespace {
 using J = nlohmann::json;
 constexpr uint64_t MiB=1024*1024, Budget=512*MiB;
@@ -99,6 +102,7 @@ ParameterTicks ParseParameters(const J& definitions,std::string_view requested,s
     return result;
 }
 struct Container {
+    bool manifestOnly=false;
     bool skip_validation=false;
     bool loading_optimization=false;
     // Texture payloads are described, not read; their decoded bytes are
@@ -131,6 +135,7 @@ struct Container {
         Check(h.file==size && h.manifest>0 && h.manifest<=size-sizeof(h) &&
             uint64_t(h.count)<=(size-sizeof(h)-h.manifest)/sizeof(Entry),"Invalid BEM directory sizes");
         Validate(h.manifest<=4*MiB && h.count<=limits.directory,"Invalid BEM directory sizes");
+        if(manifestOnly) Check(h.count<=65536 && h.manifest<=16*MiB,"Management metadata exceeds limit");
         auto json=read(sizeof(h),static_cast<size_t>(h.manifest));
         // Reject duplicate keys, including nested objects, instead of accepting last-wins metadata.
         std::vector<std::set<std::string>> keys;
@@ -142,6 +147,12 @@ struct Container {
             return true;
         };
         manifest=J::parse(json.begin(),json.end(),callback);
+        if(manifestOnly) {
+            // Metadata validates payload references against count; it does not
+            // inspect extents or decode bytes. Bound allocation even in developer mode.
+            directory.resize(h.count);
+            Metadata(); return;
+        }
         auto table=read(sizeof(h)+h.manifest,h.count*sizeof(Entry)); directory.resize(h.count);
         if(!table.empty()) std::memcpy(directory.data(),table.data(),table.size());
         uint64_t end=sizeof(h)+h.manifest+table.size();
@@ -165,6 +176,7 @@ struct Container {
     }
     void Metadata() {
         const auto& m=manifest;
+        info.manifest_json=m.dump();
         Check(U(m.at("schema"))==1,"Unknown manifest schema");
         info.package_id=Id(m.at("package_id")); info.name=S(m.at("name")); info.author=S(m.at("author"));
         info.version=S(m.at("version")); info.minor=minor;
@@ -366,7 +378,7 @@ struct Container {
                         Check(value!=neutral && U(frame.at("payload"))<directory.size() &&
                             U(frame.at("count"))<=U(m.at("meshes").at(mesh).at("vertex_count")) && S(frame.at("encoding"))=="sparse-position-f32","Invalid deformation payload reference/count/encoding");
                         const auto id=U(frame.at("payload"));
-                        Check(directory[id].decoded>=4ull+16ull*U(frame.at("count")),"Truncated position delta payload");
+                        if(!manifestOnly) Check(directory[id].decoded>=4ull+16ull*U(frame.at("count")),"Truncated position delta payload");
                     }
                 }
                 Check(hasNeutral && U(frames.front().at("value"))==min && U(frames.back().at("value"))==max,"Deformation frames must include neutral and range endpoints");
@@ -377,6 +389,11 @@ struct Container {
             }
             Validate(m.at("mesh_deformations").empty() || declared.contains("mesh-position-deltas"),"Position delta capability mismatch");
         }
+        auto selection=std::make_shared<BemSelectionMetadata>();
+        selection->manifest=J::object();
+        for(const auto* key:{"appearances","option_groups","component_rules","selection_constraints","texture_slots"})
+            if(m.contains(key)) selection->manifest[key]=m.at(key);
+        selection->parameters=parameters;info.selection_metadata=std::move(selection);
     }
     uint64_t decoded=0;
     std::map<uint32_t,std::vector<uint8_t>> cache;
@@ -436,11 +453,12 @@ struct Container {
         ReleasePayload(U(reference));
     }
     struct Selection { J operations;std::map<std::string,std::string> effective; };
-    Selection Select(std::string_view requested) const {
+    Selection Select(std::string_view requested,const J* management_manifest=nullptr) const {
+        const auto& m=management_manifest?*management_manifest:manifest;
         Selection result;
         if(!minor) {
             const auto choice=requested.empty()?info.default_appearance:std::string(requested);
-            for(const auto& appearance:manifest.at("appearances")) if(appearance.at("id")==choice) {
+            for(const auto& appearance:m.at("appearances")) if(appearance.at("id")==choice) {
                 result.operations=appearance.at("components");return result;
             }
             Check(false,"Selected appearance missing; select an available appearance in Mod manager");
@@ -456,7 +474,7 @@ struct Container {
             Check(end==requested.npos || !requested.empty(),"Trailing option separator");
         }
         std::set<std::string> known;
-        for(const auto& group:manifest.at("option_groups")) {
+        for(const auto& group:m.at("option_groups")) {
             auto id=group.at("id").get<std::string>();known.insert(id);
             auto choice=saved.contains(id)?saved.at(id):group.at("default").get<std::string>();
             bool valid=false;for(const auto& item:group.at("choices")) valid|=item.at("id")==choice;
@@ -465,10 +483,10 @@ struct Container {
                 result.effective.emplace(id,choice);
         }
         for(const auto& [group,_]:saved) Check(known.contains(group),"Unknown option group");
-        if(manifest.contains("selection_constraints")) for(const auto& rule:manifest.at("selection_constraints"))
+        if(m.contains("selection_constraints")) for(const auto& rule:m.at("selection_constraints"))
             Check(Evaluate(rule,result.effective),"Unreachable option combination");
         result.operations=J::array();
-        for(const auto& rule:manifest.at("component_rules")) {
+        for(const auto& rule:m.at("component_rules")) {
             const J* selected=nullptr;
             for(const auto& candidate:rule.at("candidates"))
                 if(!candidate.contains("when") || Evaluate(candidate.at("when"),result.effective)) {
@@ -778,11 +796,12 @@ struct Container {
             "Selected payload consumers were not exhausted");
     }
 };
-template<class F> bool File(const std::filesystem::path& path,std::string& error,F action,bool skip_validation=false,bool loading_optimization=false,bool defer_textures=false) {
+template<class F> bool File(const std::filesystem::path& path,std::string& error,F action,bool skip_validation=false,bool loading_optimization=false,bool defer_textures=false,bool manifest_only=false) {
     error.clear(); try {
         std::ifstream in(path,std::ios::binary|std::ios::ate); Check(bool(in),"BEM package cannot be opened");
         auto size=in.tellg(); Check(size>=0,"BEM size unavailable"); Container c; c.skip_validation=skip_validation; c.loading_optimization=loading_optimization;
         c.deferTextures=defer_textures;
+        c.manifestOnly=manifest_only;
         c.read=[&](uint64_t off,size_t count) {
             Check(off<=static_cast<uint64_t>(size) && count<=static_cast<uint64_t>(size)-off,"Truncated BEM");
             std::vector<uint8_t> bytes(count); in.seekg(static_cast<std::streamoff>(off));
@@ -793,6 +812,53 @@ template<class F> bool File(const std::filesystem::path& path,std::string& error
 }
 bool ReadBemPackageInfo(const std::filesystem::path& path,BemPackageInfo& out,std::string& error,bool skip_validation) {
     out={}; return File(path,error,[&](Container& c){out=c.info;},skip_validation);
+}
+bool ReadBemManagementInfo(const std::filesystem::path& path,BemPackageInfo& out,std::string& error,bool skip_validation) {
+    out={}; return File(path,error,[&](Container& c){out=c.info;},skip_validation,false,false,true);
+}
+bool ResolveBemSelection(const BemPackageInfo& info,std::string_view requested,
+    std::string_view remembered,BemSelection& out,std::string& error) {
+    out={}; error.clear();
+    try {
+        Check(bool(info.selection_metadata),"Selection metadata unavailable");
+        const auto& manifest=info.selection_metadata->manifest;
+        Container c; c.info.default_appearance=info.default_appearance; c.minor=info.minor;
+        const auto selected=c.Select(requested,&manifest); // same availability/constraints/operations as Decode
+        BemSelection result;
+        if(!info.minor) result.options=requested.empty()?info.default_appearance:std::string(requested);
+        else {
+            std::map<std::string,std::string> saved;
+            auto remaining=requested;
+            while(!remaining.empty()) {
+                const auto end=remaining.find('&'); const auto pair=remaining.substr(0,end); const auto colon=pair.find(':');
+                saved.emplace(std::string(pair.substr(0,colon)),std::string(pair.substr(colon+1)));
+                remaining=end==remaining.npos?std::string_view{}:remaining.substr(end+1);
+            }
+            for(const auto& group:manifest.at("option_groups")) {
+                const auto id=group.at("id").get<std::string>();
+                if(!result.options.empty()) result.options+='&';
+                result.options+=id+":"+(saved.contains(id)?saved.at(id):group.at("default").get<std::string>());
+                if(selected.effective.contains(id)) result.available_groups.push_back(id);
+            }
+            // Decode also requires exactly one selected texture-slot candidate.
+            if(manifest.contains("texture_slots")) for(const auto& slot:manifest.at("texture_slots")) {
+                size_t count=0;
+                for(const auto& item:slot.at("candidates")) count+=!item.contains("when") || Evaluate(item.at("when"),selected.effective);
+                Check(count==1,"Texture slot must have exactly one selected candidate");
+            }
+        }
+        const auto& definitions=info.selection_metadata->parameters;
+        auto ticks=ParseParameters(definitions,remembered,&result.parameters_saved);
+        for(const auto& parameter:definitions) {
+            const auto id=parameter.at("id").get<std::string>();
+            const bool available=!parameter.contains("available_when") || Evaluate(parameter.at("available_when"),selected.effective);
+            if(available) result.available_parameters.push_back(id);
+            else ticks.at(id)=U(parameter.at("neutral"));
+            if(!result.parameters.empty()) result.parameters+='&';
+            result.parameters+=id+":"+std::to_string(ticks.at(id));
+        }
+        out=std::move(result); return true;
+    } catch(const std::exception& e) {error=e.what(); return false;}
 }
 bool ResolveBemParameters(const BemPackageInfo& info,std::string_view requested,std::string& canonical,std::string& error) {
     canonical.clear();error.clear();

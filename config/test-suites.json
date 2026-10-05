@@ -106,6 +106,93 @@
       "purpose": "Resource config/idempotency simulations owned by resource agent; never refresh real resources."
     },
     {
+      "id": "custom_model.overlay_settings",
+      "module": "custom_model",
+      "kind": "offline",
+      "platform": [
+        "Windows"
+      ],
+      "game_version": [
+        "any"
+      ],
+      "input": {
+        "id": "synthetic-model-overlay-settings",
+        "type": "synthetic"
+      },
+      "prerequisite": [
+        {
+          "type": "tool",
+          "key": "tools.dotnet"
+        }
+      ],
+      "entry": {
+        "type": "native",
+        "cwd": ".",
+        "sources": [
+          "ui/tests/ModelOverlaySettings/ModelOverlaySettings.csproj",
+          "ui/tests/ModelOverlaySettings/Program.cs",
+          "ui/tests/ModelOverlaySettings/VirtualKeyFixture.cs",
+          "ui/BetterEndfield.UI/Services/BemRuntimeSettings.cs",
+          "ui/BetterEndfield.UI/Services/HotkeyService.cs",
+          "ui/tests/ModelOverlaySettings/ServiceFixtures.cs",
+          "ui/BetterEndfield.UI/Services/BemPackageService.cs"
+        ],
+        "executable": "dotnet/ModelOverlaySettings/AnyCPU/bin/Release/net9.0/ModelOverlaySettings.exe",
+        "artifacts": [
+          "dotnet/ModelOverlaySettings/AnyCPU/bin/Release/net9.0/ModelOverlaySettings.exe",
+          "dotnet/ModelOverlaySettings/AnyCPU/bin/Release/net9.0/ModelOverlaySettings.dll",
+          "dotnet/ModelOverlaySettings/AnyCPU/bin/Release/net9.0/ModelOverlaySettings.deps.json",
+          "dotnet/ModelOverlaySettings/AnyCPU/bin/Release/net9.0/ModelOverlaySettings.runtimeconfig.json"
+        ],
+        "receipt": "tests/receipts/custom_model.overlay_settings.json"
+      },
+      "status": "active",
+      "replaced_by": null,
+      "purpose": "Model overlay and manager concurrent updates: field preservation, default keys, exclusive enable, disable all, rollback, saved snapshot stamp and main-row versus numpad plus.",
+      "host_platform": [
+        "Windows"
+      ]
+    },
+    {
+      "id": "custom_model.overlay_native",
+      "module": "custom_model",
+      "kind": "offline",
+      "platform": [
+        "Windows"
+      ],
+      "host_platform": [
+        "Windows"
+      ],
+      "game_version": [
+        "any"
+      ],
+      "input": {
+        "id": "synthetic-model-overlay-library",
+        "type": "synthetic"
+      },
+      "prerequisite": [],
+      "entry": {
+        "type": "native",
+        "cwd": ".",
+        "executable": "windows/win-x64/Release/native/Release/BetterEndfield.ModelOverlayTests.exe",
+        "artifacts": [
+          "windows/win-x64/Release/native/Release/BetterEndfield.ModelOverlayTests.exe"
+        ],
+        "receipt": "tests/receipts/custom_model.overlay_native.json",
+        "sources": [
+          "native/modules/custom_model/tests/model_overlay_tests.cpp",
+          "native/modules/custom_model/runtime_ini.h",
+          "native/modules/custom_model/runtime_ini_win32.h",
+          "native/modules/custom_model/overlay/model_library.h",
+          "native/modules/custom_model/model_overlay_hotkey.h",
+          "native/shared/input/hotkey.h"
+        ]
+      },
+      "status": "active",
+      "replaced_by": null,
+      "purpose": "Model overlay metadata-only library, option/slider constraints, activation mutual exclusion, disable-all, optimistic rebase, atomic saves, metadata reuse and OEM versus numpad key."
+    },
+    {
       "id": "host.hooks",
       "module": "host",
       "kind": "simulation",

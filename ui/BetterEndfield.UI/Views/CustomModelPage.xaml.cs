@@ -4,6 +4,7 @@ using BetterEndfield.UI.Models;
 using BetterEndfield.UI.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
@@ -13,11 +14,13 @@ namespace BetterEndfield.UI.Views;
 public sealed partial class CustomModelPage : UserControl
 {
     private readonly BemPackageService _service = new();
-    private bool _rendering;
+    private bool _rendering = true;
     private bool _importing;
     private bool _disablingAll;
     private bool _updatingCharacterFilter;
     private string _selectedCharacter = "";
+    private bool _pendingParameters;
+    private readonly DispatcherTimer _externalSettingsTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private BemConverterWindow? _converter;
     // Packages whose component options are expanded; kept across Render().
     private readonly HashSet<string> _expanded = [];
@@ -31,14 +34,24 @@ public sealed partial class CustomModelPage : UserControl
     public CustomModelPage()
     {
         InitializeComponent();
+        _rendering = false;
+        _externalSettingsTimer.Tick += (_, _) =>
+        {
+            if (Visibility != Visibility.Visible || XamlRoot?.IsHostVisible != true) return;
+            if (_importing || _migrating || _disablingAll || _rendering || _pendingParameters || _service.IsSaving) return;
+            try { if (_service.HasExternalChanges()) Reload(); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+        };
         UpdatePageLanguage();
         Loaded += (_, _) =>
         {
             LocalizationService.Instance.PropertyChanged += PageLanguageChanged;
             UpdatePageLanguage();
             Reload();
+            _externalSettingsTimer.Start();
         };
-        Unloaded += (_, _) => LocalizationService.Instance.PropertyChanged -= PageLanguageChanged;
+        Unloaded += (_, _) => { _externalSettingsTimer.Stop(); LocalizationService.Instance.PropertyChanged -= PageLanguageChanged; };
     }
 
     private void PageLanguageChanged(object? sender, PropertyChangedEventArgs e)
@@ -59,6 +72,10 @@ public sealed partial class CustomModelPage : UserControl
         PackageFolderButton.Content = BemText.Get("打开包目录");
         CharacterFilter.Header = BemText.Get("按角色筛选");
         DisableAllButton.Content = BemText.Get("关闭全部模型");
+        bool chinese = LocalizationService.Instance.IsChinese;
+        ModelOverlayToggle.Header = chinese ? "模型悬浮窗" : "Model overlay";
+        ModelOverlayVisibleToggle.Header = chinese ? "进入游戏时显示" : "Show at game start";
+        ModelOverlayHotkeyBox.Header = chinese ? "显示／隐藏快捷键" : "Show/hide hotkey";
         UpdateCharacterFilter();
         LodToggle.Header = BemText.Get("锁定高精度 LOD");
         HotSwitchToggle.Header = BemText.Get("实验：模型热切换");
@@ -189,11 +206,15 @@ public sealed partial class CustomModelPage : UserControl
     private void Render()
     {
         _rendering = true;
+        _pendingParameters = false;
         try
         {
             SkipValidationToggle.IsOn = _service.SkipValidation;
             HotSwitchToggle.IsOn = _service.HotSwitch;
             FastLoadingToggle.IsOn = _service.FastLoading;
+            ModelOverlayToggle.IsOn = _service.ModelOverlayEnabled;
+            ModelOverlayVisibleToggle.IsOn = _service.ModelOverlayVisible;
+            ModelOverlayHotkeyBox.Text = _service.ModelOverlayHotkey.Replace("PLUS", "=", StringComparison.Ordinal);
             bool forced = _service.Packages.Any(p => p.Enabled);
             LodToggle.IsOn = _service.EffectiveLod; LodToggle.IsEnabled = !forced;
             UpdateLodHint();
@@ -285,6 +306,7 @@ public sealed partial class CustomModelPage : UserControl
                             BemText.Format("（{0:0.###}–{1:0.###}，步长 {2:0.###}，默认 {3:0.###}，原形 {4:0.###}）", parameter.Min / 1000.0, parameter.Max / 1000.0, parameter.Step / 1000.0, parameter.Default / 1000.0, parameter.Neutral / 1000.0));
                         slider.ValueChanged += (_, args) =>
                         {
+                            if (!_rendering) _pendingParameters = true;
                             pendingParameters[parameter.Id] = parameter.Snap(args.NewValue);
                             RefreshLabel();
                         };
@@ -305,7 +327,7 @@ public sealed partial class CustomModelPage : UserControl
                             try
                             {
                                 foreach (var parameter in p.Parameters) p.SelectedParameters[parameter.Id] = pendingParameters[parameter.Id];
-                                await _service.SaveAsync(); Message(() => BemText.Get("滑条已保存"), () => SelectionAppliedHint);
+                                await _service.SaveAsync(); _pendingParameters = false; Message(() => BemText.Get("滑条已保存"), () => SelectionAppliedHint);
                             }
                             catch (Exception ex) { Reload(); Message(() => BemText.Get("保存失败"), () => ex.Message, InfoBarSeverity.Error); }
                             finally { apply.IsEnabled = true; }
@@ -529,6 +551,35 @@ public sealed partial class CustomModelPage : UserControl
             await _service.SaveAsync();
             Message(() => BemText.Get("实验设置已保存"), () => BemText.Get("各开关相互独立，默认关闭；重启游戏后生效。"));
         }
+        catch (Exception ex) { Reload(); Message(() => BemText.Get("保存失败"), () => ex.Message, InfoBarSeverity.Error); }
+    }
+
+    private async void OverlaySettings_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_rendering) return;
+        try
+        {
+            _service.ModelOverlayEnabled = ModelOverlayToggle.IsOn;
+            _service.ModelOverlayVisible = ModelOverlayVisibleToggle.IsOn;
+            await _service.SaveAsync();
+        }
+        catch (Exception ex) { Reload(); Message(() => BemText.Get("保存失败"), () => ex.Message, InfoBarSeverity.Error); }
+    }
+
+    private void ModelOverlayHotkey_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (HotkeyService.IsModifier(e.Key)) return;
+        if (e.Key is Windows.System.VirtualKey.Back or Windows.System.VirtualKey.Delete)
+        { ModelOverlayHotkeyBox.Text = "NONE"; return; }
+        string captured = HotkeyService.Capture(e.Key, e.KeyStatus.IsExtendedKey);
+        if (captured.Length != 0) ModelOverlayHotkeyBox.Text = captured;
+    }
+
+    private async void ModelOverlayHotkey_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_rendering || !HotkeyService.TryNormalize(ModelOverlayHotkeyBox.Text, out string hotkey)) return;
+        try { _service.ModelOverlayHotkey = hotkey; await _service.SaveAsync(); }
         catch (Exception ex) { Reload(); Message(() => BemText.Get("保存失败"), () => ex.Message, InfoBarSeverity.Error); }
     }
     private async void SkipValidation_Toggled(object sender, RoutedEventArgs e)

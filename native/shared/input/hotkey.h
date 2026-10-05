@@ -48,6 +48,8 @@ inline int ParseKey(std::string_view value, int fallback) {
     while (!text.empty() && std::isspace(static_cast<unsigned char>(text.back()))) text.pop_back();
     for (char& c : text) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
     if (text.empty()) return fallback;
+    if (text == "+") text = "PLUS";
+    else if (text.size() >= 2 && text.ends_with("++")) { text.resize(text.size() - 1); text += "PLUS"; }
 
     int binding = 0;
     size_t start = 0;
@@ -62,6 +64,7 @@ inline int ParseKey(std::string_view value, int fallback) {
             int key = 0;
             if (token == "NONE" || token == "OFF" || token == "DISABLED") key = 0;
             else if (token == "-" || token == "MINUS" || token == "OEM_MINUS") key = VK_OEM_MINUS;
+            else if (token == "=" || token == "PLUS" || token == "OEM_PLUS" || token == "OEMPLUS") key = 0xBB;
             else if (token == "SUBTRACT" || token == "NUMPAD-") key = VK_SUBTRACT;
             else if (token == "ADD" || token == "NUMPAD+") key = VK_ADD;
             else if (token == "DECIMAL" || token == "NUMPAD.") key = VK_DECIMAL;

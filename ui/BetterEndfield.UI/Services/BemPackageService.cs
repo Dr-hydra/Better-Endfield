@@ -150,9 +150,35 @@ internal sealed class BemPackageService
     public bool SkipValidation { get; set; }
     public bool HotSwitch { get; set; }
     public bool FastLoading { get; set; }
+    public bool ModelOverlayEnabled { get; set; } = true;
+    public bool ModelOverlayVisible { get; set; }
+    public string ModelOverlayHotkey { get; set; } = "PLUS";
     public bool EffectiveLod => StandaloneLod || Packages.Any(p => p.Enabled);
+    public bool IsSaving => _gate.CurrentCount == 0;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private Dictionary<string, Dictionary<string, string>> _settings = new(StringComparer.Ordinal);
+    private Dictionary<string, Dictionary<string, string>> _baseline = new(StringComparer.Ordinal);
+    private (long Ticks, long Size) _settingsStamp;
+
+    private (long Ticks, long Size) SettingsStamp()
+    {
+        var file = new FileInfo(Path.Combine(Root, "runtime.ini"));
+        return file.Exists ? (file.LastWriteTimeUtc.Ticks, file.Length) : (0, 0);
+    }
+    public bool HasExternalChanges() => SettingsStamp() != _settingsStamp;
+
+    private void ApplyCommonSettings(Dictionary<string, Dictionary<string, string>> settings)
+    {
+        settings.TryGetValue("CustomModel", out var common);
+        StandaloneLod = common?.GetValueOrDefault("standalone_lod") is "true" or "1";
+        SkipValidation = common?.GetValueOrDefault("skip_validation") is "true" or "1";
+        HotSwitch = common?.GetValueOrDefault("hot_switch") is "true" or "1";
+        FastLoading = common?.GetValueOrDefault("fast_loading") is "true" or "1";
+        ModelOverlayEnabled = common?.GetValueOrDefault("overlay_enabled", "true") is "true" or "1" || common == null;
+        ModelOverlayVisible = common?.GetValueOrDefault("overlay_visible") is "true" or "1";
+        ModelOverlayHotkey = HotkeyService.TryNormalize(common?.GetValueOrDefault("overlay_hotkey", "PLUS"), out string hotkey)
+            ? hotkey : "PLUS";
+    }
 
     private static string StableId(JsonElement e, string key)
     {
@@ -289,23 +315,9 @@ internal sealed class BemPackageService
     {
         Packages.Clear(); _notices.Clear(); StandaloneLod = false; SkipValidation = false;
         HotSwitch = false; FastLoading = false;
-        var settings = _settings = new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
-        string ini = Path.Combine(Root, "runtime.ini");
-        if (System.IO.File.Exists(ini))
-        {
-            string section = "";
-            foreach (string source in System.IO.File.ReadLines(ini))
-            {
-                string line = source.Trim();
-                if (line.StartsWith('[') && line.EndsWith(']')) { section = line[1..^1]; settings.TryAdd(section, []); }
-                else if (line.Contains('=') && settings.TryGetValue(section, out var values))
-                { int e = line.IndexOf('='); values[line[..e].Trim()] = line[(e + 1)..].Trim(); }
-            }
-        }
-        if (settings.TryGetValue("CustomModel", out var common)) StandaloneLod = common.GetValueOrDefault("standalone_lod") is "true" or "1";
-        if (common != null) SkipValidation = common.GetValueOrDefault("skip_validation") is "true" or "1";
-        if (common != null) HotSwitch = common.GetValueOrDefault("hot_switch") is "true" or "1";
-        if (common != null) FastLoading = common.GetValueOrDefault("fast_loading") is "true" or "1";
+        var stamp = SettingsStamp();
+        var settings = _settings = BemRuntimeSettings.Read(Path.Combine(Root, "runtime.ini"));
+        ApplyCommonSettings(settings);
         var directories = new List<string> { PackageDirectory };
         if (!UsesLegacyDirectory) directories.Add(LegacyPackageDirectory);
         var files = directories.Where(Directory.Exists).SelectMany(dir => Directory.EnumerateFiles(dir, "*.bem").Order()).ToArray();
@@ -349,43 +361,88 @@ internal sealed class BemPackageService
             foreach (var p in group) p.Enabled = false;
             _notices.Add(() => BemText.Format("{0}：存在多个启用包，已在界面停用，请重新选择。", group.Key));
         }
+        _baseline = BuildDesiredSettings();
+        _settingsStamp = stamp;
     }
 
-    public async Task SaveAsync()
+    private Dictionary<string, Dictionary<string, string>> BuildDesiredSettings()
+    {
+        var settings = BemRuntimeSettings.Clone(_settings);
+        if (!settings.TryGetValue("CustomModel", out var common)) settings["CustomModel"] = common = new(StringComparer.Ordinal);
+        common["standalone_lod"] = StandaloneLod ? "true" : "false";
+        common["skip_validation"] = SkipValidation ? "true" : "false";
+        common["hot_switch"] = HotSwitch ? "true" : "false";
+        common["fast_loading"] = FastLoading ? "true" : "false";
+        common["overlay_enabled"] = ModelOverlayEnabled ? "true" : "false";
+        common["overlay_visible"] = ModelOverlayVisible ? "true" : "false";
+        common["overlay_hotkey"] = HotkeyService.TryNormalize(ModelOverlayHotkey, out string hotkey) ? hotkey : "PLUS";
+        common.Remove("loading_optimization");
+        foreach (var p in Packages)
+        {
+            if (!settings.TryGetValue("Mod." + p.Id, out var values)) settings["Mod." + p.Id] = values = new(StringComparer.Ordinal);
+            values["enabled"] = p.Enabled ? "true" : "false";
+            values["package"] = SameDirectory(Path.GetDirectoryName(p.File)!, LegacyPackageDirectory)
+                ? "packages/" + Path.GetFileName(p.File) : Path.GetFullPath(p.File);
+            values[p.IsComposable ? "options" : "appearance"] = p.IsComposable ? p.EncodedOptions() : p.SelectedAppearance;
+            values["parameters"] = p.EncodedParameters();
+            values["parameters_saved"] = p.RememberedParameters();
+        }
+        return settings;
+    }
+
+    public Task SaveAsync() => SaveCoreAsync(null);
+
+    private async Task SaveCoreAsync(IReadOnlySet<string>? forcedEnabledIds, bool disableAll = false)
     {
         await _gate.WaitAsync();
         try
         {
-            Directory.CreateDirectory(Root);
-            if (!_settings.TryGetValue("CustomModel", out var common)) _settings["CustomModel"] = common = new(StringComparer.Ordinal);
-            common["standalone_lod"] = StandaloneLod ? "true" : "false";
-            common["skip_validation"] = SkipValidation ? "true" : "false";
-            common["hot_switch"] = HotSwitch ? "true" : "false";
-            common["fast_loading"] = FastLoading ? "true" : "false";
-            common.Remove("loading_optimization");
+            var desired = BuildDesiredSettings();
+            var baseline = BemRuntimeSettings.Clone(_baseline);
+            var disk = BemRuntimeSettings.Clone(_settings);
+            var committed = await Task.Run(() => BemRuntimeSettings.Commit(Path.Combine(Root, "runtime.ini"), baseline, desired, forcedEnabledIds, disk, disableAll));
+            var advanced = BuildDesiredSettings();
+            _settings = committed.Settings;
+            ApplyCommonSettings(_settings);
             foreach (var p in Packages)
             {
-                if (!_settings.TryGetValue("Mod." + p.Id, out var values)) _settings["Mod." + p.Id] = values = new(StringComparer.Ordinal);
-                values["enabled"] = p.Enabled ? "true" : "false";
-                values["package"] = SameDirectory(Path.GetDirectoryName(p.File)!, LegacyPackageDirectory)
-                    ? "packages/" + Path.GetFileName(p.File) : Path.GetFullPath(p.File);
-                values[p.IsComposable ? "options" : "appearance"] = p.IsComposable ? p.EncodedOptions() : p.SelectedAppearance;
-                values["parameters"] = p.EncodedParameters();
-                values["parameters_saved"] = p.RememberedParameters();
+                if (!_settings.TryGetValue("Mod." + p.Id, out var state)) continue;
+                p.Enabled = state.GetValueOrDefault("enabled") is "true" or "1";
+                if (p.IsComposable) p.RestoreOptions(state.GetValueOrDefault("options", ""));
+                else p.SelectedAppearance = state.GetValueOrDefault("appearance", p.DefaultAppearance);
+                p.RestoreParameters(state.GetValueOrDefault("parameters_saved", state.GetValueOrDefault("parameters", "")));
             }
-            var text = new StringBuilder();
-            foreach (var section in _settings)
-            {
-                text.Append('[').Append(section.Key).Append("]\n");
-                foreach (var item in section.Value) text.Append(item.Key).Append('=').Append(item.Value).Append('\n');
-                text.Append('\n');
-            }
-            if (Encoding.UTF8.GetByteCount(text.ToString()) > 1024 * 1024) throw new InvalidOperationException(BemText.Get("包管理配置超过运行时 1 MiB 上限。"));
-            string temp = Path.Combine(Root, Guid.NewGuid() + ".tmp");
-            try { await System.IO.File.WriteAllTextAsync(temp, text.ToString(), new UTF8Encoding(false)); System.IO.File.Move(temp, Path.Combine(Root, "runtime.ini"), true); }
-            finally { if (System.IO.File.Exists(temp)) System.IO.File.Delete(temp); }
+            _baseline = BuildDesiredSettings();
+            RestoreNewerEdits(advanced, desired);
+            _settingsStamp = committed.Stamp;
         }
         finally { _gate.Release(); }
+    }
+
+    // UI callbacks may queue another edit while the file transaction is running.
+    // Restore that edit after recording the acknowledged disk snapshot.
+    private void RestoreNewerEdits(Dictionary<string, Dictionary<string, string>> advanced,
+        Dictionary<string, Dictionary<string, string>> submitted)
+    {
+        bool Changed(string section, string key) => advanced.TryGetValue(section, out var values)
+            && submitted.TryGetValue(section, out var old) && values.GetValueOrDefault(key) != old.GetValueOrDefault(key);
+        var common = advanced["CustomModel"];
+        if (Changed("CustomModel", "standalone_lod")) StandaloneLod = common["standalone_lod"] == "true";
+        if (Changed("CustomModel", "skip_validation")) SkipValidation = common["skip_validation"] == "true";
+        if (Changed("CustomModel", "hot_switch")) HotSwitch = common["hot_switch"] == "true";
+        if (Changed("CustomModel", "fast_loading")) FastLoading = common["fast_loading"] == "true";
+        if (Changed("CustomModel", "overlay_enabled")) ModelOverlayEnabled = common["overlay_enabled"] == "true";
+        if (Changed("CustomModel", "overlay_visible")) ModelOverlayVisible = common["overlay_visible"] == "true";
+        if (Changed("CustomModel", "overlay_hotkey")) ModelOverlayHotkey = common["overlay_hotkey"];
+        foreach (var p in Packages)
+        {
+            string section = "Mod." + p.Id;
+            if (!advanced.TryGetValue(section, out var state)) continue;
+            if (Changed(section, "enabled")) p.Enabled = state["enabled"] == "true";
+            if (p.IsComposable && Changed(section, "options")) p.RestoreOptions(state["options"]);
+            if (!p.IsComposable && Changed(section, "appearance")) p.SelectedAppearance = state["appearance"];
+            if (Changed(section, "parameters_saved")) p.RestoreParameters(state["parameters_saved"]);
+        }
     }
 
     private static void RequireGameClosed()
@@ -473,13 +530,13 @@ internal sealed class BemPackageService
         if (enabled)
             foreach (var other in Packages.Where(p => p.Character == package.Character)) other.Enabled = false;
         package.Enabled = enabled;
-        await SaveAsync();
+        await SaveCoreAsync((enabled ? Packages.Where(p => p.Character == package.Character) : new[] { package }).Select(p => p.Id).ToHashSet(StringComparer.Ordinal));
     }
 
     public async Task DisableAllAsync()
     {
         foreach (var package in Packages) package.Enabled = false;
-        await SaveAsync();
+        await SaveCoreAsync(Packages.Select(p => p.Id).ToHashSet(StringComparer.Ordinal), disableAll: true);
     }
 }
 

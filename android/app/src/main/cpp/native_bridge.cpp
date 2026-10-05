@@ -31,6 +31,8 @@
 #include <vector>
 #include <string>
 
+namespace betterendfield { bool AndroidGlobalFov(bool enabled, float fov); }
+
 // Each desktop feature module keeps its own entry point; the Android CMake build
 // renames the shared BetterEndfield_GetModuleApiV1 symbol per translation unit so
 // all of them can live in this one shared library.
@@ -294,6 +296,10 @@ extern "C" JNIEXPORT void JNICALL
 Java_dev_betterendfield_android_NativeCommandBridge_cameraValues(JNIEnv*, jclass, jfloat speed, jfloat fov) {
     betterendfield::AndroidCameraValues(speed, fov);
 }
+extern "C" JNIEXPORT jboolean JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_globalFov(JNIEnv*, jclass, jboolean enabled, jfloat fov) {
+    return betterendfield::AndroidGlobalFov(enabled == JNI_TRUE, fov) ? JNI_TRUE : JNI_FALSE;
+}
 extern "C" JNIEXPORT jstring JNICALL
 Java_dev_betterendfield_android_NativeCommandBridge_mmdStatus(JNIEnv* env, jclass) {
     return env->NewStringUTF(betterendfield::AndroidMmdStatus().c_str());
@@ -328,6 +334,7 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
         BE_NATIVE(key, "(II)Z"), BE_NATIVE(releaseKeys, "()V"), BE_NATIVE(protocolVersion, "()I"),
         BE_NATIVE(frame, "()V"), BE_NATIVE(foreground, "(Z)V"), BE_NATIVE(look, "(II)V"), BE_NATIVE(runtimeStatus, "()Ljava/lang/String;"),
         BE_NATIVE(cameraValues, "(FF)V"), BE_NATIVE(mmdStatus, "()Ljava/lang/String;"),
+        BE_NATIVE(globalFov, "(ZF)Z"),
         BE_NATIVE(updateCustomModelConfig, "(Ljava/lang/String;)Z"),
         BE_NATIVE(updateThirdPartyRuntime, "(Ljava/lang/String;)Z"),
         BE_NATIVE(mmd, "(IIDLjava/lang/String;)Z")

@@ -48,6 +48,14 @@
                 </StackPanel>
             </Border>
             <InfoBar x:Name="Status" IsOpen="False" IsClosable="True" />
+            <Border Padding="16" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <StackPanel Spacing="8">
+                    <ToggleSwitch x:Name="ModelOverlayToggle" Header="模型悬浮窗" Toggled="OverlaySettings_Toggled" />
+                    <ToggleSwitch x:Name="ModelOverlayVisibleToggle" Header="进入游戏时显示" Toggled="OverlaySettings_Toggled" />
+                    <TextBox x:Name="ModelOverlayHotkeyBox" Header="显示／隐藏快捷键" Text="=" IsSpellCheckEnabled="False"
+                             KeyDown="ModelOverlayHotkey_KeyDown" TextChanged="ModelOverlayHotkey_TextChanged" />
+                </StackPanel>
+            </Border>
             <ProgressRing x:Name="Busy" IsActive="False" Visibility="Collapsed" HorizontalAlignment="Left" />
             <controls:WrapPanel HorizontalSpacing="12" VerticalSpacing="8">
                 <ComboBox x:Name="CharacterFilter" Header="按角色筛选" MinWidth="220" SelectionChanged="CharacterFilter_SelectionChanged" />

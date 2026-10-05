@@ -287,6 +287,7 @@ bool g_time_heartbeat_contract_ready = false;
 bool g_first_person_contract_ready = false;
 bool g_pause_contract_ready = false;
 #if defined(__ANDROID__)
+std::atomic_bool g_android_global_fov_ready{false};
 uint64_t g_android_pump_generation = 0; // Unity thread only
 uint64_t g_android_first_person_pump_generation = 0;
 bool AndroidCameraReady() {
@@ -2938,6 +2939,11 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     }
     g_state.store(ModuleState::Ready, std::memory_order_release);
 #if defined(__ANDROID__)
+    // Publish only contracts backed by installed hooks; Java never installs hooks dynamically.
+    const auto global_ready = [](const char* key) { const auto* c = Contract(key); return c && c->resolved; };
+    g_android_global_fov_ready.store(g_push_state_hook_ready && g_state_layout.ready &&
+        global_ready("unity.camera.main") && global_ready("unity.camera.orthographic.get") &&
+        global_ready("unity.component.game_object") && global_ready("unity.object.op_equality"), std::memory_order_release);
     betterendfield::SetAndroidFrameClient(betterendfield::FrameClient::Camera, &AndroidCameraFrame);
 #endif
     Log("BetterEndfield.Camera module initialized successfully.");
@@ -3086,6 +3092,7 @@ void BE_CALL Shutdown() {
 #if defined(__ANDROID__)
     betterendfield::SetAndroidFrameClient(betterendfield::FrameClient::Camera, nullptr);
     betterendfield::PublishAndroidCameraState(0, 0);
+    g_android_global_fov_ready.store(false, std::memory_order_release);
 #endif
     g_character_preview_enabled=false;
     StopCharacterMotion();
@@ -3137,6 +3144,15 @@ BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfield_GetModuleApiV1() {
 
 #if defined(__ANDROID__)
 namespace betterendfield {
+bool AndroidGlobalFov(bool enabled, float fov) {
+    using namespace BetterEndfield::CameraModule;
+    if (!g_android_global_fov_ready.load(std::memory_order_acquire) || !std::isfinite(fov) || fov < 5.0f || fov > 150.0f)
+        return false;
+    // The Cinemachine hook consumes atomics on Unity's thread; JNI does not touch Unity state.
+    g_global_fov.store(fov, std::memory_order_release);
+    g_global_fov_enabled.store(enabled, std::memory_order_release);
+    return true;
+}
 void AndroidCameraValues(float speed, float fov) {
     using namespace BetterEndfield;
     using namespace BetterEndfield::CameraModule;
@@ -3172,7 +3188,10 @@ std::string AndroidMmdStatus() {
 std::string AndroidCameraValuesStatus() {
     using namespace BetterEndfield::CameraModule;
     return "camera.speed=" + std::to_string(g_movement_speed.load()) + "\n" +
-        "camera.fov=" + std::to_string(g_field_of_view.load()) + "\n";
+        "camera.fov=" + std::to_string(g_field_of_view.load()) + "\n" +
+        "camera.global_fov_ready=" + (g_android_global_fov_ready.load(std::memory_order_acquire) ? "1\n" : "0\n") +
+        "camera.global_fov_enabled=" + (g_global_fov_enabled.load() ? "1\n" : "0\n") +
+        "camera.global_fov=" + std::to_string(g_global_fov.load()) + "\n";
 }
 }
 #endif

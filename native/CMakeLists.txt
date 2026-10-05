@@ -176,6 +176,28 @@ set_target_properties(BetterEndfield.MmdOverlay PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
 )
 
+add_executable(BetterEndfield.ModelOverlay WIN32
+    modules/custom_model/overlay/main.cpp
+    modules/custom_model/overlay/model_overlay.rc
+    modules/custom_model/overlay/model_library.h
+    modules/custom_model/overlay/win32_overlay_window.h
+)
+better_endfield_target_defaults(BetterEndfield.ModelOverlay)
+target_link_libraries(BetterEndfield.ModelOverlay PRIVATE BetterEndfield.CustomModelCore gdiplus shell32)
+if(MSVC)
+    target_link_options(BetterEndfield.ModelOverlay PRIVATE "/MANIFEST:NO")
+endif()
+set_target_properties(BetterEndfield.ModelOverlay PROPERTIES
+    OUTPUT_NAME "BetterEndfield.ModelOverlay"
+    RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_STAGE_DIR}/modules"
+)
+
+add_executable(BetterEndfield.ModelOverlayTests EXCLUDE_FROM_ALL
+    modules/custom_model/tests/model_overlay_tests.cpp
+)
+better_endfield_target_defaults(BetterEndfield.ModelOverlayTests)
+target_link_libraries(BetterEndfield.ModelOverlayTests PRIVATE BetterEndfield.CustomModelCore)
+
 add_library(BetterEndfield.Actions SHARED modules/actions/module.cpp)
 better_endfield_target_defaults(BetterEndfield.Actions)
 set_target_properties(BetterEndfield.Actions PROPERTIES
@@ -382,6 +404,12 @@ add_custom_target(BetterEndfield.Layout ALL
         "${CMAKE_CURRENT_SOURCE_DIR}/modules/custom_model/betterendfield.custom_model.module.ini"
         "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.custom_model.module.ini"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/../ui/BetterEndfield.UI/Assets/model/character-names.json"
+        "${BETTER_ENDFIELD_STAGE_DIR}/modules/model-character-names.json"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/../ui/BetterEndfield.UI/Assets/model/character-names-en.json"
+        "${BETTER_ENDFIELD_STAGE_DIR}/modules/model-character-names-en.json"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/modules/voice/betterendfield.voice.module.ini"
         "${BETTER_ENDFIELD_STAGE_DIR}/modules/betterendfield.voice.module.ini"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -429,6 +457,7 @@ add_custom_target(BetterEndfield.Layout ALL
         BetterEndfield.CombatStats
         BetterEndfield.CombatOverlay
         BetterEndfield.MmdOverlay
+        BetterEndfield.ModelOverlay
         BetterEndfield.Injector
         BetterEndfield.Bootstrap
         BetterEndfield.XInput14Proxy

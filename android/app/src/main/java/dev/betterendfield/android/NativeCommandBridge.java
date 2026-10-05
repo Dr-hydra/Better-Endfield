@@ -29,6 +29,7 @@ final class NativeCommandBridge {
     static native void foreground(boolean visible);
     static native void look(int dx, int dy);
     static native void cameraValues(float speed, float fov);
+    static native boolean globalFov(boolean enabled, float fov);
     static native String mmdStatus();
     private static native boolean mmd(int type, int argument, double value, String text);
     static boolean mmdCommand(String command) {

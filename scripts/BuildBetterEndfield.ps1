@@ -5,7 +5,10 @@ param(
 
     [string]$PublishDir = "",
 
-    [string]$WorkspaceConfig = ""
+    [string]$WorkspaceConfig = "",
+
+    [ValidateRange(0, 64)]
+    [int]$Parallel = 0
 )
 
 $ErrorActionPreference = "Stop"
@@ -115,7 +118,9 @@ if ($LASTEXITCODE -ne 0) {
     throw "Better Endfield native configuration failed with exit code $LASTEXITCODE."
 }
 
-& $cmake --build $nativeBuild --config $Configuration --target BetterEndfield.Layout --parallel
+$nativeBuildArgs = @('--build', $nativeBuild, '--config', $Configuration, '--target', 'BetterEndfield.Layout', '--parallel')
+if ($Parallel -gt 0) { $nativeBuildArgs += $Parallel }
+& $cmake @nativeBuildArgs
 if ($LASTEXITCODE -ne 0) {
     throw "Better Endfield native build failed with exit code $LASTEXITCODE."
 }
@@ -196,7 +201,7 @@ if ($runtimeMarkers) {
 $requiredReleaseFiles = @(
     "BetterEndfield.exe",
     "tools\BemConverter\BetterEndfield.BemConverter.exe",
-    "docs\custom_model\BEM_CREATOR_GUIDE.md",
+    "docs\BEM_CREATOR_GUIDE.md",
     "modules\BetterEndfield.CustomModel.dll",
     "modules\betterendfield.custom_model.module.ini",
     "runtime\BetterEndfield.Host.dll",
@@ -209,6 +214,9 @@ $requiredReleaseFiles = @(
     "modules\BetterEndfield.CombatStats.dll",
     "modules\BetterEndfield.CombatOverlay.exe",
     "modules\BetterEndfield.MmdOverlay.exe",
+    "modules\BetterEndfield.ModelOverlay.exe",
+    "modules\model-character-names.json",
+    "modules\model-character-names-en.json",
     "modules\combat-semantics.besem",
     "modules\buff-sources.bemap",
     "modules\betterendfield.ui.module.ini",

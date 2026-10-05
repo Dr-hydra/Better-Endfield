@@ -23,6 +23,8 @@ final class FrameworkSettings {
 
     static void initialize(Context context) {
         local = open(context);
+        try { OverlayWriteAuthorization.initialize(context); }
+        catch (java.io.IOException unavailable) { Log.e("BetterEndfield.Settings", "overlay authorization unavailable", unavailable); }
         local.registerOnSharedPreferenceChangeListener(listener);
         XposedServiceHelper.registerListener(new XposedServiceHelper.OnServiceListener() {
             @Override public void onServiceBind(XposedService connected) {
@@ -191,6 +193,10 @@ final class FrameworkSettings {
                 else if (value instanceof Float) edit.putFloat(key, (Float) value);
                 else if (value instanceof Set<?>) edit.putStringSet(key, (Set<String>) value);
             }
+            // The secret never belongs to the UI preference map or a public provider response.
+            String authorization = OverlayWriteAuthorization.ownerToken();
+            if (OverlayWritePolicy.validToken(authorization)) edit.putString(OverlayWriteAuthorization.PREFERENCE, authorization);
+            else edit.remove(OverlayWriteAuthorization.PREFERENCE);
             edit.putInt("schemaVersion", 1);
             edit.putLong("generation", remote.getLong("generation", 0) + 1);
             if (!edit.commit()) Log.e("BetterEndfield.Settings", "framework snapshot commit failed");

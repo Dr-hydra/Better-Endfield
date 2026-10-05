@@ -6,7 +6,7 @@ Better Endfield is an open-source modular toolkit for *Arknights: Endfield*. It 
 
 [Download](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [Release notes](CHANGELOG.md) · [Android setup/build guide](android/README.md) · [BEM creator guide](docs/custom_model/BEM_CREATOR_GUIDE.en.md) · [Module developer guide](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
 
-The current version is **3.5.0**, with standalone BEM Tools **1.5.0**. Version 3.5.0 adds Android cross-LOD asset compatibility, English BEM creator documentation, portable creator workspaces and the first Blender exporter.
+The current version is **3.5.1**, with standalone BEM Tools **1.5.0**. Version 3.5.1 adds model-management overlays on both platforms and global FOV controls in the Android overlay.
 
 ## Feature overview
 
@@ -57,6 +57,8 @@ Enable the module in your framework, scope it to the Endfield client you actuall
 Both platforms use the same BEM parser/assembly core and support 1.0–1.3. **Version 3.4.2 adds BEM 1.3 position morphs**: authors define sliders and deformation data, and the runtime interpolates/adds deltas to immutable base positions while preserving bones, skinning and base normals/tangents. Old packages do not gain automatic body sliders. Source hotkey scripts, arbitrary GUI expressions and arbitrary shaders are not executed.
 
 Normal selections apply after a game restart. With experimental hot switching enabled, package/component/1.3 parameter changes apply when the game **normally reloads the resource**, such as changing the team or reopening character details. Slider dragging does not instantly rebuild an already displayed mesh. Importing, replacing package files and deleting packages should still be done with the game closed.
+
+The in-game model overlay supports character filtering, disabling all models, one active package per character, appearances, component choices and shape parameters, with expandable details. On Windows, the default show/hide key is the main keyboard `=` without Shift; its settings are on the third-party models page. On Android, use the model tab on the left side of the overlay. Both use the existing library without making extra model or texture copies.
 
 Hot switching and loading optimization are independent and disabled by default. Hot switching retains original model resources for cache rebuilding, increasing memory use. Loading optimization reduces decode copies and duplicate resources; it does not guarantee a lower in-game VRAM peak on every device.
 

@@ -33,6 +33,7 @@ public final class XposedEntry extends XposedModule {
                 report("unsupported settings schema; native runtime disabled");
                 return;
             }
+            OverlaySettingsClient.initialize(()->getRemotePreferences("module_settings"));
             ModuleConfigurations configs = ModuleConfigurations.read(settings);
             hook(Application.class.getDeclaredMethod("attach", Context.class)).intercept(chain -> {
                 Object result = chain.proceed();
@@ -73,6 +74,7 @@ public final class XposedEntry extends XposedModule {
                                 name -> new ParcelFileDescriptor.AutoCloseInputStream(openRemoteFile(name)), this::report); }
                         catch (Exception error) { report("Third-party preparation failed: " + error); }
                         RuntimeBootstrap.prepare(application,context,param.getClassLoader(),configs,this::installFrames,this::report);
+                        GlobalFovUpdater.start(()->getRemotePreferences("module_settings"));
                         ThirdPartyRuntimeUpdater.start(context,()->getRemotePreferences("module_settings"),
                             name -> new ParcelFileDescriptor.AutoCloseInputStream(openRemoteFile(name)), configs.thirdParty(), this::report);
                         if(installedPrepared) BemHotSwitchUpdater.start(context,

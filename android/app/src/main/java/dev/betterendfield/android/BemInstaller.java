@@ -383,30 +383,7 @@ final class BemInstaller {
     }
     static synchronized void saveAll(Context app,JSONArray changes) throws Exception {
         if(busy) throw new IOException("请等待当前操作完成后修改");
-        JSONArray previous=index(app),entries=new JSONArray(previous.toString());
-        for(int i=0;i<changes.length();++i) {
-            JSONObject change=changes.getJSONObject(i);
-            JSONObject entry=findEntry(entries,change.getString("generation"));
-            if(entry==null) throw new IOException("模型包列表已更新，请重新选择");
-            if((entry.optInt("bem_minor",0)>=1 && change.has("appearance")) ||
-                    (entry.optInt("bem_minor",0)<1 && change.has("options")) ||
-                    (entry.optInt("bem_minor",0)<3 && change.has("parameters"))) throw new IOException("选项类型与模型包不匹配");
-            if(entry.optInt("bem_minor",0)>=1 && change.has("options")) {
-                String options=BemOptions.encode(BemOptions.parse(entry,change.getString("options")));
-                entry.put("selected_options",options);
-            } else if(entry.optInt("bem_minor",0)<1 && change.has("appearance")) {
-                entry.put("selected_appearance",BemOptions.appearance(entry,change.getString("appearance")));
-            }
-            if(change.has("parameters")) BemParameters.select(entry,change.getString("parameters"));
-            if(change.has("enabled")) {
-                boolean enabled=change.getBoolean("enabled");
-                if(enabled) for(int j=0;j<entries.length();++j) {
-                    JSONObject other=entries.getJSONObject(j);
-                    if(entry.getString("character_id").equals(other.getString("character_id"))) other.put("enabled",false);
-                }
-                entry.put("enabled",enabled);
-            }
-        }
+        JSONArray previous=index(app),entries=OverlayWritePolicy.apply(previous,changes);
         commitIndex(app,previous.toString(),entries,"保存失败");
     }
 }

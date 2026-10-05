@@ -8,6 +8,7 @@
   },
   "tools": {
     "python": "python", "cmake": "cmake", "dotnet": "dotnet", "iscc": null,
+    "node": "node", "npm": "npm",
     "android_sdk": "toolchains/android/sdk", "android_dobby": "toolchains/android/dobby-1.0.5",
     "adb": "toolchains/android/sdk/platform-tools/adb.exe",
     "fkarkend_root": "toolchains/FkArkEnd", "resconv": "toolchains/FkArkEnd/ResConv/bin/Release/net10.0/ResConv.exe",

@@ -15,7 +15,7 @@ sys.dont_write_bytecode = True
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PATH_PREFIXES = ("paths.", "resource_update.", "documents.")
-COMMAND_KEYS = {"tools.python", "tools.cmake", "tools.dotnet", "tools.iscc"}
+COMMAND_KEYS = {"tools.python", "tools.cmake", "tools.dotnet", "tools.iscc", "tools.node", "tools.npm"}
 
 
 def merge(base: dict, override: dict) -> dict:

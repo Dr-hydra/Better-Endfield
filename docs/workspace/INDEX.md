@@ -5,13 +5,17 @@
 ## 现行说明与维护入口
 
 - [工作区政策](WORKSPACE_POLICY.md)
-本模块暂无独立现行说明；可从下列研究或邻接维护入口进入。
+- [配置与日常入口](CONFIGURATION.md)
+- [工作区构建](BUILDING.md)
+- [测试规范](TESTING.md)
 
 ## 研究与阶段记录
 
 九月初更新后资料按用户确认与当前配置归为 1.5.3；旧客户端为 pre-1.5.3，跨版本比较在清单单独登记。同版热更新以资源快照区分，日期只作元数据。阶段实施、来源证据和提案保留验证边界；部分结论已替代不代表整篇无用。
 
-本模块没有独立迁入的版本研究；上述维护说明保留自身来源与适用范围。
+不依赖游戏版本的构建记录单独保存：
+
+- [新工作区全量构建验证](research/not_applicable/workspace-build/BUILD_VALIDATION.md)
 
 ## 软件发布记录
 
@@ -22,6 +26,7 @@
 | [Better Endfield 3.4.1（2026-10-01）](releases/3.4.1/RELEASE_3_4_1.md) | 3.4.1双端发布范围、工具/实验开关及验证边界 | 发布记录 | not_applicable |
 | [Better Endfield 3.4.2](releases/3.4.2/RELEASE_3_4_2.md) | 3.4.2/Tools1.4.1功能与下载验证记录 | 发布记录 | not_applicable |
 | [Better Endfield 3.5.0](releases/3.5.0/RELEASE_3_5_0.md) | 3.5.0/Tools1.5.0发布元数据、构建结果及旧测试失败边界 | 发布记录 | not_applicable |
+| [Better Endfield 3.5.1](releases/3.5.1/RELEASE_3_5_1.md) | 双端模型悬浮窗、Android全局FOV及发布验证 | 发布记录 | 1.5.3 |
 
 ## 邻接文档与分发来源
 

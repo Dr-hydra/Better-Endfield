@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 
 /** Experimental selection updates; the validation/experiment modes stay latched at startup. */
 final class BemHotSwitchUpdater {
+    static volatile boolean running;
     private BemHotSwitchUpdater() {}
 
     static void start(Context context,Supplier<SharedPreferences> preferences,
@@ -44,6 +45,6 @@ final class BemHotSwitchUpdater {
                 }
             }
         },"BetterEndfield-BemHotSwitch");
-        worker.setDaemon(true);worker.start();
+        worker.setDaemon(true);worker.start();running=true;
     }
 }
