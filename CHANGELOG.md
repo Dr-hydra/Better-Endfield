@@ -8,7 +8,7 @@
 - 模型管理器与 PC 悬浮窗共用原子保存和增量合并，避免并发操作覆盖选择；仅修改悬浮窗状态不会触发模型重建。
 - Android 游戏进程通过框架授权的设置桥写入模块应用，保留渠道客户端支持、版本冲突检测、包代次校验和原提交失败回滚。
 - 开发工作区改用配置管理工具链和输出路径，资料按模块与游戏版本整理；新增统一构建与测试入口。
-- Windows 与 Android 统一为 3.5.1（Android versionCode 30501）；BEM Tools 保持 1.5.0，提供 PC 安装包、PC ZIP 与 Android APK。
+- Windows 与 Android 统一为 3.5.1（Android versionCode 30501）；提供 PC 安装包与 Android APK，附 BEM Tools 1.5.0、第三方模块 SDK 1.0.0 和双端 Echo 示例。
 
 ## 3.5.0
 

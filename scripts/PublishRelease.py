@@ -50,6 +50,14 @@ def main():
     assets = [(name, Path(path).resolve()) for name, path in args.asset]
     if len({name for name, _ in assets}) != len(assets) or any(not path.is_file() for _, path in assets):
         raise ValueError("Release asset names must be unique and all files must exist")
+    if args.repo.lower() == "dr-hydra/better-endfield":
+        names = {name for name, _ in assets}
+        version = args.tag.removeprefix("v")
+        if f"BetterEndfield-{version}-win-x64.zip" in names:
+            raise ValueError("Windows app releases distribute the installer only")
+        for prefix in ("BetterEndfield-ThirdPartySDK-", "BetterEndfield-Echo-", "BEM-Tools-"):
+            if not any(name.startswith(prefix) and name.endswith(".zip") for name in names):
+                raise ValueError("Missing creator release asset: " + prefix)
     body = args.notes_file.read_text(encoding="utf-8-sig")
     try:
         release = api(base + "/releases/tags/" + urllib.parse.quote(args.tag, safe=""))

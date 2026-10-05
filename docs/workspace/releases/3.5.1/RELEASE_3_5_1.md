@@ -12,9 +12,10 @@
 ## 下载
 
 - `BetterEndfield-3.5.1-Setup.exe`：Windows x64 安装包。
-- `BetterEndfield-3.5.1-win-x64.zip`：Windows x64 完整目录包。
 - `BetterEndfield-3.5.1-Android-arm64.apk`：Android ARM64 模块，versionCode 30501。
 - `BEM-Tools-1.5.0-win-x64.zip`：独立创作者工具，版本保持 1.5.0。
+- `BetterEndfield-ThirdPartySDK-1.0.0.zip`：第三方原生模块创作者 SDK。
+- `BetterEndfield-Echo-1.0.0-Dual.zip`：第三方模块 Windows／Android 双端示例。
 
 ## 验证范围
 
@@ -28,4 +29,4 @@ PC 原生模块、新悬浮窗、WinUI、BEM Tools、Inno Setup 安装包与 And
 - Added model-management overlays on both platforms: character filtering, disable all, one active package per character, appearances, components and shape parameters with expandable details.
 - The Windows model overlay uses the main keyboard **`=` without Shift** by default, supports custom chords, follows the game window and uses the existing character names and Chinese/English UI.
 - Uses the existing model library, hot-switching and rollback paths. Concurrent desktop/overlay edits preserve unrelated selections; Android writes use the framework-authorized settings bridge.
-- Includes Windows installer/ZIP, Android APK and BEM Tools 1.5.0. Production builds and offline regressions passed; new in-game behavior has not been device-tested.
+- Includes the Windows installer, Android APK, BEM Tools 1.5.0, ThirdPartySDK 1.0.0 and the dual-platform Echo example. Production builds and offline regressions passed; new in-game behavior has not been device-tested.
