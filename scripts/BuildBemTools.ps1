@@ -47,9 +47,13 @@ if ($ws.config_file) { $packageArgs += @('--workspace-config', $ws.config_file) 
 & $python @packageArgs
 if ($LASTEXITCODE -ne 0) { throw "BEM toolchain packaging failed." }
 $toolArchive = Join-Path $Destination 'dist\BEM-Tools-win-x64.zip'
-$releaseDir = Join-Path $ws.paths.releases 'tools\bem'
+$releaseDir = Get-BEReleaseDirectory -Workspace $ws
 New-Item -ItemType Directory -Path $releaseDir -Force | Out-Null
-$releaseArchive = Join-Path $releaseDir 'BEM-Tools-win-x64.zip'
+$toolVersionText = & $python (Join-Path $repo 'tools/CustomModel/bem_tool.py') --version
+if ($LASTEXITCODE -ne 0 -or ($toolVersionText -join ' ') -notmatch '(\d+\.\d+\.\d+)') {
+    throw 'BEM Tools version could not be resolved.'
+}
+$releaseArchive = Join-Path $releaseDir "BEM-Tools-$($Matches[1])-win-x64.zip"
 if ([System.IO.Path]::GetFullPath($toolArchive) -ne [System.IO.Path]::GetFullPath($releaseArchive)) {
     Copy-Item -LiteralPath $toolArchive -Destination $releaseArchive -Force
 }

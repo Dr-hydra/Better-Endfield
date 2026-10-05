@@ -11,8 +11,9 @@
 该入口构建 Windows x64 Host、全部内置模块、注入器、悬浮窗、WinUI 管理器和独立 BEM 工具，再检查发布目录。它不运行安装包构建器、不启动游戏、不部署到本机 BE 安装目录。
 
 - PC 发布目录：`build/windows/win-x64/Release/publish/`。
-- PC ZIP：`releases/windows/win-x64/Release/BetterEndfield-<version>-win-x64.zip`。
-- 独立工具：`releases/tools/bem/BEM-Tools-win-x64.zip`。
+- 所有发行文件统一存放于 `releases/<软件版本>/`，不再按平台或工具分散目录。
+- PC 安装包：`BetterEndfield-<version>-Setup.exe`；本地完整目录 ZIP：`BetterEndfield-<version>-win-x64.zip`，不上传 Windows 应用 ZIP。
+- 独立工具：`BEM-Tools-<工具版本>-win-x64.zip`，与第三方模块 SDK 和 Echo 双端示例放在同一软件版本目录。
 
 需要 VS 2022 C++、CMake 3.25 以上，以及 `global.json` 指定的 .NET SDK。BEM 构建 Python 环境按 `tools/CustomModel/requirements-build.txt` 安装依赖。可以在 `toolchains` 中单独配置这些环境，不必全局安装。PC 安装包另外通过 `scripts/BuildInstaller.ps1` 构建，需要 Inno Setup。
 
@@ -33,7 +34,7 @@ $env:ANDROID_SDK_ROOT = $ws.tools.android_sdk
 工具链版本由 `android/app/build.gradle.kts` 指定。首次取得 Gradle/Maven 依赖时去掉 `--offline`；已有依赖可离线构建。SDK 与 Dobby 路径来自工作区配置，不能继续指向备份目录。
 
 - APK 构建目录：`build/android/gradle/app/outputs/apk/release/`。
-- 完成后的保留副本：`releases/android/app-<version>/release/`。
+- 完成后的保留副本：`releases/<version>/BetterEndfield-<version>-Android-arm64.apk`。
 - 原生中间目录：`build/android/native/app/`。
 
 Release 签名沿用现有 Gradle 配置；构建不安装 APK，也不连接设备。

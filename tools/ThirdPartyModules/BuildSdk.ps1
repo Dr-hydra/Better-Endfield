@@ -4,29 +4,34 @@ param(
     [switch]$Build,
     [string]$WindowsLibrary,
     [string]$AndroidLibrary,
-    [string]$CMake = 'cmake',
+    [string]$CMake,
     [string]$AndroidNdk,
-    [string]$Ninja
+    [string]$Ninja,
+    [string]$WorkspaceConfig = ''
 )
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+. (Join-Path $repoRoot 'scripts/Workspace.ps1')
+$ws = Get-BEWorkspace -Config $WorkspaceConfig
+Set-BEWorkspaceEnvironment $ws
 $sdkVersion = '1.0.0'
 $echoRoot = Join-Path $PSScriptRoot 'echo'
-if (!$OutputDirectory) { $OutputDirectory = Join-Path $repoRoot "artifacts/third-party-sdk-$sdkVersion" }
+if (!$OutputDirectory) { $OutputDirectory = Get-BEReleaseDirectory -Workspace $ws }
 $outputRoot = [System.IO.Path]::GetFullPath($OutputDirectory)
-if (!$WindowsLibrary) { $WindowsLibrary = Join-Path $repoRoot 'artifacts/third-party-echo-win/package/native/windows-x64/example.echo.dll' }
-if (!$AndroidLibrary) { $AndroidLibrary = Join-Path $repoRoot 'artifacts/third-party-echo-android/package/native/android-arm64/libexample.echo.so' }
-if (!$AndroidNdk) { $AndroidNdk = Join-Path $repoRoot 'tools/android-toolchain/sdk/ndk/27.2.12479018' }
-if (!$Ninja) { $Ninja = Join-Path $repoRoot 'tools/android-toolchain/sdk/cmake/3.22.1/bin/ninja.exe' }
+if (!$CMake) { $CMake = $ws.tools.cmake }
+if (!$WindowsLibrary) { $WindowsLibrary = Join-Path $ws.paths.build 'third-party/echo/windows/package/native/windows-x64/example.echo.dll' }
+if (!$AndroidLibrary) { $AndroidLibrary = Join-Path $ws.paths.build 'third-party/echo/android/package/native/android-arm64/libexample.echo.so' }
+if (!$AndroidNdk) { $AndroidNdk = Join-Path $ws.tools.android_sdk 'ndk/27.2.12479018' }
+if (!$Ninja) { $Ninja = Join-Path $ws.tools.android_sdk 'cmake/3.22.1/bin/ninja.exe' }
 
 function Invoke-CMake([string[]]$Arguments) {
     & $CMake @Arguments
     if ($LASTEXITCODE -ne 0) { throw "CMake failed with exit code $LASTEXITCODE" }
 }
 if ($Build) {
-    $winBuild = Join-Path $repoRoot 'artifacts/third-party-echo-win'
-    $androidBuild = Join-Path $repoRoot 'artifacts/third-party-echo-android'
+    $winBuild = Join-Path $ws.paths.build 'third-party/echo/windows'
+    $androidBuild = Join-Path $ws.paths.build 'third-party/echo/android'
     $toolchain = Join-Path $AndroidNdk 'build/cmake/android.toolchain.cmake'
     if (!(Test-Path -LiteralPath $toolchain -PathType Leaf) -or !(Test-Path -LiteralPath $Ninja -PathType Leaf)) {
         throw 'Android toolchain missing. Set -AndroidNdk and -Ninja to installed NDK/Ninja paths.'

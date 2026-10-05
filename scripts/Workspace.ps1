@@ -11,6 +11,18 @@ function Get-BEWorkspace {
     return (($workspaceText -join "`n") | ConvertFrom-Json)
 }
 
+function Get-BEReleaseDirectory {
+    param($Workspace, [string]$Version = '')
+    if (-not $Version) {
+        $props = [xml](Get-Content -LiteralPath (Join-Path $Workspace.repo_root 'Directory.Build.props') -Raw)
+        $Version = $props.SelectSingleNode('//Version').InnerText.Trim()
+    }
+    if ($Version -notmatch '^\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?$') {
+        throw "Invalid release version: $Version"
+    }
+    return Join-Path $Workspace.paths.releases $Version
+}
+
 function Set-BEWorkspaceEnvironment {
     param($Workspace)
     New-Item -ItemType Directory -Path $Workspace.paths.temp -Force | Out-Null

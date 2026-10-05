@@ -129,9 +129,10 @@ val prepareAndroidResourceAssets by tasks.registering(Sync::class) {
 val archiveAndroidRelease by tasks.registering(Copy::class) {
     from(layout.buildDirectory.dir("outputs/apk/release")) {
         include("*.apk")
+        rename { "BetterEndfield-${android.defaultConfig.versionName}-Android-arm64.apk" }
     }
     into(File(workspacePaths["releases"] as String,
-        "android/app-${android.defaultConfig.versionName}/release"))
+        "${android.defaultConfig.versionName}"))
     onlyIf { tasks.named("assembleRelease").get().state.failure == null }
 }
 tasks.matching { it.name == "assembleRelease" }.configureEach {
@@ -141,9 +142,10 @@ tasks.matching { it.name == "assembleRelease" }.configureEach {
 val archiveAndroidBundleRelease by tasks.registering(Copy::class) {
     from(layout.buildDirectory.dir("outputs/bundle/release")) {
         include("*.aab")
+        rename { "BetterEndfield-${android.defaultConfig.versionName}-Android-arm64.aab" }
     }
     into(File(workspacePaths["releases"] as String,
-        "android/app-${android.defaultConfig.versionName}/release"))
+        "${android.defaultConfig.versionName}"))
     onlyIf { tasks.named("bundleRelease").get().state.failure == null }
 }
 tasks.matching { it.name == "bundleRelease" }.configureEach {

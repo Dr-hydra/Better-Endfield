@@ -42,7 +42,7 @@ $publishDir = if ([string]::IsNullOrWhiteSpace($PublishDir)) {
     [System.IO.Path]::GetFullPath($PublishDir)
 }
 $outputDir = if ([string]::IsNullOrWhiteSpace($OutputDir)) {
-    Join-Path $ws.paths.releases "windows\win-x64\$Configuration\installer"
+    Get-BEReleaseDirectory -Workspace $ws -Version $Version
 } else {
     [System.IO.Path]::GetFullPath($OutputDir)
 }

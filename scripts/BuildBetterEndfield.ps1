@@ -235,7 +235,7 @@ if ($missingReleaseFiles) {
 
 # Persist a complete distributable outside the cleanable publish directory.
 $version = ([xml](Get-Content -LiteralPath (Join-Path $repoRoot 'Directory.Build.props') -Raw)).SelectSingleNode('//Version').InnerText.Trim()
-$releaseDir = Join-Path $ws.paths.releases "windows\win-x64\$Configuration"
+$releaseDir = Get-BEReleaseDirectory -Workspace $ws -Version $version
 New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
 $releaseArchive = Join-Path $releaseDir "BetterEndfield-$version-win-x64.zip"
 $temporaryArchive = Join-Path $ws.paths.temp ("BetterEndfield-release-" + [Guid]::NewGuid().ToString('N') + '.zip')
