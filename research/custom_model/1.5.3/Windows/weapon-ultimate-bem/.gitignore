@@ -7,3 +7,11 @@
 !protocol_probe.py
 !protocol-probe.json
 !reader-probe.patch
+!efmi-conversion/
+!efmi-conversion/*.py
+!efmi-conversion/README.md
+!efmi-conversion/summary.json
+!weapon-conversion/
+!weapon-conversion/*.py
+!weapon-conversion/README.md
+!weapon-conversion/summary.json

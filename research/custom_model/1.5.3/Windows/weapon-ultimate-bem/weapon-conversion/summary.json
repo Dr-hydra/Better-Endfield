@@ -1,0 +1,201 @@
+{
+  "schema": 1,
+  "source": "G:\\zmd\\艾维文娜\\艾维文娜-邓·斯凯斯的兔女郎 by Nait3D\\Nait3D-Avywenna_Dun Scaith’s Bunny\\Nait3D-CohesiveTraction_GaeBolg\\Nait3D-CohesiveTraction_GaeBolg\\mod.ini",
+  "source_files_unchanged": true,
+  "scope": "Global shared wpn_lance_0006 prefab: affects every game user of this weapon resource; not character-exclusive.",
+  "artifact_hashes_computed": false,
+  "snapshot": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+  "outputs": [
+    {
+      "file": "G:\\Better Endfield\\research\\custom_model\\1.5.3\\Windows\\weapon-ultimate-bem\\weapon-conversion\\output\\Nait3D-GaeBolg-weapon-only-Windows-LOD0.bem",
+      "sample": "G:\\Better Endfield\\build\\bem14\\samples\\Nait3D-GaeBolg-weapon-only-Windows-LOD0.bem",
+      "platform": "windows-x64",
+      "lod": 0,
+      "purpose": "Windows weapon replacement research candidate",
+      "runtime_lod_supported": true,
+      "resource": "wpn_lance_0006",
+      "renderer_path": "Mesh_all/lod0/S_wpn_lance_0006_01_lod0",
+      "native_index_hash": "8526aec1",
+      "native_index_count": 19818,
+      "replacement_vertices": 12525,
+      "replacement_indices": 59928,
+      "texture_count": 3,
+      "python_validated": true,
+      "native_validated": true,
+      "geometry": {
+        "saved_assignments": 1,
+        "effective_selections": 1,
+        "max_selected_draws": 1,
+        "max_selected_indices": 59928,
+        "max_selected_textures": 3,
+        "max_selected_decoded_bytes": 7012512,
+        "max_resident_bytes": 7012512,
+        "symbolic_nodes": 0,
+        "required_minor": 4
+      }
+    },
+    {
+      "file": "G:\\Better Endfield\\research\\custom_model\\1.5.3\\Windows\\weapon-ultimate-bem\\weapon-conversion\\output\\Nait3D-GaeBolg-weapon-only-Windows-LOD1.bem",
+      "sample": "G:\\Better Endfield\\build\\bem14\\samples\\probes\\Nait3D-GaeBolg-weapon-only-Windows-LOD1.bem",
+      "platform": "windows-x64",
+      "lod": 1,
+      "purpose": "offline-only donor probe",
+      "runtime_lod_supported": false,
+      "resource": "wpn_lance_0006",
+      "renderer_path": "Mesh_all/lod1/S_wpn_lance_0006_01_lod1",
+      "native_index_hash": "89b38228",
+      "native_index_count": 10158,
+      "replacement_vertices": 12525,
+      "replacement_indices": 59928,
+      "texture_count": 3,
+      "python_validated": true,
+      "native_validated": true,
+      "geometry": {
+        "saved_assignments": 1,
+        "effective_selections": 1,
+        "max_selected_draws": 1,
+        "max_selected_indices": 59928,
+        "max_selected_textures": 3,
+        "max_selected_decoded_bytes": 7012512,
+        "max_resident_bytes": 7012512,
+        "symbolic_nodes": 0,
+        "required_minor": 4
+      }
+    }
+  ],
+  "texture_mapping": [
+    {
+      "token": "7135f6c0",
+      "property": "_BaseMap",
+      "evidence": {
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_texture_id": "cab-33602ae0d5e19be801c61bc020c862a0:4028182285433975520",
+        "native_texture_name": "T_wpn_lance_0006_01_D",
+        "direct_runtime_binding_observed": false
+      },
+      "path": "G:\\zmd\\艾维文娜\\艾维文娜-邓·斯凯斯的兔女郎 by Nait3D\\Nait3D-Avywenna_Dun Scaith’s Bunny\\Nait3D-CohesiveTraction_GaeBolg\\Nait3D-CohesiveTraction_GaeBolg\\Textures\\Components-0 t=7135f6c0.dds",
+      "texture": {
+        "width": 2048,
+        "height": 2048,
+        "mips": 1,
+        "format": 25,
+        "srgb": true,
+        "original_name": "T_wpn_lance_0006_01_D"
+      }
+    },
+    {
+      "token": "ae53cc49",
+      "property": "_BumpMap",
+      "evidence": {
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_texture_id": "cab-33602ae0d5e19be801c61bc020c862a0:-153048827881954009",
+        "native_texture_name": "T_wpn_lance_0006_01_N",
+        "direct_runtime_binding_observed": false
+      },
+      "path": "G:\\zmd\\艾维文娜\\艾维文娜-邓·斯凯斯的兔女郎 by Nait3D\\Nait3D-Avywenna_Dun Scaith’s Bunny\\Nait3D-CohesiveTraction_GaeBolg\\Nait3D-CohesiveTraction_GaeBolg\\Textures\\Components-0 t=ae53cc49.dds",
+      "texture": {
+        "width": 1024,
+        "height": 1024,
+        "mips": 1,
+        "format": 25,
+        "srgb": false,
+        "original_name": "T_wpn_lance_0006_01_N"
+      }
+    },
+    {
+      "token": "70b367d7",
+      "property": "_MetallicGlossMap",
+      "evidence": {
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_texture_id": "cab-33602ae0d5e19be801c61bc020c862a0:2730999267257455170",
+        "native_texture_name": "T_wpn_lance_0006_01_P",
+        "direct_runtime_binding_observed": false
+      },
+      "path": "G:\\zmd\\艾维文娜\\艾维文娜-邓·斯凯斯的兔女郎 by Nait3D\\Nait3D-Avywenna_Dun Scaith’s Bunny\\Nait3D-CohesiveTraction_GaeBolg\\Nait3D-CohesiveTraction_GaeBolg\\Textures\\Components-0 t=70b367d7.dds",
+      "texture": {
+        "width": 1024,
+        "height": 1024,
+        "mips": 1,
+        "format": 25,
+        "srgb": false,
+        "original_name": "T_wpn_lance_0006_01_P"
+      }
+    }
+  ],
+  "omitted_overrides": [
+    {
+      "source_hash": "7d330dbd",
+      "original_name": "T_actor_common_rain_01_M",
+      "reason": "Global rain shader resource, not a serialized weapon material slot; applying it requires a global override contract.",
+      "source_decoded_rgba": [
+        127,
+        126,
+        0,
+        32
+      ],
+      "no_op": false
+    },
+    {
+      "source_hash": "1265a39c",
+      "reason": "Legacy additional entry hash has no current native match; exact current LOD0/1 hashes are both covered."
+    }
+  ],
+  "runtime_verified": false,
+  "render_verified": false,
+  "android_ready": false,
+  "limitations": [
+    "Scoped geometry and three native material textures only; global rain flattening is intentionally not applied.",
+    "LOD1 output is an offline-only Windows donor probe; current Windows runtime rejects it. It is not an Android package.",
+    "Offline validation does not establish in-game replacement, shared weapon instancing, shader rendering or rollback behavior."
+  ],
+  "actual_manager_validation": {
+    "package_count": 6,
+    "pair_count": 15,
+    "passed": true,
+    "ordinary_and_ultimate_coexist": true,
+    "distinct_ultimate_packages_conflict": true,
+    "weapon_and_character_coexist": true,
+    "weapon_lod_variants_conflict": true,
+    "activated": false,
+    "user_library_modified": false
+  }
+}

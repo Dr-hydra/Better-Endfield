@@ -2,6 +2,8 @@
 
 日期：2026-10-05。工作区：`G:\Better Endfield`。分支：`dev/bem-1.4-weapons-forms`，基于 `3510fa7`。
 
+本文记录首轮实现与草稿验证。后续已修复 Android 显式包的 LOD 偏置回归，并利用 G 盘真实 EFMI 素材重建研究包，见 [Android LOD1 与 EFMI 复查](BEM_ANDROID_LOD1_EFMI_FOLLOWUP.md)。
+
 ## 实现范围
 
 实现 [BEM 1.4](../../../BEM_V1_4_SPEC.md) 的多资源目标与静态网格；保留 1.0–1.3 读取、选项、纹理与位置形变。武器按武器 ID 管理，角色大招按角色 ID 下的独立资源管理，状态切换继续由游戏负责。

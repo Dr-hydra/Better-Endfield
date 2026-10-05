@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "kind": "bem14-zhuangfy-ultimate-extension-delivery",
+  "platform": "windows-x64",
+  "lod": 0,
+  "resources": [
+    "chr_0030_zhuangfy_ult_postmodel",
+    "abilityentity_chr_0030_zhuangfy_ult_postmodel"
+  ],
+  "mirror": "unchanged",
+  "original_sources_and_packages": "unchanged",
+  "artifact_hashes_computed": false,
+  "packages": [
+    {
+      "task": "M0178",
+      "package_id": "dev.bem14.m0178.ultimate",
+      "sample": "build/bem14/samples/M0178-zhuangfy-ultimate-extension-Windows-LOD0.bem",
+      "components": 24,
+      "meshes": 18,
+      "textures": 15,
+      "option_groups": 10,
+      "python_all_option_combinations": 1024,
+      "resource_plans": 2048,
+      "written_source_components_verified": 9,
+      "native_options_checked": 2,
+      "native_loading_modes_equal": true,
+      "native_returncode": 0,
+      "retained_original_base_textures": 7,
+      "unapplied_global_or_unresolved_overrides": [
+        {
+          "resource": "Resource_Texture0",
+          "identity": "fe1d6277",
+          "classification": "unsupported-global-shadow-binding",
+          "reason": "Component0 ps-t2 is a Global shadow resource in all compatible native shader records, not a material property; see shadow-slot-audit.json."
+        }
+      ],
+      "source_coverage_complete": false,
+      "runtime_verified": false,
+      "render_verified": false
+    },
+    {
+      "task": "M0184",
+      "package_id": "dev.bem14.m0184.ultimate",
+      "sample": "build/bem14/samples/M0184-zhuangfy-ultimate-extension-Windows-LOD0.bem",
+      "components": 24,
+      "meshes": 20,
+      "textures": 5,
+      "option_groups": 0,
+      "python_all_option_combinations": 1,
+      "resource_plans": 2,
+      "written_source_components_verified": 10,
+      "native_options_checked": 1,
+      "native_loading_modes_equal": true,
+      "native_returncode": 0,
+      "retained_original_base_textures": 0,
+      "unapplied_global_or_unresolved_overrides": [
+        {
+          "resource": "Resource_Texture0",
+          "identity": "fe1d6277",
+          "classification": "unresolved-native-texture-identity",
+          "reason": "Source global this override has no direct slot evidence; the same hash is ps-t2 shadow data in M0178, which is corroboration rather than a material binding proof."
+        }
+      ],
+      "source_coverage_complete": false,
+      "runtime_verified": false,
+      "render_verified": false
+    }
+  ],
+  "donor_proof": "12/12 paired resources share mesh objects, bindposes, ordered bone names, material slots and renderer/bone transform spaces; each descriptor references its own resource donors",
+  "manager_checks": {
+    "report": "../weapon-conversion/actual-manager-pairs.json",
+    "packages": 6,
+    "pairs": 15,
+    "ordinary_ultimate_coexist": true,
+    "ultimate_variants_mutually_exclusive": true
+  },
+  "limitations": [
+    "Global shadow overrides are not mapped to local material textures.",
+    "Seven original-base mip identities do not establish complete mip-chain or current material identity.",
+    "No game/device/visual verification."
+  ]
+}
