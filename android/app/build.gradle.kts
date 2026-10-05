@@ -1,5 +1,8 @@
 import groovy.json.JsonSlurper
 import java.io.File
+import java.security.KeyStore
+import java.security.MessageDigest
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -17,6 +20,48 @@ val resourceUpdate = beWorkspace["resource_update"] as Map<String, Any?>
 val sharedOutputs = resourceUpdate["outputs"] as Map<String, Any?>
 val nativeStaging = File(workspacePaths["build"] as String, "android/native/app")
 val generatedAssets = layout.buildDirectory.dir("generatedAssets")
+
+@Suppress("UNCHECKED_CAST")
+val releaseSigningPolicy = beWorkspace["android_signing"] as Map<String, Any?>
+val signingPropertiesPath = File(releaseSigningPolicy["properties_file"] as String).let {
+    if (it.isAbsolute) it else File(rootProject.projectDir.parentFile, it.path)
+}
+val releaseSigningProperties = Properties()
+if (signingPropertiesPath.isFile) signingPropertiesPath.inputStream().use { releaseSigningProperties.load(it) }
+val configuredStore = releaseSigningProperties.getProperty("storeFile")?.takeIf { it.isNotBlank() }?.let {
+    File(it).let { path -> if (path.isAbsolute) path else File(rootProject.projectDir.parentFile, it) }
+}
+val configuredAlias = releaseSigningProperties.getProperty("keyAlias")?.takeIf { it.isNotBlank() }
+val configuredStorePassword = providers.environmentVariable("BE_ANDROID_STORE_PASSWORD").orNull
+    ?: releaseSigningProperties.getProperty("storePassword")?.takeIf { it.isNotEmpty() }
+val configuredKeyPassword = providers.environmentVariable("BE_ANDROID_KEY_PASSWORD").orNull
+    ?: releaseSigningProperties.getProperty("keyPassword")?.takeIf { it.isNotEmpty() }
+
+val verifyReleaseSigningKey by tasks.registering {
+    group = "verification"
+    doLast {
+        val store = configuredStore
+        val alias = configuredAlias
+        val storePassword = configuredStorePassword
+        val keyPassword = configuredKeyPassword
+        check(store != null && store.isFile && alias != null &&
+            storePassword != null && keyPassword != null) {
+            "Configure the original 3.5.0 signing key in ${signingPropertiesPath.path}; Release never uses the machine debug key."
+        }
+        val keyStore = KeyStore.getInstance(store, storePassword.toCharArray())
+        check(keyStore.isKeyEntry(alias)) { "Configured signing alias is not a private key." }
+        val certificate = keyStore.getCertificate(alias)
+            ?: error("Configured signing certificate is missing.")
+        val digest = MessageDigest.getInstance("SHA-256").digest(certificate.encoded)
+            .joinToString("") { "%02x".format(it.toInt() and 255) }
+        check(digest == releaseSigningPolicy["certificate_sha256"]) {
+            "Signing certificate does not match published 3.5.0. Expected ${releaseSigningPolicy["certificate_sha256"]}, found $digest."
+        }
+        check(keyStore.getKey(alias, keyPassword.toCharArray()) is java.security.PrivateKey) {
+            "Configured signing alias has no usable private key."
+        }
+    }
+}
 
 android {
     namespace = "dev.betterendfield.android"
@@ -50,13 +95,22 @@ android {
         }
     }
 
+    signingConfigs {
+        create("persistentRelease") {
+            storeFile = configuredStore
+            storePassword = configuredStorePassword
+            keyAlias = configuredAlias
+            keyPassword = configuredKeyPassword
+        }
+    }
+
     buildTypes {
         debug {
             isJniDebuggable = true
         }
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("persistentRelease")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -195,6 +249,11 @@ val verifyDesktopModelHookParity by tasks.registering {
 tasks.named("preBuild").configure {
     dependsOn(prepareAndroidResourceAssets)
     dependsOn(verifyDesktopModelHookParity)
+}
+
+tasks.matching { it.name == "preReleaseBuild" || it.name == "validateSigningRelease" ||
+    it.name == "packageRelease" || it.name == "signReleaseBundle" }.configureEach {
+    dependsOn(verifyReleaseSigningKey)
 }
 
 dependencies {

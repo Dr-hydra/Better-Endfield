@@ -98,6 +98,12 @@ __pycache__/
 
 # Workspace-local settings, inputs, tools and reproducible outputs.
 /config/workspace.local.json
+/config/android-signing.local.properties
+/config/secrets/
+*.keystore
+*.jks
+*.p12
+*.pfx
 /config/*.local.json
 /inputs/
 /toolchains/

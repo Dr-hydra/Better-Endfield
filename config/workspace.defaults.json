@@ -34,6 +34,10 @@
       "avatars": "native/modules/combat_stats/assets/avatars"
     }
   },
+  "android_signing": {
+    "properties_file": "config/android-signing.local.properties",
+    "certificate_sha256": "6f15740248d1d25551bb47967dd50855c18cc102dd9bf1fc3ecc8f3dd25473cf"
+  },
   "test": {"be_install_dir": null, "catalog_dir": null, "android_serial": null},
   "cleanup": {"keys": ["paths.temp", "paths.build", "paths.cache"]},
   "documents": {}

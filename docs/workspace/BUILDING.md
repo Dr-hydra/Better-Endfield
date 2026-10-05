@@ -37,7 +37,17 @@ $env:ANDROID_SDK_ROOT = $ws.tools.android_sdk
 - 完成后的保留副本：`releases/<version>/BetterEndfield-<version>-Android-arm64.apk`。
 - 原生中间目录：`build/android/native/app/`。
 
-Release 签名沿用现有 Gradle 配置；构建不安装 APK，也不连接设备。
+Release 固定使用正式 3.5.0 的签名证书，两台机器共用同一份私钥。首次在保存原密钥的机器执行：
+
+```powershell
+New-Item -ItemType Directory -Force config/secrets/android
+Copy-Item "$env:USERPROFILE/.android/debug.keystore" config/secrets/android/release.keystore
+Copy-Item config/android-signing.local.example.properties config/android-signing.local.properties
+```
+
+示例填写的是旧 Android debug 密钥的标准别名与密码；若原密钥另有密码，在本机配置中修改，或使用 `BE_ANDROID_STORE_PASSWORD`／`BE_ANDROID_KEY_PASSWORD`。私钥及本机配置均不提交 Git，应另行安全备份并提供给其他构建机。
+
+固定证书 SHA-256：`6f15740248d1d25551bb47967dd50855c18cc102dd9bf1fc3ecc8f3dd25473cf`。Release 在编译前核对私钥、密码和证书；缺失或不匹配会失败，不生成随机密钥、不回退到机器的 debug 配置。Debug 构建保留 Android 原调试行为。构建不安装 APK，也不连接设备。
 
 ## Web
 
