@@ -60,7 +60,7 @@ def main():
                       "name": args.name, "body": body, "draft": True, "prerelease": False})
     if not release["draft"]:
         raise RuntimeError("Refusing to replace assets of an already published release")
-    release = api(release["url"], "PATCH", {"name": args.name, "body": body, "target_commitish": args.target})
+    release = api(release["url"], "PATCH", {"tag_name": args.tag, "name": args.name, "body": body, "target_commitish": args.target})
     upload = urllib.parse.urlsplit(release["upload_url"].split("{", 1)[0])
     if upload.scheme != "https" or upload.hostname != "uploads.github.com":
         raise RuntimeError("Unexpected GitHub upload endpoint")
@@ -98,7 +98,10 @@ def main():
         if not asset or asset["state"] != "uploaded" or (asset["size"], asset.get("digest")) != signature:
             raise RuntimeError("Uploaded asset verification failed: " + name)
     if args.publish:
-        release = api(release["url"], "PATCH", {"draft": False, "prerelease": False, "make_latest": "true"})
+        release = api(release["url"], "PATCH", {"tag_name": args.tag, "target_commitish": args.target,
+                      "draft": False, "prerelease": False, "make_latest": "true"})
+        if release["tag_name"] != args.tag or release["draft"]:
+            raise RuntimeError("GitHub did not publish the requested release tag")
     print(json.dumps({"url": release["html_url"], "tag": release["tag_name"], "draft": release["draft"],
                       "assets": [{"name": a["name"], "bytes": a["size"], "digest": a.get("digest")}
                                  for a in release["assets"]]}, ensure_ascii=False, indent=2))
