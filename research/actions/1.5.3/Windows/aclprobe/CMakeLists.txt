@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.20)
+project(AglinaAclProbe LANGUAGES CXX)
+add_executable(acl_probe main.cpp)
+target_compile_features(acl_probe PRIVATE cxx_std_17)
+target_include_directories(acl_probe PRIVATE ../acl-official/includes ../acl-official/external/rtm/includes)
+add_executable(acl_encode encode.cpp)
+target_compile_features(acl_encode PRIVATE cxx_std_17)
+target_include_directories(acl_encode PRIVATE ../acl-official/includes ../acl-official/external/rtm/includes)

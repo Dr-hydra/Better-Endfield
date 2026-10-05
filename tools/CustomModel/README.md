@@ -1,10 +1,10 @@
 # BEMv1 创作工具与源模型校验
 
-当前能力边界和兼容性矩阵见[CustomModel 能力与兼容性声明](../../docs/CUSTOM_MODEL_CAPABILITY_COMPATIBILITY_20260918.md)。
+当前能力边界和兼容性矩阵见[CustomModel 能力与兼容性声明](../../docs/custom_model/research/1.5.3/capability-v25/CUSTOM_MODEL_CAPABILITY_COMPATIBILITY.md)。
 
 正式入口：`bem_tool.py inspect/convert/unpack/pack/validate/bundle`，以及 `workspace init` 创建可移动的标准创作者工程。`blender_addon/bem_exporter/` 可从 Blender 导出可编辑 BEM 工程。单包输出 `.bem`，分发合集为标准 `.zip`。
 独立工具链由 `scripts/BuildBemTools.ps1` 打包，无需玩家安装 Python；GUI 复用同一核心。
-[格式规范](../../docs/BEM_FORMAT_SPEC.md) · [创作者指南](../../docs/BEM_CREATOR_GUIDE.md) · [其他来源 Mod 转换](../../docs/BEM_SOURCE_MOD_CONVERSION.md)。
+[格式规范](../../docs/custom_model/BEM_FORMAT_SPEC.md) · [创作者指南](../../docs/custom_model/BEM_CREATOR_GUIDE.md) · [其他来源 Mod 转换](../../docs/custom_model/BEM_SOURCE_MOD_CONVERSION.md)。
 下文旧工具是转换后端/研究命令，它们的 v24/v25 中间产物不被正式运行时接受。
 旧运行时 PoC 已移至 [research/custom-model](../../research/custom-model/README.md)；
 本目录保留仍被当前转换流程使用的代码，包括名称带 `poc` 的转换器。
@@ -13,8 +13,8 @@
 
 `bem_tool.py convert SOURCE -o OUTPUT.bem` 在角色资料和标准声明完整时不再需要配方。
 女管理员已跑通无配方转换；佩丽卡只依据游戏资源接入资料，不引入样包专用规则。
-1.1.3 已接入 32 角色、370 个可复用 LOD0 部件，补齐 360 个单子网格入口与 1,181 项纹理身份。原生资料与 EFMI 原资源对应分开记录，不能把入库数量当作任意源包兼容数量。范围及官方来源见[角色资料说明](../../docs/archive/bem/BEM_CHARACTER_CATALOG_20260919.md)和[EFMI 身份补全](../../docs/archive/bem/BEM_EFMI_IDENTITIES_20260920.md)。
-当前支持范围与规则见[其他来源 Mod 转换](../../docs/BEM_SOURCE_MOD_CONVERSION.md)。资料放在 `catalog/`，由工具自动匹配。RabbitFX 目前只做识别和报告，不自动转换。
+1.1.3 已接入 32 角色、370 个可复用 LOD0 部件，补齐 360 个单子网格入口与 1,181 项纹理身份。原生资料与 EFMI 原资源对应分开记录，不能把入库数量当作任意源包兼容数量。范围及官方来源见[角色资料说明](../../docs/custom_model/research/1.5.3/bem-character-catalog/BEM_CHARACTER_CATALOG.md)和[EFMI 身份补全](../../docs/custom_model/research/1.5.3/bem-character-catalog/BEM_EFMI_IDENTITIES.md)。
+当前支持范围与规则见[其他来源 Mod 转换](../../docs/custom_model/BEM_SOURCE_MOD_CONVERSION.md)。资料放在 `catalog/`，由工具自动匹配。RabbitFX 目前只做识别和报告，不自动转换。
 
 ## 通用原生角色资料解析器
 
@@ -25,14 +25,14 @@
 新增 `extract_native_bundles.py` → `NativeAssetReader` → `parse_native_models.py`：
 按角色从当前 VFS 提取世界/详情资源及依赖，保留文件＋PathID 身份，解析原生 Mesh、顶点存储声明、
 bones/bindposes、材质与贴图绑定。已读取佩丽卡和庄方宜，缺失引用明确保留，未自动标记可转换。
-构建、命令、数据格式与已知缺口见 [解析器文档](../../docs/CUSTOM_MODEL_NATIVE_PARSER_20260917.md)。
+构建、命令、数据格式与已知缺口见 [解析器文档](../../docs/custom_model/CUSTOM_MODEL_NATIVE_PARSER.md)。
 `prepare_native_backend.py` 在独立源码副本修复公共高光包的解压检查；庄方宜 64 个 renderer 引用现已完整。
 `prepare_native_profile.py` 对照 Mod 入口与原生资料，核对骨骼映射并生成未放行的 profile 草稿。
 庄方宜八组合并骨架及世界/UI 八个运行时声明已核对。
 `finalize_native_profile.py` 结合真实观测、原生纹理字节和显式材质配方生成最终 profile，
 区分资料核实的 `verified` 与实机渲染的 `render_verified`。准备阶段草稿仍不自动放行。
 `runtime_native_probe.py arm/collect` 配合一次性资源交付探针采集 world/UI 原生声明与材质绑定，
-用户操作及开发命令见 [运行时探测](../../docs/CUSTOM_MODEL_RUNTIME_PROBE_20260917.md)。
+用户操作及开发命令见 [运行时探测](../../docs/custom_model/research/1.5.3/runtime-probes/CUSTOM_MODEL_RUNTIME_PROBE_ZHUANGFANGYI.md)。
 
 ## Hash/LOD 格式的新入口（2026-09-17）
 
@@ -40,13 +40,13 @@ bones/bindposes、材质与贴图绑定。已读取佩丽卡和庄方宜，缺�
 `convert_hash_lod.py`，不套用下文的 ComponentN 转换器。现支持在已核实的 schema=2
 profile 下输出 BEMPC25：默认绘制段、独立材质来源、合并骨架及 16 位输入骨骼索引重映射。
 庄方宜首个默认状态测试包已生成并部署，四组件、七项纹理，用户已确认整体显示正常。
-生成命令、材质取舍和验证范围见[庄方宜验证记录](../../docs/CUSTOM_MODEL_ZHUANGFANGYI_VALIDATION_20260917.md)。
+生成命令、材质取舍和验证范围见[庄方宜验证记录](../../docs/custom_model/research/1.5.3/zhuangfangyi/CUSTOM_MODEL_ZHUANGFANGYI_VALIDATION.md)。
 洁尔佩塔默认外观已通过 `convert_reviewed_draws.py` 和明确审阅的源程序配方生成测试包，
 跨入口绘制归并到现有运行时。此入口严格核对主 INI 和五份骨骼 Shader 的有效文本，
 不解释任意 GPU 程序。2026-09-18 用户指定 P 键另一套服装并放宽索引限制，
 新增 `gilberta-12.outfit-b.reviewed.json`，大组件用 UInt32 索引，已部署；
-不支持运行时面板切换。当前状态见[Outfit B 修正记录](../../docs/CUSTOM_MODEL_GILBERTA_OUTFIT_B_20260918.md)。
-详见 [独立转换器与样本检查](../../docs/CUSTOM_MODEL_HASH_LOD_CONVERTER_20260917.md)。
+不支持运行时面板切换。当前状态见[Outfit B 修正记录](../../docs/custom_model/research/1.5.3/gilberta-outfits/CUSTOM_MODEL_GILBERTA_OUTFIT_B.md)。
+详见 [独立转换器与样本检查](../../docs/custom_model/research/1.5.3/hash-lod-conversion/CUSTOM_MODEL_HASH_LOD_CONVERTER.md)。
 
 ```powershell
 python tools/CustomModel/convert_hash_lod.py path/to/extracted-mod --report artifacts/hash-lod-report.json
@@ -55,7 +55,7 @@ python tools/CustomModel/convert_hash_lod.py path/to/extracted-mod --profile pat
 
 RAR 先解压；可直接读取目录或 ZIP。入口配置名无需为 `mod.ini`，有多个主配置时用 `--ini` 指定。
 退出码 2 和报告中的 `conversion_ready=false` 表示缺少适配资料或超出转换范围。
-完整 schema、包格式及当前验证边界见 [四项能力实现](../../docs/CUSTOM_MODEL_V25_BINDING_IMPLEMENTATION_20260917.md)。
+完整 schema、包格式及当前验证边界见 [四项能力实现](../../docs/custom_model/research/1.5.3/capability-v25/CUSTOM_MODEL_V25_BINDING_IMPLEMENTATION.md)。
 
 `convert_efmi_poc.py` 生成现有 BEM PoC-2.4 文件。支持 ALPHA-12 的
 `TextureOverride_EntryPoint_ComponentN` 和 ALPHA-4 的
@@ -166,7 +166,7 @@ target=pelica
 
 已增加管理员＋佩丽卡双角色状态隔离与独立材质。当前部署配置 `target=both`、`path=instance`，启动即启用两个角色；F11 同时停用并回滚，F12 同时重建。需重启游戏加载新版 DLL。两套 BEM 都放在实际 catalog/custom-model 下。
 
-第二轮配置 `path=resource`，必须另起一次游戏加载验证。资源模式只在主线程 `_FinishWithAsset` 通知消费者前修改模板，没有实例扫描或 AI 附着兜底。尚未完成双角色任一路径的实机验收。步骤和证据标准见 `docs/CUSTOM_MODEL_MULTI_MOD_REPLACEMENT_WINDOW_20260915.md` 文末。
+第二轮配置 `path=resource`，必须另起一次游戏加载验证。资源模式只在主线程 `_FinishWithAsset` 通知消费者前修改模板，没有实例扫描或 AI 附着兜底。尚未完成双角色任一路径的实机验收。步骤和证据标准见 `docs/custom_model/research/1.5.3/replacement-window/CUSTOM_MODEL_MULTI_MOD_REPLACEMENT_WINDOW.md` 文末。
 
 双角色刷新修复：材质创建统一使用 Array.Clone + Material 复制构造器，避免 Renderer.materials 返回已有实例导致 F12 重建被拒绝。15 项生命周期测试通过；游戏内重复刷新待确认。
 

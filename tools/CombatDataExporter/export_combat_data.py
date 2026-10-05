@@ -18,16 +18,23 @@ Features:
 import argparse
 import collections
 import hashlib
+import io
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+from workspace_config import load_workspace, producer_key, write_if_changed
+from RefreshEndfieldResourceInputs import (
+    configured_path, publish_snapshot, read_metadata, snapshot_complete,
+    tool_revision, vfs_block_snapshot,
+)
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -586,22 +593,23 @@ def write_buff_source_map(
     skill_buff_edges: Dict[str, Set[str]],
 ) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
-    with open(output, "w", encoding="utf-8", newline="\n") as handle:
-        handle.write("BESOURCE\t2\n")
-        handle.write(f"M\tsourceSha256\t{stats['sourceSha256']}\n")
-        for key in ("skillConfigs", "buffConfigs", "referenceEdges",
-                    "sourceRoots", "missingRoots", "mappedBuffs",
-                    "candidateRows", "ambiguousBuffs", "skillBuffEdges"):
-            handle.write(f"M\t{key}\t{stats[key]}\n")
-        for buff_id, candidates in sources.items():
-            for kind, template_id, source_skill_id, trigger_skill_id in sorted(candidates):
-                handle.write(
-                    "C\t" + "\t".join((buff_id, kind, template_id,
-                                           source_skill_id, trigger_skill_id)) + "\n"
-                )
-        for skill_id, buff_ids in skill_buff_edges.items():
-            for buff_id in sorted(buff_ids):
-                handle.write(f"S\t{skill_id}\t{buff_id}\n")
+    handle = io.StringIO()
+    handle.write("BESOURCE\t2\n")
+    handle.write(f"M\tsourceSha256\t{stats['sourceSha256']}\n")
+    for key in ("skillConfigs", "buffConfigs", "referenceEdges",
+                "sourceRoots", "missingRoots", "mappedBuffs",
+                "candidateRows", "ambiguousBuffs", "skillBuffEdges"):
+        handle.write(f"M\t{key}\t{stats[key]}\n")
+    for buff_id, candidates in sources.items():
+        for kind, template_id, source_skill_id, trigger_skill_id in sorted(candidates):
+            handle.write(
+                "C\t" + "\t".join((buff_id, kind, template_id,
+                                       source_skill_id, trigger_skill_id)) + "\n"
+            )
+    for skill_id, buff_ids in skill_buff_edges.items():
+        for buff_id in sorted(buff_ids):
+            handle.write(f"S\t{skill_id}\t{buff_id}\n")
+    write_if_changed(output, handle.getvalue())
 
 
 def compute_incremental_diff(previous: Dict[str, Any], current: Dict[str, Any]) -> Dict[str, Any]:
@@ -902,7 +910,9 @@ def export_web_icons(
         with Image.open(source) as original:
             image = original.convert("RGBA")
             image.thumbnail((max_edge, max_edge), Image.Resampling.LANCZOS)
-            image.save(destination, format="PNG", optimize=True, compress_level=9)
+            encoded = io.BytesIO()
+        image.save(encoded, format="PNG", optimize=True, compress_level=9)
+        write_if_changed(destination, encoded.getvalue())
 
     groups: Dict[str, Set[str]] = {
         "skills": {
@@ -964,9 +974,11 @@ def export_web_icons(
         "copied": {key: len(value) for key, value in copied.items()},
         "missing": missing,
     }
+    previous_icons = read_metadata(output_dir / "icon-manifest.json")
+    if {k: v for k, v in previous_icons.items() if k != "generatedAt"} == {k: v for k, v in manifest.items() if k != "generatedAt"}:
+        manifest["generatedAt"] = previous_icons.get("generatedAt", manifest["generatedAt"])
     output_dir.mkdir(parents=True, exist_ok=True)
-    with open(output_dir / "icon-manifest.json", "w", encoding="utf-8") as handle:
-        json.dump(manifest, handle, ensure_ascii=False, indent=2)
+    write_if_changed(output_dir / "icon-manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))
     print("[+] Web icons: " + ", ".join(f"{key}={len(value)}" for key, value in copied.items()))
     missing_count = sum(len(value) for value in missing.values())
     if missing_count:
@@ -974,169 +986,98 @@ def export_web_icons(
     return manifest
 
 
-def default_vfs_path() -> Optional[Path]:
-    configured = os.environ.get("ENDFIELD_VFS")
-    candidates = [
-        Path(configured) if configured else None,
-        Path("E:/Endfield Game/Endfield_Data/StreamingAssets"),
-    ]
-    for candidate in candidates:
-        if candidate and candidate.exists():
-            return candidate
-    return None
+def default_game_path(ws=None) -> Optional[Path]:
+    ws = ws or load_workspace()
+    return ws.path("game.install_dir", required=False)
 
 
-def default_game_path() -> Optional[Path]:
-    configured = os.environ.get("ENDFIELD_GAME_PATH")
-    candidates = [
-        Path(configured) if configured else None,
-        Path("E:/Endfield Game"),
-    ]
-    for candidate in candidates:
-        if candidate and (candidate / "Endfield_Data/StreamingAssets/VFS").exists():
-            return candidate
-    return None
+def default_vfs_path(ws=None) -> Optional[Path]:
+    if os.environ.get("ENDFIELD_VFS"):
+        return Path(os.environ["ENDFIELD_VFS"])
+    game = default_game_path(ws)
+    return game / "Endfield_Data/StreamingAssets" if game else None
 
 
-def refresh_game_tables(
-    game_path: Path,
-    extractor_path: Path,
-    table_dir: Path,
-    threads: int,
-) -> Dict[str, Any]:
-    """Atomically refresh Table JSON from the live base + hot-update VFS."""
+def refresh_block(game_path: Path, extractor_path: Path, output: Path,
+                  threads: int, block: str, ws=None) -> Dict[str, Any]:
+    ws = ws or load_workspace()
+    if not extractor_path.is_file():
+        raise FileNotFoundError(f"Game {block} extractor missing: {extractor_path}; configure tools.endfield_dump or pass --table-extractor (prebuilt CLI required)")
+    env = ws.env()
     base_root = game_path / "Endfield_Data/StreamingAssets"
     persistent_root = game_path / "Endfield_Data/Persistent"
-    if not (base_root / "VFS").is_dir():
-        raise FileNotFoundError(f"Base game VFS not found: {base_root / 'VFS'}")
-    if not extractor_path.is_file():
-        raise FileNotFoundError(f"Endfield table extractor not found: {extractor_path}")
-
-    table_dir.parent.mkdir(parents=True, exist_ok=True)
-    staging_root = Path(tempfile.mkdtemp(
-        prefix=".combat-table-refresh-", dir=str(table_dir.parent)
-    ))
-    extraction_root = staging_root / "extracted"
-    try:
-        command = [
-            str(extractor_path), "dump",
-            "--vfs", str(base_root),
-            "--out", str(extraction_root),
-            "--block", "Table",
-            "--threads", str(max(1, threads)),
-        ]
+    indexes = vfs_block_snapshot(game_path, block)
+    revision = tool_revision([extractor_path, Path(__file__)])
+    parameters = {"block": block, "threads": max(1, threads),
+                  "gamePath": str(game_path.resolve()),
+                  "gameVersion": ws.get("game.version"), "resourceSnapshot": ws.get("game.snapshot"),
+                  "toolVersion": ws.get("resource_update.tool_revision", "unknown")}
+    key = producer_key(indexes, revision, parameters)
+    metadata_path = output.parent / "source-metadata.json"
+    previous = read_metadata(metadata_path)
+    if snapshot_complete(output, previous, key):
+        print(f"[*] Reusing complete {block} snapshot: {output}")
+        return previous
+    with tempfile.TemporaryDirectory(prefix="combat-refresh-", dir=ws.path("paths.temp")) as temporary:
+        staging = Path(temporary)
+        extraction_root = staging / "extracted"
+        command = [str(extractor_path), "dump", "--vfs", str(base_root),
+                   "--out", str(extraction_root), "--block", block,
+                   "--threads", str(max(1, threads))]
         source_kind = "base"
         if (persistent_root / "VFS").is_dir():
             command[2:4] = ["--vfs", str(persistent_root)]
             command[4:4] = ["--base-vfs", str(base_root)]
             source_kind = "persistent+base"
-        print(f"[*] Refreshing game tables from {source_kind} VFS")
-        subprocess.run(command, check=True)
-
-        staged_table = extraction_root / "Table"
-        required = [
-            "CharacterTable.json", "CharGrowthTable.json",
-            "I18nTextTable_CN.json", "ItemTable.json",
-            "WeaponBasicTable.json", "EquipTable.json",
-            "EquipSuitTable.json", "DungeonTable.json",
-        ]
-        missing = [name for name in required if not (staged_table / name).is_file()]
-        if missing:
-            raise RuntimeError("Refreshed Table block is incomplete: " + ", ".join(missing))
-
-        backup = table_dir.parent / f".{table_dir.name}.backup-{staging_root.name}"
-        replaced_existing = False
-        try:
-            if table_dir.exists():
-                os.replace(table_dir, backup)
-                replaced_existing = True
-            os.replace(staged_table, table_dir)
-        except Exception:
-            if replaced_existing and backup.exists() and not table_dir.exists():
-                os.replace(backup, table_dir)
-            raise
-        if backup.exists():
-            shutil.rmtree(backup)
-
-        source = {
-            "kind": source_kind,
-            "refreshedAt": datetime.now(timezone.utc).isoformat(),
-            "gamePath": str(game_path.resolve()),
-            "baseVfs": str(base_root.resolve()),
-            "persistentVfs": str(persistent_root.resolve())
-                if (persistent_root / "VFS").is_dir() else "",
-            "tableCount": len(list(table_dir.glob("*.json"))),
-            "requiredSha256": {
-                name: sha256_file(table_dir / name) for name in required
-            },
-        }
-        with open(table_dir.parent / "source-metadata.json", "w", encoding="utf-8") as f:
-            json.dump(source, f, ensure_ascii=False, indent=2)
+        subprocess.run(command, check=True, env=env)
+        staged = extraction_root / ("Table" if block == "Table" else "Data/Json")
+        required = (["CharacterTable.json", "CharGrowthTable.json", "I18nTextTable_CN.json",
+                     "ItemTable.json", "WeaponBasicTable.json", "EquipTable.json",
+                     "EquipSuitTable.json", "DungeonTable.json"] if block == "Table"
+                    else ["SkillData", "BuffData"])
+        if not all((staged / name).is_file() if block == "Table" else (staged / name).is_dir()
+                   for name in required):
+            raise RuntimeError(f"Refreshed {block} block is incomplete")
+        files = sorted(path for path in staged.rglob("*") if path.is_file())
+        if not files or (block != "Table" and not all(any((staged / name).glob("*.json")) for name in required)):
+            raise RuntimeError(f"Refreshed {block} block is empty")
+        # Read/validate the produced JSON before publishing anything.
+        for path in files:
+            if path.suffix.lower() == ".json" and block == "Table":
+                json.loads(path.read_text(encoding="utf-8-sig"))
+        source = {**previous, "kind": source_kind,
+                  "gameVersion": ws.get("game.version"), "resourceSnapshot": ws.get("game.snapshot"),
+                  "refreshedAt": datetime.now(timezone.utc).isoformat(),
+                  "gamePath": str(game_path.resolve()), "baseVfs": str(base_root.resolve()),
+                  "persistentVfs": str(persistent_root.resolve()) if (persistent_root / "VFS").is_dir() else "",
+                  "producerKey": key, "toolRevision": revision, "vfsIndexes": indexes,
+                  "parameters": parameters,
+                  "files": [{"path": path.relative_to(staged).as_posix(), "size": path.stat().st_size,
+                             "sha256": sha256_file(path)} for path in files]}
+        if block == "Table":
+            hashes = {item["path"]: item["sha256"] for item in source["files"]}
+            source.update(tableCount=len(files), requiredSha256={name: hashes[name] for name in required})
+        if {k: v for k, v in previous.items() if k != "refreshedAt"} == {k: v for k, v in source.items() if k != "refreshedAt"}:
+            source["refreshedAt"] = previous.get("refreshedAt", source["refreshedAt"])
+        # Publish the tree and its persistent source metadata together. Only
+        # previously tracked generated files may be removed; manual files stay.
+        publication = staging / "publish"
+        publication.mkdir()
+        os.replace(staged, publication / output.name)
+        write_if_changed(publication / metadata_path.name, json.dumps(source, ensure_ascii=False, indent=2))
+        obsolete = [str(Path(output.name) / item["path"]) for item in previous.get("files", [])]
+        publish_snapshot(publication, output.parent, ws.path("paths.temp"), obsolete)
         return source
-    finally:
-        if staging_root.exists():
-            shutil.rmtree(staging_root, ignore_errors=True)
 
 
-def refresh_game_json_data(
-    game_path: Path,
-    extractor_path: Path,
-    json_data_dir: Path,
-    threads: int,
-) -> None:
-    """Atomically refresh JsonData used to build the exact Buff source graph."""
-    base_root = game_path / "Endfield_Data/StreamingAssets"
-    persistent_root = game_path / "Endfield_Data/Persistent"
-    if not (base_root / "VFS").is_dir():
-        raise FileNotFoundError(f"Base game VFS not found: {base_root / 'VFS'}")
-    if not extractor_path.is_file():
-        raise FileNotFoundError(f"Endfield JsonData extractor not found: {extractor_path}")
+def refresh_game_tables(game_path: Path, extractor_path: Path, table_dir: Path,
+                        threads: int, ws=None) -> Dict[str, Any]:
+    return refresh_block(game_path, extractor_path, table_dir, threads, "Table", ws)
 
-    cache_root = json_data_dir.parent.parent
-    cache_root.mkdir(parents=True, exist_ok=True)
-    staging_root = Path(tempfile.mkdtemp(
-        prefix=".combat-jsondata-refresh-", dir=str(cache_root.parent)
-    ))
-    extraction_root = staging_root / "extracted"
-    try:
-        command = [
-            str(extractor_path), "dump",
-            "--vfs", str(base_root),
-            "--out", str(extraction_root),
-            "--block", "JsonData",
-            "--threads", str(max(1, threads)),
-        ]
-        source_kind = "base"
-        if (persistent_root / "VFS").is_dir():
-            command[2:4] = ["--vfs", str(persistent_root)]
-            command[4:4] = ["--base-vfs", str(base_root)]
-            source_kind = "persistent+base"
-        print(f"[*] Refreshing combat JsonData from {source_kind} VFS")
-        subprocess.run(command, check=True)
-        staged_json = extraction_root / "Data/Json"
-        required = [staged_json / "SkillData", staged_json / "BuffData"]
-        if not all(path.is_dir() for path in required):
-            raise RuntimeError("Refreshed JsonData lacks SkillData or BuffData")
 
-        backup = cache_root / ".Json.backup"
-        if backup.exists():
-            shutil.rmtree(backup)
-        replaced_existing = False
-        try:
-            if json_data_dir.exists():
-                os.replace(json_data_dir, backup)
-                replaced_existing = True
-            json_data_dir.parent.mkdir(parents=True, exist_ok=True)
-            os.replace(staged_json, json_data_dir)
-        except Exception:
-            if replaced_existing and backup.exists() and not json_data_dir.exists():
-                os.replace(backup, json_data_dir)
-            raise
-        if backup.exists():
-            shutil.rmtree(backup)
-    finally:
-        if staging_root.exists():
-            shutil.rmtree(staging_root, ignore_errors=True)
+def refresh_game_json_data(game_path: Path, extractor_path: Path, json_data_dir: Path,
+                          threads: int, ws=None) -> Dict[str, Any]:
+    return refresh_block(game_path, extractor_path, json_data_dir, threads, "JsonData", ws)
 
 
 def load_table_source_metadata(table_dir: Path) -> Dict[str, Any]:
@@ -1151,87 +1092,100 @@ def load_table_source_metadata(table_dir: Path) -> Dict[str, Any]:
         return {"kind": "unknown", "tablePath": str(table_dir.resolve())}
 
 
-def extract_icon_pngs(
-    full_dict: Dict[str, Any],
-    vfs_path: Path,
-    base_vfs_path: Optional[Path],
-    extractor_path: Path,
-    cache_dir: Path,
-    threads: int,
-) -> Path:
-    """Extract the narrow icon families referenced by the combat dictionary.
-
-    A compact family regex avoids Windows command-line length limits. The later
-    copy step still whitelists exact dictionary IDs, so unrelated extracted PNGs
-    never enter the website bundle.
-    """
-    if not vfs_path.exists():
-        raise FileNotFoundError(f"Endfield StreamingAssets not found: {vfs_path}")
-    if not extractor_path.exists():
-        raise FileNotFoundError(f"Endfield image extractor not found: {extractor_path}")
-
-    referenced = {
-        str(item.get("iconId", ""))
-        for category in ("skills", "weapons", "equipment")
-        for item in full_dict.get(category, {}).values()
-        if item.get("iconId")
-    }
-    referenced.update(
-        str(item.get("logoName", ""))
-        for item in full_dict.get("suits", {}).values()
-        if item.get("logoName")
-    )
-    if not referenced:
+def extract_named_icons(names: Set[str], vfs_path: Path, base_vfs_path: Optional[Path],
+                        extractor_path: Path, cache_dir: Path, threads: int, ws=None) -> Path:
+    ws = ws or load_workspace()
+    if not extractor_path.is_file():
+        raise FileNotFoundError(f"Image extractor missing: {extractor_path}; configure tools.endfield_dump or pass --image-extractor (prebuilt CLI required)")
+    env = ws.env()
+    if not names:
+        return cache_dir
+    # Inputs are BLC identities; game CHKs are never hashed for cache lookup.
+    identities = []
+    for root in [base_vfs_path, vfs_path]:
+        if root is None:
+            continue
+        vfs = root / "VFS" if (root / "VFS").is_dir() else root
+        if not vfs.is_dir():
+            raise FileNotFoundError(f"Game VFS not found: {vfs}")
+        for directory in sorted(vfs.iterdir()):
+            index = directory / f"{directory.name}.blc"
+            if directory.is_dir() and index.is_file():
+                identities.append({"root": str(vfs.resolve()), "block": directory.name,
+                                   "sha256": sha256_file(index)})
+    if not identities:
+        raise FileNotFoundError("No VFS indexes available for icon cache identity")
+    key = producer_key(identities, tool_revision([extractor_path, Path(__file__)]),
+                       {"names": sorted(names), "threads": max(1, threads), "format": "png",
+                        "toolVersion": ws.get("resource_update.tool_revision", "unknown")})
+    selection = producer_key(sorted(names), "icon-selection-v1", {"threads": max(1, threads)})
+    metadata_path = cache_dir / ".producers" / f"{selection}.json"
+    previous = read_metadata(metadata_path)
+    sizes = {item["path"]: item["size"] for item in previous.get("files", [])}
+    requested = {name for name in names if not (cache_dir / f"{name}.png").is_file()
+                 or (cache_dir / f"{name}.png").stat().st_size != sizes.get(f"{name}.png")}
+    if previous.get("producerKey") != key:
+        requested = set(names)
+    if not requested:
+        return cache_dir
+    pattern = "^(?:" + "|".join(sorted(re.escape(name) for name in requested)) + ")$"
+    with tempfile.TemporaryDirectory(prefix="combat-icons-", dir=ws.path("paths.temp")) as temporary:
+        staging = Path(temporary)
+        command = [str(extractor_path), "extract", "--vfs", str(vfs_path),
+                   "--out", str(staging), "--asset-name", pattern, "--types", "Texture2D",
+                   "--threads", str(max(1, threads)), "--format", "png", "--png-compression", "fast",
+                   "--max-memory-gb", "16", "--exclude-material", "--skip-missing"]
+        if base_vfs_path:
+            command[4:4] = ["--base-vfs", str(base_vfs_path)]
+        subprocess.run(command, check=True, env=env)
+        files = [path for path in staging.rglob("*.png") if path.stem.lower() in {name.lower() for name in requested}]
+        # Flatten only the selected icons, with a deterministic name. Previous
+        # unrelated cache files are retained for the other producers.
+        publication = staging / "publish"
+        publication.mkdir()
+        by_stem = {path.stem.lower(): path for path in files}
+        for name in requested:
+            if name.lower() in by_stem:
+                write_if_changed(publication / f"{name}.png", by_stem[name.lower()].read_bytes())
+        available = {path.stem.lower() for path in files}
+        missing = sorted(name for name in requested if name.lower() not in available)
+        # Do not mark missing/stale requested results as reusable. A later run
+        # can retry without overwriting the current valid metadata.
+        if missing:
+            raise RuntimeError(f"{len(missing)} requested icons could not be extracted; cache retained")
+        write_if_changed(publication / metadata_path.relative_to(cache_dir),
+                         json.dumps({"producerKey": key, "vfsIndexes": identities,
+                                     "names": sorted(names),
+                                     "files": [{"path": f"{name}.png", "size": ((publication / f"{name}.png") if name in requested else (cache_dir / f"{name}.png")).stat().st_size}
+                                               for name in sorted(names)]}, ensure_ascii=False, indent=2))
+        publish_snapshot(publication, cache_dir, ws.path("paths.temp"))
         return cache_dir
 
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    cached_stems = {path.stem.lower() for path in cache_dir.rglob("*.png")}
-    missing_from_cache = {icon_id for icon_id in referenced if icon_id.lower() not in cached_stems}
-    if not missing_from_cache:
-        print(f"[*] Icon cache is complete ({len(referenced)} referenced PNGs); extraction skipped")
-        return cache_dir
-    print(f"[*] Icon cache needs {len(missing_from_cache)} of {len(referenced)} referenced PNGs")
-    family_regex = (
-        r"^(?:icon_combo_skill_|icon_skill_|icon_ultimate_skill_|icon_attack_"
-        r"|item_equip_|wpn_|icon_pack_).*$"
-    )
-    command = [
-        str(extractor_path),
-        "extract",
-        "--vfs", str(vfs_path),
-        "--out", str(cache_dir),
-        "--asset-name", family_regex,
-        "--types", "Texture2D",
-        "--threads", str(max(1, threads)),
-        "--format", "png",
-        "--png-compression", "fast",
-        "--max-memory-gb", "16",
-        "--exclude-material",
-        "--skip-missing",
-    ]
-    if base_vfs_path:
-        command[4:4] = ["--base-vfs", str(base_vfs_path)]
-    print(f"[*] Extracting referenced icon families from: {vfs_path.resolve()}")
-    print(f"[*] Icon cache: {cache_dir.resolve()}")
-    subprocess.run(command, check=True)
-    return cache_dir
+
+def extract_icon_pngs(full_dict: Dict[str, Any], vfs_path: Path,
+                      base_vfs_path: Optional[Path], extractor_path: Path,
+                      cache_dir: Path, threads: int, ws=None) -> Path:
+    referenced = {str(item["iconId"]) for category in ("skills", "weapons", "equipment")
+                  for item in full_dict.get(category, {}).values() if item.get("iconId")}
+    referenced.update(str(item["logoName"]) for item in full_dict.get("suits", {}).values()
+                      if item.get("logoName"))
+    return extract_named_icons(referenced, vfs_path, base_vfs_path, extractor_path, cache_dir, threads, ws)
 
 
 def main():
     parser = argparse.ArgumentParser(
         description="BetterEndfield Combat Data Exporter & Incremental Sync Tool"
     )
+    parser.add_argument("--workspace-config", type=Path)
     parser.add_argument(
         "--table-dir",
         type=Path,
-        default=Path("research/table-dump/Table"),
         help="Path to dumped game tables directory",
     )
     parser.add_argument(
         "--game-path",
         type=Path,
-        default=default_game_path(),
-        help="Current Endfield installation root (or set ENDFIELD_GAME_PATH)",
+        help="Endfield installation root; defaults to the workspace game locator",
     )
     parser.add_argument(
         "--refresh-tables",
@@ -1242,25 +1196,21 @@ def main():
     parser.add_argument(
         "--table-extractor",
         type=Path,
-        default=Path("tools/EndfieldStudio/AnimeStudio.Endfield.Cli/bin/Release/net9.0/endfield-dump.exe"),
         help="EndfieldStudio CLI with dump --base-vfs support",
     )
     parser.add_argument(
         "--table-threads",
         type=int,
-        default=min(os.cpu_count() or 1, 16),
         help="Table extraction worker count",
     )
     parser.add_argument(
         "--besem",
         type=Path,
-        default=Path("manifests/combat/combat-semantics.besem"),
         help="Path to combat-semantics.besem file",
     )
     parser.add_argument(
         "--json-data-dir",
         type=Path,
-        default=Path("research/combat-jsondata/Data/Json"),
         help="Dumped JsonData/Data/Json containing SkillData and BuffData",
     )
     parser.add_argument(
@@ -1272,7 +1222,6 @@ def main():
     parser.add_argument(
         "--buff-source-output",
         type=Path,
-        default=Path("manifests/combat/buff-sources.bemap"),
         help="Exact Buff ownership reverse index used by the native recorder",
     )
     parser.add_argument(
@@ -1284,49 +1233,41 @@ def main():
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("manifests/combat/combat-dictionary.json"),
         help="Output full JSON dictionary path",
     )
     parser.add_argument(
         "--ui-output",
         type=Path,
-        default=Path("ui/BetterEndfield.UI/Assets/combat/combat-dictionary.json"),
         help="Output desktop UI embedded JSON dictionary path",
     )
     parser.add_argument(
         "--min-output",
         type=Path,
-        default=Path("web/src/data/combat-dict.min.json"),
         help="Output minified JSON dictionary path for web/mobile",
     )
     parser.add_argument(
         "--stage-output",
         type=Path,
-        default=Path("web/src/data/combat-stages.min.json"),
         help="Output grouped stage table used by the leaderboard navigation",
     )
     parser.add_argument(
         "--stage-map-output",
         type=Path,
-        default=Path("web/cloudbase/functions/combat-api/stage-map.json"),
         help="Output dungeon id -> category id map bundled with the leaderboard function",
     )
     parser.add_argument(
         "--id-registry",
         type=Path,
-        default=Path("tools/CombatDataExporter/id_registry.json"),
         help="Append-only permanent id registry backing BEC snapshot indices",
     )
     parser.add_argument(
         "--buff-data",
         type=Path,
-        default=Path("research/combat-jsondata/Data/Json/BuffData"),
         help="BuffData directory; only the filenames are read, for buff ids",
     )
     parser.add_argument(
         "--icon-source",
         type=Path,
-        default=Path(os.environ["ENDFIELD_ICON_SOURCE"]) if os.environ.get("ENDFIELD_ICON_SOURCE") else None,
         help="PNG asset tree used by this exporter for skill/item/suit icons",
     )
     parser.add_argument(
@@ -1337,37 +1278,31 @@ def main():
     parser.add_argument(
         "--vfs",
         type=Path,
-        default=default_vfs_path(),
         help="Endfield_Data/StreamingAssets path (or set ENDFIELD_VFS)",
     )
     parser.add_argument(
         "--image-extractor",
         type=Path,
-        default=Path("tools/EndfieldStudio/AnimeStudio.Endfield.Cli/bin/Release/net9.0/endfield-dump.exe"),
         help="Existing Endfield texture extraction CLI",
     )
     parser.add_argument(
         "--icon-cache",
         type=Path,
-        default=Path("tools/CombatDataExporter/.icon-cache"),
         help="Persistent cache for extracted source PNGs",
     )
     parser.add_argument(
         "--icon-threads",
         type=int,
-        default=min(os.cpu_count() or 1, 16),
         help="Texture extraction worker count",
     )
     parser.add_argument(
         "--avatar-source",
         type=Path,
-        default=Path("native/modules/combat_stats/assets/avatars"),
         help="Existing combat character avatar directory",
     )
     parser.add_argument(
         "--icon-output",
         type=Path,
-        default=Path("web/public/icons"),
         help="Static web icon output directory",
     )
     parser.add_argument(
@@ -1387,6 +1322,36 @@ def main():
         help="Run integrity validation on the generated dictionary",
     )
     args = parser.parse_args()
+    ws = load_workspace(args.workspace_config)
+    args.table_threads = args.table_threads if args.table_threads is not None else ws.get("resource_update.table_threads", min(os.cpu_count() or 1, 16))
+    args.icon_threads = args.icon_threads if args.icon_threads is not None else ws.get("resource_update.icon_threads", min(os.cpu_count() or 1, 16))
+    args.game_path = args.game_path or default_game_path(ws)
+    defaults = {
+        "table_dir": ws.path("resource_update.table_root"),
+        "json_data_dir": ws.path("resource_update.json_root"),
+        "output": ws.path("resource_update.outputs.combat_dictionary"),
+        "min_output": ws.path("resource_update.outputs.web_combat_dictionary"),
+        "besem": ws.path("resource_update.outputs.manifests", "combat", "combat-semantics.besem"),
+        "buff_source_output": ws.path("resource_update.outputs.manifests", "combat", "buff-sources.bemap"),
+        "id_registry": ws.root / "tools/CombatDataExporter/id_registry.json",
+        "stage_output": ws.root / "web/src/data/combat-stages.min.json",
+        "stage_map_output": ws.root / "web/cloudbase/functions/combat-api/stage-map.json",
+        "table_extractor": ws.path("paths.toolchains", "EndfieldStudio/AnimeStudio.Endfield.Cli/bin/Release/net9.0/endfield-dump.exe"),
+        "image_extractor": ws.path("paths.toolchains", "EndfieldStudio/AnimeStudio.Endfield.Cli/bin/Release/net9.0/endfield-dump.exe"),
+        "icon_cache": ws.path("paths.cache", "combat-icons"),
+        "icon_output": ws.root / "web/public/icons",
+        "avatar_source": ws.path("resource_update.outputs.avatars"),
+    }
+    for name, fallback in defaults.items():
+        key = ({"table_extractor": "tools.endfield_dump", "image_extractor": "tools.endfield_dump",
+                "id_registry": "resource_update.id_registry"}.get(name)
+               or "resource_update.outputs." + name)
+        if getattr(args, name) is None:
+            setattr(args, name, configured_path(ws, key, fallback))
+    args.buff_data = args.buff_data or args.json_data_dir / "BuffData"
+    args.vfs = args.vfs or default_vfs_path(ws)
+    args.icon_source = args.icon_source or (Path(os.environ["ENDFIELD_ICON_SOURCE"]) if os.environ.get("ENDFIELD_ICON_SOURCE") else None)
+    ws.env()
 
     print("==========================================================")
     print("BetterEndfield Combat Data Exporter")
@@ -1398,7 +1363,7 @@ def main():
         try:
             refresh_game_tables(
                 args.game_path, args.table_extractor, args.table_dir,
-                args.table_threads,
+                args.table_threads, ws,
             )
         except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
             print(f"[x] Error: table refresh failed: {error}")
@@ -1413,7 +1378,7 @@ def main():
         try:
             refresh_game_json_data(
                 args.game_path, args.table_extractor, args.json_data_dir,
-                args.table_threads,
+                args.table_threads, ws,
             )
         except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
             print(f"[x] Error: JsonData refresh failed: {error}")
@@ -1488,6 +1453,22 @@ def main():
         "buffs": buffs,
     }
 
+    previous = read_metadata(args.output)
+    for key, value in previous.items():
+        if key not in full_dict:
+            full_dict[key] = value
+    old_metadata = previous.get("metadata", {})
+    for key, value in old_metadata.items():
+        if key not in metadata:
+            metadata[key] = value
+    if {**previous, "metadata": {k: v for k, v in old_metadata.items() if k != "exportedAt"}} == {**full_dict, "metadata": {k: v for k, v in metadata.items() if k != "exportedAt"}}:
+        metadata["exportedAt"] = old_metadata.get("exportedAt", now_utc)
+
+    if args.verify:
+        assert len(chars) > 20, "Characters count too low"
+        assert len(weapons) > 30, "Weapons count too low"
+        assert len(dungeons) > 100, "Dungeons count too low"
+
     # Incremental diff against previous dictionary only if report path is explicitly specified
     if args.report:
         base_file = args.base if args.base else (args.output if args.output.exists() else None)
@@ -1496,9 +1477,11 @@ def main():
                 with open(base_file, "r", encoding="utf-8") as f:
                     prev_data = json.load(f)
                 diff = compute_incremental_diff(prev_data, full_dict)
+                old_diff = read_metadata(args.report)
+                if {k: v for k, v in old_diff.items() if k != "timestamp"} == {k: v for k, v in diff.items() if k != "timestamp"}:
+                    diff["timestamp"] = old_diff.get("timestamp", diff["timestamp"])
                 args.report.parent.mkdir(parents=True, exist_ok=True)
-                with open(args.report, "w", encoding="utf-8") as f:
-                    json.dump(diff, f, ensure_ascii=False, indent=2)
+                write_if_changed(args.report, json.dumps(diff, ensure_ascii=False, indent=2))
                 print(f"[+] Incremental Report saved to: {args.report}")
                 print(f"    Added: {diff['summary']['totalAdded']}, Modified: {diff['summary']['totalModified']}, Removed: {diff['summary']['totalRemoved']}")
             except Exception as e:
@@ -1506,15 +1489,13 @@ def main():
 
     # Write full JSON
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    with open(args.output, "w", encoding="utf-8") as f:
-        json.dump(full_dict, f, ensure_ascii=False, indent=2)
+    write_if_changed(args.output, json.dumps(full_dict, ensure_ascii=False, indent=2))
     print(f"[+] Full Dictionary saved to: {args.output} ({args.output.stat().st_size / 1024:.1f} KB)")
 
     # Write UI Embedded JSON
     if args.ui_output:
         args.ui_output.parent.mkdir(parents=True, exist_ok=True)
-        with open(args.ui_output, "w", encoding="utf-8") as f:
-            json.dump(full_dict, f, ensure_ascii=False, indent=2)
+        write_if_changed(args.ui_output, json.dumps(full_dict, ensure_ascii=False, indent=2))
         print(f"[+] UI Embedded Dictionary saved to: {args.ui_output} ({args.ui_output.stat().st_size / 1024:.1f} KB)")
 
     # Permanent ids, so BEC snapshot indices keep their meaning across exports.
@@ -1522,8 +1503,7 @@ def main():
     buff_ids = discover_buff_ids(args.buff_data)
     added = register_ids(ids, lookup, collect_registry_ids(full_dict, buff_ids))
     args.id_registry.parent.mkdir(parents=True, exist_ok=True)
-    with open(args.id_registry, "w", encoding="utf-8") as f:
-        json.dump({"version": len(ids), "ids": ids}, f, ensure_ascii=False, separators=(",", ":"))
+    write_if_changed(args.id_registry, json.dumps({"version": len(ids), "ids": ids}, ensure_ascii=False, separators=(",", ":")))
     print(f"[+] Id registry: {len(ids)} ids (+{added} new, {len(buff_ids)} buff ids) -> {args.id_registry}")
 
     # Write minified JSON
@@ -1533,19 +1513,16 @@ def main():
     # it ships as its own lazily-imported file rather than inside the bundle.
     min_dict["idv"] = len(ids)
     id_output = args.min_output.with_name("combat-ids.min.json")
-    with open(id_output, "w", encoding="utf-8") as f:
-        json.dump({"version": len(ids), "ids": ids}, f, ensure_ascii=False, separators=(",", ":"))
+    write_if_changed(id_output, json.dumps({"version": len(ids), "ids": ids}, ensure_ascii=False, separators=(",", ":")))
     print(f"[+] Id table saved to: {id_output} ({id_output.stat().st_size / 1024:.1f} KB)")
-    with open(args.min_output, "w", encoding="utf-8") as f:
-        json.dump(min_dict, f, ensure_ascii=False, separators=(",", ":"))
+    write_if_changed(args.min_output, json.dumps(min_dict, ensure_ascii=False, separators=(",", ":")))
     print(f"[+] Minified Web Dictionary saved to: {args.min_output} ({args.min_output.stat().st_size / 1024:.1f} KB)")
 
     # Stage table for the leaderboard navigation
     if args.stage_output:
         stage_table = build_stage_table(full_dict)
         args.stage_output.parent.mkdir(parents=True, exist_ok=True)
-        with open(args.stage_output, "w", encoding="utf-8") as f:
-            json.dump(stage_table, f, ensure_ascii=False, separators=(",", ":"))
+        write_if_changed(args.stage_output, json.dumps(stage_table, ensure_ascii=False, separators=(",", ":")))
         print(f"[+] Stage table saved to: {args.stage_output} "
               f"({len(stage_table['stages'])} stages in {len(stage_table['cats'])} categories)")
 
@@ -1555,8 +1532,7 @@ def main():
         if args.stage_map_output:
             stage_map = {stage_id: value["c"] for stage_id, value in stage_table["stages"].items()}
             args.stage_map_output.parent.mkdir(parents=True, exist_ok=True)
-            with open(args.stage_map_output, "w", encoding="utf-8") as f:
-                json.dump(stage_map, f, ensure_ascii=False, separators=(",", ":"))
+            write_if_changed(args.stage_map_output, json.dumps(stage_map, ensure_ascii=False, separators=(",", ":")))
             print(f"[+] Stage map saved to: {args.stage_map_output} ({len(stage_map)} stages)")
 
     icon_source = args.icon_source
@@ -1581,9 +1557,9 @@ def main():
                 icon_base_vfs,
                 args.image_extractor,
                 args.icon_cache,
-                args.icon_threads,
+                args.icon_threads, ws,
             )
-        except (OSError, subprocess.CalledProcessError) as error:
+        except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
             print(f"[x] Error: icon extraction failed: {error}")
             sys.exit(1)
     icon_manifest = export_web_icons(
@@ -1594,13 +1570,6 @@ def main():
         if missing_icons:
             print(f"[x] Error: {missing_icons} referenced icons could not be exported")
             sys.exit(1)
-
-    if args.verify:
-        print("[*] Verifying coverage...")
-        assert len(chars) > 20, "Characters count too low"
-        assert len(weapons) > 30, "Weapons count too low"
-        assert len(dungeons) > 100, "Dungeons count too low"
-        print("[OK] Verification passed successfully!")
 
     print("==========================================================")
     print("Export complete!")

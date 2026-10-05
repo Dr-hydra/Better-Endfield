@@ -1,4 +1,26 @@
 <Project>
+  <!-- Workspace.ps1 / Workspace.env() resolve local or explicit configuration
+       before invoking dotnet. Direct invocations use the tracked defaults;
+       callers may also supply these properties explicitly. Set paths here,
+       before Microsoft.Common.props chooses the NuGet/obj location. -->
+  <PropertyGroup>
+    <BEWorkspaceRoot Condition="'$(BEWorkspaceRoot)' == ''">$(MSBuildThisFileDirectory)</BEWorkspaceRoot>
+    <BEWorkspaceBuildRoot Condition="'$(BEWorkspaceBuildRoot)' == '' and '$(BE_WORKSPACE_BUILD_ROOT)' != ''">$(BE_WORKSPACE_BUILD_ROOT)</BEWorkspaceBuildRoot>
+    <BEWorkspaceBuildRoot Condition="'$(BEWorkspaceBuildRoot)' == ''">$(BEWorkspaceRoot)build</BEWorkspaceBuildRoot>
+    <BEWorkspaceBuildDirectory>$([MSBuild]::NormalizeDirectory('$(BEWorkspaceBuildRoot)'))</BEWorkspaceBuildDirectory>
+    <BEWorkspaceGeneratedRoot Condition="'$(BEWorkspaceGeneratedRoot)' == '' and '$(BE_WORKSPACE_GENERATED_ROOT)' != ''">$(BE_WORKSPACE_GENERATED_ROOT)</BEWorkspaceGeneratedRoot>
+    <BEWorkspaceGeneratedRoot Condition="'$(BEWorkspaceGeneratedRoot)' == ''">$(BEWorkspaceRoot)resources\generated</BEWorkspaceGeneratedRoot>
+    <BEWorkspaceGeneratedDirectory>$([MSBuild]::NormalizeDirectory('$(BEWorkspaceGeneratedRoot)'))</BEWorkspaceGeneratedDirectory>
+    <BECharacterPresetsPath Condition="'$(BECharacterPresetsPath)' == ''">$(BEWorkspaceGeneratedDirectory)model\character-presets.json</BECharacterPresetsPath>
+    <BEVoiceCatalogIndexPath Condition="'$(BEVoiceCatalogIndexPath)' == ''">$(BEWorkspaceGeneratedDirectory)voice\voice-catalog-index.json</BEVoiceCatalogIndexPath>
+    <BECombatDictionaryPath Condition="'$(BECombatDictionaryPath)' == ''">$(BEWorkspaceGeneratedDirectory)combat\combat-dictionary.json</BECombatDictionaryPath>
+    <BEWorkspaceDotnetPlatform Condition="'$(Platform)' != ''">$(Platform)</BEWorkspaceDotnetPlatform>
+    <BEWorkspaceDotnetPlatform Condition="'$(BEWorkspaceDotnetPlatform)' == ''">AnyCPU</BEWorkspaceDotnetPlatform>
+    <BaseOutputPath Condition="'$(BaseOutputPath)' == ''">$(BEWorkspaceBuildDirectory)dotnet\$(MSBuildProjectName)\$(BEWorkspaceDotnetPlatform)\bin\</BaseOutputPath>
+    <BaseIntermediateOutputPath Condition="'$(BaseIntermediateOutputPath)' == ''">$(BEWorkspaceBuildDirectory)dotnet\$(MSBuildProjectName)\$(BEWorkspaceDotnetPlatform)\obj\</BaseIntermediateOutputPath>
+    <MSBuildProjectExtensionsPath Condition="'$(MSBuildProjectExtensionsPath)' == ''">$(BaseIntermediateOutputPath)</MSBuildProjectExtensionsPath>
+    <DefaultItemExcludes>$(DefaultItemExcludes);$(BEWorkspaceBuildDirectory)**;$(MSBuildProjectDirectory)\bin\**;$(MSBuildProjectDirectory)\obj\**</DefaultItemExcludes>
+  </PropertyGroup>
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>

@@ -7176,7 +7176,7 @@
               "scope": "Fur",
               "evidence": "DrawWeightsVerified",
               "min_head_weight": 1.5259021896696422e-05,
-              "evidence_source": "docs/BEM_HAIR_BONE_ANALYSIS_20261002.md"
+              "evidence_source": "docs/camera/research/1.5.3/first-person-geometry/BEM_HAIR_BONE_ANALYSIS.md"
             }
           ]
         },
@@ -7226,7 +7226,7 @@
               "scope": "Fur",
               "evidence": "DrawWeightsVerified",
               "min_head_weight": 1.5259021896696422e-05,
-              "evidence_source": "docs/BEM_HAIR_BONE_ANALYSIS_20261002.md"
+              "evidence_source": "docs/camera/research/1.5.3/first-person-geometry/BEM_HAIR_BONE_ANALYSIS.md"
             }
           ]
         }

@@ -1,0 +1,330 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <windows.h>
+
+#pragma comment(linker, "/export:vkAcquireNextImage2KHR=C:\\Windows\\System32\\vulkan-1.vkAcquireNextImage2KHR")
+#pragma comment(linker, "/export:vkAcquireNextImageKHR=C:\\Windows\\System32\\vulkan-1.vkAcquireNextImageKHR")
+#pragma comment(linker, "/export:vkAllocateCommandBuffers=C:\\Windows\\System32\\vulkan-1.vkAllocateCommandBuffers")
+#pragma comment(linker, "/export:vkAllocateDescriptorSets=C:\\Windows\\System32\\vulkan-1.vkAllocateDescriptorSets")
+#pragma comment(linker, "/export:vkAllocateMemory=C:\\Windows\\System32\\vulkan-1.vkAllocateMemory")
+#pragma comment(linker, "/export:vkBeginCommandBuffer=C:\\Windows\\System32\\vulkan-1.vkBeginCommandBuffer")
+#pragma comment(linker, "/export:vkBindBufferMemory=C:\\Windows\\System32\\vulkan-1.vkBindBufferMemory")
+#pragma comment(linker, "/export:vkBindBufferMemory2=C:\\Windows\\System32\\vulkan-1.vkBindBufferMemory2")
+#pragma comment(linker, "/export:vkBindImageMemory=C:\\Windows\\System32\\vulkan-1.vkBindImageMemory")
+#pragma comment(linker, "/export:vkBindImageMemory2=C:\\Windows\\System32\\vulkan-1.vkBindImageMemory2")
+#pragma comment(linker, "/export:vkCmdBeginQuery=C:\\Windows\\System32\\vulkan-1.vkCmdBeginQuery")
+#pragma comment(linker, "/export:vkCmdBeginRenderPass=C:\\Windows\\System32\\vulkan-1.vkCmdBeginRenderPass")
+#pragma comment(linker, "/export:vkCmdBeginRenderPass2=C:\\Windows\\System32\\vulkan-1.vkCmdBeginRenderPass2")
+#pragma comment(linker, "/export:vkCmdBeginRendering=C:\\Windows\\System32\\vulkan-1.vkCmdBeginRendering")
+#pragma comment(linker, "/export:vkCmdBindDescriptorSets=C:\\Windows\\System32\\vulkan-1.vkCmdBindDescriptorSets")
+#pragma comment(linker, "/export:vkCmdBindDescriptorSets2=C:\\Windows\\System32\\vulkan-1.vkCmdBindDescriptorSets2")
+#pragma comment(linker, "/export:vkCmdBindIndexBuffer=C:\\Windows\\System32\\vulkan-1.vkCmdBindIndexBuffer")
+#pragma comment(linker, "/export:vkCmdBindIndexBuffer2=C:\\Windows\\System32\\vulkan-1.vkCmdBindIndexBuffer2")
+#pragma comment(linker, "/export:vkCmdBindPipeline=C:\\Windows\\System32\\vulkan-1.vkCmdBindPipeline")
+#pragma comment(linker, "/export:vkCmdBindVertexBuffers=C:\\Windows\\System32\\vulkan-1.vkCmdBindVertexBuffers")
+#pragma comment(linker, "/export:vkCmdBindVertexBuffers2=C:\\Windows\\System32\\vulkan-1.vkCmdBindVertexBuffers2")
+#pragma comment(linker, "/export:vkCmdBlitImage=C:\\Windows\\System32\\vulkan-1.vkCmdBlitImage")
+#pragma comment(linker, "/export:vkCmdBlitImage2=C:\\Windows\\System32\\vulkan-1.vkCmdBlitImage2")
+#pragma comment(linker, "/export:vkCmdClearAttachments=C:\\Windows\\System32\\vulkan-1.vkCmdClearAttachments")
+#pragma comment(linker, "/export:vkCmdClearColorImage=C:\\Windows\\System32\\vulkan-1.vkCmdClearColorImage")
+#pragma comment(linker, "/export:vkCmdClearDepthStencilImage=C:\\Windows\\System32\\vulkan-1.vkCmdClearDepthStencilImage")
+#pragma comment(linker, "/export:vkCmdCopyBuffer=C:\\Windows\\System32\\vulkan-1.vkCmdCopyBuffer")
+#pragma comment(linker, "/export:vkCmdCopyBuffer2=C:\\Windows\\System32\\vulkan-1.vkCmdCopyBuffer2")
+#pragma comment(linker, "/export:vkCmdCopyBufferToImage=C:\\Windows\\System32\\vulkan-1.vkCmdCopyBufferToImage")
+#pragma comment(linker, "/export:vkCmdCopyBufferToImage2=C:\\Windows\\System32\\vulkan-1.vkCmdCopyBufferToImage2")
+#pragma comment(linker, "/export:vkCmdCopyImage=C:\\Windows\\System32\\vulkan-1.vkCmdCopyImage")
+#pragma comment(linker, "/export:vkCmdCopyImage2=C:\\Windows\\System32\\vulkan-1.vkCmdCopyImage2")
+#pragma comment(linker, "/export:vkCmdCopyImageToBuffer=C:\\Windows\\System32\\vulkan-1.vkCmdCopyImageToBuffer")
+#pragma comment(linker, "/export:vkCmdCopyImageToBuffer2=C:\\Windows\\System32\\vulkan-1.vkCmdCopyImageToBuffer2")
+#pragma comment(linker, "/export:vkCmdCopyQueryPoolResults=C:\\Windows\\System32\\vulkan-1.vkCmdCopyQueryPoolResults")
+#pragma comment(linker, "/export:vkCmdDispatch=C:\\Windows\\System32\\vulkan-1.vkCmdDispatch")
+#pragma comment(linker, "/export:vkCmdDispatchBase=C:\\Windows\\System32\\vulkan-1.vkCmdDispatchBase")
+#pragma comment(linker, "/export:vkCmdDispatchIndirect=C:\\Windows\\System32\\vulkan-1.vkCmdDispatchIndirect")
+#pragma comment(linker, "/export:vkCmdDraw=C:\\Windows\\System32\\vulkan-1.vkCmdDraw")
+#pragma comment(linker, "/export:vkCmdDrawIndexed=C:\\Windows\\System32\\vulkan-1.vkCmdDrawIndexed")
+#pragma comment(linker, "/export:vkCmdDrawIndexedIndirect=C:\\Windows\\System32\\vulkan-1.vkCmdDrawIndexedIndirect")
+#pragma comment(linker, "/export:vkCmdDrawIndexedIndirectCount=C:\\Windows\\System32\\vulkan-1.vkCmdDrawIndexedIndirectCount")
+#pragma comment(linker, "/export:vkCmdDrawIndirect=C:\\Windows\\System32\\vulkan-1.vkCmdDrawIndirect")
+#pragma comment(linker, "/export:vkCmdDrawIndirectCount=C:\\Windows\\System32\\vulkan-1.vkCmdDrawIndirectCount")
+#pragma comment(linker, "/export:vkCmdEndQuery=C:\\Windows\\System32\\vulkan-1.vkCmdEndQuery")
+#pragma comment(linker, "/export:vkCmdEndRenderPass=C:\\Windows\\System32\\vulkan-1.vkCmdEndRenderPass")
+#pragma comment(linker, "/export:vkCmdEndRenderPass2=C:\\Windows\\System32\\vulkan-1.vkCmdEndRenderPass2")
+#pragma comment(linker, "/export:vkCmdEndRendering=C:\\Windows\\System32\\vulkan-1.vkCmdEndRendering")
+#pragma comment(linker, "/export:vkCmdExecuteCommands=C:\\Windows\\System32\\vulkan-1.vkCmdExecuteCommands")
+#pragma comment(linker, "/export:vkCmdFillBuffer=C:\\Windows\\System32\\vulkan-1.vkCmdFillBuffer")
+#pragma comment(linker, "/export:vkCmdNextSubpass=C:\\Windows\\System32\\vulkan-1.vkCmdNextSubpass")
+#pragma comment(linker, "/export:vkCmdNextSubpass2=C:\\Windows\\System32\\vulkan-1.vkCmdNextSubpass2")
+#pragma comment(linker, "/export:vkCmdPipelineBarrier=C:\\Windows\\System32\\vulkan-1.vkCmdPipelineBarrier")
+#pragma comment(linker, "/export:vkCmdPipelineBarrier2=C:\\Windows\\System32\\vulkan-1.vkCmdPipelineBarrier2")
+#pragma comment(linker, "/export:vkCmdPushConstants=C:\\Windows\\System32\\vulkan-1.vkCmdPushConstants")
+#pragma comment(linker, "/export:vkCmdPushConstants2=C:\\Windows\\System32\\vulkan-1.vkCmdPushConstants2")
+#pragma comment(linker, "/export:vkCmdPushDescriptorSet=C:\\Windows\\System32\\vulkan-1.vkCmdPushDescriptorSet")
+#pragma comment(linker, "/export:vkCmdPushDescriptorSet2=C:\\Windows\\System32\\vulkan-1.vkCmdPushDescriptorSet2")
+#pragma comment(linker, "/export:vkCmdPushDescriptorSetWithTemplate=C:\\Windows\\System32\\vulkan-1.vkCmdPushDescriptorSetWithTemplate")
+#pragma comment(linker, "/export:vkCmdPushDescriptorSetWithTemplate2=C:\\Windows\\System32\\vulkan-1.vkCmdPushDescriptorSetWithTemplate2")
+#pragma comment(linker, "/export:vkCmdResetEvent=C:\\Windows\\System32\\vulkan-1.vkCmdResetEvent")
+#pragma comment(linker, "/export:vkCmdResetEvent2=C:\\Windows\\System32\\vulkan-1.vkCmdResetEvent2")
+#pragma comment(linker, "/export:vkCmdResetQueryPool=C:\\Windows\\System32\\vulkan-1.vkCmdResetQueryPool")
+#pragma comment(linker, "/export:vkCmdResolveImage=C:\\Windows\\System32\\vulkan-1.vkCmdResolveImage")
+#pragma comment(linker, "/export:vkCmdResolveImage2=C:\\Windows\\System32\\vulkan-1.vkCmdResolveImage2")
+#pragma comment(linker, "/export:vkCmdSetBlendConstants=C:\\Windows\\System32\\vulkan-1.vkCmdSetBlendConstants")
+#pragma comment(linker, "/export:vkCmdSetCullMode=C:\\Windows\\System32\\vulkan-1.vkCmdSetCullMode")
+#pragma comment(linker, "/export:vkCmdSetDepthBias=C:\\Windows\\System32\\vulkan-1.vkCmdSetDepthBias")
+#pragma comment(linker, "/export:vkCmdSetDepthBiasEnable=C:\\Windows\\System32\\vulkan-1.vkCmdSetDepthBiasEnable")
+#pragma comment(linker, "/export:vkCmdSetDepthBounds=C:\\Windows\\System32\\vulkan-1.vkCmdSetDepthBounds")
+#pragma comment(linker, "/export:vkCmdSetDepthBoundsTestEnable=C:\\Windows\\System32\\vulkan-1.vkCmdSetDepthBoundsTestEnable")
+#pragma comment(linker, "/export:vkCmdSetDepthCompareOp=C:\\Windows\\System32\\vulkan-1.vkCmdSetDepthCompareOp")
+#pragma comment(linker, "/export:vkCmdSetDepthTestEnable=C:\\Windows\\System32\\vulkan-1.vkCmdSetDepthTestEnable")
+#pragma comment(linker, "/export:vkCmdSetDepthWriteEnable=C:\\Windows\\System32\\vulkan-1.vkCmdSetDepthWriteEnable")
+#pragma comment(linker, "/export:vkCmdSetDeviceMask=C:\\Windows\\System32\\vulkan-1.vkCmdSetDeviceMask")
+#pragma comment(linker, "/export:vkCmdSetEvent=C:\\Windows\\System32\\vulkan-1.vkCmdSetEvent")
+#pragma comment(linker, "/export:vkCmdSetEvent2=C:\\Windows\\System32\\vulkan-1.vkCmdSetEvent2")
+#pragma comment(linker, "/export:vkCmdSetFrontFace=C:\\Windows\\System32\\vulkan-1.vkCmdSetFrontFace")
+#pragma comment(linker, "/export:vkCmdSetLineStipple=C:\\Windows\\System32\\vulkan-1.vkCmdSetLineStipple")
+#pragma comment(linker, "/export:vkCmdSetLineWidth=C:\\Windows\\System32\\vulkan-1.vkCmdSetLineWidth")
+#pragma comment(linker, "/export:vkCmdSetPrimitiveRestartEnable=C:\\Windows\\System32\\vulkan-1.vkCmdSetPrimitiveRestartEnable")
+#pragma comment(linker, "/export:vkCmdSetPrimitiveTopology=C:\\Windows\\System32\\vulkan-1.vkCmdSetPrimitiveTopology")
+#pragma comment(linker, "/export:vkCmdSetRasterizerDiscardEnable=C:\\Windows\\System32\\vulkan-1.vkCmdSetRasterizerDiscardEnable")
+#pragma comment(linker, "/export:vkCmdSetRenderingAttachmentLocations=C:\\Windows\\System32\\vulkan-1.vkCmdSetRenderingAttachmentLocations")
+#pragma comment(linker, "/export:vkCmdSetRenderingInputAttachmentIndices=C:\\Windows\\System32\\vulkan-1.vkCmdSetRenderingInputAttachmentIndices")
+#pragma comment(linker, "/export:vkCmdSetScissor=C:\\Windows\\System32\\vulkan-1.vkCmdSetScissor")
+#pragma comment(linker, "/export:vkCmdSetScissorWithCount=C:\\Windows\\System32\\vulkan-1.vkCmdSetScissorWithCount")
+#pragma comment(linker, "/export:vkCmdSetStencilCompareMask=C:\\Windows\\System32\\vulkan-1.vkCmdSetStencilCompareMask")
+#pragma comment(linker, "/export:vkCmdSetStencilOp=C:\\Windows\\System32\\vulkan-1.vkCmdSetStencilOp")
+#pragma comment(linker, "/export:vkCmdSetStencilReference=C:\\Windows\\System32\\vulkan-1.vkCmdSetStencilReference")
+#pragma comment(linker, "/export:vkCmdSetStencilTestEnable=C:\\Windows\\System32\\vulkan-1.vkCmdSetStencilTestEnable")
+#pragma comment(linker, "/export:vkCmdSetStencilWriteMask=C:\\Windows\\System32\\vulkan-1.vkCmdSetStencilWriteMask")
+#pragma comment(linker, "/export:vkCmdSetViewport=C:\\Windows\\System32\\vulkan-1.vkCmdSetViewport")
+#pragma comment(linker, "/export:vkCmdSetViewportWithCount=C:\\Windows\\System32\\vulkan-1.vkCmdSetViewportWithCount")
+#pragma comment(linker, "/export:vkCmdUpdateBuffer=C:\\Windows\\System32\\vulkan-1.vkCmdUpdateBuffer")
+#pragma comment(linker, "/export:vkCmdWaitEvents=C:\\Windows\\System32\\vulkan-1.vkCmdWaitEvents")
+#pragma comment(linker, "/export:vkCmdWaitEvents2=C:\\Windows\\System32\\vulkan-1.vkCmdWaitEvents2")
+#pragma comment(linker, "/export:vkCmdWriteTimestamp=C:\\Windows\\System32\\vulkan-1.vkCmdWriteTimestamp")
+#pragma comment(linker, "/export:vkCmdWriteTimestamp2=C:\\Windows\\System32\\vulkan-1.vkCmdWriteTimestamp2")
+#pragma comment(linker, "/export:vkCopyImageToImage=C:\\Windows\\System32\\vulkan-1.vkCopyImageToImage")
+#pragma comment(linker, "/export:vkCopyImageToMemory=C:\\Windows\\System32\\vulkan-1.vkCopyImageToMemory")
+#pragma comment(linker, "/export:vkCopyMemoryToImage=C:\\Windows\\System32\\vulkan-1.vkCopyMemoryToImage")
+#pragma comment(linker, "/export:vkCreateBuffer=C:\\Windows\\System32\\vulkan-1.vkCreateBuffer")
+#pragma comment(linker, "/export:vkCreateBufferView=C:\\Windows\\System32\\vulkan-1.vkCreateBufferView")
+#pragma comment(linker, "/export:vkCreateCommandPool=C:\\Windows\\System32\\vulkan-1.vkCreateCommandPool")
+#pragma comment(linker, "/export:vkCreateComputePipelines=C:\\Windows\\System32\\vulkan-1.vkCreateComputePipelines")
+#pragma comment(linker, "/export:vkCreateDescriptorPool=C:\\Windows\\System32\\vulkan-1.vkCreateDescriptorPool")
+#pragma comment(linker, "/export:vkCreateDescriptorSetLayout=C:\\Windows\\System32\\vulkan-1.vkCreateDescriptorSetLayout")
+#pragma comment(linker, "/export:vkCreateDescriptorUpdateTemplate=C:\\Windows\\System32\\vulkan-1.vkCreateDescriptorUpdateTemplate")
+#pragma comment(linker, "/export:vkCreateDevice=C:\\Windows\\System32\\vulkan-1.vkCreateDevice")
+#pragma comment(linker, "/export:vkCreateDisplayModeKHR=C:\\Windows\\System32\\vulkan-1.vkCreateDisplayModeKHR")
+#pragma comment(linker, "/export:vkCreateDisplayPlaneSurfaceKHR=C:\\Windows\\System32\\vulkan-1.vkCreateDisplayPlaneSurfaceKHR")
+#pragma comment(linker, "/export:vkCreateEvent=C:\\Windows\\System32\\vulkan-1.vkCreateEvent")
+#pragma comment(linker, "/export:vkCreateFence=C:\\Windows\\System32\\vulkan-1.vkCreateFence")
+#pragma comment(linker, "/export:vkCreateFramebuffer=C:\\Windows\\System32\\vulkan-1.vkCreateFramebuffer")
+#pragma comment(linker, "/export:vkCreateGraphicsPipelines=C:\\Windows\\System32\\vulkan-1.vkCreateGraphicsPipelines")
+#pragma comment(linker, "/export:vkCreateHeadlessSurfaceEXT=C:\\Windows\\System32\\vulkan-1.vkCreateHeadlessSurfaceEXT")
+#pragma comment(linker, "/export:vkCreateImage=C:\\Windows\\System32\\vulkan-1.vkCreateImage")
+#pragma comment(linker, "/export:vkCreateImageView=C:\\Windows\\System32\\vulkan-1.vkCreateImageView")
+#pragma comment(linker, "/export:vkCreateInstance=C:\\Windows\\System32\\vulkan-1.vkCreateInstance")
+#pragma comment(linker, "/export:vkCreatePipelineCache=C:\\Windows\\System32\\vulkan-1.vkCreatePipelineCache")
+#pragma comment(linker, "/export:vkCreatePipelineLayout=C:\\Windows\\System32\\vulkan-1.vkCreatePipelineLayout")
+#pragma comment(linker, "/export:vkCreatePrivateDataSlot=C:\\Windows\\System32\\vulkan-1.vkCreatePrivateDataSlot")
+#pragma comment(linker, "/export:vkCreateQueryPool=C:\\Windows\\System32\\vulkan-1.vkCreateQueryPool")
+#pragma comment(linker, "/export:vkCreateRenderPass=C:\\Windows\\System32\\vulkan-1.vkCreateRenderPass")
+#pragma comment(linker, "/export:vkCreateRenderPass2=C:\\Windows\\System32\\vulkan-1.vkCreateRenderPass2")
+#pragma comment(linker, "/export:vkCreateSampler=C:\\Windows\\System32\\vulkan-1.vkCreateSampler")
+#pragma comment(linker, "/export:vkCreateSamplerYcbcrConversion=C:\\Windows\\System32\\vulkan-1.vkCreateSamplerYcbcrConversion")
+#pragma comment(linker, "/export:vkCreateSemaphore=C:\\Windows\\System32\\vulkan-1.vkCreateSemaphore")
+#pragma comment(linker, "/export:vkCreateShaderModule=C:\\Windows\\System32\\vulkan-1.vkCreateShaderModule")
+#pragma comment(linker, "/export:vkCreateSharedSwapchainsKHR=C:\\Windows\\System32\\vulkan-1.vkCreateSharedSwapchainsKHR")
+#pragma comment(linker, "/export:vkCreateSwapchainKHR=C:\\Windows\\System32\\vulkan-1.vkCreateSwapchainKHR")
+#pragma comment(linker, "/export:vkCreateWin32SurfaceKHR=C:\\Windows\\System32\\vulkan-1.vkCreateWin32SurfaceKHR")
+#pragma comment(linker, "/export:vkDestroyBuffer=C:\\Windows\\System32\\vulkan-1.vkDestroyBuffer")
+#pragma comment(linker, "/export:vkDestroyBufferView=C:\\Windows\\System32\\vulkan-1.vkDestroyBufferView")
+#pragma comment(linker, "/export:vkDestroyCommandPool=C:\\Windows\\System32\\vulkan-1.vkDestroyCommandPool")
+#pragma comment(linker, "/export:vkDestroyDescriptorPool=C:\\Windows\\System32\\vulkan-1.vkDestroyDescriptorPool")
+#pragma comment(linker, "/export:vkDestroyDescriptorSetLayout=C:\\Windows\\System32\\vulkan-1.vkDestroyDescriptorSetLayout")
+#pragma comment(linker, "/export:vkDestroyDescriptorUpdateTemplate=C:\\Windows\\System32\\vulkan-1.vkDestroyDescriptorUpdateTemplate")
+#pragma comment(linker, "/export:vkDestroyDevice=C:\\Windows\\System32\\vulkan-1.vkDestroyDevice")
+#pragma comment(linker, "/export:vkDestroyEvent=C:\\Windows\\System32\\vulkan-1.vkDestroyEvent")
+#pragma comment(linker, "/export:vkDestroyFence=C:\\Windows\\System32\\vulkan-1.vkDestroyFence")
+#pragma comment(linker, "/export:vkDestroyFramebuffer=C:\\Windows\\System32\\vulkan-1.vkDestroyFramebuffer")
+#pragma comment(linker, "/export:vkDestroyImage=C:\\Windows\\System32\\vulkan-1.vkDestroyImage")
+#pragma comment(linker, "/export:vkDestroyImageView=C:\\Windows\\System32\\vulkan-1.vkDestroyImageView")
+#pragma comment(linker, "/export:vkDestroyInstance=C:\\Windows\\System32\\vulkan-1.vkDestroyInstance")
+#pragma comment(linker, "/export:vkDestroyPipeline=C:\\Windows\\System32\\vulkan-1.vkDestroyPipeline")
+#pragma comment(linker, "/export:vkDestroyPipelineCache=C:\\Windows\\System32\\vulkan-1.vkDestroyPipelineCache")
+#pragma comment(linker, "/export:vkDestroyPipelineLayout=C:\\Windows\\System32\\vulkan-1.vkDestroyPipelineLayout")
+#pragma comment(linker, "/export:vkDestroyPrivateDataSlot=C:\\Windows\\System32\\vulkan-1.vkDestroyPrivateDataSlot")
+#pragma comment(linker, "/export:vkDestroyQueryPool=C:\\Windows\\System32\\vulkan-1.vkDestroyQueryPool")
+#pragma comment(linker, "/export:vkDestroyRenderPass=C:\\Windows\\System32\\vulkan-1.vkDestroyRenderPass")
+#pragma comment(linker, "/export:vkDestroySampler=C:\\Windows\\System32\\vulkan-1.vkDestroySampler")
+#pragma comment(linker, "/export:vkDestroySamplerYcbcrConversion=C:\\Windows\\System32\\vulkan-1.vkDestroySamplerYcbcrConversion")
+#pragma comment(linker, "/export:vkDestroySemaphore=C:\\Windows\\System32\\vulkan-1.vkDestroySemaphore")
+#pragma comment(linker, "/export:vkDestroyShaderModule=C:\\Windows\\System32\\vulkan-1.vkDestroyShaderModule")
+#pragma comment(linker, "/export:vkDestroySurfaceKHR=C:\\Windows\\System32\\vulkan-1.vkDestroySurfaceKHR")
+#pragma comment(linker, "/export:vkDestroySwapchainKHR=C:\\Windows\\System32\\vulkan-1.vkDestroySwapchainKHR")
+#pragma comment(linker, "/export:vkDeviceWaitIdle=C:\\Windows\\System32\\vulkan-1.vkDeviceWaitIdle")
+#pragma comment(linker, "/export:vkEndCommandBuffer=C:\\Windows\\System32\\vulkan-1.vkEndCommandBuffer")
+#pragma comment(linker, "/export:vkEnumerateDeviceExtensionProperties=C:\\Windows\\System32\\vulkan-1.vkEnumerateDeviceExtensionProperties")
+#pragma comment(linker, "/export:vkEnumerateDeviceLayerProperties=C:\\Windows\\System32\\vulkan-1.vkEnumerateDeviceLayerProperties")
+#pragma comment(linker, "/export:vkEnumerateInstanceExtensionProperties=C:\\Windows\\System32\\vulkan-1.vkEnumerateInstanceExtensionProperties")
+#pragma comment(linker, "/export:vkEnumerateInstanceLayerProperties=C:\\Windows\\System32\\vulkan-1.vkEnumerateInstanceLayerProperties")
+#pragma comment(linker, "/export:vkEnumerateInstanceVersion=C:\\Windows\\System32\\vulkan-1.vkEnumerateInstanceVersion")
+#pragma comment(linker, "/export:vkEnumeratePhysicalDeviceGroups=C:\\Windows\\System32\\vulkan-1.vkEnumeratePhysicalDeviceGroups")
+#pragma comment(linker, "/export:vkEnumeratePhysicalDevices=C:\\Windows\\System32\\vulkan-1.vkEnumeratePhysicalDevices")
+#pragma comment(linker, "/export:vkFlushMappedMemoryRanges=C:\\Windows\\System32\\vulkan-1.vkFlushMappedMemoryRanges")
+#pragma comment(linker, "/export:vkFreeCommandBuffers=C:\\Windows\\System32\\vulkan-1.vkFreeCommandBuffers")
+#pragma comment(linker, "/export:vkFreeDescriptorSets=C:\\Windows\\System32\\vulkan-1.vkFreeDescriptorSets")
+#pragma comment(linker, "/export:vkFreeMemory=C:\\Windows\\System32\\vulkan-1.vkFreeMemory")
+#pragma comment(linker, "/export:vkGetBufferDeviceAddress=C:\\Windows\\System32\\vulkan-1.vkGetBufferDeviceAddress")
+#pragma comment(linker, "/export:vkGetBufferMemoryRequirements=C:\\Windows\\System32\\vulkan-1.vkGetBufferMemoryRequirements")
+#pragma comment(linker, "/export:vkGetBufferMemoryRequirements2=C:\\Windows\\System32\\vulkan-1.vkGetBufferMemoryRequirements2")
+#pragma comment(linker, "/export:vkGetBufferOpaqueCaptureAddress=C:\\Windows\\System32\\vulkan-1.vkGetBufferOpaqueCaptureAddress")
+#pragma comment(linker, "/export:vkGetDescriptorSetLayoutSupport=C:\\Windows\\System32\\vulkan-1.vkGetDescriptorSetLayoutSupport")
+#pragma comment(linker, "/export:vkGetDeviceBufferMemoryRequirements=C:\\Windows\\System32\\vulkan-1.vkGetDeviceBufferMemoryRequirements")
+#pragma comment(linker, "/export:vkGetDeviceGroupPeerMemoryFeatures=C:\\Windows\\System32\\vulkan-1.vkGetDeviceGroupPeerMemoryFeatures")
+#pragma comment(linker, "/export:vkGetDeviceGroupPresentCapabilitiesKHR=C:\\Windows\\System32\\vulkan-1.vkGetDeviceGroupPresentCapabilitiesKHR")
+#pragma comment(linker, "/export:vkGetDeviceGroupSurfacePresentModesKHR=C:\\Windows\\System32\\vulkan-1.vkGetDeviceGroupSurfacePresentModesKHR")
+#pragma comment(linker, "/export:vkGetDeviceImageMemoryRequirements=C:\\Windows\\System32\\vulkan-1.vkGetDeviceImageMemoryRequirements")
+#pragma comment(linker, "/export:vkGetDeviceImageSparseMemoryRequirements=C:\\Windows\\System32\\vulkan-1.vkGetDeviceImageSparseMemoryRequirements")
+#pragma comment(linker, "/export:vkGetDeviceImageSubresourceLayout=C:\\Windows\\System32\\vulkan-1.vkGetDeviceImageSubresourceLayout")
+#pragma comment(linker, "/export:vkGetDeviceMemoryCommitment=C:\\Windows\\System32\\vulkan-1.vkGetDeviceMemoryCommitment")
+#pragma comment(linker, "/export:vkGetDeviceMemoryOpaqueCaptureAddress=C:\\Windows\\System32\\vulkan-1.vkGetDeviceMemoryOpaqueCaptureAddress")
+#pragma comment(linker, "/export:vkGetDeviceProcAddr=C:\\Windows\\System32\\vulkan-1.vkGetDeviceProcAddr")
+#pragma comment(linker, "/export:vkGetDeviceQueue=C:\\Windows\\System32\\vulkan-1.vkGetDeviceQueue")
+#pragma comment(linker, "/export:vkGetDeviceQueue2=C:\\Windows\\System32\\vulkan-1.vkGetDeviceQueue2")
+#pragma comment(linker, "/export:vkGetDisplayModeProperties2KHR=C:\\Windows\\System32\\vulkan-1.vkGetDisplayModeProperties2KHR")
+#pragma comment(linker, "/export:vkGetDisplayModePropertiesKHR=C:\\Windows\\System32\\vulkan-1.vkGetDisplayModePropertiesKHR")
+#pragma comment(linker, "/export:vkGetDisplayPlaneCapabilities2KHR=C:\\Windows\\System32\\vulkan-1.vkGetDisplayPlaneCapabilities2KHR")
+#pragma comment(linker, "/export:vkGetDisplayPlaneCapabilitiesKHR=C:\\Windows\\System32\\vulkan-1.vkGetDisplayPlaneCapabilitiesKHR")
+#pragma comment(linker, "/export:vkGetDisplayPlaneSupportedDisplaysKHR=C:\\Windows\\System32\\vulkan-1.vkGetDisplayPlaneSupportedDisplaysKHR")
+#pragma comment(linker, "/export:vkGetEventStatus=C:\\Windows\\System32\\vulkan-1.vkGetEventStatus")
+#pragma comment(linker, "/export:vkGetFenceStatus=C:\\Windows\\System32\\vulkan-1.vkGetFenceStatus")
+#pragma comment(linker, "/export:vkGetImageMemoryRequirements=C:\\Windows\\System32\\vulkan-1.vkGetImageMemoryRequirements")
+#pragma comment(linker, "/export:vkGetImageMemoryRequirements2=C:\\Windows\\System32\\vulkan-1.vkGetImageMemoryRequirements2")
+#pragma comment(linker, "/export:vkGetImageSparseMemoryRequirements=C:\\Windows\\System32\\vulkan-1.vkGetImageSparseMemoryRequirements")
+#pragma comment(linker, "/export:vkGetImageSparseMemoryRequirements2=C:\\Windows\\System32\\vulkan-1.vkGetImageSparseMemoryRequirements2")
+#pragma comment(linker, "/export:vkGetImageSubresourceLayout=C:\\Windows\\System32\\vulkan-1.vkGetImageSubresourceLayout")
+#pragma comment(linker, "/export:vkGetImageSubresourceLayout2=C:\\Windows\\System32\\vulkan-1.vkGetImageSubresourceLayout2")
+#pragma comment(linker, "/export:vkGetInstanceProcAddr=C:\\Windows\\System32\\vulkan-1.vkGetInstanceProcAddr")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceDisplayPlaneProperties2KHR=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceDisplayPlaneProperties2KHR")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceDisplayPlanePropertiesKHR=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceDisplayPlanePropertiesKHR")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceDisplayProperties2KHR=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceDisplayProperties2KHR")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceDisplayPropertiesKHR=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceDisplayPropertiesKHR")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceExternalBufferProperties=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceExternalBufferProperties")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceExternalFenceProperties=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceExternalFenceProperties")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceExternalSemaphoreProperties=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceExternalSemaphoreProperties")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceFeatures=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceFeatures")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceFeatures2=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceFeatures2")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceFormatProperties=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceFormatProperties")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceFormatProperties2=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceFormatProperties2")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceImageFormatProperties=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceImageFormatProperties")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceImageFormatProperties2=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceImageFormatProperties2")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceMemoryProperties=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceMemoryProperties")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceMemoryProperties2=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceMemoryProperties2")
+#pragma comment(linker, "/export:vkGetPhysicalDevicePresentRectanglesKHR=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDevicePresentRectanglesKHR")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceProperties=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceProperties")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceProperties2=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceProperties2")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceQueueFamilyProperties=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceQueueFamilyProperties")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceQueueFamilyProperties2=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceQueueFamilyProperties2")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceSparseImageFormatProperties=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceSparseImageFormatProperties")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceSparseImageFormatProperties2=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceSparseImageFormatProperties2")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceSurfaceCapabilities2KHR=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceSurfaceCapabilities2KHR")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceSurfaceCapabilitiesKHR=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceSurfaceCapabilitiesKHR")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceSurfaceFormats2KHR=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceSurfaceFormats2KHR")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceSurfaceFormatsKHR=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceSurfaceFormatsKHR")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceSurfacePresentModesKHR=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceSurfacePresentModesKHR")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceSurfaceSupportKHR=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceSurfaceSupportKHR")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceToolProperties=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceToolProperties")
+#pragma comment(linker, "/export:vkGetPhysicalDeviceWin32PresentationSupportKHR=C:\\Windows\\System32\\vulkan-1.vkGetPhysicalDeviceWin32PresentationSupportKHR")
+#pragma comment(linker, "/export:vkGetPipelineCacheData=C:\\Windows\\System32\\vulkan-1.vkGetPipelineCacheData")
+#pragma comment(linker, "/export:vkGetPrivateData=C:\\Windows\\System32\\vulkan-1.vkGetPrivateData")
+#pragma comment(linker, "/export:vkGetQueryPoolResults=C:\\Windows\\System32\\vulkan-1.vkGetQueryPoolResults")
+#pragma comment(linker, "/export:vkGetRenderAreaGranularity=C:\\Windows\\System32\\vulkan-1.vkGetRenderAreaGranularity")
+#pragma comment(linker, "/export:vkGetRenderingAreaGranularity=C:\\Windows\\System32\\vulkan-1.vkGetRenderingAreaGranularity")
+#pragma comment(linker, "/export:vkGetSemaphoreCounterValue=C:\\Windows\\System32\\vulkan-1.vkGetSemaphoreCounterValue")
+#pragma comment(linker, "/export:vkGetSwapchainImagesKHR=C:\\Windows\\System32\\vulkan-1.vkGetSwapchainImagesKHR")
+#pragma comment(linker, "/export:vkInvalidateMappedMemoryRanges=C:\\Windows\\System32\\vulkan-1.vkInvalidateMappedMemoryRanges")
+#pragma comment(linker, "/export:vkMapMemory=C:\\Windows\\System32\\vulkan-1.vkMapMemory")
+#pragma comment(linker, "/export:vkMapMemory2=C:\\Windows\\System32\\vulkan-1.vkMapMemory2")
+#pragma comment(linker, "/export:vkMergePipelineCaches=C:\\Windows\\System32\\vulkan-1.vkMergePipelineCaches")
+#pragma comment(linker, "/export:vkQueueBindSparse=C:\\Windows\\System32\\vulkan-1.vkQueueBindSparse")
+#pragma comment(linker, "/export:vkQueuePresentKHR=C:\\Windows\\System32\\vulkan-1.vkQueuePresentKHR")
+#pragma comment(linker, "/export:vkQueueSubmit=C:\\Windows\\System32\\vulkan-1.vkQueueSubmit")
+#pragma comment(linker, "/export:vkQueueSubmit2=C:\\Windows\\System32\\vulkan-1.vkQueueSubmit2")
+#pragma comment(linker, "/export:vkQueueWaitIdle=C:\\Windows\\System32\\vulkan-1.vkQueueWaitIdle")
+#pragma comment(linker, "/export:vkResetCommandBuffer=C:\\Windows\\System32\\vulkan-1.vkResetCommandBuffer")
+#pragma comment(linker, "/export:vkResetCommandPool=C:\\Windows\\System32\\vulkan-1.vkResetCommandPool")
+#pragma comment(linker, "/export:vkResetDescriptorPool=C:\\Windows\\System32\\vulkan-1.vkResetDescriptorPool")
+#pragma comment(linker, "/export:vkResetEvent=C:\\Windows\\System32\\vulkan-1.vkResetEvent")
+#pragma comment(linker, "/export:vkResetFences=C:\\Windows\\System32\\vulkan-1.vkResetFences")
+#pragma comment(linker, "/export:vkResetQueryPool=C:\\Windows\\System32\\vulkan-1.vkResetQueryPool")
+#pragma comment(linker, "/export:vkSetEvent=C:\\Windows\\System32\\vulkan-1.vkSetEvent")
+#pragma comment(linker, "/export:vkSetPrivateData=C:\\Windows\\System32\\vulkan-1.vkSetPrivateData")
+#pragma comment(linker, "/export:vkSignalSemaphore=C:\\Windows\\System32\\vulkan-1.vkSignalSemaphore")
+#pragma comment(linker, "/export:vkTransitionImageLayout=C:\\Windows\\System32\\vulkan-1.vkTransitionImageLayout")
+#pragma comment(linker, "/export:vkTrimCommandPool=C:\\Windows\\System32\\vulkan-1.vkTrimCommandPool")
+#pragma comment(linker, "/export:vkUnmapMemory=C:\\Windows\\System32\\vulkan-1.vkUnmapMemory")
+#pragma comment(linker, "/export:vkUnmapMemory2=C:\\Windows\\System32\\vulkan-1.vkUnmapMemory2")
+#pragma comment(linker, "/export:vkUpdateDescriptorSetWithTemplate=C:\\Windows\\System32\\vulkan-1.vkUpdateDescriptorSetWithTemplate")
+#pragma comment(linker, "/export:vkUpdateDescriptorSets=C:\\Windows\\System32\\vulkan-1.vkUpdateDescriptorSets")
+#pragma comment(linker, "/export:vkWaitForFences=C:\\Windows\\System32\\vulkan-1.vkWaitForFences")
+#pragma comment(linker, "/export:vkWaitSemaphores=C:\\Windows\\System32\\vulkan-1.vkWaitSemaphores")
+
+static bool IsPluginDisabled(const char* dllName) {
+    FILE* f = fopen("plugin\\applepie_manager_config.txt", "r");
+    if (!f) return false;
+
+    bool inPluginsSection = false;
+    char line[512];
+    while (fgets(line, sizeof(line), f)) {
+        char* end = line + strlen(line) - 1;
+        while (end > line && (*end == '\n' || *end == '\r' || *end == ' ')) *end-- = 0;
+
+        if (line[0] == '[') {
+            inPluginsSection = (_stricmp(line, "[plugins]") == 0);
+            continue;
+        }
+        if (!inPluginsSection) continue;
+
+        char* eq = strchr(line, '=');
+        if (!eq) continue;
+        *eq = 0;
+        const char* key = line;
+        const char* val = eq + 1;
+
+        char* kend = eq - 1;
+        while (kend > key && *kend == ' ') *kend-- = 0;
+        while (*val == ' ') val++;
+
+        if (_stricmp(key, dllName) == 0 && strcmp(val, "0") == 0) {
+            fclose(f);
+            return true;
+        }
+    }
+    fclose(f);
+    return false;
+}
+
+void LoadPlugin() {
+    WIN32_FIND_DATAA fd;
+    HANDLE hFind = FindFirstFileA("plugin\\*.dll", &fd);
+    if (hFind != INVALID_HANDLE_VALUE) {
+        do {
+            if (_stricmp(fd.cFileName, "applepie_manager.dll") == 0) continue;
+            if (IsPluginDisabled(fd.cFileName)) continue;
+
+            char path[MAX_PATH];
+            snprintf(path, MAX_PATH, "plugin\\%s", fd.cFileName);
+            LoadLibraryA(path);
+        } while (FindNextFileA(hFind, &fd));
+        FindClose(hFind);
+    }
+
+    LoadLibraryA("plugin\\applepie_manager.dll");
+}
+
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID reserved) {
+    if (reason == DLL_PROCESS_ATTACH) {
+        DisableThreadLibraryCalls(hModule);
+        CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)LoadPlugin, NULL, 0, NULL);
+    }
+    return TRUE;
+}

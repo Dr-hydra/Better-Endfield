@@ -11,8 +11,8 @@ Version 3.4.2 adds BEM 1.3 shape sliders, experimental third-party native
 modules/web UI, global FOV, character-follow free camera, first-person
 restoration/hair updates and Purrche title-screen resources. BEM 1.3 authoring
 uses BEM Tools **1.5.0**; the same standard package works on both platforms.
-See the [BEM creator guide](../docs/BEM_CREATOR_GUIDE.en.md) and
-[third-party module creator guide](../docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md).
+See the [BEM creator guide](../docs/custom_model/BEM_CREATOR_GUIDE.en.md) and
+[third-party module creator guide](../docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md).
 
 The app also includes the MMD library/player, responsive in-game deck,
 independent world pause, first-person updates and multiple BEM packages per
@@ -21,7 +21,7 @@ module configuration and installed works. Experimental model hot-switching and
 loading optimization are off by default. Enable the switches before restarting
 the game; hot-switching then picks up model selections on normal resource reloads
 such as team changes or reopening character details. In-game controls take effect
-immediately. See [the integration record](../docs/ANDROID_CAMERA_MMD_20261001.md)
+immediately. See [the integration record](../docs/camera/research/1.5.3/android-mmd/ANDROID_CAMERA_MMD.md)
 for validation results and platform limits.
 
 Import an MMD work from a ZIP/7z archive, a folder, or individual
@@ -137,7 +137,7 @@ local Android metadata snapshot contains every declaring class and method name.
 The same-source native code and its Android Host adapter compile successfully.
 Device testing then confirmed that all three contracts are ready, the original
 14 Hooks install, and their runtime paths execute. The `PerformUpdate` prefix
-and the neutralized sprite/texture copies (see `docs/GAME_INTERFACES.md`) were
+and the neutralized sprite/texture copies (see `docs/host/GAME_INTERFACES.md`) were
 added later for the baked-yellow login assets and are verified on desktop.
 
 On the tested client, `chr_0013_aglina_postmodel(Clone)` loaded and replaced
@@ -449,5 +449,5 @@ one pending request with explicit retry/dismiss controls, without interrupting
 the running task. Opening a new document replaces that pending request. The
 imported file's contents are validated; an extension alone is not trusted.
 Publication still requires the configured modern LSPosed service, and changes
-become active on game restart. See `../docs/archive/bem/ANDROID_BEM_OPEN_WITH_20260927.md` for
+become active on game restart. See `../docs/android/research/1.5.3/bem-open-with/ANDROID_BEM_OPEN_WITH.md` for
 supported routing, tests and outstanding device acceptance.

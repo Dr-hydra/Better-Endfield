@@ -1,10 +1,10 @@
 # 冲刺持续模块 1.13.4
 
-1.13.4 补齐梨诺漂浮物两侧光效的持续保持：除脚部与拖尾（actor 0–2）外，保持漂浮武器光效（10/11）和律动（20/21）。停止冲刺或原生效果销毁时恢复粒子参数。原来的 4 槽保持表遗漏了这些高编号效果；挂点刷新本身不会延长它们的寿命。资源依据与验证见 [显隐与光效修复](../../../docs/LIINO_DASH_VISUAL_FIX.md)。
+1.13.4 补齐梨诺漂浮物两侧光效的持续保持：除脚部与拖尾（actor 0–2）外，保持漂浮武器光效（10/11）和律动（20/21）。停止冲刺或原生效果销毁时恢复粒子参数。原来的 4 槽保持表遗漏了这些高编号效果；挂点刷新本身不会延长它们的寿命。资源依据与验证见 [显隐与光效修复](../../../docs/actions/research/1.5.3/liino-dash/LIINO_DASH_VISUAL_FIX.md)。
 
 模块 ID `betterendfield.actions`，显示名 `Sustained Dash`。启动器「冲刺持续」页提供分角色开关，默认关闭。游戏在每次特殊冲刺里选择左或右动作，本模块保留该选择，不重新掷。
 
-梨诺下方提供独立的「隐藏机甲与光效」开关（默认关闭），开启后全程省略机甲、腿甲及粒子/材质 VFX，沿用低位平滑飞行动画。关闭外观开关时恢复 [1.13.1 显隐与挂点修复](../../../docs/LIINO_DASH_VISUAL_FIX.md)。偏好通过 `liino_clean` 保存，梨诺持续冲刺关闭时仍保留选择。实现与验证见 [无机甲冲刺](../../../docs/LIINO_CLEAN_DASH.md)。
+梨诺下方提供独立的「隐藏机甲与光效」开关（默认关闭），开启后全程省略机甲、腿甲及粒子/材质 VFX，沿用低位平滑飞行动画。关闭外观开关时恢复 [1.13.1 显隐与挂点修复](../../../docs/actions/research/1.5.3/liino-dash/LIINO_DASH_VISUAL_FIX.md)。偏好通过 `liino_clean` 保存，梨诺持续冲刺关闭时仍保留选择。实现与验证见 [无机甲冲刺](../../../docs/actions/research/1.5.3/liino-dash/LIINO_CLEAN_DASH.md)。
 
 ## 支持的角色
 
@@ -41,9 +41,9 @@ diagnostics=true
 
 `Sustained dash armed for <角色>`、`Sustained dash v12: bone-pose file loaded for <角色>`、`Sustained dash v12: bone overlay bound: matched=<数量>`、`Sustained dash v12: TailLate pose applied`。`Sustained dash: mesh group hook unavailable` 表示可选钩子缺失，只影响隐藏动作延后。
 
-数据制作流程、通道映射与验证数据见 `docs/SPECIAL_DASH_CONTINUOUS_ANIMATION.md`。
+数据制作流程、通道映射与验证数据见 `docs/actions/SPECIAL_DASH_CONTINUOUS_ANIMATION.md`。
 
-梨诺 2026-09-14 改用源帧 46–66 的低位段，交叠 ±8 后半速重采样，源帧 56 接管。骨盆起伏从 44.3 cm 降至 3.9 cm；Animator 保持参数不变。复现脚本和高低位比较见 `docs/LIINO_LOW_GLIDE.md`。
+梨诺 2026-09-14 改用源帧 46–66 的低位段，交叠 ±8 后半速重采样，源帧 56 接管。骨盆起伏从 44.3 cm 降至 3.9 cm；Animator 保持参数不变。复现脚本和高低位比较见 `docs/actions/research/1.5.3/liino-dash/LIINO_LOW_GLIDE.md`。
 
 ## 历史记录
 

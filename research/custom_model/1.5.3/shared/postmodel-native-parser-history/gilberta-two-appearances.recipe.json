@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "package": {
+    "id": "gilberta.outfits",
+    "name": "洁尔佩塔双外观",
+    "author": "原 Mod 作者（开发转换样本）",
+    "version": "1.0.0"
+  },
+  "target": {
+    "character_id": "chr_0013_aglina",
+    "world_resource": "chr_0013_aglina_postmodel",
+    "ui_resource": "chr_0013_aglina_uimodel",
+    "profile_id": "aglina.windows",
+    "revision": "20260918"
+  },
+  "appearances": [
+    {
+      "id": "default",
+      "name": "原服装",
+      "format": "reviewed-draws",
+      "reviewed": {
+        "recipe": "E:\\Dr.Hydra\\Better Endfield\\.worktrees\\dev-custom-model-design\\tools\\CustomModel\\profiles\\gilberta-12.reviewed.json",
+        "database": "E:\\Dr.Hydra\\Better Endfield\\.worktrees\\dev-custom-model-design\\artifacts\\native-parser\\gilberta-database.json",
+        "observations": "E:\\Dr.Hydra\\Better Endfield\\.worktrees\\dev-custom-model-design\\artifacts\\native-parser\\gilberta-observed.json",
+        "native_textures": "E:\\Dr.Hydra\\Better Endfield\\.worktrees\\dev-custom-model-design\\artifacts\\native-parser\\gilberta-texture-raw.json",
+        "texture_dir": "E:\\Dr.Hydra\\Better Endfield\\.worktrees\\dev-custom-model-design\\artifacts\\native-parser\\gilberta-texture-bytes"
+      }
+    },
+    {
+      "id": "outfit-b",
+      "name": "另一套服装",
+      "format": "reviewed-draws",
+      "reviewed": {
+        "recipe": "E:\\Dr.Hydra\\Better Endfield\\.worktrees\\dev-custom-model-design\\tools\\CustomModel\\profiles\\gilberta-12.outfit-b.reviewed.json",
+        "database": "E:\\Dr.Hydra\\Better Endfield\\.worktrees\\dev-custom-model-design\\artifacts\\native-parser\\gilberta-database.json",
+        "observations": "E:\\Dr.Hydra\\Better Endfield\\.worktrees\\dev-custom-model-design\\artifacts\\native-parser\\gilberta-observed.json",
+        "native_textures": "E:\\Dr.Hydra\\Better Endfield\\.worktrees\\dev-custom-model-design\\artifacts\\native-parser\\gilberta-texture-raw.json",
+        "texture_dir": "E:\\Dr.Hydra\\Better Endfield\\.worktrees\\dev-custom-model-design\\artifacts\\native-parser\\gilberta-texture-bytes"
+      }
+    }
+  ],
+  "default_appearance_id": "outfit-b"
+}

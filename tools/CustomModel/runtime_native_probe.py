@@ -4,7 +4,11 @@ import datetime
 import json
 import os
 import re
+import sys
+import uuid
 from pathlib import Path
+sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'scripts'))
+from workspace_config import load_workspace, write_if_changed
 
 from parse_native_models import apply_observations
 
@@ -14,10 +18,12 @@ def read(path):
 
 
 def write(path, value):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temp = path.with_suffix(path.suffix + '.tmp')
-    temp.write_text(json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False), encoding='utf-8')
-    temp.replace(path)
+    write_if_changed(path,json.dumps(value,ensure_ascii=False,indent=2,allow_nan=False))
+
+
+def probe_catalog(workspace):
+    configured=workspace.path('test.catalog_dir',required=False)
+    return configured or Path(os.environ.get('LOCALAPPDATA','.'))/'BetterEndfield/catalog/custom-model'
 
 
 def request(database, preparation, run):
@@ -86,15 +92,18 @@ def main():
     parser.add_argument('action', choices=('arm', 'collect'))
     parser.add_argument('--database', type=Path, required=True)
     parser.add_argument('--preparation', type=Path)
-    parser.add_argument('--catalog', type=Path, default=Path(os.environ.get('LOCALAPPDATA', '.'))/'BetterEndfield/catalog/custom-model')
+    parser.add_argument('--catalog', type=Path)
+    parser.add_argument('--workspace-config',type=Path)
     parser.add_argument('--run')
     parser.add_argument('--output', type=Path)
     args = parser.parse_args()
+    workspace=load_workspace(args.workspace_config)
+    args.catalog=args.catalog or probe_catalog(workspace)
     database = read(args.database)
     try:
         if args.action == 'arm':
             if not args.preparation: parser.error('--preparation required when arming')
-            run = args.run or 'zhuangfy-'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S-%f')
+            run = args.run or 'probe-'+uuid.uuid4().hex
             text, metadata = request(database, read(args.preparation), run)
             folder = args.catalog/'native-probe'
             if (folder/(run+'.jsonl')).exists() or (folder/(run+'.request.json')).exists():
@@ -113,6 +122,10 @@ def main():
             records = [json.loads(line) for line in (folder/(args.run+'.jsonl')).read_text(encoding='utf-8').splitlines() if line.strip()]
             observations = collect(database, metadata, records)
             write(args.output, observations)
+            archive=workspace.path('paths.research','custom_model',workspace.get('game.version'),'Windows','runtime-probe','runs',args.run)
+            archive.mkdir(parents=True,exist_ok=True)
+            write(archive/'observations.json',observations)
+            write(archive/'request.json',metadata)
             print(f'Validated {len(observations["renderers"])} renderer observations: {args.output}')
     except (ValueError, KeyError, StopIteration, OSError) as error:
         print(f'Native probe: {error}'); return 2

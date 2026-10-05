@@ -1,0 +1,1309 @@
+{
+  "schema_version": 1,
+  "legacy_is_backup_only": true,
+  "entries": [
+    {
+      "id": "resource-baseline",
+      "module": "resources",
+      "game_version": "1.5.3",
+      "kind": "input",
+      "path": "inputs/1.5.3/Windows/baseline",
+      "provenance": "F:\\Better Endfield_legacy\\research\\current-inputs",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "character-catalog",
+      "module": "resources",
+      "game_version": "1.5.3",
+      "kind": "input",
+      "path": "inputs/1.5.3/Windows/catalog",
+      "provenance": "F:\\Better Endfield_legacy\\research\\character-catalog-current",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "walk-clip-metadata",
+      "module": "resources",
+      "game_version": "1.5.3",
+      "kind": "input",
+      "path": "inputs/1.5.3/Windows/clip-metadata/walk-clip-metadata.json",
+      "provenance": "F:\\Better Endfield_legacy\\research\\character-catalog-current\\walk-clip-metadata.json",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "tables",
+      "module": "resources",
+      "game_version": "1.5.3",
+      "kind": "input",
+      "path": "inputs/1.5.3/Windows/tables",
+      "provenance": "F:\\Better Endfield_legacy\\research\\table-dump",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "voice-banks",
+      "module": "resources",
+      "game_version": "1.5.3",
+      "kind": "input",
+      "path": "inputs/1.5.3/Windows/bank-pck",
+      "provenance": "F:\\Better Endfield_legacy\\research\\bank-pck",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "json-buffdata",
+      "module": "resources",
+      "game_version": "1.5.3",
+      "kind": "input",
+      "path": "inputs/1.5.3/Windows/json/BuffData",
+      "provenance": "F:\\Better Endfield_legacy\\research\\combat-jsondata\\Data\\Json\\BuffData",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "json-skilldata",
+      "module": "resources",
+      "game_version": "1.5.3",
+      "kind": "input",
+      "path": "inputs/1.5.3/Windows/json/SkillData",
+      "provenance": "F:\\Better Endfield_legacy\\research\\combat-jsondata\\Data\\Json\\SkillData",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "legacy-lod-catalog",
+      "module": "resources",
+      "game_version": "pre-1.5.3",
+      "kind": "input",
+      "path": "inputs/pre-1.5.3/shared/legacy-lod-catalog/characters.json",
+      "provenance": "F:\\Better Endfield_legacy\\legacy\\better-endfield-2.3.1\\references\\source-research\\character-catalog\\characters.json",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "android-sdk",
+      "module": "toolchains",
+      "game_version": null,
+      "kind": "toolchain",
+      "path": "toolchains/android/sdk",
+      "provenance": "F:\\Better Endfield_legacy\\tools\\android-toolchain\\sdk",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "android-dobby",
+      "module": "toolchains",
+      "game_version": null,
+      "kind": "toolchain",
+      "path": "toolchains/android/dobby-1.0.5",
+      "provenance": "F:\\Better Endfield_legacy\\tools\\android-toolchain\\dobby-1.0.5",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "fkarkend",
+      "module": "toolchains",
+      "game_version": null,
+      "kind": "toolchain",
+      "path": "toolchains/FkArkEnd",
+      "provenance": "F:\\Better Endfield_legacy\\tools\\FkArkEnd",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "unpacker",
+      "module": "toolchains",
+      "game_version": null,
+      "kind": "toolchain",
+      "path": "toolchains/EndfieldUnpacker",
+      "provenance": "F:\\Better Endfield_legacy\\tools\\EndfieldUnpacker",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "wwiser",
+      "module": "toolchains",
+      "game_version": null,
+      "kind": "toolchain",
+      "path": "toolchains/wwiser",
+      "provenance": "F:\\Better Endfield_legacy\\vendor\\wwiser",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "native-reader",
+      "module": "toolchains",
+      "game_version": null,
+      "kind": "toolchain",
+      "path": "toolchains/native-asset-reader/identities",
+      "provenance": "F:\\Better Endfield_legacy\\.worktrees\\dev-custom-model-design\\artifacts\\native-parser\\reader-identities",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "native-reader-source",
+      "module": "workspace",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/native-parser/source",
+      "provenance": "F:\\Better Endfield_legacy\\.worktrees\\dev-custom-model-design\\artifacts\\native-parser\\backend-source",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "host-il2cpp",
+      "module": "workspace",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/host/1.5.3/Windows/host-il2cpp",
+      "provenance": "F:\\Better Endfield_legacy\\research\\il2cpp-dumps",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "host-lua",
+      "module": "workspace",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/host/1.5.3/Windows/host-lua",
+      "provenance": "F:\\Better Endfield_legacy\\research\\lua-dumps",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "camera-samples",
+      "module": "workspace",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/camera/1.5.3/Windows/camera-samples",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\aglina-native-return-v2",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "camera-motion-inputs",
+      "module": "workspace",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/camera/1.5.3/Windows/camera-motion-inputs",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\liino-animation-inputs",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "android-vfs-transfer",
+      "module": "research",
+      "game_version": "1.5.3",
+      "kind": "archive",
+      "path": "inputs/1.5.3/Android/vfs-transfer",
+      "provenance": "F:\\Better Endfield_legacy\\artifacts\\android-transfer",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "ida-state",
+      "module": "research",
+      "game_version": "1.5.3",
+      "kind": "archive",
+      "path": "research/host/1.5.3/shared/ida-state",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\ida",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "combat-full-json",
+      "module": "research",
+      "game_version": "1.5.3",
+      "kind": "archive",
+      "path": "inputs/1.5.3/Windows/json",
+      "provenance": "F:\\Better Endfield_legacy\\research\\combat-jsondata\\Data\\Json",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "postmodel-native-parser-history",
+      "module": "research",
+      "game_version": "1.5.3",
+      "kind": "archive",
+      "path": "research/custom_model/1.5.3/shared/postmodel-native-parser-history",
+      "provenance": "F:\\Better Endfield_legacy\\.worktrees\\dev-custom-model-design\\artifacts\\native-parser",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "archive-backend",
+      "module": "toolchains",
+      "game_version": null,
+      "kind": "toolchain",
+      "path": "toolchains/bem-archive-backend/7zip",
+      "provenance": "F:\\Better Endfield_legacy\\artifacts\\bem-archive-backend\\7zip",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "combat-json-previous",
+      "module": "research",
+      "game_version": "1.5.3",
+      "kind": "archive",
+      "path": "inputs/1.5.3/Windows/json-previous-incomplete",
+      "provenance": "F:\\Better Endfield_legacy\\research\\combat-jsondata\\.Json.backup",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "android-resource-evidence",
+      "module": "resources",
+      "game_version": "1.5.3",
+      "kind": "input",
+      "path": "inputs/1.5.3/Android/resource-sources",
+      "provenance": "F:\\Better Endfield_legacy\\android\\resources\\.sources",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-acl-official",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/acl-official",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\acl-official",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-AclProbe",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/aclprobe",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\AclProbe",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-ActionIniTests",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/actioninitests",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\ActionIniTests",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-actions-before-v10-test-update-20260909-131805",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/actions-before-v10-test-update",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\actions-before-v10-test-update-20260909-131805",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-actions-before-v10.1-archive-fix-20260909-223952",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/actions-before-v10.1-archive-fix",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\actions-before-v10.1-archive-fix-20260909-223952",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-actions-before-v11-native-return-20260910-024502",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/actions-before-v11-native-return",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\actions-before-v11-native-return-20260910-024502",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-actions-before-v12-pose-20260910-034536",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/actions-before-v12-pose",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\actions-before-v12-pose-20260910-034536",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-actions-before-v3-test-update-20260908",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/actions-before-v3-test-update",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\actions-before-v3-test-update-20260908",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-actions-before-v4-test-update-20260908",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/actions-before-v4-test-update",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\actions-before-v4-test-update-20260908",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-actions-before-v5-test-update-20260908",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/actions-before-v5-test-update",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\actions-before-v5-test-update-20260908",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-actions-before-v7-test-update-20260908",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/actions-before-v7-test-update",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\actions-before-v7-test-update-20260908",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-actions-before-v8-test-update-20260908-180414",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/actions-before-v8-test-update",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\actions-before-v8-test-update-20260908-180414",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-actions-before-v9-test-update-20260908-231923",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/actions-before-v9-test-update",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\actions-before-v9-test-update-20260908-231923",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-aglina-animation-inputs",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/aglina-animation-inputs",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\aglina-animation-inputs",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-aglina-animator-json",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/aglina-animator-json",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\aglina-animator-json",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-aglina-animator-json-net10",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/aglina-animator-json-net10",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\aglina-animator-json-net10",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-aglina-controller-raw",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/aglina-controller-raw",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\aglina-controller-raw",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-aglina-fbx-validation",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/aglina-fbx-validation",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\aglina-fbx-validation",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-aglina-fbx-validation-v2",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/aglina-fbx-validation-v2",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\aglina-fbx-validation-v2",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-aglina-fbx-validation-v3",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/aglina-fbx-validation-v3",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\aglina-fbx-validation-v3",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-aglina-loop-fine-v1",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/aglina-loop-fine-v1",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\aglina-loop-fine-v1",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-aglina-loop-test-v1",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/aglina-loop-test-v1",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\aglina-loop-test-v1",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-aglina-native-return-v2",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/aglina-native-return-v2",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\aglina-native-return-v2",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-aglina-package-backup-20260914",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/aglina-package-backup",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\aglina-package-backup-20260914",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-aglina-pose-overlay-v12",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/aglina-pose-overlay-v12",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\aglina-pose-overlay-v12",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-aglina-pose-overlay-v13",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/aglina-pose-overlay-v13",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\aglina-pose-overlay-v13",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-aglina-return-v1",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/aglina-return-v1",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\aglina-return-v1",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-aglina-samples",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/aglina-samples",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\aglina-samples",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-aglina-v9-effect-inputs",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/aglina-v9-effect-inputs",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\aglina-v9-effect-inputs",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-aglina-v9-effect-raw",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/aglina-v9-effect-raw",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\aglina-v9-effect-raw",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-AglinaBundleWrap",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/aglinabundlewrap",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\AglinaBundleWrap",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-AglinaFbxProbe",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/aglinafbxprobe",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\AglinaFbxProbe",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-AglinaNativeClip",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/aglinanativeclip",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\AglinaNativeClip",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-android-153",
+      "module": "android",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/android/1.5.3/Windows/android-153",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\android-153",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-AnimatorProbe",
+      "module": "host",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/host/1.5.3/Windows/animatorprobe",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\AnimatorProbe",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-BundleTreeDump",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/bundletreedump",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\BundleTreeDump",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-camera_relink",
+      "module": "camera",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/camera/1.5.3/Windows/camera-relink",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\camera_relink",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-CharFbxProbe",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/charfbxprobe",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\CharFbxProbe",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-cloth04_orig",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/cloth04-orig",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\cloth04_orig",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-EIEM",
+      "module": "camera",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/camera/1.5.3/Windows/eiem",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\EIEM",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-eiem_git",
+      "module": "camera",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/camera/1.5.3/Windows/eiem-git",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\eiem_git",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-enhancer-port",
+      "module": "camera",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/camera/1.5.3/Windows/enhancer-port",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\enhancer-port",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-enhancer_unzip",
+      "module": "camera",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/camera/1.5.3/Windows/enhancer-unzip",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\enhancer_unzip",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-hair_common",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/hair-common",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\hair_common",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-hair_orig",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/hair-orig",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\hair_orig",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-hair_orig2",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/hair-orig2",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\hair_orig2",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-intro_tex",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/intro-tex",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\intro_tex",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-liino-animation-inputs",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/liino-animation-inputs",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\liino-animation-inputs",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-liino-clean-backup-1.13.1",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/liino-clean-backup-1.13.1",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\liino-clean-backup-1.13.1",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-liino-clean-model",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/liino-clean-model",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\liino-clean-model",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-liino-clip-raw",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/liino-clip-raw",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\liino-clip-raw",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-liino-controller-raw",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/liino-controller-raw",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\liino-controller-raw",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-liino-effect-raw",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/liino-effect-raw",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\liino-effect-raw",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-liino-fbx-validation",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/liino-fbx-validation",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\liino-fbx-validation",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-liino-glide-v2",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/liino-glide-v2",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\liino-glide-v2",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-liino-loop-fine-v1",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/liino-loop-fine-v1",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\liino-loop-fine-v1",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-liino-pose-overlay-v1",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/liino-pose-overlay-v1",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\liino-pose-overlay-v1",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-liino-render-vfx",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/liino-render-vfx",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\liino-render-vfx",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-liino-samples",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/liino-samples",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\liino-samples",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-liino-transition-effects",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/liino-transition-effects",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\liino-transition-effects",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-liino-ui-before-1.13.3",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/liino-ui-before-1.13.3",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\liino-ui-before-1.13.3",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-liino-visual-fix-backup",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/liino-visual-fix-backup",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\liino-visual-fix-backup",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-LiinoUiSmoke",
+      "module": "actions",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/actions/1.5.3/Windows/liinouismoke",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\LiinoUiSmoke",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-login_tex",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/login-tex",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\login_tex",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-login_tex_all",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/login-tex-all",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\login_tex_all",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-logo_tex",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/logo-tex",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\logo_tex",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-lua_full",
+      "module": "host",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/host/1.5.3/Windows/lua-full",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\lua_full",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-opensource_firstperson",
+      "module": "camera",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/camera/1.5.3/Windows/opensource-firstperson",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\opensource_firstperson",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-poser",
+      "module": "camera",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/camera/1.5.3/Windows/poser",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\poser",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-poser_main",
+      "module": "camera",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/camera/1.5.3/Windows/poser-main",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\poser_main",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-renodx",
+      "module": "camera",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/camera/1.5.3/Windows/renodx",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\renodx",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "analysis-shots",
+      "module": "workspace",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/workspace/1.5.3/Windows/shots",
+      "provenance": "F:\\Better Endfield_legacy\\tmp_analysis\\shots",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "evidence-android-refactor",
+      "module": "android",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/android/1.5.3/Windows/android-refactor",
+      "provenance": "F:\\Better Endfield_legacy\\artifacts\\android-refactor",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "evidence-async-loading-tests-20261003",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/async-loading-tests",
+      "provenance": "F:\\Better Endfield_legacy\\artifacts\\async-loading-tests-20261003",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "evidence-bundled-path-fix",
+      "module": "workspace",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/workspace/1.5.3/Windows/bundled-path-fix",
+      "provenance": "F:\\Better Endfield_legacy\\artifacts\\bundled-path-fix",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "evidence-bundled-path-probe",
+      "module": "workspace",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/workspace/1.5.3/Windows/bundled-path-probe",
+      "provenance": "F:\\Better Endfield_legacy\\artifacts\\bundled-path-probe",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "evidence-first-person-accessories-tests-20261003",
+      "module": "camera",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/camera/1.5.3/Windows/first-person-accessories-tests",
+      "provenance": "F:\\Better Endfield_legacy\\artifacts\\first-person-accessories-tests-20261003",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "evidence-first-person-profiles-tests-20261003",
+      "module": "camera",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/camera/1.5.3/Windows/first-person-profiles-tests",
+      "provenance": "F:\\Better Endfield_legacy\\artifacts\\first-person-profiles-tests-20261003",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "evidence-first-person-typhoea-campus-20261003",
+      "module": "camera",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/camera/1.5.3/Windows/first-person-typhoea-campus",
+      "provenance": "F:\\Better Endfield_legacy\\artifacts\\first-person-typhoea-campus-20261003",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "evidence-first-person-typhoea-residual-20261003",
+      "module": "camera",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/camera/1.5.3/Windows/first-person-typhoea-residual",
+      "provenance": "F:\\Better Endfield_legacy\\artifacts\\first-person-typhoea-residual-20261003",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "evidence-generic-model-matching-20261003",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/generic-model-matching",
+      "provenance": "F:\\Better Endfield_legacy\\artifacts\\generic-model-matching-20261003",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "evidence-generic-model-matching-implementation-20261003",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/generic-model-matching-implementation",
+      "provenance": "F:\\Better Endfield_legacy\\artifacts\\generic-model-matching-implementation-20261003",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "evidence-model-upload-20261003",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/model-upload",
+      "provenance": "F:\\Better Endfield_legacy\\artifacts\\model-upload-20261003",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "evidence-native-loading-20261003",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/native-loading",
+      "provenance": "F:\\Better Endfield_legacy\\artifacts\\native-loading-20261003",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "release-release-3.3.0",
+      "module": "workspace",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "releases/history/3.3.0/Windows",
+      "provenance": "F:\\Better Endfield_legacy\\artifacts\\release-3.3.0",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "evidence-world-binding-20261003",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/world-binding",
+      "provenance": "F:\\Better Endfield_legacy\\artifacts\\world-binding-20261003",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "postmodel-analysis",
+      "module": "custom_model",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/custom_model/1.5.3/Windows/postmodel-analysis",
+      "provenance": "F:\\Better Endfield_legacy\\research\\postmodel-focused",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "legacy-analysis-state",
+      "module": "host",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/host/pre-1.5.3/Windows/legacy-analysis-state",
+      "provenance": "F:\\Better Endfield_legacy\\legacy\\better-endfield-2.3.1\\local-only\\state",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "legacy-source-research",
+      "module": "host",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/host/pre-1.5.3/Windows/legacy-source-research",
+      "provenance": "F:\\Better Endfield_legacy\\legacy\\better-endfield-2.3.1\\references\\source-research",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "utility-EndfieldDumper",
+      "module": "toolchains",
+      "game_version": null,
+      "kind": "toolchain",
+      "path": "toolchains/diagnostics/EndfieldDumper",
+      "provenance": "F:\\Better Endfield_legacy\\tools\\EndfieldDumper",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "utility-EndfieldStudio",
+      "module": "toolchains",
+      "game_version": null,
+      "kind": "toolchain",
+      "path": "toolchains/diagnostics/EndfieldStudio",
+      "provenance": "F:\\Better Endfield_legacy\\tools\\EndfieldStudio",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "utility-HookInlineScan",
+      "module": "toolchains",
+      "game_version": null,
+      "kind": "toolchain",
+      "path": "toolchains/diagnostics/HookInlineScan",
+      "provenance": "F:\\Better Endfield_legacy\\tools\\HookInlineScan",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "utility-MetadataScan",
+      "module": "toolchains",
+      "game_version": null,
+      "kind": "toolchain",
+      "path": "toolchains/diagnostics/MetadataScan",
+      "provenance": "F:\\Better Endfield_legacy\\tools\\MetadataScan",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "utility-BuffProbe",
+      "module": "toolchains",
+      "game_version": null,
+      "kind": "toolchain",
+      "path": "toolchains/diagnostics/BuffProbe",
+      "provenance": "F:\\Better Endfield_legacy\\tools\\BuffProbe",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "vendor-DeftSolutions-IL2CPP-Dumper",
+      "module": "toolchains",
+      "game_version": null,
+      "kind": "toolchain",
+      "path": "toolchains/analysis/DeftSolutions-IL2CPP-Dumper",
+      "provenance": "F:\\Better Endfield_legacy\\vendor\\DeftSolutions-IL2CPP-Dumper",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "vendor-cpp2il",
+      "module": "toolchains",
+      "game_version": null,
+      "kind": "toolchain",
+      "path": "toolchains/analysis/cpp2il",
+      "provenance": "F:\\Better Endfield_legacy\\vendor\\cpp2il",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "vendor-il2cppdumper",
+      "module": "toolchains",
+      "game_version": null,
+      "kind": "toolchain",
+      "path": "toolchains/analysis/il2cppdumper",
+      "provenance": "F:\\Better Endfield_legacy\\vendor\\il2cppdumper",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "vendor-bepinex6",
+      "module": "toolchains",
+      "game_version": null,
+      "kind": "toolchain",
+      "path": "toolchains/analysis/bepinex6",
+      "provenance": "F:\\Better Endfield_legacy\\vendor\\bepinex6",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "vendor-unity-libs-2021.3.34",
+      "module": "toolchains",
+      "game_version": null,
+      "kind": "toolchain",
+      "path": "toolchains/analysis/unity-libs-2021.3.34",
+      "provenance": "F:\\Better Endfield_legacy\\vendor\\unity-libs-2021.3.34",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "vendor-tools",
+      "module": "toolchains",
+      "game_version": null,
+      "kind": "toolchain",
+      "path": "toolchains/analysis/tools",
+      "provenance": "F:\\Better Endfield_legacy\\vendor\\tools",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "source-EFStartCtl",
+      "module": "host",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/host/1.5.3/Windows/utilities/EFStartCtl",
+      "provenance": "F:\\Better Endfield_legacy\\src\\EFStartCtl",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "source-EFStartProbe",
+      "module": "host",
+      "game_version": "1.5.3",
+      "kind": "research",
+      "path": "research/host/1.5.3/Windows/utilities/EFStartProbe",
+      "provenance": "F:\\Better Endfield_legacy\\src\\EFStartProbe",
+      "availability": "local",
+      "status": "imported"
+    },
+    {
+      "id": "actions-reference-packages",
+      "module": "toolchains",
+      "game_version": "1.5.3",
+      "kind": "release-history",
+      "path": "releases/history/actions-reference-packages",
+      "provenance": "F:\\Better Endfield_legacy\\output",
+      "availability": "local",
+      "status": "imported"
+    }
+  ],
+  "upstream_ignore_reference_files": [
+    "research\\actions\\1.5.3\\Windows\\acl-official\\.upstream-gitignore",
+    "research\\actions\\1.5.3\\Windows\\acl-official\\external\\rtm\\.upstream-gitignore",
+    "research\\camera\\1.5.3\\Windows\\camera-relink\\Endfield_Camera_Relink_V1.0C\\.upstream-gitignore",
+    "research\\camera\\1.5.3\\Windows\\camera-relink\\Endfield_Camera_Relink_V1.0C\\source\\third_party\\minhook\\.upstream-gitignore",
+    "research\\camera\\1.5.3\\Windows\\eiem\\.upstream-gitignore",
+    "research\\camera\\1.5.3\\Windows\\eiem-git\\.upstream-gitignore",
+    "research\\camera\\1.5.3\\Windows\\opensource-firstperson\\improved\\.upstream-gitignore",
+    "research\\camera\\1.5.3\\Windows\\opensource-firstperson\\landoria\\.upstream-gitignore",
+    "research\\camera\\1.5.3\\Windows\\poser\\.upstream-gitignore",
+    "research\\camera\\1.5.3\\Windows\\poser-main\\.upstream-gitignore",
+    "research\\camera\\1.5.3\\Windows\\renodx\\.upstream-gitignore"
+  ]
+}

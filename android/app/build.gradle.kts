@@ -1,6 +1,22 @@
+import groovy.json.JsonSlurper
+import java.io.File
+
 plugins {
     id("com.android.application")
 }
+
+@Suppress("UNCHECKED_CAST")
+val beWorkspace = rootProject.extra["beWorkspace"] as Map<String, Any?>
+@Suppress("UNCHECKED_CAST")
+val workspacePaths = beWorkspace["paths"] as Map<String, Any?>
+@Suppress("UNCHECKED_CAST")
+val workspaceTools = beWorkspace["tools"] as Map<String, Any?>
+@Suppress("UNCHECKED_CAST")
+val resourceUpdate = beWorkspace["resource_update"] as Map<String, Any?>
+@Suppress("UNCHECKED_CAST")
+val sharedOutputs = resourceUpdate["outputs"] as Map<String, Any?>
+val nativeStaging = File(workspacePaths["build"] as String, "android/native/app")
+val generatedAssets = layout.buildDirectory.dir("generatedAssets")
 
 android {
     namespace = "dev.betterendfield.android"
@@ -28,7 +44,8 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags += listOf("-std=c++20")
-                arguments += listOf("-DANDROID_STL=c++_static")
+                arguments += listOf("-DANDROID_STL=c++_static",
+                    "-DDOBBY_ROOT=${(workspaceTools["android_dobby"] as String).replace('\\', '/')}")
             }
         }
     }
@@ -51,6 +68,8 @@ android {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
             version = "3.22.1"
+            // AGP forbids native staging inside this project's Gradle buildDir.
+            buildStagingDirectory = nativeStaging
         }
     }
 
@@ -73,22 +92,62 @@ android {
     }
 
     sourceSets {
-        getByName("main").assets.srcDir(
-            layout.buildDirectory.dir("generated/androidResourceAssets").get().asFile)
+        getByName("main").assets.srcDir(generatedAssets)
     }
 }
 
-val prepareAndroidResourceAssets by tasks.registering(Copy::class) {
-    from(rootProject.file("resources/voice-catalog-index.json"))
+val prepareAndroidResourceAssets by tasks.registering(Sync::class) {
+    // Android voice descriptors and model increments remain maintained inputs.
+    // Share the canonical file only when the complete JSON content agrees;
+    // neither source is rewritten during packaging.
+    for ((name, key) in listOf("voice-catalog-index.json" to "voice_index",
+                              "character-presets.json" to "character_presets")) {
+        val shared = File(sharedOutputs[key] as String)
+        val platform = rootProject.file("resources/$name")
+        inputs.files(shared, platform)
+        from(providers.provider {
+            check(shared.isFile) { "Shared resource is missing: $shared" }
+            if (!platform.isFile || JsonSlurper().parse(shared) == JsonSlurper().parse(platform)) {
+                shared
+            } else {
+                platform
+            }
+        }) {
+            rename { name }
+        }
+    }
     from(rootProject.file("resources/character-names.json"))
-    from(rootProject.file("resources/character-presets.json"))
     // Same layout the desktop module reads from beside its DLL, so one set of
     // bone-pose banks serves both platforms.
     from(rootProject.file("../native/modules/actions/assets")) {
         include("pose_*.bin")
         into("actions")
     }
-    into(layout.buildDirectory.dir("generated/androidResourceAssets"))
+    into(generatedAssets)
+}
+
+val archiveAndroidRelease by tasks.registering(Copy::class) {
+    from(layout.buildDirectory.dir("outputs/apk/release")) {
+        include("*.apk")
+    }
+    into(File(workspacePaths["releases"] as String,
+        "android/app-${android.defaultConfig.versionName}/release"))
+    onlyIf { tasks.named("assembleRelease").get().state.failure == null }
+}
+tasks.matching { it.name == "assembleRelease" }.configureEach {
+    finalizedBy(archiveAndroidRelease)
+}
+
+val archiveAndroidBundleRelease by tasks.registering(Copy::class) {
+    from(layout.buildDirectory.dir("outputs/bundle/release")) {
+        include("*.aab")
+    }
+    into(File(workspacePaths["releases"] as String,
+        "android/app-${android.defaultConfig.versionName}/release"))
+    onlyIf { tasks.named("bundleRelease").get().state.failure == null }
+}
+tasks.matching { it.name == "bundleRelease" }.configureEach {
+    finalizedBy(archiveAndroidBundleRelease)
 }
 
 val verifyDesktopModelHookParity by tasks.registering {

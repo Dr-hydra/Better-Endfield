@@ -1,0 +1,1 @@
+namespace BetterEndfield.UI.Services { internal sealed class LocalizationService { public static LocalizationService Instance { get; } = new(); public bool IsChinese => true; } } namespace BetterEndfield.UI.Models { internal sealed class DisplayConfiguration { } }

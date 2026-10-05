@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "game": {"version": "1.5.3", "platform": "Windows", "snapshot": "baseline", "install_dir": null},
+  "legacy": {"root": "../Better Endfield_legacy"},
+  "paths": {
+    "inputs": "inputs", "research": "research", "temp": "temp", "build": "build",
+    "cache": "cache", "releases": "releases", "toolchains": "toolchains", "generated": "resources/generated"
+  },
+  "tools": {
+    "python": "python", "cmake": "cmake", "dotnet": "dotnet", "iscc": null,
+    "android_sdk": "toolchains/android/sdk", "android_dobby": "toolchains/android/dobby-1.0.5",
+    "adb": "toolchains/android/sdk/platform-tools/adb.exe",
+    "fkarkend_root": "toolchains/FkArkEnd", "resconv": "toolchains/FkArkEnd/ResConv/bin/Release/net10.0/ResConv.exe",
+    "endfield_unpacker_root": "toolchains/EndfieldUnpacker",
+    "wwiser_root": "toolchains/wwiser", "native_asset_reader": "toolchains/native-asset-reader/identities/NativeAssetReader.exe",
+    "archive_backend": "toolchains/bem-archive-backend/7zip"
+  },
+  "resource_update": {
+    "input_root": "inputs/1.5.3/Windows/baseline",
+    "catalog_root": "inputs/1.5.3/Windows/catalog",
+    "walk_clip_metadata": "inputs/1.5.3/Windows/clip-metadata/walk-clip-metadata.json",
+    "table_root": "inputs/1.5.3/Windows/tables/Table",
+    "json_root": "inputs/1.5.3/Windows/json",
+    "bank_root": "inputs/1.5.3/Windows/bank-pck/bnk",
+    "pck_snapshot": "inputs/1.5.3/Android/pck/pck-snapshot.json",
+    "legacy_lod_catalog": "inputs/pre-1.5.3/shared/legacy-lod-catalog/characters.json",
+    "outputs": {
+      "manifests": "manifests",
+      "character_presets": "resources/generated/model/character-presets.json",
+      "voice_index": "resources/generated/voice/voice-catalog-index.json",
+      "combat_dictionary": "resources/generated/combat/combat-dictionary.json",
+      "web_combat_dictionary": "web/src/data/combat-dict.min.json",
+      "avatars": "native/modules/combat_stats/assets/avatars"
+    }
+  },
+  "test": {"be_install_dir": null, "catalog_dir": null, "android_serial": null},
+  "cleanup": {"keys": ["paths.temp", "paths.build", "paths.cache"]},
+  "documents": {}
+}

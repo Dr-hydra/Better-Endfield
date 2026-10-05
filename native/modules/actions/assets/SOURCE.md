@@ -7,13 +7,13 @@
 1. **`pose_aglina.bin`**
    - 对应角色：洁尔佩塔（`chr_0013_aglina`，Perform: `CharIntPerform_Aglina_Spdash`）
    - 规格：226 骨骼，周期 103 帧（约 1.717 秒，60 fps），包含左右双侧采样。
-   - 详见：`docs/SPECIAL_DASH_CONTINUOUS_ANIMATION.md`
+   - 详见：`docs/actions/SPECIAL_DASH_CONTINUOUS_ANIMATION.md`
 
 2. **`pose_liino.bin`**
    - 对应角色：梨诺（`chr_0035_liino`，Perform: `CharIntPerform_Liino_Spdash`）
    - 规格：339 骨骼，低位循环 40 帧（约 0.667 秒，60 fps），包含左右双侧采样。
    - 生成脚本：`tools/actions/build_liino_glide.py`
-   - 详见：`docs/LIINO_LOW_GLIDE.md`
+   - 详见：`docs/actions/research/1.5.3/liino-dash/LIINO_LOW_GLIDE.md`
 
 ## 验证与测试
 

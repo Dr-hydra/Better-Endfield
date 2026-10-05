@@ -37,7 +37,8 @@
       Include="Assets\shared\gilberta.ico"
       LogicalName="BetterEndfield.UI.Assets.shared.gilberta.ico" />
     <EmbeddedResource
-      Include="Assets\model\character-presets.json"
+      Include="$(BECharacterPresetsPath)"
+      Link="Assets\model\character-presets.json"
       LogicalName="BetterEndfield.UI.Assets.model.character-presets.json" />
     <EmbeddedResource
       Include="Assets\model\character-names.json"
@@ -46,10 +47,12 @@
       Include="Assets\model\character-names-en.json"
       LogicalName="BetterEndfield.UI.Assets.model.character-names-en.json" />
     <EmbeddedResource
-      Include="Assets\voice\voice-catalog-index.json"
+      Include="$(BEVoiceCatalogIndexPath)"
+      Link="Assets\voice\voice-catalog-index.json"
       LogicalName="BetterEndfield.UI.Assets.voice.voice-catalog-index.json" />
     <EmbeddedResource
-      Include="Assets\combat\combat-dictionary.json"
+      Include="$(BECombatDictionaryPath)"
+      Link="Assets\combat\combat-dictionary.json"
       LogicalName="BetterEndfield.UI.Assets.combat.combat-dictionary.json" />
     <EmbeddedResource
       Include="..\..\manifests\shared\optiscaler.lock.json"

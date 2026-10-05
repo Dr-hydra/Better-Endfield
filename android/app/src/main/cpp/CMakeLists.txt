@@ -3,8 +3,15 @@ project(BetterEndfieldAndroid LANGUAGES C CXX)
 
 get_filename_component(BETTER_ENDFIELD_ROOT
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../../.." ABSOLUTE)
-set(DOBBY_ROOT
-    "${BETTER_ENDFIELD_ROOT}/tools/android-toolchain/dobby-1.0.5")
+if(NOT DEFINED DOBBY_ROOT OR DOBBY_ROOT STREQUAL "")
+    if(DEFINED ENV{BE_WORKSPACE_DOBBY_ROOT} AND NOT "$ENV{BE_WORKSPACE_DOBBY_ROOT}" STREQUAL "")
+        set(DOBBY_ROOT "$ENV{BE_WORKSPACE_DOBBY_ROOT}" CACHE PATH "Dobby source directory")
+    else()
+        set(DOBBY_ROOT "${BETTER_ENDFIELD_ROOT}/toolchains/android/dobby-1.0.5"
+            CACHE PATH "Dobby source directory")
+    endif()
+endif()
+get_filename_component(DOBBY_ROOT "${DOBBY_ROOT}" ABSOLUTE BASE_DIR "${BETTER_ENDFIELD_ROOT}")
 if(NOT EXISTS "${DOBBY_ROOT}/CMakeLists.txt")
     message(FATAL_ERROR "Dobby toolchain source is missing: ${DOBBY_ROOT}")
 endif()

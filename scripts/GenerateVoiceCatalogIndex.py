@@ -9,6 +9,9 @@ import json
 from pathlib import Path
 from typing import Any
 
+from workspace_config import load_workspace, write_if_changed
+from RefreshEndfieldResourceInputs import read_metadata
+
 from BuildVoiceCatalog import (
     LANGUAGES,
     collect_routes,
@@ -17,21 +20,17 @@ from BuildVoiceCatalog import (
 )
 
 
-ROOT = Path(__file__).resolve().parents[1]
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--workspace-config", type=Path)
     parser.add_argument(
         "--manifest",
         type=Path,
-        default=ROOT / "manifests" / "voice" / "voice-event-media-manifest.json",
     )
     parser.add_argument(
         "--schema-version",
         type=int,
         choices=(1, 2),
-        default=2,
         help="Use 1 for the current Android reader's Media ID pairs; default 2 uses language-aware triples.",
     )
     parser.add_argument(
@@ -45,14 +44,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output",
         type=Path,
-        default=ROOT
-        / "ui"
-        / "BetterEndfield.UI"
-        / "Assets"
-        / "voice"
-        / "voice-catalog-index.json",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    ws = load_workspace(args.workspace_config)
+    args.manifest = args.manifest or ws.path("resource_update.outputs.manifests", "voice", "voice-event-media-manifest.json")
+    args.output = args.output or ws.path("resource_update.outputs.voice_index")
+    args.schema_version = args.schema_version or ws.get("resource_update.voice_schema_version", 2)
+    args.language = args.language or ws.get("resource_update.voice_languages")
+    args.legacy_index = args.legacy_index or ws.path("resource_update.voice_legacy_index", required=False)
+    args.merge_evidence = args.merge_evidence or ws.path("resource_update.voice_merge_evidence", required=False)
+    return args
 
 
 def collect_voice_sources(
@@ -303,11 +304,10 @@ def main() -> int:
         raise ValueError("--legacy-index and --merge-evidence must be supplied together")
     if args.legacy_index:
         output = merge_legacy_index(output, args.legacy_index.resolve(), args.merge_evidence.resolve())
+    output = {**read_metadata(args.output), **output}
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(
+    write_if_changed(args.output,
         json.dumps(output, ensure_ascii=True, separators=(",", ":")) + "\n",
-        encoding="utf-8",
-        newline="\n",
     )
     print(
         json.dumps(

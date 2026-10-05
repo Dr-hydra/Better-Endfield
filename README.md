@@ -4,7 +4,7 @@
 
 Better Endfield 是面向《明日方舟：终末地》的开源模块化工具，提供第三方角色模型、MMD 播放、相机和界面增强、按角色配音、开屏自定义，以及 PC 战斗统计和寻访记录管理。Windows 和 Android 共用主要原生功能源码；BEM 模型包和 MMD 作品可以跨端使用。另提供实验性的第三方原生模块加载与网页界面容器。
 
-[下载正式版](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [更新说明](CHANGELOG.md) · [Android 使用与构建](android/README.md) · [BEM 创作者指南](docs/BEM_CREATOR_GUIDE.md) · [模块开发指南](docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
+[下载正式版](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [更新说明](CHANGELOG.md) · [Android 使用与构建](android/README.md) · [BEM 创作者指南](docs/custom_model/BEM_CREATOR_GUIDE.md) · [模块开发指南](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
 
 当前版本为 **3.5.0**，独立 BEM Tools 为 **1.5.0**。3.5.0 增加 Android 跨 LOD 资源兼容、BEM 创作者英文文档、可移动创作者工作区和 Blender 导出器首版。
 
@@ -71,12 +71,12 @@ BetterEndfield.BemConverter.exe build character.bemproj.json
 
 两端还提供默认关闭的「实验：关闭模型校验」。该选项放开兼容性和策略限制，仍要求文件能解码且能被当前表示方式读取；不增加新编码支持。用于作者测试时可能出现错误渲染或游戏崩溃。
 
-- [创作者指南](docs/BEM_CREATOR_GUIDE.md)：工具、制作流程、导入测试、分发
-- [格式规范（1.0–1.3）](docs/BEM_FORMAT_SPEC.md)
-- [运行时行为与兼容性](docs/BEM_RUNTIME_COMPATIBILITY.md)
-- [其他来源 Mod 转换](docs/BEM_SOURCE_MOD_CONVERSION.md)
+- [创作者指南](docs/custom_model/BEM_CREATOR_GUIDE.md)：工具、制作流程、导入测试、分发
+- [格式规范（1.0–1.3）](docs/custom_model/BEM_FORMAT_SPEC.md)
+- [运行时行为与兼容性](docs/custom_model/BEM_RUNTIME_COMPATIBILITY.md)
+- [其他来源 Mod 转换](docs/custom_model/BEM_SOURCE_MOD_CONVERSION.md)
 - [形态滑条可运行示例](tools/CustomModel/examples/body-slider/)
-- [实验热切换与加载优化说明](docs/RELEASE_3_4_1_20261001.md)
+- [实验热切换与加载优化说明](docs/workspace/releases/3.4.1/RELEASE_3_4_1.md)
 
 ## 第三方模块（实验，3.4.2）
 
@@ -92,31 +92,31 @@ Android 手机导航可横向滚动，大屏保留侧边导航；模块网页使
 
 共享 Hook 是可选接口：采用 chain 的模块按同一目标串联并调用 `next`，已有 exclusive Hook 仍会报告冲突，不自动迁移成链。函数签名、参数/返回值处理和功能冲突由参与者协调。加载成功不等于与所有内置或第三方模块兼容。
 
-接入流程见 [第三方模块创作者指南](docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)，契约见 [ThirdPartyModule.h](native/shared/include/BetterEndfield/ThirdPartyModule.h)、[HookChain.h](native/shared/include/BetterEndfield/HookChain.h)与[Echo 示例](tools/ThirdPartyModules/echo/)。Echo 原生库已完成 Windows/Android 构建，消息桥与生命周期通过隔离回归；真实游戏模块的效果、稳定性和兼容性仍由作者测试和说明。
+接入流程见 [第三方模块创作者指南](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)，契约见 [ThirdPartyModule.h](native/shared/include/BetterEndfield/ThirdPartyModule.h)、[HookChain.h](native/shared/include/BetterEndfield/HookChain.h)与[Echo 示例](tools/ThirdPartyModules/echo/)。Echo 原生库已完成 Windows/Android 构建，消息桥与生命周期通过隔离回归；真实游戏模块的效果、稳定性和兼容性仍由作者测试和说明。
 
 ## 相机、第一人称与 MMD
 
 自由相机支持位置/朝向、滚转和 FOV 调整、鼠标转向、环绕/推拉/升降/平移运镜，以及可保存的关键帧路径和 VMD 镜头。时间冻结独立于自由相机；第一人称支持头部隐藏、颈部补口、侧看角度与平滑转身。快捷键可配置，Windows 支持主键盘、小键盘、鼠标和组合键；Android 用游戏内控制面板操作。
 
-3.4.2 新增的全局 FOV 只覆盖普通主相机；自由相机、第一人称和导入镜头使用自己的 FOV。人物跟随仅平移自由相机，保留镜头朝向与手动偏移，在切人和传送后重新建立参考，并在运镜播放时暂停。[实现边界](docs/CAMERA_FOV_FOLLOW_IMPLEMENTATION_20261002.md)
+3.4.2 新增的全局 FOV 只覆盖普通主相机；自由相机、第一人称和导入镜头使用自己的 FOV。人物跟随仅平移自由相机，保留镜头朝向与手动偏移，在切人和传送后重新建立参考，并在运镜播放时暂停。[实现边界](docs/camera/research/1.5.3/fov-follow/CAMERA_FOV_FOLLOW_IMPLEMENTATION.md)
 
-3.4.2 的第一人称去头发逻辑按**现场骨骼权重和实际绘制数据**分类，避免把含头部与衣物的混合网格整体隐藏；替换网格可使用 BEM 的 CPU 数据。未知角色走通用现场骨骼回退，不依赖另维护一整套必需角色表。独立部件尝试仅投影模式，混合部件保留完整投影网格；缺少可用几何数据时保留不确定部件。实际阴影和残留头发效果需要游戏验收。[方案与验证范围](docs/BEM_HAIR_SHADOW_IMPLEMENTATION_20261002.md)
+3.4.2 的第一人称去头发逻辑按**现场骨骼权重和实际绘制数据**分类，避免把含头部与衣物的混合网格整体隐藏；替换网格可使用 BEM 的 CPU 数据。未知角色走通用现场骨骼回退，不依赖另维护一整套必需角色表。独立部件尝试仅投影模式，混合部件保留完整投影网格；缺少可用几何数据时保留不确定部件。实际阴影和残留头发效果需要游戏验收。[方案与验证范围](docs/camera/research/1.5.3/first-person-geometry/BEM_HAIR_SHADOW_IMPLEMENTATION.md)
 
-MMD 作品库管理动作、表情、镜头和本地音乐，可通过 `set.ini` 描述作品；支持播放/暂停/停止、跳转、循环、游戏/自由/VMD 镜头切换，最多四名队员同台，以及衣物物理和实验地形贴合。Windows 音轨走本地音乐接口，不要求 OmniMix；Android 使用本地媒体播放，会与游戏 BGM 叠加，可在游戏设置中关闭原背景音乐。双端身体/表情、布料和地形能力依赖实际客户端接口，作品转换或编译通过不能代替实机效果验证。[双端整合记录](docs/ANDROID_CAMERA_MMD_20261001.md)
+MMD 作品库管理动作、表情、镜头和本地音乐，可通过 `set.ini` 描述作品；支持播放/暂停/停止、跳转、循环、游戏/自由/VMD 镜头切换，最多四名队员同台，以及衣物物理和实验地形贴合。Windows 音轨走本地音乐接口，不要求 OmniMix；Android 使用本地媒体播放，会与游戏 BGM 叠加，可在游戏设置中关闭原背景音乐。双端身体/表情、布料和地形能力依赖实际客户端接口，作品转换或编译通过不能代替实机效果验证。[双端整合记录](docs/camera/research/1.5.3/android-mmd/ANDROID_CAMERA_MMD.md)
 
 ## 其他模块
 
-**开屏**：替换登录演员，按角色资源选择坐姿链和最终动作，调整缩放、起始角度、转正时间、各阶段速度、原生/强制循环和双 Playable 混合；Logo 与登录色带可独立设置主题色。收录 33 名角色、4,262 条最终动作索引，3.4.2 补齐噗切娜资源。[新角色资源修复](docs/TITLE_MODEL_PURRCHE_FIX_20261002.md)
+**开屏**：替换登录演员，按角色资源选择坐姿链和最终动作，调整缩放、起始角度、转正时间、各阶段速度、原生/强制循环和双 Playable 混合；Logo 与登录色带可独立设置主题色。收录 33 名角色、4,262 条最终动作索引，3.4.2 补齐噗切娜资源。[新角色资源修复](docs/model/research/1.5.3/purrche-title/TITLE_MODEL_PURRCHE_FIX.md)
 
-**配音**：在游戏全局语言不变的情况下分别指定角色中文、英语、日语或韩语，可扩展到剧情语音、时长和口型。先在游戏中下载对应语言包，软件从本机资源生成所需目录；发布包不携带 PCK、BNK 或 WEM 音频。[语音路由说明](docs/VOICE_CUSTOM_LANGUAGE_SYSTEM.md)
+**配音**：在游戏全局语言不变的情况下分别指定角色中文、英语、日语或韩语，可扩展到剧情语音、时长和口型。先在游戏中下载对应语言包，软件从本机资源生成所需目录；发布包不携带 PCK、BNK 或 WEM 音频。[语音路由说明](docs/voice/VOICE_CUSTOM_LANGUAGE_SYSTEM.md)
 
 **界面与动作**：隐藏 UID、通过快捷键/面板切换 HUD；PC 触屏布局搭配鼠标转触控，适用于串流或触控设备，转换默认快捷键为 `Ctrl+Alt+T`。Android 可启用 PC 风格布局，建议搭配键盘或手柄。布局切换与账号平台声明独立。持续冲刺当前适配洁尔佩塔和梨诺，梨诺另有隐藏机甲与光效选项。[动作模块](native/modules/actions/README.md)
 
-**PC 战斗数据**：手动会话和关卡自动会话，伤害数字显隐、悬浮伤害/DPS 排行、技能分类、角色与技能时间轴、历史筛选和网页分析。rDPS 使用随软件更新的已验证 Buff/技能语义，将可确认的队友增益贡献重新归属；无法确认的项不参与贡献转移。数据保存在本机，网页分析由用户主动打开。[战斗契约](docs/COMBAT_RUNTIME_CONTRACTS.md)
+**PC 战斗数据**：手动会话和关卡自动会话，伤害数字显隐、悬浮伤害/DPS 排行、技能分类、角色与技能时间轴、历史筛选和网页分析。rDPS 使用随软件更新的已验证 Buff/技能语义，将可确认的队友增益贡献重新归属；无法确认的项不参与贡献转移。数据保存在本机，网页分析由用户主动打开。[战斗契约](docs/combat_stats/COMBAT_RUNTIME_CONTRACTS.md)
 
 **PC 寻访记录**：启用后从游戏连接同步记录，按卡池展示统计、六星、UP/非 UP、保底和免费抽信息，支持 JSON 导入导出及用户主动发起的云端分享。[网页功能说明](web/docs/GACHA_WEB_PLAN.md)
 
-**PC 音乐与显示**：OmniMix 集成使用用户现有后端，不复制其程序或曲库；可分别替换登录、主界面/基地、游戏内音乐，流异常时保留或恢复原生音乐。OptiScaler 负责超分、帧生成和锐化，硬件/后端兼容性依实际环境。[OmniMix 对接](docs/OMNIMIX_INTEGRATION_HANDOFF.md) · [显示管线](docs/DISPLAY_PIPELINE.md)
+**PC 音乐与显示**：OmniMix 集成使用用户现有后端，不复制其程序或曲库；可分别替换登录、主界面/基地、游戏内音乐，流异常时保留或恢复原生音乐。OptiScaler 负责超分、帧生成和锐化，硬件/后端兼容性依实际环境。[OmniMix 对接](docs/music/OMNIMIX_INTEGRATION_HANDOFF.md) · [显示管线](docs/ui/DISPLAY_PIPELINE.md)
 
 ## 模块架构与兼容性
 
@@ -138,7 +138,7 @@ Windows 主配置位于 `%LocalAppData%\BetterEndfield\BetterEndfield.ini`，UI 
 | `web/` | 战斗与寻访的网页分析/分享相关源码 |
 | `scripts/`、`docs/` | 构建和资源生成脚本、接口文档与研究记录 |
 
-内部运行时协议见 [GAME_INTERFACES.md](docs/GAME_INTERFACES.md)。研究目录和历史记录不代表全部已发布功能。
+内部运行时协议见 [GAME_INTERFACES.md](docs/host/GAME_INTERFACES.md)。研究目录和历史记录不代表全部已发布功能。
 
 ## 从源码构建
 

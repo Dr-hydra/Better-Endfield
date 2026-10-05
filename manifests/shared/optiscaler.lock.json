@@ -1,6 +1,6 @@
 {
   "Version": "0.9.4",
-  "Notes": "OptiScaler v0.9.4 (2026-07-18)，发布资产 Optiscaler_0.9.4-final.20260718._MM.7z，SHA256 575CB4DF866116093DF75AF607E37FD70E10F5163E0F23FD5C804142E80EF0AD（与上游 release 公布值一致）。组件不随发布包分发，需自行放入 payloads/optiscaler/。已排除 setup_windows.bat、setup_linux.sh 与 README：本软件使用自己的部署流程。OptiScaler.dll 部署为 dxgi.dll，因 UnityPlayer.dll 静态导入该名称。详见 docs/DISPLAY_PIPELINE.md。",
+  "Notes": "OptiScaler v0.9.4 (2026-07-18)，发布资产 Optiscaler_0.9.4-final.20260718._MM.7z，SHA256 575CB4DF866116093DF75AF607E37FD70E10F5163E0F23FD5C804142E80EF0AD（与上游 release 公布值一致）。组件不随发布包分发，需自行放入 payloads/optiscaler/。已排除 setup_windows.bat、setup_linux.sh 与 README：本软件使用自己的部署流程。OptiScaler.dll 部署为 dxgi.dll，因 UnityPlayer.dll 静态导入该名称。详见 docs/ui/DISPLAY_PIPELINE.md。",
   "Files": [
     {
       "Source": "D3D12_Optiscaler/D3D12Core.dll",

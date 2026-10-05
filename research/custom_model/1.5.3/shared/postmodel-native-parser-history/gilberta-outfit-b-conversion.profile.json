@@ -1,0 +1,1436 @@
+{
+  "schema": 2,
+  "verified": true,
+  "render_verified": false,
+  "evidence": "User-selected P-switch outfit B, other constants default; reviewed source draw ranges; 8 native observations; UINT32 indices authorized 2026-09-18; native resource-delivery probe aglina-20260917-1; process 56960",
+  "source_snapshot": {
+    "schema": 1,
+    "character": "chr_0013_aglina",
+    "game": "E:\\Endfield Game",
+    "assets": [
+      {
+        "pathHashHead": 518302494773259506,
+        "path": "assets/beyond/dynamicassets/gameplay/prefabs/uimodels/chr_0013_aglina_uimodel.prefab",
+        "bundleIndex": 145967,
+        "assetSize": 496
+      },
+      {
+        "pathHashHead": 893448140075918166,
+        "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0013_aglina_postmodel.prefab",
+        "bundleIndex": 12810,
+        "assetSize": 544
+      }
+    ],
+    "manifest_version": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+    "perforce_cl": "",
+    "bundles": [
+      {
+        "path": "Bundles/Windows/initial/2dbc0ac4e142db9292c8949b.ab",
+        "layer": "Persistent",
+        "size": 56165
+      },
+      {
+        "path": "Bundles/Windows/initial/4221fde948d08d652f19a1ed.ab",
+        "layer": "Persistent",
+        "size": 45521
+      },
+      {
+        "path": "Bundles/Windows/initial/5c10a806dacd393acbab6aed.ab",
+        "layer": "Persistent",
+        "size": 7660548
+      },
+      {
+        "path": "Bundles/Windows/initial/68cd4add9b25cfce8eeaff4b.ab",
+        "layer": "Persistent",
+        "size": 27605158
+      },
+      {
+        "path": "Bundles/Windows/initial/73cc4437466711e1bfd9a248.ab",
+        "layer": "Persistent",
+        "size": 6011495
+      },
+      {
+        "path": "Bundles/Windows/initial/b87eb7c57ede0640302dd925.ab",
+        "layer": "Persistent",
+        "size": 990180
+      },
+      {
+        "path": "Bundles/Windows/initial/e468ea94150772aea942dd41.ab",
+        "layer": "Persistent",
+        "size": 1108476
+      },
+      {
+        "path": "Bundles/Windows/main/01790ef149e2198537a73fe3.ab",
+        "layer": "Persistent",
+        "size": 3184
+      },
+      {
+        "path": "Bundles/Windows/main/01b9df5805f38e187a1dd641.ab",
+        "layer": "Persistent",
+        "size": 23499
+      },
+      {
+        "path": "Bundles/Windows/main/020cd36ad77722b9404673a7.ab",
+        "layer": "Persistent",
+        "size": 96789
+      },
+      {
+        "path": "Bundles/Windows/main/028f47d11a9f2376762b25c7.ab",
+        "layer": "Persistent",
+        "size": 88632
+      },
+      {
+        "path": "Bundles/Windows/main/0296db95f92b214f3b100ad3.ab",
+        "layer": "Persistent",
+        "size": 551035
+      },
+      {
+        "path": "Bundles/Windows/main/03bd90e3f3417c0c8f7e9fee.ab",
+        "layer": "Persistent",
+        "size": 1345810
+      },
+      {
+        "path": "Bundles/Windows/main/049c1adc56ede1c18fe769fa.ab",
+        "layer": "Persistent",
+        "size": 4160
+      },
+      {
+        "path": "Bundles/Windows/main/04bab860a7bc9415d952fee6.ab",
+        "layer": "Persistent",
+        "size": 5247
+      },
+      {
+        "path": "Bundles/Windows/main/07e3c88bda3f1f90885ac29f.ab",
+        "layer": "Persistent",
+        "size": 3573305
+      },
+      {
+        "path": "Bundles/Windows/main/0c0997a754a9db5dec4b6060.ab",
+        "layer": "Persistent",
+        "size": 95515
+      },
+      {
+        "path": "Bundles/Windows/main/0c1af390abd7e663ff9869cc.ab",
+        "layer": "Persistent",
+        "size": 177675
+      },
+      {
+        "path": "Bundles/Windows/main/0f66a3f44db37369040eb77b.ab",
+        "layer": "Persistent",
+        "size": 64240
+      },
+      {
+        "path": "Bundles/Windows/main/13ae74b5e2560fc37f6dcbd9.ab",
+        "layer": "Persistent",
+        "size": 84890
+      },
+      {
+        "path": "Bundles/Windows/main/14a61b3f5b16d04e8ddf42c9.ab",
+        "layer": "Persistent",
+        "size": 4804
+      },
+      {
+        "path": "Bundles/Windows/main/170573342741f1a19621812d.ab",
+        "layer": "Persistent",
+        "size": 3002
+      },
+      {
+        "path": "Bundles/Windows/main/185b8e0ff38d478b27238a45.ab",
+        "layer": "Persistent",
+        "size": 151697
+      },
+      {
+        "path": "Bundles/Windows/main/1ba49c19b32d67317149ded1.ab",
+        "layer": "Persistent",
+        "size": 58075
+      },
+      {
+        "path": "Bundles/Windows/main/1d1d3ed27b7345ef251b2fa5.ab",
+        "layer": "Persistent",
+        "size": 13944312
+      },
+      {
+        "path": "Bundles/Windows/main/1e56917140c6030f5055d39c.ab",
+        "layer": "Persistent",
+        "size": 2412
+      },
+      {
+        "path": "Bundles/Windows/main/272f553020bef466dfb020bd.ab",
+        "layer": "Persistent",
+        "size": 8793
+      },
+      {
+        "path": "Bundles/Windows/main/28364daa7846ec84ba529e46.ab",
+        "layer": "Persistent",
+        "size": 38108
+      },
+      {
+        "path": "Bundles/Windows/main/34f59fdb93e6e2903903e24f.ab",
+        "layer": "Persistent",
+        "size": 425988
+      },
+      {
+        "path": "Bundles/Windows/main/394d53debd5912a93a5160e0.ab",
+        "layer": "Persistent",
+        "size": 38231
+      },
+      {
+        "path": "Bundles/Windows/main/456835b0a5a1af50139d8379.ab",
+        "layer": "Persistent",
+        "size": 1252740
+      },
+      {
+        "path": "Bundles/Windows/main/4ae2f0f23fb498e9679a6768.ab",
+        "layer": "Persistent",
+        "size": 892846
+      },
+      {
+        "path": "Bundles/Windows/main/4b6080e244f2da8f8ab9008f.ab",
+        "layer": "Persistent",
+        "size": 538148
+      },
+      {
+        "path": "Bundles/Windows/main/521876b97188f94b599951f6.ab",
+        "layer": "Persistent",
+        "size": 4803
+      },
+      {
+        "path": "Bundles/Windows/main/54426955b988e05036abd041.ab",
+        "layer": "Persistent",
+        "size": 9954
+      },
+      {
+        "path": "Bundles/Windows/main/553f4a429736353f86c6c203.ab",
+        "layer": "Persistent",
+        "size": 3084
+      },
+      {
+        "path": "Bundles/Windows/main/57c7aa6ace9816756f822c58.ab",
+        "layer": "Persistent",
+        "size": 48309
+      },
+      {
+        "path": "Bundles/Windows/main/588ddb5b381f0c8dcc689b01.ab",
+        "layer": "Persistent",
+        "size": 269993
+      },
+      {
+        "path": "Bundles/Windows/main/58a2d38f0d8cd1de01748a8b.ab",
+        "layer": "Persistent",
+        "size": 69149
+      },
+      {
+        "path": "Bundles/Windows/main/5a1828cb2058fe7f15922ac5.ab",
+        "layer": "Persistent",
+        "size": 6560
+      },
+      {
+        "path": "Bundles/Windows/main/62d5e18f4d0044f8b3a3e770.ab",
+        "layer": "Persistent",
+        "size": 54437
+      },
+      {
+        "path": "Bundles/Windows/main/6670631a4e8fda71b1741752.ab",
+        "layer": "Persistent",
+        "size": 12612
+      },
+      {
+        "path": "Bundles/Windows/main/6900f7d687bd31eb8476eaf5.ab",
+        "layer": "Persistent",
+        "size": 791113
+      },
+      {
+        "path": "Bundles/Windows/main/6b9a4672941bfafb28d65b44.ab",
+        "layer": "Persistent",
+        "size": 4839
+      },
+      {
+        "path": "Bundles/Windows/main/6be256b71a596cb95e4059e4.ab",
+        "layer": "Persistent",
+        "size": 563812
+      },
+      {
+        "path": "Bundles/Windows/main/70eff54203174d001b1f2a32.ab",
+        "layer": "Persistent",
+        "size": 3107
+      },
+      {
+        "path": "Bundles/Windows/main/71d74b69e11cc568e3cf08b6.ab",
+        "layer": "Persistent",
+        "size": 3024
+      },
+      {
+        "path": "Bundles/Windows/main/742227d26a22ae6cec7d73ba.ab",
+        "layer": "Persistent",
+        "size": 3203
+      },
+      {
+        "path": "Bundles/Windows/main/776b2f9aae0f30d1b8942a45.ab",
+        "layer": "Persistent",
+        "size": 426240
+      },
+      {
+        "path": "Bundles/Windows/main/7c3ba86ecd8cfabcd4256fce.ab",
+        "layer": "Persistent",
+        "size": 137601
+      },
+      {
+        "path": "Bundles/Windows/main/7e7bdb8de0c141d85cb187bf.ab",
+        "layer": "Persistent",
+        "size": 3084
+      },
+      {
+        "path": "Bundles/Windows/main/82a12db588c918f43674ff58.ab",
+        "layer": "Persistent",
+        "size": 4900
+      },
+      {
+        "path": "Bundles/Windows/main/846b80f77f1b1a007a8cc598.ab",
+        "layer": "Persistent",
+        "size": 5094
+      },
+      {
+        "path": "Bundles/Windows/main/85df836bcca3a5265cb5fdbc.ab",
+        "layer": "Persistent",
+        "size": 173150
+      },
+      {
+        "path": "Bundles/Windows/main/925582514de2d7c012205f3f.ab",
+        "layer": "Persistent",
+        "size": 65705
+      },
+      {
+        "path": "Bundles/Windows/main/9c2a9151f1029c9aa72f1133.ab",
+        "layer": "Persistent",
+        "size": 4150
+      },
+      {
+        "path": "Bundles/Windows/main/9f1a0e63030da8e27a497eaa.ab",
+        "layer": "Persistent",
+        "size": 4730
+      },
+      {
+        "path": "Bundles/Windows/main/a0654e5d2ff673d9f6827fef.ab",
+        "layer": "Persistent",
+        "size": 170994
+      },
+      {
+        "path": "Bundles/Windows/main/a400048099aeb88fad93e764.ab",
+        "layer": "Persistent",
+        "size": 3084
+      },
+      {
+        "path": "Bundles/Windows/main/a5ebe31d12fbdaaa3057c88b.ab",
+        "layer": "Persistent",
+        "size": 2209459
+      },
+      {
+        "path": "Bundles/Windows/main/a956c8f313df71bc91ccf60b.ab",
+        "layer": "Persistent",
+        "size": 936937
+      },
+      {
+        "path": "Bundles/Windows/main/b5429fc349c00b7bd547aade.ab",
+        "layer": "Persistent",
+        "size": 4861
+      },
+      {
+        "path": "Bundles/Windows/main/b8a6f1165ec882ad91397dcc.ab",
+        "layer": "Persistent",
+        "size": 594087
+      },
+      {
+        "path": "Bundles/Windows/main/b8c2ab2c246919eb1095e81a.ab",
+        "layer": "Persistent",
+        "size": 72687
+      },
+      {
+        "path": "Bundles/Windows/main/bb1fb49eb9a3ca8fc1b7a764.ab",
+        "layer": "Persistent",
+        "size": 12660
+      },
+      {
+        "path": "Bundles/Windows/main/c38ceb8acd180cfe2e7b9628.ab",
+        "layer": "Persistent",
+        "size": 5095
+      },
+      {
+        "path": "Bundles/Windows/main/c656acdede8b94d7b5cfc762.ab",
+        "layer": "Persistent",
+        "size": 4987
+      },
+      {
+        "path": "Bundles/Windows/main/c8515aff2e1b4af925910a78.ab",
+        "layer": "Persistent",
+        "size": 106878
+      },
+      {
+        "path": "Bundles/Windows/main/d0d512c09887779b738febe0.ab",
+        "layer": "Persistent",
+        "size": 6795
+      },
+      {
+        "path": "Bundles/Windows/main/d4317576143c1e851870d546.ab",
+        "layer": "Persistent",
+        "size": 66041
+      },
+      {
+        "path": "Bundles/Windows/main/db02cf47458ea8dabe0b583f.ab",
+        "layer": "Persistent",
+        "size": 36956
+      },
+      {
+        "path": "Bundles/Windows/main/dcc283229b738bb920a1ae35.ab",
+        "layer": "Persistent",
+        "size": 4943
+      },
+      {
+        "path": "Bundles/Windows/main/e2d08ea49ce525223157702f.ab",
+        "layer": "Persistent",
+        "size": 114654
+      },
+      {
+        "path": "Bundles/Windows/main/e762578b08d7fde141e33a0c.ab",
+        "layer": "Persistent",
+        "size": 15207
+      },
+      {
+        "path": "Bundles/Windows/main/e7e22dfeaea0f061a5d6d5e2.ab",
+        "layer": "Persistent",
+        "size": 1169535
+      },
+      {
+        "path": "Bundles/Windows/main/e83b56c8c9299a61d8d7ff23.ab",
+        "layer": "Persistent",
+        "size": 3087
+      },
+      {
+        "path": "Bundles/Windows/main/eb7a10ff2441202bf078f6a7.ab",
+        "layer": "Persistent",
+        "size": 235652
+      },
+      {
+        "path": "Bundles/Windows/main/edf7162b3443935770b5b02e.ab",
+        "layer": "Persistent",
+        "size": 2989
+      },
+      {
+        "path": "Bundles/Windows/main/eea0c291c17957f440b2b3dc.ab",
+        "layer": "Persistent",
+        "size": 3092
+      },
+      {
+        "path": "Bundles/Windows/main/f081fe51cc0a600d23bef714.ab",
+        "layer": "Persistent",
+        "size": 83299
+      },
+      {
+        "path": "Bundles/Windows/main/f1e7c1d5b5a27f8fcfe8e104.ab",
+        "layer": "Persistent",
+        "size": 642119
+      },
+      {
+        "path": "Bundles/Windows/main/f8e83c032e60d781adfff9fa.ab",
+        "layer": "Persistent",
+        "size": 4808
+      },
+      {
+        "path": "Bundles/Windows/main/fad70f510dbf5f5582d409ba.ab",
+        "layer": "Persistent",
+        "size": 4160
+      },
+      {
+        "path": "Bundles/Windows/main/fb11a8fb1fe6bc3b7dd21718.ab",
+        "layer": "Persistent",
+        "size": 730801
+      },
+      {
+        "path": "Bundles/Windows/main/fb73de3aee578aa1cf545e28.ab",
+        "layer": "Persistent",
+        "size": 49957
+      },
+      {
+        "path": "Bundles/Windows/main/fe53306a5ebeb766d47fc15b.ab",
+        "layer": "Persistent",
+        "size": 198456
+      },
+      {
+        "path": "Bundles/Windows/main/fe954db117e60bfde5521dbd.ab",
+        "layer": "Persistent",
+        "size": 6685
+      }
+    ],
+    "missing": []
+  },
+  "components": {
+    "0": {
+      "mesh_name": "S_actor_aglina_cloth_01_lod0",
+      "original_index_count": 167442,
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "bone_names": [
+        "tp_base_Back_a_01_jnt",
+        "R_Bone_Chain_2",
+        "R_Bone_Chain_3",
+        "R_Bone_Chain_1",
+        "L_Bone_Chain_2",
+        "L_Bone_Chain_1",
+        "L_Bone_Chain_3",
+        "metal_base_Dn_a_01_jnt",
+        "guan_base_L_f_01_jnt",
+        "guan_base_L_c_01_jnt",
+        "neck_base_L_a_01_jnt",
+        "Bip001_L_Forearm",
+        "Bip001_L_UpperArm",
+        "Bip001_LUpArmTwist1",
+        "Bip001_L_ForeTwist1",
+        "Bip001_L_ForeTwist",
+        "corrective_Elbow_L_ty_plus",
+        "corrective_Elbow_L_ty_minus",
+        "Bip001_LUpArmTwist",
+        "Bip001_L_Finger22",
+        "Bip001_L_Finger21",
+        "corrective_Wrist_L_tz_minus",
+        "Bip001_L_Hand",
+        "corrective_Wrist_L_tz_plus",
+        "Bip001_L_Finger0",
+        "Bip001_L_Finger01",
+        "Bip001_L_Finger11",
+        "Bip001_L_Finger12",
+        "Bip001_L_Finger1",
+        "Bip001_L_Finger42",
+        "Bip001_L_Finger41",
+        "Bip001_L_Finger4",
+        "Bip001_L_Finger2",
+        "Bip001_L_Finger3",
+        "Bip001_L_Finger32",
+        "Bip001_L_Finger31",
+        "Bip001_L_Finger02",
+        "Bip001_R_Forearm",
+        "Bip001_R_UpperArm",
+        "Bip001_RUpArmTwist1",
+        "Bip001_R_ForeTwist1",
+        "Bip001_R_ForeTwist",
+        "corrective_Elbow_R_ty_minus",
+        "corrective_Elbow_R_ty_plus",
+        "Bip001_RUpArmTwist",
+        "Bip001_R_Finger22",
+        "Bip001_R_Finger21",
+        "corrective_Wrist_R_tz_plus",
+        "Bip001_R_Hand",
+        "corrective_Wrist_R_tz_minus",
+        "Bip001_R_Finger0",
+        "Bip001_R_Finger01",
+        "Bip001_R_Finger12",
+        "Bip001_R_Finger11",
+        "Bip001_R_Finger1",
+        "Bip001_R_Finger42",
+        "Bip001_R_Finger41",
+        "Bip001_R_Finger4",
+        "Bip001_R_Finger3",
+        "Bip001_R_Finger2",
+        "Bip001_R_Finger32",
+        "Bip001_R_Finger31",
+        "Bip001_R_Finger02",
+        "pd_base_R_a_01_jnt3",
+        "pd_base_R_a_01_jnt2",
+        "pd_base_R_a_01_jnt4",
+        "hand_base_R_a_01_jnt",
+        "Bip001_LThighTwist",
+        "Bip001_Pelvis",
+        "Bip001_LThighTwist1",
+        "Bip001_RThighTwist",
+        "Bip001_RThighTwist1",
+        "Bip001_Neck",
+        "Bip001_Spine2",
+        "Bip001_R_Clavicle",
+        "xiong_R_0_skin_jnt",
+        "Bip001_Spine1",
+        "Bip001_L_Clavicle",
+        "xiong_L_0_skin_jnt",
+        "Bip001_Spine",
+        "Bip001_Head",
+        "clothes_piaodai_R_c_01_jnt1",
+        "clothes_piaodai_R_c_01_jnt2",
+        "clothes_piaodai_R_d_03_jnt",
+        "clothes_piaodai_R_d_02_jnt",
+        "pd_base_R_a_01_jnt5",
+        "Bip001_R_Foot",
+        "Bip001_RCalfTwist1",
+        "clothes_piaodai_R_c_01_jnt3",
+        "clothes_piaodai_R_c_01_jnt4",
+        "clothes_piaodai_R_d_04_jnt",
+        "clothes_piaodai_R_d_05_jnt",
+        "Bip001_L_Foot",
+        "Bip001_LCalfTwist1",
+        "clothes_piaodai_L_d_02_jnt",
+        "clothes_piaodai_L_d_03_jnt",
+        "clothes_piaodai_L_c_01_jnt2",
+        "clothes_piaodai_L_c_01_jnt1",
+        "clothes_piaodai_M_d_02_jnt",
+        "clothes_piaodai_L_c_01_jnt4",
+        "clothes_piaodai_L_c_01_jnt3",
+        "clothes_piaodai_L_d_04_jnt",
+        "clothes_piaodai_L_d_05_jnt",
+        "tp_base_L_c_01_jnt",
+        "clothes_piaodai_M_d_03_jnt",
+        "Prop_base_L_g_01_jnt",
+        "pd_base_R_a_01_jnt1",
+        "pd_base_R_a_01_jnt",
+        "clothes_piaodai_L_a_01_jnt",
+        "clothes_piaodai_L_a_01_jnt1",
+        "clothes_piaodai_L_a_01_jnt2",
+        "Prop_base_L_h_01_jnt",
+        "clip_base_L_a_01_jnt",
+        "clothes_piaodai_L_d_01_jnt",
+        "clothes_piaodai_M_d_01_jnt",
+        "clothes_piaodai_M_d_04_jnt",
+        "clothes_piaodai_L_c_01_jnt",
+        "clothes_piaodai_R_d_01_jnt",
+        "Bip001_L_Thigh",
+        "Bip001_R_Thigh",
+        "Prop_base_L_f_01_jnt",
+        "Prop_base_L_a_01_jnt",
+        "Prop_base_L_b_01_jnt",
+        "iron_base_L_c_02_jnt",
+        "iron_base_L_c_01_jnt",
+        "Bip001_R_Toe0",
+        "Prop_base_L_e_01_jnt",
+        "R_Bone_Chain_4",
+        "Prop_base_L_d_01_jnt",
+        "clothes_piaodai_L_a_01_jnt4",
+        "clothes_piaodai_L_a_01_jnt3",
+        "watch_base_L_a_01_jnt",
+        "clothes_piaodai_R_c_01_jnt",
+        "Bip001_L_Toe0",
+        "hand_base_L_a_01_jnt",
+        "L_Bone_Chain_4",
+        "L_Bone_Chain_5",
+        "R_Bone_Chain_5",
+        "Bip001_LCalfTwist",
+        "Bip001_L_Calf",
+        "corrective_Knee_L_ty_minus",
+        "corrective_Knee_L_ty_plus",
+        "Bip001_RCalfTwist",
+        "corrective_Knee_R_ty_plus",
+        "Bip001_R_Calf",
+        "corrective_Knee_R_ty_minus",
+        "xiuzi_base_R_a_01_jnt1",
+        "xiuzi_base_R_d_01_jnt1",
+        "xiuzi_base_R_b_01_jnt1",
+        "xiuzi_base_R_b_01_jnt",
+        "xiuzi_base_R_c_01_jnt",
+        "xiuzi_base_R_c_01_jnt1",
+        "xiuzi_base_R_a_01_jnt",
+        "xiuzi_base_R_d_01_jnt",
+        "xiuzi_base_L_a_01_jnt1",
+        "xiuzi_base_L_b_01_jnt1",
+        "xiuzi_base_L_c_01_jnt1",
+        "xiuzi_base_L_d_01_jnt1",
+        "xiuzi_base_L_c_01_jnt",
+        "xiuzi_base_L_a_01_jnt",
+        "xiuzi_base_L_b_01_jnt",
+        "xiuzi_base_L_d_01_jnt",
+        "clothes_piaodai_M_d_05_jnt",
+        "clothes_piaodai_R_a_01_jnt",
+        "clothes_piaodai_R_a_02_jnt",
+        "clothes_piaodai_R_a_01_jnt2",
+        "clothes_piaodai_R_a_01_jnt3",
+        "clothes_piaodai_R_a_01_jnt4"
+      ],
+      "materials": [
+        "M_actor_aglina_cloth_01"
+      ],
+      "evidence": "User-selected P-switch outfit B, other constants default; reviewed source draw ranges; 8 native observations; UINT32 indices authorized 2026-09-18; native resource-delivery probe aglina-20260917-1; process 56960"
+    },
+    "1": {
+      "mesh_name": "S_actor_aglina_hair_02_lod0",
+      "original_index_count": 7080,
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "bone_names": [
+        "ear_base_L_a_01_jnt",
+        "ear_base_L_a_02_jnt",
+        "tail_base_M_a_08_jnt",
+        "tail_base_M_a_09_jnt",
+        "tail_base_M_a_07_jnt",
+        "tail_base_M_a_06_jnt",
+        "tail_base_M_a_05_jnt",
+        "tail_base_M_a_04_jnt",
+        "tail_base_M_a_03_jnt",
+        "tail_base_M_a_02_jnt",
+        "tail_base_M_a_01_jnt",
+        "ear_base_R_a_01_jnt",
+        "ear_base_R_a_02_jnt"
+      ],
+      "materials": [
+        "M_actor_aglina_hair_02"
+      ],
+      "evidence": "User-selected P-switch outfit B, other constants default; reviewed source draw ranges; 8 native observations; UINT32 indices authorized 2026-09-18; native resource-delivery probe aglina-20260917-1; process 56960"
+    },
+    "2": {
+      "mesh_name": "S_actor_aglina_hair_01_lod0",
+      "original_index_count": 65130,
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "bone_names": [
+        "hair_base_L_a_04_jnt",
+        "hair_base_L_a_03_jnt",
+        "hair_base_L_a_02_jnt",
+        "hair_base_L_a_01_jnt",
+        "hair_base_L_a_05_jnt",
+        "Bip001_Head",
+        "hair_base_L_a_06_jnt",
+        "hair_base_R_b_04_jnt",
+        "hair_base_R_b_03_jnt",
+        "hair_base_R_b_02_jnt",
+        "hair_base_M_c_01_jnt",
+        "hair_base_M_c_02_jnt",
+        "hair_base_R_c_02_jnt",
+        "hair_base_R_c_01_jnt",
+        "hair_base_L_c_02_jnt",
+        "hair_base_L_c_01_jnt",
+        "hair_base_R_a_05_jnt",
+        "hair_base_R_a_06_jnt",
+        "hair_base_R_a_04_jnt",
+        "hair_base_R_a_01_jnt",
+        "hair_base_R_a_02_jnt",
+        "ear_base_L_a_01_jnt",
+        "ear_base_L_a_02_jnt",
+        "ear_base_R_a_01_jnt",
+        "ear_base_R_a_02_jnt",
+        "hair_base_L_b_03_jnt",
+        "hair_base_L_b_02_jnt",
+        "hair_base_L_b_04_jnt",
+        "tail_base_M_a_06_jnt",
+        "tail_base_M_a_04_jnt",
+        "tail_base_M_a_05_jnt",
+        "tail_base_M_a_08_jnt",
+        "tail_base_M_a_07_jnt",
+        "tail_base_M_a_09_jnt",
+        "tail_base_M_a_03_jnt",
+        "tail_base_M_a_02_jnt",
+        "tail_base_M_a_01_jnt",
+        "hair_base_R_a_03_jnt"
+      ],
+      "materials": [
+        "M_actor_aglina_hair_01",
+        "M_actor_aglina_hairt_01"
+      ],
+      "evidence": "User-selected P-switch outfit B, other constants default; reviewed source draw ranges; 8 native observations; UINT32 indices authorized 2026-09-18; native resource-delivery probe aglina-20260917-1; process 56960"
+    },
+    "3": {
+      "mesh_name": "S_actor_aglina_body_01_lod0",
+      "original_index_count": 6123,
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "bone_names": [
+        "Bip001_Pelvis",
+        "Bip001_LThighTwist",
+        "Bip001_LThighTwist1",
+        "Bip001_RThighTwist",
+        "Bip001_RThighTwist1",
+        "Bip001_LUpArmTwist1",
+        "Bip001_LUpArmTwist",
+        "Bip001_Neck",
+        "Bip001_Spine2",
+        "Bip001_L_Clavicle",
+        "Bip001_R_Clavicle",
+        "Bip001_Spine1",
+        "xiong_L_0_skin_jnt",
+        "Bip001_Head",
+        "Bip001_RUpArmTwist",
+        "Bip001_RUpArmTwist1",
+        "xiong_R_0_skin_jnt"
+      ],
+      "materials": [
+        "M_actor_aglina_body_01"
+      ],
+      "evidence": "User-selected P-switch outfit B, other constants default; reviewed source draw ranges; 8 native observations; UINT32 indices authorized 2026-09-18; native resource-delivery probe aglina-20260917-1; process 56960"
+    }
+  },
+  "entries": {
+    "8c41c63c": {
+      "component": 0,
+      "input_strides": [
+        16,
+        12,
+        12
+      ],
+      "skin": "unorm16x4_uint8x4",
+      "local_bones": {
+        "component": 0,
+        "indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63,
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71,
+          72,
+          73,
+          74,
+          75,
+          76,
+          77,
+          78,
+          79,
+          80,
+          81,
+          82,
+          83,
+          84,
+          85,
+          86,
+          87,
+          88,
+          89,
+          90,
+          91,
+          92,
+          93,
+          94,
+          95,
+          96,
+          97,
+          98,
+          99,
+          100,
+          101,
+          102,
+          103,
+          104,
+          105,
+          106,
+          107,
+          108,
+          109,
+          110,
+          111,
+          112,
+          113,
+          114,
+          115,
+          116,
+          117,
+          118,
+          119,
+          120,
+          121,
+          122,
+          123,
+          124,
+          125,
+          126,
+          127,
+          128,
+          129,
+          130,
+          131,
+          132,
+          133,
+          134,
+          135,
+          136,
+          137,
+          138,
+          139,
+          140,
+          141,
+          142,
+          143,
+          144,
+          145,
+          146,
+          147,
+          148,
+          149,
+          150,
+          151,
+          152,
+          153,
+          154,
+          155,
+          156,
+          157,
+          158,
+          159,
+          160,
+          161,
+          162,
+          163,
+          164,
+          165,
+          166,
+          167
+        ],
+        "evidence": "Reviewed copying/rebasing shader retains source renderer bone order; runtime native bones verified"
+      },
+      "material_rules": [
+        {
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap"
+          },
+          "component": 3,
+          "slot": 0,
+          "evidence": "Source skin-color intent and live native body BaseMap; preserve disabled native normal state",
+          "textures": [
+            {
+              "resource": "Resource-Skin-DiffuseMap",
+              "original_texture": "T_actor_aglina_body_01_D"
+            }
+          ]
+        },
+        {
+          "bindings": {
+            "ps-t13": "Resource_Texture_0169931c"
+          },
+          "component": 0,
+          "slot": 0,
+          "evidence": "Original native cloth material; source diffuse equals original mip bytes",
+          "textures": [],
+          "preserve_resources": {
+            "Resource_Texture_0169931c": "Global native mip byte equality is checked before conversion"
+          }
+        },
+        {
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap"
+          },
+          "component": 0,
+          "slot": 0,
+          "evidence": "Explicit selected RabbitFX color/LightMap/NormalMap resources mapped to original cloth BaseMap/MetallicGlossMap/BumpMap; native shader retained",
+          "textures": [
+            {
+              "resource": "Resource-Skin-DiffuseMap",
+              "original_texture": "T_actor_aglina_cloth_01_D"
+            },
+            {
+              "resource": "Resource-Skin-LightMap",
+              "original_texture": "T_actor_aglina_cloth_01_M"
+            },
+            {
+              "resource": "Resource-Skin-NormalMap",
+              "original_texture": "T_actor_aglina_cloth_01_N"
+            }
+          ]
+        }
+      ]
+    },
+    "959671a1": {
+      "component": 1,
+      "input_strides": [
+        16,
+        12,
+        12
+      ],
+      "skin": "unorm16x4_uint8x4",
+      "local_bones": {
+        "component": 1,
+        "indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "evidence": "Reviewed copying/rebasing shader retains source renderer bone order; runtime native bones verified"
+      },
+      "material_rules": [
+        {
+          "bindings": {},
+          "component": 1,
+          "slot": 0,
+          "evidence": "Contiguous default ranges with identical material state; preserve native textures",
+          "textures": []
+        }
+      ]
+    },
+    "80402392": {
+      "component": 2,
+      "input_strides": [
+        16,
+        12,
+        12
+      ],
+      "skin": "unorm16x4_uint8x4",
+      "local_bones": {
+        "component": 2,
+        "indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37
+        ],
+        "evidence": "Reviewed copying/rebasing shader retains source renderer bone order; runtime native bones verified"
+      },
+      "material_rules": [
+        {
+          "bindings": {
+            "ps-t13": "Resource_Texture_9982bf25",
+            "ps-t14": "Resource_Texture_7b8aa1bc",
+            "ps-t15": "Resource_Texture_7fadc946",
+            "ps-t99": "Resource_Texture_9982bf25"
+          },
+          "component": 2,
+          "slot": 0,
+          "evidence": "Explicit static replay of native hair material slots; original vs added geometry states remain separate",
+          "textures": [],
+          "preserve_resources": {
+            "Resource_Texture_9982bf25": "Verified unchanged native global DDS",
+            "Resource_Texture_7b8aa1bc": "Verified unchanged native global DDS",
+            "Resource_Texture_7fadc946": "Verified unchanged native global DDS"
+          }
+        },
+        {
+          "bindings": {
+            "ps-t13": "Resource_Texture_9982bf25",
+            "ps-t14": "Resource_Texture_7b8aa1bc",
+            "ps-t15": "Resource_Texture_7fadc946",
+            "ps-t99": "Resource_Texture_7b8aa1bc"
+          },
+          "component": 2,
+          "slot": 1,
+          "evidence": "Explicit static replay of native hair material slots; original vs added geometry states remain separate",
+          "textures": [],
+          "preserve_resources": {
+            "Resource_Texture_7b8aa1bc": "Verified unchanged native global DDS",
+            "Resource_Texture_9982bf25": "Verified unchanged native global DDS",
+            "Resource_Texture_7fadc946": "Verified unchanged native global DDS"
+          }
+        },
+        {
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap",
+            "ps-t99": "Resource_Texture_9982bf25"
+          },
+          "component": 2,
+          "slot": 0,
+          "evidence": "Explicit static replay of native hair material slots; original vs added geometry states remain separate",
+          "textures": [
+            {
+              "resource": "Resource-Skin-DiffuseMap",
+              "original_texture": "T_actor_aglina_hair_01_D"
+            },
+            {
+              "resource": "Resource-Skin-LightMap",
+              "original_texture": "T_actor_aglina_hair_01_P"
+            },
+            {
+              "resource": "Resource-Skin-NormalMap",
+              "original_texture": "T_actor_aglina_hair_01_HN"
+            }
+          ],
+          "preserve_resources": {
+            "Resource_Texture_9982bf25": "Verified unchanged native DDS; slot selector only"
+          }
+        },
+        {
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap",
+            "ps-t14": "Resource-Skin-LightMap",
+            "ps-t15": "Resource-Skin-NormalMap",
+            "ps-t99": "Resource_Texture_7b8aa1bc"
+          },
+          "component": 2,
+          "slot": 1,
+          "evidence": "Explicit static replay of native hair material slots; original vs added geometry states remain separate",
+          "textures": [
+            {
+              "resource": "Resource-Skin-DiffuseMap",
+              "original_texture": "T_actor_aglina_hair_01_D"
+            },
+            {
+              "resource": "Resource-Skin-LightMap",
+              "original_texture": "T_actor_aglina_hair_01_P"
+            },
+            {
+              "resource": "Resource-Skin-NormalMap",
+              "original_texture": "T_actor_aglina_hair_01_HN"
+            }
+          ],
+          "preserve_resources": {
+            "Resource_Texture_7b8aa1bc": "Verified unchanged native DDS; slot selector only"
+          }
+        }
+      ]
+    },
+    "7233c71a": {
+      "component": 3,
+      "input_strides": [
+        16,
+        12,
+        12
+      ],
+      "skin": "unorm16x4_uint8x4",
+      "local_bones": {
+        "component": 3,
+        "indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
+        ],
+        "evidence": "Reviewed copying/rebasing shader retains source renderer bone order; runtime native bones verified"
+      },
+      "material_rules": [
+        {
+          "bindings": {
+            "ps-t13": "Resource-Skin-DiffuseMap"
+          },
+          "component": 3,
+          "slot": 0,
+          "evidence": "Source skin-color intent and live native body BaseMap; preserve disabled native normal state",
+          "textures": [
+            {
+              "resource": "Resource-Skin-DiffuseMap",
+              "original_texture": "T_actor_aglina_body_01_D"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "skeleton_groups": {},
+  "texture_overrides": {
+    "0169931c": {
+      "resource": "Resource_Texture_0169931c",
+      "disposition": "preserve_native",
+      "reason": "Exact native mip bytes; retain native full mip chain",
+      "evidence": "cab-fa12e10f5548fb0891faef44ab42bcb8:-8686072464031701625; 4194304 bytes compared"
+    },
+    "a9335550": {
+      "resource": "Resource_Texture_a9335550",
+      "disposition": "preserve_native",
+      "reason": "Exact native mip bytes; retain native full mip chain",
+      "evidence": "cab-fa12e10f5548fb0891faef44ab42bcb8:-9069961497623758259; 4194304 bytes compared"
+    },
+    "2c44915a": {
+      "resource": "Resource_Texture_2c44915a",
+      "disposition": "preserve_native",
+      "reason": "Exact native mip bytes; retain native full mip chain",
+      "evidence": "cab-fa12e10f5548fb0891faef44ab42bcb8:4600429189261023167; 4194304 bytes compared"
+    },
+    "9982bf25": {
+      "resource": "Resource_Texture_9982bf25",
+      "disposition": "preserve_native",
+      "reason": "Exact native mip bytes; retain native full mip chain",
+      "evidence": "cab-f630f0e1a7621ff9755575eb9843d61e:-8768149234204762642; 1048576 bytes compared"
+    },
+    "7b8aa1bc": {
+      "resource": "Resource_Texture_7b8aa1bc",
+      "disposition": "preserve_native",
+      "reason": "Exact native mip bytes; retain native full mip chain",
+      "evidence": "cab-f630f0e1a7621ff9755575eb9843d61e:3894552486110790316; 1048576 bytes compared"
+    },
+    "7fadc946": {
+      "resource": "Resource_Texture_7fadc946",
+      "disposition": "preserve_native",
+      "reason": "Exact native mip bytes; retain native full mip chain",
+      "evidence": "cab-70da16fc56b6e74fa0eaf68d0f3b9739:-8820136945092177006; 1048576 bytes compared"
+    },
+    "9580045f": {
+      "resource": "Resource-Skin-DiffuseMap",
+      "disposition": "material_rules",
+      "original_texture": "T_actor_aglina_body_01_D",
+      "evidence": "User-selected P-switch outfit B, other constants default; reviewed source draw ranges; 8 native observations; UINT32 indices authorized 2026-09-18"
+    }
+  },
+  "semantic_notes": [
+    "Static outfit B: swapkey9=1, all other persistent switches remain 0. No runtime panel/hotkeys.",
+    "C0 uses original cloth bones; five cross-entry skin ranges use native body material; later outfit surfaces retain native cloth shader and receive custom color/normal/packed texture.",
+    "Native body skin normal is disabled and unbound: preserve this state on body-material draws; no all-pass EFMI equivalence claim.",
+    "Hair base and added geometry each render through both native hair material slots; custom hair texture NormalMap maps to native SplitNormalMap, LightMap to MetallicGlossMap. Visual fidelity pending.",
+    "Components over 65536 vertices use UINT32 IB; smaller components retain UINT16. No mesh partition. Six unchanged native global textures preserve full mip chains."
+  ],
+  "allow_uint32_indices": true
+}

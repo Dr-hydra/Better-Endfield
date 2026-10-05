@@ -6015,7 +6015,7 @@
     {
       "path": "android/resources/character-presets.json",
       "size": 2048687,
-      "updateEvidence": "docs/TITLE_MODEL_PURRCHE_FIX_20261002.md"
+      "updateEvidence": "docs/model/research/1.5.3/purrche-title/TITLE_MODEL_PURRCHE_FIX.md"
     },
     {
       "path": "android/resources/voice-catalog-index.json",
@@ -6024,7 +6024,7 @@
     {
       "path": "android/resources/manifests/model/action-manifest.json",
       "size": 2052409,
-      "updateEvidence": "docs/TITLE_MODEL_PURRCHE_FIX_20261002.md"
+      "updateEvidence": "docs/model/research/1.5.3/purrche-title/TITLE_MODEL_PURRCHE_FIX.md"
     },
     {
       "path": "android/resources/manifests/voice/voice-event-media-manifest.json",
@@ -6071,7 +6071,7 @@
     "characterId": "chr_0038_purrche",
     "manifestHash": "664d17e6f5f4fd44513249dbeabf4c53",
     "device": "78572d34",
-    "evidence": "docs/TITLE_MODEL_PURRCHE_FIX_20261002.md",
+    "evidence": "docs/model/research/1.5.3/purrche-title/TITLE_MODEL_PURRCHE_FIX.md",
     "artifactHashesComputed": false
   }
 }

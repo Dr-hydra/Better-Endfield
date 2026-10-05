@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>EFStartProbe</AssemblyName>
+    <RootNamespace>EFStartProbe</RootNamespace>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <BepInExCoreDir>$(MSBuildThisFileDirectory)..\..\vendor\bepinex6\BepInEx\core</BepInExCoreDir>
+    <GameDirectory Condition="'$(GameDirectory)' == ''">E:\Endfield Game</GameDirectory>
+    <InteropDirectory Condition="Exists('$(GameDirectory)\BepInEx\interop\UnityEngine.CoreModule.dll')">$(GameDirectory)\BepInEx\interop</InteropDirectory>
+    <InteropDirectory Condition="'$(InteropDirectory)' == ''">$(MSBuildThisFileDirectory)..\..\vendor\unity-libs-2021.3.34</InteropDirectory>
+    <DefineConstants Condition="!Exists('$(GameDirectory)\BepInEx\interop\UnityEngine.CoreModule.dll')">$(DefineConstants);EFSTART_STUB</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="BepInEx.Core" HintPath="$(BepInExCoreDir)\BepInEx.Core.dll" Private="false" />
+    <Reference Include="BepInEx.Unity.IL2CPP" HintPath="$(BepInExCoreDir)\BepInEx.Unity.IL2CPP.dll" Private="false" />
+    <Reference Include="Il2CppInterop.Runtime" HintPath="$(BepInExCoreDir)\Il2CppInterop.Runtime.dll" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(BepInExCoreDir)\0Harmony.dll" Private="false" />
+    <Reference Include="UnityEngine" HintPath="$(InteropDirectory)\UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(InteropDirectory)\UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="UnityEngine.AnimationModule" HintPath="$(InteropDirectory)\UnityEngine.AnimationModule.dll" Private="false" />
+    <Reference Include="UnityEngine.AssetBundleModule" HintPath="$(InteropDirectory)\UnityEngine.AssetBundleModule.dll" Private="false" />
+    <Reference Include="UnityEngine.DirectorModule" HintPath="$(InteropDirectory)\UnityEngine.DirectorModule.dll" Private="false" />
+  </ItemGroup>
+</Project>

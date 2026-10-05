@@ -17,6 +17,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from workspace_config import load_workspace, producer_key, write_if_changed
+from RefreshEndfieldResourceInputs import configured_path, publish_snapshot, read_metadata, tool_revision
 
 ROOT = Path(__file__).resolve().parents[1]
 GENERATOR = ROOT / "scripts" / "GenerateResourceManifests.py"
@@ -40,7 +42,8 @@ def load_generator() -> Any:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--game-path", type=Path, required=True)
+    parser.add_argument("--workspace-config", type=Path)
+    parser.add_argument("--game-path", type=Path)
     parser.add_argument(
         "--package-path",
         type=Path,
@@ -52,12 +55,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--manifest",
         type=Path,
-        default=ROOT / "manifests" / "voice" / "voice-event-media-manifest.json",
     )
     parser.add_argument("--language", choices=LANGUAGES, required=True)
     parser.add_argument("--character-id", default="")
-    parser.add_argument("--output", type=Path, required=True)
-    return parser.parse_args()
+    parser.add_argument("--output", type=Path)
+    args = parser.parse_args()
+    args.workspace = ws = load_workspace(args.workspace_config)
+    args.game_path = args.game_path or ws.path("game.install_dir", required=False)
+    args.manifest = args.manifest or ws.path("resource_update.outputs.manifests", "voice", "voice-event-media-manifest.json")
+    catalogs = configured_path(ws, "resource_update.outputs.voice_catalog_root",
+                               ws.path("paths.generated", "voice", "catalogs"))
+    args.output = args.output or catalogs / f"{args.character_id or 'all'}-{args.language}.bevcat"
+    return args
 
 
 def load_json(path: Path) -> Any:
@@ -65,8 +74,10 @@ def load_json(path: Path) -> Any:
         return json.load(stream)
 
 
-def source_path(game_path: Path, value: str) -> Path:
+def source_path(game_path: Path | None, value: str) -> Path:
     path = Path(value)
+    if not path.is_absolute() and game_path is None:
+        raise ValueError("Configure game.install_dir or pass --game-path/--package-path")
     return path if path.is_absolute() else game_path / path
 
 
@@ -199,6 +210,22 @@ def build_catalog(args: argparse.Namespace) -> dict[str, Any]:
     target_indexes = [
         generator.parse_pck(target_path, args.game_path) for target_path in target_paths
     ]
+    # A CHK name is the VFS content identity. Arbitrary mutable PCK files are
+    # regenerated in memory instead of being trusted by path/size alone.
+    import re
+    identity = [{"path": str(path.resolve()), "vfsContentId": path.stem.upper(),
+                 "headerSha256": index.header_sha256, "size": index.size}
+                for path, index in zip(target_paths, target_indexes)]
+    key = producer_key(identity, tool_revision([Path(__file__), GENERATOR]),
+                       {"manifestSha256": hashlib.sha256(args.manifest.read_bytes()).hexdigest(),
+                        "language": args.language, "characterId": args.character_id})
+    report_path = args.output.with_suffix(args.output.suffix + ".json")
+    previous = read_metadata(report_path)
+    immutable = all(path.suffix.lower() == ".chk" and re.fullmatch(r"[0-9a-fA-F]{32}", path.stem)
+                    for path in target_paths)
+    if immutable and previous.get("producerKey") == key and args.output.is_file() \
+            and args.output.stat().st_size == previous.get("catalogBytes"):
+        return previous
     target_media: dict[int, tuple[Any, Any]] = {}
     for target_index in target_indexes:
         for entry in target_index.media:
@@ -275,19 +302,8 @@ def build_catalog(args: argparse.Namespace) -> dict[str, Any]:
         entry_offset,
         data_offset,
     )
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(
-        mode="wb", dir=args.output.parent, prefix=args.output.name + ".",
-        delete=False,
-    ) as stream:
-        temporary = Path(stream.name)
-        stream.write(header)
-        stream.write(packed_entries)
-        stream.write(data)
-        stream.write(duration_table)
-    temporary.replace(args.output)
-
-    digest = hashlib.sha256(args.output.read_bytes()).hexdigest().upper()
+    catalog = header + packed_entries + data + duration_table
+    digest = hashlib.sha256(catalog).hexdigest().upper()
     report = {
         "schemaVersion": 3,
         "kind": "betterendfield-voice-catalog",
@@ -301,15 +317,19 @@ def build_catalog(args: argparse.Namespace) -> dict[str, Any]:
         "voiceCount": voice_count,
         "missingTargetMediaCount": missing,
         "catalogSha256": digest,
+        "catalogBytes": len(catalog),
+        "producerKey": key,
         "sourceManifest": str(args.manifest),
         "sourcePackage": str(target_paths[0]),
         "sourcePackages": [str(path) for path in target_paths],
     }
-    args.output.with_suffix(args.output.suffix + ".json").write_text(
-        json.dumps(report, ensure_ascii=True, indent=2) + "\n",
-        encoding="utf-8",
-        newline="\n",
-    )
+    ws = getattr(args, "workspace", None) or load_workspace()
+    ws.env()
+    with tempfile.TemporaryDirectory(prefix="voice-catalog-", dir=ws.path("paths.temp")) as temporary:
+        staging = Path(temporary)
+        write_if_changed(staging / args.output.name, catalog)
+        write_if_changed(staging / report_path.name, json.dumps(report, ensure_ascii=True, indent=2) + "\n")
+        publish_snapshot(staging, args.output.parent, ws.path("paths.temp"))
     return report
 
 

@@ -1050,13 +1050,13 @@ inline constexpr LocalRule p32_s0_local[] = {
     {"Mesh_all/lod0/S_actor_purrchena_face_01_lod0", "S_actor_purrchena_face_01_lod0", 0, Scope::Face, Evidence::NamePathInferred, 0.5, 0.0, -0.5, 4.0, 4.0, "tools/CustomModel/catalog/chr_0038_purrche.json"},
     {"Mesh_all/lod0/S_actor_purrchena_fur_01_lod0", "S_actor_purrchena_fur_01_lod0_20", 0, Scope::Fur, Evidence::NamePathInferred, 0.5, 1.5259021896696422e-05, -0.5, 4.0, 4.0, "tools/CustomModel/catalog/chr_0038_purrche.json"},
     {"Mesh_all/lod0/S_actor_purrchena_fur_02_lod0", "S_actor_purrchena_fur_02_lod0_20", 0, Scope::Fur, Evidence::NamePathInferred, 0.5, 1.5259021896696422e-05, -0.5, 4.0, 4.0, "tools/CustomModel/catalog/chr_0038_purrche.json"},
-    {"Mesh_all/lod0/S_actor_purrchena_fur_03_lod0", "S_actor_purrchena_fur_03_lod0_20", 0, Scope::Fur, Evidence::DrawWeightsVerified, 0.5, 1.5259021896696422e-05, -0.5, 4.0, 4.0, "docs/BEM_HAIR_BONE_ANALYSIS_20261002.md"},
+    {"Mesh_all/lod0/S_actor_purrchena_fur_03_lod0", "S_actor_purrchena_fur_03_lod0_20", 0, Scope::Fur, Evidence::DrawWeightsVerified, 0.5, 1.5259021896696422e-05, -0.5, 4.0, 4.0, "docs/camera/research/1.5.3/first-person-geometry/BEM_HAIR_BONE_ANALYSIS.md"},
 };
 inline constexpr LocalRule p32_s1_local[] = {
     {"Mesh_all/lod0/S_actor_purrchena_face_01_lod0", "S_actor_purrchena_face_01_lod0", 0, Scope::Face, Evidence::NamePathInferred, 0.5, 0.0, -0.5, 4.0, 4.0, "tools/CustomModel/catalog/chr_0038_purrche.json"},
     {"Mesh_all/lod0/S_actor_purrchena_fur_01_lod0", "S_actor_purrchena_fur_01_lod0_20", 0, Scope::Fur, Evidence::NamePathInferred, 0.5, 1.5259021896696422e-05, -0.5, 4.0, 4.0, "tools/CustomModel/catalog/chr_0038_purrche.json"},
     {"Mesh_all/lod0/S_actor_purrchena_fur_02_lod0", "S_actor_purrchena_fur_02_lod0_20", 0, Scope::Fur, Evidence::NamePathInferred, 0.5, 1.5259021896696422e-05, -0.5, 4.0, 4.0, "tools/CustomModel/catalog/chr_0038_purrche.json"},
-    {"Mesh_all/lod0/S_actor_purrchena_fur_03_lod0", "S_actor_purrchena_fur_03_lod0_20", 0, Scope::Fur, Evidence::DrawWeightsVerified, 0.5, 1.5259021896696422e-05, -0.5, 4.0, 4.0, "docs/BEM_HAIR_BONE_ANALYSIS_20261002.md"},
+    {"Mesh_all/lod0/S_actor_purrchena_fur_03_lod0", "S_actor_purrchena_fur_03_lod0_20", 0, Scope::Fur, Evidence::DrawWeightsVerified, 0.5, 1.5259021896696422e-05, -0.5, 4.0, 4.0, "docs/camera/research/1.5.3/first-person-geometry/BEM_HAIR_BONE_ANALYSIS.md"},
 };
 inline constexpr Source p32_sources[] = {
     {"chr_0038_purrche_postmodel", "windows-x64", "world", "2954fa80-23c1-1579-2b22-4ecfd6d70418", "tools/CustomModel/catalog/chr_0038_purrche.json", "", "", 1u, false, nullptr, 0, p32_s0_local, 4},

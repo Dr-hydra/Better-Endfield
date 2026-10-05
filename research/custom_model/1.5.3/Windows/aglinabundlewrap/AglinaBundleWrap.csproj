@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net9.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
+  <ItemGroup>
+    <Reference Include="AnimeStudio"><HintPath>../../tools/EndfieldStudio/AnimeStudio.CLI/bin/Release/net9.0-windows/AnimeStudio.dll</HintPath></Reference>
+    <Content Include="../../tools/EndfieldStudio/AnimeStudio.CLI/bin/Release/net9.0-windows/*.dll"><Link>%(Filename)%(Extension)</Link><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
+  </ItemGroup>
+</Project>

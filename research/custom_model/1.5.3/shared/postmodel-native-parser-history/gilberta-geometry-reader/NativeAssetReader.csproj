@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <Target Name="CheckBackend" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(AnimeStudioDir)/AnimeStudio.dll')" Text="Supply -p:AnimeStudioDir=path/to/compatible/AnimeStudio/bin (see README)." />
+  </Target>
+  <ItemGroup>
+    <Reference Include="AnimeStudio"><HintPath>$(AnimeStudioDir)/AnimeStudio.dll</HintPath></Reference>
+    <Content Include="$(AnimeStudioDir)/*.dll" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

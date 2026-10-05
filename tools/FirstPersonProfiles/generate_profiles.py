@@ -191,7 +191,7 @@ def supplemental_purrche(catalog_root):
                                     lod=int(lod[1]), scope=scope,
                                     evidence="DrawWeightsVerified" if verified_fur03 else "NamePathInferred",
                                     min_head_weight=1.0 / 65535 if scope == "Fur" else 0.0,
-                                    evidence_source="docs/BEM_HAIR_BONE_ANALYSIS_20261002.md" if verified_fur03
+                                    evidence_source="docs/camera/research/1.5.3/first-person-geometry/BEM_HAIR_BONE_ANALYSIS.md" if verified_fur03
                                     else "tools/CustomModel/catalog/chr_0038_purrche.json"))
         sources.append(dict(model_root=root, platform=data["platform"], view=view,
                             revision=data["source_snapshot"]["manifest_version"],

@@ -20,6 +20,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
+from workspace_config import load_workspace, write_if_changed
+from RefreshEndfieldResourceInputs import configured_path
+
 
 GENERATOR_VERSION = 2
 MUL_CONST = 81861667
@@ -36,14 +39,6 @@ LANGUAGE_NAMES = {
 }
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_ACTIONS = REPO_ROOT / "research/current-inputs/character-presets.json"
-DEFAULT_AUDIO_DIALOG = REPO_ROOT / "research/current-inputs/Table/AudioDialog.json"
-DEFAULT_BNK_DIR = REPO_ROOT / "research/bank-pck/bnk"
-DEFAULT_VOICE_ALIASES = REPO_ROOT / "resources/voice/voice-event-aliases.json"
-DEFAULT_INPUT_SNAPSHOT = REPO_ROOT / "research/current-inputs/input-snapshot.json"
-DEFAULT_OUTPUT = REPO_ROOT / "manifests"
-
-
 @dataclass(frozen=True)
 class PckEntry:
     file_id: int
@@ -68,11 +63,12 @@ class PckIndex:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--actions", type=Path, default=DEFAULT_ACTIONS)
-    parser.add_argument("--audio-dialog", type=Path, default=DEFAULT_AUDIO_DIALOG)
-    parser.add_argument("--voice-aliases", type=Path, default=DEFAULT_VOICE_ALIASES)
-    parser.add_argument("--input-snapshot", type=Path, default=DEFAULT_INPUT_SNAPSHOT)
-    parser.add_argument("--bnk-dir", type=Path, default=DEFAULT_BNK_DIR)
+    parser.add_argument("--workspace-config", type=Path)
+    parser.add_argument("--actions", type=Path)
+    parser.add_argument("--audio-dialog", type=Path)
+    parser.add_argument("--voice-aliases", type=Path)
+    parser.add_argument("--input-snapshot", type=Path)
+    parser.add_argument("--bnk-dir", type=Path)
     parser.add_argument("--game-path", type=Path)
     parser.add_argument(
         "--pck", type=Path, action="append", default=[],
@@ -86,8 +82,19 @@ def parse_args() -> argparse.Namespace:
         "--pck-snapshot", type=Path,
         help="Android device PCK snapshot with verified file hashes, source paths and full sizes.",
     )
-    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
-    return parser.parse_args()
+    parser.add_argument("--output-dir", type=Path)
+    args = parser.parse_args()
+    ws = load_workspace(args.workspace_config)
+    args.actions = args.actions or ws.path("resource_update.outputs.character_presets")
+    args.audio_dialog = args.audio_dialog or ws.path("resource_update.input_root", "Table", "AudioDialog.json")
+    args.voice_aliases = args.voice_aliases or configured_path(ws, "resource_update.voice_aliases", ws.root / "resources/voice/voice-event-aliases.json")
+    args.input_snapshot = args.input_snapshot or ws.path("resource_update.input_root", "input-snapshot.json")
+    args.bnk_dir = args.bnk_dir or ws.path("resource_update.bank_root")
+    args.game_path = args.game_path or ws.path("game.install_dir", required=False)
+    args.output_dir = args.output_dir or ws.path("resource_update.outputs.manifests")
+    if args.pck_snapshot is None and ws.get("game.platform") == "Android":
+        args.pck_snapshot = ws.path("resource_update.pck_snapshot", required=False)
+    return args
 
 
 def load_json(path: Path) -> Any:
@@ -97,9 +104,7 @@ def load_json(path: Path) -> Any:
 
 def write_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="\n") as stream:
-        json.dump(value, stream, ensure_ascii=True, indent=2)
-        stream.write("\n")
+    write_if_changed(path, json.dumps(value, ensure_ascii=True, indent=2) + "\n")
 
 
 def sha256_file(path: Path) -> str:
@@ -1232,9 +1237,7 @@ def main() -> int:
     summary = build_summary(action_manifest, voice_manifest)
     report_path = output_dir / "shared" / "resource-manifest-report.md"
     report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text(
-        summary, encoding="utf-8", newline="\n"
-    )
+    write_if_changed(report_path, summary)
     print(
         "Generated "
         f"{action_manifest['stats']['characterCount']} characters / "

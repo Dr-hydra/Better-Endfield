@@ -8,21 +8,22 @@ import json
 from pathlib import Path
 from typing import Any
 
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_MANIFEST = REPO_ROOT / "state/vfs-manifest/Data/Bundles/Windows/manifest.json"
-DEFAULT_CATALOG = REPO_ROOT / "research/character-catalog/characters.json"
-DEFAULT_OUTPUT = (
-    REPO_ROOT / "ui/BetterEndfield.UI/Assets/model/character-presets.json"
-)
+from workspace_config import load_workspace, write_if_changed
+from RefreshEndfieldResourceInputs import read_metadata
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
-    parser.add_argument("--catalog", type=Path, default=DEFAULT_CATALOG)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    return parser.parse_args()
+    parser.add_argument("--workspace-config", type=Path)
+    parser.add_argument("--manifest", type=Path)
+    parser.add_argument("--catalog", type=Path)
+    parser.add_argument("--output", type=Path)
+    args = parser.parse_args()
+    ws = load_workspace(args.workspace_config)
+    args.manifest = args.manifest or ws.path("resource_update.input_root", "Bundles", ws.get("game.platform", "Windows"), "manifest.json")
+    args.catalog = args.catalog or ws.path("resource_update.catalog_root", "characters.json")
+    args.output = args.output or ws.path("resource_update.outputs.character_presets")
+    return args
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -189,6 +190,7 @@ def main() -> int:
 
     output_characters.sort(key=lambda item: item["id"])
     result = {
+        **read_metadata(args.output),
         "schemaVersion": 1,
         "manifestVersion": manifest["Version"],
         "manifestHash": manifest.get("Hash"),
@@ -196,9 +198,7 @@ def main() -> int:
         "skippedCharacters": skipped,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    with args.output.open("w", encoding="utf-8", newline="\n") as stream:
-        json.dump(result, stream, ensure_ascii=True, indent=2)
-        stream.write("\n")
+    write_if_changed(args.output, json.dumps(result, ensure_ascii=True, indent=2) + "\n")
 
     print(
         f"Wrote {len(output_characters)} character presets and "

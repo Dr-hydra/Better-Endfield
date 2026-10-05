@@ -11,7 +11,7 @@
       {
         "characterId": "chr_0038_purrche",
         "presetPath": "android/resources/character-presets.json",
-        "evidence": "docs/TITLE_MODEL_PURRCHE_FIX_20261002.md",
+        "evidence": "docs/model/research/1.5.3/purrche-title/TITLE_MODEL_PURRCHE_FIX.md",
         "manifestHash": "664d17e6f5f4fd44513249dbeabf4c53"
       }
     ]

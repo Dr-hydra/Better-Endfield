@@ -32,7 +32,7 @@ internal sealed class DisplayConfiguration
     /// <summary>
     /// 客户端无 FidelityFX API DLL，FSR3 输入不可拦截，因此非 NVIDIA 硬件必须启用
     /// GPU 欺骗才能让客户端暴露 DLSS 选项供 OptiScaler 接管。详见
-    /// docs/DISPLAY_PIPELINE.md。
+    /// docs/ui/DISPLAY_PIPELINE.md。
     /// </summary>
     public bool GpuSpoofing { get; set; } = true;
 
@@ -67,7 +67,7 @@ internal sealed class DisplayConfiguration
 
     /// <summary>
     /// 说明所选后端在该硬件上的已知代价，供 UI 直接展示。数据来源见
-    /// docs/DISPLAY_PIPELINE.md 的策略矩阵。
+    /// docs/ui/DISPLAY_PIPELINE.md 的策略矩阵。
     /// </summary>
     public static string? DescribeTradeoff(UpscalerBackend backend, GpuInfo gpu)
     {

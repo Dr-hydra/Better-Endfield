@@ -4,7 +4,7 @@
 
 本目录 `BuildProbe.ps1` 构建模块并运行针对性探针检查，可通过 `-DeployTo` 覆盖指定测试目录。使用前先按项目正常 CMake 流程配置 build，替换已加载 DLL 前退出游戏。
 
-原生资料入库后，用 `CompleteSourceIdentities.ps1` 从相同版本离线资源重算 EFMI 原索引和纹理身份。该步骤不需要作者 Mod，也不重新启动游戏；命令和限制见 `docs/archive/bem/BEM_EFMI_IDENTITIES_20260920.md`。新版本更新必须重新核验，不能仅沿用旧 hash 表。
+原生资料入库后，用 `CompleteSourceIdentities.ps1` 从相同版本离线资源重算 EFMI 原索引和纹理身份。该步骤不需要作者 Mod，也不重新启动游戏；命令和限制见 `docs/custom_model/research/1.5.3/bem-character-catalog/BEM_EFMI_IDENTITIES.md`。新版本更新必须重新核验，不能仅沿用旧 hash 表。
 
 ```powershell
 # 从仓库根目录执行。先更新离线 manifest，不能沿用旧游戏版本标注。
@@ -21,5 +21,5 @@
 数据在 `%LOCALAPPDATA%/BetterEndfield/catalog/custom-model/native-probe/`。status 可在游戏关闭后查看；`--run`/`-Run` 可选择历史任务。
 矩阵、布局与材质信息是原生观测；EFMI GPU hash、Shader 语义和 world/UI 等价性仍需离线证据，不能仅据采集完成自动批准转换。
 
-采集后的批量流程：上级目录 `prepare_sweep_offline.py` 联合提取当前快照依赖并逐角色解析，再由 `import_runtime_catalog.py` 核对身份、矩阵、骨骼和材质后生成 catalog。每个部件保留直接/等价复用来源，差异部件记录在排除清单；已有 EFMI 对应仅在原生契约一致时保留。用法和本次覆盖见 `docs/archive/bem/BEM_CHARACTER_CATALOG_20260919.md`。
-定向探针工具保留在上一级 `runtime_native_probe.py`，完整说明见 `docs/CUSTOM_MODEL_RUNTIME_SWEEP_20260919.md`。
+采集后的批量流程：上级目录 `prepare_sweep_offline.py` 联合提取当前快照依赖并逐角色解析，再由 `import_runtime_catalog.py` 核对身份、矩阵、骨骼和材质后生成 catalog。每个部件保留直接/等价复用来源，差异部件记录在排除清单；已有 EFMI 对应仅在原生契约一致时保留。用法和本次覆盖见 `docs/custom_model/research/1.5.3/bem-character-catalog/BEM_CHARACTER_CATALOG.md`。
+定向探针工具保留在上一级 `runtime_native_probe.py`，完整说明见 `docs/custom_model/research/1.5.3/runtime-probes/CUSTOM_MODEL_RUNTIME_SWEEP.md`。

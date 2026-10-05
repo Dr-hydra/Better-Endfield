@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "executable": "Endfield.exe",
+  "uninstall_key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+  "product_names": ["Endfield", "终末地"],
+  "publisher_keys": ["Software\\Hypergryph\\Launcher", "Software\\GRYPHLINE", "Software\\GRYPHLINK"],
+  "path_values": ["InstallLocation", "InstallPath", "install_path", "game_path", "GamePath", "Path"],
+  "cached_executables": [
+    "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\Shell\\MuiCache",
+    "Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Compatibility Assistant\\Store"
+  ],
+  "app_paths": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\Endfield.exe"
+}

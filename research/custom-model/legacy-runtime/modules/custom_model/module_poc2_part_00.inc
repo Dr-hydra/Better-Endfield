@@ -33,7 +33,7 @@ constexpr int kRollbackHotkey = VK_F11;
 // to separate "this renderer will not display a runtime-created Mesh at all"
 // from "the geometry or its channels are wrong", which the working
 // declaration-reproducing path has since settled; their reasoning is kept in
-// docs/CUSTOM_MODEL_POC22_RAW_STREAM.md.
+// docs/custom_model/research/1.5.3/mesh-raw-poc/CUSTOM_MODEL_POC22_RAW_STREAM.md.
 //
 // F8 reads the renderer's GraphicsBuffer metadata. Kept on its own key because
 // PoC-3 crashed the client on the Mesh-level equivalent.

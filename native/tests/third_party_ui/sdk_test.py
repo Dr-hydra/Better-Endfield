@@ -40,7 +40,7 @@ def main():
     headers = {'ModuleApi.h', 'HookChain.h', 'ThirdPartyModule.h'}
     assert {Path(name).name for name in sdk if name.startswith('include/BetterEndfield/')} == headers
     assert sdk['packages/' + args.module.name] == args.module.read_bytes(), 'embedded import ZIP differs'
-    assert sdk['docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md'].startswith(b'# ')
+    assert sdk['docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md'].startswith(b'# ')
     for platform_path in manifest['libraries'].values():
         assert sdk['examples/echo/' + platform_path] == package[platform_path]
     # The UUID temp root is outside the repository; cleanup targets only this exact directory.

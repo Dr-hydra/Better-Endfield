@@ -3,20 +3,21 @@
 
 from __future__ import annotations
 
+import argparse
+import hashlib
 import html as html_module
 import io
 import json
+import os
 import re
 import urllib.request
 from pathlib import Path
 
-from PIL import Image, ImageOps, UnidentifiedImageError
+from workspace_config import load_workspace
+from RefreshEndfieldResourceInputs import configured_path, publish_changes
 
 
-ROOT = Path(__file__).resolve().parents[1]
 INDEX_URL = "https://end.canmoe.com/zh-CN/wiki/characters"
-ASSET_DIR = ROOT / "native" / "modules" / "combat_stats" / "assets" / "avatars"
-OVERLAY_DIR = ROOT / "native" / "modules" / "combat_stats" / "overlay"
 
 CARD_PATTERN = re.compile(
     r'href="/zh-CN/wiki/characters/(?P<id>chr_[^"]+)"[\s\S]*?'
@@ -79,8 +80,28 @@ def cpp_wstring(value: str) -> str:
     return value.replace("\\", "\\\\").replace('"', '\\"')
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--workspace-config", type=Path)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--overlay-output", type=Path)
+    parser.add_argument("--index-url")
+    args = parser.parse_args()
+    args.workspace = ws = load_workspace(args.workspace_config)
+    args.output = args.output or ws.path("resource_update.outputs.avatars")
+    args.overlay_output = args.overlay_output or configured_path(ws, "resource_update.outputs.avatar_overlay", ws.root / "native/modules/combat_stats/overlay")
+    args.index_url = args.index_url or ws.get("resource_update.avatar_index_url", INDEX_URL)
+    return args
+
+
 def main() -> None:
-    page = download(INDEX_URL).decode("utf-8")
+    args = parse_args()
+    from PIL import Image, ImageOps, UnidentifiedImageError
+    from urllib.parse import urljoin
+
+    asset_dir, overlay_dir = args.output, args.overlay_output
+    page = download(args.index_url).decode("utf-8")
+    pending: dict[Path, bytes | str] = {}
     records: list[dict[str, object]] = []
     seen: set[str] = set()
     for match in CARD_PATTERN.finditer(page):
@@ -100,12 +121,10 @@ def main() -> None:
     if len(records) < 25:
         raise RuntimeError(f"Character index yielded only {len(records)} records")
 
-    ASSET_DIR.mkdir(parents=True, exist_ok=True)
-    OVERLAY_DIR.mkdir(parents=True, exist_ok=True)
     for index, record in enumerate(records):
-        source_url = "https://end.canmoe.com" + str(record["source"])
+        source_url = urljoin(args.index_url, str(record["source"]))
         source_bytes = download(source_url)
-        output_path = ASSET_DIR / f"{record['id']}.png"
+        output_path = asset_dir / f"{record['id']}.png"
         try:
             with Image.open(io.BytesIO(source_bytes)) as source_image:
                 portrait = ImageOps.fit(
@@ -114,7 +133,9 @@ def main() -> None:
                     method=Image.Resampling.LANCZOS,
                     centering=(0.5, 0.35),
                 )
-                portrait.save(output_path, format="PNG", optimize=True)
+                encoded = io.BytesIO()
+                portrait.save(encoded, format="PNG", optimize=True)
+                pending[output_path] = encoded.getvalue()
         except UnidentifiedImageError:
             # Some Python installations do not include an AVIF decoder.  A
             # previously generated PNG is still a valid local asset; retain it
@@ -125,6 +146,7 @@ def main() -> None:
                 )
         record["resourceId"] = 1000 + index
         record["sourceUrl"] = source_url
+        record["sourceSha256"] = hashlib.sha256(source_bytes).hexdigest()
 
     resources = {str(record["id"]): int(record["resourceId"]) for record in records}
     aliases = [
@@ -155,27 +177,22 @@ def main() -> None:
         )
     for record in records:
         rc_lines.append(
-            f'{record["resourceId"]} PNG "../assets/avatars/{record["id"]}.png"'
+            f'{record["resourceId"]} PNG "{Path(os.path.relpath(asset_dir / (str(record["id"]) + ".png"), overlay_dir)).as_posix()}"'
         )
     header_lines.extend(["};", ""])
 
-    (OVERLAY_DIR / "character_assets.generated.h").write_text(
-        "\n".join(header_lines), encoding="utf-8", newline="\n"
-    )
-    (OVERLAY_DIR / "avatars.generated.rcinc").write_text(
-        "\n".join(rc_lines) + "\n", encoding="utf-8", newline="\n"
-    )
+    pending[overlay_dir / "character_assets.generated.h"] = "\n".join(header_lines)
+    pending[overlay_dir / "avatars.generated.rcinc"] = "\n".join(rc_lines) + "\n"
     manifest = {
         "schemaVersion": 1,
-        "source": INDEX_URL,
+        "source": args.index_url,
         "characters": records,
     }
-    (ASSET_DIR.parent / "characters.json").write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-        newline="\n",
-    )
-    print(f"Updated {len(records)} combat portraits in {ASSET_DIR}")
+    pending[asset_dir.parent / "characters.json"] = json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
+    # Finish all downloads/decoding before replacing valid local assets.
+    args.workspace.env()
+    publish_changes(list(pending.items()), args.workspace.path("paths.temp"))
+    print(f"Updated {len(records)} combat portraits in {asset_dir}")
 
 
 if __name__ == "__main__":

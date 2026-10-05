@@ -109,7 +109,7 @@ try {
     foreach ($header in @('ModuleApi.h', 'HookChain.h', 'ThirdPartyModule.h')) {
         Copy-File (Join-Path $repoRoot "native/shared/include/BetterEndfield/$header") (Join-Path $sdkRoot "include/BetterEndfield/$header")
     }
-    Copy-File (Join-Path $repoRoot 'docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md') (Join-Path $sdkRoot 'docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md')
+    Copy-File (Join-Path $repoRoot 'docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md') (Join-Path $sdkRoot 'docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md')
     foreach ($relative in @('CMakeLists.txt', 'module.json', 'native/echo.cpp', 'ui/index.html', 'ui/style.css', 'ui/app.js')) {
         Copy-File (Join-Path $echoRoot $relative) (Join-Path $sdkRoot "examples/echo/$relative")
     }
@@ -121,7 +121,7 @@ try {
 
 Target: Better Endfield 3.4.2, package format 1, native ABI 1.
 
-- `docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md`: package, lifecycle, configuration, UI bridge, shared Hook contract and build guide.
+- `docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md`: package, lifecycle, configuration, UI bridge, shared Hook contract and build guide.
 - `include/BetterEndfield/`: all three public headers required by `ThirdPartyModule.h`.
 - `examples/echo/`: complete portable CMake/C++20 source and static HTML UI, plus both prebuilt native libraries.
 - `packages/BetterEndfield-Echo-1.0.0-Dual.zip`: import this ZIP into the application's Third-Party Modules page on either platform, then enable it.

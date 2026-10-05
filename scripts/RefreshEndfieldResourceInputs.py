@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
-import os
 import re
 import shutil
 import subprocess
@@ -18,10 +17,124 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+from workspace_config import load_workspace, producer_key, write_if_changed
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_GAME = Path(r"E:\Endfield Game")
-DEFAULT_OUTPUT = REPO_ROOT / "research/current-inputs"
+def configured_path(ws: Any, key: str, fallback: Path) -> Path:
+    return ws.path(key, required=False) or fallback
+
+
+def read_metadata(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8-sig"))
+        return value if isinstance(value, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def tool_revision(paths: list[Path]) -> str:
+    """Hash small source files; use version/stat identity for compiled tools."""
+    revisions = []
+    for path in paths:
+        if not path.is_file():
+            raise FileNotFoundError(f"Resource tool not found: {path}")
+        stat = path.stat()
+        revisions.append({"path": str(path.resolve()), "size": stat.st_size,
+                          "revision": sha256(path) if path.suffix == ".py"
+                          else stat.st_mtime_ns})
+    return producer_key(revisions, "resource-tools-v1", {})
+
+
+def snapshot_complete(output: Path, metadata: dict[str, Any], key: str) -> bool:
+    if metadata.get("producerKey") != key or not metadata.get("files"):
+        return False
+    for item in metadata["files"]:
+        try:
+            path = output / item["path"]
+            if output.resolve() not in path.resolve().parents or not path.is_file():
+                return False
+            if path.stat().st_size != item["size"]:
+                return False
+        except (KeyError, TypeError, OSError):
+            return False
+    return True
+
+
+def publish_snapshot(staging: Path, output: Path, temp: Path,
+                     obsolete: list[str] | None = None) -> None:
+    """Publish changed files only, restoring them if any publish operation fails.
+
+    Back up only files that actually change, in disposable staging. Untracked
+    files (including manual overrides) are retained. Metadata is published last.
+    """
+    output = output.resolve()
+    staged = sorted((path for path in staging.rglob("*") if path.is_file()),
+                    key=lambda p: (p.name in {"input-snapshot.json", "source-metadata.json"}
+                                   or p.parent.name == ".producers", str(p)))
+    changes: list[tuple[Path, bytes | None]] = []
+    for path in staged:
+        destination = output / path.relative_to(staging)
+        if output not in destination.resolve().parents:
+            raise ValueError(f"Snapshot path escapes output: {destination}")
+        changes.append((destination, path.read_bytes()))
+    for relative in obsolete or []:
+        destination = output / relative
+        if output not in destination.resolve().parents:
+            raise ValueError(f"Snapshot path escapes output: {destination}")
+        if destination.is_file() and not (staging / relative).exists():
+            changes.insert(0, (destination, None))
+    publish_changes(changes, temp)
+
+
+def publish_changes(changes: list[tuple[Path, bytes | str | None]], temp: Path) -> None:
+    """Apply a prepared batch, backing up only changed existing files."""
+    pending: list[tuple[Path, bytes | None]] = []
+    for destination, content in changes:
+        data = content.encode("utf-8") if isinstance(content, str) else content
+        if data is None:
+            if destination.is_file():
+                pending.append((destination, None))
+        elif not destination.is_file() or destination.read_bytes() != data:
+            pending.append((destination, data))
+    with tempfile.TemporaryDirectory(prefix="resource-rollback-", dir=temp) as saved:
+        undo: list[tuple[Path, Path | None]] = []
+        try:
+            for index, (destination, data) in enumerate(pending):
+                backup = Path(saved) / str(index) if destination.is_file() else None
+                if backup is not None:
+                    shutil.copyfile(destination, backup)
+                undo.append((destination, backup))
+                if data is None:
+                    destination.unlink()
+                else:
+                    write_if_changed(destination, data)
+        except Exception:
+            for destination, backup in reversed(undo):
+                if backup is None:
+                    destination.unlink(missing_ok=True)
+                else:
+                    write_if_changed(destination, backup.read_bytes())
+            raise
+
+
+def vfs_block_snapshot(game_path: Path, block: str) -> list[dict[str, Any]]:
+    """Read only relevant BLC indexes, never hash CHK/game payloads."""
+    result = []
+    for layer in ("StreamingAssets", "Persistent"):
+        root = game_path / "Endfield_Data" / layer / "VFS"
+        if not root.is_dir():
+            continue
+        indexes = [directory / f"{directory.name}.blc" for directory in sorted(root.iterdir())
+                   if directory.is_dir()]
+        matching = [index for index in indexes if index.stem.casefold().startswith(block.casefold())]
+        # Some clients use opaque block directory names. Conservatively bind
+        # to their small indexes when a named block cannot be selected.
+        for index in matching or indexes:
+            if index.is_file():
+                result.append({"layer": layer, "block": index.stem,
+                               "sha256": sha256(index)})
+    if not result:
+        raise FileNotFoundError(f"No {block} VFS block indexes found under {game_path}")
+    return result
 
 
 def target_pattern(platform: str) -> re.Pattern[str]:
@@ -45,26 +158,32 @@ class VfsRecord:
     size: int
     encrypted: bool
     iv_seed: int
+    content_md5: str = ""
+    file_md5: str = ""
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--game-path", type=Path, default=DEFAULT_GAME)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--workspace-config", type=Path)
+    parser.add_argument("--check", action="store_true", help="Report configuration and prerequisite status without reading game resources")
+    parser.add_argument("--game-path", type=Path)
+    parser.add_argument("--output", type=Path)
     parser.add_argument(
-        "--platform", choices=("Windows", "Android"), default="Windows"
+        "--platform", choices=("Windows", "Android")
     )
     parser.add_argument("--streaming-vfs", type=Path)
     parser.add_argument("--persistent-vfs", type=Path)
     parser.add_argument(
         "--resconv",
         type=Path,
-        default=(
-            REPO_ROOT
-            / "tools/FkArkEnd/ResConv/bin/Release/net10.0/ResConv.exe"
-        ),
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    args.workspace = ws = load_workspace(args.workspace_config)
+    args.game_path = args.game_path or ws.path("game.install_dir", required=False)
+    args.output = args.output or ws.path("resource_update.input_root")
+    args.resconv = args.resconv or ws.path("tools.resconv")
+    args.platform = args.platform or ws.get("game.platform", "Windows")
+    return args
 
 
 def load_module(name: str, path: Path) -> Any:
@@ -152,6 +271,8 @@ def parse_blc_records(
                         size=file_size,
                         encrypted=encrypted,
                         iv_seed=iv_seed,
+                        content_md5=_content_md5.hex().upper(),
+                        file_md5=_file_data_md5.hex().upper(),
                     )
                 )
     return result
@@ -167,13 +288,11 @@ def build_chunk_index(roots: list[tuple[str, Path]]) -> dict[str, Path]:
     return chunks
 
 
-def extract_overlay(
+def select_overlay(
     unpacker: Any,
     roots: list[tuple[str, Path]],
-    output: Path,
     target: re.Pattern[str],
 ) -> list[VfsRecord]:
-    chunks = build_chunk_index(roots)
     selected: dict[str, VfsRecord] = {}
     for layer, root in roots:
         if not root.exists():
@@ -187,7 +306,14 @@ def extract_overlay(
             for record in parse_blc_records(unpacker, blc, layer, target):
                 selected[record.relative_path.casefold()] = record
 
-    records = sorted(selected.values(), key=lambda item: item.relative_path.casefold())
+    return sorted(selected.values(), key=lambda item: item.relative_path.casefold())
+
+
+def extract_overlay(unpacker: Any, roots: list[tuple[str, Path]], output: Path,
+                    target: re.Pattern[str], records: list[VfsRecord] | None = None
+                    ) -> list[VfsRecord]:
+    records = records if records is not None else select_overlay(unpacker, roots, target)
+    chunks = build_chunk_index(roots)
     for record in records:
         chunk_path = chunks.get(record.chunk)
         if chunk_path is None:
@@ -207,7 +333,7 @@ def extract_overlay(
             payload = unpacker.per_file_decrypt(payload, record.iv_seed)
         destination = output / Path(record.relative_path)
         destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_bytes(payload)
+        write_if_changed(destination, payload)
     return records
 
 
@@ -241,7 +367,8 @@ def is_character_prefab(data: dict[str, Any], filename: str) -> bool:
 
 
 def convert_inputs(
-    unpacker_root: Path, resconv: Path, staging: Path, platform: str
+    unpacker_root: Path, resconv: Path, staging: Path, platform: str,
+    env: dict[str, str] | None = None,
 ) -> tuple[dict[str, int], set[str]]:
     manifest = staging / f"Bundles/{platform}/manifest.hgmmap"
     audio_dialog = staging / "TableCfg/AudioDialog.bytes"
@@ -250,7 +377,7 @@ def convert_inputs(
         raise FileNotFoundError("current manifest or AudioDialog was not extracted")
     if not resconv.exists():
         raise FileNotFoundError(f"ResConv was not found: {resconv}")
-    subprocess.run([str(resconv), str(manifest)], check=True)
+    subprocess.run([str(resconv), str(manifest)], check=True, env=env)
     manifest_json = manifest.with_suffix(".json")
     manifest_data = json.loads(manifest_json.read_text(encoding="utf-8-sig"))
     if not manifest_data.get("Assets") or not manifest_data.get("Bundles"):
@@ -262,11 +389,7 @@ def convert_inputs(
         raise ValueError("AudioDialog SparkBuffer decode failed")
     table_output = staging / "Table/AudioDialog.json"
     table_output.parent.mkdir(parents=True, exist_ok=True)
-    table_output.write_text(
-        json.dumps(table, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-        newline="\n",
-    )
+    write_if_changed(table_output, json.dumps(table, ensure_ascii=False, indent=2) + "\n")
 
     decoder = load_module("ef_manifest_json", unpacker_root / "decode_json_other.py")
     decoded_root = staging / "Json_decrypted/NPC/PrefabInfo"
@@ -284,9 +407,7 @@ def convert_inputs(
             )
             source.unlink()
             continue
-        (decoded_root / source.name).write_text(
-            result + "\n", encoding="utf-8", newline="\n"
-        )
+        write_if_changed(decoded_root / source.name, result + "\n")
         prefab_count += 1
     if prefab_count < 30:
         raise ValueError(f"only {prefab_count} playable PrefabInfo files decoded")
@@ -301,29 +422,31 @@ def convert_inputs(
     )
 
 
-def replace_output(staging: Path, output: Path) -> None:
-    output.parent.mkdir(parents=True, exist_ok=True)
-    backup = output.with_name(f".{output.name}.previous")
-    if backup.exists():
-        shutil.rmtree(backup)
-    if output.exists():
-        os.replace(output, backup)
-    try:
-        os.replace(staging, output)
-    except Exception:
-        if backup.exists() and not output.exists():
-            os.replace(backup, output)
-        raise
-    if backup.exists():
-        shutil.rmtree(backup)
-
-
 def main() -> int:
     args = parse_args()
-    game_path = args.game_path.resolve()
+    ws = args.workspace
     output = args.output.resolve()
     resconv = args.resconv.resolve()
-    unpacker_root = REPO_ROOT / "tools/EndfieldUnpacker"
+    unpacker_root = configured_path(ws, "tools.endfield_unpacker_root",
+                                    ws.path("paths.toolchains", "EndfieldUnpacker"))
+    prerequisites = [resconv, *(unpacker_root / name for name in
+                               ("decrypt_vfs.py", "decode_sparkbuffer.py", "decode_json_other.py"))]
+    if args.check:
+        print(json.dumps({"configurationValid": True, "gameVersion": ws.get("game.version"),
+                          "resourceSnapshot": ws.get("game.snapshot"), "inputRoot": str(output),
+                          "gamePath": str(args.game_path) if args.game_path else None,
+                          "gamePathStatus": "available" if args.game_path and args.game_path.is_dir() else "missing",
+                          "prerequisites": [{"path": str(path), "status": "available" if path.is_file() else "missing"}
+                                            for path in prerequisites], "refreshPerformed": False}, indent=2))
+        return 0
+    if not args.game_path:
+        raise ValueError("Configure game.install_dir or pass --game-path to refresh inputs")
+    game_path = args.game_path.resolve()
+    missing = [str(path) for path in prerequisites if not path.is_file()]
+    if missing:
+        raise FileNotFoundError("Resource refresh prerequisites missing: " + ", ".join(missing)
+                                + ". Configure tools.resconv/tools.endfield_unpacker_root or pass --resconv; prebuilt tools are required.")
+    env = ws.env()
     try:
         import Crypto  # noqa: F401
     except ModuleNotFoundError:
@@ -335,7 +458,7 @@ def main() -> int:
             )
         return subprocess.run(
             [str(bundled_python), str(Path(__file__).resolve()), *sys.argv[1:]],
-            check=False,
+            check=False, env=env,
         ).returncode
     sys.path.insert(0, str(unpacker_root))
     config_stub = types.ModuleType("config")
@@ -361,16 +484,25 @@ def main() -> int:
     if not any(root.exists() for _layer, root in roots):
         raise FileNotFoundError(f"Endfield VFS was not found under {game_path}")
 
-    output.parent.mkdir(parents=True, exist_ok=True)
-    staging = Path(
-        tempfile.mkdtemp(prefix=f".{output.name}.staging-", dir=output.parent)
-    )
-    try:
+    records = select_overlay(unpacker, roots, target_pattern(args.platform))
+    revision = tool_revision([Path(__file__), unpacker_root / "decrypt_vfs.py",
+                              unpacker_root / "decode_sparkbuffer.py",
+                              unpacker_root / "decode_json_other.py", resconv])
+    key = producer_key([asdict(item) for item in records], revision,
+                       {"platform": args.platform, "roots": [str(root) for _, root in roots],
+                        "gameVersion": ws.get("game.version"), "resourceSnapshot": ws.get("game.snapshot"),
+                        "toolVersion": ws.get("resource_update.tool_revision", "unknown")})
+    previous = read_metadata(output / "input-snapshot.json")
+    if snapshot_complete(output, previous, key):
+        print(f"Reusing complete input snapshot: {output}")
+        return 0
+    with tempfile.TemporaryDirectory(prefix="resource-inputs-", dir=ws.path("paths.temp")) as temporary:
+        staging = Path(temporary)
         records = extract_overlay(
-            unpacker, roots, staging, target_pattern(args.platform)
+            unpacker, roots, staging, target_pattern(args.platform), records
         )
         counts, excluded_prefabs = convert_inputs(
-            unpacker_root, resconv, staging, args.platform
+            unpacker_root, resconv, staging, args.platform, env
         )
         records = [
             record
@@ -381,7 +513,12 @@ def main() -> int:
             path for path in staging.rglob("*") if path.is_file()
         )
         snapshot = {
+            **previous,
             "schemaVersion": 1,
+            "producerKey": key,
+            "toolRevision": revision,
+            "gameVersion": ws.get("game.version"),
+            "resourceSnapshot": ws.get("game.snapshot"),
             "platform": args.platform,
             "overlayOrder": [layer for layer, _root in roots],
             "counts": counts,
@@ -395,16 +532,10 @@ def main() -> int:
                 for path in generated_files
             ],
         }
-        (staging / "input-snapshot.json").write_text(
-            json.dumps(snapshot, ensure_ascii=True, indent=2) + "\n",
-            encoding="utf-8",
-            newline="\n",
-        )
-        replace_output(staging, output)
-    except Exception:
-        if staging.exists():
-            shutil.rmtree(staging)
-        raise
+        write_if_changed(staging / "input-snapshot.json",
+                         json.dumps(snapshot, ensure_ascii=True, indent=2) + "\n")
+        publish_snapshot(staging, output, ws.path("paths.temp"),
+                         [item["path"] for item in previous.get("files", [])])
 
     print(
         f"Refreshed {counts['prefabInfoCount']} PrefabInfo records, "

@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "package": {
+    "id": "gilberta.outfit-b",
+    "name": "洁尔佩塔 Outfit B",
+    "author": "原 Mod 作者（开发转换样本）",
+    "version": "1.0.0"
+  },
+  "target": {
+    "character_id": "chr_0013_aglina",
+    "world_resource": "chr_0013_aglina_postmodel",
+    "ui_resource": "chr_0013_aglina_uimodel",
+    "profile_id": "aglina.windows",
+    "revision": "20260918"
+  },
+  "appearances": [
+    {
+      "id": "outfit-b",
+      "name": "另一套服装",
+      "format": "development-v25",
+      "profile": "E:\\Dr.Hydra\\Better Endfield\\.worktrees\\dev-custom-model-design\\artifacts\\native-parser\\gilberta-outfit-b-conversion.profile.json"
+    }
+  ]
+}

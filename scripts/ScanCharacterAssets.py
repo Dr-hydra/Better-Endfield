@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import io
 import json
 import re
 from collections import defaultdict
@@ -18,41 +19,26 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
+from workspace_config import load_workspace, write_if_changed
+from RefreshEndfieldResourceInputs import configured_path, read_metadata
 
-SCRIPT_PATH = Path(__file__).resolve()
-WORKSPACE_ROOT = SCRIPT_PATH.parent.parent
-DEFAULT_MANIFEST = (
-    WORKSPACE_ROOT
-    / "state"
-    / "vfs-manifest"
-    / "Data"
-    / "Bundles"
-    / "Windows"
-    / "manifest.json"
-)
-DEFAULT_PREFAB_INFO = (
-    WORKSPACE_ROOT
-    / "tools"
-    / "EndfieldUnpacker"
-    / "DecryptOutput"
-    / "Json_decrypted"
-    / "NPC"
-    / "PrefabInfo"
-)
-DEFAULT_OUTPUT = WORKSPACE_ROOT / "research" / "character-catalog"
-DEFAULT_CLIP_METADATA = DEFAULT_OUTPUT / "walk-clip-metadata.json"
-DEFAULT_CLIP_JSON = DEFAULT_OUTPUT / "walk-animation-json"
 
 PLAYABLE_CHARACTER_FILE = re.compile(r"^npc_(chr_\d{4}_[a-z0-9]+)\.json$", re.I)
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
-    parser.add_argument("--prefab-info", type=Path, default=DEFAULT_PREFAB_INFO)
+    parser.add_argument("--workspace-config", type=Path)
+    parser.add_argument("--manifest", type=Path)
+    parser.add_argument("--prefab-info", type=Path)
     parser.add_argument("--clip-json", type=Path, action="append", default=[])
-    parser.add_argument("--out", type=Path, default=DEFAULT_OUTPUT)
-    return parser.parse_args()
+    parser.add_argument("--out", type=Path)
+    args = parser.parse_args()
+    args.workspace = ws = load_workspace(args.workspace_config)
+    args.manifest = args.manifest or ws.path("resource_update.input_root", "Bundles", ws.get("game.platform", "Windows"), "manifest.json")
+    args.prefab_info = args.prefab_info or ws.path("resource_update.input_root", "Json_decrypted", "NPC", "PrefabInfo")
+    args.out = args.out or ws.path("resource_update.catalog_root")
+    return args
 
 
 def hex_u64(value: Any) -> str | None:
@@ -131,11 +117,11 @@ def is_neutral_loop_walk(clip_name: str, loop_time: bool | None) -> bool:
 
 
 def write_csv(path: Path, fieldnames: list[str], rows: Iterable[dict[str, Any]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8-sig", newline="") as stream:
-        writer = csv.DictWriter(stream, fieldnames=fieldnames, extrasaction="ignore")
-        writer.writeheader()
-        writer.writerows(rows)
+    stream = io.StringIO(newline="")
+    writer = csv.DictWriter(stream, fieldnames=fieldnames, extrasaction="ignore")
+    writer.writeheader()
+    writer.writerows(rows)
+    write_if_changed(path, stream.getvalue().encode("utf-8-sig"))
 
 
 def main() -> int:
@@ -144,6 +130,8 @@ def main() -> int:
     prefab_info_dir = args.prefab_info.resolve()
     out_dir = args.out.resolve()
 
+    if not prefab_info_dir.is_dir():
+        raise FileNotFoundError(prefab_info_dir)
     manifest = load_json(manifest_path)
     bundles = {int(item["bundleIndex"]): item for item in manifest["Bundles"]}
     assets = manifest["Assets"]
@@ -151,10 +139,14 @@ def main() -> int:
 
     clip_json_roots = list(args.clip_json)
     if not clip_json_roots:
-        if DEFAULT_CLIP_METADATA.exists():
-            clip_json_roots.append(DEFAULT_CLIP_METADATA)
-        elif DEFAULT_CLIP_JSON.exists():
-            clip_json_roots.append(DEFAULT_CLIP_JSON)
+        metadata_path = args.workspace.path("resource_update.walk_clip_metadata", required=False)
+        if metadata_path and metadata_path.exists():
+            clip_json_roots.append(metadata_path)
+        else:
+            clip_exports = configured_path(args.workspace, "resource_update.walk_clip_json",
+                                           args.workspace.path("resource_update.catalog_root", "walk-animation-json"))
+            if clip_exports.exists():
+                clip_json_roots.append(clip_exports)
     clip_metadata, clip_metadata_files, clip_metadata_records = load_clip_metadata(
         clip_json_roots
     )
@@ -378,6 +370,10 @@ def main() -> int:
         "characters": character_records,
     }
 
+    previous = read_metadata(out_dir / "characters.json")
+    if {k: v for k, v in previous.items() if k != "generatedAtUtc"} == {k: v for k, v in catalog.items() if k != "generatedAtUtc"}:
+        generated_at = previous.get("generatedAtUtc", generated_at)
+        catalog["generatedAtUtc"] = generated_at
     out_dir.mkdir(parents=True, exist_ok=True)
     compact_clip_records: list[dict[str, Any]] = []
     seen_clip_records: set[tuple[Any, ...]] = set()
@@ -410,15 +406,9 @@ def main() -> int:
         "sourceRoots": [str(path.resolve()) for path in clip_json_roots],
         "clips": compact_clip_records,
     }
-    with (out_dir / "walk-clip-metadata.json").open(
-        "w", encoding="utf-8", newline="\n"
-    ) as stream:
-        json.dump(compact_metadata, stream, ensure_ascii=False, indent=2)
-        stream.write("\n")
+    write_if_changed(out_dir / "walk-clip-metadata.json", json.dumps(compact_metadata, ensure_ascii=False, indent=2) + "\n")
 
-    with (out_dir / "characters.json").open("w", encoding="utf-8", newline="\n") as stream:
-        json.dump(catalog, stream, ensure_ascii=False, indent=2)
-        stream.write("\n")
+    write_if_changed(out_dir / "characters.json", json.dumps(catalog, ensure_ascii=False, indent=2) + "\n")
 
     selection_options = {
         "schemaVersion": 1,
@@ -446,11 +436,7 @@ def main() -> int:
             for character in character_records
         ],
     }
-    with (out_dir / "selection-options.json").open(
-        "w", encoding="utf-8", newline="\n"
-    ) as stream:
-        json.dump(selection_options, stream, ensure_ascii=False, indent=2)
-        stream.write("\n")
+    write_if_changed(out_dir / "selection-options.json", json.dumps(selection_options, ensure_ascii=False, indent=2) + "\n")
 
     model_rows: list[dict[str, Any]] = []
     animation_rows: list[dict[str, Any]] = []
@@ -490,9 +476,7 @@ def main() -> int:
     ]
     write_csv(out_dir / "animations.csv", animation_fields, animation_rows)
     write_csv(out_dir / "walk-animations.csv", animation_fields, walk_rows)
-    with (out_dir / "walk-bundles.txt").open("w", encoding="utf-8", newline="\n") as stream:
-        for bundle_name in sorted(walk_bundle_names):
-            stream.write(f"{bundle_name}\n")
+    write_if_changed(out_dir / "walk-bundles.txt", "".join(f"{name}\n" for name in sorted(walk_bundle_names)))
 
     report_lines = [
         "# Character walk-loop inventory",
@@ -587,9 +571,7 @@ def main() -> int:
             "JSON and rerun this scanner with `--clip-json <directory>`."
         )
     report_lines.append("")
-    (out_dir / "walk-loop-report.md").write_text(
-        "\n".join(report_lines), encoding="utf-8", newline="\n"
-    )
+    write_if_changed(out_dir / "walk-loop-report.md", "\n".join(report_lines))
 
     readme_lines = [
         "# Character asset catalog",
@@ -623,9 +605,7 @@ def main() -> int:
         "`m_LoopTime` enabled and its name must end in `_dialog_state_walk_loop`.",
         "",
     ]
-    (out_dir / "README.md").write_text(
-        "\n".join(readme_lines), encoding="utf-8", newline="\n"
-    )
+    write_if_changed(out_dir / "README.md", "\n".join(readme_lines))
 
     print(json.dumps(catalog["summary"], ensure_ascii=False, indent=2))
     print(f"Wrote catalog to {out_dir}")

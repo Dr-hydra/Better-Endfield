@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.20)
+project(WorldBindingChecks LANGUAGES CXX)
+add_executable(AndroidWorldBindingTests ../../native/tests/android_world_binding_tests.cpp)
+target_include_directories(AndroidWorldBindingTests PRIVATE ../../native/shared/include)
+target_compile_features(AndroidWorldBindingTests PRIVATE cxx_std_20)
+if(MSVC)
+  target_compile_options(AndroidWorldBindingTests PRIVATE /W4 /EHsc)
+endif()

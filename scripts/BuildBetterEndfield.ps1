@@ -3,30 +3,40 @@ param(
     [ValidateSet("Debug", "Release")]
     [string]$Configuration = "Release",
 
-    [string]$PublishDir = ""
+    [string]$PublishDir = "",
+
+    [string]$WorkspaceConfig = ""
 )
 
 $ErrorActionPreference = "Stop"
-$repoRoot = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'Workspace.ps1')
+$ws = Get-BEWorkspace -Config $WorkspaceConfig
+Set-BEWorkspaceEnvironment $ws
+$repoRoot = $ws.repo_root
+$cmake = $ws.tools.cmake
+$dotnet = $ws.tools.dotnet
+$python = $ws.tools.python
 $nativeRoot = Join-Path $repoRoot "native"
-$nativeBuild = Join-Path $repoRoot "artifacts\betterendfield-native-build"
+$platformBuild = Join-Path $ws.paths.build "windows\win-x64\$Configuration"
+$nativeBuild = Join-Path $platformBuild "native"
 $uiProject = Join-Path $repoRoot "ui\BetterEndfield.UI\BetterEndfield.UI.csproj"
-$voiceManifest = Join-Path $repoRoot "manifests\voice\voice-event-media-manifest.json"
-$voiceCatalogIndex = Join-Path $repoRoot `
-    "ui\BetterEndfield.UI\Assets\voice\voice-catalog-index.json"
-$combatSemantics = Join-Path $repoRoot "manifests\combat\combat-semantics.besem"
-$buffSourceMap = Join-Path $repoRoot "manifests\combat\buff-sources.bemap"
-$combatSemanticsReport = Join-Path $repoRoot `
-    "manifests\combat\combat-semantics-report.json"
+$manifestRoot = $ws.resource_update.outputs.manifests
+$voiceManifest = Join-Path $manifestRoot "voice\voice-event-media-manifest.json"
+$voiceCatalogIndex = $ws.resource_update.outputs.voice_index
+$combatSemantics = Join-Path $manifestRoot "combat\combat-semantics.besem"
+$buffSourceMap = Join-Path $manifestRoot "combat\buff-sources.bemap"
+$combatSemanticsReport = Join-Path $manifestRoot "combat\combat-semantics-report.json"
 $publishDir = if ([string]::IsNullOrWhiteSpace($PublishDir)) {
-    Join-Path $repoRoot "artifacts\BetterEndfield-win-x64"
+    Join-Path $platformBuild "publish"
 }
 else {
     [System.IO.Path]::GetFullPath($PublishDir)
 }
 
-if (-not (Get-Command cmake.exe -ErrorAction SilentlyContinue)) {
-    throw "cmake.exe was not found. Install CMake and the Visual Studio C++ workload."
+foreach ($command in @($cmake, $dotnet, $python)) {
+    if (-not (Get-Command $command -ErrorAction SilentlyContinue)) {
+        throw "Configured build command was not found: $command"
+    }
 }
 
 if (-not (Test-Path -LiteralPath $voiceManifest -PathType Leaf) -or
@@ -58,43 +68,87 @@ if ($combatReportMetadata.kind -ne 'betterendfield-combat-semantics-build-report
     throw "The bundled combat semantics catalogue is stale or invalid. Run scripts\BuildCombatSemantics.py."
 }
 
-# Validate the resolved target before any recursive removal. The publish path
-# can be supplied explicitly, but must never resolve to the workspace itself
-# or a drive root.
+# Keep explicit publish directories, but never reset retained data or installs.
 $publishDir = [System.IO.Path]::GetFullPath($publishDir)
-if ($publishDir.TrimEnd('\') -eq $repoRoot.TrimEnd('\') -or
-    $publishDir.TrimEnd('\') -eq [System.IO.Path]::GetPathRoot($publishDir).TrimEnd('\')) {
-    throw "Refusing to reset the workspace or drive root: $publishDir"
+$publishIdentity = $publishDir.TrimEnd('\', '/')
+$protectedRoots = @($repoRoot, $ws.paths.build, $ws.paths.releases,
+    [System.IO.Path]::GetPathRoot($publishDir))
+foreach ($area in $protectedRoots) {
+    $identity = [System.IO.Path]::GetFullPath($area).TrimEnd('\', '/')
+    if ($publishIdentity -eq $identity -or
+        $identity.StartsWith($publishIdentity + '\', [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Refusing to reset a workspace/output root: $publishDir"
+    }
+}
+$retainedAreas = @($ws.legacy.root, $ws.game.install_dir, $ws.test.be_install_dir,
+    $ws.paths.inputs, $ws.paths.research, $ws.paths.toolchains, $ws.paths.generated)
+foreach ($sourceDirectory in @('native', 'ui', 'android', 'web', 'tools', 'scripts',
+    'docs', 'config', 'resources', 'manifests', 'legacy', '.git')) {
+    $retainedAreas += Join-Path $repoRoot $sourceDirectory
+}
+foreach ($area in $retainedAreas) {
+    if (-not $area) { continue }
+    $identity = [System.IO.Path]::GetFullPath($area).TrimEnd('\', '/')
+    if ($publishIdentity -eq $identity -or
+        $identity.StartsWith($publishIdentity + '\', [StringComparison]::OrdinalIgnoreCase) -or
+        $publishIdentity.StartsWith($identity + '\', [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Publish directory overlaps retained data: $publishDir"
+    }
+}
+$ancestor = $publishDir
+while ($ancestor) {
+    if (Test-Path -LiteralPath $ancestor) {
+        $entry = Get-Item -LiteralPath $ancestor -Force
+        if ($entry.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
+            throw "Publish directory traverses a reparse point: $ancestor"
+        }
+    }
+    $ancestor = Split-Path -Parent $ancestor
 }
 if (Test-Path -LiteralPath $publishDir) {
     Remove-Item -LiteralPath $publishDir -Recurse -Force
 }
 New-Item -ItemType Directory -Force -Path $publishDir | Out-Null
 
-& cmake -S $nativeRoot -B $nativeBuild -G "Visual Studio 17 2022" -A x64
+& $cmake -S $nativeRoot -B $nativeBuild -G "Visual Studio 17 2022" -A x64
 if ($LASTEXITCODE -ne 0) {
     throw "Better Endfield native configuration failed with exit code $LASTEXITCODE."
 }
 
-& cmake --build $nativeBuild --config $Configuration --target BetterEndfield.Layout --parallel
+& $cmake --build $nativeBuild --config $Configuration --target BetterEndfield.Layout --parallel
 if ($LASTEXITCODE -ne 0) {
     throw "Better Endfield native build failed with exit code $LASTEXITCODE."
 }
 
-dotnet publish $uiProject -c $Configuration -r win-x64 `
+& $dotnet publish $uiProject -c $Configuration -r win-x64 `
     --self-contained true -p:Platform=x64 -p:PublishSingleFile=true `
-    -p:DebugType=None -p:DebugSymbols=false -p:PublishDir="$publishDir\"
+    -p:DebugType=None -p:DebugSymbols=false -p:PublishDir="$publishDir\" `
+    "-p:BEWorkspaceBuildRoot=$($ws.paths.build)" `
+    "-p:BECharacterPresetsPath=$($ws.resource_update.outputs.character_presets)" `
+    "-p:BEVoiceCatalogIndexPath=$voiceCatalogIndex" `
+    "-p:BECombatDictionaryPath=$($ws.resource_update.outputs.combat_dictionary)"
 if ($LASTEXITCODE -ne 0) {
     throw "Better Endfield UI publish failed with exit code $LASTEXITCODE."
 }
 
-& (Join-Path $PSScriptRoot "BuildBemTools.ps1")
-$bemTools = Join-Path $repoRoot "artifacts\bem-tools\dist\BetterEndfield.BemConverter"
+& (Join-Path $PSScriptRoot "BuildBemTools.ps1") -WorkspaceConfig $WorkspaceConfig
+$bemTools = Join-Path $ws.paths.build "tools\bem\dist\BetterEndfield.BemConverter"
 New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "tools") | Out-Null
 Copy-Item -LiteralPath $bemTools -Destination (Join-Path $publishDir "tools\BemConverter") -Recurse -Force
 New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "docs") | Out-Null
-foreach ($document in @("BEM_CREATOR_GUIDE.md", "BEM_FORMAT_SPEC.md", "BEM_RUNTIME_COMPATIBILITY.md", "BEM_SOURCE_MOD_CONVERSION.md", "THIRD_PARTY_MODULE_CREATOR_GUIDE.md")) {
-    Copy-Item -LiteralPath (Join-Path $repoRoot "docs\$document") -Destination (Join-Path $publishDir "docs") -Force
+$documentNames = @("BEM_CREATOR_GUIDE.md", "BEM_FORMAT_SPEC.md", "BEM_RUNTIME_COMPATIBILITY.md", "BEM_SOURCE_MOD_CONVERSION.md", "THIRD_PARTY_MODULE_CREATOR_GUIDE.md")
+$resolveDocuments = @'
+import json, sys
+from pathlib import Path
+sys.path.insert(0, str(Path(sys.argv[1]) / 'scripts'))
+from workspace_config import load_workspace
+ws = load_workspace(repo_root=sys.argv[1])
+print(json.dumps([{'source': str(ws.document(name)), 'basename': name} for name in sys.argv[2:]]))
+'@
+$documentJson = & $python -c $resolveDocuments $repoRoot @documentNames
+if ($LASTEXITCODE -ne 0) { throw "Release document paths could not be resolved." }
+foreach ($document in (($documentJson -join "`n") | ConvertFrom-Json)) {
+    Copy-Item -LiteralPath $document.source -Destination (Join-Path $publishDir "docs\$($document.basename)") -Force
 }
 
 $nativeStage = Join-Path $nativeBuild "stage\$Configuration"
@@ -142,7 +196,7 @@ if ($runtimeMarkers) {
 $requiredReleaseFiles = @(
     "BetterEndfield.exe",
     "tools\BemConverter\BetterEndfield.BemConverter.exe",
-    "docs\BEM_CREATOR_GUIDE.md",
+    "docs\custom_model\BEM_CREATOR_GUIDE.md",
     "modules\BetterEndfield.CustomModel.dll",
     "modules\betterendfield.custom_model.module.ini",
     "runtime\BetterEndfield.Host.dll",
@@ -171,6 +225,23 @@ if ($missingReleaseFiles) {
     throw "Final release is incomplete: $($missingReleaseFiles -join ', ')"
 }
 
+# Persist a complete distributable outside the cleanable publish directory.
+$version = ([xml](Get-Content -LiteralPath (Join-Path $repoRoot 'Directory.Build.props') -Raw)).SelectSingleNode('//Version').InnerText.Trim()
+$releaseDir = Join-Path $ws.paths.releases "windows\win-x64\$Configuration"
+New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
+$releaseArchive = Join-Path $releaseDir "BetterEndfield-$version-win-x64.zip"
+$temporaryArchive = Join-Path $ws.paths.temp ("BetterEndfield-release-" + [Guid]::NewGuid().ToString('N') + '.zip')
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+try {
+    [System.IO.Compression.ZipFile]::CreateFromDirectory($publishDir, $temporaryArchive)
+    Move-Item -LiteralPath $temporaryArchive -Destination $releaseArchive -Force
+} finally {
+    if (Test-Path -LiteralPath $temporaryArchive) {
+        Remove-Item -LiteralPath $temporaryArchive -Force
+    }
+}
+
 Write-Host ""
 Write-Host "Better Endfield build complete: $publishDir"
+Write-Host "Release archive: $releaseArchive"
 Write-Host "Run BetterEndfield.exe, verify the detected paths, then choose Injector or XInput."

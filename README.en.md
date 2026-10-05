@@ -4,7 +4,7 @@
 
 Better Endfield is an open-source modular toolkit for *Arknights: Endfield*. It provides third-party character models, MMD playback, camera and UI controls, per-character voice languages, title-screen customization, and PC combat/gacha tools. Windows and Android share the main native feature sources; standard BEM model packages and MMD works can be used on both platforms. An experimental loader also supports third-party native modules and a web UI container.
 
-[Download](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [Release notes](CHANGELOG.md) · [Android setup/build guide](android/README.md) · [BEM creator guide](docs/BEM_CREATOR_GUIDE.en.md) · [Module developer guide](docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
+[Download](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [Release notes](CHANGELOG.md) · [Android setup/build guide](android/README.md) · [BEM creator guide](docs/custom_model/BEM_CREATOR_GUIDE.en.md) · [Module developer guide](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
 
 The current version is **3.5.0**, with standalone BEM Tools **1.5.0**. Version 3.5.0 adds Android cross-LOD asset compatibility, English BEM creator documentation, portable creator workspaces and the first Blender exporter.
 
@@ -71,12 +71,12 @@ BetterEndfield.BemConverter.exe build character.bemproj.json
 
 Both platforms also have an off-by-default experimental option to disable model validation. It bypasses compatibility/policy checks while retaining the decoding and representation requirements needed to read the file; it does not add new encodings. Developer tests may render incorrectly or crash the game.
 
-- [Creator guide](docs/BEM_CREATOR_GUIDE.en.md): tools, workflows, testing and distribution
-- [Format specification, 1.0–1.3](docs/BEM_FORMAT_SPEC.en.md)
-- [Runtime behavior and compatibility](docs/BEM_RUNTIME_COMPATIBILITY.en.md)
-- [Converting other Mods](docs/BEM_SOURCE_MOD_CONVERSION.en.md)
+- [Creator guide](docs/custom_model/BEM_CREATOR_GUIDE.en.md): tools, workflows, testing and distribution
+- [Format specification, 1.0–1.3](docs/custom_model/BEM_FORMAT_SPEC.en.md)
+- [Runtime behavior and compatibility](docs/custom_model/BEM_RUNTIME_COMPATIBILITY.en.md)
+- [Converting other Mods](docs/custom_model/BEM_SOURCE_MOD_CONVERSION.en.md)
 - [Runnable shape-slider example](tools/CustomModel/examples/body-slider/)
-- [Experimental hot-switch/loading behavior](docs/RELEASE_3_4_1_20261001.md)
+- [Experimental hot-switch/loading behavior](docs/workspace/releases/3.4.1/RELEASE_3_4_1.md)
 
 ## Third-party modules (experimental, 3.4.2)
 
@@ -92,31 +92,31 @@ Android phone navigation scrolls horizontally, while large screens retain a side
 
 Shared Hooks are optional: chain participants share a target and call `next`. Existing exclusive Hooks still report conflicts and are not automatically converted into chains. Participants coordinate function signatures, arguments/results and feature interactions. Successful loading does not establish compatibility with every built-in or third-party module.
 
-Start with the [module creator guide](docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md), then [ThirdPartyModule.h](native/shared/include/BetterEndfield/ThirdPartyModule.h), [HookChain.h](native/shared/include/BetterEndfield/HookChain.h) and the [Echo example](tools/ThirdPartyModules/echo/). Echo builds for Windows/Android; messaging and lifecycle have isolated regression coverage. Authors still test and document their real game modules' behavior, stability and compatibility.
+Start with the [module creator guide](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md), then [ThirdPartyModule.h](native/shared/include/BetterEndfield/ThirdPartyModule.h), [HookChain.h](native/shared/include/BetterEndfield/HookChain.h) and the [Echo example](tools/ThirdPartyModules/echo/). Echo builds for Windows/Android; messaging and lifecycle have isolated regression coverage. Authors still test and document their real game modules' behavior, stability and compatibility.
 
 ## Cameras, first person and MMD
 
 Free camera offers position/orientation, roll/FOV, mouse rotation, orbit/dolly/crane/truck motion, saved keyframe paths and VMD cameras. World pause is independent of free camera. First person includes head hiding, neck-hole filling, side-view limits and smooth turning. Windows controls support the main keyboard, numpad, mouse and configurable key combinations; Android uses the in-game deck.
 
-The global FOV setting added in 3.4.2 affects the ordinary main camera; free camera, first person and imported cameras keep their own FOV. Character follow translates free camera without changing orientation/manual offsets, reanchors after character changes and teleports, and pauses during camera-motion playback. [Implementation boundaries](docs/CAMERA_FOV_FOLLOW_IMPLEMENTATION_20261002.md)
+The global FOV setting added in 3.4.2 affects the ordinary main camera; free camera, first person and imported cameras keep their own FOV. Character follow translates free camera without changing orientation/manual offsets, reanchors after character changes and teleports, and pauses during camera-motion playback. [Implementation boundaries](docs/camera/research/1.5.3/fov-follow/CAMERA_FOV_FOLLOW_IMPLEMENTATION.md)
 
-First-person hair removal in 3.4.2 classifies **live bone weights and actual drawn geometry**, rather than hiding an entire mixed head/clothing mesh. BEM replacement geometry can supply CPU data. Unknown characters use generic live-skeleton fallback without a second mandatory character catalog. Separate parts attempt shadow-only rendering; mixed parts retain full shadow geometry. Uncertain parts remain when no geometry source is available. Shadows and residual hair still need in-game validation. [Implementation and verification scope](docs/BEM_HAIR_SHADOW_IMPLEMENTATION_20261002.md)
+First-person hair removal in 3.4.2 classifies **live bone weights and actual drawn geometry**, rather than hiding an entire mixed head/clothing mesh. BEM replacement geometry can supply CPU data. Unknown characters use generic live-skeleton fallback without a second mandatory character catalog. Separate parts attempt shadow-only rendering; mixed parts retain full shadow geometry. Uncertain parts remain when no geometry source is available. Shadows and residual hair still need in-game validation. [Implementation and verification scope](docs/camera/research/1.5.3/first-person-geometry/BEM_HAIR_SHADOW_IMPLEMENTATION.md)
 
-The MMD library groups motion, face, camera and local music, with `set.ini` work descriptions. It includes play/pause/stop, seeking, loops, game/free/VMD camera modes, up to four dancers, cloth physics and experimental terrain fitting. Windows local music does not require OmniMix. Android plays local media alongside game BGM; turn down the game's BGM when needed. Body/face, cloth and terrain capabilities depend on the client interfaces; successful builds/imports do not establish in-game visual correctness. [Cross-platform integration record](docs/ANDROID_CAMERA_MMD_20261001.md)
+The MMD library groups motion, face, camera and local music, with `set.ini` work descriptions. It includes play/pause/stop, seeking, loops, game/free/VMD camera modes, up to four dancers, cloth physics and experimental terrain fitting. Windows local music does not require OmniMix. Android plays local media alongside game BGM; turn down the game's BGM when needed. Body/face, cloth and terrain capabilities depend on the client interfaces; successful builds/imports do not establish in-game visual correctness. [Cross-platform integration record](docs/camera/research/1.5.3/android-mmd/ANDROID_CAMERA_MMD.md)
 
 ## Other modules
 
-**Title screen:** replace the login actor, choose each character's sitting chain and final action, adjust scale/initial angle/turning/stage speeds, and use native loops, forced loops or dual-Playable blending. Logo and login-band colors can be changed independently. There are 33 characters and 4,262 final-action entries; 3.4.2 adds the missing Purrche resources. [New-character resource fix](docs/TITLE_MODEL_PURRCHE_FIX_20261002.md)
+**Title screen:** replace the login actor, choose each character's sitting chain and final action, adjust scale/initial angle/turning/stage speeds, and use native loops, forced loops or dual-Playable blending. Logo and login-band colors can be changed independently. There are 33 characters and 4,262 final-action entries; 3.4.2 adds the missing Purrche resources. [New-character resource fix](docs/model/research/1.5.3/purrche-title/TITLE_MODEL_PURRCHE_FIX.md)
 
-**Voice:** set Chinese/English/Japanese/Korean individually while keeping the game's global voice language. Optional routing covers story dialogue, duration and lip-sync. Download the required language pack in the game first; catalogs are generated from local game resources. PCK/BNK/WEM audio is not shipped. [Voice routing](docs/VOICE_CUSTOM_LANGUAGE_SYSTEM.md)
+**Voice:** set Chinese/English/Japanese/Korean individually while keeping the game's global voice language. Optional routing covers story dialogue, duration and lip-sync. Download the required language pack in the game first; catalogs are generated from local game resources. PCK/BNK/WEM audio is not shipped. [Voice routing](docs/voice/VOICE_CUSTOM_LANGUAGE_SYSTEM.md)
 
 **UI and actions:** hide UID and toggle HUD through a hotkey/deck. PC touch layout with mouse-to-touch conversion is intended for streaming/touch devices; the default conversion toggle is `Ctrl+Alt+T`. Android can enable PC-style layout, preferably with a keyboard/controller. Layout is independent of account-platform identity. Sustained special dash currently targets Gilberta and Liino, with an additional Liino mech/VFX option. [Action module](native/modules/actions/README.md)
 
-**PC combat data:** manual and automatic dungeon sessions, damage-number visibility, damage/DPS overlays, skill categories, character/skill timelines, history filtering and web analysis. rDPS uses validated Buff/skill semantics bundled with the software to reattribute confirmed teammate contributions; unverified candidates do not participate. Records stay local unless the user opens web analysis. [Combat contracts](docs/COMBAT_RUNTIME_CONTRACTS.md)
+**PC combat data:** manual and automatic dungeon sessions, damage-number visibility, damage/DPS overlays, skill categories, character/skill timelines, history filtering and web analysis. rDPS uses validated Buff/skill semantics bundled with the software to reattribute confirmed teammate contributions; unverified candidates do not participate. Records stay local unless the user opens web analysis. [Combat contracts](docs/combat_stats/COMBAT_RUNTIME_CONTRACTS.md)
 
 **PC gacha:** opt-in sync through the game connection, pool statistics, six-star/UP results, pity and free pulls, JSON import/export and user-initiated cloud sharing. [Web functionality](web/docs/GACHA_WEB_PLAN.md)
 
-**PC music/display:** OmniMix uses the user's existing backend without copying its program or library. Login, main/base and gameplay music can be replaced separately, with native fallback on stream failure. OptiScaler supplies upscaling, frame generation and sharpening according to the actual GPU/backend. [OmniMix integration](docs/OMNIMIX_INTEGRATION_HANDOFF.md) · [Display pipeline](docs/DISPLAY_PIPELINE.md)
+**PC music/display:** OmniMix uses the user's existing backend without copying its program or library. Login, main/base and gameplay music can be replaced separately, with native fallback on stream failure. OptiScaler supplies upscaling, frame generation and sharpening according to the actual GPU/backend. [OmniMix integration](docs/music/OMNIMIX_INTEGRATION_HANDOFF.md) · [Display pipeline](docs/ui/DISPLAY_PIPELINE.md)
 
 ## Architecture and compatibility
 
@@ -138,7 +138,7 @@ Windows stores its main configuration at `%LocalAppData%\BetterEndfield\BetterEn
 | `web/` | Combat/gacha web-analysis and sharing sources |
 | `scripts/`, `docs/` | Build/resource scripts, interfaces and research records |
 
-See [GAME_INTERFACES.md](docs/GAME_INTERFACES.md) for internal protocols. Research directories and historical records do not represent shipped features.
+See [GAME_INTERFACES.md](docs/host/GAME_INTERFACES.md) for internal protocols. Research directories and historical records do not represent shipped features.
 
 ## Build from source
 

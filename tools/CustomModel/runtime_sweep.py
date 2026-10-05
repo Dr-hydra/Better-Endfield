@@ -4,9 +4,10 @@ import datetime
 import json
 import os
 import re
+import uuid
 from pathlib import Path
 
-from runtime_native_probe import write, read
+from runtime_native_probe import write, read, probe_catalog, load_workspace
 
 
 def make_request(manifest, run, characters=None, persistent=False):
@@ -115,12 +116,15 @@ def main():
     p.add_argument('--characters',nargs='+',help='Optional character IDs for a fresh supplement session')
     p.add_argument('--persistent',action='store_true',help='Keep collection armed across game restarts until stop')
     p.add_argument('--run')
-    p.add_argument('--catalog',type=Path,default=Path(os.environ.get('LOCALAPPDATA','.'))/'BetterEndfield/catalog/custom-model')
+    p.add_argument('--catalog',type=Path)
+    p.add_argument('--workspace-config',type=Path)
     p.add_argument('--output',type=Path)
-    a=p.parse_args();folder=a.catalog/'native-probe'
+    a=p.parse_args();workspace=load_workspace(a.workspace_config)
+    a.catalog=a.catalog or probe_catalog(workspace)
+    folder=a.catalog/'native-probe'
     if a.command=='arm':
         if not a.manifest:p.error('--manifest required')
-        run=a.run or datetime.datetime.now().strftime('characters-%Y%m%d-%H%M%S-%f')
+        run=a.run or 'characters-'+uuid.uuid4().hex
         if (folder/(run+'.request.json')).exists() or (folder/(run+'.jsonl')).exists():raise ValueError('run already exists')
         text,meta=make_request(read(a.manifest),run,a.characters,a.persistent)
         meta['manifest_file']=str(a.manifest.resolve())
@@ -145,7 +149,8 @@ def main():
         paths=sorted(folder.glob(run+'.*.jsonl'))
         summary=summarize_campaign(meta,((p.name,records(p)) for p in paths))
     else:summary=summarize(meta,records(folder/(run+'.jsonl')))
-    destination=a.output or folder/(run+'.summary.json');write(destination,summary)
+    archive=workspace.path('paths.research','custom_model',workspace.get('game.version'),'Windows','runtime-probe','runs',run)
+    destination=a.output or archive/'summary.json';write(destination,summary)
     print(json.dumps(dict(run=run,characters=len(summary['characters_observed']),complete=summary['complete_resources'],
         incomplete=summary['incomplete_resources'],unobserved=len(summary['unobserved_resources']),summary=str(destination)),ensure_ascii=False))
 

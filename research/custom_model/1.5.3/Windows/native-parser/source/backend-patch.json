@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "source": "E:\\Dr.Hydra\\Better Endfield\\tools\\EndfieldStudio",
+  "patch": "bounded-vfs-blocks-v1",
+  "max_block_bytes": 536870912,
+  "source_modified": false
+}

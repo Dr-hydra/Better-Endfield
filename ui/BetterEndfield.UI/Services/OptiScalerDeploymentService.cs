@@ -30,7 +30,7 @@ internal sealed record OptiScalerDeploymentStatus(
 /// 组件不随发布包分发。文件清单与哈希由 manifests/shared/optiscaler.lock.json 锁定，
 /// 该文件在构建时内嵌进程序集，实际组件从 payloads/optiscaler/ 读取。锁定版本以外
 /// 的文件一律不部署。
-/// 背景与实测依据见 docs/DISPLAY_PIPELINE.md。
+/// 背景与实测依据见 docs/ui/DISPLAY_PIPELINE.md。
 /// </summary>
 internal static class OptiScalerDeploymentService
 {
