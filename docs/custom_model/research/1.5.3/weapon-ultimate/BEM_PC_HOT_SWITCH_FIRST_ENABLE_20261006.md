@@ -47,6 +47,8 @@
 
 本轮回归证明该漏扫路径已修复，不等于游戏画面验收。真实主世界首次启用、停用、再次启用仍需在新进程中验证。用户当前配置保持原样，没有计算产物哈希，正式 Release 未更新。
 
+后续用户已确认 PC 热切换正常生效，切换过程中出现严重停顿、完成后恢复。新的实机日志与第一阶段优化见 [PC 热切换停顿调查](BEM_PC_HOT_SWITCH_STUTTER_20261006.md)。
+
 ## 本机部署
 
 19:27 已更新 `E:\Better Endfield\modules\BetterEndfield.CustomModel.dll`，同步刷新本机 publish 副本。文件逐字节复核一致，`runtime.ini` 部署前后逐字节一致，没有启动或重启游戏。原文件备份在 `build/bem14/local-test/deploy-backup/20261006-192706-pc-first-enable/`，回执在本轮审计目录 `deployment.json`。Windows 最终构建及其首次启用/scene/async 独立回归通过，Android 最终原生构建通过；既有平台警告保留。

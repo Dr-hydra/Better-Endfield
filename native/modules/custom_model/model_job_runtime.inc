@@ -814,6 +814,7 @@ bool HasCompatibleWindowsModelTarget(const EnabledMod& mod,void* asset,std::stri
 }
 #endif
 bool ScanSceneInstancesForRebind() {
+    const auto scan_started_ms=GetTickCount64();
     // Generated Meshes of a generation that is no longer the role's selection.
     std::unordered_map<int32_t,const CharacterAdapter*> stale;
     std::vector<std::pair<void*,const CharacterAdapter*>> restored_roots;
@@ -892,56 +893,8 @@ bool ScanSceneInstancesForRebind() {
         Log("Hot switch instance discovery failed: renderer array/length unavailable");return false;
     }
     if (count<0 || count>65536) {Log("Hot switch instance rebind skipped: renderer count "+std::to_string(count));return false;}
-    if (!stale.empty()) {
-        // Diagnostics (2026-10-04): one line per root of an affected role.
-        std::unordered_set<const CharacterAdapter*> roles;for (const auto& [id,adapter]:stale) roles.insert(adapter);
-        struct RootSummary { std::string name; int renderers=0,stale_hits=0; };
-        std::unordered_map<int32_t,RootSummary> roots;
-        for (int i=0;i<count;++i) {
-            void* renderer=ArrayValue(renderers,i);
-            void* transform=Invoke(Contract("component.get_transform"),renderer,nullptr);
-            void* root=nullptr;std::string root_name;
-            for (int depth=0;transform && depth<64 && !root;++depth) {
-                std::string name=ObjectName(transform),base(ResourceBaseName(name));
-                for (const auto* adapter:roles) if (base==adapter->world_resource || base==adapter->ui_resource) {root=transform;root_name=name;}
-                if (!root) transform=Invoke(Contract("transform.get_parent"),transform,nullptr);
-            }
-            if (!root) continue;
-            auto& summary=roots[ModelInstanceId(root)];summary.name=root_name;++summary.renderers;
-            if (stale.contains(ModelInstanceId(GetRendererMesh(renderer)))) ++summary.stale_hits;
-        }
-        for (const auto& [id,summary]:roots)
-            Log("Hot switch instance scan root id="+std::to_string(id)+" name="+summary.name+" renderers="+
-                std::to_string(summary.renderers)+" staleHits="+std::to_string(summary.stale_hits));
-        // Renderers of an affected role (by "S_actor_<role>_" prefix) outside
-        // those roots: the scene instance may be renamed by the game.
-        std::vector<std::string> prefixes;
-        for (const auto* adapter:roles) {
-            std::string id=adapter->id;const auto cut=id.rfind('_');
-            if (cut!=std::string::npos) prefixes.push_back("S_actor_"+id.substr(cut+1)+"_");
-        }
-        int logged=0;
-        for (int i=0;i<count && logged<40;++i) {
-            void* renderer=ArrayValue(renderers,i);const auto name=ObjectName(renderer);
-            if (std::none_of(prefixes.begin(),prefixes.end(),[&](const auto& p){return name.starts_with(p);})) continue;
-            void* transform=Invoke(Contract("component.get_transform"),renderer,nullptr);
-            std::string chain;void* top=transform;bool known=false;
-            for (int depth=0;transform && depth<64;++depth) {
-                const auto node=ObjectName(transform);
-                if (depth>0 && depth<=4) chain+="/"+node;
-                if (roots.contains(ModelInstanceId(transform))) known=true;
-                top=transform;transform=Invoke(Contract("transform.get_parent"),transform,nullptr);
-            }
-            if (known) continue;
-            void* mesh=GetRendererMesh(renderer);
-            const int32_t mesh_id=ModelInstanceId(mesh);
-            Log("Hot switch instance scan other renderer="+name+" parents="+chain+" top="+ObjectName(top)+
-                " topId="+std::to_string(ModelInstanceId(top))+" mesh="+(mesh?ObjectName(mesh):std::string("null"))+
-                " meshId="+std::to_string(mesh_id)+(stale.contains(mesh_id)?" STALE":""));
-            ++logged;
-        }
-        Log("Hot switch instance scan other renderers logged="+std::to_string(logged));
-    }
+    // Keep ownership discovery below, but do not walk the whole scene twice
+    // more just to print diagnostic root and ancestor summaries.
     for (int i=0;!stale.empty() && i<count;++i) {
         void* renderer=ArrayValue(renderers,i);
         const auto owner=stale.find(ModelInstanceId(GetRendererMesh(renderer)));
@@ -984,7 +937,8 @@ bool ScanSceneInstancesForRebind() {
         " rootsRefused="+std::to_string(refused));
 #endif
     Log("Hot switch instance scan renderers="+std::to_string(count)+" staleMeshes="+std::to_string(stale.size())+
-        " restoredRootsQueued="+std::to_string(restored_queued)+" instancesQueued="+std::to_string(found));
+        " restoredRootsQueued="+std::to_string(restored_queued)+" instancesQueued="+std::to_string(found)+
+        " elapsedMs="+std::to_string(GetTickCount64()-scan_started_ms));
     g_pending_model_resources.clear();return true;
 }
 uint64_t g_instance_scan_retry_ms=0;

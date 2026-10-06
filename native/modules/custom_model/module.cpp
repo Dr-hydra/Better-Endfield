@@ -402,6 +402,7 @@ struct ConstructionScope;
 thread_local ConstructionScope* g_construction = nullptr;
 struct ConstructionScope {
     std::vector<std::pair<void*,uint32_t>> roots;
+    std::unordered_set<void*> rooted_objects;
     std::vector<void*> assets;
     // Count API submissions, including assets later rolled back. These bytes
     // are payload sizes, not driver residency or a GPU peak measurement.
@@ -443,10 +444,13 @@ struct ConstructionScope {
     ~ConstructionScope();
     void* Root(void* object) {
         if (!object) return nullptr;
-        for (const auto& root : roots) if (root.first == object) return object;
+        // Queries may return tens of thousands of objects in one scope. Keep
+        // the handle release list, but avoid scanning it for every return.
+        if (rooted_objects.contains(object)) return object;
         roots.emplace_back(object,0);
         roots.back().second = g_host->gchandle_new(g_host->context,object,0);
         if (!roots.back().second) { failed = true; return nullptr; }
+        rooted_objects.insert(object);
         return object;
     }
 };
