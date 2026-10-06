@@ -175,6 +175,8 @@
   "Modules_Title": "第三方模块",
   "Modules_Description": "导入作者提供的模块 ZIP。原生模块会运行作者代码，请选择信任的来源。配置和已加载模块的启停可在运行中更新；二进制更新、移除和排序需重启游戏完成。旧版本文件会保留，避免打断运行中的模块。",
   "Modules_Import": "导入模块 ZIP",
+  "Modules_ResourceCenter": "下载站",
+  "Modules_ResourceCenterOpenFailed": "无法打开下载站：",
   "Modules_Refresh": "刷新",
   "Modules_Empty": "尚未导入第三方模块。",
   "Modules_ReadFailed": "模块文件读取失败：",

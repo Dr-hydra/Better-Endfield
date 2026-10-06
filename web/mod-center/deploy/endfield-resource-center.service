@@ -1,0 +1,33 @@
+[Unit]
+Description=Endfield community resource center
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=endfield-mods
+Group=endfield-mods
+WorkingDirectory=/opt/endfield-resource-center
+EnvironmentFile=/etc/endfield-resource-center.env
+ExecStart=/opt/endfield-resource-center/runtime/node --max-old-space-size=64 server/server.mjs
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=25
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/endfield-resource-center
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryMax=128M
+TasksMax=32
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

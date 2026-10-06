@@ -1,0 +1,9 @@
+[
+  { "id": "module", "name": "第三方模块", "code": "MODULE", "hint": "Better Endfield 扩展模块" },
+  { "id": "functional", "name": "功能 Mod", "code": "FUNCTION", "hint": "玩法、界面与体验增强" },
+  { "id": "skin", "name": "皮肤 Mod", "code": "SKIN", "hint": "角色外观与材质创作" },
+  { "id": "bem", "name": "BEM 模型", "code": "BEM", "hint": "Better Endfield 模型包" },
+  { "id": "mmd", "name": "MMD 作品", "code": "MMD", "hint": "动作、镜头与舞台作品" },
+  { "id": "tool", "name": "工具", "code": "TOOL", "hint": "创作与资源处理工具" },
+  { "id": "other", "name": "其他", "code": "OTHER", "hint": "更多终末地社区创作" }
+]
