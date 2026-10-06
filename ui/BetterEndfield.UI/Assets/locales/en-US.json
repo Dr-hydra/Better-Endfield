@@ -175,6 +175,8 @@
   "Modules_Title": "Third-party Modules",
   "Modules_Description": "Import module ZIPs provided by creators. Native modules run creator code, so choose sources you trust. Configuration and enabled state can update while the game is running. Binary updates, removal and load-order changes require a game restart. Previous files are retained until running modules release them.",
   "Modules_Import": "Import module ZIP",
+  "Modules_ResourceCenter": "Download site",
+  "Modules_ResourceCenterOpenFailed": "Could not open the download site: ",
   "Modules_Refresh": "Refresh",
   "Modules_Empty": "No third-party modules imported yet.",
   "Modules_ReadFailed": "Could not read module files: ",

@@ -1,5 +1,6 @@
 using BetterEndfield.UI.Services;
 using System.ComponentModel;
+using System.Diagnostics;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System.Text.Json.Nodes;
@@ -10,6 +11,7 @@ namespace BetterEndfield.UI.Views;
 
 public sealed class ThirdPartyModulesPage : UserControl
 {
+    private const string ResourceCenterUrl = "https://146.235.16.65:8443/endfield/";
     private readonly ThirdPartyModuleService _service = new();
     private readonly StackPanel _cards = new() { Spacing = 12 };
     private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap };
@@ -46,6 +48,7 @@ public sealed class ThirdPartyModulesPage : UserControl
         BemLocalizedUI.Set(import, Button.ContentProperty, () => L("Import"));
         import.Click += Import;
         var refresh = ActionButton("Refresh", Render);
+        actions.Children.Add(ActionButton("ResourceCenter", OpenResourceCenter));
         actions.Children.Add(import); actions.Children.Add(refresh); page.Children.Add(actions); page.Children.Add(_status); page.Children.Add(_cards);
         Content = new ScrollViewer { Content = page, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
         Loaded += (_, _) =>
@@ -56,6 +59,11 @@ public sealed class ThirdPartyModulesPage : UserControl
             Render();
         };
         Unloaded += (_, _) => LocalizationService.Instance.PropertyChanged -= LanguageChanged;
+    }
+    private void OpenResourceCenter()
+    {
+        try { Process.Start(new ProcessStartInfo(ResourceCenterUrl) { UseShellExecute = true }); }
+        catch (Exception error) { Status(() => L("ResourceCenterOpenFailed") + error.Message); }
     }
     private void Render()
     {

@@ -2,6 +2,7 @@ package dev.betterendfield.android;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.net.Uri;
 import android.view.View;
 import android.widget.*;
 import org.json.*;
@@ -9,6 +10,7 @@ import java.util.concurrent.*;
 
 final class ThirdPartyModulesPage {
     private static final int PICK=107;
+    private static final String RESOURCE_CENTER_URL="https://146.235.16.65:8443/endfield/";
     private final Activity activity;
     private final LinearLayout cards;
     private final TextView status;
@@ -19,6 +21,7 @@ final class ThirdPartyModulesPage {
         this.activity=activity;root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(16),dp(16),dp(16),dp(16));
         TextView title=text("第三方模块",22);root.addView(title);
         root.addView(text("导入作者提供的 ZIP，自由网页界面独立打开。原生模块会运行作者代码，请选择信任来源。配置和已加载模块启停可运行中更新；二进制更新、移除和排序需重启游戏完成。旧版本文件保留，避免打断运行中的模块。",14));
+        Button resources=button("下载站");root.addView(resources);resources.setOnClickListener(v->openResourceCenter());
         Button add=button("导入模块 ZIP");root.addView(add);add.setOnClickListener(v->{if(!busy)activity.startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("application/zip").addCategory(Intent.CATEGORY_OPENABLE),PICK);});
         Button refresh=button("刷新");root.addView(refresh);refresh.setOnClickListener(v->render());
         status=text("",14);root.addView(status);cards=new LinearLayout(activity);cards.setOrientation(LinearLayout.VERTICAL);root.addView(cards);
@@ -26,6 +29,10 @@ final class ThirdPartyModulesPage {
     private TextView text(String value,int size){TextView view=new TextView(activity);view.setText(value);view.setTextSize(size);view.setTextColor(activity.getColor(R.color.text_primary));view.setPadding(0,dp(6),0,dp(6));return view;}
     private Button button(String value){Button button=new Button(activity);button.setText(value);button.setTransformationMethod(null);button.setEnabled(!busy);return button;}
     private int dp(int n){return Math.round(n*activity.getResources().getDisplayMetrics().density);}
+    private void openResourceCenter() {
+        try {activity.startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(RESOURCE_CENTER_URL)).addCategory(Intent.CATEGORY_BROWSABLE));}
+        catch(RuntimeException unavailable) {status.setText("无法打开下载站");}
+    }
     void render() {
         if(closed)return;cards.removeAllViews();
         try {

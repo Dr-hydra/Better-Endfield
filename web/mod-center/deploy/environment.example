@@ -1,0 +1,5 @@
+PUBLIC_URL=https://146.235.16.65:8443/endfield/
+PORT=9017
+DATABASE_PATH=/var/lib/endfield-resource-center/catalog.sqlite
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
