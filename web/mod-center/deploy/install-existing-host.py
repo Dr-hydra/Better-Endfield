@@ -30,6 +30,10 @@ except KeyError:
 target.mkdir(mode=0o755, parents=True, exist_ok=True)
 for folder in ['dist', 'server', 'shared']:
     shutil.copytree(stage / folder, target / folder, dirs_exist_ok=True)
+# Deployment staging may come from a private temporary directory. Normalize
+# the public bundle so the service account can traverse and read every asset.
+for item in (target / 'dist').rglob('*'):
+    item.chmod(0o755 if item.is_dir() else 0o644)
 shutil.copytree(stage / 'node_modules/nodemailer', target / 'node_modules/nodemailer', dirs_exist_ok=True)
 shutil.copy2(stage / 'README.md', target / 'README.md')
 (target / 'runtime').mkdir(mode=0o755, exist_ok=True)
