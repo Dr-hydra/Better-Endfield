@@ -3246,6 +3246,9 @@ std::shared_ptr<const BemPocData> AcquirePayload(const EnabledMod& mod) {
 }
 ModRegistry g_registry;
 uint64_t g_model_revision=1;
+// Names, rather than adapter pointers, survive several accepted updates before
+// the next frame. Discovery resolves them against the current registry.
+std::unordered_set<std::string> g_pending_model_resources;
 #include "model_asset_cache.inc"
 std::filesystem::path g_registry_root;
 std::string g_last_registry_text,g_pending_registry_text;
@@ -3275,12 +3278,33 @@ bool InstallRegistryUpdate(std::string_view text) {
     const bool selections_changed=candidate.enabled.size()!=g_registry.enabled.size() ||
         !std::equal(candidate.enabled.begin(),candidate.enabled.end(),g_registry.enabled.begin(),
             [](const EnabledMod& a,const EnabledMod& b){return a.selection_key==b.selection_key;});
+    if (selections_changed) {
+        const auto changed=[&](const EnabledMod& mod,const char* state) {
+            const auto& adapter=*mod.adapter;
+            for (const auto* resource:{adapter.world_resource,adapter.ui_resource}) {
+                g_pending_model_resources.emplace(resource);
+            }
+            Log("Hot switch selection changed owner="+std::string(adapter.id)+" world="+adapter.world_resource+
+                " ui="+adapter.ui_resource+" state="+state+" package="+mod.package_id+
+                " revision="+std::to_string(g_model_revision+1));
+        };
+        for (const auto& mod:candidate.enabled) {
+            const auto old=std::find_if(g_registry.enabled.begin(),g_registry.enabled.end(),[&](const auto& entry){
+                return SameAdapter(*entry.adapter,*mod.adapter);
+            });
+            if (old==g_registry.enabled.end()) changed(mod,"enabled");
+            else if (old->selection_key!=mod.selection_key) changed(mod,"changed");
+        }
+        for (const auto& old:g_registry.enabled) if (std::none_of(candidate.enabled.begin(),candidate.enabled.end(),[&](const auto& mod){
+            return SameAdapter(*old.adapter,*mod.adapter);
+        })) changed(old,"disabled");
+    }
     g_registry=std::move(candidate);
     // Overlay visibility, unknown fields and dormant selections do not invalidate
     // jobs/assets. Actual model edits keep the established generation path.
     if(selections_changed) {
         ++g_model_revision;
-        Log("Experimental hot switch selection accepted; registered resources queued for update.");
+        Log("Experimental hot switch selection accepted; resource discovery pending.");
     }
     return true;
 }

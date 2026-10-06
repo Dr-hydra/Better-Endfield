@@ -2,6 +2,7 @@
 // Tests the production v25 parser, palette/material preparation and commit
 // rollback. No game or graphics device is touched.
 #include "../modules/custom_model/module.cpp"
+#include "../shared/third_party/nlohmann/json.hpp"
 #include <iostream>
 #include <cstdlib>
 #include <sstream>
@@ -27,6 +28,7 @@ struct Fake {
     std::map<std::string,uint64_t> props; // Texture sampler properties (raw 32-bit values)
     std::vector<uint8_t> data;
     int width=4, height=4, format=10;
+    uint32_t index_count=6;
     size_t destroy_calls=0;
 };
 std::vector<std::unique_ptr<Fake>> objects;
@@ -38,6 +40,7 @@ int32_t fake_max_lod=1;
 void* fake_transform_type=nullptr;
 void* fake_camera=nullptr;
 void* fake_scene_renderers=nullptr;
+void* fake_scene_game_objects=nullptr;
 int fake_game_object_class_token=0;
 uint64_t game_object_calls=0;
 uint64_t fake_runtime_calls=0;
@@ -77,7 +80,8 @@ void* BE_CALL InvokeFake(void*,const void* method,void* object,void** args,void*
     }
     if (key=="component.get_transform") return n->transform?n->transform:object;
     if (key=="component.get_game_object") return n->game_object;
-    if (key=="resources.find_all") return fake_scene_renderers;
+    if (key=="resources.find_all") return fake_scene_game_objects && args[0]==g_game_object_class.type_object?
+        fake_scene_game_objects:fake_scene_renderers;
     if (key=="object.get_type" || key=="type.get_element_type" || key=="game_object.get_transform") return object;
     if (key=="component.get_component") return n->filter;
     if (key=="time.frame_count") return Scalar(fake_frame);
@@ -85,13 +89,16 @@ void* BE_CALL InvokeFake(void*,const void* method,void* object,void** args,void*
     if (key=="game_object.renderers") return fake_transform_type && args[0]==fake_transform_type?n->transforms:object;
     if (key=="mesh.get_vertex_count") return Scalar(3);
     if (key=="mesh.get_sub_mesh_count") return Scalar(1);
-    if (key=="mesh.get_index_count") return Scalar(6);
+    if (key=="mesh.get_index_count") return Scalar(n->index_count);
     if (key=="mesh.get_vertex_attribute_count") return Scalar(n->array.size());
     if (key=="mesh.get_vertex_attribute") return n->array.at(*static_cast<int*>(args[0]));
     if (key=="probe.material_shader") return Make("shader");
     if (key=="material.get_shader") {if (!n->shader) n->shader=Make("shader");return n->shader;}
     if (key=="array.create") { auto* a=Make(); a->array.resize(*static_cast<int*>(args[1])); return a; }
-    if (key=="array.get_length") return Scalar(n->array.size());
+    if (key=="array.get_length") {
+        Check(args && args[0] && *static_cast<int32_t*>(args[0])==0,"Array.GetLength must receive dimension 0");
+        return Scalar(n->array.size());
+    }
     if (key=="array.get_value") return n->array.at(*static_cast<int*>(args[0]));
     if (key=="array.set_value") { n->array.at(*static_cast<int*>(args[1]))=args[0]; return nullptr; }
     if (key=="array.clone") { auto* a=Make(); a->array=n->array; return a; }
@@ -1396,8 +1403,10 @@ void ResourceTypeBoundaryTests(const std::filesystem::path& package_path) {
 }
 
 #include "custom_model_scene_rebind_tests.inc"
+#include "custom_model_first_enable_tests.inc"
 
 int main(int argc,char** argv) {
+    if(argc==4 && std::string_view(argv[1])=="--first-enable") {FirstEnableTests(argv[2],argv[3]);return 0;}
     if(argc==3 && std::string_view(argv[1])=="--scene-rebind") {SceneRebindTests(argv[2]);return 0;}
     if(argc==3 && std::string_view(argv[1])=="--resource-types") {ResourceTypeBoundaryTests(argv[2]);return 0;}
     if(argc==2 && std::string_view(argv[1])=="--static-resource") {StaticResourceTests();return 0;}

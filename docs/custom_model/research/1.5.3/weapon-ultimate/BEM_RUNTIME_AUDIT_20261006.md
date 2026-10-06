@@ -2,6 +2,8 @@
 
 工作区 `G:\Better Endfield`，分支 `dev/bem-1.4-weapons-forms`。测试安装在 `E:\Better Endfield`，游戏在 `E:\Endfield Game`。
 
+后续用户已确认武器与大招首次加载正常；PC 主世界“从未替换过的资源首次启用”另有漏扫路径，后续调查、修复和红绿回归见 [PC 首次启用热切换](BEM_PC_HOT_SWITCH_FIRST_ENABLE_20261006.md)。
+
 ## 判断
 
 本轮问题属于运行时边界和验收缺口，不能归为一个启用配置问题。格式解析、管理器和离线转换已有可复核证据；运行时存在崩溃阻断及热切换漏绑，尚未达到可发布状态。编译通过、离线合同匹配、`published=true` 均不能代替实际渲染验收。

@@ -777,7 +777,43 @@ int32_t ModelInstanceId(void* object) {
     int32_t id=0;
     return object && IsNativeObjectAlive(object) && InvokeValue(Contract("object.instance_id"),object,nullptr,id)?id:0;
 }
-void ScanSceneInstancesForRebind() {
+#if !defined(__ANDROID__)
+// Discovery has no decoded payload and does not construct a Mesh/material.
+// Check every declared donor before admitting a previously untracked root;
+// ProcessResource repeats the full production checks before publication.
+bool HasCompatibleWindowsModelTarget(const EnabledMod& mod,void* asset,std::string& reason) {
+    if (!IsGameObjectResource(asset)) {reason="not-GameObject";return false;}
+    const auto& adapter=*mod.adapter;
+    if (adapter.explicit_resource && adapter.receiver_lod!=0) {reason="unsupported-Windows-LOD";return false;}
+    bool inactive=true;void* args[]{ModelRendererType(),&inactive};
+    void* renderers=Invoke(Contract("game_object.renderers"),asset,args);
+    std::vector<GenericRendererCandidate> index;
+    if (!BuildGenericRendererIndex(adapter,asset,renderers,index) || index.empty()) {reason="renderer-index-unavailable";return false;}
+    std::vector<GenericMatching::Candidate> candidates;
+    for (const auto& entry:index) {
+        GenericMatching::Candidate c;c.key=entry.key;c.renderer=entry.renderer;
+        ReadGenericPristineMesh(adapter,asset,entry,c.pristine);candidates.push_back(std::move(c));
+    }
+    std::vector<void*> receivers;
+    for (const auto& identity:adapter.components) {
+        GenericMatching::Request request{adapter.id,candidates.front().key.resource,identity.name,
+            adapter.explicit_resource?GenericMatching::Region::Explicit:GenericMatching::Region::Lod0,
+            identity.indices,!mod.skip_validation,adapter.explicit_resource?identity.receiver_path:""};
+        const auto match=GenericMatching::SelectUnique(candidates,request,[&](const auto& c) {
+            const auto found=std::find_if(index.begin(),index.end(),[&](const auto& entry){return entry.renderer==c.renderer;});
+            return found!=index.end() && !GenericCandidateContractError(asset,*found,identity.static_mesh);
+        });
+        if (match.status!=GenericMatching::MatchStatus::Matched) {
+            reason="donor="+std::string(identity.name)+DescribeGenericDonorFailure(asset,index,candidates,request,match.status,identity.static_mesh);
+            return false;
+        }
+        receivers.push_back(index[match.index].renderer);
+    }
+    if (!GenericMatching::DistinctReceivers(receivers)) {reason="duplicate-receivers";return false;}
+    return true;
+}
+#endif
+bool ScanSceneInstancesForRebind() {
     // Generated Meshes of a generation that is no longer the role's selection.
     std::unordered_map<int32_t,const CharacterAdapter*> stale;
     std::vector<std::pair<void*,const CharacterAdapter*>> restored_roots;
@@ -795,7 +831,18 @@ void ScanSceneInstancesForRebind() {
         for (const auto& binding:record.bindings) if (binding.generated_mesh && binding.mesh.instance_id)
             stale.emplace(binding.mesh.instance_id,record.adapter);
     }
-    if (stale.empty() && restored_roots.empty()) return;
+    std::unordered_map<std::string,const EnabledMod*> discover;
+#if !defined(__ANDROID__)
+    // An off Mod is not registered at delivery. When it is first enabled,
+    // cached prefabs and their already-existing clones have no completed
+    // generation. Restrict discovery to precisely the changed resource names.
+    for (const auto& mod:g_registry.enabled) for (const auto* resource:{mod.adapter->world_resource,mod.adapter->ui_resource})
+        if (g_pending_model_resources.contains(resource)) discover.emplace(resource,&mod);
+#endif
+    if (stale.empty() && restored_roots.empty() && discover.empty()) {
+        if (!g_pending_model_resources.empty()) Log("Hot switch discovery: no affected loaded generation or enabled resource");
+        g_pending_model_resources.clear();return true;
+    }
     std::unordered_set<int32_t> queued;
     for (const auto& pending:g_instance_rebind_queue) queued.insert(ModelInstanceId(pending->Get()));
     size_t found=0;
@@ -811,33 +858,41 @@ void ScanSceneInstancesForRebind() {
         // Keep synchronous rebinds and frame-sliced Jobs mutually exclusive
         // for this role in the revision, including restored templates.
         const bool registered=std::any_of(g_model_targets.begin(),g_model_targets.end(),[&](const auto& target){return target.root.Is(object);});
-        if (registered) {
-            std::erase_if(g_model_jobs,[&](const auto& job) {
-                if (!SameAdapter(*job->mod.adapter,role)) return false;
-                if (job->ticket) g_model_loader->Cancel(job->ticket);
-                Log("Hot switch template Job replaced by synchronous rebind resource="+name);
-                return true;
-            });
-            g_instance_rebind_queue.push_back(std::move(reference));
-        } else g_instance_rebind_queue.insert(g_instance_rebind_queue.begin(),std::move(reference));
+        std::erase_if(g_model_jobs,[&](const auto& job) {
+            if (!SameAdapter(*job->mod.adapter,role)) return false;
+            if (job->ticket) g_model_loader->Cancel(job->ticket);
+            // A template absent from FindAll is not necessarily in the rebind
+            // queue. Its cancelled Job must not leave a false "already built"
+            // desired key: admit it again once synchronous role work finishes.
+            for (auto& target:g_model_targets) if (target.root.instance_id==job->target.instance_id) {
+                target.desired.clear();target.verified_selection.clear();target.next_verify_ms=0;
+            }
+            Log("Hot switch template Job replaced by synchronous rebind resource="+name);
+            return true;
+        });
+        if (registered) g_instance_rebind_queue.push_back(std::move(reference));
+        else g_instance_rebind_queue.insert(g_instance_rebind_queue.begin(),std::move(reference));
         ++found;
     };
     for (const auto& [root,adapter]:restored_roots) queue_root(root,*adapter);
     const auto restored_queued=found;
-    if (stale.empty()) {
+    if (stale.empty() && discover.empty()) {
         Log("Hot switch instance scan renderers=0 staleMeshes=0 restoredRootsQueued="+std::to_string(restored_queued)+
-            " instancesQueued="+std::to_string(found));return;
+            " instancesQueued="+std::to_string(found));g_pending_model_resources.clear();return true;
     }
     const auto* find_all=Contract("resources.find_all");const auto* game_object=Contract("component.get_game_object");
     if (!find_all || !find_all->resolved || !game_object || !game_object->resolved) {
         Log("Hot switch instance discovery unavailable: Resources.FindObjectsOfTypeAll/Component.gameObject not resolved; restoredRootsQueued="+
-            std::to_string(restored_queued));return;
+            std::to_string(restored_queued));return false;
     }
     void* args[]{ModelRendererType()};
     void* renderers=Invoke(find_all,nullptr,args);
-    const int count=ArrayLength(renderers);
-    if (count<0 || count>65536) {Log("Hot switch instance rebind skipped: renderer count "+std::to_string(count));return;}
-    {
+    int32_t count=0,dimension=0;void* length_args[]{&dimension};
+    if (!renderers || !InvokeValue(Contract("array.get_length"),renderers,length_args,count)) {
+        Log("Hot switch instance discovery failed: renderer array/length unavailable");return false;
+    }
+    if (count<0 || count>65536) {Log("Hot switch instance rebind skipped: renderer count "+std::to_string(count));return false;}
+    if (!stale.empty()) {
         // Diagnostics (2026-10-04): one line per root of an affected role.
         std::unordered_set<const CharacterAdapter*> roles;for (const auto& [id,adapter]:stale) roles.insert(adapter);
         struct RootSummary { std::string name; int renderers=0,stale_hits=0; };
@@ -887,7 +942,7 @@ void ScanSceneInstancesForRebind() {
         }
         Log("Hot switch instance scan other renderers logged="+std::to_string(logged));
     }
-    for (int i=0;i<count;++i) {
+    for (int i=0;!stale.empty() && i<count;++i) {
         void* renderer=ArrayValue(renderers,i);
         const auto owner=stale.find(ModelInstanceId(GetRendererMesh(renderer)));
         if (owner==stale.end()) continue;
@@ -902,19 +957,51 @@ void ScanSceneInstancesForRebind() {
         void* object=root?Invoke(game_object,root,nullptr):nullptr;
         queue_root(object,*owner->second);
     }
+#if !defined(__ANDROID__)
+    size_t discovered=0,refused=0;
+    std::unordered_set<int32_t> checked;
+    for (int i=0;!discover.empty() && i<count;++i) {
+        void* renderer=ArrayValue(renderers,i);
+        if (!IsModelRenderer(renderer) || !IsNativeObjectAlive(renderer)) continue;
+        void* transform=Invoke(Contract("component.get_transform"),renderer,nullptr);
+        for (int depth=0;transform && depth<64;++depth) {
+            const auto name=ObjectName(transform);const auto role=discover.find(std::string(ResourceBaseName(name)));
+            if (role!=discover.end()) {
+                void* object=Invoke(game_object,transform,nullptr);const int32_t id=ModelInstanceId(object);
+                if (id && !queued.contains(id) && checked.insert(id).second) {
+                    std::string reason;
+                    if (HasCompatibleWindowsModelTarget(*role->second,object,reason)) {
+                        const auto before=found;queue_root(object,*role->second->adapter);
+                        if (found!=before) ++discovered;
+                    } else if (refused++<8) Log("Hot switch discovery refused resource="+name+" reason="+reason);
+                }
+                break;
+            }
+            transform=Invoke(Contract("transform.get_parent"),transform,nullptr);
+        }
+    }
+    Log("Hot switch discovery resources="+std::to_string(discover.size())+" rootsQueued="+std::to_string(discovered)+
+        " rootsRefused="+std::to_string(refused));
+#endif
     Log("Hot switch instance scan renderers="+std::to_string(count)+" staleMeshes="+std::to_string(stale.size())+
         " restoredRootsQueued="+std::to_string(restored_queued)+" instancesQueued="+std::to_string(found));
+    g_pending_model_resources.clear();return true;
 }
+uint64_t g_instance_scan_retry_ms=0;
 void PumpInstanceRebind(uint64_t frame) {
     if (!g_hot_switch_runtime.load()) return;
-    if (!g_instance_rebind_handled) {g_instance_rebind_handled=g_model_revision;return;} // startup is not a switch
+    if (!g_instance_rebind_handled && g_pending_model_resources.empty()) {
+        g_instance_rebind_handled=g_model_revision;return; // startup is not a switch
+    }
     // The visible scene instance is rebound first. Registered templates are
     // rebuilt afterwards by their Jobs, which then reuse the instance's live
     // published textures instead of uploading them a second time.
-    if (g_instance_rebind_handled!=g_model_revision) {
-        g_instance_rebind_handled=g_model_revision;
-        try {ScanSceneInstancesForRebind();}
+    if (g_instance_rebind_handled!=g_model_revision && GetTickCount64()>=g_instance_scan_retry_ms) {
+        bool scanned=false;
+        try {scanned=ScanSceneInstancesForRebind();}
         catch (...) {Log("Hot switch instance scan failed with a native exception");}
+        if (scanned) {g_instance_rebind_handled=g_model_revision;g_instance_scan_retry_ms=0;}
+        else g_instance_scan_retry_ms=GetTickCount64()+1000;
     }
     if (g_instance_rebind_queue.empty()) return;
     auto permit=g_model_frame_budget.TryBegin(frame,{0,1,true,false});
