@@ -10,7 +10,7 @@
 
 The world/UI and skinning details in sections 1–6 below primarily describe legacy character packages; explicit 1.4 contracts are defined in the extension specification.
 
-The sections below describe the legacy 1.0–1.3 character world/UI route. The development branch adds [BEM 1.4 resource targets](BEM_V1_4_SPEC.md), with explicit receiver paths and platform declarations. The initial Windows implementation executes LOD0 targets; Android uses the declared resource itself as donor. New game targets still require platform evidence and in-game validation.
+The sections below describe the legacy 1.0–1.3 character world/UI route. The current release supports [BEM 1.4 resource targets](BEM_V1_4_SPEC.md), with explicit receiver paths and platform declarations. Windows executes LOD0 targets; Android uses the declared resource itself as donor. New game targets still require platform evidence and in-game validation.
 
 Android world LOD1 is the existing design: legacy packages use UI LOD0 donors with world LOD1 receivers, while 1.4 packages can explicitly declare their own LOD1 receivers and donors. The Windows LOD0 restriction does not apply to Android. All enabled Android model packages participate in the existing `lod_pipeline` bias maintenance without changing QualitySettings. The function name `EnableForceLOD0` does not require Android to render LOD0.
 

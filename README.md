@@ -6,7 +6,7 @@ Better Endfield 是面向《明日方舟：终末地》的开源模块化工具�
 
 [下载正式版](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [更新说明](CHANGELOG.md) · [Android 使用与构建](android/README.md) · [BEM 创作者指南](docs/custom_model/BEM_CREATOR_GUIDE.md) · [模块开发指南](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
 
-当前版本为 **3.5.1**，独立 BEM Tools 为 **1.5.0**。3.5.1 增加双端模型管理悬浮窗与 Android 悬浮窗全局 FOV 调节。
+当前版本为 **3.5.2**，独立 BEM Tools 为 **1.5.1**。3.5.2 同步 BEM 1.4 创作者工具与运行时能力，修正模型热切换、Android PCUI 鼠标输入、Workshop 导航和桌面 DPI 布局。
 
 ## 功能一览
 
@@ -15,8 +15,8 @@ Better Endfield 是面向《明日方舟：终末地》的开源模块化工具�
 | 功能 | Windows x64 | Android ARM64 | 说明 |
 | --- | --- | --- | --- |
 | 第三方模型（BEM） | 支持 | 支持 | 同一标准包；导入、更新、多包管理、按角色启用、外观与部件选项 |
-| BEM 1.3 形态滑条 | 支持（3.4.2） | 支持（3.4.2） | 作者提供顶点形变数据；插值、叠加、条件可用与参数保存 |
-| 第三方原生模块与网页容器 | 实验（3.4.2） | 实验（3.4.2） | 统一导入/管理入口；游戏内 Host 加载 DLL/SO，作者自定义网页与功能 |
+| BEM 1.4 资源与形态 | 支持（3.5.2） | 支持（3.5.2） | 显式资源目标、静态网格、LOD/平台声明；支持武器与大招资源，兼容 1.0–1.3 包 |
+| 第三方原生模块与网页容器 | 实验 | 实验 | 增强功能页统一入口；游戏内 Host 加载 DLL/SO，作者自定义网页与功能 |
 | 模型热切换 | 实验 | 实验 | 悬浮窗管理包、外观、组件与形态参数；游戏启动前开启，选择变化随正常资源重载生效 |
 | 模型加载优化 | 实验 | 实验 | 减少解码副本并复用同次构建的等价贴图；不降低画质 |
 | 开屏模型、动画与主题色 | 支持 | 支持 | 角色、最终动作、分阶段速度、缩放、转身、循环与交叉混合 |
@@ -54,7 +54,7 @@ Android 包是 **LSPosed/libxposed API 102 模块**，要求 Android 10 及以�
 
 **玩家使用 `.bem` 标准包即可**，无需安装 Python、原 Mod 框架、角色数据库或编辑运行配置。一个包对应一个角色，支持固定外观、可组合部件和材质/纹理替换。同一角色可以安装多个包，启用其中一个时停用其他包；更新保留仍有效的外观和参数选择。
 
-PC 和 Android 使用同一 BEM 解析与装配核心，支持 1.0–1.3；**3.4.2 新增 BEM 1.3 位置形变**。包内滑条由作者定义，运行时在基础顶点上插值并叠加增量，沿用原骨骼、蒙皮和基础法线/切线。它不会自动给旧模型生成体型滑条，也不执行源 Mod 的热键脚本、GUI 表达式或任意 Shader。
+PC 和 Android 使用同一 BEM 解析与装配核心，支持 BEM 1.0–1.4；**3.5.2 新增 BEM 1.4 资源目标与静态网格能力**，可以声明 Windows/Android、LOD、资源路径与 donor 关系，覆盖武器和角色大招形态。旧包继续按 1.0–1.3 规则解析；运行时仍不会执行源 Mod 的热键脚本、GUI 表达式或任意 Shader。
 
 常规选择在重启游戏后生效。实验热切换开启后，包、部件及 1.3 参数变化在切换配队、重新打开详情等**正常资源重载**时应用；没有每次拖动滑条立即更新当前网格的承诺。导入、更新包文件和删除仍建议在游戏关闭时进行。
 
@@ -64,7 +64,7 @@ PC 和 Android 使用同一 BEM 解析与装配核心，支持 1.0–1.3；**3.4
 
 Android 可对贴图异常的包执行「转换手机纹理」；转换成功发布新一代并保留选择，失败或取消保留原包。该操作需要已验证的法线编码信息，模型本身的跨端标准不代表桌面纹理在所有手机 GPU 上均可直接显示。
 
-**创作者工具**包含图形导出入口和独立 CLI，支持目录、ZIP、RAR、7z 输入，转换报告、结构校验、可保存的 `.bemproj.json` 导出工程、标准工作区和重复构建。角色资料随工具分发，包含 33 名角色；软件另附开屏资源索引。BEM Tools 1.5.0 增加 Blender 工程导出入口；BEM 1.3 仍支持同拓扑目标顶点、稀疏增量，以及作者显式绑定的官方 EFMI ShapeKey buffers，不会自动还原任意源 GUI 或猜测顶点对应关系。
+**创作者工具**包含图形导出入口和独立 CLI，支持目录、ZIP、RAR、7z 输入，转换报告、结构校验、可保存的 `.bemproj.json` 导出工程、标准工作区和重复构建。BEM Tools 1.5.1 正式支持 BEM 1.4，并保留 Blender/EFMI legacy 角色流水线边界；创作者必须显式声明资源目标、LOD、平台和 donor 证据，不会自动还原任意源 GUI 或猜测顶点对应关系。
 
 ```powershell
 BetterEndfield.BemConverter.exe new-project editable/project.json --mode pack -o character.bemproj.json
@@ -74,13 +74,13 @@ BetterEndfield.BemConverter.exe build character.bemproj.json
 两端还提供默认关闭的「实验：关闭模型校验」。该选项放开兼容性和策略限制，仍要求文件能解码且能被当前表示方式读取；不增加新编码支持。用于作者测试时可能出现错误渲染或游戏崩溃。
 
 - [创作者指南](docs/custom_model/BEM_CREATOR_GUIDE.md)：工具、制作流程、导入测试、分发
-- [格式规范（1.0–1.3）](docs/custom_model/BEM_FORMAT_SPEC.md)
+- [格式规范（1.0–1.4）](docs/custom_model/BEM_FORMAT_SPEC.md)
 - [运行时行为与兼容性](docs/custom_model/BEM_RUNTIME_COMPATIBILITY.md)
 - [其他来源 Mod 转换](docs/custom_model/BEM_SOURCE_MOD_CONVERSION.md)
 - [形态滑条可运行示例](tools/CustomModel/examples/body-slider/)
 - [实验热切换与加载优化说明](docs/workspace/releases/3.4.1/RELEASE_3_4_1.md)
 
-## 第三方模块（实验，3.4.2）
+## 第三方模块（实验）
 
 双端通过独立的「第三方模块」入口导入作者提供的 ZIP，管理启用状态、加载顺序和各模块的网页入口；新模块首次导入默认停用。一个包包含 `module.json`、对应平台的 Windows x64 DLL / Android ARM64 SO，以及可选 HTML/CSS/JS 资源；可以只提供一端，也可以只提供网页功能。第三方模块与 `.bem` 模型包分别管理。
 
@@ -90,7 +90,7 @@ BetterEndfield.BemConverter.exe build character.bemproj.json
 
 更新或移除会退休旧安装代次，但旧目录仍保留，Android 的旧 ZIP 也会保留；当前没有自动垃圾回收，也不在重启后自动删除这些文件，避免破坏运行中的原生库或网页资源。
 
-Android 手机导航可横向滚动，大屏保留侧边导航；模块网页使用独立页面，完整编辑器不会挤在管理卡片里。跨端网页建议把静态资源随包分发；Android 容器只加载包内离线资源，网络业务可由作者原生模块处理。
+Android 手机导航可横向滚动，大屏保留侧边导航；第三方模块与创意工坊统一放在增强功能页，模块网页使用独立页面。跨端网页建议把静态资源随包分发；Android 容器只加载包内离线资源，网络业务可由作者原生模块处理。
 
 共享 Hook 是可选接口：采用 chain 的模块按同一目标串联并调用 `next`，已有 exclusive Hook 仍会报告冲突，不自动迁移成链。函数签名、参数/返回值处理和功能冲突由参与者协调。加载成功不等于与所有内置或第三方模块兼容。
 

@@ -5,7 +5,7 @@
 正式入口：`bem_tool.py inspect/convert/unpack/pack/validate/bundle`，以及 `workspace init` 创建可移动的标准创作者工程。`blender_addon/bem_exporter/` 可从 Blender 导出可编辑 BEM 工程。单包输出 `.bem`，分发合集为标准 `.zip`。
 独立工具链由 `scripts/BuildBemTools.ps1` 打包，无需玩家安装 Python；GUI 复用同一核心。
 [格式规范](../../docs/custom_model/BEM_FORMAT_SPEC.md) · [创作者指南](../../docs/custom_model/BEM_CREATOR_GUIDE.md) · [其他来源 Mod 转换](../../docs/custom_model/BEM_SOURCE_MOD_CONVERSION.md)。
-开发分支的 `pack/unpack/build/validate/bundle` 已支持 BEM 1.4 的显式资源表和静态网格，`inspect/validate` 可按 resource/platform 输出选中计划；精确契约、资源筛选命令及合成工程见 [BEM 1.4 规范](../../docs/custom_model/BEM_V1_4_SPEC.md)。现有 1.0–1.3 制作与读取流程保持兼容。源 Mod 的通用 `convert` 和 Blender 插件仍是旧角色入口，不能自动生成任意武器/大招的 1.4 工程；实际目标仍需要各平台验证过的 profile 与游戏内验收。
+BEM Tools 1.5.1 正式支持 BEM 1.0–1.4；旧的 1.5.0 正式发行包没有 1.4，运行 `--version` 应看到 `BEM Tools 1.5.1 / BEM 1.0+1.1+1.2+1.3+1.4`。`pack/unpack/build/validate/bundle` 支持 1.4 的显式资源表和静态网格，`inspect/validate` 可按 resource/platform 输出选中计划；精确契约、资源筛选命令及合成工程见 [BEM 1.4 规范](../../docs/custom_model/BEM_V1_4_SPEC.md)。现有 1.0–1.3 制作与读取流程保持兼容。源 Mod 的通用 `convert` 和 Blender 插件仍是旧角色入口，不能自动生成任意武器/大招的 1.4 工程；实际目标仍需要各平台验证过的 profile 与游戏内验收。
 下文旧工具是转换后端/研究命令，它们的 v24/v25 中间产物不被正式运行时接受。
 旧运行时 PoC 已移至 [research/custom-model](../../research/custom-model/README.md)；
 本目录保留仍被当前转换流程使用的代码，包括名称带 `poc` 的转换器。

@@ -6,7 +6,7 @@ Better Endfield is an open-source modular toolkit for *Arknights: Endfield*. It 
 
 [Download](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [Release notes](CHANGELOG.md) · [Android setup/build guide](android/README.md) · [BEM creator guide](docs/custom_model/BEM_CREATOR_GUIDE.en.md) · [Module developer guide](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
 
-The current version is **3.5.1**, with standalone BEM Tools **1.5.0**. Version 3.5.1 adds model-management overlays on both platforms and global FOV controls in the Android overlay.
+The current version is **3.5.2**, with standalone BEM Tools **1.5.1**. Version 3.5.2 formalizes BEM 1.4 resources and creator tooling, and fixes model hot switching, Android PCUI mouse input, Workshop navigation and desktop DPI placement.
 
 ## Feature overview
 
@@ -15,8 +15,8 @@ Supported means an implementation and controls exist; it does not mean every cha
 | Feature | Windows x64 | Android ARM64 | Details |
 | --- | --- | --- | --- |
 | Third-party models (BEM) | Supported | Supported | Same standard package; import/update, multiple installed packages, per-character activation, appearance and component options |
-| BEM 1.3 shape sliders | Supported (3.4.2) | Supported (3.4.2) | Author-supplied position deltas, interpolation, additive parameters, conditional availability and saved values |
-| Third-party native modules and web UI | Experimental (3.4.2) | Experimental (3.4.2) | Dedicated import/management entry; game Host loads DLL/SO, with author-defined pages and features |
+| BEM 1.4 resources and forms | Supported (3.5.2) | Supported (3.5.2) | Explicit resource targets, static meshes and LOD/platform declarations; weapons and ultimate-form resources, with 1.0–1.3 compatibility |
+| Third-party native modules and web UI | Experimental | Experimental | Unified under Enhancement; game Host loads DLL/SO, with author-defined pages and features |
 | Model hot switching | Experimental | Experimental | Enable before game startup; selections apply on normal game resource reloads |
 | Model loading optimization | Experimental | Experimental | Fewer decode copies and reuse of equivalent textures within one build; no quality reduction |
 | Title-screen models, animation and colors | Supported | Supported | Character/action selection, stage speeds, scale, turning, looping and crossfades |
@@ -54,7 +54,7 @@ Enable the module in your framework, scope it to the Endfield client you actuall
 
 **Players only need a `.bem` package.** No Python, source Mod framework, character database or hand-written runtime configuration is required. A package targets one character and can contain fixed appearances, configurable components and material/texture replacements. Multiple packages can be installed for one character; activating one disables the others. Updates preserve valid saved selections.
 
-Both platforms use the same BEM parser/assembly core and support 1.0–1.3. **Version 3.4.2 adds BEM 1.3 position morphs**: authors define sliders and deformation data, and the runtime interpolates/adds deltas to immutable base positions while preserving bones, skinning and base normals/tangents. Old packages do not gain automatic body sliders. Source hotkey scripts, arbitrary GUI expressions and arbitrary shaders are not executed.
+Both platforms use the same BEM parser/assembly core and support BEM 1.0–1.4. **Version 3.5.2 adds BEM 1.4 resource targets and static meshes**: packages can declare platform, LOD, resource paths and donor relationships for weapons and ultimate forms. Older 1.0–1.3 packages keep their existing behavior. Source hotkey scripts, arbitrary GUI expressions and arbitrary shaders are not executed.
 
 Normal selections apply after a game restart. With experimental hot switching enabled, package/component/1.3 parameter changes apply when the game **normally reloads the resource**, such as changing the team or reopening character details. Slider dragging does not instantly rebuild an already displayed mesh. Importing, replacing package files and deleting packages should still be done with the game closed.
 
@@ -64,7 +64,7 @@ Hot switching and loading optimization are independent and disabled by default. 
 
 Android provides optional mobile texture conversion for packages with incorrect-looking textures. Success publishes a new generation and preserves selections; failure/cancellation keeps the old package. Conversion requires verified normal-map encoding metadata. A portable model format does not guarantee that desktop texture formats display correctly on every mobile GPU.
 
-**Creator tools** offer a graphical export workflow and standalone CLI, directory/ZIP/RAR/7z inputs, conversion reports, validation, saved `.bemproj.json` tasks, portable workspaces and reproducible builds. Profiles for 33 characters ship with the tools; the app also bundles title-screen resource indexes. BEM Tools 1.5.0 adds the first Blender project exporter. BEM 1.3 still supports matching-topology targets, sparse deltas and explicitly bound official EFMI ShapeKey buffers; it does not reconstruct arbitrary source GUIs or guess vertex correspondence.
+**Creator tools** offer a graphical export workflow and standalone CLI, directory/ZIP/RAR/7z inputs, conversion reports, validation, saved `.bemproj.json` tasks, portable workspaces and reproducible builds. BEM Tools 1.5.1 formally supports BEM 1.4 while keeping the legacy Blender/EFMI character pipeline boundaries; authors must declare resource targets, LOD, platform and donor evidence. It does not reconstruct arbitrary source GUIs or guess vertex correspondence.
 
 ```powershell
 BetterEndfield.BemConverter.exe new-project editable/project.json --mode pack -o character.bemproj.json
@@ -74,13 +74,13 @@ BetterEndfield.BemConverter.exe build character.bemproj.json
 Both platforms also have an off-by-default experimental option to disable model validation. It bypasses compatibility/policy checks while retaining the decoding and representation requirements needed to read the file; it does not add new encodings. Developer tests may render incorrectly or crash the game.
 
 - [Creator guide](docs/custom_model/BEM_CREATOR_GUIDE.en.md): tools, workflows, testing and distribution
-- [Format specification, 1.0–1.3](docs/custom_model/BEM_FORMAT_SPEC.en.md)
+- [Format specification, 1.0–1.4](docs/custom_model/BEM_FORMAT_SPEC.en.md)
 - [Runtime behavior and compatibility](docs/custom_model/BEM_RUNTIME_COMPATIBILITY.en.md)
 - [Converting other Mods](docs/custom_model/BEM_SOURCE_MOD_CONVERSION.en.md)
 - [Runnable shape-slider example](tools/CustomModel/examples/body-slider/)
 - [Experimental hot-switch/loading behavior](docs/workspace/releases/3.4.1/RELEASE_3_4_1.md)
 
-## Third-party modules (experimental, 3.4.2)
+## Third-party modules (experimental)
 
 Both apps have a dedicated Third-party Modules entry for importing author-supplied ZIP packages, managing enabled state/order, and opening each module's page; newly imported modules start disabled. A package contains `module.json`, a Windows x64 DLL / Android ARM64 SO for its target platforms, and optional HTML/CSS/JS. It can target one platform or provide only a web UI. Modules are managed separately from `.bem` model packages.
 

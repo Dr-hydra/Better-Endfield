@@ -1,6 +1,6 @@
 # BEM 运行时行为与兼容性
 
-本页下文说明旧 1.0–1.3 角色包的 world/UI 路径。开发分支新增的多资源、武器与形态目标见 [BEM 1.4 规范](BEM_V1_4_SPEC.md)：各资源使用显式接收器路径与平台声明；Windows 初版仅执行 LOD0 目标，Android 使用声明资源自身的 donor。真实新目标仍需平台资料和游戏内验收。
+本页下文说明旧 1.0–1.3 角色包的 world/UI 路径。当前版本的多资源、武器与形态目标见 [BEM 1.4 规范](BEM_V1_4_SPEC.md)：各资源使用显式接收器路径与平台声明；Windows 仅执行 LOD0 目标，Android 使用声明资源自身的 donor。真实新目标仍需平台资料和游戏内验收。
 
 Android 场景使用 LOD1 是原有设计：旧包的 LOD0 指 UI donor，场景接收器仍是 LOD1；1.4 显式包可直接声明自身的 LOD1 接收器与 donor。Windows 的 LOD0 限制不会套到 Android。Android 所有启用模型包均参与既有 `lod_pipeline` 偏置维护，保留游戏的 QualitySettings；`EnableForceLOD0` 的函数名不表示手机必须使用 LOD0。
 

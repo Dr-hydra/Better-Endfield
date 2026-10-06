@@ -14,14 +14,14 @@ BEM（`.bem`）是 Better Endfield 的模型替换包。1.0–1.3 包对应一�
 
 | 工具 | 位置 | 用途 |
 | --- | --- | --- |
-| BEM Tools 命令行 `BetterEndfield.BemConverter.exe` | 程序目录 `tools/BemConverter/`；也有独立包 `BEM-Tools-win-x64.zip`（解压即用，不需要 Python） | 转换、打包、校验、解包、合集，所有功能的核心 |
+| BEM Tools 命令行 `BetterEndfield.BemConverter.exe` | 程序目录 `tools/BemConverter/`；也有独立包 `BEM-Tools-1.5.1-win-x64.zip`（解压即用，不需要 Python） | 转换、打包、校验、解包、合集，所有功能的核心 |
 | 桌面创作者窗口 | 角色外观页 →“其他来源 Mod 转换…” | 图形界面，调用同一个命令行 |
 | Blender 导出插件 | 独立工具包 `blender_addon/bem_exporter/` | 从带有 `BEM_C<number>` 对象的 Blender 工程导出可编辑 BEM 工程 |
 | 桌面模型管理页 | 角色外观页 | 导入、启用、选择外观和选项、调滑条 |
 | Android 模型页 | Better Endfield App | 导入、启用、选择，以及手机纹理转换 |
 | AI Skill `bem-creator` | 独立工具包 `skills/bem-creator` | 复制到 AI 工具的技能目录（Codex 为 `~/.codex/skills`），用 `$bem-creator` 调用。只辅助准备配方和解释报告，不能代替校验 |
 
-当前开发分支的 BEM Tools 版本为 1.5.0，支持写入和读取 BEM 1.0–1.4。工具版本与 BEM 格式版本不同；旧的同名发行包不一定包含 1.4，用 `--version` 确认输出包含 `BEM 1.0+1.1+1.2+1.3+1.4`。从源码运行时，用 `python tools/CustomModel/bem_tool.py` 代替 exe。
+BEM Tools 1.5.1 正式支持写入和读取 BEM 1.0–1.4；旧的 1.5.0 正式发行包不包含 BEM 1.4。工具版本与 BEM 格式版本不同，用 `--version` 确认输出为 `BEM Tools 1.5.1 / BEM 1.0+1.1+1.2+1.3+1.4`。从源码运行时，用 `python tools/CustomModel/bem_tool.py` 代替 exe。
 
 ## 三种制作方式
 

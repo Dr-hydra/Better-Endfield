@@ -11,7 +11,7 @@ from pathlib import Path
 import bem_v1 as bem
 import bem_projects
 
-TOOL_VERSION = "1.5.0"
+TOOL_VERSION = "1.5.1"
 FORMAT_VERSIONS = {0: '1.0', 1: '1.1', 2: '1.2', 3: '1.3', 4: '1.4'}
 from convert_efmi_poc import Source
 from efmi_source import sections, analyze_source

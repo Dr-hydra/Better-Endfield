@@ -16,6 +16,19 @@ $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $ws = Get-BEWorkspace -Config $WorkspaceConfig
 Set-BEWorkspaceEnvironment $ws
 $sdkVersion = '1.0.0'
+$propsPath = Join-Path $ws.repo_root 'Directory.Build.props'
+if (!(Test-Path -LiteralPath $propsPath -PathType Leaf)) {
+    throw "Directory.Build.props not found: $propsPath"
+}
+$props = [xml](Get-Content -LiteralPath $propsPath -Raw)
+$applicationVersionNode = $props.SelectSingleNode('//Version')
+if ($null -eq $applicationVersionNode -or [string]::IsNullOrWhiteSpace($applicationVersionNode.InnerText)) {
+    throw 'Directory.Build.props does not define <Version>.'
+}
+$applicationVersion = $applicationVersionNode.InnerText.Trim()
+if ($applicationVersion -notmatch '^\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?$') {
+    throw "Invalid application version in Directory.Build.props: $applicationVersion"
+}
 $echoRoot = Join-Path $PSScriptRoot 'echo'
 if (!$OutputDirectory) { $OutputDirectory = Get-BEReleaseDirectory -Workspace $ws }
 $outputRoot = [System.IO.Path]::GetFullPath($OutputDirectory)
@@ -124,7 +137,7 @@ try {
     Write-Utf8 (Join-Path $sdkRoot 'README.md') @'
 # Better Endfield Third-Party Module SDK 1.0.0
 
-Target: Better Endfield 3.4.2, package format 1, native ABI 1.
+Target: Better Endfield __APPLICATION_VERSION__, package format 1, native ABI 1.
 
 - `docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md`: package, lifecycle, configuration, UI bridge, shared Hook contract and build guide.
 - `include/BetterEndfield/`: all three public headers required by `ThirdPartyModule.h`.
@@ -144,11 +157,14 @@ Each CMake build emits a **single-platform** `build/echo-*/package/`. A dual-pla
 
 Native callbacks execute on a Host worker, not the game main thread. Game symbols and version adaptation belong to the author. Shared Hook `next` forwards to the next registered node; it is not a guarantee to bypass all other modules. Legacy builtin hooks remain exclusive unless migrated explicitly. Loaded libraries and old generations remain resident; binary upgrades need a game restart.
 '@
+    $sdkReadme = Join-Path $sdkRoot 'README.md'
+    $sdkReadmeText = (Get-Content -LiteralPath $sdkReadme -Raw).Replace('__APPLICATION_VERSION__', $applicationVersion)
+    Write-Utf8 $sdkReadme $sdkReadmeText
     $sdkZip = Join-Path $outputRoot "BetterEndfield-ThirdPartySDK-$sdkVersion.zip"
     Zip-Directory $sdkRoot $sdkZip
     $metadata = [ordered]@{
         sdk_version = $sdkVersion
-        application_version = '3.4.2'
+        application_version = $applicationVersion
         package_format = 1
         native_abi = 1
         module_id = $manifest.id

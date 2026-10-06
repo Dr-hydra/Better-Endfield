@@ -4,6 +4,8 @@
 
 格式支持、运行时接线和游戏内验证是三个独立状态。合成包通过解析检查，不代表任意游戏资源已验证可替换。随附示例使用虚构资源名，不能作为可玩 Mod 安装。
 
+BEM Tools 1.5.1 正式支持本规范的解析、构建、打包与校验；旧的 1.5.0 正式发行包不包含 1.4。通用 EFMI `convert` 和 Blender 导出仍使用旧角色目标，真实武器/大招需要显式资源工程和对应平台 donor 证据。
+
 ## 版本和容器
 
 - magic、40 字节头、32 字节 payload 目录项、raw/zstd 编码与 BEM 1.0–1.3 相同；major=1、minor=4。
@@ -86,7 +88,7 @@ Android 替换或隐藏部件时，在同一提交/恢复事务中处理其 `sha
 
 资源注册、匹配和缓存按资源隔离；文件仍使用全局组件编号，原生运行时仅在读取选定资源时将组件和 donor 引用重映射为局部编号。关闭普通模型校验不能绕过跨资源 donor、目标类型或平台边界。两个旧包仍沿用同角色互斥规则；涉及 1.4 包时按当前平台资源是否重叠判断，重复 package ID 仍冲突。
 
-此开发分支已覆盖离线解析与构建回归。庄方宜大招、武器挂接、资源池复用及 Android 阴影仍需真实游戏验收；随附真实资源草稿只有 `keep` 规则，不是已完成的替换 Mod。
+离线解析与构建回归已覆盖 1.4；庄方宜大招、武器加载和 PC 热切换已有用户实机验收。其他目标、资源池复用及 Android 渲染和阴影仍需对应实机证据；随附真实资源草稿只有 `keep` 规则，不是已完成的替换 Mod。
 
 ## 组件与 donor 作用域
 
@@ -126,7 +128,7 @@ Android 替换或隐藏部件时，在同一提交/恢复事务中处理其 `sha
 
 `bem_tool.py pack/unpack/build/validate/bundle` 支持 1.4 项目，ZIP 可同时包含旧角色包与 1.4 角色/武器包。通用 EFMI `convert` 与其 recipe 仍使用旧角色目标；真实武器/大招须先建立显式、资源内的来源映射，再由可编辑工程打包。本规范不会把普通角色 profile 自动套用于大招或武器。Blender 插件尚不直接输出显式资源表或静态武器。
 
-`build_bem14_target.py` 从 NativeAssetReader 原始图谱或新版离线 metadata，按作者 spec 的精确 prefab 身份及 LOD 分支生成未验证目标 profile，并可输出所有组件为 `keep` 的项目起点。它检查 snapshot 与平台来源，不猜测 runtime 布局或来源 Mod 映射。真实 Windows 草稿见 [庄方宜大招、静态剑、蒙皮法器](../../../profiles/bem14-drafts/README.md)，分别含 36、1、4 个组件；这些草稿的 `runtime_verified`、`conversion_ready` 均为 false。
+`build_bem14_target.py` 从 NativeAssetReader 原始图谱或新版离线 metadata，按作者 spec 的精确 prefab 身份及 LOD 分支生成未验证目标 profile，并可输出所有组件为 `keep` 的项目起点。它检查 snapshot 与平台来源，不猜测 runtime 布局或来源 Mod 映射。真实 Windows 草稿见 [庄方宜大招、静态剑、蒙皮法器](../../tools/CustomModel/profiles/bem14-drafts/README.md)，分别含 36、1、4 个组件；这些草稿的 `runtime_verified`、`conversion_ready` 均为 false。
 
 独立制作工具中的等价入口为 `BetterEndfield.BemConverter.exe target-profile NATIVE_GRAPH.json --spec SPEC.json -o PROFILE.json --project PROJECT.json`。发行目录的 `examples/multi-resource/project/export.bemproj.json` 是打包阶段生成的可直接构建示例，无需最终用户运行 Python 生成器。
 

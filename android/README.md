@@ -1,16 +1,17 @@
 # Better Endfield Android
 
 See the [main feature matrix](../README.en.md#feature-overview) for Windows/Android
-coverage. The current APK version is **3.4.2**. In-game rendering and real
+coverage. The current APK version is **3.5.2**. In-game rendering and real
 third-party modules still require device testing; build and isolated regression
 results are not gameplay validation.
 
-## Android 3.4.2
+## Android 3.5.2
 
-Version 3.4.2 adds BEM 1.3 shape sliders, experimental third-party native
-modules/web UI, global FOV, character-follow free camera, first-person
-restoration/hair updates and Purrche title-screen resources. BEM 1.3 authoring
-uses BEM Tools **1.5.0**; the same standard package works on both platforms.
+Version 3.5.2 includes BEM 1.4 resource targets, Android PCUI relative-mouse
+capture, responsive desktop-layout handling, experimental third-party native
+modules/web UI, global FOV, character-follow free camera and first-person
+restoration/hair updates. BEM 1.4 authoring
+uses BEM Tools **1.5.1**; the same standard package works on both platforms.
 See the [BEM creator guide](../docs/custom_model/BEM_CREATOR_GUIDE.en.md) and
 [third-party module creator guide](../docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md).
 
@@ -36,8 +37,10 @@ including import, per-character exclusive activation and expandable component
 options. The model download buttons open the author's Quark, Baidu and Katfile mirrors.
 The header's support button offers WeChat appreciation, Afdian and PayPal.
 
-Experimental native modules use a separate Third-party Modules entry: import
-the author's ZIP, enable it and open its optional web UI in its own Activity.
+The enhancement page contains the Third-party Modules manager and the Creative
+Workshop download entry. Import an author's ZIP, enable it and open its optional
+web UI in its own Activity. The Creative Workshop opens the maintained download
+site at https://146.235.16.65:8443/endfield/.
 The game Host loads ARM64 SO libraries; modules can also provide only an
 offline HTML/CSS/JS page. Configuration and already-loaded module activation
 can update at runtime. Binary updates, removal and order changes require a

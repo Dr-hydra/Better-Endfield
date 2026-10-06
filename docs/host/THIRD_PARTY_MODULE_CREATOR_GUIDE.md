@@ -1,6 +1,6 @@
 # 第三方模块创作者指南
 
-适用：Better Endfield 3.4.2，第三方包格式 1 / Native ABI 1。Windows x64 与 Android arm64 使用同一套包与网页消息协议。SDK 版本独立为 1.0.0。
+适用：Better Endfield 3.5.2，第三方包格式 1 / Native ABI 1。Windows x64 与 Android arm64 使用同一套包与网页消息协议。SDK 版本独立为 1.0.0。
 
 ## 先运行 Echo 示例
 

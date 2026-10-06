@@ -14,14 +14,14 @@ BEM (`.bem`) is Better Endfield's model replacement package. Versions 1.0–1.3 
 
 | Tool | Location | Purpose |
 | --- | --- | --- |
-| BEM Tools CLI `BetterEndfield.BemConverter.exe` | `tools/BemConverter/` in the application; also available as `BEM-Tools-win-x64.zip` (portable, no Python required) | Conversion, packing, validation, unpacking, and collections; the core of every workflow |
+| BEM Tools CLI `BetterEndfield.BemConverter.exe` | `tools/BemConverter/` in the application; also available as `BEM-Tools-1.5.1-win-x64.zip` (portable, no Python required) | Conversion, packing, validation, unpacking, and collections; the core of every workflow |
 | Desktop creator window | Character appearance page → “Convert other source Mod…” | GUI front end for the same CLI |
 | Blender exporter | `blender_addon/bem_exporter/` in the portable tool | Export an editable BEM project from Blender objects named `BEM_C<number>` |
 | Desktop model manager | Character appearance page | Importing, enabling, choosing appearances and options, and adjusting sliders |
 | Android model page | Better Endfield App | Importing, enabling, choosing, and converting textures on the phone |
 | AI skill `bem-creator` | Standalone `skills/bem-creator` package | Helps prepare recipes and explain reports; it does not replace validation |
 
-The development branch uses BEM Tools 1.5.0 and reads and writes BEM 1.0–1.4. Tool and format versions are separate; an older distribution with the same tool version may lack 1.4. Check that `--version` includes `BEM 1.0+1.1+1.2+1.3+1.4`. When running from source, use `python tools/CustomModel/bem_tool.py` instead of the executable.
+BEM Tools 1.5.1 officially reads and writes BEM 1.0–1.4; the older official 1.5.0 distribution does not include BEM 1.4. Tool and format versions are separate. Check that `--version` returns `BEM Tools 1.5.1 / BEM 1.0+1.1+1.2+1.3+1.4`. When running from source, use `python tools/CustomModel/bem_tool.py` instead of the executable.
 
 ## Three authoring workflows
 

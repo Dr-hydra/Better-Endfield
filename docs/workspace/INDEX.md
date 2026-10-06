@@ -27,6 +27,7 @@
 | [Better Endfield 3.4.2](releases/3.4.2/RELEASE_3_4_2.md) | 3.4.2/Tools1.4.1功能与下载验证记录 | 发布记录 | not_applicable |
 | [Better Endfield 3.5.0](releases/3.5.0/RELEASE_3_5_0.md) | 3.5.0/Tools1.5.0发布元数据、构建结果及旧测试失败边界 | 发布记录 | not_applicable |
 | [Better Endfield 3.5.1](releases/3.5.1/RELEASE_3_5_1.md) | 双端模型悬浮窗、Android全局FOV及发布验证 | 发布记录 | 1.5.3 |
+| [Better Endfield 3.5.2](releases/3.5.2/RELEASE_3_5_2.md) | BEM 1.4、武器/大招资源、热切换、PCUI输入、Workshop与桌面布局 | 发布记录 | 1.5.3 |
 
 ## 邻接文档与分发来源
 
