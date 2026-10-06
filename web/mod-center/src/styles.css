@@ -90,6 +90,21 @@
 .portal-empty p { font-size: 12px; line-height: 1.8; color: var(--muted); margin: 4px 0 22px; }
 .portal-footer { margin-top: 44px; border-top: 1px solid var(--line); padding-top: 18px; display: flex; justify-content: space-between; gap: 14px; font: 9px Consolas, monospace; color: var(--muted); }
 .pagination { display: flex; justify-content: center; align-items: center; gap: 18px; margin-top: 25px; font-size: 12px; }
+.thanks-page { display: grid; gap: 22px; }
+.thanks-hero { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: clamp(28px, 4vw, 52px); overflow: hidden; box-shadow: none; border-top: 4px solid var(--yellow); }
+.thanks-hero h1 { max-width: 680px; margin: 14px 0 12px; font-size: clamp(32px, 4vw, 54px); line-height: 1.2; letter-spacing: -.06em; }
+.thanks-hero p { max-width: 620px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.9; }
+.thanks-mark { display: grid; place-items: center; width: 150px; height: 150px; flex: 0 0 auto; color: var(--accent-ink); background: var(--yellow); transform: rotate(6deg); }
+.thanks-mark svg { transform: rotate(-6deg); stroke-width: 1.25; }
+.thanks-panel { padding: clamp(23px, 3vw, 34px); box-shadow: none; }
+.thanks-panel .block-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 16px; margin-bottom: 24px; }
+.thanks-panel .block-heading .eyebrow { width: 100%; }
+.thanks-panel .block-heading h2 { margin: 8px 0 0; }
+.thanks-panel .block-heading p { margin: 8px 0 0; color: var(--muted); font-size: 11px; }
+.thanks-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; border: 1px solid var(--line); background: var(--line); }
+.thanks-name { min-width: 0; min-height: 62px; padding: 14px 16px; display: flex; align-items: center; gap: 11px; background: var(--panel-2); }
+.thanks-name svg { flex: 0 0 auto; color: var(--yellow); }
+.thanks-name span { min-width: 0; overflow-wrap: anywhere; font-size: 13px; line-height: 1.5; }
 .resource-skeleton { padding: 14px; box-shadow: none; }
 .resource-skeleton > div { height: 170px; background: var(--panel-2); }
 .resource-skeleton > span { display: block; height: 12px; background: var(--panel-2); margin-top: 15px; }
@@ -231,6 +246,12 @@
   .portal-empty { padding: 38px 20px; }
   .portal-empty h3 { font-size: 18px; }
   .portal-footer { flex-direction: column; gap: 8px; }
+  .thanks-hero { align-items: flex-start; padding: 25px 20px; }
+  .thanks-hero h1 { font-size: 31px; }
+  .thanks-mark { width: 78px; height: 78px; }
+  .thanks-mark svg { width: 38px; height: 38px; }
+  .thanks-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .thanks-name { min-height: 57px; padding: 12px; }
   .required-fields { grid-template-columns: 1fr; gap: 22px; }
   .publish-panel { padding: 24px 20px; }
   .publish-heading h1 { font-size: 28px; }

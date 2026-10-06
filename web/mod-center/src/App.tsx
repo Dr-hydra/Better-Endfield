@@ -3,6 +3,7 @@ import type { JSX } from "preact";
 import categories from "../shared/types.json";
 import { authRequest, base, blankDraft, request, write, type Catalog, type Draft, type Resource, type Session } from "./api";
 import { localizeMessage, type Language } from "./messages";
+import { supporterCutoffDate, supporterNames } from "./supporters.generated";
 
 const text = (lang: Language, zh: string, en: string) => lang === "zh" ? zh : en;
 const category = (id: string) => categories.find(item => item.id === id) || categories[categories.length - 1];
@@ -14,6 +15,10 @@ const releaseName = (resource: Resource, lang: Language) => resource.latest.vers
 const routeOf = () => location.hash.replace(/^#\/?/, "").split("?")[0] || "explore";
 const go = (route: string) => { location.hash = `#/${route}`; };
 const emptyCatalog: Catalog = { items: [], counts: {}, total: 0, page: 1, pages: 1 };
+const formatCutoffDate = (value: string, lang: Language) => {
+  const [year, month, day] = value.split("-").map(Number);
+  return lang === "zh" ? `${year}年${month}月${day}日` : `${month}/${day}/${year}`;
+};
 
 function Icon({ name, size = 20 }: { name: string; size?: number }) {
   const paths: Record<string, string> = {
@@ -26,6 +31,7 @@ function Icon({ name, size = 20 }: { name: string; size?: number }) {
     moon: "M20 15a9 9 0 0 1-11-11 9 9 0 1 0 11 11Z", sun: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M20 4l-2 2M6 18l-2 2",
     github: "M9 19c-4 1-4-2-6-2m12 5v-4a4 4 0 0 0-1-3c3 0 6-1 6-5a4 4 0 0 0-1-3c0-1 0-2-1-3l-3 1a12 12 0 0 0-6 0L6 4c-1 1-1 2-1 3a4 4 0 0 0-1 3c0 4 3 5 6 5a4 4 0 0 0-1 3v4",
     mail: "M3 5h18v14H3zM3 6l9 7 9-7",
+    heart: "M20.8 8.7c0 5.1-8.8 10.3-8.8 10.3S3.2 13.8 3.2 8.7A4.7 4.7 0 0 1 12 6.1a4.7 4.7 0 0 1 8.8 2.6Z",
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[name] || paths.layers} /></svg>;
 }
@@ -114,7 +120,7 @@ export default function App() {
     if (!resource) return;
     try { await write(`resources/${resource.id}`, "DELETE", {}, session.csrf); setDeletePrompt(false); setRevision(value => value + 1); go("mine"); } catch (reason) { setError((reason as Error).message); }
   }
-  const nav = [ { id: "explore", title: text(lang, "发现作品", "Explore"), icon: "discover" }, { id: "mine", title: text(lang, "我的发布", "My works"), icon: "user" }, { id: "publish", title: text(lang, "发布作品", "Publish"), icon: "plus" } ];
+  const nav = [ { id: "explore", title: text(lang, "发现作品", "Explore"), icon: "discover" }, { id: "mine", title: text(lang, "我的发布", "My works"), icon: "user" }, { id: "publish", title: text(lang, "发布作品", "Publish"), icon: "plus" }, { id: "thanks", title: text(lang, "感谢名单", "Thanks"), icon: "heart" } ];
   const navButtons = nav.map(item => <button key={item.id} class={(item.id === route || (item.id === "publish" && editor)) ? "active" : ""} onClick={() => go(item.id)}><Icon name={item.icon} /><span>{item.title}</span></button>);
   const owned = resource?.author.id === session.user?.id;
 
@@ -144,6 +150,7 @@ export default function App() {
         <button class="back-link" onClick={() => go(resourceId ? `resource/${resourceId}` : "explore")}><Icon name="back" size={17} />{resourceId ? t("返回作品", "Back to work") : t("返回作品目录", "Back to catalog")}</button>
         {resourceId && loading ? <div class="portal-empty panel">{t("正在读取作品…", "Loading work…")}</div> : resourceId && (!resource || !owned) ? <div class="portal-empty panel"><h3>{t("暂时无法编辑这份作品", "This work cannot be edited right now")}</h3><p>{t("请使用发布者的账号登录。", "Sign in with the author's account.")}</p><button class="button primary" onClick={login}>{t("登录", "Sign in")}</button></div> : <PublishForm key={`${route}-${resourceId}`} resource={resourceId ? resource : null} editing={editing} releasing={releasing} session={session} lang={lang} onLogin={login} onNotice={setNotice} onPublished={result => { setRevision(value => value + 1); go(`resource/${result.id}`); }} />}
       </>}
+      {route === "thanks" && <ThanksPage lang={lang} />}
       {route.startsWith("resource/") && <>
         <button class="back-link" onClick={() => go("explore")}><Icon name="back" size={17} />{t("返回作品目录", "Back to catalog")}</button>
         {loading ? <div class="portal-empty panel">{t("正在读取作品…", "Loading work…")}</div> : resource && <>
@@ -158,6 +165,26 @@ export default function App() {
     {authOpen && <EmailDialog session={session} purpose={authPurpose} lang={lang} onClose={() => setAuthOpen(false)} onVerified={next => { setSession(next); setAuthOpen(false); setNotice(authPurpose === "bind" ? "邮箱绑定成功。" : "登录成功。"); }} />}
     {deletePrompt && <div class="dialog-overlay"><section class="delete-dialog panel" role="dialog" aria-modal="true" aria-labelledby="delete-title"><span class="eyebrow">DELETE WORK</span><h2 id="delete-title">{t("删除这份作品？", "Delete this work?")}</h2><p>{t(`「${resource?.name}」及其发布记录会从目录中移除。`, `“${resource?.name}” and its releases will be removed from the catalog.`)}</p><div><button class="button secondary" autoFocus onClick={() => setDeletePrompt(false)}>{t("取消", "Cancel")}</button><button class="button danger" onClick={remove}>{t("确认删除", "Delete")}</button></div></section></div>}
   </div>;
+}
+
+function ThanksPage({ lang }: { lang: Language }) {
+  const t = (zh: string, en: string) => text(lang, zh, en);
+  return <main class="thanks-page">
+    <section class="thanks-hero panel">
+      <div>
+        <span class="eyebrow">COMMUNITY / {t("鸣谢", "THANKS")}</span>
+        <h1>{t("感谢每一份支持。", "Thank you for every bit of support.")}</h1>
+        <p>{t("这些名字来自愿意让 Better Endfield 继续走下去的玩家。", "These names belong to players who help Better Endfield keep moving forward.")}</p>
+      </div>
+      <div class="thanks-mark" aria-hidden="true"><Icon name="heart" size={74} /></div>
+    </section>
+    <section class="thanks-panel panel" aria-labelledby="thanks-title">
+      <div class="block-heading"><span class="eyebrow">LIST / {t("感谢名单", "THANKS LIST")}</span><h2 id="thanks-title">{t("支持者", "Supporters")}</h2><p>{t(`名单截至 ${formatCutoffDate(supporterCutoffDate, lang)}`, `List updated through ${formatCutoffDate(supporterCutoffDate, lang)}`)}</p></div>
+      <div class="thanks-grid" aria-label={t("支持者名单", "Supporter list")}>
+        {supporterNames.map(supporter => <div class="thanks-name" key={supporter.name}><Icon name="heart" size={17} /><span>{supporter.name === "anonymous" ? t("匿名", "Anonymous") : supporter.name}</span></div>)}
+      </div>
+    </section>
+  </main>;
 }
 
 function EmailDialog({ session, purpose, lang, onClose, onVerified }: { session: Session; purpose: "login" | "bind"; lang: Language; onClose: () => void; onVerified: (value: Session) => void }) {
