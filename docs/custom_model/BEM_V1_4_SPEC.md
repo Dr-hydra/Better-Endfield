@@ -124,7 +124,7 @@ Android 替换或隐藏部件时，在同一提交/恢复事务中处理其 `sha
 
 ## 制作与选择计划
 
-`bem_tool.py pack/unpack/build/validate` 支持 1.4 项目。普通 EFMI 自动转换需要目标资源的真实已验证 profile，本规范不会把普通角色 profile 自动套用于大招或武器。
+`bem_tool.py pack/unpack/build/validate/bundle` 支持 1.4 项目，ZIP 可同时包含旧角色包与 1.4 角色/武器包。通用 EFMI `convert` 与其 recipe 仍使用旧角色目标；真实武器/大招须先建立显式、资源内的来源映射，再由可编辑工程打包。本规范不会把普通角色 profile 自动套用于大招或武器。Blender 插件尚不直接输出显式资源表或静态武器。
 
 `build_bem14_target.py` 从 NativeAssetReader 原始图谱或新版离线 metadata，按作者 spec 的精确 prefab 身份及 LOD 分支生成未验证目标 profile，并可输出所有组件为 `keep` 的项目起点。它检查 snapshot 与平台来源，不猜测 runtime 布局或来源 Mod 映射。真实 Windows 草稿见 [庄方宜大招、静态剑、蒙皮法器](../../tools/CustomModel/profiles/bem14-drafts/README.md)，分别含 36、1、4 个组件；这些草稿的 `runtime_verified`、`conversion_ready` 均为 false。
 

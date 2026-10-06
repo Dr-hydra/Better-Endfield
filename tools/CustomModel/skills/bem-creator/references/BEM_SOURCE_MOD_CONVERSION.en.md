@@ -1,5 +1,7 @@
 # Converting Source Mods to BEM
 
+The general `convert` command and character profiles below use legacy character targets. BEM 1.4 multi-resource and static-mesh projects are supported by `pack/unpack/build/validate/bundle`, but ordinary character profiles and recipes do not automatically apply to weapons or independent ultimate prefabs. Obtain native prefab, LOD, receiver, bone and material identities for the intended platform, generate an unverified starting project with `target-profile`, then supply explicit source mappings and an editable project. Windows gameplay verification is not Android donor evidence; mobile resources and texture compatibility require separate checks. See [1.4 authoring](BEM_CREATOR_GUIDE.en.md#weapon-and-ultimate-projects-14) and [the 1.4 specification](BEM_V1_4_SPEC.md).
+
 This document explains how to convert EFMI / 3DMigoto character Mods to BEM: what can be automated, when a recipe is required, how the converter proves identity, and what common errors mean. See the [Creator Guide](BEM_CREATOR_GUIDE.en.md) for tool and export-task usage.
 
 ## 1. Core principles

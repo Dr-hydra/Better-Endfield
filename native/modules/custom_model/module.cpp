@@ -3935,6 +3935,10 @@ void BE_CALL ShutdownResourceModule() {
         Log("Hook disable reported failure; pinned inactive detours remain pass-through.");
     std::lock_guard lock(g_state_mutex);
     if (g_model_jobs.empty()) { g_model_loader.reset(); g_texture_streamer.reset(); }
+    // Pending scene work owns strong roots. It belongs to this module lifetime,
+    // never to a later start, even though published bindings stay in the game.
+    g_instance_rebind_queue.clear();g_pending_model_resources.clear();
+    g_instance_rebind_handled=0;g_instance_scan_retry_ms=0;
     g_payload_cache.clear(); g_completed.clear(); g_lod.pipeline.Reset();
     g_generated_texture_identity.clear(); g_generated_texture_order.clear();
     g_model_assets.clear();g_model_plans.clear();g_model_targets.clear();g_model_file_leases.clear();

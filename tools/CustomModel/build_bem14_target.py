@@ -27,6 +27,9 @@ def build_profile(database, spec):
                           if len(parts := record['path'].lower().split('/')) > 1 and
                           parts[0] == 'bundles' and parts[1] in platform_names}
     target = {k: spec[k] for k in ('id', 'profile_id', 'revision', 'snapshot')}
+    # BEM 1.4 retains this historical wire constant, including Android-only
+    # packages. Actual target platforms belong to resources[].platforms;
+    # observed source platforms are recorded separately, never inferred here.
     target.update(kind=spec['target_kind'], platform='windows-x64', resources=[], components=[])
     evidence = []
     for request in spec['resources']:
@@ -76,7 +79,8 @@ def build_profile(database, spec):
     bem.validate_manifest(manifest, 0)
     return dict(schema=1, kind='bem-target-profile', bem_format='1.4', target=target,
                 required_capabilities=capabilities, evidence=evidence,
-                source_snapshot={k: (source.get('snapshot') or {}).get(k) for k in ('manifest_version', 'perforce_cl')},
+                source_snapshot={**{k: snapshot.get(k) for k in ('manifest_version', 'perforce_cl')},
+                                 'platforms': [p for p in bem_v14.PLATFORMS if p in observed_platforms]},
                 backend_warning_count=len(source.get('backend_errors') or []),
                 runtime_verified=False, conversion_ready=False, render_verified=False,
                 limitations=['Offline identities only; replacement stream layouts, source mappings and runtime lifecycle remain unverified.']), manifest

@@ -29,7 +29,7 @@ The creator workflow has two source routes:
 
 The catalog supplies target identities and layouts, not complete character models. Do not expect it to provide a Blender reference scene. Keep author source files and generated payloads in a repeatable workspace, and distribute only the final `.bem` unless an editable project is intended.
 
-The bundled Blender exporter is a constrained first route for direct authoring: it accepts objects named `BEM_C<number>` or objects with `bem_component_id`, exports the verified 16/12/12 skin layout and explicit texture identities, and writes an editable project for `pack/build`. Do not claim support for arbitrary layouts, option groups, or shape sliders unless the resulting project passes validation.
+The bundled Blender exporter is a constrained legacy-character route: it accepts objects named `BEM_C<number>` or objects with `bem_component_id`, exports the verified 16/12/12 skin layout and explicit texture identities, and writes an editable project for `pack/build`. It does not directly export 1.4 resource tables or static weapons. Use an explicit editable project for those targets. Do not claim support for arbitrary layouts, option groups, or shape sliders unless the resulting project passes validation.
 
 ## Choose the operation
 
@@ -76,11 +76,20 @@ evidence. `target-profile NATIVE_GRAPH.json --spec SPEC.json -o PROFILE.json --p
 creates an unverified, keep-only starting project. It does not establish conversion readiness
 or in-game rendering; ordinary character conversion profiles do not apply automatically.
 
+`inspect/validate --resource ID --platform PLATFORM` returns a selected-plan report, not a
+filtered package; validation still checks all resources. `unpack` preserves the complete
+project, and `bundle` can combine legacy and 1.4 packages. Source `convert` remains the
+legacy catalog/reviewed-recipe route; real weapon and ultimate conversion needs explicit
+resource-local source mappings. Do not add Android platform labels to Windows profiles
+without Android donor evidence. Android first-enable discovery covers explicit resources;
+legacy mobile UI LOD0→world LOD1 adaptation remains separate.
+
 The Windows and Android runtimes retain BEM 1.0–1.3 compatibility. The package retains native shaders and
 uses original materials selected per draw. Local skin indices remain UINT8 with at most
 256 palette entries per component, even when input bone indices are 16 bit.
 Composable packages preserve all candidate payloads for future selections. Experimental
-hot switching applies on the next normal resource delivery; otherwise selections apply
+hot switching consumes selection revisions in the game-frame scheduler and rebinds loaded
+targets; normal deliveries also apply the latest choice. Otherwise selections apply
 on the next game start. Runtime loading reads only selected payloads and interpolation
 endpoints. 1.3 moves positions while retaining base normals/tangents and original bones.
 

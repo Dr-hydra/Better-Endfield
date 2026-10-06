@@ -2,6 +2,8 @@
 
 本文说明如何把 EFMI / 3DMigoto 格式的角色 Mod 转换为 BEM：哪些能自动转换、哪些需要配方、转换器怎样确认身份，以及常见报错。工具和导出工程的用法见 [创作者指南](BEM_CREATOR_GUIDE.md)。
 
+下文的通用 `convert` 与角色资料适用于旧角色目标。BEM 1.4 的多资源/静态网格已由 `pack/unpack/build/validate/bundle` 支持，但普通角色 profile 和配方不能直接套用于武器或独立大招。须取得目标平台的真实 prefab、LOD、receiver、骨骼与材质身份，使用 `target-profile` 生成未验证起点，再准备明确的来源映射与可编辑工程。Windows 已验收的测试 Mod 不构成 Android donor 证据；手机资源声明与纹理兼容均需独立核对。见 [1.4 制作流程](BEM_CREATOR_GUIDE.md#武器与大招工程14) 和 [1.4 规范](BEM_V1_4_SPEC.md)。
+
 ## 1. 基本原则
 
 - 转换器读取源 Mod 的 INI 声明和资源，在**静态**条件下求出要绘制的网格和贴图，再按原游戏资源身份写成 BEM。

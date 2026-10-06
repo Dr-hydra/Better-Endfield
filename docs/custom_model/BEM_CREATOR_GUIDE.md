@@ -1,11 +1,12 @@
 # BEM 创作者指南
 
-BEM（`.bem`）是 Better Endfield 的角色模型替换包。一个包对应一个角色，可以包含多套外观、可组合的部件选项和连续的体型滑条。玩家只需要导入包，不需要 Python、注入框架或手写配置。Windows 和 Android 使用同一个包。
+BEM（`.bem`）是 Better Endfield 的模型替换包。1.0–1.3 包对应一个角色；1.4 包对应一个角色或武器 ID，可分别替换普通形态、大招 prefab 或武器资源，并保留外观选项和位置滑条。Windows 和 Android 可使用同一个包，但包必须为各平台声明对应资源与 donor 合同。
 
 | 文档 | 内容 |
 | --- | --- |
 | 本文 | 工具、制作流程、导入测试、分发、常见问题 |
 | [格式规范](BEM_FORMAT_SPEC.md) | 1.0–1.3 的文件结构、字段、上限 |
+| [BEM 1.4 扩展](BEM_V1_4_SPEC.md) | 多资源目标、武器、静态网格和平台声明 |
 | [运行时行为与兼容性](BEM_RUNTIME_COMPATIBILITY.md) | 游戏内如何匹配部件、几何和贴图要求、显存开销、热切换、第一人称、日志对照 |
 | [其他来源 Mod 转换](BEM_SOURCE_MOD_CONVERSION.md) | EFMI / 3DMigoto Mod 的自动转换范围、配方、身份规则、转换报错 |
 
@@ -20,7 +21,7 @@ BEM（`.bem`）是 Better Endfield 的角色模型替换包。一个包对应一
 | Android 模型页 | Better Endfield App | 导入、启用、选择，以及手机纹理转换 |
 | AI Skill `bem-creator` | 独立工具包 `skills/bem-creator` | 复制到 AI 工具的技能目录（Codex 为 `~/.codex/skills`），用 `$bem-creator` 调用。只辅助准备配方和解释报告，不能代替校验 |
 
-当前 BEM Tools 版本 1.5.0，支持写入和读取 BEM 1.0–1.3。从源码运行时，用 `python tools/CustomModel/bem_tool.py` 代替 exe。
+当前开发分支的 BEM Tools 版本为 1.5.0，支持写入和读取 BEM 1.0–1.4。工具版本与 BEM 格式版本不同；旧的同名发行包不一定包含 1.4，用 `--version` 确认输出包含 `BEM 1.0+1.1+1.2+1.3+1.4`。从源码运行时，用 `python tools/CustomModel/bem_tool.py` 代替 exe。
 
 ## 三种制作方式
 
@@ -44,7 +45,7 @@ export.bemproj.json          # 可重复导出的任务工程
 
 `project.json` 是低层 BEM 工程，适合由导出插件或高级工具生成，不建议手工从零编写。建模软件负责网格、权重、UV、法线和贴图；BEM Tools 负责版本选择、payload 去重、压缩、校验和最终打包。
 
-当前随工具提供的 Blender 导出器先支持经过核实的 16/12/12 蒙皮布局、固定外观和显式贴图身份。对象名使用 `BEM_C0`、`BEM_C1` 等，或者设置对象自定义属性 `bem_component_id`。特殊顶点布局、选项组和形态滑条仍应使用可编辑工程或配方流程。
+当前随工具提供的 Blender 导出器先支持经过核实的 16/12/12 蒙皮布局、固定外观和显式贴图身份，输出旧角色目标工程。对象名使用 `BEM_C0`、`BEM_C1` 等，或者设置对象自定义属性 `bem_component_id`。插件尚不直接导出 1.4 多资源或静态武器；这些项目使用下述可编辑工程流程。特殊顶点布局、选项组和形态滑条仍应使用可编辑工程或配方流程。
 
 直接制作仍需要针对目标角色确认组件、骨骼名称、材质槽、贴图身份和世界/UI 资源关系。`catalog/` 提供这些身份与布局资料，但不包含随工具分发的完整角色模型。作者应自行准备建模参考或本地模板。
 
@@ -130,6 +131,41 @@ BetterEndfield.BemConverter.exe build 我的角色工程/export.bemproj.json
 | 场景与详情模型骨骼名不同 | 1.2 骨骼别名 `bone_name_aliases` |
 | 8K 等大贴图（单张超过 64 MiB） | 1.2 及以上 |
 | 连续体型调节 | 1.3 `parameters` + `mesh_deformations` |
+| 普通形态与独立大招资源分别替换 | 1.4 `target.resources` + 组件 `resource`/`renderer_path` |
+| 静态武器 MeshRenderer + MeshFilter | 1.4 `renderer_kind: static`，不添加伪骨骼 |
+| 同包包含 Windows 与 Android 的不同 LOD/donor | 1.4 按资源声明 `platforms` 和 `lod` |
+
+## 武器与大招工程（1.4）
+
+| 入口 | 1.4 支持范围 |
+| --- | --- |
+| `pack` / `unpack` / `build` / `validate` | 显式多资源、静态/蒙皮网格、原有选项与位置滑条 |
+| `inspect` / `validate --resource ID --platform PLATFORM` | 查看指定资源的选中计划；`validate` 仍校验整个包 |
+| `bundle` | 将旧角色包与 1.4 包放入同一个标准 ZIP |
+| `target-profile` | 从精确原生图谱生成未验证的 profile 和全 `keep` 项目起点 |
+| 源 Mod `convert` | 仍是已有角色资料和审阅配方入口，不是任意武器/大招的自动转换器 |
+| Blender 插件 | 仍输出旧角色工程，尚不直接导出 1.4 资源表或静态网格 |
+
+一个角色包的 `target.kind` 为 `character`，`target.id` 为角色 ID；武器包使用 `weapon` 和武器 ID。`target.resources` 中每个资源有独立 ID、根名、prefab 路径、平台和 LOD。组件必须声明所属 `resource`、精确 `renderer_path`、`renderer_kind`、原 Mesh/索引、材质及骨骼身份。每个 mesh 的全部 donor 必须来自自己的资源；跨资源共享几何时复制 descriptor 并共享 payload，不能借另一个 prefab 的 donor。
+
+独立工具包包含可直接构建的合成工程：
+
+```powershell
+BetterEndfield.BemConverter.exe build examples/multi-resource/project/export.bemproj.json
+BetterEndfield.BemConverter.exe inspect examples/multi-resource/project/dist/synthetic.bem --resource ultimate --platform windows-x64 --report ultimate-plan.json
+BetterEndfield.BemConverter.exe validate examples/multi-resource/project/dist/synthetic.bem --resource weapon --platform android-arm64 --report android-plan.json
+```
+
+示例使用虚构资源，只验证制作和格式流程，不能安装为游戏 Mod。制作真实资源时，先准备相应平台的原生图谱与目标 spec：
+
+```powershell
+BetterEndfield.BemConverter.exe target-profile NATIVE_GRAPH.json --spec SPEC.json -o TARGET_PROFILE.json --project project.json
+BetterEndfield.BemConverter.exe pack project.json -o target.bem --report build.json
+```
+
+生成器不会自动放行来源 Mod 映射或实机渲染：profile 的 `conversion_ready`、`runtime_verified` 保持 false。作者再加入替换几何、draw 与贴图映射，执行完整 `validate` 并实机检查。BEM 沿用游戏的大招触发和武器装备逻辑，不实现源 Mod 的脚本或技能状态机。
+
+Windows 当前只执行显式 LOD0。Android 可声明自身 LOD1 接收器和 donor，保留手机原有 LOD 设计；不同平台合同应使用不同 resource ID。`target.platform` 仍保留历史常量 `windows-x64`，实际平台由 `resources[].platforms` 决定，不要把顶层常量改为 Android。不能只给 Windows 资源补上 `android-arm64` 标签来宣称兼容。没有 Android 资源声明的包不能在 Android 导入；转换贴图也不会补齐资源、骨骼或 LOD 合同。
 
 ## 组合外观（1.1+）
 
@@ -194,14 +230,14 @@ BetterEndfield.BemConverter.exe inspect source-mod.zip --report inspection.json
 | | Windows | Android |
 | --- | --- | --- |
 | 导入 | 模型管理页“导入 BEM / ZIP”，或把文件拖进页面；ZIP 合集可勾选要导入的包。**需要关闭游戏** | App 模型页导入单个 `.bem`，也可以从文件管理器“打开方式”或“分享”导入 |
-| 新包状态 | 默认停用 | 默认启用，并停用同角色的其他包 |
+| 新包状态 | 默认停用 | 默认启用，并停用与其资源冲突的其他包 |
 | 存放位置 | 程序目录 `models/`（不可写时为 `%LOCALAPPDATA%\BetterEndfield\catalog\custom-model\packages`） | App 私有目录，并发布给游戏 |
 | 更新 | 相同 `package_id` 即覆盖更新，保留启用状态和仍有效的选择 | 每次导入生成新版本，保留选择 |
-| 生效 | 下次启动游戏；开启实验热切换后，切换配队或重开详情页时生效 | 同左 |
+| 生效 | 下次启动游戏；已开启热切换时，选择变化由游戏帧调度处理已加载实例 | 同左；1.4 按 Android 显式资源发现，仍需手机实机验收 |
 
-- 同一角色可以安装多个包，但同时只能启用一个。
+- 旧角色包同一角色同时只能启用一个；1.4 按当前平台的资源根检查冲突，普通形态与大招包只有在资源不重叠时才能共同启用。同一 package ID 更新不能改变 target kind/id。
 - 校验未通过的包不能导入。有“关闭模型校验”实验选项可以跳过兼容性检查，仅用于开发测试，可能渲染错误或崩溃。
-- 实机测试至少检查场景、角色详情页和配队界面。Android 上场景模型由详情模型构建，规则见[运行时文档](BEM_RUNTIME_COMPATIBILITY.md#3-lod)。
+- 实机测试至少检查场景、角色详情页和配队界面；1.4 还应检查实际武器、大招主体和声明的其他 prefab，以及启用、停用、再次启用。Android 旧包的场景模型由详情模型构建，1.4 显式资源使用自身 donor，规则见[运行时文档](BEM_RUNTIME_COMPATIBILITY.md#3-lod)。
 - 游戏里没有生效时，先确认包已启用、外观选择正确，再查看日志中的拒绝原因，对照[运行时日志表](BEM_RUNTIME_COMPATIBILITY.md#11-日志拒绝信息对照)。
 
 ## 面向手机的注意事项

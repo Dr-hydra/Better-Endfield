@@ -141,7 +141,7 @@ $bemTools = Join-Path $ws.paths.build "tools\bem\dist\BetterEndfield.BemConverte
 New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "tools") | Out-Null
 Copy-Item -LiteralPath $bemTools -Destination (Join-Path $publishDir "tools\BemConverter") -Recurse -Force
 New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "docs") | Out-Null
-$documentNames = @("BEM_CREATOR_GUIDE.md", "BEM_FORMAT_SPEC.md", "BEM_RUNTIME_COMPATIBILITY.md", "BEM_SOURCE_MOD_CONVERSION.md", "THIRD_PARTY_MODULE_CREATOR_GUIDE.md")
+$documentNames = @("BEM_CREATOR_GUIDE.md", "BEM_FORMAT_SPEC.md", "BEM_V1_4_SPEC.md", "BEM_RUNTIME_COMPATIBILITY.md", "BEM_SOURCE_MOD_CONVERSION.md", "THIRD_PARTY_MODULE_CREATOR_GUIDE.md")
 $resolveDocuments = @'
 import json, sys
 from pathlib import Path
@@ -153,7 +153,15 @@ print(json.dumps([{'source': str(ws.document(name)), 'basename': name} for name 
 $documentJson = & $python -c $resolveDocuments $repoRoot @documentNames
 if ($LASTEXITCODE -ne 0) { throw "Release document paths could not be resolved." }
 foreach ($document in (($documentJson -join "`n") | ConvertFrom-Json)) {
-    Copy-Item -LiteralPath $document.source -Destination (Join-Path $publishDir "docs\$($document.basename)") -Force
+    $documentDestination = Join-Path $publishDir "docs\$($document.basename)"
+    if ($document.basename -eq 'BEM_V1_4_SPEC.md') {
+        $specText = [System.IO.File]::ReadAllText($document.source).Replace(
+            '../../tools/CustomModel/profiles/bem14-drafts/README.md',
+            '../tools/BemConverter/profiles/bem14-drafts/README.md')
+        [System.IO.File]::WriteAllText($documentDestination, $specText, [System.Text.UTF8Encoding]::new($false))
+    } else {
+        Copy-Item -LiteralPath $document.source -Destination $documentDestination -Force
+    }
 }
 
 $nativeStage = Join-Path $nativeBuild "stage\$Configuration"
@@ -202,6 +210,7 @@ $requiredReleaseFiles = @(
     "BetterEndfield.exe",
     "tools\BemConverter\BetterEndfield.BemConverter.exe",
     "docs\BEM_CREATOR_GUIDE.md",
+    "docs\BEM_V1_4_SPEC.md",
     "modules\BetterEndfield.CustomModel.dll",
     "modules\betterendfield.custom_model.module.ini",
     "runtime\BetterEndfield.Host.dll",

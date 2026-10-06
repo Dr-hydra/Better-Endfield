@@ -777,14 +777,30 @@ int32_t ModelInstanceId(void* object) {
     int32_t id=0;
     return object && IsNativeObjectAlive(object) && InvokeValue(Contract("object.instance_id"),object,nullptr,id)?id:0;
 }
-#if !defined(__ANDROID__)
+enum class ModelDiscoveryPlatform { Windows, Android };
+#if defined(__ANDROID__)
+constexpr auto kModelDiscoveryPlatform=ModelDiscoveryPlatform::Android;
+#else
+constexpr auto kModelDiscoveryPlatform=ModelDiscoveryPlatform::Windows;
+#endif
 // Discovery has no decoded payload and does not construct a Mesh/material.
 // Check every declared donor before admitting a previously untracked root;
 // ProcessResource repeats the full production checks before publication.
-bool HasCompatibleWindowsModelTarget(const EnabledMod& mod,void* asset,std::string& reason) {
+bool HasCompatibleModelTarget(const EnabledMod& mod,void* asset,std::string& reason,
+    ModelDiscoveryPlatform platform=kModelDiscoveryPlatform) {
     if (!IsGameObjectResource(asset)) {reason="not-GameObject";return false;}
     const auto& adapter=*mod.adapter;
-    if (adapter.explicit_resource && adapter.receiver_lod!=0) {reason="unsupported-Windows-LOD";return false;}
+    // Legacy Android world bindings use the paired UI LOD0 -> world LOD1
+    // adapter. They cannot be admitted by this own-donor preflight.
+    if (platform==ModelDiscoveryPlatform::Android && !adapter.explicit_resource) {
+        reason="Android-legacy-requires-paired-world-route";return false;
+    }
+    if (platform==ModelDiscoveryPlatform::Windows && adapter.explicit_resource && adapter.receiver_lod!=0) {
+        reason="unsupported-Windows-LOD";return false;
+    }
+    if (adapter.explicit_resource && std::any_of(adapter.components.begin(),adapter.components.end(),[&](const auto& identity) {
+        return !GenericMatching::ReceiverLodAgrees(identity.receiver_path,adapter.receiver_lod);
+    })) {reason="receiver-resource-LOD-mismatch";return false;}
     bool inactive=true;void* args[]{ModelRendererType(),&inactive};
     void* renderers=Invoke(Contract("game_object.renderers"),asset,args);
     std::vector<GenericRendererCandidate> index;
@@ -812,8 +828,7 @@ bool HasCompatibleWindowsModelTarget(const EnabledMod& mod,void* asset,std::stri
     if (!GenericMatching::DistinctReceivers(receivers)) {reason="duplicate-receivers";return false;}
     return true;
 }
-#endif
-bool ScanSceneInstancesForRebind() {
+bool ScanSceneInstancesForRebind(ModelDiscoveryPlatform platform=kModelDiscoveryPlatform) {
     const auto scan_started_ms=GetTickCount64();
     // Generated Meshes of a generation that is no longer the role's selection.
     std::unordered_map<int32_t,const CharacterAdapter*> stale;
@@ -833,13 +848,14 @@ bool ScanSceneInstancesForRebind() {
             stale.emplace(binding.mesh.instance_id,record.adapter);
     }
     std::unordered_map<std::string,const EnabledMod*> discover;
-#if !defined(__ANDROID__)
     // An off Mod is not registered at delivery. When it is first enabled,
     // cached prefabs and their already-existing clones have no completed
     // generation. Restrict discovery to precisely the changed resource names.
-    for (const auto& mod:g_registry.enabled) for (const auto* resource:{mod.adapter->world_resource,mod.adapter->ui_resource})
-        if (g_pending_model_resources.contains(resource)) discover.emplace(resource,&mod);
-#endif
+    for (const auto& mod:g_registry.enabled) {
+        if (platform==ModelDiscoveryPlatform::Android && !mod.adapter->explicit_resource) continue;
+        for (const auto* resource:{mod.adapter->world_resource,mod.adapter->ui_resource})
+            if (g_pending_model_resources.contains(resource)) discover.emplace(resource,&mod);
+    }
     if (stale.empty() && restored_roots.empty() && discover.empty()) {
         if (!g_pending_model_resources.empty()) Log("Hot switch discovery: no affected loaded generation or enabled resource");
         g_pending_model_resources.clear();return true;
@@ -910,7 +926,6 @@ bool ScanSceneInstancesForRebind() {
         void* object=root?Invoke(game_object,root,nullptr):nullptr;
         queue_root(object,*owner->second);
     }
-#if !defined(__ANDROID__)
     size_t discovered=0,refused=0;
     std::unordered_set<int32_t> checked;
     for (int i=0;!discover.empty() && i<count;++i) {
@@ -923,7 +938,7 @@ bool ScanSceneInstancesForRebind() {
                 void* object=Invoke(game_object,transform,nullptr);const int32_t id=ModelInstanceId(object);
                 if (id && !queued.contains(id) && checked.insert(id).second) {
                     std::string reason;
-                    if (HasCompatibleWindowsModelTarget(*role->second,object,reason)) {
+                    if (HasCompatibleModelTarget(*role->second,object,reason,platform)) {
                         const auto before=found;queue_root(object,*role->second->adapter);
                         if (found!=before) ++discovered;
                     } else if (refused++<8) Log("Hot switch discovery refused resource="+name+" reason="+reason);
@@ -935,7 +950,6 @@ bool ScanSceneInstancesForRebind() {
     }
     Log("Hot switch discovery resources="+std::to_string(discover.size())+" rootsQueued="+std::to_string(discovered)+
         " rootsRefused="+std::to_string(refused));
-#endif
     Log("Hot switch instance scan renderers="+std::to_string(count)+" staleMeshes="+std::to_string(stale.size())+
         " restoredRootsQueued="+std::to_string(restored_queued)+" instancesQueued="+std::to_string(found)+
         " elapsedMs="+std::to_string(GetTickCount64()-scan_started_ms));

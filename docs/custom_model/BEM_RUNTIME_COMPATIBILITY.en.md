@@ -1,5 +1,15 @@
 # BEM Runtime Behavior and Compatibility
 
+### BEM 1.4 resources on both platforms
+
+- Windows and Android expand `target.resources` for the current platform and match exact receiver paths and renderer kinds. Same-name Sprite/Texture2D assets do not enter model APIs.
+- Skinned ultimate resources use their own prefab bones and material donors. Static weapons use a MeshRenderer with the unique MeshFilter on the same GameObject, without dummy bones. Explicit Android resources do not borrow a legacy character UI donor.
+- Android first-enable discovery handles explicit resources declared for `android-arm64`, validating their own LOD and receiver contracts before rebinding. Windows still accepts explicit LOD0 only. Legacy Android packages retain UI LOD0→world LOD1 adaptation.
+- Version 1.4 conflicts use resource roots on the current platform. Packages without current-platform resources cannot be imported; texture conversion does not change platform declarations.
+- Weapon/ultimate loading and PC hot switching have user gameplay acceptance. Android implementation and regression tests are not device rendering acceptance, and adding a platform label to a Windows sample does not establish Android compatibility.
+
+The world/UI and skinning details in sections 1–6 below primarily describe legacy character packages; explicit 1.4 contracts are defined in the extension specification.
+
 The sections below describe the legacy 1.0–1.3 character world/UI route. The development branch adds [BEM 1.4 resource targets](BEM_V1_4_SPEC.md), with explicit receiver paths and platform declarations. The initial Windows implementation executes LOD0 targets; Android uses the declared resource itself as donor. New game targets still require platform evidence and in-game validation.
 
 Android world LOD1 is the existing design: legacy packages use UI LOD0 donors with world LOD1 receivers, while 1.4 packages can explicitly declare their own LOD1 receivers and donors. The Windows LOD0 restriction does not apply to Android. All enabled Android model packages participate in the existing `lod_pipeline` bias maintenance without changing QualitySettings. The function name `EnableForceLOD0` does not require Android to render LOD0.
@@ -127,12 +137,12 @@ Author guidance:
 ## 8. Selection timing and hot switching
 
 - **Default:** enable/disable, appearance, option, and slider changes take effect at the next game start.
-- **Experimental hot switching** (enable it, then restart once): later selection changes apply at the next resource delivery, such as switching teams or reopening a detail page. Instances already shown in the scene are rebuilt.
+- **Experimental hot switching** (enable it, then restart once): the game-frame scheduler applies selection changes to registered templates and scene instances without waiting for a team switch or detail-page rebuild. PC discovers cached roots on first enable; Android 1.4 also discovers explicit resources. Later normal resource deliveries still use the latest selection.
   - Disabling a package restores the original model. The original Mesh is retained while a replacement is displayed, so memory use is slightly higher.
   - If the original resource has already been unloaded, rebuilding is rejected with `Hot switch Original ... unavailable`; re-enter the scene or restart the game.
   - Hot switching, model-validation bypass, and loading-speed priority each require a restart when their own flag changes.
   - A model loaded before hot switching was enabled cannot be switched directly; restart once.
-- 1.3 sliders are not applied every frame while dragging. They follow the next-delivery or next-start rules above.
+- 1.3/1.4 sliders request selection rebuilds rather than per-frame vertex animation. They follow the scheduler above with hot switching enabled, or apply at the next start otherwise.
 
 ## 9. First-person compatibility
 

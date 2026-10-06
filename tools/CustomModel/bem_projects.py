@@ -102,7 +102,14 @@ def bundle(inputs, output):
                     bem.require(key not in ids, 'Duplicate package ID in bundle: ' + m['package_id']); ids.add(key)
                     name = m['package_id'] + '.bem'
                     archive.write(staged, name)
-                    packages.append(dict(entry=name, package_id=m['package_id'], name=m['name'], character_id=m['target']['character_id']))
+                    target = m['target']
+                    target_kind = target.get('kind', 'character')
+                    target_id = target['id'] if 'kind' in target else target['character_id']
+                    summary = dict(entry=name, package_id=m['package_id'], name=m['name'],
+                                   target_kind=target_kind, target_id=target_id)
+                    if target_kind == 'character':
+                        summary['character_id'] = target_id
+                    packages.append(summary)
         bem.require(Path(temp).stat().st_size <= MAX_BUNDLE, 'ZIP exceeds 4 GiB budget')
         os.replace(temp, output)
     finally:

@@ -15,7 +15,7 @@ def main():
     paths=[{'key':key,'path':str(ws.path(key)),'exists':ws.path(key).exists()}for key in required]
     optional=['tools.resconv','game.install_dir','test.be_install_dir']
     paths += [{'key':key,'path':str(ws.path(key,required=False))if ws.path(key,required=False)else None,'exists':bool(ws.path(key,required=False)and ws.path(key,required=False).exists())}for key in optional]
-    docs=['BEM_CREATOR_GUIDE.md','BEM_FORMAT_SPEC.md','BEM_RUNTIME_COMPATIBILITY.md','BEM_SOURCE_MOD_CONVERSION.md','THIRD_PARTY_MODULE_CREATOR_GUIDE.md']
+    docs=['BEM_CREATOR_GUIDE.md','BEM_FORMAT_SPEC.md','BEM_V1_4_SPEC.md','BEM_RUNTIME_COMPATIBILITY.md','BEM_SOURCE_MOD_CONVERSION.md','THIRD_PARTY_MODULE_CREATOR_GUIDE.md']
     documents=[{'name':name,'path':str(ws.document(name)),'exists':ws.document(name).is_file()}for name in docs]
     result={'configuration_valid':True,'game_version':ws.get('game.version'),'game_discovery_source':ws.get('game.discovery_source'),'cleanup_targets':[str(p)for p in ws.clean_targets()],'paths':paths,'documents':documents,'no_tools_executed':True,'build_and_game_validation':'not_run'}
     print(json.dumps(result,ensure_ascii=False,indent=2))

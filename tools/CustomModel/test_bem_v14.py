@@ -218,5 +218,51 @@ class Bem14Tests(unittest.TestCase):
         self.assertEqual(bem.package_minor(self.path), 4)
         self.assertEqual(check_geometry(*bem.read_package(self.path), 4)['required_minor'], 4)
 
+    def test_cli_bundle_mixed_legacy_character_and_static_weapon_roundtrip(self):
+        from test_bem_v1 import fixture
+        legacy = fixture(); legacy_path = self.root / 'legacy.bem'; legacy.write(legacy_path)
+        self.b.write(self.path)
+        weapon = copy.deepcopy(self.b); m = weapon.m
+        m['package_id'] = 'synthetic.static-weapon'
+        m['target'].update(kind='weapon', id='wpn_synthetic')
+        m['target']['resources'] = [m['target']['resources'][2]]
+        component = m['target']['components'][2]; component['id'] = 0
+        m['target']['components'] = [component]
+        mesh = m['meshes'][2]; mesh['draws'][0]['material_component'] = 0
+        m['meshes'] = [mesh]
+        deformation = m['mesh_deformations'][2]; deformation['mesh'] = 0
+        m['mesh_deformations'] = [deformation]
+        m['component_rules'] = [dict(target=0, candidates=[dict(operation='replace', mesh=0)])]
+        weapon_path = self.root / 'weapon.bem'; weapon.write(weapon_path)
+        sources = [legacy_path, self.path, weapon_path]
+        archive = self.root / 'mixed.zip'
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            self.assertEqual(main(['bundle', *map(str, sources), '-o', str(archive)]), 0)
+        summaries = {p['package_id']: p for p in json.loads(output.getvalue())['packages']}
+        for manifest in (legacy.m, self.b.m):
+            target_id = manifest['target'].get('id', manifest['target'].get('character_id'))
+            summary = summaries[manifest['package_id']]
+            self.assertEqual((summary['target_kind'], summary['target_id'], summary['character_id']),
+                             ('character', target_id, target_id))
+        summary = summaries[m['package_id']]
+        self.assertEqual((summary['target_kind'], summary['target_id']), ('weapon', 'wpn_synthetic'))
+        self.assertNotIn('character_id', summary)
+        expected = {bem.read_package(p)[0]['package_id']: bem.read_package(p) for p in sources}
+        for command, extra in [('inspect', []), ('unpack', ['-o', str(self.root / 'staged')])]:
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                self.assertEqual(main([command, str(archive), *extra]), 0)
+            result = json.loads(output.getvalue())
+            self.assertFalse(result['issues'])
+            self.assertEqual({p['package']['package_id'] for p in result['packages']}, set(expected))
+            for package in result['packages']:
+                package_id = package['package']['package_id']
+                self.assertEqual(package['package'], expected[package_id][0])
+                if command == 'unpack':
+                    staged = self.root / 'staged' / package['file']
+                    self.assertEqual(bem.read_package(staged), expected[package_id])
+                    self.assertEqual(bem.package_minor(staged), 0 if package_id == legacy.m['package_id'] else 4)
+
 
 if __name__ == '__main__': unittest.main()
