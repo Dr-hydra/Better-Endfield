@@ -52,6 +52,7 @@ ModelOverlayHost g_model_overlay;
 #endif
 BE_ResolvedClassV1 g_skinned_renderer_class{},g_mesh_class{},g_texture2d_class{},g_material_class{};
 BE_ResolvedClassV1 g_renderer_class{},g_static_renderer_class{},g_mesh_filter_class{};
+BE_ResolvedClassV1 g_game_object_class{};
 using ObjectClassFn=void*(*)(void*);
 using ArrayNewSpecificFn=void*(*)(void*,uintptr_t);
 ObjectClassFn g_object_class=nullptr;
@@ -598,6 +599,16 @@ bool IsNativeObjectAlive(void* object) {
     void* parameters[1]{object};
     return object && InvokeValue(Contract("object.is_alive"), nullptr,
         parameters, alive) && alive != 0;
+}
+
+// AssetProxy delivers arbitrary UnityEngine.Objects. Weapons in particular
+// share their prefab name with UI Sprites; invoking a GameObject instance
+// method on that Sprite can fault inside Unity before a managed exception is
+// raised. GameObject is sealed, so an exact IL2CPP class check proves this
+// boundary for both prefabs and clones. Missing type contracts fail closed.
+bool IsGameObjectResource(void* asset) {
+    return asset && g_object_class && g_game_object_class.class_info &&
+        g_object_class(asset)==g_game_object_class.class_info;
 }
 
 bool RendererMaterialsMatch(void* renderer, void* expected_materials) {
@@ -2840,6 +2851,7 @@ bool RememberResource(const CharacterAdapter& adapter,void* asset,
     return true;
 }
 bool IsCompletedResource(const CharacterAdapter& adapter,void* asset,std::string_view selection_key={}) {
+    if (!IsGameObjectResource(asset)) return false;
     // Natural clones may share the completed template's meshes/materials. The
     // full per-component identity must agree; names alone never prove completion.
     bool inactive=true; void* args[]{ModelRendererType(),&inactive};
@@ -3120,6 +3132,7 @@ bool ReadGenericPristineMesh(const CharacterAdapter& adapter,void* asset,
 }
 bool CaptureGenericResourceBindings(const CharacterAdapter& adapter,const BemPocData& bem,void* asset,
     std::vector<PreparedBinding>& bindings) {
+    if (!IsGameObjectResource(asset)) return false;
     if (!ValidatePayloadAdapter(adapter,bem)) return false;
     bool inactive=true;void* args[]{ModelRendererType(),&inactive};
     void* renderers=Invoke(Contract("game_object.renderers"),asset,args);
@@ -3138,24 +3151,12 @@ bool CaptureGenericResourceBindings(const CharacterAdapter& adapter,const BemPoc
             identity.indices,!bem.skip_validation,adapter.explicit_resource?identity.receiver_path:""};
         const auto match=GenericMatching::SelectUnique(candidates,request,[&](const auto& c) {
             const auto found=std::find_if(index.begin(),index.end(),[&](const auto& entry){return entry.renderer==c.renderer;});
-            if (found==index.end() || !c.pristine.mesh || component.static_mesh!=IsStaticRenderer(found->renderer)) return false;
-            const int materials=ArrayLength(found->materials),bones=ArrayLength(found->bones);
-            if (materials<=0 || materials>256 || bones<0 || bones>256) return false;
-            for(int i=0;i<materials;++i) {
-                void* material=ArrayValue(found->materials,i);void* shader=Invoke(Contract("material.get_shader"),material,nullptr);
-                if (!material || !IsNativeObjectAlive(material) || !shader || !IsNativeObjectAlive(shader)) return false;
-            }
-            for(int i=0;i<bones;++i) {
-                void* bone=ArrayValue(found->bones,i);std::string path;
-                if (!bone || !IsNativeObjectAlive(bone) || !ResourceRelativePath(asset,bone,path)) return false;
-            }
-            return true;
+            return found!=index.end() && c.pristine.mesh &&
+                !GenericCandidateContractError(asset,*found,component.static_mesh);
         });
         if (match.status!=GenericMatching::MatchStatus::Matched) {
-            std::string details;
-            for (const auto& c:candidates) if (c.key.region==GenericMatching::Region::Lod0 && !c.pristine.detail.empty())
-                details+=" ["+c.key.path+": "+c.pristine.detail+"]";
-            Log("Generic model donor is missing/ambiguous: "+std::string(identity.name)+details);return false;
+            Log("Generic model donor is missing/ambiguous: "+std::string(identity.name)+
+                DescribeGenericDonorFailure(asset,index,candidates,request,match.status,component.static_mesh));return false;
         }
         chosen.push_back(match.index);unique.push_back(index[match.index].renderer);
     }
@@ -3382,7 +3383,7 @@ bool PrepareDisabledResource(void* asset,const CharacterAdapter* adapter,std::ve
     return !bindings.empty();
 }
 bool RestoreDisabledResource(void* asset,std::string_view name,ConstructionScope& construction) {
-    if (!g_hot_switch_runtime.load()) return false;
+    if (!IsGameObjectResource(asset) || !g_hot_switch_runtime.load()) return false;
     name=ResourceBaseName(name);
     const CharacterAdapter* adapter=nullptr;
     for (auto record=g_completed.rbegin();record!=g_completed.rend();++record) {
@@ -3445,7 +3446,7 @@ bool RestoreDisabledResource(void* asset,std::string_view name,ConstructionScope
 }
 
 bool ProcessResource(void* asset,ConstructionScope& construction) {
-    if (!RootTemporary(asset)) return false;
+    if (!IsGameObjectResource(asset) || !RootTemporary(asset)) return false;
     const auto name=ObjectName(asset);
     construction.resource_name=name;
     const EnabledMod* mod=g_registry.Match(name);
@@ -3582,6 +3583,7 @@ bool ProcessResource(void* asset,ConstructionScope& construction) {
 // Used whenever asynchronous registration cannot be shown to be complete.
 std::atomic<uint64_t> g_sync_deliveries{0};
 void SynchronousModelDelivery(void* asset,const char* reason) {
+    if (!IsGameObjectResource(asset)) return;
     std::lock_guard lock(g_state_mutex);
     if (!g_enabled.load() || g_stopping.load()) return;
     ReloadRegistryAtDelivery();
@@ -3604,7 +3606,8 @@ void SynchronousModelDelivery(void* asset,const char* reason) {
     if (mod && !g_probe.sweep) RegisterModelDelivery(asset,nullptr,true,ok?std::string{}:selection);
 }
 void __fastcall ResourceFinish(void* proxy,void* asset,void* method) {
-    if (g_enabled.load(std::memory_order_acquire) && !g_stopping.load() && !g_in_delivery) {
+    if (g_enabled.load(std::memory_order_acquire) && !g_stopping.load() && !g_in_delivery &&
+        IsGameObjectResource(asset)) {
         g_in_delivery=true;
         try {
             if (const char* blocker=ModelAsyncDeliveryBlocker(GetTickCount64())) {
@@ -3738,7 +3741,8 @@ bool ResolveRuntimeContracts() {
         return g_host->resolve_class(g_host->context,"UnityEngine.CoreModule.dll","UnityEngine",name,&result)==BE_Result_Ok &&
             result.class_info && result.type_object;
     };
-    if (models && (!resolve_class("Mesh",g_mesh_class) || !resolve_class("SkinnedMeshRenderer",g_skinned_renderer_class) ||
+    if (models && (!resolve_class("GameObject",g_game_object_class) ||
+        !resolve_class("Mesh",g_mesh_class) || !resolve_class("SkinnedMeshRenderer",g_skinned_renderer_class) ||
         !resolve_class("Renderer",g_renderer_class) || !resolve_class("MeshRenderer",g_static_renderer_class) ||
         !resolve_class("MeshFilter",g_mesh_filter_class) ||
         !resolve_class("Texture2D",g_texture2d_class) || !resolve_class("Material",g_material_class))) return false;
@@ -3748,7 +3752,8 @@ bool ResolveRuntimeContracts() {
     g_weak_target=reinterpret_cast<WeakTargetFn>(GetProcAddress(game,"il2cpp_gchandle_get_target"));
     g_static_get=reinterpret_cast<StaticFieldFn>(GetProcAddress(game,"il2cpp_field_static_get_value"));
     g_static_set=reinterpret_cast<StaticFieldFn>(GetProcAddress(game,"il2cpp_field_static_set_value"));
-    // Optional for v24; v25 refuses construction if typed array allocation is unavailable.
+    // Object class is mandatory before accepting an AssetProxy receiver.
+    // Typed array allocation remains optional for v24.
     g_object_class=reinterpret_cast<ObjectClassFn>(GetProcAddress(game,"il2cpp_object_get_class"));
     g_array_new_specific=reinterpret_cast<ArrayNewSpecificFn>(GetProcAddress(game,"il2cpp_array_new_specific"));
     return g_weak_new && g_weak_target &&
@@ -3757,7 +3762,7 @@ bool ResolveRuntimeContracts() {
 #else
         (!betterendfield::AndroidNpcParametersEnabled() || g_lod.Resolve()) &&
 #endif
-        (!models || ResolveEngineBindings());
+        (!models || (g_object_class && ResolveEngineBindings()));
 }
 BE_Result BE_CALL InitializeResourceModule(const BE_HostApiV1* host) {
 #if defined(__ANDROID__)

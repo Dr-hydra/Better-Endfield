@@ -65,3 +65,54 @@ bool BuildGenericRendererIndex(const CharacterAdapter& adapter,void* asset,void*
 // No bone arrays, material clones, Meshes or completed records are allocated.
 bool ReadGenericPristineMesh(const CharacterAdapter& adapter,void* asset,
     const GenericRendererCandidate& candidate,GenericMatching::MeshIdentity& identity);
+
+// Shared read-only compatibility check. Keep failure reasons alongside the
+// actual gate so diagnostics cannot claim a different contract was checked.
+const char* GenericCandidateContractError(void* asset,const GenericRendererCandidate& candidate,bool static_mesh) {
+    if (static_mesh!=IsStaticRenderer(candidate.renderer)) return "renderer-kind";
+    const int materials=ArrayLength(candidate.materials),bones=ArrayLength(candidate.bones);
+    if (materials<=0 || materials>256) return "material-count";
+    if (bones<0 || bones>256) return "bone-count";
+    for (int i=0;i<materials;++i) {
+        void* material=ArrayValue(candidate.materials,i);
+        if (!material || !IsNativeObjectAlive(material)) return "material-missing-or-dead";
+        void* shader=Invoke(Contract("material.get_shader"),material,nullptr);
+        if (!shader || !IsNativeObjectAlive(shader)) return "shader-missing-or-dead";
+    }
+    for (int i=0;i<bones;++i) {
+        void* bone=ArrayValue(candidate.bones,i);std::string path;
+        if (!bone || !IsNativeObjectAlive(bone)) return "bone-missing-or-dead";
+        if (!ResourceRelativePath(asset,bone,path)) return "bone-outside-resource-root";
+    }
+    return nullptr;
+}
+std::string DescribeGenericDonorFailure(void* asset,const std::vector<GenericRendererCandidate>& index,
+    const std::vector<GenericMatching::Candidate>& candidates,const GenericMatching::Request& request,
+    GenericMatching::MatchStatus status,bool static_mesh) {
+    std::string text=" resource="+std::string(request.resource)+" status="+
+        (status==GenericMatching::MatchStatus::Ambiguous?"ambiguous":
+         status==GenericMatching::MatchStatus::InvalidIndex?"invalid-index":"missing")+
+        " expectedIndices="+std::to_string(request.indices)+" checked="+(request.check_indices?"true":"false");
+    if (request.region==GenericMatching::Region::Explicit) text+=" receiver="+std::string(request.verified_receiver_path);
+    size_t relevant=0,shown=0;
+    for (const auto& c:candidates) if (c.key.region==request.region) ++relevant;
+    text+=" candidates="+std::to_string(relevant);
+    // Show exact-name candidates first; unrelated meshes are useful only when
+    // the expected donor is absent. Bound diagnostics for large prefab graphs.
+    for (int pass=0;pass<2 && shown<6;++pass) for (size_t i=0;i<candidates.size() && shown<6;++i) {
+        const auto& c=candidates[i];const auto& p=c.pristine;
+        if (c.key.region!=request.region || (p.name==request.mesh_name)!=(pass==0)) continue;
+        std::string reason;
+        if (!p.detail.empty()) reason=p.detail;
+        else if (p.origin!=GenericMatching::DonorOrigin::Pristine && p.origin!=GenericMatching::DonorOrigin::SavedOriginal) reason="unverified-lineage";
+        else if (p.name!=request.mesh_name) reason="mesh-name";
+        else if ((request.region==GenericMatching::Region::Explicit || !request.verified_receiver_path.empty()) && c.key.path!=request.verified_receiver_path) reason="receiver-path";
+        else if (request.check_indices && (!p.indices_known || p.indices!=request.indices)) reason="index-count";
+        else if (const char* error=GenericCandidateContractError(asset,index[i],static_mesh)) reason=error;
+        else reason="compatible";
+        text+=" ["+c.key.path+" mesh="+p.name+" indices="+
+            (p.indices_known?std::to_string(p.indices):"unknown")+" reason="+reason+"]";
+        ++shown;
+    }
+    return text;
+}

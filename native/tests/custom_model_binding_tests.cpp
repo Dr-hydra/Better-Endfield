@@ -13,12 +13,14 @@ struct Fake {
     void* bones=nullptr; void* poses=nullptr; void* materials=nullptr; void* mesh=nullptr;
     bool enabled=true;
     bool visible=false;
+    bool alive=true;
     void* parent=nullptr;
     void* transforms=nullptr;
     void* shader=nullptr;
     void* runtime_class=nullptr;
     void* filter=nullptr;
     void* transform=nullptr;
+    void* game_object=nullptr;
     Matrix4x4Raw matrix{};
     uint64_t scalar=0;
     std::map<int32_t,void*> textures;
@@ -35,10 +37,27 @@ uint64_t fake_frame=0,texture_ctors=0,texture_applies=0,finish_calls=0;
 int32_t fake_max_lod=1;
 void* fake_transform_type=nullptr;
 void* fake_camera=nullptr;
+void* fake_scene_renderers=nullptr;
+int fake_game_object_class_token=0;
+uint64_t game_object_calls=0;
+uint64_t fake_runtime_calls=0;
+void* last_finished_asset=nullptr;
+void* FakeObjectClass(void* object) {
+    auto* value=static_cast<Fake*>(object);
+    return value->runtime_class?value->runtime_class:object;
+}
+void ConfigureFakeObjectClasses() {
+    g_game_object_class.class_info=&fake_game_object_class_token;
+    g_game_object_class.type_object=&fake_game_object_class_token;
+    g_object_class=&FakeObjectClass;
+}
 Fake* Make(std::string name={}) {
     auto p=std::make_unique<Fake>(); p->name=std::move(name);
     for (int i=0;i<4;++i) p->matrix.m[i*5]=1;
     auto* result=p.get(); objects.push_back(std::move(p)); return result;
+}
+Fake* GameObject(std::string name={}) {
+    auto* object=Make(std::move(name));object->runtime_class=&fake_game_object_class_token;object->game_object=object;return object;
 }
 Fake* Array(std::initializer_list<void*> values) { auto* n=Make(); n->array=values; return n; }
 void Check(bool result,const char* message) { if (!result) { std::cerr<<message<<'\n'; std::exit(1); } }
@@ -48,9 +67,17 @@ bool SameMaterialSet(void* actual,void* expected) {
     return actual && expected && static_cast<Fake*>(actual)->array==static_cast<Fake*>(expected)->array;
 }
 void* BE_CALL InvokeFake(void*,const void* method,void* object,void** args,void** exception) {
+    ++fake_runtime_calls;
     const auto key=std::string_view(static_cast<const MethodContract*>(method)->key);
     auto* n=static_cast<Fake*>(object);
+    if (key.starts_with("game_object.")) {
+        Check(n && n->runtime_class==&fake_game_object_class_token,
+            "non-GameObject receiver reached a GameObject-specific runtime API");
+        ++game_object_calls;
+    }
     if (key=="component.get_transform") return n->transform?n->transform:object;
+    if (key=="component.get_game_object") return n->game_object;
+    if (key=="resources.find_all") return fake_scene_renderers;
     if (key=="object.get_type" || key=="type.get_element_type" || key=="game_object.get_transform") return object;
     if (key=="component.get_component") return n->filter;
     if (key=="time.frame_count") return Scalar(fake_frame);
@@ -70,7 +97,7 @@ void* BE_CALL InvokeFake(void*,const void* method,void* object,void** args,void*
     if (key=="array.clone") { auto* a=Make(); a->array=n->array; return a; }
     if (key=="object.get_name") return object;
     if (key=="object.instance_id") return Scalar(reinterpret_cast<uintptr_t>(object)&0x7fffffff);
-    if (key=="object.is_alive") return Scalar(args[0]!=nullptr);
+    if (key=="object.is_alive") return Scalar(args[0] && static_cast<Fake*>(args[0])->alive);
     if (key=="object.get_hide_flags") return Scalar(n->props["hideFlags"]);
     if (key=="object.set_hide_flags") { n->props["hideFlags"]=*static_cast<int32_t*>(args[0]); return nullptr; }
     if (key=="transform.local_to_world") return object;
@@ -157,7 +184,7 @@ void ParserTests(const std::filesystem::path& path) {
     host.runtime_invoke=InvokeFake; host.object_unbox=UnboxFake; host.copy_managed_string=StringFake;
     host.object_new=NewFake; host.gchandle_new=RootFake; host.gchandle_free=FreeFake;
     g_host=&host; g_material_class.class_info=&host; g_texture2d_class.class_info=&host;
-    g_object_class=[](void* array)->void* { return array; };
+    ConfigureFakeObjectClasses();
     g_array_new_specific=[](void*,uintptr_t size)->void* { auto* a=Make(); a->array.resize(size); return a; };
     for (auto& method:g_methods) { method.method_info=&method; method.resolved=true; }
     {
@@ -393,7 +420,7 @@ void StaticResourceTests() {
     host.object_new=NewFake;host.gchandle_new=TrackedRoot;host.gchandle_free=TrackedFree;g_host=&host;
     g_weak_new=TrackedWeak;
     g_weak_target=[](uint32_t handle)->void* {const auto it=tracked_handles.find(handle);return it==tracked_handles.end()?nullptr:it->second;};
-    g_object_class=[](void* object)->void* {auto* n=static_cast<Fake*>(object);return n->runtime_class?n->runtime_class:object;};
+    ConfigureFakeObjectClasses();
     g_array_new_specific=[](void*,uintptr_t count)->void* {auto* n=Make();n->array.resize(count);return n;};
     for (auto& method:g_methods) {method.method_info=&method;method.resolved=true;}
     g_renderer_class.type_object=Make("Renderer");g_static_renderer_class.class_info=Make("MeshRenderer");
@@ -402,7 +429,7 @@ void StaticResourceTests() {
     owner->names={"blade_mesh"};owner->components={{owner->names[0].c_str(),6,"Meshes/blade",true}};
     owner->adapter={owner->id.c_str(),owner->world.c_str(),owner->ui.c_str(),"",false,owner->components,"weapon","assets/test/wpn_test_postmodel.prefab",0,true};
     g_registry={};g_registry.owned_adapters.push_back(owner);g_hot_switch_runtime=true;
-    auto* asset=Make(owner->world);auto* group=Make("Meshes");group->parent=asset;
+    auto* asset=GameObject(owner->world);auto* group=Make("Meshes");group->parent=asset;
     auto* renderer=Make("blade");renderer->parent=group;renderer->runtime_class=const_cast<void*>(g_static_renderer_class.class_info);
     auto* filter=Make("filter");renderer->filter=filter;filter->mesh=Make("blade_mesh");
     renderer->materials=Array({Make("blade_material")});asset->array={renderer};
@@ -435,7 +462,7 @@ void StaticResourceTests() {
             "static MeshFilter commit failed");
         g_completed.push_back(std::move(record));
         Check(IsCompletedResource(owner->adapter,asset,"static"),"static completion identity did not match");
-        auto* clone=Make(owner->world+"(Clone)#7");auto* clone_group=Make("Meshes");clone_group->parent=clone;
+        auto* clone=GameObject(owner->world+"(Clone)#7");auto* clone_group=Make("Meshes");clone_group->parent=clone;
         auto* clone_renderer=Make("blade");clone_renderer->parent=clone_group;clone_renderer->runtime_class=const_cast<void*>(g_static_renderer_class.class_info);
         auto* clone_filter=Make("filter");clone_filter->mesh=replacement;clone_renderer->filter=clone_filter;
         clone_renderer->materials=renderer->materials;clone->array={clone_renderer};
@@ -477,14 +504,14 @@ void HotSwitchTests(const std::filesystem::path& path) {
     };
     g_weak_new=[](void* object,bool)->uint32_t { return TrackedRoot(nullptr,object,0); };
     g_weak_target=[](uint32_t handle)->void* { const auto found=tracked_handles.find(handle); return found==tracked_handles.end()?nullptr:found->second; };
-    g_object_class=[](void* array)->void* { return array; };
+    ConfigureFakeObjectClasses();
     g_array_new_specific=[](void*,uintptr_t count)->void* { auto* a=Make(); a->array.resize(count); return a; };
     for (auto& method:g_methods) { method.method_info=&method; method.resolved=true; }
     auto owner=std::make_shared<OwnedCharacterAdapter>(); owner->id="chr_test"; owner->world="world"; owner->ui="ui";
     owner->names={"mesh0","mesh1"}; for (const auto& name:owner->names) owner->components.push_back({name.c_str(),6});
     owner->adapter={owner->id.c_str(),owner->world.c_str(),owner->ui.c_str(),"",false,owner->components};
     g_registry={}; g_registry.hot_switch=true; g_registry.owned_adapters.push_back(owner); g_hot_switch_runtime=true;
-    auto* asset=Make("world"); auto* original_texture=Make("original");
+    auto* asset=GameObject("world"); auto* original_texture=Make("original");
     auto* mesh_all=Make("Mesh_all");mesh_all->parent=asset;auto* lod0=Make("lod0");lod0->parent=mesh_all;
     asset->transforms=Array({mesh_all,lod0});
     std::array<Fake*,2> renderers{},original_materials{};
@@ -541,7 +568,7 @@ void HotSwitchTests(const std::filesystem::path& path) {
     publish("B",2,false); auto* b_materials=renderers[0]->materials;
     Check(a_materials!=b_materials,"A to B reused generated materials");
     {
-        ConstructionScope scope; auto* clone=Make("world(Clone)");
+        ConstructionScope scope; auto* clone=GameObject("world(Clone)");
         auto* clone_mesh_all=Make("Mesh_all");clone_mesh_all->parent=clone;auto* clone_lod=Make("lod0");clone_lod->parent=clone_mesh_all;
         auto* clone0=Make("mesh0"); clone0->parent=clone_lod; clone0->mesh=renderers[0]->mesh;
         clone0->materials=a_materials; auto* bone=Make("bone0"); bone->parent=clone;
@@ -630,7 +657,7 @@ void ProbeTests(const std::filesystem::path& output) {
     g_engine.get_vertex_buffer_stride=[](void*,int s)->int32_t { return s==0?16:12; };
     std::vector<Fake*> resources;
     for(const auto root:{"world","ui"}) {
-        auto* asset=Make(std::string(root)+(std::string_view(root)=="ui"?"(Clone)":"")); auto* renderer=Make("mesh"); renderer->parent=asset; asset->array={renderer};
+        auto* asset=GameObject(std::string(root)+(std::string_view(root)=="ui"?"(Clone)":"")); auto* renderer=Make("mesh"); renderer->parent=asset; asset->array={renderer};
         auto* mesh=Make("mesh"); renderer->mesh=mesh;
         for(const auto a:std::array<VertexAttributeDescriptorRaw,6>{{{0,0,3,0},{1,3,4,0},{4,0,2,1},{6,3,4,1},{12,4,4,2},{13,6,4,2}}}) {
             auto* boxed=Make(); std::memcpy(&boxed->matrix,&a,sizeof(a)); mesh->array.push_back(boxed);
@@ -731,7 +758,7 @@ void AsyncJobsTests(const std::filesystem::path& path) {
     g_host=&host;g_material_class.class_info=&host;g_texture2d_class.class_info=&host;
     g_weak_new=&TrackedWeak;
     g_weak_target=[](uint32_t h)->void*{auto it=tracked_handles.find(h);return it==tracked_handles.end()?nullptr:it->second;};
-    g_object_class=[](void* array)->void*{return array;};
+    ConfigureFakeObjectClasses();
     g_array_new_specific=[](void*,uintptr_t n)->void*{auto* a=Make();a->array.resize(n);return a;};
     fake_transform_type=Make("TransformType");host.resolve_class=[](void*,const char*,const char*,const char*,BE_ResolvedClassV1* result)->BE_Result {
         result->class_info=fake_transform_type;result->type_object=fake_transform_type;return BE_Result_Ok;
@@ -761,7 +788,7 @@ void AsyncJobsTests(const std::filesystem::path& path) {
         materials[i]=Make("material"+std::to_string(i));materials[i]->textures[7]=original_texture;
     }
     auto receiver=[&](const char* name) {
-        auto* root=Make(name);auto* mesh_all=Make("Mesh_all");mesh_all->parent=root;
+        auto* root=GameObject(name);auto* mesh_all=Make("Mesh_all");mesh_all->parent=root;
         auto* lod=Make("lod0");lod->parent=mesh_all;root->transforms=Array({mesh_all,lod});
         for (int i=0;i<2;++i) {
             auto* r=Make("receiver"+std::to_string(i));r->parent=lod;r->mesh=meshes[i];r->materials=Array({materials[i]});
@@ -777,7 +804,7 @@ void AsyncJobsTests(const std::filesystem::path& path) {
         std::this_thread::yield();
     };
     {
-        ConstructionScope observation;auto* ui_root=Make("template");auto* live_root=Make("scene-receiver");
+        ConstructionScope observation;auto* ui_root=GameObject("template");auto* live_root=GameObject("scene-receiver");
         live_root->matrix.m[12]=123;auto* ui_renderer=Make();ui_renderer->parent=ui_root;
         auto* live_renderer=Make();live_renderer->parent=live_root;live_renderer->matrix.m[12]=123;
         g_verified_mesh_space_roots={ui_root,live_root};
@@ -952,7 +979,7 @@ void AsyncGeometryAndFallbackTests(const std::filesystem::path& path) {
     g_host=&host;g_material_class.class_info=&host;g_texture2d_class.class_info=&host;
     g_weak_new=[](void* object,bool)->uint32_t{return TrackedRoot(nullptr,object,0);};
     g_weak_target=[](uint32_t h)->void*{auto it=tracked_handles.find(h);return it==tracked_handles.end()?nullptr:it->second;};
-    g_object_class=[](void* array)->void*{return array;};
+    ConfigureFakeObjectClasses();
     g_array_new_specific=[](void*,uintptr_t n)->void*{auto* a=Make();a->array.resize(n);return a;};
     fake_transform_type=Make("TransformType");host.resolve_class=[](void*,const char*,const char*,const char*,BE_ResolvedClassV1* result)->BE_Result {
         result->class_info=fake_transform_type;result->type_object=fake_transform_type;return BE_Result_Ok;
@@ -992,7 +1019,7 @@ void AsyncGeometryAndFallbackTests(const std::filesystem::path& path) {
         materials[i]=Make("material"+std::to_string(i));materials[i]->textures[7]=original_texture;
     }
     auto receiver=[&](const char* name) {
-        auto* root=Make(name);auto* mesh_all=Make("Mesh_all");mesh_all->parent=root;
+        auto* root=GameObject(name);auto* mesh_all=Make("Mesh_all");mesh_all->parent=root;
         auto* lod=Make("lod0");lod->parent=mesh_all;root->transforms=Array({mesh_all,lod});
         for (int i=0;i<2;++i) {
             auto* r=Make("receiver"+std::to_string(i));r->parent=lod;r->mesh=meshes[i];r->materials=Array({materials[i]});
@@ -1093,7 +1120,7 @@ void AsyncGeometryAndFallbackTests(const std::filesystem::path& path) {
         g_model_clone_coverage=false;tick();seed_payload_cache();
         auto* root=receiver("ui");finish(root);
         Check(completed(root) && LogContains("reason=clone-coverage-unavailable"),"default delivery did not stay synchronous");
-        auto* clone=Make("ui(Clone)");auto* mesh_all=Make("Mesh_all");mesh_all->parent=clone;
+        auto* clone=GameObject("ui(Clone)");auto* mesh_all=Make("Mesh_all");mesh_all->parent=clone;
         auto* lod=Make("lod0");lod->parent=mesh_all;clone->transforms=Array({mesh_all,lod});
         for (int i=0;i<2;++i) {
             auto* source=static_cast<Fake*>(root->array[i]);
@@ -1258,7 +1285,121 @@ void AsyncGeometryAndFallbackTests(const std::filesystem::path& path) {
     g_weak_new=nullptr;g_weak_target=nullptr;g_host=nullptr;
     std::cout<<"PASS async geometry Job commit, pump-not-started/stalled synchronous fallback, chained clone hooks/refusal fallback, early clone replaced by frame-sliced commit, natural clone reuse, Job-failure fallback, per-texture synchronous decode and diagnostics\n";
 }
+void ResourceTypeBoundaryTests(const std::filesystem::path& package_path) {
+    BE_HostApiV1 host{};host.runtime_invoke=InvokeFake;host.object_unbox=UnboxFake;host.copy_managed_string=StringFake;
+    host.object_new=NewFake;host.gchandle_new=TrackedRoot;host.gchandle_free=TrackedFree;g_host=&host;
+    ConfigureFakeObjectClasses();
+    g_weak_new=TrackedWeak;
+    g_weak_target=[](uint32_t h)->void* {auto it=tracked_handles.find(h);return it==tracked_handles.end()?nullptr:it->second;};
+    g_array_new_specific=[](void*,uintptr_t count)->void* {auto* value=Make();value->array.resize(count);return value;};
+    for (auto& method:g_methods) {method.method_info=&method;method.resolved=true;}
+    g_renderer_class.type_object=Make("RendererType");g_static_renderer_class.class_info=Make("MeshRendererClass");
+    g_skinned_renderer_class.class_info=Make("SkinnedMeshRendererClass");g_mesh_filter_class.type_object=Make("MeshFilterType");
+    g_material_class.class_info=Make("MaterialClass");
+    g_static_get=[](const void* field,void* value){std::memcpy(value,fake_static_fields[field].data(),8);};
+    g_static_set=[](const void* field,void* value){std::memcpy(fake_static_fields[field].data(),value,8);};
+    for (auto& field:g_lod.fields) field.resolved.field_info=&field;
+    g_original_finish=[](void*,void* asset,void*) {++finish_calls;last_finished_asset=asset;};
+    g_enabled=true;g_stopping=false;g_hot_switch_runtime=false;g_probe.active=false;
+
+    for (bool static_mesh:{true,false}) {
+        auto owner=std::make_shared<OwnedCharacterAdapter>();
+        owner->id=static_mesh?"wpn_lance_0006":"chr_test_ult";owner->world=owner->ui=owner->id;
+        owner->names={"body_mesh"};owner->components={{owner->names[0].c_str(),6,"Meshes/body",static_mesh}};
+        owner->adapter={owner->id.c_str(),owner->world.c_str(),owner->ui.c_str(),"",false,owner->components,
+            "explicit","assets/test/resource.prefab",0,true};
+        g_registry={};g_registry.owned_adapters.push_back(owner);
+        EnabledMod mod{&owner->adapter,package_path,"default",false,false,"type-boundary-selection",""};
+        g_registry.enabled.push_back(mod);
+        auto payload=std::make_shared<BemPocData>();BemComponent component;component.static_mesh=static_mesh;
+        component.info.component_id=0;component.info.original_index_count=6;
+        // A real hide operation exercises capture/material preparation/commit
+        // without substituting any of those production functions or a GPU.
+        component.info.flags=kComponentFlagNoGeometry|kComponentFlagHidden;payload->components.push_back(component);
+        g_payload_cache.push_back({mod.package,mod.appearance,mod.selection_key,payload,0,GetTickCount64()+60000});
+        const auto receiver=[&](bool clone) {
+            auto* asset=GameObject(owner->world+(clone?"(Clone)":""));auto* group=Make("Meshes");group->parent=asset;
+            auto* renderer=Make("body");renderer->parent=group;renderer->materials=Array({Make("material")});
+            renderer->runtime_class=const_cast<void*>(static_mesh?g_static_renderer_class.class_info:g_skinned_renderer_class.class_info);
+            auto* mesh=Make("body_mesh");
+            if (static_mesh) {auto* filter=Make("filter");filter->mesh=mesh;renderer->filter=filter;}
+            else {renderer->mesh=mesh;auto* bone=Make("bone");bone->parent=asset;renderer->bones=Array({bone});}
+            asset->array={renderer};return asset;
+        };
+        auto* prefab=receiver(false);auto* clone=receiver(true);
+        for (const char* type:{"SpriteClass","Texture2DClass"}) {
+            auto* collision=Make(owner->world);collision->runtime_class=Make(type);
+            // Even a misleadingly populated mock cannot masquerade as a prefab.
+            collision->array=prefab->array;
+            for (bool async:{false,true}) {
+                g_model_clone_coverage=async;g_model_pump_ms=GetTickCount64();
+                const auto calls=fake_runtime_calls,finished=finish_calls,held=roots;
+                ResourceFinish(nullptr,collision,nullptr);
+                Check(finish_calls==finished+1 && last_finished_asset==collision,"same-name non-prefab was not passed through exactly once");
+                Check(fake_runtime_calls==calls && roots==held && g_model_deliveries.empty() && g_model_jobs.empty(),
+                    "same-name non-prefab was invoked, rooted or queued by delivery");
+            }
+            const auto calls=fake_runtime_calls,held=roots;
+            {
+                ConstructionScope scope;std::vector<PreparedBinding> bindings;
+                SynchronousModelDelivery(collision,"type-test");
+                Check(!ProcessResource(collision,scope),"direct processing accepted a non-prefab");
+                Check(!CaptureGenericResourceBindings(owner->adapter,*payload,collision,bindings),"capture accepted a non-prefab");
+                Check(!IsCompletedResource(owner->adapter,collision),"completion accepted a non-prefab");
+                Check(!RegisterModelDelivery(collision) && !RegisterModelDelivery(prefab,collision),"registration accepted a non-prefab receiver/source");
+                Check(!EnqueueResourceBuild(collision,mod) && !RememberModelTarget(collision,mod),"async queue accepted a non-prefab");
+            }
+            Check(fake_runtime_calls==calls && roots==held,"direct rejection invoked Unity or retained a non-prefab");
+        }
+        // Unresolved reflection contracts also pass through, even for a valid
+        // named prefab; a missing check is never treated as permission.
+        for (bool missing_class:{true,false}) {
+            const auto cls=g_game_object_class;const auto get_class=g_object_class;
+            if (missing_class) g_game_object_class={};else g_object_class=nullptr;
+            const auto calls=fake_runtime_calls,finished=finish_calls;
+            ResourceFinish(nullptr,prefab,nullptr);
+            Check(finish_calls==finished+1 && fake_runtime_calls==calls && g_model_deliveries.empty(),"missing type contract did not fail closed");
+            g_game_object_class=cls;g_object_class=get_class;
+        }
+        g_model_clone_coverage=false;
+        for (auto* asset:{prefab,clone}) {
+            const auto calls=game_object_calls,finished=finish_calls;
+            ResourceFinish(nullptr,asset,nullptr);
+            Check(finish_calls==finished+1 && last_finished_asset==asset,"valid prefab/clone lost the original callback");
+            Check(game_object_calls>calls && !static_cast<Fake*>(asset->array[0])->enabled,
+                "valid static/skinned prefab or clone did not reach the real commit");
+            Check(!g_completed.empty() && g_model_deliveries.size()==1,"committed prefab/clone was not recorded");
+            g_model_deliveries.clear();
+        }
+        auto* pending=receiver(true);g_model_clone_coverage=true;g_model_pump_ms=GetTickCount64();
+        ResourceFinish(nullptr,pending,nullptr);
+        Check(g_model_deliveries.size()==1 && static_cast<Fake*>(pending->array[0])->enabled,"valid async clone did not register before commit");
+        g_model_deliveries.clear();
+        AsyncBemLoader::Backend backend;
+        backend.plan=[](const BemRequest&,BemLoadPlan& plan,std::string&){plan.reservation_bytes=1024;return true;};
+        backend.load=[payload](const BemRequest&,uint64_t,BemPocData& out,BemLoadStats&,std::string&){out=*payload;return true;};
+        g_model_loader=std::make_unique<AsyncBemLoader>(AsyncBemLoader::Config{},std::move(backend));
+        Check(EnqueueResourceBuild(pending,mod) && g_model_jobs.size()==1 && g_model_jobs[0]->target.Get()==pending,
+            "valid static/skinned clone was refused by the production async queue");
+        {ConstructionScope scope;CancelModelJobs();}
+        g_model_loader->Shutdown();g_model_loader.reset();
+        g_completed.clear();g_payload_cache.clear();g_original_mesh_pins.clear();
+    }
+    {ConstructionScope scope;g_lod.Restore();g_lod.pipeline.Reset();}
+    {std::lock_guard lock(g_model_clone_watch_mutex);g_model_clone_watch.clear();g_model_clone_watch_size=0;}
+    g_model_clone_coverage=false;g_model_pump_ms=0;g_registry={};g_enabled=false;
+    g_renderer_class={};g_static_renderer_class={};g_skinned_renderer_class={};g_mesh_filter_class={};g_game_object_class={};
+    g_static_get=nullptr;g_static_set=nullptr;for (auto& field:g_lod.fields) field.resolved.field_info=nullptr;
+    Check(roots==0 && tracked_handles.empty(),"resource type boundary tests leaked roots");
+    g_weak_new=nullptr;g_weak_target=nullptr;g_host=nullptr;
+    std::cout<<"PASS resource type boundary: same-name Sprite/Texture2D passthrough, missing contracts, static/skinned prefab+clone real commit and async registration/queue\n";
+}
+
+#include "custom_model_scene_rebind_tests.inc"
+
 int main(int argc,char** argv) {
+    if(argc==3 && std::string_view(argv[1])=="--scene-rebind") {SceneRebindTests(argv[2]);return 0;}
+    if(argc==3 && std::string_view(argv[1])=="--resource-types") {ResourceTypeBoundaryTests(argv[2]);return 0;}
     if(argc==2 && std::string_view(argv[1])=="--static-resource") {StaticResourceTests();return 0;}
     if(argc==3 && std::string_view(argv[1])=="--async") {AsyncJobsTests(argv[2]);AsyncGeometryAndFallbackTests(argv[2]);return 0;}
     if(argc==2 && std::string_view(argv[1])=="--geometry") {CpuGeometryTests();return 0;}
@@ -1312,6 +1453,6 @@ int main(int argc,char** argv) {
     if(argc==4 && std::string_view(argv[1])=="--probe-dll") { ProbeDllStartup(argv[2],argv[3]); return 0; }
     if (argc==3 && std::string_view(argv[1])=="--probe") { ProbeTests(argv[2]); return 0; }
     Check(argc>=2,"pass synthetic BEMv1 package path");
-    ParserTests(argv[1]); RegistryTests(argv[1]); HotSwitchTests(argv[1]); StaticResourceTests();
+    ParserTests(argv[1]); RegistryTests(argv[1]); HotSwitchTests(argv[1]); StaticResourceTests();ResourceTypeBoundaryTests(argv[1]);SceneRebindTests(argv[1]);
     std::cout<<"PASS: BEMv1 parser, exact donor identity, material isolation, rollback, ownership, appearance/LOD routing\n";
 }

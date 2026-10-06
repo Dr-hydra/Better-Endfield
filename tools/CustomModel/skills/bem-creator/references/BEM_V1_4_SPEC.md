@@ -72,6 +72,8 @@
 
 ## 当前运行时范围
 
+交付入口先确认实际 Unity Object 是 `GameObject`，同名 `Sprite`、`Texture2D` 不进入模型处理。当前运行时依据资源根名、renderer 相对路径及 Mesh/donor 合同匹配；`asset_path` 用于制作来源和离线校验，尚未与交付时 AssetProxy 的真实加载路径核对，不能将它视为运行时来源证明。
+
 Windows 初版只执行 `lod=0` 的显式资源，依赖已有 LOD0 锁定机制；其他 LOD 会被明确拒绝。协议允许 LOD 0–3 不代表当前各平台均已实现所有组合。
 
 Android 普通角色使用 LOD1 接收是既有设计，旧包仍走 UI LOD0 donor → world LOD1 转接。1.4 显式资源也支持 `lod=1`，但从声明的 LOD1 接收器自身取得网格、材质和骨骼 donor，不能拿 LOD0 的骨骼编号直接充作 LOD1 合同。Windows 的 LOD0 限制不会应用到 Android。

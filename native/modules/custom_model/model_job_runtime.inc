@@ -68,7 +68,8 @@ std::mutex g_model_delivery_mutex;
 std::vector<PendingModelDelivery> g_model_deliveries;
 std::atomic<uint64_t> g_model_deliveries_registered{0},g_model_deliveries_dropped{0};
 bool RegisterModelDelivery(void* asset,void* source=nullptr,bool synchronous=false,std::string refused_selection={}) {
-    if (!asset || !g_host || !g_enabled.load() || g_stopping.load()) return false;
+    if (!IsGameObjectResource(asset) || (source && !IsGameObjectResource(source)) ||
+        !g_host || !g_enabled.load() || g_stopping.load()) return false;
     PendingModelDelivery pending;pending.asset=std::make_unique<StrongReference>();
     if (!pending.asset->Set(asset)) return false;
     if (source) { pending.source=std::make_unique<StrongReference>();if (!pending.source->Set(source)) return false; }
@@ -637,7 +638,12 @@ const char* LoadPriorityName(LoadPriority priority) {
 }
 // Returns false when this target has no Job of its own yet (it waits behind
 // its role's builder or a full queue) and must be offered again later.
+bool ModelInstanceRebindPending(const CharacterAdapter& adapter);
 bool EnqueueResourceBuild(void* asset,const EnabledMod& mod,LoadPriority priority=LoadPriority::Visible) {
+    if (!IsGameObjectResource(asset)) return false;
+    // A scene rebind can take several frames. Keep a later UI/world target
+    // from recreating a Job while this role still has synchronous work queued.
+    if (ModelInstanceRebindPending(*mod.adapter)) return false;
     for (const auto& job:g_model_jobs) if (job->target.Is(asset)) {
         job->priority=priority;if (job->ticket) g_model_loader->SetPriority(job->ticket,priority);
         if (g_texture_streamer) for (const auto& work:job->textures) if (work.decode) g_texture_streamer->SetPriority(work.decode,priority);
@@ -671,6 +677,7 @@ bool EnqueueResourceBuild(void* asset,const EnabledMod& mod,LoadPriority priorit
     return true;
 }
 KnownModelTarget* RememberModelTarget(void* asset,const EnabledMod& mod) {
+    if (!IsGameObjectResource(asset)) return nullptr;
     for (auto& target:g_model_targets) if (target.root.Get()==asset) {target.failed_selection.clear();return &target;}
     if (g_model_targets.size()>=128) return nullptr;
     KnownModelTarget target;target.owner=OwnAdapter(*mod.adapter);target.adapter=mod.adapter;
@@ -713,6 +720,7 @@ void RunSynchronousModelFallback(void* asset,const std::string& resource,const s
 }
 uint64_t g_model_next_status_ms=0;
 bool ModelRootPosition(void* object,bool component,Float3& position) {
+    if (!component && !IsGameObjectResource(object)) return false;
     void* transform=Invoke(Contract(component?"component.get_transform":"game_object.get_transform"),object,nullptr);
     Matrix4x4Raw matrix{};
     if (!transform || !InvokeValue(Contract("transform.local_to_world"),transform,nullptr,matrix)) return false;
@@ -753,35 +761,82 @@ void RefreshModelTargetPriorities(uint64_t now) {
 // previous generation's Mesh/material references; the game does not deliver
 // them again. After the template Jobs of a new revision settle, one scan finds
 // every renderer that still shows a Mesh this module generated for a role whose
-// active selection differs, and each owning instance root is processed by the
-// proven synchronous transaction (rebuild or restore), one root per frame.
+// active selection differs. Previously restored instances also have verified
+// root/adapter records: re-enable those directly even though their Mesh is now
+// Original. Each root uses the synchronous transaction, one root per frame.
 uint64_t g_instance_rebind_handled=0;
 std::vector<std::unique_ptr<StrongReference>> g_instance_rebind_queue;
+bool ModelInstanceRebindPending(const CharacterAdapter& adapter) {
+    for (const auto& pending:g_instance_rebind_queue) if (void* root=pending->Get()) {
+        const auto name=ObjectName(root);const auto base=ResourceBaseName(name);
+        if (base==adapter.world_resource || base==adapter.ui_resource) return true;
+    }
+    return false;
+}
 int32_t ModelInstanceId(void* object) {
     int32_t id=0;
     return object && IsNativeObjectAlive(object) && InvokeValue(Contract("object.instance_id"),object,nullptr,id)?id:0;
 }
 void ScanSceneInstancesForRebind() {
-    const auto* find_all=Contract("resources.find_all");const auto* game_object=Contract("component.get_game_object");
-    if (!find_all || !find_all->resolved || !game_object || !game_object->resolved) {
-        Log("Hot switch instance rebind unavailable: Resources.FindObjectsOfTypeAll/Component.gameObject not resolved");return;
-    }
     // Generated Meshes of a generation that is no longer the role's selection.
     std::unordered_map<int32_t,const CharacterAdapter*> stale;
+    std::vector<std::pair<void*,const CharacterAdapter*>> restored_roots;
     for (const auto& record:g_completed) {
-        if (record.selection_key.empty() || record.selection_key==ActiveSelectionKey(*record.adapter)) continue;
+        const auto active=ActiveSelectionKey(*record.adapter);
+        if (record.selection_key==active) continue;
+        if (record.selection_key.empty()) {
+            // Disable wrote this record only after a validated restoration.
+            // It remains useful ownership evidence while the root is alive;
+            // requiring generated Mesh identity here loses pooled instances.
+            if (void* root=record.root.Get()) restored_roots.emplace_back(root,record.adapter);
+            continue;
+        }
         // The recorded instance ID survives a recycled managed wrapper.
         for (const auto& binding:record.bindings) if (binding.generated_mesh && binding.mesh.instance_id)
             stale.emplace(binding.mesh.instance_id,record.adapter);
     }
-    if (stale.empty()) return;
+    if (stale.empty() && restored_roots.empty()) return;
+    std::unordered_set<int32_t> queued;
+    for (const auto& pending:g_instance_rebind_queue) queued.insert(ModelInstanceId(pending->Get()));
+    size_t found=0;
+    const auto queue_root=[&](void* object,const CharacterAdapter& role) {
+        if (!IsGameObjectResource(object)) return;
+        const auto name=ObjectName(object);const auto base=ResourceBaseName(name);
+        if (base!=role.world_resource && base!=role.ui_resource) return;
+        const int32_t id=ModelInstanceId(object);
+        if (!id || queued.contains(id)) return;
+        auto reference=std::make_unique<StrongReference>();
+        if (!reference->Set(object)) return;
+        queued.insert(id);
+        // Keep synchronous rebinds and frame-sliced Jobs mutually exclusive
+        // for this role in the revision, including restored templates.
+        const bool registered=std::any_of(g_model_targets.begin(),g_model_targets.end(),[&](const auto& target){return target.root.Is(object);});
+        if (registered) {
+            std::erase_if(g_model_jobs,[&](const auto& job) {
+                if (!SameAdapter(*job->mod.adapter,role)) return false;
+                if (job->ticket) g_model_loader->Cancel(job->ticket);
+                Log("Hot switch template Job replaced by synchronous rebind resource="+name);
+                return true;
+            });
+            g_instance_rebind_queue.push_back(std::move(reference));
+        } else g_instance_rebind_queue.insert(g_instance_rebind_queue.begin(),std::move(reference));
+        ++found;
+    };
+    for (const auto& [root,adapter]:restored_roots) queue_root(root,*adapter);
+    const auto restored_queued=found;
+    if (stale.empty()) {
+        Log("Hot switch instance scan renderers=0 staleMeshes=0 restoredRootsQueued="+std::to_string(restored_queued)+
+            " instancesQueued="+std::to_string(found));return;
+    }
+    const auto* find_all=Contract("resources.find_all");const auto* game_object=Contract("component.get_game_object");
+    if (!find_all || !find_all->resolved || !game_object || !game_object->resolved) {
+        Log("Hot switch instance discovery unavailable: Resources.FindObjectsOfTypeAll/Component.gameObject not resolved; restoredRootsQueued="+
+            std::to_string(restored_queued));return;
+    }
     void* args[]{ModelRendererType()};
     void* renderers=Invoke(find_all,nullptr,args);
     const int count=ArrayLength(renderers);
     if (count<0 || count>65536) {Log("Hot switch instance rebind skipped: renderer count "+std::to_string(count));return;}
-    std::unordered_set<int32_t> queued;
-    for (const auto& pending:g_instance_rebind_queue) queued.insert(ModelInstanceId(pending->Get()));
-    size_t found=0;
     {
         // Diagnostics (2026-10-04): one line per root of an affected role.
         std::unordered_set<const CharacterAdapter*> roles;for (const auto& [id,adapter]:stale) roles.insert(adapter);
@@ -845,29 +900,10 @@ void ScanSceneInstancesForRebind() {
             transform=Invoke(Contract("transform.get_parent"),transform,nullptr);
         }
         void* object=root?Invoke(game_object,root,nullptr):nullptr;
-        const int32_t id=ModelInstanceId(object);
-        if (!id || !queued.insert(id).second) continue;
-        auto reference=std::make_unique<StrongReference>();
-        if (!reference->Set(object)) continue;
-        // Registered receivers (delivered templates) go after the scene
-        // instances, through the same synchronous transaction: one role is
-        // never committed by a frame-sliced Job and a synchronous rebind in the
-        // same revision (device 2026-10-04: that combination exited the game).
-        const bool registered=std::any_of(g_model_targets.begin(),g_model_targets.end(),[&](const auto& target){return target.root.Is(object);});
-        if (registered) {
-            const auto* role=owner->second;
-            std::erase_if(g_model_jobs,[&](const auto& job) {
-                if (!SameAdapter(*job->mod.adapter,*role)) return false;
-                if (job->ticket) g_model_loader->Cancel(job->ticket);
-                Log("Hot switch template Job replaced by synchronous rebind resource="+ObjectName(object));
-                return true;
-            });
-            g_instance_rebind_queue.push_back(std::move(reference));
-        } else g_instance_rebind_queue.insert(g_instance_rebind_queue.begin(),std::move(reference));
-        ++found;
+        queue_root(object,*owner->second);
     }
     Log("Hot switch instance scan renderers="+std::to_string(count)+" staleMeshes="+std::to_string(stale.size())+
-        " instancesQueued="+std::to_string(found));
+        " restoredRootsQueued="+std::to_string(restored_queued)+" instancesQueued="+std::to_string(found));
 }
 void PumpInstanceRebind(uint64_t frame) {
     if (!g_hot_switch_runtime.load()) return;
@@ -893,6 +929,12 @@ void PumpInstanceRebind(uint64_t frame) {
     try {ConstructionScope scope;scope.delivery_mode="hot-switch-instance";ok=ProcessResource(asset,scope);}
     catch (const std::exception& error) {Log(std::string("Hot switch instance rebind failed: ")+error.what());}
     catch (...) {Log("Hot switch instance rebind failed with a native C++ exception.");}
+    if (ok) for (auto& target:g_model_targets) if (target.root.Is(asset)) {
+        const auto* mod=g_registry.Match(name);
+        target.desired=mod?mod->selection_key:std::string{};
+        target.verified_selection=target.desired;target.failed_selection.clear();
+        target.next_verify_ms=GetTickCount64()+g_model_verify_interval_ms;
+    }
     Log(std::string("Hot switch instance rebind ")+(ok?"committed":"refused")+" resource="+name);
 }
 void PumpModelJobs(uint64_t frame) {
