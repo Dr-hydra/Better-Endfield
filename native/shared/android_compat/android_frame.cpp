@@ -1,5 +1,6 @@
 #include "android_frame.h"
 #include "android_virtual_keys.h"
+#include "android_pc_mouse.h"
 #include <atomic>
 #include <algorithm>
 #include <unistd.h>
@@ -10,6 +11,7 @@ std::atomic<FrameCallback> g_clients[static_cast<unsigned>(FrameClient::Count)]{
 std::atomic_bool g_foreground{true}, g_suspend{false}, g_hud{false};
 std::atomic_uint g_capabilities{0}, g_active{0};
 std::atomic_int g_look_x{0}, g_look_y{0};
+AndroidPcMouseState g_pc_mouse;
 }
 bool OnAndroidFrameThread() { return g_thread.load(std::memory_order_acquire) == gettid(); }
 bool HasAndroidFrameBridge() { return g_thread.load(std::memory_order_acquire) != 0; }
@@ -17,6 +19,7 @@ void DispatchAndroidFrame() {
     pid_t unset = 0;
     g_thread.compare_exchange_strong(unset, gettid(), std::memory_order_acq_rel);
     if (!OnAndroidFrameThread()) return;
+    g_pc_mouse.NextFrame();
     const bool suspend = g_suspend.exchange(false, std::memory_order_acq_rel) || !AndroidForeground();
     for (auto& slot : g_clients) {
         if (auto callback = slot.load(std::memory_order_acquire)) callback(suspend);
@@ -29,6 +32,7 @@ void SetAndroidFrameClient(FrameClient client, FrameCallback callback) {
 }
 void SetAndroidForeground(bool foreground) {
     g_foreground.store(foreground, std::memory_order_release);
+    g_pc_mouse.Foreground(foreground);
     if (!foreground) {
         g_suspend.store(true, std::memory_order_release);
         ReleaseAllVirtualKeys();
@@ -60,4 +64,12 @@ void TakeAndroidLook(int& dx, int& dy) {
     dx = g_look_x.exchange(0, std::memory_order_acq_rel);
     dy = g_look_y.exchange(0, std::memory_order_acq_rel);
 }
+void PublishAndroidPcMouse(bool enabled, bool ready) { g_pc_mouse.Publish(enabled, ready); }
+void SetAndroidPcCursorRequest(bool show) { g_pc_mouse.CursorRequest(show); }
+bool AndroidPcMouseCaptureRequested() { return g_pc_mouse.CaptureRequested(); }
+void SetAndroidPcMouseCaptured(bool captured) { g_pc_mouse.Captured(captured); }
+void AddAndroidPcMouseMotion(float x, float y) { g_pc_mouse.Motion(x, y); }
+bool ReadAndroidPcMouseMotion(float& x, float& y) { return g_pc_mouse.Read(x, y); }
+void ResetAndroidPcMouse() { g_pc_mouse.Reset(); }
+AndroidPcMouseSnapshot InspectAndroidPcMouse() { return g_pc_mouse.Inspect(); }
 }

@@ -2,6 +2,7 @@
 #include "core/jni_binding.h"
 #include "core/runtime_status.h"
 #include "android_frame.h"
+#include "android_pc_mouse.h"
 #include "android_camera.h"
 #include "core/local_music_android.h"
 #include <fcntl.h>
@@ -292,6 +293,18 @@ extern "C" JNIEXPORT void JNICALL
 Java_dev_betterendfield_android_NativeCommandBridge_look(JNIEnv*, jclass, jint dx, jint dy) {
     betterendfield::AddAndroidLook(dx, dy);
 }
+extern "C" JNIEXPORT jboolean JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_pcMouseCaptureRequested(JNIEnv*, jclass) {
+    return betterendfield::AndroidPcMouseCaptureRequested() ? JNI_TRUE : JNI_FALSE;
+}
+extern "C" JNIEXPORT void JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_pcMouseCaptured(JNIEnv*, jclass, jboolean captured) {
+    betterendfield::SetAndroidPcMouseCaptured(captured == JNI_TRUE);
+}
+extern "C" JNIEXPORT void JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_pcMouseMotion(JNIEnv*, jclass, jfloat dx, jfloat dy) {
+    betterendfield::AddAndroidPcMouseMotion(dx, dy);
+}
 extern "C" JNIEXPORT void JNICALL
 Java_dev_betterendfield_android_NativeCommandBridge_cameraValues(JNIEnv*, jclass, jfloat speed, jfloat fov) {
     betterendfield::AndroidCameraValues(speed, fov);
@@ -333,6 +346,7 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
         BE_NATIVE(submit, "(Ljava/lang/String;)Z"), BE_NATIVE(status, "()Ljava/lang/String;"),
         BE_NATIVE(key, "(II)Z"), BE_NATIVE(releaseKeys, "()V"), BE_NATIVE(protocolVersion, "()I"),
         BE_NATIVE(frame, "()V"), BE_NATIVE(foreground, "(Z)V"), BE_NATIVE(look, "(II)V"), BE_NATIVE(runtimeStatus, "()Ljava/lang/String;"),
+        BE_NATIVE(pcMouseCaptureRequested, "()Z"), BE_NATIVE(pcMouseCaptured, "(Z)V"), BE_NATIVE(pcMouseMotion, "(FF)V"),
         BE_NATIVE(cameraValues, "(FF)V"), BE_NATIVE(mmdStatus, "()Ljava/lang/String;"),
         BE_NATIVE(globalFov, "(ZF)Z"),
         BE_NATIVE(updateCustomModelConfig, "(Ljava/lang/String;)Z"),

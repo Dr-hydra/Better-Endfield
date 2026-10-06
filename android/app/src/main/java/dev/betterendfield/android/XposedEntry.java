@@ -52,6 +52,7 @@ public final class XposedEntry extends XposedModule {
                                 }
                             });
                     Application application=(Application) chain.getThisObject();
+                    installPcMouseCapture(application);
                     Context context=(Context) chain.getArg(0);
                     new Thread(() -> {
                         String initialIndex=settings.getString(BemInstaller.INDEX,"[]");
@@ -122,6 +123,36 @@ public final class XposedEntry extends XposedModule {
         } catch (Throwable error) {
             hooks.forEach(HookHandle::unhook);
             throw error;
+        }
+    }
+
+    private void installPcMouseCapture(Application application) {
+        CopyOnWriteArrayList<HookHandle> hooks = new CopyOnWriteArrayList<>();
+        try {
+            for (Class<?> type : new Class<?>[]{android.view.View.class, android.view.ViewGroup.class}) {
+                hooks.add(hook(type.getDeclaredMethod("dispatchCapturedPointerEvent", android.view.MotionEvent.class))
+                        .intercept(chain -> {
+                            if (PcUiMouseBridge.capturedEvent((android.view.View) chain.getThisObject(),
+                                    (android.view.MotionEvent) chain.getArg(0))) return true;
+                            return chain.proceed();
+                        }));
+            }
+            hooks.add(hook(android.view.View.class.getDeclaredMethod("dispatchPointerCaptureChanged", boolean.class))
+                    .intercept(chain -> {
+                        Object result = chain.proceed();
+                        PcUiMouseBridge.captureChanged((android.view.View) chain.getThisObject(), (boolean) chain.getArg(0));
+                        return result;
+                    }));
+            hooks.add(hook(android.view.View.class.getDeclaredMethod("dispatchWindowFocusChanged", boolean.class))
+                    .intercept(chain -> {
+                        Object result = chain.proceed();
+                        PcUiMouseBridge.windowFocusChanged((android.view.View) chain.getThisObject(), (boolean) chain.getArg(0));
+                        return result;
+                    }));
+            PcUiMouseBridge.install(application, this::report);
+        } catch (Throwable error) {
+            hooks.forEach(HookHandle::unhook);
+            report("PC mouse capture bridge unavailable: " + error);
         }
     }
 

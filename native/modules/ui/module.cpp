@@ -6,12 +6,14 @@
 #include <Windows.h>
 #if defined(__ANDROID__)
 #include "android_frame.h"
+#include "android_pc_mouse.h"
 #endif
 
 #include <algorithm>
 #include <array>
 #include <atomic>
 #include <cctype>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -195,6 +197,18 @@ constexpr int32_t kPlatformAndroid = 11;
 constexpr int32_t kInputTypeTouch = 1;
 
 MethodContract g_contracts[]{
+#if defined(__ANDROID__)
+    // Android 1.5.3 metadata + ARM64 method bodies confirm these signatures.
+    {"android_pc_mouse.cursor_toggle",
+        {"Input.Beyond.dll", "Beyond.Input", "RealCursorManager", "_ToggleCursorInternal",
+            "System.Boolean|System.Boolean", "System.Void", 2}, false},
+    {"android_pc_mouse.cursor_calc_state",
+        {"Input.Beyond.dll", "Beyond.Input", "RealCursorManager", "CalcState",
+            "System.Boolean", "System.Void", 1}, false},
+    {"android_pc_mouse.get_axis",
+        {"Input.Beyond.dll", "Beyond.Input", "InputManager", "GetAxis",
+            "System.String", "System.Single", 1}, false},
+#endif
     {"device.is_mobile",
         {"Common.Beyond.dll", "Beyond", "DeviceInfo", "get_isMobile",
             nullptr, "System.Boolean", 0},
@@ -396,6 +410,11 @@ bool Unbox(void* boxed, T& value) {
     std::memcpy(&value, raw, sizeof(T));
     return true;
 }
+
+#if defined(__ANDROID__)
+#include "android_pc_mouse_diagnostics.inc"
+#include "android_pc_mouse_runtime.inc"
+#endif
 
 void* SafeGetObjectName(void* instance) {
 #if defined(_WIN32)
@@ -1225,6 +1244,12 @@ bool ResolveContracts() {
         return false;
     }
 
+#if defined(__ANDROID__)
+    g_android_pc_cursor_calc_state_method = nullptr;
+    g_android_pc_real_cursor_field = nullptr;
+    ResolveAndroidPcMouseDiagnostics();
+#endif
+
     int resolved_count = 0;
     for (auto& contract : g_contracts) {
         BE_ResolvedMethodV1 resolved{};
@@ -1237,6 +1262,10 @@ bool ResolveContracts() {
             resolved_count++;
             if (std::string_view(contract.key) == "device.change_input_type") {
                 g_change_input_type_method = resolved.method_info;
+#if defined(__ANDROID__)
+            } else if (std::string_view(contract.key) == "android_pc_mouse.cursor_calc_state") {
+                g_android_pc_cursor_calc_state_method = resolved.method_info;
+#endif
             } else if (std::string_view(contract.key) ==
                 "camera_utils.manager") {
                 g_camera_utils_get_manager_method = resolved.method_info;
@@ -1273,6 +1302,11 @@ bool ResolveContracts() {
 
     if (g_host->resolve_field) {
 #if defined(__ANDROID__)
+        const BE_FieldDescriptorV1 cursor_field{"Input.Beyond.dll", "Beyond.Input", "InputManager",
+            "m_realCursorManager", "Beyond.Input.RealCursorManager"};
+        BE_ResolvedFieldV1 cursor_resolved{};
+        if (g_host->resolve_field(g_host->context, &cursor_field, &cursor_resolved) == BE_Result_Ok)
+            g_android_pc_real_cursor_field = cursor_resolved.field_info;
         const BE_FieldDescriptorV1 keyboard{"Common.Beyond.dll", "Beyond", "DeviceInfo/InputType", "Keyboard", nullptr};
         BE_ResolvedFieldV1 enum_field{};
         if (g_host->resolve_field(g_host->context, &keyboard, &enum_field) == BE_Result_Ok &&
@@ -1427,6 +1461,14 @@ bool InstallHooks() {
         } else if (key == "game_object.set_active") {
             detour = reinterpret_cast<void*>(&DetourGameObjectSetActive);
             original = reinterpret_cast<void**>(&g_original_game_object_set_active);
+#if defined(__ANDROID__)
+        } else if (key == "android_pc_mouse.cursor_toggle") {
+            detour = reinterpret_cast<void*>(&DetourAndroidPcCursorToggle);
+            original = reinterpret_cast<void**>(&g_original_android_pc_cursor_toggle);
+        } else if (key == "android_pc_mouse.get_axis") {
+            detour = reinterpret_cast<void*>(&DetourAndroidPcGetAxis);
+            original = reinterpret_cast<void**>(&g_original_android_pc_get_axis);
+#endif
         }
 
         if (detour && original) {
@@ -1435,6 +1477,12 @@ bool InstallHooks() {
             if (res != BE_Result_Ok) {
                 Log(std::string("Failed to install hook for: ") + contract.key);
             } else {
+#if defined(__ANDROID__)
+                if (key == "android_pc_mouse.cursor_toggle")
+                    g_android_pc_cursor_hook_ready = g_original_android_pc_cursor_toggle != nullptr;
+                if (key == "android_pc_mouse.get_axis")
+                    g_android_pc_axis_hook_ready = g_original_android_pc_get_axis != nullptr;
+#endif
                 Log(std::string("Successfully hooked: ") + contract.key);
             }
         }
@@ -1456,6 +1504,7 @@ void AndroidUiFrame(bool suspend) {
     if (state != ModuleState::Ready && state != ModuleState::Active && state != ModuleState::Disabled) return;
     if (!suspend) {
         PumpInputType();
+        PumpAndroidPcMouseDiagnostics();
         PumpUidVisibility();
         PumpHudVisibility();
     }
@@ -1510,6 +1559,11 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
 #endif
     const bool active = mobile_active || pc_active || uid_active || hud_active;
     g_pc_ui_enabled.store(pc_active, std::memory_order_release);
+#if defined(__ANDROID__)
+    betterendfield::PublishAndroidPcMouse(pc_active,
+        g_android_pc_cursor_hook_ready && g_android_pc_axis_hook_ready);
+    g_next_android_pc_cursor_refresh_tick.store(0, std::memory_order_release);
+#endif
     g_mobile_ui_enabled.store(mobile_active, std::memory_order_release);
     g_hide_uid_enabled.store(uid_active, std::memory_order_release);
     g_hide_hud_enabled.store(hud_active, std::memory_order_release);
@@ -1517,6 +1571,9 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
     g_platform_spoof_enabled.store(mobile_active && config.platform_spoof_enabled,
         std::memory_order_release);
     g_diagnostics_enabled.store(config.diagnostics, std::memory_order_release);
+#if defined(__ANDROID__)
+    g_android_pc_mouse_diagnostics_reset.store(true, std::memory_order_release);
+#endif
     TouchInput::SetEnabled(mobile_active);
 
     Log(std::string("UI Configuration applied: enabled=") + (config.enabled ? "true" : "false") +
@@ -1545,6 +1602,9 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
 
 void BE_CALL Shutdown() {
 #if defined(__ANDROID__)
+    betterendfield::ResetAndroidPcMouse();
+    g_android_pc_cursor_intent_known.store(false, std::memory_order_release);
+    g_android_pc_cursor_hook_ready = g_android_pc_axis_hook_ready = false;
     betterendfield::SetAndroidFrameClient(betterendfield::FrameClient::Ui, nullptr);
     betterendfield::PublishAndroidHudState(false);
 #endif

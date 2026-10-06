@@ -27,6 +27,9 @@ final class NativeCommandBridge {
     static native boolean updateCustomModelConfig(String configuration);
     static native void frame();
     static native void foreground(boolean visible);
+    static native boolean pcMouseCaptureRequested();
+    static native void pcMouseCaptured(boolean captured);
+    static native void pcMouseMotion(float dx, float dy);
     static native void look(int dx, int dy);
     static native void cameraValues(float speed, float fov);
     static native boolean globalFov(boolean enabled, float fov);

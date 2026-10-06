@@ -34,6 +34,10 @@ for source in native/modules/camera/eiem/eiem_body.cpp native/modules/camera/eie
 done
 "$CXX" "${flags[@]}" -D__ANDROID__ -Inative/shared/include -Inative/modules/ui native/tests/android_rebuild/camera_test.cpp "${objects[@]}" native/shared/host/pose_lease.cpp "$S/android_win32.cpp" "$S/android_frame.cpp" -ldl -o "$BUILD/camera"
 "$BUILD/camera"
-"$CXX" "${flags[@]}" -D__ANDROID__ -Inative/shared/include -Inative/modules/ui native/tests/android_rebuild/ui_layout_test.cpp "$S/android_win32.cpp" "$S/android_frame.cpp" "$S/touch_input_android.cpp" -ldl -o "$BUILD/ui"
-"$BUILD/ui"
+for test in ui_layout ui_mouse_diagnostics ui_pc_mouse_runtime; do
+ "$CXX" "${flags[@]}" -D__ANDROID__ -Inative/shared/include -Inative/modules/ui "native/tests/android_rebuild/${test}_test.cpp" "$S/android_win32.cpp" "$S/android_frame.cpp" "$S/touch_input_android.cpp" -ldl -o "$BUILD/$test"
+ "$BUILD/$test"
+done
+"$CXX" "${flags[@]}" native/tests/android_rebuild/pc_mouse_state_test.cpp -o "$BUILD/pc_mouse_state"
+"$BUILD/pc_mouse_state"
 echo 'PASS Android shared-source syntax checks'
