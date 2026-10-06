@@ -163,6 +163,22 @@
 .delete-dialog h2 { margin: 12px 0; font-size: 24px; }
 .delete-dialog p { color: var(--muted); font-size: 12px; line-height: 1.9; }
 .delete-dialog > div { display: flex; justify-content: end; gap: 12px; margin-top: 25px; }
+.auth-dialog { position: relative; width: min(430px, 100%); padding: 32px; }
+.auth-dialog h2 { margin: 12px 0 8px; font-size: 25px; }
+.auth-dialog > p { margin: 0 0 24px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.auth-close { position: absolute; top: 12px; right: 15px; border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 25px; line-height: 1; }
+.auth-provider, .email-login-form > .button { width: 100%; justify-content: center; }
+.email-login-form { display: grid; gap: 15px; }
+.email-login-form label { display: grid; gap: 8px; }
+.email-login-form label > span { font-size: 12px; font-weight: 700; }
+.email-login-form input { width: 100%; min-height: 46px; padding: 11px 13px; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink); font-family: inherit; font-size: 13px; }
+.auth-divider { display: flex; align-items: center; gap: 12px; margin: 21px 0; color: var(--muted); font: 10px Consolas, monospace; }
+.auth-divider::before, .auth-divider::after { content: ''; height: 1px; flex: 1; background: var(--line); }
+.email-code-hint { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.8; overflow-wrap: anywhere; }
+.auth-restart { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 11px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.account-email { margin-bottom: 20px; padding: 18px; display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap; }
+.account-email strong { font-size: 13px; }
+.account-email p { margin: 6px 0 0; font-size: 12px; color: var(--muted); line-height: 1.7; overflow-wrap: anywhere; }
 .button.danger { background: var(--red); color: white; border-color: var(--red); }
 .mobile-theme, .mobile-login, .mobile-language { background: transparent; border: 0; color: inherit; cursor: pointer; }
 .mobile-login { font-size: 10px; max-width: 125px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

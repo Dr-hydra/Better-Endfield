@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "fflate": "^0.8.2",
+    "nodemailer": "^10.0.15",
     "preact": "^10.27.2"
   },
   "devDependencies": {
