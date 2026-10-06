@@ -12,8 +12,12 @@ export const blankDraft = (): Draft => ({ name: "", type: "", url: "", version: 
 export const base = import.meta.env.BASE_URL;
 
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${base}api/${path}`, { credentials: "same-origin", ...init });
-  const result = await response.json();
+  let response: Response;
+  try { response = await fetch(`${base}api/${path}`, { credentials: "same-origin", ...init }); }
+  catch { throw new Error("网络连接失败，请检查网络后重试。"); }
+  let result;
+  try { result = await response.json(); }
+  catch { throw new Error("服务响应异常，请稍后重试。"); }
   if (!response.ok) throw new Error(result.error || "请求失败，请稍后重试。");
   return result as T;
 }

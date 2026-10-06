@@ -1,3 +1,8 @@
+.mod-center .rail-tools { display: flex; align-items: center; gap: 10px; }
+.mod-center .language-toggle { min-width: 34px; height: 30px; padding: 0 7px; border: 1px solid currentColor; background: transparent; color: inherit; cursor: pointer; font: 700 10px Consolas, monospace; }
+.mod-center .language-toggle:hover { color: var(--yellow); border-color: var(--yellow); }
+.mod-center .top-status .top-language { height: 27px; min-width: 32px; border: 1px solid var(--line); }
+.mod-center .top-status .top-language:hover { border-color: var(--ink); }
 .mod-center { --accent-ink: #172126; }
 .mod-center .side-rail, .mod-center .mobile-header, .mod-center .mobile-nav { background: #172126; color: #fffef9; }
 .mod-center button { touch-action: manipulation; }
@@ -159,9 +164,10 @@
 .delete-dialog p { color: var(--muted); font-size: 12px; line-height: 1.9; }
 .delete-dialog > div { display: flex; justify-content: end; gap: 12px; margin-top: 25px; }
 .button.danger { background: var(--red); color: white; border-color: var(--red); }
-.mobile-theme, .mobile-login { background: transparent; border: 0; color: inherit; cursor: pointer; }
-.mobile-login { font-size: 11px; max-width: 145px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mobile-theme { display: flex; align-items: center; margin-left: auto; margin-right: 16px; }
+.mobile-theme, .mobile-login, .mobile-language { background: transparent; border: 0; color: inherit; cursor: pointer; }
+.mobile-login { font-size: 10px; max-width: 125px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mobile-theme { display: flex; align-items: center; padding: 7px; margin: 0 6px; }
+.mobile-language { font: 700 10px Consolas, monospace; padding: 7px 5px; margin-left: auto; }
 @media (max-width: 1150px) {
   .resource-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .portal-hero { grid-template-columns: 1fr 1fr; }

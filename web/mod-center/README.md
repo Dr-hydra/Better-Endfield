@@ -1,6 +1,6 @@
-# 终末地资源中心
+# 终末地下载站 / Better Endfield Downloads
 
-独立部署的终末地社区资源目录，沿用仓库 Web 的 Preact、米白/深色主题、侧栏和黄色强调色。与 Toy 和战斗统计业务独立。
+独立部署的终末地社区下载站，提供中英双语界面，沿用仓库 Web 的 Preact、米白/深色主题、侧栏和黄色强调色。与 Toy 和战斗统计业务独立。
 
 作者使用 GitHub 登录，自助提交外部下载地址。必填项只有名字、类型、链接。版本名字、封面链接、介绍和更新说明均可选；不接收资源包上传，不设置发布审核，不按地区屏蔽访问。
 
@@ -39,7 +39,7 @@ npm run mods:serve
 
 在 GitHub Settings → Developer settings → OAuth Apps → New OAuth App 创建应用：
 
-- Application name：`Endfield Resource Center`（可以自行改名）。
+- Application name：`Endfield Downloads`（可以自行改名）。
 - Homepage URL：`https://146.235.16.65:8443/endfield/`。
 - Authorization callback URL：`https://146.235.16.65:8443/endfield/auth/github/callback`。
 - 使用精确回调匹配，关闭 wildcard matching。不需要仓库访问权限或 Device Flow。
