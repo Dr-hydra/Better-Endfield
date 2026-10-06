@@ -42,4 +42,6 @@
 
 Windows 模块及 binding 测试构建成功。默认完整回归（包含 scene rebind、类型边界、静态资源）、async 回归、first-enable 十场景均通过；覆盖提交、Original 恢复、连续 revision、取消调度和 GC 句柄清理。Android `externalNativeBuildRelease` 成功，保留 26 条既有警告，未修改 LOD1 适配、设置键或 UI。
 
-日志为本轮审计目录下的 `stutter-windows-build.log`、`stutter-android-build.log`、`stutter-binding.log`、`stutter-async.log`、`stutter-first-enable.log`。未计算产物哈希。代码回归不等于实机性能测量，第一阶段优化后的游戏停顿改善尚待复测。
+日志为本轮审计目录下的 `stutter-windows-build.log`、`stutter-android-build.log`、`stutter-binding.log`、`stutter-async.log`、`stutter-first-enable.log`。未计算产物哈希。
+
+2026-10-06，用户在第一阶段优化版本 `9a0b882` 部署后反馈“现在这个切换速度已经还行了”。本轮实机切换速度已获用户验收；此结论来自实际游玩反馈，没有采集量化帧耗时或消除全部上传尖峰的证据。后续分帧改造保留为优化方案。
