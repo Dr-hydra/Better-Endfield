@@ -1111,7 +1111,7 @@ public sealed partial class MainWindow : Window
         NavigationView sender,
         NavigationViewSelectionChangedEventArgs args)
     {
-        if (args.SelectedItemContainer?.Tag as string == "sponsor") return;
+        if (args.SelectedItemContainer?.Tag as string is "sponsor" or "workshop") return;
         string page = args.IsSettingsSelected
             ? "settings"
             : args.SelectedItemContainer?.Tag as string ?? "model";
@@ -3895,6 +3895,7 @@ public sealed partial class MainWindow : Window
         DisplayNavigationItem.Content = isZh ? "显示增强" : "Display & Pipeline";
         GachaNavigationItem.Content = isZh ? "寻访查询" : "Gacha History";
         CustomModelNavigationItem.Content = isZh ? "角色外观" : "Model Replacement";
+        WorkshopNavigationItem.Content = isZh ? "创意工坊" : "Workshop";
         ThirdPartyModulesNavigationItem.Content = isZh ? "第三方模块" : "Third-party Modules";
         if (FeatureNavigation.SettingsItem is NavigationViewItem settingsItem)
         {

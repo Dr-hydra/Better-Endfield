@@ -149,6 +149,10 @@
                 <NavigationViewItem x:Name="CustomModelNavigationItem" Content="角色外观" Tag="custom-model">
                     <NavigationViewItem.Icon><FontIcon Glyph="&#xE771;" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem x:Name="WorkshopNavigationItem" Content="创意工坊"
+                                    SelectsOnInvoked="False" Tag="workshop">
+                    <NavigationViewItem.Icon><FontIcon Glyph="&#xE719;" /></NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItem x:Name="ThirdPartyModulesNavigationItem" Content="第三方模块" Tag="third-party-modules">
                     <NavigationViewItem.Icon><FontIcon Glyph="&#xE74C;" /></NavigationViewItem.Icon>
                 </NavigationViewItem>

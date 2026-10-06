@@ -21,6 +21,11 @@ public sealed partial class MainWindow
     private async void FeatureNavigation_ItemInvoked(
         NavigationView sender, NavigationViewItemInvokedEventArgs args)
     {
+        if (args.InvokedItemContainer?.Tag as string == "workshop")
+        {
+            OpenWorkshop();
+            return;
+        }
         if (args.InvokedItemContainer?.Tag as string != "sponsor" || _sponsorDialogOpen) return;
         _sponsorDialogOpen = true;
         bool isZh = LocalizationService.Instance.IsChinese;

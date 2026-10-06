@@ -2,6 +2,7 @@ package dev.betterendfield.android;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.net.Uri;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
@@ -27,7 +28,6 @@ import java.util.Map;
 public final class MainActivity extends Activity {
     static final String EXTRA_PAGE = "settings_page";
     private static final int CUSTOM_MODEL_PAGE = 4;
-    private static final int THIRD_PARTY_PAGE = 5;
     private static final int ENHANCEMENT_PAGE = 2;
     private static final int ABOUT_PAGE = 3;
     private static final int[] THEME_COLOR_VIEW_IDS = {
@@ -78,7 +78,6 @@ public final class MainActivity extends Activity {
     private int currentPage;
     private AboutPage aboutPage;
     private BemInstallPage bemPage;
-    private ThirdPartyModulesPage thirdPartyPage;
     private android.widget.HorizontalScrollView navigationScroll;
     private boolean resumed;
 
@@ -87,18 +86,22 @@ public final class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         String requestedPage = getIntent().getStringExtra(EXTRA_PAGE);
+        boolean openThirdParty = savedInstanceState == null
+                ? "third_party_modules".equals(requestedPage)
+                : savedInstanceState.getInt("page", 0) == 5;
         currentPage = savedInstanceState == null
-                ? ("third_party_modules".equals(requestedPage) ? THIRD_PARTY_PAGE : "custom_model".equals(requestedPage) ? CUSTOM_MODEL_PAGE
+                ? (openThirdParty ? ENHANCEMENT_PAGE : "custom_model".equals(requestedPage) ? CUSTOM_MODEL_PAGE
                         : ("enhancement".equals(requestedPage) ? ENHANCEMENT_PAGE
                                 : ("about".equals(requestedPage) ? ABOUT_PAGE : 0)))
                 : savedInstanceState.getInt("page", 0);
-        currentPage = Math.max(0, Math.min(THIRD_PARTY_PAGE, currentPage));
+        // Page 5 was the removed top-level third-party tab. Keep old saved
+        // instances on the enhancement page instead of exposing a dead tab.
+        if (currentPage > ABOUT_PAGE && currentPage != CUSTOM_MODEL_PAGE) currentPage = ENHANCEMENT_PAGE;
+        currentPage = Math.max(0, currentPage);
 
         View bemContent = findViewById(R.id.bem_content);
         bemContent.setPadding(0, 0, 0, 0);
         bemPage = new BemInstallPage(this, bemContent, savedInstanceState);
-        thirdPartyPage = new ThirdPartyModulesPage(this, findViewById(R.id.third_party_section));
-
         setupPageNavigation();
         setupModelPage();
         setupVoicePage();
@@ -106,13 +109,16 @@ public final class MainActivity extends Activity {
         setupAboutPage();
         findViewById(R.id.sponsor_button).setOnClickListener(view -> SponsorDialog.show(this));
         applyResponsiveShell();
+        if (openThirdParty) {
+            findViewById(R.id.enhancement_section).post(() ->
+                    startActivity(new Intent(this, ThirdPartyModulesActivity.class)));
+        }
     }
 
     @Override protected void onResume() {
         super.onResume();
         resumed = true;
         updateBemRefresh();
-        if(currentPage==THIRD_PARTY_PAGE)thirdPartyPage.render();
     }
 
     @Override protected void onPause() {
@@ -127,7 +133,6 @@ public final class MainActivity extends Activity {
         saveHandler.removeCallbacksAndMessages(null);
         if (aboutPage != null) aboutPage.close();
         if (bemPage != null) bemPage.close();
-        if (thirdPartyPage != null) thirdPartyPage.close();
         super.onDestroy();
     }
 
@@ -140,7 +145,6 @@ public final class MainActivity extends Activity {
     @Override protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
         if (bemPage != null) bemPage.onActivityResult(request, result, data);
-        if (thirdPartyPage != null) thirdPartyPage.onActivityResult(request, result, data);
     }
 
     private void flushModelEdits() {
@@ -190,16 +194,14 @@ public final class MainActivity extends Activity {
                 findViewById(R.id.voice_section),
                 findViewById(R.id.enhancement_section),
                 findViewById(R.id.about_section),
-                findViewById(R.id.custom_model_section),
-                findViewById(R.id.third_party_section)
+                findViewById(R.id.custom_model_section)
         };
         View[] buttons = {
                 findViewById(R.id.show_model_button),
                 findViewById(R.id.show_voice_button),
                 findViewById(R.id.show_enhancement_button),
                 findViewById(R.id.show_about_button),
-                findViewById(R.id.show_custom_model_button),
-                findViewById(R.id.show_third_party_button)
+                findViewById(R.id.show_custom_model_button)
         };
         android.widget.ScrollView scroll = findViewById(R.id.responsive_scroll);
         for (int index = 0; index < buttons.length; ++index) {
@@ -210,7 +212,6 @@ public final class MainActivity extends Activity {
                 currentPage = page;
                 showPage(sections, buttons, page);
                 updateBemRefresh();
-                if(page==THIRD_PARTY_PAGE)thirdPartyPage.render();
                 scrollSelectedNavigation();
                 scroll.post(() -> scroll.smoothScrollTo(0, 0));
             });
@@ -708,6 +709,25 @@ public final class MainActivity extends Activity {
             startActivity(new Intent(this, MmdLibraryActivity.class));
         });
         page.addView(mmd, SectionCard.stacked(this, 12));
+
+        Button modules = enhancementButton("第三方模块");
+        modules.setOnClickListener(view -> {
+            flushModelEdits();
+            startActivity(new Intent(this, ThirdPartyModulesActivity.class));
+        });
+        page.addView(modules, SectionCard.stacked(this, 12));
+
+        Button workshop = enhancementButton("创意工坊");
+        workshop.setOnClickListener(view -> {
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW,
+                        Uri.parse("https://146.235.16.65:8443/endfield/"))
+                        .addCategory(Intent.CATEGORY_BROWSABLE));
+            } catch (RuntimeException ignored) {
+                android.widget.Toast.makeText(this, "无法打开创意工坊", android.widget.Toast.LENGTH_SHORT).show();
+            }
+        });
+        page.addView(workshop, SectionCard.stacked(this, 12));
     }
 
     private void addEnhancementEntry(LinearLayout page, String title, String feature) {
