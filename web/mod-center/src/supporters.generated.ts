@@ -2,10 +2,10 @@
 export const supporterCutoffDate = "2026-10-06";
 export const supporterNames = [
   {
-    "name": "anonymous"
+    "name": "Cre_GeB6"
   },
   {
-    "name": "Cre_GeB6"
+    "name": "凉快的凉"
   },
   {
     "name": "钓鱼佬&演奏家"
@@ -15,6 +15,9 @@ export const supporterNames = [
   },
   {
     "name": "白"
+  },
+  {
+    "name": "anonymous"
   },
   {
     "name": "ke"
