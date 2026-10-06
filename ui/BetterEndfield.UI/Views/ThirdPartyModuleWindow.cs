@@ -34,7 +34,7 @@ internal sealed class ThirdPartyModuleWindow : Window
         var grid = new Grid(); grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         grid.Children.Add(_status); Grid.SetRow(_view, 1); grid.Children.Add(_view); Content = grid;
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(1120, 820));
+        WindowPlacementService.SetInitialSize(this, 1120, 820, App.MainWindowInstance);
         _view.Loaded += Initialize;
         Closed += (_, _) => { _closed = true; LocalizationService.Instance.PropertyChanged -= LanguageChanged; _poll.Stop(); _view.Close(); if (Windows.GetValueOrDefault(record.Id) == this) Windows.Remove(record.Id); };
         _poll.Tick += Poll;

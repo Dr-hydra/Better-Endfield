@@ -248,10 +248,8 @@
                             x:Name="ModelPageScrollViewer"
                             HorizontalScrollBarVisibility="Disabled"
                             VerticalScrollBarVisibility="Auto">
+                            <controls:PageContentPanel Padding="32,28,32,44">
                             <StackPanel
-                                MaxWidth="920"
-                                Margin="32,28,32,44"
-                                HorizontalAlignment="Stretch"
                                 Spacing="28">
                                 <StackPanel Spacing="6">
                                     <TextBlock x:Name="ModelPageTitleTextBlock" Style="{StaticResource PageTitleStyle}" Text="开屏" />
@@ -492,6 +490,7 @@
                                     </StackPanel>
                                 </ContentControl>
                             </StackPanel>
+                            </controls:PageContentPanel>
                         </ScrollViewer>
 
                         <ScrollViewer
@@ -499,10 +498,8 @@
                             HorizontalScrollBarVisibility="Disabled"
                             Visibility="Collapsed"
                             VerticalScrollBarVisibility="Auto">
+                            <controls:PageContentPanel Padding="32,28,32,44">
                             <StackPanel
-                                MaxWidth="920"
-                                Margin="32,28,32,44"
-                                HorizontalAlignment="Stretch"
                                 Spacing="28">
                                 <StackPanel Spacing="6">
                                     <TextBlock x:Name="VoicePageTitleTextBlock" Style="{StaticResource PageTitleStyle}" Text="配音语言" />
@@ -615,6 +612,7 @@
                                     </StackPanel>
                                 </ContentControl>
                             </StackPanel>
+                            </controls:PageContentPanel>
                         </ScrollViewer>
 
                         <ScrollViewer
@@ -622,10 +620,8 @@
                             HorizontalScrollBarVisibility="Disabled"
                             Visibility="Collapsed"
                             VerticalScrollBarVisibility="Auto">
+                            <controls:PageContentPanel Padding="32,28,32,44">
                             <StackPanel
-                                MaxWidth="920"
-                                Margin="32,28,32,44"
-                                HorizontalAlignment="Stretch"
                                 Spacing="28">
                                 <StackPanel Spacing="6">
                                     <TextBlock x:Name="MusicPageTitleTextBlock" Style="{StaticResource PageTitleStyle}" Text="OmniMix 音乐集成" />
@@ -767,6 +763,7 @@
                                     </StackPanel>
                                 </ContentControl>
                             </StackPanel>
+                            </controls:PageContentPanel>
                         </ScrollViewer>
 
                         <ScrollViewer
@@ -774,10 +771,8 @@
                             HorizontalScrollBarVisibility="Disabled"
                             Visibility="Collapsed"
                             VerticalScrollBarVisibility="Auto">
+                            <controls:PageContentPanel Padding="32,28,32,44">
                             <StackPanel
-                                MaxWidth="920"
-                                Margin="32,28,32,44"
-                                HorizontalAlignment="Stretch"
                                 Spacing="28">
                                 <StackPanel Spacing="6">
                                     <TextBlock x:Name="CombatPageTitleTextBlock" Style="{StaticResource PageTitleStyle}" Text="战斗数据" />
@@ -1155,6 +1150,7 @@
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
+                            </controls:PageContentPanel>
                         </ScrollViewer>
 
                         <ScrollViewer
@@ -1162,10 +1158,8 @@
                             HorizontalScrollBarVisibility="Disabled"
                             Visibility="Collapsed"
                             VerticalScrollBarVisibility="Auto">
+                            <controls:PageContentPanel Padding="32,28,32,44">
                             <StackPanel
-                                MaxWidth="920"
-                                Margin="32,28,32,44"
-                                HorizontalAlignment="Stretch"
                                 Spacing="28">
                                 <StackPanel Spacing="6">
                                     <TextBlock x:Name="UiPageTitleTextBlock" Style="{StaticResource PageTitleStyle}" Text="界面增强" />
@@ -1240,11 +1234,13 @@
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
+                            </controls:PageContentPanel>
                         </ScrollViewer>
 
                         <ScrollViewer x:Name="ActionsPageScrollViewer" Visibility="Collapsed"
                             HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                            <StackPanel MaxWidth="920" Margin="32,28,32,44" Spacing="24">
+                            <controls:PageContentPanel Padding="32,28,32,44">
+                            <StackPanel Spacing="24">
                                 <TextBlock x:Name="ActionsPageTitle" Style="{StaticResource PageTitleStyle}" Text="冲刺持续" />
                                 <TextBlock x:Name="ActionsPageDescription" TextWrapping="Wrap"
                                     Text="分角色开启特殊冲刺动作的持续播放。设置保存后，下一次特殊冲刺生效。" />
@@ -1264,6 +1260,7 @@
                                     Message="保留游戏本次选中的左或右特殊冲刺动作，在持续冲刺时循环播放，延后自然结束；停止或被打断时结束。" />
 
                             </StackPanel>
+                            </controls:PageContentPanel>
                         </ScrollViewer>
 
                         <ScrollViewer
@@ -1271,10 +1268,8 @@
                             HorizontalScrollBarVisibility="Disabled"
                             Visibility="Collapsed"
                             VerticalScrollBarVisibility="Auto">
+                            <controls:PageContentPanel Padding="32,28,32,44">
                             <StackPanel
-                                MaxWidth="920"
-                                Margin="32,28,32,44"
-                                HorizontalAlignment="Stretch"
                                 Spacing="28">
                                 <StackPanel Spacing="6">
                                     <TextBlock x:Name="CameraPageTitleTextBlock" Style="{StaticResource PageTitleStyle}" Text="相机增强" />
@@ -1864,6 +1859,7 @@
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
+                            </controls:PageContentPanel>
                         </ScrollViewer>
 
                         <ScrollViewer
@@ -1871,10 +1867,8 @@
                             HorizontalScrollBarVisibility="Disabled"
                             Visibility="Collapsed"
                             VerticalScrollBarVisibility="Auto">
+                            <controls:PageContentPanel Padding="32,28,32,44">
                             <StackPanel
-                                MaxWidth="920"
-                                Margin="32,28,32,44"
-                                HorizontalAlignment="Stretch"
                                 Spacing="28">
                                 <StackPanel Spacing="6">
                                     <TextBlock x:Name="DisplayPageTitleTextBlock" Style="{StaticResource PageTitleStyle}" Text="显示增强" />
@@ -1991,6 +1985,7 @@
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
+                            </controls:PageContentPanel>
                         </ScrollViewer>
 
                         <ScrollViewer
@@ -1998,10 +1993,8 @@
                             HorizontalScrollBarVisibility="Disabled"
                             Visibility="Collapsed"
                             VerticalScrollBarVisibility="Auto">
+                            <controls:PageContentPanel Padding="32,28,32,44">
                             <StackPanel
-                                MaxWidth="920"
-                                Margin="32,28,32,44"
-                                HorizontalAlignment="Stretch"
                                 Spacing="28">
                                 <StackPanel Spacing="6">
                                     <TextBlock x:Name="SettingsPageTitleTextBlock" Style="{StaticResource PageTitleStyle}" Text="设置" />
@@ -2263,6 +2256,7 @@
                                     </Border>
                                 </StackPanel>
                             </StackPanel>
+                            </controls:PageContentPanel>
                         </ScrollViewer>
 
                         <ScrollViewer
@@ -2270,10 +2264,8 @@
                             HorizontalScrollBarVisibility="Disabled"
                             Visibility="Collapsed"
                             VerticalScrollBarVisibility="Auto">
+                            <controls:PageContentPanel Padding="32,28,32,44">
                             <StackPanel
-                                MaxWidth="920"
-                                Margin="32,28,32,44"
-                                HorizontalAlignment="Stretch"
                                 Spacing="30">
                                 <Grid ColumnSpacing="18">
                                     <Grid.ColumnDefinitions>
@@ -2452,6 +2444,7 @@
                                         Content="查看完整说明" />
                                 </StackPanel>
                             </StackPanel>
+                            </controls:PageContentPanel>
                         </ScrollViewer>
                     </Grid>
 

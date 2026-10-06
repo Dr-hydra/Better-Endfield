@@ -3819,16 +3819,7 @@ public sealed partial class MainWindow : Window
 
     private void TryResizeWindow()
     {
-        try
-        {
-            nint windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            Microsoft.UI.WindowId windowId =
-                Microsoft.UI.Win32Interop.GetWindowIdFromWindow(windowHandle);
-            AppWindow.GetFromWindowId(windowId).Resize(new SizeInt32(1180, 860));
-        }
-        catch (InvalidOperationException)
-        {
-        }
+        WindowPlacementService.SetInitialSize(this, 1180, 860);
     }
 
     private void TrySetWindowIcon()

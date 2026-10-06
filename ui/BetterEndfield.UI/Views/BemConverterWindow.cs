@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.ComponentModel;
 using System.Text;
 using System.Text.Json;
+using BetterEndfield.UI.Controls;
 using BetterEndfield.UI.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -35,8 +36,10 @@ internal sealed class BemConverterWindow : Window
     public BemConverterWindow(string installRoot)
     {
         _installRoot = installRoot; Title = BemText.Get("BEM 创作者工具");
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(900, 820));
-        var body = new StackPanel { Spacing = 18, Padding = new Thickness(28), MaxWidth = 840, HorizontalAlignment = HorizontalAlignment.Stretch };
+        WindowPlacementService.SetInitialSize(this, 900, 820, App.MainWindowInstance);
+        var page = new PageContentPanel { Padding = new Thickness(28), MaxContentWidth = 840 };
+        var body = new StackPanel { Spacing = 18 };
+        page.Children.Add(body);
         body.Children.Add(Text(() => BemText.Get("BEM 创作者工具"), 28));
         body.Children.Add(Text(() => BemText.Get("先选任务。只想使用下载的 BEM / ZIP？回到“角色外观”直接导入即可。")));
         foreach (var item in new (Func<string> Label, string Mode)[] {
@@ -57,7 +60,7 @@ internal sealed class BemConverterWindow : Window
         var docs = Button(() => BemText.Get("帮助与支持范围"), ShowGuide); actions.Children.Add(docs);
         body.Children.Add(actions); body.Children.Add(_status); body.Children.Add(_result);
         _detailPanel.Content = _details; body.Children.Add(_detailPanel);
-        Content = new ScrollViewer { Content = body, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+        Content = new ScrollViewer { Content = page, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
         _task.SelectionChanged += (_, _) => ResetTask(); _task.SelectedIndex = 0;
         _cancel.Click += (_, _) => _operation?.Cancel();
         _saveReport.Click += async (_, _) =>

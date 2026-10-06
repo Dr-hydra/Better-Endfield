@@ -1,3 +1,4 @@
+using BetterEndfield.UI.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Web.WebView2.Core;
@@ -37,7 +38,7 @@ public sealed class ToyAnalysisWindow : Window
         grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         grid.Children.Add(_status);
         Grid.SetRow(_view, 1); grid.Children.Add(_view); Content = grid;
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(1280, 900));
+        WindowPlacementService.SetInitialSize(this, 1280, 900, App.MainWindowInstance);
         Closed += (_, _) => { _closed = true; _lifetime.Cancel(); _ack?.TrySetCanceled(); _view.Close(); Windows.Remove(this); };
         _view.Loaded += Initialize;
     }
