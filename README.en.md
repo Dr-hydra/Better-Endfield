@@ -6,7 +6,7 @@ Better Endfield is an open-source modular toolkit for *Arknights: Endfield*. It 
 
 [Download](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [Release notes](CHANGELOG.md) · [Android setup/build guide](android/README.md) · [BEM creator guide](docs/custom_model/BEM_CREATOR_GUIDE.en.md) · [Module developer guide](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
 
-The current version is **3.5.2**, with standalone BEM Tools **1.5.2**. The tool ZIP includes the double-clickable `BetterEndfield.BemTools.exe` creator GUI. Version 3.5.2 formalizes BEM 1.4 resources and creator tooling, and fixes model hot switching, Android PCUI mouse input, Workshop navigation and desktop DPI placement.
+The current version is **3.5.3**, with standalone BEM Tools **1.5.2**. The tool ZIP includes the double-clickable `BetterEndfield.BemTools.exe` creator GUI. Version 3.5.3 adds a Windows [Steam CN launch preview](docs/host/STEAM_CN_LAUNCH.md) and prevents duplicate injection alongside a local XInput proxy. Steam integration still awaits complete metadata and real-client testing. BEM 1.4, weapon/ultimate resources, model hot switching, Android PCUI input and desktop DPI placement carry forward from 3.5.2.
 
 ## Feature overview
 

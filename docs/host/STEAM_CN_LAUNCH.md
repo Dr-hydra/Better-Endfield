@@ -1,6 +1,6 @@
 # Steam 国服启动（Windows 预览）
 
-本功能在 `feat/steam-cn-launch` 开发分支预搭建，主程序版本仍为 3.5.2。设置页提供独立的“Steam 国服启动（预览）”区域；尚未随正式版发布。
+本功能在 `feat/steam-cn-launch` 开发分支实现，随 Windows 3.5.3 以预览功能发布。设置页提供独立的“Steam 国服启动（预览）”区域；真实 Steam 启动仍待完整元数据与实机验证。
 
 ## 配置流程
 

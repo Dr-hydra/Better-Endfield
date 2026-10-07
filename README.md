@@ -6,7 +6,7 @@ Better Endfield 是面向《明日方舟：终末地》的开源模块化工具�
 
 [下载正式版](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [更新说明](CHANGELOG.md) · [Android 使用与构建](android/README.md) · [BEM 创作者指南](docs/custom_model/BEM_CREATOR_GUIDE.md) · [模块开发指南](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
 
-当前版本为 **3.5.2**，独立 BEM Tools 为 **1.5.2**，工具 ZIP 内含可双击启动的 `BetterEndfield.BemTools.exe` 创作者 GUI。3.5.2 同步 BEM 1.4 创作者工具与运行时能力，修正模型热切换、Android PCUI 鼠标输入、Workshop 导航和桌面 DPI 布局。
+当前版本为 **3.5.3**，独立 BEM Tools 为 **1.5.2**，工具 ZIP 内含可双击启动的 `BetterEndfield.BemTools.exe` 创作者 GUI。3.5.3 新增 Windows [Steam 国服启动预览](docs/host/STEAM_CN_LAUNCH.md)和 XInput 重复注入拦截；Steam 接入仍待完整元数据与实机验证。BEM 1.4、武器/大招资源、模型热切换、Android PCUI 输入和桌面 DPI 布局能力沿用 3.5.2。
 
 ## 功能一览
 

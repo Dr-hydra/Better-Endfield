@@ -1,6 +1,6 @@
 # Steam 国服启动预研
 
-日期：2026-10-07。Windows 预搭建已在 `feat/steam-cn-launch` 实现；真实 Steam 接入仍未完成实机验证，正式发布包未包含此功能。使用步骤见 [Steam 国服启动使用与验证](../../../STEAM_CN_LAUNCH.md)。
+日期：2026-10-07。Windows 预搭建已在 `feat/steam-cn-launch` 实现，并随 3.5.3 以预览功能发布；真实 Steam 接入仍未完成实机验证。使用步骤见 [Steam 国服启动使用与验证](../../../STEAM_CN_LAUNCH.md)。
 
 ## 结论
 

@@ -141,7 +141,7 @@ $bemTools = Join-Path $ws.paths.build "tools\bem\dist\BetterEndfield.BemConverte
 New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "tools") | Out-Null
 Copy-Item -LiteralPath $bemTools -Destination (Join-Path $publishDir "tools\BemConverter") -Recurse -Force
 New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "docs") | Out-Null
-$documentNames = @("BEM_CREATOR_GUIDE.md", "BEM_FORMAT_SPEC.md", "BEM_V1_4_SPEC.md", "BEM_RUNTIME_COMPATIBILITY.md", "BEM_SOURCE_MOD_CONVERSION.md", "THIRD_PARTY_MODULE_CREATOR_GUIDE.md")
+$documentNames = @("BEM_CREATOR_GUIDE.md", "BEM_FORMAT_SPEC.md", "BEM_V1_4_SPEC.md", "BEM_RUNTIME_COMPATIBILITY.md", "BEM_SOURCE_MOD_CONVERSION.md", "THIRD_PARTY_MODULE_CREATOR_GUIDE.md", "STEAM_CN_LAUNCH.md")
 $resolveDocuments = @'
 import json, sys
 from pathlib import Path
@@ -211,6 +211,7 @@ $requiredReleaseFiles = @(
     "tools\BemConverter\BetterEndfield.BemConverter.exe",
     "docs\BEM_CREATOR_GUIDE.md",
     "docs\BEM_V1_4_SPEC.md",
+    "docs\STEAM_CN_LAUNCH.md",
     "modules\BetterEndfield.CustomModel.dll",
     "modules\betterendfield.custom_model.module.ini",
     "runtime\BetterEndfield.Host.dll",

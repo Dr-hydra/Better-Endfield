@@ -1,11 +1,15 @@
 # Better Endfield Android
 
 See the [main feature matrix](../README.en.md#feature-overview) for Windows/Android
-coverage. The current APK version is **3.5.2**. In-game rendering and real
+coverage. The current APK version is **3.5.3** (versionCode 30503). In-game rendering and real
 third-party modules still require device testing; build and isolated regression
 results are not gameplay validation.
 
-## Android 3.5.2
+## Android 3.5.3
+
+This patch aligns the Android version with the Windows release. Steam CN launch
+and duplicate desktop-injector protection are Windows features; Android behavior
+continues from 3.5.2.
 
 Version 3.5.2 includes BEM 1.4 resource targets, Android PCUI relative-mouse
 capture, responsive desktop-layout handling, experimental third-party native
