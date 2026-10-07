@@ -9,13 +9,14 @@
     "test": "vitest run",
     "check": "tsc -b --pretty false",
     "mods:dev": "vite --config mod-center/vite.config.ts",
-    "mods:build": "tsc -p mod-center/tsconfig.json && vite build --config mod-center/vite.config.ts",
+    "mods:build": "node mod-center/scripts/build-supporters.mjs && tsc -p mod-center/tsconfig.json && vite build --config mod-center/vite.config.ts",
     "mods:check": "tsc -p mod-center/tsconfig.json",
     "mods:test": "node --test mod-center/server/server.test.mjs",
     "mods:serve": "node mod-center/server/server.mjs"
   },
   "dependencies": {
     "fflate": "^0.8.2",
+    "nodemailer": "^10.0.15",
     "preact": "^10.27.2"
   },
   "devDependencies": {

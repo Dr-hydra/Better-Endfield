@@ -1,3 +1,8 @@
+.mod-center .rail-tools { display: flex; align-items: center; gap: 10px; }
+.mod-center .language-toggle { min-width: 34px; height: 30px; padding: 0 7px; border: 1px solid currentColor; background: transparent; color: inherit; cursor: pointer; font: 700 10px Consolas, monospace; }
+.mod-center .language-toggle:hover { color: var(--yellow); border-color: var(--yellow); }
+.mod-center .top-status .top-language { height: 27px; min-width: 32px; border: 1px solid var(--line); }
+.mod-center .top-status .top-language:hover { border-color: var(--ink); }
 .mod-center { --accent-ink: #172126; }
 .mod-center .side-rail, .mod-center .mobile-header, .mod-center .mobile-nav { background: #172126; color: #fffef9; }
 .mod-center button { touch-action: manipulation; }
@@ -85,6 +90,21 @@
 .portal-empty p { font-size: 12px; line-height: 1.8; color: var(--muted); margin: 4px 0 22px; }
 .portal-footer { margin-top: 44px; border-top: 1px solid var(--line); padding-top: 18px; display: flex; justify-content: space-between; gap: 14px; font: 9px Consolas, monospace; color: var(--muted); }
 .pagination { display: flex; justify-content: center; align-items: center; gap: 18px; margin-top: 25px; font-size: 12px; }
+.thanks-page { display: grid; gap: 22px; }
+.thanks-hero { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: clamp(28px, 4vw, 52px); overflow: hidden; box-shadow: none; border-top: 4px solid var(--yellow); }
+.thanks-hero h1 { max-width: 680px; margin: 14px 0 12px; font-size: clamp(32px, 4vw, 54px); line-height: 1.2; letter-spacing: -.06em; }
+.thanks-hero p { max-width: 620px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.9; }
+.thanks-mark { display: grid; place-items: center; width: 150px; height: 150px; flex: 0 0 auto; color: var(--accent-ink); background: var(--yellow); transform: rotate(6deg); }
+.thanks-mark svg { transform: rotate(-6deg); stroke-width: 1.25; }
+.thanks-panel { padding: clamp(23px, 3vw, 34px); box-shadow: none; }
+.thanks-panel .block-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 16px; margin-bottom: 24px; }
+.thanks-panel .block-heading .eyebrow { width: 100%; }
+.thanks-panel .block-heading h2 { margin: 8px 0 0; }
+.thanks-panel .block-heading p { margin: 8px 0 0; color: var(--muted); font-size: 11px; }
+.thanks-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; border: 1px solid var(--line); background: var(--line); }
+.thanks-name { min-width: 0; min-height: 62px; padding: 14px 16px; display: flex; align-items: center; gap: 11px; background: var(--panel-2); }
+.thanks-name svg { flex: 0 0 auto; color: var(--yellow); }
+.thanks-name span { min-width: 0; overflow-wrap: anywhere; font-size: 13px; line-height: 1.5; }
 .resource-skeleton { padding: 14px; box-shadow: none; }
 .resource-skeleton > div { height: 170px; background: var(--panel-2); }
 .resource-skeleton > span { display: block; height: 12px; background: var(--panel-2); margin-top: 15px; }
@@ -158,10 +178,27 @@
 .delete-dialog h2 { margin: 12px 0; font-size: 24px; }
 .delete-dialog p { color: var(--muted); font-size: 12px; line-height: 1.9; }
 .delete-dialog > div { display: flex; justify-content: end; gap: 12px; margin-top: 25px; }
+.auth-dialog { position: relative; width: min(430px, 100%); padding: 32px; }
+.auth-dialog h2 { margin: 12px 0 8px; font-size: 25px; }
+.auth-dialog > p { margin: 0 0 24px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.auth-close { position: absolute; top: 12px; right: 15px; border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 25px; line-height: 1; }
+.auth-provider, .email-login-form > .button { width: 100%; justify-content: center; }
+.email-login-form { display: grid; gap: 15px; }
+.email-login-form label { display: grid; gap: 8px; }
+.email-login-form label > span { font-size: 12px; font-weight: 700; }
+.email-login-form input { width: 100%; min-height: 46px; padding: 11px 13px; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink); font-family: inherit; font-size: 13px; }
+.auth-divider { display: flex; align-items: center; gap: 12px; margin: 21px 0; color: var(--muted); font: 10px Consolas, monospace; }
+.auth-divider::before, .auth-divider::after { content: ''; height: 1px; flex: 1; background: var(--line); }
+.email-code-hint { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.8; overflow-wrap: anywhere; }
+.auth-restart { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 11px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.account-email { margin-bottom: 20px; padding: 18px; display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap; }
+.account-email strong { font-size: 13px; }
+.account-email p { margin: 6px 0 0; font-size: 12px; color: var(--muted); line-height: 1.7; overflow-wrap: anywhere; }
 .button.danger { background: var(--red); color: white; border-color: var(--red); }
-.mobile-theme, .mobile-login { background: transparent; border: 0; color: inherit; cursor: pointer; }
-.mobile-login { font-size: 11px; max-width: 145px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mobile-theme { display: flex; align-items: center; margin-left: auto; margin-right: 16px; }
+.mobile-theme, .mobile-login, .mobile-language { background: transparent; border: 0; color: inherit; cursor: pointer; }
+.mobile-login { font-size: 10px; max-width: 125px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mobile-theme { display: flex; align-items: center; padding: 7px; margin: 0 6px; }
+.mobile-language { font: 700 10px Consolas, monospace; padding: 7px 5px; margin-left: auto; }
 @media (max-width: 1150px) {
   .resource-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .portal-hero { grid-template-columns: 1fr 1fr; }
@@ -209,6 +246,12 @@
   .portal-empty { padding: 38px 20px; }
   .portal-empty h3 { font-size: 18px; }
   .portal-footer { flex-direction: column; gap: 8px; }
+  .thanks-hero { align-items: flex-start; padding: 25px 20px; }
+  .thanks-hero h1 { font-size: 31px; }
+  .thanks-mark { width: 78px; height: 78px; }
+  .thanks-mark svg { width: 38px; height: 38px; }
+  .thanks-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .thanks-name { min-height: 57px; padding: 12px; }
   .required-fields { grid-template-columns: 1fr; gap: 22px; }
   .publish-panel { padding: 24px 20px; }
   .publish-heading h1 { font-size: 28px; }

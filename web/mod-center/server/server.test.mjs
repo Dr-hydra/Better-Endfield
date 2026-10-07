@@ -5,8 +5,8 @@ import { createApp, makeSession, validateDraft } from './server.mjs';
 const minimum = { name: '测试模型', type: 'bem', url: 'https://example.com/model.zip' };
 async function fixture(extra = {}) {
   const app = createApp({ databasePath: ':memory:', publicUrl: 'https://mods.example/endfield/', ...extra });
-  app.db.prepare('INSERT INTO users VALUES (?,?,?,?,?)').run('author', '123', 'creator', '', 'https://github.com/creator');
-  app.db.prepare('INSERT INTO users VALUES (?,?,?,?,?)').run('other', '456', 'other', '', 'https://github.com/other');
+  app.db.prepare('INSERT INTO users (id,github_id,login,avatar,profile_url) VALUES (?,?,?,?,?)').run('author', '123', 'creator', '', 'https://github.com/creator');
+  app.db.prepare('INSERT INTO users (id,github_id,login,avatar,profile_url) VALUES (?,?,?,?,?)').run('other', '456', 'other', '', 'https://github.com/other');
   const author = makeSession(app.db, 'author'), other = makeSession(app.db, 'other');
   await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
   const root = `http://127.0.0.1:${app.server.address().port}/endfield/`;
@@ -107,6 +107,27 @@ test('OAuth state is browser-bound, single-use, and uses the stable GitHub accou
     }
     const original = await authenticate(); login = 'renamed-account'; const renamed = await authenticate();
     assert.equal(original.id, renamed.id); assert.equal(renamed.login, login); assert.equal(exchanges, 2);
+  } finally { await app.close(); }
+});
+test('email codes create a session and can only be used once', async () => {
+  const sent = [];
+  const app = await fixture({ smtpFrom: 'no-reply@example.com', sendEmail: async message => { sent.push(message); } });
+  try {
+    const status = await app.call('api/session', { anonymous: true });
+    assert.equal(status.data.emailEnabled, true);
+    const requested = await app.call('auth/email/request', { method: 'POST', body: { email: 'Author@example.com' }, anonymous: true });
+    assert.equal(requested.status, 202); assert.equal(sent.length, 1); assert.match(sent[0].to, /^author@example\.com$/);
+    assert.match(sent[0].text, /\b\d{6}\b/);
+    const code = sent[0].text.match(/\b(\d{6})\b/)[1];
+    const emailCookie = requested.headers.getSetCookie().find(value => value.startsWith('be_email=')).split(';')[0];
+    const verified = await app.call('auth/email/verify', { method: 'POST', body: { code }, anonymous: true, headers: { Cookie: emailCookie } });
+    assert.equal(verified.status, 200);
+    const sessionCookie = verified.headers.getSetCookie().find(value => value.startsWith('be_session=')).split(';')[0];
+    const session = await app.call('api/session', { anonymous: true, headers: { Cookie: sessionCookie } });
+    assert.match(session.data.user.login, /^creator-[a-f0-9]{8}$/);
+    assert.equal(app.db.prepare('SELECT email FROM users WHERE id=?').get(session.data.user.id).email, 'author@example.com');
+    const reused = await app.call('auth/email/verify', { method: 'POST', body: { code }, anonymous: true, headers: { Cookie: emailCookie } });
+    assert.equal(reused.status, 400);
   } finally { await app.close(); }
 });
 test('pagination is bounded and private source files are not served', async () => {

@@ -3,3 +3,9 @@ PORT=9017
 DATABASE_PATH=/var/lib/endfield-resource-center/catalog.sqlite
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
+# Optional passwordless email sign-in. Use a dedicated mailbox's SMTP authorization code.
+SMTP_HOST=
+SMTP_PORT=465
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=
