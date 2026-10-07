@@ -6,6 +6,7 @@ import android.os.SystemClock;
 import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.PointerIcon;
 import com.unity3d.player.UnityPlayer;
 import java.util.ArrayList;
 
@@ -19,14 +20,20 @@ public final class PcUiMouseBridgeHostTest {
         final ArrayList<Boolean> capture = new ArrayList<>();
         float x, y;
         int moves;
+        boolean enabled = true, directTouch;
+        int absoluteEvents;
+        float absoluteX, absoluteY;
         public boolean ready() { return ready; }
         public boolean requested() { return requested; }
+        public int cursorMode() { return !enabled || !ready ? 0 : requested ? 1 : 2; }
         public void captured(boolean value) {
             acknowledgements++;
             if (actual != value) capture.add(value);
             actual = value;
         }
         public void motion(float dx, float dy) { x += dx; y += dy; moves++; }
+        public void absolute(float x, float y) { absoluteX = x; absoluteY = y; absoluteEvents++; }
+        public void directTouch(boolean active) { directTouch = active; }
     }
     private static final class Fixture {
         final Native input = new Native();
@@ -160,7 +167,46 @@ public final class PcUiMouseBridgeHostTest {
         check(f.errors.stream().filter(line -> line.equals("PC mouse capture requested for Unity input")).count() == 1,
                 "platform capture exception does not spam request diagnostics");
         f.close();
-        System.out.println("PcUiMouseBridgeHostTest: " + checks + " lifecycle, delta and button transport checks passed");
+        f = new Fixture(); f.input.requested = false;
+        PointerIcon hidden = new PointerIcon(PointerIcon.TYPE_NULL);
+        View surface = new View(); surface.icon = hidden; f.unity.children.add(surface);
+        f.start();
+        check(f.unity.requests == 0 && surface.icon.type == PointerIcon.TYPE_ARROW,
+                "game visible intent restores an actual Android pointer on Unity surface children");
+        MotionEvent absolute = event(MotionEvent.ACTION_DOWN, 384, 270, 1);
+        absolute.source = InputDevice.SOURCE_MOUSE;
+        f.bridge.observe(f.unity, absolute);
+        check(f.input.absoluteEvents == 1 && f.input.absoluteX == 0.2f && f.input.absoluteY == 0.25f,
+                "physical menu mouse normalized against current Unity viewport, without center recentering");
+        check(absolute.action == MotionEvent.ACTION_DOWN && absolute.x == 384 && absolute.y == 270 && absolute.buttons == 1
+                && !absolute.recycled && f.unity.injected.isEmpty(), "observer preserves source button event and original dispatch");
+        f.unity.width = 960; f.unity.height = 540; f.bridge.observe(f.unity, absolute);
+        check(f.input.absoluteX == 0.4f && f.input.absoluteY == 0.5f, "resize is reflected on the next absolute event");
+        f.bridge.observe(new View(), absolute); f.bridge.observe(f.unity, event(MotionEvent.ACTION_MOVE, 2, 3, 0));
+        check(f.input.absoluteEvents == 2, "unrelated views and relative samples never publish absolute coordinates");
+        absolute.x = Float.NaN; f.bridge.observe(f.unity, absolute);
+        check(f.input.absoluteEvents == 2, "invalid menu coordinates do not replace the last valid pointer");
+        MotionEvent finger = event(MotionEvent.ACTION_DOWN, 10, 20, 0); finger.source = InputDevice.SOURCE_TOUCHSCREEN;
+        f.bridge.observe(f.unity, finger); check(f.input.directTouch, "real touchscreen press retains Unity touch authority");
+        finger.action = MotionEvent.ACTION_UP; f.bridge.observe(f.unity, finger);
+        check(!f.input.directTouch, "last touchscreen release clears held contact state");
+        finger.action = 6; f.bridge.observe(f.unity, finger); // ACTION_POINTER_UP: another finger is still down.
+        check(f.input.directTouch, "multi-touch pointer-up does not release the remaining contacts");
+        finger.action = MotionEvent.ACTION_CANCEL; f.bridge.observe(f.unity, finger);
+        check(!f.input.directTouch, "touch cancellation clears contact ownership");
+        MotionEvent mouseUp = event(MotionEvent.ACTION_UP, 384, 270, 0); mouseUp.source = InputDevice.SOURCE_MOUSE;
+        f.bridge.observe(f.unity, mouseUp);
+        check(f.input.absoluteX == 0.4f && f.input.absoluteY == 0.5f && mouseUp.action == MotionEvent.ACTION_UP,
+                "button release samples the same true local position as the press without replacing its action");
+        f.input.requested = true; f.poll();
+        check(surface.icon == hidden && f.unity.icon == null, "gameplay returns original per-view pointer icons");
+        f.bridge.observe(f.unity, absolute); check(f.input.absoluteEvents == 3, "hidden-cursor gameplay does not publish absolute positions");
+        f.input.requested = false; f.poll(); f.input.enabled = false; f.poll();
+        check(surface.icon == hidden, "configuration disable restores hidden/default icons");
+        f.input.enabled = true; f.poll(); f.bridge.pause(f.activity);
+        check(surface.icon == hidden && !f.input.directTouch, "pause restores icons and clears touch ownership");
+        f.close();
+        System.out.println("PcUiMouseBridgeHostTest: " + checks + " lifecycle, delta, absolute pointer and button transport checks passed");
     }
     private static MotionEvent event(int action, float x, float y, int buttons) {
         MotionEvent e = new MotionEvent(); e.action = action; e.x = x; e.y = y; e.buttons = buttons; return e;

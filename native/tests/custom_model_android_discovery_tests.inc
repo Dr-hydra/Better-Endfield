@@ -106,7 +106,7 @@ void AndroidDiscoveryTests(const std::filesystem::path& legacy_input,const std::
         legacy.enabled.size()==1,"legacy discovery fixture rejected");
     {ConstructionScope scope;std::string reason;
         verify(!HasCompatibleModelTarget(legacy.enabled[0],valid.front().root,reason,ModelDiscoveryPlatform::Android) &&
-            reason=="Android-legacy-requires-paired-world-route","Android legacy world was routed through explicit own-donor discovery");}
+            reason=="renderer-index-unavailable","Android legacy discovery admitted an unrelated resource through own-donor matching");}
     g_instance_rebind_queue.clear();
     // Model Android publication through the real shared commit/Original
     // bookkeeping after the preflight above. Do not invoke the Windows LOD1

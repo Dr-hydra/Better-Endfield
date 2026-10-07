@@ -19,12 +19,16 @@ $overlayClasspath = @($overlayOutput, $JsonJar, $MainClasses, $ServiceJar, $Andr
 $overlaySources = @(
     (Join-Path $overlayAndroid 'app/src/testHost/java/android/content/Context.java'),
     (Join-Path $overlayMain 'OverlayWritePolicy.java'),
+    (Join-Path $overlayMain 'OverlayModelCatalogState.java'),
+    (Join-Path $overlayMain 'OverlayReconnectPolicy.java'),
     (Join-Path $overlayMain 'BemOptions.java'),
     (Join-Path $overlayMain 'BemParameters.java'),
     (Join-Path $overlayMain 'BemHotSwitchUpdate.java'),
     (Join-Path $overlayTests 'OverlayWritePolicyTest.java'),
     (Join-Path $overlayHostTests 'ModuleSettingsFovTest.java'),
     (Join-Path $overlayHostTests 'BemOverlayPreparationTest.java'),
+    (Join-Path $overlayHostTests 'OverlayModelCatalogStateTest.java'),
+    (Join-Path $overlayHostTests 'OverlayReconnectPolicyTest.java'),
     (Join-Path $overlayTests 'BemHotSwitchUpdateTest.java')
 )
 & javac -encoding UTF-8 --release 17 -proc:none -cp $overlayClasspath -d $overlayOutput @overlaySources
@@ -33,3 +37,9 @@ foreach ($overlayTest in @('OverlayWritePolicyTest', 'ModuleSettingsFovTest', 'B
     & java -cp $overlayClasspath "dev.betterendfield.android.$overlayTest" $overlayOutput
     if ($LASTEXITCODE -ne 0) { throw "Overlay regression failed: $overlayTest" }
 }
+# This test has an optional saved-index file argument, not an output directory.
+# Its normal regression coverage uses an independent synthetic catalog.
+& java -cp $overlayClasspath 'dev.betterendfield.android.OverlayModelCatalogStateTest'
+if ($LASTEXITCODE -ne 0) { throw 'Overlay regression failed: OverlayModelCatalogStateTest' }
+& java -cp $overlayClasspath 'dev.betterendfield.android.OverlayReconnectPolicyTest'
+if ($LASTEXITCODE -ne 0) { throw 'Overlay regression failed: OverlayReconnectPolicyTest' }

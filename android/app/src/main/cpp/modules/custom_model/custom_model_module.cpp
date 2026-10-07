@@ -283,7 +283,7 @@ bool CustomModelModule::UpdateSharedReplacement(const std::string& config) {
     }
     const auto text=SharedRegistryText(config,paths,ConfigValue(config,"appearance"));
     const auto result=replacement_api_->configuration_changed(text.c_str());
-    LogInfo(Id(),result==BE_Result_Ok?"Hot switch registry queued for the next resource delivery":
+    LogInfo(Id(),result==BE_Result_Ok?"Hot switch registry queued for Unity runtime refresh":
         "Hot switch registry queue rejected; previous selection retained");
     return result==BE_Result_Ok;
 }

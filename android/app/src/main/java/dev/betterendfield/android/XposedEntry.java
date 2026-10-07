@@ -149,6 +149,19 @@ public final class XposedEntry extends XposedModule {
                         PcUiMouseBridge.windowFocusChanged((android.view.View) chain.getThisObject(), (boolean) chain.getArg(0));
                         return result;
                     }));
+            // These dispatch points still carry coordinates local to the Unity
+            // root. A child SurfaceView can change event offsets later, so do
+            // not infer root coordinates from UnityPlayer.injectEvent instead.
+            hooks.add(hook(android.view.ViewGroup.class.getDeclaredMethod("dispatchTouchEvent", android.view.MotionEvent.class))
+                    .intercept(chain -> {
+                        PcUiMouseBridge.ordinaryEvent((android.view.View) chain.getThisObject(), (android.view.InputEvent) chain.getArg(0));
+                        return chain.proceed();
+                    }));
+            hooks.add(hook(android.view.View.class.getDeclaredMethod("dispatchGenericMotionEvent", android.view.MotionEvent.class))
+                    .intercept(chain -> {
+                        PcUiMouseBridge.ordinaryEvent((android.view.View) chain.getThisObject(), (android.view.InputEvent) chain.getArg(0));
+                        return chain.proceed();
+                    }));
             PcUiMouseBridge.install(application, this::report);
         } catch (Throwable error) {
             hooks.forEach(HookHandle::unhook);

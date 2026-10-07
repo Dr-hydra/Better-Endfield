@@ -124,12 +124,13 @@ void PumpAndroidPcMouseDiagnostics() {
     state.last_visible = cursor_visible;
     state.next_report_tick = now + 5000;
     const auto relative = betterendfield::InspectAndroidPcMouse();
-    char buffer[680];
+    char buffer[850];
     std::snprintf(buffer, sizeof(buffer),
         "Android PC mouse: lock=%d, visible=%d, position=(%.1f,%.1f)%s, screen=%dx%d%s, "
         "sampled_range=(%.1f..%.1f,%.1f..%.1f), edge_samples=%u/%u, "
         "legacy_axis_abs_max=(%.4f,%.4f), axis_samples=%u (4Hz samples; not total movement), "
-        "relative_requested=%s, captured=%s, relative_events=%llu, axis_reads=%llu, relative_snapshot=(%.3f,%.3f)",
+        "relative_requested=%s, captured=%s, relative_events=%llu, axis_reads=%llu, relative_snapshot=(%.3f,%.3f), "
+        "absolute_hook_ready=%s, absolute_events=%llu, position_reads=%llu, absolute_valid=%s",
         state.last_lock_state, cursor_visible, position.x, position.y,
         have_position ? "" : " [unavailable]", width, height,
         have_screen ? "" : " [unavailable]", state.min_x, state.max_x,
@@ -137,7 +138,10 @@ void PumpAndroidPcMouseDiagnostics() {
         state.max_axis_x, state.max_axis_y, state.axis_samples,
         relative.requested ? "true" : "false", relative.captured ? "true" : "false",
         static_cast<unsigned long long>(relative.motion_events),
-        static_cast<unsigned long long>(relative.axis_reads), relative.x, relative.y);
+        static_cast<unsigned long long>(relative.axis_reads), relative.x, relative.y,
+        g_android_pc_absolute_hook_ready ? "true" : "false",
+        static_cast<unsigned long long>(relative.absolute_events),
+        static_cast<unsigned long long>(relative.position_reads), relative.absolute_valid ? "true" : "false");
     Log(buffer);
     ResetAndroidPcMouseSamples(state);
 }

@@ -8,6 +8,7 @@ import android.os.Looper;
 import android.view.InputDevice;
 import android.view.InputEvent;
 import android.view.MotionEvent;
+import android.view.PointerIcon;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -21,8 +22,11 @@ final class PcUiMouseBridge {
     interface NativeInput {
         boolean ready();
         boolean requested();
+        int cursorMode(); // 0 = inactive/unknown, 1 = hidden, 2 = visible
         void captured(boolean value);
         void motion(float dx, float dy);
+        void absolute(float x, float y);
+        void directTouch(boolean active);
     }
 
     private static PcUiMouseBridge instance;
@@ -31,6 +35,7 @@ final class PcUiMouseBridge {
     private final NativeInput input;
     private final Consumer<String> log;
     private Session active;
+    private final ThreadLocal<Boolean> syntheticInput = ThreadLocal.withInitial(() -> false);
 
     PcUiMouseBridge(NativeInput input, Consumer<String> log) {
         this.input = input;
@@ -42,8 +47,11 @@ final class PcUiMouseBridge {
         PcUiMouseBridge bridge = new PcUiMouseBridge(new NativeInput() {
             public boolean ready() { return RuntimeBootstrap.loaded(); }
             public boolean requested() { return NativeCommandBridge.pcMouseCaptureRequested(); }
+            public int cursorMode() { return NativeCommandBridge.pcMouseCursorMode(); }
             public void captured(boolean value) { NativeCommandBridge.pcMouseCaptured(value); }
             public void motion(float dx, float dy) { NativeCommandBridge.pcMouseMotion(dx, dy); }
+            public void absolute(float x, float y) { NativeCommandBridge.pcMouseAbsolute(x, y); }
+            public void directTouch(boolean active) { NativeCommandBridge.pcMouseDirectTouch(active); }
         }, log);
         application.registerActivityLifecycleCallbacks(bridge.callbacks());
         instance = bridge;
@@ -51,6 +59,22 @@ final class PcUiMouseBridge {
 
     static boolean capturedEvent(View view, MotionEvent event) {
         return instance != null && instance.handle(view, event);
+    }
+    static void ordinaryEvent(View unity, InputEvent event) {
+        if (instance == null || !(event instanceof MotionEvent motion)) return;
+        try { instance.observe(unity, motion); }
+        catch (RuntimeException | LinkageError error) {
+            Session session = instance.active;
+            if (session != null) {
+                session.transportFailed = true;
+                instance.release(session);
+                instance.restorePointerIcons(session);
+                if (!session.reportedFailure) {
+                    session.reportedFailure = true;
+                    instance.log.accept("PC mouse absolute observation unavailable: " + error);
+                }
+            }
+        }
     }
 
     static void captureChanged(View view, boolean captured) {
@@ -60,7 +84,11 @@ final class PcUiMouseBridge {
     static void windowFocusChanged(View view, boolean focused) {
         if (instance != null && !focused && instance.active != null) {
             Session session = instance.active;
-            if (view == session.unity || view == session.captureView) instance.release(session);
+            if (view == session.unity || view == session.captureView) {
+                instance.release(session);
+                instance.restorePointerIcons(session);
+                if (instance.input.ready()) instance.input.directTouch(false);
+            }
         }
     }
 
@@ -91,6 +119,8 @@ final class PcUiMouseBridge {
         session.resumed = false;
         main.removeCallbacks(session.poll);
         release(session);
+        restorePointerIcons(session);
+        if (input.ready()) input.directTouch(false);
     }
 
     void destroy(Activity activity) {
@@ -112,6 +142,8 @@ final class PcUiMouseBridge {
         View captureView;
         Method inject;
         MotionEvent heldButtons;
+        final Map<View, PointerIcon> pointerIcons = new IdentityHashMap<>();
+        PointerIcon arrow;
         final Runnable poll = new Runnable() {
             @Override public void run() {
                 if (!resumed) return;
@@ -133,15 +165,19 @@ final class PcUiMouseBridge {
     void update(Session session) {
         if (session.transportFailed && session.unity != null && session.unity.isAttachedToWindow()) {
             release(session);
+            restorePointerIcons(session);
+            if (input.ready()) input.directTouch(false);
             return;
         }
-        if (!session.resumed || !session.activity.hasWindowFocus() || !input.ready()
-                || !input.requested()) {
+        if (!session.resumed || !session.activity.hasWindowFocus() || !input.ready()) {
             release(session);
+            restorePointerIcons(session);
+            if (input.ready()) input.directTouch(false);
             return;
         }
         if (session.unity == null || !session.unity.isAttachedToWindow()) {
             release(session);
+            restorePointerIcons(session);
             session.unity = findUnity(session.activity.getWindow().getDecorView(), 0);
             session.inject = null;
             session.transportFailed = false;
@@ -157,6 +193,19 @@ final class PcUiMouseBridge {
         }
         if (session.unity == null || session.inject == null || !session.unity.isShown()
                 || session.unity.getWidth() <= 0 || session.unity.getHeight() <= 0) return;
+        int cursorMode = input.cursorMode();
+        if (cursorMode == 2) {
+            release(session);
+            if (session.arrow == null) session.arrow = PointerIcon.getSystemIcon(session.unity.getContext(), PointerIcon.TYPE_ARROW);
+            showPointerIcons(session, session.unity, 0);
+            return;
+        }
+        restorePointerIcons(session);
+        if (cursorMode != 1 || !input.requested()) {
+            release(session);
+            input.directTouch(false);
+            return;
+        }
         View focused = session.unity.findFocus();
         if (focused == null || !focused.isAttachedToWindow()) { release(session); return; }
         if (session.captureView != null && session.captureView != focused) release(session);
@@ -197,6 +246,43 @@ final class PcUiMouseBridge {
             }
         }
         return null;
+    }
+
+    private void showPointerIcons(Session session, View view, int depth) {
+        if (depth > 16) return;
+        if (!session.pointerIcons.containsKey(view)) session.pointerIcons.put(view, view.getPointerIcon());
+        if (view.getPointerIcon() != session.arrow) view.setPointerIcon(session.arrow);
+        if (view instanceof ViewGroup group)
+            for (int i = 0; i < group.getChildCount(); i++) showPointerIcons(session, group.getChildAt(i), depth + 1);
+    }
+
+    private void restorePointerIcons(Session session) {
+        for (var saved : session.pointerIcons.entrySet()) saved.getKey().setPointerIcon(saved.getValue());
+        session.pointerIcons.clear();
+    }
+
+    // Observe dispatch on the Unity root before child coordinate transforms.
+    // Keep normal dispatch and the complete press/release sequence unchanged.
+    void observe(View unity, MotionEvent event) {
+        Session session = active;
+        if (session == null || unity != session.unity || syntheticInput.get() || !session.resumed ||
+                session.transportFailed || !session.activity.hasWindowFocus() || !input.ready()) return;
+        int action = event.getActionMasked();
+        if (event.isFromSource(InputDevice.SOURCE_TOUCHSCREEN)) {
+            input.directTouch(action != MotionEvent.ACTION_UP && action != MotionEvent.ACTION_CANCEL);
+            return;
+        }
+        if (input.cursorMode() != 2 || !event.isFromSource(InputDevice.SOURCE_MOUSE) ||
+                event.isFromSource(InputDevice.SOURCE_MOUSE_RELATIVE) || session.unity.getWidth() <= 0 || session.unity.getHeight() <= 0) return;
+        float x = event.getX() / session.unity.getWidth(), y = event.getY() / session.unity.getHeight();
+        if (Float.isFinite(x) && Float.isFinite(y)) input.absolute(x, y);
+    }
+
+    private Object inject(Session session, InputEvent event) throws ReflectiveOperationException {
+        boolean previous = syntheticInput.get();
+        syntheticInput.set(true);
+        try { return session.inject.invoke(session.unity, event); }
+        finally { syntheticInput.set(previous); }
     }
 
     private void notifyCaptured(Session session, boolean value) {
@@ -270,7 +356,7 @@ final class PcUiMouseBridge {
         try {
             normal.setSource(InputDevice.SOURCE_MOUSE);
             normal.setLocation(session.unity.getWidth() * 0.5f, session.unity.getHeight() * 0.5f);
-            if (Boolean.FALSE.equals(session.inject.invoke(session.unity, normal)))
+            if (Boolean.FALSE.equals(inject(session, normal)))
                 throw new IllegalStateException("UnityPlayer rejected mouse button/scroll input");
             if (session.heldButtons != null) session.heldButtons.recycle();
             session.heldButtons = normal.getButtonState() != 0 ? MotionEvent.obtain(normal) : null;
@@ -296,7 +382,7 @@ final class PcUiMouseBridge {
                     MotionEvent.ACTION_UP, count, properties, coordinates, held.getMetaState(), 0,
                     held.getXPrecision(), held.getYPrecision(), held.getDeviceId(), held.getEdgeFlags(),
                     InputDevice.SOURCE_MOUSE, held.getFlags());
-            if (session.inject != null && session.unity != null) session.inject.invoke(session.unity, release);
+            if (session.inject != null && session.unity != null) inject(session, release);
         } catch (ReflectiveOperationException | RuntimeException ignored) {
             // Focus/lifecycle teardown can invalidate UnityPlayer before delivery.
         } finally {

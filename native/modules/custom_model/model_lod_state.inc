@@ -102,8 +102,8 @@ struct LodState {
             npc_snapshot=true;
         }
         if (!pipeline.Set(current)) return false;
-        // Pipeline bias only. Mobile NPC and quality/culling configuration
-        // must remain untouched, even while character replacements are active.
+        // Preserve mobile resource LOD selection and maximumLODLevel. NPC
+        // visibility uses only the separately configured overrides above.
         active=true;
         if (!InvokeVoid(Contract("pipeline.enable_force_lod0"),current,nullptr)) { Restore(); return false; }
         if (npc_snapshot) for (auto& field:fields) if (!Write(field,field.desired)) { Restore(); return false; }

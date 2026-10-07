@@ -11,8 +11,24 @@ int main() {
     assert(!mouse.CaptureRequested()); // no gameplay cursor intent yet
     mouse.CursorRequest(true);
     assert(!mouse.CaptureRequested()); // menus remain absolute
+    assert(mouse.CursorMode() == 2);
+    mouse.Absolute(0.2f, 0.3f);
+    assert(mouse.ReadAbsolute(x, y) && x == 0.2f && y == 0.3f);
+    mouse.NextFrame(); mouse.Publish(true, true); mouse.CursorRequest(true);
+    assert(mouse.ReadAbsolute(x, y) && x == 0.2f && y == 0.3f); // stable publication/intent is idempotent
+    mouse.DirectTouch(true);
+    mouse.Absolute(0.4f, 0.5f);
+    assert(!mouse.ReadAbsolute(x, y)); // real touchscreen owns position while fingers are down
+    mouse.DirectTouch(false);
+    assert(!mouse.ReadAbsolute(x, y)); // finger release waits for a new real mouse sample
+    mouse.Absolute(0.4f, 0.5f);
+    mouse.Foreground(false);
+    assert(mouse.CursorMode() == 0 && !mouse.ReadAbsolute(x, y));
+    mouse.Foreground(true);
+    assert(mouse.CursorMode() == 2 && !mouse.ReadAbsolute(x, y));
     mouse.CursorRequest(false);
     assert(mouse.CaptureRequested());
+    assert(mouse.CursorMode() == 1 && !mouse.ReadAbsolute(x, y));
     mouse.Motion(10, 20);
     assert(!mouse.Read(x, y)); // request is not proof capture was granted
     mouse.Captured(true);
@@ -57,6 +73,7 @@ int main() {
     mouse.Captured(true);
     mouse.Reset();
     assert(!mouse.CaptureRequested() && !mouse.Read(x, y));
+    assert(mouse.CursorMode() == 0 && !mouse.ReadAbsolute(x, y));
     mouse.Publish(true, true);
     assert(!mouse.CaptureRequested()); // a new session cannot reuse old intent
     std::cout << "PASS Android relative mouse state: capture gating, fractional accumulation, frame snapshots, unbounded movement, menu/focus/off/stop cleanup\n";

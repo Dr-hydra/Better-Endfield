@@ -32,6 +32,8 @@ final class FrameworkSettings {
                     service = connected; remoteService = connected;
                     FrameworkSettings.class.notifyAll();
                     publish();
+                    OverlaySettingsDiagnostics.record(context, "framework=connected authorization_ready="
+                            + OverlayWritePolicy.validToken(OverlayWriteAuthorization.ownerToken()));
                 }
             }
             @Override public void onServiceDied(XposedService disconnected) {

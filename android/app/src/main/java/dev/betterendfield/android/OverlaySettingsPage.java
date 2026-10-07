@@ -29,6 +29,7 @@ final class OverlaySettingsPage {
     private final boolean models, preview;
     private final Set<String> expanded;
     private final ArrayList<View> mutations = new ArrayList<>();
+    private final OverlayModelCatalogState modelCatalog = new OverlayModelCatalogState();
     private String character, revision = "", index = "[]";
     private boolean closed, reading, writing, busy, tracking, dirty, fovEnabled, updating, fovReady, hot;
     private float fov = 60;
@@ -64,29 +65,43 @@ final class OverlaySettingsPage {
         if (closed || reading || writing || tracking) return;
         reading = true;
         long request = ++sequence;
+        if (models) modelCatalog.beginRead(request);
         OverlaySettingsClient.call(activity, models ? "read_models" : "read_fov", null, null, reply -> {
+            if (closed || request != sequence) return;
             reading = false;
-            if (closed || request != sequence || tracking) return;
+            if (tracking) return;
             if (reply.getBoolean("ok")) accept(reply);
-            else { revision = ""; updateEnabled(); if (!models) updateFov(); }
+            else if (models) modelReadFailed(request, reply);
+            else { revision = ""; updateEnabled(); updateFov(); }
         });
     }
     private void accept(Bundle reply) {
-        revision = reply.getString("revision", ""); busy = reply.getBoolean("busy");
         if (models) {
-            String next = reply.getString("index", "[]");
-            if (!next.equals(index) || root.getChildCount() < 3) { index = next; renderModels(); }
+            int previous = modelCatalog.version();
+            if (!modelCatalog.succeed(sequence, reply.getString("index"), reply.getString("revision", ""))) return;
+            revision = modelCatalog.revision(); index = modelCatalog.index(); busy = reply.getBoolean("busy");
+            if (previous != modelCatalog.version() || root.getChildCount() < 3) renderModels();
             updateEnabled();
         } else {
+            revision = reply.getString("revision", ""); busy = reply.getBoolean("busy");
             fovEnabled = reply.getBoolean("enabled");
             fov = (float) Math.max(5, Math.min(150, ModuleSettings.parse(reply.getString("value", "60"), 60)));
             savedFovEnabled = fovEnabled; savedFov = fov;
             updateFov();
         }
     }
+    private void modelReadFailed(long request, Bundle reply) {
+        int previous = modelCatalog.version();
+        if (!modelCatalog.fail(request, reply.getString("error", "设置桥不可用"))) return;
+        revision = modelCatalog.revision();
+        if (previous != modelCatalog.version()) renderModels();
+        updateEnabled();
+    }
     private void save(String method, JSONObject patch) {
         if (preview || writing || revision.isEmpty() || (models && busy)) return;
-        ++sequence; writing = true; updateEnabled(); if (!models) updateFov();
+        ++sequence; reading = false; writing = true;
+        if (models) modelCatalog.invalidate(sequence);
+        updateEnabled(); if (!models) updateFov();
         OverlaySettingsClient.call(activity, method, revision, patch == null ? null : patch.toString(), reply -> {
             writing = false;
             // A closed tab still rolls a failed FOV preview back to the authoritative module setting.
@@ -98,13 +113,15 @@ final class OverlaySettingsPage {
                 if (!models) { fovEnabled = savedFovEnabled; fov = savedFov; applyFov(fovEnabled, fov); updateFov(); }
                 else if (!closed) renderModels();
                 if (!closed) Toast.makeText(activity, reply.getString("error", "设置未保存"), Toast.LENGTH_SHORT).show();
+                if (models) modelCatalog.beginRead(sequence);
                 OverlaySettingsClient.call(activity, models ? "read_models" : "read_fov", null, null, restored -> {
                     writing = false;
                     if (!models && restored.getBoolean("ok")) applyFov(restored.getBoolean("enabled"),
                             (float) ModuleSettings.parse(restored.getString("value", "60"), 60));
                     if (!closed) {
                         if (restored.getBoolean("ok")) { accept(restored); if (models) renderModels(); }
-                        else { revision = ""; updateEnabled(); if (!models) updateFov(); }
+                        else if (models) modelReadFailed(sequence, restored);
+                        else { revision = ""; updateEnabled(); updateFov(); }
                     }
                 });
             }
@@ -163,6 +180,11 @@ final class OverlaySettingsPage {
         renderedHot = hot;
         ++render; mutations.clear(); root.removeAllViews();
         modelState = label(preview ? "预览模式" : hot ? "热切换：已启用" : "热切换：未启用"); root.addView(modelState);
+        if (!modelCatalog.hasCatalog() || modelCatalog.hasError()) {
+            root.addView(label(modelCatalog.message()));
+            if (modelCatalog.hasError()) addModelReadRetry();
+            if (!modelCatalog.hasCatalog()) { updateEnabled(); return; }
+        }
         try {
             JSONArray entries = new JSONArray(index); TreeSet<String> characters = new TreeSet<>(); boolean enabled = false;
             for (int i = 0; i < entries.length(); ++i) {
@@ -190,7 +212,14 @@ final class OverlaySettingsPage {
                 addModel(entry);
             }
             updateEnabled();
-        } catch (Exception error) { revision = ""; root.addView(label("模型列表不可用")); updateEnabled(); }
+        } catch (Exception error) {
+            modelCatalog.fail(sequence, "模型列表格式不可用"); revision = modelCatalog.revision();
+            root.addView(label(modelCatalog.message())); addModelReadRetry(); updateEnabled();
+        }
+    }
+    private void addModelReadRetry() {
+        TextView retry = button("重试读取"); root.addView(retry, height(44));
+        retry.setOnClickListener(v -> refresh());
     }
     private void addModel(JSONObject entry) throws Exception {
         String generation = entry.getString("generation"); final int version = render;
@@ -198,7 +227,7 @@ final class OverlaySettingsPage {
         LinearLayout.LayoutParams space = new LinearLayout.LayoutParams(-1, -2); space.topMargin = dp(10); root.addView(card, space);
         card.addView(label(entry.getString("name")));
         Switch enabled = new Switch(activity); enabled.setTextColor(INK); enabled.setTextSize(13); enabled.setMinimumHeight(dp(48));
-        enabled.setText(BemOptions.targetLabel(BemOptions.targetKey(entry)) + " · " + (hot ? "启用（下次加载生效）" : "启用（重启后生效）"));
+        enabled.setText(BemOptions.targetLabel(BemOptions.targetKey(entry)) + " · " + (hot ? "启用（热切换）" : "启用（重启后生效）"));
         enabled.setChecked(entry.optBoolean("enabled", true)); card.addView(enabled); mutations.add(enabled);
         enabled.setOnCheckedChangeListener((v, checked) -> { if (version == render) modelPatch(generation, "enabled", checked); });
         TextView details = button(expanded.contains(generation) ? "收起详细选项 ▴" : "详细选项 ▾"); card.addView(details, height(44));

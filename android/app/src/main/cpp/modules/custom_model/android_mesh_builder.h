@@ -10,6 +10,15 @@ bool AndroidMeshRollbackTest();
 bool AndroidPipelineLodEnabled();
 bool AndroidNpcParametersEnabled();
 bool AndroidInspectionEnabled();
+// Explicit, read-only one-shot mip sampling request in the game's private cache.
+std::string AndroidTextureMipRequestToken();
+// Named native icall for optional read-only observation; never invoked here.
+void* AndroidLodStreamingOffsetEntry();
+void* AndroidTextureBudgetSetterEntry();
+void* AndroidTextureBudgetGetterEntry();
+void* AndroidQualityLevelSetterEntry();
+void* AndroidQualityLevelGetterEntry();
+bool AndroidReadMemoryHeadroom(uint64_t& total_bytes,uint64_t& available_bytes);
 void AndroidAuditNormalTexture(void* texture,const std::string& name);
 bool AndroidAuditMaterialCopy(void* original, void* copy);
 void AndroidAuditTextureColorSpace(void* original, void* replacement, const std::string& name);

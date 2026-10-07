@@ -67,6 +67,9 @@ UiConfiguration g_configuration;
 std::mutex g_configuration_mutex;
 std::atomic_bool g_mobile_ui_enabled{false};
 std::atomic_bool g_pc_ui_enabled{false};
+#if defined(__ANDROID__)
+std::atomic_bool g_android_pc_absolute_hook_ready{false};
+#endif
 int32_t g_keyboard_input_type = -1;
 std::atomic_bool g_hide_uid_enabled{false};
 std::atomic_bool g_hide_hud_enabled{false};
@@ -208,6 +211,15 @@ MethodContract g_contracts[]{
     {"android_pc_mouse.get_axis",
         {"Input.Beyond.dll", "Beyond.Input", "InputManager", "GetAxis",
             "System.String", "System.Single", 1}, false},
+    {"android_pc_mouse.screen_width",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Screen", "get_width",
+            nullptr, "System.Int32", 0}, false},
+    {"android_pc_mouse.screen_height",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Screen", "get_height",
+            nullptr, "System.Int32", 0}, false},
+    {"android_pc_mouse.binding_enabled",
+        {"Input.Beyond.dll", "Beyond.Input", "InputBindingInfo", "get_enabled",
+            nullptr, "System.Boolean", 0}, false},
 #endif
     {"device.is_mobile",
         {"Common.Beyond.dll", "Beyond", "DeviceInfo", "get_isMobile",
@@ -1247,6 +1259,10 @@ bool ResolveContracts() {
 #if defined(__ANDROID__)
     g_android_pc_cursor_calc_state_method = nullptr;
     g_android_pc_real_cursor_field = nullptr;
+    g_android_pc_binding_action_field = nullptr;
+    g_android_pc_screen_width = g_android_pc_screen_height = nullptr;
+    g_android_pc_screen_width_method = g_android_pc_screen_height_method = nullptr;
+    g_android_pc_absolute_hook_ready = false;
     ResolveAndroidPcMouseDiagnostics();
 #endif
 
@@ -1265,6 +1281,12 @@ bool ResolveContracts() {
 #if defined(__ANDROID__)
             } else if (std::string_view(contract.key) == "android_pc_mouse.cursor_calc_state") {
                 g_android_pc_cursor_calc_state_method = resolved.method_info;
+            } else if (std::string_view(contract.key) == "android_pc_mouse.screen_width") {
+                g_android_pc_screen_width = reinterpret_cast<GetInt32Fn>(resolved.method_pointer);
+                g_android_pc_screen_width_method = resolved.method_info;
+            } else if (std::string_view(contract.key) == "android_pc_mouse.screen_height") {
+                g_android_pc_screen_height = reinterpret_cast<GetInt32Fn>(resolved.method_pointer);
+                g_android_pc_screen_height_method = resolved.method_info;
 #endif
             } else if (std::string_view(contract.key) ==
                 "camera_utils.manager") {
@@ -1307,6 +1329,13 @@ bool ResolveContracts() {
         BE_ResolvedFieldV1 cursor_resolved{};
         if (g_host->resolve_field(g_host->context, &cursor_field, &cursor_resolved) == BE_Result_Ok)
             g_android_pc_real_cursor_field = cursor_resolved.field_info;
+        const BE_FieldDescriptorV1 action_field{"Input.Beyond.dll", "Beyond.Input", "InputBindingInfo",
+            "playerActionId", "System.String"};
+        BE_ResolvedFieldV1 action_resolved{};
+        if (g_host->resolve_field(g_host->context, &action_field, &action_resolved) == BE_Result_Ok) {
+            g_android_pc_binding_action_field = action_resolved.field_info;
+            Log("Resolved field contract: android_pc_mouse.binding_action");
+        }
         const BE_FieldDescriptorV1 keyboard{"Common.Beyond.dll", "Beyond", "DeviceInfo/InputType", "Keyboard", nullptr};
         BE_ResolvedFieldV1 enum_field{};
         if (g_host->resolve_field(g_host->context, &keyboard, &enum_field) == BE_Result_Ok &&
@@ -1468,6 +1497,10 @@ bool InstallHooks() {
         } else if (key == "android_pc_mouse.get_axis") {
             detour = reinterpret_cast<void*>(&DetourAndroidPcGetAxis);
             original = reinterpret_cast<void**>(&g_original_android_pc_get_axis);
+        } else if (key == "android_pc_mouse.binding_enabled") {
+            if (!g_android_pc_binding_action_field) continue;
+            detour = reinterpret_cast<void*>(&DetourAndroidPcBindingEnabled);
+            original = reinterpret_cast<void**>(&g_original_android_pc_binding_enabled);
 #endif
         }
 
@@ -1488,6 +1521,9 @@ bool InstallHooks() {
         }
     }
 
+#if defined(__ANDROID__)
+    InstallAndroidPcMousePositionHook();
+#endif
     return true;
 }
 
@@ -1605,6 +1641,10 @@ void BE_CALL Shutdown() {
     betterendfield::ResetAndroidPcMouse();
     g_android_pc_cursor_intent_known.store(false, std::memory_order_release);
     g_android_pc_cursor_hook_ready = g_android_pc_axis_hook_ready = false;
+    g_android_pc_binding_action_field = nullptr;
+    g_android_pc_screen_width = g_android_pc_screen_height = nullptr;
+    g_android_pc_screen_width_method = g_android_pc_screen_height_method = nullptr;
+    g_android_pc_absolute_hook_ready = false;
     betterendfield::SetAndroidFrameClient(betterendfield::FrameClient::Ui, nullptr);
     betterendfield::PublishAndroidHudState(false);
 #endif
@@ -1615,6 +1655,10 @@ void BE_CALL Shutdown() {
     ReleaseHiddenUidRoots();
     ReleaseHudCanvasRoots();
     StopHooks();
+#if defined(__ANDROID__)
+    g_original_android_pc_mouse_position = nullptr;
+    g_original_android_pc_binding_enabled = nullptr;
+#endif
     g_state.store(ModuleState::Stopped);
     g_mobile_ui_enabled.store(false, std::memory_order_release);
     g_pc_ui_enabled.store(false, std::memory_order_release);

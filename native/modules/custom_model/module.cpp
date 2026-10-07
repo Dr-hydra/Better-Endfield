@@ -15,6 +15,7 @@
 #if defined(__ANDROID__)
 #include "modules/custom_model/android_mesh_builder.h"
 #include "android_lod_relations.generated.h"
+#include "android_texture_budget_policy.h"
 #endif
 #if defined(_WIN32)
 #include <Windows.h>
@@ -47,6 +48,7 @@ namespace {
 constexpr char kModuleId[]="betterendfield.custom_model";
 const BE_HostApiV1* g_host=nullptr;
 std::atomic_bool g_hot_switch_runtime{false};
+std::atomic<DWORD> g_pump_thread{0};
 #if defined(_WIN32)
 ModelOverlayHost g_model_overlay;
 #endif
@@ -205,6 +207,31 @@ MethodContract g_methods[]{
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Renderer",
             "set_enabled", "System.Boolean", "System.Void", 1}, true},
 #if defined(__ANDROID__)
+    // Read-only issue #25 diagnostics. Missing/stripped getters never prevent
+    // model publication; these are separate from the existing LOD policy.
+    {"android.streaming_active", {"UnityEngine.CoreModule.dll","UnityEngine","QualitySettings","get_streamingMipmapsActive",nullptr,"System.Boolean",0},false},
+    {"android.streaming_budget", {"UnityEngine.CoreModule.dll","UnityEngine","QualitySettings","get_streamingMipmapsMemoryBudget",nullptr,"System.Single",0},false},
+    {"android.streaming_budget_set", {"UnityEngine.CoreModule.dll","UnityEngine","QualitySettings","set_streamingMipmapsMemoryBudget","System.Single","System.Void",1},false},
+    {"android.streaming_max_reduction", {"UnityEngine.CoreModule.dll","UnityEngine","QualitySettings","get_streamingMipmapsMaxLevelReduction",nullptr,"System.Int32",0},false},
+    {"android.global_mip_limit", {"UnityEngine.CoreModule.dll","UnityEngine","QualitySettings","get_globalTextureMipmapLimit",nullptr,"System.Int32",0},false},
+    {"android.master_texture_limit", {"UnityEngine.CoreModule.dll","UnityEngine","QualitySettings","get_masterTextureLimit",nullptr,"System.Int32",0},false},
+    {"android.quality_max_lod", {"UnityEngine.CoreModule.dll","UnityEngine","QualitySettings","get_maximumLODLevel",nullptr,"System.Int32",0},false},
+    {"android.quality_lod_offset", {"UnityEngine.CoreModule.dll","UnityEngine","QualitySettings","get_lodOffset",nullptr,"System.Int32",0},false},
+    {"android.lod_streaming_active", {"UnityEngine.HGGraphicsModule.dll","UnityEngine.HyperGryph","HGLODStreamingSystem","get_enableLODStreaming",nullptr,"System.Boolean",0},false},
+    {"android.lod_streaming_status", {"UnityEngine.HGGraphicsModule.dll","UnityEngine.HyperGryph","HGLODStreamingSystem","QueryLODStreamingStatus",nullptr,"UnityEngine.HyperGryph.LODStreamingStatus",0},false},
+    {"android.lod_streaming_offset", {"UnityEngine.HGGraphicsModule.dll","UnityEngine.HyperGryph","HGLODStreamingSystem","SetArtTagLODStreamingOffset","System.UInt32|System.Int32","System.Void",2},false},
+    {"android.texture_current", {"UnityEngine.CoreModule.dll","UnityEngine","Texture","get_currentTextureMemory",nullptr,"System.UInt64",0},false},
+    {"android.texture_nonstreaming", {"UnityEngine.CoreModule.dll","UnityEngine","Texture","get_nonStreamingTextureMemory",nullptr,"System.UInt64",0},false},
+    {"android.texture_desired", {"UnityEngine.CoreModule.dll","UnityEngine","Texture","get_desiredTextureMemory",nullptr,"System.UInt64",0},false},
+    {"android.texture_target", {"UnityEngine.CoreModule.dll","UnityEngine","Texture","get_targetTextureMemory",nullptr,"System.UInt64",0},false},
+    {"android.texture_pending", {"UnityEngine.CoreModule.dll","UnityEngine","Texture","get_streamingTexturePendingLoadCount",nullptr,"System.UInt64",0},false},
+    {"android.texture_loading", {"UnityEngine.CoreModule.dll","UnityEngine","Texture","get_streamingTextureLoadingCount",nullptr,"System.UInt64",0},false},
+    {"android.texture_streaming_count", {"UnityEngine.CoreModule.dll","UnityEngine","Texture","get_streamingTextureCount",nullptr,"System.UInt64",0},false},
+    {"android.texture_nonstreaming_count", {"UnityEngine.CoreModule.dll","UnityEngine","Texture","get_nonStreamingTextureCount",nullptr,"System.UInt64",0},false},
+    {"android.texture_is_streaming", {"UnityEngine.CoreModule.dll","UnityEngine","Texture2D","get_streamingMipmaps",nullptr,"System.Boolean",0},false},
+    {"android.texture_loaded_mip", {"UnityEngine.CoreModule.dll","UnityEngine","Texture2D","get_loadedMipmapLevel",nullptr,"System.Int32",0},false},
+    {"android.texture_desired_mip", {"UnityEngine.CoreModule.dll","UnityEngine","Texture2D","get_desiredMipmapLevel",nullptr,"System.Int32",0},false},
+    {"android.texture_requested_mip", {"UnityEngine.CoreModule.dll","UnityEngine","Texture2D","get_requestedMipmapLevel",nullptr,"System.Int32",0},false},
     {"android.shadow_get", {"UnityEngine.CoreModule.dll","UnityEngine","Renderer","get_shadowCastingMode",nullptr,"UnityEngine.Rendering.ShadowCastingMode",0},true},
     {"android.all_renderers", {"UnityEngine.CoreModule.dll","UnityEngine","Resources","FindObjectsOfTypeAll","System.Type","UnityEngine.Object[]",1},true},
     {"android.renderer_visible", {"UnityEngine.CoreModule.dll","UnityEngine","Renderer","get_isVisible",nullptr,"System.Boolean",0},true},
@@ -1671,6 +1698,10 @@ void RememberGeneratedTexture(void* texture,const std::string& identity) {
         g_generated_texture_order.erase(g_generated_texture_order.begin());
     }
 }
+#if defined(__ANDROID__)
+#include "android_lod_streaming_observer.inc"
+#include "android_texture_streaming_diagnostics.inc"
+#endif
 constexpr uint64_t kRenderSyncBytes=4ull*1024*1024;
 constexpr uint64_t kFastLoadingSyncBytes=128ull*1024*1024;
 bool g_fast_loading=false; // [CustomModel] fast_loading, fixed for the session
@@ -1679,6 +1710,7 @@ void* CreateTextureFromBem(const BemPocData& bem,size_t index) {
     const BemTexture& texture=bem.textures.at(index);
     const BemTextureEntryRaw& info = texture.info;
 #ifdef __ANDROID__
+    ObserveAndroidTextureStreamingBeforeUpload();
     // Installation probes EGL; confirm against the game's actual graphics backend as well.
     int32_t supported_format=info.create_format; uint8_t supported=0;
     void* supported_args[]{&supported_format};
@@ -1876,6 +1908,10 @@ ConstructionScope::~ConstructionScope() {
                 " elapsedMs="+std::to_string(GetTickCount64()-started_ms));
         } catch (...) { /* Diagnostics must not interrupt rollback/unwinding. */ }
     }
+#if defined(__ANDROID__)
+    if (texture_constructed) ObserveAndroidTextureStreamingAfterUpload(
+        published,texture_constructed,texture_payload_bytes,texture_dedup_bytes,texture_live_reuse_bytes);
+#endif
     // No long-lived GC roots or DontUnloadUnusedAsset flags after delivery.
     auto* restore=attached?previous:g_construction;
     g_construction = nullptr; // Cleanup must not allocate more temporary roots.
@@ -3336,6 +3372,9 @@ void ReloadRegistryAtDelivery() {
 }
 #include "../../../tools/CustomModel/developer-tools/native_probe.inl"
 LodState g_lod;
+#if defined(__ANDROID__)
+#include "android_texture_budget_runtime.inc"
+#endif
 std::atomic_bool g_enabled{false},g_stopping{false},g_standalone_lod{false},g_shutdown_ack{false};
 OriginalMeshPin::~OriginalMeshPin() {
     if (const auto found=g_original_mesh_pins.find(instance_id);found!=g_original_mesh_pins.end() && found->second.expired())
@@ -3353,7 +3392,6 @@ std::mutex g_state_mutex,g_shutdown_mutex;
 std::condition_variable g_shutdown_cv;
 thread_local bool g_in_delivery=false;
 uint64_t g_next_prune=0;
-std::atomic<DWORD> g_pump_thread{0};
 using DeliveryFn=void(__fastcall*)(void*,void*,void*);
 using PumpFn=void(__fastcall*)(void*);
 using RetireHooksFn=BE_Result(BE_CALL*)(void*,const char*);
@@ -3682,14 +3720,23 @@ void __fastcall ResourcePump(void* method) {
         else CancelModelJobs();
 #if defined(__ANDROID__)
         // Keep the configured highest-available-LOD bias for every enabled
-        // mobile model, including explicit LOD1 resources. QualitySettings is
-        // untouched; the binding contract still targets the actual mobile LOD.
+        // mobile model, including explicit LOD1 resources. The geometry LOD
+        // contract stays unchanged; texture-pool coordination is separate.
         const bool ready=g_lod.MaintainAndroid(stop,g_registry);
+        const bool unbinding_pending=!stop && g_android_budget_policy.HasOwnedOverride() &&
+            g_hot_switch_runtime.load() && (!g_pending_model_resources.empty() ||
+                !g_instance_rebind_queue.empty() || g_instance_rebind_handled!=g_model_revision);
+        const bool texture_ready=TickAndroidTextureBudget(!stop &&
+            ((g_lod.active && g_lod.applied) || unbinding_pending),stop);
 #else
         const bool desired=!stop && EffectiveLodEnabled(!g_registry.enabled.empty(),g_standalone_lod.load());
         const bool ready=g_lod.Update(desired);
 #endif
-        if (stop && ready) { g_shutdown_ack.store(true); g_shutdown_cv.notify_all(); }
+        if (stop && ready
+#if defined(__ANDROID__)
+            && texture_ready
+#endif
+        ) { g_shutdown_ack.store(true); g_shutdown_cv.notify_all(); }
         const uint64_t now=GetTickCount64();
         if (now>=g_next_prune) {
             TickNativeProbe();
@@ -3699,6 +3746,8 @@ void __fastcall ResourcePump(void* method) {
             PruneCompletedResources();
 #if defined(__ANDROID__)
             InspectAndroidRenderers();
+            if (!stop && (!g_registry.enabled.empty() || g_hot_switch_runtime.load()))
+                ObserveAndroidTextureStreamingPeriodic();
 #endif
             g_next_prune=now+1000;
         }
@@ -3842,6 +3891,20 @@ BE_Result BE_CALL InitializeResourceModule(const BE_HostApiV1* host) {
         g_pump_thread.store(0);g_model_frame=UINT64_MAX;g_model_foreground_streak=0;g_model_pump_ms.store(0);
         g_sync_deliveries.store(0);g_model_deliveries_registered.store(0);g_model_deliveries_dropped.store(0);
         g_model_frame_budget=FrameBudget{FrameBudget::Config{32*kLoadingMiB,256*kLoadingMiB,8,2,std::chrono::milliseconds(2)}};
+#if defined(__ANDROID__)
+        g_android_texture_diagnostics={};
+        InitializeAndroidTextureBudget();
+        ResetAndroidLodStreamingObserver();
+        auto* offset_contract=Contract("android.lod_streaming_offset");
+        void* offset_entry=offset_contract && offset_contract->resolved
+            ? betterendfield::AndroidLodStreamingOffsetEntry() : nullptr;
+        const bool offset_observer=offset_entry && host->create_hook(host->context,kModuleId,offset_entry,
+            reinterpret_cast<void*>(&AndroidObserveLodStreamingOffset),
+            reinterpret_cast<void**>(&g_original_android_lod_streaming_offset))==BE_Result_Ok && g_original_android_lod_streaming_offset;
+        g_android_lod_streaming_observer_installed.store(offset_observer,std::memory_order_release);
+        Log(offset_observer ? "Android LOD streaming offset observer active: original values forwarded; no policy writes" :
+            "Android LOD streaming offset observer unavailable; model/LOD policy unchanged");
+#endif
         g_stopping.store(false); g_shutdown_ack.store(false); g_enabled.store(true,std::memory_order_release);
         InitializeModelJobs();
         InstallModelCloneHooks();
@@ -3859,7 +3922,7 @@ BE_Result BE_CALL InitializeResourceModule(const BE_HostApiV1* host) {
 #if defined(__ANDROID__)
         Log(std::string("Android replacement mode=")+
             (betterendfield::AndroidMeshRollbackTest()?"rollback (original bindings restored)":"replace (bindings retained)")+
-            (betterendfield::AndroidNpcParametersEnabled()?"; pipeline + NPC parameters; QualitySettings unchanged":
+            (betterendfield::AndroidNpcParametersEnabled()?"; pipeline + NPC parameters; geometry quality unchanged":
             betterendfield::AndroidPipelineLodEnabled()?"; pipeline bias only; quality/NPC/camera culling unchanged":
                 "; global LOD/culling overrides disabled"));
 #endif
@@ -3914,25 +3977,36 @@ void BE_CALL ShutdownResourceModule() {
     bool need_restore=false;
     {
         std::lock_guard lock(g_state_mutex); need_restore=g_lod.active || !g_model_jobs.empty();
+#if defined(__ANDROID__)
+        need_restore=need_restore || g_android_budget_policy.HasOwnedOverride() || AndroidBudgetHasLease();
+#endif
         if (need_restore && g_pump_thread.load()==GetCurrentThreadId()) {
             ConstructionScope construction;
             CancelModelJobs();
             bool restored=g_lod.Restore();
+#if defined(__ANDROID__)
+            restored=TickAndroidTextureBudget(false,true) && restored;
+#endif
             g_shutdown_ack.store(restored);
         }
     }
     if (need_restore && !g_shutdown_ack.load()) {
         std::unique_lock lock(g_shutdown_mutex);
         g_shutdown_cv.wait_for(lock,std::chrono::seconds(2),[]{return g_shutdown_ack.load();});
-        if (!g_shutdown_ack.load()) Log("LOD restoration was not acknowledged on the Unity thread before shutdown.");
+        if (!g_shutdown_ack.load()) Log("LOD/texture-pool restoration was not acknowledged on the Unity thread before shutdown.");
     }
     g_enabled.store(false,std::memory_order_release);
     DisableModelCloneHooks();
     if (g_model_loader) g_model_loader->Shutdown();
     if (g_texture_streamer) g_texture_streamer->Shutdown();
     g_lod_bias_locked.store(false,std::memory_order_release);
-    if (g_retire_hooks && g_retire_hooks(g_host->context,kModuleId)!=BE_Result_Ok)
+    const bool hooks_retired=g_retire_hooks && g_retire_hooks(g_host->context,kModuleId)==BE_Result_Ok;
+    if (g_retire_hooks && !hooks_retired)
         Log("Hook disable reported failure; pinned inactive detours remain pass-through.");
+#if defined(__ANDROID__)
+    if (hooks_retired) g_android_lod_streaming_observer_installed.store(false,std::memory_order_release);
+    if (hooks_retired) g_android_budget_hooks_ready.store(false,std::memory_order_release);
+#endif
     std::lock_guard lock(g_state_mutex);
     if (g_model_jobs.empty()) { g_model_loader.reset(); g_texture_streamer.reset(); }
     // Pending scene work owns strong roots. It belongs to this module lifetime,

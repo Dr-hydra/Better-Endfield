@@ -295,6 +295,26 @@ add_executable(BetterEndfield.AndroidModelLodTests EXCLUDE_FROM_ALL
 )
 better_endfield_target_defaults(BetterEndfield.AndroidModelLodTests)
 
+add_executable(BetterEndfield.AndroidTextureStreamingDiagnosticsTests EXCLUDE_FROM_ALL
+    tests/android_texture_streaming_diagnostics_tests.cpp
+)
+better_endfield_target_defaults(BetterEndfield.AndroidTextureStreamingDiagnosticsTests)
+
+add_executable(BetterEndfield.AndroidTextureBudgetPolicyTests EXCLUDE_FROM_ALL
+    tests/android_texture_budget_policy_tests.cpp
+)
+better_endfield_target_defaults(BetterEndfield.AndroidTextureBudgetPolicyTests)
+
+add_executable(BetterEndfield.AndroidTextureBudgetRuntimeTests EXCLUDE_FROM_ALL
+    tests/android_texture_budget_runtime_tests.cpp
+)
+better_endfield_target_defaults(BetterEndfield.AndroidTextureBudgetRuntimeTests)
+
+add_executable(BetterEndfield.AndroidLodStreamingObserverTests EXCLUDE_FROM_ALL
+    tests/android_lod_streaming_observer_tests.cpp
+)
+better_endfield_target_defaults(BetterEndfield.AndroidLodStreamingObserverTests)
+
 better_endfield_target_defaults(BetterEndfield.BemValidate)
 
 # Read-only research utility. It is deliberately excluded from the default

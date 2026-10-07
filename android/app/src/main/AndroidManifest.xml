@@ -14,6 +14,19 @@
         <provider android:name=".OverlaySettingsProvider"
             android:authorities="dev.betterendfield.android.overlay.settings"
             android:exported="true" android:grantUriPermissions="false" />
+        <receiver android:name=".ModulePackageReplacedReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+        <activity
+            android:name=".FrameworkBootstrapActivity"
+            android:screenOrientation="behind"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity android:name=".ThirdPartyModuleActivity" android:exported="false" android:label="第三方模块" android:theme="@style/AppTheme" />
         <activity android:name=".ThirdPartyModulesActivity" android:exported="false" android:label="第三方模块" android:theme="@style/AppTheme" />
         <activity

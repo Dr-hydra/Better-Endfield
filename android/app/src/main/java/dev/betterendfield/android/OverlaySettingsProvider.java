@@ -14,6 +14,7 @@ import org.json.JSONObject;
 /** Only bounded settings patches cross UIDs; module-owned commits publish through FrameworkSettings. */
 public final class OverlaySettingsProvider extends ContentProvider {
     static final String AUTHORITY = "dev.betterendfield.android.overlay.settings";
+    private volatile String lastRejectedCaller = "";
     @Override public boolean onCreate() {
         try { OverlayWriteAuthorization.initialize(getContext()); }
         catch (java.io.IOException unavailable) { android.util.Log.e("BetterEndfield.Overlay", "overlay authorization unavailable", unavailable); }
@@ -23,11 +24,24 @@ public final class OverlaySettingsProvider extends ContentProvider {
         Context app = getContext();
         int caller = Binder.getCallingUid();
         Object authorization = extras == null ? null : extras.get(OverlayWriteAuthorization.REQUEST);
+        String supplied = authorization instanceof String ? (String) authorization : null;
+        String expected = OverlayWriteAuthorization.ownerToken();
+        String[] packages = app == null ? null : app.getPackageManager().getPackagesForUid(caller);
         // Provider IPC grants visibility of its calling UID, including previously unknown channel packages.
         if (app == null || !OverlayWritePolicy.callerAllowed(caller, Process.myUid(),
-                app.getPackageManager().getPackagesForUid(caller),
-                authorization instanceof String ? (String) authorization : null, OverlayWriteAuthorization.ownerToken()))
+                packages, supplied, expected)) {
+            String failure = "settings bridge caller rejected uid=" + caller
+                    + " packages=" + (packages == null ? -1 : packages.length)
+                    + " supplied_valid=" + OverlayWritePolicy.validToken(supplied)
+                    + " owner_ready=" + OverlayWritePolicy.validToken(expected);
+            if (!failure.equals(lastRejectedCaller)) {
+                lastRejectedCaller = failure;
+                android.util.Log.e("BetterEndfield.Overlay", failure);
+                OverlaySettingsDiagnostics.record(app, failure);
+            }
             throw new SecurityException("Caller cannot modify module settings");
+        }
+        lastRejectedCaller = "";
         if (extras != null) { extras = new Bundle(extras); extras.remove(OverlayWriteAuthorization.REQUEST); }
         if (arg != null) throw new IllegalArgumentException("Unexpected argument");
         long identity = Binder.clearCallingIdentity();
@@ -76,10 +90,17 @@ public final class OverlaySettingsProvider extends ContentProvider {
         } catch (Exception error) {
             result.clear(); result.putBoolean("ok", false);
             result.putString("error", error.getMessage() == null ? "设置未保存" : error.getMessage());
+            result.putString("error_code", "provider_" + error.getClass().getSimpleName());
+            OverlaySettingsDiagnostics.record(app, "operation=" + diagnosticOperation(method)
+                    + " result=failed category=provider_" + error.getClass().getSimpleName());
         } finally {
             Binder.restoreCallingIdentity(identity);
         }
         return result;
+    }
+    private static String diagnosticOperation(String method) {
+        return "read_models".equals(method) || "edit_models".equals(method) || "disable_models".equals(method)
+                || "read_fov".equals(method) || "edit_fov".equals(method) ? method : "unknown";
     }
     private static String fovState(Context app) {
         return ModuleSettings.isGlobalFovEnabled(app) + ":" + ModuleSettings.getGlobalFieldOfView(app);

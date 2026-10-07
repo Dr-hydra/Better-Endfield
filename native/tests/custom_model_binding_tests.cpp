@@ -1405,9 +1405,10 @@ void ResourceTypeBoundaryTests(const std::filesystem::path& package_path) {
 #include "custom_model_scene_rebind_tests.inc"
 #include "custom_model_first_enable_tests.inc"
 #include "custom_model_android_discovery_tests.inc"
+#include "custom_model_android_legacy_discovery_tests.inc"
 
 int main(int argc,char** argv) {
-    if(argc==4 && std::string_view(argv[1])=="--android-discovery") {AndroidDiscoveryTests(argv[2],argv[3]);return 0;}
+    if(argc==4 && std::string_view(argv[1])=="--android-discovery") {AndroidDiscoveryTests(argv[2],argv[3]);AndroidLegacyDiscoveryTests(argv[2]);return 0;}
     if(argc==4 && std::string_view(argv[1])=="--first-enable") {FirstEnableTests(argv[2],argv[3]);return 0;}
     if(argc==3 && std::string_view(argv[1])=="--scene-rebind") {SceneRebindTests(argv[2]);return 0;}
     if(argc==3 && std::string_view(argv[1])=="--resource-types") {ResourceTypeBoundaryTests(argv[2]);return 0;}

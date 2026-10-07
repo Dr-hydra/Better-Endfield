@@ -17,6 +17,7 @@
 
 - [1.5.3 研究入口](research/1.5.3/INDEX.md)：1 篇。
 - [Steam 国服启动预研及实现记录：ACF、XInput 与权限](research/not_applicable/steam-launch/STEAM_CN_LAUNCH_FEASIBILITY_20261007.md)
+- [Shizuku 免 root 可行性：进程内入口与权限边界](research/not_applicable/shizuku/SHIZUKU_FEASIBILITY_20261007.md)
 
 ## 邻接文档与分发来源
 

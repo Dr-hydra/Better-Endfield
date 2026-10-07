@@ -30,7 +30,7 @@ final class BemHotSwitchUpdater {
                                 BemInstalledResources.configuration=configuration;
                                 return true;
                             });
-                        if(queued) log.accept("Experimental BEM selection queued; waiting for next resource delivery");
+                        if(queued) log.accept("Experimental BEM selection queued for runtime refresh");
                         lastFailure="";
                     }
                 } catch(Exception | LinkageError error) {

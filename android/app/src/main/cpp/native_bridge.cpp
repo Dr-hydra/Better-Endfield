@@ -249,6 +249,18 @@ Java_dev_betterendfield_android_NativeCommandBridge_releaseKeys(JNIEnv*, jclass)
 
 extern "C" JNIEXPORT jint JNICALL
 Java_dev_betterendfield_android_NativeCommandBridge_protocolVersion(JNIEnv*, jclass) { return 1; }
+extern "C" JNIEXPORT jint JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_pcMouseCursorMode(JNIEnv*, jclass) {
+    return betterendfield::AndroidPcCursorMode();
+}
+extern "C" JNIEXPORT void JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_pcMouseAbsolute(JNIEnv*, jclass, jfloat x, jfloat y) {
+    betterendfield::AddAndroidPcMouseAbsolute(x, y);
+}
+extern "C" JNIEXPORT void JNICALL
+Java_dev_betterendfield_android_NativeCommandBridge_pcMouseDirectTouch(JNIEnv*, jclass, jboolean active) {
+    betterendfield::SetAndroidPcDirectTouch(active == JNI_TRUE);
+}
 extern "C" JNIEXPORT jboolean JNICALL
 Java_dev_betterendfield_android_NativeCommandBridge_updateCustomModelConfig(JNIEnv* env,jclass,jstring configuration) {
     if (!env || !configuration || env->GetStringUTFLength(configuration)>1024*1024) return JNI_FALSE;
@@ -347,6 +359,7 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
         BE_NATIVE(key, "(II)Z"), BE_NATIVE(releaseKeys, "()V"), BE_NATIVE(protocolVersion, "()I"),
         BE_NATIVE(frame, "()V"), BE_NATIVE(foreground, "(Z)V"), BE_NATIVE(look, "(II)V"), BE_NATIVE(runtimeStatus, "()Ljava/lang/String;"),
         BE_NATIVE(pcMouseCaptureRequested, "()Z"), BE_NATIVE(pcMouseCaptured, "(Z)V"), BE_NATIVE(pcMouseMotion, "(FF)V"),
+        BE_NATIVE(pcMouseCursorMode, "()I"), BE_NATIVE(pcMouseAbsolute, "(FF)V"), BE_NATIVE(pcMouseDirectTouch, "(Z)V"),
         BE_NATIVE(cameraValues, "(FF)V"), BE_NATIVE(mmdStatus, "()Ljava/lang/String;"),
         BE_NATIVE(globalFov, "(ZF)Z"),
         BE_NATIVE(updateCustomModelConfig, "(Ljava/lang/String;)Z"),

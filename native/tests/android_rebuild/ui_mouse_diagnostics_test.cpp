@@ -55,6 +55,8 @@ int main() {
     g_diagnostics_enabled = true;
     SampleNow();
     assert(logs.size() == 1 && logs.back().find("lock=0, visible=1") != std::string::npos);
+    assert(logs.back().find("absolute_hook_ready=false") != std::string::npos &&
+        logs.back().find("absolute_events=0, position_reads=0, absolute_valid=false") != std::string::npos);
     const int first_calls = invocations;
     PumpAndroidPcMouseDiagnostics();
     assert(invocations == first_calls); // at most four engine samples per second
@@ -67,6 +69,17 @@ int main() {
     SampleNow();
     assert(logs.size() == 2 && logs.back().find("edge_samples=2/22") != std::string::npos);
     assert(logs.back().find("not total movement") != std::string::npos);
+    betterendfield::PublishAndroidPcMouse(true, true);
+    betterendfield::SetAndroidPcCursorRequest(true);
+    betterendfield::AddAndroidPcMouseAbsolute(0.25f, 0.5f);
+    float absolute_x = 0.0f, absolute_y = 0.0f;
+    assert(betterendfield::ReadAndroidPcMouseAbsolute(absolute_x, absolute_y));
+    g_android_pc_absolute_hook_ready = true;
+    state.next_report_tick = 0;
+    SampleNow();
+    assert(logs.back().find("absolute_hook_ready=true, absolute_events=1, position_reads=1, absolute_valid=true") != std::string::npos);
+    // The additional forced report does not change the stable logging limit.
+    logs.pop_back();
     lock_value = 1;
     visible_value = false;
     SampleNow();

@@ -400,6 +400,9 @@ bool AdvanceModelTexture(ModelBuildJob& job,uint64_t frame) {
             return JobFail(job,"texture format unsupported t="+tex.name+" format="+std::to_string(supported_format));
 #endif
         work.object=NewAsset(g_texture2d_class.class_info);
+#if defined(__ANDROID__)
+        ObserveAndroidTextureStreamingBeforeUpload();
+#endif
         int32_t width=info.width,height=info.height,format=info.create_format,mips=info.mip_count;
         uint8_t linear=!info.create_srgb;void* args[]{&width,&height,&format,&mips,&linear};
         if (!work.object || !InvokeVoid(Contract("texture2d.ctor"),work.object,args)) return JobFail(job,"Texture2D ctor failed t="+tex.name);
@@ -783,33 +786,128 @@ constexpr auto kModelDiscoveryPlatform=ModelDiscoveryPlatform::Android;
 #else
 constexpr auto kModelDiscoveryPlatform=ModelDiscoveryPlatform::Windows;
 #endif
+struct ModelAndroidDiscoveryRoute {
+    void* (*load_ui)(const char*,void*&,uint32_t&)=nullptr;
+    void (*release_ui)(void*&,uint32_t&)=nullptr;
+    std::span<const GenericMatching::ExactLodRelation> relations;
+    GenericMatching::AssetScope scope;
+};
+ModelAndroidDiscoveryRoute AndroidModelDiscoveryRoute() {
+#if defined(__ANDROID__)
+    return {[](const char* name,void*& handle,uint32_t& root) {
+            return betterendfield::AndroidLoadUiDonor(std::string(name),handle,root);
+        },[](void*& handle,uint32_t& root) {
+            betterendfield::AndroidReleaseUiDonor(handle,root);handle=nullptr;root=0;
+        },
+        AndroidLodRelations(),AndroidLodAssetScope()};
+#else
+    return {};
+#endif
+}
+bool BuildModelDiscoveryIndex(const CharacterAdapter& adapter,void* asset,
+    std::vector<GenericRendererCandidate>& index,std::vector<GenericMatching::Candidate>& candidates,std::string& reason) {
+    bool inactive=true;void* args[]{ModelRendererType(),&inactive};
+    void* renderers=Invoke(Contract("game_object.renderers"),asset,args);
+    if (!BuildGenericRendererIndex(adapter,asset,renderers,index) || index.empty()) {reason="renderer-index-unavailable";return false;}
+    for (const auto& entry:index) {
+        GenericMatching::Candidate c;c.key=entry.key;c.renderer=entry.renderer;
+        ReadGenericPristineMesh(adapter,asset,entry,c.pristine);candidates.push_back(std::move(c));
+    }
+    return true;
+}
+bool HasCompatibleAndroidLegacyWorld(const EnabledMod& mod,void* asset,std::string& reason,
+    const ModelAndroidDiscoveryRoute& route) {
+    const auto& adapter=*mod.adapter;
+    if (!route.load_ui || !route.release_ui) {reason="Android-legacy-paired-donor-route-unavailable";return false;}
+    void* handle=nullptr;uint32_t handle_root=0;
+    struct ReleaseDonor {
+        const ModelAndroidDiscoveryRoute& route;void*& handle;uint32_t& root;
+        ~ReleaseDonor() {route.release_ui(handle,root);}
+    } release{route,handle,handle_root};
+    void* donor=RootTemporary(route.load_ui(adapter.ui_resource,handle,handle_root));
+    if (!donor || !IsNativeObjectAlive(donor)) {reason="Android-legacy-UI-donor-unavailable";return false;}
+    if (!IsGameObjectResource(donor) || ObjectName(donor)!=adapter.ui_resource) {
+        reason="Android-legacy-UI-donor-identity-mismatch";return false;
+    }
+    std::vector<GenericRendererCandidate> ui_index,world_index;
+    std::vector<GenericMatching::Candidate> ui_candidates,world_candidates;
+    if (!BuildModelDiscoveryIndex(adapter,donor,ui_index,ui_candidates,reason) ||
+        !BuildModelDiscoveryIndex(adapter,asset,world_index,world_candidates,reason)) return false;
+    std::vector<void*> ui_receivers,world_receivers;
+    for (const auto& identity:adapter.components) {
+        const auto compatible=[&](void* root,const auto& index,const auto& candidate) {
+            const auto entry=std::find_if(index.begin(),index.end(),[&](const auto& value){return value.renderer==candidate.renderer;});
+            return entry!=index.end() && ArrayLength(entry->bones)>0 &&
+                !GenericCandidateContractError(root,*entry,false);
+        };
+        GenericMatching::Request ui_request{adapter.id,adapter.ui_resource,identity.name,
+            GenericMatching::Region::Lod0,identity.indices,!mod.skip_validation,""};
+        const auto source=GenericMatching::SelectUnique(ui_candidates,ui_request,
+            [&](const auto& c){return compatible(donor,ui_index,c);});
+        if (source.status!=GenericMatching::MatchStatus::Matched) {
+            reason="Android-legacy-UI-donor="+std::string(identity.name)+
+                DescribeGenericDonorFailure(donor,ui_index,ui_candidates,ui_request,source.status,false);return false;
+        }
+        const auto& source_candidate=ui_candidates[source.index];
+        GenericMatching::LodCounterpart relation;
+        const auto relation_status=GenericMatching::FindExactAndroidLod1Relation(route.relations,route.scope,
+            adapter.id,adapter.ui_resource,adapter.world_resource,source_candidate.key.path,identity.name,relation);
+        if (relation_status==GenericMatching::RelationStatus::Ambiguous) {reason="Android-legacy-ambiguous-LOD-relation";return false;}
+        bool bounded=false;
+        if (relation_status!=GenericMatching::RelationStatus::Matched && mod.skip_validation) {
+            const auto match=GenericMatching::SelectBoundedAndroidLod1(world_candidates,
+                {adapter.id,adapter.world_resource,source_candidate.key.path,identity.name},
+                [&](const auto& c){return compatible(asset,world_index,c);});
+            if (match.status==GenericMatching::MatchStatus::Ambiguous || match.status==GenericMatching::MatchStatus::InvalidIndex) {
+                reason="Android-legacy-ambiguous-bounded-LOD-relation";return false;
+            }
+            if (match.status==GenericMatching::MatchStatus::Matched) {
+                const auto& c=world_candidates[match.index];bounded=true;
+                relation.target_path=c.key.path;relation.target_mesh=c.pristine.name;
+                relation.target_indices=c.pristine.indices;relation.target_indices_known=c.pristine.indices_known;
+            }
+        }
+        if (!bounded && relation_status!=GenericMatching::RelationStatus::Matched &&
+            !GenericMatching::AndroidLod1Counterpart(source_candidate.key.path,relation)) {
+            reason="Android-legacy-unsupported-UI-receiver-path";return false;
+        }
+        GenericMatching::Request world_request{adapter.id,adapter.world_resource,relation.target_mesh,
+            GenericMatching::Region::Lod1,relation.target_indices,!mod.skip_validation && relation.target_indices_known,relation.target_path};
+        const auto target=GenericMatching::SelectUnique(world_candidates,world_request,
+            [&](const auto& c){return compatible(asset,world_index,c);});
+        if (target.status!=GenericMatching::MatchStatus::Matched) {
+            reason="Android-legacy-world-donor="+std::string(identity.name)+
+                DescribeGenericDonorFailure(asset,world_index,world_candidates,world_request,target.status,false);return false;
+        }
+        ui_receivers.push_back(source_candidate.renderer);world_receivers.push_back(world_candidates[target.index].renderer);
+    }
+    if (!GenericMatching::DistinctReceivers(ui_receivers) || !GenericMatching::DistinctReceivers(world_receivers)) {
+        reason="Android-legacy-duplicate-receivers";return false;
+    }
+    return true;
+}
 // Discovery has no decoded payload and does not construct a Mesh/material.
 // Check every declared donor before admitting a previously untracked root;
 // ProcessResource repeats the full production checks before publication.
 bool HasCompatibleModelTarget(const EnabledMod& mod,void* asset,std::string& reason,
-    ModelDiscoveryPlatform platform=kModelDiscoveryPlatform) {
-    if (!IsGameObjectResource(asset)) {reason="not-GameObject";return false;}
+    ModelDiscoveryPlatform platform=kModelDiscoveryPlatform,
+    const ModelAndroidDiscoveryRoute& android_route=AndroidModelDiscoveryRoute()) {
+    if (!IsGameObjectResource(asset) || !IsNativeObjectAlive(asset)) {reason="not-live-GameObject";return false;}
     const auto& adapter=*mod.adapter;
     // Legacy Android world bindings use the paired UI LOD0 -> world LOD1
-    // adapter. They cannot be admitted by this own-donor preflight.
-    if (platform==ModelDiscoveryPlatform::Android && !adapter.explicit_resource) {
-        reason="Android-legacy-requires-paired-world-route";return false;
-    }
+    // adapter. Their world mesh/count must never be compared to UI LOD0.
+    if (platform==ModelDiscoveryPlatform::Android && !adapter.explicit_resource &&
+        ResourceBaseName(ObjectName(asset))==adapter.world_resource)
+        return HasCompatibleAndroidLegacyWorld(mod,asset,reason,android_route);
     if (platform==ModelDiscoveryPlatform::Windows && adapter.explicit_resource && adapter.receiver_lod!=0) {
         reason="unsupported-Windows-LOD";return false;
     }
     if (adapter.explicit_resource && std::any_of(adapter.components.begin(),adapter.components.end(),[&](const auto& identity) {
         return !GenericMatching::ReceiverLodAgrees(identity.receiver_path,adapter.receiver_lod);
     })) {reason="receiver-resource-LOD-mismatch";return false;}
-    bool inactive=true;void* args[]{ModelRendererType(),&inactive};
-    void* renderers=Invoke(Contract("game_object.renderers"),asset,args);
     std::vector<GenericRendererCandidate> index;
-    if (!BuildGenericRendererIndex(adapter,asset,renderers,index) || index.empty()) {reason="renderer-index-unavailable";return false;}
     std::vector<GenericMatching::Candidate> candidates;
-    for (const auto& entry:index) {
-        GenericMatching::Candidate c;c.key=entry.key;c.renderer=entry.renderer;
-        ReadGenericPristineMesh(adapter,asset,entry,c.pristine);candidates.push_back(std::move(c));
-    }
+    if (!BuildModelDiscoveryIndex(adapter,asset,index,candidates,reason)) return false;
     std::vector<void*> receivers;
     for (const auto& identity:adapter.components) {
         GenericMatching::Request request{adapter.id,candidates.front().key.resource,identity.name,
@@ -828,7 +926,8 @@ bool HasCompatibleModelTarget(const EnabledMod& mod,void* asset,std::string& rea
     if (!GenericMatching::DistinctReceivers(receivers)) {reason="duplicate-receivers";return false;}
     return true;
 }
-bool ScanSceneInstancesForRebind(ModelDiscoveryPlatform platform=kModelDiscoveryPlatform) {
+bool ScanSceneInstancesForRebind(ModelDiscoveryPlatform platform=kModelDiscoveryPlatform,
+    const ModelAndroidDiscoveryRoute& android_route=AndroidModelDiscoveryRoute()) {
     const auto scan_started_ms=GetTickCount64();
     // Generated Meshes of a generation that is no longer the role's selection.
     std::unordered_map<int32_t,const CharacterAdapter*> stale;
@@ -852,7 +951,6 @@ bool ScanSceneInstancesForRebind(ModelDiscoveryPlatform platform=kModelDiscovery
     // cached prefabs and their already-existing clones have no completed
     // generation. Restrict discovery to precisely the changed resource names.
     for (const auto& mod:g_registry.enabled) {
-        if (platform==ModelDiscoveryPlatform::Android && !mod.adapter->explicit_resource) continue;
         for (const auto* resource:{mod.adapter->world_resource,mod.adapter->ui_resource})
             if (g_pending_model_resources.contains(resource)) discover.emplace(resource,&mod);
     }
@@ -928,6 +1026,7 @@ bool ScanSceneInstancesForRebind(ModelDiscoveryPlatform platform=kModelDiscovery
     }
     size_t discovered=0,refused=0;
     std::unordered_set<int32_t> checked;
+    std::unordered_set<std::string> retry_resources;
     for (int i=0;!discover.empty() && i<count;++i) {
         void* renderer=ArrayValue(renderers,i);
         if (!IsModelRenderer(renderer) || !IsNativeObjectAlive(renderer)) continue;
@@ -936,12 +1035,19 @@ bool ScanSceneInstancesForRebind(ModelDiscoveryPlatform platform=kModelDiscovery
             const auto name=ObjectName(transform);const auto role=discover.find(std::string(ResourceBaseName(name)));
             if (role!=discover.end()) {
                 void* object=Invoke(game_object,transform,nullptr);const int32_t id=ModelInstanceId(object);
-                if (id && !queued.contains(id) && checked.insert(id).second) {
+                if (id && !queued.contains(id) && checked.insert(id).second &&
+                    !IsCompletedResource(*role->second->adapter,object,role->second->selection_key)) {
                     std::string reason;
-                    if (HasCompatibleModelTarget(*role->second,object,reason,platform)) {
+                    if (HasCompatibleModelTarget(*role->second,object,reason,platform,android_route)) {
                         const auto before=found;queue_root(object,*role->second->adapter);
                         if (found!=before) ++discovered;
-                    } else if (refused++<8) Log("Hot switch discovery refused resource="+name+" reason="+reason);
+                    } else {
+                        if (reason=="Android-legacy-UI-donor-unavailable") {
+                            retry_resources.emplace(role->second->adapter->world_resource);
+                            retry_resources.emplace(role->second->adapter->ui_resource);
+                        }
+                        if (refused++<8) Log("Hot switch discovery refused resource="+name+" reason="+reason);
+                    }
                 }
                 break;
             }
@@ -953,7 +1059,8 @@ bool ScanSceneInstancesForRebind(ModelDiscoveryPlatform platform=kModelDiscovery
     Log("Hot switch instance scan renderers="+std::to_string(count)+" staleMeshes="+std::to_string(stale.size())+
         " restoredRootsQueued="+std::to_string(restored_queued)+" instancesQueued="+std::to_string(found)+
         " elapsedMs="+std::to_string(GetTickCount64()-scan_started_ms));
-    g_pending_model_resources.clear();return true;
+    g_pending_model_resources=std::move(retry_resources);
+    return g_pending_model_resources.empty();
 }
 uint64_t g_instance_scan_retry_ms=0;
 void PumpInstanceRebind(uint64_t frame) {

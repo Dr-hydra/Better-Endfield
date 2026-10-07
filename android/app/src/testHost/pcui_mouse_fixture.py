@@ -9,6 +9,7 @@ import subprocess
 
 
 STUBS = {
+    "android/content/Context.java": "package android.content; public class Context {}",
     "android/os/Bundle.java": "package android.os; public class Bundle {}",
     "android/os/Looper.java": "package android.os; public class Looper { public static Looper getMainLooper(){return new Looper();} }",
     "android/os/SystemClock.java": "package android.os; public class SystemClock { public static long time; public static long uptimeMillis(){return time;} }",
@@ -47,6 +48,10 @@ STUBS = {
             public boolean attached=true,shown=true,captured,throwRequest;
             public int requests,releases,width=1920,height=1080;
             public View focus=this;
+            public PointerIcon icon;
+            public android.content.Context getContext(){return new android.content.Context();}
+            public PointerIcon getPointerIcon(){return icon;}
+            public void setPointerIcon(PointerIcon value){icon=value;}
             public boolean hasPointerCapture(){return captured;}
             public boolean isAttachedToWindow(){return attached;}
             public boolean isShown(){return shown;}
@@ -64,9 +69,15 @@ STUBS = {
             public View getChildAt(int i){return children.get(i);}
         }""",
     "android/view/InputEvent.java": "package android.view; public class InputEvent {}",
+    "android/view/PointerIcon.java": r"""package android.view;
+        public class PointerIcon {
+            public static final int TYPE_ARROW=1000,TYPE_NULL=0; public final int type;
+            public PointerIcon(int type){this.type=type;}
+            public static PointerIcon getSystemIcon(android.content.Context context,int type){return new PointerIcon(type);}
+        }""",
     "android/view/InputDevice.java": r"""package android.view;
         public class InputDevice {
-            public static final int SOURCE_MOUSE=0x2002,SOURCE_MOUSE_RELATIVE=0x20004;
+            public static final int SOURCE_MOUSE=0x2002,SOURCE_MOUSE_RELATIVE=0x20004,SOURCE_TOUCHSCREEN=0x1002;
             public static boolean mouse=true;
             public static int[] getDeviceIds(){return mouse?new int[]{7}:new int[0];}
             public static InputDevice getDevice(int id){return new InputDevice();}
@@ -128,6 +139,9 @@ STUBS = {
     "dev/betterendfield/android/NativeCommandBridge.java": r"""package dev.betterendfield.android;
         final class NativeCommandBridge {
             static boolean pcMouseCaptureRequested(){return false;}
+            static int pcMouseCursorMode(){return 0;}
+            static void pcMouseAbsolute(float x,float y){}
+            static void pcMouseDirectTouch(boolean active){}
             static void pcMouseCaptured(boolean capture){}
             static void pcMouseMotion(float x,float y){}
         }""",

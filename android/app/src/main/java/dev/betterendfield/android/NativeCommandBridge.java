@@ -28,6 +28,9 @@ final class NativeCommandBridge {
     static native void frame();
     static native void foreground(boolean visible);
     static native boolean pcMouseCaptureRequested();
+    static native int pcMouseCursorMode();
+    static native void pcMouseAbsolute(float x, float y);
+    static native void pcMouseDirectTouch(boolean active);
     static native void pcMouseCaptured(boolean captured);
     static native void pcMouseMotion(float dx, float dy);
     static native void look(int dx, int dy);

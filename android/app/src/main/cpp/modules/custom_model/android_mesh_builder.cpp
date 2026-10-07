@@ -2,6 +2,9 @@
 #include "core/log.h"
 #include <array>
 #include <cstring>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <stdexcept>
 
 namespace betterendfield {
@@ -104,6 +107,71 @@ bool AndroidMeshRollbackTest() { return rollback_test; }
 bool AndroidPipelineLodEnabled() { return pipeline_lod_enabled; }
 bool AndroidNpcParametersEnabled() { return npc_parameters_enabled; }
 bool AndroidInspectionEnabled() { return inspection_enabled; }
+std::string AndroidTextureMipRequestToken() {
+    // The normal module never enumerates textures unless explicitly requested.
+    // Read a small file next to our existing private diagnostics; no settings
+    // changes, native resource writes or persistent token acknowledgement.
+    const char* diagnostics=std::getenv("BETTER_ENDFIELD_DIAGNOSTICS_PATH");
+    if (!diagnostics || !*diagnostics) return {};
+    try {
+        const auto request=std::filesystem::path(diagnostics).parent_path()/"betterendfield-texture-mips.request";
+        std::ifstream input(request,std::ios::binary);
+        if (!input) return {};
+        std::array<char,129> buffer{};
+        input.read(buffer.data(),buffer.size());
+        const auto size=input.gcount();
+        if (size<=0 || size>128) return {};
+        std::string text(buffer.data(),static_cast<size_t>(size));
+        const auto end=text.find('\n');
+        if (end==std::string::npos) return {};
+        auto magic=text.substr(0,end);
+        if (!magic.empty() && magic.back()=='\r') magic.pop_back();
+        if (magic!="BE_TEXTURE_MIPS_V1") return {};
+        auto token=text.substr(end+1);
+        if (!token.empty() && token.back()=='\n') token.pop_back();
+        if (!token.empty() && token.back()=='\r') token.pop_back();
+        if (token.empty() || token.size()>64) return {};
+        for (const unsigned char c:token)
+            if (!((c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') || c=='-' || c=='_')) return {};
+        return token;
+    } catch (...) { return {}; }
+}
+void* AndroidLodStreamingOffsetEntry() {
+    return runtime ? runtime->ResolveIcall("UnityEngine.HyperGryph.HGLODStreamingSystem::SetArtTagLODStreamingOffset") : nullptr;
+}
+void* AndroidTextureBudgetSetterEntry() {
+    return runtime ? runtime->ResolveIcall("UnityEngine.QualitySettings::set_streamingMipmapsMemoryBudget") : nullptr;
+}
+void* AndroidTextureBudgetGetterEntry() {
+    return runtime ? runtime->ResolveIcall("UnityEngine.QualitySettings::get_streamingMipmapsMemoryBudget") : nullptr;
+}
+void* AndroidQualityLevelSetterEntry() {
+    return runtime ? runtime->ResolveIcall("UnityEngine.QualitySettings::SetQualityLevel") : nullptr;
+}
+void* AndroidQualityLevelGetterEntry() {
+    return runtime ? runtime->ResolveIcall("UnityEngine.QualitySettings::GetQualityLevel") : nullptr;
+}
+bool AndroidReadMemoryHeadroom(uint64_t& total_bytes,uint64_t& available_bytes) {
+    total_bytes=0;available_bytes=0;
+    std::ifstream input("/proc/meminfo");
+    bool total_seen=false,available_seen=false;
+    for(std::string line;std::getline(input,line);) {
+        const bool total=line.starts_with("MemTotal:"),available=line.starts_with("MemAvailable:");
+        if(!total && !available) continue;
+        const auto begin=line.find_first_of("0123456789");
+        if(begin==std::string::npos) return false;
+        const auto end=line.find_first_not_of("0123456789",begin);
+        if(end==std::string::npos || line.substr(end).find("kB")==std::string::npos) return false;
+        try {
+            const auto value=std::stoull(line.substr(begin,end-begin));
+            if(value>UINT64_MAX/1024) return false;
+            if(total) {total_bytes=value*1024;total_seen=true;}
+            else {available_bytes=value*1024;available_seen=true;}
+        } catch(...) {return false;}
+        if(total_seen && available_seen) break;
+    }
+    return total_seen && available_seen && total_bytes>0 && available_bytes<=total_bytes;
+}
 
 bool AndroidAuditMaterialCopy(void* original,void* copy) {
     try {

@@ -250,6 +250,12 @@
 | --- | --- | --- | --- |
 | [热切换与 legacy 实例路径调研（2026-10-03）](hot-switch/HOT_SWITCH_LEGACY_PATH_RESEARCH.md) | 借鉴旧实例路径的目标重绑、donor复用和回收方案 | 研究/提案 | 1.5.3 |
 
+## ANDROID_TEXTURE_STREAMING_ISSUE_25_20261007.md
+
+| 文档 | 用途 | 状态 | 游戏版本 |
+| --- | --- | --- | --- |
+| [Android 模型启用后场景纹理模糊：issue #25](android-texture-streaming/ANDROID_TEXTURE_STREAMING_ISSUE_25_20261007.md) | 原生 LOD 资源链、真实资产区间与完整启用 mip 采样，保留全局 LOD 和可见范围设计 | 调查与诊断记录 | 1.5.3 |
+
 ## MODEL_CAMERA_IMPLEMENTATION.md
 
 | 文档 | 用途 | 状态 | 游戏版本 |
