@@ -15,6 +15,7 @@
 九月初更新后资料按用户确认与当前配置归为 1.5.3；旧客户端为 pre-1.5.3，跨版本比较在清单单独登记。同版热更新以资源快照区分，日期只作元数据。阶段实施、来源证据和提案保留验证边界；部分结论已替代不代表整篇无用。
 
 - [1.5.3 研究入口](research/1.5.3/INDEX.md)：1 篇。
+- [Steam 国服启动预研：ACF、XInput 与权限](research/not_applicable/steam-launch/STEAM_CN_LAUNCH_FEASIBILITY_20261007.md)
 
 ## 邻接文档与分发来源
 

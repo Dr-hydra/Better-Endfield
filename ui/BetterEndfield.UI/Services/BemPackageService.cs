@@ -613,22 +613,3 @@ internal sealed class BemBundleImport(string directory) : IDisposable
         if (Directory.Exists(directory)) Directory.Delete(directory, true);
     }
 }
-
-internal static class BemToolService
-{
-    public static async Task<string> RunAsync(string installRoot, IEnumerable<string> args, CancellationToken token = default)
-    {
-        string tool = Path.Combine(installRoot, "tools", "BemConverter", "BetterEndfield.BemConverter.exe");
-        if (!System.IO.File.Exists(tool)) tool = Path.Combine((Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory), "tools", "BemConverter", "BetterEndfield.BemConverter.exe");
-        if (!System.IO.File.Exists(tool)) throw new FileNotFoundException(BemText.Get("缺少随软件提供的 BEM 转换工具。请使用包含 tools/BemConverter 的完整构建；开发环境运行 BuildBemTools.ps1。"));
-        var info = new ProcessStartInfo(tool) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true, StandardOutputEncoding = Encoding.UTF8, StandardErrorEncoding = Encoding.UTF8 };
-        foreach (string arg in args) info.ArgumentList.Add(arg);
-        using var process = Process.Start(info) ?? throw new InvalidOperationException(BemText.Get("无法启动转换工具。"));
-        using var cancel = token.Register(() => { try { if (!process.HasExited) process.Kill(true); } catch (InvalidOperationException) { } });
-        Task<string> stdout = process.StandardOutput.ReadToEndAsync(token), stderr = process.StandardError.ReadToEndAsync(token);
-        await process.WaitForExitAsync(token);
-        string report = await stdout, errors = await stderr;
-        if (process.ExitCode != 0) throw new InvalidDataException(string.IsNullOrWhiteSpace(report) ? errors : report);
-        return report;
-    }
-}

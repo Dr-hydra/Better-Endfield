@@ -10,8 +10,8 @@ Use the installed `BetterEndfield.BemConverter.exe` CLI, or the repository's
 executable at its root; the player application places it under `tools/BemConverter`.
 Run `--version` and `--help` to check the available commands. Do not assume the
 game runtime or creator profiles support a newer format because the extension matches.
-The official BEM Tools 1.5.1 distribution supports BEM 1.0–1.4. The older official
-1.5.0 distribution lacks 1.4; check for `BEM Tools 1.5.1 / BEM 1.0+1.1+1.2+1.3+1.4`.
+BEM Tools 1.5.2 includes a standalone creator GUI and supports BEM 1.0–1.4. The older official
+1.5.0 distribution lacks 1.4; check for `BEM Tools 1.5.2 / BEM 1.0+1.1+1.2+1.3+1.4`.
 
 Read [the creator guide](references/BEM_CREATOR_GUIDE.en.md) for tools, export task projects,
 editable projects, sliders, importing and distribution. Read [the format specification](references/BEM_FORMAT_SPEC.en.md)
@@ -69,7 +69,7 @@ contain several independently managed packages. Multiple packages for one charac
 may be installed, but only one legacy package per character can be enabled. Source key combinations need reviewed reachability
 and resource mapping; do not blindly enumerate them as complete appearances.
 
-BEM Tools 1.5.1 supports BEM 1.4 explicit resources and static meshes; see
+BEM Tools 1.5.2 supports BEM 1.4 explicit resources and static meshes; see
 `references/BEM_V1_4_SPEC.md`. One 1.4 package owns a character or weapon ID and may declare
 multiple resource roots with separate component contracts. Conflict checks use resources
 on the current platform; updates preserve target kind/id. Windows currently executes only

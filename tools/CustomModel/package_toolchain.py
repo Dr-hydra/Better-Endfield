@@ -1,4 +1,4 @@
-"""Assemble the self-contained CLI distribution and optional AI skill."""
+"""Assemble the self-contained creator GUI, CLI and AI skill distribution."""
 import argparse
 from pathlib import Path
 import shutil
@@ -6,6 +6,7 @@ import os
 import stat
 import zipfile
 import sys
+import tempfile
 
 
 def prepare_bem14_example(repo, target):
@@ -32,6 +33,7 @@ def main():
     p = argparse.ArgumentParser(); p.add_argument('directory', type=Path)
     p.add_argument('--workspace-config', type=Path)
     p.add_argument('--archive-backend', type=Path)
+    p.add_argument('--gui-directory', type=Path, required=True)
     args = p.parse_args()
     repo = Path(__file__).resolve().parents[2]
     sys.path.insert(0, str(repo/'scripts'))
@@ -39,6 +41,8 @@ def main():
     workspace = load_workspace(args.workspace_config, repo)
     target = args.directory.resolve()
     if not (target/'BetterEndfield.BemConverter.exe').is_file(): raise ValueError('Build CLI first')
+    gui = args.gui_directory.resolve()
+    if not (gui/'BetterEndfield.BemTools.exe').is_file(): raise ValueError('Build creator GUI first')
     docs = ['BEM_CREATOR_GUIDE.md', 'BEM_FORMAT_SPEC.md', 'BEM_V1_4_SPEC.md', 'BEM_RUNTIME_COMPATIBILITY.md', 'BEM_SOURCE_MOD_CONVERSION.md',
             'BEM_CREATOR_GUIDE.en.md', 'BEM_FORMAT_SPEC.en.md', 'BEM_RUNTIME_COMPATIBILITY.en.md', 'BEM_SOURCE_MOD_CONVERSION.en.md']
     (target/'docs').mkdir(exist_ok=True)
@@ -69,9 +73,23 @@ def main():
     copy_documents(workspace, docs, refs, '../../../profiles/bem14-drafts/README.md')
     shutil.copyfile(repo/'LICENSE', target/'LICENSE.txt')
     output = target.parent/'BEM-Tools-win-x64.zip'
-    with zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=6) as z:
-        for file in sorted(target.rglob('*')):
-            if file.is_file(): z.write(file, str(Path('BEM-Tools')/file.relative_to(target)))
+    # Keep the CLI staging directory usable by the main application without
+    # adding another self-contained WinUI runtime to its embedded tools folder.
+    # Only the independent ZIP combines the GUI and backend beside each other.
+    with tempfile.TemporaryDirectory(prefix='bem-tools-package-', dir=target.parent) as temporary:
+        staged_archive = Path(temporary)/output.name
+        with zipfile.ZipFile(staged_archive, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=6) as z:
+            names = set()
+            for root in (target, gui):
+                for file in sorted(root.rglob('*')):
+                    if not file.is_file(): continue
+                    name = (Path('BEM-Tools')/file.relative_to(root)).as_posix()
+                    if name.casefold() in names:
+                        raise ValueError(f'Duplicate toolchain archive entry: {name}')
+                    names.add(name.casefold())
+                    z.write(file, name)
+            z.write(repo/'tools/CustomModel/TOOLCHAIN_README.md', 'BEM-Tools/README.md')
+        staged_archive.replace(output)
     print(f'Toolchain ZIP: {output} ({output.stat().st_size} bytes)')
 
 

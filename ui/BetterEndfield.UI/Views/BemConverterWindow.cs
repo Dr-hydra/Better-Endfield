@@ -33,15 +33,17 @@ internal sealed class BemConverterWindow : Window
     private BemExportProject _project = new();
     private string? _projectFile;
 
-    public BemConverterWindow(string installRoot)
+    public BemConverterWindow(string installRoot, Window? owner = null, bool standalone = false)
     {
         _installRoot = installRoot; Title = BemText.Get("BEM 创作者工具");
-        WindowPlacementService.SetInitialSize(this, 900, 820, App.MainWindowInstance);
+        WindowPlacementService.SetInitialSize(this, 900, 820, owner);
         var page = new PageContentPanel { Padding = new Thickness(28), MaxContentWidth = 840 };
         var body = new StackPanel { Spacing = 18 };
         page.Children.Add(body);
         body.Children.Add(Text(() => BemText.Get("BEM 创作者工具"), 28));
-        body.Children.Add(Text(() => BemText.Get("先选任务。只想使用下载的 BEM / ZIP？回到“角色外观”直接导入即可。")));
+        body.Children.Add(Text(() => BemText.Get(standalone
+            ? "先选任务。导出的 BEM / ZIP 可在 Better Endfield 的“角色外观”页面导入使用。"
+            : "先选任务。只想使用下载的 BEM / ZIP？回到“角色外观”直接导入即可。")));
         foreach (var item in new (Func<string> Label, string Mode)[] {
             (() => BemText.Get("创建 / 打开导出工程"), "build"),
             (() => BemText.Get("创建标准工作区"), "workspace"),
@@ -345,7 +347,13 @@ internal sealed class BemConverterWindow : Window
     private async Task OpenExportProject()
     {
         string? file = await OpenPath(".json"); if (file == null) return;
+        OpenProject(file);
+    }
+    public void OpenProject(string file)
+    {
+        file = Path.GetFullPath(file);
         var project = BemExportProject.Load(file);
+        _task.SelectedIndex = 0;
         _project = project; _projectFile = file; RenderExportProject();
         Status(() => BemText.Get("工程已打开"), () => BemText.Get("修改参数后点击“保存参数并导出 BEM”。"));
     }

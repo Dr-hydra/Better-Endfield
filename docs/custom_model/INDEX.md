@@ -23,6 +23,7 @@
 
 - [1.5.3 研究入口](research/1.5.3/INDEX.md)：51 篇。
 - [双端模型悬浮窗与 Android 全局 FOV](research/1.5.3/model-overlay/MODEL_OVERLAY_IMPLEMENTATION.md)
+- [BEM Tools 1.5.2 独立 GUI 与验证](research/not_applicable/creator-gui/BEM_TOOLS_STANDALONE_GUI_20261007.md)
 
 ## 历史 BEM 格式与通用工具研究
 

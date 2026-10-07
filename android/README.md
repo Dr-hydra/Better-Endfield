@@ -11,7 +11,7 @@ Version 3.5.2 includes BEM 1.4 resource targets, Android PCUI relative-mouse
 capture, responsive desktop-layout handling, experimental third-party native
 modules/web UI, global FOV, character-follow free camera and first-person
 restoration/hair updates. BEM 1.4 authoring
-uses BEM Tools **1.5.1**; the same standard package works on both platforms.
+uses BEM Tools **1.5.2**; the same standard package works on both platforms.
 See the [BEM creator guide](../docs/custom_model/BEM_CREATOR_GUIDE.en.md) and
 [third-party module creator guide](../docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md).
 

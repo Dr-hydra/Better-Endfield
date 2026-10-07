@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <AssemblyName>BetterEndfield.BemTools</AssemblyName>
+    <RootNamespace>BetterEndfield.BemTools</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\BetterEndfield.UI\Assets\shared\gilberta.ico</ApplicationIcon>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="1.8.260709004" />
+    <Compile Include="..\BetterEndfield.UI\Controls\PageContentPanel.cs" Link="Shared\PageContentPanel.cs" />
+    <Compile Include="..\BetterEndfield.UI\Views\BemConverterWindow.cs" Link="Shared\BemConverterWindow.cs" />
+    <Compile Include="..\BetterEndfield.UI\Views\BemLocalizedUI.cs" Link="Shared\BemLocalizedUI.cs" />
+    <Compile Include="..\BetterEndfield.UI\Services\BemToolService.cs" Link="Shared\BemToolService.cs" />
+    <Compile Include="..\BetterEndfield.UI\Services\BemExportProject.cs" Link="Shared\BemExportProject.cs" />
+    <Compile Include="..\BetterEndfield.UI\Services\BemReportPresentation.cs" Link="Shared\BemReportPresentation.cs" />
+    <Compile Include="..\BetterEndfield.UI\Services\BemText.cs" Link="Shared\BemText.cs" />
+    <Compile Include="..\BetterEndfield.UI\Services\LocalizationService.cs" Link="Shared\LocalizationService.cs" />
+    <Compile Include="..\BetterEndfield.UI\Services\WindowPlacementService.cs" Link="Shared\WindowPlacementService.cs" />
+    <Compile Include="..\BetterEndfield.UI\Services\WindowPlacementGeometry.cs" Link="Shared\WindowPlacementGeometry.cs" />
+    <EmbeddedResource Include="..\BetterEndfield.UI\Assets\locales\*.json"
+      LogicalName="BetterEndfield.UI.Assets.locales.%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

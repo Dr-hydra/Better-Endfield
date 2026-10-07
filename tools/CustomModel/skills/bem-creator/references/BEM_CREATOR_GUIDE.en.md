@@ -14,14 +14,17 @@ BEM (`.bem`) is Better Endfield's model replacement package. Versions 1.0–1.3 
 
 | Tool | Location | Purpose |
 | --- | --- | --- |
-| BEM Tools CLI `BetterEndfield.BemConverter.exe` | `tools/BemConverter/` in the application; also available as `BEM-Tools-1.5.1-win-x64.zip` (portable, no Python required) | Conversion, packing, validation, unpacking, and collections; the core of every workflow |
-| Desktop creator window | Character appearance page → “Convert other source Mod…” | GUI front end for the same CLI |
+| Standalone creator GUI `BetterEndfield.BemTools.exe` | Root of `BEM-Tools-1.5.2-win-x64.zip`; extract the complete archive and double-click | Projects, workspaces, conversion, packing, unpacking and collections; no main application, Python or .NET installation required |
+| BEM Tools CLI `BetterEndfield.BemConverter.exe` | `tools/BemConverter/` in the application, or the root of the standalone tools | Conversion, packing, validation, unpacking, and collections; the core of every workflow |
+| Main application creator window | Character appearance page → “BEM Creator Tools…”; older versions use “Convert other source Mod…” | Shares the standalone GUI window code and calls the same CLI |
 | Blender exporter | `blender_addon/bem_exporter/` in the portable tool | Export an editable BEM project from Blender objects named `BEM_C<number>` |
 | Desktop model manager | Character appearance page | Importing, enabling, choosing appearances and options, and adjusting sliders |
 | Android model page | Better Endfield App | Importing, enabling, choosing, and converting textures on the phone |
 | AI skill `bem-creator` | Standalone `skills/bem-creator` package | Helps prepare recipes and explain reports; it does not replace validation |
 
-BEM Tools 1.5.1 officially reads and writes BEM 1.0–1.4; the older official 1.5.0 distribution does not include BEM 1.4. Tool and format versions are separate. Check that `--version` returns `BEM Tools 1.5.1 / BEM 1.0+1.1+1.2+1.3+1.4`. When running from source, use `python tools/CustomModel/bem_tool.py` instead of the executable.
+BEM Tools has officially read and written BEM 1.0–1.4 since 1.5.1; version 1.5.2 adds the standalone GUI. The older official 1.5.0 distribution does not include BEM 1.4. Tool and format versions are separate. The current `--version` returns `BEM Tools 1.5.2 / BEM 1.0+1.1+1.2+1.3+1.4`. When running from source, use `python tools/CustomModel/bem_tool.py` instead of the executable.
+
+Extract the entire standalone package and launch `BetterEndfield.BemTools.exe`, keeping the CLI and support files beside it. The GUI follows the system language. Drop one `.bemproj.json` file onto the EXE icon or pass its path as an argument to open an export project. The creator window inside the main application still uses that application's language preference.
 
 ## Three authoring workflows
 

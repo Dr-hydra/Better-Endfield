@@ -9,7 +9,7 @@
             <TextBlock x:Name="PageIntro" Text="支持 BEM 1.0–1.4 模型包，管理角色、武器和技能形态。资源目标不重叠的模型包可以同时启用。" TextWrapping="Wrap" />
             <StackPanel Orientation="Horizontal" Spacing="12">
                 <Button x:Name="ImportButton" Content="导入 BEM / ZIP" Click="Import_Click" />
-                <Button x:Name="ConvertButton" Content="其他来源 Mod 转换…" Click="Convert_Click" />
+                <Button x:Name="ConvertButton" Content="BEM 创作者工具…" Click="Convert_Click" />
                 <Button x:Name="RefreshButton" Content="刷新" Click="Refresh_Click" />
                 <Button x:Name="PackageFolderButton" Content="打开包目录" Click="OpenFolder_Click" />
             </StackPanel>

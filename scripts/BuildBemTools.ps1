@@ -10,8 +10,12 @@ $ws = Get-BEWorkspace -Config $WorkspaceConfig
 Set-BEWorkspaceEnvironment $ws
 $repo = $ws.repo_root
 $python = $ws.tools.python
+$dotnet = $ws.tools.dotnet
 if (-not (Get-Command $python -ErrorAction SilentlyContinue)) {
     throw "Configured Python was not found: $python"
+}
+if (-not (Get-Command $dotnet -ErrorAction SilentlyContinue)) {
+    throw "Configured dotnet was not found: $dotnet"
 }
 if ([string]::IsNullOrWhiteSpace($ArchiveBackend)) {
     $ArchiveBackend = if ($ws.tools.archive_backend) {
@@ -27,6 +31,11 @@ if ([string]::IsNullOrWhiteSpace($Destination)) {
     $Destination = Join-Path $ws.paths.build "tools\bem"
 }
 $Destination = [System.IO.Path]::GetFullPath($Destination)
+$toolVersionText = & $python (Join-Path $repo 'tools/CustomModel/bem_tool.py') --version
+if ($LASTEXITCODE -ne 0 -or ($toolVersionText -join ' ') -notmatch '(\d+\.\d+\.\d+)') {
+    throw 'BEM Tools version could not be resolved.'
+}
+$toolVersion = $Matches[1]
 # Creator tools are self-contained at runtime. Build dependencies are explicit.
 & $python -c "import PyInstaller, zstandard"
 if ($LASTEXITCODE -ne 0) { throw "Install tools/CustomModel/requirements-build.txt into the build Python environment first." }
@@ -41,8 +50,16 @@ if ($LASTEXITCODE -ne 0) { throw "Install tools/CustomModel/requirements-build.t
     --specpath $Destination `
     (Join-Path $repo "tools\CustomModel\bem_tool.py")
 if ($LASTEXITCODE -ne 0) { throw "BEM converter build failed." }
+$guiPublishDir = Join-Path $Destination 'gui-publish'
+& $dotnet publish (Join-Path $repo 'ui/BetterEndfield.BemTools/BetterEndfield.BemTools.csproj') `
+    -c Release -r win-x64 --self-contained true -p:Platform=x64 `
+    -p:DebugType=None -p:DebugSymbols=false "-p:PublishDir=$guiPublishDir\" `
+    "-p:BEWorkspaceBuildRoot=$($ws.paths.build)" `
+    "-p:Version=$toolVersion" "-p:InformationalVersion=$toolVersion"
+if ($LASTEXITCODE -ne 0) { throw "BEM creator GUI build failed." }
 $packageArgs = @((Join-Path $repo 'tools\CustomModel\package_toolchain.py'),
     (Join-Path $Destination 'dist\BetterEndfield.BemConverter'),
+    '--gui-directory', $guiPublishDir,
     '--archive-backend', $ArchiveBackend)
 if ($ws.config_file) { $packageArgs += @('--workspace-config', $ws.config_file) }
 & $python @packageArgs
@@ -50,13 +67,10 @@ if ($LASTEXITCODE -ne 0) { throw "BEM toolchain packaging failed." }
 $toolArchive = Join-Path $Destination 'dist\BEM-Tools-win-x64.zip'
 $releaseDir = Get-BEReleaseDirectory -Workspace $ws
 New-Item -ItemType Directory -Path $releaseDir -Force | Out-Null
-$toolVersionText = & $python (Join-Path $repo 'tools/CustomModel/bem_tool.py') --version
-if ($LASTEXITCODE -ne 0 -or ($toolVersionText -join ' ') -notmatch '(\d+\.\d+\.\d+)') {
-    throw 'BEM Tools version could not be resolved.'
-}
-$releaseArchive = Join-Path $releaseDir "BEM-Tools-$($Matches[1])-win-x64.zip"
+$releaseArchive = Join-Path $releaseDir "BEM-Tools-$toolVersion-win-x64.zip"
 if ([System.IO.Path]::GetFullPath($toolArchive) -ne [System.IO.Path]::GetFullPath($releaseArchive)) {
     Copy-Item -LiteralPath $toolArchive -Destination $releaseArchive -Force
 }
 Write-Host "BEM toolchain ZIP: $releaseArchive"
+Write-Host "BEM creator GUI: BEM-Tools/BetterEndfield.BemTools.exe inside the ZIP"
 Write-Host "BEM converter: $Destination\dist\BetterEndfield.BemConverter"

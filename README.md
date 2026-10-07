@@ -6,7 +6,7 @@ Better Endfield 是面向《明日方舟：终末地》的开源模块化工具�
 
 [下载正式版](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [更新说明](CHANGELOG.md) · [Android 使用与构建](android/README.md) · [BEM 创作者指南](docs/custom_model/BEM_CREATOR_GUIDE.md) · [模块开发指南](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
 
-当前版本为 **3.5.2**，独立 BEM Tools 为 **1.5.1**。3.5.2 同步 BEM 1.4 创作者工具与运行时能力，修正模型热切换、Android PCUI 鼠标输入、Workshop 导航和桌面 DPI 布局。
+当前版本为 **3.5.2**，独立 BEM Tools 为 **1.5.2**，工具 ZIP 内含可双击启动的 `BetterEndfield.BemTools.exe` 创作者 GUI。3.5.2 同步 BEM 1.4 创作者工具与运行时能力，修正模型热切换、Android PCUI 鼠标输入、Workshop 导航和桌面 DPI 布局。
 
 ## 功能一览
 
@@ -64,7 +64,7 @@ PC 和 Android 使用同一 BEM 解析与装配核心，支持 BEM 1.0–1.4；*
 
 Android 可对贴图异常的包执行「转换手机纹理」；转换成功发布新一代并保留选择，失败或取消保留原包。该操作需要已验证的法线编码信息，模型本身的跨端标准不代表桌面纹理在所有手机 GPU 上均可直接显示。
 
-**创作者工具**包含图形导出入口和独立 CLI，支持目录、ZIP、RAR、7z 输入，转换报告、结构校验、可保存的 `.bemproj.json` 导出工程、标准工作区和重复构建。BEM Tools 1.5.1 正式支持 BEM 1.4，并保留 Blender/EFMI legacy 角色流水线边界；创作者必须显式声明资源目标、LOD、平台和 donor 证据，不会自动还原任意源 GUI 或猜测顶点对应关系。
+**创作者工具**包含独立 GUI、主程序内的“BEM 创作者工具…”入口和 CLI，支持目录、ZIP、RAR、7z 输入，转换报告、结构校验、可保存的 `.bemproj.json` 导出工程、标准工作区和重复构建。BEM Tools 1.5.2 支持 BEM 1.4，并保留 Blender/EFMI legacy 角色流水线边界；创作者必须显式声明资源目标、LOD、平台和 donor 证据，不会自动还原任意源 GUI 或猜测顶点对应关系。
 
 ```powershell
 BetterEndfield.BemConverter.exe new-project editable/project.json --mode pack -o character.bemproj.json

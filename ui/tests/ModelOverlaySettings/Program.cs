@@ -21,7 +21,11 @@ static class Program
         byte[] metadata = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new
         {
             schema = 1, package_id = id, name = "Test " + id, author = "Synthetic", version = "1.0",
-            target = new { platform = "windows-x64", character_id = character },
+            target = new
+            {
+                platform = "windows-x64", character_id = character,
+                world_resource = character + ".world", ui_resource = character + ".ui"
+            },
             default_appearance_id = "a", appearances = new[] { new { id = "a", name = "A" }, new { id = "b", name = "B" } }
         });
         using var writer = new BinaryWriter(File.Create(path));
@@ -88,7 +92,9 @@ static class Program
         MetadataFixture(Path.Combine(service.PackageDirectory, "a.bem"), "a", "character.one");
         MetadataFixture(Path.Combine(service.PackageDirectory, "b.bem"), "b", "character.one");
         MetadataFixture(Path.Combine(service.PackageDirectory, "c.bem"), "c", "character.two");
-        service.Load(); await service.SaveAsync();
+        service.Load();
+        Expect(service.Packages.Count == 3, "Synthetic legacy packages failed to load.");
+        await service.SaveAsync();
         string runtime = Path.Combine(service.Root, "runtime.ini");
         var loaded = BemRuntimeSettings.Read(runtime);
         var external = BemRuntimeSettings.Clone(loaded);

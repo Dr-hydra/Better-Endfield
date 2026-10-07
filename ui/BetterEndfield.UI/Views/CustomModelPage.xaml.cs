@@ -67,7 +67,7 @@ public sealed partial class CustomModelPage : UserControl
         PageTitle.Text = BemText.Get("角色与武器 · BEM");
         PageIntro.Text = BemText.Get("支持 BEM 1.0–1.4 模型包，管理角色、武器和技能形态。资源目标不重叠的模型包可以同时启用。");
         ImportButton.Content = BemText.Get("导入 BEM / ZIP");
-        ConvertButton.Content = BemText.Get("其他来源 Mod 转换…");
+        ConvertButton.Content = BemText.Get("BEM 创作者工具…");
         RefreshButton.Content = BemText.Get("刷新");
         PackageFolderButton.Content = BemText.Get("打开包目录");
         CharacterFilter.Header = BemText.Get("按角色或武器筛选");
@@ -608,7 +608,7 @@ public sealed partial class CustomModelPage : UserControl
     {
         try
         {
-            if (_converter == null) { _converter = new BemConverterWindow(InstallRoot); _converter.Closed += (_, _) => _converter = null; }
+            if (_converter == null) { _converter = new BemConverterWindow(InstallRoot, App.MainWindowInstance); _converter.Closed += (_, _) => _converter = null; }
             _converter.Activate();
         }
         catch (Exception ex) { Message(() => BemText.Get("无法打开转换器"), () => ex.Message, InfoBarSeverity.Error); }

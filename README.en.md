@@ -6,7 +6,7 @@ Better Endfield is an open-source modular toolkit for *Arknights: Endfield*. It 
 
 [Download](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [Release notes](CHANGELOG.md) · [Android setup/build guide](android/README.md) · [BEM creator guide](docs/custom_model/BEM_CREATOR_GUIDE.en.md) · [Module developer guide](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
 
-The current version is **3.5.2**, with standalone BEM Tools **1.5.1**. Version 3.5.2 formalizes BEM 1.4 resources and creator tooling, and fixes model hot switching, Android PCUI mouse input, Workshop navigation and desktop DPI placement.
+The current version is **3.5.2**, with standalone BEM Tools **1.5.2**. The tool ZIP includes the double-clickable `BetterEndfield.BemTools.exe` creator GUI. Version 3.5.2 formalizes BEM 1.4 resources and creator tooling, and fixes model hot switching, Android PCUI mouse input, Workshop navigation and desktop DPI placement.
 
 ## Feature overview
 
@@ -64,7 +64,7 @@ Hot switching and loading optimization are independent and disabled by default. 
 
 Android provides optional mobile texture conversion for packages with incorrect-looking textures. Success publishes a new generation and preserves selections; failure/cancellation keeps the old package. Conversion requires verified normal-map encoding metadata. A portable model format does not guarantee that desktop texture formats display correctly on every mobile GPU.
 
-**Creator tools** offer a graphical export workflow and standalone CLI, directory/ZIP/RAR/7z inputs, conversion reports, validation, saved `.bemproj.json` tasks, portable workspaces and reproducible builds. BEM Tools 1.5.1 formally supports BEM 1.4 while keeping the legacy Blender/EFMI character pipeline boundaries; authors must declare resource targets, LOD, platform and donor evidence. It does not reconstruct arbitrary source GUIs or guess vertex correspondence.
+**Creator tools** offer a standalone GUI, the main application's “BEM Creator Tools…” entry and CLI, directory/ZIP/RAR/7z inputs, conversion reports, validation, saved `.bemproj.json` tasks, portable workspaces and reproducible builds. BEM Tools 1.5.2 supports BEM 1.4 while keeping the legacy Blender/EFMI character pipeline boundaries; authors must declare resource targets, LOD, platform and donor evidence. It does not reconstruct arbitrary source GUIs or guess vertex correspondence.
 
 ```powershell
 BetterEndfield.BemConverter.exe new-project editable/project.json --mode pack -o character.bemproj.json
