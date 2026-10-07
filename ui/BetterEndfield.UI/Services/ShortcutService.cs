@@ -50,6 +50,7 @@ internal static class ShortcutService
         }
         else if (loaderMode.Equals("injector", StringComparison.OrdinalIgnoreCase))
         {
+            InjectorLaunchGuard.EnsureAllowed(gamePath);
             injectorPath = Path.GetFullPath(injectorPath.Trim());
             if (!File.Exists(injectorPath))
             {

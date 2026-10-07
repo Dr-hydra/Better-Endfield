@@ -151,6 +151,7 @@ public sealed partial class MainWindow : Window
 
     private void RegisterReactiveControls(DependencyObject root)
     {
+        if (root is Views.SteamIntegrationPage) return;
         int count = VisualTreeHelper.GetChildrenCount(root);
         for (int index = 0; index < count; index++)
         {
@@ -269,6 +270,7 @@ public sealed partial class MainWindow : Window
             UpdatePathStatusText();
             await RefreshXInputStatusAsync();
             RefreshRuntimeStatus();
+            InitializeSteamIntegration();
             _statusTimer.Start();
         }
         catch (Exception exception)
@@ -1972,6 +1974,8 @@ public sealed partial class MainWindow : Window
         LaunchProgressRing.IsActive = true;
         try
         {
+            if (!GetSelectedLoaderMode().Equals("xinput", StringComparison.OrdinalIgnoreCase))
+                InjectorLaunchGuard.EnsureAllowed(GamePathBox.Text.Trim());
             if (!await SaveAsync(showSuccess: false))
             {
                 return;

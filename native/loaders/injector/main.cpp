@@ -2,6 +2,7 @@
 #include <TlHelp32.h>
 
 #include "BetterEndfield/BootstrapConfig.h"
+#include "launch_guard.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -534,6 +535,13 @@ int wmain(int argc, wchar_t* argv[]) {
     if (game_path.empty() || !std::filesystem::is_regular_file(game_path)) {
         std::wcerr << L"Usage: BetterEndfield.Injector.exe --game <Endfield.exe>\n";
         return 2;
+    }
+
+    if (better_endfield::HasLocalXInputProxy(game_path)) {
+        std::wcerr << L"xinput1_4.dll already exists in the game directory. "
+                      L"Use the XInput auto-loader, or uninstall the BE proxy before "
+                      L"using this injector. Other loaders must be resolved separately.\n";
+        return 6;
     }
 
     const std::filesystem::path loader_path = ExecutablePath();

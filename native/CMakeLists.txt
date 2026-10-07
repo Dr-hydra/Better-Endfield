@@ -21,6 +21,7 @@ set(BETTER_ENDFIELD_STAGE_DIR "${CMAKE_BINARY_DIR}/stage/$<CONFIG>")
 set(BETTER_ENDFIELD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shared/include")
 
 add_executable(BetterEndfield.FirstPersonMeshTests EXCLUDE_FROM_ALL tests/first_person_mesh_tests.cpp)
+add_executable(BetterEndfield.InjectorLaunchGuardTests EXCLUDE_FROM_ALL tests/injector_launch_guard_tests.cpp)
 
 add_subdirectory(
     "${CMAKE_CURRENT_SOURCE_DIR}/shared/third_party/minhook"

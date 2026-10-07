@@ -2110,6 +2110,8 @@
                                     </StackPanel>
                                 </Border>
 
+                                <views:SteamIntegrationPage x:Name="SteamIntegrationPage" />
+
                                 <Border Style="{StaticResource SectionStyle}">
                                     <StackPanel Spacing="16">
                                         <TextBlock x:Name="LoaderModeSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="加载方式" />

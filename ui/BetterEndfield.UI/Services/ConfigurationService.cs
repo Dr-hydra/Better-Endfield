@@ -16,6 +16,7 @@ internal static class ConfigurationService
     };
 
     private static readonly SemaphoreSlim NativeConfigurationWriteLock = new(1, 1);
+    private static readonly SemaphoreSlim AppSettingsWriteLock = new(1, 1);
 
     public static string SettingsDirectory { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -78,9 +79,20 @@ internal static class ConfigurationService
 
     public static async Task SaveAppSettingsAsync(AppSettings settings)
     {
-        Directory.CreateDirectory(SettingsDirectory);
-        await using FileStream stream = File.Create(SettingsPath);
-        await JsonSerializer.SerializeAsync(stream, settings, JsonOptions);
+        await AppSettingsWriteLock.WaitAsync();
+        string temporary = SettingsPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            Directory.CreateDirectory(SettingsDirectory);
+            string json = JsonSerializer.Serialize(settings, JsonOptions);
+            await File.WriteAllTextAsync(temporary, json, new UTF8Encoding(false));
+            File.Move(temporary, SettingsPath, true);
+        }
+        finally
+        {
+            try { if (File.Exists(temporary)) File.Delete(temporary); }
+            finally { AppSettingsWriteLock.Release(); }
+        }
     }
 
     /// <summary>

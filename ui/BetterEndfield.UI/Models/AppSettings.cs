@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace BetterEndfield.UI.Models;
 
 internal sealed class AppSettings
@@ -15,4 +18,9 @@ internal sealed class AppSettings
     public bool GachaEnabled { get; set; } = false;
 
     public string DisclaimerAcceptedVersion { get; set; } = string.Empty;
+
+    public SteamIntegrationSettings SteamIntegration { get; set; } = new();
+
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? AdditionalSettings { get; set; }
 }

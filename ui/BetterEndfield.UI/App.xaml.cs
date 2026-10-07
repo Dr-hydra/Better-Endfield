@@ -34,6 +34,13 @@ public partial class App : Application
             _window.Activate();
             return;
         }
+        int steamPreviewIndex = Array.IndexOf(arguments, "--steam-setup-preview");
+        if (steamPreviewIndex >= 0)
+        {
+            _window = new Views.SteamIntegrationPreviewWindow(steamPreviewIndex + 1 < arguments.Length ? arguments[steamPreviewIndex + 1] : null);
+            _window.Activate();
+            return;
+        }
         if (TryRunOmniMixCommand(arguments))
         {
             return;
