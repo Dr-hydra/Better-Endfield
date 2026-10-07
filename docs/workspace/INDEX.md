@@ -29,6 +29,7 @@
 | [Better Endfield 3.5.1](releases/3.5.1/RELEASE_3_5_1.md) | 双端模型悬浮窗、Android全局FOV及发布验证 | 发布记录 | 1.5.3 |
 | [Better Endfield 3.5.2](releases/3.5.2/RELEASE_3_5_2.md) | BEM 1.4、武器/大招资源、热切换、PCUI输入、Workshop与桌面布局 | 发布记录 | 1.5.3 |
 | [Better Endfield 3.5.3](releases/3.5.3/RELEASE_3_5_3.md) | Windows Steam 国服启动预览、重复注入保护与独立 BEM GUI | 发布记录 | not_applicable |
+| [Better Endfield 3.5.4](releases/3.5.4/RELEASE_3_5_4.md) | Android 场景纹理、首次热切换、更新后自动连接与 PCUI 输入修正；本地小范围测试，无下载资产 | 草稿，尚未正式发布 | 1.5.3 |
 
 ## 邻接文档与分发来源
 
