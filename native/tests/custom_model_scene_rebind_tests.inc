@@ -24,6 +24,7 @@ void SceneRebindTests(const std::filesystem::path& package_path) {
     for (auto& field:g_lod.fields) field.resolved.field_info=&field;
     g_model_build_mesh=[](const BemComponent&,void* donor,void*& mesh,void* poses)->bool {
         ++fake_mesh_builds;fake_build_donors.push_back(donor);
+        if (std::exchange(fail_next_mesh_build,false)) return false;
         auto* built=static_cast<Fake*>(NewAsset(g_material_class.class_info));if (!built) return false;
         built->name="scene-generated-"+std::to_string(fake_mesh_builds);built->poses=poses;mesh=built;return true;
     };
@@ -32,7 +33,7 @@ void SceneRebindTests(const std::filesystem::path& package_path) {
 
     for (bool static_mesh:{false,true}) {
         g_completed.clear();g_model_targets.clear();g_payload_cache.clear();captured_logs.clear();
-        g_instance_rebind_queue.clear();g_model_frame_budget=FrameBudget{};
+        ResetInstanceRebinds();g_model_frame_budget=FrameBudget{};fail_next_mesh_build=false;
         g_hot_switch_runtime=true;g_instance_rebind_handled=g_model_revision;
         auto payload=std::make_shared<BemPocData>(fixture);payload->textures.clear();
         payload->payload_source.reset();payload->loading_optimization=false;
@@ -201,9 +202,84 @@ void SceneRebindTests(const std::filesystem::path& package_path) {
             Check(latest,"revision arriving mid-queue left a verified clone on an older selection");
         }
         Check(g_model_jobs.empty() && g_model_targets.size()==(static_mesh?1u:2u),"natural clones leaked into targets or competing Jobs survived");
+        if (static_mesh) {
+            // Exercise the actual ProcessResource failure/pump boundary: failed
+            // roots retry with backoff, do not block healthy work, and retain an
+            // unresolved lease after the per-revision attempt bound is reached.
+            const auto queue=[&](Fake* root) {
+                auto pending=std::make_unique<PendingInstanceRebind>();Check(pending->Set(root),"retry root handle failed");
+                pending->adapter=&owner->adapter;pending->adapter_owner=owner;pending->revision=g_model_revision;
+                pending->selection_key=ActiveSelectionKey(owner->adapter);
+                g_instance_rebind_queue.push_back(std::move(pending));
+            };
+            const auto pump=[&] {++fake_frame;ConstructionScope scope;PumpInstanceRebind(fake_frame);};
+            ResetInstanceRebinds();g_pending_model_resources.clear();
+            EnabledMod retry=d;retry.selection_key="scene-retry";cache(retry);g_registry.enabled={retry};++g_model_revision;
+            g_instance_rebind_handled=g_model_revision;g_instance_rebind_revision=g_model_revision;
+            queue(clones[0].root);const auto previous_mesh=mesh(clones[0].renderers[0]);
+            fail_next_mesh_build=true;pump();
+            Check(mesh(clones[0].renderers[0])==previous_mesh && g_instance_rebind_queue.size()==1 &&
+                g_instance_rebind_queue.front()->attempts==1 && g_instance_rebind_queue.front()->next_retry_ms>GetTickCount64(),
+                "failed instance was dropped, mutated or retried without backoff");
+            const auto builds_before_backoff=fake_mesh_builds;pump();
+            Check(fake_mesh_builds==builds_before_backoff,"cooldown attempted another Mesh build");
+            queue(prefab.root);pump();
+            Check(IsCompletedResource(owner->adapter,prefab.root,retry.selection_key) && g_instance_rebind_queue.size()==1,
+                "a waiting retry blocked a healthy template");
+            g_instance_rebind_queue.front()->next_retry_ms=0;pump();
+            Check(g_instance_rebind_queue.empty() && g_failed_instance_rebinds.empty() &&
+                IsCompletedResource(owner->adapter,clones[0].root,retry.selection_key),"transient instance failure did not recover");
+            EnabledMod refused_mod=retry;refused_mod.selection_key="scene-retry-rejected";cache(refused_mod);g_registry.enabled={refused_mod};++g_model_revision;
+            g_instance_rebind_handled=g_model_revision;g_instance_rebind_revision=g_model_revision;queue(clones[0].root);
+            const auto retained_mesh=mesh(clones[0].renderers[0]);
+            for (unsigned attempt=0;attempt<kInstanceRebindAttempts;++attempt) {
+                g_instance_rebind_queue.front()->next_retry_ms=0;fail_next_mesh_build=true;pump();
+            }
+            Check(g_instance_rebind_queue.empty() && g_failed_instance_rebinds.size()==1 && InstanceRebindOutstanding() &&
+                mesh(clones[0].renderers[0])==retained_mesh,"exhausted retries lost their unresolved state or previous binding");
+            const auto bounded_builds=fake_mesh_builds;pump();Check(fake_mesh_builds==bounded_builds,"exhausted request rebuilt indefinitely");
+            // A separate, unchanged role must remain exhausted when this role
+            // receives a new selection (device: Liino revived Pelica's request).
+            auto peer_owner=std::make_shared<OwnedCharacterAdapter>();peer_owner->id="chr_retry_peer";
+            peer_owner->world="retry_peer_world";peer_owner->ui="retry_peer_ui";
+            peer_owner->adapter={peer_owner->id.c_str(),peer_owner->world.c_str(),peer_owner->ui.c_str(),"",false,{}};
+            EnabledMod peer{&peer_owner->adapter,package_path,"default",false,false,"unchanged-peer-selection",""};
+            auto* peer_root=GameObject(peer_owner->world);
+            auto peer_failure=std::make_unique<PendingInstanceRebind>();Check(peer_failure->Set(peer_root),"peer failure root handle failed");
+            peer_failure->adapter=&peer_owner->adapter;peer_failure->adapter_owner=peer_owner;
+            peer_failure->selection_key=peer.selection_key;peer_failure->attempts=kInstanceRebindAttempts;peer_failure->revision=g_model_revision;
+            const auto peer_revision=peer_failure->revision;g_failed_instance_rebinds.push_back(std::move(peer_failure));
+            EnabledMod latest=refused_mod;latest.selection_key="scene-retry-latest";cache(latest);g_registry.enabled={latest,peer};++g_model_revision;
+            g_instance_rebind_handled=g_model_revision;pump();
+            Check(g_instance_rebind_queue.empty() && g_failed_instance_rebinds.size()==1 &&
+                g_failed_instance_rebinds.front()->Get()==peer_root && g_failed_instance_rebinds.front()->attempts==kInstanceRebindAttempts &&
+                g_failed_instance_rebinds.front()->revision==peer_revision && InstanceRebindExhausted(peer_root) &&
+                !InstanceRebindExhausted(clones[0].root),"another role's edit replayed or reset an unchanged failed request");
+            g_failed_instance_rebinds.clear();
+            Check(!InstanceRebindOutstanding() && IsCompletedResource(owner->adapter,clones[0].root,latest.selection_key),
+                "new revision did not retry an exhausted root with the latest selection");
+            // A normal later resource delivery can also resolve a refusal;
+            // otherwise a destroyed native root must release its strong handle.
+            g_registry.enabled={refused_mod};++g_model_revision;g_instance_rebind_handled=g_model_revision;
+            g_instance_rebind_revision=g_model_revision;queue(clones[0].root);
+            for (unsigned attempt=0;attempt<kInstanceRebindAttempts;++attempt) {
+                g_instance_rebind_queue.front()->next_retry_ms=0;fail_next_mesh_build=true;pump();
+            }
+            {ConstructionScope scope;Check(ProcessResource(clones[0].root,scope),"normal delivery failed to repair the rejected root");}
+            g_failed_instance_prune_ms=0;pump();Check(!InstanceRebindOutstanding(),"successful normal delivery retained a failed lease");
+            g_registry.enabled={latest};++g_model_revision;g_instance_rebind_handled=g_model_revision;
+            g_instance_rebind_revision=g_model_revision;queue(clones[0].root);
+            for (unsigned attempt=0;attempt<kInstanceRebindAttempts;++attempt) {
+                g_instance_rebind_queue.front()->next_retry_ms=0;fail_next_mesh_build=true;pump();
+            }
+            clones[0].root->alive=false;g_failed_instance_prune_ms=0;pump();
+            Check(!InstanceRebindOutstanding(),"destroyed native root kept a failed lease");
+            clones[0].root->alive=true;
+            std::cout<<"PASS instance retry: delayed transient recovery, healthy work fairness, attempt bound, unresolved lease, superseding revision, normal delivery and destroyed-root cleanup\n";
+        }
         {ConstructionScope scope;CancelModelJobs();}
         g_model_loader->Shutdown();g_model_loader.reset();
-        g_instance_rebind_queue.clear();g_model_targets.clear();g_completed.clear();g_original_mesh_pins.clear();
+        ResetInstanceRebinds();g_model_targets.clear();g_completed.clear();g_original_mesh_pins.clear();
         fake_scene_renderers=nullptr;
 
         // A duplicate delivery with a changed binding has no authority to use

@@ -1403,11 +1403,13 @@ void ResourceTypeBoundaryTests(const std::filesystem::path& package_path) {
 }
 
 #include "custom_model_scene_rebind_tests.inc"
+#include "custom_model_instance_lineage_tests.inc"
 #include "custom_model_first_enable_tests.inc"
 #include "custom_model_android_discovery_tests.inc"
 #include "custom_model_android_legacy_discovery_tests.inc"
 
 int main(int argc,char** argv) {
+    if(argc==2 && std::string_view(argv[1])=="--instance-lineage") {InstanceLineageTests();return 0;}
     if(argc==4 && std::string_view(argv[1])=="--android-discovery") {AndroidDiscoveryTests(argv[2],argv[3]);AndroidLegacyDiscoveryTests(argv[2]);return 0;}
     if(argc==4 && std::string_view(argv[1])=="--first-enable") {FirstEnableTests(argv[2],argv[3]);return 0;}
     if(argc==3 && std::string_view(argv[1])=="--scene-rebind") {SceneRebindTests(argv[2]);return 0;}
@@ -1465,6 +1467,6 @@ int main(int argc,char** argv) {
     if(argc==4 && std::string_view(argv[1])=="--probe-dll") { ProbeDllStartup(argv[2],argv[3]); return 0; }
     if (argc==3 && std::string_view(argv[1])=="--probe") { ProbeTests(argv[2]); return 0; }
     Check(argc>=2,"pass synthetic BEMv1 package path");
-    ParserTests(argv[1]); RegistryTests(argv[1]); HotSwitchTests(argv[1]); StaticResourceTests();ResourceTypeBoundaryTests(argv[1]);SceneRebindTests(argv[1]);
+    ParserTests(argv[1]); RegistryTests(argv[1]); HotSwitchTests(argv[1]); StaticResourceTests();ResourceTypeBoundaryTests(argv[1]);SceneRebindTests(argv[1]);InstanceLineageTests();
     std::cout<<"PASS: BEMv1 parser, exact donor identity, material isolation, rollback, ownership, appearance/LOD routing\n";
 }

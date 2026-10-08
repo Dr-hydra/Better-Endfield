@@ -2751,6 +2751,17 @@ void* ResolveOriginalMaterials(const SavedOriginalBinding& original,void* type_t
     return result;
 }
 bool UseSavedOriginal(void* asset,PreparedBinding& binding,bool require_materials,bool restoring_original) {
+    const auto refuse=[&](const std::string& reason) {
+        if (g_instance_rebind_active) Log("Hot switch Original binding refused resource="+ObjectName(asset)+
+            " receiver="+binding.receiver_key.path+" reason="+reason);
+        return false;
+    };
+    const bool owns_record=std::any_of(g_completed.begin(),g_completed.end(),[&](const auto& record) {
+        GenericMatching::ReceiverKey key;
+        return record.root.Is(asset) && MakeReceiverKey(*record.adapter,asset,binding.renderer,key) &&
+            (binding.receiver_key.character.empty() || binding.receiver_key==key) &&
+            std::any_of(record.bindings.begin(),record.bindings.end(),[&](const auto& old) {return old.receiver_key==key;});
+    });
     for (auto record=g_completed.rbegin();record!=g_completed.rend();++record) {
         GenericMatching::ReceiverKey key;
         if (!MakeReceiverKey(*record->adapter,asset,binding.renderer,key) ||
@@ -2758,6 +2769,7 @@ bool UseSavedOriginal(void* asset,PreparedBinding& binding,bool require_material
         for (const auto& old:record->bindings) {
             if (!old.original || old.receiver_key!=key) continue;
             const bool same_root=record->root.Is(asset);
+            if (owns_record && !same_root) continue;
             if (!same_root && !old.mesh.Is(binding.original_mesh)) continue;
             // On another root (a scene instance cloned from this template) the
             // game may give the instance its own material copies. A Mesh this
@@ -2790,34 +2802,41 @@ bool UseSavedOriginal(void* asset,PreparedBinding& binding,bool require_material
             if (!old.original->bone_paths.empty()) {
                 BE_ResolvedClassV1 transform{};
                 if (!g_host->resolve_class || g_host->resolve_class(g_host->context,"UnityEngine.CoreModule.dll",
-                    "UnityEngine","Transform",&transform)!=BE_Result_Ok || !transform.type_object) return false;
+                    "UnityEngine","Transform",&transform)!=BE_Result_Ok || !transform.type_object) return refuse("Transform-type-unavailable");
                 bool inactive=true; void* args[]{transform.type_object,&inactive};
                 void* transforms=Invoke(Contract("game_object.renderers"),asset,args);
                 const int count=ArrayLength(transforms);
-                if (count<0 || count>8192) return false;
+                if (count<0 || count>8192) return refuse("Transform-count-invalid");
+                // A pooled UI prefab may contain unrelated helper/decorative
+                // transforms with duplicate or transient paths. Restoration
+                // only needs the paths captured in this Original palette.
+                const std::unordered_set<std::string> wanted(old.original->bone_paths.begin(),old.original->bone_paths.end());
                 std::unordered_map<std::string,void*> paths;
                 for (int i=0;i<count;++i) {
                     void* bone=ArrayValue(transforms,i);
                     std::string path;
-                    if (!bone || !ResourceRelativePath(asset,bone,path) || !paths.emplace(path,bone).second) return false;
+                    if (!bone || !IsNativeObjectAlive(bone) || !ResourceRelativePath(asset,bone,path) || !wanted.contains(path)) continue;
+                    if (!paths.emplace(path,bone).second)
+                        return refuse("Original-bone-path-ambiguous path="+path);
                 }
                 void* mapped=NewArrayLike(binding.original_bones,static_cast<int>(old.original->bone_paths.size()));
-                if (!mapped) return false;
+                if (!mapped) return refuse("bone-array-allocation-failed");
                 for (size_t i=0;i<old.original->bone_paths.size();++i) {
-                    const auto found=paths.find(old.original->bone_paths[i]);
-                    if (found==paths.end() || !SetArrayValue(mapped,static_cast<int>(i),found->second)) return false;
+                    const auto& path=old.original->bone_paths[i];
+                    const auto found=paths.find(path);
+                    if (found==paths.end() || !SetArrayValue(mapped,static_cast<int>(i),found->second)) return refuse("Original-bone-path-unavailable path="+path);
                 }
                 binding.donor_bones=mapped;
                 auto local_original=std::make_shared<SavedOriginalBinding>();
                 local_original->CopyIdentity(*old.original);
-                if (!local_original->mesh.Is(binding.donor_mesh) || !local_original->bones.Set(mapped)) return false;
+                if (!local_original->mesh.Is(binding.donor_mesh) || !local_original->bones.Set(mapped)) return refuse("local-Original-capture-failed");
 #if defined(__ANDROID__)
                 local_original->change_shadow=old.original->change_shadow; local_original->shadow=old.original->shadow;
-                if (!local_original->shadow_mesh.Set(old.original->shadow_mesh.Get())) return false;
+                if (!local_original->shadow_mesh.Set(old.original->shadow_mesh.Get())) return refuse("Original-shadow-unavailable");
 #endif
                 binding.saved_original=std::move(local_original);
             }
-            if (!binding.donor_bones && !IsStaticRenderer(binding.renderer)) return false;
+            if (!binding.donor_bones && !IsStaticRenderer(binding.renderer)) return refuse("Original-bones-unavailable");
             return true;
         }
     }
@@ -3110,6 +3129,17 @@ bool ReadGenericPristineMesh(const CharacterAdapter& adapter,void* asset,
     const GenericRendererCandidate& candidate,GenericMatching::MeshIdentity& identity) {
     using Origin=GenericMatching::DonorOrigin;
     identity={};void* pristine=candidate.mesh;bool known_generated=false;
+    // A receiver's own completed record is stronger evidence than another
+    // template/clone sharing an unchanged Mesh. Retired records must not veto it.
+    const bool owns_record=std::any_of(g_completed.begin(),g_completed.end(),[&](const auto& record) {
+        return SameAdapter(*record.adapter,adapter) && record.root.Is(asset) &&
+            std::any_of(record.bindings.begin(),record.bindings.end(),[&](const auto& binding) {
+                return binding.receiver_key==candidate.key;
+            });
+    });
+    bool saw_completed=false;
+    Origin unavailable_origin=Origin::Unavailable;
+    std::string unavailable_detail="completed Mesh has no verified Original lineage";
     auto refuse=[&](Origin origin,const char* detail) {
         identity={};identity.origin=origin;identity.detail=detail;return false;
     };
@@ -3122,9 +3152,11 @@ bool ReadGenericPristineMesh(const CharacterAdapter& adapter,void* asset,
     for (const auto& record:g_completed) if (SameAdapter(*record.adapter,adapter)) for (const auto& old:record.bindings) {
         if (old.receiver_key!=candidate.key) continue;
         const bool same_root=record.root.Is(asset);
+        if (owns_record && !same_root) continue;
         const bool same_mesh=old.mesh.Is(candidate.mesh);
         void* saved=old.original?old.original->ResolveMesh(candidate.mesh):nullptr;
         if (!same_root && !same_mesh) continue;
+        saw_completed=true;
         if (same_root && !same_mesh && !same_object(saved,candidate.mesh))
             return refuse(Origin::Unavailable,!old.original?
                 "completed receiver holds an unknown Mesh and no Original was saved":
@@ -3146,24 +3178,41 @@ bool ReadGenericPristineMesh(const CharacterAdapter& adapter,void* asset,
             // Another root: a different generation may be the exact owner.
             // Unknown third-party bindings never become pristine by name.
             if (!same_root && !old.generated_mesh) {
-                if (count!=static_cast<int>(old.materials.size()))
-                    return refuse(Origin::Unavailable,"clone material count differs from its completed generation");
-                continue;
+                // This query identifies geometry only. An exact saved Original
+                // Mesh remains pristine when the game gives a clone different
+                // material slots; UseSavedOriginal validates material ownership
+                // separately before a build or restoration can borrow them.
+                if (!same_object(saved,candidate.mesh)) {
+                    unavailable_detail=count!=static_cast<int>(old.materials.size())?
+                        "clone material count differs from its completed generation":
+                        "clone materials do not identify a completed generation";
+                    continue;
+                }
             }
             // A Mesh this module generated is held by no third party: on a
             // natural clone it proves the generation even when the game gave
             // the instance its own material copies.
             LogGenericLineageNote(candidate.key,same_root?
                 "receiver materials changed after commit; Mesh lineage keeps the saved Original":
-                "clone materials differ; generated Mesh lineage keeps the saved Original");
+                old.generated_mesh?"clone materials differ; generated Mesh lineage keeps the saved Original":
+                "clone materials changed; exact Original Mesh identifies geometry only");
         }
         known_generated=old.generated_mesh || !old.materials.empty();
-        if (!old.original) return refuse(Origin::CompletedWithoutOriginal,
-            "completed without a saved Original (hot switch was off at that commit)");
-        if (!saved || !IsNativeObjectAlive(saved)) return refuse(Origin::Unavailable,"saved Original Mesh is no longer alive");
+        if (!old.original) {
+            unavailable_origin=Origin::CompletedWithoutOriginal;
+            unavailable_detail="completed without a saved Original (hot switch was off at that commit)";
+            if (same_root) return refuse(unavailable_origin,unavailable_detail.c_str());
+            continue;
+        }
+        if (!saved || !IsNativeObjectAlive(saved)) {
+            unavailable_detail="saved Original Mesh is no longer alive";
+            if (same_root) return refuse(Origin::Unavailable,unavailable_detail.c_str());
+            continue;
+        }
         if (identity.mesh && identity.mesh!=saved) return refuse(Origin::Ambiguous,"completed generations claim different Originals");
         identity.mesh=saved;pristine=saved;
     }
+    if (saw_completed && !identity.mesh) return refuse(unavailable_origin,unavailable_detail.c_str());
     if (!pristine || !IsNativeObjectAlive(pristine)) return refuse(Origin::Unavailable,"receiver Mesh missing or not alive");
     if (!ReadGenericMeshIdentity(pristine,known_generated?Origin::SavedOriginal:Origin::Pristine,identity)) {
         identity.detail="Mesh identity unreadable (name/sub-mesh/index count)";return false;
@@ -3430,8 +3479,12 @@ bool PrepareDisabledResource(void* asset,const CharacterAdapter* adapter,std::ve
         binding.original_mesh=GetRendererMesh(binding.renderer);
         binding.original_materials=Invoke(Contract("renderer.get_shared_materials"),binding.renderer,nullptr);
         binding.original_bones=GetRendererBones(binding.renderer);
-        if (!GetRendererEnabled(binding.renderer,binding.original_enabled) || !UseSavedOriginal(asset,binding,true,true) ||
-            !binding.saved_original) return false;
+        if (!GetRendererEnabled(binding.renderer,binding.original_enabled)) {
+            if (g_instance_rebind_active) Log("Hot switch Original restore refused resource="+ObjectName(asset)+" receiver="+key.path+" reason=renderer-state-unavailable");return false;
+        }
+        if (!UseSavedOriginal(asset,binding,true,true) || !binding.saved_original) {
+            if (g_instance_rebind_active) Log("Hot switch Original restore refused resource="+ObjectName(asset)+" receiver="+key.path+" reason=saved-binding-unavailable");return false;
+        }
         binding.custom_mesh=DonorMesh(binding); binding.custom_materials=DonorMaterials(binding);
         binding.custom_bones=DonorBones(binding); binding.custom_enabled=binding.donor_enabled;
         for (int b=0;b<ArrayLength(binding.custom_bones);++b)
@@ -3450,6 +3503,9 @@ bool PrepareDisabledResource(void* asset,const CharacterAdapter* adapter,std::ve
 }
 bool RestoreDisabledResource(void* asset,std::string_view name,ConstructionScope& construction) {
     if (!IsGameObjectResource(asset) || !g_hot_switch_runtime.load()) return false;
+    const auto refuse=[&](const char* reason) {
+        if (g_instance_rebind_active) Log("Hot switch disable preparation refused resource="+ObjectName(asset)+" reason="+reason);return false;
+    };
     name=ResourceBaseName(name);
     const CharacterAdapter* adapter=nullptr;
     for (auto record=g_completed.rbegin();record!=g_completed.rend();++record) {
@@ -3472,11 +3528,11 @@ bool RestoreDisabledResource(void* asset,std::string_view name,ConstructionScope
         }
         if (adapter) break;
     }
-    if (!adapter) return false;
+    if (!adapter) return refuse("completed-owner-unavailable");
     std::vector<PreparedBinding> bindings;
-    if (!PrepareDisabledResource(asset,adapter,bindings)) return false;
+    if (!PrepareDisabledResource(asset,adapter,bindings)) return refuse("original-bindings-unavailable");
     CompletedResource completed;
-    if (!RememberResource(*adapter,asset,bindings,completed) || construction.failed) return false;
+    if (!RememberResource(*adapter,asset,bindings,completed) || construction.failed) return refuse("original-record-capture-failed");
     auto* transaction=&bindings;
 #if defined(__ANDROID__)
     void* paired_ui_asset=nullptr; void* handle=nullptr; uint32_t handle_root=0;
@@ -3484,14 +3540,14 @@ bool RestoreDisabledResource(void* asset,std::string_view name,ConstructionScope
     CompletedResource paired_completed; std::vector<PreparedBinding> ui_bindings,paired_transaction;
     if (!adapter->explicit_resource && name==adapter->world_resource) {
         paired_ui_asset=RootTemporary(betterendfield::AndroidLoadUiDonor(adapter->ui_resource,handle,handle_root));
-        if (!paired_ui_asset) return false;
+        if (!paired_ui_asset) return refuse("paired-UI-donor-unavailable");
         bool paired_modified=false;
         if (!IsCompletedResource(*adapter,paired_ui_asset,"")) for (const auto& old:g_completed)
             if (SameAdapter(*old.adapter,*adapter) && !old.selection_key.empty() &&
                 (old.root.Is(paired_ui_asset) || IsCompletedResource(*adapter,paired_ui_asset,old.selection_key))) { paired_modified=true; break; }
         if (paired_modified) {
             if (!PrepareDisabledResource(paired_ui_asset,adapter,ui_bindings) ||
-                !RememberResource(*adapter,paired_ui_asset,ui_bindings,paired_completed) || construction.failed) return false;
+                !RememberResource(*adapter,paired_ui_asset,ui_bindings,paired_completed) || construction.failed) return refuse("paired-UI-original-restore-unavailable");
             paired_transaction=bindings; paired_transaction.insert(paired_transaction.end(),ui_bindings.begin(),ui_bindings.end());
             transaction=&paired_transaction;
         }
@@ -3725,7 +3781,7 @@ void __fastcall ResourcePump(void* method) {
         const bool ready=g_lod.MaintainAndroid(stop,g_registry);
         const bool unbinding_pending=!stop && g_android_budget_policy.HasOwnedOverride() &&
             g_hot_switch_runtime.load() && (!g_pending_model_resources.empty() ||
-                !g_instance_rebind_queue.empty() || g_instance_rebind_handled!=g_model_revision);
+                InstanceRebindOutstanding() || g_instance_rebind_handled!=g_model_revision);
         const bool texture_ready=TickAndroidTextureBudget(!stop &&
             ((g_lod.active && g_lod.applied) || unbinding_pending),stop);
 #else
@@ -3891,6 +3947,7 @@ BE_Result BE_CALL InitializeResourceModule(const BE_HostApiV1* host) {
         g_pump_thread.store(0);g_model_frame=UINT64_MAX;g_model_foreground_streak=0;g_model_pump_ms.store(0);
         g_sync_deliveries.store(0);g_model_deliveries_registered.store(0);g_model_deliveries_dropped.store(0);
         g_model_frame_budget=FrameBudget{FrameBudget::Config{32*kLoadingMiB,256*kLoadingMiB,8,2,std::chrono::milliseconds(2)}};
+        ResetInstanceRebinds();
 #if defined(__ANDROID__)
         g_android_texture_diagnostics={};
         InitializeAndroidTextureBudget();
@@ -4011,8 +4068,7 @@ void BE_CALL ShutdownResourceModule() {
     if (g_model_jobs.empty()) { g_model_loader.reset(); g_texture_streamer.reset(); }
     // Pending scene work owns strong roots. It belongs to this module lifetime,
     // never to a later start, even though published bindings stay in the game.
-    g_instance_rebind_queue.clear();g_pending_model_resources.clear();
-    g_instance_rebind_handled=0;g_instance_scan_retry_ms=0;
+    ResetInstanceRebinds();g_pending_model_resources.clear();
     g_payload_cache.clear(); g_completed.clear(); g_lod.pipeline.Reset();
     g_generated_texture_identity.clear(); g_generated_texture_order.clear();
     g_model_assets.clear();g_model_plans.clear();g_model_targets.clear();g_model_file_leases.clear();

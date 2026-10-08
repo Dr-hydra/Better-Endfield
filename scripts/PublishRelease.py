@@ -30,6 +30,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", required=True)
     parser.add_argument("--tag", required=True)
+    parser.add_argument("--release-id", type=int, help="Upload into an existing draft by id (drafts are not always visible through the tag endpoint)")
     parser.add_argument("--target", required=True)
     parser.add_argument("--name", required=True)
     parser.add_argument("--notes-file", type=Path, required=True)
@@ -59,13 +60,20 @@ def main():
             if not any(name.startswith(prefix) and name.endswith(".zip") for name in names):
                 raise ValueError("Missing creator release asset: " + prefix)
     body = args.notes_file.read_text(encoding="utf-8-sig")
-    try:
-        release = api(base + "/releases/tags/" + urllib.parse.quote(args.tag, safe=""))
-    except urllib.error.HTTPError as error:
-        if error.code != 404:
-            raise
-        release = api(base + "/releases", "POST", {"tag_name": args.tag, "target_commitish": args.target,
-                      "name": args.name, "body": body, "draft": True, "prerelease": False})
+    if args.release_id is not None:
+        if args.release_id <= 0:
+            raise ValueError("Release id must be positive")
+        release = api(base + "/releases/" + str(args.release_id))
+        if release["tag_name"] != args.tag:
+            raise ValueError("Existing release id does not match the requested tag")
+    else:
+        try:
+            release = api(base + "/releases/tags/" + urllib.parse.quote(args.tag, safe=""))
+        except urllib.error.HTTPError as error:
+            if error.code != 404:
+                raise
+            release = api(base + "/releases", "POST", {"tag_name": args.tag, "target_commitish": args.target,
+                          "name": args.name, "body": body, "draft": True, "prerelease": False})
     if not release["draft"]:
         raise RuntimeError("Refusing to replace assets of an already published release")
     release = api(release["url"], "PATCH", {"tag_name": args.tag, "name": args.name, "body": body, "target_commitish": args.target})

@@ -768,7 +768,26 @@ void RefreshModelTargetPriorities(uint64_t now) {
 // root/adapter records: re-enable those directly even though their Mesh is now
 // Original. Each root uses the synchronous transaction, one root per frame.
 uint64_t g_instance_rebind_handled=0;
-std::vector<std::unique_ptr<StrongReference>> g_instance_rebind_queue;
+struct PendingInstanceRebind {
+    StrongReference root;
+    const CharacterAdapter* adapter=nullptr;
+    std::shared_ptr<OwnedCharacterAdapter> adapter_owner;
+    std::string selection_key;
+    uint64_t revision=0,next_retry_ms=0;
+    unsigned attempts=0;
+    bool Set(void* object) {return root.Set(object);}
+    void* Get() const {return root.Get();}
+};
+std::vector<std::unique_ptr<PendingInstanceRebind>> g_instance_rebind_queue,g_failed_instance_rebinds;
+uint64_t g_instance_scan_retry_ms=0,g_instance_rebind_revision=0,g_failed_instance_prune_ms=0;
+constexpr unsigned kInstanceRebindAttempts=3;
+void ResetInstanceRebinds() {
+    g_instance_rebind_queue.clear();g_failed_instance_rebinds.clear();
+    g_instance_rebind_handled=0;g_instance_scan_retry_ms=0;g_instance_rebind_revision=0;g_failed_instance_prune_ms=0;
+}
+bool InstanceRebindOutstanding() {
+    return !g_instance_rebind_queue.empty() || !g_failed_instance_rebinds.empty();
+}
 bool ModelInstanceRebindPending(const CharacterAdapter& adapter) {
     for (const auto& pending:g_instance_rebind_queue) if (void* root=pending->Get()) {
         const auto name=ObjectName(root);const auto base=ResourceBaseName(name);
@@ -779,6 +798,12 @@ bool ModelInstanceRebindPending(const CharacterAdapter& adapter) {
 int32_t ModelInstanceId(void* object) {
     int32_t id=0;
     return object && IsNativeObjectAlive(object) && InvokeValue(Contract("object.instance_id"),object,nullptr,id)?id:0;
+}
+bool InstanceRebindExhausted(void* asset) {
+    const auto id=ModelInstanceId(asset);
+    return id && std::any_of(g_failed_instance_rebinds.begin(),g_failed_instance_rebinds.end(),[&](const auto& failed) {
+        return failed->adapter && failed->selection_key==ActiveSelectionKey(*failed->adapter) && ModelInstanceId(failed->Get())==id;
+    });
 }
 enum class ModelDiscoveryPlatform { Windows, Android };
 #if defined(__ANDROID__)
@@ -933,6 +958,8 @@ bool ScanSceneInstancesForRebind(ModelDiscoveryPlatform platform=kModelDiscovery
     std::unordered_map<int32_t,const CharacterAdapter*> stale;
     std::vector<std::pair<void*,const CharacterAdapter*>> restored_roots;
     for (const auto& record:g_completed) {
+        if (!g_pending_model_resources.empty() && !g_pending_model_resources.contains(record.adapter->world_resource) &&
+            !g_pending_model_resources.contains(record.adapter->ui_resource)) continue;
         const auto active=ActiveSelectionKey(*record.adapter);
         if (record.selection_key==active) continue;
         if (record.selection_key.empty()) {
@@ -960,6 +987,9 @@ bool ScanSceneInstancesForRebind(ModelDiscoveryPlatform platform=kModelDiscovery
     }
     std::unordered_set<int32_t> queued;
     for (const auto& pending:g_instance_rebind_queue) queued.insert(ModelInstanceId(pending->Get()));
+    // A permanently refused root gets a fresh attempt on a new selection,
+    // not every transient discovery retry of the same revision.
+    for (const auto& pending:g_failed_instance_rebinds) queued.insert(ModelInstanceId(pending->Get()));
     size_t found=0;
     const auto queue_root=[&](void* object,const CharacterAdapter& role) {
         if (!IsGameObjectResource(object)) return;
@@ -967,8 +997,10 @@ bool ScanSceneInstancesForRebind(ModelDiscoveryPlatform platform=kModelDiscovery
         if (base!=role.world_resource && base!=role.ui_resource) return;
         const int32_t id=ModelInstanceId(object);
         if (!id || queued.contains(id)) return;
-        auto reference=std::make_unique<StrongReference>();
+        auto reference=std::make_unique<PendingInstanceRebind>();
         if (!reference->Set(object)) return;
+        reference->adapter=&role;reference->adapter_owner=OwnAdapter(role);reference->revision=g_model_revision;
+        reference->selection_key=ActiveSelectionKey(role);
         queued.insert(id);
         // Keep synchronous rebinds and frame-sliced Jobs mutually exclusive
         // for this role in the revision, including restored templates.
@@ -1062,9 +1094,35 @@ bool ScanSceneInstancesForRebind(ModelDiscoveryPlatform platform=kModelDiscovery
     g_pending_model_resources=std::move(retry_resources);
     return g_pending_model_resources.empty();
 }
-uint64_t g_instance_scan_retry_ms=0;
 void PumpInstanceRebind(uint64_t frame) {
     if (!g_hot_switch_runtime.load()) return;
+    const auto now=GetTickCount64();
+    if (g_instance_rebind_revision!=g_model_revision) {
+        // An unrelated role edit is not a new request for an exhausted root.
+        for (auto failed=g_failed_instance_rebinds.begin();failed!=g_failed_instance_rebinds.end();) {
+            if ((*failed)->adapter && (*failed)->selection_key!=ActiveSelectionKey(*(*failed)->adapter)) {
+                g_instance_rebind_queue.push_back(std::move(*failed));failed=g_failed_instance_rebinds.erase(failed);
+            } else ++failed;
+        }
+        for (auto& pending:g_instance_rebind_queue) {
+            const auto selection=pending->adapter?ActiveSelectionKey(*pending->adapter):std::string{};
+            if (pending->selection_key!=selection) {
+                pending->selection_key=selection;pending->revision=g_model_revision;pending->attempts=0;pending->next_retry_ms=0;
+            }
+        }
+        g_instance_rebind_revision=g_model_revision;
+    }
+    // Exhausted requests retain their live roots as unresolved work, so a
+    // failed disable cannot release the texture-pool lease prematurely. Native
+    // destruction or a later normal successful delivery releases the record.
+    if (now>=g_failed_instance_prune_ms) {
+        std::erase_if(g_failed_instance_rebinds,[](const auto& failed) {
+            void* asset=failed->Get();
+            return !asset || !IsNativeObjectAlive(asset) ||
+                (failed->adapter && IsCompletedResource(*failed->adapter,asset,ActiveSelectionKey(*failed->adapter)));
+        });
+        g_failed_instance_prune_ms=now+1000;
+    }
     if (!g_instance_rebind_handled && g_pending_model_resources.empty()) {
         g_instance_rebind_handled=g_model_revision;return; // startup is not a switch
     }
@@ -1079,14 +1137,19 @@ void PumpInstanceRebind(uint64_t frame) {
         else g_instance_scan_retry_ms=GetTickCount64()+1000;
     }
     if (g_instance_rebind_queue.empty()) return;
+    const auto due=std::find_if(g_instance_rebind_queue.begin(),g_instance_rebind_queue.end(),[&](const auto& pending) {
+        return pending->next_retry_ms<=now;
+    });
+    if (due==g_instance_rebind_queue.end()) return;
     auto permit=g_model_frame_budget.TryBegin(frame,{0,1,true,false});
     if (!permit) return;
-    auto reference=std::move(g_instance_rebind_queue.front());
-    g_instance_rebind_queue.erase(g_instance_rebind_queue.begin());
+    auto reference=std::move(*due);
+    g_instance_rebind_queue.erase(due);
     void* asset=reference->Get();
     if (!asset || !IsNativeObjectAlive(asset)) return;
     const auto name=ObjectName(asset);
     bool ok=false;
+    ++reference->attempts;
     struct RebindFlag {RebindFlag(){g_instance_rebind_active=true;}~RebindFlag(){g_instance_rebind_active=false;}} flag;
     try {ConstructionScope scope;scope.delivery_mode="hot-switch-instance";ok=ProcessResource(asset,scope);}
     catch (const std::exception& error) {Log(std::string("Hot switch instance rebind failed: ")+error.what());}
@@ -1097,7 +1160,19 @@ void PumpInstanceRebind(uint64_t frame) {
         target.verified_selection=target.desired;target.failed_selection.clear();
         target.next_verify_ms=GetTickCount64()+g_model_verify_interval_ms;
     }
-    Log(std::string("Hot switch instance rebind ")+(ok?"committed":"refused")+" resource="+name);
+    const auto attempts=reference->attempts;
+    const auto request_revision=reference->revision;
+    if (!ok) {
+        if (attempts<kInstanceRebindAttempts) {
+            reference->next_retry_ms=GetTickCount64()+1000*attempts;
+            g_instance_rebind_queue.push_back(std::move(reference));
+        } else {
+            g_failed_instance_rebinds.push_back(std::move(reference));
+        }
+    }
+    Log(std::string("Hot switch instance rebind ")+(ok?"committed":"refused")+" resource="+name+
+        " attempt="+std::to_string(attempts)+" revision="+std::to_string(request_revision)+
+        (ok?"":attempts<kInstanceRebindAttempts?" retry=pending":" retry=exhausted; previous bindings retained"));
 }
 void PumpModelJobs(uint64_t frame) {
     if (g_model_frame==frame || !g_model_loader) return;
@@ -1143,6 +1218,7 @@ void PumpModelJobs(uint64_t frame) {
     // Only registered receivers are queried; no scene-wide discovery/scan.
     for (auto& target:g_model_targets) {
         void* asset=target.root.Get();const EnabledMod* mod=nullptr;
+        if (InstanceRebindExhausted(asset)) continue;
         for (const auto& candidate:g_registry.enabled) if (SameAdapter(*candidate.adapter,*target.adapter)) {mod=&candidate;break;}
         if (!mod) {
             target.verified_selection.clear();
