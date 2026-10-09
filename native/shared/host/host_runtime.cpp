@@ -13,14 +13,14 @@
 #include <cstring>
 #include <thread>
 
-namespace BetterEndfield::Host {
+namespace BetterEndfieldNext::Host {
 BE_Result HostRuntime::RetireHooks(const std::string& module_id) {
     return hooks_ ? hooks_->RetireModule(module_id) : BE_Result_NotReady;
 }
 
 // Optional named capability leaves the BE_HostApiV1 layout unchanged. A module
 // must pin its DLL and stop accepting work before using this lifecycle path.
-BE_EXPORT BE_Result BE_CALL BetterEndfield_RetireModuleHooksV1(void* context, const char* module_id) {
+BE_EXPORT BE_Result BE_CALL BetterEndfieldNext_RetireModuleHooksV1(void* context, const char* module_id) {
     if (!context || !module_id || !*module_id) return BE_Result_InvalidArgument;
     return static_cast<HostRuntime*>(context)->RetireHooks(module_id);
 }
@@ -48,7 +48,7 @@ std::string MethodLabel(const BE_MethodDescriptorV1& descriptor) {
 
 HostRuntime::HostRuntime(HMODULE host_module, const void* bootstrap_data)
     : host_module_(host_module), bootstrap_data_(bootstrap_data) {
-    api_.abi_version = BETTER_ENDFIELD_MODULE_ABI_V1;
+    api_.abi_version = BETTER_ENDFIELD_NEXT_MODULE_ABI_V1;
     api_.context = this;
     api_.log = &HostRuntime::LogCallback;
     api_.resolve_method = &HostRuntime::ResolveMethodCallback;
@@ -91,13 +91,13 @@ void HostRuntime::Run() {
 
     logger_ = std::make_unique<Logger>();
     logger_->Initialize(settings_->Paths().log_root);
-    logger_->Write("host", "BetterEndfield.Host starting.");
+    logger_->Write("host", "BetterEndfieldNext.Host starting.");
     logger_->Write("host",
         "Process-lifetime mode active; detach cleanup is intentionally skipped.");
     hooks_ = std::make_unique<HookBroker>(*logger_);
     const bool hook_service_ready=hooks_->Initialize();
     if (!hook_service_ready) logger_->Write("host", "Hook broker unavailable; independent third-party modules may still start.");
-    third_party_=std::make_unique<BetterEndfield::ThirdParty::ThirdPartyHost>();
+    third_party_=std::make_unique<BetterEndfieldNext::ThirdParty::ThirdPartyHost>();
     third_party_->Start(settings_->Paths().settings_root/"third-party"/"index.json","windows-x64",
         [this](const std::string& module,const std::string& message){logger_->Write(module,message);},nullptr,hook_service_ready?hooks_->ChainApi():nullptr);
 
@@ -354,4 +354,4 @@ void BE_CALL HostRuntime::GCHandleFreeCallback(void* context, uint32_t handle) {
     }
 }
 
-} // namespace BetterEndfield::Host
+} // namespace BetterEndfieldNext::Host

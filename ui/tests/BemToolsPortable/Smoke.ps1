@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
     [Parameter(Mandatory)][string]$ToolDirectory,
     [Parameter(Mandatory)][string]$WorkDirectory
@@ -9,8 +9,8 @@ Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
 
 $toolRoot = (Resolve-Path -LiteralPath $ToolDirectory).Path
-$gui = Join-Path $toolRoot 'BetterEndfield.BemTools.exe'
-$cli = Join-Path $toolRoot 'BetterEndfield.BemConverter.exe'
+$gui = Join-Path $toolRoot 'BetterEndfieldNext.BemTools.exe'
+$cli = Join-Path $toolRoot 'BetterEndfieldNext.BemConverter.exe'
 foreach ($file in @($gui, $cli, (Join-Path $toolRoot 'docs/BEM_CREATOR_GUIDE.md'))) {
     if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw "Missing toolchain file: $file" }
 }

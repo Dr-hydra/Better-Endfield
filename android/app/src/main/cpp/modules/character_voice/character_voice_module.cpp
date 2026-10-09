@@ -15,11 +15,11 @@
 #include <unordered_set>
 #include <utility>
 
-namespace betterendfield {
+namespace betterendfieldnext {
 namespace {
 
-constexpr char kCatalogRoot[] = "BETTER_ENDFIELD_VOICE_CATALOG_ROOT";
-constexpr char kVoiceRules[] = "BETTER_ENDFIELD_VOICE_RULES";
+constexpr char kCatalogRoot[] = "BETTER_ENDFIELD_NEXT_VOICE_CATALOG_ROOT";
+constexpr char kVoiceRules[] = "BETTER_ENDFIELD_NEXT_VOICE_RULES";
 constexpr int kAkSuccess = 1;
 thread_local bool g_loading_auxiliary_package = false;
 thread_local int g_duration_language_override = -1;
@@ -1306,4 +1306,4 @@ int CharacterVoiceModule::HookUnloadFilePackage(
     return original == nullptr ? 0 : original(package_id, method_info);
 }
 
-}  // namespace betterendfield
+}  // namespace betterendfieldnext

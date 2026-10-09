@@ -3,7 +3,7 @@
 #include <cassert>
 #include <iostream>
 #include <limits>
-using namespace BetterEndfield::UiModule;
+using namespace BetterEndfieldNext::UiModule;
 static int lock_method, visible_method, position_method, width_method, height_method, axis_method;
 static int32_t lock_value = 0, screen_width = 1920, screen_height = 1080;
 static bool visible_value = true, reject_axis = false;
@@ -44,7 +44,7 @@ int main() {
     state.screen_width = &width_method;
     state.screen_height = &height_method;
     state.axis_raw = &axis_method;
-    betterendfield::SetAndroidForeground(true);
+    betterendfieldnext::SetAndroidForeground(true);
     g_pc_ui_enabled = false;
     SampleNow();
     assert(invocations == 0 && logs.empty());
@@ -69,11 +69,11 @@ int main() {
     SampleNow();
     assert(logs.size() == 2 && logs.back().find("edge_samples=2/22") != std::string::npos);
     assert(logs.back().find("not total movement") != std::string::npos);
-    betterendfield::PublishAndroidPcMouse(true, true);
-    betterendfield::SetAndroidPcCursorRequest(true);
-    betterendfield::AddAndroidPcMouseAbsolute(0.25f, 0.5f);
+    betterendfieldnext::PublishAndroidPcMouse(true, true);
+    betterendfieldnext::SetAndroidPcCursorRequest(true);
+    betterendfieldnext::AddAndroidPcMouseAbsolute(0.25f, 0.5f);
     float absolute_x = 0.0f, absolute_y = 0.0f;
-    assert(betterendfield::ReadAndroidPcMouseAbsolute(absolute_x, absolute_y));
+    assert(betterendfieldnext::ReadAndroidPcMouseAbsolute(absolute_x, absolute_y));
     g_android_pc_absolute_hook_ready = true;
     state.next_report_tick = 0;
     SampleNow();
@@ -95,10 +95,10 @@ int main() {
     SampleNow();
     assert(logs.back().find("position=(nan,540.0) [unavailable]") != std::string::npos);
     const int before_suspend = invocations;
-    betterendfield::SetAndroidForeground(false);
+    betterendfieldnext::SetAndroidForeground(false);
     SampleNow();
     assert(invocations == before_suspend);
-    betterendfield::SetAndroidForeground(true);
+    betterendfieldnext::SetAndroidForeground(true);
     // Missing optional metadata leaves the module's input mode untouched.
     state.lock_state = state.visible = state.position = nullptr;
     state.axis_raw = state.screen_width = state.screen_height = nullptr;

@@ -14,8 +14,8 @@ BEM（`.bem`）是 Better Endfield 的模型替换包。1.0–1.3 包对应一�
 
 | 工具 | 位置 | 用途 |
 | --- | --- | --- |
-| 独立创作者 GUI `BetterEndfield.BemTools.exe` | `BEM-Tools-1.5.2-win-x64.zip` 根目录，完整解压后双击使用 | 工程、工作区、转换、打包、解包与合集；无需安装主程序、Python 或 .NET |
-| BEM Tools 命令行 `BetterEndfield.BemConverter.exe` | 程序目录 `tools/BemConverter/`，或独立工具包根目录 | 转换、打包、校验、解包、合集，所有功能的核心 |
+| 独立创作者 GUI `BetterEndfieldNext.BemTools.exe` | `BEM-Tools-1.5.2-win-x64.zip` 根目录，完整解压后双击使用 | 工程、工作区、转换、打包、解包与合集；无需安装主程序、Python 或 .NET |
+| BEM Tools 命令行 `BetterEndfieldNext.BemConverter.exe` | 程序目录 `tools/BemConverter/`，或独立工具包根目录 | 转换、打包、校验、解包、合集，所有功能的核心 |
 | 主程序创作者窗口 | 角色外观页 →“BEM 创作者工具…”；旧版入口为“其他来源 Mod 转换…” | 与独立 GUI 共用窗口代码，调用同一个命令行 |
 | Blender 导出插件 | 独立工具包 `blender_addon/bem_exporter/` | 从带有 `BEM_C<number>` 对象的 Blender 工程导出可编辑 BEM 工程 |
 | 桌面模型管理页 | 角色外观页 | 导入、启用、选择外观和选项、调滑条 |
@@ -24,7 +24,7 @@ BEM（`.bem`）是 Better Endfield 的模型替换包。1.0–1.3 包对应一�
 
 BEM Tools 从 1.5.1 起正式支持写入和读取 BEM 1.0–1.4，1.5.2 增加独立 GUI；旧的 1.5.0 正式发行包不包含 BEM 1.4。工具版本与 BEM 格式版本不同，当前 `--version` 输出为 `BEM Tools 1.5.2 / BEM 1.0+1.1+1.2+1.3+1.4`。从源码运行时，用 `python tools/CustomModel/bem_tool.py` 代替 exe。
 
-独立工具请完整解压后运行 `BetterEndfield.BemTools.exe`，保留同目录的命令行和支持文件。GUI 跟随系统语言；可将一个 `.bemproj.json` 工程拖到 EXE 图标上打开，或通过命令行传入该工程路径。主程序中的创作者窗口仍使用主程序的语言设置。
+独立工具请完整解压后运行 `BetterEndfieldNext.BemTools.exe`，保留同目录的命令行和支持文件。GUI 跟随系统语言；可将一个 `.bemproj.json` 工程拖到 EXE 图标上打开，或通过命令行传入该工程路径。主程序中的创作者窗口仍使用主程序的语言设置。
 
 ## 三种制作方式
 
@@ -93,9 +93,9 @@ my-outfit/
 命令行：
 
 ```text
-BetterEndfield.BemConverter.exe new-project editable/project.json --mode pack -o character.bemproj.json
-BetterEndfield.BemConverter.exe new-project source-mod.zip --recipe conversion.recipe.json -o character.bemproj.json
-BetterEndfield.BemConverter.exe build character.bemproj.json
+BetterEndfieldNext.BemConverter.exe new-project editable/project.json --mode pack -o character.bemproj.json
+BetterEndfieldNext.BemConverter.exe new-project source-mod.zip --recipe conversion.recipe.json -o character.bemproj.json
+BetterEndfieldNext.BemConverter.exe build character.bemproj.json
 ```
 
 `new-project` 可选参数：`--deformations`、`--export-output`、`--package-id`、`--name`、`--author`、`--package-version`。`build` 只读取工程文件，输出路径、配方、形态配置都在工程里修改。
@@ -103,8 +103,8 @@ BetterEndfield.BemConverter.exe build character.bemproj.json
 如果希望把输入文件和输出目录整理成可移动的完整工程，可以使用工作区初始化：
 
 ```text
-BetterEndfield.BemConverter.exe workspace init 我的角色工程 --source 原始Mod.zip --mode convert
-BetterEndfield.BemConverter.exe build 我的角色工程/export.bemproj.json
+BetterEndfieldNext.BemConverter.exe workspace init 我的角色工程 --source 原始Mod.zip --mode convert
+BetterEndfieldNext.BemConverter.exe build 我的角色工程/export.bemproj.json
 ```
 
 工作区会复制源文件或 `project.json` 及其 payload，创建 `source`、`project`、`textures`、`dist`、`reports` 等目录，并继续使用同一个 `.bemproj.json` 格式。目标目录必须为空或不存在。
@@ -154,16 +154,16 @@ BetterEndfield.BemConverter.exe build 我的角色工程/export.bemproj.json
 独立工具包包含可直接构建的合成工程：
 
 ```powershell
-BetterEndfield.BemConverter.exe build examples/multi-resource/project/export.bemproj.json
-BetterEndfield.BemConverter.exe inspect examples/multi-resource/project/dist/synthetic.bem --resource ultimate --platform windows-x64 --report ultimate-plan.json
-BetterEndfield.BemConverter.exe validate examples/multi-resource/project/dist/synthetic.bem --resource weapon --platform android-arm64 --report android-plan.json
+BetterEndfieldNext.BemConverter.exe build examples/multi-resource/project/export.bemproj.json
+BetterEndfieldNext.BemConverter.exe inspect examples/multi-resource/project/dist/synthetic.bem --resource ultimate --platform windows-x64 --report ultimate-plan.json
+BetterEndfieldNext.BemConverter.exe validate examples/multi-resource/project/dist/synthetic.bem --resource weapon --platform android-arm64 --report android-plan.json
 ```
 
 示例使用虚构资源，只验证制作和格式流程，不能安装为游戏 Mod。制作真实资源时，先准备相应平台的原生图谱与目标 spec：
 
 ```powershell
-BetterEndfield.BemConverter.exe target-profile NATIVE_GRAPH.json --spec SPEC.json -o TARGET_PROFILE.json --project project.json
-BetterEndfield.BemConverter.exe pack project.json -o target.bem --report build.json
+BetterEndfieldNext.BemConverter.exe target-profile NATIVE_GRAPH.json --spec SPEC.json -o TARGET_PROFILE.json --project project.json
+BetterEndfieldNext.BemConverter.exe pack project.json -o target.bem --report build.json
 ```
 
 生成器不会自动放行来源 Mod 映射或实机渲染：profile 的 `conversion_ready`、`runtime_verified` 保持 false。作者再加入替换几何、draw 与贴图映射，执行完整 `validate` 并实机检查。BEM 沿用游戏的大招触发和武器装备逻辑，不实现源 Mod 的脚本或技能状态机。
@@ -211,8 +211,8 @@ Windows 当前只执行显式 LOD0。Android 可声明自身 LOD1 接收器和 d
 
 ```text
 python examples/body-slider/create_project.py --output demo-body-slider
-BetterEndfield.BemConverter.exe build demo-body-slider/export.bemproj.json
-BetterEndfield.BemConverter.exe validate demo-body-slider/dist/synthetic.bem
+BetterEndfieldNext.BemConverter.exe build demo-body-slider/export.bemproj.json
+BetterEndfieldNext.BemConverter.exe validate demo-body-slider/dist/synthetic.bem
 ```
 
 这是一个三角形的格式测试，不是可用的角色包。
@@ -220,8 +220,8 @@ BetterEndfield.BemConverter.exe validate demo-body-slider/dist/synthetic.bem
 ## 校验与报告
 
 ```text
-BetterEndfield.BemConverter.exe validate character.bem --report validation.json
-BetterEndfield.BemConverter.exe inspect source-mod.zip --report inspection.json
+BetterEndfieldNext.BemConverter.exe validate character.bem --report validation.json
+BetterEndfieldNext.BemConverter.exe inspect source-mod.zip --report inspection.json
 ```
 
 - 退出码 0 表示操作完成，失败时为 2，原因在报告的 `issues` 中。`inspect` 完成只代表检查结束，不代表可以转换。
@@ -234,7 +234,7 @@ BetterEndfield.BemConverter.exe inspect source-mod.zip --report inspection.json
 | --- | --- | --- |
 | 导入 | 模型管理页“导入 BEM / ZIP”，或把文件拖进页面；ZIP 合集可勾选要导入的包。**需要关闭游戏** | App 模型页导入单个 `.bem`，也可以从文件管理器“打开方式”或“分享”导入 |
 | 新包状态 | 默认停用 | 默认启用，并停用与其资源冲突的其他包 |
-| 存放位置 | 程序目录 `models/`（不可写时为 `%LOCALAPPDATA%\BetterEndfield\catalog\custom-model\packages`） | App 私有目录，并发布给游戏 |
+| 存放位置 | 程序目录 `models/`（不可写时为 `%LOCALAPPDATA%\BetterEndfieldNext\catalog\custom-model\packages`） | App 私有目录，并发布给游戏 |
 | 更新 | 相同 `package_id` 即覆盖更新，保留启用状态和仍有效的选择 | 每次导入生成新版本，保留选择 |
 | 生效 | 下次启动游戏；已开启热切换时，选择变化由游戏帧调度处理已加载实例 | 同左；1.4 按 Android 显式资源发现，仍需手机实机验收 |
 
@@ -260,7 +260,7 @@ BetterEndfield.BemConverter.exe inspect source-mod.zip --report inspection.json
 - 多个包可以做成 ZIP 合集：
 
 ```text
-BetterEndfield.BemConverter.exe bundle first.bem second.bem -o collection.zip --report bundle.json
+BetterEndfieldNext.BemConverter.exe bundle first.bem second.bem -o collection.zip --report bundle.json
 ```
 
   `bundle` 会逐包校验后以“仅存储”方式打包。不要把 `.bem` 直接改名为 `.zip`。
@@ -271,16 +271,16 @@ BetterEndfield.BemConverter.exe bundle first.bem second.bem -o collection.zip --
 ## 命令速查
 
 ```text
-BetterEndfield.BemConverter.exe inspect  <源目录|zip|rar|7z|bem> [--ini 路径] [--report r.json]
-BetterEndfield.BemConverter.exe convert  <源> -o out.bem [--recipe recipe.json] [--ini 路径] [--deformations m.json] [--report r.json]
-BetterEndfield.BemConverter.exe pack     project.json -o out.bem [--deformations m.json] [--report r.json]
-BetterEndfield.BemConverter.exe validate pkg.bem [--report r.json]
-BetterEndfield.BemConverter.exe unpack   pkg.bem|collection.zip -o 新目录 [--report r.json]
-BetterEndfield.BemConverter.exe bundle   a.bem b.bem ... -o collection.zip [--report r.json]
-BetterEndfield.BemConverter.exe new-project <源|project.json> -o task.bemproj.json [--mode convert|pack] [--recipe r.json] [...]
-BetterEndfield.BemConverter.exe workspace init <目录> --source <源|project.json> [--mode convert|pack] [--recipe r.json]
-BetterEndfield.BemConverter.exe build    task.bemproj.json [--report r.json]
-BetterEndfield.BemConverter.exe --version
+BetterEndfieldNext.BemConverter.exe inspect  <源目录|zip|rar|7z|bem> [--ini 路径] [--report r.json]
+BetterEndfieldNext.BemConverter.exe convert  <源> -o out.bem [--recipe recipe.json] [--ini 路径] [--deformations m.json] [--report r.json]
+BetterEndfieldNext.BemConverter.exe pack     project.json -o out.bem [--deformations m.json] [--report r.json]
+BetterEndfieldNext.BemConverter.exe validate pkg.bem [--report r.json]
+BetterEndfieldNext.BemConverter.exe unpack   pkg.bem|collection.zip -o 新目录 [--report r.json]
+BetterEndfieldNext.BemConverter.exe bundle   a.bem b.bem ... -o collection.zip [--report r.json]
+BetterEndfieldNext.BemConverter.exe new-project <源|project.json> -o task.bemproj.json [--mode convert|pack] [--recipe r.json] [...]
+BetterEndfieldNext.BemConverter.exe workspace init <目录> --source <源|project.json> [--mode convert|pack] [--recipe r.json]
+BetterEndfieldNext.BemConverter.exe build    task.bemproj.json [--report r.json]
+BetterEndfieldNext.BemConverter.exe --version
 ```
 
 不带 `--recipe` 直接 `convert` 时，每次生成新的随机包 ID；需要稳定 ID 请使用导出工程。

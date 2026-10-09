@@ -3,7 +3,7 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
-namespace betterendfield {
+namespace betterendfieldnext {
 namespace {
 bool ValidValue(uint32_t value) { return value == 1 || value == 2 || value == 4; }
 }

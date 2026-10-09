@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-namespace BetterEndfield::CombatStats {
+namespace BetterEndfieldNext::CombatStats {
 
 enum class SemanticStatus : uint8_t {
     Unknown = 0,
@@ -140,4 +140,4 @@ private:
     size_t skill_buff_edge_count_ = 0;
 };
 
-} // namespace BetterEndfield::CombatStats
+} // namespace BetterEndfieldNext::CombatStats

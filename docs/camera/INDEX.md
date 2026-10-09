@@ -1,12 +1,13 @@
-# 相机、第一人称与 MMD
+# 相机与 MMD
 
 [全部文档](../INDEX.md)
+
+第一人称已在 Next 退役，源码与工具见 [legacy 归档](../../legacy/retired-before-next/README.md)。历史研究仅用于追溯。
 
 ## 现行说明与维护入口
 
 | 文档 | 用途 | 状态 | 游戏版本 |
 | --- | --- | --- | --- |
-| [任务 D：逐角色第一人称资料与 helper](FIRST_PERSON_PROFILES.md) | 逐角色profile/helper接入接口、规则覆盖与生成文件交接 | 维护参考 | 1.5.3 |
 
 ## 研究与阶段记录
 

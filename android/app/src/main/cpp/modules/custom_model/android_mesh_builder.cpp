@@ -7,7 +7,7 @@
 #include <fstream>
 #include <stdexcept>
 
-namespace betterendfield {
+namespace betterendfieldnext {
 namespace {
 constexpr const char* kAssembly = "UnityEngine.CoreModule.dll";
 constexpr const char* kLog = "android_mesh_builder";
@@ -111,7 +111,7 @@ std::string AndroidTextureMipRequestToken() {
     // The normal module never enumerates textures unless explicitly requested.
     // Read a small file next to our existing private diagnostics; no settings
     // changes, native resource writes or persistent token acknowledgement.
-    const char* diagnostics=std::getenv("BETTER_ENDFIELD_DIAGNOSTICS_PATH");
+    const char* diagnostics=std::getenv("BETTER_ENDFIELD_NEXT_DIAGNOSTICS_PATH");
     if (!diagnostics || !*diagnostics) return {};
     try {
         const auto request=std::filesystem::path(diagnostics).parent_path()/"betterendfield-texture-mips.request";
@@ -348,7 +348,7 @@ bool AndroidReadMeshStrides(void* mesh, std::vector<int32_t>& strides) {
     } catch (const std::exception& error) { LogError(kLog,error.what()); strides.clear(); return false; }
 }
 
-bool AndroidSubmitMesh(void* mesh, const BetterEndfield::CustomModel::BemComponent& component) {
+bool AndroidSubmitMesh(void* mesh, const BetterEndfieldNext::CustomModel::BemComponent& component) {
     if (!mesh || !AndroidMeshBuilderReady()) return false;
     try {
         Calls calls;

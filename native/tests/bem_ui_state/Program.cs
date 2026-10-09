@@ -1,6 +1,6 @@
 using System.Text;
 using System.Text.Json.Nodes;
-using BetterEndfield.UI.Services;
+using BetterEndfieldNext.UI.Services;
 
 // The host test exercises locale selection without the WinRT app-language API.
 namespace Windows.Globalization
@@ -11,7 +11,7 @@ namespace Windows.Globalization
     }
 }
 
-namespace BetterEndfield.UI.Services
+namespace BetterEndfieldNext.UI.Services
 {
     internal static class ConfigurationService
     {

@@ -1,6 +1,6 @@
 # BEM Format Specification (1.0–1.4)
 
-BEM (Better Endfield Model) is a character model replacement package with the `.bem` extension. Windows and Android read the same file. The [BEM 1.4 extension](BEM_V1_4_SPEC.md) defines explicit multi-resource targets and static weapons. The sections below describe the 1.0–1.3 contract; version-specific differences are marked below. See the [Creator Guide](BEM_CREATOR_GUIDE.en.md) for production workflow and [Runtime Behavior and Compatibility](BEM_RUNTIME_COMPATIBILITY.en.md) for in-game matching and restrictions.
+BEM (Better Endfield Next Model) is a character model replacement package with the `.bem` extension. Windows and Android read the same file. The [BEM 1.4 extension](BEM_V1_4_SPEC.md) defines explicit multi-resource targets and static weapons. The sections below describe the 1.0–1.3 contract; version-specific differences are marked below. See the [Creator Guide](BEM_CREATOR_GUIDE.en.md) for production workflow and [Runtime Behavior and Compatibility](BEM_RUNTIME_COMPATIBILITY.en.md) for in-game matching and restrictions.
 
 Reference implementations: writers and validators are `tools/CustomModel/bem_v1.py`, `bem_v11.py`, `bem_v13.py`, and `bem_v14.py`; the native reader is `native/modules/custom_model/bem.cpp`.
 

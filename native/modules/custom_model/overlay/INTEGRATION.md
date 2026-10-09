@@ -1,16 +1,16 @@
 # Model overlay integration
 
-The Windows target is `BetterEndfield.ModelOverlay` with output name
-`BetterEndfield.ModelOverlay.exe`, staged beside `BetterEndfield.CustomModel.dll`.
+The Windows target is `BetterEndfieldNext.ModelOverlay` with output name
+`BetterEndfieldNext.ModelOverlay.exe`, staged beside `BetterEndfieldNext.CustomModel.dll`.
 Sources: `overlay/main.cpp`, `overlay/model_overlay.rc`; link
-`BetterEndfield.CustomModelCore`, `gdiplus`, `shell32`, `user32`, `gdi32`.
+`BetterEndfieldNext.CustomModelCore`, `gdiplus`, `shell32`, `user32`, `gdi32`.
 Use C++20, UNICODE/_UNICODE, WIN32_LEAN_AND_MEAN, NOMINMAX, UTF-8 and the existing
 static MSVC runtime. As for MmdOverlay, use `/MANIFEST:NO` with the explicit rc.
 Only add this target on Windows. None of these helpers enters Android builds.
 
 ## Settings transaction (UI and companion)
 
-- Exact mutex: `Local\BetterEndfield.CustomModel.Settings`. This is a dedicated
+- Exact mutex: `Local\BetterEndfieldNext.CustomModel.Settings`. This is a dedicated
   per-login-session custom-model settings scope, independent of other overlays.
 - UTF-8 without BOM; same profile `catalog/custom-model/runtime.ini` as the host.
   Preserve unknown sections, keys, dormant selections and experimental flags.
@@ -48,7 +48,7 @@ custom-model adapter uses the shared input parser and rejects unknown bindings.
 
 ## Lifecycle and IPC
 
-Host creates `Local\BetterEndfield.ModelOverlay.<game-pid>` mapping, initializes
+Host creates `Local\BetterEndfieldNext.ModelOverlay.<game-pid>` mapping, initializes
 `model_overlay_protocol.h::Shared`, then starts the companion with `--game-pid`
 and `--mapping`. Shared paths are immutable for the session. The installed library
 is `<install-root>/models`, the legacy library is `<runtime-root>/packages`; saved

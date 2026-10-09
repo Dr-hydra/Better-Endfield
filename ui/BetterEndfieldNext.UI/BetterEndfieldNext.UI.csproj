@@ -1,0 +1,105 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <AssemblyName>BetterEndfieldNext</AssemblyName>
+    <RootNamespace>BetterEndfieldNext.UI</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\shared\gilberta.ico</ApplicationIcon>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <BEObfuscate Condition="'$(BEObfuscate)' == '' and '$(Configuration)' == 'Release'">true</BEObfuscate>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="1.8.260709004" />
+  </ItemGroup>
+
+  <!-- Transform only the application assembly; WinUI and framework binaries
+       retain their metadata. The clean output assembly stays untouched. -->
+  <Target Name="ObfuscateNextApplication" AfterTargets="PrepareForBundle"
+          Condition="'$(BEObfuscate)' == 'true' and '$(PublishSingleFile)' == 'true'">
+    <PropertyGroup>
+      <NextObfuscationDirectory>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)next-obfuscated'))</NextObfuscationDirectory>
+    </PropertyGroup>
+    <ItemGroup>
+      <NextOriginalAssembly Include="@(FilesToBundle)" Condition="'%(FilesToBundle.Filename)%(FilesToBundle.Extension)' == '$(AssemblyName).dll'" />
+    </ItemGroup>
+    <Error Condition="'@(NextOriginalAssembly)' == ''" Text="Next application assembly is missing from the bundle inputs." />
+    <Exec Command="pwsh -NoProfile -File &quot;$(BEWorkspaceRoot)scripts\ObfuscateNext.ps1&quot; -AssemblyPath &quot;@(NextOriginalAssembly->'%(FullPath)')&quot; -OutputDirectory &quot;$(NextObfuscationDirectory)&quot; -DependencyDirectory &quot;$(TargetDir.TrimEnd('\'))&quot;" />
+    <ItemGroup>
+      <FilesToBundle Remove="@(NextOriginalAssembly)" />
+      <FilesToBundle Include="$(NextObfuscationDirectory)\$(AssemblyName).dll">
+        <RelativePath>$(AssemblyName).dll</RelativePath>
+      </FilesToBundle>
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <Content Include="Assets\shared\gilberta.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <EmbeddedResource
+      Include="Assets\sponsor\wechat-appreciation.png"
+      LogicalName="BetterEndfieldNext.UI.Assets.sponsor.wechat-appreciation.png" />
+    <EmbeddedResource
+      Include="Assets\shared\gilberta.ico"
+      LogicalName="BetterEndfieldNext.UI.Assets.shared.gilberta.ico" />
+    <EmbeddedResource
+      Include="$(BECharacterPresetsPath)"
+      Link="Assets\model\character-presets.json"
+      LogicalName="BetterEndfieldNext.UI.Assets.model.character-presets.json" />
+    <EmbeddedResource
+      Include="Assets\model\character-names.json"
+      LogicalName="BetterEndfieldNext.UI.Assets.model.character-names.json" />
+    <EmbeddedResource
+      Include="Assets\model\character-names-en.json"
+      LogicalName="BetterEndfieldNext.UI.Assets.model.character-names-en.json" />
+    <EmbeddedResource
+      Include="$(BEVoiceCatalogIndexPath)"
+      Link="Assets\voice\voice-catalog-index.json"
+      LogicalName="BetterEndfieldNext.UI.Assets.voice.voice-catalog-index.json" />
+    <EmbeddedResource
+      Include="$(BECombatDictionaryPath)"
+      Link="Assets\combat\combat-dictionary.json"
+      LogicalName="BetterEndfieldNext.UI.Assets.combat.combat-dictionary.json" />
+    <EmbeddedResource
+      Include="..\..\manifests\shared\optiscaler.lock.json"
+      LogicalName="BetterEndfieldNext.UI.Assets.shared.optiscaler.lock.json" />
+    <EmbeddedResource
+      Include="Assets\locales\*.json"
+      LogicalName="BetterEndfieldNext.UI.Assets.locales.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\..\native\modules\combat_stats\assets\avatars\*.png">
+      <LogicalName>BetterEndfieldNext.UI.Assets.combat.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\web\public\icons\items\wpn_*.png">
+      <LogicalName>BetterEndfieldNext.UI.Assets.gacha.weapon.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <Target
+    Name="CopyWinUIResourcesToPublish"
+    AfterTargets="Publish"
+    Condition="'$(PublishSingleFile)' != 'true'">
+    <ItemGroup>
+      <WinUICompiledResource Include="$(TargetDir)*.xbf" />
+      <WinUICompiledResource Include="$(TargetDir)$(AssemblyName).pri" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(WinUICompiledResource)"
+      DestinationFolder="$(PublishDir)"
+      SkipUnchangedFiles="true" />
+  </Target>
+</Project>

@@ -1,6 +1,6 @@
 # BEM Creator Guide
 
-BEM (`.bem`) is Better Endfield's model replacement package. Versions 1.0–1.3 target one character; 1.4 targets a character or weapon ID and can separately replace ordinary forms, ultimate prefabs and weapon resources while retaining options and position sliders. Windows and Android can share a package when it declares the resource and donor contracts for each platform.
+BEM (`.bem`) is Better Endfield Next's model replacement package. Versions 1.0–1.3 target one character; 1.4 targets a character or weapon ID and can separately replace ordinary forms, ultimate prefabs and weapon resources while retaining options and position sliders. Windows and Android can share a package when it declares the resource and donor contracts for each platform.
 
 | Document | Contents |
 | --- | --- |
@@ -14,17 +14,17 @@ BEM (`.bem`) is Better Endfield's model replacement package. Versions 1.0–1.3 
 
 | Tool | Location | Purpose |
 | --- | --- | --- |
-| Standalone creator GUI `BetterEndfield.BemTools.exe` | Root of `BEM-Tools-1.5.2-win-x64.zip`; extract the complete archive and double-click | Projects, workspaces, conversion, packing, unpacking and collections; no main application, Python or .NET installation required |
-| BEM Tools CLI `BetterEndfield.BemConverter.exe` | `tools/BemConverter/` in the application, or the root of the standalone tools | Conversion, packing, validation, unpacking, and collections; the core of every workflow |
+| Standalone creator GUI `BetterEndfieldNext.BemTools.exe` | Root of `BEM-Tools-1.5.2-win-x64.zip`; extract the complete archive and double-click | Projects, workspaces, conversion, packing, unpacking and collections; no main application, Python or .NET installation required |
+| BEM Tools CLI `BetterEndfieldNext.BemConverter.exe` | `tools/BemConverter/` in the application, or the root of the standalone tools | Conversion, packing, validation, unpacking, and collections; the core of every workflow |
 | Main application creator window | Character appearance page → “BEM Creator Tools…”; older versions use “Convert other source Mod…” | Shares the standalone GUI window code and calls the same CLI |
 | Blender exporter | `blender_addon/bem_exporter/` in the portable tool | Export an editable BEM project from Blender objects named `BEM_C<number>` |
 | Desktop model manager | Character appearance page | Importing, enabling, choosing appearances and options, and adjusting sliders |
-| Android model page | Better Endfield App | Importing, enabling, choosing, and converting textures on the phone |
+| Android model page | Better Endfield Next App | Importing, enabling, choosing, and converting textures on the phone |
 | AI skill `bem-creator` | Standalone `skills/bem-creator` package | Helps prepare recipes and explain reports; it does not replace validation |
 
 BEM Tools has officially read and written BEM 1.0–1.4 since 1.5.1; version 1.5.2 adds the standalone GUI. The older official 1.5.0 distribution does not include BEM 1.4. Tool and format versions are separate. The current `--version` returns `BEM Tools 1.5.2 / BEM 1.0+1.1+1.2+1.3+1.4`. When running from source, use `python tools/CustomModel/bem_tool.py` instead of the executable.
 
-Extract the entire standalone package and launch `BetterEndfield.BemTools.exe`, keeping the CLI and support files beside it. The GUI follows the system language. Drop one `.bemproj.json` file onto the EXE icon or pass its path as an argument to open an export project. The creator window inside the main application still uses that application's language preference.
+Extract the entire standalone package and launch `BetterEndfieldNext.BemTools.exe`, keeping the CLI and support files beside it. The GUI follows the system language. Drop one `.bemproj.json` file onto the EXE icon or pass its path as an argument to open an export project. The creator window inside the main application still uses that application's language preference.
 
 ## Three authoring workflows
 
@@ -93,9 +93,9 @@ The desktop creator window creates or opens an export task. Select a source Mod 
 CLI equivalent:
 
 ```text
-BetterEndfield.BemConverter.exe new-project editable/project.json --mode pack -o character.bemproj.json
-BetterEndfield.BemConverter.exe new-project source-mod.zip --recipe conversion.recipe.json -o character.bemproj.json
-BetterEndfield.BemConverter.exe build character.bemproj.json
+BetterEndfieldNext.BemConverter.exe new-project editable/project.json --mode pack -o character.bemproj.json
+BetterEndfieldNext.BemConverter.exe new-project source-mod.zip --recipe conversion.recipe.json -o character.bemproj.json
+BetterEndfieldNext.BemConverter.exe build character.bemproj.json
 ```
 
 Optional `new-project` arguments include `--deformations`, `--export-output`, `--package-id`, `--name`, `--author`, and `--package-version`. `build` reads the task file; edit the task to change its output, recipe, or deformation input.
@@ -103,8 +103,8 @@ Optional `new-project` arguments include `--deformations`, `--export-output`, `-
 To organize inputs and outputs into a movable self-contained workspace, initialize one with:
 
 ```text
-BetterEndfield.BemConverter.exe workspace init my-character-workspace --source original-mod.zip --mode convert
-BetterEndfield.BemConverter.exe build my-character-workspace/export.bemproj.json
+BetterEndfieldNext.BemConverter.exe workspace init my-character-workspace --source original-mod.zip --mode convert
+BetterEndfieldNext.BemConverter.exe build my-character-workspace/export.bemproj.json
 ```
 
 Workspace initialization copies the source archive, or `project.json` and its payloads, creates `source`, `project`, `textures`, `dist`, and `reports` directories, and continues to use the same `.bemproj.json` format. The target directory must be new or empty.
@@ -154,16 +154,16 @@ Use `target.kind: character` with the character ID, or `weapon` with the weapon 
 The portable distribution includes a ready-made synthetic project:
 
 ```powershell
-BetterEndfield.BemConverter.exe build examples/multi-resource/project/export.bemproj.json
-BetterEndfield.BemConverter.exe inspect examples/multi-resource/project/dist/synthetic.bem --resource ultimate --platform windows-x64 --report ultimate-plan.json
-BetterEndfield.BemConverter.exe validate examples/multi-resource/project/dist/synthetic.bem --resource weapon --platform android-arm64 --report android-plan.json
+BetterEndfieldNext.BemConverter.exe build examples/multi-resource/project/export.bemproj.json
+BetterEndfieldNext.BemConverter.exe inspect examples/multi-resource/project/dist/synthetic.bem --resource ultimate --platform windows-x64 --report ultimate-plan.json
+BetterEndfieldNext.BemConverter.exe validate examples/multi-resource/project/dist/synthetic.bem --resource weapon --platform android-arm64 --report android-plan.json
 ```
 
 Its fictional resources test authoring and format behavior; it is not a playable Mod. For real targets, prepare a native graph and target spec for the intended platform:
 
 ```powershell
-BetterEndfield.BemConverter.exe target-profile NATIVE_GRAPH.json --spec SPEC.json -o TARGET_PROFILE.json --project project.json
-BetterEndfield.BemConverter.exe pack project.json -o target.bem --report build.json
+BetterEndfieldNext.BemConverter.exe target-profile NATIVE_GRAPH.json --spec SPEC.json -o TARGET_PROFILE.json --project project.json
+BetterEndfieldNext.BemConverter.exe pack project.json -o target.bem --report build.json
 ```
 
 The generator keeps `conversion_ready` and `runtime_verified` false. Add replacement geometry, draws and texture mappings, run full validation and verify the result in the game. BEM follows the game's weapon equipment and ultimate activation; it does not execute source scripts or implement an ability state machine.
@@ -208,8 +208,8 @@ Runnable example:
 
 ```text
 python examples/body-slider/create_project.py --output demo-body-slider
-BetterEndfield.BemConverter.exe build demo-body-slider/export.bemproj.json
-BetterEndfield.BemConverter.exe validate demo-body-slider/dist/synthetic.bem
+BetterEndfieldNext.BemConverter.exe build demo-body-slider/export.bemproj.json
+BetterEndfieldNext.BemConverter.exe validate demo-body-slider/dist/synthetic.bem
 ```
 
 This is a triangular format test, not a usable character package.
@@ -217,8 +217,8 @@ This is a triangular format test, not a usable character package.
 ## Validation and reports
 
 ```text
-BetterEndfield.BemConverter.exe validate character.bem --report validation.json
-BetterEndfield.BemConverter.exe inspect source-mod.zip --report inspection.json
+BetterEndfieldNext.BemConverter.exe validate character.bem --report validation.json
+BetterEndfieldNext.BemConverter.exe inspect source-mod.zip --report inspection.json
 ```
 
 - Exit code 0 means the operation completed; failures return 2 and explain the cause in `issues`. A completed `inspect` is not proof that conversion is ready.
@@ -231,7 +231,7 @@ BetterEndfield.BemConverter.exe inspect source-mod.zip --report inspection.json
 | --- | --- | --- |
 | Import | Model manager → “Import BEM / ZIP”, or drag files into the page. A ZIP collection can be filtered during import. **Close the game first.** | Import one `.bem` on the app model page, or use “Open with” / “Share” from a file manager |
 | New package | Disabled by default | Enabled by default; packages with conflicting resources are disabled |
-| Storage | `models/` beside the application; if unwritable, `%LOCALAPPDATA%\\BetterEndfield\\catalog\\custom-model\\packages` | App-private storage, then published to the game |
+| Storage | `models/` beside the application; if unwritable, `%LOCALAPPDATA%\\BetterEndfieldNext\\catalog\\custom-model\\packages` | App-private storage, then published to the game |
 | Update | Same `package_id` updates in place and keeps enabled state and valid selections | Each import creates a new version and keeps the selection |
 | Activation | Next game start; when hot switching is enabled, selection changes are applied to loaded instances by the game-frame scheduler | Same; 1.4 discovers explicit Android resources and still requires device validation |
 
@@ -257,7 +257,7 @@ Bind hair, head accessories, and ears only to the Head subtree or tail bones so 
 - Several packages can be stored in a ZIP collection:
 
 ```text
-BetterEndfield.BemConverter.exe bundle first.bem second.bem -o collection.zip --report bundle.json
+BetterEndfieldNext.BemConverter.exe bundle first.bem second.bem -o collection.zip --report bundle.json
 ```
 
   `bundle` validates each package and creates a standard stored ZIP. Do not merely rename a `.bem` to `.zip`.
@@ -268,16 +268,16 @@ BetterEndfield.BemConverter.exe bundle first.bem second.bem -o collection.zip --
 ## Command quick reference
 
 ```text
-BetterEndfield.BemConverter.exe inspect  <directory|zip|rar|7z|bem> [--ini path] [--report r.json]
-BetterEndfield.BemConverter.exe convert  <source> -o out.bem [--recipe recipe.json] [--ini path] [--deformations m.json] [--report r.json]
-BetterEndfield.BemConverter.exe pack     project.json -o out.bem [--deformations m.json] [--report r.json]
-BetterEndfield.BemConverter.exe validate pkg.bem [--report r.json]
-BetterEndfield.BemConverter.exe unpack   pkg.bem|collection.zip -o new-directory [--report r.json]
-BetterEndfield.BemConverter.exe bundle   a.bem b.bem ... -o collection.zip [--report r.json]
-BetterEndfield.BemConverter.exe new-project <source|project.json> -o task.bemproj.json [--mode convert|pack] [--recipe r.json] [...]
-BetterEndfield.BemConverter.exe workspace init <directory> --source <source|project.json> [--mode convert|pack] [--recipe r.json]
-BetterEndfield.BemConverter.exe build    task.bemproj.json [--report r.json]
-BetterEndfield.BemConverter.exe --version
+BetterEndfieldNext.BemConverter.exe inspect  <directory|zip|rar|7z|bem> [--ini path] [--report r.json]
+BetterEndfieldNext.BemConverter.exe convert  <source> -o out.bem [--recipe recipe.json] [--ini path] [--deformations m.json] [--report r.json]
+BetterEndfieldNext.BemConverter.exe pack     project.json -o out.bem [--deformations m.json] [--report r.json]
+BetterEndfieldNext.BemConverter.exe validate pkg.bem [--report r.json]
+BetterEndfieldNext.BemConverter.exe unpack   pkg.bem|collection.zip -o new-directory [--report r.json]
+BetterEndfieldNext.BemConverter.exe bundle   a.bem b.bem ... -o collection.zip [--report r.json]
+BetterEndfieldNext.BemConverter.exe new-project <source|project.json> -o task.bemproj.json [--mode convert|pack] [--recipe r.json] [...]
+BetterEndfieldNext.BemConverter.exe workspace init <directory> --source <source|project.json> [--mode convert|pack] [--recipe r.json]
+BetterEndfieldNext.BemConverter.exe build    task.bemproj.json [--report r.json]
+BetterEndfieldNext.BemConverter.exe --version
 ```
 
 Running `convert` without `--recipe` creates a new random package ID each time. Use an export task when a stable ID is required.

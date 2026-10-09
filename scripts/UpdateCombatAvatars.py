@@ -71,7 +71,7 @@ LEGACY_ALIASES = (
 
 
 def download(url: str) -> bytes:
-    request = urllib.request.Request(url, headers={"User-Agent": "BetterEndfield/2.1"})
+    request = urllib.request.Request(url, headers={"User-Agent": "BetterEndfieldNext/2.1"})
     with urllib.request.urlopen(request, timeout=30) as response:
         return response.read()
 

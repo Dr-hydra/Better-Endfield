@@ -29,7 +29,7 @@ No upstream executable, private SMC memory layout, hash constant, or game asset 
 commit `1bc9baa` (AGPL-3.0, copy in `native/modules/camera/eiem/LICENSE.EIEM`):
 VMD parser, DirectVmd sampling/source rig/PMX reference, ghost rig with FinalIK
 leg and knee handling, terrain follow and SkeletalMorphCore face code. It is
-compiled into `BetterEndfield.Camera.dll` through `eiem/eiem_body.cpp`, which
+compiled into `BetterEndfieldNext.Camera.dll` through `eiem/eiem_body.cpp`, which
 replaces EIEM's loader, GUI, audio and hook installation. Local modifications
 are listed in `native/modules/camera/eiem/UPSTREAM.md`.
 

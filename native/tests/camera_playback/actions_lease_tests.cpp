@@ -3,8 +3,8 @@
 #include "../../modules/actions/module.cpp"
 #include "../../shared/motion/pose_lease_registry.h"
 #include "test_support.h"
-using namespace BetterEndfield;
-using namespace BetterEndfield::Actions;
+using namespace BetterEndfieldNext;
+using namespace BetterEndfieldNext::Actions;
 static Motion::PoseLeaseRegistry registry;
 static uint64_t BE_CALL Acquire(const void* r,const char* o){return registry.Acquire(r,o);}
 static int BE_CALL Owns(const void* r,const char* o,uint64_t t){return registry.Owns(r,o,t);}
@@ -15,7 +15,7 @@ static void* BE_CALL InvokeUnexpected(void*,const void*,void*,void**,void**){++i
 int main() {
     BE_HostApiV1 host{};host.gchandle_free=Free;host.runtime_invoke=InvokeUnexpected;g_host=&host;
     const BE_PoseLeaseApiV1 api{1,Acquire,Owns,ReleaseLease};g_pose_leases=&api;g_pose_lease_ready=true;
-    CHECK(BetterEndfield_ActionsPoseLeaseVersionV1()==1);
+    CHECK(BetterEndfieldNext_ActionsPoseLeaseVersionV1()==1);
     auto root=reinterpret_cast<void*>(42);
     auto lease=registry.Acquire(root,kId);
     PoseOwner owner;owner.root=root;owner.lease=lease;owner.root_pin=10;
@@ -29,6 +29,6 @@ int main() {
     g_pose_owner.root=root;g_pose_owner.lease=old;g_pose_owner.component=reinterpret_cast<void*>(1);
     g_game_thread=GetCurrentThreadId();ApplyPoseOverlay(g_pose_owner.component,0.1f);
     CHECK(!g_pose_owner.root);CHECK(invokes==0);CHECK(registry.Owns(root,"camera",next));
-    CHECK(registry.Release(root,"camera",next));g_pose_lease_ready=false;CHECK(BetterEndfield_ActionsPoseLeaseVersionV1()==0);g_host=nullptr;
+    CHECK(registry.Release(root,"camera",next));g_pose_lease_ready=false;CHECK(BetterEndfieldNext_ActionsPoseLeaseVersionV1()==0);g_host=nullptr;
     std::cout<<"PASS production Actions lease release and stale-writer guards: "<<checks<<" checks\n";
 }

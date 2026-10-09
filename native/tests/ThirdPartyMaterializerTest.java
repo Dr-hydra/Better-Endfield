@@ -1,4 +1,4 @@
-package dev.betterendfield.android;
+package dev.betterendfield.next;
 import android.content.Context;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -60,7 +60,7 @@ public final class ThirdPartyMaterializerTest {
             byte[] uiArchive=uiBytes.toByteArray();JSONObject uiIndex=index("example.ui",UUID.randomUUID().toString(),uiArchive.length);
             String uiPath=ThirdPartyRuntimeMaterializer.prepare(context,uiIndex.toString(),name->new ByteArrayInputStream(uiArchive),message->{});
             check(new JSONObject(Files.readString(new File(uiPath).toPath())).getJSONArray("modules").getJSONObject(0).getBoolean("enabled"),"UI-only package required Android native binary");
-            for(String reserved:new String[]{"voice.character","VoIcE.ChArAcTeR","betterendfield.test"}){
+            for(String reserved:new String[]{"voice.character","VoIcE.ChArAcTeR","betterendfieldnext.test"}){
                 boolean rejected=false;try{ThirdPartyRuntimeMaterializer.prepare(context,index(reserved,UUID.randomUUID().toString(),zip.length).toString(),
                     name->new ByteArrayInputStream(zip),message->{});}catch(IOException expected){rejected=true;}
                 check(rejected,"Reserved native module ID accepted: "+reserved);

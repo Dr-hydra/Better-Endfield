@@ -2,7 +2,7 @@
 
 ## 结论
 
-终末地可以通过 Wwise Audio Input 接收 Better Endfield 提供的实时 PCM。
+终末地可以通过 Wwise Audio Input 接收 Better Endfield Next 提供的实时 PCM。
 2026-08-16 的离线实验已完成一条 48 kHz、单声道、float32 正弦流：
 
 - 格式回调：1 次。
@@ -87,7 +87,7 @@ EndOfEvent 生命周期为准。
 
 ## OmniMix 正式模块落地
 
-正式模块 `BetterEndfield.Music.dll` 沿用已经实测通过的
+正式模块 `BetterEndfieldNext.Music.dll` 沿用已经实测通过的
 `PostAudioInputEvent(..., null, null)` 路径，并 Hook Internal 格式/采样入口。
 Hook 只处理模块自己记录的 Playing ID，其他调用全部转发。这样不依赖固定 RVA，
 也不在纯 C++ 中构造布局和 GC 生命周期尚未验证的 IL2CPP 托管 Delegate。
@@ -125,7 +125,7 @@ Pause/Resume。Source 健康度依据最近一次 Wwise 样本回调时间，而
 当前测试目录：
 
 ```text
-artifacts/BetterEndfield-win-x64
+artifacts/BetterEndfieldNext-win-x64
 ```
 
 成功 Bank：
@@ -165,7 +165,7 @@ sine source completed playingId=3 callbacks=750 frames=384000
 
 ### 2026-08-17 队列能力复测
 
-Better Endfield 最初只在 `OmniPcmClient_ConnectInstance` 中声明
+Better Endfield Next 最初只在 `OmniPcmClient_ConnectInstance` 中声明
 `ServerControlledPlayback | Seek | AudioPlayback`。OmniMix 因此按能力策略拒绝
 `insertIntoQueue`，返回 `FailedPrecondition: queue management not available`。正式模块现已
 补充 `QueueManagement (1 << 2)`；重新连接会覆盖既有实例的布尔能力，无需删除实例。
@@ -180,7 +180,7 @@ D3D12Core.dll+0x13610
 ```
 
 故障前音乐日志为 `44100Hz/2ch -> 48000Hz`、Playing ID `7`、1126 次采样回调且
-`underflows=0`，崩溃线程不包含 Better Endfield、OmniPcmShared、Wwise 或音频回调。
+`underflows=0`，崩溃线程不包含 Better Endfield Next、OmniPcmShared、Wwise 或音频回调。
 后续播放测试正常，且该故障无法稳定复现；现有证据不足以把它归因于 OmniMix、音乐模块、
 Vulkan 或 D3D。该事件只作为未归因的偶发现象留档，不形成图形后端兼容性结论，也不在
 音乐模块内加入图形 API 特判。

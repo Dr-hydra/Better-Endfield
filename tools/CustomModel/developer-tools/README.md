@@ -18,7 +18,7 @@
 
 采集期间暂停本进程的模型替换，不修改用户设置。stop 移除待启动请求并通知正在运行的探针；当前进程仍保持替换暂停，下次启动恢复正常。采完后务必 stop；游戏版本更新后停止旧任务，用新 manifest 建立新 run，不跨版本合并。
 
-数据在 `%LOCALAPPDATA%/BetterEndfield/catalog/custom-model/native-probe/`。status 可在游戏关闭后查看；`--run`/`-Run` 可选择历史任务。
+数据在 `%LOCALAPPDATA%/BetterEndfieldNext/catalog/custom-model/native-probe/`。status 可在游戏关闭后查看；`--run`/`-Run` 可选择历史任务。
 矩阵、布局与材质信息是原生观测；EFMI GPU hash、Shader 语义和 world/UI 等价性仍需离线证据，不能仅据采集完成自动批准转换。
 
 采集后的批量流程：上级目录 `prepare_sweep_offline.py` 联合提取当前快照依赖并逐角色解析，再由 `import_runtime_catalog.py` 核对身份、矩阵、骨骼和材质后生成 catalog。每个部件保留直接/等价复用来源，差异部件记录在排除清单；已有 EFMI 对应仅在原生契约一致时保留。用法和本次覆盖见 `docs/custom_model/research/1.5.3/bem-character-catalog/BEM_CHARACTER_CATALOG.md`。

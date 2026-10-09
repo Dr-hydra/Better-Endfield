@@ -11,7 +11,7 @@
 // Touchscreen device (verified 2026-08-29), so this module turns the left
 // mouse button into a finger rather than faking anything inside IL2CPP.
 
-namespace BetterEndfield::UiModule::TouchInput {
+namespace BetterEndfieldNext::UiModule::TouchInput {
 
 using LogFn = void (*)(const char*);
 
@@ -25,4 +25,4 @@ void Stop();
 // Follows the touch UI: conversion only runs while the mobile layout is on.
 void SetEnabled(bool enabled);
 
-}  // namespace BetterEndfield::UiModule::TouchInput
+}  // namespace BetterEndfieldNext::UiModule::TouchInput

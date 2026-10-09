@@ -12,7 +12,7 @@ constexpr double kLoadTimeoutSeconds = 20.0;
 constexpr double kMusicSnapSeconds = 0.25;
 constexpr double kPublishSeconds = 0.05;
 constexpr uint64_t kOverlayRelaunchMs = 3000;
-constexpr char kMusicOwner[] = "betterendfield.camera.mmd";
+constexpr char kMusicOwner[] = "betterendfieldnext.camera.mmd";
 
 enum class State { Idle, Loading, Playing, Paused };
 enum class CameraMode { Vmd = 0, Free = 1, Game = 2 };
@@ -93,7 +93,7 @@ void Say(Proto::MessageCode code, const std::string& detail, bool log = true) {
 
 std::filesystem::path ModuleDirectory() {
 #if defined(__ANDROID__)
-    const char* root = std::getenv("BETTER_ENDFIELD_MMD_ROOT");
+    const char* root = std::getenv("BETTER_ENDFIELD_NEXT_MMD_ROOT");
     return root && *root ? MmdLibrary::FromUtf8(root).parent_path() / "modules" : std::filesystem::path();
 #else
     HMODULE module = nullptr;
@@ -112,12 +112,12 @@ std::filesystem::path ModuleDirectory() {
 
 const BE_LocalMusicApiV1* ResolveMusic() {
 #if defined(__ANDROID__)
-    return betterendfield::AndroidLocalMusicApi();
+    return betterendfieldnext::AndroidLocalMusicApi();
 #else
-    HMODULE module = GetModuleHandleW(L"BetterEndfield.Music.dll");
+    HMODULE module = GetModuleHandleW(L"BetterEndfieldNext.Music.dll");
     if (!module) return nullptr;
     const auto get = reinterpret_cast<BE_GetLocalMusicApiV1Fn>(
-        GetProcAddress(module, "BetterEndfield_GetLocalMusicApiV1"));
+        GetProcAddress(module, "BetterEndfieldNext_GetLocalMusicApiV1"));
     const BE_LocalMusicApiV1* api = get ? get() : nullptr;
     if (!api || api->version < 1 || api->size < sizeof(BE_LocalMusicApiV1) || !api->open ||
         !api->play || !api->pause || !api->seek || !api->close || !api->status || !api->set_gain) {
@@ -144,7 +144,7 @@ bool Active() { return g.state == State::Playing || g.state == State::Paused; }
 
 // ---------------------------------------------------------------------------
 // Sources: a library work (<install>\mmd\<work>\set.ini) or the loose files of
-// the [betterendfield.camera] section.
+// the [betterendfieldnext.camera] section.
 // ---------------------------------------------------------------------------
 bool ResolveSources(Sources& out) {
     Sources next;
@@ -374,7 +374,7 @@ void BeginLoad() {
     }
     if (music_wanted && !g.music) {
         Say(Proto::MessageCode::MusicModuleMissing,
-            "music needs the Music module (BetterEndfield.Music.dll with local playback)");
+            "music needs the Music module (BetterEndfieldNext.Music.dll with local playback)");
     }
     if (!g.want_body && !g.want_camera && !g.want_music) {
         Say(Proto::MessageCode::NothingPlayable, "nothing playable in " + g.sources.name);
@@ -701,7 +701,7 @@ void Pump() {
 // Input thread: visibility and the companion process. No Unity calls.
 std::filesystem::path OverlayExecutable() {
     const std::filesystem::path directory = ModuleDirectory();
-    return directory.empty() ? std::filesystem::path() : directory / L"BetterEndfield.MmdOverlay.exe";
+    return directory.empty() ? std::filesystem::path() : directory / L"BetterEndfieldNext.MmdOverlay.exe";
 }
 
 void EnsureOverlayProcess() {
@@ -716,7 +716,7 @@ void EnsureOverlayProcess() {
     const std::filesystem::path executable = OverlayExecutable();
     std::error_code status;
     if (executable.empty() || !std::filesystem::is_regular_file(executable, status)) {
-        Log("MMD overlay: BetterEndfield.MmdOverlay.exe not found beside the Camera DLL.");
+        Log("MMD overlay: BetterEndfieldNext.MmdOverlay.exe not found beside the Camera DLL.");
         g_overlay.last_launch = now + 60000; // do not spam the log
         return;
     }
@@ -845,7 +845,7 @@ void PumpMmdOverlayHost(bool mmd_enabled) {
 void StartMmd() {
     using namespace Mmd;
 #if defined(__ANDROID__)
-    const char* root = std::getenv("BETTER_ENDFIELD_MMD_ROOT");
+    const char* root = std::getenv("BETTER_ENDFIELD_NEXT_MMD_ROOT");
     g_library_root = root && *root ? MmdLibrary::FromUtf8(root) : std::filesystem::path();
     std::string library = "[";
     for (const auto& work : MmdLibrary::Scan(g_library_root)) {

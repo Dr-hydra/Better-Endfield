@@ -4,7 +4,7 @@
 #include <mutex>
 #include <string_view>
 
-namespace betterendfield {
+namespace betterendfieldnext {
 namespace {
 std::mutex g_mutex;
 std::string g_pending;

@@ -10,7 +10,7 @@
     "updates": [
       {
         "characterId": "chr_0038_purrche",
-        "presetPath": "ui/BetterEndfield.UI/Assets/model/character-presets.json",
+        "presetPath": "ui/BetterEndfieldNext.UI/Assets/model/character-presets.json",
         "evidence": "docs/model/research/1.5.3/purrche-title/TITLE_MODEL_PURRCHE_FIX.md",
         "manifestHash": "8b9cf90e2097d4b4767c76ae00807eb6"
       }

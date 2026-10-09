@@ -21,15 +21,15 @@
 // Built out of native/CMakeLists.txt but kept here, next to the script that
 // consumes its output; the target is EXCLUDE_FROM_ALL and never ships.
 //
-//     cmake --build build --config Release --target BetterEndfield.BuffProbe
+//     cmake --build build --config Release --target BetterEndfieldNext.BuffProbe
 //     python tools/CombatDataExporter/build_buff_table.py --emit-id-list <modules dir>
 //
-// Copy BetterEndfield.BuffProbe.dll, its .module.ini and combat-buff-ids.txt
+// Copy BetterEndfieldNext.BuffProbe.dll, its .module.ini and combat-buff-ids.txt
 // into the injector's modules directory, enter any battle, press the hotkey,
 // then delete the three files again so ordinary injections do not load it.
-// Output: %LOCALAPPDATA%\BetterEndfield\combat-buffs.json
+// Output: %LOCALAPPDATA%\BetterEndfieldNext\combat-buffs.json
 
-#include <BetterEndfield/ModuleApi.h>
+#include <BetterEndfieldNext/ModuleApi.h>
 
 #include <Windows.h>
 
@@ -49,7 +49,7 @@
 
 namespace {
 
-constexpr const char* kModuleId = "betterendfield.buff-probe";
+constexpr const char* kModuleId = "betterendfieldnext.buff-probe";
 constexpr const char* kAssembly = "Gameplay.Beyond.dll";
 constexpr const char* kCore = "Beyond.Gameplay.Core";
 constexpr const char* kGameplay = "Beyond.Gameplay";
@@ -614,7 +614,7 @@ std::filesystem::path OutputPath() {
         static_cast<DWORD>(std::size(buffer)));
     const std::filesystem::path root = length ? std::filesystem::path(buffer) :
         std::filesystem::temp_directory_path();
-    return root / L"BetterEndfield" / L"combat-buffs.json";
+    return root / L"BetterEndfieldNext" / L"combat-buffs.json";
 }
 
 std::vector<std::string> LoadBuffIds() {
@@ -949,8 +949,8 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Better Endfield Buff Table Probe", "1.0.0",
-        BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Better Endfield Next Buff Table Probe", "1.0.0",
+        BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown,
@@ -958,6 +958,6 @@ const BE_ModuleApiV1 kApi{
 
 } // namespace
 
-BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfield_GetModuleApiV1(void) {
+BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfieldNext_GetModuleApiV1(void) {
     return &kApi;
 }

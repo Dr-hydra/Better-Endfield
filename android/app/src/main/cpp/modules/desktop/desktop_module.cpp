@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <cstring>
 
-namespace betterendfield {
+namespace betterendfieldnext {
 
 DesktopModule::DesktopModule(
     const char* id,
@@ -18,7 +18,7 @@ DesktopModule::DesktopModule(
       configuration_variable_(configuration_variable),
       api_getter_(api_getter),
       active_message_(std::move(active_message)) {
-    host_.abi_version = BETTER_ENDFIELD_MODULE_ABI_V1;
+    host_.abi_version = BETTER_ENDFIELD_NEXT_MODULE_ABI_V1;
     host_.context = this;
     host_.log = &LogCallback;
     host_.resolve_method = &ResolveMethodCallback;
@@ -70,7 +70,7 @@ ModuleResult DesktopModule::Start(Il2CppRuntime& runtime) {
         return {false, std::move(hook_error)};
     }
     api_ = api_getter_ == nullptr ? nullptr : api_getter_();
-    if (api_ == nullptr || api_->descriptor.abi_version != BETTER_ENDFIELD_MODULE_ABI_V1 ||
+    if (api_ == nullptr || api_->descriptor.abi_version != BETTER_ENDFIELD_NEXT_MODULE_ABI_V1 ||
         api_->initialize == nullptr || api_->configuration_changed == nullptr) {
         return {false, "desktop module ABI is unavailable"};
     }
@@ -99,7 +99,7 @@ DesktopModule* DesktopModule::Self(void* context) {
 
 void DesktopModule::LogCallback(void* context, const char* module_id, const char* message) {
     DesktopModule* self = Self(context);
-    LogInfo(module_id != nullptr ? module_id : (self != nullptr ? self->id_ : "betterendfield"),
+    LogInfo(module_id != nullptr ? module_id : (self != nullptr ? self->id_ : "betterendfieldnext"),
         message == nullptr ? "" : message);
 }
 
@@ -295,4 +295,4 @@ void* DesktopModule::FieldGetValueObjectCallback(
             reinterpret_cast<const FieldInfo*>(field_info), instance);
 }
 
-}  // namespace betterendfield
+}  // namespace betterendfieldnext

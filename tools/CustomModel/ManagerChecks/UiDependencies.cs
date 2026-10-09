@@ -1,4 +1,4 @@
-namespace BetterEndfield.UI.Services;
+namespace BetterEndfieldNext.UI.Services;
 
 // The manager regressions exercise production metadata/settings services on a
 // plain .NET host; visual localization and keyboard capture are outside scope.

@@ -1,6 +1,6 @@
 # 特殊冲刺动画持续播放
 
-按住冲刺时，让角色保持自己的特殊冲刺动作循环播放，而不是播完一遍就回到普通疾跑。当前支持洁尔佩塔（`chr_0013_aglina`）和梨诺（`chr_0035_liino`）。启动器「冲刺持续」页的开关写入 `[betterendfield.actions] enabled`；`external_loop=true` 时启用骨骼姿态覆盖，`false` 时退回只保持状态不改姿态的 v9 行为。
+按住冲刺时，让角色保持自己的特殊冲刺动作循环播放，而不是播完一遍就回到普通疾跑。当前支持洁尔佩塔（`chr_0013_aglina`）和梨诺（`chr_0035_liino`）。启动器「冲刺持续」页的开关写入 `[betterendfieldnext.actions] enabled`；`external_loop=true` 时启用骨骼姿态覆盖，`false` 时退回只保持状态不改姿态的 v9 行为。
 
 ## 1. 运行时如何工作
 
@@ -62,19 +62,19 @@
 
 ## 4. 部署与配置
 
-`scripts/BuildBetterEndfield.ps1` 产出的 `modules/` 已自动包含模块与姿态数据文件：
+`scripts/BuildBetterEndfieldNext.ps1` 产出的 `modules/` 已自动包含模块与姿态数据文件：
 
 ```
-modules/BetterEndfield.Actions.dll
-modules/betterendfield.actions.module.ini
+modules/BetterEndfieldNext.Actions.dll
+modules/betterendfieldnext.actions.module.ini
 modules/actions/pose_aglina.bin
 modules/actions/pose_liino.bin
 ```
 
-`%LOCALAPPDATA%\BetterEndfield\BetterEndfield.ini`：
+`%LOCALAPPDATA%\BetterEndfieldNext\BetterEndfieldNext.ini`：
 
 ```ini
-[betterendfield.actions]
+[betterendfieldnext.actions]
 schema_version=2
 enabled=true
 external_loop=true
@@ -99,7 +99,7 @@ diagnostics=true
 
 ### 2026-09-08 测试版本核对
 
-01:58–02:00 的测试仍打印 v2 启动标识。用户确认 `artifacts/BetterEndfield-win-x64` 是复制测试包使用的目录；核对该目录的动作 DLL，大小为 180736 字节，修改时间为 2026-09-07 20:39:28，含 v2 标识、不含 v3 标识。不能将这次结果当作 v3 实机失败。已将输出目录中 186368 字节的 v3 动作 DLL 更新到该测试目录，旧文件备份在 `tmp_analysis/actions-before-v3-test-update-20260908`，并核对新标识。没有修改启动路径选择逻辑。
+01:58–02:00 的测试仍打印 v2 启动标识。用户确认 `artifacts/BetterEndfieldNext-win-x64` 是复制测试包使用的目录；核对该目录的动作 DLL，大小为 180736 字节，修改时间为 2026-09-07 20:39:28，含 v2 标识、不含 v3 标识。不能将这次结果当作 v3 实机失败。已将输出目录中 186368 字节的 v3 动作 DLL 更新到该测试目录，旧文件备份在 `tmp_analysis/actions-before-v3-test-update-20260908`，并核对新标识。没有修改启动路径选择逻辑。
 
 用户观察到后续体力恢复；当前保持条件已覆盖 `Dash` 以及 `Grounded + Sprint + moving`，没有把体力恢复当作退出条件。这次旧版日志也显示已跨过 `Dash → grounded Sprint`，随后才丢失 Perform。v3 效果仍需更新后的实机日志验证。
 
@@ -476,7 +476,7 @@ Aglina Perform _TryExit: command=0, reason=-1, type=-1, hold=1
 
 - `E:\Endfield Game\GameAssembly.dll`，与 `research/il2cpp-dumps/20260903-pc-current/IL2CPP_Dump_Normal/` 的方法定义对照。
 - `research/combat-jsondata/Data/Json/CharInteractPerformCfgs/CharIntPerform_Aglina_Spdash.json`，实际是 MemoryPack 二进制，长度 743 字节。
-- `%LocalAppData%\BetterEndfield\logs\BetterEndfield.log` 中 02:51:39 加载 v7、02:52:47–02:53:01 的运行记录。
+- `%LocalAppData%\BetterEndfieldNext\logs\BetterEndfieldNext.log` 中 02:51:39 加载 v7、02:52:47–02:53:01 的运行记录。
 
 资源解码脚本为 `tmp_analysis/inspect_aglina_perform_20260908.py`，输出 `tmp_analysis/aglina-perform-decoded-20260908.json`，包含各字段的文件字节范围。严格检查成员计数、布尔值、长度、未知类型及文件末尾；本样本消费 **743/743** 字节。没有改写输入资源，也没有计算产物哈希。
 
@@ -954,13 +954,13 @@ Root Y 减 Motion Y 的局部极值如下，都是资源相对高度，不能直
 
 ### 验证与交付
 
-- `BetterEndfield.Actions` 和 `BetterEndfield.ActionsTests` 的 Release 构建通过。
+- `BetterEndfieldNext.Actions` 和 `BetterEndfieldNext.ActionsTests` 的 Release 构建通过。
 - 策略回归覆盖 100 次循环调度、两峰相位/周期、首次原生混合、请求确认、停滞超时、帧越界、其他过渡优先、无效输入、End 自然清理条件和定点隐藏条件。
 - `tmp_analysis/verify_aglina_v8_contracts.py` 对照当前本地 dump，核对 45 个方法签名或属性访问器存在性；属性访问器的完整运行时类型契约仍由宿主解析器验证。结果为 `tmp_analysis/aglina-v8-method-contracts.json`。
-- DLL 可加载并导出 `betterendfield.actions / 1.7.0 / ABI 1`，目标测试包与构建输出逐字节一致；未计算产物哈希。
+- DLL 可加载并导出 `betterendfieldnext.actions / 1.7.0 / ABI 1`，目标测试包与构建输出逐字节一致；未计算产物哈希。
 - 音频依赖 `Audio.Beyond.dll` 已加入动作模块 manifest。构建单个动作目标没有刷新共享 staging manifest，交付时已从源文件同步并核对依赖行。
 
-交付文件：`artifacts/BetterEndfield-win-x64/modules/BetterEndfield.Actions.dll`（196096 字节）及同目录 `betterendfield.actions.module.ini`。旧 DLL/manifest 保存在 `tmp_analysis/actions-before-v8-test-update-20260908-180414`。
+交付文件：`artifacts/BetterEndfieldNext-win-x64/modules/BetterEndfieldNext.Actions.dll`（196096 字节）及同目录 `betterendfieldnext.actions.module.ini`。旧 DLL/manifest 保存在 `tmp_analysis/actions-before-v8-test-update-20260908-180414`。
 
 运行日志的加载标识应为 `Actions enabled: Aglina peak-to-peak bob blend and End-track hold (v8 experimental).`；循环记录为 `Aglina v8 same-side bob blend`。重启游戏后使用现有动作模块开关测试：持续至少 10 秒，再分别停止、攻击、腾空、换人和关闭开关。尚未取得本版实机日志，不能将离线测试视作游戏内成功；尤其需要确认自转场是否被引擎接受、根运动是否正常、左侧急转轨道和手脚接缝是否可接受。
 
@@ -968,7 +968,7 @@ Root Y 减 Motion Y 的局部极值如下，都是资源相对高度，不能直
 
 ### 1. v8 实机证据修正了此前判断
 
-用户确认“武器/道具还在，发光或粒子消失”，循环可持续但存在明显接缝。本轮读取 `%LOCALAPPDATA%/BetterEndfield/logs/BetterEndfield.log` 最近记录，截取为 `tmp_analysis/aglina-v8-latest-log.txt`。
+用户确认“武器/道具还在，发光或粒子消失”，循环可持续但存在明显接缝。本轮读取 `%LOCALAPPDATA%/BetterEndfieldNext/logs/BetterEndfieldNext.log` 最近记录，截取为 `tmp_analysis/aglina-v8-latest-log.txt`。
 
 22:52:40 的请求为 `normalized=0.655, target_seconds=1.336, blend_seconds=0.300`，随后当前进度从约 0.704 回到 **0.087**，再经过 0.1、0.2、0.3 等入场进度；后几轮重复同样模式。状态长度 3.467 秒，因此 0.087 对应约 0.30 秒。若中段目标生效，混合完成应约在 normalizedTime **0.47**。这不是已经完成 0.933 秒目标循环的证据，而是旧调度器误将任何时间回落都当作成功。
 
@@ -1005,14 +1005,14 @@ EffectInstance.DurationTick 的非循环分支在 `0x02D57238` 扣减 delta，`0
 
 ### 5. 验证与产物
 
-- Release 构建通过；`BetterEndfield.ActionsTests` 包含 v8 实际错落点回归、正确中段确认及已有 100 次循环/退出测试。
-- 新 `BetterEndfield.ActionsEffectsTests` 直接覆盖生产恢复/Finish 路径，以托管 API 替身验证恢复原值、回收幂等、失效对象、无关效果与关闭时不调用 Unity。它没有模拟粒子渲染。
+- Release 构建通过；`BetterEndfieldNext.ActionsTests` 包含 v8 实际错落点回归、正确中段确认及已有 100 次循环/退出测试。
+- 新 `BetterEndfieldNext.ActionsEffectsTests` 直接覆盖生产恢复/Finish 路径，以托管 API 替身验证恢复原值、回收幂等、失效对象、无关效果与关闭时不调用 Unity。它没有模拟粒子渲染。
 - 61 个方法/属性访问器与本地 dump 核对通过，结果保存为 `tmp_analysis/aglina-current-method-contracts.json`。运行时泛型 Lock 和粒子实例操作仍须实机验证。
 - 特效证据：`tmp_analysis/aglina-v9-effect-summary.json`、`aglina-v9-effect-raw/*.tree.json`、`aglina-v9-effect-bundles.json`；DurationTick 证据为 `aglina-v9-lifetime-branch.txt`。
 
 v9 启动标识：`Actions enabled: Aglina normalized bob blend and continuous particles (v9 experimental).`。重点核对循环落点约 0.47、`effect 0/1 continuous particles prepared: count=2` 和 `held target effect lifetime/auto-fade clock`；持续跑 10 秒后检查停止/攻击时粒子是否清理。当前未取得 v9 游戏内结果，不能声称已消除全部接缝或完成粒子实机验收。
 
-测试包 DLL 与 manifest 已更新至 `artifacts/BetterEndfield-win-x64/modules`；导出版本 1.8.0、ABI 1，DLL 208384 字节，已与构建输出逐字节核对。旧 v8 备份：`tmp_analysis/actions-before-v9-test-update-20260908-231923`。未计算产物哈希。
+测试包 DLL 与 manifest 已更新至 `artifacts/BetterEndfieldNext-win-x64/modules`；导出版本 1.8.0、ABI 1，DLL 208384 字节，已与构建输出逐字节核对。旧 v8 备份：`tmp_analysis/actions-before-v9-test-update-20260908-231923`。未计算产物哈希。
 
 ## 2026-09-09：外部导出及第二版验证
 
@@ -1043,7 +1043,7 @@ FBX 已在 Blender 实际导入：左右端点骨骼位置差和抽查的第 4 �
 
 ## 2026-09-09：v10 回导测试包（Actions 1.9.0）
 
-用户认可粗修视频后授权游戏回导。现已将回导器和动画资源装入 `artifacts/BetterEndfield-win-x64`，尚未启动游戏实测。
+用户认可粗修视频后授权游戏回导。现已将回导器和动画资源装入 `artifacts/BetterEndfieldNext-win-x64`，尚未启动游戏实测。
 
 回导 Clip 保留原版 208/60 秒时长和起手，在帧 40–143 内使用粗修闭合 Loop，相位对齐到原版帧 40；之后平滑接回原收尾。前進 Motion 和 19 个音效/语音事件已还原。Unity 导入使用原 T Pose/骨骼映射、完整附属骨骼 Mask，并去除 FBX 多出的路径前缀及无关 Root Transform 行进曲线，避免重复移动。
 
@@ -1113,7 +1113,7 @@ Release 编译、82 个接口描述、新增文件/时钟/混合/所有权清理
 2. 动作本质是滑翔：根高度 40 帧谷、98 峰、138 谷，循环段内双脚离地 0.27–1.2 m，无脚部接触问题。全身边界搜索仍选源帧 22–125（首尾位置 RMS 0.253 → 0.104 m）。
 3. `make_aglina_loop_fine.py`：接缝改为真实数据交叠淡化（起点侧源帧 0–44 与终点侧 103–147 各 22 帧，五次 smootherstep 权重），源帧 45–102 不动。身体骨骼接缝角加速度 0.1–1.0 °/帧²，低于原动作自身 99 分位（1.6–15）；头发链 3–4 对 10；端点差 0；Blender 四轮周期检查差 0。产物 `tmp_analysis/aglina-loop-fine-v1`，对照视频 `aglina_loop_before_after_4cycles.mp4`。
 4. `prepare_aglina_pose_overlay_v13.py`：399 → 226 根骨骼。剔除 84 根原动作中静止的骨骼（Nub、lod 网格节点、Funnel、IK_Root 等）和 89 根面部/视线骨骼（交还口型、注视、表情系统；冲刺中有语音事件）。22 根 Humanoid 骨骼全部保留并标记 required。时序参数与 v12 相同（104 点、周期 103、相位 18、入口 40/208），文件名沿用 `aglina_pose_v12.bin`。`validate_aglina_pose_bank.py` 按 PoseBank::Load 规则复核通过。
-5. 已替换 `build/native/stage/Release/modules/actions/aglina_pose_v12.bin`；备份在 `tmp_analysis/aglina-pose-overlay-v13/backup/`。线上 `artifacts/BetterEndfield-win-x64` 自 2026-09-10 08:00 主线重建后已不含 Actions 模块（v12 试播日志在 `%LOCALAPPDATA%\BetterEndfield\logs\BetterEndfield.log.bak`，03:48–03:50，matched=399、mean_apply_us≈157），本轮未改动线上目录，而是从本工作树完整发布到 `artifacts/BetterEndfield-win-x64-aglina-test`（含本分支 Actions DLL 与 v13 数据），并把 `BetterEndfield.ini` 的 `[Host]`/`[Loader]` 指向该目录、加入 `[betterendfield.actions]` 节（原 ini 已备份），见 v13 README“2026-09-13 21:45 测试发布”。
+5. 已替换 `build/native/stage/Release/modules/actions/aglina_pose_v12.bin`；备份在 `tmp_analysis/aglina-pose-overlay-v13/backup/`。线上 `artifacts/BetterEndfieldNext-win-x64` 自 2026-09-10 08:00 主线重建后已不含 Actions 模块（v12 试播日志在 `%LOCALAPPDATA%\BetterEndfieldNext\logs\BetterEndfieldNext.log.bak`，03:48–03:50，matched=399、mean_apply_us≈157），本轮未改动线上目录，而是从本工作树完整发布到 `artifacts/BetterEndfieldNext-win-x64-aglina-test`（含本分支 Actions DLL 与 v13 数据），并把 `BetterEndfieldNext.ini` 的 `[Host]`/`[Loader]` 指向该目录、加入 `[betterendfieldnext.actions]` 节（原 ini 已备份），见 v13 README“2026-09-13 21:45 测试发布”。
 
 待实机确认：`bone overlay bound: matched=226`、`TailLate pose applied` 后右腿是否随循环摆动；面部交还原生后口型与注视是否正常；`wep_L` 挂点在接缝处的跳变是否可见（原动作自身即有）。加载日志里“104 samples”是 DLL 写死的文案。说明见 `tmp_analysis/aglina-fbx-validation-v3/README.md`、`aglina-loop-fine-v1/README.md`、`aglina-pose-overlay-v13/README.md`。
 

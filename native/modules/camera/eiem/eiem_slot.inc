@@ -389,8 +389,8 @@ static bool MotionBackend_EnterDirectMainThread(bool play,
   if (play)
     DirectVmdRuntime_RequestPlay();
   Log("[P4-DIRECT-ENTER] accepted play=%d entity=%p animator=%p "
-      "backendGeneration=%llu ghostGeneration=%llu clock=BetterEndfield.MmdDirector "
-      "camera=BetterEndfield audio=BetterEndfield.Music tid=%lu",
+      "backendGeneration=%llu ghostGeneration=%llu clock=BetterEndfieldNext.MmdDirector "
+      "camera=BetterEndfieldNext audio=BetterEndfieldNext.Music tid=%lu",
       play ? 1 : 0, g_mainCharEntity, g_cachedAnimator,
       (unsigned long long)g_motionBackend.Generation(),
       (unsigned long long)s_ghostRequestedGeneration.load(
@@ -400,13 +400,13 @@ static bool MotionBackend_EnterDirectMainThread(bool play,
 }
 
 // ===========================================================================
-// Better Endfield slot driver
+// Better Endfield Next slot driver
 // ===========================================================================
 namespace {
-using namespace BetterEndfield;
+using namespace BetterEndfieldNext;
 
 const BE_HostApiV1 *g_beHost = nullptr;
-constexpr char kBeModuleId[] = "betterendfield.camera";
+constexpr char kBeModuleId[] = "betterendfieldnext.camera";
 bool g_beInitialized = false;
 bool g_beAvailable = false;
 bool g_beFaceReady = false;
@@ -867,7 +867,7 @@ bool ApiInitialize(const BE_HostApiV1 *host, const std::wstring &log_path,
   if (!log_path.empty())
     g_logHandle = CreateFileW(log_path.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr,
                               CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-  Log("=== Better Endfield EIEM DirectVmd port (upstream 1bc9baa) slot %d ===", BE_EIEM_SLOT);
+  Log("=== Better Endfield Next EIEM DirectVmd port (upstream 1bc9baa) slot %d ===", BE_EIEM_SLOT);
   g_beAvailable = ResolveAll(targets);
   if (g_beAvailable) {
     ApplyOptions();
@@ -1078,7 +1078,7 @@ const EiemSlot::Api kApi{
 } // namespace
 } // namespace BE_EIEM_NS
 
-const BetterEndfield::EiemSlot::Api *BetterEndfield::EiemSlot::BE_EIEM_API() {
+const BetterEndfieldNext::EiemSlot::Api *BetterEndfieldNext::EiemSlot::BE_EIEM_API() {
   return &BE_EIEM_NS::kApi;
 }
 

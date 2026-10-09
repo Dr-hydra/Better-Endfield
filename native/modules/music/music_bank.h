@@ -3,7 +3,7 @@
 #include <array>
 #include <cstdint>
 
-namespace BetterEndfield::Music {
+namespace BetterEndfieldNext::Music {
 
 constexpr uint32_t kBankId = 3704265910u;
 constexpr uint32_t kEventId = 95937692u;
@@ -38,4 +38,4 @@ constexpr uint64_t BankFnv1a64() {
 static_assert(BankFnv1a64() == 0x3E0D3AD84BA719A1ull,
     "The embedded Audio Input Bank differs from the validated 188-byte Bank.");
 
-} // namespace BetterEndfield::Music
+} // namespace BetterEndfieldNext::Music

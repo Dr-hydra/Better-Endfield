@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <mutex>
 
-namespace BetterEndfield::CustomModel {
+namespace BetterEndfieldNext::CustomModel {
 // Lifecycle only: Win32 process/IPC, no worker and no Unity calls.
 class ModelOverlayHost {
 public:
@@ -14,7 +14,7 @@ public:
         if(!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS|GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
             reinterpret_cast<LPCWSTR>(module_address),&module)||!GetModuleFileNameW(module,dll,32768)) return false;
         const auto directory=std::filesystem::path(dll).parent_path();
-        const auto executable=directory/L"BetterEndfield.ModelOverlay.exe";
+        const auto executable=directory/L"BetterEndfieldNext.ModelOverlay.exe";
         const auto mapping_name=OverlayProtocol::MappingName(GetCurrentProcessId());
         mapping_=CreateFileMappingW(INVALID_HANDLE_VALUE,nullptr,PAGE_READWRITE,0,sizeof(OverlayProtocol::Shared),mapping_name.c_str());
         if(!mapping_) return false;
@@ -66,5 +66,5 @@ private:
     std::wstring mapping_name_;
     ULONGLONG last_launch_=0;
 };
-} // namespace BetterEndfield::CustomModel
+} // namespace BetterEndfieldNext::CustomModel
 #endif

@@ -28,7 +28,7 @@ def main():
 
     meta = d["metadata"]
     print("=" * 66)
-    print("【BetterEndfield 战斗全量数据字典解析总览】")
+    print("【BetterEndfieldNext 战斗全量数据字典解析总览】")
     print(f"• 导出时间: {meta['exportedAt']}")
     print("• 抽取数据量统计:")
     for k, v in meta["counts"].items():

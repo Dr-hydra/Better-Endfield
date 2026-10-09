@@ -12,7 +12,7 @@
         android:roundIcon="@drawable/gilberta"
         android:supportsRtl="true">
         <provider android:name=".OverlaySettingsProvider"
-            android:authorities="dev.betterendfield.android.overlay.settings"
+            android:authorities="dev.betterendfield.next.overlay.settings"
             android:exported="true" android:grantUriPermissions="false" />
         <receiver android:name=".ModulePackageReplacedReceiver" android:exported="false">
             <intent-filter>

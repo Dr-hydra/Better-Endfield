@@ -21,3 +21,5 @@
 该归档同时包含从工作区和 `%LOCALAPPDATA%/BetterEndfield/research` 剪切进来的旧版
 资源导出、IL2CPP dump、运行记录及本机大型研究输入。可提交内容与本机专用载荷的
 边界见版本目录内的 `README.md` 和 `references/README.md`。
+
+Next 退役功能与入口快照见 [retired-before-next](retired-before-next/README.md)，来源、文件角色及 SHA-256 见对应 manifest.json。

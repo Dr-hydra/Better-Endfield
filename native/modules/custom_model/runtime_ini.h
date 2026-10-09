@@ -7,7 +7,7 @@
 #include <string_view>
 #include <vector>
 
-namespace BetterEndfield::CustomModel::Settings {
+namespace BetterEndfieldNext::CustomModel::Settings {
 inline constexpr size_t kMaxIniBytes=1024*1024;
 inline std::string Trim(std::string_view value) {
     const auto first=value.find_first_not_of(" \t\r\n");
@@ -108,4 +108,4 @@ inline std::string PairValue(std::string_view source,std::string_view id) {
     }
     return {};
 }
-} // namespace BetterEndfield::CustomModel::Settings
+} // namespace BetterEndfieldNext::CustomModel::Settings

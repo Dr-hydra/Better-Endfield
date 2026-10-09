@@ -5,13 +5,13 @@
 #include <filesystem>
 #include <string>
 
-#ifndef BETTER_ENDFIELD_INPUT_PROXY_MARKER
-#error BETTER_ENDFIELD_INPUT_PROXY_MARKER must identify this proxy.
+#ifndef BETTER_ENDFIELD_NEXT_INPUT_PROXY_MARKER
+#error BETTER_ENDFIELD_NEXT_INPUT_PROXY_MARKER must identify this proxy.
 #endif
 
 // Use PE forwarders instead of calling LoadLibrary from DllMain. These match
 // the XInput 1.4 API surface imported by the client.
-#if defined(BETTER_ENDFIELD_INPUT_PROXY_XINPUT14)
+#if defined(BETTER_ENDFIELD_NEXT_INPUT_PROXY_XINPUT14)
 #pragma comment(linker, "/export:XInputGetState=C:\\Windows\\System32\\XInput1_4.XInputGetState,@2")
 #pragma comment(linker, "/export:XInputSetState=C:\\Windows\\System32\\XInput1_4.XInputSetState,@3")
 #pragma comment(linker, "/export:XInputGetCapabilities=C:\\Windows\\System32\\XInput1_4.XInputGetCapabilities,@4")
@@ -19,7 +19,7 @@
 #pragma comment(linker, "/export:XInputGetBatteryInformation=C:\\Windows\\System32\\XInput1_4.XInputGetBatteryInformation,@7")
 #pragma comment(linker, "/export:XInputGetKeystroke=C:\\Windows\\System32\\XInput1_4.XInputGetKeystroke,@8")
 #pragma comment(linker, "/export:XInputGetAudioDeviceIds=C:\\Windows\\System32\\XInput1_4.XInputGetAudioDeviceIds,@10")
-#elif defined(BETTER_ENDFIELD_INPUT_BOOTSTRAP)
+#elif defined(BETTER_ENDFIELD_NEXT_INPUT_BOOTSTRAP)
 // The built-in injector loads this ordinary image-backed DLL through the
 // Windows loader. It intentionally exports no input API.
 #else
@@ -65,7 +65,7 @@ std::filesystem::path SettingsPath() {
         return {};
     }
     return std::filesystem::path(local_app_data.data()) /
-        L"BetterEndfield" / L"BetterEndfield.ini";
+        L"BetterEndfieldNext" / L"BetterEndfieldNext.ini";
 }
 
 std::filesystem::path ReadHostPath() {
@@ -81,7 +81,7 @@ std::filesystem::path ReadHostPath() {
         return {};
     }
     return std::filesystem::path(install_root.data()) / L"runtime" /
-        L"BetterEndfield.Host.dll";
+        L"BetterEndfieldNext.Host.dll";
 }
 
 bool ShouldLoadHost() {
@@ -103,11 +103,11 @@ DWORD WINAPI ProxyWorker(void* module) {
     if (directory.empty()) {
         return 0;
     }
-    WriteTextFile(directory / BETTER_ENDFIELD_INPUT_PROXY_MARKER, "loaded\r\n",
+    WriteTextFile(directory / BETTER_ENDFIELD_NEXT_INPUT_PROXY_MARKER, "loaded\r\n",
         CREATE_ALWAYS);
 
-#if defined(BETTER_ENDFIELD_INPUT_PROXY_LOAD_HOST)
-    const auto status = directory / BETTER_ENDFIELD_INPUT_PROXY_STATUS;
+#if defined(BETTER_ENDFIELD_NEXT_INPUT_PROXY_LOAD_HOST)
+    const auto status = directory / BETTER_ENDFIELD_NEXT_INPUT_PROXY_STATUS;
     WriteTextFile(status, "worker entered\r\n", CREATE_ALWAYS);
     if (!ShouldLoadHost()) {
         WriteTextFile(status, "host disabled by configuration\r\n", OPEN_ALWAYS);
@@ -120,7 +120,7 @@ DWORD WINAPI ProxyWorker(void* module) {
         return 0;
     }
 
-#if defined(BETTER_ENDFIELD_INPUT_BOOTSTRAP)
+#if defined(BETTER_ENDFIELD_NEXT_INPUT_BOOTSTRAP)
     // This image is loaded by the built-in injector after the game is resumed.
     // Loading the native Host does not require this short-lived worker to enter
     // the managed runtime. The Host owns the single IL2CPP thread attachment.

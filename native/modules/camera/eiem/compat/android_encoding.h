@@ -5,7 +5,7 @@
 #include <string>
 #include "android_cp932_table.h"
 
-namespace BetterEndfield::EiemAndroid {
+namespace BetterEndfieldNext::EiemAndroid {
 inline void AppendUtf8(std::string& out, uint32_t cp) {
   if (cp < 0x80) out += char(cp);
   else if (cp < 0x800) {

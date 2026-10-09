@@ -24,12 +24,12 @@
 
 #include "eiem_slot.h"
 
-namespace BetterEndfield::EiemBody {
+namespace BetterEndfieldNext::EiemBody {
 namespace {
 using EiemSlot::Api;
 
 const BE_HostApiV1* g_host = nullptr;
-constexpr char kModuleId[] = "betterendfield.camera";
+constexpr char kModuleId[] = "betterendfieldnext.camera";
 bool g_initialized = false;
 bool g_available = false;
 std::wstring g_log_path;
@@ -325,7 +325,7 @@ bool Initialize(const BE_HostApiV1* host, const std::wstring& log_path) {
 #if defined(__ANDROID__)
     HostLog("DirectVmd managed adapter ready; independent IK/knee/twist/SMC/cloth/terrain are metadata-gated; owned FinalIK solve suspended");
 #else
-    HostLog("DirectVmd ready (diagnostics: BetterEndfield.EiemBody.log)");
+    HostLog("DirectVmd ready (diagnostics: BetterEndfieldNext.EiemBody.log)");
 #endif
     return true;
 }
@@ -412,4 +412,4 @@ void Shutdown() {
         if (g_slots[i] && g_tried[i]) g_slots[i]->shutdown();
 }
 
-} // namespace BetterEndfield::EiemBody
+} // namespace BetterEndfieldNext::EiemBody

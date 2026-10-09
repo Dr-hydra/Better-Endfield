@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BetterEndfield/ModuleApi.h"
+#include "BetterEndfieldNext/ModuleApi.h"
 
 #include <Windows.h>
 
@@ -8,7 +8,7 @@
 #include <atomic>
 #include <string>
 
-namespace BetterEndfield::Host {
+namespace BetterEndfieldNext::Host {
 
 class DynamicResolver;
 class HookBroker;
@@ -16,8 +16,8 @@ class Logger;
 class ModuleManager;
 class SettingsStore;
 }
-namespace BetterEndfield::ThirdParty { class ThirdPartyHost; }
-namespace BetterEndfield::Host {
+namespace BetterEndfieldNext::ThirdParty { class ThirdPartyHost; }
+namespace BetterEndfieldNext::Host {
 
 class HostRuntime {
 public:
@@ -69,8 +69,8 @@ private:
     std::unique_ptr<DynamicResolver> resolver_;
     std::unique_ptr<HookBroker> hooks_;
     std::unique_ptr<ModuleManager> modules_;
-    std::unique_ptr<BetterEndfield::ThirdParty::ThirdPartyHost> third_party_;
+    std::unique_ptr<BetterEndfieldNext::ThirdParty::ThirdPartyHost> third_party_;
     std::atomic_bool stop_requested_{false};
 };
 
-} // namespace BetterEndfield::Host
+} // namespace BetterEndfieldNext::Host

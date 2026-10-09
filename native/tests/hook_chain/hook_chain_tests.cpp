@@ -11,7 +11,7 @@
 #include <fstream>
 #include <sstream>
 #endif
-using namespace BetterEndfield::Hooks;
+using namespace BetterEndfieldNext::Hooks;
 namespace {
 unsigned checks=0;
 void Check(bool value,const char* message){++checks;if(!value)throw std::runtime_error(message);}
@@ -140,7 +140,7 @@ void CoreTests() {
 void ProductionTests() {
     const auto log_root=std::filesystem::temp_directory_path()/"be_hook_chain_tests";
     std::filesystem::remove_all(log_root);
-    BetterEndfield::Host::Logger logger;logger.Initialize(log_root);BetterEndfield::Host::HookBroker broker(logger);
+    BetterEndfieldNext::Host::Logger logger;logger.Initialize(log_root);BetterEndfieldNext::Host::HookBroker broker(logger);
     Check(broker.Initialize(),"MinHook init");auto* api=broker.ChainApi();
     uint64_t ha=0,hb=0;void* ignored=nullptr;
     Check(api->create(api->context,"a",reinterpret_cast<void*>(&Original),reinterpret_cast<void*>(&A),reinterpret_cast<void**>(&next_a),&ha)==BE_Result_Ok,"real A");
@@ -164,16 +164,16 @@ void ProductionTests() {
     Check(broker.ReleaseModule("builtin")==BE_Result_Ok&&call(1,2,3,4,5,6)==91,"release re-registered built-in");
     // Two built-in modules hook one target: both run, release keeps the other.
     broker.DescribeEntry(reinterpret_cast<void*>(&CloneOriginal),"UnityEngine.Object::Internal_CloneSingleWithParent(...)");
-    Check(broker.Create("betterendfield.model",reinterpret_cast<void*>(&CloneOriginal),reinterpret_cast<void*>(&M),reinterpret_cast<void**>(&next_m))==BE_Result_Ok,"model clone hook");
-    Check(broker.Create("betterendfield.custom_model",reinterpret_cast<void*>(&CloneOriginal),reinterpret_cast<void*>(&N),reinterpret_cast<void**>(&next_n))==BE_Result_Ok,"custom_model clone hook refused");
+    Check(broker.Create("betterendfieldnext.model",reinterpret_cast<void*>(&CloneOriginal),reinterpret_cast<void*>(&M),reinterpret_cast<void**>(&next_m))==BE_Result_Ok,"model clone hook");
+    Check(broker.Create("betterendfieldnext.custom_model",reinterpret_cast<void*>(&CloneOriginal),reinterpret_cast<void*>(&N),reinterpret_cast<void**>(&next_n))==BE_Result_Ok,"custom_model clone hook refused");
     volatile IntFn clone_call=&CloneOriginal;order.clear();
     Check(clone_call(1,2,3,4,5,6)==11044&&order=="MN","both built-in hooks must run in registration order");
-    Check(broker.ReleaseModule("betterendfield.model")==BE_Result_Ok,"release model");order.clear();
+    Check(broker.ReleaseModule("betterendfieldnext.model")==BE_Result_Ok,"release model");order.clear();
     Check(clone_call(1,2,3,4,5,6)==10044&&order=="N","custom_model lost its hook when model was released");
     order.clear();Check(next_m(1,2,3,4,5,6)==10044&&order=="N","released original skipped the remaining chain");
-    Check(broker.Create("betterendfield.model",reinterpret_cast<void*>(&CloneOriginal),reinterpret_cast<void*>(&M),reinterpret_cast<void**>(&next_m))==BE_Result_Ok,"model re-registration");
+    Check(broker.Create("betterendfieldnext.model",reinterpret_cast<void*>(&CloneOriginal),reinterpret_cast<void*>(&M),reinterpret_cast<void**>(&next_m))==BE_Result_Ok,"model re-registration");
     order.clear();Check(clone_call(1,2,3,4,5,6)==11044&&order=="MN","re-registered model moved");
-    Check(broker.ReleaseModule("betterendfield.custom_model")==BE_Result_Ok,"release custom_model");order.clear();
+    Check(broker.ReleaseModule("betterendfieldnext.custom_model")==BE_Result_Ok,"release custom_model");order.clear();
     Check(clone_call(1,2,3,4,5,6)==1044&&order=="M","model lost its hook when custom_model was released");
     // Computed before FpOriginal is patched; later direct calls enter the chain.
     const double fp_base=FpOriginal(.125,2,.25f,3.5,4,5.75,.5f,6);
@@ -192,18 +192,18 @@ void ProductionTests() {
     Check(api->disable_module(api->context,"joined")==BE_Result_Ok,"third-party release");
     Check(std::abs(fp_call(.125,2,.25f,3.5,4,5.75,.5f,6)-fp_base)<1e-8,"released target is not a pass-through");
     broker.Shutdown();Check(call(1,2,3,4,5,6)==91,"real shutdown original");
-    std::ifstream log_file(log_root/"BetterEndfield.log");std::stringstream log;log<<log_file.rdbuf();
+    std::ifstream log_file(log_root/"BetterEndfieldNext.log");std::stringstream log;log<<log_file.rdbuf();
     const std::string text=log.str();
     Check(text.find("Hook installed for exclusive: Test.Fp::Original(...) at ")!=std::string::npos,"install line missing");
     Check(text.find("First call observed: ")!=std::string::npos&&text.find("Test.Fp::Original(...) / Test.Folded::Twin(...) (")!=std::string::npos,"first call line missing");
     Check(text.find("Shared native entry at ")!=std::string::npos,"shared entry warning missing");
-    Check(text.find("Hook installed for betterendfield.model: UnityEngine.Object::Internal_CloneSingleWithParent(...) at ")!=std::string::npos,"clone install line missing");
-    Check(text.find("now runs betterendfield.model -> betterendfield.custom_model -> original.")!=std::string::npos,"chain owner line missing");
-    Check(text.find("after release of betterendfield.model: betterendfield.custom_model -> original.")!=std::string::npos,"release owner line missing");
+    Check(text.find("Hook installed for betterendfieldnext.model: UnityEngine.Object::Internal_CloneSingleWithParent(...) at ")!=std::string::npos,"clone install line missing");
+    Check(text.find("now runs betterendfieldnext.model -> betterendfieldnext.custom_model -> original.")!=std::string::npos,"chain owner line missing");
+    Check(text.find("after release of betterendfieldnext.model: betterendfieldnext.custom_model -> original.")!=std::string::npos,"release owner line missing");
     Check(text.find("Hook conflict: builtin already has an active hook at ")!=std::string::npos,"duplicate conflict line missing");
 }
 void DiagnosticsTests() {
-    namespace D=BetterEndfield::Host::HookDiagnostics;
+    namespace D=BetterEndfieldNext::Host::HookDiagnostics;
     // 0: xor edx,edx; jmp +57 -> 64 (a tail call into a leaf). 64: ret.
     // 128: xor eax,eax; je +4; ret (leaf without a tail call).
     auto* code=static_cast<uint8_t*>(VirtualAlloc(nullptr,4096,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));

@@ -24,7 +24,7 @@
 #include <cctype>
 #include <cstring>
 #include <climits>
-namespace BetterEndfield::ThirdParty {
+namespace BetterEndfieldNext::ThirdParty {
 namespace {
 using J=nlohmann::json;
 constexpr size_t kLimit=1024*1024;
@@ -38,7 +38,7 @@ void Close(Socket fd){close(fd);}
 void Require(bool condition,const char* reason){if(!condition)throw std::runtime_error(reason);}
 std::string Read(const std::filesystem::path& path){std::ifstream in(path,std::ios::binary|std::ios::ate);Require(bool(in),"Module metadata cannot be opened");auto size=in.tellg();Require(size>0 && static_cast<uint64_t>(size)<=kLimit,"Module metadata exceeds limit");std::string data(static_cast<size_t>(size),'\0');in.seekg(0);Require(bool(in.read(data.data(),data.size())),"Module metadata read failed");return data;}
 std::filesystem::path UtfPath(const std::string& value){return std::filesystem::path(std::u8string_view(reinterpret_cast<const char8_t*>(value.data()),value.size()));}
-bool Id(const std::string& id){if(id.empty() || id.size()>96 || !std::isalnum(static_cast<unsigned char>(id[0])))return false;for(unsigned char c:id)if(!std::isalnum(c)&&c!='_'&&c!='.'&&c!='-')return false;std::string lower=id;std::transform(lower.begin(),lower.end(),lower.begin(),[](unsigned char c){return static_cast<char>(std::tolower(c));});return !lower.starts_with("betterendfield.")&&lower!="voice.character";}
+bool Id(const std::string& id){if(id.empty() || id.size()>96 || !std::isalnum(static_cast<unsigned char>(id[0])))return false;for(unsigned char c:id)if(!std::isalnum(c)&&c!='_'&&c!='.'&&c!='-')return false;std::string lower=id;std::transform(lower.begin(),lower.end(),lower.begin(),[](unsigned char c){return static_cast<char>(std::tolower(c));});return !lower.starts_with("betterendfieldnext.")&&lower!="voice.character";}
 std::filesystem::path Child(const std::filesystem::path& root,const std::string& relative){Require(!relative.empty() && relative.find('\\')==relative.npos && relative.find(':')==relative.npos && relative.find('\0')==relative.npos,"Invalid package-relative path");auto path=UtfPath(relative);Require(!path.is_absolute(),"Absolute package library path");for(const auto& part:path)Require(part!="."&&part!=".."&&!part.empty(),"Invalid package path segment");auto base=std::filesystem::weakly_canonical(root);auto candidate=std::filesystem::weakly_canonical(base/path);auto rel=candidate.lexically_relative(base);Require(!rel.empty()&&!rel.is_absolute()&&*rel.begin()!="..","Library escapes module generation");Require(std::filesystem::is_regular_file(candidate),"Native module library is missing");return candidate;}
 J Parse(const std::string& data){Require(data.size()<=kLimit,"JSON exceeds limit");try{return J::parse(data);}catch(const J::parse_error&){throw std::runtime_error("Invalid module JSON");}}
 bool ConstantEqual(const std::string& a,const std::string& b){size_t diff=a.size()^b.size();for(size_t i=0;i<std::max(a.size(),b.size());++i)diff|=(i<a.size()?a[i]:0)^(i<b.size()?b[i]:0);return diff==0;}
@@ -117,9 +117,9 @@ struct ThirdPartyHost::Impl {
         if(!module.library){const auto manifest=Parse(Read(UtfPath(module.directory)/"module.json"));const auto library=Child(UtfPath(module.directory),manifest.at("libraries").at(platform).get<std::string>());
 #ifdef _WIN32
             Require(library.extension()==L".dll","Windows module must be a DLL");module.library=LoadLibraryExW(library.c_str(),nullptr,LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR|LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
-            Require(module.library,"Native module library failed to load");auto entry=reinterpret_cast<BE_GetThirdPartyModuleV1Fn>(GetProcAddress(static_cast<HMODULE>(module.library),"BetterEndfield_GetThirdPartyModuleV1"));
+            Require(module.library,"Native module library failed to load");auto entry=reinterpret_cast<BE_GetThirdPartyModuleV1Fn>(GetProcAddress(static_cast<HMODULE>(module.library),"BetterEndfieldNext_GetThirdPartyModuleV1"));
 #else
-            Require(library.extension()==".so","Android module must be a shared library");module.library=dlopen(library.c_str(),RTLD_NOW|RTLD_LOCAL);Require(module.library,"Native module library failed to load");auto entry=reinterpret_cast<BE_GetThirdPartyModuleV1Fn>(dlsym(module.library,"BetterEndfield_GetThirdPartyModuleV1"));
+            Require(library.extension()==".so","Android module must be a shared library");module.library=dlopen(library.c_str(),RTLD_NOW|RTLD_LOCAL);Require(module.library,"Native module library failed to load");auto entry=reinterpret_cast<BE_GetThirdPartyModuleV1Fn>(dlsym(module.library,"BetterEndfieldNext_GetThirdPartyModuleV1"));
 #endif
             module.pinned=true;Require(entry,"Third-party module entry point is missing");const auto candidate=entry();
             Require(candidate && candidate->struct_size>=sizeof(BE_ThirdPartyModuleV1)&&candidate->version==1&&candidate->id&&module.id==candidate->id&&candidate->initialize&&candidate->on_message,"Third-party module ABI differs");module.api=candidate;

@@ -129,18 +129,18 @@ buff id 列表直接用 `research/combat-jsondata/Data/Json/BuffData/` 的文件
 
 ## 导出流程
 
-`tools/BuffProbe/`（`BetterEndfield.BuffProbe`，`EXCLUDE_FROM_ALL`）：
+`tools/BuffProbe/`（`BetterEndfieldNext.BuffProbe`，`EXCLUDE_FROM_ALL`）：
 
 1. `Initialize` 解析 `TryGetBuff` / `TailLateTick` / `ClearCache` / `get_tagName` 与上表全部字段。
 2. hook `TryGetBuff`，**只用来从第一次真实调用里捕获 `this`**，随后自行驱动 loader。
 3. 后台线程轮询热键（默认 `Ctrl+F9`，ini 可改），把请求**锁存**成一个原子标志。
 4. hook `BattleManager.TailLateTick` 消费该标志，在游戏线程上执行导出。
 5. 一次性遍历 `combat-buff-ids.txt`，逐个 `TryGetBuff` 并读出字段，
-   写 `%LOCALAPPDATA%\BetterEndfield\combat-buffs.json`，最后 `ClearCache()`。
+   写 `%LOCALAPPDATA%\BetterEndfieldNext\combat-buffs.json`，最后 `ClearCache()`。
 6. `tools/CombatDataExporter/build_buff_table.py` 消费该文件，产出网页端资源表。
 
 ```powershell
-cmake --build build --config Release --target BetterEndfield.BuffProbe
+cmake --build build --config Release --target BetterEndfieldNext.BuffProbe
 python tools/CombatDataExporter/build_buff_table.py --emit-id-list <modules 目录>
 # 把 dll / .module.ini / combat-buff-ids.txt 拷进 modules/
 # 注入 → 进任意战斗 → Ctrl+F9 → 用完把这三个文件删掉
@@ -151,7 +151,7 @@ python tools/CombatDataExporter/build_buff_table.py
 
 - **不能 hook `BattleManager.Tick`。** combat_stats 已经占了这个目标，host 的
   HookBroker 一个目标只允许一个属主。探针先注册就会把 combat_stats 的 Tick hook 顶掉，
-  日志里是 `Hook conflict at a target already owned by betterendfield.buff-probe`，
+  日志里是 `Hook conflict at a target already owned by betterendfieldnext.buff-probe`，
   代价是发布模块失去技能收招的兜底关闭。`TailLateTick` 同样每帧调用且无人占用。
 - **不能在 hook 里直接采键。** hook 只在游戏恰好调用时执行一次，
   按键的百来毫秒几乎永远错不上，实测一次都没采到。所以采键必须在独立线程上连续做。

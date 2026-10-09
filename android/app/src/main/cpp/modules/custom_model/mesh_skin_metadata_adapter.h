@@ -3,7 +3,7 @@
 #include "mesh_layout_probe.h"
 #include <cstdint>
 
-namespace betterendfield {
+namespace betterendfieldnext {
 
 class MeshSkinMetadataAdapter final {
 public:

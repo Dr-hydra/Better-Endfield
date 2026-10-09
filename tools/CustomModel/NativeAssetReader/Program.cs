@@ -199,7 +199,7 @@ static class Program
         var result=new { schema=1, source="AnimeStudio reference-preserving offline reader",
             backend=typeof(AssetsManager).Assembly.GetName().Version?.ToString(),
             backend_patch=typeof(AssetsManager).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
-                .FirstOrDefault(a=>a.Key=="BetterEndfield.NativeBackendPatch")?.Value,
+                .FirstOrDefault(a=>a.Key=="BetterEndfieldNext.NativeBackendPatch")?.Value,
             snapshot,
             input_directory=input, bundles=files.Select(f=>Path.GetRelativePath(input,f)).ToArray(),
             files=manager.assetsFileList.Select(f=>new { name=f.fileName, unity_version=string.Join('.',f.version),

@@ -7,8 +7,8 @@ The packaged BEM Tools distribution includes a ready-made `project/` directory.
 From the distribution root, run:
 
 ```powershell
-.\BetterEndfield.BemConverter.exe build examples/multi-resource/project/export.bemproj.json
-.\BetterEndfield.BemConverter.exe validate examples/multi-resource/project/dist/synthetic.bem --resource weapon --platform windows-x64
+.\BetterEndfieldNext.BemConverter.exe build examples/multi-resource/project/export.bemproj.json
+.\BetterEndfieldNext.BemConverter.exe validate examples/multi-resource/project/dist/synthetic.bem --resource weapon --platform windows-x64
 ```
 
 The project includes skinned body/ultimate resources, a static weapon, shared
@@ -22,8 +22,8 @@ invalid packages for parser regression testing.
 For a real offline graph, the packaged target generator is available as:
 
 ```powershell
-.\BetterEndfield.BemConverter.exe target-profile NATIVE_GRAPH.json --spec profiles/bem14-drafts/sword-0014.spec.json -o MY_PROFILE.json --project MY_PROJECT.json
-.\BetterEndfield.BemConverter.exe pack MY_PROJECT.json -o MY_TARGET.bem
+.\BetterEndfieldNext.BemConverter.exe target-profile NATIVE_GRAPH.json --spec profiles/bem14-drafts/sword-0014.spec.json -o MY_PROFILE.json --project MY_PROJECT.json
+.\BetterEndfieldNext.BemConverter.exe pack MY_PROJECT.json -o MY_TARGET.bem
 ```
 
 Generated real-target projects initially contain only `keep` operations. They

@@ -1,7 +1,7 @@
 #include "../modules/custom_model/bem.h"
 #include <filesystem>
 #include <iostream>
-using namespace BetterEndfield::CustomModel;
+using namespace BetterEndfieldNext::CustomModel;
 #ifdef _WIN32
 int wmain(int argc,wchar_t** argv) {
 #else

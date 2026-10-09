@@ -10,13 +10,13 @@
 // probe it spawns inherits that token and the integrity levels match.  It does
 // nothing else: no hooks, no contracts, no managed calls.
 //
-// It deliberately takes no settings from BetterEndfield.ini.  The launcher UI
+// It deliberately takes no settings from BetterEndfieldNext.ini.  The launcher UI
 // rewrites that file wholesale from the sections it models, so a hand-added
 // section for a research module is deleted on the next save.  Staging this
 // module into modules/ is itself the opt-in, and arguments come from a sidecar
 // file beside the DLL where nothing else will touch them.
 
-#include <BetterEndfield/ModuleApi.h>
+#include <BetterEndfieldNext/ModuleApi.h>
 
 #include <Windows.h>
 
@@ -25,9 +25,9 @@
 
 namespace {
 
-constexpr const char* kModuleId = "betterendfield.touch-probe-launcher";
-constexpr const wchar_t* kProbeExecutable = L"BetterEndfield.TouchProbe.exe";
-constexpr const wchar_t* kArgumentsFile = L"BetterEndfield.TouchProbe.args";
+constexpr const char* kModuleId = "betterendfieldnext.touch-probe-launcher";
+constexpr const wchar_t* kProbeExecutable = L"BetterEndfieldNext.TouchProbe.exe";
+constexpr const wchar_t* kArgumentsFile = L"BetterEndfieldNext.TouchProbe.args";
 
 const BE_HostApiV1* g_host = nullptr;
 HANDLE g_child = nullptr;
@@ -178,8 +178,8 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Better Endfield Touch Probe Launcher", "0.2.0",
-        BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Better Endfield Next Touch Probe Launcher", "0.2.0",
+        BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown,
@@ -187,6 +187,6 @@ const BE_ModuleApiV1 kApi{
 
 }  // namespace
 
-BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfield_GetModuleApiV1(void) {
+BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfieldNext_GetModuleApiV1(void) {
     return &kApi;
 }

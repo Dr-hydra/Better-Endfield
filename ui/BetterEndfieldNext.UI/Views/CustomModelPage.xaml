@@ -1,0 +1,68 @@
+<UserControl
+    x:Class="BetterEndfieldNext.UI.Views.CustomModelPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:controls="using:BetterEndfieldNext.UI.Controls"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="18" Padding="24">
+            <TextBlock x:Name="PageTitle" Text="角色与武器 · BEM" FontSize="28" FontWeight="SemiBold" />
+            <TextBlock x:Name="PageIntro" Text="支持 BEM 1.0–1.4 模型包，管理角色、武器和技能形态。资源目标不重叠的模型包可以同时启用。" TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <Button x:Name="ImportButton" Content="导入 BEM / ZIP" Click="Import_Click" />
+                <Button x:Name="ConvertButton" Content="BEM 创作者工具…" Click="Convert_Click" />
+                <Button x:Name="RefreshButton" Content="刷新" Click="Refresh_Click" />
+                <Button x:Name="PackageFolderButton" Content="打开包目录" Click="OpenFolder_Click" />
+            </StackPanel>
+            <Border x:Name="ModelDropArea" AllowDrop="True" Padding="20" CornerRadius="8"
+                    BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    DragOver="ModelDropArea_DragOver" DragLeave="ModelDropArea_DragLeave" Drop="ModelDropArea_Drop">
+                <Grid>
+                    <Border x:Name="ModelDropHighlight" Margin="-20" CornerRadius="8" BorderThickness="2"
+                            BorderBrush="{ThemeResource AccentFillColorDefaultBrush}" Visibility="Collapsed" IsHitTestVisible="False" />
+                    <StackPanel Spacing="6" HorizontalAlignment="Center">
+                        <TextBlock x:Name="ModelDropTitle" Text="将 BEM 或 ZIP 模型包拖到这里" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" TextWrapping="Wrap" />
+                        <TextBlock x:Name="ModelDropHint" Text="支持同时拖入多个文件，按顺序导入；ZIP 内可选择要导入的包。" Opacity="0.7" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <Border Padding="16" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <StackPanel Spacing="8">
+                    <TextBlock x:Name="GetModelsTitle" Text="获取模型" FontSize="16" FontWeight="SemiBold" />
+                    <controls:WrapPanel HorizontalSpacing="12" VerticalSpacing="8">
+                        <Button x:Name="QuarkModelsButton" Content="夸克网盘" Click="ModelSource_Click" Tag="https://pan.quark.cn/s/97a9ca8f9bf2" />
+                        <Button x:Name="BaiduModelsButton" Content="百度网盘" Click="ModelSource_Click" Tag="https://pan.baidu.com/s/5ekaAiiLmZKXHZ7pHH0W-Vw" />
+                        <Button x:Name="KatfileModelsButton" Content="Katfile 网盘" Click="ModelSource_Click" Tag="https://katfile.biz/users/hydra405/" />
+                    </controls:WrapPanel>
+                </StackPanel>
+            </Border>
+            <Border Padding="16" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <StackPanel Spacing="8">
+                    <ToggleSwitch x:Name="LodToggle" Header="锁定高精度 LOD" Toggled="Lod_Toggled" />
+                    <TextBlock x:Name="LodHint" TextWrapping="Wrap" />
+                    <ToggleSwitch x:Name="HotSwitchToggle" Header="实验：模型热切换" Toggled="Experiments_Toggled" />
+                    <TextBlock x:Name="HotSwitchHint" Text="开启后需重启游戏。之后切换包、外观、组件或应用滑条，在切换配队或重新打开详情时更新。会增加内存占用。" TextWrapping="Wrap" />
+                    <ToggleSwitch x:Name="FastLoadingToggle" Header="加载速度优先" Toggled="Experiments_Toggled" />
+                    <ToggleSwitch x:Name="SkipValidationToggle" Header="实验：关闭模型校验" Toggled="SkipValidation_Toggled" />
+                    <TextBlock x:Name="SkipValidationHint" Text="开启后会跳过兼容性和容量校验，可能导致游戏崩溃或模型错乱，风险自行承担。重启游戏后生效。" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+            <InfoBar x:Name="Status" IsOpen="False" IsClosable="True" />
+            <Border Padding="16" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <StackPanel Spacing="8">
+                    <ToggleSwitch x:Name="ModelOverlayToggle" Header="模型悬浮窗" Toggled="OverlaySettings_Toggled" />
+                    <ToggleSwitch x:Name="ModelOverlayVisibleToggle" Header="进入游戏时显示" Toggled="OverlaySettings_Toggled" />
+                    <TextBox x:Name="ModelOverlayHotkeyBox" Header="显示／隐藏快捷键" Text="=" IsSpellCheckEnabled="False"
+                             KeyDown="ModelOverlayHotkey_KeyDown" TextChanged="ModelOverlayHotkey_TextChanged" />
+                </StackPanel>
+            </Border>
+            <ProgressRing x:Name="Busy" IsActive="False" Visibility="Collapsed" HorizontalAlignment="Left" />
+            <controls:WrapPanel HorizontalSpacing="12" VerticalSpacing="8">
+                <ComboBox x:Name="CharacterFilter" Header="按角色筛选" MinWidth="220" SelectionChanged="CharacterFilter_SelectionChanged" />
+                <Button x:Name="DisableAllButton" Content="关闭全部模型" VerticalAlignment="Bottom" Click="DisableAll_Click" />
+            </controls:WrapPanel>
+            <TextBlock x:Name="EmptyHint" Text="尚未导入模型包。已有其他格式？打开转换窗口查看支持范围与缺少的资料。" TextWrapping="Wrap" />
+            <StackPanel x:Name="PackageCards" Spacing="12" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

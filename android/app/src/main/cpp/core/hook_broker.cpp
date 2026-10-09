@@ -6,7 +6,7 @@
 #include <mutex>
 #include <vector>
 #include "../../../../../../native/shared/hooks/hook_chain.h"
-namespace betterendfield {
+namespace betterendfieldnext {
 namespace {
 struct Record { HookBroker* owner; void* target; uint64_t handle; };
 struct Registry {
@@ -15,13 +15,13 @@ struct Registry {
     std::vector<std::unique_ptr<Record>> live;
     // Removed stubs are never reused: a stale caller must not remove a new hook.
     std::vector<std::unique_ptr<Record>> retired;
-    std::unique_ptr<BetterEndfield::Hooks::Chain> chains;
+    std::unique_ptr<BetterEndfieldNext::Hooks::Chain> chains;
 };
 // Hooks are process-lifetime resources. Avoid global destructor order races.
 Registry& Hooks() { static auto* registry = new Registry; return *registry; }
 // Registry mutex held.
-BetterEndfield::Hooks::Chain& Chains(Registry& registry) {
-    if (!registry.chains) registry.chains = std::make_unique<BetterEndfield::Hooks::Chain>(BetterEndfield::Hooks::Backend{
+BetterEndfieldNext::Hooks::Chain& Chains(Registry& registry) {
+    if (!registry.chains) registry.chains = std::make_unique<BetterEndfieldNext::Hooks::Chain>(BetterEndfieldNext::Hooks::Backend{
         [](void* target, void* entry, void** original) { return DobbyPrepare(target, entry, original) == 0; },
         [](void* target) { return DobbyCommit(target) == 0; },
         [](void* target) { DobbyDestroy(target); },
@@ -67,7 +67,7 @@ bool HookBroker::Install(const char* module, void* target, void* replacement, vo
     registry.live.reserve(registry.live.size() + 1);
     const bool first = !chains.Contains(target);
     const BE_Result result = chains.Create(module, target, replacement, original, &record->handle,
-        BetterEndfield::Hooks::Chain::Duplicate::Reject);
+        BetterEndfieldNext::Hooks::Chain::Duplicate::Reject);
     if (result == BE_Result_Conflict) {
         error = std::string("native hook target already hooked by ") + module +
             "; a module may hook an entry once";
@@ -111,7 +111,7 @@ bool HookBroker::Remove(void*& stub) {
 const BE_HookChainApiV1* HookBroker::ChainApi() {
     auto& registry=Hooks();std::lock_guard lock(registry.mutex);
     Chains(registry);
-    chain_api_={sizeof(BE_HookChainApiV1),BETTER_ENDFIELD_HOOK_CHAIN_ABI_V1,this,
+    chain_api_={sizeof(BE_HookChainApiV1),BETTER_ENDFIELD_NEXT_HOOK_CHAIN_ABI_V1,this,
         &CreateChain,&DisableChain,&DisableModuleChain};
     return &chain_api_;
 }

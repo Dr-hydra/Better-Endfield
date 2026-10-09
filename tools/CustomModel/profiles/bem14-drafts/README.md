@@ -31,7 +31,7 @@ python tools/CustomModel/build_bem14_target.py NATIVE_GRAPH.json --spec tools/Cu
 独立制作工具包也提供同一入口，无需安装 Python：
 
 ```powershell
-.\BetterEndfield.BemConverter.exe target-profile NATIVE_GRAPH.json --spec profiles/bem14-drafts/zhuangfy-ultimate.spec.json -o MY_PROFILE.json --project MY_PROJECT.json
+.\BetterEndfieldNext.BemConverter.exe target-profile NATIVE_GRAPH.json --spec profiles/bem14-drafts/zhuangfy-ultimate.spec.json -o MY_PROFILE.json --project MY_PROJECT.json
 ```
 
 输入可以是 NativeAssetReader 原始图谱，或新版 `parse_native_models.py` 输出。

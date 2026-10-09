@@ -5,7 +5,7 @@
 #include <thread>
 #include <vector>
 #include <iostream>
-namespace betterendfield { void LogError(const char*,const char*) {} void LogInfo(const char*,const char*) {} }
+namespace betterendfieldnext { void LogError(const char*,const char*) {} void LogInfo(const char*,const char*) {} }
 static std::atomic_int inside{0}, maximum{0}, installs{0}, commits{0}, destroys{0};
 static bool failInstall=false;
 extern "C" int DobbyHook(void*,void*,void**){return -1;} // Brokers must patch through the chain.
@@ -18,7 +18,7 @@ extern "C" int DobbyPrepare(void*,void*,void** original){
 extern "C" int DobbyCommit(void*) {++commits;return 0;}
 extern "C" int DobbyDestroy(void*) {++destroys;return 0;}
 int main(){
-    using betterendfield::HookBroker;HookBroker a,b;std::string error;
+    using betterendfieldnext::HookBroker;HookBroker a,b;std::string error;
     void* target=reinterpret_cast<void*>(0x1000);void* replacement=reinterpret_cast<void*>(0x2000);
     void* other=reinterpret_cast<void*>(0x3000);
     void *stub=nullptr,*original=nullptr,*second=nullptr,*second_original=nullptr;
@@ -36,9 +36,9 @@ int main(){
     // Named owners: two modules hosted by one broker share a target.
     void *m=nullptr,*n=nullptr,*m_original=nullptr,*n_original=nullptr,*m_again=nullptr;
     void* shared=reinterpret_cast<void*>(0x5000);
-    assert(a.Install("betterendfield.model",shared,replacement,&m_original,m,error));
-    assert(a.Install("betterendfield.custom_model",shared,other,&n_original,n,error));
-    assert(!a.Install("betterendfield.model",shared,other,&m_original,m_again,error)&&!m_again);
+    assert(a.Install("betterendfieldnext.model",shared,replacement,&m_original,m,error));
+    assert(a.Install("betterendfieldnext.custom_model",shared,other,&n_original,n,error));
+    assert(!a.Install("betterendfieldnext.model",shared,other,&m_original,m_again,error)&&!m_again);
     assert(a.Remove(m)&&a.Remove(n));
     failInstall=true;void* failed=nullptr;
     assert(!a.Install(reinterpret_cast<void*>(0x6000),replacement,&original,failed,error));assert(!failed&&destroys==0);

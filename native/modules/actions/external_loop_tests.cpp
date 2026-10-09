@@ -2,7 +2,7 @@
 #include "module.cpp"
 #include <cstdlib>
 #include <vector>
-using namespace BetterEndfield::Actions;
+using namespace BetterEndfieldNext::Actions;
 #define CHECK(x) do { if (!(x)) { std::fprintf(stderr,"line %d: %s\n",__LINE__,#x);std::exit(1); } } while(false)
 namespace {
 struct Stub {bool alive=true;void* controller=nullptr;};

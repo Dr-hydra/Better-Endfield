@@ -1,12 +1,15 @@
-# Better Endfield
+# Better Endfield Next
 
 [简体中文](README.md) | [English](README.en.md)
 
-Better Endfield 是面向《明日方舟：终末地》的开源模块化工具，提供第三方角色模型、MMD 播放、相机和界面增强、按角色配音、开屏自定义，以及 PC 战斗统计和寻访记录管理。Windows 和 Android 共用主要原生功能源码；BEM 模型包和 MMD 作品可以跨端使用。另提供实验性的第三方原生模块加载与网页界面容器。
+Better Endfield Next 是面向《明日方舟：终末地》的开源模块化工具，提供第三方角色模型、MMD 播放、相机和界面增强、按角色配音、开屏自定义，以及 PC 战斗统计和寻访记录管理。Windows 和 Android 共用主要原生功能源码；BEM 模型包和 MMD 作品可以跨端使用。第三方原生模块和网页容器的运行实现保留，入口暂时隐藏。
 
 [下载正式版](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [更新说明](CHANGELOG.md) · [Android 使用与构建](android/README.md) · [BEM 创作者指南](docs/custom_model/BEM_CREATOR_GUIDE.md) · [模块开发指南](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
 
-当前版本为 **3.5.3**，独立 BEM Tools 为 **1.5.2**，工具 ZIP 内含可双击启动的 `BetterEndfield.BemTools.exe` 创作者 GUI。3.5.3 新增 Windows [Steam 国服启动预览](docs/host/STEAM_CN_LAUNCH.md)和 XInput 重复注入拦截；Steam 接入仍待完整元数据与实机验证。BEM 1.4、武器/大招资源、模型热切换、Android PCUI 输入和桌面 DPI 布局能力沿用 3.5.2。
+当前版本为 **4.0.0**，独立 BEM Tools 为 **1.5.2**，工具 ZIP 内含可双击启动的 `BetterEndfieldNext.BemTools.exe` 创作者 GUI。3.5.3 新增 Windows [Steam 国服启动预览](docs/host/STEAM_CN_LAUNCH.md)和 XInput 重复注入拦截；Steam 接入仍待完整元数据与实机验证。BEM 1.4、武器/大招资源、模型热切换、Android PCUI 输入和桌面 DPI 布局能力沿用 3.5.2。
+
+Next 使用新的安装身份、内部标识和发布签名，与旧版独立。请先卸载旧版（Windows 同时卸载旧 XInput 代理），重新安装并设置；Android 需重新启用模块和游戏作用域。旧设置不迁移，BEM/MMD 文件可手动重新导入。Logo 保留。第一人称已移除并归档至 `legacy/retired-before-next/`。[实施与构建说明](docs/workspace/NEXT_IMPLEMENTATION.md)。
+
 
 ## 功能一览
 
@@ -16,12 +19,12 @@ Better Endfield 是面向《明日方舟：终末地》的开源模块化工具�
 | --- | --- | --- | --- |
 | 第三方模型（BEM） | 支持 | 支持 | 同一标准包；导入、更新、多包管理、按角色启用、外观与部件选项 |
 | BEM 1.4 资源与形态 | 支持（3.5.2） | 支持（3.5.2） | 显式资源目标、静态网格、LOD/平台声明；支持武器与大招资源，兼容 1.0–1.3 包 |
-| 第三方原生模块与网页容器 | 实验 | 实验 | 增强功能页统一入口；游戏内 Host 加载 DLL/SO，作者自定义网页与功能 |
+| 第三方原生模块与网页容器 | 入口隐藏 | 入口隐藏 | 保留游戏内 Host 装载器及网页桥，暂不开放管理入口 |
 | 模型热切换 | 实验 | 实验 | 悬浮窗管理包、外观、组件与形态参数；游戏启动前开启，选择变化随正常资源重载生效 |
 | 模型加载优化 | 实验 | 实验 | 减少解码副本并复用同次构建的等价贴图；不降低画质 |
 | 开屏模型、动画与主题色 | 支持 | 支持 | 角色、最终动作、分阶段速度、缩放、转身、循环与交叉混合 |
 | 角色配音语言 | 支持 | 支持 | 单独指定中文、英语、日语、韩语；可应用于剧情语音与口型 |
-| 自由相机、第一人称、时间冻结 | 支持 | 支持 | 独立控制、FOV、运镜、关键帧、VMD 镜头、近景透明效果处理 |
+| 自由相机、时间冻结 | 支持 | 支持 | 独立控制、FOV、运镜、关键帧、VMD 镜头、近景透明效果处理 |
 | 全局 FOV、自由相机人物跟随 | 支持（3.4.2） | 支持（3.4.2） | 普通主相机 FOV 覆盖；自由相机跟随人物平移并保留手动偏移 |
 | MMD 作品库与多人同台 | 支持 | 支持 | 最多四人，动作、表情、镜头、本地音乐、时间轴与衣物物理选项 |
 | UID/HUD 显隐、界面布局 | 支持 | 支持 | PC 可用触屏布局与鼠标转触控；Android 可切换 PC 风格布局 |
@@ -37,9 +40,9 @@ Windows 提供中文/英文界面、明暗主题、运行状态和日志、游�
 
 ### Windows
 
-从 [Releases](https://github.com/Dr-hydra/Better-Endfield/releases) 下载 Windows 安装包，启动 Better Endfield，检查游戏路径并开启需要的功能，然后保存并启动游戏。运行环境为 Windows 10/11 x64。
+从 [Releases](https://github.com/Dr-hydra/Better-Endfield/releases) 下载 Windows 安装包，启动 Better Endfield Next，检查游戏路径并开启需要的功能，然后保存并启动游戏。运行环境为 Windows 10/11 x64。
 
-- **内置注入器**：默认方式，由 Better Endfield 启动游戏，Host 和模块从软件目录加载，不把 Better Endfield 运行文件写入游戏目录。
+- **内置注入器**：默认方式，由 Better Endfield Next 启动游戏，Host 和模块从软件目录加载，不把 Better Endfield Next 运行文件写入游戏目录。
 - **XInput 自启动**：设置页可安装可选的 `xinput1_4.dll` 代理，此后从官方启动器或游戏快捷方式启动也能加载。安装与卸载核对归属记录；已有其他工具的同名文件时不会覆盖。
 
 OptiScaler 是独立部署功能，会写入游戏目录并在下次启动时生效。游戏启动参数也会用于一键启动快捷方式。
@@ -48,7 +51,7 @@ OptiScaler 是独立部署功能，会写入游戏目录并在下次启动时生
 
 Android 包是 **LSPosed/libxposed API 102 模块**，要求 Android 10 及以上、ARM64，以及能注入目标游戏的兼容框架；单独安装 APK 不会启用游戏功能。
 
-安装后在框架中启用模块并选择实际使用的终末地客户端，在模块应用中设置功能，然后彻底停止并重启游戏。游戏内面板通过目标 Activity 显示，无需悬浮窗权限；相机、冻结、第一人称和 MMD 使用面板控制。详细操作、作用域排查和构建要求见 [Android README](android/README.md)。
+安装后在框架中启用模块并选择实际使用的终末地客户端，在模块应用中设置功能，然后彻底停止并重启游戏。游戏内面板通过目标 Activity 显示，无需悬浮窗权限；相机、冻结和 MMD 使用面板控制。详细操作、作用域排查和构建要求见 [Android README](android/README.md)。
 
 ## 第三方角色模型与创作者工具
 
@@ -67,8 +70,8 @@ Android 可对贴图异常的包执行「转换手机纹理」；转换成功发
 **创作者工具**包含独立 GUI、主程序内的“BEM 创作者工具…”入口和 CLI，支持目录、ZIP、RAR、7z 输入，转换报告、结构校验、可保存的 `.bemproj.json` 导出工程、标准工作区和重复构建。BEM Tools 1.5.2 支持 BEM 1.4，并保留 Blender/EFMI legacy 角色流水线边界；创作者必须显式声明资源目标、LOD、平台和 donor 证据，不会自动还原任意源 GUI 或猜测顶点对应关系。
 
 ```powershell
-BetterEndfield.BemConverter.exe new-project editable/project.json --mode pack -o character.bemproj.json
-BetterEndfield.BemConverter.exe build character.bemproj.json
+BetterEndfieldNext.BemConverter.exe new-project editable/project.json --mode pack -o character.bemproj.json
+BetterEndfieldNext.BemConverter.exe build character.bemproj.json
 ```
 
 两端还提供默认关闭的「实验：关闭模型校验」。该选项放开兼容性和策略限制，仍要求文件能解码且能被当前表示方式读取；不增加新编码支持。用于作者测试时可能出现错误渲染或游戏崩溃。
@@ -80,31 +83,18 @@ BetterEndfield.BemConverter.exe build character.bemproj.json
 - [形态滑条可运行示例](tools/CustomModel/examples/body-slider/)
 - [实验热切换与加载优化说明](docs/workspace/releases/3.4.1/RELEASE_3_4_1.md)
 
-## 第三方模块（实验）
+## 第三方模块（入口隐藏）
 
-双端通过独立的「第三方模块」入口导入作者提供的 ZIP，管理启用状态、加载顺序和各模块的网页入口；新模块首次导入默认停用。一个包包含 `module.json`、对应平台的 Windows x64 DLL / Android ARM64 SO，以及可选 HTML/CSS/JS 资源；可以只提供一端，也可以只提供网页功能。第三方模块与 `.bem` 模型包分别管理。
+Next 保留原生模块装载器和网页桥，Windows、Android 暂时隐藏模块管理入口及旧入口路由。内部标识和 ABI 导出已采用 Next 命名，旧模块二进制不承诺兼容。[模块创作者指南](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)。
 
-原生库由**游戏进程中的 Host**加载；Windows 网页使用 WebView2，Android 使用 WebView。作者可以自由编写页面，通过统一桥读取/保存自身 JSON 配置、发送业务消息、接收结果和查询状态。网页可在游戏未连接时保存配置；需要游戏模块的消息则要求运行中的 Host 连接。
+## 相机与 MMD
 
-加载器提供入口 ABI、模块生命周期、配置和消息运输，游戏函数表、版本适配、调用线程、功能实现及停用恢复由作者维护。模块可以自行解析，也可选用 Host 已就绪的辅助接口；初始化不强制等待 IL2CPP。Host 回调在线程工作队列执行，不代表 Unity 主线程。配置与已加载模块启停可运行时更新；原生库仍随游戏进程驻留，二进制更新、删除和顺序调整需重启游戏，不做任意热卸载。
+自由相机支持位置/朝向、滚转和 FOV 调整、鼠标转向、环绕/推拉/升降/平移运镜，以及可保存的关键帧路径和 VMD 镜头。时间冻结独立于自由相机。快捷键可配置，Windows 支持主键盘、小键盘、鼠标和组合键；Android 用游戏内控制面板操作。
 
-更新或移除会退休旧安装代次，但旧目录仍保留，Android 的旧 ZIP 也会保留；当前没有自动垃圾回收，也不在重启后自动删除这些文件，避免破坏运行中的原生库或网页资源。
-
-Android 手机导航可横向滚动，大屏保留侧边导航；第三方模块与创意工坊统一放在增强功能页，模块网页使用独立页面。跨端网页建议把静态资源随包分发；Android 容器只加载包内离线资源，网络业务可由作者原生模块处理。
-
-共享 Hook 是可选接口：采用 chain 的模块按同一目标串联并调用 `next`，已有 exclusive Hook 仍会报告冲突，不自动迁移成链。函数签名、参数/返回值处理和功能冲突由参与者协调。加载成功不等于与所有内置或第三方模块兼容。
-
-接入流程见 [第三方模块创作者指南](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)，契约见 [ThirdPartyModule.h](native/shared/include/BetterEndfield/ThirdPartyModule.h)、[HookChain.h](native/shared/include/BetterEndfield/HookChain.h)与[Echo 示例](tools/ThirdPartyModules/echo/)。Echo 原生库已完成 Windows/Android 构建，消息桥与生命周期通过隔离回归；真实游戏模块的效果、稳定性和兼容性仍由作者测试和说明。
-
-## 相机、第一人称与 MMD
-
-自由相机支持位置/朝向、滚转和 FOV 调整、鼠标转向、环绕/推拉/升降/平移运镜，以及可保存的关键帧路径和 VMD 镜头。时间冻结独立于自由相机；第一人称支持头部隐藏、颈部补口、侧看角度与平滑转身。快捷键可配置，Windows 支持主键盘、小键盘、鼠标和组合键；Android 用游戏内控制面板操作。
-
-3.4.2 新增的全局 FOV 只覆盖普通主相机；自由相机、第一人称和导入镜头使用自己的 FOV。人物跟随仅平移自由相机，保留镜头朝向与手动偏移，在切人和传送后重新建立参考，并在运镜播放时暂停。[实现边界](docs/camera/research/1.5.3/fov-follow/CAMERA_FOV_FOLLOW_IMPLEMENTATION.md)
+3.4.2 新增的全局 FOV 只覆盖普通主相机；自由相机和导入镜头使用自己的 FOV。人物跟随仅平移自由相机，保留镜头朝向与手动偏移，在切人和传送后重新建立参考，并在运镜播放时暂停。[实现边界](docs/camera/research/1.5.3/fov-follow/CAMERA_FOV_FOLLOW_IMPLEMENTATION.md)
 
 Android 悬浮窗提供独立全局 FOV 开关与 5–150° 滑条，复用 App 设置并保存；已初始化相机可即时调整，未初始化的相机保留配置并在重启后生效。
 
-3.4.2 的第一人称去头发逻辑按**现场骨骼权重和实际绘制数据**分类，避免把含头部与衣物的混合网格整体隐藏；替换网格可使用 BEM 的 CPU 数据。未知角色走通用现场骨骼回退，不依赖另维护一整套必需角色表。独立部件尝试仅投影模式，混合部件保留完整投影网格；缺少可用几何数据时保留不确定部件。实际阴影和残留头发效果需要游戏验收。[方案与验证范围](docs/camera/research/1.5.3/first-person-geometry/BEM_HAIR_SHADOW_IMPLEMENTATION.md)
 
 MMD 作品库管理动作、表情、镜头和本地音乐，可通过 `set.ini` 描述作品；支持播放/暂停/停止、跳转、循环、游戏/自由/VMD 镜头切换，最多四名队员同台，以及衣物物理和实验地形贴合。Windows 音轨走本地音乐接口，不要求 OmniMix；Android 使用本地媒体播放，会与游戏 BGM 叠加，可在游戏设置中关闭原背景音乐。双端身体/表情、布料和地形能力依赖实际客户端接口，作品转换或编译通过不能代替实机效果验证。[双端整合记录](docs/camera/research/1.5.3/android-mmd/ANDROID_CAMERA_MMD.md)
 
@@ -128,11 +118,11 @@ Windows 的 Host 加载独立功能 DLL；Android 的游戏内运行时编译共
 
 这允许不同客户端共用代码，但**不保证任意游戏版本自动兼容**：方法签名、资源、渲染布局或设备接口变化仍可能要求更新。内置模块的契约缺失会禁用对应能力并记录日志。Android 应将作用域选到实际客户端；世界、详情和开屏以及 PC/手机资源布局也不能互相假定相同。
 
-Windows 主配置位于 `%LocalAppData%\BetterEndfield\BetterEndfield.ini`，UI 设置为同目录的 `ui-settings.json`，BEM 包与状态位于 `catalog\custom-model`。Android 设置通过框架发布，资源复制到游戏自己的私有目录。角色/语音索引随软件分发，原游戏资源按需要从本机读取，不随仓库或安装包分发。
+Windows 主配置位于 `%LocalAppData%\BetterEndfieldNext\BetterEndfieldNext.ini`，UI 设置为同目录的 `ui-settings.json`，BEM 包与状态位于 `catalog\custom-model`。Android 设置通过框架发布，资源复制到游戏自己的私有目录。角色/语音索引随软件分发，原游戏资源按需要从本机读取，不随仓库或安装包分发。
 
 | 目录 | 内容 |
 | --- | --- |
-| `ui/BetterEndfield.UI/` | WinUI 桌面管理界面与资源 |
+| `ui/BetterEndfieldNext.UI/` | WinUI 桌面管理界面与资源 |
 | `native/modules/` | 模型、BEM、配音、音乐、战斗、界面、相机、动作与寻访模块 |
 | `native/shared/` | Host、公共 C ABI、平台兼容层与原生依赖 |
 | `native/loaders/` | Windows 内置注入器与 XInput 自启动代理 |
@@ -149,7 +139,7 @@ Windows 主配置位于 `%LocalAppData%\BetterEndfield\BetterEndfield.ini`，UI 
 Windows 需要 Visual Studio 2022 C++ 工具集、CMake、.NET SDK 9 和 PowerShell；构建安装程序另需 Inno Setup 6。BEM 工具构建依赖见 [`requirements-build.txt`](tools/CustomModel/requirements-build.txt)。
 
 ```powershell
-pwsh -File .\scripts\BuildBetterEndfield.ps1
+pwsh -File .\scripts\BuildBetterEndfieldNext.ps1
 pwsh -File .\scripts\BuildInstaller.ps1
 pwsh -File .\scripts\BuildBemTools.ps1
 ```
@@ -164,6 +154,6 @@ Android 使用 JDK 17 及以上、SDK、NDK 和 CMake，版本以 [`android/app/
 
 ## 许可
 
-Better Endfield 使用 [AGPL-3.0-only](LICENSE)，是独立的非官方项目，与游戏开发商及发行商无关联。MinHook、Dobby、EIEM、7-Zip 等依赖或引用保留各自许可证和来源说明；创作者应自行确认第三方模型、动作、音频和模块的分发授权。
+Better Endfield Next 使用 [AGPL-3.0-only](LICENSE)，是独立的非官方项目，与游戏开发商及发行商无关联。MinHook、Dobby、EIEM、7-Zip 等依赖或引用保留各自许可证和来源说明；创作者应自行确认第三方模型、动作、音频和模块的分发授权。
 
 功能效果取决于客户端、设备和用户导入内容。使用前请了解相关服务规则及账号/客户端风险；游戏更新后遇到契约失败，应关闭受影响功能并等待适配。

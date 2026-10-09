@@ -70,7 +70,7 @@ bool LoadPoseBank(const CharacterProfile* profile){
     // Android has no per-module DLL to locate the banks next to. The host
     // publishes the directory it materialized them into; the file names are the
     // same ASCII names the desktop layout uses.
-    const char* root=std::getenv("BETTER_ENDFIELD_ACTIONS_ASSET_ROOT");
+    const char* root=std::getenv("BETTER_ENDFIELD_NEXT_ACTIONS_ASSET_ROOT");
     if(root==nullptr||*root=='\0'){Log("Sustained dash v12: no bone-pose directory was published; native v9 hold only.");return false;}
     std::string file(root);
     if(!file.empty()&&file.back()!='/')file.push_back('/');

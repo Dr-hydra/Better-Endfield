@@ -76,7 +76,7 @@ STUBS = {
             public Intent getIntent(){intentReads++;return new Intent("hostile-setting-patch");}
         }""",
     "android/util/Log.java": "package android.util; public class Log { public static int w(String tag,String message){return 0;} }",
-    "dev/betterendfield/android/OverlaySettingsDiagnostics.java": """package dev.betterendfield.android;
+    "dev/betterendfield/next/OverlaySettingsDiagnostics.java": """package dev.betterendfield.next;
         import android.content.Context;
         import java.util.ArrayList;
         import java.util.List;
@@ -86,7 +86,7 @@ STUBS = {
             static synchronized void reset(){entries.clear();}
             static synchronized String statuses(){return String.join(",",entries);}
         }""",
-    "dev/betterendfield/android/FrameworkSettings.java": """package dev.betterendfield.android;
+    "dev/betterendfield/next/FrameworkSettings.java": """package dev.betterendfield.next;
         import java.util.concurrent.CountDownLatch;
         final class FrameworkSettings {
             static volatile boolean connected,throwOnWorker;
@@ -139,15 +139,15 @@ def main():
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(source, encoding="utf-8")
         sources.append(str(path))
-    main_sources = repo / "android/app/src/main/java/dev/betterendfield/android"
+    main_sources = repo / "android/app/src/main/java/dev/betterendfield/next"
     sources += [str(main_sources / name) for name in (
         "FrameworkBootstrapActivity.java", "ModulePackageReplacedReceiver.java", "FrameworkServiceWait.java")]
-    sources.append(str(repo / "android/app/src/testHost/java/dev/betterendfield/android/FrameworkBootstrapHostTest.java"))
+    sources.append(str(repo / "android/app/src/testHost/java/dev/betterendfield/next/FrameworkBootstrapHostTest.java"))
     classes = output / "classes"
     classes.mkdir(exist_ok=True)
     subprocess.run([args.javac, "-encoding", "UTF-8", "--release", "17", "-proc:none", "-Xlint:all", "-Werror",
                     "-d", str(classes), *sources], check=True)
-    subprocess.run([args.java, "-cp", str(classes), "dev.betterendfield.android.FrameworkBootstrapHostTest"], check=True)
+    subprocess.run([args.java, "-cp", str(classes), "dev.betterendfield.next.FrameworkBootstrapHostTest"], check=True)
     print("PASS bootstrap manifest: same Application process, explicit transparent bounded Activity, non-exported update-only receiver")
 
 

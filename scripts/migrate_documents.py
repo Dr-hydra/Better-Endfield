@@ -339,7 +339,7 @@ def module_of(path: str) -> str:
         ("combat_stats", ("combat", "CombatData")),
         ("actions", ("/actions/",)),
         ("voice", ("/voice/",)),
-        ("ui", ("BetterEndfield.UI",)),
+        ("ui", ("BetterEndfieldNext.UI",)),
         ("web", ("web/",)),
         ("android", ("android/",)),
         ("host", ("HookInline",)),

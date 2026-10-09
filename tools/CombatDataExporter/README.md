@@ -39,7 +39,7 @@ python tools/CombatDataExporter/export_combat_data.py `
 
 - `manifests/combat/combat-dictionary.json`
 - `manifests/combat/buff-sources.bemap`
-- `ui/BetterEndfield.UI/Assets/combat/combat-dictionary.json`
+- `ui/BetterEndfieldNext.UI/Assets/combat/combat-dictionary.json`
 - `web/src/data/combat-dict.min.json`
 - `web/public/icons/characters`
 - `web/public/icons/skills`

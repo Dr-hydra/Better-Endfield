@@ -1,4 +1,4 @@
-# Better Endfield 移动端 UI / 云游戏与触控交互逆向接口文档
+# Better Endfield Next 移动端 UI / 云游戏与触控交互逆向接口文档
 
 本文档汇总整理了对《明日方舟：终末地》（Arknights: Endfield）PC 客户端中**移动端 UI、触控轮盘、云游戏模式及平台判定**的逆向分析成果、关键类/方法/RVA 签名清单、两种实现路径的尝试与现存问题，供后续接手人员深入分析。
 
@@ -24,7 +24,7 @@
 
 ## 2. 观察到的完整接口与 RVA 签名清单
 
-> **注**：以下 RVA 基准对应当前 IL2CPP Dump（基于 `GameAssembly.dll`，Unity 2021）。实际运行时通过 `BetterEndfield.Host` 的 `il2cpp_class_get_methods` 动态解析，无需硬编码偏移。
+> **注**：以下 RVA 基准对应当前 IL2CPP Dump（基于 `GameAssembly.dll`，Unity 2021）。实际运行时通过 `BetterEndfieldNext.Host` 的 `il2cpp_class_get_methods` 动态解析，无需硬编码偏移。
 
 ### 2.1 平台与设备状态 (`Common.Beyond.dll` -> `Beyond.DeviceInfo`)
 
@@ -123,7 +123,7 @@
 - **实验结果**：
   由于云游戏模式下，游戏会等待专用 Named Pipe（如 `\\.\pipe\hypergryph_cloud_game_*`）由云端推流宿主完成 handshake 并下发鉴权 Token，导致 PC 端常规本地登录逻辑被绕过，游戏停留在无登录框的黑屏/等待状态。
 
-### 方案 B：纯内存 Hook 平台与输入判定 (`BetterEndfield.UiModule`)
+### 方案 B：纯内存 Hook 平台与输入判定 (`BetterEndfieldNext.UiModule`)
 - **机制**：
   在不使用 `-cloud` 参数的情况下正常进行 PC 登录。通过在 `GameAssembly.dll` 中 Detour 拦截 `Beyond.DeviceInfo` 和 `UnityEngine.Application` 的各 getter，强制向游戏系统汇报当前为 `Touch` 输入与移动端环境。
 - **失效根因（已通过反编译定位，2026-08-29）**：
@@ -195,7 +195,7 @@ Windows 的 `CreateSyntheticPointerDevice` + `InjectSyntheticPointerInput` 注�
 两个必须注意的实现约束，都是踩过的坑：
 
 1. **必须与游戏同完整性级别**。UIPI 会静默丢弃低完整性进程投向高完整性窗口的输入——不报错，只是没反应。游戏以管理员运行，所以探针由 `launcher_module.cpp` 从游戏进程内 `CreateProcess` 拉起，靠继承令牌对齐。
-2. **配置不能放 `BetterEndfield.ini`**。`ConfigurationService.SaveModConfigurationAsync` 是整文件覆盖写，只序列化 UI 建模过的节，手工添加的节会在下次保存时被删除。研究模块的参数应放在 DLL 旁的独立文件里。
+2. **配置不能放 `BetterEndfieldNext.ini`**。`ConfigurationService.SaveModConfigurationAsync` 是整文件覆盖写，只序列化 UI 建模过的节，手工添加的节会在下次保存时被删除。研究模块的参数应放在 DLL 旁的独立文件里。
 
 ### 5.3 已实现：`native/modules/ui/touch_input.cpp`
 

@@ -3,7 +3,7 @@ param(
     [Parameter(Mandatory=$true)][string]$Databases,
     [Parameter(Mandatory=$true)][string]$Reader,
     [Parameter(Mandatory=$true)][string[]]$Runs,
-    [string]$Captures = (Join-Path $env:LOCALAPPDATA 'BetterEndfield\catalog\custom-model\native-probe'),
+    [string]$Captures = (Join-Path $env:LOCALAPPDATA 'BetterEndfieldNext\catalog\custom-model\native-probe'),
     [string]$Catalog = '',
     [string]$Evidence = ''
 )

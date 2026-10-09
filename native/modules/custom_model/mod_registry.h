@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <memory>
 
-namespace BetterEndfield::CustomModel {
+namespace BetterEndfieldNext::CustomModel {
 // Unity names an instance "<prefab>(Clone)"; the game's model pool may append
 // "#<serial>" as well (device 2026-10-04: "chr_0003_endminf_postmodel(Clone)#27").
 inline std::string_view ResourceBaseName(std::string_view name) {

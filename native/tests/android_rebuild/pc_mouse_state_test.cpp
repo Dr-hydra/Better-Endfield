@@ -3,7 +3,7 @@
 #include <iostream>
 #include <limits>
 #include <thread>
-using betterendfield::AndroidPcMouseState;
+using betterendfieldnext::AndroidPcMouseState;
 int main() {
     AndroidPcMouseState mouse;
     float x = 0, y = 0;

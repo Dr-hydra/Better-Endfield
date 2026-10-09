@@ -1,4 +1,4 @@
-#include "BetterEndfield/ModuleApi.h"
+#include "BetterEndfieldNext/ModuleApi.h"
 
 #include "touch_input.h"
 #include "../../shared/input/hotkey.h"
@@ -23,10 +23,10 @@
 #include <string_view>
 #include <vector>
 
-namespace BetterEndfield::UiModule {
+namespace BetterEndfieldNext::UiModule {
 namespace {
 
-constexpr char kModuleId[] = "betterendfield.ui";
+constexpr char kModuleId[] = "betterendfieldnext.ui";
 
 enum class ModuleState : uint8_t {
     Created,
@@ -166,7 +166,7 @@ std::vector<HiddenHudCanvas> g_hidden_hud_canvases;
 bool g_hud_hidden = false;
 bool g_hud_hotkey_was_down = false;
 
-constexpr char kHudCameraMaskOwner[] = "BetterEndfield.HideHUD";
+constexpr char kHudCameraMaskOwner[] = "BetterEndfieldNext.HideHUD";
 
 struct HiddenUidObject {
     void* object = nullptr;
@@ -757,7 +757,7 @@ std::string HudVisibilityStatus(const HudVisibilityResult& result) {
 
 void PumpHudVisibility() {
     const bool allowed = g_hide_hud_enabled.load(std::memory_order_acquire);
-    const bool hotkey_down = allowed && BetterEndfield::Input::IsDown(
+    const bool hotkey_down = allowed && BetterEndfieldNext::Input::IsDown(
         g_hide_hud_hotkey.load(std::memory_order_relaxed));
     const bool hotkey_pressed = hotkey_down && !g_hud_hotkey_was_down;
     g_hud_hotkey_was_down = hotkey_down;
@@ -1183,7 +1183,7 @@ bool ParseBoolean(std::string_view value, bool default_value = false) {
 }
 
 int ParseVirtualKey(std::string_view value, int fallback) {
-    return BetterEndfield::Input::ParseKey(value, fallback);
+    return BetterEndfieldNext::Input::ParseKey(value, fallback);
 }
 
 UiConfiguration ParseConfigurationText(const char* raw_configuration) {
@@ -1212,7 +1212,7 @@ UiConfiguration ParseConfigurationText(const char* raw_configuration) {
         }
 
         if (line.front() == '[' && line.back() == ']') {
-            in_section = (line == "[betterendfield.ui]");
+            in_section = (line == "[betterendfieldnext.ui]");
             continue;
         }
 
@@ -1535,7 +1535,7 @@ void StopHooks() {
 
 #if defined(__ANDROID__)
 void AndroidUiFrame(bool suspend) {
-    if (!betterendfield::OnAndroidFrameThread()) return;
+    if (!betterendfieldnext::OnAndroidFrameThread()) return;
     const auto state = g_state.load(std::memory_order_acquire);
     if (state != ModuleState::Ready && state != ModuleState::Active && state != ModuleState::Disabled) return;
     if (!suspend) {
@@ -1544,11 +1544,11 @@ void AndroidUiFrame(bool suspend) {
         PumpUidVisibility();
         PumpHudVisibility();
     }
-    betterendfield::PublishAndroidHudState(g_hud_hidden);
+    betterendfieldnext::PublishAndroidHudState(g_hud_hidden);
 }
 #endif
 BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
-    if (!host || host->abi_version != BETTER_ENDFIELD_MODULE_ABI_V1) {
+    if (!host || host->abi_version != BETTER_ENDFIELD_NEXT_MODULE_ABI_V1) {
         return BE_Result_InvalidArgument;
     }
     g_host = host;
@@ -1572,9 +1572,9 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
 
     g_state.store(ModuleState::Ready);
 #if defined(__ANDROID__)
-    betterendfield::SetAndroidFrameClient(betterendfield::FrameClient::Ui, &AndroidUiFrame);
+    betterendfieldnext::SetAndroidFrameClient(betterendfieldnext::FrameClient::Ui, &AndroidUiFrame);
 #endif
-    Log("BetterEndfield.UI module initialized successfully.");
+    Log("BetterEndfieldNext.UI module initialized successfully.");
     return BE_Result_Ok;
 }
 
@@ -1596,7 +1596,7 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
     const bool active = mobile_active || pc_active || uid_active || hud_active;
     g_pc_ui_enabled.store(pc_active, std::memory_order_release);
 #if defined(__ANDROID__)
-    betterendfield::PublishAndroidPcMouse(pc_active,
+    betterendfieldnext::PublishAndroidPcMouse(pc_active,
         g_android_pc_cursor_hook_ready && g_android_pc_axis_hook_ready);
     g_next_android_pc_cursor_refresh_tick.store(0, std::memory_order_release);
 #endif
@@ -1638,15 +1638,15 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
 
 void BE_CALL Shutdown() {
 #if defined(__ANDROID__)
-    betterendfield::ResetAndroidPcMouse();
+    betterendfieldnext::ResetAndroidPcMouse();
     g_android_pc_cursor_intent_known.store(false, std::memory_order_release);
     g_android_pc_cursor_hook_ready = g_android_pc_axis_hook_ready = false;
     g_android_pc_binding_action_field = nullptr;
     g_android_pc_screen_width = g_android_pc_screen_height = nullptr;
     g_android_pc_screen_width_method = g_android_pc_screen_height_method = nullptr;
     g_android_pc_absolute_hook_ready = false;
-    betterendfield::SetAndroidFrameClient(betterendfield::FrameClient::Ui, nullptr);
-    betterendfield::PublishAndroidHudState(false);
+    betterendfieldnext::SetAndroidFrameClient(betterendfieldnext::FrameClient::Ui, nullptr);
+    betterendfieldnext::PublishAndroidHudState(false);
 #endif
     TouchInput::SetEnabled(false);
     TouchInput::Stop();
@@ -1666,14 +1666,14 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "UI Enhancements", "3.2.0", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "UI Enhancements", "3.2.0", BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};
 
 } // namespace
-} // namespace BetterEndfield::UiModule
+} // namespace BetterEndfieldNext::UiModule
 
-BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfield_GetModuleApiV1() {
-    return &BetterEndfield::UiModule::kApi;
+BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfieldNext_GetModuleApiV1() {
+    return &BetterEndfieldNext::UiModule::kApi;
 }

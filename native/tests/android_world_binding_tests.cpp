@@ -1,6 +1,6 @@
 // Exercise the production Android world adapter with managed-object stand-ins.
 // No game, Android device or graphics driver is needed for these route checks.
-#include "BetterEndfield/ModuleApi.h"
+#include "BetterEndfieldNext/ModuleApi.h"
 #include "../modules/custom_model/bem.h"
 #include "../modules/custom_model/mod_registry.h"
 #include "../modules/custom_model/resource_policy.h"
@@ -55,11 +55,11 @@ size_t ui_load_calls=0;
 size_t checks=0;
 void Check(bool value,const char* message) { ++checks; if (!value) throw std::runtime_error(message); }
 }
-namespace betterendfield {
+namespace betterendfieldnext {
 void* AndroidLoadUiDonor(const char*,void*&,uint32_t&) { ++ui_load_calls; return ui_donor; }
 void AndroidReleaseUiDonor(void*&,uint32_t&) {}
 }
-namespace BetterEndfield::CustomModel {
+namespace BetterEndfieldNext::CustomModel {
 struct PreparedBinding {
     GenericMatching::ReceiverKey receiver_key;
     uint32_t component_id=0;
@@ -193,7 +193,7 @@ bool RestoreSavedShadowState(PreparedBinding& binding) {
 #include "../modules/custom_model/explicit_android_shadows.inc"
 }
 namespace {
-using namespace BetterEndfield::CustomModel;
+using namespace BetterEndfieldNext::CustomModel;
 struct Fixture {
     std::array<ComponentIdentity,1> identities{{{"Body_lod0",3}}};
     std::string component_name,world_name,ui_name;
@@ -402,7 +402,7 @@ void ExplicitShadowChecks() {
 }
 int main() {
     try {
-        using namespace BetterEndfield::CustomModel;
+        using namespace BetterEndfieldNext::CustomModel;
         host.resolve_class=[](void*,const char*,const char*,const char*,BE_ResolvedClassV1* type)->BE_Result {
             type->type_object=transform_type; return BE_Result_Ok;
         };

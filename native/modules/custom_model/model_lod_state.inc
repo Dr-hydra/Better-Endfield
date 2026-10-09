@@ -80,7 +80,7 @@ struct LodState {
     // the highest available resource LOD (normally LOD1), not QualitySettings
     // maximumLODLevel=0. Explicit resources need the same configured policy.
     bool MaintainAndroid(bool stopping,const ModRegistry& registry) {
-        return Update(!stopping && !registry.enabled.empty() && betterendfield::AndroidPipelineLodEnabled());
+        return Update(!stopping && !registry.enabled.empty() && betterendfieldnext::AndroidPipelineLodEnabled());
     }
 #endif
     bool Update(bool desired) {
@@ -97,7 +97,7 @@ struct LodState {
             return true;
         }
         if (active && !Restore()) return false;
-        if (betterendfield::AndroidNpcParametersEnabled()) {
+        if (betterendfieldnext::AndroidNpcParametersEnabled()) {
             for (auto& field:fields) if (!SafeStaticField(g_static_get,field.resolved.field_info,field.original.data())) return false;
             npc_snapshot=true;
         }

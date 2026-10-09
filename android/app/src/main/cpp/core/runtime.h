@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string>
 
-namespace betterendfield {
+namespace betterendfieldnext {
 
 struct Il2CppDomain;
 struct Il2CppAssembly;
@@ -145,4 +145,4 @@ private:
     bool owns_attachment_ = false;
 };
 
-}  // namespace betterendfield
+}  // namespace betterendfieldnext

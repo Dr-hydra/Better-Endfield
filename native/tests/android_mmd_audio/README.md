@@ -1,6 +1,6 @@
 # MmdAudio host JVM regression tests
 
-The runner compiles the current production `android/app/src/main/java/dev/betterendfield/android/MmdAudio.java`
+The runner compiles the current production `android/app/src/main/java/dev/betterendfield/next/MmdAudio.java`
 with minimal `android.media.MediaPlayer` and `android.os` stubs. It requires a JDK supporting Java 17,
 and does not run Gradle, JNI, an emulator, or the overlay geometry suite.
 

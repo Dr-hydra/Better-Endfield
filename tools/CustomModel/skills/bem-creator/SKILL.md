@@ -5,7 +5,7 @@ description: Convert supported Endfield source Mods to BEM 1.0–1.3, build expl
 
 # BEM creator workflow
 
-Use the installed `BetterEndfield.BemConverter.exe` CLI, or the repository's
+Use the installed `BetterEndfieldNext.BemConverter.exe` CLI, or the repository's
 `python tools/CustomModel/bem_tool.py`. The standalone distribution places the
 executable at its root; the player application places it under `tools/BemConverter`.
 Run `--version` and `--help` to check the available commands. Do not assume the

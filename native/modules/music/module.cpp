@@ -1,5 +1,5 @@
-#include <BetterEndfield/ModuleApi.h>
-#include <BetterEndfield/LocalMusic.h>
+#include <BetterEndfieldNext/ModuleApi.h>
+#include <BetterEndfieldNext/LocalMusic.h>
 
 #include "music_bank.h"
 #include "omni_pcm_abi.h"
@@ -33,10 +33,10 @@
 
 namespace {
 
-using namespace BetterEndfield::Music;
-namespace Omni = BetterEndfield::Music::Omni;
+using namespace BetterEndfieldNext::Music;
+namespace Omni = BetterEndfieldNext::Music::Omni;
 
-constexpr const char* kModuleId = "betterendfield.music";
+constexpr const char* kModuleId = "betterendfieldnext.music";
 constexpr const char* kGameplayAssembly = "Gameplay.Beyond.dll";
 constexpr const char* kMusicNamespace = "Beyond.Gameplay.Audio";
 constexpr const char* kMusicClass = "AudioMusicSystem";
@@ -894,7 +894,7 @@ bool CreateAudioGameObject() {
     void* object = g_host->object_new(
         g_host->context, g_game_object_class.class_info);
     void* name = g_host->string_new(
-        g_host->context, "BetterEndfield.OmniMixAudioInput");
+        g_host->context, "BetterEndfieldNext.OmniMixAudioInput");
     if (!object || !name) {
         return false;
     }
@@ -1617,7 +1617,7 @@ bool ConnectOmniSession(OmniSession& session, const MusicConfig& config) {
     options.client_id = config.client_id.c_str();
     options.mod_id = kModuleId;
     options.game_name = "Arknights: Endfield";
-    options.display_name = "Better Endfield";
+    options.display_name = "Better Endfield Next";
     options.kind = Omni::GameMod;
     options.capability_flags = Omni::ServerControlledPlayback |
         Omni::QueueManagement | Omni::Seek | Omni::AudioPlayback;
@@ -1919,7 +1919,7 @@ bool ResolveContractsAndInstallHooks() {
 }
 
 BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
-    if (!host || host->abi_version != BETTER_ENDFIELD_MODULE_ABI_V1 ||
+    if (!host || host->abi_version != BETTER_ENDFIELD_NEXT_MODULE_ABI_V1 ||
         !host->log || !host->resolve_method || !host->resolve_field ||
         !host->create_hook || !host->release_module_hooks ||
         !host->resolve_class || !host->object_new || !host->string_new ||
@@ -2034,8 +2034,8 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Better Endfield Music", "3.2.0",
-        BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Better Endfield Next Music", "3.2.0",
+        BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown,
@@ -2043,11 +2043,11 @@ const BE_ModuleApiV1 kApi{
 
 } // namespace
 
-BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfield_GetModuleApiV1(void) {
+BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfieldNext_GetModuleApiV1(void) {
     return &kApi;
 }
 
 // Named capability for Camera's MMD playback (LocalMusic.h).
-BE_EXPORT const BE_LocalMusicApiV1* BE_CALL BetterEndfield_GetLocalMusicApiV1(void) {
+BE_EXPORT const BE_LocalMusicApiV1* BE_CALL BetterEndfieldNext_GetLocalMusicApiV1(void) {
     return &LocalTrack::kApi;
 }

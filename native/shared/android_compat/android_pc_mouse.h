@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <mutex>
 
-namespace betterendfield {
+namespace betterendfieldnext {
 
 struct AndroidPcMouseSnapshot {
     bool requested = false, captured = false;
@@ -153,4 +153,4 @@ bool ReadAndroidPcMouseMotion(float& x, float& y);
 void ResetAndroidPcMouse();
 AndroidPcMouseSnapshot InspectAndroidPcMouse();
 
-} // namespace betterendfield
+} // namespace betterendfieldnext

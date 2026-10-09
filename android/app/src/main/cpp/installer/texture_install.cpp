@@ -9,8 +9,8 @@
 #include <mutex>
 #include <stdexcept>
 
-namespace betterendfield {
-using J=BetterEndfield::CustomModel::BemJson;
+namespace betterendfieldnext {
+using J=BetterEndfieldNext::CustomModel::BemJson;
 namespace {
 std::mutex activeMutex;
 astcenc_context* activeContext=nullptr;

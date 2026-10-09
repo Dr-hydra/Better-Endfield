@@ -2,7 +2,7 @@
 
 This triangle is a format/creator test, not a game character or playable mod.
 Run: python create_project.py --output <new-directory>
-Then: BetterEndfield.BemConverter.exe build <new-directory>/export.bemproj.json
+Then: BetterEndfieldNext.BemConverter.exe build <new-directory>/export.bemproj.json
 """
 import argparse
 import json

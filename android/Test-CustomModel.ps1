@@ -33,7 +33,7 @@ if ($taskPackageList) {
     foreach ($taskPackage in $taskPackageList) { Invoke-TaskAdb shell test -r $taskPackage | Out-Null }
 }
 if (-not $SkipInstall) { Invoke-TaskAdb install -r $taskApk | Out-Null }
-$taskPrevious = [string](Invoke-TaskAdb shell getprop debug.betterendfield.custom_model_config)
+$taskPrevious = [string](Invoke-TaskAdb shell getprop debug.betterendfieldnext.custom_model_config)
 $taskConfig = if ($taskPackageList) {
     'resource=auto;packages=' + (($taskPackageList | ForEach-Object { Split-Path $_ -Leaf }) -join ',')
 } else { 'resource=auto;package=' + $DevicePackage }
@@ -57,7 +57,7 @@ if ($Mode -eq 'Rollback') {
     Write-Output 'Rollback mode restores original models immediately; it must not be used for visual replacement validation.'
 }
 try {
-    Invoke-TaskAdb shell "setprop debug.betterendfield.custom_model_config '$taskConfig'" | Out-Null
+    Invoke-TaskAdb shell "setprop debug.betterendfieldnext.custom_model_config '$taskConfig'" | Out-Null
     Invoke-TaskAdb shell am force-stop com.hypergryph.endfield | Out-Null
     Invoke-TaskAdb shell monkey -p com.hypergryph.endfield 1 | Out-Null
     $taskDeadline = (Get-Date).AddSeconds($TimeoutSeconds)
@@ -68,7 +68,7 @@ try {
         if ($LASTEXITCODE -ne 0 -or $taskFoundPid -notmatch '^\d+$') { throw 'Game process exited.' }
         if ($taskPid -and $taskPid -ne $taskFoundPid) { throw 'Game process restarted during test.' }
         $taskPid = $taskFoundPid
-        $taskLines = Invoke-TaskAdb logcat -d "--pid=$taskPid" -s BetterEndfield:V AndroidRuntime:E libc:F
+        $taskLines = Invoke-TaskAdb logcat -d "--pid=$taskPid" -s BetterEndfieldNext:V AndroidRuntime:E libc:F
         $taskLines | Set-Content -LiteralPath (Join-Path $taskOutput 'runtime.log') -Encoding utf8
         $taskText = $taskLines -join "`n"
         if ($taskText -match 'Fatal signal|FATAL EXCEPTION|commit/restore FAIL|scratch builder FAIL|CRITICAL:') {
@@ -88,7 +88,7 @@ try {
     if (([string](Invoke-TaskAdb shell pidof com.hypergryph.endfield)) -ne $taskPid) {
         $taskPassed = $false; throw 'Game did not survive the post-test observation.'
     }
-    $taskFinal = Invoke-TaskAdb logcat -d "--pid=$taskPid" -s BetterEndfield:V AndroidRuntime:E libc:F
+    $taskFinal = Invoke-TaskAdb logcat -d "--pid=$taskPid" -s BetterEndfieldNext:V AndroidRuntime:E libc:F
     $taskFinal | Set-Content -LiteralPath (Join-Path $taskOutput 'runtime.log') -Encoding utf8
     if (($taskFinal -join "`n") -match 'Fatal signal|FATAL EXCEPTION|commit/restore FAIL|CRITICAL:') {
         $taskPassed = $false; throw 'Runtime failure after the passing marker.'
@@ -99,6 +99,6 @@ try {
 } finally {
     if ($Mode -ne 'Replace' -or -not $taskPassed) {
         & $Adb -s $Serial shell am force-stop com.hypergryph.endfield | Out-Null
-        & $Adb -s $Serial shell "setprop debug.betterendfield.custom_model_config '$taskPrevious'" | Out-Null
+        & $Adb -s $Serial shell "setprop debug.betterendfieldnext.custom_model_config '$taskPrevious'" | Out-Null
     }
 }

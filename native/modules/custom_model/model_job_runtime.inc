@@ -86,7 +86,7 @@ bool RegisterModelDelivery(void* asset,void* source=nullptr,bool synchronous=fal
 //                             template plus every instance cloned meanwhile;
 //   not requested/refused  -> proven synchronous transaction inside Finish.
 // UnityEngine.Object::Internal_CloneSingleWithParent is also hooked by
-// betterendfield.model (login actor capture). The Host create_hook chains
+// betterendfieldnext.model (login actor capture). The Host create_hook chains
 // detours per target (PC and Android, registration order; `original` is the
 // next link), so both modules coexist. An exclusive Host refused the second
 // owner on 2026-10-03 ("native hook target already owned"); with such a Host
@@ -243,7 +243,7 @@ struct ModelBuildJob {
     std::string failure;      // First recorded reason; logged once when the Job is dropped.
 #if defined(__ANDROID__)
     void* donor_handle=nullptr;uint32_t donor_handle_root=0;
-    ~ModelBuildJob() { betterendfield::AndroidReleaseUiDonor(donor_handle,donor_handle_root); }
+    ~ModelBuildJob() { betterendfieldnext::AndroidReleaseUiDonor(donor_handle,donor_handle_root); }
 #endif
 };
 std::vector<std::unique_ptr<ModelBuildJob>> g_model_jobs;
@@ -435,8 +435,8 @@ bool AdvanceModelTexture(ModelBuildJob& job,uint64_t frame) {
             return JobFail(job,"built texture readback/sampler mismatch t="+tex.name+" size="+std::to_string(width)+"x"+
                 std::to_string(height)+" format="+std::to_string(format)+" expected="+std::to_string(expected));
 #if defined(__ANDROID__)
-        betterendfield::AndroidAuditTextureColorSpace(work.donor,work.object,tex.original_name);
-        betterendfield::AndroidAuditNormalTexture(work.donor,tex.original_name);
+        betterendfieldnext::AndroidAuditTextureColorSpace(work.donor,work.object,tex.original_name);
+        betterendfieldnext::AndroidAuditNormalTexture(work.donor,tex.original_name);
 #endif
         RememberGeneratedTexture(work.object,work.identity);
     }
@@ -520,7 +520,7 @@ bool CommitModelJob(ModelBuildJob& job,uint64_t frame) {
                 if (!copy || !InvokeVoid(Contract("material.copy"),copy,args) || !MaterialCopyCompatible(material,copy) || !SetArrayValue(b.custom_materials,i,copy))
                     return JobFail(job,"world private material copy failed");
 #if defined(__ANDROID__)
-                if (!betterendfield::AndroidAuditMaterialCopy(material,copy)) return JobFail(job,"world material copy audit failed");
+                if (!betterendfieldnext::AndroidAuditMaterialCopy(material,copy)) return JobFail(job,"world material copy audit failed");
 #endif
             }
         }
@@ -542,7 +542,7 @@ bool CommitModelJob(ModelBuildJob& job,uint64_t frame) {
     }
     job.scope.published=true; // Set before any diagnostic/bookkeeping allocation.
 #if defined(__ANDROID__)
-    if (betterendfield::AndroidMeshRollbackTest()) {
+    if (betterendfieldnext::AndroidMeshRollbackTest()) {
         bool restored=true;
         for (auto it=transaction.rbegin();it!=transaction.rend();++it) if (!RestorePreparedBinding(*it)) restored=false;
         job.scope.published=!restored;
@@ -576,7 +576,7 @@ bool AdvanceModelJob(ModelBuildJob& job,uint64_t frame) {
 #if defined(__ANDROID__)
         if (!job.mod.adapter->explicit_resource && ResourceBaseName(job.scope.resource_name)==job.mod.adapter->world_resource) {
             // g_in_delivery supplies OriginalOnly for this synchronous donor acquisition.
-            job.ui_asset=RootTemporary(betterendfield::AndroidLoadUiDonor(job.mod.adapter->ui_resource,job.donor_handle,job.donor_handle_root));
+            job.ui_asset=RootTemporary(betterendfieldnext::AndroidLoadUiDonor(job.mod.adapter->ui_resource,job.donor_handle,job.donor_handle_root));
             if (!job.ui_asset) return JobFail(job,"Android UI donor unavailable: "+std::string(job.mod.adapter->ui_resource));
         }
 #endif
@@ -820,9 +820,9 @@ struct ModelAndroidDiscoveryRoute {
 ModelAndroidDiscoveryRoute AndroidModelDiscoveryRoute() {
 #if defined(__ANDROID__)
     return {[](const char* name,void*& handle,uint32_t& root) {
-            return betterendfield::AndroidLoadUiDonor(std::string(name),handle,root);
+            return betterendfieldnext::AndroidLoadUiDonor(std::string(name),handle,root);
         },[](void*& handle,uint32_t& root) {
-            betterendfield::AndroidReleaseUiDonor(handle,root);handle=nullptr;root=0;
+            betterendfieldnext::AndroidReleaseUiDonor(handle,root);handle=nullptr;root=0;
         },
         AndroidLodRelations(),AndroidLodAssetScope()};
 #else

@@ -12,7 +12,7 @@
 #include <string_view>
 #include <vector>
 
-namespace betterendfield {
+namespace betterendfieldnext {
 namespace {
 
 struct Il2CppMethodInfoPrefix {
@@ -599,4 +599,4 @@ Il2CppThreadScope::Il2CppThreadScope(const Il2CppRuntime& runtime) : runtime_(ru
 Il2CppThreadScope::~Il2CppThreadScope() {
     if (owns_attachment_) runtime_.DetachCurrentThread(thread_);
 }
-} // namespace betterendfield
+} // namespace betterendfieldnext

@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <string>
 
-namespace BetterEndfield::Host {
+namespace BetterEndfieldNext::Host {
 
 struct HostPaths {
     std::filesystem::path install_root;
@@ -31,4 +31,4 @@ private:
     HostPaths paths_;
 };
 
-} // namespace BetterEndfield::Host
+} // namespace BetterEndfieldNext::Host

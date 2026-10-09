@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../BetterEndfieldNext.UI/Models/ModConfiguration.cs" Link="ModConfiguration.cs" />
+    <Compile Include="../../BetterEndfieldNext.UI/Models/FreeCameraExtras.cs" Link="FreeCameraExtras.cs" />
+    <Compile Include="../../BetterEndfieldNext.UI/Services/LocalizationService.cs" Link="LocalizationService.cs" />
+    <Compile Include="../../../native/tests/third_party_ui/PlatformStubs.cs" Link="PlatformStubs.cs" />
+    <EmbeddedResource Include="../../BetterEndfieldNext.UI/Assets/locales/*.json" LogicalName="BetterEndfieldNext.UI.Assets.locales.%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

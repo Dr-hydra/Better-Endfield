@@ -35,7 +35,7 @@ unsigned LogCount(std::string_view part) {
     return static_cast<unsigned>(std::count_if(logs.begin(),logs.end(),[&](const auto& line){return line.find(part)!=std::string::npos;}));
 }
 }
-namespace betterendfield {
+namespace betterendfieldnext {
 bool AndroidInspectionEnabled() {return inspect;}
 std::string AndroidTextureMipRequestToken() {
     ++request_reads;
@@ -43,7 +43,7 @@ std::string AndroidTextureMipRequestToken() {
     return fixture_request_token;
 }
 }
-namespace BetterEndfield::CustomModel {
+namespace BetterEndfieldNext::CustomModel {
 struct {void* type_object=reinterpret_cast<void*>(1);} g_texture2d_class;
 std::unordered_map<int32_t,std::string> g_generated_texture_identity;
 std::atomic<uint32_t> g_pump_thread{7};
@@ -96,7 +96,7 @@ std::string ObjectName(void* object) {return static_cast<Texture*>(object)->name
 }
 int main() {
     try {
-        using namespace BetterEndfield::CustomModel;
+        using namespace BetterEndfieldNext::CustomModel;
         current_thread=6;
         ObserveAndroidTextureStreamingBeforeUpload();ObserveAndroidTextureStreamingAfterUpload(true,2,1234,567,890);
         Check(!reads && !enumerations && logs.empty(),"unconfirmed resource thread ran Unity diagnostics");

@@ -1,13 +1,13 @@
 #pragma once
 
 // ABI subset derived from OmniPcmShared's MIT-licensed public header.
-// Better Endfield loads these functions dynamically and does not link against
+// Better Endfield Next loads these functions dynamically and does not link against
 // a particular OmniMix build.
 
 #include <cstddef>
 #include <cstdint>
 
-namespace BetterEndfield::Music::Omni {
+namespace BetterEndfieldNext::Music::Omni {
 
 constexpr uint32_t kVersion2 = 2u;
 constexpr uint32_t kAbiMajor = 2u;
@@ -160,4 +160,4 @@ static_assert(sizeof(ClientConfig) == 16);
 static_assert(sizeof(ConnectOptions) == 56);
 static_assert(sizeof(ConnectionInfo) == 136);
 
-} // namespace BetterEndfield::Music::Omni
+} // namespace BetterEndfieldNext::Music::Omni

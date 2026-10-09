@@ -22,13 +22,13 @@
 #include <unordered_map>
 #include <vector>
 
-namespace BetterEndfield::CombatOverlay {
+namespace BetterEndfieldNext::CombatOverlay {
 namespace {
 
 using namespace Gdiplus;
 using Protocol = CombatOverlayProtocol::SharedSnapshot;
 
-constexpr wchar_t kWindowClass[] = L"BetterEndfield.CombatOverlay.Window";
+constexpr wchar_t kWindowClass[] = L"BetterEndfieldNext.CombatOverlay.Window";
 constexpr int kWindowWidth = 480;
 constexpr int kHeaderHeight = 96;
 constexpr int kRowHeight = 76;
@@ -114,8 +114,8 @@ std::filesystem::path DataDirectory() {
     const DWORD length = GetEnvironmentVariableW(L"LOCALAPPDATA", local_app_data,
         static_cast<DWORD>(std::size(local_app_data)));
     std::filesystem::path directory = length
-        ? std::filesystem::path(local_app_data) / L"BetterEndfield"
-        : std::filesystem::temp_directory_path() / L"BetterEndfield";
+        ? std::filesystem::path(local_app_data) / L"BetterEndfieldNext"
+        : std::filesystem::temp_directory_path() / L"BetterEndfieldNext";
     std::error_code error;
     std::filesystem::create_directories(directory, error);
     return directory;
@@ -160,7 +160,7 @@ bool IsEnglish() {
     }
     last_check = now;
 
-    std::filesystem::path ini_path = DataDirectory() / L"BetterEndfield.ini";
+    std::filesystem::path ini_path = DataDirectory() / L"BetterEndfieldNext.ini";
     wchar_t buffer[64]{};
     GetPrivateProfileStringW(L"Launcher", L"Language", L"", buffer,
         static_cast<DWORD>(std::size(buffer)), ini_path.c_str());
@@ -944,7 +944,7 @@ int Run(HINSTANCE instance) {
     window_class.lpszClassName = kWindowClass;
     RegisterClassExW(&window_class);
     g_window = CreateWindowExW(WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW |
-            WS_EX_NOACTIVATE, kWindowClass, L"Better Endfield 战斗数据",
+            WS_EX_NOACTIVATE, kWindowClass, L"Better Endfield Next 战斗数据",
         WS_POPUP, 0, 0, kWindowWidth, kMinimumHeight, nullptr, nullptr, instance, nullptr);
     if (!g_window) {
         OverlayLog("CreateWindowEx failed error=" + std::to_string(GetLastError()));
@@ -972,8 +972,8 @@ int Run(HINSTANCE instance) {
     return 0;
 }
 
-} // namespace BetterEndfield::CombatOverlay
+} // namespace BetterEndfieldNext::CombatOverlay
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int) {
-    return BetterEndfield::CombatOverlay::Run(instance);
+    return BetterEndfieldNext::CombatOverlay::Run(instance);
 }

@@ -14,7 +14,7 @@ container itself; run the generated `export.bemproj.json` with BEM Tools.
 6. Run:
 
 ```text
-BetterEndfield.BemConverter.exe build <exported-directory>/export.bemproj.json
+BetterEndfieldNext.BemConverter.exe build <exported-directory>/export.bemproj.json
 ```
 
 The first version supports the verified 16/12/12 vertex layout, fixed

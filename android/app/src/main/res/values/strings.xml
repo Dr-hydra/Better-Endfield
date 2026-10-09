@@ -2,10 +2,10 @@
 <!-- The existing interface intentionally falls back to its default language;
      additional locale resources currently translate only the new controls. -->
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
-    <string name="app_name">Better Endfield</string>
+    <string name="app_name">Better Endfield Next</string>
     <string name="xposed_description">Modular Endfield model replacement and per-character voice routing</string>
     <string name="settings_subtitle">终末地增强模块 · Android</string>
-    <string name="app_icon_description">Better Endfield 图标</string>
+    <string name="app_icon_description">Better Endfield Next 图标</string>
     <string name="runtime_badge">ROOT · LSPOSED</string>
     <string name="model_page">开屏模型</string>
     <string name="custom_model_page">第三方模型</string>
@@ -66,8 +66,8 @@
     <string name="model_restart_required">模型设置已保存。请强制停止并重新启动游戏。</string>
     <string name="enhancement_description">界面增强、持续冲刺和相机增强统一在这里配置。需要在游戏运行中即时触发的动作放在悬浮窗里，其余开关都在这一页。</string>
 
-    <!-- betterendfield.ui -->
-    <string name="ui_card_eyebrow">INTERFACE · betterendfield.ui</string>
+    <!-- betterendfieldnext.ui -->
+    <string name="ui_card_eyebrow">INTERFACE · betterendfieldnext.ui</string>
     <string name="ui_card_title">界面增强</string>
     <string name="ui_card_subtitle">与桌面端同源编译。隐藏 UID 是常驻开关；隐藏全部 HUD 需要在游戏里即时切换，开关在这里，触发按钮在悬浮窗。</string>
     <string name="ui_hide_uid">隐藏 UID 水印</string>
@@ -75,29 +75,24 @@
     <string name="ui_hide_hud">启用隐藏全部 HUD</string>
     <string name="ui_hide_hud_hint">隐藏或恢复游戏内 MainHudRoot 下的全部 HUD 画布，不影响菜单和设置界面。由悬浮窗的按钮切换。</string>
 
-    <!-- betterendfield.camera -->
-    <string name="camera_card_eyebrow">CAMERA · betterendfield.camera</string>
+    <!-- betterendfieldnext.camera -->
+    <string name="camera_card_eyebrow">CAMERA · betterendfieldnext.camera</string>
     <string name="camera_card_title">相机增强</string>
-    <string name="camera_card_subtitle">自由视角、时间冻结、第一人称与 MMD 可分别启用，运行中从悬浮窗触发；这里的开关和参数自动保存，重启游戏后装载。</string>
+    <string name="camera_card_subtitle">自由视角、时间冻结与 MMD 可分别启用，运行中从悬浮窗触发；这里的开关和参数自动保存，重启游戏后装载。</string>
     <string name="camera_dither">移除角色近距离虚化</string>
     <string name="camera_dither_hint">调用游戏自身的 ForceClearDither，移除镜头贴近角色时的半透明虚化。无需热键。</string>
     <string name="camera_free">启用自由视角功能</string>
     <string name="camera_free_hint">进入时捕获主相机的位置和视野，退出后恢复原值。悬浮窗展开后会出现方向键与升降键。</string>
     <string name="camera_pause">启用时间冻结功能</string>
     <string name="camera_pause_hint">冻结游戏时间；可独立启用，从悬浮窗冻结或恢复。</string>
-    <string name="camera_first_person">启用第一人称视角功能</string>
-    <string name="camera_first_person_hint">将视点固定到当前操控角色的头部。与自由视角相互独立，可单独启用。</string>
-    <string name="camera_hide_head">隐藏头部（第一人称）</string>
     <string name="camera_hide_head_hint">使用独立网格副本隐藏头部，保留身体、手臂和原始阴影。</string>
-    <string name="camera_fill_neck">填补颈部开口</string>
     <string name="camera_fill_neck_hint">隐藏头部后会露出颈部开口，用一小块补面遮住。</string>
     <string name="camera_group_values">参数</string>
     <string name="camera_speed_label">移动速度</string>
     <string name="camera_fov_label">视野（FOV）</string>
-    <string name="camera_fp_fov_label">第一人称视野（FOV）</string>
 
-    <!-- betterendfield.actions -->
-    <string name="dash_card_eyebrow">SPRINT · betterendfield.actions</string>
+    <!-- betterendfieldnext.actions -->
+    <string name="dash_card_eyebrow">SPRINT · betterendfieldnext.actions</string>
     <string name="dash_card_title">冲刺持续</string>
     <string name="dash_card_subtitle">分角色开启特殊冲刺动作的持续播放。循环段由随包附带的骨骼姿态数据接管，桌面端不用热键，因此这一页就是全部设置。</string>
     <string name="dash_enable">启用冲刺持续</string>
@@ -131,14 +126,12 @@
     <string name="module_will_not_load">不会装载</string>
     <string name="overlay_turned_on">悬浮窗已启用。首次启用请重启游戏；面板随游戏页面显示和隐藏。</string>
     <string name="overlay_turned_off">悬浮窗已关闭。重新进入游戏页面后生效。</string>
-    <string name="bem_import_activity_label">Better Endfield · 导入 BEM</string>
+    <string name="bem_import_activity_label">Better Endfield Next · 导入 BEM</string>
     <string name="ui_pc">使用 PC 界面布局</string>
     <string name="ui_pc_hint">切换键盘输入对应的界面布局，建议连接键鼠或手柄。触屏按钮可能消失；关闭后恢复此前的输入类型，不更改平台身份。重启游戏后装载此设置。</string>
-    <string name="camera_fp_side_limit">第一人称侧看角度上限</string>
     <string name="camera_global_fov">修改全局视野</string>
     <string name="camera_global_fov_value">全局视野（FOV）</string>
     <string name="camera_follow_character">自由镜头跟随人物移动</string>
-    <string name="camera_fp_turn_speed">第一人称转身速度</string>
     <string name="degree_per_second">°/秒</string>
     <string name="mmd_title">MMD 作品库</string>
     <string name="mmd_enable">启用 MMD 播放功能</string>
@@ -182,5 +175,5 @@
     <string name="camera_keyframe_segment">关键帧段时长（0.2–60 秒）</string>
     <string name="camera_keyframe_loop">循环播放关键帧</string>
     <string name="camera_keyframe_loop_hint">关键帧路径播放到结尾后重新播放。</string>
-    <string name="camera_keyframe_file_hint">关键帧文件保存在游戏内部存储的 betterendfield/camera-path.becam。保存和加载由游戏悬浮窗执行，结果以悬浮窗状态为准。</string>
+    <string name="camera_keyframe_file_hint">关键帧文件保存在游戏内部存储的 betterendfieldnext/camera-path.becam。保存和加载由游戏悬浮窗执行，结果以悬浮窗状态为准。</string>
 </resources>

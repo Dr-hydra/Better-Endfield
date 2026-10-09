@@ -12,7 +12,7 @@
 #include <string_view>
 #include <vector>
 
-namespace BetterEndfield::Host {
+namespace BetterEndfieldNext::Host {
 namespace {
 
 std::string ToUtf8(const std::wstring& value) {
@@ -194,7 +194,7 @@ ModuleManager::LoadResult ModuleManager::LoadManifest(
     const auto get_api = reinterpret_cast<BE_GetModuleApiV1Fn>(
         GetProcAddress(library, api_name.c_str()));
     const BE_ModuleApiV1* api = get_api ? get_api() : nullptr;
-    if (!api || api->descriptor.abi_version != BETTER_ENDFIELD_MODULE_ABI_V1 ||
+    if (!api || api->descriptor.abi_version != BETTER_ENDFIELD_NEXT_MODULE_ABI_V1 ||
         !api->descriptor.module_id || module_id != api->descriptor.module_id ||
         !api->initialize || !api->shutdown) {
         logger_.Write("host.modules", "Module ABI validation failed: " + module_id);
@@ -271,4 +271,4 @@ void ModuleManager::Shutdown() {
     pending_module_count_ = 0;
 }
 
-} // namespace BetterEndfield::Host
+} // namespace BetterEndfieldNext::Host

@@ -38,17 +38,17 @@ def main():
             for value in item.attrib.values():
                 if value.startswith('@+id/'):
                     symbols.setdefault('id', set()).add(value[5:])
-    java = root / 'android/app/src/main/java/dev/betterendfield/android'
+    java = root / 'android/app/src/main/java/dev/betterendfield/next'
     names = ['BemInstallActivity', 'BemInstallPage', 'BemInstaller', 'BemImportRequest', 'BemImportStream',
              'BemOptions', 'BemParameters', 'AstcSupport', 'BemInstalledResources',
              'ThirdPartyModulePackage', 'ThirdPartyModuleStore', 'ThirdPartyModuleActivity', 'ThirdPartyModulesPage']
     sources = [java / (name + '.java') for name in names]
-    sources.append(root / 'android/app/src/androidTest/java/dev/betterendfield/android/BemInstallerTest.java')
+    sources.append(root / 'android/app/src/androidTest/java/dev/betterendfield/next/BemInstallerTest.java')
     with tempfile.TemporaryDirectory(prefix='bem-java-check-') as temporary:
         build = Path(temporary)
-        stub = build / 'stubs/dev/betterendfield/android'
+        stub = build / 'stubs/dev/betterendfield/next'
         stub.mkdir(parents=True)
-        text = 'package dev.betterendfield.android; public final class R {\n'
+        text = 'package dev.betterendfield.next; public final class R {\n'
         for kind, values in sorted(symbols.items()):
             text += 'public static final class ' + kind + ' {\n'
             for index, name in enumerate(sorted(values), 1):
@@ -56,7 +56,7 @@ def main():
             text += '}\n'
         text += '}\n'
         (stub / 'R.java').write_text(text, encoding='utf-8')
-        (stub / 'FrameworkSettings.java').write_text('''package dev.betterendfield.android;
+        (stub / 'FrameworkSettings.java').write_text('''package dev.betterendfield.next;
 // Compile-only fixture, never packaged or executed.
 final class FrameworkSettings {
  static android.content.SharedPreferences open(android.content.Context c) {throw new UnsupportedOperationException();}

@@ -6,6 +6,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="../../../ui/BetterEndfield.UI/Services/BemExportProject.cs" Link="BemExportProject.cs" />
+    <Compile Include="../../../ui/BetterEndfieldNext.UI/Services/BemExportProject.cs" Link="BemExportProject.cs" />
   </ItemGroup>
 </Project>

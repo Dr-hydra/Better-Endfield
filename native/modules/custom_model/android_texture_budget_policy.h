@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <limits>
 
-namespace BetterEndfield::CustomModel {
+namespace BetterEndfieldNext::CustomModel {
 
 // Pump-thread state only. The caller supplies engine/system observations and
 // records external setter requests independently, excluding its own writes.
@@ -248,4 +248,4 @@ private:
     Decision pending_{};
 };
 
-} // namespace BetterEndfield::CustomModel
+} // namespace BetterEndfieldNext::CustomModel

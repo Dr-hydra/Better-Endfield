@@ -7,14 +7,14 @@
 #include <mutex>
 #include <unistd.h>
 
-namespace betterendfield {
+namespace betterendfieldnext {
 namespace {
 
-constexpr char kLogTag[] = "BetterEndfield";
+constexpr char kLogTag[] = "BetterEndfieldNext";
 
 void Write(int priority, const char* component, const char* message) {
     __android_log_print(priority, kLogTag, "[%s] %s", component, message);
-    const char* diagnostics = std::getenv("BETTER_ENDFIELD_DIAGNOSTICS_PATH");
+    const char* diagnostics = std::getenv("BETTER_ENDFIELD_NEXT_DIAGNOSTICS_PATH");
     if (diagnostics != nullptr && *diagnostics != '\0') {
         static std::mutex mutex;
         std::lock_guard lock(mutex);
@@ -42,4 +42,4 @@ void LogError(const char* component, const char* message) {
     Write(ANDROID_LOG_ERROR, component, message);
 }
 
-}  // namespace betterendfield
+}  // namespace betterendfieldnext

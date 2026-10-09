@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-using namespace BetterEndfield::CombatStats;
+using namespace BetterEndfieldNext::CombatStats;
 
 namespace {
 
@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
 
     // Dynamic JSON catalog test
     const std::filesystem::path temp_json =
-        std::filesystem::temp_directory_path() / "betterendfield_test_buff_catalog.json";
+        std::filesystem::temp_directory_path() / "betterendfieldnext_test_buff_catalog.json";
     SemanticEffect dynamic_effect;
     dynamic_effect.name = "测试动态Buff";
     dynamic_effect.source_kind = "character";

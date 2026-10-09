@@ -43,4 +43,4 @@
 | [EFMI 原资源身份补全](../research/1.5.3/bem-character-catalog/BEM_EFMI_IDENTITIES.md) | 360入口/1181纹理身份算法、版本manifest及10个多子网格限制 | 既有归档 | 1.5.3 |
 | [BEM 模型管理局部修正（2026-10-03）](../research/1.5.3/bem-management/BEM_MODEL_MANAGEMENT.md) | 双端筛选/关闭全部的局部保存、UI及热切换证据 | 既有归档 | 1.5.3 |
 | [BEM matching review (2026-10-01)](../research/1.5.3/bem-matching/BEM_MATCHING_REVIEW.md) | 共享Texture pin、错误元数据及Android导入匹配修正 | 既有归档 | 1.5.3 |
-| [Better Endfield 角色模型替换可行性结论](../research/1.5.3/model-replacement/CHARACTER_MODEL_REPLACEMENT.md) | 2026-09-08选型、EFMI实测及客户端约束 | 既有归档 | 1.5.3 |
+| [Better Endfield Next 角色模型替换可行性结论](../research/1.5.3/model-replacement/CHARACTER_MODEL_REPLACEMENT.md) | 2026-09-08选型、EFMI实测及客户端约束 | 既有归档 | 1.5.3 |

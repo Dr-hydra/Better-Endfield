@@ -6,7 +6,7 @@ int wmain(int argc,wchar_t** argv){
 int main(int argc,char** argv){
 #endif
     if(argc!=2)return 2;
-    BetterEndfield::ThirdParty::ThirdPartyHost host;
+    BetterEndfieldNext::ThirdParty::ThirdPartyHost host;
 #ifdef _WIN32
     const char* platform="windows-x64";
 #else

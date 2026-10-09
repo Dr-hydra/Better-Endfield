@@ -46,9 +46,9 @@ namespace BE_EIEM_NS {
 #include "direct_vmd_source_sample.h"
 
 namespace {
-using BetterEndfield::EiemSlot::Api;
-using BetterEndfield::EiemBody::LoadState;
-using BetterEndfield::EiemBody::Options;
+using BetterEndfieldNext::EiemSlot::Api;
+using BetterEndfieldNext::EiemBody::LoadState;
+using BetterEndfieldNext::EiemBody::Options;
 using Id = DirectVmdBoneId;
 constexpr size_t N = DIRECT_VMD_BONE_COUNT;
 const BE_HostApiV1* host = nullptr;
@@ -59,7 +59,7 @@ bool active = false;
 bool animatorWasEnabled = false;
 Options options;
 void Log(const std::string& message) {
-  if (host && host->log) host->log(host->context, "betterendfield.camera",
+  if (host && host->log) host->log(host->context, "betterendfieldnext.camera",
       ("EIEM Android[" + std::to_string(BE_EIEM_SLOT + 1) + "]: " + message).c_str());
 }
 bool OnMainThread() { return std::this_thread::get_id() == mainThread; }
@@ -490,11 +490,11 @@ void Apply() {
   ApplyFace(frame);
 }
 
-bool Initialize(const BE_HostApiV1* value, const std::wstring&, BetterEndfield::EiemSlot::HookTargets* targets) {
+bool Initialize(const BE_HostApiV1* value, const std::wstring&, BetterEndfieldNext::EiemSlot::HookTargets* targets) {
   if (initialized) return available;
   initialized = true; host = value; mainThread = std::this_thread::get_id();
   if (targets) *targets = {};
-  if (!host || host->abi_version != BETTER_ENDFIELD_MODULE_ABI_V1 || !host->resolve_method ||
+  if (!host || host->abi_version != BETTER_ENDFIELD_NEXT_MODULE_ABI_V1 || !host->resolve_method ||
       !host->runtime_invoke || !host->object_unbox || !host->gchandle_new || !host->gchandle_free) {
     Log("required managed host contract unavailable"); return false;
   }
@@ -524,7 +524,7 @@ bool Initialize(const BE_HostApiV1* value, const std::wstring&, BetterEndfield::
   Log("DirectVmd managed adapter ready; FK/IK/knee/twist/SMC/cloth/terrain use named managed contracts");
   return true;
 }
-bool PrepareFace(BetterEndfield::EiemSlot::FaceTargets* targets) {
+bool PrepareFace(BetterEndfieldNext::EiemSlot::FaceTargets* targets) {
   if (targets) *targets = {};
   // This adapter feeds SMC.SetPose/Update rather than intercepting native jobs.
   if (!available || !metadata.Ready() || !host->resolve_class || !host->object_new || !host->string_new) return false;
@@ -536,7 +536,7 @@ bool PrepareFace(BetterEndfield::EiemSlot::FaceTargets* targets) {
       host->resolve_class(host->context,kGame,kPoseNs,"SkeletalMorphPose",&poseClass)==BE_Result_Ok && poseClass.class_info &&
       host->resolve_class(host->context,kGame,kPoseNs,"MorphCtrlValue",&ctrlClass)==BE_Result_Ok && ctrlClass.class_info;
 }
-void SetOriginals(const BetterEndfield::EiemSlot::Originals&) {}
+void SetOriginals(const BetterEndfieldNext::EiemSlot::Originals&) {}
 void SetOptions(const Options& value) {
   if (!OnMainThread()) return;
   if (value.terrain != options.terrain) ResetTerrain();
@@ -638,7 +638,7 @@ void GrounderUpdate(void*, void*) {}
 bool OwnsSmc(void*) { return false; }
 void SmcUpdate(void*, float, void*) {}
 void Job(void*, void*, void*, void*) {}
-bool CameraReference(BetterEndfield::EiemBody::CameraReference* out) {
+bool CameraReference(BetterEndfieldNext::EiemBody::CameraReference* out) {
   if (!out || !active || !placementReady) return false;
   auto reference = DirectVmdApplyWorldTranslationPlacement(anchor, placement);
   out->position[0] = reference.position.x; out->position[1] = reference.position.y; out->position[2] = reference.position.z;
@@ -662,7 +662,7 @@ const Api kApi{Initialize, PrepareFace, SetOriginals, SetOptions, SetSharedAncho
   CameraReference, ClothPrepare, ClothReadback,TerrainAvailable,TerrainReason};
 } // namespace
 } // namespace BE_EIEM_NS
-const BetterEndfield::EiemSlot::Api* BetterEndfield::EiemSlot::BE_EIEM_API() {
+const BetterEndfieldNext::EiemSlot::Api* BetterEndfieldNext::EiemSlot::BE_EIEM_API() {
   return &BE_EIEM_NS::kApi;
 }
 #undef BE_EIEM_API

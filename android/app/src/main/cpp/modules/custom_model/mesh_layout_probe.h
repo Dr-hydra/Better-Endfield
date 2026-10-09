@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-namespace betterendfield {
+namespace betterendfieldnext {
 struct MeshLayoutEvidence {
     uintptr_t image_base = 0;
     uint32_t candidate_offset = 0;

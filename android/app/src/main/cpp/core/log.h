@@ -1,8 +1,8 @@
 #pragma once
 
-namespace betterendfield {
+namespace betterendfieldnext {
 
 void LogInfo(const char* component, const char* message);
 void LogError(const char* component, const char* message);
 
-}  // namespace betterendfield
+}  // namespace betterendfieldnext

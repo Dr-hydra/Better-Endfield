@@ -1,8 +1,8 @@
-#include "BetterEndfield/PoseLease.h"
+#include "BetterEndfieldNext/PoseLease.h"
 #include "test_support.h"
-extern "C" const BE_PoseLeaseApiV1* BE_CALL BetterEndfield_GetPoseLeaseApiV1();
+extern "C" const BE_PoseLeaseApiV1* BE_CALL BetterEndfieldNext_GetPoseLeaseApiV1();
 int main() {
-    auto api=BetterEndfield_GetPoseLeaseApiV1();CHECK(api&&api->version==1);
+    auto api=BetterEndfieldNext_GetPoseLeaseApiV1();CHECK(api&&api->version==1);
     auto root=reinterpret_cast<void*>(1234);
     auto token=api->acquire(root,"camera");CHECK(token);
     CHECK(!api->acquire(root,"actions"));CHECK(api->owns(root,"camera",token));

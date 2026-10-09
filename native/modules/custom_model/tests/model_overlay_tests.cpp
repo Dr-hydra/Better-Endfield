@@ -8,7 +8,7 @@
 #include <thread>
 #include <atomic>
 
-using namespace BetterEndfield::CustomModel;
+using namespace BetterEndfieldNext::CustomModel;
 namespace Management=ModelManagement;
 using Json=Management::Json;
 namespace {
@@ -113,8 +113,8 @@ int main() {try {
     Check(!ResolveBemSelection(info,"style:on&unknown:value",{},selection,error),"Unknown selection silently accepted");
     Check(ParseModelOverlayHotkey("PLUS")==VK_OEM_PLUS,"Default hotkey is not bare main keyboard =");
     for(const auto* alias:{"=","+","OemPlus","OEM_PLUS"}) Check(ParseModelOverlayHotkey(alias)==VK_OEM_PLUS,"OEM alias failed");
-    Check(ParseModelOverlayHotkey("Shift+OemPlus")== (VK_OEM_PLUS|BetterEndfield::Input::kShift),"Shift alias failed");
-    Check(ParseModelOverlayHotkey("CTRL++")== (VK_OEM_PLUS|BetterEndfield::Input::kCtrl),"Literal plus chord failed");
+    Check(ParseModelOverlayHotkey("Shift+OemPlus")== (VK_OEM_PLUS|BetterEndfieldNext::Input::kShift),"Shift alias failed");
+    Check(ParseModelOverlayHotkey("CTRL++")== (VK_OEM_PLUS|BetterEndfieldNext::Input::kCtrl),"Literal plus chord failed");
     Check(ParseModelOverlayHotkey("ADD")==VK_ADD&&VK_ADD!=ParseModelOverlayHotkey("PLUS"),"Numpad ADD confused with PLUS");
     bool bad_hotkey=false;try {ParseModelOverlayHotkey("nonsense");} catch(...) {bad_hotkey=true;}Check(bad_hotkey,"Invalid hotkey silently ignored");
     const auto runtime=temp.root/"runtime.ini";

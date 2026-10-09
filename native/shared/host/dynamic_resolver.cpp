@@ -7,7 +7,7 @@
 #include <string_view>
 #include <vector>
 
-namespace BetterEndfield::Host {
+namespace BetterEndfieldNext::Host {
 namespace {
 
 std::vector<std::string_view> SplitParameters(const char* parameters) {
@@ -492,4 +492,4 @@ BE_Result DynamicResolver::ResolveMethod(const BE_MethodDescriptorV1& descriptor
     return BE_Result_NotFound;
 }
 
-} // namespace BetterEndfield::Host
+} // namespace BetterEndfieldNext::Host

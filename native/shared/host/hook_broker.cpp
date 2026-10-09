@@ -8,7 +8,7 @@
 #include <cstdio>
 #include "../hooks/hook_chain.h"
 
-namespace BetterEndfield::Host {
+namespace BetterEndfieldNext::Host {
 namespace {
 
 // Idle hooks are reported once per checkpoint after installation.
@@ -36,7 +36,7 @@ bool HookBroker::Initialize() {
     }
     initialized_ = true;
     // Backend callbacks run under mutex_ (Link, Shutdown).
-    chains_=std::make_unique<BetterEndfield::Hooks::Chain>(BetterEndfield::Hooks::Backend{
+    chains_=std::make_unique<BetterEndfieldNext::Hooks::Chain>(BetterEndfieldNext::Hooks::Backend{
         [this](void* target,void* entry,void** original){
             const int status=Patch(target,entry,original);
             if(status!=MH_OK)logger_.Write("host.hooks","MinHook creation failed at "+
@@ -52,7 +52,7 @@ bool HookBroker::Initialize() {
             MH_DisableHook(target);
             if(auto probe=probes_.find(target);probe!=probes_.end())probe->second.retired=true;
         }});
-    chain_api_={sizeof(BE_HookChainApiV1),BETTER_ENDFIELD_HOOK_CHAIN_ABI_V1,this,
+    chain_api_={sizeof(BE_HookChainApiV1),BETTER_ENDFIELD_NEXT_HOOK_CHAIN_ABI_V1,this,
         &CreateChain,&DisableChain,&DisableModuleChain};
     return true;
 }
@@ -81,8 +81,8 @@ BE_Result HookBroker::Link(const char* module, void* target, void* detour,
     void** next, uint64_t* handle, bool built_in) {
     const bool first = target && !chains_->Contains(target);
     const BE_Result result = chains_->Create(module, target, detour, next, handle,
-        built_in ? BetterEndfield::Hooks::Chain::Duplicate::Reject
-                 : BetterEndfield::Hooks::Chain::Duplicate::Reuse);
+        built_in ? BetterEndfieldNext::Hooks::Chain::Duplicate::Reject
+                 : BetterEndfieldNext::Hooks::Chain::Duplicate::Reuse);
     const std::string owner = module ? module : "<unnamed>";
     if (result == BE_Result_Conflict) {
         logger_.Write("host.hooks", "Hook conflict: " + owner +
@@ -204,7 +204,7 @@ int HookBroker::Patch(void* target, void* detour, void** original) {
     // Read the target before MinHook rewrites its first instructions.
     Probe probe;
     probe.shape = HookDiagnostics::Describe(target);
-    const auto relay = BetterEndfield::Hooks::RelayPool::Instance().MakeTracked();
+    const auto relay = BetterEndfieldNext::Hooks::RelayPool::Instance().MakeTracked();
     if (relay) {
         relay.Set(detour);
     }
@@ -376,4 +376,4 @@ void HookBroker::Poll() {
     }
 }
 
-} // namespace BetterEndfield::Host
+} // namespace BetterEndfieldNext::Host

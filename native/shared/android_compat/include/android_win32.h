@@ -1,6 +1,6 @@
 #pragma once
 
-// Win32 surface used by the desktop Better Endfield modules, implemented for
+// Win32 surface used by the desktop Better Endfield Next modules, implemented for
 // Android/ARM64. The desktop module sources are compiled unchanged; this header
 // is reached through the compatibility <Windows.h> beside it, which is only on
 // the include path of the desktop-module translation units.
@@ -117,7 +117,7 @@ union LARGE_INTEGER {
 #define VK_F1 0x70
 #define VK_OEM_MINUS 0xBD
 
-namespace betterendfield::win32 {
+namespace betterendfieldnext::win32 {
 
 std::uint64_t MonotonicMilliseconds();
 std::int64_t MonotonicNanoseconds();
@@ -129,22 +129,22 @@ std::uint32_t ProcessId();
 void* Il2CppImage();
 void* Symbol(void* image, const char* name);
 
-}  // namespace betterendfield::win32
+}  // namespace betterendfieldnext::win32
 
 inline std::uint64_t GetTickCount64() {
-    return betterendfield::win32::MonotonicMilliseconds();
+    return betterendfieldnext::win32::MonotonicMilliseconds();
 }
 
 inline DWORD GetTickCount() {
-    return static_cast<DWORD>(betterendfield::win32::MonotonicMilliseconds());
+    return static_cast<DWORD>(betterendfieldnext::win32::MonotonicMilliseconds());
 }
 
 inline void Sleep(DWORD milliseconds) {
-    betterendfield::win32::SleepMilliseconds(milliseconds);
+    betterendfieldnext::win32::SleepMilliseconds(milliseconds);
 }
 
-inline DWORD GetCurrentThreadId() { return betterendfield::win32::ThreadId(); }
-inline DWORD GetCurrentProcessId() { return betterendfield::win32::ProcessId(); }
+inline DWORD GetCurrentThreadId() { return betterendfieldnext::win32::ThreadId(); }
+inline DWORD GetCurrentProcessId() { return betterendfieldnext::win32::ProcessId(); }
 
 inline BOOL QueryPerformanceFrequency(LARGE_INTEGER* frequency) {
     if (frequency == nullptr) return 0;
@@ -154,29 +154,29 @@ inline BOOL QueryPerformanceFrequency(LARGE_INTEGER* frequency) {
 
 inline BOOL QueryPerformanceCounter(LARGE_INTEGER* counter) {
     if (counter == nullptr) return 0;
-    counter->QuadPart = betterendfield::win32::MonotonicNanoseconds();
+    counter->QuadPart = betterendfieldnext::win32::MonotonicNanoseconds();
     return 1;
 }
 
 inline SHORT GetAsyncKeyState(int virtual_key) {
-    return betterendfield::VirtualKeyDown(virtual_key)
+    return betterendfieldnext::VirtualKeyDown(virtual_key)
         ? static_cast<SHORT>(0x8000) : static_cast<SHORT>(0);
 }
 
 // The injected library only exists inside the game process, and Android has no
 // notion of a different process holding the foreground while this code runs.
-inline HWND GetForegroundWindow() { return betterendfield::AndroidForeground() ? reinterpret_cast<HWND>(1) : nullptr; }
+inline HWND GetForegroundWindow() { return betterendfieldnext::AndroidForeground() ? reinterpret_cast<HWND>(1) : nullptr; }
 
 inline DWORD GetWindowThreadProcessId(HWND, DWORD* process_id) {
-    if (process_id != nullptr) *process_id = betterendfield::win32::ProcessId();
-    return betterendfield::win32::ThreadId();
+    if (process_id != nullptr) *process_id = betterendfieldnext::win32::ProcessId();
+    return betterendfieldnext::win32::ThreadId();
 }
 
-inline HMODULE GetModuleHandleW(LPCWSTR) { return betterendfield::win32::Il2CppImage(); }
-inline HMODULE GetModuleHandleA(LPCSTR) { return betterendfield::win32::Il2CppImage(); }
+inline HMODULE GetModuleHandleW(LPCWSTR) { return betterendfieldnext::win32::Il2CppImage(); }
+inline HMODULE GetModuleHandleA(LPCSTR) { return betterendfieldnext::win32::Il2CppImage(); }
 
 inline void* GetProcAddress(HMODULE image, const char* name) {
-    return betterendfield::win32::Symbol(image, name);
+    return betterendfieldnext::win32::Symbol(image, name);
 }
 
 // Desktop crash forensics: a GameAssembly-relative return-address list attached

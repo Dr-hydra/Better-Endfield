@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 
-namespace BetterEndfield::Input {
+namespace BetterEndfieldNext::Input {
 
 // Low 16 bits contain the virtual key. Higher bits contain modifiers and the
 // numpad-enter distinction. Keeping the binding in one integer lets existing
@@ -96,4 +96,4 @@ inline int ParseKey(std::string_view value, int fallback) {
     return binding;
 }
 
-} // namespace BetterEndfield::Input
+} // namespace BetterEndfieldNext::Input

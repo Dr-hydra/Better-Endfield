@@ -3,7 +3,7 @@
 #include <span>
 #include <string>
 
-namespace BetterEndfield::CustomModel {
+namespace BetterEndfieldNext::CustomModel {
 struct NativeMeshLayout {
     uint32_t bones_per_vertex_offset = 0;
     uint32_t agreeing_serializers = 0;

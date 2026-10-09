@@ -7,11 +7,11 @@
 #include <atomic>
 #include <memory>
 
-namespace betterendfield {
+namespace betterendfieldnext {
 // Read-only first-stage adapter; enabled explicitly in debug builds only.
 class CustomModelResourceProbe final : public Module {
 public:
-    const char* Id() const override { return "betterendfield.custom_model.probe"; }
+    const char* Id() const override { return "betterendfieldnext.custom_model.probe"; }
     ModuleResult Start(Il2CppRuntime& runtime) override;
 private:
     static void Finish(void* proxy, void* asset, void* method);

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "BetterEndfield/ModuleApi.h"
-#include "BetterEndfield/HookChain.h"
+#include "BetterEndfieldNext/ModuleApi.h"
+#include "BetterEndfieldNext/HookChain.h"
 #include "hook_diagnostics.h"
 
 #include <atomic>
@@ -13,8 +13,8 @@
 #include <unordered_map>
 #include <vector>
 
-namespace BetterEndfield::Hooks {class Chain;}
-namespace BetterEndfield::Host {
+namespace BetterEndfieldNext::Hooks {class Chain;}
+namespace BetterEndfieldNext::Host {
 
 class Logger;
 
@@ -34,7 +34,7 @@ public:
     // same targets keep running; relays and trampolines are never freed.
     BE_Result ReleaseModule(const std::string& module_id);
     // Same as ReleaseModule (chain nodes are never freed); kept for the
-    // BetterEndfield_RetireModuleHooksV1 lifecycle of process-pinned modules.
+    // BetterEndfieldNext_RetireModuleHooksV1 lifecycle of process-pinned modules.
     BE_Result RetireModule(const std::string& module_id);
     const BE_HookChainApiV1* ChainApi();
     void Shutdown();
@@ -77,11 +77,11 @@ private:
     std::unordered_map<void*, Probe> probes_;
     std::unordered_map<void*, std::vector<std::string>> labels_;
     std::unordered_map<uintptr_t, uint32_t> call_sites_; // Poll thread only.
-    std::unique_ptr<BetterEndfield::Hooks::Chain> chains_;
+    std::unique_ptr<BetterEndfieldNext::Hooks::Chain> chains_;
     BE_HookChainApiV1 chain_api_{};
     static BE_Result BE_CALL CreateChain(void*,const char*,void*,void*,void**,uint64_t*);
     static BE_Result BE_CALL DisableChain(void*,uint64_t);
     static BE_Result BE_CALL DisableModuleChain(void*,const char*);
 };
 
-} // namespace BetterEndfield::Host
+} // namespace BetterEndfieldNext::Host

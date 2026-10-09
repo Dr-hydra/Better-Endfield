@@ -5,8 +5,8 @@
 #include "test_support.h"
 #include <filesystem>
 #include <fstream>
-using namespace BetterEndfield;
-using namespace BetterEndfield::CameraModule;
+using namespace BetterEndfieldNext;
+using namespace BetterEndfieldNext::CameraModule;
 static void Drain() {
     auto until=std::chrono::steady_clock::now()+std::chrono::seconds(5);
     while(g_camera_files.Busy() && std::chrono::steady_clock::now()<until) {
@@ -85,5 +85,10 @@ int main() {
         for(const auto& extra:work.extra_motion)CHECK(extra.empty());
     }
     std::filesystem::remove_all(dir);
+    // Freeze remains a standalone capability after retiring first person.
+    g_pause_contract_ready = true;
+    ConfigurationChanged("enabled=true\npause_enabled=true\nmmd_enabled=false\n");
+    CHECK(g_pause_enabled.load() && g_state.load() == ModuleState::Active);
+    CHECK(!g_free_camera_enabled.load() && !g_mmd_enabled.load());
     std::cout<<"PASS production camera callbacks: "<<checks<<" checks\n";
 }

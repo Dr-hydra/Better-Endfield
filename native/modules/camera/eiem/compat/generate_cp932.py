@@ -9,7 +9,7 @@ for lead in range(256):
             continue
         if len(decoded) == 1:
             pairs.append(((lead << 8 | trail) << 16) | ord(decoded))
-text = "// Generated from Python cp932 (Windows-31J); regenerate with compat/generate_cp932.py.\n#pragma once\n#include <cstdint>\nnamespace BetterEndfield::EiemAndroid {\ninline constexpr uint32_t kCp932Pairs[] = {\n"
+text = "// Generated from Python cp932 (Windows-31J); regenerate with compat/generate_cp932.py.\n#pragma once\n#include <cstdint>\nnamespace BetterEndfieldNext::EiemAndroid {\ninline constexpr uint32_t kCp932Pairs[] = {\n"
 for i in range(0, len(pairs), 8):
     text += "  " + ", ".join(f"0x{x:08x}u" for x in pairs[i:i+8]) + ",\n"
 text += "};\n}\n"

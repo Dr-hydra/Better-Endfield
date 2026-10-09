@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using BetterEndfield.UI.Services;
+using BetterEndfieldNext.UI.Services;
 
 internal static class Program
 {
@@ -65,7 +65,7 @@ internal static class Program
         using var http = new HttpClient(handler);
         var service = new SteamIntegrationService(Path.Combine(root, "BE settings"), http, () => running);
         var metadata = Metadata(); metadata.Validate();
-        var settings = JsonSerializer.Deserialize<BetterEndfield.UI.Models.AppSettings>("{\"LoaderMode\":\"injector\",\"futureSetting\":\"keep\"}")!;
+        var settings = JsonSerializer.Deserialize<BetterEndfieldNext.UI.Models.AppSettings>("{\"LoaderMode\":\"injector\",\"futureSetting\":\"keep\"}")!;
         settings.SteamIntegration.LaunchAsAdministrator = true;
         using (var settingsJson = JsonDocument.Parse(JsonSerializer.Serialize(settings)))
         {

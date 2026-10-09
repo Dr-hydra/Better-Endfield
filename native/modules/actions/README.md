@@ -2,7 +2,7 @@
 
 1.13.4 补齐梨诺漂浮物两侧光效的持续保持：除脚部与拖尾（actor 0–2）外，保持漂浮武器光效（10/11）和律动（20/21）。停止冲刺或原生效果销毁时恢复粒子参数。原来的 4 槽保持表遗漏了这些高编号效果；挂点刷新本身不会延长它们的寿命。资源依据与验证见 [显隐与光效修复](../../../docs/actions/research/1.5.3/liino-dash/LIINO_DASH_VISUAL_FIX.md)。
 
-模块 ID `betterendfield.actions`，显示名 `Sustained Dash`。启动器「冲刺持续」页提供分角色开关，默认关闭。游戏在每次特殊冲刺里选择左或右动作，本模块保留该选择，不重新掷。
+模块 ID `betterendfieldnext.actions`，显示名 `Sustained Dash`。启动器「冲刺持续」页提供分角色开关，默认关闭。游戏在每次特殊冲刺里选择左或右动作，本模块保留该选择，不重新掷。
 
 梨诺下方提供独立的「隐藏机甲与光效」开关（默认关闭），开启后全程省略机甲、腿甲及粒子/材质 VFX，沿用低位平滑飞行动画。关闭外观开关时恢复 [1.13.1 显隐与挂点修复](../../../docs/actions/research/1.5.3/liino-dash/LIINO_DASH_VISUAL_FIX.md)。偏好通过 `liino_clean` 保存，梨诺持续冲刺关闭时仍保留选择。实现与验证见 [无机甲冲刺](../../../docs/actions/research/1.5.3/liino-dash/LIINO_CLEAN_DASH.md)。
 
@@ -30,7 +30,7 @@
 ## 配置
 
 ```ini
-[betterendfield.actions]
+[betterendfieldnext.actions]
 schema_version=2
 enabled=true
 external_loop=true
@@ -102,12 +102,12 @@ v9 改用 `UnityEngine.Animator.CrossFade` 的显式归一化时间入口，避�
 
 已通过 Release 构建、循环策略测试（新增 v8 错落点回归）、生产恢复/Finish 路径的 API 替身测试（恢复原参数、嵌套回收幂等、失效对象、无关对象和线程关闭）、61 个方法/属性访问器的本地 dump 核对。替身测试不等于 Unity 粒子渲染测试；循环落点、发光连续性与身体接缝仍需重启游戏确认。
 
-测试包已更新：`artifacts/BetterEndfield-win-x64/modules/BetterEndfield.Actions.dll`（1.8.0，208384 字节）及同目录依赖 manifest。旧 v8 文件备份在 `tmp_analysis/actions-before-v9-test-update-20260908-231923`。复制测试包时同时更新 manifest，其中新增了粒子模块和 CoreModule 依赖。
+测试包已更新：`artifacts/BetterEndfieldNext-win-x64/modules/BetterEndfieldNext.Actions.dll`（1.8.0，208384 字节）及同目录依赖 manifest。旧 v8 文件备份在 `tmp_analysis/actions-before-v9-test-update-20260908-231923`。复制测试包时同时更新 manifest，其中新增了粒子模块和 CoreModule 依赖。
 
 ```powershell
-cmake --build build/native --config Release --target BetterEndfield.Actions BetterEndfield.ActionsTests BetterEndfield.ActionsEffectsTests --parallel 4
-& build/native/Release/BetterEndfield.ActionsTests.exe
-& build/native/Release/BetterEndfield.ActionsEffectsTests.exe
+cmake --build build/native --config Release --target BetterEndfieldNext.Actions BetterEndfieldNext.ActionsTests BetterEndfieldNext.ActionsEffectsTests --parallel 4
+& build/native/Release/BetterEndfieldNext.ActionsTests.exe
+& build/native/Release/BetterEndfieldNext.ActionsEffectsTests.exe
 ```
 
 ### v8 实现记录（已由 v9 替换固定时间播放入口）
@@ -137,7 +137,7 @@ v8 在保持期间较早安排下一轮，因此正常情况下到不了上述 S
 
 配套保持：`deferred logic 11 prop hide`、`deferred owned Perform End track cleanup`、`deferred Flying_Stop until session exit`。失败退出：`loop interrupted, late, or not acknowledged`；不把请求成功当作视觉循环成功。
 
-已通过 Release 构建与策略回归，覆盖 100 次同侧混合调度、真实进度回落确认、拒绝/停滞超时、首次入场、显式出口优先、无效数据和定点道具匹配；45 个方法/属性访问器描述与当前本地 IL2CPP dump 核对通过。测试 DLL 位于 `artifacts/BetterEndfield-win-x64/modules/BetterEndfield.Actions.dll`，需要重启游戏加载。实测优先检查保持至少 10 秒，以及停止、攻击、腾空、换人、关闭配置。
+已通过 Release 构建与策略回归，覆盖 100 次同侧混合调度、真实进度回落确认、拒绝/停滞超时、首次入场、显式出口优先、无效数据和定点道具匹配；45 个方法/属性访问器描述与当前本地 IL2CPP dump 核对通过。测试 DLL 位于 `artifacts/BetterEndfieldNext-win-x64/modules/BetterEndfieldNext.Actions.dll`，需要重启游戏加载。实测优先检查保持至少 10 秒，以及停止、攻击、腾空、换人、关闭配置。
 
 限制：两个源高点的 Root/手脚姿态并不相同，v8 用同侧混合验证可行性，尚未证明接缝自然；同状态转场、游戏时间缩放、快速声音分支和根运动仍以实机日志/画面为准。
 
@@ -151,7 +151,7 @@ v3 实机仍失败：02:06 的日志确认加载 v3，随后直接 `perform clea
 
 对于非循环 Clip，在 normalizedTime 到 1，或观察到当前特殊状态向游戏 `HASH_STATE_RUN` / `HASH_STATE_SPRINT` 的过渡时，以当前特殊状态 hash 调用 Animator.Play(layer 0, normalizedTime 0)。不重新随机左右、不使用任意 0.7 截断阈值。其他过渡、归属丢失及移动条件失效不重播。整段重播的衔接效果尚需实机确认，不能等同于已验证的无缝循环。
 
-构建与策略回归通过。测试 DLL 更新在 `artifacts/BetterEndfield-win-x64/modules/BetterEndfield.Actions.dll`；v3 备份在 `tmp_analysis/actions-before-v4-test-update-20260908`。下面保留 v3 自然结束拦截说明，该机制仍存在，但不足以独自解决实机问题。
+构建与策略回归通过。测试 DLL 更新在 `artifacts/BetterEndfieldNext-win-x64/modules/BetterEndfieldNext.Actions.dll`；v3 备份在 `tmp_analysis/actions-before-v4-test-update-20260908`。下面保留 v3 自然结束拦截说明，该机制仍存在，但不足以独自解决实机问题。
 
 ### v5 修正（1.4.0）
 
@@ -210,7 +210,7 @@ v5/v6 的保持判断仍要求 `IsPlayingSpDashPerform()` 为 true。实际退�
 ### 旧版配置说明
 
 ```ini
-[betterendfield.actions]
+[betterendfieldnext.actions]
 schema_version=2
 enabled=false
 diagnostics=true
@@ -231,6 +231,6 @@ diagnostics=true
 原生模块、启动器发布和生命周期策略回归测试通过；实机效果仍待确认。
 
 ```powershell
-cmake --build build/native --config Release --target BetterEndfield.Actions BetterEndfield.ActionsTests --parallel 4
-& build/native/Release/BetterEndfield.ActionsTests.exe
+cmake --build build/native --config Release --target BetterEndfieldNext.Actions BetterEndfieldNext.ActionsTests --parallel 4
+& build/native/Release/BetterEndfieldNext.ActionsTests.exe
 ```

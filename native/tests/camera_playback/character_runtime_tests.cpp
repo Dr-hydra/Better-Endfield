@@ -2,10 +2,10 @@
 #include "../../shared/motion/pose_lease_registry.h"
 #include "eiem_body_fake.h"
 #include "test_support.h"
-using namespace BetterEndfield;
-using namespace BetterEndfield::CameraModule;
-namespace CM=BetterEndfield::CameraModule::CharacterMotion;
-using LoadState=BetterEndfield::EiemBody::LoadState;
+using namespace BetterEndfieldNext;
+using namespace BetterEndfieldNext::CameraModule;
+namespace CM=BetterEndfieldNext::CameraModule::CharacterMotion;
+using LoadState=BetterEndfieldNext::EiemBody::LoadState;
 struct Object {
     bool alive=true;
     Object* transform=nullptr;

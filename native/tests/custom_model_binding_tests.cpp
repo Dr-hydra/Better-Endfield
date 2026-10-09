@@ -6,7 +6,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <sstream>
-using namespace BetterEndfield::CustomModel;
+using namespace BetterEndfieldNext::CustomModel;
 namespace {
 struct Fake {
     std::string name;
@@ -403,17 +403,17 @@ void CpuGeometryTests() {
     };
     auto* mesh=Make("custom-mesh");Copy copy;
     {ConstructionScope scope;RememberCpuGeometry(mesh,component);}
-    Check(BetterEndfield_QueryCustomModelGeometryV1(mesh,visitor,&copy)==BE_Result_Ok && copy.called && copy.stride==12 && copy.positions[0]==1 && copy.indices==std::vector<uint32_t>({0,1,2}),"geometry bridge did not copy current positions/skin/index");
+    Check(BetterEndfieldNext_QueryCustomModelGeometryV1(mesh,visitor,&copy)==BE_Result_Ok && copy.called && copy.stride==12 && copy.positions[0]==1 && copy.indices==std::vector<uint32_t>({0,1,2}),"geometry bridge did not copy current positions/skin/index");
     const float changed=11;std::memcpy(component.streams[0].data(),&changed,4);
     {ConstructionScope scope;RememberCpuGeometry(mesh,component);}
-    copy={};Check(BetterEndfield_QueryCustomModelGeometryV1(mesh,visitor,&copy)==BE_Result_Ok && copy.positions[0]==11 && g_cpu_geometry.size()==1,"geometry bridge retained prior positions for the same mesh");
-    Check(BetterEndfield_QueryCustomModelGeometryV1(Make("unregistered"),visitor,&copy)==BE_Result_NotFound,"geometry bridge confused unregistered mesh identity");
-    Check(BetterEndfield_QueryCustomModelGeometryV1(mesh,nullptr,&copy)==BE_Result_InvalidArgument,"geometry bridge accepted missing visitor");
-    g_pump_thread=0;Check(BetterEndfield_QueryCustomModelGeometryV1(mesh,visitor,&copy)==BE_Result_NotReady,"geometry bridge allowed wrong thread");g_pump_thread=GetCurrentThreadId();
+    copy={};Check(BetterEndfieldNext_QueryCustomModelGeometryV1(mesh,visitor,&copy)==BE_Result_Ok && copy.positions[0]==11 && g_cpu_geometry.size()==1,"geometry bridge retained prior positions for the same mesh");
+    Check(BetterEndfieldNext_QueryCustomModelGeometryV1(Make("unregistered"),visitor,&copy)==BE_Result_NotFound,"geometry bridge confused unregistered mesh identity");
+    Check(BetterEndfieldNext_QueryCustomModelGeometryV1(mesh,nullptr,&copy)==BE_Result_InvalidArgument,"geometry bridge accepted missing visitor");
+    g_pump_thread=0;Check(BetterEndfieldNext_QueryCustomModelGeometryV1(mesh,visitor,&copy)==BE_Result_NotReady,"geometry bridge allowed wrong thread");g_pump_thread=GetCurrentThreadId();
     // A live managed address whose weak target now has another Unity instance ID
     // must not inherit an old generated mesh's CPU data.
     tracked_handles[g_cpu_geometry[0]->mesh.handle]=Make("reused-address");
-    Check(BetterEndfield_QueryCustomModelGeometryV1(mesh,visitor,&copy)==BE_Result_NotFound && g_cpu_geometry.empty() && !g_cpu_geometry_bytes,"geometry bridge accepted stale Unity identity");
+    Check(BetterEndfieldNext_QueryCustomModelGeometryV1(mesh,visitor,&copy)==BE_Result_NotFound && g_cpu_geometry.empty() && !g_cpu_geometry_bytes,"geometry bridge accepted stale Unity identity");
     auto oversized=component;oversized.info.vertex_count=UINT32_MAX;
     {ConstructionScope scope;RememberCpuGeometry(mesh,oversized);}
     Check(g_cpu_geometry.empty(),"geometry bridge exceeded memory budget");
@@ -724,7 +724,7 @@ struct ProbeStartupContext { std::string catalog; bool armed=false; };
 void ProbeDllStartup(const std::filesystem::path& dll,const std::filesystem::path& catalog) {
     auto encoded=std::filesystem::absolute(catalog).u8string();
     ProbeStartupContext context{std::string(reinterpret_cast<const char*>(encoded.data()),encoded.size())};
-    BE_HostApiV1 host{}; host.abi_version=BETTER_ENDFIELD_MODULE_ABI_V1; host.context=&context;
+    BE_HostApiV1 host{}; host.abi_version=BETTER_ENDFIELD_NEXT_MODULE_ABI_V1; host.context=&context;
     host.log=[](void* c,const char*,const char* message) { auto& state=*static_cast<ProbeStartupContext*>(c);
         if(std::string_view(message).starts_with("Native probe armed:")) state.armed=true;
         std::cout<<message<<'\n'; };
@@ -739,7 +739,7 @@ void ProbeDllStartup(const std::filesystem::path& dll,const std::filesystem::pat
     host.gchandle_new=RootFake; host.gchandle_free=FreeFake;
     HMODULE library=LoadLibraryExW(std::filesystem::absolute(dll).c_str(),nullptr,LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR|LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
     Check(library!=nullptr,"probe DLL load failed");
-    auto api=reinterpret_cast<BE_GetModuleApiV1Fn>(GetProcAddress(library,"BetterEndfield_GetModuleApiV1"));
+    auto api=reinterpret_cast<BE_GetModuleApiV1Fn>(GetProcAddress(library,"BetterEndfieldNext_GetModuleApiV1"));
     Check(api!=nullptr,"module API missing");
     Check(api()->initialize(&host)==BE_Result_ContractMismatch,"offline startup should stop at unavailable game contracts");
     Check(context.armed,"actual DLL did not arm the real request");
@@ -957,7 +957,7 @@ void AsyncJobsTests(const std::filesystem::path& path) {
 // Device regression 2026-10-03: every geometry component failed silently in the
 // async Mesh phase (palette skin validated from the metadata-only plan), so no
 // package was ever replaced. Also covers the synchronous fallbacks and the
-// clone-hook ownership that broke betterendfield.model.
+// clone-hook ownership that broke betterendfieldnext.model.
 std::vector<std::string> captured_logs;
 uint64_t fake_mesh_builds=0;
 bool fail_next_mesh_build=false;
@@ -1051,7 +1051,7 @@ void AsyncGeometryAndFallbackTests(const std::filesystem::path& path) {
     };
     {
         // Clone observation (2026-10-03). The Host create_hook chains several
-        // modules on one target, so CustomModel and betterendfield.model both
+        // modules on one target, so CustomModel and betterendfieldnext.model both
         // hook Internal_CloneSingleWithParent. Coverage decides delivery mode.
         static std::vector<std::pair<std::string,void*>> owners;static bool exclusive=false;
         static int single_marker=0,parent_marker=0;
@@ -1072,24 +1072,24 @@ void AsyncGeometryAndFallbackTests(const std::filesystem::path& path) {
             std::string_view(ModelAsyncDeliveryBlocker(GetTickCount64()))=="clone-coverage-unavailable",
             "unrequested clone hooks changed the delivery mode");
         // (b) An exclusive Host refusing a second owner: logged synchronous fallback.
-        g_model_clone_hooks_requested=true;exclusive=true;owners={{"betterendfield.model",&parent_marker}};
+        g_model_clone_hooks_requested=true;exclusive=true;owners={{"betterendfieldnext.model",&parent_marker}};
         InstallModelCloneHooks();
         Check(!g_model_clone_coverage.load() && LogContains("Model clone hook unavailable (clone.with_parent=") &&
             LogContains("template delivery=synchronous fallback") &&
             std::string_view(ModelAsyncDeliveryBlocker(GetTickCount64()))=="clone-coverage-unavailable",
             "refused clone hook did not fall back to the synchronous transaction");
-        // (c) Chaining Host: both installed, betterendfield.model still hooks the same target.
+        // (c) Chaining Host: both installed, betterendfieldnext.model still hooks the same target.
         exclusive=false;owners.clear();g_original_clone_single=nullptr;g_original_clone_with_parent=nullptr;
         InstallModelCloneHooks();
         void* model_original=nullptr;
         Check(g_model_clone_coverage.load() && LogContains("Model clone hooks installed") && owners.size()==2 &&
-            host.create_hook(nullptr,"betterendfield.model",&parent_marker,&parent_marker+1,&model_original)==BE_Result_Ok,
-            "chained clone hooks not installed or betterendfield.model lost Internal_CloneSingleWithParent");
+            host.create_hook(nullptr,"betterendfieldnext.model",&parent_marker,&parent_marker+1,&model_original)==BE_Result_Ok,
+            "chained clone hooks not installed or betterendfieldnext.model lost Internal_CloneSingleWithParent");
         g_model_pump_ms=GetTickCount64();
         Check(!ModelAsyncDeliveryBlocker(GetTickCount64()),"clone coverage + live pump did not select frame-sliced delivery");
         // (d) An existing Instantiate(position,rotation) entry that cannot be hooked breaks coverage.
         static int instantiate_marker=0;Contract("clone.instantiate")->pointer=&instantiate_marker;
-        owners={{"betterendfield.other",&instantiate_marker}};exclusive=true;InstallModelCloneHooks();
+        owners={{"betterendfieldnext.other",&instantiate_marker}};exclusive=true;InstallModelCloneHooks();
         Check(!g_model_clone_coverage.load() && LogContains("clone.instantiate="),"unhooked Instantiate entry still claimed coverage");
         exclusive=false;owners.clear();InstallModelCloneHooks();
         Check(g_model_clone_coverage.load() && owners.size()==3,"present Instantiate entry was not hooked");

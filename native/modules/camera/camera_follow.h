@@ -3,7 +3,7 @@
 #include <cmath>
 #include <cstdint>
 
-namespace BetterEndfield::CameraFollow {
+namespace BetterEndfieldNext::CameraFollow {
 
 // Identities are compared only. Never retain or dereference a game object here.
 template<class Point> class Anchor {
@@ -44,4 +44,4 @@ private:
     Point position_{};
 };
 
-} // namespace BetterEndfield::CameraFollow
+} // namespace BetterEndfieldNext::CameraFollow

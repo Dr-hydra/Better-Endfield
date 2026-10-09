@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <unordered_map>
 
-using namespace BetterEndfield::CustomModel::GenericMatching;
+using namespace BetterEndfieldNext::CustomModel::GenericMatching;
 namespace {
 size_t checks=0;
 void Check(bool value,const char* message) { ++checks; if (!value) throw std::runtime_error(message); }

@@ -4,7 +4,7 @@
 #include <mutex>
 #include <string>
 
-namespace BetterEndfield::Host {
+namespace BetterEndfieldNext::Host {
 
 class Logger {
 public:
@@ -16,4 +16,4 @@ private:
     std::mutex mutex_;
 };
 
-} // namespace BetterEndfield::Host
+} // namespace BetterEndfieldNext::Host

@@ -1,5 +1,5 @@
-#include "BetterEndfield/ModuleApi.h"
-#include "BetterEndfield/PoseLease.h"
+#include "BetterEndfieldNext/ModuleApi.h"
+#include "BetterEndfieldNext/PoseLease.h"
 #include "dash_policy.h"
 #include "pose_policy.h"
 #include <fstream>
@@ -16,9 +16,9 @@
 #include <string>
 #include <string_view>
 
-namespace BetterEndfield::Actions {
+namespace BetterEndfieldNext::Actions {
 namespace {
-constexpr char kId[] = "betterendfield.actions";
+constexpr char kId[] = "betterendfieldnext.actions";
 constexpr char kGame[] = "Gameplay.Beyond.dll";
 constexpr char kUnity[] = "UnityEngine.AnimationModule.dll";
 constexpr char kUnityCore[] = "UnityEngine.CoreModule.dll";
@@ -1231,17 +1231,17 @@ BE_Result BE_CALL Configure(const char* raw) {
 BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
 #if defined(_WIN32) || defined(BE_TEST_PC_POSE)
 #if defined(__ANDROID__)
-    g_pose_leases = BetterEndfield_GetPoseLeaseApiV1();
+    g_pose_leases = BetterEndfieldNext_GetPoseLeaseApiV1();
 #else
     auto lease_getter = reinterpret_cast<BE_GetPoseLeaseApiV1Fn>(GetProcAddress(
-        GetModuleHandleW(L"BetterEndfield.Host.dll"), "BetterEndfield_GetPoseLeaseApiV1"));
+        GetModuleHandleW(L"BetterEndfieldNext.Host.dll"), "BetterEndfieldNext_GetPoseLeaseApiV1"));
     g_pose_leases = lease_getter ? lease_getter() : nullptr;
 #endif
     if (g_pose_leases && (g_pose_leases->version != 1 || !g_pose_leases->acquire ||
         !g_pose_leases->owns || !g_pose_leases->release)) g_pose_leases = nullptr;
     g_pose_lease_ready.store(g_pose_leases != nullptr, std::memory_order_release);
 #endif
-    if (!host || host->abi_version != BETTER_ENDFIELD_MODULE_ABI_V1 ||
+    if (!host || host->abi_version != BETTER_ENDFIELD_NEXT_MODULE_ABI_V1 ||
         !host->resolve_method || !host->resolve_field || !host->resolve_class || !host->runtime_invoke ||
         !host->object_unbox || !host->field_get_value_object ||
         !host->copy_managed_string || !host->gchandle_new || !host->gchandle_free ||
@@ -1442,16 +1442,16 @@ void BE_CALL Shutdown() {
     g_particle_type_root = 0;
     g_particle_type = nullptr;
 }
-const BE_ModuleApiV1 kApi{{kId, "Sustained Dash", "1.13.5", BETTER_ENDFIELD_MODULE_ABI_V1},
+const BE_ModuleApiV1 kApi{{kId, "Sustained Dash", "1.13.5", BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
     &Initialize, &Configure, &Shutdown};
 } // namespace
-} // namespace BetterEndfield::Actions
+} // namespace BetterEndfieldNext::Actions
 
-BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfield_GetModuleApiV1() {
-    return &BetterEndfield::Actions::kApi;
+BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfieldNext_GetModuleApiV1() {
+    return &BetterEndfieldNext::Actions::kApi;
 }
 
 // Camera checks this handshake before permitting a body writer alongside Actions.
-BE_EXPORT uint32_t BE_CALL BetterEndfield_ActionsPoseLeaseVersionV1() {
-    return BetterEndfield::Actions::g_pose_lease_ready.load(std::memory_order_acquire) ? 1u : 0u;
+BE_EXPORT uint32_t BE_CALL BetterEndfieldNext_ActionsPoseLeaseVersionV1() {
+    return BetterEndfieldNext::Actions::g_pose_lease_ready.load(std::memory_order_acquire) ? 1u : 0u;
 }

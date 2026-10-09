@@ -5,12 +5,12 @@
 #include <iomanip>
 #include <sstream>
 
-namespace BetterEndfield::Host {
+namespace BetterEndfieldNext::Host {
 
 void Logger::Initialize(const std::filesystem::path& root) {
     std::error_code error;
     std::filesystem::create_directories(root, error);
-    file_path_ = root / "BetterEndfield.log";
+    file_path_ = root / "BetterEndfieldNext.log";
 }
 
 void Logger::Write(const std::string& source, const std::string& message) {
@@ -29,4 +29,4 @@ void Logger::Write(const std::string& source, const std::string& message) {
            << " [" << source << "] " << message << '\n';
 }
 
-} // namespace BetterEndfield::Host
+} // namespace BetterEndfieldNext::Host

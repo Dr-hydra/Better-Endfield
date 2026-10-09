@@ -77,7 +77,7 @@ device/performance measurement was performed.
 ## Device regression fix — 2026-10-03 (evening)
 
 Device log (new APK): CustomModel stopped after "Android MeshData replacement
-transaction ready"; no build/commit; betterendfield.model failed with "native
+transaction ready"; no build/commit; betterendfieldnext.model failed with "native
 hook target already owned" on `unity.object.clone_with_parent`.
 
 - Root cause A (no model ever replaced): the Job Mesh phase called
@@ -89,7 +89,7 @@ hook target already owned" on `unity.object.clone_with_parent`.
   payload right before the Mesh build. Regression test reproduces the bug.
 - Root cause B: CustomModel hooked `Internal_CloneSingleWithParent` (Android
   via a shared HookBroker chain, Windows via create_hook; custom_model loads
-  first on both), which the Host then refused for betterendfield.model.
+  first on both), which the Host then refused for betterendfieldnext.model.
   CustomModel now installs no clone hook. Without complete clone coverage an
   instance created before an async commit would keep the original forever, so
   template deliveries use the proven synchronous transaction inside Finish

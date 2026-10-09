@@ -1,5 +1,5 @@
-#include "BetterEndfield/ModuleApi.h"
-#include "BetterEndfield/VoiceCatalog.h"
+#include "BetterEndfieldNext/ModuleApi.h"
+#include "BetterEndfieldNext/VoiceCatalog.h"
 
 #include <Windows.h>
 
@@ -21,10 +21,10 @@
 #include <vector>
 #include <utility>
 
-namespace BetterEndfield::Voice {
+namespace BetterEndfieldNext::Voice {
 namespace {
 
-constexpr char kModuleId[] = "betterendfield.voice";
+constexpr char kModuleId[] = "betterendfieldnext.voice";
 constexpr int kAkSuccess = 1;
 
 enum class ModuleState : uint8_t {
@@ -2773,7 +2773,7 @@ void CommitConfiguration(VoiceConfiguration configuration) {
 }
 
 BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
-    if (!host || host->abi_version != BETTER_ENDFIELD_MODULE_ABI_V1 ||
+    if (!host || host->abi_version != BETTER_ENDFIELD_NEXT_MODULE_ABI_V1 ||
         !host->resolve_method || !host->create_hook ||
         !host->release_module_hooks || !host->resolve_field ||
         !host->copy_catalog_root || !host->copy_managed_string || !host->string_new ||
@@ -2815,7 +2815,7 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     if (!ResolveRuntimeContract()) {
         return BE_Result_ContractMismatch;
     }
-    Log("[voice-config] waiting for BetterEndfield module configuration");
+    Log("[voice-config] waiting for BetterEndfieldNext module configuration");
     return BE_Result_Ok;
 }
 
@@ -2929,14 +2929,14 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Voice Language", "3.1.1", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Voice Language", "3.1.1", BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};
 
 } // namespace
-} // namespace BetterEndfield::Voice
+} // namespace BetterEndfieldNext::Voice
 
-BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfield_GetModuleApiV1() {
-    return &BetterEndfield::Voice::kApi;
+BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfieldNext_GetModuleApiV1() {
+    return &BetterEndfieldNext::Voice::kApi;
 }

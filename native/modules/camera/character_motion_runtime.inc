@@ -12,7 +12,7 @@ double MmdDirectorSeconds();
 bool MmdDirectorPlaying();
 namespace Mmd {std::filesystem::path ModuleDirectory();}
 namespace CharacterMotion {
-constexpr char kOwner[] = "betterendfield.camera.character";
+constexpr char kOwner[] = "betterendfieldnext.camera.character";
 constexpr int kMaxActors = EiemBody::kMaxActors;
 struct Config {
     bool enabled=false, face=false, terrain=false, loop=false;
@@ -91,7 +91,7 @@ std::wstring EiemLogPath() {
     const auto install=modules.parent_path();
     std::error_code error;
     const auto logs=install/L"logs";
-    return ((std::filesystem::is_directory(logs,error)?logs:install)/L"BetterEndfield.EiemBody.log").wstring();
+    return ((std::filesystem::is_directory(logs,error)?logs:install)/L"BetterEndfieldNext.EiemBody.log").wstring();
 }
 struct Actor {
     void* entity=nullptr;
@@ -148,10 +148,10 @@ struct Runtime final {
         if(resolved)return true;
         if(!g_host || !g_host->resolve_method || !g_host->resolve_class || !g_host->gchandle_new || !g_host->gchandle_free)return false;
 #if defined(__ANDROID__)
-        leases = BetterEndfield_GetPoseLeaseApiV1();
+        leases = BetterEndfieldNext_GetPoseLeaseApiV1();
 #else
         auto get=reinterpret_cast<BE_GetPoseLeaseApiV1Fn>(GetProcAddress(
-            GetModuleHandleW(L"BetterEndfield.Host.dll"),"BetterEndfield_GetPoseLeaseApiV1"));
+            GetModuleHandleW(L"BetterEndfieldNext.Host.dll"),"BetterEndfieldNext_GetPoseLeaseApiV1"));
         leases=get?get():nullptr;
 #endif
         if(!leases || leases->version!=1 || !leases->acquire || !leases->owns || !leases->release) {
@@ -179,17 +179,17 @@ struct Runtime final {
     }
     bool Eiem() {
         if(!eiem_tried){eiem_tried=true;EiemBody::Initialize(g_host,EiemLogPath());}
-        if(!EiemBody::Available()){Log("Character VMD unavailable: EIEM body port could not resolve this client (see BetterEndfield.EiemBody.log).");return false;}
+        if(!EiemBody::Available()){Log("Character VMD unavailable: EIEM body port could not resolve this client (see BetterEndfieldNext.EiemBody.log).");return false;}
         return true;
     }
     bool CooperativeActions() {
 #if defined(__ANDROID__)
         return leases != nullptr; // Actions shares this same registry in the Android library.
 #else
-        auto actions=GetModuleHandleW(L"BetterEndfield.Actions.dll");
+        auto actions=GetModuleHandleW(L"BetterEndfieldNext.Actions.dll");
         if(!actions)return true;
         using Version=uint32_t(BE_CALL*)();
-        auto version=reinterpret_cast<Version>(GetProcAddress(actions,"BetterEndfield_ActionsPoseLeaseVersionV1"));
+        auto version=reinterpret_cast<Version>(GetProcAddress(actions,"BetterEndfieldNext_ActionsPoseLeaseVersionV1"));
         if(version&&version()==1)return true;
         Log("Character VMD refused: Actions DLL lacks the pose-lease handshake; replace Host/Actions/Camera together.");return false;
 #endif
@@ -373,7 +373,7 @@ struct Runtime final {
                 case EiemBody::LoadState::Ready: actor.loading=false;break;
                 case EiemBody::LoadState::Loading: break;
                 default:
-                    Log("Character VMD file rejected for dancer "+std::to_string(i+1)+" (see BetterEndfield.EiemBody.log).");
+                    Log("Character VMD file rejected for dancer "+std::to_string(i+1)+" (see BetterEndfieldNext.EiemBody.log).");
                     if(i==0){Stop(true,"load failed");return;}
                     Release(i,true,"load failed");break;
                 }
@@ -405,7 +405,7 @@ void PublishCharacterConfiguration(const CameraConfiguration& value) {
     next->cloth=static_cast<EiemBody::ClothMode>(std::clamp(value.vmd_cloth_mode,0,2));
     if(next->enabled && !g_original_tail_late_tick
 #if defined(__ANDROID__)
-        && !betterendfield::HasAndroidFrameBridge()
+        && !betterendfieldnext::HasAndroidFrameBridge()
 #endif
     ) {
         next->enabled=false;Log("Character VMD unavailable: a successfully installed CameraManager.TailLateTick is required.");

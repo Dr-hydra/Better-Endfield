@@ -13,7 +13,7 @@
 #include <string_view>
 #include <vector>
 
-namespace betterendfield {
+namespace betterendfieldnext {
 
 struct MethodInfo;
 
@@ -207,4 +207,4 @@ private:
     static std::atomic<CharacterVoiceModule*> active_;
 };
 
-}  // namespace betterendfield
+}  // namespace betterendfieldnext

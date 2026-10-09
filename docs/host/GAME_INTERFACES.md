@@ -1,10 +1,10 @@
-# Better Endfield Runtime Interfaces
+# Better Endfield Next Runtime Interfaces
 
 本文记录重构后的进程内接口协议。运行时不保存客户端地址、文件哈希白名单或硬编码字段偏移。
 
 ## Host 与模块
 
-Host 导出模块发现所需的 `BetterEndfield_GetModuleApiV1`。模块清单使用 `modules/*.module.ini`，包含模块 ID、DLL、ABI、契约组及 `requires` 程序集列表。Host 等待所需 IL2CPP 程序集注册后，按清单文件名的稳定顺序加载 DLL，先调用 `initialize`，再推送对应配置；依赖未就绪会在 90 秒窗口内重试，ABI 或契约拒绝则不重复加载。模块配置节中的 `enabled=false` 会在本次进程启动时跳过该 DLL；已经加载的模块仍会收到后续配置变更并可停用自身行为，但从关闭改为开启需要下一次注入。
+Host 导出模块发现所需的 `BetterEndfieldNext_GetModuleApiV1`。模块清单使用 `modules/*.module.ini`，包含模块 ID、DLL、ABI、契约组及 `requires` 程序集列表。Host 等待所需 IL2CPP 程序集注册后，按清单文件名的稳定顺序加载 DLL，先调用 `initialize`，再推送对应配置；依赖未就绪会在 90 秒窗口内重试，ABI 或契约拒绝则不重复加载。模块配置节中的 `enabled=false` 会在本次进程启动时跳过该 DLL；已经加载的模块仍会收到后续配置变更并可停用自身行为，但从关闭改为开启需要下一次注入。
 
 Host 是唯一的 HookBroker 所有者，负责 MinHook 初始化、目标冲突检查、启用、禁用和移除。运行中只停用模块行为，不卸载 DLL；模块卸载在游戏进程结束后完成。
 
@@ -22,7 +22,7 @@ Host 使用 `GameAssembly.dll` 的 IL2CPP 导出解析：
 
 ## 开屏模块
 
-`BetterEndfield.Model.dll` 在同一登录场景生命周期中提供模型替换、Logo 与登录色带主题。各能力组独立解析、独立安装 Hook；任一视觉契约缺失只停用对应功能。
+`BetterEndfieldNext.Model.dll` 在同一登录场景生命周期中提供模型替换、Logo 与登录色带主题。各能力组独立解析、独立安装 Hook；任一视觉契约缺失只停用对应功能。
 
 模型替换动态验证并使用以下契约：
 
@@ -108,7 +108,7 @@ Catalog 不包含 `GameAssembly.dll` 身份条件。B 服只要提供可解析�
 
 ## 战斗数据模块
 
-`BetterEndfield.CombatStats.dll` 是第四个独立模块，默认关闭。它动态解析：
+`BetterEndfieldNext.CombatStats.dll` 是第四个独立模块，默认关闭。它动态解析：
 
 - `Gameplay.Beyond.dll / Beyond.Gameplay.Core.BattleManager.BattleRecorder.RecordDamage`
 - `UI.Gameplay.Beyond.dll / Beyond.UI.DamageTextCtrl._OnHpChanged`
@@ -120,14 +120,14 @@ Catalog 不包含 `GameAssembly.dll` 身份条件。B 服只要提供可解析�
 元数据中的值类型字段偏移包含 16 字节装箱头，读取 `ref Modifier` 时必须扣除该头；类对象字段不扣除。
 事件先进入有界队列，再由模块线程汇总；
 队列满时只丢弃统计事件，不影响游戏线程。F11（可配置）切换开始和结束会话，结果写入
-`%LocalAppData%\\BetterEndfield\\combat-sessions\\combat-*.json`。
+`%LocalAppData%\\BetterEndfieldNext\\combat-sessions\\combat-*.json`。
 
-`BetterEndfield.CombatOverlay.exe` 是随 CombatStats 模块分发的独立 Win32/GDI+ 伴随进程。
+`BetterEndfieldNext.CombatOverlay.exe` 是随 CombatStats 模块分发的独立 Win32/GDI+ 伴随进程。
 模块不在 Unity/IL2CPP 渲染线程中创建窗口，而是把最多 16 个角色的累计值和六种技能分类写入
-`Local\\BetterEndfield.CombatStats.<game-pid>` 共享内存；悬浮窗以 sequence 奇偶校验读取一致快照。
+`Local\\BetterEndfieldNext.CombatStats.<game-pid>` 共享内存；悬浮窗以 sequence 奇偶校验读取一致快照。
 它显示嵌入 EXE 的本地角色头像、每 10 倍切换一级中文单位的数值和按普攻、战技、终结技、连携技、被动、其他堆叠的横向柱状图，并提供对应颜色图例。
 F12（可配置）只切换共享状态，不注入输入处理；悬浮窗相对游戏客户区定位，Ctrl+鼠标左键拖动后的
-偏移保存在 `%LocalAppData%\\BetterEndfield\\combat-overlay.ini`。游戏退出或模块卸载时伴随进程自动退出。
+偏移保存在 `%LocalAppData%\\BetterEndfieldNext\\combat-overlay.ini`。游戏退出或模块卸载时伴随进程自动退出。
 头像来自 CEP 终末地规划器角色图鉴的构建时快照，来源记录在
 `native/modules/combat_stats/assets/SOURCE.md`；正式运行时不访问该站点。
 
@@ -180,9 +180,9 @@ generation 或 Seek generation 变化都会先清空旧流再绑定新流。策�
 
 ## 加载适配器
 
-`BetterEndfield.Injector.exe` 启动目标程序，并通过普通映像 Bootstrap 在启动阶段加载 Host；Host 根据自身 DLL 路径找到软件根目录。注入器支持在 `--` 后接收并转发游戏参数。
+`BetterEndfieldNext.Injector.exe` 启动目标程序，并通过普通映像 Bootstrap 在启动阶段加载 Host；Host 根据自身 DLL 路径找到软件根目录。注入器支持在 `--` 后接收并转发游戏参数。
 
-`payloads/xinput1_4.dll` 是唯一会部署到游戏目录的代理。它用 PE forwarder 转发 Windows XInput 1.4 API，仅从 `%LocalAppData%\BetterEndfield\BetterEndfield.ini` 的 `[Loader] install_root` 定位 Host，不包含旧代理配置回退。
+`payloads/xinput1_4.dll` 是唯一会部署到游戏目录的代理。它用 PE forwarder 转发 Windows XInput 1.4 API，仅从 `%LocalAppData%\BetterEndfieldNext\BetterEndfieldNext.ini` 的 `[Loader] install_root` 定位 Host，不包含旧代理配置回退。
 
 ### XInput 代理时序
 
@@ -191,11 +191,11 @@ generation 或 Seek generation 变化都会先清空旧流再绑定新流。策�
 1. 写入代理加载标记和状态文件，便于诊断 Windows 是否选择了本地 XInput DLL。
 2. 读取 `[Loader] load_host` 和 `install_root`，验证软件目录中的 Host 存在。
 3. 等待 `GameAssembly.dll` 出现，并取得 `il2cpp_domain_get`、`il2cpp_thread_attach` 和 `il2cpp_thread_detach`。
-4. 等待 Domain 就绪，在 Worker 线程附加 IL2CPP 后加载 `runtime\BetterEndfield.Host.dll`，随后解除附加。
+4. 等待 Domain 就绪，在 Worker 线程附加 IL2CPP 后加载 `runtime\BetterEndfieldNext.Host.dll`，随后解除附加。
 
 ## 界面增强与移动端 UI 模块
 
-`BetterEndfield.UiModule.dll` 提供 PC 客户端下切换移动端/触控 UI 与隐藏 UID 水印的实验性支持。两个功能默认关闭、相互独立；管理器中的开关会立即保存并由 Host 热重载。移动端相关接口与逆向成果详见专题文档：[docs/ui/MOBILE_UI_REVERSING.md](../ui/MOBILE_UI_REVERSING.md)。
+`BetterEndfieldNext.UiModule.dll` 提供 PC 客户端下切换移动端/触控 UI 与隐藏 UID 水印的实验性支持。两个功能默认关闭、相互独立；管理器中的开关会立即保存并由 Host 热重载。移动端相关接口与逆向成果详见专题文档：[docs/ui/MOBILE_UI_REVERSING.md](../ui/MOBILE_UI_REVERSING.md)。
 
 模块通过 Hook 拦截以下三层运行时契约：
 
@@ -209,13 +209,13 @@ generation 或 Seek generation 变化都会先清空旧流再绑定新流。策�
 
 ### 全部 HUD 隐藏
 
-开启 `hide_hud_enabled` 后，通过 `hide_hud_hotkey` 指定的热键（默认主键盘数字 0）隐藏或恢复游戏内全部 UI。当前实现复用 `UIManager.OnToggleUiAction` 中纯显示侧的原生接口：通过 `Beyond.Gameplay.View.CameraUtils.get_cameraManager()` 获取相机管理器，再以独立键 `BetterEndfield.HideHUD` 调用 `CameraManager.AddUICamCullingMaskConfig(string, int) -> bool`，遮罩值为 `UIConst.LAYERS.Nothing` 对应的 `0`；恢复时调用 `CameraManager.RemoveUICamCullingMaskConfig(string) -> bool`，只移除模块自己的配置。两个返回值表示配置集合是否发生增删，重复添加或移除不存在的键会返回 `false`，不代表最终遮罩状态失败。
+开启 `hide_hud_enabled` 后，通过 `hide_hud_hotkey` 指定的热键（默认主键盘数字 0）隐藏或恢复游戏内全部 UI。当前实现复用 `UIManager.OnToggleUiAction` 中纯显示侧的原生接口：通过 `Beyond.Gameplay.View.CameraUtils.get_cameraManager()` 获取相机管理器，再以独立键 `BetterEndfieldNext.HideHUD` 调用 `CameraManager.AddUICamCullingMaskConfig(string, int) -> bool`，遮罩值为 `UIConst.LAYERS.Nothing` 对应的 `0`；恢复时调用 `CameraManager.RemoveUICamCullingMaskConfig(string) -> bool`，只移除模块自己的配置。两个返回值表示配置集合是否发生增删，重复添加或移除不存在的键会返回 `false`，不代表最终遮罩状态失败。
 
 模块不广播 `ON_TOGGLE_UI_ACTION`、`CLEAR_SCREEN_ON/OFF`，也不覆盖 `CameraControllerBase.hideHUD`，因此不会进入 `UIManager._ToggleUIInputBinding` 的输入组冻结分支。相机管理器暂不可用时才回退扫描 `MainHudRoot` 的 Canvas/Graphic，并每两秒重试原生遮罩，以覆盖地图切换或相机管理器重建。Windows 当前客户端已实测确认：数字 0 可隐藏及恢复全部 UI，隐藏期间角色移动和原生鼠标视角保持可用。所有 Unity/IL2CPP 调用均在游戏主线程执行。
 
 ## 相机增强模块
 
-`BetterEndfield.Camera.dll` 独立负责自由视角和镜头近距离反虚化，读取 `[betterendfield.camera]`。模块以 `Beyond.Gameplay.View.CameraMono._ProcessDitherByPitch` 作为游戏主线程上的相机更新泵；所有 Unity 对象读取和写入均发生在该线程，不从 Host 配置轮询线程调用 Unity API。
+`BetterEndfieldNext.Camera.dll` 独立负责自由视角和镜头近距离反虚化，读取 `[betterendfieldnext.camera]`。模块以 `Beyond.Gameplay.View.CameraMono._ProcessDitherByPitch` 作为游戏主线程上的相机更新泵；所有 Unity 对象读取和写入均发生在该线程，不从 Host 配置轮询线程调用 Unity API。
 
 ### 自由视角
 

@@ -38,7 +38,7 @@ def main():
     assert all(path in package for path in manifest['libraries'].values())
     assert manifest['ui'] in package
     headers = {'ModuleApi.h', 'HookChain.h', 'ThirdPartyModule.h'}
-    assert {Path(name).name for name in sdk if name.startswith('include/BetterEndfield/')} == headers
+    assert {Path(name).name for name in sdk if name.startswith('include/BetterEndfieldNext/')} == headers
     assert sdk['packages/' + args.module.name] == args.module.read_bytes(), 'embedded import ZIP differs'
     assert sdk['docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md'].startswith(b'# ')
     for platform_path in manifest['libraries'].values():
@@ -57,7 +57,7 @@ def main():
         run(args.cmake, '-S', str(source), '-B', str(build), '-A', 'x64')
         run(args.cmake, '--build', str(build), '--config', 'Release')
         cache = (build / 'CMakeCache.txt').read_text(encoding='utf-8')
-        include_value = next(line.split('=', 1)[1] for line in cache.splitlines() if line.startswith('BETTER_ENDFIELD_SDK_INCLUDE:PATH='))
+        include_value = next(line.split('=', 1)[1] for line in cache.splitlines() if line.startswith('BETTER_ENDFIELD_NEXT_SDK_INCLUDE:PATH='))
         assert Path(include_value).resolve() == temp_root / 'include', 'sample used headers outside extracted SDK'
         built_manifest = json.loads((build / 'package/module.json').read_text(encoding='utf-8'))
         assert set(built_manifest['libraries']) == {'windows-x64'}, 'single-platform output contains unsupported platform'
@@ -67,7 +67,7 @@ def main():
                         ('initialize', ctypes.c_void_p), ('configuration_changed', ctypes.c_void_p),
                         ('on_message', ctypes.c_void_p), ('shutdown', ctypes.c_void_p)]
         loaded = ctypes.CDLL(str(library))
-        entry = loaded.BetterEndfield_GetThirdPartyModuleV1
+        entry = loaded.BetterEndfieldNext_GetThirdPartyModuleV1
         entry.argtypes = []
         entry.restype = ctypes.POINTER(Module)
         module = entry().contents

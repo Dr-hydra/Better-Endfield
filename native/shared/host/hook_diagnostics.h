@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace BetterEndfield::Host::HookDiagnostics {
+namespace BetterEndfieldNext::Host::HookDiagnostics {
 
 // Static shape of a hook target, read before it is patched. Name resolution
 // proves the method exists; it does not prove the game still calls this copy.
@@ -37,4 +37,4 @@ std::unordered_map<uintptr_t, uint32_t> CountRel32References(const uint8_t* code
 std::unordered_map<uintptr_t, uint32_t> CountDirectReferences(HMODULE module,
     const std::vector<uintptr_t>& targets);
 
-} // namespace BetterEndfield::Host::HookDiagnostics
+} // namespace BetterEndfieldNext::Host::HookDiagnostics

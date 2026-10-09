@@ -6,7 +6,7 @@
 #include <shellapi.h>
 #include <optional>
 
-namespace BetterEndfield::CustomModel::ModelOverlay {
+namespace BetterEndfieldNext::CustomModel::ModelOverlay {
 namespace {
 namespace UI=Win32Overlay;
 namespace Management=ModelManagement;
@@ -46,7 +46,7 @@ const Color accent(255,67,201,255),text(255,241,244,249),disabled(150,140,148,16
 bool IsEnglish() {
     static ULONGLONG last=0;static bool english=false;
     const auto now=GetTickCount64();if(last&&now-last<3000) return english;last=now;
-    const auto profile=library.root.parent_path().parent_path()/L"BetterEndfield.ini";
+    const auto profile=library.root.parent_path().parent_path()/L"BetterEndfieldNext.ini";
     wchar_t language[64]{};
     GetPrivateProfileStringW(L"Launcher",L"Language",L"",language,64,profile.c_str());
     english=language[0]?(_wcsicmp(language,L"en")==0||_wcsicmp(language,L"en-US")==0||
@@ -292,7 +292,7 @@ int Run(HINSTANCE instance) {
     return 0;
 }
 } // namespace
-} // namespace BetterEndfield::CustomModel::ModelOverlay
+} // namespace BetterEndfieldNext::CustomModel::ModelOverlay
 int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int) {
-    return BetterEndfield::CustomModel::ModelOverlay::Run(instance);
+    return BetterEndfieldNext::CustomModel::ModelOverlay::Run(instance);
 }

@@ -31,7 +31,7 @@ hook 目标有三种来源：
 | 参数 | 来源 |
 |---|---|
 | 默认（`--hooks hooked_methods.json`） | 从源码整理的 hook 描述符清单（2026-10-03 快照，共 137 个），按名字和签名在 dump 里匹配 |
-| `--log %LOCALAPPDATA%\BetterEndfield\logs\BetterEndfield.log` | 新版 Host 运行一次后，日志中 `Hook installed ... at GameAssembly.dll+0x...` 的行，就是实际装上的目标 |
+| `--log %LOCALAPPDATA%\BetterEndfieldNext\logs\BetterEndfieldNext.log` | 新版 Host 运行一次后，日志中 `Hook installed ... at GameAssembly.dll+0x...` 的行，就是实际装上的目标 |
 | `--rva 0x472E3D0 ...` | 直接指定 RVA |
 
 模块新增或修改 hook 后，`hooked_methods.json` 会过时，这时优先用 `--log`。

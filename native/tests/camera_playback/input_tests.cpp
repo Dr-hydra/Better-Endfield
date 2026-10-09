@@ -4,7 +4,7 @@
 #include "test_support.h"
 #include <array>
 
-using namespace BetterEndfield::CameraModule;
+using namespace BetterEndfieldNext::CameraModule;
 
 namespace {
 RAWINPUT packet{};

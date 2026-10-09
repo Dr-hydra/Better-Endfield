@@ -214,7 +214,7 @@ static inline std::string SjisToUtf8(const char *sjis, int maxLen) {
   if (sjisLen == 0) return std::string();
 
 #if defined(__ANDROID__)
-  return BetterEndfield::EiemAndroid::DecodeCp932(sjis, static_cast<size_t>(sjisLen));
+  return BetterEndfieldNext::EiemAndroid::DecodeCp932(sjis, static_cast<size_t>(sjisLen));
 #else
   const int wideLen =
       MultiByteToWideChar(932, 0, sjis, sjisLen, nullptr, 0);
@@ -945,11 +945,11 @@ static inline VmdFile *LoadVmd(const char *path) {
     return vmd.release();
   }
 
-  // BE-PATCH(utf8-path): Better Endfield passes UTF-8 paths (library folders
+  // BE-PATCH(utf8-path): Better Endfield Next passes UTF-8 paths (library folders
   // may contain non-ASCII names); open through the wide CRT API.
   FILE *file = nullptr;
 #if defined(__ANDROID__)
-  if (!BetterEndfield::EiemAndroid::ValidUtf8(path) || !(file = fopen(path, "rb"))) {
+  if (!BetterEndfieldNext::EiemAndroid::ValidUtf8(path) || !(file = fopen(path, "rb"))) {
     vmd->error = "Cannot open UTF-8 file";
     return vmd.release();
   }

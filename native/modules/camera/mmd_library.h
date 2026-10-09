@@ -22,7 +22,7 @@
 #include <system_error>
 #include <vector>
 
-namespace BetterEndfield::MmdLibrary {
+namespace BetterEndfieldNext::MmdLibrary {
 
 inline constexpr size_t kMaxWorks = 512;
 inline constexpr uintmax_t kMaxSetFileBytes = 16u * 1024u;
@@ -146,4 +146,4 @@ inline std::vector<Work> Scan(const std::filesystem::path& root) {
     return works;
 }
 
-} // namespace BetterEndfield::MmdLibrary
+} // namespace BetterEndfieldNext::MmdLibrary

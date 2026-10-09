@@ -1,4 +1,4 @@
-# Better Endfield Display Pipeline
+# Better Endfield Next Display Pipeline
 
 本文记录显示增强功能的集成方案。该功能不引入进程内模块，也不改动 Host、HookBroker 或模块 ABI；全部实现位于 UI 侧的部署与配置层。
 
@@ -54,8 +54,8 @@ DLSS 调用路径为 `sl.interposer` → `sl.dlss` → `nvngx_dlss`，不是裸 
 客户端进程
 ├── dxgi.dll         OptiScaler          UnityPlayer.dll 静态导入时加载
 │                                        → 拦截 Streamline/NGX，输出 FSR4
-└── xinput1_4.dll    Better Endfield 代理 输入子系统初始化时加载（可选部署）
-    └── 轮询 IL2CPP domain → runtime/BetterEndfield.Host.dll → modules/
+└── xinput1_4.dll    Better Endfield Next 代理 输入子系统初始化时加载（可选部署）
+    └── 轮询 IL2CPP domain → runtime/BetterEndfieldNext.Host.dll → modules/
 ```
 
 两条链占用不同槽位、处于不同加载阶段，不共享 hook 引擎，不需要相互转发或排序。Host 的 IL2CPP 附着模型与 HookBroker 的验证规则不受影响。
@@ -110,14 +110,14 @@ OptiScaler 为 GPL-3.0，本项目为 AGPL-3.0，二者可结合，但分发 GPL
 dxgi.dll                              OptiScaler 主体
 OptiScaler.ini                        由软件生成，不接受手工编辑后的回写
 amd_fidelityfx_*.dll / *.dll          OptiScaler 发布包内的后端与模型文件
-BetterEndfield.display.install.json   部署清单
+BetterEndfieldNext.display.install.json   部署清单
 ```
 
 清单结构：
 
 ```jsonc
 {
-  "Product": "BetterEndfield.DisplayPipeline",
+  "Product": "BetterEndfieldNext.DisplayPipeline",
   "OptiScalerVersion": "<锁定版本>",
   "Files": [ { "Name": "dxgi.dll", "Sha256": "..." } ],
   "PreexistingFiles": [ "..." ],

@@ -17,7 +17,7 @@
 #include <utility>
 #include <vector>
 
-namespace BetterEndfield::Vmd {
+namespace BetterEndfieldNext::Vmd {
 inline constexpr double FramesPerSecond = 30.0;
 struct Vec3 { float x = 0, y = 0, z = 0; };
 struct Quaternion { float x = 0, y = 0, z = 0, w = 1; };
@@ -326,4 +326,4 @@ inline bool SampleCamera(const std::vector<CameraKey>& keys, double frame, Camer
     out.fov = Mix(a->fov,b->fov,curve(5));
     return true;
 }
-} // namespace BetterEndfield::Vmd
+} // namespace BetterEndfieldNext::Vmd

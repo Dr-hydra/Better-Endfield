@@ -20,7 +20,7 @@
 
 BuildID / Manifest 更新保留 `LastPlayed`、`LastOwner` 等未知或运行时字段。安装目录、Windows 启动路径或所选库改变时，需先移除旧配置再重新应用。Steam 启动打断首次配置时，BE 保存待提交记录，客户端退出后可以继续提交或移除。
 
-“移除 BE 的 ACF”只清除 BE 管理的清单、空占位文件和本次创建的空目录，保留备份及 XInput 代理。XInput 由主程序原有安装 / 卸载功能管理。状态与备份位于 `%LOCALAPPDATA%\BetterEndfield\steam`。
+“移除 BE 的 ACF”只清除 BE 管理的清单、空占位文件和本次创建的空目录，保留备份及 XInput 代理。XInput 由主程序原有安装 / 卸载功能管理。状态与备份位于 `%LOCALAPPDATA%\BetterEndfieldNext\steam`。
 
 BE 拒绝接管其他来源的 ACF、其他库已有安装、包含下载资源的占位目录或目录链接。占位目录与国服目录分开；`AutoUpdateBehavior=1` 不能保证 Steam 永不下载。Steam 下载或校验后目录有实际文件时，BE 会停止更新 / 移除，需检查 Steam 安装状态。
 
@@ -32,20 +32,20 @@ BE 拒绝接管其他来源的 ACF、其他库已有安装、包含下载资源�
 
 ## 避免重复注入
 
-游戏目录已经有 `xinput1_4.dll` 时，BE 启动按钮、创建注入器快捷方式和独立 `BetterEndfield.Injector.exe` 均拒绝内置注入器启动。改用 XInput 模式，或使用 BE 卸载其代理后再用注入器。未知来源的同名文件不会被自动删除。历史快捷方式也会受到新注入器的检查，拒绝时退出码为 6。
+游戏目录已经有 `xinput1_4.dll` 时，BE 启动按钮、创建注入器快捷方式和独立 `BetterEndfieldNext.Injector.exe` 均拒绝内置注入器启动。改用 XInput 模式，或使用 BE 卸载其代理后再用注入器。未知来源的同名文件不会被自动删除。历史快捷方式也会受到新注入器的检查，拒绝时退出码为 6。
 
 ## 构建和离线验证
 
 从仓库根目录运行以下命令。所有测试使用独立的合成游戏库、HTTP 响应及注册表存储替身，不修改真实 Steam、国服目录或管理员设置。
 
 ```powershell
-& 'toolchains/dotnet/dotnet.exe' run --project 'ui/tests/SteamIntegration/SteamIntegration.csproj' -c Release '-p:BEWorkspaceBuildRoot=G:/Better Endfield/build/steam-cn-launch/build' -- 'G:/Better Endfield/build/steam-cn-launch/fixtures'
+& 'toolchains/dotnet/dotnet.exe' run --project 'ui/tests/SteamIntegration/SteamIntegration.csproj' -c Release '-p:BEWorkspaceBuildRoot=G:/Better Endfield Next/build/steam-cn-launch/build' -- 'G:/Better Endfield Next/build/steam-cn-launch/fixtures'
 
-& 'C:/Program Files/CMake/bin/cmake.exe' --build 'build/steam-cn-launch/native' --config Release --target BetterEndfield.Injector BetterEndfield.InjectorLaunchGuardTests
-& 'build/steam-cn-launch/native/Release/BetterEndfield.InjectorLaunchGuardTests.exe' 'build/steam-cn-launch/native-guard-fixture'
+& 'C:/Program Files/CMake/bin/cmake.exe' --build 'build/steam-cn-launch/native' --config Release --target BetterEndfieldNext.Injector BetterEndfieldNext.InjectorLaunchGuardTests
+& 'build/steam-cn-launch/native/Release/BetterEndfieldNext.InjectorLaunchGuardTests.exe' 'build/steam-cn-launch/native-guard-fixture'
 
 $latest = Get-Content 'build/steam-cn-launch/fixtures/latest.json' -Raw | ConvertFrom-Json
-& 'ui/tests/SteamIntegration/SmokeUi.ps1' -Executable 'G:/Better Endfield/build/steam-cn-launch/ui-publish/BetterEndfield.exe' -Metadata $latest.previewMetadata -WorkDirectory 'G:/Better Endfield/build/steam-cn-launch/ui-smoke'
+& 'ui/tests/SteamIntegration/SmokeUi.ps1' -Executable 'G:/Better Endfield Next/build/steam-cn-launch/ui-publish/BetterEndfieldNext.exe' -Metadata $latest.previewMetadata -WorkDirectory 'G:/Better Endfield Next/build/steam-cn-launch/ui-smoke'
 ```
 
 界面脚本使用 PowerShell 7，在隔离的 `--steam-setup-preview` 窗口检查写入 / 启动按钮禁用、完整 ACF 预览以及普通 / 760×700 窗口截图。隔离预览不载入主程序设置，不安装代理、不写 Steam 文件或注册表、不启动游戏。

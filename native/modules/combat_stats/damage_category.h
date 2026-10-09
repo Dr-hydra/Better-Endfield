@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string_view>
 
-namespace BetterEndfield::CombatStats::DamageCategory {
+namespace BetterEndfieldNext::CombatStats::DamageCategory {
 
 inline constexpr size_t kBasicAttack = 0;
 inline constexpr size_t kSkill = 1;
@@ -68,4 +68,4 @@ static_assert(Classify("chr_test_normal_skill_ult", kNormalSkillMask) == kSkill)
 static_assert(Classify("chr_test_talent_1", kTalentDamageMask) == kPassive);
 static_assert(Classify("opaque_skill", 0) == kOther);
 
-} // namespace BetterEndfield::CombatStats::DamageCategory
+} // namespace BetterEndfieldNext::CombatStats::DamageCategory

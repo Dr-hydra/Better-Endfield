@@ -1,5 +1,5 @@
-// Included inside CameraModule's anonymous namespace, after the first-person
-// runtime. The free camera owns its full pose (position, yaw/pitch/roll, FOV)
+// Included inside CameraModule's anonymous namespace, after common camera
+// helpers. The free camera owns its full pose (position, yaw/pitch/roll, FOV)
 // and advances it on the real-time clock, so freezing Time.timeScale only stops
 // the world. The pose is written into the Cinemachine CameraState while the
 // Brain pushes; when the Brain stops pushing (CameraManager no longer ticks
@@ -235,7 +235,7 @@ void MmdCameraLoaded(CameraFiles::Result&& result);
 void ClearMouseInput() {
 #if defined(__ANDROID__)
     int ignored_x = 0, ignored_y = 0;
-    betterendfield::TakeAndroidLook(ignored_x, ignored_y);
+    betterendfieldnext::TakeAndroidLook(ignored_x, ignored_y);
 #endif
     g_mouse_dx.store(0, std::memory_order_relaxed);
     g_mouse_dy.store(0, std::memory_order_relaxed);
@@ -688,7 +688,7 @@ void StepFreeCamera() {
     int dy = g_mouse_dy.exchange(0, std::memory_order_relaxed);
 #if defined(__ANDROID__)
     int touch_x = 0, touch_y = 0;
-    betterendfield::TakeAndroidLook(touch_x, touch_y);
+    betterendfieldnext::TakeAndroidLook(touch_x, touch_y);
     dx += touch_x;
     dy += touch_y;
 #endif
@@ -769,7 +769,7 @@ public:
     ScopedGlobalFovState(void* brain, void* state) {
         if (!state || !brain || !g_state_layout.ready ||
             !g_global_fov_enabled.load(std::memory_order_relaxed) ||
-            g_first_person_active.load(std::memory_order_acquire) || g_free_camera_active)
+            g_free_camera_active)
             return;
         void* camera = Invoke(Contract("unity.camera.main"), nullptr, nullptr);
         bool orthographic = true;
@@ -842,9 +842,7 @@ void ExitFreeCamera(const char* reason) {
 
 bool EnterFreeCamera() {
     g_free_follow_anchor.Reset();
-    if (g_first_person_active.load(std::memory_order_acquire)) {
-        ExitFirstPerson("switching to free camera");
-    }
+
     void* camera = Invoke(Contract("unity.camera.main"), nullptr, nullptr);
     void* transform = Invoke(Contract("unity.component.transform"), camera, nullptr);
     Vector3 forward{};

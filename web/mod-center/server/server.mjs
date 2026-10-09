@@ -195,7 +195,7 @@ export function createApp(options = {}) {
           const exchanged = await oauthFetch('https://github.com/login/oauth/access_token', { method: 'POST', signal: AbortSignal.timeout(15000), headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: githubId, client_secret: githubSecret, code, code_verifier: record.verifier, redirect_uri: new URL('auth/github/callback', publicUrl.href.endsWith('/') ? publicUrl : `${publicUrl}/`).href }) });
           const access = await exchanged.json();
           if (!exchanged.ok || typeof access.access_token !== 'string') throw new Error('exchange');
-          const response = await oauthFetch('https://api.github.com/user', { signal: AbortSignal.timeout(15000), headers: { Authorization: `Bearer ${access.access_token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'BetterEndfield-ModCenter' } });
+          const response = await oauthFetch('https://api.github.com/user', { signal: AbortSignal.timeout(15000), headers: { Authorization: `Bearer ${access.access_token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'BetterEndfieldNext-ModCenter' } });
           const profile = await response.json();
           if (!response.ok || !Number.isSafeInteger(profile.id) || profile.id <= 0 || typeof profile.login !== 'string') throw new Error('profile');
           const known = db.prepare('SELECT id FROM users WHERE github_id=?').get(String(profile.id));

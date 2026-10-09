@@ -11,7 +11,7 @@
 // right shape for configuration but would drop the release event of a
 // press-and-hold control. A latch is a plain atomic, so the panel can write it
 // from the Android UI thread while the camera input thread polls it every 5 ms.
-namespace betterendfield {
+namespace betterendfieldnext {
 
 enum class VirtualKeyAction : int {
     Release = 0,
@@ -32,4 +32,4 @@ void ReleaseAllVirtualKeys();
 
 bool VirtualKeyDown(int virtual_key);
 
-}  // namespace betterendfield
+}  // namespace betterendfieldnext

@@ -40,7 +40,7 @@ $toolVersion = $Matches[1]
 & $python -c "import PyInstaller, zstandard"
 if ($LASTEXITCODE -ne 0) { throw "Install tools/CustomModel/requirements-build.txt into the build Python environment first." }
 & $python -m PyInstaller --noconfirm --clean --onedir --console `
-    --name BetterEndfield.BemConverter `
+    --name BetterEndfieldNext.BemConverter `
     --hidden-import bem_v11 `
     --hidden-import bem_v13 `
     --hidden-import bem_v14 `
@@ -51,14 +51,16 @@ if ($LASTEXITCODE -ne 0) { throw "Install tools/CustomModel/requirements-build.t
     (Join-Path $repo "tools\CustomModel\bem_tool.py")
 if ($LASTEXITCODE -ne 0) { throw "BEM converter build failed." }
 $guiPublishDir = Join-Path $Destination 'gui-publish'
-& $dotnet publish (Join-Path $repo 'ui/BetterEndfield.BemTools/BetterEndfield.BemTools.csproj') `
+& $dotnet publish (Join-Path $repo 'ui/BetterEndfieldNext.BemTools/BetterEndfieldNext.BemTools.csproj') `
     -c Release -r win-x64 --self-contained true -p:Platform=x64 `
     -p:DebugType=None -p:DebugSymbols=false "-p:PublishDir=$guiPublishDir\" `
     "-p:BEWorkspaceBuildRoot=$($ws.paths.build)" `
     "-p:Version=$toolVersion" "-p:InformationalVersion=$toolVersion"
 if ($LASTEXITCODE -ne 0) { throw "BEM creator GUI build failed." }
+& (Join-Path $PSScriptRoot 'SignNextRelease.ps1') -Path $guiPublishDir -WorkspaceConfig $WorkspaceConfig
+& (Join-Path $PSScriptRoot 'SignNextRelease.ps1') -Path (Join-Path $Destination 'dist\BetterEndfieldNext.BemConverter') -WorkspaceConfig $WorkspaceConfig
 $packageArgs = @((Join-Path $repo 'tools\CustomModel\package_toolchain.py'),
-    (Join-Path $Destination 'dist\BetterEndfield.BemConverter'),
+    (Join-Path $Destination 'dist\BetterEndfieldNext.BemConverter'),
     '--gui-directory', $guiPublishDir,
     '--archive-backend', $ArchiveBackend)
 if ($ws.config_file) { $packageArgs += @('--workspace-config', $ws.config_file) }
@@ -72,5 +74,5 @@ if ([System.IO.Path]::GetFullPath($toolArchive) -ne [System.IO.Path]::GetFullPat
     Copy-Item -LiteralPath $toolArchive -Destination $releaseArchive -Force
 }
 Write-Host "BEM toolchain ZIP: $releaseArchive"
-Write-Host "BEM creator GUI: BEM-Tools/BetterEndfield.BemTools.exe inside the ZIP"
-Write-Host "BEM converter: $Destination\dist\BetterEndfield.BemConverter"
+Write-Host "BEM creator GUI: BEM-Tools/BetterEndfieldNext.BemTools.exe inside the ZIP"
+Write-Host "BEM converter: $Destination\dist\BetterEndfieldNext.BemConverter"

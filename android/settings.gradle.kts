@@ -66,7 +66,7 @@ localProperties.getProperty("sdk.dir")?.let {
     }
 }
 System.setProperty("android.home", workspaceSdk.path)
-gradle.startParameter.projectCacheDir = File(workspacePaths["build"] as String, "android/gradle-cache")
+gradle.startParameter.projectCacheDir = File(workspacePaths["build"] as String, "next/android/gradle-cache")
 gradle.extra["beWorkspace"] = workspace
 
 dependencyResolutionManagement {
@@ -78,5 +78,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "BetterEndfield.Android"
+rootProject.name = "BetterEndfieldNext.Android"
 include(":app")

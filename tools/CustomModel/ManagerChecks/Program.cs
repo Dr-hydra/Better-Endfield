@@ -1,4 +1,4 @@
-using BetterEndfield.UI.Services;
+using BetterEndfieldNext.UI.Services;
 
 static void Check(bool ok, string why) { if (!ok) throw new InvalidOperationException(why); }
 var inspect = BemInspectionSummary.Read("""{"format":"component-n","analysis":{"components":[{},{}],"textures":24,"errors":[]}}""");
@@ -136,7 +136,7 @@ finally
         Directory.Delete(root, true);
 }
 
-namespace BetterEndfield.UI.Services
+namespace BetterEndfieldNext.UI.Services
 {
     internal static class ConfigurationService
     {

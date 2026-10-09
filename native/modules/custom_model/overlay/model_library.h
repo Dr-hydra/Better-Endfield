@@ -6,7 +6,7 @@
 #include <memory>
 #include <set>
 
-namespace BetterEndfield::CustomModel::ModelManagement {
+namespace BetterEndfieldNext::CustomModel::ModelManagement {
 using Json=nlohmann::json;
 inline std::filesystem::path Utf8Path(std::string_view value) {
     return std::filesystem::path(std::u8string_view(reinterpret_cast<const char8_t*>(value.data()),value.size()));
@@ -180,4 +180,4 @@ private:
         packages.push_back(std::move(package));
     }
 };
-} // namespace BetterEndfield::CustomModel::ModelManagement
+} // namespace BetterEndfieldNext::CustomModel::ModelManagement

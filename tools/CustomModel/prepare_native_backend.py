@@ -58,7 +58,7 @@ def main():
     shutil.copy2(source / 'AnimeStudio.Libraries/AnimeStudio.Ooz.dll', output / 'AnimeStudio.Libraries/AnimeStudio.Ooz.dll')
     (output / 'AnimeStudio/VFSFile.cs').write_text(patched, encoding='utf-8')
     (output / 'AnimeStudio/NativeBackendPatch.cs').write_text(
-        '[assembly: System.Reflection.AssemblyMetadata("BetterEndfield.NativeBackendPatch", "bounded-vfs-blocks-v1")]\n',
+        '[assembly: System.Reflection.AssemblyMetadata("BetterEndfieldNext.NativeBackendPatch", "bounded-vfs-blocks-v1")]\n',
         encoding='utf-8')
     (output / 'backend-patch.json').write_text(json.dumps({
         'schema': 1, 'source': str(source), 'patch': 'bounded-vfs-blocks-v1',

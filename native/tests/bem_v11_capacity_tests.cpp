@@ -7,7 +7,7 @@
 #include <iostream>
 #include <stdexcept>
 
-using namespace BetterEndfield::CustomModel;
+using namespace BetterEndfieldNext::CustomModel;
 using J=nlohmann::json;
 
 #pragma pack(push,1)

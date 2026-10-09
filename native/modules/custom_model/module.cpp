@@ -2,8 +2,8 @@
 // Mesh, material and texture algorithms migrated from the 84b88bfb PoC;
 // Build Jobs own unpublished objects across frames; published Mesh/Texture
 // assets are only observed weakly (no idle retention), with receiver-local bindings.
-#include "BetterEndfield/ModuleApi.h"
-#include "BetterEndfield/CustomModelGeometry.h"
+#include "BetterEndfieldNext/ModuleApi.h"
+#include "BetterEndfieldNext/CustomModelGeometry.h"
 #include "bem.h"
 #include "async_loading.h"
 #include "model_content_identity.h"
@@ -43,9 +43,9 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-namespace BetterEndfield::CustomModel {
+namespace BetterEndfieldNext::CustomModel {
 namespace {
-constexpr char kModuleId[]="betterendfield.custom_model";
+constexpr char kModuleId[]="betterendfieldnext.custom_model";
 const BE_HostApiV1* g_host=nullptr;
 std::atomic_bool g_hot_switch_runtime{false};
 std::atomic<DWORD> g_pump_thread{0};
@@ -987,7 +987,7 @@ bool ResolveEngineBindings() {
     if (g_engine.resolved) return true;
 
 #if defined(__ANDROID__)
-    if (!betterendfield::AndroidMeshBuilderReady()) return false;
+    if (!betterendfieldnext::AndroidMeshBuilderReady()) return false;
     BE_FieldDescriptorV1 descriptor{"UnityEngine.CoreModule.dll", "UnityEngine", "Object", "m_CachedPtr", "System.IntPtr"};
     BE_ResolvedFieldV1 field{};
     std::string error;
@@ -1148,7 +1148,7 @@ bool DeclarationsEqual(
 
 bool ReadMeshStrides(void* mesh, std::vector<int32_t>& strides) {
 #if defined(__ANDROID__)
-    return betterendfield::AndroidReadMeshStrides(mesh,strides);
+    return betterendfieldnext::AndroidReadMeshStrides(mesh,strides);
 #else
     strides.clear();
     if (!ResolveEngineBindings()) return false;
@@ -1412,7 +1412,7 @@ bool BuildMeshFromComponent(
     const int32_t index_count = static_cast<int32_t>(info.index_count);
     int sub_mesh_count = component.draws.empty() ? 1 : static_cast<int>(component.draws.size());
 #if defined(__ANDROID__)
-    if (!betterendfield::AndroidSubmitMesh(mesh,component)) {
+    if (!betterendfieldnext::AndroidSubmitMesh(mesh,component)) {
         Log(label + " Android MeshData submission/readback failed.");
         DestroyUnityObject(mesh); return false;
     }
@@ -1824,7 +1824,7 @@ void* CreateTextureFromBem(const BemPocData& bem,size_t index) {
 
     if (auto* set_name = Contract("object.set_name");
         set_name && set_name->resolved && g_host->string_new) {
-        const std::string name = "BetterEndfield.T." + texture.name;
+        const std::string name = "BetterEndfieldNext.T." + texture.name;
         void* managed = NewString(name.c_str());
         void* parameters[1]{managed};
         InvokeVoid(set_name, object, parameters);
@@ -2198,8 +2198,8 @@ bool ApplyTextureMask(void* copy,uint64_t mask,const BemPocData& bem,
                 texture=CreateTextureFromBem(bem,t);
                 if (!texture || !CopySamplerState(match->texture,texture)) return false;
 #if defined(__ANDROID__)
-                betterendfield::AndroidAuditTextureColorSpace(match->texture,texture,tex.original_name);
-                betterendfield::AndroidAuditNormalTexture(match->texture,tex.original_name);
+                betterendfieldnext::AndroidAuditTextureColorSpace(match->texture,texture,tex.original_name);
+                betterendfieldnext::AndroidAuditNormalTexture(match->texture,tex.original_name);
 #endif
             }
             for (const auto* matched:matches) {
@@ -2226,7 +2226,7 @@ bool PrepareDrawMaterials(const BemComponent& component,PreparedBinding& target,
         if (!copy || !InvokeVoid(Contract("material.copy"),copy,ctor) || !MaterialCopyCompatible(material,copy) ||
             !SetArrayValue(target.custom_materials,static_cast<int>(i),copy)) return false;
 #if defined(__ANDROID__)
-        if (!betterendfield::AndroidAuditMaterialCopy(material,copy)) return false;
+        if (!betterendfieldnext::AndroidAuditMaterialCopy(material,copy)) return false;
 #endif
         if (!ApplyTextureMask(copy,draw.textures,bem,texture_cache)) return false;
     }
@@ -2732,8 +2732,8 @@ void* ResolveOriginalMaterials(const SavedOriginalBinding& original,void* type_t
 #if defined(__ANDROID__)
         if (!complete && !adapter.explicit_resource) {
             void* handle=nullptr; uint32_t handle_root=0;
-            struct Release { void*& handle; uint32_t& root; ~Release(){ betterendfield::AndroidReleaseUiDonor(handle,root); } } release{handle,handle_root};
-            if (void* donor=RootTemporary(betterendfield::AndroidLoadUiDonor(adapter.ui_resource,handle,handle_root)); donor && donor!=asset)
+            struct Release { void*& handle; uint32_t& root; ~Release(){ betterendfieldnext::AndroidReleaseUiDonor(handle,root); } } release{handle,handle_root};
+            if (void* donor=RootTemporary(betterendfieldnext::AndroidLoadUiDonor(adapter.ui_resource,handle,handle_root)); donor && donor!=asset)
                 complete=CollectLiveMaterials(donor,wanted,live);
         }
 #endif
@@ -3034,7 +3034,7 @@ void PruneCompletedResources() {
 #if defined(__ANDROID__)
 void InspectAndroidRenderers() {
     static uint64_t next=0;
-    if (!betterendfield::AndroidInspectionEnabled() || GetTickCount64()<next || g_completed.empty()) return;
+    if (!betterendfieldnext::AndroidInspectionEnabled() || GetTickCount64()<next || g_completed.empty()) return;
     next=GetTickCount64()+5000;
     void* args[]{ModelRendererType()};
     void* renderers=Invoke(Contract("android.all_renderers"),nullptr,args);
@@ -3536,10 +3536,10 @@ bool RestoreDisabledResource(void* asset,std::string_view name,ConstructionScope
     auto* transaction=&bindings;
 #if defined(__ANDROID__)
     void* paired_ui_asset=nullptr; void* handle=nullptr; uint32_t handle_root=0;
-    struct ReleaseUi { void*& handle; uint32_t& root; ~ReleaseUi(){ betterendfield::AndroidReleaseUiDonor(handle,root); } } release{handle,handle_root};
+    struct ReleaseUi { void*& handle; uint32_t& root; ~ReleaseUi(){ betterendfieldnext::AndroidReleaseUiDonor(handle,root); } } release{handle,handle_root};
     CompletedResource paired_completed; std::vector<PreparedBinding> ui_bindings,paired_transaction;
     if (!adapter->explicit_resource && name==adapter->world_resource) {
-        paired_ui_asset=RootTemporary(betterendfield::AndroidLoadUiDonor(adapter->ui_resource,handle,handle_root));
+        paired_ui_asset=RootTemporary(betterendfieldnext::AndroidLoadUiDonor(adapter->ui_resource,handle,handle_root));
         if (!paired_ui_asset) return refuse("paired-UI-donor-unavailable");
         bool paired_modified=false;
         if (!IsCompletedResource(*adapter,paired_ui_asset,"")) for (const auto& old:g_completed)
@@ -3583,22 +3583,22 @@ bool ProcessResource(void* asset,ConstructionScope& construction) {
         void* handle=nullptr; uint32_t root=0;
         struct ReleaseDonor {
             void*& handle; uint32_t& root;
-            ~ReleaseDonor() { betterendfield::AndroidReleaseUiDonor(handle,root); }
+            ~ReleaseDonor() { betterendfieldnext::AndroidReleaseUiDonor(handle,root); }
         } release{handle,root};
         bool ready=false;
         try {
             ConstructionScope ui_scope;
-            void* donor=RootTemporary(betterendfield::AndroidLoadUiDonor(mod->adapter->ui_resource,handle,root));
+            void* donor=RootTemporary(betterendfieldnext::AndroidLoadUiDonor(mod->adapter->ui_resource,handle,root));
             ready=donor && ProcessResource(donor,ui_scope);
         } catch (...) { ready=false; }
-        if (ready && betterendfield::AndroidMeshRollbackTest() && betterendfield::AndroidPipelineLodEnabled()) {
+        if (ready && betterendfieldnext::AndroidMeshRollbackTest() && betterendfieldnext::AndroidPipelineLodEnabled()) {
             const bool restored=g_lod.Restore();
             const bool reapplied=restored && g_lod.Update(true);
             Log(std::string("Android LOD restore/reapply ")+(reapplied?"PASS":"FAIL"));
             ready=reapplied;
         }
         Log(std::string("Android paired world/UI ")+
-            (betterendfield::AndroidMeshRollbackTest()?"validation ":"publication ")+(ready?"PASS":"FAIL"));
+            (betterendfieldnext::AndroidMeshRollbackTest()?"validation ":"publication ")+(ready?"PASS":"FAIL"));
         return ready;
     };
 #endif
@@ -3645,7 +3645,7 @@ bool ProcessResource(void* asset,ConstructionScope& construction) {
     const auto result=CommitResource<PreparedBinding>(*transaction,ApplyPreparedBinding,RestorePreparedBinding);
     if (result==CommitResult::Committed) {
 #if defined(__ANDROID__)
-        if (betterendfield::AndroidMeshRollbackTest()) {
+        if (betterendfieldnext::AndroidMeshRollbackTest()) {
             // Bindings already point at generated assets; preserve them if an
             // unexpected diagnostic exception interrupts restoration.
             construction.published=true;
@@ -3852,7 +3852,7 @@ bool ResolveRuntimeContracts() {
         if (key.starts_with("probe.") && !g_probe.active) continue;
 #if defined(__ANDROID__)
         if (key.starts_with("quality.") ||
-            (!betterendfield::AndroidPipelineLodEnabled() && (key.starts_with("pipeline.") || key.starts_with("culling.")))) continue;
+            (!betterendfieldnext::AndroidPipelineLodEnabled() && (key.starts_with("pipeline.") || key.starts_with("culling.")))) continue;
 #endif
         const bool lod=key.starts_with("pipeline.") || key.starts_with("quality.") ||
             key.starts_with("culling.") ||
@@ -3893,7 +3893,7 @@ bool ResolveRuntimeContracts() {
 #if !defined(__ANDROID__)
         g_lod.Resolve() &&
 #else
-        (!betterendfield::AndroidNpcParametersEnabled() || g_lod.Resolve()) &&
+        (!betterendfieldnext::AndroidNpcParametersEnabled() || g_lod.Resolve()) &&
 #endif
         (!models || (g_object_class && ResolveEngineBindings()));
 }
@@ -3901,9 +3901,9 @@ BE_Result BE_CALL InitializeResourceModule(const BE_HostApiV1* host) {
 #if defined(__ANDROID__)
     // The private Android platform adapter must be configured before this
     // shared transaction can be enabled. Never resolve PC raw setters here.
-    if (!betterendfield::AndroidMeshBuilderReady()) return BE_Result_NotReady;
+    if (!betterendfieldnext::AndroidMeshBuilderReady()) return BE_Result_NotReady;
 #endif
-    if (!host || host->abi_version!=BETTER_ENDFIELD_MODULE_ABI_V1 || !host->log || !host->resolve_method ||
+    if (!host || host->abi_version!=BETTER_ENDFIELD_NEXT_MODULE_ABI_V1 || !host->log || !host->resolve_method ||
         !host->resolve_field || !host->resolve_class || !host->create_hook || !host->copy_catalog_root ||
         !host->copy_managed_string || !host->runtime_invoke || !host->object_new || !host->object_unbox ||
         !host->string_new || !host->gchandle_new || !host->gchandle_free) return BE_Result_InvalidArgument;
@@ -3918,7 +3918,7 @@ BE_Result BE_CALL InitializeResourceModule(const BE_HostApiV1* host) {
         HMODULE host_module=nullptr;
         if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS|GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
             reinterpret_cast<LPCWSTR>(host->create_hook),&host_module)) return BE_Result_ContractMismatch;
-        g_retire_hooks=reinterpret_cast<RetireHooksFn>(GetProcAddress(host_module,"BetterEndfield_RetireModuleHooksV1"));
+        g_retire_hooks=reinterpret_cast<RetireHooksFn>(GetProcAddress(host_module,"BetterEndfieldNext_RetireModuleHooksV1"));
         if (!g_retire_hooks) { Log("Host lacks safe hook retirement; update Host and CustomModel together."); return BE_Result_ContractMismatch; }
         HMODULE pinned=nullptr;
         if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS|GET_MODULE_HANDLE_EX_FLAG_PIN,
@@ -3930,7 +3930,7 @@ BE_Result BE_CALL InitializeResourceModule(const BE_HostApiV1* host) {
         };
         if (!install("pump.canvas_will_render",reinterpret_cast<void*>(&ResourcePump),reinterpret_cast<void**>(&g_original_pump)) ||
 #if defined(__ANDROID__)
-            (betterendfield::AndroidPipelineLodEnabled() && (
+            (betterendfieldnext::AndroidPipelineLodEnabled() && (
                 !install("pipeline.register_bias",reinterpret_cast<void*>(&AndroidRegisterLodBias),reinterpret_cast<void**>(&g_original_register_bias)) ||
                 !install("culling.set_parent_lod_bias",reinterpret_cast<void*>(&ParentLodBias),reinterpret_cast<void**>(&g_original_parent_lod_bias)) ||
                 !install("culling.set_art_tag_lod_bias",reinterpret_cast<void*>(&ArtTagLodBias),reinterpret_cast<void**>(&g_original_art_tag_lod_bias)))) ||
@@ -3954,7 +3954,7 @@ BE_Result BE_CALL InitializeResourceModule(const BE_HostApiV1* host) {
         ResetAndroidLodStreamingObserver();
         auto* offset_contract=Contract("android.lod_streaming_offset");
         void* offset_entry=offset_contract && offset_contract->resolved
-            ? betterendfield::AndroidLodStreamingOffsetEntry() : nullptr;
+            ? betterendfieldnext::AndroidLodStreamingOffsetEntry() : nullptr;
         const bool offset_observer=offset_entry && host->create_hook(host->context,kModuleId,offset_entry,
             reinterpret_cast<void*>(&AndroidObserveLodStreamingOffset),
             reinterpret_cast<void**>(&g_original_android_lod_streaming_offset))==BE_Result_Ok && g_original_android_lod_streaming_offset;
@@ -3978,9 +3978,9 @@ BE_Result BE_CALL InitializeResourceModule(const BE_HostApiV1* host) {
             " standaloneLOD="+std::to_string(g_standalone_lod.load()));
 #if defined(__ANDROID__)
         Log(std::string("Android replacement mode=")+
-            (betterendfield::AndroidMeshRollbackTest()?"rollback (original bindings restored)":"replace (bindings retained)")+
-            (betterendfield::AndroidNpcParametersEnabled()?"; pipeline + NPC parameters; geometry quality unchanged":
-            betterendfield::AndroidPipelineLodEnabled()?"; pipeline bias only; quality/NPC/camera culling unchanged":
+            (betterendfieldnext::AndroidMeshRollbackTest()?"rollback (original bindings restored)":"replace (bindings retained)")+
+            (betterendfieldnext::AndroidNpcParametersEnabled()?"; pipeline + NPC parameters; geometry quality unchanged":
+            betterendfieldnext::AndroidPipelineLodEnabled()?"; pipeline bias only; quality/NPC/camera culling unchanged":
                 "; global LOD/culling overrides disabled"));
 #endif
 #if defined(_WIN32)
@@ -4077,12 +4077,12 @@ void BE_CALL ShutdownResourceModule() {
     // Model bindings are intentionally not rolled back on module shutdown.
 }
 const BE_ModuleApiV1 kResourceApi{
-    {kModuleId,"Custom Model","0.1.0",BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId,"Custom Model","0.1.0",BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
     InitializeResourceModule,ResourceConfigurationChanged,ShutdownResourceModule
 };
 }
-BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfield_GetModuleApiV1() { return &kResourceApi; }
-BE_EXPORT BE_Result BE_CALL BetterEndfield_QueryCustomModelGeometryV1(void* mesh,
+BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfieldNext_GetModuleApiV1() { return &kResourceApi; }
+BE_EXPORT BE_Result BE_CALL BetterEndfieldNext_QueryCustomModelGeometryV1(void* mesh,
     BE_CustomModelGeometryVisitorV1 visitor,void* context) {
     if(!mesh || !visitor) return BE_Result_InvalidArgument;
     if(!g_host || !g_enabled.load() || g_stopping.load() || g_in_delivery || g_pump_thread.load()!=GetCurrentThreadId()) return BE_Result_NotReady;
@@ -4093,7 +4093,7 @@ BE_EXPORT BE_Result BE_CALL BetterEndfield_QueryCustomModelGeometryV1(void* mesh
         PruneCpuGeometry();
         for(const auto& entry:g_cpu_geometry) if(entry->mesh.Get()==mesh) {
             entry->used=++g_cpu_geometry_serial;
-            const BE_CustomModelGeometryV1 view{sizeof(BE_CustomModelGeometryV1),BETTER_ENDFIELD_CUSTOM_MODEL_GEOMETRY_V1,
+            const BE_CustomModelGeometryV1 view{sizeof(BE_CustomModelGeometryV1),BETTER_ENDFIELD_NEXT_CUSTOM_MODEL_GEOMETRY_V1,
                 entry->vertices,static_cast<uint32_t>(entry->indices.size()),entry->positions.data(),entry->skin.data(),entry->stride,
                 entry->indices.data(),entry->draws.data(),static_cast<uint32_t>(entry->draws.size())};
             return visitor(context,&view);
@@ -4104,6 +4104,6 @@ BE_EXPORT BE_Result BE_CALL BetterEndfield_QueryCustomModelGeometryV1(void* mesh
 }
 BOOL WINAPI DllMain(HINSTANCE instance,DWORD reason,LPVOID reserved) {
     if (reason==DLL_PROCESS_ATTACH) DisableThreadLibraryCalls(instance);
-    if (reason==DLL_PROCESS_DETACH && reserved) BetterEndfield::CustomModel::g_process_terminating.store(true);
+    if (reason==DLL_PROCESS_DETACH && reserved) BetterEndfieldNext::CustomModel::g_process_terminating.store(true);
     return TRUE;
 }

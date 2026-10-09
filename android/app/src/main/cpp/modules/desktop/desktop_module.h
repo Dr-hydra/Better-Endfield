@@ -1,13 +1,13 @@
 #pragma once
 
-#include "BetterEndfield/ModuleApi.h"
+#include "BetterEndfieldNext/ModuleApi.h"
 #include "core/hook_broker.h"
 #include "modules/module.h"
 
 #include <string>
 #include <vector>
 
-namespace betterendfield {
+namespace betterendfieldnext {
 
 // Runs a desktop module translation unit unchanged on Android.
 //
@@ -103,4 +103,4 @@ private:
     bool initialized_ = false;
 };
 
-}  // namespace betterendfield
+}  // namespace betterendfieldnext

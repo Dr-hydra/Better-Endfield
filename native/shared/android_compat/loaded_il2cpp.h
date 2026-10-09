@@ -2,7 +2,7 @@
 #include <dlfcn.h>
 #include <link.h>
 #include <cstring>
-namespace betterendfield {
+namespace betterendfieldnext {
 inline void* OpenLoadedIl2Cpp() {
     if (void* image = dlopen("libil2cpp.so", RTLD_NOLOAD | RTLD_NOW)) return image;
     void* image = nullptr;

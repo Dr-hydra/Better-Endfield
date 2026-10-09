@@ -1,10 +1,10 @@
-using BetterEndfield.UI.Services;
+using BetterEndfieldNext.UI.Services;
 using System.IO.Compression;
 using System.Text.Json.Nodes;
 using System.Text;
 using System.Net;
 
-namespace BetterEndfield.UI.Services { internal static class ConfigurationService { public static string SettingsDirectory { get; set; } = ""; } }
+namespace BetterEndfieldNext.UI.Services { internal static class ConfigurationService { public static string SettingsDirectory { get; set; } = ""; } }
 internal static class Program
 {
     private static int checks;
@@ -36,10 +36,10 @@ internal static class Program
             foreach(string bad in new[]{"../escape","ui/../escape","ui\\escape","C:/escape","/absolute","UI/INDEX.HTML","module.json","native/CON.dll"})
                 await Reject(()=>service.ImportAsync(Zip(temp,Manifest(),bad)),"Accepted unsafe/duplicate ZIP entry "+bad);
             Check(before==await File.ReadAllTextAsync(service.IndexPath),"Rejected imports altered installed snapshot");
-            await Reject(()=>service.ImportAsync(Zip(temp,Manifest("betterendfield.camera"))),"Accepted internal module overwrite");
+            await Reject(()=>service.ImportAsync(Zip(temp,Manifest("betterendfieldnext.camera"))),"Accepted internal module overwrite");
             await Reject(()=>service.ImportAsync(Zip(temp,Manifest("voice.character"))),"Accepted Android builtin voice module ID");
             await Reject(()=>service.ImportAsync(Zip(temp,Manifest("VOICE.Character"))),"Accepted builtin voice ID case alias");
-            foreach(string dependency in new[]{"voice.character","betterendfield.camera","example.test"})
+            foreach(string dependency in new[]{"voice.character","betterendfieldnext.camera","example.test"})
             {
                 var badDependency=Manifest();badDependency["dependencies"]=new JsonArray(dependency);
                 await Reject(()=>service.ImportAsync(Zip(temp,badDependency)),"Accepted invalid dependency "+dependency);

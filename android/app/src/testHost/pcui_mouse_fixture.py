@@ -134,9 +134,9 @@ STUBS = {
             public final ArrayList<MotionEvent> injected=new ArrayList<>();
             public boolean injectEvent(InputEvent event){injected.add(MotionEvent.obtain((MotionEvent)event));return accepts;}
         }""",
-    "dev/betterendfield/android/RuntimeBootstrap.java": r"""package dev.betterendfield.android;
+    "dev/betterendfield/next/RuntimeBootstrap.java": r"""package dev.betterendfield.next;
         final class RuntimeBootstrap {static boolean loaded(){return false;} }""",
-    "dev/betterendfield/android/NativeCommandBridge.java": r"""package dev.betterendfield.android;
+    "dev/betterendfield/next/NativeCommandBridge.java": r"""package dev.betterendfield.next;
         final class NativeCommandBridge {
             static boolean pcMouseCaptureRequested(){return false;}
             static int pcMouseCursorMode(){return 0;}
@@ -164,11 +164,11 @@ def main():
         files.append(str(target))
     android = Path(__file__).resolve().parents[3]
     files.extend([
-        str(android / "app/src/main/java/dev/betterendfield/android/PcUiMouseBridge.java"),
-        str(android / "app/src/testHost/java/dev/betterendfield/android/PcUiMouseBridgeHostTest.java"),
+        str(android / "app/src/main/java/dev/betterendfield/next/PcUiMouseBridge.java"),
+        str(android / "app/src/testHost/java/dev/betterendfield/next/PcUiMouseBridgeHostTest.java"),
     ])
     subprocess.run(["javac", "-encoding", "UTF-8", "--release", "17", "-d", str(classes), *files], check=True)
-    subprocess.run(["java", "-cp", str(classes), "dev.betterendfield.android.PcUiMouseBridgeHostTest"], check=True)
+    subprocess.run(["java", "-cp", str(classes), "dev.betterendfield.next.PcUiMouseBridgeHostTest"], check=True)
 
 
 if __name__ == "__main__":

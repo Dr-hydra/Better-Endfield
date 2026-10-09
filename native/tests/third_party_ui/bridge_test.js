@@ -1,19 +1,19 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const root=path.resolve(__dirname,'../../..');
-const android=fs.readFileSync(path.join(root,'android/app/src/main/assets/third-party-bridge.js'),'utf8').trim();
-const cs=fs.readFileSync(path.join(root,'ui/BetterEndfield.UI/Services/ThirdPartyWebBridge.cs'),'utf8');
+const android=fs.readFileSync(path.join(root,'android/app/src/main/assets/third-party-bridge.js'),'utf8').replace(/\r\n/g,'\n').trim();
+const cs=fs.readFileSync(path.join(root,'ui/BetterEndfieldNext.UI/Services/ThirdPartyWebBridge.cs'),'utf8');
 const windows=cs.match(/Script = """\r?\n([\s\S]*?)\r?\n    """;/)[1].split(/\r?\n/).map(line=>line.slice(4)).join('\n').trim();
 assert.equal(windows,android,'Both platforms must expose the same creator bridge');
 async function test(platform){
   const sent=[],timers=new Map();let listener,id=0;
   const window={};window.top=window;
   if(platform==='windows')window.chrome={webview:{postMessage:message=>sent.push(message),addEventListener:(_,callback)=>listener=callback}};
-  else window.BetterEndfieldModuleHost={postMessage:message=>sent.push(JSON.parse(message))};
+  else window.BetterEndfieldNextModuleHost={postMessage:message=>sent.push(JSON.parse(message))};
   vm.runInNewContext(android,{window,console,setTimeout:(callback,millis)=>{assert.equal(millis,15000);timers.set(++id,callback);return id;},clearTimeout:key=>timers.delete(key)});
   const deliver=data=>platform==='windows'?listener({data}):window.__beModuleDeliver(data);
-  const host=window.betterEndfield;assert.equal(Object.isFrozen(host),true);
-  let promise=host.readConfig(),request=sent.pop();assert.equal(request.operation,'readConfig');assert.equal(request.protocol,'better-endfield.module-ui.v1');
+  const host=window.betterEndfieldNext;assert.equal(Object.isFrozen(host),true);
+  let promise=host.readConfig(),request=sent.pop();assert.equal(request.operation,'readConfig');assert.equal(request.protocol,'better-endfield-next.module-ui.v1');
   deliver({kind:'bridge_reply',request_id:request.request_id,value:{label:'author',future:[1,2]}});assert.deepEqual(await promise,{label:'author',future:[1,2]});
   promise=host.saveConfig({label:'changed',nested:{yes:true}});request=sent.pop();assert.equal(request.operation,'saveConfig');assert.equal(request.payload.nested.yes,true);
   deliver({kind:'bridge_reply',request_id:request.request_id,value:{saved:true}});assert.equal((await promise).saved,true);

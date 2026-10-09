@@ -4,7 +4,7 @@
 A local development tool, in two halves:
 
     1. --emit-id-list <dir>
-       Writes combat-buff-ids.txt next to BetterEndfield.BuffProbe.dll. The ids
+       Writes combat-buff-ids.txt next to BetterEndfieldNext.BuffProbe.dll. The ids
        are just the BuffData filenames; the contents are MemoryPack blobs with a
        .json suffix and cannot be read here.
 
@@ -214,7 +214,7 @@ def build(probe_path: Path, registry_path: Path, main_output: Path,
     if not probe_path.exists():
         raise SystemExit(
             f"probe output not found: {probe_path}\n"
-            "Build BetterEndfield.BuffProbe, inject it, enter a battle and press its hotkey."
+            "Build BetterEndfieldNext.BuffProbe, inject it, enter a battle and press its hotkey."
         )
     with open(probe_path, "r", encoding="utf-8") as handle:
         payload = json.load(handle)
@@ -270,7 +270,7 @@ def main() -> None:
     parser.add_argument("--buff-data", type=Path,
                         help="BuffData directory; only the filenames are read")
     parser.add_argument("--probe-output", type=Path,
-                        help="combat-buffs.json written by BetterEndfield.BuffProbe")
+                        help="combat-buffs.json written by BetterEndfieldNext.BuffProbe")
     parser.add_argument("--id-registry", type=Path)
     parser.add_argument("--output", type=Path,
                         help="table shipped with the main bundle")

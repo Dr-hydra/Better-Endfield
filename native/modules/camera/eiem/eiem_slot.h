@@ -8,7 +8,7 @@
 
 #include <string>
 
-namespace BetterEndfield::EiemSlot {
+namespace BetterEndfieldNext::EiemSlot {
 
 // Code addresses (MethodInfo::methodPointer) of the methods eiem_body.cpp hooks.
 struct HookTargets {
@@ -83,4 +83,4 @@ const Api* Slot1();
 const Api* Slot2();
 const Api* Slot3();
 
-} // namespace BetterEndfield::EiemSlot
+} // namespace BetterEndfieldNext::EiemSlot

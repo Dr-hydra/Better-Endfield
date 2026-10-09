@@ -16,9 +16,9 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-namespace betterendfield {
-using namespace BetterEndfield::CustomModel;
-extern "C" const BE_ModuleApiV1* BetterEndfield_GetCustomModelModuleApiV1();
+namespace betterendfieldnext {
+using namespace BetterEndfieldNext::CustomModel;
+extern "C" const BE_ModuleApiV1* BetterEndfieldNext_GetCustomModelModuleApiV1();
 CustomModelModule* CustomModelModule::instance_ = nullptr;
 CustomModelModule::FinishFn CustomModelModule::original_ = nullptr;
 CustomModelModule::CopyFn CustomModelModule::copy_original_ = nullptr;
@@ -228,7 +228,7 @@ bool CustomModelModule::InitializeSharedReplacement(const std::string& config) {
     // complete registry through copy_module_configuration instead.
     replacement_root_ = std::filesystem::path("/data/local/tmp");
     if (ConfigValue(config,"capture") == "1") {
-        const char* diagnostics = std::getenv("BETTER_ENDFIELD_DIAGNOSTICS_PATH");
+        const char* diagnostics = std::getenv("BETTER_ENDFIELD_NEXT_DIAGNOSTICS_PATH");
         if (!diagnostics || !*diagnostics) return false;
         replacement_root_ = std::filesystem::path(diagnostics).parent_path() / "custom-model-probe";
         std::filesystem::create_directories(replacement_root_/"custom-model");
@@ -239,7 +239,7 @@ bool CustomModelModule::InitializeSharedReplacement(const std::string& config) {
     }
     replacement_config_=SharedRegistryText(config,package_paths_,appearance_);
     host_ = {};
-    host_.abi_version = BETTER_ENDFIELD_MODULE_ABI_V1; host_.context = this;
+    host_.abi_version = BETTER_ENDFIELD_NEXT_MODULE_ABI_V1; host_.context = this;
     host_.log = &HostLog; host_.resolve_method = &HostResolveMethod;
     host_.resolve_field = &HostResolveField; host_.create_hook = &HostCreateHook;
     host_.release_module_hooks = &HostReleaseHooks;
@@ -252,7 +252,7 @@ bool CustomModelModule::InitializeSharedReplacement(const std::string& config) {
     host_.gchandle_free = &HostGcHandleFree; host_.field_get_value_object = &HostFieldGetValueObject;
     std::string hook_error;
     if (!replacement_broker_.Initialize(hook_error)) { LogError(Id(), hook_error.c_str()); return false; }
-    replacement_api_ = BetterEndfield_GetCustomModelModuleApiV1();
+    replacement_api_ = BetterEndfieldNext_GetCustomModelModuleApiV1();
     if (!replacement_api_ || !replacement_api_->initialize ||
             replacement_api_->initialize(&host_) != BE_Result_Ok) {
         LogError(Id(), "shared custom model initialization failed"); return false;
@@ -416,7 +416,7 @@ void AuditLoadedMeshCode(Il2CppRuntime& runtime) {
 }
 
 ModuleResult CustomModelModule::Start(Il2CppRuntime& runtime) {
-    const char* raw = std::getenv("BETTER_ENDFIELD_CUSTOM_MODEL_CONFIG");
+    const char* raw = std::getenv("BETTER_ENDFIELD_NEXT_CUSTOM_MODEL_CONFIG");
     if (!raw || *raw == '\0') return {false, "no Android BEM package configured"};
     const std::string_view config(raw);
     if (ConfigValue(config, "api_audit") == "1") {
@@ -533,14 +533,14 @@ void CustomModelModule::CopyProbe(void* mesh, void* source) {
         uint32_t target_before = 0;
         ReadOwnMemory(reinterpret_cast<uintptr_t>(source) + 0x14, &source_value, sizeof(source_value));
         ReadOwnMemory(reinterpret_cast<uintptr_t>(mesh) + 0x1c0, &target_before, sizeof(target_before));
-        LogInfo("betterendfield.custom_model", ("copy probe before source_plus_14=" +
+        LogInfo("betterendfieldnext.custom_model", ("copy probe before source_plus_14=" +
             std::to_string(source_value) + " target_plus_1c0=" + std::to_string(target_before)).c_str());
     }
     if (copy_original_) copy_original_(mesh, source);
     if (count < 8 && mesh) {
         uint32_t target_after = 0;
         ReadOwnMemory(reinterpret_cast<uintptr_t>(mesh) + 0x1c0, &target_after, sizeof(target_after));
-        LogInfo("betterendfield.custom_model", ("copy probe after target_plus_1c0=" +
+        LogInfo("betterendfieldnext.custom_model", ("copy probe after target_plus_1c0=" +
             std::to_string(target_after)).c_str());
     }
 }
@@ -555,7 +555,7 @@ void CustomModelModule::CreateProbe(void* mesh) {
     if (value) std::memcpy(&native, value, sizeof(native));
     uint32_t candidate = 0;
     const bool readable = instance_->mesh_metadata_ && instance_->mesh_metadata_->Read(native, candidate);
-    LogInfo("betterendfield.custom_model", ("create probe native=" + std::to_string(native) +
+    LogInfo("betterendfieldnext.custom_model", ("create probe native=" + std::to_string(native) +
         " candidate=" + std::to_string(candidate) + " readable=" + (readable ? "yes" : "no")).c_str());
 }
 
@@ -714,7 +714,7 @@ void CustomModelModule::Finish(void* proxy, void* asset, void* method) {
 }
 
 extern "C" __attribute__((visibility("default"))) BE_Result
-BetterEndfield_RetireModuleHooksV1(void* context, const char* module_id) {
-    auto* self = static_cast<betterendfield::CustomModelModule*>(context);
+BetterEndfieldNext_RetireModuleHooksV1(void* context, const char* module_id) {
+    auto* self = static_cast<betterendfieldnext::CustomModelModule*>(context);
     return self ? self->RetireSharedHooks(module_id) : BE_Result_InvalidArgument;
 }

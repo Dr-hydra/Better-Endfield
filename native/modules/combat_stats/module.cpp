@@ -1,4 +1,4 @@
-#include <BetterEndfield/ModuleApi.h>
+#include <BetterEndfieldNext/ModuleApi.h>
 
 #include "combat_overlay_protocol.h"
 #include "../../shared/input/hotkey.h"
@@ -39,10 +39,10 @@
 #include <utility>
 #include <vector>
 
-namespace BetterEndfield::CombatStats {
+namespace BetterEndfieldNext::CombatStats {
 namespace {
 
-constexpr char kModuleId[] = "betterendfield.combat_stats";
+constexpr char kModuleId[] = "betterendfieldnext.combat_stats";
 constexpr size_t kMaxPendingEvents = 8192;
 constexpr size_t kMaxRawEvents = 100000;
 constexpr size_t kMaxBuffIntervals = 8192;
@@ -941,8 +941,8 @@ double ParseNumber(const std::unordered_map<std::string, std::string>& values,
 }
 
 int ParseVirtualKey(std::string value, int fallback, bool& ctrl) {
-    const int binding = BetterEndfield::Input::ParseKey(value, fallback);
-    ctrl = BetterEndfield::Input::HasCtrl(binding);
+    const int binding = BetterEndfieldNext::Input::ParseKey(value, fallback);
+    ctrl = BetterEndfieldNext::Input::HasCtrl(binding);
     return binding;
 }
 
@@ -5686,7 +5686,7 @@ std::filesystem::path SessionsDirectory() {
         static_cast<DWORD>(std::size(buffer)));
     const std::filesystem::path root = length ? std::filesystem::path(buffer) :
         std::filesystem::temp_directory_path();
-    return root / L"BetterEndfield" / L"combat-sessions";
+    return root / L"BetterEndfieldNext" / L"combat-sessions";
 }
 
 const Session::SquadMember* FindSquadMember(
@@ -6456,7 +6456,7 @@ bool EnsureOverlayMappingLocked() {
     g_overlay_snapshot->version = CombatOverlayProtocol::kVersion;
     g_overlay_snapshot->structure_size = sizeof(*g_overlay_snapshot);
     g_overlay_snapshot->game_pid = GetCurrentProcessId();
-    Log("[combat-overlay] shared snapshot ready name=Local\\BetterEndfield.CombatStats." +
+    Log("[combat-overlay] shared snapshot ready name=Local\\BetterEndfieldNext.CombatStats." +
         std::to_string(GetCurrentProcessId()));
     return true;
 }
@@ -6473,7 +6473,7 @@ std::filesystem::path OverlayExecutablePath() {
         static_cast<DWORD>(path.size()));
     if (!length || length >= path.size()) return {};
     path.resize(length);
-    return std::filesystem::path(path).parent_path() / L"BetterEndfield.CombatOverlay.exe";
+    return std::filesystem::path(path).parent_path() / L"BetterEndfieldNext.CombatOverlay.exe";
 }
 
 void EnsureOverlayProcess() {
@@ -6915,8 +6915,8 @@ struct HotkeyLatch {
 };
 
 bool KeyPressed(int vk, bool ctrl, HotkeyLatch& latch) {
-    const int binding = vk | (ctrl ? BetterEndfield::Input::kCtrl : 0);
-    const bool down = BetterEndfield::Input::IsDown(binding);
+    const int binding = vk | (ctrl ? BetterEndfieldNext::Input::kCtrl : 0);
+    const bool down = BetterEndfieldNext::Input::IsDown(binding);
     if (down) {
         latch.released_samples = 0;
         if (latch.pressed) return false;
@@ -7924,7 +7924,7 @@ void StopHooks() {
 } // namespace
 
 BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
-    if (!host || host->abi_version != BETTER_ENDFIELD_MODULE_ABI_V1 ||
+    if (!host || host->abi_version != BETTER_ENDFIELD_NEXT_MODULE_ABI_V1 ||
         !host->resolve_method || !host->resolve_field || !host->create_hook ||
         !host->release_module_hooks || !host->copy_managed_string || !host->log) {
         return BE_Result_ContractMismatch;
@@ -8015,13 +8015,13 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Combat Statistics", "3.1.3", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Combat Statistics", "3.1.3", BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};
 
-} // namespace BetterEndfield::CombatStats
+} // namespace BetterEndfieldNext::CombatStats
 
-BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfield_GetModuleApiV1() {
-    return &BetterEndfield::CombatStats::kApi;
+BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfieldNext_GetModuleApiV1() {
+    return &BetterEndfieldNext::CombatStats::kApi;
 }

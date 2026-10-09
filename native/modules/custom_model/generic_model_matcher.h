@@ -7,7 +7,7 @@
 #include <string_view>
 #include <vector>
 
-namespace BetterEndfield::CustomModel::GenericMatching {
+namespace BetterEndfieldNext::CustomModel::GenericMatching {
 enum class Region { Unknown, Lod0, Lod1, Lod2, Lod3, MobileProxy, DesktopProxy, Explicit };
 struct ReceiverKey {
     std::string character, resource, path;

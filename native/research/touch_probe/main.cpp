@@ -151,7 +151,7 @@ HWND CreateMarkerWindow() {
     window_class.cbSize = sizeof(window_class);
     window_class.lpfnWndProc = MarkerWndProc;
     window_class.hInstance = ::GetModuleHandleW(nullptr);
-    window_class.lpszClassName = L"BetterEndfieldTouchMarker";
+    window_class.lpszClassName = L"BetterEndfieldNextTouchMarker";
     ::RegisterClassExW(&window_class);
 
     const HWND window = ::CreateWindowExW(
@@ -212,7 +212,7 @@ bool RunSelfTest(HANDLE device) {
     window_class.hCursor = ::LoadCursor(nullptr, IDC_ARROW);
     window_class.hbrBackground =
         reinterpret_cast<HBRUSH>(::GetStockObject(BLACK_BRUSH));
-    window_class.lpszClassName = L"BetterEndfieldTouchProbe";
+    window_class.lpszClassName = L"BetterEndfieldNextTouchProbe";
     if (!::RegisterClassExW(&window_class)) {
         std::printf("    RegisterClassExW failed, GetLastError=%lu\n",
                     ::GetLastError());
@@ -225,7 +225,7 @@ bool RunSelfTest(HANDLE device) {
     const int y = ::GetSystemMetrics(SM_CYSCREEN) / 2 - height / 2;
     const HWND window = ::CreateWindowExW(
         WS_EX_TOPMOST | WS_EX_TOOLWINDOW, window_class.lpszClassName,
-        L"Better Endfield touch probe", WS_POPUP | WS_BORDER, x, y, width,
+        L"Better Endfield Next touch probe", WS_POPUP | WS_BORDER, x, y, width,
         height, nullptr, nullptr, window_class.hInstance, nullptr);
     if (!window) {
         std::printf("    CreateWindowExW failed, GetLastError=%lu\n",
@@ -373,7 +373,7 @@ int main(int argc, char** argv) {
     // so buffered output would be lost exactly when it matters.
     ::setvbuf(stdout, nullptr, _IONBF, 0);
 
-    std::printf("Better Endfield synthetic touch probe\n");
+    std::printf("Better Endfield Next synthetic touch probe\n");
     std::printf("=====================================\n\n");
 
     POINT anchor{};

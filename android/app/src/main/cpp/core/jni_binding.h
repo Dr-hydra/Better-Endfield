@@ -1,6 +1,6 @@
 #pragma once
 #include <jni.h>
-namespace betterendfield {
+namespace betterendfieldnext {
 inline bool BindContextLoaderNatives(JNIEnv* env, const char* class_name,
         const JNINativeMethod* methods, jint count, jclass* bound_class = nullptr) {
     if (!env || env->PushLocalFrame(8) != JNI_OK) return false;

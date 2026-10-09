@@ -61,15 +61,64 @@
         "type": "python_unittest",
         "cwd": "scripts/tests",
         "modules": [
-          "test_workspace_config"
+          "test_workspace_config",
+          "test_next_identity"
         ],
         "sources": [
-          "scripts/tests/test_workspace_config.py"
+          "scripts/tests/test_workspace_config.py",
+          "scripts/tests/test_next_identity.py"
         ]
       },
       "status": "active",
       "replaced_by": null,
       "purpose": "Shared workspace reader/cleanup boundary regressions owned by parent."
+    },
+    {
+      "id": "camera.next_configuration",
+      "module": "camera",
+      "kind": "offline",
+      "platform": [
+        "Windows"
+      ],
+      "game_version": [
+        "any"
+      ],
+      "input": {
+        "id": "next-camera-configuration",
+        "type": "synthetic"
+      },
+      "prerequisite": [
+        {
+          "type": "tool",
+          "key": "tools.dotnet"
+        }
+      ],
+      "entry": {
+        "type": "native",
+        "cwd": ".",
+        "sources": [
+          "ui/tests/NextConfiguration/NextConfiguration.csproj",
+          "ui/tests/NextConfiguration/Program.cs",
+          "ui/BetterEndfieldNext.UI/Models/ModConfiguration.cs",
+          "ui/BetterEndfieldNext.UI/Models/FreeCameraExtras.cs",
+          "ui/BetterEndfieldNext.UI/Services/LocalizationService.cs",
+          "native/tests/third_party_ui/PlatformStubs.cs"
+        ],
+        "executable": "next/dotnet/NextConfiguration/AnyCPU/bin/Release/net9.0/NextConfiguration.exe",
+        "artifacts": [
+          "next/dotnet/NextConfiguration/AnyCPU/bin/Release/net9.0/NextConfiguration.exe",
+          "next/dotnet/NextConfiguration/AnyCPU/bin/Release/net9.0/NextConfiguration.dll",
+          "next/dotnet/NextConfiguration/AnyCPU/bin/Release/net9.0/NextConfiguration.deps.json",
+          "next/dotnet/NextConfiguration/AnyCPU/bin/Release/net9.0/NextConfiguration.runtimeconfig.json"
+        ],
+        "receipt": "tests/receipts/camera.next_configuration.json"
+      },
+      "status": "active",
+      "replaced_by": null,
+      "purpose": "Production Windows configuration serialization: standalone freeze/MMD and retired-setting exclusion.",
+      "host_platform": [
+        "Windows"
+      ]
     },
     {
       "id": "resource.workspace",
@@ -132,10 +181,10 @@
           "ui/tests/ModelOverlaySettings/ModelOverlaySettings.csproj",
           "ui/tests/ModelOverlaySettings/Program.cs",
           "ui/tests/ModelOverlaySettings/VirtualKeyFixture.cs",
-          "ui/BetterEndfield.UI/Services/BemRuntimeSettings.cs",
-          "ui/BetterEndfield.UI/Services/HotkeyService.cs",
+          "ui/BetterEndfieldNext.UI/Services/BemRuntimeSettings.cs",
+          "ui/BetterEndfieldNext.UI/Services/HotkeyService.cs",
           "ui/tests/ModelOverlaySettings/ServiceFixtures.cs",
-          "ui/BetterEndfield.UI/Services/BemPackageService.cs"
+          "ui/BetterEndfieldNext.UI/Services/BemPackageService.cs"
         ],
         "executable": "dotnet/ModelOverlaySettings/AnyCPU/bin/Release/net9.0/ModelOverlaySettings.exe",
         "artifacts": [
@@ -174,9 +223,9 @@
       "entry": {
         "type": "native",
         "cwd": ".",
-        "executable": "windows/win-x64/Release/native/Release/BetterEndfield.ModelOverlayTests.exe",
+        "executable": "windows/win-x64/Release/native/Release/BetterEndfieldNext.ModelOverlayTests.exe",
         "artifacts": [
-          "windows/win-x64/Release/native/Release/BetterEndfield.ModelOverlayTests.exe"
+          "windows/win-x64/Release/native/Release/BetterEndfieldNext.ModelOverlayTests.exe"
         ],
         "receipt": "tests/receipts/custom_model.overlay_native.json",
         "sources": [
@@ -263,7 +312,7 @@
         ],
         "build_dir": "tests/native/camera_playback",
         "configuration": "Release",
-        "test_regex": "^camera_(vmd|path|runtime|character|character_runtime|lease|actions_lease|fov_follow|first_person|head_hide|portable_mesh|input)$",
+        "test_regex": "^camera_(vmd|path|runtime|character|character_runtime|lease|actions_lease|fov_follow|input)$",
         "artifacts": [
           "tests/native/camera_playback/Release/camera_vmd_tests.exe",
           "tests/native/camera_playback/Release/camera_path_tests.exe",
@@ -273,7 +322,6 @@
           "tests/native/camera_playback/Release/camera_lease_tests.exe",
           "tests/native/camera_playback/Release/camera_actions_lease_tests.exe",
           "tests/native/camera_playback/Release/camera_fov_follow_tests.exe",
-          "tests/native/camera_playback/Release/camera_first_person_tests.exe",
           "tests/native/camera_playback/Release/camera_head_hide_tests.exe",
           "tests/native/camera_playback/Release/camera_portable_mesh_tests.exe",
           "tests/native/camera_playback/Release/camera_input_tests.exe"
@@ -282,49 +330,7 @@
       },
       "status": "active",
       "replaced_by": null,
-      "purpose": "Camera parsers, playback, leases, first-person production translation units, head hiding and portable mesh; reuses CTest discovery.",
-      "host_platform": [
-        "Windows"
-      ]
-    },
-    {
-      "id": "camera.firstperson_profiles",
-      "module": "camera",
-      "kind": "simulation",
-      "platform": [
-        "Windows",
-        "Android"
-      ],
-      "game_version": [
-        "any"
-      ],
-      "input": {
-        "id": "source-fixtures",
-        "type": "synthetic"
-      },
-      "prerequisite": [
-        {
-          "type": "tool",
-          "key": "tools.ctest"
-        }
-      ],
-      "entry": {
-        "type": "ctest",
-        "cwd": ".",
-        "sources": [
-          "native/tests/first_person_profiles/CMakeLists.txt"
-        ],
-        "build_dir": "tests/native/first_person_profiles",
-        "configuration": "Release",
-        "test_regex": "^first_person_profiles$",
-        "artifacts": [
-          "tests/native/first_person_profiles/Release/first_person_profiles_tests.exe"
-        ],
-        "receipt": "tests/receipts/camera.firstperson_profiles.json"
-      },
-      "status": "active",
-      "replaced_by": null,
-      "purpose": "Portable profile selection and evidence boundaries.",
+      "purpose": "Camera parsers, playback, leases, production camera translation units; reuses CTest discovery.",
       "host_platform": [
         "Windows"
       ]
@@ -355,9 +361,9 @@
         "sources": [
           "native/tests/first_person_mesh_tests.cpp"
         ],
-        "executable": "windows/win-x64/Release/native/Release/BetterEndfield.FirstPersonMeshTests.exe",
+        "executable": "windows/win-x64/Release/native/Release/BetterEndfieldNext.FirstPersonMeshTests.exe",
         "artifacts": [
-          "windows/win-x64/Release/native/Release/BetterEndfield.FirstPersonMeshTests.exe"
+          "windows/win-x64/Release/native/Release/BetterEndfieldNext.FirstPersonMeshTests.exe"
         ],
         "receipt": "tests/receipts/camera.firstperson_mesh.json",
         "configuration": "Release"
@@ -487,8 +493,8 @@
         "configuration": "Release",
         "test_regex": "^(bem_v11_capacity|bem_v13_morph)$",
         "artifacts": [
-          "tests/native/async_loading/Release/BetterEndfield.BemV11CapacityTests.exe",
-          "tests/native/async_loading/Release/BetterEndfield.BemV13MorphTests.exe"
+          "tests/native/async_loading/Release/BetterEndfieldNext.BemV11CapacityTests.exe",
+          "tests/native/async_loading/Release/BetterEndfieldNext.BemV13MorphTests.exe"
         ],
         "receipt": "tests/receipts/custom_model.core.json"
       },
@@ -567,9 +573,9 @@
         "sources": [
           "native/tests/custom_model_binding_tests.cpp"
         ],
-        "executable": "windows/win-x64/Release/native/Release/BetterEndfield.CustomModelBindingTests.exe",
+        "executable": "windows/win-x64/Release/native/Release/BetterEndfieldNext.CustomModelBindingTests.exe",
         "artifacts": [
-          "windows/win-x64/Release/native/Release/BetterEndfield.CustomModelBindingTests.exe"
+          "windows/win-x64/Release/native/Release/BetterEndfieldNext.CustomModelBindingTests.exe"
         ],
         "receipt": "tests/receipts/custom_model.binding.json",
         "configuration": "Release"
@@ -607,9 +613,9 @@
         "sources": [
           "native/tests/combat_semantics_tests.cpp"
         ],
-        "executable": "windows/win-x64/Release/native/Release/BetterEndfield.CombatSemanticsTests.exe",
+        "executable": "windows/win-x64/Release/native/Release/BetterEndfieldNext.CombatSemanticsTests.exe",
         "artifacts": [
-          "windows/win-x64/Release/native/Release/BetterEndfield.CombatSemanticsTests.exe"
+          "windows/win-x64/Release/native/Release/BetterEndfieldNext.CombatSemanticsTests.exe"
         ],
         "receipt": "tests/receipts/combat.semantics.json",
         "configuration": "Release"
@@ -647,9 +653,9 @@
         "sources": [
           "native/modules/actions/dash_policy_tests.cpp"
         ],
-        "executable": "windows/win-x64/Release/native/Release/BetterEndfield.ActionsTests.exe",
+        "executable": "windows/win-x64/Release/native/Release/BetterEndfieldNext.ActionsTests.exe",
         "artifacts": [
-          "windows/win-x64/Release/native/Release/BetterEndfield.ActionsTests.exe"
+          "windows/win-x64/Release/native/Release/BetterEndfieldNext.ActionsTests.exe"
         ],
         "receipt": "tests/receipts/actions.policy.json",
         "configuration": "Release"
@@ -687,9 +693,9 @@
         "sources": [
           "native/modules/actions/effects_lifecycle_tests.cpp"
         ],
-        "executable": "windows/win-x64/Release/native/Release/BetterEndfield.ActionsEffectsTests.exe",
+        "executable": "windows/win-x64/Release/native/Release/BetterEndfieldNext.ActionsEffectsTests.exe",
         "artifacts": [
-          "windows/win-x64/Release/native/Release/BetterEndfield.ActionsEffectsTests.exe"
+          "windows/win-x64/Release/native/Release/BetterEndfieldNext.ActionsEffectsTests.exe"
         ],
         "receipt": "tests/receipts/actions.effects.json",
         "configuration": "Release"
@@ -727,9 +733,9 @@
         "sources": [
           "native/modules/actions/external_loop_tests.cpp"
         ],
-        "executable": "windows/win-x64/Release/native/Release/BetterEndfield.ActionsExternalTests.exe",
+        "executable": "windows/win-x64/Release/native/Release/BetterEndfieldNext.ActionsExternalTests.exe",
         "artifacts": [
-          "windows/win-x64/Release/native/Release/BetterEndfield.ActionsExternalTests.exe"
+          "windows/win-x64/Release/native/Release/BetterEndfieldNext.ActionsExternalTests.exe"
         ],
         "receipt": "tests/receipts/actions.external.json",
         "configuration": "Release"
@@ -767,9 +773,9 @@
         "sources": [
           "native/modules/actions/pose_overlay_tests.cpp"
         ],
-        "executable": "windows/win-x64/Release/native/Release/BetterEndfield.ActionsPoseTests.exe",
+        "executable": "windows/win-x64/Release/native/Release/BetterEndfieldNext.ActionsPoseTests.exe",
         "artifacts": [
-          "windows/win-x64/Release/native/Release/BetterEndfield.ActionsPoseTests.exe"
+          "windows/win-x64/Release/native/Release/BetterEndfieldNext.ActionsPoseTests.exe"
         ],
         "receipt": "tests/receipts/actions.pose.json",
         "configuration": "Release"
@@ -809,13 +815,17 @@
           "test_bem_v1",
           "test_bem_v11",
           "test_bem_v12",
-          "test_bem_v13"
+          "test_bem_v13",
+          "test_bem_v14",
+          "test_bem14_target"
         ],
         "sources": [
           "tools/CustomModel/test_bem_v1.py",
           "tools/CustomModel/test_bem_v11.py",
           "tools/CustomModel/test_bem_v12.py",
-          "tools/CustomModel/test_bem_v13.py"
+          "tools/CustomModel/test_bem_v13.py",
+          "tools/CustomModel/test_bem_v14.py",
+          "tools/CustomModel/test_bem14_target.py"
         ]
       },
       "status": "active",
@@ -1190,10 +1200,10 @@
           "tools/CustomModel/test_bem_tasks.py"
         ],
         "native_environment": {
-          "BEM_VALIDATOR": "windows/win-x64/Release/native/Release/BetterEndfield.BemValidate.exe"
+          "BEM_VALIDATOR": "windows/win-x64/Release/native/Release/BetterEndfieldNext.BemValidate.exe"
         },
         "artifacts": [
-          "windows/win-x64/Release/native/Release/BetterEndfield.BemValidate.exe"
+          "windows/win-x64/Release/native/Release/BetterEndfieldNext.BemValidate.exe"
         ],
         "receipt": "tests/receipts/creator.bem.native_validation.json",
         "configuration": "Release"
@@ -1591,9 +1601,9 @@
       "entry": {
         "type": "catalog_only",
         "cwd": ".",
-        "reference": "android/app/src/androidTest/java/dev/betterendfield/android/BemInstallerTest.java",
+        "reference": "android/app/src/androidTest/java/dev/betterendfield/next/BemInstallerTest.java",
         "sources": [
-          "android/app/src/androidTest/java/dev/betterendfield/android/BemInstallerTest.java"
+          "android/app/src/androidTest/java/dev/betterendfield/next/BemInstallerTest.java"
         ],
         "blocked_reason": "Gradle instrumentation requires APK/install/device workflow and build receipt; no runner adapter yet."
       },
@@ -1762,10 +1772,10 @@
       "entry": {
         "type": "catalog_only",
         "cwd": ".",
-        "reference": "android/app/src/test/java/dev/betterendfield/android/FrameworkServiceWaitTest.java",
+        "reference": "android/app/src/test/java/dev/betterendfield/next/FrameworkServiceWaitTest.java",
         "sources": [
-          "android/app/src/test/java/dev/betterendfield/android/FrameworkServiceWaitTest.java",
-          "android/app/src/test/java/dev/betterendfield/android/OverlayGeometryTest.java"
+          "android/app/src/test/java/dev/betterendfield/next/FrameworkServiceWaitTest.java",
+          "android/app/src/test/java/dev/betterendfield/next/OverlayGeometryTest.java"
         ],
         "blocked_reason": "Existing pure Java main classes require separate javac build. Register both original host checks without invoking a compiler or device."
       },
@@ -1790,7 +1800,6 @@
       "source": "docs/FIRST_PERSON_PROFILES_20261003.md",
       "status": "replaced",
       "replaced_by": [
-        "camera.firstperson_profiles",
         "camera.profile_evidence"
       ],
       "scope": "Profile host/evidence regression entry is formalized. Geometry audit helper and actual-source audit remain active; this does not replace game/Android geometry evidence."

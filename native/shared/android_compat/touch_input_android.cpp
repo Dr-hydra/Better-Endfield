@@ -5,7 +5,7 @@
 // client already has a real Touchscreen, so there is nothing to convert and no
 // mouse to convert from. These are the whole-file stand-ins for the desktop
 // implementation; the module source is shared and calls them unconditionally.
-namespace BetterEndfield::UiModule::TouchInput {
+namespace BetterEndfieldNext::UiModule::TouchInput {
 
 bool Start(LogFn log) {
     if (log != nullptr) {
@@ -19,4 +19,4 @@ void Stop() {}
 
 void SetEnabled(bool) {}
 
-}  // namespace BetterEndfield::UiModule::TouchInput
+}  // namespace BetterEndfieldNext::UiModule::TouchInput

@@ -155,7 +155,7 @@ Windows 与 Android 使用同一套原生读取与构建代码（`native/modules
 
 ## 11. 日志拒绝信息对照
 
-日志位置：Windows `%LOCALAPPDATA%\BetterEndfield\logs\BetterEndfield.log`；Android 为框架模块日志。
+日志位置：Windows `%LOCALAPPDATA%\BetterEndfieldNext\logs\BetterEndfieldNext.log`；Android 为框架模块日志。
 
 **包与配置**
 

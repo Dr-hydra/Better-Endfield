@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace betterendfield {
+namespace betterendfieldnext {
 
 class Il2CppRuntime;
 
@@ -18,4 +18,4 @@ public:
     virtual ModuleResult Start(Il2CppRuntime& runtime) = 0;
 };
 
-}  // namespace betterendfield
+}  // namespace betterendfieldnext

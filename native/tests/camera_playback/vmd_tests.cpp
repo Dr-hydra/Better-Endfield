@@ -1,7 +1,7 @@
 #include "../../shared/motion/vmd.h"
 #include "test_support.h"
 #include <random>
-using namespace BetterEndfield;
+using namespace BetterEndfieldNext;
 struct Writer {
     std::vector<uint8_t> bytes;
     void u8(uint8_t x) { bytes.push_back(x); }

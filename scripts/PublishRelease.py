@@ -54,9 +54,9 @@ def main():
     if args.repo.lower() == "dr-hydra/better-endfield":
         names = {name for name, _ in assets}
         version = args.tag.removeprefix("v")
-        if f"BetterEndfield-{version}-win-x64.zip" in names:
+        if f"BetterEndfieldNext-{version}-win-x64.zip" in names:
             raise ValueError("Windows app releases distribute the installer only")
-        for prefix in ("BetterEndfield-ThirdPartySDK-", "BetterEndfield-Echo-", "BEM-Tools-"):
+        for prefix in ("BetterEndfieldNext-ThirdPartySDK-", "BetterEndfieldNext-Echo-", "BEM-Tools-"):
             if not any(name.startswith(prefix) and name.endswith(".zip") for name in names):
                 raise ValueError("Missing creator release asset: " + prefix)
     body = args.notes_file.read_text(encoding="utf-8-sig")

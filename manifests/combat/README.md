@@ -2,7 +2,7 @@
 
 `combat-semantics.besem` 是 CombatStats 随软件版本发布的只读紧凑目录。它只包含 Buff、技能、元素、
 乘区、状态和少量公式键，不包含 PCK、BNK、WEM、角色资源、封包或抓包内容。运行时只从
-`BetterEndfield.CombatStats.dll` 同目录读取这一个文件；不存在用户更新目录或远程热更新。
+`BetterEndfieldNext.CombatStats.dll` 同目录读取这一个文件；不存在用户更新目录或远程热更新。
 
 当前目录来源版本和 SHA-256 记录在 `combat-semantics-report.json`。版本更新时使用用户提供的
 EndfieldLogsClient 数据包重新生成：

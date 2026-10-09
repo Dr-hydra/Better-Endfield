@@ -1,0 +1,78 @@
+#ifndef StageDir
+  #error StageDir must be supplied by BuildInstaller.ps1
+#endif
+#ifndef OutputDir
+  #error OutputDir must be supplied by BuildInstaller.ps1
+#endif
+#ifndef AppVersion
+  ; Supplied by BuildInstaller.ps1 from Directory.Build.props, so that the
+  ; installer and the running application always report the same version.
+  #error AppVersion must be supplied by BuildInstaller.ps1
+#endif
+
+#define AppName "Better Endfield Next"
+#define Publisher "Dr.Hydra"
+
+[Setup]
+AppId={{5E32B9A0-79D7-4870-B1C0-93021A7CA978}
+AppName={#AppName}
+AppVersion={#AppVersion}
+AppPublisher={#Publisher}
+AppPublisherURL=https://github.com/Dr-hydra/Better-Endfield
+AppSupportURL=https://github.com/Dr-hydra/Better-Endfield/issues
+AppUpdatesURL=https://github.com/Dr-hydra/Better-Endfield/releases
+DefaultDirName={localappdata}\Programs\Better Endfield Next
+DefaultGroupName=Better Endfield Next
+DisableProgramGroupPage=yes
+; An upgrade must land on top of the existing installation. Without this the
+; wizard still offers the directory page, and a user who installed to another
+; drive can confirm the default location instead, leaving the old copy — and
+; the shortcuts pointing at it — untouched while the new files go elsewhere.
+UsePreviousAppDir=yes
+DisableDirPage=auto
+PrivilegesRequired=lowest
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
+OutputDir={#OutputDir}
+OutputBaseFilename=BetterEndfieldNext-{#AppVersion}-Setup
+SetupIconFile=..\ui\BetterEndfieldNext.UI\Assets\shared\gilberta.ico
+WizardSmallImageFile=..\ui\BetterEndfieldNext.UI\Assets\shared\gilberta.png
+UninstallDisplayIcon={app}\BetterEndfieldNext.exe
+InfoBeforeFile=DISCLAIMER.zh-CN.txt
+LicenseFile=..\LICENSE
+Compression=lzma2/ultra64
+SolidCompression=yes
+WizardStyle=modern
+CloseApplications=force
+RestartApplications=no
+VersionInfoVersion={#AppVersion}.0
+VersionInfoCompany={#Publisher}
+VersionInfoDescription=Better Endfield Next Installer
+VersionInfoProductName={#AppName}
+VersionInfoProductVersion={#AppVersion}.0
+
+[Languages]
+Name: "en"; MessagesFile: "compiler:Default.isl"; InfoBeforeFile: "DISCLAIMER.en.txt"
+Name: "chinesesimp"; MessagesFile: "Languages\ChineseSimplified.isl"; InfoBeforeFile: "DISCLAIMER.zh-CN.txt"
+
+[CustomMessages]
+en.LaunchProgram=Launch Better Endfield Next
+chinesesimp.LaunchProgram=启动 Better Endfield Next
+
+[Tasks]
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+
+[Files]
+Source: "{#StageDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+[Icons]
+Name: "{autoprograms}\Better Endfield Next"; Filename: "{app}\BetterEndfieldNext.exe"; WorkingDir: "{app}"
+Name: "{autodesktop}\Better Endfield Next"; Filename: "{app}\BetterEndfieldNext.exe"; WorkingDir: "{app}"; Tasks: desktopicon
+
+[Run]
+Filename: "{app}\BetterEndfieldNext.exe"; Description: "{cm:LaunchProgram}"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent
+
+[UninstallRun]
+; 清理写入游戏目录的全部文件：XInput 代理与显示增强组件。旧安装记录的是
+; --uninstall-xinput-silent，程序仍接受该参数。
+Filename: "{app}\BetterEndfieldNext.exe"; Parameters: "--uninstall-game-files-silent"; WorkingDir: "{app}"; RunOnceId: "RemoveGameDirectoryFiles"; Flags: runhidden waituntilterminated skipifdoesntexist

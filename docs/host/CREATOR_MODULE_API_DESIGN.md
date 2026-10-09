@@ -1,6 +1,6 @@
 # 双端第三方模块加载器与 UI 容器实现
 
-日期：2026-10-02。Better Endfield 3.4.2 已实现双端第三方模块 ZIP 导入、游戏进程原生加载、网页容器、配置/消息/日志，以及可选共享 Hook 链。包 format 1、Native ABI 1；独立 SDK 版本 1.0.0。具体字段、示例与编译命令见 [第三方模块创作者指南](THIRD_PARTY_MODULE_CREATOR_GUIDE.md)。本文记录架构、实现边界与后续工作。
+日期：2026-10-02。Better Endfield Next 3.4.2 已实现双端第三方模块 ZIP 导入、游戏进程原生加载、网页容器、配置/消息/日志，以及可选共享 Hook 链。包 format 1、Native ABI 1；独立 SDK 版本 1.0.0。具体字段、示例与编译命令见 [第三方模块创作者指南](THIRD_PARTY_MODULE_CREATOR_GUIDE.md)。本文记录架构、实现边界与后续工作。
 
 ## 定位与分工
 
@@ -21,7 +21,7 @@
 
 ## 现有代码基础
 
-- 内置 Windows `module_manager.cpp` 继续使用现有 `BE_ModuleApiV1` 与 contract。第三方走独立的 `native/shared/third_party_modules/third_party_host.cpp`，固定新入口为 `BetterEndfield_GetThirdPartyModuleV1`，不改变内置 ABI。
+- 内置 Windows `module_manager.cpp` 继续使用现有 `BE_ModuleApiV1` 与 contract。第三方走独立的 `native/shared/third_party_modules/third_party_host.cpp`，固定新入口为 `BetterEndfieldNext_GetThirdPartyModuleV1`，不改变内置 ABI。
 - `ThirdPartyModule.h`、`ModuleApi.h`、`HookChain.h` 为公开头文件。runtime 是可选辅助能力，作者可自行维护游戏类型、地址与版本适配；初始化尚不可用时可通过 `get_runtime` 后续查询。
 - Android 使用同一共享 Host 与动态 SO 通道；`ThirdPartyRuntimeMaterializer` 将已发布 ZIP 解包至游戏私有目录，`ThirdPartyRuntimeUpdater` 更新索引，游戏进程再执行加载。
 - 两端 broker 已接入可选共享链，Windows 使用 MinHook，Android 使用 Dobby；既有独占 API 保持原语义。内置目标未统一迁移，遇到独占占用仍报 `Conflict`。
@@ -60,7 +60,7 @@ Host 不理解业务 body，不列举所有游戏操作。作者可以自定义�
 
 manifest 只描述 ID、名称、作者、模块版本、入口/加载 ABI、平台二进制、可选模块依赖、UI 入口及默认配置。加载 ABI 与游戏函数表版本分开；作者可另写其已测试的游戏版本作为说明。包内声明路径保持在自己的安装目录，模块 ID 不得与内置或已安装模块冲突。
 
-Host 选当前平台入口，在游戏进程加载 `BetterEndfield_GetThirdPartyModuleV1` 返回的 `BE_ThirdPartyModuleV1`。新结构与 `BE_ThirdPartyHostV1` 带 version / struct_size，保持内置 Host ABI 不变。initialize/on_message 必需，configuration_changed/shutdown 可选。
+Host 选当前平台入口，在游戏进程加载 `BetterEndfieldNext_GetThirdPartyModuleV1` 返回的 `BE_ThirdPartyModuleV1`。新结构与 `BE_ThirdPartyHostV1` 带 version / struct_size，保持内置 Host ABI 不变。initialize/on_message 必需，configuration_changed/shutdown 可选。
 
 Windows 在游戏内加载对应 DLL。Android 在框架连接后发布 ZIP，游戏私有目录 materializer 校验并提取原生库，再由游戏 Host 加载；导入应用不执行第三方 native。Echo 静态链接运行库；作者携带额外动态依赖时须自行验证目标进程 linker namespace 和依赖解析。
 

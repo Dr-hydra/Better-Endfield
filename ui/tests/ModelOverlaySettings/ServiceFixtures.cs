@@ -1,4 +1,4 @@
-namespace BetterEndfield.UI.Services;
+namespace BetterEndfieldNext.UI.Services;
 
 // UI/profile dependencies are replaced; all model persistence runs in the real service.
 internal static class ConfigurationService

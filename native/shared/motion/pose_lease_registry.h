@@ -5,7 +5,7 @@
 #include <mutex>
 #include <string>
 #include <string_view>
-namespace BetterEndfield::Motion {
+namespace BetterEndfieldNext::Motion {
 class PoseLeaseRegistry {
 public:
     uint64_t Acquire(const void* root,std::string_view owner) {

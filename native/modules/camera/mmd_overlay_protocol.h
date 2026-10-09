@@ -1,5 +1,5 @@
 #pragma once
-// Shared memory between BetterEndfield.Camera (game) and the MMD overlay
+// Shared memory between BetterEndfieldNext.Camera (game) and the MMD overlay
 // companion. The game writes Status under a sequence lock; the overlay appends
 // Commands to a small ring the game drains on its main thread.
 #include <Windows.h>
@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <string>
 
-namespace BetterEndfield::MmdOverlayProtocol {
+namespace BetterEndfieldNext::MmdOverlayProtocol {
 
 inline constexpr uint32_t kMagic = 0x444D4D42; // "BMMD"
 inline constexpr uint32_t kVersion = 1;
@@ -108,7 +108,7 @@ struct Shared {
 #pragma pack(pop)
 
 inline std::wstring MappingName(DWORD game_pid) {
-    return L"Local\\BetterEndfield.Mmd." + std::to_wstring(game_pid);
+    return L"Local\\BetterEndfieldNext.Mmd." + std::to_wstring(game_pid);
 }
 
-} // namespace BetterEndfield::MmdOverlayProtocol
+} // namespace BetterEndfieldNext::MmdOverlayProtocol

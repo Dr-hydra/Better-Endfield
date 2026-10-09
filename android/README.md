@@ -1,4 +1,7 @@
-# Better Endfield Android
+# Better Endfield Next Android
+
+Next 4.0.0 uses `dev.betterendfield.next` and a new release signing key. Uninstall the previous app, install Next, enable the new framework module and select the game scope again. Settings are independent and are not migrated. First person is removed; Third-party Modules navigation is hidden while its runtime is retained. The Logo is unchanged. See [Next implementation notes](../docs/workspace/NEXT_IMPLEMENTATION.md).
+
 
 See the [main feature matrix](../README.en.md#feature-overview) for Windows/Android
 coverage. The current APK version is **3.5.3** (versionCode 30503). In-game rendering and real
@@ -34,7 +37,7 @@ motion/face/camera/music files. Existing `set.ini` files are recognized;
 otherwise, review the detected files and confirm the work before importing.
 Files are copied to private storage and published through the framework. Up to four dancers use
 `motion2`–`motion4` and optional `face2`–`face4`. Camera paths save to the game's
-private `betterendfield/camera-path.becam`.
+private `betterendfieldnext/camera-path.becam`.
 
 Third-party BEM packages are managed directly in the main navigation tab,
 including import, per-character exclusive activation and expandable component
@@ -110,7 +113,7 @@ observed working on device.
 
 ## Login model module parity
 
-Version 3.0.1 also ports `betterendfield.model`. Android does not maintain a
+Version 3.0.1 also ports `betterendfieldnext.model`. Android does not maintain a
 second rewritten implementation: CMake compiles the desktop source file
 `native/modules/model/module.cpp` directly into the Android ARM64 library. An
 Android Host adapter supplies exact IL2CPP method/field/class resolution,
@@ -168,8 +171,8 @@ release) were verified in the same run.
 
 ## Interface, camera and sustained dash
 
-Version 3.3.0 ports `BetterEndfield.UI`, `BetterEndfield.Camera` and
-`BetterEndfield.Actions` the same way the login-model module was ported: CMake
+Version 3.3.0 ports `BetterEndfieldNext.UI`, `BetterEndfieldNext.Camera` and
+`BetterEndfieldNext.Actions` the same way the login-model module was ported: CMake
 compiles the desktop sources
 (`native/modules/{ui,camera,actions}/module.cpp`) straight into the Android
 ARM64 library. There is no second Android implementation of any of them, and no
@@ -226,11 +229,11 @@ button that presses a key nothing reads is worse than a button that is not
 there.
 
 Each module has its own configuration string and its own environment variable
-(`BETTER_ENDFIELD_UI_CONFIG`, `BETTER_ENDFIELD_CAMERA_CONFIG`,
-`BETTER_ENDFIELD_ACTIONS_CONFIG`). An empty string keeps that module out of the
+(`BETTER_ENDFIELD_NEXT_UI_CONFIG`, `BETTER_ENDFIELD_NEXT_CAMERA_CONFIG`,
+`BETTER_ENDFIELD_NEXT_ACTIONS_CONFIG`). An empty string keeps that module out of the
 game process entirely, which is also what the diagnostics page reports.
 
-The Android-only `betterendfield.enhancement` module that 3.0.2 through 3.2.2
+The Android-only `betterendfieldnext.enhancement` module that 3.0.2 through 3.2.2
 shipped is gone: its two switches (hide UID, disable dither) are now served by
 the shared desktop sources, and keeping both would have installed two hooks on
 `GameObject.SetActive` from two different brokers. The old preference keys are
@@ -244,7 +247,7 @@ module is configured. `native/modules/actions/assets/pose_*.bin` - the same
 files the desktop module reads from beside its DLL - are packaged into the APK
 uncompressed and copied into the game's own files directory on first launch,
 and the native side is pointed at them through
-`BETTER_ENDFIELD_ACTIONS_ASSET_ROOT`.
+`BETTER_ENDFIELD_NEXT_ACTIONS_ASSET_ROOT`.
 
 Character names, the clean-exhaust option and the camera/interface labels use
 the desktop UI's wording (洁尔佩塔, 梨诺, 隐藏机甲与光效, 启用时间冻结功能,
@@ -267,15 +270,14 @@ Every distinctive contract these three modules need was checked against the
 
 Note that `CinemachineBrain.PushStateToUnityCamera` is **absent** from the
 1.4.3 snapshot under `android/research/device-1.4.3` and present in 1.5.3. Free
-camera and first person rewrite the camera pose there, so those two features
+the free camera rewrites the camera pose there, so that feature
 need a 1.5-series client; the module reports the contract as unavailable rather
 than pretending on an older one.
 
 ## Android settings UI
 
 The settings screen separates Model Replacement, Third-party Models,
-Character Voice, Enhancements, About/diagnostics and experimental Third-party
-Modules. The latter is distinct from BEM model packages.
+Character Voice, Enhancements, About/diagnostics and Workshop. The Third-party Modules runtime is retained with its navigation entry hidden.
 Phone navigation scrolls horizontally to keep each item readable; large screens
 retain a side rail. A module's complete web UI opens in a separate Activity,
 using bundled offline HTML/CSS/JS rather than a small embedded management card.
@@ -323,7 +325,7 @@ ID. This is necessary because Windows and Android PCK filenames, sizes, hashes,
 and WEM payloads are not interchangeable.
 
 Generated catalogs are private to the game at
-`files/betterendfield/catalog`. They contain only the selected routes and are
+`files/betterendfieldnext/catalog`. They contain only the selected routes and are
 rebuilt when the embedded table or device PCK identity changes. The APK does
 not contain PCK, BNK, or WEM payloads. A selected language must first be
 downloaded through the game.
@@ -355,7 +357,7 @@ Research catalogs and source PCK/CHK files stay under ignored
   Japanese package.
 - Rule changes require force-stopping and restarting the game.
 - The in-game panel's controls are wired: hide-HUD, free camera, time freeze,
-  first person and the free-camera movement pad all press the virtual keys the
+  and the free-camera movement pad all press the virtual keys the
   ported desktop modules poll. BEM hot switching is opt-in: enable before
   restarting the game, then apply selections through normal resource reloads.
 - Compilation, isolated lifecycle tests and UI previews do not prove actual
@@ -398,7 +400,7 @@ the repository root:
 .\android\gradlew.bat -p android :app:assembleDebug --offline --no-daemon
 ```
 
-The APK is written to `build/android/gradle/app/outputs/apk/debug/app-debug.apk`
+The APK is written to `build/next/android/gradle/app/outputs/apk/debug/app-debug.apk`
 under the configured build root. Release APKs are also retained in
 `releases/android/app-<version>/release/`.
 

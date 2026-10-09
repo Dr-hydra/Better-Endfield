@@ -1,4 +1,4 @@
-#include <BetterEndfield/ModuleApi.h>
+#include <BetterEndfieldNext/ModuleApi.h>
 
 #include <Windows.h>
 #include <intrin.h>
@@ -16,7 +16,7 @@
 
 namespace {
 
-constexpr const char* kModuleId = "betterendfield.music-probe";
+constexpr const char* kModuleId = "betterendfieldnext.music-probe";
 constexpr const char* kGameplayAssembly = "Gameplay.Beyond.dll";
 constexpr const char* kMusicNamespace = "Beyond.Gameplay.Audio";
 constexpr const char* kMusicClass = "AudioMusicSystem";
@@ -1317,7 +1317,7 @@ bool ReadProbeBank(std::vector<uint8_t>& result, std::wstring& path) {
         return false;
     }
     path.resize(separator + 1);
-    path += L"BetterEndfield.MusicProbe.bnk";
+    path += L"BetterEndfieldNext.MusicProbe.bnk";
 
     const HANDLE file = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ,
         nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -1370,7 +1370,7 @@ bool CreateProbeGameObject() {
     void* game_object = g_host->object_new(
         g_host->context, g_probe_game_object_class.class_info);
     void* name = g_host->string_new(
-        g_host->context, "BetterEndfield.AudioInputProbe");
+        g_host->context, "BetterEndfieldNext.AudioInputProbe");
     if (!game_object || !name) {
         Log("[music-input] managed GameObject allocation failed");
         return false;
@@ -1910,7 +1910,7 @@ bool InstallHooks() {
 }
 
 BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
-    if (!host || host->abi_version != BETTER_ENDFIELD_MODULE_ABI_V1 ||
+    if (!host || host->abi_version != BETTER_ENDFIELD_NEXT_MODULE_ABI_V1 ||
         !host->log || !host->resolve_method || !host->resolve_field ||
         !host->create_hook || !host->release_module_hooks ||
         !host->copy_managed_string || !host->resolve_class ||
@@ -2024,8 +2024,8 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Better Endfield Music Probe", "0.7.8",
-        BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Better Endfield Next Music Probe", "0.7.8",
+        BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown,
@@ -2033,6 +2033,6 @@ const BE_ModuleApiV1 kApi{
 
 } // namespace
 
-BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfield_GetModuleApiV1(void) {
+BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfieldNext_GetModuleApiV1(void) {
     return &kApi;
 }

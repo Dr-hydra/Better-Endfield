@@ -8,7 +8,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
-namespace BetterEndfield::CustomModel {
+namespace BetterEndfieldNext::CustomModel {
 constexpr uint32_t kMaxBemComponents = 64;
 // BEM 1.2 limits; 1.0/1.1 packages keep their own tighter limits in bem.cpp.
 constexpr uint32_t kMaxBemTextures = 64;
@@ -229,4 +229,4 @@ bool LoadBem(const std::filesystem::path& path, BemPocData& output, std::string&
 // bytes are never held whole). `output` receives exactly info.data_size bytes.
 bool DecodeBemTexturePayload(const BemPayloadSource& source, const BemTexture& texture,
     std::vector<uint8_t>& output, std::string& error);
-} // namespace BetterEndfield::CustomModel
+} // namespace BetterEndfieldNext::CustomModel

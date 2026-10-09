@@ -1,0 +1,236 @@
+{
+  "source_commit": "ad33357bb1bb453d5925022e2be7bf507245d6ea",
+  "product_version": "3.5.4",
+  "target": "Better Endfield Next 4.0.0",
+  "game_version": "1.5.3",
+  "files": [
+    {
+      "source": "docs/camera/FIRST_PERSON_PROFILES.md",
+      "archive": "first-person/files/docs/camera/FIRST_PERSON_PROFILES.md",
+      "sha256": "ac72f8dbb6e5451eac982917fc8ed95e7110b6d2301e643a9a4b813694088294",
+      "role": "retired"
+    },
+    {
+      "source": "native/modules/camera/first_person_mesh.h",
+      "archive": "first-person/files/native/modules/camera/first_person_mesh.h",
+      "sha256": "54dd8e73b8dbdbdf52effa436bb2c1a0125762f07416f097501630202fec48f4",
+      "role": "retired"
+    },
+    {
+      "source": "native/modules/camera/first_person_profiles.generated.inc",
+      "archive": "first-person/files/native/modules/camera/first_person_profiles.generated.inc",
+      "sha256": "d0f4dc2c79afd41df0f9707e8f08fabce680340573bffc1bbbf973e0bf91d8f6",
+      "role": "retired"
+    },
+    {
+      "source": "native/modules/camera/first_person_profiles.h",
+      "archive": "first-person/files/native/modules/camera/first_person_profiles.h",
+      "sha256": "3971619e3723ee96a04f79d51b9ad909e1d78353294c145c18ae179b6c579297",
+      "role": "retired"
+    },
+    {
+      "source": "native/modules/camera/first_person_retry.h",
+      "archive": "first-person/files/native/modules/camera/first_person_retry.h",
+      "sha256": "e994e2665aac317b6be5dee5dfd9f060812460c3d63be25923fb1305059dce60",
+      "role": "retired"
+    },
+    {
+      "source": "native/modules/camera/first_person_runtime.inc",
+      "archive": "first-person/files/native/modules/camera/first_person_runtime.inc",
+      "sha256": "8dec343df7d6612e795ec3a577581be2b8632a030ef4a07ccdb692d73c1cad57",
+      "role": "retired"
+    },
+    {
+      "source": "native/tests/camera_playback/first_person_tests.cpp",
+      "archive": "first-person/files/native/tests/camera_playback/first_person_tests.cpp",
+      "sha256": "28227635d7df2266f0a009caf15e4443242b664f73b8e6c7c4cf03e0d22d7cb6",
+      "role": "retired"
+    },
+    {
+      "source": "native/tests/camera_playback/head_hide_tests.cpp",
+      "archive": "first-person/files/native/tests/camera_playback/head_hide_tests.cpp",
+      "sha256": "67dd67e8bea70c008328a912c74e462bb572bc058bc9bed7417a1291737b1057",
+      "role": "retired"
+    },
+    {
+      "source": "native/tests/camera_playback/portable_mesh_tests.cpp",
+      "archive": "first-person/files/native/tests/camera_playback/portable_mesh_tests.cpp",
+      "sha256": "f6846f8547248049242ca34fd64eee4a95dddfdb13b85780fa06e8750c21f9c2",
+      "role": "retired"
+    },
+    {
+      "source": "native/tests/first_person_mesh_tests.cpp",
+      "archive": "first-person/files/native/tests/first_person_mesh_tests.cpp",
+      "sha256": "68c4485c5312f8780ac71cd1d299ff8bd72567434837a9d68384faa814c41b79",
+      "role": "retired"
+    },
+    {
+      "source": "native/tests/first_person_profiles/CMakeLists.txt",
+      "archive": "first-person/files/native/tests/first_person_profiles/CMakeLists.txt",
+      "sha256": "965074ceef356c5e75ed123a4115c5601a1a83255563938de0ce6ee6ed29cd94",
+      "role": "retired"
+    },
+    {
+      "source": "native/tests/first_person_profiles/profiles_tests.cpp",
+      "archive": "first-person/files/native/tests/first_person_profiles/profiles_tests.cpp",
+      "sha256": "c1e84afda33228b0a64d11fda02cff2aaa7bc32e5d0ec0314315ae37264023f2",
+      "role": "retired"
+    },
+    {
+      "source": "native/tests/first_person_profiles/test_generation.py",
+      "archive": "first-person/files/native/tests/first_person_profiles/test_generation.py",
+      "sha256": "db5acd4fadfe2e082a32fdd415daa0eec758c3532c0748e94c76dac8270e6cac",
+      "role": "retired"
+    },
+    {
+      "source": "tools/FirstPersonProfiles/android_fallback_regression.generated.json",
+      "archive": "first-person/files/tools/FirstPersonProfiles/android_fallback_regression.generated.json",
+      "sha256": "b61dcc39567dce30770319965e128c1a77d2c4eb704a9d439a76f53cde818b81",
+      "role": "retired"
+    },
+    {
+      "source": "tools/FirstPersonProfiles/audit_android_fallback.py",
+      "archive": "first-person/files/tools/FirstPersonProfiles/audit_android_fallback.py",
+      "sha256": "17b608855eeea1d697c5896c07a17b47c011adeba4fd276f5907334c982aec61",
+      "role": "retired"
+    },
+    {
+      "source": "tools/FirstPersonProfiles/audit_local_geometry.py",
+      "archive": "first-person/files/tools/FirstPersonProfiles/audit_local_geometry.py",
+      "sha256": "b1691ee3aef80cac3c8f65cdcff63b3ffa738b012ef675348cda6b3d4d2d4e4a",
+      "role": "retired"
+    },
+    {
+      "source": "tools/FirstPersonProfiles/generate_profiles.py",
+      "archive": "first-person/files/tools/FirstPersonProfiles/generate_profiles.py",
+      "sha256": "74283a3e9f0a3092ff79c400db97b3b67ce7b3eb43c4d2d98be0a97097f39886",
+      "role": "retired"
+    },
+    {
+      "source": "tools/FirstPersonProfiles/geometry_regression.generated.json",
+      "archive": "first-person/files/tools/FirstPersonProfiles/geometry_regression.generated.json",
+      "sha256": "899ef7f53104a99f58672283ee1bb52654100d0bbd90a2481432b1034c644af9",
+      "role": "retired"
+    },
+    {
+      "source": "tools/FirstPersonProfiles/profiles.generated.json",
+      "archive": "first-person/files/tools/FirstPersonProfiles/profiles.generated.json",
+      "sha256": "ba8d5a126547a8e04a5a6db427cb0c9855430bfac98b03341e57ae4bb4e55cc2",
+      "role": "retired"
+    },
+    {
+      "source": "android/app/src/main/cpp/native_bridge.cpp",
+      "archive": "first-person/shared-snapshots/android/app/src/main/cpp/native_bridge.cpp",
+      "sha256": "e399f5445111f934ba6d56a7bab9be7b5c02a225c2947514c24e79e47b4fa23e",
+      "role": "shared-baseline"
+    },
+    {
+      "source": "android/app/src/main/java/dev/betterendfield/android/EnhancementSettingsActivity.java",
+      "archive": "first-person/shared-snapshots/android/app/src/main/java/dev/betterendfield/android/EnhancementSettingsActivity.java",
+      "sha256": "4defd54fbe747b89f00a956cb6d8c482cd454740eb3e3b3f317dce81d3a623d0",
+      "role": "shared-baseline"
+    },
+    {
+      "source": "android/app/src/main/java/dev/betterendfield/android/GameOverlay.java",
+      "archive": "first-person/shared-snapshots/android/app/src/main/java/dev/betterendfield/android/GameOverlay.java",
+      "sha256": "56ae565a3354aaed9d46f145fbf2c5c6b76e17b2ccf113f1cd9102ea1a91357c",
+      "role": "shared-baseline"
+    },
+    {
+      "source": "android/app/src/main/java/dev/betterendfield/android/Hotkeys.java",
+      "archive": "first-person/shared-snapshots/android/app/src/main/java/dev/betterendfield/android/Hotkeys.java",
+      "sha256": "5a61101fbc4106a6fb56008e37393d34eeda12adc5a2944ef19fce8a16b51516",
+      "role": "shared-baseline"
+    },
+    {
+      "source": "android/app/src/main/java/dev/betterendfield/android/ModuleSettings.java",
+      "archive": "first-person/shared-snapshots/android/app/src/main/java/dev/betterendfield/android/ModuleSettings.java",
+      "sha256": "e328ac9b2a1c3d36c6bdad5e21232131b7d15ccbb300ee03ac0436760a45f75f",
+      "role": "shared-baseline"
+    },
+    {
+      "source": "android/app/src/main/java/dev/betterendfield/android/OverlayFeatures.java",
+      "archive": "first-person/shared-snapshots/android/app/src/main/java/dev/betterendfield/android/OverlayFeatures.java",
+      "sha256": "37e57c380ecd20686e62f40dfd04518bc3c8637442922f458ef5b09ae5544eef",
+      "role": "shared-baseline"
+    },
+    {
+      "source": "android/app/src/main/java/dev/betterendfield/android/RuntimeSnapshot.java",
+      "archive": "first-person/shared-snapshots/android/app/src/main/java/dev/betterendfield/android/RuntimeSnapshot.java",
+      "sha256": "6eee27ea0213bb530ecb3df3f0aadcc4dd63c9480458151304f57f43ede0290f",
+      "role": "shared-baseline"
+    },
+    {
+      "source": "android/app/src/main/res/values/strings.xml",
+      "archive": "first-person/shared-snapshots/android/app/src/main/res/values/strings.xml",
+      "sha256": "3bf2a2893916d98308386f6af60a298ef128f714c1e2ec735fcaec5d13031d9c",
+      "role": "shared-baseline"
+    },
+    {
+      "source": "android/app/src/testHost/java/dev/betterendfield/android/ModuleSettingsFovTest.java",
+      "archive": "first-person/shared-snapshots/android/app/src/testHost/java/dev/betterendfield/android/ModuleSettingsFovTest.java",
+      "sha256": "df7b1b71f14da0ead16876db2c861699d736c88558f4332788a1da7f45a969ff",
+      "role": "shared-baseline"
+    },
+    {
+      "source": "native/modules/camera/free_camera_runtime.inc",
+      "archive": "first-person/shared-snapshots/native/modules/camera/free_camera_runtime.inc",
+      "sha256": "01f342df398aee7961df11413d200f1c8984a31fd40d7f1eb7fb8e4733fee93f",
+      "role": "shared-baseline"
+    },
+    {
+      "source": "native/modules/camera/module.cpp",
+      "archive": "first-person/shared-snapshots/native/modules/camera/module.cpp",
+      "sha256": "de2d05722e80cec23023eacdb1077a7393a8f663f1daac10c500fcd8ed484646",
+      "role": "shared-baseline"
+    },
+    {
+      "source": "ui/BetterEndfield.UI/MainWindow.xaml",
+      "archive": "first-person/shared-snapshots/ui/BetterEndfield.UI/MainWindow.xaml",
+      "sha256": "1cc02e40188b3926bdac11320501d39f629e28426da6d48d91e29d3ad0160af9",
+      "role": "shared-baseline"
+    },
+    {
+      "source": "ui/BetterEndfield.UI/MainWindow.xaml.cs",
+      "archive": "first-person/shared-snapshots/ui/BetterEndfield.UI/MainWindow.xaml.cs",
+      "sha256": "f1ae3a0de08f29d8024baaee9daf58b17791602df5f2498c2c369b9fcfe8246d",
+      "role": "shared-baseline"
+    },
+    {
+      "source": "ui/BetterEndfield.UI/Models/ModConfiguration.cs",
+      "archive": "first-person/shared-snapshots/ui/BetterEndfield.UI/Models/ModConfiguration.cs",
+      "sha256": "f5b65ebeaafde6cfd65ec477d1ade8edf2670532a1daa99166fd3c3af24af951",
+      "role": "shared-baseline"
+    },
+    {
+      "source": "ui/BetterEndfield.UI/Services/ConfigurationService.cs",
+      "archive": "first-person/shared-snapshots/ui/BetterEndfield.UI/Services/ConfigurationService.cs",
+      "sha256": "c2b44b1172745c9f85907f3360072eb0f64ea6243049748a0a67ce6a09b251a3",
+      "role": "shared-baseline"
+    },
+    {
+      "source": "ui/BetterEndfield.UI/MainWindow.xaml",
+      "archive": "third-party-entry/ui/BetterEndfield.UI/MainWindow.xaml",
+      "sha256": "1cc02e40188b3926bdac11320501d39f629e28426da6d48d91e29d3ad0160af9",
+      "role": "entry-baseline"
+    },
+    {
+      "source": "ui/BetterEndfield.UI/MainWindow.xaml.cs",
+      "archive": "third-party-entry/ui/BetterEndfield.UI/MainWindow.xaml.cs",
+      "sha256": "f1ae3a0de08f29d8024baaee9daf58b17791602df5f2498c2c369b9fcfe8246d",
+      "role": "entry-baseline"
+    },
+    {
+      "source": "android/app/src/main/java/dev/betterendfield/android/MainActivity.java",
+      "archive": "third-party-entry/android/app/src/main/java/dev/betterendfield/android/MainActivity.java",
+      "sha256": "e49479abfbe8ed30a3aab6f0a4a0f29c417781b9e9e31b2199bb00a3c349bf69",
+      "role": "entry-baseline"
+    },
+    {
+      "source": "native/tests/android_rebuild/camera_test.cpp",
+      "archive": "first-person/shared-snapshots/native/tests/android_rebuild/camera_test.cpp",
+      "sha256": "ed8064627af109cd99a6978804c45064c0ec2407ced82f0fdfaedff74860e79e",
+      "role": "shared-baseline"
+    }
+  ]
+}

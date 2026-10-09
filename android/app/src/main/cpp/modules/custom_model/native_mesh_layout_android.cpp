@@ -1,12 +1,12 @@
 #include "native_mesh_layout.h"
 #include "mesh_layout_probe.h"
 
-namespace BetterEndfield::CustomModel {
+namespace BetterEndfieldNext::CustomModel {
 
 bool ResolveNativeMeshLayout(std::span<const uint8_t>, NativeMeshLayout& layout,
     std::string& error) {
-    const betterendfield::MeshLayoutEvidence evidence =
-        betterendfield::ProbeLoadedUnityMeshLayout();
+    const betterendfieldnext::MeshLayoutEvidence evidence =
+        betterendfieldnext::ProbeLoadedUnityMeshLayout();
     layout = {};
     if (evidence.candidate_offset == 0 || evidence.archive_functions < 2 ||
             evidence.descriptor_paths == 0 || evidence.reader_paths == 0) {

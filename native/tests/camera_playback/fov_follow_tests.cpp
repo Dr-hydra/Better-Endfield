@@ -4,7 +4,7 @@
 #include <array>
 #include <limits>
 
-using namespace BetterEndfield::CameraModule;
+using namespace BetterEndfieldNext::CameraModule;
 
 namespace {
 enum Method : uintptr_t { Main = 1, GameObject, Orthographic, Destroyed,
@@ -94,14 +94,12 @@ int main() {
     CHECK(delivered_fov == 63);
     camera.orthographic = false;
     // Other camera modes own their FOV, so the ordinary override stays inactive.
-    for (int mode = 0; mode < 2; ++mode) {
-        g_free_camera_active = mode == 0;
-        g_first_person_active = mode == 1;
+    g_free_camera_active = true;
+    {
         ScopedGlobalFovState override(&brain, state.data());
         CHECK(state == original_state);
     }
     g_free_camera_active = false;
-    g_first_person_active = false;
     g_global_fov = std::numeric_limits<float>::quiet_NaN();
     DetourPushState(&brain, state.data(), nullptr);
     CHECK(delivered_fov == 63);

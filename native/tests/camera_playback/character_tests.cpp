@@ -4,7 +4,7 @@
 #include "test_support.h"
 #include <atomic>
 #include <thread>
-using namespace BetterEndfield;
+using namespace BetterEndfieldNext;
 using namespace CharacterPose;
 struct Fake : Backend {
     std::map<uintptr_t,Quaternion> rotations;

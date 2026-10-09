@@ -219,7 +219,7 @@ static bool Hook(void *mi, const char *l, void *d, void **o) {
   void *t = ((MInfo *)mi)->mp;
   if (!t)
     return false;
-  // BE-PATCH(hook-broker): every hook goes through Better Endfield's Host.
+  // BE-PATCH(hook-broker): every hook goes through Better Endfield Next's Host.
   if (!g_eiemCreateHook || !g_eiemCreateHook(t, d, o))
     return false;
   Log("[OK] %s hooked", l);

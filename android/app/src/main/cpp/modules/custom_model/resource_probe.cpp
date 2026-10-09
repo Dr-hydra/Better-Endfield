@@ -8,7 +8,7 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-namespace betterendfield {
+namespace betterendfieldnext {
 namespace {
 // Read only our own mapped code, without dereferencing a possibly stale pointer.
 void LogGetterCode(const char* component, const Il2CppRuntime& runtime) {

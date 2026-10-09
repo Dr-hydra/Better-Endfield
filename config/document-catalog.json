@@ -758,9 +758,9 @@
       "replacement": "未见明确整体替代声明；按正文适用范围保留",
       "ownership": "documentation",
       "reference_evidence": {
-        "机器消费及生成证据": "ui/BetterEndfield.UI/Views/BemConverterWindow.cs:539 [机器消费] string path = Path.Combine(_installRoot, \"docs\", \"BEM_CREATOR_GUIDE.md\");；ui/BetterEndfield.UI/Views/BemConverterWindow.cs:540 [机器消费] if (!File.Exists(path)) path = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory, \"docs\", \"BEM_CREATOR_GUIDE.md\");；scripts/BuildBetterEndfield.ps1:96 [机器打包] foreach ($document in @(\"BEM_CREATOR_GUIDE.md\", \"BEM_FORMAT_SPEC.md\", \"BEM_RUNTIME_COMPATIBILITY.md\", \"BEM_SOURCE_MOD_CONVERSION.md\", \"THIRD_PARTY_MODULE_CREATOR_GUIDE.md\")) {；scripts/BuildBetterEndfield.ps1:145 [机器校验] \"docs\\BEM_CREATOR_GUIDE.md\",；tools/CustomModel/package_toolchain.py:13 [机器打包] docs = ['BEM_CREATOR_GUIDE.md', 'BEM_FORMAT_SPEC.md', 'BEM_RUNTIME_COMPATIBILITY.md', 'BEM_SOURCE_MOD_CONVERSION.md',；tools/CustomModel/package_toolchain.py:16 [机器消费] copyfile(repo/docs/name, target/docs/name)；tools/CustomModel/package_toolchain.py:28 [机器消费] copyfile(repo/docs/name, refs/name)；ui/BetterEndfield.UI/Views/BemConverterWindow.cs:541 [机器消费] File.ReadAllTextAsync(path, Encoding.UTF8)，软件内帮助直接读取MD",
+        "机器消费及生成证据": "ui/BetterEndfieldNext.UI/Views/BemConverterWindow.cs:539 [机器消费] string path = Path.Combine(_installRoot, \"docs\", \"BEM_CREATOR_GUIDE.md\");；ui/BetterEndfieldNext.UI/Views/BemConverterWindow.cs:540 [机器消费] if (!File.Exists(path)) path = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory, \"docs\", \"BEM_CREATOR_GUIDE.md\");；scripts/BuildBetterEndfieldNext.ps1:96 [机器打包] foreach ($document in @(\"BEM_CREATOR_GUIDE.md\", \"BEM_FORMAT_SPEC.md\", \"BEM_RUNTIME_COMPATIBILITY.md\", \"BEM_SOURCE_MOD_CONVERSION.md\", \"THIRD_PARTY_MODULE_CREATOR_GUIDE.md\")) {；scripts/BuildBetterEndfieldNext.ps1:145 [机器校验] \"docs\\BEM_CREATOR_GUIDE.md\",；tools/CustomModel/package_toolchain.py:13 [机器打包] docs = ['BEM_CREATOR_GUIDE.md', 'BEM_FORMAT_SPEC.md', 'BEM_RUNTIME_COMPATIBILITY.md', 'BEM_SOURCE_MOD_CONVERSION.md',；tools/CustomModel/package_toolchain.py:16 [机器消费] copyfile(repo/docs/name, target/docs/name)；tools/CustomModel/package_toolchain.py:28 [机器消费] copyfile(repo/docs/name, refs/name)；ui/BetterEndfieldNext.UI/Views/BemConverterWindow.cs:541 [机器消费] File.ReadAllTextAsync(path, Encoding.UTF8)，软件内帮助直接读取MD",
         "证据定位及代码注释": "范围内未见",
-        "文档导航及正文引用": "docs/custom_model/BEM_FORMAT_SPEC.md:3 [普通导航] BEM（Better Endfield Model）是《终末地》角色模型替换包，扩展名 `.bem`。Windows 与 Android 读取同一个文件。本文合并 1.0–1.3 的全部协议内容；各版本只在下文标注的地方不同。制作流程见 [创作者指南](BEM_CREATOR_GUIDE.md)，游戏内的匹配与限制见 [运行时行为与兼容性](BEM_RUNT；docs/custom_model/BEM_RUNTIME_COMPATIBILITY.md:3 [普通导航] 本文说明游戏加载 BEM 包时实际做了什么：怎样找到要替换的部件、对几何和贴图有哪些要求、加载开销、选择何时生效，以及日志里各类拒绝信息的含义。格式字段见 [格式规范](BEM_FORMAT_SPEC.md)，制作流程见 [创作者指南](BEM_CREATOR_GUIDE.md)。；docs/custom_model/BEM_SOURCE_MOD_CONVERSION.md:3 [普通导航] 本文说明如何把 EFMI / 3DMigoto 格式的角色 Mod 转换为 BEM：哪些能自动转换、哪些需要配方、转换器怎样确认身份，以及常见报错。工具和导出工程的用法见 [创作者指南](BEM_CREATOR_GUIDE.md)。；docs/custom_model/BEM_SOURCE_MOD_CONVERSION.md:125 [普通导航] 形态配置的其他写法见 [创作者指南](BEM_CREATOR_GUIDE.md#形态滑条13)。；docs/custom_model/history/INDEX.md:7 [普通导航] - [创作者指南](../../BEM_CREATOR_GUIDE.md)；README.md:7 [普通导航] [下载正式版](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [更新说明](CHANGELOG.md) · [Android 使用与构建](android/README.md) · [BEM 创作者指南](docs/custom_model/BEM_CREATOR_GUIDE.md) · [模块开发指南]；README.md:74 [普通导航] - [创作者指南](docs/custom_model/BEM_CREATOR_GUIDE.md)：工具、制作流程、导入测试、分发；docs/custom_model/history/bem-1.0/BEM_V1_DESIGN_DRAFT.md:1 [普通导航] > 2026-09-18：本文件保留讨论历史。正式实现与当前边界以 [BEM_V1_SPEC.md](BEM_V1_SPEC.md) 和 [BEM_CREATOR_GUIDE.md](../../BEM_CREATOR_GUIDE.md) 为准；旧实验包不兼容。全角色采样计划继续保留。；docs/custom_model/history/bem-1.0/BEM_CREATOR_GUIDE_DRAFT.md:1 [普通导航] > 2026-09-18：本文件保留讨论历史。正式实现与当前边界以 [BEM_V1_SPEC.md](BEM_V1_SPEC.md) 和 [BEM_CREATOR_GUIDE.md](../../BEM_CREATOR_GUIDE.md) 为准；旧实验包不兼容。全角色采样计划继续保留。；docs/custom_model/history/tooling/toolchain/BEM_TOOLCHAIN.md:21 [普通导航] 完整功能说明见 [创作者指南](../../BEM_CREATOR_GUIDE.md)，协议见 [BEMv1 规范](BEM_V1_SPEC.md)。；tools/CustomModel/README.md:7 [普通导航] [格式规范](../../docs/BEM_FORMAT_SPEC.md) · [创作者指南](../../docs/BEM_CREATOR_GUIDE.md) · [其他来源 Mod 转换](../../docs/BEM_SOURCE_MOD_CONVERSION.md)。；tools/CustomModel/examples/README.md:11 [正文证据/维护指引] `body-slider/create_project.py` 生成可运行的 BEM 1.3 位置滑条示例（只需 Python 标准库）：`python body-slider/create_project.py --output NEW_DIRECTORY`，再运行 `BetterEndfield.BemConverter.exe build NEW_DI；tools/CustomModel/examples/README.md:21 [正文证据/维护指引] 参见随软件发布的 `docs/custom_model/BEM_CREATOR_GUIDE.md`、`docs/custom_model/BEM_FORMAT_SPEC.md`。"
+        "文档导航及正文引用": "docs/custom_model/BEM_FORMAT_SPEC.md:3 [普通导航] BEM（Better Endfield Model）是《终末地》角色模型替换包，扩展名 `.bem`。Windows 与 Android 读取同一个文件。本文合并 1.0–1.3 的全部协议内容；各版本只在下文标注的地方不同。制作流程见 [创作者指南](BEM_CREATOR_GUIDE.md)，游戏内的匹配与限制见 [运行时行为与兼容性](BEM_RUNT；docs/custom_model/BEM_RUNTIME_COMPATIBILITY.md:3 [普通导航] 本文说明游戏加载 BEM 包时实际做了什么：怎样找到要替换的部件、对几何和贴图有哪些要求、加载开销、选择何时生效，以及日志里各类拒绝信息的含义。格式字段见 [格式规范](BEM_FORMAT_SPEC.md)，制作流程见 [创作者指南](BEM_CREATOR_GUIDE.md)。；docs/custom_model/BEM_SOURCE_MOD_CONVERSION.md:3 [普通导航] 本文说明如何把 EFMI / 3DMigoto 格式的角色 Mod 转换为 BEM：哪些能自动转换、哪些需要配方、转换器怎样确认身份，以及常见报错。工具和导出工程的用法见 [创作者指南](BEM_CREATOR_GUIDE.md)。；docs/custom_model/BEM_SOURCE_MOD_CONVERSION.md:125 [普通导航] 形态配置的其他写法见 [创作者指南](BEM_CREATOR_GUIDE.md#形态滑条13)。；docs/custom_model/history/INDEX.md:7 [普通导航] - [创作者指南](../../BEM_CREATOR_GUIDE.md)；README.md:7 [普通导航] [下载正式版](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [更新说明](CHANGELOG.md) · [Android 使用与构建](android/README.md) · [BEM 创作者指南](docs/custom_model/BEM_CREATOR_GUIDE.md) · [模块开发指南]；README.md:74 [普通导航] - [创作者指南](docs/custom_model/BEM_CREATOR_GUIDE.md)：工具、制作流程、导入测试、分发；docs/custom_model/history/bem-1.0/BEM_V1_DESIGN_DRAFT.md:1 [普通导航] > 2026-09-18：本文件保留讨论历史。正式实现与当前边界以 [BEM_V1_SPEC.md](BEM_V1_SPEC.md) 和 [BEM_CREATOR_GUIDE.md](../../BEM_CREATOR_GUIDE.md) 为准；旧实验包不兼容。全角色采样计划继续保留。；docs/custom_model/history/bem-1.0/BEM_CREATOR_GUIDE_DRAFT.md:1 [普通导航] > 2026-09-18：本文件保留讨论历史。正式实现与当前边界以 [BEM_V1_SPEC.md](BEM_V1_SPEC.md) 和 [BEM_CREATOR_GUIDE.md](../../BEM_CREATOR_GUIDE.md) 为准；旧实验包不兼容。全角色采样计划继续保留。；docs/custom_model/history/tooling/toolchain/BEM_TOOLCHAIN.md:21 [普通导航] 完整功能说明见 [创作者指南](../../BEM_CREATOR_GUIDE.md)，协议见 [BEMv1 规范](BEM_V1_SPEC.md)。；tools/CustomModel/README.md:7 [普通导航] [格式规范](../../docs/BEM_FORMAT_SPEC.md) · [创作者指南](../../docs/BEM_CREATOR_GUIDE.md) · [其他来源 Mod 转换](../../docs/BEM_SOURCE_MOD_CONVERSION.md)。；tools/CustomModel/examples/README.md:11 [正文证据/维护指引] `body-slider/create_project.py` 生成可运行的 BEM 1.3 位置滑条示例（只需 Python 标准库）：`python body-slider/create_project.py --output NEW_DIRECTORY`，再运行 `BetterEndfieldNext.BemConverter.exe build NEW_DI；tools/CustomModel/examples/README.md:21 [正文证据/维护指引] 参见随软件发布的 `docs/custom_model/BEM_CREATOR_GUIDE.md`、`docs/custom_model/BEM_FORMAT_SPEC.md`。"
       },
       "game_version_note": "通用格式、工具接口/替身验证或软件说明不绑定游戏客户端版本。"
     },
@@ -838,7 +838,7 @@
       "replacement": "未见明确整体替代声明；按正文适用范围保留",
       "ownership": "documentation",
       "reference_evidence": {
-        "机器消费及生成证据": "scripts/BuildBetterEndfield.ps1:96 [机器打包] foreach ($document in @(\"BEM_CREATOR_GUIDE.md\", \"BEM_FORMAT_SPEC.md\", \"BEM_RUNTIME_COMPATIBILITY.md\", \"BEM_SOURCE_MOD_CONVERSION.md\", \"THIRD_PARTY_MODULE_CREATOR_GUIDE.md\")) {；tools/CustomModel/package_toolchain.py:13 [机器打包] docs = ['BEM_CREATOR_GUIDE.md', 'BEM_FORMAT_SPEC.md', 'BEM_RUNTIME_COMPATIBILITY.md', 'BEM_SOURCE_MOD_CONVERSION.md',；tools/CustomModel/package_toolchain.py:16 [机器消费] copyfile(repo/docs/name, target/docs/name)；tools/CustomModel/package_toolchain.py:28 [机器消费] copyfile(repo/docs/name, refs/name)",
+        "机器消费及生成证据": "scripts/BuildBetterEndfieldNext.ps1:96 [机器打包] foreach ($document in @(\"BEM_CREATOR_GUIDE.md\", \"BEM_FORMAT_SPEC.md\", \"BEM_RUNTIME_COMPATIBILITY.md\", \"BEM_SOURCE_MOD_CONVERSION.md\", \"THIRD_PARTY_MODULE_CREATOR_GUIDE.md\")) {；tools/CustomModel/package_toolchain.py:13 [机器打包] docs = ['BEM_CREATOR_GUIDE.md', 'BEM_FORMAT_SPEC.md', 'BEM_RUNTIME_COMPATIBILITY.md', 'BEM_SOURCE_MOD_CONVERSION.md',；tools/CustomModel/package_toolchain.py:16 [机器消费] copyfile(repo/docs/name, target/docs/name)；tools/CustomModel/package_toolchain.py:28 [机器消费] copyfile(repo/docs/name, refs/name)",
         "证据定位及代码注释": "范围内未见",
         "文档导航及正文引用": "docs/custom_model/BEM_CREATOR_GUIDE.md:8 [普通导航] | [格式规范](BEM_FORMAT_SPEC.md) | 1.0–1.3 的文件结构、字段、上限 |；docs/custom_model/BEM_CREATOR_GUIDE.md:29 [普通导航] 3. **直接制作**：按[格式规范](BEM_FORMAT_SPEC.md)准备 `project.json` 和二进制 payload，再 `pack`。；docs/custom_model/BEM_RUNTIME_COMPATIBILITY.md:3 [普通导航] 本文说明游戏加载 BEM 包时实际做了什么：怎样找到要替换的部件、对几何和贴图有哪些要求、加载开销、选择何时生效，以及日志里各类拒绝信息的含义。格式字段见 [格式规范](BEM_FORMAT_SPEC.md)，制作流程见 [创作者指南](BEM_CREATOR_GUIDE.md)。；docs/custom_model/history/INDEX.md:8 [普通导航] - [格式规范（1.0–1.3）](../../BEM_FORMAT_SPEC.md)；README.md:75 [普通导航] - [格式规范（1.0–1.3）](docs/custom_model/BEM_FORMAT_SPEC.md)；tools/CustomModel/README.md:7 [普通导航] [格式规范](../../docs/BEM_FORMAT_SPEC.md) · [创作者指南](../../docs/BEM_CREATOR_GUIDE.md) · [其他来源 Mod 转换](../../docs/BEM_SOURCE_MOD_CONVERSION.md)。；tools/CustomModel/examples/README.md:21 [正文证据/维护指引] 参见随软件发布的 `docs/custom_model/BEM_CREATOR_GUIDE.md`、`docs/custom_model/BEM_FORMAT_SPEC.md`。"
       },
@@ -1043,7 +1043,7 @@
       "replacement": "未见明确整体替代声明；按正文适用范围保留",
       "ownership": "documentation",
       "reference_evidence": {
-        "机器消费及生成证据": "scripts/BuildBetterEndfield.ps1:96 [机器打包] foreach ($document in @(\"BEM_CREATOR_GUIDE.md\", \"BEM_FORMAT_SPEC.md\", \"BEM_RUNTIME_COMPATIBILITY.md\", \"BEM_SOURCE_MOD_CONVERSION.md\", \"THIRD_PARTY_MODULE_CREATOR_GUIDE.md\")) {；tools/CustomModel/package_toolchain.py:13 [机器打包] docs = ['BEM_CREATOR_GUIDE.md', 'BEM_FORMAT_SPEC.md', 'BEM_RUNTIME_COMPATIBILITY.md', 'BEM_SOURCE_MOD_CONVERSION.md',；tools/CustomModel/package_toolchain.py:16 [机器消费] copyfile(repo/docs/name, target/docs/name)；tools/CustomModel/package_toolchain.py:28 [机器消费] copyfile(repo/docs/name, refs/name)",
+        "机器消费及生成证据": "scripts/BuildBetterEndfieldNext.ps1:96 [机器打包] foreach ($document in @(\"BEM_CREATOR_GUIDE.md\", \"BEM_FORMAT_SPEC.md\", \"BEM_RUNTIME_COMPATIBILITY.md\", \"BEM_SOURCE_MOD_CONVERSION.md\", \"THIRD_PARTY_MODULE_CREATOR_GUIDE.md\")) {；tools/CustomModel/package_toolchain.py:13 [机器打包] docs = ['BEM_CREATOR_GUIDE.md', 'BEM_FORMAT_SPEC.md', 'BEM_RUNTIME_COMPATIBILITY.md', 'BEM_SOURCE_MOD_CONVERSION.md',；tools/CustomModel/package_toolchain.py:16 [机器消费] copyfile(repo/docs/name, target/docs/name)；tools/CustomModel/package_toolchain.py:28 [机器消费] copyfile(repo/docs/name, refs/name)",
         "证据定位及代码注释": "范围内未见",
         "文档导航及正文引用": "docs/custom_model/BEM_CREATOR_GUIDE.md:9 [普通导航] | [运行时行为与兼容性](BEM_RUNTIME_COMPATIBILITY.md) | 游戏内如何匹配部件、几何和贴图要求、显存开销、热切换、第一人称、日志对照 |；docs/custom_model/BEM_CREATOR_GUIDE.md:204 [普通导航] - 实机测试至少检查场景、角色详情页和配队界面。Android 上场景模型由详情模型构建，规则见[运行时文档](BEM_RUNTIME_COMPATIBILITY.md#3-lod)。；docs/custom_model/BEM_CREATOR_GUIDE.md:205 [普通导航] - 游戏里没有生效时，先确认包已启用、外观选择正确，再查看日志中的拒绝原因，对照[运行时日志表](BEM_RUNTIME_COMPATIBILITY.md#11-日志拒绝信息对照)。；docs/custom_model/BEM_CREATOR_GUIDE.md:212 [普通导航] - 贴图越大，加载时的瞬时内存和显存越高，与包文件大小无关，见[运行时文档第 7 节](BEM_RUNTIME_COMPATIBILITY.md#7-加载开销与显存)。；docs/custom_model/BEM_CREATOR_GUIDE.md:216 [普通导航] 头发、头饰、耳朵的权重只绑到 Head 子树或尾巴骨骼，第一人称时才会被正确隐藏；身体和衣服不要绑到 Head 上。详见[运行时文档第 9 节](BEM_RUNTIME_COMPATIBILITY.md#9-第一人称兼容)。；docs/custom_model/BEM_FORMAT_SPEC.md:3 [普通导航] BEM（Better Endfield Model）是《终末地》角色模型替换包，扩展名 `.bem`。Windows 与 Android 读取同一个文件。本文合并 1.0–1.3 的全部协议内容；各版本只在下文标注的地方不同。制作流程见 [创作者指南](BEM_CREATOR_GUIDE.md)，游戏内的匹配与限制见 [运行时行为与兼容性](BEM_RUNT；docs/custom_model/history/INDEX.md:9 [普通导航] - [运行时行为与兼容性](../../BEM_RUNTIME_COMPATIBILITY.md)；README.md:76 [普通导航] - [运行时行为与兼容性](docs/custom_model/BEM_RUNTIME_COMPATIBILITY.md)"
       },
@@ -1122,9 +1122,9 @@
       "replacement": "未见明确整体替代声明；按正文适用范围保留",
       "ownership": "documentation",
       "reference_evidence": {
-        "机器消费及生成证据": "scripts/BuildBetterEndfield.ps1:96 [机器打包] foreach ($document in @(\"BEM_CREATOR_GUIDE.md\", \"BEM_FORMAT_SPEC.md\", \"BEM_RUNTIME_COMPATIBILITY.md\", \"BEM_SOURCE_MOD_CONVERSION.md\", \"THIRD_PARTY_MODULE_CREATOR_GUIDE.md\")) {；tools/CustomModel/package_toolchain.py:13 [机器打包] docs = ['BEM_CREATOR_GUIDE.md', 'BEM_FORMAT_SPEC.md', 'BEM_RUNTIME_COMPATIBILITY.md', 'BEM_SOURCE_MOD_CONVERSION.md',；tools/CustomModel/package_toolchain.py:16 [机器消费] copyfile(repo/docs/name, target/docs/name)；tools/CustomModel/package_toolchain.py:28 [机器消费] copyfile(repo/docs/name, refs/name)",
+        "机器消费及生成证据": "scripts/BuildBetterEndfieldNext.ps1:96 [机器打包] foreach ($document in @(\"BEM_CREATOR_GUIDE.md\", \"BEM_FORMAT_SPEC.md\", \"BEM_RUNTIME_COMPATIBILITY.md\", \"BEM_SOURCE_MOD_CONVERSION.md\", \"THIRD_PARTY_MODULE_CREATOR_GUIDE.md\")) {；tools/CustomModel/package_toolchain.py:13 [机器打包] docs = ['BEM_CREATOR_GUIDE.md', 'BEM_FORMAT_SPEC.md', 'BEM_RUNTIME_COMPATIBILITY.md', 'BEM_SOURCE_MOD_CONVERSION.md',；tools/CustomModel/package_toolchain.py:16 [机器消费] copyfile(repo/docs/name, target/docs/name)；tools/CustomModel/package_toolchain.py:28 [机器消费] copyfile(repo/docs/name, refs/name)",
         "证据定位及代码注释": "范围内未见",
-        "文档导航及正文引用": "docs/custom_model/BEM_CREATOR_GUIDE.md:10 [普通导航] | [其他来源 Mod 转换](BEM_SOURCE_MOD_CONVERSION.md) | EFMI / 3DMigoto Mod 的自动转换范围、配方、身份规则、转换报错 |；docs/custom_model/BEM_CREATOR_GUIDE.md:27 [普通导航] 1. **转换现有 Mod**：标准 EFMI ComponentN Mod 通常可以直接转换；其他格式需要配方。见 [其他来源 Mod 转换](BEM_SOURCE_MOD_CONVERSION.md)。；docs/custom_model/BEM_CREATOR_GUIDE.md:166 [普通导航] - `efmi`：绑定源 Mod 的 ShapeKey，见 [转换文档](BEM_SOURCE_MOD_CONVERSION.md#8-shapekey-绑定到-13-滑条)。；docs/custom_model/history/INDEX.md:10 [普通导航] - [其他来源 Mod 转换](../../BEM_SOURCE_MOD_CONVERSION.md)；README.md:77 [普通导航] - [其他来源 Mod 转换](docs/custom_model/BEM_SOURCE_MOD_CONVERSION.md)；tools/CustomModel/README.md:7 [普通导航] [格式规范](../../docs/BEM_FORMAT_SPEC.md) · [创作者指南](../../docs/BEM_CREATOR_GUIDE.md) · [其他来源 Mod 转换](../../docs/BEM_SOURCE_MOD_CONVERSION.md)。；tools/CustomModel/README.md:17 [普通导航] 当前支持范围与规则见[其他来源 Mod 转换](../../docs/BEM_SOURCE_MOD_CONVERSION.md)。资料放在 `catalog/`，由工具自动匹配。RabbitFX 目前只做识别和报告，不自动转换。；tools/CustomModel/examples/README.md:11 [正文证据/维护指引] `body-slider/create_project.py` 生成可运行的 BEM 1.3 位置滑条示例（只需 Python 标准库）：`python body-slider/create_project.py --output NEW_DIRECTORY`，再运行 `BetterEndfield.BemConverter.exe build NEW_DI"
+        "文档导航及正文引用": "docs/custom_model/BEM_CREATOR_GUIDE.md:10 [普通导航] | [其他来源 Mod 转换](BEM_SOURCE_MOD_CONVERSION.md) | EFMI / 3DMigoto Mod 的自动转换范围、配方、身份规则、转换报错 |；docs/custom_model/BEM_CREATOR_GUIDE.md:27 [普通导航] 1. **转换现有 Mod**：标准 EFMI ComponentN Mod 通常可以直接转换；其他格式需要配方。见 [其他来源 Mod 转换](BEM_SOURCE_MOD_CONVERSION.md)。；docs/custom_model/BEM_CREATOR_GUIDE.md:166 [普通导航] - `efmi`：绑定源 Mod 的 ShapeKey，见 [转换文档](BEM_SOURCE_MOD_CONVERSION.md#8-shapekey-绑定到-13-滑条)。；docs/custom_model/history/INDEX.md:10 [普通导航] - [其他来源 Mod 转换](../../BEM_SOURCE_MOD_CONVERSION.md)；README.md:77 [普通导航] - [其他来源 Mod 转换](docs/custom_model/BEM_SOURCE_MOD_CONVERSION.md)；tools/CustomModel/README.md:7 [普通导航] [格式规范](../../docs/BEM_FORMAT_SPEC.md) · [创作者指南](../../docs/BEM_CREATOR_GUIDE.md) · [其他来源 Mod 转换](../../docs/BEM_SOURCE_MOD_CONVERSION.md)。；tools/CustomModel/README.md:17 [普通导航] 当前支持范围与规则见[其他来源 Mod 转换](../../docs/BEM_SOURCE_MOD_CONVERSION.md)。资料放在 `catalog/`，由工具自动匹配。RabbitFX 目前只做识别和报告，不自动转换。；tools/CustomModel/examples/README.md:11 [正文证据/维护指引] `body-slider/create_project.py` 生成可运行的 BEM 1.3 位置滑条示例（只需 Python 标准库）：`python body-slider/create_project.py --output NEW_DIRECTORY`，再运行 `BetterEndfieldNext.BemConverter.exe build NEW_DI"
       },
       "game_version_note": "通用格式、工具接口/替身验证或软件说明不绑定游戏客户端版本。"
     },
@@ -1468,7 +1468,7 @@
           "kind": "inventory",
           "report": "F:/zmd_bem/reports/workspace_inventory_20261005/项目用途_文档.csv",
           "row": 30,
-          "excerpt": "docs/combat_stats/COMBAT_RUNTIME_CONTRACTS.md:3 本文记录战斗数据模块（`BetterEndfield.CombatStats.dll`）下一阶段实现所依赖的游戏内数据结构与获取链，；docs/combat_stats/COMBAT_RUNTIME_CONTRACTS.md:4 用于 rDPS 增伤归属、角色装备/武器/技能/潜能快照、关卡元数据和分类维度。"
+          "excerpt": "docs/combat_stats/COMBAT_RUNTIME_CONTRACTS.md:3 本文记录战斗数据模块（`BetterEndfieldNext.CombatStats.dll`）下一阶段实现所依赖的游戏内数据结构与获取链，；docs/combat_stats/COMBAT_RUNTIME_CONTRACTS.md:4 用于 rDPS 增伤归属、角色装备/武器/技能/潜能快照、关卡元数据和分类维度。"
         },
         {
           "kind": "document",
@@ -1569,7 +1569,7 @@
       ],
       "legacy_path": "docs/CUSTOM_MODEL_ARCHITECTURE.md",
       "path": "docs/custom_model/research/1.5.3/architecture/CUSTOM_MODEL_ARCHITECTURE.md",
-      "title": "BetterEndfield.CustomModel 架构设计",
+      "title": "BetterEndfieldNext.CustomModel 架构设计",
       "evidence": [
         {
           "kind": "inventory",
@@ -1581,7 +1581,7 @@
           "kind": "document",
           "path": "docs/custom_model/research/1.5.3/architecture/CUSTOM_MODEL_ARCHITECTURE.md",
           "line": 1,
-          "excerpt": "BetterEndfield.CustomModel 架构设计"
+          "excerpt": "BetterEndfieldNext.CustomModel 架构设计"
         }
       ],
       "purpose": "实现前设计冻结及样本待验证项，不是现行稳定契约",
@@ -1624,7 +1624,7 @@
           "kind": "inventory",
           "report": "F:/zmd_bem/reports/workspace_inventory_20261005/项目用途_文档.csv",
           "row": 33,
-          "excerpt": "docs/custom_model/research/1.5.3/mesh-skinning/CUSTOM_MODEL_BONES_PER_VERTEX_ANDROID.md:3 状态：调查结论，未改变运行时代码。；docs/custom_model/research/1.5.3/mesh-skinning/CUSTOM_MODEL_BONES_PER_VERTEX_ANDROID.md:7 生产版 `BetterEndfield.CustomModel` 的处理顺序如下："
+          "excerpt": "docs/custom_model/research/1.5.3/mesh-skinning/CUSTOM_MODEL_BONES_PER_VERTEX_ANDROID.md:3 状态：调查结论，未改变运行时代码。；docs/custom_model/research/1.5.3/mesh-skinning/CUSTOM_MODEL_BONES_PER_VERTEX_ANDROID.md:7 生产版 `BetterEndfieldNext.CustomModel` 的处理顺序如下："
         },
         {
           "kind": "document",
@@ -1775,7 +1775,7 @@
           "kind": "inventory",
           "report": "F:/zmd_bem/reports/workspace_inventory_20261005/项目用途_文档.csv",
           "row": 36,
-          "excerpt": "docs/custom_model/research/1.5.3/endmin-casualwear/CUSTOM_MODEL_EFMI_SAMPLE_ENDMIN_CASUALWEAR.md:3 状态：真实样本验证记录  ；docs/custom_model/research/1.5.3/endmin-casualwear/CUSTOM_MODEL_EFMI_SAMPLE_ENDMIN_CASUALWEAR.md:4 用途：`BetterEndfield.CustomModel` / BEM v1 设计输入"
+          "excerpt": "docs/custom_model/research/1.5.3/endmin-casualwear/CUSTOM_MODEL_EFMI_SAMPLE_ENDMIN_CASUALWEAR.md:3 状态：真实样本验证记录  ；docs/custom_model/research/1.5.3/endmin-casualwear/CUSTOM_MODEL_EFMI_SAMPLE_ENDMIN_CASUALWEAR.md:4 用途：`BetterEndfieldNext.CustomModel` / BEM v1 设计输入"
         },
         {
           "kind": "document",
@@ -2383,7 +2383,7 @@
       ],
       "legacy_path": "docs/CUSTOM_MODEL_POC1_C9_PLAN.md",
       "path": "docs/custom_model/research/1.5.3/endmin-casualwear/CUSTOM_MODEL_POC1_C9_PLAN.md",
-      "title": "BetterEndfield.CustomModel PoC-1：Endmin Casualwear 衣物优先",
+      "title": "BetterEndfieldNext.CustomModel PoC-1：Endmin Casualwear 衣物优先",
       "evidence": [
         {
           "kind": "inventory",
@@ -2395,7 +2395,7 @@
           "kind": "document",
           "path": "docs/custom_model/research/1.5.3/endmin-casualwear/CUSTOM_MODEL_POC1_C9_PLAN.md",
           "line": 1,
-          "excerpt": "BetterEndfield.CustomModel PoC-1：Endmin Casualwear 衣物优先"
+          "excerpt": "BetterEndfieldNext.CustomModel PoC-1：Endmin Casualwear 衣物优先"
         }
       ],
       "purpose": "首次C9衣物视觉PoC与C10隐藏验证计划",
@@ -2435,7 +2435,7 @@
       ],
       "legacy_path": "docs/CUSTOM_MODEL_POC21_RAW_CHANNEL.md",
       "path": "docs/custom_model/research/1.5.3/mesh-raw-poc/CUSTOM_MODEL_POC21_RAW_CHANNEL.md",
-      "title": "BetterEndfield.CustomModel PoC-2.1: guarded Mesh raw-channel path",
+      "title": "BetterEndfieldNext.CustomModel PoC-2.1: guarded Mesh raw-channel path",
       "evidence": [
         {
           "kind": "inventory",
@@ -2447,7 +2447,7 @@
           "kind": "document",
           "path": "docs/custom_model/research/1.5.3/mesh-raw-poc/CUSTOM_MODEL_POC21_RAW_CHANNEL.md",
           "line": 1,
-          "excerpt": "BetterEndfield.CustomModel PoC-2.1: guarded Mesh raw-channel path"
+          "excerpt": "BetterEndfieldNext.CustomModel PoC-2.1: guarded Mesh raw-channel path"
         }
       ],
       "purpose": "旧raw-channel假设；正文明确由PoC2.2取代",
@@ -2488,7 +2488,7 @@
       ],
       "legacy_path": "docs/CUSTOM_MODEL_POC22_RAW_STREAM.md",
       "path": "docs/custom_model/research/1.5.3/mesh-raw-poc/CUSTOM_MODEL_POC22_RAW_STREAM.md",
-      "title": "BetterEndfield.CustomModel PoC-2.2: exact source layout via engine bindings",
+      "title": "BetterEndfieldNext.CustomModel PoC-2.2: exact source layout via engine bindings",
       "evidence": [
         {
           "kind": "inventory",
@@ -2500,7 +2500,7 @@
           "kind": "document",
           "path": "docs/custom_model/research/1.5.3/mesh-raw-poc/CUSTOM_MODEL_POC22_RAW_STREAM.md",
           "line": 1,
-          "excerpt": "BetterEndfield.CustomModel PoC-2.2: exact source layout via engine bindings"
+          "excerpt": "BetterEndfieldNext.CustomModel PoC-2.2: exact source layout via engine bindings"
         }
       ],
       "purpose": "精确源布局ABI与旧PoC纠错，catalog构建保留证据标签",
@@ -2654,7 +2654,7 @@
           "kind": "inventory",
           "report": "F:/zmd_bem/reports/workspace_inventory_20261005/项目用途_文档.csv",
           "row": 53,
-          "excerpt": "docs/custom_model/research/1.5.3/resource-delivery/CUSTOM_MODEL_RESOURCE_AB_VALIDATION.md:3 工作树：`.worktrees/dev-custom-model-design`。测试目录：`E:\\Dr.Hydra\\Better Endfield\\artifacts\\BetterEndfield-win-x64`。用户授权直接覆盖、不备份；游戏由用户启动和验证。没有修改主工作树源码，没有计算产物哈希。；docs/custom_model/research/1.5.3/resource-delivery/CUSTOM_MODEL_RESOURCE_AB_VALIDATION.md:5 收尾状态：用户确认当前新版原生资源实现开发完成并授权推送开发分支。正式版采用已通过的 B5 行为；临时实验开关、B6 观察代码、新增测试程序和 A/B 构建/部署脚本已撤除。下文保留实验期间的证据，最终去留与未执行项目见末节。"
+          "excerpt": "docs/custom_model/research/1.5.3/resource-delivery/CUSTOM_MODEL_RESOURCE_AB_VALIDATION.md:3 工作树：`.worktrees/dev-custom-model-design`。测试目录：`E:\\Dr.Hydra\\Better Endfield\\artifacts\\BetterEndfieldNext-win-x64`。用户授权直接覆盖、不备份；游戏由用户启动和验证。没有修改主工作树源码，没有计算产物哈希。；docs/custom_model/research/1.5.3/resource-delivery/CUSTOM_MODEL_RESOURCE_AB_VALIDATION.md:5 收尾状态：用户确认当前新版原生资源实现开发完成并授权推送开发分支。正式版采用已通过的 B5 行为；临时实验开关、B6 观察代码、新增测试程序和 A/B 构建/部署脚本已撤除。下文保留实验期间的证据，最终去留与未执行项目见末节。"
         },
         {
           "kind": "document",
@@ -2803,7 +2803,7 @@
       ],
       "legacy_path": "docs/CUSTOM_MODEL_RUNTIME_PROBE.md",
       "path": "docs/custom_model/research/1.5.3/runtime-probes/CUSTOM_MODEL_RUNTIME_PROBE.md",
-      "title": "BetterEndfield.CustomModel Runtime Probe",
+      "title": "BetterEndfieldNext.CustomModel Runtime Probe",
       "evidence": [
         {
           "kind": "inventory",
@@ -2815,7 +2815,7 @@
           "kind": "document",
           "path": "docs/custom_model/research/1.5.3/runtime-probes/CUSTOM_MODEL_RUNTIME_PROBE.md",
           "line": 1,
-          "excerpt": "BetterEndfield.CustomModel Runtime Probe"
+          "excerpt": "BetterEndfieldNext.CustomModel Runtime Probe"
         }
       ],
       "purpose": "早期Windows只读探针目的、第一轮结果与实验入口",
@@ -2957,7 +2957,7 @@
       ],
       "legacy_path": "docs/CUSTOM_MODEL_RUNTIME_VALIDATION_ENDMIN_20260910.md",
       "path": "docs/custom_model/research/1.5.3/endmin-casualwear/CUSTOM_MODEL_RUNTIME_VALIDATION_ENDMIN.md",
-      "title": "BetterEndfield.CustomModel 运行时验证：Endministrator (F)",
+      "title": "BetterEndfieldNext.CustomModel 运行时验证：Endministrator (F)",
       "evidence": [
         {
           "kind": "inventory",
@@ -2969,7 +2969,7 @@
           "kind": "document",
           "path": "docs/custom_model/research/1.5.3/endmin-casualwear/CUSTOM_MODEL_RUNTIME_VALIDATION_ENDMIN.md",
           "line": 1,
-          "excerpt": "BetterEndfield.CustomModel 运行时验证：Endministrator (F)"
+          "excerpt": "BetterEndfieldNext.CustomModel 运行时验证：Endministrator (F)"
         }
       ],
       "purpose": "管理员源布局/组件/骨骼设计输入及catalog构建证据",
@@ -3143,7 +3143,7 @@
       "ownership": "documentation",
       "reference_evidence": {
         "机器消费及生成证据": "范围内未见",
-        "证据定位及代码注释": "manifests/shared/optiscaler.lock.json:3 [代码注释/定位] \"Notes\": \"OptiScaler v0.9.4 (2026-07-18)，发布资产 Optiscaler_0.9.4-final.20260718._MM.7z，SHA256 575CB4DF866116093DF75AF607E37FD70E10F5163E0F23FD5C804142E80EF0AD（与上游 release 公布值一致）。组件不随；ui/BetterEndfield.UI/Services/OptiScalerDeploymentService.cs:33 [代码注释/定位] /// 背景与实测依据见 docs/ui/DISPLAY_PIPELINE.md。；ui/BetterEndfield.UI/Models/DisplayConfiguration.cs:35 [代码注释/定位] /// docs/ui/DISPLAY_PIPELINE.md。；ui/BetterEndfield.UI/Models/DisplayConfiguration.cs:70 [代码注释/定位] /// docs/ui/DISPLAY_PIPELINE.md 的策略矩阵。",
+        "证据定位及代码注释": "manifests/shared/optiscaler.lock.json:3 [代码注释/定位] \"Notes\": \"OptiScaler v0.9.4 (2026-07-18)，发布资产 Optiscaler_0.9.4-final.20260718._MM.7z，SHA256 575CB4DF866116093DF75AF607E37FD70E10F5163E0F23FD5C804142E80EF0AD（与上游 release 公布值一致）。组件不随；ui/BetterEndfieldNext.UI/Services/OptiScalerDeploymentService.cs:33 [代码注释/定位] /// 背景与实测依据见 docs/ui/DISPLAY_PIPELINE.md。；ui/BetterEndfieldNext.UI/Models/DisplayConfiguration.cs:35 [代码注释/定位] /// docs/ui/DISPLAY_PIPELINE.md。；ui/BetterEndfieldNext.UI/Models/DisplayConfiguration.cs:70 [代码注释/定位] /// docs/ui/DISPLAY_PIPELINE.md 的策略矩阵。",
         "文档导航及正文引用": "docs/custom_model/research/1.5.3/model-replacement/CHARACTER_MODEL_REPLACEMENT.md:173 [正文证据/维护指引] 3. **PC 端集成 EFMI（注入 3DMigoto + `-force-d3d11`）可作为短期生态兜底，但明确为 PC-only，不参与架构决策。** 该路径与 `docs/ui/DISPLAY_PIPELINE.md` 的 OptiScaler 方案互斥（`-force-d3d11` 会使 FSR4 路径与 DLSS-FG 失效），若实施须做成互斥模式。；README.en.md:119 [普通导航] **PC music/display:** OmniMix uses the user's existing backend without copying its program or library. Login, main/base and gameplay music can be replaced separately, with native f；README.md:119 [普通导航] **PC 音乐与显示**：OmniMix 集成使用用户现有后端，不复制其程序或曲库；可分别替换登录、主界面/基地、游戏内音乐，流异常时保留或恢复原生音乐。OptiScaler 负责超分、帧生成和锐化，硬件/后端兼容性依实际环境。[OmniMix 对接](docs/music/OMNIMIX_INTEGRATION_HANDOFF.md) · [显示管线](docs/DI"
       },
       "game_version_note": "通用格式、工具接口/替身验证或软件说明不绑定游戏客户端版本。"
@@ -3425,7 +3425,7 @@
           "kind": "inventory",
           "report": "F:/zmd_bem/reports/workspace_inventory_20261005/项目用途_文档.csv",
           "row": 68,
-          "excerpt": "docs/camera/FIRST_PERSON_PROFILES.md:3 基线 `main dd7131b4`，直接叠加现有工作区。职责限定为本记录及下列新增文件；camera runtime 接入、Android MeshData 适配和最终构建/安装由主代理负责。；docs/camera/FIRST_PERSON_PROFILES.md:7 `native/modules/camera/first_person_profiles.h`，命名空间 `BetterEndfield::FirstPersonProfiles`："
+          "excerpt": "docs/camera/FIRST_PERSON_PROFILES.md:3 基线 `main dd7131b4`，直接叠加现有工作区。职责限定为本记录及下列新增文件；camera runtime 接入、Android MeshData 适配和最终构建/安装由主代理负责。；docs/camera/FIRST_PERSON_PROFILES.md:7 `native/modules/camera/first_person_profiles.h`，命名空间 `BetterEndfieldNext::FirstPersonProfiles`："
         },
         {
           "kind": "document",
@@ -3533,7 +3533,7 @@
           "kind": "inventory",
           "report": "F:/zmd_bem/reports/workspace_inventory_20261005/项目用途_文档.csv",
           "row": 70,
-          "excerpt": "docs/host/GAME_INTERFACES.md:3 本文记录重构后的进程内接口协议。运行时不保存客户端地址、文件哈希白名单或硬编码字段偏移。；docs/host/GAME_INTERFACES.md:7 Host 导出模块发现所需的 `BetterEndfield_GetModuleApiV1`。模块清单使用 `modules/*.module.ini`，包含模块 ID、DLL、ABI、契约组及 `requires` 程序集列表。Host 等待所需 IL2CPP 程序集注册后，按清单文件名的稳定顺序加载 DLL，先调用 `initialize`，再推送对应配置；依赖未就绪会在 "
+          "excerpt": "docs/host/GAME_INTERFACES.md:3 本文记录重构后的进程内接口协议。运行时不保存客户端地址、文件哈希白名单或硬编码字段偏移。；docs/host/GAME_INTERFACES.md:7 Host 导出模块发现所需的 `BetterEndfieldNext_GetModuleApiV1`。模块清单使用 `modules/*.module.ini`，包含模块 ID、DLL、ABI、契约组及 `requires` 程序集列表。Host 等待所需 IL2CPP 程序集注册后，按清单文件名的稳定顺序加载 DLL，先调用 `initialize`，再推送对应配置；依赖未就绪会在 "
         },
         {
           "kind": "document",
@@ -4723,7 +4723,7 @@
           "kind": "inventory",
           "report": "F:/zmd_bem/reports/workspace_inventory_20261005/项目用途_文档.csv",
           "row": 93,
-          "excerpt": "docs/actions/SPECIAL_DASH_CONTINUOUS_ANIMATION.md:3 按住冲刺时，让角色保持自己的特殊冲刺动作循环播放，而不是播完一遍就回到普通疾跑。当前支持洁尔佩塔（`chr_0013_aglina`）和梨诺（`chr_0035_liino`）。启动器「冲刺持续」页的开关写入 `[betterendfield.actions] enabled`；`external_loop=true` 时启用骨骼姿态覆盖，`false` 时退回只保持状态不改姿；docs/actions/SPECIAL_DASH_CONTINUOUS_ANIMATION.md:7 游戏侧有两层机制：Animator 的 `SpDash_L` / `SpDash_R` 状态，以及 `CharIntPerform_<角色>_Spdash` 这个 Perform。两者生命周期独立，都要处理。模块（`native/modules/actions`）分三部分："
+          "excerpt": "docs/actions/SPECIAL_DASH_CONTINUOUS_ANIMATION.md:3 按住冲刺时，让角色保持自己的特殊冲刺动作循环播放，而不是播完一遍就回到普通疾跑。当前支持洁尔佩塔（`chr_0013_aglina`）和梨诺（`chr_0035_liino`）。启动器「冲刺持续」页的开关写入 `[betterendfieldnext.actions] enabled`；`external_loop=true` 时启用骨骼姿态覆盖，`false` 时退回只保持状态不改姿；docs/actions/SPECIAL_DASH_CONTINUOUS_ANIMATION.md:7 游戏侧有两层机制：Animator 的 `SpDash_L` / `SpDash_R` 状态，以及 `CharIntPerform_<角色>_Spdash` 这个 Perform。两者生命周期独立，都要处理。模块（`native/modules/actions`）分三部分："
         },
         {
           "kind": "document",
@@ -4780,7 +4780,7 @@
           "kind": "inventory",
           "report": "F:/zmd_bem/reports/workspace_inventory_20261005/项目用途_文档.csv",
           "row": 94,
-          "excerpt": "docs/ui/research/1.5.3/sponsor/SPONSOR_UI.md:3 分支：`dev/android-main-bem-import-20260927`。；docs/ui/research/1.5.3/sponsor/SPONSOR_UI.md:5 - 安卓：标题栏右侧「赞助」，使用杏橙底色 `#FFCFA3`、深棕文字 `#4A2B18`。标题在窄栏自动调整大小。点击展示渠道选择，微信码独立展示并可保存到相册 `Pictures/BetterEndfield`，供微信从相册识别；保存使用 Android 10+ MediaStore，无需新增存储权限。"
+          "excerpt": "docs/ui/research/1.5.3/sponsor/SPONSOR_UI.md:3 分支：`dev/android-main-bem-import-20260927`。；docs/ui/research/1.5.3/sponsor/SPONSOR_UI.md:5 - 安卓：标题栏右侧「赞助」，使用杏橙底色 `#FFCFA3`、深棕文字 `#4A2B18`。标题在窄栏自动调整大小。点击展示渠道选择，微信码独立展示并可保存到相册 `Pictures/BetterEndfieldNext`，供微信从相册识别；保存使用 Android 10+ MediaStore，无需新增存储权限。"
         },
         {
           "kind": "document",
@@ -4884,7 +4884,7 @@
           "kind": "inventory",
           "report": "F:/zmd_bem/reports/workspace_inventory_20261005/项目用途_文档.csv",
           "row": 96,
-          "excerpt": "docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md:3 适用：Better Endfield 3.4.2，第三方包格式 1 / Native ABI 1。Windows x64 与 Android arm64 使用同一套包与网页消息协议。SDK 版本独立为 1.0.0。；docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md:7 SDK 中的 `packages/BetterEndfield-Echo-1.0.0-Dual.zip` 是完整双端包。进入管理应用的“第三方模块”，导入 ZIP 并启用，连接正在运行的游戏，再打开模块页面。点击发送应收到带有计数、原请求与当前配置的回复；修改 Label 后保存可验证配置回调。模块原生代码不依赖游戏地址，也不改变游戏行为。"
+          "excerpt": "docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md:3 适用：Better Endfield 3.4.2，第三方包格式 1 / Native ABI 1。Windows x64 与 Android arm64 使用同一套包与网页消息协议。SDK 版本独立为 1.0.0。；docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md:7 SDK 中的 `packages/BetterEndfieldNext-Echo-1.0.0-Dual.zip` 是完整双端包。进入管理应用的“第三方模块”，导入 ZIP 并启用，连接正在运行的游戏，再打开模块页面。点击发送应收到带有计数、原请求与当前配置的回复；修改 Label 后保存可验证配置回调。模块原生代码不依赖游戏地址，也不改变游戏行为。"
         },
         {
           "kind": "document",
@@ -4901,9 +4901,9 @@
       "replacement": "未见明确整体替代声明；按正文适用范围保留",
       "ownership": "documentation",
       "reference_evidence": {
-        "机器消费及生成证据": "native/tests/third_party_ui/sdk_test.py:43 [机器校验] assert sdk['docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md'].startswith(b'# ')；tools/ThirdPartyModules/BuildSdk.ps1:112 [机器消费] Copy-File (Join-Path $repoRoot 'docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md') (Join-Path $sdkRoot 'docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md')；scripts/BuildBetterEndfield.ps1:96 [机器打包] foreach ($document in @(\"BEM_CREATOR_GUIDE.md\", \"BEM_FORMAT_SPEC.md\", \"BEM_RUNTIME_COMPATIBILITY.md\", \"BEM_SOURCE_MOD_CONVERSION.md\", \"THIRD_PARTY_MODULE_CREATOR_GUIDE.md\")) {",
+        "机器消费及生成证据": "native/tests/third_party_ui/sdk_test.py:43 [机器校验] assert sdk['docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md'].startswith(b'# ')；tools/ThirdPartyModules/BuildSdk.ps1:112 [机器消费] Copy-File (Join-Path $repoRoot 'docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md') (Join-Path $sdkRoot 'docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md')；scripts/BuildBetterEndfieldNext.ps1:96 [机器打包] foreach ($document in @(\"BEM_CREATOR_GUIDE.md\", \"BEM_FORMAT_SPEC.md\", \"BEM_RUNTIME_COMPATIBILITY.md\", \"BEM_SOURCE_MOD_CONVERSION.md\", \"THIRD_PARTY_MODULE_CREATOR_GUIDE.md\")) {",
         "证据定位及代码注释": "tools/ThirdPartyModules/BuildSdk.ps1:124 [代码注释/定位] - `docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md`: package, lifecycle, configuration, UI bridge, shared Hook contract and build guide.",
-        "文档导航及正文引用": "docs/host/CREATOR_MODULE_API_DESIGN.md:3 [普通导航] 日期：2026-10-02。Better Endfield 3.4.2 已实现双端第三方模块 ZIP 导入、游戏进程原生加载、网页容器、配置/消息/日志，以及可选共享 Hook 链。包 format 1、Native ABI 1；独立 SDK 版本 1.0.0。具体字段、示例与编译命令见 [第三方模块创作者指南](THIRD_PARTY_MODULE_CRE；docs/host/CREATOR_MODULE_API_DESIGN.md:94 [普通导航] 4. 已交付[创作者指南](THIRD_PARTY_MODULE_CREATOR_GUIDE.md)、三份公开头文件与 `tools/ThirdPartyModules/BuildSdk.ps1`，导出完整双端 Echo ZIP 和独立 SDK ZIP。；README.en.md:7 [普通导航] [Download](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [Release notes](CHANGELOG.md) · [Android setup/build guide](android/README.md) · [BEM creator guide](docs/；README.en.md:95 [普通导航] Start with the [module creator guide](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md), then [ThirdPartyModule.h](native/shared/include/BetterEndfield/ThirdPartyModule.h), [HookChain.h](n；README.md:7 [普通导航] [下载正式版](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [更新说明](CHANGELOG.md) · [Android 使用与构建](android/README.md) · [BEM 创作者指南](docs/custom_model/BEM_CREATOR_GUIDE.md) · [模块开发指南]；README.md:95 [普通导航] 接入流程见 [第三方模块创作者指南](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)，契约见 [ThirdPartyModule.h](native/shared/include/BetterEndfield/ThirdPartyModule.h)、[HookChain.h](native/shared/include/B；android/README.md:15 [普通导航] [third-party module creator guide](../docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)."
+        "文档导航及正文引用": "docs/host/CREATOR_MODULE_API_DESIGN.md:3 [普通导航] 日期：2026-10-02。Better Endfield 3.4.2 已实现双端第三方模块 ZIP 导入、游戏进程原生加载、网页容器、配置/消息/日志，以及可选共享 Hook 链。包 format 1、Native ABI 1；独立 SDK 版本 1.0.0。具体字段、示例与编译命令见 [第三方模块创作者指南](THIRD_PARTY_MODULE_CRE；docs/host/CREATOR_MODULE_API_DESIGN.md:94 [普通导航] 4. 已交付[创作者指南](THIRD_PARTY_MODULE_CREATOR_GUIDE.md)、三份公开头文件与 `tools/ThirdPartyModules/BuildSdk.ps1`，导出完整双端 Echo ZIP 和独立 SDK ZIP。；README.en.md:7 [普通导航] [Download](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [Release notes](CHANGELOG.md) · [Android setup/build guide](android/README.md) · [BEM creator guide](docs/；README.en.md:95 [普通导航] Start with the [module creator guide](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md), then [ThirdPartyModule.h](native/shared/include/BetterEndfieldNext/ThirdPartyModule.h), [HookChain.h](n；README.md:7 [普通导航] [下载正式版](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [更新说明](CHANGELOG.md) · [Android 使用与构建](android/README.md) · [BEM 创作者指南](docs/custom_model/BEM_CREATOR_GUIDE.md) · [模块开发指南]；README.md:95 [普通导航] 接入流程见 [第三方模块创作者指南](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)，契约见 [ThirdPartyModule.h](native/shared/include/BetterEndfieldNext/ThirdPartyModule.h)、[HookChain.h](native/shared/include/B；android/README.md:15 [普通导航] [third-party module creator guide](../docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)."
       },
       "game_version_note": "通用格式、工具接口/替身验证或软件说明不绑定游戏客户端版本。"
     },
@@ -6445,7 +6445,7 @@
       "reference_evidence": {
         "机器消费及生成证据": "范围内未见",
         "证据定位及代码注释": "范围内未见",
-        "文档导航及正文引用": "docs/camera/research/1.5.3/eiem-port/CAMERA_EIEM_PORT_PLAN.md:132 [正文证据/维护指引] - **新文件**：`native/modules/camera/free_camera_runtime.inc`，包括自由视角位姿、鼠标钩子、运镜、关键帧和 VMD 镜头；另有 `ui/BetterEndfield.UI/Models/FreeCameraExtras.cs` 和 `THIRD_PARTY_NOTICES.md`。"
+        "文档导航及正文引用": "docs/camera/research/1.5.3/eiem-port/CAMERA_EIEM_PORT_PLAN.md:132 [正文证据/维护指引] - **新文件**：`native/modules/camera/free_camera_runtime.inc`，包括自由视角位姿、鼠标钩子、运镜、关键帧和 VMD 镜头；另有 `ui/BetterEndfieldNext.UI/Models/FreeCameraExtras.cs` 和 `THIRD_PARTY_NOTICES.md`。"
       },
       "game_version_note": "按用户明确的九月初后 1.5.3 时间线与当前配置归类；原始来源与验证边界保留，热更新差异由资源快照记录。",
       "resource_snapshot_evidence": []
@@ -7015,19 +7015,19 @@
       "platform": [
         "Windows"
       ],
-      "legacy_path": "ui/BetterEndfield.UI/README.md",
-      "path": "ui/BetterEndfield.UI/README.md",
+      "legacy_path": "ui/BetterEndfieldNext.UI/README.md",
+      "path": "ui/BetterEndfieldNext.UI/README.md",
       "title": "Better Endfield UI",
       "evidence": [
         {
           "kind": "inventory",
           "report": "F:/zmd_bem/reports/workspace_inventory_20261005/项目用途_文档.csv",
           "row": 141,
-          "excerpt": "ui/BetterEndfield.UI/README.md:3 Better Endfield 的 WinUI 3 中文控制器。应用负责编辑模块配置、显示运行状态并启动原生注入器。；ui/BetterEndfield.UI/README.md:5 项目位于仓库的 `ui/BetterEndfield.UI`。`Assets/model` 保存模型预设与角色名，`Assets/voice` 保存不含音频内容的紧凑语音索引，`Assets/shared` 保存 UI 与安装器共用的品牌资源。"
+          "excerpt": "ui/BetterEndfieldNext.UI/README.md:3 Better Endfield 的 WinUI 3 中文控制器。应用负责编辑模块配置、显示运行状态并启动原生注入器。；ui/BetterEndfieldNext.UI/README.md:5 项目位于仓库的 `ui/BetterEndfieldNext.UI`。`Assets/model` 保存模型预设与角色名，`Assets/voice` 保存不含音频内容的紧凑语音索引，`Assets/shared` 保存 UI 与安装器共用的品牌资源。"
         },
         {
           "kind": "document",
-          "path": "ui/BetterEndfield.UI/README.md",
+          "path": "ui/BetterEndfieldNext.UI/README.md",
           "line": 1,
           "excerpt": "Better Endfield UI"
         }
@@ -7101,7 +7101,7 @@
           "kind": "inventory",
           "report": "F:/zmd_bem/reports/workspace_inventory_20261005/项目用途_文档.csv",
           "row": 143,
-          "excerpt": "native/modules/actions/README.md:3 1.13.4 补齐梨诺漂浮物两侧光效的持续保持：除脚部与拖尾（actor 0–2）外，保持漂浮武器光效（10/11）和律动（20/21）。停止冲刺或原生效果销毁时恢复粒子参数。原来的 4 槽保持表遗漏了这些高编号效果；挂点刷新本身不会延长它们的寿命。资源依据与验证见 [显隐与光效修复](../../../docs/LIINO_DASH_VISUAL_FIX.md)。；native/modules/actions/README.md:5 模块 ID `betterendfield.actions`，显示名 `Sustained Dash`。启动器「冲刺持续」页提供分角色开关，默认关闭。游戏在每次特殊冲刺里选择左或右动作，本模块保留该选择，不重新掷。"
+          "excerpt": "native/modules/actions/README.md:3 1.13.4 补齐梨诺漂浮物两侧光效的持续保持：除脚部与拖尾（actor 0–2）外，保持漂浮武器光效（10/11）和律动（20/21）。停止冲刺或原生效果销毁时恢复粒子参数。原来的 4 槽保持表遗漏了这些高编号效果；挂点刷新本身不会延长它们的寿命。资源依据与验证见 [显隐与光效修复](../../../docs/LIINO_DASH_VISUAL_FIX.md)。；native/modules/actions/README.md:5 模块 ID `betterendfieldnext.actions`，显示名 `Sustained Dash`。启动器「冲刺持续」页提供分角色开关，默认关闭。游戏在每次特殊冲刺里选择左或右动作，本模块保留该选择，不重新掷。"
         },
         {
           "kind": "document",
@@ -7153,7 +7153,7 @@
           "kind": "inventory",
           "report": "F:/zmd_bem/reports/workspace_inventory_20261005/项目用途_文档.csv",
           "row": 144,
-          "excerpt": "native/modules/actions/assets/SOURCE.md:3 本目录包含冲刺持续模块（`BetterEndfield.Actions`）在 `external_loop=true` 模式下运行时所需的骨骼姿态覆盖二进制数据文件（BEPOSE12 格式）。；native/modules/actions/assets/SOURCE.md:7 1. **`pose_aglina.bin`**"
+          "excerpt": "native/modules/actions/assets/SOURCE.md:3 本目录包含冲刺持续模块（`BetterEndfieldNext.Actions`）在 `external_loop=true` 模式下运行时所需的骨骼姿态覆盖二进制数据文件（BEPOSE12 格式）。；native/modules/actions/assets/SOURCE.md:7 1. **`pose_aglina.bin`**"
         },
         {
           "kind": "document",
@@ -7828,7 +7828,7 @@
           "kind": "inventory",
           "report": "F:/zmd_bem/reports/workspace_inventory_20261005/项目用途_文档.csv",
           "row": 159,
-          "excerpt": "native/tests/android_mmd_audio/README.md:3 The runner compiles the current production `android/app/src/main/java/dev/betterendfield/android/MmdAudio.java`；native/tests/android_mmd_audio/README.md:4 with minimal `android.media.MediaPlayer` and `android.os` stubs. It requires a JDK supporting Java 17,"
+          "excerpt": "native/tests/android_mmd_audio/README.md:3 The runner compiles the current production `android/app/src/main/java/dev/betterendfield/next/MmdAudio.java`；native/tests/android_mmd_audio/README.md:4 with minimal `android.media.MediaPlayer` and `android.os` stubs. It requires a JDK supporting Java 17,"
         },
         {
           "kind": "document",
@@ -8096,21 +8096,21 @@
       "platform": [
         "Android"
       ],
-      "legacy_path": "native/shared/third_party/astcenc/README.betterendfield.md",
-      "path": "native/shared/third_party/astcenc/README.betterendfield.md",
-      "title": "README.betterendfield.md",
+      "legacy_path": "native/shared/third_party/astcenc/README.betterendfieldnext.md",
+      "path": "native/shared/third_party/astcenc/README.betterendfieldnext.md",
+      "title": "README.betterendfieldnext.md",
       "evidence": [
         {
           "kind": "inventory",
           "report": "F:/zmd_bem/reports/workspace_inventory_20261005/项目用途_文档.csv",
           "row": 165,
-          "excerpt": "native/shared/third_party/astcenc/README.betterendfield.md:1 Arm astcenc 5.2.0, upstream commit 2319d9c4d4af53a7fc7c52985e264ce6e8a02a9b.；native/shared/third_party/astcenc/README.betterendfield.md:2 Source: https://github.com/ARM-software/astc-encoder"
+          "excerpt": "native/shared/third_party/astcenc/README.betterendfieldnext.md:1 Arm astcenc 5.2.0, upstream commit 2319d9c4d4af53a7fc7c52985e264ce6e8a02a9b.；native/shared/third_party/astcenc/README.betterendfieldnext.md:2 Source: https://github.com/ARM-software/astc-encoder"
         },
         {
           "kind": "document",
-          "path": "native/shared/third_party/astcenc/README.betterendfield.md",
+          "path": "native/shared/third_party/astcenc/README.betterendfieldnext.md",
           "line": 1,
-          "excerpt": "README.betterendfield.md"
+          "excerpt": "README.betterendfieldnext.md"
         }
       ],
       "purpose": "astcenc5.2.0固定commit、未修改上游及本地解码接口",
@@ -8135,21 +8135,21 @@
       "platform": [
         "Android"
       ],
-      "legacy_path": "native/shared/third_party/bcdec/README.betterendfield.md",
-      "path": "native/shared/third_party/bcdec/README.betterendfield.md",
-      "title": "README.betterendfield.md",
+      "legacy_path": "native/shared/third_party/bcdec/README.betterendfieldnext.md",
+      "path": "native/shared/third_party/bcdec/README.betterendfieldnext.md",
+      "title": "README.betterendfieldnext.md",
       "evidence": [
         {
           "kind": "inventory",
           "report": "F:/zmd_bem/reports/workspace_inventory_20261005/项目用途_文档.csv",
           "row": 166,
-          "excerpt": "native/shared/third_party/bcdec/README.betterendfield.md:1 bcdec 0.98, upstream commit 80859ed3b7afb1c527a2a99d70c61457bea72d0c.；native/shared/third_party/bcdec/README.betterendfield.md:2 Source: https://github.com/iOrange/bcdec"
+          "excerpt": "native/shared/third_party/bcdec/README.betterendfieldnext.md:1 bcdec 0.98, upstream commit 80859ed3b7afb1c527a2a99d70c61457bea72d0c.；native/shared/third_party/bcdec/README.betterendfieldnext.md:2 Source: https://github.com/iOrange/bcdec"
         },
         {
           "kind": "document",
-          "path": "native/shared/third_party/bcdec/README.betterendfield.md",
+          "path": "native/shared/third_party/bcdec/README.betterendfieldnext.md",
           "line": 1,
-          "excerpt": "README.betterendfield.md"
+          "excerpt": "README.betterendfieldnext.md"
         }
       ],
       "purpose": "bcdec0.98固定commit、双许可与本地未修改声明",
@@ -8880,8 +8880,8 @@
       {
         "path": "README.en.md",
         "line": 95,
-        "original": "Start with the [module creator guide](docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md), then [ThirdPartyModule.h](native/shared/include/BetterEndfield/ThirdPartyModule.h), [HookChain.h](native/shared/include/BetterEndfield/HookChain.h) and the [Echo example](tools/ThirdPartyModules/echo/). Echo builds for Windows/Android; messaging and lifecycle have isolated regression coverage. Authors still test and document their real game modules' behavior, stability and compatibility.",
-        "suggested": "Start with the [module creator guide](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md), then [ThirdPartyModule.h](native/shared/include/BetterEndfield/ThirdPartyModule.h), [HookChain.h](native/shared/include/BetterEndfield/HookChain.h) and the [Echo example](tools/ThirdPartyModules/echo). Echo builds for Windows/Android; messaging and lifecycle have isolated regression coverage. Authors still test and document their real game modules' behavior, stability and compatibility."
+        "original": "Start with the [module creator guide](docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md), then [ThirdPartyModule.h](native/shared/include/BetterEndfieldNext/ThirdPartyModule.h), [HookChain.h](native/shared/include/BetterEndfieldNext/HookChain.h) and the [Echo example](tools/ThirdPartyModules/echo/). Echo builds for Windows/Android; messaging and lifecycle have isolated regression coverage. Authors still test and document their real game modules' behavior, stability and compatibility.",
+        "suggested": "Start with the [module creator guide](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md), then [ThirdPartyModule.h](native/shared/include/BetterEndfieldNext/ThirdPartyModule.h), [HookChain.h](native/shared/include/BetterEndfieldNext/HookChain.h) and the [Echo example](tools/ThirdPartyModules/echo). Echo builds for Windows/Android; messaging and lifecycle have isolated regression coverage. Authors still test and document their real game modules' behavior, stability and compatibility."
       },
       {
         "path": "README.en.md",
@@ -8970,8 +8970,8 @@
       {
         "path": "README.md",
         "line": 95,
-        "original": "接入流程见 [第三方模块创作者指南](docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)，契约见 [ThirdPartyModule.h](native/shared/include/BetterEndfield/ThirdPartyModule.h)、[HookChain.h](native/shared/include/BetterEndfield/HookChain.h)与[Echo 示例](tools/ThirdPartyModules/echo/)。Echo 原生库已完成 Windows/Android 构建，消息桥与生命周期通过隔离回归；真实游戏模块的效果、稳定性和兼容性仍由作者测试和说明。",
-        "suggested": "接入流程见 [第三方模块创作者指南](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)，契约见 [ThirdPartyModule.h](native/shared/include/BetterEndfield/ThirdPartyModule.h)、[HookChain.h](native/shared/include/BetterEndfield/HookChain.h)与[Echo 示例](tools/ThirdPartyModules/echo)。Echo 原生库已完成 Windows/Android 构建，消息桥与生命周期通过隔离回归；真实游戏模块的效果、稳定性和兼容性仍由作者测试和说明。"
+        "original": "接入流程见 [第三方模块创作者指南](docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)，契约见 [ThirdPartyModule.h](native/shared/include/BetterEndfieldNext/ThirdPartyModule.h)、[HookChain.h](native/shared/include/BetterEndfieldNext/HookChain.h)与[Echo 示例](tools/ThirdPartyModules/echo/)。Echo 原生库已完成 Windows/Android 构建，消息桥与生命周期通过隔离回归；真实游戏模块的效果、稳定性和兼容性仍由作者测试和说明。",
+        "suggested": "接入流程见 [第三方模块创作者指南](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)，契约见 [ThirdPartyModule.h](native/shared/include/BetterEndfieldNext/ThirdPartyModule.h)、[HookChain.h](native/shared/include/BetterEndfieldNext/HookChain.h)与[Echo 示例](tools/ThirdPartyModules/echo)。Echo 原生库已完成 Windows/Android 构建，消息桥与生命周期通过隔离回归；真实游戏模块的效果、稳定性和兼容性仍由作者测试和说明。"
       },
       {
         "path": "README.md",
@@ -9168,8 +9168,8 @@
       {
         "path": "tools/CustomModel/examples/README.md",
         "line": 11,
-        "original": "`body-slider/create_project.py` 生成可运行的 BEM 1.3 位置滑条示例（只需 Python 标准库）：`python body-slider/create_project.py --output NEW_DIRECTORY`，再运行 `BetterEndfield.BemConverter.exe build NEW_DIRECTORY/export.bemproj.json`。任务使用同一工程的 `deformations` 字段，包含三角形 base、同拓扑 target 和 body 滑条；这是格式测试，不是游戏角色。详见 `docs/BEM_CREATOR_GUIDE.md` 的“形态滑条”一节和 `docs/BEM_SOURCE_MOD_CONVERSION.md` 的 ShapeKey 绑定。",
-        "suggested": "`body-slider/create_project.py` 生成可运行的 BEM 1.3 位置滑条示例（只需 Python 标准库）：`python body-slider/create_project.py --output NEW_DIRECTORY`，再运行 `BetterEndfield.BemConverter.exe build NEW_DIRECTORY/export.bemproj.json`。任务使用同一工程的 `deformations` 字段，包含三角形 base、同拓扑 target 和 body 滑条；这是格式测试，不是游戏角色。详见 `docs/custom_model/BEM_CREATOR_GUIDE.md` 的“形态滑条”一节和 `docs/custom_model/BEM_SOURCE_MOD_CONVERSION.md` 的 ShapeKey 绑定。"
+        "original": "`body-slider/create_project.py` 生成可运行的 BEM 1.3 位置滑条示例（只需 Python 标准库）：`python body-slider/create_project.py --output NEW_DIRECTORY`，再运行 `BetterEndfieldNext.BemConverter.exe build NEW_DIRECTORY/export.bemproj.json`。任务使用同一工程的 `deformations` 字段，包含三角形 base、同拓扑 target 和 body 滑条；这是格式测试，不是游戏角色。详见 `docs/BEM_CREATOR_GUIDE.md` 的“形态滑条”一节和 `docs/BEM_SOURCE_MOD_CONVERSION.md` 的 ShapeKey 绑定。",
+        "suggested": "`body-slider/create_project.py` 生成可运行的 BEM 1.3 位置滑条示例（只需 Python 标准库）：`python body-slider/create_project.py --output NEW_DIRECTORY`，再运行 `BetterEndfieldNext.BemConverter.exe build NEW_DIRECTORY/export.bemproj.json`。任务使用同一工程的 `deformations` 字段，包含三角形 base、同拓扑 target 和 body 滑条；这是格式测试，不是游戏角色。详见 `docs/custom_model/BEM_CREATOR_GUIDE.md` 的“形态滑条”一节和 `docs/custom_model/BEM_SOURCE_MOD_CONVERSION.md` 的 ShapeKey 绑定。"
       },
       {
         "path": "tools/CustomModel/examples/README.md",

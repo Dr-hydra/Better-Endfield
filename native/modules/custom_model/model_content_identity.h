@@ -5,7 +5,7 @@
 #include <span>
 #include <string>
 
-namespace BetterEndfield::CustomModel {
+namespace BetterEndfieldNext::CustomModel {
 // CPU worker only. A small certificate replaces ordinal/name-based identity;
 // the full payload is never retained/copied by the finished-asset cache.
 inline std::string ModelContentSha256(std::span<const uint8_t> input) {

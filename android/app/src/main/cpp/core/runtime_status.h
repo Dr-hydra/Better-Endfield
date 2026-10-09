@@ -2,7 +2,7 @@
 #include <map>
 #include <mutex>
 #include <string>
-namespace betterendfield {
+namespace betterendfieldnext {
 class RuntimeStatus final {
 public:
     void Set(const std::string& id, const std::string& state) {

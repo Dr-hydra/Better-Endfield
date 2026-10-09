@@ -1,6 +1,6 @@
 #pragma once
 #include <cmath>
-namespace BetterEndfield::Actions {
+namespace BetterEndfieldNext::Actions {
 enum class Decision { Wait, Keep, Cancel };
 // Current Liino perform: the material dissolve starts before the mesh hide.
 // End particles are separate actions; neither belongs in a sustained flight.

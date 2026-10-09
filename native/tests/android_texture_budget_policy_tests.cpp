@@ -7,7 +7,7 @@
 #include "../modules/custom_model/android_texture_budget_policy.h"
 
 namespace {
-using Policy=BetterEndfield::CustomModel::AndroidTextureBudgetPolicy;
+using Policy=BetterEndfieldNext::CustomModel::AndroidTextureBudgetPolicy;
 using Action=Policy::Action;
 using Reason=Policy::Reason;
 constexpr uint64_t M=Policy::MiB;

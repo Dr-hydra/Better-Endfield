@@ -6,7 +6,7 @@
 #include <cstdio>
 #include <cstring>
 
-namespace BetterEndfield::Host::HookDiagnostics {
+namespace BetterEndfieldNext::Host::HookDiagnostics {
 namespace {
 
 constexpr size_t kLeafScanLimit = 128;
@@ -194,4 +194,4 @@ std::unordered_map<uintptr_t, uint32_t> CountDirectReferences(HMODULE module,
     return totals;
 }
 
-} // namespace BetterEndfield::Host::HookDiagnostics
+} // namespace BetterEndfieldNext::Host::HookDiagnostics

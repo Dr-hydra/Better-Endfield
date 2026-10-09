@@ -14,7 +14,7 @@
 #include <unistd.h>
 #endif
 
-namespace BetterEndfield::CameraFiles {
+namespace BetterEndfieldNext::CameraFiles {
 enum class Kind { LoadVmd, LoadPath, SavePath, LoadMotion };
 struct Job {
     Kind kind = Kind::LoadVmd;
@@ -209,4 +209,4 @@ private:
     std::optional<Job> pending_;
     std::optional<Result> completed_;
 };
-} // namespace BetterEndfield::CameraFiles
+} // namespace BetterEndfieldNext::CameraFiles

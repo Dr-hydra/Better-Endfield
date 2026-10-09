@@ -73,7 +73,7 @@ void NativeSetQuality(int32_t level,bool expensive) {
 }
 }
 
-namespace betterendfield {
+namespace betterendfieldnext {
 void* AndroidTextureBudgetSetterEntry() {return reinterpret_cast<void*>(&NativeSetBudget);}
 void* AndroidTextureBudgetGetterEntry() {return reinterpret_cast<void*>(&NativeGetBudget);}
 void* AndroidQualityLevelSetterEntry() {return reinterpret_cast<void*>(&NativeSetQuality);}
@@ -85,7 +85,7 @@ bool AndroidReadMemoryHeadroom(uint64_t& physical,uint64_t& available) {
 }
 }
 
-namespace BetterEndfield::CustomModel {
+namespace BetterEndfieldNext::CustomModel {
 enum BE_Result {BE_Result_Ok=0,BE_Result_Failed=1};
 struct MethodContract {const char* key;bool resolved=true;};
 struct TestHost {
@@ -455,7 +455,7 @@ void UnconfirmedGrowthTierChangeUsesPreviousOwn() {
 }
 
 int main() {
-    using namespace BetterEndfield::CustomModel;
+    using namespace BetterEndfieldNext::CustomModel;
     struct Test {const char* name;void(*run)();};
     const std::array<Test,19> tests{{
         {"pump restriction and shutdown",PumpRestrictionAndShutdown},

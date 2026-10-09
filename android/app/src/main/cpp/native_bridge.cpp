@@ -32,16 +32,16 @@
 #include <vector>
 #include <string>
 
-namespace betterendfield { bool AndroidGlobalFov(bool enabled, float fov); }
+namespace betterendfieldnext { bool AndroidGlobalFov(bool enabled, float fov); }
 
 // Each desktop feature module keeps its own entry point; the Android CMake build
-// renames the shared BetterEndfield_GetModuleApiV1 symbol per translation unit so
+// renames the shared BetterEndfieldNext_GetModuleApiV1 symbol per translation unit so
 // all of them can live in this one shared library.
-extern "C" const BE_ModuleApiV1* BetterEndfield_GetUiModuleApiV1();
-extern "C" const BE_ModuleApiV1* BetterEndfield_GetCameraModuleApiV1();
-extern "C" const BE_ModuleApiV1* BetterEndfield_GetActionsModuleApiV1();
+extern "C" const BE_ModuleApiV1* BetterEndfieldNext_GetUiModuleApiV1();
+extern "C" const BE_ModuleApiV1* BetterEndfieldNext_GetCameraModuleApiV1();
+extern "C" const BE_ModuleApiV1* BetterEndfieldNext_GetActionsModuleApiV1();
 
-namespace betterendfield {
+namespace betterendfieldnext {
 namespace {
 
 constexpr auto kPollInterval = std::chrono::milliseconds(100);
@@ -53,7 +53,7 @@ struct Session {
     RuntimeStatus status;
     Il2CppRuntime runtime;
     std::vector<std::unique_ptr<Module>> modules;
-    BetterEndfield::ThirdParty::ThirdPartyHost third_party;
+    BetterEndfieldNext::ThirdParty::ThirdPartyHost third_party;
     HookBroker third_party_hooks;
     std::unique_ptr<DesktopModule> third_party_helper;
     int lock_fd = -1;
@@ -70,14 +70,14 @@ const char* Configured(const char* variable) {
 void RunModules() {
     auto& state = State();
     auto& runtime = state.runtime;
-    if(const char* index=Configured("BETTER_ENDFIELD_THIRD_PARTY_INDEX")) {
+    if(const char* index=Configured("BETTER_ENDFIELD_NEXT_THIRD_PARTY_INDEX")) {
         std::string error;const bool ready=state.third_party_hooks.Initialize(error);
         state.third_party.Start(index,"android-arm64",[](const auto& id,const auto& message){LogInfo(id.c_str(),message.c_str());},nullptr,
             ready?state.third_party_hooks.ChainApi():nullptr);
     }
     state.status.Set("runtime", "waiting_il2cpp");
     for (int attempt = 0; attempt < kMaximumAttempts; ++attempt) {
-        if (runtime.Connect() && runtime.HasAssembly("mscorlib.dll") && betterendfield::HasAndroidFrameBridge()) break;
+        if (runtime.Connect() && runtime.HasAssembly("mscorlib.dll") && betterendfieldnext::HasAndroidFrameBridge()) break;
         if (attempt + 1 == kMaximumAttempts) {
             state.status.Set("runtime", "failed_il2cpp_timeout");
             LogError("runtime", "IL2CPP exports/domain/loaded images did not become ready");
@@ -92,48 +92,48 @@ void RunModules() {
         return;
     }
     state.status.Set("runtime", "starting_modules");
-    if(Configured("BETTER_ENDFIELD_THIRD_PARTY_INDEX")) {
+    if(Configured("BETTER_ENDFIELD_NEXT_THIRD_PARTY_INDEX")) {
         static const BE_ModuleApiV1 helper{{"third-party.runtime.helper","Third-party optional helpers","1",1},
             [](const BE_HostApiV1*)->BE_Result{return BE_Result_Ok;},[](const char*)->BE_Result{return BE_Result_Ok;},[](){}};
-        state.third_party_helper=std::make_unique<DesktopModule>("third-party.runtime.helper","BETTER_ENDFIELD_THIRD_PARTY_INDEX",
+        state.third_party_helper=std::make_unique<DesktopModule>("third-party.runtime.helper","BETTER_ENDFIELD_NEXT_THIRD_PARTY_INDEX",
             []()->const BE_ModuleApiV1*{return &helper;},"Third-party runtime helper ready");
         if(state.third_party_helper->Start(runtime).active)state.third_party.SetRuntime(state.third_party_helper->OptionalHostApi());
     }
-    const char* custom_probe = std::getenv("BETTER_ENDFIELD_CUSTOM_MODEL_PROBE");
-    if (Configured("BETTER_ENDFIELD_CUSTOM_MODEL_CONFIG") != nullptr) {
+    const char* custom_probe = std::getenv("BETTER_ENDFIELD_NEXT_CUSTOM_MODEL_PROBE");
+    if (Configured("BETTER_ENDFIELD_NEXT_CUSTOM_MODEL_CONFIG") != nullptr) {
         state.modules.emplace_back(std::make_unique<CustomModelModule>());
     }
     if (custom_probe != nullptr && std::string(custom_probe) == "1") {
         state.modules.emplace_back(std::make_unique<CustomModelResourceProbe>());
     }
-    if (Configured("BETTER_ENDFIELD_VOICE_RULES") != nullptr) {
+    if (Configured("BETTER_ENDFIELD_NEXT_VOICE_RULES") != nullptr) {
         state.modules.emplace_back(std::make_unique<CharacterVoiceModule>());
     }
-    if (Configured("BETTER_ENDFIELD_MODEL_CONFIG") != nullptr) {
+    if (Configured("BETTER_ENDFIELD_NEXT_MODEL_CONFIG") != nullptr) {
         state.modules.emplace_back(std::make_unique<LoginModelModule>());
     }
     // The three ported desktop modules. Their configurations are independent, so
     // a user who only wants one of them never has the others in the process.
-    if (Configured("BETTER_ENDFIELD_UI_CONFIG") != nullptr) {
+    if (Configured("BETTER_ENDFIELD_NEXT_UI_CONFIG") != nullptr) {
         state.modules.emplace_back(std::make_unique<DesktopModule>(
-            "betterendfield.ui",
-            "BETTER_ENDFIELD_UI_CONFIG",
-            &BetterEndfield_GetUiModuleApiV1,
+            "betterendfieldnext.ui",
+            "BETTER_ENDFIELD_NEXT_UI_CONFIG",
+            &BetterEndfieldNext_GetUiModuleApiV1,
             "same-source desktop UI module active (hide UID/watermark, all-HUD toggle)"));
     }
-    if (Configured("BETTER_ENDFIELD_CAMERA_CONFIG") != nullptr) {
+    if (Configured("BETTER_ENDFIELD_NEXT_CAMERA_CONFIG") != nullptr) {
         state.modules.emplace_back(std::make_unique<DesktopModule>(
-            "betterendfield.camera",
-            "BETTER_ENDFIELD_CAMERA_CONFIG",
-            &BetterEndfield_GetCameraModuleApiV1,
+            "betterendfieldnext.camera",
+            "BETTER_ENDFIELD_NEXT_CAMERA_CONFIG",
+            &BetterEndfieldNext_GetCameraModuleApiV1,
             "same-source desktop camera module active (free camera, world pause, "
-            "first person, near-camera dither)"));
+            "near-camera dither)"));
     }
-    if (Configured("BETTER_ENDFIELD_ACTIONS_CONFIG") != nullptr) {
+    if (Configured("BETTER_ENDFIELD_NEXT_ACTIONS_CONFIG") != nullptr) {
         state.modules.emplace_back(std::make_unique<DesktopModule>(
-            "betterendfield.actions",
-            "BETTER_ENDFIELD_ACTIONS_CONFIG",
-            &BetterEndfield_GetActionsModuleApiV1,
+            "betterendfieldnext.actions",
+            "BETTER_ENDFIELD_NEXT_ACTIONS_CONFIG",
+            &BetterEndfieldNext_GetActionsModuleApiV1,
             "same-source desktop sustained-dash module active"));
     }
 
@@ -146,12 +146,12 @@ void RunModules() {
         const std::string name(id);
         if (name == "voice.character") return runtime.HasAssembly("Audio.Beyond.dll") &&
             runtime.HasAssembly("AK.Wwise.Unity.API.dll");
-        if (name == "betterendfield.ui") return runtime.HasAssembly("Common.Beyond.dll") &&
+        if (name == "betterendfieldnext.ui") return runtime.HasAssembly("Common.Beyond.dll") &&
             runtime.HasAssembly("UI.Beyond.dll") && runtime.HasAssembly("Gameplay.Beyond.dll") &&
             runtime.HasAssembly("UnityEngine.UI.dll");
-        if (name == "betterendfield.camera") return runtime.HasAssembly("Gameplay.Beyond.dll") &&
+        if (name == "betterendfieldnext.camera") return runtime.HasAssembly("Gameplay.Beyond.dll") &&
             runtime.HasAssembly("Cinemachine.dll");
-        if (name == "betterendfield.actions") return runtime.HasAssembly("Gameplay.Beyond.dll") &&
+        if (name == "betterendfieldnext.actions") return runtime.HasAssembly("Gameplay.Beyond.dll") &&
             runtime.HasAssembly("Audio.Beyond.dll");
         return runtime.HasAssembly("Gameplay.Beyond.dll");
     };
@@ -186,46 +186,46 @@ void RunModules() {
 
 bool AnyModuleRequested() {
     static constexpr const char* kVariables[]{
-        "BETTER_ENDFIELD_VOICE_RULES",
-        "BETTER_ENDFIELD_MODEL_CONFIG",
-        "BETTER_ENDFIELD_UI_CONFIG",
-        "BETTER_ENDFIELD_CAMERA_CONFIG",
-        "BETTER_ENDFIELD_ACTIONS_CONFIG",
-        "BETTER_ENDFIELD_CUSTOM_MODEL_CONFIG",
-        "BETTER_ENDFIELD_THIRD_PARTY_INDEX",
+        "BETTER_ENDFIELD_NEXT_VOICE_RULES",
+        "BETTER_ENDFIELD_NEXT_MODEL_CONFIG",
+        "BETTER_ENDFIELD_NEXT_UI_CONFIG",
+        "BETTER_ENDFIELD_NEXT_CAMERA_CONFIG",
+        "BETTER_ENDFIELD_NEXT_ACTIONS_CONFIG",
+        "BETTER_ENDFIELD_NEXT_CUSTOM_MODEL_CONFIG",
+        "BETTER_ENDFIELD_NEXT_THIRD_PARTY_INDEX",
     };
     for (const char* variable : kVariables) {
         if (Configured(variable) != nullptr) return true;
     }
-    const char* custom_probe = std::getenv("BETTER_ENDFIELD_CUSTOM_MODEL_PROBE");
+    const char* custom_probe = std::getenv("BETTER_ENDFIELD_NEXT_CUSTOM_MODEL_PROBE");
     return custom_probe != nullptr && std::string(custom_probe) == "1";
 }
 
 }  // namespace
-}  // namespace betterendfield
+}  // namespace betterendfieldnext
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_updateThirdPartyRuntime(JNIEnv* env,jclass,jstring index) {
+Java_dev_betterendfield_next_NativeCommandBridge_updateThirdPartyRuntime(JNIEnv* env,jclass,jstring index) {
     if(!env || !index || env->GetStringUTFLength(index)>1024*1024)return JNI_FALSE;
     const char* json=env->GetStringUTFChars(index,nullptr);if(!json)return JNI_FALSE;
-    const bool accepted=betterendfield::State().third_party.UpdateIndex(json);env->ReleaseStringUTFChars(index,json);return accepted?JNI_TRUE:JNI_FALSE;
+    const bool accepted=betterendfieldnext::State().third_party.UpdateIndex(json);env->ReleaseStringUTFChars(index,json);return accepted?JNI_TRUE:JNI_FALSE;
 }
 extern "C" JNIEXPORT jboolean JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_submit(
+Java_dev_betterendfield_next_NativeCommandBridge_submit(
         JNIEnv* environment, jclass, jstring payload) {
     if (!environment || !payload) return JNI_FALSE;
     const char* text = environment->GetStringUTFChars(payload, nullptr);
     if (!text) return JNI_FALSE;
-    const bool accepted = betterendfield::SubmitRuntimeCommand(text, std::strlen(text));
+    const bool accepted = betterendfieldnext::SubmitRuntimeCommand(text, std::strlen(text));
     environment->ReleaseStringUTFChars(payload, text);
     return accepted ? JNI_TRUE : JNI_FALSE;
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_status(
+Java_dev_betterendfield_next_NativeCommandBridge_status(
         JNIEnv* environment, jclass) {
     if (!environment) return nullptr;
-    const std::string status = betterendfield::CopyRuntimeCommandStatus();
+    const std::string status = betterendfieldnext::CopyRuntimeCommandStatus();
     return environment->NewStringUTF(status.c_str());
 }
 
@@ -235,125 +235,125 @@ Java_dev_betterendfield_android_NativeCommandBridge_status(
 // press-and-hold control such as the free-camera movement pad. The latch is a
 // plain atomic, so a press is visible to the desktop polling code immediately.
 extern "C" JNIEXPORT jboolean JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_key(
+Java_dev_betterendfield_next_NativeCommandBridge_key(
         JNIEnv*, jclass, jint virtual_key, jint action) {
-    return betterendfield::SetVirtualKey(
+    return betterendfieldnext::SetVirtualKey(
         static_cast<int>(virtual_key),
-        static_cast<betterendfield::VirtualKeyAction>(action)) ? JNI_TRUE : JNI_FALSE;
+        static_cast<betterendfieldnext::VirtualKeyAction>(action)) ? JNI_TRUE : JNI_FALSE;
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_releaseKeys(JNIEnv*, jclass) {
-    betterendfield::ReleaseAllVirtualKeys();
+Java_dev_betterendfield_next_NativeCommandBridge_releaseKeys(JNIEnv*, jclass) {
+    betterendfieldnext::ReleaseAllVirtualKeys();
 }
 
 extern "C" JNIEXPORT jint JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_protocolVersion(JNIEnv*, jclass) { return 1; }
+Java_dev_betterendfield_next_NativeCommandBridge_protocolVersion(JNIEnv*, jclass) { return 1; }
 extern "C" JNIEXPORT jint JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_pcMouseCursorMode(JNIEnv*, jclass) {
-    return betterendfield::AndroidPcCursorMode();
+Java_dev_betterendfield_next_NativeCommandBridge_pcMouseCursorMode(JNIEnv*, jclass) {
+    return betterendfieldnext::AndroidPcCursorMode();
 }
 extern "C" JNIEXPORT void JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_pcMouseAbsolute(JNIEnv*, jclass, jfloat x, jfloat y) {
-    betterendfield::AddAndroidPcMouseAbsolute(x, y);
+Java_dev_betterendfield_next_NativeCommandBridge_pcMouseAbsolute(JNIEnv*, jclass, jfloat x, jfloat y) {
+    betterendfieldnext::AddAndroidPcMouseAbsolute(x, y);
 }
 extern "C" JNIEXPORT void JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_pcMouseDirectTouch(JNIEnv*, jclass, jboolean active) {
-    betterendfield::SetAndroidPcDirectTouch(active == JNI_TRUE);
+Java_dev_betterendfield_next_NativeCommandBridge_pcMouseDirectTouch(JNIEnv*, jclass, jboolean active) {
+    betterendfieldnext::SetAndroidPcDirectTouch(active == JNI_TRUE);
 }
 extern "C" JNIEXPORT jboolean JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_updateCustomModelConfig(JNIEnv* env,jclass,jstring configuration) {
+Java_dev_betterendfield_next_NativeCommandBridge_updateCustomModelConfig(JNIEnv* env,jclass,jstring configuration) {
     if (!env || !configuration || env->GetStringUTFLength(configuration)>1024*1024) return JNI_FALSE;
     const char* text=env->GetStringUTFChars(configuration,nullptr); if (!text) return JNI_FALSE;
-    const bool queued=betterendfield::CustomModelModule::QueueConfiguration(text);
+    const bool queued=betterendfieldnext::CustomModelModule::QueueConfiguration(text);
     env->ReleaseStringUTFChars(configuration,text);
     return queued?JNI_TRUE:JNI_FALSE;
 }
 extern "C" JNIEXPORT void JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_frame(JNIEnv*, jclass) {
-    auto& state = betterendfield::State();
+Java_dev_betterendfield_next_NativeCommandBridge_frame(JNIEnv*, jclass) {
+    auto& state = betterendfieldnext::State();
     try {
         if (state.connected.load(std::memory_order_acquire)) {
-            betterendfield::Il2CppThreadScope thread(state.runtime);
+            betterendfieldnext::Il2CppThreadScope thread(state.runtime);
             if (!thread.attached()) return;
-            betterendfield::CustomModelModule::ApplyPendingConfiguration();
-            betterendfield::DispatchAndroidFrame();
+            betterendfieldnext::CustomModelModule::ApplyPendingConfiguration();
+            betterendfieldnext::DispatchAndroidFrame();
         } else {
             // Publish the render-thread identity before the worker starts.
             // No module callback can be installed before connected is published.
-            betterendfield::DispatchAndroidFrame();
+            betterendfieldnext::DispatchAndroidFrame();
         }
     } catch (const std::exception& error) {
-        betterendfield::LogError("runtime.frame", error.what());
+        betterendfieldnext::LogError("runtime.frame", error.what());
     } catch (...) {
-        betterendfield::LogError("runtime.frame", "frame callback failed");
+        betterendfieldnext::LogError("runtime.frame", "frame callback failed");
     }
 }
 extern "C" JNIEXPORT void JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_foreground(JNIEnv*, jclass, jboolean visible) {
-    betterendfield::SetAndroidForeground(visible == JNI_TRUE);
+Java_dev_betterendfield_next_NativeCommandBridge_foreground(JNIEnv*, jclass, jboolean visible) {
+    betterendfieldnext::SetAndroidForeground(visible == JNI_TRUE);
 }
 extern "C" JNIEXPORT jstring JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_runtimeStatus(JNIEnv* env, jclass) {
-    const auto status = betterendfield::State().status.Copy() + betterendfield::AndroidCameraValuesStatus() +
-        "camera.capabilities=" + std::to_string(betterendfield::AndroidCameraCapabilities()) + "\n" +
-        "camera.active=" + std::to_string(betterendfield::AndroidCameraActive()) + "\n" +
-        "ui.hud_hidden=" + (betterendfield::AndroidHudHidden() ? "1\n" : "0\n");
+Java_dev_betterendfield_next_NativeCommandBridge_runtimeStatus(JNIEnv* env, jclass) {
+    const auto status = betterendfieldnext::State().status.Copy() + betterendfieldnext::AndroidCameraValuesStatus() +
+        "camera.capabilities=" + std::to_string(betterendfieldnext::AndroidCameraCapabilities()) + "\n" +
+        "camera.active=" + std::to_string(betterendfieldnext::AndroidCameraActive()) + "\n" +
+        "ui.hud_hidden=" + (betterendfieldnext::AndroidHudHidden() ? "1\n" : "0\n");
     return env->NewStringUTF(status.c_str());
 }
 extern "C" JNIEXPORT void JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_look(JNIEnv*, jclass, jint dx, jint dy) {
-    betterendfield::AddAndroidLook(dx, dy);
+Java_dev_betterendfield_next_NativeCommandBridge_look(JNIEnv*, jclass, jint dx, jint dy) {
+    betterendfieldnext::AddAndroidLook(dx, dy);
 }
 extern "C" JNIEXPORT jboolean JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_pcMouseCaptureRequested(JNIEnv*, jclass) {
-    return betterendfield::AndroidPcMouseCaptureRequested() ? JNI_TRUE : JNI_FALSE;
+Java_dev_betterendfield_next_NativeCommandBridge_pcMouseCaptureRequested(JNIEnv*, jclass) {
+    return betterendfieldnext::AndroidPcMouseCaptureRequested() ? JNI_TRUE : JNI_FALSE;
 }
 extern "C" JNIEXPORT void JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_pcMouseCaptured(JNIEnv*, jclass, jboolean captured) {
-    betterendfield::SetAndroidPcMouseCaptured(captured == JNI_TRUE);
+Java_dev_betterendfield_next_NativeCommandBridge_pcMouseCaptured(JNIEnv*, jclass, jboolean captured) {
+    betterendfieldnext::SetAndroidPcMouseCaptured(captured == JNI_TRUE);
 }
 extern "C" JNIEXPORT void JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_pcMouseMotion(JNIEnv*, jclass, jfloat dx, jfloat dy) {
-    betterendfield::AddAndroidPcMouseMotion(dx, dy);
+Java_dev_betterendfield_next_NativeCommandBridge_pcMouseMotion(JNIEnv*, jclass, jfloat dx, jfloat dy) {
+    betterendfieldnext::AddAndroidPcMouseMotion(dx, dy);
 }
 extern "C" JNIEXPORT void JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_cameraValues(JNIEnv*, jclass, jfloat speed, jfloat fov) {
-    betterendfield::AndroidCameraValues(speed, fov);
+Java_dev_betterendfield_next_NativeCommandBridge_cameraValues(JNIEnv*, jclass, jfloat speed, jfloat fov) {
+    betterendfieldnext::AndroidCameraValues(speed, fov);
 }
 extern "C" JNIEXPORT jboolean JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_globalFov(JNIEnv*, jclass, jboolean enabled, jfloat fov) {
-    return betterendfield::AndroidGlobalFov(enabled == JNI_TRUE, fov) ? JNI_TRUE : JNI_FALSE;
+Java_dev_betterendfield_next_NativeCommandBridge_globalFov(JNIEnv*, jclass, jboolean enabled, jfloat fov) {
+    return betterendfieldnext::AndroidGlobalFov(enabled == JNI_TRUE, fov) ? JNI_TRUE : JNI_FALSE;
 }
 extern "C" JNIEXPORT jstring JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_mmdStatus(JNIEnv* env, jclass) {
-    return env->NewStringUTF(betterendfield::AndroidMmdStatus().c_str());
+Java_dev_betterendfield_next_NativeCommandBridge_mmdStatus(JNIEnv* env, jclass) {
+    return env->NewStringUTF(betterendfieldnext::AndroidMmdStatus().c_str());
 }
 extern "C" JNIEXPORT jboolean JNICALL
-Java_dev_betterendfield_android_NativeCommandBridge_mmd(JNIEnv* env, jclass, jint type,
+Java_dev_betterendfield_next_NativeCommandBridge_mmd(JNIEnv* env, jclass, jint type,
         jint argument, jdouble value, jstring text) {
     if (!text || env->GetStringUTFLength(text) >= 256) return JNI_FALSE;
     const char* utf8 = env->GetStringUTFChars(text, nullptr);
     if (!utf8) return JNI_FALSE;
     const std::string command_text(utf8);
     env->ReleaseStringUTFChars(text, utf8);
-    try { return betterendfield::AndroidMmdCommand(type, argument, value, command_text) ? JNI_TRUE : JNI_FALSE; }
+    try { return betterendfieldnext::AndroidMmdCommand(type, argument, value, command_text) ? JNI_TRUE : JNI_FALSE; }
     catch (...) { return JNI_FALSE; }
 }
 extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
     JNIEnv* env = nullptr;
     if (!vm || vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) return JNI_ERR;
-    auto& state = betterendfield::State();
+    auto& state = betterendfieldnext::State();
     // flock is shared across library copies/namespaces, unlike a C++ static.
     // The private game cache path is set before nativeLoad. Keep the descriptor
     // open for the process lifetime; the kernel releases it on process death.
-    const char* lock_path = std::getenv("BETTER_ENDFIELD_RUNTIME_LOCK");
+    const char* lock_path = std::getenv("BETTER_ENDFIELD_NEXT_RUNTIME_LOCK");
     if (!lock_path || !*lock_path) return JNI_ERR;
     int fd = open(lock_path, O_CREAT | O_RDWR | O_CLOEXEC | O_NOFOLLOW, 0600);
     if (fd < 0) return JNI_ERR;
     if (flock(fd, LOCK_EX | LOCK_NB) != 0) { close(fd); return JNI_ERR; }
 #define BE_NATIVE(name, signature) {const_cast<char*>(#name), const_cast<char*>(signature), \
-    reinterpret_cast<void*>(&Java_dev_betterendfield_android_NativeCommandBridge_##name)}
+    reinterpret_cast<void*>(&Java_dev_betterendfield_next_NativeCommandBridge_##name)}
     const JNINativeMethod methods[]{
         BE_NATIVE(submit, "(Ljava/lang/String;)Z"), BE_NATIVE(status, "()Ljava/lang/String;"),
         BE_NATIVE(key, "(II)Z"), BE_NATIVE(releaseKeys, "()V"), BE_NATIVE(protocolVersion, "()I"),
@@ -368,26 +368,26 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
     };
 #undef BE_NATIVE
     jclass bridge_class = nullptr;
-    if (!betterendfield::BindContextLoaderNatives(env, "dev.betterendfield.android.NativeCommandBridge",
+    if (!betterendfieldnext::BindContextLoaderNatives(env, "dev.betterendfield.next.NativeCommandBridge",
             methods, static_cast<jint>(sizeof(methods) / sizeof(methods[0])), &bridge_class)) {
         close(fd);
         return JNI_ERR;
     }
-    if (!betterendfield::InitializeAndroidMusic(vm, env, bridge_class))
-        betterendfield::LogError("mmd.music", "Java media API unavailable; body and camera remain usable");
+    if (!betterendfieldnext::InitializeAndroidMusic(vm, env, bridge_class))
+        betterendfieldnext::LogError("mmd.music", "Java media API unavailable; body and camera remain usable");
     state.lock_fd = fd;
     state.status.Set("runtime", "loaded");
-    if (betterendfield::AnyModuleRequested() && !state.started.exchange(true)) {
+    if (betterendfieldnext::AnyModuleRequested() && !state.started.exchange(true)) {
         // Once registered, do not unload the library on worker creation failure:
         // published JNI pointers must remain valid so status can report it.
         try {
             std::thread([] {
-                try { betterendfield::RunModules(); }
+                try { betterendfieldnext::RunModules(); }
                 catch (const std::exception& e) {
-                    betterendfield::State().status.Set("runtime", "failed_exception");
-                    betterendfield::LogError("runtime", e.what());
+                    betterendfieldnext::State().status.Set("runtime", "failed_exception");
+                    betterendfieldnext::LogError("runtime", e.what());
                 }
-                catch (...) { betterendfield::State().status.Set("runtime", "failed_exception"); }
+                catch (...) { betterendfieldnext::State().status.Set("runtime", "failed_exception"); }
             }).detach();
         } catch (...) { state.status.Set("runtime", "failed_worker_creation"); }
     }

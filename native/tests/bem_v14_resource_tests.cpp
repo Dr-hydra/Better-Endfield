@@ -8,7 +8,7 @@
 #include <iostream>
 #include <stdexcept>
 
-using namespace BetterEndfield::CustomModel;
+using namespace BetterEndfieldNext::CustomModel;
 namespace {
 int checks=0;
 void Require(bool value,const std::string& why) { ++checks; if(!value) throw std::runtime_error(why); }

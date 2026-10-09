@@ -5,7 +5,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
-$productionAudio = Join-Path $repoRoot 'android/app/src/main/java/dev/betterendfield/android/MmdAudio.java'
+$productionAudio = Join-Path $repoRoot 'android/app/src/main/java/dev/betterendfield/next/MmdAudio.java'
 $testSources = @(Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'stubs'), (Join-Path $PSScriptRoot 'src') -Filter '*.java' -Recurse | ForEach-Object { $_.FullName })
 $audioTestOutput = Join-Path ([IO.Path]::GetTempPath()) ('be-mmd-audio-jvm-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $audioTestOutput | Out-Null
@@ -15,12 +15,12 @@ Write-Output ('Production source SHA256: ' + (Get-FileHash -LiteralPath $audioSn
 & $JavaCompiler -encoding UTF-8 --release 17 -d $audioTestOutput $audioSnapshot @testSources
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 if ($Cases.Count -eq 0) {
-    $Cases = @(& $Java -cp $audioTestOutput dev.betterendfield.android.MmdAudioJvmTest --list)
+    $Cases = @(& $Java -cp $audioTestOutput dev.betterendfield.next.MmdAudioJvmTest --list)
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 $failed = @()
 foreach ($case in $Cases) {
-    & $Java -cp $audioTestOutput dev.betterendfield.android.MmdAudioJvmTest $case
+    & $Java -cp $audioTestOutput dev.betterendfield.next.MmdAudioJvmTest $case
     if ($LASTEXITCODE -ne 0) { $failed += $case }
 }
 Write-Output ('Audio JVM cases: ' + ($Cases.Count - $failed.Count) + '/' + $Cases.Count + ' passed')

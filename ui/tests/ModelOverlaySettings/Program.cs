@@ -1,4 +1,4 @@
-using BetterEndfield.UI.Services;
+using BetterEndfieldNext.UI.Services;
 
 static class Program
 {

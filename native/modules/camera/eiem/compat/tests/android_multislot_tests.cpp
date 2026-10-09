@@ -1,6 +1,6 @@
 #define BE_EIEM_FIXTURE_LIBRARY
 #include "android_slot_tests.cpp"
-namespace Body=BetterEndfield::EiemBody;
+namespace Body=BetterEndfieldNext::EiemBody;
 void WaitLoad(int slot){
   for(int n=0;n<400;++n){if(Body::LoadStatus(slot)==Body::LoadState::Ready)return;assert(Body::LoadStatus(slot)!=Body::LoadState::Failed);std::this_thread::sleep_for(std::chrono::milliseconds(2));}
   assert(false);

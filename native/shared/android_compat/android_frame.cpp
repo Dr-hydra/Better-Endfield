@@ -4,7 +4,7 @@
 #include <atomic>
 #include <algorithm>
 #include <unistd.h>
-namespace betterendfield {
+namespace betterendfieldnext {
 namespace {
 std::atomic<pid_t> g_thread{0};
 std::atomic<FrameCallback> g_clients[static_cast<unsigned>(FrameClient::Count)]{};

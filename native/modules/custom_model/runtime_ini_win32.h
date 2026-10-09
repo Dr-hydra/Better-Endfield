@@ -6,8 +6,8 @@
 #include <filesystem>
 #include <functional>
 
-namespace BetterEndfield::CustomModel::Settings {
-inline constexpr wchar_t kMutexName[]=L"Local\\BetterEndfield.CustomModel.Settings";
+namespace BetterEndfieldNext::CustomModel::Settings {
+inline constexpr wchar_t kMutexName[]=L"Local\\BetterEndfieldNext.CustomModel.Settings";
 class MutexLock {
 public:
     MutexLock() {
@@ -69,5 +69,5 @@ inline bool Update(const std::filesystem::path& path,const std::function<void(In
         throw std::runtime_error("Runtime settings changed repeatedly; retry save");
     } catch(const std::exception& e) {error=e.what();return false;}
 }
-} // namespace BetterEndfield::CustomModel::Settings
+} // namespace BetterEndfieldNext::CustomModel::Settings
 #endif

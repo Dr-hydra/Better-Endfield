@@ -1,7 +1,7 @@
 #include <Windows.h>
 #include <TlHelp32.h>
 
-#include "BetterEndfield/BootstrapConfig.h"
+#include "BetterEndfieldNext/BootstrapConfig.h"
 #include "launch_guard.h"
 
 #include <algorithm>
@@ -64,7 +64,7 @@ std::filesystem::path ExecutablePath() {
     return value;
 }
 
-void CopyBootstrapPath(wchar_t (&destination)[BETTER_ENDFIELD_BOOTSTRAP_PATH_CAPACITY],
+void CopyBootstrapPath(wchar_t (&destination)[BETTER_ENDFIELD_NEXT_BOOTSTRAP_PATH_CAPACITY],
     const std::filesystem::path& source) {
     const std::wstring value = source.wstring();
     wcsncpy_s(destination, _countof(destination), value.c_str(),
@@ -73,7 +73,7 @@ void CopyBootstrapPath(wchar_t (&destination)[BETTER_ENDFIELD_BOOTSTRAP_PATH_CAP
 
 BE_BootstrapConfigV1 BuildBootstrapConfig(const std::filesystem::path& install_root) {
     BE_BootstrapConfigV1 config{};
-    std::memcpy(config.magic, BETTER_ENDFIELD_BOOTSTRAP_MAGIC,
+    std::memcpy(config.magic, BETTER_ENDFIELD_NEXT_BOOTSTRAP_MAGIC,
         sizeof(config.magic));
     config.size = sizeof(config);
     CopyBootstrapPath(config.install_root, install_root);
@@ -83,7 +83,7 @@ BE_BootstrapConfigV1 BuildBootstrapConfig(const std::filesystem::path& install_r
         local_app_data, static_cast<DWORD>(_countof(local_app_data)));
     if (length != 0 && length < _countof(local_app_data)) {
         const std::filesystem::path settings_root =
-            std::filesystem::path(local_app_data) / L"BetterEndfield";
+            std::filesystem::path(local_app_data) / L"BetterEndfieldNext";
         CopyBootstrapPath(config.settings_root, settings_root);
         CopyBootstrapPath(config.catalog_root, settings_root / L"catalog");
         CopyBootstrapPath(config.log_root, settings_root / L"logs");
@@ -365,7 +365,7 @@ bool ManualMapHost(HANDLE process, const std::filesystem::path& host_path,
     VirtualFreeEx(process, remote_shellcode, 0, MEM_RELEASE);
     VirtualFreeEx(process, remote_data, 0, MEM_RELEASE);
     VirtualFreeEx(process, remote_bootstrap, 0, MEM_RELEASE);
-    std::wcout << L"BetterEndfield.Host mapped before game resume.\n";
+    std::wcout << L"BetterEndfieldNext.Host mapped before game resume.\n";
     return true;
 }
 
@@ -472,7 +472,7 @@ bool LoadBootstrapWithRemoteThread(HANDLE process, DWORD process_id,
                    << L", thread=0x" << std::hex << remote_result << std::dec << L").\n";
         return false;
     }
-    std::wcout << L"BetterEndfield.Bootstrap loaded; its worker will wait for IL2CPP.\n";
+    std::wcout << L"BetterEndfieldNext.Bootstrap loaded; its worker will wait for IL2CPP.\n";
     return true;
 }
 
@@ -533,7 +533,7 @@ int wmain(int argc, wchar_t* argv[]) {
         }
     }
     if (game_path.empty() || !std::filesystem::is_regular_file(game_path)) {
-        std::wcerr << L"Usage: BetterEndfield.Injector.exe --game <Endfield.exe>\n";
+        std::wcerr << L"Usage: BetterEndfieldNext.Injector.exe --game <Endfield.exe>\n";
         return 2;
     }
 
@@ -547,16 +547,16 @@ int wmain(int argc, wchar_t* argv[]) {
     const std::filesystem::path loader_path = ExecutablePath();
     const std::filesystem::path install_root = loader_path.parent_path().parent_path();
     const std::filesystem::path host_path = install_root / L"runtime" /
-        L"BetterEndfield.Host.dll";
+        L"BetterEndfieldNext.Host.dll";
     const std::filesystem::path bootstrap_path = install_root / L"loaders" /
-        L"BetterEndfield.Bootstrap.dll";
+        L"BetterEndfieldNext.Bootstrap.dll";
     if (!std::filesystem::is_regular_file(host_path)) {
-        std::wcerr << L"BetterEndfield.Host.dll was not found.\n";
+        std::wcerr << L"BetterEndfieldNext.Host.dll was not found.\n";
         return 3;
     }
     if (!manual_map && !late_manual_map &&
         !std::filesystem::is_regular_file(bootstrap_path)) {
-        std::wcerr << L"BetterEndfield.Bootstrap.dll was not found.\n";
+        std::wcerr << L"BetterEndfieldNext.Bootstrap.dll was not found.\n";
         return 3;
     }
 
@@ -624,7 +624,7 @@ int wmain(int argc, wchar_t* argv[]) {
         TerminateProcess(process.hProcess, 1);
         CloseHandle(process.hThread);
         CloseHandle(process.hProcess);
-        std::wcerr << L"Unable to load BetterEndfield Host.\n";
+        std::wcerr << L"Unable to load BetterEndfieldNext Host.\n";
         return 5;
     }
 

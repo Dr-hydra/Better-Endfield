@@ -6,12 +6,12 @@ CTest 和平台测试发现。`native/tests`、`tools/CustomModel/test_*.py`、A
 测试源码没有为统一目录而搬动或复制。
 
 本轮只核对清单、计划和纯模拟 registry 边界。没有构建、运行现存大测试、
-启动游戏/手机、刷新真实资源、安装/覆盖 `E:\Better Endfield` 或推送。
+启动游戏/手机、刷新真实资源、安装/覆盖 `E:\Better Endfield Next` 或推送。
 `F:\Better Endfield_legacy` 保持完整回退；`F:\zmd` 不参与。
 
 ## 使用入口
 
-在 `F:\Better Endfield` 执行，或从任意目录使用入口的绝对路径：
+在 `F:\Better Endfield Next` 执行，或从任意目录使用入口的绝对路径：
 
 ```powershell
 python -B scripts/run_workspace_tests.py --list
@@ -124,7 +124,7 @@ runner 不生成凭据，也不把已有 EXE 反向标成新编译。未来构�
   "built_at": "实际 UTC 完成时间",
   "artifacts": [
     {
-      "path": "windows/win-x64/Release/native/Release/BetterEndfield.FirstPersonMeshTests.exe",
+      "path": "windows/win-x64/Release/native/Release/BetterEndfieldNext.FirstPersonMeshTests.exe",
       "size": 123,
       "mtime_ns": 123456789
     }

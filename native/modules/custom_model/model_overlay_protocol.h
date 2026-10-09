@@ -3,7 +3,7 @@
 #include <Windows.h>
 #include <cstdint>
 #include <string>
-namespace BetterEndfield::CustomModel::OverlayProtocol {
+namespace BetterEndfieldNext::CustomModel::OverlayProtocol {
 inline constexpr uint32_t kMagic=0x4C444D42, kVersion=1;
 inline constexpr size_t kPathCapacity=32768;
 struct Shared {
@@ -16,10 +16,10 @@ struct Shared {
     wchar_t runtime_ini[kPathCapacity]{};
     wchar_t package_directory[kPathCapacity]{};
 };
-inline std::wstring MappingName(DWORD pid) {return L"Local\\BetterEndfield.ModelOverlay."+std::to_wstring(pid);}
+inline std::wstring MappingName(DWORD pid) {return L"Local\\BetterEndfieldNext.ModelOverlay."+std::to_wstring(pid);}
 inline uint64_t ConfigHash(std::string_view text) {
     uint64_t hash=14695981039346656037ull;
     for(const unsigned char c:text) {hash^=c;hash*=1099511628211ull;} return hash;
 }
-} // namespace BetterEndfield::CustomModel::OverlayProtocol
+} // namespace BetterEndfieldNext::CustomModel::OverlayProtocol
 #endif

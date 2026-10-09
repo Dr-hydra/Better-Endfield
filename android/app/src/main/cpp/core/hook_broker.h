@@ -1,9 +1,9 @@
 #pragma once
 
 #include <string>
-#include "BetterEndfield/HookChain.h"
+#include "BetterEndfieldNext/HookChain.h"
 
-namespace betterendfield {
+namespace betterendfieldnext {
 
 // Every native hook, built-in or third-party, is a node of the shared
 // per-target chain (native/shared/hooks/hook_chain.h), matching the Windows
@@ -39,4 +39,4 @@ private:
     static BE_Result BE_CALL DisableModuleChain(void*,const char*);
 };
 
-}  // namespace betterendfield
+}  // namespace betterendfieldnext

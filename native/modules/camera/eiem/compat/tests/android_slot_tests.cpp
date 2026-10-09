@@ -180,14 +180,14 @@ int main(){
   auto h=Host();host=&h;mainThread=std::this_thread::get_id();assert(metadata.Load());
   for(auto& m:methods)assert(Resolve(nullptr,&m.descriptor,&m.resolved)==BE_Result_Ok);
   auto* owner=New(FindClass("Entity"));auto* anim=New(FindClass("Animator"));auto* root=MakeRig(anim);auto* core=MakeSmc(owner);
-  entity=Pin(owner);animator=Pin(anim);options.face=true;options.cloth=BetterEndfield::EiemBody::ClothMode::Stable;
+  entity=Pin(owner);animator=Pin(anim);options.face=true;options.cloth=BetterEndfieldNext::EiemBody::ClothMode::Stable;
   anim->human[7]->rotation=DirectVmdQuaternionFromAxisAngle({1,0,0},.7f);assert(Capture());assert(std::fabs(bones[size_t(Id::UpperBody)].natural.rotation.w-1)<1e-6f);assert(face.ready);assert(cloth.size()==1);assert(twists[0][0].transform&&twists[0][1].transform);
   DirectVmdSampleFrame frame{};frame.valid=1;frame.leftFootIkEnabled=1;frame.rightFootIkEnabled=1;
   for(auto& b:frame.bones)b.rotation={0,0,0,1};
   frame.bones[size_t(Id::LeftArmTwist)].rotation=DirectVmdQuaternionFromAxisAngle({.7941f,-.6076f,.012f},.6f);
   ApplyTwists(frame);assert(std::fabs(twists[0][0].transform.object?Obj(twists[0][0].transform.object)->rotation.w:1)<.999f);
   ApplyCloth();assert(root->fields["test_anchor"]->position.y==1.25f);auto* c=root->components[0];assert(Value<float>(c->fields["serialize"]->fields["clothSimulateWeight"])==1);assert(ClothRestore());assert(root->fields["test_anchor"]->position.y==2.5f);assert(Value<float>(c->fields["serialize"]->fields["clothSimulateWeight"])==.3f);assert(Value<float>(c->fields["clothSimulateWeightProperty"])==.4f);
-  options.cloth=BetterEndfield::EiemBody::ClothMode::Freeze;auto nodes=Tree();CaptureCloth(nodes);ApplyCloth();assert(!c->enabled);assert(ClothRestore());assert(c->enabled);
+  options.cloth=BetterEndfieldNext::EiemBody::ClothMode::Freeze;auto nodes=Tree();CaptureCloth(nodes);ApplyCloth();assert(!c->enabled);assert(ClothRestore());assert(c->enabled);
   frame.morphCount=2;strcpy(frame.morphs[0].name,u8"あ");frame.morphs[0].weight=.8f;strcpy(frame.morphs[1].name,u8"まばたき");frame.morphs[1].weight=.5f;
   ApplyFace(frame);assert(setPoseCalls==1&&faceUpdates==1);assert(Value<bool>(core->fields["m_pauseEmotion"]));auto* pose=core->fields["test_pose"];assert(pose->fields["mouthValue"]->items.size()==5);assert(pose->fields["eyeValueL"]->items.size()==1);assert(pose->fields["eyeValueR"]->items.size()==1);
   auto* snapshotArray=Obj(face.snapshots[0].array.object);snapshotArray->items[2]=Box(999);assert(FaceRestore());assert(Value<int>(snapshotArray->items[2])==102);assert(!Value<bool>(core->fields["m_pauseEmotion"]));
@@ -211,8 +211,8 @@ int main(){
   // Managed exception fails the feature; it does not become an API success.
   face.ready=true;failMethod="SetPose";ApplyFace(frame);assert(!face.ready);failMethod.clear();
   Stop("offline-stop");entity.Reset();animator.Reset();ownerRoot.Reset();nodes.clear();assert(handles.empty());
-  auto cp=BetterEndfield::EiemAndroid::DecodeCp932("\x83\x5a\x83\x93\x83\x5e\x81\x5b",8);assert(cp==u8"センター");assert(BetterEndfield::EiemAndroid::DecodeCp932("\x81",1).empty());
-  const uint8_t utf16[]={0x3d,0xd8,0x00,0xde};assert(BetterEndfield::EiemAndroid::DecodeUtf16LE(utf16,4)=="\xf0\x9f\x98\x80");
+  auto cp=BetterEndfieldNext::EiemAndroid::DecodeCp932("\x83\x5a\x83\x93\x83\x5e\x81\x5b",8);assert(cp==u8"センター");assert(BetterEndfieldNext::EiemAndroid::DecodeCp932("\x81",1).empty());
+  const uint8_t utf16[]={0x3d,0xd8,0x00,0xde};assert(BetterEndfieldNext::EiemAndroid::DecodeUtf16LE(utf16,4)=="\xf0\x9f\x98\x80");
   std::cout<<"PASS: Avatar natural bind (animated entry rejected as bind), cloth root anchors, managed SMC pose+snapshot restoration, twist, independent leg/toe IK, boxed terrain query+walkability+height response+pause+exception capability status, stable/freeze cloth restoration, exception gating, GC pins, CP932/UTF16\n";
 }
 

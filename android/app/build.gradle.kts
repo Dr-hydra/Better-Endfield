@@ -18,7 +18,7 @@ val workspaceTools = beWorkspace["tools"] as Map<String, Any?>
 val resourceUpdate = beWorkspace["resource_update"] as Map<String, Any?>
 @Suppress("UNCHECKED_CAST")
 val sharedOutputs = resourceUpdate["outputs"] as Map<String, Any?>
-val nativeStaging = File(workspacePaths["build"] as String, "android/native/app")
+val nativeStaging = File(workspacePaths["build"] as String, "next/android/native/app")
 val generatedAssets = layout.buildDirectory.dir("generatedAssets")
 
 @Suppress("UNCHECKED_CAST")
@@ -46,7 +46,7 @@ val verifyReleaseSigningKey by tasks.registering {
         val keyPassword = configuredKeyPassword
         check(store != null && store.isFile && alias != null &&
             storePassword != null && keyPassword != null) {
-            "Configure the original 3.5.0 signing key in ${signingPropertiesPath.path}; Release never uses the machine debug key."
+            "Configure the Next signing key in ${signingPropertiesPath.path}; Release never uses the machine debug key."
         }
         val keyStore = KeyStore.getInstance(store, storePassword.toCharArray())
         check(keyStore.isKeyEntry(alias)) { "Configured signing alias is not a private key." }
@@ -55,7 +55,7 @@ val verifyReleaseSigningKey by tasks.registering {
         val digest = MessageDigest.getInstance("SHA-256").digest(certificate.encoded)
             .joinToString("") { "%02x".format(it.toInt() and 255) }
         check(digest == releaseSigningPolicy["certificate_sha256"]) {
-            "Signing certificate does not match published 3.5.0. Expected ${releaseSigningPolicy["certificate_sha256"]}, found $digest."
+            "Signing certificate does not match the Next release identity. Expected ${releaseSigningPolicy["certificate_sha256"]}, found $digest."
         }
         check(keyStore.getKey(alias, keyPassword.toCharArray()) is java.security.PrivateKey) {
             "Configured signing alias has no usable private key."
@@ -64,7 +64,7 @@ val verifyReleaseSigningKey by tasks.registering {
 }
 
 android {
-    namespace = "dev.betterendfield.android"
+    namespace = "dev.betterendfield.next"
     compileSdk = 37
     ndkVersion = "27.2.12479018"
 
@@ -73,14 +73,14 @@ android {
     }
 
     defaultConfig {
-        applicationId = "dev.betterendfield.android"
+        applicationId = "dev.betterendfield.next"
         // The libxposed API 102 service is the only framework entry point, and it
         // needs Android 10. The legacy API 82 build was dropped in 3.3.0.
         minSdk = 29
         targetSdk = 35
-        versionCode = 30504
-        versionName = "3.5.4"
-        testInstrumentationRunner = "dev.betterendfield.android.BemInstallerTest"
+        versionCode = 40000
+        versionName = "4.0.0"
+        testInstrumentationRunner = "dev.betterendfield.next.BemInstallerTest"
 
         ndk {
             abiFilters += "arm64-v8a"
@@ -109,7 +109,8 @@ android {
             isJniDebuggable = true
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             signingConfig = signingConfigs.getByName("persistentRelease")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -183,7 +184,7 @@ val prepareAndroidResourceAssets by tasks.registering(Sync::class) {
 val archiveAndroidRelease by tasks.registering(Copy::class) {
     from(layout.buildDirectory.dir("outputs/apk/release")) {
         include("*.apk")
-        rename { "BetterEndfield-${android.defaultConfig.versionName}-Android-arm64.apk" }
+        rename { "BetterEndfieldNext-${android.defaultConfig.versionName}-Android-arm64.apk" }
     }
     into(File(workspacePaths["releases"] as String,
         "${android.defaultConfig.versionName}"))
@@ -196,7 +197,7 @@ tasks.matching { it.name == "assembleRelease" }.configureEach {
 val archiveAndroidBundleRelease by tasks.registering(Copy::class) {
     from(layout.buildDirectory.dir("outputs/bundle/release")) {
         include("*.aab")
-        rename { "BetterEndfield-${android.defaultConfig.versionName}-Android-arm64.aab" }
+        rename { "BetterEndfieldNext-${android.defaultConfig.versionName}-Android-arm64.aab" }
     }
     into(File(workspacePaths["releases"] as String,
         "${android.defaultConfig.versionName}"))

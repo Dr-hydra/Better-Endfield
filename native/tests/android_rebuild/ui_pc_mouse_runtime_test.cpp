@@ -1,7 +1,7 @@
 #include "../../modules/ui/module.cpp"
 #include <cassert>
 #include <iostream>
-using namespace BetterEndfield::UiModule;
+using namespace BetterEndfieldNext::UiModule;
 static int manager, cursor, field, calculate;
 static int action_field, binding;
 static const char* binding_action = nullptr;
@@ -53,27 +53,27 @@ int main() {
     g_android_pc_real_cursor_field = &field;
     g_android_pc_cursor_calc_state_method = &calculate;
     g_keyboard_input_type = 0;
-    betterendfield::ResetAndroidPcMouse();
+    betterendfieldnext::ResetAndroidPcMouse();
     ConfigurationChanged("enabled=true\npc_ui_enabled=true\ndiagnostics=false\n");
-    assert(!betterendfield::AndroidPcMouseCaptureRequested());
+    assert(!betterendfieldnext::AndroidPcMouseCaptureRequested());
     assert(Axis("HorizontalController") == 7 && refreshes == 0);
     assert(Axis("Mouse X") == 7 && refreshes == 1 && original_cursor_calls == 1);
-    assert(!last_show && betterendfield::AndroidPcMouseCaptureRequested());
+    assert(!last_show && betterendfieldnext::AndroidPcMouseCaptureRequested());
     assert(Axis("Mouse Y") == 7 && refreshes == 1); // capture has not been acknowledged
-    betterendfield::SetAndroidPcMouseCaptured(true);
-    betterendfield::AddAndroidPcMouseMotion(2.5f, -3.25f);
+    betterendfieldnext::SetAndroidPcMouseCaptured(true);
+    betterendfieldnext::AddAndroidPcMouseMotion(2.5f, -3.25f);
     const int fallback_calls = original_axis_calls;
     assert(Axis("Mouse X") == 2.5f && Axis("Mouse Y") == 3.25f);
     assert(Axis("Mouse X") == 2.5f && Axis("Mouse Y") == 3.25f);
     assert(original_axis_calls == fallback_calls);
     assert(Axis("View X") == 7 && original_axis_calls == fallback_calls + 1);
-    betterendfield::DispatchAndroidFrame();
+    betterendfieldnext::DispatchAndroidFrame();
     assert(Axis("Mouse Y") == 0 && Axis("Mouse X") == 0);
-    betterendfield::AddAndroidPcMouseMotion(9000, 5000);
-    betterendfield::DispatchAndroidFrame();
+    betterendfieldnext::AddAndroidPcMouseMotion(9000, 5000);
+    betterendfieldnext::DispatchAndroidFrame();
     assert(Axis("Mouse X") == 9000 && Axis("Mouse Y") == -5000);
     DetourAndroidPcCursorToggle(&cursor, true, false, nullptr);
-    assert(last_show && original_cursor_calls == 2 && !betterendfield::AndroidPcMouseCaptureRequested());
+    assert(last_show && original_cursor_calls == 2 && !betterendfieldnext::AndroidPcMouseCaptureRequested());
     assert(Axis("Mouse X") == 7 && Axis("Mouse Y") == 7); // menu uses original input
     g_original_android_pc_mouse_position = OriginalPosition;
     g_android_pc_screen_width = ScreenWidth;
@@ -81,17 +81,17 @@ int main() {
     AndroidPcMousePosition position{};
     DetourAndroidPcMousePosition(&position);
     assert(position.x == 12 && position.y == 34 && position.z == 56); // no real mouse sample
-    betterendfield::AddAndroidPcMouseAbsolute(0.2f, 0.25f);
+    betterendfieldnext::AddAndroidPcMouseAbsolute(0.2f, 0.25f);
     DetourAndroidPcMousePosition(&position);
     assert(position.x == 256 && position.y == 540 && position.z == 0);
-    betterendfield::DispatchAndroidFrame();
-    betterendfield::PublishAndroidPcMouse(true, true);
+    betterendfieldnext::DispatchAndroidFrame();
+    betterendfieldnext::PublishAndroidPcMouse(true, true);
     DetourAndroidPcMousePosition(&position);
     assert(position.x == 256 && position.y == 540); // stable frames/publication never recenter a held click
-    betterendfield::SetAndroidPcDirectTouch(true);
+    betterendfieldnext::SetAndroidPcDirectTouch(true);
     DetourAndroidPcMousePosition(&position);
     assert(position.x == 12 && position.y == 34);
-    betterendfield::SetAndroidPcDirectTouch(false);
+    betterendfieldnext::SetAndroidPcDirectTouch(false);
     DetourAndroidPcMousePosition(&position);
     assert(position.x == 12 && position.y == 34); // no stale mouse after finger release
     g_original_android_pc_binding_enabled = OriginalBinding;
@@ -105,16 +105,16 @@ int main() {
     binding_action = nullptr; binding_enabled = false;
     assert(!DetourAndroidPcBindingEnabled(&binding, nullptr) && binding_calls == 3);
     DetourAndroidPcCursorToggle(&cursor, false, false, nullptr);
-    betterendfield::SetAndroidPcMouseCaptured(true);
+    betterendfieldnext::SetAndroidPcMouseCaptured(true);
     assert(Axis("Mouse X") == 0); // no movement from before the menu survives
     ConfigurationChanged("enabled=true\npc_ui_enabled=false\ndiagnostics=false\n");
-    assert(!betterendfield::AndroidPcMouseCaptureRequested() && Axis("Mouse X") == 7);
+    assert(!betterendfieldnext::AndroidPcMouseCaptureRequested() && Axis("Mouse X") == 7);
     binding_action = "common_quit_game"; binding_enabled = true;
     assert(DetourAndroidPcBindingEnabled(&binding, nullptr) && binding_calls == 4); // Android quit restored when PCUI closes
     g_android_pc_axis_hook_ready = false;
     ConfigurationChanged("enabled=true\npc_ui_enabled=true\ndiagnostics=false\n");
-    assert(!betterendfield::AndroidPcMouseCaptureRequested() && Axis("Mouse Y") == 7);
+    assert(!betterendfieldnext::AndroidPcMouseCaptureRequested() && Axis("Mouse Y") == 7);
     Shutdown();
-    assert(!betterendfield::AndroidPcMouseCaptureRequested() && !g_android_pc_cursor_intent_known);
+    assert(!betterendfieldnext::AndroidPcMouseCaptureRequested() && !g_android_pc_cursor_intent_known);
     std::cout << "PASS Android PC mouse runtime: cursor lifecycle, relative axes, real absolute position scaling, touch fallback, quit binding eligibility and shutdown\n";
 }

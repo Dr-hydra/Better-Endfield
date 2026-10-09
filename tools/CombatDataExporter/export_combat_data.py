@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-BetterEndfield Combat Data Exporter & Incremental Sync Tool
+BetterEndfieldNext Combat Data Exporter & Incremental Sync Tool
 ==========================================================
 Extracts official Chinese names, identifiers, attributes, and semantic bindings
 from raw dumped game tables and generates a unified, ultra-compact dictionary for
@@ -1174,7 +1174,7 @@ def extract_icon_pngs(full_dict: Dict[str, Any], vfs_path: Path,
 
 def main():
     parser = argparse.ArgumentParser(
-        description="BetterEndfield Combat Data Exporter & Incremental Sync Tool"
+        description="BetterEndfieldNext Combat Data Exporter & Incremental Sync Tool"
     )
     parser.add_argument("--workspace-config", type=Path)
     parser.add_argument(
@@ -1354,7 +1354,7 @@ def main():
     ws.env()
 
     print("==========================================================")
-    print("BetterEndfield Combat Data Exporter")
+    print("BetterEndfieldNext Combat Data Exporter")
     print("==========================================================")
     if args.refresh_tables:
         if not args.game_path:

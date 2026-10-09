@@ -8,7 +8,7 @@
 #include <vector>
 #include "../../shared/third_party/minhook/src/hde/hde64.h"
 
-namespace BetterEndfield::CustomModel {
+namespace BetterEndfieldNext::CustomModel {
 namespace {
 template<class T> bool Read(std::span<const uint8_t> image, size_t offset, T& out) {
     if (offset > image.size() || sizeof(T) > image.size() - offset) return false;

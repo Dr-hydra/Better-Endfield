@@ -1,6 +1,6 @@
 # BEM 格式规范（1.0–1.4）
 
-BEM（Better Endfield Model）是《终末地》角色模型替换包，扩展名 `.bem`。Windows 与 Android 读取同一个文件。[BEM 1.4 扩展规范](BEM_V1_4_SPEC.md)定义多资源目标和静态武器。下文保留 1.0–1.3 的协议内容；各版本只在下文标注的地方不同。制作流程见 [创作者指南](BEM_CREATOR_GUIDE.md)，游戏内的匹配与限制见 [运行时行为与兼容性](BEM_RUNTIME_COMPATIBILITY.md)。
+BEM（Better Endfield Next Model）是《终末地》角色模型替换包，扩展名 `.bem`。Windows 与 Android 读取同一个文件。[BEM 1.4 扩展规范](BEM_V1_4_SPEC.md)定义多资源目标和静态武器。下文保留 1.0–1.3 的协议内容；各版本只在下文标注的地方不同。制作流程见 [创作者指南](BEM_CREATOR_GUIDE.md)，游戏内的匹配与限制见 [运行时行为与兼容性](BEM_RUNTIME_COMPATIBILITY.md)。
 
 参考实现：写入与校验 `tools/CustomModel/bem_v1.py`、`bem_v11.py`、`bem_v13.py`、`bem_v14.py`；读取 `native/modules/custom_model/bem.cpp`。
 

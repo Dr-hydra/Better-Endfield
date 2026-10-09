@@ -22,7 +22,7 @@ void DetourAndroidPcMousePosition(AndroidPcMousePosition* position) {
     if (!position || !g_pc_ui_enabled.load(std::memory_order_acquire) ||
         !g_android_pc_screen_width || !g_android_pc_screen_height) return;
     float x = 0.0f, y = 0.0f;
-    if (!betterendfield::ReadAndroidPcMouseAbsolute(x, y)) return;
+    if (!betterendfieldnext::ReadAndroidPcMouseAbsolute(x, y)) return;
     const int32_t width = g_android_pc_screen_width(const_cast<void*>(g_android_pc_screen_width_method));
     const int32_t height = g_android_pc_screen_height(const_cast<void*>(g_android_pc_screen_height_method));
     if (width <= 0 || height <= 0) return;
@@ -72,7 +72,7 @@ void __fastcall DetourAndroidPcCursorToggle(
     if (g_original_android_pc_cursor_toggle)
         g_original_android_pc_cursor_toggle(instance, show_cursor, force_update, method);
     g_android_pc_cursor_intent_known.store(true, std::memory_order_release);
-    betterendfield::SetAndroidPcCursorRequest(show_cursor);
+    betterendfieldnext::SetAndroidPcCursorRequest(show_cursor);
     if (g_pc_ui_enabled.load(std::memory_order_acquire) &&
         g_diagnostics_enabled.load(std::memory_order_relaxed)) {
         static thread_local int32_t last_request = -1;
@@ -81,7 +81,7 @@ void __fastcall DetourAndroidPcCursorToggle(
             last_request = request;
             Log(std::string("Android PC mouse cursor request: show=") +
                 (show_cursor ? "true" : "false") + ", relative_capture=" +
-                (betterendfield::AndroidPcMouseCaptureRequested() ? "requested" : "off"));
+                (betterendfieldnext::AndroidPcMouseCaptureRequested() ? "requested" : "off"));
         }
     }
 }
@@ -118,7 +118,7 @@ float __fastcall DetourAndroidPcGetAxis(void* instance, void* axis_name, void* m
             if (axis == "Mouse X" || axis == "Mouse Y") {
                 PrimeAndroidPcCursorIntent(instance);
                 float x = 0.0f, y = 0.0f;
-                if (betterendfield::ReadAndroidPcMouseMotion(x, y)) {
+                if (betterendfieldnext::ReadAndroidPcMouseMotion(x, y)) {
                     // Captured Android coordinates point down; Rewired's Mouse
                     // Y and the game's normalized-screen camera path point up.
                     // The game retains its downstream Lua/camera gains. This

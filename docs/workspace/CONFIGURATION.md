@@ -2,7 +2,7 @@
 
 当前游戏资料为1.5.3，更新前资料归pre-1.5.3；同版热更新记录资源快照。工作区源码在本目录，旧目录仅作回退备份。
 
-配置读取顺序：workspace.defaults.json → workspace.local.json（本机，不提交Git）→ 显式脚本参数。游戏目录默认从注册表自动发现，本机BE实际测试目标配置为E:\Better Endfield。
+配置读取顺序：workspace.defaults.json → workspace.local.json（本机，不提交Git）→ 显式脚本参数。游戏目录默认从注册表自动发现，本机BE实际测试目标配置为E:\Better Endfield Next。
 
 常用入口：
 
@@ -12,7 +12,7 @@ python scripts/run_workspace_tests.py --list
 python scripts/run_workspace_tests.py --module workspace --plan
 & scripts/UpdateResourceManifests.ps1 -Plan
 & scripts/Clean-Workspace.ps1
-& scripts/BuildBetterEndfield.ps1 -Configuration Release
+& scripts/BuildBetterEndfieldNext.ps1 -Configuration Release
 & scripts/BuildWeb.ps1
 ```
 

@@ -1,5 +1,5 @@
 'use strict';
-const host=window.betterEndfield,log=document.querySelector('#log'),connection=document.querySelector('#connection');
+const host=window.betterEndfieldNext,log=document.querySelector('#log'),connection=document.querySelector('#connection');
 let configuration={};
 function write(value){log.textContent=(typeof value==='string'?value:JSON.stringify(value,null,2))+'\n\n'+log.textContent;}
 async function status(){try{const value=await host.status();connection.textContent=value.connected?'Game bridge connected':'Game bridge offline';write(value);}catch(error){write(error.message);}}

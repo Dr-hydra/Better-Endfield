@@ -2,7 +2,7 @@
 // a library work and controlling MMD playback without a numpad. Rendering and
 // window following reuse the combat overlay's approach (GDI+ layered window
 // owned by the game window). The window never activates, so the game keeps
-// keyboard focus; commands go to BetterEndfield.Camera through shared memory.
+// keyboard focus; commands go to BetterEndfieldNext.Camera through shared memory.
 #include "../mmd_library.h"
 #include "../mmd_overlay_protocol.h"
 
@@ -22,13 +22,13 @@
 #include <string_view>
 #include <vector>
 
-namespace BetterEndfield::MmdOverlay {
+namespace BetterEndfieldNext::MmdOverlay {
 namespace {
 
 using namespace Gdiplus;
 namespace Proto = MmdOverlayProtocol;
 
-constexpr wchar_t kWindowClass[] = L"BetterEndfield.MmdOverlay.Window";
+constexpr wchar_t kWindowClass[] = L"BetterEndfieldNext.MmdOverlay.Window";
 constexpr int kWidth = 420;
 constexpr int kHeaderHeight = 48;
 constexpr int kRowHeight = 30;
@@ -106,8 +106,8 @@ std::filesystem::path DataDirectory() {
     const DWORD length = GetEnvironmentVariableW(L"LOCALAPPDATA", local_app_data,
         static_cast<DWORD>(std::size(local_app_data)));
     std::filesystem::path directory = length
-        ? std::filesystem::path(local_app_data) / L"BetterEndfield"
-        : std::filesystem::temp_directory_path() / L"BetterEndfield";
+        ? std::filesystem::path(local_app_data) / L"BetterEndfieldNext"
+        : std::filesystem::temp_directory_path() / L"BetterEndfieldNext";
     std::error_code error;
     std::filesystem::create_directories(directory, error);
     return directory;
@@ -141,7 +141,7 @@ bool IsEnglish() {
     const ULONGLONG now = GetTickCount64();
     if (cached != -1 && now - last_check < 3000) return cached == 1;
     last_check = now;
-    const std::filesystem::path ini = DataDirectory() / L"BetterEndfield.ini";
+    const std::filesystem::path ini = DataDirectory() / L"BetterEndfieldNext.ini";
     wchar_t buffer[64]{};
     GetPrivateProfileStringW(L"Launcher", L"Language", L"", buffer,
         static_cast<DWORD>(std::size(buffer)), ini.c_str());
@@ -773,7 +773,7 @@ int Run(HINSTANCE instance) {
     window_class.lpszClassName = kWindowClass;
     RegisterClassExW(&window_class);
     g_window = CreateWindowExW(WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE, kWindowClass,
-        L"Better Endfield MMD", WS_POPUP, 0, 0, kWidth, kHeight, nullptr, nullptr, instance, nullptr);
+        L"Better Endfield Next MMD", WS_POPUP, 0, 0, kWidth, kHeight, nullptr, nullptr, instance, nullptr);
     if (!g_window) {
         OverlayLog("CreateWindowEx failed error=" + std::to_string(GetLastError()));
         return 6;
@@ -794,8 +794,8 @@ int Run(HINSTANCE instance) {
     return 0;
 }
 
-} // namespace BetterEndfield::MmdOverlay
+} // namespace BetterEndfieldNext::MmdOverlay
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int) {
-    return BetterEndfield::MmdOverlay::Run(instance);
+    return BetterEndfieldNext::MmdOverlay::Run(instance);
 }

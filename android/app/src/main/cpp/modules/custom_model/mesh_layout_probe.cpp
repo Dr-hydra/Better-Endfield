@@ -14,7 +14,7 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
-namespace betterendfield {
+namespace betterendfieldnext {
 namespace {
 constexpr uint32_t kGnuEhFrame = 0x6474e550;
 
@@ -136,8 +136,8 @@ MeshLayoutEvidence ProbeLoadedUnityMeshLayout() {
     if (image.failed || image.segments.empty()) return Failure("Unity ELF snapshot unavailable");
     // Debug-only bootstrap supplies this path. Export executable bytes only;
     // no writable segments or game object/asset memory are captured.
-    const char* config = std::getenv("BETTER_ENDFIELD_CUSTOM_MODEL_CONFIG");
-    const char* diagnostics = std::getenv("BETTER_ENDFIELD_DIAGNOSTICS_PATH");
+    const char* config = std::getenv("BETTER_ENDFIELD_NEXT_CUSTOM_MODEL_CONFIG");
+    const char* diagnostics = std::getenv("BETTER_ENDFIELD_NEXT_DIAGNOSTICS_PATH");
     if (config && diagnostics && std::string_view(config).find("code_probe=1") != std::string_view::npos) {
         for (const auto& segment : image.segments) {
             if (!(segment.flags & PF_X)) continue;

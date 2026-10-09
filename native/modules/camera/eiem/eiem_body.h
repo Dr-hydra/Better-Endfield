@@ -10,12 +10,12 @@
 // Threading: everything except Shutdown runs on the Unity main thread (the
 // Camera module's TailLateTick or unscaled heartbeat). File I/O and sampling
 // happen on each actor's worker.
-#include "BetterEndfield/ModuleApi.h"
+#include "BetterEndfieldNext/ModuleApi.h"
 
 #include <cstdint>
 #include <string>
 
-namespace BetterEndfield::EiemBody {
+namespace BetterEndfieldNext::EiemBody {
 
 constexpr int kMaxActors = 4;
 
@@ -91,4 +91,4 @@ void PublishClock(double seconds, bool playing);
 // Process shutdown on a non-game thread: stops the workers only.
 void Shutdown();
 
-} // namespace BetterEndfield::EiemBody
+} // namespace BetterEndfieldNext::EiemBody

@@ -130,7 +130,7 @@ Android 替换或隐藏部件时，在同一提交/恢复事务中处理其 `sha
 
 `build_bem14_target.py` 从 NativeAssetReader 原始图谱或新版离线 metadata，按作者 spec 的精确 prefab 身份及 LOD 分支生成未验证目标 profile，并可输出所有组件为 `keep` 的项目起点。它检查 snapshot 与平台来源，不猜测 runtime 布局或来源 Mod 映射。真实 Windows 草稿见 [庄方宜大招、静态剑、蒙皮法器](../../tools/CustomModel/profiles/bem14-drafts/README.md)，分别含 36、1、4 个组件；这些草稿的 `runtime_verified`、`conversion_ready` 均为 false。
 
-独立制作工具中的等价入口为 `BetterEndfield.BemConverter.exe target-profile NATIVE_GRAPH.json --spec SPEC.json -o PROFILE.json --project PROJECT.json`。发行目录的 `examples/multi-resource/project/export.bemproj.json` 是打包阶段生成的可直接构建示例，无需最终用户运行 Python 生成器。
+独立制作工具中的等价入口为 `BetterEndfieldNext.BemConverter.exe target-profile NATIVE_GRAPH.json --spec SPEC.json -o PROFILE.json --project PROJECT.json`。发行目录的 `examples/multi-resource/project/export.bemproj.json` 是打包阶段生成的可直接构建示例，无需最终用户运行 Python 生成器。
 
 ```powershell
 python tools/CustomModel/examples/multi-resource/create_project.py research/custom_model/bem14-example

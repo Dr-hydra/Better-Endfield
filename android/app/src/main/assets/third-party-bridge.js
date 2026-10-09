@@ -1,5 +1,5 @@
 (() => {
-  if (window.top !== window || window.betterEndfield) return;
+  if (window.top !== window || window.betterEndfieldNext) return;
   let next = 0; const pending = new Map(), listeners = new Set();
   const session = Math.random().toString(36).slice(2);
   function invoke(operation, payload) {
@@ -7,10 +7,10 @@
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => { pending.delete(request_id); reject(new Error('Host request timed out')); }, 15000);
       pending.set(request_id, { resolve, reject, timeout });
-      const message = JSON.stringify({ protocol: 'better-endfield.module-ui.v1', request_id, operation, payload });
+      const message = JSON.stringify({ protocol: 'better-endfield-next.module-ui.v1', request_id, operation, payload });
       try {
         if (window.chrome?.webview) window.chrome.webview.postMessage(JSON.parse(message));
-        else window.BetterEndfieldModuleHost.postMessage(message);
+        else window.BetterEndfieldNextModuleHost.postMessage(message);
       } catch (error) { clearTimeout(timeout); pending.delete(request_id); reject(error); }
     });
   }
@@ -24,7 +24,7 @@
     }
   };
   if (window.chrome?.webview) window.chrome.webview.addEventListener('message', e => window.__beModuleDeliver(e.data));
-  Object.defineProperty(window, 'betterEndfield', { value: Object.freeze({
+  Object.defineProperty(window, 'betterEndfieldNext', { value: Object.freeze({
     readConfig: () => invoke('readConfig'),
     saveConfig: configuration => invoke('saveConfig', configuration),
     send: body => invoke('send', body),

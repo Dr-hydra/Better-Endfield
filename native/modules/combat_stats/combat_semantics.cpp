@@ -10,7 +10,7 @@
 #include <limits>
 #include <sstream>
 
-namespace BetterEndfield::CombatStats {
+namespace BetterEndfieldNext::CombatStats {
 namespace {
 
 constexpr uint32_t kFlagDynamic = 1u << 0;
@@ -602,4 +602,4 @@ bool CombatSemanticCatalog::ElementMatches(SemanticElement effect,
     return false;
 }
 
-} // namespace BetterEndfield::CombatStats
+} // namespace BetterEndfieldNext::CombatStats

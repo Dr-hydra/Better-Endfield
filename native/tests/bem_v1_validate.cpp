@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <set>
 #include <random>
-using namespace BetterEndfield::CustomModel;
+using namespace BetterEndfieldNext::CustomModel;
 namespace {
 bool SamePayload(const BemPocData& a,const BemPocData& b) {
     if(std::memcmp(&a.header,&b.header,sizeof(a.header)) || a.components.size()!=b.components.size() ||

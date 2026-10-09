@@ -6,8 +6,8 @@
 #include <vector>
 
 namespace EiemFake {
-using BetterEndfield::EiemBody::kMaxActors;
-using BetterEndfield::EiemBody::LoadState;
+using BetterEndfieldNext::EiemBody::kMaxActors;
+using BetterEndfieldNext::EiemBody::LoadState;
 struct Actor {
     bool ready = false, active = false;
     LoadState load_state = LoadState::Idle;
@@ -21,12 +21,12 @@ struct Actor {
 inline bool available = true;
 inline bool start_result = true;
 inline int initialize_calls = 0, shutdowns = 0;
-inline BetterEndfield::EiemBody::Options options;
+inline BetterEndfieldNext::EiemBody::Options options;
 inline Actor actors[kMaxActors];
 inline bool anchor_valid = false;
 inline float anchor_position[3]{};
 inline bool camera_ok = false;
-inline BetterEndfield::EiemBody::CameraReference camera;
+inline BetterEndfieldNext::EiemBody::CameraReference camera;
 inline double clock_seconds = -1;
 inline bool clock_playing = false;
 inline void SetAllLoadStates(LoadState state) {
@@ -34,7 +34,7 @@ inline void SetAllLoadStates(LoadState state) {
 }
 } // namespace EiemFake
 
-namespace BetterEndfield::EiemBody {
+namespace BetterEndfieldNext::EiemBody {
 bool Initialize(const BE_HostApiV1*, const std::wstring&) {++EiemFake::initialize_calls;return EiemFake::available;}
 bool Available() {return EiemFake::available;}
 bool EnsureActor(int actor) {
@@ -67,4 +67,4 @@ bool GetCameraReference(int actor,CameraReference& reference) {
 }
 void PublishClock(double seconds,bool playing) {EiemFake::clock_seconds=seconds;EiemFake::clock_playing=playing;}
 void Shutdown() {++EiemFake::shutdowns;}
-} // namespace BetterEndfield::EiemBody
+} // namespace BetterEndfieldNext::EiemBody

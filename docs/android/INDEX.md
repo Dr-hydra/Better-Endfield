@@ -19,5 +19,5 @@
 | 文档 | 用途 | 状态 | 游戏版本 |
 | --- | --- | --- | --- |
 | [安卓界面约束](../../android/AGENTS.md) | 安卓实验/相机UI文字、模型实验分组及配置行为约束 | 工作约束 | not_applicable |
-| [Better Endfield Android](../../android/README.md) | Android安装、设置、运行时生命周期、构建和专题说明 | 维护参考 | 1.5.3 |
+| [Better Endfield Next Android](../../android/README.md) | Android安装、设置、运行时生命周期、构建和专题说明 | 维护参考 | 1.5.3 |
 | [终末地资源映射清单](../../android/resources/manifests/shared/resource-manifest-report.md) | 资源映射快照统计及资源来源可追溯记录 | 生成报告 | 1.5.3 |

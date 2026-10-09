@@ -70,7 +70,7 @@ void BeginProbeStatus() {
     std::array<wchar_t,32768> local{};
     const DWORD length=GetEnvironmentVariableW(L"LOCALAPPDATA",local.data(),static_cast<DWORD>(local.size()));
     if(!length || length>=local.size()) return;
-    const auto root=std::filesystem::path(local.data())/"BetterEndfield"/"catalog"/"custom-model";
+    const auto root=std::filesystem::path(local.data())/"BetterEndfieldNext"/"catalog"/"custom-model";
     if(!std::filesystem::exists(root/"native-probe.request")) return;
     g_probe_status_path=root/"native-probe.status.json";
     WriteProbeStatus("initializing");
@@ -236,7 +236,7 @@ void CaptureNativeProbe(void* asset) {
             void* mesh=Invoke(Contract("skinned.get_shared_mesh"),renderer,nullptr,false);
             const auto mesh_name=ObjectName(mesh);
             if(!path.starts_with(resource+"/") || !paths.insert(path).second || mesh_name.empty() ||
-               mesh_name.starts_with("BetterEndfield.")) { complete=false; continue; }
+               mesh_name.starts_with("BetterEndfieldNext.")) { complete=false; continue; }
             NativeProbeItem observed{resource,path,mesh_name,"runtime:"+path,0};
             if(!first) rows+=','; first=false;
             rows+=ProbeRenderer(observed,renderer,complete);

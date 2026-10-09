@@ -1,7 +1,7 @@
 // Generated from Python cp932 (Windows-31J); regenerate with compat/generate_cp932.py.
 #pragma once
 #include <cstdint>
-namespace BetterEndfield::EiemAndroid {
+namespace BetterEndfieldNext::EiemAndroid {
 inline constexpr uint32_t kCp932Pairs[] = {
   0x81403000u, 0x81413001u, 0x81423002u, 0x8143ff0cu, 0x8144ff0eu, 0x814530fbu, 0x8146ff1au, 0x8147ff1bu,
   0x8148ff1fu, 0x8149ff01u, 0x814a309bu, 0x814b309cu, 0x814c00b4u, 0x814dff40u, 0x814e00a8u, 0x814fff3eu,

@@ -39,7 +39,7 @@ void SampleAndroidTextureMips(uint64_t now,const std::string& request_token={}) 
     // and 12 game samples. Inspection retains its 1024/6 fallback semantics.
     if (!AndroidTextureDiagnosticsOnPump() ||
         (requested?(!AndroidTextureMipTokenValid(request_token) || request_token==state.last_mip_request_token):
-            !betterendfield::AndroidInspectionEnabled()) || now<state.next_mip_sample_ms ||
+            !betterendfieldnext::AndroidInspectionEnabled()) || now<state.next_mip_sample_ms ||
         !g_texture2d_class.type_object) return;
     state.next_mip_sample_ms=now+60000;
     void* args[]{g_texture2d_class.type_object};
@@ -157,7 +157,7 @@ void ObserveAndroidTextureStreaming(const char* event,bool force=false,std::stri
             else if (!state.mip_idle_seen) {state.mip_idle_seen=true;state.mip_idle_since_ms=now;}
             else if (now-state.mip_idle_since_ms>=15000 && now>=state.next_mip_sample_ms &&
                 g_texture2d_class.type_object) {
-                auto token=betterendfield::AndroidTextureMipRequestToken();
+                auto token=betterendfieldnext::AndroidTextureMipRequestToken();
                 if (AndroidTextureMipTokenValid(token) && token!=state.last_mip_request_token)
                     request_token=std::move(token);
             }

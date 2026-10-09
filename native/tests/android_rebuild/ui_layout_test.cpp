@@ -2,7 +2,7 @@
 #include "../../modules/ui/module.cpp"
 #include <cassert>
 #include <iostream>
-using namespace BetterEndfield::UiModule;
+using namespace BetterEndfieldNext::UiModule;
 static int input = 1, calls = 0;
 static int32_t boxed;
 static int change;

@@ -3,7 +3,7 @@
 #include <cassert>
 #include <thread>
 #include <iostream>
-using namespace betterendfield;
+using namespace betterendfieldnext;
 static int frames, suspended;
 static void Frame(bool suspend) { assert(OnAndroidFrameThread()); ++frames; suspended += suspend; }
 int main() {

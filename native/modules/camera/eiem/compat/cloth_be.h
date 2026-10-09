@@ -1,5 +1,5 @@
 #pragma once
-// Better Endfield side of EIEM's cloth playback service (upstream/cloth.h).
+// Better Endfield Next side of EIEM's cloth playback service (upstream/cloth.h).
 //
 // Kept from EIEM: the base service. While a slot's DirectVmd session runs it
 // finds the character's BeyondBoneCloth components, forces simulate weight 1

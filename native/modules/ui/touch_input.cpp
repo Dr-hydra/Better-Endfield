@@ -6,7 +6,7 @@
 #include <cstdio>
 #include <thread>
 
-namespace BetterEndfield::UiModule::TouchInput {
+namespace BetterEndfieldNext::UiModule::TouchInput {
 namespace {
 
 // CreateSyntheticPointerDevice and friends are Windows 10 1809+.  Resolving
@@ -288,4 +288,4 @@ void SetEnabled(bool enabled) {
     }
 }
 
-}  // namespace BetterEndfield::UiModule::TouchInput
+}  // namespace BetterEndfieldNext::UiModule::TouchInput

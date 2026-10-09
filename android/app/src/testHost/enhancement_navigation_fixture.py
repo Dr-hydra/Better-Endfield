@@ -60,9 +60,9 @@ STUBS = {
             public int getColor(int id){return id;}public void finish(){finished=true;}
             public android.content.res.Resources getResources(){return new android.content.res.Resources();}
         }""",
-    "dev/betterendfield/android/R.java": "package dev.betterendfield.android; public class R {public static class color {public static int app_background=7;}}",
-    "dev/betterendfield/android/SectionCard.java": "package dev.betterendfield.android; public class SectionCard {public static Object stacked(android.app.Activity a,int m){return new Object();}}",
-    "dev/betterendfield/android/ThirdPartyModulesPage.java": r"""package dev.betterendfield.android;
+    "dev/betterendfield/next/R.java": "package dev.betterendfield.next; public class R {public static class color {public static int app_background=7;}}",
+    "dev/betterendfield/next/SectionCard.java": "package dev.betterendfield.next; public class SectionCard {public static Object stacked(android.app.Activity a,int m){return new Object();}}",
+    "dev/betterendfield/next/ThirdPartyModulesPage.java": r"""package dev.betterendfield.next;
         public class ThirdPartyModulesPage {
             static ThirdPartyModulesPage last;public android.app.Activity owner;
             public int renders,results,request,result,closed;public android.content.Intent data;
@@ -71,7 +71,7 @@ STUBS = {
             void onActivityResult(int request,int result,android.content.Intent data){this.request=request;this.result=result;this.data=data;results++;}
             void close(){closed++;}
         }""",
-    "dev/betterendfield/android/EnhancementNavigationHostTest.java": r"""package dev.betterendfield.android;
+    "dev/betterendfield/next/EnhancementNavigationHostTest.java": r"""package dev.betterendfield.next;
         import android.os.Bundle;import android.content.Intent;import android.widget.*;
         public class EnhancementNavigationHostTest {
             static int checks;static void check(boolean b,String m){checks++;if(!b)throw new AssertionError(m);}
@@ -103,7 +103,7 @@ def main():
     args = parser.parse_args()
     android = Path(__file__).resolve().parents[3]
     output = args.output.resolve()
-    main_java = android / "app/src/main/java/dev/betterendfield/android"
+    main_java = android / "app/src/main/java/dev/betterendfield/next"
     activity = (main_java / "MainActivity.java").read_text(encoding="utf-8")
     layout = ET.parse(android / "app/src/main/res/layout/activity_main.xml")
     manifest = ET.parse(android / "app/src/main/AndroidManifest.xml")
@@ -113,7 +113,8 @@ def main():
     assert "@+id/show_custom_model_button" in ids and "@+id/custom_model_section" in ids
     managers = [n for n in manifest.iter("activity") if n.get(ns + "name") == ".ThirdPartyModulesActivity"]
     assert len(managers) == 1 and managers[0].get(ns + "exported") == "false"
-    assert 'new Intent(this, ThirdPartyModulesActivity.class)' in activity
+    assert 'new Intent(this, ThirdPartyModulesActivity.class)' not in activity
+    assert 'enhancementButton("第三方模块")' not in activity
     assert 'enhancementButton("创意工坊")' in activity and 'Intent.CATEGORY_BROWSABLE' in activity
     assert 'https://146.235.16.65:8443/endfield/' in activity
     assert 'android.widget.Toast.makeText(this, "无法打开创意工坊"' in activity
@@ -122,19 +123,19 @@ def main():
     # old saved page 5 and activity recreation after a consumed legacy deep link.
     route = activity[activity.index("String requestedPage ="):activity.index("View bemContent =")]
     route = route.replace("getIntent().getStringExtra(EXTRA_PAGE)", "requested")
-    route_source = r"""package dev.betterendfield.android;
+    route_source = r"""package dev.betterendfield.next;
         import android.os.Bundle;
         public class MainPageRouteHostTest {
             static int CUSTOM_MODEL_PAGE=4,ENHANCEMENT_PAGE=2,ABOUT_PAGE=3;
             static int[] route(String requested,Bundle savedInstanceState){int currentPage;
         """ + route + r"""
-                return new int[]{currentPage,openThirdParty?1:0};
+                return new int[]{currentPage,0};
             }
             static void check(String request,Integer saved,int page,boolean open){Bundle b=null;if(saved!=null){b=new Bundle();b.putInt("page",saved);}int[] r=route(request,b);if(r[0]!=page||r[1]!=(open?1:0))throw new AssertionError(request+"/"+saved);}
             public static void main(String[] args){
-                check("third_party_modules",null,2,true);
+                check("third_party_modules",null,0,false);
                 check("third_party_modules",2,2,false);
-                check(null,5,2,true);
+                check(null,5,2,false);
                 check(null,-1,0,false);
                 check(null,100,2,false);
                 check("custom_model",null,4,false);
@@ -142,11 +143,11 @@ def main():
                 check("about",null,3,false);
                 check(null,4,4,false);
                 check(null,null,0,false);
-                System.out.println("MainPageRouteHostTest: 10 legacy/deep-link/restore route checks passed");
+                System.out.println("MainPageRouteHostTest: 10 hidden-entry/restore route checks passed");
             }
         }"""
     stubs = dict(STUBS)
-    stubs["dev/betterendfield/android/MainPageRouteHostTest.java"] = route_source
+    stubs["dev/betterendfield/next/MainPageRouteHostTest.java"] = route_source
     files = []
     for name, code in stubs.items():
         path = output / "sources" / name
@@ -158,7 +159,7 @@ def main():
     files.append(str(main_java / "ThirdPartyModulesActivity.java"))
     subprocess.run(["javac", "-encoding", "UTF-8", "--release", "17", "-d", str(classes), *files], check=True)
     for test in ("MainPageRouteHostTest", "EnhancementNavigationHostTest"):
-        subprocess.run(["java", "-cp", str(classes), "dev.betterendfield.android." + test], check=True)
+        subprocess.run(["java", "-cp", str(classes), "dev.betterendfield.next." + test], check=True)
     print("Manifest/top-level tabs/workshop destination checks passed")
 
 

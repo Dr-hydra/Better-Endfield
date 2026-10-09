@@ -2,7 +2,7 @@
 #include <string_view>
 #include <vector>
 
-namespace BetterEndfield::CustomModel {
+namespace BetterEndfieldNext::CustomModel {
 enum class TexturePinStatus { Matched, Missing, Ambiguous };
 
 template<class Slot> struct TexturePinMatch {

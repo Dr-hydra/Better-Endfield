@@ -16,7 +16,7 @@ those calls. This scans GameAssembly.dll for each hooked method:
 
 Inputs: the game's GameAssembly.dll, an IL2CPP dump of the same build
 (IL2CPP_Dump_AI and IL2CPP_Dump_Normal), and the hooked methods, either as a
-descriptor list (hooked_methods.json) or straight from a BetterEndfield.log
+descriptor list (hooked_methods.json) or straight from a BetterEndfieldNext.log
 written by a Host with hook diagnostics ("Hook installed ... at
 GameAssembly.dll+0x...").
 """
@@ -451,7 +451,7 @@ def main():
     parser.add_argument('--dump', required=True, help='IL2CPP dump directory (IL2CPP_Dump_AI, IL2CPP_Dump_Normal) of the same build')
     source = parser.add_mutually_exclusive_group()
     source.add_argument('--hooks', default=os.path.join(HERE, 'hooked_methods.json'), help='hook descriptor list (default: hooked_methods.json)')
-    source.add_argument('--log', help='BetterEndfield.log with "Hook installed" lines')
+    source.add_argument('--log', help='BetterEndfieldNext.log with "Hook installed" lines')
     source.add_argument('--rva', nargs='+', help='explicit GameAssembly RVAs, e.g. 0x472E3D0')
     parser.add_argument('--json', help='write the full result as JSON')
     parser.add_argument('--all', action='store_true', help='also list hooks without findings')

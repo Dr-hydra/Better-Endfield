@@ -21,7 +21,7 @@ if ($LASTEXITCODE -ne 0 -or "$taskUid".Trim() -ne '0') {
 if ($LASTEXITCODE -ne 0) { throw 'APK installation failed.' }
 try {
     & $Adb -s $Serial shell "am force-stop $Package"
-    & $Adb -s $Serial shell setprop debug.betterendfield.resource_probe 1
+    & $Adb -s $Serial shell setprop debug.betterendfieldnext.resource_probe 1
     if ($LASTEXITCODE -ne 0) { throw 'Unable to enable the debug probe.' }
     & $Adb -s $Serial shell "monkey -p $Package 1" > (Join-Path $taskOutput 'launch.log') 2>&1
     if ($LASTEXITCODE -ne 0) { throw 'Unable to launch game.' }
@@ -32,7 +32,7 @@ try {
 } finally {
     & $Adb -s $Serial shell "am force-stop $Package"
     if ($LASTEXITCODE -ne 0) { Write-Warning 'Game stop failed; check the ADB connection and stop it manually.' }
-    & $Adb -s $Serial shell setprop debug.betterendfield.resource_probe 0
+    & $Adb -s $Serial shell setprop debug.betterendfieldnext.resource_probe 0
 }
 Write-Output "Probe evidence: $taskOutput"
 Write-Output 'Inspect current process timestamps: logs may also contain earlier runs. Log capture alone is not a passing test.'

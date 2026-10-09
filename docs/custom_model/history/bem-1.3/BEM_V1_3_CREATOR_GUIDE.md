@@ -22,11 +22,11 @@ In the Windows creator window choose “创建 / 打开导出工程”, select t
 CLI equivalents:
 
 ```powershell
-BetterEndfield.BemConverter.exe new-project editable/project.json --mode pack --deformations body-morphs.json -o character.bemproj.json
-BetterEndfield.BemConverter.exe build character.bemproj.json
-BetterEndfield.BemConverter.exe pack editable/project.json --deformations body-morphs.json -o character.bem
-BetterEndfield.BemConverter.exe convert source-mod --recipe conversion.recipe.json --deformations body-morphs.json -o character.bem
-BetterEndfield.BemConverter.exe validate character.bem --report validation.json
+BetterEndfieldNext.BemConverter.exe new-project editable/project.json --mode pack --deformations body-morphs.json -o character.bemproj.json
+BetterEndfieldNext.BemConverter.exe build character.bemproj.json
+BetterEndfieldNext.BemConverter.exe pack editable/project.json --deformations body-morphs.json -o character.bem
+BetterEndfieldNext.BemConverter.exe convert source-mod --recipe conversion.recipe.json --deformations body-morphs.json -o character.bem
+BetterEndfieldNext.BemConverter.exe validate character.bem --report validation.json
 ```
 
 Use distinct input, output, task and report paths. Export tasks protect explicitly named targets, sparse inputs and EFMI source files from report/output collisions.
@@ -81,8 +81,8 @@ The distributed `examples/body-slider/create_project.py` uses only the Python st
 
 ```powershell
 python examples/body-slider/create_project.py --output demo-body-slider
-BetterEndfield.BemConverter.exe build demo-body-slider/export.bemproj.json
-BetterEndfield.BemConverter.exe validate demo-body-slider/dist/synthetic.bem
+BetterEndfieldNext.BemConverter.exe build demo-body-slider/export.bemproj.json
+BetterEndfieldNext.BemConverter.exe validate demo-body-slider/dist/synthetic.bem
 ```
 
 From the repository, run `python tools/CustomModel/examples/body-slider/create_project.py --output artifacts/bem-v13-demo`, then replace the executable above with `python tools/CustomModel/bem_tool.py`. Use a new directory. This is a format/creator test, not a playable character package. At tick 500, positions interpolate halfway from the triangle base to the target. An exported playable package still needs a verified character/resource contract and actual author body data.

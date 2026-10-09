@@ -73,7 +73,7 @@ function Save-TaskAdbOutput {
 # Read-only snapshots. Do not clear logcat, launch/stop the game, install an APK,
 # or toggle models. Private cache access via su is explicitly opt-in.
 $logPath = Join-Path $OutputDirectory 'betterendfield-logcat.txt'
-$logExit = Save-TaskAdbOutput -Arguments @('-s', $Serial, 'logcat', '-d', '-v', 'threadtime', '-t', '3000', 'BetterEndfield:V', '*:S') -Path $logPath
+$logExit = Save-TaskAdbOutput -Arguments @('-s', $Serial, 'logcat', '-d', '-v', 'threadtime', '-t', '3000', 'BetterEndfieldNext:V', '*:S') -Path $logPath
 $memoryPath = Join-Path $OutputDirectory 'game-meminfo.txt'
 $memoryExit = Save-TaskAdbOutput -Arguments @('-s', $Serial, 'shell', 'dumpsys', 'meminfo', $Package) -Path $memoryPath
 $processPath = Join-Path $OutputDirectory 'game-pid.txt'
@@ -86,7 +86,7 @@ if ($IncludePrivateRuntimeLog) {
     $privateExit = Save-TaskAdbOutput -Arguments @('-s', $Serial, 'shell', $taskPrivateCommand) -Path (Join-Path $OutputDirectory 'game-native-diagnostics.log')
     $taskOverlayCommand = 'su -c "cat /data/user/0/' + $Package + '/cache/betterendfield-overlay-settings.log"'
     $gameOverlayExit = Save-TaskAdbOutput -Arguments @('-s', $Serial, 'shell', $taskOverlayCommand) -Path (Join-Path $OutputDirectory 'game-overlay-settings.log')
-    $ownerOverlayExit = Save-TaskAdbOutput -Arguments @('-s', $Serial, 'shell', 'su -c "cat /data/user/0/dev.betterendfield.android/cache/betterendfield-overlay-settings.log"') -Path (Join-Path $OutputDirectory 'owner-overlay-settings.log')
+    $ownerOverlayExit = Save-TaskAdbOutput -Arguments @('-s', $Serial, 'shell', 'su -c "cat /data/user/0/dev.betterendfield.next/cache/betterendfield-overlay-settings.log"') -Path (Join-Path $OutputDirectory 'owner-overlay-settings.log')
 }
 
 [ordered]@{

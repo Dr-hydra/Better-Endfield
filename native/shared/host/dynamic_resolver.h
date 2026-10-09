@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BetterEndfield/ModuleApi.h"
+#include "BetterEndfieldNext/ModuleApi.h"
 
 #include <Windows.h>
 
@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-namespace BetterEndfield::Host {
+namespace BetterEndfieldNext::Host {
 
 class DynamicResolver {
 public:
@@ -108,4 +108,4 @@ private:
     void* attached_thread_ = nullptr;
 };
 
-} // namespace BetterEndfield::Host
+} // namespace BetterEndfieldNext::Host

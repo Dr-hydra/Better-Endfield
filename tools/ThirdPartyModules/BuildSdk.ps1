@@ -102,7 +102,7 @@ function Test-Package([string]$Directory) {
     $androidBytes = [System.IO.File]::ReadAllBytes((Join-Path $Directory $manifest.libraries.'android-arm64'))
     if ($androidBytes.Length -lt 64 -or $androidBytes[0] -ne 0x7f -or $androidBytes[1] -ne 0x45 -or $androidBytes[2] -ne 0x4c -or $androidBytes[3] -ne 0x46 -or $androidBytes[4] -ne 2 -or $androidBytes[5] -ne 1 -or [BitConverter]::ToUInt16($androidBytes, 18) -ne 183) { throw 'Android library is not a little-endian arm64 ELF64 image.' }
     foreach ($bytes in @($winBytes, $androidBytes)) {
-        if (![System.Text.Encoding]::ASCII.GetString($bytes).Contains('BetterEndfield_GetThirdPartyModuleV1')) { throw 'Required native entry symbol is missing.' }
+        if (![System.Text.Encoding]::ASCII.GetString($bytes).Contains('BetterEndfieldNext_GetThirdPartyModuleV1')) { throw 'Required native entry symbol is missing.' }
     }
     return $manifest
 }
@@ -119,13 +119,13 @@ try {
     Copy-File $WindowsLibrary (Join-Path $packageRoot 'native/windows-x64/example.echo.dll')
     Copy-File $AndroidLibrary (Join-Path $packageRoot 'native/android-arm64/libexample.echo.so')
     $manifest = Test-Package $packageRoot
-    $echoName = "BetterEndfield-Echo-$($manifest.version)-Dual.zip"
+    $echoName = "BetterEndfieldNext-Echo-$($manifest.version)-Dual.zip"
     $echoZip = Join-Path $outputRoot $echoName
     Zip-Directory $packageRoot $echoZip
 
     $sdkRoot = Join-Path $stageRoot 'sdk'
     foreach ($header in @('ModuleApi.h', 'HookChain.h', 'ThirdPartyModule.h')) {
-        Copy-File (Join-Path $repoRoot "native/shared/include/BetterEndfield/$header") (Join-Path $sdkRoot "include/BetterEndfield/$header")
+        Copy-File (Join-Path $repoRoot "native/shared/include/BetterEndfieldNext/$header") (Join-Path $sdkRoot "include/BetterEndfieldNext/$header")
     }
     Copy-File (Join-Path $repoRoot 'docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md') (Join-Path $sdkRoot 'docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md')
     foreach ($relative in @('CMakeLists.txt', 'module.json', 'native/echo.cpp', 'ui/index.html', 'ui/style.css', 'ui/app.js')) {
@@ -140,9 +140,9 @@ try {
 Target: Better Endfield __APPLICATION_VERSION__, package format 1, native ABI 1.
 
 - `docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md`: package, lifecycle, configuration, UI bridge, shared Hook contract and build guide.
-- `include/BetterEndfield/`: all three public headers required by `ThirdPartyModule.h`.
+- `include/BetterEndfieldNext/`: all three public headers required by `ThirdPartyModule.h`.
 - `examples/echo/`: complete portable CMake/C++20 source and static HTML UI, plus both prebuilt native libraries.
-- `packages/BetterEndfield-Echo-1.0.0-Dual.zip`: import this ZIP into the application's Third-Party Modules page on either platform, then enable it.
+- `packages/BetterEndfieldNext-Echo-1.0.0-Dual.zip`: import this ZIP into the application's Third-Party Modules page on either platform, then enable it.
 
 From this SDK directory on Windows with CMake and Visual Studio C++ Build Tools:
 
@@ -160,7 +160,7 @@ Native callbacks execute on a Host worker, not the game main thread. Game symbol
     $sdkReadme = Join-Path $sdkRoot 'README.md'
     $sdkReadmeText = (Get-Content -LiteralPath $sdkReadme -Raw).Replace('__APPLICATION_VERSION__', $applicationVersion)
     Write-Utf8 $sdkReadme $sdkReadmeText
-    $sdkZip = Join-Path $outputRoot "BetterEndfield-ThirdPartySDK-$sdkVersion.zip"
+    $sdkZip = Join-Path $outputRoot "BetterEndfieldNext-ThirdPartySDK-$sdkVersion.zip"
     Zip-Directory $sdkRoot $sdkZip
     $metadata = [ordered]@{
         sdk_version = $sdkVersion

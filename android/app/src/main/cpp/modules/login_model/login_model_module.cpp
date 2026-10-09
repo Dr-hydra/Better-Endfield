@@ -7,12 +7,12 @@
 #include <cstdlib>
 #include <cstring>
 
-extern "C" const BE_ModuleApiV1* BetterEndfield_GetModuleApiV1();
+extern "C" const BE_ModuleApiV1* BetterEndfieldNext_GetModuleApiV1();
 
-namespace betterendfield {
+namespace betterendfieldnext {
 
 LoginModelModule::LoginModelModule() {
-    host_.abi_version = BETTER_ENDFIELD_MODULE_ABI_V1;
+    host_.abi_version = BETTER_ENDFIELD_NEXT_MODULE_ABI_V1;
     host_.context = this;
     host_.log = &LogCallback;
     host_.resolve_method = &ResolveMethodCallback;
@@ -40,11 +40,11 @@ LoginModelModule::~LoginModelModule() {
 }
 
 const char* LoginModelModule::Id() const {
-    return "betterendfield.model";
+    return "betterendfieldnext.model";
 }
 
 ModuleResult LoginModelModule::Start(Il2CppRuntime& runtime) {
-    const char* configured = std::getenv("BETTER_ENDFIELD_MODEL_CONFIG");
+    const char* configured = std::getenv("BETTER_ENDFIELD_NEXT_MODEL_CONFIG");
     if (configured == nullptr || *configured == '\0') {
         return {false, "no model replacement configuration selected"};
     }
@@ -62,8 +62,8 @@ ModuleResult LoginModelModule::Start(Il2CppRuntime& runtime) {
     if (!hook_broker_.Initialize(hook_error)) {
         return {false, std::move(hook_error)};
     }
-    api_ = BetterEndfield_GetModuleApiV1();
-    if (api_ == nullptr || api_->descriptor.abi_version != BETTER_ENDFIELD_MODULE_ABI_V1 ||
+    api_ = BetterEndfieldNext_GetModuleApiV1();
+    if (api_ == nullptr || api_->descriptor.abi_version != BETTER_ENDFIELD_NEXT_MODULE_ABI_V1 ||
         api_->initialize == nullptr || api_->configuration_changed == nullptr) {
         return {false, "desktop model module ABI is unavailable"};
     }
@@ -90,7 +90,7 @@ LoginModelModule* LoginModelModule::Self(void* context) {
 void LoginModelModule::LogCallback(
     void* context, const char* module_id, const char* message) {
     (void)context;
-    LogInfo(module_id == nullptr ? "betterendfield.model" : module_id,
+    LogInfo(module_id == nullptr ? "betterendfieldnext.model" : module_id,
         message == nullptr ? "" : message);
 }
 
@@ -304,4 +304,4 @@ void* LoginModelModule::FieldGetValueObjectCallback(
             reinterpret_cast<const FieldInfo*>(field_info), instance);
 }
 
-}  // namespace betterendfield
+}  // namespace betterendfieldnext

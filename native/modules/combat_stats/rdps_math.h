@@ -4,7 +4,7 @@
 #include <span>
 #include <vector>
 
-namespace BetterEndfield::CombatStats {
+namespace BetterEndfieldNext::CombatStats {
 
 struct RdpsMathZone {
     double multiplier = 1.0;
@@ -61,4 +61,4 @@ inline bool AllocateExternalFractions(std::span<const RdpsMathZone> zones,
     return true;
 }
 
-} // namespace BetterEndfield::CombatStats
+} // namespace BetterEndfieldNext::CombatStats

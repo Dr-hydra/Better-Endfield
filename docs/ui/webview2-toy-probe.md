@@ -15,10 +15,10 @@
 在仓库根目录 PowerShell 执行：
 
 ```powershell
-& '.\ui\BetterEndfield.UI\bin\x64\Release\net9.0-windows10.0.19041.0\win-x64\BetterEndfield.exe' --webview-probe 'https://www.bilibili.com/toy/preview/preview_yBlekLfW/index.html'
+& '.\ui\BetterEndfieldNext.UI\bin\x64\Release\net9.0-windows10.0.19041.0\win-x64\BetterEndfieldNext.exe' --webview-probe 'https://www.bilibili.com/toy/preview/preview_yBlekLfW/index.html'
 ```
 
-如果预览要求创作者登录，先在这个独立窗口登录。WebView2 使用独立持久化目录 `%LOCALAPPDATA%\BetterEndfield\WebViewProbe`。
+如果预览要求创作者登录，先在这个独立窗口登录。WebView2 使用独立持久化目录 `%LOCALAPPDATA%\BetterEndfieldNext\WebViewProbe`。
 
 预期：Toy 页面出现“桌面直连验证成功：已接收 8 MiB，数据未上传”，窗口日志出现 `ack` / `step:end`。日志在上述 exe 同目录的 `webview-probe.log`，不输出传输正文或登录凭证。
 

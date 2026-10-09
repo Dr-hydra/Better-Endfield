@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <string>
 
-namespace BetterEndfield::CombatOverlayProtocol {
+namespace BetterEndfieldNext::CombatOverlayProtocol {
 
 inline constexpr uint32_t kMagic = 0x53434542; // "BECS"
 inline constexpr uint32_t kVersion = 7;
@@ -63,7 +63,7 @@ struct SharedSnapshot {
 #pragma pack(pop)
 
 inline std::wstring MappingName(DWORD game_pid) {
-    return L"Local\\BetterEndfield.CombatStats." + std::to_wstring(game_pid);
+    return L"Local\\BetterEndfieldNext.CombatStats." + std::to_wstring(game_pid);
 }
 
-} // namespace BetterEndfield::CombatOverlayProtocol
+} // namespace BetterEndfieldNext::CombatOverlayProtocol

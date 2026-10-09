@@ -37,7 +37,7 @@ elseif ($Version -ne $assemblyVersion) {
         "report different versions; update Directory.Build.props instead.")
 }
 $publishDir = if ([string]::IsNullOrWhiteSpace($PublishDir)) {
-    Join-Path $ws.paths.build "windows\win-x64\$Configuration\publish"
+    Join-Path $ws.paths.build "next\windows\win-x64\$Configuration\publish"
 } else {
     [System.IO.Path]::GetFullPath($PublishDir)
 }
@@ -47,7 +47,7 @@ $outputDir = if ([string]::IsNullOrWhiteSpace($OutputDir)) {
     [System.IO.Path]::GetFullPath($OutputDir)
 }
 $stagingDir = Join-Path $ws.paths.temp ("installer-staging\" + [Guid]::NewGuid().ToString('N'))
-$installerScript = Join-Path $repoRoot "installer\BetterEndfield.iss"
+$installerScript = Join-Path $repoRoot "installer\BetterEndfieldNext.iss"
 
 function Assert-StagingChildPath {
     param([Parameter(Mandatory)][string]$Path)
@@ -93,8 +93,8 @@ if (-not $iscc) {
     throw "ISCC.exe was not found. Install Inno Setup 6 for the current user or system."
 }
 
-if (-not (Test-Path -LiteralPath (Join-Path $publishDir 'BetterEndfield.exe') -PathType Leaf)) {
-    throw "Publish output is missing: $publishDir. Run BuildBetterEndfield.ps1 -Configuration $Configuration first."
+if (-not (Test-Path -LiteralPath (Join-Path $publishDir 'BetterEndfieldNext.exe') -PathType Leaf)) {
+    throw "Publish output is missing: $publishDir. Run BuildBetterEndfieldNext.ps1 -Configuration $Configuration first."
 }
 # Stage the existing publish output without changing it or clearing release history.
 [void](Assert-StagingChildPath $stagingDir)
@@ -112,9 +112,9 @@ try {
         Where-Object { $_.Extension -in @(".pdb", ".log") } |
         Remove-Item -Force
 
-    $stagedExecutable = Join-Path $stagingDir "BetterEndfield.exe"
+    $stagedExecutable = Join-Path $stagingDir "BetterEndfieldNext.exe"
     if (-not (Test-Path -LiteralPath $stagedExecutable -PathType Leaf)) {
-        throw "Installer staging lost BetterEndfield.exe before packaging."
+        throw "Installer staging lost BetterEndfieldNext.exe before packaging."
     }
 
     $includedCultures = @('en-US', 'zh-CN', 'zh-TW')
@@ -148,10 +148,11 @@ finally {
     }
 }
 
-$installer = Join-Path $outputDir "BetterEndfield-$Version-Setup.exe"
+$installer = Join-Path $outputDir "BetterEndfieldNext-$Version-Setup.exe"
 if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
     throw "Installer output is missing: $installer"
 }
 
 Write-Host ""
 Write-Host "Installer complete: $installer"
+& (Join-Path $PSScriptRoot 'SignNextRelease.ps1') -Path $installer -WorkspaceConfig $WorkspaceConfig

@@ -1,19 +1,39 @@
 {
   "schema_version": 1,
-  "game": {"version": "1.5.3", "platform": "Windows", "snapshot": "baseline", "install_dir": null},
-  "legacy": {"root": "../Better Endfield_legacy"},
+  "game": {
+    "version": "1.5.3",
+    "platform": "Windows",
+    "snapshot": "baseline",
+    "install_dir": null
+  },
+  "legacy": {
+    "root": "../Better Endfield_legacy"
+  },
   "paths": {
-    "inputs": "inputs", "research": "research", "temp": "temp", "build": "build",
-    "cache": "cache", "releases": "releases", "toolchains": "toolchains", "generated": "resources/generated"
+    "inputs": "inputs",
+    "research": "research",
+    "temp": "temp",
+    "build": "build",
+    "cache": "cache",
+    "releases": "releases",
+    "toolchains": "toolchains",
+    "generated": "resources/generated"
   },
   "tools": {
-    "python": "python", "cmake": "cmake", "dotnet": "dotnet", "iscc": null,
-    "node": "node", "npm": "npm",
-    "android_sdk": "toolchains/android/sdk", "android_dobby": "toolchains/android/dobby-1.0.5",
+    "python": "python",
+    "cmake": "cmake",
+    "dotnet": "dotnet",
+    "iscc": null,
+    "node": "node",
+    "npm": "npm",
+    "android_sdk": "toolchains/android/sdk",
+    "android_dobby": "toolchains/android/dobby-1.0.5",
     "adb": "toolchains/android/sdk/platform-tools/adb.exe",
-    "fkarkend_root": "toolchains/FkArkEnd", "resconv": "toolchains/FkArkEnd/ResConv/bin/Release/net10.0/ResConv.exe",
+    "fkarkend_root": "toolchains/FkArkEnd",
+    "resconv": "toolchains/FkArkEnd/ResConv/bin/Release/net10.0/ResConv.exe",
     "endfield_unpacker_root": "toolchains/EndfieldUnpacker",
-    "wwiser_root": "toolchains/wwiser", "native_asset_reader": "toolchains/native-asset-reader/identities/NativeAssetReader.exe",
+    "wwiser_root": "toolchains/wwiser",
+    "native_asset_reader": "toolchains/native-asset-reader/identities/NativeAssetReader.exe",
     "archive_backend": "toolchains/bem-archive-backend/7zip"
   },
   "resource_update": {
@@ -35,10 +55,25 @@
     }
   },
   "android_signing": {
-    "properties_file": "config/android-signing.local.properties",
-    "certificate_sha256": "6f15740248d1d25551bb47967dd50855c18cc102dd9bf1fc3ecc8f3dd25473cf"
+    "properties_file": "config/android-next-signing.local.properties",
+    "certificate_sha256": "27d4c9a1f20c2a99953f3ad8488fd1ba33f543b7294d4f441ddd128ef5f3c799"
   },
-  "test": {"be_install_dir": null, "catalog_dir": null, "android_serial": null},
-  "cleanup": {"keys": ["paths.temp", "paths.build", "paths.cache"]},
-  "documents": {}
+  "test": {
+    "be_install_dir": null,
+    "catalog_dir": null,
+    "android_serial": null
+  },
+  "cleanup": {
+    "keys": [
+      "paths.temp",
+      "paths.build",
+      "paths.cache"
+    ]
+  },
+  "documents": {},
+  "windows_signing": {
+    "trust": "self-signed-internal",
+    "properties_file": "config/next-windows-signing.local.json",
+    "certificate_sha256": "b1bf40f1a225dd20a0603dd4ce828c29a102956e178188e899f82602afc45d96"
+  }
 }

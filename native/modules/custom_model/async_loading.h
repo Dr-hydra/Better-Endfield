@@ -13,7 +13,7 @@
 #include <unordered_map>
 #include <utility>
 
-namespace BetterEndfield::CustomModel {
+namespace BetterEndfieldNext::CustomModel {
 constexpr uint64_t kLoadingMiB = 1024ull * 1024;
 enum class LoadPriority { Prewarm = 0, Visible = 1, Foreground = 2 };
 enum class AsyncLoadStatus { Pending, Ready, Failed, Cancelled };
@@ -635,4 +635,4 @@ private:
         counts_.elapsed += std::max(elapsed, std::chrono::nanoseconds::zero()); active_ = false;
     }
 };
-} // namespace BetterEndfield::CustomModel
+} // namespace BetterEndfieldNext::CustomModel

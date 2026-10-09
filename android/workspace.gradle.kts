@@ -12,7 +12,7 @@ rootProject.extra["beWorkspace"] = beWorkspace
 
 allprojects {
     val projectSegment = if (path == ":") "root" else path.removePrefix(":").replace(':', '/')
-    layout.buildDirectory.set(File(workspaceBuild, "android/gradle/$projectSegment"))
+    layout.buildDirectory.set(File(workspaceBuild, "next/android/gradle/$projectSegment"))
     tasks.withType<Exec>().configureEach {
         environment("TEMP", workspaceTemp)
         environment("TMP", workspaceTemp)

@@ -8,7 +8,7 @@
 
 ## BEM 的用途
 
-BEM 是交给 Better Endfield 运行时装配的模型数据包。作者在电脑端准备和转换资源，
+BEM 是交给 Better Endfield Next 运行时装配的模型数据包。作者在电脑端准备和转换资源，
 玩家导入 BEM；手机端无需解析 EFMI 配置或执行 Mod 脚本。
 当前只有 PC 自定义模型运行时完成了这些样本验证，Android 仍需移植与独立验证。
 

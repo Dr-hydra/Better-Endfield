@@ -1,6 +1,6 @@
 #include "../../modules/camera/camera_file_worker.h"
 #include "test_support.h"
-using namespace BetterEndfield;
+using namespace BetterEndfieldNext;
 static CameraPath::Path MakePath() {
     return {3,false,{{{0,0,0},{0,0,0,1},60},{{2,3,4},{0,1,0,0},90}}};
 }

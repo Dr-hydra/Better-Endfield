@@ -40,9 +40,9 @@ def main():
     from workspace_config import load_workspace
     workspace = load_workspace(args.workspace_config, repo)
     target = args.directory.resolve()
-    if not (target/'BetterEndfield.BemConverter.exe').is_file(): raise ValueError('Build CLI first')
+    if not (target/'BetterEndfieldNext.BemConverter.exe').is_file(): raise ValueError('Build CLI first')
     gui = args.gui_directory.resolve()
-    if not (gui/'BetterEndfield.BemTools.exe').is_file(): raise ValueError('Build creator GUI first')
+    if not (gui/'BetterEndfieldNext.BemTools.exe').is_file(): raise ValueError('Build creator GUI first')
     docs = ['BEM_CREATOR_GUIDE.md', 'BEM_FORMAT_SPEC.md', 'BEM_V1_4_SPEC.md', 'BEM_RUNTIME_COMPATIBILITY.md', 'BEM_SOURCE_MOD_CONVERSION.md',
             'BEM_CREATOR_GUIDE.en.md', 'BEM_FORMAT_SPEC.en.md', 'BEM_RUNTIME_COMPATIBILITY.en.md', 'BEM_SOURCE_MOD_CONVERSION.en.md']
     (target/'docs').mkdir(exist_ok=True)

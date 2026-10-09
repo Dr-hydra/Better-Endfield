@@ -1,12 +1,15 @@
-# Better Endfield
+# Better Endfield Next
 
 [English](README.en.md) | [简体中文](README.md)
 
-Better Endfield is an open-source modular toolkit for *Arknights: Endfield*. It provides third-party character models, MMD playback, camera and UI controls, per-character voice languages, title-screen customization, and PC combat/gacha tools. Windows and Android share the main native feature sources; standard BEM model packages and MMD works can be used on both platforms. An experimental loader also supports third-party native modules and a web UI container.
+Better Endfield Next is an open-source modular toolkit for *Arknights: Endfield*. It provides third-party character models, MMD playback, camera and UI controls, per-character voice languages, title-screen customization, and PC combat/gacha tools. Windows and Android share the main native feature sources; standard BEM model packages and MMD works can be used on both platforms. The experimental third-party module runtime remains present with its entry hidden.
 
 [Download](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [Release notes](CHANGELOG.md) · [Android setup/build guide](android/README.md) · [BEM creator guide](docs/custom_model/BEM_CREATOR_GUIDE.en.md) · [Module developer guide](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
 
-The current version is **3.5.3**, with standalone BEM Tools **1.5.2**. The tool ZIP includes the double-clickable `BetterEndfield.BemTools.exe` creator GUI. Version 3.5.3 adds a Windows [Steam CN launch preview](docs/host/STEAM_CN_LAUNCH.md) and prevents duplicate injection alongside a local XInput proxy. Steam integration still awaits complete metadata and real-client testing. BEM 1.4, weapon/ultimate resources, model hot switching, Android PCUI input and desktop DPI placement carry forward from 3.5.2.
+The current version is **4.0.0**, with standalone BEM Tools **1.5.2**. The tool ZIP includes the double-clickable `BetterEndfieldNext.BemTools.exe` creator GUI. Version 3.5.3 adds a Windows [Steam CN launch preview](docs/host/STEAM_CN_LAUNCH.md) and prevents duplicate injection alongside a local XInput proxy. Steam integration still awaits complete metadata and real-client testing. BEM 1.4, weapon/ultimate resources, model hot switching, Android PCUI input and desktop DPI placement carry forward from 3.5.2.
+
+Next is an independent installation with new internal identifiers and release signing keys. Uninstall the previous version (including the Windows XInput proxy), reinstall, and configure features again. On Android, enable the new module and select the game scope again. Existing settings are not migrated; BEM/MMD files can be imported manually. The Logo is unchanged. First person has been retired into `legacy/retired-before-next/`. See [implementation and build notes](docs/workspace/NEXT_IMPLEMENTATION.md).
+
 
 ## Feature overview
 
@@ -16,12 +19,12 @@ Supported means an implementation and controls exist; it does not mean every cha
 | --- | --- | --- | --- |
 | Third-party models (BEM) | Supported | Supported | Same standard package; import/update, multiple installed packages, per-character activation, appearance and component options |
 | BEM 1.4 resources and forms | Supported (3.5.2) | Supported (3.5.2) | Explicit resource targets, static meshes and LOD/platform declarations; weapons and ultimate-form resources, with 1.0–1.3 compatibility |
-| Third-party native modules and web UI | Experimental | Experimental | Unified under Enhancement; game Host loads DLL/SO, with author-defined pages and features |
+| Third-party native modules and web UI | Entry hidden | Entry hidden | Game Host loader and web bridge retained; management navigation temporarily hidden |
 | Model hot switching | Experimental | Experimental | Enable before game startup; selections apply on normal game resource reloads |
 | Model loading optimization | Experimental | Experimental | Fewer decode copies and reuse of equivalent textures within one build; no quality reduction |
 | Title-screen models, animation and colors | Supported | Supported | Character/action selection, stage speeds, scale, turning, looping and crossfades |
 | Per-character voice languages | Supported | Supported | Chinese, English, Japanese and Korean, with optional story voice and lip-sync routing |
-| Free camera, first person and world pause | Supported | Supported | Independent controls, FOV, camera motion, keyframes, VMD cameras and near-camera dither handling |
+| Free camera and world pause | Supported | Supported | Independent controls, FOV, camera motion, keyframes, VMD cameras and near-camera dither handling |
 | Global FOV and character-follow free camera | Supported (3.4.2) | Supported (3.4.2) | Override the ordinary main camera FOV; translate free camera with the character while retaining manual offsets |
 | MMD library and multiple dancers | Supported | Supported | Up to four dancers, motion/face/camera/local music, timeline and cloth options |
 | UID/HUD visibility and UI layouts | Supported | Supported | Touch layout and mouse-to-touch on PC; PC-style layout on Android |
@@ -37,9 +40,9 @@ The Windows app includes Chinese/English localization, light/dark themes, runtim
 
 ### Windows
 
-Download the Windows installer from [Releases](https://github.com/Dr-hydra/Better-Endfield/releases), open Better Endfield, check the game path, enable the features you need and launch the game. Windows 10/11 x64 is required.
+Download the Windows installer from [Releases](https://github.com/Dr-hydra/Better-Endfield/releases), open Better Endfield Next, check the game path, enable the features you need and launch the game. Windows 10/11 x64 is required.
 
-- **Built-in injector:** the default mode. Better Endfield launches the game and loads Host/modules from the application directory, without deploying Better Endfield runtime files into the game directory.
+- **Built-in injector:** the default mode. Better Endfield Next launches the game and loads Host/modules from the application directory, without deploying Better Endfield Next runtime files into the game directory.
 - **XInput autostart:** optionally install the `xinput1_4.dll` proxy in Settings to load through the official launcher or a game shortcut. Installation/removal checks ownership and does not overwrite another tool's existing file.
 
 OptiScaler is a separate deployment feature that writes to the game directory and applies on the next launch. Launch arguments also apply to generated one-click shortcuts.
@@ -48,7 +51,7 @@ OptiScaler is a separate deployment feature that writes to the game directory an
 
 The APK is an **LSPosed/libxposed API 102 module**, requiring Android 10+, ARM64 and a compatible framework that can inject the target game. Installing the APK alone does not activate game features.
 
-Enable the module in your framework, scope it to the Endfield client you actually use, configure features in the module app, then fully stop and restart the game. The in-game deck is attached to the target Activity and does not require overlay permission. Use it for camera, pause, first-person and MMD controls. See the [Android README](android/README.md) for setup, scope troubleshooting and build requirements.
+Enable the module in your framework, scope it to the Endfield client you actually use, configure features in the module app, then fully stop and restart the game. The in-game deck is attached to the target Activity and does not require overlay permission. Use it for camera, pause and MMD controls. See the [Android README](android/README.md) for setup, scope troubleshooting and build requirements.
 
 ## BEM models and creator tools
 
@@ -67,8 +70,8 @@ Android provides optional mobile texture conversion for packages with incorrect-
 **Creator tools** offer a standalone GUI, the main application's “BEM Creator Tools…” entry and CLI, directory/ZIP/RAR/7z inputs, conversion reports, validation, saved `.bemproj.json` tasks, portable workspaces and reproducible builds. BEM Tools 1.5.2 supports BEM 1.4 while keeping the legacy Blender/EFMI character pipeline boundaries; authors must declare resource targets, LOD, platform and donor evidence. It does not reconstruct arbitrary source GUIs or guess vertex correspondence.
 
 ```powershell
-BetterEndfield.BemConverter.exe new-project editable/project.json --mode pack -o character.bemproj.json
-BetterEndfield.BemConverter.exe build character.bemproj.json
+BetterEndfieldNext.BemConverter.exe new-project editable/project.json --mode pack -o character.bemproj.json
+BetterEndfieldNext.BemConverter.exe build character.bemproj.json
 ```
 
 Both platforms also have an off-by-default experimental option to disable model validation. It bypasses compatibility/policy checks while retaining the decoding and representation requirements needed to read the file; it does not add new encodings. Developer tests may render incorrectly or crash the game.
@@ -80,29 +83,16 @@ Both platforms also have an off-by-default experimental option to disable model 
 - [Runnable shape-slider example](tools/CustomModel/examples/body-slider/)
 - [Experimental hot-switch/loading behavior](docs/workspace/releases/3.4.1/RELEASE_3_4_1.md)
 
-## Third-party modules (experimental)
+## Third-party modules (entry hidden)
 
-Both apps have a dedicated Third-party Modules entry for importing author-supplied ZIP packages, managing enabled state/order, and opening each module's page; newly imported modules start disabled. A package contains `module.json`, a Windows x64 DLL / Android ARM64 SO for its target platforms, and optional HTML/CSS/JS. It can target one platform or provide only a web UI. Modules are managed separately from `.bem` model packages.
+Next keeps the native module loader and web bridge, but hides module-management navigation and the old entry route on both platforms. Internal identifiers and ABI exports use Next names; old binaries are not promised compatibility. [Module author guide](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md).
 
-The **Host inside the game process** loads native code. Windows uses WebView2 and Android uses WebView for author-written pages. A generic bridge reads/saves the module's JSON configuration, sends business messages, receives results and queries status. Configuration can be saved without a game connection; messages to a native module require a running Host connection.
-
-The loader provides the entry ABI, lifecycle, configuration and message transport. Authors maintain their own game function tables, version adaptation, calling threads, feature implementation and restoration. They can resolve interfaces themselves or optionally use available Host helpers; initialization does not require IL2CPP readiness. Host callbacks run on a worker, not the Unity main thread. Configuration and activation of already-loaded modules can update at runtime. Native libraries remain resident; binary updates, removal and order changes require a game restart rather than arbitrary hot unloading.
-
-Updating/removing a package retires its old installation generation while retaining the old directory; Android also retains its old ZIP. There is currently no automatic garbage collection or deletion after restart, so an active library or page can continue reading its files.
-
-Android phone navigation scrolls horizontally, while large screens retain a side rail. Each module's web UI opens in its own screen instead of a small management card. Bundle static resources for portable pages: Android serves only package-local offline resources; authors can handle network functionality in their native module.
-
-Shared Hooks are optional: chain participants share a target and call `next`. Existing exclusive Hooks still report conflicts and are not automatically converted into chains. Participants coordinate function signatures, arguments/results and feature interactions. Successful loading does not establish compatibility with every built-in or third-party module.
-
-Start with the [module creator guide](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md), then [ThirdPartyModule.h](native/shared/include/BetterEndfield/ThirdPartyModule.h), [HookChain.h](native/shared/include/BetterEndfield/HookChain.h) and the [Echo example](tools/ThirdPartyModules/echo/). Echo builds for Windows/Android; messaging and lifecycle have isolated regression coverage. Authors still test and document their real game modules' behavior, stability and compatibility.
-
-## Cameras, first person and MMD
+## Cameras and MMD
 
 Free camera offers position/orientation, roll/FOV, mouse rotation, orbit/dolly/crane/truck motion, saved keyframe paths and VMD cameras. World pause is independent of free camera. First person includes head hiding, neck-hole filling, side-view limits and smooth turning. Windows controls support the main keyboard, numpad, mouse and configurable key combinations; Android uses the in-game deck.
 
-The global FOV setting added in 3.4.2 affects the ordinary main camera; free camera, first person and imported cameras keep their own FOV. Character follow translates free camera without changing orientation/manual offsets, reanchors after character changes and teleports, and pauses during camera-motion playback. [Implementation boundaries](docs/camera/research/1.5.3/fov-follow/CAMERA_FOV_FOLLOW_IMPLEMENTATION.md)
+The global FOV setting added in 3.4.2 affects the ordinary main camera; free camera and imported cameras keep their own FOV. Character follow translates free camera without changing orientation/manual offsets, reanchors after character changes and teleports, and pauses during camera-motion playback. [Implementation boundaries](docs/camera/research/1.5.3/fov-follow/CAMERA_FOV_FOLLOW_IMPLEMENTATION.md)
 
-First-person hair removal in 3.4.2 classifies **live bone weights and actual drawn geometry**, rather than hiding an entire mixed head/clothing mesh. BEM replacement geometry can supply CPU data. Unknown characters use generic live-skeleton fallback without a second mandatory character catalog. Separate parts attempt shadow-only rendering; mixed parts retain full shadow geometry. Uncertain parts remain when no geometry source is available. Shadows and residual hair still need in-game validation. [Implementation and verification scope](docs/camera/research/1.5.3/first-person-geometry/BEM_HAIR_SHADOW_IMPLEMENTATION.md)
 
 The MMD library groups motion, face, camera and local music, with `set.ini` work descriptions. It includes play/pause/stop, seeking, loops, game/free/VMD camera modes, up to four dancers, cloth physics and experimental terrain fitting. Windows local music does not require OmniMix. Android plays local media alongside game BGM; turn down the game's BGM when needed. Body/face, cloth and terrain capabilities depend on the client interfaces; successful builds/imports do not establish in-game visual correctness. [Cross-platform integration record](docs/camera/research/1.5.3/android-mmd/ANDROID_CAMERA_MMD.md)
 
@@ -126,11 +116,11 @@ Windows Host loads individual native feature DLLs. Android compiles shared featu
 
 This enables shared code across clients, but **does not guarantee automatic compatibility with every game update**. Method signatures, assets, renderer layouts and device interfaces may still require adaptation. Missing built-in contracts disable the affected capability and produce logs. Scope Android to the actual client; world/detail/title and desktop/mobile resource layouts are not assumed identical.
 
-Windows stores its main configuration at `%LocalAppData%\BetterEndfield\BetterEndfield.ini`, UI settings in `ui-settings.json`, and BEM packages/state in `catalog\custom-model`. Android publishes settings through the framework and copies resources into the game's private storage. Resource/voice indexes ship with the software; original game payloads are read locally as needed and are not distributed.
+Windows stores its main configuration at `%LocalAppData%\BetterEndfieldNext\BetterEndfieldNext.ini`, UI settings in `ui-settings.json`, and BEM packages/state in `catalog\custom-model`. Android publishes settings through the framework and copies resources into the game's private storage. Resource/voice indexes ship with the software; original game payloads are read locally as needed and are not distributed.
 
 | Directory | Contents |
 | --- | --- |
-| `ui/BetterEndfield.UI/` | WinUI desktop controller and assets |
+| `ui/BetterEndfieldNext.UI/` | WinUI desktop controller and assets |
 | `native/modules/` | Model, BEM, voice, music, combat, UI, camera, actions and gacha modules |
 | `native/shared/` | Host, public C ABI, platform compatibility and native dependencies |
 | `native/loaders/` | Windows injector and XInput proxy |
@@ -147,7 +137,7 @@ See [GAME_INTERFACES.md](docs/host/GAME_INTERFACES.md) for internal protocols. R
 Windows requires Visual Studio 2022 C++ tools, CMake, .NET SDK 9 and PowerShell; installer packaging also requires Inno Setup 6. BEM tool build dependencies are in [`requirements-build.txt`](tools/CustomModel/requirements-build.txt).
 
 ```powershell
-pwsh -File .\scripts\BuildBetterEndfield.ps1
+pwsh -File .\scripts\BuildBetterEndfieldNext.ps1
 pwsh -File .\scripts\BuildInstaller.ps1
 pwsh -File .\scripts\BuildBemTools.ps1
 ```
@@ -162,6 +152,6 @@ Build scripts consume generated repository indexes. Refresh affected data after 
 
 ## License
 
-Better Endfield is licensed under [AGPL-3.0-only](LICENSE). It is an independent, unofficial project and is not affiliated with the game developers/publishers. Dependencies/references including MinHook, Dobby, EIEM and 7-Zip retain their own licenses and attribution. Creators are responsible for distribution rights to their models, motion, audio and modules.
+Better Endfield Next is licensed under [AGPL-3.0-only](LICENSE). It is an independent, unofficial project and is not affiliated with the game developers/publishers. Dependencies/references including MinHook, Dobby, EIEM and 7-Zip retain their own licenses and attribution. Creators are responsible for distribution rights to their models, motion, audio and modules.
 
 Behavior depends on the client, device and imported content. Review the applicable service rules and account/client risks before use. Disable affected features when a game update breaks a contract and wait for adaptation.

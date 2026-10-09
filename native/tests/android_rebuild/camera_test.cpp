@@ -3,8 +3,8 @@
 #include "../../modules/camera/module.cpp"
 #include <cassert>
 #include <iostream>
-using namespace BetterEndfield::CameraModule;
-namespace betterendfield { const BE_LocalMusicApiV1* AndroidLocalMusicApi() { return nullptr; } }
+using namespace BetterEndfieldNext::CameraModule;
+namespace betterendfieldnext { const BE_LocalMusicApiV1* AndroidLocalMusicApi() { return nullptr; } }
 static int mode = 0;
 static float clockScale = 0.75f;
 static int getScale, setScale;
@@ -21,7 +21,7 @@ static BE_Result Create(void*,const char*,void* target,void*,void** original) {
     *original = target; return BE_Result_Ok;
 }
 static void Reset() {
-    g_free_camera_contract_ready = g_first_person_contract_ready = true;
+    g_free_camera_contract_ready = true;
     g_dither_contract_ready = g_time_heartbeat_contract_ready = true;
     g_state_layout.ready = true;
     g_push_state_hook_ready = false;
@@ -32,13 +32,13 @@ static void Reset() {
 }
 int main() {
     BE_HostApiV1 host{};host.create_hook=Create;g_host=&host;
-    betterendfield::DispatchAndroidFrame();
+    betterendfieldnext::DispatchAndroidFrame();
     Reset(); mode=0;assert(!InstallHook());
-    assert(!g_free_camera_contract_ready&&!g_first_person_contract_ready&&!g_dither_contract_ready);
+    assert(!g_free_camera_contract_ready&&!g_dither_contract_ready);
     Reset(); mode=1;assert(InstallHook());
-    assert(g_dither_contract_ready&&!g_free_camera_contract_ready&&!g_first_person_contract_ready);
+    assert(g_dither_contract_ready&&!g_free_camera_contract_ready);
     Reset(); mode=2;assert(InstallHook());
-    assert(g_free_camera_contract_ready&&g_first_person_contract_ready&&!g_dither_contract_ready);
+    assert(g_free_camera_contract_ready&&!g_dither_contract_ready);
     // A pause-only profile still has the real nativeRender pump when optional
     // camera hooks fail. The test executes production time ownership logic.
     Reset(); mode=0;g_pause_contract_ready=true;assert(InstallHook());
@@ -53,23 +53,6 @@ int main() {
     g_pause_request=true;PumpFreeCameraControl();assert(clockScale==0.75f&&!g_changed_time_scale);
     g_pause_request=true;PumpFreeCameraControl();assert(clockScale==0&&g_changed_time_scale);
     g_pause_enabled=false;PumpFreeCameraControl();assert(clockScale==0.75f&&!g_changed_time_scale);
-    // Free-camera heartbeat must not claim that first-person cleanup has run.
-    // No TailLateTick or CameraTick executes during these rendered frames.
-    g_state.store(ModuleState::Ready);
-    g_first_person_camera_enabled=false;g_first_person_active=true;
-    PumpFreeCameraControl();AndroidCameraFrame(false);
-    assert(!g_first_person_active.load());
-    g_first_person_active=true;PumpFreeCameraControl();AndroidCameraFrame(false);
-    assert(!g_first_person_active.load());
-    // A config exit queued after a prior FP pump still wins this rendered frame.
-    PumpFirstPerson();g_first_person_active=true;g_first_person_exit_request=true;
-    PumpFreeCameraControl();AndroidCameraFrame(false);
-    assert(!g_first_person_active.load()&&!g_first_person_exit_request.load());
-    const auto full_frame_generation=g_android_first_person_pump_generation;
-    PumpFirstPerson(false,false);
-    assert(g_android_first_person_pump_generation==full_frame_generation);
-    PumpFirstPerson();
-    assert(g_android_first_person_pump_generation==full_frame_generation+1);
     g_host=nullptr;
     std::cout<<"PASS camera: hook capabilities, pause-only frame pump, independent freeze, camera mode preservation and exact time restoration\n";
 }

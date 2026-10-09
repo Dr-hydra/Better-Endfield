@@ -74,7 +74,7 @@ class WorkspaceTests(unittest.TestCase):
         self.assertTrue(write_if_changed(p,b'changed'));self.assertEqual(p.read_bytes(),b'changed')
 
     def test_game_discovery_rejects_be_launcher(self):
-        p=self.root/'BetterEndfield.exe';p.write_bytes(b'fixture')
+        p=self.root/'BetterEndfieldNext.exe';p.write_bytes(b'fixture')
         self.assertIsNone(game_directory(str(p)))
         game=self.root/'game';game.mkdir();(game/'Endfield.exe').write_bytes(b'fixture')
         self.assertEqual(game_directory(str(game/'Endfield.exe')),game)

@@ -123,10 +123,10 @@ void InitializeAndroidTextureBudget() {
     g_android_budget_policy.Reset();g_android_next_budget_ms=0;g_android_next_budget_report_ms=0;
     {std::lock_guard lock(g_android_budget_io_mutex);g_android_budget_io={};}
     auto* setter=Contract("android.streaming_budget_set");
-    void* budget_entry=betterendfield::AndroidTextureBudgetSetterEntry();
-    void* quality_entry=betterendfield::AndroidQualityLevelSetterEntry();
-    g_android_budget_getter=reinterpret_cast<AndroidBudgetGetterFn>(betterendfield::AndroidTextureBudgetGetterEntry());
-    g_android_quality_getter=reinterpret_cast<AndroidQualityGetterFn>(betterendfield::AndroidQualityLevelGetterEntry());
+    void* budget_entry=betterendfieldnext::AndroidTextureBudgetSetterEntry();
+    void* quality_entry=betterendfieldnext::AndroidQualityLevelSetterEntry();
+    g_android_budget_getter=reinterpret_cast<AndroidBudgetGetterFn>(betterendfieldnext::AndroidTextureBudgetGetterEntry());
+    g_android_quality_getter=reinterpret_cast<AndroidQualityGetterFn>(betterendfieldnext::AndroidQualityLevelGetterEntry());
     const bool available=setter && setter->resolved && budget_entry && quality_entry &&
         g_android_budget_getter && g_android_quality_getter;
     const bool budget_hook=available && g_host->create_hook(g_host->context,kModuleId,budget_entry,
@@ -156,7 +156,7 @@ bool TickAndroidTextureBudget(bool force_lod,bool restoring=false) noexcept {
         s.counters_valid=InvokeValue(Contract("android.texture_current"),nullptr,nullptr,s.current_bytes) &&
             InvokeValue(Contract("android.texture_desired"),nullptr,nullptr,s.desired_bytes) &&
             InvokeValue(Contract("android.texture_target"),nullptr,nullptr,s.target_bytes);
-        s.memory_valid=betterendfield::AndroidReadMemoryHeadroom(s.physical_ram_bytes,s.available_bytes);
+        s.memory_valid=betterendfieldnext::AndroidReadMemoryHeadroom(s.physical_ram_bytes,s.available_bytes);
         auto io=AndroidBudgetIoSnapshot();
         s.external_request_epoch=io.epoch;
         s.external_budget_valid=io.external_valid && AndroidBudgetBytes(io.external_value,s.external_budget_bytes);

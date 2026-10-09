@@ -166,7 +166,7 @@ This is for development only and may render incorrectly or crash the game. The l
 
 ## 11. Log rejection reference
 
-Logs are in `%LOCALAPPDATA%\BetterEndfield\logs\BetterEndfield.log` on Windows and in the framework module log on Android.
+Logs are in `%LOCALAPPDATA%\BetterEndfieldNext\logs\BetterEndfieldNext.log` on Windows and in the framework module log on Android.
 
 **Package and configuration**
 

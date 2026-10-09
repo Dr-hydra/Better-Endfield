@@ -4,7 +4,7 @@
 // Portions derived from EIEM (https://github.com/Sasye/EIEM), AGPL-3.0.
 #include <vector>
 #include <string>
-namespace BetterEndfield::CharacterPose {
+namespace BetterEndfieldNext::CharacterPose {
 struct RigName { std::vector<std::string> sources; const char* target; bool eye=false; };
 inline const std::vector<RigName>& DefaultRig() {
     static const std::vector<RigName> names{

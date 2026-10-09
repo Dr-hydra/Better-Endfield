@@ -5,7 +5,7 @@
 #include <set>
 #include <mutex>
 
-namespace BetterEndfield::CustomModel {
+namespace BetterEndfieldNext::CustomModel {
 namespace {
 std::string Trim(std::string_view s) {
     auto a=s.find_first_not_of(" \t\r\n"); if(a==s.npos) return {};

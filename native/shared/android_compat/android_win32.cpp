@@ -8,7 +8,7 @@
 #include <thread>
 #include <unistd.h>
 
-namespace betterendfield {
+namespace betterendfieldnext {
 namespace {
 
 constexpr int kVirtualKeyCount = 256;
@@ -84,4 +84,4 @@ void* Symbol(void* image, const char* name) {
 }
 
 }  // namespace win32
-}  // namespace betterendfield
+}  // namespace betterendfieldnext

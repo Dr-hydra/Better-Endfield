@@ -4,7 +4,7 @@
 #include <set>
 #include <unordered_set>
 
-namespace BetterEndfield::CharacterPose {
+namespace BetterEndfieldNext::CharacterPose {
 using Vmd::Vec3;
 using Vmd::Quaternion;
 inline Quaternion Inverse(Quaternion q) { q = Vmd::Normalize(q); return {-q.x,-q.y,-q.z,q.w}; }
@@ -187,4 +187,4 @@ private:
     double last_=0,time_=0,duration_=0;
     bool loop_=false,paused_=false,finished_=false;
 };
-} // namespace BetterEndfield::CharacterPose
+} // namespace BetterEndfieldNext::CharacterPose

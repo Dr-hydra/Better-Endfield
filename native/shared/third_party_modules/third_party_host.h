@@ -1,10 +1,10 @@
 #pragma once
-#include "BetterEndfield/ThirdPartyModule.h"
+#include "BetterEndfieldNext/ThirdPartyModule.h"
 #include <filesystem>
 #include <functional>
 #include <memory>
 #include <string>
-namespace BetterEndfield::ThirdParty {
+namespace BetterEndfieldNext::ThirdParty {
 class ThirdPartyHost final {
 public:
     using Log = std::function<void(const std::string&,const std::string&)>;

@@ -1,6 +1,6 @@
 # Combat Runtime Contracts
 
-本文记录战斗数据模块（`BetterEndfield.CombatStats.dll`）下一阶段实现所依赖的游戏内数据结构与获取链，
+本文记录战斗数据模块（`BetterEndfieldNext.CombatStats.dll`）下一阶段实现所依赖的游戏内数据结构与获取链，
 用于 rDPS 增伤归属、角色装备/武器/技能/潜能快照、关卡元数据和分类维度。
 
 字段偏移来自 `tools/EndfieldDumper/IL2CPP_Dump_Normal/Gameplay.Beyond.dll.cs`（游戏版本 1.4.4 的 dump），

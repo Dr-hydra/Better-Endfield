@@ -42,7 +42,7 @@ def main():
         destination=ws.path("paths.research",module,version,"Windows",topic(source.name))
         add("analysis-"+source.name,source,destination,module,(".git","__pycache__","obj","CMakeFiles",".venv","node_modules"))
     for source in sorted((legacy/"artifacts").iterdir()):
-        if not source.is_dir() or source.name in {"android-transfer","betterendfield-native-build","bem-tools","bem-archive-backend","BetterEndfield-win-x64","installer","generic-model-test-build"}:
+        if not source.is_dir() or source.name in {"android-transfer","betterendfield-native-build","bem-tools","bem-archive-backend","BetterEndfieldNext-win-x64","installer","generic-model-test-build"}:
             continue
         value=source.name.lower()
         if value.startswith("release-"):

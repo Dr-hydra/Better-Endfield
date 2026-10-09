@@ -1,4 +1,4 @@
-namespace BetterEndfield.UI.Services;
+namespace BetterEndfieldNext.UI.Services;
 
 internal sealed class LocalizationService
 {

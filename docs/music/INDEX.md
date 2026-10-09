@@ -7,7 +7,7 @@
 | 文档 | 用途 | 状态 | 游戏版本 |
 | --- | --- | --- | --- |
 | [终末地音乐输入研究](MUSIC_INTEGRATION_RESEARCH.md) | Wwise Audio Input/PCM链路与Bank合同研究 | 维护参考 | 1.5.3 |
-| [OmniMix 对接 Better Endfield 交付要求](OMNIMIX_INTEGRATION_HANDOFF.md) | 跨项目CLI/ABI/退出码/PCM交付合同，不能按handoff丢弃 | 维护参考 | not_applicable |
+| [OmniMix 对接 Better Endfield Next 交付要求](OMNIMIX_INTEGRATION_HANDOFF.md) | 跨项目CLI/ABI/退出码/PCM交付合同，不能按handoff丢弃 | 维护参考 | not_applicable |
 
 ## 研究与阶段记录
 

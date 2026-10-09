@@ -14,9 +14,9 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
     void* handle=nullptr; uint32_t handle_root=0;
     struct DonorLifetime {
         void*& handle; uint32_t& root;
-        ~DonorLifetime() { betterendfield::AndroidReleaseUiDonor(handle,root); }
+        ~DonorLifetime() { betterendfieldnext::AndroidReleaseUiDonor(handle,root); }
     } lifetime{handle,handle_root};
-    void* donor=RootTemporary(betterendfield::AndroidLoadUiDonor(adapter.ui_resource,handle,handle_root));
+    void* donor=RootTemporary(betterendfieldnext::AndroidLoadUiDonor(adapter.ui_resource,handle,handle_root));
     if (!donor || (!bem.skip_validation && ObjectName(donor)!=adapter.ui_resource)) { Log("Android UI donor unavailable."); return false; }
     std::vector<PreparedBinding> sources;
     const bool committed_ui=ReadCompletedAndroidDonor(adapter,bem,donor,sources);

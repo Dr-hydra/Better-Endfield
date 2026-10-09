@@ -6,9 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="../../../ui/BetterEndfield.UI/Services/BemPackageService.cs" Link="BemPackageService.cs" />
-    <Compile Include="../../../ui/BetterEndfield.UI/Services/BemReportPresentation.cs" Link="BemReportPresentation.cs" />
-    <Compile Include="../../../ui/BetterEndfield.UI/Services/BemText.cs" Link="BemText.cs" />
-    <Compile Include="../../../ui/BetterEndfield.UI/Services/LocalizationService.cs" Link="LocalizationService.cs" />
+    <Compile Include="../../../ui/BetterEndfieldNext.UI/Services/BemPackageService.cs" Link="BemPackageService.cs" />
+    <Compile Include="../../../ui/BetterEndfieldNext.UI/Services/BemReportPresentation.cs" Link="BemReportPresentation.cs" />
+    <Compile Include="../../../ui/BetterEndfieldNext.UI/Services/BemText.cs" Link="BemText.cs" />
+    <Compile Include="../../../ui/BetterEndfieldNext.UI/Services/LocalizationService.cs" Link="LocalizationService.cs" />
   </ItemGroup>
 </Project>

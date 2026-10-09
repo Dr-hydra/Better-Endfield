@@ -1,17 +1,20 @@
 cmake_minimum_required(VERSION 3.22.1)
-project(BetterEndfieldAndroid LANGUAGES C CXX)
+project(BetterEndfieldNextAndroid LANGUAGES C CXX)
+set(CMAKE_C_VISIBILITY_PRESET hidden)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 
-get_filename_component(BETTER_ENDFIELD_ROOT
+get_filename_component(BETTER_ENDFIELD_NEXT_ROOT
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../../.." ABSOLUTE)
 if(NOT DEFINED DOBBY_ROOT OR DOBBY_ROOT STREQUAL "")
     if(DEFINED ENV{BE_WORKSPACE_DOBBY_ROOT} AND NOT "$ENV{BE_WORKSPACE_DOBBY_ROOT}" STREQUAL "")
         set(DOBBY_ROOT "$ENV{BE_WORKSPACE_DOBBY_ROOT}" CACHE PATH "Dobby source directory")
     else()
-        set(DOBBY_ROOT "${BETTER_ENDFIELD_ROOT}/toolchains/android/dobby-1.0.5"
+        set(DOBBY_ROOT "${BETTER_ENDFIELD_NEXT_ROOT}/toolchains/android/dobby-1.0.5"
             CACHE PATH "Dobby source directory")
     endif()
 endif()
-get_filename_component(DOBBY_ROOT "${DOBBY_ROOT}" ABSOLUTE BASE_DIR "${BETTER_ENDFIELD_ROOT}")
+get_filename_component(DOBBY_ROOT "${DOBBY_ROOT}" ABSOLUTE BASE_DIR "${BETTER_ENDFIELD_NEXT_ROOT}")
 if(NOT EXISTS "${DOBBY_ROOT}/CMakeLists.txt")
     message(FATAL_ERROR "Dobby toolchain source is missing: ${DOBBY_ROOT}")
 endif()
@@ -28,13 +31,13 @@ set(DOBBY_BUILD_KERNEL OFF CACHE BOOL "" FORCE)
 # Do not build upstream examples (they depend on disabled Dobby plugins).
 add_subdirectory("${DOBBY_ROOT}" "${CMAKE_CURRENT_BINARY_DIR}/dobby" EXCLUDE_FROM_ALL)
 if(TARGET dobby_static)
-    set(BETTER_ENDFIELD_DOBBY_TARGET dobby_static)
+    set(BETTER_ENDFIELD_NEXT_DOBBY_TARGET dobby_static)
 elseif(TARGET dobby)
-    set(BETTER_ENDFIELD_DOBBY_TARGET dobby)
+    set(BETTER_ENDFIELD_NEXT_DOBBY_TARGET dobby)
 else()
     message(FATAL_ERROR "Dobby did not provide a supported library target")
 endif()
-add_subdirectory("${BETTER_ENDFIELD_ROOT}/native/modules/custom_model"
+add_subdirectory("${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/custom_model"
     "${CMAKE_CURRENT_BINARY_DIR}/custom_model")
 
 # Import-time codec only. This library never starts the injected game runtime.
@@ -42,17 +45,17 @@ set(ASTCENC_CLI OFF CACHE BOOL "" FORCE)
 set(ASTCENC_ISA_NEON ON CACHE BOOL "" FORCE)
 set(ASTCENC_ISA_NATIVE OFF CACHE BOOL "" FORCE)
 set(ASTCENC_UNITTEST OFF CACHE BOOL "" FORCE)
-add_subdirectory("${BETTER_ENDFIELD_ROOT}/native/shared/third_party/astcenc"
+add_subdirectory("${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/third_party/astcenc"
     "${CMAKE_CURRENT_BINARY_DIR}/astcenc")
 set_target_properties(astcenc-neon-static PROPERTIES POSITION_INDEPENDENT_CODE ON)
 # ASTC's search loops need optimization even in a debuggable APK. Keep symbols.
 target_compile_options(astcenc-neon-static PRIVATE -O3)
-add_library(betterendfield_installer SHARED installer/install_jni.cpp installer/texture_install.cpp)
-target_compile_options(betterendfield_installer PRIVATE -O2)
-target_compile_features(betterendfield_installer PRIVATE cxx_std_20)
-target_include_directories(betterendfield_installer PRIVATE "${BETTER_ENDFIELD_ROOT}/native/shared/third_party/bcdec")
-target_link_libraries(betterendfield_installer PRIVATE BetterEndfield.CustomModelCore astcenc-neon-static c++_static c++abi)
-target_link_options(betterendfield_installer PRIVATE -Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384)
+add_library(betterendfieldnext_installer SHARED installer/install_jni.cpp installer/texture_install.cpp)
+target_compile_options(betterendfieldnext_installer PRIVATE -O2)
+target_compile_features(betterendfieldnext_installer PRIVATE cxx_std_20)
+target_include_directories(betterendfieldnext_installer PRIVATE "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/third_party/bcdec")
+target_link_libraries(betterendfieldnext_installer PRIVATE BetterEndfieldNext.CustomModelCore astcenc-neon-static c++_static c++abi)
+target_link_options(betterendfieldnext_installer PRIVATE -Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384)
 
 # The UI, camera and sustained-dash features are the desktop translation units,
 # compiled for ARM64 without a second implementation. Everything platform
@@ -61,61 +64,61 @@ target_link_options(betterendfield_installer PRIVATE -Wl,-z,max-page-size=16384 
 # implementation of the desktop mouse-to-touch helper. The include directory that
 # provides <Windows.h> is deliberately scoped to this target so the Android
 # runtime sources can never pick it up.
-add_library(betterendfield_desktop_features STATIC
-    "${BETTER_ENDFIELD_ROOT}/native/shared/android_compat/android_win32.cpp"
-    "${BETTER_ENDFIELD_ROOT}/native/shared/android_compat/android_frame.cpp"
-    "${BETTER_ENDFIELD_ROOT}/native/shared/android_compat/touch_input_android.cpp"
-    "${BETTER_ENDFIELD_ROOT}/native/modules/ui/module.cpp"
-    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/module.cpp"
-    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/eiem_body.cpp"
-    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/eiem_slot0.cpp"
-    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/eiem_slot1.cpp"
-    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/eiem_slot2.cpp"
-    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/eiem_slot3.cpp"
-    "${BETTER_ENDFIELD_ROOT}/native/shared/host/pose_lease.cpp"
-    "${BETTER_ENDFIELD_ROOT}/native/modules/actions/module.cpp")
+add_library(betterendfieldnext_desktop_features STATIC
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/android_compat/android_win32.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/android_compat/android_frame.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/android_compat/touch_input_android.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/ui/module.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/module.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/eiem/eiem_body.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/eiem/eiem_slot0.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/eiem/eiem_slot1.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/eiem/eiem_slot2.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/eiem/eiem_slot3.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/host/pose_lease.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/actions/module.cpp")
 
-# Each desktop module exports the same BetterEndfield_GetModuleApiV1 entry point
+# Each desktop module exports the same BetterEndfieldNext_GetModuleApiV1 entry point
 # because on Windows each one is its own DLL. Renaming per translation unit keeps
 # all three in one shared library, the way the custom-model source already is.
 set_source_files_properties(
-    "${BETTER_ENDFIELD_ROOT}/native/modules/ui/module.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/ui/module.cpp"
     PROPERTIES COMPILE_DEFINITIONS
-    "BetterEndfield_GetModuleApiV1=BetterEndfield_GetUiModuleApiV1")
+    "BetterEndfieldNext_GetModuleApiV1=BetterEndfieldNext_GetUiModuleApiV1")
 set_source_files_properties(
-    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/module.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/module.cpp"
     PROPERTIES COMPILE_DEFINITIONS
-    "BetterEndfield_GetModuleApiV1=BetterEndfield_GetCameraModuleApiV1")
+    "BetterEndfieldNext_GetModuleApiV1=BetterEndfieldNext_GetCameraModuleApiV1")
 set_source_files_properties(
-    "${BETTER_ENDFIELD_ROOT}/native/modules/actions/module.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/actions/module.cpp"
     PROPERTIES COMPILE_DEFINITIONS
-    "BetterEndfield_GetModuleApiV1=BetterEndfield_GetActionsModuleApiV1")
+    "BetterEndfieldNext_GetModuleApiV1=BetterEndfieldNext_GetActionsModuleApiV1")
 
-target_include_directories(betterendfield_desktop_features PRIVATE
-    "${BETTER_ENDFIELD_ROOT}/native/shared/android_compat/include"
-    "${BETTER_ENDFIELD_ROOT}/native/shared/android_compat"
-    "${BETTER_ENDFIELD_ROOT}/native/shared/include"
-    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem"
-    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/compat"
-    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/upstream"
-    "${BETTER_ENDFIELD_ROOT}/native/modules/ui")
-target_compile_features(betterendfield_desktop_features PRIVATE cxx_std_20)
+target_include_directories(betterendfieldnext_desktop_features PRIVATE
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/android_compat/include"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/android_compat"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/include"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/eiem"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/eiem/compat"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/eiem/upstream"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/ui")
+target_compile_features(betterendfieldnext_desktop_features PRIVATE cxx_std_20)
 # Shared desktop sources are not compiled with -Wpedantic on Windows either;
 # holding them to it here would only produce noise this port cannot act on.
-target_compile_options(betterendfield_desktop_features PRIVATE -Wall -O2)
-set_target_properties(betterendfield_desktop_features
+target_compile_options(betterendfieldnext_desktop_features PRIVATE -Wall -O2)
+set_target_properties(betterendfieldnext_desktop_features
     PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 set_source_files_properties(
-    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/eiem_slot0.cpp"
-    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/eiem_slot1.cpp"
-    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/eiem_slot2.cpp"
-    "${BETTER_ENDFIELD_ROOT}/native/modules/camera/eiem/eiem_slot3.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/eiem/eiem_slot0.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/eiem/eiem_slot1.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/eiem/eiem_slot2.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/eiem/eiem_slot3.cpp"
     PROPERTIES COMPILE_OPTIONS "-fno-char8_t")
 
-add_library(betterendfield_android SHARED
+add_library(betterendfieldnext_android SHARED
     native_bridge.cpp
-    "${BETTER_ENDFIELD_ROOT}/native/shared/third_party_modules/third_party_host.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/third_party_modules/third_party_host.cpp"
     core/hook_broker.cpp
     core/log.cpp
     core/local_music_android.cpp
@@ -126,45 +129,45 @@ add_library(betterendfield_android SHARED
     modules/custom_model/mesh_skin_metadata_adapter.cpp
     modules/custom_model/custom_model_module.cpp
     modules/custom_model/android_mesh_builder.cpp
-    "${BETTER_ENDFIELD_ROOT}/native/modules/custom_model/module.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/custom_model/module.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/modules/custom_model/native_mesh_layout_android.cpp"
     modules/character_voice/character_voice_module.cpp
     modules/desktop/desktop_module.cpp
     modules/login_model/login_model_module.cpp
-    "${BETTER_ENDFIELD_ROOT}/native/modules/model/module.cpp")
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/model/module.cpp")
 
 # The Android runtime currently uses its own Module interface. Compile the
 # shared PC custom-model translation unit as a private implementation target so
 # its exported desktop module symbol cannot collide with the login-model module.
 set_source_files_properties(
-    "${BETTER_ENDFIELD_ROOT}/native/modules/custom_model/module.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/custom_model/module.cpp"
     PROPERTIES COMPILE_DEFINITIONS
-    "BetterEndfield_GetModuleApiV1=BetterEndfield_GetCustomModelModuleApiV1")
+    "BetterEndfieldNext_GetModuleApiV1=BetterEndfieldNext_GetCustomModelModuleApiV1")
 
-target_include_directories(betterendfield_android PRIVATE
+target_include_directories(betterendfieldnext_android PRIVATE
     .
-    "${BETTER_ENDFIELD_ROOT}/native/shared/android_compat"
-    "${BETTER_ENDFIELD_ROOT}/native/shared/include")
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/android_compat"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/include")
 
-target_compile_features(betterendfield_android PRIVATE cxx_std_20)
-target_compile_options(betterendfield_android PRIVATE
+target_compile_features(betterendfieldnext_android PRIVATE cxx_std_20)
+target_compile_options(betterendfieldnext_android PRIVATE
     -Wall
     -Wextra
     -Wpedantic
     -fvisibility=hidden)
 
-target_link_options(betterendfield_android PRIVATE
+target_link_options(betterendfieldnext_android PRIVATE
     -Wl,-z,max-page-size=16384
     -Wl,-z,common-page-size=16384)
 
 find_library(log_library log REQUIRED)
 find_library(dl_library dl REQUIRED)
 
-target_link_libraries(betterendfield_android PRIVATE
+target_link_libraries(betterendfieldnext_android PRIVATE
     c++_static
     c++abi
-    ${BETTER_ENDFIELD_DOBBY_TARGET}
-    BetterEndfield.CustomModelCore
-    betterendfield_desktop_features
+    ${BETTER_ENDFIELD_NEXT_DOBBY_TARGET}
+    BetterEndfieldNext.CustomModelCore
+    betterendfieldnext_desktop_features
     ${log_library}
     ${dl_library})

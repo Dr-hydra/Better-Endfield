@@ -1,7 +1,7 @@
 #pragma once
 #include <string_view>
 
-namespace BetterEndfield::Host {
+namespace BetterEndfieldNext::Host {
 // IL2CPP versions use '/', '+' or '.' for nested type names. All other
 // characters (including generic arguments and by-ref '&') remain exact.
 inline bool SameTypeText(const char* actual, std::string_view expected) {

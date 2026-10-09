@@ -39,7 +39,7 @@ function encodeSnapshot(snapshot: GachaWebSnapshot): string {
 
 function decodeSnapshot(value: string): GachaWebSnapshot {
   const parsed = JSON.parse(strFromU8(inflateSync(fromBase64Url(value)))) as GachaWebSnapshot;
-  if (parsed.schemaVersion !== VERSION || parsed.kind !== "betterendfield.gacha" ||
+  if (parsed.schemaVersion !== VERSION || parsed.kind !== "betterendfieldnext.gacha" ||
       !Array.isArray(parsed.categories) || !Array.isArray(parsed.pools)) {
     throw new Error("寻访云存档版本不受支持");
   }

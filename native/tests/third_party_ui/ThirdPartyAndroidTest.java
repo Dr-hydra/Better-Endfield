@@ -1,4 +1,4 @@
-package dev.betterendfield.android;
+package dev.betterendfield.next;
 
 import android.content.*;
 import android.net.Uri;
@@ -48,10 +48,10 @@ public final class ThirdPartyAndroidTest {
         for(String bad:new String[]{"../escape","ui/../escape","ui\\escape","C:/escape","/absolute","UI/INDEX.HTML","MODULE.JSON","native/CON.so"})
             rejects(()->ThirdPartyModuleStore.importArchive(app,new Uri(zip(app,manifest(id),bad))),"Accepted bad ZIP entry "+bad);
         check(previous.equals(app.preferences.value),"Failed imports changed installed index");
-        rejects(()->ThirdPartyModuleStore.importArchive(app,new Uri(zip(app,manifest("betterendfield.camera")))),"Overwrote built-in module ID");
+        rejects(()->ThirdPartyModuleStore.importArchive(app,new Uri(zip(app,manifest("betterendfieldnext.camera")))),"Overwrote built-in module ID");
         rejects(()->ThirdPartyModuleStore.importArchive(app,new Uri(zip(app,manifest("voice.character")))),"Accepted builtin voice module ID");
         rejects(()->ThirdPartyModuleStore.importArchive(app,new Uri(zip(app,manifest("VOICE.Character")))),"Accepted builtin voice module ID case alias");
-        for(String dependency:new String[]{"voice.character","betterendfield.camera",id})
+        for(String dependency:new String[]{"voice.character","betterendfieldnext.camera",id})
             rejects(()->ThirdPartyModuleStore.importArchive(app,new Uri(zip(app,manifest(id).put("dependencies",new JSONArray().put(dependency))))),"Accepted invalid dependency "+dependency);
         JSONArray excessive=new JSONArray();for(int i=0;i<129;i++)excessive.put("example.dependency"+i);
         rejects(()->ThirdPartyModuleStore.importArchive(app,new Uri(zip(app,manifest(id).put("dependencies",excessive)))),"Accepted >128 dependencies");

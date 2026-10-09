@@ -1,0 +1,42 @@
+namespace BetterEndfieldNext.UI.Services;
+
+internal static class ThirdPartyWebBridge
+{
+    // The container binds module identity and keeps the runtime bearer token out of JS.
+    internal const string Script = """
+    (() => {
+      if (window.top !== window || window.betterEndfieldNext) return;
+      let next = 0; const pending = new Map(), listeners = new Set();
+      const session = Math.random().toString(36).slice(2);
+      function invoke(operation, payload) {
+        const request_id = session + ':' + (++next);
+        return new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => { pending.delete(request_id); reject(new Error('Host request timed out')); }, 15000);
+          pending.set(request_id, { resolve, reject, timeout });
+          const message = JSON.stringify({ protocol: 'better-endfield-next.module-ui.v1', request_id, operation, payload });
+          try {
+            if (window.chrome?.webview) window.chrome.webview.postMessage(JSON.parse(message));
+            else window.BetterEndfieldNextModuleHost.postMessage(message);
+          } catch (error) { clearTimeout(timeout); pending.delete(request_id); reject(error); }
+        });
+      }
+      window.__beModuleDeliver = envelope => {
+        if (envelope.kind === 'bridge_reply') {
+          const item = pending.get(envelope.request_id); if (!item) return;
+          clearTimeout(item.timeout); pending.delete(envelope.request_id);
+          envelope.error ? item.reject(new Error(envelope.error)) : item.resolve(envelope.value);
+        } else if (envelope.kind === 'runtime_message') {
+          for (const listener of listeners) { try { listener(envelope.message); } catch (error) { console.error(error); } }
+        }
+      };
+      if (window.chrome?.webview) window.chrome.webview.addEventListener('message', e => window.__beModuleDeliver(e.data));
+      Object.defineProperty(window, 'betterEndfieldNext', { value: Object.freeze({
+        readConfig: () => invoke('readConfig'),
+        saveConfig: configuration => invoke('saveConfig', configuration),
+        send: body => invoke('send', body),
+        status: () => invoke('status'),
+        onmessage: listener => { if (typeof listener !== 'function') throw new TypeError('Expected a function'); listeners.add(listener); return () => listeners.delete(listener); }
+      }) });
+    })();
+    """;
+}

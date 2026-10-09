@@ -4,7 +4,7 @@ Owned files: `native/modules/custom_model/async_loading.h`, `bem.h`, `bem.cpp`,
 and this independent test directory. No module/cache/matcher/camera or main
 CMake changes; no APK build, device operation, branch, commit or push.
 
-Production interface, namespace `BetterEndfield::CustomModel`:
+Production interface, namespace `BetterEndfieldNext::CustomModel`:
 
 ```cpp
 AsyncBemLoader loader;        // one instance for all roles/world/UI
@@ -66,8 +66,8 @@ ledger. These are submission controls, not GPU fences or performance results.
 
 No additional production source is needed for this header-only helper. Both
 PC and Android targets already compile `bem.cpp`; rebuild their existing core.
-Standalone targets: `async_loading_tests`, `BetterEndfield.BemV11CapacityTests`,
-`BetterEndfield.BemV13MorphTests` in `native/tests/async_loading/CMakeLists.txt`.
+Standalone targets: `async_loading_tests`, `BetterEndfieldNext.BemV11CapacityTests`,
+`BetterEndfieldNext.BemV13MorphTests` in `native/tests/async_loading/CMakeLists.txt`.
 Local build directory: `artifacts/async-loading-tests-20261003` (MSVC Release).
 Run `ctest --test-dir artifacts/async-loading-tests-20261003 -C Release --output-on-failure`.
 

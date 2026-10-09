@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BetterEndfield/ModuleApi.h"
+#include "BetterEndfieldNext/ModuleApi.h"
 
 #include <Windows.h>
 
@@ -9,7 +9,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace BetterEndfield::Host {
+namespace BetterEndfieldNext::Host {
 
 class HostRuntime;
 class Logger;
@@ -55,4 +55,4 @@ private:
     size_t pending_module_count_ = 0;
 };
 
-} // namespace BetterEndfield::Host
+} // namespace BetterEndfieldNext::Host

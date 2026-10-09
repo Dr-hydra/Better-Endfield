@@ -15,7 +15,7 @@
 
 - [bem_projects.py](../../../../../tools/CustomModel/bem_projects.py)：`pack_project()`、`unpack()`。
 - [bem_tool.py](../../../../../tools/CustomModel/bem_tool.py)：`convert()`、`convert_automatic()`、CLI 命令表。
-- [BemConverterWindow.cs](../../../../../ui/BetterEndfield.UI/Views/BemConverterWindow.cs)：`ResetTask()`、`PrepareConversion()`、`ExportPrepared()`、`ProcessProject()`。
+- [BemConverterWindow.cs](../../../../../ui/BetterEndfieldNext.UI/Views/BemConverterWindow.cs)：`ResetTask()`、`PrepareConversion()`、`ExportPrepared()`、`ProcessProject()`。
 - [conversion.recipe.json](../../../../../tools/CustomModel/examples/conversion.recipe.json)：现有转换配方模板。
 
 ## 现在就能使用的重复导出
@@ -23,9 +23,9 @@
 对已经适配好的 BEM，首次解包，随后保持 `package_id`，直接修改工程内的配置或 payload 后重新打包：
 
 ```text
-BetterEndfield.BemConverter.exe unpack original.bem -o editable
-BetterEndfield.BemConverter.exe pack editable/project.json -o dist/updated.bem --report reports/packing.json
-BetterEndfield.BemConverter.exe validate dist/updated.bem --report reports/validation.json
+BetterEndfieldNext.BemConverter.exe unpack original.bem -o editable
+BetterEndfieldNext.BemConverter.exe pack editable/project.json -o dist/updated.bem --report reports/packing.json
+BetterEndfieldNext.BemConverter.exe validate dist/updated.bem --report reports/validation.json
 ```
 
 也可在 GUI 中选择“将项目打包为 BEM”并打开 `editable/project.json`。payload 路径必须位于工程目录内；工程移动后仍可使用其相对路径。解包目标目录必须尚不存在；重新导出直接 `pack`，不必再次解包。
@@ -33,7 +33,7 @@ BetterEndfield.BemConverter.exe validate dist/updated.bem --report reports/valid
 对需要重新读取源 Mod 的项目，保存已核实配方，再运行：
 
 ```text
-BetterEndfield.BemConverter.exe convert source --recipe conversion.recipe.json -o dist/updated.bem --report reports/conversion.json
+BetterEndfieldNext.BemConverter.exe convert source --recipe conversion.recipe.json -o dist/updated.bem --report reports/conversion.json
 ```
 
 配方里的每个 appearance 可以保存 `source`，省去依赖 GUI 先选的源路径；CLI 目前仍要求给出 `source` 位置参数。配方中的相对路径按配方目录解析，位置参数按调用者工作目录解析。已有的显式配方保留作者指定的包 ID；无配方自动转换每次创建新的随机 ID，不能直接当成已发布包的稳定更新工作流。
@@ -84,5 +84,5 @@ BetterEndfield.BemConverter.exe convert source --recipe conversion.recipe.json -
 
 - 新增工程创建/重开/移动/重复构建、稳定 ID、参数覆盖、输入保护以及真实配方别名/32 字节蒙皮输出测试，使用生产原生 validator 验证。
 - 现有项目、ComponentN、Hash/LOD、BEM 1.0/1.1/1.2 与审阅转换回归已通过；独立 C# CreatorProjectChecks 覆盖 GUI 读写、参数恢复、稳定 ID、另存路径及覆盖保护。
-- 另用生产 `BetterEndfield.BemValidate.exe` 复现上述 1.0 别名写包不一致，原生明确拒绝。
+- 另用生产 `BetterEndfieldNext.BemValidate.exe` 复现上述 1.0 别名写包不一致，原生明确拒绝。
 - Windows UI 编译通过；本代理未生成发布包、未部署、未计算产物哈希。

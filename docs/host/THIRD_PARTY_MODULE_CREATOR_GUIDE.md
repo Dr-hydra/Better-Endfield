@@ -1,14 +1,14 @@
 # 第三方模块创作者指南
 
-适用：Better Endfield 3.5.2，第三方包格式 1 / Native ABI 1。Windows x64 与 Android arm64 使用同一套包与网页消息协议。SDK 版本独立为 1.0.0。
+适用：Better Endfield Next 3.5.2，第三方包格式 1 / Native ABI 1。Windows x64 与 Android arm64 使用同一套包与网页消息协议。SDK 版本独立为 1.0.0。
 
 ## 先运行 Echo 示例
 
-SDK 中的 `packages/BetterEndfield-Echo-1.0.0-Dual.zip` 是完整双端包。进入管理应用的“第三方模块”，导入 ZIP 并启用，连接正在运行的游戏，再打开模块页面。点击发送应收到带有计数、原请求与当前配置的回复；修改 Label 后保存可验证配置回调。模块原生代码不依赖游戏地址，也不改变游戏行为。
+SDK 中的 `packages/BetterEndfieldNext-Echo-1.0.0-Dual.zip` 是完整双端包。进入管理应用的“第三方模块”，导入 ZIP 并启用，连接正在运行的游戏，再打开模块页面。点击发送应收到带有计数、原请求与当前配置的回复；修改 Label 后保存可验证配置回调。模块原生代码不依赖游戏地址，也不改变游戏行为。
 
 Android 导入时需要框架连接，以便将 ZIP 发布到游戏可读取的目录。Windows 通过管理应用安装目录记录供游戏 Host 读取。只有另一平台二进制的包可记录，但不能在当前平台启用。UI-only 包可以打开页面并保存配置，没有原生消息接收端。
 
-仓库示例位于 `tools/ThirdPartyModules/echo/`；独立 SDK 位于 `examples/echo/`。公开头文件全部位于 `include/BetterEndfield/`：`ThirdPartyModule.h`、`ModuleApi.h`、`HookChain.h`。实际字段和类型以随 SDK 分发的头文件为准。
+仓库示例位于 `tools/ThirdPartyModules/echo/`；独立 SDK 位于 `examples/echo/`。公开头文件全部位于 `include/BetterEndfieldNext/`：`ThirdPartyModule.h`、`ModuleApi.h`、`HookChain.h`。实际字段和类型以随 SDK 分发的头文件为准。
 
 ## 包结构与 manifest
 
@@ -28,7 +28,7 @@ ui/app.js
   "format": 1,
   "id": "example.echo",
   "name": "Echo / Counter",
-  "author": "Better Endfield",
+  "author": "Better Endfield Next",
   "version": "1.0.0",
   "abi": 1,
   "libraries": {
@@ -52,10 +52,10 @@ ui/app.js
 
 ## 原生入口与生命周期
 
-导出固定 C 入口 `BetterEndfield_GetThirdPartyModuleV1`，返回生命周期结构。以下代码说明入口形态；完整可编译实现见 Echo：
+导出固定 C 入口 `BetterEndfieldNext_GetThirdPartyModuleV1`，返回生命周期结构。以下代码说明入口形态；完整可编译实现见 Echo：
 
 ```cpp
-#include <BetterEndfield/ThirdPartyModule.h>
+#include <BetterEndfieldNext/ThirdPartyModule.h>
 
 static BE_Result BE_CALL Initialize(const BE_ThirdPartyHostV1* host,
                                     const char* configuration_json);
@@ -74,7 +74,7 @@ static const BE_ThirdPartyModuleV1 module = {
 #define MODULE_EXPORT __attribute__((visibility("default")))
 #endif
 extern "C" MODULE_EXPORT const BE_ThirdPartyModuleV1* BE_CALL
-BetterEndfield_GetThirdPartyModuleV1() { return &module; }
+BetterEndfieldNext_GetThirdPartyModuleV1() { return &module; }
 ```
 
 `initialize` 与 `on_message` 为必需回调；`configuration_changed` 与 `shutdown` 可为空。结构提供 `struct_size` 和 `version` 用于 ABI 识别；读取可选尾部字段前应先检查大小，检查函数指针是否为空。
@@ -102,13 +102,13 @@ UTF-8 字符串只在回调期间借用；返回后仍需使用的请求、配�
 
 作者提交编译后的静态 HTML/CSS/JavaScript，可以使用自己的框架和响应式布局。Windows 使用 WebView2，Android 使用 WebView。每个安装代次具有独立本地 HTTPS 来源；页面只能读取自己的包资源，外部页面或网络资源不会作为模块 UI 加载。把依赖的 JS/CSS/字体打包到 ZIP 中，避免 CDN。
 
-应用注入 `window.betterEndfield`：
+应用注入 `window.betterEndfieldNext`：
 
 ```js
-const config = await window.betterEndfield.readConfig();
-await window.betterEndfield.saveConfig({ ...config, label: "My module" });
+const config = await window.betterEndfieldNext.readConfig();
+await window.betterEndfieldNext.saveConfig({ ...config, label: "My module" });
 
-const unsubscribe = window.betterEndfield.onmessage(message => {
+const unsubscribe = window.betterEndfieldNext.onmessage(message => {
   if (message.kind === "reply") {
     console.log(message.request_id, message.result, message.body);
   } else if (message.kind === "event") {
@@ -116,8 +116,8 @@ const unsubscribe = window.betterEndfield.onmessage(message => {
   }
 });
 
-const accepted = await window.betterEndfield.send({ action: "count" });
-const status = await window.betterEndfield.status();
+const accepted = await window.betterEndfieldNext.send({ action: "count" });
+const status = await window.betterEndfieldNext.status();
 // status: { connected, module }
 // 页面销毁前取消监听：unsubscribe();
 ```
@@ -140,7 +140,7 @@ const status = await window.betterEndfield.status();
 {"kind":"event","body":{"type":"counter","value":1}}
 ```
 
-Host 将页面固定绑定到自己的模块身份，网页传入的 `module_id` 不能选择其他模块。身份验证 token 保存在应用和 Host 配置中，不交给网页。作者只需要使用上述桥，不需要自行连接 loopback HTTP 或实现运输协议 `better-endfield.module-ui.v1`。
+Host 将页面固定绑定到自己的模块身份，网页传入的 `module_id` 不能选择其他模块。身份验证 token 保存在应用和 Host 配置中，不交给网页。作者只需要使用上述桥，不需要自行连接 loopback HTTP 或实现运输协议 `better-endfield-next.module-ui.v1`。
 
 配置可在游戏离线时保存，下次连接使用最新持久化配置。UI-only 模块的状态为 `ui_only`，发送原生消息会失败。页面关闭不等于停用原生模块。网页请求超时为 15 秒；Host 队列有容量限制，消息与事件不持久化，作者需要明确自己的业务重试方式。当前没有主题/语言启动事件和面向作者的统一游戏主线程任务 API；页面需要自行处理布局和业务调度。
 
@@ -189,7 +189,7 @@ cmake --build build/echo-android --config Release
 ./tools/ThirdPartyModules/BuildSdk.ps1 -Build
 ```
 
-脚本导出 `BetterEndfield-Echo-1.0.0-Dual.zip` 和 `BetterEndfield-ThirdPartySDK-1.0.0.zip`。SDK 包含三份公开头文件、本指南、完整 Echo 工程、双端原生库及完整导入 ZIP；不包含用户配置、安装索引或身份验证 token。作品分发时只需发布你的模块 ZIP，无需打包整个 SDK。
+脚本导出 `BetterEndfieldNext-Echo-1.0.0-Dual.zip` 和 `BetterEndfieldNext-ThirdPartySDK-1.0.0.zip`。SDK 包含三份公开头文件、本指南、完整 Echo 工程、双端原生库及完整导入 ZIP；不包含用户配置、安装索引或身份验证 token。作品分发时只需发布你的模块 ZIP，无需打包整个 SDK。
 
 ## 发布前验证
 

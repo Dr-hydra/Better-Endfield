@@ -36,8 +36,8 @@
 | 文档 | 用途 | 状态 | 游戏版本 |
 | --- | --- | --- | --- |
 | [Runtime B handoff — 2026-10-03](../../native/modules/custom_model/model_runtime_notes.md) | 线程/身份/所有权、晚间回归修复和逐纹理解码追加记录 | 历史过程 | 1.5.3 |
-| [README.betterendfield.md](../../native/shared/third_party/astcenc/README.betterendfield.md) | astcenc5.2.0固定commit、未修改上游及本地解码接口 | 来源/证据 | not_applicable |
-| [README.betterendfield.md](../../native/shared/third_party/bcdec/README.betterendfield.md) | bcdec0.98固定commit、双许可与本地未修改声明 | 来源/证据 | not_applicable |
+| [README.betterendfieldnext.md](../../native/shared/third_party/astcenc/README.betterendfieldnext.md) | astcenc5.2.0固定commit、未修改上游及本地解码接口 | 来源/证据 | not_applicable |
+| [README.betterendfieldnext.md](../../native/shared/third_party/bcdec/README.betterendfieldnext.md) | bcdec0.98固定commit、双许可与本地未修改声明 | 来源/证据 | not_applicable |
 | [CustomModel 历史研究归档](../../research/custom-model/README.md) | 旧实现迁移位置、相对结构及仍用probe/convert_efmi_poc边界 | 历史过程 | 1.5.3 |
 | [BEMv1 创作工具与源模型校验](../../tools/CustomModel/README.md) | CLI/Blender/资料parser/样本入口与历史能力导航 | 维护参考 | 1.5.3 |
 | [BEM Blender exporter](../../tools/CustomModel/blender_addon/README.md) | Blender导出可编辑工程、显式对象契约与快速使用 | 维护参考 | 1.5.3 |

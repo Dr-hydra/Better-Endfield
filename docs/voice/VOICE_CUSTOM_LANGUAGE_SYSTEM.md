@@ -161,7 +161,7 @@ else     GetVoicePath(path, out voPath, devStage)                       // 内�
   `GetCurrentLanguage`。即官方系统若启用,被切语言的角色会出现"日语音频 + 中文时长/口型"的错位——
   除非补丁层同时改这两处。这与 mod 需要自行路由时长与口型的现状一致。
 
-## 7. 对 Better Endfield 的影响与机会
+## 7. 对 Better Endfield Next 的影响与机会
 
 ### 7.1 风险与适配
 

@@ -126,7 +126,7 @@ python -m unittest discover -s tools/CustomModel -p "test_*.py" -v
 
 ## 佩丽卡游戏管线测试入口
 
-**程序目录与 catalog 目录不同。** 当前启动器使用 `%LOCALAPPDATA%\BetterEndfield\catalog` 作为 catalog 根目录。DLL/模块 INI 放在程序目录的 `modules`，模型包与角色配置必须放到 catalog，不能只复制到程序目录。
+**程序目录与 catalog 目录不同。** 当前启动器使用 `%LOCALAPPDATA%\BetterEndfieldNext\catalog` 作为 catalog 根目录。DLL/模块 INI 放在程序目录的 `modules`，模型包与角色配置必须放到 catalog，不能只复制到程序目录。
 
 在 Host 的 catalog 根目录下放置：
 
@@ -151,16 +151,16 @@ target=pelica
 
 本轮验证：DLL 编译通过；11 项假 Host 生命周期场景通过（含角色隔离、组件身份、刷新和回滚），并通过生产 BEM 加载器读取实际佩丽卡几何包。这些检查不执行 Unity 顶点上传或游戏渲染，实机显示、骨骼语义及展示界面仍待验收。当前 C0/C1/C9 已恢复 12 字节原始流，材质近似包尚待实机验收。
 
-分支测试装配目录：`artifacts/pelica-research/runtime-stage/`，含 `modules/BetterEndfield.CustomModel.dll` 及上述 `custom-model/` 文件。部署时 `modules` 复制到程序目录，`custom-model` 复制到实际 catalog 根目录。
+分支测试装配目录：`artifacts/pelica-research/runtime-stage/`，含 `modules/BetterEndfieldNext.CustomModel.dll` 及上述 `custom-model/` 文件。部署时 `modules` 复制到程序目录，`custom-model` 复制到实际 catalog 根目录。
 
-2026-09-15 部署修正：已更新指定程序目录 `artifacts/BetterEndfield-win-x64/modules`，并将佩丽卡包和 `runtime.ini` 安装到 `%LOCALAPPDATA%\BetterEndfield\catalog\custom-model`。此前只复制到程序目录导致配置未读取，日志确认加载了旧管理员包（11 部件、24 贴图）。修正后用运行时同款 Windows INI API 读回 `target=pelica`。角色配置仅在初始化时读取，需重启游戏才能生效，实机效果仍待验证。
+2026-09-15 部署修正：已更新指定程序目录 `artifacts/BetterEndfieldNext-win-x64/modules`，并将佩丽卡包和 `runtime.ini` 安装到 `%LOCALAPPDATA%\BetterEndfieldNext\catalog\custom-model`。此前只复制到程序目录导致配置未读取，日志确认加载了旧管理员包（11 部件、24 贴图）。修正后用运行时同款 Windows INI API 读回 `target=pelica`。角色配置仅在初始化时读取，需重启游戏才能生效，实机效果仍待验证。
 
 
 ### 本轮验证与部署
 
 15 项 Python 测试、11 项假 Host 生命周期场景（新增私有材质隔离和恢复）、Release DLL 构建、实际材质包生产解析通过。测试不等于 Unity GPU 渲染验收。新默认文件名是 `pelica-lod0-native-materials.bempoc`，需要同时更新 DLL 和 catalog 包，并重启游戏。F12 应用后应检查成功部件数和 `Textures: installed=...`（具体日志以运行时为准），F11 检查恢复。
 
-第二版已同步至指定程序目录的 DLL 与 `%LOCALAPPDATA%\BetterEndfield\catalog\custom-model` 的新包，覆盖前备份于分支研究目录 deployment-backups。管理员样本输出与原基线逐字节一致（56,182,760 字节）。
+第二版已同步至指定程序目录的 DLL 与 `%LOCALAPPDATA%\BetterEndfieldNext\catalog\custom-model` 的新包，覆盖前备份于分支研究目录 deployment-backups。管理员样本输出与原基线逐字节一致（56,182,760 字节）。
 
 
 ## 双角色双路径实验

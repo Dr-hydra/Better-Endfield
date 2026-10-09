@@ -1,4 +1,4 @@
-#include "BetterEndfield/ThirdPartyModule.h"
+#include "BetterEndfieldNext/ThirdPartyModule.h"
 #include <string>
 namespace {
 const BE_ThirdPartyHostV1* host=nullptr;
@@ -23,7 +23,7 @@ void BE_CALL Shutdown(){host=nullptr;}
 const BE_ThirdPartyModuleV1 api{sizeof(BE_ThirdPartyModuleV1),1,"example.echo",Initialize,Configure,Message,Shutdown};
 }
 #if defined(__ANDROID__)
-extern "C" __attribute__((visibility("default"))) const BE_ThirdPartyModuleV1* BetterEndfield_GetThirdPartyModuleV1(){return &api;}
+extern "C" __attribute__((visibility("default"))) const BE_ThirdPartyModuleV1* BetterEndfieldNext_GetThirdPartyModuleV1(){return &api;}
 #else
-BE_EXPORT const BE_ThirdPartyModuleV1* BE_CALL BetterEndfield_GetThirdPartyModuleV1(){return &api;}
+BE_EXPORT const BE_ThirdPartyModuleV1* BE_CALL BetterEndfieldNext_GetThirdPartyModuleV1(){return &api;}
 #endif

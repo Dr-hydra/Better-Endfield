@@ -13,7 +13,7 @@
 #include <optional>
 #include <charconv>
 
-namespace BetterEndfield::CustomModel {
+namespace BetterEndfieldNext::CustomModel {
 struct BemSelectionMetadata {
     nlohmann::json manifest,parameters;
 };

@@ -4,7 +4,7 @@
 #include <locale>
 #include <sstream>
 
-namespace BetterEndfield::CameraPath {
+namespace BetterEndfieldNext::CameraPath {
 inline constexpr size_t MaxKeys = 64, MaxFileBytes = 65536;
 struct Key {
     Vmd::Vec3 position;
@@ -117,4 +117,4 @@ inline bool Sample(const Path& path, double seconds, Key& output, bool& finished
     output.fov = Vmd::Mix(b.fov,c.fov,t); // bounded linear FOV, no spline overshoot
     return true;
 }
-} // namespace BetterEndfield::CameraPath
+} // namespace BetterEndfieldNext::CameraPath

@@ -1,13 +1,13 @@
 #include "settings_store.h"
 
-#include "BetterEndfield/BootstrapConfig.h"
+#include "BetterEndfieldNext/BootstrapConfig.h"
 
 #include <Windows.h>
 
 #include <array>
 #include <cstring>
 
-namespace BetterEndfield::Host {
+namespace BetterEndfieldNext::Host {
 namespace {
 
 std::filesystem::path GetLocalAppDataRoot() {
@@ -17,7 +17,7 @@ std::filesystem::path GetLocalAppDataRoot() {
     if (size == 0 || size >= buffer.size()) {
         return {};
     }
-    return std::filesystem::path(buffer.data()) / L"BetterEndfield";
+    return std::filesystem::path(buffer.data()) / L"BetterEndfieldNext";
 }
 
 std::filesystem::path ModulePathFromHandle(void* host_module) {
@@ -83,7 +83,7 @@ HostPaths SettingsStore::DiscoverPaths(void* host_module, const void* bootstrap_
     if (bootstrap_data) {
         const auto* bootstrap = static_cast<const BE_BootstrapConfigV1*>(bootstrap_data);
         if (bootstrap->size == sizeof(BE_BootstrapConfigV1) &&
-            std::memcmp(bootstrap->magic, BETTER_ENDFIELD_BOOTSTRAP_MAGIC, 9) == 0) {
+            std::memcmp(bootstrap->magic, BETTER_ENDFIELD_NEXT_BOOTSTRAP_MAGIC, 9) == 0) {
             if (bootstrap->install_root[0] != L'\0') {
                 paths.install_root = bootstrap->install_root;
                 paths.bootstrap_install_root = true;
@@ -110,7 +110,7 @@ HostPaths SettingsStore::DiscoverPaths(void* host_module, const void* bootstrap_
         paths.log_root = paths.settings_root / L"logs";
     }
     paths.modules_root = paths.install_root / L"modules";
-    paths.settings_file = paths.settings_root / L"BetterEndfield.ini";
+    paths.settings_file = paths.settings_root / L"BetterEndfieldNext.ini";
     return paths;
 }
 
@@ -125,7 +125,7 @@ bool SettingsStore::Initialize(HostPaths paths, std::string& error) {
     std::filesystem::create_directories(paths.catalog_root, filesystem_error);
     std::filesystem::create_directories(paths.log_root, filesystem_error);
     if (filesystem_error) {
-        error = "Unable to create BetterEndfield user directories.";
+        error = "Unable to create BetterEndfieldNext user directories.";
         return false;
     }
 
@@ -192,4 +192,4 @@ uint64_t SettingsStore::ChangeToken() const {
     return error ? time : time ^ (size + 0x9E3779B97F4A7C15ull);
 }
 
-} // namespace BetterEndfield::Host
+} // namespace BetterEndfieldNext::Host

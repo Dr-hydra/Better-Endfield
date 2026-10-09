@@ -20,8 +20,8 @@ inline std::wstring Wide(const std::string &s) {
   if (s.empty())
     return {};
 #if defined(__ANDROID__)
-  Require(BetterEndfield::EiemAndroid::ValidUtf8(s), "Invalid UTF-8");
-  return BetterEndfield::EiemAndroid::Utf8ToWide(s);
+  Require(BetterEndfieldNext::EiemAndroid::ValidUtf8(s), "Invalid UTF-8");
+  return BetterEndfieldNext::EiemAndroid::Utf8ToWide(s);
 #else
   const int n = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, s.data(),
                                     int(s.size()), nullptr, 0);
@@ -134,7 +134,7 @@ public:
     }
     Require(n % 2 == 0, "Odd UTF-16 PMX text length");
 #if defined(__ANDROID__)
-    const auto decoded = BetterEndfield::EiemAndroid::DecodeUtf16LE(bytes.data() + p, size_t(n));
+    const auto decoded = BetterEndfieldNext::EiemAndroid::DecodeUtf16LE(bytes.data() + p, size_t(n));
     Require(!decoded.empty() && decoded.find('\0') == std::string::npos,
             "Invalid UTF-16 in PMX");
     return decoded;

@@ -1,4 +1,4 @@
-#include "BetterEndfield/ModuleApi.h"
+#include "BetterEndfieldNext/ModuleApi.h"
 
 #include <cstdint>
 
@@ -33,10 +33,10 @@ static uint64_t GetTickCount64() {
 #include <utility>
 #include <vector>
 
-namespace BetterEndfield::Model {
+namespace BetterEndfieldNext::Model {
 namespace {
 
-constexpr char kModuleId[] = "betterendfield.model";
+constexpr char kModuleId[] = "betterendfieldnext.model";
 constexpr uint8_t kMainCategory = 0;
 constexpr size_t kClipCount = 4;
 constexpr float kVerticalFollowResponseSeconds = 0.45f;
@@ -3879,9 +3879,9 @@ bool BuildPlayableGraph(void* animator, void* clip, double speed, bool loop,
     mixer = {};
     PlayableData output{};
     void* graph_name = g_host->string_new(g_host->context,
-        "Better Endfield Login Animation");
+        "Better Endfield Next Login Animation");
     void* output_name = g_host->string_new(g_host->context,
-        "Better Endfield Login Output");
+        "Better Endfield Next Login Output");
     if (!graph_name || !output_name) {
         return false;
     }
@@ -5059,7 +5059,7 @@ void StopHooks() {
 }
 
 BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
-    if (!host || host->abi_version != BETTER_ENDFIELD_MODULE_ABI_V1 ||
+    if (!host || host->abi_version != BETTER_ENDFIELD_NEXT_MODULE_ABI_V1 ||
         !host->resolve_method || !host->resolve_field || !host->resolve_class ||
         !host->create_hook || !host->release_module_hooks || !host->runtime_invoke ||
         !host->object_unbox || !host->object_new || !host->string_new ||
@@ -5131,14 +5131,14 @@ void BE_CALL Shutdown() {
 }
 
 const BE_ModuleApiV1 kApi{
-    {kModuleId, "Login Model", "3.1.1", BETTER_ENDFIELD_MODULE_ABI_V1},
+    {kModuleId, "Login Model", "3.1.1", BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
     &Initialize,
     &ConfigurationChanged,
     &Shutdown};
 
 } // namespace
-} // namespace BetterEndfield::Model
+} // namespace BetterEndfieldNext::Model
 
-BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfield_GetModuleApiV1() {
-    return &BetterEndfield::Model::kApi;
+BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfieldNext_GetModuleApiV1() {
+    return &BetterEndfieldNext::Model::kApi;
 }

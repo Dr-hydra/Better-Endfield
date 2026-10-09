@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <limits>
-using namespace BetterEndfield::Actions;
+using namespace BetterEndfieldNext::Actions;
 #define CHECK(x) do { if (!(x)) { std::fprintf(stderr, "line %d: %s\n", __LINE__, #x); std::exit(1); } } while (false)
 int main() {
     Frame replay;
@@ -75,7 +75,7 @@ int main() {
     CHECK(!IsTargetHide(kAglinaPropHide, 11, 0, true, 2.4f));
     CHECK(!IsTargetHide(kAglinaPropHide, 11, 0, false, 1.4f));
     CHECK(!IsTargetHide(kAglinaPropHide, 11, 0, false, std::numeric_limits<float>::quiet_NaN()));
-    using BetterEndfield::Host::SameTypeText;
+    using BetterEndfieldNext::Host::SameTypeText;
     CHECK(SameTypeText("Outer/Inner", "Outer.Inner"));
     CHECK(!SameTypeText("Outer+Inner", "Outer.Inner&"));
     CHECK(!SameTypeText(nullptr, "System.Int32"));

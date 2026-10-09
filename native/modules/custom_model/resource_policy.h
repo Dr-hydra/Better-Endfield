@@ -3,7 +3,7 @@
 #include <span>
 #include <string_view>
 
-namespace BetterEndfield::CustomModel {
+namespace BetterEndfieldNext::CustomModel {
 constexpr bool EffectiveLodEnabled(bool has_enabled_mod, bool standalone_enabled) {
     return has_enabled_mod || standalone_enabled;
 }

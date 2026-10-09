@@ -13,8 +13,8 @@ flags=(-std=c++20 -pthread -g -I"$A" -I"$S" -I"$S/include" -Inative/tests/androi
 "$BUILD/hooks"
 "$CXX" "${flags[@]}" native/tests/android_rebuild/runtime_test.cpp "$A/core/runtime.cpp" native/tests/android_rebuild/log_stub.cpp -ldl -o "$BUILD/runtime"
 "$BUILD/runtime"
-javac -d "$BUILD/classes" "$A/../java/dev/betterendfield/android/RuntimeSnapshot.java" native/tests/android_rebuild/snapshot_test.java
-java -ea -cp "$BUILD/classes" dev.betterendfield.android.SnapshotTest
+javac -d "$BUILD/classes" "$A/../java/dev/betterendfield/next/RuntimeSnapshot.java" native/tests/android_rebuild/snapshot_test.java
+java -ea -cp "$BUILD/classes" dev.betterendfield.next.SnapshotTest
 "$CXX" "${flags[@]}" -fPIC -shared -I"$JAVA_HOME/include" -I"$JAVA_HOME/include/linux" native/tests/android_rebuild/jni_test.cpp -o "$BUILD/libjni-isolation.so"
 javac -d "$BUILD/game" native/tests/android_rebuild/Loader.java
 javac -d "$BUILD/module" native/tests/android_rebuild/Bridge.java

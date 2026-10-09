@@ -15,7 +15,7 @@ struct MetadataApi {
   bool Ready() const { return objectClass && classMethods && methodName && paramCount && paramType && returnType && typeName && valueType && freeMemory; }
   bool Load() {
 #if !defined(BE_EIEM_ANDROID_OFFLINE_TEST)
-    void* image = betterendfield::OpenLoadedIl2Cpp();
+    void* image = betterendfieldnext::OpenLoadedIl2Cpp();
     if (!image) return false;
 #define EIEM_META(member, name) member = reinterpret_cast<decltype(member)>(dlsym(image, name))
 #else
@@ -523,7 +523,7 @@ bool ClothRestore() {
   return complete;
 }
 void CaptureCloth(const std::vector<Pin>& nodes) {
-  if (options.cloth == BetterEndfield::EiemBody::ClothMode::Game || !host->resolve_class) return;
+  if (options.cloth == BetterEndfieldNext::EiemBody::ClothMode::Game || !host->resolve_class) return;
   BE_ResolvedClassV1 klass{};
   if (host->resolve_class(host->context, "BeyondDynamicBone.dll", "BeyondDynamicBone", "BeyondBoneCloth", &klass) != BE_Result_Ok || !klass.type_object) {
     Log("cloth class unavailable"); return;
@@ -557,7 +557,7 @@ void CaptureCloth(const std::vector<Pin>& nodes) {
         Log("cloth original state unreadable; component left under game control"); continue;
       }
       if (!metadata.setField && (item.propertyWeight != item.weight || item.propertyRatio != item.ratio) &&
-          options.cloth == BetterEndfield::EiemBody::ClothMode::Stable) {
+          options.cloth == BetterEndfieldNext::EiemBody::ClothMode::Stable) {
         Log("cloth stable unavailable: distinct property/serialize originals require field_set_value export"); continue;
       }
       // The PC service parks non-humanoid cloth roots at their Avatar pose.
@@ -596,10 +596,10 @@ void ApplyCloth() {
   for (auto& item : cloth) {
     if (!Alive(item.object.object)) continue;
     item.changed = true;
-    if (options.cloth == BetterEndfield::EiemBody::ClothMode::Freeze) {
+    if (options.cloth == BetterEndfieldNext::EiemBody::ClothMode::Freeze) {
       bool value = false;
       if (!Set(SetEnabled, item.object.object, &value)) Log("cloth freeze failed");
-    } else if (options.cloth == BetterEndfield::EiemBody::ClothMode::Stable) {
+    } else if (options.cloth == BetterEndfieldNext::EiemBody::ClothMode::Stable) {
       item.changedNumeric = true;
       float weight = 1, ratio = 0;
       void* weightArgs[] = {&weight}; void* ratioArgs[] = {&ratio};

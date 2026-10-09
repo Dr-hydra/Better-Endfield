@@ -1,4 +1,4 @@
-// Local file playback for BetterEndfield/LocalMusic.h. One Media Foundation
+// Local file playback for BetterEndfieldNext/LocalMusic.h. One Media Foundation
 // decoder thread converts the file to the Wwise output rate and feeds the same
 // Audio Input ring as OmniMix; PumpLocalMusicPolicy() on the game's main thread
 // owns every Wwise call. Included inside the module's anonymous namespace.

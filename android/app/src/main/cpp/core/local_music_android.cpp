@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cstring>
 #include <cmath>
-namespace betterendfield {
+namespace betterendfieldnext {
 namespace {
 JavaVM* java_vm = nullptr;
 jclass bridge = nullptr;

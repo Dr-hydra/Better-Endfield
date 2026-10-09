@@ -14,7 +14,7 @@
 #include <string>
 #include <string_view>
 
-namespace BetterEndfield::CustomModel::Win32Overlay {
+namespace BetterEndfieldNext::CustomModel::Win32Overlay {
 inline std::wstring Wide(std::string_view text) {
     if(text.empty()) return {};const int count=MultiByteToWideChar(CP_UTF8,0,text.data(),static_cast<int>(text.size()),nullptr,0);
     std::wstring out(static_cast<size_t>(count),L'\0');
@@ -45,10 +45,10 @@ public:
         Gdiplus::GdiplusStartupInput input;
         if(Gdiplus::GdiplusStartup(&token_,&input,nullptr)!=Gdiplus::Ok) return false;
         WNDCLASSEXW wc{sizeof(wc)};wc.hInstance=instance;wc.lpfnWndProc=Proc;
-        wc.hCursor=LoadCursorW(nullptr,IDC_ARROW);wc.lpszClassName=L"BetterEndfield.ModelOverlay.Window";
+        wc.hCursor=LoadCursorW(nullptr,IDC_ARROW);wc.lpszClassName=L"BetterEndfieldNext.ModelOverlay.Window";
         RegisterClassExW(&wc);
         handle=CreateWindowExW(WS_EX_LAYERED|WS_EX_TOOLWINDOW|WS_EX_NOACTIVATE,wc.lpszClassName,
-            L"Better Endfield Models",WS_POPUP,0,0,static_cast<int>(width),static_cast<int>(height),nullptr,nullptr,instance,this);
+            L"Better Endfield Next Models",WS_POPUP,0,0,static_cast<int>(width),static_cast<int>(height),nullptr,nullptr,instance,this);
         if(!handle) return false;SetTimer(handle,1,50,nullptr);return true;
     }
     ~Window() {
@@ -140,5 +140,5 @@ private:
     bool dragging_=false;
     POINT position_{};
 };
-} // namespace BetterEndfield::CustomModel::Win32Overlay
+} // namespace BetterEndfieldNext::CustomModel::Win32Overlay
 #endif

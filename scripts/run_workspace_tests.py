@@ -23,7 +23,7 @@ KINDS = {"static", "offline", "simulation", "game", "device"}
 CATALOG_STATUSES = {"active", "version_limited", "replaced", "retired"}
 RESULT_STATUSES = ("passed", "failed", "skipped", "blocked", "not_run")
 ENTRY_TYPES = {"python_unittest", "python_script", "native", "ctest", "catalog_only"}
-SOURCE_SCOPES = ("native", "android/app/src", "tools/CustomModel", "tools/FirstPersonProfiles", "scripts", "config", "ui")
+SOURCE_SCOPES = ("native", "android/app/src", "tools/CustomModel", "scripts", "config", "ui")
 SOURCE_SUFFIXES = {".c", ".cc", ".cpp", ".h", ".hpp", ".java", ".cs", ".py", ".ps1", ".sh", ".js", ".cmake", ".csproj", ".props"}
 
 

@@ -70,7 +70,7 @@ void PumpAndroidPcMouseDiagnostics() {
     }
     if (!g_pc_ui_enabled.load(std::memory_order_acquire) ||
         !g_diagnostics_enabled.load(std::memory_order_relaxed) ||
-        !betterendfield::AndroidForeground()) return;
+        !betterendfieldnext::AndroidForeground()) return;
     const uint64_t now = GetTickCount64();
     if (now < state.next_sample_tick) return;
     state.next_sample_tick = now + 250;
@@ -123,7 +123,7 @@ void PumpAndroidPcMouseDiagnostics() {
     state.last_lock_state = have_lock ? lock_state : -1;
     state.last_visible = cursor_visible;
     state.next_report_tick = now + 5000;
-    const auto relative = betterendfield::InspectAndroidPcMouse();
+    const auto relative = betterendfieldnext::InspectAndroidPcMouse();
     char buffer[850];
     std::snprintf(buffer, sizeof(buffer),
         "Android PC mouse: lock=%d, visible=%d, position=(%.1f,%.1f)%s, screen=%dx%d%s, "

@@ -1,4 +1,4 @@
-package dev.betterendfield.android;
+package dev.betterendfield.next;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -299,7 +299,7 @@ public final class BemPackageStateTest {
         JSONObject corrupt=new JSONObject(first.toString()).put("selected_parameters","size:821");
         rejects(()->BemInstalledResources.prepare(game,new JSONArray().put(corrupt).toString(),source,message->{},true,true,false),"Skip validation bypassed parameter wire validation");
         check(opened.size()==2,"Invalid parameter opened payload before validation");
-        byte[] original=Files.readAllBytes(new File(game.root,"betterendfield/installed-models/"+first.getString("generation")+".bem").toPath());
+        byte[] original=Files.readAllBytes(new File(game.root,"betterendfieldnext/installed-models/"+first.getString("generation")+".bem").toPath());
         check(java.util.Arrays.equals(original,new byte[4]),"Runtime materialization rewrote package payload");
         System.out.println("PASS BEM 1.3 defaults, atomic saves, hidden weights, upgrades, runtime payload preservation and selection updates");
     }
@@ -322,7 +322,7 @@ public final class BemPackageStateTest {
         BemInstaller.saveAll(app,new JSONArray().put(change(installed,"parameters",BemParameters.encode(weights))));
         String config=BemInstalledResources.prepare(app,BemInstaller.index(app).toString(),name->new ByteArrayInputStream(bytes),message->{},false,true,false);
         check(config.contains(";parameters="+BemParameters.encode(weights)),"Real package selection not handed to native configuration");
-        File copied=new File(app.root,"betterendfield/installed-models/"+installed.getString("generation")+".bem");
+        File copied=new File(app.root,"betterendfieldnext/installed-models/"+installed.getString("generation")+".bem");
         check(java.util.Arrays.equals(bytes,Files.readAllBytes(copied.toPath())),"Materialization altered real 1.3 manifest or deformation payload");
         System.out.println("PASS real BEM 1.3 manifest/deformation bytes preserved through installed index and private materialization ("+bytes.length+" bytes)");
     }

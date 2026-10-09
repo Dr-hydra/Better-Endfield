@@ -6,8 +6,8 @@
 
 | 文档 | 用途 | 状态 | 游戏版本 |
 | --- | --- | --- | --- |
-| [Better Endfield Display Pipeline](DISPLAY_PIPELINE.md) | UI部署/配置层显示增强、代理槽位和依赖策略 | 维护参考 | not_applicable |
-| [Better Endfield 移动端 UI / 云游戏与触控交互逆向接口文档](MOBILE_UI_REVERSING.md) | 移动UI/触控/平台判定接口研究及启用路径 | 维护参考 | 1.5.3 |
+| [Better Endfield Next Display Pipeline](DISPLAY_PIPELINE.md) | UI部署/配置层显示增强、代理槽位和依赖策略 | 维护参考 | not_applicable |
+| [Better Endfield Next 移动端 UI / 云游戏与触控交互逆向接口文档](MOBILE_UI_REVERSING.md) | 移动UI/触控/平台判定接口研究及启用路径 | 维护参考 | 1.5.3 |
 | [WebView2 → Toy 技术验证（2026-09-14）](webview2-toy-probe.md) | WebView2→Toy手动验证、协议v1及正式接入缺口 | 研究/提案 | not_applicable |
 
 ## 研究与阶段记录
@@ -22,4 +22,4 @@
 
 | 文档 | 用途 | 状态 | 游戏版本 |
 | --- | --- | --- | --- |
-| [Better Endfield UI](../../ui/BetterEndfield.UI/README.md) | WinUI职责、资源布局、界面与构建说明 | 维护参考 | not_applicable |
+| [Better Endfield Next UI](../../ui/BetterEndfieldNext.UI/README.md) | WinUI职责、资源布局、界面与构建说明 | 维护参考 | not_applicable |

@@ -4,7 +4,7 @@
 
 ## 工作区与配置
 
-- 新工作区为 `F:\Better Endfield`，整理分支为 `chore/workspace-reorganization`。`F:\Better Endfield_legacy` 是完整回退资料，不把它当作可清理缓存。
+- 新工作区为 `F:\Better Endfield Next`，整理分支为 `chore/workspace-reorganization`。`F:\Better Endfield_legacy` 是完整回退资料，不把它当作可清理缓存。
 - `F:\zmd` 不参与本次整理。BEM 转换已经结束，仅保留经验与后续指定包修复资料。
 - 可变路径、工具选择、采集参数、输入选择和版本兼容资料走配置；格式定义、ABI 和边界约束仍由代码保证。
 - 使用仓库默认配置、本机覆盖配置和显式命令行参数。默认配置可跟踪，本机配置、私有参数和凭据不进入 Git。路径优先相对工作区根目录。
@@ -23,7 +23,7 @@
     "toolchains": "toolchains"
   },
   "test": {
-    "be_install_dir": "E:\\Better Endfield"
+    "be_install_dir": "E:\\Better Endfield Next"
   }
 }
 ```

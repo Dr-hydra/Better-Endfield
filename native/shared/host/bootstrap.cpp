@@ -1,4 +1,4 @@
-#include "BetterEndfield/BootstrapConfig.h"
+#include "BetterEndfieldNext/BootstrapConfig.h"
 
 #include "host_runtime.h"
 
@@ -16,7 +16,7 @@ bool g_has_bootstrap = false;
 // The Host is pinned and lives until process termination. Keeping this as a
 // raw process-lifetime pointer prevents C++ static teardown from invoking
 // Wwise, MinHook, or FreeLibrary while Windows holds the loader lock.
-BetterEndfield::Host::HostRuntime* g_runtime = nullptr;
+BetterEndfieldNext::Host::HostRuntime* g_runtime = nullptr;
 
 void WriteAttachMarker(const wchar_t* message) {
     wchar_t local_app_data[32768]{};
@@ -27,7 +27,7 @@ void WriteAttachMarker(const wchar_t* message) {
         return;
     }
     std::wstring directory(local_app_data);
-    directory += L"\\BetterEndfield\\logs";
+    directory += L"\\BetterEndfieldNext\\logs";
     CreateDirectoryW((directory.substr(0, directory.find_last_of(L'\\'))).c_str(), nullptr);
     CreateDirectoryW(directory.c_str(), nullptr);
     const std::wstring path = directory + L"\\host-attach.marker";
@@ -64,7 +64,7 @@ DWORD WINAPI HostThread(void*) {
     WriteAttachMarker(L"Host pinned for process lifetime");
 
     const void* bootstrap = g_has_bootstrap ? &g_bootstrap : nullptr;
-    g_runtime = new (std::nothrow) BetterEndfield::Host::HostRuntime(
+    g_runtime = new (std::nothrow) BetterEndfieldNext::Host::HostRuntime(
         g_host_module, bootstrap);
     if (!g_runtime) {
         WriteAttachMarker(L"Host runtime allocation failed");
@@ -95,7 +95,7 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved) {
         __try {
             const auto* candidate = static_cast<const BE_BootstrapConfigV1*>(reserved);
             if (candidate->size == sizeof(BE_BootstrapConfigV1) &&
-                std::memcmp(candidate->magic, BETTER_ENDFIELD_BOOTSTRAP_MAGIC, 9) == 0) {
+                std::memcmp(candidate->magic, BETTER_ENDFIELD_NEXT_BOOTSTRAP_MAGIC, 9) == 0) {
                 std::memcpy(&g_bootstrap, candidate, sizeof(g_bootstrap));
                 g_has_bootstrap = true;
             }

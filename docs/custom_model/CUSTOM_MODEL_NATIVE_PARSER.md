@@ -49,13 +49,13 @@
 从开发工作树运行，下面 `$backend`、`$unpacker`、`$resconv` 应指向本机已有工具：
 
 ```powershell
-python tools/CustomModel/prepare_native_backend.py --source 'E:\Dr.Hydra\Better Endfield\tools\EndfieldStudio' --output artifacts/native-parser/backend-source
+python tools/CustomModel/prepare_native_backend.py --source 'E:\Dr.Hydra\Better Endfield Next\tools\EndfieldStudio' --output artifacts/native-parser/backend-source
 dotnet build artifacts/native-parser/backend-source/AnimeStudio/AnimeStudio.csproj -c Release -f net8.0 -p:CopyLocalLockFileAssemblies=true -o artifacts/native-parser/backend
 $backend = (Resolve-Path artifacts/native-parser/backend).Path
 dotnet build tools/CustomModel/NativeAssetReader/NativeAssetReader.csproj -c Release "-p:AnimeStudioDir=$backend" -o artifacts/native-parser/reader-fixed
 
-$unpacker = 'E:\Dr.Hydra\Better Endfield\tools\EndfieldUnpacker'
-$resconv = 'E:\Dr.Hydra\Better Endfield\tools\FkArkEnd\ResConv\bin\Release\net10.0\ResConv.exe'
+$unpacker = 'E:\Dr.Hydra\Better Endfield Next\tools\EndfieldUnpacker'
+$resconv = 'E:\Dr.Hydra\Better Endfield Next\tools\FkArkEnd\ResConv\bin\Release\net10.0\ResConv.exe'
 python tools/CustomModel/extract_native_bundles.py --game 'E:\Endfield Game' --character chr_0030_zhuangfy --unpacker $unpacker --resconv $resconv --output artifacts/native-parser/zhuangfangyi-inputs
 
 dotnet artifacts/native-parser/reader-fixed/NativeAssetReader.dll artifacts/native-parser/zhuangfangyi-inputs artifacts/native-parser/zhuangfangyi-raw.json

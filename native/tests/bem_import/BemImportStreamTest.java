@@ -1,4 +1,4 @@
-package dev.betterendfield.android;
+package dev.betterendfield.next;
 
 import java.io.*;
 import java.util.Arrays;

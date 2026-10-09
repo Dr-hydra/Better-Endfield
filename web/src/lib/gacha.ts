@@ -3,7 +3,7 @@ import type { GachaWebSnapshot } from "../types";
 
 const PREFIX = "gacha:v";
 const CURRENT_SCHEMA_VERSION = 1;
-const SNAPSHOT_KIND = "betterendfield.gacha";
+const SNAPSHOT_KIND = "betterendfieldnext.gacha";
 const MAX_FRAGMENT_CHARS = 64 * 1024;
 
 function fromBase64Url(value: string): Uint8Array {

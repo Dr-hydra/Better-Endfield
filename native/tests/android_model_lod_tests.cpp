@@ -1,5 +1,5 @@
 // Exercise the exact Android LodState and pump entry without Unity or a device.
-#include "BetterEndfield/ModuleApi.h"
+#include "BetterEndfieldNext/ModuleApi.h"
 #include "../modules/custom_model/mod_registry.h"
 #include <algorithm>
 #include <array>
@@ -15,11 +15,11 @@ Pipeline* current_pipeline=nullptr;
 unsigned quality_reads=0,quality_writes=0,static_accesses=0,checks=0;
 void Check(bool ok,const char* why) {++checks;if (!ok) throw std::runtime_error(why);}
 }
-namespace betterendfield {
+namespace betterendfieldnext {
 bool AndroidPipelineLodEnabled() {return pipeline_config;}
 bool AndroidNpcParametersEnabled() {return false;}
 }
-namespace BetterEndfield::CustomModel {
+namespace BetterEndfieldNext::CustomModel {
 struct Float2 {float x,y;};
 struct WeakManagedReference {
     void* object=nullptr;
@@ -75,7 +75,7 @@ template<class T> bool InvokeValue(const char* key,void*,void**,T& value) {
 
 int main() {
     try {
-        using namespace BetterEndfield::CustomModel;
+        using namespace BetterEndfieldNext::CustomModel;
         for (const int route:{0,1,2}) {
             const bool explicit_resource=route!=0,static_mesh=route==2;
             const std::array<ComponentIdentity,1> identities{{{"synthetic_mobile_lod1",6,"Mesh_all/lod1/part",static_mesh}}};

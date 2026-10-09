@@ -8,8 +8,8 @@
 #include <cstring>
 #include <cstdlib>
 #include <iostream>
-using namespace betterendfield;
-namespace betterendfield {
+using namespace betterendfieldnext;
+namespace betterendfieldnext {
 struct Il2CppDomain{};struct Il2CppAssembly{};struct Il2CppImage{};struct Il2CppClass{};
 struct Il2CppType{const char* name;};struct FieldInfo{int flags;};struct MethodInfo{void* entry;};
 }

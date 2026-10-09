@@ -1,5 +1,5 @@
 #pragma once
-#include "BetterEndfield/HookChain.h"
+#include "BetterEndfieldNext/HookChain.h"
 #include <atomic>
 #include <cstring>
 #include <functional>
@@ -15,7 +15,7 @@
 #include <unistd.h>
 #endif
 
-namespace BetterEndfield::Hooks {
+namespace BetterEndfieldNext::Hooks {
 // RX instructions never change. Only a separate aligned, lock-free RW pointer
 // changes. Relays remain alive until process exit, including a disabled next
 // retained by a callback which entered before its module was stopped.
@@ -250,4 +250,4 @@ private:
     std::unordered_map<void*,std::unique_ptr<Target>> targets_;
     std::unordered_map<uint64_t,std::unique_ptr<Node>> nodes_;
 };
-} // namespace BetterEndfield::Hooks
+} // namespace BetterEndfieldNext::Hooks

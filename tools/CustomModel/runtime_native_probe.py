@@ -23,7 +23,7 @@ def write(path, value):
 
 def probe_catalog(workspace):
     configured=workspace.path('test.catalog_dir',required=False)
-    return configured or Path(os.environ.get('LOCALAPPDATA','.'))/'BetterEndfield/catalog/custom-model'
+    return configured or Path(os.environ.get('LOCALAPPDATA','.'))/'BetterEndfieldNext/catalog/custom-model'
 
 
 def request(database, preparation, run):
