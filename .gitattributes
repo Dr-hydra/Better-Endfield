@@ -3,3 +3,5 @@ manifests/** text eol=lf
 *.besem text eol=lf
 *.bemap text eol=lf
 *.bin binary
+# Archived source digests describe the original bytes, including mixed EOLs.
+legacy/retired-before-next/** -text
