@@ -208,7 +208,8 @@ public final class BemInstallerTest extends Instrumentation {
         assertTrue(info.exported);
         assertEquals(android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP,info.launchMode);
         android.net.Uri content=android.net.Uri.parse("content://bem.test.provider/document/123");
-        for(String mime:new String[]{"application/x-bem","application/vnd.betterendfield.bem","application/octet-stream","application/x-binary"}) {
+        for(String mime:new String[]{"application/x-bem","application/vnd.betterendfield.bem","application/octet-stream","application/x-binary",
+                "application/zip","application/x-zip-compressed","application/x-zip"}) {
             android.content.Intent view=new android.content.Intent(android.content.Intent.ACTION_VIEW)
                     .setDataAndType(content,mime).setPackage(context.getPackageName());
             assertTrue(resolvesBem(pm,view));

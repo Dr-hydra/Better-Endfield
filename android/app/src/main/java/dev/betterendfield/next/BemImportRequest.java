@@ -15,7 +15,7 @@ final class BemImportRequest {
         String action = intent.getAction();
         if (Intent.ACTION_MAIN.equals(action)) return null;
         if (!Intent.ACTION_VIEW.equals(action) && !Intent.ACTION_SEND.equals(action)) {
-            throw new IllegalArgumentException("请一次打开或分享一个 BEM 文件。 ");
+            throw new IllegalArgumentException("请一次打开或分享一个 BEM 或 ZIP 文件。");
         }
         try {
             Uri candidate = intent.getData();
@@ -31,7 +31,7 @@ final class BemImportRequest {
             ClipData clip = intent.getClipData();
             if (clip != null) {
                 if (clip.getItemCount() != 1 || clip.getItemAt(0).getUri() == null) {
-                    throw new IllegalArgumentException("请一次选择一个 BEM 文件，不支持文本或批量分享。");
+                    throw new IllegalArgumentException("请一次选择一个 BEM 或 ZIP 文件，不支持文本或批量分享。");
                 }
                 candidate = merge(candidate, clip.getItemAt(0).getUri());
             }
@@ -46,7 +46,7 @@ final class BemImportRequest {
     static Uri requireContentUri(Uri uri) {
         if (uri == null || !"content".equals(uri.getScheme()) ||
                 uri.getAuthority() == null || uri.getAuthority().isEmpty()) {
-            throw new IllegalArgumentException("请通过文件管理器分享本地 BEM 文件；不接受文件路径或网络链接。");
+            throw new IllegalArgumentException("请通过文件管理器分享本地 BEM 或 ZIP 文件；不接受文件路径或网络链接。");
         }
         return uri;
     }

@@ -326,8 +326,73 @@ public final class BemPackageStateTest {
         check(java.util.Arrays.equals(bytes,Files.readAllBytes(copied.toPath())),"Materialization altered real 1.3 manifest or deformation payload");
         System.out.println("PASS real BEM 1.3 manifest/deformation bytes preserved through installed index and private materialization ("+bytes.length+" bytes)");
     }
+    private static File importStage(App app) throws IOException {
+        File root=new File(app.root,"bem-installed");if(!root.isDirectory() && !root.mkdirs())throw new IOException("fixture root");
+        File stage=new File(root,"stage-"+UUID.randomUUID());if(!stage.mkdir())throw new IOException("fixture stage");return stage;
+    }
+    private static BemImportArchive.Item importItem(File stage,String name) throws IOException {
+        File directory=new File(stage,"package-"+UUID.randomUUID());if(!directory.mkdir())throw new IOException("fixture package");
+        BemImportArchive.Item item=new BemImportArchive.Item(name,directory);
+        Files.write(item.file.toPath(),new byte[]{'B','E','M',0,'P','K','G',0,1,2,3,4});return item;
+    }
+    private static void awaitInstaller() throws Exception {
+        long deadline=System.nanoTime()+5_000_000_000L;
+        while(BemInstaller.busy && System.nanoTime()<deadline)Thread.sleep(10);
+        check(!BemInstaller.busy,"Import worker did not finish");
+    }
+    private static void zipSelectionAndPublication() throws Exception {
+        App app=new App();JSONObject existing=entry("same",true),unrelated=entry("unrelated",true);
+        app.seed(new JSONArray().put(existing).put(unrelated));BemInstaller.index(app);
+        String previous=app.prefs.value;
+        File stage=importStage(app);BemImportArchive.Bundle archive=new BemImportArchive.Bundle(true);
+        for(String name:new String[]{"first.bem","fail.bem","other.bem","unchecked.bem","invalid.bem"})archive.packages.add(importItem(stage,name));
+        int[] inspected={0};
+        BemInstaller.PendingBundle bundle=BemInstaller.prepareImport(app,stage,archive,true,(file,skip)->{
+            check(skip,"Skip-validation choice was not latched for the collection");
+            String name=archive.packages.stream().filter(item->item.file.equals(file)).findFirst().orElseThrow().name;
+            inspected[0]++;if(name.equals("invalid.bem"))throw new IOException("fixture invalid package");
+            JSONObject report=entry(name.equals("first.bem") || name.equals("fail.bem")?"same":name,true);
+            return report.put("package_id","test."+name).put("name",name).put("bytes",file.length());
+        });
+        check(inspected[0]==5 && bundle.packages.size()==4 && bundle.issues.size()==1,"Per-package native errors did not remain reviewable");
+        check(previous.equals(app.prefs.value),"Preparation changed existing enabled packages");
+        check(FrameworkSettings.publishedBem.isEmpty(),"Preparation published before selecting packages");
+        synchronized(BemInstaller.class) {BemInstaller.busy=true;BemInstaller.pendingBundle=bundle;}
+        check(!BemInstaller.importSelected(bundle,new boolean[1]) && BemInstaller.pendingBundle==bundle,"Invalid selection consumed the review");
+        FrameworkSettings.failBemRemote=bundle.packages.get(1).report.getString("remote");
+        check(BemInstaller.importSelected(bundle,new boolean[]{true,true,true,false}),"Selected collection was not accepted");
+        check(!BemInstaller.importSelected(bundle,new boolean[]{true,true,true,false}),"Review was replayed");
+        awaitInstaller();JSONArray installed=BemInstaller.index(app);
+        JSONObject first=bundle.packages.get(0).report,failed=bundle.packages.get(1).report,other=bundle.packages.get(2).report,unchecked=bundle.packages.get(3).report;
+        check(installed.length()==4,"Batch did not retain old entries and two successful imports");
+        check(!find(installed,existing.getString("generation")).getBoolean("enabled"),"Successful import did not apply character exclusivity");
+        check(find(installed,unrelated.getString("generation")).getBoolean("enabled"),"Batch changed unrelated enabled package");
+        check(find(installed,first.getString("generation")).getBoolean("enabled"),"Later publication failure disabled successful sibling");
+        check(find(installed,other.getString("generation"))!=null && find(installed,failed.getString("generation"))==null
+                && find(installed,unchecked.getString("generation"))==null,"Failed or unselected package became installed");
+        check(FrameworkSettings.publishedBem.size()==2 && !stage.exists(),"Remote publication or staging cleanup mismatch");
+        byte[] actual=Files.readAllBytes(new File(new File(app.root,"bem-installed/"+first.getString("generation")),"installed.bem").toPath());
+        check(java.util.Arrays.equals(actual,FrameworkSettings.publishedBem.get(first.getString("remote"))),"Framework payload differs from staged BEM bytes");
+        check(BemInstaller.status.contains("成功 2 个") && BemInstaller.status.contains("未导入 1 个"),"Batch result omitted partial success");
+
+        File failedStage=importStage(app);BemImportArchive.Bundle raw=new BemImportArchive.Bundle(false);raw.packages.add(importItem(failedStage,"raw"));
+        BemInstaller.PendingBundle failedCommit=BemInstaller.prepareImport(app,failedStage,raw,false,
+                (file,skip)->entry("same",true).put("package_id","test.rollback").put("bytes",file.length()));
+        String stable=app.prefs.value;app.prefs.failNext=true;
+        rejects(()->BemInstaller.installPrepared(app,failedCommit.packages.get(0)),"Batch commit failure was accepted");
+        JSONObject rejected=failedCommit.packages.get(0).report;
+        check(stable.equals(app.prefs.value) && !FrameworkSettings.publishedBem.containsKey(rejected.getString("remote")),"Failed index commit changed selection or retained unreferenced remote payload");
+
+        File cancelledStage=importStage(app);BemImportArchive.Bundle review=new BemImportArchive.Bundle(true);review.packages.add(importItem(cancelledStage,"cancel.bem"));
+        BemInstaller.PendingBundle cancelled=BemInstaller.prepareImport(app,cancelledStage,review,false,
+                (file,skip)->entry("cancel",true).put("bytes",file.length()));
+        synchronized(BemInstaller.class) {BemInstaller.busy=true;BemInstaller.pendingBundle=cancelled;}
+        BemInstaller.cancelBundle(cancelled);awaitInstaller();
+        check(BemInstaller.pendingBundle==null && !cancelledStage.exists() && stable.equals(app.prefs.value),"Review cancellation changed index or retained staging");
+        System.out.println("PASS ZIP review, selected imports, latched validation, partial publication failure, index rollback, payload preservation and cancellation");
+    }
     public static void main(String[] args) {
-        try {coexistenceAndConversion();migrationAndImmediateSave();componentValidation();continuousParameters();runtimeDefenseAndRemoval();resourceTargets();if(args.length>0)realShapePayload(args[0]);System.out.println("PASS "+checks+" BEM package state checks");System.exit(0);}
+        try {coexistenceAndConversion();migrationAndImmediateSave();componentValidation();continuousParameters();runtimeDefenseAndRemoval();resourceTargets();if(args.length>0)realShapePayload(args[0]);zipSelectionAndPublication();System.out.println("PASS "+checks+" BEM package state checks");System.exit(0);}
         catch(Throwable error){error.printStackTrace();System.exit(1);}
     }
 }

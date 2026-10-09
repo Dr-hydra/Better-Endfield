@@ -24,6 +24,8 @@ final class BemInstallPage {
     private final Handler handler=new Handler(Looper.getMainLooper());
     private TextView status;private LinearLayout entries;private String displayed="";
     private Button importButton,cancel;
+    private android.app.AlertDialog bundleDialog;
+    private BemInstaller.PendingBundle reviewedBundle;
     private Button disableAll;
     private Spinner characterFilter;
     private String selectedCharacter="";
@@ -46,8 +48,9 @@ final class BemInstallPage {
         refreshExperiment(fastLoading,BemInstaller.FAST_LOADING);
         keepLocalCopies.setEnabled(!BemInstaller.busy);cleanUnused.setEnabled(!BemInstaller.busy);
         status.setText(BemInstaller.status);
-        root.findViewById(R.id.bem_operation_state).setVisibility(BemInstaller.busy || BemInstaller.status.contains("未完成") || BemInstaller.status.contains("失败") || BemInstaller.status.startsWith("已清理") || BemInstaller.status.contains("本地副本") ? View.VISIBLE : View.GONE);importButton.setEnabled(!BemInstaller.busy);cancel.setEnabled(BemInstaller.busy && !BemInstaller.removing);
+        root.findViewById(R.id.bem_operation_state).setVisibility(BemInstaller.busy || BemInstaller.status.contains("ZIP 导入") || BemInstaller.status.contains("未完成") || BemInstaller.status.contains("失败") || BemInstaller.status.startsWith("已清理") || BemInstaller.status.contains("本地副本") ? View.VISIBLE : View.GONE);importButton.setEnabled(!BemInstaller.busy);cancel.setEnabled(BemInstaller.busy && !BemInstaller.removing);
         incomingRetry.setEnabled(pendingImport!=null && !BemInstaller.busy);
+        reviewBundle();
         progress.setVisibility(BemInstaller.busy?View.VISIBLE:View.GONE);
         progressLabel.setVisibility(BemInstaller.busy?View.VISIBLE:View.GONE);
         cancel.setVisibility(BemInstaller.busy?View.VISIBLE:View.GONE);
@@ -56,7 +59,7 @@ final class BemInstallPage {
             progress.setIndeterminate(percent<0);
             if(percent>=0) progress.setProgress(percent);
             long seconds=(SystemClock.elapsedRealtime()-BemInstaller.startedAt)/1000;
-            progressLabel.setText((percent<0?"正在处理":"当前 mip 编码："+percent+"%")+" · 已用 "+(seconds/60)+"分"+(seconds%60)+"秒");
+            progressLabel.setText((percent<0?"正在处理":"当前进度："+percent+"%")+" · 已用 "+(seconds/60)+"分"+(seconds%60)+"秒");
         }
         String index=FrameworkSettings.open(activity).getString(BemInstaller.INDEX,"[]");
         if(!index.equals(displayed)) showEntries();
@@ -113,7 +116,8 @@ final class BemInstallPage {
             pendingImport=null;
             incoming.setVisibility(View.GONE);
         });
-        importButton.setOnClickListener(v -> activity.startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("*/*").addCategory(Intent.CATEGORY_OPENABLE),PICK));
+        importButton.setOnClickListener(v -> activity.startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("*/*")
+                .putExtra(Intent.EXTRA_TITLE,"选择 BEM 或 ZIP").addCategory(Intent.CATEGORY_OPENABLE),PICK));
         root.findViewById(R.id.bem_models_quark).setOnClickListener(v -> openModelSource("https://pan.quark.cn/s/97a9ca8f9bf2"));
         root.findViewById(R.id.bem_models_baidu).setOnClickListener(v -> openModelSource("https://pan.baidu.com/s/5ekaAiiLmZKXHZ7pHH0W-Vw"));
         root.findViewById(R.id.bem_models_katfile).setOnClickListener(v -> openModelSource("https://katfile.biz/users/hydra405/"));
@@ -267,7 +271,52 @@ final class BemInstallPage {
     }
     void resume(){active=true;handler.removeCallbacks(refresh);handler.post(refresh);}
     void pause(){active=false;handler.removeCallbacks(refresh);}
-    void close(){pause();++renderVersion;}
+    void close(){pause();++renderVersion;if(bundleDialog!=null) bundleDialog.dismiss();bundleDialog=null;reviewedBundle=null;}
+    private void reviewBundle() {
+        BemInstaller.PendingBundle bundle=BemInstaller.pendingBundle;
+        if(bundle==null) {
+            if(bundleDialog!=null) bundleDialog.dismiss();
+            bundleDialog=null;reviewedBundle=null;return;
+        }
+        if(reviewedBundle==bundle && bundleDialog!=null && bundleDialog.isShowing()) return;
+        if(bundleDialog!=null) bundleDialog.dismiss();
+        reviewedBundle=bundle;
+        ScrollView scroll=new ScrollView(activity);
+        LinearLayout options=new LinearLayout(activity);options.setOrientation(LinearLayout.VERTICAL);
+        options.setPadding(dp(16),dp(8),dp(16),dp(8));scroll.addView(options);
+        boolean[] selected=new boolean[bundle.packages.size()];
+        for(int i=0;i<selected.length;++i) {
+            int position=i;BemInstaller.PreparedPackage item=bundle.packages.get(i);
+            JSONObject report=item.report;
+            String generation=report.optString("generation");
+            selected[i]=!bundle.deselected.contains(generation);
+            CheckBox choice=new CheckBox(activity);choice.setChecked(selected[i]);choice.setMinHeight(dp(56));
+            String target=report.optString("target_id",report.optString("character_id",""));
+            choice.setText(report.optString("name",item.item.name)+" · "+target+"\n"
+                    +String.format(java.util.Locale.ROOT,"%.1f MB",item.item.file.length()/1048576.0));
+            choice.setOnCheckedChangeListener((button,checked)->{
+                selected[position]=checked;
+                if(checked) bundle.deselected.remove(generation);else bundle.deselected.add(generation);
+            });
+            options.addView(choice,new LinearLayout.LayoutParams(-1,-2));
+        }
+        if(!bundle.issues.isEmpty()) options.addView(fieldLabel("以下项未通过校验：\n"+String.join("\n",bundle.issues)));
+        bundleDialog=new android.app.AlertDialog.Builder(activity)
+                .setTitle("导入 ZIP 中的模型包")
+                .setView(scroll)
+                .setPositiveButton("导入所选",(dialog,which)->{
+                    try {BemInstaller.importSelected(bundle,selected);}
+                    catch(RuntimeException error) {showIncoming("无法开始 ZIP 导入："+error.getMessage());}
+                })
+                .setNegativeButton("取消",(dialog,which)->BemInstaller.cancelBundle(bundle))
+                .setOnCancelListener(dialog->BemInstaller.cancelBundle(bundle)).create();
+        bundleDialog.setOnShowListener(dialog->{
+            android.view.ViewGroup.LayoutParams layout=scroll.getLayoutParams();
+            layout.height=Math.min(dp(420),activity.getResources().getDisplayMetrics().heightPixels/2);
+            scroll.setLayoutParams(layout);
+        });
+        bundleDialog.show();
+    }
     private void showEntries() {
         final int version=++renderVersion;
         entries.removeAllViews();packageActions.clear();

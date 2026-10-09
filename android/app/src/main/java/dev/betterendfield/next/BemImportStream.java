@@ -16,6 +16,7 @@ final class BemImportStream {
     interface Checkpoint { void check() throws IOException; }
 
     private BemImportStream() {}
+    static boolean matchesHeader(byte[] header) { return Arrays.equals(MAGIC, header); }
 
     // Streams are owned by the caller. No provider names, filesystem paths or MIME
     // types participate in validation. Check the magic before copying a large file.
@@ -39,7 +40,7 @@ final class BemImportStream {
                 filled += count;
             }
         }
-        if (!Arrays.equals(MAGIC, header)) {
+        if (!matchesHeader(header)) {
             throw new IOException("不是有效的 BEM 文件；修改扩展名不能转换文件格式。");
         }
         checkpoint.check();

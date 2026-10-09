@@ -39,7 +39,7 @@ def main():
                 if value.startswith('@+id/'):
                     symbols.setdefault('id', set()).add(value[5:])
     java = root / 'android/app/src/main/java/dev/betterendfield/next'
-    names = ['BemInstallActivity', 'BemInstallPage', 'BemInstaller', 'BemImportRequest', 'BemImportStream',
+    names = ['BemInstallActivity', 'BemInstallPage', 'BemInstaller', 'BemImportRequest', 'BemImportStream', 'BemImportArchive',
              'BemOptions', 'BemParameters', 'AstcSupport', 'BemInstalledResources',
              'ThirdPartyModulePackage', 'ThirdPartyModuleStore', 'ThirdPartyModuleActivity', 'ThirdPartyModulesPage']
     sources = [java / (name + '.java') for name in names]

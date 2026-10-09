@@ -24,6 +24,22 @@ final class BemInstaller {
     private static volatile boolean cancelled;
     private static boolean nativeLoaded;
     private static final java.util.concurrent.ExecutorService worker = Executors.newSingleThreadExecutor();
+    static final class PreparedPackage {
+        final BemImportArchive.Item item;
+        final JSONObject report;
+        PreparedPackage(BemImportArchive.Item item, JSONObject report) { this.item=item; this.report=report; }
+    }
+    static final class PendingBundle {
+        final Context app;
+        final File directory;
+        final boolean zip;
+        final java.util.List<PreparedPackage> packages=new java.util.ArrayList<>();
+        final java.util.List<String> issues=new java.util.ArrayList<>();
+        final java.util.Set<String> deselected=new java.util.HashSet<>();
+        PendingBundle(Context app,File directory,boolean zip) {this.app=app;this.directory=directory;this.zip=zip;}
+    }
+    interface Inspector { JSONObject inspect(File file,boolean skipValidation) throws Exception; }
+    static volatile PendingBundle pendingBundle;
     static native String convertNative(String input, String output, String rules, boolean astc) throws IOException;
     static native String inspectNativeWithOptions(String input, boolean skipValidation) throws IOException;
     static String inspectNative(String input) throws IOException { return inspectNativeWithOptions(input, false); }
@@ -36,7 +52,15 @@ final class BemInstaller {
         }
     }
     static synchronized void loadCodec() { if (!nativeLoaded) { System.loadLibrary("betterendfieldnext_installer"); nativeLoaded=true; } }
-    static synchronized void cancel() { if(removing || !busy) return; cancelled=true; if(nativeLoaded) cancelNative(); status="正在取消，保留原安装版本…"; }
+    static synchronized void cancel() {
+        if(removing || !busy) return;
+        cancelled=true; if(nativeLoaded) cancelNative(); status="正在取消，保留原安装版本…";
+        PendingBundle bundle=pendingBundle;
+        if(bundle!=null) {
+            pendingBundle=null;
+            worker.execute(()->{try {deleteOwned(bundle.directory);status="已取消 ZIP 导入，原有模型包已保留。";}finally {busy=false;}});
+        }
+    }
     static void checkpoint() throws IOException { if(cancelled) throw new IOException("已取消安装"); }
     static synchronized JSONArray index(Context context) {
         try {
@@ -68,10 +92,152 @@ final class BemInstaller {
     }
     /** Returns false when another operation owns the worker; never drops a request silently. */
     static synchronized boolean start(Context context, Uri uri) {
-        return run(context, BemImportRequest.requireContentUri(uri), null);
+        return startImport(context, BemImportRequest.requireContentUri(uri));
     }
     static synchronized void convert(Context context, String generation) {
         run(context, null, generation);
+    }
+    private static synchronized boolean startImport(Context context,Uri uri) {
+        if(busy) return false;
+        Context app=context.getApplicationContext();
+        boolean skipValidation=FrameworkSettings.open(app).getBoolean(SKIP_VALIDATION,false);
+        progressPercent=-1;startedAt=android.os.SystemClock.elapsedRealtime();
+        busy=true;cancelled=false;status="正在读取 BEM 或 ZIP…";
+        try {worker.execute(()->{
+            File stage=null;boolean awaitingSelection=false;
+            try {
+                File root=new File(app.getFilesDir(),"bem-installed");
+                if(!root.isDirectory() && !root.mkdirs()) throw new IOException("无法创建安装目录");
+                stage=new File(root,"stage-"+UUID.randomUUID());
+                if(!stage.mkdir()) throw new IOException("无法创建临时目录");
+                BemImportArchive.Bundle archive;
+                try(InputStream input=app.getContentResolver().openInputStream(uri)) {
+                    if(input==null) throw new IOException("无法打开包");
+                    archive=BemImportArchive.read(input,stage,BemInstaller::checkpoint,text->status=text);
+                }
+                if(archive.packages.isEmpty()) throw new IOException("ZIP 中没有可导入的 BEM。\n"+String.join("\n",archive.issues));
+                loadCodec();checkpoint();
+                PendingBundle bundle=prepareImport(app,stage,archive,skipValidation,
+                        (file,skip)->new JSONObject(inspectNativeWithOptions(file.getAbsolutePath(),skip)));
+                checkpoint();
+                if(bundle.packages.isEmpty()) throw new IOException("ZIP 中没有通过校验的 BEM。\n"+String.join("\n",bundle.issues));
+                if(bundle.zip) {
+                    synchronized(BemInstaller.class) {
+                        checkpoint();pendingBundle=bundle;awaitingSelection=true;
+                        status="ZIP 已校验，等待选择要导入的 "+bundle.packages.size()+" 个模型包。";
+                    }
+                    stage=null; // Ownership passes to confirmation/cancellation, including Activity recreation.
+                } else {
+                    awaitPublishing();installPrepared(app,bundle.packages.get(0));
+                    status="已原样导入："+bundle.packages.get(0).report.getString("name")+"。重启游戏后生效。";
+                }
+            } catch(Throwable error) {
+                status="导入未完成："+importError(error);
+                android.util.Log.e("BetterEndfieldNext.Install",status,error);
+            } finally {
+                if(stage!=null) deleteOwned(stage);
+                if(!awaitingSelection) busy=false;
+            }
+        });return true;} catch(RuntimeException rejected) {busy=false;status="无法启动导入任务，请重试。";throw rejected;}
+    }
+    static PendingBundle prepareImport(Context app,File stage,BemImportArchive.Bundle archive,
+            boolean skipValidation,Inspector inspector) throws Exception {
+        PendingBundle bundle=new PendingBundle(app,stage,archive.zip);
+        bundle.issues.addAll(archive.issues);JSONArray previous=index(app);
+        for(int i=0;i<archive.packages.size();++i) {
+            checkpoint();BemImportArchive.Item item=archive.packages.get(i);
+            status="正在校验 "+(i+1)+" / "+archive.packages.size()+"："+item.name;
+            try {
+                JSONObject report=inspector.inspect(item.file,skipValidation);
+                String generation=UUID.randomUUID().toString();
+                report.put("texture_mode","original").put("generation",generation)
+                        .put("remote","bem-"+generation+".bem").put("enabled",true);
+                report.getString("name");installedIndex(previous,report,null);
+                checkpoint();
+                try(FileOutputStream output=new FileOutputStream(new File(item.directory,"report.json"))) {
+                    output.write(report.toString(2).getBytes(StandardCharsets.UTF_8));output.getFD().sync();
+                }
+                bundle.packages.add(new PreparedPackage(item,report));
+            } catch(Exception error) {
+                checkpoint();
+                if(!archive.zip) throw error;
+                bundle.issues.add(item.name+"："+importError(error));deleteOwned(item.directory);
+            }
+        }
+        return bundle;
+    }
+    static synchronized boolean importSelected(PendingBundle bundle,boolean[] choices) {
+        if(bundle==null || pendingBundle!=bundle || choices.length!=bundle.packages.size()) return false;
+        boolean[] selected=choices.clone();pendingBundle=null;
+        try {worker.execute(()->installBundle(bundle,selected));return true;}
+        catch(RuntimeException rejected) {
+            pendingBundle=bundle;status="无法启动 ZIP 导入，请重试。";throw rejected;
+        }
+    }
+    static synchronized void cancelBundle(PendingBundle bundle) {if(pendingBundle==bundle) cancel();}
+    private static void installBundle(PendingBundle bundle,boolean[] choices) {
+        int selected=0,installed=0;for(boolean choice:choices) if(choice) selected++;
+        java.util.List<String> issues=new java.util.ArrayList<>(bundle.issues);
+        boolean stopped=false;
+        try {
+            if(selected==0) {status="未选择模型包，已取消 ZIP 导入。";return;}
+            awaitPublishing();int current=0;
+            for(int i=0;i<choices.length;++i) {
+                if(!choices[i]) continue;
+                checkpoint();PreparedPackage item=bundle.packages.get(i);
+                status="正在导入 "+(++current)+" / "+selected+"："+item.report.optString("name",item.item.name);
+                progressPercent=(current-1)*100/selected;
+                try {installPrepared(bundle.app,item);installed++;}
+                catch(Exception error) {
+                    checkpoint();issues.add(item.item.name+"："+importError(error));
+                }
+            }
+        } catch(Exception error) {
+            stopped=true;
+            if(!cancelled) issues.add(importError(error));
+        } finally {
+            deleteOwned(bundle.directory);progressPercent=-1;
+            if(selected>0) {
+                status=(stopped?(cancelled?"已取消 ZIP 导入":"ZIP 导入未完成"):"ZIP 导入完成")
+                        +"：成功 "+installed+" 个，未导入 "+(selected-installed)+" 个"
+                        +(issues.isEmpty()?"。":"，无效或失败项 "+issues.size()+" 个。\n"+String.join("\n",issues))
+                        +(installed>0?"\n重启游戏后生效。":"");
+            }
+            busy=false;
+        }
+    }
+    private static void awaitPublishing() throws IOException {
+        checkpoint();if(!FrameworkSettings.isConnected()) status="正在等待框架服务连接…";
+        FrameworkSettings.awaitConnection();checkpoint();
+    }
+    /** Commit one generation at a time, preserving already imported items on later failures. */
+    static void installPrepared(Context app,PreparedPackage item) throws Exception {
+        File root=new File(app.getFilesDir(),"bem-installed");
+        String generation=item.report.getString("generation");
+        File installed=new File(root,generation);boolean moved=false,committed=false;
+        try {
+            checkpoint();installedIndex(index(app),item.report,null);
+            if(!item.item.directory.renameTo(installed)) throw new IOException("安装结果发布失败");
+            moved=true;checkpoint();
+            FrameworkSettings.publishBem(new File(installed,"installed.bem"),item.report.getString("remote"));
+            checkpoint();
+            synchronized(BemInstaller.class) {
+                checkpoint();JSONArray previous=index(app),next=installedIndex(previous,item.report,null);
+                commitIndex(app,previous.toString(),next,"安装索引保存失败");committed=true;
+            }
+            if(!FrameworkSettings.open(app).getBoolean(KEEP_LOCAL_COPIES,true)) new File(installed,"installed.bem").delete();
+        } finally {
+            if(moved && !committed) {
+                // If a failed rollback left a durable reference, keep its payload for recovery.
+                boolean referenced=true;
+                try {referenced=referencedGenerations(app).contains(generation);} catch(Exception ignored) {}
+                if(!referenced) {FrameworkSettings.removeBem(item.report.getString("remote"));deleteOwned(installed);}
+            }
+        }
+    }
+    private static String importError(Throwable error) {
+        if(error instanceof SecurityException) return "读取授权已失效，请重新选择文件或从文件管理器打开。";
+        String message=error.getMessage();return message==null || message.isEmpty()?error.getClass().getSimpleName():message;
     }
     private static synchronized boolean run(Context context, Uri uri, String previousGeneration) {
         if(busy) return false;

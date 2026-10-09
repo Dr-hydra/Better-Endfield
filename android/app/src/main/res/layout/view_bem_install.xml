@@ -3,7 +3,7 @@
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_header" android:orientation="vertical" android:padding="20dp">
             <TextView style="@style/SectionTitle" android:text="第三方模型" android:textSize="20sp" />
         </LinearLayout>
-        <Button android:id="@+id/bem_import" style="@style/PrimaryButton" android:layout_marginTop="18dp" android:text="导入 BEM 包" />
+        <Button android:id="@+id/bem_import" style="@style/PrimaryButton" android:layout_marginTop="18dp" android:text="导入 BEM / ZIP" />
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="16dp">
             <Switch android:id="@+id/bem_hot_switch" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:text="实验：模型热切换" />
             <Switch android:id="@+id/bem_fast_loading" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:layout_marginTop="12dp" android:text="@string/bem_fast_loading" />

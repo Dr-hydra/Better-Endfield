@@ -50,7 +50,7 @@
             android:label="@string/bem_import_activity_label"
             android:theme="@style/AppTheme">
             <!-- Document URIs often contain opaque IDs, not filenames. Use MIME
-                 routing, then validate the actual BEM bytes in the installer. -->
+                 routing, then validate actual BEM or ZIP bytes in the installer. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -60,6 +60,9 @@
                 <data android:mimeType="application/vnd.betterendfield.bem" />
                 <data android:mimeType="application/octet-stream" />
                 <data android:mimeType="application/x-binary" />
+                <data android:mimeType="application/zip" />
+                <data android:mimeType="application/x-zip-compressed" />
+                <data android:mimeType="application/x-zip" />
             </intent-filter>
             <!-- Providers which report no MIME type at all. This does not match
                  resolved image/PDF/text types, and never accepts http or file URIs. -->
@@ -77,6 +80,9 @@
                 <data android:mimeType="application/vnd.betterendfield.bem" />
                 <data android:mimeType="application/octet-stream" />
                 <data android:mimeType="application/x-binary" />
+                <data android:mimeType="application/zip" />
+                <data android:mimeType="application/x-zip-compressed" />
+                <data android:mimeType="application/x-zip" />
             </intent-filter>
         </activity>
         <activity

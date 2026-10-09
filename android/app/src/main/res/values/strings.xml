@@ -126,7 +126,7 @@
     <string name="module_will_not_load">不会装载</string>
     <string name="overlay_turned_on">悬浮窗已启用。首次启用请重启游戏；面板随游戏页面显示和隐藏。</string>
     <string name="overlay_turned_off">悬浮窗已关闭。重新进入游戏页面后生效。</string>
-    <string name="bem_import_activity_label">Better Endfield Next · 导入 BEM</string>
+    <string name="bem_import_activity_label">Better Endfield Next · 导入 BEM / ZIP</string>
     <string name="ui_pc">使用 PC 界面布局</string>
     <string name="ui_pc_hint">切换键盘输入对应的界面布局，建议连接键鼠或手柄。触屏按钮可能消失；关闭后恢复此前的输入类型，不更改平台身份。重启游戏后装载此设置。</string>
     <string name="camera_global_fov">修改全局视野</string>

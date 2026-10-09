@@ -2,6 +2,8 @@
 
 Next 4.0.0 uses `dev.betterendfield.next` and a new release signing key. Uninstall the previous app, install Next, enable the new framework module and select the game scope again. Settings are independent and are not migrated. First person is removed; Third-party Modules navigation is hidden while its runtime is retained. The Logo is unchanged. See [Next implementation notes](../docs/workspace/NEXT_IMPLEMENTATION.md).
 
+BEM import also accepts ZIP collections: choose which validated packages to import, including BEMs in subdirectories. [Android ZIP import behavior and limits](../docs/custom_model/ANDROID_BEM_ZIP_IMPORT.md).
+
 
 See the [main feature matrix](../README.en.md#feature-overview) for Windows/Android
 coverage. The current APK version is **3.5.3** (versionCode 30503). In-game rendering and real

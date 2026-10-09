@@ -1746,7 +1746,10 @@
         "reference": "native/tests/bem_import/run.sh",
         "sources": [
           "native/tests/bem_import/run.sh",
-          "native/tests/bem_import/BemImportStreamTest.java"
+          "native/tests/bem_import/BemImportStreamTest.java",
+          "native/tests/bem_import/BemImportArchiveTest.java",
+          "android/app/src/main/java/dev/betterendfield/next/BemImportArchive.java",
+          "android/app/src/main/java/dev/betterendfield/next/BemImportStream.java"
         ],
         "blocked_reason": "Original stream harness compiles production Java with javac; no compilation in this runner. Its static manifest portion is registered separately."
       },

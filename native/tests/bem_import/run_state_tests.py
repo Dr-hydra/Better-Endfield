@@ -52,7 +52,11 @@ java.nio.file.Files.move(java.nio.file.Path.of(from),java.nio.file.Path.of(to),j
         'dev/betterendfield/next/FrameworkSettings.java': '''package dev.betterendfield.next;
 final class FrameworkSettings {
 static android.content.SharedPreferences open(android.content.Context app){return app.getSharedPreferences("module_settings",0);}
-static boolean publishBem(java.io.File file,String name){throw new UnsupportedOperationException("Native import is outside host test scope");}
+static final java.util.Map<String,byte[]> publishedBem=new java.util.HashMap<>();
+static boolean failBemPublish;static String failBemRemote;
+static void publishBem(java.io.File file,String name)throws java.io.IOException{
+    if(failBemPublish || name.equals(failBemRemote)){failBemPublish=false;failBemRemote=null;throw new java.io.IOException("fixture publication failed");}
+    publishedBem.put(name,java.nio.file.Files.readAllBytes(file.toPath()));}
 static boolean isConnected(){return true;}static void awaitConnection(){}
 static java.io.InputStream openBem(String name)throws java.io.IOException{throw new java.io.IOException("Remote payload is outside host test scope");}
 static String[] listBem(){return new String[0];}
@@ -61,7 +65,7 @@ static String lastThirdPartyRemote;static byte[] lastThirdPartyBytes;
 static void awaitThirdPartyConnection(){}
 static void publishThirdParty(java.io.File file,String name)throws java.io.IOException{lastThirdPartyRemote=name;lastThirdPartyBytes=java.nio.file.Files.readAllBytes(file.toPath());}
 static boolean removeThirdParty(String name){return true;}
-static boolean removeBem(String name){return true;}}''',
+static boolean removeBem(String name){publishedBem.remove(name);return true;}}''',
         'dev/betterendfield/next/AstcSupport.java': '''package dev.betterendfield.next;
 final class AstcSupport {static boolean available(){throw new UnsupportedOperationException();}}''',
         'dev/betterendfield/next/BemImportRequest.java': '''package dev.betterendfield.next;
@@ -75,7 +79,7 @@ final class BemImportRequest {static android.net.Uri requireContentUri(android.n
             urllib.request.urlretrieve('https://repo.maven.apache.org/maven2/org/json/json/20240303/json-20240303.jar', jar)
         if not jar.is_file():
             parser.error('org.json jar does not exist')
-        sources = [java / f'{name}.java' for name in ('BemInstaller', 'BemOptions', 'BemParameters', 'BemInstalledResources', 'BemImportStream', 'BemHotSwitchUpdate', 'OverlayWritePolicy', 'ThirdPartyModulePackage', 'ThirdPartyModuleStore')]
+        sources = [java / f'{name}.java' for name in ('BemInstaller', 'BemOptions', 'BemParameters', 'BemInstalledResources', 'BemImportStream', 'BemImportArchive', 'BemHotSwitchUpdate', 'OverlayWritePolicy', 'ThirdPartyModulePackage', 'ThirdPartyModuleStore')]
         sources.append(Path(__file__).with_name('BemPackageStateTest.java'))
         sources.append(root / 'android/app/src/test/java/dev/betterendfield/next/BemHotSwitchUpdateTest.java')
         sources.append(root / 'android/app/src/test/java/dev/betterendfield/next/OverlayWritePolicyTest.java')
