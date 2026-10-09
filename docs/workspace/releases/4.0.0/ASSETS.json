@@ -1,0 +1,66 @@
+{
+  "product": "Better Endfield Next",
+  "version": "4.0.0",
+  "tag": "v4.0.0",
+  "implementation_commit": "1d62beb712aab97bab19eaf209912918ab259585",
+  "build_sources": {
+    "windows_and_bem_tools": "bde0adfb5b3112365526e0be46a5179d8d8b1de6",
+    "android_bem_zip": "ffa1fd1625e456356baf0ff825d642327dc68c8c",
+    "android_source_tree": "4317e328ae557c0f5390fd12115e7b71c4fc6079",
+    "sdk_echo_native_sources": "1d62beb712aab97bab19eaf209912918ab259585",
+    "sdk_documentation_and_packaging": "v4.0.0"
+  },
+  "android": {
+    "package": "dev.betterendfield.next",
+    "version": "4.0.0",
+    "version_code": 40000,
+    "signing_certificate_sha256": "27d4c9a1f20c2a99953f3ad8488fd1ba33f543b7294d4f441ddd128ef5f3c799"
+  },
+  "windows_signing": {
+    "trust": "self-signed-internal",
+    "certificate_sha256": "b1bf40f1a225dd20a0603dd4ce828c29a102956e178188e899f82602afc45d96"
+  },
+  "validation": {
+    "initial_next_build": "Windows/Android Release, Android lint/signature, obfuscated UI startup, related offline regressions",
+    "android_bem_zip": {
+      "release": "passed",
+      "r8": "passed",
+      "lint": "passed",
+      "apk_v2_signature": "passed",
+      "stream_assertions": 31,
+      "archive_assertions": 27,
+      "package_state_assertions": 150,
+      "device_acceptance": "not run"
+    },
+    "release_worktree_identity_and_archive_tests": 5,
+    "sdk_echo": "Fresh Windows x64 and Android arm64 Release builds; PE/ELF, Next exports, manifest paths and archive CRC verified",
+    "artifacts": "Local SHA-256 matched the verified builds; all ZIP/APK CRC checks passed"
+  },
+  "artifacts": [
+    {
+      "name": "BEM-Tools-1.5.2-win-x64.zip",
+      "bytes": 71920786,
+      "sha256": "5533738958c8001d0f2d3b017d841316ef2d01801abaa4fedc40291920807441"
+    },
+    {
+      "name": "BetterEndfieldNext-4.0.0-Android-arm64.apk",
+      "bytes": 6061947,
+      "sha256": "7279bd2628f7f145c22f2647dfd933f39c33893ecb023b6cc566184f621e7176"
+    },
+    {
+      "name": "BetterEndfieldNext-4.0.0-Setup.exe",
+      "bytes": 76408312,
+      "sha256": "a29bdbdf61c4907e5d06692374c239c7e2f961211ba2e7314127fd32e4dc4b0a"
+    },
+    {
+      "name": "BetterEndfieldNext-Echo-1.0.0-Dual.zip",
+      "bytes": 236384,
+      "sha256": "8fb3ee1db5b709fbe59657836730e9ea50ab0fe5684fc39182926c4f87dfd377"
+    },
+    {
+      "name": "BetterEndfieldNext-ThirdPartySDK-1.0.0.zip",
+      "bytes": 484683,
+      "sha256": "31fa88fa6f96a52796c8d510be988a01b9746417005cf1125e2a4e852b971559"
+    }
+  ]
+}

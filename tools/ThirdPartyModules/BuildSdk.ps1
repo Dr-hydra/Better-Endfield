@@ -135,14 +135,16 @@ try {
     Copy-File $AndroidLibrary (Join-Path $sdkRoot 'examples/echo/native/android-arm64/libexample.echo.so')
     Copy-File $echoZip (Join-Path $sdkRoot "packages/$echoName")
     Write-Utf8 (Join-Path $sdkRoot 'README.md') @'
-# Better Endfield Third-Party Module SDK 1.0.0
+# Better Endfield Next Third-Party Module SDK 1.0.0
 
-Target: Better Endfield __APPLICATION_VERSION__, package format 1, native ABI 1.
+Target: Better Endfield Next __APPLICATION_VERSION__, package format 1, native ABI 1.
+
+Next 4.0.0 temporarily hides the third-party module management entry points and legacy routes on both platforms. The runtime remains available; this SDK and Echo package are distributed for development and interface reference. Importing or opening the example through the public management UI is unavailable in this release. Rebuild older modules against the Next headers and exported entry symbol.
 
 - `docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md`: package, lifecycle, configuration, UI bridge, shared Hook contract and build guide.
 - `include/BetterEndfieldNext/`: all three public headers required by `ThirdPartyModule.h`.
 - `examples/echo/`: complete portable CMake/C++20 source and static HTML UI, plus both prebuilt native libraries.
-- `packages/BetterEndfieldNext-Echo-1.0.0-Dual.zip`: import this ZIP into the application's Third-Party Modules page on either platform, then enable it.
+- `packages/BetterEndfieldNext-Echo-1.0.0-Dual.zip`: dual-platform example package; UI import instructions apply when the Third-Party Modules entry point is available.
 
 From this SDK directory on Windows with CMake and Visual Studio C++ Build Tools:
 

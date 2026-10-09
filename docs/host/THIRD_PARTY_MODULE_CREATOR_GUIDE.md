@@ -1,6 +1,8 @@
 # 第三方模块创作者指南
 
-适用：Better Endfield Next 3.5.2，第三方包格式 1 / Native ABI 1。Windows x64 与 Android arm64 使用同一套包与网页消息协议。SDK 版本独立为 1.0.0。
+适用：Better Endfield Next 4.0.0，第三方包格式 1 / Native ABI 1。Windows x64 与 Android arm64 使用同一套包与网页消息协议。SDK 版本独立为 1.0.0。
+
+Next 4.0.0 暂时隐藏双端第三方模块管理入口及旧入口路由，保留装载器和网页桥。随 Release 提供的 SDK / Echo 用于开发与接口对照；本版本无法通过公开管理入口导入或打开示例。下文管理页面操作适用于入口开放时。旧模块须按 Next 头文件和导出标识重新构建，旧二进制不承诺兼容。
 
 ## 先运行 Echo 示例
 

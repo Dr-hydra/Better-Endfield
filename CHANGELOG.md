@@ -1,13 +1,15 @@
 # 更新日志
 
-## 4.0.0 Better Endfield Next（独立安装预览）
+## 4.0.0 Better Endfield Next
 
 - 产品更名为 Better Endfield Next，保留原 Logo，更新双端安装身份、内部模块/通信标识和发布签名。与旧版独立，需卸载后重新安装；Android 重新启用框架模块和游戏作用域，不迁移旧设置。
 - 第一人称功能完整移除；专用代码、资料工具、测试及公共文件原始快照归档至 `legacy/retired-before-next/`。
 - 暂时隐藏 Windows、Android 第三方模块入口及旧入口路由，保留装载器、网页桥和管理实现。
 - Windows Release 加入 Obfuscar 程序集混淆；Android Release 启用 R8 和资源收缩；原生 C++ 优化与符号收敛。公开调用和界面绑定保留必要名称。
+- Android 支持单个 BEM 和包含多个 BEM 的 ZIP，校验后可勾选导入项，支持子目录及文件管理器打开/分享；逐包处理冲突和失败，保留已成功导入的模型。
 - 修正 Windows 仅开启时间冻结时的相机模块启用条件，使冻结能独立运行。
 - 双端 Release、Android lint、签名核对、桌面启动和相关离线回归已通过；游戏内效果待实机验收。Windows 目前使用内部自签证书。
+- 完整安装说明、附件与验证范围见 [4.0.0 发布记录](docs/workspace/releases/4.0.0/RELEASE_4_0_0.md)。
 
 
 ## 3.5.4（草稿，未正式发布）
