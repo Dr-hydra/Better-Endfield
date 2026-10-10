@@ -43,16 +43,31 @@ class NextIdentityTests(unittest.TestCase):
                 self.assertTrue(fields['library'].startswith('BetterEndfieldNext.'))
                 self.assertIn(fields['library'].removesuffix('.dll'),cmake)
 
-    def test_retained_extension_runtime_has_no_public_navigation_entry(self):
+    def test_third_party_runtime_removed_and_workshop_retained(self):
         main=(ROOT/'android/app/src/main/java/dev/betterendfield/next/MainActivity.java').read_text(encoding='utf-8')
         self.assertNotIn('ThirdPartyModulesActivity.class',main)
         ui=ET.parse(ROOT/'ui/BetterEndfieldNext.UI/MainWindow.xaml')
         tag='{http://schemas.microsoft.com/winfx/2006/xaml}Name'
-        navigation=next(node for node in ui.iter() if node.get(tag)=='ThirdPartyModulesNavigationItem')
-        self.assertEqual(navigation.get('Visibility'),'Collapsed')
+        self.assertFalse(any(node.get(tag)=='ThirdPartyModulesNavigationItem' for node in ui.iter()))
+        self.assertTrue(any(node.get(tag)=='WorkshopNavigationItem' for node in ui.iter()))
         host=(ROOT/'native/shared/host/host_runtime.cpp').read_text(encoding='utf-8')
-        self.assertIn('third_party_->Start',host)
-        self.assertIn('ThirdPartyHost',(ROOT/'android/app/src/main/cpp/native_bridge.cpp').read_text(encoding='utf-8'))
+        self.assertNotIn('third_party_',host)
+        self.assertIn('std::make_unique<HookBroker>',host)
+        self.assertIn('std::make_unique<ModuleManager>',host)
+        self.assertFalse((ROOT/'native/shared/third_party_modules/third_party_host.cpp').exists())
+        self.assertTrue((ROOT/'native/shared/hooks/hook_chain.h').is_file())
+        bridge=(ROOT/'android/app/src/main/cpp/native_bridge.cpp').read_text(encoding='utf-8')
+        self.assertNotIn('ThirdPartyHost',bridge)
+        self.assertNotIn('updateThirdPartyRuntime',bridge)
+        self.assertNotIn('THIRD_PARTY_INDEX',bridge)
+        for relative in ('native/CMakeLists.txt','android/app/src/main/cpp/CMakeLists.txt'):
+            self.assertNotIn('third_party_modules',(ROOT/relative).read_text(encoding='utf-8'))
+        configs=(ROOT/'android/app/src/main/java/dev/betterendfield/next/ModuleConfigurations.java').read_text(encoding='utf-8')
+        self.assertNotIn('thirdParty',configs)
+        self.assertIn('enhancementButton("创意工坊")',main)
+        manifest=ET.parse(ROOT/'android/app/src/main/AndroidManifest.xml')
+        ns='{http://schemas.android.com/apk/res/android}'
+        self.assertFalse(any('ThirdParty' in node.get(ns+'name','') for node in manifest.iter('activity')))
 
     def test_new_signing_pins_are_distinct_and_private_paths_are_ignored(self):
         policy=json.loads((ROOT/'config/workspace.defaults.json').read_text(encoding='utf-8-sig'))

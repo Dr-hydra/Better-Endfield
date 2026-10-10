@@ -5,10 +5,10 @@
 | 模块 | 入口 |
 | --- | --- |
 | 自定义模型与 BEM | [custom_model](custom_model/INDEX.md) |
-| 相机、第一人称与 MMD | [camera](camera/INDEX.md) |
+| 相机与 MMD（含历史第一人称研究） | [camera](camera/INDEX.md) |
 | 动作与特殊冲刺 | [actions](actions/INDEX.md) |
 | 战斗数据 | [combat_stats](combat_stats/INDEX.md) |
-| Host 与第三方模块 | [host](host/INDEX.md) |
+| Host 与内置模块 | [host](host/INDEX.md) |
 | 语音 | [voice](voice/INDEX.md) |
 | 音乐输入与 OmniMix | [music](music/INDEX.md) |
 | Android 平台 | [android](android/INDEX.md) |

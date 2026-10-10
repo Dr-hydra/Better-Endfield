@@ -114,7 +114,7 @@ runner 不生成凭据，也不把已有 EXE 反向标成新编译。未来构�
 ```json
 {
   "schema_version": 1,
-  "suite_id": "camera.firstperson_mesh",
+  "suite_id": "host.hooks",
   "source_commit": "实际 git HEAD",
   "code_revision": "同一时间 source_record(repo_root) 的 code_revision",
   "build_succeeded": true,
@@ -124,7 +124,7 @@ runner 不生成凭据，也不把已有 EXE 反向标成新编译。未来构�
   "built_at": "实际 UTC 完成时间",
   "artifacts": [
     {
-      "path": "windows/win-x64/Release/native/Release/BetterEndfieldNext.FirstPersonMeshTests.exe",
+      "path": "host/hook_chain/Release/hook_chain_tests.exe",
       "size": 123,
       "mtime_ns": 123456789
     }
@@ -177,13 +177,13 @@ list/plan 中依赖缺失可正常生成报告并退出 0，不代表这些 suit
 | --- | --- |
 | workspace / resource | `workspace.registry/config`、`resource.workspace/character_presets`；三个 workspace 测试文件分别由测试、parent、资源负责人维护 |
 | host | `host.hooks` → `native/tests/hook_chain`；`android.host_rebuild` 保留 Linux 编译模拟入口，`android.host_java` 保留原连接时序/overlay geometry Java main 检查 |
-| camera / firstperson | `camera.playback/firstperson_profiles/firstperson_mesh/profile_evidence` → 原 camera CTest、profile CTest、mesh 排除目标和 `test_generation.py` |
+| camera | `camera.playback` → 相机/MMD CTest；第一人称源码与专属回归已迁移至 E Mod Loader，不再作为 BE 套件 |
 | custom_model | `custom_model.core/matcher/loadstate/binding/android_loadstate/desktop_loadstate/android_stream` → 原 core、matcher、scheduler、binding、桌面/Java state 与 stream 入口 |
 | actions / combat | `actions.policy/effects/external/pose`、`combat.semantics` → 原排除目标，不依赖真实游戏 |
 | creator 格式与工程 | `creator.bem.format/projects/tasks/native_validation` → 原 BEM 各代模块、项目/任务模块和生产 validator |
 | creator 来源与转换 | `creator.efmi/hash_lod/native_catalog/source_archive` → EFMI、Hash-LOD、native 图/材质证据、RAR/7z 原模块 |
 | creator 记录与纹理 | `creator.runtime_records/textures/android_mesh_api` → 原 request/sweep 聚合、DDS、离线 ELF/stub 检查 |
-| third_party | `third_party.host/bridge/navigation/sdk/ui/materializer` → 原 Python、JS、C#/Java 脚本；需构建或无配置适配的入口保留但阻止 |
+| 已迁移的第三方模块 | 原 `third_party.*` 测试随源码迁移至 [E Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader)，不再登记为 BE 套件；Host Hook 链测试继续保留 |
 | AndroidMMD | `androidmmd.audio/import` → 原 `native/tests/android_mmd_*/Run.ps1`；需独立 JDK 编译/本地 jars，无自动下载 |
 | game / device | `android.bem_manifest/bem_instrumentation/custom_model_device/resource_probe`、`custom_model.runtime_probe`；manifest 是 static，其余真实采集/设备入口被门控 |
 
@@ -195,8 +195,7 @@ list/plan 中依赖缺失可正常生成报告并退出 0，不代表这些 suit
 
 | 既有验证资料/命令 | 现行归属与保留边界 |
 | --- | --- |
-| `FIRST_PERSON_HEAD_ACCESSORIES_20261003.md` 中局部 artifacts 编译/运行命令 | `camera.playback`、`camera.firstperson_mesh` 统一其 host 回归入口；保留原历史结果和视觉/设备限制 |
-| `FIRST_PERSON_PROFILES_20261003.md` 中 profile 测试命令 | `camera.firstperson_profiles`、`camera.profile_evidence` 统一已覆盖回归；geometry helper、实际来源 audit 仍活跃 |
+| 历史第一人称附件、角色骨骼资料与局部验证命令 | 已迁移至 E Mod Loader；BE 保留历史结果和视觉/设备限制，不再登记为现行回归入口 |
 | `native/tests/async_loading/README.md` 的旧 artifacts CTest 命令 | `custom_model.core/loadstate` 使用配置 build + receipt；保留全部 concurrency、容量、morph 兼容边界 |
 | CustomModel README 的原全目录 unittest discover | 仍是同一实现维护来源；清单按组选择，native/archive 前提单列，未删除原发现入口 |
 | Android probes、第一人称几何/ABI 研究与实机采样 | 1.5.3/snapshot 相关，仍活跃；离线模拟不能替代运行时/视觉证据，旧客户端对比标 pre-1.5.3 |

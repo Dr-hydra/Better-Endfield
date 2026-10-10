@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 2,
+  "kind": "betterendfield-voice-catalog-index",
+  "packages": [
+    {
+      "language": 0,
+      "source": "Endfield_Data/Persistent/VFS/fixture.chk",
+      "size": 72,
+      "headerSize": 56,
+      "headerSha256": "cd536f5336e5442f96dc0f7f47e472c141c4b6fc0ecdec911ae6018e9a13bbaa"
+    },
+    {
+      "language": 1,
+      "source": "Endfield_Data/Persistent/VFS/fixture.chk",
+      "size": 72,
+      "headerSize": 56,
+      "headerSha256": "cd536f5336e5442f96dc0f7f47e472c141c4b6fc0ecdec911ae6018e9a13bbaa"
+    },
+    {
+      "language": 2,
+      "source": "Endfield_Data/Persistent/VFS/fixture.chk",
+      "size": 72,
+      "headerSize": 56,
+      "headerSha256": "cd536f5336e5442f96dc0f7f47e472c141c4b6fc0ecdec911ae6018e9a13bbaa"
+    },
+    {
+      "language": 3,
+      "source": "Endfield_Data/Persistent/VFS/fixture.chk",
+      "size": 72,
+      "headerSize": 56,
+      "headerSha256": "cd536f5336e5442f96dc0f7f47e472c141c4b6fc0ecdec911ae6018e9a13bbaa"
+    }
+  ],
+  "catalogs": [
+    {
+      "characterId": "chr_0013_aglina",
+      "language": 2,
+      "voiceCount": 1,
+      "routes": [
+        0,
+        1,
+        100
+      ],
+      "voiceSources": {}
+    }
+  ]
+}

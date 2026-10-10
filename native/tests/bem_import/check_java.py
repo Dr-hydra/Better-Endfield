@@ -40,8 +40,7 @@ def main():
                     symbols.setdefault('id', set()).add(value[5:])
     java = root / 'android/app/src/main/java/dev/betterendfield/next'
     names = ['BemInstallActivity', 'BemInstallPage', 'BemInstaller', 'BemImportRequest', 'BemImportStream', 'BemImportArchive',
-             'BemOptions', 'BemParameters', 'AstcSupport', 'BemInstalledResources',
-             'ThirdPartyModulePackage', 'ThirdPartyModuleStore', 'ThirdPartyModuleActivity', 'ThirdPartyModulesPage']
+             'BemOptions', 'BemParameters', 'AstcSupport', 'BemInstalledResources']
     sources = [java / (name + '.java') for name in names]
     sources.append(root / 'android/app/src/androidTest/java/dev/betterendfield/next/BemInstallerTest.java')
     with tempfile.TemporaryDirectory(prefix='bem-java-check-') as temporary:
@@ -64,9 +63,6 @@ final class FrameworkSettings {
  static boolean removeBem(String n) {throw new UnsupportedOperationException();}
  static boolean isConnected() {throw new UnsupportedOperationException();}
  static void awaitConnection() {throw new UnsupportedOperationException();}
- static void awaitThirdPartyConnection() {throw new UnsupportedOperationException();}
- static void publishThirdParty(java.io.File file,String name) throws java.io.IOException {throw new UnsupportedOperationException();}
- static boolean removeThirdParty(String name) {throw new UnsupportedOperationException();}
 }
 ''', encoding='utf-8')
         subprocess.run(['javac', '--release', '17', '-encoding', 'UTF-8', '-Xlint:unchecked',

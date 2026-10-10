@@ -32,7 +32,7 @@ MODULES = {
     "camera": "相机、第一人称与 MMD",
     "actions": "动作与特殊冲刺",
     "combat_stats": "战斗数据",
-    "host": "Host 与第三方模块",
+    "host": "Host 与内置模块",
     "voice": "语音",
     "music": "音乐输入与 OmniMix",
     "android": "Android 平台",
@@ -52,7 +52,7 @@ CURRENT = {
     "camera": "FIRST_PERSON_PROFILES_20261003.md",
     "actions": "SPECIAL_DASH_CONTINUOUS_ANIMATION.md",
     "combat_stats": "BUFF_TABLE_EXPORT.md COMBAT_RUNTIME_CONTRACTS.md",
-    "host": "GAME_INTERFACES.md THIRD_PARTY_MODULE_CREATOR_GUIDE.md CREATOR_MODULE_API_DESIGN_20261002.md",
+    "host": "GAME_INTERFACES.md",
     "voice": "VOICE_CUSTOM_LANGUAGE_SYSTEM.md",
     "music": "MUSIC_INTEGRATION_RESEARCH.md OMNIMIX_INTEGRATION_HANDOFF.md",
     "ui": "DISPLAY_PIPELINE.md MOBILE_UI_REVERSING.md",
@@ -551,7 +551,7 @@ def navigation(catalog: dict) -> dict[str, str]:
 - BEM 历史格式按 `docs/custom_model/history/bem-<format>/` 组织；BE 发布记录按 `docs/workspace/releases/<software-version>/` 组织。两者不是游戏版本。
 - 日期保留在原文标题、正文和 catalog 元数据中，不作为目录主分类。1.5.3 内部热更新由资源快照与来源清单区分。通用工具/格式的 `game_version` 为 `not_applicable`；跨版本对照列出两个版本，原文中未校正的 1.4.4 标记作为原始版本声明保留并注明与用户时间线差异。
 - `config/documents.json` 的 `documents` 字典保存原公开 filename 到唯一源码 path。源码移动后，安装目录公开名仍为原 basename。
-- 四组中英文 BEM 规范位于 `docs/custom_model/`，第三方模块作者指南位于 `docs/host/`。Skill reference 保留原位与原内容，parent 负责打包同步。
+- 四组中英文 BEM 规范位于 `docs/custom_model/`；第三方模块作者指南已迁移至独立 E Mod Loader 项目。Skill reference 保留原位与原内容，parent 负责打包同步。
 - `{REWRITE_FILE}` 是旧 repo-relative path 到新 path 的普通 JSON 字典，包含 126 个迁移路径及 1 个已确认的过时引用别名。根 README、模块邻接 README、代码注释和其他外部消费者由 parent 集成，不由迁移脚本写入。
 
 ## 运行方式

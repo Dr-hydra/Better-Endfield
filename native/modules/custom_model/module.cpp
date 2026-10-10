@@ -2861,7 +2861,11 @@ bool RememberResource(const CharacterAdapter& adapter,void* asset,
         completed.component_id=binding.component_id; completed.enabled=binding.custom_enabled;
         completed.generated_mesh=binding.custom_mesh!=DonorMesh(binding);
         completed.original=binding.saved_original;
-        if (!completed.original && (retain_original || g_hot_switch_runtime.load())) {
+        // Normal deliveries can revisit a cached UI template or a clone with
+        // game-owned material copies even when hot switching is disabled.
+        // Keep its donor lineage for every applied selection; otherwise an
+        // unchanged hide/keep Mesh is mistaken for an unknown generated Mesh.
+        if (!completed.original && (retain_original || g_hot_switch_runtime.load() || !record.selection_key.empty())) {
             auto original=std::make_shared<SavedOriginalBinding>();
             if (!original->mesh.Set(DonorMesh(binding)) || !original->SetMaterials(DonorMaterials(binding)) ||
                 (!IsStaticRenderer(binding.renderer) && !original->bones.Set(DonorBones(binding)))) return false;
@@ -2999,41 +3003,25 @@ void IndexLivePublishedTextures(const CharacterAdapter& adapter,std::unordered_m
 }
 void PruneCompletedResources() {
     const auto now=GetTickCount64();
-    if (g_hot_switch_runtime.load()) {
-        // Scene instances cloned before a hot switch keep showing a retired
-        // generation. Unity often recycles a Mesh's managed wrapper while the
-        // native Mesh is still rendered, so weak handles cannot prove a retired
-        // generation unused. Keep retired lineage (and its shared Original) per
-        // role, bounded to the newest few generations, so the instance rebind
-        // can still identify and rebuild those instances.
-        constexpr size_t kRetiredGenerationsPerRole=4;
-        std::unordered_map<const CharacterAdapter*,size_t> retired;
-        for (auto record=g_completed.rbegin();record!=g_completed.rend();++record) {
-            if (record->root.Get()) {record->last_seen_ms=now;continue;}
-            // Only generated output can still be shown by an older instance;
-            // a restored-Original record has nothing left to rebind.
-            if (std::none_of(record->bindings.begin(),record->bindings.end(),
-                    [](const auto& binding){return binding.generated_mesh || binding.generated_materials;})) {
-                record->retired_drop=true;continue;
-            }
-            const CharacterAdapter* role=record->adapter;
-            for (const auto& [seen,count]:retired) if (SameAdapter(*seen,*role)) {role=seen;break;}
-            if (++retired[role]>kRetiredGenerationsPerRole) record->retired_drop=true;
+    // Scene instances and pooled UI models can retain a retired generation
+    // with hot switching off. A recycled wrapper does not prove its native
+    // Mesh unused. Keep bounded lineage so later deliveries can recover donors.
+    constexpr size_t kRetiredGenerationsPerRole=4;
+    std::unordered_map<const CharacterAdapter*,size_t> retired;
+    for (auto record=g_completed.rbegin();record!=g_completed.rend();++record) {
+        if (record->root.Get()) {record->last_seen_ms=now;continue;}
+        // Replaced materials, geometry and hidden parts can all survive in
+        // pooled instances; a restored-Original record needs no retention.
+        if (std::none_of(record->bindings.begin(),record->bindings.end(),
+                [](const auto& binding){return binding.generated_mesh || binding.generated_materials ||
+                    (binding.original && binding.enabled!=binding.original->enabled);})) {
+            record->retired_drop=true;continue;
         }
-        std::erase_if(g_completed,[](const auto& record){return record.retired_drop;});
-        return;
+        const CharacterAdapter* role=record->adapter;
+        for (const auto& [seen,count]:retired) if (SameAdapter(*seen,*role)) {role=seen;break;}
+        if (++retired[role]>kRetiredGenerationsPerRole) record->retired_drop=true;
     }
-    std::erase_if(g_completed,[&](auto& record) {
-        if (record.root.Get()) {record.last_seen_ms=now;return false;}
-        // Unknown old consumers keep their displayed assets. Drop only extra
-        // Original ownership after the idle window, retaining weak provenance.
-        if (record.last_seen_ms+10000<=now) for (auto& binding:record.bindings) binding.original.reset();
-        for (const auto& binding:record.bindings) {
-            if (binding.generated_mesh && binding.mesh.Get()) return false;
-            if (binding.generated_materials) for (const auto& material:binding.materials) if (material.Get()) return false;
-        }
-        return true;
-    });
+    std::erase_if(g_completed,[](const auto& record){return record.retired_drop;});
 }
 #if defined(__ANDROID__)
 void InspectAndroidRenderers() {
@@ -3132,7 +3120,8 @@ void LogGenericLineageNote(const GenericMatching::ReceiverKey& key,const char* n
 bool ReadGenericPristineMesh(const CharacterAdapter& adapter,void* asset,
     const GenericRendererCandidate& candidate,GenericMatching::MeshIdentity& identity) {
     using Origin=GenericMatching::DonorOrigin;
-    identity={};void* pristine=candidate.mesh;bool known_generated=false;
+    void* lineage_mesh=candidate.mesh;
+    identity={};void* pristine=lineage_mesh;bool known_generated=false;
     // A receiver's own completed record is stronger evidence than another
     // template/clone sharing an unchanged Mesh. Retired records must not veto it.
     const bool owns_record=std::any_of(g_completed.begin(),g_completed.end(),[&](const auto& record) {
@@ -3157,11 +3146,11 @@ bool ReadGenericPristineMesh(const CharacterAdapter& adapter,void* asset,
         if (old.receiver_key!=candidate.key) continue;
         const bool same_root=record.root.Is(asset);
         if (owns_record && !same_root) continue;
-        const bool same_mesh=old.mesh.Is(candidate.mesh);
-        void* saved=old.original?old.original->ResolveMesh(candidate.mesh):nullptr;
+        const bool same_mesh=old.mesh.Is(lineage_mesh);
+        void* saved=old.original?old.original->ResolveMesh(lineage_mesh):nullptr;
         if (!same_root && !same_mesh) continue;
         saw_completed=true;
-        if (same_root && !same_mesh && !same_object(saved,candidate.mesh))
+        if (same_root && !same_mesh && !same_object(saved,lineage_mesh))
             return refuse(Origin::Unavailable,!old.original?
                 "completed receiver holds an unknown Mesh and no Original was saved":
                 saved?"completed receiver holds a Mesh that is neither this module's output nor the saved Original":
@@ -3186,7 +3175,7 @@ bool ReadGenericPristineMesh(const CharacterAdapter& adapter,void* asset,
                 // Mesh remains pristine when the game gives a clone different
                 // material slots; UseSavedOriginal validates material ownership
                 // separately before a build or restoration can borrow them.
-                if (!same_object(saved,candidate.mesh)) {
+                if (!same_object(saved,lineage_mesh)) {
                     unavailable_detail=count!=static_cast<int>(old.materials.size())?
                         "clone material count differs from its completed generation":
                         "clone materials do not identify a completed generation";

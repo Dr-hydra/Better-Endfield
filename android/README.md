@@ -1,13 +1,13 @@
 # Better Endfield Next Android
 
-Next 4.0.0 uses `dev.betterendfield.next` and a new release signing key. Uninstall the previous app, install Next, enable the new framework module and select the game scope again. Settings are independent and are not migrated. First person is removed; Third-party Modules navigation is hidden while its runtime is retained. The Logo is unchanged. See [Next implementation notes](../docs/workspace/NEXT_IMPLEMENTATION.md).
+Next 4.0.0 uses `dev.betterendfield.next` and a new release signing key. Uninstall the previous app, install Next, enable the new framework module and select the game scope again. Settings are independent and are not migrated. Third-party modules and first person have moved to [Endfield Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader); BE removes the third-party loader, management pages and web bridge. The general Host, built-in module loading, shared Hook chains and Workshop entry remain. The Logo is unchanged. See [Next implementation notes](../docs/workspace/NEXT_IMPLEMENTATION.md).
 
 BEM import also accepts ZIP collections: choose which validated packages to import, including BEMs in subdirectories. [Android ZIP import behavior and limits](../docs/custom_model/ANDROID_BEM_ZIP_IMPORT.md).
 
 
 See the [main feature matrix](../README.en.md#feature-overview) for Windows/Android
-coverage. The current APK version is **3.5.3** (versionCode 30503). In-game rendering and real
-third-party modules still require device testing; build and isolated regression
+coverage. The current source version is **4.0.0** (versionCode 40000). In-game rendering
+still requires device testing; build and isolated regression
 results are not gameplay validation.
 
 ## Android 3.5.3
@@ -17,15 +17,15 @@ and duplicate desktop-injector protection are Windows features; Android behavior
 continues from 3.5.2.
 
 Version 3.5.2 includes BEM 1.4 resource targets, Android PCUI relative-mouse
-capture, responsive desktop-layout handling, experimental third-party native
-modules/web UI, global FOV, character-follow free camera and first-person
-restoration/hair updates. BEM 1.4 authoring
+capture, responsive desktop-layout handling, global FOV and character-follow
+free camera. The former third-party modules/web UI and first-person functionality
+are now maintained in E Mod Loader. BEM 1.4 authoring
 uses BEM Tools **1.5.2**; the same standard package works on both platforms.
 See the [BEM creator guide](../docs/custom_model/BEM_CREATOR_GUIDE.en.md) and
-[third-party module creator guide](../docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md).
+[E Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader).
 
 The app also includes the MMD library/player, responsive in-game deck,
-independent world pause, first-person updates and multiple BEM packages per
+independent world pause and multiple BEM packages per
 character. Settings save automatically; restarting the game loads the updated
 module configuration and installed works. Experimental model hot-switching and
 loading optimization are off by default. Enable the switches before restarting

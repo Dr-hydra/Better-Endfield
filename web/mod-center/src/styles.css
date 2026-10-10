@@ -88,7 +88,16 @@
 .portal-empty > .eyebrow { font-size: 9px; }
 .portal-empty h3 { margin: 13px 0 8px; font-size: 21px; line-height: 1.5; }
 .portal-empty p { font-size: 12px; line-height: 1.8; color: var(--muted); margin: 4px 0 22px; }
-.portal-footer { margin-top: 44px; border-top: 1px solid var(--line); padding-top: 18px; display: flex; justify-content: space-between; gap: 14px; font: 9px Consolas, monospace; color: var(--muted); }
+.portal-footer { margin-top: 44px; border-top: 1px solid var(--line); padding-top: 18px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 14px; font: 9px Consolas, monospace; color: var(--muted); }
+.portal-footer a { display: inline-flex; align-items: center; gap: 5px; color: var(--ink); }
+.project-notice { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 22px; padding: 22px 26px; border-left: 4px solid var(--yellow); }
+.project-notice strong { display: block; font-size: 16px; line-height: 1.5; }
+.project-notice p { max-width: 760px; margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.project-notice .button { flex-shrink: 0; white-space: nowrap; }
+@media (max-width: 680px) {
+  .project-notice { align-items: stretch; flex-direction: column; gap: 16px; padding: 18px; }
+  .project-notice .button { justify-content: center; }
+}
 .pagination { display: flex; justify-content: center; align-items: center; gap: 18px; margin-top: 25px; font-size: 12px; }
 .thanks-page { display: grid; gap: 22px; }
 .thanks-hero { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: clamp(28px, 4vw, 52px); overflow: hidden; box-shadow: none; border-top: 4px solid var(--yellow); }

@@ -96,7 +96,6 @@ final class RuntimeBootstrap {
             Os.setenv("BETTER_ENDFIELD_NEXT_ACTIONS_ASSET_ROOT", actionPoseRoot, true);
             Os.setenv("BETTER_ENDFIELD_NEXT_CUSTOM_MODEL_PROBE", debugResourceProbe() ? "1" : "0", true);
             Os.setenv("BETTER_ENDFIELD_NEXT_CUSTOM_MODEL_CONFIG", customModelConfig(), true);
-            Os.setenv("BETTER_ENDFIELD_NEXT_THIRD_PARTY_INDEX", ThirdPartyRuntimeMaterializer.indexPath, true);
             Os.setenv("BETTER_ENDFIELD_NEXT_VOICE_CATALOG_ROOT",
                     new File(context.getFilesDir(), "betterendfieldnext/catalog").getAbsolutePath(), true);
             Os.setenv("BETTER_ENDFIELD_NEXT_DIAGNOSTICS_PATH",

@@ -1,7 +1,6 @@
 package dev.betterendfield.next;
 
 final class NativeCommandBridge {
-    static native boolean updateThirdPartyRuntime(String index);
     /** Matches betterendfieldnext::VirtualKeyAction in native/shared/android_compat. */
     static final int KEY_RELEASE = 0;
     static final int KEY_PRESS = 1;

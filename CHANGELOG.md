@@ -2,6 +2,8 @@
 
 ## 未发布
 
+- 修复 Windows Next 混淆构建写入 XInput 安装记录时的 JSON 异常，恢复代理安装后的状态刷新，以及“保存并启动”在配音资源准备完成后的正常启动流程。
+- 第三方模块与第一人称源码迁移至独立项目 [Endfield Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader)。BE 双端完整移除第三方模块装载器、管理页面、网页桥和配置接入，保留通用 Host、内置模块加载、共享 Hook 链及创意工坊入口；工坊网页新增新项目链接。
 - 同一个 BEM 可覆盖使用同名角色模型、外包一层同名节点的非编队 NPC；统一模型根定位、加载登记与关闭恢复，保留原有校验。Android aglina / 凛 1.2.1 已通过用户实机测试。
 
 ## 4.0.0 Better Endfield Next

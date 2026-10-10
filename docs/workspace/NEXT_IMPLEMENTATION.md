@@ -6,7 +6,7 @@
 
 第一人称已从 Windows、Android 和共用相机运行时移除。专用文件、工具、测试及公共文件快照保存在 `legacy/retired-before-next/first-person/`，来源和 SHA-256 见归档清单，归档不参与现行构建。
 
-第三方模块仅隐藏桌面导航、Android 增强页和旧入口路由；模块装载器、管理实现、原生 ABI 与网页桥继续保留。入口原始文件快照在同一归档的 `third-party-entry/`。新版内部 ABI 和标识已经更新，旧二进制不承诺兼容。
+第三方模块与第一人称源码现已迁移至独立项目 [Endfield Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader)。BE 双端移除第三方模块装载器、管理实现、原生扩展 ABI、网页桥和配置接入；保留通用 Host、内置模块 ABI 与共享 Hook 链。双端创意工坊入口保留。原 `third-party-entry/` 归档和下方 4.0.0 验证记录仅描述迁移前历史，不参与当前构建。
 
 显示名称为 Better Endfield Next；现有 Logo 和主题素材保留。产品版本 4.0.0，BEM Tools 独立版本继续由原工具链维护。BEM/MMD 用户素材格式继续支持，需手动重新导入。
 
@@ -55,3 +55,12 @@ android/gradlew.bat -p android :app:assembleRelease :app:lintRelease --no-daemon
 - Windows 安装器构建及新身份签名通过；当前证书为内部自签，系统信任状态不等同于受信任公共发布证书。
 
 本轮未安装到游戏目录、未注入游戏、未覆盖手机安装。编译、离线回归和启动检查不替代游戏内相机、模型、MMD 等实机效果验证。
+
+## E Mod Loader 拆分验证（2026-10-10）
+
+- 103 个第三方模块、第一人称及必要集成参考文件原样复制至 [E Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader)，逐项 SHA-256 校验通过；迁移清单保存源提交及工作树快照说明。
+- BE 移除第三方专属源码、双端接入、网页桥、配置、SDK 打包消费及测试注册项；通用 Host、内置模块、共享 Hook 链和双端创意工坊入口保留。
+- Windows Host Release、WinUI Release、Android Java 和原生 Debug 编译通过；共享 Hook 链 CTest、5 项安装身份/迁移边界、5 项 Windows 配置、10 项 Android 页面路由，以及 Android BEM 状态/热切换/写入边界回归通过。
+- 工坊网页 TypeScript 与生产构建通过，首页顶部新增第三方模块/第一人称迁移说明及 E Mod Loader 跳转按钮，并更新第三方模块分类提示；已部署至 [公开工坊](https://146.235.16.65:8443/endfield/)，公网首页、资源 SHA-256 与 API 健康检查通过。后端服务、数据库、环境配置和 HTTPS 代理保持原部署，最新回退文件保存在服务器 `/opt/endfield-resource-center/backups/eml-link-20261010T062406Z/`。
+- 测试注册表边界检查有一项现有失败：未跟踪的 `tools/CustomModel/test_cloth_authoring.py` 尚未登记。使用迁移前注册表同样失败，与本次删除第三方套件无关。
+- 未发布新的 BE 安装包，未安装或加载到游戏；E Mod Loader 当前为原样源码迁入阶段，加载方式待定。

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <DebugType>None</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../BetterEndfieldNext.UI/Services/XInputDeploymentService.cs" Link="XInputDeploymentService.cs" />
+    <Compile Include="../../BetterEndfieldNext.UI/Services/VoiceCatalogService.cs" Link="VoiceCatalogService.cs" />
+    <EmbeddedResource Include="voice-index.json" LogicalName="BetterEndfieldNext.UI.Assets.voice.voice-catalog-index.json" />
+  </ItemGroup>
+</Project>

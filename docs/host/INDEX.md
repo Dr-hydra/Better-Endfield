@@ -1,14 +1,14 @@
-# Host 与第三方模块
+# Host 与内置模块
 
 [全部文档](../INDEX.md)
+
+第三方模块及第一人称源码已迁移至 [Endfield Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader)。BE 保留通用 Host、内置模块加载和共享 Hook 链，第三方模块不再参与双端构建。
 
 ## 现行说明与维护入口
 
 | 文档 | 用途 | 状态 | 游戏版本 |
 | --- | --- | --- | --- |
-| [双端第三方模块加载器与 UI 容器实现](CREATOR_MODULE_API_DESIGN.md) | 已实现第三方加载器架构、Host/作者责任及后续工作 | 维护参考 | not_applicable |
 | [Better Endfield Next Runtime Interfaces](GAME_INTERFACES.md) | Host/模块、动态IL2CPP、登录/语音等运行时接口 | 维护参考 | 1.5.3 |
-| [第三方模块创作者指南](THIRD_PARTY_MODULE_CREATOR_GUIDE.md) | 第三方包格式1/Native ABI1/SDK1.0.0作者接入指南 | 现行规范 | not_applicable |
 | [Steam 国服启动使用与验证](STEAM_CN_LAUNCH.md) | Windows 预览、元数据更新、管理员选项与 XInput 冲突处理 | 3.5.3 预览功能 | not_applicable |
 
 ## 研究与阶段记录

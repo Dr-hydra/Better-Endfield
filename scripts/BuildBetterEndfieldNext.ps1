@@ -141,7 +141,7 @@ $bemTools = Join-Path $ws.paths.build "tools\bem\dist\BetterEndfieldNext.BemConv
 New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "tools") | Out-Null
 Copy-Item -LiteralPath $bemTools -Destination (Join-Path $publishDir "tools\BemConverter") -Recurse -Force
 New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "docs") | Out-Null
-$documentNames = @("BEM_CREATOR_GUIDE.md", "BEM_FORMAT_SPEC.md", "BEM_V1_4_SPEC.md", "BEM_RUNTIME_COMPATIBILITY.md", "BEM_SOURCE_MOD_CONVERSION.md", "THIRD_PARTY_MODULE_CREATOR_GUIDE.md", "STEAM_CN_LAUNCH.md")
+$documentNames = @("BEM_CREATOR_GUIDE.md", "BEM_FORMAT_SPEC.md", "BEM_V1_4_SPEC.md", "BEM_RUNTIME_COMPATIBILITY.md", "BEM_SOURCE_MOD_CONVERSION.md", "STEAM_CN_LAUNCH.md")
 $resolveDocuments = @'
 import json, sys
 from pathlib import Path

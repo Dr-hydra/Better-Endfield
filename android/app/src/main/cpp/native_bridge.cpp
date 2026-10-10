@@ -17,7 +17,6 @@
 #include "modules/login_model/login_model_module.h"
 #include "modules/custom_model/resource_probe.h"
 #include "modules/custom_model/custom_model_module.h"
-#include "../../../../../native/shared/third_party_modules/third_party_host.h"
 
 #include "android_virtual_keys.h"
 
@@ -53,9 +52,6 @@ struct Session {
     RuntimeStatus status;
     Il2CppRuntime runtime;
     std::vector<std::unique_ptr<Module>> modules;
-    BetterEndfieldNext::ThirdParty::ThirdPartyHost third_party;
-    HookBroker third_party_hooks;
-    std::unique_ptr<DesktopModule> third_party_helper;
     int lock_fd = -1;
 };
 // One session lives for the process lifetime. Detached bootstrap and installed
@@ -70,11 +66,6 @@ const char* Configured(const char* variable) {
 void RunModules() {
     auto& state = State();
     auto& runtime = state.runtime;
-    if(const char* index=Configured("BETTER_ENDFIELD_NEXT_THIRD_PARTY_INDEX")) {
-        std::string error;const bool ready=state.third_party_hooks.Initialize(error);
-        state.third_party.Start(index,"android-arm64",[](const auto& id,const auto& message){LogInfo(id.c_str(),message.c_str());},nullptr,
-            ready?state.third_party_hooks.ChainApi():nullptr);
-    }
     state.status.Set("runtime", "waiting_il2cpp");
     for (int attempt = 0; attempt < kMaximumAttempts; ++attempt) {
         if (runtime.Connect() && runtime.HasAssembly("mscorlib.dll") && betterendfieldnext::HasAndroidFrameBridge()) break;
@@ -92,13 +83,6 @@ void RunModules() {
         return;
     }
     state.status.Set("runtime", "starting_modules");
-    if(Configured("BETTER_ENDFIELD_NEXT_THIRD_PARTY_INDEX")) {
-        static const BE_ModuleApiV1 helper{{"third-party.runtime.helper","Third-party optional helpers","1",1},
-            [](const BE_HostApiV1*)->BE_Result{return BE_Result_Ok;},[](const char*)->BE_Result{return BE_Result_Ok;},[](){}};
-        state.third_party_helper=std::make_unique<DesktopModule>("third-party.runtime.helper","BETTER_ENDFIELD_NEXT_THIRD_PARTY_INDEX",
-            []()->const BE_ModuleApiV1*{return &helper;},"Third-party runtime helper ready");
-        if(state.third_party_helper->Start(runtime).active)state.third_party.SetRuntime(state.third_party_helper->OptionalHostApi());
-    }
     const char* custom_probe = std::getenv("BETTER_ENDFIELD_NEXT_CUSTOM_MODEL_PROBE");
     if (Configured("BETTER_ENDFIELD_NEXT_CUSTOM_MODEL_CONFIG") != nullptr) {
         state.modules.emplace_back(std::make_unique<CustomModelModule>());
@@ -192,7 +176,6 @@ bool AnyModuleRequested() {
         "BETTER_ENDFIELD_NEXT_CAMERA_CONFIG",
         "BETTER_ENDFIELD_NEXT_ACTIONS_CONFIG",
         "BETTER_ENDFIELD_NEXT_CUSTOM_MODEL_CONFIG",
-        "BETTER_ENDFIELD_NEXT_THIRD_PARTY_INDEX",
     };
     for (const char* variable : kVariables) {
         if (Configured(variable) != nullptr) return true;
@@ -204,12 +187,6 @@ bool AnyModuleRequested() {
 }  // namespace
 }  // namespace betterendfieldnext
 
-extern "C" JNIEXPORT jboolean JNICALL
-Java_dev_betterendfield_next_NativeCommandBridge_updateThirdPartyRuntime(JNIEnv* env,jclass,jstring index) {
-    if(!env || !index || env->GetStringUTFLength(index)>1024*1024)return JNI_FALSE;
-    const char* json=env->GetStringUTFChars(index,nullptr);if(!json)return JNI_FALSE;
-    const bool accepted=betterendfieldnext::State().third_party.UpdateIndex(json);env->ReleaseStringUTFChars(index,json);return accepted?JNI_TRUE:JNI_FALSE;
-}
 extern "C" JNIEXPORT jboolean JNICALL
 Java_dev_betterendfield_next_NativeCommandBridge_submit(
         JNIEnv* environment, jclass, jstring payload) {
@@ -363,7 +340,6 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
         BE_NATIVE(cameraValues, "(FF)V"), BE_NATIVE(mmdStatus, "()Ljava/lang/String;"),
         BE_NATIVE(globalFov, "(ZF)Z"),
         BE_NATIVE(updateCustomModelConfig, "(Ljava/lang/String;)Z"),
-        BE_NATIVE(updateThirdPartyRuntime, "(Ljava/lang/String;)Z"),
         BE_NATIVE(mmd, "(IIDLjava/lang/String;)Z")
     };
 #undef BE_NATIVE

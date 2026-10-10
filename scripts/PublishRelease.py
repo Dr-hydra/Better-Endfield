@@ -56,7 +56,7 @@ def main():
         version = args.tag.removeprefix("v")
         if f"BetterEndfieldNext-{version}-win-x64.zip" in names:
             raise ValueError("Windows app releases distribute the installer only")
-        for prefix in ("BetterEndfieldNext-ThirdPartySDK-", "BetterEndfieldNext-Echo-", "BEM-Tools-"):
+        for prefix in ("BEM-Tools-",):
             if not any(name.startswith(prefix) and name.endswith(".zip") for name in names):
                 raise ValueError("Missing creator release asset: " + prefix)
     body = args.notes_file.read_text(encoding="utf-8-sig")

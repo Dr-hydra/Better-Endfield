@@ -141,6 +141,8 @@ void SceneRebindTests(const std::filesystem::path& package_path) {
         };
         g_registry.enabled.clear();pump_switch();
         for (const auto& clone:clones) {
+            if (mesh(clone.renderers[0])!=original_meshes[0])
+                for (const auto& line:captured_logs) std::cerr<<line<<'\n';
             Check(mesh(clone.renderers[0])==original_meshes[0],"unregistered natural clone was not restored by the real scene scan/pump");
             bool recorded=false;
             for (const auto& record:g_completed) if (record.root.Is(clone.root) && record.selection_key.empty()) recorded=true;
@@ -288,6 +290,10 @@ void SceneRebindTests(const std::filesystem::path& package_path) {
         EnabledMod unsaved=b;unsaved.selection_key="scene-without-original";cache(unsaved);g_registry.enabled={unsaved};
         auto drift=receiver(owner->world);
         ResourceFinish(nullptr,drift.root,nullptr);g_model_deliveries.clear();
+        // Current normal deliveries retain provenance even with hot switch
+        // off. Explicitly retire it to exercise the missing-Original gate.
+        for (auto& record:g_completed) if (record.root.Is(drift.root))
+            for (auto& binding:record.bindings) binding.original.reset();
         const auto builds=fake_mesh_builds;const auto original_calls=finish_calls;
         ResourceFinish(nullptr,drift.root,nullptr);g_model_deliveries.clear();
         Check(fake_mesh_builds==builds && finish_calls==original_calls+1,"unchanged duplicate Finish rebuilt geometry or swallowed delivery");

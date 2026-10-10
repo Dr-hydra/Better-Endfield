@@ -2,7 +2,7 @@
 
 [全部文档](../INDEX.md)
 
-第一人称已在 Next 退役，源码与工具见 [legacy 归档](../../legacy/retired-before-next/README.md)。历史研究仅用于追溯。
+第一人称源码与工具已迁移至 [Endfield Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader/tree/main/examples/first-person)，BE 不再提供此功能。原 [legacy 归档](../../legacy/retired-before-next/README.md) 与历史研究保留用于追溯，不参与构建。
 
 ## 现行说明与维护入口
 

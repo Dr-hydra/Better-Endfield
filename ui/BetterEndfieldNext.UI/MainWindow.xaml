@@ -153,9 +153,6 @@
                                     SelectsOnInvoked="False" Tag="workshop">
                     <NavigationViewItem.Icon><FontIcon Glyph="&#xE719;" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem x:Name="ThirdPartyModulesNavigationItem" Visibility="Collapsed" Content="第三方模块" Tag="third-party-modules">
-                    <NavigationViewItem.Icon><FontIcon Glyph="&#xE74C;" /></NavigationViewItem.Icon>
-                </NavigationViewItem>
             </NavigationView.MenuItems>
 
             <NavigationView.FooterMenuItems>
@@ -247,7 +244,6 @@
                     <Grid Grid.Row="1">
                         <views:GachaPage x:Name="GachaPage" Visibility="Collapsed" />
                         <views:CustomModelPage x:Name="CustomModelPage" Visibility="Collapsed" />
-                        <views:ThirdPartyModulesPage x:Name="ThirdPartyModulesPage" Visibility="Collapsed" />
                         <ScrollViewer
                             x:Name="ModelPageScrollViewer"
                             HorizontalScrollBarVisibility="Disabled"

@@ -1081,7 +1081,7 @@ public sealed partial class MainWindow : Window
         NavigationView sender,
         NavigationViewSelectionChangedEventArgs args)
     {
-        if (args.SelectedItemContainer?.Tag as string is "sponsor" or "workshop" or "third-party-modules") return;
+        if (args.SelectedItemContainer?.Tag as string is "sponsor" or "workshop") return;
         string page = args.IsSettingsSelected
             ? "settings"
             : args.SelectedItemContainer?.Tag as string ?? "model";
@@ -1107,8 +1107,6 @@ public sealed partial class MainWindow : Window
             ? Visibility.Visible : Visibility.Collapsed;
         CustomModelPage.Visibility = page == "custom-model"
             ? Visibility.Visible : Visibility.Collapsed;
-        ThirdPartyModulesPage.Visibility = page == "third-party-modules"
-            ? Visibility.Visible : Visibility.Collapsed;
         CustomModelPage.InstallRootProvider = () =>
             ConfigurationService.ResolveInstallRoot(
                 RuntimePathDiscoveryService.BundledInjectorPath);
@@ -1128,7 +1126,7 @@ public sealed partial class MainWindow : Window
         AboutPageScrollViewer.Visibility = page == "about"
             ? Visibility.Visible
             : Visibility.Collapsed;
-        ActionBar.Visibility = page is "about" or "gacha" or "custom-model" or "third-party-modules"
+        ActionBar.Visibility = page is "about" or "gacha" or "custom-model"
             ? Visibility.Collapsed
             : Visibility.Visible;
         UpdatePageSelectionHint(page);
@@ -1148,7 +1146,6 @@ public sealed partial class MainWindow : Window
             "display" => isZh ? "显示增强直接写入游戏目录，改动在下一次启动客户端时生效。" : "Display enhancements are written to the game directory and apply on the next launch.",
             "gacha" => isZh ? "寻访记录同步后仅在本机保存，登录会话不会写入磁盘。" : "Synced gacha records are saved locally; login sessions are never written to disk.",
             "custom-model" => isZh ? "角色外观工具会读取当前安装根目录，转换与部署结果需要按报告核对。" : "Model tools use the current installation directory. Check conversion and deployment reports.",
-            "third-party-modules" => isZh ? "第三方模块的配置保存在本机；加载列表变化在重启游戏后生效。" : "Third-party module settings are saved locally; load-order changes apply after restarting the game.",
             _ => isZh ? "角色与动画参数保存后在下一次注入时生效。" : "Saved character and animation settings apply on the next injection."
         };
     }
@@ -1954,9 +1951,14 @@ public sealed partial class MainWindow : Window
             string launchArguments = GameLaunchArgumentsBox.Text.Trim();
             if (loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase))
             {
+                ShowStatus(
+                    isZh ? "正在准备 XInput 代理" : "Preparing XInput Proxy",
+                    isZh ? "正在检查并安装游戏自动加载代理。" : "Checking and installing the game auto-load proxy.",
+                    InfoBarSeverity.Informational);
                 await XInputDeploymentService.InstallAsync(
                     GamePathBox.Text.Trim(),
                     RuntimePathDiscoveryService.BundledInjectorPath);
+                await RefreshXInputStatusAsync();
                 startInfo = new ProcessStartInfo
                 {
                     FileName = GamePathBox.Text.Trim(),
@@ -1993,7 +1995,7 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception exception) when (
             exception is InvalidOperationException or IOException or
-                UnauthorizedAccessException or Win32Exception)
+                UnauthorizedAccessException or Win32Exception or NotSupportedException)
         {
             ShowStatus(isZh ? "启动失败" : "Launch Failed", exception.Message, InfoBarSeverity.Error);
         }
@@ -2323,7 +2325,7 @@ public sealed partial class MainWindow : Window
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or
             InvalidDataException or InvalidOperationException or
-            OmniMixRegistrationException)
+            OmniMixRegistrationException or NotSupportedException)
         {
             ShowStatus(isZh ? "保存失败" : "Save Failed", exception.Message, InfoBarSeverity.Error);
             return false;
@@ -2765,17 +2767,24 @@ public sealed partial class MainWindow : Window
         }
         try
         {
+            ShowStatus(
+                isZh ? "正在安装 XInput 代理" : "Installing XInput Proxy",
+                isZh ? "正在复制代理并保存安装记录。" : "Copying the proxy and saving its installation record.",
+                InfoBarSeverity.Informational);
             XInputDeploymentStatus status = await XInputDeploymentService.InstallAsync(
                 GamePathBox.Text.Trim(),
                 RuntimePathDiscoveryService.BundledInjectorPath);
-            await RefreshXInputStatusAsync();
             ShowStatus(isZh ? "XInput 已安装" : "XInput Installed", status.Message, InfoBarSeverity.Success);
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or
-                InvalidDataException or InvalidOperationException)
+                InvalidDataException or InvalidOperationException or NotSupportedException)
         {
             ShowStatus(isZh ? "XInput 安装失败" : "XInput Installation Failed", exception.Message, InfoBarSeverity.Error);
+        }
+        finally
+        {
+            await RefreshXInputStatusAsync();
         }
     }
 
@@ -3851,7 +3860,6 @@ public sealed partial class MainWindow : Window
         GachaNavigationItem.Content = isZh ? "寻访查询" : "Gacha History";
         CustomModelNavigationItem.Content = isZh ? "角色外观" : "Model Replacement";
         WorkshopNavigationItem.Content = isZh ? "创意工坊" : "Workshop";
-        ThirdPartyModulesNavigationItem.Content = isZh ? "第三方模块" : "Third-party Modules";
         if (FeatureNavigation.SettingsItem is NavigationViewItem settingsItem)
         {
             settingsItem.Content = isZh ? "设置" : "Settings";
@@ -4282,6 +4290,5 @@ public sealed partial class MainWindow : Window
         // outlive the app.
         CombatWebHandoff.CloseCurrent();
         Views.ToyAnalysisWindow.CloseAll();
-        Views.ThirdPartyModuleWindow.CloseAll();
     }
 }

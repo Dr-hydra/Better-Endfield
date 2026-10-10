@@ -5,7 +5,6 @@
 #include "logging.h"
 #include "module_manager.h"
 #include "settings_store.h"
-#include "../third_party_modules/third_party_host.h"
 
 #include <Windows.h>
 
@@ -69,7 +68,6 @@ HostRuntime::HostRuntime(HMODULE host_module, const void* bootstrap_data)
 }
 
 HostRuntime::~HostRuntime() {
-    if(third_party_) third_party_->Stop();
     if (modules_) {
         modules_->Shutdown();
     }
@@ -95,11 +93,10 @@ void HostRuntime::Run() {
     logger_->Write("host",
         "Process-lifetime mode active; detach cleanup is intentionally skipped.");
     hooks_ = std::make_unique<HookBroker>(*logger_);
-    const bool hook_service_ready=hooks_->Initialize();
-    if (!hook_service_ready) logger_->Write("host", "Hook broker unavailable; independent third-party modules may still start.");
-    third_party_=std::make_unique<BetterEndfieldNext::ThirdParty::ThirdPartyHost>();
-    third_party_->Start(settings_->Paths().settings_root/"third-party"/"index.json","windows-x64",
-        [this](const std::string& module,const std::string& message){logger_->Write(module,message);},nullptr,hook_service_ready?hooks_->ChainApi():nullptr);
+    if (!hooks_->Initialize()) {
+        logger_->Write("host", "Hook broker unavailable; native modules disabled.");
+        return;
+    }
 
     const auto deadline = std::chrono::steady_clock::now() + kRuntimeWait;
     while (!GetModuleHandleW(L"GameAssembly.dll")) {
@@ -131,7 +128,6 @@ void HostRuntime::Run() {
         std::this_thread::sleep_for(kRuntimePoll);
     }
 
-    third_party_->SetRuntime(&api_);
 
     modules_ = std::make_unique<ModuleManager>(*this, *logger_, *settings_);
     const auto module_deadline = std::chrono::steady_clock::now() + kRuntimeWait;

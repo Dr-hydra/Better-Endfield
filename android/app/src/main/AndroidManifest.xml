@@ -5,7 +5,6 @@
         android:name=".ModuleApplication"
         android:description="@string/xposed_description"
         android:allowBackup="false"
-        android:networkSecurityConfig="@xml/module_network_security"
         android:hasCode="true"
         android:icon="@drawable/gilberta"
         android:label="@string/app_name"
@@ -27,8 +26,6 @@
             android:noHistory="true"
             android:taskAffinity=""
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-        <activity android:name=".ThirdPartyModuleActivity" android:exported="false" android:label="第三方模块" android:theme="@style/AppTheme" />
-        <activity android:name=".ThirdPartyModulesActivity" android:exported="false" android:label="第三方模块" android:theme="@style/AppTheme" />
         <activity
             android:name=".EnhancementSettingsActivity"
             android:exported="false"

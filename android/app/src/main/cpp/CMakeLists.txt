@@ -40,6 +40,27 @@ endif()
 add_subdirectory("${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/custom_model"
     "${CMAKE_CURRENT_BINARY_DIR}/custom_model")
 
+# The upstream POSIX writer protects only one page. A 16-byte ARM64 jump
+# starting twelve bytes before a page boundary otherwise crashes in memcpy.
+get_target_property(BE_DOBBY_SOURCES ${BETTER_ENDFIELD_NEXT_DOBBY_TARGET} SOURCES)
+set(BE_DOBBY_PATCH_SOURCE "source/UserMode/ExecMemory/code-patch-tool-posix.cc")
+set(BE_DOBBY_PATCH_FOUND FALSE)
+foreach(BE_DOBBY_SOURCE IN LISTS BE_DOBBY_SOURCES)
+    if(BE_DOBBY_SOURCE MATCHES "(^|/)source/UserMode/ExecMemory/code-patch-tool-posix\\.cc$")
+        list(REMOVE_ITEM BE_DOBBY_SOURCES "${BE_DOBBY_SOURCE}")
+        set(BE_DOBBY_PATCH_FOUND TRUE)
+    endif()
+endforeach()
+if(NOT BE_DOBBY_PATCH_FOUND)
+    message(FATAL_ERROR "Dobby POSIX patch source changed; review the code-write adapter")
+endif()
+set_property(TARGET ${BETTER_ENDFIELD_NEXT_DOBBY_TARGET} PROPERTY SOURCES "${BE_DOBBY_SOURCES}")
+target_sources(${BETTER_ENDFIELD_NEXT_DOBBY_TARGET} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/core/code_patch_posix.cpp")
+
+add_executable(BetterEndfieldNext.CodePatchTests EXCLUDE_FROM_ALL tests/code_patch_tests.cpp)
+target_compile_features(BetterEndfieldNext.CodePatchTests PRIVATE cxx_std_20)
+target_link_libraries(BetterEndfieldNext.CodePatchTests PRIVATE ${BETTER_ENDFIELD_NEXT_DOBBY_TARGET} c++_static c++abi log)
+
 # Import-time codec only. This library never starts the injected game runtime.
 set(ASTCENC_CLI OFF CACHE BOOL "" FORCE)
 set(ASTCENC_ISA_NEON ON CACHE BOOL "" FORCE)
@@ -118,7 +139,6 @@ set_source_files_properties(
 
 add_library(betterendfieldnext_android SHARED
     native_bridge.cpp
-    "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/third_party_modules/third_party_host.cpp"
     core/hook_broker.cpp
     core/log.cpp
     core/local_music_android.cpp

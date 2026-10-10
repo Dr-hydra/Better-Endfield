@@ -102,7 +102,7 @@
           "ui/BetterEndfieldNext.UI/Models/ModConfiguration.cs",
           "ui/BetterEndfieldNext.UI/Models/FreeCameraExtras.cs",
           "ui/BetterEndfieldNext.UI/Services/LocalizationService.cs",
-          "native/tests/third_party_ui/PlatformStubs.cs"
+          "ui/tests/NextConfiguration/PlatformStubs.cs"
         ],
         "executable": "next/dotnet/NextConfiguration/AnyCPU/bin/Release/net9.0/NextConfiguration.exe",
         "artifacts": [
@@ -334,90 +334,6 @@
       "host_platform": [
         "Windows"
       ]
-    },
-    {
-      "id": "camera.firstperson_mesh",
-      "module": "camera",
-      "kind": "simulation",
-      "platform": [
-        "Windows"
-      ],
-      "game_version": [
-        "any"
-      ],
-      "input": {
-        "id": "source-fixtures",
-        "type": "synthetic"
-      },
-      "prerequisite": [
-        {
-          "type": "source",
-          "path": "native/tests/first_person_mesh_tests.cpp"
-        }
-      ],
-      "entry": {
-        "type": "native",
-        "cwd": ".",
-        "sources": [
-          "native/tests/first_person_mesh_tests.cpp"
-        ],
-        "executable": "windows/win-x64/Release/native/Release/BetterEndfieldNext.FirstPersonMeshTests.exe",
-        "artifacts": [
-          "windows/win-x64/Release/native/Release/BetterEndfieldNext.FirstPersonMeshTests.exe"
-        ],
-        "receipt": "tests/receipts/camera.firstperson_mesh.json",
-        "configuration": "Release"
-      },
-      "status": "active",
-      "replaced_by": null,
-      "purpose": "Mesh clipping, body preservation and retry/lifecycle budgets; explicit EXCLUDE_FROM_ALL target.",
-      "host_platform": [
-        "Windows"
-      ]
-    },
-    {
-      "id": "camera.profile_evidence",
-      "module": "camera",
-      "kind": "static",
-      "platform": [
-        "Windows",
-        "Android"
-      ],
-      "game_version": [
-        "1.5.3"
-      ],
-      "input": {
-        "id": "firstperson-generated-evidence",
-        "type": "checked_in",
-        "path": "tools/FirstPersonProfiles/profiles.generated.json"
-      },
-      "prerequisite": [
-        {
-          "type": "tool",
-          "key": "tools.python"
-        },
-        {
-          "type": "source",
-          "path": "tools/FirstPersonProfiles/profiles.generated.json"
-        },
-        {
-          "type": "source",
-          "path": "tools/FirstPersonProfiles/geometry_regression.generated.json"
-        }
-      ],
-      "entry": {
-        "type": "python_unittest",
-        "cwd": "native/tests/first_person_profiles",
-        "modules": [
-          "test_generation"
-        ],
-        "sources": [
-          "native/tests/first_person_profiles/test_generation.py"
-        ]
-      },
-      "status": "version_limited",
-      "replaced_by": null,
-      "purpose": "Existing generated evidence/profile inputs; game 1.5.3 evidence is retained; resource snapshots distinguish hot updates."
     },
     {
       "id": "custom_model.matcher",
@@ -1282,182 +1198,6 @@
       "purpose": "BEM VIEW/SEND and manifest/XML structural assertions; not an Intent/device acceptance test."
     },
     {
-      "id": "third_party.navigation",
-      "module": "third_party",
-      "kind": "static",
-      "platform": [
-        "Android"
-      ],
-      "game_version": [
-        "any"
-      ],
-      "input": {
-        "id": "source-fixtures",
-        "type": "synthetic"
-      },
-      "prerequisite": [
-        {
-          "type": "tool",
-          "key": "tools.python"
-        }
-      ],
-      "entry": {
-        "type": "python_script",
-        "cwd": ".",
-        "script": "native/tests/third_party_ui/navigation_test.py",
-        "sources": [
-          "native/tests/third_party_ui/navigation_test.py"
-        ]
-      },
-      "status": "active",
-      "replaced_by": null,
-      "purpose": "Third-party Android navigation/XML/sample structure."
-    },
-    {
-      "id": "third_party.bridge",
-      "module": "third_party",
-      "kind": "simulation",
-      "platform": [
-        "Windows",
-        "Android"
-      ],
-      "game_version": [
-        "any"
-      ],
-      "input": {
-        "id": "source-fixtures",
-        "type": "synthetic"
-      },
-      "prerequisite": [],
-      "entry": {
-        "type": "catalog_only",
-        "cwd": ".",
-        "reference": "native/tests/third_party_ui/bridge_test.js",
-        "sources": [
-          "native/tests/third_party_ui/bridge_test.js"
-        ],
-        "blocked_reason": "Node bridge entry retained; configured Node tool and adapter are not yet registered."
-      },
-      "status": "active",
-      "replaced_by": null,
-      "purpose": "Opaque third-party bridge messages/events."
-    },
-    {
-      "id": "third_party.host",
-      "module": "third_party",
-      "kind": "simulation",
-      "platform": [
-        "Windows",
-        "Android"
-      ],
-      "game_version": [
-        "any"
-      ],
-      "input": {
-        "id": "source-fixtures",
-        "type": "synthetic"
-      },
-      "prerequisite": [],
-      "entry": {
-        "type": "catalog_only",
-        "cwd": ".",
-        "reference": "native/tests/third_party_host_test.py",
-        "sources": [
-          "native/tests/third_party_host_test.py"
-        ],
-        "blocked_reason": "Requires receipted host executable AND Echo DLL plus argument adapter; existing legacy binaries are not accepted."
-      },
-      "status": "active",
-      "replaced_by": null,
-      "purpose": "Native loader, loopback authorization, enable/disable/configuration and UI-only module behavior."
-    },
-    {
-      "id": "third_party.sdk",
-      "module": "third_party",
-      "kind": "offline",
-      "platform": [
-        "Windows",
-        "Android"
-      ],
-      "game_version": [
-        "any"
-      ],
-      "input": {
-        "id": "source-fixtures",
-        "type": "synthetic"
-      },
-      "prerequisite": [],
-      "entry": {
-        "type": "catalog_only",
-        "cwd": ".",
-        "reference": "native/tests/third_party_ui/sdk_test.py",
-        "sources": [
-          "native/tests/third_party_ui/sdk_test.py"
-        ],
-        "blocked_reason": "Existing SDK check compiles Echo; this runner never builds. Requires separate explicit build workflow and package inputs."
-      },
-      "status": "active",
-      "replaced_by": null,
-      "purpose": "Public SDK ZIP boundaries and external-header consumer checks."
-    },
-    {
-      "id": "third_party.ui",
-      "module": "third_party",
-      "kind": "simulation",
-      "platform": [
-        "Windows",
-        "Android"
-      ],
-      "game_version": [
-        "any"
-      ],
-      "input": {
-        "id": "source-fixtures",
-        "type": "synthetic"
-      },
-      "prerequisite": [],
-      "entry": {
-        "type": "catalog_only",
-        "cwd": ".",
-        "reference": "native/tests/third_party_ui/ThirdPartyUiTests.csproj",
-        "sources": [
-          "native/tests/third_party_ui/ThirdPartyUiTests.csproj"
-        ],
-        "blocked_reason": "dotnet run would build/restore; use a separately receipted build before adding a launch adapter."
-      },
-      "status": "active",
-      "replaced_by": null,
-      "purpose": "Desktop third-party UI state and package compatibility."
-    },
-    {
-      "id": "third_party.materializer",
-      "module": "third_party",
-      "kind": "simulation",
-      "platform": [
-        "Android"
-      ],
-      "game_version": [
-        "any"
-      ],
-      "input": {
-        "id": "source-fixtures",
-        "type": "synthetic"
-      },
-      "prerequisite": [],
-      "entry": {
-        "type": "catalog_only",
-        "cwd": ".",
-        "reference": "native/tests/run_third_party_materializer_test.py",
-        "sources": [
-          "native/tests/run_third_party_materializer_test.py"
-        ],
-        "blocked_reason": "Script invokes javac and downloads org.json when omitted. Retained catalog entry; separate offline dependency/build workflow required."
-      },
-      "status": "active",
-      "replaced_by": null,
-      "purpose": "Android materializer production Java code with host stubs."
-    },
-    {
       "id": "custom_model.android_loadstate",
       "module": "custom_model",
       "kind": "simulation",
@@ -1483,7 +1223,7 @@
       },
       "status": "active",
       "replaced_by": null,
-      "purpose": "Android BEM storage/import/hot-switch and third-party package state with host adapters."
+      "purpose": "Android BEM storage/import/hot-switch with host adapters."
     },
     {
       "id": "android.host_rebuild",
@@ -1788,25 +1528,6 @@
     }
   ],
   "validation_catalog": [
-    {
-      "id": "camera-local-ad_hoc",
-      "source": "docs/FIRST_PERSON_HEAD_ACCESSORIES_20261003.md",
-      "status": "replaced",
-      "replaced_by": [
-        "camera.playback",
-        "camera.firstperson_mesh"
-      ],
-      "scope": "Old artifacts paths and one-off compile/run commands are superseded as current execution entry only; retain historical findings and separate device/visual limitations."
-    },
-    {
-      "id": "profile-local-ad_hoc",
-      "source": "docs/FIRST_PERSON_PROFILES_20261003.md",
-      "status": "replaced",
-      "replaced_by": [
-        "camera.profile_evidence"
-      ],
-      "scope": "Profile host/evidence regression entry is formalized. Geometry audit helper and actual-source audit remain active; this does not replace game/Android geometry evidence."
-    },
     {
       "id": "async-local-ad_hoc",
       "source": "native/tests/async_loading/README.md",

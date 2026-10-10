@@ -24,6 +24,7 @@
 - [1.5.3 研究入口](research/1.5.3/INDEX.md)：60 篇。
 - [双端模型悬浮窗与 Android 全局 FOV](research/1.5.3/model-overlay/MODEL_OVERLAY_IMPLEMENTATION.md)
 - [BEM Tools 1.5.2 独立 GUI 与验证](research/not_applicable/creator-gui/BEM_TOOLS_STANDALONE_GUI_20261007.md)
+- [凛模型共享权重与内裙裁剪试版](../../legacy/native-bem-cloth-20261010/BEM_WEIGHT_SKIRT_EXPERIMENT.md)：原生物理已停止，记录 1.2.3–1.2.6 制作方案、内裤露白定位、前摆下垂与剩余动作问题。
 
 ## 历史 BEM 格式与通用工具研究
 

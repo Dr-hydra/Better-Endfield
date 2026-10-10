@@ -1517,48 +1517,6 @@
       "version_claim_note": "原文标记与用户最新版本时间线不同；保留原文，只在 catalog 明确归类依据，交 parent 校正说明。"
     },
     {
-      "module": "host",
-      "type": "maintenance_reference",
-      "status": "reference",
-      "game_version": "not_applicable",
-      "platform": [
-        "Windows",
-        "Android"
-      ],
-      "legacy_path": "docs/CREATOR_MODULE_API_DESIGN_20261002.md",
-      "path": "docs/host/CREATOR_MODULE_API_DESIGN.md",
-      "title": "双端第三方模块加载器与 UI 容器实现",
-      "evidence": [
-        {
-          "kind": "inventory",
-          "report": "F:/zmd_bem/reports/workspace_inventory_20261005/项目用途_文档.csv",
-          "row": 31,
-          "excerpt": "docs/host/CREATOR_MODULE_API_DESIGN.md:3 日期：2026-10-02。Better Endfield 3.4.2 已实现双端第三方模块 ZIP 导入、游戏进程原生加载、网页容器、配置/消息/日志，以及可选共享 Hook 链。包 format 1、Native ABI 1；独立 SDK 版本 1.0.0。具体字段、示例与编译命令见 [第三方模块创作者指南](THIRD_PARTY_MODULE_CREATOR_GUIDE；docs/host/CREATOR_MODULE_API_DESIGN.md:7 以原生模块加载器为主。我们提供包导入、Host 加载、生命周期接点、配置与消息运输、网页 UI 容器和可选共享 Hook 基础设施。开发者自行维护游戏函数表、偏移、签名、调用方式、功能逻辑、配置 schema 与 UI。"
-        },
-        {
-          "kind": "document",
-          "path": "docs/host/CREATOR_MODULE_API_DESIGN.md",
-          "line": 1,
-          "excerpt": "双端第三方模块加载器与 UI 容器实现"
-        }
-      ],
-      "purpose": "已实现第三方加载器架构、Host/作者责任及后续工作",
-      "status_detail": "维护说明；正文所列版本有效性需随实现核对",
-      "classification_source": "维护接口",
-      "dates": [
-        "2026-10-02"
-      ],
-      "game_version_evidence": [],
-      "replacement": "未见明确整体替代声明；按正文适用范围保留",
-      "ownership": "documentation",
-      "reference_evidence": {
-        "机器消费及生成证据": "范围内未见",
-        "证据定位及代码注释": "范围内未见",
-        "文档导航及正文引用": "范围内未见；不等于项目全域无引用"
-      },
-      "game_version_note": "通用格式、工具接口/替身验证或软件说明不绑定游戏客户端版本。"
-    },
-    {
       "module": "custom_model",
       "type": "historical_record",
       "status": "historical",
@@ -3410,62 +3368,6 @@
     },
     {
       "module": "camera",
-      "type": "maintenance_reference",
-      "status": "reference",
-      "game_version": "1.5.3",
-      "platform": [
-        "Windows",
-        "Android"
-      ],
-      "legacy_path": "docs/FIRST_PERSON_PROFILES_20261003.md",
-      "path": "docs/camera/FIRST_PERSON_PROFILES.md",
-      "title": "任务 D：逐角色第一人称资料与 helper",
-      "evidence": [
-        {
-          "kind": "inventory",
-          "report": "F:/zmd_bem/reports/workspace_inventory_20261005/项目用途_文档.csv",
-          "row": 68,
-          "excerpt": "docs/camera/FIRST_PERSON_PROFILES.md:3 基线 `main dd7131b4`，直接叠加现有工作区。职责限定为本记录及下列新增文件；camera runtime 接入、Android MeshData 适配和最终构建/安装由主代理负责。；docs/camera/FIRST_PERSON_PROFILES.md:7 `native/modules/camera/first_person_profiles.h`，命名空间 `BetterEndfieldNext::FirstPersonProfiles`："
-        },
-        {
-          "kind": "document",
-          "path": "docs/camera/FIRST_PERSON_PROFILES.md",
-          "line": 1,
-          "excerpt": "任务 D：逐角色第一人称资料与 helper"
-        }
-      ],
-      "purpose": "逐角色profile/helper接入接口、规则覆盖与生成文件交接",
-      "status_detail": "维护说明；正文所列版本有效性需随实现核对",
-      "classification_source": "维护接口",
-      "dates": [],
-      "game_version_evidence": [
-        {
-          "kind": "user_clarification",
-          "date": "2026-10-05",
-          "excerpt": "用户明确：九月初更新后一直是 1.5.3；此前资料标 pre-1.5.3；1.5.3 内部热更新以资源快照区分。",
-          "config_path": "config/workspace.defaults.json",
-          "config_key": "game.version",
-          "value": "1.5.3"
-        }
-      ],
-      "replacement": "未见明确整体替代声明；按正文适用范围保留",
-      "ownership": "documentation",
-      "reference_evidence": {
-        "机器消费及生成证据": "范围内未见",
-        "证据定位及代码注释": "范围内未见",
-        "文档导航及正文引用": "docs/custom_model/research/1.5.3/model-camera-integration/MODEL_CAMERA_IMPLEMENTATION.md:39 [正文证据/维护指引] 更细的文件/接口交接见 `native/modules/custom_model/model_runtime_notes.md`、`native/tests/async_loading/README.md`、`docs/camera/FIRST_PERSON_PROFILES.md`。"
-      },
-      "game_version_note": "按用户明确的九月初后 1.5.3 时间线与当前配置归类；原始来源与验证边界保留，热更新差异由资源快照记录。",
-      "resource_snapshot_evidence": [
-        {
-          "path": "docs/camera/FIRST_PERSON_PROFILES.md",
-          "line": 23,
-          "excerpt": "- 从 `F:/zmd_bem/research/identities/roles/*/native.json` 生成 32 个角色、64 个 world/UI 主骨架来源。实际来源均为 Windows，manifest 字段为 `2954fa80-23c1-1579-2b22-4ecfd6d70418`；它不保证不同 payload 相同。"
-        }
-      ]
-    },
-    {
-      "module": "camera",
       "type": "research_design",
       "status": "proposal",
       "game_version": "1.5.3",
@@ -4866,46 +4768,6 @@
       },
       "game_version_note": "按用户明确的九月初后 1.5.3 时间线与当前配置归类；原始来源与验证边界保留，热更新差异由资源快照记录。",
       "resource_snapshot_evidence": []
-    },
-    {
-      "module": "host",
-      "type": "specification",
-      "status": "current",
-      "game_version": "not_applicable",
-      "platform": [
-        "Windows",
-        "Android"
-      ],
-      "legacy_path": "docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md",
-      "path": "docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md",
-      "title": "第三方模块创作者指南",
-      "evidence": [
-        {
-          "kind": "inventory",
-          "report": "F:/zmd_bem/reports/workspace_inventory_20261005/项目用途_文档.csv",
-          "row": 96,
-          "excerpt": "docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md:3 适用：Better Endfield 3.4.2，第三方包格式 1 / Native ABI 1。Windows x64 与 Android arm64 使用同一套包与网页消息协议。SDK 版本独立为 1.0.0。；docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md:7 SDK 中的 `packages/BetterEndfieldNext-Echo-1.0.0-Dual.zip` 是完整双端包。进入管理应用的“第三方模块”，导入 ZIP 并启用，连接正在运行的游戏，再打开模块页面。点击发送应收到带有计数、原请求与当前配置的回复；修改 Label 后保存可验证配置回调。模块原生代码不依赖游戏地址，也不改变游戏行为。"
-        },
-        {
-          "kind": "document",
-          "path": "docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md",
-          "line": 1,
-          "excerpt": "第三方模块创作者指南"
-        }
-      ],
-      "purpose": "第三方包格式1/Native ABI1/SDK1.0.0作者接入指南",
-      "status_detail": "现行入口",
-      "classification_source": "现行规范",
-      "dates": [],
-      "game_version_evidence": [],
-      "replacement": "未见明确整体替代声明；按正文适用范围保留",
-      "ownership": "documentation",
-      "reference_evidence": {
-        "机器消费及生成证据": "native/tests/third_party_ui/sdk_test.py:43 [机器校验] assert sdk['docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md'].startswith(b'# ')；tools/ThirdPartyModules/BuildSdk.ps1:112 [机器消费] Copy-File (Join-Path $repoRoot 'docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md') (Join-Path $sdkRoot 'docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md')；scripts/BuildBetterEndfieldNext.ps1:96 [机器打包] foreach ($document in @(\"BEM_CREATOR_GUIDE.md\", \"BEM_FORMAT_SPEC.md\", \"BEM_RUNTIME_COMPATIBILITY.md\", \"BEM_SOURCE_MOD_CONVERSION.md\", \"THIRD_PARTY_MODULE_CREATOR_GUIDE.md\")) {",
-        "证据定位及代码注释": "tools/ThirdPartyModules/BuildSdk.ps1:124 [代码注释/定位] - `docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md`: package, lifecycle, configuration, UI bridge, shared Hook contract and build guide.",
-        "文档导航及正文引用": "docs/host/CREATOR_MODULE_API_DESIGN.md:3 [普通导航] 日期：2026-10-02。Better Endfield 3.4.2 已实现双端第三方模块 ZIP 导入、游戏进程原生加载、网页容器、配置/消息/日志，以及可选共享 Hook 链。包 format 1、Native ABI 1；独立 SDK 版本 1.0.0。具体字段、示例与编译命令见 [第三方模块创作者指南](THIRD_PARTY_MODULE_CRE；docs/host/CREATOR_MODULE_API_DESIGN.md:94 [普通导航] 4. 已交付[创作者指南](THIRD_PARTY_MODULE_CREATOR_GUIDE.md)、三份公开头文件与 `tools/ThirdPartyModules/BuildSdk.ps1`，导出完整双端 Echo ZIP 和独立 SDK ZIP。；README.en.md:7 [普通导航] [Download](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [Release notes](CHANGELOG.md) · [Android setup/build guide](android/README.md) · [BEM creator guide](docs/；README.en.md:95 [普通导航] Start with the [module creator guide](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md), then [ThirdPartyModule.h](native/shared/include/BetterEndfieldNext/ThirdPartyModule.h), [HookChain.h](n；README.md:7 [普通导航] [下载正式版](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [更新说明](CHANGELOG.md) · [Android 使用与构建](android/README.md) · [BEM 创作者指南](docs/custom_model/BEM_CREATOR_GUIDE.md) · [模块开发指南]；README.md:95 [普通导航] 接入流程见 [第三方模块创作者指南](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)，契约见 [ThirdPartyModule.h](native/shared/include/BetterEndfieldNext/ThirdPartyModule.h)、[HookChain.h](native/shared/include/B；android/README.md:15 [普通导航] [third-party module creator guide](../docs/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)."
-      },
-      "game_version_note": "通用格式、工具接口/替身验证或软件说明不绑定游戏客户端版本。"
     },
     {
       "module": "model",

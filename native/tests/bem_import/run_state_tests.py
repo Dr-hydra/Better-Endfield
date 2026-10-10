@@ -15,7 +15,6 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--json-jar', type=Path)
     parser.add_argument('--bem-fixture', type=Path, help='Optional real BEM 1.3 to verify exact payload materialization')
-    parser.add_argument('--third-party-fixture', type=Path, help='Optional complete dual-platform module ZIP to verify production import')
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[3]
     java = root / 'android/app/src/main/java/dev/betterendfield/next'
@@ -61,10 +60,6 @@ static boolean isConnected(){return true;}static void awaitConnection(){}
 static java.io.InputStream openBem(String name)throws java.io.IOException{throw new java.io.IOException("Remote payload is outside host test scope");}
 static String[] listBem(){return new String[0];}
 static long bemSize(String name){return -1;}
-static String lastThirdPartyRemote;static byte[] lastThirdPartyBytes;
-static void awaitThirdPartyConnection(){}
-static void publishThirdParty(java.io.File file,String name)throws java.io.IOException{lastThirdPartyRemote=name;lastThirdPartyBytes=java.nio.file.Files.readAllBytes(file.toPath());}
-static boolean removeThirdParty(String name){return true;}
 static boolean removeBem(String name){publishedBem.remove(name);return true;}}''',
         'dev/betterendfield/next/AstcSupport.java': '''package dev.betterendfield.next;
 final class AstcSupport {static boolean available(){throw new UnsupportedOperationException();}}''',
@@ -79,11 +74,10 @@ final class BemImportRequest {static android.net.Uri requireContentUri(android.n
             urllib.request.urlretrieve('https://repo.maven.apache.org/maven2/org/json/json/20240303/json-20240303.jar', jar)
         if not jar.is_file():
             parser.error('org.json jar does not exist')
-        sources = [java / f'{name}.java' for name in ('BemInstaller', 'BemOptions', 'BemParameters', 'BemInstalledResources', 'BemImportStream', 'BemImportArchive', 'BemHotSwitchUpdate', 'OverlayWritePolicy', 'ThirdPartyModulePackage', 'ThirdPartyModuleStore')]
+        sources = [java / f'{name}.java' for name in ('BemInstaller', 'BemOptions', 'BemParameters', 'BemInstalledResources', 'BemImportStream', 'BemImportArchive', 'BemHotSwitchUpdate', 'OverlayWritePolicy')]
         sources.append(Path(__file__).with_name('BemPackageStateTest.java'))
         sources.append(root / 'android/app/src/test/java/dev/betterendfield/next/BemHotSwitchUpdateTest.java')
         sources.append(root / 'android/app/src/test/java/dev/betterendfield/next/OverlayWritePolicyTest.java')
-        sources.append(root / 'native/tests/third_party_ui/ThirdPartyAndroidTest.java')
         for name, text in stubs.items():
             file = build / 'stubs' / name
             file.parent.mkdir(parents=True, exist_ok=True)
@@ -96,8 +90,6 @@ final class BemImportRequest {static android.net.Uri requireContentUri(android.n
         subprocess.run(['java', '-cp', os.pathsep.join((str(classes), str(jar.resolve()))), 'dev.betterendfield.next.BemPackageStateTest', *fixture_args], check=True)
         subprocess.run(['java', '-cp', os.pathsep.join((str(classes), str(jar.resolve()))), 'dev.betterendfield.next.BemHotSwitchUpdateTest'], check=True)
         subprocess.run(['java', '-cp', os.pathsep.join((str(classes), str(jar.resolve()))), 'dev.betterendfield.next.OverlayWritePolicyTest'], check=True)
-        third_party_args = [] if args.third_party_fixture is None else [str(args.third_party_fixture.resolve())]
-        subprocess.run(['java', '-cp', os.pathsep.join((str(classes), str(jar.resolve()))), 'dev.betterendfield.next.ThirdPartyAndroidTest', *third_party_args], check=True)
 
 
 if __name__ == '__main__':

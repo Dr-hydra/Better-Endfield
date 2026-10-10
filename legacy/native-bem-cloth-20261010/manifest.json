@@ -1,0 +1,477 @@
+{
+  "product": "Better Endfield Next 4.0.0",
+  "source_commit": "c2f8eafcfe2fd17fcb6028f660e4f44288e6125d",
+  "source_state": "uncommitted development snapshot",
+  "date": "2026-10-10",
+  "compatibility": "Android BeyondDynamicBone metadata and aglina world/details; exact game revision unknown",
+  "files": [
+    {
+      "source": "android/app/src/main/cpp/CMakeLists.txt",
+      "sha256": "727399e348c3c60cb0c388aeaf7c55e264b7fd6ac0d5b27b3d157ea3489f796c",
+      "bytes": 10446,
+      "action": "snapshot"
+    },
+    {
+      "source": "android/app/src/main/cpp/modules/custom_model/android_mesh_builder.cpp",
+      "sha256": "e4959a350c283ef5e5a8268027a881054fae589282f368e65a9f132b18366065",
+      "bytes": 33707,
+      "action": "snapshot"
+    },
+    {
+      "source": "android/app/src/main/cpp/modules/custom_model/android_mesh_builder.h",
+      "sha256": "245ce9ef093f56483db171fb370d948d1f04d293444ca1dc5fd6aa5e023b9aea",
+      "bytes": 2111,
+      "action": "snapshot"
+    },
+    {
+      "source": "native/modules/custom_model/module.cpp",
+      "sha256": "098840fb936f18c9624989c3e1bb8a84c79e4bb042a104326f8dddd104a60477",
+      "bytes": 224581,
+      "action": "snapshot"
+    },
+    {
+      "source": "native/modules/custom_model/CMakeLists.txt",
+      "sha256": "52a8c4948460025a3be6265e41cb023a3dceb0d9fbc95f4338f640732dcc321f",
+      "bytes": 3912,
+      "action": "snapshot"
+    },
+    {
+      "source": "native/tests/custom_model_binding_tests.cpp",
+      "sha256": "81de5c8f03e4afaf376b91fae9a74590e676b22ffc076a6e8f86c2e8dc5562b4",
+      "bytes": 118549,
+      "action": "snapshot"
+    },
+    {
+      "source": "android/app/src/main/cpp/core/hook_broker.cpp",
+      "sha256": "a7406fef585f3ea054c6ebfbd9af31a13a823f77fe6a011d3907097426c15d4e",
+      "bytes": 6984,
+      "action": "snapshot"
+    },
+    {
+      "source": "android/app/src/main/cpp/core/code_patch_posix.cpp",
+      "sha256": "932ffccf9c12fa7fcfbc843ed5d9b26f1bfa2931efc0b166c551ca888511f309",
+      "bytes": 2895,
+      "action": "snapshot"
+    },
+    {
+      "source": "android/app/src/main/cpp/core/code_patch_posix.h",
+      "sha256": "76afa64234b05fcba00e24e6c6a21a55d626d97a6b3d42e507b072c96ac46376",
+      "bytes": 105,
+      "action": "snapshot"
+    },
+    {
+      "source": "android/app/src/main/cpp/tests/code_patch_tests.cpp",
+      "sha256": "ef06209b9f7ddc6b87392404db881bab050de9d0ab65942271573d47a05c82ce",
+      "bytes": 4688,
+      "action": "snapshot"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/scripts/build_native.py",
+      "sha256": "b1f99c9c696a44f785e4b1fd8536863b79faada5c5a479a8c80bd2f99389a68e",
+      "bytes": 25987,
+      "action": "snapshot"
+    },
+    {
+      "source": "android/app/src/main/cpp/modules/custom_model/android_cloth_bone.inc",
+      "sha256": "c15ac70ebc389e3d7740535d173d59dcdae7d53a7af408ccbac7214858504401",
+      "bytes": 47957,
+      "action": "move"
+    },
+    {
+      "source": "android/app/src/main/cpp/modules/custom_model/android_cloth_candidate.inc",
+      "sha256": "044639e6a2cbcf38c88cf3e185801b5401aa4a70a894809534cbc8fc791b363b",
+      "bytes": 34554,
+      "action": "move"
+    },
+    {
+      "source": "android/app/src/main/cpp/modules/custom_model/android_cloth_contact_abi.inc",
+      "sha256": "0e274b823186003aaa4f38751f674a6d6347c5a33c8586c2e2eb661363077306",
+      "bytes": 12409,
+      "action": "move"
+    },
+    {
+      "source": "android/app/src/main/cpp/modules/custom_model/android_cloth_contact_hooks.inc",
+      "sha256": "72e361735714bd89919fa663f04a6bac5b7eac582fe6169d650e2013d2017c09",
+      "bytes": 11435,
+      "action": "move"
+    },
+    {
+      "source": "android/app/src/main/cpp/modules/custom_model/android_cloth_display_probe.inc",
+      "sha256": "5c352438d70c2878f12b06c131a4d5d3d8071131cf005dc9c482cd911238c9ad",
+      "bytes": 5542,
+      "action": "move"
+    },
+    {
+      "source": "android/app/src/main/cpp/modules/custom_model/android_cloth_layer_hooks.inc",
+      "sha256": "6b9123a0a3c38223122bc60285fa74739f8d16cf9d607648138e05b832e9fab5",
+      "bytes": 8905,
+      "action": "move"
+    },
+    {
+      "source": "android/app/src/main/cpp/modules/custom_model/android_cloth_live.inc",
+      "sha256": "47af3a69b46643750bca5c445fab4d9438d43df93f19b430fcbc27e17e597d04",
+      "bytes": 25899,
+      "action": "move"
+    },
+    {
+      "source": "android/app/src/main/cpp/modules/custom_model/android_cloth_probe.cpp",
+      "sha256": "391c8896833ba1cb8f13fe073d4321592fe1f95947acb4d2441fcb32ddd44cbd",
+      "bytes": 23005,
+      "action": "move"
+    },
+    {
+      "source": "android/app/src/main/cpp/modules/custom_model/android_cloth_probe.h",
+      "sha256": "537a8c9222f35c5e7b80b93941fccfeba1e41e13a4da9162cf659986edd97e06",
+      "bytes": 1333,
+      "action": "move"
+    },
+    {
+      "source": "native/modules/custom_model/cloth_bone_binding.h",
+      "sha256": "c3758deeda4ef0873b64a5a4f7d9d45d3d197a7d284bd3297cb72360cf526c5a",
+      "bytes": 5590,
+      "action": "move"
+    },
+    {
+      "source": "native/modules/custom_model/cloth_contact_counter.h",
+      "sha256": "0c890ca088c1bcb6fa06baaa8b99626fcb397fbdc147021e47eeb0718ddf926d",
+      "bytes": 1040,
+      "action": "move"
+    },
+    {
+      "source": "native/modules/custom_model/cloth_display_binding.h",
+      "sha256": "dd4ad2a38c0b92b8743152e94ce22370ac368aff0bec8ac35270eeb536ab2f8e",
+      "bytes": 3180,
+      "action": "move"
+    },
+    {
+      "source": "native/modules/custom_model/cloth_layer_order.h",
+      "sha256": "8fb760d4e30b2803993e01879de5c235bf8e2863b6cac36f12eff0b9d56ec184",
+      "bytes": 3029,
+      "action": "move"
+    },
+    {
+      "source": "native/modules/custom_model/cloth_proxy_validation.h",
+      "sha256": "8cec0fe2092af321678a856d725487c2ba05595037ff68502a63315a6133166e",
+      "bytes": 2644,
+      "action": "move"
+    },
+    {
+      "source": "native/tests/cloth_bone_binding_tests.cpp",
+      "sha256": "496876285e68a3227f7e04fe2804a4d80597608ea2af57e031b110c2532c12e7",
+      "bytes": 2957,
+      "action": "move"
+    },
+    {
+      "source": "native/tests/cloth_contact_counter_tests.cpp",
+      "sha256": "9d2ba175a670c19b11666e7aaa62ff190be2a37fc7f41c894989c10a0a97c89c",
+      "bytes": 1672,
+      "action": "move"
+    },
+    {
+      "source": "native/tests/cloth_display_binding_tests.cpp",
+      "sha256": "1b8390e444291f99d5f0f8a442e12c5a6041ecb397878a3cfda33ecd0d1edc5b",
+      "bytes": 1495,
+      "action": "move"
+    },
+    {
+      "source": "native/tests/cloth_layer_order_tests.cpp",
+      "sha256": "f3642d0cc139f9782578ccdcfde24a32dfc6e50ac362d35db9c6fdffc967508c",
+      "bytes": 1725,
+      "action": "move"
+    },
+    {
+      "source": "native/tests/cloth_proxy_validation_tests.cpp",
+      "sha256": "8394ed464db58bb51015a831cf5b5451b01fbe982591fbfb53aecfab9fbc1b22",
+      "bytes": 1218,
+      "action": "move"
+    },
+    {
+      "source": "tools/CustomModel/cloth_authoring.py",
+      "sha256": "fad6a23b76a947d9e1ced824c081765764451efb533d8738eeaa585a116691f9",
+      "bytes": 6851,
+      "action": "move"
+    },
+    {
+      "source": "tools/CustomModel/test_cloth_authoring.py",
+      "sha256": "42a51ab0b96d3a020a23822b708a15ac51beae11d3a527d033d76ae2d0c40015",
+      "bytes": 3226,
+      "action": "move"
+    },
+    {
+      "source": "docs/custom_model/BEM_CLOTH_PROTOTYPE.md",
+      "sha256": "e8f0243038763441e60b1cd90dc05352eb0c31e902c06f646dcbbe78720ecc6e",
+      "bytes": 21029,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/scripts/bonecloth_authoring.py",
+      "sha256": "2f77a7ba274701d3939e16616c5a09937acdc756ab2be9da4626e0a412b91e26",
+      "bytes": 9270,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/scripts/export_cloth_prototype.py",
+      "sha256": "8841f243437fdbe1dd6f5c49f4feec911cdd06c0bcf834b191926e318a2a1720",
+      "bytes": 5654,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/scripts/capture_cloth_candidate.py",
+      "sha256": "01cc04539275a19f8ece8a4eef69277c6a4522a89aca19f8ffe6e0b8f50ec62e",
+      "bytes": 874,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/scripts/run_phone_cloth_probe.py",
+      "sha256": "c2c204609796affe4721b5d45a68c9f21342204cafd254d16359f69b5f1960c0",
+      "bytes": 3301,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/scripts/analyze_live_display.py",
+      "sha256": "7540da9de4ddfca43d77dded08aa2aac2cbae78c5b148387b8774792dfd84d4e",
+      "bytes": 3160,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/scripts/analyze_live_surfaces.py",
+      "sha256": "e2209b7dbad4bf667bc4d0c3ef1809776b2d6660221bc1e1f6d627abc1d4640e",
+      "bytes": 1662,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/scripts/analyze_particle_surfaces.py",
+      "sha256": "f2d2e678ec5fb8cf5803846312364e7c63d29a899261ab855ae4874e1085a3a8",
+      "bytes": 1338,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/scripts/analyze_seam_capture.py",
+      "sha256": "0dbf1324fb2c15d81919d59a4df2f06b4cbe7c5e71107917c164cb65d63ec7b3",
+      "bytes": 1827,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/scripts/audit_source_physics.py",
+      "sha256": "41ee47f87888106b17ae0a032968d6b37f6bb102970dbd7c5ce4e30e916957b7",
+      "bytes": 2665,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/scripts/extend_hip_colliders.py",
+      "sha256": "5f15b72ea7df004139f1f3f44790fb8a1224ba745b3036a3035b3f872bd6f100",
+      "bytes": 736,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-probe/CMakeLists.txt",
+      "sha256": "e8e06af8d6774d3352bab32bf7999a9024e2149af67b717c4a76228a12db8598",
+      "bytes": 607,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-probe/index.html",
+      "sha256": "94eff9d0bdc42fe57d852a328f24372a4360f18ff5693220141d130d610d13f7",
+      "bytes": 672,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-probe/module.json",
+      "sha256": "b14b3e47a1eeeced6a3818a5f54ac5b3f25370c4f62e7e477262b4b70e08d240",
+      "bytes": 314,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-probe/next-candidate-request.json",
+      "sha256": "f91ad547f89f14d16e049cfe22c6750fe0267afd871f9efdf849a441810f5293",
+      "bytes": 111,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-probe/next-request.json",
+      "sha256": "c598409cb48f37fbacc3b8f9346e5e8cdb554fba3334cfb1571c72d3234c560a",
+      "bytes": 109,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-probe/probe.cpp",
+      "sha256": "25075e507704ce8c387bffdf3203e2a3378878f70ce170174adb0d758fdc56b1",
+      "bytes": 7294,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-probe/README.md",
+      "sha256": "d5393dfa818e0015d69dfc8993fd627947ef7398f85aebb5265c01264acb6ba4",
+      "bytes": 752,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-sdk/include/BetterEndfield/HookChain.h",
+      "sha256": "969688e60551b88568376d9f2860a204e769c9665f4448b1d055ac50aab48a0c",
+      "bytes": 847,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-sdk/include/BetterEndfield/ModuleApi.h",
+      "sha256": "a950991a0f3bcf7663b6e2de0fb4acb8963bfd2696b4b7171479f6acedfaf181",
+      "bytes": 4742,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-sdk/include/BetterEndfield/ThirdPartyModule.h",
+      "sha256": "c35392dcc474f23d903abc8189313ef19cdc195deabc37461837735ea0096dff",
+      "bytes": 1802,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/request-002.json",
+      "sha256": "cd11db2e940b5dcadbbc030f0db5249f9151c6d70acd43bae7718a8b0245f492",
+      "bytes": 117,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/request-004.json",
+      "sha256": "4336b73c4dd55d11818f5eaf209d08a1960bd31cd7176aecc2fa1274e51d7711",
+      "bytes": 126,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/request-005.json",
+      "sha256": "0511ffbfd87ee57309f587cade8f7ca91e00ab9b3dc4486abd76025014367209",
+      "bytes": 126,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/request-006.json",
+      "sha256": "34468c45901870a74fbf4cba4f362cfd0b88894204e30232a361969123867bb3",
+      "bytes": 104,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/request-008.json",
+      "sha256": "a00426474b8a03941ccc66d29e60ab62f498c63ff87c69dff7ce3f2279710c7b",
+      "bytes": 104,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/request-009.json",
+      "sha256": "bbfa34591a9618afea448986cc0b9e762825b3dbcbbbaf5e3dd418a0d514e774",
+      "bytes": 122,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/rin-cloth.json",
+      "sha256": "b1e2d76a3625398252c888c1ce518d643f2d1ac7c76825d55003202b60172e44",
+      "bytes": 335079,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/rin-contact-abi-013.request.json",
+      "sha256": "39ff45e9b80ca5bc90505598de1a6b1c0f23ada86ad2bc70b577dc57e3f24b0b",
+      "bytes": 104,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/rin-contact-hook-011.request.json",
+      "sha256": "3dc955c23175ec3af41dfb3d56147811845e6379b18e00451cf12b0dc8ba895c",
+      "bytes": 122,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/rin-contact-hook-012.request.json",
+      "sha256": "6313faf74df4f07b96e5d3caa21857c3b6dc436e042dd870a32d0d35595514a9",
+      "bytes": 122,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/rin-contact-hook-014.request.json",
+      "sha256": "7ff4e73ec2b11f2e819ae99f979ec8d7d9474cda782bf85f2f3a1e409096b26a",
+      "bytes": 122,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/rin-contact-hook-015.request.json",
+      "sha256": "9f8b7461105c9f0e4f50aa0f8f908bd6b425eb81e97e3f22afe1255a4342f748",
+      "bytes": 122,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/rin-display-write-019.request.json",
+      "sha256": "9abb9165aa62dbd5ced38bebf08f03146bbc66621a3569653a20717d16016f46",
+      "bytes": 119,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/rin-display-write-020.request.json",
+      "sha256": "889d8bdd2b1b1ccf2bb38baebcdae6efdafd0ab14cf988e551146ad764d3cfc8",
+      "bytes": 119,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/rin-live-display-021.request.json",
+      "sha256": "fa03a7426ff890371cec7694162bbd4c242a7589a0b63ee7cfbb5b191758669d",
+      "bytes": 112,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/rin-live-display-022.request.json",
+      "sha256": "c26bb5b9a9a8da3ed59129d298444635df26f5da43bc59a89271a90e7f8ec67e",
+      "bytes": 112,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/rin-live-display-023.request.json",
+      "sha256": "ce0f8f5ca853937ff733e87dd4b845345f12047c5f70dcdb8f1e85550d8b2f4f",
+      "bytes": 112,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/rin-live-display-024.request.json",
+      "sha256": "5dc6a581d1aeea505ea2c4d2323ed5585be786bfbf8d61fa178c768f41786466",
+      "bytes": 112,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/rin-live-display-025.request.json",
+      "sha256": "185caee0ba83775011c6f12e0b62f8470848d13b6627dc06cb74be841fcf192e",
+      "bytes": 112,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/rin-live-display-026.request.json",
+      "sha256": "ac4680d5e33cf74f586958a50486bc6ec90a611bad25b24db9682315af98c3d3",
+      "bytes": 132,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/rin-native-pair-016.request.json",
+      "sha256": "9c55af5c4726c9753b22a8b16cc4c5c72c06631b2e65e0d202a3a6616c6db9c2",
+      "bytes": 113,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/rin-native-pair-017.request.json",
+      "sha256": "8fcf473db9c770931a0d991c91fe103fbc64969f55b51f44443771af7e2ebdce",
+      "bytes": 113,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/physics-authoring/rin-particles-018.request.json",
+      "sha256": "9d67ddf7e85731bf10939009b1b4c46a03a6f28dea739c951cd5a58d6b8b2bcb",
+      "bytes": 111,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/scripts/next_phone_status.py",
+      "sha256": "972ad4915767f70c261b946da453cb180d9d4c3e8791fd7ab1dec92041770a33",
+      "bytes": 1464,
+      "action": "move"
+    },
+    {
+      "source": "artifacts/native-bem-tohsaka-aglina-20261008/scripts/archive_native_physics.py",
+      "sha256": "a376b9f1ab7f3abbf001110145d2b9df71eb28d1f9636ac55fbb82bb1cb26776",
+      "bytes": 8027,
+      "action": "move"
+    }
+  ]
+}

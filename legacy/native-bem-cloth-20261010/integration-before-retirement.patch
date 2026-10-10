@@ -1,0 +1,465 @@
+diff --git a/android/app/src/main/cpp/CMakeLists.txt b/android/app/src/main/cpp/CMakeLists.txt
+index 34f3fe96..23757635 100644
+--- a/android/app/src/main/cpp/CMakeLists.txt
++++ b/android/app/src/main/cpp/CMakeLists.txt
+@@ -40,6 +40,27 @@ endif()
+ add_subdirectory("${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/custom_model"
+     "${CMAKE_CURRENT_BINARY_DIR}/custom_model")
+ 
++# The upstream POSIX writer protects only one page. A 16-byte ARM64 jump
++# starting twelve bytes before a page boundary otherwise crashes in memcpy.
++get_target_property(BE_DOBBY_SOURCES ${BETTER_ENDFIELD_NEXT_DOBBY_TARGET} SOURCES)
++set(BE_DOBBY_PATCH_SOURCE "source/UserMode/ExecMemory/code-patch-tool-posix.cc")
++set(BE_DOBBY_PATCH_FOUND FALSE)
++foreach(BE_DOBBY_SOURCE IN LISTS BE_DOBBY_SOURCES)
++    if(BE_DOBBY_SOURCE MATCHES "(^|/)source/UserMode/ExecMemory/code-patch-tool-posix\\.cc$")
++        list(REMOVE_ITEM BE_DOBBY_SOURCES "${BE_DOBBY_SOURCE}")
++        set(BE_DOBBY_PATCH_FOUND TRUE)
++    endif()
++endforeach()
++if(NOT BE_DOBBY_PATCH_FOUND)
++    message(FATAL_ERROR "Dobby POSIX patch source changed; review the code-write adapter")
++endif()
++set_property(TARGET ${BETTER_ENDFIELD_NEXT_DOBBY_TARGET} PROPERTY SOURCES "${BE_DOBBY_SOURCES}")
++target_sources(${BETTER_ENDFIELD_NEXT_DOBBY_TARGET} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/core/code_patch_posix.cpp")
++
++add_executable(BetterEndfieldNext.CodePatchTests EXCLUDE_FROM_ALL tests/code_patch_tests.cpp)
++target_compile_features(BetterEndfieldNext.CodePatchTests PRIVATE cxx_std_20)
++target_link_libraries(BetterEndfieldNext.CodePatchTests PRIVATE ${BETTER_ENDFIELD_NEXT_DOBBY_TARGET} c++_static c++abi log)
++
+ # Import-time codec only. This library never starts the injected game runtime.
+ set(ASTCENC_CLI OFF CACHE BOOL "" FORCE)
+ set(ASTCENC_ISA_NEON ON CACHE BOOL "" FORCE)
+@@ -118,7 +139,6 @@ set_source_files_properties(
+ 
+ add_library(betterendfieldnext_android SHARED
+     native_bridge.cpp
+-    "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/third_party_modules/third_party_host.cpp"
+     core/hook_broker.cpp
+     core/log.cpp
+     core/local_music_android.cpp
+@@ -129,6 +149,7 @@ add_library(betterendfieldnext_android SHARED
+     modules/custom_model/mesh_skin_metadata_adapter.cpp
+     modules/custom_model/custom_model_module.cpp
+     modules/custom_model/android_mesh_builder.cpp
++    modules/custom_model/android_cloth_probe.cpp
+     "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/custom_model/module.cpp"
+     "${CMAKE_CURRENT_SOURCE_DIR}/modules/custom_model/native_mesh_layout_android.cpp"
+     modules/character_voice/character_voice_module.cpp
+diff --git a/android/app/src/main/cpp/core/hook_broker.cpp b/android/app/src/main/cpp/core/hook_broker.cpp
+index d63a2670..89356b20 100644
+--- a/android/app/src/main/cpp/core/hook_broker.cpp
++++ b/android/app/src/main/cpp/core/hook_broker.cpp
+@@ -1,5 +1,6 @@
+ #include "core/hook_broker.h"
+ #include "core/log.h"
++#include "core/code_patch_posix.h"
+ #include <dobby.h>
+ #include <cstdio>
+ #include <memory>
+@@ -22,8 +23,14 @@ Registry& Hooks() { static auto* registry = new Registry; return *registry; }
+ // Registry mutex held.
+ BetterEndfieldNext::Hooks::Chain& Chains(Registry& registry) {
+     if (!registry.chains) registry.chains = std::make_unique<BetterEndfieldNext::Hooks::Chain>(BetterEndfieldNext::Hooks::Backend{
+-        [](void* target, void* entry, void** original) { return DobbyPrepare(target, entry, original) == 0; },
+-        [](void* target) { return DobbyCommit(target) == 0; },
++        [](void* target, void* entry, void** original) {
++            ResetCodePatchFailure();const bool prepared=DobbyPrepare(target, entry, original)==0;
++            if(prepared&&CodePatchFailed()){DobbyDestroy(target);return false;}
++            return prepared;
++        },
++        [](void* target) {
++            ResetCodePatchFailure();return DobbyCommit(target)==0&&!CodePatchFailed();
++        },
+         [](void* target) { DobbyDestroy(target); },
+         [](void*) { /* Process-pinned Dobby trampoline: relay forwards to original. */ }});
+     return *registry.chains;
+diff --git a/android/app/src/main/cpp/modules/custom_model/android_mesh_builder.cpp b/android/app/src/main/cpp/modules/custom_model/android_mesh_builder.cpp
+index 0b97207f..b225434d 100644
+--- a/android/app/src/main/cpp/modules/custom_model/android_mesh_builder.cpp
++++ b/android/app/src/main/cpp/modules/custom_model/android_mesh_builder.cpp
+@@ -1,4 +1,5 @@
+ #include "android_mesh_builder.h"
++#include "android_cloth_probe.h"
+ #include "core/log.h"
+ #include <array>
+ #include <cstring>
+@@ -102,7 +103,7 @@ void Transfer(Calls& calls, uintptr_t data, int stream,
+ }
+ }
+ 
+-void ConfigureAndroidMeshBuilder(Il2CppRuntime& value, bool test, bool pipeline, bool npc, bool inspect) { runtime = &value; rollback_test = test; pipeline_lod_enabled=pipeline; npc_parameters_enabled=npc; inspection_enabled=inspect; api = {}; }
++void ConfigureAndroidMeshBuilder(Il2CppRuntime& value, bool test, bool pipeline, bool npc, bool inspect) { runtime = &value; rollback_test = test; pipeline_lod_enabled=pipeline; npc_parameters_enabled=npc; inspection_enabled=inspect; api = {}; ConfigureAndroidClothProbe(value); }
+ bool AndroidMeshRollbackTest() { return rollback_test; }
+ bool AndroidPipelineLodEnabled() { return pipeline_lod_enabled; }
+ bool AndroidNpcParametersEnabled() { return npc_parameters_enabled; }
+@@ -348,6 +349,62 @@ bool AndroidReadMeshStrides(void* mesh, std::vector<int32_t>& strides) {
+     } catch (const std::exception& error) { LogError(kLog,error.what()); strides.clear(); return false; }
+ }
+ 
++bool AndroidReadMeshGeometry(void* mesh,BetterEndfieldNext::CustomModel::BemComponent& component) {
++    if(!mesh||!AndroidMeshBuilderReady())return false;
++    try {
++        Calls calls;MeshDataScope data{calls};data.Init(mesh);void* args[]{&data.data};
++        const int vertices=calls.Value<int32_t>(api.vertex_count,nullptr,args);
++        const int streams=calls.Value<int32_t>(api.buffer_count,nullptr,args);
++        const int subs=calls.Value<int32_t>(api.sub_count,nullptr,args);
++        if(vertices<=0||vertices>1048576||streams!=3||subs<=0||subs>256)return false;
++        auto format=runtime->ResolveMethodExact(kAssembly,"UnityEngine","Mesh","get_indexFormat","","UnityEngine.Rendering.IndexFormat",0);
++        const int index_format=calls.Value<int32_t>(format,mesh);if(index_format<0||index_format>1)return false;
++        component={};component.info.vertex_count=vertices;component.info.index_element_size=index_format?4:2;
++        uint32_t strides[3]{};
++        for(int stream=-1;stream<streams;++stream) {
++            void* read_args[]{&data.data,&stream};
++            const uint64_t size=calls.Value<uint64_t>(stream<0?api.index_size:api.vertex_size,nullptr,read_args);
++            const uintptr_t pointer=calls.Value<uintptr_t>(stream<0?api.index_ptr:api.vertex_ptr,nullptr,read_args);
++            if(!pointer||!size||size>64u*1024u*1024u||pointer>UINTPTR_MAX-size)return false;
++            auto& bytes=stream<0?component.indices:component.streams[stream];
++            bytes.assign(reinterpret_cast<const uint8_t*>(pointer),reinterpret_cast<const uint8_t*>(pointer)+size);
++            if(stream>=0){if(size%vertices)return false;strides[stream]=size/vertices;}
++        }
++        component.info.stride0=strides[0];component.info.stride1=strides[1];component.info.stride2=strides[2];
++        if(component.indices.size()%component.info.index_element_size)return false;
++        component.info.index_count=component.indices.size()/component.info.index_element_size;
++        int attributes=calls.Value<int32_t>(api.attribute_count,mesh);if(attributes<=0||attributes>16)return false;
++        for(int i=0;i<attributes;++i){void* a[]{&i};component.attributes.push_back(calls.Value<std::array<int32_t,4>>(api.attribute,mesh,a));}
++        for(int i=0;i<subs;++i) {
++            SubMesh sub{};void* a[]{&data.data,&i,&sub};calls.Call(api.sub,nullptr,a);
++            if(sub.topology!=0||sub.base!=0||sub.start<0||sub.count<0||uint64_t(sub.start)+sub.count>component.info.index_count)return false;
++            BetterEndfieldNext::CustomModel::BemComponent::Draw draw{};draw.start=sub.start;draw.count=sub.count;
++            component.draws.push_back(draw);
++        }
++        return true;
++    }catch(const std::exception& e){LogError(kLog,e.what());return false;}
++}
++bool AndroidUpdateMeshPackedGeometry(void* mesh,const std::vector<float>& positions,const std::vector<uint32_t>& frames) {
++    if(!mesh||frames.empty()||positions.size()!=frames.size()*3||frames.size()>1048576)return false;
++    try {
++        Calls calls;
++        auto setter=runtime->ResolveMethodExact(kAssembly,"UnityEngine","Mesh","SetNativeArrayForChannelImpl",
++            "UnityEngine.Rendering.VertexAttribute|UnityEngine.Rendering.VertexAttributeFormat|System.Int32|System.IntPtr|System.Int32|System.Int32|System.Int32|UnityEngine.Rendering.MeshUpdateFlags","System.Void",8);
++        if(!setter.info)return false;
++        int32_t format=0,start=0,count=frames.size(),flags=0;
++        // This Android player's normal-channel setter consumes float3 even
++        // when dimension=1 is supplied. Never pass packed TBN words to it.
++        // Position writes use the observed float3 contract; packed frames stay
++        // in their original stream until a separate normal writer is verified.
++        for(int32_t channel:{0}) {
++            int32_t dimension=3;
++            uintptr_t pointer=reinterpret_cast<uintptr_t>(positions.data());
++            void* args[]{&channel,&format,&dimension,&pointer,&count,&start,&count,&flags};calls.Call(setter,mesh,args);
++        }
++        return true;
++    }catch(const std::exception& e){LogError(kLog,e.what());return false;}
++}
++
+ bool AndroidSubmitMesh(void* mesh, const BetterEndfieldNext::CustomModel::BemComponent& component) {
+     if (!mesh || !AndroidMeshBuilderReady()) return false;
+     try {
+diff --git a/android/app/src/main/cpp/modules/custom_model/android_mesh_builder.h b/android/app/src/main/cpp/modules/custom_model/android_mesh_builder.h
+index 58c9ee1c..ed3678e2 100644
+--- a/android/app/src/main/cpp/modules/custom_model/android_mesh_builder.h
++++ b/android/app/src/main/cpp/modules/custom_model/android_mesh_builder.h
+@@ -24,6 +24,9 @@ bool AndroidAuditMaterialCopy(void* original, void* copy);
+ void AndroidAuditTextureColorSpace(void* original, void* replacement, const std::string& name);
+ bool AndroidMeshBuilderReady();
+ bool AndroidReadMeshStrides(void* mesh, std::vector<int32_t>& strides);
++// Readable generated meshes only; used to own an instance-local cloth output.
++bool AndroidReadMeshGeometry(void* mesh, BetterEndfieldNext::CustomModel::BemComponent& component);
++bool AndroidUpdateMeshPackedGeometry(void* mesh,const std::vector<float>& positions,const std::vector<uint32_t>& frames);
+ // Caller owns and roots the unpublished Mesh and initializes its skin field.
+ bool AndroidSubmitMesh(void* mesh, const BetterEndfieldNext::CustomModel::BemComponent& component);
+ // Retains the game's resource handle until Release; does not instantiate or
+diff --git a/native/modules/custom_model/CMakeLists.txt b/native/modules/custom_model/CMakeLists.txt
+index b0ddca09..f808cb72 100644
+--- a/native/modules/custom_model/CMakeLists.txt
++++ b/native/modules/custom_model/CMakeLists.txt
+@@ -17,12 +17,27 @@ target_link_libraries(BetterEndfieldNext.BemValidate PRIVATE BetterEndfieldNext.
+ add_executable(BetterEndfieldNext.BemV11CapacityTests EXCLUDE_FROM_ALL ../../tests/bem_v11_capacity_tests.cpp)
+ add_executable(BetterEndfieldNext.BemV13MorphTests EXCLUDE_FROM_ALL ../../tests/bem_v13_morph_tests.cpp)
+ add_executable(BetterEndfieldNext.BemV14ResourceTests EXCLUDE_FROM_ALL ../../tests/bem_v14_resource_tests.cpp)
++add_executable(BetterEndfieldNext.ClothProxyTests EXCLUDE_FROM_ALL ../../tests/cloth_proxy_validation_tests.cpp)
++add_executable(BetterEndfieldNext.ClothContactCounterTests EXCLUDE_FROM_ALL ../../tests/cloth_contact_counter_tests.cpp)
++target_compile_features(BetterEndfieldNext.ClothContactCounterTests PRIVATE cxx_std_20)
++add_executable(BetterEndfieldNext.ClothDisplayBindingTests EXCLUDE_FROM_ALL ../../tests/cloth_display_binding_tests.cpp)
++add_executable(BetterEndfieldNext.ClothBoneBindingTests EXCLUDE_FROM_ALL ../../tests/cloth_bone_binding_tests.cpp)
++add_executable(BetterEndfieldNext.ClothLayerOrderTests EXCLUDE_FROM_ALL ../../tests/cloth_layer_order_tests.cpp)
++target_compile_features(BetterEndfieldNext.ClothLayerOrderTests PRIVATE cxx_std_20)
++target_compile_features(BetterEndfieldNext.ClothDisplayBindingTests PRIVATE cxx_std_20)
++target_compile_features(BetterEndfieldNext.ClothBoneBindingTests PRIVATE cxx_std_20)
++target_compile_features(BetterEndfieldNext.ClothProxyTests PRIVATE cxx_std_20)
+ target_link_libraries(BetterEndfieldNext.BemV14ResourceTests PRIVATE BetterEndfieldNext.CustomModelCore)
+ target_link_libraries(BetterEndfieldNext.BemV13MorphTests PRIVATE BetterEndfieldNext.CustomModelCore)
+ add_executable(BetterEndfieldNext.BemKeepTextureValidate EXCLUDE_FROM_ALL ../../tests/bem_keep_texture_validate.cpp)
+ target_link_libraries(BetterEndfieldNext.BemKeepTextureValidate PRIVATE BetterEndfieldNext.CustomModelCore)
+ target_link_libraries(BetterEndfieldNext.BemV11CapacityTests PRIVATE BetterEndfieldNext.CustomModelCore)
+ if(ANDROID)
++    target_link_libraries(BetterEndfieldNext.ClothLayerOrderTests PRIVATE c++_static c++abi)
++    target_link_libraries(BetterEndfieldNext.ClothDisplayBindingTests PRIVATE c++_static c++abi)
++    target_link_libraries(BetterEndfieldNext.ClothBoneBindingTests PRIVATE c++_static c++abi)
++    target_link_libraries(BetterEndfieldNext.ClothContactCounterTests PRIVATE c++_static c++abi)
++    target_link_libraries(BetterEndfieldNext.ClothProxyTests PRIVATE c++_static c++abi)
+     target_link_libraries(BetterEndfieldNext.BemValidate PRIVATE c++_static c++abi)
+     target_link_libraries(BetterEndfieldNext.BemV11CapacityTests PRIVATE c++_static c++abi)
+     target_link_libraries(BetterEndfieldNext.BemV13MorphTests PRIVATE c++_static c++abi)
+diff --git a/native/modules/custom_model/module.cpp b/native/modules/custom_model/module.cpp
+index e2c20a64..ff5f4438 100644
+--- a/native/modules/custom_model/module.cpp
++++ b/native/modules/custom_model/module.cpp
+@@ -14,6 +14,7 @@
+ #include "texture_binding_policy.h"
+ #if defined(__ANDROID__)
+ #include "modules/custom_model/android_mesh_builder.h"
++#include "modules/custom_model/android_cloth_probe.h"
+ #include "android_lod_relations.generated.h"
+ #include "android_texture_budget_policy.h"
+ #endif
+@@ -473,6 +474,14 @@ struct ConstructionScope {
+     explicit ConstructionScope(bool attach=true) : attached(attach) { if (attach) g_construction = this; }
+     ConstructionScope(const ConstructionScope&) = delete;
+     ~ConstructionScope();
++    // Transfer only this asset to a longer-lived owner. Other unpublished
++    // assets in the pump must still be destroyed when the transaction ends.
++    bool TransferAsset(void* object) {
++        if(!object)return false;
++        auto found=std::find(assets.begin(),assets.end(),object);
++        if(found==assets.end())return false;
++        *found=nullptr;return true;
++    }
+     void* Root(void* object) {
+         if (!object) return nullptr;
+         // Queries may return tens of thousands of objects in one scope. Keep
+@@ -2754,6 +2763,15 @@ void* ResolveOriginalMaterials(const SavedOriginalBinding& original,void* type_t
+     for (int i=0;i<count;++i) if (!SetArrayValue(result,i,found[i])) { why="Original material array assignment failed"; return nullptr; }
+     return result;
+ }
++// Physics clone identity is equivalent to its pinned BEM source. Actual bindings
++// remain untouched so rollback always uses the receiver's real mesh.
++void* ModelLineageMesh(void* mesh) {
++#if defined(__ANDROID__)
++    return betterendfieldnext::AndroidClothSourceMesh(mesh);
++#else
++    return mesh;
++#endif
++}
+ bool UseSavedOriginal(void* asset,PreparedBinding& binding,bool require_materials,bool restoring_original) {
+     const auto refuse=[&](const std::string& reason) {
+         if (g_instance_rebind_active) Log("Hot switch Original binding refused resource="+ObjectName(asset)+
+@@ -2774,7 +2792,7 @@ bool UseSavedOriginal(void* asset,PreparedBinding& binding,bool require_material
+             if (!old.original || old.receiver_key!=key) continue;
+             const bool same_root=record->root.Is(asset);
+             if (owns_record && !same_root) continue;
+-            if (!same_root && !old.mesh.Is(binding.original_mesh)) continue;
++            if (!same_root && !old.mesh.Is(ModelLineageMesh(binding.original_mesh))) continue;
+             // On another root (a scene instance cloned from this template) the
+             // game may give the instance its own material copies. A Mesh this
+             // module generated proves the generation. Restoring the Original
+@@ -2861,7 +2879,11 @@ bool RememberResource(const CharacterAdapter& adapter,void* asset,
+         completed.component_id=binding.component_id; completed.enabled=binding.custom_enabled;
+         completed.generated_mesh=binding.custom_mesh!=DonorMesh(binding);
+         completed.original=binding.saved_original;
+-        if (!completed.original && (retain_original || g_hot_switch_runtime.load())) {
++        // Normal deliveries can revisit a cached UI template or a clone with
++        // game-owned material copies even when hot switching is disabled.
++        // Keep its donor lineage for every applied selection; otherwise an
++        // unchanged hide/keep Mesh is mistaken for an unknown generated Mesh.
++        if (!completed.original && (retain_original || g_hot_switch_runtime.load() || !record.selection_key.empty())) {
+             auto original=std::make_shared<SavedOriginalBinding>();
+             if (!original->mesh.Set(DonorMesh(binding)) || !original->SetMaterials(DonorMaterials(binding)) ||
+                 (!IsStaticRenderer(binding.renderer) && !original->bones.Set(DonorBones(binding)))) return false;
+@@ -2935,7 +2957,7 @@ bool IsCompletedResource(const CharacterAdapter& adapter,void* asset,std::string
+                 }
+             }
+             bool enabled=false;
+-            if (!renderer || !binding.mesh.Is(GetRendererMesh(renderer)) ||
++            if (!renderer || !binding.mesh.Is(ModelLineageMesh(GetRendererMesh(renderer))) ||
+                 !GetRendererEnabled(renderer,enabled) || enabled!=binding.enabled) { matches=false; break; }
+ #if defined(__ANDROID__)
+             if (binding.check_shadow) {
+@@ -2999,41 +3021,25 @@ void IndexLivePublishedTextures(const CharacterAdapter& adapter,std::unordered_m
+ }
+ void PruneCompletedResources() {
+     const auto now=GetTickCount64();
+-    if (g_hot_switch_runtime.load()) {
+-        // Scene instances cloned before a hot switch keep showing a retired
+-        // generation. Unity often recycles a Mesh's managed wrapper while the
+-        // native Mesh is still rendered, so weak handles cannot prove a retired
+-        // generation unused. Keep retired lineage (and its shared Original) per
+-        // role, bounded to the newest few generations, so the instance rebind
+-        // can still identify and rebuild those instances.
+-        constexpr size_t kRetiredGenerationsPerRole=4;
+-        std::unordered_map<const CharacterAdapter*,size_t> retired;
+-        for (auto record=g_completed.rbegin();record!=g_completed.rend();++record) {
+-            if (record->root.Get()) {record->last_seen_ms=now;continue;}
+-            // Only generated output can still be shown by an older instance;
+-            // a restored-Original record has nothing left to rebind.
+-            if (std::none_of(record->bindings.begin(),record->bindings.end(),
+-                    [](const auto& binding){return binding.generated_mesh || binding.generated_materials;})) {
+-                record->retired_drop=true;continue;
+-            }
+-            const CharacterAdapter* role=record->adapter;
+-            for (const auto& [seen,count]:retired) if (SameAdapter(*seen,*role)) {role=seen;break;}
+-            if (++retired[role]>kRetiredGenerationsPerRole) record->retired_drop=true;
++    // Scene instances and pooled UI models can retain a retired generation
++    // with hot switching off. A recycled wrapper does not prove its native
++    // Mesh unused. Keep bounded lineage so later deliveries can recover donors.
++    constexpr size_t kRetiredGenerationsPerRole=4;
++    std::unordered_map<const CharacterAdapter*,size_t> retired;
++    for (auto record=g_completed.rbegin();record!=g_completed.rend();++record) {
++        if (record->root.Get()) {record->last_seen_ms=now;continue;}
++        // Replaced materials, geometry and hidden parts can all survive in
++        // pooled instances; a restored-Original record needs no retention.
++        if (std::none_of(record->bindings.begin(),record->bindings.end(),
++                [](const auto& binding){return binding.generated_mesh || binding.generated_materials ||
++                    (binding.original && binding.enabled!=binding.original->enabled);})) {
++            record->retired_drop=true;continue;
+         }
+-        std::erase_if(g_completed,[](const auto& record){return record.retired_drop;});
+-        return;
++        const CharacterAdapter* role=record->adapter;
++        for (const auto& [seen,count]:retired) if (SameAdapter(*seen,*role)) {role=seen;break;}
++        if (++retired[role]>kRetiredGenerationsPerRole) record->retired_drop=true;
+     }
+-    std::erase_if(g_completed,[&](auto& record) {
+-        if (record.root.Get()) {record.last_seen_ms=now;return false;}
+-        // Unknown old consumers keep their displayed assets. Drop only extra
+-        // Original ownership after the idle window, retaining weak provenance.
+-        if (record.last_seen_ms+10000<=now) for (auto& binding:record.bindings) binding.original.reset();
+-        for (const auto& binding:record.bindings) {
+-            if (binding.generated_mesh && binding.mesh.Get()) return false;
+-            if (binding.generated_materials) for (const auto& material:binding.materials) if (material.Get()) return false;
+-        }
+-        return true;
+-    });
++    std::erase_if(g_completed,[](const auto& record){return record.retired_drop;});
+ }
+ #if defined(__ANDROID__)
+ void InspectAndroidRenderers() {
+@@ -3132,7 +3138,8 @@ void LogGenericLineageNote(const GenericMatching::ReceiverKey& key,const char* n
+ bool ReadGenericPristineMesh(const CharacterAdapter& adapter,void* asset,
+     const GenericRendererCandidate& candidate,GenericMatching::MeshIdentity& identity) {
+     using Origin=GenericMatching::DonorOrigin;
+-    identity={};void* pristine=candidate.mesh;bool known_generated=false;
++    void* lineage_mesh=ModelLineageMesh(candidate.mesh);
++    identity={};void* pristine=lineage_mesh;bool known_generated=false;
+     // A receiver's own completed record is stronger evidence than another
+     // template/clone sharing an unchanged Mesh. Retired records must not veto it.
+     const bool owns_record=std::any_of(g_completed.begin(),g_completed.end(),[&](const auto& record) {
+@@ -3157,11 +3164,11 @@ bool ReadGenericPristineMesh(const CharacterAdapter& adapter,void* asset,
+         if (old.receiver_key!=candidate.key) continue;
+         const bool same_root=record.root.Is(asset);
+         if (owns_record && !same_root) continue;
+-        const bool same_mesh=old.mesh.Is(candidate.mesh);
+-        void* saved=old.original?old.original->ResolveMesh(candidate.mesh):nullptr;
++        const bool same_mesh=old.mesh.Is(lineage_mesh);
++        void* saved=old.original?old.original->ResolveMesh(lineage_mesh):nullptr;
+         if (!same_root && !same_mesh) continue;
+         saw_completed=true;
+-        if (same_root && !same_mesh && !same_object(saved,candidate.mesh))
++        if (same_root && !same_mesh && !same_object(saved,lineage_mesh))
+             return refuse(Origin::Unavailable,!old.original?
+                 "completed receiver holds an unknown Mesh and no Original was saved":
+                 saved?"completed receiver holds a Mesh that is neither this module's output nor the saved Original":
+@@ -3186,7 +3193,7 @@ bool ReadGenericPristineMesh(const CharacterAdapter& adapter,void* asset,
+                 // Mesh remains pristine when the game gives a clone different
+                 // material slots; UseSavedOriginal validates material ownership
+                 // separately before a build or restoration can borrow them.
+-                if (!same_object(saved,candidate.mesh)) {
++                if (!same_object(saved,lineage_mesh)) {
+                     unavailable_detail=count!=static_cast<int>(old.materials.size())?
+                         "clone material count differs from its completed generation":
+                         "clone materials do not identify a completed generation";
+@@ -3791,13 +3798,14 @@ void __fastcall ResourcePump(void* method) {
+                 InstanceRebindOutstanding() || g_instance_rebind_handled!=g_model_revision);
+         const bool texture_ready=TickAndroidTextureBudget(!stop &&
+             ((g_lod.active && g_lod.applied) || unbinding_pending),stop);
++        const bool cloth_ready=!stop || betterendfieldnext::ShutdownAndroidClothProbe();
+ #else
+         const bool desired=!stop && EffectiveLodEnabled(!g_registry.enabled.empty(),g_standalone_lod.load());
+         const bool ready=g_lod.Update(desired);
+ #endif
+         if (stop && ready
+ #if defined(__ANDROID__)
+-            && texture_ready
++            && texture_ready && cloth_ready
+ #endif
+         ) { g_shutdown_ack.store(true); g_shutdown_cv.notify_all(); }
+         const uint64_t now=GetTickCount64();
+@@ -3809,6 +3817,15 @@ void __fastcall ResourcePump(void* method) {
+             PruneCompletedResources();
+ #if defined(__ANDROID__)
+             InspectAndroidRenderers();
++            if (!stop) {
++                std::vector<betterendfieldnext::AndroidClothProbeRoot> cloth_roots;
++                for (const auto& record:g_completed) {
++                    void* root=record.root.Get();
++                    if (root && IsNativeObjectAlive(root))
++                        cloth_roots.push_back({root,record.adapter->id,ObjectName(root)});
++                }
++                betterendfieldnext::PollAndroidClothProbe(cloth_roots);
++            }
+             if (!stop && (!g_registry.enabled.empty() || g_hot_switch_runtime.load()))
+                 ObserveAndroidTextureStreamingPeriodic();
+ #endif
+@@ -4089,6 +4106,25 @@ const BE_ModuleApiV1 kResourceApi{
+ };
+ }
+ BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfieldNext_GetModuleApiV1() { return &kResourceApi; }
++#if defined(__ANDROID__)
++std::shared_ptr<void> PinModelMeshForCloth(void* mesh) {
++    auto pin=AcquireOriginalMeshPin(mesh);
++    if(!pin||!pin->flag_added) {
++        int32_t flags=0;
++        if(!mesh||!InvokeValue(Contract("object.get_hide_flags"),mesh,nullptr,flags)||!(flags&kHideFlagDontUnloadUnusedAsset))return {};
++    }
++    return pin;
++}
++void* BuildModelMeshForCloth(const BemComponent& component,void* source_mesh,void* bindposes) {
++    void* mesh=nullptr;
++    if(!source_mesh||!bindposes||!BuildMeshFromComponent(component,source_mesh,mesh,bindposes))return nullptr;
++    // BoneDetach owns the successful output. Leaving it in the unpublished
++    // ResourcePump scope destroys the renderer's new mesh at the end of this
++    // frame, even while a managed GC handle still keeps its wrapper alive.
++    if(!g_construction||!g_construction->TransferAsset(mesh))return nullptr;
++    return mesh;
++}
++#endif
+ BE_EXPORT BE_Result BE_CALL BetterEndfieldNext_QueryCustomModelGeometryV1(void* mesh,
+     BE_CustomModelGeometryVisitorV1 visitor,void* context) {
+     if(!mesh || !visitor) return BE_Result_InvalidArgument;
+diff --git a/native/tests/custom_model_binding_tests.cpp b/native/tests/custom_model_binding_tests.cpp
+index 5e3faffd..6729b927 100644
+--- a/native/tests/custom_model_binding_tests.cpp
++++ b/native/tests/custom_model_binding_tests.cpp
+@@ -1418,7 +1418,31 @@ void ResourceTypeBoundaryTests(const std::filesystem::path& package_path) {
+ #include "custom_model_android_legacy_discovery_tests.inc"
+ #include "custom_model_npc_root_tests.inc"
+ 
++void ClothMeshLifetimeTests() {
++    BE_HostApiV1 host{};host.runtime_invoke=InvokeFake;host.object_unbox=UnboxFake;
++    host.gchandle_new=RootFake;host.gchandle_free=FreeFake;g_host=&host;
++    for(auto& method:g_methods){method.method_info=&method;method.resolved=true;}
++    auto* mesh=Make("physics-mesh");auto* abandoned=Make("unpublished-other-asset");
++    auto* donor=Make("borrowed-donor");
++    {
++        ConstructionScope pump;
++        pump.Root(mesh);pump.assets={mesh,abandoned};
++        Check(pump.TransferAsset(mesh),"cloth mesh ownership transfer refused");
++        Check(!pump.TransferAsset(mesh)&&!pump.TransferAsset(donor)&&!pump.TransferAsset(nullptr),
++            "ownership transfer accepted a duplicate, borrowed or null asset");
++        Check(!pump.published,"single mesh transfer published unrelated assets");
++    }
++    Check(mesh->destroy_calls==0&&abandoned->destroy_calls==1&&donor->destroy_calls==0,
++        "pump destroyed owned cloth mesh or leaked unrelated temporary assets");
++    Check(roots==0,"mesh transfer retained a pump GC root");
++    DestroyUnityObject(mesh);
++    Check(mesh->destroy_calls==1,"cloth owner could not release transferred mesh");
++    g_host=nullptr;
++    std::cout<<"PASS cloth mesh lifetime: survives unpublished pump, other assets cleaned, owner destroys once\n";
++}
++
+ int main(int argc,char** argv) {
++    if(argc==2 && std::string_view(argv[1])=="--cloth-mesh-lifetime") {ClothMeshLifetimeTests();return 0;}
+     if(argc==2 && std::string_view(argv[1])=="--npc-roots") {NpcRootTests();return 0;}
+     if(argc==2 && std::string_view(argv[1])=="--instance-lineage") {InstanceLineageTests();return 0;}
+     if(argc==4 && std::string_view(argv[1])=="--android-discovery") {AndroidDiscoveryTests(argv[2],argv[3]);AndroidLegacyDiscoveryTests(argv[2]);return 0;}

@@ -20,6 +20,7 @@ void InstanceLineageTests() {
         auto* own_materials=Array({Make("own-material-1"),Make("own-material-2")});
         auto* foreign_materials=Array({Make("template-material")});auto* bones=Array({Make("bone")});
         renderer->mesh=mesh;renderer->materials=own_materials;renderer->bones=bones;
+        static_cast<Fake*>(ArrayValue(bones,0))->parent=other_root;
         GenericMatching::ReceiverKey key;
         Check(MakeReceiverKey(adapter,root,renderer,key),"lineage receiver key unavailable");
         GenericRendererCandidate candidate{key,renderer,mesh,own_materials,bones,true};
@@ -43,6 +44,50 @@ void InstanceLineageTests() {
             Check(ReadGenericPristineMesh(adapter,root,candidate,identity) && identity.mesh==expected &&
                 identity.origin==GenericMatching::DonorOrigin::SavedOriginal,"reliable Original was vetoed by another root's material state");
         };
+        // Normal UI redelivery must retain geometry lineage with hot switch
+        // off, including hidden/kept parts whose materials the game replaces.
+        {
+            const bool hot=g_hot_switch_runtime.exchange(false);
+            auto* donor_mesh_all=Make("Mesh_all");donor_mesh_all->parent=other_root;
+            auto* donor_lod=Make("lod1");donor_lod->parent=donor_mesh_all;
+            auto* donor_renderer=Make("brow");donor_renderer->parent=donor_lod;
+            donor_renderer->runtime_class=renderer->runtime_class;
+            PreparedBinding binding;binding.renderer=donor_renderer;
+            binding.original_mesh=binding.custom_mesh=mesh;
+            binding.original_materials=binding.custom_materials=foreign_materials;
+            binding.original_bones=bones;binding.custom_enabled=false;
+            CompletedResource completed;ConstructionScope scope;
+            Check(RememberResource(adapter,other_root,{binding},completed,"selected-rin"),
+                "normal delivery could not capture donor lineage");
+            Check(completed.bindings.front().original!=nullptr &&
+                !completed.bindings.front().original->mesh_pin,
+                "hot-switch-off delivery lost Original identity or pinned an unchanged Mesh");
+            g_completed.push_back(std::move(completed));read(mesh);
+            // A UI template wrapper disappears while pooled clones still use
+            // its Mesh. Crossing the old ten-second grace period must not
+            // erase the source record, including hide-only selections.
+            g_completed.back().root.Reset();
+            g_completed.back().last_seen_ms=GetTickCount64()-10001;
+            PruneCompletedResources();
+            Check(g_completed.size()==1 && g_completed.front().bindings.front().original,
+                "pooled UI lost donor lineage when its template wrapper expired");
+            read(mesh);
+            g_completed.clear();g_hot_switch_runtime.store(hot);
+        }
+        {
+            const bool hot=g_hot_switch_runtime.exchange(false);
+            for(int i=0;i<6;++i) {
+                auto retired=record(other_root,mesh,foreign_materials,mesh,false,true);
+                retired.root.Reset();retired.selection_key=std::to_string(i);
+                retired.bindings.front().enabled=false; // hide-only selection
+                g_completed.push_back(std::move(retired));
+            }
+            PruneCompletedResources();
+            Check(g_completed.size()==4 && g_completed.front().selection_key=="2" &&
+                g_completed.back().selection_key=="5","retired UI lineage is not bounded to newest records");
+            for(const auto& r:g_completed) Check(bool(r.bindings.front().original),"retired lineage lost its Original");
+            g_completed.clear();g_hot_switch_runtime.store(hot);
+        }
         for (bool foreign_first:{false,true}) {
             g_completed.clear();
             if (foreign_first) g_completed.push_back(record(other_root,mesh,foreign_materials,different,false,true));
