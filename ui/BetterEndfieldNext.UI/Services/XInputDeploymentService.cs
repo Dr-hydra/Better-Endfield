@@ -23,6 +23,12 @@ internal static class XInputDeploymentService
     public const string ProxyFileName = "xinput1_4.dll";
     private const string ManifestFileName = "BetterEndfieldNext.xinput.install.json";
     private const string ProductId = "BetterEndfieldNext.XInputProxy";
+    // Exact signed payload distributed in official Next 4.0.0. That build could
+    // copy the proxy and then fail to write its obfuscated ownership JSON.
+    // Recognize only the released bytes when recovering an unmarked old proxy.
+    private const string Released400ProxySha256 = "AEE2781D41262A1D90A787195855C21872AD969F8D8286623C85858BEA61E9F2";
+    private static bool IsReleasedProxy(string sha256) =>
+        sha256.Equals(Released400ProxySha256, StringComparison.OrdinalIgnoreCase);
     private static readonly string[] RuntimeFiles =
     [
         "BetterEndfieldNext-xinput1_4-proxy.loaded",
@@ -90,7 +96,7 @@ internal static class XInputDeploymentService
             }
 
             DeploymentManifest? manifest = await ReadManifestAsync(paths.Manifest);
-            if (IsOwnedManifest(manifest, targetHash))
+            if (IsReleasedProxy(targetHash) || IsOwnedManifest(manifest, targetHash))
             {
                 return new XInputDeploymentStatus(
                     XInputDeploymentState.UpdateAvailable,
@@ -175,7 +181,7 @@ internal static class XInputDeploymentService
             string sourceHash = await ComputeSha256Async(paths.Source);
             DeploymentManifest? manifest = await ReadManifestAsync(paths.Manifest);
             bool owned = sourceHash.Equals(targetHash, StringComparison.OrdinalIgnoreCase) ||
-                IsOwnedManifest(manifest, targetHash);
+                IsReleasedProxy(targetHash) || IsOwnedManifest(manifest, targetHash);
             if (!owned)
             {
                 throw new IOException(
@@ -283,9 +289,9 @@ internal static class XInputDeploymentService
 
     private static bool IsOwnedManifest(DeploymentManifest? manifest, string targetHash) =>
         manifest is not null &&
-        manifest.Product.Equals(ProductId, StringComparison.Ordinal) &&
-        manifest.ProxyFile.Equals(ProxyFileName, StringComparison.OrdinalIgnoreCase) &&
-        manifest.Sha256.Equals(targetHash, StringComparison.OrdinalIgnoreCase);
+        string.Equals(manifest.Product, ProductId, StringComparison.Ordinal) &&
+        string.Equals(manifest.ProxyFile, ProxyFileName, StringComparison.OrdinalIgnoreCase) &&
+        string.Equals(manifest.Sha256, targetHash, StringComparison.OrdinalIgnoreCase);
 
     private static async Task<string> ComputeSha256Async(string path)
     {

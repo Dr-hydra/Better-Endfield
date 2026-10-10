@@ -105,6 +105,29 @@ internal static class Program
         Check(status.State==XInputDeploymentState.Conflict && !status.CanInstall && !status.CanUninstall,"unknown proxy was not protected");
         try {await XInputDeploymentService.InstallAsync(game,injector);throw new Exception("unknown proxy was overwritten");}
         catch(IOException) {Check((await File.ReadAllBytesAsync(target)).SequenceEqual(new byte[]{9,9,9}),"unknown proxy changed");}
+        if (args.Length > 1)
+        {
+            // Exercise the real published 4.0.0 bytes, not a fake ownership hash.
+            byte[] previous = await File.ReadAllBytesAsync(args[1]);
+            await File.WriteAllBytesAsync(target, previous);
+            status = await XInputDeploymentService.InspectAsync(game, injector);
+            Check(status.State == XInputDeploymentState.UpdateAvailable && status.CanInstall && status.CanUninstall,
+                "official 4.0.0 proxy without ownership record was treated as unknown");
+            await XInputDeploymentService.InstallAsync(game, injector);
+            Check(File.Exists(manifest) && (await File.ReadAllBytesAsync(target)).SequenceEqual(await File.ReadAllBytesAsync(source)),
+                "upgrade did not replace the released 4.0.0 proxy and repair its manifest");
+            File.Delete(manifest);
+            byte[] tampered = (byte[])previous.Clone(); tampered[^1] ^= 1;
+            await File.WriteAllBytesAsync(target, tampered);
+            status = await XInputDeploymentService.InspectAsync(game, injector);
+            Check(status.State == XInputDeploymentState.Conflict && !status.CanInstall && !status.CanUninstall,
+                "modified released proxy was incorrectly claimed");
+            try { await XInputDeploymentService.InstallAsync(game, injector); throw new Exception("modified proxy was overwritten"); }
+            catch (IOException) { Check((await File.ReadAllBytesAsync(target)).SequenceEqual(tampered), "modified proxy changed"); }
+            await File.WriteAllBytesAsync(target, previous);
+            await XInputDeploymentService.UninstallAsync(game, injector);
+            Check(!File.Exists(target) && !File.Exists(manifest), "unmarked official proxy could not be uninstalled");
+        }
         await VoiceCatalogService.CommitAsync(new VoiceCatalogPreparation([]));
         Check(!File.Exists(catalog),"disabled voice catalog was not retired");
         Console.WriteLine($"PASS {checks} desktop voice preparation and XInput installation/status/ownership checks.");

@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([string]$WorkspaceConfig = '')
+param([string]$WorkspaceConfig = '', [string]$PreviousProxyPath = '')
 $ErrorActionPreference = 'Stop'
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
 . (Join-Path $repoRoot 'scripts/Workspace.ps1')
@@ -9,12 +9,14 @@ $project = Join-Path $PSScriptRoot 'DesktopLaunch.csproj'
 & $ws.tools.dotnet build $project -c Release "-p:BEWorkspaceBuildRoot=$testRoot" --nologo
 if ($LASTEXITCODE -ne 0) { throw 'Desktop launch test build failed.' }
 $bin = Join-Path $testRoot 'dotnet/DesktopLaunch/AnyCPU/bin/Release/net9.0'
-& $ws.tools.dotnet (Join-Path $bin 'DesktopLaunch.dll') $testRoot
+$fixtureArgs = @($testRoot)
+if ($PreviousProxyPath) { $fixtureArgs += [IO.Path]::GetFullPath($PreviousProxyPath) }
+& $ws.tools.dotnet (Join-Path $bin 'DesktopLaunch.dll') @fixtureArgs
 if ($LASTEXITCODE -ne 0) { throw 'Desktop launch regression failed.' }
 $obfuscated = Join-Path $testRoot 'obfuscated'
 & (Join-Path $repoRoot 'scripts/ObfuscateNext.ps1') -AssemblyPath (Join-Path $bin 'DesktopLaunch.dll') `
     -OutputDirectory $obfuscated -WorkspaceConfig $WorkspaceConfig
 Copy-Item -LiteralPath (Join-Path $bin 'DesktopLaunch.deps.json'),(Join-Path $bin 'DesktopLaunch.runtimeconfig.json') `
     -Destination $obfuscated
-& $ws.tools.dotnet (Join-Path $obfuscated 'DesktopLaunch.dll') $testRoot
+& $ws.tools.dotnet (Join-Path $obfuscated 'DesktopLaunch.dll') @fixtureArgs
 if ($LASTEXITCODE -ne 0) { throw 'Obfuscated desktop launch regression failed.' }
