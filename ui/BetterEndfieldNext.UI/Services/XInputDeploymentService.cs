@@ -29,12 +29,16 @@ internal static class XInputDeploymentService
         "BetterEndfieldNext-xinput1_4-host.status"
     ];
 
-    private sealed record DeploymentManifest(
-        string Product,
-        string ProxyFile,
-        string Sha256,
-        string InstallRoot,
-        DateTimeOffset InstalledUtc);
+    // Reflection-based JSON must not depend on constructor parameter names:
+    // Release obfuscation removes those names from private positional records.
+    private sealed class DeploymentManifest
+    {
+        public string Product { get; init; } = string.Empty;
+        public string ProxyFile { get; init; } = string.Empty;
+        public string Sha256 { get; init; } = string.Empty;
+        public string InstallRoot { get; init; } = string.Empty;
+        public DateTimeOffset InstalledUtc { get; init; }
+    }
 
     private sealed record DeploymentPaths(
         string Source,
@@ -235,12 +239,14 @@ internal static class XInputDeploymentService
 
     private static async Task WriteManifestAsync(DeploymentPaths paths, string sha256)
     {
-        var manifest = new DeploymentManifest(
-            ProductId,
-            ProxyFileName,
-            sha256,
-            paths.InstallRoot,
-            DateTimeOffset.UtcNow);
+        var manifest = new DeploymentManifest
+        {
+            Product = ProductId,
+            ProxyFile = ProxyFileName,
+            Sha256 = sha256,
+            InstallRoot = paths.InstallRoot,
+            InstalledUtc = DateTimeOffset.UtcNow
+        };
         string temporary = paths.Manifest + ".tmp";
         try
         {

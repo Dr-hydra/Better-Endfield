@@ -1954,9 +1954,14 @@ public sealed partial class MainWindow : Window
             string launchArguments = GameLaunchArgumentsBox.Text.Trim();
             if (loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase))
             {
+                ShowStatus(
+                    isZh ? "正在准备 XInput 代理" : "Preparing XInput Proxy",
+                    isZh ? "正在检查并安装游戏自动加载代理。" : "Checking and installing the game auto-load proxy.",
+                    InfoBarSeverity.Informational);
                 await XInputDeploymentService.InstallAsync(
                     GamePathBox.Text.Trim(),
                     RuntimePathDiscoveryService.BundledInjectorPath);
+                await RefreshXInputStatusAsync();
                 startInfo = new ProcessStartInfo
                 {
                     FileName = GamePathBox.Text.Trim(),
@@ -1993,7 +1998,7 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception exception) when (
             exception is InvalidOperationException or IOException or
-                UnauthorizedAccessException or Win32Exception)
+                UnauthorizedAccessException or Win32Exception or NotSupportedException)
         {
             ShowStatus(isZh ? "启动失败" : "Launch Failed", exception.Message, InfoBarSeverity.Error);
         }
@@ -2323,7 +2328,7 @@ public sealed partial class MainWindow : Window
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or
             InvalidDataException or InvalidOperationException or
-            OmniMixRegistrationException)
+            OmniMixRegistrationException or NotSupportedException)
         {
             ShowStatus(isZh ? "保存失败" : "Save Failed", exception.Message, InfoBarSeverity.Error);
             return false;
@@ -2765,17 +2770,24 @@ public sealed partial class MainWindow : Window
         }
         try
         {
+            ShowStatus(
+                isZh ? "正在安装 XInput 代理" : "Installing XInput Proxy",
+                isZh ? "正在复制代理并保存安装记录。" : "Copying the proxy and saving its installation record.",
+                InfoBarSeverity.Informational);
             XInputDeploymentStatus status = await XInputDeploymentService.InstallAsync(
                 GamePathBox.Text.Trim(),
                 RuntimePathDiscoveryService.BundledInjectorPath);
-            await RefreshXInputStatusAsync();
             ShowStatus(isZh ? "XInput 已安装" : "XInput Installed", status.Message, InfoBarSeverity.Success);
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or
-                InvalidDataException or InvalidOperationException)
+                InvalidDataException or InvalidOperationException or NotSupportedException)
         {
             ShowStatus(isZh ? "XInput 安装失败" : "XInput Installation Failed", exception.Message, InfoBarSeverity.Error);
+        }
+        finally
+        {
+            await RefreshXInputStatusAsync();
         }
     }
 
