@@ -286,7 +286,7 @@ int HumanBone(size_t i) {
 void ReleaseBones() {
   for (auto& bone : bones) bone.transform.Reset();
   avatarLocalPoses.clear();
-  baseScale = 0; placementReady = false;
+  baseScale = 0; naturalHeight = 0; placementReady = false;
 }
 void Stop(const char*) {
   if (!OnMainThread()) return;
@@ -343,7 +343,6 @@ bool Capture() {
   }
   baseScale = (legLength * 0.5f) / eiem_source::Reference().legLength;
   if (!DirectVmdFinite(baseScale) || baseScale < 1e-5f || baseScale > 100) return false;
-  naturalHeight = bones[size_t(Id::LowerBody)].natural.position.y - entryRoot.position.y;
   const auto inv = DirectVmdQuaternionInverse(entryRoot.rotation);
   for (size_t i = 0; i < N; ++i) {
     auto& bone = bones[i];
@@ -356,6 +355,13 @@ bool Capture() {
       bone.bind.worldPosition = parent < 0 ? VmdVec3{} : bones[size_t(parent)].bind.worldPosition;
     }
   }
+  // Match PC's camera reference: the Avatar bind head in owner-root space.
+  // The pelvis height shrinks camera interest and distance, lowering framing.
+  const float bindHeadHeight = bones[size_t(Id::Head)].bind.worldPosition.y;
+  naturalHeight = DirectVmdFinite(bindHeadHeight) && bindHeadHeight > 0.1f &&
+      bindHeadHeight < 5.0f ? bindHeadHeight : 0.0f;
+  Log("camera bind head height=" + std::to_string(naturalHeight) +
+      " source=Avatar.humanDescription.skeleton");
   // Same source control geometry used by PC DirectVmd, expressed in game basis.
   const eiem_source::Reference reference;
   bones[size_t(Id::Center)].bind.worldPosition = DirectVmdSub(bones[size_t(Id::LowerBody)].bind.worldPosition,

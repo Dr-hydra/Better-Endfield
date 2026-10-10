@@ -181,7 +181,15 @@ int main(){
   for(auto& m:methods)assert(Resolve(nullptr,&m.descriptor,&m.resolved)==BE_Result_Ok);
   auto* owner=New(FindClass("Entity"));auto* anim=New(FindClass("Animator"));auto* root=MakeRig(anim);auto* core=MakeSmc(owner);
   entity=Pin(owner);animator=Pin(anim);options.face=true;options.cloth=BetterEndfieldNext::EiemBody::ClothMode::Stable;
+  anim->human[10]->position.y=.8f; // Animated entry head is below the Avatar bind head (1.6).
   anim->human[7]->rotation=DirectVmdQuaternionFromAxisAngle({1,0,0},.7f);assert(Capture());assert(std::fabs(bones[size_t(Id::UpperBody)].natural.rotation.w-1)<1e-6f);assert(face.ready);assert(cloth.size()==1);assert(twists[0][0].transform&&twists[0][1].transform);
+  placementReady=true;active=true;
+  BetterEndfieldNext::EiemBody::CameraReference cameraReference{};
+  assert(CameraReference(&cameraReference));
+  assert(std::fabs(cameraReference.natural_height-1.6f)<1e-6f);
+  assert(std::fabs(cameraReference.natural_height-anim->human[0]->position.y)>.5f);
+  assert(std::fabs(cameraReference.natural_height-anim->human[10]->position.y)>.5f);
+  active=false;placementReady=false;
   DirectVmdSampleFrame frame{};frame.valid=1;frame.leftFootIkEnabled=1;frame.rightFootIkEnabled=1;
   for(auto& b:frame.bones)b.rotation={0,0,0,1};
   frame.bones[size_t(Id::LeftArmTwist)].rotation=DirectVmdQuaternionFromAxisAngle({.7941f,-.6076f,.012f},.6f);
@@ -210,7 +218,7 @@ int main(){
   terrain.result.Reset();movement.Reset();options.terrain=false;
   // Managed exception fails the feature; it does not become an API success.
   face.ready=true;failMethod="SetPose";ApplyFace(frame);assert(!face.ready);failMethod.clear();
-  Stop("offline-stop");entity.Reset();animator.Reset();ownerRoot.Reset();nodes.clear();assert(handles.empty());
+  Stop("offline-stop");assert(naturalHeight==0);entity.Reset();animator.Reset();ownerRoot.Reset();nodes.clear();assert(handles.empty());
   auto cp=BetterEndfieldNext::EiemAndroid::DecodeCp932("\x83\x5a\x83\x93\x83\x5e\x81\x5b",8);assert(cp==u8"センター");assert(BetterEndfieldNext::EiemAndroid::DecodeCp932("\x81",1).empty());
   const uint8_t utf16[]={0x3d,0xd8,0x00,0xde};assert(BetterEndfieldNext::EiemAndroid::DecodeUtf16LE(utf16,4)=="\xf0\x9f\x98\x80");
   std::cout<<"PASS: Avatar natural bind (animated entry rejected as bind), cloth root anchors, managed SMC pose+snapshot restoration, twist, independent leg/toe IK, boxed terrain query+walkability+height response+pause+exception capability status, stable/freeze cloth restoration, exception gating, GC pins, CP932/UTF16\n";

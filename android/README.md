@@ -1,12 +1,14 @@
 # Better Endfield Next Android
 
-Next 4.0.0 uses `dev.betterendfield.next` and a new release signing key. Uninstall the previous app, install Next, enable the new framework module and select the game scope again. Settings are independent and are not migrated. Third-party modules and first person have moved to [Endfield Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader); BE removes the third-party loader, management pages and web bridge. The general Host, built-in module loading, shared Hook chains and Workshop entry remain. The Logo is unchanged. See [Next implementation notes](../docs/workspace/NEXT_IMPLEMENTATION.md).
+Next 4.0.1 uses `dev.betterendfield.next` and the Next release signing key. Next 4.0.0 users can update in place and retain their settings. When upgrading from 3.x, uninstall the previous app, install Next, enable the new framework module and select the game scope again; 3.x settings are not migrated. Third-party modules and first person have moved to [Endfield Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader); BE removes the third-party loader, management pages and web bridge. The general Host, built-in module loading, shared Hook chains and Workshop entry remain. The Logo is unchanged. See [Next implementation notes](../docs/workspace/NEXT_IMPLEMENTATION.md).
+
+The replacement 4.0.1 APK fixes low MMD camera framing by using the Avatar bind head height, matching PC. Existing 4.0.1 users can reinstall this APK and restart the game; existing MMD motion and camera files remain compatible.
 
 BEM import also accepts ZIP collections: choose which validated packages to import, including BEMs in subdirectories. [Android ZIP import behavior and limits](../docs/custom_model/ANDROID_BEM_ZIP_IMPORT.md).
 
 
 See the [main feature matrix](../README.en.md#feature-overview) for Windows/Android
-coverage. The current source version is **4.0.0** (versionCode 40000). In-game rendering
+coverage. The current source version is **4.0.1** (versionCode 40001). In-game rendering
 still requires device testing; build and isolated regression
 results are not gameplay validation.
 
