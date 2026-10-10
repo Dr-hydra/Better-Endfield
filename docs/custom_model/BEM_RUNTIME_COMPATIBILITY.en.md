@@ -212,3 +212,15 @@ Logs are in `%LOCALAPPDATA%\BetterEndfieldNext\logs\BetterEndfieldNext.log` on W
 | `LOD prerequisite unavailable` | Windows could not force LOD0 | Usually a game update; update the application |
 | `Resource preparation failed; original retained` | Preparation failed; earlier logs contain the cause | Read the preceding entries |
 | `Hot switch configuration rejected` / `Hot switch flags changed; restart the game` | Invalid hot-switch configuration or a restart-required flag changed | Restart the game |
+
+## Experimental cloned model support
+
+The Windows and Android model pages offer an independent **Experimental: cloned model support** switch. It defaults to off and requires a game restart. Windows stores `[CustomModel] clone_support=false`; Android stores `bem_clone_support` and carries the startup value through selection updates. Hot switching, upload pacing and validation remain independent.
+
+Enabled observation records the source and package generation at instantiation. Template delivery remains synchronous. A clone that already inherited the complete result keeps its private materials and parameters without a duplicate upload. Rebuilds use the verified Original and map its bone paths into the clone's own hierarchy.
+
+Private material copies alone do not reject an observed clone. Unknown Meshes, released Originals, changed source declarations, ambiguous receivers and missing/duplicate required bones still reject preparation and retain current bindings. The `(Clone)` suffix routes a resource; it does not prove ownership. Legacy Android characters retain their UI LOD0 to world LOD1 adapter, while explicit resources retain their own paths.
+
+A completed receiver holding its exact recorded Original Mesh can be prepared again. This redelivery correction is always active and does not require the experimental switch.
+
+Offline lifecycle regressions and both Release builds have been verified. Ultimate-state teleportation, pooling, NPC wrappers and game-specific private material changes still require device validation.

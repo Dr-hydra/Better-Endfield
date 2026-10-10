@@ -14,6 +14,7 @@ final class BemInstaller {
     static final String INDEX = "installed_bem_packages";
     static final String SKIP_VALIDATION = "bem_skip_validation";
     static final String HOT_SWITCH = "bem_hot_switch";
+    static final String CLONE_SUPPORT = "bem_clone_support";
     static final String FAST_LOADING = "bem_fast_loading";
     static final String KEEP_LOCAL_COPIES = "bem_keep_local_copies";
     static volatile String status = "原样导入 BEM 包；贴图异常时，可在对应模型包下手动转换手机纹理。";

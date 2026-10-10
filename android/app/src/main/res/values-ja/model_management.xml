@@ -8,4 +8,5 @@
     <string name="bem_storage">ストレージ</string>
     <string name="bem_keep_local_copies">ローカルコピーを保持</string>
     <string name="bem_clean_unused">未使用データを削除</string>
+    <string name="bem_clone_support">実験：複製モデル対応</string>
 </resources>

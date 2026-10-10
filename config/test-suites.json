@@ -504,6 +504,55 @@
       ]
     },
     {
+      "id": "custom_model.clone_support",
+      "module": "custom_model",
+      "kind": "simulation",
+      "platform": [
+        "Windows",
+        "Android"
+      ],
+      "game_version": [
+        "any"
+      ],
+      "input": {
+        "id": "source-fixtures",
+        "type": "synthetic"
+      },
+      "prerequisite": [
+        {
+          "type": "source",
+          "path": "native/tests/custom_model_binding_tests.cpp"
+        }
+      ],
+      "entry": {
+        "type": "native",
+        "cwd": ".",
+        "sources": [
+          "native/tests/custom_model_binding_tests.cpp",
+          "native/tests/custom_model_clone_support_tests.inc",
+          "native/modules/custom_model/module.cpp",
+          "native/modules/custom_model/model_clone_lineage.inc",
+          "native/modules/custom_model/model_job_runtime.inc",
+          "native/modules/custom_model/mod_registry.cpp"
+        ],
+        "executable": "windows/win-x64/Release/native/Release/BetterEndfieldNext.CustomModelBindingTests.exe",
+        "artifacts": [
+          "windows/win-x64/Release/native/Release/BetterEndfieldNext.CustomModelBindingTests.exe"
+        ],
+        "receipt": "tests/receipts/custom_model.clone_support.json",
+        "configuration": "Release",
+        "args": [
+          "--clone-support"
+        ]
+      },
+      "status": "active",
+      "replaced_by": null,
+      "purpose": "Experimental clone inheritance and lifecycle: fixed startup switch, synchronous templates, immutable generation, per-instance bones/materials, Original restore and strict refusal.",
+      "host_platform": [
+        "Windows"
+      ]
+    },
+    {
       "id": "combat.semantics",
       "module": "combat",
       "kind": "simulation",

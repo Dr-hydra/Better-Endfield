@@ -203,3 +203,15 @@ Windows 与 Android 使用同一套原生读取与构建代码（`native/modules
 | `LOD prerequisite unavailable` | Windows 强制 LOD0 失败 | 通常是游戏更新导致，需要更新程序 |
 | `Resource preparation failed; original retained` | 准备阶段失败，前面的日志有原因 | 查看前几行 |
 | `Hot switch configuration rejected` / `Hot switch flags changed; restart the game` | 热切换期间配置无效，或修改了需要重启的开关 | 重启游戏 |
+
+## 实验：克隆模型支持
+
+PC 与 Android 模型管理页提供独立的“实验：克隆模型支持”开关，默认关闭，重启游戏后生效。PC 的配置项为 `[CustomModel] clone_support=false`；Android 保存为 `bem_clone_support`，启动和热更新均传递同一会话值。热切换、加载速度优先和关闭模型校验仍各自独立。
+
+开启后，模块监听已登记模型来源的实例化，保存生成时的来源与包选择代次。模板交付仍同步完成，不因开启 Clone 支持切换为分帧异步。已完整继承结果的实例保留自己的材质对象和参数，不重复上传模型；需要重新准备的实例使用记录中的原版数据，并将骨骼按资源根内路径映射到自身。
+
+克隆实例的独立材质对象不会单独导致拒绝。未知 Mesh、原版数据已释放、来源声明变化、接收器歧义、缺失或重复的必要骨骼仍拒绝，保留当前绑定。识别依赖真实来源和对象身份，`(Clone)` 名称仅用于资源路由。Android 旧角色包继续按 UI LOD0 → world LOD1 的原有适配保存来源；显式包沿用自身资源路径。
+
+同一个已完成接收器重新持有记录中的原版 Mesh 时，会重新准备当前选择，修复资源二次交付后世界模型保持原版的问题。此修复始终启用，不依赖实验开关。
+
+目前已通过离线生命周期回归及两端 Release 构建；大招状态下传送、对象池复用、NPC 包装根和真实私有材质变化仍需实机验收。

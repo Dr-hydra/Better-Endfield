@@ -8,4 +8,5 @@
     <string name="bem_storage">儲存空間</string>
     <string name="bem_keep_local_copies">保留本機副本</string>
     <string name="bem_clean_unused">清理未使用資料</string>
+    <string name="bem_clone_support">實驗：複製模型支援</string>
 </resources>

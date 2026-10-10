@@ -1,10 +1,14 @@
 # 更新日志
 
-## 未发布
+## 4.0.1 Better Endfield Next
 
-- 修复 Windows Next 混淆构建写入 XInput 安装记录时的 JSON 异常，恢复代理安装后的状态刷新，以及“保存并启动”在配音资源准备完成后的正常启动流程。
-- 第三方模块与第一人称源码迁移至独立项目 [Endfield Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader)。BE 双端完整移除第三方模块装载器、管理页面、网页桥和配置接入，保留通用 Host、内置模块加载、共享 Hook 链及创意工坊入口；工坊网页新增新项目链接。
 - 同一个 BEM 可覆盖使用同名角色模型、外包一层同名节点的非编队 NPC；统一模型根定位、加载登记与关闭恢复，保留原有校验。Android aglina / 凛 1.2.1 已通过用户实机测试。
+- 修复 Windows DLL / XInput 代理安装后状态不能及时刷新。
+- 修复 Windows“保存并启动”卡在“正在准备配音资源”、无法启动游戏的问题；修正混淆构建中的安装记录 JSON 序列化。
+- 修复模型资源重新持有已记录原版 Mesh 后的二次交付拒绝，允许重新准备当前替换。
+- PC / Android 新增独立、默认关闭的“实验：克隆模型支持”，重启游戏生效；保存生成时的来源代次、实例恢复记录与自身骨骼，保持同步模板交付。已继承完整结果的实例保留私有材质，来源不明时保留当前绑定。
+- 双端彻底移除第三方模块装载器、管理页面、网页桥、扩展配置与 SDK / Echo 打包项，迁移到独立项目 [Endfield Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader)。通用 Host、内置模块加载、共享 Hook 链及创意工坊保留。
+- BEM 原生布料物理及制作端权重、裁剪试验作为废弃研究归档到 `legacy/native-bem-cloth-20261010/`，不参与当前构建。
 
 ## 4.0.0 Better Endfield Next
 

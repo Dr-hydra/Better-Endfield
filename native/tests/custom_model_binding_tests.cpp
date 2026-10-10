@@ -371,6 +371,8 @@ void RegistryTests(const std::filesystem::path& path) {
         "metadata-refused candidate was treated as disabling the working package");
     Check(!InstallRegistryUpdate("[CustomModel]\nhot_switch=true\nfast_loading=true\n") &&
         g_registry.enabled.size()==1,"startup experiment flags changed during hot switch");
+    Check(!InstallRegistryUpdate("[CustomModel]\nhot_switch=true\nclone_support=true\n") && g_registry.enabled.size()==1,
+        "clone startup flag changed during hot switch");
     Check(InstallRegistryUpdate("[CustomModel]\nhot_switch=true\n") && g_registry.enabled.empty(),
         "explicitly disabling all packages rejected");
     std::string reenabling=default_selection; reenabling.insert(reenabling.find('\n')+1,"hot_switch=true\n");
@@ -478,6 +480,17 @@ void StaticResourceTests() {
             "static MeshFilter commit failed");
         g_completed.push_back(std::move(record));
         Check(IsCompletedResource(owner->adapter,asset,"static"),"static completion identity did not match");
+        // A completed root whose receiver shows the Original again (the asset was reloaded, or an
+        // earlier rollback restored it) must be re-prepared. Refusing it left the receiver on the
+        // original model for the rest of the session.
+        filter->mesh=original;bindings.clear();
+        Check(CaptureGenericResourceBindings(owner->adapter,bem,asset,bindings) && bindings.size()==1 &&
+            bindings[0].original_mesh==original,"pristine receiver on a completed root was refused instead of re-prepared");
+        // An unrelated Mesh of the same name/count must still not be promoted to pristine.
+        filter->mesh=Make("blade_mesh");bindings.clear();
+        Check(!CaptureGenericResourceBindings(owner->adapter,bem,asset,bindings),
+            "unknown Mesh on a completed root was promoted to pristine");
+        filter->mesh=replacement;
         auto* clone=GameObject(owner->world+"(Clone)#7");auto* clone_group=Make("Meshes");clone_group->parent=clone;
         auto* clone_renderer=Make("blade");clone_renderer->parent=clone_group;clone_renderer->runtime_class=const_cast<void*>(g_static_renderer_class.class_info);
         auto* clone_filter=Make("filter");clone_filter->mesh=replacement;clone_renderer->filter=clone_filter;
@@ -1418,7 +1431,10 @@ void ResourceTypeBoundaryTests(const std::filesystem::path& package_path) {
 #include "custom_model_android_legacy_discovery_tests.inc"
 #include "custom_model_npc_root_tests.inc"
 
+#include "custom_model_clone_support_tests.inc"
+
 int main(int argc,char** argv) {
+    if(argc==2 && std::string_view(argv[1])=="--clone-support") {CloneSupportTests();return 0;}
     if(argc==2 && std::string_view(argv[1])=="--npc-roots") {NpcRootTests();return 0;}
     if(argc==2 && std::string_view(argv[1])=="--instance-lineage") {InstanceLineageTests();return 0;}
     if(argc==4 && std::string_view(argv[1])=="--android-discovery") {AndroidDiscoveryTests(argv[2],argv[3]);AndroidLegacyDiscoveryTests(argv[2]);return 0;}

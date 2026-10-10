@@ -48,6 +48,8 @@ namespace {
 constexpr char kModuleId[]="betterendfieldnext.custom_model";
 const BE_HostApiV1* g_host=nullptr;
 std::atomic_bool g_hot_switch_runtime{false};
+std::atomic_bool g_clone_support_runtime{false};
+void WatchModelCloneSource(void* asset);
 std::atomic<DWORD> g_pump_thread{0};
 #if defined(_WIN32)
 ModelOverlayHost g_model_overlay;
@@ -2865,7 +2867,7 @@ bool RememberResource(const CharacterAdapter& adapter,void* asset,
         // game-owned material copies even when hot switching is disabled.
         // Keep its donor lineage for every applied selection; otherwise an
         // unchanged hide/keep Mesh is mistaken for an unknown generated Mesh.
-        if (!completed.original && (retain_original || g_hot_switch_runtime.load() || !record.selection_key.empty())) {
+        if (!completed.original && (retain_original || g_hot_switch_runtime.load() || g_clone_support_runtime.load() || !record.selection_key.empty())) {
             auto original=std::make_shared<SavedOriginalBinding>();
             if (!original->mesh.Set(DonorMesh(binding)) || !original->SetMaterials(DonorMaterials(binding)) ||
                 (!IsStaticRenderer(binding.renderer) && !original->bones.Set(DonorBones(binding)))) return false;
@@ -3155,7 +3157,12 @@ bool ReadGenericPristineMesh(const CharacterAdapter& adapter,void* asset,
                 "completed receiver holds an unknown Mesh and no Original was saved":
                 saved?"completed receiver holds a Mesh that is neither this module's output nor the saved Original":
                 "saved Original Mesh released");
-        if (!same_mesh) continue;
+        if (!same_mesh) {
+            // A completed receiver can return to its exact saved Original after
+            // a reload/rollback. Re-prepare it without accepting an unknown Mesh.
+            if (same_root && same_object(saved,lineage_mesh)) { identity.mesh=saved; pristine=saved; }
+            continue;
+        }
         if (!old.mesh.Get()) LogGenericLineageNote(candidate.key,"managed wrapper recycled; matched by instance ID");
         const int count=ArrayLength(candidate.materials);
         bool custom_materials=count==static_cast<int>(old.materials.size());
@@ -3349,7 +3356,7 @@ bool InstallRegistryUpdate(std::string_view text) {
     ModRegistry candidate; std::string error;
     if (!ParseModRegistry(text,g_registry_root,candidate,error)) { Log("Hot switch configuration rejected; previous selection retained: "+error); return false; }
     if (candidate.hot_switch!=g_registry.hot_switch || candidate.skip_validation!=g_registry.skip_validation ||
-        candidate.fast_loading!=g_registry.fast_loading) {
+        candidate.fast_loading!=g_registry.fast_loading || candidate.clone_support!=g_registry.clone_support) {
         Log("Hot switch flags changed; restart the game to apply experimental/validation settings."); return false;
     }
     for (const auto& diagnostic:candidate.diagnostics) if (!diagnostic.starts_with("Developer mode:")) {
@@ -3452,6 +3459,10 @@ void PublishCompleted(CompletedResource&& record,void* asset) {
         binding.shadow_mesh.Is(binding.original->shadow_mesh.Get())) binding.original->shadow_mesh_pin.reset();
 #endif
     g_completed.push_back(std::move(record));
+    if (g_clone_support_runtime.load()) {
+        try {WatchModelCloneSource(asset);}
+        catch (...) {Log("Experimental clone source observation failed; committed resource retained");}
+    }
 }
 bool PrepareDisabledResource(void* asset,const CharacterAdapter* adapter,std::vector<PreparedBinding>& bindings) {
     bool inactive=true; void* args[]{ModelRendererType(),&inactive};
@@ -3495,6 +3506,7 @@ bool PrepareDisabledResource(void* asset,const CharacterAdapter* adapter,std::ve
     return !bindings.empty();
 }
 #include "model_receiver_root.inc"
+#include "model_clone_lineage.inc"
 bool RestoreDisabledResource(void* asset,std::string_view name,ConstructionScope& construction) {
     if (!IsGameObjectResource(asset) || !g_hot_switch_runtime.load()) return false;
     const auto refuse=[&](const char* reason) {
@@ -3719,6 +3731,7 @@ void SynchronousModelDelivery(void* asset,const char* reason) {
     const std::string selection=mod?mod->selection_key:std::string{};
     if (mod) Log("Model delivery synchronous resource="+name+" role="+std::string(mod->adapter->id)+" reason="+reason);
     const bool ok=ProcessResource(asset,construction);
+    if (ok && mod && g_clone_support_runtime.load()) WatchModelCloneSource(asset);
     // Record the receiver for hot switch / verification. A refused selection
     // is not handed to an identical asynchronous retry.
     if (mod && !g_probe.sweep) RegisterModelDelivery(asset,nullptr,true,ok?std::string{}:selection);
@@ -3833,6 +3846,9 @@ bool ReadRuntimeRegistry() {
     Log(std::string("Model loading mode=")+(g_fast_loading?"fast (render sync every 128MiB)":"low-peak (render sync every 4MiB)"));
     g_last_registry_text=text;
     g_hot_switch_runtime.store(g_registry.hot_switch);
+    g_clone_support_runtime.store(g_registry.clone_support);
+    g_model_clone_hooks_requested=g_registry.clone_support;
+    Log(std::string("Experimental clone support=")+(g_registry.clone_support?"on; template delivery remains synchronous":"off"));
     if(g_probe.sweep) {
         g_registry.enabled.clear();
         Log("Native sweep session: model replacement paused in memory; saved configuration unchanged.");
