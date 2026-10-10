@@ -24,4 +24,4 @@
 
 Next 退役功能与入口快照见 [retired-before-next](retired-before-next/README.md)，来源、文件角色及 SHA-256 见对应 manifest.json。
 
-凛 BEM 原生裙子物理实验于 2026-10-10 停止，源码、制作脚本和测试已归档到 [native-bem-cloth-20261010](native-bem-cloth-20261010/README.md)。当前构建不引用该实验；实机未解决的问题和移除边界见归档说明。
+凛 BEM 原生裙子物理以及后续权重、裁剪试验于 2026-10-10 归为废弃研究，源码、制作脚本和测试已归档到 [native-bem-cloth-20261010](native-bem-cloth-20261010/README.md)。当前构建不引用该实验；实机未解决的问题和移除边界见归档说明。

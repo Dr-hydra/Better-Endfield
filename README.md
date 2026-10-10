@@ -10,7 +10,7 @@ Better Endfield Next 是面向《明日方舟：终末地》的开源模块化�
 
 当前版本为 **4.0.1**，独立 BEM Tools 为 **1.5.2**，工具 ZIP 内含可双击启动的 `BetterEndfieldNext.BemTools.exe` 创作者 GUI。3.5.3 新增 Windows [Steam 国服启动预览](docs/host/STEAM_CN_LAUNCH.md)和 XInput 重复注入拦截；Steam 接入仍待完整元数据与实机验证。BEM 1.4、武器/大招资源、模型热切换、Android PCUI 输入和桌面 DPI 布局能力沿用 3.5.2。
 
-4.0.0 可直接覆盖更新至 4.0.1，保留 Next 设置。Next 使用新的安装身份、内部标识和发布签名，与 3.x 旧版独立。请先卸载旧版（Windows 同时卸载旧 XInput 代理），重新安装并设置；Android 需重新启用模块和游戏作用域。旧设置不迁移，BEM/MMD 文件可手动重新导入。Logo 保留。第一人称功能现由 [E Mod Loader 独立模块](https://github.com/Dr-hydra/Endfield-Mod-Loader/releases/tag/v0.1.0-dev) 提供。[实施与构建说明](docs/workspace/NEXT_IMPLEMENTATION.md)。
+4.0.0 可直接覆盖更新至 4.0.1，保留 Next 设置。Next 使用新的安装身份、内部标识和发布签名，与 3.x 旧版独立。从 3.x 升级时，请先卸载旧版（Windows 同时卸载旧 XInput 代理），重新安装并设置；Android 需重新启用模块和游戏作用域。旧设置不迁移，BEM/MMD 文件可手动重新导入。Logo 保留。第一人称功能现由 [E Mod Loader 独立模块](https://github.com/Dr-hydra/Endfield-Mod-Loader/releases/tag/v0.1.0-dev) 提供。[实施与构建说明](docs/workspace/NEXT_IMPLEMENTATION.md)。
 
 
 ## 功能一览
