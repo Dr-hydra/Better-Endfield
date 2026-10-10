@@ -2,13 +2,15 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-Better Endfield Next 是面向《明日方舟：终末地》的开源模块化工具，提供第三方角色模型、MMD 播放、相机和界面增强、按角色配音、开屏自定义，以及 PC 战斗统计和寻访记录管理。Windows 和 Android 共用主要原生功能源码；BEM 模型包和 MMD 作品可以跨端使用。第三方原生模块和网页容器的运行实现保留，入口暂时隐藏。
+Better Endfield Next 是面向《明日方舟：终末地》的开源模块化工具，提供第三方角色模型、MMD 播放、相机和界面增强、按角色配音、开屏自定义，以及 PC 战斗统计和寻访记录管理。Windows 和 Android 共用主要原生功能源码；BEM 模型包和 MMD 作品可以跨端使用。
 
-[下载正式版](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [更新说明](CHANGELOG.md) · [Android 使用与构建](android/README.md) · [BEM 创作者指南](docs/custom_model/BEM_CREATOR_GUIDE.md) · [模块开发指南](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
+[下载正式版](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [更新说明](CHANGELOG.md) · [Android 使用与构建](android/README.md) · [BEM 创作者指南](docs/custom_model/BEM_CREATOR_GUIDE.md) · [E Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader)
+
+**第三方模块与第一人称已迁移至独立项目 [Endfield Mod Loader（E Mod Loader）](https://github.com/Dr-hydra/Endfield-Mod-Loader)。** EML **0.1.0-dev 开发预览**现已提供 Windows 加载器、Android APK 和独立第一人称模块。**[下载 EML 与第一人称模块](https://github.com/Dr-hydra/Endfield-Mod-Loader/releases/tag/v0.1.0-dev)** · [第一人称使用说明](https://github.com/Dr-hydra/Endfield-Mod-Loader/blob/main/examples/first-person/README.md)。Windows、Android 的创意工坊入口继续保留；BE 的通用 Host、内置模块加载及共享 Hook 链继续维护。游戏及 Android 设备效果尚未实机验证。
 
 当前版本为 **4.0.0**，独立 BEM Tools 为 **1.5.2**，工具 ZIP 内含可双击启动的 `BetterEndfieldNext.BemTools.exe` 创作者 GUI。3.5.3 新增 Windows [Steam 国服启动预览](docs/host/STEAM_CN_LAUNCH.md)和 XInput 重复注入拦截；Steam 接入仍待完整元数据与实机验证。BEM 1.4、武器/大招资源、模型热切换、Android PCUI 输入和桌面 DPI 布局能力沿用 3.5.2。
 
-Next 使用新的安装身份、内部标识和发布签名，与旧版独立。请先卸载旧版（Windows 同时卸载旧 XInput 代理），重新安装并设置；Android 需重新启用模块和游戏作用域。旧设置不迁移，BEM/MMD 文件可手动重新导入。Logo 保留。第一人称已移除并归档至 `legacy/retired-before-next/`。[实施与构建说明](docs/workspace/NEXT_IMPLEMENTATION.md)。
+Next 使用新的安装身份、内部标识和发布签名，与旧版独立。请先卸载旧版（Windows 同时卸载旧 XInput 代理），重新安装并设置；Android 需重新启用模块和游戏作用域。旧设置不迁移，BEM/MMD 文件可手动重新导入。Logo 保留。第一人称功能现由 [E Mod Loader 独立模块](https://github.com/Dr-hydra/Endfield-Mod-Loader/releases/tag/v0.1.0-dev) 提供。[实施与构建说明](docs/workspace/NEXT_IMPLEMENTATION.md)。
 
 
 ## 功能一览
@@ -19,7 +21,6 @@ Next 使用新的安装身份、内部标识和发布签名，与旧版独立。
 | --- | --- | --- | --- |
 | 第三方模型（BEM） | 支持 | 支持 | 同一标准包；导入、更新、多包管理、按角色启用、外观与部件选项 |
 | BEM 1.4 资源与形态 | 支持（3.5.2） | 支持（3.5.2） | 显式资源目标、静态网格、LOD/平台声明；支持武器与大招资源，兼容 1.0–1.3 包 |
-| 第三方原生模块与网页容器 | 入口隐藏 | 入口隐藏 | 保留游戏内 Host 装载器及网页桥，暂不开放管理入口 |
 | 模型热切换 | 实验 | 实验 | 悬浮窗管理包、外观、组件与形态参数；游戏启动前开启，选择变化随正常资源重载生效 |
 | 模型加载优化 | 实验 | 实验 | 减少解码副本并复用同次构建的等价贴图；不降低画质 |
 | 开屏模型、动画与主题色 | 支持 | 支持 | 角色、最终动作、分阶段速度、缩放、转身、循环与交叉混合 |
@@ -83,9 +84,9 @@ BetterEndfieldNext.BemConverter.exe build character.bemproj.json
 - [形态滑条可运行示例](tools/CustomModel/examples/body-slider/)
 - [实验热切换与加载优化说明](docs/workspace/releases/3.4.1/RELEASE_3_4_1.md)
 
-## 第三方模块（入口隐藏）
+## 已迁移的功能
 
-Next 保留原生模块装载器和网页桥，Windows、Android 暂时隐藏模块管理入口及旧入口路由。内部标识和 ABI 导出已采用 Next 命名，旧模块二进制不承诺兼容。[模块创作者指南](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)。
+第三方原生模块、模块网页及第一人称功能由 [E Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader) 提供。前往 [EML Release](https://github.com/Dr-hydra/Endfield-Mod-Loader/releases/tag/v0.1.0-dev) 下载对应平台的加载器，再导入 `example.first-person-0.1.0-dev.zip`；Windows 默认按减号 `-` 切换，Android 可在模块配置中设置默认进入。原 BE format 1 / ABI 1 模块包可直接导入 EML，Next 接口不在兼容范围内。BEM 模型包、MMD 作品及双端创意工坊入口继续由 BE 支持。
 
 ## 相机与 MMD
 

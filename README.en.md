@@ -2,13 +2,15 @@
 
 [English](README.en.md) | [简体中文](README.md)
 
-Better Endfield Next is an open-source modular toolkit for *Arknights: Endfield*. It provides third-party character models, MMD playback, camera and UI controls, per-character voice languages, title-screen customization, and PC combat/gacha tools. Windows and Android share the main native feature sources; standard BEM model packages and MMD works can be used on both platforms. The experimental third-party module runtime remains present with its entry hidden.
+Better Endfield Next is an open-source modular toolkit for *Arknights: Endfield*. It provides third-party character models, MMD playback, camera and UI controls, per-character voice languages, title-screen customization, and PC combat/gacha tools. Windows and Android share the main native feature sources; standard BEM model packages and MMD works can be used on both platforms.
 
-[Download](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [Release notes](CHANGELOG.md) · [Android setup/build guide](android/README.md) · [BEM creator guide](docs/custom_model/BEM_CREATOR_GUIDE.en.md) · [Module developer guide](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md)
+[Download](https://github.com/Dr-hydra/Better-Endfield/releases/latest) · [Release notes](CHANGELOG.md) · [Android setup/build guide](android/README.md) · [BEM creator guide](docs/custom_model/BEM_CREATOR_GUIDE.en.md) · [E Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader)
+
+**Third-party modules and first person have moved to [Endfield Mod Loader (E Mod Loader)](https://github.com/Dr-hydra/Endfield-Mod-Loader).** The **0.1.0-dev preview** includes the Windows loader, Android APK and a standalone first-person module. **[Download EML and the first-person module](https://github.com/Dr-hydra/Endfield-Mod-Loader/releases/tag/v0.1.0-dev)** · [First-person guide](https://github.com/Dr-hydra/Endfield-Mod-Loader/blob/main/examples/first-person/README.md). Workshop entries on both platforms remain available; BE continues to maintain its general Host, built-in module loading and shared Hook chains. Gameplay and Android device behavior have not been tested.
 
 The current version is **4.0.0**, with standalone BEM Tools **1.5.2**. The tool ZIP includes the double-clickable `BetterEndfieldNext.BemTools.exe` creator GUI. Version 3.5.3 adds a Windows [Steam CN launch preview](docs/host/STEAM_CN_LAUNCH.md) and prevents duplicate injection alongside a local XInput proxy. Steam integration still awaits complete metadata and real-client testing. BEM 1.4, weapon/ultimate resources, model hot switching, Android PCUI input and desktop DPI placement carry forward from 3.5.2.
 
-Next is an independent installation with new internal identifiers and release signing keys. Uninstall the previous version (including the Windows XInput proxy), reinstall, and configure features again. On Android, enable the new module and select the game scope again. Existing settings are not migrated; BEM/MMD files can be imported manually. The Logo is unchanged. First person has been retired into `legacy/retired-before-next/`. See [implementation and build notes](docs/workspace/NEXT_IMPLEMENTATION.md).
+Next is an independent installation with new internal identifiers and release signing keys. Uninstall the previous version (including the Windows XInput proxy), reinstall, and configure features again. On Android, enable the new module and select the game scope again. Existing settings are not migrated; BEM/MMD files can be imported manually. The Logo is unchanged. First person is now available as an [independent E Mod Loader module](https://github.com/Dr-hydra/Endfield-Mod-Loader/releases/tag/v0.1.0-dev). See [implementation and build notes](docs/workspace/NEXT_IMPLEMENTATION.md).
 
 
 ## Feature overview
@@ -19,7 +21,6 @@ Supported means an implementation and controls exist; it does not mean every cha
 | --- | --- | --- | --- |
 | Third-party models (BEM) | Supported | Supported | Same standard package; import/update, multiple installed packages, per-character activation, appearance and component options |
 | BEM 1.4 resources and forms | Supported (3.5.2) | Supported (3.5.2) | Explicit resource targets, static meshes and LOD/platform declarations; weapons and ultimate-form resources, with 1.0–1.3 compatibility |
-| Third-party native modules and web UI | Entry hidden | Entry hidden | Game Host loader and web bridge retained; management navigation temporarily hidden |
 | Model hot switching | Experimental | Experimental | Enable before game startup; selections apply on normal game resource reloads |
 | Model loading optimization | Experimental | Experimental | Fewer decode copies and reuse of equivalent textures within one build; no quality reduction |
 | Title-screen models, animation and colors | Supported | Supported | Character/action selection, stage speeds, scale, turning, looping and crossfades |
@@ -83,13 +84,13 @@ Both platforms also have an off-by-default experimental option to disable model 
 - [Runnable shape-slider example](tools/CustomModel/examples/body-slider/)
 - [Experimental hot-switch/loading behavior](docs/workspace/releases/3.4.1/RELEASE_3_4_1.md)
 
-## Third-party modules (entry hidden)
+## Migrated features
 
-Next keeps the native module loader and web bridge, but hides module-management navigation and the old entry route on both platforms. Internal identifiers and ABI exports use Next names; old binaries are not promised compatibility. [Module author guide](docs/host/THIRD_PARTY_MODULE_CREATOR_GUIDE.md).
+Third-party native modules, module web pages and first person are provided by [E Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader). Download the loader for your platform from the [EML Release](https://github.com/Dr-hydra/Endfield-Mod-Loader/releases/tag/v0.1.0-dev), then import `example.first-person-0.1.0-dev.zip`. Windows uses the minus key `-` by default; Android can enable the default first-person view in module settings. Original BE format 1 / ABI 1 packages can be imported directly; Next interfaces are outside the compatibility scope. BEM packages, MMD works and Workshop entries on both platforms remain available in BE.
 
 ## Cameras and MMD
 
-Free camera offers position/orientation, roll/FOV, mouse rotation, orbit/dolly/crane/truck motion, saved keyframe paths and VMD cameras. World pause is independent of free camera. First person includes head hiding, neck-hole filling, side-view limits and smooth turning. Windows controls support the main keyboard, numpad, mouse and configurable key combinations; Android uses the in-game deck.
+Free camera offers position/orientation, roll/FOV, mouse rotation, orbit/dolly/crane/truck motion, saved keyframe paths and VMD cameras. World pause is independent of free camera. Windows controls support the main keyboard, numpad, mouse and configurable key combinations; Android uses the in-game deck.
 
 The global FOV setting added in 3.4.2 affects the ordinary main camera; free camera and imported cameras keep their own FOV. Character follow translates free camera without changing orientation/manual offsets, reanchors after character changes and teleports, and pauses during camera-motion playback. [Implementation boundaries](docs/camera/research/1.5.3/fov-follow/CAMERA_FOV_FOLLOW_IMPLEMENTATION.md)
 
