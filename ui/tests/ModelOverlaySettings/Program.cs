@@ -94,7 +94,11 @@ static class Program
         MetadataFixture(Path.Combine(service.PackageDirectory, "c.bem"), "c", "character.two");
         service.Load();
         Expect(service.Packages.Count == 3, "Synthetic legacy packages failed to load.");
+        Expect(!service.CloneSupport, "Clone support must default off.");
+        service.CloneSupport = true;
         await service.SaveAsync();
+        service.Load();
+        Expect(service.CloneSupport && !service.HotSwitch, "Clone support did not persist independently of hot switch.");
         string runtime = Path.Combine(service.Root, "runtime.ini");
         var loaded = BemRuntimeSettings.Read(runtime);
         var external = BemRuntimeSettings.Clone(loaded);

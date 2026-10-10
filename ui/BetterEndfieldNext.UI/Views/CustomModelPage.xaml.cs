@@ -79,12 +79,13 @@ public sealed partial class CustomModelPage : UserControl
         UpdateCharacterFilter();
         LodToggle.Header = BemText.Get("锁定高精度 LOD");
         HotSwitchToggle.Header = BemText.Get("实验：模型热切换");
+        CloneSupportToggle.Header = BemText.Get("实验：克隆模型支持");
         HotSwitchHint.Text = BemText.Get("开启后需重启游戏。之后切换包、外观、组件或应用滑条，在切换配队或重新打开详情时更新。会增加内存占用。");
         FastLoadingToggle.Header = BemText.Get("加载速度优先");
         SkipValidationToggle.Header = BemText.Get("实验：关闭模型校验");
         SkipValidationHint.Text = BemText.Get("开启后会跳过兼容性和容量校验，可能导致游戏崩溃或模型错乱，风险自行承担。重启游戏后生效。");
         EmptyHint.Text = BemText.Get("尚未导入模型包。已有其他格式？打开转换窗口查看支持范围与缺少的资料。");
-        foreach (var toggle in new[] { LodToggle, HotSwitchToggle, FastLoadingToggle, SkipValidationToggle })
+        foreach (var toggle in new[] { LodToggle, HotSwitchToggle, CloneSupportToggle, FastLoadingToggle, SkipValidationToggle })
         {
             toggle.OnContent = BemText.Get("开启");
             toggle.OffContent = BemText.Get("关闭");
@@ -214,6 +215,7 @@ public sealed partial class CustomModelPage : UserControl
         {
             SkipValidationToggle.IsOn = _service.SkipValidation;
             HotSwitchToggle.IsOn = _service.HotSwitch;
+            CloneSupportToggle.IsOn = _service.CloneSupport;
             FastLoadingToggle.IsOn = _service.FastLoading;
             ModelOverlayToggle.IsOn = _service.ModelOverlayEnabled;
             ModelOverlayVisibleToggle.IsOn = _service.ModelOverlayVisible;
@@ -550,6 +552,7 @@ public sealed partial class CustomModelPage : UserControl
         try
         {
             _service.HotSwitch = HotSwitchToggle.IsOn;
+            _service.CloneSupport = CloneSupportToggle.IsOn;
             _service.FastLoading = FastLoadingToggle.IsOn;
             await _service.SaveAsync();
             Message(() => BemText.Get("实验设置已保存"), () => BemText.Get("各开关相互独立，默认关闭；重启游戏后生效。"));

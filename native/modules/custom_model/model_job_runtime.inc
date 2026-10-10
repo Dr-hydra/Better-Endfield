@@ -63,17 +63,21 @@ struct PendingModelDelivery {
     // not immediately retried by a second, identical asynchronous build.
     bool synchronous=false;
     std::string refused_selection;
+    std::shared_ptr<const ModelCloneLineage> clone_lineage;
+    int32_t clone_source_id=0;
 };
 std::mutex g_model_delivery_mutex;
 std::vector<PendingModelDelivery> g_model_deliveries;
 std::atomic<uint64_t> g_model_deliveries_registered{0},g_model_deliveries_dropped{0};
-bool RegisterModelDelivery(void* asset,void* source=nullptr,bool synchronous=false,std::string refused_selection={}) {
+bool RegisterModelDelivery(void* asset,void* source=nullptr,bool synchronous=false,std::string refused_selection={},
+    std::shared_ptr<const ModelCloneLineage> lineage={},int32_t source_id=0) {
     if (!IsGameObjectResource(asset) || (source && !IsGameObjectResource(source)) ||
         !g_host || !g_enabled.load() || g_stopping.load()) return false;
     PendingModelDelivery pending;pending.asset=std::make_unique<StrongReference>();
     if (!pending.asset->Set(asset)) return false;
     if (source) { pending.source=std::make_unique<StrongReference>();if (!pending.source->Set(source)) return false; }
     pending.synchronous=synchronous;pending.refused_selection=std::move(refused_selection);
+    pending.clone_lineage=std::move(lineage);pending.clone_source_id=source_id;
     std::lock_guard lock(g_model_delivery_mutex);
     if (g_model_deliveries.size()>=256) {g_model_deliveries_dropped.fetch_add(1);return false;}
     g_model_deliveries.push_back(std::move(pending));g_model_deliveries_registered.fetch_add(1);
@@ -110,23 +114,45 @@ ModelInstantiateWithParentFn g_original_instantiate_with_parent=nullptr;
 // hot path checks an atomic count first; only watched sources take the lock.
 std::mutex g_model_clone_watch_mutex;
 std::unordered_set<void*> g_model_clone_watch;
+struct ModelCloneWatchEntry { int32_t source_id=0;std::shared_ptr<const ModelCloneLineage> lineage; };
+std::unordered_map<void*,ModelCloneWatchEntry> g_model_clone_lineages;
 std::atomic<size_t> g_model_clone_watch_size{0};
 std::atomic<uint64_t> g_model_clones_registered{0};
 void WatchModelCloneSource(void* asset) {
     if (!asset || !g_model_clone_coverage.load()) return;
+    auto lineage=g_clone_support_runtime.load()?CaptureModelCloneLineage(asset):nullptr;
+    if (g_clone_support_runtime.load() && !lineage) return;
+    const int32_t source_id=ModelInstanceId(asset);
     std::lock_guard lock(g_model_clone_watch_mutex);
-    g_model_clone_watch.insert(asset);g_model_clone_watch_size.store(g_model_clone_watch.size());
+    g_model_clone_watch.insert(asset);
+    if (lineage) {
+        // A wrapped NPC source and its receiver root can both be watched. Refresh
+        // every alias after a synchronous rebind or an instance Job commits.
+        for (auto& [source,observed]:g_model_clone_lineages)
+            if (observed.lineage && observed.lineage->receiver_id==lineage->receiver_id) observed.lineage=lineage;
+        g_model_clone_lineages[asset]={source_id,std::move(lineage)};
+    }
+    g_model_clone_watch_size.store(g_model_clone_watch.size());
 }
 void NoteModelClone(void* source,void* clone) {
     if (!source || !clone || !g_model_clone_watch_size.load(std::memory_order_relaxed) ||
         !g_enabled.load(std::memory_order_acquire) || g_stopping.load()) return;
+    ModelCloneWatchEntry observed;
     {
         std::lock_guard lock(g_model_clone_watch_mutex);
         if (!g_model_clone_watch.contains(source)) return;
-        g_model_clone_watch.insert(clone);g_model_clone_watch_size.store(g_model_clone_watch.size());
+        if (const auto found=g_model_clone_lineages.find(source);found!=g_model_clone_lineages.end()) observed=found->second;
     }
-    try { if (RegisterModelDelivery(clone,source)) g_model_clones_registered.fetch_add(1); }
-    catch (...) { /* Never disturb the game's Instantiate. */ }
+    try {
+        if (!RegisterModelDelivery(clone,source,false,{},observed.lineage,observed.source_id)) return;
+        g_model_clones_registered.fetch_add(1);
+        // Pending delivery owns a strong clone handle before it becomes a source.
+        // The pump assigns its exact ID before releasing that pending ownership.
+        std::lock_guard lock(g_model_clone_watch_mutex);
+        g_model_clone_watch.insert(clone);
+        if (observed.lineage) g_model_clone_lineages.try_emplace(clone,ModelCloneWatchEntry{0,observed.lineage});
+        g_model_clone_watch_size.store(g_model_clone_watch.size());
+    } catch (...) { /* Never disturb the game's Instantiate. */ }
 }
 void* __fastcall ModelCloneSingle(void* data,void* method) {
     void* clone=g_original_clone_single?g_original_clone_single(data,method):nullptr;
@@ -169,7 +195,8 @@ void InstallModelCloneHooks() {
         reinterpret_cast<void**>(&g_original_instantiate_with_parent)) && complete;
     g_model_clone_coverage.store(complete);
     if (complete)
-        Log("Model clone hooks installed ("+installed+"); template delivery=frame-sliced");
+        Log("Model clone hooks installed ("+installed+"); template delivery="+
+            (g_clone_support_runtime.load()?"synchronous; experimental observation":"frame-sliced"));
     else
         Log("Model clone hook unavailable ("+failed+"; installed="+installed+"); template delivery=synchronous fallback");
 }
@@ -182,12 +209,14 @@ void PruneModelCloneWatch() {
     {std::lock_guard pending(g_model_delivery_mutex);
         for (const auto& delivery:g_model_deliveries) if (void* asset=delivery.asset->Get()) watch.insert(asset);}
     std::lock_guard lock(g_model_clone_watch_mutex);
-    g_model_clone_watch.swap(watch);g_model_clone_watch_size.store(g_model_clone_watch.size());
+    g_model_clone_watch.swap(watch);
+    std::erase_if(g_model_clone_lineages,[&](const auto& entry){return !g_model_clone_watch.contains(entry.first);});
+    g_model_clone_watch_size.store(g_model_clone_watch.size());
 }
 void DisableModelCloneHooks() {
     g_model_clone_coverage.store(false);
     std::lock_guard lock(g_model_clone_watch_mutex);
-    g_model_clone_watch.clear();g_model_clone_watch_size.store(0);
+    g_model_clone_watch.clear();g_model_clone_lineages.clear();g_model_clone_watch_size.store(0);
 }
 constexpr uint64_t kModelPumpStallMs=2000;
 std::atomic<uint64_t> g_model_pump_ms{0};
@@ -195,6 +224,7 @@ uint64_t g_model_verify_interval_ms=500;
 // Returns null only when an asynchronous registration is known to be complete:
 // every clone variant is observed and the Unity frame pump has run recently.
 const char* ModelAsyncDeliveryBlocker(uint64_t now) {
+    if (g_clone_support_runtime.load()) return "experimental-clone-synchronous";
     if (!g_model_clone_coverage.load()) return "clone-coverage-unavailable";
     const auto pumped=g_model_pump_ms.load();
     if (!pumped) return "pump-not-started";
@@ -1199,6 +1229,15 @@ void PumpModelJobs(uint64_t frame) {
         std::string source_name;
         if (!mod && delivery.source) {source_name=ObjectName(delivery.source->Get());mod=g_registry.Match(source_name);}
         if (!mod) continue;
+        if (delivery.clone_lineage && g_clone_support_runtime.load()) {
+            std::string why;
+            if ((delivery.clone_source_id && delivery.clone_source_id!=ModelInstanceId(delivery.source->Get())) ||
+                !AdoptObservedModelClone(asset,*mod,*delivery.clone_lineage,why)) {
+                Log("Experimental clone refused; current bindings retained: "+name+" reason="+(why.empty()?"source identity changed":why));
+                continue;
+            }
+            WatchModelCloneSource(delivery.asset->Get());
+        }
         auto* target=RememberModelTarget(asset,*mod);
         if (target && delivery.synchronous) {
             // The synchronous transaction already handled this selection.
@@ -1234,7 +1273,7 @@ void PumpModelJobs(uint64_t frame) {
         // Synchronous template mode: rebuild only for a new selection (hot
         // switch). Game/camera renderer toggles on a committed receiver must
         // not trigger another decode, so its bindings are not re-verified.
-        if (!g_model_clone_coverage.load() && target.desired==mod->selection_key) continue;
+        if ((!g_model_clone_coverage.load() || g_clone_support_runtime.load()) && target.desired==mod->selection_key) continue;
         bool owns_record=false;
         for (const auto& record:g_completed) if (record.root.Is(asset) && record.selection_key==mod->selection_key) {owns_record=true;break;}
         // With synchronous template delivery a natural clone shares the

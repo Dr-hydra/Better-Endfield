@@ -22,6 +22,10 @@ final class BemInstalledResources {
     /** pruneUnused is only safe before the runtime has opened any package path. */
     static String prepare(Context context,String index,Source source,Consumer<String> log,
             boolean skipValidation,boolean hotSwitch,boolean fastLoading,boolean pruneUnused) throws Exception {
+        return prepare(context,index,source,log,skipValidation,hotSwitch,fastLoading,pruneUnused,false);
+    }
+    static String prepare(Context context,String index,Source source,Consumer<String> log,
+            boolean skipValidation,boolean hotSwitch,boolean fastLoading,boolean pruneUnused,boolean cloneSupport) throws Exception {
         java.util.Set<String> used=new java.util.HashSet<>();
         JSONArray entries=BemOptions.exclusive(new JSONArray(index));StringBuilder paths=new StringBuilder(),appearances=new StringBuilder(),options=new StringBuilder(),parameters=new StringBuilder();
         File root=new File(context.getFilesDir(),"betterendfieldnext/installed-models");
@@ -58,6 +62,6 @@ final class BemInstalledResources {
         }
         return paths.length()==0&&!hotSwitch?"":"resource=auto;replace=1;lod_pipeline=1;lod_npc=1;packages="+paths
             +";appearances="+appearances+";options="+options+";parameters="+parameters+";skip_validation="+(skipValidation?"1":"0")
-            +";hot_switch="+(hotSwitch?"1":"0")+";fast_loading="+(fastLoading?"1":"0");
+            +";hot_switch="+(hotSwitch?"1":"0")+";fast_loading="+(fastLoading?"1":"0")+";clone_support="+(cloneSupport?"1":"0");
     }
 }

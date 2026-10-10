@@ -23,7 +23,9 @@ public final class BemOverlayPreparationTest {
         Context context = new Context(null, directory);
         BemInstalledResources.Source source = name -> { throw new AssertionError("Recopied an installed generation"); };
         String config = BemInstalledResources.prepare(context, new JSONArray().put(entry).toString(), source, value -> {}, true, true, true);
-        check(config.contains("skip_validation=1;hot_switch=1;fast_loading=1"), "latched developer mode dropped");
+        check(config.contains("skip_validation=1;hot_switch=1;fast_loading=1;clone_support=0"), "latched developer mode dropped");
+        String cloneConfig=BemInstalledResources.prepare(context,new JSONArray().put(entry).toString(),source,value->{},false,false,false,false,true);
+        check(cloneConfig.contains("hot_switch=0;fast_loading=0;clone_support=1"), "clone support is not independent of hot switch");
         check(config.contains("options=body:on;parameters=shape:700"), "selections dropped");
         entry.put("selected_options", "body:off").put("selected_parameters", "shape:800");
         String updated = BemInstalledResources.prepare(context, new JSONArray().put(entry).toString(), source, value -> {}, true, true, true);
@@ -100,7 +102,7 @@ public final class BemOverlayPreparationTest {
         }
         String expected = "resource=auto;replace=1;lod_pipeline=1;lod_npc=1;packages=" + String.join(",", paths)
                 + ";appearances=" + String.join(",", appearances) + ";options=" + options + ";parameters=" + parameters
-                + ";skip_validation=1;hot_switch=1;fast_loading=1";
+                + ";skip_validation=1;hot_switch=1;fast_loading=1;clone_support=0";
         check(expected.equals(actual), "BEM 1.4 runtime configuration differs: " + actual);
     }
     private static void check(boolean value, String message) { if (!value) throw new AssertionError(message); }

@@ -158,6 +158,7 @@ internal sealed class BemPackageService
     public bool StandaloneLod { get; set; }
     public bool SkipValidation { get; set; }
     public bool HotSwitch { get; set; }
+    public bool CloneSupport { get; set; }
     public bool FastLoading { get; set; }
     public bool ModelOverlayEnabled { get; set; } = true;
     public bool ModelOverlayVisible { get; set; }
@@ -182,6 +183,7 @@ internal sealed class BemPackageService
         StandaloneLod = common?.GetValueOrDefault("standalone_lod") is "true" or "1";
         SkipValidation = common?.GetValueOrDefault("skip_validation") is "true" or "1";
         HotSwitch = common?.GetValueOrDefault("hot_switch") is "true" or "1";
+        CloneSupport = common?.GetValueOrDefault("clone_support") is "true" or "1";
         FastLoading = common?.GetValueOrDefault("fast_loading") is "true" or "1";
         ModelOverlayEnabled = common?.GetValueOrDefault("overlay_enabled", "true") is "true" or "1" || common == null;
         ModelOverlayVisible = common?.GetValueOrDefault("overlay_visible") is "true" or "1";
@@ -369,7 +371,7 @@ internal sealed class BemPackageService
     public void Load()
     {
         Packages.Clear(); _notices.Clear(); StandaloneLod = false; SkipValidation = false;
-        HotSwitch = false; FastLoading = false;
+        HotSwitch = false; FastLoading = false; CloneSupport = false;
         var stamp = SettingsStamp();
         var settings = _settings = BemRuntimeSettings.Read(Path.Combine(Root, "runtime.ini"));
         ApplyCommonSettings(settings);
@@ -433,6 +435,7 @@ internal sealed class BemPackageService
         common["standalone_lod"] = StandaloneLod ? "true" : "false";
         common["skip_validation"] = SkipValidation ? "true" : "false";
         common["hot_switch"] = HotSwitch ? "true" : "false";
+        common["clone_support"] = CloneSupport ? "true" : "false";
         common["fast_loading"] = FastLoading ? "true" : "false";
         common["overlay_enabled"] = ModelOverlayEnabled ? "true" : "false";
         common["overlay_visible"] = ModelOverlayVisible ? "true" : "false";
@@ -491,6 +494,7 @@ internal sealed class BemPackageService
         if (Changed("CustomModel", "standalone_lod")) StandaloneLod = common["standalone_lod"] == "true";
         if (Changed("CustomModel", "skip_validation")) SkipValidation = common["skip_validation"] == "true";
         if (Changed("CustomModel", "hot_switch")) HotSwitch = common["hot_switch"] == "true";
+        if (Changed("CustomModel", "clone_support")) CloneSupport = common["clone_support"] == "true";
         if (Changed("CustomModel", "fast_loading")) FastLoading = common["fast_loading"] == "true";
         if (Changed("CustomModel", "overlay_enabled")) ModelOverlayEnabled = common["overlay_enabled"] == "true";
         if (Changed("CustomModel", "overlay_visible")) ModelOverlayVisible = common["overlay_visible"] == "true";

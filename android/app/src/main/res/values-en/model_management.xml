@@ -8,4 +8,5 @@
     <string name="bem_storage">Storage</string>
     <string name="bem_keep_local_copies">Keep local copies</string>
     <string name="bem_clean_unused">Clean up unused data</string>
+    <string name="bem_clone_support">Experimental: cloned model support</string>
 </resources>

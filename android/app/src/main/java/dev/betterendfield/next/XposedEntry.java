@@ -58,13 +58,14 @@ public final class XposedEntry extends XposedModule {
                         String initialIndex=settings.getString(BemInstaller.INDEX,"[]");
                         boolean skipValidation=settings.getBoolean(BemInstaller.SKIP_VALIDATION,false);
                         boolean hotSwitch=settings.getBoolean(BemInstaller.HOT_SWITCH,false);
+                        boolean cloneSupport=settings.getBoolean(BemInstaller.CLONE_SUPPORT,false);
                         boolean fastLoading=settings.getBoolean(BemInstaller.FAST_LOADING,false);
                         boolean installedPrepared=false;
                         BemInstalledResources.Source modelSource=
                             name -> new ParcelFileDescriptor.AutoCloseInputStream(openRemoteFile(name));
                         try {
                             BemInstalledResources.configuration=BemInstalledResources.prepare(context,
-                                initialIndex,modelSource,this::report,skipValidation,hotSwitch,fastLoading,true);
+                                initialIndex,modelSource,this::report,skipValidation,hotSwitch,fastLoading,true,cloneSupport);
                             installedPrepared=true;
                         } catch(Exception error) {report("Installed BEM preparation failed: "+error);}
                         if (settings.getBoolean(ModuleSettings.MMD_ENABLED, false)) try {
@@ -80,7 +81,7 @@ public final class XposedEntry extends XposedModule {
                             name -> new ParcelFileDescriptor.AutoCloseInputStream(openRemoteFile(name)), configs.thirdParty(), this::report);
                         if(installedPrepared) BemHotSwitchUpdater.start(context,
                             ()->getRemotePreferences("module_settings"),modelSource,initialIndex,
-                            skipValidation,hotSwitch,fastLoading,this::report);
+                            skipValidation,hotSwitch,fastLoading,cloneSupport,this::report);
                     },"BetterEndfieldNext-InstalledModels").start();
                 } catch (Throwable error) { report("bootstrap failed: " + error); }
                 return result;

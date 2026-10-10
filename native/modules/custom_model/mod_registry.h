@@ -57,6 +57,7 @@ struct ModRegistry {
     bool standalone_lod = false;
     bool skip_validation = false;
     bool hot_switch = false;
+    bool clone_support = false; // Experimental, latched at game startup.
     // Payload move/release parsing; verified byte-identical, always on.
     bool loading_optimization = true;
     // Optional: fewer render-thread syncs while uploading (faster, higher peak).

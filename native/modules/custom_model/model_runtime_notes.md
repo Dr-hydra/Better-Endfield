@@ -133,3 +133,20 @@ hook target already owned" on `unity.object.clone_with_parent`.
   maxFrameUploadBytes=`; `Model clone hooks installed/unavailable`;
   `Model queue ... textureDecodeLiveBytes= textureDecodePeakBytes=
   clonesRegistered= maxFrameUploadBytes=`.
+
+
+## Current clone observation (2026-10-10)
+
+The earlier `kModelCloneHooksRequested=true` note describes the async experiment,
+not the production default. `clone_support` now explicitly opts into observation
+(default false, session-latched). It requests the same chained hooks while
+`ModelAsyncDeliveryBlocker` keeps template delivery synchronous. Immutable
+source generation snapshots accompany pending clones; the pump validates mesh
+identity, source declarations and each clone's own bone paths before recording
+inheritance. Publication refreshes watched wrapper/receiver aliases. No scene
+scan or blanket name-based ownership is added to the Instantiate callbacks.
+
+`--clone-support` in CustomModelBindingTests covers production inheritance,
+pump registration, Original retention with hot switch off, material preservation,
+nested clones, reset/re-preparation, old generations, bone isolation/refusal,
+and handle cleanup. `custom_model.clone_support` registers that mode.

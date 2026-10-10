@@ -33,7 +33,7 @@ void SceneRebindTests(const std::filesystem::path& package_path) {
 
     for (bool static_mesh:{false,true}) {
         g_completed.clear();g_model_targets.clear();g_payload_cache.clear();captured_logs.clear();
-        ResetInstanceRebinds();g_model_frame_budget=FrameBudget{};fail_next_mesh_build=false;
+        ResetInstanceRebinds();g_pending_model_resources.clear();g_model_frame_budget=FrameBudget{};fail_next_mesh_build=false;
         g_hot_switch_runtime=true;g_instance_rebind_handled=g_model_revision;
         auto payload=std::make_shared<BemPocData>(fixture);payload->textures.clear();
         payload->payload_source.reset();payload->loading_optimization=false;
@@ -292,7 +292,7 @@ void SceneRebindTests(const std::filesystem::path& package_path) {
         ResourceFinish(nullptr,drift.root,nullptr);g_model_deliveries.clear();
         Check(fake_mesh_builds==builds && finish_calls==original_calls+1,"unchanged duplicate Finish rebuilt geometry or swallowed delivery");
         auto* changed=Make("changed-material");drift.renderers[0]->materials=Array({changed});
-        if (!static_mesh) drift.renderers[0]->bones=Array({Make("foreign-bone")});
+        if (!static_mesh) {auto* changed_bone=Make("changed-bone");changed_bone->parent=drift.root;drift.renderers[0]->bones=Array({changed_bone});}
         captured_logs.clear();ResourceFinish(nullptr,drift.root,nullptr);g_model_deliveries.clear();
         Check(fake_mesh_builds==builds && finish_calls==original_calls+2,"binding drift without Original caused another build or lost delivery");
         Check(LogContains("completed without a saved Original") && LogContains("expectedIndices="),

@@ -285,6 +285,7 @@ internal static class BemText
         ["打开包目录"] = "Open package folder",
         ["锁定高精度 LOD"] = "Lock high-detail LOD",
         ["实验：模型热切换"] = "Experimental: model hot-switching",
+        ["实验：克隆模型支持"] = "Experimental: cloned model support",
         ["开启后需重启游戏。之后切换包、外观、组件或应用滑条，在切换配队或重新打开详情时更新。会增加内存占用。"] = "Restart the game after enabling. Package, appearance, component and applied slider changes then take effect on team changes or character-detail reloads. Uses additional memory.",
         ["加载速度优先"] = "Prioritize loading speed",
         ["实验：关闭模型校验"] = "Experimental: disable model validation",
