@@ -4,7 +4,10 @@
   "android": {
     "package": "dev.betterendfield.next",
     "versionCode": 40001,
-    "certificate_sha256": "27d4c9a1f20c2a99953f3ad8488fd1ba33f543b7294d4f441ddd128ef5f3c799"
+    "certificate_sha256": "27d4c9a1f20c2a99953f3ad8488fd1ba33f543b7294d4f441ddd128ef5f3c799",
+    "code_source_commit": "22963ac1a472d8a37c9f8061b0e93c049596cd06",
+    "revision": "mmd-camera-bind-head-20261010",
+    "mmd_camera_height_source": "Avatar.humanDescription.skeleton head in owner-root space"
   },
   "windows": {
     "fileVersion": "4.0.1.0",
@@ -38,11 +41,15 @@
     "npc_and_clone_lifecycle": "passed",
     "android_isolated_arm64_code_patch": "passed",
     "mod_center_typecheck_build": "passed",
-    "signatures": "verified"
+    "signatures": "verified",
+    "android_mmd_camera_bind_height": "passed: bind head 1.6m, live head 0.8m, pelvis 1.0m",
+    "android_camera_release_lint": "lintVitalRelease passed",
+    "android_camera_apk_override_install": "passed on connected arm64 device; settings retained"
   },
   "gameplay_validation": {
     "npc": "user-confirmed before release integration",
-    "clone": "experimental; complete in-game acceptance not claimed"
+    "clone": "experimental; complete in-game acceptance not claimed",
+    "android_mmd_camera": "user approved publication after repair APK installation"
   },
   "assets": [
     {
@@ -52,8 +59,8 @@
     },
     {
       "name": "BetterEndfieldNext-4.0.1-Android-arm64.apk",
-      "bytes": 6007665,
-      "sha256": "bc0ec9ca984e9a139b93a023e3ce60792a3b8339ee365e6a8dcb45fdb40472e5"
+      "bytes": 6008613,
+      "sha256": "61aab0e76f11d827bcf1911e729ddb704bcd146deb5ee5a20374391102428208"
     },
     {
       "name": "BEM-Tools-1.5.2-win-x64.zip",
