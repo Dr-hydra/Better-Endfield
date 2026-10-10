@@ -1192,6 +1192,8 @@ void PumpModelJobs(uint64_t frame) {
             try {CaptureNativeProbe(asset);} catch (...) {Log("Native probe delivery failed");}
         }
         if (g_probe.sweep) continue;
+        asset=ResolveLegacyModelReceiverRoot(asset);
+        if (!asset || !IsNativeObjectAlive(asset)) continue;
         const auto name=ObjectName(asset);
         const EnabledMod* mod=g_registry.Match(name);
         std::string source_name;

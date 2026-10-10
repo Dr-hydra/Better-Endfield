@@ -196,6 +196,10 @@ MethodContract g_methods[]{
     {"transform.get_parent",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Transform",
             "get_parent", nullptr, "UnityEngine.Transform", 0}, true},
+    {"transform.child_count", {"UnityEngine.CoreModule.dll","UnityEngine","Transform",
+        "get_childCount",nullptr,"System.Int32",0},false},
+    {"transform.get_child", {"UnityEngine.CoreModule.dll","UnityEngine","Transform",
+        "GetChild","System.Int32","UnityEngine.Transform",1},false},
     {"renderer.get_enabled",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Renderer",
             "get_enabled", nullptr, "System.Boolean", 0}, true},
@@ -3501,6 +3505,7 @@ bool PrepareDisabledResource(void* asset,const CharacterAdapter* adapter,std::ve
     }
     return !bindings.empty();
 }
+#include "model_receiver_root.inc"
 bool RestoreDisabledResource(void* asset,std::string_view name,ConstructionScope& construction) {
     if (!IsGameObjectResource(asset) || !g_hot_switch_runtime.load()) return false;
     const auto refuse=[&](const char* reason) {
@@ -3569,6 +3574,8 @@ bool RestoreDisabledResource(void* asset,std::string_view name,ConstructionScope
 
 bool ProcessResource(void* asset,ConstructionScope& construction) {
     if (!IsGameObjectResource(asset) || !RootTemporary(asset)) return false;
+    asset=ResolveLegacyModelReceiverRoot(asset);
+    if (!asset || !RootTemporary(asset)) return false;
     const auto name=ObjectName(asset);
     construction.resource_name=name;
     const EnabledMod* mod=g_registry.Match(name);

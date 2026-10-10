@@ -86,6 +86,15 @@ void* BE_CALL InvokeFake(void*,const void* method,void* object,void** args,void*
     if (key=="component.get_component") return n->filter;
     if (key=="time.frame_count") return Scalar(fake_frame);
     if (key=="transform.get_parent") return n->parent;
+    if (key=="transform.child_count") {
+        size_t count=0;for (const auto& child:objects) if (child->parent==object) ++count;
+        return Scalar(count);
+    }
+    if (key=="transform.get_child") {
+        int32_t index=*static_cast<int32_t*>(args[0]);
+        for (const auto& child:objects) if (child->parent==object && index--==0) return child.get();
+        return nullptr;
+    }
     if (key=="game_object.renderers") return fake_transform_type && args[0]==fake_transform_type?n->transforms:object;
     if (key=="mesh.get_vertex_count") return Scalar(3);
     if (key=="mesh.get_sub_mesh_count") return Scalar(1);
@@ -1407,8 +1416,10 @@ void ResourceTypeBoundaryTests(const std::filesystem::path& package_path) {
 #include "custom_model_first_enable_tests.inc"
 #include "custom_model_android_discovery_tests.inc"
 #include "custom_model_android_legacy_discovery_tests.inc"
+#include "custom_model_npc_root_tests.inc"
 
 int main(int argc,char** argv) {
+    if(argc==2 && std::string_view(argv[1])=="--npc-roots") {NpcRootTests();return 0;}
     if(argc==2 && std::string_view(argv[1])=="--instance-lineage") {InstanceLineageTests();return 0;}
     if(argc==4 && std::string_view(argv[1])=="--android-discovery") {AndroidDiscoveryTests(argv[2],argv[3]);AndroidLegacyDiscoveryTests(argv[2]);return 0;}
     if(argc==4 && std::string_view(argv[1])=="--first-enable") {FirstEnableTests(argv[2],argv[3]);return 0;}
