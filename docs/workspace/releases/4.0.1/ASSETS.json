@@ -1,0 +1,64 @@
+{
+  "version": "4.0.1",
+  "code_source_commit": "ad48931048566909dd3d0293804297643bc5f096",
+  "android": {
+    "package": "dev.betterendfield.next",
+    "versionCode": 40001,
+    "certificate_sha256": "27d4c9a1f20c2a99953f3ad8488fd1ba33f543b7294d4f441ddd128ef5f3c799"
+  },
+  "windows": {
+    "fileVersion": "4.0.1.0",
+    "certificate_sha256": "b1bf40f1a225dd20a0603dd4ce828c29a102956e178188e899f82602afc45d96",
+    "trust": "self-signed-internal"
+  },
+  "clone_support": {
+    "experimental": true,
+    "default_enabled": false,
+    "requires_game_restart": true
+  },
+  "third_party_modules": {
+    "removed": true,
+    "migrated_to": "https://github.com/Dr-hydra/Endfield-Mod-Loader"
+  },
+  "retired_bem_cloth_research": "legacy/native-bem-cloth-20261010",
+  "checks": {
+    "windows_release": "passed",
+    "winui_obfuscation": "passed",
+    "android_release": "passed",
+    "android_lint": "passed",
+    "desktop_plain_checks": 22,
+    "desktop_obfuscated_checks": 22,
+    "published_manifest_roundtrip": "passed",
+    "windows_settings_checks": 30,
+    "windows_configuration_checks": 5,
+    "workspace_checks": 44,
+    "android_bem_state_checks": 150,
+    "android_navigation_checks": 10,
+    "model_binding_and_async": "passed",
+    "npc_and_clone_lifecycle": "passed",
+    "android_isolated_arm64_code_patch": "passed",
+    "mod_center_typecheck_build": "passed",
+    "signatures": "verified"
+  },
+  "gameplay_validation": {
+    "npc": "user-confirmed before release integration",
+    "clone": "experimental; complete in-game acceptance not claimed"
+  },
+  "assets": [
+    {
+      "name": "BetterEndfieldNext-4.0.1-Setup.exe",
+      "bytes": 76317816,
+      "sha256": "6952fa3dddb18cf60fe36cc13ce0168ac8377393d7aef1b155450e1b0c88d050"
+    },
+    {
+      "name": "BetterEndfieldNext-4.0.1-Android-arm64.apk",
+      "bytes": 6007665,
+      "sha256": "bc0ec9ca984e9a139b93a023e3ce60792a3b8339ee365e6a8dcb45fdb40472e5"
+    },
+    {
+      "name": "BEM-Tools-1.5.2-win-x64.zip",
+      "bytes": 71922187,
+      "sha256": "788c7f6cfdcda5317813f4b76b22c6beedecd69175b0d5fe5f0764b997953e2b"
+    }
+  ]
+}

@@ -10,6 +10,8 @@
 - 双端彻底移除第三方模块装载器、管理页面、网页桥、扩展配置与 SDK / Echo 打包项，迁移到独立项目 [Endfield Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader)。通用 Host、内置模块加载、共享 Hook 链及创意工坊保留。
 - BEM 原生布料物理及制作端权重、裁剪试验作为废弃研究归档到 `legacy/native-bem-cloth-20261010/`，不参与当前构建。
 
+完整附件与验证范围见 [4.0.1 发布记录](docs/workspace/releases/4.0.1/RELEASE_4_0_1.md)。
+
 ## 4.0.0 Better Endfield Next
 
 - 产品更名为 Better Endfield Next，保留原 Logo，更新双端安装身份、内部模块/通信标识和发布签名。与旧版独立，需卸载后重新安装；Android 重新启用框架模块和游戏作用域，不迁移旧设置。
