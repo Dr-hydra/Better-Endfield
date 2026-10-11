@@ -39,6 +39,10 @@ namespace betterendfieldnext { bool AndroidGlobalFov(bool enabled, float fov); }
 extern "C" const BE_ModuleApiV1* BetterEndfieldNext_GetUiModuleApiV1();
 extern "C" const BE_ModuleApiV1* BetterEndfieldNext_GetCameraModuleApiV1();
 extern "C" const BE_ModuleApiV1* BetterEndfieldNext_GetActionsModuleApiV1();
+extern "C" const BE_ModuleApiV1* BetterEndfieldNext_GetMediaScreenModuleApiV1();
+extern "C" int BetterEndfieldNext_MediaScreenCommandV1(unsigned action, double value);
+extern "C" int BetterEndfieldNext_MediaScreenStatusV1(char* destination, size_t capacity);
+extern "C" void BetterEndfieldNext_MediaScreenForegroundV1(int visible);
 
 namespace betterendfieldnext {
 namespace {
@@ -120,6 +124,11 @@ void RunModules() {
             &BetterEndfieldNext_GetActionsModuleApiV1,
             "same-source desktop sustained-dash module active"));
     }
+    if (Configured("BETTER_ENDFIELD_NEXT_MEDIA_SCREEN_CONFIG") != nullptr) {
+        state.modules.emplace_back(std::make_unique<DesktopModule>(
+            "betterendfieldnext.media_screen", "BETTER_ENDFIELD_NEXT_MEDIA_SCREEN_CONFIG",
+            &BetterEndfieldNext_GetMediaScreenModuleApiV1, "manual guest-room media screen active"));
+    }
 
     // Missing hot-update metadata delays only the affected module. The actual
     // Start calls remain serialized; abandoning a timed-out C++ thread is unsafe
@@ -176,6 +185,7 @@ bool AnyModuleRequested() {
         "BETTER_ENDFIELD_NEXT_CAMERA_CONFIG",
         "BETTER_ENDFIELD_NEXT_ACTIONS_CONFIG",
         "BETTER_ENDFIELD_NEXT_CUSTOM_MODEL_CONFIG",
+        "BETTER_ENDFIELD_NEXT_MEDIA_SCREEN_CONFIG",
     };
     for (const char* variable : kVariables) {
         if (Configured(variable) != nullptr) return true;
@@ -266,9 +276,20 @@ Java_dev_betterendfield_next_NativeCommandBridge_frame(JNIEnv*, jclass) {
         betterendfieldnext::LogError("runtime.frame", "frame callback failed");
     }
 }
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_dev_betterendfield_next_NativeCommandBridge_mediaScreen(JNIEnv*, jclass, jint action, jdouble value) {
+    return BetterEndfieldNext_MediaScreenCommandV1(static_cast<unsigned>(action), value) ? JNI_TRUE : JNI_FALSE;
+}
+extern "C" JNIEXPORT jstring JNICALL
+Java_dev_betterendfield_next_NativeCommandBridge_mediaScreenStatus(JNIEnv* env, jclass) {
+    char status[512]{}; BetterEndfieldNext_MediaScreenStatusV1(status, sizeof(status));
+    return env->NewStringUTF(status);
+}
 extern "C" JNIEXPORT void JNICALL
 Java_dev_betterendfield_next_NativeCommandBridge_foreground(JNIEnv*, jclass, jboolean visible) {
     betterendfieldnext::SetAndroidForeground(visible == JNI_TRUE);
+    BetterEndfieldNext_MediaScreenForegroundV1(visible == JNI_TRUE ? 1 : 0);
 }
 extern "C" JNIEXPORT jstring JNICALL
 Java_dev_betterendfield_next_NativeCommandBridge_runtimeStatus(JNIEnv* env, jclass) {
@@ -339,6 +360,7 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
         BE_NATIVE(pcMouseCursorMode, "()I"), BE_NATIVE(pcMouseAbsolute, "(FF)V"), BE_NATIVE(pcMouseDirectTouch, "(Z)V"),
         BE_NATIVE(cameraValues, "(FF)V"), BE_NATIVE(mmdStatus, "()Ljava/lang/String;"),
         BE_NATIVE(globalFov, "(ZF)Z"),
+        BE_NATIVE(mediaScreen, "(ID)Z"), BE_NATIVE(mediaScreenStatus, "()Ljava/lang/String;"),
         BE_NATIVE(updateCustomModelConfig, "(Ljava/lang/String;)Z"),
         BE_NATIVE(mmd, "(IIDLjava/lang/String;)Z")
     };

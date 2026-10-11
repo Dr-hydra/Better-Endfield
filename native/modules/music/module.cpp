@@ -1,8 +1,10 @@
 #include <BetterEndfieldNext/ModuleApi.h>
 #include <BetterEndfieldNext/LocalMusic.h>
+#include <BetterEndfieldNext/MusicControl.h>
 
 #include "music_bank.h"
 #include "omni_pcm_abi.h"
+#include "bgm_pause.h"
 
 #include <Windows.h>
 #include <mfapi.h>
@@ -1165,6 +1167,15 @@ void DisengageReplacement(const char* reason) {
 }
 
 bool g_local_policy_engaged = false;
+BgmPauseRequests g_bgm_pause_requests;
+bool g_external_pause_engaged = false;
+
+uint64_t BE_CALL AcquireBgmPause(const char* owner) {
+    if (!owner || !*owner) return 0;
+    try { return g_bgm_pause_requests.Acquire(); } catch (...) { return 0; }
+}
+void BE_CALL ReleaseBgmPause(uint64_t token) { g_bgm_pause_requests.Release(token); }
+const BE_MusicControlApiV1 kMusicControlApi{1, sizeof(BE_MusicControlApiV1), &AcquireBgmPause, &ReleaseBgmPause};
 
 // Local playback (LocalMusic.h) has priority over OmniMix and the game's music
 // while a track is open. Returns true when it handled this tick.
@@ -1174,7 +1185,7 @@ bool PumpLocalMusicPolicy() {
         if (g_local_policy_engaged) {
             g_local_policy_engaged = false;
             SetCustomPaused(true);
-            RestoreNativeMusic();
+            if (!g_bgm_pause_requests.Active()) RestoreNativeMusic();
             Log("[music.local] local track closed; native/OmniMix policy resumes");
         }
         return false;
@@ -1198,6 +1209,19 @@ bool PumpLocalMusicPolicy() {
 void PumpMusicPolicy() {
     if (PumpLocalMusicPolicy()) {
         return;
+    }
+    if (g_bgm_pause_requests.Active()) {
+        if (!g_external_pause_engaged) Log("[music.policy] window projection BGM pause engaged");
+        g_external_pause_engaged = true;
+        PauseNativeMusic(true);
+        SetCustomPaused(true);
+        DisengageReplacement("bgm_pause");
+        return;
+    }
+    if (g_external_pause_engaged) {
+        g_external_pause_engaged = false;
+        RestoreNativeMusic();
+        Log("[music.policy] window projection BGM pause released");
     }
     const bool enabled = g_enabled.load(std::memory_order_acquire);
     if (!enabled) {
@@ -1958,6 +1982,7 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     g_shutdown_requested.store(false, std::memory_order_release);
     g_worker_started.store(true, std::memory_order_release);
     g_worker = std::thread(&WorkerMain);
+    g_bgm_pause_requests.Start();
     Log("[music] module 1.0.0 initialized; metadata contracts only, no fixed RVA");
     return BE_Result_Ok;
 }
@@ -1988,6 +2013,8 @@ BE_Result BE_CALL ConfigurationChanged(const char* configuration) {
 }
 
 void BE_CALL Shutdown() {
+    g_bgm_pause_requests.Stop();
+    g_external_pause_engaged = false;
     g_enabled.store(false, std::memory_order_release);
     g_shutdown_requested.store(true, std::memory_order_release);
     LocalTrack::Stop();
@@ -2050,4 +2077,8 @@ BE_EXPORT const BE_ModuleApiV1* BE_CALL BetterEndfieldNext_GetModuleApiV1(void) 
 // Named capability for Camera's MMD playback (LocalMusic.h).
 BE_EXPORT const BE_LocalMusicApiV1* BE_CALL BetterEndfieldNext_GetLocalMusicApiV1(void) {
     return &LocalTrack::kApi;
+}
+
+BE_EXPORT const BE_MusicControlApiV1* BE_CALL BetterEndfieldNext_GetMusicControlApiV1(void) {
+    return &kMusicControlApi;
 }

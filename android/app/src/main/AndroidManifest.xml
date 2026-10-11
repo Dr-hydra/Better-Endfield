@@ -19,6 +19,9 @@
             </intent-filter>
         </receiver>
         <activity
+            android:name=".MediaScreenActivity"
+            android:exported="false" />
+        <activity
             android:name=".FrameworkBootstrapActivity"
             android:screenOrientation="behind"
             android:exported="true"

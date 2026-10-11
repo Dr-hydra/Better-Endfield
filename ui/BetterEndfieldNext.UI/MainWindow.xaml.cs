@@ -95,6 +95,7 @@ public sealed partial class MainWindow : Window
         Interval = TimeSpan.FromSeconds(1)
     };
     private readonly DispatcherTimer _autoSaveTimer = new() { Interval = TimeSpan.FromMilliseconds(700) };
+    private readonly MediaCaptureService _mediaCaptureService = new();
 
     private bool _initializing = true;
     private FreeCameraExtras _freeCameraExtras = new();
@@ -119,6 +120,7 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
         GachaPage.EnabledChanged += GachaPage_EnabledChanged;
+        MediaScreenPage.ConfigurationChanged += (_, _) => ScheduleAutoSave();
         RegisterReactiveControls(MainRoot);
         RegisterHotkeyControls(MainRoot);
         Title = "Better Endfield Next";
@@ -151,7 +153,7 @@ public sealed partial class MainWindow : Window
 
     private void RegisterReactiveControls(DependencyObject root)
     {
-        if (root is Views.SteamIntegrationPage) return;
+        if (root is Views.SteamIntegrationPage or Views.MediaScreenPage) return;
         int count = VisualTreeHelper.GetChildrenCount(root);
         for (int index = 0; index < count; index++)
         {
@@ -169,6 +171,7 @@ public sealed partial class MainWindow : Window
 
     private void RegisterHotkeyControls(DependencyObject root)
     {
+        if (root is Views.MediaScreenPage) return;
         int count = VisualTreeHelper.GetChildrenCount(root);
         for (int index = 0; index < count; index++)
         {
@@ -1094,6 +1097,7 @@ public sealed partial class MainWindow : Window
         MusicPageScrollViewer.Visibility = page == "music"
             ? Visibility.Visible
             : Visibility.Collapsed;
+        MediaScreenPage.Visibility = page == "media-screen" ? Visibility.Visible : Visibility.Collapsed;
         CombatPageScrollViewer.Visibility = page == "combat"
             ? Visibility.Visible
             : Visibility.Collapsed;
@@ -2302,6 +2306,7 @@ public sealed partial class MainWindow : Window
                 injectorPath,
                 GetSelectedLoaderMode(),
                 configuration);
+            _mediaCaptureService.Configure(configuration.MediaScreen);
             await VoiceCatalogService.CommitAsync(catalogPreparation);
             _appSettings.GameExecutablePath = gamePath;
             _appSettings.LoaderMode = GetSelectedLoaderMode();
@@ -2990,7 +2995,8 @@ public sealed partial class MainWindow : Window
             WorldPauseToggleHotkey = PauseWorldHotkeyBox.Text,
             FreeCameraMovementSpeed = FreeCameraMovementSpeedNumberBox.Value,
             FreeCameraFieldOfView = FreeCameraFieldOfViewNumberBox.Value,
-            FreeCameraExtras = ReadFreeCameraExtras()
+            FreeCameraExtras = ReadFreeCameraExtras(),
+            MediaScreen = MediaScreenPage.ReadConfiguration()
         };
         return true;
     }
@@ -3054,6 +3060,8 @@ public sealed partial class MainWindow : Window
         HideHudToggle.IsOn = configuration.HideHudEnabled;
         HideHudHotkeyBox.Text = configuration.HideHudToggleHotkey;
         FreeCameraToggle.IsOn = configuration.FreeCameraEnabled;
+        MediaScreenPage.ApplyConfiguration(configuration.MediaScreen);
+        _mediaCaptureService.Configure(configuration.MediaScreen);
         ContinuousSpecialDashAglinaToggle.IsOn = configuration.ContinuousSpecialDashAglinaEnabled;
         ContinuousSpecialDashLiinoToggle.IsOn = configuration.ContinuousSpecialDashLiinoEnabled;
         LiinoCleanDashToggle.IsOn = configuration.LiinoCleanDashEnabled;
@@ -3841,6 +3849,8 @@ public sealed partial class MainWindow : Window
         CombatNavigationItem.Content = isZh ? "战斗数据" : "Combat Stats";
         UiNavigationItem.Content = isZh ? "界面增强" : "Touch & UI";
         CameraNavigationItem.Content = isZh ? "相机增强" : "Camera";
+        MediaScreenNavigationItem.Content = isZh ? "会客室媒体屏" : "Guest Room Media Screen";
+        MediaScreenPage.UpdateLanguage();
         ActionsNavigationItem.Content = isZh ? "冲刺持续" : "Sustained Dash";
         ActionsPageTitle.Text = isZh ? "冲刺持续" : "Sustained Dash";
         ActionsPageDescription.Text = isZh ? "分角色开启特殊冲刺动作的持续播放。设置保存后，下一次特殊冲刺生效。" : "Enables the sustained special dash per character. Changes apply on the next special dash.";
@@ -4286,6 +4296,7 @@ public sealed partial class MainWindow : Window
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {
         _statusTimer.Stop();
+        _mediaCaptureService.Dispose();
         // The handoff port outlives the click by a few minutes; it must not
         // outlive the app.
         CombatWebHandoff.CloseCurrent();

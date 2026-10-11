@@ -68,6 +68,31 @@ set_target_properties(BetterEndfieldNext.Model PROPERTIES
 
 add_subdirectory(modules/custom_model)
 
+add_library(BetterEndfieldNext.MediaScreen SHARED
+    modules/media_screen/module.cpp
+    modules/media_screen/remote_capture.cpp)
+better_endfield_target_defaults(BetterEndfieldNext.MediaScreen)
+set_target_properties(BetterEndfieldNext.MediaScreen PROPERTIES
+    OUTPUT_NAME "BetterEndfieldNext.MediaScreen"
+    RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules"
+    LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules")
+
+add_executable(BetterEndfieldNext.MediaCapture WIN32
+    modules/media_screen/capture_broker.cpp
+    modules/media_screen/window_capture.cpp)
+add_library(BetterEndfieldNext.GameInputBridge SHARED modules/media_screen/game_input_bridge.cpp)
+better_endfield_target_defaults(BetterEndfieldNext.GameInputBridge)
+target_link_libraries(BetterEndfieldNext.GameInputBridge PRIVATE minhook dxguid)
+set_target_properties(BetterEndfieldNext.GameInputBridge PROPERTIES
+    OUTPUT_NAME "BetterEndfieldNext.GameInputBridge"
+    RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/runtime")
+add_dependencies(BetterEndfieldNext.MediaCapture BetterEndfieldNext.GameInputBridge)
+better_endfield_target_defaults(BetterEndfieldNext.MediaCapture)
+target_link_libraries(BetterEndfieldNext.MediaCapture PRIVATE d3d11 dxgi windowsapp shell32 dwmapi)
+set_target_properties(BetterEndfieldNext.MediaCapture PROPERTIES
+    OUTPUT_NAME "BetterEndfieldNext.MediaCapture"
+    RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/runtime")
+
 add_library(BetterEndfieldNext.CustomModel SHARED
     modules/custom_model/module.cpp
     modules/custom_model/native_mesh_layout.cpp
@@ -437,6 +462,9 @@ add_custom_target(BetterEndfieldNext.Layout ALL
         "${CMAKE_CURRENT_SOURCE_DIR}/modules/music/betterendfieldnext.music.module.ini"
         "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules/betterendfieldnext.music.module.ini"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/modules/media_screen/betterendfieldnext.media_screen.module.ini"
+        "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules/betterendfieldnext.media_screen.module.ini"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/modules/combat_stats/betterendfieldnext.combat_stats.module.ini"
         "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules/betterendfieldnext.combat_stats.module.ini"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -471,6 +499,9 @@ add_custom_target(BetterEndfieldNext.Layout ALL
         BetterEndfieldNext.CustomModel
         BetterEndfieldNext.Voice
         BetterEndfieldNext.Music
+        BetterEndfieldNext.MediaScreen
+        BetterEndfieldNext.MediaCapture
+        BetterEndfieldNext.GameInputBridge
         BetterEndfieldNext.UiModule
         BetterEndfieldNext.Camera
         BetterEndfieldNext.Actions

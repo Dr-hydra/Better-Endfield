@@ -6,6 +6,7 @@ namespace BetterEndfieldNext.UI.Models;
 
 internal sealed class ModConfiguration
 {
+    public MediaScreenConfiguration MediaScreen { get; set; } = new();
     public bool GachaEnabled { get; set; }
     public string Character { get; set; } = "chr_0013_aglina";
 
@@ -263,9 +264,9 @@ internal sealed class ModConfiguration
         text.AppendLine("[betterendfieldnext.music]");
         text.AppendLine("schema_version=1");
         // "enabled" loads the module; MMD music uses it without OmniMix.
-        text.AppendLine($"enabled={Boolean(MusicReplacementEnabled || FreeCameraExtras.RequiresMusicModule)}");
+        text.AppendLine($"enabled={Boolean(MusicReplacementEnabled || FreeCameraExtras.RequiresMusicModule || MediaScreen.RequiresMusicModule)}");
         text.AppendLine($"music_replacement_enabled={Boolean(MusicReplacementEnabled)}");
-        text.AppendLine($"local_playback_enabled={Boolean(FreeCameraExtras.RequiresMusicModule)}");
+        text.AppendLine($"local_playback_enabled={Boolean(FreeCameraExtras.RequiresMusicModule || MediaScreen.RequiresAudio)}");
         text.AppendLine($"backend_exe={OmniMixBackendExe}");
         text.AppendLine($"client_id={OmniMixClientId}");
         text.AppendLine($"replace_login={Boolean(ReplaceLoginMusic)}");
@@ -317,6 +318,8 @@ internal sealed class ModConfiguration
         text.AppendLine();
         text.AppendLine("[Launcher]");
         text.AppendLine($"Language={(LocalizationService.Instance.IsChinese ? "zh_CN" : "en_US")}");
+        text.AppendLine();
+        text.Append(MediaScreen.ToIni());
         return text.ToString();
     }
 }

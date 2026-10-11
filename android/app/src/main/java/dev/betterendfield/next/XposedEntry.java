@@ -68,6 +68,8 @@ public final class XposedEntry extends XposedModule {
                                 initialIndex,modelSource,this::report,skipValidation,hotSwitch,fastLoading,true,cloneSupport);
                             installedPrepared=true;
                         } catch(Exception error) {report("Installed BEM preparation failed: "+error);}
+                        MediaScreenFiles.prepare(context, settings.getString(ModuleSettings.MEDIA_CONFIGURATION, ""),
+                                settings.getString(MediaScreenFiles.INDEX, "[]"), modelSource, this::report);
                         if (settings.getBoolean(ModuleSettings.MMD_ENABLED, false)) try {
                             MmdInstalledResources.prepare(context, settings.getString(MmdInstaller.INDEX, "[]"),
                                     name -> new ParcelFileDescriptor.AutoCloseInputStream(openRemoteFile(name)), this::report);

@@ -4,6 +4,82 @@
   "receipt_schema": "docs/workspace/TESTING.md#构建凭据",
   "suites": [
     {
+      "id": "media_screen.runtime",
+      "module": "media_screen",
+      "kind": "simulation",
+      "platform": ["Windows", "Android"],
+      "host_platform": ["Windows"],
+      "game_version": ["any"],
+      "input": {"id": "media-screen-fake-host", "type": "synthetic"},
+      "prerequisite": [{"type": "tool", "key": "tools.ctest"}],
+      "entry": {
+        "type": "ctest",
+        "cwd": ".",
+        "sources": [
+          "native/tests/media_screen/CMakeLists.txt",
+          "native/tests/media_screen/media_screen_tests.cpp",
+          "native/tests/media_screen/capture_ipc_tests.cpp",
+          "native/tests/media_screen/window_input_tests.cpp",
+          "native/tests/media_screen/game_input_tests.cpp",
+          "native/modules/media_screen/module.cpp",
+            "native/modules/media_screen/window_control.h",
+            "native/modules/media_screen/receiver_inspection.h",
+            "native/modules/media_screen/desk_receivers.h",
+            "native/modules/media_screen/aspect_fit.h",
+          "native/modules/media_screen/window_input.h",
+          "native/modules/media_screen/control_input_shield.h",
+          "native/modules/media_screen/game_input_client.h",
+          "native/modules/media_screen/game_input_protocol.h",
+          "native/modules/media_screen/game_input_bridge.cpp",
+          "native/modules/media_screen/game_input_directinput.inc",
+          "native/modules/media_screen/window_capture.h",
+          "native/modules/media_screen/control_geometry.h",
+          "native/modules/media_screen/control_hotkey.h",
+          "native/modules/media_screen/remote_capture.cpp",
+          "native/modules/media_screen/capture_ipc.h",
+          "native/modules/media_screen/configuration.h",
+          "native/modules/media_screen/output_limits.h",
+          "native/modules/music/bgm_pause.h",
+          "native/shared/include/BetterEndfieldNext/MusicControl.h",
+          "native/modules/media_screen/file_reader.h",
+          "native/modules/media_screen/image_header.h"
+        ],
+        "build_dir": "next/media-screen/tests",
+        "configuration": "Release",
+        "test_regex": "^media_screen(_capture_ipc|_window_input|_game_input)?$",
+        "artifacts": ["next/media-screen/tests/Release/media_screen_tests.exe", "next/media-screen/tests/Release/media_capture_ipc_tests.exe", "next/media-screen/tests/Release/media_window_input_tests.exe", "next/media-screen/tests/Release/media_game_input_tests.exe"],
+        "receipt": "tests/receipts/media_screen.runtime.json"
+      },
+      "status": "active",
+      "replaced_by": null,
+          "purpose": "Manual activation/restoration, receiver lifecycle, video/audio pause, chords, original WndProc cursor mapping, BGM leases, IPC, ordinary app input, and isolated source-process Raw Input/DirectInput state, relative mouse, release and focus preservation. Tests game input shielding and exit key drain. Actual game compatibility requires separate source-engine/runtime verification."
+    },
+    {
+      "id": "media_screen.android_files",
+      "module": "media_screen",
+      "kind": "offline",
+      "platform": ["Android"],
+      "game_version": ["any"],
+      "input": {"id": "media-screen-synthetic-files", "type": "synthetic"},
+      "prerequisite": [],
+      "entry": {
+        "type": "catalog_only",
+        "cwd": ".",
+        "reference": "native/tests/media_screen_android/Run.ps1",
+        "sources": [
+          "native/tests/media_screen_android/Run.ps1",
+          "native/tests/media_screen_android/src/dev/betterendfield/next/MediaScreenFilesTest.java",
+          "native/tests/media_screen_android/stubs/android/content/Context.java",
+          "native/tests/media_screen_android/stubs/dev/betterendfield/next/BemInstalledResources.java",
+          "android/app/src/main/java/dev/betterendfield/next/MediaScreenFiles.java"
+        ],
+        "blocked_reason": "Run.ps1 compiles the production Java cache with host stubs and the local JSON jar; the shared runner does not compile JVM tests."
+      },
+      "status": "active",
+      "replaced_by": null,
+      "purpose": "Game-private media file materialization, immutable cache reuse, manifest bounds, token validation and atomic transfer failure."
+    },
+    {
       "id": "workspace.registry",
       "module": "workspace",
       "kind": "simulation",
@@ -100,6 +176,7 @@
           "ui/tests/NextConfiguration/NextConfiguration.csproj",
           "ui/tests/NextConfiguration/Program.cs",
           "ui/BetterEndfieldNext.UI/Models/ModConfiguration.cs",
+          "ui/BetterEndfieldNext.UI/Models/MediaScreenConfiguration.cs",
           "ui/BetterEndfieldNext.UI/Models/FreeCameraExtras.cs",
           "ui/BetterEndfieldNext.UI/Services/LocalizationService.cs",
           "ui/tests/NextConfiguration/PlatformStubs.cs"
@@ -115,7 +192,7 @@
       },
       "status": "active",
       "replaced_by": null,
-      "purpose": "Production Windows configuration serialization: standalone freeze/MMD and retired-setting exclusion.",
+      "purpose": "Production Windows configuration serialization: standalone freeze/MMD, retired-setting exclusion and media-screen audio gating/path preservation.",
       "host_platform": [
         "Windows"
       ]

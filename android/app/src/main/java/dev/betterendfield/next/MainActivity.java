@@ -702,6 +702,9 @@ public final class MainActivity extends Activity {
             startActivity(new Intent(this, MmdLibraryActivity.class));
         });
         page.addView(mmd, SectionCard.stacked(this, 12));
+        Button media = enhancementButton("会客室媒体屏");
+        media.setOnClickListener(view -> startActivity(new Intent(this, MediaScreenActivity.class)));
+        page.addView(media, SectionCard.stacked(this, 12));
 
         Button workshop = enhancementButton("创意工坊");
         workshop.setOnClickListener(view -> {

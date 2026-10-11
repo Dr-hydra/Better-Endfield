@@ -93,6 +93,7 @@ final class RuntimeBootstrap {
             Os.setenv("BETTER_ENDFIELD_NEXT_CAMERA_CONFIG", configs.camera(), true);
             Os.setenv("BETTER_ENDFIELD_NEXT_MMD_ROOT", new File(context.getFilesDir(), "betterendfieldnext/mmd").getAbsolutePath(), true);
             Os.setenv("BETTER_ENDFIELD_NEXT_ACTIONS_CONFIG", configs.actions(), true);
+            Os.setenv("BETTER_ENDFIELD_NEXT_MEDIA_SCREEN_CONFIG", MediaScreenFiles.configuration, true);
             Os.setenv("BETTER_ENDFIELD_NEXT_ACTIONS_ASSET_ROOT", actionPoseRoot, true);
             Os.setenv("BETTER_ENDFIELD_NEXT_CUSTOM_MODEL_PROBE", debugResourceProbe() ? "1" : "0", true);
             Os.setenv("BETTER_ENDFIELD_NEXT_CUSTOM_MODEL_CONFIG", customModelConfig(), true);

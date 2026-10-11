@@ -97,7 +97,8 @@ add_library(betterendfieldnext_desktop_features STATIC
     "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/eiem/eiem_slot2.cpp"
     "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/eiem/eiem_slot3.cpp"
     "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/host/pose_lease.cpp"
-    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/actions/module.cpp")
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/actions/module.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/media_screen/module.cpp")
 
 # Each desktop module exports the same BetterEndfieldNext_GetModuleApiV1 entry point
 # because on Windows each one is its own DLL. Renaming per translation unit keeps
@@ -114,6 +115,10 @@ set_source_files_properties(
     "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/actions/module.cpp"
     PROPERTIES COMPILE_DEFINITIONS
     "BetterEndfieldNext_GetModuleApiV1=BetterEndfieldNext_GetActionsModuleApiV1")
+set_source_files_properties(
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/media_screen/module.cpp"
+    PROPERTIES COMPILE_DEFINITIONS
+    "BetterEndfieldNext_GetModuleApiV1=BetterEndfieldNext_GetMediaScreenModuleApiV1")
 
 target_include_directories(betterendfieldnext_desktop_features PRIVATE
     "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/android_compat/include"

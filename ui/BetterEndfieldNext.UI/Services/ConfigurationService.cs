@@ -631,6 +631,8 @@ internal static class ConfigurationService
             values, "field_of_view", configuration.FreeCameraFieldOfView);
         configuration.FreeCameraExtras = FreeCameraExtras.FromValues(values);
         configuration.GachaEnabled = Boolean(gachaValues, "enabled", configuration.GachaEnabled);
+        configuration.MediaScreen = MediaScreenConfiguration.FromValues(ReadIniSection(
+            string.Join(Environment.NewLine, lines), "betterendfieldnext.media_screen"));
         return configuration;
     }
 
@@ -645,9 +647,10 @@ internal static class ConfigurationService
         bool replacement = music.TryGetValue("music_replacement_enabled", out string? flag)
             ? Truthy(flag)
             : music.TryGetValue("enabled", out string? legacy) && Truthy(legacy);
-        music["enabled"] = replacement || mmdMusic ? "true" : "false";
+        var media = MediaScreenConfiguration.FromValues(ReadIniSection(contents, "betterendfieldnext.media_screen"));
+        music["enabled"] = replacement || mmdMusic || media.RequiresMusicModule ? "true" : "false";
         music["music_replacement_enabled"] = replacement ? "true" : "false";
-        music["local_playback_enabled"] = mmdMusic ? "true" : "false";
+        music["local_playback_enabled"] = mmdMusic || media.RequiresAudio ? "true" : "false";
         if (!music.ContainsKey("schema_version")) music["schema_version"] = "1";
         var section = new StringBuilder();
         section.Append("[betterendfieldnext.music]").Append(Environment.NewLine);

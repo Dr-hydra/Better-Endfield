@@ -25,6 +25,8 @@ final class NativeCommandBridge {
     /** Queues a prepared BEM snapshot; Unity applies it on a later frame. */
     static native boolean updateCustomModelConfig(String configuration);
     static native void frame();
+    static native boolean mediaScreen(int action, double value);
+    static native String mediaScreenStatus();
     static native void foreground(boolean visible);
     static native boolean pcMouseCaptureRequested();
     static native int pcMouseCursorMode();

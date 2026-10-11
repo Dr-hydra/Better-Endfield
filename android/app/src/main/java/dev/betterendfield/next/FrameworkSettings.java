@@ -137,6 +137,25 @@ final class FrameworkSettings {
         return name != null && name.length() <= 200
                 && name.matches("mmd-[a-f0-9-]{36}-[A-Za-z0-9_.-]+");
     }
+    static void publishMedia(java.io.File file, String name) throws java.io.IOException {
+        if (!MediaScreenFiles.valid(name) || !file.isFile()) throw new java.io.IOException("无效的媒体文件");
+        ParcelFileDescriptor descriptor;
+        synchronized (FrameworkSettings.class) {
+            if (remoteService == null) throw new java.io.IOException("框架服务未连接");
+            descriptor = remoteService.openRemoteFile(name);
+        }
+        try (descriptor; java.io.FileInputStream input = new java.io.FileInputStream(file);
+                FileOutputStream output = new FileOutputStream(descriptor.getFileDescriptor())) {
+            output.getChannel().truncate(0); byte[] buffer = new byte[65536]; long total = 0; int count;
+            while ((count = input.read(buffer)) != -1) { total += count; if (total > 512L * 1024 * 1024) throw new java.io.IOException("媒体文件过大"); output.write(buffer, 0, count); }
+            output.getFD().sync();
+        }
+    }
+    static synchronized void removeMedia(String name) {
+        if (remoteService != null && MediaScreenFiles.valid(name)) {
+            try { remoteService.deleteRemoteFile(name); } catch (RuntimeException ignored) {}
+        }
+    }
     static synchronized boolean publishMmd(java.io.File file, String name) {
         if (remoteService == null || !validMmdRemote(name) || !file.isFile()) return false;
         try (ParcelFileDescriptor descriptor = remoteService.openRemoteFile(name);

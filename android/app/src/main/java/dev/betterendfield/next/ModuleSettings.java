@@ -67,6 +67,8 @@ final class ModuleSettings {
     private static final String DASH_AGLINA = "dash_character_aglina";
     private static final String DASH_LIINO = "dash_character_liino";
     static final String ACTIONS_CONFIGURATION = "actions_configuration";
+    static final String MEDIA_CONFIGURATION = "media_screen_configuration";
+    static final String MEDIA_SETTINGS = "media_screen_settings";
 
     // Superseded by UI_HIDE_UID and CAMERA_DITHER. Version 3.2.2 and earlier
     // implemented those two switches in a separate Android-only enhancement
