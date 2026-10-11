@@ -121,6 +121,9 @@
                 <NavigationViewItem x:Name="ActionsNavigationItem" Content="动作模块" Tag="actions">
                     <NavigationViewItem.Icon><FontIcon Glyph="&#xE7C1;" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem x:Name="MediaScreenNavigationItem" Content="会客室媒体屏" Tag="media-screen">
+                    <NavigationViewItem.Icon><FontIcon Glyph="&#xE714;" /></NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItem
                     x:Name="CameraNavigationItem"
                     Content="相机增强"
@@ -243,6 +246,7 @@
 
                     <Grid Grid.Row="1">
                         <views:GachaPage x:Name="GachaPage" Visibility="Collapsed" />
+                        <views:MediaScreenPage x:Name="MediaScreenPage" Visibility="Collapsed" />
                         <views:CustomModelPage x:Name="CustomModelPage" Visibility="Collapsed" />
                         <ScrollViewer
                             x:Name="ModelPageScrollViewer"

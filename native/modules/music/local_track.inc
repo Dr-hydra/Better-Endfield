@@ -60,7 +60,7 @@ bool AllowedExtension(const std::filesystem::path& path) {
         character = static_cast<wchar_t>(towlower(character));
     }
     return extension == L".wav" || extension == L".mp3" || extension == L".m4a" ||
-        extension == L".aac" || extension == L".flac" || extension == L".wma";
+        extension == L".aac" || extension == L".flac" || extension == L".wma" || extension == L".mp4";
 }
 
 class Decoder {
@@ -76,7 +76,7 @@ public:
             return false;
         }
         if (!AllowedExtension(file)) {
-            message = "music must be WAV, MP3, M4A, AAC, FLAC or WMA";
+            message = "music must be WAV, MP3, M4A, AAC, FLAC, WMA or MP4";
             return false;
         }
         HRESULT result = MFCreateSourceReaderFromURL(path.c_str(), nullptr, &reader_);

@@ -45,7 +45,8 @@ final class GameOverlay {
     private static float savedX = 0.02f, savedY = 0.32f;
     // Deliberately process-local: Activity recreation must not undo "本次关闭".
     private static boolean sessionDismissed;
-    private static final int HUD = 0, CAMERA = 1, PAUSE = 2, MMD = 4, GLOBAL_FOV = 5, MODELS = 6;
+    private static final int HUD = 0, CAMERA = 1, PAUSE = 2, MMD = 4, GLOBAL_FOV = 5, MODELS = 6, MEDIA = 7;
+    private TextView mediaStatus;
     private OverlaySettingsPage settingsPage;
     private final Set<String> expandedModels = new HashSet<>();
     private String modelCharacter = "";
@@ -242,12 +243,12 @@ final class GameOverlay {
         // Keep the handle gesture; drop listeners belonging to the old title.
         dragGestures.removeIf(gesture -> !gesture.clickable);
         speedSlider = null; fovSlider = null; timeline = null; library = null;
-        mmdSummary = null; mmdTime = null; mmdMessage = null; mmdKeys = null;
+        mmdSummary = null; mmdTime = null; mmdMessage = null; mmdKeys = null; mediaStatus = null;
         body.removeAllViews(); navigation.removeAllViews();
         shown = readFeatures();
         if (!hasTab(selectedTab)) {
             selectedTab = -1;
-            for (int tab = 0; tab <= MODELS; tab++) if (hasTab(tab)) { selectedTab = tab; break; }
+            for (int tab = 0; tab <= MEDIA; tab++) if (hasTab(tab)) { selectedTab = tab; break; }
         }
         addNavigation(HUD, "界面", ControlIcon.HUD);
         addNavigation(CAMERA, "自由镜头", ControlIcon.CAMERA);
@@ -255,6 +256,7 @@ final class GameOverlay {
         addNavigation(MMD, "MMD", ControlIcon.MMD);
         addNavigation(GLOBAL_FOV, "游戏视野", ControlIcon.EYE);
         addNavigation(MODELS, "模型管理", ControlIcon.MMD);
+        addNavigation(MEDIA, "媒体屏", ControlIcon.EYE);
         TextView brand = text("BETTER ENDFIELD", 9, GOLD); brand.setLetterSpacing(0.14f);
         brand.setMinimumHeight(dp(32)); brand.setGravity(Gravity.CENTER_VERTICAL);
         brand.setContentDescription("拖动标题移动悬浮窗"); brand.setOnTouchListener(new DragTouch(false));
@@ -282,6 +284,7 @@ final class GameOverlay {
                 body.addView(tile("冻结 / 恢复时间", "8", ControlIcon.PAUSE, Hotkeys.WORLD_PAUSE, 8), stacked(10));
                 body.addView(text("冻结时间可独立使用。关闭悬浮窗会保留冻结状态；请先点按恢复，或在设置中关闭后重启游戏。", 12, MUTED), stacked(10)); break;
             case MMD: addMmdControls(); break;
+            case MEDIA: addMediaControls(); break;
             case GLOBAL_FOV:
             case MODELS:
                 settingsPage = new OverlaySettingsPage(activity, selectedTab == MODELS, preview, expandedModels, modelCharacter);
@@ -387,7 +390,7 @@ final class GameOverlay {
         }
     }
     private boolean hasTab(int tab) {
-        if (preview) return tab >= HUD && tab <= MODELS;
+        if (preview) return tab >= HUD && tab <= MEDIA;
         switch (tab) {
             case HUD: return shown.hideHud();
             case CAMERA: return shown.freeCamera();
@@ -395,6 +398,7 @@ final class GameOverlay {
             case MMD: return shown.mmd();
             case GLOBAL_FOV:
             case MODELS: return true;
+            case MEDIA: return true;
             default: return false;
         }
     }
@@ -406,6 +410,7 @@ final class GameOverlay {
             case MMD: return "MMD 控制台";
             case GLOBAL_FOV: return "游戏视野";
             case MODELS: return "模型管理";
+            case MEDIA: return "会客室媒体屏";
             default: return "快捷控制";
         }
     }
@@ -744,6 +749,7 @@ final class GameOverlay {
         cameraFov = finiteNumber(snapshot.values.get("camera.fov"), cameraFov, ModuleSettings.FOV_MINIMUM, ModuleSettings.FOV_MAXIMUM);
         if (speedSlider != null) speedSlider.update(); if (fovSlider != null) fovSlider.update();
         refreshMmd();
+        refreshMedia();
         if (settingsPage != null) {
             settingsPage.runtime(snapshot);
             if (panel.getVisibility() == View.VISIBLE) settingsPage.refresh();
@@ -763,6 +769,37 @@ final class GameOverlay {
     }
     private boolean canSend() {
         return !preview && resumed && !closed && !sessionDismissed && host.hasWindowFocus() && RuntimeBootstrap.loaded();
+    }
+    private void addMediaControls() {
+        mediaStatus = text("空闲", 12, GOLD); body.addView(mediaStatus, stacked(10));
+        String[] labels = {"开始 / 恢复原画", "停止", "暂停 / 继续"};
+        for (int i = 0; i < labels.length; ++i) {
+            int action = i; TextView button = smallButton(labels[i]);
+            button.setOnClickListener(v -> {
+                if (!canSend()) return;
+                try { if (!NativeCommandBridge.mediaScreen(action, 0)) toast("媒体屏模块未就绪"); }
+                catch (RuntimeException | LinkageError error) { toast("媒体屏控制不可用"); }
+            }); body.addView(button, stacked(8));
+        }
+        android.widget.EditText position = new android.widget.EditText(activity);
+        position.setSingleLine(true); position.setHint("跳转秒数"); position.setTextColor(INK);
+        position.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        body.addView(position, stacked(8)); TextView seek = smallButton("跳转");
+        seek.setOnClickListener(v -> {
+            if (!canSend()) return;
+            try { double value = Double.parseDouble(position.getText().toString());
+                if (!Double.isFinite(value) || value < 0 || !NativeCommandBridge.mediaScreen(3, value)) toast("跳转未执行");
+            } catch (RuntimeException | LinkageError error) { toast("请输入有效秒数"); }
+        }); body.addView(seek, stacked(8));
+    }
+    private void refreshMedia() {
+        if (mediaStatus == null || preview || !RuntimeBootstrap.loaded()) return;
+        try {
+            String value = NativeCommandBridge.mediaScreenStatus(); if (value == null) return;
+            mediaStatus.setText(value.startsWith("playing:") ? "播放中" : value.startsWith("loading:") ? "加载中" :
+                value.startsWith("paused:") ? "已暂停" : value.startsWith("ended:") ? "播放结束" :
+                value.startsWith("error:") ? "操作失败：" + value.substring(6) : "空闲");
+        } catch (RuntimeException | LinkageError ignored) { mediaStatus.setText("控制不可用"); }
     }
     private void send(int key, int action) {
         if (preview) return;

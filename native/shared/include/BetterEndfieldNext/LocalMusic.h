@@ -1,7 +1,7 @@
 #pragma once
 #include "ModuleApi.h"
 // Optional named capability exported by BetterEndfieldNext.Music.dll. It plays one
-// local WAV/MP3 file through the Music module's Wwise Audio Input channel, so a
+// local audio file (including an MP4 audio stream) through Wwise Audio Input, so a
 // second module never hooks the same Wwise callbacks. While a track is open the
 // OmniMix stream is not consumed and the game's own music stays paused.
 // Every call is thread-safe and never touches Unity from the caller's thread.
