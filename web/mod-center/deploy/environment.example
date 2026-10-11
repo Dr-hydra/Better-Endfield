@@ -9,3 +9,6 @@ SMTP_PORT=465
 SMTP_USER=
 SMTP_PASS=
 SMTP_FROM=
+# Stable numeric GitHub IDs allowed to upload work files (comma-separated).
+FILE_UPLOAD_GITHUB_IDS=
+UPLOAD_DIRECTORY=/var/lib/endfield-resource-center/uploads

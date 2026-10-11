@@ -6,6 +6,8 @@ import { stat } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import nodemailer from 'nodemailer';
+import { createUploads, uploadLimits } from './uploads.mjs';
+import { createSocial } from './social.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const types = JSON.parse(readFileSync(path.join(root, 'shared/types.json'), 'utf8'));
@@ -38,9 +40,13 @@ export function validateDraft(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) fail(400, '表单格式不正确。');
   const category = text(body.type, 40, '类型', true);
   if (!typeIds.has(category)) fail(400, '请选择列表中的资源类型。');
+  const fileId = text(body.file_id, 36, '上传文件');
+  if (fileId && !/^[a-f0-9-]{36}$/.test(fileId)) fail(400, '上传文件格式不正确。');
+  const imageIds = body.image_ids;
+  if (imageIds !== undefined && (!Array.isArray(imageIds) || imageIds.length > uploadLimits.imagesPerWork || new Set(imageIds).size !== imageIds.length || imageIds.some(id => typeof id !== 'string' || !/^[a-f0-9-]{36}$/.test(id)))) fail(400, '每个作品最多上传 6 张图片。');
   return {
     name: text(body.name, 120, '名字', true), type: category,
-    url: link(body.url, '下载链接', true), version: text(body.version, 80, '版本'),
+    url: link(body.url, '下载链接', !fileId), file_id: fileId, image_ids: imageIds, version: text(body.version, 80, '版本'),
     cover: link(body.cover, '封面链接'), description: text(body.description, 16000, '作品介绍'),
     notes: text(body.notes, 4000, '更新说明'),
   };
@@ -56,6 +62,8 @@ export function createApp(options = {}) {
   const publicUrl = new URL(options.publicUrl || process.env.PUBLIC_URL || 'http://127.0.0.1:9017/endfield/');
   if (publicUrl.username || publicUrl.password || publicUrl.search || publicUrl.hash || !['http:', 'https:'].includes(publicUrl.protocol)) throw new Error('PUBLIC_URL must be a plain HTTP(S) site URL');
   const prefix = `${publicUrl.pathname.replace(/\/$/, '')}/`;
+  const fileUploadGithubIds = new Set(String(options.fileUploadGithubIds ?? process.env.FILE_UPLOAD_GITHUB_IDS ?? '').split(',').map(value => value.trim()).filter(Boolean));
+  const canUploadFiles = user => Boolean(user?.github_id && fileUploadGithubIds.has(user.github_id));
   const githubId = options.githubId ?? process.env.GITHUB_CLIENT_ID ?? '';
   const githubSecret = options.githubSecret ?? process.env.GITHUB_CLIENT_SECRET ?? '';
   const githubEnabled = Boolean(githubId && githubSecret);
@@ -95,6 +103,7 @@ export function createApp(options = {}) {
       PRAGMA foreign_keys=ON;`);
   }
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS users_email ON users(email) WHERE email IS NOT NULL');
+  if (!db.prepare('PRAGMA table_info(releases)').all().some(column => column.name === 'file_id')) db.exec('ALTER TABLE releases ADD COLUMN file_id TEXT REFERENCES uploads(id)');
   const secure = publicUrl.protocol === 'https:';
   const cookie = (name, value, age) => `${name}=${value}; Path=${prefix}; HttpOnly; SameSite=Lax; Max-Age=${age}${secure ? '; Secure' : ''}`;
   const cookies = req => Object.fromEntries(String(req.headers.cookie || '').split(';').map(part => part.trim().split('=')).filter(part => part.length === 2));
@@ -135,11 +144,25 @@ export function createApp(options = {}) {
     db.exec('BEGIN IMMEDIATE');
     try { const result = action(); db.exec('COMMIT'); return result; } catch (error) { db.exec('ROLLBACK'); throw error; }
   };
-  const releaseView = row => ({ id: row.id, number: row.number, url: row.url, version: row.version, notes: row.notes, created_at: row.created_at });
-  const resourceView = (row, history = false) => {
+  const uploads = createUploads({ db, directory: options.uploadDirectory || process.env.UPLOAD_DIRECTORY || path.join(path.dirname(databasePath === ':memory:' ? path.join(root, 'data/catalog.sqlite') : databasePath), 'uploads'), publicUrl, prefix, canUploadFiles, limits: options.uploadLimits || uploadLimits });
+  const social = createSocial({ db, session, authorize, rate, json, text, bodyOf, canAdmin: canUploadFiles });
+  const sessionView = user => ({ user: user ? userView(user) : null, csrf: user?.csrf || '', githubEnabled, emailEnabled, email: user?.email || '', canUploadFiles: canUploadFiles(user), uploadLimits: uploads.limits });
+  const releaseView = row => ({ id: row.id, number: row.number, url: row.url, version: row.version, notes: row.notes, created_at: row.created_at, file: uploads.file(row.file_id) });
+  const resourceView = (row, history = false, userId = null) => {
     const author = db.prepare('SELECT * FROM users WHERE id=?').get(row.owner_id);
     const latest = db.prepare('SELECT * FROM releases WHERE resource_id=? ORDER BY number DESC LIMIT 1').get(row.id);
-    return { id: row.id, name: row.name, type: row.type, description: row.description, cover: row.cover, created_at: row.created_at, updated_at: row.updated_at, author: userView(author), latest: releaseView(latest), ...(history ? { releases: db.prepare('SELECT * FROM releases WHERE resource_id=? ORDER BY number DESC').all(row.id).map(releaseView) } : {}) };
+    const images = uploads.gallery(row.id);
+    return { id: row.id, name: row.name, type: row.type, description: row.description, cover: images[0]?.url || row.cover, cover_link: row.cover, images, ...social.stats(row.id, userId), created_at: row.created_at, updated_at: row.updated_at, author: userView(author), latest: releaseView(latest), ...(history ? { releases: db.prepare('SELECT * FROM releases WHERE resource_id=? ORDER BY number DESC').all(row.id).map(releaseView) } : {}) };
+  };
+  const prepareDraft = (body, user) => {
+    const draft = validateDraft(body);
+    for (const id of draft.image_ids || []) uploads.getOwned(id, user, 'image');
+    if (draft.file_id) {
+      if (!canUploadFiles(user)) fail(403, '当前账号没有作品文件上传权限。');
+      const file = uploads.getOwned(draft.file_id, user, 'file');
+      draft.url = uploads.view(file).url;
+    } else if (draft.url.startsWith(new URL('media/', publicUrl).href)) fail(400, '请选择上传的作品文件。');
+    return draft;
   };
   const owned = (id, user) => {
     const row = db.prepare('SELECT * FROM resources WHERE id=?').get(id);
@@ -150,7 +173,7 @@ export function createApp(options = {}) {
   const addRelease = (id, draft) => {
     if (draft.version && db.prepare('SELECT 1 FROM releases WHERE resource_id=? AND version=?').get(id, draft.version)) fail(409, '这个版本已发布，请填写新版本名或留空。');
     const next = db.prepare('SELECT COALESCE(MAX(number),0)+1 AS number FROM releases WHERE resource_id=?').get(id).number;
-    db.prepare('INSERT INTO releases VALUES (?,?,?,?,?,?,?)').run(randomUUID(), id, next, draft.url, draft.version, draft.notes, Date.now());
+    db.prepare('INSERT INTO releases(id,resource_id,number,url,version,notes,created_at,file_id) VALUES (?,?,?,?,?,?,?,?)').run(randomUUID(), id, next, draft.url, draft.version, draft.notes, Date.now(), draft.file_id || null);
   };
   const assets = path.resolve(options.assetsDir || path.join(root, 'dist'));
   const oauthFetch = options.oauthFetch || fetch;
@@ -167,8 +190,20 @@ export function createApp(options = {}) {
       const route = url.pathname.slice(prefix.length);
       if (route === 'api/health' && req.method === 'GET') return json(res, 200, { ok: true });
       if (route === 'api/session' && req.method === 'GET') {
-        const user = session(req); return json(res, 200, { user: user ? userView(user) : null, csrf: user?.csrf || '', githubEnabled, emailEnabled, email: user?.email || '' });
+        return json(res, 200, sessionView(session(req)));
       }
+      if (route === 'api/uploads' && req.method === 'POST') {
+        const user = authorize(req);
+        const kind = url.searchParams.get('kind');
+        if (kind === 'file' && !canUploadFiles(user)) fail(403, '当前账号没有作品文件上传权限。');
+        rate(`upload:${user.id}`, 60, 3600000); rate('upload-global', 300, 3600000);
+        return json(res, 201, await uploads.receive(req, user, kind));
+      }
+      const uploadRoute = /^api\/uploads\/([a-f0-9-]{36})$/.exec(route);
+      if (uploadRoute && req.method === 'DELETE') { await uploads.remove(uploadRoute[1], authorize(req)); return json(res, 200, { ok: true }); }
+      const mediaRoute = /^media\/([a-f0-9-]{36})$/.exec(route);
+      if (mediaRoute && ['GET','HEAD'].includes(req.method)) return await uploads.serve(req, res, mediaRoute[1], session(req));
+      if (await social.handle(route, req, res, url)) return;
       if (route === 'api/logout' && req.method === 'POST') {
         authorize(req); db.prepare('DELETE FROM sessions WHERE token_hash=?').run(digest(cookies(req).be_session));
         res.setHeader('Set-Cookie', cookie('be_session', '', 0)); return json(res, 200, { ok: true });
@@ -269,7 +304,7 @@ export function createApp(options = {}) {
         const issued = makeSession(db, id);
         res.setHeader('Set-Cookie', [cookie('be_session', issued.value, 30 * 86400), cookie('be_email', '', 0)]);
         const user = db.prepare('SELECT * FROM users WHERE id=?').get(id);
-        return json(res, 200, { user: userView(user), csrf: issued.csrf, githubEnabled, emailEnabled, email: user.email });
+        return json(res, 200, { ...sessionView(user), csrf: issued.csrf });
       }
       if (route === 'api/resources' && req.method === 'GET') {
         const category = url.searchParams.get('type') || '';
@@ -286,7 +321,8 @@ export function createApp(options = {}) {
         const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
         const total = db.prepare(`SELECT COUNT(*) AS total FROM resources r JOIN users u ON u.id=r.owner_id ${clause}`).get(...params).total;
         const sort = url.searchParams.get('sort') === 'newest' ? 'r.created_at' : 'r.updated_at';
-        const items = db.prepare(`SELECT r.* FROM resources r JOIN users u ON u.id=r.owner_id ${clause} ORDER BY ${sort} DESC,r.id LIMIT 24 OFFSET ?`).all(...params, (page - 1) * 24).map(row => resourceView(row));
+        const viewer = session(req);
+        const items = db.prepare(`SELECT r.* FROM resources r JOIN users u ON u.id=r.owner_id ${clause} ORDER BY ${sort} DESC,r.id LIMIT 24 OFFSET ?`).all(...params, (page - 1) * 24).map(row => resourceView(row, false, viewer?.id));
         const counts = Object.fromEntries(types.map(item => [item.id, 0]));
         const rows = mine ? db.prepare('SELECT type,COUNT(*) AS n FROM resources WHERE owner_id=? GROUP BY type').all(user.id) : db.prepare('SELECT type,COUNT(*) AS n FROM resources GROUP BY type').all();
         for (const row of rows) counts[row.type] = row.n;
@@ -294,10 +330,10 @@ export function createApp(options = {}) {
       }
       if (route === 'api/resources' && req.method === 'POST') {
         const user = authorize(req); rate(`write:${user.id}`, 60, 3600000);
-        const draft = validateDraft(await bodyOf(req));
+        const draft = prepareDraft(await bodyOf(req), user);
         const id = randomUUID(), now = Date.now();
-        transaction(() => { db.prepare('INSERT INTO resources VALUES (?,?,?,?,?,?,?,?)').run(id, draft.name, draft.type, draft.description, draft.cover, user.id, now, now); addRelease(id, draft); });
-        return json(res, 201, resourceView(db.prepare('SELECT * FROM resources WHERE id=?').get(id), true));
+        transaction(() => { db.prepare('INSERT INTO resources VALUES (?,?,?,?,?,?,?,?)').run(id, draft.name, draft.type, draft.description, draft.cover, user.id, now, now); addRelease(id, draft); uploads.setGallery(id, draft.image_ids || []); });
+        return json(res, 201, resourceView(db.prepare('SELECT * FROM resources WHERE id=?').get(id), true, user.id));
       }
       const resourceRoute = /^api\/resources\/([a-f0-9-]{36})(\/releases)?$/.exec(route);
       if (resourceRoute) {
@@ -305,24 +341,25 @@ export function createApp(options = {}) {
         if (!resourceRoute[2] && req.method === 'GET') {
           const row = db.prepare('SELECT * FROM resources WHERE id=?').get(id);
           if (!row) fail(404, '作品不存在或已被删除。');
-          return json(res, 200, resourceView(row, true));
+          return json(res, 200, resourceView(row, true, session(req)?.id));
         }
         if (resourceRoute[2] && req.method === 'POST') {
           const user = authorize(req); rate(`write:${user.id}`, 60, 3600000); const row = owned(id, user);
           const body = await bodyOf(req);
-          const draft = validateDraft({ ...body, name: row.name, type: row.type });
+          const draft = prepareDraft({ ...body, name: row.name, type: row.type }, user);
           transaction(() => { addRelease(id, draft); db.prepare('UPDATE resources SET updated_at=? WHERE id=?').run(Date.now(), id); });
-          return json(res, 201, resourceView(db.prepare('SELECT * FROM resources WHERE id=?').get(id), true));
+          return json(res, 201, resourceView(db.prepare('SELECT * FROM resources WHERE id=?').get(id), true, user.id));
         }
         if (!resourceRoute[2] && req.method === 'PUT') {
           const user = authorize(req); rate(`write:${user.id}`, 60, 3600000); owned(id, user);
-          const draft = validateDraft(await bodyOf(req));
+          const draft = prepareDraft(await bodyOf(req), user);
           const latest = db.prepare('SELECT * FROM releases WHERE resource_id=? ORDER BY number DESC LIMIT 1').get(id);
           transaction(() => {
             if (draft.url !== latest.url || draft.version !== latest.version) addRelease(id, draft);
             db.prepare('UPDATE resources SET name=?,type=?,description=?,cover=?,updated_at=? WHERE id=?').run(draft.name, draft.type, draft.description, draft.cover, Date.now(), id);
+            if (draft.image_ids !== undefined) uploads.setGallery(id, draft.image_ids);
           });
-          return json(res, 200, resourceView(db.prepare('SELECT * FROM resources WHERE id=?').get(id), true));
+          return json(res, 200, resourceView(db.prepare('SELECT * FROM resources WHERE id=?').get(id), true, user.id));
         }
         if (!resourceRoute[2] && req.method === 'DELETE') {
           const user = authorize(req); owned(id, user); db.prepare('DELETE FROM resources WHERE id=?').run(id);
@@ -342,15 +379,17 @@ export function createApp(options = {}) {
       if (req.method === 'HEAD') return res.end();
       const stream = createReadStream(filename); stream.on('error', () => res.destroy()); stream.pipe(res);
     } catch (error) {
+      if (!req.complete) req.resume();
       if (res.headersSent) return res.destroy();
       const status = Number(error.status) || 500;
       if (status === 500) console.error('Request failed:', error.code || error.name);
       json(res, status, { error: status === 500 ? '服务暂时不可用，请稍后重试。' : error.message });
     }
   });
-  server.requestTimeout = 20000; server.headersTimeout = 10000; server.maxHeadersCount = 48; server.maxConnections = 128;
-  const cleanup = setInterval(() => { db.prepare('DELETE FROM sessions WHERE expires_at<?').run(Date.now()); db.prepare('DELETE FROM oauth_states WHERE expires_at<?').run(Date.now()); db.prepare('DELETE FROM email_codes WHERE expires_at<?').run(Date.now()); }, 600000).unref();
-  return { server, db, close: () => new Promise(resolve => { clearInterval(cleanup); server.close(() => { mailer?.close(); db.close(); resolve(); }); server.closeIdleConnections(); }) };
+  server.requestTimeout = 300000; server.headersTimeout = 10000; server.maxHeadersCount = 48; server.maxConnections = 128;
+  let uploadCleanup = Promise.resolve();
+  const cleanup = setInterval(() => { db.prepare('DELETE FROM sessions WHERE expires_at<?').run(Date.now()); db.prepare('DELETE FROM oauth_states WHERE expires_at<?').run(Date.now()); db.prepare('DELETE FROM email_codes WHERE expires_at<?').run(Date.now()); uploadCleanup = uploads.cleanup().catch(() => console.error('Upload cleanup failed')); }, 600000).unref();
+  return { server, db, close: () => new Promise(resolve => { clearInterval(cleanup); server.close(async () => { await uploadCleanup; mailer?.close(); db.close(); resolve(); }); server.closeIdleConnections(); }) };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {

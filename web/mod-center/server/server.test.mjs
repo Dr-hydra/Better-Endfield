@@ -1,27 +1,34 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { Readable } from 'node:stream';
 import { createApp, makeSession, validateDraft } from './server.mjs';
 
 const minimum = { name: '测试模型', type: 'bem', url: 'https://example.com/model.zip' };
+const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jfuQAAAAASUVORK5CYII=', 'base64');
+const uploadHeaders = name => ({ 'Content-Type': 'application/octet-stream', 'X-Upload-Name': encodeURIComponent(name) });
 async function fixture(extra = {}) {
-  const app = createApp({ databasePath: ':memory:', publicUrl: 'https://mods.example/endfield/', ...extra });
+  const uploadDirectory = await mkdtemp(path.join(tmpdir(), 'endfield-upload-test-'));
+  const app = createApp({ databasePath: ':memory:', publicUrl: 'https://mods.example/endfield/', uploadDirectory, ...extra });
   app.db.prepare('INSERT INTO users (id,github_id,login,avatar,profile_url) VALUES (?,?,?,?,?)').run('author', '123', 'creator', '', 'https://github.com/creator');
   app.db.prepare('INSERT INTO users (id,github_id,login,avatar,profile_url) VALUES (?,?,?,?,?)').run('other', '456', 'other', '', 'https://github.com/other');
   const author = makeSession(app.db, 'author'), other = makeSession(app.db, 'other');
   await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
   const root = `http://127.0.0.1:${app.server.address().port}/endfield/`;
-  const call = async (route, { method = 'GET', body, who = author, headers = {}, anonymous = false } = {}) => {
+  const call = async (route, { method = 'GET', body, raw, who = author, headers = {}, anonymous = false } = {}) => {
     const response = await fetch(root + route, { method, redirect: 'manual', headers: {
       ...(anonymous ? {} : { Cookie: `be_session=${who.value}`, 'X-CSRF-Token': who.csrf }),
       Origin: 'https://mods.example', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...headers,
-    }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+    }, ...(raw !== undefined ? { body: raw, duplex: 'half' } : body === undefined ? {} : { body: JSON.stringify(body) }) });
     return { status: response.status, headers: response.headers, data: response.headers.get('content-type')?.includes('json') ? await response.json() : await response.text() };
   };
-  return { ...app, call, author, other };
+  return { ...app, call, author, other, close: async () => { await app.close(); await rm(uploadDirectory, { recursive: true, force: true }); } };
 }
 
 test('only name, type and link are required; dangerous URLs and unknown types are rejected', () => {
-  assert.deepEqual(validateDraft(minimum), { ...minimum, version: '', cover: '', description: '', notes: '' });
+  assert.deepEqual(validateDraft(minimum), { ...minimum, version: '', cover: '', description: '', notes: '', file_id: '', image_ids: undefined });
   for (const key of ['name', 'type', 'url']) assert.throws(() => validateDraft({ ...minimum, [key]: '' }), { status: 400 });
   for (const url of ['javascript:alert(1)', 'data:text/html,hello', 'file:///etc/passwd', 'https://user:pass@example.com/']) assert.throws(() => validateDraft({ ...minimum, url }), { status: 400 });
   assert.throws(() => validateDraft({ ...minimum, type: 'invalid' }), { status: 400 });
@@ -107,6 +114,111 @@ test('OAuth state is browser-bound, single-use, and uses the stable GitHub accou
     }
     const original = await authenticate(); login = 'renamed-account'; const renamed = await authenticate();
     assert.equal(original.id, renamed.id); assert.equal(renamed.login, login); assert.equal(exchanges, 2);
+  } finally { await app.close(); }
+});
+
+test('likes require login and CSRF, are unique per account, and can be cancelled', async () => {
+  const app = await fixture();
+  try {
+    const resource = (await app.call('api/resources', { method: 'POST', body: minimum })).data;
+    const endpoint = `api/resources/${resource.id}/likes`;
+    assert.equal((await app.call(endpoint, { method: 'PUT', anonymous: true })).status, 401);
+    assert.equal((await app.call(endpoint, { method: 'PUT', headers: { 'X-CSRF-Token': 'wrong' } })).status, 403);
+    assert.equal((await app.call(endpoint, { method: 'PUT' })).data.likes, 1);
+    assert.equal((await app.call(endpoint, { method: 'PUT' })).data.likes, 1);
+    assert.equal((await app.call(endpoint, { method: 'PUT', who: app.other })).data.likes, 2);
+    const anonymous = (await app.call(`api/resources/${resource.id}`, { anonymous: true })).data;
+    assert.equal(anonymous.likes, 2); assert.equal(anonymous.liked, false);
+    assert.equal((await app.call(endpoint, { method: 'DELETE' })).data.likes, 1);
+    assert.equal((await app.call(endpoint, { method: 'DELETE' })).data.liked, false);
+    assert.equal((await app.call('api/resources')).data.items[0].likes, 1);
+  } finally { await app.close(); }
+});
+
+test('comments remain plain text, enforce limits, pagination, and self/admin deletion', async () => {
+  const app = await fixture({ fileUploadGithubIds: '123' });
+  try {
+    const resource = (await app.call('api/resources', { method: 'POST', body: minimum })).data;
+    const endpoint = `api/resources/${resource.id}/comments`;
+    assert.equal((await app.call(endpoint, { method: 'POST', anonymous: true, body: { body: 'hi' } })).status, 401);
+    assert.equal((await app.call(endpoint, { method: 'POST', body: { body: ' ' } })).status, 400);
+    assert.equal((await app.call(endpoint, { method: 'POST', body: { body: 'x'.repeat(2001) } })).status, 400);
+    const posted = await app.call(endpoint, { method: 'POST', body: { body: '<script>alert(1)</script>\n评论' } });
+    assert.equal(posted.status, 201);
+    assert.equal((await app.call(endpoint, { method: 'POST', body: { body: 'again' } })).status, 429);
+    const list = await app.call(endpoint, { anonymous: true });
+    assert.equal(list.data.items[0].body, '<script>alert(1)</script>\n评论');
+    assert.equal(list.data.items[0].canDelete, false);
+    assert.equal((await app.call(`${endpoint}/${posted.data.id}`, { method: 'DELETE', who: app.other })).status, 403);
+    assert.equal((await app.call(`${endpoint}/${posted.data.id}`, { method: 'DELETE' })).status, 200);
+    const other = await app.call(endpoint, { method: 'POST', who: app.other, body: { body: 'other comment' } });
+    assert.equal((await app.call(endpoint)).data.items[0].canDelete, true);
+    assert.equal((await app.call(`${endpoint}/${other.data.id}`, { method: 'DELETE' })).status, 200);
+    for (let index = 0; index < 25; index++) app.db.prepare('INSERT INTO comments VALUES (?,?,?,?,?)').run(`comment-${index}`, resource.id, 'other', 'comment', index);
+    assert.equal((await app.call(endpoint)).data.items.length, 20);
+    assert.equal((await app.call(`${endpoint}?page=2`)).data.items.length, 5);
+    await app.call(`api/resources/${resource.id}`, { method: 'DELETE' });
+    assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM comments').get().n, 0);
+  } finally { await app.close(); }
+});
+
+test('file upload rights use stable GitHub IDs; hosted files preserve old releases and support ranges', async () => {
+  const app = await fixture({ fileUploadGithubIds: '123' });
+  try {
+    app.db.prepare('UPDATE users SET login=? WHERE id=?').run('Dr-hydra', 'other');
+    assert.equal((await app.call('api/session')).data.canUploadFiles, true);
+    assert.equal((await app.call('api/session', { who: app.other })).data.canUploadFiles, false);
+    assert.equal((await app.call('api/uploads?kind=file', { method: 'POST', who: app.other, raw: Buffer.from('file'), headers: uploadHeaders('mod.zip') })).status, 403);
+    const first = await app.call('api/uploads?kind=file', { method: 'POST', raw: Buffer.from('old-file'), headers: uploadHeaders('模型.zip') });
+    assert.equal(first.status, 201);
+    const media = `media/${first.data.id}`;
+    assert.equal((await app.call(media, { anonymous: true })).status, 404);
+    assert.equal((await app.call('api/resources', { method: 'POST', who: app.other, body: { ...minimum, file_id: first.data.id } })).status, 403);
+    const created = await app.call('api/resources', { method: 'POST', body: { ...minimum, url: '', file_id: first.data.id } });
+    assert.equal(created.status, 201); assert.equal(created.data.latest.file.filename, '模型.zip');
+    const downloaded = await app.call(media, { anonymous: true });
+    assert.equal(downloaded.data, 'old-file'); assert.match(downloaded.headers.get('content-disposition'), /attachment/);
+    const range = await app.call(media, { anonymous: true, headers: { Range: 'bytes=0-2' } });
+    assert.equal(range.status, 206); assert.equal(range.data, 'old');
+    assert.equal((await app.call(media, { headers: { Range: 'bytes=999-1000' } })).status, 416);
+    assert.equal((await app.call(media, { method: 'HEAD', anonymous: true })).headers.get('content-length'), '8');
+    assert.equal((await app.call(`api/uploads/${first.data.id}`, { method: 'DELETE' })).status, 409);
+    const second = await app.call('api/uploads?kind=file', { method: 'POST', raw: Buffer.from('new-file'), headers: uploadHeaders('new.zip') });
+    const release = await app.call(`api/resources/${created.data.id}/releases`, { method: 'POST', body: { file_id: second.data.id } });
+    assert.equal(release.data.releases.length, 2); assert.equal(release.data.releases[1].file.id, first.data.id);
+    await app.call(`api/resources/${created.data.id}`, { method: 'DELETE' });
+    assert.equal((await app.call(media, { anonymous: true })).status, 404);
+  } finally { await app.close(); }
+});
+
+test('image uploads enforce contents, ownership and six-image gallery limit', async () => {
+  const app = await fixture();
+  try {
+    assert.equal((await app.call('api/uploads?kind=image', { method: 'POST', anonymous: true, raw: png, headers: uploadHeaders('a.png') })).status, 401);
+    assert.equal((await app.call('api/uploads?kind=image', { method: 'POST', raw: Buffer.from('<svg onload="alert(1)"></svg>'), headers: uploadHeaders('fake.png') })).status, 415);
+    const ids = [];
+    for (let index = 0; index < 7; index++) { const uploaded = await app.call('api/uploads?kind=image', { method: 'POST', raw: png, headers: uploadHeaders(`${index}.png`) }); assert.equal(uploaded.status, 201); ids.push(uploaded.data.id); }
+    assert.equal((await app.call('api/resources', { method: 'POST', body: { ...minimum, image_ids: ids } })).status, 400);
+    assert.equal((await app.call('api/resources', { method: 'POST', who: app.other, body: { ...minimum, image_ids: [ids[0]] } })).status, 403);
+    const created = await app.call('api/resources', { method: 'POST', body: { ...minimum, image_ids: ids.slice(0, 6) } });
+    assert.equal(created.data.images.length, 6); assert.match(created.data.cover, new RegExp(ids[0]));
+    assert.equal((await app.call(`media/${ids[0]}`, { anonymous: true })).status, 200);
+    assert.equal((await app.call(`media/${ids[6]}`, { anonymous: true })).status, 404);
+    const edited = await app.call(`api/resources/${created.data.id}`, { method: 'PUT', body: { ...minimum, image_ids: [ids[1]] } });
+    assert.equal(edited.data.images.length, 1); assert.match(edited.data.cover, new RegExp(ids[1]));
+    assert.equal((await app.call(`api/uploads/${ids[6]}`, { method: 'DELETE' })).status, 200);
+    assert.equal((await app.call(`api/uploads/${ids[1]}`, { method: 'DELETE', who: app.other })).status, 403);
+  } finally { await app.close(); }
+});
+
+test('upload bounds reject oversized declared and chunked bodies without retaining files', async () => {
+  const app = await fixture({ fileUploadGithubIds: '123', uploadLimits: { imageBytes: 32, fileBytes: 8, imagesPerWork: 6 } });
+  try {
+    assert.equal((await app.call('api/uploads?kind=image', { method: 'POST', raw: png, headers: uploadHeaders('a.png') })).status, 413);
+    assert.equal((await app.call('api/uploads?kind=file', { method: 'POST', raw: Buffer.from('123456789'), headers: uploadHeaders('a.zip') })).status, 413);
+    assert.equal((await app.call('api/uploads?kind=file', { method: 'POST', raw: Readable.from([Buffer.from('1234'), Buffer.from('56789')]), headers: uploadHeaders('a.zip') })).status, 413);
+    assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM uploads').get().n, 0);
+    assert.equal((await app.call('api/uploads?kind=file', { method: 'POST', raw: Buffer.alloc(0), headers: uploadHeaders('empty.zip') })).status, 400);
   } finally { await app.close(); }
 });
 test('email codes create a session and can only be used once', async () => {

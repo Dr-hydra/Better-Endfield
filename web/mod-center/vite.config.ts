@@ -10,6 +10,6 @@ export default defineConfig({
   build: { outDir: "dist", target: "es2022", sourcemap: false },
   server: {
     host: "127.0.0.1", port: 5174,
-    proxy: { "/endfield/api": "http://127.0.0.1:9017", "/endfield/auth": "http://127.0.0.1:9017" },
+    proxy: { "/endfield/api": "http://127.0.0.1:9017", "/endfield/auth": "http://127.0.0.1:9017", "/endfield/media": "http://127.0.0.1:9017" },
   },
 });

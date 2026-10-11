@@ -99,6 +99,43 @@
   .project-notice .button { justify-content: center; }
 }
 .pagination { display: flex; justify-content: center; align-items: center; gap: 18px; margin-top: 25px; font-size: 12px; }
+.card-footer { flex-wrap: wrap; }
+.card-social { width: 100%; padding-top: 4px; }
+.community-panel, .gallery-panel { margin-top: 22px; padding: clamp(20px, 3vw, 30px); box-shadow: none; }
+.community-heading { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 23px; }
+.community-heading h2 { margin: 8px 0 0; font-size: 22px; }
+.community-heading h2 small { font: 12px Consolas, monospace; color: var(--muted); margin-left: 10px; }
+.like-button.liked { border-color: var(--yellow); background: var(--yellow); color: var(--accent-ink); }
+.comment-form { display: grid; gap: 10px; }
+.comment-form label { font-size: 12px; font-weight: 700; }
+.comment-form textarea { width: 100%; min-height: 95px; resize: vertical; padding: 12px; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink); font: inherit; font-size: 13px; }
+.comment-form > div, .comment-login { display: flex; justify-content: space-between; align-items: center; gap: 15px; }
+.comment-form small, .comment-login p, .comment-empty { color: var(--muted); font-size: 12px; line-height: 1.8; }
+.comment-empty { margin: 25px 0 0; }
+.comment-item { padding-top: 19px; margin-top: 19px; border-top: 1px solid var(--line); }
+.comment-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 11px; }
+.comment-meta > span { display: flex; align-items: center; gap: 7px; }
+.comment-meta img { width: 24px; height: 24px; border-radius: 50%; }
+.comment-meta time { color: var(--muted); }
+.comment-meta button { margin-left: auto; border: 0; background: transparent; color: var(--red); cursor: pointer; font: inherit; }
+.comment-item p { margin: 10px 0 0; }
+.work-gallery, .upload-previews { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.work-gallery a { display: block; border: 1px solid var(--line); background: var(--panel-2); }
+.work-gallery img { width: 100%; aspect-ratio: 16 / 10; object-fit: contain; display: block; }
+.upload-editor { display: grid; gap: 22px; }
+.upload-editor section { display: grid; gap: 12px; padding: 17px; border: 1px solid var(--line); background: var(--panel-2); }
+.upload-editor strong { font-size: 12px; }
+.upload-editor small, .upload-editor p { font-size: 11px; color: var(--muted); font-weight: 400; line-height: 1.8; margin: 0; }
+.upload-editor .upload-input { gap: 7px; }
+.upload-editor input[type=file] { min-width: 0; background: var(--panel); font-size: 11px; }
+.uploaded-file { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; overflow-wrap: anywhere; }
+.uploaded-file button, .upload-previews button { border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; font: inherit; font-size: 10px; padding: 6px; }
+.upload-previews > div { min-width: 0; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.upload-previews img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border: 1px solid var(--line); }
+.upload-previews span { padding: 5px; background: var(--yellow); font-size: 10px; color: var(--accent-ink); }
+.upload-progress { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.upload-progress progress { width: 55%; accent-color: var(--yellow); }
+@media (max-width: 720px) { .work-gallery, .upload-previews { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .thanks-page { display: grid; gap: 22px; }
 .thanks-hero { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: clamp(28px, 4vw, 52px); overflow: hidden; box-shadow: none; border-top: 4px solid var(--yellow); }
 .thanks-hero h1 { max-width: 680px; margin: 14px 0 12px; font-size: clamp(32px, 4vw, 54px); line-height: 1.2; letter-spacing: -.06em; }
