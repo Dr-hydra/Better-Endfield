@@ -1,5 +1,5 @@
 // Generated from ../supporters.json. Edit the JSON table, then run mods:build.
-export const supporterCutoffDate = "2026-10-06";
+export const supporterCutoffDate = "2026-10-07";
 export const supporterNames = [
   {
     "name": "Cre_GeB6"
@@ -27,6 +27,12 @@ export const supporterNames = [
   },
   {
     "name": "忍忍"
+  },
+  {
+    "name": "大肠味的大肠"
+  },
+  {
+    "name": "Sabververse"
   },
   {
     "name": "Chronos"

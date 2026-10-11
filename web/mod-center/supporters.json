@@ -1,6 +1,8 @@
 {
-  "cutoffDate": "2026-10-06",
+  "cutoffDate": "2026-10-07",
   "entries": [
+    { "name": "Sabververse", "amount": 10, "date": "2026-10-07", "source": "赞赏码" },
+    { "name": "大肠味的大肠", "amount": 10, "date": "2026-10-07", "source": "赞赏码" },
     { "name": "Chronos", "amount": 10, "date": "2026-10-06", "source": "赞赏码" },
     { "name": "特拉密斯", "amount": 10, "date": "2026-10-05", "source": "赞赏码" },
     { "name": "缓尾目衣鱼", "amount": 10, "date": "2026-10-05", "source": "赞赏码" },
