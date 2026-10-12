@@ -8,7 +8,7 @@
 
 第三方模块与第一人称源码现已迁移至独立项目 [Endfield Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader)。BE 双端移除第三方模块装载器、管理实现、原生扩展 ABI、网页桥和配置接入；保留通用 Host、内置模块 ABI 与共享 Hook 链。双端创意工坊入口保留。原 `third-party-entry/` 归档和下方 4.0.0 验证记录仅描述迁移前历史，不参与当前构建。
 
-显示名称为 Better Endfield Next；现有 Logo 和主题素材保留。当前产品版本 4.0.1，BEM Tools 独立版本继续由原工具链维护。BEM/MMD 用户素材格式继续支持，需手动重新导入。
+显示名称为 Better Endfield Next；现有 Logo 和主题素材保留。当前产品版本 4.0.2，BEM Tools 独立版本继续由原工具链维护。BEM/MMD 用户素材格式继续支持，需手动重新导入。
 
 ## 新安装身份
 
@@ -73,3 +73,14 @@ NPC 接入、Windows DLL 代理状态/启动修复、模型二次交付修复及
 本次双端 Release、Android lint、Windows 普通/混淆启动回归、模型完整绑定/异步/来源/NPC/Clone 回归、Android BEM 安装状态、页面路由及工坊构建通过；通用跨页 CodePatch 的自包含 ARM64 测试通过。上方各轮记录保留其当时状态；未登记 cloth_authoring 的旧测试问题已随该研究归档而消除，当前 44 项工作区回归全部通过。
 
 发行内容和验证边界见 [4.0.1 发布记录](releases/4.0.1/RELEASE_4_0_1.md)。
+
+## 4.0.2 更新
+
+Windows 与 Android 同步更新到 4.0.2，Android versionCode 为 40002，沿用 Next 安装身份和签名。
+新增会客室图片、视频媒体屏；Windows 集成本地窗口投影、桌面电脑屏适配、独立屏幕开关、
+来源游戏键鼠输入桥与终末地输入屏蔽。Windows 投影操控已由用户实测确认，UE 和 Android
+媒体屏画面仍保留各自的实机验收边界。
+
+双端 Release、Windows Obfuscar、Android R8／Lint／签名核对、Windows 普通与混淆后的启动回归、
+配置序列化、发布版 UI 和 Android 媒体文件检查通过；Windows UI 检查保留了原 INI 字节。
+发行内容见 [4.0.2 发布记录](releases/4.0.2/RELEASE_4_0_2.md)，产物大小与验证范围见同目录 ASSETS.json。

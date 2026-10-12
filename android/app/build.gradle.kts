@@ -78,8 +78,8 @@ android {
         // needs Android 10. The legacy API 82 build was dropped in 3.3.0.
         minSdk = 29
         targetSdk = 35
-        versionCode = 40001
-        versionName = "4.0.1"
+        versionCode = 40002
+        versionName = "4.0.2"
         testInstrumentationRunner = "dev.betterendfield.next.BemInstallerTest"
 
         ndk {

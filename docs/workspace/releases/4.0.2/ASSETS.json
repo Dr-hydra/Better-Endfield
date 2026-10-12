@@ -1,0 +1,52 @@
+{
+  "version": "4.0.2",
+  "windows": {
+    "fileVersion": "4.0.2.0",
+    "architecture": "x64",
+    "signing": "Next original internal self-signed identity",
+    "obfuscation": "Obfuscar"
+  },
+  "android": {
+    "applicationId": "dev.betterendfield.next",
+    "versionCode": 40002,
+    "versionName": "4.0.2",
+    "architecture": "arm64-v8a",
+    "signing": "Next original release identity",
+    "obfuscation": "R8"
+  },
+  "checks": {
+    "windows_release": "passed",
+    "android_release": "passed",
+    "android_lint": "passed",
+    "desktop_plain_checks": 17,
+    "desktop_obfuscated_checks": 17,
+    "windows_configuration": "passed",
+    "windows_release_ui": "passed; settings byte-preserved",
+    "android_compiled_layout": "checked",
+    "apk_signature": "verified v2, original Next certificate",
+    "windows_product_signatures": "original Next certificate; internal self-signed trust policy",
+    "media_runtime": "four CTest cases passed before merge",
+    "android_media_files": "passed"
+  },
+  "gameplay_validation": {
+    "windows_projection_control": "user accepted deployed guest-room behavior",
+    "muse_dash": "background Unity keyboard/mouse and Rewired keyboard state verified",
+    "ue": "not validated",
+    "android_media_screen": "not device-validated"
+  },
+  "hashes_calculated": false,
+  "assets": [
+    {
+      "name": "BetterEndfieldNext-4.0.2-Setup.exe",
+      "bytes": 76236360
+    },
+    {
+      "name": "BetterEndfieldNext-4.0.2-Android-arm64.apk",
+      "bytes": 6066817
+    },
+    {
+      "name": "BEM-Tools-1.5.2-win-x64.zip",
+      "bytes": 71816257
+    }
+  ]
+}

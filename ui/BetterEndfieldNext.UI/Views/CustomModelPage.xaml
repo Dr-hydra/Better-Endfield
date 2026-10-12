@@ -26,7 +26,7 @@
                     </StackPanel>
                 </Grid>
             </Border>
-            <Border Padding="16" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+            <Border Padding="16" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Visibility="Collapsed">
                 <StackPanel Spacing="8">
                     <TextBlock x:Name="GetModelsTitle" Text="获取模型" FontSize="16" FontWeight="SemiBold" />
                     <controls:WrapPanel HorizontalSpacing="12" VerticalSpacing="8">

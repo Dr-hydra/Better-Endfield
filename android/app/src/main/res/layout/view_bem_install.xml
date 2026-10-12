@@ -15,7 +15,7 @@
             <Switch android:id="@+id/bem_keep_local_copies" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:layout_marginTop="8dp" android:text="@string/bem_keep_local_copies" />
             <Button android:id="@+id/bem_clean_unused" style="@style/GhostButton" android:layout_marginTop="8dp" android:text="@string/bem_clean_unused" />
         </LinearLayout>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="16dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="16dp" android:visibility="gone">
             <TextView style="@style/CardTitle" android:text="获取模型" />
             <Button android:id="@+id/bem_models_quark" style="@style/GhostButton" android:layout_marginTop="8dp" android:text="夸克网盘" />
             <Button android:id="@+id/bem_models_baidu" style="@style/GhostButton" android:layout_marginTop="6dp" android:text="百度网盘" />
