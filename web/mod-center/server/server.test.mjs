@@ -22,7 +22,7 @@ async function fixture(extra = {}) {
       ...(anonymous ? {} : { Cookie: `be_session=${who.value}`, 'X-CSRF-Token': who.csrf }),
       Origin: 'https://mods.example', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...headers,
     }, ...(raw !== undefined ? { body: raw, duplex: 'half' } : body === undefined ? {} : { body: JSON.stringify(body) }) });
-    return { status: response.status, headers: response.headers, data: response.headers.get('content-type')?.includes('json') ? await response.json() : await response.text() };
+    return { status: response.status, headers: response.headers, data: method !== 'HEAD' && response.headers.get('content-type')?.includes('json') ? await response.json() : await response.text() };
   };
   return { ...app, call, author, other, close: async () => { await app.close(); await rm(uploadDirectory, { recursive: true, force: true }); } };
 }
@@ -114,6 +114,83 @@ test('OAuth state is browser-bound, single-use, and uses the stable GitHub accou
     }
     const original = await authenticate(); login = 'renamed-account'; const renamed = await authenticate();
     assert.equal(original.id, renamed.id); assert.equal(renamed.login, login); assert.equal(exchanges, 2);
+  } finally { await app.close(); }
+});
+
+test('authors hide their own works; hidden works leave public listings, counts and search', async () => {
+  const app = await fixture();
+  try {
+    const created = (await app.call('api/resources', { method: 'POST', body: minimum })).data;
+    const endpoint = `api/resources/${created.id}/visibility`;
+    assert.equal(created.visibility, 'public');
+    assert.equal((await app.call(endpoint, { method: 'PUT', body: { hidden: true }, anonymous: true })).status, 401);
+    assert.equal((await app.call(endpoint, { method: 'PUT', body: { hidden: true }, who: app.other })).status, 403);
+    assert.equal((await app.call(endpoint, { method: 'PUT', body: { hidden: true }, headers: { 'X-CSRF-Token': 'wrong' } })).status, 403);
+    assert.equal((await app.call(endpoint, { method: 'PUT', body: { hidden: 'yes' } })).status, 400);
+    const hidden = await app.call(endpoint, { method: 'PUT', body: { hidden: true } });
+    assert.equal(hidden.data.visibility, 'author-hidden');
+    const list = (await app.call('api/resources?type=bem&q=测试', { anonymous: true })).data;
+    assert.equal(list.total, 0); assert.equal(list.counts.bem, 0);
+    assert.equal((await app.call('api/resources?mine=1')).data.items[0].visibility, 'author-hidden');
+    assert.equal((await app.call(`api/resources/${created.id}`, { who: app.other })).status, 403);
+    assert.equal((await app.call(`api/resources/${created.id}`, { anonymous: true })).data.visibility, 'author-hidden');
+    assert.equal((await app.call('api/resources?manage=1')).status, 403);
+    assert.equal((await app.call(endpoint, { method: 'PUT', body: { hidden: false } })).data.visibility, 'public');
+    assert.equal((await app.call('api/resources', { anonymous: true })).data.total, 1);
+  } finally { await app.close(); }
+});
+
+test('administrator hiding overrides authors and survives edits/releases; only administrators can restore', async () => {
+  const app = await fixture({ adminGithubIds: '456', fileUploadGithubIds: '123' });
+  try {
+    assert.equal((await app.call('api/session')).data.isAdmin, false);
+    assert.equal((await app.call('api/session', { who: app.other })).data.isAdmin, true);
+    assert.equal((await app.call('api/session', { who: app.other })).data.canUploadFiles, false);
+    const created = (await app.call('api/resources', { method: 'POST', body: minimum })).data;
+    const endpoint = `api/resources/${created.id}/visibility`;
+    await app.call(endpoint, { method: 'PUT', body: { hidden: true } });
+    const hidden = await app.call(endpoint, { method: 'PUT', who: app.other, body: { hidden: true, reason: '链接需要修正' } });
+    assert.equal(hidden.data.visibility, 'admin-hidden'); assert.equal(hidden.data.author_hidden, true);
+    assert.equal(hidden.data.hide_reason, '链接需要修正');
+    const publicResponse = await app.call(`api/resources/${created.id}`, { anonymous: true });
+    assert.equal(publicResponse.status, 403); assert.equal(publicResponse.data.reason, '链接需要修正');
+    assert.equal(publicResponse.data.latest, undefined);
+    assert.equal((await app.call(endpoint, { method: 'PUT', body: { hidden: false } })).status, 403);
+    const edited = await app.call(`api/resources/${created.id}`, { method: 'PUT', body: { ...minimum, description: 'Changed', admin_hidden: false, visibility: 'public' } });
+    assert.equal(edited.status, 200); assert.equal(edited.data.visibility, 'admin-hidden');
+    const release = await app.call(`api/resources/${created.id}/releases`, { method: 'POST', body: { url: 'https://example.com/new.zip' } });
+    assert.equal(release.data.visibility, 'admin-hidden'); assert.equal(release.data.releases.length, 2);
+    const manage = (await app.call('api/resources?manage=1&visibility=admin-hidden', { who: app.other })).data;
+    assert.equal(manage.total, 1); assert.equal(manage.counts.bem, 1);
+    assert.equal((await app.call('api/resources?manage=1&visibility=public', { who: app.other })).data.total, 0);
+    const restored = await app.call(endpoint, { method: 'PUT', who: app.other, body: { hidden: false } });
+    assert.equal(restored.data.author_hidden, false); assert.equal(restored.data.admin_hidden, false);
+    assert.equal(restored.data.hide_reason, '');
+    assert.equal((await app.call('api/resources', { anonymous: true })).data.total, 1);
+  } finally { await app.close(); }
+});
+
+test('hidden works also protect comments, likes and hosted media while retaining all records', async () => {
+  const app = await fixture({ fileUploadGithubIds: '123', adminGithubIds: '456' });
+  try {
+    const image = (await app.call('api/uploads?kind=image', { method: 'POST', raw: png, headers: uploadHeaders('gallery.png') })).data;
+    const file = (await app.call('api/uploads?kind=file', { method: 'POST', raw: Buffer.from('mod-content'), headers: uploadHeaders('mod.zip') })).data;
+    const created = (await app.call('api/resources', { method: 'POST', body: { ...minimum, url: '', file_id: file.id, image_ids: [image.id] } })).data;
+    await app.call(`api/resources/${created.id}/comments`, { method: 'POST', body: { body: 'Retained comment' } });
+    await app.call(`api/resources/${created.id}/likes`, { method: 'PUT' });
+    await app.call(`api/resources/${created.id}/visibility`, { method: 'PUT', body: { hidden: true }, who: app.other });
+    for (const route of [`api/resources/${created.id}/comments`, `media/${image.id}`, `media/${file.id}`]) {
+      assert.equal((await app.call(route, { anonymous: true })).status, 403);
+      assert.equal((await app.call(route)).status, 200);
+      assert.equal((await app.call(route, { who: app.other })).status, 200);
+    }
+    assert.equal((await app.call(`media/${file.id}`, { method: 'HEAD', anonymous: true })).status, 403);
+    assert.equal((await app.call(`media/${file.id}`, { headers: { Range: 'bytes=0-2' }, anonymous: true })).status, 403);
+    assert.equal((await app.call(`api/resources/${created.id}/likes`, { method: 'PUT', anonymous: true })).status, 403);
+    await app.call(`api/resources/${created.id}/visibility`, { method: 'PUT', body: { hidden: false }, who: app.other });
+    const restored = (await app.call(`api/resources/${created.id}`)).data;
+    assert.equal(restored.comments, 1); assert.equal(restored.likes, 1); assert.equal(restored.images.length, 1);
+    assert.equal((await app.call(`media/${file.id}`, { anonymous: true })).data, 'mod-content');
   } finally { await app.close(); }
 });
 

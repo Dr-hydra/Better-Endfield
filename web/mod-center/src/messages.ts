@@ -1,6 +1,12 @@
 export type Language = "zh" | "en";
 
 const messages: Record<string, string> = {
+  "作品已被管理员隐藏，暂时无法查看。": "This work is hidden by an administrator and cannot currently be viewed.",
+  "作品已被作者隐藏，暂时无法查看。": "This work is hidden by the author and cannot currently be viewed.",
+  "作品已被管理员隐藏，只有管理员可以恢复。": "This work is hidden by an administrator. Only an administrator can restore it.",
+  "只有作者或管理员可以更改作品展示状态。": "Only the author or an administrator can change work visibility.",
+  "只有管理员可以查看作品管理列表。": "Only administrators can view the work management list.",
+  "作品展示状态不正确。": "The work visibility value is invalid.",
   "当前账号没有作品文件上传权限。": "Your account cannot upload work files.",
   "上传文件不存在或不属于当前账号。": "This upload does not exist or belongs to another account.",
   "上传类型不正确。": "Invalid upload type.",
@@ -63,6 +69,7 @@ const fields: Record<string, string> = {
   "封面链接": "Cover link", "作品介绍": "Description", "更新说明": "Update notes",
   "搜索内容": "Search query", "GitHub 用户名": "GitHub username", "邮箱": "Email", "验证码": "Code",
   "评论": "Comment", "上传文件": "Upload",
+  "隐藏原因": "Hide reason",
 };
 
 // Keep the original message in state so an open notice also follows language changes.

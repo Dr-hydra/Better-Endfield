@@ -8,12 +8,16 @@ export interface Resource {
   id: string; name: string; type: string; description: string; cover: string;
   created_at: number; updated_at: number; author: User; latest: Release;
   releases?: Release[]; images: Upload[]; cover_link: string; likes: number; comments: number; liked: boolean;
+  visibility: 'public' | 'author-hidden' | 'admin-hidden'; author_hidden: boolean; admin_hidden: boolean; hide_reason: string;
 }
-export interface Session { user: User | null; csrf: string; githubEnabled: boolean; emailEnabled: boolean; email: string; canUploadFiles: boolean; uploadLimits?: { imageBytes: number; fileBytes: number; imagesPerWork: number } }
+export interface Session { user: User | null; csrf: string; githubEnabled: boolean; emailEnabled: boolean; email: string; isAdmin: boolean; canUploadFiles: boolean; uploadLimits?: { imageBytes: number; fileBytes: number; imagesPerWork: number } }
 export interface Catalog { items: Resource[]; counts: Record<string, number>; total: number; page: number; pages: number }
 export interface Draft { name: string; type: string; url: string; version: string; cover: string; description: string; notes: string; file_id: string; image_ids: string[] }
 export const blankDraft = (): Draft => ({ name: "", type: "", url: "", version: "", cover: "", description: "", notes: "", file_id: "", image_ids: [] });
 export const base = import.meta.env.BASE_URL;
+export class ApiError extends Error {
+  constructor(message: string, public readonly details: { visibility?: string; reason?: string } = {}) { super(message); }
+}
 
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
@@ -22,7 +26,7 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let result;
   try { result = await response.json(); }
   catch { throw new Error("服务响应异常，请稍后重试。"); }
-  if (!response.ok) throw new Error(result.error || "请求失败，请稍后重试。");
+  if (!response.ok) throw new ApiError(result.error || "请求失败，请稍后重试。", result);
   return result as T;
 }
 
@@ -33,7 +37,7 @@ export async function authRequest<T>(path: string, init?: RequestInit): Promise<
   let result;
   try { result = await response.json(); }
   catch { throw new Error("服务响应异常，请稍后重试。"); }
-  if (!response.ok) throw new Error(result.error || "请求失败，请稍后重试。");
+  if (!response.ok) throw new ApiError(result.error || "请求失败，请稍后重试。", result);
   return result as T;
 }
 

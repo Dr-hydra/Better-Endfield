@@ -99,6 +99,27 @@
   .project-notice .button { justify-content: center; }
 }
 .pagination { display: flex; justify-content: center; align-items: center; gap: 18px; margin-top: 25px; font-size: 12px; }
+.visibility-panel { padding: 20px; margin-bottom: 22px; box-shadow: none; border-left: 4px solid var(--yellow); }
+.visibility-panel.admin-hidden { border-left-color: var(--red); }
+.visibility-summary { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.visibility-summary strong { font-size: 14px; }
+.visibility-summary p { margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.visibility-actions { display: flex; flex-wrap: wrap; gap: 10px; flex-shrink: 0; }
+.visibility-reason { white-space: pre-wrap; overflow-wrap: anywhere; }
+.hide-reason-input { display: grid; gap: 8px; margin-top: 15px; font-size: 11px; color: var(--muted); }
+.hide-reason-input input { width: 100%; min-height: 38px; padding: 8px; background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); }
+.visibility-badge { display: inline-block; margin: 8px 0 0 10px; padding: 3px 6px; font-size: 9px; background: var(--panel-2); color: var(--muted); border: 1px solid var(--line); }
+.visibility-badge.admin-hidden { color: var(--red); }
+.visibility-badge.author-hidden { color: var(--ink); background: var(--yellow); }
+.manage-visibility-filter { display: flex; align-items: center; gap: 12px; font-size: 12px; }
+.manage-visibility-filter select { min-height: 38px; }
+.hidden-work-notice { display: grid; justify-items: center; gap: 12px; text-align: center; padding: 45px 25px; box-shadow: none; }
+.hidden-work-notice h2 { margin: 5px 0 0; font-size: 23px; }
+.hidden-work-notice p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.8; }
+@media (max-width: 720px) {
+  .visibility-summary { align-items: stretch; flex-direction: column; gap: 15px; }
+  .mod-center .mobile-nav.has-management button { min-width: 0; flex: 1 1 0; flex-direction: column; gap: 4px; padding: 0 3px; font-size: 10px; }
+}
 .card-footer { flex-wrap: wrap; }
 .card-social { width: 100%; padding-top: 4px; }
 .community-panel, .gallery-panel { margin-top: 22px; padding: clamp(20px, 3vw, 30px); box-shadow: none; }

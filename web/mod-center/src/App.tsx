@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { JSX } from "preact";
 import categories from "../shared/types.json";
-import { authRequest, base, blankDraft, request, write, type Catalog, type Draft, type Resource, type Session } from "./api";
+import { ApiError, authRequest, base, blankDraft, request, write, type Catalog, type Draft, type Resource, type Session } from "./api";
 import { Community } from './Community';
 import { UploadEditor } from './UploadEditor';
+import { VisibilityControls, visibilityLabel } from './VisibilityControls';
 import { localizeMessage, type Language } from "./messages";
 import { supporterCutoffDate, supporterNames } from "./supporters.generated";
 
@@ -52,7 +53,7 @@ export default function App() {
   const [route, setRoute] = useState(routeOf);
   const [theme, setTheme] = useState(() => localStorage.getItem("be-theme") || "light");
   const [lang, setLang] = useState<Language>(() => localStorage.getItem("be-lang") === "en" ? "en" : "zh");
-  const [session, setSession] = useState<Session>({ user: null, csrf: "", githubEnabled: false, emailEnabled: false, email: "", canUploadFiles: false });
+  const [session, setSession] = useState<Session>({ user: null, csrf: "", githubEnabled: false, emailEnabled: false, email: "", canUploadFiles: false, isAdmin: false });
   const [sessionLoading, setSessionLoading] = useState(true);
   const [catalog, setCatalog] = useState<Catalog>(emptyCatalog);
   const [selectedType, setSelectedType] = useState("");
@@ -64,12 +65,15 @@ export default function App() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [resource, setResource] = useState<Resource | null>(null);
+  const [hiddenStatus, setHiddenStatus] = useState<{ visibility: string; reason: string } | null>(null);
+  const [visibilityFilter, setVisibilityFilter] = useState('');
   const [revision, setRevision] = useState(0);
   const [deletePrompt, setDeletePrompt] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [authPurpose, setAuthPurpose] = useState<"login" | "bind">("login");
   const mine = route === "mine";
-  const listing = route === "explore" || mine;
+  const manage = route === 'manage';
+  const listing = route === "explore" || mine || manage;
   const editor = route === "publish" || route.startsWith("edit/") || route.startsWith("release/");
   const editing = route.startsWith("edit/");
   const releasing = route.startsWith("release/");
@@ -87,20 +91,20 @@ export default function App() {
     request<Session>("session").then(setSession).catch(reason => setError(reason.message)).finally(() => setSessionLoading(false));
   }, []);
   useEffect(() => { const timer = setTimeout(() => setDebounced(search), 250); return () => clearTimeout(timer); }, [search]);
-  useEffect(() => setPage(1), [selectedType, debounced, sort, mine]);
+  useEffect(() => setPage(1), [selectedType, debounced, sort, mine, manage, visibilityFilter]);
   useEffect(() => {
-    if (!listing || (mine && !session.user)) return;
+    if (!listing || (mine && !session.user) || (manage && !session.isAdmin)) return;
     let stale = false;
     setLoading(true); setError("");
-    const params = new URLSearchParams({ type: selectedType, q: debounced, sort, page: String(page), mine: mine ? "1" : "0" });
+    const params = new URLSearchParams({ type: selectedType, q: debounced, sort, page: String(page), mine: mine ? "1" : "0", manage: manage ? '1' : '0', visibility: manage ? visibilityFilter : '' });
     request<Catalog>(`resources?${params}`).then(result => { if (!stale) setCatalog(result); }).catch(reason => { if (!stale) setError(reason.message); }).finally(() => { if (!stale) setLoading(false); });
     return () => { stale = true; };
-  }, [listing, mine, session.user?.id, selectedType, debounced, sort, page, revision]);
+  }, [listing, mine, manage, session.isAdmin, session.user?.id, selectedType, debounced, sort, page, revision, visibilityFilter]);
   useEffect(() => {
-    if (!resourceId) { setResource(null); return; }
+    if (!resourceId) { setResource(null); setHiddenStatus(null); return; }
     let stale = false;
-    setResource(null); setLoading(true); setError("");
-    request<Resource>(`resources/${resourceId}`).then(result => { if (!stale) setResource(result); }).catch(reason => { if (!stale) setError(reason.message); }).finally(() => { if (!stale) setLoading(false); });
+    setResource(null); setHiddenStatus(null); setLoading(true); setError("");
+    request<Resource>(`resources/${resourceId}`).then(result => { if (!stale) setResource(result); }).catch(reason => { if (!stale) { if (reason instanceof ApiError && reason.details.visibility) setHiddenStatus({ visibility: reason.details.visibility, reason: reason.details.reason || '' }); else setError(reason.message); } }).finally(() => { if (!stale) setLoading(false); });
     return () => { stale = true; };
   }, [resourceId, revision, session.user?.id]);
   useEffect(() => {
@@ -116,13 +120,13 @@ export default function App() {
   }
   function filter(id: string) { setSelectedType(id); setPage(1); go("explore"); }
   async function logout() {
-    try { await write("logout", "POST", {}, session.csrf); setSession({ ...session, user: null, csrf: "", email: "", canUploadFiles: false }); go("explore"); } catch (reason) { setError((reason as Error).message); }
+    try { await write("logout", "POST", {}, session.csrf); setSession({ ...session, user: null, csrf: "", email: "", canUploadFiles: false, isAdmin: false }); go("explore"); } catch (reason) { setError((reason as Error).message); }
   }
   async function remove() {
     if (!resource) return;
     try { await write(`resources/${resource.id}`, "DELETE", {}, session.csrf); setDeletePrompt(false); setRevision(value => value + 1); go("mine"); } catch (reason) { setError((reason as Error).message); }
   }
-  const nav = [ { id: "explore", title: text(lang, "发现作品", "Explore"), icon: "discover" }, { id: "mine", title: text(lang, "我的发布", "My works"), icon: "user" }, { id: "publish", title: text(lang, "发布作品", "Publish"), icon: "plus" }, { id: "thanks", title: text(lang, "感谢名单", "Thanks"), icon: "heart" } ];
+  const nav = [ { id: "explore", title: text(lang, "发现作品", "Explore"), icon: "discover" }, { id: "mine", title: text(lang, "我的发布", "My works"), icon: "user" }, { id: "publish", title: text(lang, "发布作品", "Publish"), icon: "plus" }, { id: "thanks", title: text(lang, "感谢名单", "Thanks"), icon: "heart" }, ...(session.isAdmin ? [{ id: "manage", title: t("管理作品", "Manage"), icon: "edit" }] : []) ];
   const navButtons = nav.map(item => <button key={item.id} class={(item.id === route || (item.id === "publish" && editor)) ? "active" : ""} onClick={() => go(item.id)}><Icon name={item.icon} /><span>{item.title}</span></button>);
   const owned = resource?.author.id === session.user?.id;
 
@@ -138,14 +142,17 @@ export default function App() {
       {route === "explore" && <section class="project-notice panel" aria-label={t("项目迁移说明", "Project migration")}><div><strong>{t("第三方模块与第一人称已迁移", "Third-party modules and first person have moved")}</strong><p>{t("相关源码与后续开发已转至 Endfield Mod Loader（E Mod Loader），新项目开发中。BE 的创意工坊入口继续保留。", "Sources and further development are now in Endfield Mod Loader (E Mod Loader). The new project is in development; BE keeps its Workshop entry.")}</p></div><a class="button primary" href="https://github.com/Dr-hydra/Endfield-Mod-Loader" target="_blank" rel="noopener noreferrer">{t("前往 E Mod Loader", "Open E Mod Loader")}<Icon name="external" size={17} /></a></section>}
       {notice && <div class="portal-notice" role="status"><span>{localizeMessage(notice, lang)}</span><button onClick={() => setNotice("")} aria-label={t("关闭提示", "Dismiss notice")}>×</button></div>}
       {error && <div class="portal-notice error" role="alert"><span>{localizeMessage(error, lang)}</span><button onClick={() => setError("")} aria-label={t("关闭错误", "Dismiss error")}>×</button></div>}
+      {hiddenStatus && <section class="hidden-work-notice panel" role="status"><Icon name="layers" size={38} /><h2>{hiddenStatus.visibility === 'admin-hidden' ? t('此作品已被管理员隐藏', 'This work is hidden by an administrator') : t('此作品已被作者隐藏', 'This work is hidden by the author')}</h2><p>{t('暂时无法查看、评论或下载此作品。', 'This work cannot currently be viewed, commented on, or downloaded.')}</p>{hiddenStatus.reason && <p class="visibility-reason">{t('原因：', 'Reason: ')}{hiddenStatus.reason}</p>}{!session.user && <button class="button secondary" onClick={login}>{t('作者或管理员登录', 'Sign in as author or administrator')}</button>}</section>}
+      {resource && (editor || route.startsWith('resource/')) && <VisibilityControls key={`${resource.id}-${revision}`} resource={resource} session={session} lang={lang} onChanged={() => setRevision(value => value + 1)} />}
       {listing && <>
-        {!mine && <section class="portal-hero panel"><div class="hero-copy"><span class="eyebrow">BETTER ENDFIELD · {t("下载站", "DOWNLOADS")}</span><h1>{t("发现终末地", "Explore Endfield")}<br /><span>{t("社区创作。", "Community creations.")}</span></h1><p>{t("功能、外观、模型与更多可能。", "Mods, skins, models, and more.")}<br />{t("找到喜欢的作品，也让你的创作被看见。", "Find something you like, or share your own work.")}</p><button class="button primary large" onClick={() => go("publish")}>{t("发布你的作品", "Publish your work")} <Icon name="arrow" /></button><div class="hero-foot"><span><b>{total.toString().padStart(2, "0")}</b> {t("份社区作品", "community works")}</span><i /><span><b>07</b> {t("个资源分类", "categories")}</span></div></div><div class="hero-index"><div class="hero-index-heading"><span>COMMUNITY / {t("创作目录", "CATALOG")}</span><Icon name="layers" size={23} /></div>{categories.map((item, index) => <button key={item.id} onClick={() => filter(item.id)}><span class="index-number">0{index + 1}</span><span><strong>{categoryName(item, lang)}</strong><small>{categoryHint(item, lang)}</small></span><Icon name="chevron" size={16} /></button>)}<div class="hero-index-foot"><span>{t("由作者分享 · 前往原地址下载", "Shared by authors · Download from the original link")}</span><i class="status-dot" /></div></div></section>}
-        <section class="catalog-heading"><div><span class="eyebrow">{mine ? t("YOUR COLLECTION / 创作管理", "YOUR COLLECTION") : t("EXPLORE / 作品目录", "EXPLORE")}</span><h2>{mine ? t("我的发布", "My works") : t("浏览作品", "Browse works")}<span>{catalog.total}</span></h2></div>{mine ? <button class="button primary" onClick={() => go("publish")}><Icon name="plus" size={17} />{t("发布作品", "Publish")}</button> : <span class="catalog-caption">{t("每一个想法，都可以从这里开始。", "Every idea can start here.")}</span>}</section>
+        {manage && session.isAdmin && <label class="manage-visibility-filter"><span>{t('展示状态', 'Visibility')}</span><select value={visibilityFilter} onChange={event => setVisibilityFilter(event.currentTarget.value)}><option value="">{t('全部状态', 'All states')}</option><option value="public">{t('公开展示', 'Public')}</option><option value="author-hidden">{t('作者隐藏', 'Hidden by author')}</option><option value="admin-hidden">{t('管理员隐藏', 'Hidden by admin')}</option></select></label>}
+        {!mine && !manage && <section class="portal-hero panel"><div class="hero-copy"><span class="eyebrow">BETTER ENDFIELD · {t("下载站", "DOWNLOADS")}</span><h1>{t("发现终末地", "Explore Endfield")}<br /><span>{t("社区创作。", "Community creations.")}</span></h1><p>{t("功能、外观、模型与更多可能。", "Mods, skins, models, and more.")}<br />{t("找到喜欢的作品，也让你的创作被看见。", "Find something you like, or share your own work.")}</p><button class="button primary large" onClick={() => go("publish")}>{t("发布你的作品", "Publish your work")} <Icon name="arrow" /></button><div class="hero-foot"><span><b>{total.toString().padStart(2, "0")}</b> {t("份社区作品", "community works")}</span><i /><span><b>07</b> {t("个资源分类", "categories")}</span></div></div><div class="hero-index"><div class="hero-index-heading"><span>COMMUNITY / {t("创作目录", "CATALOG")}</span><Icon name="layers" size={23} /></div>{categories.map((item, index) => <button key={item.id} onClick={() => filter(item.id)}><span class="index-number">0{index + 1}</span><span><strong>{categoryName(item, lang)}</strong><small>{categoryHint(item, lang)}</small></span><Icon name="chevron" size={16} /></button>)}<div class="hero-index-foot"><span>{t("由作者分享 · 前往原地址下载", "Shared by authors · Download from the original link")}</span><i class="status-dot" /></div></div></section>}
+        <section class="catalog-heading"><div><span class="eyebrow">{manage ? t("MANAGE / 作品管理", "MANAGE") : mine ? t("YOUR COLLECTION / 创作管理", "YOUR COLLECTION") : t("EXPLORE / 作品目录", "EXPLORE")}</span><h2>{manage ? t("管理作品", "Manage works") : mine ? t("我的发布", "My works") : t("浏览作品", "Browse works")}<span>{catalog.total}</span></h2></div>{mine ? <button class="button primary" onClick={() => go("publish")}><Icon name="plus" size={17} />{t("发布作品", "Publish")}</button> : <span class="catalog-caption">{t("每一个想法，都可以从这里开始。", "Every idea can start here.")}</span>}</section>
         {mine && session.user && session.emailEnabled && <section class="account-email panel"><div><strong>{t("邮箱登录", "Email sign-in")}</strong><p>{session.email ? t(`已绑定 ${session.email}`, `Linked: ${session.email}`) : t("绑定邮箱后，也可以用验证码登录并管理这些作品。", "Link an email to sign in with a code and manage these works.")}</p></div>{!session.email && <button class="button secondary" onClick={() => { setAuthPurpose("bind"); setAuthOpen(true); }}><Icon name="mail" size={16} />{t("绑定邮箱", "Link email")}</button>}</section>}
-        {mine && !session.user ? <section class="portal-empty panel"><Icon name="user" size={44} /><h3>{t("在这里管理你的创作", "Manage your creations here")}</h3><p>{t("使用 GitHub 或邮箱登录后，发布作品、修改介绍或添加新版本。", "Sign in with GitHub or email to publish, edit, or add releases.")}</p><button class="button primary" onClick={login}><Icon name="user" size={18} />{t("登录", "Sign in")}</button></section> : <>
+        {((mine && !session.user) || (manage && !session.isAdmin)) ? <section class="portal-empty panel"><Icon name="user" size={44} /><h3>{manage ? t("需要管理员账号", "Administrator account required") : t("在这里管理你的创作", "Manage your creations here")}</h3><p>{manage ? t("只有管理员可以查看所有作品及其隐藏状态。", "Only administrators can view all works and their visibility.") : t("使用 GitHub 或邮箱登录后，发布作品、修改介绍或添加新版本。", "Sign in with GitHub or email to publish, edit, or add releases.")}</p><button class="button primary" onClick={login}><Icon name="user" size={18} />{t("登录", "Sign in")}</button></section> : <>
           <section class="catalog-toolbar panel"><label class="search-field"><Icon name="search" size={19} /><input aria-label={t("搜索作品", "Search works")} placeholder={t("搜索作品、介绍或作者…", "Search works, descriptions, or authors…")} value={search} maxLength={120} onInput={event => setSearch(event.currentTarget.value)} />{search && <button aria-label={t("清空搜索", "Clear search")} onClick={() => setSearch("")}>×</button>}</label><label class="sort-field"><span>{t("排序", "Sort")}</span><select aria-label={t("排序方式", "Sort order")} value={sort} onChange={event => setSort(event.currentTarget.value)}><option value="updated">{t("最近更新", "Recently updated")}</option><option value="newest">{t("最新发布", "Newest")}</option></select></label></section>
           <nav class="type-filters" aria-label={t("资源类型筛选", "Filter by type")}><button class={`filter-chip ${!selectedType ? "active" : ""}`} onClick={() => setSelectedType("")}>{t("全部", "All")}<span>{total}</span></button>{categories.map(item => <button key={item.id} class={`filter-chip ${selectedType === item.id ? "active" : ""}`} onClick={() => setSelectedType(item.id)}>{categoryName(item, lang)}<span>{catalog.counts[item.id] || 0}</span></button>)}</nav>
-          {loading ? <div class="resource-grid" aria-label={t("正在读取作品", "Loading works")} aria-busy="true">{[0, 1, 2].map(value => <div key={value} class="resource-skeleton panel"><div /><span /><span /></div>)}</div> : catalog.items.length ? <div class="resource-grid">{catalog.items.map(item => <article class="resource-card panel" key={item.id}><a class="card-main" href={`#/resource/${item.id}`}><ResourceCover resource={item} lang={lang} /><div class="card-copy"><span class="card-version">{releaseName(item, lang)}</span><h3>{item.name}</h3><p>{item.description ? item.description.slice(0, 160) : t("打开作品，查看作者提供的下载链接。", "Open the work to see the author's download link.")}</p></div></a><div class="card-footer"><a href={item.author.profile_url} target="_blank" rel="noopener noreferrer" class="author-name">{item.author.avatar ? <img src={item.author.avatar} alt="" loading="lazy" referrerPolicy="no-referrer" /> : <Icon name="user" size={14} />}<span>{item.author.login}</span></a><span>{date(item.updated_at, lang)}</span><span class="card-social">♡ {item.likes} · {t("评论", "Comments")} {item.comments}</span></div></article>)}</div> : <section class="portal-empty panel"><div class="empty-mark"><Icon name={search || selectedType ? "search" : "layers"} size={44} /></div><span class="eyebrow">{search || selectedType ? "NO RESULTS" : "THE FIRST CHAPTER"}</span><h3>{search || selectedType ? t("暂时没有匹配的作品", "No matching works yet") : mine ? t("你的第一份作品，从这里开始", "Start with your first work") : t("成为这里的第一位创作者", "Be the first creator here")}</h3><p>{search || selectedType ? t("试试其他关键词，或换一个资源类型。", "Try another keyword or type.") : t("只需填写名字、类型和下载链接，就能分享作品。", "Share a work by filling in a name, type, and download link.")}</p><button class="button secondary" onClick={search || selectedType ? () => { setSearch(""); setSelectedType(""); } : () => go("publish")}>{search || selectedType ? t("清除筛选", "Clear filters") : t("发布第一份作品", "Publish the first work")}<Icon name="arrow" size={17} /></button></section>}
+          {loading ? <div class="resource-grid" aria-label={t("正在读取作品", "Loading works")} aria-busy="true">{[0, 1, 2].map(value => <div key={value} class="resource-skeleton panel"><div /><span /><span /></div>)}</div> : catalog.items.length ? <div class="resource-grid">{catalog.items.map(item => <article class="resource-card panel" key={item.id}><a class="card-main" href={`#/resource/${item.id}`}><ResourceCover resource={item} lang={lang} /><div class="card-copy"><span class="card-version">{releaseName(item, lang)}</span>{(mine || manage) && <span class={`visibility-badge ${item.visibility}`}>{visibilityLabel(item.visibility, lang)}</span>}<h3>{item.name}</h3><p>{item.description ? item.description.slice(0, 160) : t("打开作品，查看作者提供的下载链接。", "Open the work to see the author's download link.")}</p></div></a><div class="card-footer"><a href={item.author.profile_url} target="_blank" rel="noopener noreferrer" class="author-name">{item.author.avatar ? <img src={item.author.avatar} alt="" loading="lazy" referrerPolicy="no-referrer" /> : <Icon name="user" size={14} />}<span>{item.author.login}</span></a><span>{date(item.updated_at, lang)}</span><span class="card-social">♡ {item.likes} · {t("评论", "Comments")} {item.comments}</span></div></article>)}</div> : <section class="portal-empty panel"><div class="empty-mark"><Icon name={search || selectedType ? "search" : "layers"} size={44} /></div><span class="eyebrow">{search || selectedType ? "NO RESULTS" : "THE FIRST CHAPTER"}</span><h3>{search || selectedType ? t("暂时没有匹配的作品", "No matching works yet") : mine ? t("你的第一份作品，从这里开始", "Start with your first work") : t("成为这里的第一位创作者", "Be the first creator here")}</h3><p>{search || selectedType ? t("试试其他关键词，或换一个资源类型。", "Try another keyword or type.") : t("只需填写名字、类型和下载链接，就能分享作品。", "Share a work by filling in a name, type, and download link.")}</p><button class="button secondary" onClick={search || selectedType ? () => { setSearch(""); setSelectedType(""); } : () => go("publish")}>{search || selectedType ? t("清除筛选", "Clear filters") : t("发布第一份作品", "Publish the first work")}<Icon name="arrow" size={17} /></button></section>}
           {catalog.pages > 1 && <nav class="pagination" aria-label={t("分页", "Pagination")}><button class="button secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>{t("上一页", "Previous")}</button><span>{page} / {catalog.pages}</span><button class="button secondary" disabled={page >= catalog.pages} onClick={() => setPage(page + 1)}>{t("下一页", "Next")}</button></nav>}
         </>}
       </>}
@@ -166,7 +173,7 @@ export default function App() {
       </>}
       <footer class="portal-footer"><span>BETTER ENDFIELD / {t("下载站", "DOWNLOADS")}</span><a href="https://github.com/Dr-hydra/Endfield-Mod-Loader" target="_blank" rel="noopener noreferrer">Endfield Mod Loader <Icon name="external" size={12} /></a><span>{t("社区创作 · 作者自助发布", "Community creations · Self-service publishing")}</span></footer>
     </div>
-    <nav class="mobile-nav" aria-label={t("移动导航", "Mobile navigation")}>{navButtons}</nav>
+    <nav class={`mobile-nav ${session.isAdmin ? "has-management" : ""}`} aria-label={t("移动导航", "Mobile navigation")}>{navButtons}</nav>
     {authOpen && <EmailDialog session={session} purpose={authPurpose} lang={lang} onClose={() => setAuthOpen(false)} onVerified={next => { setSession(next); setAuthOpen(false); setNotice(authPurpose === "bind" ? "邮箱绑定成功。" : "登录成功。"); }} />}
     {deletePrompt && <div class="dialog-overlay"><section class="delete-dialog panel" role="dialog" aria-modal="true" aria-labelledby="delete-title"><span class="eyebrow">DELETE WORK</span><h2 id="delete-title">{t("删除这份作品？", "Delete this work?")}</h2><p>{t(`「${resource?.name}」及其发布记录会从目录中移除。`, `“${resource?.name}” and its releases will be removed from the catalog.`)}</p><div><button class="button secondary" autoFocus onClick={() => setDeletePrompt(false)}>{t("取消", "Cancel")}</button><button class="button danger" onClick={remove}>{t("确认删除", "Delete")}</button></div></section></div>}
   </div>;

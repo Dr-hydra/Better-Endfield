@@ -12,7 +12,7 @@ function imageMime(bytes) {
   fail(415, '仅支持 JPG、PNG 和 WebP 图片。');
 }
 
-export function createUploads({ db, directory, publicUrl, prefix, canUploadFiles, limits = uploadLimits }) {
+export function createUploads({ db, directory, publicUrl, prefix, canUploadFiles, visibility, limits = uploadLimits }) {
   db.exec(`CREATE TABLE IF NOT EXISTS uploads (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES users(id), kind TEXT NOT NULL, filename TEXT NOT NULL, mime TEXT NOT NULL, size INTEGER NOT NULL, created_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS resource_images (resource_id TEXT NOT NULL REFERENCES resources(id) ON DELETE CASCADE, upload_id TEXT NOT NULL REFERENCES uploads(id), position INTEGER NOT NULL, PRIMARY KEY(resource_id,upload_id));
     CREATE INDEX IF NOT EXISTS upload_owner ON uploads(owner_id,created_at);`);
@@ -70,6 +70,8 @@ export function createUploads({ db, directory, publicUrl, prefix, canUploadFiles
   async function serve(req, res, id, user) {
     const row = db.prepare('SELECT * FROM uploads WHERE id=?').get(id);
     if (!row || (!referenced(id) && row.owner_id !== user?.id)) fail(404, '文件不存在或已被删除。');
+    const resources = db.prepare('SELECT r.* FROM resources r JOIN resource_images i ON i.resource_id=r.id WHERE i.upload_id=? UNION SELECT r.* FROM resources r JOIN releases v ON v.resource_id=r.id WHERE v.file_id=?').all(id, id);
+    if (resources.length && !resources.some(resource => visibility.canRead(resource, user))) visibility.requireReadable(resources.find(resource => resource.admin_hidden) || resources[0], user);
     const file = filenameOf(row.id);
     const info = await stat(file).catch(() => null);
     if (!info) fail(404, '文件不存在或已被删除。');

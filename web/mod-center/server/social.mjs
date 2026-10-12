@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-export function createSocial({ db, session, authorize, rate, json, text, bodyOf, canAdmin }) {
+export function createSocial({ db, session, authorize, rate, json, text, bodyOf, canAdmin, visibility }) {
   db.exec(`CREATE TABLE IF NOT EXISTS likes (resource_id TEXT NOT NULL REFERENCES resources(id) ON DELETE CASCADE, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, created_at INTEGER NOT NULL, PRIMARY KEY(resource_id,user_id));
     CREATE TABLE IF NOT EXISTS comments (id TEXT PRIMARY KEY, resource_id TEXT NOT NULL REFERENCES resources(id) ON DELETE CASCADE, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, body TEXT NOT NULL, created_at INTEGER NOT NULL);
     CREATE INDEX IF NOT EXISTS comment_resource ON comments(resource_id,created_at DESC);`);
@@ -12,7 +12,9 @@ export function createSocial({ db, session, authorize, rate, json, text, bodyOf,
     const match = /^api\/resources\/([a-f0-9-]{36})\/(likes|comments)(?:\/([a-f0-9-]{36}))?$/.exec(route);
     if (!match) return false;
     const [, id, operation, commentId] = match;
-    if (!db.prepare('SELECT 1 FROM resources WHERE id=?').get(id)) fail(404, '作品不存在或已被删除。');
+    const resource = db.prepare('SELECT * FROM resources WHERE id=?').get(id);
+    if (!resource) fail(404, '作品不存在或已被删除。');
+    visibility.requireReadable(resource, session(req));
     if (operation === 'likes' && !commentId && ['PUT', 'DELETE'].includes(req.method)) {
       const user = authorize(req); rate(`like:${user.id}`, 120, 3600000);
       if (req.method === 'PUT') db.prepare('INSERT OR IGNORE INTO likes VALUES (?,?,?)').run(id, user.id, Date.now());

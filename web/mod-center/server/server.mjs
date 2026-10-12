@@ -8,6 +8,7 @@ import path from 'node:path';
 import nodemailer from 'nodemailer';
 import { createUploads, uploadLimits } from './uploads.mjs';
 import { createSocial } from './social.mjs';
+import { createVisibility, visibilityOf } from './visibility.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const types = JSON.parse(readFileSync(path.join(root, 'shared/types.json'), 'utf8'));
@@ -64,6 +65,8 @@ export function createApp(options = {}) {
   const prefix = `${publicUrl.pathname.replace(/\/$/, '')}/`;
   const fileUploadGithubIds = new Set(String(options.fileUploadGithubIds ?? process.env.FILE_UPLOAD_GITHUB_IDS ?? '').split(',').map(value => value.trim()).filter(Boolean));
   const canUploadFiles = user => Boolean(user?.github_id && fileUploadGithubIds.has(user.github_id));
+  const adminGithubIds = new Set(String(options.adminGithubIds ?? process.env.ADMIN_GITHUB_IDS ?? [...fileUploadGithubIds].join(',')).split(',').map(value => value.trim()).filter(Boolean));
+  const canAdmin = user => Boolean(user?.github_id && adminGithubIds.has(user.github_id));
   const githubId = options.githubId ?? process.env.GITHUB_CLIENT_ID ?? '';
   const githubSecret = options.githubSecret ?? process.env.GITHUB_CLIENT_SECRET ?? '';
   const githubEnabled = Boolean(githubId && githubSecret);
@@ -104,6 +107,7 @@ export function createApp(options = {}) {
   }
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS users_email ON users(email) WHERE email IS NOT NULL');
   if (!db.prepare('PRAGMA table_info(releases)').all().some(column => column.name === 'file_id')) db.exec('ALTER TABLE releases ADD COLUMN file_id TEXT REFERENCES uploads(id)');
+  const visibility = createVisibility({ db, canAdmin });
   const secure = publicUrl.protocol === 'https:';
   const cookie = (name, value, age) => `${name}=${value}; Path=${prefix}; HttpOnly; SameSite=Lax; Max-Age=${age}${secure ? '; Secure' : ''}`;
   const cookies = req => Object.fromEntries(String(req.headers.cookie || '').split(';').map(part => part.trim().split('=')).filter(part => part.length === 2));
@@ -144,15 +148,15 @@ export function createApp(options = {}) {
     db.exec('BEGIN IMMEDIATE');
     try { const result = action(); db.exec('COMMIT'); return result; } catch (error) { db.exec('ROLLBACK'); throw error; }
   };
-  const uploads = createUploads({ db, directory: options.uploadDirectory || process.env.UPLOAD_DIRECTORY || path.join(path.dirname(databasePath === ':memory:' ? path.join(root, 'data/catalog.sqlite') : databasePath), 'uploads'), publicUrl, prefix, canUploadFiles, limits: options.uploadLimits || uploadLimits });
-  const social = createSocial({ db, session, authorize, rate, json, text, bodyOf, canAdmin: canUploadFiles });
-  const sessionView = user => ({ user: user ? userView(user) : null, csrf: user?.csrf || '', githubEnabled, emailEnabled, email: user?.email || '', canUploadFiles: canUploadFiles(user), uploadLimits: uploads.limits });
+  const uploads = createUploads({ db, directory: options.uploadDirectory || process.env.UPLOAD_DIRECTORY || path.join(path.dirname(databasePath === ':memory:' ? path.join(root, 'data/catalog.sqlite') : databasePath), 'uploads'), publicUrl, prefix, canUploadFiles, visibility, limits: options.uploadLimits || uploadLimits });
+  const social = createSocial({ db, session, authorize, rate, json, text, bodyOf, canAdmin, visibility });
+  const sessionView = user => ({ user: user ? userView(user) : null, csrf: user?.csrf || '', githubEnabled, emailEnabled, email: user?.email || '', isAdmin: canAdmin(user), canUploadFiles: canUploadFiles(user), uploadLimits: uploads.limits });
   const releaseView = row => ({ id: row.id, number: row.number, url: row.url, version: row.version, notes: row.notes, created_at: row.created_at, file: uploads.file(row.file_id) });
   const resourceView = (row, history = false, userId = null) => {
     const author = db.prepare('SELECT * FROM users WHERE id=?').get(row.owner_id);
     const latest = db.prepare('SELECT * FROM releases WHERE resource_id=? ORDER BY number DESC LIMIT 1').get(row.id);
     const images = uploads.gallery(row.id);
-    return { id: row.id, name: row.name, type: row.type, description: row.description, cover: images[0]?.url || row.cover, cover_link: row.cover, images, ...social.stats(row.id, userId), created_at: row.created_at, updated_at: row.updated_at, author: userView(author), latest: releaseView(latest), ...(history ? { releases: db.prepare('SELECT * FROM releases WHERE resource_id=? ORDER BY number DESC').all(row.id).map(releaseView) } : {}) };
+    return { id: row.id, name: row.name, type: row.type, description: row.description, cover: images[0]?.url || row.cover, cover_link: row.cover, images, visibility: visibilityOf(row), author_hidden: Boolean(row.author_hidden), admin_hidden: Boolean(row.admin_hidden), hide_reason: row.hide_reason, ...social.stats(row.id, userId), created_at: row.created_at, updated_at: row.updated_at, author: userView(author), latest: releaseView(latest), ...(history ? { releases: db.prepare('SELECT * FROM releases WHERE resource_id=? ORDER BY number DESC').all(row.id).map(releaseView) } : {}) };
   };
   const prepareDraft = (body, user) => {
     const draft = validateDraft(body);
@@ -312,19 +316,27 @@ export function createApp(options = {}) {
         const query = text(url.searchParams.get('q'), 120, '搜索内容');
         const page = Math.max(1, Math.min(100000, Number(url.searchParams.get('page')) || 1)) | 0;
         const mine = url.searchParams.get('mine') === '1';
-        const user = mine ? session(req) : null;
+        const manage = url.searchParams.get('manage') === '1';
+        const viewer = session(req);
+        const user = mine ? viewer : null;
         if (mine && !user) fail(401, '请先登录。');
+        if (manage && !canAdmin(viewer)) fail(403, '只有管理员可以查看作品管理列表。');
+        const filterVisibility = manage ? url.searchParams.get('visibility') || '' : '';
+        if (filterVisibility && !['public','author-hidden','admin-hidden'].includes(filterVisibility)) fail(400, '作品展示状态不正确。');
         const where = [], params = [];
         if (category) { where.push('r.type=?'); params.push(category); }
         if (query) { where.push('(r.name LIKE ? OR r.description LIKE ? OR u.login LIKE ?)'); params.push(...Array(3).fill(`%${query}%`)); }
         if (mine) { where.push('r.owner_id=?'); params.push(user.id); }
+        else if (!manage) where.push('r.author_hidden=0 AND r.admin_hidden=0');
+        if (filterVisibility === 'public') where.push('r.author_hidden=0 AND r.admin_hidden=0');
+        if (filterVisibility === 'author-hidden') where.push('r.author_hidden=1 AND r.admin_hidden=0');
+        if (filterVisibility === 'admin-hidden') where.push('r.admin_hidden=1');
         const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
         const total = db.prepare(`SELECT COUNT(*) AS total FROM resources r JOIN users u ON u.id=r.owner_id ${clause}`).get(...params).total;
         const sort = url.searchParams.get('sort') === 'newest' ? 'r.created_at' : 'r.updated_at';
-        const viewer = session(req);
         const items = db.prepare(`SELECT r.* FROM resources r JOIN users u ON u.id=r.owner_id ${clause} ORDER BY ${sort} DESC,r.id LIMIT 24 OFFSET ?`).all(...params, (page - 1) * 24).map(row => resourceView(row, false, viewer?.id));
         const counts = Object.fromEntries(types.map(item => [item.id, 0]));
-        const rows = mine ? db.prepare('SELECT type,COUNT(*) AS n FROM resources WHERE owner_id=? GROUP BY type').all(user.id) : db.prepare('SELECT type,COUNT(*) AS n FROM resources GROUP BY type').all();
+        const rows = mine ? db.prepare('SELECT type,COUNT(*) AS n FROM resources WHERE owner_id=? GROUP BY type').all(user.id) : db.prepare(`SELECT type,COUNT(*) AS n FROM resources ${manage ? '' : 'WHERE author_hidden=0 AND admin_hidden=0'} GROUP BY type`).all();
         for (const row of rows) counts[row.type] = row.n;
         return json(res, 200, { items, counts, total, page, pages: Math.max(1, Math.ceil(total / 24)) });
       }
@@ -332,8 +344,19 @@ export function createApp(options = {}) {
         const user = authorize(req); rate(`write:${user.id}`, 60, 3600000);
         const draft = prepareDraft(await bodyOf(req), user);
         const id = randomUUID(), now = Date.now();
-        transaction(() => { db.prepare('INSERT INTO resources VALUES (?,?,?,?,?,?,?,?)').run(id, draft.name, draft.type, draft.description, draft.cover, user.id, now, now); addRelease(id, draft); uploads.setGallery(id, draft.image_ids || []); });
+        transaction(() => { db.prepare('INSERT INTO resources(id,name,type,description,cover,owner_id,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)').run(id, draft.name, draft.type, draft.description, draft.cover, user.id, now, now); addRelease(id, draft); uploads.setGallery(id, draft.image_ids || []); });
         return json(res, 201, resourceView(db.prepare('SELECT * FROM resources WHERE id=?').get(id), true, user.id));
+      }
+      const visibilityRoute = /^api\/resources\/([a-f0-9-]{36})\/visibility$/.exec(route);
+      if (visibilityRoute && req.method === 'PUT') {
+        const user = authorize(req); rate(`visibility:${user.id}`, 60, 3600000);
+        const row = db.prepare('SELECT * FROM resources WHERE id=?').get(visibilityRoute[1]);
+        if (!row) fail(404, '作品不存在或已被删除。');
+        const body = await bodyOf(req);
+        if (typeof body.hidden !== 'boolean') fail(400, '作品展示状态不正确。');
+        const reason = canAdmin(user) ? text(body.reason, 500, '隐藏原因') : '';
+        visibility.change(row, user, body.hidden, reason);
+        return json(res, 200, resourceView(db.prepare('SELECT * FROM resources WHERE id=?').get(row.id), true, user.id));
       }
       const resourceRoute = /^api\/resources\/([a-f0-9-]{36})(\/releases)?$/.exec(route);
       if (resourceRoute) {
@@ -341,7 +364,8 @@ export function createApp(options = {}) {
         if (!resourceRoute[2] && req.method === 'GET') {
           const row = db.prepare('SELECT * FROM resources WHERE id=?').get(id);
           if (!row) fail(404, '作品不存在或已被删除。');
-          return json(res, 200, resourceView(row, true, session(req)?.id));
+          const viewer = session(req); visibility.requireReadable(row, viewer);
+          return json(res, 200, resourceView(row, true, viewer?.id));
         }
         if (resourceRoute[2] && req.method === 'POST') {
           const user = authorize(req); rate(`write:${user.id}`, 60, 3600000); const row = owned(id, user);
@@ -383,7 +407,7 @@ export function createApp(options = {}) {
       if (res.headersSent) return res.destroy();
       const status = Number(error.status) || 500;
       if (status === 500) console.error('Request failed:', error.code || error.name);
-      json(res, status, { error: status === 500 ? '服务暂时不可用，请稍后重试。' : error.message });
+      json(res, status, { error: status === 500 ? '服务暂时不可用，请稍后重试。' : error.message, ...(error.visibility ? { visibility: error.visibility, reason: error.reason } : {}) });
     }
   });
   server.requestTimeout = 300000; server.headersTimeout = 10000; server.maxHeadersCount = 48; server.maxConnections = 128;

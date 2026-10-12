@@ -11,4 +11,6 @@ SMTP_PASS=
 SMTP_FROM=
 # Stable numeric GitHub IDs allowed to upload work files (comma-separated).
 FILE_UPLOAD_GITHUB_IDS=
+# Administrator IDs for visibility and comment management; set independently.
+ADMIN_GITHUB_IDS=
 UPLOAD_DIRECTORY=/var/lib/endfield-resource-center/uploads
