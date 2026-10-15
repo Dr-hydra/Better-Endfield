@@ -1,6 +1,6 @@
 {
   "version": "4.0.5",
-  "hashes_calculated": false,
+  "hashes_calculated": true,
   "windows": {
     "fileVersion": "4.0.5.0",
     "architecture": "x64",
@@ -29,23 +29,27 @@
     {
       "name": "BetterEndfieldNext-4.0.5-Setup.exe",
       "bytes": 76888056,
+      "sha256": "098ca6fbdd05e5b20c5bd0d0f3c2e07a80c55b822238ca552c64d8757ef21f89",
       "public": true
     },
     {
       "name": "BetterEndfieldNext-4.0.5-Android-arm64.apk",
       "bytes": 6078785,
+      "sha256": "2687a986f9153fcbbf50a77b9e84190fcf979811d42eac1d29d8e754c455ff63",
       "public": true
     },
     {
       "name": "BEM-Tools-1.5.5-win-x64.zip",
       "bytes": 72960361,
+      "sha256": "3174ed76a92d73740f5efefff0beeec3ba8b9d2b965de8e0216c8a1a4dbf1ea3",
       "public": true
     }
   ],
   "local_only_assets": [
     {
       "name": "BetterEndfieldNext-4.0.5-win-x64.zip",
-      "bytes": 85045118
+      "bytes": 85045118,
+      "sha256": "e2bbeb38b1cbe1bc1ca6f4d30ec1bb2810469e0456573d8feb67653cab00949e"
     }
   ],
   "release": {
