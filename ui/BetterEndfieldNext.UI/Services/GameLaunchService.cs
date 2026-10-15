@@ -8,6 +8,7 @@ internal static class GameLaunchService
     public static string SelectHelperPath(string loaderMode, string injectorPath, string launcherPath) =>
         loaderMode.ToLowerInvariant() switch
         {
+            "none" => launcherPath,
             "injector" => injectorPath,
             "xinput" => launcherPath,
             _ => throw new InvalidOperationException("不支持的加载方式。")
@@ -15,6 +16,10 @@ internal static class GameLaunchService
 
     public static async Task EnsureLoaderReadyAsync(string loaderMode, string gamePath, Func<Task<bool>> isXInputInstalled)
     {
+        if (loaderMode.Equals("none", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
         if (loaderMode.Equals("injector", StringComparison.OrdinalIgnoreCase))
         {
             InjectorLaunchGuard.EnsureAllowed(gamePath);
@@ -41,7 +46,11 @@ internal static class GameLaunchService
         return !quoted;
     }
 
-    public static string BuildArguments(string gamePath, string gameArguments)
+    public static string BuildArguments(
+        string gamePath,
+        string gameArguments,
+        string? officialLauncherPath = null,
+        bool bypassOfficialLauncher = false)
     {
         string game = Path.GetFullPath(gamePath.Trim());
         if (!File.Exists(game) || !Path.GetFileName(game).Equals("Endfield.exe", StringComparison.OrdinalIgnoreCase))
@@ -50,7 +59,20 @@ internal static class GameLaunchService
             throw new ArgumentException("游戏启动参数无效。", nameof(gameArguments));
 
         // Keep all saved game flags after the helper's option separator.
-        string arguments = "--hide-console --game \"" + game + "\" --";
+        string arguments = "--hide-console";
+        if (bypassOfficialLauncher)
+        {
+            arguments += " --no-parent";
+        }
+        else if (!string.IsNullOrWhiteSpace(officialLauncherPath))
+        {
+            string parent = Path.GetFullPath(officialLauncherPath.Trim());
+            if (File.Exists(parent))
+            {
+                arguments += " --parent \"" + parent + "\"";
+            }
+        }
+        arguments += " --game \"" + game + "\" --";
         return string.IsNullOrWhiteSpace(gameArguments) ? arguments : arguments + " " + gameArguments.Trim();
     }
 
@@ -59,9 +81,11 @@ internal static class GameLaunchService
         string injectorPath,
         string launcherPath,
         string gamePath,
-        string gameArguments)
+        string gameArguments,
+        string? officialLauncherPath = null,
+        bool bypassOfficialLauncher = false)
     {
-        string arguments = BuildArguments(gamePath, gameArguments);
+        string arguments = BuildArguments(gamePath, gameArguments, officialLauncherPath, bypassOfficialLauncher);
         string helperPath = SelectHelperPath(loaderMode, injectorPath, launcherPath);
         if (loaderMode.Equals("injector", StringComparison.OrdinalIgnoreCase)) InjectorLaunchGuard.EnsureAllowed(gamePath);
 

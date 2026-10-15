@@ -53,7 +53,7 @@ if ($LASTEXITCODE -ne 0) { throw "BEM converter build failed." }
 $guiPublishDir = Join-Path $Destination 'gui-publish'
 & $dotnet publish (Join-Path $repo 'ui/BetterEndfieldNext.BemTools/BetterEndfieldNext.BemTools.csproj') `
     -c Release -r win-x64 --self-contained true -p:Platform=x64 `
-    -p:DebugType=None -p:DebugSymbols=false "-p:PublishDir=$guiPublishDir\" `
+    -p:DebugType=None -p:DebugSymbols=false "-p:PublishDir=$guiPublishDir\\" `
     "-p:BEWorkspaceBuildRoot=$($ws.paths.build)" `
     "-p:Version=$toolVersion" "-p:InformationalVersion=$toolVersion"
 if ($LASTEXITCODE -ne 0) { throw "BEM creator GUI build failed." }

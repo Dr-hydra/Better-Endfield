@@ -1995,6 +1995,46 @@
                                             FontSize="12"
                                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                             Text="等待扫描游戏路径。" />
+                                        <Grid ColumnSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <ComboBox
+                                                x:Name="OfficialLauncherComboBox"
+                                                Header="官方启动器"
+                                                HorizontalAlignment="Stretch"
+                                                PlaceholderText="选择或添加官方启动器..."
+                                                SelectionChanged="OfficialLauncherComboBox_SelectionChanged" />
+                                            <Button
+                                                x:Name="BrowseOfficialLauncherButton"
+                                                Grid.Column="1"
+                                                Margin="0,24,0,0"
+                                                Click="BrowseOfficialLauncherButton_Click"
+                                                Style="{StaticResource PathButtonStyle}"
+                                                ToolTipService.ToolTip="浏览并添加官方启动器">
+                                                <SymbolIcon Symbol="OpenFile" />
+                                            </Button>
+                                            <Button
+                                                x:Name="RemoveOfficialLauncherButton"
+                                                Grid.Column="2"
+                                                Margin="0,24,0,0"
+                                                Click="RemoveOfficialLauncherButton_Click"
+                                                Style="{StaticResource PathButtonStyle}"
+                                                ToolTipService.ToolTip="从列表中移除当前项">
+                                                <SymbolIcon Symbol="Delete" />
+                                            </Button>
+                                        </Grid>
+                                        <CheckBox
+                                            x:Name="BypassOfficialLauncherCheckBox"
+                                            Content="免官方启动器模式（Steam 原生版 / 直启）"
+                                            Click="BypassOfficialLauncherCheckBox_Click" />
+                                        <TextBlock
+                                            x:Name="OfficialLauncherPathStatusTextBlock"
+                                            FontSize="12"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Text="未指定时自动扫描本机官方启动器。" />
                                         <TextBox
                                             x:Name="GameLaunchArgumentsBox"
                                             Header="游戏启动参数（可选）"
@@ -2046,15 +2086,26 @@
                                 <Border Style="{StaticResource SectionStyle}">
                                     <StackPanel Spacing="16">
                                         <TextBlock x:Name="LoaderModeSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="加载方式" />
-                                        <Grid ColumnSpacing="18">
+                                        <Grid ColumnSpacing="14">
                                             <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
                                             <RadioButton
-                                                x:Name="InjectorModeRadioButton"
+                                                x:Name="NoneModeRadioButton"
                                                 GroupName="LoaderMode"
                                                 IsChecked="True"
+                                                Checked="LoaderModeRadioButton_Checked">
+                                                <StackPanel Spacing="3">
+                                                    <TextBlock x:Name="NoneModeTitleTextBlock" FontWeight="SemiBold" Text="不注入" />
+                                                    <TextBlock x:Name="NoneModeHintTextBlock" Style="{StaticResource FieldHintStyle}" Text="跳过启动器直启游戏" />
+                                                </StackPanel>
+                                            </RadioButton>
+                                            <RadioButton
+                                                x:Name="InjectorModeRadioButton"
+                                                Grid.Column="1"
+                                                GroupName="LoaderMode"
                                                 Checked="LoaderModeRadioButton_Checked">
                                                 <StackPanel Spacing="3">
                                                     <TextBlock x:Name="InjectorModeTitleTextBlock" FontWeight="SemiBold" Text="内置注入器" />
@@ -2063,7 +2114,7 @@
                                             </RadioButton>
                                             <RadioButton
                                                 x:Name="XInputModeRadioButton"
-                                                Grid.Column="1"
+                                                Grid.Column="2"
                                                 GroupName="LoaderMode"
                                                 Checked="LoaderModeRadioButton_Checked">
                                                 <StackPanel Spacing="3">

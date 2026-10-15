@@ -7,7 +7,13 @@ internal sealed class AppSettings
 {
     public string GameExecutablePath { get; set; } = string.Empty;
 
-    public string LoaderMode { get; set; } = "injector";
+    public string OfficialLauncherPath { get; set; } = string.Empty;
+
+    public List<string> OfficialLauncherHistory { get; set; } = new();
+
+    public bool BypassOfficialLauncher { get; set; } = false;
+
+    public string LoaderMode { get; set; } = "none";
 
     public string GameLaunchArguments { get; set; } = string.Empty;
 

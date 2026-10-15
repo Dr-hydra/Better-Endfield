@@ -7,15 +7,19 @@ DWORD Run(int argc, wchar_t* argv[]) {
     std::wstring error;
     if (!ParseOptions(argc, argv, false, options, error)) { ShowError(error); return 2; }
     ConfigureConsole(options);
-    VerifiedLauncher launcher;
-    if (!FindOfficialLauncher(options.parent, launcher, error)) { ShowError(error); return 7; }
-    OfficialParent parent;
-    if (!parent.Start(launcher, error)) { ShowError(error); return 4; }
-    // Signature and mapped parent image are now fixed. Allow official updater
-    // normal access to the executable while the game continues running.
-    launcher.file.reset();
     PROCESS_INFORMATION game{};
-    if (!parent.CreateGame(options.game, options.arguments, 0, game, error)) { ShowError(error); return 4; }
+    OfficialParent parent;
+    if (options.no_parent) {
+        if (!CreateGameProcess(options.game, options.arguments, 0, game, error)) { ShowError(error); return 4; }
+    } else {
+        VerifiedLauncher launcher;
+        if (!FindOfficialLauncher(options.parent, launcher, error)) { ShowError(error); return 7; }
+        if (!parent.Start(launcher, error)) { ShowError(error); return 4; }
+        // Signature and mapped parent image are now fixed. Allow official updater
+        // normal access to the executable while the game continues running.
+        launcher.file.reset();
+        if (!parent.CreateGame(options.game, options.arguments, 0, game, error)) { ShowError(error); return 4; }
+    }
     Handle process(game.hProcess);
     CloseHandle(game.hThread);
     DWORD exit_code = 0;

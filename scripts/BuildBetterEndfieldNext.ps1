@@ -127,7 +127,7 @@ if ($LASTEXITCODE -ne 0) {
 
 & $dotnet publish $uiProject -c $Configuration -r win-x64 `
     --self-contained true -p:Platform=x64 -p:PublishSingleFile=true `
-    -p:DebugType=None -p:DebugSymbols=false -p:PublishDir="$publishDir\" `
+    -p:DebugType=None -p:DebugSymbols=false "-p:PublishDir=$publishDir\\" `
     "-p:BEWorkspaceBuildRoot=$($ws.paths.build)" `
     "-p:BECharacterPresetsPath=$($ws.resource_update.outputs.character_presets)" `
     "-p:BEVoiceCatalogIndexPath=$voiceCatalogIndex" `

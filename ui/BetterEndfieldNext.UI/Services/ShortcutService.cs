@@ -31,11 +31,13 @@ internal static class ShortcutService
         string injectorPath,
         string launcherPath,
         string gamePath,
-        string gameArguments)
+        string gameArguments,
+        string? officialLauncherPath = null,
+        bool bypassOfficialLauncher = false)
     {
         gamePath = Path.GetFullPath(gamePath.Trim());
         var startInfo = GameLaunchService.CreateStartInfo(
-            loaderMode, injectorPath, launcherPath, gamePath, gameArguments);
+            loaderMode, injectorPath, launcherPath, gamePath, gameArguments, officialLauncherPath, bypassOfficialLauncher);
 
         string shortcutPath = Path.Combine(
             GetDesktopDirectory(),
@@ -46,8 +48,37 @@ internal static class ShortcutService
             startInfo.Arguments,
             startInfo.WorkingDirectory,
             gamePath,
-            "使用已保存的 Better Endfield Next 配置启动终末地");
+            "使用已保存的 Better Endfield Next 配置启动终末地",
+            runAsAdmin: true);
         return shortcutPath;
+    }
+
+    public static string? ResolveShortcutTarget(string shortcutPath)
+    {
+        if (string.IsNullOrWhiteSpace(shortcutPath) || !File.Exists(shortcutPath))
+        {
+            return null;
+        }
+
+        object shellLinkObject = new ShellLink();
+        try
+        {
+            var persistFile = (IPersistFile)shellLinkObject;
+            persistFile.Load(shortcutPath, 0);
+            var shellLink = (IShellLinkW)shellLinkObject;
+            var targetBuilder = new StringBuilder(1024);
+            shellLink.GetPath(targetBuilder, targetBuilder.Capacity, nint.Zero, 0);
+            string target = targetBuilder.ToString();
+            return string.IsNullOrWhiteSpace(target) ? null : target;
+        }
+        catch
+        {
+            return null;
+        }
+        finally
+        {
+            Marshal.FinalReleaseComObject(shellLinkObject);
+        }
     }
 
     private static string GetDesktopDirectory()
@@ -67,8 +98,14 @@ internal static class ShortcutService
         string arguments,
         string workingDirectory,
         string iconPath,
-        string description)
+        string description,
+        bool runAsAdmin = false)
     {
+        if (File.Exists(shortcutPath))
+        {
+            try { File.Delete(shortcutPath); } catch { }
+        }
+
         object shellLinkObject = new ShellLink();
         try
         {
@@ -78,6 +115,13 @@ internal static class ShortcutService
             shellLink.SetWorkingDirectory(workingDirectory);
             shellLink.SetDescription(description);
             shellLink.SetIconLocation(iconPath, 0);
+
+            if (runAsAdmin && shellLinkObject is IShellLinkDataList dataList)
+            {
+                dataList.GetFlags(out uint flags);
+                dataList.SetFlags(flags | 0x00002000); // SLDF_RUNAS_USER
+            }
+
             ((IPersistFile)shellLinkObject).Save(shortcutPath, true);
         }
         finally
@@ -90,6 +134,18 @@ internal static class ShortcutService
     [Guid("00021401-0000-0000-C000-000000000046")]
     private sealed class ShellLink
     {
+    }
+
+    [ComImport]
+    [Guid("45E2B4AE-B1C3-11D0-B92F-00A0C90312E1")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IShellLinkDataList
+    {
+        void AddDataBlock(nint pDataBlock);
+        void CopyDataBlock(uint dwSig, out nint ppDataBlock);
+        void RemoveDataBlock(uint dwSig);
+        void GetFlags(out uint pdwFlags);
+        void SetFlags(uint dwFlags);
     }
 
     [ComImport]

@@ -179,11 +179,17 @@ internal sealed class ModConfiguration
 
     public FreeCameraExtras FreeCameraExtras { get; set; } = new();
 
-
-
-
-
-
+    public bool RequiresInjection() =>
+        ModelReplacementEnabled ||
+        VoiceRouterEnabled ||
+        MusicReplacementEnabled ||
+        CombatStatsEnabled ||
+        UiEnhancementEnabled ||
+        FreeCameraEnabled ||
+        ContinuousSpecialDashEnabled ||
+        (MediaScreen != null && MediaScreen.Enabled) ||
+        DisableDitherEnabled ||
+        LogoThemeEnabled;
 
     public static ModConfiguration CreateDefaults() => new();
 

@@ -15,10 +15,14 @@ struct Options {
     bool late_manual_map = false;
     bool steam_launch = false;
     bool hide_console = false;
+    bool no_parent = false;
 };
 
 bool ParseOptions(int argc, wchar_t* argv[], bool allow_injection, Options& options,
     std::wstring& error);
+bool CreateGameProcess(const std::filesystem::path& game,
+    const std::vector<std::wstring>& arguments, DWORD creation_flags,
+    PROCESS_INFORMATION& process, std::wstring& error);
 std::wstring QuoteArgument(const std::wstring& argument);
 std::wstring WindowsError(const wchar_t* operation, DWORD code);
 void ShowError(const std::wstring& message);

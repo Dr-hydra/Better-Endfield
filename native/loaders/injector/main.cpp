@@ -599,20 +599,28 @@ DWORD RunInjector(int argc, wchar_t* argv[]) {
     }
 
     launch::VerifiedLauncher official_launcher;
-    if (!launch::FindOfficialLauncher(options.parent, official_launcher, launch_error)) {
-        launch::ShowError(launch_error);
-        return 7;
-    }
     launch::OfficialParent official_parent;
-    if (!official_parent.Start(official_launcher, launch_error)) {
-        launch::ShowError(launch_error);
-        return 4;
-    }
-    official_launcher.file.reset();
     PROCESS_INFORMATION process{};
-    if (!official_parent.CreateGame(game_path, game_arguments, CREATE_SUSPENDED, process, launch_error)) {
-        launch::ShowError(launch_error);
-        return 4;
+
+    if (options.no_parent) {
+        if (!launch::CreateGameProcess(game_path, game_arguments, CREATE_SUSPENDED, process, launch_error)) {
+            launch::ShowError(launch_error);
+            return 4;
+        }
+    } else {
+        if (!launch::FindOfficialLauncher(options.parent, official_launcher, launch_error)) {
+            launch::ShowError(launch_error);
+            return 7;
+        }
+        if (!official_parent.Start(official_launcher, launch_error)) {
+            launch::ShowError(launch_error);
+            return 4;
+        }
+        official_launcher.file.reset();
+        if (!official_parent.CreateGame(game_path, game_arguments, CREATE_SUSPENDED, process, launch_error)) {
+            launch::ShowError(launch_error);
+            return 4;
+        }
     }
     OwnedGameStartup owned_game(process);
     InjectionDiagnostics diagnostics(hide_console);

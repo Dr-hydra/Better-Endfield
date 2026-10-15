@@ -142,7 +142,8 @@ internal static class ConfigurationService
         ModConfiguration configuration)
     {
         if (!loaderMode.Equals("injector", StringComparison.OrdinalIgnoreCase) &&
-            !loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase))
+            !loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase) &&
+            !loaderMode.Equals("none", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("不支持的加载方式。");
         }
@@ -289,7 +290,8 @@ internal static class ConfigurationService
     internal static string ResolveInstallRoot(string injectorPath, string loaderMode)
     {
         if (!loaderMode.Equals("injector", StringComparison.OrdinalIgnoreCase) &&
-            !loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase))
+            !loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase) &&
+            !loaderMode.Equals("none", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("不支持的加载方式。");
         }

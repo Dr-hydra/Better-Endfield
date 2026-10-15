@@ -42,6 +42,15 @@ internal sealed class VoiceRuleEntry
     public required string LanguageDisplayName { get; init; }
 }
 
+internal sealed class OfficialLauncherItem
+{
+    public required string Path { get; init; }
+
+    public required string DisplayText { get; init; }
+
+    public override string ToString() => DisplayText;
+}
+
 public sealed partial class MainWindow : Window
 {
     private const string DisclaimerVersion = "1";
@@ -255,9 +264,15 @@ public sealed partial class MainWindow : Window
             }
 
             GamePathBox.Text = _appSettings.GameExecutablePath;
+            BypassOfficialLauncherCheckBox.IsChecked = _appSettings.BypassOfficialLauncher;
+            PopulateOfficialLaunchers(
+                _appSettings.OfficialLauncherHistory,
+                null,
+                _appSettings.OfficialLauncherPath ?? string.Empty);
             InjectorPathBox.Text = RuntimePathDiscoveryService.BundledInjectorPath;
             GameLaunchArgumentsBox.Text = _appSettings.GameLaunchArguments;
             SelectLoaderMode(_appSettings.LoaderMode);
+            UpdateOfficialLauncherUiState();
             await ScanRuntimePathsAsync(showResult: false);
             RefreshRuntimeAnimationDurations();
 
@@ -302,6 +317,226 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private string GetSelectedOfficialLauncherPath()
+    {
+        if (OfficialLauncherComboBox.SelectedItem is OfficialLauncherItem item)
+        {
+            return item.Path;
+        }
+        return string.Empty;
+    }
+
+    private List<string> GetOfficialLauncherHistory()
+    {
+        var list = new List<string>();
+        foreach (var obj in OfficialLauncherComboBox.Items)
+        {
+            if (obj is OfficialLauncherItem item && !string.IsNullOrWhiteSpace(item.Path))
+            {
+                list.Add(item.Path);
+            }
+        }
+        return list;
+    }
+
+    private void AddOrSelectOfficialLauncher(string path, bool select = true)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return;
+        string resolved = RuntimePathDiscoveryService.ResolveOfficialLauncherPath(path);
+        if (string.IsNullOrWhiteSpace(resolved)) return;
+        resolved = Path.GetFullPath(resolved);
+
+        foreach (var obj in OfficialLauncherComboBox.Items)
+        {
+            if (obj is OfficialLauncherItem existing && existing.Path.Equals(resolved, StringComparison.OrdinalIgnoreCase))
+            {
+                if (select) OfficialLauncherComboBox.SelectedItem = existing;
+                return;
+            }
+        }
+
+        var newItem = new OfficialLauncherItem
+        {
+            Path = resolved,
+            DisplayText = RuntimePathDiscoveryService.FormatLauncherDisplayName(resolved)
+        };
+        OfficialLauncherComboBox.Items.Add(newItem);
+        if (select)
+        {
+            OfficialLauncherComboBox.SelectedItem = newItem;
+        }
+    }
+
+    private void PopulateOfficialLaunchers(IEnumerable<string>? history, IEnumerable<string>? discovered, string preferredPath)
+    {
+        OfficialLauncherComboBox.Items.Clear();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (discovered != null)
+        {
+            foreach (var p in discovered)
+            {
+                if (!string.IsNullOrWhiteSpace(p) && seen.Add(Path.GetFullPath(p)))
+                {
+                    OfficialLauncherComboBox.Items.Add(new OfficialLauncherItem
+                    {
+                        Path = Path.GetFullPath(p),
+                        DisplayText = RuntimePathDiscoveryService.FormatLauncherDisplayName(p)
+                    });
+                }
+            }
+        }
+
+        if (history != null)
+        {
+            foreach (var p in history)
+            {
+                if (!string.IsNullOrWhiteSpace(p) && File.Exists(p) && seen.Add(Path.GetFullPath(p)))
+                {
+                    OfficialLauncherComboBox.Items.Add(new OfficialLauncherItem
+                    {
+                        Path = Path.GetFullPath(p),
+                        DisplayText = RuntimePathDiscoveryService.FormatLauncherDisplayName(p)
+                    });
+                }
+            }
+        }
+
+        OfficialLauncherItem? toSelect = null;
+        if (!string.IsNullOrWhiteSpace(preferredPath))
+        {
+            string prefNorm = Path.GetFullPath(preferredPath);
+            foreach (var obj in OfficialLauncherComboBox.Items)
+            {
+                if (obj is OfficialLauncherItem item && item.Path.Equals(prefNorm, StringComparison.OrdinalIgnoreCase))
+                {
+                    toSelect = item;
+                    break;
+                }
+            }
+            if (toSelect == null && File.Exists(prefNorm))
+            {
+                toSelect = new OfficialLauncherItem
+                {
+                    Path = prefNorm,
+                    DisplayText = RuntimePathDiscoveryService.FormatLauncherDisplayName(prefNorm)
+                };
+                OfficialLauncherComboBox.Items.Add(toSelect);
+            }
+        }
+
+        if (toSelect != null)
+        {
+            OfficialLauncherComboBox.SelectedItem = toSelect;
+        }
+        else if (OfficialLauncherComboBox.Items.Count > 0)
+        {
+            OfficialLauncherComboBox.SelectedIndex = 0;
+        }
+
+        UpdateOfficialLauncherUiState();
+    }
+
+    private void UpdateOfficialLauncherUiState()
+    {
+        bool bypass = BypassOfficialLauncherCheckBox.IsChecked == true;
+        OfficialLauncherComboBox.IsEnabled = !bypass;
+        BrowseOfficialLauncherButton.IsEnabled = !bypass;
+        RemoveOfficialLauncherButton.IsEnabled = !bypass && OfficialLauncherComboBox.SelectedItem != null;
+
+        UpdateOfficialLauncherPathStatus();
+    }
+
+    private void UpdateOfficialLauncherPathStatus()
+    {
+        bool isZh = LocalizationService.Instance.IsChinese;
+        if (BypassOfficialLauncherCheckBox.IsChecked == true)
+        {
+            OfficialLauncherPathStatusTextBlock.Text = isZh
+                ? "已启用免官方启动器模式，将直接拉起游戏。"
+                : "Direct launch mode enabled; game will be launched directly without official launcher.";
+            return;
+        }
+
+        string path = GetSelectedOfficialLauncherPath();
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            OfficialLauncherPathStatusTextBlock.Text = isZh
+                ? "未检测到或未指定官方启动器路径。点击右侧浏览可添加桌面快捷方式或 Games.exe。"
+                : "No official launcher specified. Click browse to add a shortcut or Games.exe.";
+        }
+        else if (File.Exists(path))
+        {
+            string fileName = Path.GetFileName(path);
+            bool isGamesExe = fileName.Equals("Games.exe", StringComparison.OrdinalIgnoreCase);
+            bool isGryphlink = path.Contains("GRYPHLINK", StringComparison.OrdinalIgnoreCase);
+            string serverType = isGryphlink ? (isZh ? "国际服" : "Global") : (isZh ? "国服" : "CN");
+            string dirName = Path.GetFileName(Path.GetDirectoryName(path) ?? string.Empty);
+            string verInfo = !string.IsNullOrWhiteSpace(dirName) && dirName.Any(char.IsDigit) ? $" {dirName}" : string.Empty;
+
+            if (isGamesExe)
+            {
+                OfficialLauncherPathStatusTextBlock.Text = isZh
+                    ? $"已就绪：已定位到官方启动核心（{serverType}{verInfo} Games.exe）。"
+                    : $"Ready: official launch core identified ({serverType}{verInfo} Games.exe).";
+            }
+            else
+            {
+                OfficialLauncherPathStatusTextBlock.Text = isZh
+                    ? $"已就绪：使用指定的启动器程序（{fileName}）。"
+                    : $"Ready: using specified executable ({fileName}).";
+            }
+        }
+        else
+        {
+            OfficialLauncherPathStatusTextBlock.Text = isZh
+                ? "指定的文件不存在，请重新选择或点击重新扫描。"
+                : "Specified file does not exist; please re-select or rescan.";
+        }
+    }
+
+    private async void BrowseOfficialLauncherButton_Click(object sender, RoutedEventArgs e)
+    {
+        string? selectedPath = await PickExecutableAsync(
+            LocalizationService.Instance.IsChinese
+                ? "选择官方启动器或快捷方式 (Games.exe / Launcher.exe / .lnk)"
+                : "Select Official Launcher or Shortcut (Games.exe / Launcher.exe / .lnk)",
+            allowShortcuts: true);
+        if (selectedPath is not null)
+        {
+            AddOrSelectOfficialLauncher(selectedPath, select: true);
+            UpdateOfficialLauncherUiState();
+        }
+    }
+
+    private void RemoveOfficialLauncherButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (OfficialLauncherComboBox.SelectedItem is OfficialLauncherItem item)
+        {
+            int index = OfficialLauncherComboBox.SelectedIndex;
+            OfficialLauncherComboBox.Items.Remove(item);
+            if (OfficialLauncherComboBox.Items.Count > 0)
+            {
+                OfficialLauncherComboBox.SelectedIndex = Math.Clamp(index, 0, OfficialLauncherComboBox.Items.Count - 1);
+            }
+            else
+            {
+                OfficialLauncherComboBox.SelectedItem = null;
+            }
+            UpdateOfficialLauncherUiState();
+        }
+    }
+
+    private void OfficialLauncherComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        UpdateOfficialLauncherUiState();
+    }
+
+    private void BypassOfficialLauncherCheckBox_Click(object sender, RoutedEventArgs e)
+    {
+        UpdateOfficialLauncherUiState();
+    }
+
     private void InjectorPathBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         ConfigurationPathTextBlock.Text =
@@ -321,14 +556,39 @@ public sealed partial class MainWindow : Window
 
     private void SelectLoaderMode(string mode)
     {
-        bool useXInput = mode.Equals("xinput", StringComparison.OrdinalIgnoreCase) ||
-            mode.Equals("version", StringComparison.OrdinalIgnoreCase);
-        XInputModeRadioButton.IsChecked = useXInput;
-        InjectorModeRadioButton.IsChecked = !useXInput;
+        if (mode.Equals("none", StringComparison.OrdinalIgnoreCase))
+        {
+            NoneModeRadioButton.IsChecked = true;
+            InjectorModeRadioButton.IsChecked = false;
+            XInputModeRadioButton.IsChecked = false;
+        }
+        else if (mode.Equals("xinput", StringComparison.OrdinalIgnoreCase) ||
+            mode.Equals("version", StringComparison.OrdinalIgnoreCase))
+        {
+            NoneModeRadioButton.IsChecked = false;
+            InjectorModeRadioButton.IsChecked = false;
+            XInputModeRadioButton.IsChecked = true;
+        }
+        else
+        {
+            NoneModeRadioButton.IsChecked = false;
+            InjectorModeRadioButton.IsChecked = true;
+            XInputModeRadioButton.IsChecked = false;
+        }
     }
 
-    private string GetSelectedLoaderMode() =>
-        XInputModeRadioButton.IsChecked == true ? "xinput" : "injector";
+    private string GetSelectedLoaderMode()
+    {
+        if (NoneModeRadioButton.IsChecked == true)
+        {
+            return "none";
+        }
+        if (XInputModeRadioButton.IsChecked == true)
+        {
+            return "xinput";
+        }
+        return "injector";
+    }
 
     private void LoaderModeRadioButton_Checked(object sender, RoutedEventArgs e)
     {
@@ -1949,12 +2209,30 @@ public sealed partial class MainWindow : Window
         try
         {
             string loaderMode = GetSelectedLoaderMode();
+            if (loaderMode.Equals("none", StringComparison.OrdinalIgnoreCase))
+            {
+                if (TryReadConfiguration(out ModConfiguration currentConfig, out _) && currentConfig.RequiresInjection())
+                {
+                    ShowStatus(
+                        isZh ? "需要选择注入方式" : "Injection Mode Required",
+                        isZh ? "当前启用了需要注入的游戏功能（模型、战斗、视角、视觉等）。请在“设置 -> 加载方式”中选择“内置注入器”或“XInput 自启动”，或关闭相关功能后再启动。"
+                             : "Features requiring injection are currently enabled. Please select an injection mode (Built-in Injector or XInput) under Settings, or disable those features before launching.",
+                        InfoBarSeverity.Warning);
+                    return;
+                }
+            }
+
+            bool bypassLauncher = BypassOfficialLauncherCheckBox.IsChecked == true;
+            string officialLauncherPath = GetSelectedOfficialLauncherPath();
+
             var startInfo = GameLaunchService.CreateStartInfo(
                 loaderMode,
                 RuntimePathDiscoveryService.BundledInjectorPath,
                 RuntimePathDiscoveryService.BundledLauncherPath,
                 GamePathBox.Text.Trim(),
-                GameLaunchArgumentsBox.Text);
+                GameLaunchArgumentsBox.Text,
+                officialLauncherPath,
+                bypassOfficialLauncher: bypassLauncher);
             if (!await SaveAsync(showSuccess: false))
             {
                 return;
@@ -2068,22 +2346,40 @@ public sealed partial class MainWindow : Window
 
     private async void CreateGameShortcutButton_Click(object sender, RoutedEventArgs e)
     {
+        string loaderMode = GetSelectedLoaderMode();
+        bool isZh = LocalizationService.Instance.IsChinese;
+        if (loaderMode.Equals("none", StringComparison.OrdinalIgnoreCase))
+        {
+            if (TryReadConfiguration(out ModConfiguration currentConfig, out _) && currentConfig.RequiresInjection())
+            {
+                ShowStatus(
+                    isZh ? "需要选择注入方式" : "Injection Mode Required",
+                    isZh ? "当前启用了需要注入的游戏功能。请在“设置 -> 加载方式”中选择“内置注入器”或“XInput 自启动”后再创建快捷方式，或关闭相关功能。"
+                         : "Features requiring injection are currently enabled. Please select an injection mode before creating a shortcut, or disable those features.",
+                    InfoBarSeverity.Warning);
+                return;
+            }
+        }
+
         if (!await SaveAsync(showSuccess: false))
         {
             return;
         }
 
-        bool isZh = LocalizationService.Instance.IsChinese;
         try
         {
-            string loaderMode = GetSelectedLoaderMode();
             await EnsureSelectedLoaderReadyAsync();
+            bool bypassLauncher = BypassOfficialLauncherCheckBox.IsChecked == true;
+            string officialLauncherPath = GetSelectedOfficialLauncherPath();
+
             string shortcutPath = ShortcutService.CreateGameShortcut(
                 loaderMode,
                 RuntimePathDiscoveryService.BundledInjectorPath,
                 RuntimePathDiscoveryService.BundledLauncherPath,
                 GamePathBox.Text,
-                GameLaunchArgumentsBox.Text);
+                GameLaunchArgumentsBox.Text,
+                officialLauncherPath,
+                bypassOfficialLauncher: bypassLauncher);
             ShowStatus(
                 isZh ? "一键启动快捷方式已创建" : "Quick Launch Shortcut Created",
                 isZh ? $"已保存当前配置并创建：{shortcutPath}" : $"Saved configuration and created: {shortcutPath}",
@@ -2281,6 +2577,9 @@ public sealed partial class MainWindow : Window
             _mediaCaptureService.Configure(configuration.MediaScreen);
             await VoiceCatalogService.CommitAsync(catalogPreparation);
             _appSettings.GameExecutablePath = gamePath;
+            _appSettings.OfficialLauncherPath = GetSelectedOfficialLauncherPath();
+            _appSettings.OfficialLauncherHistory = GetOfficialLauncherHistory();
+            _appSettings.BypassOfficialLauncher = BypassOfficialLauncherCheckBox.IsChecked == true;
             _appSettings.LoaderMode = GetSelectedLoaderMode();
             _appSettings.GameLaunchArguments = GameLaunchArgumentsBox.Text.Trim();
             _appSettings.Theme = GetSelectedTheme();
@@ -2290,11 +2589,22 @@ public sealed partial class MainWindow : Window
                 ConfigurationService.GetNativeConfigurationPath(injectorPath);
             if (showSuccess)
             {
-                ShowStatus(
-                    isZh ? "参数已保存" : "Configuration Saved",
-                    isZh ? "视觉、语言与已加载的音乐模块会在约 2 秒内热更新；模型、动画及首次启用的模块在下次注入时读取。"
-                         : "Visuals, language, and loaded music reload within 2s; models and animations load on next launch.",
-                    InfoBarSeverity.Success);
+                if (GetSelectedLoaderMode().Equals("none", StringComparison.OrdinalIgnoreCase) && configuration.RequiresInjection())
+                {
+                    ShowStatus(
+                        isZh ? "参数已保存（需选择注入方式）" : "Configuration Saved (Injection Required)",
+                        isZh ? "已启用需要注入的游戏功能，当前启动方式为“不注入”。启动游戏前请在设置中选择“内置注入器”或“XInput 自启动”。"
+                             : "Features requiring injection are enabled, but launch mode is 'None'. Please select Built-in Injector or XInput before launching.",
+                        InfoBarSeverity.Warning);
+                }
+                else
+                {
+                    ShowStatus(
+                        isZh ? "参数已保存" : "Configuration Saved",
+                        isZh ? "视觉、语言与已加载的音乐模块会在约 2 秒内热更新；模型、动画及首次启用的模块在下次注入时读取。"
+                             : "Visuals, language, and loaded music reload within 2s; models and animations load on next launch.",
+                        InfoBarSeverity.Success);
+                }
             }
 
             return true;
@@ -2343,15 +2653,26 @@ public sealed partial class MainWindow : Window
         PathScanProgressRing.IsActive = true;
         try
         {
+            string currentSelected = GetSelectedOfficialLauncherPath();
             RuntimePathDiscoveryResult result =
                 await RuntimePathDiscoveryService.DiscoverAsync(
-                    GamePathBox.Text);
+                    GamePathBox.Text,
+                    currentSelected);
             if (!string.IsNullOrWhiteSpace(result.GameExecutablePath))
             {
                 GamePathBox.Text = result.GameExecutablePath;
             }
+            PopulateOfficialLaunchers(
+                _appSettings.OfficialLauncherHistory,
+                result.DiscoveredOfficialLaunchers,
+                !string.IsNullOrWhiteSpace(currentSelected) ? currentSelected : result.OfficialLauncherPath);
+            _appSettings.OfficialLauncherPath = GetSelectedOfficialLauncherPath();
+            _appSettings.OfficialLauncherHistory = GetOfficialLauncherHistory();
+            _ = ConfigurationService.SaveAppSettingsAsync(_appSettings);
+
             InjectorPathBox.Text = result.InjectorPath;
             UpdatePathStatusText();
+            UpdateOfficialLauncherUiState();
             await RefreshXInputStatusAsync();
             if (showResult)
             {
@@ -2407,20 +2728,42 @@ public sealed partial class MainWindow : Window
     private void UpdateLoaderModePanel()
     {
         bool isZh = LocalizationService.Instance.IsChinese;
-        bool xinput = GetSelectedLoaderMode().Equals(
-            "xinput",
-            StringComparison.OrdinalIgnoreCase);
+        string mode = GetSelectedLoaderMode();
+        bool xinput = mode.Equals("xinput", StringComparison.OrdinalIgnoreCase);
+        bool none = mode.Equals("none", StringComparison.OrdinalIgnoreCase);
+
         XInputManagementPanel.Visibility = xinput
             ? Visibility.Visible
             : Visibility.Collapsed;
-        LoaderModeDescriptionTextBlock.Text = xinput
-            ? (isZh ? "游戏每次启动都会自动加载 Better Endfield Next。适合与其他加载器共存，或通过官方启动器直接启动。"
-                    : "Better Endfield Next loads automatically whenever game starts. Recommended when coexisting with other mods or launching via official launcher.")
-            : (isZh ? "由 Better Endfield Next 启动游戏并在启动阶段加载 Host，游戏目录保持不变。"
-                    : "Launched and injected by Better Endfield Next at startup; game directory remains unmodified.");
-        PageSelectionHintTextBlock.Text = xinput
-            ? (isZh ? "请先点击“安装或更新”部署 XInput；启动和创建快捷方式不会自动安装。" : "Use Install / Update to deploy XInput first; launching or creating shortcuts will not install it.")
-            : (isZh ? "保存后在下一次注入时生效。" : "Changes will take effect on next game launch/injection.");
+
+        if (none)
+        {
+            LoaderModeDescriptionTextBlock.Text = isZh
+                ? "跳过官方启动器直接启动游戏，不加载任何注入模块。支持一键桌面启动快捷方式。"
+                : "Launch the game directly skipping the official launcher without injecting any mods. Supports one-click desktop shortcut.";
+            PageSelectionHintTextBlock.Text = isZh
+                ? "当前启动方式不会注入任何功能。"
+                : "No mods will be injected under this launch mode.";
+        }
+        else if (xinput)
+        {
+            LoaderModeDescriptionTextBlock.Text = isZh
+                ? "游戏每次启动都会自动加载 Better Endfield Next。适合与其他加载器共存，或通过官方启动器直接启动。"
+                : "Better Endfield Next loads automatically whenever game starts. Recommended when coexisting with other mods or launching via official launcher.";
+            PageSelectionHintTextBlock.Text = isZh
+                ? "请先点击“安装或更新”部署 XInput；启动和创建快捷方式不会自动安装。"
+                : "Use Install / Update to deploy XInput first; launching or creating shortcuts will not install it.";
+        }
+        else
+        {
+            LoaderModeDescriptionTextBlock.Text = isZh
+                ? "由 Better Endfield Next 启动游戏并在启动阶段加载 Host，游戏目录保持不变。"
+                : "Launched and injected by Better Endfield Next at startup; game directory remains unmodified.";
+            PageSelectionHintTextBlock.Text = isZh
+                ? "保存后在下一次注入时生效。"
+                : "Changes will take effect on next game launch/injection.";
+        }
+
         UpdatePathStatusText();
     }
 
@@ -3612,7 +3955,7 @@ public sealed partial class MainWindow : Window
         return !requireAcceptance || result == ContentDialogResult.Primary;
     }
 
-    private async Task<string?> PickExecutableAsync(string commitButtonText)
+    private async Task<string?> PickExecutableAsync(string commitButtonText, bool allowShortcuts = false)
     {
         var picker = new FileOpenPicker
         {
@@ -3620,6 +3963,10 @@ public sealed partial class MainWindow : Window
             SuggestedStartLocation = PickerLocationId.ComputerFolder
         };
         picker.FileTypeFilter.Add(".exe");
+        if (allowShortcuts)
+        {
+            picker.FileTypeFilter.Add(".lnk");
+        }
         WinRT.Interop.InitializeWithWindow.Initialize(
             picker,
             WinRT.Interop.WindowNative.GetWindowHandle(this));
@@ -4128,6 +4475,10 @@ public sealed partial class MainWindow : Window
             : "Scanned automatically on launch; re-scan if game or launcher location changes.";
         ScanPathsButtonTextBlock.Text = isZh ? "重新扫描" : "Rescan Paths";
         GamePathBox.Header = isZh ? "游戏程序" : "Game Executable";
+        OfficialLauncherComboBox.Header = isZh ? "官方启动器" : "Official Launcher";
+        OfficialLauncherComboBox.PlaceholderText = isZh ? "选择或添加官方启动器..." : "Select or add official launcher...";
+        BypassOfficialLauncherCheckBox.Content = isZh ? "免官方启动器模式（Steam 原生版 / 直启）" : "Bypass Official Launcher (Steam Native / Direct)";
+        UpdateOfficialLauncherUiState();
         GameLaunchArgumentsBox.Header = isZh ? "游戏启动参数（可选）" : "Game Launch Arguments (Optional)";
         GameLaunchArgumentsBox.PlaceholderText = isZh ? "例如：-force-d3d11" : "e.g. -force-d3d11";
         GameLaunchArgumentsHintTextBlock.Text = isZh
