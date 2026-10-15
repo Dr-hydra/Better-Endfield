@@ -22,6 +22,20 @@ bool Parse(std::vector<std::wstring> arguments, bool injection,
 
 int wmain(int argc, wchar_t* argv[]) {
     using namespace better_endfield::launch;
+    if (argc == 2 && (std::wstring(argv[1]) == L"--console-child" ||
+        std::wstring(argv[1]) == L"--hidden-console-child")) {
+        const HWND original = GetConsoleWindow();
+        if (!original) return 10;
+        Options options;
+        ConfigureConsole(options);
+        if (GetConsoleWindow() != original) return 11;
+        options.steam_launch = std::wstring(argv[1]) == L"--console-child";
+        options.hide_console = !options.steam_launch;
+        ConfigureConsole(options);
+        if (GetConsoleWindow()) return 12;
+        Sleep(100);
+        return 37;
+    }
     if (argc < 2 || argc > 3) return 2;
     try {
         const auto root = std::filesystem::absolute(argv[1]);
@@ -41,11 +55,43 @@ int wmain(int argc, wchar_t* argv[]) {
         Options options;
         Check(Parse({L"helper", L"--game", game.wstring(), L"--", L"-force-d3d11", L"", L"--steam-command", L"international.exe", L"--unexpected"}, false, options), "Steam command rejected.");
         Check(options.arguments == std::vector<std::wstring>{L"-force-d3d11", L""}, "Steam residual command reached game arguments.");
+        Check(options.steam_launch, "Steam launch did not request console detachment.");
         Check(Parse({L"helper", L"--parent", L"C:\\Official\\Games.exe", L"--game", game.wstring(), L"--steam-command", L"ignored"}, false, options), "Explicit parent rejected.");
         Check(options.parent == L"C:\\Official\\Games.exe" && options.arguments.empty(), "Explicit parent changed.");
+        Check(options.steam_launch, "Steam marker before game arguments was lost.");
         Check(!Parse({L"helper", L"--game", game.wstring(), L"--manual-map"}, false, options), "Launcher accepted injection mode.");
         Check(!Parse({L"helper", L"--game", game.wstring(), L"--manual-map", L"--manual-map-late"}, true, options), "Conflicting injection modes accepted.");
         Check(Parse({L"helper", L"--game", game.wstring(), L"--manual-map-late"}, true, options) && options.late_manual_map, "Injector mode was lost.");
+        Check(!options.steam_launch, "CLI launch unexpectedly requested console detachment.");
+        Check(!options.hide_console, "CLI launch unexpectedly enabled explicit console hiding.");
+        Check(Parse({L"helper", L"--hide-console", L"--game", game.wstring(), L"--", L"--hide-console"}, false, options)
+            && options.hide_console && !options.steam_launch, "GUI launcher console option was lost.");
+        Check(options.arguments == std::vector<std::wstring>{L"--hide-console"}, "Console option after separator was not preserved as a game argument.");
+        Check(Parse({L"helper", L"--hide-console", L"--game", game.wstring(), L"--manual-map-late"}, true, options)
+            && options.hide_console && options.late_manual_map, "GUI injector console option was lost.");
+        Check(Parse({L"helper", L"--game", game.wstring(), L"--manual-map-late", L"--steam-command", L"ignored"}, true, options)
+            && options.steam_launch && options.late_manual_map, "Injector Steam launch mode was lost.");
+
+        // Exercise real console detachment and the same wait/exit-code path as
+        // the launch helpers, using only this inert test child (never the game).
+        wchar_t executable[32768]{};
+        Check(GetModuleFileNameW(nullptr, executable, _countof(executable)) != 0, "Test executable path missing.");
+        for (const auto* mode : {L"--console-child", L"--hidden-console-child"}) {
+            auto child_command = QuoteArgument(executable) + L" " + mode;
+            STARTUPINFOW startup{};
+            startup.cb = sizeof(startup);
+            startup.dwFlags = STARTF_USESHOWWINDOW;
+            startup.wShowWindow = SW_HIDE;
+            PROCESS_INFORMATION child{};
+            Check(CreateProcessW(executable, child_command.data(), nullptr, nullptr, FALSE,
+                CREATE_NEW_CONSOLE, nullptr, nullptr, &startup, &child) != FALSE, "Console test child failed to start.");
+            Handle child_process(child.hProcess);
+            CloseHandle(child.hThread);
+            DWORD child_exit_code = 0;
+            std::wstring child_error;
+            Check(WaitForGame(child_process.get(), child_exit_code, child_error), "Console test child wait failed.");
+            Check(child_exit_code == 37, "Console detachment changed CLI behavior, process lifetime, or exit code.");
+        }
         Check(IsOfficialPublisher(L"Shanghai Hypergryph Network Technology Co., Ltd."), "Official publisher rejected.");
         Check(!IsOfficialPublisher(L"Shanghai Hypergryph Network Technology Co., Ltd. Untrusted"), "Publisher suffix spoof accepted.");
         Check(!IsOfficialPublisher(L"Microsoft Corporation"), "Different valid publisher accepted.");
@@ -58,7 +104,7 @@ int wmain(int argc, wchar_t* argv[]) {
             Check(FindOfficialLauncher({}, launcher, error), "Installed official launcher discovery/signature verification failed.");
             std::wcout << L"Verified official launcher (not started): " << launcher.executable.wstring() << L'\n';
         }
-        std::wcout << L"Official launcher: " << checks << L" checks passed; no processes started.\n";
+        std::wcout << L"Official launcher: " << checks << L" checks passed; no game or Steam processes started.\n";
         return 0;
     } catch (const std::exception& exception) {
         std::cerr << exception.what() << '\n'; return 1;

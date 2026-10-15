@@ -49,7 +49,8 @@ $configFile = Join-Path $output 'obfuscar.xml'
 if ($LASTEXITCODE -ne 0) { throw "Obfuscar failed with exit code $LASTEXITCODE." }
 $result = Join-Path $output $assembly.Name
 if (-not (Test-Path -LiteralPath $result -PathType Leaf)) { throw 'Obfuscar did not produce the application assembly.' }
-if ((Get-FileHash -LiteralPath $result).Hash -eq (Get-FileHash -LiteralPath $assembly.FullName).Hash) {
+if ([Linq.Enumerable]::SequenceEqual[byte](
+    [IO.File]::ReadAllBytes($result), [IO.File]::ReadAllBytes($assembly.FullName))) {
     throw 'Application assembly was not transformed.'
 }
 Write-Output "Next assembly obfuscated; mappings remain in $output."

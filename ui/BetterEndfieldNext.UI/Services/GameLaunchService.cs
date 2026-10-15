@@ -50,7 +50,7 @@ internal static class GameLaunchService
             throw new ArgumentException("游戏启动参数无效。", nameof(gameArguments));
 
         // Keep all saved game flags after the helper's option separator.
-        string arguments = "--game \"" + game + "\" --";
+        string arguments = "--hide-console --game \"" + game + "\" --";
         return string.IsNullOrWhiteSpace(gameArguments) ? arguments : arguments + " " + gameArguments.Trim();
     }
 

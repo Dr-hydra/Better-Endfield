@@ -13,6 +13,8 @@ struct Options {
     std::vector<std::wstring> arguments;
     bool manual_map = false;
     bool late_manual_map = false;
+    bool steam_launch = false;
+    bool hide_console = false;
 };
 
 bool ParseOptions(int argc, wchar_t* argv[], bool allow_injection, Options& options,
@@ -20,6 +22,7 @@ bool ParseOptions(int argc, wchar_t* argv[], bool allow_injection, Options& opti
 std::wstring QuoteArgument(const std::wstring& argument);
 std::wstring WindowsError(const wchar_t* operation, DWORD code);
 void ShowError(const std::wstring& message);
+void ConfigureConsole(const Options& options);
 
 class Handle {
 public:

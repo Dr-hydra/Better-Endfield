@@ -64,6 +64,12 @@ internal static class SteamEnvironment
         finally { foreach (var process in processes) process.Dispose(); }
     }
 
+    public static uint? ActiveAccountId()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(@"Software\Valve\Steam\ActiveProcess");
+        return key?.GetValue("ActiveUser") is int value && value != 0 ? unchecked((uint)value) : null;
+    }
+
     public static bool? IsRunningElevated()
     {
         var processes = Process.GetProcessesByName("steam");

@@ -43,6 +43,26 @@ function Wait-Control([string[]]$Names) {
     } while ([DateTime]::UtcNow -lt $deadline)
     throw "Missing UI control: $($Names -join ' / ')"
 }
+function Wait-EnabledControl([string[]]$Names) {
+    $deadline = [DateTime]::UtcNow.AddSeconds(15)
+    do {
+        $element = Find-Control $Names
+        if ($null -ne $element -and $element.Current.IsEnabled -and -not $element.Current.IsOffscreen) { return $element }
+        if ($script:process.HasExited) { throw 'Preview process exited.' }
+        Start-Sleep -Milliseconds 100
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw "UI control did not become enabled and visible: $($Names -join ' / ')"
+}
+function Wait-ControlClosed([string[]]$Names) {
+    $deadline = [DateTime]::UtcNow.AddSeconds(15)
+    do {
+        $element = Find-Control $Names
+        if ($null -eq $element -or $element.Current.IsOffscreen) { return }
+        if ($script:process.HasExited) { throw 'Preview process exited.' }
+        Start-Sleep -Milliseconds 100
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw "UI control remained open: $($Names -join ' / ')"
+}
 function Capture-Preview([string]$Name) {
     $null = [SteamPreviewCapture]::SetForegroundWindow($script:process.MainWindowHandle)
     Start-Sleep -Milliseconds 250
@@ -52,6 +72,24 @@ function Capture-Preview([string]$Name) {
     $graphics = [Drawing.Graphics]::FromImage($bitmap)
     try { $graphics.CopyFromScreen($rect.Left,$rect.Top,0,0,$bitmap.Size); $bitmap.Save((Join-Path $work $Name),[Drawing.Imaging.ImageFormat]::Png) }
     finally { $graphics.Dispose(); $bitmap.Dispose() }
+}
+function Get-CleanupPreviewSnapshot {
+    $fixture = Join-Path ([IO.Path]::GetTempPath()) 'BE-SteamPreview'
+    if (-not (Test-Path -LiteralPath $fixture)) { return 'absent' }
+    $queue = [Collections.Generic.Queue[string]]::new()
+    $queue.Enqueue($fixture)
+    $entries = [Collections.Generic.List[string]]::new()
+    while ($queue.Count -gt 0) {
+        $path = $queue.Dequeue()
+        $entry = Get-Item -LiteralPath $path -Force
+        if ($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Cleanup preview fixture contains a reparse point.' }
+        $length = if ($entry.PSIsContainer) { 0 } else { $entry.Length }
+        $entries.Add(($entry.FullName + '|' + [int]$entry.Attributes + '|' + $length + '|' + $entry.LastWriteTimeUtc.Ticks))
+        if ($entry.PSIsContainer) {
+            foreach ($child in [IO.Directory]::EnumerateFileSystemEntries($path)) { $queue.Enqueue($child) }
+        }
+    }
+    return (($entries | Sort-Object) -join "`n")
 }
 
 $process = $null
@@ -73,8 +111,8 @@ try {
         Start-Sleep -Milliseconds 100
     }
     foreach ($names in @(
-        @('应用 / 更新 ACF','Apply / update ACF'),
-        @('移除 BE 的 ACF','Remove BE''s ACF'),
+        @('应用 / 更新配置','Apply / update setup'),
+        @('移除 BE 配置','Remove BE setup'),
         @('同步 Windows 管理员设置','Sync Windows elevation setting'),
         @('恢复管理员设置','Restore elevation setting'),
         @('从 Steam 启动国服','Launch CN from Steam')
@@ -100,10 +138,35 @@ try {
     Capture-Preview 'steam-preview-acf.png'
     $close = Wait-Control @('关闭', 'Close')
     $close.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern).Invoke()
+    Wait-ControlClosed @('ACF 预览（尚未写入）', 'ACF preview (not written)')
+    $cleanupSnapshot = Get-CleanupPreviewSnapshot
+    $cleanupPreview = Wait-EnabledControl @('预览清理确认', 'Preview cleanup confirmation')
+    $cleanupPreview.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern).Invoke()
+    $null = Wait-Control @('清理 Steam 目录并重新配置？', 'Clean up Steam directory and configure again?')
+    $cancelCleanup = Wait-Control @('取消', 'Cancel')
+    $deleteCleanup = Wait-Control @('删除并重新配置', 'Delete and configure again')
+    if (-not $cancelCleanup.Current.IsEnabled -or -not $deleteCleanup.Current.IsEnabled) { throw 'Cleanup confirmation buttons are disabled.' }
+    $dialogText = ($root.FindAll([Windows.Automation.TreeScope]::Descendants, [Windows.Automation.Condition]::TrueCondition) |
+        ForEach-Object { $_.Current.Name }) -join "`n"
+    if ($dialogText -notmatch 'BE-SteamPreview' -or $dialogText -notmatch 'Arknights Endfield' -or
+        $dialogText -notmatch 'appmanifest_4732690\.acf' -or $dialogText -notmatch '3 (?:个文件|files)' -or $dialogText -notmatch '592 (?:字节|bytes)') {
+        throw 'Cleanup confirmation does not show the expected isolated paths and file totals.'
+    }
+    $deadline = [DateTime]::UtcNow.AddSeconds(5)
+    while (-not $cancelCleanup.Current.HasKeyboardFocus) {
+        if ([DateTime]::UtcNow -gt $deadline) { throw 'Cleanup confirmation does not initially focus Cancel.' }
+        Start-Sleep -Milliseconds 100
+    }
+    Capture-Preview 'steam-preview-cleanup-confirmation.png'
+    $cancelCleanup.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern).Invoke()
+    Wait-ControlClosed @('清理 Steam 目录并重新配置？', 'Clean up Steam directory and configure again?')
+    $null = Wait-Control @('已取消清理，未删除文件。', 'Cleanup canceled; no files were deleted.')
+    $null = Wait-EnabledControl @('预览清理确认', 'Preview cleanup confirmation')
+    if ((Get-CleanupPreviewSnapshot) -cne $cleanupSnapshot) { throw 'Canceling the cleanup preview changed its fixture.' }
     $null = [SteamPreviewCapture]::MoveWindow($process.MainWindowHandle, 30, 30, 760, 700, $true)
     Start-Sleep -Milliseconds 300
     Capture-Preview 'steam-preview-small.png'
-    [ordered]@{ success = $true; acf_preview = $true; mutating_buttons_disabled = $true; window_sizes = @('initial','760x700'); metadata = $metadataFile } |
+    [ordered]@{ success = $true; acf_preview = $true; mutating_buttons_disabled = $true; cleanup_confirmation = $true; cleanup_default_cancel = $true; cleanup_cancel_preserves_fixture = $true; window_sizes = @('initial','760x700'); metadata = $metadataFile } |
         ConvertTo-Json | Set-Content -LiteralPath (Join-Path $work 'summary.json') -Encoding UTF8
     Write-Output ('Steam UI preview passed: ' + (Join-Path $work 'summary.json'))
 }

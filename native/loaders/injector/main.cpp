@@ -11,6 +11,7 @@
 #include <cstring>
 #include <filesystem>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -80,6 +81,19 @@ private:
     HANDLE process_;
     HANDLE thread_;
     bool started_ = false;
+};
+
+// Preserve detailed injection failures for a dialog after the helper console
+// has been detached. CLI launches continue writing directly to stderr.
+class InjectionDiagnostics {
+public:
+    explicit InjectionDiagnostics(bool capture)
+        : previous_(capture ? std::wcerr.rdbuf(output_.rdbuf()) : nullptr) {}
+    ~InjectionDiagnostics() { if (previous_) std::wcerr.rdbuf(previous_); }
+    std::wstring Details() const { return output_.str(); }
+private:
+    std::wostringstream output_;
+    std::wstreambuf* previous_;
 };
 
 std::filesystem::path ExecutablePath() {
@@ -550,15 +564,21 @@ DWORD RunInjector(int argc, wchar_t* argv[]) {
         launch::ShowError(launch_error);
         return 2;
     }
+    launch::ConfigureConsole(options);
+    const bool hide_console = options.hide_console || options.steam_launch;
+    const auto report_error = [hide_console](const std::wstring& message) {
+        if (hide_console) launch::ShowError(message);
+        else std::wcerr << message << L'\n';
+    };
     const auto& game_path = options.game;
     const auto& game_arguments = options.arguments;
     const bool manual_map = options.manual_map;
     const bool late_manual_map = options.late_manual_map;
 
     if (better_endfield::HasLocalXInputProxy(game_path)) {
-        std::wcerr << L"xinput1_4.dll already exists in the game directory. "
+        report_error(L"xinput1_4.dll already exists in the game directory. "
                       L"Use the XInput auto-loader, or uninstall the BE proxy before "
-                      L"using this injector. Other loaders must be resolved separately.\n";
+                      L"using this injector. Other loaders must be resolved separately.");
         return 6;
     }
 
@@ -569,12 +589,12 @@ DWORD RunInjector(int argc, wchar_t* argv[]) {
     const std::filesystem::path bootstrap_path = install_root / L"loaders" /
         L"BetterEndfieldNext.Bootstrap.dll";
     if (!std::filesystem::is_regular_file(host_path)) {
-        std::wcerr << L"BetterEndfieldNext.Host.dll was not found.\n";
+        report_error(L"BetterEndfieldNext.Host.dll was not found.");
         return 3;
     }
     if (!manual_map && !late_manual_map &&
         !std::filesystem::is_regular_file(bootstrap_path)) {
-        std::wcerr << L"BetterEndfieldNext.Bootstrap.dll was not found.\n";
+        report_error(L"BetterEndfieldNext.Bootstrap.dll was not found.");
         return 3;
     }
 
@@ -595,6 +615,7 @@ DWORD RunInjector(int argc, wchar_t* argv[]) {
         return 4;
     }
     OwnedGameStartup owned_game(process);
+    InjectionDiagnostics diagnostics(hide_console);
 
     bool injected = false;
 
@@ -603,12 +624,12 @@ DWORD RunInjector(int argc, wchar_t* argv[]) {
         injected = ManualMapHost(process.hProcess, host_path, bootstrap);
     } else {
         if (ResumeThread(process.hThread) == static_cast<DWORD>(-1)) {
-            PrintLastError(L"Unable to resume Endfield");
+            report_error(launch::WindowsError(L"Unable to resume Endfield", GetLastError()));
             return 5;
         }
         if (late_manual_map) {
             if (!WaitForModule(process.dwProcessId, L"GameAssembly.dll", 90000)) {
-                std::wcerr << L"GameAssembly.dll was not observed before timeout.\n";
+                report_error(L"GameAssembly.dll was not observed before timeout.");
                 return 5;
             }
             // Give Unity's native runtime and the GC a short settling window
@@ -623,12 +644,12 @@ DWORD RunInjector(int argc, wchar_t* argv[]) {
     }
 
     if (!injected) {
-        std::wcerr << L"Unable to load BetterEndfieldNext Host.\n";
+        report_error(L"Unable to load BetterEndfieldNext Host.\n" + diagnostics.Details());
         return 5;
     }
 
     if (manual_map && ResumeThread(process.hThread) == static_cast<DWORD>(-1)) {
-        PrintLastError(L"Unable to resume Endfield after Host mapping");
+        report_error(launch::WindowsError(L"Unable to resume Endfield after Host mapping", GetLastError()));
         return 5;
     }
 

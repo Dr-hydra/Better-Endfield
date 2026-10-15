@@ -5,6 +5,7 @@
     <Compile Include="../../BetterEndfieldNext.UI/Services/SteamMetadata.cs" Link="SteamMetadata.cs" />
     <Compile Include="../../BetterEndfieldNext.UI/Services/SteamIntegrationService.cs" Link="SteamIntegrationService.cs" />
     <Compile Include="../../BetterEndfieldNext.UI/Services/SteamCompatibilityService.cs" Link="SteamCompatibilityService.cs" />
+    <Compile Include="../../BetterEndfieldNext.UI/Services/SteamLaunchOptionsService.cs" Link="SteamLaunchOptionsService.cs" />
     <Compile Include="../../BetterEndfieldNext.UI/Services/InjectorLaunchGuard.cs" Link="InjectorLaunchGuard.cs" />
     <Compile Include="../../BetterEndfieldNext.UI/Services/GameLaunchService.cs" Link="GameLaunchService.cs" />
     <Compile Include="../../BetterEndfieldNext.UI/Models/AppSettings.cs" Link="AppSettings.cs" />

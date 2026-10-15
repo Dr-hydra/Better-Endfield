@@ -167,14 +167,14 @@ internal static class Program
         await RejectAsync(() => service.ApplyAsync(library, game, metadata, [library, other]), "other_library_install");
         string savedArguments = "-force-d3d11 -logFile \"C:\\Logs with spaces\\player.log\"";
         string command = SteamIntegrationService.GenerateLaunchCommand(launcher, game, savedArguments);
-        Check(ParseCommandLine(command).SequenceEqual(new[] { launcher, "--game", game, "--", "-force-d3d11", "-logFile", @"C:\Logs with spaces\player.log", "--steam-command", "%command%" }),
+        Check(ParseCommandLine(command).SequenceEqual(new[] { launcher, "--hide-console", "--game", game, "--", "-force-d3d11", "-logFile", @"C:\Logs with spaces\player.log", "--steam-command", "%command%" }),
             "Steam launch command did not preserve CN arguments or isolate its upstream command.");
         string upstreamCommand = "\"C:\\Steam library\\Global Launcher.exe\" --game=endfield --channel=steam";
         var expanded = ParseCommandLine(command.Replace("%command%", upstreamCommand, StringComparison.Ordinal));
         int boundary = Array.IndexOf(expanded, "--steam-command");
-        Check(boundary == 7 && expanded[boundary + 1] == @"C:\Steam library\Global Launcher.exe" && expanded[^1] == "--channel=steam",
+        Check(boundary == 8 && expanded[boundary + 1] == @"C:\Steam library\Global Launcher.exe" && expanded[^1] == "--channel=steam",
             "Steam's expanded launcher arguments crossed the game argument boundary.");
-        Check(ParseCommandLine(SteamIntegrationService.GenerateLaunchCommand(launcher, game, "")).SequenceEqual(new[] { launcher, "--game", game, "--", "--steam-command", "%command%" }),
+        Check(ParseCommandLine(SteamIntegrationService.GenerateLaunchCommand(launcher, game, "")).SequenceEqual(new[] { launcher, "--hide-console", "--game", game, "--", "--steam-command", "%command%" }),
             "An empty game argument list lost its helper or Steam separator.");
         Reject(() => SteamIntegrationService.GenerateLaunchCommand(launcher, game, "%command%"), "invalid_launch_arguments");
         foreach (string invalid in new[] { "--steam-command fake.exe", "\"--steam-command\"", "-flag\nvalue", "-logFile \"unfinished" })
@@ -188,6 +188,12 @@ internal static class Program
         Check(ParseCommandLine("helper.exe " + xinputStart.Arguments).Skip(1).SequenceEqual(expanded.Skip(1).Take(boundary - 1)),
             "Desktop launch and Steam disagree on the saved game arguments.");
         var injectorStart = GameLaunchService.CreateStartInfo("injector", injector, launcher, game, savedArguments);
+        foreach (var start in new[] { xinputStart, injectorStart })
+        {
+            var options = ParseCommandLine("helper.exe " + start.Arguments);
+            Check(Array.IndexOf(options, "--hide-console") > 0 && Array.IndexOf(options, "--hide-console") < Array.IndexOf(options, "--"),
+                "GUI launch did not put console hiding in the helper's options.");
+        }
         Check(injectorStart.FileName == injector && injectorStart.Arguments == xinputStart.Arguments && injectorStart.Verb == "runas",
             "Injector launch lost its selected mode or game argument boundary.");
         string selectedInjector = GameLaunchService.SelectHelperPath("injector", injector, launcher);
@@ -253,6 +259,8 @@ internal static class Program
         await Task.WhenAll(Enumerable.Range(0, 8).Select(i => service.CacheAsync(Metadata((200 + i).ToString()))));
         service.ReadCache()!.Metadata.Validate();
         Check(!Directory.EnumerateFiles(Path.Combine(root, "BE settings"), "*.tmp").Any(), "Atomic cache write left temporary files.");
+        _checks += SteamLaunchOptionsChecks.Run(Path.Combine(root, "LaunchOptions checks"));
+        _checks += await SteamReplacementChecks.RunAsync(Path.Combine(root, "Replacement checks"));
         Directory.CreateDirectory(workspace);
         File.WriteAllText(Path.Combine(workspace, "latest.json"), JsonSerializer.Serialize(new { checks = _checks, fixtureDirectory = root, previewMetadata }));
         Console.WriteLine($"Steam integration: {_checks} checks passed. Synthetic workspace: {root}");

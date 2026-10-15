@@ -6,6 +6,7 @@ DWORD Run(int argc, wchar_t* argv[]) {
     Options options;
     std::wstring error;
     if (!ParseOptions(argc, argv, false, options, error)) { ShowError(error); return 2; }
+    ConfigureConsole(options);
     VerifiedLauncher launcher;
     if (!FindOfficialLauncher(options.parent, launcher, error)) { ShowError(error); return 7; }
     OfficialParent parent;

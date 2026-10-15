@@ -90,9 +90,48 @@ Assert-Same $compatibility.Executable 'C:\SteamFixture\steam.exe' 'compatibility
 Assert-Same $compatibility.OriginalAdministrator $true 'compatibility.OriginalAdministrator'
 Assert-Same $compatibility.WrittenAdministrator $false 'compatibility.WrittenAdministrator'
 
+$launchOptionsEntries = @(
+    [ordered]@{
+        SteamRoot='C:\SteamFixture'; AccountId=[uint32]12345; Original=$null
+        Written='"C:\Better Endfield\loaders\BetterEndfieldNext.Launcher.exe" --game "C:\Endfield Game\Endfield.exe" -- --steam-command %command%'
+        PreviousWritten=$null; Pending=$false
+    },
+    [ordered]@{
+        SteamRoot='D:\Steam 备用'; AccountId=[uint32]4000000000
+        Original='-force-d3d11 --label "保留原选项"'
+        Written='"D:\BE 新版\loaders\BetterEndfieldNext.Launcher.exe" --game "D:\终末地\Endfield.exe" -- --steam-command %command%'
+        PreviousWritten='"D:\BE 旧版\loaders\BetterEndfieldNext.Launcher.exe" --game "D:\终末地\Endfield.exe" -- --steam-command %command%'
+        Pending=$true
+    }
+)
+$launchOptionsJson = [ordered]@{
+    Product='BetterEndfieldNext.SteamLaunchOptions'; Entries=$launchOptionsEntries
+} | ConvertTo-Json -Depth 10
+$launchOptions = Decode-Dto 'SteamLaunchOptionsReceipt' $launchOptionsJson
+Assert-Same $launchOptions.Product 'BetterEndfieldNext.SteamLaunchOptions' 'launch-options.Product'
+Assert-Same $launchOptions.Entries.Count $launchOptionsEntries.Count 'launch-options.Entries.Count'
+for ($index = 0; $index -lt $launchOptionsEntries.Count; $index++) {
+    $expectedEntry = $launchOptionsEntries[$index]
+    $entry = Decode-Dto 'SteamLaunchOptionsEntry' ($expectedEntry | ConvertTo-Json)
+    foreach ($field in @('SteamRoot','AccountId','Original','Written','PreviousWritten','Pending')) {
+        Assert-Same $launchOptions.Entries[$index].$field $expectedEntry[$field] "launch-options.Entries[$index].$field"
+        Assert-Same $entry.$field $expectedEntry[$field] "launch-options-entry[$index].$field"
+    }
+}
+$replacementJson = [ordered]@{
+    Product='BetterEndfieldNext.SteamReplacement'; LibraryPath='C:\SteamFixture'; Metadata=$expected
+    Pending=$true; UpdatedUtc='2026-10-15T00:00:00+00:00'
+} | ConvertTo-Json -Depth 10
+$replacement = Decode-Dto 'SteamReplacementReceipt' $replacementJson
+Assert-Same $replacement.Product 'BetterEndfieldNext.SteamReplacement' 'replacement.Product'
+Assert-Same $replacement.LibraryPath 'C:\SteamFixture' 'replacement.LibraryPath'
+Assert-Metadata $replacement.Metadata $expected
+Assert-Same $replacement.Pending $true 'replacement.Pending'
+if (!$replacement.UpdatedUtc) { throw 'Replacement timestamp was lost.' }
+
 $result = [ordered]@{
     success=$true; assembly=$assemblyFile; mapping=(Resolve-Path -LiteralPath $MappingPath).Path
-    checks=@('published-normalized-parse','metadata-roundtrip','cache-roundtrip','install-receipt-roundtrip','compatibility-receipt-roundtrip')
+    checks=@('published-normalized-parse','metadata-roundtrip','cache-roundtrip','install-receipt-roundtrip','compatibility-receipt-roundtrip','launch-options-receipt-roundtrip','launch-options-entry-roundtrip','replacement-receipt-roundtrip')
 }
 $output = $result | ConvertTo-Json -Depth 4
 if ($OutputPath) { [IO.File]::WriteAllText([IO.Path]::GetFullPath($OutputPath), $output, [Text.UTF8Encoding]::new($false)) }

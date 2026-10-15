@@ -158,11 +158,12 @@ bool ParseOptions(int argc, wchar_t* argv[], bool allow_injection, Options& opti
     bool game_arguments = false;
     for (int index = 1; index < argc; ++index) {
         const std::wstring option = argv[index];
-        if (option == L"--steam-command") break;
+        if (option == L"--steam-command") { options.steam_launch = true; break; }
         if (game_arguments) { options.arguments.push_back(option); continue; }
         if (option == L"--") game_arguments = true;
         else if (option == L"--game" && index + 1 < argc && options.game.empty()) options.game = argv[++index];
         else if (option == L"--parent" && index + 1 < argc && options.parent.empty()) options.parent = argv[++index];
+        else if (option == L"--hide-console") options.hide_console = true;
         else if (allow_injection && option == L"--manual-map") options.manual_map = true;
         else if (allow_injection && option == L"--manual-map-late") options.late_manual_map = true;
         else { error = L"无效启动参数 / Invalid launch option: " + option; return false; }
@@ -198,6 +199,13 @@ std::wstring WindowsError(const wchar_t* operation, DWORD code) {
 void ShowError(const std::wstring& message) {
     std::wcerr << message << L'\n';
     MessageBoxW(nullptr, message.c_str(), L"Better Endfield — 启动失败 / Launch failed", MB_OK | MB_ICONERROR);
+}
+
+void ConfigureConsole(const Options& options) {
+    // GUI/Steam keep this helper alive until the game exits. Detach only this
+    // process, rather than hiding a console window that a CLI caller may own.
+    // Ordinary command-line launches keep their console and diagnostics.
+    if (options.hide_console || options.steam_launch) FreeConsole();
 }
 
 bool IsOfficialPublisher(const std::wstring& organization) { return Equal(organization, kPublisher); }

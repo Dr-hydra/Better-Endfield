@@ -18,7 +18,7 @@
             <CheckBox x:Name="AutoUpdateBox" HorizontalAlignment="Stretch" Content="BE 自动查询最新元数据，并在 Steam 退出后更新 ACF" Checked="PreferencesChanged" Unchecked="PreferencesChanged" />
             <CheckBox x:Name="AdministratorBox" HorizontalAlignment="Stretch" Content="以管理员身份启动 Steam（覆盖层兼容，可选）" Checked="PreferencesChanged" Unchecked="PreferencesChanged" />
             <TextBlock x:Name="AdministratorHint" Text="默认关闭。当前实测普通权限仍可记录时长和展示状态；游戏提权时，管理员启动有助于覆盖层和截图。" TextWrapping="Wrap" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-            <TextBlock x:Name="ExitHint" Text="应用、更新或移除 ACF 前，请在 Steam 菜单选择“退出”，并确认托盘后台也已结束。" TextWrapping="Wrap" />
+            <TextBlock x:Name="ExitHint" Text="应用或移除配置前，请从 Steam 菜单选择“退出”。BE 会自动填写当前账号的启动选项，并保留原值供移除时恢复。" TextWrapping="Wrap" />
             <TextBlock x:Name="MetadataText" Text="等待获取完整元数据。" TextWrapping="Wrap" />
             <TextBlock x:Name="ClientText" TextWrapping="Wrap" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
             <ProgressRing x:Name="BusyRing" Width="20" Height="20" IsActive="False" Visibility="Collapsed" HorizontalAlignment="Left" />
@@ -27,11 +27,12 @@
                     <Button x:Name="FetchButton" Content="获取元数据" Click="Fetch_Click" />
                     <Button x:Name="ImportButton" Content="导入元数据…" Click="Import_Click" />
                     <Button x:Name="PreviewButton" Content="预览 ACF" Click="Preview_Click" />
+                    <Button x:Name="ReplacementPreviewButton" Content="预览清理确认" Click="ReplacementPreview_Click" Visibility="Collapsed" />
                 </controls:WrapPanel>
                 <controls:WrapPanel HorizontalSpacing="8" VerticalSpacing="8">
-                    <Button x:Name="ApplyButton" Content="应用 / 更新 ACF" Click="Apply_Click" />
-                    <Button x:Name="RestoreButton" Content="移除 BE 的 ACF" Click="Restore_Click" />
-                    <Button x:Name="CopyButton" Content="复制启动命令" Click="Copy_Click" />
+                    <Button x:Name="ApplyButton" Content="应用 / 更新配置" Click="Apply_Click" />
+                    <Button x:Name="RestoreButton" Content="移除 BE 配置" Click="Restore_Click" />
+                    <Button x:Name="CopyButton" Content="复制启动命令（备用）" Click="Copy_Click" />
                 </controls:WrapPanel>
                 <controls:WrapPanel HorizontalSpacing="8" VerticalSpacing="8">
                     <Button x:Name="StartButton" Content="从 Steam 启动国服" Click="Start_Click" />
@@ -39,7 +40,7 @@
                     <Button x:Name="RestoreAdminButton" Content="恢复管理员设置" Click="RestoreAdmin_Click" />
                 </controls:WrapPanel>
             </StackPanel>
-            <TextBlock x:Name="CopyHint" Text="首次配置后，将复制的命令粘贴到 Steam 游戏属性的“启动选项”。国服仍由官方启动器更新。" TextWrapping="Wrap" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <TextBlock x:Name="CopyHint" Text="启动前会检查启动选项；需要更新时，退出 Steam 后再次点击启动即可自动填写。国服仍由官方启动器更新。" TextWrapping="Wrap" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
             <InfoBar x:Name="StatusBar" IsOpen="False" IsClosable="True" />
         </StackPanel>
     </Border>
