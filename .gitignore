@@ -195,6 +195,7 @@ __pycache__/
 
 /research/**/generated/**
 /research/camera/**/renodx/src/games/**/assets/**
+/research/actions/mhw-longsword/**
 
 # Unity editor/import caches are reproducible, not research source.
 /research/**/Library/**

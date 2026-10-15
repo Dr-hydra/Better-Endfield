@@ -3,39 +3,42 @@
 ## 动作
 
 - 游戏 VFS manifest 版本：`2954fa80-23c1-1579-2b22-4ecfd6d70418`
-- 角色：33
-- 动作：4262
-- 未纳入角色：1
+- 角色：37
+- 动作：4719
+- 未纳入角色：0
 
 ## 版本输入
 
-- `Bundles/Android/manifest.hgmmap`：`65455F5554D87BF3E6B2A81A641E7DDDC38CBD8378A3C8C5F20E3DE828E6C57E`（49558742 bytes）
-- `TableCfg/AudioDialog.bytes`：`48EF3EFB67D417A38EDA94B04C1309E88162049F28750CAD941AD803DD82AC7E`（4875268 bytes）
+- `Bundles/Android/manifest.hgmmap`：`FFA614CA2932B8C09892E7000EADE968`（53700330 bytes）
+- `TableCfg/AudioDialog.bytes`：`649E7513131B8CAB64F91A0F7DFA0FF90D3DDFB0F4BC7C1C05967021C93CB04C`（5388652 bytes）
 
 ## 角色短语音
 
-- `AudioDialog` 具名角色短语音 Event：996
-- 覆盖角色：33
-- 至少一种语言通过 BNK/HIRC 映射：638
-- 四语均通过映射：638
-- 原生 Wwise 容器事件：638
-- v9 显式降级事件：358
-- 无可读名称的 Bank：625
-- Media 引用：7252（唯一 6859）
+- `AudioDialog` 具名角色短语音 Event：1025
+- 覆盖角色：34
+- 至少一种语言通过 BNK/HIRC 映射：660
+- 四语均通过映射：660
+- 原生 Wwise 容器事件：660
+- v9 显式降级事件：365
+- 无可读名称的 Bank：699
+- Media 引用：7488（唯一 7083）
 
 ### 各语言
 
-- Chinese：映射 638，缺 Bank 358，无效 0，Media 存在 1715 / 1715
-- English：映射 638，缺 Bank 358，无效 0，Media 存在 1714 / 1714
-- Japanese：映射 638，缺 Bank 358，无效 0，Media 存在 1715 / 1715
-- Korean：映射 638，缺 Bank 358，无效 0，Media 存在 1715 / 1715
+- Chinese：映射 660，缺 Bank 365，无效 0，Media 存在 1771 / 1771
+- English：映射 660，缺 Bank 365，无效 0，Media 存在 1770 / 1770
+- Japanese：映射 660，缺 Bank 365，无效 0，Media 存在 1771 / 1771
+- Korean：映射 660，缺 Bank 365，无效 0，Media 存在 1771 / 1771
 
 ## PCK 覆盖
 
-- `chinese-pck-1` chinese, sfx：存在 1715，缺少 0（`/sdcard/Android/data/com.hypergryph.endfield/files/VFS/E1E7D7CE/F2F65C121E37C9A4C694A27A3FD1F903.chk`）
-- `english-pck-1` english, sfx：存在 1714，缺少 0（`/sdcard/Android/data/com.hypergryph.endfield/files/VFS/A31457D0/FC0EB9CB8B7B21E4FC85D7AAD0A8498A.chk`）
-- `japanese-pck-1` japanese, sfx：存在 1715，缺少 0（`/sdcard/Android/data/com.hypergryph.endfield/files/VFS/F668D4EE/2F1317FEE2F58878B7AA28C20F8F23EE.chk`）
-- `korean-pck-1` korean, sfx：存在 1715，缺少 0（`/sdcard/Android/data/com.hypergryph.endfield/files/VFS/E9D31017/6C17D7CA48BD06744AD80660A538154D.chk`）
+- `chinese-pck-1` chinese, sfx：存在 1771，缺少 0（`/sdcard/Android/data/com.hypergryph.endfield/files/VFS/E1E7D7CE/C8B18CE5AF55BDC131CE168D08FADE69.chk`）
+- `english-pck-1` english, sfx：存在 3，缺少 1767（`/sdcard/Android/data/com.hypergryph.endfield/files/VFS/A31457D0/9A51A883293C0A72B8D2C171B3F51726.chk`）
+- `english-pck-2` english, sfx：存在 1767，缺少 3（`/sdcard/Android/data/com.hypergryph.endfield/files/VFS/A31457D0/C830E93FDB642740B99BD3EEF9FDD6E2.chk`）
+- `japanese-pck-1` japanese, sfx：存在 1715，缺少 56（`/sdcard/Android/data/com.hypergryph.endfield/files/VFS/F668D4EE/62CFCED4F31B46803AFD058CF4CB1643.chk`）
+- `japanese-pck-2` japanese, sfx：存在 56，缺少 1715（`/sdcard/Android/data/com.hypergryph.endfield/files/VFS/F668D4EE/93937607BD7D32C4E905DEA36C0E4CB6.chk`）
+- `korean-pck-1` korean, sfx：存在 56，缺少 1715（`/sdcard/Android/data/com.hypergryph.endfield/files/VFS/E9D31017/196C7041D4C16FC42431C5C7E1820A59.chk`）
+- `korean-pck-2` korean, sfx：存在 1715，缺少 56（`/sdcard/Android/data/com.hypergryph.endfield/files/VFS/E9D31017/B8D63126D7ED7F01EBF5C756668D685D.chk`）
 
 ## 解释
 

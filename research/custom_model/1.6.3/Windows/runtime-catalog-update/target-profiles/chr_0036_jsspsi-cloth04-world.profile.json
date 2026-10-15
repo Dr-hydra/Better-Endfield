@@ -1,0 +1,94 @@
+{
+  "schema": 1,
+  "kind": "bem-target-profile",
+  "bem_format": "1.4",
+  "target": {
+    "id": "chr_0036_jsspsi",
+    "profile_id": "chr_0036_jsspsi-cloth04-world-pc",
+    "revision": "1.6.3-20261015",
+    "snapshot": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+    "kind": "character",
+    "platform": "windows-x64",
+    "resources": [
+      {
+        "id": "world",
+        "name": "chr_0036_jsspsi_postmodel",
+        "asset_path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0036_jsspsi_postmodel.prefab",
+        "platforms": [
+          "windows-x64"
+        ],
+        "lod": 0
+      }
+    ],
+    "components": [
+      {
+        "id": 0,
+        "resource": "world",
+        "renderer_kind": "skinned",
+        "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_04_lod0",
+        "mesh_name": "S_actor_jsspsi_cloth_04_lod0",
+        "original_index_count": 474,
+        "bone_names": [
+          "R_sleeveD_03_jnt",
+          "R_sleeveD_04_jnt",
+          "R_sleeveD_05_jnt",
+          "R_sleeveD_06_jnt",
+          "R_sleeveD_02_jnt",
+          "R_sleeveD_01_jnt",
+          "Bip001_Spine",
+          "Bip001_Spine1",
+          "L_skirtA_01_jnt",
+          "R_skirtA_01_jnt",
+          "R_skirtB_01_jnt",
+          "L_skirtA_02_jnt",
+          "R_skirtA_02_jnt",
+          "L_skirtA_03_jnt",
+          "R_skirtA_03_jnt",
+          "L_skirtA_04_jnt",
+          "R_skirtA_04_jnt",
+          "R_skirtB_02_jnt",
+          "R_skirtB_03_jnt",
+          "L_skirtB_01_jnt",
+          "L_skirtB_02_jnt",
+          "L_skirtB_03_jnt",
+          "L_skirtB_04_jnt",
+          "R_skirtB_04_jnt"
+        ],
+        "materials": [
+          "M_fx_jsspsi_cloth_04_01",
+          "M_fx_jsspsi_cloth_04_02",
+          "M_fx_jsspsi_cloth_04_03"
+        ]
+      }
+    ]
+  },
+  "required_capabilities": [
+    "native-materials",
+    "composable-options",
+    "multi-resource-targets"
+  ],
+  "evidence": [
+    {
+      "component": 0,
+      "renderer_id": "cab-5e4313d29424e12b5e321c8dc18fefc1:9214644292568822060",
+      "mesh_id": "cab-f1cb0ce88ceb770638295d8f4f9eaa8b:-2890387106605326464",
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_04_lod0",
+      "runtime_layout_observed": true
+    }
+  ],
+  "source_snapshot": {
+    "manifest_version": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+    "perforce_cl": "",
+    "platforms": [
+      "windows-x64"
+    ]
+  },
+  "backend_warning_count": 0,
+  "runtime_verified": false,
+  "conversion_ready": false,
+  "render_verified": false,
+  "limitations": [
+    "Offline identities only; replacement stream layouts, source mappings and runtime lifecycle remain unverified."
+  ]
+}
