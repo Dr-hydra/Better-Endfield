@@ -1,0 +1,67 @@
+{
+  "version": "4.0.4",
+  "hashes_calculated": false,
+  "windows": {
+    "version": "4.0.4",
+    "architecture": "x64",
+    "signed": true,
+    "signing_identity": "CN=Better Endfield Next",
+    "signing_policy": "self-signed-internal",
+    "installed_directory": "E:\\Better Endfield\\Better Endfield Next",
+    "installation_passed": true,
+    "existing_settings_byte_unchanged": 3
+  },
+  "android": {
+    "version_name": "4.0.4",
+    "version_code": 40004,
+    "architecture": "arm64",
+    "release_build_passed": true,
+    "publish": false,
+    "voice_data": "pending later update"
+  },
+  "bem_tools": {
+    "version": "1.5.4",
+    "catalog_revision": "20261015-1.6.3-snowshine1",
+    "portable_projects_packed_and_validated": 6,
+    "catalog_profiles_byte_match": true
+  },
+  "checks": {
+    "aurora_legacy_policy": 228,
+    "aurora_production_binding": 666,
+    "catalog_import": 11,
+    "steam_service": 204,
+    "native_launcher": 34,
+    "published_json": 8,
+    "aurora_native_renderer_observations": 65,
+    "legacy_bem_runtime": {
+      "package_id": "bem.cc33ec800c40493b87f640bbbcd3f503",
+      "resource": "chr_0014_aurora_postmodel",
+      "committed_components": 12,
+      "palette_slots_remapped": 10,
+      "strict_validation": true,
+      "game_exit_code": 0,
+      "user_accepted": true
+    },
+    "sprint": "user tested; compiled for release without repeating sprint tests"
+  },
+  "not_verified": [
+    "All seven legacy BEM packages individually rendered",
+    "Legacy BEM replacement rendering in the character details UI",
+    "Steam playtime, overlay and Steam Input acceptance",
+    "Android Snowshine compatibility and new voice data"
+  ],
+  "assets": [
+    { "name": "BetterEndfieldNext-4.0.4-Setup.exe", "bytes": 76664608 },
+    { "name": "BEM-Tools-1.5.4-win-x64.zip", "bytes": 72854215 },
+    { "name": "BEM-Tools-1.5.4-data-patch.zip", "bytes": 1359331 }
+  ],
+  "local_only_assets": [
+    { "name": "BetterEndfieldNext-4.0.4-win-x64.zip", "bytes": 84958754 },
+    { "name": "BetterEndfieldNext-4.0.4-Android-arm64.apk", "bytes": 6066313 }
+  ],
+  "release": {
+    "tag": "v4.0.4",
+    "title": "Better Endfield Next 4.0.4 / BEM Tools 1.5.4",
+    "notes": "docs/workspace/releases/4.0.4/GITHUB_RELEASE.md"
+  }
+}

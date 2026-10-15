@@ -42,3 +42,7 @@ BEM Tools 1.5.3 新增祀、明河及其 02/03 世界形态的原始资源合同
 - 本目录全部相对引用随工具包移动；不要求原来的研究工作区。没有 Android donor、Android 资源声明或 Android 新版验证。
 
 English: These are Windows 1.6.3 target resources. Jsspsi has a partial legacy catalog with real source identities; only supported per-component layouts can use ordinary source conversion. Minghe variants use exact BEM 1.4 world targets, all owned by `chr_0037_minghe`. The bundled explicit projects are editable keep-only starting points, not completed replacements. Readiness/rendering flags remain false and missing identities remain explicit.
+
+## 昼雪 1.6.3 修订
+
+[昼雪资料](SNOWSHINE.md) 更新当前世界/详情合同、EFMI 身份及 keep-only 工程；与既有祀、明河资料一并分发。

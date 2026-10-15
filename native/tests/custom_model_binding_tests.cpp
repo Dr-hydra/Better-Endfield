@@ -29,6 +29,7 @@ struct Fake {
     std::vector<uint8_t> data;
     int width=4, height=4, format=10;
     uint32_t index_count=6;
+    uint32_t vertex_count=3;
     size_t destroy_calls=0;
 };
 std::vector<std::unique_ptr<Fake>> objects;
@@ -44,6 +45,7 @@ void* fake_scene_game_objects=nullptr;
 int fake_game_object_class_token=0;
 uint64_t game_object_calls=0;
 uint64_t fake_runtime_calls=0;
+uint64_t fake_binding_write_calls=0;
 void* last_finished_asset=nullptr;
 void* FakeObjectClass(void* object) {
     auto* value=static_cast<Fake*>(object);
@@ -96,7 +98,7 @@ void* BE_CALL InvokeFake(void*,const void* method,void* object,void** args,void*
         return nullptr;
     }
     if (key=="game_object.renderers") return fake_transform_type && args[0]==fake_transform_type?n->transforms:object;
-    if (key=="mesh.get_vertex_count") return Scalar(3);
+    if (key=="mesh.get_vertex_count") return Scalar(n->vertex_count);
     if (key=="mesh.get_sub_mesh_count") return Scalar(1);
     if (key=="mesh.get_index_count") return Scalar(n->index_count);
     if (key=="mesh.get_vertex_attribute_count") return Scalar(n->array.size());
@@ -125,20 +127,21 @@ void* BE_CALL InvokeFake(void*,const void* method,void* object,void** args,void*
     if (key.starts_with("skinned.") && n && n->runtime_class==g_static_renderer_class.class_info && n->runtime_class)
         Check(false,"static renderer reached a SkinnedMeshRenderer API");
     if (key=="filter.get_shared_mesh") return n->mesh;
-    if (key=="filter.set_shared_mesh") { n->mesh=args[0]; return nullptr; }
+    if (key=="filter.set_shared_mesh") { ++fake_binding_write_calls; n->mesh=args[0]; return nullptr; }
     if (key=="skinned.get_bones") return n->bones;
-    if (key=="skinned.set_bones") { n->bones=args[0]; return nullptr; }
+    if (key=="skinned.set_bones") { ++fake_binding_write_calls; n->bones=args[0]; return nullptr; }
     if (key=="skinned.get_shared_mesh") return n->mesh;
-    if (key=="skinned.set_shared_mesh") { n->mesh=args[0]; return nullptr; }
+    if (key=="skinned.set_shared_mesh") { ++fake_binding_write_calls; n->mesh=args[0]; return nullptr; }
     if (key=="renderer.get_shared_materials") return n->materials;
     if (key=="renderer.set_shared_materials") {
+        ++fake_binding_write_calls;
         if (object==reject_material_renderer && !rejected) { rejected=true; *exception=object; }
         else n->materials=args[0];
         return nullptr;
     }
     if (key=="renderer.get_enabled") return Scalar(n->enabled);
     if (key=="renderer.is_visible") return Scalar(n->visible);
-    if (key=="renderer.set_enabled") { n->enabled=*static_cast<bool*>(args[0]); return nullptr; }
+    if (key=="renderer.set_enabled") { ++fake_binding_write_calls; n->enabled=*static_cast<bool*>(args[0]); return nullptr; }
     if (key=="material.copy") { auto* donor=static_cast<Fake*>(args[0]);if (!donor->shader) donor->shader=Make("shader");n->shader=donor->shader;n->name=donor->name; n->textures=donor->textures; return nullptr; }
     if (key=="material.get_texture_property_ids") { auto* a=Array({}); for (auto [id,tex]:n->textures) a->array.push_back(Scalar(id)); return a; }
     if (key=="material.get_texture_by_id") return n->textures.at(*static_cast<int*>(args[0]));
@@ -1432,8 +1435,10 @@ void ResourceTypeBoundaryTests(const std::filesystem::path& package_path) {
 #include "custom_model_npc_root_tests.inc"
 
 #include "custom_model_clone_support_tests.inc"
+#include "aurora_runtime_checks.inc"
 
 int main(int argc,char** argv) {
+    if(argc==2 && std::string_view(argv[1])=="--aurora-legacy") {AuroraRuntimeTests();return 0;}
     if(argc==2 && std::string_view(argv[1])=="--clone-support") {CloneSupportTests();return 0;}
     if(argc==2 && std::string_view(argv[1])=="--npc-roots") {NpcRootTests();return 0;}
     if(argc==2 && std::string_view(argv[1])=="--instance-lineage") {InstanceLineageTests();return 0;}

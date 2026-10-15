@@ -1,0 +1,331 @@
+{
+  "schema": 1,
+  "game_version": "1.6.3",
+  "character_id": "chr_0014_aurora",
+  "runs": [
+    "aurora-1_6_3-login-20261015",
+    "aurora-1_6_3-login-ui-20261015"
+  ],
+  "provenance": [
+    {
+      "run": "aurora-1_6_3-login-20261015",
+      "process_ids": [
+        17216
+      ]
+    },
+    {
+      "run": "aurora-1_6_3-login-ui-20261015",
+      "process_ids": [
+        9064
+      ]
+    }
+  ],
+  "matched_renderers": 65,
+  "catalog_components": 12,
+  "entries": 11,
+  "textures": 41,
+  "identity_issues": [
+    {
+      "kind": "mesh",
+      "name": "S_actor_aurora_fur_01_lod0_20",
+      "reason": "not a complete single-submesh index region"
+    }
+  ],
+  "supported_source_layouts": 8,
+  "changes": {
+    "1": {
+      "original_index_count": {
+        "before": 87120,
+        "after": 87288
+      },
+      "bone_names": {
+        "before": [
+          "Bip001_LCalfTwist",
+          "Bip001_LCalfTwist1",
+          "Bip001_L_Foot",
+          "Bip001_L_Thigh",
+          "Bip001_LThighTwist1",
+          "Bip001_LThighTwist",
+          "Bip001_Pelvis",
+          "Bip001_L_Calf",
+          "Bip001_L_Toe0",
+          "Bip001_R_Foot",
+          "Bip001_R_Toe0",
+          "Bip001_RCalfTwist",
+          "Bip001_RCalfTwist1",
+          "Bip001_R_Thigh",
+          "Bip001_RThighTwist1",
+          "Bip001_RThighTwist",
+          "Bip001_R_Calf",
+          "Bip001_L_UpperArm",
+          "Bip001_LUpArmTwist",
+          "Bip001_LUpArmTwist1",
+          "Bip001_Spine2",
+          "Bip001_R_Clavicle",
+          "R_collarA_jnt",
+          "Bip001_L_Clavicle",
+          "L_collarA_jnt",
+          "Bip001_L_Forearm",
+          "Bip001_L_ForeTwist",
+          "Bip001_L_ForeTwist1",
+          "Bip001_R_Forearm",
+          "Bip001_R_ForeTwist",
+          "Bip001_R_ForeTwist1",
+          "Bip001_L_Finger21",
+          "Bip001_L_Finger22",
+          "Bip001_L_Hand",
+          "Bip001_L_Finger0",
+          "Bip001_L_Finger01",
+          "Bip001_L_Finger1",
+          "Bip001_L_Finger11",
+          "Bip001_L_Finger12",
+          "Bip001_L_Finger3",
+          "Bip001_L_Finger4",
+          "Bip001_L_Finger2",
+          "Bip001_L_Finger31",
+          "Bip001_L_Finger32",
+          "Bip001_L_Finger02",
+          "Bip001_L_Finger42",
+          "Bip001_L_Finger41",
+          "Bip001_R_Finger21",
+          "Bip001_R_Finger22",
+          "Bip001_R_Hand",
+          "Bip001_R_Finger0",
+          "Bip001_R_Finger01",
+          "Bip001_R_Finger1",
+          "Bip001_R_Finger11",
+          "Bip001_R_Finger12",
+          "Bip001_R_Finger3",
+          "Bip001_R_Finger4",
+          "Bip001_R_Finger2",
+          "Bip001_R_Finger31",
+          "Bip001_R_Finger32",
+          "Bip001_R_Finger02",
+          "Bip001_R_Finger42",
+          "Bip001_R_Finger41",
+          "L_sleeve_04_jnt",
+          "L_sleeve_03_jnt",
+          "L_sleeve_01_jnt",
+          "L_sleeve_02_jnt",
+          "R_sleeve_02_jnt",
+          "R_sleeve_03_jnt",
+          "R_sleeve_01_jnt",
+          "R_sleeve_04_jnt",
+          "R_collarB_jnt",
+          "M_collarC_jnt",
+          "L_collarB_jnt",
+          "R_breast_01_jnt",
+          "R_vestA_01_jnt",
+          "L_vestA_01_jnt",
+          "L_breast_01_jnt",
+          "Bip001_RUpArmTwist",
+          "L_vestB_01_jnt",
+          "R_vestC_01_jnt",
+          "Bip001_RUpArmTwist1",
+          "R_vestB_01_jnt",
+          "Bip001_R_UpperArm",
+          "Bip001_Spine1",
+          "Bip001_Spine",
+          "Bip001_Neck"
+        ],
+        "after": [
+          "Bip001_LCalfTwist",
+          "Bip001_LCalfTwist1",
+          "Bip001_L_Foot",
+          "Bip001_L_Thigh",
+          "Bip001_LThighTwist1",
+          "Bip001_LThighTwist",
+          "Bip001_Pelvis",
+          "Bip001_L_Calf",
+          "Bip001_L_Toe0",
+          "Bip001_R_Foot",
+          "Bip001_R_Toe0",
+          "Bip001_RCalfTwist",
+          "Bip001_RCalfTwist1",
+          "Bip001_R_Thigh",
+          "Bip001_RThighTwist1",
+          "Bip001_RThighTwist",
+          "Bip001_R_Calf",
+          "Bip001_L_UpperArm",
+          "Bip001_LUpArmTwist",
+          "Bip001_LUpArmTwist1",
+          "Bip001_Spine2",
+          "Bip001_R_Clavicle",
+          "R_collarA_jnt",
+          "Bip001_L_Clavicle",
+          "L_collarA_jnt",
+          "Bip001_L_Forearm",
+          "Bip001_L_ForeTwist",
+          "Bip001_L_ForeTwist1",
+          "Bip001_R_Forearm",
+          "Bip001_R_ForeTwist",
+          "Bip001_R_ForeTwist1",
+          "Bip001_L_Finger21",
+          "Bip001_L_Finger22",
+          "Bip001_L_Hand",
+          "Bip001_L_Finger0",
+          "Bip001_L_Finger01",
+          "Bip001_L_Finger1",
+          "Bip001_L_Finger02",
+          "Bip001_L_Finger11",
+          "Bip001_L_Finger12",
+          "Bip001_L_Finger3",
+          "Bip001_L_Finger4",
+          "Bip001_L_Finger2",
+          "Bip001_L_Finger31",
+          "Bip001_L_Finger32",
+          "Bip001_L_Finger42",
+          "Bip001_L_Finger41",
+          "Bip001_R_Finger21",
+          "Bip001_R_Finger22",
+          "Bip001_R_Hand",
+          "Bip001_R_Finger0",
+          "Bip001_R_Finger01",
+          "Bip001_R_Finger1",
+          "Bip001_R_Finger11",
+          "Bip001_R_Finger12",
+          "Bip001_R_Finger3",
+          "Bip001_R_Finger4",
+          "Bip001_R_Finger2",
+          "Bip001_R_Finger31",
+          "Bip001_R_Finger32",
+          "Bip001_R_Finger02",
+          "Bip001_R_Finger42",
+          "Bip001_R_Finger41",
+          "L_sleeve_04_jnt",
+          "L_sleeve_01_jnt",
+          "L_sleeve_03_jnt",
+          "L_sleeve_02_jnt",
+          "R_sleeve_02_jnt",
+          "R_sleeve_03_jnt",
+          "R_sleeve_01_jnt",
+          "R_sleeve_04_jnt",
+          "R_collarB_jnt",
+          "M_collarC_jnt",
+          "L_collarB_jnt",
+          "R_breast_01_jnt",
+          "R_vestA_01_jnt",
+          "L_vestA_01_jnt",
+          "L_breast_01_jnt",
+          "Bip001_RUpArmTwist",
+          "L_vestB_01_jnt",
+          "R_vestC_01_jnt",
+          "Bip001_RUpArmTwist1",
+          "R_vestB_01_jnt",
+          "Bip001_R_UpperArm",
+          "Bip001_Spine1",
+          "Bip001_Spine",
+          "Bip001_Neck"
+        ]
+      },
+      "vertex_count": {
+        "before": 23073,
+        "after": 23141
+      }
+    },
+    "5": {
+      "strides": {
+        "before": [
+          16,
+          16,
+          12
+        ],
+        "after": [
+          40,
+          16,
+          32
+        ]
+      },
+      "attributes": {
+        "before": [
+          [
+            0,
+            0,
+            3,
+            0
+          ],
+          [
+            1,
+            0,
+            1,
+            0
+          ],
+          [
+            4,
+            0,
+            2,
+            1
+          ],
+          [
+            5,
+            0,
+            2,
+            1
+          ],
+          [
+            12,
+            4,
+            4,
+            2
+          ],
+          [
+            13,
+            6,
+            4,
+            2
+          ]
+        ],
+        "after": [
+          [
+            0,
+            0,
+            3,
+            0
+          ],
+          [
+            1,
+            0,
+            3,
+            0
+          ],
+          [
+            2,
+            0,
+            4,
+            0
+          ],
+          [
+            4,
+            0,
+            2,
+            1
+          ],
+          [
+            5,
+            0,
+            2,
+            1
+          ],
+          [
+            12,
+            0,
+            4,
+            2
+          ],
+          [
+            13,
+            10,
+            4,
+            2
+          ]
+        ]
+      },
+      "vertex_count": {
+        "before": 632,
+        "after": 1516
+      }
+    }
+  },
+  "render_verified": false,
+  "artifact_hashes_computed": false
+}

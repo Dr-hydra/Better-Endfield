@@ -11,6 +11,7 @@
 #include "mod_registry.h"
 #include "resource_policy.h"
 #include "generic_model_matcher.h"
+#include "aurora_legacy_compat.h"
 #include "texture_binding_policy.h"
 #if defined(__ANDROID__)
 #include "modules/custom_model/android_mesh_builder.h"
@@ -1949,6 +1950,11 @@ struct PreparedBinding {
     bool donor_enabled=true;
     std::shared_ptr<SavedOriginalBinding> saved_original;
     std::vector<std::string> bone_names;
+#if defined(_WIN32)
+    // Set only after the actual pristine donor passes the complete, bounded
+    // Snowshine 1.6.3 contract; it also applies when this part is kept/hidden.
+    bool aurora_legacy_163=false;
+#endif
     bool original_enabled=true;
     bool custom_enabled=true;
 #if defined(__ANDROID__)
@@ -1965,6 +1971,41 @@ bool UseSavedOriginal(void* asset,PreparedBinding& binding,bool require_material
 struct GenericRendererCandidate;
 bool ReadGenericPristineMesh(const CharacterAdapter&,void*,const GenericRendererCandidate&,GenericMatching::MeshIdentity&);
 #include "generic_model_matcher.inc"
+#if defined(_WIN32)
+bool ValidateAuroraLegacyParts(void* asset,const GenericMatching::ReceiverKey& key,uint32_t component,
+    void* mesh,void* material,std::span<void* const> bones) {
+    GenericMatching::MeshIdentity identity;
+    int32_t vertices=0;
+    if (!AuroraLegacy::IsLegacyTarget(key.character,key.resource,component,ObjectName(mesh),AuroraLegacy::kLegacyIndices,false) ||
+        !ReadGenericMeshIdentity(mesh,GenericMatching::DonorOrigin::Pristine,identity) ||
+        !InvokeValue(Contract("mesh.get_vertex_count"),mesh,nullptr,vertices) || vertices<0) return false;
+    if (!IsNativeObjectAlive(material) || ObjectName(material)!=AuroraLegacy::kMaterialName ||
+        !IsNativeObjectAlive(Invoke(Contract("material.get_shader"),material,nullptr))) return false;
+    void* poses=Invoke(Contract("mesh.get_bindposes"),mesh,nullptr);
+    if (bones.size()!=AuroraLegacy::kBoneCount || ArrayLength(poses)!=int(AuroraLegacy::kBoneCount)) return false;
+    std::array<std::string,AuroraLegacy::kBoneCount> names,paths;
+    std::array<AuroraLegacy::BoneObservation,AuroraLegacy::kBoneCount> observed;
+    for (size_t i=0;i<AuroraLegacy::kBoneCount;++i) {
+        void* bone=bones[i];Matrix4x4Raw matrix{};
+        if (!IsNativeObjectAlive(bone) || !ResourceRelativePath(asset,bone,paths[i]) ||
+            !Unbox(ArrayValue(poses,int(i)),matrix)) return false;
+        names[i]=ObjectName(bone);
+        observed[i].name=names[i];observed[i].path=paths[i];
+        std::copy(std::begin(matrix.m),std::end(matrix.m),observed[i].bindpose.begin());
+    }
+    return AuroraLegacy::ValidateDonor(identity.name,key.path,identity.indices,uint32_t(vertices),observed);
+}
+bool ValidateAuroraLegacyDonor(void* asset,PreparedBinding& binding) {
+    binding.aurora_legacy_163=false;
+    void* source_bones=DonorBones(binding);void* materials=DonorMaterials(binding);
+    if (ArrayLength(source_bones)!=int(AuroraLegacy::kBoneCount) || ArrayLength(materials)!=1) return false;
+    std::array<void*,AuroraLegacy::kBoneCount> bones;
+    for (size_t i=0;i<bones.size();++i) bones[i]=ArrayValue(source_bones,int(i));
+    binding.aurora_legacy_163=ValidateAuroraLegacyParts(asset,binding.receiver_key,binding.component_id,
+        DonorMesh(binding),ArrayValue(materials,0),bones);
+    return binding.aurora_legacy_163;
+}
+#endif
 bool MakeReceiverKey(const CharacterAdapter& adapter,void* asset,void* renderer,GenericMatching::ReceiverKey& key) {
     std::string resource=ObjectName(asset),path;
     resource=std::string(ResourceBaseName(resource));
@@ -2085,10 +2126,19 @@ bool PreparePalette(const BemComponent& component,PreparedBinding& target,
             Log("Merged palette donor missing or mesh spaces differ."); return false;
         }
         void* donor_poses=Invoke(Contract("mesh.get_bindposes"),DonorMesh(*donor),nullptr);
-        if (ref.index>=static_cast<uint32_t>(ArrayLength(DonorBones(*donor))) ||
-            ref.index>=static_cast<uint32_t>(ArrayLength(donor_poses))) return false;
-        void* bone=ArrayValue(DonorBones(*donor),ref.index);
-        void* pose=ArrayValue(donor_poses,ref.index); Matrix4x4Raw matrix{};
+        uint32_t donor_index=ref.index;
+#if defined(_WIN32)
+        if (donor->aurora_legacy_163) {
+            if (donor->component_id!=1 || i>=component.bone_names.size()) return false;
+            const auto mapped=AuroraLegacy::RemapBone(ref.index,component.bone_names[i]);
+            if (!mapped) {Log("Aurora legacy palette source does not match the verified old bone slot.");return false;}
+            donor_index=*mapped;
+        }
+#endif
+        if (donor_index>=static_cast<uint32_t>(ArrayLength(DonorBones(*donor))) ||
+            donor_index>=static_cast<uint32_t>(ArrayLength(donor_poses))) return false;
+        void* bone=ArrayValue(DonorBones(*donor),donor_index);
+        void* pose=ArrayValue(donor_poses,donor_index); Matrix4x4Raw matrix{};
         // BEM 1.2 aliases cover a bone this resource names differently (e.g. a
         // world-skeleton typo); the palette still binds the donor's bone object.
         if (!IsNativeObjectAlive(bone) || (!skip_validation && !component.BoneNameMatches(i,ObjectName(bone))) || !Unbox(pose,matrix)) return false;
@@ -3219,6 +3269,87 @@ bool ReadGenericPristineMesh(const CharacterAdapter& adapter,void* asset,
     }
     return true;
 }
+#if defined(_WIN32)
+// Discovery must not rebuild bone arrays or materials. For a generated Mesh,
+// use its proven saved Original identity and resolve that palette's paths in
+// this root; the currently displayed custom palette can have a different order.
+bool ValidateAuroraLegacyCandidate(const CharacterAdapter& adapter,void* asset,uint32_t component,
+    const GenericRendererCandidate& candidate,const GenericMatching::MeshIdentity& identity) {
+    std::array<void*,AuroraLegacy::kBoneCount> bones{};
+    if (identity.origin==GenericMatching::DonorOrigin::Pristine) {
+        if (ArrayLength(candidate.bones)!=int(bones.size()) || ArrayLength(candidate.materials)!=1) return false;
+        for (size_t i=0;i<bones.size();++i) bones[i]=ArrayValue(candidate.bones,int(i));
+        return ValidateAuroraLegacyParts(asset,candidate.key,component,identity.mesh,ArrayValue(candidate.materials,0),bones);
+    }
+    if (identity.origin!=GenericMatching::DonorOrigin::SavedOriginal) return false;
+    const SavedOriginalBinding* original=nullptr;
+    for (const auto& record:g_completed) if (SameAdapter(*record.adapter,adapter))
+        for (const auto& old:record.bindings) if (old.original && old.receiver_key==candidate.key &&
+            old.original->ResolveMesh(candidate.mesh)==identity.mesh) {
+            if (old.original->bone_paths.size()!=bones.size() || old.original->materials.size()!=1 ||
+                old.original->material_present.size()!=1 || !old.original->material_present[0]) return false;
+            for (size_t i=0;i<bones.size();++i)
+                if (old.original->bone_paths[i]!=AuroraLegacy::kCurrentBones[i].path) return false;
+            original=old.original.get();
+        }
+    if (!original) return false;
+    void* material=original->materials[0].Get();
+    if (!material) {
+        std::vector<const WeakObject*> wanted{&original->materials[0]};std::vector<void*> live(1,nullptr);
+        bool complete=CollectLiveMaterials(asset,wanted,live);
+        for (const auto& record:g_completed) if (!complete && SameAdapter(*record.adapter,adapter))
+            if (void* root=record.root.Get();root && root!=asset) complete=CollectLiveMaterials(root,wanted,live);
+        if (!complete) return false;
+        material=live[0];
+    }
+    BE_ResolvedClassV1 transform{};
+    if (!g_host->resolve_class || g_host->resolve_class(g_host->context,"UnityEngine.CoreModule.dll",
+        "UnityEngine","Transform",&transform)!=BE_Result_Ok || !transform.type_object) return false;
+    bool inactive=true;void* args[]{transform.type_object,&inactive};
+    void* transforms=Invoke(Contract("game_object.renderers"),asset,args);
+    const int count=ArrayLength(transforms);
+    if (count<0 || count>8192) return false;
+    std::unordered_map<std::string_view,size_t> wanted;
+    for (size_t i=0;i<bones.size();++i) wanted.emplace(AuroraLegacy::kCurrentBones[i].path,i);
+    for (int i=0;i<count;++i) {
+        void* bone=ArrayValue(transforms,i);std::string path;
+        if (!IsNativeObjectAlive(bone) || !ResourceRelativePath(asset,bone,path)) continue;
+        const auto found=wanted.find(path);
+        if (found==wanted.end()) continue;
+        if (bones[found->second]) return false;
+        bones[found->second]=bone;
+    }
+    return ValidateAuroraLegacyParts(asset,candidate.key,component,identity.mesh,material,bones);
+}
+#endif
+GenericMatching::Match SelectCompatibleModelDonor(const CharacterAdapter& adapter,void* asset,
+    const std::vector<GenericRendererCandidate>& index,const std::vector<GenericMatching::Candidate>& candidates,
+    uint32_t component_id,bool static_mesh,GenericMatching::Request& request,bool windows_compat,bool& legacy_aurora) {
+    legacy_aurora=false;
+    const auto candidate_valid=[&](const auto& candidate) {
+        const auto found=std::find_if(index.begin(),index.end(),[&](const auto& entry){return entry.renderer==candidate.renderer;});
+        return found!=index.end() && candidate.pristine.mesh && !GenericCandidateContractError(asset,*found,static_mesh);
+    };
+    auto match=GenericMatching::SelectUnique(candidates,request,candidate_valid);
+#if defined(_WIN32)
+    if (windows_compat && match.status==GenericMatching::MatchStatus::Missing && request.check_indices &&
+        AuroraLegacy::IsLegacyTarget(adapter.id,request.resource,component_id,request.mesh_name,request.indices,adapter.explicit_resource)) {
+        // The package/header contract remains unchanged. Only this exact donor
+        // request is adapted, after the normal match failed with no candidate.
+        request.indices=AuroraLegacy::kCurrentIndices;
+        request.verified_receiver_path=AuroraLegacy::kReceiverPath;
+        match=GenericMatching::SelectUnique(candidates,request,[&](const auto& candidate) {
+            if (!candidate_valid(candidate)) return false;
+            const auto found=std::find_if(index.begin(),index.end(),[&](const auto& entry){return entry.renderer==candidate.renderer;});
+            return ValidateAuroraLegacyCandidate(adapter,asset,component_id,*found,candidate.pristine);
+        });
+        legacy_aurora=match.status==GenericMatching::MatchStatus::Matched;
+    }
+#else
+    (void)windows_compat;
+#endif
+    return match;
+}
 bool CaptureGenericResourceBindings(const CharacterAdapter& adapter,const BemPocData& bem,void* asset,
     std::vector<PreparedBinding>& bindings) {
     if (!IsGameObjectResource(asset)) return false;
@@ -3233,21 +3364,25 @@ bool CaptureGenericResourceBindings(const CharacterAdapter& adapter,const BemPoc
         ReadGenericPristineMesh(adapter,asset,candidate,c.pristine);candidates.push_back(std::move(c));
     }
     std::vector<size_t> chosen;std::vector<void*> unique;
+#if defined(_WIN32)
+    std::vector<bool> legacy_aurora;
+#endif
     for (const auto& component:bem.components) {
         const auto& identity=adapter.components[component.info.component_id];
         GenericMatching::Request request{adapter.id,candidates.front().key.resource,identity.name,
             adapter.explicit_resource?GenericMatching::Region::Explicit:GenericMatching::Region::Lod0,
             identity.indices,!bem.skip_validation,adapter.explicit_resource?identity.receiver_path:""};
-        const auto match=GenericMatching::SelectUnique(candidates,request,[&](const auto& c) {
-            const auto found=std::find_if(index.begin(),index.end(),[&](const auto& entry){return entry.renderer==c.renderer;});
-            return found!=index.end() && c.pristine.mesh &&
-                !GenericCandidateContractError(asset,*found,component.static_mesh);
-        });
+        bool compatible_aurora=false;
+        const auto match=SelectCompatibleModelDonor(adapter,asset,index,candidates,component.info.component_id,
+            component.static_mesh,request,true,compatible_aurora);
         if (match.status!=GenericMatching::MatchStatus::Matched) {
             Log("Generic model donor is missing/ambiguous: "+std::string(identity.name)+
                 DescribeGenericDonorFailure(asset,index,candidates,request,match.status,component.static_mesh));return false;
         }
         chosen.push_back(match.index);unique.push_back(index[match.index].renderer);
+#if defined(_WIN32)
+        legacy_aurora.push_back(compatible_aurora);
+#endif
     }
     if (!GenericMatching::DistinctReceivers(unique)) return false;
     for (size_t i=0;i<chosen.size();++i) {
@@ -3255,6 +3390,15 @@ bool CaptureGenericResourceBindings(const CharacterAdapter& adapter,const BemPoc
         b.receiver_key=c.key;b.component_id=component.info.component_id;b.renderer=c.renderer;b.original_mesh=c.mesh;
         b.original_materials=c.materials;b.original_bones=c.bones;b.original_enabled=c.enabled;
         if (!UseSavedOriginal(asset,b)) return false;
+#if defined(_WIN32)
+        if (legacy_aurora[i]) {
+            if (!ValidateAuroraLegacyDonor(asset,b)) {
+                Log("Aurora legacy donor palette/path/material/bindpose contract refused; original retained.");return false;
+            }
+            Log("Aurora legacy donor accepted resource="+b.receiver_key.resource+
+                " oldIndices=87120 currentIndices=87288 vertices=23141 palette=87 remappedSlots=10");
+        }
+#endif
         b.custom_mesh=DonorMesh(b);b.custom_enabled=(component.info.flags&kComponentFlagHidden)?false:
             (b.saved_original?b.donor_enabled:b.original_enabled);
         if (b.saved_original) b.custom_bones=DonorBones(b);

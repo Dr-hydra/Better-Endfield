@@ -1,4 +1,4 @@
-# BEM Tools 1.5.3
+# BEM Tools 1.5.4
 
 解压整个工具包，双击 **BetterEndfieldNext.BemTools.exe** 打开创作者 GUI。
 无需安装 Better Endfield、Python 或 .NET。请保留同目录的命令行程序、
@@ -8,14 +8,14 @@ GUI 与 Better Endfield 的“角色外观 → BEM 创作者工具…”使用�
 支持导出工程、标准工作区、源 Mod 转换、BEM 解包、项目打包和 ZIP 合集。
 导出的模型包在 Better Endfield 中导入使用。
 
-1.5.3 更新 Windows 1.6.3 角色目标资料；独立 GUI 自 1.5.2 起提供。
+1.5.4 更新昼雪的 Windows 1.6.3 合同与来源身份，并保留 1.5.3 新增的祀、明河资料；独立 GUI 自 1.5.2 起提供。
 新增采集资料随 `catalog/`、`profiles/` 一起分发。资料内的准备状态仍是准则：
 运行时采集完成不代表任意源 Mod 可以自动转换，也不代表替换模型已通过游戏内验证。
 本次没有加入 Android 新版游戏目标证据。
 
 新增资料入口：[1.6.3 目标资料说明](profiles/endfield-1.6.3/README.md) 与
 [目标索引](profiles/endfield-1.6.3/index.json)。包含祀的部分常规角色 catalog、
-祀完整世界/详情与 cloth_04 的 1.4 起点，以及明河三个世界模型的 1.4 起点。
+祀完整世界/详情与 cloth_04 的 1.4 起点、明河三个世界模型的 1.4 起点，以及[昼雪世界/详情修订](profiles/endfield-1.6.3/SNOWSHINE.md)。
 这些显式项目均为 `keep-only`：可读取、打包，但尚无替换网格；
 `runtime_verified`、`conversion_ready`、`render_verified` 均保持 `false`。
 便携证据随该目录的 `evidence/` 分发，不需要开发者的研究工作区。
@@ -42,7 +42,7 @@ export projects, portable workspaces, source Mod conversion, unpacking, packing
 and ZIP bundles. Pass one `.bemproj.json` path to open an existing export project.
 Import the resulting packages in Better Endfield to use them in the game.
 
-Version 1.5.3 refreshes Windows 1.6.3 character target data; the standalone GUI
+Version 1.5.4 refreshes Snowshine's Windows 1.6.3 contracts and source identities, retaining the Jsspsi/Minghe data from 1.5.3; the standalone GUI
 was introduced in 1.5.2. Target collections travel with `catalog/` and `profiles/`.
 Their readiness fields remain authoritative: captured runtime data alone does not
 establish automatic conversion or in-game rendering. This update adds no evidence
@@ -51,7 +51,7 @@ for targets in a new Android game version.
 See the bundled [1.6.3 collection](profiles/endfield-1.6.3/README.md) and
 [target index](profiles/endfield-1.6.3/index.json): a partial legacy catalog for
 Jsspsi, full world/UI and cloth_04 resource projects for Jsspsi, and three world
-variants for Minghe. Explicit projects are keep-only authoring starting points,
+variants for Minghe, plus the updated Snowshine world/UI project. Explicit projects are keep-only authoring starting points,
 with all three readiness flags still false. Their portable evidence is included
 under the same collection's `evidence/` directory.
 

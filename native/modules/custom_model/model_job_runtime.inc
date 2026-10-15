@@ -964,14 +964,14 @@ bool HasCompatibleModelTarget(const EnabledMod& mod,void* asset,std::string& rea
     std::vector<GenericMatching::Candidate> candidates;
     if (!BuildModelDiscoveryIndex(adapter,asset,index,candidates,reason)) return false;
     std::vector<void*> receivers;
-    for (const auto& identity:adapter.components) {
+    for (size_t component=0;component<adapter.components.size();++component) {
+        const auto& identity=adapter.components[component];
         GenericMatching::Request request{adapter.id,candidates.front().key.resource,identity.name,
             adapter.explicit_resource?GenericMatching::Region::Explicit:GenericMatching::Region::Lod0,
             identity.indices,!mod.skip_validation,adapter.explicit_resource?identity.receiver_path:""};
-        const auto match=GenericMatching::SelectUnique(candidates,request,[&](const auto& c) {
-            const auto found=std::find_if(index.begin(),index.end(),[&](const auto& entry){return entry.renderer==c.renderer;});
-            return found!=index.end() && !GenericCandidateContractError(asset,*found,identity.static_mesh);
-        });
+        bool legacy_aurora=false;
+        const auto match=SelectCompatibleModelDonor(adapter,asset,index,candidates,uint32_t(component),identity.static_mesh,
+            request,platform==ModelDiscoveryPlatform::Windows,legacy_aurora);
         if (match.status!=GenericMatching::MatchStatus::Matched) {
             reason="donor="+std::string(identity.name)+DescribeGenericDonorFailure(asset,index,candidates,request,match.status,identity.static_mesh);
             return false;

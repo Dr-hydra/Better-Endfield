@@ -1,12 +1,12 @@
 # Steam 国服启动（Windows 预览）
 
-本功能自 Windows 3.5.3 起提供。4.0.3 更新已有 Steam 启动流程以适配新版国服检查，并按用户选择使用注入器或 XInput；不会因配置 Steam 自动安装 XInput。正式 Steam 元数据已齐备，当前国服 1.6.3 的 Steam 覆盖层、计时和完整客户端流程仍待实机验证。
+本功能自 Windows 3.5.3 起提供。4.0.4 自动填写和更新当前 Steam 账号的启动选项，修复直接运行占位 EXE 时的“平台无效”；用户已确认启动修复可用。配置沿用主界面的注入器或 XInput 选择，不会自动安装 XInput。Steam 计时、覆盖层、截图及 Steam Input 仍需单独实机验证。
 
 ## 当前版本状态（2026-10-15）
 
-SteamDB 与 `api.steamcmd.net/v1/info/4732690` 均已提供所需字段：安装目录 `Arknights Endfiled`、默认程序 `Endfield.exe`、public BuildID `25728898`、Depot `4732691`、Manifest `3024011413268238677`。安装目录的 `Endfiled` 是上游原始拼写，不能自行更正。现有“获取元数据”入口可以继续使用，无需硬编码这些版本值。
+应用 AppID 为 `4732690`，正式元数据已提供安装目录、Windows 启动程序、public BuildID 和 Depot Manifest。使用“获取元数据”取得最新资料，或导入与当前游戏版本一致的 JSON；目录与版本字段以本次解析结果为准，不在程序或使用说明中硬编码。
 
-已保存[可导入的规范 JSON](../../research/host/1.6.3/Windows/steam-launch/normalized-metadata.json)和 [ACF 预览](../../research/host/1.6.3/Windows/steam-launch/preview-only.acf)。生产解析器验证缺项为零，JSON 与 ACF 的身份及 Depot Manifest 往返检查通过。本次只生成预览，没有应用到真实 Steam 游戏库。字段来源与验证记录见 [1.6.3 Steam 元数据检查](research/1.6.3/steam-launch/STEAM_METADATA_20261015.md)。
+仓库保留的[规范 JSON](../../research/host/1.6.3/Windows/steam-launch/normalized-metadata.json)和 [ACF 预览](../../research/host/1.6.3/Windows/steam-launch/preview-only.acf)是早期查询快照，其中曾出现 `Arknights Endfiled` 拼写；它们不证明当前安装目录仍采用该值。本机当前配置已使用 `Arknights Endfield`，后续仍应遵循最新导入资料，并在 ACF 预览中核对路径。历史字段来源见 [1.6.3 Steam 元数据检查](research/1.6.3/steam-launch/STEAM_METADATA_20261015.md)，4.0.4 的实际验证范围见[发布记录](../workspace/releases/4.0.4/RELEASE_4_0_4.md)。
 
 国服 1.6.3 已实际执行启动器父进程检查。4.0.3 的 Injector 和 Launcher 共用新的启动适配，自动寻找并验证本机正版 `Games.exe`，借用其暂停进程启动游戏，官方启动器界面无需运行。该方案已通过真实国服启动检查；本机仍需保留正版启动器文件，并遵循正常 UAC 授权。证据及验证边界见[启动器检查记录](research/1.6.3/launcher-check/LAUNCHER_CHECK.md)。
 
@@ -15,10 +15,14 @@ SteamDB 与 `api.steamcmd.net/v1/info/4732690` 均已提供所需字段：安装
 1. 在 BE 中选择国服 `Endfield.exe`、启动参数、加载方式和需要启用的模块。注入器模式不需要 XInput；若选择 XInput，应通过现有“安装或更新”按钮自行部署。
 2. 在 Steam 区域检测 `steam.exe`，选择已登记的 Steam 游戏库。
 3. 获取元数据，或导入保存的 `api.steamcmd.net` 原始 JSON / BE 规范化 JSON。必须具备应用 `4732690` 的安装目录、Windows 启动 EXE、public BuildID 和 Depot Manifest；缺失数据时只能等待，BE 不会填写猜测值。
-4. 在 Steam 菜单选择“退出”，确认托盘中的客户端也已结束。点击“应用 / 更新 ACF”：写入 ACF 和独立目录内的空占位 EXE，不改变加载方式、不安装 XInput。
-5. 点击“复制启动命令”，在 Steam 游戏属性的“启动选项”中粘贴。首次手动设置完成后可用 Steam 的开始按钮，或 BE 的“从 Steam 启动国服”。
+4. 在 Steam 菜单选择“退出”，确认托盘中的客户端也已结束。点击“应用 / 更新配置”：写入 ACF 和独立目录内的空占位 EXE，并自动填写当前账号的启动选项。
+5. 配置成功后，可直接使用 Steam 的开始按钮或 BE 的“从 Steam 启动国服”。BE 的启动按钮会再次核对命令；需要修改而 Steam 仍运行时，会提示先退出客户端，再点击启动自动更新。
 
-启动命令为 `"BE 启动组件完整路径" --game "国服 Endfield.exe 完整路径" -- 已保存的国服参数 --steam-command %command%`。注入器模式使用 `BetterEndfieldNext.Injector.exe`，XInput 模式使用 `BetterEndfieldNext.Launcher.exe`；Steam 附带的原始命令不会混入国服参数。BE 不自动修改 `localconfig.vdf`。从旧版升级、更换加载方式或修改路径/参数后，应重新复制到 Steam 启动选项。国服资源继续由官方启动器更新；需要先在 Steam 正常入库，ACF 不授予许可或提前解锁。
+启动命令为 `"BE 启动组件完整路径" --hide-console --game "国服 Endfield.exe 完整路径" -- 已保存的国服参数 --steam-command %command%`。注入器模式使用 `BetterEndfieldNext.Injector.exe`，XInput 模式使用 `BetterEndfieldNext.Launcher.exe`；辅助程序隐藏控制台并保留错误提示，Steam 附带的原始命令不会混入国服参数。
+
+4.0.4 自动修改所选 Steam 账号 `localconfig.vdf` 中此游戏的 `LaunchOptions` 字段，保留其他文本、游戏和账号配置。“复制启动命令”保留为手动配置入口，正常流程无需自行粘贴。切换账号、加载方式、BE 路径或国服参数后，请在 Steam 退出时使用“应用 / 更新配置”或 BE 的启动按钮刷新；每小时元数据查询不会在后台修改启动选项。
+
+Steam 运行时使用当前活动账号；退出时按最近登录记录选择，存在歧义会要求先登录目标账号，BE 不猜测账户。首次接管会保存原启动选项；此后若用户另外改了该值，BE 会拒绝静默覆盖。可以手动填入当前生成的完整命令后重试。国服资源继续由官方启动器更新；需要先在 Steam 正常入库，ACF 不授予许可或提前解锁。
 
 2026-10-07 的查询曾仅返回游戏名称，该数据缺口现已补齐。测试用合成元数据仍仅为离线夹具；应使用最新在线数据或上文保存的正式数据快照。
 
@@ -28,9 +32,17 @@ SteamDB 与 `api.steamcmd.net/v1/info/4732690` 均已提供所需字段：安装
 
 BuildID / Manifest 更新保留 `LastPlayed`、`LastOwner` 等未知或运行时字段。安装目录、Windows 启动路径或所选库改变时，需先移除旧配置再重新应用。Steam 启动打断首次配置时，BE 保存待提交记录，客户端退出后可以继续提交或移除。
 
-“移除 BE 的 ACF”只清除 BE 管理的清单、空占位文件和本次创建的空目录，保留备份及 XInput 代理。XInput 由主程序原有安装 / 卸载功能管理。状态与备份位于 `%LOCALAPPDATA%\BetterEndfieldNext\steam`。
+“移除 BE 配置”先恢复 BE 管理过的账号各自原启动选项，再清除归属 BE 的清单、空占位文件和本次创建的空目录。其他字段的后续修改会保留；启动选项已被另行更改时停止恢复，避免覆盖。备份及 XInput 代理保留，XInput 继续由原有安装 / 卸载功能管理。状态与备份位于 `%LOCALAPPDATA%\BetterEndfieldNext\steam`。
 
-BE 拒绝接管其他来源的 ACF、其他库已有安装、包含下载资源的占位目录或目录链接。占位目录与国服目录分开；`AutoUpdateBehavior=1` 不能保证 Steam 永不下载。Steam 下载或校验后目录有实际文件时，BE 会停止更新 / 移除，需检查 Steam 安装状态。
+游戏目录根部或元数据指定 EXE 旁的 `steam_appid.txt`，若是普通小文件（至多 128 字节），UTF-8/ASCII 内容去掉可选 BOM、首尾空白及 NUL 后恰好为 `4732690`，可直接保留并更新。普通移除也保留该文件和因此非空的目录。其他位置同名文件、错误 AppID、异常内容或链接不属于此白名单。
+
+## 冲突文件与确认清理
+
+发现其他来源的 ACF、非空 EXE、日志或其他未归属 BE 的文件时，自动更新和普通移除不会删除它们。手动点击“应用 / 更新配置”可查看清理预览，显示完整 Steam 游戏目录、ACF 路径、文件数与总字节数；选择“删除并重新配置”才永久删除预览中的内容。已下载的 Steam 国际服资源也会被删除，程序只备份小型清单和配置记录，不备份游戏内容；取消则不删除。
+
+清理仅限已登记 Steam 库中的指定游戏目录。国服目录、BE 安装和状态目录、其他库的同游戏安装、目录链接及重解析点都不能通过确认绕过。执行前复核目录快照，确认期间内容变化会停止；逐项删除中出现新文件也不会递归带走。Steam 或游戏运行时拒绝清理，中途启动、文件占用或取消会停止；未完成操作需退出客户端后再次点击“应用 / 更新配置”，重新查看并确认剩余范围。
+
+占位目录始终与国服目录分开。`AutoUpdateBehavior=1` 不保证 Steam 永不下载；校验或更新可能下载国际服文件，遇到上述冲突应先检查清理预览，确认是否要删除已下载资源。
 
 ## 管理员权限
 
@@ -58,4 +70,4 @@ $latest = Get-Content 'build/steam-cn-launch/fixtures/latest.json' -Raw | Conver
 
 界面脚本使用 PowerShell 7，在隔离的 `--steam-setup-preview` 窗口检查写入 / 启动按钮禁用、完整 ACF 预览以及普通 / 760×700 窗口截图。隔离预览不载入主程序设置，不安装代理、不写 Steam 文件或注册表、不启动游戏。
 
-离线覆盖包括多 Depot 与 64 位 Manifest、Windows 目标筛选、版本更新、Steam 运行时拒绝写入、既有安装保护、备份 / 移除、中断恢复、管理员选项保留及 XInput 冲突。实际 Steam 开始 / 停止状态、时长、覆盖层、截图、Steam Input 和版本更新必须另行实机验证。
+4.0.4 的 204 项离线检查涵盖多 Depot 与 64 位 Manifest、Windows 筛选、账号选择和启动选项恢复、Steam 运行时拒绝写入、辅助 AppID 文件保留、确认清理与中断恢复、目录和链接保护、管理员选项保留及 XInput 冲突。用户已确认本轮 Steam 启动修复；计时、覆盖层、截图、Steam Input 和后续 Steam 更新行为仍需分别验收。

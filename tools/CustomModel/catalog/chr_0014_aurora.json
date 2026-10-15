@@ -5,7 +5,7 @@
   "name": "昼雪",
   "platform": "windows-x64",
   "profile_id": "chr_0014_aurora-pc",
-  "revision": "20260920-identities1",
+  "revision": "20261015-1.6.3-snowshine1",
   "verified": true,
   "world_resource": "chr_0014_aurora_postmodel",
   "ui_resource": "chr_0014_aurora_uimodel",
@@ -177,27 +177,28 @@
         "mesh_id": "cab-e2c8bba2d4c4b2296346b1b04f388635:-4103500401884850413",
         "world_ui": "offline-equivalent",
         "observations": {
+          "chr_0014_aurora_postmodel": {
+            "kind": "direct",
+            "run": "aurora-1_6_3-login-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-20261015.jsonl",
+            "process_id": 17216,
+            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:6577984646510014244",
+            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_body_01_lod0"
+          },
           "chr_0014_aurora_uimodel": {
             "kind": "direct",
-            "run": "characters-20260919-202150-881718",
-            "file": "characters-20260919-202150-881718.jsonl",
-            "process_id": 19900,
+            "run": "aurora-1_6_3-login-ui-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-ui-20261015.jsonl",
+            "process_id": 9064,
             "renderer_id": "cab-6ba3c4ee88ac7fa09d31895db86639a2:2229749835916691642",
             "path": "chr_0014_aurora_uimodel/Mesh_all/lod0/S_actor_aurora_body_01_lod0"
-          },
-          "chr_0014_aurora_postmodel": {
-            "kind": "equivalent-reuse",
-            "from_resource": "chr_0014_aurora_uimodel",
-            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:6577984646510014244",
-            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_body_01_lod0",
-            "reason": "identical Mesh identity, relative bone paths/order and materials"
           }
         }
       }
     },
     "1": {
       "mesh_name": "S_actor_aurora_cloth_01_lod0",
-      "original_index_count": 87120,
+      "original_index_count": 87288,
       "bone_names": [
         "Bip001_LCalfTwist",
         "Bip001_LCalfTwist1",
@@ -236,6 +237,7 @@
         "Bip001_L_Finger0",
         "Bip001_L_Finger01",
         "Bip001_L_Finger1",
+        "Bip001_L_Finger02",
         "Bip001_L_Finger11",
         "Bip001_L_Finger12",
         "Bip001_L_Finger3",
@@ -243,7 +245,6 @@
         "Bip001_L_Finger2",
         "Bip001_L_Finger31",
         "Bip001_L_Finger32",
-        "Bip001_L_Finger02",
         "Bip001_L_Finger42",
         "Bip001_L_Finger41",
         "Bip001_R_Finger21",
@@ -263,8 +264,8 @@
         "Bip001_R_Finger42",
         "Bip001_R_Finger41",
         "L_sleeve_04_jnt",
-        "L_sleeve_03_jnt",
         "L_sleeve_01_jnt",
+        "L_sleeve_03_jnt",
         "L_sleeve_02_jnt",
         "R_sleeve_02_jnt",
         "R_sleeve_03_jnt",
@@ -423,14 +424,14 @@
       ],
       "layout_verified": true,
       "source_layout_supported": true,
-      "vertex_count": 23073,
+      "vertex_count": 23141,
       "submeshes": [
         {
-          "index_count": 87120,
+          "index_count": 87288,
           "first_byte": 0,
           "base_vertex": 0,
           "first_vertex": 0,
-          "vertex_count": 23073,
+          "vertex_count": 23141,
           "topology": "Triangles"
         }
       ],
@@ -438,20 +439,21 @@
         "mesh_id": "cab-dbef022be1af997aa637c646423728c7:2699219010904384929",
         "world_ui": "offline-equivalent",
         "observations": {
+          "chr_0014_aurora_postmodel": {
+            "kind": "direct",
+            "run": "aurora-1_6_3-login-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-20261015.jsonl",
+            "process_id": 17216,
+            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:-3111959450259951836",
+            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_cloth_01_lod0"
+          },
           "chr_0014_aurora_uimodel": {
             "kind": "direct",
-            "run": "characters-20260919-202150-881718",
-            "file": "characters-20260919-202150-881718.jsonl",
-            "process_id": 19900,
+            "run": "aurora-1_6_3-login-ui-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-ui-20261015.jsonl",
+            "process_id": 9064,
             "renderer_id": "cab-6ba3c4ee88ac7fa09d31895db86639a2:7811701542961268922",
             "path": "chr_0014_aurora_uimodel/Mesh_all/lod0/S_actor_aurora_cloth_01_lod0"
-          },
-          "chr_0014_aurora_postmodel": {
-            "kind": "equivalent-reuse",
-            "from_resource": "chr_0014_aurora_uimodel",
-            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:-3111959450259951836",
-            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_cloth_01_lod0",
-            "reason": "identical Mesh identity, relative bone paths/order and materials"
           }
         }
       }
@@ -664,20 +666,21 @@
         "mesh_id": "cab-ecf2548e36fec396f21bb11bf3bb3d01:-2487775228834135115",
         "world_ui": "offline-equivalent",
         "observations": {
+          "chr_0014_aurora_postmodel": {
+            "kind": "direct",
+            "run": "aurora-1_6_3-login-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-20261015.jsonl",
+            "process_id": 17216,
+            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:8266933979920396068",
+            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_cloth_02_lod0"
+          },
           "chr_0014_aurora_uimodel": {
             "kind": "direct",
-            "run": "characters-20260919-202150-881718",
-            "file": "characters-20260919-202150-881718.jsonl",
-            "process_id": 19900,
+            "run": "aurora-1_6_3-login-ui-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-ui-20261015.jsonl",
+            "process_id": 9064,
             "renderer_id": "cab-6ba3c4ee88ac7fa09d31895db86639a2:703278557883189434",
             "path": "chr_0014_aurora_uimodel/Mesh_all/lod0/S_actor_aurora_cloth_02_lod0"
-          },
-          "chr_0014_aurora_postmodel": {
-            "kind": "equivalent-reuse",
-            "from_resource": "chr_0014_aurora_uimodel",
-            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:8266933979920396068",
-            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_cloth_02_lod0",
-            "reason": "identical Mesh identity, relative bone paths/order and materials"
           }
         }
       }
@@ -854,20 +857,21 @@
         "mesh_id": "cab-e0cf28cff3cb76f7f763f55b319cfeed:-6808088408882414241",
         "world_ui": "offline-equivalent",
         "observations": {
+          "chr_0014_aurora_postmodel": {
+            "kind": "direct",
+            "run": "aurora-1_6_3-login-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-20261015.jsonl",
+            "process_id": 17216,
+            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:5590858618335588132",
+            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_cloth_03_lod0"
+          },
           "chr_0014_aurora_uimodel": {
             "kind": "direct",
-            "run": "characters-20260919-202150-881718",
-            "file": "characters-20260919-202150-881718.jsonl",
-            "process_id": 19900,
+            "run": "aurora-1_6_3-login-ui-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-ui-20261015.jsonl",
+            "process_id": 9064,
             "renderer_id": "cab-6ba3c4ee88ac7fa09d31895db86639a2:-7018352199102445382",
             "path": "chr_0014_aurora_uimodel/Mesh_all/lod0/S_actor_aurora_cloth_03_lod0"
-          },
-          "chr_0014_aurora_postmodel": {
-            "kind": "equivalent-reuse",
-            "from_resource": "chr_0014_aurora_uimodel",
-            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:5590858618335588132",
-            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_cloth_03_lod0",
-            "reason": "identical Mesh identity, relative bone paths/order and materials"
           }
         }
       }
@@ -1025,20 +1029,21 @@
         "mesh_id": "cab-d77daab69edf756c1db12506c16af0cc:-1994349850272542937",
         "world_ui": "offline-equivalent",
         "observations": {
+          "chr_0014_aurora_postmodel": {
+            "kind": "direct",
+            "run": "aurora-1_6_3-login-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-20261015.jsonl",
+            "process_id": 17216,
+            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:-8712466890465415388",
+            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_cloth_04_lod0"
+          },
           "chr_0014_aurora_uimodel": {
             "kind": "direct",
-            "run": "characters-20260919-202150-881718",
-            "file": "characters-20260919-202150-881718.jsonl",
-            "process_id": 19900,
+            "run": "aurora-1_6_3-login-ui-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-ui-20261015.jsonl",
+            "process_id": 9064,
             "renderer_id": "cab-6ba3c4ee88ac7fa09d31895db86639a2:-239827159218796358",
             "path": "chr_0014_aurora_uimodel/Mesh_all/lod0/S_actor_aurora_cloth_04_lod0"
-          },
-          "chr_0014_aurora_postmodel": {
-            "kind": "equivalent-reuse",
-            "from_resource": "chr_0014_aurora_uimodel",
-            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:-8712466890465415388",
-            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_cloth_04_lod0",
-            "reason": "identical Mesh identity, relative bone paths/order and materials"
           }
         }
       }
@@ -1109,9 +1114,9 @@
         ]
       ],
       "strides": [
+        40,
         16,
-        16,
-        12
+        32
       ],
       "attributes": [
         [
@@ -1123,7 +1128,13 @@
         [
           1,
           0,
-          1,
+          3,
+          0
+        ],
+        [
+          2,
+          0,
+          4,
           0
         ],
         [
@@ -1140,13 +1151,13 @@
         ],
         [
           12,
-          4,
+          0,
           4,
           2
         ],
         [
           13,
-          6,
+          10,
           4,
           2
         ]
@@ -1154,14 +1165,14 @@
       "source_streams": [],
       "layout_verified": true,
       "source_layout_supported": false,
-      "vertex_count": 632,
+      "vertex_count": 1516,
       "submeshes": [
         {
           "index_count": 2088,
           "first_byte": 0,
           "base_vertex": 0,
           "first_vertex": 0,
-          "vertex_count": 632,
+          "vertex_count": 1516,
           "topology": "Triangles"
         }
       ],
@@ -1169,20 +1180,21 @@
         "mesh_id": "cab-52d0fea2d53b8b4ac25e81612160d7e0:8448473239854918606",
         "world_ui": "offline-equivalent",
         "observations": {
+          "chr_0014_aurora_postmodel": {
+            "kind": "direct",
+            "run": "aurora-1_6_3-login-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-20261015.jsonl",
+            "process_id": 17216,
+            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:-6895387260143079644",
+            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_eyebrow_01_lod0"
+          },
           "chr_0014_aurora_uimodel": {
             "kind": "direct",
-            "run": "characters-20260919-202150-881718",
-            "file": "characters-20260919-202150-881718.jsonl",
-            "process_id": 19900,
+            "run": "aurora-1_6_3-login-ui-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-ui-20261015.jsonl",
+            "process_id": 9064,
             "renderer_id": "cab-6ba3c4ee88ac7fa09d31895db86639a2:-8540808162178643782",
             "path": "chr_0014_aurora_uimodel/Mesh_all/lod0/S_actor_aurora_eyebrow_01_lod0"
-          },
-          "chr_0014_aurora_postmodel": {
-            "kind": "equivalent-reuse",
-            "from_resource": "chr_0014_aurora_uimodel",
-            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:-6895387260143079644",
-            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_eyebrow_01_lod0",
-            "reason": "identical Mesh identity, relative bone paths/order and materials"
           }
         }
       }
@@ -1295,20 +1307,21 @@
         "mesh_id": "cab-52d0fea2d53b8b4ac25e81612160d7e0:1613292064252832718",
         "world_ui": "offline-equivalent",
         "observations": {
+          "chr_0014_aurora_postmodel": {
+            "kind": "direct",
+            "run": "aurora-1_6_3-login-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-20261015.jsonl",
+            "process_id": 17216,
+            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:-8307175316873023708",
+            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_eyeshadow_01_lod0"
+          },
           "chr_0014_aurora_uimodel": {
             "kind": "direct",
-            "run": "characters-20260919-202150-881718",
-            "file": "characters-20260919-202150-881718.jsonl",
-            "process_id": 19900,
+            "run": "aurora-1_6_3-login-ui-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-ui-20261015.jsonl",
+            "process_id": 9064,
             "renderer_id": "cab-6ba3c4ee88ac7fa09d31895db86639a2:3519721816459233466",
             "path": "chr_0014_aurora_uimodel/Mesh_all/lod0/S_actor_aurora_eyeshadow_01_lod0"
-          },
-          "chr_0014_aurora_postmodel": {
-            "kind": "equivalent-reuse",
-            "from_resource": "chr_0014_aurora_uimodel",
-            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:-8307175316873023708",
-            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_eyeshadow_01_lod0",
-            "reason": "identical Mesh identity, relative bone paths/order and materials"
           }
         }
       }
@@ -1531,20 +1544,21 @@
         "mesh_id": "cab-8a5e63b87e0fa9f55edbd9e5e0a7f521:-8512099496008413885",
         "world_ui": "offline-equivalent",
         "observations": {
+          "chr_0014_aurora_postmodel": {
+            "kind": "direct",
+            "run": "aurora-1_6_3-login-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-20261015.jsonl",
+            "process_id": 17216,
+            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:-3876079028842467548",
+            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_face_01_lod0"
+          },
           "chr_0014_aurora_uimodel": {
             "kind": "direct",
-            "run": "characters-20260919-202150-881718",
-            "file": "characters-20260919-202150-881718.jsonl",
-            "process_id": 19900,
+            "run": "aurora-1_6_3-login-ui-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-ui-20261015.jsonl",
+            "process_id": 9064,
             "renderer_id": "cab-6ba3c4ee88ac7fa09d31895db86639a2:-3977311426885334854",
             "path": "chr_0014_aurora_uimodel/Mesh_all/lod0/S_actor_aurora_face_01_lod0"
-          },
-          "chr_0014_aurora_postmodel": {
-            "kind": "equivalent-reuse",
-            "from_resource": "chr_0014_aurora_uimodel",
-            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:-3876079028842467548",
-            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_face_01_lod0",
-            "reason": "identical Mesh identity, relative bone paths/order and materials"
           }
         }
       }
@@ -1719,20 +1733,21 @@
         "mesh_id": "cab-464618977a82ed2e37f4cb304c62d530:-4595143516572003559",
         "world_ui": "offline-equivalent",
         "observations": {
+          "chr_0014_aurora_postmodel": {
+            "kind": "direct",
+            "run": "aurora-1_6_3-login-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-20261015.jsonl",
+            "process_id": 17216,
+            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:-5611789553866379484",
+            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_fur_01_lod0"
+          },
           "chr_0014_aurora_uimodel": {
             "kind": "direct",
-            "run": "characters-20260919-202150-881718",
-            "file": "characters-20260919-202150-881718.jsonl",
-            "process_id": 19900,
+            "run": "aurora-1_6_3-login-ui-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-ui-20261015.jsonl",
+            "process_id": 9064,
             "renderer_id": "cab-6ba3c4ee88ac7fa09d31895db86639a2:-8330883597802354502",
             "path": "chr_0014_aurora_uimodel/Mesh_all/lod0/S_actor_aurora_fur_01_lod0"
-          },
-          "chr_0014_aurora_postmodel": {
-            "kind": "equivalent-reuse",
-            "from_resource": "chr_0014_aurora_uimodel",
-            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:-5611789553866379484",
-            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_fur_01_lod0",
-            "reason": "identical Mesh identity, relative bone paths/order and materials"
           }
         }
       }
@@ -1988,20 +2003,21 @@
         "mesh_id": "cab-aca0a1e7109779355ab281400702487c:6116151664258281014",
         "world_ui": "offline-equivalent",
         "observations": {
+          "chr_0014_aurora_postmodel": {
+            "kind": "direct",
+            "run": "aurora-1_6_3-login-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-20261015.jsonl",
+            "process_id": 17216,
+            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:-2740468700808941788",
+            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_hair_01_lod0"
+          },
           "chr_0014_aurora_uimodel": {
             "kind": "direct",
-            "run": "characters-20260919-202150-881718",
-            "file": "characters-20260919-202150-881718.jsonl",
-            "process_id": 19900,
+            "run": "aurora-1_6_3-login-ui-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-ui-20261015.jsonl",
+            "process_id": 9064,
             "renderer_id": "cab-6ba3c4ee88ac7fa09d31895db86639a2:1177310151953533114",
             "path": "chr_0014_aurora_uimodel/Mesh_all/lod0/S_actor_aurora_hair_01_lod0"
-          },
-          "chr_0014_aurora_postmodel": {
-            "kind": "equivalent-reuse",
-            "from_resource": "chr_0014_aurora_uimodel",
-            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:-2740468700808941788",
-            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_hair_01_lod0",
-            "reason": "identical Mesh identity, relative bone paths/order and materials"
           }
         }
       }
@@ -2130,20 +2146,21 @@
         "mesh_id": "cab-52d0fea2d53b8b4ac25e81612160d7e0:-8447601386106901554",
         "world_ui": "offline-equivalent",
         "observations": {
+          "chr_0014_aurora_postmodel": {
+            "kind": "direct",
+            "run": "aurora-1_6_3-login-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-20261015.jsonl",
+            "process_id": 17216,
+            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:2081317719773540132",
+            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_hs_01_lod0"
+          },
           "chr_0014_aurora_uimodel": {
             "kind": "direct",
-            "run": "characters-20260919-202150-881718",
-            "file": "characters-20260919-202150-881718.jsonl",
-            "process_id": 19900,
+            "run": "aurora-1_6_3-login-ui-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-ui-20261015.jsonl",
+            "process_id": 9064,
             "renderer_id": "cab-6ba3c4ee88ac7fa09d31895db86639a2:-8578750786008397638",
             "path": "chr_0014_aurora_uimodel/Mesh_all/lod0/S_actor_aurora_hs_01_lod0"
-          },
-          "chr_0014_aurora_postmodel": {
-            "kind": "equivalent-reuse",
-            "from_resource": "chr_0014_aurora_uimodel",
-            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:2081317719773540132",
-            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_hs_01_lod0",
-            "reason": "identical Mesh identity, relative bone paths/order and materials"
           }
         }
       }
@@ -2244,20 +2261,21 @@
         "mesh_id": "cab-52d0fea2d53b8b4ac25e81612160d7e0:-2875521149754070066",
         "world_ui": "offline-equivalent",
         "observations": {
+          "chr_0014_aurora_postmodel": {
+            "kind": "direct",
+            "run": "aurora-1_6_3-login-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-20261015.jsonl",
+            "process_id": 17216,
+            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:-8142403529238712540",
+            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_iris_01_lod0"
+          },
           "chr_0014_aurora_uimodel": {
             "kind": "direct",
-            "run": "characters-20260919-202150-881718",
-            "file": "characters-20260919-202150-881718.jsonl",
-            "process_id": 19900,
+            "run": "aurora-1_6_3-login-ui-20261015",
+            "file": "../profiles/endfield-1.6.3/evidence/aurora-1_6_3-login-ui-20261015.jsonl",
+            "process_id": 9064,
             "renderer_id": "cab-6ba3c4ee88ac7fa09d31895db86639a2:3369836337057220794",
             "path": "chr_0014_aurora_uimodel/Mesh_all/lod0/S_actor_aurora_iris_01_lod0"
-          },
-          "chr_0014_aurora_postmodel": {
-            "kind": "equivalent-reuse",
-            "from_resource": "chr_0014_aurora_uimodel",
-            "renderer_id": "cab-f3b01cd49b541c3ff8f4f297c60ed3c8:-8142403529238712540",
-            "path": "chr_0014_aurora_postmodel/Mesh_all/lod0/S_actor_aurora_iris_01_lod0",
-            "reason": "identical Mesh identity, relative bone paths/order and materials"
           }
         }
       }
@@ -2265,11 +2283,11 @@
   },
   "entries": {
     "dadf5a1f": 0,
-    "0671628a": 1,
+    "e21af1da": 1,
     "b4310e71": 2,
     "d133ae20": 3,
     "a4dc0ce9": 4,
-    "020075ae": 5,
+    "914887d7": 5,
     "dc7e76f8": 6,
     "b144d4cd": 7,
     "7cca4f82": 9,
@@ -3297,7 +3315,7 @@
         ]
       }
     },
-    "59af8e82": {
+    "3ea83bf4": {
       "name": "T_actor_common_femaleskincolor01_lut_D",
       "evidence": {
         "texture_id": "cab-723dce01c8e13e166b3be200c5417013:4951544993205285082",
@@ -3305,7 +3323,7 @@
         "descriptor": [
           1024,
           32,
-          11,
+          1,
           1,
           99,
           1,
@@ -3315,7 +3333,7 @@
           0,
           0
         ],
-        "native_data_crc32c": "ad349056",
+        "native_data_crc32c": "58b980fe",
         "runtime_graphics_format": 108,
         "runtime_sizes": [
           [
@@ -3489,9 +3507,10 @@
   "mapping_status": "offline-resource-identities-partial",
   "excluded_components": [],
   "evidence": [
-    "CUSTOM_MODEL_RUNTIME_SWEEP_20260919.md"
+    "../profiles/endfield-1.6.3/SNOWSHINE.md",
+    "../profiles/endfield-1.6.3/evidence/snowshine-summary.json"
   ],
-  "note": "Native sweep plus offline identity join. EFMI identities recomputed from original game buffers and texture descriptors; custom source logic remains separate.",
+  "note": "Native sweep plus offline identity join. EFMI identities recomputed from original game buffers and texture descriptors; custom source logic remains separate. Windows 1.6.3 direct world/UI observations; old C1 source identities were not retained. Native verification does not establish arbitrary Mod conversion or replacement rendering.",
   "entry_identity_evidence": {
     "0": {
       "mesh_id": "cab-e2c8bba2d4c4b2296346b1b04f388635:-4103500401884850413",
@@ -3505,9 +3524,9 @@
       "mesh_id": "cab-dbef022be1af997aa637c646423728c7:2699219010904384929",
       "policy": "efmi-dx11-region-texture0-fullchain-v1",
       "index_size": 2,
-      "byte_width": 174240,
-      "index_count": 87120,
-      "source_hash": "0671628a"
+      "byte_width": 174576,
+      "index_count": 87288,
+      "source_hash": "e21af1da"
     },
     "2": {
       "mesh_id": "cab-ecf2548e36fec396f21bb11bf3bb3d01:-2487775228834135115",
@@ -3539,7 +3558,7 @@
       "index_size": 2,
       "byte_width": 4176,
       "index_count": 2088,
-      "source_hash": "020075ae"
+      "source_hash": "914887d7"
     },
     "6": {
       "mesh_id": "cab-52d0fea2d53b8b4ac25e81612160d7e0:1613292064252832718",

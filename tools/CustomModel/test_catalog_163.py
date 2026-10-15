@@ -50,7 +50,7 @@ class Catalog163Tests(unittest.TestCase):
 
     def test_explicit_targets_keep_real_owner_platform_and_pack_without_research_paths(self):
         index = load(PROFILES / "index.json")
-        self.assertEqual(len(index["targets"]), 5)
+        self.assertEqual(len(index["targets"]), 6)
         with tempfile.TemporaryDirectory() as temporary:
             for item in index["targets"]:
                 with self.subTest(profile=item["profile"]):
@@ -74,6 +74,40 @@ class Catalog163Tests(unittest.TestCase):
                     pack_project(PROFILES / item["project"], output)
                     manifest, _ = bem.read_package(output)
                     self.assertEqual(manifest["target"], project["manifest"]["target"])
+
+    def test_snowshine_current_contract_and_source_identity_replace_old_revision(self):
+        catalog = load(ROOT / "catalog/chr_0014_aurora.json")
+        self.assertEqual(catalog["revision"], "20261015-1.6.3-snowshine1")
+        self.assertEqual(catalog["components"]["1"]["original_index_count"], 87288)
+        self.assertEqual(catalog["components"]["1"]["vertex_count"], 23141)
+        self.assertEqual(catalog["entries"]["e21af1da"], 1)
+        self.assertNotIn("0671628a", catalog["entries"])
+        self.assertEqual(catalog["components"]["5"]["strides"], [40, 16, 32])
+        self.assertFalse(catalog["components"]["5"]["source_layout_supported"])
+        self.assertEqual(sum(c["source_layout_supported"] for c in catalog["components"].values()), 8)
+        sections = {"TextureOverride_EntryPoint_Component1": "hash = e21af1da\nmatch_index_count = 87288\n"}
+        selected, _ = component_auto.match_catalog(sections, component_auto.catalogs())
+        self.assertEqual(selected["character_id"], "chr_0014_aurora")
+        sections["TextureOverride_EntryPoint_Component1"] = "hash = e21af1da\nmatch_index_count = 87120\n"
+        with self.assertRaisesRegex(ValueError, "CHARACTER_REVISION"):
+            component_auto.match_catalog(sections, component_auto.catalogs())
+
+    def test_snowshine_evidence_preserves_separate_direct_world_ui_sessions(self):
+        catalog_path = ROOT / "catalog/chr_0014_aurora.json"
+        catalog = load(catalog_path)
+        summary = load(PROFILES / "evidence/snowshine-summary.json")
+        self.assertEqual(summary["matched_renderers"], 65)
+        self.assertEqual(len(summary["provenance"]), 2)
+        self.assertTrue(all(len(item["process_ids"]) == 1 for item in summary["provenance"]))
+        self.assertNotEqual(summary["provenance"][0]["process_ids"], summary["provenance"][1]["process_ids"])
+        for reference in catalog["evidence"]:
+            self.assertTrue((catalog_path.parent / reference).is_file(), reference)
+        for component in catalog["components"].values():
+            observations = component["evidence"]["observations"]
+            self.assertEqual(len(observations), 2)
+            self.assertTrue(all(item["kind"] == "direct" for item in observations.values()))
+            for item in observations.values():
+                self.assertTrue((catalog_path.parent / item["file"]).is_file())
 
 
 if __name__ == "__main__":

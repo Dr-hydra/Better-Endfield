@@ -18,7 +18,7 @@ struct Frame {
     float time = 0;
     float delta = 0;
     float length = 0;
-    bool clip_loop = false;
+    int clip_loop = -1; // Diagnostic only: -1 means the optional getter is unavailable.
     int next_hash = 0;
     bool returning_to_locomotion = false;
     float next_time = 0;

@@ -10,9 +10,9 @@ Use the installed `BetterEndfieldNext.BemConverter.exe` CLI, or the repository's
 executable at its root; the player application places it under `tools/BemConverter`.
 Run `--version` and `--help` to check the available commands. Do not assume the
 game runtime or creator profiles support a newer format because the extension matches.
-BEM Tools 1.5.3 includes a standalone creator GUI (introduced in 1.5.2), supports
+BEM Tools 1.5.4 includes a standalone creator GUI (introduced in 1.5.2), supports
 BEM 1.0–1.4 and refreshes Windows 1.6.3 target data. The older official 1.5.0
-distribution lacks 1.4; check for `BEM Tools 1.5.3 / BEM 1.0+1.1+1.2+1.3+1.4`.
+distribution lacks 1.4; check for `BEM Tools 1.5.4 / BEM 1.0+1.1+1.2+1.3+1.4`.
 
 Read [the creator guide](references/BEM_CREATOR_GUIDE.en.md) for tools, export task projects,
 editable projects, sliders, importing and distribution. Read [the format specification](references/BEM_FORMAT_SPEC.en.md)
@@ -70,7 +70,7 @@ contain several independently managed packages. Multiple packages for one charac
 may be installed, but only one legacy package per character can be enabled. Source key combinations need reviewed reachability
 and resource mapping; do not blindly enumerate them as complete appearances.
 
-BEM Tools 1.5.3 supports BEM 1.4 explicit resources and static meshes; see
+BEM Tools 1.5.4 supports BEM 1.4 explicit resources and static meshes; see
 `references/BEM_V1_4_SPEC.md`. One 1.4 package owns a character or weapon ID and may declare
 multiple resource roots with separate component contracts. Conflict checks use resources
 on the current platform; updates preserve target kind/id. Windows currently executes only
@@ -87,13 +87,13 @@ resource-local source mappings. Do not add Android platform labels to Windows pr
 without Android donor evidence. Android first-enable discovery covers explicit resources;
 legacy mobile UI LOD0→world LOD1 adaptation remains separate.
 
-The 1.5.3 target refresh is Windows-only. Read each bundled catalog/profile's
+The 1.5.3/1.5.4 target refresh is Windows-only. Read each bundled catalog/profile's
 readiness and missing-evidence fields before using it; runtime capture does not
 prove arbitrary source conversion or rendering. Distributed target data must be
 usable within `catalog/` and `profiles/`, without relying on a developer's research
 workspace. Do not infer support for a new Android game version from this update.
 The tool-root `profiles/endfield-1.6.3/index.json` lists the new Jsspsi and Minghe
-targets and links the included evidence. These explicit projects are keep-only;
+targets plus the revised Snowshine world/UI target and links the included evidence. These explicit projects are keep-only;
 packing them successfully does not turn them into replacement models. The partial
 legacy Jsspsi catalog is separate from the complete explicit resource projects.
 

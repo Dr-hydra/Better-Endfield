@@ -582,7 +582,14 @@ bool ReadFrame(void* component, Frame& frame, int& current_hash) {
     current_hash = Value<int>(StateHash, state, ok);
     frame.time = Value<float>(StateTime, state, ok);
     frame.length = Value<float>(StateLength, state, ok);
-    frame.clip_loop = Value<bool>(StateLoop, state, ok);
+    // Unity may strip this diagnostic getter. Its absence or invocation failure
+    // must not invalidate the state/time/length needed to maintain the dash.
+    frame.clip_loop = -1;
+    if (ok && g_methods[StateLoop].resolved.method_info) {
+        bool loop_ok = true;
+        bool loop = Value<bool>(StateLoop, state, loop_ok);
+        if (loop_ok) frame.clip_loop = loop ? 1 : 0;
+    }
     frame.current_special = current_hash == g_hashes[0] || current_hash == g_hashes[1];
     if (frame.transitioning) {
         boxed = Invoke(NextState, animator, args, ok);
@@ -596,6 +603,7 @@ bool ReadFrame(void* component, Frame& frame, int& current_hash) {
     }
     return ok;
 }
+const char* ClipLoopText(int loop) { return loop < 0 ? "unknown" : loop ? "1" : "0"; }
 void RefreshLiinoEffectsAfterPose(void* component);
 #include "external_loop.inl"
 #include "pose_overlay.inl"
@@ -1081,8 +1089,8 @@ void __fastcall PreLateDetour(void* component, float delta, const void* method) 
                 if (g_session.config->diagnostics) {
                     char text[280];
                     std::snprintf(text, sizeof(text),
-                        "Sustained dash exit: hash=%d, next=%d, time=%.3f, length=%.3f, clip_loop=%d, perform=%d, special=%d, entering=%d, outgoing=%d, pending=%.3f",
-                        hash, frame.next_hash, frame.time, frame.length, frame.clip_loop, frame.allowed, frame.current_special, frame.entering_special,
+                        "Sustained dash exit: hash=%d, next=%d, time=%.3f, length=%.3f, clip_loop=%s, perform=%d, special=%d, entering=%d, outgoing=%d, pending=%.3f",
+                        hash, frame.next_hash, frame.time, frame.length, ClipLoopText(frame.clip_loop), frame.allowed, frame.current_special, frame.entering_special,
                         frame.outgoing, g_session.policy.pending_time);
                     Log(text);
                 }
@@ -1092,8 +1100,8 @@ void __fastcall PreLateDetour(void* component, float delta, const void* method) 
                 g_session.last_special_hash = hash;
                 if (g_session.config->diagnostics && (g_session.side_changes < 5 || g_session.side_changes % 16 == 0)) {
                     char text[160];
-                    std::snprintf(text, sizeof(text), "Sustained dash selected state=%s, time=%.3f, length=%.3f, clip_loop=%d",
-                        hash == g_hashes[0] ? "left" : "right", frame.time, frame.length, frame.clip_loop);
+                    std::snprintf(text, sizeof(text), "Sustained dash selected state=%s, time=%.3f, length=%.3f, clip_loop=%s",
+                        hash == g_hashes[0] ? "left" : "right", frame.time, frame.length, ClipLoopText(frame.clip_loop));
                     Log(text);
                 }
             }
@@ -1103,8 +1111,8 @@ void __fastcall PreLateDetour(void* component, float delta, const void* method) 
                     g_session.last_progress_bucket = bucket;
                     if (g_session.config->diagnostics) {
                         char text[224];
-                        std::snprintf(text, sizeof(text), "Sustained dash animation progress: time=%.3f, next=%.3f, transition=%d, length=%.3f, clip_loop=%d, deferred=%u",
-                            frame.time, frame.next_time, frame.transitioning, frame.length, frame.clip_loop, g_session.natural_end_deferrals);
+                        std::snprintf(text, sizeof(text), "Sustained dash animation progress: time=%.3f, next=%.3f, transition=%d, length=%.3f, clip_loop=%s, deferred=%u",
+                            frame.time, frame.next_time, frame.transitioning, frame.length, ClipLoopText(frame.clip_loop), g_session.natural_end_deferrals);
                         Log(text);
                     }
                 }
@@ -1243,6 +1251,11 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     g_host = host;
     for (auto& method : g_methods) {
         if (host->resolve_method(host->context, &method.desc, &method.resolved) != BE_Result_Ok) {
+            if (&method == &g_methods[StateLoop]) {
+                method.resolved = {};
+                Log("Optional action diagnostic unavailable: AnimatorStateInfo.get_loop; clip_loop=unknown.");
+                continue;
+            }
             Log((std::string("Missing action method: ") + method.desc.class_name + "." + method.desc.method_name).c_str());
             if (&method == &g_methods[MeshGroupShow]) { g_mesh_group_contract = false; continue; }
             if (&method == &g_methods[EffectActionPlay]) { g_liino_teardown_contract = false; continue; }
@@ -1429,7 +1442,7 @@ void BE_CALL Shutdown() {
     g_particle_type_root = 0;
     g_particle_type = nullptr;
 }
-const BE_ModuleApiV1 kApi{{kId, "Sustained Dash", "1.13.5", BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
+const BE_ModuleApiV1 kApi{{kId, "Sustained Dash", "1.13.6", BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
     &Initialize, &Configure, &Shutdown};
 } // namespace
 } // namespace BetterEndfieldNext::Actions

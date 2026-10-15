@@ -20,12 +20,21 @@ int visual_actor = 4;
 float visual_delay = 1.5667f;
 bool moving = true, airborne = false;
 bool main_character = true, visual_metadata_error = false;
+bool animator_loop = false;
+MethodId failing_method = MethodCount;
+bool invoke_returns_null = false;
+int state_loop_calls = 0;
 const char* perform_id = "CharIntPerform_Liino_Spdash";
 Particle* finish_particle = nullptr;
 void* BE_CALL InvokeFake(void*, const void* method, void* instance, void** args, void** exception) {
     *exception = nullptr;
     ++unity_calls;
     auto id = static_cast<MethodId>(reinterpret_cast<uintptr_t>(method) - 1);
+    if (id == StateLoop) ++state_loop_calls;
+    if (id == failing_method) {
+        if (!invoke_returns_null) *exception = &visual_other;
+        return nullptr;
+    }
     auto* p = static_cast<Particle*>(instance);
     switch (id) {
     case GetEntity: case GetCharCtrl: case GetMovement: case GetGait:
@@ -38,7 +47,8 @@ void* BE_CALL InvokeFake(void*, const void* method, void* instance, void** args,
     case VisualPerformEntity: return &visual_identity;
     case Moving: return &moving;
     case Airborne: return &airborne;
-    case IsDead: case InTransition: case StateLoop: { static bool no = false; return &no; }
+    case IsDead: case InTransition: { static bool no = false; return &no; }
+    case StateLoop: return &animator_loop;
     case MoveMode: return &g_dash_mode;
     case GaitValue: return &g_sprint;
     case StateHash: return &g_hashes[0];
@@ -109,6 +119,32 @@ int main() {
     for (int i = 0; i < FieldCount; ++i)
         g_fields[i].resolved.field_info = reinterpret_cast<void*>(static_cast<uintptr_t>(i + 1));
     int identity = 0, unrelated = 0;
+    // Read the real production frame path with the diagnostic contract present,
+    // stripped, throwing, or returning no boxed value. Core failures still stop it.
+    g_hashes[0] = 123; g_hashes[1] = 456;
+    Frame frame;
+    int state_hash = 0;
+    CHECK(ReadFrame(&identity, frame, state_hash) && frame.clip_loop == 0);
+    animator_loop = true;
+    CHECK(ReadFrame(&identity, frame, state_hash) && frame.clip_loop == 1);
+    auto loop_method = g_methods[StateLoop].resolved;
+    g_methods[StateLoop].resolved = {};
+    int calls_before = state_loop_calls;
+    CHECK(ReadFrame(&identity, frame, state_hash) && frame.clip_loop == -1);
+    CHECK(state_loop_calls == calls_before && state_hash == 123 && frame.current_special);
+    CHECK(frame.time == .5f && frame.length > 0);
+    CHECK(std::strcmp(ClipLoopText(frame.clip_loop), "unknown") == 0);
+    g_methods[StateLoop].resolved = loop_method;
+    for (bool null_result : {false, true}) {
+        invoke_returns_null = null_result;
+        failing_method = StateLoop;
+        CHECK(ReadFrame(&identity, frame, state_hash) && frame.clip_loop == -1);
+        for (MethodId core : {StateHash, StateTime, StateLength}) {
+            failing_method = core;
+            CHECK(!ReadFrame(&identity, frame, state_hash));
+        }
+    }
+    failing_method = MethodCount; invoke_returns_null = false; animator_loop = false;
     Particle p;
     auto effect = Held(p, &identity);
     RestoreEffect(effect, true);
@@ -254,5 +290,5 @@ int main() {
     MeshGroupShowDetour(&visual_handle, &visual_identity, 3, true, nullptr);
     CHECK(mesh_calls == 3);
     g_host = nullptr;
-    std::puts("Actions effects: restoration, retained visuals, clean entry/exit, all 22 VFX slots and ownership exclusions passed.");
+    std::puts("Actions effects: optional frame diagnostics, core failure guards, restoration, retained visuals, clean entry/exit, all 22 VFX slots and ownership exclusions passed.");
 }

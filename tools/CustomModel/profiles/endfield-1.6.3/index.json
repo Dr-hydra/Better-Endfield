@@ -85,6 +85,20 @@
       "runtime_verified": false,
       "conversion_ready": false,
       "render_verified": false
+    },
+    {
+      "name": "昼雪 · 1.6.3 世界与详情资源",
+      "owner_id": "chr_0014_aurora",
+      "profile": "chr_0014_aurora-full.profile.json",
+      "project": "chr_0014_aurora-full.project.json",
+      "components": 24,
+      "platforms": [
+        "windows-x64"
+      ],
+      "preparation": "keep-only",
+      "runtime_verified": false,
+      "conversion_ready": false,
+      "render_verified": false
     }
   ]
 }

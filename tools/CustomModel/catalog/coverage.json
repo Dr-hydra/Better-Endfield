@@ -29,6 +29,18 @@
       "process_ids": [
         14396
       ]
+    },
+    {
+      "run": "aurora-1_6_3-login-20261015",
+      "process_ids": [
+        17216
+      ]
+    },
+    {
+      "run": "aurora-1_6_3-login-ui-20261015",
+      "process_ids": [
+        9064
+      ]
     }
   ],
   "characters": [
@@ -208,7 +220,7 @@
         "S_actor_aurora_iris_01_lod0"
       ],
       "observations": {
-        "chr_0014_aurora_postmodel": 0,
+        "chr_0014_aurora_postmodel": 12,
         "chr_0014_aurora_uimodel": 12
       },
       "source_entries": 11,

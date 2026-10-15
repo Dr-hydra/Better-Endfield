@@ -1,0 +1,1228 @@
+{
+  "manifest": {
+    "schema": 1,
+    "package_id": "chr_0014_aurora-full-pc",
+    "name": "昼雪 · 1.6.3 世界与详情资源（创作起点，无替换）",
+    "author": "BEM target tool",
+    "version": "1.6.3-20261015",
+    "required_capabilities": [
+      "native-materials",
+      "composable-options",
+      "multi-resource-targets"
+    ],
+    "target": {
+      "id": "chr_0014_aurora",
+      "profile_id": "chr_0014_aurora-full-pc",
+      "revision": "1.6.3-20261015",
+      "snapshot": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+      "kind": "character",
+      "platform": "windows-x64",
+      "resources": [
+        {
+          "id": "world",
+          "name": "chr_0014_aurora_postmodel",
+          "asset_path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0014_aurora_postmodel.prefab",
+          "platforms": [
+            "windows-x64"
+          ],
+          "lod": 0
+        },
+        {
+          "id": "ui",
+          "name": "chr_0014_aurora_uimodel",
+          "asset_path": "assets/beyond/dynamicassets/gameplay/prefabs/uimodels/chr_0014_aurora_uimodel.prefab",
+          "platforms": [
+            "windows-x64"
+          ],
+          "lod": 0
+        }
+      ],
+      "components": [
+        {
+          "id": 0,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_body_01_lod0",
+          "mesh_name": "S_actor_aurora_body_01_lod0",
+          "original_index_count": 7659,
+          "bone_names": [
+            "Bip001_Pelvis",
+            "Bip001_RThighTwist",
+            "Bip001_RThighTwist1",
+            "Bip001_R_Thigh",
+            "Bip001_LThighTwist",
+            "Bip001_LThighTwist1",
+            "Bip001_L_Thigh",
+            "Bip001_Spine2",
+            "Bip001_L_Clavicle",
+            "Bip001_Neck",
+            "Bip001_LUpArmTwist",
+            "L_breast_01_jnt",
+            "Bip001_R_Clavicle",
+            "R_breast_01_jnt",
+            "Bip001_Head",
+            "Bip001_RUpArmTwist",
+            "Bip001_Spine1",
+            "Bip001_Spine"
+          ],
+          "materials": [
+            "M_actor_aurora_body_01"
+          ]
+        },
+        {
+          "id": 1,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_cloth_01_lod0",
+          "mesh_name": "S_actor_aurora_cloth_01_lod0",
+          "original_index_count": 87288,
+          "bone_names": [
+            "Bip001_LCalfTwist",
+            "Bip001_LCalfTwist1",
+            "Bip001_L_Foot",
+            "Bip001_L_Thigh",
+            "Bip001_LThighTwist1",
+            "Bip001_LThighTwist",
+            "Bip001_Pelvis",
+            "Bip001_L_Calf",
+            "Bip001_L_Toe0",
+            "Bip001_R_Foot",
+            "Bip001_R_Toe0",
+            "Bip001_RCalfTwist",
+            "Bip001_RCalfTwist1",
+            "Bip001_R_Thigh",
+            "Bip001_RThighTwist1",
+            "Bip001_RThighTwist",
+            "Bip001_R_Calf",
+            "Bip001_L_UpperArm",
+            "Bip001_LUpArmTwist",
+            "Bip001_LUpArmTwist1",
+            "Bip001_Spine2",
+            "Bip001_R_Clavicle",
+            "R_collarA_jnt",
+            "Bip001_L_Clavicle",
+            "L_collarA_jnt",
+            "Bip001_L_Forearm",
+            "Bip001_L_ForeTwist",
+            "Bip001_L_ForeTwist1",
+            "Bip001_R_Forearm",
+            "Bip001_R_ForeTwist",
+            "Bip001_R_ForeTwist1",
+            "Bip001_L_Finger21",
+            "Bip001_L_Finger22",
+            "Bip001_L_Hand",
+            "Bip001_L_Finger0",
+            "Bip001_L_Finger01",
+            "Bip001_L_Finger1",
+            "Bip001_L_Finger02",
+            "Bip001_L_Finger11",
+            "Bip001_L_Finger12",
+            "Bip001_L_Finger3",
+            "Bip001_L_Finger4",
+            "Bip001_L_Finger2",
+            "Bip001_L_Finger31",
+            "Bip001_L_Finger32",
+            "Bip001_L_Finger42",
+            "Bip001_L_Finger41",
+            "Bip001_R_Finger21",
+            "Bip001_R_Finger22",
+            "Bip001_R_Hand",
+            "Bip001_R_Finger0",
+            "Bip001_R_Finger01",
+            "Bip001_R_Finger1",
+            "Bip001_R_Finger11",
+            "Bip001_R_Finger12",
+            "Bip001_R_Finger3",
+            "Bip001_R_Finger4",
+            "Bip001_R_Finger2",
+            "Bip001_R_Finger31",
+            "Bip001_R_Finger32",
+            "Bip001_R_Finger02",
+            "Bip001_R_Finger42",
+            "Bip001_R_Finger41",
+            "L_sleeve_04_jnt",
+            "L_sleeve_01_jnt",
+            "L_sleeve_03_jnt",
+            "L_sleeve_02_jnt",
+            "R_sleeve_02_jnt",
+            "R_sleeve_03_jnt",
+            "R_sleeve_01_jnt",
+            "R_sleeve_04_jnt",
+            "R_collarB_jnt",
+            "M_collarC_jnt",
+            "L_collarB_jnt",
+            "R_breast_01_jnt",
+            "R_vestA_01_jnt",
+            "L_vestA_01_jnt",
+            "L_breast_01_jnt",
+            "Bip001_RUpArmTwist",
+            "L_vestB_01_jnt",
+            "R_vestC_01_jnt",
+            "Bip001_RUpArmTwist1",
+            "R_vestB_01_jnt",
+            "Bip001_R_UpperArm",
+            "Bip001_Spine1",
+            "Bip001_Spine",
+            "Bip001_Neck"
+          ],
+          "materials": [
+            "M_actor_aurora_cloth_01"
+          ]
+        },
+        {
+          "id": 2,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_cloth_02_lod0",
+          "mesh_name": "S_actor_aurora_cloth_02_lod0",
+          "original_index_count": 73359,
+          "bone_names": [
+            "glasses_jnt",
+            "Bip001_Head",
+            "Bip001_Pelvis",
+            "Bip001_Spine",
+            "Bip001_LThighTwist",
+            "Bip001_RThighTwist",
+            "Bip001_LThighTwist1",
+            "Bip001_RThighTwist1",
+            "hoop_01_jnt",
+            "hoop_02_jnt",
+            "card_jnt",
+            "bag_A_jnt",
+            "ribbonE_01_jnt",
+            "ribbonD_01_jnt",
+            "R_bag_B_jnt",
+            "L_bag_B_jnt",
+            "Bip001_Spine2",
+            "Bip001_L_Clavicle",
+            "Bip001_R_Clavicle",
+            "swag_jnt",
+            "Bip001_LUpArmTwist",
+            "snowman_02_jnt",
+            "bear_02_jnt",
+            "ribbonA_01_jnt",
+            "ribbonA_02_jnt",
+            "R_breast_01_jnt",
+            "L_breast_01_jnt",
+            "R_vestC_01_jnt",
+            "Bip001_Spine1",
+            "L_collarA_jnt",
+            "bear_01_jnt",
+            "snowman_01_jnt",
+            "ribbonB_02_jnt",
+            "ribbonC_02_jnt",
+            "ribbonB_01_jnt",
+            "ribbonC_01_jnt",
+            "ribbonF_01_jnt",
+            "ropeA_01_jnt",
+            "ropeB_01_jnt",
+            "Bip001_R_UpperArm",
+            "Bip001_RUpArmTwist1",
+            "Bip001_R_Forearm",
+            "Bip001_RUpArmTwist",
+            "Bip001_LUpArmTwist1",
+            "Bip001_L_Forearm",
+            "Bip001_L_UpperArm",
+            "Bip001_L_ForeTwist"
+          ],
+          "materials": [
+            "M_actor_aurora_cloth_02"
+          ]
+        },
+        {
+          "id": 3,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_cloth_03_lod0",
+          "mesh_name": "S_actor_aurora_cloth_03_lod0",
+          "original_index_count": 5262,
+          "bone_names": [
+            "glasses_jnt",
+            "Bip001_Spine2",
+            "R_breast_01_jnt",
+            "R_vestC_01_jnt",
+            "L_breast_01_jnt",
+            "L_vestC_01_jnt",
+            "Bip001_R_Clavicle",
+            "Bip001_L_Clavicle",
+            "Bip001_Spine1",
+            "Bip001_LUpArmTwist",
+            "Bip001_RUpArmTwist",
+            "Bip001_Neck",
+            "Bip001_Pelvis",
+            "Bip001_Spine",
+            "Bip001_LThighTwist",
+            "Bip001_RThighTwist"
+          ],
+          "materials": [
+            "M_actor_aurora_cloth_03"
+          ]
+        },
+        {
+          "id": 4,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_cloth_04_lod0",
+          "mesh_name": "S_actor_aurora_cloth_04_lod0",
+          "original_index_count": 1476,
+          "bone_names": [
+            "skateboard_01_jnt",
+            "skateboard_02_jnt"
+          ],
+          "materials": [
+            "M_actor_aurora_cloth_04"
+          ]
+        },
+        {
+          "id": 5,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_eyebrow_01_lod0",
+          "mesh_name": "S_actor_aurora_eyebrow_01_lod0",
+          "original_index_count": 2088,
+          "bone_names": [
+            "eyeLf06Joint",
+            "eyeLf07Joint",
+            "Bip001_Head",
+            "eyeLf08Joint",
+            "browLf01Joint",
+            "browLf02Joint",
+            "browLf03Joint",
+            "browLf04Joint",
+            "browLf05Joint",
+            "browLineLf01Joint",
+            "browLineLf02Joint",
+            "browLineLf03Joint",
+            "eyeLf05Joint",
+            "eyeLf01Joint",
+            "eyeLf02EyelashJoint",
+            "eyeLf03EyelashJoint",
+            "eyeLf04EyelashJoint",
+            "eyeLf01EyelashJoint",
+            "eyeLf04Joint",
+            "eyeLf05EyelashJoint",
+            "eyeRt06Joint",
+            "eyeRt07Joint",
+            "eyeRt08Joint",
+            "browRt01Joint",
+            "browRt02Joint",
+            "browRt03Joint",
+            "browRt04Joint",
+            "browRt05Joint",
+            "browLineRt01Joint",
+            "browLineRt02Joint",
+            "browLineRt03Joint",
+            "eyeRt05Joint",
+            "eyeRt01Joint",
+            "eyeRt02EyelashJoint",
+            "eyeRt03EyelashJoint",
+            "eyeRt04EyelashJoint",
+            "eyeRt01EyelashJoint",
+            "eyeRt04Joint",
+            "eyeRt05EyelashJoint"
+          ],
+          "materials": [
+            "M_actor_aurora_eyebrow_01"
+          ]
+        },
+        {
+          "id": 6,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_eyeshadow_01_lod0",
+          "mesh_name": "S_actor_aurora_eyeshadow_01_lod0",
+          "original_index_count": 96,
+          "bone_names": [
+            "eyeLf01Joint",
+            "eyeLf02Joint",
+            "eyeLf08Joint",
+            "eyeLf03Joint",
+            "eyeLf03IrissdJoint",
+            "eyeLf04Joint",
+            "eyeLf05Joint",
+            "eyeLf06Joint",
+            "eyeRt01Joint",
+            "eyeRt02Joint",
+            "eyeRt08Joint",
+            "eyeRt03Joint",
+            "eyeRt03IrissdJoint",
+            "eyeRt04Joint",
+            "eyeRt05Joint",
+            "eyeRt06Joint"
+          ],
+          "materials": [
+            "M_eyewhiteshadow_common_01",
+            "M_eyeshadow_common_03"
+          ]
+        },
+        {
+          "id": 7,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_face_01_lod0",
+          "mesh_name": "S_actor_aurora_face_01_lod0",
+          "original_index_count": 9012,
+          "bone_names": [
+            "faceMdToothUpJoint",
+            "faceMdToothDnJoint",
+            "TongueMd01Joint",
+            "TongueMd02Joint",
+            "lipLup1Joint",
+            "Bip001_Head",
+            "lipLup3Joint",
+            "lipLup2Joint",
+            "lipLup4Joint",
+            "lipMupJoint",
+            "lipRup4Joint",
+            "lipRup3Joint",
+            "lipRup2Joint",
+            "lipRup1Joint",
+            "faceRtCheekOtDnJoint",
+            "faceMdJawDnJoint",
+            "lipRdn1Joint",
+            "lipRdn3Joint",
+            "lipRdn2Joint",
+            "faceRtCheekOtJoint",
+            "lipRdn4Joint",
+            "lipMdnJoint",
+            "lipLdn4Joint",
+            "faceLfCheekOtDnJoint",
+            "lipLdn3Joint",
+            "lipLdn2Joint",
+            "lipLdn1Joint",
+            "faceLfCheekOtJoint",
+            "browLineLf01Joint",
+            "browLineLf02Joint",
+            "browLineLf03Joint",
+            "NoseMd01Joint",
+            "eyeRt01Joint",
+            "eyeRt02Joint",
+            "eyeRt03Joint",
+            "eyeRt08Joint",
+            "eyeRt04Joint",
+            "eyeRt05Joint",
+            "eyeRt06Joint",
+            "eyeRt07Joint",
+            "eyeLf01Joint",
+            "eyeLf08Joint",
+            "eyeLf02Joint",
+            "eyeLf03Joint",
+            "eyeLf04Joint",
+            "eyeLf05Joint",
+            "eyeLf06Joint",
+            "eyeLf07Joint",
+            "linejoint",
+            "browLineRt01Joint",
+            "browLineRt02Joint",
+            "browLineRt03Joint"
+          ],
+          "materials": [
+            "M_actor_aurora_face_01"
+          ]
+        },
+        {
+          "id": 8,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_fur_01_lod0",
+          "mesh_name": "S_actor_aurora_fur_01_lod0_20",
+          "original_index_count": 34560,
+          "bone_names": [
+            "Bip001_Pelvis",
+            "Bip001_Spine",
+            "Bip001_Head",
+            "L_bear_ear_jnt",
+            "R_bear_ear_jnt"
+          ],
+          "materials": [
+            "M_actor_aurora_hair_01",
+            "M_actor_aurora_hair_02"
+          ]
+        },
+        {
+          "id": 9,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_hair_01_lod0",
+          "mesh_name": "S_actor_aurora_hair_01_lod0",
+          "original_index_count": 25470,
+          "bone_names": [
+            "Bip001_Head",
+            "hairG_02_jnt",
+            "hairG_03_jnt",
+            "hairG_01_jnt",
+            "hairI_02_jnt",
+            "hairI_03_jnt",
+            "hairE_02_jnt",
+            "hairE_03_jnt",
+            "hairE_01_jnt",
+            "hairF_02_jnt",
+            "hairF_03_jnt",
+            "hairF_01_jnt",
+            "hairD_02_jnt",
+            "hairD_01_jnt",
+            "hairK_02_jnt",
+            "hairK_01_jnt",
+            "hairC_04_jnt",
+            "hairC_03_jnt",
+            "hairC_02_jnt",
+            "hairC_01_jnt",
+            "hairH_02_jnt",
+            "hairH_03_jnt",
+            "hairH_04_jnt",
+            "hairH_01_jnt",
+            "hairJ_02_jnt",
+            "hairJ_03_jnt",
+            "hairJ_01_jnt",
+            "hairA_02_jnt",
+            "hairA_03_jnt",
+            "hairA_01_jnt"
+          ],
+          "materials": [
+            "M_actor_aurora_hair_01",
+            "M_actor_aurora_hairt_01"
+          ]
+        },
+        {
+          "id": 10,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_hs_01_lod0",
+          "mesh_name": "S_actor_aurora_hs_01_lod0",
+          "original_index_count": 546,
+          "bone_names": [
+            "Bip001_Head",
+            "hairA_02_jnt",
+            "hairA_03_jnt",
+            "hairA_01_jnt",
+            "hairJ_03_jnt",
+            "hairJ_02_jnt",
+            "hairI_02_jnt",
+            "hairI_03_jnt",
+            "hairC_03_jnt",
+            "hairC_04_jnt",
+            "hairC_02_jnt",
+            "hairJ_01_jnt"
+          ],
+          "materials": [
+            "M_hairshadow_common_03"
+          ]
+        },
+        {
+          "id": 11,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_iris_01_lod0",
+          "mesh_name": "S_actor_aurora_iris_01_lod0",
+          "original_index_count": 1224,
+          "bone_names": [
+            "faceLfHighlightJoint",
+            "faceLfHighlightAJoint",
+            "faceLfHighlightBJoint",
+            "faceRtHighlightBJoint",
+            "faceRtHighlightAJoint",
+            "faceRtHighlightJoint",
+            "faceLfIrisJoint",
+            "faceLfPupilJoint",
+            "faceRtIrisJoint",
+            "faceRtPupilJoint"
+          ],
+          "materials": [
+            "M_actor_aurora_iris_01"
+          ]
+        },
+        {
+          "id": 12,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_body_01_lod0",
+          "mesh_name": "S_actor_aurora_body_01_lod0",
+          "original_index_count": 7659,
+          "bone_names": [
+            "Bip001_Pelvis",
+            "Bip001_RThighTwist",
+            "Bip001_RThighTwist1",
+            "Bip001_R_Thigh",
+            "Bip001_LThighTwist",
+            "Bip001_LThighTwist1",
+            "Bip001_L_Thigh",
+            "Bip001_Spine2",
+            "Bip001_L_Clavicle",
+            "Bip001_Neck",
+            "Bip001_LUpArmTwist",
+            "L_breast_01_jnt",
+            "Bip001_R_Clavicle",
+            "R_breast_01_jnt",
+            "Bip001_Head",
+            "Bip001_RUpArmTwist",
+            "Bip001_Spine1",
+            "Bip001_Spine"
+          ],
+          "materials": [
+            "M_actor_aurora_body_01"
+          ]
+        },
+        {
+          "id": 13,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_cloth_01_lod0",
+          "mesh_name": "S_actor_aurora_cloth_01_lod0",
+          "original_index_count": 87288,
+          "bone_names": [
+            "Bip001_LCalfTwist",
+            "Bip001_LCalfTwist1",
+            "Bip001_L_Foot",
+            "Bip001_L_Thigh",
+            "Bip001_LThighTwist1",
+            "Bip001_LThighTwist",
+            "Bip001_Pelvis",
+            "Bip001_L_Calf",
+            "Bip001_L_Toe0",
+            "Bip001_R_Foot",
+            "Bip001_R_Toe0",
+            "Bip001_RCalfTwist",
+            "Bip001_RCalfTwist1",
+            "Bip001_R_Thigh",
+            "Bip001_RThighTwist1",
+            "Bip001_RThighTwist",
+            "Bip001_R_Calf",
+            "Bip001_L_UpperArm",
+            "Bip001_LUpArmTwist",
+            "Bip001_LUpArmTwist1",
+            "Bip001_Spine2",
+            "Bip001_R_Clavicle",
+            "R_collarA_jnt",
+            "Bip001_L_Clavicle",
+            "L_collarA_jnt",
+            "Bip001_L_Forearm",
+            "Bip001_L_ForeTwist",
+            "Bip001_L_ForeTwist1",
+            "Bip001_R_Forearm",
+            "Bip001_R_ForeTwist",
+            "Bip001_R_ForeTwist1",
+            "Bip001_L_Finger21",
+            "Bip001_L_Finger22",
+            "Bip001_L_Hand",
+            "Bip001_L_Finger0",
+            "Bip001_L_Finger01",
+            "Bip001_L_Finger1",
+            "Bip001_L_Finger02",
+            "Bip001_L_Finger11",
+            "Bip001_L_Finger12",
+            "Bip001_L_Finger3",
+            "Bip001_L_Finger4",
+            "Bip001_L_Finger2",
+            "Bip001_L_Finger31",
+            "Bip001_L_Finger32",
+            "Bip001_L_Finger42",
+            "Bip001_L_Finger41",
+            "Bip001_R_Finger21",
+            "Bip001_R_Finger22",
+            "Bip001_R_Hand",
+            "Bip001_R_Finger0",
+            "Bip001_R_Finger01",
+            "Bip001_R_Finger1",
+            "Bip001_R_Finger11",
+            "Bip001_R_Finger12",
+            "Bip001_R_Finger3",
+            "Bip001_R_Finger4",
+            "Bip001_R_Finger2",
+            "Bip001_R_Finger31",
+            "Bip001_R_Finger32",
+            "Bip001_R_Finger02",
+            "Bip001_R_Finger42",
+            "Bip001_R_Finger41",
+            "L_sleeve_04_jnt",
+            "L_sleeve_01_jnt",
+            "L_sleeve_03_jnt",
+            "L_sleeve_02_jnt",
+            "R_sleeve_02_jnt",
+            "R_sleeve_03_jnt",
+            "R_sleeve_01_jnt",
+            "R_sleeve_04_jnt",
+            "R_collarB_jnt",
+            "M_collarC_jnt",
+            "L_collarB_jnt",
+            "R_breast_01_jnt",
+            "R_vestA_01_jnt",
+            "L_vestA_01_jnt",
+            "L_breast_01_jnt",
+            "Bip001_RUpArmTwist",
+            "L_vestB_01_jnt",
+            "R_vestC_01_jnt",
+            "Bip001_RUpArmTwist1",
+            "R_vestB_01_jnt",
+            "Bip001_R_UpperArm",
+            "Bip001_Spine1",
+            "Bip001_Spine",
+            "Bip001_Neck"
+          ],
+          "materials": [
+            "M_actor_aurora_cloth_01"
+          ]
+        },
+        {
+          "id": 14,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_cloth_02_lod0",
+          "mesh_name": "S_actor_aurora_cloth_02_lod0",
+          "original_index_count": 73359,
+          "bone_names": [
+            "glasses_jnt",
+            "Bip001_Head",
+            "Bip001_Pelvis",
+            "Bip001_Spine",
+            "Bip001_LThighTwist",
+            "Bip001_RThighTwist",
+            "Bip001_LThighTwist1",
+            "Bip001_RThighTwist1",
+            "hoop_01_jnt",
+            "hoop_02_jnt",
+            "card_jnt",
+            "bag_A_jnt",
+            "ribbonE_01_jnt",
+            "ribbonD_01_jnt",
+            "R_bag_B_jnt",
+            "L_bag_B_jnt",
+            "Bip001_Spine2",
+            "Bip001_L_Clavicle",
+            "Bip001_R_Clavicle",
+            "swag_jnt",
+            "Bip001_LUpArmTwist",
+            "snowman_02_jnt",
+            "bear_02_jnt",
+            "ribbonA_01_jnt",
+            "ribbonA_02_jnt",
+            "R_breast_01_jnt",
+            "L_breast_01_jnt",
+            "R_vestC_01_jnt",
+            "Bip001_Spine1",
+            "L_collarA_jnt",
+            "bear_01_jnt",
+            "snowman_01_jnt",
+            "ribbonB_02_jnt",
+            "ribbonC_02_jnt",
+            "ribbonB_01_jnt",
+            "ribbonC_01_jnt",
+            "ribbonF_01_jnt",
+            "ropeA_01_jnt",
+            "ropeB_01_jnt",
+            "Bip001_R_UpperArm",
+            "Bip001_RUpArmTwist1",
+            "Bip001_R_Forearm",
+            "Bip001_RUpArmTwist",
+            "Bip001_LUpArmTwist1",
+            "Bip001_L_Forearm",
+            "Bip001_L_UpperArm",
+            "Bip001_L_ForeTwist"
+          ],
+          "materials": [
+            "M_actor_aurora_cloth_02"
+          ]
+        },
+        {
+          "id": 15,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_cloth_03_lod0",
+          "mesh_name": "S_actor_aurora_cloth_03_lod0",
+          "original_index_count": 5262,
+          "bone_names": [
+            "glasses_jnt",
+            "Bip001_Spine2",
+            "R_breast_01_jnt",
+            "R_vestC_01_jnt",
+            "L_breast_01_jnt",
+            "L_vestC_01_jnt",
+            "Bip001_R_Clavicle",
+            "Bip001_L_Clavicle",
+            "Bip001_Spine1",
+            "Bip001_LUpArmTwist",
+            "Bip001_RUpArmTwist",
+            "Bip001_Neck",
+            "Bip001_Pelvis",
+            "Bip001_Spine",
+            "Bip001_LThighTwist",
+            "Bip001_RThighTwist"
+          ],
+          "materials": [
+            "M_actor_aurora_cloth_03"
+          ]
+        },
+        {
+          "id": 16,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_cloth_04_lod0",
+          "mesh_name": "S_actor_aurora_cloth_04_lod0",
+          "original_index_count": 1476,
+          "bone_names": [
+            "skateboard_01_jnt",
+            "skateboard_02_jnt"
+          ],
+          "materials": [
+            "M_actor_aurora_cloth_04"
+          ]
+        },
+        {
+          "id": 17,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_eyebrow_01_lod0",
+          "mesh_name": "S_actor_aurora_eyebrow_01_lod0",
+          "original_index_count": 2088,
+          "bone_names": [
+            "eyeLf06Joint",
+            "eyeLf07Joint",
+            "Bip001_Head",
+            "eyeLf08Joint",
+            "browLf01Joint",
+            "browLf02Joint",
+            "browLf03Joint",
+            "browLf04Joint",
+            "browLf05Joint",
+            "browLineLf01Joint",
+            "browLineLf02Joint",
+            "browLineLf03Joint",
+            "eyeLf05Joint",
+            "eyeLf01Joint",
+            "eyeLf02EyelashJoint",
+            "eyeLf03EyelashJoint",
+            "eyeLf04EyelashJoint",
+            "eyeLf01EyelashJoint",
+            "eyeLf04Joint",
+            "eyeLf05EyelashJoint",
+            "eyeRt06Joint",
+            "eyeRt07Joint",
+            "eyeRt08Joint",
+            "browRt01Joint",
+            "browRt02Joint",
+            "browRt03Joint",
+            "browRt04Joint",
+            "browRt05Joint",
+            "browLineRt01Joint",
+            "browLineRt02Joint",
+            "browLineRt03Joint",
+            "eyeRt05Joint",
+            "eyeRt01Joint",
+            "eyeRt02EyelashJoint",
+            "eyeRt03EyelashJoint",
+            "eyeRt04EyelashJoint",
+            "eyeRt01EyelashJoint",
+            "eyeRt04Joint",
+            "eyeRt05EyelashJoint"
+          ],
+          "materials": [
+            "M_actor_aurora_eyebrow_01"
+          ]
+        },
+        {
+          "id": 18,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_eyeshadow_01_lod0",
+          "mesh_name": "S_actor_aurora_eyeshadow_01_lod0",
+          "original_index_count": 96,
+          "bone_names": [
+            "eyeLf01Joint",
+            "eyeLf02Joint",
+            "eyeLf08Joint",
+            "eyeLf03Joint",
+            "eyeLf03IrissdJoint",
+            "eyeLf04Joint",
+            "eyeLf05Joint",
+            "eyeLf06Joint",
+            "eyeRt01Joint",
+            "eyeRt02Joint",
+            "eyeRt08Joint",
+            "eyeRt03Joint",
+            "eyeRt03IrissdJoint",
+            "eyeRt04Joint",
+            "eyeRt05Joint",
+            "eyeRt06Joint"
+          ],
+          "materials": [
+            "M_eyewhiteshadow_common_01",
+            "M_eyeshadow_common_03"
+          ]
+        },
+        {
+          "id": 19,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_face_01_lod0",
+          "mesh_name": "S_actor_aurora_face_01_lod0",
+          "original_index_count": 9012,
+          "bone_names": [
+            "faceMdToothUpJoint",
+            "faceMdToothDnJoint",
+            "TongueMd01Joint",
+            "TongueMd02Joint",
+            "lipLup1Joint",
+            "Bip001_Head",
+            "lipLup3Joint",
+            "lipLup2Joint",
+            "lipLup4Joint",
+            "lipMupJoint",
+            "lipRup4Joint",
+            "lipRup3Joint",
+            "lipRup2Joint",
+            "lipRup1Joint",
+            "faceRtCheekOtDnJoint",
+            "faceMdJawDnJoint",
+            "lipRdn1Joint",
+            "lipRdn3Joint",
+            "lipRdn2Joint",
+            "faceRtCheekOtJoint",
+            "lipRdn4Joint",
+            "lipMdnJoint",
+            "lipLdn4Joint",
+            "faceLfCheekOtDnJoint",
+            "lipLdn3Joint",
+            "lipLdn2Joint",
+            "lipLdn1Joint",
+            "faceLfCheekOtJoint",
+            "browLineLf01Joint",
+            "browLineLf02Joint",
+            "browLineLf03Joint",
+            "NoseMd01Joint",
+            "eyeRt01Joint",
+            "eyeRt02Joint",
+            "eyeRt03Joint",
+            "eyeRt08Joint",
+            "eyeRt04Joint",
+            "eyeRt05Joint",
+            "eyeRt06Joint",
+            "eyeRt07Joint",
+            "eyeLf01Joint",
+            "eyeLf08Joint",
+            "eyeLf02Joint",
+            "eyeLf03Joint",
+            "eyeLf04Joint",
+            "eyeLf05Joint",
+            "eyeLf06Joint",
+            "eyeLf07Joint",
+            "linejoint",
+            "browLineRt01Joint",
+            "browLineRt02Joint",
+            "browLineRt03Joint"
+          ],
+          "materials": [
+            "M_actor_aurora_face_01"
+          ]
+        },
+        {
+          "id": 20,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_fur_01_lod0",
+          "mesh_name": "S_actor_aurora_fur_01_lod0_20",
+          "original_index_count": 34560,
+          "bone_names": [
+            "Bip001_Pelvis",
+            "Bip001_Spine",
+            "Bip001_Head",
+            "L_bear_ear_jnt",
+            "R_bear_ear_jnt"
+          ],
+          "materials": [
+            "M_actor_aurora_hair_01",
+            "M_actor_aurora_hair_02"
+          ]
+        },
+        {
+          "id": 21,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_hair_01_lod0",
+          "mesh_name": "S_actor_aurora_hair_01_lod0",
+          "original_index_count": 25470,
+          "bone_names": [
+            "Bip001_Head",
+            "hairG_02_jnt",
+            "hairG_03_jnt",
+            "hairG_01_jnt",
+            "hairI_02_jnt",
+            "hairI_03_jnt",
+            "hairE_02_jnt",
+            "hairE_03_jnt",
+            "hairE_01_jnt",
+            "hairF_02_jnt",
+            "hairF_03_jnt",
+            "hairF_01_jnt",
+            "hairD_02_jnt",
+            "hairD_01_jnt",
+            "hairK_02_jnt",
+            "hairK_01_jnt",
+            "hairC_04_jnt",
+            "hairC_03_jnt",
+            "hairC_02_jnt",
+            "hairC_01_jnt",
+            "hairH_02_jnt",
+            "hairH_03_jnt",
+            "hairH_04_jnt",
+            "hairH_01_jnt",
+            "hairJ_02_jnt",
+            "hairJ_03_jnt",
+            "hairJ_01_jnt",
+            "hairA_02_jnt",
+            "hairA_03_jnt",
+            "hairA_01_jnt"
+          ],
+          "materials": [
+            "M_actor_aurora_hair_01",
+            "M_actor_aurora_hairt_01"
+          ]
+        },
+        {
+          "id": 22,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_hs_01_lod0",
+          "mesh_name": "S_actor_aurora_hs_01_lod0",
+          "original_index_count": 546,
+          "bone_names": [
+            "Bip001_Head",
+            "hairA_02_jnt",
+            "hairA_03_jnt",
+            "hairA_01_jnt",
+            "hairJ_03_jnt",
+            "hairJ_02_jnt",
+            "hairI_02_jnt",
+            "hairI_03_jnt",
+            "hairC_03_jnt",
+            "hairC_04_jnt",
+            "hairC_02_jnt",
+            "hairJ_01_jnt"
+          ],
+          "materials": [
+            "M_hairshadow_common_03"
+          ]
+        },
+        {
+          "id": 23,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_aurora_iris_01_lod0",
+          "mesh_name": "S_actor_aurora_iris_01_lod0",
+          "original_index_count": 1224,
+          "bone_names": [
+            "faceLfHighlightJoint",
+            "faceLfHighlightAJoint",
+            "faceLfHighlightBJoint",
+            "faceRtHighlightBJoint",
+            "faceRtHighlightAJoint",
+            "faceRtHighlightJoint",
+            "faceLfIrisJoint",
+            "faceLfPupilJoint",
+            "faceRtIrisJoint",
+            "faceRtPupilJoint"
+          ],
+          "materials": [
+            "M_actor_aurora_iris_01"
+          ]
+        }
+      ]
+    },
+    "meshes": [],
+    "textures": [],
+    "option_groups": [],
+    "component_rules": [
+      {
+        "target": 0,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 1,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 2,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 3,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 4,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 5,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 6,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 7,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 8,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 9,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 10,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 11,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 12,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 13,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 14,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 15,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 16,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 17,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 18,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 19,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 20,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 21,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 22,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 23,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      }
+    ]
+  },
+  "payload_files": []
+}
