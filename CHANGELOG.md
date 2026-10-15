@@ -6,6 +6,8 @@
 - **免启动器直接拉起模式**：设置页新增“跳过官方启动器”开关，开启后无需打开任何启动器即可直接启动游戏。在 XInput 模式下启用跳过启动器时，自动以管理员权限直接运行游戏主程序，保证注入和游戏正常拉起。
 - **Android 1.6.4 全语种短语音目录同步**：提取并校验真机（1.6.4 / versionCode 61）最新 VFS 音频分区，完成中、英、日、韩四语种共 1,359 个 Banks 与 14 万+ 条 Media 记录验证，生成包含全部 35 个角色 × 4 种语言（共 140 目录）的完整运行时索引，彻底解决韩语语音缺失与新短语音映射问题。
 - **BEM Tools 升级 1.5.5**：将 4.0.4 补充包的角色资料直接整合入完整包，无需单独覆盖补丁；保留昼雪、祀、明河的 Windows 1.6.3 目标合同、profiles 与 keep-only 创作起点工程。
+- **Windows 串流与触控输入优化**：集成 Unity 输入系统独立指针路由策略（AllPointersAsIs），彻底根治 iOS / Moonlight 串流及触屏多指输入时 UI 按钮按下不释放卡死的问题；新增 mouse_to_touch_enabled 配置开关，实现原生触控与鼠标模拟转换解耦。（感谢 @orangetooth 的逆向分析与 @yumi233 的适配提交，详见 Issue #29 与 [触控修复说明](docs/ui/TOUCH_POINTER_REUSE_FIX.md)）。
+- **Android 媒体屏管理界面风格统一**：重构媒体屏增强页面，统一为 Better Endfield 原生 UI 风格，完善媒体导入提示与状态布局。
 
 附件与验证边界见 [4.0.5 发布记录](docs/workspace/releases/4.0.5/RELEASE_4_0_5.md)。
 

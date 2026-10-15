@@ -1,6 +1,9 @@
 #include "BetterEndfieldNext/ModuleApi.h"
 
 #include "touch_input.h"
+#if !defined(__ANDROID__)
+#include "touch_pointer_policy.h"
+#endif
 #include "../../shared/input/hotkey.h"
 
 #include <Windows.h>
@@ -42,6 +45,7 @@ enum class ModuleState : uint8_t {
 struct UiConfiguration {
     bool enabled = false;
     bool mobile_ui_enabled = false;
+    bool mouse_to_touch_enabled = true;
     bool pc_ui_enabled = false;
     bool hide_uid_enabled = false;
     bool hide_hud_enabled = false;
@@ -1232,6 +1236,9 @@ UiConfiguration ParseConfigurationText(const char* raw_configuration) {
             config.enabled = ParseBoolean(value, config.enabled);
         } else if (key == "mobile_ui_enabled") {
             config.mobile_ui_enabled = ParseBoolean(value, config.mobile_ui_enabled);
+        } else if (key == "mouse_to_touch_enabled") {
+            config.mouse_to_touch_enabled =
+                ParseBoolean(value, config.mouse_to_touch_enabled);
         } else if (key == "pc_ui_enabled") {
             config.pc_ui_enabled = ParseBoolean(value, config.pc_ui_enabled);
         } else if (key == "hide_uid_enabled") {
@@ -1569,6 +1576,9 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     // The touch layout is unusable without a finger to drive it, so the input
     // half starts with the module and stays gated on the same configuration.
     TouchInput::Start([](const char* message) { Log(message); });
+#if !defined(__ANDROID__)
+    TouchPointerPolicy::Start(host, [](const char* message) { Log(message); });
+#endif
 
     g_state.store(ModuleState::Ready);
 #if defined(__ANDROID__)
@@ -1610,10 +1620,14 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
 #if defined(__ANDROID__)
     g_android_pc_mouse_diagnostics_reset.store(true, std::memory_order_release);
 #endif
-    TouchInput::SetEnabled(mobile_active);
+    TouchInput::SetEnabled(mobile_active && config.mouse_to_touch_enabled);
+#if !defined(__ANDROID__)
+    TouchPointerPolicy::SetEnabled(mobile_active);
+#endif
 
     Log(std::string("UI Configuration applied: enabled=") + (config.enabled ? "true" : "false") +
         ", mobile_ui_enabled=" + (config.mobile_ui_enabled ? "true" : "false") +
+        ", mouse_to_touch_enabled=" + (config.mouse_to_touch_enabled ? "true" : "false") +
         ", pc_ui_enabled=" + (config.pc_ui_enabled ? "true" : "false") +
         ", pc_ui_effective=" + (pc_active ? "true" : "false") +
         ", keyboard_input_type=" + std::to_string(g_keyboard_input_type) +
@@ -1650,6 +1664,9 @@ void BE_CALL Shutdown() {
 #endif
     TouchInput::SetEnabled(false);
     TouchInput::Stop();
+#if !defined(__ANDROID__)
+    TouchPointerPolicy::Stop();
+#endif
     g_hide_uid_enabled.store(false, std::memory_order_release);
     g_hide_hud_enabled.store(false, std::memory_order_release);
     ReleaseHiddenUidRoots();

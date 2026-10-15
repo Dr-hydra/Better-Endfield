@@ -132,8 +132,13 @@ add_library(BetterEndfieldNext.UiModule SHARED
     modules/ui/module.cpp
     modules/ui/touch_input.cpp
     modules/ui/touch_input.h
+    modules/ui/touch_pointer_policy.cpp
+    modules/ui/touch_pointer_policy.h
 )
 better_endfield_target_defaults(BetterEndfieldNext.UiModule)
+add_executable(BetterEndfieldNext.TouchPointerPolicyTests EXCLUDE_FROM_ALL
+    tests/ui/touch_pointer_policy_tests.cpp)
+better_endfield_target_defaults(BetterEndfieldNext.TouchPointerPolicyTests)
 set_target_properties(BetterEndfieldNext.UiModule PROPERTIES
     OUTPUT_NAME "BetterEndfieldNext.UiModule"
     RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules"

@@ -28,28 +28,28 @@
   "assets": [
     {
       "name": "BetterEndfieldNext-4.0.5-Setup.exe",
-      "bytes": 76888056,
-      "sha256": "098ca6fbdd05e5b20c5bd0d0f3c2e07a80c55b822238ca552c64d8757ef21f89",
+      "bytes": 76890456,
+      "sha256": "5d7f0a68c212cba03344e5431a69b7bf004c6656d45ebded5605c236f18e891a",
       "public": true
     },
     {
       "name": "BetterEndfieldNext-4.0.5-Android-arm64.apk",
-      "bytes": 6078785,
-      "sha256": "2687a986f9153fcbbf50a77b9e84190fcf979811d42eac1d29d8e754c455ff63",
+      "bytes": 6081661,
+      "sha256": "c2a9efe061435eaf827cd5601a552fb6c7f842e00b356b25a31acfb4ca83e0f4",
       "public": true
     },
     {
       "name": "BEM-Tools-1.5.5-win-x64.zip",
-      "bytes": 72960361,
-      "sha256": "3174ed76a92d73740f5efefff0beeec3ba8b9d2b965de8e0216c8a1a4dbf1ea3",
+      "bytes": 72959582,
+      "sha256": "e88ff8c6b614b379cfaa8610889f2b8b3112005582e09b517b362591fa3d749a",
       "public": true
     }
   ],
   "local_only_assets": [
     {
       "name": "BetterEndfieldNext-4.0.5-win-x64.zip",
-      "bytes": 85045118,
-      "sha256": "e2bbeb38b1cbe1bc1ca6f4d30ec1bb2810469e0456573d8feb67653cab00949e"
+      "bytes": 85046684,
+      "sha256": "6ed82f8c8e33acb38ecd756c8fcde942b3a1f1327548bd4cc2d74d5fb743c323"
     }
   ],
   "release": {
