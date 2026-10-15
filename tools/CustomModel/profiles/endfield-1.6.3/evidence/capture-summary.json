@@ -1,0 +1,84 @@
+{
+  "run": "bem-1_6_3-login-20261015-091033-3bb4aa",
+  "manifest_version": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+  "process_ids": [
+    14396
+  ],
+  "captured": {
+    "chr_0036_jsspsi_postmodel": {
+      "character_id": "chr_0036_jsspsi",
+      "variant": "world",
+      "asset_path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0036_jsspsi_postmodel.prefab",
+      "complete": true,
+      "renderers": 86,
+      "expected_renderers": 86,
+      "complete_renderers": 86,
+      "incomplete_meshes": [],
+      "session_file": "bem-1_6_3-login-20261015-091033-3bb4aa.14396.4956203.jsonl"
+    },
+    "chr_0037_minghe_postmodel": {
+      "character_id": "chr_0037_minghe",
+      "variant": "world",
+      "asset_path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0037_minghe_postmodel.prefab",
+      "complete": true,
+      "renderers": 81,
+      "expected_renderers": 81,
+      "complete_renderers": 81,
+      "incomplete_meshes": [],
+      "session_file": "bem-1_6_3-login-20261015-091033-3bb4aa.14396.4956203.jsonl"
+    },
+    "chr_0037_minghe02_postmodel": {
+      "character_id": "chr_0037_minghe02",
+      "variant": "world",
+      "asset_path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0037_minghe02_postmodel.prefab",
+      "complete": true,
+      "renderers": 81,
+      "expected_renderers": 81,
+      "complete_renderers": 81,
+      "incomplete_meshes": [],
+      "session_file": "bem-1_6_3-login-20261015-091033-3bb4aa.14396.4956203.jsonl"
+    },
+    "chr_0037_minghe03_postmodel": {
+      "character_id": "chr_0037_minghe03",
+      "variant": "world",
+      "asset_path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0037_minghe03_postmodel.prefab",
+      "complete": true,
+      "renderers": 81,
+      "expected_renderers": 81,
+      "complete_renderers": 81,
+      "incomplete_meshes": [],
+      "session_file": "bem-1_6_3-login-20261015-091033-3bb4aa.14396.4956203.jsonl"
+    },
+    "chr_0036_jsspsi_uimodel": {
+      "character_id": "chr_0036_jsspsi",
+      "variant": "ui",
+      "asset_path": "assets/beyond/dynamicassets/gameplay/prefabs/uimodels/chr_0036_jsspsi_uimodel.prefab",
+      "complete": true,
+      "renderers": 23,
+      "expected_renderers": 23,
+      "complete_renderers": 23,
+      "incomplete_meshes": [],
+      "session_file": "bem-1_6_3-login-20261015-091033-3bb4aa.14396.4956203.jsonl"
+    }
+  },
+  "complete_resources": 5,
+  "incomplete_resources": [],
+  "unobserved_resources": [],
+  "characters_observed": [
+    "chr_0036_jsspsi",
+    "chr_0037_minghe",
+    "chr_0037_minghe02",
+    "chr_0037_minghe03"
+  ],
+  "note": "未观察到不等于失败或未拥有；运行时元数据不包含 EFMI GPU hash，也不自动批准转换。",
+  "segments": [
+    {
+      "file": "bem-1_6_3-login-20261015-091033-3bb4aa.14396.4956203.jsonl",
+      "process_ids": [
+        14396
+      ],
+      "resources": 5
+    }
+  ],
+  "conflicting_resources": []
+}

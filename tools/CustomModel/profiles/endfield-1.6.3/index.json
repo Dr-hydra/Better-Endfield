@@ -1,0 +1,90 @@
+{
+  "schema": 1,
+  "kind": "bem-bundled-resource-index",
+  "game_version": "1.6.3",
+  "platforms": [
+    "windows-x64"
+  ],
+  "legacy_catalog": {
+    "path": "../../catalog/chr_0036_jsspsi.json",
+    "character_id": "chr_0036_jsspsi",
+    "name": "祀",
+    "mapping_status": "offline-resource-identities-partial",
+    "components": 15,
+    "source_entries": 14,
+    "source_textures": 58,
+    "supported_source_layouts": 8
+  },
+  "targets": [
+    {
+      "name": "祀 · 完整世界与详情资源",
+      "owner_id": "chr_0036_jsspsi",
+      "profile": "chr_0036_jsspsi-full.profile.json",
+      "project": "chr_0036_jsspsi-full.project.json",
+      "components": 46,
+      "platforms": [
+        "windows-x64"
+      ],
+      "preparation": "keep-only",
+      "runtime_verified": false,
+      "conversion_ready": false,
+      "render_verified": false
+    },
+    {
+      "name": "祀 · 世界 cloth_04",
+      "owner_id": "chr_0036_jsspsi",
+      "profile": "chr_0036_jsspsi-cloth04-world.profile.json",
+      "project": "chr_0036_jsspsi-cloth04-world.project.json",
+      "components": 1,
+      "platforms": [
+        "windows-x64"
+      ],
+      "preparation": "keep-only",
+      "runtime_verified": false,
+      "conversion_ready": false,
+      "render_verified": false
+    },
+    {
+      "name": "明河 · 世界模型",
+      "owner_id": "chr_0037_minghe",
+      "profile": "chr_0037_minghe-world.profile.json",
+      "project": "chr_0037_minghe-world.project.json",
+      "components": 20,
+      "platforms": [
+        "windows-x64"
+      ],
+      "preparation": "keep-only",
+      "runtime_verified": false,
+      "conversion_ready": false,
+      "render_verified": false
+    },
+    {
+      "name": "明河 · 世界模型 02",
+      "owner_id": "chr_0037_minghe",
+      "profile": "chr_0037_minghe02-world.profile.json",
+      "project": "chr_0037_minghe02-world.project.json",
+      "components": 20,
+      "platforms": [
+        "windows-x64"
+      ],
+      "preparation": "keep-only",
+      "runtime_verified": false,
+      "conversion_ready": false,
+      "render_verified": false
+    },
+    {
+      "name": "明河 · 世界模型 03",
+      "owner_id": "chr_0037_minghe",
+      "profile": "chr_0037_minghe03-world.profile.json",
+      "project": "chr_0037_minghe03-world.project.json",
+      "components": 20,
+      "platforms": [
+        "windows-x64"
+      ],
+      "preparation": "keep-only",
+      "runtime_verified": false,
+      "conversion_ready": false,
+      "render_verified": false
+    }
+  ]
+}

@@ -1919,8 +1919,12 @@ public sealed partial class MainWindow : Window
 
     private async void LaunchButton_Click(object sender, RoutedEventArgs e)
     {
+        if (LaunchProgressRing.IsActive) return;
         bool isZh = LocalizationService.Instance.IsChinese;
-        if (Process.GetProcessesByName("Endfield").Length > 0)
+        var gameProcesses = Process.GetProcessesByName("Endfield");
+        bool gameRunning = gameProcesses.Length > 0;
+        foreach (var process in gameProcesses) process.Dispose();
+        if (gameRunning)
         {
             ShowStatus(
                 isZh ? "游戏已经在运行" : "Game Already Running",
@@ -1941,65 +1945,35 @@ public sealed partial class MainWindow : Window
 
         LaunchProgressRing.Visibility = Visibility.Visible;
         LaunchProgressRing.IsActive = true;
+        LaunchButton.IsEnabled = false;
         try
         {
-            if (!GetSelectedLoaderMode().Equals("xinput", StringComparison.OrdinalIgnoreCase))
-                InjectorLaunchGuard.EnsureAllowed(GamePathBox.Text.Trim());
+            string loaderMode = GetSelectedLoaderMode();
+            var startInfo = GameLaunchService.CreateStartInfo(
+                loaderMode,
+                RuntimePathDiscoveryService.BundledInjectorPath,
+                RuntimePathDiscoveryService.BundledLauncherPath,
+                GamePathBox.Text.Trim(),
+                GameLaunchArgumentsBox.Text);
             if (!await SaveAsync(showSuccess: false))
             {
                 return;
             }
 
-            string loaderMode = GetSelectedLoaderMode();
-            ProcessStartInfo startInfo;
-            string launchArguments = GameLaunchArgumentsBox.Text.Trim();
-            if (loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase))
-            {
-                ShowStatus(
-                    isZh ? "正在准备 XInput 代理" : "Preparing XInput Proxy",
-                    isZh ? "正在检查并安装游戏自动加载代理。" : "Checking and installing the game auto-load proxy.",
-                    InfoBarSeverity.Informational);
-                await XInputDeploymentService.InstallAsync(
-                    GamePathBox.Text.Trim(),
-                    RuntimePathDiscoveryService.BundledInjectorPath);
-                await RefreshXInputStatusAsync();
-                startInfo = new ProcessStartInfo
-                {
-                    FileName = GamePathBox.Text.Trim(),
-                    WorkingDirectory = Path.GetDirectoryName(GamePathBox.Text.Trim()) ?? string.Empty,
-                    UseShellExecute = true,
-                    Arguments = launchArguments
-                };
-            }
-            else
-            {
-                startInfo = new ProcessStartInfo
-                {
-                    FileName = RuntimePathDiscoveryService.BundledInjectorPath,
-                    WorkingDirectory = Path.GetDirectoryName(
-                        RuntimePathDiscoveryService.BundledInjectorPath) ?? string.Empty,
-                    UseShellExecute = true,
-                    Verb = "runas",
-                    Arguments = BuildInjectorArguments(
-                        GamePathBox.Text.Trim(),
-                        launchArguments)
-                };
-            }
-            Process.Start(startInfo);
+            await EnsureSelectedLoaderReadyAsync();
+            // The helper stays alive until the game exits. It reports startup
+            // failures itself; waiting here would keep the UI busy during play.
+            using var launchProcess = Process.Start(startInfo)
+                ?? throw new InvalidOperationException(isZh ? "无法启动游戏。" : "Unable to start the game.");
             ShowStatus(
-                loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase)
-                    ? (isZh ? "XInput 自启动已就绪" : "XInput Auto-load Ready")
-                    : (isZh ? "注入器已启动" : "Injector Launched"),
-                loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase)
-                    ? (isZh ? "游戏将通过 xinput1_4.dll 加载 Better Endfield Next Host。"
-                            : "The game will load Better Endfield Next Host via xinput1_4.dll.")
-                    : (isZh ? "如果出现用户账户控制提示，请允许管理员权限。游戏启动后状态会自动更新。"
-                            : "Please grant administrator permissions if prompted by UAC. Status will update once game starts."),
-                InfoBarSeverity.Success);
+                isZh ? "正在启动游戏" : "Starting Game",
+                isZh ? "启动请求已发送，游戏启动后状态会自动更新。"
+                     : "Launch requested. Status will update when the game starts.",
+                InfoBarSeverity.Informational);
         }
         catch (Exception exception) when (
             exception is InvalidOperationException or IOException or
-                UnauthorizedAccessException or Win32Exception or NotSupportedException)
+                UnauthorizedAccessException or Win32Exception or NotSupportedException or ArgumentException)
         {
             ShowStatus(isZh ? "启动失败" : "Launch Failed", exception.Message, InfoBarSeverity.Error);
         }
@@ -2007,6 +1981,7 @@ public sealed partial class MainWindow : Window
         {
             LaunchProgressRing.IsActive = false;
             LaunchProgressRing.Visibility = Visibility.Collapsed;
+            LaunchButton.IsEnabled = true;
         }
     }
 
@@ -2102,15 +2077,11 @@ public sealed partial class MainWindow : Window
         try
         {
             string loaderMode = GetSelectedLoaderMode();
-            if (loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase))
-            {
-                await XInputDeploymentService.InstallAsync(
-                    GamePathBox.Text.Trim(),
-                    RuntimePathDiscoveryService.BundledInjectorPath);
-            }
+            await EnsureSelectedLoaderReadyAsync();
             string shortcutPath = ShortcutService.CreateGameShortcut(
                 loaderMode,
                 RuntimePathDiscoveryService.BundledInjectorPath,
+                RuntimePathDiscoveryService.BundledLauncherPath,
                 GamePathBox.Text,
                 GameLaunchArgumentsBox.Text);
             ShowStatus(
@@ -2119,7 +2090,8 @@ public sealed partial class MainWindow : Window
                 InfoBarSeverity.Success);
         }
         catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException or COMException)
+            exception is IOException or UnauthorizedAccessException or COMException or
+                InvalidOperationException or ArgumentException)
         {
             ShowStatus(isZh ? "创建快捷方式失败" : "Failed to Create Shortcut", exception.Message, InfoBarSeverity.Error);
         }
@@ -2351,17 +2323,12 @@ public sealed partial class MainWindow : Window
             error = "启动参数不能超过 2048 个字符。";
             return false;
         }
+        if (!GameLaunchService.AreArgumentsValid(arguments))
+        {
+            error = "请配对启动参数中的双引号，并移除 --steam-command。";
+            return false;
+        }
         return true;
-    }
-
-    private static string BuildInjectorArguments(
-        string gameExecutablePath,
-        string gameArguments)
-    {
-        string arguments = "--game " + QuoteProcessArgument(gameExecutablePath);
-        return string.IsNullOrWhiteSpace(gameArguments)
-            ? arguments
-            : arguments + " -- " + gameArguments.Trim();
     }
 
     private async Task ScanRuntimePathsAsync(bool showResult)
@@ -2452,7 +2419,7 @@ public sealed partial class MainWindow : Window
             : (isZh ? "由 Better Endfield Next 启动游戏并在启动阶段加载 Host，游戏目录保持不变。"
                     : "Launched and injected by Better Endfield Next at startup; game directory remains unmodified.");
         PageSelectionHintTextBlock.Text = xinput
-            ? (isZh ? "启动时会确保 XInput 代理已安装到游戏目录。" : "Launcher will ensure XInput proxy is installed in game directory.")
+            ? (isZh ? "请先点击“安装或更新”部署 XInput；启动和创建快捷方式不会自动安装。" : "Use Install / Update to deploy XInput first; launching or creating shortcuts will not install it.")
             : (isZh ? "保存后在下一次注入时生效。" : "Changes will take effect on next game launch/injection.");
         UpdatePathStatusText();
     }
@@ -3781,12 +3748,6 @@ public sealed partial class MainWindow : Window
             FileName = path,
             UseShellExecute = true
         });
-    }
-
-    private static string QuoteProcessArgument(string value)
-    {
-        string escaped = value.Replace("\"", "\\\"");
-        return $"\"{escaped}\"";
     }
 
     private void TryResizeWindow()

@@ -36,6 +36,8 @@ def main():
     parser.add_argument("--notes-file", type=Path, required=True)
     parser.add_argument("--asset", nargs=2, action="append", metavar=("NAME", "PATH"), required=True)
     parser.add_argument("--publish", action="store_true")
+    parser.add_argument("--verify-digest", action="store_true",
+                        help="Compute local SHA-256 and compare GitHub asset digests; permits reusing an identical uploaded draft asset")
     args = parser.parse_args()
     token = credentials()
     base = "https://api.github.com/repos/" + args.repo
@@ -83,12 +85,18 @@ def main():
     expected = {}
     for name, path in assets:
         size = path.stat().st_size
-        digest = hashlib.file_digest(path.open("rb"), "sha256").hexdigest()
-        expected[name] = (size, "sha256:" + digest)
+        digest = None
+        if args.verify_digest:
+            with path.open("rb") as stream:
+                digest = "sha256:" + hashlib.file_digest(stream, "sha256").hexdigest()
+        expected[name] = (size, digest)
         existing = next((asset for asset in release["assets"] if asset["name"] == name), None)
-        if existing and (existing["size"], existing.get("digest")) == expected[name]:
+        if (args.verify_digest and existing and existing.get("state") == "uploaded" and
+                (existing["size"], existing.get("digest")) == expected[name]):
             print("Verified existing draft asset:", name, flush=True)
             continue
+        # Equal sizes do not prove equal contents. Without explicit digest
+        # verification, upload this invocation's file again even for a draft.
         if existing:
             api(existing["url"], "DELETE")
         connection = http.client.HTTPSConnection(upload.hostname, timeout=120)
@@ -111,7 +119,8 @@ def main():
     release = api(release["url"])
     for name, signature in expected.items():
         asset = next((a for a in release["assets"] if a["name"] == name), None)
-        if not asset or asset["state"] != "uploaded" or (asset["size"], asset.get("digest")) != signature:
+        if (not asset or asset["state"] != "uploaded" or asset["size"] != signature[0] or
+                (args.verify_digest and asset.get("digest") != signature[1])):
             raise RuntimeError("Uploaded asset verification failed: " + name)
     if args.publish:
         release = api(release["url"], "PATCH", {"tag_name": args.tag, "target_commitish": args.target,
@@ -119,7 +128,8 @@ def main():
         if release["tag_name"] != args.tag or release["draft"]:
             raise RuntimeError("GitHub did not publish the requested release tag")
     print(json.dumps({"url": release["html_url"], "tag": release["tag_name"], "draft": release["draft"],
-                      "assets": [{"name": a["name"], "bytes": a["size"], "digest": a.get("digest")}
+                      "assets": [{"name": a["name"], "bytes": a["size"],
+                                  **({"digest": a.get("digest")} if args.verify_digest else {})}
                                  for a in release["assets"]]}, ensure_ascii=False, indent=2))
 
 

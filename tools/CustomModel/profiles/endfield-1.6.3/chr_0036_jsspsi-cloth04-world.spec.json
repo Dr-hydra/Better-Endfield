@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "kind": "bem-resource-target-spec",
+  "id": "chr_0036_jsspsi",
+  "profile_id": "chr_0036_jsspsi-cloth04-world-pc",
+  "revision": "1.6.3-20261015",
+  "snapshot": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+  "target_kind": "character",
+  "resources": [
+    {
+      "id": "world",
+      "asset_path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0036_jsspsi_postmodel.prefab",
+      "platforms": [
+        "windows-x64"
+      ],
+      "lod": 0,
+      "renderer_paths": [
+        "Mesh_all/lod0/S_actor_jsspsi_cloth_04_lod0"
+      ]
+    }
+  ]
+}

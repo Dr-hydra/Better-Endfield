@@ -1,5 +1,7 @@
 # BEM 运行时行为与兼容性
 
+当前 BE 4.0.3 / Windows 游戏 1.6.3、Android 游戏 1.6.4 的定向检查与实机边界见 [BEM 链路核查](research/1.6.3/bem-chain-audit/BEM_CHAIN_AUDIT.md)。Windows 已用现有凛包验证真实开屏提交；手机缺语言资源，本轮只完成静态与离线检查。
+
 本页下文说明旧 1.0–1.3 角色包的 world/UI 路径。当前版本的多资源、武器与形态目标见 [BEM 1.4 规范](BEM_V1_4_SPEC.md)：各资源使用显式接收器路径与平台声明；Windows 仅执行 LOD0 目标，Android 使用声明资源自身的 donor。真实新目标仍需平台资料和游戏内验收。
 
 Android 场景使用 LOD1 是原有设计：旧包的 LOD0 指 UI donor，场景接收器仍是 LOD1；1.4 显式包可直接声明自身的 LOD1 接收器与 donor。Windows 的 LOD0 限制不会套到 Android。Android 所有启用模型包均参与既有 `lod_pipeline` 偏置维护，保留游戏的 QualitySettings；`EnableForceLOD0` 的函数名不表示手机必须使用 LOD0。

@@ -1,6 +1,6 @@
 # Better Endfield Next Runtime Interfaces
 
-本文记录重构后的进程内接口协议。运行时不保存客户端地址、文件哈希白名单或硬编码字段偏移。
+本文记录重构后的进程内接口协议。Host 按元数据定位方法和字段，不保存客户端固定地址或文件哈希白名单。部分模块仍有原生结构布局、枚举及字段回退常量，需要随客户端版本核对；当前 Windows 1.6.3 的检查和修复见[更新记录](research/1.6.3/hook-update/GAME_UPDATE_1_6_3.md)。
 
 ## Host 与模块
 

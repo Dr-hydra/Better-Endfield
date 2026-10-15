@@ -8,7 +8,10 @@
 
 | 文档 | 用途 | 状态 | 游戏版本 |
 | --- | --- | --- | --- |
-| [Better Endfield Next Runtime Interfaces](GAME_INTERFACES.md) | Host/模块、动态IL2CPP、登录/语音等运行时接口 | 维护参考 | 1.5.3 |
+| [Better Endfield Next Runtime Interfaces](GAME_INTERFACES.md) | Host/模块、动态IL2CPP、登录/语音等运行时接口 | 维护参考 | 1.6.3 Windows |
+| [1.6.3 挂钩与资源更新](research/1.6.3/hook-update/GAME_UPDATE_1_6_3.md) | 本轮适配、资源、构建与验证边界 | 当前适配 | 1.6.3 Windows |
+| [1.6.3 官方启动器检查](research/1.6.3/launcher-check/LAUNCHER_CHECK.md) | 直接 EXE 启动失败与官方启动链的实测差异 | 已定位 | 1.6.3 Windows |
+| [1.6.3 Steam 元数据检查](research/1.6.3/steam-launch/STEAM_METADATA_20261015.md) | 正式元数据、可导入 JSON、ACF 预览及启动验证边界 | 元数据齐备 | 1.6.3 Windows |
 | [Steam 国服启动使用与验证](STEAM_CN_LAUNCH.md) | Windows 预览、元数据更新、管理员选项与 XInput 冲突处理 | 3.5.3 预览功能 | not_applicable |
 
 ## 研究与阶段记录

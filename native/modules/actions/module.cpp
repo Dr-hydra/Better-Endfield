@@ -128,7 +128,7 @@ enum MethodId {
     CurrentState, NextState, InTransition, StateHash, StateTime, StateLength,
     IsPlayingPerform, PerformId, SetDashing, MoveMode, Moving, Airborne,
     FlowTick, PerformClear, PerformState, HandleAlive, StateLoop, AddCommand,
-    TickStateInterrupt, CrossFade, TryExit, CheckTrackEnd, ShowObject,
+    CrossFade, TryInterruptCommand, DoExit, ShowObject,
     AudioMonoPost, AudioMonoComponent, AudioEntityPost, AudioHash,
     EffectName, EffectObject, EffectDuration, EffectFinish, EffectStop,
     ComponentsInChildren, ArrayLength, ArrayItem, ParticleMain,
@@ -178,10 +178,9 @@ Method g_methods[] = {
     {{kGame,kPerformNs,kHandle,"_CheckEntityAlive",nullptr,"System.Boolean",0}},
     {{kUnity,"UnityEngine","AnimatorStateInfo","get_loop",nullptr,"System.Boolean",0}},
     {{kGame,kPerformNs,kHandle,"AddInterruptCommand","Beyond.Gameplay.CharInteractPerformEnums.InterruptReason|Beyond.Gameplay.CharInteractPerformEnums.InterruptType|System.Boolean","System.Void",3}},
-    {{kGame,kView,kCharacterComp,"_TickStatePerformInterrupt",nullptr,"System.Void",0}},
     {{kUnity,"UnityEngine","Animator","CrossFade","System.Int32|System.Single|System.Int32|System.Single|System.Single|UnityEngine.AnimationBlendStyle|UnityEngine.AnimatorTransitionInterruptionSource|System.Boolean","System.Void",8}},
-    {{kGame,kPerformNs,kHandle,"_TryExit","Beyond.Gameplay.Core.CharInteractPerform.InterruptCommandData","System.Boolean",1}},
-    {{kGame,kPerformNs,kHandle,"_CheckTrackEnd",nullptr,"System.Boolean",0}},
+    {{kGame,kPerformNs,kHandle,"_TryGetCurInterruptCommand","Beyond.Gameplay.Core.CharInteractPerform.InterruptCommandData&","System.Boolean",1}},
+    {{kGame,kPerformNs,kHandle,"_DoExit",nullptr,"System.Void",0}},
     {{kGame,kPerformNs,kHandle,"ShowObject","Beyond.Gameplay.Core.CharInteractPerform.ObjectShowActData","System.Void",1}},
     {{kGame,kAnimation,"AnimatorMono","PostAudioEvent","System.UInt32|System.Single","System.Void",2}},
     {{kGame,kAnimation,"AnimatorMono","get_innerAnimatorComponent",nullptr,"Beyond.Gameplay.View.ComplexAnimatorComponent",0}},
@@ -266,14 +265,12 @@ TickFn g_flow_tick = nullptr;
 BoolArgFn g_perform_clear = nullptr;
 using CommandFn = void(__fastcall*)(void*, int, int, bool, const void*);
 CommandFn g_add_command = nullptr;
-VoidFn g_tick_state_interrupt = nullptr;
-using TryExitFn = bool(__fastcall*)(void*, void*, const void*);
-TryExitFn g_try_exit = nullptr;
-using CheckTrackFn = bool(__fastcall*)(void*, const void*);
+using TryInterruptCommandFn = bool(__fastcall*)(void*, void**, const void*);
+TryInterruptCommandFn g_try_interrupt_command = nullptr;
 using ShowFn = void(__fastcall*)(void*, void*, const void*);
 using AudioMonoFn = void(__fastcall*)(void*, uint32_t, float, const void*);
 using AudioEntityFn = uint32_t(__fastcall*)(void*, uint32_t, int, void*, void*, const void*);
-CheckTrackFn g_check_track = nullptr;
+VoidFn g_do_exit = nullptr;
 ShowFn g_show = nullptr;
 AudioMonoFn g_audio_mono = nullptr;
 AudioEntityFn g_audio_entity = nullptr;
@@ -332,7 +329,6 @@ struct Session {
     uint32_t natural_end_deferrals = 0;
     int last_progress_bucket = -1;
     uint32_t animation_replays = 0;
-    bool held_state_interrupt = false;
     uint32_t try_exit_calls = 0;
     uint32_t spdash_interrupts_suppressed = 0;
     int last_interrupt_reason = -1;
@@ -343,10 +339,6 @@ struct Session {
 Session g_session;
 bool g_liino_teardown_contract = true, g_effect_follow_contract = true;
 bool g_liino_clean_contract = true;
-// Optional: the 2026-09-03 PC client inlines _TickStatePerformInterrupt into
-// its only caller, PreLateTick, so the entry hook never fires there; the other
-// interrupt holds still apply. Builds that keep it out of line use the hook.
-bool g_state_interrupt_contract = true;
 int g_liino_mesh_groups[2]{-1, -1};
 VoidFn g_effect_action_play = nullptr;
 const void* g_hash_fields[2]{};
@@ -779,18 +771,10 @@ bool ReadMovementState(void* component, int& mode, int& gait, bool& moving, bool
     gait = Value<int>(GaitValue, gait_object, ok);
     return ok;
 }
-void __fastcall StateInterruptDetour(void* component, const void* method) {
-    // The generic callback calls ForceExit and clears m_currentRequest directly.
-    if (ShouldHold(component)) {
-        if (!g_session.held_state_interrupt && g_session.config->diagnostics)
-            Log("Sustained dash: holding _TickStatePerformInterrupt for the owned sprint session (v4).");
-        g_session.held_state_interrupt = true;
-        return;
-    }
-    g_tick_state_interrupt(component, method);
-}
-bool __fastcall TryExitDetour(void* handle, void* command, const void* method) {
-    if (handle == g_session.handle && g_session.component) {
+bool __fastcall TryInterruptCommandDetour(void* handle, void** command_out, const void* method) {
+    const bool result = g_try_interrupt_command(handle, command_out, method);
+    void* command = result && command_out ? *command_out : nullptr;
+    if (command && handle == g_session.handle && g_session.component) {
         ++g_session.try_exit_calls;
         bool ok = true;
         int type = command ? Unbox<int>(FieldObject(CommandType, command), ok) : -1;
@@ -805,17 +789,21 @@ bool __fastcall TryExitDetour(void* handle, void* command, const void* method) {
             g_session.last_interrupt_type = type;
             g_session.last_interrupt_reason = reason;
             char text[256];
-            std::snprintf(text, sizeof(text), "Sustained dash Perform _TryExit: command=%p, reason=%d, type=%d, suppress=%d, hold=%d, mode=%d, gait=%d, moving=%d, airborne=%d, owned=%d",
+            std::snprintf(text, sizeof(text), "Sustained dash Perform command: command=%p, reason=%d, type=%d, suppress=%d, hold=%d, mode=%d, gait=%d, moving=%d, airborne=%d, owned=%d",
                 command, reason, type, hold && reason == g_sp_dash_end && type == g_force_exit,
                 hold, mode, gait, moving, airborne, owned);
             Log(text);
         }
         // The game's special-dash end command is the expected transition from
         // dash to sprint. Let every other explicit exit retain its semantics.
-        if (hold && reason == g_sp_dash_end && type == g_force_exit)
+        // 1.6.3 inlines _TryExit into _TickMainFlow. Filter its input at the
+        // surviving command dequeue instead of hooking the unused wrapper.
+        if (hold && reason == g_sp_dash_end && type == g_force_exit) {
+            *command_out = nullptr;
             return false;
+        }
     }
-    return g_try_exit(handle, command, method);
+    return result;
 }
 void __fastcall DashingDetour(void* blackboard, bool value, const void* method) {
     if (blackboard == g_session.blackboard && g_session.component) {
@@ -839,10 +827,13 @@ void __fastcall FlowDetour(void* handle, float delta, const void* method) {
     FlowScope scope(handle);
     g_flow_tick(handle, delta, method);
 }
-// This resource creates props/effects in End. Do not hook/block entry to End.
-bool __fastcall TrackEndDetour(void* handle, const void* method) {
-    bool result = g_check_track(handle, method);
-    if (!result || handle != g_session.handle || !g_session.component) return result;
+// 1.6.3 inlines _CheckTrackEnd, but natural cleanup still reaches _DoExit.
+// End itself must run: the resource creates props/effects on entering it.
+void __fastcall DoExitDetour(void* handle, const void* method) {
+    if (handle != g_session.handle || !g_session.component) {
+        g_do_exit(handle, method);
+        return;
+    }
     bool ok = true;
     bool command = Unbox<bool>(FieldObject(HasCommand, handle), ok);
     int phase = Value<int>(PerformState, handle, ok);
@@ -852,9 +843,9 @@ bool __fastcall TrackEndDetour(void* handle, const void* method) {
     if (defer) {
         if (++g_session.natural_end_deferrals == 1 && g_session.config->diagnostics)
             Log("Sustained dash v8: deferred owned Perform End track cleanup.");
-        return false;
+        return;
     }
-    return result;
+    g_do_exit(handle, method);
 }
 // Optional: absent on builds where the mesh-group action is unavailable.
 bool g_mesh_group_contract = true;
@@ -1124,6 +1115,9 @@ void __fastcall PreLateDetour(void* component, float delta, const void* method) 
     g_pre_late(component, delta, method);
 }
 bool __fastcall CheckDetour(void* component, const void* method) {
+    // 1.6.3 inlines _TickStatePerformInterrupt into PreLateTick, but its
+    // condition-3 delegate still invokes ShouldInterruptSpDash through this
+    // entry (CharacterAnimationComponent.cctor registers that exact target).
     // Always retain the original result for every other role and perform.
     bool result = g_check(component, method);
     return result && !ShouldHold(component);
@@ -1250,7 +1244,6 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     for (auto& method : g_methods) {
         if (host->resolve_method(host->context, &method.desc, &method.resolved) != BE_Result_Ok) {
             Log((std::string("Missing action method: ") + method.desc.class_name + "." + method.desc.method_name).c_str());
-            if (&method == &g_methods[TickStateInterrupt]) { g_state_interrupt_contract = false; continue; }
             if (&method == &g_methods[MeshGroupShow]) { g_mesh_group_contract = false; continue; }
             if (&method == &g_methods[EffectActionPlay]) { g_liino_teardown_contract = false; continue; }
             if (&method == &g_methods[EffectManualFollow]) { g_effect_follow_contract = false; continue; }
@@ -1340,8 +1333,8 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     uint32_t impl = 0;
     if (!ok || !g_hash_fields[0] || !g_hash_fields[1] || !g_locomotion_fields[0] || !g_locomotion_fields[1] ||
         (flags(g_methods[SetDashing].resolved.method_info, &impl) & 0x10u)) return BE_Result_ContractMismatch;
-    for (MethodId id : {FlowTick, PerformClear, AddCommand, CrossFade, TryExit,
-        CheckTrackEnd, ShowObject, AudioMonoPost, AudioMonoComponent, EffectDuration, EffectFinish, EffectStop})
+    for (MethodId id : {FlowTick, PerformClear, AddCommand, CrossFade, TryInterruptCommand,
+        DoExit, ShowObject, AudioMonoPost, AudioMonoComponent, EffectDuration, EffectFinish, EffectStop})
         if (flags(g_methods[id].resolved.method_info, &impl) & 0x10u) return BE_Result_ContractMismatch;
     for (MethodId id : {AudioEntityPost, AudioHash, UnityAlive})
         if (!(flags(g_methods[id].resolved.method_info, &impl) & 0x10u)) return BE_Result_ContractMismatch;
@@ -1363,9 +1356,9 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     if (!g_particle_type_root) return BE_Result_Failed;
     struct Hook { MethodId id; void* detour; void** original; };
     Hook hooks[]{
-        {TryExit, reinterpret_cast<void*>(&TryExitDetour), reinterpret_cast<void**>(&g_try_exit)},
+        {TryInterruptCommand, reinterpret_cast<void*>(&TryInterruptCommandDetour), reinterpret_cast<void**>(&g_try_interrupt_command)},
         {FlowTick, reinterpret_cast<void*>(&FlowDetour), reinterpret_cast<void**>(&g_flow_tick)},
-        {CheckTrackEnd, reinterpret_cast<void*>(&TrackEndDetour), reinterpret_cast<void**>(&g_check_track)},
+        {DoExit, reinterpret_cast<void*>(&DoExitDetour), reinterpret_cast<void**>(&g_do_exit)},
         {ShowObject, reinterpret_cast<void*>(&ShowObjectDetour), reinterpret_cast<void**>(&g_show)},
         {AudioMonoPost, reinterpret_cast<void*>(&AudioMonoDetour), reinterpret_cast<void**>(&g_audio_mono)},
         {AudioEntityPost, reinterpret_cast<void*>(&AudioEntityDetour), reinterpret_cast<void**>(&g_audio_entity)},
@@ -1394,12 +1387,6 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
             return BE_Result_Failed;
         }
     }
-    if (g_state_interrupt_contract &&
-        ((flags(g_methods[TickStateInterrupt].resolved.method_info, &impl) & 0x10u) ||
-         host->create_hook(host->context, kId, g_methods[TickStateInterrupt].resolved.method_pointer,
-             reinterpret_cast<void*>(&StateInterruptDetour), reinterpret_cast<void**>(&g_tick_state_interrupt)) != BE_Result_Ok))
-        g_state_interrupt_contract = false;
-    if (!g_state_interrupt_contract) Log("Sustained dash: _TickStatePerformInterrupt hook unavailable; the other interrupt holds remain.");
     if (g_liino_teardown_contract &&
         ((flags(g_methods[EffectActionPlay].resolved.method_info, &impl) & 0x10u) ||
          host->create_hook(host->context, kId, g_methods[EffectActionPlay].resolved.method_pointer,

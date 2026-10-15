@@ -1,21 +1,43 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace BetterEndfieldNext.UI.Services;
 
-internal sealed record SteamDepotMetadata(string Id, string Manifest);
+internal sealed record SteamDepotMetadata
+{
+    [JsonConstructor]
+    public SteamDepotMetadata() { }
+    public SteamDepotMetadata(string Id, string Manifest) { this.Id = Id; this.Manifest = Manifest; }
+
+    [JsonPropertyName("Id")]
+    public string Id { get; init; } = "";
+    [JsonPropertyName("Manifest")]
+    public string Manifest { get; init; } = "";
+}
 
 internal sealed class SteamMetadata
 {
     public const string EndfieldAppId = "4732690";
+    [JsonConstructor]
+    public SteamMetadata() { }
+
+    [JsonPropertyName("AppId")]
     public string AppId { get; set; } = EndfieldAppId;
+    [JsonPropertyName("Name")]
     public string Name { get; set; } = "Arknights: Endfield";
+    [JsonPropertyName("InstallDirectory")]
     public string InstallDirectory { get; set; } = "";
+    [JsonPropertyName("Executable")]
     public string Executable { get; set; } = "";
+    [JsonPropertyName("LaunchArguments")]
     public string LaunchArguments { get; set; } = "";
+    [JsonPropertyName("BuildId")]
     public string BuildId { get; set; } = "";
+    [JsonPropertyName("Depots")]
     public List<SteamDepotMetadata> Depots { get; set; } = [];
 
+    [JsonPropertyName("MissingFields")]
     public IReadOnlyList<string> MissingFields => new[]
     {
         string.IsNullOrEmpty(InstallDirectory) ? "install_directory" : "",

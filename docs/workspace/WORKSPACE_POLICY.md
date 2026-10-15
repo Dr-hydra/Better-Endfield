@@ -1,5 +1,7 @@
 # 工作区迁移与资料管理规范
 
+2026-10-15：当前工作区为 `G:\Better Endfield`，游戏目录为 `G:\Arknights Endfield`，IDA 为 `D:\graduation project\IDA Professional 9.2`。本机工具选择已写入 `config/workspace.local.json`；以下 F 盘路径属于前次整理记录。当前游戏适配见[1.6.3 更新记录](../host/research/1.6.3/hook-update/GAME_UPDATE_1_6_3.md)。
+
 本文是新工作区当前采用的管理规范。统一配置读取、资源工具链、构建路径、文档和测试入口已经接入；本次未构建、实机验证或部署。
 
 ## 工作区与配置

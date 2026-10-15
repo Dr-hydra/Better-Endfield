@@ -8,7 +8,7 @@ Better Endfield Next 是面向《明日方舟：终末地》的开源模块化�
 
 **第三方模块与第一人称已迁移至独立项目 [Endfield Mod Loader（E Mod Loader）](https://github.com/Dr-hydra/Endfield-Mod-Loader)。** EML **0.1.1-dev Windows 开发预览**现已提供 Windows 加载器、Android APK 和独立第一人称模块。**[下载 EML 与第一人称模块](https://github.com/Dr-hydra/Endfield-Mod-Loader/releases/latest)** · [第一人称使用说明](https://github.com/Dr-hydra/Endfield-Mod-Loader/blob/main/examples/first-person/README.md)。Windows、Android 的创意工坊入口继续保留；BE 的通用 Host、内置模块加载及共享 Hook 链继续维护。游戏及 Android 设备效果尚未实机验证。
 
-当前版本为 **4.0.1**，独立 BEM Tools 为 **1.5.2**，工具 ZIP 内含可双击启动的 `BetterEndfieldNext.BemTools.exe` 创作者 GUI。Android APK 已补充 MMD 镜头高度修复，与 PC 使用相同的角色高度基准；已安装 4.0.1 的用户可重新下载 APK 覆盖安装并重启游戏。3.5.3 新增 Windows [Steam 国服启动预览](docs/host/STEAM_CN_LAUNCH.md)和 XInput 重复注入拦截；Steam 接入仍待完整元数据与实机验证。BEM 1.4、武器/大招资源、模型热切换、Android PCUI 输入和桌面 DPI 布局能力沿用 3.5.2。
+当前版本为 **4.0.3**，独立 BEM Tools 为 **1.5.3**。本版适配游戏 Windows 1.6.3 / Android 1.6.4，更新启动器校验、挂点与资源，并补充祀和明河的 BEM 创作资料。XInput 由用户手动安装，注入器方式无需 XInput；已有 [Steam 国服启动](docs/host/STEAM_CN_LAUNCH.md)按当前加载方式生成命令，升级后请重新复制启动选项。Steam 元数据现已齐备，计时和覆盖层仍待实机验证。详情见 [4.0.3 更新记录](docs/workspace/releases/4.0.3/RELEASE_4_0_3.md)。
 
 4.0.0 可直接覆盖更新至 4.0.1，保留 Next 设置。Next 使用新的安装身份、内部标识和发布签名，与 3.x 旧版独立。从 3.x 升级时，请先卸载旧版（Windows 同时卸载旧 XInput 代理），重新安装并设置；Android 需重新启用模块和游戏作用域。旧设置不迁移，BEM/MMD 文件可手动重新导入。Logo 保留。第一人称功能现由 [E Mod Loader 独立模块](https://github.com/Dr-hydra/Endfield-Mod-Loader/releases/latest) 提供。[实施与构建说明](docs/workspace/NEXT_IMPLEMENTATION.md)。
 
@@ -68,7 +68,7 @@ PC 和 Android 使用同一 BEM 解析与装配核心，支持 BEM 1.0–1.4；*
 
 Android 可对贴图异常的包执行「转换手机纹理」；转换成功发布新一代并保留选择，失败或取消保留原包。该操作需要已验证的法线编码信息，模型本身的跨端标准不代表桌面纹理在所有手机 GPU 上均可直接显示。
 
-**创作者工具**包含独立 GUI、主程序内的“BEM 创作者工具…”入口和 CLI，支持目录、ZIP、RAR、7z 输入，转换报告、结构校验、可保存的 `.bemproj.json` 导出工程、标准工作区和重复构建。BEM Tools 1.5.2 支持 BEM 1.4，并保留 Blender/EFMI legacy 角色流水线边界；创作者必须显式声明资源目标、LOD、平台和 donor 证据，不会自动还原任意源 GUI 或猜测顶点对应关系。
+**创作者工具**包含独立 GUI、主程序内的“BEM 创作者工具…”入口和 CLI，支持目录、ZIP、RAR、7z 输入，转换报告、结构校验、可保存的 `.bemproj.json` 导出工程、标准工作区和重复构建。BEM Tools 1.5.3 支持 BEM 1.4，并保留 Blender/EFMI legacy 角色流水线边界；创作者必须显式声明资源目标、LOD、平台和 donor 证据，不会自动还原任意源 GUI 或猜测顶点对应关系。
 
 ```powershell
 BetterEndfieldNext.BemConverter.exe new-project editable/project.json --mode pack -o character.bemproj.json

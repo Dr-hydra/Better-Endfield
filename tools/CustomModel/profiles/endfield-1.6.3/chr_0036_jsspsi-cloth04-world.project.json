@@ -1,0 +1,88 @@
+{
+  "manifest": {
+    "schema": 1,
+    "package_id": "chr_0036_jsspsi-cloth04-world-pc",
+    "name": "祀 · 世界 cloth_04（创作起点，无替换）",
+    "author": "BEM target tool",
+    "version": "1.6.3-20261015",
+    "required_capabilities": [
+      "native-materials",
+      "composable-options",
+      "multi-resource-targets"
+    ],
+    "target": {
+      "id": "chr_0036_jsspsi",
+      "profile_id": "chr_0036_jsspsi-cloth04-world-pc",
+      "revision": "1.6.3-20261015",
+      "snapshot": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+      "kind": "character",
+      "platform": "windows-x64",
+      "resources": [
+        {
+          "id": "world",
+          "name": "chr_0036_jsspsi_postmodel",
+          "asset_path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0036_jsspsi_postmodel.prefab",
+          "platforms": [
+            "windows-x64"
+          ],
+          "lod": 0
+        }
+      ],
+      "components": [
+        {
+          "id": 0,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_04_lod0",
+          "mesh_name": "S_actor_jsspsi_cloth_04_lod0",
+          "original_index_count": 474,
+          "bone_names": [
+            "R_sleeveD_03_jnt",
+            "R_sleeveD_04_jnt",
+            "R_sleeveD_05_jnt",
+            "R_sleeveD_06_jnt",
+            "R_sleeveD_02_jnt",
+            "R_sleeveD_01_jnt",
+            "Bip001_Spine",
+            "Bip001_Spine1",
+            "L_skirtA_01_jnt",
+            "R_skirtA_01_jnt",
+            "R_skirtB_01_jnt",
+            "L_skirtA_02_jnt",
+            "R_skirtA_02_jnt",
+            "L_skirtA_03_jnt",
+            "R_skirtA_03_jnt",
+            "L_skirtA_04_jnt",
+            "R_skirtA_04_jnt",
+            "R_skirtB_02_jnt",
+            "R_skirtB_03_jnt",
+            "L_skirtB_01_jnt",
+            "L_skirtB_02_jnt",
+            "L_skirtB_03_jnt",
+            "L_skirtB_04_jnt",
+            "R_skirtB_04_jnt"
+          ],
+          "materials": [
+            "M_fx_jsspsi_cloth_04_01",
+            "M_fx_jsspsi_cloth_04_02",
+            "M_fx_jsspsi_cloth_04_03"
+          ]
+        }
+      ]
+    },
+    "meshes": [],
+    "textures": [],
+    "option_groups": [],
+    "component_rules": [
+      {
+        "target": 0,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      }
+    ]
+  },
+  "payload_files": []
+}

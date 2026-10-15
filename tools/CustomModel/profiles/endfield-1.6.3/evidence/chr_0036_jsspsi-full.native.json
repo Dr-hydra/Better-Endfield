@@ -1,0 +1,5406 @@
+{
+  "schema": 1,
+  "kind": "bem-explicit-resource-evidence",
+  "profile_id": "chr_0036_jsspsi-full-pc",
+  "platform": "windows-x64",
+  "source_snapshot": {
+    "manifest_version": "2954fa80-23c1-1579-2b22-4ecfd6d70418"
+  },
+  "run": "bem-1_6_3-login-20261015-091033-3bb4aa",
+  "layouts": [
+    {
+      "component": 0,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_body_01_lod0",
+      "mesh_id": "cab-6b4cf15ba35166145ae13e92fb1f0194:-287861200147694619",
+      "mesh_name": "S_actor_jsspsi_body_01_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "vertex_count": 5553,
+      "original_index_count": 27468
+    },
+    {
+      "component": 1,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_brow_01_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-3463371317159254943",
+      "mesh_name": "S_actor_jsspsi_brow_01_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          3,
+          0
+        ],
+        [
+          2,
+          0,
+          4,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          0,
+          4,
+          2
+        ],
+        [
+          13,
+          10,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        40,
+        8,
+        32
+      ],
+      "vertex_count": 3044,
+      "original_index_count": 4212
+    },
+    {
+      "component": 2,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_01_lod0",
+      "mesh_id": "cab-18cdb0e3c1b40de330c3d4dc423ef4f8:-3924004479152712804",
+      "mesh_name": "S_actor_jsspsi_cloth_01_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "vertex_count": 28195,
+      "original_index_count": 88650
+    },
+    {
+      "component": 3,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_02_lod0",
+      "mesh_id": "cab-66d7ae228194fb751b326e57fbfb099d:-8604161715406435883",
+      "mesh_name": "S_actor_jsspsi_cloth_02_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        12
+      ],
+      "vertex_count": 4792,
+      "original_index_count": 15198
+    },
+    {
+      "component": 4,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_03_lod0",
+      "mesh_id": "cab-c1f6ca943013f325cffe3791cf596b69:-649341810688518597",
+      "mesh_name": "S_actor_jsspsi_cloth_03_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "vertex_count": 485,
+      "original_index_count": 2004
+    },
+    {
+      "component": 5,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_04_lod0",
+      "mesh_id": "cab-f1cb0ce88ceb770638295d8f4f9eaa8b:-2890387106605326464",
+      "mesh_name": "S_actor_jsspsi_cloth_04_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        12
+      ],
+      "vertex_count": 110,
+      "original_index_count": 474
+    },
+    {
+      "component": 6,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_05_lod0",
+      "mesh_id": "cab-9cb81dd94ce9cc55bad76ef217705001:-847851402574854020",
+      "mesh_name": "S_actor_jsspsi_cloth_05_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        12
+      ],
+      "vertex_count": 1255,
+      "original_index_count": 5376
+    },
+    {
+      "component": 7,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_06_lod0",
+      "mesh_id": "cab-967760f821d1016b425577cfb5fa8c2c:4218888903330085684",
+      "mesh_name": "S_actor_jsspsi_cloth_06_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        4
+      ],
+      "vertex_count": 1194,
+      "original_index_count": 4680
+    },
+    {
+      "component": 8,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_07_lod0",
+      "mesh_id": "cab-a055d47ac0cad6e9c48b6e7e60845b73:-3156040929756391609",
+      "mesh_name": "S_actor_jsspsi_cloth_07_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        12
+      ],
+      "vertex_count": 785,
+      "original_index_count": 2958
+    },
+    {
+      "component": 9,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_08_lod0",
+      "mesh_id": "cab-8748d59f7ec4c73fa907a7223e9e6edb:-5373175497485141836",
+      "mesh_name": "S_actor_jsspsi_cloth_08_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        12
+      ],
+      "vertex_count": 456,
+      "original_index_count": 1752
+    },
+    {
+      "component": 10,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_09_lod0",
+      "mesh_id": "cab-4852986a778efcaadfed34974d79b53e:283224785004244662",
+      "mesh_name": "S_actor_jsspsi_cloth_09_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        4
+      ],
+      "vertex_count": 219,
+      "original_index_count": 924
+    },
+    {
+      "component": 11,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_eyeshadow_01_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:7430414606217454689",
+      "mesh_name": "S_actor_jsspsi_eyeshadow_01_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        12
+      ],
+      "vertex_count": 38,
+      "original_index_count": 102
+    },
+    {
+      "component": 12,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_face_01_lod0",
+      "mesh_id": "cab-17714c36e07f3e96c381c7c34466d5c1:5838293619666055276",
+      "mesh_name": "S_actor_jsspsi_face_01_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "vertex_count": 2596,
+      "original_index_count": 12876
+    },
+    {
+      "component": 13,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_hair_01_lod0",
+      "mesh_id": "cab-e7d4877a246165afe8a314b53ee9ec5e:-8225586088738040977",
+      "mesh_name": "S_actor_jsspsi_hair_01_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "vertex_count": 17162,
+      "original_index_count": 59757
+    },
+    {
+      "component": 14,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_hairshadow_01_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-270879503579274143",
+      "mesh_name": "S_actor_jsspsi_hairshadow_01_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        12
+      ],
+      "vertex_count": 300,
+      "original_index_count": 1023
+    },
+    {
+      "component": 15,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_iris_01_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:8528485224484054113",
+      "mesh_name": "S_actor_jsspsi_iris_01_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        4
+      ],
+      "vertex_count": 302,
+      "original_index_count": 1464
+    },
+    {
+      "component": 16,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_01_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-7951359891864476575",
+      "mesh_name": "S_actor_jsspsi_vfxpart_01_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        16,
+        4
+      ],
+      "vertex_count": 1194,
+      "original_index_count": 4680
+    },
+    {
+      "component": 17,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_02_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-225323721809255327",
+      "mesh_name": "S_actor_jsspsi_vfxpart_02_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        16,
+        4
+      ],
+      "vertex_count": 219,
+      "original_index_count": 924
+    },
+    {
+      "component": 18,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_03_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:5972864351343879265",
+      "mesh_name": "S_actor_jsspsi_vfxpart_03_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        16,
+        12
+      ],
+      "vertex_count": 1255,
+      "original_index_count": 5376
+    },
+    {
+      "component": 19,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_04_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:158407003521229921",
+      "mesh_name": "S_actor_jsspsi_vfxpart_04_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        16,
+        12
+      ],
+      "vertex_count": 456,
+      "original_index_count": 1752
+    },
+    {
+      "component": 20,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_05_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-7027862668767779743",
+      "mesh_name": "S_actor_jsspsi_vfxpart_05_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        4
+      ],
+      "vertex_count": 418,
+      "original_index_count": 1800
+    },
+    {
+      "component": 21,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_06_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:808209684023288929",
+      "mesh_name": "S_actor_jsspsi_vfxpart_06_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        4
+      ],
+      "vertex_count": 208,
+      "original_index_count": 900
+    },
+    {
+      "component": 22,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_07_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-632371829315722143",
+      "mesh_name": "S_actor_jsspsi_vfxpart_07_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        16,
+        4
+      ],
+      "vertex_count": 550,
+      "original_index_count": 2316
+    },
+    {
+      "component": 23,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_body_01_lod0",
+      "mesh_id": "cab-6b4cf15ba35166145ae13e92fb1f0194:-287861200147694619",
+      "mesh_name": "S_actor_jsspsi_body_01_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "vertex_count": 5553,
+      "original_index_count": 27468
+    },
+    {
+      "component": 24,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_brow_01_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-3463371317159254943",
+      "mesh_name": "S_actor_jsspsi_brow_01_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          3,
+          0
+        ],
+        [
+          2,
+          0,
+          4,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          0,
+          4,
+          2
+        ],
+        [
+          13,
+          10,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        40,
+        8,
+        32
+      ],
+      "vertex_count": 3044,
+      "original_index_count": 4212
+    },
+    {
+      "component": 25,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_01_lod0",
+      "mesh_id": "cab-18cdb0e3c1b40de330c3d4dc423ef4f8:-3924004479152712804",
+      "mesh_name": "S_actor_jsspsi_cloth_01_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "vertex_count": 28195,
+      "original_index_count": 88650
+    },
+    {
+      "component": 26,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_02_lod0",
+      "mesh_id": "cab-66d7ae228194fb751b326e57fbfb099d:-8604161715406435883",
+      "mesh_name": "S_actor_jsspsi_cloth_02_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        12
+      ],
+      "vertex_count": 4792,
+      "original_index_count": 15198
+    },
+    {
+      "component": 27,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_03_lod0",
+      "mesh_id": "cab-c1f6ca943013f325cffe3791cf596b69:-649341810688518597",
+      "mesh_name": "S_actor_jsspsi_cloth_03_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "vertex_count": 485,
+      "original_index_count": 2004
+    },
+    {
+      "component": 28,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_04_lod0",
+      "mesh_id": "cab-f1cb0ce88ceb770638295d8f4f9eaa8b:-2890387106605326464",
+      "mesh_name": "S_actor_jsspsi_cloth_04_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        12
+      ],
+      "vertex_count": 110,
+      "original_index_count": 474
+    },
+    {
+      "component": 29,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_05_lod0",
+      "mesh_id": "cab-9cb81dd94ce9cc55bad76ef217705001:-847851402574854020",
+      "mesh_name": "S_actor_jsspsi_cloth_05_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        12
+      ],
+      "vertex_count": 1255,
+      "original_index_count": 5376
+    },
+    {
+      "component": 30,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_06_lod0",
+      "mesh_id": "cab-967760f821d1016b425577cfb5fa8c2c:4218888903330085684",
+      "mesh_name": "S_actor_jsspsi_cloth_06_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        4
+      ],
+      "vertex_count": 1194,
+      "original_index_count": 4680
+    },
+    {
+      "component": 31,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_07_lod0",
+      "mesh_id": "cab-a055d47ac0cad6e9c48b6e7e60845b73:-3156040929756391609",
+      "mesh_name": "S_actor_jsspsi_cloth_07_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        12
+      ],
+      "vertex_count": 785,
+      "original_index_count": 2958
+    },
+    {
+      "component": 32,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_08_lod0",
+      "mesh_id": "cab-8748d59f7ec4c73fa907a7223e9e6edb:-5373175497485141836",
+      "mesh_name": "S_actor_jsspsi_cloth_08_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        12
+      ],
+      "vertex_count": 456,
+      "original_index_count": 1752
+    },
+    {
+      "component": 33,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_09_lod0",
+      "mesh_id": "cab-4852986a778efcaadfed34974d79b53e:283224785004244662",
+      "mesh_name": "S_actor_jsspsi_cloth_09_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        4
+      ],
+      "vertex_count": 219,
+      "original_index_count": 924
+    },
+    {
+      "component": 34,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_eyeshadow_01_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:7430414606217454689",
+      "mesh_name": "S_actor_jsspsi_eyeshadow_01_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        12
+      ],
+      "vertex_count": 38,
+      "original_index_count": 102
+    },
+    {
+      "component": 35,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_face_01_lod0",
+      "mesh_id": "cab-17714c36e07f3e96c381c7c34466d5c1:5838293619666055276",
+      "mesh_name": "S_actor_jsspsi_face_01_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "vertex_count": 2596,
+      "original_index_count": 12876
+    },
+    {
+      "component": 36,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_hair_01_lod0",
+      "mesh_id": "cab-e7d4877a246165afe8a314b53ee9ec5e:-8225586088738040977",
+      "mesh_name": "S_actor_jsspsi_hair_01_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "vertex_count": 17162,
+      "original_index_count": 59757
+    },
+    {
+      "component": 37,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_hairshadow_01_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-270879503579274143",
+      "mesh_name": "S_actor_jsspsi_hairshadow_01_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        12
+      ],
+      "vertex_count": 300,
+      "original_index_count": 1023
+    },
+    {
+      "component": 38,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_iris_01_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:8528485224484054113",
+      "mesh_name": "S_actor_jsspsi_iris_01_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        4
+      ],
+      "vertex_count": 302,
+      "original_index_count": 1464
+    },
+    {
+      "component": 39,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_01_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-7951359891864476575",
+      "mesh_name": "S_actor_jsspsi_vfxpart_01_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        16,
+        4
+      ],
+      "vertex_count": 1194,
+      "original_index_count": 4680
+    },
+    {
+      "component": 40,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_02_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-225323721809255327",
+      "mesh_name": "S_actor_jsspsi_vfxpart_02_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        16,
+        4
+      ],
+      "vertex_count": 219,
+      "original_index_count": 924
+    },
+    {
+      "component": 41,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_03_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:5972864351343879265",
+      "mesh_name": "S_actor_jsspsi_vfxpart_03_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        16,
+        12
+      ],
+      "vertex_count": 1255,
+      "original_index_count": 5376
+    },
+    {
+      "component": 42,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_04_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:158407003521229921",
+      "mesh_name": "S_actor_jsspsi_vfxpart_04_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        16,
+        12
+      ],
+      "vertex_count": 456,
+      "original_index_count": 1752
+    },
+    {
+      "component": 43,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_05_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-7027862668767779743",
+      "mesh_name": "S_actor_jsspsi_vfxpart_05_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        4
+      ],
+      "vertex_count": 418,
+      "original_index_count": 1800
+    },
+    {
+      "component": 44,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_06_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:808209684023288929",
+      "mesh_name": "S_actor_jsspsi_vfxpart_06_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        4
+      ],
+      "vertex_count": 208,
+      "original_index_count": 900
+    },
+    {
+      "component": 45,
+      "resource": "ui",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_07_lod0",
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-632371829315722143",
+      "mesh_name": "S_actor_jsspsi_vfxpart_07_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        16,
+        4
+      ],
+      "vertex_count": 550,
+      "original_index_count": 2316
+    }
+  ],
+  "identity_policy": "efmi-dx11-region-texture0-fullchain-v1",
+  "resource_entries": {
+    "world": {
+      "59bf046a": 0,
+      "6dc25c11": 2,
+      "77ea19b6": 3,
+      "c345bccf": 4,
+      "5639e0f6": 5,
+      "b4ea2057": 8,
+      "d9b71faf": 11,
+      "fae3e4f0": 12,
+      "ff3790c7": 13,
+      "56510c18": 14,
+      "953eee43": 15,
+      "25fecd7f": 20,
+      "cb97ca56": 21,
+      "ea8bdce6": 22
+    },
+    "ui": {
+      "59bf046a": 23,
+      "6dc25c11": 25,
+      "77ea19b6": 26,
+      "c345bccf": 27,
+      "5639e0f6": 28,
+      "b4ea2057": 31,
+      "d9b71faf": 34,
+      "fae3e4f0": 35,
+      "ff3790c7": 36,
+      "56510c18": 37,
+      "953eee43": 38,
+      "25fecd7f": 43,
+      "cb97ca56": 44,
+      "ea8bdce6": 45
+    }
+  },
+  "entry_identity_evidence": {
+    "0": {
+      "mesh_id": "cab-6b4cf15ba35166145ae13e92fb1f0194:-287861200147694619",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 54936,
+      "index_count": 27468,
+      "source_hash": "59bf046a"
+    },
+    "2": {
+      "mesh_id": "cab-18cdb0e3c1b40de330c3d4dc423ef4f8:-3924004479152712804",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 177300,
+      "index_count": 88650,
+      "source_hash": "6dc25c11"
+    },
+    "3": {
+      "mesh_id": "cab-66d7ae228194fb751b326e57fbfb099d:-8604161715406435883",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 30396,
+      "index_count": 15198,
+      "source_hash": "77ea19b6"
+    },
+    "4": {
+      "mesh_id": "cab-c1f6ca943013f325cffe3791cf596b69:-649341810688518597",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 4008,
+      "index_count": 2004,
+      "source_hash": "c345bccf"
+    },
+    "5": {
+      "mesh_id": "cab-f1cb0ce88ceb770638295d8f4f9eaa8b:-2890387106605326464",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 948,
+      "index_count": 474,
+      "source_hash": "5639e0f6"
+    },
+    "6": {
+      "mesh_id": "cab-9cb81dd94ce9cc55bad76ef217705001:-847851402574854020",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 10752,
+      "index_count": 5376,
+      "source_hash": "a6b80ffb"
+    },
+    "7": {
+      "mesh_id": "cab-967760f821d1016b425577cfb5fa8c2c:4218888903330085684",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 9360,
+      "index_count": 4680,
+      "source_hash": "d7404d7e"
+    },
+    "8": {
+      "mesh_id": "cab-a055d47ac0cad6e9c48b6e7e60845b73:-3156040929756391609",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 5916,
+      "index_count": 2958,
+      "source_hash": "b4ea2057"
+    },
+    "9": {
+      "mesh_id": "cab-8748d59f7ec4c73fa907a7223e9e6edb:-5373175497485141836",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 3504,
+      "index_count": 1752,
+      "source_hash": "a9411ba7"
+    },
+    "10": {
+      "mesh_id": "cab-4852986a778efcaadfed34974d79b53e:283224785004244662",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 1848,
+      "index_count": 924,
+      "source_hash": "a80c3759"
+    },
+    "11": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:7430414606217454689",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 204,
+      "index_count": 102,
+      "source_hash": "d9b71faf"
+    },
+    "12": {
+      "mesh_id": "cab-17714c36e07f3e96c381c7c34466d5c1:5838293619666055276",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 25752,
+      "index_count": 12876,
+      "source_hash": "fae3e4f0"
+    },
+    "13": {
+      "mesh_id": "cab-e7d4877a246165afe8a314b53ee9ec5e:-8225586088738040977",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 119514,
+      "index_count": 59757,
+      "source_hash": "ff3790c7"
+    },
+    "14": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-270879503579274143",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 2046,
+      "index_count": 1023,
+      "source_hash": "56510c18"
+    },
+    "15": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:8528485224484054113",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 2928,
+      "index_count": 1464,
+      "source_hash": "953eee43"
+    },
+    "16": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-7951359891864476575",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 9360,
+      "index_count": 4680,
+      "source_hash": "d7404d7e"
+    },
+    "17": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-225323721809255327",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 1848,
+      "index_count": 924,
+      "source_hash": "a80c3759"
+    },
+    "18": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:5972864351343879265",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 10752,
+      "index_count": 5376,
+      "source_hash": "a6b80ffb"
+    },
+    "19": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:158407003521229921",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 3504,
+      "index_count": 1752,
+      "source_hash": "a9411ba7"
+    },
+    "20": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-7027862668767779743",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 3600,
+      "index_count": 1800,
+      "source_hash": "25fecd7f"
+    },
+    "21": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:808209684023288929",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 1800,
+      "index_count": 900,
+      "source_hash": "cb97ca56"
+    },
+    "22": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-632371829315722143",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 4632,
+      "index_count": 2316,
+      "source_hash": "ea8bdce6"
+    },
+    "23": {
+      "mesh_id": "cab-6b4cf15ba35166145ae13e92fb1f0194:-287861200147694619",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 54936,
+      "index_count": 27468,
+      "source_hash": "59bf046a"
+    },
+    "25": {
+      "mesh_id": "cab-18cdb0e3c1b40de330c3d4dc423ef4f8:-3924004479152712804",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 177300,
+      "index_count": 88650,
+      "source_hash": "6dc25c11"
+    },
+    "26": {
+      "mesh_id": "cab-66d7ae228194fb751b326e57fbfb099d:-8604161715406435883",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 30396,
+      "index_count": 15198,
+      "source_hash": "77ea19b6"
+    },
+    "27": {
+      "mesh_id": "cab-c1f6ca943013f325cffe3791cf596b69:-649341810688518597",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 4008,
+      "index_count": 2004,
+      "source_hash": "c345bccf"
+    },
+    "28": {
+      "mesh_id": "cab-f1cb0ce88ceb770638295d8f4f9eaa8b:-2890387106605326464",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 948,
+      "index_count": 474,
+      "source_hash": "5639e0f6"
+    },
+    "29": {
+      "mesh_id": "cab-9cb81dd94ce9cc55bad76ef217705001:-847851402574854020",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 10752,
+      "index_count": 5376,
+      "source_hash": "a6b80ffb"
+    },
+    "30": {
+      "mesh_id": "cab-967760f821d1016b425577cfb5fa8c2c:4218888903330085684",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 9360,
+      "index_count": 4680,
+      "source_hash": "d7404d7e"
+    },
+    "31": {
+      "mesh_id": "cab-a055d47ac0cad6e9c48b6e7e60845b73:-3156040929756391609",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 5916,
+      "index_count": 2958,
+      "source_hash": "b4ea2057"
+    },
+    "32": {
+      "mesh_id": "cab-8748d59f7ec4c73fa907a7223e9e6edb:-5373175497485141836",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 3504,
+      "index_count": 1752,
+      "source_hash": "a9411ba7"
+    },
+    "33": {
+      "mesh_id": "cab-4852986a778efcaadfed34974d79b53e:283224785004244662",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 1848,
+      "index_count": 924,
+      "source_hash": "a80c3759"
+    },
+    "34": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:7430414606217454689",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 204,
+      "index_count": 102,
+      "source_hash": "d9b71faf"
+    },
+    "35": {
+      "mesh_id": "cab-17714c36e07f3e96c381c7c34466d5c1:5838293619666055276",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 25752,
+      "index_count": 12876,
+      "source_hash": "fae3e4f0"
+    },
+    "36": {
+      "mesh_id": "cab-e7d4877a246165afe8a314b53ee9ec5e:-8225586088738040977",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 119514,
+      "index_count": 59757,
+      "source_hash": "ff3790c7"
+    },
+    "37": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-270879503579274143",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 2046,
+      "index_count": 1023,
+      "source_hash": "56510c18"
+    },
+    "38": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:8528485224484054113",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 2928,
+      "index_count": 1464,
+      "source_hash": "953eee43"
+    },
+    "39": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-7951359891864476575",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 9360,
+      "index_count": 4680,
+      "source_hash": "d7404d7e"
+    },
+    "40": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-225323721809255327",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 1848,
+      "index_count": 924,
+      "source_hash": "a80c3759"
+    },
+    "41": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:5972864351343879265",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 10752,
+      "index_count": 5376,
+      "source_hash": "a6b80ffb"
+    },
+    "42": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:158407003521229921",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 3504,
+      "index_count": 1752,
+      "source_hash": "a9411ba7"
+    },
+    "43": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-7027862668767779743",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 3600,
+      "index_count": 1800,
+      "source_hash": "25fecd7f"
+    },
+    "44": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:808209684023288929",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 1800,
+      "index_count": 900,
+      "source_hash": "cb97ca56"
+    },
+    "45": {
+      "mesh_id": "cab-12f1672197515ae95a68617189e8ba60:-632371829315722143",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 4632,
+      "index_count": 2316,
+      "source_hash": "ea8bdce6"
+    }
+  },
+  "textures": {
+    "172348f4": {
+      "name": "T_actor_common_body_01_RD",
+      "aliases": [
+        "T_actor_common_face_01_RD"
+      ],
+      "evidence": {
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "kind": "shared-source-hash",
+        "targets": [
+          {
+            "name": "T_actor_common_body_01_RD",
+            "evidence": {
+              "texture_id": "cab-f73bd58505faab842c266da5fd3ef559:9015086203897338725",
+              "policy": "efmi-dx11-region-texture0-fullchain-v1",
+              "descriptor": [
+                256,
+                1,
+                1,
+                1,
+                28,
+                1,
+                0,
+                0,
+                8,
+                0,
+                0
+              ],
+              "native_data_crc32c": "bb885ffb",
+              "runtime_graphics_format": 8,
+              "runtime_sizes": [
+                [
+                  256,
+                  1
+                ]
+              ]
+            }
+          },
+          {
+            "name": "T_actor_common_face_01_RD",
+            "evidence": {
+              "texture_id": "cab-52ea55afe624d7233f83d33f95137ebd:5848563174712869001",
+              "policy": "efmi-dx11-region-texture0-fullchain-v1",
+              "descriptor": [
+                256,
+                1,
+                1,
+                1,
+                28,
+                1,
+                0,
+                0,
+                8,
+                0,
+                0
+              ],
+              "native_data_crc32c": "bb885ffb",
+              "runtime_graphics_format": 8,
+              "runtime_sizes": [
+                [
+                  256,
+                  1
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "c30d3c7b": {
+      "name": "T_actor_common_cloth_02_RS",
+      "evidence": {
+        "texture_id": "cab-a5c0b9978b367709aeecaf6fcc43c75e:2174236443485968244",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "e235d821",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "c383b676": {
+      "name": "T_actor_common_cloth_04_RD",
+      "evidence": {
+        "texture_id": "cab-dda756238d04de89c59d562835d15c3a:2595675294308502756",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          1,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "5109626c",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            1
+          ]
+        ]
+      }
+    },
+    "9529b478": {
+      "name": "T_actor_common_cloth_04_RS",
+      "evidence": {
+        "texture_id": "cab-37f059e6a93378657725edd285796b84:4523718382697154697",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "d2decd4c",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "d5906b6a": {
+      "name": "T_actor_common_eyeshadow_01_M",
+      "evidence": {
+        "texture_id": "cab-e0c2577d28432f83374490550edc6b0a:1943856218045776426",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          32,
+          32,
+          6,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "43a76c1d",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            32,
+            32
+          ]
+        ]
+      }
+    },
+    "6899d1a4": {
+      "name": "T_actor_common_eyeshadow_02_M",
+      "evidence": {
+        "texture_id": "cab-37cba2aef5da66859bb487a2e4639ab6:2400241694096528712",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          32,
+          32,
+          6,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "7c34adce",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            32,
+            32
+          ]
+        ]
+      }
+    },
+    "290f53c8": {
+      "name": "T_actor_common_face_01_hl_M",
+      "evidence": {
+        "texture_id": "cab-b6bb3cc4483165082b296844684c52da:-2443816471313249430",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "907e417b",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "9750205d": {
+      "name": "T_actor_common_female_emotion_atlas_01_D",
+      "evidence": {
+        "texture_id": "cab-4f49e420f74b0a444fa7929840edbe90:-5029632173409998771",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "db2f1ff8",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "de88be11": {
+      "name": "T_actor_common_female_face_03_SDF",
+      "evidence": {
+        "texture_id": "cab-71e905dd65182bd56ed2b41ef2a8dde5:-1914551387401438376",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "d155a089",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "dbf4f80f": {
+      "name": "T_actor_common_female_face_03_cm_M",
+      "evidence": {
+        "texture_id": "cab-2354cfa3ed49bea87907e51a1e2702fe:-5059011942471656554",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "50e2c347",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "3ea83bf4": {
+      "name": "T_actor_common_femaleskincolor01_lut_D",
+      "evidence": {
+        "texture_id": "cab-723dce01c8e13e166b3be200c5417013:4951544993205285082",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          32,
+          1,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "58b980fe",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            32
+          ]
+        ]
+      }
+    },
+    "6b173443": {
+      "name": "T_actor_common_femaleskincolor03_lut_D",
+      "evidence": {
+        "texture_id": "cab-ba65d66547f29a2d1f6a4a77b75ee17d:2974746277297921454",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          32,
+          1,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "0daf1c6e",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            32
+          ]
+        ]
+      }
+    },
+    "62aeb468": {
+      "name": "T_actor_common_hair_03_RD",
+      "evidence": {
+        "texture_id": "cab-f6fcbbe390ce7be65b251151737dc1c5:7448402756121317154",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          1,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "010045c0",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            1
+          ]
+        ]
+      }
+    },
+    "151c9982": {
+      "name": "T_actor_common_hairline_03_M",
+      "evidence": {
+        "texture_id": "cab-67dec3851d20abe31e69d62c821759b2:3012176911137855631",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "8fcf3b42",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "fb524ebd": {
+      "name": "T_actor_common_hairshadow_01_M",
+      "evidence": {
+        "texture_id": "cab-b95b327020df7ae0f1e7cd8e002482c8:4070306725172282955",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          32,
+          32,
+          6,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "021842a4",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            32,
+            32
+          ]
+        ]
+      }
+    },
+    "f18a7d64": {
+      "name": "T_actor_common_hairst_01_ST",
+      "evidence": {
+        "texture_id": "cab-4ec5d566ac4da93846f2e9bc00199929:-6833856728080991578",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          256,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "2d730321",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            256
+          ]
+        ]
+      }
+    },
+    "92caa993": {
+      "name": "T_actor_common_matcap_08_D",
+      "evidence": {
+        "texture_id": "cab-d37cbcb9dfb55941fcf44fb84afb8031:4408346933513063125",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          9,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "6ac533af",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "9e07785e": {
+      "name": "T_actor_jsspsi_body_01_D",
+      "evidence": {
+        "texture_id": "cab-4a161d9ee3611275f7e8ecf8d2c3f04d:-4385975085952385249",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "e5bfd3d1",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "2483060d": {
+      "name": "T_actor_jsspsi_body_01_N",
+      "evidence": {
+        "texture_id": "cab-4a161d9ee3611275f7e8ecf8d2c3f04d:3624648857283484965",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "3388a9db",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "7114cec0": {
+      "name": "T_actor_jsspsi_cloth_01_D",
+      "evidence": {
+        "texture_id": "cab-ec2e74ee32da6c27a2827b124e4233d8:-3620854535404559783",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "831dd569",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "4803bb3c": {
+      "name": "T_actor_jsspsi_cloth_01_E",
+      "evidence": {
+        "texture_id": "cab-ec2e74ee32da6c27a2827b124e4233d8:-6462851598173630224",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "d06f77fe",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "d11b4e0b": {
+      "name": "T_actor_jsspsi_cloth_01_N",
+      "evidence": {
+        "texture_id": "cab-ec2e74ee32da6c27a2827b124e4233d8:6319030766130334146",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "a2be3118",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "dea730f0": {
+      "name": "T_actor_jsspsi_cloth_01_P",
+      "evidence": {
+        "texture_id": "cab-ec2e74ee32da6c27a2827b124e4233d8:7509083894507618864",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "0e2e23bc",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "3a57f16e": {
+      "name": "T_actor_jsspsi_cloth_01_ST",
+      "evidence": {
+        "texture_id": "cab-5028ee077ef59c66ccc18f5f8677b257:5592657118656117895",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "7c507cab",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "3e631726": {
+      "name": "T_actor_jsspsi_cloth_02_D",
+      "evidence": {
+        "texture_id": "cab-7a9049ca9ef1ee6cab8d19cddd78c38b:-977738059845484612",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "e6a8b55a",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "82908c0b": {
+      "name": "T_actor_jsspsi_cloth_02_E",
+      "evidence": {
+        "texture_id": "cab-7a9049ca9ef1ee6cab8d19cddd78c38b:-4686562643169882493",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "ee56a7aa",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "d43577bb": {
+      "name": "T_actor_jsspsi_cloth_02_N",
+      "evidence": {
+        "texture_id": "cab-7a9049ca9ef1ee6cab8d19cddd78c38b:1400448158502307283",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "802425ba",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "86cd92fc": {
+      "name": "T_actor_jsspsi_cloth_02_P",
+      "evidence": {
+        "texture_id": "cab-7a9049ca9ef1ee6cab8d19cddd78c38b:1105640740067338339",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "ba272d0f",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "6d419a6f": {
+      "name": "T_actor_jsspsi_cloth_03_M",
+      "evidence": {
+        "texture_id": "cab-fcb5b3d207bfae1826362dd549b7a5ff:1385111046840314771",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "73f2e2c7",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "e619c38f": {
+      "name": "T_actor_jsspsi_cloth_04_D",
+      "evidence": {
+        "texture_id": "cab-5bb969d8d4d8a4977e9404abc5e90be1:-7265771625233049100",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "de93409b",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "77982056": {
+      "name": "T_actor_jsspsi_cloth_04_N",
+      "evidence": {
+        "texture_id": "cab-5bb969d8d4d8a4977e9404abc5e90be1:4159881578161093744",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "9e949c0e",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "b9220c4a": {
+      "name": "T_actor_jsspsi_cloth_04_P",
+      "evidence": {
+        "texture_id": "cab-5bb969d8d4d8a4977e9404abc5e90be1:-8266199156759405956",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "e4551d2d",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "1a6ba766": {
+      "name": "T_actor_jsspsi_face_01_D",
+      "evidence": {
+        "texture_id": "cab-7306aabeca813af039030c3a7f3edea2:3306332818391292998",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "201c72ae",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "e4dece78": {
+      "name": "T_actor_jsspsi_face_01_N",
+      "evidence": {
+        "texture_id": "cab-7306aabeca813af039030c3a7f3edea2:6275197367508911903",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "00ab60f0",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "fd54ea84": {
+      "name": "T_actor_jsspsi_face_01_ST",
+      "evidence": {
+        "texture_id": "cab-70107025bfbc98826d9c42039ce5e1d9:5974032474356586256",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          128,
+          128,
+          8,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "085bc768",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            128,
+            128
+          ]
+        ]
+      }
+    },
+    "5244e135": {
+      "name": "T_actor_jsspsi_hair_01_D",
+      "evidence": {
+        "texture_id": "cab-e0c88363549815bad3958f36227aded5:6726516924265797935",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "8bb0c8f5",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "1cd10f39": {
+      "name": "T_actor_jsspsi_hair_01_HN",
+      "evidence": {
+        "texture_id": "cab-f94dbf453e900bd9039ca9629f85f56e:-4796015513020250489",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "b27c7e66",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "f34edaad": {
+      "name": "T_actor_jsspsi_hair_01_P",
+      "evidence": {
+        "texture_id": "cab-e0c88363549815bad3958f36227aded5:-7138095869813633630",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          2048,
+          12,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "d3290588",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            2048,
+            2048
+          ]
+        ]
+      }
+    },
+    "a367ca04": {
+      "name": "T_actor_jsspsi_hair_01_RS",
+      "evidence": {
+        "texture_id": "cab-da6b1513f96ed981993ad9a386d2a35f:5063796136668268660",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          1,
+          1,
+          28,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "ea5e8a21",
+        "runtime_graphics_format": 8,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "2effc3f5": {
+      "name": "T_actor_jsspsi_hair_01_ST",
+      "evidence": {
+        "texture_id": "cab-1f6074ddec8ad78bdeb900ce732b6272:2235888799758655020",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "07df5fb7",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "d7810cc2": {
+      "name": "T_actor_jsspsi_iris_01_D",
+      "evidence": {
+        "texture_id": "cab-9c60663a59dccff131f616f85cc48313:3233882578504071519",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "298569e8",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "e7c4b66a": {
+      "name": "T_actor_lizhiyan_cloth_01_ST",
+      "evidence": {
+        "texture_id": "cab-57405aea11daa72ae859428562c2124d:-9207332507298864352",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "2c85fe5b",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "0e977254": {
+      "name": "T_fx_flow_303_M",
+      "evidence": {
+        "texture_id": "cab-2dd231519c9bcc1e294f01bb2c27eb3d:-2905505271134930819",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "58f032b7",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "ef9d53d7": {
+      "name": "T_fx_flow_317_M",
+      "evidence": {
+        "texture_id": "cab-d375986d13c1076dda1c9491680d82f8:991844072757155368",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          128,
+          128,
+          8,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "f7e6cda1",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            128,
+            128
+          ]
+        ]
+      }
+    },
+    "85375038": {
+      "name": "T_fx_flow_527_M",
+      "evidence": {
+        "texture_id": "cab-4659c81b53f4fba74acfc98550c5ed06:5855206339404419075",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          1,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "6021e3e4",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "5f56da4d": {
+      "name": "T_fx_flow_812_M",
+      "evidence": {
+        "texture_id": "cab-7ab1845f8433fcbcf7de9bc9aac7662a:-7228768435968560296",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          64,
+          64,
+          7,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "7a035c74",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            64,
+            64
+          ]
+        ]
+      }
+    },
+    "8d4b57d0": {
+      "name": "T_fx_flow_zrx_005_M",
+      "evidence": {
+        "texture_id": "cab-322883981f5a7ccf3cc1384cfe11bf66:1982186407929033858",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          9,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "7829f3f5",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "2ff6d590": {
+      "name": "T_fx_glow_gfx_03",
+      "evidence": {
+        "texture_id": "cab-34be77cf2f5472476abb070cea5a4a75:-2043062080550352352",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          9,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "e444f570",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "6376c672": {
+      "name": "T_fx_jsspsi_si_mask2_M",
+      "evidence": {
+        "texture_id": "cab-5eaabef207d835f80a4b5020fd132e8d:7114725120467188172",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "ff364679",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "2e70bcc2": {
+      "name": "T_fx_jsspsi_si_mask5_02_M",
+      "evidence": {
+        "texture_id": "cab-2eaa0b2933d2d308a8125c16c7a108ca:3270602641811877156",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          128,
+          128,
+          8,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "17ab5644",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            128,
+            128
+          ]
+        ]
+      }
+    },
+    "3cb9e2ef": {
+      "name": "T_fx_jsspsi_si_mask5_M",
+      "evidence": {
+        "texture_id": "cab-303aff6dc83625dc7f0c072dbee0730d:-2623787310477348280",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          128,
+          128,
+          8,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "c0bb4bcc",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            128,
+            128
+          ]
+        ]
+      }
+    },
+    "a1e8888e": {
+      "name": "T_fx_jsspsi_wings_color_901",
+      "evidence": {
+        "texture_id": "cab-d81b45befdcff8d3b3f23169aecea862:5292178853427058168",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "25d790d5",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "4daf6918": {
+      "name": "T_fx_jsspsi_wings_mask2_0",
+      "evidence": {
+        "texture_id": "cab-3404dfd2239a1c3fc4598f15aa97de71:365877746207329293",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "1e84ef62",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "0f4b4a94": {
+      "name": "T_fx_jsspsi_wings_mask2_3",
+      "evidence": {
+        "texture_id": "cab-dfa23a2f4bf9920b964680d62a3e2eb3:-7815563836272650474",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "4331b95e",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "15c2a19a": {
+      "name": "T_fx_jsspsi_wings_mask_901",
+      "evidence": {
+        "texture_id": "cab-a94fe51106b3dcdf7cd1f2f05b1b4992:-8597394488990208850",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "65cc21ce",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "0ffa89d9": {
+      "name": "T_fx_mask_02_C_M",
+      "evidence": {
+        "texture_id": "cab-1a3fcfd13670bfaf1e0fa6ee632c074c:-6111581923782014350",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          64,
+          64,
+          1,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "b4556e68",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            64,
+            64
+          ]
+        ]
+      }
+    },
+    "3f85c1bf": {
+      "name": "T_fx_mask_03_02_M",
+      "evidence": {
+        "texture_id": "cab-3bfe91367598e407d217060fa8a2dd89:-2907729466900039472",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          64,
+          64,
+          7,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "1d5748c0",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            64,
+            64
+          ]
+        ]
+      }
+    },
+    "b4b5b469": {
+      "name": "T_fx_mask_03_02_f_c_M",
+      "evidence": {
+        "texture_id": "cab-11f0ca7ead5d7a660d7ace84d912afa1:3476732745892104796",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          64,
+          64,
+          7,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "3ddd79f1",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            64,
+            64
+          ]
+        ]
+      }
+    },
+    "de63c933": {
+      "name": "T_fx_mask_102_M",
+      "evidence": {
+        "texture_id": "cab-035d6186938565b3dfc77d8feccaf901:2726221644386686821",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          32,
+          32,
+          6,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "463d6212",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            32,
+            32
+          ]
+        ]
+      }
+    },
+    "4c2093e6": {
+      "name": "T_fx_mask_161_M",
+      "evidence": {
+        "texture_id": "cab-6134d7f8bd0cd243c703153c6622fa91:1628820421474720019",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          256,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "fec4fca9",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            256
+          ]
+        ]
+      }
+    },
+    "2a41f982": {
+      "name": "T_fx_mask_224_c_M",
+      "evidence": {
+        "texture_id": "cab-b9a0ec0cae7514130dea95ee50b1bbca:3158187496495232136",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          9,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "08ec7187",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "d01d0a6e": {
+      "name": "T_fx_mask_37_C_M",
+      "evidence": {
+        "texture_id": "cab-87074b27c9964f673c2acc0716639397:5491024866828568969",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          9,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "b40f2a50",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "3f04eda7": {
+      "name": "T_fx_mask_616_c_M",
+      "evidence": {
+        "texture_id": "cab-c36087ee6776204cadf897a2fd6ccd28:4947371421219039511",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          64,
+          64,
+          7,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "7dc8ec41",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            64,
+            64
+          ]
+        ]
+      }
+    },
+    "b115da91": {
+      "name": "T_fx_mask_804_M",
+      "evidence": {
+        "texture_id": "cab-0ce687d398cc4f2231851bd87ca42466:-1993041074277959112",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "f1b7c3ae",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "b0c5b539": {
+      "name": "T_fx_mask_zr027_c_M",
+      "evidence": {
+        "texture_id": "cab-227262e75d769c1ba771e12136f44f2d:7089162497644016725",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          9,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "c27e9577",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "7010b723": {
+      "name": "T_fx_mask_zr028_c_M",
+      "evidence": {
+        "texture_id": "cab-63706076e6d3ecbdad21a5c436a67984:5612707548967916487",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          128,
+          128,
+          8,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "65fe31e3",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            128,
+            128
+          ]
+        ]
+      }
+    },
+    "57c5a383": {
+      "name": "T_fx_noise_cyt_003_1",
+      "evidence": {
+        "texture_id": "cab-ae2206b674e9bd20e015353fb20314fa:3691533391489891258",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          9,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "c08afeb3",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "b9c589c8": {
+      "name": "T_fx_normal_301_N",
+      "evidence": {
+        "texture_id": "cab-eec9d30f76846dee587270c0e0d1be28:-5651056934967448697",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          128,
+          128,
+          8,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "f0c01cc3",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            128,
+            128
+          ]
+        ]
+      }
+    },
+    "ccbc3c56": {
+      "name": "T_fx_normal_302_N",
+      "evidence": {
+        "texture_id": "cab-943857430478bd3f813388628f43fa28:2771930553465520447",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          64,
+          64,
+          7,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "8e466550",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            64,
+            64
+          ]
+        ]
+      }
+    },
+    "79ac2f8c": {
+      "name": "T_fx_normal_501_N",
+      "evidence": {
+        "texture_id": "cab-5a224b3979030f47391eae5286eb7404:536576193998735124",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          64,
+          64,
+          7,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "263d81dc",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            64,
+            64
+          ]
+        ]
+      }
+    },
+    "2c0c33c8": {
+      "name": "T_fx_normal_zr006_N",
+      "evidence": {
+        "texture_id": "cab-3b380edd4eef8f606e5e8d51ccd25bce:-2394236288844088952",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          64,
+          64,
+          7,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "339d9094",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            64,
+            64
+          ]
+        ]
+      }
+    },
+    "ed8d44fb": {
+      "name": "T_fx_object_504_M",
+      "evidence": {
+        "texture_id": "cab-9b0b66cfe46891167dea5a8f00e5ed12:3538319141558431050",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          1,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "061cd172",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "bbe19930": {
+      "name": "T_fx_trail_1101_D",
+      "evidence": {
+        "texture_id": "cab-9836b556e7254c215ecf6826f23c3878:-1214039277571013280",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          9,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "4aa7670f",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "449b0b80": {
+      "name": "T_fx_trail_5175_D",
+      "evidence": {
+        "texture_id": "cab-eb229feaa8a78d280f282ab0849db0ce:-6921566410674402566",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          9,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "bed85446",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "b60ed4a4": {
+      "name": "T_fx_trail_901",
+      "evidence": {
+        "texture_id": "cab-9804f0db17bef900023f3f211f0c6d91:4763083171083290505",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          128,
+          128,
+          1,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "5dddb3ec",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            128,
+            128
+          ]
+        ]
+      }
+    },
+    "81c821bc": {
+      "name": "T_fx_trail_cyt_003",
+      "evidence": {
+        "texture_id": "cab-7be45dc65c8b56025c32867473b814a7:4205872653186985691",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "5d394c47",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "f7104c62": {
+      "name": "T_fx_trail_fj_03_M",
+      "evidence": {
+        "texture_id": "cab-8ccc17db2eadebf57d31dba976bf674a:-3555181801912552760",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          256,
+          1,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "bfd34583",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            256
+          ]
+        ]
+      }
+    },
+    "a49bdfa4": {
+      "name": "T_fx_trail_fj_06_M",
+      "evidence": {
+        "texture_id": "cab-3f5f262b11c5d8ad2a00bb167e0e117b:2449225440465893903",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          512,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "c8bab252",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            512
+          ]
+        ]
+      }
+    },
+    "b9b6476d": {
+      "name": "T_fx_trail_fj_09_1_v1d4_02_M",
+      "evidence": {
+        "texture_id": "cab-5135550bb5323cf7ef769cbc1a187413:5572205141890244902",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "4e5d6a87",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            1024
+          ]
+        ]
+      }
+    },
+    "80f55e0c": {
+      "name": "T_fx_trail_fj_09_1_v1d4_M",
+      "evidence": {
+        "texture_id": "cab-f7acc2e938fbb91d8034e6759d6719d8:-7749280694129558208",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "5f0ec038",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            1024
+          ]
+        ]
+      }
+    },
+    "3bc8431c": {
+      "name": "T_fx_trail_fj_09_3_v1d4_M",
+      "evidence": {
+        "texture_id": "cab-aa3b7fa7240af42160192cd46fe667c7:-665024764451011201",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "3093fbfb",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            1024
+          ]
+        ]
+      }
+    },
+    "1d82b623": {
+      "name": "T_fx_trail_fj_10_v1d6_M",
+      "evidence": {
+        "texture_id": "cab-8926f1a3d0881ffed8d80f59cb6ef7d0:-3864344663308950051",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          1024,
+          12,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "98d200b7",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            2048,
+            1024
+          ]
+        ]
+      }
+    },
+    "5a809302": {
+      "name": "T_fx_trail_fj_16_v1d6_M",
+      "evidence": {
+        "texture_id": "cab-3820875fe8e36dc6522a430470b1dc31:1933437324996402018",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          2048,
+          1024,
+          12,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "d10b29d3",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            2048,
+            1024
+          ]
+        ]
+      }
+    },
+    "36e8ff2e": {
+      "name": "T_fx_trail_fym_03_1_M",
+      "evidence": {
+        "texture_id": "cab-c14b5a0bd16f89843259a5bf9106d301:8001930522707568397",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          1,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "29eacc1b",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "ad61543f": {
+      "name": "T_fx_trail_fym_03_M",
+      "evidence": {
+        "texture_id": "cab-f482d19920e75da07ae9ef4bb0a9d316:-5337905910330555533",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          9,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "29eacc1b",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "e338f69b": {
+      "name": "T_fx_trail_gfx_18",
+      "evidence": {
+        "texture_id": "cab-f1c556ab6e6db895463b9897b928b1e4:4929026377307869770",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          128,
+          9,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "e8093de6",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            128
+          ]
+        ]
+      }
+    },
+    "5c93eea2": {
+      "name": "T_fx_trail_zh_511_M",
+      "evidence": {
+        "texture_id": "cab-bddeb8b55162bac3e4c9e0b33951cf56:-994392827591947584",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          128,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "34ac5a52",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            128
+          ]
+        ]
+      }
+    },
+    "d6207a80": {
+      "name": "T_fx_trail_zr003_C_M",
+      "evidence": {
+        "texture_id": "cab-2e7b6bf7ec1958860da319630bca4d88:-6434979918166225487",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          1024,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "28a915f4",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            1024
+          ]
+        ]
+      }
+    },
+    "ec5f9113": {
+      "name": "T_fx_trail_zrx_08_M",
+      "evidence": {
+        "texture_id": "cab-74b9109211d99c3cb0978eefb9856b9e:3765497595538858339",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          256,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "b2424745",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            256
+          ]
+        ]
+      }
+    },
+    "05ebb709": {
+      "name": "T_fx_trail_zrx_18_M_01",
+      "evidence": {
+        "texture_id": "cab-070c0ea2138a17fc18e5efbffabaecd9:803009489001213070",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          1024,
+          512,
+          11,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "3b90f4f6",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            1024,
+            512
+          ]
+        ]
+      }
+    },
+    "b1872d14": {
+      "name": "common_deco_white",
+      "evidence": {
+        "texture_id": "cab-07225bd45dc3d0b5f1477afeb884ca3a:3701457122332891076",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          68,
+          68,
+          1,
+          1,
+          98,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "ad16520c",
+        "runtime_graphics_format": 109,
+        "runtime_sizes": [
+          [
+            68,
+            68
+          ]
+        ]
+      }
+    }
+  },
+  "identity_issues": [
+    {
+      "resource": "world",
+      "kind": "mesh",
+      "name": "S_actor_jsspsi_brow_01_lod0",
+      "reason": "not a complete single-submesh index region"
+    },
+    {
+      "resource": "world",
+      "kind": "mesh_collision",
+      "hash": "a6b80ffb",
+      "components": [
+        6,
+        18
+      ],
+      "reason": "same IB identity for multiple native parts"
+    },
+    {
+      "resource": "world",
+      "kind": "mesh_collision",
+      "hash": "d7404d7e",
+      "components": [
+        7,
+        16
+      ],
+      "reason": "same IB identity for multiple native parts"
+    },
+    {
+      "resource": "world",
+      "kind": "mesh_collision",
+      "hash": "a9411ba7",
+      "components": [
+        9,
+        19
+      ],
+      "reason": "same IB identity for multiple native parts"
+    },
+    {
+      "resource": "world",
+      "kind": "mesh_collision",
+      "hash": "a80c3759",
+      "components": [
+        10,
+        17
+      ],
+      "reason": "same IB identity for multiple native parts"
+    },
+    {
+      "resource": "ui",
+      "kind": "mesh",
+      "name": "S_actor_jsspsi_brow_01_lod0",
+      "reason": "not a complete single-submesh index region"
+    },
+    {
+      "resource": "ui",
+      "kind": "mesh_collision",
+      "hash": "a6b80ffb",
+      "components": [
+        29,
+        41
+      ],
+      "reason": "same IB identity for multiple native parts"
+    },
+    {
+      "resource": "ui",
+      "kind": "mesh_collision",
+      "hash": "d7404d7e",
+      "components": [
+        30,
+        39
+      ],
+      "reason": "same IB identity for multiple native parts"
+    },
+    {
+      "resource": "ui",
+      "kind": "mesh_collision",
+      "hash": "a9411ba7",
+      "components": [
+        32,
+        42
+      ],
+      "reason": "same IB identity for multiple native parts"
+    },
+    {
+      "resource": "ui",
+      "kind": "mesh_collision",
+      "hash": "a80c3759",
+      "components": [
+        33,
+        40
+      ],
+      "reason": "same IB identity for multiple native parts"
+    }
+  ],
+  "legacy_conversion_ready": false
+}

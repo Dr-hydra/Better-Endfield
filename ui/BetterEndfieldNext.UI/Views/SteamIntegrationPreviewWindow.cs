@@ -17,9 +17,7 @@ internal sealed class SteamIntegrationPreviewWindow : Window
         var page = new SteamIntegrationPage(Path.Combine(Path.GetTempPath(), "BE-SteamPreview-" + Guid.NewGuid().ToString("N")));
         var column = new PageContentPanel { Padding = new Thickness(20), MaxContentWidth = 900 };
         column.Children.Add(page);
-        Content = new ScrollViewer { Content = column, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
-        WindowPlacementService.SetInitialSize(this, 980, 920);
-        page.Initialize(new SteamIntegrationSettings { AutoUpdateMetadata = false }, () => Task.CompletedTask, () => "", () => "", () => Task.FromResult(false), preview: true);
+        page.Initialize(new SteamIntegrationSettings { AutoUpdateMetadata = false }, () => Task.CompletedTask, () => "", () => "", () => "injector", () => Task.FromResult(false), preview: true);
         if (metadataPath is not null)
             page.Loaded += async (_, _) =>
             {
@@ -29,5 +27,8 @@ internal sealed class SteamIntegrationPreviewWindow : Window
                     await new ContentDialog { XamlRoot = page.XamlRoot, Title = "Preview metadata error", Content = exception.Message, CloseButtonText = "Close" }.ShowAsync();
                 }
             };
+        // Register the initial import before native window creation can load the page.
+        Content = new ScrollViewer { Content = column, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+        WindowPlacementService.SetInitialSize(this, 980, 920);
     }
 }

@@ -13,6 +13,22 @@
       "issues": []
     },
     {
+      "character_id": "chr_0003_endminf",
+      "name": "管理员（女）",
+      "entries": 11,
+      "textures": 35,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
+      "character_id": "chr_0004_pelica",
+      "name": "佩丽卡",
+      "entries": 12,
+      "textures": 37,
+      "mapping_status": "offline-resource-identities",
+      "issues": []
+    },
+    {
       "character_id": "chr_0005_chen",
       "name": "陈千语",
       "entries": 10,
@@ -304,20 +320,18 @@
       ]
     },
     {
-      "character_id": "chr_0003_endminf",
-      "name": "管理员（女）",
-      "entries": 11,
-      "textures": 35,
-      "mapping_status": "offline-resource-identities",
-      "issues": []
-    },
-    {
-      "character_id": "chr_0004_pelica",
-      "name": "佩丽卡",
-      "entries": 12,
-      "textures": 37,
-      "mapping_status": "offline-resource-identities",
-      "issues": []
+      "character_id": "chr_0036_jsspsi",
+      "name": "祀",
+      "entries": 14,
+      "textures": 58,
+      "mapping_status": "offline-resource-identities-partial",
+      "issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_jsspsi_brow_01_lod0",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
     },
     {
       "character_id": "chr_0038_purrche",

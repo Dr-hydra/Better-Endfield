@@ -23,6 +23,12 @@
       "process_ids": [
         6340
       ]
+    },
+    {
+      "run": "bem-1_6_3-login-20261015-091033-3bb4aa",
+      "process_ids": [
+        14396
+      ]
     }
   ],
   "characters": [
@@ -660,6 +666,42 @@
         {
           "kind": "mesh",
           "name": "S_actor_liino_brow_01_lod0",
+          "reason": "not a complete single-submesh index region"
+        }
+      ]
+    },
+    {
+      "character_id": "chr_0036_jsspsi",
+      "name": "祀",
+      "components": 15,
+      "mapping_status": "offline-resource-identities-partial",
+      "excluded": [
+        {
+          "mesh_name": "S_actor_jsspsi_cloth_04_lod0",
+          "reasons": [
+            "world/UI material slots differ"
+          ]
+        }
+      ],
+      "unsupported_source_layouts": [
+        "S_actor_jsspsi_brow_01_lod0",
+        "S_actor_jsspsi_cloth_02_lod0",
+        "S_actor_jsspsi_cloth_05_lod0",
+        "S_actor_jsspsi_cloth_06_lod0",
+        "S_actor_jsspsi_cloth_07_lod0",
+        "S_actor_jsspsi_cloth_08_lod0",
+        "S_actor_jsspsi_cloth_09_lod0"
+      ],
+      "observations": {
+        "chr_0036_jsspsi_postmodel": 15,
+        "chr_0036_jsspsi_uimodel": 15
+      },
+      "source_entries": 14,
+      "source_textures": 58,
+      "identity_issues": [
+        {
+          "kind": "mesh",
+          "name": "S_actor_jsspsi_brow_01_lod0",
           "reason": "not a complete single-submesh index region"
         }
       ]

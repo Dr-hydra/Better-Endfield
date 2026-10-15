@@ -21,12 +21,19 @@ def prepare_bem14_example(repo, target):
 def copy_documents(workspace, names, destination, draft_link):
     for name in names:
         source = workspace.document(name)
+        text = source.read_text(encoding='utf-8-sig')
         if name == 'BEM_V1_4_SPEC.md':
-            text = source.read_text(encoding='utf-8-sig').replace(
+            text = text.replace(
                 '../../tools/CustomModel/profiles/bem14-drafts/README.md', draft_link)
-            (destination/name).write_text(text, encoding='utf-8')
-        else:
-            shutil.copyfile(source, destination/name)
+        if name == 'BEM_RUNTIME_COMPATIBILITY.md':
+            # The audit contains developer-local evidence and is deliberately
+            # not part of the public toolchain. Preserve its validation scope
+            # without publishing a broken research-workspace hyperlink.
+            text = '\n'.join(
+                'BE 4.0.3 / Windows 游戏 1.6.3 已用现有凛包验证真实开屏模型提交。Android 本轮仅完成静态与离线检查，未进行手机游戏内运行验证；这些结果不代表任意新角色目标都已通过替换验证。'
+                if 'research/1.6.3/bem-chain-audit/BEM_CHAIN_AUDIT.md' in line else line
+                for line in text.split('\n'))
+        (destination/name).write_text(text, encoding='utf-8')
 
 
 def main():
@@ -52,7 +59,9 @@ def main():
     prepare_bem14_example(repo, target)
     shutil.copytree(repo/'tools/CustomModel/blender_addon', target/'blender_addon', dirs_exist_ok=True, ignore=source_ignore)
     shutil.copytree(repo/'tools/CustomModel/catalog', target/'catalog', dirs_exist_ok=True)
-    shutil.copytree(repo/'tools/CustomModel/profiles/bem14-drafts', target/'profiles/bem14-drafts', dirs_exist_ok=True)
+    # Ship all target collections, including versioned runtime captures. The
+    # same staging tree is embedded in BE and included in the standalone ZIP.
+    shutil.copytree(repo/'tools/CustomModel/profiles', target/'profiles', dirs_exist_ok=True, ignore=source_ignore)
     draft_readme = target/'profiles/bem14-drafts/README.md'
     draft_readme.write_text(draft_readme.read_text(encoding='utf-8').replace(
         '../../../../docs/custom_model/BEM_V1_4_SPEC.md', '../../docs/BEM_V1_4_SPEC.md'), encoding='utf-8')

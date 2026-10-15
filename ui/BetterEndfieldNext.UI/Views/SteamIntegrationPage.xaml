@@ -8,7 +8,7 @@
         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
         <StackPanel x:Name="SteamBody" Spacing="12">
             <TextBlock x:Name="TitleText" Text="Steam 国服启动（预览）" FontSize="20" FontWeight="SemiBold" />
-            <TextBlock x:Name="IntroText" Text="在 Steam 库中直接启动国服，使用 BE 的 XInput 自启动加载模块。" TextWrapping="Wrap" />
+            <TextBlock x:Name="IntroText" Text="在 Steam 库中启动国服，沿用主界面选择的加载方式。配置 ACF 不会安装 XInput。" TextWrapping="Wrap" />
             <Grid ColumnSpacing="8">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                 <TextBox x:Name="SteamPathBox" Header="Steam 程序" PlaceholderText="steam.exe" TextChanged="PreferencesChanged" />

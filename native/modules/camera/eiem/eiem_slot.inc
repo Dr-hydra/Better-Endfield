@@ -578,10 +578,11 @@ const char *TypeName(void *field) {
   return type && il2cpp_type_get_name ? il2cpp_type_get_name(type) : nullptr;
 }
 
-// FindFloorResult as used by EIEM: bool@0, bool@1, float@8, Vector3@0x10,
-// Vector3@0x1C (unboxed). Accept the native call only when metadata agrees.
+// FindFloorResult embeds RaycastHit at 0x10 (unboxed); its point and normal
+// are at +0 and +0xC. Verify both levels before accepting the native call.
 bool VerifyFloorResultLayout(void *method) {
   if (!method || !il2cpp_method_get_param || !il2cpp_class_from_type ||
+      !il2cpp_field_get_type || !il2cpp_field_get_name ||
       il2cpp_method_get_param_count(method) != 7)
     return false;
   void *type = il2cpp_method_get_param(method, 2);
@@ -594,8 +595,8 @@ bool VerifyFloorResultLayout(void *method) {
   }
   struct Expect { int offset; const char *type; bool seen; } expect[] = {
       {0x00, "System.Boolean", false}, {0x01, "System.Boolean", false},
-      {0x08, "System.Single", false}, {0x10, "UnityEngine.Vector3", false},
-      {0x1C, "UnityEngine.Vector3", false}};
+      {0x08, "System.Single", false}, {0x10, "UnityEngine.RaycastHit", false}};
+  void *hitClass = nullptr;
   void *it = nullptr;
   while (void *field = il2cpp_class_get_fields(klass, &it)) {
     if (il2cpp_field_get_flags && (il2cpp_field_get_flags(field) & 0x10)) continue;
@@ -603,10 +604,24 @@ bool VerifyFloorResultLayout(void *method) {
     const char *name = TypeName(field);
     for (auto &e : expect)
       if (e.offset == offset && name && !strcmp(name, e.type)) e.seen = true;
+    if (offset == 0x10 && name && !strcmp(name, "UnityEngine.RaycastHit"))
+      hitClass = il2cpp_class_from_type(il2cpp_field_get_type(field));
   }
   for (const auto &e : expect)
     if (!e.seen) return false;
-  return true;
+  if (!hitClass) return false;
+  bool pointSeen = false, normalSeen = false;
+  it = nullptr;
+  while (void *field = il2cpp_class_get_fields(hitClass, &it)) {
+    if (il2cpp_field_get_flags && (il2cpp_field_get_flags(field) & 0x10)) continue;
+    const int offset = static_cast<int>(il2cpp_field_get_offset(field)) - 16;
+    const char *typeName = TypeName(field);
+    const char *fieldName = il2cpp_field_get_name(field);
+    if (!typeName || strcmp(typeName, "UnityEngine.Vector3") || !fieldName) continue;
+    if (offset == 0 && !strcmp(fieldName, "m_Point")) pointSeen = true;
+    if (offset == 0xC && !strcmp(fieldName, "m_Normal")) normalSeen = true;
+  }
+  return pointSeen && normalSeen;
 }
 
 void *CodeOf(void *method) {

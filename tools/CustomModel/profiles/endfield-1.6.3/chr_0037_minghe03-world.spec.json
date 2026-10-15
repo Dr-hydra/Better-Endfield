@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "kind": "bem-resource-target-spec",
+  "id": "chr_0037_minghe",
+  "profile_id": "chr_0037_minghe03-world-pc",
+  "revision": "1.6.3-20261015",
+  "snapshot": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+  "target_kind": "character",
+  "resources": [
+    {
+      "id": "world",
+      "asset_path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0037_minghe03_postmodel.prefab",
+      "platforms": [
+        "windows-x64"
+      ],
+      "lod": 0
+    }
+  ]
+}

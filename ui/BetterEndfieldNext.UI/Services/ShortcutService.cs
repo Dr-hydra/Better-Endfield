@@ -29,52 +29,22 @@ internal static class ShortcutService
     public static string CreateGameShortcut(
         string loaderMode,
         string injectorPath,
+        string launcherPath,
         string gamePath,
         string gameArguments)
     {
         gamePath = Path.GetFullPath(gamePath.Trim());
-        if (!File.Exists(gamePath))
-        {
-            throw new FileNotFoundException("未找到 Endfield.exe。", gamePath);
-        }
-
-        string targetPath;
-        string arguments;
-        string workingDirectory;
-        gameArguments = gameArguments.Trim();
-        if (loaderMode.Equals("xinput", StringComparison.OrdinalIgnoreCase))
-        {
-            targetPath = gamePath;
-            arguments = gameArguments;
-            workingDirectory = Path.GetDirectoryName(gamePath) ?? AppContext.BaseDirectory;
-        }
-        else if (loaderMode.Equals("injector", StringComparison.OrdinalIgnoreCase))
-        {
-            InjectorLaunchGuard.EnsureAllowed(gamePath);
-            injectorPath = Path.GetFullPath(injectorPath.Trim());
-            if (!File.Exists(injectorPath))
-            {
-                throw new FileNotFoundException("未找到注入器。", injectorPath);
-            }
-            targetPath = injectorPath;
-            arguments = "--game " + QuoteArgument(gamePath) +
-                (gameArguments.Length == 0 ? string.Empty : " -- " + gameArguments);
-            workingDirectory =
-                Path.GetDirectoryName(injectorPath) ?? AppContext.BaseDirectory;
-        }
-        else
-        {
-            throw new InvalidOperationException("不支持的加载方式。");
-        }
+        var startInfo = GameLaunchService.CreateStartInfo(
+            loaderMode, injectorPath, launcherPath, gamePath, gameArguments);
 
         string shortcutPath = Path.Combine(
             GetDesktopDirectory(),
             "终末地（Better Endfield Next）.lnk");
         CreateShortcut(
             shortcutPath,
-            targetPath,
-            arguments,
-            workingDirectory,
+            startInfo.FileName,
+            startInfo.Arguments,
+            startInfo.WorkingDirectory,
             gamePath,
             "使用已保存的 Better Endfield Next 配置启动终末地");
         return shortcutPath;
@@ -90,9 +60,6 @@ internal static class ShortcutService
         Directory.CreateDirectory(desktop);
         return desktop;
     }
-
-    private static string QuoteArgument(string value) =>
-        $"\"{value.Replace("\"", "\\\"")}\"";
 
     private static void CreateShortcut(
         string shortcutPath,

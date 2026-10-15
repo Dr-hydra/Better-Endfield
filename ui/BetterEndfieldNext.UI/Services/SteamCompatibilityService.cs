@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace BetterEndfieldNext.UI.Services;
 
@@ -8,7 +9,24 @@ internal interface ISteamCompatibilityStore
     void Write(string executable, string? flags);
 }
 
-internal sealed record SteamCompatibilityReceipt(string Executable, bool OriginalAdministrator, bool WrittenAdministrator);
+internal sealed record SteamCompatibilityReceipt
+{
+    [JsonConstructor]
+    public SteamCompatibilityReceipt() { }
+    public SteamCompatibilityReceipt(string Executable, bool OriginalAdministrator, bool WrittenAdministrator)
+    {
+        this.Executable = Executable;
+        this.OriginalAdministrator = OriginalAdministrator;
+        this.WrittenAdministrator = WrittenAdministrator;
+    }
+
+    [JsonPropertyName("Executable")]
+    public string Executable { get; init; } = "";
+    [JsonPropertyName("OriginalAdministrator")]
+    public bool OriginalAdministrator { get; init; }
+    [JsonPropertyName("WrittenAdministrator")]
+    public bool WrittenAdministrator { get; init; }
+}
 
 internal sealed class SteamCompatibilityService(string receiptPath, ISteamCompatibilityStore store, Func<bool> steamIsRunning)
 {

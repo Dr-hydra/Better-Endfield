@@ -14,7 +14,7 @@ import urllib.request
 from pathlib import Path
 
 from workspace_config import load_workspace
-from RefreshEndfieldResourceInputs import configured_path, publish_changes
+from RefreshEndfieldResourceInputs import configured_path, publish_changes, read_metadata
 
 
 INDEX_URL = "https://end.canmoe.com/zh-CN/wiki/characters"
@@ -38,6 +38,7 @@ ENGLISH_NAMES = {
     "chr_0033_camille": "Camille",
     "chr_0016_laevat": "Laevatain",
     "chr_0035_liino": "Reno",
+    "chr_0037_minghe": "Argent Flow",
     "chr_0015_lifeng": "Lifeng",
     "chr_0028_wulfa": "Wulfa",
     "chr_0031_mifu": "Mifu",
@@ -86,6 +87,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--overlay-output", type=Path)
     parser.add_argument("--index-url")
+    parser.add_argument("--missing-only", action="store_true",
+                        help="Download only missing portraits and retain existing image provenance/resource IDs.")
     args = parser.parse_args()
     args.workspace = ws = load_workspace(args.workspace_config)
     args.output = args.output or ws.path("resource_update.outputs.avatars")
@@ -121,10 +124,36 @@ def main() -> None:
     if len(records) < 25:
         raise RuntimeError(f"Character index yielded only {len(records)} records")
 
+    previous = read_metadata(asset_dir.parent / "characters.json")
+    previous_records = previous.get("characters", [])
+    previous_by_id = {str(record["id"]): record for record in previous_records}
+    if args.missing_only:
+        current = {str(record["id"]): record for record in records}
+        # Retain historical entries and ordering when the website temporarily
+        # omits a character. New entries receive unused stable resource IDs.
+        records = [current.pop(str(record["id"]), record) for record in previous_records]
+        records.extend(current.values())
+    next_resource_id = max((int(record.get("resourceId", 999)) for record in previous_records), default=999) + 1
+    downloaded = 0
+
     for index, record in enumerate(records):
         source_url = urljoin(args.index_url, str(record["source"]))
-        source_bytes = download(source_url)
         output_path = asset_dir / f"{record['id']}.png"
+        old = previous_by_id.get(str(record["id"]), {})
+        if args.missing_only:
+            if "resourceId" in old:
+                record["resourceId"] = old["resourceId"]
+            else:
+                record["resourceId"] = next_resource_id
+                next_resource_id += 1
+            if output_path.is_file():
+                # These source fields describe the image actually retained.
+                for key in ("source", "sourceUrl", "sourceSha256"):
+                    if key in old:
+                        record[key] = old[key]
+                continue
+        source_bytes = download(source_url)
+        downloaded += 1
         try:
             with Image.open(io.BytesIO(source_bytes)) as source_image:
                 portrait = ImageOps.fit(
@@ -144,7 +173,8 @@ def main() -> None:
                 raise RuntimeError(
                     f"Cannot decode {source_url} and no existing PNG is available"
                 )
-        record["resourceId"] = 1000 + index
+        if not args.missing_only:
+            record["resourceId"] = 1000 + index
         record["sourceUrl"] = source_url
         record["sourceSha256"] = hashlib.sha256(source_bytes).hexdigest()
 
@@ -152,7 +182,7 @@ def main() -> None:
     aliases = [
         {"id": alias_id, "name": name, "nameEn": name_en,
          "resourceId": resources.get(target, 1000)}
-        for alias_id, name, name_en, target in LEGACY_ALIASES
+        for alias_id, name, name_en, target in LEGACY_ALIASES if alias_id not in resources
     ]
 
     header_lines = [
@@ -192,7 +222,7 @@ def main() -> None:
     # Finish all downloads/decoding before replacing valid local assets.
     args.workspace.env()
     publish_changes(list(pending.items()), args.workspace.path("paths.temp"))
-    print(f"Updated {len(records)} combat portraits in {asset_dir}")
+    print(f"Updated {len(records)} combat portrait records; downloaded {downloaded} images in {asset_dir}")
 
 
 if __name__ == "__main__":

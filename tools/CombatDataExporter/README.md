@@ -4,6 +4,14 @@
 从当前游戏的 `Persistent/VFS` 热更层读取 Table 与 JsonData，并在缺少热更
 分片时回退 `StreamingAssets/VFS` 基础层，不再直接信任仓库中的旧数据快照。
 
+当前适配 **1.6.3 Windows**。统一入口为 `scripts/UpdateResourceManifests.ps1`，游戏和工具路径读取工作区配置。日常增量更新只补缺失图标：
+
+```powershell
+python tools/CombatDataExporter/export_combat_data.py --game-path 'G:\Arknights Endfield' --fill-missing-icons
+```
+
+Buff 引用通过当前 MemoryPack schema 与 USPC 字符串池结构化读取，不再在二进制中搜索 ASCII。schema 路径由 `resource_update.memorypack_schema` 指定；类型或输入解析失败时终止，保留最后有效的来源映射。schema 维护方式见[版本输入说明](../../config/compatibility/combat_stats/1.6.3/README.md)。本轮结果见[资源更新记录](../../docs/workspace/research/1.6.3/resource-update/RESOURCE_UPDATE.md)。
+
 首次完整导出：
 
 ```powershell
@@ -37,9 +45,8 @@ python tools/CombatDataExporter/export_combat_data.py `
 
 输出包括：
 
-- `manifests/combat/combat-dictionary.json`
+- `resources/generated/combat/combat-dictionary.json`
 - `manifests/combat/buff-sources.bemap`
-- `ui/BetterEndfieldNext.UI/Assets/combat/combat-dictionary.json`
 - `web/src/data/combat-dict.min.json`
 - `web/public/icons/characters`
 - `web/public/icons/skills`
@@ -47,7 +54,7 @@ python tools/CombatDataExporter/export_combat_data.py `
 - `web/public/icons/suits`
 - `web/public/icons/icon-manifest.json`
 
-导出器只将字典精确引用的 PNG 写入网站目录，并删除不再引用的旧图标。网页图标最长边压缩到 128 像素；`--verify-icons` 遇到任何缺失资源时返回非零退出码。
+导出器只将字典精确引用的 PNG 写入网站目录，并删除不再引用的旧图标。已有图片保持不变；新增网页图标最长边压缩到 128 像素。`--fill-missing-icons` 从当前 manifest 选取缺图所在 bundle 后定点提取；`--verify-icons` 遇到任何缺失资源时返回非零退出码。
 
 `buff-sources.bemap` 只接受 Table 中的技能/被动/武器/套装入口，以及与真实
 `SkillData`、`BuffData` 文件名完全匹配的直接引用。运行时还会结合施加角色、

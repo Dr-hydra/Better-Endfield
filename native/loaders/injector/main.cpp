@@ -3,6 +3,7 @@
 
 #include "BetterEndfieldNext/BootstrapConfig.h"
 #include "launch_guard.h"
+#include "../shared/official_launcher.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -52,6 +53,34 @@ void PrintLastError(const wchar_t* prefix) {
         LocalFree(message);
     }
 }
+
+// Before startup completes, every failure (including C++ exceptions) must
+// discard only the game process this invocation just created. After startup,
+// waiting/diagnostic failures must never terminate a running game.
+class OwnedGameStartup {
+public:
+    explicit OwnedGameStartup(const PROCESS_INFORMATION& process) noexcept
+        : process_(process.hProcess), thread_(process.hThread) {}
+    OwnedGameStartup(const OwnedGameStartup&) = delete;
+    OwnedGameStartup& operator=(const OwnedGameStartup&) = delete;
+    ~OwnedGameStartup() {
+        if (!started_ && WaitForSingleObject(process_, 0) == WAIT_TIMEOUT) {
+            if (TerminateProcess(process_, 1)) WaitForSingleObject(process_, 5000);
+            else PrintLastError(L"Unable to clean up incomplete Endfield startup");
+        }
+        if (thread_) CloseHandle(thread_);
+        CloseHandle(process_);
+    }
+    void Complete() noexcept {
+        started_ = true;
+        CloseHandle(thread_);
+        thread_ = nullptr;
+    }
+private:
+    HANDLE process_;
+    HANDLE thread_;
+    bool started_ = false;
+};
 
 std::filesystem::path ExecutablePath() {
     std::wstring value(32768, L'\0');
@@ -513,29 +542,18 @@ bool WaitForModule(DWORD process_id, const wchar_t* module_name,
 
 } // namespace
 
-int wmain(int argc, wchar_t* argv[]) {
-    std::filesystem::path game_path;
-    std::vector<std::wstring> game_arguments;
-    bool manual_map = false;
-    bool late_manual_map = false;
-    for (int index = 1; index < argc; ++index) {
-        if (std::wstring_view(argv[index]) == L"--game" && index + 1 < argc) {
-            game_path = argv[++index];
-        } else if (std::wstring_view(argv[index]) == L"--manual-map") {
-            manual_map = true;
-        } else if (std::wstring_view(argv[index]) == L"--manual-map-late") {
-            late_manual_map = true;
-        } else if (std::wstring_view(argv[index]) == L"--") {
-            for (++index; index < argc; ++index) {
-                game_arguments.emplace_back(argv[index]);
-            }
-            break;
-        }
-    }
-    if (game_path.empty() || !std::filesystem::is_regular_file(game_path)) {
-        std::wcerr << L"Usage: BetterEndfieldNext.Injector.exe --game <Endfield.exe>\n";
+DWORD RunInjector(int argc, wchar_t* argv[]) {
+    namespace launch = better_endfield::launch;
+    launch::Options options;
+    std::wstring launch_error;
+    if (!launch::ParseOptions(argc, argv, true, options, launch_error)) {
+        launch::ShowError(launch_error);
         return 2;
     }
+    const auto& game_path = options.game;
+    const auto& game_arguments = options.arguments;
+    const bool manual_map = options.manual_map;
+    const bool late_manual_map = options.late_manual_map;
 
     if (better_endfield::HasLocalXInputProxy(game_path)) {
         std::wcerr << L"xinput1_4.dll already exists in the game directory. "
@@ -560,35 +578,25 @@ int wmain(int argc, wchar_t* argv[]) {
         return 3;
     }
 
-    STARTUPINFOW startup{};
-    startup.cb = sizeof(startup);
-    PROCESS_INFORMATION process{};
-    std::wstring command_line = L"\"" + game_path.wstring() + L"\"";
-    for (const auto& argument : game_arguments) {
-        command_line += L" \"";
-        for (const wchar_t character : argument) {
-            if (character == L'\"') {
-                command_line += L'\\';
-            }
-            command_line += character;
-        }
-        command_line += L"\"";
+    launch::VerifiedLauncher official_launcher;
+    if (!launch::FindOfficialLauncher(options.parent, official_launcher, launch_error)) {
+        launch::ShowError(launch_error);
+        return 7;
     }
-    if (!CreateProcessW(game_path.c_str(), command_line.data(), nullptr, nullptr, FALSE,
-            CREATE_SUSPENDED, nullptr, game_path.parent_path().c_str(), &startup,
-            &process)) {
-        PrintLastError(L"Unable to start Endfield");
+    launch::OfficialParent official_parent;
+    if (!official_parent.Start(official_launcher, launch_error)) {
+        launch::ShowError(launch_error);
         return 4;
     }
+    official_launcher.file.reset();
+    PROCESS_INFORMATION process{};
+    if (!official_parent.CreateGame(game_path, game_arguments, CREATE_SUSPENDED, process, launch_error)) {
+        launch::ShowError(launch_error);
+        return 4;
+    }
+    OwnedGameStartup owned_game(process);
 
     bool injected = false;
-    if (manual_map && late_manual_map) {
-        std::wcerr << L"--manual-map and --manual-map-late are mutually exclusive.\n";
-        TerminateProcess(process.hProcess, 1);
-        CloseHandle(process.hThread);
-        CloseHandle(process.hProcess);
-        return 2;
-    }
 
     if (manual_map) {
         const BE_BootstrapConfigV1 bootstrap = BuildBootstrapConfig(install_root);
@@ -596,17 +604,11 @@ int wmain(int argc, wchar_t* argv[]) {
     } else {
         if (ResumeThread(process.hThread) == static_cast<DWORD>(-1)) {
             PrintLastError(L"Unable to resume Endfield");
-            TerminateProcess(process.hProcess, 1);
-            CloseHandle(process.hThread);
-            CloseHandle(process.hProcess);
             return 5;
         }
         if (late_manual_map) {
             if (!WaitForModule(process.dwProcessId, L"GameAssembly.dll", 90000)) {
                 std::wcerr << L"GameAssembly.dll was not observed before timeout.\n";
-                TerminateProcess(process.hProcess, 1);
-                CloseHandle(process.hThread);
-                CloseHandle(process.hProcess);
                 return 5;
             }
             // Give Unity's native runtime and the GC a short settling window
@@ -621,22 +623,30 @@ int wmain(int argc, wchar_t* argv[]) {
     }
 
     if (!injected) {
-        TerminateProcess(process.hProcess, 1);
-        CloseHandle(process.hThread);
-        CloseHandle(process.hProcess);
         std::wcerr << L"Unable to load BetterEndfieldNext Host.\n";
         return 5;
     }
 
     if (manual_map && ResumeThread(process.hThread) == static_cast<DWORD>(-1)) {
         PrintLastError(L"Unable to resume Endfield after Host mapping");
-        TerminateProcess(process.hProcess, 1);
-        CloseHandle(process.hThread);
-        CloseHandle(process.hProcess);
         return 5;
     }
 
-    CloseHandle(process.hThread);
-    CloseHandle(process.hProcess);
-    return 0;
+    owned_game.Complete();
+    DWORD exit_code = 0;
+    const bool waited = launch::WaitForGame(process.hProcess, exit_code, launch_error);
+    if (!waited) {
+        launch::ShowError(launch_error);
+        return 8;
+    }
+    return exit_code;
+}
+
+int wmain(int argc, wchar_t* argv[]) {
+    DWORD code = 4;
+    try { code = RunInjector(argc, argv); }
+    catch (const std::exception&) {
+        better_endfield::launch::ShowError(L"启动时发生异常，请检查游戏和官方启动器安装。 / Launch failed; check the game and official launcher installation.");
+    }
+    ExitProcess(code);
 }

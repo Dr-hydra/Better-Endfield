@@ -1,19 +1,38 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace BetterEndfieldNext.UI.Services;
 
 internal sealed class SteamInstallReceipt
 {
+    [JsonPropertyName("Product")]
     public string Product { get; set; } = "BetterEndfieldNext.SteamCN";
+    [JsonPropertyName("LibraryPath")]
     public string LibraryPath { get; set; } = "";
+    [JsonPropertyName("Metadata")]
     public SteamMetadata Metadata { get; set; } = new();
+    [JsonPropertyName("CreatedDirectories")]
     public List<string> CreatedDirectories { get; set; } = [];
+    [JsonPropertyName("UpdatedUtc")]
     public DateTimeOffset UpdatedUtc { get; set; }
+    [JsonPropertyName("Pending")]
     public bool Pending { get; set; }
 }
 
-internal sealed record SteamMetadataCache(DateTimeOffset FetchedUtc, SteamMetadata Metadata);
+internal sealed class SteamMetadataCache
+{
+    public SteamMetadataCache() { }
+    public SteamMetadataCache(DateTimeOffset fetchedUtc, SteamMetadata metadata)
+    {
+        FetchedUtc = fetchedUtc;
+        Metadata = metadata;
+    }
+    [JsonPropertyName("FetchedUtc")]
+    public DateTimeOffset FetchedUtc { get; set; }
+    [JsonPropertyName("Metadata")]
+    public SteamMetadata Metadata { get; set; } = new();
+}
 internal sealed record SteamInstallPaths(string Manifest, string GameDirectory, string Placeholder);
 
 internal sealed class SteamIntegrationService(string stateDirectory, HttpClient http, Func<bool> steamIsRunning)
@@ -74,14 +93,23 @@ internal sealed class SteamIntegrationService(string stateDirectory, HttpClient 
             Path.Combine(game, SteamMetadata.ValidateRelativePath(metadata.Executable)));
     }
 
-    public static string GenerateLaunchCommand(string gamePath, string arguments)
+    private static void ValidateGamePath(string gamePath)
     {
-        string game = Path.GetFullPath(gamePath);
-        if (!File.Exists(game) || !Path.GetFileName(game).Equals("Endfield.exe", StringComparison.OrdinalIgnoreCase))
+        if (!File.Exists(gamePath) || !Path.GetFileName(gamePath).Equals("Endfield.exe", StringComparison.OrdinalIgnoreCase))
             throw new SteamIntegrationException("invalid_game_path");
-        if (game.Contains('"') || arguments.Any(c => c is '\0' or '\r' or '\n') || arguments.Contains("%command%", StringComparison.OrdinalIgnoreCase))
+    }
+
+    public static string GenerateLaunchCommand(string helperPath, string gamePath, string arguments)
+    {
+        ValidateGamePath(gamePath);
+        if (!GameLaunchService.AreArgumentsValid(arguments) || arguments.Contains("%command%", StringComparison.OrdinalIgnoreCase))
             throw new SteamIntegrationException("invalid_launch_arguments");
-        return "\"" + game + "\"" + (string.IsNullOrWhiteSpace(arguments) ? "" : " " + arguments.Trim()) + " %command%";
+        string helper = Path.GetFullPath(helperPath);
+        string name = Path.GetFileName(helper);
+        if (!File.Exists(helper) || !(name.Equals("BetterEndfieldNext.Launcher.exe", StringComparison.OrdinalIgnoreCase) ||
+                name.Equals("BetterEndfieldNext.Injector.exe", StringComparison.OrdinalIgnoreCase)))
+            throw new SteamIntegrationException("invalid_launcher_path");
+        return "\"" + helper + "\" " + GameLaunchService.BuildArguments(gamePath, arguments) + " --steam-command %command%";
     }
 
     public static string GenerateAcf(SteamMetadata metadata, string? previous = null)
@@ -128,7 +156,7 @@ internal sealed class SteamIntegrationService(string stateDirectory, HttpClient 
     public async Task ApplyAsync(string libraryPath, string gamePath, SteamMetadata metadata, IEnumerable<string> knownLibraries, CancellationToken token = default)
     {
         metadata.Validate();
-        GenerateLaunchCommand(gamePath, "");
+        ValidateGamePath(gamePath);
         await _writeLock.WaitAsync(token);
         try
         {

@@ -10,6 +10,7 @@ internal static class RuntimePathDiscoveryService
 {
     private const string GameExecutableName = "Endfield.exe";
     private const string InjectorExecutableName = "BetterEndfieldNext.Injector.exe";
+    private const string LauncherExecutableName = "BetterEndfieldNext.Launcher.exe";
 
     // IncludeAllContentForSelfExtract makes BaseDirectory point at the temporary
     // bundle extraction directory. Native payloads remain beside the launcher EXE.
@@ -17,6 +18,11 @@ internal static class RuntimePathDiscoveryService
         Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory,
         "loaders",
         InjectorExecutableName));
+
+    public static string BundledLauncherPath { get; } = Path.GetFullPath(Path.Combine(
+        Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory,
+        "loaders",
+        LauncherExecutableName));
 
     public static Task<RuntimePathDiscoveryResult> DiscoverAsync(
         string preferredGamePath) => Task.Run(() => new RuntimePathDiscoveryResult(

@@ -30,6 +30,35 @@ if (args is ["--v14"])
     }
     return;
 }
+if (args is ["--import-real", var settingsRoot, var toolRoot, var sourcePackage])
+{
+    // Explicitly isolated evidence setup: never select the user's model library.
+    string root = Path.GetFullPath(settingsRoot);
+    string auditRoot = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "build", "bem-chain-audit-4.0.3")) + Path.DirectorySeparatorChar;
+    if (!root.StartsWith(auditRoot, StringComparison.OrdinalIgnoreCase))
+        throw new InvalidOperationException("Real-package validation must stay inside build/bem-chain-audit-4.0.3.");
+    ConfigurationService.SettingsDirectory = root;
+    var service = new BemPackageService();
+    service.Load();
+    if (service.Packages.Count != 0) throw new InvalidOperationException("Use an empty isolated model library.");
+    service.SkipValidation = false;
+    await service.ImportAsync(sourcePackage, toolRoot);
+    var package = service.Packages.Single();
+    Check(!package.Enabled, "real import must initially remain disabled");
+    service.HotSwitch = true;
+    await service.SetEnabledAsync(package, true);
+    service.Load();
+    package = service.Packages.Single();
+    Check(package.Enabled && service.HotSwitch && !service.SkipValidation,
+        "isolated activation did not preserve strict validation and hot switching");
+    Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new
+    {
+        result = "PASS", package.Id, package.Name, package.TargetKind, package.TargetId,
+        package.SupportsCurrentPlatform, package.Enabled, service.HotSwitch, service.SkipValidation,
+        root = service.Root, packageFile = package.File, runtimeConfig = Path.Combine(service.Root, "runtime.ini")
+    }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+    return;
+}
 if (args is ["--v11", var packagePath])
 {
     var package = BemPackageService.ReadMetadata(packagePath);
@@ -140,6 +169,6 @@ namespace BetterEndfieldNext.UI.Services
 {
     internal static class ConfigurationService
     {
-        public static string SettingsDirectory { get; } = Path.Combine(Path.GetTempPath(), "BemManagerChecks-" + Guid.NewGuid());
+        public static string SettingsDirectory { get; set; } = Path.Combine(Path.GetTempPath(), "BemManagerChecks-" + Guid.NewGuid());
     }
 }

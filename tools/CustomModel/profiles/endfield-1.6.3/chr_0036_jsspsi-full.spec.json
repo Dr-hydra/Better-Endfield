@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "kind": "bem-resource-target-spec",
+  "id": "chr_0036_jsspsi",
+  "target_kind": "character",
+  "profile_id": "chr_0036_jsspsi-full-pc",
+  "revision": "1.6.3-20261015",
+  "snapshot": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+  "resources": [
+    {
+      "id": "world",
+      "asset_path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0036_jsspsi_postmodel.prefab",
+      "platforms": [
+        "windows-x64"
+      ],
+      "lod": 0
+    },
+    {
+      "id": "ui",
+      "asset_path": "assets/beyond/dynamicassets/gameplay/prefabs/uimodels/chr_0036_jsspsi_uimodel.prefab",
+      "platforms": [
+        "windows-x64"
+      ],
+      "lod": 0
+    }
+  ]
+}

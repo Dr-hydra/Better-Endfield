@@ -8,5 +8,6 @@
     <Compile Include="../../../ui/BetterEndfieldNext.UI/Services/BemReportPresentation.cs" Link="BemReportPresentation.cs" />
     <Compile Include="../../../ui/BetterEndfieldNext.UI/Services/BemRuntimeSettings.cs" Link="BemRuntimeSettings.cs" />
     <Compile Include="../../../ui/BetterEndfieldNext.UI/Services/BemText.cs" Link="BemText.cs" />
+    <Compile Include="../../../ui/BetterEndfieldNext.UI/Services/BemToolService.cs" Link="BemToolService.cs" />
   </ItemGroup>
 </Project>

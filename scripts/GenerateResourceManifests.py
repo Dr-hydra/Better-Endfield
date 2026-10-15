@@ -186,11 +186,20 @@ def parse_languages(
         language_id = read_u32(data, position + 4)
         position += 8
         string_start = start + name_offset
-        string_end = data.find(b"\0", string_start, start + size)
+        if not start + 4 + count * 8 <= string_start < start + size:
+            raise ValueError("invalid PCK language name offset")
+        # Bank PCKs use UTF-8 names; current Windows media PCKs use UTF-16LE.
+        # Their ASCII language names make the two encodings unambiguous.
+        wide = string_start + 1 < start + size and data[string_start + 1] == 0
+        if wide:
+            string_end = next((offset for offset in range(string_start, start + size - 1, 2)
+                               if data[offset:offset + 2] == b"\0\0"), -1)
+        else:
+            string_end = data.find(b"\0", string_start, start + size)
         if string_end < 0:
             raise ValueError("unterminated PCK language name")
         result[language_id] = bytes(data[string_start:string_end]).decode(
-            "utf-8", errors="replace"
+            "utf-16-le" if wide else "utf-8"
         )
     return result
 

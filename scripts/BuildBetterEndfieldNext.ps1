@@ -208,6 +208,7 @@ if ($runtimeMarkers) {
 }
 $requiredReleaseFiles = @(
     "BetterEndfieldNext.exe",
+    "loaders\BetterEndfieldNext.Launcher.exe",
     "tools\BemConverter\BetterEndfieldNext.BemConverter.exe",
     "docs\BEM_CREATOR_GUIDE.md",
     "docs\BEM_V1_4_SPEC.md",

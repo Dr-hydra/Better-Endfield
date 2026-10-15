@@ -429,6 +429,7 @@ def extract_buff_semantics(besem_path: Optional[Path]) -> Dict[str, Any]:
 def build_buff_source_index(
     reader: GameTableReader,
     json_data_dir: Path,
+    schema_path: Path,
 ) -> Tuple[Dict[str, Set[Tuple[str, str, str, str]]], Dict[str, Any], Dict[str, Set[str]]]:
     """Build exact Buff ownership candidates from authoritative references."""
     skill_dir = json_data_dir / "SkillData"
@@ -444,18 +445,21 @@ def build_buff_source_index(
     known_ids = set(skill_files) | set(buff_files)
     graph: Dict[str, Set[str]] = {}
     source_hash = hashlib.sha256()
-    import re
-    token_pattern = re.compile(rb"[A-Za-z0-9_]{4,}")
+    from memorypack_refs import ReferenceReader
+    reference_reader = ReferenceReader(schema_path, json_data_dir / "StringPool")
+    # Pool indices can remain unchanged while their strings change. Include
+    # the schema and pool inputs in the existing source fingerprint.
+    source_hash.update(schema_path.read_bytes())
+    for path in sorted((json_data_dir / "StringPool").glob("StringPool*.byte")):
+        source_hash.update(path.name.encode("utf-8"))
+        source_hash.update(hashlib.sha256(path.read_bytes()).digest())
     for config_id, path in sorted(
         [*skill_files.items(), *buff_files.items()], key=lambda item: item[0]
     ):
         payload = path.read_bytes()
         source_hash.update(config_id.encode("utf-8"))
         source_hash.update(hashlib.sha256(payload).digest())
-        tokens = {
-            value.decode("ascii").lower()
-            for value in token_pattern.findall(payload)
-        }
+        tokens = reference_reader.read(path)
         graph[config_id] = tokens & known_ids
 
     # kind, template id, source/display skill id, traversal root
@@ -572,6 +576,7 @@ def build_buff_source_index(
 
     stats = {
         "schemaVersion": 2,
+        "referenceEncoding": "memorypack-pooled-1.6.3",
         "sourceSha256": source_hash.hexdigest(),
         "skillConfigs": len(skill_files),
         "buffConfigs": len(buff_files),
@@ -894,6 +899,7 @@ def export_web_icons(
     icon_source: Optional[Path],
     avatar_source: Path,
     output_dir: Path,
+    refresh_existing: bool = False,
 ) -> Dict[str, Any]:
     """Copy only dictionary-referenced PNGs into the static web bundle.
 
@@ -906,6 +912,8 @@ def export_web_icons(
         raise RuntimeError("Pillow is required for web icon conversion: pip install Pillow") from error
 
     def write_web_png(source: Path, destination: Path, max_edge: int) -> None:
+        if destination.is_file() and not refresh_existing:
+            return
         destination.parent.mkdir(parents=True, exist_ok=True)
         with Image.open(source) as original:
             image = original.convert("RGBA")
@@ -950,6 +958,8 @@ def export_web_icons(
             source = index.get(Path(icon_id).stem.lower())
             if source:
                 write_web_png(source, destination / f"{icon_id}.png", 128)
+                copied[group].append(icon_id)
+            elif (destination / f"{icon_id}.png").is_file():
                 copied[group].append(icon_id)
             else:
                 missing[group].append(icon_id)
@@ -1129,12 +1139,32 @@ def extract_named_icons(names: Set[str], vfs_path: Path, base_vfs_path: Optional
     if not requested:
         return cache_dir
     pattern = "^(?:" + "|".join(sorted(re.escape(name) for name in requested)) + ")$"
+    bundle_names: Set[str] = set()
+    manifest_path = ws.path("resource_update.input_root", "Bundles", ws.get("game.platform", "Windows"), "manifest.json")
+    if manifest_path.is_file():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+        bundles = {item["bundleIndex"]: item["name"] for item in manifest["Bundles"]}
+        candidates: Dict[str, List[Dict[str, Any]]] = collections.defaultdict(list)
+        for asset in manifest["Assets"]:
+            path = asset["path"].lower()
+            name = Path(path).stem
+            if name in requested and "/ui/sprites/" in path and path.endswith((".png", ".tga")):
+                candidates[name].append(asset)
+        for name in requested:
+            if not candidates[name]:
+                raise ValueError(f"Current manifest has no UI texture for {name}; refusing an unrestricted bundle scan")
+            asset = min(candidates[name], key=lambda item: (
+                "/itemicon/" not in item["path"].lower(), len(item["path"]), item["path"]))
+            bundle_names.add(bundles[asset["bundleIndex"]])
     with tempfile.TemporaryDirectory(prefix="combat-icons-", dir=ws.path("paths.temp")) as temporary:
         staging = Path(temporary)
         command = [str(extractor_path), "extract", "--vfs", str(vfs_path),
                    "--out", str(staging), "--asset-name", pattern, "--types", "Texture2D",
                    "--threads", str(max(1, threads)), "--format", "png", "--png-compression", "fast",
-                   "--max-memory-gb", "16", "--exclude-material", "--skip-missing"]
+                   "--max-memory-gb", "16", "--exclude-material", "--skip-missing",
+                   "--scratch", str(staging / "bundles")]
+        if bundle_names:
+            command += ["--bundle-name", "(?:" + "|".join(re.escape(name) for name in sorted(bundle_names)) + ")$"]
         if base_vfs_path:
             command[4:4] = ["--base-vfs", str(base_vfs_path)]
         subprocess.run(command, check=True, env=env)
@@ -1276,6 +1306,10 @@ def main():
         help="Extract referenced PNGs directly from Endfield StreamingAssets",
     )
     parser.add_argument(
+        "--fill-missing-icons", action="store_true",
+        help="Extract only referenced icons missing from the web output, using current manifest bundles",
+    )
+    parser.add_argument(
         "--vfs",
         type=Path,
         help="Endfield_Data/StreamingAssets path (or set ENDFIELD_VFS)",
@@ -1402,7 +1436,7 @@ def main():
     buffs = extract_buff_semantics(args.besem)
     try:
         buff_sources, buff_source_stats, skill_buff_edges = build_buff_source_index(
-            reader, args.json_data_dir
+            reader, args.json_data_dir, ws.path("resource_update.memorypack_schema")
         )
         write_buff_source_map(
             args.buff_source_output, buff_sources, buff_source_stats,
@@ -1563,8 +1597,22 @@ def main():
             print(f"[x] Error: icon extraction failed: {error}")
             sys.exit(1)
     icon_manifest = export_web_icons(
-        full_dict, icon_source, args.avatar_source, args.icon_output
+        full_dict, icon_source, args.avatar_source, args.icon_output,
+        refresh_existing=args.export_icons,
     )
+    missing_icon_names = {name for names in icon_manifest["missing"].values() for name in names}
+    if args.fill_missing_icons and missing_icon_names:
+        if not args.game_path:
+            raise ValueError("Missing icon extraction requires a current game installation")
+        base_root = args.game_path / "Endfield_Data/StreamingAssets"
+        persistent_root = args.game_path / "Endfield_Data/Persistent"
+        use_overlay = (persistent_root / "VFS").is_dir()
+        icon_source = extract_named_icons(
+            missing_icon_names, persistent_root if use_overlay else base_root,
+            base_root if use_overlay else None, args.image_extractor,
+            args.icon_cache, args.icon_threads, ws,
+        )
+        icon_manifest = export_web_icons(full_dict, icon_source, args.avatar_source, args.icon_output)
     if args.verify_icons:
         missing_icons = sum(len(items) for items in icon_manifest["missing"].values())
         if missing_icons:

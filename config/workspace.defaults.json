@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "game": {
-    "version": "1.5.3",
+    "version": "1.6.3",
     "platform": "Windows",
     "snapshot": "baseline",
     "install_dir": null
@@ -37,12 +37,12 @@
     "archive_backend": "toolchains/bem-archive-backend/7zip"
   },
   "resource_update": {
-    "input_root": "inputs/1.5.3/Windows/baseline",
-    "catalog_root": "inputs/1.5.3/Windows/catalog",
+    "input_root": "inputs/1.6.3/Windows/baseline",
+    "catalog_root": "inputs/1.6.3/Windows/catalog",
     "walk_clip_metadata": "inputs/1.5.3/Windows/clip-metadata/walk-clip-metadata.json",
-    "table_root": "inputs/1.5.3/Windows/tables/Table",
-    "json_root": "inputs/1.5.3/Windows/json",
-    "bank_root": "inputs/1.5.3/Windows/bank-pck/bnk",
+    "table_root": "inputs/1.6.3/Windows/tables/Table",
+    "json_root": "inputs/1.6.3/Windows/json",
+    "bank_root": "inputs/1.6.3/Windows/bank-pck/bnk",
     "pck_snapshot": "inputs/1.5.3/Android/pck/pck-snapshot.json",
     "legacy_lod_catalog": "inputs/pre-1.5.3/shared/legacy-lod-catalog/characters.json",
     "outputs": {
@@ -52,7 +52,8 @@
       "combat_dictionary": "resources/generated/combat/combat-dictionary.json",
       "web_combat_dictionary": "web/src/data/combat-dict.min.json",
       "avatars": "native/modules/combat_stats/assets/avatars"
-    }
+    },
+    "memorypack_schema": "config/compatibility/combat_stats/1.6.3/memorypack-schema.json"
   },
   "android_signing": {
     "properties_file": "config/android-next-signing.local.properties",

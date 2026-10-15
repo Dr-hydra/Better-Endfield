@@ -98,6 +98,7 @@ if ((Test-Path -LiteralPath $tableDir -PathType Container) -or -not $SkipInputRe
         '--besem', (Join-Path $manifestRoot 'combat/combat-semantics.besem'),
         '--output', $outputs.combat_dictionary,
         '--min-output', $outputs.web_combat_dictionary,
+        '--fill-missing-icons',
         '--verify'
     )
     if ($SkipInputRefresh) { $combatArgs += @('--no-refresh-tables', '--no-refresh-json-data') }

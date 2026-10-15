@@ -32,6 +32,7 @@ scripts/*
 !scripts/PublishRelease.py
 !scripts/BuildInstaller.ps1
 !scripts/PrepareBemArchiveBackend.ps1
+!scripts/PrepareEndfieldDump.ps1
 !scripts/BuildVoiceCatalog.py
 !scripts/GenerateVoiceCatalogIndex.py
 !scripts/GenerateModCharacterPresets.py

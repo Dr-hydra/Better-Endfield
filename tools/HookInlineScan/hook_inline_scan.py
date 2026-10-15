@@ -23,6 +23,7 @@ GameAssembly.dll+0x...").
 import argparse
 import bisect
 import collections
+import functools
 import json
 import mmap
 import os
@@ -47,7 +48,8 @@ HELPER_CALLERS = 3000  # Callees with more call sites are runtime helpers.
 class Image:
     def __init__(self, path):
         self.pe = pefile.PE(path, fast_load=True)
-        self.pe.parse_data_directories(directories=[pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_EXCEPTION']])
+        # Read .pdata below directly. Expanding every unwind record through
+        # pefile duplicates this work and dominates targeted scans on this PE.
         self.file = open(path, 'rb')
         self.map = mmap.mmap(self.file.fileno(), 0, access=mmap.ACCESS_READ)
         self.sections = [(s.VirtualAddress, s.VirtualAddress + max(s.Misc_VirtualSize, s.SizeOfRawData),
@@ -174,6 +176,33 @@ def load_dump(root):
     return methods, modifiers
 
 
+def load_methods_json(path):
+    """Read a targeted metadata export; no full IL2CPP dump is necessary."""
+    with open(path, encoding='utf-8-sig') as stream:
+        payload = json.load(stream)
+    rows = payload['methods'] if isinstance(payload, dict) else payload
+    methods, modifiers = [], {}
+
+    def number(value):
+        return int(value, 0) if isinstance(value, str) else value
+
+    for row in rows:
+        asm = row.get('asm', row.get('assembly'))
+        ns = row.get('ns', row.get('namespace', ''))
+        cls = row.get('cls') or '.'.join(filter(None, (ns, row['class'])))
+        types = row.get('types', row.get('parameter_types', []))
+        if isinstance(types, str):
+            types = types.split('|') if '|' in types else split_parameters(types)
+        method = dict(asm=asm, cls=cls, ns=ns,
+                      short=row.get('short') or re.split(r'[./+]', cls)[-1],
+                      name=row.get('name', row.get('method')),
+                      ret=row.get('ret', row.get('return_type')), types=types or [],
+                      rva=number(row.get('rva', 0)), token=number(row.get('token')))
+        methods.append(method)
+        modifiers[(asm, method['token'])] = row.get('modifiers', [])
+    return methods, modifiers
+
+
 # ---------------------------------------------------------------------- indexes
 
 class Index:
@@ -190,6 +219,17 @@ class Index:
         self.src, self.dst, self.op = self._edges(os.path.join(cache, 'edges.npz'))
         self.fragment_map = self._fragments(os.path.join(cache, 'fragments.pkl'))
         self.sites, self.site_list = self._ifix_sites(os.path.join(cache, 'ifix_sites.pkl'))
+        # Newer clients inline IFix's dispatch table rather than IsPatched(id).
+        from patch_table_scan import scan_patch_tables
+        patch_cache = os.path.join(cache, 'patch_table_sites_v1.pkl')
+        if os.path.exists(patch_cache):
+            patch_sites = pickle.load(open(patch_cache, 'rb'))
+        else:
+            patch_sites = scan_patch_tables(image)
+            pickle.dump(patch_sites, open(patch_cache, 'wb'))
+        self.site_list = sorted(self.site_list + patch_sites)
+        for address, table, slot in patch_sites:
+            self.sites.setdefault((table, slot), []).append(address)
         self.site_addresses = [s[0] for s in self.site_list]
 
     def name(self, rva):
@@ -231,10 +271,14 @@ class Index:
         high = np.searchsorted(self.dst, target, side='right')
         return [(int(s), 'call' if o == 0xE8 else 'jmp') for s, o in zip(self.src[low:high], self.op[low:high])]
 
+    def caller_count(self, target):
+        return int(np.searchsorted(self.dst, target, side='right') - np.searchsorted(self.dst, target))
+
     def fragments(self, rva):
         entry = self.image.func_at(rva)
         return [(entry[0], entry[1]) if entry else (rva, rva + 128)] + list(self.fragment_map.get(rva, []))
 
+    @functools.lru_cache(maxsize=8192)
     def callees(self, rva):
         parts = self.fragments(rva)
         out = []
@@ -247,7 +291,7 @@ class Index:
         return out
 
     def distinctive(self, rva):
-        return {c for c in self.callees(rva) if c not in self.ifix and len(self.callers(c)) < HELPER_CALLERS}
+        return {c for c in self.callees(rva) if c not in self.ifix and self.caller_count(c) < HELPER_CALLERS}
 
     def size(self, rva):
         return sum(end - begin for begin, end in self.fragments(rva))
@@ -283,7 +327,10 @@ class Index:
 
     def _ifix_sites(self, path):
         if os.path.exists(path):
-            return pickle.load(open(path, 'rb'))
+            cached = pickle.load(open(path, 'rb'))
+            # Targeted exports may add helpers without changing the binary.
+            if isinstance(cached, dict) and cached.get('helpers') == self.ifix:
+                return cached['result']
         site_list = []
         for begin, end in self.image.code_ranges():
             data = self.image.read(begin, end - begin)
@@ -308,7 +355,7 @@ class Index:
         for address, assembly, ident in site_list:
             sites[(assembly, ident)].append(address)
         result = (dict(sites), site_list)
-        pickle.dump(result, open(path, 'wb'))
+        pickle.dump(dict(helpers=self.ifix, result=result), open(path, 'wb'))
         return result
 
     def entry_check(self, rva):
@@ -327,6 +374,8 @@ class Index:
 # --------------------------------------------------------------------- analysis
 
 def is_function_entry(image, rva):
+    if not any(begin <= rva < end for begin, end in image.code_ranges()):
+        return False
     entry = image.func_at(rva)
     if not entry:
         return image.read(rva - 1, 1)[0] == 0xCC  # leaf after int3 padding
@@ -380,7 +429,9 @@ def analyze(index, rva):
 
 def verdict(hook, result):
     virtual = bool(set(hook.get('mods') or []) & {'virtual', 'override', 'abstract'})
-    confirmed = [c for c in result['copies'] if c['confirmed']]
+    # An entry can begin with an inlined helper's check. That fingerprint
+    # describes the helper, not this hook, so it cannot prove lost coverage.
+    confirmed = [] if result['borrowed'] else [c for c in result['copies'] if c['confirmed']]
     direct = result['calls'] + result['jmps']
     if confirmed and direct == 0 and not virtual:
         return 'never', 'every caller uses an inlined copy; the hook does not fire'
@@ -448,7 +499,9 @@ def hooks_from_log(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     parser.add_argument('--game', required=True, help='game directory containing GameAssembly.dll')
-    parser.add_argument('--dump', required=True, help='IL2CPP dump directory (IL2CPP_Dump_AI, IL2CPP_Dump_Normal) of the same build')
+    metadata = parser.add_mutually_exclusive_group(required=True)
+    metadata.add_argument('--dump', help='IL2CPP dump directory (IL2CPP_Dump_AI, IL2CPP_Dump_Normal) of the same build')
+    metadata.add_argument('--methods-json', help='targeted metadata export with methods and optional modifiers; include IFix.WrappersManagerImpl helpers')
     source = parser.add_mutually_exclusive_group()
     source.add_argument('--hooks', default=os.path.join(HERE, 'hooked_methods.json'), help='hook descriptor list (default: hooked_methods.json)')
     source.add_argument('--log', help='BetterEndfieldNext.log with "Hook installed" lines')
@@ -461,13 +514,13 @@ def main():
     image = Image(os.path.join(args.game, 'GameAssembly.dll'))
     cache = os.path.join(args.cache, image.key)
     os.makedirs(cache, exist_ok=True)
-    dump_cache = os.path.join(cache, 'dump.pkl')
-    if os.path.exists(dump_cache):
-        methods, modifiers = pickle.load(open(dump_cache, 'rb'))
+    if args.methods_json:
+        methods, modifiers = load_methods_json(args.methods_json)
     else:
+        # Parsing metadata is cheap compared with the PE index. Avoid keeping
+        # a stale or partial dump when its contents change for the same build.
         print('Parsing the IL2CPP dump...', file=sys.stderr)
         methods, modifiers = load_dump(args.dump)
-        pickle.dump((methods, modifiers), open(dump_cache, 'wb'))
     by_rva = collections.defaultdict(list)
     for m in methods:
         by_rva[m['rva']].append(m)

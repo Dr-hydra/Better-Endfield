@@ -52,8 +52,11 @@ constexpr size_t kMaxRdpsSourcesPerHit = 16;
 // stops a pathological buff from growing the interval without bound.
 constexpr size_t kMaxBuffNominalEffects = 16;
 constexpr size_t kModifierSlotCount = 8;
-constexpr int32_t kAttributeTypeCount = 101;
+constexpr int32_t kAttributeTypeCount = 108;
 constexpr size_t kAttributeModifierValueCount = 9;
+// 1.6.3 ModifierType values mapped to the eight GetValue/GetBaseValue outputs.
+constexpr std::array<int32_t, kModifierSlotCount> kModifierSlotOrdinals{
+    0, 1, 3, 4, 5, 6, 7, 8};
 
 enum class ModuleState : uint8_t {
     Created,
@@ -308,7 +311,7 @@ struct TimelineBucket {
 // case. A spread is real information: it is the buff scaling with something.
 struct BuffNominalEffect {
     int32_t attribute_type = -1;
-    int32_t slot = -1;  // Beyond.GEnums.ModifierType ordinal, 0-7
+    int32_t slot = -1;  // Canonical GetValue/GetBaseValue contribution slot, 0-7
     double min = 0.0;
     double max = 0.0;
 };
@@ -1080,6 +1083,12 @@ bool ResolveFieldWithOffsetFallback(RuntimeField& output, const char* key,
     return output.resolved;
 }
 
+bool ResolveProtoField(RuntimeField& output, const char* key,
+    const char* klass, const char* field) {
+    return ResolveField(output, key, "Beyond.Network.Proto.dll", "Proto",
+        klass, field);
+}
+
 bool ResolveRuntimeContract() {
     g_state.store(ModuleState::Resolving, std::memory_order_release);
     const bool damage_init = ResolveMethod(g_damage_init, "damage.detail.init",
@@ -1261,29 +1270,27 @@ bool ResolveRuntimeContract() {
     const bool damage_pack_field = ResolveField(g_modifier_damage_pack,
         "modifier.damage-pack", assembly, namespc, modifier_class,
         "<damagePackData>k__BackingField");
-    const char* proto_assembly = "Beyond.Network.Proto.dll";
-    const char* proto_namespace = "Proto";
-    const bool server_modifier_args_field = ResolveField(g_server_detail_modifier_args,
-        "server-detail.modifier-args", proto_assembly, proto_namespace,
-        "BATTLE_DAMAGE_DETAIL", "modifierArgs_");
-    const bool server_processor_args_field = ResolveField(
+    const bool server_modifier_args_field = ResolveProtoField(g_server_detail_modifier_args,
+        "server-detail.modifier-args", "BATTLE_DAMAGE_DETAIL",
+        "__pbn__ModifierArgs");
+    const bool server_processor_args_field = ResolveProtoField(
         g_server_detail_processor_debug_args, "server-detail.processor-debug-args",
-        proto_assembly, proto_namespace, "BATTLE_DAMAGE_DETAIL", "processorDebugArgs_");
-    const bool attacker_modifiers_field = ResolveField(g_modifier_args_attacker_modifiers,
-        "modifier-args.attacker", proto_assembly, proto_namespace,
-        "BATTLE_DAMAGE_MODIFIER_ARGS", "attackerModifiers_");
-    const bool defender_modifiers_field = ResolveField(g_modifier_args_defender_modifiers,
-        "modifier-args.defender", proto_assembly, proto_namespace,
-        "BATTLE_DAMAGE_MODIFIER_ARGS", "defenderModifiers_");
-    const bool handle_buff_field = ResolveField(g_modifier_handle_buff_inst_id,
-        "modifier-handle.buff-inst-id", proto_assembly, proto_namespace,
-        "BATTLE_MODIFIER_HANDLE", "buffInstId_");
-    const bool handle_index_field = ResolveField(g_modifier_handle_index,
-        "modifier-handle.index", proto_assembly, proto_namespace,
-        "BATTLE_MODIFIER_HANDLE", "index_");
-    const bool handle_processor_args_field = ResolveField(
+        "BATTLE_DAMAGE_DETAIL", "<ProcessorDebugArgs>k__BackingField");
+    const bool attacker_modifiers_field = ResolveProtoField(g_modifier_args_attacker_modifiers,
+        "modifier-args.attacker", "BATTLE_DAMAGE_MODIFIER_ARGS",
+        "<AttackerModifiers>k__BackingField");
+    const bool defender_modifiers_field = ResolveProtoField(g_modifier_args_defender_modifiers,
+        "modifier-args.defender", "BATTLE_DAMAGE_MODIFIER_ARGS",
+        "<DefenderModifiers>k__BackingField");
+    const bool handle_buff_field = ResolveProtoField(g_modifier_handle_buff_inst_id,
+        "modifier-handle.buff-inst-id", "BATTLE_MODIFIER_HANDLE",
+        "<BuffInstId>k__BackingField");
+    const bool handle_index_field = ResolveProtoField(g_modifier_handle_index,
+        "modifier-handle.index", "BATTLE_MODIFIER_HANDLE",
+        "<Index>k__BackingField");
+    const bool handle_processor_args_field = ResolveProtoField(
         g_modifier_handle_processor_debug_args, "modifier-handle.processor-debug-args",
-        proto_assembly, proto_namespace, "BATTLE_MODIFIER_HANDLE", "processorDebugArgs_");
+        "BATTLE_MODIFIER_HANDLE", "<ProcessorDebugArgs>k__BackingField");
     const bool buff_id_field = ResolveField(g_buff_id, "buff.id", assembly, namespc,
         "Buff", "<id>k__BackingField");
     const bool buff_owner_field = ResolveField(g_buff_owner, "buff.owner", assembly, namespc,
@@ -1751,16 +1758,25 @@ void* ReadDamageServerDetail(void* modifier) {
 int ManagedMapCount(void* map_field) {
     if (!map_field) return 0;
     __try {
-        // Google.Protobuf MapField<TKey,TValue> stores its Dictionary at +0x10.
-        // IL2CPP Dictionary count is _count - _freeCount at +0x20/+0x28.
-        void* dictionary = *reinterpret_cast<void**>(
-            reinterpret_cast<uint8_t*>(map_field) + 0x10);
-        if (!dictionary) return 0;
-        const int32_t allocated = *reinterpret_cast<int32_t*>(
-            reinterpret_cast<uint8_t*>(dictionary) + 0x20);
-        const int32_t free_count = *reinterpret_cast<int32_t*>(
-            reinterpret_cast<uint8_t*>(dictionary) + 0x28);
-        const int32_t count = allocated - free_count;
+        // 1.6.3 Proto.MapField inherits Dictionary; read its public getter.
+        using ObjectClassFn = void*(*)(void*);
+        using ClassMethodFn = const void*(*)(void*, const char*, int);
+        static auto object_class = reinterpret_cast<ObjectClassFn>(GetProcAddress(
+            GetModuleHandleW(L"GameAssembly.dll"), "il2cpp_object_get_class"));
+        static auto class_method = reinterpret_cast<ClassMethodFn>(GetProcAddress(
+            GetModuleHandleW(L"GameAssembly.dll"), "il2cpp_class_get_method_from_name"));
+        if (!object_class || !class_method || !g_host->runtime_invoke ||
+            !g_host->object_unbox) return -1;
+        void* klass = object_class(map_field);
+        const void* getter = klass ? class_method(klass, "get_Count", 0) : nullptr;
+        if (!getter) return -1;
+        void* exception = nullptr;
+        void* boxed = g_host->runtime_invoke(g_host->context, getter, map_field,
+            nullptr, &exception);
+        if (exception || !boxed) return -1;
+        void* value = g_host->object_unbox(g_host->context, boxed);
+        if (!value) return -1;
+        const int32_t count = *static_cast<int32_t*>(value);
         return count >= 0 && count <= 4096 ? count : -1;
     }
     __except (EXCEPTION_EXECUTE_HANDLER) {
@@ -1777,10 +1793,30 @@ bool ReadRepeatedObjects(void* repeated_field, RepeatedObjects& result) {
     result = {};
     if (!repeated_field) return true;
     __try {
+        // Generic definition offsets are not instantiated offsets. Resolve
+        // the actual Proto.RepeatedField runtime class.
+        using ObjectClassFn = void*(*)(void*);
+        using FindFieldFn = void*(*)(void*, const char*);
+        using FieldOffsetFn = int32_t(*)(void*);
+        static auto object_class = reinterpret_cast<ObjectClassFn>(GetProcAddress(
+            GetModuleHandleW(L"GameAssembly.dll"), "il2cpp_object_get_class"));
+        static auto find_field = reinterpret_cast<FindFieldFn>(GetProcAddress(
+            GetModuleHandleW(L"GameAssembly.dll"), "il2cpp_class_get_field_from_name"));
+        static auto field_offset = reinterpret_cast<FieldOffsetFn>(GetProcAddress(
+            GetModuleHandleW(L"GameAssembly.dll"), "il2cpp_field_get_offset"));
+        if (!object_class || !find_field || !field_offset) return false;
+        void* klass = object_class(repeated_field);
+        if (!klass) return false;
+        void* items_field = find_field(klass, "m_items");
+        void* count_field = find_field(klass, "m_count");
+        if (!items_field || !count_field) return false;
+        const int32_t items_offset = field_offset(items_field);
+        const int32_t count_offset = field_offset(count_field);
+        if (items_offset < 16 || count_offset < 16) return false;
         void* array = *reinterpret_cast<void**>(
-            reinterpret_cast<uint8_t*>(repeated_field) + 0x10);
+            reinterpret_cast<uint8_t*>(repeated_field) + items_offset);
         const int32_t count = *reinterpret_cast<int32_t*>(
-            reinterpret_cast<uint8_t*>(repeated_field) + 0x18);
+            reinterpret_cast<uint8_t*>(repeated_field) + count_offset);
         if (count < 0 || count > 4096 || (count > 0 && !array)) return false;
         if (array) {
             const uintptr_t capacity = *reinterpret_cast<uintptr_t*>(
@@ -2438,8 +2474,8 @@ bool IsIdentityScalar(double value) {
     return std::isfinite(value) && std::abs(value - 1.0) <= 1.0e-10;
 }
 
-// AttributeContribution carries one double per ModifierType slot, and its
-// members are declared in ordinal order: GetValue fills 0-3, GetBaseValue
+// AttributeContribution carries one double per canonical contribution slot:
+// GetValue fills 0-3, GetBaseValue
 // fills the base_* half, 4-7.
 std::array<double, kModifierSlotCount> ContributionSlots(
     const BuffDiagnosticInfo::AttributeContribution& contribution) {
@@ -2800,7 +2836,8 @@ struct LedgerContributor {
 // The BattleFormula.CalculateDamage inputs for one hit, read from the pack
 // after the game finished with it:
 //   damage = calcResult * prod(zones) * weakness * (1 + critDmg if crit)
-//            * defRes * (1 - shelter) * max(0, typeRes) [* ignite]
+//            * defRes * (1 - shelter) * max(0, typeRes)
+//            [* ignite] [* physicalInfliction]
 struct HitFactors {
     bool valid = false;
     double attack = 0.0;
@@ -2818,6 +2855,8 @@ struct HitFactors {
     double shelter = 0.0;
     double ignite = 1.0;
     bool ignite_applies = false;
+    double physical_infliction = 1.0;
+    bool physical_infliction_applies = false;
 };
 
 struct HitLedger {
@@ -3626,7 +3665,7 @@ RdpsContributionKind ClassifyAttributeContribution(int32_t side,
             (attribute_type >= 50 && attribute_type <= 55)) {
             return RdpsContributionKind::DamageIncrease;
         }
-        if (attribute_type == 49 ||
+        if (attribute_type == 25 || attribute_type == 49 ||
             (attribute_type >= 35 && attribute_type <= 38)) {
             return RdpsContributionKind::AbnormalIncrease;
         }
@@ -3641,6 +3680,9 @@ RdpsContributionKind ClassifyAttributeContribution(int32_t side,
     if ((attribute_type >= 70 && attribute_type <= 75) ||
         (attribute_type >= 80 && attribute_type <= 85)) {
         return RdpsContributionKind::Fragile;
+    }
+    if (attribute_type >= 101 && attribute_type <= 106) {
+        return RdpsContributionKind::VulnerabilityTaken;
     }
     if (attribute_type == 4 || attribute_type == 5 || attribute_type == 6 ||
         attribute_type == 7 || attribute_type == 48 || attribute_type == 60) {
@@ -4073,6 +4115,13 @@ int32_t TakenScalarAttribute(int32_t slot) {
     return slot >= 0 && slot < 6 ? kTypes[static_cast<size_t>(slot)] : -1;
 }
 
+// 1.6.3 folds these attributes into TakenScalar through
+// Attributes._GetOtherAttributeFinalScalar; they are not an extra damage zone.
+int32_t TakenReductionAttribute(int32_t slot) {
+    static constexpr std::array<int32_t, 6> kTypes{101, 105, 104, 103, 102, 106};
+    return slot >= 0 && slot < 6 ? kTypes[static_cast<size_t>(slot)] : -1;
+}
+
 // Resistance enum order differs from the element order:
 // Physical 94, Natural 95, Cryst 96, Pulse 97, Fire 98, Ether 99.
 int32_t ResistanceAttribute(int32_t slot) {
@@ -4084,11 +4133,13 @@ constexpr int32_t kAttributeAtk = 2;
 constexpr int32_t kAttributeDef = 3;
 constexpr int32_t kAttributeCriticalRate = 9;
 constexpr int32_t kAttributeCriticalDamage = 10;
+constexpr int32_t kAttributePhysicalInflictionScalar = 25;
 constexpr int32_t kAttributeIgniteScalar = 49;
 constexpr int32_t kAttributeBrokenUnit = 61;
 constexpr int32_t kAttributeWeakness = 62;
 constexpr int32_t kAttributeShelter = 63;
 constexpr uint64_t kIgniteDecorateMask = 0xfd00038ull;
+constexpr uint64_t kPhysicalInflictionDecorateMask = 0x4001c000ull;
 
 bool IsSkillTypeIncreaseAttribute(int32_t type) {
     return type == 17 || type == 28 || type == 32 || type == 33;
@@ -4103,12 +4154,14 @@ bool IsIgniteIncreaseAttribute(int32_t type) {
 std::vector<int32_t> DamageRelevantAttributes(int32_t side) {
     if (side == 0) {
         return {kAttributeAtk, kAttributeCriticalRate, kAttributeCriticalDamage,
-            17, 28, 32, 33, 35, 36, 37, 38, kAttributeIgniteScalar,
+            17, kAttributePhysicalInflictionScalar, 28, 32, 33, 35, 36, 37, 38,
+            kAttributeIgniteScalar,
             50, 51, 52, 53, 54, 55, kAttributeBrokenUnit, kAttributeWeakness,
             64, 65, 66, 67, 68, 69};
     }
     return {kAttributeDef, 4, 5, 6, 7, 48, 60, kAttributeShelter,
-        70, 71, 72, 73, 74, 75, 94, 95, 96, 97, 98, 99};
+        70, 71, 72, 73, 74, 75, 94, 95, 96, 97, 98, 99,
+        101, 102, 103, 104, 105, 106};
 }
 
 double SnapshotAttribute(const DoubleArraySnapshot& array, int32_t type) {
@@ -4146,6 +4199,10 @@ HitFactors CaptureHitFactors(const DamagePackNumericSnapshot& snapshot,
     factors.ignite = SnapshotAttribute(snapshot.attacker_attributes, kAttributeIgniteScalar);
     factors.ignite_applies =
         (g_damage_flow_context.decorate_mask & kIgniteDecorateMask) != 0;
+    factors.physical_infliction = SnapshotAttribute(snapshot.attacker_attributes,
+        kAttributePhysicalInflictionScalar);
+    factors.physical_infliction_applies =
+        (g_damage_flow_context.decorate_mask & kPhysicalInflictionDecorateMask) != 0;
     factors.def_resistance_ok = CallPackDouble(
         g_get_def_resistance_value, pack_data, factors.def_resistance);
     factors.type_resistance_ok = CallPackDouble(
@@ -4386,6 +4443,10 @@ bool AttributeDamageFactor(const ZoneTable& table, const HitLedger& ledger,
             kind = RdpsContributionKind::AbnormalIncrease;
             return f.ignite_applies && linear(f.ignite);
         }
+        if (type == kAttributePhysicalInflictionScalar) {
+            kind = RdpsContributionKind::AbnormalIncrease;
+            return f.physical_infliction_applies && linear(f.physical_infliction);
+        }
         if (type == kAttributeCriticalDamage) {
             kind = RdpsContributionKind::Critical;
             return f.critical && linear(1.0 + f.crit_damage);
@@ -4439,6 +4500,10 @@ bool AttributeDamageFactor(const ZoneTable& table, const HitLedger& ledger,
         if (slot >= 0 && type == TakenScalarAttribute(slot)) {
             kind = RdpsContributionKind::VulnerabilityTaken;
             return linear(SnapshotAttributeOrZero(snapshot.defender_attributes, type));
+        }
+        if (slot >= 0 && type == TakenReductionAttribute(slot)) {
+            kind = RdpsContributionKind::VulnerabilityTaken;
+            return linear(SnapshotAttribute(snapshot.defender_attributes, type));
         }
         if (type == kAttributeShelter) {
             if (1.0 - f.shelter <= 1.0e-12) return false;
@@ -5221,8 +5286,12 @@ void TrackBuffNominalContribution(uint64_t inst_id,
 // damage pack's blackboard, so it already reflects whatever the buff scales
 // with. Buff.GetValue cannot see these -- it reads the buff's own blackboard.
 void TrackBuffNominalSample(uint64_t inst_id, int32_t attribute_type,
-    int32_t slot, double value) {
+    int32_t modifier_type, double value) {
     if (!inst_id || !g_session_active.load(std::memory_order_acquire)) return;
+    const auto found_slot = std::find(kModifierSlotOrdinals.begin(),
+        kModifierSlotOrdinals.end(), modifier_type);
+    if (found_slot == kModifierSlotOrdinals.end()) return;
+    const int32_t slot = static_cast<int32_t>(found_slot - kModifierSlotOrdinals.begin());
     if (IsSlotIdentity(static_cast<size_t>(slot), value)) return;
     std::scoped_lock lock(g_session_mutex);
     const auto found = g_session.open_buff_intervals.find(inst_id);
@@ -5587,6 +5656,10 @@ void WriteHitLedger(std::ostream& output, const HitLedger& ledger) {
     write_optional(std::isfinite(f.ignite), f.ignite);
     output << ",\"igniteApplies\":";
     write_bool(f.ignite_applies);
+    output << ",\"physicalInfliction\":";
+    write_optional(std::isfinite(f.physical_infliction), f.physical_infliction);
+    output << ",\"physicalInflictionApplies\":";
+    write_bool(f.physical_infliction_applies);
     output << "},\"externalFraction\":" << ledger.external_fraction
         << ",\"selfFraction\":" << ledger.self_fraction
         << ",\"zoneWrites\":[";

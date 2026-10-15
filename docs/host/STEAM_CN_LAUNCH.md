@@ -1,18 +1,26 @@
 # Steam 国服启动（Windows 预览）
 
-本功能在 `feat/steam-cn-launch` 开发分支实现，随 Windows 3.5.3 以预览功能发布。设置页提供独立的“Steam 国服启动（预览）”区域；真实 Steam 启动仍待完整元数据与实机验证。
+本功能自 Windows 3.5.3 起提供。4.0.3 更新已有 Steam 启动流程以适配新版国服检查，并按用户选择使用注入器或 XInput；不会因配置 Steam 自动安装 XInput。正式 Steam 元数据已齐备，当前国服 1.6.3 的 Steam 覆盖层、计时和完整客户端流程仍待实机验证。
+
+## 当前版本状态（2026-10-15）
+
+SteamDB 与 `api.steamcmd.net/v1/info/4732690` 均已提供所需字段：安装目录 `Arknights Endfiled`、默认程序 `Endfield.exe`、public BuildID `25728898`、Depot `4732691`、Manifest `3024011413268238677`。安装目录的 `Endfiled` 是上游原始拼写，不能自行更正。现有“获取元数据”入口可以继续使用，无需硬编码这些版本值。
+
+已保存[可导入的规范 JSON](../../research/host/1.6.3/Windows/steam-launch/normalized-metadata.json)和 [ACF 预览](../../research/host/1.6.3/Windows/steam-launch/preview-only.acf)。生产解析器验证缺项为零，JSON 与 ACF 的身份及 Depot Manifest 往返检查通过。本次只生成预览，没有应用到真实 Steam 游戏库。字段来源与验证记录见 [1.6.3 Steam 元数据检查](research/1.6.3/steam-launch/STEAM_METADATA_20261015.md)。
+
+国服 1.6.3 已实际执行启动器父进程检查。4.0.3 的 Injector 和 Launcher 共用新的启动适配，自动寻找并验证本机正版 `Games.exe`，借用其暂停进程启动游戏，官方启动器界面无需运行。该方案已通过真实国服启动检查；本机仍需保留正版启动器文件，并遵循正常 UAC 授权。证据及验证边界见[启动器检查记录](research/1.6.3/launcher-check/LAUNCHER_CHECK.md)。
 
 ## 配置流程
 
-1. 在 BE 中选择国服 `Endfield.exe`、启动参数和需要启用的模块。
+1. 在 BE 中选择国服 `Endfield.exe`、启动参数、加载方式和需要启用的模块。注入器模式不需要 XInput；若选择 XInput，应通过现有“安装或更新”按钮自行部署。
 2. 在 Steam 区域检测 `steam.exe`，选择已登记的 Steam 游戏库。
 3. 获取元数据，或导入保存的 `api.steamcmd.net` 原始 JSON / BE 规范化 JSON。必须具备应用 `4732690` 的安装目录、Windows 启动 EXE、public BuildID 和 Depot Manifest；缺失数据时只能等待，BE 不会填写猜测值。
-4. 在 Steam 菜单选择“退出”，确认托盘中的客户端也已结束。点击“应用 / 更新 ACF”：BE 保存模块设置、切换至 XInput 模式并部署自启动代理，随后写入 ACF 和独立目录内的空占位 EXE。
+4. 在 Steam 菜单选择“退出”，确认托盘中的客户端也已结束。点击“应用 / 更新 ACF”：写入 ACF 和独立目录内的空占位 EXE，不改变加载方式、不安装 XInput。
 5. 点击“复制启动命令”，在 Steam 游戏属性的“启动选项”中粘贴。首次手动设置完成后可用 Steam 的开始按钮，或 BE 的“从 Steam 启动国服”。
 
-启动命令为 `"国服 Endfield.exe 完整路径" 已保存的国服参数 %command%`。BE 不自动修改 `localconfig.vdf`。修改国服路径或参数后，应重新复制启动命令。国服资源继续由官方启动器更新；需要先在 Steam 正常入库，ACF 不授予许可或提前解锁。
+启动命令为 `"BE 启动组件完整路径" --game "国服 Endfield.exe 完整路径" -- 已保存的国服参数 --steam-command %command%`。注入器模式使用 `BetterEndfieldNext.Injector.exe`，XInput 模式使用 `BetterEndfieldNext.Launcher.exe`；Steam 附带的原始命令不会混入国服参数。BE 不自动修改 `localconfig.vdf`。从旧版升级、更换加载方式或修改路径/参数后，应重新复制到 Steam 启动选项。国服资源继续由官方启动器更新；需要先在 Steam 正常入库，ACF 不授予许可或提前解锁。
 
-截至 2026-10-07，本次查询仅返回游戏名称，未返回完整启动与 Depot 信息。界面支持导入和预览；真实 Steam 启动效果仍待完整元数据与实际客户端验证。测试用元数据仅为离线夹具，不可作为真实游戏配置。
+2026-10-07 的查询曾仅返回游戏名称，该数据缺口现已补齐。测试用合成元数据仍仅为离线夹具；应使用最新在线数据或上文保存的正式数据快照。
 
 ## 版本更新和恢复
 
@@ -39,13 +47,13 @@ BE 拒绝接管其他来源的 ACF、其他库已有安装、包含下载资源�
 从仓库根目录运行以下命令。所有测试使用独立的合成游戏库、HTTP 响应及注册表存储替身，不修改真实 Steam、国服目录或管理员设置。
 
 ```powershell
-& 'toolchains/dotnet/dotnet.exe' run --project 'ui/tests/SteamIntegration/SteamIntegration.csproj' -c Release '-p:BEWorkspaceBuildRoot=G:/Better Endfield Next/build/steam-cn-launch/build' -- 'G:/Better Endfield Next/build/steam-cn-launch/fixtures'
+& 'toolchains/dotnet/dotnet.exe' run --project 'ui/tests/SteamIntegration/SteamIntegration.csproj' -c Release '-p:BEWorkspaceBuildRoot=G:/Better Endfield/build/steam-cn-launch/build' -- 'G:/Better Endfield/build/steam-cn-launch/fixtures'
 
 & 'C:/Program Files/CMake/bin/cmake.exe' --build 'build/steam-cn-launch/native' --config Release --target BetterEndfieldNext.Injector BetterEndfieldNext.InjectorLaunchGuardTests
 & 'build/steam-cn-launch/native/Release/BetterEndfieldNext.InjectorLaunchGuardTests.exe' 'build/steam-cn-launch/native-guard-fixture'
 
 $latest = Get-Content 'build/steam-cn-launch/fixtures/latest.json' -Raw | ConvertFrom-Json
-& 'ui/tests/SteamIntegration/SmokeUi.ps1' -Executable 'G:/Better Endfield Next/build/steam-cn-launch/ui-publish/BetterEndfieldNext.exe' -Metadata $latest.previewMetadata -WorkDirectory 'G:/Better Endfield Next/build/steam-cn-launch/ui-smoke'
+& 'ui/tests/SteamIntegration/SmokeUi.ps1' -Executable 'G:/Better Endfield/build/steam-cn-launch/ui-publish/BetterEndfieldNext.exe' -Metadata $latest.previewMetadata -WorkDirectory 'G:/Better Endfield/build/steam-cn-launch/ui-smoke'
 ```
 
 界面脚本使用 PowerShell 7，在隔离的 `--steam-setup-preview` 窗口检查写入 / 启动按钮禁用、完整 ACF 预览以及普通 / 760×700 窗口截图。隔离预览不载入主程序设置，不安装代理、不写 Steam 文件或注册表、不启动游戏。

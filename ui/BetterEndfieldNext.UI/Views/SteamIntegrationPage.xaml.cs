@@ -20,7 +20,8 @@ public sealed partial class SteamIntegrationPage : UserControl
     private Func<Task> _saveSettings = () => Task.CompletedTask;
     private Func<string> _gamePath = () => "";
     private Func<string> _gameArguments = () => "";
-    private Func<Task<bool>> _prepareXInput = () => Task.FromResult(false);
+    private Func<string> _loaderMode = () => "injector";
+    private Func<Task<bool>> _prepareLaunch = () => Task.FromResult(false);
     private SteamMetadata? _metadata;
     private bool _initializing = true, _initialized, _busy, _pending, _managed, _preview, _setupPending;
     private DateTimeOffset _nextQuery, _nextApply;
@@ -41,10 +42,11 @@ public sealed partial class SteamIntegrationPage : UserControl
         Localize();
     }
 
-    internal void Initialize(SteamIntegrationSettings settings, Func<Task> saveSettings, Func<string> gamePath, Func<string> arguments, Func<Task<bool>> prepareXInput, bool preview = false)
+    internal void Initialize(SteamIntegrationSettings settings, Func<Task> saveSettings, Func<string> gamePath, Func<string> arguments, Func<string> loaderMode, Func<Task<bool>> prepareLaunch, bool preview = false)
     {
         _preview = preview;
-        _settings = settings; _saveSettings = saveSettings; _gamePath = gamePath; _gameArguments = arguments; _prepareXInput = prepareXInput;
+        _settings = settings; _saveSettings = saveSettings; _gamePath = gamePath; _gameArguments = arguments;
+        _loaderMode = loaderMode; _prepareLaunch = prepareLaunch;
         _initializing = true;
         SteamPathBox.Text = settings.SteamExecutablePath.Length > 0 ? settings.SteamExecutablePath : SteamEnvironment.DiscoverExecutable();
         AutoUpdateBox.IsChecked = settings.AutoUpdateMetadata;
@@ -87,7 +89,7 @@ public sealed partial class SteamIntegrationPage : UserControl
     private void Localize()
     {
         TitleText.Text = T("Steam 国服启动（预览）", "Steam CN launch (Preview)");
-        IntroText.Text = T("在 Steam 库中直接启动国服，使用 BE 的 XInput 自启动加载模块。", "Launch the CN client from your Steam library with BE's XInput auto-loader.");
+        IntroText.Text = T("在 Steam 库中启动国服，沿用主界面选择的加载方式。配置 ACF 不会安装 XInput。", "Launch the CN client from Steam using the loading mode selected in the main window. ACF setup does not install XInput.");
         SteamPathBox.Header = T("Steam 程序", "Steam executable"); LibraryBox.Header = T("Steam 游戏库", "Steam library");
         AutoUpdateBox.Content = new TextBlock { Text = T("BE 自动查询最新元数据，并在 Steam 退出后更新 ACF", "Check metadata automatically; update the ACF after Steam exits"), TextWrapping = TextWrapping.Wrap };
         AdministratorBox.Content = new TextBlock { Text = T("以管理员身份启动 Steam（覆盖层兼容，可选）", "Run Steam as administrator (optional overlay compatibility)"), TextWrapping = TextWrapping.Wrap };
@@ -97,7 +99,7 @@ public sealed partial class SteamIntegrationPage : UserControl
         PreviewButton.Content = T("预览 ACF", "Preview ACF"); ApplyButton.Content = T("应用 / 更新 ACF", "Apply / update ACF"); RestoreButton.Content = T("移除 BE 的 ACF", "Remove BE's ACF");
         CopyButton.Content = T("复制启动命令", "Copy launch command"); StartButton.Content = T("从 Steam 启动国服", "Launch CN from Steam");
         SyncAdminButton.Content = T("同步 Windows 管理员设置", "Sync Windows elevation setting"); RestoreAdminButton.Content = T("恢复管理员设置", "Restore elevation setting");
-        CopyHint.Text = T("首次配置后，将复制的命令粘贴到 Steam 游戏属性的“启动选项”。国服仍由官方启动器更新。", "After initial setup, paste the copied command into the game's Steam Launch Options. The official CN launcher still updates the CN game.");
+        CopyHint.Text = T("首次配置、切换加载方式或更新 BE 后，重新复制命令到 Steam 游戏属性的“启动选项”。启动按钮使用 Steam 中已粘贴的命令；国服仍由官方启动器更新。", "After setup, changing the loading mode or updating BE, copy the command into Steam Launch Options again. The launch button uses the command saved in Steam; the official CN launcher still updates the CN game.");
     }
 
     private void CapturePreferences()
@@ -156,7 +158,9 @@ public sealed partial class SteamIntegrationPage : UserControl
             "install_changed" => T("占位目录已包含其他文件，请先检查 Steam 下载或安装状态。", "The placeholder directory now contains other files. Check Steam's download or installation state."),
             "layout_changed" or "library_changed" => T("安装位置或启动布局已变化，请先移除 BE 的旧 ACF，再重新配置。", "The installation or launch layout changed. Remove BE's old ACF before setting it up again."),
             "invalid_game_path" => T("请在主程序中选择有效的 Endfield.exe。", "Select a valid Endfield.exe in the main application."),
-            "game_running" => T("请先退出游戏，再准备 XInput 启动。", "Exit the game before preparing XInput launch."),
+            "invalid_launcher_path" => T("启动组件缺失，请重新解压完整的 Better Endfield Next。", "A launch component is missing. Extract the complete Better Endfield Next package again."),
+            "invalid_launch_arguments" => T("请检查启动参数的引号；不能包含换行、%command% 或 --steam-command。", "Check argument quoting; line breaks, %command% and --steam-command are not allowed."),
+            "game_running" => T("游戏已在运行，请先退出。", "The game is already running. Exit it first."),
             "operation_busy" => T("另一 BE 实例正在操作 Steam 配置，请稍后再试。", "Another BE instance is modifying the Steam configuration. Try again shortly."),
             "setup_pending" => T("Steam 配置尚未提交完成，请先退出 Steam 并应用 ACF。", "Steam setup is not fully committed. Exit Steam and apply the ACF first."),
             "invalid_steam_path" => T("请选择有效的 steam.exe。", "Select a valid steam.exe."),
@@ -252,7 +256,6 @@ public sealed partial class SteamIntegrationPage : UserControl
         if (SteamEnvironment.IsRunning()) throw new SteamIntegrationException("steam_running");
         if (_metadata is null) throw new SteamIntegrationException("metadata_pending");
         _metadata.Validate(); CapturePreferences();
-        if (!await _prepareXInput()) { Notice(T("请先完成主程序游戏路径和 XInput 配置。", "Complete the game path and XInput setup in the main application first."), InfoBarSeverity.Warning); return; }
         await _service.ApplyAsync(_settings.LibraryPath, _gamePath(), _metadata, SteamEnvironment.DiscoverLibraries(_settings.SteamExecutablePath), _cancellation.Token);
         _managed = true; _pending = false; _setupPending = false;
         await _saveSettings();
@@ -265,7 +268,9 @@ public sealed partial class SteamIntegrationPage : UserControl
     });
     private async void Copy_Click(object sender, RoutedEventArgs e) => await RunAsync(() =>
     {
-        var data = new DataPackage(); data.SetText(SteamIntegrationService.GenerateLaunchCommand(_gamePath(), _gameArguments())); Clipboard.SetContent(data);
+        string helper = GameLaunchService.SelectHelperPath(_loaderMode(), RuntimePathDiscoveryService.BundledInjectorPath,
+            RuntimePathDiscoveryService.BundledLauncherPath);
+        var data = new DataPackage(); data.SetText(SteamIntegrationService.GenerateLaunchCommand(helper, _gamePath(), _gameArguments())); Clipboard.SetContent(data);
         Notice(T("启动命令已复制。", "Launch command copied.")); return Task.CompletedTask;
     });
     private async void Start_Click(object sender, RoutedEventArgs e) => await RunAsync(async () =>
@@ -276,7 +281,7 @@ public sealed partial class SteamIntegrationPage : UserControl
         var receipt = _service.ReadReceipt();
         if (receipt is null) throw new SteamIntegrationException("metadata_pending");
         if (receipt.Pending) throw new SteamIntegrationException("setup_pending");
-        if (!await _prepareXInput()) { Notice(T("请先完成游戏路径和 XInput 配置。", "Complete the game path and XInput setup first."), InfoBarSeverity.Warning); return; }
+        if (!await _prepareLaunch()) { Notice(T("请先完成主界面的游戏路径和当前加载方式配置。", "Complete the game path and selected loading mode in the main window first."), InfoBarSeverity.Warning); return; }
         SteamEnvironment.Launch(_settings.SteamExecutablePath, _settings.LaunchAsAdministrator, game: true);
         Notice(T("Steam 启动请求已发送。", "Steam launch requested."));
     });

@@ -389,11 +389,36 @@ set_target_properties(BetterEndfieldNext.BuffProbe PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/research"
 )
 
+add_library(BetterEndfieldNext.OfficialLauncher STATIC
+    loaders/shared/official_launcher.cpp
+)
+better_endfield_target_defaults(BetterEndfieldNext.OfficialLauncher)
+target_link_libraries(BetterEndfieldNext.OfficialLauncher PUBLIC wintrust crypt32 shell32 advapi32 user32)
+
+add_executable(BetterEndfieldNext.Launcher
+    loaders/launcher/main.cpp
+    loaders/launcher/BetterEndfieldNext.Launcher.rc
+)
+better_endfield_target_defaults(BetterEndfieldNext.Launcher)
+target_link_libraries(BetterEndfieldNext.Launcher PRIVATE BetterEndfieldNext.OfficialLauncher)
+if(MSVC)
+    target_link_options(BetterEndfieldNext.Launcher PRIVATE "/MANIFEST:NO")
+endif()
+set_target_properties(BetterEndfieldNext.Launcher PROPERTIES
+    OUTPUT_NAME "BetterEndfieldNext.Launcher"
+    RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/loaders"
+)
+
+add_executable(BetterEndfieldNext.OfficialLauncherTests EXCLUDE_FROM_ALL tests/official_launcher_tests.cpp)
+better_endfield_target_defaults(BetterEndfieldNext.OfficialLauncherTests)
+target_link_libraries(BetterEndfieldNext.OfficialLauncherTests PRIVATE BetterEndfieldNext.OfficialLauncher)
+
 add_executable(BetterEndfieldNext.Injector
     loaders/injector/main.cpp
     loaders/injector/BetterEndfieldNext.Injector.rc
 )
 better_endfield_target_defaults(BetterEndfieldNext.Injector)
+target_link_libraries(BetterEndfieldNext.Injector PRIVATE BetterEndfieldNext.OfficialLauncher)
 if(MSVC)
     target_link_options(BetterEndfieldNext.Injector PRIVATE "/MANIFEST:NO")
 endif()
@@ -511,6 +536,7 @@ add_custom_target(BetterEndfieldNext.Layout ALL
         BetterEndfieldNext.MmdOverlay
         BetterEndfieldNext.ModelOverlay
         BetterEndfieldNext.Injector
+        BetterEndfieldNext.Launcher
         BetterEndfieldNext.Bootstrap
         BetterEndfieldNext.XInput14Proxy
 )

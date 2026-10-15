@@ -1,6 +1,6 @@
 # Better Endfield Next Android
 
-Next 4.0.2 uses `dev.betterendfield.next` and the Next release signing key. Next 4.0.x users can update in place and retain their settings. When upgrading from 3.x, uninstall the previous app, install Next, enable the new framework module and select the game scope again; 3.x settings are not migrated. Third-party modules and first person have moved to [Endfield Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader); BE removes the third-party loader, management pages and web bridge. The general Host, built-in module loading, shared Hook chains and Workshop entry remain. The Logo is unchanged. See [Next implementation notes](../docs/workspace/NEXT_IMPLEMENTATION.md).
+Next 4.0.3 uses `dev.betterendfield.next` and the Next release signing key. Next 4.0.x users can update in place and retain their settings. When upgrading from 3.x, uninstall the previous app, install Next, enable the new framework module and select the game scope again; 3.x settings are not migrated. Third-party modules and first person have moved to [Endfield Mod Loader](https://github.com/Dr-hydra/Endfield-Mod-Loader); BE removes the third-party loader, management pages and web bridge. The general Host, built-in module loading, shared Hook chains and Workshop entry remain. The Logo is unchanged. See [Next implementation notes](../docs/workspace/NEXT_IMPLEMENTATION.md).
 
 The replacement 4.0.1 APK fixes low MMD camera framing by using the Avatar bind head height, matching PC. Existing 4.0.1 users can reinstall this APK and restart the game; existing MMD motion and camera files remain compatible.
 
@@ -8,9 +8,11 @@ BEM import also accepts ZIP collections: choose which validated packages to impo
 
 
 See the [main feature matrix](../README.en.md#feature-overview) for Windows/Android
-coverage. The current source version is **4.0.2** (versionCode 40002). In-game rendering
+coverage. The current source version is **4.0.3** (versionCode 40003). In-game rendering
 still requires device testing; build and isolated regression
 results are not gameplay validation.
+
+For game 1.6.4, the 4.0.3 update has a [targeted ARM64 hook and device-initialization check](../research/android/1.6.4/Android/hook-update/ANDROID_1_6_4_HOOK_CHECK.md). The new sprint call sites and the Android-specific MMD `runtime_invoke` contracts match; Camera initialized on the updated device. Sprint was disabled and MMD playback was not exercised in that run.
 
 ## Android 3.5.3
 

@@ -4,6 +4,73 @@
   "receipt_schema": "docs/workspace/TESTING.md#构建凭据",
   "suites": [
     {
+      "id": "host.official_launcher",
+      "module": "host",
+      "kind": "offline",
+      "platform": [
+        "Windows"
+      ],
+      "host_platform": [
+        "Windows"
+      ],
+      "game_version": [
+        "1.6.3"
+      ],
+      "input": {
+        "id": "launcher-args-and-unsigned-parent",
+        "type": "synthetic"
+      },
+      "prerequisite": [],
+      "entry": {
+        "type": "catalog_only",
+        "cwd": ".",
+        "reference": "native/tests/official_launcher_tests.cpp",
+        "sources": [
+          "native/tests/official_launcher_tests.cpp",
+          "native/loaders/shared/official_launcher.cpp",
+          "native/loaders/shared/official_launcher.h"
+        ],
+        "blocked_reason": "Build BetterEndfieldNext.OfficialLauncherTests explicitly and pass a disposable fixture directory; optional --verify-installed reads the local official signature without starting processes."
+      },
+      "status": "active",
+      "replaced_by": null,
+      "purpose": "Windows argv and Steam boundary, mode validation, exact official publisher and unsigned-parent rejection; optional installed launcher discovery."
+    },
+    {
+      "id": "host.steam_published_metadata",
+      "module": "host",
+      "kind": "offline",
+      "platform": [
+        "Windows"
+      ],
+      "host_platform": [
+        "Windows"
+      ],
+      "game_version": [
+        "any"
+      ],
+      "input": {
+        "id": "steam-real-metadata-and-published-assembly",
+        "type": "synthetic"
+      },
+      "prerequisite": [],
+      "entry": {
+        "type": "catalog_only",
+        "cwd": ".",
+        "reference": "ui/tests/SteamIntegration/VerifyPublishedMetadata.ps1",
+        "sources": [
+          "ui/tests/SteamIntegration/VerifyPublishedMetadata.ps1",
+          "ui/BetterEndfieldNext.UI/Services/SteamMetadata.cs",
+          "ui/BetterEndfieldNext.UI/Services/SteamIntegrationService.cs",
+          "ui/BetterEndfieldNext.UI/Services/SteamCompatibilityService.cs"
+        ],
+        "blocked_reason": "Requires the freshly published bundle extraction, its matching Obfuscar Mapping.txt, and explicit saved metadata path; invoke the script with these release-specific inputs."
+      },
+      "status": "active",
+      "replaced_by": null,
+      "purpose": "Validate normalized metadata parsing and metadata/cache/install/compatibility receipt roundtrips in the actual obfuscated release assembly."
+    },
+    {
       "id": "media_screen.runtime",
       "module": "media_screen",
       "kind": "simulation",
@@ -196,6 +263,31 @@
       "host_platform": [
         "Windows"
       ]
+    },
+    {
+      "id": "resource.formats_1_6_3",
+      "module": "resource",
+      "kind": "offline",
+      "platform": ["Windows"],
+      "game_version": ["1.6.3"],
+      "input": {"id": "v5-pck-memorypack-fixtures", "type": "synthetic"},
+      "prerequisite": [{"type": "tool", "key": "tools.python"}],
+      "entry": {
+        "type": "python_unittest",
+        "cwd": ".",
+        "modules": ["scripts.tests.test_resource_format_versions", "tools.CombatDataExporter.test_memorypack_refs"],
+        "sources": [
+          "scripts/tests/test_resource_format_versions.py",
+          "tools/CombatDataExporter/test_memorypack_refs.py",
+          "scripts/RefreshEndfieldResourceInputs.py",
+          "scripts/GenerateResourceManifests.py",
+          "tools/CombatDataExporter/memorypack_refs.py",
+          "tools/CombatDataExporter/string_pool.py"
+        ]
+      },
+      "status": "active",
+      "replaced_by": null,
+      "purpose": "Current BLC v5, PCK language encoding and typed pooled MemoryPack reference parsing."
     },
     {
       "id": "resource.workspace",

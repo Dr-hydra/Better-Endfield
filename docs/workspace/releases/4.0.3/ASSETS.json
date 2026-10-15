@@ -1,0 +1,77 @@
+{
+  "version": "4.0.3",
+  "hashes_calculated": false,
+  "windows": {
+    "fileVersion": "4.0.3.0",
+    "architecture": "x64",
+    "gameVersion": "1.6.3",
+    "signing": "original Next internal self-signed identity",
+    "obfuscation": "Obfuscar"
+  },
+  "android": {
+    "applicationId": "dev.betterendfield.next",
+    "versionCode": 40003,
+    "versionName": "4.0.3",
+    "architecture": "arm64-v8a",
+    "gameVersion": "1.6.4",
+    "gameVersionCode": 61,
+    "signing": "original Next release identity",
+    "obfuscation": "R8",
+    "installed_on_connected_device": true
+  },
+  "checks": {
+    "windows_release": "passed",
+    "windows_installer": "passed",
+    "android_release": "passed",
+    "native_launcher_checks": 20,
+    "steam_service_checks": 82,
+    "obfuscated_ui_preview": "passed",
+    "obfuscated_metadata_and_receipts": "5 checks passed",
+    "android_camera_initialization": "contracts ready, four hooks installed, initialized",
+    "android_actions_static": "ARM64 active calls, delegate, field and enum matches",
+    "android_mmd_static": "Android runtime_invoke signature and field contracts match",
+    "bem_tools_portable": "passed: standalone and embedded versions/data, five pack/validate projects, real standalone GUI export"
+  },
+  "not_verified": [
+    "Steam overlay, playtime and complete real-client launch",
+    "Android sprint gameplay (disabled in current configuration)",
+    "Android MMD playback"
+  ],
+  "assets": [
+    {
+      "name": "BetterEndfieldNext-4.0.3-Setup.exe",
+      "bytes": 76593272,
+      "public": true
+    },
+    {
+      "name": "BetterEndfieldNext-4.0.3-Android-arm64.apk",
+      "bytes": 6066309,
+      "public": true
+    },
+    {
+      "name": "BEM-Tools-1.5.3-win-x64.zip",
+      "bytes": 72734970,
+      "public": true
+    }
+  ],
+  "release": {
+    "repository": "Dr-hydra/Better-Endfield",
+    "tag": "v4.0.3",
+    "url": "https://github.com/Dr-hydra/Better-Endfield/releases/tag/v4.0.3"
+  },
+  "bem_tools": {
+    "version": "1.5.3",
+    "gui_file_version": "1.5.3.0",
+    "legacy_catalog_characters": 34,
+    "new_profile_sets": 5,
+    "new_profile_files": 24,
+    "platform": "windows-x64",
+    "readiness": "partial legacy mappings; explicit keep-only authoring targets"
+  },
+  "local_only_assets": [
+    {
+      "name": "BetterEndfieldNext-4.0.3-win-x64.zip",
+      "bytes": 84815850
+    }
+  ]
+}

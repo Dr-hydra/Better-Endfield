@@ -1,4 +1,5 @@
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using BetterEndfieldNext.UI.Services;
@@ -6,6 +7,17 @@ using BetterEndfieldNext.UI.Services;
 internal static class Program
 {
     private static int _checks;
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern nint CommandLineToArgvW(string commandLine, out int count);
+    [DllImport("kernel32.dll")]
+    private static extern nint LocalFree(nint memory);
+    private static string[] ParseCommandLine(string commandLine)
+    {
+        nint values = CommandLineToArgvW(commandLine, out int count);
+        if (values == 0) throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+        try { return Enumerable.Range(0, count).Select(i => Marshal.PtrToStringUni(Marshal.ReadIntPtr(values, i * nint.Size))!).ToArray(); }
+        finally { LocalFree(values); }
+    }
     private static void Check(bool condition, string message) { if (!condition) throw new Exception(message); _checks++; }
     private static void Reject(Action action, string code)
     {
@@ -60,6 +72,9 @@ internal static class Program
         string game = Path.Combine(root, "国服目录", "Endfield.exe");
         Directory.CreateDirectory(Path.GetDirectoryName(game)!); File.WriteAllText(game, "Synthetic, never executable.");
         string steam = Path.Combine(root, "steam.exe"); File.WriteAllText(steam, "Synthetic, never executable.");
+        string loaderDirectory = Path.Combine(root, "BE installation 中文", "loaders"); Directory.CreateDirectory(loaderDirectory);
+        string launcher = Path.Combine(loaderDirectory, "BetterEndfieldNext.Launcher.exe"); File.WriteAllText(launcher, "Synthetic, never executable.");
+        string injector = Path.Combine(loaderDirectory, "BetterEndfieldNext.Injector.exe"); File.WriteAllText(injector, "Synthetic, never executable.");
         bool running = false;
         var handler = new Handler();
         using var http = new HttpClient(handler);
@@ -120,6 +135,8 @@ internal static class Program
         await service.ApplyAsync(library, game, metadata, [library]);
         var paths = SteamIntegrationService.GetPaths(library, metadata);
         Check(File.Exists(paths.Manifest) && File.Exists(paths.Placeholder) && new FileInfo(paths.Placeholder).Length == 0, "Initial install did not create a valid placeholder.");
+        Check(Directory.GetFileSystemEntries(Path.GetDirectoryName(game)!).SequenceEqual(new[] { game }) && settings.LoaderMode == "injector",
+            "ACF setup changed the game directory or selected loading mode.");
         Check(service.ReadReceipt()!.Metadata.BuildId == "100", "Install receipt missing.");
         File.WriteAllText(paths.Manifest, tree.ToString());
         await service.ApplyAsync(library, game, Metadata("101"), [library]);
@@ -148,8 +165,51 @@ internal static class Program
         string other = Path.Combine(root, "Other library"); Directory.CreateDirectory(Path.Combine(other, "steamapps"));
         File.WriteAllText(Path.Combine(other, "steamapps", "appmanifest_4732690.acf"), "Foreign install");
         await RejectAsync(() => service.ApplyAsync(library, game, metadata, [library, other]), "other_library_install");
-        Check(SteamIntegrationService.GenerateLaunchCommand(game, "-force-d3d11").EndsWith(" -force-d3d11 %command%"), "Saved CN launch arguments were lost.");
-        Reject(() => SteamIntegrationService.GenerateLaunchCommand(game, "%command%"), "invalid_launch_arguments");
+        string savedArguments = "-force-d3d11 -logFile \"C:\\Logs with spaces\\player.log\"";
+        string command = SteamIntegrationService.GenerateLaunchCommand(launcher, game, savedArguments);
+        Check(ParseCommandLine(command).SequenceEqual(new[] { launcher, "--game", game, "--", "-force-d3d11", "-logFile", @"C:\Logs with spaces\player.log", "--steam-command", "%command%" }),
+            "Steam launch command did not preserve CN arguments or isolate its upstream command.");
+        string upstreamCommand = "\"C:\\Steam library\\Global Launcher.exe\" --game=endfield --channel=steam";
+        var expanded = ParseCommandLine(command.Replace("%command%", upstreamCommand, StringComparison.Ordinal));
+        int boundary = Array.IndexOf(expanded, "--steam-command");
+        Check(boundary == 7 && expanded[boundary + 1] == @"C:\Steam library\Global Launcher.exe" && expanded[^1] == "--channel=steam",
+            "Steam's expanded launcher arguments crossed the game argument boundary.");
+        Check(ParseCommandLine(SteamIntegrationService.GenerateLaunchCommand(launcher, game, "")).SequenceEqual(new[] { launcher, "--game", game, "--", "--steam-command", "%command%" }),
+            "An empty game argument list lost its helper or Steam separator.");
+        Reject(() => SteamIntegrationService.GenerateLaunchCommand(launcher, game, "%command%"), "invalid_launch_arguments");
+        foreach (string invalid in new[] { "--steam-command fake.exe", "\"--steam-command\"", "-flag\nvalue", "-logFile \"unfinished" })
+            Reject(() => SteamIntegrationService.GenerateLaunchCommand(launcher, game, invalid), "invalid_launch_arguments");
+        Check(GameLaunchService.AreArgumentsValid("-label \"escaped \\\"quote\\\"\""), "Escaped quotes in saved arguments were rejected.");
+        Reject(() => SteamIntegrationService.GenerateLaunchCommand(Path.Combine(root, "missing", "BetterEndfieldNext.Launcher.exe"), game, ""), "invalid_launcher_path");
+        Reject(() => SteamIntegrationService.GenerateLaunchCommand(game, game, ""), "invalid_launcher_path");
+        var xinputStart = GameLaunchService.CreateStartInfo("xinput", injector, launcher, game, savedArguments);
+        Check(xinputStart.FileName == launcher && xinputStart.WorkingDirectory == loaderDirectory && xinputStart.UseShellExecute && xinputStart.Verb == "runas",
+            "XInput launch did not select the elevated bundled launcher.");
+        Check(ParseCommandLine("helper.exe " + xinputStart.Arguments).Skip(1).SequenceEqual(expanded.Skip(1).Take(boundary - 1)),
+            "Desktop launch and Steam disagree on the saved game arguments.");
+        var injectorStart = GameLaunchService.CreateStartInfo("injector", injector, launcher, game, savedArguments);
+        Check(injectorStart.FileName == injector && injectorStart.Arguments == xinputStart.Arguments && injectorStart.Verb == "runas",
+            "Injector launch lost its selected mode or game argument boundary.");
+        string selectedInjector = GameLaunchService.SelectHelperPath("injector", injector, launcher);
+        string selectedXInput = GameLaunchService.SelectHelperPath("xinput", injector, launcher);
+        Check(selectedInjector == injector && selectedXInput == launcher,
+            "Current loading mode did not select the matching Steam helper.");
+        Check(ParseCommandLine(SteamIntegrationService.GenerateLaunchCommand(selectedInjector, game, savedArguments))[0] == injector,
+            "Steam rejected or replaced the optional Injector route.");
+        int xinputInspections = 0;
+        await GameLaunchService.EnsureLoaderReadyAsync("injector", game, () =>
+        {
+            xinputInspections++;
+            return Task.FromResult(false);
+        });
+        Check(xinputInspections == 0, "Injector launch unnecessarily depends on XInput readiness.");
+        bool missingXInputRejected = false;
+        try { await GameLaunchService.EnsureLoaderReadyAsync("xinput", game, () => Task.FromResult(false)); }
+        catch (InvalidOperationException) { missingXInputRejected = true; }
+        Check(missingXInputRejected, "Missing XInput was silently accepted instead of requesting explicit installation.");
+        await GameLaunchService.EnsureLoaderReadyAsync("xinput", game, () => Task.FromResult(true));
+        Check(Directory.GetFileSystemEntries(Path.GetDirectoryName(game)!).SequenceEqual(new[] { game }) && settings.LoaderMode == "injector",
+            "Preparing a launch deployed game files or changed the selected loading mode.");
 
         var store = new CompatibilityStore { Value = "~ HIGHDPIAWARE" };
         var compatibility = new SteamCompatibilityService(Path.Combine(root, "compatibility.json"), store, () => running);

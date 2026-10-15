@@ -1,0 +1,2201 @@
+{
+  "manifest": {
+    "schema": 1,
+    "package_id": "chr_0036_jsspsi-full-pc",
+    "name": "祀 · 完整世界与详情资源（创作起点，无替换）",
+    "author": "BEM target tool",
+    "version": "1.6.3-20261015",
+    "required_capabilities": [
+      "native-materials",
+      "composable-options",
+      "multi-resource-targets"
+    ],
+    "target": {
+      "id": "chr_0036_jsspsi",
+      "profile_id": "chr_0036_jsspsi-full-pc",
+      "revision": "1.6.3-20261015",
+      "snapshot": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+      "kind": "character",
+      "platform": "windows-x64",
+      "resources": [
+        {
+          "id": "world",
+          "name": "chr_0036_jsspsi_postmodel",
+          "asset_path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0036_jsspsi_postmodel.prefab",
+          "platforms": [
+            "windows-x64"
+          ],
+          "lod": 0
+        },
+        {
+          "id": "ui",
+          "name": "chr_0036_jsspsi_uimodel",
+          "asset_path": "assets/beyond/dynamicassets/gameplay/prefabs/uimodels/chr_0036_jsspsi_uimodel.prefab",
+          "platforms": [
+            "windows-x64"
+          ],
+          "lod": 0
+        }
+      ],
+      "components": [
+        {
+          "id": 0,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_body_01_lod0",
+          "mesh_name": "S_actor_jsspsi_body_01_lod0",
+          "original_index_count": 27468,
+          "bone_names": [
+            "Bip001_L_ForeTwist",
+            "Bip001_L_ForeTwist1",
+            "Bip001_L_Forearm",
+            "Bip001_L_Hand",
+            "Bip001_L_Hand_ty_minus",
+            "Bip001_L_Hand_ty_plus",
+            "Bip001_L_Finger0",
+            "Bip001_L_UpperArm",
+            "Bip001_LUpArmTwist1",
+            "Bip001_LUpArmTwist",
+            "Bip001_L_Forearm_ty_minus",
+            "Bip001_L_Forearm_ty_plus",
+            "Bip001_L_Finger12",
+            "Bip001_L_Finger11",
+            "Bip001_L_Finger1",
+            "Bip001_L_Finger2",
+            "Bip001_L_Finger22",
+            "Bip001_L_Finger21",
+            "Bip001_L_Finger3",
+            "Bip001_L_Finger32",
+            "Bip001_L_Finger31",
+            "Bip001_L_Finger4",
+            "Bip001_L_Finger42",
+            "Bip001_L_Finger41",
+            "Bip001_L_Finger02",
+            "Bip001_L_Finger01",
+            "Bip001_R_ForeTwist",
+            "Bip001_R_ForeTwist1",
+            "Bip001_R_Forearm",
+            "Bip001_R_Hand",
+            "Bip001_R_Hand_ty_minus",
+            "Bip001_R_Hand_ty_plus",
+            "Bip001_R_Finger0",
+            "Bip001_R_UpperArm",
+            "Bip001_RUpArmTwist1",
+            "Bip001_RUpArmTwist",
+            "Bip001_R_Forearm_ty_minus",
+            "Bip001_R_Forearm_ty_plus",
+            "Bip001_R_Finger12",
+            "Bip001_R_Finger11",
+            "Bip001_R_Finger1",
+            "Bip001_R_Finger2",
+            "Bip001_R_Finger22",
+            "Bip001_R_Finger21",
+            "Bip001_R_Finger3",
+            "Bip001_R_Finger32",
+            "Bip001_R_Finger31",
+            "Bip001_R_Finger4",
+            "Bip001_R_Finger42",
+            "Bip001_R_Finger41",
+            "Bip001_R_Finger02",
+            "Bip001_R_Finger01",
+            "Bip001_Spine1",
+            "Bip001_Spine2",
+            "Bip001_L_Clavicle",
+            "Bip001_R_Clavicle",
+            "L_breast_01_jnt",
+            "Bip001_Spine",
+            "Bip001_Neck",
+            "Bip001_R_UpperArm_tz_minus",
+            "Bip001_R_UpperArm_tz_plus",
+            "Bip001_R_UpperArm_ty_minus",
+            "Bip001_R_UpperArm_ty_plus",
+            "R_breast_01_jnt",
+            "Bip001_L_UpperArm_tz_minus",
+            "Bip001_L_UpperArm_tz_plus",
+            "Bip001_L_UpperArm_ty_minus",
+            "Bip001_L_UpperArm_ty_plus",
+            "Bip001_RThighTwist",
+            "Bip001_RThighTwist1_bend_jnt",
+            "Bip001_R_Thigh_bend_jnt",
+            "Bip001_Pelvis",
+            "Bip001_LThighTwist",
+            "Bip_R_Thigh_ty_minus",
+            "Bip_R_Thigh_ty_plus",
+            "Bip_R_Thigh_tz_minus",
+            "Bip001_LThighTwist1_bend_jnt",
+            "Bip001_L_Thigh_bend_jnt",
+            "Bip_L_Thigh_ty_minus",
+            "Bip_L_Thigh_ty_plus",
+            "Bip_L_Thigh_tz_minus",
+            "Bip001_L_Foot",
+            "Bip001_LCalfTwist1",
+            "Bip001_L_Foot_ty_plus",
+            "Bip001_L_Calf_bend_jnt",
+            "Bip001_LCalfTwist_bend_jnt",
+            "Bip_L_Calf_ty_plus",
+            "Bip_L_Calf_ty_minus",
+            "Bip001_L_Foot_ty_minus",
+            "Bip001_L_Toe0",
+            "Bip001_R_Foot",
+            "Bip001_RCalfTwist1",
+            "Bip001_R_Foot_ty_plus",
+            "Bip001_R_Calf_bend_jnt",
+            "Bip001_RCalfTwist_bend_jnt",
+            "Bip_R_Calf_ty_plus",
+            "Bip_R_Calf_ty_minus",
+            "Bip001_R_Foot_ty_minus",
+            "Bip001_R_Toe0",
+            "Bip001_Head",
+            "R_ear_01_jnt",
+            "L_ear_01_jnt",
+            "faceMdJawDnJoint",
+            "faceLfCheekOtDnJoint",
+            "faceRtCheekOtDnJoint"
+          ],
+          "materials": [
+            "M_actor_jsspsi_body_01"
+          ]
+        },
+        {
+          "id": 1,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_brow_01_lod0",
+          "mesh_name": "S_actor_jsspsi_brow_01_lod0",
+          "original_index_count": 4212,
+          "bone_names": [
+            "eyeLf04EyelashJoint",
+            "eyeLf05EyelashJoint",
+            "eyeLf06Joint",
+            "eyeLf07Joint",
+            "eyeLf05Joint",
+            "eyeLf01EyelashJoint",
+            "eyeLf02EyelashJoint",
+            "eyeLf03EyelashJoint",
+            "eyeLf08Joint",
+            "eyeLf01Joint",
+            "browLf02Joint",
+            "browLf01Joint",
+            "browLf03Joint",
+            "browLf04Joint",
+            "browLf05Joint",
+            "browLineLf01Joint",
+            "browLineLf02Joint",
+            "browLineLf03Joint",
+            "eyeRt04EyelashJoint",
+            "eyeRt05EyelashJoint",
+            "eyeRt06Joint",
+            "eyeRt07Joint",
+            "eyeRt05Joint",
+            "eyeRt01EyelashJoint",
+            "eyeRt02EyelashJoint",
+            "eyeRt03EyelashJoint",
+            "eyeRt08Joint",
+            "eyeRt01Joint",
+            "browRt01Joint",
+            "browRt02Joint",
+            "browRt03Joint",
+            "browRt04Joint",
+            "browRt05Joint",
+            "browLineRt01Joint",
+            "browLineRt02Joint",
+            "browLineRt03Joint"
+          ],
+          "materials": [
+            "M_actor_jsspsi_brow_01",
+            "M_actor_jsspsi_face_01"
+          ]
+        },
+        {
+          "id": 2,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_01_lod0",
+          "mesh_name": "S_actor_jsspsi_cloth_01_lod0",
+          "original_index_count": 88650,
+          "bone_names": [
+            "Bip001_R_Foot",
+            "Bip001_R_Toe0",
+            "Bip001_R_Foot_ty_plus",
+            "Bip001_RCalfTwist1",
+            "Bip001_R_Foot_ty_minus",
+            "Bip001_L_Foot",
+            "Bip001_L_Toe0",
+            "Bip001_L_Foot_ty_plus",
+            "Bip001_LCalfTwist1",
+            "R_sleeveD_01_jnt",
+            "R_sleeveD_02_jnt",
+            "R_sleeveD_03_jnt",
+            "R_sleeveD_04_jnt",
+            "R_sleeveD_05_jnt",
+            "R_sleeveD_06_jnt",
+            "R_sleeve_all_jnt",
+            "R_clothB_jnt",
+            "ribbonF_01_jnt",
+            "braceletA_03_jnt",
+            "L_skirtC_04_jnt",
+            "R_skirtC_04_jnt",
+            "L_skirtC_03_jnt",
+            "R_skirtC_03_jnt",
+            "L_skirtC_02_jnt",
+            "R_skirtC_02_jnt",
+            "L_skirtC_01_jnt",
+            "R_skirtC_01_jnt",
+            "Bip001_Spine",
+            "R_skirtB_01_jnt",
+            "R_skirtA_01_jnt",
+            "R_skirtA_04_jnt",
+            "R_skirtB_04_jnt",
+            "R_skirtB_02_jnt",
+            "R_skirtA_02_jnt",
+            "R_skirtB_03_jnt",
+            "R_skirtA_03_jnt",
+            "Bip001_Spine1",
+            "Bip001_Spine2",
+            "L_skirtB_01_jnt",
+            "L_skirtA_01_jnt",
+            "L_skirtA_04_jnt",
+            "L_skirtB_04_jnt",
+            "L_skirtA_02_jnt",
+            "L_skirtB_02_jnt",
+            "L_skirtA_03_jnt",
+            "L_skirtB_03_jnt",
+            "R_sleeveB_01_jnt",
+            "R_sleeveA_01_jnt",
+            "R_sleeveF_01_jnt",
+            "R_sleeveC_03_jnt",
+            "Bip001_L_Foot_ty_minus",
+            "L_sleeveD_04_jnt",
+            "L_sleeveD_05_jnt",
+            "L_sleeveD_06_jnt",
+            "L_sleeveD_01_jnt",
+            "L_sleeveD_02_jnt",
+            "L_sleeveD_03_jnt",
+            "L_sleeve_all_jnt",
+            "L_clothB_jnt",
+            "braceletA_06_jnt",
+            "braceletA_05_jnt",
+            "braceletA_07_jnt",
+            "wheat_02_jnt",
+            "wheat_01_jnt",
+            "braceletA_01_jnt",
+            "braceletA_04_jnt",
+            "braceletA_02_jnt",
+            "Bip001_Head",
+            "L_sleeveI_01_jnt",
+            "L_sleeveI_02_jnt",
+            "L_sleeveA_01_jnt",
+            "L_sleeveB_01_jnt",
+            "L_sleeveF_01_jnt",
+            "L_sleeveC_03_jnt",
+            "ribbonB_01_jnt",
+            "ribbonB_02_jnt",
+            "ribbonB_03_jnt",
+            "ribbonB_04_jnt",
+            "ribbonI_01_jnt",
+            "bowA_jnt",
+            "ribbonC_01_jnt",
+            "ribbonC_02_jnt",
+            "ribbonC_03_jnt",
+            "Bip001_Neck",
+            "R_breast_01_jnt",
+            "R_ribbonA_01_jnt",
+            "R_ribbonA_02_jnt",
+            "R_ribbonA_03_jnt",
+            "R_ribbonG_01_jnt",
+            "L_breast_01_jnt",
+            "L_ribbonA_01_jnt",
+            "L_ribbonA_02_jnt",
+            "L_ribbonA_03_jnt",
+            "Bip001_Pelvis",
+            "Bip001_LThighTwist",
+            "Bip001_RThighTwist",
+            "R_collar_01_jnt",
+            "L_collar_01_jnt",
+            "R_clothA_01_jnt",
+            "Bip001_R_Clavicle",
+            "M_clothA_jnt",
+            "L_clothA_01_jnt",
+            "Bip001_L_Clavicle",
+            "ribbonC_04_jnt",
+            "ribbonC_06_jnt",
+            "ribbonC_05_jnt",
+            "ribbonF_03_jnt",
+            "ribbonF_04_jnt",
+            "ribbonF_05_jnt",
+            "ribbonF_02_jnt",
+            "necklace_01_jnt",
+            "tail_09_jnt",
+            "Bip001_LUpArmTwist",
+            "Bip001_L_UpperArm_tz_plus",
+            "L_sleeveC_01_jnt",
+            "L_sleeveC_jnt",
+            "ribbonE_01_jnt",
+            "ribbonE_02_jnt",
+            "Bip001_R_Thigh_bend_jnt",
+            "Bip001_RThighTwist1_bend_jnt",
+            "Bip001_L_UpperArm_ty_plus",
+            "R_sleeveC_jnt",
+            "ribbonH_01_jnt",
+            "L_bowB_05_jnt",
+            "L_bowB_jnt",
+            "L_bowB_04_jnt",
+            "L_bowB_02_jnt",
+            "L_bowB_01_jnt",
+            "L_ribbonG_01_jnt",
+            "Bip_L_Thigh_ty_minus",
+            "Bip_L_Thigh_tz_minus",
+            "Bip_L_Thigh_ty_plus",
+            "tail_01_jnt",
+            "tail_02_jnt",
+            "tail_06_jnt",
+            "tail_07_jnt",
+            "tail_08_jnt",
+            "tail_03_jnt",
+            "tail_04_jnt",
+            "tail_05_jnt",
+            "Bip001_L_UpperArm_ty_minus",
+            "bowC_jnt",
+            "R_bowC_01_jnt",
+            "L_bowC_01_jnt",
+            "R_bowC_03_jnt",
+            "L_bowC_03_jnt",
+            "Bip001_RUpArmTwist",
+            "Bip001_R_UpperArm_tz_plus",
+            "R_sleeveC_01_jnt",
+            "Bip001_R_UpperArm_ty_plus",
+            "R_bowB_05_jnt",
+            "R_bowB_jnt",
+            "R_bowB_04_jnt",
+            "R_bowB_02_jnt",
+            "R_bowB_01_jnt",
+            "Bip_R_Thigh_ty_minus",
+            "Bip_R_Thigh_tz_minus",
+            "Bip_R_Thigh_ty_plus",
+            "Bip001_R_UpperArm_ty_minus"
+          ],
+          "materials": [
+            "M_actor_jsspsi_cloth_01"
+          ]
+        },
+        {
+          "id": 3,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_02_lod0",
+          "mesh_name": "S_actor_jsspsi_cloth_02_lod0",
+          "original_index_count": 15198,
+          "bone_names": [
+            "Bip001_Head",
+            "Bip001_RCalfTwist1",
+            "Bip001_R_Calf_bend_jnt",
+            "Bip001_RCalfTwist_bend_jnt",
+            "braceletA_01_jnt",
+            "braceletA_02_jnt",
+            "braceletA_04_jnt",
+            "braceletA_03_jnt",
+            "braceletA_05_jnt",
+            "braceletA_07_jnt",
+            "braceletA_06_jnt",
+            "R_earring_02_jnt",
+            "R_ear_01_jnt",
+            "R_earring_01_jnt",
+            "L_earring_02_jnt",
+            "L_ear_01_jnt",
+            "L_earring_01_jnt",
+            "tasselA_01_jnt",
+            "tasselA_03_jnt",
+            "tasselA_02_jnt",
+            "tasselA_04_jnt",
+            "tasselA_05_jnt",
+            "ribbonC_03_jnt",
+            "L_cloudA_01_jnt",
+            "L_cloudB_01_jnt",
+            "R_cloudA_01_jnt",
+            "R_cloudB_01_jnt",
+            "Bip001_LCalfTwist1",
+            "Bip001_L_Calf_bend_jnt",
+            "Bip001_LCalfTwist_bend_jnt",
+            "Bip001_R_Foot",
+            "Bip001_R_Foot_ty_plus",
+            "Bip001_L_Foot",
+            "Bip001_L_Foot_ty_minus"
+          ],
+          "materials": [
+            "M_actor_jsspsi_cloth_02"
+          ]
+        },
+        {
+          "id": 4,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_03_lod0",
+          "mesh_name": "S_actor_jsspsi_cloth_03_lod0",
+          "original_index_count": 2004,
+          "bone_names": [
+            "Bip001_LCalfTwist1",
+            "Bip001_L_Calf_bend_jnt",
+            "Bip001_LCalfTwist_bend_jnt",
+            "Bip001_L_Foot",
+            "Bip001_L_Foot_ty_plus",
+            "Bip001_L_Foot_ty_minus",
+            "Bip001_L_Toe0",
+            "Bip001_RCalfTwist1",
+            "Bip001_R_Calf_bend_jnt",
+            "Bip001_RCalfTwist_bend_jnt",
+            "Bip001_R_Foot",
+            "Bip001_R_Foot_ty_plus",
+            "Bip001_R_Foot_ty_minus",
+            "Bip001_R_Toe0",
+            "L_skirtA_03_jnt",
+            "R_skirtA_03_jnt",
+            "L_skirtA_04_jnt",
+            "R_skirtA_04_jnt",
+            "Bip001_Spine",
+            "R_skirtB_01_jnt",
+            "R_skirtA_01_jnt",
+            "L_skirtA_01_jnt",
+            "R_skirtA_02_jnt",
+            "R_skirtB_02_jnt",
+            "R_skirtB_03_jnt",
+            "R_skirtB_04_jnt",
+            "L_skirtA_02_jnt",
+            "L_skirtB_01_jnt",
+            "L_skirtB_02_jnt",
+            "L_skirtB_03_jnt",
+            "L_skirtB_04_jnt"
+          ],
+          "materials": [
+            "M_actor_jsspsi_cloth_03"
+          ]
+        },
+        {
+          "id": 5,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_04_lod0",
+          "mesh_name": "S_actor_jsspsi_cloth_04_lod0",
+          "original_index_count": 474,
+          "bone_names": [
+            "R_sleeveD_03_jnt",
+            "R_sleeveD_04_jnt",
+            "R_sleeveD_05_jnt",
+            "R_sleeveD_06_jnt",
+            "R_sleeveD_02_jnt",
+            "R_sleeveD_01_jnt",
+            "Bip001_Spine",
+            "Bip001_Spine1",
+            "L_skirtA_01_jnt",
+            "R_skirtA_01_jnt",
+            "R_skirtB_01_jnt",
+            "L_skirtA_02_jnt",
+            "R_skirtA_02_jnt",
+            "L_skirtA_03_jnt",
+            "R_skirtA_03_jnt",
+            "L_skirtA_04_jnt",
+            "R_skirtA_04_jnt",
+            "R_skirtB_02_jnt",
+            "R_skirtB_03_jnt",
+            "L_skirtB_01_jnt",
+            "L_skirtB_02_jnt",
+            "L_skirtB_03_jnt",
+            "L_skirtB_04_jnt",
+            "R_skirtB_04_jnt"
+          ],
+          "materials": [
+            "M_fx_jsspsi_cloth_04_01",
+            "M_fx_jsspsi_cloth_04_02",
+            "M_fx_jsspsi_cloth_04_03"
+          ]
+        },
+        {
+          "id": 6,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_05_lod0",
+          "mesh_name": "S_actor_jsspsi_cloth_05_lod0",
+          "original_index_count": 5376,
+          "bone_names": [
+            "Bip001_Spine",
+            "Bip001_Spine1",
+            "tail_02_jnt",
+            "tail_01_jnt",
+            "tail_04_jnt",
+            "tail_03_jnt",
+            "tail_05_jnt",
+            "tail_06_jnt",
+            "tail_07_jnt",
+            "tail_08_jnt",
+            "tail_09_jnt"
+          ],
+          "materials": [
+            "M_fx_jsspsi_cloth_05",
+            "M_fx_actor_jsspsi_cloth_05_01"
+          ]
+        },
+        {
+          "id": 7,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_06_lod0",
+          "mesh_name": "S_actor_jsspsi_cloth_06_lod0",
+          "original_index_count": 4680,
+          "bone_names": [
+            "L_wingHand_jnt",
+            "R_wingHand_jnt"
+          ],
+          "materials": [
+            "M_fx_jsspsi_cloth_06_01",
+            "M_fx_jsspsi_cloth_06_01_depthonly"
+          ]
+        },
+        {
+          "id": 8,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_07_lod0",
+          "mesh_name": "S_actor_jsspsi_cloth_07_lod0",
+          "original_index_count": 2958,
+          "bone_names": [
+            "tail_05_jnt",
+            "tail_06_jnt",
+            "tail_07_jnt",
+            "tail_08_jnt",
+            "tail_09_jnt",
+            "tail_01_jnt",
+            "tail_03_jnt",
+            "tail_02_jnt",
+            "Bip001_Spine",
+            "tail_04_jnt",
+            "Bip001_Spine1"
+          ],
+          "materials": [
+            "M_actor_jsspsi_cloth_04"
+          ]
+        },
+        {
+          "id": 9,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_08_lod0",
+          "mesh_name": "S_actor_jsspsi_cloth_08_lod0",
+          "original_index_count": 1752,
+          "bone_names": [
+            "R_wingB_03_jnt",
+            "R_wingB_02_jnt",
+            "R_wingB_01_jnt",
+            "L_wingB_03_jnt",
+            "L_wingB_02_jnt",
+            "L_wingB_01_jnt"
+          ],
+          "materials": [
+            "M_fx_actor_jsspsi_cloth_08_01",
+            "M_fx_actor_jsspsi_cloth_08_01_depthonly"
+          ]
+        },
+        {
+          "id": 10,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_09_lod0",
+          "mesh_name": "S_actor_jsspsi_cloth_09_lod0",
+          "original_index_count": 924,
+          "bone_names": [
+            "R_wingHand_jnt",
+            "L_wingHand_jnt"
+          ],
+          "materials": [
+            "M_fx_jsspsi_cloth_06_02",
+            "M_fx_jsspsi_cloth_06_02_depthonly"
+          ]
+        },
+        {
+          "id": 11,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_eyeshadow_01_lod0",
+          "mesh_name": "S_actor_jsspsi_eyeshadow_01_lod0",
+          "original_index_count": 102,
+          "bone_names": [
+            "eyeLf04Joint",
+            "eyeLf05Joint",
+            "eyeLf03IrissdJoint",
+            "eyeLf06Joint",
+            "eyeLf03Joint",
+            "eyeLf02Joint",
+            "eyeLf01Joint",
+            "eyeRt04Joint",
+            "eyeRt05Joint",
+            "eyeRt03IrissdJoint",
+            "eyeRt06Joint",
+            "eyeRt03Joint",
+            "eyeRt02Joint",
+            "eyeRt01Joint"
+          ],
+          "materials": [
+            "M_eyewhiteshadow_common_01",
+            "M_eyeshadow_common_03"
+          ]
+        },
+        {
+          "id": 12,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_face_01_lod0",
+          "mesh_name": "S_actor_jsspsi_face_01_lod0",
+          "original_index_count": 12876,
+          "bone_names": [
+            "face_Head",
+            "lipLdn3Joint",
+            "lipMdnJoint",
+            "lipLdn2Joint",
+            "lipRdn3Joint",
+            "lipRdn2Joint",
+            "lipLup1Joint",
+            "lipLup4Joint",
+            "lipLup3Joint",
+            "lipLup2Joint",
+            "lipMupJoint",
+            "lipLdn1Joint",
+            "lipRup2Joint",
+            "lipRup3Joint",
+            "lipRup4Joint",
+            "lipRup1Joint",
+            "lipRdn1Joint",
+            "line_toothJoint",
+            "TongueMd03Joint",
+            "TongueMd04Joint",
+            "TongueMd02Joint",
+            "TongueMd01Joint",
+            "faceMdToothUpJoint",
+            "faceMdToothDnJoint",
+            "lipLdn4Joint",
+            "lipRdn4Joint",
+            "faceLfCheekOtDnJoint",
+            "faceRtCheekOtDnJoint",
+            "NoseMd01Joint",
+            "lineJoint",
+            "faceMdJawDnJoint",
+            "faceLfCheekOtJoint",
+            "faceLfCheekOtUpJoint",
+            "L_ear_01_jnt",
+            "faceLfCheekOtInJoint",
+            "eyeLf08Joint",
+            "eyeLf01Joint",
+            "eyeLf07Joint",
+            "eyeLf06Joint",
+            "eyeLf02Joint",
+            "eyeLf03Joint",
+            "eyeLf04Joint",
+            "eyeLf05Joint",
+            "faceRtCheekOtJoint",
+            "faceRtCheekOtUpJoint",
+            "R_ear_01_jnt",
+            "faceRtCheekOtInJoint",
+            "eyeRt08Joint",
+            "eyeRt01Joint",
+            "eyeRt07Joint",
+            "eyeRt06Joint",
+            "eyeRt02Joint",
+            "eyeRt03Joint",
+            "eyeRt04Joint",
+            "eyeRt05Joint",
+            "nasolabialLf02Joint",
+            "nasolabialLf03Joint",
+            "nasolabialLf01Joint",
+            "nasolabialRt02Joint",
+            "nasolabialRt03Joint",
+            "nasolabialRt01Joint"
+          ],
+          "materials": [
+            "M_actor_jsspsi_face_01"
+          ]
+        },
+        {
+          "id": 13,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_hair_01_lod0",
+          "mesh_name": "S_actor_jsspsi_hair_01_lod0",
+          "original_index_count": 59757,
+          "bone_names": [
+            "Bip001_Head",
+            "L_hairC_01_jnt",
+            "L_hairC_02_jnt",
+            "L_hairC_03_jnt",
+            "R_hairC_01_jnt",
+            "R_hairC_02_jnt",
+            "R_hairC_03_jnt",
+            "R_hairE_01_jnt",
+            "L_hairD_01_jnt",
+            "R_hairD_01_jnt",
+            "L_hairE_01_jnt",
+            "L_hairE_02_jnt",
+            "L_hairE_03_jnt",
+            "L_hairE_04_jnt",
+            "L_hairE_06_jnt",
+            "L_hairE_07_jnt",
+            "L_hairE_08_jnt",
+            "L_hairE_09_jnt",
+            "L_hairE_05_jnt",
+            "R_hairE_02_jnt",
+            "R_hairE_03_jnt",
+            "R_hairE_04_jnt",
+            "R_hairE_05_jnt",
+            "R_hairE_06_jnt",
+            "R_hairE_07_jnt",
+            "R_hairE_08_jnt",
+            "R_hairE_09_jnt",
+            "strandA_02_jnt",
+            "strandA_03_jnt",
+            "strandA_01_jnt",
+            "R_hairB_01_jnt",
+            "R_hairB_02_jnt",
+            "L_hairB_01_jnt",
+            "L_hairB_02_jnt",
+            "M_hairA_01_jnt",
+            "M_hairA_02_jnt",
+            "strandB_01_jnt"
+          ],
+          "materials": [
+            "M_actor_jsspsi_hair_01",
+            "M_actor_jsspsi_hairt_01"
+          ]
+        },
+        {
+          "id": 14,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_hairshadow_01_lod0",
+          "mesh_name": "S_actor_jsspsi_hairshadow_01_lod0",
+          "original_index_count": 1023,
+          "bone_names": [
+            "Bip001_Head",
+            "L_hairC_01_jnt",
+            "L_hairC_02_jnt",
+            "L_hairC_03_jnt",
+            "R_hairC_01_jnt",
+            "R_hairC_02_jnt",
+            "R_hairC_03_jnt",
+            "R_hairB_01_jnt",
+            "R_hairB_02_jnt",
+            "M_hairA_02_jnt",
+            "M_hairA_01_jnt",
+            "L_hairB_01_jnt",
+            "L_hairB_02_jnt"
+          ],
+          "materials": [
+            "M_hairshadow_common_01"
+          ]
+        },
+        {
+          "id": 15,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_iris_01_lod0",
+          "mesh_name": "S_actor_jsspsi_iris_01_lod0",
+          "original_index_count": 1464,
+          "bone_names": [
+            "faceLfHighlightJoint",
+            "faceLfHighlightJointA",
+            "faceRtHighlightJointA",
+            "faceRtHighlightJoint",
+            "faceLfPupilJoint",
+            "faceLfIrisJoint",
+            "faceRtPupilJoint",
+            "faceRtIrisJoint"
+          ],
+          "materials": [
+            "M_actor_jsspsi_iris_01"
+          ]
+        },
+        {
+          "id": 16,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_01_lod0",
+          "mesh_name": "S_actor_jsspsi_vfxpart_01_lod0",
+          "original_index_count": 4680,
+          "bone_names": [
+            "L_wingHand_jnt",
+            "R_wingHand_jnt"
+          ],
+          "materials": [
+            "M_fx_jsspsi_toppotential_01_1",
+            "M_fx_jsspsi_toppotential_01_2",
+            "M_fx_jsspsi_toppotential_01_3"
+          ]
+        },
+        {
+          "id": 17,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_02_lod0",
+          "mesh_name": "S_actor_jsspsi_vfxpart_02_lod0",
+          "original_index_count": 924,
+          "bone_names": [
+            "R_wingHand_jnt",
+            "L_wingHand_jnt"
+          ],
+          "materials": [
+            "M_fx_jsspsi_toppotential_01_4"
+          ]
+        },
+        {
+          "id": 18,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_03_lod0",
+          "mesh_name": "S_actor_jsspsi_vfxpart_03_lod0",
+          "original_index_count": 5376,
+          "bone_names": [
+            "Bip001_Spine",
+            "Bip001_Spine1",
+            "tail_02_jnt",
+            "tail_01_jnt",
+            "tail_04_jnt",
+            "tail_03_jnt",
+            "tail_05_jnt",
+            "tail_06_jnt",
+            "tail_07_jnt",
+            "tail_08_jnt",
+            "tail_09_jnt"
+          ],
+          "materials": [
+            "M_fx_jsspsi_toppotential_01_5"
+          ]
+        },
+        {
+          "id": 19,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_04_lod0",
+          "mesh_name": "S_actor_jsspsi_vfxpart_04_lod0",
+          "original_index_count": 1752,
+          "bone_names": [
+            "R_wingB_03_jnt",
+            "R_wingB_02_jnt",
+            "R_wingB_01_jnt",
+            "L_wingB_03_jnt",
+            "L_wingB_02_jnt",
+            "L_wingB_01_jnt"
+          ],
+          "materials": [
+            "M_fx_jsspsi_toppotential_01_6",
+            "M_fx_jsspsi_toppotential_01_7",
+            "M_fx_jsspsi_toppotential_01_8"
+          ]
+        },
+        {
+          "id": 20,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_05_lod0",
+          "mesh_name": "S_actor_jsspsi_vfxpart_05_lod0",
+          "original_index_count": 1800,
+          "bone_names": [
+            "Bip001_Head"
+          ],
+          "materials": [
+            "M_fx_jsspsi_toppotential_01_9",
+            "M_fx_jsspsi_toppotential_01_10"
+          ]
+        },
+        {
+          "id": 21,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_06_lod0",
+          "mesh_name": "S_actor_jsspsi_vfxpart_06_lod0",
+          "original_index_count": 900,
+          "bone_names": [
+            "L_wingHand_jnt",
+            "R_wingHand_jnt"
+          ],
+          "materials": [
+            "M_fx_jsspsi_toppotential_01_11"
+          ]
+        },
+        {
+          "id": 22,
+          "resource": "world",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_07_lod0",
+          "mesh_name": "S_actor_jsspsi_vfxpart_07_lod0",
+          "original_index_count": 2316,
+          "bone_names": [
+            "Bip001_Head"
+          ],
+          "materials": [
+            "M_fx_jsspsi_toppotential_01_12"
+          ]
+        },
+        {
+          "id": 23,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_body_01_lod0",
+          "mesh_name": "S_actor_jsspsi_body_01_lod0",
+          "original_index_count": 27468,
+          "bone_names": [
+            "Bip001_L_ForeTwist",
+            "Bip001_L_ForeTwist1",
+            "Bip001_L_Forearm",
+            "Bip001_L_Hand",
+            "Bip001_L_Hand_ty_minus",
+            "Bip001_L_Hand_ty_plus",
+            "Bip001_L_Finger0",
+            "Bip001_L_UpperArm",
+            "Bip001_LUpArmTwist1",
+            "Bip001_LUpArmTwist",
+            "Bip001_L_Forearm_ty_minus",
+            "Bip001_L_Forearm_ty_plus",
+            "Bip001_L_Finger12",
+            "Bip001_L_Finger11",
+            "Bip001_L_Finger1",
+            "Bip001_L_Finger2",
+            "Bip001_L_Finger22",
+            "Bip001_L_Finger21",
+            "Bip001_L_Finger3",
+            "Bip001_L_Finger32",
+            "Bip001_L_Finger31",
+            "Bip001_L_Finger4",
+            "Bip001_L_Finger42",
+            "Bip001_L_Finger41",
+            "Bip001_L_Finger02",
+            "Bip001_L_Finger01",
+            "Bip001_R_ForeTwist",
+            "Bip001_R_ForeTwist1",
+            "Bip001_R_Forearm",
+            "Bip001_R_Hand",
+            "Bip001_R_Hand_ty_minus",
+            "Bip001_R_Hand_ty_plus",
+            "Bip001_R_Finger0",
+            "Bip001_R_UpperArm",
+            "Bip001_RUpArmTwist1",
+            "Bip001_RUpArmTwist",
+            "Bip001_R_Forearm_ty_minus",
+            "Bip001_R_Forearm_ty_plus",
+            "Bip001_R_Finger12",
+            "Bip001_R_Finger11",
+            "Bip001_R_Finger1",
+            "Bip001_R_Finger2",
+            "Bip001_R_Finger22",
+            "Bip001_R_Finger21",
+            "Bip001_R_Finger3",
+            "Bip001_R_Finger32",
+            "Bip001_R_Finger31",
+            "Bip001_R_Finger4",
+            "Bip001_R_Finger42",
+            "Bip001_R_Finger41",
+            "Bip001_R_Finger02",
+            "Bip001_R_Finger01",
+            "Bip001_Spine1",
+            "Bip001_Spine2",
+            "Bip001_L_Clavicle",
+            "Bip001_R_Clavicle",
+            "L_breast_01_jnt",
+            "Bip001_Spine",
+            "Bip001_Neck",
+            "Bip001_R_UpperArm_tz_minus",
+            "Bip001_R_UpperArm_tz_plus",
+            "Bip001_R_UpperArm_ty_minus",
+            "Bip001_R_UpperArm_ty_plus",
+            "R_breast_01_jnt",
+            "Bip001_L_UpperArm_tz_minus",
+            "Bip001_L_UpperArm_tz_plus",
+            "Bip001_L_UpperArm_ty_minus",
+            "Bip001_L_UpperArm_ty_plus",
+            "Bip001_RThighTwist",
+            "Bip001_RThighTwist1_bend_jnt",
+            "Bip001_R_Thigh_bend_jnt",
+            "Bip001_Pelvis",
+            "Bip001_LThighTwist",
+            "Bip_R_Thigh_ty_minus",
+            "Bip_R_Thigh_ty_plus",
+            "Bip_R_Thigh_tz_minus",
+            "Bip001_LThighTwist1_bend_jnt",
+            "Bip001_L_Thigh_bend_jnt",
+            "Bip_L_Thigh_ty_minus",
+            "Bip_L_Thigh_ty_plus",
+            "Bip_L_Thigh_tz_minus",
+            "Bip001_L_Foot",
+            "Bip001_LCalfTwist1",
+            "Bip001_L_Foot_ty_plus",
+            "Bip001_L_Calf_bend_jnt",
+            "Bip001_LCalfTwist_bend_jnt",
+            "Bip_L_Calf_ty_plus",
+            "Bip_L_Calf_ty_minus",
+            "Bip001_L_Foot_ty_minus",
+            "Bip001_L_Toe0",
+            "Bip001_R_Foot",
+            "Bip001_RCalfTwist1",
+            "Bip001_R_Foot_ty_plus",
+            "Bip001_R_Calf_bend_jnt",
+            "Bip001_RCalfTwist_bend_jnt",
+            "Bip_R_Calf_ty_plus",
+            "Bip_R_Calf_ty_minus",
+            "Bip001_R_Foot_ty_minus",
+            "Bip001_R_Toe0",
+            "Bip001_Head",
+            "R_ear_01_jnt",
+            "L_ear_01_jnt",
+            "faceMdJawDnJoint",
+            "faceLfCheekOtDnJoint",
+            "faceRtCheekOtDnJoint"
+          ],
+          "materials": [
+            "M_actor_jsspsi_body_01"
+          ]
+        },
+        {
+          "id": 24,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_brow_01_lod0",
+          "mesh_name": "S_actor_jsspsi_brow_01_lod0",
+          "original_index_count": 4212,
+          "bone_names": [
+            "eyeLf04EyelashJoint",
+            "eyeLf05EyelashJoint",
+            "eyeLf06Joint",
+            "eyeLf07Joint",
+            "eyeLf05Joint",
+            "eyeLf01EyelashJoint",
+            "eyeLf02EyelashJoint",
+            "eyeLf03EyelashJoint",
+            "eyeLf08Joint",
+            "eyeLf01Joint",
+            "browLf02Joint",
+            "browLf01Joint",
+            "browLf03Joint",
+            "browLf04Joint",
+            "browLf05Joint",
+            "browLineLf01Joint",
+            "browLineLf02Joint",
+            "browLineLf03Joint",
+            "eyeRt04EyelashJoint",
+            "eyeRt05EyelashJoint",
+            "eyeRt06Joint",
+            "eyeRt07Joint",
+            "eyeRt05Joint",
+            "eyeRt01EyelashJoint",
+            "eyeRt02EyelashJoint",
+            "eyeRt03EyelashJoint",
+            "eyeRt08Joint",
+            "eyeRt01Joint",
+            "browRt01Joint",
+            "browRt02Joint",
+            "browRt03Joint",
+            "browRt04Joint",
+            "browRt05Joint",
+            "browLineRt01Joint",
+            "browLineRt02Joint",
+            "browLineRt03Joint"
+          ],
+          "materials": [
+            "M_actor_jsspsi_brow_01",
+            "M_actor_jsspsi_face_01"
+          ]
+        },
+        {
+          "id": 25,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_01_lod0",
+          "mesh_name": "S_actor_jsspsi_cloth_01_lod0",
+          "original_index_count": 88650,
+          "bone_names": [
+            "Bip001_R_Foot",
+            "Bip001_R_Toe0",
+            "Bip001_R_Foot_ty_plus",
+            "Bip001_RCalfTwist1",
+            "Bip001_R_Foot_ty_minus",
+            "Bip001_L_Foot",
+            "Bip001_L_Toe0",
+            "Bip001_L_Foot_ty_plus",
+            "Bip001_LCalfTwist1",
+            "R_sleeveD_01_jnt",
+            "R_sleeveD_02_jnt",
+            "R_sleeveD_03_jnt",
+            "R_sleeveD_04_jnt",
+            "R_sleeveD_05_jnt",
+            "R_sleeveD_06_jnt",
+            "R_sleeve_all_jnt",
+            "R_clothB_jnt",
+            "ribbonF_01_jnt",
+            "braceletA_03_jnt",
+            "L_skirtC_04_jnt",
+            "R_skirtC_04_jnt",
+            "L_skirtC_03_jnt",
+            "R_skirtC_03_jnt",
+            "L_skirtC_02_jnt",
+            "R_skirtC_02_jnt",
+            "L_skirtC_01_jnt",
+            "R_skirtC_01_jnt",
+            "Bip001_Spine",
+            "R_skirtB_01_jnt",
+            "R_skirtA_01_jnt",
+            "R_skirtA_04_jnt",
+            "R_skirtB_04_jnt",
+            "R_skirtB_02_jnt",
+            "R_skirtA_02_jnt",
+            "R_skirtB_03_jnt",
+            "R_skirtA_03_jnt",
+            "Bip001_Spine1",
+            "Bip001_Spine2",
+            "L_skirtB_01_jnt",
+            "L_skirtA_01_jnt",
+            "L_skirtA_04_jnt",
+            "L_skirtB_04_jnt",
+            "L_skirtA_02_jnt",
+            "L_skirtB_02_jnt",
+            "L_skirtA_03_jnt",
+            "L_skirtB_03_jnt",
+            "R_sleeveB_01_jnt",
+            "R_sleeveA_01_jnt",
+            "R_sleeveF_01_jnt",
+            "R_sleeveC_03_jnt",
+            "Bip001_L_Foot_ty_minus",
+            "L_sleeveD_04_jnt",
+            "L_sleeveD_05_jnt",
+            "L_sleeveD_06_jnt",
+            "L_sleeveD_01_jnt",
+            "L_sleeveD_02_jnt",
+            "L_sleeveD_03_jnt",
+            "L_sleeve_all_jnt",
+            "L_clothB_jnt",
+            "braceletA_06_jnt",
+            "braceletA_05_jnt",
+            "braceletA_07_jnt",
+            "wheat_02_jnt",
+            "wheat_01_jnt",
+            "braceletA_01_jnt",
+            "braceletA_04_jnt",
+            "braceletA_02_jnt",
+            "Bip001_Head",
+            "L_sleeveI_01_jnt",
+            "L_sleeveI_02_jnt",
+            "L_sleeveA_01_jnt",
+            "L_sleeveB_01_jnt",
+            "L_sleeveF_01_jnt",
+            "L_sleeveC_03_jnt",
+            "ribbonB_01_jnt",
+            "ribbonB_02_jnt",
+            "ribbonB_03_jnt",
+            "ribbonB_04_jnt",
+            "ribbonI_01_jnt",
+            "bowA_jnt",
+            "ribbonC_01_jnt",
+            "ribbonC_02_jnt",
+            "ribbonC_03_jnt",
+            "Bip001_Neck",
+            "R_breast_01_jnt",
+            "R_ribbonA_01_jnt",
+            "R_ribbonA_02_jnt",
+            "R_ribbonA_03_jnt",
+            "R_ribbonG_01_jnt",
+            "L_breast_01_jnt",
+            "L_ribbonA_01_jnt",
+            "L_ribbonA_02_jnt",
+            "L_ribbonA_03_jnt",
+            "Bip001_Pelvis",
+            "Bip001_LThighTwist",
+            "Bip001_RThighTwist",
+            "R_collar_01_jnt",
+            "L_collar_01_jnt",
+            "R_clothA_01_jnt",
+            "Bip001_R_Clavicle",
+            "M_clothA_jnt",
+            "L_clothA_01_jnt",
+            "Bip001_L_Clavicle",
+            "ribbonC_04_jnt",
+            "ribbonC_06_jnt",
+            "ribbonC_05_jnt",
+            "ribbonF_03_jnt",
+            "ribbonF_04_jnt",
+            "ribbonF_05_jnt",
+            "ribbonF_02_jnt",
+            "necklace_01_jnt",
+            "tail_09_jnt",
+            "Bip001_LUpArmTwist",
+            "Bip001_L_UpperArm_tz_plus",
+            "L_sleeveC_01_jnt",
+            "L_sleeveC_jnt",
+            "ribbonE_01_jnt",
+            "ribbonE_02_jnt",
+            "Bip001_R_Thigh_bend_jnt",
+            "Bip001_RThighTwist1_bend_jnt",
+            "Bip001_L_UpperArm_ty_plus",
+            "R_sleeveC_jnt",
+            "ribbonH_01_jnt",
+            "L_bowB_05_jnt",
+            "L_bowB_jnt",
+            "L_bowB_04_jnt",
+            "L_bowB_02_jnt",
+            "L_bowB_01_jnt",
+            "L_ribbonG_01_jnt",
+            "Bip_L_Thigh_ty_minus",
+            "Bip_L_Thigh_tz_minus",
+            "Bip_L_Thigh_ty_plus",
+            "tail_01_jnt",
+            "tail_02_jnt",
+            "tail_06_jnt",
+            "tail_07_jnt",
+            "tail_08_jnt",
+            "tail_03_jnt",
+            "tail_04_jnt",
+            "tail_05_jnt",
+            "Bip001_L_UpperArm_ty_minus",
+            "bowC_jnt",
+            "R_bowC_01_jnt",
+            "L_bowC_01_jnt",
+            "R_bowC_03_jnt",
+            "L_bowC_03_jnt",
+            "Bip001_RUpArmTwist",
+            "Bip001_R_UpperArm_tz_plus",
+            "R_sleeveC_01_jnt",
+            "Bip001_R_UpperArm_ty_plus",
+            "R_bowB_05_jnt",
+            "R_bowB_jnt",
+            "R_bowB_04_jnt",
+            "R_bowB_02_jnt",
+            "R_bowB_01_jnt",
+            "Bip_R_Thigh_ty_minus",
+            "Bip_R_Thigh_tz_minus",
+            "Bip_R_Thigh_ty_plus",
+            "Bip001_R_UpperArm_ty_minus"
+          ],
+          "materials": [
+            "M_actor_jsspsi_cloth_01"
+          ]
+        },
+        {
+          "id": 26,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_02_lod0",
+          "mesh_name": "S_actor_jsspsi_cloth_02_lod0",
+          "original_index_count": 15198,
+          "bone_names": [
+            "Bip001_Head",
+            "Bip001_RCalfTwist1",
+            "Bip001_R_Calf_bend_jnt",
+            "Bip001_RCalfTwist_bend_jnt",
+            "braceletA_01_jnt",
+            "braceletA_02_jnt",
+            "braceletA_04_jnt",
+            "braceletA_03_jnt",
+            "braceletA_05_jnt",
+            "braceletA_07_jnt",
+            "braceletA_06_jnt",
+            "R_earring_02_jnt",
+            "R_ear_01_jnt",
+            "R_earring_01_jnt",
+            "L_earring_02_jnt",
+            "L_ear_01_jnt",
+            "L_earring_01_jnt",
+            "tasselA_01_jnt",
+            "tasselA_03_jnt",
+            "tasselA_02_jnt",
+            "tasselA_04_jnt",
+            "tasselA_05_jnt",
+            "ribbonC_03_jnt",
+            "L_cloudA_01_jnt",
+            "L_cloudB_01_jnt",
+            "R_cloudA_01_jnt",
+            "R_cloudB_01_jnt",
+            "Bip001_LCalfTwist1",
+            "Bip001_L_Calf_bend_jnt",
+            "Bip001_LCalfTwist_bend_jnt",
+            "Bip001_R_Foot",
+            "Bip001_R_Foot_ty_plus",
+            "Bip001_L_Foot",
+            "Bip001_L_Foot_ty_minus"
+          ],
+          "materials": [
+            "M_actor_jsspsi_cloth_02"
+          ]
+        },
+        {
+          "id": 27,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_03_lod0",
+          "mesh_name": "S_actor_jsspsi_cloth_03_lod0",
+          "original_index_count": 2004,
+          "bone_names": [
+            "Bip001_LCalfTwist1",
+            "Bip001_L_Calf_bend_jnt",
+            "Bip001_LCalfTwist_bend_jnt",
+            "Bip001_L_Foot",
+            "Bip001_L_Foot_ty_plus",
+            "Bip001_L_Foot_ty_minus",
+            "Bip001_L_Toe0",
+            "Bip001_RCalfTwist1",
+            "Bip001_R_Calf_bend_jnt",
+            "Bip001_RCalfTwist_bend_jnt",
+            "Bip001_R_Foot",
+            "Bip001_R_Foot_ty_plus",
+            "Bip001_R_Foot_ty_minus",
+            "Bip001_R_Toe0",
+            "L_skirtA_03_jnt",
+            "R_skirtA_03_jnt",
+            "L_skirtA_04_jnt",
+            "R_skirtA_04_jnt",
+            "Bip001_Spine",
+            "R_skirtB_01_jnt",
+            "R_skirtA_01_jnt",
+            "L_skirtA_01_jnt",
+            "R_skirtA_02_jnt",
+            "R_skirtB_02_jnt",
+            "R_skirtB_03_jnt",
+            "R_skirtB_04_jnt",
+            "L_skirtA_02_jnt",
+            "L_skirtB_01_jnt",
+            "L_skirtB_02_jnt",
+            "L_skirtB_03_jnt",
+            "L_skirtB_04_jnt"
+          ],
+          "materials": [
+            "M_actor_jsspsi_cloth_03"
+          ]
+        },
+        {
+          "id": 28,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_04_lod0",
+          "mesh_name": "S_actor_jsspsi_cloth_04_lod0",
+          "original_index_count": 474,
+          "bone_names": [
+            "R_sleeveD_03_jnt",
+            "R_sleeveD_04_jnt",
+            "R_sleeveD_05_jnt",
+            "R_sleeveD_06_jnt",
+            "R_sleeveD_02_jnt",
+            "R_sleeveD_01_jnt",
+            "Bip001_Spine",
+            "Bip001_Spine1",
+            "L_skirtA_01_jnt",
+            "R_skirtA_01_jnt",
+            "R_skirtB_01_jnt",
+            "L_skirtA_02_jnt",
+            "R_skirtA_02_jnt",
+            "L_skirtA_03_jnt",
+            "R_skirtA_03_jnt",
+            "L_skirtA_04_jnt",
+            "R_skirtA_04_jnt",
+            "R_skirtB_02_jnt",
+            "R_skirtB_03_jnt",
+            "L_skirtB_01_jnt",
+            "L_skirtB_02_jnt",
+            "L_skirtB_03_jnt",
+            "L_skirtB_04_jnt",
+            "R_skirtB_04_jnt"
+          ],
+          "materials": [
+            "M_fx_jsspsi_cloth_04_03"
+          ]
+        },
+        {
+          "id": 29,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_05_lod0",
+          "mesh_name": "S_actor_jsspsi_cloth_05_lod0",
+          "original_index_count": 5376,
+          "bone_names": [
+            "Bip001_Spine",
+            "Bip001_Spine1",
+            "tail_02_jnt",
+            "tail_01_jnt",
+            "tail_04_jnt",
+            "tail_03_jnt",
+            "tail_05_jnt",
+            "tail_06_jnt",
+            "tail_07_jnt",
+            "tail_08_jnt",
+            "tail_09_jnt"
+          ],
+          "materials": [
+            "M_fx_jsspsi_cloth_05",
+            "M_fx_actor_jsspsi_cloth_05_01"
+          ]
+        },
+        {
+          "id": 30,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_06_lod0",
+          "mesh_name": "S_actor_jsspsi_cloth_06_lod0",
+          "original_index_count": 4680,
+          "bone_names": [
+            "L_wingHand_jnt",
+            "R_wingHand_jnt"
+          ],
+          "materials": [
+            "M_fx_jsspsi_cloth_06_01",
+            "M_fx_jsspsi_cloth_06_01_depthonly"
+          ]
+        },
+        {
+          "id": 31,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_07_lod0",
+          "mesh_name": "S_actor_jsspsi_cloth_07_lod0",
+          "original_index_count": 2958,
+          "bone_names": [
+            "tail_05_jnt",
+            "tail_06_jnt",
+            "tail_07_jnt",
+            "tail_08_jnt",
+            "tail_09_jnt",
+            "tail_01_jnt",
+            "tail_03_jnt",
+            "tail_02_jnt",
+            "Bip001_Spine",
+            "tail_04_jnt",
+            "Bip001_Spine1"
+          ],
+          "materials": [
+            "M_actor_jsspsi_cloth_04"
+          ]
+        },
+        {
+          "id": 32,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_08_lod0",
+          "mesh_name": "S_actor_jsspsi_cloth_08_lod0",
+          "original_index_count": 1752,
+          "bone_names": [
+            "R_wingB_03_jnt",
+            "R_wingB_02_jnt",
+            "R_wingB_01_jnt",
+            "L_wingB_03_jnt",
+            "L_wingB_02_jnt",
+            "L_wingB_01_jnt"
+          ],
+          "materials": [
+            "M_fx_actor_jsspsi_cloth_08_01",
+            "M_fx_actor_jsspsi_cloth_08_01_depthonly"
+          ]
+        },
+        {
+          "id": 33,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_09_lod0",
+          "mesh_name": "S_actor_jsspsi_cloth_09_lod0",
+          "original_index_count": 924,
+          "bone_names": [
+            "R_wingHand_jnt",
+            "L_wingHand_jnt"
+          ],
+          "materials": [
+            "M_fx_jsspsi_cloth_06_02",
+            "M_fx_jsspsi_cloth_06_02_depthonly"
+          ]
+        },
+        {
+          "id": 34,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_eyeshadow_01_lod0",
+          "mesh_name": "S_actor_jsspsi_eyeshadow_01_lod0",
+          "original_index_count": 102,
+          "bone_names": [
+            "eyeLf04Joint",
+            "eyeLf05Joint",
+            "eyeLf03IrissdJoint",
+            "eyeLf06Joint",
+            "eyeLf03Joint",
+            "eyeLf02Joint",
+            "eyeLf01Joint",
+            "eyeRt04Joint",
+            "eyeRt05Joint",
+            "eyeRt03IrissdJoint",
+            "eyeRt06Joint",
+            "eyeRt03Joint",
+            "eyeRt02Joint",
+            "eyeRt01Joint"
+          ],
+          "materials": [
+            "M_eyewhiteshadow_common_01",
+            "M_eyeshadow_common_03"
+          ]
+        },
+        {
+          "id": 35,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_face_01_lod0",
+          "mesh_name": "S_actor_jsspsi_face_01_lod0",
+          "original_index_count": 12876,
+          "bone_names": [
+            "face_Head",
+            "lipLdn3Joint",
+            "lipMdnJoint",
+            "lipLdn2Joint",
+            "lipRdn3Joint",
+            "lipRdn2Joint",
+            "lipLup1Joint",
+            "lipLup4Joint",
+            "lipLup3Joint",
+            "lipLup2Joint",
+            "lipMupJoint",
+            "lipLdn1Joint",
+            "lipRup2Joint",
+            "lipRup3Joint",
+            "lipRup4Joint",
+            "lipRup1Joint",
+            "lipRdn1Joint",
+            "line_toothJoint",
+            "TongueMd03Joint",
+            "TongueMd04Joint",
+            "TongueMd02Joint",
+            "TongueMd01Joint",
+            "faceMdToothUpJoint",
+            "faceMdToothDnJoint",
+            "lipLdn4Joint",
+            "lipRdn4Joint",
+            "faceLfCheekOtDnJoint",
+            "faceRtCheekOtDnJoint",
+            "NoseMd01Joint",
+            "lineJoint",
+            "faceMdJawDnJoint",
+            "faceLfCheekOtJoint",
+            "faceLfCheekOtUpJoint",
+            "L_ear_01_jnt",
+            "faceLfCheekOtInJoint",
+            "eyeLf08Joint",
+            "eyeLf01Joint",
+            "eyeLf07Joint",
+            "eyeLf06Joint",
+            "eyeLf02Joint",
+            "eyeLf03Joint",
+            "eyeLf04Joint",
+            "eyeLf05Joint",
+            "faceRtCheekOtJoint",
+            "faceRtCheekOtUpJoint",
+            "R_ear_01_jnt",
+            "faceRtCheekOtInJoint",
+            "eyeRt08Joint",
+            "eyeRt01Joint",
+            "eyeRt07Joint",
+            "eyeRt06Joint",
+            "eyeRt02Joint",
+            "eyeRt03Joint",
+            "eyeRt04Joint",
+            "eyeRt05Joint",
+            "nasolabialLf02Joint",
+            "nasolabialLf03Joint",
+            "nasolabialLf01Joint",
+            "nasolabialRt02Joint",
+            "nasolabialRt03Joint",
+            "nasolabialRt01Joint"
+          ],
+          "materials": [
+            "M_actor_jsspsi_face_01"
+          ]
+        },
+        {
+          "id": 36,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_hair_01_lod0",
+          "mesh_name": "S_actor_jsspsi_hair_01_lod0",
+          "original_index_count": 59757,
+          "bone_names": [
+            "Bip001_Head",
+            "L_hairC_01_jnt",
+            "L_hairC_02_jnt",
+            "L_hairC_03_jnt",
+            "R_hairC_01_jnt",
+            "R_hairC_02_jnt",
+            "R_hairC_03_jnt",
+            "R_hairE_01_jnt",
+            "L_hairD_01_jnt",
+            "R_hairD_01_jnt",
+            "L_hairE_01_jnt",
+            "L_hairE_02_jnt",
+            "L_hairE_03_jnt",
+            "L_hairE_04_jnt",
+            "L_hairE_06_jnt",
+            "L_hairE_07_jnt",
+            "L_hairE_08_jnt",
+            "L_hairE_09_jnt",
+            "L_hairE_05_jnt",
+            "R_hairE_02_jnt",
+            "R_hairE_03_jnt",
+            "R_hairE_04_jnt",
+            "R_hairE_05_jnt",
+            "R_hairE_06_jnt",
+            "R_hairE_07_jnt",
+            "R_hairE_08_jnt",
+            "R_hairE_09_jnt",
+            "strandA_02_jnt",
+            "strandA_03_jnt",
+            "strandA_01_jnt",
+            "R_hairB_01_jnt",
+            "R_hairB_02_jnt",
+            "L_hairB_01_jnt",
+            "L_hairB_02_jnt",
+            "M_hairA_01_jnt",
+            "M_hairA_02_jnt",
+            "strandB_01_jnt"
+          ],
+          "materials": [
+            "M_actor_jsspsi_hair_01",
+            "M_actor_jsspsi_hairt_01"
+          ]
+        },
+        {
+          "id": 37,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_hairshadow_01_lod0",
+          "mesh_name": "S_actor_jsspsi_hairshadow_01_lod0",
+          "original_index_count": 1023,
+          "bone_names": [
+            "Bip001_Head",
+            "L_hairC_01_jnt",
+            "L_hairC_02_jnt",
+            "L_hairC_03_jnt",
+            "R_hairC_01_jnt",
+            "R_hairC_02_jnt",
+            "R_hairC_03_jnt",
+            "R_hairB_01_jnt",
+            "R_hairB_02_jnt",
+            "M_hairA_02_jnt",
+            "M_hairA_01_jnt",
+            "L_hairB_01_jnt",
+            "L_hairB_02_jnt"
+          ],
+          "materials": [
+            "M_hairshadow_common_01"
+          ]
+        },
+        {
+          "id": 38,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_iris_01_lod0",
+          "mesh_name": "S_actor_jsspsi_iris_01_lod0",
+          "original_index_count": 1464,
+          "bone_names": [
+            "faceLfHighlightJoint",
+            "faceLfHighlightJointA",
+            "faceRtHighlightJointA",
+            "faceRtHighlightJoint",
+            "faceLfPupilJoint",
+            "faceLfIrisJoint",
+            "faceRtPupilJoint",
+            "faceRtIrisJoint"
+          ],
+          "materials": [
+            "M_actor_jsspsi_iris_01"
+          ]
+        },
+        {
+          "id": 39,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_01_lod0",
+          "mesh_name": "S_actor_jsspsi_vfxpart_01_lod0",
+          "original_index_count": 4680,
+          "bone_names": [
+            "L_wingHand_jnt",
+            "R_wingHand_jnt"
+          ],
+          "materials": [
+            "M_fx_jsspsi_toppotential_01_1",
+            "M_fx_jsspsi_toppotential_01_2",
+            "M_fx_jsspsi_toppotential_01_3",
+            "M_fx_jsspsi_toppotential_01_1_depth"
+          ]
+        },
+        {
+          "id": 40,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_02_lod0",
+          "mesh_name": "S_actor_jsspsi_vfxpart_02_lod0",
+          "original_index_count": 924,
+          "bone_names": [
+            "R_wingHand_jnt",
+            "L_wingHand_jnt"
+          ],
+          "materials": [
+            "M_fx_jsspsi_toppotential_01_4"
+          ]
+        },
+        {
+          "id": 41,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_03_lod0",
+          "mesh_name": "S_actor_jsspsi_vfxpart_03_lod0",
+          "original_index_count": 5376,
+          "bone_names": [
+            "Bip001_Spine",
+            "Bip001_Spine1",
+            "tail_02_jnt",
+            "tail_01_jnt",
+            "tail_04_jnt",
+            "tail_03_jnt",
+            "tail_05_jnt",
+            "tail_06_jnt",
+            "tail_07_jnt",
+            "tail_08_jnt",
+            "tail_09_jnt"
+          ],
+          "materials": [
+            "M_fx_jsspsi_toppotential_01_5"
+          ]
+        },
+        {
+          "id": 42,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_04_lod0",
+          "mesh_name": "S_actor_jsspsi_vfxpart_04_lod0",
+          "original_index_count": 1752,
+          "bone_names": [
+            "R_wingB_03_jnt",
+            "R_wingB_02_jnt",
+            "R_wingB_01_jnt",
+            "L_wingB_03_jnt",
+            "L_wingB_02_jnt",
+            "L_wingB_01_jnt"
+          ],
+          "materials": [
+            "M_fx_jsspsi_toppotential_01_6",
+            "M_fx_jsspsi_toppotential_01_7",
+            "M_fx_jsspsi_toppotential_01_8"
+          ]
+        },
+        {
+          "id": 43,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_05_lod0",
+          "mesh_name": "S_actor_jsspsi_vfxpart_05_lod0",
+          "original_index_count": 1800,
+          "bone_names": [
+            "Bip001_Head"
+          ],
+          "materials": [
+            "M_fx_jsspsi_toppotential_01_9",
+            "M_fx_jsspsi_toppotential_01_10"
+          ]
+        },
+        {
+          "id": 44,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_06_lod0",
+          "mesh_name": "S_actor_jsspsi_vfxpart_06_lod0",
+          "original_index_count": 900,
+          "bone_names": [
+            "L_wingHand_jnt",
+            "R_wingHand_jnt"
+          ],
+          "materials": [
+            "M_fx_jsspsi_toppotential_01_11"
+          ]
+        },
+        {
+          "id": 45,
+          "resource": "ui",
+          "renderer_kind": "skinned",
+          "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_vfxpart_07_lod0",
+          "mesh_name": "S_actor_jsspsi_vfxpart_07_lod0",
+          "original_index_count": 2316,
+          "bone_names": [
+            "Bip001_Head"
+          ],
+          "materials": [
+            "M_fx_jsspsi_toppotential_01_12"
+          ]
+        }
+      ]
+    },
+    "meshes": [],
+    "textures": [],
+    "option_groups": [],
+    "component_rules": [
+      {
+        "target": 0,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 1,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 2,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 3,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 4,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 5,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 6,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 7,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 8,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 9,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 10,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 11,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 12,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 13,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 14,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 15,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 16,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 17,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 18,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 19,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 20,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 21,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 22,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 23,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 24,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 25,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 26,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 27,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 28,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 29,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 30,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 31,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 32,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 33,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 34,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 35,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 36,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 37,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 38,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 39,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 40,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 41,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 42,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 43,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 44,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      },
+      {
+        "target": 45,
+        "candidates": [
+          {
+            "operation": "keep"
+          }
+        ]
+      }
+    ]
+  },
+  "payload_files": []
+}

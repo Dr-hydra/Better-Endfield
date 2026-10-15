@@ -10,19 +10,30 @@ public sealed partial class MainWindow
         _appSettings.SteamIntegration ??= new SteamIntegrationSettings();
         SteamIntegrationPage.Initialize(_appSettings.SteamIntegration,
             () => ConfigurationService.SaveAppSettingsAsync(_appSettings),
-            () => GamePathBox.Text.Trim(), () => GameLaunchArgumentsBox.Text.Trim(), PrepareSteamXInputAsync);
+            () => GamePathBox.Text.Trim(), () => GameLaunchArgumentsBox.Text.Trim(),
+            GetSelectedLoaderMode, PrepareSteamLaunchAsync);
     }
 
-    private async Task<bool> PrepareSteamXInputAsync()
+    private Task EnsureSelectedLoaderReadyAsync() => GameLaunchService.EnsureLoaderReadyAsync(
+        GetSelectedLoaderMode(), GamePathBox.Text.Trim(), async () =>
+        {
+            var status = await XInputDeploymentService.InspectAsync(
+                GamePathBox.Text.Trim(), RuntimePathDiscoveryService.BundledInjectorPath);
+            if (status.State == XInputDeploymentState.Conflict)
+                throw new InvalidOperationException(status.Message);
+            return status.State == XInputDeploymentState.Installed;
+        });
+
+    private async Task<bool> PrepareSteamLaunchAsync()
     {
         var processes = System.Diagnostics.Process.GetProcessesByName("Endfield");
         bool running = processes.Length > 0;
         foreach (var process in processes) process.Dispose();
         if (running) throw new SteamIntegrationException("game_running");
-        SelectLoaderMode("xinput");
-        if (!await SaveAsync(showSuccess: false)) return false;
-        await XInputDeploymentService.InstallAsync(GamePathBox.Text.Trim(), RuntimePathDiscoveryService.BundledInjectorPath);
-        await RefreshXInputStatusAsync();
-        return true;
+        SteamIntegrationService.GenerateLaunchCommand(
+            GameLaunchService.SelectHelperPath(GetSelectedLoaderMode(), RuntimePathDiscoveryService.BundledInjectorPath,
+                RuntimePathDiscoveryService.BundledLauncherPath), GamePathBox.Text.Trim(), GameLaunchArgumentsBox.Text.Trim());
+        await EnsureSelectedLoaderReadyAsync();
+        return await SaveAsync(showSuccess: false);
     }
 }

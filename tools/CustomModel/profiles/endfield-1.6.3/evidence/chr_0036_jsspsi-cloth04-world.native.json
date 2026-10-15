@@ -1,0 +1,398 @@
+{
+  "schema": 1,
+  "kind": "bem-explicit-resource-evidence",
+  "profile_id": "chr_0036_jsspsi-cloth04-world-pc",
+  "platform": "windows-x64",
+  "source_snapshot": {
+    "manifest_version": "2954fa80-23c1-1579-2b22-4ecfd6d70418"
+  },
+  "run": "bem-1_6_3-login-20261015-091033-3bb4aa",
+  "layouts": [
+    {
+      "component": 0,
+      "resource": "world",
+      "renderer_path": "Mesh_all/lod0/S_actor_jsspsi_cloth_04_lod0",
+      "mesh_id": "cab-f1cb0ce88ceb770638295d8f4f9eaa8b:-2890387106605326464",
+      "mesh_name": "S_actor_jsspsi_cloth_04_lod0",
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        12
+      ],
+      "vertex_count": 110,
+      "original_index_count": 474
+    }
+  ],
+  "identity_policy": "efmi-dx11-region-texture0-fullchain-v1",
+  "resource_entries": {
+    "world": {
+      "5639e0f6": 0
+    }
+  },
+  "entry_identity_evidence": {
+    "0": {
+      "mesh_id": "cab-f1cb0ce88ceb770638295d8f4f9eaa8b:-2890387106605326464",
+      "policy": "efmi-dx11-region-texture0-fullchain-v1",
+      "index_size": 2,
+      "byte_width": 948,
+      "index_count": 474,
+      "source_hash": "5639e0f6"
+    }
+  },
+  "textures": {
+    "85375038": {
+      "name": "T_fx_flow_527_M",
+      "evidence": {
+        "texture_id": "cab-4659c81b53f4fba74acfc98550c5ed06:5855206339404419075",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          1,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "6021e3e4",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "6376c672": {
+      "name": "T_fx_jsspsi_si_mask2_M",
+      "evidence": {
+        "texture_id": "cab-5eaabef207d835f80a4b5020fd132e8d:7114725120467188172",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "ff364679",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "2e70bcc2": {
+      "name": "T_fx_jsspsi_si_mask5_02_M",
+      "evidence": {
+        "texture_id": "cab-2eaa0b2933d2d308a8125c16c7a108ca:3270602641811877156",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          128,
+          128,
+          8,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "17ab5644",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            128,
+            128
+          ]
+        ]
+      }
+    },
+    "3cb9e2ef": {
+      "name": "T_fx_jsspsi_si_mask5_M",
+      "evidence": {
+        "texture_id": "cab-303aff6dc83625dc7f0c072dbee0730d:-2623787310477348280",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          128,
+          128,
+          8,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "c0bb4bcc",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            128,
+            128
+          ]
+        ]
+      }
+    },
+    "b115da91": {
+      "name": "T_fx_mask_804_M",
+      "evidence": {
+        "texture_id": "cab-0ce687d398cc4f2231851bd87ca42466:-1993041074277959112",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          512,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "f1b7c3ae",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            512
+          ]
+        ]
+      }
+    },
+    "57c5a383": {
+      "name": "T_fx_noise_cyt_003_1",
+      "evidence": {
+        "texture_id": "cab-ae2206b674e9bd20e015353fb20314fa:3691533391489891258",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          256,
+          9,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "c08afeb3",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            256
+          ]
+        ]
+      }
+    },
+    "b9c589c8": {
+      "name": "T_fx_normal_301_N",
+      "evidence": {
+        "texture_id": "cab-eec9d30f76846dee587270c0e0d1be28:-5651056934967448697",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          128,
+          128,
+          8,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "f0c01cc3",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            128,
+            128
+          ]
+        ]
+      }
+    },
+    "ccbc3c56": {
+      "name": "T_fx_normal_302_N",
+      "evidence": {
+        "texture_id": "cab-943857430478bd3f813388628f43fa28:2771930553465520447",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          64,
+          64,
+          7,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "8e466550",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            64,
+            64
+          ]
+        ]
+      }
+    },
+    "79ac2f8c": {
+      "name": "T_fx_normal_501_N",
+      "evidence": {
+        "texture_id": "cab-5a224b3979030f47391eae5286eb7404:536576193998735124",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          64,
+          64,
+          7,
+          1,
+          83,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "263d81dc",
+        "runtime_graphics_format": 104,
+        "runtime_sizes": [
+          [
+            64,
+            64
+          ]
+        ]
+      }
+    },
+    "e338f69b": {
+      "name": "T_fx_trail_gfx_18",
+      "evidence": {
+        "texture_id": "cab-f1c556ab6e6db895463b9897b928b1e4:4929026377307869770",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          256,
+          128,
+          9,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "e8093de6",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            256,
+            128
+          ]
+        ]
+      }
+    },
+    "5c93eea2": {
+      "name": "T_fx_trail_zh_511_M",
+      "evidence": {
+        "texture_id": "cab-bddeb8b55162bac3e4c9e0b33951cf56:-994392827591947584",
+        "policy": "efmi-dx11-region-texture0-fullchain-v1",
+        "descriptor": [
+          512,
+          128,
+          10,
+          1,
+          99,
+          1,
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        "native_data_crc32c": "34ac5a52",
+        "runtime_graphics_format": 108,
+        "runtime_sizes": [
+          [
+            512,
+            128
+          ]
+        ]
+      }
+    }
+  },
+  "identity_issues": [],
+  "legacy_conversion_ready": false
+}
