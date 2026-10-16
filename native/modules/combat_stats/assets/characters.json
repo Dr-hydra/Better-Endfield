@@ -257,6 +257,24 @@
       "source": "/images/characters/chr_0022_bounda.avif?v=b8672814",
       "resourceId": 1031,
       "sourceUrl": "https://end.canmoe.com/images/characters/chr_0022_bounda.avif?v=b8672814"
+    },
+    {
+      "id": "chr_0036_jsspsi",
+      "name": "祀",
+      "nameEn": "祀",
+      "source": "/images/characters/chr_0036_jsspsi.avif?v=16ce391e",
+      "resourceId": 1032,
+      "sourceUrl": "https://end.canmoe.com/images/characters/chr_0036_jsspsi.avif?v=16ce391e",
+      "sourceSha256": "16ce391eaa150b78ce37fc55528af0cb5927b78a62741bcd3f1c64b66afb43cc"
+    },
+    {
+      "id": "chr_0037_minghe",
+      "name": "明河",
+      "nameEn": "Argent Flow",
+      "source": "icon_chr_0037_minghe.png",
+      "resourceId": 1033,
+      "sourceUrl": "local:vfs/d21fda285c7bd3c9ec2c65e2.ab/icon_chr_0037_minghe.png",
+      "sourceSha256": "e25577d849a75a4deab794abe9ec5e306ae86c76db5e4d246a76e7f54583bb36"
     }
   ]
 }

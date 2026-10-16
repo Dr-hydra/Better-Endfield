@@ -1,5 +1,12 @@
 # 更新日志
 
+## 4.0.6 Better Endfield Next
+
+- **Steam 覆盖层与链式启动修复**：针对 Steam 替换启动即使开启管理员权限也无法呼出 Steam 叠加层的问题，重构启动器流程，在挂起状态下的游戏子进程中完成 Steam Overlay 模块注入，彻底恢复 Shift+Tab 叠加层快捷键呼出与状态同步。
+- **Android 会客室媒体屏崩溃修复**：解决手机版会客室媒体屏播放视频时闪退的问题。针对 Android Vulkan 渲染模式下 Unity 原生 VideoPlayer 引发的底层驱动崩溃，自动回退并接入 Android NDK 原生 MediaCodec / libmediandk.so 解码流水线，直连 SurfaceTexture 纹理渲染，彻底根治视频播放闪退。
+- **桌面端新角色头像与战斗字典增量同步**：增量提取并规范化补充新角色「祀（chr_0036_jsspsi）」与「明河（chr_0037_minghe）」的高清头像资源，完整嵌入桌面端 UI 程序集；重新运行增量流水线同步战斗字典，角色总数增量更新至 36 位，同步刷新 Native Overlay 与 Web 字典定义。
+
+附件与验证边界见 [4.0.6 发布记录](docs/workspace/releases/4.0.6/RELEASE_4_0_6.md)。
 ## 4.0.5 Better Endfield Next
 
 - **多启动器自动识别与切换**：支持官服及各渠道服启动器自动扫描与下拉列表切换，支持手动选择并记住自定义启动器路径，支持从列表移除。
@@ -286,3 +293,4 @@
 - BEM Tools 升至 1.5.0，增加可移动创作者工作区、英文文档和 Blender 工程导出器首版。
 - PC 创作者窗口增加标准工作区入口。
 - Windows 与 Android Release 构建、Android Lint 与 APK 签名检查通过；随版本发布 BEM Tools 1.5.0、第三方模块 SDK 与双端 Echo 示例。
+

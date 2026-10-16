@@ -41,7 +41,9 @@ inline constexpr CharacterAsset kCharacterAssets[] = {
     {"chr_0020_meurs", L"卡契尔", L"Catcher", 1029},
     {"chr_0019_karin", L"秋栗", L"Karin", 1030},
     {"chr_0022_bounda", L"萤石", L"Fluorite", 1031},
+    {"chr_0036_jsspsi", L"祀", L"祀", 1032},
+    {"chr_0037_minghe", L"明河", L"Argent Flow", 1033},
     {"chr_0002_endminm", L"管理员（男）", L"Endministrator (Male)", 1002},
     {"chr_0003_endminf", L"管理员（女）", L"Endministrator (Female)", 1002},
-    {"chr_0036_jsspsi", L"祀", L"Si", 1000},
 };
+

@@ -8,7 +8,7 @@ Better Endfield Next 是面向《明日方舟：终末地》的开源模块化�
 
 **第三方模块与第一人称已迁移至独立项目 [Endfield Mod Loader（E Mod Loader）](https://github.com/Dr-hydra/Endfield-Mod-Loader)。** EML **0.1.1-dev Windows 开发预览**现已提供 Windows 加载器、Android APK 和独立第一人称模块。**[下载 EML 与第一人称模块](https://github.com/Dr-hydra/Endfield-Mod-Loader/releases/latest)** · [第一人称使用说明](https://github.com/Dr-hydra/Endfield-Mod-Loader/blob/main/examples/first-person/README.md)。Windows、Android 的创意工坊入口继续保留；BE 的通用 Host、内置模块加载及共享 Hook 链继续维护。游戏及 Android 设备效果尚未实机验证。
 
-当前版本为 **4.0.5**，独立 BEM Tools 为 **1.5.5**。本版支持多启动器自动识别与免启动器直接拉起模式，同步安卓 1.6.4 四语种完整短语音运行时索引，并整合昼雪角色创作资料入完整包。详情见 [4.0.5 更新记录](docs/workspace/releases/4.0.5/RELEASE_4_0_5.md)。
+当前版本为 **4.0.6**，独立 BEM Tools 为 **1.5.5**。本版支持多启动器自动识别与免启动器直接拉起模式，同步安卓 1.6.4 四语种完整短语音运行时索引，并整合昼雪角色创作资料入完整包。详情见 [4.0.6 更新记录](docs/workspace/releases/4.0.6/RELEASE_4_0_6.md)。
 
 Next 4.0.x 沿用现有安装身份。Next 使用新的安装身份、内部标识和发布签名，与 3.x 旧版独立。从 3.x 升级时，请先卸载旧版（Windows 同时卸载旧 XInput 代理），重新安装并设置；Android 需重新启用模块和游戏作用域。旧设置不迁移，BEM/MMD 文件可手动重新导入。Logo 保留。第一人称功能现由 [E Mod Loader 独立模块](https://github.com/Dr-hydra/Endfield-Mod-Loader/releases/latest) 提供。[实施与构建说明](docs/workspace/NEXT_IMPLEMENTATION.md)。
 
@@ -158,3 +158,4 @@ Android 使用 JDK 17 及以上、SDK、NDK 和 CMake，版本以 [`android/app/
 Better Endfield Next 使用 [AGPL-3.0-only](LICENSE)，是独立的非官方项目，与游戏开发商及发行商无关联。MinHook、Dobby、EIEM、7-Zip 等依赖或引用保留各自许可证和来源说明；创作者应自行确认第三方模型、动作、音频和模块的分发授权。
 
 功能效果取决于客户端、设备和用户导入内容。使用前请了解相关服务规则及账号/客户端风险；游戏更新后遇到契约失败，应关闭受影响功能并等待适配。
+

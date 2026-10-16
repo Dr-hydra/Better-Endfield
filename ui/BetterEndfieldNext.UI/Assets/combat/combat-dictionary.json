@@ -2,50 +2,37 @@
   "metadata": {
     "schemaVersion": 1,
     "generator": "CombatDataExporter v1.0",
-    "exportedAt": "2026-09-29T15:26:27.842148+00:00",
+    "exportedAt": "2026-10-16T10:58:58.608956+00:00",
     "source": {
-      "kind": "persistent+base",
-      "refreshedAt": "2026-09-29T15:16:44.689597+00:00",
-      "gamePath": "D:\\Arknights Endfield",
-      "baseVfs": "D:\\Arknights Endfield\\Endfield_Data\\StreamingAssets",
-      "persistentVfs": "D:\\Arknights Endfield\\Endfield_Data\\Persistent",
-      "tableCount": 724,
-      "requiredSha256": {
-        "CharacterTable.json": "7a9f2aec88e424266567bc73e51f21ee0c18d1663ea022b8f786c80a96efea36",
-        "CharGrowthTable.json": "f949c8be7a3ba77f82015a54917770597715582077a8ca55005abc24e5376e4b",
-        "I18nTextTable_CN.json": "1e850d2455f815d54a43ae40ac7db8d5fe67907e2e54f57c90cfe1e62904a73b",
-        "ItemTable.json": "1aa73ec2e5a6fc40cb251d935119a1ae3d1fe8219dae65cec4ae9d725f2bf58e",
-        "WeaponBasicTable.json": "02e2467e54f2a6fa5aa77b90d1aa261ac59496ae70a2b1b0cc0567bcfb89dc38",
-        "EquipTable.json": "ff511db7354ef0d4b37fb5d1226453e98afdbeb09753ed11fce34819770b0650",
-        "EquipSuitTable.json": "b937764bec054fc2028a9d57d9105200c690dbb462227205326ba585e5e7a430",
-        "DungeonTable.json": "1315b8584cdd304bf3d2c83a2a803f2666bead223e975207fa84ce21e8b9c201"
-      }
+      "kind": "offline-snapshot",
+      "tablePath": "G:\\Better Endfield\\temp\\dump_tables\\Table"
     },
     "counts": {
-      "characters": 34,
-      "skills": 262,
-      "talents": 131,
-      "weapons": 80,
+      "characters": 36,
+      "skills": 269,
+      "talents": 135,
+      "weapons": 84,
       "suits": 24,
-      "equipment": 258,
-      "dungeons": 363,
-      "dungeonSeries": 83,
+      "equipment": 276,
+      "dungeons": 407,
+      "dungeonSeries": 92,
       "buffs": 182,
-      "buffSourceMappings": 669,
-      "buffSourceCandidates": 1883
+      "buffSourceMappings": 706,
+      "buffSourceCandidates": 1983
     },
     "buffSourceIndex": {
       "schemaVersion": 2,
-      "sourceSha256": "fcef45d0ecedd675be85d3231e3ddd7c8c5e84ff85098bc39df5b39d6a0bf277",
-      "skillConfigs": 2648,
-      "buffConfigs": 2921,
-      "referenceEdges": 11683,
-      "sourceRoots": 724,
+      "referenceEncoding": "memorypack-pooled-1.6.3",
+      "sourceSha256": "aeb7f403bce88f2b50617291c72339e7d401f1cc9c4392e23630761318680eee",
+      "skillConfigs": 2927,
+      "buffConfigs": 3394,
+      "referenceEdges": 13588,
+      "sourceRoots": 751,
       "missingRoots": 0,
-      "mappedBuffs": 669,
-      "candidateRows": 1883,
-      "ambiguousBuffs": 283,
-      "skillBuffEdges": 2465
+      "mappedBuffs": 706,
+      "candidateRows": 1983,
+      "ambiguousBuffs": 309,
+      "skillBuffEdges": 2771
     }
   },
   "characters": {
@@ -400,6 +387,28 @@
       "department": "ENDFIELD INDUSTRIES",
       "defaultWeaponId": "wpn_lance_0009",
       "iconAvatar": "icon_head_chr_0035_liino"
+    },
+    "chr_0036_jsspsi": {
+      "name": "祀",
+      "engName": "",
+      "rarity": 6,
+      "profession": 4,
+      "weaponType": 3,
+      "charTypeId": "Cryst",
+      "department": "ENDFIELD INDUSTRIES",
+      "defaultWeaponId": "wpn_claym_0010",
+      "iconAvatar": "icon_head_chr_0036_jsspsi"
+    },
+    "chr_0037_minghe": {
+      "name": "明河",
+      "engName": "",
+      "rarity": 6,
+      "profession": 0,
+      "weaponType": 0,
+      "charTypeId": "Pulse",
+      "department": "",
+      "defaultWeaponId": "wpn_sword_0025",
+      "iconAvatar": "icon_head_chr_0037_minghe"
     },
     "chr_0038_purrche": {
       "name": "噗切娜",
@@ -1521,7 +1530,7 @@
       "characterId": "chr_0027_tangtang",
       "name": "大当家盯着呢！",
       "category": "ultimate",
-      "desc": "汤汤揭开眼罩，释放眼中的<@ba.key>古老图形</>封锁范围内的敌人，使其暂停行动一段时间，并造成持续的<@ba.cryst>寒冷伤害</>。\n<@ba.key>古老图形</>演化结束时降下巨浪，对范围内敌人造成大量<@ba.cryst>寒冷伤害</>。\n若主控干员在<@ba.key>古老图形</>中下落攻击，会提前结束演化降下巨浪，巨浪造成的<@ba.cryst>寒冷伤害</>提升。",
+      "desc": "汤汤揭开眼罩，释放眼中的<@ba.key>古老图形</>，对范围内的敌人施加一段时间的<#ba.static>定身</>，并造成持续的<@ba.cryst>寒冷伤害</>。\n<@ba.key>古老图形</>演化结束时降下巨浪，对范围内敌人造成大量<@ba.cryst>寒冷伤害</>。\n若主控干员在<@ba.key>古老图形</>中下落攻击，会提前结束演化降下巨浪，巨浪造成的<@ba.cryst>寒冷伤害</>提升。",
       "iconId": "icon_ultimate_skill_tangtang_01",
       "skillIds": [
         "chr_0027_tangtang_ultimate_skill"
@@ -1915,6 +1924,53 @@
         "chr_0035_liino_ultimate_skill"
       ]
     },
+    "chr_0036_jsspsi_ComboSkill": {
+      "characterId": "chr_0036_jsspsi",
+      "name": "成竹在胸",
+      "category": "combo",
+      "desc": "当有敌人的<#ba.crystinflict>寒冷附着</>或<#ba.fireinflict>灼热附着</>被<#ba.consume>消耗</>或<#ba.absorb>吸收</>后可以发动。\n召唤<@ba.key>墨龙</>，造成<@ba.cryst>寒冷伤害</>，伤害根据<#ba.consume>消耗</>或<#ba.absorb>吸收</>附着的最高层数获得提升。",
+      "iconId": "icon_combo_skill_jsspsi_01",
+      "skillIds": [
+        "chr_0036_jsspsi_combo_skill"
+      ]
+    },
+    "chr_0036_jsspsi_NormalAttack": {
+      "characterId": "chr_0036_jsspsi",
+      "name": "乘兴起笔",
+      "category": "attack",
+      "desc": "普通攻击：\n对敌人进行至多5段攻击，造成<@ba.cryst>寒冷伤害</>。作为主控干员时，<#ba.lastcombo>重击</>会造成<@ba.poise>{poise:0}</>点失衡。\n\n下落攻击：\n处于空中时使用普通攻击，会下落并攻击附近敌人，造成<@ba.cryst>寒冷伤害</>。\n\n处决攻击：\n附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量<@ba.cryst>寒冷伤害</>并恢复一定技力。",
+      "iconId": "icon_attack_claym",
+      "skillIds": [
+        "chr_0036_jsspsi_attack1",
+        "chr_0036_jsspsi_attack2",
+        "chr_0036_jsspsi_attack3",
+        "chr_0036_jsspsi_attack4",
+        "chr_0036_jsspsi_attack5",
+        "chr_0036_jsspsi_plunging_attack_end",
+        "chr_0036_jsspsi_power_attack"
+      ]
+    },
+    "chr_0036_jsspsi_NormalSkill": {
+      "characterId": "chr_0036_jsspsi",
+      "name": "河山共影",
+      "category": "skill",
+      "desc": "对目标施加<@ba.key>笔意</>和<#ba.static>定身</>并造成<@ba.cryst>寒冷伤害</>。同时对目标施加<#ba.crystinflict>寒冷附着</>，若小队内<@ba.key>01号位</>是<@ba.fire>灼热</>属性的干员则变为施加<#ba.fireinflict>灼热附着</>。被施加<@ba.key>笔意</>的目标受到伤害后，记录一部分伤害值。<@ba.key>笔意</>持续时间结束将会爆发，对范围内敌人造成所记录伤害值的<#ba.fixeddamage>固定伤害</>。施放后战技在一段时间内替换为<@ba.key>起墨</>。\n<@ba.key>起墨</>：消耗<@ba.vup>15</>技力，从被施加<@ba.key>笔意</>的目标体内拉出<@ba.key>墨魂</>，<@ba.key>墨魂</>受到的所有伤害和效果将传递给本体，<@ba.key>墨魂</>持续时间等同于<@ba.key>笔意</>剩余时间。施放后战技在一段时间内替换为<@ba.key>收笔</>。\n<@ba.key>收笔</>：不消耗技力，使<@ba.key>墨魂</>提前消失。<@ba.key>墨魂</>消失时朝原目标移动并触发和<@ba.key>笔意</>效果相同的爆发。\n<@ba.info>对墨魂和处于笔意状态的目标同时造成伤害或效果时，只会视作造成一次伤害或效果。墨魂存在期间若原目标被击败则连接另一名战斗中的敌人，并对其施加笔意，持续时间不会重新计算。未拉出墨魂且处于笔意状态的目标被击败时，会在其位置生成墨魂。</>",
+      "iconId": "icon_skill_jsspsi_01",
+      "skillIds": [
+        "chr_0036_jsspsi_normal_skill",
+        "chr_0036_jsspsi_normal_skill_1"
+      ]
+    },
+    "chr_0036_jsspsi_UltimateSkill": {
+      "characterId": "chr_0036_jsspsi",
+      "name": "谁都不许扫兴",
+      "category": "ultimate",
+      "desc": "从画卷唤出<@ba.key>巨型墨龙</>造成<@ba.cryst>寒冷伤害</>，同时对全队施加一段时间的<#ba.crystenhance>寒冷增幅</>和<#ba.fireenhance>灼热增幅</>。",
+      "iconId": "icon_ultimate_skill_jsspsi_01",
+      "skillIds": [
+        "chr_0036_jsspsi_ultimate_skill"
+      ]
+    },
     "chr_0038_purrche_ComboSkill": {
       "characterId": "chr_0038_purrche",
       "name": "点心还是“礼物”",
@@ -2083,6 +2139,16 @@
     },
     "sk_wpn_claym_0017": {
       "name": "巧技·赤断",
+      "category": "passive_patch",
+      "desc": ""
+    },
+    "sk_wpn_claym_0018": {
+      "name": "效益·落墨添彩",
+      "category": "passive_patch",
+      "desc": ""
+    },
+    "sk_wpn_claym_0019": {
+      "name": "效益·秘辛史话",
       "category": "passive_patch",
       "desc": ""
     },
@@ -2408,6 +2474,11 @@
     },
     "sk_wpn_sword_0023": {
       "name": "医疗·甜与梦",
+      "category": "passive_patch",
+      "desc": ""
+    },
+    "sk_wpn_sword_0024": {
+      "name": "迸发·聚合效益",
       "category": "passive_patch",
       "desc": ""
     },
@@ -3386,6 +3457,30 @@
       "name": "一等星的鼓舞",
       "iconId": "icon_talent_liino_02"
     },
+    "chr_0036_jsspsi_talent_1_1": {
+      "characterId": "chr_0036_jsspsi",
+      "nodeId": "chr_0036_jsspsi_passive_skill_0_1",
+      "name": "代理人的眷顾",
+      "iconId": "icon_talent_jsspsi_01"
+    },
+    "chr_0036_jsspsi_talent_1_2": {
+      "characterId": "chr_0036_jsspsi",
+      "nodeId": "chr_0036_jsspsi_passive_skill_0_2",
+      "name": "代理人的眷顾",
+      "iconId": "icon_talent_jsspsi_01"
+    },
+    "chr_0036_jsspsi_talent_2_1": {
+      "characterId": "chr_0036_jsspsi",
+      "nodeId": "chr_0036_jsspsi_passive_skill_1_1",
+      "name": "丹青不渝",
+      "iconId": "icon_talent_jsspsi_02"
+    },
+    "chr_0036_jsspsi_talent_2_2": {
+      "characterId": "chr_0036_jsspsi",
+      "nodeId": "chr_0036_jsspsi_passive_skill_1_2",
+      "name": "丹青不渝",
+      "iconId": "icon_talent_jsspsi_02"
+    },
     "chr_0038_purrche_talent_1_1": {
       "characterId": "chr_0038_purrche",
       "nodeId": "chr_0038_purrche_passive_skill_0_1",
@@ -3547,6 +3642,22 @@
       "iconId": "wpn_claym_0017",
       "potentialSkillId": "sk_wpn_claym_0017",
       "potentialSkillName": "巧技·赤断"
+    },
+    "wpn_claym_0018": {
+      "name": "玉中身",
+      "rarity": 6,
+      "weaponType": 3,
+      "iconId": "wpn_claym_0018",
+      "potentialSkillId": "sk_wpn_claym_0018",
+      "potentialSkillName": "效益·落墨添彩"
+    },
+    "wpn_claym_0019": {
+      "name": "悠久传承",
+      "rarity": 6,
+      "weaponType": 3,
+      "iconId": "wpn_claym_0019",
+      "potentialSkillId": "sk_wpn_claym_0019",
+      "potentialSkillName": "效益·秘辛史话"
     },
     "wpn_funnel_0001": {
       "name": "全自动骇新星",
@@ -4052,6 +4163,14 @@
       "potentialSkillId": "sk_wpn_sword_0021",
       "potentialSkillName": "附术·长愿"
     },
+    "wpn_sword_0021_ink": {
+      "name": "宏愿",
+      "rarity": 6,
+      "weaponType": 1,
+      "iconId": "wpn_sword_0021",
+      "potentialSkillId": "sk_wpn_sword_0021",
+      "potentialSkillName": "附术·长愿"
+    },
     "wpn_sword_0022": {
       "name": "狼之绯",
       "rarity": 6,
@@ -4067,6 +4186,14 @@
       "iconId": "wpn_sword_0023",
       "potentialSkillId": "sk_wpn_sword_0023",
       "potentialSkillName": "医疗·甜与梦"
+    },
+    "wpn_sword_0024": {
+      "name": "聚合工业",
+      "rarity": 6,
+      "weaponType": 1,
+      "iconId": "wpn_sword_0024",
+      "potentialSkillId": "sk_wpn_sword_0024",
+      "potentialSkillName": "迸发·聚合效益"
     },
     "wpn_sword_0026": {
       "name": "遥望",
@@ -8180,6 +8307,59 @@
         }
       ]
     },
+    "item_equip_t4_parts_wuling00_body_06": {
+      "name": "集成实训刃装护甲",
+      "rarity": 5,
+      "iconId": "item_equip_t4_parts_wuling00_body_06",
+      "partType": 0,
+      "suitId": "suit_generaltype",
+      "minWearLevel": 60,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 48.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 0,
+          "value": 74.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            81.0,
+            88.0,
+            96.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 0,
+          "value": 49.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            53.0,
+            58.0,
+            63.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 50,
+          "value": 0.09833333333333333,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.1081666648387909,
+            0.11800000071525574,
+            0.12783333659172058
+          ],
+          "base": false
+        }
+      ]
+    },
     "item_equip_t4_parts_wuling00_edc_01": {
       "name": "集成实训排障刀",
       "rarity": 5,
@@ -8445,6 +8625,59 @@
         }
       ]
     },
+    "item_equip_t4_parts_wuling00_edc_06": {
+      "name": "集成实训刃装短锯",
+      "rarity": 5,
+      "iconId": "item_equip_t4_parts_wuling00_edc_06",
+      "partType": 2,
+      "suitId": "suit_generaltype",
+      "minWearLevel": 60,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 18.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 0,
+          "value": 27.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            29.0,
+            32.0,
+            35.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 0,
+          "value": 18.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            19.0,
+            21.0,
+            23.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 50,
+          "value": 0.19666666666666666,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.2163333296775818,
+            0.23600000143051147,
+            0.25566667318344116
+          ],
+          "base": false
+        }
+      ]
+    },
     "item_equip_t4_parts_wuling00_hand_01": {
       "name": "集成实训手套",
       "rarity": 5,
@@ -8705,6 +8938,59 @@
             0.16224999725818634,
             0.1770000010728836,
             0.19175000488758087
+          ],
+          "base": false
+        }
+      ]
+    },
+    "item_equip_t4_parts_wuling00_hand_06": {
+      "name": "集成实训刃装护手",
+      "rarity": 5,
+      "iconId": "item_equip_t4_parts_wuling00_hand_06",
+      "partType": 1,
+      "suitId": "suit_generaltype",
+      "minWearLevel": 60,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 36.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 0,
+          "value": 55.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            60.0,
+            66.0,
+            71.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 0,
+          "value": 37.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            40.0,
+            44.0,
+            48.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 50,
+          "value": 0.1638888888888889,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.1802777796983719,
+            0.1966666728258133,
+            0.2130555510520935
           ],
           "base": false
         }
@@ -9120,6 +9406,88 @@
         }
       ]
     },
+    "item_equip_t4_parts_wuling02_body_03": {
+      "name": "涉渊钢甲",
+      "rarity": 5,
+      "iconId": "item_equip_t4_parts_wuling02_body_03",
+      "partType": 0,
+      "suitId": "",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 56.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 40,
+          "value": 115.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            126.0,
+            138.0,
+            149.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 33,
+          "value": 0.21599999999999997,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.23759999871253967,
+            0.25920000672340393,
+            0.2808000147342682
+          ],
+          "base": false
+        }
+      ]
+    },
+    "item_equip_t4_parts_wuling02_body_04": {
+      "name": "涉渊防护服",
+      "rarity": 5,
+      "iconId": "item_equip_t4_parts_wuling02_body_04",
+      "partType": 0,
+      "suitId": "",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 56.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 41,
+          "value": 115.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            126.0,
+            138.0,
+            149.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 0,
+          "value": 0.11999999999999998,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.13199999928474426,
+            0.14399999380111694,
+            0.15600000321865082
+          ],
+          "base": false
+        }
+      ]
+    },
     "item_equip_t4_parts_wuling02_edc_01": {
       "name": "涉渊护甲板",
       "rarity": 5,
@@ -9156,6 +9524,47 @@
             0.23762047290802002,
             0.2592223286628723,
             0.2808241844177246
+          ],
+          "base": false
+        }
+      ]
+    },
+    "item_equip_t4_parts_wuling02_edc_02": {
+      "name": "涉渊白刃",
+      "rarity": 5,
+      "iconId": "item_equip_t4_parts_wuling02_edc_02",
+      "partType": 2,
+      "suitId": "",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 21.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 40,
+          "value": 43.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            47.0,
+            51.0,
+            55.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 44,
+          "value": 0.2571428571428571,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.28285714983940125,
+            0.3085714280605316,
+            0.334285706281662
           ],
           "base": false
         }
@@ -9238,6 +9647,88 @@
             0.3959999978542328,
             0.4320000112056732,
             0.46799999475479126
+          ],
+          "base": false
+        }
+      ]
+    },
+    "item_equip_t4_parts_wuling02_hand_03": {
+      "name": "涉渊裹手",
+      "rarity": 5,
+      "iconId": "item_equip_t4_parts_wuling02_hand_03",
+      "partType": 1,
+      "suitId": "",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 42.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 42,
+          "value": 86.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            94.0,
+            103.0,
+            111.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 0,
+          "value": 0.2,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.2199999988079071,
+            0.23999999463558197,
+            0.25999999046325684
+          ],
+          "base": false
+        }
+      ]
+    },
+    "item_equip_t4_parts_wuling02_hand_04": {
+      "name": "涉渊手甲",
+      "rarity": 5,
+      "iconId": "item_equip_t4_parts_wuling02_hand_04",
+      "partType": 1,
+      "suitId": "",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 42.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 39,
+          "value": 86.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            94.0,
+            103.0,
+            111.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 17,
+          "value": 0.24,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.2639999985694885,
+            0.2879999876022339,
+            0.31200000643730164
           ],
           "base": false
         }
@@ -10173,6 +10664,59 @@
         }
       ]
     },
+    "item_equip_t4_suit_atk02_body_05": {
+      "name": "50式应龙软甲",
+      "rarity": 5,
+      "iconId": "item_equip_t4_suit_atk02_body_05",
+      "partType": 0,
+      "suitId": "suit_atk02",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 56.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 41,
+          "value": 87.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            95.0,
+            104.0,
+            113.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 39,
+          "value": 58.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            63.0,
+            69.0,
+            75.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 33,
+          "value": 0.207,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.22769999504089355,
+            0.2484000027179718,
+            0.26910001039505005
+          ],
+          "base": false
+        }
+      ]
+    },
     "item_equip_t4_suit_atk02_edc_01": {
       "name": "50式应龙雷达",
       "rarity": 5,
@@ -10438,6 +10982,59 @@
         }
       ]
     },
+    "item_equip_t4_suit_atk02_edc_06": {
+      "name": "50式应龙信标",
+      "rarity": 5,
+      "iconId": "item_equip_t4_suit_atk02_edc_06",
+      "partType": 2,
+      "suitId": "suit_atk02",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 21.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 41,
+          "value": 32.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            35.0,
+            38.0,
+            41.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 39,
+          "value": 21.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            23.0,
+            25.0,
+            27.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 33,
+          "value": 0.414,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.4553999900817871,
+            0.4968000054359436,
+            0.5382000207901001
+          ],
+          "base": false
+        }
+      ]
+    },
     "item_equip_t4_suit_atk02_hand_01": {
       "name": "50式应龙护手",
       "rarity": 5,
@@ -10521,6 +11118,59 @@
         {
           "index": 2,
           "type": 40,
+          "value": 43.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            47.0,
+            51.0,
+            55.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 33,
+          "value": 0.345,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.37950000166893005,
+            0.414000004529953,
+            0.44850000739097595
+          ],
+          "base": false
+        }
+      ]
+    },
+    "item_equip_t4_suit_atk02_hand_03": {
+      "name": "50式应龙手套",
+      "rarity": 5,
+      "iconId": "item_equip_t4_suit_atk02_hand_03",
+      "partType": 1,
+      "suitId": "suit_atk02",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 42.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 41,
+          "value": 65.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            71.0,
+            78.0,
+            84.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 39,
           "value": 43.0,
           "modifierType": 5,
           "enhancedValues": [
@@ -15478,6 +16128,59 @@
         }
       ]
     },
+    "item_equip_t4_suit_pulse_cryst01_body_02": {
+      "name": "脉冲式轻甲",
+      "rarity": 5,
+      "iconId": "item_equip_t4_suit_pulse_cryst01_body_02",
+      "partType": 0,
+      "suitId": "suit_pulse_cryst01",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 56.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 42,
+          "value": 87.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            95.0,
+            104.0,
+            113.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 39,
+          "value": 58.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            63.0,
+            69.0,
+            75.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 0,
+          "value": 0.11499999999999999,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.1264999955892563,
+            0.1379999965429306,
+            0.14949999749660492
+          ],
+          "base": false
+        }
+      ]
+    },
     "item_equip_t4_suit_pulse_cryst01_edc_01": {
       "name": "脉冲式探针",
       "rarity": 5,
@@ -15613,6 +16316,59 @@
         }
       ]
     },
+    "item_equip_t4_suit_pulse_cryst01_edc_04": {
+      "name": "脉冲式护甲板",
+      "rarity": 5,
+      "iconId": "item_equip_t4_suit_pulse_cryst01_edc_04",
+      "partType": 2,
+      "suitId": "suit_pulse_cryst01",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 21.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 42,
+          "value": 32.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            35.0,
+            38.0,
+            41.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 39,
+          "value": 21.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            23.0,
+            25.0,
+            27.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 44,
+          "value": 0.2464285714285714,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.2710714340209961,
+            0.29571428894996643,
+            0.32035714387893677
+          ],
+          "base": false
+        }
+      ]
+    },
     "item_equip_t4_suit_pulse_cryst01_hand_01": {
       "name": "脉冲式手套",
       "rarity": 5,
@@ -15643,6 +16399,59 @@
         {
           "index": 2,
           "type": 41,
+          "value": 43.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            47.0,
+            51.0,
+            55.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 0,
+          "value": 0.19166666666666668,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.2108333259820938,
+            0.23000000417232513,
+            0.24916666746139526
+          ],
+          "base": false
+        }
+      ]
+    },
+    "item_equip_t4_suit_pulse_cryst01_hand_02": {
+      "name": "脉冲式轻护手",
+      "rarity": 5,
+      "iconId": "item_equip_t4_suit_pulse_cryst01_hand_02",
+      "partType": 1,
+      "suitId": "suit_pulse_cryst01",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 42.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 42,
+          "value": 65.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            71.0,
+            78.0,
+            84.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 39,
           "value": 43.0,
           "modifierType": 5,
           "enhancedValues": [
@@ -15972,6 +16781,112 @@
         }
       ]
     },
+    "item_equip_t4_suit_usp02_body_05": {
+      "name": "长息防护服",
+      "rarity": 5,
+      "iconId": "item_equip_t4_suit_usp02_body_05",
+      "partType": 0,
+      "suitId": "suit_usp02",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 56.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 41,
+          "value": 87.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            95.0,
+            104.0,
+            113.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 39,
+          "value": 58.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            63.0,
+            69.0,
+            75.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 44,
+          "value": 0.1232142857142857,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.13553571701049805,
+            0.14785714447498322,
+            0.16017857193946838
+          ],
+          "base": false
+        }
+      ]
+    },
+    "item_equip_t4_suit_usp02_body_06": {
+      "name": "长息改装护甲",
+      "rarity": 5,
+      "iconId": "item_equip_t4_suit_usp02_body_06",
+      "partType": 0,
+      "suitId": "suit_usp02",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 56.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 41,
+          "value": 87.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            95.0,
+            104.0,
+            113.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 39,
+          "value": 58.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            63.0,
+            69.0,
+            75.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 33,
+          "value": 0.207,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.22769999504089355,
+            0.2484000027179718,
+            0.26910001039505005
+          ],
+          "base": false
+        }
+      ]
+    },
     "item_equip_t4_suit_usp02_edc_01": {
       "name": "长息蓄电核",
       "rarity": 5,
@@ -16278,6 +17193,59 @@
         }
       ]
     },
+    "item_equip_t4_suit_usp02_edc_07": {
+      "name": "长息测距仪",
+      "rarity": 5,
+      "iconId": "item_equip_t4_suit_usp02_edc_07",
+      "partType": 2,
+      "suitId": "suit_usp02",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 21.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 41,
+          "value": 32.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            35.0,
+            38.0,
+            41.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 39,
+          "value": 21.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            23.0,
+            25.0,
+            27.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 33,
+          "value": 0.414,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.4553999900817871,
+            0.4968000054359436,
+            0.5382000207901001
+          ],
+          "base": false
+        }
+      ]
+    },
     "item_equip_t4_suit_usp02_hand_01": {
       "name": "长息护手",
       "rarity": 5,
@@ -16485,6 +17453,59 @@
             0.22589285671710968,
             0.24642856419086456,
             0.26696428656578064
+          ],
+          "base": false
+        }
+      ]
+    },
+    "item_equip_t4_suit_usp02_hand_05": {
+      "name": "长息导能护手",
+      "rarity": 5,
+      "iconId": "item_equip_t4_suit_usp02_hand_05",
+      "partType": 1,
+      "suitId": "suit_usp02",
+      "minWearLevel": 70,
+      "modifiers": [
+        {
+          "index": 0,
+          "type": 3,
+          "value": 42.0,
+          "modifierType": 5,
+          "base": true
+        },
+        {
+          "index": 1,
+          "type": 41,
+          "value": 65.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            71.0,
+            78.0,
+            84.0
+          ],
+          "base": false
+        },
+        {
+          "index": 2,
+          "type": 39,
+          "value": 43.0,
+          "modifierType": 5,
+          "enhancedValues": [
+            47.0,
+            51.0,
+            55.0
+          ],
+          "base": false
+        },
+        {
+          "index": 3,
+          "type": 33,
+          "value": 0.345,
+          "modifierType": 5,
+          "enhancedValues": [
+            0.37950000166893005,
+            0.414000004529953,
+            0.44850000739097595
           ],
           "base": false
         }
@@ -17422,6 +18443,36 @@
       "domainId": "",
       "costStamina": 0
     },
+    "dung02_bossrush04_01": {
+      "name": "危境遗影·祀",
+      "subName": "",
+      "seriesId": "dung02_group_bossrush04",
+      "seriesName": "危境再现·祀",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_bossrush04_02": {
+      "name": "危境延影·祀",
+      "subName": "",
+      "seriesId": "dung02_group_bossrush04",
+      "seriesName": "危境再现·祀",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_bossrush04_03": {
+      "name": "危境祸影·祀",
+      "subName": "",
+      "seriesId": "dung02_group_bossrush04",
+      "seriesName": "危境再现·祀",
+      "category": "dungeon_bossrush",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
     "dung02_daily_archery01": {
       "name": "dung02_daily_archery01",
       "subName": "",
@@ -17677,6 +18728,66 @@
       "subName": "",
       "seriesId": "dung02_group_puzzle12",
       "seriesName": "六方巧境",
+      "category": "dungeon_challenge",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_puzzle13": {
+      "name": "弹性乐园",
+      "subName": "",
+      "seriesId": "dung02_group_puzzle13",
+      "seriesName": "画外遗光",
+      "category": "dungeon_challenge",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_puzzle14": {
+      "name": "空山灵雨",
+      "subName": "",
+      "seriesId": "dung02_group_puzzle14",
+      "seriesName": "画外遗光",
+      "category": "dungeon_challenge",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_puzzle15": {
+      "name": "引桩行",
+      "subName": "",
+      "seriesId": "dung02_group_puzzle15",
+      "seriesName": "画外遗光",
+      "category": "dungeon_challenge",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_puzzle16": {
+      "name": "视线参差",
+      "subName": "",
+      "seriesId": "dung02_group_puzzle16",
+      "seriesName": "画外遗光",
+      "category": "dungeon_challenge",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_puzzle17": {
+      "name": "阵列怒火",
+      "subName": "",
+      "seriesId": "dung02_group_puzzle17",
+      "seriesName": "画外遗光",
+      "category": "dungeon_challenge",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung02_puzzle18": {
+      "name": "虫球三争霸",
+      "subName": "",
+      "seriesId": "dung02_group_puzzle18",
+      "seriesName": "画外遗光",
       "category": "dungeon_challenge",
       "sortId": 0,
       "domainId": "",
@@ -18342,6 +19453,56 @@
       "domainId": "",
       "costStamina": 0
     },
+    "dung_e12m3d1_01": {
+      "name": "dung_e12m3d1_01",
+      "subName": "",
+      "seriesId": "dung_group_e12m3d1_01",
+      "seriesName": "",
+      "category": "dungeon_story",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung_e12m4d1_01": {
+      "name": "dung_e12m4d1_01",
+      "subName": "",
+      "seriesId": "dung_group_e12m4d1_01",
+      "seriesName": "",
+      "category": "dungeon_story",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung_e12m5d5_01": {
+      "name": "dung_e12m5d5_01",
+      "subName": "",
+      "seriesId": "dung_group_e12m5d5_01",
+      "seriesName": "",
+      "category": "dungeon_story",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung_e12m5d7_01": {
+      "name": "dung_e12m5d7_01",
+      "subName": "",
+      "seriesId": "dung_group_e12m5d7_01",
+      "seriesName": "",
+      "category": "dungeon_story",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung_e12m5d8_01": {
+      "name": "dung_e12m5d8_01",
+      "subName": "",
+      "seriesId": "dung_group_e12m5d8_01",
+      "seriesName": "",
+      "category": "dungeon_story",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
     "dung_endmin_chartrain01": {
       "name": "干员教学·管理员",
       "subName": "",
@@ -18359,6 +19520,26 @@
       "seriesName": "干员教学",
       "category": "dungeon_chartutorial",
       "sortId": 5,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung_jsspsi_chartrain01": {
+      "name": "干员教学·祀",
+      "subName": "",
+      "seriesId": "dung_group_chartrain",
+      "seriesName": "干员教学",
+      "category": "dungeon_chartutorial",
+      "sortId": 29,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung_jsspsi_chartrial": {
+      "name": "祀的作战演练",
+      "subName": "",
+      "seriesId": "",
+      "seriesName": "",
+      "category": "dungeon_chartrial",
+      "sortId": 0,
       "domainId": "",
       "costStamina": 0
     },
@@ -18687,6 +19868,16 @@
       "subName": "",
       "seriesId": "dung_group_ss05",
       "seriesName": "协议空间·高阶培养Ⅴ",
+      "category": "dungeon_ss",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dung_ss06": {
+      "name": "高危材料溶解池",
+      "subName": "",
+      "seriesId": "dung_group_ss06",
+      "seriesName": "协议空间·高阶培养VI",
       "category": "dungeon_ss",
       "sortId": 0,
       "domainId": "",
@@ -19058,6 +20249,16 @@
       "seriesId": "",
       "seriesName": "",
       "category": "dungeon_chartrial",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "dungeon_gamblingdungeon01": {
+      "name": "百趣演武",
+      "subName": "",
+      "seriesId": "dung01_group_gambling",
+      "seriesName": "",
+      "category": "dungeon_gamblingdungeon",
       "sortId": 0,
       "domainId": "",
       "costStamina": 0
@@ -19474,6 +20675,186 @@
     },
     "indie_battletower014_s": {
       "name": "野兽诡计·困难",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower015": {
+      "name": "蚀影记录：雷声·普通",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower015_ex": {
+      "name": "蚀影记录：雷声·残酷",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower015_s": {
+      "name": "蚀影记录：雷声·困难",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower016": {
+      "name": "长刃记录：应龙·普通",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower016_ex": {
+      "name": "长刃记录：应龙·残酷",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower016_s": {
+      "name": "长刃记录：应龙·困难",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower017": {
+      "name": "复仇记录：碾骨·普通",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower017_ex": {
+      "name": "复仇记录：碾骨·残酷",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower017_s": {
+      "name": "复仇记录：碾骨·困难",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower018": {
+      "name": "兽群记录：清波寨·普通",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower018_ex": {
+      "name": "兽群记录：清波寨·残酷",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower018_s": {
+      "name": "兽群记录：清波寨·困难",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower019": {
+      "name": "造物记录：傀·普通",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower019_ex": {
+      "name": "造物记录：傀·残酷",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower019_s": {
+      "name": "造物记录：傀·困难",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower020": {
+      "name": "防卫记录：盾片·普通",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower020_ex": {
+      "name": "防卫记录：盾片·残酷",
+      "subName": "",
+      "seriesId": "indie_group_twdg",
+      "seriesName": "战争回响",
+      "category": "dungeon_seasontower",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_battletower020_s": {
+      "name": "防卫记录：盾片·困难",
       "subName": "",
       "seriesId": "indie_group_twdg",
       "seriesName": "战争回响",
@@ -20072,6 +21453,86 @@
       "domainId": "",
       "costStamina": 0
     },
+    "indie_hard030": {
+      "name": "受缚之影",
+      "subName": "",
+      "seriesId": "indie_group_h08",
+      "seriesName": "深林呓语",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_hard030_s": {
+      "name": "受缚之影·苦难",
+      "subName": "",
+      "seriesId": "indie_group_h08",
+      "seriesName": "深林呓语",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_hard031": {
+      "name": "相引之骸",
+      "subName": "",
+      "seriesId": "indie_group_h08",
+      "seriesName": "深林呓语",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_hard031_s": {
+      "name": "相引之骸·苦难",
+      "subName": "",
+      "seriesId": "indie_group_h08",
+      "seriesName": "深林呓语",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_hard032": {
+      "name": "怨怒延展",
+      "subName": "",
+      "seriesId": "indie_group_h08",
+      "seriesName": "深林呓语",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_hard032_s": {
+      "name": "怨怒延展·苦难",
+      "subName": "",
+      "seriesId": "indie_group_h08",
+      "seriesName": "深林呓语",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_hard033": {
+      "name": "虫傀呼应",
+      "subName": "",
+      "seriesId": "indie_group_h08",
+      "seriesName": "深林呓语",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
+    "indie_hard033_s": {
+      "name": "虫傀呼应·苦难",
+      "subName": "",
+      "seriesId": "indie_group_h08",
+      "seriesName": "深林呓语",
+      "category": "dungeon_highdifficulty",
+      "sortId": 0,
+      "domainId": "",
+      "costStamina": 0
+    },
     "indie_levelcheck001": {
       "name": "生命进程Ⅰ",
       "subName": "",
@@ -20148,6 +21609,7 @@
     "dung02_group_bossrush01": "危境再现·阮一",
     "dung02_group_bossrush02": "危境再现·聂菲斯",
     "dung02_group_bossrush03": "危境再现·阿莱克琉斯",
+    "dung02_group_bossrush04": "危境再现·祀",
     "dung02_group_minibossrush01": "危境碎片·巨山犼兽",
     "dung02_group_minibossrush02": "危境碎片·蚀影噪雷",
     "dung02_group_minibossrush03": "危境碎片·幽林之怒",
@@ -20163,6 +21625,12 @@
     "dung02_group_puzzle10": "六方巧境",
     "dung02_group_puzzle11": "六方巧境",
     "dung02_group_puzzle12": "六方巧境",
+    "dung02_group_puzzle13": "画外遗光",
+    "dung02_group_puzzle14": "画外遗光",
+    "dung02_group_puzzle15": "画外遗光",
+    "dung02_group_puzzle16": "画外遗光",
+    "dung02_group_puzzle17": "画外遗光",
+    "dung02_group_puzzle18": "画外遗光",
     "dung02_group_rcdg01": "登楼阁",
     "dung02_group_rcdg02": "蹈清风",
     "dung02_group_rcdg03": "步流云",
@@ -20188,6 +21656,7 @@
     "dung_group_ss03": "协议空间·高阶培养Ⅲ",
     "dung_group_ss04": "协议空间·高阶培养Ⅳ",
     "dung_group_ss05": "协议空间·高阶培养Ⅴ",
+    "dung_group_ss06": "协议空间·高阶培养VI",
     "dung_group_tangtang01": "支线任务",
     "dung_group_train01": "基础训练",
     "dung_group_wolfgd01": "支线任务",
@@ -20202,6 +21671,7 @@
     "indie_group_h05": "死寂争鸣",
     "indie_group_h06": "山中见犼",
     "indie_group_h07": "幽影刻形",
+    "indie_group_h08": "深林呓语",
     "indie_group_levelcheck01": "协议空间·探索等级",
     "indie_group_levelcheck02": "协议空间·探索等级",
     "indie_group_levelcheck03": "协议空间·探索等级",
