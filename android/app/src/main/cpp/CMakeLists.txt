@@ -187,6 +187,7 @@ target_link_options(betterendfieldnext_android PRIVATE
 
 find_library(log_library log REQUIRED)
 find_library(dl_library dl REQUIRED)
+find_library(mediandk_library mediandk REQUIRED)
 
 target_link_libraries(betterendfieldnext_android PRIVATE
     c++_static
@@ -195,4 +196,5 @@ target_link_libraries(betterendfieldnext_android PRIVATE
     BetterEndfieldNext.CustomModelCore
     betterendfieldnext_desktop_features
     ${log_library}
-    ${dl_library})
+    ${dl_library}
+    ${mediandk_library})

@@ -6,6 +6,7 @@
 #ifdef __ANDROID__
 #include "android_frame.h"
 #include "android_camera.h"
+#include "android_video_decoder.h"
 #endif
 #include "configuration.h"
 #include "control_hotkey.h"
@@ -127,6 +128,10 @@ uint64_t prepare_started = 0;
 WindowCapture capture;
 uint64_t last_frame_serial = 0;
 std::vector<unsigned char> window_pixels;
+#elif defined(__ANDROID__)
+AndroidVideoDecoder android_decoder;
+uint64_t play_started_ms = 0;
+uint64_t pause_started_ms = 0;
 #endif
 
 uint64_t Now() { return static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -209,6 +214,11 @@ bool Hook(MethodId id, void* detour, void** original);
 #endif
 
 void Stop(bool restore = true) {
+#ifdef __ANDROID__
+    android_decoder.Close();
+    play_started_ms = 0;
+    pause_started_ms = 0;
+#endif
     CancelDeskReceivers();
     RestoreDeskLayers(restore);
 #ifdef _WIN32
@@ -489,6 +499,26 @@ void Start(const Configuration& config) {
         canvas_texture = RenderTexture(running.width, running.height); image_texture = Texture(2, 2);
         image_generation = reader.Read(slides[0]); Status("loading:image");
     } else if (running.source == "video") {
+#ifdef __ANDROID__
+        if (running.path.empty()) throw std::runtime_error("No video file selected");
+        if (!android_decoder.Open(running.path)) throw std::runtime_error("Failed to open video via Android MediaCodec");
+        int video_w = android_decoder.CropWidth();
+        int video_h = android_decoder.CropHeight();
+        if (video_w <= 0 || video_h <= 0) {
+            video_w = running.width;
+            video_h = running.height;
+        }
+        running.width = video_w;
+        running.height = video_h;
+        canvas_texture = Texture(video_w, video_h);
+        video_started = false;
+        prepare_started = Now();
+        play_started_ms = Now();
+        paused = false;
+        background_paused = false;
+        StartAudio();
+        Status("loading:video");
+#else
         if (!video_class.class_info || !methods[VideoPrepared].resolved.method_info) throw std::runtime_error("VideoPlayer is unavailable on this client");
         canvas_texture = RenderTexture(running.width, running.height);
         BE_ResolvedClassV1 go_class{};
@@ -513,6 +543,7 @@ void Start(const Configuration& config) {
         std::string media_path(reinterpret_cast<const char*>(utf8_path.data()), utf8_path.size());
         SetObject(VideoUrl, player, host->string_new(host->context, media_path.c_str()));
         StartAudio(); Invoke(VideoPrepare, player); prepare_started = Now(); Status("loading:video");
+#endif
     }
 #ifdef _WIN32
     else {
@@ -529,6 +560,77 @@ void Start(const Configuration& config) {
 #endif
 }
 void VideoFrame() {
+#ifdef __ANDROID__
+    if (!video_started) {
+        if (Now() - prepare_started > 10000) throw std::runtime_error("Video preparation timed out");
+        if (audio_token) {
+            BE_LocalMusicStatusV1 audio{}; audio.size = sizeof(audio);
+            if (!music->status(audio_token, &audio) || audio.state == BE_LocalMusic_Error || audio.state == BE_LocalMusic_Idle) {
+                throw std::runtime_error("Video audio failed to prepare or changed owner");
+            }
+            if (audio.state == BE_LocalMusic_Loading) return;
+            if (!music->play(audio_token, 0)) throw std::runtime_error("Cannot start video audio");
+        }
+        video_started = true;
+        play_started_ms = Now();
+        Status("playing:video");
+    }
+
+    double target_seconds = 0.0;
+    if (audio_token) {
+        if (!paused) {
+            BE_LocalMusicStatusV1 audio{}; audio.size = sizeof(audio);
+            if (!music->status(audio_token, &audio) || audio.state == BE_LocalMusic_Error || audio.state == BE_LocalMusic_Idle) {
+                throw std::runtime_error("Video audio stopped or changed owner");
+            }
+            if (audio.state == BE_LocalMusic_Ended) {
+                if (running.loop) {
+                    android_decoder.Seek(0);
+                    if (!music->play(audio_token, 0)) throw std::runtime_error("Cannot restart video audio");
+                    target_seconds = 0.0;
+                } else {
+                    paused = true;
+                    Status("ended:video");
+                    return;
+                }
+            } else {
+                target_seconds = audio.position_seconds;
+            }
+        }
+    } else if (!paused) {
+        double elapsed = static_cast<double>(Now() - play_started_ms) / 1000.0;
+        double duration = android_decoder.Duration();
+        if (duration > 0.0 && elapsed >= duration) {
+            if (running.loop) {
+                play_started_ms = Now();
+                android_decoder.Seek(0);
+                target_seconds = 0.0;
+            } else {
+                paused = true;
+                Status("ended:video");
+                return;
+            }
+        } else {
+            target_seconds = elapsed;
+        }
+    }
+
+    if (!paused) {
+        const uint8_t* rgba = nullptr;
+        bool fresh = false;
+        if (android_decoder.AdvanceTo(target_seconds, rgba, fresh) && fresh && rgba) {
+            void* pointer = const_cast<uint8_t*>(rgba);
+            int32_t size = static_cast<int32_t>(android_decoder.CropWidth() * android_decoder.CropHeight() * 4);
+            void* upload[]{&pointer, &size};
+            Invoke(LoadRaw, canvas_texture, upload);
+            uint8_t mip = 0, unreadable = 0;
+            void* apply[]{&mip, &unreadable};
+            Invoke(Apply, canvas_texture, apply);
+            ++canvas_revision;
+        }
+    }
+    Paint();
+#else
     if (!video_started) {
         if (Now() - prepare_started > 30000) throw std::runtime_error("Video preparation timed out");
         if (!Value<uint8_t>(VideoPrepared, player)) return;
@@ -559,24 +661,52 @@ void VideoFrame() {
         if (duration > 0 && position >= duration - 0.1) { paused = true; Status("ended:video"); }
     }
     Paint();
+#endif
 }
 void PauseToggle() {
     if (!bound) return;
     if (running.source == "video" && !video_started) return;
     paused = !paused;
+#ifdef __ANDROID__
+    if (running.source == "video") {
+        if (audio_token) {
+            if (paused) music->pause(audio_token);
+            else music->play(audio_token, -1);
+        } else {
+            if (paused) pause_started_ms = Now();
+            else play_started_ms += (Now() - pause_started_ms);
+        }
+    }
+#else
     if (player) {
         Invoke(paused ? VideoPause : VideoPlay, player);
         if (audio_token) { if (paused) music->pause(audio_token); else music->play(audio_token, -1); }
     }
+#endif
     if (!paused) slide_at = Now();
     Status(paused ? "paused:" + running.source : "playing:" + running.source);
 }
 void Seek(double position) {
-    if (!bound || !player || !video_started || !std::isfinite(position) || position < 0) return;
+    if (!bound || !video_started || !std::isfinite(position) || position < 0) return;
+#ifdef __ANDROID__
+    if (running.source == "video") {
+        double duration = android_decoder.Duration();
+        if (duration > 0.0) position = std::min(position, duration);
+        android_decoder.Seek(position);
+        if (audio_token) {
+            if (!music->seek(audio_token, position)) throw std::runtime_error("Audio seek failed");
+        } else {
+            play_started_ms = Now() - static_cast<uint64_t>(position * 1000.0);
+        }
+        return;
+    }
+#else
+    if (!player) return;
     double duration = Value<double>(VideoLength, player);
     if (duration > 0) position = std::min(position, duration);
     SetValue<double>(VideoSetTime, player, position);
     if (audio_token && !music->seek(audio_token, position)) throw std::runtime_error("Audio seek failed");
+#endif
 }
 #ifdef _WIN32
 void WindowFrame(bool receive=true) {
@@ -675,9 +805,17 @@ void Frame(bool suspended = false) {
         if (!suspended && pid==GetCurrentProcessId()) ReceiverInspectionFrame();
 #endif
         if (suspended) {
+#ifdef __ANDROID__
+            if (running.source == "video" && video_started && !paused && !background_paused) {
+                if (audio_token) music->pause(audio_token);
+                pause_started_ms = Now();
+                background_paused = true;
+            }
+#else
             if (player && video_started && !paused && !background_paused) {
                 Invoke(VideoPause, player); if (audio_token) music->pause(audio_token); background_paused = true;
             }
+#endif
             return;
         }
         DeskReceiversFrame();
@@ -687,7 +825,14 @@ void Frame(bool suspended = false) {
             if (!available) { Stop(); Status("idle:desk_screens_unavailable"); return; }
         }
         if (background_paused) {
+#ifdef __ANDROID__
+            if (running.source == "video" && !paused) {
+                if (audio_token) music->play(audio_token, -1);
+                else play_started_ms += (Now() - pause_started_ms);
+            }
+#else
             if (!paused) { Invoke(VideoPlay, player); if (audio_token) music->play(audio_token, -1); }
+#endif
             background_paused = false;
         }
         if (paused) {
@@ -696,6 +841,9 @@ void Frame(bool suspended = false) {
 #endif
             Paint(); return;
         }
+#ifdef __ANDROID__
+        if (running.source == "video" && bound) { VideoFrame(); return; }
+#endif
         if (player) { VideoFrame(); return; }
         if (image_texture) {
             auto result = reader.Take();
