@@ -577,6 +577,76 @@ final class BemInstaller {
     static synchronized void select(Context app,String generation,String appearance,boolean enabled) throws Exception {
         saveAll(app,new JSONArray().put(new JSONObject().put("generation",generation).put("appearance",appearance).put("enabled",enabled)));
     }
+    static synchronized boolean convertToAstc(Context context, String generation) {
+        if(busy) return false;
+        Context app = context.getApplicationContext();
+        progressPercent = -1; startedAt = android.os.SystemClock.elapsedRealtime();
+        busy = true; cancelled = false; status = "正在准备转换为 ASTC 格式…";
+        worker.execute(() -> {
+            File root = new File(app.getFilesDir(), "bem-installed");
+            File folder = new File(root, generation);
+            File bemFile = new File(folder, "installed.bem");
+            File tempRepaired = new File(folder, "installed.bem.tmp");
+            try {
+                checkpoint();
+                loadCodec();
+                String rules = "{}";
+                try(InputStream in = app.getAssets().open("android-normal-rules.json");
+                    ByteArrayOutputStream bytes = new ByteArrayOutputStream()) {
+                    byte[] buffer = new byte[8192]; int count;
+                    while((count = in.read(buffer)) != -1) bytes.write(buffer, 0, count);
+                    rules = new String(bytes.toByteArray(), StandardCharsets.UTF_8);
+                } catch(Throwable ignored) {}
+
+                status = "正在转换为 ASTC 格式并流压缩…";
+                convertNative(bemFile.getAbsolutePath(), tempRepaired.getAbsolutePath(), rules, true);
+                if(tempRepaired.isFile() && tempRepaired.length() > 0) {
+                    if(bemFile.delete() && tempRepaired.renameTo(bemFile)) {
+                        File reportFile = new File(folder, "report.json");
+                        JSONObject reportJson = reportFile.isFile()
+                            ? new JSONObject(new String(java.nio.file.Files.readAllBytes(reportFile.toPath()), StandardCharsets.UTF_8))
+                            : new JSONObject();
+                        reportJson.put("astc_converted", true);
+                        reportJson.put("texture_mode", "astc");
+                        reportJson.put("normal_repaired", true);
+                        reportJson.put("bytes", bemFile.length());
+                        try(FileOutputStream out = new FileOutputStream(reportFile)) {
+                            out.write(reportJson.toString(2).getBytes(StandardCharsets.UTF_8));
+                            out.getFD().sync();
+                        } catch(Throwable ignored) {}
+
+                        JSONArray list = index(app);
+                        String modelName = generation;
+                        String remote = "bem-" + generation + ".bem";
+                        for(int i = 0; i < list.length(); ++i) {
+                            JSONObject item = list.getJSONObject(i);
+                            if(generation.equals(item.optString("generation"))) {
+                                modelName = item.optString("name", modelName);
+                                remote = item.optString("remote", remote);
+                                item.put("astc_converted", true);
+                                item.put("texture_mode", "astc");
+                                item.put("normal_repaired", true);
+                                item.put("bytes", bemFile.length());
+                                break;
+                            }
+                        }
+                        commitIndex(app, list.toString(), list, "保存 ASTC 转换索引失败");
+                        FrameworkSettings.publishBem(bemFile, remote);
+                        status = "「" + modelName + "」已成功转换为 ASTC 格式。重启游戏后生效。";
+                    } else {
+                        throw new IOException("无法替换转换后的模型包");
+                    }
+                }
+            } catch(Throwable error) {
+                if(tempRepaired.exists()) tempRepaired.delete();
+                status = "ASTC 转换未完成：" + importError(error);
+            } finally {
+                busy = false; progressPercent = -1;
+            }
+        });
+        return true;
+    }
+
     static synchronized boolean repairAllInstalledNormals(Context context) {
         if(busy) return false;
         Context app=context.getApplicationContext();

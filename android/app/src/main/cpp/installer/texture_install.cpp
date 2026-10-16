@@ -209,10 +209,13 @@ void ConvertInstalledTexture(const J& manifest,J& texture,std::vector<uint8_t>& 
         const auto lw=std::max(sw/scale,1u),lh=std::max(sh/scale,1u);
         if(progress) progress(m+1,levels,0);
         auto rgba=decodeScaled(bytes.data()+pos,format,sw,sh,scale,checkpoint);pos+=mipSize(format,sw,sh);
-        if(normal && encoding=="xy-unorm") {
+        if(normal) {
             for(size_t i=0;i<rgba.size();i+=4) {
-                float x=rgba[i]*(2.0f/255)-1,y=rgba[i+1]*(2.0f/255)-1;
-                rgba[i+2]=uint8_t(std::lround((std::sqrt(std::max(0.0f,1-x*x-y*y))+1)*127.5f));
+                if(encoding=="xy-unorm" || rgba[i+2]<=5) {
+                    float x=rgba[i]*(2.0f/255)-1,y=rgba[i+1]*(2.0f/255)-1;
+                    rgba[i+2]=uint8_t(std::lround((std::sqrt(std::max(0.0f,1-x*x-y*y))+1)*127.5f));
+                    rgba[i+3]=255;
+                }
             }
         }
         size_t count=astc?size_t((lw+block-1)/block)*((lh+block-1)/block)*16:rgba.size();

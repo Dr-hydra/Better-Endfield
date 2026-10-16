@@ -395,10 +395,24 @@ final class BemInstallPage {
                 }
                 LinearLayout actions=new LinearLayout(activity);actions.setOrientation(LinearLayout.HORIZONTAL);
                 LinearLayout.LayoutParams actionLayout=new LinearLayout.LayoutParams(-1,-2);actionLayout.topMargin=dp(16);card.addView(actions,actionLayout);
-                Button remove=actionButton("移除模型包");
-                LinearLayout.LayoutParams removeLayout=new LinearLayout.LayoutParams(-1,dp(44));
-                actions.addView(remove,removeLayout);packageActions.add(remove);
                 String packageName=entry.getString("name");
+                boolean isAstc=entry.optBoolean("astc_converted",false)||"astc".equals(entry.optString("texture_mode"));
+                Button convertAstc=actionButton(isAstc?"已转为 ASTC":"转为 ASTC 格式");
+                LinearLayout.LayoutParams convertLayout=new LinearLayout.LayoutParams(0,dp(44),1f);
+                actions.addView(convertAstc,convertLayout);
+                if(!isAstc) packageActions.add(convertAstc);
+                convertAstc.setEnabled(!isAstc && !BemInstaller.busy);
+                convertAstc.setOnClickListener(v -> new android.app.AlertDialog.Builder(activity)
+                        .setTitle("将「"+packageName+"」转为 ASTC？")
+                        .setMessage("将扫描模型包内所有纹理并重编码为移动端原生 ASTC 格式（自动补全法线 Z 轴并启用流压缩）。用于解决部分机型贴图黑屏、粉屏或显存过大问题。")
+                        .setNegativeButton("取消",null)
+                        .setPositiveButton("开始转换",(dialog,which)->BemInstaller.convertToAstc(activity,generation))
+                        .show());
+                View actionSpacer=new View(activity);
+                actions.addView(actionSpacer,new LinearLayout.LayoutParams(dp(8),dp(44)));
+                Button remove=actionButton("移除模型包");
+                LinearLayout.LayoutParams removeLayout=new LinearLayout.LayoutParams(0,dp(44),1f);
+                actions.addView(remove,removeLayout);packageActions.add(remove);
                 remove.setOnClickListener(v -> new android.app.AlertDialog.Builder(activity)
                         .setTitle("移除「"+packageName+"」？")
                         .setMessage("将删除此模型包的安装文件和配置。下载目录中的原始 BEM 文件会保留，可重新导入。游戏内已加载的模型需重启游戏后恢复。")
