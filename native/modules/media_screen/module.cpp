@@ -6,10 +6,6 @@
 #ifdef __ANDROID__
 #include "android_frame.h"
 #include "android_camera.h"
-#include <link.h>
-#include <sys/mman.h>
-#include <unistd.h>
-#include <string_view>
 #endif
 #include "configuration.h"
 #include "control_hotkey.h"
@@ -351,70 +347,6 @@ void Paint() {
     PaintDeskLayers();
     if (!paint_confirmed) { paint_confirmed = true; Log("Renderer material/texture verified: property=" + String(texture_property_name) + " receivers=" + std::to_string(receivers.size())); }
 }
-#ifdef __ANDROID__
-void PatchAndroidUnityVideoVulkanCrash() {
-    static bool patched = false;
-    if (patched) return;
-    patched = true;
-
-    struct SearchContext {
-        uintptr_t text_start = 0;
-        size_t text_size = 0;
-    } ctx;
-
-    dl_iterate_phdr([](dl_phdr_info* info, size_t, void* data) {
-        auto* c = static_cast<SearchContext*>(data);
-        std::string_view name = info->dlpi_name ? info->dlpi_name : "";
-        if (name.substr(name.find_last_of('/') + 1) != "libunity.so") return 0;
-        for (size_t i = 0; i < info->dlpi_phnum; ++i) {
-            const auto& ph = info->dlpi_phdr[i];
-            if (ph.p_type == PT_LOAD && (ph.p_flags & PF_X)) {
-                c->text_start = info->dlpi_addr + ph.p_vaddr;
-                c->text_size = ph.p_memsz;
-                return 1;
-            }
-        }
-        return 0;
-    }, &ctx);
-
-    if (!ctx.text_start || ctx.text_size < 32) return;
-
-    // Unique 16-byte signature in VideoMediaMemoryOutput immediately preceding the crashing BL:
-    // 1742768: str wzr, [sp, #8]    -> ff 0b 00 b9
-    // 174276c: str xzr, [sp]        -> ff 03 00 f9
-    // 1742770: ldr w1, [x19, #0xb0] -> 61 b2 40 b9
-    // 1742774: mov x2, sp           -> e2 03 00 91
-    // 1742778: bl 0x1155dc0         -> crashes on uninitialized Vulkan sampler map
-    const uint8_t sig[] = {
-        0xff, 0x0b, 0x00, 0xb9,
-        0xff, 0x03, 0x00, 0xf9,
-        0x61, 0xb2, 0x40, 0xb9,
-        0xe2, 0x03, 0x00, 0x91
-    };
-
-    const uint8_t* start = reinterpret_cast<const uint8_t*>(ctx.text_start);
-    const size_t max_search = ctx.text_size - sizeof(sig) - 4;
-    for (size_t offset = 0; offset <= max_search; offset += 4) {
-        if (std::memcmp(start + offset, sig, sizeof(sig)) == 0) {
-            uintptr_t target = ctx.text_start + offset + sizeof(sig);
-            uint32_t insn = 0;
-            std::memcpy(&insn, reinterpret_cast<void*>(target), sizeof(insn));
-            if ((insn & 0xFC000000) == 0x94000000) { // ARM64 BL opcode
-                long page_size = sysconf(_SC_PAGESIZE);
-                if (page_size <= 0) page_size = 4096;
-                uintptr_t page_start = target & ~(static_cast<uintptr_t>(page_size) - 1);
-                if (mprotect(reinterpret_cast<void*>(page_start), page_size, PROT_READ | PROT_WRITE | PROT_EXEC) == 0) {
-                    uint32_t nop = 0xd503201f;
-                    std::memcpy(reinterpret_cast<void*>(target), &nop, sizeof(nop));
-                    __builtin___clear_cache(reinterpret_cast<char*>(target), reinterpret_cast<char*>(target + 4));
-                    mprotect(reinterpret_cast<void*>(page_start), page_size, PROT_READ | PROT_EXEC);
-                }
-            }
-            break;
-        }
-    }
-}
-#endif
 void* RenderTexture(int width, int height) {
     auto texture = New(rt_class); int32_t w = width, h = height, depth = 0;
     void* args[]{&w, &h, &depth}; Invoke(RtCtor, texture, args);
@@ -558,16 +490,7 @@ void Start(const Configuration& config) {
         image_generation = reader.Read(slides[0]); Status("loading:image");
     } else if (running.source == "video") {
         if (!video_class.class_info || !methods[VideoPrepared].resolved.method_info) throw std::runtime_error("VideoPlayer is unavailable on this client");
-#ifdef __ANDROID__
-        PatchAndroidUnityVideoVulkanCrash();
-#endif
         canvas_texture = RenderTexture(running.width, running.height);
-        auto previous = Invoke(RtGetActive, nullptr); SetObject(RtSetActive, nullptr, canvas_texture);
-        struct Color { float r, g, b, a; } black{0, 0, 0, 1};
-        uint8_t depth = 0, color = 1; float depth_value = 1;
-        void* clear[]{&depth, &color, &black, &depth_value};
-        try { Invoke(ClearRt, nullptr, clear); } catch (...) {}
-        SetObject(RtSetActive, nullptr, previous);
         BE_ResolvedClassV1 go_class{};
         if (!Class(kCore, "UnityEngine", "GameObject", go_class)) throw std::runtime_error("Cannot create video owner");
         player_go = New(go_class);
