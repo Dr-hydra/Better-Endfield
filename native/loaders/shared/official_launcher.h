@@ -28,6 +28,11 @@ std::wstring WindowsError(const wchar_t* operation, DWORD code);
 void ShowError(const std::wstring& message);
 void ConfigureConsole(const Options& options);
 
+bool ShouldInjectSteamOverlay(const Options& options);
+void PrepareSteamEnvironment(const Options& options);
+std::filesystem::path FindSteamOverlayDll();
+bool InjectSteamOverlay(HANDLE process, const Options& options);
+
 class Handle {
 public:
     explicit Handle(HANDLE value = nullptr) : value_(value) {}

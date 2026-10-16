@@ -28,8 +28,8 @@
   "assets": [
     {
       "name": "BetterEndfieldNext-4.0.5-Setup.exe",
-      "bytes": 76890456,
-      "sha256": "5d7f0a68c212cba03344e5431a69b7bf004c6656d45ebded5605c236f18e891a",
+      "bytes": 76657720,
+      "sha256": "30d29acbff96d8ff2bf494aa3d2e1dc5f0345222cf9dfa2112ccc97dd91f1232",
       "public": true
     },
     {
@@ -48,8 +48,8 @@
   "local_only_assets": [
     {
       "name": "BetterEndfieldNext-4.0.5-win-x64.zip",
-      "bytes": 85046684,
-      "sha256": "6ed82f8c8e33acb38ecd756c8fcde942b3a1f1327548bd4cc2d74d5fb743c323"
+      "bytes": 84967275,
+      "sha256": "38fadbb666f05c35557527847a39d73e40289b18ac58630c59c5ff35ed81c41a"
     }
   ],
   "release": {

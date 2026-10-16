@@ -453,7 +453,7 @@ public sealed partial class MainWindow : Window
         if (BypassOfficialLauncherCheckBox.IsChecked == true)
         {
             OfficialLauncherPathStatusTextBlock.Text = isZh
-                ? "已启用免官方启动器模式，将直接拉起游戏。"
+                ? "已启用直启模式，将直接拉起游戏。"
                 : "Direct launch mode enabled; game will be launched directly without official launcher.";
             return;
         }
@@ -4477,7 +4477,7 @@ public sealed partial class MainWindow : Window
         GamePathBox.Header = isZh ? "游戏程序" : "Game Executable";
         OfficialLauncherComboBox.Header = isZh ? "官方启动器" : "Official Launcher";
         OfficialLauncherComboBox.PlaceholderText = isZh ? "选择或添加官方启动器..." : "Select or add official launcher...";
-        BypassOfficialLauncherCheckBox.Content = isZh ? "免官方启动器模式（Steam 原生版 / 直启）" : "Bypass Official Launcher (Steam Native / Direct)";
+        BypassOfficialLauncherCheckBox.Content = isZh ? "Steam 原生版 / 直启" : "Bypass Official Launcher (Steam Native / Direct)";
         UpdateOfficialLauncherUiState();
         GameLaunchArgumentsBox.Header = isZh ? "游戏启动参数（可选）" : "Game Launch Arguments (Optional)";
         GameLaunchArgumentsBox.PlaceholderText = isZh ? "例如：-force-d3d11" : "e.g. -force-d3d11";

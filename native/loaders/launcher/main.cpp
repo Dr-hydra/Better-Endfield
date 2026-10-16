@@ -7,10 +7,11 @@ DWORD Run(int argc, wchar_t* argv[]) {
     std::wstring error;
     if (!ParseOptions(argc, argv, false, options, error)) { ShowError(error); return 2; }
     ConfigureConsole(options);
+    PrepareSteamEnvironment(options);
     PROCESS_INFORMATION game{};
     OfficialParent parent;
     if (options.no_parent) {
-        if (!CreateGameProcess(options.game, options.arguments, 0, game, error)) { ShowError(error); return 4; }
+        if (!CreateGameProcess(options.game, options.arguments, CREATE_SUSPENDED, game, error)) { ShowError(error); return 4; }
     } else {
         VerifiedLauncher launcher;
         if (!FindOfficialLauncher(options.parent, launcher, error)) { ShowError(error); return 7; }
@@ -18,8 +19,10 @@ DWORD Run(int argc, wchar_t* argv[]) {
         // Signature and mapped parent image are now fixed. Allow official updater
         // normal access to the executable while the game continues running.
         launcher.file.reset();
-        if (!parent.CreateGame(options.game, options.arguments, 0, game, error)) { ShowError(error); return 4; }
+        if (!parent.CreateGame(options.game, options.arguments, CREATE_SUSPENDED, game, error)) { ShowError(error); return 4; }
     }
+    InjectSteamOverlay(game.hProcess, options);
+    ResumeThread(game.hThread);
     Handle process(game.hProcess);
     CloseHandle(game.hThread);
     DWORD exit_code = 0;

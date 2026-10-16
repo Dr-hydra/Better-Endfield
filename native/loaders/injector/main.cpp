@@ -565,6 +565,7 @@ DWORD RunInjector(int argc, wchar_t* argv[]) {
         return 2;
     }
     launch::ConfigureConsole(options);
+    launch::PrepareSteamEnvironment(options);
     const bool hide_console = options.hide_console || options.steam_launch;
     const auto report_error = [hide_console](const std::wstring& message) {
         if (hide_console) launch::ShowError(message);
@@ -624,6 +625,8 @@ DWORD RunInjector(int argc, wchar_t* argv[]) {
     }
     OwnedGameStartup owned_game(process);
     InjectionDiagnostics diagnostics(hide_console);
+
+    launch::InjectSteamOverlay(process.hProcess, options);
 
     bool injected = false;
 

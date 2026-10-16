@@ -72,6 +72,31 @@ int wmain(int argc, wchar_t* argv[]) {
         Check(Parse({L"helper", L"--game", game.wstring(), L"--manual-map-late", L"--steam-command", L"ignored"}, true, options)
             && options.steam_launch && options.late_manual_map, "Injector Steam launch mode was lost.");
 
+        // Steam overlay injection checks: non-Steam users must remain 100% unaffected.
+        Options non_steam_options{};
+        SetEnvironmentVariableW(L"SteamOverlayGameId", nullptr);
+        SetEnvironmentVariableW(L"SteamAppId", nullptr);
+        SetEnvironmentVariableW(L"SteamGameId", nullptr);
+        Check(!ShouldInjectSteamOverlay(non_steam_options), "Non-Steam options triggered Steam overlay injection.");
+
+        Options steam_options{};
+        steam_options.steam_launch = true;
+        Check(ShouldInjectSteamOverlay(steam_options), "Steam options did not trigger Steam overlay injection.");
+        PrepareSteamEnvironment(steam_options);
+        wchar_t steam_env_buf[64]{};
+        Check(GetEnvironmentVariableW(L"SteamOverlayGameId", steam_env_buf, _countof(steam_env_buf)) > 0
+            && std::wstring(steam_env_buf) == L"4732690", "SteamOverlayGameId not set correctly.");
+        Check(GetEnvironmentVariableW(L"SteamAppId", steam_env_buf, _countof(steam_env_buf)) > 0
+            && std::wstring(steam_env_buf) == L"4732690", "SteamAppId not set correctly.");
+        Check(GetEnvironmentVariableW(L"SteamGameId", steam_env_buf, _countof(steam_env_buf)) > 0
+            && std::wstring(steam_env_buf) == L"4732690", "SteamGameId not set correctly.");
+
+        const auto overlay_dll = FindSteamOverlayDll();
+        if (!overlay_dll.empty()) {
+            std::error_code overlay_ec;
+            Check(std::filesystem::is_regular_file(overlay_dll, overlay_ec), "Found overlay DLL is not a regular file.");
+        }
+
         // Exercise real console detachment and the same wait/exit-code path as
         // the launch helpers, using only this inert test child (never the game).
         wchar_t executable[32768]{};

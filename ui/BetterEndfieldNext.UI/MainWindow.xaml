@@ -2028,7 +2028,7 @@
                                         </Grid>
                                         <CheckBox
                                             x:Name="BypassOfficialLauncherCheckBox"
-                                            Content="免官方启动器模式（Steam 原生版 / 直启）"
+                                            Content="Steam 原生版 / 直启"
                                             Click="BypassOfficialLauncherCheckBox_Click" />
                                         <TextBlock
                                             x:Name="OfficialLauncherPathStatusTextBlock"

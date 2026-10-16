@@ -213,6 +213,102 @@ void ConfigureConsole(const Options& options) {
     if (options.hide_console || options.steam_launch) FreeConsole();
 }
 
+bool ShouldInjectSteamOverlay(const Options& options) {
+    if (options.steam_launch) return true;
+    wchar_t value[64]{};
+    if (GetEnvironmentVariableW(L"SteamOverlayGameId", value, static_cast<DWORD>(std::size(value))) > 0) return true;
+    if (GetEnvironmentVariableW(L"SteamAppId", value, static_cast<DWORD>(std::size(value))) > 0) return true;
+    return false;
+}
+
+void PrepareSteamEnvironment(const Options& options) {
+    if (!ShouldInjectSteamOverlay(options)) return;
+    wchar_t value[64]{};
+    if (GetEnvironmentVariableW(L"SteamOverlayGameId", value, static_cast<DWORD>(std::size(value))) == 0) {
+        SetEnvironmentVariableW(L"SteamOverlayGameId", L"4732690");
+    }
+    if (GetEnvironmentVariableW(L"SteamAppId", value, static_cast<DWORD>(std::size(value))) == 0) {
+        SetEnvironmentVariableW(L"SteamAppId", L"4732690");
+    }
+    if (GetEnvironmentVariableW(L"SteamGameId", value, static_cast<DWORD>(std::size(value))) == 0) {
+        SetEnvironmentVariableW(L"SteamGameId", L"4732690");
+    }
+}
+
+std::filesystem::path FindSteamOverlayDll() {
+    wchar_t steam_path[32768]{};
+    const DWORD length = GetEnvironmentVariableW(L"SteamPath", steam_path,
+        static_cast<DWORD>(std::size(steam_path)));
+    if (length > 0 && length < std::size(steam_path)) {
+        std::error_code ec;
+        std::filesystem::path candidate = std::filesystem::path(steam_path) / L"GameOverlayRenderer64.dll";
+        if (std::filesystem::is_regular_file(candidate, ec)) return candidate;
+    }
+
+    for (const auto& key : {
+        ReadRegistry(HKEY_CURRENT_USER, L"Software\\Valve\\Steam", L"SteamPath"),
+        ReadRegistry(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Valve\\Steam", L"InstallPath"),
+        ReadRegistry(HKEY_LOCAL_MACHINE, L"SOFTWARE\\WOW6432Node\\Valve\\Steam", L"InstallPath")
+    }) {
+        if (!key.empty()) {
+            std::error_code ec;
+            std::filesystem::path candidate = std::filesystem::path(key) / L"GameOverlayRenderer64.dll";
+            if (std::filesystem::is_regular_file(candidate, ec)) return candidate;
+        }
+    }
+
+    const std::filesystem::path default_path = L"C:\\Program Files (x86)\\Steam\\GameOverlayRenderer64.dll";
+    std::error_code ec;
+    if (std::filesystem::is_regular_file(default_path, ec)) return default_path;
+
+    return {};
+}
+
+bool InjectSteamOverlay(HANDLE process, const Options& options) {
+    if (!ShouldInjectSteamOverlay(options) || !process) return true;
+    const auto overlay_dll = FindSteamOverlayDll();
+    if (overlay_dll.empty()) return false;
+
+    const std::wstring full_path = std::filesystem::absolute(overlay_dll).wstring();
+    const SIZE_T bytes = (full_path.size() + 1) * sizeof(wchar_t);
+    void* remote_path = VirtualAllocEx(process, nullptr, bytes,
+        MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    if (!remote_path) return false;
+
+    SIZE_T written = 0;
+    if (!WriteProcessMemory(process, remote_path, full_path.c_str(), bytes, &written) || written != bytes) {
+        VirtualFreeEx(process, remote_path, 0, MEM_RELEASE);
+        return false;
+    }
+
+    HMODULE kernel32 = GetModuleHandleW(L"kernel32.dll");
+    if (!kernel32) {
+        VirtualFreeEx(process, remote_path, 0, MEM_RELEASE);
+        return false;
+    }
+
+    auto load_library_w = reinterpret_cast<LPTHREAD_START_ROUTINE>(
+        GetProcAddress(kernel32, "LoadLibraryW"));
+    if (!load_library_w) {
+        VirtualFreeEx(process, remote_path, 0, MEM_RELEASE);
+        return false;
+    }
+
+    HANDLE thread = CreateRemoteThread(process, nullptr, 0,
+        load_library_w, remote_path, 0, nullptr);
+    if (!thread) {
+        VirtualFreeEx(process, remote_path, 0, MEM_RELEASE);
+        return false;
+    }
+
+    WaitForSingleObject(thread, 10000);
+    DWORD exit_code = 0;
+    GetExitCodeThread(thread, &exit_code);
+    CloseHandle(thread);
+    VirtualFreeEx(process, remote_path, 0, MEM_RELEASE);
+    return exit_code != 0;
+}
+
 bool IsOfficialPublisher(const std::wstring& organization) { return Equal(organization, kPublisher); }
 
 bool IsValidExecutableImage(HANDLE file) {
@@ -318,6 +414,42 @@ OfficialParent::~OfficialParent() {
     WaitForSingleObject(process_.get(), 5000);
 }
 
+using CreateProcessW_Fn = BOOL(WINAPI*)(
+    LPCWSTR, LPWSTR, LPSECURITY_ATTRIBUTES, LPSECURITY_ATTRIBUTES,
+    BOOL, DWORD, LPVOID, LPCWSTR, LPSTARTUPINFOW, LPPROCESS_INFORMATION);
+
+BOOL CreateProcessWithoutOverlayHook(
+    LPCWSTR application_name,
+    LPWSTR command_line,
+    LPSECURITY_ATTRIBUTES process_attributes,
+    LPSECURITY_ATTRIBUTES thread_attributes,
+    BOOL inherit_handles,
+    DWORD creation_flags,
+    LPVOID environment,
+    LPCWSTR current_directory,
+    LPSTARTUPINFOW startup_info,
+    LPPROCESS_INFORMATION process_information) {
+    // Steam overlay installs an inline hook on kernel32!CreateProcessW to
+    // capture child processes. Calling unhooked kernelbase!CreateProcessW keeps
+    // the dummy suspended launcher parent invisible to Steam, allowing Steam to
+    // capture and hook Endfield.exe cleanly on the subsequent CreateGame call.
+    if (HMODULE kernelbase = GetModuleHandleW(L"kernelbase.dll")) {
+        auto pCreateProcessW = reinterpret_cast<CreateProcessW_Fn>(
+            GetProcAddress(kernelbase, "CreateProcessW"));
+        if (pCreateProcessW) {
+            const auto bytes = reinterpret_cast<const unsigned char*>(pCreateProcessW);
+            if (bytes[0] != 0xE9 && !(bytes[0] == 0xFF && bytes[1] == 0x25) && bytes[0] != 0xEB) {
+                return pCreateProcessW(application_name, command_line, process_attributes,
+                    thread_attributes, inherit_handles, creation_flags, environment,
+                    current_directory, startup_info, process_information);
+            }
+        }
+    }
+    return CreateProcessW(application_name, command_line, process_attributes,
+        thread_attributes, inherit_handles, creation_flags, environment,
+        current_directory, startup_info, process_information);
+}
+
 bool OfficialParent::Start(const VerifiedLauncher& launcher, std::wstring& error) {
     if (process_.get() || !launcher.file.get() || launcher.file.get() == INVALID_HANDLE_VALUE) {
         error = L"Invalid verified launcher state."; return false;
@@ -328,7 +460,7 @@ bool OfficialParent::Start(const VerifiedLauncher& launcher, std::wstring& error
     startup.wShowWindow = SW_HIDE;
     PROCESS_INFORMATION process{};
     auto command = QuoteArgument(launcher.executable.wstring());
-    if (!CreateProcessW(launcher.executable.c_str(), command.data(), nullptr, nullptr, FALSE,
+    if (!CreateProcessWithoutOverlayHook(launcher.executable.c_str(), command.data(), nullptr, nullptr, FALSE,
             CREATE_SUSPENDED | CREATE_NO_WINDOW, nullptr, launcher.executable.parent_path().c_str(), &startup, &process)) {
         error = WindowsError(L"创建官方启动器父进程 / Create official launcher parent", GetLastError());
         return false;
