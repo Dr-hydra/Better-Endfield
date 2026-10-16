@@ -32,27 +32,31 @@ final class BemInstalledResources {
         if(!root.isDirectory()&&!root.mkdirs()) throw new IOException("Cannot create game model directory");
         for(int i=0;i<entries.length();++i) {
             JSONObject entry=entries.getJSONObject(i);if(!entry.optBoolean("enabled",true)) continue;
-            boolean composable=entry.optInt("bem_minor",0)>=1;
-            String appearance=composable?"":BemOptions.appearance(entry,entry.optString("selected_appearance",entry.getString("default_appearance")));
-            String selection=composable?BemOptions.encode(BemOptions.parse(entry,entry.optString("selected_options",entry.getString("default_options")))):"";
-            String parameterSelection=BemParameters.encode(BemParameters.parse(entry,entry.optString("selected_parameters",entry.optString("default_parameters",""))));
-            String generation=entry.getString("generation"),remote=entry.getString("remote");
-            if(!generation.matches("[a-f0-9-]{36}")||!remote.equals("bem-"+generation+".bem")) throw new IOException("Invalid installed generation");
-            long expected=entry.getLong("bytes");if(expected<=0||expected>2L*1024*1024*1024) throw new IOException("Invalid installed size");
-            File output=new File(root,generation+".bem"),temp=new File(root,generation+".tmp");used.add(output.getName());
-            if(!output.isFile()||output.length()!=expected) {
-                try {
-                    try(InputStream in=source.open(remote);FileOutputStream out=new FileOutputStream(temp)) {
-                        byte[] buffer=new byte[65536];long length=0;int n;
-                        while((n=in.read(buffer))!=-1) {length+=n;if(length>expected) throw new IOException("Installed payload exceeds declared size");out.write(buffer,0,n);}
-                        if(length!=expected) throw new IOException("Truncated installed payload");out.getFD().sync();
-                    }
-                    android.system.Os.rename(temp.getAbsolutePath(),output.getAbsolutePath());
-                } finally {temp.delete();}
+            try {
+                boolean composable=entry.optInt("bem_minor",0)>=1;
+                String appearance=composable?"":BemOptions.appearance(entry,entry.optString("selected_appearance",entry.getString("default_appearance")));
+                String selection=composable?BemOptions.encode(BemOptions.parse(entry,entry.optString("selected_options",entry.getString("default_options")))):"";
+                String parameterSelection=BemParameters.encode(BemParameters.parse(entry,entry.optString("selected_parameters",entry.optString("default_parameters",""))));
+                String generation=entry.getString("generation"),remote=entry.getString("remote");
+                if(!generation.matches("[a-f0-9-]{36}")||!remote.equals("bem-"+generation+".bem")) throw new IOException("Invalid installed generation");
+                long expected=entry.optLong("bytes",0);if(expected>2L*1024*1024*1024) throw new IOException("Invalid installed size");
+                File output=new File(root,generation+".bem"),temp=new File(root,generation+".tmp");used.add(output.getName());
+                if(!output.isFile()||(expected>0&&output.length()!=expected)) {
+                    try {
+                        try(InputStream in=source.open(remote);FileOutputStream out=new FileOutputStream(temp)) {
+                            byte[] buffer=new byte[65536];long length=0;int n;
+                            while((n=in.read(buffer))!=-1) {length+=n;if(length>2L*1024*1024*1024) throw new IOException("Installed payload exceeds declared size");out.write(buffer,0,n);}
+                            if(length==0) throw new IOException("Truncated installed payload");out.getFD().sync();
+                        }
+                        android.system.Os.rename(temp.getAbsolutePath(),output.getAbsolutePath());
+                    } finally {temp.delete();}
+                }
+                if(paths.length()>0) {paths.append(',');appearances.append(',');options.append(',');parameters.append(',');}
+                paths.append(output.getAbsolutePath());appearances.append(appearance);options.append(selection);parameters.append(parameterSelection);
+                log.accept("Installed BEM ready: "+entry.getString("package_id")+" selection="+(composable?selection:appearance));
+            } catch(Exception itemError) {
+                log.accept("Installed BEM item skipped due to error: "+itemError.getMessage());
             }
-            if(paths.length()>0) {paths.append(',');appearances.append(',');options.append(',');parameters.append(',');}
-            paths.append(output.getAbsolutePath());appearances.append(appearance);options.append(selection);parameters.append(parameterSelection);
-            log.accept("Installed BEM ready: "+entry.getString("package_id")+" selection="+(composable?selection:appearance));
         }
         File[] stale=pruneUnused?root.listFiles():null;
         if(stale!=null) for(File file:stale) {

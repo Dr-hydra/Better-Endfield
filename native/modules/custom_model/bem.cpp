@@ -1037,7 +1037,19 @@ bool RewriteBemTextures(const std::filesystem::path& input,const std::filesystem
             Check(bytes.size()<=c.limits.textureBytes,"Texture exceeds format limit");
             transform(c.manifest,texture,bytes);
             Check(!bytes.empty() && bytes.size()<=c.limits.textureBytes,"Converted texture exceeds format limit");
-            texture["payload"]=append(0,bytes.size(),bytes);
+            if(texture == original) {
+                copy(texture["payload"]);
+            } else {
+                size_t bound = ZSTD_compressBound(bytes.size());
+                std::vector<uint8_t> compressed(bound);
+                size_t cSize = ZSTD_compress(compressed.data(), compressed.size(), bytes.data(), bytes.size(), 3);
+                if (!ZSTD_isError(cSize) && cSize < bytes.size()) {
+                    compressed.resize(cSize);
+                    texture["payload"] = append(1, bytes.size(), compressed);
+                } else {
+                    texture["payload"] = append(0, bytes.size(), bytes);
+                }
+            }
             converted.emplace(key,texture);
             changes.push_back({{"name",texture.at("original_name")},{"source_format",original.at("format")},
                 {"format",texture.at("format")},{"bytes",bytes.size()}});

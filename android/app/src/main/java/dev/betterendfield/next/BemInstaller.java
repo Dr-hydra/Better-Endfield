@@ -42,6 +42,7 @@ final class BemInstaller {
     interface Inspector { JSONObject inspect(File file,boolean skipValidation) throws Exception; }
     static volatile PendingBundle pendingBundle;
     static native String convertNative(String input, String output, String rules, boolean astc) throws IOException;
+    static native String repairNormalsNative(String input, String output, boolean astc) throws IOException;
     static native String inspectNativeWithOptions(String input, boolean skipValidation) throws IOException;
     static String inspectNative(String input) throws IOException { return inspectNativeWithOptions(input, false); }
     static native void cancelNative();
@@ -67,10 +68,18 @@ final class BemInstaller {
         try {
             String stored=FrameworkSettings.open(context).getString(INDEX,"[]");
             JSONArray entries=BemOptions.exclusive(new JSONArray(stored));
+            File root=new File(context.getFilesDir(),"bem-installed");
             // Legacy entries had implicit enabled/default selections. Repair them on disk
             // before the UI can advertise the normalized state.
             for(int i=0;i<entries.length();++i) {
                 JSONObject entry=entries.getJSONObject(i);
+                String gen=entry.optString("generation");
+                if(!gen.isEmpty()) {
+                    File bemFile=new File(new File(root,gen),"installed.bem");
+                    if(bemFile.isFile() && bemFile.length()>0 && bemFile.length()!=entry.optLong("bytes",0)) {
+                        entry.put("bytes",bemFile.length());
+                    }
+                }
                 if(entry.optInt("bem_minor",0)>=1) {
                     String selection=entry.optString("selected_options",entry.getString("default_options"));
                     try {selection=BemOptions.encode(BemOptions.parse(entry,selection));}
@@ -213,6 +222,26 @@ final class BemInstaller {
     }
     /** Commit one generation at a time, preserving already imported items on later failures. */
     static void installPrepared(Context app,PreparedPackage item) throws Exception {
+        File bemFile=new File(item.item.directory,"installed.bem");
+        if(bemFile.isFile()) {
+            File repaired=new File(item.item.directory,"installed.bem.repaired");
+            try {
+                loadCodec();
+                repairNormalsNative(bemFile.getAbsolutePath(),repaired.getAbsolutePath(),true);
+                if(repaired.isFile() && repaired.length()>0) {
+                    if(bemFile.delete() && repaired.renameTo(bemFile)) {
+                        item.report.put("normal_repaired",true);
+                        item.report.put("bytes",bemFile.length());
+                        try(FileOutputStream out=new FileOutputStream(new File(item.item.directory,"report.json"))) {
+                            out.write(item.report.toString(2).getBytes(StandardCharsets.UTF_8));
+                            out.getFD().sync();
+                        }
+                    }
+                }
+            } catch(Throwable ignored) {
+                if(repaired.exists()) repaired.delete();
+            }
+        }
         File root=new File(app.getFilesDir(),"bem-installed");
         String generation=item.report.getString("generation");
         File installed=new File(root,generation);boolean moved=false,committed=false;
@@ -548,6 +577,67 @@ final class BemInstaller {
     static synchronized void select(Context app,String generation,String appearance,boolean enabled) throws Exception {
         saveAll(app,new JSONArray().put(new JSONObject().put("generation",generation).put("appearance",appearance).put("enabled",enabled)));
     }
+    static synchronized boolean repairAllInstalledNormals(Context context) {
+        if(busy) return false;
+        Context app=context.getApplicationContext();
+        progressPercent=-1;startedAt=android.os.SystemClock.elapsedRealtime();
+        busy=true;cancelled=false;status="正在扫描已安装模型包…";
+        worker.execute(()->{
+            int total=0,repairedCount=0;
+            try {
+                File root=new File(app.getFilesDir(),"bem-installed");
+                JSONArray list=index(app);total=list.length();
+                loadCodec();
+                for(int i=0;i<list.length();++i) {
+                    checkpoint();
+                    JSONObject entry=list.getJSONObject(i);
+                    String gen=entry.getString("generation");
+                    String name=entry.optString("name",gen);
+                    File folder=new File(root,gen);
+                    File bemFile=new File(folder,"installed.bem");
+                    if(!bemFile.isFile()) continue;
+                    status="正在检查并修复法线 ("+(i+1)+" / "+total+")："+name;
+                    progressPercent=(i*100)/Math.max(1,total);
+                    File tempRepaired=new File(folder,"installed.bem.tmp");
+                    try {
+                        repairNormalsNative(bemFile.getAbsolutePath(),tempRepaired.getAbsolutePath(),true);
+                        if(tempRepaired.isFile() && tempRepaired.length()>0) {
+                            if(bemFile.delete() && tempRepaired.renameTo(bemFile)) {
+                                repairedCount++;
+                                entry.put("normal_repaired",true);
+                                entry.put("bytes",bemFile.length());
+                                File reportFile=new File(folder,"report.json");
+                                if(reportFile.isFile()) {
+                                    try {
+                                        JSONObject reportJson=new JSONObject(new String(java.nio.file.Files.readAllBytes(reportFile.toPath()),StandardCharsets.UTF_8));
+                                        reportJson.put("normal_repaired",true);
+                                        reportJson.put("bytes",bemFile.length());
+                                        try(FileOutputStream out=new FileOutputStream(reportFile)) {
+                                            out.write(reportJson.toString(2).getBytes(StandardCharsets.UTF_8));
+                                            out.getFD().sync();
+                                        }
+                                    } catch(Throwable ignored) {}
+                                }
+                                FrameworkSettings.publishBem(bemFile,entry.getString("remote"));
+                            }
+                        }
+                    } catch(Exception err) {
+                        if(tempRepaired.exists()) tempRepaired.delete();
+                    }
+                }
+                if(repairedCount>0) {
+                    commitIndex(app,list.toString(),list,"保存法线修复索引失败");
+                }
+                status="法线修复完成：共扫描 "+total+" 个模型包，更新了 "+repairedCount+" 个包。重启游戏后生效。";
+            } catch(Throwable error) {
+                status="法线修复未完成："+importError(error);
+            } finally {
+                busy=false;progressPercent=-1;
+            }
+        });
+        return true;
+    }
+
     static synchronized void disableAll(Context app) throws Exception {
         if(busy) throw new IOException("请等待当前操作完成后修改");
         JSONArray entries=index(app),changes=new JSONArray();

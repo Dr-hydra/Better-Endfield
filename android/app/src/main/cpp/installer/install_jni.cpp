@@ -62,3 +62,35 @@ extern "C" JNIEXPORT jstring JNICALL Java_dev_betterendfield_next_BemInstaller_c
         return env->NewStringUTF(report.c_str());
     } catch(const std::exception& error) {env->ThrowNew(env->FindClass("java/io/IOException"),error.what());return nullptr;}
 }
+extern "C" JNIEXPORT jstring JNICALL Java_dev_betterendfield_next_BemInstaller_repairNormalsNative(JNIEnv* env,jclass owner,jstring src,jstring dst,jboolean astc) {
+    if(busy.exchange(true)) {env->ThrowNew(env->FindClass("java/io/IOException"),"Another operation is running");return nullptr;}
+    struct Guard {~Guard(){busy=false;}} guard; cancelled=false;
+    try {
+        Utf input(env,src),output(env,dst);
+        auto checkpoint=[] {if(cancelled.load()) throw std::runtime_error("Operation cancelled");};
+        auto progressMethod=env->GetStaticMethodID(owner,"conversionProgress","(Ljava/lang/String;IIIIF)V");
+        if(!progressMethod) return nullptr;
+        unsigned textureIndex=0,repairedCount=0;
+        std::string report,error;
+        bool ok=BetterEndfieldNext::CustomModel::RewriteBemTextures(input.data,output.data,
+            [&](const auto& manifest,auto& texture,auto& bytes) {
+                ++textureIndex;
+                auto name=texture.at("original_name").template get<std::string>();
+                auto progress=[&](unsigned mip,unsigned mips,float percent) {
+                    auto label=env->NewStringUTF(name.c_str());
+                    if(!label) throw std::runtime_error("Cannot report progress");
+                    env->CallStaticVoidMethod(owner,progressMethod,label,jint(textureIndex),jint(manifest.at("textures").size()),jint(mip),jint(mips),jfloat(percent));
+                    env->DeleteLocalRef(label);
+                };
+                if(betterendfieldnext::RepairNormalTexture(manifest,texture,bytes,astc,checkpoint,progress)) {
+                    ++repairedCount;
+                }
+            },checkpoint,report,error);
+        if(!ok) throw std::runtime_error(error);
+        if(repairedCount==0) {
+            std::filesystem::remove(output.data);
+            return env->NewStringUTF("{\"repaired\":false,\"count\":0}");
+        }
+        return env->NewStringUTF(report.c_str());
+    } catch(const std::exception& error) {env->ThrowNew(env->FindClass("java/io/IOException"),error.what());return nullptr;}
+}

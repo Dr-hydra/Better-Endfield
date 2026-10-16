@@ -27,6 +27,7 @@ final class BemInstallPage {
     private android.app.AlertDialog bundleDialog;
     private BemInstaller.PendingBundle reviewedBundle;
     private Button disableAll;
+    private Button repairAllNormals;
     private Spinner characterFilter;
     private String selectedCharacter="";
     private boolean updatingCharacterFilter,hasEnabledPackages;
@@ -66,6 +67,7 @@ final class BemInstallPage {
         if(!index.equals(displayed)) showEntries();
         for(View action:packageActions) action.setEnabled(!BemInstaller.busy);
         disableAll.setEnabled(!BemInstaller.busy && hasEnabledPackages);
+        if(repairAllNormals!=null) repairAllNormals.setEnabled(!BemInstaller.busy && entries.getChildCount()>0);
         handler.postDelayed(this,500);
     }};
     BemInstallPage(Activity activity, View root, Bundle state) {
@@ -166,6 +168,12 @@ final class BemInstallPage {
         disableAll=actionButton(activity.getString(R.string.bem_disable_all));disableAll.setEnabled(false);
         LinearLayout.LayoutParams buttonLayout=new LinearLayout.LayoutParams(-1,dp(44));buttonLayout.topMargin=dp(12);
         management.addView(disableAll,buttonLayout);
+        repairAllNormals=actionButton("修复所有法线");repairAllNormals.setEnabled(false);
+        LinearLayout.LayoutParams repairLayout=new LinearLayout.LayoutParams(-1,dp(44));repairLayout.topMargin=dp(8);
+        management.addView(repairAllNormals,repairLayout);
+        repairAllNormals.setOnClickListener(v->{
+            BemInstaller.repairAllInstalledNormals(activity);
+        });
         disableAll.setOnClickListener(v->{
             try {
                 BemInstaller.disableAll(activity);
@@ -387,13 +395,8 @@ final class BemInstallPage {
                 }
                 LinearLayout actions=new LinearLayout(activity);actions.setOrientation(LinearLayout.HORIZONTAL);
                 LinearLayout.LayoutParams actionLayout=new LinearLayout.LayoutParams(-1,-2);actionLayout.topMargin=dp(16);card.addView(actions,actionLayout);
-                if("original".equals(mode)) {
-                    Button convert=actionButton("转换纹理");actions.addView(convert,new LinearLayout.LayoutParams(0,dp(44),1));packageActions.add(convert);
-                    convert.setOnClickListener(v -> BemInstaller.convert(activity,generation));
-                }
                 Button remove=actionButton("移除模型包");
-                LinearLayout.LayoutParams removeLayout=new LinearLayout.LayoutParams(0,dp(44),1);
-                if("original".equals(mode)) removeLayout.leftMargin=dp(8);
+                LinearLayout.LayoutParams removeLayout=new LinearLayout.LayoutParams(-1,dp(44));
                 actions.addView(remove,removeLayout);packageActions.add(remove);
                 String packageName=entry.getString("name");
                 remove.setOnClickListener(v -> new android.app.AlertDialog.Builder(activity)
@@ -408,7 +411,7 @@ final class BemInstallPage {
             applyCharacterFilter();
         } catch(Exception error){
             entries.removeAllViews();packageActions.clear();
-            hasEnabledPackages=false;disableAll.setEnabled(false);
+            hasEnabledPackages=false;disableAll.setEnabled(false);if(repairAllNormals!=null) repairAllNormals.setEnabled(false);
             String message="安装列表读取失败："+error.getMessage();
             if(!BemInstaller.busy) BemInstaller.status=message;
             status.setText(message);

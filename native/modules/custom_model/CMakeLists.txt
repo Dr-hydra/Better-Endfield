@@ -2,7 +2,8 @@
 # Engine calls, process memory access and native layout discovery stay in adapters.
 file(GLOB BEM_ZSTD_COMMON CONFIGURE_DEPENDS ../../shared/third_party/zstd/lib/common/*.c)
 file(GLOB BEM_ZSTD_DECODE CONFIGURE_DEPENDS ../../shared/third_party/zstd/lib/decompress/*.c)
-add_library(BetterEndfieldNext.BemZstd STATIC ${BEM_ZSTD_COMMON} ${BEM_ZSTD_DECODE})
+file(GLOB BEM_ZSTD_COMPRESS CONFIGURE_DEPENDS ../../shared/third_party/zstd/lib/compress/*.c)
+add_library(BetterEndfieldNext.BemZstd STATIC ${BEM_ZSTD_COMMON} ${BEM_ZSTD_DECODE} ${BEM_ZSTD_COMPRESS})
 target_compile_definitions(BetterEndfieldNext.BemZstd PRIVATE ZSTD_DISABLE_ASM)
 set_target_properties(BetterEndfieldNext.BemZstd PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
