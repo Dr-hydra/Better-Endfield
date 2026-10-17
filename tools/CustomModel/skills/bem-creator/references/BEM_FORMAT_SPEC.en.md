@@ -1,6 +1,6 @@
 # BEM Format Specification (1.0–1.4)
 
-BEM (Better Endfield Model) is a character model replacement package with the `.bem` extension. Windows and Android read the same file. The [BEM 1.4 extension](BEM_V1_4_SPEC.md) defines explicit multi-resource targets and static weapons. The sections below describe the 1.0–1.3 contract; version-specific differences are marked below. See the [Creator Guide](BEM_CREATOR_GUIDE.en.md) for production workflow and [Runtime Behavior and Compatibility](BEM_RUNTIME_COMPATIBILITY.en.md) for in-game matching and restrictions.
+BEM (Better Endfield Next Model) is a character model replacement package with the `.bem` extension. Windows and Android read the same file. The [BEM 1.4 extension](BEM_V1_4_SPEC.md) defines explicit multi-resource targets and static weapons. The sections below describe the 1.0–1.3 contract; version-specific differences are marked below. See the [Creator Guide](BEM_CREATOR_GUIDE.en.md) for production workflow and [Runtime Behavior and Compatibility](BEM_RUNTIME_COMPATIBILITY.en.md) for in-game matching and restrictions.
 
 Reference implementations: writers and validators are `tools/CustomModel/bem_v1.py`, `bem_v11.py`, `bem_v13.py`, and `bem_v14.py`; the native reader is `native/modules/custom_model/bem.cpp`.
 
@@ -350,3 +350,59 @@ Shape evaluation follows EFMI ShapeKey semantics: `position = original position 
 All versions share these limits: 2 GiB container; 4 MiB manifest; 512 MiB per payload; 1..64 components; 256 palette bones; 256 draws per component; 16,777,216 selected indices; 1,048,576 vertices; 64 shape parameters; and 4096 deformation channels.
 
 Budgets apply to one selection and are not the same as the actual GPU peak. The 1.3 budget conservatively counts all frames for each channel. See the runtime document for actual loading cost.
+
+
+## 12. BEM 1.5 Material & Keyword Overrides (material-overrides-v1)
+
+BEM 1.5 (`minor = 5`) introduces the `material-overrides-v1` capability, allowing draw candidates to dynamically override Unity Material properties and shader keywords. This enables visual customizations such as transparent gauze, ink-mist matte shading, and specular suppression without replacing underlying shaders.
+
+### Capability Declaration
+Packages utilizing this feature must declare it in `required_capabilities`:
+```json
+"required_capabilities": ["native-materials", "material-overrides-v1"]
+```
+
+### Draws Material Overrides Object
+An optional `material_overrides` object can be added to `meshes[].draws[]`:
+- `floats`: Object mapping property name to float, value bounded in `[-128.0, 128.0]`, max 32 items per draw.
+- `colors`: Object mapping property name to 4-element RGBA float array, channels bounded in `[0.0, 8.0]`, max 16 items per draw.
+- `vectors`: Object mapping property name to 4-element float array, components bounded in `[-65536.0, 65536.0]`, max 8 items per draw.
+- `disable_keywords`: String array of shader keywords to disable, max 16 items per draw.
+- `enable_keywords`: String array of shader keywords to enable, max 16 items per draw.
+
+### Property & Keyword Naming Rules
+- Property names must begin with `_` and contain only letters, numbers, and underscores, length 2..96 characters (`^_[a-zA-Z0-9_]{1,95}$`).
+- Keywords must contain only uppercase letters, numbers, and underscores, length 2..96 characters (`^[A-Z0-9_]{2,96}$`).
+
+### Skip Validation (Developer Mode)
+When "Skip Validation" (`skip_validation`) is active:
+- Property and keyword names are relaxed to ASCII printable characters;
+- Out-of-bounds float and color values are clamped to their valid ranges rather than rejected;
+- Item limits are relaxed 4x (128 floats, 64 colors, 32 vectors, 64 of each keyword list).
+
+### Root Bone Offset Extension (root-offset-v1)
+
+BEM 1.5 introduces `root-offset-v1`, enabling local translation adjustments on a specified bone node to resolve ground clipping caused by high heels, platform shoes, or floating stances.
+
+#### Capability Declaration
+```json
+"required_capabilities": [
+  "native-materials",
+  "root-offset-v1"
+]
+```
+
+#### Manifest Structure
+Add `root_offset` at the root level of `manifest.json`:
+```json
+{
+  "root_offset": {
+    "path": "Bip001",
+    "translation": [0.0, 0.04, 0.0]
+  }
+}
+```
+- `path`: String, relative hierarchy path to the target bone node (1..256 chars, `[-A-Za-z0-9_ /]`, no `..` or `//`).
+- `translation`: 3-element float array `[x, y, z]` representing local offset in meters.
+  - Length bound: $\sqrt{x^2 + y^2 + z^2} \le 0.2$ meters.
+  - Relaxed to 1.0 meter and clamped automatically when "Skip Validation" is active.

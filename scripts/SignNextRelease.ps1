@@ -13,7 +13,8 @@ if (-not (Test-Path -LiteralPath $certificatePath)) {
     Import-PfxCertificate -FilePath $properties.pfx_file -Password $password -CertStoreLocation Cert:\CurrentUser\My | Out-Null
 }
 $certificate = Get-Item -LiteralPath $certificatePath
-$fingerprint = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($certificate.RawData)).ToLowerInvariant()
+$hasher = [System.Security.Cryptography.SHA256]::Create()
+$fingerprint = (-join ($hasher.ComputeHash($certificate.RawData) | ForEach-Object { $_.ToString("x2") }))
 if ($fingerprint -ne $policy.certificate_sha256) { throw 'Windows signing certificate does not match the Next release identity.' }
 $item = Get-Item -LiteralPath $Path
 $files = if ($item.PSIsContainer) {

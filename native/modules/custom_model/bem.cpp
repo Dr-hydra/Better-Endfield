@@ -45,6 +45,62 @@ std::string Id(const J& j) {
         (c>='A'&&c<='Z')||(c>='a'&&c<='z')||(c>='0'&&c<='9')||c=='_'||c=='-'||c=='.';}),"Invalid stable ID");
     Check(s[0]!='.' && s[0]!='-' && s[0]!='_',"Invalid stable ID start"); return s;
 }
+BemRootOffset ReadRootOffset(const J& manifest, bool skip_validation = false) {
+    BemRootOffset result;
+    const char* key = manifest.contains("root_offset") ? "root_offset" : (manifest.contains("visual_root_offset") ? "visual_root_offset" : nullptr);
+    if (!key) return result;
+    const auto& p = manifest.at(key);
+    if (!p.is_object() || !p.contains("path")) {
+        if (!skip_validation) throw std::runtime_error("Invalid root offset format");
+        return result;
+    }
+    result.path = p.at("path").get<std::string>();
+    if (!ValidVisualPath(result.path)) {
+        if (!skip_validation) throw std::runtime_error("Invalid root offset path");
+        return result;
+    }
+    float squared = 0.0f;
+    if (p.contains("translation") && p.at("translation").is_array() && p.at("translation").size() == 3) {
+        const auto& arr = p.at("translation");
+        for (size_t i = 0; i < 3; ++i) {
+            float f = arr[i].get<float>();
+            if (!std::isfinite(f)) {
+                if (!skip_validation) throw std::runtime_error("Nonfinite root translation");
+                f = 0.0f;
+            }
+            result.translation[i] = f;
+            squared += f * f;
+        }
+    } else if (p.contains("translation_bits") && p.at("translation_bits").is_array() && p.at("translation_bits").size() == 3) {
+        const auto& arr = p.at("translation_bits");
+        for (size_t i = 0; i < 3; ++i) {
+            uint32_t bits = arr[i].get<uint32_t>();
+            float f = 0.0f;
+            std::memcpy(&f, &bits, sizeof(float));
+            if (!std::isfinite(f)) {
+                if (!skip_validation) throw std::runtime_error("Nonfinite root translation bits");
+                f = 0.0f;
+            }
+            result.translation[i] = f;
+            squared += f * f;
+        }
+    } else {
+        if (!skip_validation) throw std::runtime_error("root_offset missing translation");
+    }
+    const float max_squared = skip_validation ? 1.0f : 0.040001f;
+    if (squared > max_squared) {
+        if (!skip_validation) throw std::runtime_error("Root offset translation exceeds maximum limit (0.2m)");
+        float len = std::sqrt(squared);
+        if (len > 1e-4f) {
+            float scale = std::sqrt(max_squared) / len;
+            result.translation[0] *= scale;
+            result.translation[1] *= scale;
+            result.translation[2] *= scale;
+        }
+    }
+    return result;
+}
+
 uint32_t Crc(std::string_view s) {
     uint32_t n=0xffffffff;
     for(auto b:s) { n^=static_cast<uint8_t>(b); for(int i=0;i<8;++i) n=(n>>1)^(0xedb88320u & (0u-(n&1))); }
@@ -126,8 +182,8 @@ struct Container {
         Check(size>=sizeof(Header),"Invalid BEM file size");
         Validate(size<=2ull*1024*MiB,"Invalid BEM file size");
         auto raw=read(0,sizeof(Header)); Header h{}; std::memcpy(&h,raw.data(),sizeof(h));
-        Check(std::memcmp(h.magic,"BEM\0PKG\0",8)==0 && h.major==1 && h.minor<=4 && h.size==sizeof(h) && !h.flags,
-            "Only BEM 1.0/1.1/1.2/1.3/1.4 packages are supported");
+        Check(std::memcmp(h.magic,"BEM\0PKG\0",8)==0 && h.major==1 && h.minor<=5 && h.size==sizeof(h) && !h.flags,
+            "Only BEM 1.0/1.1/1.2/1.3/1.4/1.5 packages are supported");
         minor=h.minor; limits=LimitsFor(minor);
         if(skip_validation) {
             limits.choices=SIZE_MAX; limits.rules=SIZE_MAX; limits.textures=kMaxBemTextures;
@@ -189,6 +245,7 @@ struct Container {
         if(minor>=2) caps.insert({"texture-slots","resource-bone-aliases"});
         if(minor>=3) caps.insert({"body-parameters","mesh-position-deltas"});
         if(minor>=4) caps.insert({"multi-resource-targets","static-meshes"});
+        if(minor>=5) caps.insert({"material-overrides-v1", "root-offset-v1"});
         bool composable=false,fixed=false,keepTextureCapability=false,slotCapability=false,aliasCapability=false;
         std::set<std::string> declared;
         for(const auto& c:m.at("required_capabilities")) {auto cap=S(c);Validate(caps.contains(cap),"Unsupported required capability");
@@ -328,6 +385,7 @@ struct Container {
         Check(m.at("meshes").is_array() && m.at("textures").is_array(),"Invalid resource tables");
         Validate(m.at("meshes").size()<=4096 && m.at("textures").size()<=4096,"Invalid resource tables");
         if(minor>=4) ValidateResourceMeshes(m,info);
+        if(m.contains("root_offset")||m.contains("visual_root_offset")) ReadRootOffset(m,skip_validation);
         for(const auto& mesh:m.at("meshes")) {
             const bool isStatic=minor>=4 && RendererStatic(mesh);
             Check(minor>=4 || !mesh.contains("renderer_kind"),"Renderer kind requires BEM 1.4");
@@ -819,12 +877,77 @@ struct Container {
                 Check(count && donor<info.component_names.size() && slot<m.at("target").at("components").at(donor).at("materials").size(),"Material reference outside donor table");
                 Validate(start==end && count%3==0 && slot<256 && m.at("target").at("components").at(donor).at("materials").at(slot)==name,"Invalid material draw"); end+=count;
                 const auto mask=selectTextures(d.at("textures"),"Duplicate draw texture");
-                c.draws.push_back({start,count,localComponent(donor),slot,Crc(name),0,mask}); c.material_names.push_back(name);
+                BemMaterialOverrides overrides;
+                if(d.contains("material_overrides")) {
+                    const auto& ov=d.at("material_overrides");
+                    Check(ov.is_object(),"material_overrides must be an object");
+                    if(ov.contains("floats")) {
+                        const auto& fl=ov.at("floats"); Check(fl.is_object(),"floats must be an object");
+                        Validate(fl.size()<=(skip_validation?128u:32u),"Too many float overrides");
+                        for(auto it=fl.begin();it!=fl.end();++it) {
+                            Validate(ValidOverrideProperty(it.key(),skip_validation),"Invalid float property name");
+                            float val=it.value().get<float>();
+                            Validate(ValidOverrideFloat(val,skip_validation),"Invalid float value");
+                            if(skip_validation) val=std::clamp(val,-128.0f,128.0f);
+                            overrides.floats.emplace_back(it.key(),val);
+                        }
+                    }
+                    if(ov.contains("colors")) {
+                        const auto& cl=ov.at("colors"); Check(cl.is_object(),"colors must be an object");
+                        Validate(cl.size()<=(skip_validation?64u:16u),"Too many color overrides");
+                        for(auto it=cl.begin();it!=cl.end();++it) {
+                            Validate(ValidOverrideProperty(it.key(),skip_validation),"Invalid color property name");
+                            const auto& arr=it.value(); Check(arr.is_array()&&arr.size()==4,"Color must have 4 channels");
+                            std::array<float,4> cval{arr[0].get<float>(),arr[1].get<float>(),arr[2].get<float>(),arr[3].get<float>()};
+                            for(float& ch:cval) {
+                                Validate(std::isfinite(ch)&&(skip_validation||(ch>=0.0f&&ch<=8.0f)),"Invalid color channel value");
+                                if(skip_validation) ch=std::clamp(ch,0.0f,8.0f);
+                            }
+                            overrides.colors.emplace_back(it.key(),cval);
+                        }
+                    }
+                    if(ov.contains("vectors")) {
+                        const auto& vl=ov.at("vectors"); Check(vl.is_object(),"vectors must be an object");
+                        Validate(vl.size()<=(skip_validation?32u:8u),"Too many vector overrides");
+                        for(auto it=vl.begin();it!=vl.end();++it) {
+                            Validate(ValidOverrideProperty(it.key(),skip_validation),"Invalid vector property name");
+                            const auto& arr=it.value(); Check(arr.is_array()&&arr.size()==4,"Vector must have 4 components");
+                            std::array<float,4> vval{arr[0].get<float>(),arr[1].get<float>(),arr[2].get<float>(),arr[3].get<float>()};
+                            for(float& vh:vval) {
+                                Validate(std::isfinite(vh)&&(skip_validation||(vh>=-65536.0f&&vh<=65536.0f)),"Invalid vector component value");
+                                if(skip_validation) vh=std::clamp(vh,-65536.0f,65536.0f);
+                            }
+                            overrides.vectors.emplace_back(it.key(),vval);
+                        }
+                    }
+                    if(ov.contains("disable_keywords")) {
+                        const auto& dk=ov.at("disable_keywords"); Check(dk.is_array(),"disable_keywords must be an array");
+                        Validate(dk.size()<=(skip_validation?64u:16u),"Too many disable_keywords");
+                        for(const auto& kw:dk) {
+                            std::string kws=kw.get<std::string>();
+                            Validate(ValidOverrideKeyword(kws,skip_validation),"Invalid keyword in disable_keywords");
+                            overrides.disable_keywords.push_back(std::move(kws));
+                        }
+                    }
+                    if(ov.contains("enable_keywords")) {
+                        const auto& ek=ov.at("enable_keywords"); Check(ek.is_array(),"enable_keywords must be an array");
+                        Validate(ek.size()<=(skip_validation?64u:16u),"Too many enable_keywords");
+                        for(const auto& kw:ek) {
+                            std::string kws=kw.get<std::string>();
+                            Validate(ValidOverrideKeyword(kws,skip_validation),"Invalid keyword in enable_keywords");
+                            overrides.enable_keywords.push_back(std::move(kws));
+                        }
+                    }
+                }
+                c.draws.push_back({start,count,localComponent(donor),slot,Crc(name),0,mask});
+                c.draw_material_overrides.push_back(std::move(overrides));
+                c.material_names.push_back(name);
             }
             Validate(end==h.index_count,"Draws must partition IB"); h.reserved0=static_cast<uint32_t>(c.bones.size()); h.reserved1=static_cast<uint32_t>(c.draws.size());
             out.components.push_back(std::move(c));
         }
         out.header.texture_count=static_cast<uint32_t>(out.textures.size());
+        out.root_offset=ReadRootOffset(m,skip_validation);
         Check(!loading_optimization || (payloadUses.empty() && cache.empty() && cacheBytes==0),
             "Selected payload consumers were not exhausted");
     }

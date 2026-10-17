@@ -65,7 +65,7 @@ public sealed partial class CustomModelPage : UserControl
     private void UpdatePageLanguage()
     {
         PageTitle.Text = BemText.Get("角色与武器 · BEM");
-        PageIntro.Text = BemText.Get("支持 BEM 1.0–1.4 模型包，管理角色、武器和技能形态。资源目标不重叠的模型包可以同时启用。");
+        PageIntro.Text = BemText.Get("支持 BEM 1.0–1.5 模型包，管理角色、武器和技能形态。资源目标不重叠的模型包可以同时启用。");
         ImportButton.Content = BemText.Get("导入 BEM / ZIP");
         ConvertButton.Content = BemText.Get("BEM 创作者工具…");
         RefreshButton.Content = BemText.Get("刷新");

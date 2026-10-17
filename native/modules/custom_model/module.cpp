@@ -409,6 +409,13 @@ MethodContract g_methods[]{
     {"transform.local_to_world", {"UnityEngine.CoreModule.dll","UnityEngine","Transform","get_localToWorldMatrix",nullptr,"UnityEngine.Matrix4x4",0},false},
     {"transform.world_to_local", {"UnityEngine.CoreModule.dll","UnityEngine","Transform","get_worldToLocalMatrix",nullptr,"UnityEngine.Matrix4x4",0},false},
     {"probe.material_shader", {"UnityEngine.CoreModule.dll","UnityEngine","Material","get_shader",nullptr,"UnityEngine.Shader",0},false},
+    {"material.set_float", {"UnityEngine.CoreModule.dll","UnityEngine","Material","SetFloat","System.String|System.Single","System.Void",2},false},
+    {"material.set_color", {"UnityEngine.CoreModule.dll","UnityEngine","Material","SetColor","System.String|UnityEngine.Color","System.Void",2},false},
+    {"material.set_vector", {"UnityEngine.CoreModule.dll","UnityEngine","Material","SetVector","System.String|UnityEngine.Vector4","System.Void",2},false},
+    {"material.disable_keyword", {"UnityEngine.CoreModule.dll","UnityEngine","Material","DisableKeyword","System.String","System.Void",1},false},
+    {"material.enable_keyword", {"UnityEngine.CoreModule.dll","UnityEngine","Material","EnableKeyword","System.String","System.Void",1},false},
+    {"visual.get_local_position", {"UnityEngine.CoreModule.dll","UnityEngine","Transform","get_localPosition",nullptr,"UnityEngine.Vector3",0},false},
+    {"visual.set_local_position", {"UnityEngine.CoreModule.dll","UnityEngine","Transform","set_localPosition","UnityEngine.Vector3","System.Void",1},false},
     {"material.copy", {"UnityEngine.CoreModule.dll","UnityEngine","Material",".ctor","UnityEngine.Material","System.Void",1},true},
     {"material.get_shader", {"UnityEngine.CoreModule.dll","UnityEngine","Material","get_shader",nullptr,"UnityEngine.Shader",0},true},
     {"object.instance_id", {"UnityEngine.CoreModule.dll","UnityEngine","Object","GetInstanceID",nullptr,"System.Int32",0},true},
@@ -1950,6 +1957,10 @@ struct PreparedBinding {
     bool donor_enabled=true;
     std::shared_ptr<SavedOriginalBinding> saved_original;
     std::vector<std::string> bone_names;
+    std::vector<BemMaterialOverrides> material_overrides;
+    void* visual_root=nullptr;
+    std::string visual_root_path;
+    Float3 visual_original{},visual_custom{},visual_pristine{};
 #if defined(_WIN32)
     // Set only after the actual pristine donor passes the complete, bounded
     // Snowshine 1.6.3 contract; it also applies when this part is kept/hidden.
@@ -2023,6 +2034,48 @@ bool MaterialCopyCompatible(void* source,void* copy) {
     void* shader=Invoke(Contract("material.get_shader"),source,nullptr);
     return shader && IsNativeObjectAlive(shader) && Invoke(Contract("material.get_shader"),copy,nullptr)==shader;
 }
+bool ApplyMaterialOverrides(void* material, const BemMaterialOverrides& p, bool skip_validation = false) {
+    if (!material) return false;
+    Log("Applied BEM 1.5 material overrides: floats=" + std::to_string(p.floats.size()) +
+        " colors=" + std::to_string(p.colors.size()) +
+        " disable_keywords=" + std::to_string(p.disable_keywords.size()));
+    for (const auto& [name, value] : p.floats) {
+        void* key = NewString(name.c_str());
+        void* args[]{key, (void*)&value};
+        if (!InvokeVoid(Contract("material.set_float"), material, args)) {
+            if (!skip_validation) return false;
+        }
+    }
+    for (const auto& [name, value] : p.colors) {
+        void* key = NewString(name.c_str());
+        void* args[]{key, (void*)value.data()};
+        if (!InvokeVoid(Contract("material.set_color"), material, args)) {
+            if (!skip_validation) return false;
+        }
+    }
+    for (const auto& [name, value] : p.vectors) {
+        void* key = NewString(name.c_str());
+        void* args[]{key, (void*)value.data()};
+        if (!InvokeVoid(Contract("material.set_vector"), material, args)) {
+            if (!skip_validation) return false;
+        }
+    }
+    for (const auto& name : p.disable_keywords) {
+        void* key = NewString(name.c_str());
+        void* args[]{key};
+        if (!InvokeVoid(Contract("material.disable_keyword"), material, args)) {
+            if (!skip_validation) return false;
+        }
+    }
+    for (const auto& name : p.enable_keywords) {
+        void* key = NewString(name.c_str());
+        void* args[]{key};
+        if (!InvokeVoid(Contract("material.enable_keyword"), material, args)) {
+            if (!skip_validation) return false;
+        }
+    }
+    return true;
+}
 bool CopyMaterials(PreparedBinding& binding,bool skip_validation=false) {
     if (!binding.original_materials) binding.original_materials=Invoke(Contract("renderer.get_shared_materials"),binding.renderer,nullptr);
     void* donor=DonorMaterials(binding);
@@ -2034,8 +2087,13 @@ bool CopyMaterials(PreparedBinding& binding,bool skip_validation=false) {
         void* source=ArrayValue(donor,i);
         void* copy=source?NewAsset(g_material_class.class_info):nullptr;
         void* ctor[]{source}; void* slot[]{copy,&i};
-        if (!copy || !InvokeVoid(Contract("material.copy"),copy,ctor) || !MaterialCopyCompatible(source,copy) ||
-            !InvokeVoid(Contract("array.set_value"),binding.custom_materials,slot) ||
+        if (!copy || !InvokeVoid(Contract("material.copy"),copy,ctor) || !MaterialCopyCompatible(source,copy)) return false;
+        if (i < static_cast<int>(binding.material_overrides.size()) && !binding.material_overrides[i].empty()) {
+            if (!ApplyMaterialOverrides(copy, binding.material_overrides[i], skip_validation)) {
+                if (!skip_validation) return false;
+            }
+        }
+        if (!InvokeVoid(Contract("array.set_value"),binding.custom_materials,slot) ||
             ArrayValue(binding.custom_materials,i)!=copy) return false;
     }
     return true;
@@ -2285,6 +2343,11 @@ bool PrepareDrawMaterials(const BemComponent& component,PreparedBinding& target,
         if (!betterendfieldnext::AndroidAuditMaterialCopy(material,copy)) return false;
 #endif
         if (!ApplyTextureMask(copy,draw.textures,bem,texture_cache)) return false;
+        if (i < component.draw_material_overrides.size() && !component.draw_material_overrides[i].empty()) {
+            if (!ApplyMaterialOverrides(copy, component.draw_material_overrides[i], bem.skip_validation)) {
+                if (!bem.skip_validation) return false;
+            }
+        }
     }
     return true;
 }
@@ -2313,6 +2376,8 @@ bool SetRendererBones(void* renderer,void* bones) {
     for (int i=0;i<ArrayLength(bones);++i) if (ArrayValue(read,i)!=ArrayValue(bones,i)) return false;
     return true;
 }
+bool SetVisualPosition(void* root,const Float3& position);
+bool PrepareVisualRoot(void* asset,const BemPocData& bem,std::vector<PreparedBinding>& bindings);
 bool ApplyPreparedBinding(PreparedBinding& binding) {
 #if defined(__ANDROID__)
     if (binding.change_shadow) {
@@ -2326,6 +2391,7 @@ bool ApplyPreparedBinding(PreparedBinding& binding) {
     if (binding.custom_bones && !SetRendererBones(binding.renderer,binding.custom_bones)) return false;
     if (binding.custom_mesh!=binding.original_mesh && !SetSharedMesh(binding.renderer,binding.custom_mesh)) return false;
     if (!ApplyRendererMaterials(binding.renderer,binding.custom_materials)) return false;
+    if (!SetVisualPosition(binding.visual_root,binding.visual_custom)) return false;
     bool read=false;
     return SetRendererEnabled(binding.renderer,binding.custom_enabled) &&
         GetRendererEnabled(binding.renderer,read) && read==binding.custom_enabled;
@@ -2349,7 +2415,8 @@ bool RestorePreparedBinding(PreparedBinding& binding) {
         shadow=restored_mode && restored_proxy;
     }
 #endif
-    return mesh && bones && materials && enabled && shadow;
+    const bool visual=SetVisualPosition(binding.visual_root,binding.visual_original);
+    return mesh && bones && materials && enabled && shadow && visual;
 }
 bool ValidatePayloadAdapter(const CharacterAdapter& adapter,const BemPocData& bem) {
     if (adapter.explicit_resource && std::any_of(adapter.components.begin(),adapter.components.end(),[&](const auto& c){
@@ -2401,7 +2468,7 @@ bool PrepareResource(const CharacterAdapter& adapter,const BemPocData& bem,void*
     #if defined(__ANDROID__)
     if (!PrepareExplicitAndroidShadows(adapter,bem,asset,bindings)) return false;
     #endif
-    return !g_construction->failed;
+    return !g_construction->failed && PrepareVisualRoot(asset,bem,bindings);
 }
 #if defined(__ANDROID__)
 bool ReadCompletedAndroidDonor(const CharacterAdapter&,const BemPocData&,void*,std::vector<PreparedBinding>&);
@@ -2600,6 +2667,8 @@ struct SavedOriginalBinding {
     WeakBoneArray bones;
     std::vector<std::string> bone_paths;
     bool enabled=true;
+    std::string visual_root_path;
+    Float3 visual_pristine{};
 #if defined(__ANDROID__)
     bool change_shadow=false;
     int32_t shadow=0;
@@ -2632,12 +2701,44 @@ struct SavedOriginalBinding {
         for (size_t i=0;i<other.materials.size();++i) materials[i].Clone(other.materials[i]);
         material_present=other.material_present; material_names=other.material_names;
         enabled=other.enabled; bone_paths=other.bone_paths;
+        visual_root_path=other.visual_root_path; visual_pristine=other.visual_pristine;
 #if defined(__ANDROID__)
         change_shadow=other.change_shadow; shadow=other.shadow;
         shadow_mesh_pin=other.shadow_mesh_pin;
 #endif
     }
 };
+bool SetVisualPosition(void* root,const Float3& position) {
+    if(!root) return true;
+    void* args[]{const_cast<Float3*>(&position)};Float3 read{};
+    return InvokeVoid(Contract("visual.set_local_position"),root,args) &&
+        InvokeValue(Contract("visual.get_local_position"),root,nullptr,read) &&
+        std::isfinite(read.x) && std::isfinite(read.y) && std::isfinite(read.z) &&
+        std::abs(read.x-position.x)<1e-4f && std::abs(read.y-position.y)<1e-4f && std::abs(read.z-position.z)<1e-4f;
+}
+bool PrepareVisualRoot(void* asset,const BemPocData& bem,std::vector<PreparedBinding>& bindings) {
+    std::string path=bem.root_offset.path;PreparedBinding* owner=nullptr;
+    for(auto& b:bindings) if(b.saved_original && !b.saved_original->visual_root_path.empty()) {owner=&b;if(path.empty())path=b.saved_original->visual_root_path;break;}
+    if(path.empty()) return true;
+    if(owner && owner->saved_original && owner->saved_original->visual_root_path!=path) return false;
+    if(bindings.empty() || !ValidVisualPath(path)) return false;
+    if(!owner) owner=&bindings.front();
+    void* node=Invoke(Contract("game_object.get_transform"),asset,nullptr);size_t begin=0;
+    while(begin<path.size()) {
+        auto end=path.find('/',begin);if(end==path.npos)end=path.size();auto part=path.substr(begin,end-begin);
+        int32_t count=0;if(!node || !InvokeValue(Contract("transform.child_count"),node,nullptr,count) || count<0 || count>8192)return false;
+        void* next=nullptr;for(int32_t i=0;i<count;++i) {void* args[]{&i};void* child=Invoke(Contract("transform.get_child"),node,args);
+            if(child && ObjectName(child)==part) {if(next)return false;next=child;}}
+        node=next;begin=end+1;
+    }
+    if(!node || !InvokeValue(Contract("visual.get_local_position"),node,nullptr,owner->visual_original))return false;
+    owner->visual_pristine=owner->visual_original;
+    if(owner->saved_original && owner->saved_original->visual_root_path==path)owner->visual_pristine=owner->saved_original->visual_pristine;
+    const auto& t=bem.root_offset.translation;const auto base=owner->visual_pristine;
+    owner->visual_custom={base.x+t[0],base.y+t[1],base.z+t[2]};owner->visual_root=node;owner->visual_root_path=path;
+    for(float v:{base.x,base.y,base.z,owner->visual_custom.x,owner->visual_custom.y,owner->visual_custom.z})if(!std::isfinite(v))return false;
+    Log("Root offset prepared path="+path+" y="+std::to_string(t[1]));return true;
+}
 // RenderPipeline is a managed IDisposable, not a UnityEngine.Object. It has no
 // native Unity instance ID and must never go through Object.op_Implicit.
 struct WeakManagedReference {
@@ -2922,6 +3023,7 @@ bool RememberResource(const CharacterAdapter& adapter,void* asset,
             if (!original->mesh.Set(DonorMesh(binding)) || !original->SetMaterials(DonorMaterials(binding)) ||
                 (!IsStaticRenderer(binding.renderer) && !original->bones.Set(DonorBones(binding)))) return false;
             original->enabled=binding.original_enabled;
+            original->visual_root_path=binding.visual_root_path; original->visual_pristine=binding.visual_pristine;
             for (int i=0;i<ArrayLength(DonorBones(binding));++i) {
                 std::string path;
                 if (!ResourceRelativePath(asset,ArrayValue(DonorBones(binding),i),path)) return false;
@@ -3399,7 +3501,16 @@ bool CaptureGenericResourceBindings(const CharacterAdapter& adapter,const BemPoc
                 " oldIndices=87120 currentIndices=87288 vertices=23141 palette=87 remappedSlots=10");
         }
 #endif
-        b.custom_mesh=DonorMesh(b);b.custom_enabled=(component.info.flags&kComponentFlagHidden)?false:
+        b.custom_mesh=DonorMesh(b);
+        for (size_t d = 0; d < component.draws.size(); ++d) {
+            if (d < component.draw_material_overrides.size() && !component.draw_material_overrides[d].empty()) {
+                uint32_t slot = component.draws[d].material_slot;
+                if (slot >= b.material_overrides.size())
+                    b.material_overrides.resize(slot + 1);
+                b.material_overrides[slot] = component.draw_material_overrides[d];
+            }
+        }
+        b.custom_enabled=(component.info.flags&kComponentFlagHidden)?false:
             (b.saved_original?b.donor_enabled:b.original_enabled);
         if (b.saved_original) b.custom_bones=DonorBones(b);
         if (!b.custom_mesh) return false;bindings.push_back(std::move(b));
@@ -3647,7 +3758,8 @@ bool PrepareDisabledResource(void* asset,const CharacterAdapter* adapter,std::ve
 #endif
         bindings.push_back(std::move(binding));
     }
-    return !bindings.empty();
+    BemPocData disabled;
+    return !bindings.empty() && PrepareVisualRoot(asset,disabled,bindings);
 }
 #include "model_receiver_root.inc"
 #include "model_clone_lineage.inc"
@@ -3871,14 +3983,17 @@ void SynchronousModelDelivery(void* asset,const char* reason) {
         Log(std::string("Model delivery mode=synchronous reason=")+reason+" (first delivery)");
     ConstructionScope construction;
     const auto name=ObjectName(asset);
-    const EnabledMod* mod=g_registry.Match(name);
+    void* receiver=RootTemporary(asset);
+    receiver=ResolveLegacyModelReceiverRoot(receiver);
+    if (!receiver || !RootTemporary(receiver)) return;
+    const EnabledMod* mod=g_registry.Match(ObjectName(receiver));
     const std::string selection=mod?mod->selection_key:std::string{};
     if (mod) Log("Model delivery synchronous resource="+name+" role="+std::string(mod->adapter->id)+" reason="+reason);
-    const bool ok=ProcessResource(asset,construction);
+    const bool ok=ProcessResource(receiver,construction);
     if (ok && mod && g_clone_support_runtime.load()) WatchModelCloneSource(asset);
     // Record the receiver for hot switch / verification. A refused selection
     // is not handed to an identical asynchronous retry.
-    if (mod && !g_probe.sweep) RegisterModelDelivery(asset,nullptr,true,ok?std::string{}:selection);
+    if (mod && !g_probe.sweep) RegisterModelDelivery(receiver,nullptr,true,ok?std::string{}:selection);
 }
 void __fastcall ResourceFinish(void* proxy,void* asset,void* method) {
     if (g_enabled.load(std::memory_order_acquire) && !g_stopping.load() && !g_in_delivery &&

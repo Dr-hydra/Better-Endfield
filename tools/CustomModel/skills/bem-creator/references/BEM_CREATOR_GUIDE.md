@@ -1,6 +1,6 @@
 # BEM 创作者指南
 
-BEM（`.bem`）是 Better Endfield 的模型替换包。1.0–1.3 包对应一个角色；1.4 包对应一个角色或武器 ID，可分别替换普通形态、大招 prefab 或武器资源，并保留外观选项和位置滑条。Windows 和 Android 可使用同一个包，但包必须为各平台声明对应资源与 donor 合同。
+BEM（`.bem`）是 Better Endfield Next 的模型替换包。1.0–1.3 包对应一个角色；1.4 包对应一个角色或武器 ID，可分别替换普通形态、大招 prefab 或武器资源，并保留外观选项和位置滑条。Windows 和 Android 可使用同一个包，但包必须为各平台声明对应资源与 donor 合同。
 
 | 文档 | 内容 |
 | --- | --- |
@@ -19,7 +19,7 @@ BEM（`.bem`）是 Better Endfield 的模型替换包。1.0–1.3 包对应一�
 | 主程序创作者窗口 | 角色外观页 →“BEM 创作者工具…”；旧版入口为“其他来源 Mod 转换…” | 与独立 GUI 共用窗口代码，调用同一个命令行 |
 | Blender 导出插件 | 独立工具包 `blender_addon/bem_exporter/` | 从带有 `BEM_C<number>` 对象的 Blender 工程导出可编辑 BEM 工程 |
 | 桌面模型管理页 | 角色外观页 | 导入、启用、选择外观和选项、调滑条 |
-| Android 模型页 | Better Endfield App | 导入、启用、选择，以及手机纹理转换 |
+| Android 模型页 | Better Endfield Next App | 导入、启用、选择，以及手机纹理转换 |
 | AI Skill `bem-creator` | 独立工具包 `skills/bem-creator` | 复制到 AI 工具的技能目录（Codex 为 `~/.codex/skills`），用 `$bem-creator` 调用。只辅助准备配方和解释报告，不能代替校验 |
 
 BEM Tools 从 1.5.1 起正式支持写入和读取 BEM 1.0–1.4，1.5.2 增加独立 GUI；旧的 1.5.0 正式发行包不包含 BEM 1.4。工具版本与 BEM 格式版本不同，当前 `--version` 输出为 `BEM Tools 1.5.4 / BEM 1.0+1.1+1.2+1.3+1.4`。从源码运行时，用 `python tools/CustomModel/bem_tool.py` 代替 exe。
@@ -294,3 +294,72 @@ BetterEndfieldNext.BemConverter.exe --version
 - **手机上贴图不显示或报格式不支持**：在 App 中对该包执行“转换纹理”。提示缺少法线编码时，按上一节声明 `normal_encoding`。
 - **第一人称时身体被裁掉，或头发没隐藏**：检查相关顶点的骨骼权重，见第一人称一节。
 - **配队界面偶尔缺少部位**（例如管理员的眼睛）：已知问题，原因尚未确认，退出并重新进入配队界面即可恢复。
+
+
+## 材质属性与关键字覆盖（BEM 1.5）
+
+从 BEM 1.5（`material-overrides-v1`）起，您无需制作或替换自定义 Shader，即可通过在网格绘制项（draw）中指定 `material_overrides`，直接调校角色材质在游戏原生 NPR/PBR 着色器下的透明度、水墨色调与光泽表现。
+
+### 常用视觉配方
+
+#### 1. 半透水墨薄纱 / 蕾丝透光与深度写入
+解决半透物体在场景中穿插穿透或发黑的问题：
+```json
+{
+  "material_overrides": {
+    "floats": {
+      "_TransparentDepthWrite": 1.0,
+      "_ZWrite": 1.0,
+      "_Cutoff": 0.5,
+      "_Smoothness": 0.15
+    },
+    "colors": {
+      "_BaseColor": [0.08, 0.08, 0.08, 0.75]
+    }
+  }
+}
+```
+
+#### 2. 消光与抑制各向异性高光
+去除某些原版衣服、发丝上自带的各向异性光圈或清漆高光，呈现哑光/水墨质感：
+```json
+{
+  "material_overrides": {
+    "disable_keywords": [
+      "_ANISOTROPY_SPECULAR_ON",
+      "_CLEARCOAT",
+      "_EMISSION"
+    ]
+  }
+}
+```
+
+#### 3. 启用特定透明变体
+```json
+{
+  "material_overrides": {
+    "enable_keywords": [
+      "_ALPHAPREMULTIPLY_ON"
+    ]
+  }
+}
+```
+
+> **注意**：
+> - 属性名必须以 `_` 开头且为合法标识符（如 `_BaseColor`、`_Metallic`）；关键字须为大写标识符（如 `_CLEARCOAT`）。
+> - 若使用「实验：关闭模型校验」，工具链和游戏端将放宽命名限制并自动截断超界数值。
+
+### 骨骼根节点抬升配置（解决高跟鞋插地）
+
+当 Mod 包含高跟鞋或悬浮姿势导致脚底陷入地面时，可在工程的清单中添加 `root_offset`，无需修改骨骼绑定或刷平顶点：
+
+```json
+{
+  "root_offset": {
+    "path": "Bip001",
+    "translation": [0.0, 0.04, 0.0]
+  }
+}
+```
+- `translation` 中的第二个分量为 Y 轴垂直方向（单位为米，如 `0.04` 代表抬高 4cm）。
+- 系统内置了防累积漂移保护与卸载回滚机制，无论切换多少次配队或外观形态，均会自动锁定原始坐标基准，不会随换装飞天。

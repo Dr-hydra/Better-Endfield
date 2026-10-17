@@ -1,6 +1,6 @@
 ---
 name: bem-creator
-description: Convert supported Endfield source Mods to BEM 1.0–1.3, build explicit multi-resource and static-mesh BEM 1.4 projects, configure author position sliders and official EFMI ShapeKey buffer bindings, inspect and validate packages, unpack editable projects, repack them, and assemble multi-Mod ZIP distributions using the BEM creator CLI. Use for BEM creation and conversion diagnostics.
+description: Convert supported Endfield source Mods to BEM 1.0–1.3, build explicit multi-resource and static-mesh BEM 1.4 projects, apply BEM 1.5 material and keyword overrides (material-overrides-v1), configure author position sliders and official EFMI ShapeKey buffer bindings, inspect and validate packages, unpack editable projects, repack them, and assemble multi-Mod ZIP distributions using the BEM creator CLI. Use for BEM creation and conversion diagnostics.
 ---
 
 # BEM creator workflow
@@ -33,6 +33,22 @@ The creator workflow has two source routes:
 The catalog supplies target identities and layouts, not complete character models. Do not expect it to provide a Blender reference scene. Keep author source files and generated payloads in a repeatable workspace, and distribute only the final `.bem` unless an editable project is intended.
 
 The bundled Blender exporter is a constrained legacy-character route: it accepts objects named `BEM_C<number>` or objects with `bem_component_id`, exports the verified 16/12/12 skin layout and explicit texture identities, and writes an editable project for `pack/build`. It does not directly export 1.4 resource tables or static weapons. Use an explicit editable project for those targets. Do not claim support for arbitrary layouts, option groups, or shape sliders unless the resulting project passes validation.
+
+
+### BEM 1.5 Material & Keyword Overrides (material-overrides-v1)
+
+When authoring or converting source mods that request custom shaders or special visual treatments (e.g. translucent ink/gauze, specular suppression, depth writes), use BEM 1.5 `material_overrides` on draw items rather than attempting to execute external HLSL or driver-level hooks.
+
+- Declare `"material-overrides-v1"` in `required_capabilities`.
+- Configure `material_overrides` in `meshes[].draws[]`:
+  - `floats`: e.g. `{"_TransparentDepthWrite": 1.0, "_ZWrite": 1.0, "_Cutoff": 0.5, "_Smoothness": 0.2}`
+  - `colors`: e.g. `{"_BaseColor": [0.08, 0.08, 0.08, 0.75]}`
+  - `vectors`: e.g. `{"_MainTex_ST": [1.0, 1.0, 0.0, 0.0]}`
+  - `disable_keywords`: e.g. `["_ANISOTROPY_SPECULAR_ON", "_CLEARCOAT", "_EMISSION"]`
+  - `enable_keywords`: e.g. `["_ALPHAPREMULTIPLY_ON"]`
+- Property names must start with `_` (`^_[a-zA-Z0-9_]{1,95}$`), and keywords must be uppercase (`^[A-Z0-9_]{2,96}$`).
+- When "Skip Validation" (`skip_validation`) is toggled by the author, naming restrictions are relaxed and values are automatically clamped to valid bounds.
+- For mods with high heels, platform soles, or floating stances that clip into the ground, declare `"root-offset-v1"` and add `"root_offset": {"path": "Bip001", "translation": [0.0, 0.04, 0.0]}` at the root of `manifest.json`.
 
 ## Choose the operation
 

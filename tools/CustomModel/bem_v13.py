@@ -30,7 +30,7 @@ def position_attribute(mesh):
 
 
 def validate_manifest(m, payload_count, minor=None):
-    bem.require(minor in (None, 3, 4), 'Body parameters require BEM 1.3 or newer')
+    bem.require(minor in (None, 3, 4, 5), 'Body parameters require BEM 1.3 or newer')
     params, channels = m.get('parameters', []), m.get('mesh_deformations', [])
     bem.require(isinstance(params, list) and len(params) <= MAX_PARAMETERS, 'Invalid parameters')
     bem.require(isinstance(channels, list) and len(channels) <= MAX_CHANNELS, 'Invalid mesh deformations')
@@ -85,7 +85,7 @@ def validate_manifest(m, payload_count, minor=None):
         bem.require(values == sorted(set(values)) and values[0] == p['min'] and
                     values[-1] == p['max'] and neutral_count == 1,
                     'Morph frames must cover min/max and contain one neutral frame')
-    options.validate_manifest(m, payload_count, 4 if minor == 4 else 3)
+    options.validate_manifest(m, payload_count, minor if minor in (3, 4, 5) else 3)
 
 
 def encode_deltas(records, vertex_count):

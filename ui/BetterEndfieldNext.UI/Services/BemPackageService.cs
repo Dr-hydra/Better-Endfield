@@ -251,8 +251,8 @@ internal sealed class BemPackageService
         if (!r.ReadBytes(8).SequenceEqual(new byte[] { 66, 69, 77, 0, 80, 75, 71, 0 }))
             throw new InvalidDataException(BemText.Get("BEM 包头不合法。"));
         ushort major = r.ReadUInt16(), minor = r.ReadUInt16();
-        if (major != 1 || minor > 4 || r.ReadUInt32() != 40)
-            throw new InvalidDataException(BemText.Get("仅支持 BEM 1.0–1.4 包。"));
+        if (major != 1 || minor > 5 || r.ReadUInt32() != 40)
+            throw new InvalidDataException(BemText.Get("仅支持 BEM 1.0–1.5 包。"));
         ulong fileSize = r.ReadUInt64(), manifestSize = r.ReadUInt64();
         uint count = r.ReadUInt32(), flags = r.ReadUInt32();
         if (fileSize != (ulong)stream.Length || manifestSize == 0 || manifestSize > int.MaxValue || flags != 0 ||

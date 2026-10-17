@@ -1,6 +1,6 @@
 # BEM 格式规范（1.0–1.4）
 
-BEM（Better Endfield Model）是《终末地》角色模型替换包，扩展名 `.bem`。Windows 与 Android 读取同一个文件。[BEM 1.4 扩展规范](BEM_V1_4_SPEC.md)定义多资源目标和静态武器。下文保留 1.0–1.3 的协议内容；各版本只在下文标注的地方不同。制作流程见 [创作者指南](BEM_CREATOR_GUIDE.md)，游戏内的匹配与限制见 [运行时行为与兼容性](BEM_RUNTIME_COMPATIBILITY.md)。
+BEM（Better Endfield Next Model）是《终末地》角色模型替换包，扩展名 `.bem`。Windows 与 Android 读取同一个文件。[BEM 1.4 扩展规范](BEM_V1_4_SPEC.md)定义多资源目标和静态武器。下文保留 1.0–1.3 的协议内容；各版本只在下文标注的地方不同。制作流程见 [创作者指南](BEM_CREATOR_GUIDE.md)，游戏内的匹配与限制见 [运行时行为与兼容性](BEM_RUNTIME_COMPATIBILITY.md)。
 
 参考实现：写入与校验 `tools/CustomModel/bem_v1.py`、`bem_v11.py`、`bem_v13.py`、`bem_v14.py`；读取 `native/modules/custom_model/bem.cpp`。
 
@@ -346,3 +346,59 @@ Payload 目录每项 32 字节，数组下标就是 Payload ID：
 各版本相同：容器 2 GiB；Manifest 4 MiB；单个 Payload 512 MiB；部件 1..64；骨骼表 256；每部件 draw 256；选中索引 16,777,216；顶点 1,048,576；形态参数 64、形变通道 4096。
 
 预算按单次选择计算，不等于实际显存峰值；1.3 的预算按各通道全部帧保守计算。实际加载开销见运行时文档。
+
+
+## 12. BEM 1.5 材质属性与关键字动态覆盖（material-overrides-v1）
+
+BEM 1.5（`minor = 5`）引入了 `material-overrides-v1` 能力，允许在网格绘制候选（draw）上对 Unity 材质实例的属性与关键字进行动态覆盖，以支持透明薄纱、水墨消光、高光抑制等定制视觉需求，且无需替换底层 Shader。
+
+### Capability 声明
+使用该特性的模型包须在 `required_capabilities` 中声明：
+```json
+"required_capabilities": ["native-materials", "material-overrides-v1"]
+```
+
+### Draws 材质覆盖对象
+在 `meshes[].draws[]` 中追加可选的 `material_overrides` 对象：
+- `floats`：键值字典，浮点数范围限制在 `[-128.0, 128.0]`，单 draw 最多 32 项。
+- `colors`：键值字典，4 元 RGBA 浮点数组，通道值限制在 `[0.0, 8.0]`，单 draw 最多 16 项。
+- `vectors`：键值字典，4 元浮点数组，分量值限制在 `[-65536.0, 65536.0]`，单 draw 最多 8 项。
+- `disable_keywords`：字符串列表，禁用指定 Shader Keyword，单 draw 最多 16 项。
+- `enable_keywords`：字符串列表，启用指定 Shader Keyword，单 draw 最多 16 项。
+
+### 属性与关键字命名规范
+- 属性名必须以 `_` 开头，仅含英文字母、数字和下划线，长度 2..96 字符（正则：`^_[a-zA-Z0-9_]{1,95}$`）。
+- 关键字必须仅含大写英文字母、数字和下划线，长度 2..96 字符（正则：`^[A-Z0-9_]{2,96}$`）。
+
+### 实验：关闭模型校验（skip_validation）
+当开启「关闭模型校验」时：
+- 属性名与关键字放宽为 ASCII 可打印字符；
+- 超界浮点数与颜色值自动饱和截断（Clamp）至合法范围；
+- 配额限制放宽至 4 倍（浮点 128 项，颜色 64 项，向量 32 项，关键字各 64 项）。
+
+### 根骨骼位移扩展（root-offset-v1）
+
+BEM 1.5 新增 `root-offset-v1` 能力，允许模型声明对骨骼根节点的局部平移微调，主要用于解决高跟鞋、厚底鞋或悬浮装束导致的角色脚底插地穿模问题。
+
+#### Capability 声明
+```json
+"required_capabilities": [
+  "native-materials",
+  "root-offset-v1"
+]
+```
+
+#### 清单配置结构
+在 `manifest.json` 根级配置 `root_offset`：
+```json
+{
+  "root_offset": {
+    "path": "Bip001",
+    "translation": [0.0, 0.04, 0.0]
+  }
+}
+```
+- `path`：字符串，目标骨骼层级相对路径（1..256 字符，字符集 `[-A-Za-z0-9_ /]`，禁止包含 `..` 或 `//`）。
+- `translation`：包含 3 个浮点数的数组 `[x, y, z]`，代表局部坐标平移量（米）。
+  - 位移模长限制：$\sqrt{x^2 + y^2 + z^2} \le 0.2$ 米。
+  - 在「关闭模型校验」模式下放宽至 1.0 米，并自动饱和截断。

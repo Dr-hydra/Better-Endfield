@@ -294,3 +294,72 @@ BetterEndfieldNext.BemConverter.exe --version
 - **手机上贴图不显示或报格式不支持**：在 App 中对该包执行“转换纹理”。提示缺少法线编码时，按上一节声明 `normal_encoding`。
 - **第一人称时身体被裁掉，或头发没隐藏**：检查相关顶点的骨骼权重，见第一人称一节。
 - **配队界面偶尔缺少部位**（例如管理员的眼睛）：已知问题，原因尚未确认，退出并重新进入配队界面即可恢复。
+
+
+## 材质属性与关键字覆盖（BEM 1.5）
+
+从 BEM 1.5（`material-overrides-v1`）起，您无需制作或替换自定义 Shader，即可通过在网格绘制项（draw）中指定 `material_overrides`，直接调校角色材质在游戏原生 NPR/PBR 着色器下的透明度、水墨色调与光泽表现。
+
+### 常用视觉配方
+
+#### 1. 半透水墨薄纱 / 蕾丝透光与深度写入
+解决半透物体在场景中穿插穿透或发黑的问题：
+```json
+{
+  "material_overrides": {
+    "floats": {
+      "_TransparentDepthWrite": 1.0,
+      "_ZWrite": 1.0,
+      "_Cutoff": 0.5,
+      "_Smoothness": 0.15
+    },
+    "colors": {
+      "_BaseColor": [0.08, 0.08, 0.08, 0.75]
+    }
+  }
+}
+```
+
+#### 2. 消光与抑制各向异性高光
+去除某些原版衣服、发丝上自带的各向异性光圈或清漆高光，呈现哑光/水墨质感：
+```json
+{
+  "material_overrides": {
+    "disable_keywords": [
+      "_ANISOTROPY_SPECULAR_ON",
+      "_CLEARCOAT",
+      "_EMISSION"
+    ]
+  }
+}
+```
+
+#### 3. 启用特定透明变体
+```json
+{
+  "material_overrides": {
+    "enable_keywords": [
+      "_ALPHAPREMULTIPLY_ON"
+    ]
+  }
+}
+```
+
+> **注意**：
+> - 属性名必须以 `_` 开头且为合法标识符（如 `_BaseColor`、`_Metallic`）；关键字须为大写标识符（如 `_CLEARCOAT`）。
+> - 若使用「实验：关闭模型校验」，工具链和游戏端将放宽命名限制并自动截断超界数值。
+
+### 骨骼根节点抬升配置（解决高跟鞋插地）
+
+当 Mod 包含高跟鞋或悬浮姿势导致脚底陷入地面时，可在工程的清单中添加 `root_offset`，无需修改骨骼绑定或刷平顶点：
+
+```json
+{
+  "root_offset": {
+    "path": "Bip001",
+    "translation": [0.0, 0.04, 0.0]
+  }
+}
+```
+- `translation` 中的第二个分量为 Y 轴垂直方向（单位为米，如 `0.04` 代表抬高 4cm）。
+- 系统内置了防累积漂移保护与卸载回滚机制，无论切换多少次配队或外观形态，均会自动锁定原始坐标基准，不会随换装飞天。

@@ -8,6 +8,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include "material_overrides.h"
 namespace BetterEndfieldNext::CustomModel {
 constexpr uint32_t kMaxBemComponents = 64;
 // BEM 1.2 limits; 1.0/1.1 packages keep their own tighter limits in bem.cpp.
@@ -117,6 +118,7 @@ struct BemComponent {
     struct KeepMaterialOverride { uint32_t material_slot, material_crc; uint64_t textures; };
     std::vector<BoneSource> bones;
     std::vector<Draw> draws;
+    std::vector<BemMaterialOverrides> draw_material_overrides;
     std::vector<KeepMaterialOverride> keep_material_overrides;
     std::vector<std::string> keep_material_names;
     std::vector<std::array<int32_t,4>> attributes;
@@ -148,6 +150,7 @@ struct BemPocData {
     BemFileHeader header{};
     std::vector<BemComponent> components;
     std::vector<BemTexture> textures;
+    BemRootOffset root_offset;
     bool skip_validation = false; // Developer option, never read from a package.
     bool loading_optimization = false; // Experimental runtime option, never read from a package.
     // Set only for deferred texture payloads. Metadata only (path/size/time).

@@ -1,4 +1,4 @@
-# BEM Tools 1.5.5
+# BEM Tools 1.6.0
 
 解压整个工具包，双击 **BetterEndfieldNext.BemTools.exe** 打开创作者 GUI。
 无需安装 Better Endfield、Python 或 .NET。请保留同目录的命令行程序、
@@ -8,7 +8,7 @@ GUI 与 Better Endfield 的“角色外观 → BEM 创作者工具…”使用�
 支持导出工程、标准工作区、源 Mod 转换、BEM 解包、项目打包和 ZIP 合集。
 导出的模型包在 Better Endfield 中导入使用。
 
-1.5.5 将此前 4.0.4 补充包的角色资料直接整合入完整包，更新昼雪的 Windows 1.6.3 合同与来源身份，并保留祀、明河资料；独立 GUI 自 1.5.2 起提供。
+1.6.0 版本前两位版本号起与游戏版本对齐（1.6.x），支持 BEM 1.5 材质覆盖规范（material-overrides-v1），更新昼雪的 Windows 1.6.3 合同与来源身份，并保留祀、明河资料；独立 GUI 自 1.5.2 起提供。
 新增采集资料随 `catalog/`、`profiles/` 一起分发。资料内的准备状态仍是准则：
 运行时采集完成不代表任意源 Mod 可以自动转换，也不代表替换模型已通过游戏内验证。
 本次没有加入 Android 新版游戏目标证据。

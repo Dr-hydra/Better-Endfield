@@ -1,5 +1,7 @@
 # BEM 运行时行为与兼容性
 
+当前 BE 4.0.3 / Windows 游戏 1.6.3、Android 游戏 1.6.4 的定向检查与实机边界见 [BEM 链路核查](research/1.6.3/bem-chain-audit/BEM_CHAIN_AUDIT.md)。Windows 已用现有凛包验证真实开屏提交；手机缺语言资源，本轮只完成静态与离线检查。
+
 本页下文说明旧 1.0–1.3 角色包的 world/UI 路径。当前版本的多资源、武器与形态目标见 [BEM 1.4 规范](BEM_V1_4_SPEC.md)：各资源使用显式接收器路径与平台声明；Windows 仅执行 LOD0 目标，Android 使用声明资源自身的 donor。真实新目标仍需平台资料和游戏内验收。
 
 Android 场景使用 LOD1 是原有设计：旧包的 LOD0 指 UI donor，场景接收器仍是 LOD1；1.4 显式包可直接声明自身的 LOD1 接收器与 donor。Windows 的 LOD0 限制不会套到 Android。Android 所有启用模型包均参与既有 `lod_pipeline` 偏置维护，保留游戏的 QualitySettings；`EnableForceLOD0` 的函数名不表示手机必须使用 LOD0。
@@ -25,6 +27,8 @@ Windows 与 Android 使用同一套原生读取与构建代码（`native/modules
 - 每个角色同时只能启用一个包。同一角色有两个启用包、或两个包的资源根重复时，这些包全部不生效，日志为 `Conflicting enabled package`。
 - 资源名比较前会去掉 `(Clone)` 和 `#数字` 后缀，同一角色的场景副本都能识别。
 - 开屏角色走场景模型（`*_postmodel`）的加载路径，按场景模型规则替换。
+- 普通角色的非编队 NPC 若使用同名 `*_postmodel`，且在外层 prefab 下有唯一的同名模型子节点，可以复用同一个 BEM。运行时定位实际模型根后继续执行原有网格、材质、骨骼和 LOD 校验，资源仍以原来的外层 prefab 交给游戏；加载登记及关闭恢复使用实际模型根。无需另做或另导入一份 NPC 模型包。
+- 包装层有歧义、缺少必要方法或部件校验失败时保留原模型。该适配不改变 BEM 1.4 显式路径的根。2026-10-10，Android aglina 非编队 NPC 使用凛 1.2.1 BEM 的替换已通过用户实机测试；其他 NPC 仍需相应资源结构与实机验证。
 
 ## 2. 部件匹配
 
@@ -201,3 +205,43 @@ Windows 与 Android 使用同一套原生读取与构建代码（`native/modules
 | `LOD prerequisite unavailable` | Windows 强制 LOD0 失败 | 通常是游戏更新导致，需要更新程序 |
 | `Resource preparation failed; original retained` | 准备阶段失败，前面的日志有原因 | 查看前几行 |
 | `Hot switch configuration rejected` / `Hot switch flags changed; restart the game` | 热切换期间配置无效，或修改了需要重启的开关 | 重启游戏 |
+
+## 实验：克隆模型支持
+
+PC 与 Android 模型管理页提供独立的“实验：克隆模型支持”开关，默认关闭，重启游戏后生效。PC 的配置项为 `[CustomModel] clone_support=false`；Android 保存为 `bem_clone_support`，启动和热更新均传递同一会话值。热切换、加载速度优先和关闭模型校验仍各自独立。
+
+开启后，模块监听已登记模型来源的实例化，保存生成时的来源与包选择代次。模板交付仍同步完成，不因开启 Clone 支持切换为分帧异步。已完整继承结果的实例保留自己的材质对象和参数，不重复上传模型；需要重新准备的实例使用记录中的原版数据，并将骨骼按资源根内路径映射到自身。
+
+克隆实例的独立材质对象不会单独导致拒绝。未知 Mesh、原版数据已释放、来源声明变化、接收器歧义、缺失或重复的必要骨骼仍拒绝，保留当前绑定。识别依赖真实来源和对象身份，`(Clone)` 名称仅用于资源路由。Android 旧角色包继续按 UI LOD0 → world LOD1 的原有适配保存来源；显式包沿用自身资源路径。
+
+同一个已完成接收器重新持有记录中的原版 Mesh 时，会重新准备当前选择，修复资源二次交付后世界模型保持原版的问题。此修复始终启用，不依赖实验开关。
+
+目前已通过离线生命周期回归及两端 Release 构建；大招状态下传送、对象池复用、NPC 包装根和真实私有材质变化仍需实机验收。
+
+
+## BEM 1.5 材质覆盖运行时行为与容错规则
+
+BEM 1.5 引入的 `material-overrides-v1` 特质在游戏运行时具有以下确定的生命周期与错误隔离行为：
+
+### 1. 作用域隔离与材质克隆
+- 游戏为当前角色部位准备网格与材质时，从原始角色 Renderer 的共享材质中提取模板，并通过 `UnityEngine.Object.Instantiate` 进行实例克隆。
+- 所有 `material_overrides`（浮点、颜色、向量、着色器关键字）均只注入到当前克隆实例上，绝不修改共享全局材质，确保切换配队或停用 Mod 时材质状态不被跨场景污染。
+
+### 2. 注入时序与属性降级
+- 材质属性覆盖在网格装配阶段逐个 DrawCall 依次执行：
+  - `Material.SetFloat(name, value)`
+  - `Material.SetColor(name, color)`
+  - `Material.SetVector(name, vector)`
+  - `Material.DisableKeyword(keyword)`
+  - `Material.EnableKeyword(keyword)`
+- 若目标原生 Shader 未定义某个重载属性，底层引擎会自动忽略该属性写入，不会引发渲染中断或异常退出。
+
+### 3. 「实验：关闭模型校验」联动
+开启「实验：关闭模型校验」（`skip_validation=true`）时：
+- 放宽命名与格式限制：允许属性名缺少 `_` 前缀，放宽关键字大小写要求；
+- 数值饱和截断：超出范围的浮点数与颜色值自动截断（Clamp）至合法边界，不拒绝模型包加载；
+- 扩展属性配额：单个 DrawCall 的重载项上限放宽至严格模式的 4 倍。
+
+### 4. 根骨骼位移变换与防漂移回滚（root-offset-v1）
+- **基准锁定（Pristine Baseline）**：模型初次挂载时，系统捕获指定骨骼节点的原生 `localPosition` 存入 `visual_pristine`；所有换装与形态切换计算均以此绝对基准为底数累加，避免多次换装导致高度累加。
+- **卸载还原**：在停用 Mod 或切换到无偏移的模型包时，精确将 Transform 的本地坐标恢复至 `visual_original`。

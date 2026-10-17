@@ -49,8 +49,8 @@ def limits(minor=None):
         return dict(minor=1, choices=MAX_CHOICES, rules=MAX_RULES, textures=MAX_SELECTED_TEXTURES,
                     texture_bytes=MAX_TEXTURE_BYTES, resident=MAX_SELECTED_RESIDENT,
                     decoded=MAX_SELECTED_DECODED, directory=MAX_DIRECTORY)
-    v1.require(minor in (None, 2, 3, 4), 'Unsupported BEM minor version')
-    return dict(minor=4 if minor is None else minor, choices=MAX_CHOICES_V12, rules=MAX_RULES_V12, textures=MAX_SELECTED_TEXTURES_V12,
+    v1.require(minor in (None, 2, 3, 4, 5), 'Unsupported BEM minor version')
+    return dict(minor=5 if minor is None else minor, choices=MAX_CHOICES_V12, rules=MAX_RULES_V12, textures=MAX_SELECTED_TEXTURES_V12,
                 texture_bytes=MAX_TEXTURE_BYTES_V12, resident=MAX_SELECTED_RESIDENT_V12,
                 decoded=MAX_SELECTED_DECODED_V12, directory=MAX_DIRECTORY_V12)
 
@@ -77,6 +77,8 @@ def candidate_count(m):
 
 def required_minor(m, summary, payload_count=0):
     """Smallest header minor able to carry this composable manifest."""
+    import bem_v15
+    if bem_v15.used(m): return 5
     import bem_v14
     if bem_v14.used(m): return 4
     import bem_v13

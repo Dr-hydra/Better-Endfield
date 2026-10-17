@@ -291,3 +291,72 @@ Running `convert` without `--recipe` creates a new random package ID each time. 
 - **Textures are missing or unsupported on a phone:** Run “Convert textures” in the app. If the normal encoding is missing, declare `normal_encoding` as described above.
 - **The body is clipped or hair remains in first person:** Check the bone weights of the affected vertices.
 - **A team screen occasionally misses a part:** This is a known issue whose cause has not been confirmed. Leave and re-enter the team screen.
+
+
+## Material & Keyword Overrides (BEM 1.5)
+
+Starting in BEM 1.5 (`material-overrides-v1`), you can tune transparency, ink-like matte tones, depth writing, and specular behavior on native NPR/PBR shaders by configuring `material_overrides` on draw entries, without needing custom shaders.
+
+### Common Recipes
+
+#### 1. Semi-transparent Gauze / Lace Depth Writing
+Fixes sorting artifacts and dark halos for translucent garments:
+```json
+{
+  "material_overrides": {
+    "floats": {
+      "_TransparentDepthWrite": 1.0,
+      "_ZWrite": 1.0,
+      "_Cutoff": 0.5,
+      "_Smoothness": 0.15
+    },
+    "colors": {
+      "_BaseColor": [0.08, 0.08, 0.08, 0.75]
+    }
+  }
+}
+```
+
+#### 2. Matte Shading & Anisotropy Suppression
+Removes harsh circular hair highlights or glossy clearcoat to achieve a matte ink finish:
+```json
+{
+  "material_overrides": {
+    "disable_keywords": [
+      "_ANISOTROPY_SPECULAR_ON",
+      "_CLEARCOAT",
+      "_EMISSION"
+    ]
+  }
+}
+```
+
+#### 3. Enabling Transparency Variants
+```json
+{
+  "material_overrides": {
+    "enable_keywords": [
+      "_ALPHAPREMULTIPLY_ON"
+    ]
+  }
+}
+```
+
+> **Note**:
+> - Property names must start with `_` (e.g. `_BaseColor`), and keywords must be uppercase (e.g. `_CLEARCOAT`).
+> - When "Skip Validation" is active, naming restrictions are relaxed and out-of-range numbers are clamped automatically.
+
+### Root Bone Elevation (Fixing High-Heel Ground Clipping)
+
+When a mod includes high heels, thick platform soles, or floating stances that clip into the terrain, add `root_offset` in the manifest without altering vertex bindings:
+
+```json
+{
+  "root_offset": {
+    "path": "Bip001",
+    "translation": [0.0, 0.04, 0.0]
+  }
+}
+```
+- The second element of `translation` controls vertical elevation (e.g. `0.04` lifts the model by 4cm).
+- The runtime automatically latches the pristine baseline and handles rollbacks, ensuring switching options never causes accumulated height drift.

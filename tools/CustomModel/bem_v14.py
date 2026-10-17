@@ -134,10 +134,10 @@ def validate_bindings(m):
 
 
 def validate_manifest(m, payload_count, minor=None):
-    bem.require(minor in (None, 4), 'Explicit resource targets require BEM 1.4')
+    bem.require(minor in (None, 4, 5), 'Explicit resource targets require BEM 1.4+')
     bem.require('option_groups' in m, 'BEM 1.4 requires a composable project')
     import bem_v13
-    bem_v13.validate_manifest(m, payload_count, 4)
+    bem_v13.validate_manifest(m, payload_count, minor or 4)
     validate_bindings(m)
 
 

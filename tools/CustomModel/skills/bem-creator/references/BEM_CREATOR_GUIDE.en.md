@@ -1,6 +1,6 @@
 # BEM Creator Guide
 
-BEM (`.bem`) is Better Endfield's model replacement package. Versions 1.0–1.3 target one character; 1.4 targets a character or weapon ID and can separately replace ordinary forms, ultimate prefabs and weapon resources while retaining options and position sliders. Windows and Android can share a package when it declares the resource and donor contracts for each platform.
+BEM (`.bem`) is Better Endfield Next's model replacement package. Versions 1.0–1.3 target one character; 1.4 targets a character or weapon ID and can separately replace ordinary forms, ultimate prefabs and weapon resources while retaining options and position sliders. Windows and Android can share a package when it declares the resource and donor contracts for each platform.
 
 | Document | Contents |
 | --- | --- |
@@ -19,7 +19,7 @@ BEM (`.bem`) is Better Endfield's model replacement package. Versions 1.0–1.3 
 | Main application creator window | Character appearance page → “BEM Creator Tools…”; older versions use “Convert other source Mod…” | Shares the standalone GUI window code and calls the same CLI |
 | Blender exporter | `blender_addon/bem_exporter/` in the portable tool | Export an editable BEM project from Blender objects named `BEM_C<number>` |
 | Desktop model manager | Character appearance page | Importing, enabling, choosing appearances and options, and adjusting sliders |
-| Android model page | Better Endfield App | Importing, enabling, choosing, and converting textures on the phone |
+| Android model page | Better Endfield Next App | Importing, enabling, choosing, and converting textures on the phone |
 | AI skill `bem-creator` | Standalone `skills/bem-creator` package | Helps prepare recipes and explain reports; it does not replace validation |
 
 BEM Tools has officially read and written BEM 1.0–1.4 since 1.5.1; version 1.5.2 adds the standalone GUI. The older official 1.5.0 distribution does not include BEM 1.4. Tool and format versions are separate. The current `--version` returns `BEM Tools 1.5.4 / BEM 1.0+1.1+1.2+1.3+1.4`. When running from source, use `python tools/CustomModel/bem_tool.py` instead of the executable.
@@ -291,3 +291,72 @@ Running `convert` without `--recipe` creates a new random package ID each time. 
 - **Textures are missing or unsupported on a phone:** Run “Convert textures” in the app. If the normal encoding is missing, declare `normal_encoding` as described above.
 - **The body is clipped or hair remains in first person:** Check the bone weights of the affected vertices.
 - **A team screen occasionally misses a part:** This is a known issue whose cause has not been confirmed. Leave and re-enter the team screen.
+
+
+## Material & Keyword Overrides (BEM 1.5)
+
+Starting in BEM 1.5 (`material-overrides-v1`), you can tune transparency, ink-like matte tones, depth writing, and specular behavior on native NPR/PBR shaders by configuring `material_overrides` on draw entries, without needing custom shaders.
+
+### Common Recipes
+
+#### 1. Semi-transparent Gauze / Lace Depth Writing
+Fixes sorting artifacts and dark halos for translucent garments:
+```json
+{
+  "material_overrides": {
+    "floats": {
+      "_TransparentDepthWrite": 1.0,
+      "_ZWrite": 1.0,
+      "_Cutoff": 0.5,
+      "_Smoothness": 0.15
+    },
+    "colors": {
+      "_BaseColor": [0.08, 0.08, 0.08, 0.75]
+    }
+  }
+}
+```
+
+#### 2. Matte Shading & Anisotropy Suppression
+Removes harsh circular hair highlights or glossy clearcoat to achieve a matte ink finish:
+```json
+{
+  "material_overrides": {
+    "disable_keywords": [
+      "_ANISOTROPY_SPECULAR_ON",
+      "_CLEARCOAT",
+      "_EMISSION"
+    ]
+  }
+}
+```
+
+#### 3. Enabling Transparency Variants
+```json
+{
+  "material_overrides": {
+    "enable_keywords": [
+      "_ALPHAPREMULTIPLY_ON"
+    ]
+  }
+}
+```
+
+> **Note**:
+> - Property names must start with `_` (e.g. `_BaseColor`), and keywords must be uppercase (e.g. `_CLEARCOAT`).
+> - When "Skip Validation" is active, naming restrictions are relaxed and out-of-range numbers are clamped automatically.
+
+### Root Bone Elevation (Fixing High-Heel Ground Clipping)
+
+When a mod includes high heels, thick platform soles, or floating stances that clip into the terrain, add `root_offset` in the manifest without altering vertex bindings:
+
+```json
+{
+  "root_offset": {
+    "path": "Bip001",
+    "translation": [0.0, 0.04, 0.0]
+  }
+}
+```
+- The second element of `translation` controls vertical elevation (e.g. `0.04` lifts the model by 4cm).
+- The runtime automatically latches the pristine baseline and handles rollbacks, ensuring switching options never causes accumulated height drift.
