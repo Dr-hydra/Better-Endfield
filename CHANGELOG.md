@@ -2,7 +2,7 @@
 
 ## 4.0.7 Better Endfield Next
 
-- **BEM 1.5 材质属性与关键字动态覆盖（material-overrides-v1）**：原生支持在模型绘制阶段对 Unity 材质属性（floats、colors、vectors）及着色器关键字（disable_keywords、enable_keywords）进行实例级动态覆盖；完美支持半透薄纱深度写入、水墨暗底色调校及高光抑制等复杂视觉需求，双端（Windows / Android）完全对齐。
+- **BEM 1.5 材质属性与关键字动态覆盖（material-overrides-v1）**：原生支持在模型绘制阶段对 Unity 材质属性（floats、colors、vectors）及着色器关键字（disable_keywords、enable_keywords）进行实例级动态覆盖；完美支持半透薄纱深度写入、水墨暗底色调校及高光抑制等复杂视觉需求，双端完全对齐（特别鸣谢 @Saberverse 提供 BEM 1.5 规范设计与审阅材料支持）。
 - **关闭模型校验开关（skip_validation）全链路联动**：工具链与原生运行时全面接入「关闭模型校验」宽松模式，支持属性名称放宽、超界数值自动截断（Clamp）与配额动态扩容。
 - **BEM Tools 升级至 1.6.0**：版本号前两位正式对齐游戏主版本（1.6.x），同步更新创作者指南、格式规范与 Agent Skill。
 

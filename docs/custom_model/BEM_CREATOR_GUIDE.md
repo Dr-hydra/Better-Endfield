@@ -298,6 +298,9 @@ BetterEndfieldNext.BemConverter.exe --version
 
 ## 材质属性与关键字覆盖（BEM 1.5）
 
+> **致谢**：特别感谢 **@Saberverse** 在 BEM 1.5 格式规范设计、材质属性与关键字动态覆盖方案以及 NPC 路径适配中提供的关键技术支持与审阅材料。
+
+
 从 BEM 1.5（`material-overrides-v1`）起，您无需制作或替换自定义 Shader，即可通过在网格绘制项（draw）中指定 `material_overrides`，直接调校角色材质在游戏原生 NPR/PBR 着色器下的透明度、水墨色调与光泽表现。
 
 ### 常用视觉配方

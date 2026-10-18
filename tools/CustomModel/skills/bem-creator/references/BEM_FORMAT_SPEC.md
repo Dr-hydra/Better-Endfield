@@ -350,6 +350,9 @@ Payload 目录每项 32 字节，数组下标就是 Payload ID：
 
 ## 12. BEM 1.5 材质属性与关键字动态覆盖（material-overrides-v1）
 
+> **致谢**：特别感谢 **@Saberverse** 在 BEM 1.5 格式规范设计、材质属性与关键字动态覆盖方案以及 NPC 路径适配中提供的关键技术支持与审阅材料。
+
+
 BEM 1.5（`minor = 5`）引入了 `material-overrides-v1` 能力，允许在网格绘制候选（draw）上对 Unity 材质实例的属性与关键字进行动态覆盖，以支持透明薄纱、水墨消光、高光抑制等定制视觉需求，且无需替换底层 Shader。
 
 ### Capability 声明

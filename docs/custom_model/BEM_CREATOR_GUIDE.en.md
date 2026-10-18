@@ -295,6 +295,9 @@ Running `convert` without `--recipe` creates a new random package ID each time. 
 
 ## Material & Keyword Overrides (BEM 1.5)
 
+> **Acknowledgment**: Special thanks to **@Saberverse** for key technical support and review materials contributed to the BEM 1.5 specification, material/keyword override design, and NPC receiver path integration.
+
+
 Starting in BEM 1.5 (`material-overrides-v1`), you can tune transparency, ink-like matte tones, depth writing, and specular behavior on native NPR/PBR shaders by configuring `material_overrides` on draw entries, without needing custom shaders.
 
 ### Common Recipes

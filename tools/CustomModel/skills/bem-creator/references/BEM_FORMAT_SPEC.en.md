@@ -354,6 +354,9 @@ Budgets apply to one selection and are not the same as the actual GPU peak. The 
 
 ## 12. BEM 1.5 Material & Keyword Overrides (material-overrides-v1)
 
+> **Acknowledgment**: Special thanks to **@Saberverse** for key technical support and review materials contributed to the BEM 1.5 specification, material/keyword override design, and NPC receiver path integration.
+
+
 BEM 1.5 (`minor = 5`) introduces the `material-overrides-v1` capability, allowing draw candidates to dynamically override Unity Material properties and shader keywords. This enables visual customizations such as transparent gauze, ink-mist matte shading, and specular suppression without replacing underlying shaders.
 
 ### Capability Declaration
