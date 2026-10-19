@@ -11,7 +11,7 @@ from pathlib import Path
 import bem_v1 as bem
 import bem_projects
 
-TOOL_VERSION = "1.6.0"
+TOOL_VERSION = "1.6.1"
 FORMAT_VERSIONS = {0: '1.0', 1: '1.1', 2: '1.2', 3: '1.3', 4: '1.4', 5: '1.5'}
 from convert_efmi_poc import Source
 from efmi_source import sections, analyze_source
@@ -275,7 +275,7 @@ def main(argv=None):
     parser.add_argument('--author')
     parser.add_argument('--package-version')
     args=parser.parse_args(raw_argv)
-    result=dict(tool_version=TOOL_VERSION,format_version='1.0/1.1/1.2/1.3/1.4',command=args.command,source=str(args.source),success=False,conversion_ready=False,render_verified=False,issues=[])
+    result=dict(tool_version=TOOL_VERSION,format_version='1.0/1.1/1.2/1.3/1.4/1.5',command=args.command,source=str(args.source),success=False,conversion_ready=False,render_verified=False,issues=[])
     report_path = args.report
     protected_paths = [args.source, *args.additional] + ([args.output] if args.output else []) + ([args.recipe] if args.recipe else [])
     if args.deformations: protected_paths.append(args.deformations)

@@ -65,6 +65,11 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "{#StageDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
+[InstallDelete]
+; PyInstaller onedir payloads are replaced as a directory. Leaving files from
+; an older Python/runtime inside it breaks otherwise valid upgrades.
+Type: filesandordirs; Name: "{app}\tools\BemConverter\_internal"
+
 [Icons]
 Name: "{autoprograms}\Better Endfield Next"; Filename: "{app}\BetterEndfieldNext.exe"; WorkingDir: "{app}"
 Name: "{autodesktop}\Better Endfield Next"; Filename: "{app}\BetterEndfieldNext.exe"; WorkingDir: "{app}"; Tasks: desktopicon

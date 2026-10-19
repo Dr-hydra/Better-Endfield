@@ -1,0 +1,61 @@
+{
+  "version": "4.0.8",
+  "hashes_calculated": true,
+  "windows": {
+    "fileVersion": "4.0.8.0",
+    "architecture": "x64",
+    "gameVersion": "1.6.3",
+    "signing": "original Next internal self-signed identity",
+    "obfuscation": "Obfuscar"
+  },
+  "android": {
+    "applicationId": "dev.betterendfield.next",
+    "versionCode": 40008,
+    "versionName": "4.0.8",
+    "architecture": "arm64-v8a",
+    "signing": "original Next release identity",
+    "obfuscation": "R8"
+  },
+  "checks": {
+    "windows_release": "passed",
+    "windows_installer": "passed",
+    "bem_tools_portable": "passed"
+  },
+  "assets": [
+    {
+      "name": "BetterEndfieldNext-4.0.8-Setup.exe",
+      "bytes": 77141288,
+      "sha256": "d36f2356b16eb0a5710998b9569b86a01784e5bdadb3ccff5fd8741328f0bfca",
+      "public": true
+    },
+    {
+      "name": "BetterEndfieldNext-4.0.8-Android-arm64.apk",
+      "bytes": 6390945,
+      "sha256": "eada8ace366a084f7e61af6288ef7000b63267999ff7b651ad9efcde30d646b2",
+      "public": true
+    },
+    {
+      "name": "BEM-Tools-1.6.1-win-x64.zip",
+      "bytes": 73275891,
+      "sha256": "a353e222d5104c4a082a983965b180644057fff51346899e7ecbc7e61641486c",
+      "public": true
+    }
+  ],
+  "local_only_assets": [
+    {
+      "name": "BetterEndfieldNext-4.0.8-win-x64.zip",
+      "bytes": 85647432,
+      "sha256": "d2f370e1ddbfd45d3b96c14973be2601d591dd2409ae5c3e8e8cf7e08a0356d3"
+    }
+  ],
+  "release": {
+    "repository": "Dr-hydra/Better-Endfield",
+    "tag": "v4.0.8",
+    "url": "https://github.com/Dr-hydra/Better-Endfield/releases/tag/v4.0.8"
+  },
+  "bem_tools": {
+    "version": "1.6.1",
+    "gui_file_version": "1.6.1.0",
+    "platform": "windows-x64"
+  }
+}

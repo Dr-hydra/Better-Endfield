@@ -951,6 +951,7 @@
           "test_bem_v12",
           "test_bem_v13",
           "test_bem_v14",
+          "test_bem_v15",
           "test_bem14_target"
         ],
         "sources": [
@@ -959,12 +960,13 @@
           "tools/CustomModel/test_bem_v12.py",
           "tools/CustomModel/test_bem_v13.py",
           "tools/CustomModel/test_bem_v14.py",
+          "tools/CustomModel/test_bem_v15.py",
           "tools/CustomModel/test_bem14_target.py"
         ]
       },
       "status": "active",
       "replaced_by": null,
-      "purpose": "BEM 1.0–1.3 format/geometry/loading-option compatibility. Inherited BEM_VALIDATOR is removed; Python skips remain visible."
+      "purpose": "BEM 1.0–1.5 format/geometry/loading-option compatibility. Inherited BEM_VALIDATOR is removed; Python skips remain visible."
     },
     {
       "id": "creator.bem.projects",

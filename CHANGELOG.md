@@ -1,5 +1,11 @@
 # 更新日志
 
+## 4.0.8 Better Endfield Next
+
+- **BEM Tools 1.6.1 修复**：修复 1.6.0 中 `bem_v15` 源码 NUL 导致模块无法导入、所有 CLI 校验与打包失败的问题；补全冻结包 hidden import，并在构建后执行真实 BEM 校验。
+- **BEM 1.5 回归**：修复材质覆盖数值被通用 manifest 校验提前拒绝的问题；旧版 1.0–1.4 不再依赖 1.5 模块加载。
+- **安装升级清理**：升级时清理旧的 BEM Tools 运行时目录，避免旧 Python、DLL 或 GUI 文件残留。
+
 ## 4.0.7 Better Endfield Next
 
 - **BEM 1.5 材质属性与关键字动态覆盖（material-overrides-v1）**：原生支持在模型绘制阶段对 Unity 材质属性（floats、colors、vectors）及着色器关键字（disable_keywords、enable_keywords）进行实例级动态覆盖；完美支持半透薄纱深度写入、水墨暗底色调校及高光抑制等复杂视觉需求，双端完全对齐（特别鸣谢 @Saberverse 提供 BEM 1.5 规范设计与审阅材料支持）。

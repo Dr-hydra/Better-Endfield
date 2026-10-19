@@ -77,8 +77,12 @@ def candidate_count(m):
 
 def required_minor(m, summary, payload_count=0):
     """Smallest header minor able to carry this composable manifest."""
-    import bem_v15
-    if bem_v15.used(m): return 5
+    caps = m.get('required_capabilities', [])
+    if any(c in caps for c in ('material-overrides-v1', 'root-offset-v1')) or \
+            'root_offset' in m or 'visual_root_offset' in m or \
+            any('material_overrides' in draw for mesh in m.get('meshes', []) for draw in mesh.get('draws', [])):
+        import bem_v15
+        if bem_v15.used(m): return 5
     import bem_v14
     if bem_v14.used(m): return 4
     import bem_v13

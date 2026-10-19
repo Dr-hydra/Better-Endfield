@@ -60,7 +60,9 @@ def validate_manifest(m, payload_count, minor=None):
     def tree(value, depth=0, allow_float=False):
         require(depth <= 48, 'Manifest nesting exceeds 48')
         if isinstance(value, dict):
-            for k, v in value.items(): tree(v, depth+1, allow_float or k == 'material_overrides')
+            for k, v in value.items():
+                tree(v, depth+1, allow_float or k in (
+                    'material_overrides', 'floats', 'colors', 'vectors', 'translation'))
         elif isinstance(value, list):
             for v in value: tree(v, depth+1, allow_float)
         elif type(value) in (int, float):
@@ -72,9 +74,13 @@ def validate_manifest(m, payload_count, minor=None):
         elif isinstance(value, str):
             require('\0' not in value, 'NUL in manifest string')
     tree(m)
-    import bem_v15
-    if minor == 5 or bem_v15.used(m):
+    if minor == 5:
+        import bem_v15
         return bem_v15.validate_manifest(m, payload_count, minor)
+    if minor is None:
+        import bem_v15
+        if bem_v15.used(m):
+            return bem_v15.validate_manifest(m, payload_count, minor)
     import bem_v14
     if minor == 4 or bem_v14.used(m):
         return bem_v14.validate_manifest(m, payload_count, minor)

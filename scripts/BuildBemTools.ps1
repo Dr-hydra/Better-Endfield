@@ -44,12 +44,42 @@ if ($LASTEXITCODE -ne 0) { throw "Install tools/CustomModel/requirements-build.t
     --hidden-import bem_v11 `
     --hidden-import bem_v13 `
     --hidden-import bem_v14 `
+    --hidden-import bem_v15 `
     --hidden-import efmi_shapes `
     --distpath (Join-Path $Destination "dist") `
     --workpath (Join-Path $Destination "work") `
     --specpath $Destination `
     (Join-Path $repo "tools\CustomModel\bem_tool.py")
 if ($LASTEXITCODE -ne 0) { throw "BEM converter build failed." }
+$converterDir = Join-Path $Destination 'dist\BetterEndfieldNext.BemConverter'
+$converterExe = Join-Path $converterDir 'BetterEndfieldNext.BemConverter.exe'
+$versionOutput = & $converterExe --version
+if ($LASTEXITCODE -ne 0 -or ($versionOutput -join ' ') -notmatch 'BEM Tools 1\.6\.1') {
+    throw "Frozen BEM converter version check failed: $($versionOutput -join ' ')"
+}
+$warningFile = Join-Path (Join-Path $Destination 'work\BetterEndfieldNext.BemConverter') 'warn-BetterEndfieldNext.BemConverter.txt'
+if ((Test-Path -LiteralPath $warningFile) -and
+    (Select-String -LiteralPath $warningFile -Pattern 'bem_v15' -SimpleMatch -Quiet)) {
+    throw "Frozen BEM converter cannot import bem_v15. See $warningFile"
+}
+$smokeBem = Join-Path $Destination 'smoke-test.bem'
+& $python -c @"
+import sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+import bem_v1
+from test_bem_v1 import fixture
+fixture().write(Path(sys.argv[2]))
+"@ (Join-Path $repo 'tools\CustomModel') $smokeBem
+if ($LASTEXITCODE -ne 0) { throw "BEM smoke package generation failed." }
+try {
+    $validationOutput = & $converterExe validate $smokeBem
+    if ($LASTEXITCODE -ne 0 -or ($validationOutput -join ' ') -notmatch '"success":\s*true') {
+        throw "Frozen BEM converter smoke validation failed: $($validationOutput -join ' ')"
+    }
+} finally {
+    Remove-Item -LiteralPath $smokeBem -Force -ErrorAction SilentlyContinue
+}
 $guiPublishDir = Join-Path $Destination 'gui-publish'
 & $dotnet publish (Join-Path $repo 'ui/BetterEndfieldNext.BemTools/BetterEndfieldNext.BemTools.csproj') `
     -c Release -r win-x64 --self-contained true -p:Platform=x64 `
