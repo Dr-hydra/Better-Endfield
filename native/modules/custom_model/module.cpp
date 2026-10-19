@@ -1973,6 +1973,12 @@ struct PreparedBinding {
     int32_t original_shadow=0,custom_shadow=0;
     void* original_shadow_mesh=nullptr;
     void* custom_shadow_mesh=nullptr;
+    struct SiblingStaticRenderer {
+        void* renderer=nullptr;
+        void* original_mesh=nullptr;
+        void* original_materials=nullptr;
+    };
+    std::vector<SiblingStaticRenderer> sibling_static_renderers;
 #endif
 };
 void* DonorMesh(const PreparedBinding& b) { return b.donor_mesh?b.donor_mesh:b.original_mesh; }
@@ -2024,7 +2030,14 @@ bool MakeReceiverKey(const CharacterAdapter& adapter,void* asset,void* renderer,
         (resource!=adapter.world_resource && resource!=adapter.ui_resource) || !ResourceRelativePath(asset,renderer,path)) return false;
     const auto region=GenericMatching::ClassifyReceiver(path);
     const bool declared=std::any_of(adapter.components.begin(),adapter.components.end(),[&](const auto& identity){
-        return path==identity.receiver_path && identity.static_mesh==IsStaticRenderer(renderer);
+        if (identity.static_mesh == IsStaticRenderer(renderer)) {
+            std::string_view id_path(identity.receiver_path ? identity.receiver_path : "");
+            if (path == id_path) return true;
+#if defined(__ANDROID__)
+            if (GenericMatching::SiblingLodPathMatches(id_path, path)) return true;
+#endif
+        }
+        return false;
     });
     if (adapter.explicit_resource && !declared && region!=GenericMatching::Region::MobileProxy) return false;
     key={adapter.id,std::move(resource),path,adapter.explicit_resource?GenericMatching::Region::Explicit:region};
@@ -2392,6 +2405,14 @@ bool ApplyPreparedBinding(PreparedBinding& binding) {
     if (binding.custom_mesh!=binding.original_mesh && !SetSharedMesh(binding.renderer,binding.custom_mesh)) return false;
     if (!ApplyRendererMaterials(binding.renderer,binding.custom_materials)) return false;
     if (!SetVisualPosition(binding.visual_root,binding.visual_custom)) return false;
+#if defined(__ANDROID__)
+    for (const auto& sibling:binding.sibling_static_renderers) {
+        if (sibling.renderer) {
+            SetSharedMesh(sibling.renderer,binding.custom_mesh);
+            ApplyRendererMaterials(sibling.renderer,binding.custom_materials);
+        }
+    }
+#endif
     bool read=false;
     return SetRendererEnabled(binding.renderer,binding.custom_enabled) &&
         GetRendererEnabled(binding.renderer,read) && read==binding.custom_enabled;
@@ -2413,6 +2434,12 @@ bool RestorePreparedBinding(PreparedBinding& binding) {
         const bool restored_proxy=InvokeVoid(Contract("android.shadow_mesh_set"),binding.renderer,proxy) &&
             ReadNullableObject(Contract("android.shadow_mesh_get"),binding.renderer,read_mesh) && read_mesh==binding.original_shadow_mesh;
         shadow=restored_mode && restored_proxy;
+    }
+    for (const auto& sibling:binding.sibling_static_renderers) {
+        if (sibling.renderer) {
+            SetSharedMesh(sibling.renderer,sibling.original_mesh);
+            ApplyRendererMaterials(sibling.renderer,sibling.original_materials);
+        }
     }
 #endif
     const bool visual=SetVisualPosition(binding.visual_root,binding.visual_original);
@@ -2458,11 +2485,23 @@ bool PrepareResource(const CharacterAdapter& adapter,const BemPocData& bem,void*
         const auto& component=bem.components[i]; auto& binding=bindings[i];
         if (!(component.info.flags&kComponentFlagNoGeometry)) {
             void* poses=nullptr;
-            if (!PreparePalette(component,binding,bindings,poses,bem.skip_validation) ||
-                !g_model_build_mesh(component,DonorMesh(binding),binding.custom_mesh,poses) ||
-                !PrepareDrawMaterials(component,binding,bindings,bem,&transaction_textures)) return false;
+            if (!PreparePalette(component,binding,bindings,poses,bem.skip_validation)) {
+                Log("PrepareResource: PreparePalette failed for C" + std::to_string(i));
+                return false;
+            }
+            if (!g_model_build_mesh(component,DonorMesh(binding),binding.custom_mesh,poses)) {
+                Log("PrepareResource: g_model_build_mesh failed for C" + std::to_string(i));
+                return false;
+            }
+            if (!PrepareDrawMaterials(component,binding,bindings,bem,&transaction_textures)) {
+                Log("PrepareResource: PrepareDrawMaterials failed for C" + std::to_string(i));
+                return false;
+            }
         } else {
-            if (!PrepareKeepMaterials(component,binding,bem,&transaction_textures)) return false;
+            if (!PrepareKeepMaterials(component,binding,bem,&transaction_textures)) {
+                Log("PrepareResource: PrepareKeepMaterials failed for C" + std::to_string(i));
+                return false;
+            }
         }
     }
     #if defined(__ANDROID__)
@@ -3447,6 +3486,20 @@ GenericMatching::Match SelectCompatibleModelDonor(const CharacterAdapter& adapte
         });
         legacy_aurora=match.status==GenericMatching::MatchStatus::Matched;
     }
+#elif defined(__ANDROID__)
+    (void)windows_compat;
+    if (match.status==GenericMatching::MatchStatus::Missing && static_mesh && adapter.explicit_resource) {
+        for (size_t i=0;i<candidates.size();++i) {
+            const auto& c=candidates[i];
+            if (c.renderer && c.key.character==request.character && c.key.resource==request.resource &&
+                GenericMatching::SiblingLodPathMatches(request.verified_receiver_path, c.key.path) && candidate_valid(c)) {
+                match.status=GenericMatching::MatchStatus::Matched;
+                match.index=i; match.valid_count=1;
+                Log("SelectCompatibleModelDonor: matched sibling LOD candidate path=" + c.key.path);
+                break;
+            }
+        }
+    }
 #else
     (void)windows_compat;
 #endif
@@ -3454,12 +3507,15 @@ GenericMatching::Match SelectCompatibleModelDonor(const CharacterAdapter& adapte
 }
 bool CaptureGenericResourceBindings(const CharacterAdapter& adapter,const BemPocData& bem,void* asset,
     std::vector<PreparedBinding>& bindings) {
-    if (!IsGameObjectResource(asset)) return false;
-    if (!ValidatePayloadAdapter(adapter,bem)) return false;
+    if (!IsGameObjectResource(asset)) { Log("CaptureGenericResourceBindings: !IsGameObjectResource"); return false; }
+    if (!ValidatePayloadAdapter(adapter,bem)) { Log("CaptureGenericResourceBindings: !ValidatePayloadAdapter for " + std::string(adapter.world_resource)); return false; }
     bool inactive=true;void* args[]{ModelRendererType(),&inactive};
     void* renderers=Invoke(Contract("game_object.renderers"),asset,args);
     std::vector<GenericRendererCandidate> index;
-    if (!BuildGenericRendererIndex(adapter,asset,renderers,index) || index.empty()) return false;
+    if (!BuildGenericRendererIndex(adapter,asset,renderers,index) || index.empty()) {
+        Log("CaptureGenericResourceBindings: BuildGenericRendererIndex failed or empty: count=" + std::to_string(index.size()));
+        return false;
+    }
     std::vector<GenericMatching::Candidate> candidates;
     for (const auto& candidate:index) {
         GenericMatching::Candidate c;c.key=candidate.key;c.renderer=candidate.renderer;
@@ -3513,6 +3569,44 @@ bool CaptureGenericResourceBindings(const CharacterAdapter& adapter,const BemPoc
         b.custom_enabled=(component.info.flags&kComponentFlagHidden)?false:
             (b.saved_original?b.donor_enabled:b.original_enabled);
         if (b.saved_original) b.custom_bones=DonorBones(b);
+#if defined(__ANDROID__)
+        if (component.static_mesh && c.renderer) {
+            void* trans = Invoke(Contract("component.get_transform"), c.renderer, nullptr);
+            void* lod_parent = trans ? Invoke(Contract("transform.get_parent"), trans, nullptr) : nullptr;
+            void* mesh_all = lod_parent ? Invoke(Contract("transform.get_parent"), lod_parent, nullptr) : nullptr;
+            if (mesh_all && ObjectName(mesh_all) == "Mesh_all") {
+                int32_t count = 0;
+                if (InvokeValue(Contract("transform.child_count"), mesh_all, nullptr, count) && count > 1 && count <= 16) {
+                    bool inactive = true;
+                    void* rend_args[]{ModelRendererType(), &inactive};
+                    const auto stem_trans = GenericMatching::StripKnownMeshSuffix(ObjectName(trans));
+                    for (int32_t i = 0; i < count; ++i) {
+                        void* i_arg[]{&i};
+                        void* child = Invoke(Contract("transform.get_child"), mesh_all, i_arg);
+                        if (child && child != lod_parent) {
+                            void* child_go = Invoke(Contract("component.get_game_object"), child, nullptr);
+                            void* child_renderers = child_go ? Invoke(Contract("game_object.renderers"), child_go, rend_args) : nullptr;
+                            int32_t rcount = ArrayLength(child_renderers);
+                            for (int32_t r = 0; r < rcount; ++r) {
+                                void* sib_renderer = ArrayValue(child_renderers, r);
+                                if (sib_renderer && sib_renderer != c.renderer && IsStaticRenderer(sib_renderer)) {
+                                    void* sib_trans = Invoke(Contract("component.get_transform"), sib_renderer, nullptr);
+                                    const auto stem_sib = sib_trans ? GenericMatching::StripKnownMeshSuffix(ObjectName(sib_trans)) : std::string_view{};
+                                    if (rcount == 1 || stem_trans == stem_sib || (stem_trans.size() > 5 && stem_sib.size() > 5 && stem_trans.substr(0, stem_trans.size() - 5) == stem_sib.substr(0, stem_sib.size() - 5))) {
+                                        PreparedBinding::SiblingStaticRenderer sib;
+                                        sib.renderer = sib_renderer;
+                                        sib.original_mesh = GetRendererMesh(sib_renderer);
+                                        sib.original_materials = Invoke(Contract("renderer.get_shared_materials"), sib_renderer, nullptr);
+                                        b.sibling_static_renderers.push_back(sib);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+#endif
         if (!b.custom_mesh) return false;bindings.push_back(std::move(b));
     }
     return !g_construction->failed;

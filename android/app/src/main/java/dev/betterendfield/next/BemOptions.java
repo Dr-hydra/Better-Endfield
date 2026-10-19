@@ -102,12 +102,23 @@ final class BemOptions {
         Set<String> a=resourceKeys(first),b=resourceKeys(second);
         if(a.isEmpty() || b.isEmpty()) return targetKey(first).equals(targetKey(second));
         for(String key:a) if(key.startsWith("android-arm64:") && b.contains(key)) return true;
+        if(targetKind(first).equals("weapon") && targetKind(second).equals("weapon")) {
+            for(String ka:a) for(String kb:b) {
+                int sa=ka.indexOf(':'), sb=kb.indexOf(':');
+                if(sa>=0 && sb>=0 && ka.substring(sa+1).equals(kb.substring(sb+1))) return true;
+            }
+        }
         return false;
     }
 
     static boolean supportsAndroid(JSONObject entry) throws Exception {
         if(entry.optInt("bem_minor",0)<4) return true;
         for(String key:resourceKeys(entry)) if(key.startsWith("android-arm64:")) return true;
+        if(targetKind(entry).equals("weapon")) {
+            for(String key:resourceKeys(entry)) {
+                if(key.startsWith("windows-x64:") && !key.endsWith(":android_unavailable")) return true;
+            }
+        }
         return false;
     }
 

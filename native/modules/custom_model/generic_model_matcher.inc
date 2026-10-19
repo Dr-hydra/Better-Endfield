@@ -40,23 +40,46 @@ bool BuildGenericRendererIndex(const CharacterAdapter& adapter,void* asset,void*
     auto resource=ObjectName(asset);
     resource=std::string(ResourceBaseName(resource));
     if (!asset || !renderers || count<=0 || count>4096 ||
-        (resource!=adapter.ui_resource && resource!=adapter.world_resource)) return false;
+        (resource!=adapter.ui_resource && resource!=adapter.world_resource)) {
+        Log("BuildGenericRendererIndex reject: resource=" + resource + " world=" + std::string(adapter.world_resource) + " count=" + std::to_string(count));
+        return false;
+    }
     std::unordered_map<std::string,void*> paths;
     for (int i=0;i<count;++i) {
         GenericRendererCandidate c; c.renderer=ArrayValue(renderers,i);
         std::string path;
         if (!IsModelRenderer(c.renderer) || (!adapter.explicit_resource && IsStaticRenderer(c.renderer))) continue;
         if (!IsNativeObjectAlive(c.renderer) || !ResourceRelativePath(asset,c.renderer,path) || (!adapter.explicit_resource && path.empty()) ||
-            !paths.emplace(path,c.renderer).second) return false;
+            !paths.emplace(path,c.renderer).second) {
+            Log("BuildGenericRendererIndex path/alive reject: path=" + path);
+            return false;
+        }
         if (adapter.explicit_resource && std::none_of(adapter.components.begin(),adapter.components.end(),[&](const auto& identity){
-            return path==identity.receiver_path && identity.static_mesh==IsStaticRenderer(c.renderer);
-        })) continue;
+            if (identity.static_mesh == IsStaticRenderer(c.renderer)) {
+                if (path == identity.receiver_path) return true;
+#if defined(__ANDROID__)
+                std::string_view id_path(identity.receiver_path ? identity.receiver_path : "");
+                if (GenericMatching::SiblingLodPathMatches(id_path, path)) return true;
+#endif
+            }
+            return false;
+        })) {
+            Log("BuildGenericRendererIndex path not declared: " + path + " static=" + std::to_string(IsStaticRenderer(c.renderer)));
+            continue;
+        }
         c.key={adapter.id,resource,path,adapter.explicit_resource?GenericMatching::Region::Explicit:GenericMatching::ClassifyReceiver(path)};
         c.mesh=GetRendererMesh(c.renderer);
         c.materials=Invoke(Contract("renderer.get_shared_materials"),c.renderer,nullptr);
         c.bones=GetRendererBones(c.renderer);
-        if (!GetRendererEnabled(c.renderer,c.enabled)) return false;
+        if (!GetRendererEnabled(c.renderer,c.enabled)) {
+            Log("BuildGenericRendererIndex GetRendererEnabled failed for " + path);
+            return false;
+        }
+        Log("BuildGenericRendererIndex candidate accepted: path=" + path + " mesh=" + ObjectName(c.mesh));
         candidates.push_back(std::move(c));
+    }
+    if (candidates.empty()) {
+        Log("BuildGenericRendererIndex: zero candidates matched for " + resource);
     }
     return true;
 }

@@ -32,6 +32,25 @@ inline bool ReceiverLodAgrees(std::string_view path,uint32_t lod) {
     if (digit<'0' || digit>'3' || (path.size()>prefix.size()+1 && path[prefix.size()+1]!='/')) return true;
     return uint32_t(digit-'0')==lod;
 }
+inline bool SiblingLodPathMatches(std::string_view pathA, std::string_view pathB) {
+    if (pathA == pathB) return true;
+    constexpr std::string_view prefixes[]{"Mesh_all/lod0/", "Mesh_all/lod1/", "Mesh_all/lod2/", "Mesh_all/lod3/"};
+    size_t idxA = 4, idxB = 4;
+    for (size_t i = 0; i < 4; ++i) {
+        if (pathA.starts_with(prefixes[i])) idxA = i;
+        if (pathB.starts_with(prefixes[i])) idxB = i;
+    }
+    if (idxA == 4 || idxB == 4) return false;
+    std::string_view leafA = pathA.substr(prefixes[idxA].size());
+    std::string_view leafB = pathB.substr(prefixes[idxB].size());
+    for (const auto* s : {"_lod0", "_lod1", "_lod2", "_lod3"}) {
+        if (leafA.ends_with(s)) { leafA.remove_suffix(5); break; }
+    }
+    for (const auto* s : {"_lod0", "_lod1", "_lod2", "_lod3"}) {
+        if (leafB.ends_with(s)) { leafB.remove_suffix(5); break; }
+    }
+    return leafA == leafB;
+}
 enum class PathStatus { Valid, OutsideRoot, Cycle, TooDeep, InvalidName };
 struct RelativePath { PathStatus status=PathStatus::OutsideRoot; std::string path; };
 // Walk actual parent objects. An outer scene parent/name never defines the root.

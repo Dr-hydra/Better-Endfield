@@ -129,6 +129,13 @@ bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,Mod
                 for(const auto& resource:info.resources) if(std::find(resource.platforms.begin(),resource.platforms.end(),platform)!=resource.platforms.end()) {
                     selectedResources.push_back(&resource); keys.push_back(std::string(platform)+":"+resource.name);
                 }
+#if defined(__ANDROID__)
+                if(selectedResources.empty()) {
+                    for(const auto& resource:info.resources) if(std::find(resource.platforms.begin(),resource.platforms.end(),"windows-x64")!=resource.platforms.end()) {
+                        selectedResources.push_back(&resource); keys.push_back(std::string(platform)+":"+resource.name);
+                    }
+                }
+#endif
                 if(selectedResources.empty()) { parsed.diagnostics.push_back("Package has no resource for "+std::string(platform)+": "+info.package_id); continue; }
             } else {
                 selectedResources.push_back(nullptr);
