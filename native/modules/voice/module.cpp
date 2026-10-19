@@ -222,6 +222,9 @@ std::atomic<uint32_t> g_auxiliary_mount_depth{0};
 // its first real call. The slot address is static, so it is located once at
 // install time and the native hook is attached as soon as the slot is filled.
 void** g_native_unload_slot = nullptr;
+const char* g_native_unload_export_name = nullptr;
+void* g_native_unload_resolver = nullptr;
+void* g_native_unload_method_info = nullptr;
 std::mutex g_native_unload_mutex;
 bool g_native_unload_deferred_logged = false;
 thread_local int g_lip_language_override = -1;
@@ -1758,6 +1761,9 @@ bool IsExecutableAddress(const void* address) {
 bool TryLocateNativeUnloadSlot(void**& slot, DWORD& seh_code) {
     slot = nullptr;
     seh_code = 0;
+    g_native_unload_export_name = nullptr;
+    g_native_unload_resolver = nullptr;
+    g_native_unload_method_info = nullptr;
     auto* code = static_cast<const uint8_t*>(
         g_pinvoke_unload_file_package.pointer);
     if (!code) {
@@ -1768,36 +1774,61 @@ bool TryLocateNativeUnloadSlot(void**& slot, DWORD& seh_code) {
         // IL2CPP P/Invoke stubs load their lazily resolved native target with
         // `mov rax, [rip+disp32]` before tail-calling it. The IFix path reads
         // the same slot directly, which is why hooking the managed stub alone
-        // misses unloads. Only the slot address is derived here; the game is
-        // never called to force the resolution. The cache is a writable
-        // static, so read-only constant loads are never mistaken for it.
+        // misses unloads. If the slot has not been resolved yet, we also parse
+        // the export name and resolver call from the stub to pre-resolve it.
         for (size_t offset = 0; offset + 7 <= 64; ++offset) {
-            if (code[offset] != 0x48 || code[offset + 1] != 0x8B ||
-                code[offset + 2] != 0x05) {
-                continue;
+            if (code[offset] == 0x48 && code[offset + 1] == 0x8B &&
+                code[offset + 2] == 0x05) {
+                int32_t displacement = 0;
+                std::memcpy(&displacement, code + offset + 3,
+                    sizeof(displacement));
+                auto** candidate = reinterpret_cast<void**>(
+                    const_cast<uint8_t*>(code) + offset + 7 + displacement);
+                MEMORY_BASIC_INFORMATION memory{};
+                if (VirtualQuery(candidate, &memory, sizeof(memory)) == sizeof(memory) &&
+                    memory.State == MEM_COMMIT) {
+                    const DWORD protect = memory.Protect & 0xFF;
+                    if (protect == PAGE_READWRITE || protect == PAGE_WRITECOPY ||
+                        protect == PAGE_EXECUTE_READWRITE ||
+                        protect == PAGE_EXECUTE_WRITECOPY) {
+                        if (IsExecutableAddress(*candidate)) {
+                            slot = candidate;
+                            return true;
+                        }
+                        if (!fallback) {
+                            fallback = candidate;
+                        }
+                    }
+                }
             }
-            int32_t displacement = 0;
-            std::memcpy(&displacement, code + offset + 3,
-                sizeof(displacement));
-            auto** candidate = reinterpret_cast<void**>(
-                const_cast<uint8_t*>(code) + offset + 7 + displacement);
-            MEMORY_BASIC_INFORMATION memory{};
-            if (VirtualQuery(candidate, &memory, sizeof(memory)) !=
-                    sizeof(memory) || memory.State != MEM_COMMIT) {
-                continue;
+
+            // Parse lea rdx, [rip+disp32] (48 8D 15 disp32) -> method_info / export name
+            if (code[offset] == 0x48 && code[offset + 1] == 0x8D &&
+                code[offset + 2] == 0x15 && !g_native_unload_method_info) {
+                int32_t displacement = 0;
+                std::memcpy(&displacement, code + offset + 3,
+                    sizeof(displacement));
+                void* candidate = const_cast<uint8_t*>(code) + offset + 7 + displacement;
+                MEMORY_BASIC_INFORMATION memory{};
+                if (VirtualQuery(candidate, &memory, sizeof(memory)) == sizeof(memory) &&
+                    memory.State == MEM_COMMIT) {
+                    g_native_unload_method_info = candidate;
+                    const auto* str = static_cast<const char*>(candidate);
+                    if (std::strncmp(str, "CSharp_", 7) == 0) {
+                        g_native_unload_export_name = str;
+                    }
+                }
             }
-            const DWORD protect = memory.Protect & 0xFF;
-            if (protect != PAGE_READWRITE && protect != PAGE_WRITECOPY &&
-                protect != PAGE_EXECUTE_READWRITE &&
-                protect != PAGE_EXECUTE_WRITECOPY) {
-                continue;
-            }
-            if (IsExecutableAddress(*candidate)) {
-                slot = candidate;
-                return true;
-            }
-            if (!fallback) {
-                fallback = candidate;
+
+            // Parse call rel32 (E8 rel32) -> il2cpp_codegen_resolve_pinvoke
+            if (code[offset] == 0xE8 && g_native_unload_method_info && !g_native_unload_resolver) {
+                int32_t displacement = 0;
+                std::memcpy(&displacement, code + offset + 1,
+                    sizeof(displacement));
+                void* candidate = const_cast<uint8_t*>(code) + offset + 5 + displacement;
+                if (IsExecutableAddress(candidate)) {
+                    g_native_unload_resolver = candidate;
+                }
             }
         }
     }
@@ -1808,24 +1839,72 @@ bool TryLocateNativeUnloadSlot(void**& slot, DWORD& seh_code) {
     return slot != nullptr;
 }
 
+bool TryReadSlotRaw(void** slot, void*& candidate, DWORD& seh_code) {
+    candidate = nullptr;
+    seh_code = 0;
+    if (!slot) return false;
+    __try {
+        candidate = *slot;
+        return true;
+    }
+    __except (CaptureExceptionCode(GetExceptionCode(), &seh_code)) {
+        candidate = nullptr;
+        return false;
+    }
+}
+
+void* TryInvokeResolverRaw(void* resolver, void* method_info) {
+    if (!resolver || !method_info) return nullptr;
+    __try {
+        using ResolveFn = void*(__fastcall*)(void* method_info);
+        return reinterpret_cast<ResolveFn>(resolver)(method_info);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return nullptr;
+    }
+}
+
 bool TryReadNativeUnloadTarget(void*& target, DWORD& seh_code) {
     target = nullptr;
     seh_code = 0;
     if (!g_native_unload_slot) {
         return false;
     }
-    __try {
-        void* candidate = *g_native_unload_slot;
-        if (!IsExecutableAddress(candidate)) {
-            return false;
-        }
+    void* candidate = nullptr;
+    if (TryReadSlotRaw(g_native_unload_slot, candidate, seh_code) &&
+        IsExecutableAddress(candidate)) {
         target = candidate;
         return true;
     }
-    __except (CaptureExceptionCode(GetExceptionCode(), &seh_code)) {
-        target = nullptr;
-        return false;
+
+    // Active resolution: pre-resolve the slot so we don't dead-wait on the
+    // game to call UnloadFilePackage.
+    if (g_native_unload_export_name) {
+        HMODULE ak = GetModuleHandleW(L"AkSoundEngine.dll");
+        if (ak) {
+            void* proc = reinterpret_cast<void*>(
+                GetProcAddress(ak, g_native_unload_export_name));
+            if (IsExecutableAddress(proc)) {
+                *g_native_unload_slot = proc;
+                target = proc;
+                Log("[voice-pck] native unload target pre-resolved via export: " +
+                    std::string(g_native_unload_export_name));
+                return true;
+            }
+        }
     }
+
+    if (g_native_unload_resolver && g_native_unload_method_info) {
+        void* proc = TryInvokeResolverRaw(g_native_unload_resolver, g_native_unload_method_info);
+        if (IsExecutableAddress(proc)) {
+            *g_native_unload_slot = proc;
+            target = proc;
+            Log("[voice-pck] native unload target pre-resolved via IL2CPP resolver");
+            return true;
+        }
+    }
+
+    return false;
 }
 
 // Attaches the native unload hook once IL2CPP has resolved the P/Invoke slot.
@@ -2492,6 +2571,9 @@ void ClearOriginals() {
     {
         std::lock_guard lock(g_native_unload_mutex);
         g_native_unload_slot = nullptr;
+        g_native_unload_export_name = nullptr;
+        g_native_unload_resolver = nullptr;
+        g_native_unload_method_info = nullptr;
         g_native_unload_deferred_logged = false;
     }
 }
