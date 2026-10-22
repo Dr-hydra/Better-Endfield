@@ -686,6 +686,63 @@
     },
     {
       "module": "custom_model",
+      "type": "historical_record",
+      "status": "partially_superseded",
+      "game_version": "1.5.3",
+      "platform": [
+        "Windows"
+      ],
+      "legacy_path": null,
+      "path": "docs/custom_model/BEM_ANIMATION_DRIVER_POC_PLAN.md",
+      "title": "BEM 连续动画驱动器原型（PoC）实机实现方案",
+      "evidence": [
+        {
+          "kind": "document",
+          "path": "docs/custom_model/BEM_ANIMATION_DRIVER_POC_PLAN.md",
+          "line": 1,
+          "excerpt": "BEM 连续动画驱动器原型（PoC）实机实现方案"
+        },
+        {
+          "kind": "document",
+          "path": "docs/custom_model/BEM_ANIMATION_DRIVER_POC_PLAN.md",
+          "line": 3,
+          "excerpt": "文档状态：已废弃，仅作历史记录。"
+        },
+        {
+          "kind": "document",
+          "path": "docs/custom_model/BEM_ANIMATION_DRIVER_POC_PLAN.md",
+          "line": 5,
+          "excerpt": "本文描述的是开发期的外置侧车验证形态：侧车 .anim.json、NumPad 热键、以及当时计划的「BEM 1.6 animations」。正式形态是 BEM 1.5 的 dynamic-drivers-v1（见 BEM 格式规范第 13 节）。"
+        }
+      ],
+      "purpose": "侧车式连续动画驱动器的 PoC 实现方案与实测边界；已废弃，正式形态为 BEM 1.5 dynamic-drivers-v1",
+      "status_detail": "正文标注已废弃；正式形态见 BEM 格式规范第 13 节 dynamic-drivers-v1，冲突之处以规范为准",
+      "classification_source": "已替代历史",
+      "dates": [
+        "2026-10-22"
+      ],
+      "game_version_evidence": [
+        {
+          "kind": "user_clarification",
+          "date": "2026-10-05",
+          "excerpt": "用户明确：九月初更新后一直是 1.5.3；此前资料标 pre-1.5.3；1.5.3 内部热更新以资源快照区分。",
+          "config_path": "config/workspace.defaults.json",
+          "config_key": "game.version",
+          "value": "1.5.3"
+        }
+      ],
+      "replacement": "docs/custom_model/BEM_FORMAT_SPEC.md",
+      "ownership": "documentation",
+      "reference_evidence": {
+        "机器消费及生成证据": "范围内未见",
+        "证据定位及代码注释": "范围内未见",
+        "文档导航及正文引用": "docs/custom_model/INDEX.md:25 [导航] 连续动画驱动器 PoC 方案：侧车验证形态的原始记录，已被规范第 13 节取代，仅作历史参考。"
+      },
+      "game_version_note": "按用户明确的九月初后 1.5.3 时间线与当前配置归类；原始来源与验证边界保留，热更新差异由资源快照记录。",
+      "resource_snapshot_evidence": []
+    },
+    {
+      "module": "custom_model",
       "type": "specification",
       "status": "current",
       "game_version": "not_applicable",
