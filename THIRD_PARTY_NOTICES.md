@@ -40,3 +40,13 @@ are listed in `native/modules/camera/eiem/UPSTREAM.md`.
   reading the current squad through `GameInstance.get_player` →
   `GamePlayer.squadManager` → `SquadManager.GetMemberBySlot`, and sharing one
   stage origin between dancers. No Endfield-Poser source code is included.
+
+## miniz
+
+- Source: https://github.com/richgel999/miniz, release 3.1.2 amalgamated pair
+  (`miniz.c` + `miniz.h`), vendored verbatim under
+  `native/shared/third_party/miniz` with its upstream `LICENSE`.
+- License: MIT, per the upstream LICENSE file.
+- Used by the shared package decoder (`bem.cpp`) to read the BEM ZIP container
+  described in format specification section 14. Only the ZIP reader APIs are
+  used; no miniz source is modified.

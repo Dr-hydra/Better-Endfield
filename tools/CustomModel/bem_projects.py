@@ -54,6 +54,18 @@ def pack_project(source, output, package=None, deformations=None):
                 format_version=FORMAT_VERSIONS[bem.package_minor(output)])
 
 
+def _stage_project(manifest, payloads, staging):
+    """Materialise an editable project: one payload file per index plus project.json."""
+    folder = staging / 'payloads'; folder.mkdir()
+    names = []
+    for i, raw in enumerate(payloads):
+        name = f'payloads/{i:04d}.bin'
+        (staging / name).write_bytes(raw); names.append(name)
+    (staging / 'project.json').write_text(
+        json.dumps(dict(manifest=manifest, payload_files=names), ensure_ascii=False, indent=2), encoding='utf-8')
+    return names
+
+
 def unpack(source, output):
     source, output = Path(source), Path(output)
     bem.require(not output.exists(), 'Output directory already exists; choose a new project directory')
@@ -61,16 +73,23 @@ def unpack(source, output):
     with tempfile.TemporaryDirectory(dir=output.parent, prefix='.bem-unpack-') as tmp:
         staging = Path(tmp) / 'project'; staging.mkdir()
         if source.suffix.lower() == '.zip':
-            result = inspect_bundle(source, staging)
-            bem.require(result['packages'], 'ZIP contains no valid BEM packages: ' + json.dumps(result['issues'], ensure_ascii=False))
+            if has_package_manifest(source):
+                package = read_zip_package(source)
+                m, payloads = package['manifest'], package['payloads']
+                # format_version is a container-only hint for readers that do not see a
+                # binary header; the binary form records the same thing in its header.
+                declared = str(m.get('format_version', 'unknown'))
+                m = {key: value for key, value in m.items() if key != 'format_version'}
+                names = _stage_project(m, payloads, staging)
+                result = dict(format='BEM-ZIP-PACKAGE', package=m, project='project.json',
+                              payload_count=len(names), issues=[], conversion_ready=True,
+                              format_version=declared)
+            else:
+                result = inspect_bundle(source, staging)
+                bem.require(result['packages'], 'ZIP contains no valid BEM packages: ' + json.dumps(result['issues'], ensure_ascii=False))
         else:
             m, payloads = validated(source)
-            folder = staging / 'payloads'; folder.mkdir()
-            names = []
-            for i, raw in enumerate(payloads):
-                name = f'payloads/{i:04d}.bin'
-                (staging / name).write_bytes(raw); names.append(name)
-            (staging / 'project.json').write_text(json.dumps(dict(manifest=m, payload_files=names), ensure_ascii=False, indent=2), encoding='utf-8')
+            names = _stage_project(m, payloads, staging)
             from bem_tool import FORMAT_VERSIONS
             result = dict(format='BEM-project', package=m, project='project.json', payload_count=len(names), issues=[],
                           format_version=FORMAT_VERSIONS[bem.package_minor(source)])
@@ -174,3 +193,159 @@ def inspect_bundle(source, destination=None):
 def has_bem_members(path):
     with zipfile.ZipFile(path) as z:
         return any(e.filename.lower().endswith('.bem') and not e.is_dir() for e in z.infolist())
+
+
+ZIP_FIXED_DATE = (1980, 1, 1, 0, 0, 0)
+ZIP_MAX_ENTRIES = 8192
+ZIP_MANIFEST_LIMIT = 4 * 1024**2
+
+
+def _zip_member(archive, name, data, compress=zipfile.ZIP_DEFLATED):
+    """Write one reproducible member: fixed timestamp and fixed file mode."""
+    info = zipfile.ZipInfo(name, date_time=ZIP_FIXED_DATE)
+    info.compress_type = compress
+    info.external_attr = 0o600 << 16
+    archive.writestr(info, data)
+
+
+def _package_layout(archive):
+    """Locate manifest.json in a single model package, tolerating one wrapper folder.
+
+    Returns (prefix, manifest_entry, members) or (None, None, members).
+    """
+    members = {}
+    for entry in archive.infolist():
+        if entry.is_dir():
+            continue
+        rel = PurePosixPath(entry.filename.replace('\\', '/'))
+        bem.require(not rel.is_absolute() and '..' not in rel.parts and ':' not in str(rel),
+                    'Unsafe archive member path')
+        key = str(rel)
+        bem.require(key not in members, 'Duplicate archive member path')
+        members[key] = entry
+    if 'manifest.json' in members:
+        return '', members['manifest.json'], members
+    tops = sorted({PurePosixPath(name).parts[0] for name in members if len(PurePosixPath(name).parts) > 1})
+    wrapped = f'{tops[0]}/manifest.json' if len(tops) == 1 else None
+    if wrapped and wrapped in members:
+        return f'{tops[0]}/', members[wrapped], members
+    return None, None, members
+
+
+def has_package_manifest(path):
+    """True when the archive is a single model package rather than a collection bundle."""
+    with zipfile.ZipFile(path) as archive:
+        prefix, _, _ = _package_layout(archive)
+        return prefix is not None
+
+
+def payload_count(manifest):
+    """Number of payload slots, matching how the native reader sizes its directory."""
+    highest = -1
+
+    def take(ref):
+        nonlocal highest
+        if isinstance(ref, int) and not isinstance(ref, bool):
+            highest = max(highest, ref)
+
+    for mesh in manifest.get('meshes') or []:
+        for stream in mesh.get('streams') or []:
+            if isinstance(stream, dict):
+                take(stream.get('payload'))
+        if isinstance(mesh, dict):
+            take(mesh.get('indices'))
+            for draw in mesh.get('draws') or []:
+                if isinstance(draw, dict):
+                    take(draw.get('indices'))
+    for texture in manifest.get('textures') or []:
+        if isinstance(texture, dict):
+            take(texture.get('payload'))
+    for channel in manifest.get('mesh_deformations') or []:
+        for frame in channel.get('frames') or []:
+            if isinstance(frame, dict):
+                take(frame.get('payload'))
+    for appearance in manifest.get('appearances') or []:
+        if isinstance(appearance, dict):
+            take(appearance.get('preview'))
+    return highest + 1
+
+
+def read_zip_package(source):
+    """Read the single model ZIP package of format specification section 14.
+
+    Manifest payload references are indices, so each payload lives at
+    payloads/<id>.bin; the shorter spellings are accepted for hand-made archives.
+    """
+    with zipfile.ZipFile(source) as archive:
+        entries = archive.infolist()
+        bem.require(len(entries) <= ZIP_MAX_ENTRIES, 'ZIP has too many entries')
+        prefix, manifest_entry, members = _package_layout(archive)
+        bem.require(prefix is not None, 'ZIP package is missing manifest.json')
+        # A manifest at the root wins even when stray .bem members are present, which is
+        # exactly how the runtime resolves the same archive.
+        raw = archive.read(manifest_entry)
+        bem.require(0 < len(raw) <= ZIP_MANIFEST_LIMIT, 'Manifest exceeds 4 MiB')
+        try:
+            manifest = json.loads(raw.decode('utf-8'))
+        except (UnicodeDecodeError, ValueError) as exc:
+            raise ValueError('Manifest is not valid JSON: ' + str(exc)) from exc
+        bem.require(isinstance(manifest, dict) and 'package_id' in manifest and 'target' in manifest,
+                    'ZIP manifest is not a BEM package manifest')
+        payloads, total = [], 0
+        for index in range(payload_count(manifest)):
+            data = None
+            for name in (f'payloads/{index:04d}.bin', f'payloads/{index}.bin', f'{index}.bin'):
+                if prefix + name in members:
+                    data = archive.read(members[prefix + name])
+                    break
+            bem.require(data is not None, 'ZIP package is missing payload %d' % index)
+            total += len(data)
+            bem.require(total <= MAX_PACKAGE, 'ZIP payloads exceed 2 GiB')
+            payloads.append(data)
+    return dict(manifest=manifest, payloads=payloads, prefix=prefix, entries=len(entries))
+
+
+def pack_zip(source, output, preview=None):
+    """Wrap a validated .bem into the single model ZIP package of section 14.
+
+    The manifest is copied unchanged except for a format_version hint, which lets a
+    reader pick the right limits when the container carries no binary header.
+    """
+    from bem_tool import FORMAT_VERSIONS
+    source, output = Path(source), Path(output)
+    bem.require(source.suffix.lower() == '.bem', 'ZIP package input must be a .bem file')
+    bem.require(output.suffix.lower() == '.zip', 'ZIP package filename must end in .zip')
+    bem.require(output.resolve() != source.resolve(), 'Output cannot overwrite the input package')
+    if preview is not None:
+        preview = Path(preview)
+        bem.require(preview.is_file(), 'Preview image not found')
+        bem.require(preview.stat().st_size <= bem.LIMIT, 'Preview image exceeds the payload budget')
+    m, payloads = validated(source)
+    minor = bem.package_minor(source)
+    bem.require(len(payloads) <= 16384, 'Too many payload files')
+    decoded = sum(len(p) for p in payloads)
+    bem.require(decoded <= MAX_PACKAGE, 'Package decoded budget exceeded')
+    manifest = dict(m)
+    manifest.setdefault('format_version', f'1.{minor}')
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    fd, temp = tempfile.mkstemp(dir=output.parent, prefix='.bem-package-', suffix='.zip'); os.close(fd)
+    try:
+        with zipfile.ZipFile(temp, 'w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
+            _zip_member(archive, 'manifest.json', json.dumps(manifest, ensure_ascii=False).encode('utf-8'))
+            if preview is not None:
+                _zip_member(archive, 'preview.png', preview.read_bytes(), zipfile.ZIP_STORED)
+            for index, raw in enumerate(payloads):
+                _zip_member(archive, f'payloads/{index:04d}.bin', raw)
+        bem.require(Path(temp).stat().st_size <= MAX_PACKAGE, 'ZIP package exceeds 2 GiB')
+        os.replace(temp, output)
+    finally:
+        if os.path.exists(temp): os.unlink(temp)
+
+    # Read the written file back: a package that cannot be re-read is not a deliverable.
+    readback = read_zip_package(output)
+    bem.require(readback['manifest']['package_id'] == m['package_id'], 'ZIP package ID changed on rewrite')
+    bem.require(len(readback['payloads']) == len(payloads), 'ZIP package payload count changed on rewrite')
+    return dict(format='BEM-ZIP-PACKAGE', package=m, payload_count=len(payloads),
+                entry_count=readback['entries'], size=output.stat().st_size,
+                format_version=FORMAT_VERSIONS[minor], issues=[], conversion_ready=True)

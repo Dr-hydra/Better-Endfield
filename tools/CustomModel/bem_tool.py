@@ -28,6 +28,12 @@ def inspect_source(path, explicit=None, *, prepared=None):
                     package=m, entries=[], issues=[], conversion_ready=False)
     if path.is_file() and path.suffix.lower() not in ('.zip','.rar','.7z'):
         raise ValueError('ARCHIVE_FORMAT: 源 Mod 支持目录、ZIP、RAR 和 7z。')
+    if path.suffix.lower() == '.zip' and bem_projects.has_package_manifest(path):
+        package = bem_projects.read_zip_package(path)
+        m = package['manifest']
+        return dict(format='BEM-ZIP-PACKAGE', format_version=str(m.get('format_version', '1.0')),
+                    package=m, entries=[], issues=[], conversion_ready=False,
+                    payload_count=len(package['payloads']), wrapper=package['prefix'])
     if path.suffix.lower() == '.zip' and bem_projects.has_bem_members(path):
         return bem_projects.inspect_bundle(path)
     src = Source(path)
@@ -251,7 +257,7 @@ def main(argv=None):
     if len(raw_argv) >= 2 and raw_argv[0] == 'workspace' and raw_argv[1] == 'init':
         raw_argv = ['init-workspace', *raw_argv[2:]]
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command',choices=['inspect','convert','validate','pack','unpack','bundle','new-project','build',
+    parser.add_argument('command',choices=['inspect','convert','validate','pack','pack-zip','unpack','bundle','new-project','build',
                                            'init-workspace','workspace-init','target-profile'])
     parser.add_argument('--version', action='version', version='BEM Tools '+TOOL_VERSION+' / BEM 1.0+1.1+1.2+1.3+1.4+1.5')
     parser.add_argument('source',type=Path)
@@ -274,6 +280,7 @@ def main(argv=None):
     parser.add_argument('--name')
     parser.add_argument('--author')
     parser.add_argument('--package-version')
+    parser.add_argument('--preview', type=Path, help='Optional preview.png embedded in a pack-zip package')
     args=parser.parse_args(raw_argv)
     result=dict(tool_version=TOOL_VERSION,format_version='1.0/1.1/1.2/1.3/1.4/1.5',command=args.command,source=str(args.source),success=False,conversion_ready=False,render_verified=False,issues=[])
     report_path = args.report
@@ -331,10 +338,12 @@ def main(argv=None):
             result.update(package=m,size=args.source.stat().st_size,format_version=FORMAT_VERSIONS[minor])
             if 'option_groups' in m:
                 result['selection_space']=selection_space
-        elif args.command in ('pack','unpack','bundle'):
+        elif args.command in ('pack','unpack','bundle','pack-zip'):
             bem.require(args.output, 'OUTPUT: 缺少输出路径')
             if args.command=='pack': result.update(bem_projects.pack_project(args.source,args.output,deformations=args.deformations))
             elif args.command=='unpack': result.update(bem_projects.unpack(args.source,args.output))
+            elif args.command=='pack-zip':
+                result.update(bem_projects.pack_zip(args.source,args.output,preview=args.preview))
             else: result.update(bem_projects.bundle([args.source,*args.additional],args.output))
         else:
             bem.require(args.output,'OUTPUT: 请选择输出文件')

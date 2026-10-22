@@ -493,26 +493,27 @@ BEM 1.5 扩展支持 dynamic-drivers-v1 能力，允许模型包在清单内直�
 - 识别机制：引擎不依赖文件扩展名（.bem 或 .zip 均可），通过文件前 4 字节魔数 0x50 0x4B 0x03 0x04（PK\x03\x04）自动识别 ZIP 容器并切换为内存级流式直读，零临时落盘。
 
 ### 2. 标准包内文件布局
-ZIP 容器根目录必须包含 manifest.json，资产文件采用清晰透明的目录存放：
+ZIP 容器根目录必须包含 manifest.json。清单里的 `payload` 是整数编号，所以载荷按编号命名，文件名由清单唯一决定，不需要任何映射表：
 ```text
 模型包.zip (或 .bem)
 ├── manifest.json              # [必需] 核心清单与内化 drivers
 ├── preview.png                # [可选] 预览缩略图
-├── streams/                   # 顶点流与索引数据
-│   ├── mesh0_stream0.bin
-│   ├── mesh0_stream1.bin
-│   ├── mesh0_stream2.bin
-│   └── mesh0_indices.bin
-└── textures/                  # 贴图资产（DDS / PNG）
-    ├── T_cloth_01_D.dds
-    └── T_cloth_01_N.dds
+└── payloads/                  # [必需] 按清单中的 payload 编号存放
+    ├── 0000.bin               # payload 0：顶点流、索引、贴图、形变帧都在这里
+    ├── 0001.bin               # payload 1
+    └── 0002.bin
 ```
+
+- 文件编号即清单中引用的 `payload` / `indices` / `preview` 整数，从 0 开始连续；缺号会在加载时报 `ZIP package is missing payload N`。
+- 载荷内容就是 BEM 二进制包目录表里那段**未压缩**的字节，容器自身负责压缩。条目可用 STORED 或 DEFLATE，读取端自动解压；加密条目会被拒绝。
+- 也可以用 `0000.bin`（无前导零）或直接放在根目录，用于手工调试包，但正式发布建议用四位补零形式。
+- 可选在清单里写 `"format_version": "1.5"`：ZIP 容器没有二进制头，读取端缺省要靠字段推断版本，写明可避免推断误差。该键属于容器提示，写回二进制包时会被丢弃。
 
 ### 3. ZIP 单模型包 vs BEM 合集包的自适应无歧义判定
 引擎与创作者导入工具采用统一的三步无歧义判定算法：
 1. 单模型包（BEM Archive Package）：
    - ZIP 根目录（或剥离单一顶层包裹目录后）存在合法的 manifest.json，且内部包含 package_id 与 target；
-   - 包内不含 .bem 文件；
+   - 包内通常不含 .bem 文件；若两者同时存在，以 manifest.json 为准，运行时会按单模型包处理而不是合集包；
    - 处理策略：直接作为独立模型包挂载与渲染。
 2. 合集分发包（BEM Collection Bundle）：
    - ZIP 内包含一个或多个 .bem 文件；

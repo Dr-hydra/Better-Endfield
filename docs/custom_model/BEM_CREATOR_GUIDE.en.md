@@ -417,3 +417,55 @@ Add `dynamic-drivers-v1` to `required_capabilities`, then write a root-level `dr
 - **Only the Windows client runs drivers.** Android parses them but produces no motion.
 - **Overlay controls do not exist yet.** Starting and stopping currently means editing `drivers=<id>:play` in `runtime.ini`, so treat this as a "starts at rest, can be enabled by hand" feature for now.
 - The legacy sidecar `.anim.json` is a development-only form, read by the runtime only as a fallback when the manifest has no `drivers`. Do not ship sidecars.
+
+## Publishing with a ZIP container (no packaging tool required)
+
+BEM accepts standard ZIP containers. Both clients identify the format by the leading magic bytes rather than the extension, so a creator can publish with the operating system's own compressor and the runtime will still load it.
+
+### The manual route
+
+1. Start from an ordinary `.bem` binary package.
+2. Unpack it into an editable payload folder:
+
+```bash
+python tools/CustomModel/bem_tool.py unpack model.bem -o project/
+```
+
+This produces `project/project.json` plus `project/payloads/0000.bin`, `0001.bin`, and so on.
+
+3. Rename `project.json` to `manifest.json`, keep `payloads/` next to it, and zip the folder:
+
+```text
+model.zip
+├── manifest.json
+└── payloads/
+    ├── 0000.bin
+    └── 0001.bin
+```
+
+4. Optionally add `preview.png` as a thumbnail.
+
+### The one-command route
+
+```bash
+python tools/CustomModel/bem_tool.py pack-zip model.bem -o model.zip
+```
+
+`pack-zip` fully validates the source package, writes the layout above, and then reads its own output back to confirm it is loadable. Timestamps are fixed, so the same input produces a byte-identical archive that is easy to diff and commit.
+
+The reverse direction works too:
+
+```bash
+python tools/CustomModel/bem_tool.py unpack model.zip -o project/            # ZIP to editable project
+python tools/CustomModel/bem_tool.py pack project/project.json -o model.bem  # project to binary package
+```
+
+That round trip is **byte-for-byte equivalent**: `.bem → ZIP → project → .bem` reproduces the original binary package exactly.
+
+### Rules and limits
+
+- The number under `payloads/` is the manifest's `payload` integer and must run contiguously from 0. A gap reports `ZIP package is missing payload N`.
+- Entries may be stored or deflated and are decompressed on read; encrypted entries are rejected.
+- One wrapper folder (for example zipping the whole `MyModel/` directory) is unfolded automatically, but only **one** level; deeper nesting fails detection.
+- When `manifest.json` and a `.bem` sit in the same archive, the manifest wins and the archive is treated as a single model package.
+- To state the version explicitly, add `"format_version": "1.5"`. A ZIP has no binary header, so without it the reader infers the version from the fields present. The key is dropped when writing a binary package.

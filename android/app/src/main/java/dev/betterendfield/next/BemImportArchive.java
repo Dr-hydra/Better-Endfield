@@ -1,5 +1,8 @@
 package dev.betterendfield.next;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -87,6 +90,26 @@ final class BemImportArchive {
             Progress progress, long totalLimit, int packageLimit) throws IOException {
         if (totalLimit < 8 || packageLimit < 1) throw new IllegalArgumentException("Invalid ZIP limits");
         checkpoint.check(); int expectedEntries = checkDirectory(archive);
+        // A single model package has no .bem member at all; detect it before the bundle scan
+        // so one archive shape never has to be guessed from its extension.
+        try (ZipFile probe = openZip(archive)) {
+            Map<String, ZipEntry> members = new LinkedHashMap<>();
+            Enumeration<? extends ZipEntry> probeEntries = probe.entries();
+            int seen = 0;
+            while (probeEntries.hasMoreElements()) {
+                ZipEntry entry = probeEntries.nextElement();
+                if (++seen > MAX_ENTRIES) throw new IOException("ZIP 文件数超过 4096。");
+                if (entry.isDirectory()) continue;
+                members.put(checkedName(entry.getName()), entry);
+            }
+            String[] found = locateManifest(members);
+            if (found[0] != null) {
+                Bundle single = new Bundle(true);
+                single.packages.add(singlePackage(archive, stage, probe, members, found[0], found[1],
+                        checkpoint, progress, totalLimit));
+                return single;
+            }
+        }
         Bundle bundle = new Bundle(true); long[] consumed = {0}; int entries = 0, packages = 0;
         Set<String> names = new HashSet<>();
         try (ZipFile zip = openZip(archive)) {
@@ -128,6 +151,143 @@ final class BemImportArchive {
         if (packages == 0) throw new IOException("ZIP 中没有找到 BEM 文件。");
         return bundle;
     }
+    /** Root manifest.json, or the manifest inside the single wrapper folder the format allows. */
+    private static String[] locateManifest(Map<String, ZipEntry> members) {
+        if (members.containsKey("manifest.json")) return new String[] {"manifest.json", ""};
+        Set<String> tops = new HashSet<>();
+        for (String name : members.keySet()) {
+            int slash = name.indexOf('/');
+            tops.add(slash < 0 ? "" : name.substring(0, slash));
+        }
+        if (tops.size() == 1) {
+            String top = tops.iterator().next();
+            if (!top.isEmpty() && members.containsKey(top + "/manifest.json"))
+                return new String[] {top + "/manifest.json", top + "/"};
+        }
+        return new String[] {null, ""};
+    }
+
+    /**
+     * Validate a single model package and stage the container itself.
+     *
+     * The runtime reads ZIP containers natively, so the validated archive is kept as the
+     * installed artifact; only the texture conversion step rewrites it into a binary package.
+     */
+    private static Item singlePackage(File archive, File stage, ZipFile zip, Map<String, ZipEntry> members,
+            String manifestName, String prefix, BemImportStream.Checkpoint checkpoint,
+            Progress progress, long totalLimit) throws IOException {
+        progress.update("正在校验 ZIP 单模型包…");
+        JSONObject manifest = readManifest(zip, members.get(manifestName), checkpoint);
+        if (!manifest.has("package_id") || !manifest.has("target"))
+            throw new IOException("ZIP 中的 manifest.json 不是 BEM 模型清单。");
+        int count = payloadCount(manifest);
+        long consumed = 0;
+        for (int id = 0; id < count; id++) {
+            checkpoint.check();
+            ZipEntry entry = payload(members, prefix, id);
+            if (entry == null) throw new IOException("ZIP 单模型包缺少 payload " + id + "。");
+            if (entry.getMethod() != ZipEntry.STORED && entry.getMethod() != ZipEntry.DEFLATED)
+                throw new IOException("不支持此 ZIP 条目的压缩方式，请使用存储或 Deflate。");
+            if (entry.getSize() < 0 || entry.getSize() > BemImportStream.MAX_BYTES)
+                throw new IOException("ZIP 内 payload 超过 2 GiB 大小上限。");
+            if (entry.getSize() > totalLimit - consumed) throw new IOException("ZIP 内 payload 的总大小超过导入上限。");
+            consumed += entry.getSize();
+            CRC32 crc = new CRC32(); long bytes;
+            // ZipFile streams do not promise a CRC check, so every payload is read in full.
+            try (InputStream input = new CheckedInputStream(zip.getInputStream(entry), crc)) {
+                bytes = drain(input, checkpoint);
+            }
+            if (bytes != entry.getSize() || crc.getValue() != entry.getCrc())
+                throw new IOException("ZIP 条目长度或 CRC 校验失败。");
+        }
+        Item item = item(stage, manifest.optString("package_id", "BEM"));
+        progress.update("正在写入：" + item.name);
+        try (InputStream input = new FileInputStream(archive);
+                FileOutputStream output = new FileOutputStream(item.file)) {
+            byte[] buffer = new byte[65536]; int read;
+            while ((read = input.read(buffer)) != -1) {
+                checkpoint.check(); output.write(buffer, 0, read);
+            }
+            output.getFD().sync();
+        }
+        return item;
+    }
+
+    private static long drain(InputStream input, BemImportStream.Checkpoint checkpoint) throws IOException {
+        byte[] buffer = new byte[65536]; long total = 0; int read;
+        while ((read = input.read(buffer)) != -1) {
+            checkpoint.check(); total += read;
+            if (total > BemImportStream.MAX_BYTES) throw new IOException("ZIP 条目超过大小上限。");
+        }
+        return total;
+    }
+
+    private static ZipEntry payload(Map<String, ZipEntry> members, String prefix, int id) {
+        ZipEntry entry = members.get(prefix + "payloads/" + String.format(Locale.ROOT, "%04d", id) + ".bin");
+        if (entry == null) entry = members.get(prefix + "payloads/" + id + ".bin");
+        if (entry == null) entry = members.get(prefix + id + ".bin");
+        return entry;
+    }
+
+    private static JSONObject readManifest(ZipFile zip, ZipEntry entry,
+            BemImportStream.Checkpoint checkpoint) throws IOException {
+        final long limit = 4L * 1024 * 1024;
+        long declared = entry.getSize();
+        if (declared > limit) throw new IOException("manifest.json 超过 4 MiB 上限。");
+        try (InputStream input = zip.getInputStream(entry);
+                ByteArrayOutputStream bytes = new ByteArrayOutputStream(declared > 0 ? (int) declared : 8192)) {
+            byte[] buffer = new byte[8192]; int read; long total = 0;
+            while ((read = input.read(buffer)) != -1) {
+                checkpoint.check(); total += read;
+                if (total > limit) throw new IOException("manifest.json 超过 4 MiB 上限。");
+                bytes.write(buffer, 0, read);
+            }
+            return new JSONObject(new String(bytes.toByteArray(), StandardCharsets.UTF_8));
+        } catch (org.json.JSONException error) {
+            throw new IOException("manifest.json 不是合法 JSON。", error);
+        }
+    }
+
+    /** Payload slots referenced by the manifest, matching how the native reader sizes its directory. */
+    private static int payloadCount(JSONObject manifest) {
+        int highest = -1;
+        JSONArray meshes = manifest.optJSONArray("meshes");
+        if (meshes != null) for (int i = 0; i < meshes.length(); i++) {
+            JSONObject mesh = meshes.optJSONObject(i);
+            if (mesh == null) continue;
+            JSONArray streams = mesh.optJSONArray("streams");
+            if (streams != null) for (int s = 0; s < streams.length(); s++)
+                highest = Math.max(highest, index(streams.optJSONObject(s), "payload"));
+            highest = Math.max(highest, index(mesh, "indices"));
+            JSONArray draws = mesh.optJSONArray("draws");
+            if (draws != null) for (int d = 0; d < draws.length(); d++)
+                highest = Math.max(highest, index(draws.optJSONObject(d), "indices"));
+        }
+        highest = Math.max(highest, highestOf(manifest.optJSONArray("textures"), "payload"));
+        JSONArray channels = manifest.optJSONArray("mesh_deformations");
+        if (channels != null) for (int c = 0; c < channels.length(); c++) {
+            JSONObject channel = channels.optJSONObject(c);
+            if (channel == null) continue;
+            JSONArray frames = channel.optJSONArray("frames");
+            if (frames != null) for (int f = 0; f < frames.length(); f++)
+                highest = Math.max(highest, index(frames.optJSONObject(f), "payload"));
+        }
+        highest = Math.max(highest, highestOf(manifest.optJSONArray("appearances"), "preview"));
+        return highest + 1;
+    }
+
+    private static int highestOf(JSONArray array, String key) {
+        int highest = -1;
+        if (array != null) for (int i = 0; i < array.length(); i++)
+            highest = Math.max(highest, index(array.optJSONObject(i), key));
+        return highest;
+    }
+
+    private static int index(JSONObject object, String key) {
+        if (object == null || !object.has(key) || object.isNull(key)) return -1;
+        return object.optInt(key, -1);
+    }
+
     private static InputStream budget(InputStream input, long[] consumed, long limit) {
         return new FilterInputStream(input) {
             private void charge(int count) throws IOException {

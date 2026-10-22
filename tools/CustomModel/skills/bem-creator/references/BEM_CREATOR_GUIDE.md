@@ -420,3 +420,55 @@ BetterEndfieldNext.BemConverter.exe --version
 - **只有 Windows 客户端会跑驱动器**，Android 端目前解析但不产生动效。
 - **悬浮窗控件还没有做**。启停目前只能改 `runtime.ini` 的 `drivers=控制器ID:play`，所以现阶段把它当"默认静止、可手动开启"的功能来设计。
 - 老的侧车 `.anim.json` 是开发期验证形态，运行时只在清单没有 `drivers` 时兜底读取。正式发布不要带侧车。
+
+## 用 ZIP 容器发布模型（无需专用封包工具）
+
+BEM 支持标准 ZIP 容器，双端按文件头魔数识别，不看扩展名。所以创作者可以直接用系统压缩软件打包，不经过任何工具也能被运行时加载。
+
+### 最快的手工做法
+
+1. 先得到一份普通的 `.bem` 二进制包；
+2. 用本工具链把它展开成可编辑的载荷目录：
+
+```bash
+python tools/CustomModel/bem_tool.py unpack model.bem -o project/
+```
+
+这会生成 `project/project.json` 和 `project/payloads/0000.bin`、`0001.bin`……
+
+3. 把 `project.json` 改名为 `manifest.json`，与 `payloads/` 放同一目录，整体压成 ZIP：
+
+```text
+model.zip
+├── manifest.json
+└── payloads/
+    ├── 0000.bin
+    └── 0001.bin
+```
+
+4. 可选加一张 `preview.png` 作为预览图。
+
+### 用工具一条命令完成
+
+```bash
+python tools/CustomModel/bem_tool.py pack-zip model.bem -o model.zip
+```
+
+`pack-zip` 会先完整校验源包，再按上面的布局写出 ZIP，最后把写出的文件重新读一遍确认可读。它使用固定时间戳，同样的输入产生逐字节相同的输出，便于比对和入库。
+
+反向操作同样支持：
+
+```bash
+python tools/CustomModel/bem_tool.py unpack model.zip -o project/   # ZIP → 可编辑工程
+python tools/CustomModel/bem_tool.py pack project/project.json -o model.bem   # 工程 → 二进制包
+```
+
+这条往返路径是**字节级等价**的：`.bem → ZIP → 工程 → .bem` 得到与原文件完全相同的二进制包。
+
+### 约定与限制
+
+- `payloads/` 下的编号就是清单里的 `payload` 整数，必须从 0 开始连续。缺号会报 `ZIP package is missing payload N`。
+- 条目可以是存储或 Deflate，读取端自动解压；加密条目会被拒绝。
+- 包里可以带一层顶层目录（例如整个 `MyModel/` 文件夹压进去），运行时会自动展开；但**只能有一层**，多一层就会判定失败。
+- 同一目录下同时存在 `manifest.json` 和 `.bem` 时，以 `manifest.json` 为准，按单模型包处理。
+- 想在清单里明确版本，可以写 `"format_version": "1.5"`。ZIP 没有二进制头，不写就只能靠字段推断版本；写回二进制包时这个键会被丢弃。

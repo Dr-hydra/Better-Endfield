@@ -199,7 +199,9 @@ struct Container {
     }
     void Open(uint64_t size) {
         Check(size >= 4, "Invalid BEM file size");
-        auto probe = read(0, 8);
+        // Read the whole header, not just the 8-byte signature: the version check below
+        // inspects every field, and a short probe would copy uninitialised heap bytes.
+        auto probe = read(0, std::min<uint64_t>(size, sizeof(Header)));
         Check(probe.size() >= 4, "Cannot read package signature");
 
         if (probe.size() >= 8 && std::memcmp(probe.data(), "BEM\0PKG\0", 8) == 0) {
@@ -286,21 +288,41 @@ struct Container {
 
             manifest = J::parse(manifest_str);
 
-            minor = 1;
+            // A ZIP container carries no binary header, so the minor version must come from
+            // the manifest: an explicit format_version wins, otherwise the presence of
+            // version-specific fields decides, and declared capabilities can only raise it.
+            // The default used to be 1, which rejected every BEM 1.0 package because 1.x
+            // manifests are then required to carry option_groups.
+            minor = 0;
             if (manifest.contains("format_version") && manifest["format_version"].is_string()) {
                 std::string fv = manifest["format_version"].get<std::string>();
                 if (fv.starts_with("1.")) {
                     try { minor = static_cast<uint16_t>(std::stoi(fv.substr(2))); } catch (...) {}
                 }
+            } else {
+                if (manifest.contains("option_groups")) minor = std::max<uint16_t>(minor, 1);
+                if (manifest.contains("texture_slots")) minor = std::max<uint16_t>(minor, 2);
+                if (manifest.contains("parameters") || manifest.contains("mesh_deformations"))
+                    minor = std::max<uint16_t>(minor, 3);
+                if (manifest.contains("resources")) minor = std::max<uint16_t>(minor, 4);
+                if (manifest.contains("root_offset") || manifest.contains("drivers"))
+                    minor = std::max<uint16_t>(minor, 5);
             }
             if (manifest.contains("required_capabilities") && manifest["required_capabilities"].is_array()) {
                 for (const auto& cap : manifest["required_capabilities"]) {
+                    // Both the documented capability names and the early prototype spellings
+                    // are honoured here; Metadata() keeps validating against the documented set.
                     if (cap == "material-overrides-v1" || cap == "root-offset-v1" || cap == "dynamic-drivers-v1")
                         minor = std::max<uint16_t>(minor, 5);
-                    else if (cap == "multi-resource-v1" || cap == "static-mesh-v1")
+                    else if (cap == "multi-resource-targets" || cap == "static-meshes" ||
+                             cap == "multi-resource-v1" || cap == "static-mesh-v1")
                         minor = std::max<uint16_t>(minor, 4);
                     else if (cap == "body-parameters" || cap == "mesh-position-deltas")
                         minor = std::max<uint16_t>(minor, 3);
+                    else if (cap == "texture-slots" || cap == "resource-bone-aliases")
+                        minor = std::max<uint16_t>(minor, 2);
+                    else if (cap == "composable-options" || cap == "keep-material-textures")
+                        minor = std::max<uint16_t>(minor, 1);
                 }
             }
             limits = LimitsFor(minor);
@@ -403,7 +425,7 @@ struct Container {
         if(minor>=2) caps.insert({"texture-slots","resource-bone-aliases"});
         if(minor>=3) caps.insert({"body-parameters","mesh-position-deltas"});
         if(minor>=4) caps.insert({"multi-resource-targets","static-meshes"});
-        if(minor>=5) caps.insert({"material-overrides-v1", "root-offset-v1"});
+        if(minor>=5) caps.insert({"material-overrides-v1", "root-offset-v1", "dynamic-drivers-v1"});
         bool composable=false,fixed=false,keepTextureCapability=false,slotCapability=false,aliasCapability=false;
         std::set<std::string> declared;
         for(const auto& c:m.at("required_capabilities")) {auto cap=S(c);Validate(caps.contains(cap),"Unsupported required capability");
@@ -634,6 +656,22 @@ struct Container {
     std::map<uint32_t,std::vector<uint8_t>> cache;
     std::map<uint32_t,size_t> payloadUses;
     uint64_t cacheBytes=0;
+    // Stored bytes of one payload, container-agnostic. In a ZIP container the directory
+    // offset field holds the entry index, so a raw file read would return the wrong bytes;
+    // rewriting a package therefore has to go through here, not through read().
+    std::vector<uint8_t> Stored(uint32_t id) {
+        Check(id<directory.size(),"Missing payload");
+        const auto& e=directory[id];
+        if(!is_zip) return read(e.offset,static_cast<size_t>(e.stored));
+        int zip_idx=(id<zip_payload_file_indices.size())?zip_payload_file_indices[id]:-1;
+        Check(zip_idx>=0,"ZIP payload entry missing");
+        // The ZIP directory records compressed and decoded extents; a rewritten package
+        // stores payloads raw, so the buffer must be sized by the decoded extent.
+        std::vector<uint8_t> bytes(static_cast<size_t>(e.decoded));
+        Check(mz_zip_reader_extract_to_mem(&zip,zip_idx,bytes.data(),bytes.size(),0)!=0,
+            "Failed to decompress ZIP payload entry");
+        return bytes;
+    }
     const std::vector<uint8_t>& Payload(const J& reference,uint64_t expected) {
         auto id=U(reference); Check(id<directory.size(),"Missing payload"); const auto& e=directory[id];
         Check(e.decoded==expected,"Payload decoded size differs from resource description");
@@ -1303,10 +1341,23 @@ bool RewriteBemTextures(const std::filesystem::path& input,const std::filesystem
         auto copy=[&](BemJson& ref) {
             auto old=U(ref); auto it=copied.find(old);
             if(it==copied.end()) { checkpoint(); const auto& e=c.directory.at(old);
-                it=copied.emplace(old,append(e.codec,e.decoded,c.read(e.offset,static_cast<size_t>(e.stored)))).first; }
+                auto bytes=c.Stored(old); auto codec=e.codec;
+                // ZIP payloads are stored raw, so an installed package would balloon.
+                // Compress them here to keep the rewritten package at normal size.
+                if(!codec && !bytes.empty()) {
+                    std::vector<uint8_t> packed(ZSTD_compressBound(bytes.size()));
+                    auto written=ZSTD_compress(packed.data(),packed.size(),bytes.data(),bytes.size(),9);
+                    if(!ZSTD_isError(written) && written<bytes.size()) {
+                        packed.resize(written); bytes.swap(packed); codec=1;
+                    }
+                }
+                it=copied.emplace(old,append(codec,e.decoded,bytes)).first; }
             ref=it->second;
         };
         auto manifest=c.manifest;
+        // A ZIP container has no binary header, so a packer may record the version in the
+        // manifest instead. The rewritten binary carries it in the header, so drop the hint.
+        if(c.is_zip) manifest.erase("format_version");
         for(auto& mesh:manifest["meshes"]) {
             for(auto& stream:mesh["streams"]) copy(stream["payload"]);
             if(c.minor) for(auto& draw:mesh["draws"]) copy(draw["indices"]);
@@ -1362,7 +1413,10 @@ bool RewriteBemTextures(const std::filesystem::path& input,const std::filesystem
         while(payloads) {checkpoint();payloads.read(buffer.data(),buffer.size());out.write(buffer.data(),payloads.gcount());}
         Check(payloads.eof(),"Staging read failed"); out.close(); Check(bool(out),"Installed package flush failed");
         for(const auto& appearance:validationSelections) {checkpoint();BemPocData parsed;std::string failure;
-            Check(LoadBem(output,parsed,failure,appearance),"Installed validation: "+failure);}
+            // Evaluate the load before building the message: argument evaluation order is
+            // unspecified, so inlining it would report an empty failure string.
+            const bool loaded=LoadBem(output,parsed,failure,appearance);
+            Check(loaded,"Installed validation: "+failure);}
         BemJson summary={{"package_id",c.info.package_id},{"character_id",c.info.character_id},{"name",c.info.name},
             {"target_kind",c.info.target_kind},{"target_id",c.info.target_id},{"resource_keys",c.info.resource_keys},
             {"textures",changes},{"bytes",offset},{"revision",1},{"bem_minor",c.minor}};

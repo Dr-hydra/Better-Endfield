@@ -496,19 +496,23 @@ BEM natively supports standard PKZip / Zip64 containers across all versions. Mod
 - The engine auto-detects archive format via header magic: 0x42 0x45 0x4D 0x00 (BEM PKG) selects binary stream decoding; 0x50 0x4B 0x03 0x04 (PKZip) activates in-memory zero-copy ZIP decompression.
 
 ### 2. Standard Archive Layout
+The root must contain manifest.json. Manifest `payload` references are integers, so payloads are named by number and the file name follows from the manifest alone:
 ```text
 model.zip (or .bem)
 ├── manifest.json              # [Required] Core manifest with drivers
 ├── preview.png                # [Optional] Preview thumbnail
-├── streams/                   # Vertex and index buffers
-│   ├── mesh0_stream0.bin
-│   └── mesh0_indices.bin
-└── textures/                  # Texture assets (DDS / PNG)
-    ├── T_cloth_01_D.dds
-    └── T_cloth_01_N.dds
+└── payloads/                  # [Required] Keyed by manifest payload id
+    ├── 0000.bin               # payload 0: vertex streams, indices, textures, morph frames
+    ├── 0001.bin               # payload 1
+    └── 0002.bin
 ```
 
+- The file number is the `payload` / `indices` / `preview` integer the manifest references, contiguous from 0. A gap fails the load with `ZIP package is missing payload N`.
+- Each payload holds the same **uncompressed** bytes as one entry of the binary package directory; the container does the compressing. Entries may be STORED or DEFLATE and are decompressed on read; encrypted entries are rejected.
+- `0000.bin` (no padding) or an entry at the root also works for debugging by hand, but published packages should use the four-digit form.
+- A manifest may carry `"format_version": "1.5"`. A ZIP container has no binary header, so readers otherwise infer the version from the fields present; declaring it removes the guesswork. It is a container hint and is dropped when writing a binary package.
+
 ### 3. Disambiguation: Collection Bundle vs Single Model Package
-1. Single Model Archive (Package): Root (or single top-level directory) contains valid manifest.json and no .bem files. Loaded directly as a standalone model.
+1. Single Model Archive (Package): Root (or single top-level directory) contains valid manifest.json. Such an archive normally has no .bem members; when both are present the manifest wins and the archive is treated as a single package, not a bundle.
 2. Collection Bundle: Contains one or more .bem archives and no root model manifest.json. Dispatched to the bundle staging extractor.
 3. Single Top-Level Folder Tolerance: Archives wrapped in a single root folder containing manifest.json are automatically unfolded to ensure seamless creator workflow.
