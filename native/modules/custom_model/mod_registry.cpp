@@ -109,7 +109,8 @@ bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,Mod
             if(!enabled) continue;
             auto file=get("package");
             auto path=std::filesystem::path(std::u8string_view(reinterpret_cast<const char8_t*>(file.data()),file.size()));
-            if(file.empty()||path.extension()!=".bem") {parsed.diagnostics.push_back("Refused non-BEMv1 package: "+name);continue;}
+            auto ext = path.extension();
+            if(file.empty()||(ext!=".bem"&&ext!=".zip"&&ext!=".BEM"&&ext!=".ZIP")) {parsed.diagnostics.push_back("Refused non-BEMv1 package: "+name);continue;}
             if(path.is_relative()) path=root/path;
             BemPackageInfo info; std::string why;
             if(!CachedPackageInfo(path,info,why,parsed.skip_validation)) {parsed.diagnostics.push_back("Package refused: "+name+": "+why);continue;}
@@ -119,6 +120,7 @@ bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,Mod
                 parsed.diagnostics.push_back("Appearance removed; using package default: "+name);appearance=info.default_appearance;
             }
             std::string parameters;
+            std::string drivers = get("drivers");
             if(!ResolveBemParameters(info,get("parameters"),parameters,why)) {
                 parsed.diagnostics.push_back("Parameters removed or invalid; using package defaults: "+name+": "+why);
                 parameters=info.default_parameters;
@@ -181,7 +183,7 @@ bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,Mod
                     own->resource_id.c_str(),own->asset_path.c_str(),resource?resource->lod:0,resource!=nullptr};
                 const auto resourceKey=resource?key+"\nresource:"+resource->id:key;
                 parsed.enabled.push_back({&own->adapter,canonical,appearance,parsed.skip_validation,
-                    parsed.loading_optimization,resourceKey,parameters,own->resource_id,info.package_id});
+                    parsed.loading_optimization,resourceKey,parameters,own->resource_id,info.package_id,drivers});
                 parsed.owned_adapters.push_back(std::move(own));
             }
         }

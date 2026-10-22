@@ -22,6 +22,7 @@
 #include <Windows.h>
 #include "model_overlay_host.h"
 #include "runtime_ini_win32.h"
+#include "animation_driver.h"
 #else
 #include "platform_compat.h"
 #endif
@@ -54,8 +55,27 @@ void WatchModelCloneSource(void* asset);
 std::atomic<DWORD> g_pump_thread{0};
 #if defined(_WIN32)
 ModelOverlayHost g_model_overlay;
+AnimationDriverHost g_animation_driver;
+void EnsureAnimationDriverLoaded();
+
+struct DynamicShapeChannel {
+    std::string name;
+    uint32_t vertex_start = 0;
+    uint32_t vertex_count = 0;
+    float dx = 0.0f, dy = 0.0f, dz = 0.0f;
+    std::vector<uint8_t> base_positions;
+};
+struct DynamicMeshRecord {
+    int32_t component_id = -1;
+    std::vector<DynamicShapeChannel> channels;
+};
+std::unordered_map<int32_t, DynamicMeshRecord> g_dynamic_meshes;
 #endif
-BE_ResolvedClassV1 g_skinned_renderer_class{},g_mesh_class{},g_texture2d_class{},g_material_class{};
+BE_ResolvedClassV1 g_skinned_renderer_class{},g_mesh_class{},g_texture2d_class{},g_material_class{},g_vector3_class{};
+using ArrayNewFn = void* (*)(void* elementTypeInfo, uintptr_t length);
+using ArrayHeaderSizeFn = int32_t (*)();
+ArrayNewFn g_il2cpp_array_new = nullptr;
+ArrayHeaderSizeFn g_il2cpp_array_header_size = nullptr;
 BE_ResolvedClassV1 g_renderer_class{},g_static_renderer_class{},g_mesh_filter_class{};
 BE_ResolvedClassV1 g_game_object_class{};
 using ObjectClassFn=void*(*)(void*);
@@ -258,6 +278,24 @@ MethodContract g_methods[]{
     {"skinned.set_shared_mesh",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "SkinnedMeshRenderer",
             "set_sharedMesh", "UnityEngine.Mesh", "System.Void", 1}, true},
+    {"mesh.add_blend_shape_frame",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh",
+            "AddBlendShapeFrame", nullptr, "System.Void", 5}, false},
+    {"mesh.get_blend_shape_index",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh",
+            "GetBlendShapeIndex", nullptr, "System.Int32", 1}, false},
+    {"mesh.get_blend_shape_count",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh",
+            "get_blendShapeCount", nullptr, "System.Int32", 0}, false},
+    {"mesh.get_blend_shape_name",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh",
+            "GetBlendShapeName", nullptr, "System.String", 1}, false},
+    {"skinned.set_blend_shape_weight",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "SkinnedMeshRenderer",
+            "SetBlendShapeWeight", nullptr, "System.Void", 2}, false},
+    {"skinned.get_blend_shape_weight",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "SkinnedMeshRenderer",
+            "GetBlendShapeWeight", nullptr, "System.Single", 1}, false},
     {"skinned.get_bones",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "SkinnedMeshRenderer",
             "get_bones", nullptr, "UnityEngine.Transform[]", 0}, true},
@@ -941,6 +979,23 @@ bool SafeSetVertexBufferData(
     }
 }
 
+bool SafeUpdateSubVertexBuffer(
+    void* mesh, int32_t stream, const void* data,
+    int32_t byte_offset, int32_t byte_count) {
+    if (!g_engine.set_vertex_buffer_data || !mesh || !data || byte_count <= 0) return false;
+    __try {
+        g_engine.set_vertex_buffer_data(
+            mesh, stream, data, 0, byte_offset, byte_count, 1, kMeshUpdateDefault);
+        if (g_engine.upload_mesh_data) {
+            g_engine.upload_mesh_data(mesh, false);
+        }
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+}
+
 bool SafeSetIndexBufferParams(
     void* mesh, int32_t index_count, int32_t index_format) {
     __try {
@@ -1497,6 +1552,38 @@ bool BuildMeshFromComponent(
         }
     }
 
+#if defined(_WIN32)
+    EnsureAnimationDriverLoaded();
+    const auto sidecar_shapes = g_animation_driver.GetShapesForComponent(info.component_id);
+    if (!sidecar_shapes.empty() && !component.streams.empty() && !component.streams[0].empty()) {
+        int32_t mesh_id = 0;
+        if (InvokeValue(Contract("object.instance_id"), mesh, nullptr, mesh_id) && mesh_id != 0) {
+            DynamicMeshRecord rec{};
+            rec.component_id = info.component_id;
+            const auto& stream0 = component.streams[0];
+            for (const auto& s : sidecar_shapes) {
+                uint32_t v_count = (s.vertex_end >= s.vertex_start) ? (s.vertex_end - s.vertex_start + 1) : 0;
+                size_t byte_off = static_cast<size_t>(s.vertex_start) * 16;
+                size_t byte_cnt = static_cast<size_t>(v_count) * 16;
+                if (byte_off + byte_cnt <= stream0.size()) {
+                    DynamicShapeChannel ch{};
+                    ch.name = s.name;
+                    ch.vertex_start = s.vertex_start;
+                    ch.vertex_count = v_count;
+                    ch.dx = s.dx; ch.dy = s.dy; ch.dz = s.dz;
+                    ch.base_positions.assign(stream0.begin() + byte_off, stream0.begin() + byte_off + byte_cnt);
+                    rec.channels.push_back(std::move(ch));
+                    Log(label + " registered dynamic stream 0 channel: " + s.name + " (" + 
+                        std::to_string(v_count) + " vertices, offset=" + std::to_string(byte_off) + ")");
+                }
+            }
+            if (!rec.channels.empty()) {
+                g_dynamic_meshes[mesh_id] = std::move(rec);
+            }
+        }
+    }
+#endif
+
 #endif
     void* p_bindposes[1]{bindposes};
     if (!component.static_mesh && !InvokeVoid(Contract("mesh.set_bindposes"), mesh, p_bindposes)) {
@@ -1887,6 +1974,12 @@ bool GetRendererEnabled(void* renderer, bool& enabled) {
 
 void DestroyUnityObject(void* object) {
     if (!object) return;
+#if defined(_WIN32)
+    int32_t destroy_id = 0;
+    if (InvokeValue(Contract("object.instance_id"), object, nullptr, destroy_id) && destroy_id != 0) {
+        g_dynamic_meshes.erase(destroy_id);
+    }
+#endif
     if (g_construction) {
         auto& assets = g_construction->assets;
         auto it = std::find(assets.begin(),assets.end(),object);
@@ -1973,12 +2066,13 @@ struct PreparedBinding {
     int32_t original_shadow=0,custom_shadow=0;
     void* original_shadow_mesh=nullptr;
     void* custom_shadow_mesh=nullptr;
-    struct SiblingStaticRenderer {
+    struct SiblingRenderer {
         void* renderer=nullptr;
         void* original_mesh=nullptr;
         void* original_materials=nullptr;
+        void* original_bones=nullptr;
     };
-    std::vector<SiblingStaticRenderer> sibling_static_renderers;
+    std::vector<SiblingRenderer> sibling_renderers;
 #endif
 };
 void* DonorMesh(const PreparedBinding& b) { return b.donor_mesh?b.donor_mesh:b.original_mesh; }
@@ -2406,10 +2500,14 @@ bool ApplyPreparedBinding(PreparedBinding& binding) {
     if (!ApplyRendererMaterials(binding.renderer,binding.custom_materials)) return false;
     if (!SetVisualPosition(binding.visual_root,binding.visual_custom)) return false;
 #if defined(__ANDROID__)
-    for (const auto& sibling:binding.sibling_static_renderers) {
+    for (const auto& sibling:binding.sibling_renderers) {
         if (sibling.renderer) {
+            if (binding.custom_bones && !IsStaticRenderer(sibling.renderer)) {
+                SetRendererBones(sibling.renderer,binding.custom_bones);
+            }
             SetSharedMesh(sibling.renderer,binding.custom_mesh);
             ApplyRendererMaterials(sibling.renderer,binding.custom_materials);
+            SetRendererEnabled(sibling.renderer,binding.custom_enabled);
         }
     }
 #endif
@@ -2435,10 +2533,14 @@ bool RestorePreparedBinding(PreparedBinding& binding) {
             ReadNullableObject(Contract("android.shadow_mesh_get"),binding.renderer,read_mesh) && read_mesh==binding.original_shadow_mesh;
         shadow=restored_mode && restored_proxy;
     }
-    for (const auto& sibling:binding.sibling_static_renderers) {
+    for (const auto& sibling:binding.sibling_renderers) {
         if (sibling.renderer) {
+            if (sibling.original_bones && !IsStaticRenderer(sibling.renderer)) {
+                SetRendererBones(sibling.renderer,sibling.original_bones);
+            }
             SetSharedMesh(sibling.renderer,sibling.original_mesh);
             ApplyRendererMaterials(sibling.renderer,sibling.original_materials);
+            SetRendererEnabled(sibling.renderer,binding.original_enabled);
         }
     }
 #endif
@@ -2850,7 +2952,13 @@ struct CompletedBinding {
     GenericMatching::ReceiverKey receiver_key;
     uint32_t component_id=0;
     std::string renderer_name;
+    WeakObject renderer;
     WeakObject mesh;
+    struct BlendShapeSlot {
+        std::string name;
+        int32_t index;
+    };
+    std::vector<BlendShapeSlot> blend_shapes;
     std::vector<WeakObject> materials;
     bool enabled=false;
     bool generated_mesh=false;
@@ -3050,6 +3158,7 @@ bool RememberResource(const CharacterAdapter& adapter,void* asset,
         CompletedBinding completed;
         if (!MakeReceiverKey(adapter,asset,binding.renderer,completed.receiver_key)) return false;
         completed.renderer_name=ObjectName(binding.renderer);
+        completed.renderer.Set(binding.renderer);
         completed.component_id=binding.component_id; completed.enabled=binding.custom_enabled;
         completed.generated_mesh=binding.custom_mesh!=DonorMesh(binding);
         completed.original=binding.saved_original;
@@ -3105,6 +3214,23 @@ bool RememberResource(const CharacterAdapter& adapter,void* asset,
             WeakObject material;
             if (!material.Set(ArrayValue(binding.custom_materials,i))) return false;
             completed.materials.push_back(std::move(material));
+        }
+        if (completed.generated_mesh) {
+            void* m = completed.mesh.Get();
+            if (m) {
+                int32_t bs_count = 0;
+                if (InvokeValue(Contract("mesh.get_blend_shape_count"), m, nullptr, bs_count) && bs_count > 0) {
+                    for (int32_t i = 0; i < bs_count; ++i) {
+                        void* p[]{ &i };
+                        void* name_obj = Invoke(Contract("mesh.get_blend_shape_name"), m, p);
+                        if (name_obj) {
+                            std::string name = ManagedString(name_obj);
+                            completed.blend_shapes.push_back({ std::move(name), i });
+                            Log("Renderer " + completed.renderer_name + " cached BlendShape [" + std::to_string(i) + "]: " + completed.blend_shapes.back().name);
+                        }
+                    }
+                }
+            }
         }
         record.bindings.push_back(std::move(completed));
     }
@@ -3488,7 +3614,7 @@ GenericMatching::Match SelectCompatibleModelDonor(const CharacterAdapter& adapte
     }
 #elif defined(__ANDROID__)
     (void)windows_compat;
-    if (match.status==GenericMatching::MatchStatus::Missing && static_mesh && adapter.explicit_resource) {
+    if (match.status==GenericMatching::MatchStatus::Missing && adapter.explicit_resource) {
         for (size_t i=0;i<candidates.size();++i) {
             const auto& c=candidates[i];
             if (c.renderer && c.key.character==request.character && c.key.resource==request.resource &&
@@ -3570,7 +3696,7 @@ bool CaptureGenericResourceBindings(const CharacterAdapter& adapter,const BemPoc
             (b.saved_original?b.donor_enabled:b.original_enabled);
         if (b.saved_original) b.custom_bones=DonorBones(b);
 #if defined(__ANDROID__)
-        if (component.static_mesh && c.renderer) {
+        if (adapter.explicit_resource && c.renderer) {
             void* trans = Invoke(Contract("component.get_transform"), c.renderer, nullptr);
             void* lod_parent = trans ? Invoke(Contract("transform.get_parent"), trans, nullptr) : nullptr;
             void* mesh_all = lod_parent ? Invoke(Contract("transform.get_parent"), lod_parent, nullptr) : nullptr;
@@ -3589,15 +3715,16 @@ bool CaptureGenericResourceBindings(const CharacterAdapter& adapter,const BemPoc
                             int32_t rcount = ArrayLength(child_renderers);
                             for (int32_t r = 0; r < rcount; ++r) {
                                 void* sib_renderer = ArrayValue(child_renderers, r);
-                                if (sib_renderer && sib_renderer != c.renderer && IsStaticRenderer(sib_renderer)) {
+                                if (sib_renderer && sib_renderer != c.renderer) {
                                     void* sib_trans = Invoke(Contract("component.get_transform"), sib_renderer, nullptr);
                                     const auto stem_sib = sib_trans ? GenericMatching::StripKnownMeshSuffix(ObjectName(sib_trans)) : std::string_view{};
                                     if (rcount == 1 || stem_trans == stem_sib || (stem_trans.size() > 5 && stem_sib.size() > 5 && stem_trans.substr(0, stem_trans.size() - 5) == stem_sib.substr(0, stem_sib.size() - 5))) {
-                                        PreparedBinding::SiblingStaticRenderer sib;
+                                        PreparedBinding::SiblingRenderer sib;
                                         sib.renderer = sib_renderer;
                                         sib.original_mesh = GetRendererMesh(sib_renderer);
                                         sib.original_materials = Invoke(Contract("renderer.get_shared_materials"), sib_renderer, nullptr);
-                                        b.sibling_static_renderers.push_back(sib);
+                                        if (!IsStaticRenderer(sib_renderer)) sib.original_bones = GetRendererBones(sib_renderer);
+                                        b.sibling_renderers.push_back(sib);
                                     }
                                 }
                             }
@@ -4136,6 +4263,69 @@ void __fastcall ResourcePump(void* method) {
         }
         if (!stop) { ReloadRegistryAtDelivery(); if (frame_known) PumpModelJobs(static_cast<uint64_t>(frame)); }
         else CancelModelJobs();
+
+#if defined(_WIN32)
+        // Continuous Animation Driver Tick
+        static uint64_t s_anim_last_tick = 0;
+        uint64_t now_ms = GetTickCount64();
+        float dt = (s_anim_last_tick == 0) ? 0.016f : static_cast<float>(now_ms - s_anim_last_tick) / 1000.0f;
+        if (dt > 0.1f) dt = 0.1f;
+        s_anim_last_tick = now_ms;
+
+        EnsureAnimationDriverLoaded();
+
+        if (g_animation_driver.HasActiveDrivers() && !g_completed.empty()) {
+            g_animation_driver.Tick(dt,
+                [&](uint32_t component_id, uint32_t slot, const std::string& prop, float val) {
+                    for (const auto& completed : g_completed) {
+                        void* root = completed.root.Get();
+                        if (!root || !IsNativeObjectAlive(root)) continue;
+                        for (const auto& binding : completed.bindings) {
+                            if (binding.component_id == component_id && slot < binding.materials.size()) {
+                                void* mat = binding.materials[slot].Get();
+                                if (mat && IsNativeObjectAlive(mat)) {
+                                    void* key = NewString(prop.c_str());
+                                    void* args[]{key, (void*)&val};
+                                    InvokeVoid(Contract("material.set_float"), mat, args);
+                                }
+                            }
+                        }
+                    }
+                },
+                [&](const std::string& param, float val) {
+                    for (const auto& completed : g_completed) {
+                        void* root = completed.root.Get();
+                        if (!root || !IsNativeObjectAlive(root)) continue;
+                        for (const auto& binding : completed.bindings) {
+                            int32_t mesh_id = binding.mesh.instance_id;
+                            if (mesh_id == 0) continue;
+                            auto it = g_dynamic_meshes.find(mesh_id);
+                            if (it == g_dynamic_meshes.end()) continue;
+                            void* mesh = binding.mesh.Get();
+                            if (!mesh || !IsNativeObjectAlive(mesh)) continue;
+
+                            for (const auto& ch : it->second.channels) {
+                                if (ch.name == param && !ch.base_positions.empty()) {
+                                    thread_local std::vector<uint8_t> working_slice;
+                                    working_slice = ch.base_positions;
+                                    float weight = val; // 0.0 .. 1.0
+                                    for (uint32_t i = 0; i < ch.vertex_count; ++i) {
+                                        float* pos = reinterpret_cast<float*>(working_slice.data() + i * 16);
+                                        pos[0] += ch.dx * weight;
+                                        pos[1] += ch.dy * weight;
+                                        pos[2] += ch.dz * weight;
+                                    }
+                                    SafeUpdateSubVertexBuffer(
+                                        mesh, 0, working_slice.data(),
+                                        ch.vertex_start * 16, static_cast<int32_t>(working_slice.size()));
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+        }
+#endif
 #if defined(__ANDROID__)
         // Keep the configured highest-available-LOD bias for every enabled
         // mobile model, including explicit LOD1 resources. The geometry LOD
@@ -4172,6 +4362,51 @@ void __fastcall ResourcePump(void* method) {
     } catch (const std::exception& error) { Log(std::string("Resource maintenance failed: ")+error.what()); }
     catch (...) { Log("Resource maintenance failed."); }
 }
+#if defined(_WIN32)
+void EnsureAnimationDriverLoaded() {
+    if (g_registry.enabled.empty()) return;
+    for (const auto& mod : g_registry.enabled) {
+        if (g_animation_driver.LoadedPath() != mod.package) {
+            BemPackageInfo info; std::string why;
+            if (ReadBemManagementInfo(mod.package, info, why, true)) {
+                if (!info.manifest_json.empty()) {
+                    try {
+                        auto m = nlohmann::json::parse(info.manifest_json);
+                        if (m.contains("drivers") || m.contains("shapes")) {
+                            g_animation_driver.LoadFromManifest(m, mod.package);
+                        }
+                    } catch (...) {}
+                }
+            }
+            if (!g_animation_driver.HasActiveDrivers()) {
+                std::filesystem::path anim_path = mod.package;
+                anim_path.replace_extension(".anim.json");
+                if (std::filesystem::exists(anim_path)) {
+                    g_animation_driver.LoadConfig(anim_path);
+                }
+            }
+        }
+        // Apply driver play/pause states from mod.drivers (synchronized from overlay)
+        if (!mod.drivers.empty()) {
+            std::string rem = mod.drivers;
+            while (!rem.empty()) {
+                auto amp = rem.find('&');
+                auto pair = rem.substr(0, amp);
+                auto colon = pair.find(':');
+                if (colon != std::string::npos) {
+                    std::string did = pair.substr(0, colon);
+                    std::string val = pair.substr(colon + 1);
+                    bool play = (val == "play" || val == "1" || val == "true");
+                    g_animation_driver.SetPlaying(did, play);
+                }
+                rem = (amp == std::string::npos) ? "" : rem.substr(amp + 1);
+            }
+        }
+        if (g_animation_driver.HasActiveDrivers()) break;
+    }
+}
+#endif
+
 bool ReadRuntimeRegistry() {
     std::array<char,4096> catalog{};
     if (g_host->copy_catalog_root(g_host->context,catalog.data(),catalog.size())<=0) return false;
@@ -4243,9 +4478,12 @@ bool ResolveRuntimeContracts() {
         !resolve_class("Mesh",g_mesh_class) || !resolve_class("SkinnedMeshRenderer",g_skinned_renderer_class) ||
         !resolve_class("Renderer",g_renderer_class) || !resolve_class("MeshRenderer",g_static_renderer_class) ||
         !resolve_class("MeshFilter",g_mesh_filter_class) ||
-        !resolve_class("Texture2D",g_texture2d_class) || !resolve_class("Material",g_material_class))) return false;
+        !resolve_class("Texture2D",g_texture2d_class) || !resolve_class("Material",g_material_class) ||
+        !resolve_class("Vector3",g_vector3_class))) return false;
     HMODULE game=GetModuleHandleW(L"GameAssembly.dll");
     if (!game) return false;
+    g_il2cpp_array_new = reinterpret_cast<ArrayNewFn>(GetProcAddress(game, "il2cpp_array_new"));
+    g_il2cpp_array_header_size = reinterpret_cast<ArrayHeaderSizeFn>(GetProcAddress(game, "il2cpp_array_object_header_size"));
     g_weak_new=reinterpret_cast<WeakNewFn>(GetProcAddress(game,"il2cpp_gchandle_new_weakref"));
     g_weak_target=reinterpret_cast<WeakTargetFn>(GetProcAddress(game,"il2cpp_gchandle_get_target"));
     g_static_get=reinterpret_cast<StaticFieldFn>(GetProcAddress(game,"il2cpp_field_static_get_value"));
@@ -4254,6 +4492,14 @@ bool ResolveRuntimeContracts() {
     // Typed array allocation remains optional for v24.
     g_object_class=reinterpret_cast<ObjectClassFn>(GetProcAddress(game,"il2cpp_object_get_class"));
     g_array_new_specific=reinterpret_cast<ArrayNewSpecificFn>(GetProcAddress(game,"il2cpp_array_new_specific"));
+#if defined(_WIN32)
+    Log(std::string("[AnimDriver] Contract check: add_blend_shape_frame=") + (Contract("mesh.add_blend_shape_frame") && Contract("mesh.add_blend_shape_frame")->resolved ? "OK" : "FAILED") +
+        " get_blend_shape_count=" + (Contract("mesh.get_blend_shape_count") && Contract("mesh.get_blend_shape_count")->resolved ? "OK" : "FAILED") +
+        " get_blend_shape_name=" + (Contract("mesh.get_blend_shape_name") && Contract("mesh.get_blend_shape_name")->resolved ? "OK" : "FAILED") +
+        " set_blend_shape_weight=" + (Contract("skinned.set_blend_shape_weight") && Contract("skinned.set_blend_shape_weight")->resolved ? "OK" : "FAILED") +
+        " vector3=" + (g_vector3_class.class_info ? "OK" : "FAILED") +
+        " array_new=" + (g_il2cpp_array_new ? "OK" : "FAILED"));
+#endif
     return g_weak_new && g_weak_target &&
 #if !defined(__ANDROID__)
         g_lod.Resolve() &&
@@ -4275,7 +4521,10 @@ BE_Result BE_CALL InitializeResourceModule(const BE_HostApiV1* host) {
     g_host=host;
     try {
         BeginProbeStatus();
-        if (!ReadRuntimeRegistry() || !ResolveRuntimeContracts()) { WriteProbeStatus("initialization_failed"); return BE_Result_ContractMismatch; }
+        #if defined(_WIN32)
+        g_animation_driver.SetLogger([](const std::string& msg){ Log(msg); });
+#endif
+    if (!ReadRuntimeRegistry() || !ResolveRuntimeContracts()) { WriteProbeStatus("initialization_failed"); return BE_Result_ContractMismatch; }
 #if defined(__ANDROID__)
         g_retire_hooks=host->release_module_hooks;
         if (!g_retire_hooks) return BE_Result_ContractMismatch;

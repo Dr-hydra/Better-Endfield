@@ -2,6 +2,7 @@
 #include "bem_rewrite.h"
 #include "../../shared/third_party/nlohmann/json.hpp"
 #include "../../shared/third_party/zstd/lib/zstd.h"
+#include "../../shared/third_party/miniz/miniz.h" 
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -158,6 +159,15 @@ ParameterTicks ParseParameters(const J& definitions,std::string_view requested,s
     for(const auto& [id,_]:saved) Check(result.contains(id),"Unknown parameter");
     return result;
 }
+static size_t ZipReadFunc(void *pOpaque, mz_uint64 file_ofs, void *pBuf, size_t n) {
+    auto* read_fn = static_cast<const std::function<std::vector<uint8_t>(uint64_t, size_t)>*>(pOpaque);
+    if (!read_fn || !(*read_fn)) return 0;
+    auto bytes = (*read_fn)(file_ofs, n);
+    if (bytes.empty()) return 0;
+    std::memcpy(pBuf, bytes.data(), bytes.size());
+    return bytes.size();
+}
+
 struct Container {
     bool manifestOnly=false;
     bool skip_validation=false;
@@ -178,49 +188,197 @@ struct Container {
     std::function<std::vector<uint8_t>(uint64_t,size_t)> read;
     BemPackageInfo info;
     J parameters=J::array();
+    bool is_zip = false;
+    mz_zip_archive zip{};
+    std::vector<int> zip_payload_file_indices;
+    std::string zip_prefix;
+    ~Container() {
+        if (is_zip) {
+            mz_zip_reader_end(&zip);
+        }
+    }
     void Open(uint64_t size) {
-        Check(size>=sizeof(Header),"Invalid BEM file size");
-        Validate(size<=2ull*1024*MiB,"Invalid BEM file size");
-        auto raw=read(0,sizeof(Header)); Header h{}; std::memcpy(&h,raw.data(),sizeof(h));
-        Check(std::memcmp(h.magic,"BEM\0PKG\0",8)==0 && h.major==1 && h.minor<=5 && h.size==sizeof(h) && !h.flags,
-            "Only BEM 1.0/1.1/1.2/1.3/1.4/1.5 packages are supported");
-        minor=h.minor; limits=LimitsFor(minor);
-        if(skip_validation) {
-            limits.choices=SIZE_MAX; limits.rules=SIZE_MAX; limits.textures=kMaxBemTextures;
-            limits.textureBytes=UINT32_MAX; limits.budget=UINT64_MAX; limits.directory=UINT32_MAX;
+        Check(size >= 4, "Invalid BEM file size");
+        auto probe = read(0, 8);
+        Check(probe.size() >= 4, "Cannot read package signature");
+
+        if (probe.size() >= 8 && std::memcmp(probe.data(), "BEM\0PKG\0", 8) == 0) {
+            Check(size>=sizeof(Header),"Invalid BEM file size");
+            Validate(size<=2ull*1024*MiB,"Invalid BEM file size");
+            Header h{}; std::memcpy(&h,probe.data(),sizeof(h));
+            Check(std::memcmp(h.magic,"BEM\0PKG\0",8)==0 && h.major==1 && h.minor<=5 && h.size==sizeof(h) && !h.flags,
+                "Only BEM 1.0/1.1/1.2/1.3/1.4/1.5 packages are supported");
+            minor=h.minor; limits=LimitsFor(minor);
+            if(skip_validation) {
+                limits.choices=SIZE_MAX; limits.rules=SIZE_MAX; limits.textures=kMaxBemTextures;
+                limits.textureBytes=UINT32_MAX; limits.budget=UINT64_MAX; limits.directory=UINT32_MAX;
+            }
+            Check(h.file==size && h.manifest>0 && h.manifest<=size-sizeof(h) &&
+                uint64_t(h.count)<=(size-sizeof(h)-h.manifest)/sizeof(Entry),"Invalid BEM directory sizes");
+            Validate(h.manifest<=4*MiB && h.count<=limits.directory,"Invalid BEM directory sizes");
+            if(manifestOnly) Check(h.count<=65536 && h.manifest<=16*MiB,"Management metadata exceeds limit");
+            auto json=read(sizeof(h),static_cast<size_t>(h.manifest));
+            std::vector<std::set<std::string>> keys;
+            auto callback=[&](int depth,nlohmann::json::parse_event_t event,J& value) {
+                Check(depth<=48,"Manifest nesting exceeds 48");
+                if(event==J::parse_event_t::object_start) keys.emplace_back();
+                if(event==J::parse_event_t::key) Check(keys.back().insert(value.get<std::string>()).second,"Duplicate manifest key");
+                if(event==J::parse_event_t::object_end) keys.pop_back();
+                return true;
+            };
+            manifest=J::parse(json.begin(),json.end(),callback);
+            if(manifestOnly) {
+                directory.resize(h.count);
+                Metadata(); return;
+            }
+            auto table=read(sizeof(h)+h.manifest,h.count*sizeof(Entry)); directory.resize(h.count);
+            if(!table.empty()) std::memcpy(directory.data(),table.data(),table.size());
+            uint64_t end=sizeof(h)+h.manifest+table.size();
+            for(const auto& e:directory) {
+                Check(e.codec<=1 && !e.reserved && e.offset==end && e.stored>0 &&
+                    e.decoded>0 && e.stored<=size-end,"Invalid payload extent/codec/budget");
+                Validate(e.stored<=Budget && e.decoded<=Budget,"Invalid payload extent/codec/budget");
+                Check(e.codec || e.stored==e.decoded,"Raw payload size differs"); end+=e.stored;
+            }
+            Check(end==size,"Trailing or missing BEM bytes");
+            Metadata();
+            return;
         }
-        Check(h.file==size && h.manifest>0 && h.manifest<=size-sizeof(h) &&
-            uint64_t(h.count)<=(size-sizeof(h)-h.manifest)/sizeof(Entry),"Invalid BEM directory sizes");
-        Validate(h.manifest<=4*MiB && h.count<=limits.directory,"Invalid BEM directory sizes");
-        if(manifestOnly) Check(h.count<=65536 && h.manifest<=16*MiB,"Management metadata exceeds limit");
-        auto json=read(sizeof(h),static_cast<size_t>(h.manifest));
-        // Reject duplicate keys, including nested objects, instead of accepting last-wins metadata.
-        std::vector<std::set<std::string>> keys;
-        auto callback=[&](int depth,nlohmann::json::parse_event_t event,J& value) {
-            Check(depth<=48,"Manifest nesting exceeds 48");
-            if(event==J::parse_event_t::object_start) keys.emplace_back();
-            if(event==J::parse_event_t::key) Check(keys.back().insert(value.get<std::string>()).second,"Duplicate manifest key");
-            if(event==J::parse_event_t::object_end) keys.pop_back();
-            return true;
-        };
-        manifest=J::parse(json.begin(),json.end(),callback);
-        if(manifestOnly) {
-            // Metadata validates payload references against count; it does not
-            // inspect extents or decode bytes. Bound allocation even in developer mode.
-            directory.resize(h.count);
-            Metadata(); return;
+
+        if (probe[0] == 'P' && probe[1] == 'K' && probe[2] == 3 && probe[3] == 4) {
+            is_zip = true;
+            std::memset(&zip, 0, sizeof(zip));
+            zip.m_pRead = ZipReadFunc;
+            zip.m_pIO_opaque = &this->read;
+            Check(mz_zip_reader_init(&zip, size, 0) != 0, "Corrupt or invalid ZIP package");
+
+            mz_uint num_files = mz_zip_reader_get_num_files(&zip);
+            int manifest_file_index = -1;
+            bool has_bem_files = false;
+            for (mz_uint i = 0; i < num_files; ++i) {
+                mz_zip_archive_file_stat stat;
+                if (!mz_zip_reader_file_stat(&zip, i, &stat)) continue;
+                std::string name(stat.m_filename);
+                for (char& c : name) if (c == '\\') c = '/';
+                if (name.size() >= 4 && (name.ends_with(".bem") || name.ends_with(".BEM"))) {
+                    has_bem_files = true;
+                }
+                if (name == "manifest.json") {
+                    manifest_file_index = static_cast<int>(i);
+                    zip_prefix.clear();
+                } else if (name.ends_with("/manifest.json") && manifest_file_index < 0) {
+                    auto first_slash = name.find('/');
+                    if (first_slash != std::string::npos && first_slash == name.rfind('/')) {
+                        manifest_file_index = static_cast<int>(i);
+                        zip_prefix = name.substr(0, first_slash + 1);
+                    }
+                }
+            }
+            Check(manifest_file_index >= 0, has_bem_files ? 
+                "ZIP contains BEM bundle members, not a single BEM model manifest" : 
+                "ZIP package is missing manifest.json");
+
+            size_t manifest_size = 0;
+            void* pManifest = mz_zip_reader_extract_to_heap(&zip, manifest_file_index, &manifest_size, 0);
+            Check(pManifest != nullptr, "Failed to extract manifest.json from ZIP");
+            std::string manifest_str(reinterpret_cast<const char*>(pManifest), manifest_size);
+            mz_free(pManifest);
+
+            manifest = J::parse(manifest_str);
+
+            minor = 1;
+            if (manifest.contains("format_version") && manifest["format_version"].is_string()) {
+                std::string fv = manifest["format_version"].get<std::string>();
+                if (fv.starts_with("1.")) {
+                    try { minor = static_cast<uint16_t>(std::stoi(fv.substr(2))); } catch (...) {}
+                }
+            }
+            if (manifest.contains("required_capabilities") && manifest["required_capabilities"].is_array()) {
+                for (const auto& cap : manifest["required_capabilities"]) {
+                    if (cap == "material-overrides-v1" || cap == "root-offset-v1" || cap == "dynamic-drivers-v1")
+                        minor = std::max<uint16_t>(minor, 5);
+                    else if (cap == "multi-resource-v1" || cap == "static-mesh-v1")
+                        minor = std::max<uint16_t>(minor, 4);
+                    else if (cap == "body-parameters" || cap == "mesh-position-deltas")
+                        minor = std::max<uint16_t>(minor, 3);
+                }
+            }
+            limits = LimitsFor(minor);
+            if (skip_validation) {
+                limits.choices = SIZE_MAX; limits.rules = SIZE_MAX; limits.textures = kMaxBemTextures;
+                limits.textureBytes = UINT32_MAX; limits.budget = UINT64_MAX; limits.directory = UINT32_MAX;
+            }
+
+            std::map<std::string, int> name_to_zip_idx;
+            for (mz_uint i = 0; i < num_files; ++i) {
+                mz_zip_archive_file_stat stat;
+                if (!mz_zip_reader_file_stat(&zip, i, &stat)) continue;
+                std::string name(stat.m_filename);
+                for (char& c : name) if (c == '\\') c = '/';
+                if (!zip_prefix.empty() && name.starts_with(zip_prefix)) {
+                    name = name.substr(zip_prefix.size());
+                }
+                name_to_zip_idx[name] = static_cast<int>(i);
+            }
+
+            uint32_t max_payload_id = 0;
+            bool found_any_payload = false;
+            auto inspect_payload = [&](const J& ref) {
+                if (ref.is_number_integer()) {
+                    uint32_t pid = ref.get<uint32_t>();
+                    max_payload_id = std::max(max_payload_id, pid);
+                    found_any_payload = true;
+                }
+            };
+
+            for (const auto& mesh : manifest.value("meshes", J::array())) {
+                for (const auto& s : mesh.value("streams", J::array())) if (s.contains("payload")) inspect_payload(s["payload"]);
+                if (mesh.contains("indices")) inspect_payload(mesh["indices"]);
+                for (const auto& d : mesh.value("draws", J::array())) if (d.contains("indices")) inspect_payload(d["indices"]);
+            }
+            for (const auto& t : manifest.value("textures", J::array())) if (t.contains("payload")) inspect_payload(t["payload"]);
+            for (const auto& ch : manifest.value("mesh_deformations", J::array())) {
+                for (const auto& f : ch.value("frames", J::array())) if (f.contains("payload")) inspect_payload(f["payload"]);
+            }
+            for (const auto& app : manifest.value("appearances", J::array())) if (app.contains("preview")) inspect_payload(app["preview"]);
+
+            size_t total_payloads = found_any_payload ? (max_payload_id + 1) : 0;
+            directory.resize(total_payloads);
+            zip_payload_file_indices.resize(total_payloads, -1);
+
+            for (uint32_t pid = 0; pid < total_payloads; ++pid) {
+                char buf[64];
+                snprintf(buf, sizeof(buf), "payloads/%04u.bin", pid);
+                std::string c1 = buf;
+                snprintf(buf, sizeof(buf), "payloads/%u.bin", pid);
+                std::string c2 = buf;
+                snprintf(buf, sizeof(buf), "%u.bin", pid);
+                std::string c3 = buf;
+
+                int zip_idx = -1;
+                if (auto it = name_to_zip_idx.find(c1); it != name_to_zip_idx.end()) zip_idx = it->second;
+                else if (auto it = name_to_zip_idx.find(c2); it != name_to_zip_idx.end()) zip_idx = it->second;
+                else if (auto it = name_to_zip_idx.find(c3); it != name_to_zip_idx.end()) zip_idx = it->second;
+
+                if (zip_idx >= 0) {
+                    mz_zip_archive_file_stat stat;
+                    mz_zip_reader_file_stat(&zip, zip_idx, &stat);
+                    Entry e{};
+                    e.codec = 0;
+                    e.reserved = 0;
+                    e.offset = static_cast<uint64_t>(zip_idx);
+                    e.stored = stat.m_comp_size;
+                    e.decoded = stat.m_uncomp_size;
+                    directory[pid] = e;
+                    zip_payload_file_indices[pid] = zip_idx;
+                }
+            }
+
+            Metadata();
+            return;
         }
-        auto table=read(sizeof(h)+h.manifest,h.count*sizeof(Entry)); directory.resize(h.count);
-        if(!table.empty()) std::memcpy(directory.data(),table.data(),table.size());
-        uint64_t end=sizeof(h)+h.manifest+table.size();
-        for(const auto& e:directory) {
-            Check(e.codec<=1 && !e.reserved && e.offset==end && e.stored>0 &&
-                e.decoded>0 && e.stored<=size-end,"Invalid payload extent/codec/budget");
-            Validate(e.stored<=Budget && e.decoded<=Budget,"Invalid payload extent/codec/budget");
-            Check(e.codec || e.stored==e.decoded,"Raw payload size differs"); end+=e.stored;
-        }
-        Check(end==size,"Trailing or missing BEM bytes");
-        Metadata();
+
+        Check(false, "Unrecognized package signature; expected BEM binary or ZIP package");
     }
     // Fixed texture index, or {"slot":id} (BEM 1.2) resolved per selection.
     void TextureRefs(const J& refs,const std::string& message) const {
@@ -483,13 +641,22 @@ struct Container {
         const uint64_t decodedBudget=limits.budget;
         Check(decoded<=decodedBudget-e.decoded,"Selected appearance exceeds decoded payload budget"); decoded+=e.decoded;
         if(stats) stats->payload_ids.push_back(id);
-        auto bytes=read(e.offset,static_cast<size_t>(e.stored));
-        if(e.codec) {
-            Check(ZSTD_findFrameCompressedSize(bytes.data(),bytes.size())==bytes.size() &&
-                ZSTD_getFrameContentSize(bytes.data(),bytes.size())==e.decoded,"Zstd frame extent/content size differs");
-            std::vector<uint8_t> result(static_cast<size_t>(e.decoded));
-            auto n=ZSTD_decompress(result.data(),result.size(),bytes.data(),bytes.size());
-            Check(!ZSTD_isError(n) && n==result.size(),"Invalid Zstd payload"); bytes=std::move(result);
+        std::vector<uint8_t> bytes;
+        if (is_zip) {
+            bytes.resize(static_cast<size_t>(e.decoded));
+            int zip_idx = (id < zip_payload_file_indices.size()) ? zip_payload_file_indices[id] : -1;
+            Check(zip_idx >= 0, "ZIP payload entry missing");
+            mz_bool ok = mz_zip_reader_extract_to_mem(&zip, zip_idx, bytes.data(), bytes.size(), 0);
+            Check(ok != 0, "Failed to decompress ZIP payload entry");
+        } else {
+            bytes = read(e.offset,static_cast<size_t>(e.stored));
+            if(e.codec) {
+                Check(ZSTD_findFrameCompressedSize(bytes.data(),bytes.size())==bytes.size() &&
+                    ZSTD_getFrameContentSize(bytes.data(),bytes.size())==e.decoded,"Zstd frame extent/content size differs");
+                std::vector<uint8_t> result(static_cast<size_t>(e.decoded));
+                auto n=ZSTD_decompress(result.data(),result.size(),bytes.data(),bytes.size());
+                Check(!ZSTD_isError(n) && n==result.size(),"Invalid Zstd payload"); bytes=std::move(result);
+            }
         }
         cacheBytes+=bytes.size();
         if(stats) {

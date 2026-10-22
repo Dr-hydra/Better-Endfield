@@ -409,3 +409,87 @@ Add `root_offset` at the root level of `manifest.json`:
 - `translation`: 3-element float array `[x, y, z]` representing local offset in meters.
   - Length bound: $\sqrt{x^2 + y^2 + z^2} \le 0.2$ meters.
   - Relaxed to 1.0 meter and clamped automatically when "Skip Validation" is active.
+
+
+## 13. BEM 1.5 Dynamic Clock Drivers & Material Modulation (dynamic-drivers-v1)
+
+BEM 1.5 introduces the dynamic-drivers-v1 capability, enabling packages to declare continuous procedural time animations (e.g. reciprocating gadget movement) and dynamic material parameter modulation (such as breathing glow lights, tactical flashlight toggles, and specular ramps) directly in the manifest without external sidecar files.
+
+### Interaction Principle: Dual-Platform In-Game Overlay Controls (No Hotkeys)
+- Zero Hotkey Dependency: Hotkeys are entirely eliminated to avoid keyboard layout conflicts and mobile device incompatibilities;
+- Cross-Platform Parity: Both Windows desktop (ModelOverlay window) and Android mobile (GameOverlay floating window) render visual on/off switches and speed sliders inside the model detail panel, ensuring identical touch and mouse UX.
+
+### Capability Declaration
+`json
+"required_capabilities": [
+  "native-materials",
+  "material-overrides-v1",
+  "dynamic-drivers-v1"
+]
+`
+
+### Manifest Structure (drivers field in manifest.json)
+`json
+{
+  "drivers": [
+    {
+      "id": "driver_dildo_thrust",
+      "name": "Gadget Reciprocating Thrust",
+      "waveform": "pingpong",
+      "default_playing": false,
+      "base_frequency": 1.2,
+      "speed_multiplier": 1.0,
+      "bindings": [
+        {
+          "type": "morph_parameter",
+          "target": "dildo_depth",
+          "range": [0.0, 1.0]
+        }
+      ]
+    },
+    {
+      "id": "driver_glow_pulse",
+      "name": "Tactical Glow Breathing",
+      "waveform": "sine",
+      "default_playing": false,
+      "base_frequency": 0.8,
+      "bindings": [
+        {
+          "type": "material_float",
+          "component": 2,
+          "material_slot": 0,
+          "property": "_EmissionWeight",
+          "range": [0.0, 1.5]
+        }
+      ]
+    }
+  ]
+}
+`
+
+---
+
+## 14. BEM Native ZIP Archive Container Specification
+
+BEM natively supports standard PKZip / Zip64 containers across all versions. Models can be directly authored, debugged, and distributed as standard .zip archives without requiring binary repackaging.
+
+### 1. Dual-Mode Signature Auto-Detection
+- The engine auto-detects archive format via header magic: 0x42 0x45 0x4D 0x00 (BEM PKG) selects binary stream decoding; 0x50 0x4B 0x03 0x04 (PKZip) activates in-memory zero-copy ZIP decompression.
+
+### 2. Standard Archive Layout
+`	ext
+model.zip (or .bem)
+├── manifest.json              # [Required] Core manifest with drivers
+├── preview.png                # [Optional] Preview thumbnail
+├── streams/                   # Vertex and index buffers
+│   ├── mesh0_stream0.bin
+│   └── mesh0_indices.bin
+└── textures/                  # Texture assets (DDS / PNG)
+    ├── T_cloth_01_D.dds
+    └── T_cloth_01_N.dds
+`
+
+### 3. Disambiguation: Collection Bundle vs Single Model Package
+1. Single Model Archive (Package): Root (or single top-level directory) contains valid manifest.json and no .bem files. Loaded directly as a standalone model.
+2. Collection Bundle: Contains one or more .bem archives and no root model manifest.json. Dispatched to the bundle staging extractor.
+3. Single Top-Level Folder Tolerance: Archives wrapped in a single root folder containing manifest.json are automatically unfolded to ensure seamless creator workflow.

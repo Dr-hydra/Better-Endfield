@@ -42,6 +42,7 @@ struct EnabledMod {
     bool loading_optimization = false;
     std::string selection_key;
     std::string parameters;
+    std::string drivers;
     std::string resource_id;
     std::string package_id; // Conflict/reload identity independent of owner ID.
 };
