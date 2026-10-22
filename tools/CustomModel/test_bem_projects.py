@@ -31,6 +31,22 @@ class ProjectTests(unittest.TestCase):
         self.assertEqual(bem.read_package(self.root/'edit.bem')[0]['appearances'][0]['name'], '已编辑')
         p['payload_files'][0] = '../one.bem'; path.write_text(json.dumps(p), encoding='utf-8')
         with self.assertRaises(ValueError): projects.pack_project(path, self.root/'rejected.bem')
+    def test_pack_accepts_project_directory(self):
+        out = self.root/'editable'; projects.unpack(self.one, out)
+        from_dir = self.root/'from-dir.bem'; from_file = self.root/'from-file.bem'
+        projects.pack_project(out, from_dir)
+        projects.pack_project(out/'project.json', from_file)
+        self.assertEqual(from_dir.read_bytes(), from_file.read_bytes())
+        self.assertEqual(bem.read_package(from_dir), bem.read_package(self.one))
+    def test_pack_reports_unusable_project_input(self):
+        empty = self.root/'empty'; empty.mkdir()
+        with self.assertRaisesRegex(ValueError, 'contains no project.json'):
+            projects.pack_project(empty, self.root/'missing.bem')
+        with self.assertRaisesRegex(ValueError, 'does not exist'):
+            projects.pack_project(self.root/'nowhere', self.root/'missing.bem')
+        binary = self.root/'binary.bem'; binary.write_bytes(b'\x00\xff\xfe not json')
+        with self.assertRaisesRegex(ValueError, 'not readable JSON'):
+            projects.pack_project(binary, self.root/'missing.bem')
     def test_bundle_stored_members_and_stage(self):
         zip = self.root/'collection.zip'; projects.bundle([self.one,self.two], zip)
         with zipfile.ZipFile(zip) as z:

@@ -456,9 +456,12 @@ python tools/CustomModel/bem_tool.py pack-zip model.bem -o model.zip
 The reverse direction works too:
 
 ```bash
-python tools/CustomModel/bem_tool.py unpack model.zip -o project/            # ZIP to editable project
-python tools/CustomModel/bem_tool.py pack project/project.json -o model.bem  # project to binary package
+python tools/CustomModel/bem_tool.py unpack model.zip -o project/        # ZIP to editable project
+python tools/CustomModel/bem_tool.py pack project/ -o model.bem          # project directory to binary package
+python tools/CustomModel/bem_tool.py pack project/project.json -o model.bem  # same thing, spelled out
 ```
+
+`pack` takes either the project directory or the `project.json` inside it, and both produce an identical package.
 
 That round trip is **byte-for-byte equivalent**: `.bem → ZIP → project → .bem` reproduces the original binary package exactly.
 

@@ -460,8 +460,11 @@ python tools/CustomModel/bem_tool.py pack-zip model.bem -o model.zip
 
 ```bash
 python tools/CustomModel/bem_tool.py unpack model.zip -o project/   # ZIP → 可编辑工程
-python tools/CustomModel/bem_tool.py pack project/project.json -o model.bem   # 工程 → 二进制包
+python tools/CustomModel/bem_tool.py pack project/ -o model.bem                # 工程目录 → 二进制包
+python tools/CustomModel/bem_tool.py pack project/project.json -o model.bem    # 等价写法
 ```
+
+`pack` 的第一个参数给工程目录或目录里的 `project.json` 都可以，两者产出完全相同。
 
 这条往返路径是**字节级等价**的：`.bem → ZIP → 工程 → .bem` 得到与原文件完全相同的二进制包。
 

@@ -21,9 +21,35 @@ def validated(path):
     return m, payloads
 
 
+def project_manifest(source):
+    """Resolve a project manifest from either project.json or the directory holding it.
+
+    Unpacking writes a project directory, so packing is naturally handed that directory
+    back; opening a directory as JSON would surface a bare permission error instead of
+    anything the caller can act on.
+    """
+    source = Path(source)
+    if source.is_dir():
+        manifest = source / 'project.json'
+        bem.require(manifest.is_file(), f'Project directory contains no project.json: {source}')
+        return manifest
+    bem.require(source.exists(), f'Project manifest does not exist: {source}')
+    return source
+
+
+def load_project(source):
+    """Parse a resolved project manifest, naming the file when it is not JSON."""
+    try:
+        return bem.load_json(source)
+    except ValueError as error:
+        # JSONDecodeError and UnicodeDecodeError both land here; neither names the file
+        # on its own, and a binary file handed in by mistake reads as a decode failure.
+        raise ValueError(f'Project manifest is not readable JSON ({source}): {error}') from None
+
+
 def pack_project(source, output, package=None, deformations=None):
-    source, output = Path(source), Path(output)
-    project = bem.load_json(source)
+    source, output = project_manifest(source), Path(output)
+    project = load_project(source)
     root = source.parent.resolve()
     payloads, total = [], 0
     bem.require(len(project['payload_files']) <= 16384, 'Too many payload files')
