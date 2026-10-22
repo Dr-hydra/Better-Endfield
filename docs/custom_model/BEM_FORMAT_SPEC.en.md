@@ -1,6 +1,6 @@
-# BEM Format Specification (1.0–1.4)
+# BEM Format Specification (1.0–1.5)
 
-BEM (Better Endfield Next Model) is a character model replacement package with the `.bem` extension. Windows and Android read the same file. The [BEM 1.4 extension](BEM_V1_4_SPEC.md) defines explicit multi-resource targets and static weapons. The sections below describe the 1.0–1.3 contract; version-specific differences are marked below. See the [Creator Guide](BEM_CREATOR_GUIDE.en.md) for production workflow and [Runtime Behavior and Compatibility](BEM_RUNTIME_COMPATIBILITY.en.md) for in-game matching and restrictions.
+BEM (Better Endfield Next Model) is a character model replacement package with the `.bem` extension. Windows and Android read the same file. The [BEM 1.4 extension](BEM_V1_4_SPEC.md) defines explicit multi-resource targets and static weapons. The sections below describe the 1.0–1.3 contract; version-specific differences are marked below. Sections 12–14 add the BEM 1.5 material overrides, dynamic clock drivers and the native ZIP container. See the [Creator Guide](BEM_CREATOR_GUIDE.en.md) for production workflow and [Runtime Behavior and Compatibility](BEM_RUNTIME_COMPATIBILITY.en.md) for in-game matching and restrictions.
 
 Reference implementations: writers and validators are `tools/CustomModel/bem_v1.py`, `bem_v11.py`, `bem_v13.py`, and `bem_v14.py`; the native reader is `native/modules/custom_model/bem.cpp`.
 
@@ -13,9 +13,10 @@ Reference implementations: writers and validators are `tools/CustomModel/bem_v1.
 | 1.2 | `texture_slots`, resource-specific bone aliases, 32-byte uncompressed skinning, and higher resource limits | Add `texture-slots` and/or `resource-bone-aliases` as used |
 | 1.3 | Continuous parameters, `parameters` + `mesh_deformations` | `body-parameters`, `mesh-position-deltas` |
 | 1.4 | Explicit resource/platform targets and static MeshRenderer meshes; see the linked extension | `multi-resource-targets`; `static-meshes` when used |
+| 1.5 | Material property and keyword overrides, root bone offset, dynamic clock drivers; see sections 12 and 13 | Add `material-overrides-v1`, `root-offset-v1`, `dynamic-drivers-v1` as used |
 
 - Writers choose the **lowest version that can express the package**. A package without newer features remains readable by older runtimes. Newer content in an older header is rejected.
-- Readers apply the limits and semantics for the header version. The current development runtime accepts 1.0–1.4.
+- Readers apply the limits and semantics for the header version. The current development runtime accepts 1.0–1.5. The ZIP container in section 14 is version independent.
 - Every version requires `native-materials`, `palette-u8`, and `indices-u32`. Unknown or duplicate capabilities, and used features without their capability, are rejected. Declaring an unused capability is allowed.
 
 ## 2. Container
@@ -26,7 +27,7 @@ The file contains, in order: a 40-byte header, a UTF-8 JSON manifest, a payload 
 | --- | --- | --- |
 | 0 | byte[8] | magic `42 45 4D 00 50 4B 47 00` (`BEM\\0PKG\\0`) |
 | 8 | uint16 | major = 1 |
-| 10 | uint16 | minor = 0..3 |
+| 10 | uint16 | minor = 0..5 |
 | 12 | uint32 | header_size = 40 |
 | 16 | uint64 | file_size, equal to the actual file length |
 | 24 | uint64 | manifest_size, 1 byte..4 MiB |
@@ -72,6 +73,7 @@ Top-level fields:
 | 1.1+: `option_groups`, `component_rules`, optional `selection_constraints` | Composable options; see section 6 |
 | 1.2+: optional `texture_slots` | See section 9 |
 | 1.3: optional `parameters`, `mesh_deformations` | See section 10 |
+| 1.5: optional `root_offset`, `drivers` | See sections 12 and 13; `material_overrides` inside a draw also belongs to 1.5 |
 
 ## 4. Target contract
 
@@ -337,7 +339,7 @@ Shape evaluation follows EFMI ShapeKey semantics: `position = original position 
 
 ## 11. Limits summary
 
-| Item | 1.0 | 1.1 | 1.2 / 1.3 |
+| Item | 1.0 | 1.1 | 1.2 / 1.3 / 1.4 / 1.5 |
 | --- | --- | --- | --- |
 | Appearances / option groups | 1..64 appearances | 64 groups | 64 groups |
 | Choices per group | — | 16 | 64 |
@@ -347,7 +349,7 @@ Shape evaluation follows EFMI ShapeKey semantics: `position = original position 
 | Decoded data / resident resources in one selection | 512 / 512 MiB | 768 / 768 MiB | 1536 / 1536 MiB |
 | Payload directory entries | 4096 | 4096 | 16384 |
 
-All versions share these limits: 2 GiB container; 4 MiB manifest; 512 MiB per payload; 1..64 components; 256 palette bones; 256 draws per component; 16,777,216 selected indices; 1,048,576 vertices; 64 shape parameters; and 4096 deformation channels.
+All versions share these limits: 2 GiB container; 4 MiB manifest; 512 MiB per payload; 1..64 components; 256 palette bones; 256 draws per component; 16,777,216 selected indices; 1,048,576 vertices; 64 shape parameters; and 4096 deformation channels. 1.4 and 1.5 add no container or resource limits and reuse the same column; the 1.5 `material_overrides` and `drivers` quotas are counted per draw, see sections 12 and 13.
 
 Budgets apply to one selection and are not the same as the actual GPU peak. The 1.3 budget conservatively counts all frames for each channel. See the runtime document for actual loading cost.
 
@@ -415,21 +417,26 @@ Add `root_offset` at the root level of `manifest.json`:
 
 BEM 1.5 introduces the dynamic-drivers-v1 capability, enabling packages to declare continuous procedural time animations (e.g. reciprocating gadget movement) and dynamic material parameter modulation (such as breathing glow lights, tactical flashlight toggles, and specular ramps) directly in the manifest without external sidecar files.
 
-### Interaction Principle: Dual-Platform In-Game Overlay Controls (No Hotkeys)
+### Interaction Principle: Dual-Platform In-Game Overlay Controls (No Hotkeys, Design Goal)
+
+> **Implementation status:** this section describes an interaction design goal, not a shipped capability. As of this writing neither the Windows nor the Android build provides overlay animation controls; the runtime only honours the `drivers=<id>:play&...` key in `runtime.ini`. The model detail panel switches and speed sliders are still to be implemented, so creators should not plan around them.
+
 - Zero Hotkey Dependency: Hotkeys are entirely eliminated to avoid keyboard layout conflicts and mobile device incompatibilities;
 - Cross-Platform Parity: Both Windows desktop (ModelOverlay window) and Android mobile (GameOverlay floating window) render visual on/off switches and speed sliders inside the model detail panel, ensuring identical touch and mouse UX.
 
 ### Capability Declaration
-`json
+
+```json
 "required_capabilities": [
   "native-materials",
   "material-overrides-v1",
   "dynamic-drivers-v1"
 ]
-`
+```
 
 ### Manifest Structure (drivers field in manifest.json)
-`json
+
+```json
 {
   "drivers": [
     {
@@ -465,7 +472,19 @@ BEM 1.5 introduces the dynamic-drivers-v1 capability, enabling packages to decla
     }
   ]
 }
-`
+```
+
+#### Field reference
+- `id`: unique controller identifier string;
+- `name`: controller display name, used as the control title once overlay controls exist;
+- `waveform`: generator type; supports `pingpong` (linear reciprocation), `sine` (smooth cosine), `jitter` (high-frequency noise), `sawtooth` (single-direction ramp) and `step` (on/off step);
+- `default_playing`: initial state after entering the game; must be `false` (at rest) by default;
+- `base_frequency`: base oscillation frequency in Hz; phase accumulates as `phase = (phase + Δt × base_frequency × speed_multiplier) mod 1`;
+- `bindings`: driven targets:
+  - `morph_parameter`: drives an existing continuous shape parameter of the package, extracting deltas from `mesh_deformations` and writing a local Stream 0 slice for artifact-free displacement. **Open question:** that is the target semantics; the current prototype takes a single fixed delta supplied by an external sidecar and is not wired to deformation frames yet, so this item will be revised once the semantics are settled;
+  - `material_float`: updates a float property of the given material slot every frame (e.g. `_EmissionWeight`, `_Smoothness`, `_Cutoff`) at negligible cost;
+  - `material_color`: drives colour properties such as `_EmissionColor`;
+  - `material_keyword`: toggles shader keywords such as `_EMISSION`.
 
 ---
 
@@ -477,7 +496,7 @@ BEM natively supports standard PKZip / Zip64 containers across all versions. Mod
 - The engine auto-detects archive format via header magic: 0x42 0x45 0x4D 0x00 (BEM PKG) selects binary stream decoding; 0x50 0x4B 0x03 0x04 (PKZip) activates in-memory zero-copy ZIP decompression.
 
 ### 2. Standard Archive Layout
-`	ext
+```text
 model.zip (or .bem)
 ├── manifest.json              # [Required] Core manifest with drivers
 ├── preview.png                # [Optional] Preview thumbnail
@@ -487,7 +506,7 @@ model.zip (or .bem)
 └── textures/                  # Texture assets (DDS / PNG)
     ├── T_cloth_01_D.dds
     └── T_cloth_01_N.dds
-`
+```
 
 ### 3. Disambiguation: Collection Bundle vs Single Model Package
 1. Single Model Archive (Package): Root (or single top-level directory) contains valid manifest.json and no .bem files. Loaded directly as a standalone model.

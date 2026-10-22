@@ -224,3 +224,53 @@ Private material copies alone do not reject an observed clone. Unknown Meshes, r
 A completed receiver holding its exact recorded Original Mesh can be prepared again. This redelivery correction is always active and does not require the experimental switch.
 
 Offline lifecycle regressions and both Release builds have been verified. Ultimate-state teleportation, pooling, NPC wrappers and game-specific private material changes still require device validation.
+
+## BEM 1.5 material override runtime behavior and error isolation
+
+The `material-overrides-v1` capability has the following lifecycle and error-isolation behavior at runtime.
+
+### 1. Scope isolation and material cloning
+- When the game prepares meshes and materials for a character part, it takes a template from the original renderer's shared material and clones it through `UnityEngine.Object.Instantiate`.
+- Every `material_overrides` entry (floats, colours, vectors, shader keywords) is applied only to that clone. Shared global materials are never modified, so changing the team or disabling the mod cannot leak material state across scenes.
+
+### 2. Injection order and property fallback
+- Overrides run per draw call during mesh assembly, in this order: `Material.SetFloat`, `SetColor`, `SetVector`, `DisableKeyword`, `EnableKeyword`.
+- If the target native shader does not define an overloaded property, the engine ignores the write. It does not interrupt rendering or throw.
+
+### 3. Interaction with experimental model validation off
+With `skip_validation=true`:
+- naming rules are relaxed: property names may omit the `_` prefix and keyword case is not enforced;
+- out-of-range floats and colours are clamped to the legal bounds instead of rejecting the package;
+- per-draw-call quotas expand to four times the strict limits.
+
+### 4. Root offset baseline and restore (root-offset-v1)
+- **Pristine baseline:** on first mount the runtime captures the target bone's native `localPosition` into `visual_pristine`. All outfit and shape recalculation starts from that absolute base, so repeated outfit switches do not accumulate height.
+- **Restore on unload:** disabling the mod or switching to a package without an offset restores the transform's local position exactly to `visual_original`.
+
+## BEM 1.5 dynamic clock driver runtime behavior (dynamic-drivers-v1)
+
+This section records what `drivers` actually does in the current development tree, including the parts that are not closed yet. It is an implementation-boundary note, not a full promise; the target semantics are in [format specification section 13](BEM_FORMAT_SPEC.en.md).
+
+### 1. Mounting and clock source
+- Drivers exist on the **Windows client only**. The PC build ticks once per rendered frame inside `ResourcePump` on the render thread. Android is not implemented: a package's `drivers` are parsed but produce no motion.
+- Δt comes from consecutive `GetTickCount64()` samples. The first frame is treated as 16 ms and a single frame is clamped to 0.1 s, so a stall or breakpoint cannot jump the phase.
+- Phase accumulates as `phase = (phase + Δt × base_frequency × speed_multiplier) mod 1`, then `waveform` maps it to a normalised 0..1 value.
+
+### 2. Loading and switching
+- If an enabled package carries a `drivers` (or legacy `shapes`) field, the runtime loads that package manifest in place. It reloads only when the package path differs from the currently loaded one.
+- A manifest parse failure is swallowed and does not affect model replacement itself.
+- Each package owns one driver host; a hot switch rebuilds it from the new path.
+
+### 3. Target dispatching
+- **Material:** locates the assembled clone by `component` + `material_slot` and writes the property every frame through `material.set_float`. When nothing is bound to that material the frame performs no write.
+- **Morph:** matches the parameter name against a dynamic mesh channel, recomputes a local slice as base positions plus `fixed delta × normalised value`, and writes the range back through `UpdateSubVertexBuffer`. **Note:** the current implementation uses a single fixed-direction delta and is not wired to the per-frame deltas in `mesh_deformations`; it still falls short of the target semantics in format specification section 13 (see the open-question marker there).
+- A binding that matches no target is skipped silently. It does not raise an error or stop the remaining bindings.
+
+### 4. Play state and control
+- Play state is read only from the `drivers=<id>:play&<id>:pause` key in a `[Mod.*]` section of `runtime.ini`. A missing value falls back to `default_playing`, which the specification requires to be false.
+- **The dual-platform overlay controls are not implemented.** No interface writes that key yet, so starting and stopping currently requires editing the configuration by hand.
+- Disabling the mod unloads the driver with the package; material properties return to the clone's initial values and the dynamic mesh slices stop being written.
+
+### 5. Verification boundary
+- The sidecar (`<name>.anim.json`) is a development-only form that the runtime still keeps as a fallback: it is read only when the manifest has no `drivers`. Shipping packages must not rely on it.
+- The behaviour above has been verified on a real PC for both the material and morph dispatch chains. Android is a zero implementation with no device result. Multiple concurrent drivers, phase continuity across a hot switch, and frame cost with large vertex channels have not been measured systematically.

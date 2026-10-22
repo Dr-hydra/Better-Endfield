@@ -1,6 +1,6 @@
-# BEM 格式规范（1.0–1.4）
+# BEM 格式规范（1.0–1.5）
 
-BEM（Better Endfield Next Model）是《终末地》角色模型替换包，扩展名 `.bem`。Windows 与 Android 读取同一个文件。[BEM 1.4 扩展规范](BEM_V1_4_SPEC.md)定义多资源目标和静态武器。下文保留 1.0–1.3 的协议内容；各版本只在下文标注的地方不同。制作流程见 [创作者指南](BEM_CREATOR_GUIDE.md)，游戏内的匹配与限制见 [运行时行为与兼容性](BEM_RUNTIME_COMPATIBILITY.md)。
+BEM（Better Endfield Next Model）是《终末地》角色模型替换包，扩展名 `.bem`。Windows 与 Android 读取同一个文件。[BEM 1.4 扩展规范](BEM_V1_4_SPEC.md)定义多资源目标和静态武器。下文保留 1.0–1.3 的协议内容；各版本只在下文标注的地方不同。第 12–14 节收录 BEM 1.5 的材质覆盖、动态时钟驱动器与原生 ZIP 容器。制作流程见 [创作者指南](BEM_CREATOR_GUIDE.md)，游戏内的匹配与限制见 [运行时行为与兼容性](BEM_RUNTIME_COMPATIBILITY.md)。
 
 参考实现：写入与校验 `tools/CustomModel/bem_v1.py`、`bem_v11.py`、`bem_v13.py`、`bem_v14.py`；读取 `native/modules/custom_model/bem.cpp`。
 
@@ -13,9 +13,10 @@ BEM（Better Endfield Next Model）是《终末地》角色模型替换包，扩
 | 1.2 | 贴图槽 `texture_slots`、按资源区分的骨骼名别名、32 字节非压缩蒙皮，以及更高的资源上限 | 按使用加 `texture-slots`、`resource-bone-aliases` |
 | 1.3 | 连续形态参数 `parameters` + 位置增量 `mesh_deformations` | `body-parameters`、`mesh-position-deltas` |
 | 1.4 | 显式资源／平台目标、静态 MeshRenderer 网格，见扩展规范 | `multi-resource-targets`；使用静态目标时加 `static-meshes` |
+| 1.5 | 材质属性与关键字覆盖、根骨骼位移、动态时钟驱动器，见第 12、13 节 | 按使用加 `material-overrides-v1`、`root-offset-v1`、`dynamic-drivers-v1` |
 
 - 写入器按内容选择**能表达该包的最低版本**：不需要新特性的包仍写成旧版本，让旧运行时可读。不能把高版本内容写进低版本头部，读取器会拒绝。
-- 读取器按头部版本执行对应的上限和语义；当前运行时接受 1.0–1.4。
+- 读取器按头部版本执行对应的上限和语义；当前运行时接受 1.0–1.5。ZIP 容器（第 14 节）不依赖头部版本，各版本通用。
 - 所有版本都要求能力 `native-materials`、`palette-u8`、`indices-u32`。未知能力、重复能力，或使用了某项功能却没声明对应能力，一律拒绝。只声明不使用是允许的。
 
 ## 2. 容器
@@ -26,7 +27,7 @@ BEM（Better Endfield Next Model）是《终末地》角色模型替换包，扩
 | --- | --- | --- |
 | 0 | byte[8] | magic `42 45 4D 00 50 4B 47 00`（`BEM\0PKG\0`） |
 | 8 | uint16 | major = 1 |
-| 10 | uint16 | minor = 0..3 |
+| 10 | uint16 | minor = 0..5 |
 | 12 | uint32 | header_size = 40 |
 | 16 | uint64 | file_size，等于实际文件长度 |
 | 24 | uint64 | manifest_size，1 字节..4 MiB |
@@ -72,6 +73,7 @@ Payload 目录每项 32 字节，数组下标就是 Payload ID：
 | 1.1+：`option_groups`、`component_rules`、可选 `selection_constraints` | 组合选项，见第 6 节 |
 | 1.2+：可选 `texture_slots` | 见第 9 节 |
 | 1.3：可选 `parameters`、`mesh_deformations` | 见第 10 节 |
+| 1.5：可选 `root_offset`、`drivers` | 见第 12、13 节；draw 内的 `material_overrides` 同属 1.5 |
 
 ## 4. Target：目标角色契约
 
@@ -333,7 +335,7 @@ Payload 目录每项 32 字节，数组下标就是 Payload ID：
 
 ## 11. 上限汇总
 
-| 项 | 1.0 | 1.1 | 1.2 / 1.3 |
+| 项 | 1.0 | 1.1 | 1.2 / 1.3 / 1.4 / 1.5 |
 | --- | --- | --- | --- |
 | 外观 / 选项组 | 1..64 个外观 | 64 组 | 64 组 |
 | 每组选项 | — | 16 | 64 |
@@ -343,7 +345,7 @@ Payload 目录每项 32 字节，数组下标就是 Payload ID：
 | 单次选择的已解码数据 / 常驻资源 | 512 / 512 MiB | 768 / 768 MiB | 1536 / 1536 MiB |
 | Payload 目录项 | 4096 | 4096 | 16384 |
 
-各版本相同：容器 2 GiB；Manifest 4 MiB；单个 Payload 512 MiB；部件 1..64；骨骼表 256；每部件 draw 256；选中索引 16,777,216；顶点 1,048,576；形态参数 64、形变通道 4096。
+各版本相同：容器 2 GiB；Manifest 4 MiB；单个 Payload 512 MiB；部件 1..64；骨骼表 256；每部件 draw 256；选中索引 16,777,216；顶点 1,048,576；形态参数 64、形变通道 4096。1.4 与 1.5 没有新增容器或资源上限，沿用同一列；1.5 的 `material_overrides` 与 `drivers` 按单个 draw 计配额，见第 12、13 节。
 
 预算按单次选择计算，不等于实际显存峰值；1.3 的预算按各通道全部帧保守计算。实际加载开销见运行时文档。
 
@@ -411,21 +413,26 @@ BEM 1.5 新增 `root-offset-v1` 能力，允许模型声明对骨骼根节点的
 
 BEM 1.5 扩展支持 dynamic-drivers-v1 能力，允许模型包在清单内直接声明时间连续动画（如道具往复平移）与材质属性动态调制（如发光呼吸灯、战术手电开关、高光渐变），无需外置任何侧车文件。
 
-### 交互原则：双端悬浮窗可视化控制（无热键依赖）
+### 交互原则：双端悬浮窗可视化控制（零热键，设计目标）
+
+> **实现状态**：本节是交互设计目标，不是已交付能力。截至本节落定时，PC 与 Android 都还没有悬浮窗动效控件；运行时目前只支持通过 `runtime.ini` 的 `drivers=控制器ID:play&...` 键设置播放状态。模型详情页的开关与调速器待实现，创作者不应按已可用来设计。
+
 - 零热键设计：彻底摒弃传统桌面快捷键（如小键盘 NumPad）依赖，防止热键冲突或移动端无实体键盘导致的不可用；
 - 双端同构：PC 端（ModelOverlay 悬浮窗）与 Android 移动端（GameOverlay 悬浮窗）统一在模型详情页中渲染动效控制开关与调速器，触屏与鼠标交互完全一致。
 
 ### Capability 声明
-`json
+
+```json
 "required_capabilities": [
   "native-materials",
   "material-overrides-v1",
   "dynamic-drivers-v1"
 ]
-`
+```
 
 ### 清单配置结构（manifest.json 中的 drivers 字段）
-`json
+
+```json
 {
   "drivers": [
     {
@@ -461,16 +468,16 @@ BEM 1.5 扩展支持 dynamic-drivers-v1 能力，允许模型包在清单内直�
     }
   ]
 }
-`
+```
 
 #### 字段说明：
 - id：控制器唯一字符串标识符；
-- name：悬浮窗内显示的控件显示名称；
+- name：控制器显示名称；悬浮窗控件落地后作为控件标题；
 - waveform：波形发生器类型，支持 pingpong（往复振荡）、sine（余弦平滑波动）、jitter（高频微噪波）、sawtooth（单向锯齿）、step（开关阶跃）；
 - default_playing：进入游戏后的初始状态，默认必须为 false（保持静止）；
-- base_frequency：振荡基频（Hz）；
+- base_frequency：振荡基频（Hz）；相位按 `phase = (phase + Δt × base_frequency × speed_multiplier) mod 1` 累加；
 - bindings：驱动绑定的受控目标列表：
-  - morph_parameter：驱动包内已有的连续形态参数，运行时自动从 mesh_deformations 中提取差量并走 Stream 0 局部切片直传，实现 0 花屏的 GPU 蒙皮位移；
+  - morph_parameter：驱动包内已有的连续形态参数，运行时自动从 mesh_deformations 中提取差量并走 Stream 0 局部切片直传，实现 0 花屏的 GPU 蒙皮位移。**待决**：本条为目标语义，现有原型由外置侧车提供单点固定增量、尚未接到形变帧；正式语义收敛后再修订本项；
   - material_float：每帧动态更新指定材质槽的浮点属性（如 _EmissionWeight、_Smoothness、_Cutoff），零额外开销；
   - material_color：驱动 _EmissionColor 等颜色属性；
   - material_keyword：动态开关着色器关键字（如 _EMISSION）。
@@ -487,7 +494,7 @@ BEM 1.5 扩展支持 dynamic-drivers-v1 能力，允许模型包在清单内直�
 
 ### 2. 标准包内文件布局
 ZIP 容器根目录必须包含 manifest.json，资产文件采用清晰透明的目录存放：
-`	ext
+```text
 模型包.zip (或 .bem)
 ├── manifest.json              # [必需] 核心清单与内化 drivers
 ├── preview.png                # [可选] 预览缩略图
@@ -499,7 +506,7 @@ ZIP 容器根目录必须包含 manifest.json，资产文件采用清晰透明�
 └── textures/                  # 贴图资产（DDS / PNG）
     ├── T_cloth_01_D.dds
     └── T_cloth_01_N.dds
-`
+```
 
 ### 3. ZIP 单模型包 vs BEM 合集包的自适应无歧义判定
 引擎与创作者导入工具采用统一的三步无歧义判定算法：

@@ -22,7 +22,7 @@ BEM（`.bem`）是 Better Endfield Next 的模型替换包。1.0–1.3 包对应
 | Android 模型页 | Better Endfield Next App | 导入、启用、选择，以及手机纹理转换 |
 | AI Skill `bem-creator` | 独立工具包 `skills/bem-creator` | 复制到 AI 工具的技能目录（Codex 为 `~/.codex/skills`），用 `$bem-creator` 调用。只辅助准备配方和解释报告，不能代替校验 |
 
-BEM Tools 从 1.5.1 起正式支持写入和读取 BEM 1.0–1.4，1.5.2 增加独立 GUI；旧的 1.5.0 正式发行包不包含 BEM 1.4。工具版本与 BEM 格式版本不同，当前 `--version` 输出为 `BEM Tools 1.5.4 / BEM 1.0+1.1+1.2+1.3+1.4`。从源码运行时，用 `python tools/CustomModel/bem_tool.py` 代替 exe。
+BEM Tools 1.6.1 支持写入和读取 BEM 1.0–1.5，并提供独立 GUI；旧的 1.5.0 正式发行包不包含 BEM 1.4。工具版本与 BEM 格式版本不同，当前 `--version` 输出为 `BEM Tools 1.6.1 / BEM 1.0+1.1+1.2+1.3+1.4+1.5`。从源码运行时，用 `python tools/CustomModel/bem_tool.py` 代替 exe。
 
 独立工具请完整解压后运行 `BetterEndfieldNext.BemTools.exe`，保留同目录的命令行和支持文件。GUI 跟随系统语言；可将一个 `.bemproj.json` 工程拖到 EXE 图标上打开，或通过命令行传入该工程路径。主程序中的创作者窗口仍使用主程序的语言设置。
 
@@ -366,3 +366,57 @@ BetterEndfieldNext.BemConverter.exe --version
 ```
 - `translation` 中的第二个分量为 Y 轴垂直方向（单位为米，如 `0.04` 代表抬高 4cm）。
 - 系统内置了防累积漂移保护与卸载回滚机制，无论切换多少次配队或外观形态，均会自动锁定原始坐标基准，不会随换装飞天。
+
+## 连续动效与时钟驱动器（BEM 1.5）
+
+`dynamic-drivers-v1` 让模型包在清单里声明随时间循环的动效，不需要外置任何侧车文件。
+
+### 能力声明与配置位置
+
+清单 `required_capabilities` 中加 `dynamic-drivers-v1`，然后在根级写 `drivers` 数组：
+
+```json
+{
+  "required_capabilities": ["native-materials", "material-overrides-v1", "dynamic-drivers-v1"],
+  "drivers": [
+    {
+      "id": "glow_pulse",
+      "name": "发光纹路呼吸",
+      "waveform": "sine",
+      "default_playing": false,
+      "base_frequency": 0.8,
+      "speed_multiplier": 1.0,
+      "bindings": [
+        {"type": "material_float", "component": 2, "material_slot": 0,
+         "property": "_EmissionWeight", "range": [0.0, 1.5]}
+      ]
+    }
+  ]
+}
+```
+
+### 波形怎么选
+
+| waveform | 形态 | 适合 |
+| --- | --- | --- |
+| `sine` | 余弦平滑往复 | 呼吸灯、心跳、脉冲 |
+| `pingpong` | 三角线性往复 | 机械活塞、道具往复平移 |
+| `sawtooth` | 单向锯齿 | 流水、单向位移 |
+| `jitter` | 高频微噪波 | 小幅震颤、故障抖动 |
+| `step` | 阶跃开关 | 开关灯、档位切换 |
+
+`base_frequency` 是基频（Hz），`speed_multiplier` 是初始倍速。归一化值落在 0..1，再线性映射到 `range`。
+
+### 绑定类型
+
+- `material_float`：每帧写材质浮点属性，开销接近零，最稳。
+- `material_color`：写颜色属性（如 `_EmissionColor`）。
+- `material_keyword`：开关着色器关键字。
+- `morph_parameter`：驱动包内已有的形态参数。**当前限制**：实现使用的是单一固定方向增量，尚未接到 `mesh_deformations` 的逐帧形变，语义收敛前不要用它做精细动作。
+
+### 现在能用到什么程度
+
+- `default_playing` 必须写 `false`。规范要求进游戏先保持静止，避免加载瞬间就开始动。
+- **只有 Windows 客户端会跑驱动器**，Android 端目前解析但不产生动效。
+- **悬浮窗控件还没有做**。启停目前只能改 `runtime.ini` 的 `drivers=控制器ID:play`，所以现阶段把它当"默认静止、可手动开启"的功能来设计。
+- 老的侧车 `.anim.json` 是开发期验证形态，运行时只在清单没有 `drivers` 时兜底读取。正式发布不要带侧车。

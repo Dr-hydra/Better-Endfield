@@ -363,3 +363,57 @@ When a mod includes high heels, thick platform soles, or floating stances that c
 ```
 - The second element of `translation` controls vertical elevation (e.g. `0.04` lifts the model by 4cm).
 - The runtime automatically latches the pristine baseline and handles rollbacks, ensuring switching options never causes accumulated height drift.
+
+## Continuous motion and clock drivers (BEM 1.5)
+
+`dynamic-drivers-v1` lets a package declare looping time-based motion in the manifest, with no sidecar file at all.
+
+### Capability declaration and placement
+
+Add `dynamic-drivers-v1` to `required_capabilities`, then write a root-level `drivers` array:
+
+```json
+{
+  "required_capabilities": ["native-materials", "material-overrides-v1", "dynamic-drivers-v1"],
+  "drivers": [
+    {
+      "id": "glow_pulse",
+      "name": "Glow pattern breathing",
+      "waveform": "sine",
+      "default_playing": false,
+      "base_frequency": 0.8,
+      "speed_multiplier": 1.0,
+      "bindings": [
+        {"type": "material_float", "component": 2, "material_slot": 0,
+         "property": "_EmissionWeight", "range": [0.0, 1.5]}
+      ]
+    }
+  ]
+}
+```
+
+### Choosing a waveform
+
+| waveform | Shape | Good for |
+| --- | --- | --- |
+| `sine` | Smooth cosine reciprocation | Breathing lights, heartbeats, pulses |
+| `pingpong` | Linear triangle reciprocation | Mechanical pistons, back-and-forth prop travel |
+| `sawtooth` | One-direction ramp | Flowing water, one-way displacement |
+| `jitter` | High-frequency noise | Small tremors, glitch shake |
+| `step` | On/off step | Lamps, gear changes |
+
+`base_frequency` is the base rate in Hz and `speed_multiplier` the initial speed factor. The normalised value lands in 0..1 and is then mapped linearly onto `range`.
+
+### Binding types
+
+- `material_float`: writes a material float property every frame. Near-zero cost and the most reliable option.
+- `material_color`: writes colour properties such as `_EmissionColor`.
+- `material_keyword`: toggles shader keywords.
+- `morph_parameter`: drives an existing shape parameter of the package. **Current limitation:** the implementation uses a single fixed-direction delta and is not wired to the per-frame deltas in `mesh_deformations`, so do not build fine motion on it until the semantics settle.
+
+### What works today
+
+- `default_playing` must be `false`. The specification requires the model to start at rest so nothing moves the moment it loads.
+- **Only the Windows client runs drivers.** Android parses them but produces no motion.
+- **Overlay controls do not exist yet.** Starting and stopping currently means editing `drivers=<id>:play` in `runtime.ini`, so treat this as a "starts at rest, can be enabled by hand" feature for now.
+- The legacy sidecar `.anim.json` is a development-only form, read by the runtime only as a fallback when the manifest has no `drivers`. Do not ship sidecars.
