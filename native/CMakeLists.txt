@@ -95,6 +95,7 @@ set_target_properties(BetterEndfieldNext.MediaCapture PROPERTIES
 
 add_library(BetterEndfieldNext.CustomModel SHARED
     modules/custom_model/module.cpp
+    modules/custom_model/animation_driver.cpp
     modules/custom_model/native_mesh_layout.cpp
     shared/third_party/minhook/src/hde/hde64.c
 )

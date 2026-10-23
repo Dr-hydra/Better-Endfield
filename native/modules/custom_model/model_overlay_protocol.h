@@ -4,8 +4,19 @@
 #include <cstdint>
 #include <string>
 namespace BetterEndfieldNext::CustomModel::OverlayProtocol {
-inline constexpr uint32_t kMagic=0x4C444D42, kVersion=1;
+inline constexpr uint32_t kMagic=0x4C444D42, kVersion=2;
 inline constexpr size_t kPathCapacity=32768;
+// Section 13 driver panel. The list is published by the game module and edited
+// by the companion, so both sides must agree on the capacity.
+inline constexpr uint32_t kDriverCapacity=16;
+inline constexpr size_t kDriverIdCapacity=64, kDriverNameCapacity=128;
+struct DriverState {
+    wchar_t id[kDriverIdCapacity]{};
+    wchar_t name[kDriverNameCapacity]{};
+    volatile LONG playing=0;
+    // Speed is an integer so a peer never reads a torn float across processes.
+    volatile LONG speed_millis=1000;
+};
 struct Shared {
     uint32_t magic=kMagic, version=kVersion, structure_size=sizeof(Shared), game_pid=0;
     volatile LONG shutdown_requested=0;
@@ -15,6 +26,17 @@ struct Shared {
     alignas(8) volatile LONG64 last_config_hash=0;
     wchar_t runtime_ini[kPathCapacity]{};
     wchar_t package_directory[kPathCapacity]{};
+    // Package the driver list below belongs to. Only one driver set is live at a
+    // time, so the panel attaches controls to the package that owns it.
+    wchar_t driver_package[kPathCapacity]{};
+    // Bumped by the module after it rewrote ids, names and defaults.
+    volatile LONG driver_revision=0;
+    // Bumped by the companion after it edited `playing` or `speed_millis`.
+    volatile LONG driver_control_revision=0;
+    // Written last while publishing, so a reader that sees the new count also
+    // sees the entries behind it.
+    volatile LONG driver_count=0;
+    DriverState drivers[kDriverCapacity]{};
 };
 inline std::wstring MappingName(DWORD pid) {return L"Local\\BetterEndfieldNext.ModelOverlay."+std::to_wstring(pid);}
 inline uint64_t ConfigHash(std::string_view text) {

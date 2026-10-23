@@ -27,6 +27,10 @@ add_executable(BetterEndfieldNext.BemValidate EXCLUDE_FROM_ALL ../../tests/bem_v
 target_link_libraries(BetterEndfieldNext.BemValidate PRIVATE BetterEndfieldNext.CustomModelCore)
 add_executable(BetterEndfieldNext.BemV11CapacityTests EXCLUDE_FROM_ALL ../../tests/bem_v11_capacity_tests.cpp)
 add_executable(BetterEndfieldNext.BemV13MorphTests EXCLUDE_FROM_ALL ../../tests/bem_v13_morph_tests.cpp)
+add_executable(BetterEndfieldNext.AnimationDriverTests EXCLUDE_FROM_ALL
+    ../../tests/animation_driver_tests.cpp animation_driver.cpp)
+target_include_directories(BetterEndfieldNext.AnimationDriverTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+target_compile_features(BetterEndfieldNext.AnimationDriverTests PRIVATE cxx_std_20)
 add_executable(BetterEndfieldNext.BemV14ResourceTests EXCLUDE_FROM_ALL ../../tests/bem_v14_resource_tests.cpp)
 target_link_libraries(BetterEndfieldNext.BemV14ResourceTests PRIVATE BetterEndfieldNext.CustomModelCore)
 target_link_libraries(BetterEndfieldNext.BemV13MorphTests PRIVATE BetterEndfieldNext.CustomModelCore)

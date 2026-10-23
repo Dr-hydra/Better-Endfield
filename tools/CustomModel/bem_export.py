@@ -21,7 +21,8 @@ def prepare_export(manifest, payloads):
     extended_caps = any(c in ('texture-slots', 'resource-bone-aliases') for c in manifest['required_capabilities'])
     shapes = bool(manifest.get('parameters') or manifest.get('mesh_deformations') or
                   any(c in ('body-parameters', 'mesh-position-deltas') for c in manifest['required_capabilities']))
-    if 'option_groups' not in manifest and (aliases or slots or skin32 or overrides or extended_caps or shapes or targets):
+    drivers = bool(manifest.get('drivers'))
+    if 'option_groups' not in manifest and (aliases or slots or skin32 or overrides or extended_caps or shapes or targets or drivers):
         appearances = manifest.pop('appearances')
         default = manifest.pop('default_appearance_id')
         bem.require(0 < len(appearances) <= 64, 'Expected 1..64 appearances')
@@ -69,6 +70,7 @@ def prepare_export(manifest, payloads):
                     any(mesh.get('renderer_kind') == 'static' for mesh in manifest['meshes'])) and 'static-meshes' not in caps:
                 caps.append('static-meshes')
         for capability, used in (('resource-bone-aliases', aliases), ('texture-slots', slots),
+            ('dynamic-drivers-v1', drivers),
             ('keep-material-textures', any(c.get('material_overrides') for r in manifest['component_rules'] for c in r['candidates']))):
             if used and capability not in caps: caps.append(capability)
     return manifest, payloads

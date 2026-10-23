@@ -36,6 +36,9 @@ struct Control {
     bool enabled=true;
     std::function<void()> click;
     std::optional<Action> slider;
+    // >= 0 marks a section 13 speed slider: it edits the shared driver block
+    // instead of runtime.ini, so releasing it must not queue an ini save.
+    int driver=-1;
     uint32_t min=0,max=1000,step=1;
 };
 std::vector<Control> controls;
@@ -132,6 +135,68 @@ void Button(Graphics& g,const std::wstring& label,const RectF& rect,std::functio
     UI::Label(g,label,{rect.X+8,rect.Y,rect.Width-16,rect.Height},enabled?(selected?accent:text):disabled,14,selected);
     if(in_view) controls.push_back({rect,enabled,std::move(click)});
 }
+// ---- Section 13 driver panel ----
+// Only one driver set is live at a time, so the controls attach to the package
+// whose path the module published. A stale path simply hides the section.
+constexpr uint32_t kSpeedMin=250,kSpeedMax=4000,kSpeedStep=50;
+std::wstring FileName(const wchar_t* path) {
+    const wchar_t* slash=wcsrchr(path,L'\\');
+    if(!slash) slash=wcsrchr(path,L'/');
+    return slash?slash+1:path;
+}
+int VisibleDrivers(const Management::Package& package) {
+    if(!shared->driver_package[0]) return 0;
+    const auto owner=UI::Wide(Management::PathUtf8(package.metadata->path));
+    // Exact path first. The registry may hold the same package under a relative
+    // or differently normalised path, so the file name is accepted as well: only
+    // one driver set is live at a time, so it cannot be ambiguous.
+    if(_wcsicmp(shared->driver_package,owner.c_str())!=0 &&
+       _wcsicmp(FileName(shared->driver_package).c_str(),FileName(owner.c_str()).c_str())!=0)
+        return 0;
+    return static_cast<int>(std::clamp<LONG>(
+        InterlockedCompareExchange(&shared->driver_count,0,0),0,
+        static_cast<LONG>(Protocol::kDriverCapacity)));
+}
+void DriverPlaying(size_t index,bool playing) {
+    if(index>=Protocol::kDriverCapacity) return;
+    InterlockedExchange(&shared->drivers[index].playing,playing?1:0);
+    InterlockedIncrement(&shared->driver_control_revision);
+}
+void DriverSpeed(size_t index,uint32_t millis) {
+    if(index>=Protocol::kDriverCapacity) return;
+    InterlockedExchange(&shared->drivers[index].speed_millis,static_cast<LONG>(millis));
+    InterlockedIncrement(&shared->driver_control_revision);
+}
+void DrawDrivers(Graphics& g,const Management::Package& package,float& y) {
+    const int count=VisibleDrivers(package);
+    if(count<=0) return;
+    UI::Label(g,T(L"动效",L"Motion"),{32,y,window.width-64,26},Color(255,170,180,196),14);y+=28;
+    for(int i=0;i<count;++i) {
+        auto& entry=shared->drivers[i];
+        const bool playing=InterlockedCompareExchange(&entry.playing,0,0)!=0;
+        const uint32_t speed=std::clamp<uint32_t>(static_cast<uint32_t>(std::max<LONG>(
+            InterlockedCompareExchange(&entry.speed_millis,0,0),1000)),kSpeedMin,kSpeedMax);
+        const std::wstring name=entry.name[0]?entry.name:entry.id;
+        UI::Label(g,name,{32,y,window.width-204,30},text);
+        Button(g,playing?T(L"暂停",L"Pause"):T(L"播放",L"Play"),{window.width-160,y,136,28},
+            [i,playing]{DriverPlaying(static_cast<size_t>(i),!playing);});
+        y+=32;
+        const RectF rect(44,y,window.width-172,26);
+        Pen track(Color(255,64,73,91),4),fill(accent,4);
+        g.DrawLine(&track,rect.X,rect.Y+13,rect.GetRight(),rect.Y+13);
+        const float fraction=static_cast<float>(speed-kSpeedMin)/static_cast<float>(kSpeedMax-kSpeedMin);
+        g.DrawLine(&fill,rect.X,rect.Y+13,rect.X+rect.Width*fraction,rect.Y+13);
+        SolidBrush knob(accent);g.FillEllipse(&knob,rect.X+rect.Width*fraction-6,rect.Y+7,12.0f,12.0f);
+        wchar_t label[32]{};swprintf_s(label,L"%.2fx",speed/1000.0);
+        UI::Label(g,label,{window.width-120,y-2,96,26},accent,13);
+        if(rect.Y>=kContentTop&&rect.GetBottom()<=window.height-48) {
+            Control control{rect,true};control.driver=i;control.min=kSpeedMin;control.max=kSpeedMax;
+            control.step=kSpeedStep;controls.push_back(std::move(control));
+        }
+        y+=32;
+    }
+    y+=4;
+}
 void DrawSlider(Graphics& g,const Management::Package& package,const Management::Json& parameter,float& y) {
     const auto id=parameter.at("id").get<std::string>();
     const bool active=Available(package.selection.available_parameters,id)&&!save_failed;
@@ -184,6 +249,7 @@ void DrawDetails(Graphics& g,const Management::Package& package,float& y) {
         }
     }
     for(const auto& parameter:metadata->parameters) DrawSlider(g,package,parameter,y);
+    DrawDrivers(g,package,y);
 }
 void Paint(Graphics& g) {
     controls.clear();SolidBrush bar(accent);g.FillRectangle(&bar,18.0f,14.0f,4.0f,22.0f);
@@ -228,10 +294,14 @@ void Paint(Graphics& g) {
         SolidBrush brush(Color(200,100,120,145));g.FillRectangle(&brush,window.width-10,top,3.0f,thumb);
     }
 }
-void SliderValue(const Control& control,float x) {
+uint32_t SliderTick(const Control& control,float x) {
     const double fraction=std::clamp(static_cast<double>((x-control.rect.X)/control.rect.Width),0.0,1.0);
     const auto steps=static_cast<uint32_t>(std::llround(fraction*(control.max-control.min)/control.step));
-    auto action=*control.slider;action.value=std::to_string(control.min+steps*control.step);pending=std::move(action);
+    return control.min+steps*control.step;
+}
+void SliderValue(const Control& control,float x) {
+    if(control.driver>=0) {DriverSpeed(static_cast<size_t>(control.driver),SliderTick(control,x));return;}
+    auto action=*control.slider;action.value=std::to_string(SliderTick(control,x));pending=std::move(action);
 }
 bool Mouse(UINT msg,float x,float y,WPARAM wp) {
     if(msg==WM_MOUSEWHEEL) {scroll+=GET_WHEEL_DELTA_WPARAM(wp)>0?-54.0f:54.0f;window.Render();return true;}
@@ -245,7 +315,13 @@ bool Mouse(UINT msg,float x,float y,WPARAM wp) {
     }
     if(msg==WM_LBUTTONUP) {
         const auto control=pressed;pressed.reset();
-        if(drag_slider) {SliderValue(*drag_slider,x);drag_slider.reset();SavePending();}
+        if(drag_slider) {
+            const bool ini_slider=drag_slider->driver<0;
+            SliderValue(*drag_slider,x);drag_slider.reset();
+            // Speed lives in the shared block, not in runtime.ini, so there is
+            // nothing to queue for a save.
+            if(ini_slider) SavePending();
+        }
         else if(control&&control->rect.Contains(x,y)&&control->click) control->click();
         window.Render();return control.has_value();
     }

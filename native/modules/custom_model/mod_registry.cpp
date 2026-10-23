@@ -127,7 +127,7 @@ bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,Mod
             }
             std::vector<const BemResourceInfo*> selectedResources;
             std::vector<std::string> keys;
-            if(info.minor>=4) {
+            if(!info.resources.empty()) {
                 for(const auto& resource:info.resources) if(std::find(resource.platforms.begin(),resource.platforms.end(),platform)!=resource.platforms.end()) {
                     selectedResources.push_back(&resource); keys.push_back(std::string(platform)+":"+resource.name);
                 }

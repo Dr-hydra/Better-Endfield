@@ -17,6 +17,7 @@ BEM（Better Endfield Next Model）是《终末地》角色模型替换包，扩
 
 - 写入器按内容选择**能表达该包的最低版本**：不需要新特性的包仍写成旧版本，让旧运行时可读。不能把高版本内容写进低版本头部，读取器会拒绝。
 - 读取器按头部版本执行对应的上限和语义；当前运行时接受 1.0–1.5。ZIP 容器（第 14 节）不依赖头部版本，各版本通用。
+- 1.5 是 1.3 的扩展：包可以继续使用 `character_id` / `world_resource` / `ui_resource` 这套旧目标，不必为了用 1.5 特性重建为 1.4 结构。`multi-resource-targets` 自 1.4 起是**可选的目标结构分支**，走不走显式资源目标由 `target` 里有没有 `resources` 决定，与头部版本无关；声明该能力却不带 `resources`、或带了 `resources` 却不声明，都会被拒绝。目标结构一旦确定，整包按该结构校验（部件不得混用两套字段）。
 - 所有版本都要求能力 `native-materials`、`palette-u8`、`indices-u32`。未知能力、重复能力，或使用了某项功能却没声明对应能力，一律拒绝。只声明不使用是允许的。
 
 ## 2. 容器
@@ -413,12 +414,12 @@ BEM 1.5 新增 `root-offset-v1` 能力，允许模型声明对骨骼根节点的
 
 BEM 1.5 扩展支持 dynamic-drivers-v1 能力，允许模型包在清单内直接声明时间连续动画（如道具往复平移）与材质属性动态调制（如发光呼吸灯、战术手电开关、高光渐变），无需外置任何侧车文件。
 
-### 交互原则：双端悬浮窗可视化控制（零热键，设计目标）
+### 交互原则：双端悬浮窗可视化控制（零热键）
 
-> **实现状态**：本节是交互设计目标，不是已交付能力。截至本节落定时，PC 与 Android 都还没有悬浮窗动效控件；运行时目前只支持通过 `runtime.ini` 的 `drivers=控制器ID:play&...` 键设置播放状态。模型详情页的开关与调速器待实现，创作者不应按已可用来设计。
-
-- 零热键设计：彻底摒弃传统桌面快捷键（如小键盘 NumPad）依赖，防止热键冲突或移动端无实体键盘导致的不可用；
-- 双端同构：PC 端（ModelOverlay 悬浮窗）与 Android 移动端（GameOverlay 悬浮窗）统一在模型详情页中渲染动效控制开关与调速器，触屏与鼠标交互完全一致。
+- 零热键：不提供任何直接控制动效的桌面快捷键，避免热键冲突与移动端无实体键盘不可用；
+- 双端同构：PC（ModelOverlay 悬浮窗）与 Android（GameOverlay 悬浮窗）都在模型详情页渲染「动效」分区，逐条给出播放/暂停开关与速度滑条，触屏与鼠标交互一致；
+- **当次会话有效**：面板改动只作用于当前运行，不写回 `runtime.ini`，也不修改包内 `default_playing`。重启后回到包的默认状态；要改默认值就改包。
+- **实现状态**：PC 端已交付（运行时把驱动列表发布到共享块，面板回写播放状态与千分比速度）；Android 端待跟进。`runtime.ini` 的 `drivers=<id>:play&...` 仍可用，作为无面板时的兼容入口，面板改动会覆盖它。
 
 ### Capability 声明
 
@@ -429,6 +430,8 @@ BEM 1.5 扩展支持 dynamic-drivers-v1 能力，允许模型包在清单内直�
   "dynamic-drivers-v1"
 ]
 ```
+
+`dynamic-drivers-v1` 不要求显式资源目标：1.3 结构的包（`character_id` / `world_resource` / `ui_resource`）加上该能力就是合法的 1.5 包，读写两端一致。材质绑定的 `component` 仍是 `target.components` 的下标，两种目标结构含义相同。
 
 ### 清单配置结构（manifest.json 中的 drivers 字段）
 
@@ -471,16 +474,67 @@ BEM 1.5 扩展支持 dynamic-drivers-v1 能力，允许模型包在清单内直�
 ```
 
 #### 字段说明：
-- id：控制器唯一字符串标识符；
-- name：控制器显示名称；悬浮窗控件落地后作为控件标题；
-- waveform：波形发生器类型，支持 pingpong（往复振荡）、sine（余弦平滑波动）、jitter（高频微噪波）、sawtooth（单向锯齿）、step（开关阶跃）；
+- id：控制器唯一字符串标识符，同一包内不得重复；
+- name：控制器显示名称，作为悬浮窗「动效」分区的控件标题；缺省时回落到 id；
+- waveform：波形发生器类型，闭集，见下节；未知名称丢弃该控制器（不静默回退到下界）；
 - default_playing：进入游戏后的初始状态，默认必须为 false（保持静止）；
-- base_frequency：振荡基频（Hz）；相位按 `phase = (phase + Δt × base_frequency × speed_multiplier) mod 1` 累加；
-- bindings：驱动绑定的受控目标列表：
-  - morph_parameter：驱动包内已有的连续形态参数，运行时自动从 mesh_deformations 中提取差量并走 Stream 0 局部切片直传，实现 0 花屏的 GPU 蒙皮位移。**待决**：本条为目标语义，现有原型由外置侧车提供单点固定增量、尚未接到形变帧；正式语义收敛后再修订本项；
-  - material_float：每帧动态更新指定材质槽的浮点属性（如 _EmissionWeight、_Smoothness、_Cutoff），零额外开销；
-  - material_color：驱动 _EmissionColor 等颜色属性；
-  - material_keyword：动态开关着色器关键字（如 _EMISSION）。
+- base_frequency：振荡基频（Hz），`0 ≤ f ≤ 10`；相位按 `phase = (phase + Δt × base_frequency × speed_multiplier) mod 1` 累加；
+- speed_multiplier：初始倍率，`0 ≤ s ≤ 10`，面板滑条可在 0.25x~4.00x 之间实时调整；
+- bindings：驱动绑定的受控目标列表，1~32 条；
+- **配额**：单个包最多 16 个控制器。超出部分运行时丢弃并记 `[AnimDriver]` 日志，工具侧在打包时直接报错。
+
+##### 波形（闭集，`phase = 0` 一律输出 0）
+
+| 名称 | 取值 | 适用 |
+| --- | --- | --- |
+| `pingpong`（缺省） | `p < 0.5 ? 2p : 2 − 2p` | 往复、抽插 |
+| `sine` | `(1 − cos 2πp) / 2` | 呼吸、脉冲（不是 `sin`，否则 phase 0 会从 0.5 起步） |
+| `jitter` | 相位量化后的确定性哈希 | 高频微震 |
+| `sawtooth` | `p` | 单向流水 |
+| `step` | `p < 0.5 ? 0 : 1` | 开关阶跃 |
+
+`jitter` 必须是相位的确定性函数，不得使用 `rand()`：同一包在两次运行间必须产生同一条曲线，否则无法做 A/B 对照。
+
+#### binding 通用字段
+
+- `type`：闭集，`morph_parameter`（别名 `blend_shape`）、`material_float`、`material_color`、`material_keyword`；未知类型丢弃该条绑定并记日志；
+- `component`：目标组件 id（即 `target.components[].id`），材质类绑定必填，缺省 0；
+- `material_slot`：该组件渲染器材质数组的下标，缺省 0；越界时该绑定不会命中任何材质；
+- `range`：`[low, high]` 递增对；缺省 `[0, 1]`。不同绑定类型的含义不同，见下。
+
+#### `morph_parameter`（正式语义）
+
+沿参数的刻度域求值，**不是权重裁剪**：
+
+1. 波形给出 `w ∈ [0,1]`；
+2. 映射到刻度：`tick = round(min + (low + (high − low) × w) × (max − min))`，其中 `min/max` 是该参数的 `parameters[]` 刻度范围，`range = [low, high]` 是刻度域上的归一化区间，必须落在 `[0,1]` 内；
+3. 在 `mesh_deformations` 中该参数的相邻两帧之间按 `tick` 线性插值，得到每顶点的绝对偏移；
+4. 偏移加到基准顶点位置上，按连续顶点 run 写回 Stream 0；
+5. **播放期间接管该参数，停止后交还手动值**，不做双源合并（避免裁剪顺序歧义）。
+
+`target` 必须是 `parameters[]` 中已声明的参数 id；未声明时包校验失败。一个控制器可以同时驱动多个参数，同帧下这些通道的偏移在同一个基准上求和后再上传一次。
+
+#### `material_float`
+
+`range = [low, high]` 是**输出区间**：`value = low + (high − low) × w`，缺省 `[0,1]`。输出区间不要求落在 `[0,1]` 内，校验上限为 ±128。表现等价于每帧对该材质槽调用一次 `Material.SetFloat(property, value)`，属性名遵循第 12 节正则 `^_[a-zA-Z0-9_]{1,95}$`。
+
+#### `material_color`
+
+`colors` 为 `[from, to]` 两个 RGBA 四元组，通道取值 `[0,8]`；按 `w` 逐通道线性插值后写入该材质槽（`Material.SetColor`），属性名规则同上。
+
+#### `material_keyword`
+
+`keyword` 遵循第 12 节正则 `^[A-Z0-9_]{2,96}$`；`w > threshold` 时 `EnableKeyword`，否则 `DisableKeyword`；`threshold` 缺省 0.5，必须落在 `[0,1]`。
+
+#### 恢复规则（驱动停止、暂停、换包、卸载）
+
+每帧对账：某一帧没有写某个属性，就当它已释放，因此暂停、换包、模型卸载、模块退出都走同一条路径，不需要单独的停止回调。
+
+- 该材质槽在 `material_overrides` 里静态覆盖过同名属性 → 重放静态值；
+- 没有静态覆盖 → 写回该绑定的下界：`material_float` 用 `range[0]`，`material_color` 用 `colors[0]`，`material_keyword` 关闭；
+- `morph_parameter` → 回放加载时采样的帧权重，因此一个驱动接管参数 A 时，参数 B 的手动形变不会被抹掉。
+
+**已知限制**：关键字没有静态覆盖时一律关闭，因为运行时不新增 `Material.IsKeywordEnabled` 反射契约；若目标 shader 原本开着同一关键字，停止后会与包作者的预期不一致。需要保证语义时请用 `material_overrides.enable_keywords` 显式声明。
 
 ---
 

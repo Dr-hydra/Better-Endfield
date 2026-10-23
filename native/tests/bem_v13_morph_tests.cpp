@@ -77,6 +77,16 @@ void Position(const BemPocData& data,float x,float y,float z) {
 int main() {try {
     Fixture fixture;Temp file;file.Write(fixture.Pack());std::string error;BemPackageInfo info;
     Check(ReadBemPackageInfo(file.path,info,error),error);Check(info.minor==3 && info.default_parameters=="width:0&height:500","Missing parameter metadata");
+    {   // 1.5 extends 1.3: a header bump alone must not demand explicit resource targets.
+        Temp bumped_file;bumped_file.Write(fixture.Pack(5));BemPackageInfo bumped;
+        Check(ReadBemPackageInfo(bumped_file.path,bumped,error),error);
+        Check(bumped.minor==5 && bumped.resources.empty() && bumped.character_id==info.character_id,"Legacy target rejected under BEM 1.5");
+        Check(bumped.resource_keys==info.resource_keys && bumped.default_parameters==info.default_parameters,"Legacy roots lost under BEM 1.5");
+        Fixture wrong;wrong.manifest=fixture.manifest;
+        wrong.manifest["required_capabilities"].push_back("multi-resource-targets");
+        Temp rejected;rejected.Write(wrong.Pack(5));BemPackageInfo ignored;
+        Check(!ReadBemPackageInfo(rejected.path,ignored,error),"Resource capability accepted without explicit resource targets");
+    }
     std::string canonical;Check(ResolveBemParameters(info,"height:750&width:750",canonical,error),error);
     Check(canonical=="width:750&height:750","Parameter order is not canonical");
     Check(!ResolveBemParameters(info,"width:1001",canonical,error),"Out-of-range tick accepted");
@@ -87,6 +97,39 @@ int main() {try {
     Check(!ResolveBemParameters(info,"width:1&",canonical,error),"Trailing parameter separator accepted");
     BemPocData base,a,b,again,optimized;BemLoadStats neutralStats,stats,optStats;
     Check(LoadBem(file.path,base,error,{},&neutralStats),error);Position(base,1,2,3);
+    // Runtime source captured at load. Playback must not re-read the package, so
+    // the channels, the tick domain and the whole position stream travel with
+    // the component.
+    const auto& morph=base.components[0].morph;
+    Check(morph!=nullptr,"Load did not capture a morph source");
+    Check(morph->channels.size()==2 && morph->channels[0].parameter=="width" && morph->channels[1].parameter=="height","Morph channels were not lowered");
+    Check(morph->vertices==std::vector<uint32_t>({0}) && morph->stream==0 && morph->offset==0 && morph->stride==12,"Morph vertex set or position attribute is wrong");
+    Check(morph->base==base.components[0].streams[0],"Morph base is not the unmorphed stream");
+    Check(morph->channels[0].frames.size()==3 && morph->channels[0].frames[0].neutral && morph->channels[0].frames[2].tick==1000,"Morph frame ladder differs");
+    Check(morph->channels[0].min_tick==0 && morph->channels[0].max_tick==1000 && morph->channels[0].step==1,"Morph tick domain differs");
+    // Defaults are width 0 and height 500, both authored as neutral frames: a
+    // restore sample must therefore displace nothing.
+    Check(morph->channels[0].settled==std::vector<std::pair<uint32_t,float>>({{0,1.0f}}),"Width default did not settle on its neutral frame");
+    Check(morph->channels[1].settled==std::vector<std::pair<uint32_t,float>>({{1,1.0f}}),"Height default did not settle on tick 500");
+    auto sample=[&](const BemMorphChannel& channel,float low,float high,float weight,float expected) {
+        std::vector<float> accumulated(morph->vertices.size()*3,0.0f);
+        SampleMorphChannel(channel,*morph,low,high,weight,accumulated);
+        Check(std::fabs(accumulated[0]-expected)<0.00001f && accumulated[1]==0.0f && accumulated[2]==0.0f,"Morph sample differs");
+    };
+    sample(morph->channels[0],0,1,-1.0f,0.0f);     // restore replays the neutral default
+    sample(morph->channels[0],0,1,0.0f,0.0f);      // tick 0, neutral frame
+    sample(morph->channels[0],0,1,0.25f,1.0f);     // tick 250, half of the first authored step
+    sample(morph->channels[0],0,1,0.5f,2.0f);      // tick 500
+    sample(morph->channels[0],0,1,1.0f,6.0f);      // tick 1000
+    sample(morph->channels[0],0,0.5f,1.0f,2.0f);   // range confines the sweep to tick 500
+    sample(morph->channels[0],0.5f,1.0f,0.0f,2.0f);// range lifts the lower bound to tick 500
+    {
+        std::vector<float> height(morph->vertices.size()*3,0.0f);
+        SampleMorphChannel(morph->channels[1],*morph,0,1,-1.0f,height);
+        Check(height[0]==0.0f && height[2]==0.0f,"Height default did not settle on its neutral frame");
+        SampleMorphChannel(morph->channels[1],*morph,0,1,0.0f,height);
+        Check(std::fabs(height[2]+2.0f)<0.00001f,"Height tick 0 did not sample the authored frame");
+    }
     Check(neutralStats.payload_ids==std::vector<uint32_t>({0,1,2,3}),"Neutral read delta payloads");
     Check(LoadBem(file.path,a,error,{},&stats,false,false,"width:750&height:750"),error);Position(a,5,2,5);
     Check(LoadBem(file.path,b,error,{},nullptr,false,false,"width:250&height:0"),error);Position(b,2,2,1);

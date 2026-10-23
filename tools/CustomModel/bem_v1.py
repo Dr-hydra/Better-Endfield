@@ -17,7 +17,8 @@ ENTRY = struct.Struct('<IIQQQ')
 LIMIT = 512 * 1024 * 1024
 ID = re.compile(r'^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$')
 CAPABILITIES = ['native-materials', 'palette-u8', 'indices-u32', 'fixed-appearances']
-SUPPORTED_CAPABILITIES = CAPABILITIES + ['texture-astc', 'material-overrides-v1', 'root-offset-v1']
+SUPPORTED_CAPABILITIES = CAPABILITIES + ['texture-astc', 'material-overrides-v1', 'root-offset-v1',
+                                         'dynamic-drivers-v1']
 
 
 def require(ok, message):
@@ -62,7 +63,10 @@ def validate_manifest(m, payload_count, minor=None):
         if isinstance(value, dict):
             for k, v in value.items():
                 tree(v, depth+1, allow_float or k in (
-                    'material_overrides', 'floats', 'colors', 'vectors', 'translation'))
+                    'material_overrides', 'floats', 'colors', 'vectors', 'translation',
+                    # Section 13 clock parameters are fractional by nature and are
+                    # validated field by field in bem_v15.
+                    'drivers'))
         elif isinstance(value, list):
             for v in value: tree(v, depth+1, allow_float)
         elif type(value) in (int, float):

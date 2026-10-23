@@ -17,6 +17,7 @@ Reference implementations: writers and validators are `tools/CustomModel/bem_v1.
 
 - Writers choose the **lowest version that can express the package**. A package without newer features remains readable by older runtimes. Newer content in an older header is rejected.
 - Readers apply the limits and semantics for the header version. The current development runtime accepts 1.0–1.5. The ZIP container in section 14 is version independent.
+- 1.5 extends 1.3: a package may keep the legacy `character_id` / `world_resource` / `ui_resource` target and does not have to be rebuilt as 1.4 to use 1.5 features. `multi-resource-targets` is an **optional target-structure branch** from 1.4 onward; whether explicit resource targets apply depends on the presence of `resources` in `target`, never on the header version. Declaring the capability without `resources`, or carrying `resources` without declaring it, is rejected. Once the structure is chosen the whole package is validated against it; components may not mix the two field sets.
 - Every version requires `native-materials`, `palette-u8`, and `indices-u32`. Unknown or duplicate capabilities, and used features without their capability, are rejected. Declaring an unused capability is allowed.
 
 ## 2. Container
@@ -417,12 +418,12 @@ Add `root_offset` at the root level of `manifest.json`:
 
 BEM 1.5 introduces the dynamic-drivers-v1 capability, enabling packages to declare continuous procedural time animations (e.g. reciprocating gadget movement) and dynamic material parameter modulation (such as breathing glow lights, tactical flashlight toggles, and specular ramps) directly in the manifest without external sidecar files.
 
-### Interaction Principle: Dual-Platform In-Game Overlay Controls (No Hotkeys, Design Goal)
+### Interaction Principle: Dual-Platform In-Game Overlay Controls (No Hotkeys)
 
-> **Implementation status:** this section describes an interaction design goal, not a shipped capability. As of this writing neither the Windows nor the Android build provides overlay animation controls; the runtime only honours the `drivers=<id>:play&...` key in `runtime.ini`. The model detail panel switches and speed sliders are still to be implemented, so creators should not plan around them.
-
-- Zero Hotkey Dependency: Hotkeys are entirely eliminated to avoid keyboard layout conflicts and mobile device incompatibilities;
-- Cross-Platform Parity: Both Windows desktop (ModelOverlay window) and Android mobile (GameOverlay floating window) render visual on/off switches and speed sliders inside the model detail panel, ensuring identical touch and mouse UX.
+- Zero Hotkey Dependency: no desktop hotkey drives animation directly, avoiding keyboard layout conflicts and the lack of a physical keyboard on mobile;
+- Cross-Platform Parity: both Windows (ModelOverlay window) and Android (GameOverlay) render a "Motion" group inside the model detail panel, one play/pause switch plus one speed slider per controller, with identical touch and mouse UX;
+- **Session-scoped**: panel edits apply to the current run only. They are not written back to `runtime.ini` and do not modify `default_playing`; a restart returns to the package default. To change the default, change the package.
+- **Implementation status**: shipped on Windows (the runtime publishes the driver list into the shared block; the panel writes back play state and per-mille speed). Android is still pending. The `drivers=<id>:play&...` key in `runtime.ini` remains as a headless fallback; a panel edit overrides it.
 
 ### Capability Declaration
 
@@ -433,6 +434,8 @@ BEM 1.5 introduces the dynamic-drivers-v1 capability, enabling packages to decla
   "dynamic-drivers-v1"
 ]
 ```
+
+`dynamic-drivers-v1` does not require explicit resource targets: a 1.3-style package (`character_id` / `world_resource` / `ui_resource`) plus that capability is a valid 1.5 package, and both readers agree. A material binding's `component` is still an index into `target.components`, which means the same under either target structure.
 
 ### Manifest Structure (drivers field in manifest.json)
 
@@ -475,16 +478,67 @@ BEM 1.5 introduces the dynamic-drivers-v1 capability, enabling packages to decla
 ```
 
 #### Field reference
-- `id`: unique controller identifier string;
-- `name`: controller display name, used as the control title once overlay controls exist;
-- `waveform`: generator type; supports `pingpong` (linear reciprocation), `sine` (smooth cosine), `jitter` (high-frequency noise), `sawtooth` (single-direction ramp) and `step` (on/off step);
+- `id`: unique controller identifier, unique within the package;
+- `name`: display name used as the control title in the overlay "Motion" group; falls back to `id` when absent;
+- `waveform`: closed generator set, see below; an unknown name drops the controller instead of silently clamping to the lower bound;
 - `default_playing`: initial state after entering the game; must be `false` (at rest) by default;
-- `base_frequency`: base oscillation frequency in Hz; phase accumulates as `phase = (phase + Δt × base_frequency × speed_multiplier) mod 1`;
-- `bindings`: driven targets:
-  - `morph_parameter`: drives an existing continuous shape parameter of the package, extracting deltas from `mesh_deformations` and writing a local Stream 0 slice for artifact-free displacement. **Open question:** that is the target semantics; the current prototype takes a single fixed delta supplied by an external sidecar and is not wired to deformation frames yet, so this item will be revised once the semantics are settled;
-  - `material_float`: updates a float property of the given material slot every frame (e.g. `_EmissionWeight`, `_Smoothness`, `_Cutoff`) at negligible cost;
-  - `material_color`: drives colour properties such as `_EmissionColor`;
-  - `material_keyword`: toggles shader keywords such as `_EMISSION`.
+- `base_frequency`: base oscillation frequency in Hz, `0 ≤ f ≤ 10`; phase accumulates as `phase = (phase + Δt × base_frequency × speed_multiplier) mod 1`;
+- `speed_multiplier`: initial multiplier, `0 ≤ s ≤ 10`; the panel slider adjusts it live between 0.25x and 4.00x;
+- `bindings`: driven targets, 1..32 entries;
+- **Quotas**: at most 16 controllers per package. Anything beyond that is dropped by the runtime with an `[AnimDriver]` log line; the authoring tools reject it at pack time.
+
+##### Waveforms (closed set, all output 0 at `phase = 0`)
+
+| Name | Value | Typical use |
+| --- | --- | --- |
+| `pingpong` (default) | `p < 0.5 ? 2p : 2 − 2p` | reciprocation, thrust |
+| `sine` | `(1 − cos 2πp) / 2` | breathing, pulse (`sin` would start at 0.5) |
+| `jitter` | deterministic hash of the quantised phase | high-frequency tremor |
+| `sawtooth` | `p` | one-way flow |
+| `step` | `p < 0.5 ? 0 : 1` | binary switching |
+
+`jitter` must be a deterministic function of phase and must never use `rand()`: the same package has to produce the same curve across runs, otherwise A/B comparison is impossible.
+
+#### Common binding fields
+
+- `type`: closed set — `morph_parameter` (alias `blend_shape`), `material_float`, `material_color`, `material_keyword`. Unknown types drop that binding with a log line;
+- `component`: target component id (that is, `target.components[].id`); required for material bindings, defaults to 0;
+- `material_slot`: index into that component's renderer material array, defaults to 0; an out-of-range slot simply matches no material;
+- `range`: increasing `[low, high]` pair, defaults to `[0, 1]`. Its meaning depends on the binding type, see below.
+
+#### `morph_parameter` (normative semantics)
+
+Evaluated over the parameter's tick domain — this is **not** weight clipping:
+
+1. the waveform yields `w ∈ [0,1]`;
+2. map to a tick: `tick = round(min + (low + (high − low) × w) × (max − min))`, where `min/max` come from that parameter's `parameters[]` entry and `range = [low, high]` is a normalised interval over the tick domain that must stay inside `[0,1]`;
+3. interpolate linearly between the two adjacent `mesh_deformations` frames for that parameter to obtain a per-vertex absolute delta;
+4. add the delta to the base vertex positions and upload it as contiguous vertex runs into Stream 0;
+5. **the driver owns the parameter while it plays and hands it back when it stops**; the two sources are never blended, which removes any ambiguity about clipping order.
+
+`target` must be a parameter id declared in `parameters[]`; an undeclared target fails validation. One controller may drive several parameters; their deltas are summed over the same base and uploaded once per frame.
+
+#### `material_float`
+
+`range = [low, high]` is the **output interval**: `value = low + (high − low) × w`, default `[0,1]`, not restricted to positive values. It is equivalent to calling `Material.SetFloat(property, value)` on that material slot each frame. The property name follows the section 12 pattern `^_[a-zA-Z0-9_]{1,95}$`.
+
+#### `material_color`
+
+`colors` holds two RGBA quads `[from, to]` with channels in `[0,8]`; each channel is interpolated by `w` and written to the material slot (`Material.SetColor`). The same property-name pattern applies.
+
+#### `material_keyword`
+
+`keyword` follows the section 12 pattern `^[A-Z0-9_]{2,96}$`; `EnableKeyword` when `w > threshold`, `DisableKeyword` otherwise. `threshold` defaults to 0.5 and must be inside `[0,1]`.
+
+#### Restore rules (stop, pause, package switch, unload)
+
+Reconciliation happens every frame: a property that no playing driver writes in a frame counts as released, so pause, package switch, model retirement and module shutdown all take the same path and no explicit stop callback is needed.
+
+- If that material slot statically overrides the same property in `material_overrides`, replay the static value;
+- otherwise write back the binding's lower endpoint: `range[0]` for `material_float`, `colors[0]` for `material_color`, and keyword off for `material_keyword`;
+- `morph_parameter` replays the frame weights sampled at load, so a driver taking over parameter A never erases manual deformation on parameter B.
+
+**Known limitation**: a keyword without a static override is always disabled, because the runtime deliberately adds no `Material.IsKeywordEnabled` reflection contract. If the target shader had that keyword on, stopping will not restore it; declare it through `material_overrides.enable_keywords` when the semantics matter.
 
 ---
 

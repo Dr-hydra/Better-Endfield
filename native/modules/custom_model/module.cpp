@@ -57,19 +57,18 @@ std::atomic<DWORD> g_pump_thread{0};
 ModelOverlayHost g_model_overlay;
 AnimationDriverHost g_animation_driver;
 void EnsureAnimationDriverLoaded();
+void PollAnimationDriverControls();
 
-struct DynamicShapeChannel {
-    std::string name;
-    uint32_t vertex_start = 0;
-    uint32_t vertex_count = 0;
-    float dx = 0.0f, dy = 0.0f, dz = 0.0f;
-    std::vector<uint8_t> base_positions;
-};
 struct DynamicMeshRecord {
     int32_t component_id = -1;
-    std::vector<DynamicShapeChannel> channels;
+    // Immutable morph samples owned by the loaded component. Shared because one
+    // component can be built into more than one live mesh (world and UI).
+    std::shared_ptr<const BemMorphSet> morph;
 };
 std::unordered_map<int32_t, DynamicMeshRecord> g_dynamic_meshes;
+// Set while the previous frame pushed driver weights into the meshes, so the
+// first frame carrying none restores the authored pose exactly once.
+bool g_driver_morph_active = false;
 #endif
 BE_ResolvedClassV1 g_skinned_renderer_class{},g_mesh_class{},g_texture2d_class{},g_material_class{},g_vector3_class{};
 using ArrayNewFn = void* (*)(void* elementTypeInfo, uintptr_t length);
@@ -1554,32 +1553,20 @@ bool BuildMeshFromComponent(
 
 #if defined(_WIN32)
     EnsureAnimationDriverLoaded();
-    const auto sidecar_shapes = g_animation_driver.GetShapesForComponent(info.component_id);
-    if (!sidecar_shapes.empty() && !component.streams.empty() && !component.streams[0].empty()) {
+    // Section 10 samples captured at load. Registering them here is what lets a
+    // driver address this mesh later; without a record the tick has nothing to
+    // write into.
+    if (component.morph && !component.morph->channels.empty()) {
         int32_t mesh_id = 0;
         if (InvokeValue(Contract("object.instance_id"), mesh, nullptr, mesh_id) && mesh_id != 0) {
             DynamicMeshRecord rec{};
             rec.component_id = info.component_id;
-            const auto& stream0 = component.streams[0];
-            for (const auto& s : sidecar_shapes) {
-                uint32_t v_count = (s.vertex_end >= s.vertex_start) ? (s.vertex_end - s.vertex_start + 1) : 0;
-                size_t byte_off = static_cast<size_t>(s.vertex_start) * 16;
-                size_t byte_cnt = static_cast<size_t>(v_count) * 16;
-                if (byte_off + byte_cnt <= stream0.size()) {
-                    DynamicShapeChannel ch{};
-                    ch.name = s.name;
-                    ch.vertex_start = s.vertex_start;
-                    ch.vertex_count = v_count;
-                    ch.dx = s.dx; ch.dy = s.dy; ch.dz = s.dz;
-                    ch.base_positions.assign(stream0.begin() + byte_off, stream0.begin() + byte_off + byte_cnt);
-                    rec.channels.push_back(std::move(ch));
-                    Log(label + " registered dynamic stream 0 channel: " + s.name + " (" + 
-                        std::to_string(v_count) + " vertices, offset=" + std::to_string(byte_off) + ")");
-                }
-            }
-            if (!rec.channels.empty()) {
-                g_dynamic_meshes[mesh_id] = std::move(rec);
-            }
+            rec.morph = component.morph;
+            auto channels = component.morph->channels.size();
+            auto vertices = component.morph->vertices.size();
+            g_dynamic_meshes[mesh_id] = std::move(rec);
+            Log(label + " registered morph source: " + std::to_string(channels) + " channels, " +
+                std::to_string(vertices) + " sampled vertices");
         }
     }
 #endif
@@ -2960,6 +2947,9 @@ struct CompletedBinding {
     };
     std::vector<BlendShapeSlot> blend_shapes;
     std::vector<WeakObject> materials;
+    // Authored per-slot overrides, kept so a driver that stops can hand the
+    // property back to the package's static value instead of to a guess.
+    std::vector<BemMaterialOverrides> material_overrides;
     bool enabled=false;
     bool generated_mesh=false;
     bool generated_materials=false;
@@ -2990,6 +2980,234 @@ bool SameAdapter(const CharacterAdapter& a,const CharacterAdapter& b) {
         std::string_view(a.ui_resource)==b.ui_resource && std::string_view(a.resource_id)==b.resource_id &&
         a.explicit_resource==b.explicit_resource && a.receiver_lod==b.receiver_lod;
 }
+// ---- Section 10/13 driver morph application ----
+#if defined(_WIN32)
+struct DriverMorphValue {
+    const std::string* parameter=nullptr;
+    float range_low=0.0f,range_high=1.0f,weight=0.0f;
+};
+// Every live mesh that captured a morph source, resolved through the bindings
+// currently attached to the character.
+template <typename Fn>
+void ForEachMorphedMesh(Fn&& visit) {
+    for (const auto& completed:g_completed) {
+        void* root=completed.root.Get();
+        if (!root || !IsNativeObjectAlive(root)) continue;
+        for (const auto& binding:completed.bindings) {
+            const int32_t mesh_id=binding.mesh.instance_id;
+            if (mesh_id==0) continue;
+            const auto found=g_dynamic_meshes.find(mesh_id);
+            if (found==g_dynamic_meshes.end() || !found->second.morph) continue;
+            void* mesh=binding.mesh.Get();
+            if (!mesh || !IsNativeObjectAlive(mesh)) continue;
+            visit(mesh,*found->second.morph);
+        }
+    }
+}
+// Rebuilds the position stream of every registered mesh from its captured base
+// and uploads only the vertex runs that moved. `values` empty means no driver is
+// playing, which restores the authored weights once and then idles.
+void ApplyDriverMorph(const std::vector<DriverMorphValue>& values) {
+    if (!g_driver_morph_active && values.empty()) return;
+    const bool had_work=g_driver_morph_active;
+    g_driver_morph_active=!values.empty();
+    if (!g_driver_morph_active && !had_work) return;
+
+    thread_local std::vector<float> accumulated;
+    thread_local std::vector<uint32_t> touched;
+    thread_local std::vector<uint8_t> run_bytes;
+
+    ForEachMorphedMesh([&](void* mesh,const BemMorphSet& set) {
+        if (set.vertices.empty() || set.channels.empty() || set.base.empty()) return;
+        accumulated.assign(set.vertices.size()*3,0.0f);
+        for (const auto& channel:set.channels) {
+            const DriverMorphValue* driven=nullptr;
+            for (const auto& value:values)
+                if (value.parameter && *value.parameter==channel.parameter) {driven=&value;break;}
+            // A negative weight is the restore sample: it replays whatever the
+            // load-time tick selected, so parameters no driver owns keep their
+            // authored pose while a neighbour is animated.
+            if (driven) SampleMorphChannel(channel,set,driven->range_low,driven->range_high,driven->weight,accumulated);
+            else SampleMorphChannel(channel,set,0.0f,1.0f,-1.0f,accumulated);
+        }
+        touched.clear();
+        for (size_t i=0;i<set.vertices.size();++i) {
+            const float* d=accumulated.data()+i*3;
+            if (d[0]!=0.0f || d[1]!=0.0f || d[2]!=0.0f) touched.push_back(static_cast<uint32_t>(i));
+        }
+        if (touched.empty()) return;
+        // A partial vertex-buffer upload writes contiguous bytes, and the stride
+        // between two touched vertices also carries skin and UV data, so each
+        // range is rebuilt from the captured base rather than from positions only.
+        auto upload=[&](size_t begin,size_t end) {
+            const uint32_t first_vertex=set.vertices[touched[begin]];
+            const uint32_t last_vertex=set.vertices[touched[end-1]];
+            const size_t byte_offset=size_t(first_vertex)*set.stride;
+            const size_t byte_count=size_t(last_vertex-first_vertex+1)*set.stride;
+            if (byte_offset+byte_count>set.base.size()) return;
+            run_bytes.assign(set.base.begin()+byte_offset,set.base.begin()+byte_offset+byte_count);
+            for (size_t i=begin;i<end;++i) {
+                const size_t index=touched[i];
+                auto* target=run_bytes.data()+(size_t(set.vertices[index])-first_vertex)*set.stride+set.offset;
+                float position[3];std::memcpy(position,target,12);
+                const float* d=accumulated.data()+index*3;
+                for (size_t axis=0;axis<3;++axis) position[axis]+=d[axis];
+                std::memcpy(target,position,12);
+            }
+            SafeUpdateSubVertexBuffer(mesh,static_cast<int32_t>(set.stream),run_bytes.data(),
+                static_cast<int32_t>(byte_offset),static_cast<int32_t>(byte_count));
+        };
+        constexpr size_t kMaxMorphRuns=32;
+        size_t runs=1;
+        for (size_t i=1;i<touched.size();++i)
+            if (set.vertices[touched[i]]!=set.vertices[touched[i-1]]+1) ++runs;
+        if (runs>kMaxMorphRuns) { upload(0,touched.size()); return; }
+        size_t begin=0;
+        for (size_t i=1;i<=touched.size();++i) {
+            if (i<touched.size() && set.vertices[touched[i]]==set.vertices[touched[i-1]]+1) continue;
+            upload(begin,i);
+            begin=i;
+        }
+    });
+}
+
+// ---- Section 13 material modulation ----
+// A material property is driver-owned only while a playing driver keeps writing
+// it. Ownership is reconciled every frame instead of on explicit stop calls, so
+// pause, package switch, model retirement and module shutdown all resolve the
+// same way: the first frame that stops writing a property restores it.
+enum class DriverMaterialKind:uint8_t {Float,Color,Keyword};
+struct DriverMaterialWrite {
+    DriverMaterialKind kind=DriverMaterialKind::Float;
+    uint32_t component=0,slot=0;
+    std::string name;                     // shader property or keyword
+    float rest_float=0.0f;                // weight 0 endpoint of the binding
+    std::array<float,4> rest_color{};
+    bool matched=false;                   // a live material accepted a write
+    bool warned=false;
+};
+std::unordered_map<uint64_t,DriverMaterialWrite> g_driver_material_writes;
+
+uint64_t DriverMaterialKey(DriverMaterialKind kind,uint32_t component,uint32_t slot,
+                           const std::string& name) {
+    uint64_t h=1469598103934665603ull;
+    const auto mix=[&h](uint64_t v){
+        for(int i=0;i<8;++i){h^=(v>>(i*8))&0xffu;h*=1099511628211ull;}
+    };
+    mix(static_cast<uint64_t>(kind)); mix(component); mix(slot);
+    for (unsigned char c:name) {h^=c;h*=1099511628211ull;}
+    return h;
+}
+template <typename Fn>
+void ForEachDriverMaterial(uint32_t component,uint32_t slot,Fn&& visit) {
+    for (const auto& completed:g_completed) {
+        void* root=completed.root.Get();
+        if (!root || !IsNativeObjectAlive(root)) continue;
+        for (const auto& binding:completed.bindings) {
+            if (binding.component_id!=component || size_t(slot)>=binding.materials.size()) continue;
+            void* material=binding.materials[slot].Get();
+            if (material && IsNativeObjectAlive(material)) visit(material,binding);
+        }
+    }
+}
+// One property write. `keyword_on` is ignored for float and colour targets.
+void SetDriverMaterialProperty(void* material,DriverMaterialKind kind,const std::string& name,
+                               float value,const std::array<float,4>& color,bool keyword_on) {
+    void* key=NewString(name.c_str());
+    if (kind==DriverMaterialKind::Float) {
+        float sampled=value; void* args[]{key,&sampled};
+        InvokeVoid(Contract("material.set_float"),material,args);
+    } else if (kind==DriverMaterialKind::Color) {
+        float rgba[4]{color[0],color[1],color[2],color[3]}; void* args[]{key,rgba};
+        InvokeVoid(Contract("material.set_color"),material,args);
+    } else {
+        void* args[]{key};
+        InvokeVoid(Contract(keyword_on?"material.enable_keyword":"material.disable_keyword"),
+                   material,args);
+    }
+}
+void ApplyDriverMaterialValue(const DriverMaterialWrite& write,float value,
+                              const std::array<float,4>& color,bool keyword_on) {
+    ForEachDriverMaterial(write.component,write.slot,[&](void* material,const CompletedBinding&){
+        SetDriverMaterialProperty(material,write.kind,write.name,value,color,keyword_on);
+    });
+}
+// Restores the package's own static value for this property when it has one.
+// Returns false when the package never authored the property, where the
+// binding's lower endpoint is the rest state by definition of section 13.
+bool ReplayDriverMaterialRest(const DriverMaterialWrite& write) {
+    bool applied=false;
+    ForEachDriverMaterial(write.component,write.slot,
+        [&](void* material,const CompletedBinding& binding){
+            if (size_t(write.slot)>=binding.material_overrides.size()) return;
+            const auto& overrides=binding.material_overrides[write.slot];
+            if (write.kind==DriverMaterialKind::Float) {
+                for (const auto& entry:overrides.floats) if (entry.first==write.name) {
+                    SetDriverMaterialProperty(material,write.kind,write.name,entry.second,{},false);
+                    applied=true; return;
+                }
+            } else if (write.kind==DriverMaterialKind::Color) {
+                for (const auto& entry:overrides.colors) if (entry.first==write.name) {
+                    SetDriverMaterialProperty(material,write.kind,write.name,0.0f,entry.second,false);
+                    applied=true; return;
+                }
+            } else {
+                for (const auto& name:overrides.enable_keywords) if (name==write.name) {
+                    SetDriverMaterialProperty(material,write.kind,write.name,0.0f,{},true);
+                    applied=true; return;
+                }
+                for (const auto& name:overrides.disable_keywords) if (name==write.name) {
+                    SetDriverMaterialProperty(material,write.kind,write.name,0.0f,{},false);
+                    applied=true; return;
+                }
+            }
+        });
+    return applied;
+}
+void ReleaseDriverMaterials(const std::unordered_set<uint64_t>* keep) {
+    if (g_driver_material_writes.empty()) return;
+    size_t restored=0,given_back=0;
+    for (auto it=g_driver_material_writes.begin();it!=g_driver_material_writes.end();) {
+        if (keep && keep->count(it->first)) {++it;continue;}
+        const DriverMaterialWrite& write=it->second;
+        if (ReplayDriverMaterialRest(write)) ++restored;
+        else {
+            // No authored value: fall back to the binding's lower endpoint, which
+            // is exactly the pose phase 0 sits on while a driver is paused.
+            ApplyDriverMaterialValue(write,write.rest_float,write.rest_color,false);
+            ++given_back;
+        }
+        it=g_driver_material_writes.erase(it);
+    }
+    if (restored||given_back) Log("[AnimDriver] Released material modulation: "+
+        std::to_string(restored)+" restored to authored value, "+
+        std::to_string(given_back)+" to binding lower bound.");
+}
+void WriteDriverMaterial(DriverMaterialKind kind,uint32_t component,uint32_t slot,
+                         const std::string& name,float value,const std::array<float,4>& color,
+                         bool keyword_on,float rest_float,const std::array<float,4>& rest_color,
+                         std::unordered_set<uint64_t>& touched) {
+    const uint64_t key=DriverMaterialKey(kind,component,slot,name);
+    auto [it,inserted]=g_driver_material_writes.try_emplace(key);
+    if (inserted) {
+        it->second.kind=kind; it->second.component=component; it->second.slot=slot;
+        it->second.name=name; it->second.rest_float=rest_float; it->second.rest_color=rest_color;
+    }
+    touched.insert(key);
+    DriverMaterialWrite& write=it->second;
+    bool matched=false;
+    ForEachDriverMaterial(component,slot,[&](void* material,const CompletedBinding&){
+        SetDriverMaterialProperty(material,kind,name,value,color,keyword_on);
+        matched=true;
+    });
+    if (matched) write.matched=true;
+    else if (!write.warned) {
+        write.warned=true;
+        Log("[AnimDriver] No live material for component "+std::to_string(component)+
+            " slot "+std::to_string(slot)+"; '"+name+"' is not modulated.");
+    }
+}
+#endif
 std::string RelativeBonePath(void* bone) {
     auto path=BuildTransformPath(bone); const auto slash=path.find('/');
     return slash==path.npos?path:path.substr(slash+1);
@@ -3160,6 +3378,7 @@ bool RememberResource(const CharacterAdapter& adapter,void* asset,
         completed.renderer_name=ObjectName(binding.renderer);
         completed.renderer.Set(binding.renderer);
         completed.component_id=binding.component_id; completed.enabled=binding.custom_enabled;
+        completed.material_overrides=binding.material_overrides;
         completed.generated_mesh=binding.custom_mesh!=DonorMesh(binding);
         completed.original=binding.saved_original;
         // Normal deliveries can revisit a cached UI template or a clone with
@@ -4273,57 +4492,50 @@ void __fastcall ResourcePump(void* method) {
         s_anim_last_tick = now_ms;
 
         EnsureAnimationDriverLoaded();
-
-        if (g_animation_driver.HasActiveDrivers() && !g_completed.empty()) {
-            g_animation_driver.Tick(dt,
-                [&](uint32_t component_id, uint32_t slot, const std::string& prop, float val) {
-                    for (const auto& completed : g_completed) {
-                        void* root = completed.root.Get();
-                        if (!root || !IsNativeObjectAlive(root)) continue;
-                        for (const auto& binding : completed.bindings) {
-                            if (binding.component_id == component_id && slot < binding.materials.size()) {
-                                void* mat = binding.materials[slot].Get();
-                                if (mat && IsNativeObjectAlive(mat)) {
-                                    void* key = NewString(prop.c_str());
-                                    void* args[]{key, (void*)&val};
-                                    InvokeVoid(Contract("material.set_float"), mat, args);
-                                }
-                            }
-                        }
-                    }
-                },
-                [&](const std::string& param, float val) {
-                    for (const auto& completed : g_completed) {
-                        void* root = completed.root.Get();
-                        if (!root || !IsNativeObjectAlive(root)) continue;
-                        for (const auto& binding : completed.bindings) {
-                            int32_t mesh_id = binding.mesh.instance_id;
-                            if (mesh_id == 0) continue;
-                            auto it = g_dynamic_meshes.find(mesh_id);
-                            if (it == g_dynamic_meshes.end()) continue;
-                            void* mesh = binding.mesh.Get();
-                            if (!mesh || !IsNativeObjectAlive(mesh)) continue;
-
-                            for (const auto& ch : it->second.channels) {
-                                if (ch.name == param && !ch.base_positions.empty()) {
-                                    thread_local std::vector<uint8_t> working_slice;
-                                    working_slice = ch.base_positions;
-                                    float weight = val; // 0.0 .. 1.0
-                                    for (uint32_t i = 0; i < ch.vertex_count; ++i) {
-                                        float* pos = reinterpret_cast<float*>(working_slice.data() + i * 16);
-                                        pos[0] += ch.dx * weight;
-                                        pos[1] += ch.dy * weight;
-                                        pos[2] += ch.dz * weight;
-                                    }
-                                    SafeUpdateSubVertexBuffer(
-                                        mesh, 0, working_slice.data(),
-                                        ch.vertex_start * 16, static_cast<int32_t>(working_slice.size()));
-                                }
-                            }
-                        }
-                    }
-                }
-            );
+        PollAnimationDriverControls();
+        if (stop) {
+            // Leave nothing driver-owned behind on unload: a saved scene would
+            // otherwise keep the last animated frame as its authored look.
+            ApplyDriverMorph({});
+            ReleaseDriverMaterials(nullptr);
+        }
+        else if (g_animation_driver.HasActiveDrivers() && !g_completed.empty()) {
+            DriverSink sink;
+            thread_local std::unordered_set<uint64_t> touched;
+            touched.clear();
+            sink.on_material_float = [&](uint32_t component_id, uint32_t slot,
+                                         const std::string& prop, float val, float rest) {
+                    WriteDriverMaterial(DriverMaterialKind::Float, component_id, slot, prop, val, {},
+                                        false, rest, {}, touched);
+                };
+            sink.on_material_color = [&](uint32_t component_id, uint32_t slot,
+                                         const std::string& prop,
+                                         const std::array<float, 4>& rgba,
+                                         const std::array<float, 4>& rest) {
+                    WriteDriverMaterial(DriverMaterialKind::Color, component_id, slot, prop, 0.0f,
+                                        rgba, false, 0.0f, rest, touched);
+                };
+            sink.on_material_keyword = [&](uint32_t component_id, uint32_t slot,
+                                           const std::string& keyword, bool enabled) {
+                    WriteDriverMaterial(DriverMaterialKind::Keyword, component_id, slot, keyword,
+                                        0.0f, {}, enabled, 0.0f, {}, touched);
+                };
+            // Morph bindings are collected first and applied once after the tick:
+            // a mesh can be driven on several parameters at the same time, and
+            // section 10 sums their deltas over one base instead of layering
+            // uploads on top of each other.
+            std::vector<DriverMorphValue> morph_values;
+            sink.on_morph_parameter = [&](const std::string& param, float low, float high, float val) {
+                    morph_values.push_back(DriverMorphValue{&param, low, high, val});
+                };
+            g_animation_driver.Tick(dt, sink);
+            ApplyDriverMorph(morph_values);
+            // Anything this frame did not write has gone back to the package.
+            ReleaseDriverMaterials(&touched);
+        }
+        else {
+            ApplyDriverMorph({});
+            ReleaseDriverMaterials(nullptr);
         }
 #endif
 #if defined(__ANDROID__)
@@ -4363,31 +4575,47 @@ void __fastcall ResourcePump(void* method) {
     catch (...) { Log("Resource maintenance failed."); }
 }
 #if defined(_WIN32)
+// UTF-8, not path::string(): package names are routinely non-ASCII and the
+// companion compares this against its own UTF-8 path text.
+std::string PackagePathUtf8(const std::filesystem::path& path) {
+    const auto bytes=path.u8string();
+    return std::string(reinterpret_cast<const char*>(bytes.data()),bytes.size());
+}
+void PublishAnimationDrivers(const std::filesystem::path& package) {
+    std::vector<DriverPanelState> panel;
+    for (const auto& summary:g_animation_driver.Summaries())
+        panel.push_back(DriverPanelState{summary.id,summary.name,summary.playing,summary.speed_millis});
+    g_model_overlay.PublishDrivers(PackagePathUtf8(package),panel);
+}
 void EnsureAnimationDriverLoaded() {
     if (g_registry.enabled.empty()) return;
+    // A package whose manifest cannot be read is retried on a timer instead of
+    // once per frame; a driverless package is remembered through LoadedPath().
+    static std::string failed_package;
+    static uint64_t retry_at=0;
+    // The ini driver overrides are replayed only when the text or the package
+    // changes, so they cannot overwrite what the overlay panel just set.
+    static std::string applied_overrides;
     for (const auto& mod : g_registry.enabled) {
-        if (g_animation_driver.LoadedPath() != mod.package) {
+        const std::string package=mod.package.string();
+        if (g_animation_driver.LoadedPath() != package) {
+            const uint64_t now=GetTickCount64();
+            if (failed_package==package && now<retry_at) continue;
+            // Dynamic drivers live in the package manifest only. The sidecar
+            // .anim.json route was a development vehicle and was never released,
+            // so there is no compatibility surface to keep.
             BemPackageInfo info; std::string why;
-            if (ReadBemManagementInfo(mod.package, info, why, true)) {
-                if (!info.manifest_json.empty()) {
-                    try {
-                        auto m = nlohmann::json::parse(info.manifest_json);
-                        if (m.contains("drivers") || m.contains("shapes")) {
-                            g_animation_driver.LoadFromManifest(m, mod.package);
-                        }
-                    } catch (...) {}
-                }
-            }
-            if (!g_animation_driver.HasActiveDrivers()) {
-                std::filesystem::path anim_path = mod.package;
-                anim_path.replace_extension(".anim.json");
-                if (std::filesystem::exists(anim_path)) {
-                    g_animation_driver.LoadConfig(anim_path);
-                }
+            if (ReadBemManagementInfo(mod.package, info, why, true) && !info.manifest_json.empty()) {
+                g_animation_driver.LoadFromManifest(info.manifest_json, package);
+                PublishAnimationDrivers(mod.package);
+                failed_package.clear();
+            } else {
+                failed_package=package; retry_at=now+5000;
             }
         }
         // Apply driver play/pause states from mod.drivers (synchronized from overlay)
-        if (!mod.drivers.empty()) {
+        if (!mod.drivers.empty() && applied_overrides != package+"\n"+mod.drivers) {
+            applied_overrides = package+"\n"+mod.drivers;
             std::string rem = mod.drivers;
             while (!rem.empty()) {
                 auto amp = rem.find('&');
@@ -4402,7 +4630,18 @@ void EnsureAnimationDriverLoaded() {
                 rem = (amp == std::string::npos) ? "" : rem.substr(amp + 1);
             }
         }
-        if (g_animation_driver.HasActiveDrivers()) break;
+        // Only a loaded driver set ends the search: a paused set must not be
+        // replaced by the next package in the list.
+        if (g_animation_driver.DriverCount() > 0) break;
+    }
+}
+// The panel sends a whole snapshot on every edit, so applying it is idempotent.
+void PollAnimationDriverControls() {
+    thread_local std::vector<DriverPanelState> panel;
+    if (!g_model_overlay.PollDriverControls(panel)) return;
+    for (const auto& state : panel) {
+        g_animation_driver.SetPlaying(state.id, state.playing);
+        g_animation_driver.SetSpeedMillis(state.id, state.speed_millis);
     }
 }
 #endif

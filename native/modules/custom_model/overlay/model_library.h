@@ -44,13 +44,14 @@ enum class ActionKind {Enable,Disable,DisableAll,Option,Appearance,Parameter,Def
 struct Action {ActionKind kind;std::string section,id,value;};
 inline std::string TargetKey(const BemPackageInfo& info) {return info.target_kind+":"+info.target_id;}
 inline bool SupportsWindows(const BemPackageInfo& info) {
-    return info.minor<4 || std::any_of(info.resource_keys.begin(),info.resource_keys.end(),[](const auto& key){return key.starts_with("windows-x64:");});
+    return info.resources.empty() || std::any_of(info.resource_keys.begin(),info.resource_keys.end(),[](const auto& key){return key.starts_with("windows-x64:");});
 }
 inline bool Conflicts(const BemPackageInfo& first,const BemPackageInfo& second) {
     if(!first.package_id.empty() && first.package_id==second.package_id) return true;
     // Preserve the legacy character contract while allowing explicit forms to
     // coexist with a normal character package when their resource roots differ.
-    if(first.minor<4 && second.minor<4 && !first.character_id.empty() && first.character_id==second.character_id) return true;
+    // Structure, not the header version, decides which contract applies.
+    if(first.resources.empty() && second.resources.empty() && !first.character_id.empty() && first.character_id==second.character_id) return true;
     for(const auto& key:first.resource_keys)
         if(key.starts_with("windows-x64:") && std::find(second.resource_keys.begin(),second.resource_keys.end(),key)!=second.resource_keys.end()) return true;
     return false;

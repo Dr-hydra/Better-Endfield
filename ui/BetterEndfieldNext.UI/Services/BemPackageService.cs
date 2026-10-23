@@ -199,12 +199,14 @@ internal sealed class BemPackageService
         return value;
     }
 
-    private static (string Kind, string Id, HashSet<string> Resources) ReadTarget(JsonElement target, ushort minor)
+    private static (string Kind, string Id, HashSet<string> Resources) ReadTarget(JsonElement target)
     {
         var keys = new HashSet<string>(StringComparer.Ordinal);
-        if (minor < 4)
+        // The target structure decides the contract, not the header version:
+        // 1.5 extends 1.3, so a 1.5 package may still use the legacy roots.
+        if (!target.TryGetProperty("resources", out _))
         {
-            if (target.TryGetProperty("kind", out _) || target.TryGetProperty("id", out _) || target.TryGetProperty("resources", out _))
+            if (target.TryGetProperty("kind", out _) || target.TryGetProperty("id", out _))
                 throw new InvalidDataException(BemText.Get("BEM 资源目标不合法。"));
             string id = StableId(target, "character_id");
             foreach (string platform in new[] { "windows-x64", "android-arm64" })
@@ -263,7 +265,7 @@ internal sealed class BemPackageService
         var m = document.RootElement;
         if (m.GetProperty("schema").GetInt32() != 1 || (!skipValidation && m.GetProperty("target").GetProperty("platform").GetString() != "windows-x64"))
             throw new InvalidDataException(BemText.Get("不支持的 BEM schema 或目标平台。"));
-        var target = ReadTarget(m.GetProperty("target"), minor);
+        var target = ReadTarget(m.GetProperty("target"));
         var appearances = minor == 0 ? m.GetProperty("appearances").EnumerateArray().Select(a => new BemAppearance
         {
             Id = StableId(a, "id"), Name = a.GetProperty("name").GetString() ?? "",

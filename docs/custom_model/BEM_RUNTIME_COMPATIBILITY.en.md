@@ -249,28 +249,32 @@ With `skip_validation=true`:
 
 ## BEM 1.5 dynamic clock driver runtime behavior (dynamic-drivers-v1)
 
-This section records what `drivers` actually does in the current development tree, including the parts that are not closed yet. It is an implementation-boundary note, not a full promise; the target semantics are in [format specification section 13](BEM_FORMAT_SPEC.en.md).
+This section records what `drivers` actually does in the current tree, including the parts that are not closed yet. It is an implementation-boundary note, not a full promise; the target semantics live in [format specification section 13](BEM_FORMAT_SPEC.md).
 
-### 1. Mounting and clock source
-- Drivers exist on the **Windows client only**. The PC build ticks once per rendered frame inside `ResourcePump` on the render thread. Android is not implemented: a package's `drivers` are parsed but produce no motion.
-- Δt comes from consecutive `GetTickCount64()` samples. The first frame is treated as 16 ms and a single frame is clamped to 0.1 s, so a stall or breakpoint cannot jump the phase.
+### 1. Mount point and clock source
+- Drivers exist on **Windows only**. The PC build ticks them once per frame inside the render-thread `ResourcePump`; Android parses `drivers` but produces no motion.
+- Δt is the `GetTickCount64()` delta between frames, 16 ms on the first frame, clamped to 0.1 s so a hitch or breakpoint cannot jump the phase.
 - Phase accumulates as `phase = (phase + Δt × base_frequency × speed_multiplier) mod 1`, then `waveform` maps it to a normalised 0..1 value.
 
 ### 2. Loading and switching
-- If an enabled package carries a `drivers` (or legacy `shapes`) field, the runtime loads that package manifest in place. It reloads only when the package path differs from the currently loaded one.
-- A manifest parse failure is swallowed and does not affect model replacement itself.
-- Each package owns one driver host; a hot switch rebuilds it from the new path.
+- The target structure is decided by `target` itself: `resources` selects the 1.4 explicit resource targets, otherwise `world_resource` / `ui_resource` apply, regardless of the header minor version. A 1.3-style package that declares `dynamic-drivers-v1` is therefore accepted as 1.5 without being rebuilt.
+- When an enabled package carries `drivers`, the runtime parses and installs them on the first frame that needs them. The same package path is never re-read, and a package without drivers also remembers its path so the file is not reopened every frame.
+- A parse failure logs `[AnimDriver]` and leaves the runtime driverless, retrying after 5 s. Model replacement is unaffected.
+- There is one driver host: the first enabled package that actually carries drivers wins, and a paused driver set is not displaced by the next package in the list.
+- The `.anim.json` sidecar fallback is gone; only drivers internalised in the manifest are honoured.
 
 ### 3. Target dispatching
-- **Material:** locates the assembled clone by `component` + `material_slot` and writes the property every frame through `material.set_float`. When nothing is bound to that material the frame performs no write.
-- **Morph:** matches the parameter name against a dynamic mesh channel, recomputes a local slice as base positions plus `fixed delta × normalised value`, and writes the range back through `UpdateSubVertexBuffer`. **Note:** the current implementation uses a single fixed-direction delta and is not wired to the per-frame deltas in `mesh_deformations`; it still falls short of the target semantics in format specification section 13 (see the open-question marker there).
+- **Material float / color / keyword:** locates the assembled clone material by `component` + `material_slot` and calls `material.set_float` / `set_color` / `enable_keyword` every frame. Property names follow the section 12 pattern; an out-of-range slot or unknown component writes nothing and logs once.
+- **Morph:** matches the parameter name against a dynamic mesh channel, interpolates a per-vertex absolute delta between the adjacent `mesh_deformations` frames of that parameter, adds it to the base positions captured at load, and uploads it as contiguous vertex runs through `SafeUpdateSubVertexBuffer` into Stream 0. More than 32 runs degrades to one whole-range upload.
 - A binding that matches no target is skipped silently. It does not raise an error or stop the remaining bindings.
 
 ### 4. Play state and control
-- Play state is read only from the `drivers=<id>:play&<id>:pause` key in a `[Mod.*]` section of `runtime.ini`. A missing value falls back to `default_playing`, which the specification requires to be false.
-- **The dual-platform overlay controls are not implemented.** No interface writes that key yet, so starting and stopping currently requires editing the configuration by hand.
-- Disabling the mod unloads the driver with the package; material properties return to the clone's initial values and the dynamic mesh slices stop being written.
+- The `drivers=<id>:play&<id>:pause` key in a `[Mod.*]` section of `runtime.ini` is still read as the headless entry point. It is applied only when the text changes, so it cannot overwrite panel settings every frame.
+- The Windows overlay model detail page now has a Motion group: one play/pause switch plus a 0.25x..4.00x speed slider per controller. Edits travel back through shared memory and are **session-scoped**: nothing is written to `runtime.ini` and the package default is untouched.
+- The Android panel is still pending.
+- Disabling the mod or unloading the model hands material properties back per the section 13 restore rules (static override value, or the binding's lower endpoint) and replays the frame weights sampled at load for morphs.
 
 ### 5. Verification boundary
-- The sidecar (`<name>.anim.json`) is a development-only form that the runtime still keeps as a fallback: it is read only when the manifest has no `drivers`. Shipping packages must not rely on it.
-- The behaviour above has been verified on a real PC for both the material and morph dispatch chains. Android is a zero implementation with no device result. Multiple concurrent drivers, phase continuity across a hot switch, and frame cost with large vertex channels have not been measured systematically.
+- Morph channels and deltas were checked against a real package (`vag_morph 1637`, `anal_morph 180`, `dildo_depth 6358`, `anal_plug_depth 1434`, matching the Python unpack item by item), and unit tests cover channel merging, tick-domain mapping and frame interpolation.
+- In-game visual results, concurrent drivers, phase continuity across a hot switch, and frame cost with large vertex channels have not been measured systematically.
+- Keyword restore has a known limitation: without a static override the keyword is always disabled (see format specification section 13).
