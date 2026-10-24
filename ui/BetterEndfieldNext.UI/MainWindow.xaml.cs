@@ -282,7 +282,13 @@ public sealed partial class MainWindow : Window
             ApplyConfiguration(configuration);
             GachaPage.SetEnabled(_appSettings.GachaEnabled);
             RefreshCombatSessions();
+            AutoCheckUpdatesToggle.IsOn = _appSettings.AutoCheckUpdates;
+            UpdateAboutUpdateHint();
             _initializing = false;
+            if (_appSettings.AutoCheckUpdates)
+            {
+                _ = CheckUpdatesOnStartupAsync();
+            }
             UpdateCrossfadePanel();
             UpdateLoaderModePanel();
             UpdatePathStatusText();
@@ -2452,6 +2458,84 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private void UpdateAboutUpdateHint()
+    {
+        bool isZh = LocalizationService.Instance.IsChinese;
+        if (AutoCheckUpdatesToggle.IsOn)
+        {
+            AboutUpdateSectionHint.Text = isZh
+                ? "启动时自动检查 GitHub Releases，发现新版本时提示更新。"
+                : "Automatically checks GitHub Releases on startup and prompts when a new version is available.";
+        }
+        else
+        {
+            AboutUpdateSectionHint.Text = isZh
+                ? "仅在点击检查时访问 GitHub Releases，不会后台自动联网。"
+                : "Connects to GitHub Releases only when manually checked; no background network tracking.";
+        }
+    }
+
+    private async void AutoCheckUpdatesToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_initializing) return;
+        _appSettings.AutoCheckUpdates = AutoCheckUpdatesToggle.IsOn;
+        UpdateAboutUpdateHint();
+        try
+        {
+            await ConfigurationService.SaveAppSettingsAsync(_appSettings);
+        }
+        catch (Exception ex)
+        {
+            ShowStatus(LocalizationService.Instance.IsChinese ? "保存设置失败" : "Failed to Save Settings", ex.Message, InfoBarSeverity.Error);
+        }
+    }
+
+    private async Task CheckUpdatesOnStartupAsync()
+    {
+        try
+        {
+            UpdateCheckResult result = await UpdateService.CheckAsync(CancellationToken.None);
+            if (result.IsUpdateAvailable && !string.IsNullOrWhiteSpace(result.LatestVersion))
+            {
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    ShowUpdateAvailable(result.CurrentVersion, result.LatestVersion, result.ReleasesUrl);
+                });
+            }
+        }
+        catch
+        {
+            // Background startup update check is quiet on network/timeout errors.
+        }
+    }
+
+    private void ShowUpdateAvailable(string currentVersion, string latestVersion, string releaseUrl)
+    {
+        bool isZh = LocalizationService.Instance.IsChinese;
+        _latestReleaseUrl = releaseUrl;
+        var downloadButton = new Button
+        {
+            Content = isZh ? "打开下载页" : "Download",
+            Style = (Style)Application.Current.Resources["DefaultButtonStyle"]
+        };
+        downloadButton.Click += (_, _) => OpenWithShell(releaseUrl);
+        StatusInfoBar.ActionButton = downloadButton;
+        StatusInfoBar.Title = isZh ? "发现新版本" : "New Version Available";
+        StatusInfoBar.Message = isZh
+            ? $"Better Endfield Next 有可用更新：当前 {currentVersion}，最新 {latestVersion}。"
+            : $"A new version of Better Endfield Next is available: current {currentVersion}, latest {latestVersion}.";
+        StatusInfoBar.Severity = InfoBarSeverity.Success;
+        StatusInfoBar.IsOpen = true;
+
+        UpdateInfoBar.Title = isZh ? "发现新版本" : "New Version Available";
+        UpdateInfoBar.Message = isZh
+            ? $"当前 {currentVersion}，最新 {latestVersion}。"
+            : $"Current {currentVersion}, Latest {latestVersion}.";
+        UpdateInfoBar.Severity = InfoBarSeverity.Success;
+        UpdateInfoBar.IsOpen = true;
+        OpenReleaseButton.Visibility = Visibility.Visible;
+    }
+
     private void OpenReleaseButton_Click(object sender, RoutedEventArgs e) =>
         OpenWithShell(_latestReleaseUrl);
 
@@ -4082,6 +4166,7 @@ public sealed partial class MainWindow : Window
 
     private void ShowStatus(string title, string message, InfoBarSeverity severity)
     {
+        StatusInfoBar.ActionButton = null;
         StatusInfoBar.Title = title;
         StatusInfoBar.Message = message;
         StatusInfoBar.Severity = severity;
@@ -4525,9 +4610,8 @@ public sealed partial class MainWindow : Window
             : "Endfield Title Scene Models & Voice Router Controller";
         CurrentVersionTextBlock.Text = $"{(isZh ? "版本" : "Version")} {UpdateService.CurrentVersion}";
         AboutUpdateSectionTitle.Text = isZh ? "软件更新" : "Software Updates";
-        AboutUpdateSectionHint.Text = isZh
-            ? "仅在点击检查时访问 GitHub Releases，不会后台自动联网。"
-            : "Connects to GitHub Releases only when manually checked; no background network tracking.";
+        AutoCheckUpdatesToggle.Header = isZh ? "启动时自动检查更新" : "Check for updates on startup";
+        UpdateAboutUpdateHint();
         CheckUpdatesButtonTextBlock.Text = isZh ? "检查更新" : "Check for Updates";
         OpenReleaseButtonTextBlock.Text = isZh ? "打开下载页" : "Open Release Page";
         AboutProjectSectionTitle.Text = isZh ? "项目" : "Project";

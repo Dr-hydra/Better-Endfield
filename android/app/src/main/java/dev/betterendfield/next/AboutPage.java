@@ -65,6 +65,12 @@ final class AboutPage extends LinearLayout {
         addView(header);
 
         SectionCard updates = card("软件更新");
+        android.content.SharedPreferences prefs = FrameworkSettings.open(activity);
+        SettingRow autoCheckRow = new SettingRow(activity, "启动时自动检查更新", "进入应用时自动检查 GitHub Releases 并提示新版本", null);
+        autoCheckRow.initialize(prefs.getBoolean(ModuleSettings.AUTO_CHECK_UPDATES, true));
+        autoCheckRow.onChanged((button, checked) -> prefs.edit().putBoolean(ModuleSettings.AUTO_CHECK_UPDATES, checked).apply());
+        updates.add(autoCheckRow);
+
         checkUpdates = button("检查更新", this::checkUpdates);
         updates.add(checkUpdates);
         updateResult = text("", 14); updateResult.setVisibility(GONE);
@@ -122,43 +128,11 @@ final class AboutPage extends LinearLayout {
         updateResult.setVisibility(GONE); openRelease.setVisibility(GONE);
         worker.execute(() -> {
             String message, link = RELEASES;
-            HttpURLConnection connection = null;
             try {
-                connection = (HttpURLConnection) new URL("https://api.github.com/repos/Dr-hydra/Better-Endfield/releases?per_page=30").openConnection();
-                connection.setConnectTimeout(12000); connection.setReadTimeout(12000);
-                connection.setRequestProperty("User-Agent", "BetterEndfieldNext-Android/" + BuildConfig.VERSION_NAME);
-                connection.setRequestProperty("Accept", "application/vnd.github+json");
-                int code = connection.getResponseCode();
-                if (code != 200) throw new java.io.IOException("HTTP " + code);
-                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                try (InputStream input = connection.getInputStream()) {
-                    byte[] buffer = new byte[8192]; int count;
-                    while ((count = input.read(buffer)) != -1) {
-                        if (bytes.size() + count > 2 * 1024 * 1024) throw new java.io.IOException("更新数据过大");
-                        bytes.write(buffer, 0, count);
-                    }
-                }
-                JSONArray releases = new JSONArray(new String(bytes.toByteArray(), java.nio.charset.StandardCharsets.UTF_8));
-                JSONObject latest = null;
-                // Desktop-only releases are not Android updates.
-                for (int i = 0; i < releases.length() && latest == null; i++) {
-                    JSONObject release = releases.getJSONObject(i);
-                    if (release.optBoolean("draft") || release.optBoolean("prerelease")) continue;
-                    JSONArray assets = release.optJSONArray("assets");
-                    if (assets == null) continue;
-                    for (int j = 0; j < assets.length(); j++)
-                        if (assets.getJSONObject(j).optString("name").toLowerCase(java.util.Locale.ROOT).endsWith(".apk")) { latest = release; break; }
-                }
-                if (latest == null) message = "暂无 Android 发布版本";
-                else {
-                    String version = latest.getString("tag_name");
-                    String candidate = latest.optString("html_url", RELEASES);
-                    if (candidate.startsWith(RELEASES + "/")) link = candidate;
-                    message = compareVersions(version, BuildConfig.VERSION_NAME) > 0
-                            ? "发现新版本 " + version : "已是最新版本 · " + BuildConfig.VERSION_NAME;
-                }
+                AppUpdateChecker.Result result = AppUpdateChecker.check();
+                message = result.message;
+                link = result.releaseUrl;
             } catch (Exception failure) { message = "检查更新失败 · " + failure.getMessage(); }
-            finally { if (connection != null) connection.disconnect(); }
             final String result = message, target = link;
             main.post(() -> {
                 if (closed || activity.isDestroyed()) return;
@@ -166,14 +140,6 @@ final class AboutPage extends LinearLayout {
                 checkUpdates.setText("检查更新"); checkUpdates.setEnabled(true); openRelease.setVisibility(VISIBLE);
             });
         });
-    }
-    private static int compareVersions(String left, String right) {
-        String[] a = left.replaceFirst("^[vV]", "").split("[.+-]"), b = right.replaceFirst("^[vV]", "").split("[.+-]");
-        for (int i = 0; i < 3; i++) {
-            int comparison = Long.compare(i < a.length ? Long.parseLong(a[i]) : 0, i < b.length ? Long.parseLong(b[i]) : 0);
-            if (comparison != 0) return comparison;
-        }
-        return 0;
     }
     void close() { closed = true; main.removeCallbacksAndMessages(null); worker.shutdownNow(); }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }

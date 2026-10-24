@@ -21,6 +21,7 @@ final class ModuleSettings {
     private static final String MODEL_SCALE = "model_scale";
     private static final String LOGO_ENABLED = "logo_theme_enabled";
     private static final String LOGO_COLOR = "logo_theme_color";
+    static final String AUTO_CHECK_UPDATES = "auto_check_updates";
     static final String MODEL_CONFIGURATION = "model_configuration";
 
     // betterendfieldnext.ui — the desktop interface module.

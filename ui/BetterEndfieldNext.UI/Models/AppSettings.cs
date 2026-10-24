@@ -23,6 +23,8 @@ internal sealed class AppSettings
 
     public bool GachaEnabled { get; set; } = false;
 
+    public bool AutoCheckUpdates { get; set; } = true;
+
     public string DisclaimerAcceptedVersion { get; set; } = string.Empty;
 
     public SteamIntegrationSettings SteamIntegration { get; set; } = new();

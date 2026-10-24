@@ -2280,10 +2280,15 @@
                                 <Border Style="{StaticResource SectionStyle}">
                                     <StackPanel Spacing="14">
                                         <TextBlock x:Name="AboutUpdateSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="软件更新" />
+                                        <ToggleSwitch
+                                            x:Name="AutoCheckUpdatesToggle"
+                                            Header="启动时自动检查更新"
+                                            IsOn="True"
+                                            Toggled="AutoCheckUpdatesToggle_Toggled" />
                                         <TextBlock
                                             x:Name="AboutUpdateSectionHint"
                                             Style="{StaticResource FieldHintStyle}"
-                                            Text="仅在点击检查时访问 GitHub Releases，不会后台自动联网。" />
+                                            Text="启动时自动检查 GitHub Releases，发现新版本时提示更新。" />
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <Button
                                                 x:Name="CheckUpdatesButton"

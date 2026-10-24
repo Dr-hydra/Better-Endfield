@@ -1,6 +1,8 @@
 package dev.betterendfield.next;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.widget.Toast;
 import android.content.Intent;
 import android.net.Uri;
 import android.graphics.Color;
@@ -105,7 +107,39 @@ public final class MainActivity extends Activity {
         setupAboutPage();
         findViewById(R.id.sponsor_button).setOnClickListener(view -> SponsorDialog.show(this));
         applyResponsiveShell();
+        if (savedInstanceState == null) {
+            checkUpdateOnStartup();
+        }
+    }
 
+    private void checkUpdateOnStartup() {
+        android.content.SharedPreferences prefs = FrameworkSettings.open(this);
+        if (!prefs.getBoolean(ModuleSettings.AUTO_CHECK_UPDATES, true)) return;
+        new Thread(() -> {
+            try {
+                AppUpdateChecker.Result result = AppUpdateChecker.check();
+                if (result.isUpdateAvailable && !isFinishing() && !isDestroyed()) {
+                    runOnUiThread(() -> {
+                        if (isFinishing() || isDestroyed()) return;
+                        new AlertDialog.Builder(this)
+                                .setTitle("发现新版本")
+                                .setMessage("Better Endfield Next 有可用更新：\n\n当前版本：" + result.currentVersion
+                                        + "\n最新版本：" + result.latestVersion)
+                                .setPositiveButton("打开下载页", (dialog, which) -> {
+                                    try {
+                                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(result.releaseUrl)));
+                                    } catch (Exception ignored) {
+                                        Toast.makeText(MainActivity.this, "无法打开链接", Toast.LENGTH_SHORT).show();
+                                    }
+                                })
+                                .setNegativeButton("稍后再说", null)
+                                .show();
+                    });
+                }
+            } catch (Exception ignored) {
+                // Background check fails silently without interrupting the user.
+            }
+        }, "startup-update-check").start();
     }
 
     @Override protected void onResume() {
