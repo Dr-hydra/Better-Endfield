@@ -12,7 +12,10 @@ namespace BetterEndfieldNext::CustomModel {
 // side; only the shared block is UTF-16, matching every other field there.
 struct DriverPanelState {
     std::string id,name;
-    bool playing=false;
+    // 0 stopped, 1 playing, 2 paused, 3 finished. The companion edits this and
+    // the module applies it, so pause and stop stay distinct across processes.
+    int state=0;
+    bool once=false;
     uint32_t speed_millis=1000;
 };
 // Lifecycle only: Win32 process/IPC, no worker and no Unity calls.
@@ -76,11 +79,27 @@ public:
             Wide(row.id,OverlayProtocol::kDriverIdCapacity,list[i].id);
             Wide(row.name,OverlayProtocol::kDriverNameCapacity,list[i].name);
             InterlockedExchange(&row.speed_millis,static_cast<LONG>(list[i].speed_millis));
-            InterlockedExchange(&row.playing,list[i].playing?1:0);
+            InterlockedExchange(&row.playback,list[i].once?1:0);
+            InterlockedExchange(&row.state,static_cast<LONG>(list[i].state));
         }
         InterlockedExchange(&view_->driver_count,static_cast<LONG>(count));
         InterlockedIncrement(&view_->driver_revision);
     }
+    // Publishes only the runtime-owned state of each row. Used when the module
+    // transitions a driver on its own (a one-shot reaching its end): rewriting
+    // the whole row would briefly zero `driver_count`, and a click landing in
+    // that window would be read as "no rows" and silently dropped.
+    void PublishDriverStates(const std::vector<int>& states) {
+        std::lock_guard lock(mutex_);
+        if(!view_) return;
+        const LONG count=std::clamp<LONG>(InterlockedCompareExchange(&view_->driver_count,0,0),
+            0,static_cast<LONG>(OverlayProtocol::kDriverCapacity));
+        const size_t limit=std::min<size_t>(states.size(),static_cast<size_t>(count));
+        for(size_t i=0;i<limit;++i)
+            InterlockedExchange(&view_->drivers[i].state,static_cast<LONG>(states[i]));
+        InterlockedIncrement(&view_->driver_revision);
+    }
+
     // Returns true when the companion edited a control since the previous call;
     // `out` then carries every row so the caller can apply the whole set.
     bool PollDriverControls(std::vector<DriverPanelState>& out) {
@@ -97,7 +116,9 @@ public:
             DriverPanelState state;
             state.id=Narrow(row.id,OverlayProtocol::kDriverIdCapacity);
             state.name=Narrow(row.name,OverlayProtocol::kDriverNameCapacity);
-            state.playing=InterlockedCompareExchange(&row.playing,0,0)!=0;
+            state.state=static_cast<int>(std::clamp<LONG>(
+                InterlockedCompareExchange(&row.state,0,0),0,3));
+            state.once=InterlockedCompareExchange(&row.playback,0,0)!=0;
             state.speed_millis=static_cast<uint32_t>(std::max<LONG>(
                 InterlockedCompareExchange(&row.speed_millis,0,0),1));
             if(state.id.empty()) continue;

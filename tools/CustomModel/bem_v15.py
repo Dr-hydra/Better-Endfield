@@ -23,8 +23,9 @@ MAX_DRIVERS, MAX_BINDINGS = 16, 32
 WAVEFORMS = ('pingpong', 'sine', 'jitter', 'sawtooth', 'step')
 BINDING_TYPES = ('morph_parameter', 'blend_shape', 'material_float', 'material_color',
                  'material_keyword')
-DRIVER_KEYS = {'id', 'name', 'waveform', 'default_playing', 'base_frequency',
-               'speed_multiplier', 'bindings'}
+DRIVER_KEYS = {'id', 'name', 'waveform', 'playback', 'default_playing', 'base_frequency',
+               'speed_multiplier', 'bindings', 'sound'}
+PLAYBACK_MODES = ('loop', 'once')
 
 
 
@@ -179,6 +180,8 @@ def validate_drivers(m, skip_validation=False):
                         f'Invalid driver name: {did}')
         waveform = driver.get('waveform', 'pingpong')
         bem.require(waveform in WAVEFORMS, f'Unknown driver waveform: {waveform}')
+        playback = driver.get('playback', 'loop')
+        bem.require(playback in PLAYBACK_MODES, f'Unknown driver playback: {playback}')
         bem.require(isinstance(driver.get('default_playing', False), bool),
                     f'default_playing must be a boolean: {did}')
         frequency = driver.get('base_frequency', 1.0)

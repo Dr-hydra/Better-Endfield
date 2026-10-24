@@ -38,7 +38,7 @@ bool InitializeAndroidDriverAudio(void* vm, void* env, void* bridge_class);
 
 namespace betterendfieldnext {
 bool AndroidGlobalFov(bool enabled, float fov);
-bool AndroidSetCustomModelDriver(const char* id, bool playing, int speed_millis);
+bool AndroidSetCustomModelDriver(const char* id, int state, int speed_millis);
 std::string AndroidGetCustomModelDriversJson();
 }
 
@@ -259,11 +259,11 @@ Java_dev_betterendfield_next_NativeCommandBridge_pcMouseDirectTouch(JNIEnv*, jcl
 }
 extern "C" JNIEXPORT jboolean JNICALL
 Java_dev_betterendfield_next_NativeCommandBridge_setCustomModelDriver(
-        JNIEnv* env, jclass, jstring driverId, jboolean playing, jint speedMillis) {
+        JNIEnv* env, jclass, jstring driverId, jint state, jint speedMillis) {
     if (!driverId) return JNI_FALSE;
     const char* raw = env->GetStringUTFChars(driverId, nullptr);
     if (!raw) return JNI_FALSE;
-    const bool ok = betterendfieldnext::AndroidSetCustomModelDriver(raw, playing == JNI_TRUE, speedMillis);
+    const bool ok = betterendfieldnext::AndroidSetCustomModelDriver(raw, state, speedMillis);
     env->ReleaseStringUTFChars(driverId, raw);
     return ok ? JNI_TRUE : JNI_FALSE;
 }
@@ -388,7 +388,7 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
         BE_NATIVE(globalFov, "(ZF)Z"),
         BE_NATIVE(mediaScreen, "(ID)Z"), BE_NATIVE(mediaScreenStatus, "()Ljava/lang/String;"),
         BE_NATIVE(updateCustomModelConfig, "(Ljava/lang/String;)Z"),
-        BE_NATIVE(setCustomModelDriver, "(Ljava/lang/String;ZI)Z"),
+        BE_NATIVE(setCustomModelDriver, "(Ljava/lang/String;II)Z"),
         BE_NATIVE(customModelDriverStatus, "()Ljava/lang/String;"),
         BE_NATIVE(mmd, "(IIDLjava/lang/String;)Z")
     };

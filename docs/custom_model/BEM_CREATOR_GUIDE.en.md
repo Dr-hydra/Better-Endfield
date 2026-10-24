@@ -366,7 +366,7 @@ When a mod includes high heels, thick platform soles, or floating stances that c
 
 ## Continuous motion and clock drivers (BEM 1.5)
 
-`dynamic-drivers-v1` lets a package declare looping time-based motion in the manifest, with no sidecar file at all.
+`dynamic-drivers-v1` lets a package declare time-based motion in the manifest with no sidecar file at all. Motion can **loop forever** or **play once and hold the last frame**.
 
 ### Capability declaration and placement
 
@@ -380,6 +380,7 @@ Add `dynamic-drivers-v1` to `required_capabilities`, then write a root-level `dr
       "id": "glow_pulse",
       "name": "Glow pattern breathing",
       "waveform": "sine",
+      "playback": "loop",
       "default_playing": false,
       "base_frequency": 0.8,
       "speed_multiplier": 1.0,
@@ -387,20 +388,43 @@ Add `dynamic-drivers-v1` to `required_capabilities`, then write a root-level `dr
         {"type": "material_float", "component": 2, "material_slot": 0,
          "property": "_EmissionWeight", "range": [0.0, 1.5]}
       ]
+    },
+    {
+      "id": "insert_once",
+      "name": "Single push",
+      "waveform": "sawtooth",
+      "playback": "once",
+      "default_playing": false,
+      "base_frequency": 0.5,
+      "bindings": [
+        {"type": "morph_parameter", "target": "anal_plug_depth", "range": [0.0, 1.0]}
+      ]
     }
   ]
 }
 ```
 
+### Loop or one-shot: `playback`
+
+| Value | Effect |
+| --- | --- |
+| `loop` (default) | Repeats forever. Good for breathing lights, thrust, flow. |
+| `once` | Plays from 0 to 1, stops and holds the last frame. Good for a one-time "push in and stay" motion. |
+
+Two things matter for `once`:
+
+- **Duration comes from `base_frequency`**: `duration = 1 / (base_frequency × speed_multiplier)` seconds. For a 2-second play, write `0.5`;
+- **The waveform decides the end frame**: `sawtooth` / `step` rest at the far end (weight 1), while `pingpong` / `sine` return to the start (weight 0). Use `sawtooth` for "push out and hold", not `pingpong`.
+
 ### Choosing a waveform
 
-| waveform | Shape | Good for |
-| --- | --- | --- |
-| `sine` | Smooth cosine reciprocation | Breathing lights, heartbeats, pulses |
-| `pingpong` | Linear triangle reciprocation | Mechanical pistons, back-and-forth prop travel |
-| `sawtooth` | One-direction ramp | Flowing water, one-way displacement |
-| `jitter` | High-frequency noise | Small tremors, glitch shake |
-| `step` | On/off step | Lamps, gear changes |
+| waveform | Shape | Good for | `once` end |
+| --- | --- | --- | --- |
+| `sine` | Smooth cosine reciprocation | Breathing lights, heartbeats, pulses | Back at start |
+| `pingpong` | Linear triangle reciprocation | Mechanical pistons, back-and-forth prop travel | Back at start |
+| `sawtooth` | One-direction ramp | Flow, one-way displacement, single push | Rests at far end |
+| `jitter` | High-frequency noise | Small tremors, glitch shake | Hash value; avoid when the endpoint matters |
+| `step` | On/off step | Lamps, gear changes | Rests at far end |
 
 `base_frequency` is the base rate in Hz and `speed_multiplier` the initial speed factor. The normalised value lands in 0..1 and is then mapped linearly onto `range`.
 
@@ -409,15 +433,26 @@ Add `dynamic-drivers-v1` to `required_capabilities`, then write a root-level `dr
 - `material_float`: writes a material float property every frame. Near-zero cost and the most reliable option.
 - `material_color`: writes colour properties such as `_EmissionColor`.
 - `material_keyword`: toggles shader keywords.
-- `morph_parameter`: drives an existing shape parameter of the package using the per-frame deltas in `mesh_deformations`: it interpolates per-vertex position offsets over the parameter's tick domain and writes them back into the Stream 0 position component every frame. Only positions change; normals/tangents/UVs and skinning are untouched, so shading and skinning are unaffected.
+- `morph_parameter`: drives an existing shape parameter of the package using the per-frame deltas in `mesh_deformations`: it interpolates per-vertex position offsets over the parameter's tick domain and writes them back into the position component every frame. Only positions change; normals/tangents/UVs and skinning are untouched, so shading and skinning are unaffected.
   **Important limit:** do not drive a parameter with an animation and a manual slider over the same vertex set. The slider rebuilds the mesh and uploads the whole stream at load, while the driver rewrites those positions every frame; the two overwrite each other and produce residue at the previous position, flicker during playback and a hazy surface. To get "slider sets the base, animation oscillates", split it into two parameters bound to disjoint vertex ranges. Different parameters over different vertex ranges remain independent.
+
+### Sound (optional)
+
+A controller can carry one embedded sound that starts and stops with playback, and it **never overrides or pauses existing game audio**:
+
+```json
+"sound": { "payload": 12, "format": "ogg", "gain": 0.8, "loop": true, "offset_seconds": 0.0 }
+```
+
+The audio is stored as an ordinary payload inside the package. A finished `once` driver stops its voice; under `loop` the `loop` flag decides. Sound and waveform are independent clocks, so long loops drift slowly; match the sound length to one waveform period when alignment matters.
 
 ### What works today
 
 - `default_playing` must be `false`. The specification requires the model to start at rest so nothing moves the moment it loads.
-- **Only the Windows client runs drivers.** Android parses them but produces no motion.
-- **Overlay controls do not exist yet.** Starting and stopping currently means editing `drivers=<id>:play` in `runtime.ini`, so treat this as a "starts at rest, can be enabled by hand" feature for now.
-- The legacy sidecar `.anim.json` is a development-only form, read by the runtime only as a fallback when the manifest has no `drivers`. Do not ship sidecars.
+- **Both Windows and Android run drivers** with identical behaviour; both write only the position component for morphs. Windows exposes two equivalent upload paths in the overlay for A/B diagnosis; Android has one.
+- **The overlay has full controls**: Start / Pause / Stop buttons plus a 0.25x..4.00x speed slider per controller, on both Windows and Android. Edits are session-scoped and never written back into the package.
+- **Desktop hotkeys are configured in the manager GUI**: one start/stop toggle per controller, **unbound by default**, using the same grammar as the GUI's other hotkeys. Hotkeys are a binary toggle with no pause; pause is overlay-only.
+- The legacy sidecar `.anim.json` is a development-only form; the runtime honours only `drivers` internalised in the manifest. Do not ship sidecars.
 
 ## Publishing with a ZIP container (no packaging tool required)
 

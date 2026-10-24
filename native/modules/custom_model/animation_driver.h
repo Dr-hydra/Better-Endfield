@@ -25,6 +25,25 @@ enum class DriverWaveform : uint8_t {
     Count
 };
 
+enum class DriverPlayback : uint8_t {
+    Loop = 0,  // phase wraps in [0,1) forever
+    Once = 1,  // phase advances to 1, stops there and holds the last frame
+    Count
+};
+
+// Runtime state machine. `Paused` and `Finished` keep delivering samples so the
+// pose is held; only `Stopped` releases the parameter back to the package.
+enum class DriverState : uint8_t {
+    Stopped = 0,   // not delivering; phase reset; parameters handed back
+    Playing = 1,   // phase advancing
+    Paused = 2,    // phase frozen, still delivering
+    Finished = 3,  // once only: phase clamped at 1, still delivering
+    Count
+};
+
+// True while the driver should push samples into its bindings.
+inline bool DriverDelivers(DriverState state) { return state != DriverState::Stopped; }
+
 enum class DriverBindingType : uint8_t {
     MorphParameter = 0,  // alias: blend_shape
     MaterialFloat = 1,
@@ -74,10 +93,12 @@ struct DriverSound {
 struct Driver {
     std::string id, name;
     DriverWaveform waveform = DriverWaveform::PingPong;
+    DriverPlayback playback = DriverPlayback::Loop;
     bool default_playing = false;
-    bool playing = false;
+    DriverState state = DriverState::Stopped;
     float base_frequency = 1.0f;
     float speed_multiplier = 1.0f;
+    // 0..1. Under `once` it is clamped at 1 when the driver finishes.
     double phase = 0.0;
     std::vector<DriverBinding> bindings;
     DriverSound sound;
@@ -87,10 +108,14 @@ struct Driver {
 // per-mille so it can cross a process boundary as an integer.
 struct DriverSummary {
     std::string id, name;
-    bool playing = false;
+    DriverState state = DriverState::Stopped;
+    DriverPlayback playback = DriverPlayback::Loop;
     bool default_playing = false;
     uint32_t speed_millis = 1000;
     bool has_sound = false;
+    // True only while the driver is actually advancing. Paused and finished
+    // drivers hold their pose but must not keep a sound voice alive.
+    bool sounding = false;
 };
 
 // Per-frame dispatch targets. Any channel may be empty; empty channels are
@@ -134,8 +159,20 @@ public:
     bool HasActiveDrivers() const;
     std::size_t DriverCount() const { return drivers_.size(); }
 
-    // Runtime play/pause, normally fed from runtime.ini `drivers=id:play&...`
-    // and from the overlay panel.
+    // Runtime control. `Start` begins or resumes: from Stopped or Finished the
+    // phase resets to 0, from Paused it continues at the frozen phase.
+    void Start(const std::string& id);
+    // `Pause` freezes the current phase and keeps delivering it, so the pose is
+    // held instead of snapping back.
+    void Pause(const std::string& id);
+    // `Stop` releases the parameter: nothing is delivered and the phase resets.
+    void Stop(const std::string& id);    // Applies a desired state, which is what a control surface sends: the host
+    // decides whether that means Start, Pause or Stop.
+    void ApplyState(const std::string& id, DriverState state);
+
+    // Legacy boolean entry point kept for runtime.ini `drivers=id:play|pause`.
+    // true maps to Start, false maps to Stop (never Pause), which is what that
+    // key has always meant.
     void SetPlaying(const std::string& id, bool play);
     void SetAllPlaying(bool play);
     // Per-mille speed multiplier, clamped to [100, 8000] (0.1x .. 8x). The phase

@@ -44,6 +44,15 @@ internal sealed class BemParameterGroup
     public uint Snap(double value) => (uint)Math.Clamp(Min + Math.Round((value - Min) / Step) * Step, Min, Max);
 }
 
+// One section 13 driver, as the GUI needs it: the id is the key the hotkey
+// table and the overlay controls use, the name is the row title.
+internal sealed class BemDriverInfo
+{
+    public string Id { get; init; } = "";
+    public string Name { get; init; } = "";
+    public bool Once { get; init; }
+}
+
 internal sealed class BemPackage
 {
     public string Id { get; init; } = "";
@@ -71,7 +80,14 @@ internal sealed class BemPackage
     public List<JsonElement> SelectionConstraints { get; init; } = [];
     public Dictionary<string, string> SelectedOptions { get; } = new(StringComparer.Ordinal);
     public List<BemParameterGroup> Parameters { get; init; } = [];
+    public List<BemDriverInfo> Drivers { get; init; } = [];
     public Dictionary<string, uint> SelectedParameters { get; } = new(StringComparer.Ordinal);
+    // Section 13 desktop hotkeys, keyed by driver id. An empty string means the
+    // driver is deliberately unbound, which is the documented default.
+    public Dictionary<string, string> DriverHotkeys { get; } = new(StringComparer.Ordinal);
+    public string EncodedDriverHotkeys() =>
+        DriverHotkeys.Count == 0 ? "" :
+        string.Join("&", Drivers.Select(d => d.Id + ":" + DriverHotkeys.GetValueOrDefault(d.Id, "")));
     // Kept separately from runtime selection, so downgrading then upgrading a package
     // does not lose sliders which are temporarily absent from its metadata.
     private readonly Dictionary<string, uint> _rememberedParameters = new(StringComparer.Ordinal);
@@ -110,6 +126,29 @@ internal sealed class BemPackage
             if (group.AvailableWhen is null || Evaluate(group.AvailableWhen.Value, active))
                 active[group.Id] = SelectedOptions[group.Id];
         return active;
+    }
+
+    // Hotkeys are validated against the drivers this package actually declares:
+    // a stale id from a previous version of the package is dropped rather than
+    // silently kept, and a duplicate key is a configuration error.
+    public bool RestoreDriverHotkeys(string saved)
+    {
+        DriverHotkeys.Clear();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        bool repaired = false;
+        foreach (string pair in saved.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            int split = pair.IndexOf(':');
+            if (split <= 0) { repaired = true; continue; }
+            string id = pair[..split], key = pair[(split + 1)..].Trim();
+            if (!Drivers.Any(d => d.Id == id)) { repaired = true; continue; }
+            if (key.Length == 0 || key == "NONE") continue;
+            if (!HotkeyService.TryNormalize(key, out string normalized) || normalized == "NONE")
+            { repaired = true; continue; }
+            if (!seen.Add(normalized)) { repaired = true; continue; }
+            DriverHotkeys[id] = normalized;
+        }
+        return repaired;
     }
 
     public bool OptionsValid() => SelectionConstraints.All(rule => Evaluate(rule, EffectiveOptions()));
@@ -301,13 +340,35 @@ internal sealed class BemPackageService
             parameters.Any(p => p.Min > p.Max || p.Max > 1000 || p.Step == 0 || p.Step > 1000 ||
                 (p.Max - p.Min) % p.Step != 0 || !p.Accepts(p.Default) || !p.Accepts(p.Neutral)))
             throw new InvalidDataException(BemText.Get("BEM 滑条目录不合法。"));
+        // Section 13 drivers are only used by the GUI to build the hotkey rows.
+        // Malformed entries are skipped here; the runtime already logs and drops
+        // them, and a bad driver must never block loading the package.
+        var drivers = new List<BemDriverInfo>();
+        if (minor >= 5 && m.TryGetProperty("drivers", out var driverList) &&
+            driverList.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var driver in driverList.EnumerateArray())
+            {
+                if (driver.ValueKind != JsonValueKind.Object ||
+                    !driver.TryGetProperty("id", out var idNode) ||
+                    idNode.ValueKind != JsonValueKind.String) continue;
+                string idValue = idNode.GetString() ?? "";
+                if (!Regex.IsMatch(idValue, @"\A[A-Za-z0-9][A-Za-z0-9_.-]{0,95}\z")) continue;
+                string nameValue = driver.TryGetProperty("name", out var nameNode) &&
+                    nameNode.ValueKind == JsonValueKind.String ? nameNode.GetString() ?? "" : "";
+                bool onceValue = driver.TryGetProperty("playback", out var playbackNode) &&
+                    playbackNode.ValueKind == JsonValueKind.String &&
+                    playbackNode.GetString() == "once";
+                drivers.Add(new BemDriverInfo { Id = idValue, Name = nameValue.Length == 0 ? idValue : nameValue, Once = onceValue });
+            }
+        }
         var package = new BemPackage
         {
             Id = StableId(m, "package_id"), Name = m.GetProperty("name").GetString() ?? "",
             Author = m.GetProperty("author").GetString() ?? "", Version = m.GetProperty("version").GetString() ?? "",
             Character = target.Id, TargetKind = target.Kind, FormatMinor = minor, ResourceKeys = target.Resources, File = path, Size = stream.Length,
             Appearances = appearances, DefaultAppearance = def, SelectedAppearance = def,
-            IsComposable = minor >= 1, OptionGroups = groups, Parameters = parameters,
+            IsComposable = minor >= 1, OptionGroups = groups, Parameters = parameters, Drivers = drivers,
             SelectionConstraints = minor >= 1 && m.TryGetProperty("selection_constraints", out var constraints)
                 ? constraints.EnumerateArray().Select(c => c.Clone()).ToList() : []
         };
@@ -397,7 +458,11 @@ internal sealed class BemPackageService
                         if (p.RestoreParameters(state.GetValueOrDefault("parameters_saved", state.GetValueOrDefault("parameters", ""))))
                             _notices.Add(() => BemText.Format("{0}：部分滑条范围已变化，回退作者默认值。", p.Name));
                     }
-                    catch (InvalidDataException) { p.RestoreParameters(""); _notices.Add(() => BemText.Format("{0}：滑条设置损坏，回退作者默认值。", p.Name)); }
+                    catch (InvalidDataException) { p.RestoreParameters(""); _notices.Add(() => BemText.Format("{0}：滑条设置损坏，回退作者默认值。", p.Name)); }                    // Hotkeys must be restored before any save: BuildDesiredSettings
+                    // writes the table from DriverHotkeys, and an unrestored (empty)
+                    // map would look like the user cleared every binding.
+                    if (p.RestoreDriverHotkeys(state.GetValueOrDefault("driver_hotkeys", "")))
+                        _notices.Add(() => BemText.Format("{0}：部分动效快捷键不可用，已忽略。", p.Name));
                     if (p.IsComposable)
                     {
                         try { p.RestoreOptions(state.GetValueOrDefault("options", "")); }
@@ -452,6 +517,11 @@ internal sealed class BemPackageService
             values[p.IsComposable ? "options" : "appearance"] = p.IsComposable ? p.EncodedOptions() : p.SelectedAppearance;
             values["parameters"] = p.EncodedParameters();
             values["parameters_saved"] = p.RememberedParameters();
+            // Written per package so switching packages switches the key table,
+            // and a disabled package simply stops responding.
+            string hotkeys = p.EncodedDriverHotkeys();
+            if (hotkeys.Length > 0) values["driver_hotkeys"] = hotkeys;
+            else values.Remove("driver_hotkeys");
         }
         return settings;
     }
@@ -477,6 +547,7 @@ internal sealed class BemPackageService
                 if (p.IsComposable) p.RestoreOptions(state.GetValueOrDefault("options", ""));
                 else p.SelectedAppearance = state.GetValueOrDefault("appearance", p.DefaultAppearance);
                 p.RestoreParameters(state.GetValueOrDefault("parameters_saved", state.GetValueOrDefault("parameters", "")));
+                p.RestoreDriverHotkeys(state.GetValueOrDefault("driver_hotkeys", ""));
             }
             _baseline = BuildDesiredSettings();
             RestoreNewerEdits(advanced, desired);
@@ -508,7 +579,7 @@ internal sealed class BemPackageService
             if (Changed(section, "enabled")) p.Enabled = state["enabled"] == "true";
             if (p.IsComposable && Changed(section, "options")) p.RestoreOptions(state["options"]);
             if (!p.IsComposable && Changed(section, "appearance")) p.SelectedAppearance = state["appearance"];
-            if (Changed(section, "parameters_saved")) p.RestoreParameters(state["parameters_saved"]);
+            if (Changed(section, "parameters_saved")) p.RestoreParameters(state["parameters_saved"]);            if (Changed(section, "driver_hotkeys")) p.RestoreDriverHotkeys(state.GetValueOrDefault("driver_hotkeys", ""));
         }
     }
 

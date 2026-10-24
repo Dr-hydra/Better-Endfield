@@ -24,7 +24,8 @@ import java.util.function.IntConsumer;
 /** Two independent tabs, sharing only a settings transport, never package materialization. */
 final class OverlaySettingsPage {
     private static final int INK = 0xFFF2F2EF, GOLD = 0xFFE6CD82, EDGE = 0xFF3B434A;
-    private static final Map<String, Boolean> driverPlayingStates = new java.util.HashMap<>();
+    // 0 stopped, 1 playing, 2 paused. Mirrors the native DriverState enum.
+    private static final Map<String, Integer> driverStates = new java.util.HashMap<>();
     private static final Map<String, Integer> driverSpeedStates = new java.util.HashMap<>();
     final LinearLayout root;
     private final Activity activity;
@@ -288,17 +289,43 @@ final class OverlaySettingsPage {
                 String id = driver.getString("id");
                 String name = driver.optString("name", id);
                 boolean defaultPlaying = driver.optBoolean("default_playing", false);
-                boolean playing = driverPlayingStates.computeIfAbsent(id, k -> defaultPlaying);
+                boolean once = "once".equals(driver.optString("playback", "loop"));
+                int state = driverStates.computeIfAbsent(id, k -> defaultPlaying ? 1 : 0);
                 int speed = driverSpeedStates.computeIfAbsent(id, k -> 1000);
 
-                Switch playSwitch = new Switch(activity);
-                playSwitch.setTextColor(INK);
-                playSwitch.setTextSize(13);
-                playSwitch.setMinimumHeight(dp(44));
-                playSwitch.setText(name + " · " + (playing ? "播放中" : "暂停"));
-                playSwitch.setChecked(playing);
-                card.addView(playSwitch);
-                mutations.add(playSwitch);
+                TextView title = label(name + " · " + stateLabel(state, once));
+                card.addView(title);
+
+                LinearLayout buttons = new LinearLayout(activity);
+                buttons.setOrientation(LinearLayout.HORIZONTAL);
+                TextView start = button(state == 3 ? "重播" : "开始");
+                TextView pause = button(state == 2 ? "继续" : "暂停");
+                TextView stop = button("停止");
+                buttons.addView(start, weight(1));
+                buttons.addView(pause, weight(1));
+                buttons.addView(stop, weight(1));
+                card.addView(buttons);
+                mutations.add(start); mutations.add(pause); mutations.add(stop);
+
+                start.setOnClickListener(v -> {
+                    if (version != render) return;
+                    driverStates.put(id, 1);
+                    title.setText(name + " · " + stateLabel(1, once));
+                    sendDriver(id, 1, speed);
+                });
+                pause.setOnClickListener(v -> {
+                    if (version != render) return;
+                    int next = state == 2 ? 1 : 2;
+                    driverStates.put(id, next);
+                    title.setText(name + " · " + stateLabel(next, once));
+                    sendDriver(id, next, speed);
+                });
+                stop.setOnClickListener(v -> {
+                    if (version != render) return;
+                    driverStates.put(id, 0);
+                    title.setText(name + " · " + stateLabel(0, once));
+                    sendDriver(id, 0, speed);
+                });
 
                 final int minSpeed = 250, maxSpeed = 4000, stepSpeed = 50;
                 TextView speedTitle = label("速度  " + String.format(java.util.Locale.ROOT, "%.2fx", speed / 1000.0));
@@ -309,35 +336,33 @@ final class OverlaySettingsPage {
                 card.addView(speedSlider, height(48));
                 speedSlider.setContentDescription(name + " 速度");
 
-                final String driverId = id;
-                playSwitch.setOnCheckedChangeListener((v, checked) -> {
-                    if (version != render) return;
-                    driverPlayingStates.put(driverId, checked);
-                    playSwitch.setText(name + " · " + (checked ? "播放中" : "暂停"));
-                    try {
-                        NativeCommandBridge.setCustomModelDriver(driverId, checked, driverSpeedStates.getOrDefault(driverId, 1000));
-                    } catch (Throwable ignored) {}
-                });
-
                 final boolean[] speedChanged = {false};
                 bindSlider(speedSlider, progress -> {
                     if (version != render) return;
                     int curSpeed = minSpeed + progress * stepSpeed;
-                    driverSpeedStates.put(driverId, curSpeed);
+                    driverSpeedStates.put(id, curSpeed);
                     speedTitle.setText("速度  " + String.format(java.util.Locale.ROOT, "%.2fx", curSpeed / 1000.0));
                     speedChanged[0] = true;
                 }, () -> {
                     if (version == render && speedChanged[0]) {
                         speedChanged[0] = false;
-                        int curSpeed = driverSpeedStates.getOrDefault(driverId, 1000);
-                        boolean isPlaying = driverPlayingStates.getOrDefault(driverId, defaultPlaying);
-                        try {
-                            NativeCommandBridge.setCustomModelDriver(driverId, isPlaying, curSpeed);
-                        } catch (Throwable ignored) {}
+                        sendDriver(id, driverStates.getOrDefault(id, 0),
+                            driverSpeedStates.getOrDefault(id, 1000));
                     }
                 });
             }
         }
+    }
+    private static String stateLabel(int state, boolean once) {
+        if (state == 1) return "播放中";
+        if (state == 2) return "已暂停";
+        return once ? "已停止 / 结束" : "已停止";
+    }
+    private static void sendDriver(String id, int state, int speed) {
+        try { NativeCommandBridge.setCustomModelDriver(id, state, speed); } catch (Throwable ignored) {}
+    }
+    private static LinearLayout.LayoutParams weight(float value) {
+        return new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, value);
     }
     private void choice(LinearLayout parent, String title, String[] ids, String[] names, String selected, java.util.function.Consumer<String> changed) {
         int active = 0; for (int i = 0; i < ids.length; ++i) if (ids[i].equals(selected)) active = i;

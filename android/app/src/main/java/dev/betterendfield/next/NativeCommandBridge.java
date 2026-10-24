@@ -24,7 +24,7 @@ final class NativeCommandBridge {
     static native String runtimeStatus();
     /** Queues a prepared BEM snapshot; Unity applies it on a later frame. */
     static native boolean updateCustomModelConfig(String configuration);
-    static native boolean setCustomModelDriver(String id, boolean playing, int speedMillis);
+    static native boolean setCustomModelDriver(String id, int state, int speedMillis);
     static native String customModelDriverStatus();
     static native void frame();
     static native boolean mediaScreen(int action, double value);

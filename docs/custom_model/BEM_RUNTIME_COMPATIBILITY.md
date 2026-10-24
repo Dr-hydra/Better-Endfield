@@ -249,12 +249,13 @@ BEM 1.5 引入的 `material-overrides-v1` 特质在游戏运行时具有以下�
 
 ## BEM 1.5 动态时钟驱动器运行时行为（dynamic-drivers-v1）
 
-本节记录 `drivers` 在当前开发树中的实际行为，包括尚未闭合的部分。它是实现边界说明，不是完整承诺；目标语义见[格式规范第 13 节](BEM_FORMAT_SPEC.md)。
+本节记录 `drivers` 在当前开发树中的实际行为。它是实现边界说明，不是完整承诺；目标语义见[格式规范第 13 节](BEM_FORMAT_SPEC.md)。
 
 ### 1. 挂载与时钟来源
-- 驱动器只在 **Windows 客户端**存在。PC 端在渲染线程的 `ResourcePump` 中每帧调用一次 Tick；Android 端尚未实现，包里的 `drivers` 会被解析但不会产生任何动效。
+- 驱动器在 **Windows 与 Android 两端**都运行。PC 端在渲染线程的 `ResourcePump` 中每帧调用一次 Tick；Android 端由同一个 pump 在 Unity 线程经原生桥驱动。
 - Δt 取 `GetTickCount64()` 的相邻帧差，首帧按 16 ms 处理，单帧上限截断为 0.1 s，避免卡顿或断点后相位跳变。
-- 相位按 `phase = (phase + Δt × base_frequency × speed_multiplier) mod 1` 累加，再按 `waveform` 映射到 0..1 的归一化值。
+- `loop` 下相位按 `phase = (phase + Δt × base_frequency × speed_multiplier) mod 1` 累加，再按 `waveform` 映射到 0..1 的归一化值。
+- `once` 下相位同样推进，但**钳制在 1**。到达后驱动进入「已结束」，仍每帧投递 phase = 1，因此末帧保持住、不回弹。时长 = `1 / (base_frequency × speed_multiplier)` 秒。
 
 ### 2. 加载与切换
 - 目标结构由 `target` 自身决定：带 `resources` 走 1.4 显式资源目标，不带就用 `world_resource` / `ui_resource`，与头部次版本无关。因此 1.3 结构的包只要声明 `dynamic-drivers-v1` 就按 1.5 接受，不需要重建为 1.4 结构。
@@ -265,7 +266,11 @@ BEM 1.5 引入的 `material-overrides-v1` 特质在游戏运行时具有以下�
 
 ### 3. 目标分发
 - **材质 float / color / keyword**：按 `component` + `material_slot` 定位已装配的克隆材质，逐帧调用 `material.set_float` / `set_color` / `enable_keyword`。属性名按第 12 节正则校验；槽位越界或组件不存在时不写入，并记一次日志。
-- **形态**：按参数名匹配动态网格通道，在该参数相邻的 `mesh_deformations` 帧之间插值出每顶点绝对偏移，加到加载时捕获的基准顶点位置上，按连续顶点 run 走 `SafeUpdateSubVertexBuffer` 写回 Stream 0（只写位置分量）。Stream 1（法线/切线/UV）与 Stream 2（骨骼）完全不触碰，因此不影响着色和蒙皮。run 数超过 32 段时退化为整段上传。
+- **形态（Windows）**：按参数名匹配动态网格通道，在该参数相邻的 `mesh_deformations` 帧之间插值出每顶点绝对偏移，加到加载时捕获的基准顶点位置上再上传。存在两条等价路径，可在悬浮窗运行期切换：
+  - `channel`（默认）：重建整条 Position 通道，通过 `SetNativeArrayForChannelImpl` 上传。跨平台，也是 Android 唯一可用的路径；
+  - `byte_range`：只重写发生位移的顶点区间，通过 `InternalSetVertexBufferData` 上传。
+- **形态（Android）**：同样的「基准 + 偏移」计算，但只经 `Mesh.SetNativeArrayForChannelImpl` 上传。`InternalSetVertexBufferData` 与 `MarkModified` 未被 Android 的 Unity 导出，因此该端不存在区间写入路径。
+- 两条路径都不触碰 Stream 1（法线/切线/UV）与 Stream 2（骨骼），因此着色与蒙皮保持原样。必须守住的不变量是：**绝不在这类原生多流网格上调用 `Mesh.AddBlendShapeFrame`**，它会重组内部流并破坏着色。
 - 未匹配到目标时该绑定静默跳过，不报错、不中断其余绑定。
 
 #### 重要限制：不要同时把动画和滑条绑定到同一组顶点
@@ -276,7 +281,7 @@ BEM 1.5 引入的 `material-overrides-v1` 特质在游戏运行时具有以下�
 - 动画过程中模型表面闪烁、看起来发虚；
 - 不同道具之间表现不一致（静止姿势是否露出体表决定了残影是否可见）。
 
-根因：滑条变更在加载期按所选刻度重建网格并整条上传，驱动则在运行期每帧改写 Stream 0 的位置分量。两者共同作用于同一组顶点时，运行期写入会与重建时上传的基准姿势相互覆盖。
+根因：滑条变更在加载期按所选刻度重建网格并整条上传，驱动则在运行期每帧改写位置分量。两者共同作用于同一组顶点时，运行期写入会与重建时上传的基准姿势相互覆盖。
 
 推荐做法：
 
@@ -285,13 +290,24 @@ BEM 1.5 引入的 `material-overrides-v1` 特质在游戏运行时具有以下�
 - 不同顶点区间上的不同参数（例如道具 A 与道具 B）可以各自独立控制，互不影响。
 
 ### 4. 播放状态与控制
+
+每个控制器有四个状态：`stopped`、`playing`、`paused`、`finished`（最后一种仅 `once`）。暂停与已结束都**继续投递**冻结或末帧的采样值，只有停止才释放参数。
+
+| 入口 | 可用操作 | 平台 |
+| --- | --- | --- |
+| 悬浮窗「动效」分区 | 开始 / 暂停 / 停止 + 速度滑条 | Windows、Android |
+| 管理器 GUI 配置的快捷键 | 开始 / 结束 二元切换（无暂停） | 仅 Windows |
+| `runtime.ini` `drivers=` | `id:play` / `id:pause` | 双端，无面板时的兼容入口 |
+
 - `runtime.ini` 的 `[Mod.*]` 段 `drivers=控制器ID:play&控制器ID:pause` 仍可读，作为无面板时的入口；只有文本变化时才重新应用，不会每帧覆盖面板设置。
-- PC 悬浮窗的模型详情页已有「动效」分区：每个控制器一行播放/暂停开关，加一条 0.25x~4.00x 速度滑条。改动经共享内存回写运行时，**当次会话有效**，不写回 `runtime.ini`，也不改包内默认值。
-- Android 端面板待跟进。
-- 停用 Mod 或卸载模型时，材质属性按第 13 节的恢复规则交还（静态覆盖值，或绑定的下界），形变回放加载时采样的帧权重。
+- PC 悬浮窗的模型详情页已有「动效」分区：每个控制器一行，含开始、暂停、停止三个按钮与一条 0.25x~4.00x 速度滑条。改动经共享内存回写运行时，**当次会话有效**，不写回 `runtime.ini`，也不改包内默认值。
+- Android 的 GameOverlay 设置页提供同样的三按钮布局与速度滑条，经 `NativeCommandBridge.setCustomModelDriver` 转发。该桥只承载播放状态与千分比速度，会话语义与 PC 一致。
+- **桌面快捷键**由管理器 GUI 按控制器配置，保存在 `runtime.ini` 的 `[Mod.<包id>]` 段 `driver_hotkeys`。它只做开始/结束切换，在游戏前台时以只读方式轮询，不拦截游戏输入；由悬浮窗进程执行，所以面板隐藏时依然有效，也不依赖管理器保持运行。
+- 停用 Mod 或卸载模型时，材质属性按第 13 节的恢复规则交还（静态覆盖值，或绑定的下界），形变回放加载时采样的帧权重。停止、换包、模型卸载与模块退出走同一条路径；暂停与已结束不走。
 
 ### 5. 验证边界
-- 已在真实包上核对形态通道与差量（`vag_morph 1637`、`anal_morph 180`、`dildo_depth 6358`、`anal_plug_depth 1434`，与 Python 解包逐项吻合）；单元测试覆盖通道合并、刻度域映射与帧插值。
-- 游戏内肉眼效果、多驱动并发、热切换中途的相位连续性、以及大量顶点通道下的帧耗仍未经系统测量。
+- 已在真实包上核对形态通道与差量（`vag_morph 1637`、`anal_morph 180`、`dildo_depth 6358`、`anal_plug_depth 1434`，与 Python 解包逐项吻合），单元测试覆盖通道合并、刻度域映射与帧插值。
+- Android 已实机验证：日志 `Android position upload: vertices=119860 touched=6358 maxDelta=0.007353` 证明通道上传真正到达 GPU，两个驱动可并行且相位交替。
+- 多驱动并发、热切换中途的相位连续性、以及大量顶点通道下的帧耗尚未系统测量。
 - 关键字恢复存在已知限制：没有静态覆盖时一律关闭（见格式规范第 13 节）。
 - 形态驱动与手动滑条共存于同一组顶点时会出现原位置残影、闪烁与发虚（见上文「重要限制」）；该组合不属于受支持用法。

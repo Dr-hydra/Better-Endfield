@@ -24,6 +24,12 @@ std::string current_text,filter,message;
 std::set<std::string> expanded,expanded_groups;
 bool filter_open=false,key_down=false,save_failed=false;
 int binding=VK_OEM_PLUS;
+// Section 13 driver hotkeys, configured by the manager GUI and executed here.
+// One entry per bound driver of the package whose drivers are live; `held` is
+// the previous key state so a binding fires on the press edge only.
+struct DriverHotkey { std::string id; int key=0; bool held=false; };
+std::vector<DriverHotkey> driver_hotkeys;
+std::string driver_hotkeys_source;
 float scroll=0,content_height=0;
 ULONGLONG last_scan=0,last_save=0;
 std::optional<Action> pending;
@@ -144,23 +150,115 @@ std::wstring FileName(const wchar_t* path) {
     if(!slash) slash=wcsrchr(path,L'/');
     return slash?slash+1:path;
 }
-int VisibleDrivers(const Management::Package& package) {
-    if(!shared->driver_package[0]) return 0;
+// Four-state write. 0 stopped, 1 playing, 2 paused, 3 finished; the module
+// owns the transition into 3, the companion only ever sends 0..2.
+void SetDriverState(size_t index,LONG state);
+std::string NarrowText(const wchar_t* source,size_t capacity);
+
+// Four-state write. 0 stopped, 1 playing, 2 paused, 3 finished; the module
+// owns the transition into 3, the companion only ever sends 0..2.
+void SetDriverState(size_t index,LONG state) {
+    if(index>=Protocol::kDriverCapacity) return;
+    InterlockedExchange(&shared->drivers[index].state,state);
+    InterlockedIncrement(&shared->driver_control_revision);
+}
+
+std::string NarrowText(const wchar_t* source,size_t capacity) {
+    if(!source||!*source) return {};
+    // The shared block is fixed width; never read past the field even if the
+    // writer forgot to terminate it.
+    size_t length=0;
+    while(length<capacity&&source[length]) ++length;
+    if(!length) return {};
+    const int size=WideCharToMultiByte(CP_UTF8,0,source,static_cast<int>(length),nullptr,0,nullptr,nullptr);
+    if(size<=0) return {};
+    std::string out(static_cast<size_t>(size),'\0');
+    WideCharToMultiByte(CP_UTF8,0,source,static_cast<int>(length),out.data(),size,nullptr,nullptr);
+    return out;
+}
+// The module publishes the path of the package whose drivers are live. The
+// registry may hold the same file under a relative or differently normalised
+// path, so the file name is accepted as well: only one driver set is live at a
+// time, so it cannot be ambiguous.
+bool OwnsDrivers(const Management::Package& package) {
+    if(!shared->driver_package[0]) return false;
     const auto owner=UI::Wide(Management::PathUtf8(package.metadata->path));
-    // Exact path first. The registry may hold the same package under a relative
-    // or differently normalised path, so the file name is accepted as well: only
-    // one driver set is live at a time, so it cannot be ambiguous.
-    if(_wcsicmp(shared->driver_package,owner.c_str())!=0 &&
-       _wcsicmp(FileName(shared->driver_package).c_str(),FileName(owner.c_str()).c_str())!=0)
-        return 0;
+    return _wcsicmp(shared->driver_package,owner.c_str())==0 ||
+       _wcsicmp(FileName(shared->driver_package).c_str(),FileName(owner.c_str()).c_str())==0;
+}
+int VisibleDrivers(const Management::Package& package) {
+    if(!OwnsDrivers(package)) return 0;
     return static_cast<int>(std::clamp<LONG>(
         InterlockedCompareExchange(&shared->driver_count,0,0),0,
         static_cast<LONG>(Protocol::kDriverCapacity)));
 }
-void DriverPlaying(size_t index,bool playing) {
-    if(index>=Protocol::kDriverCapacity) return;
-    InterlockedExchange(&shared->drivers[index].playing,playing?1:0);
-    InterlockedIncrement(&shared->driver_control_revision);
+// Reads `driver_hotkeys` from the section that owns the live driver set.
+// Parsing happens only when the text changes: this runs from the UI timer.
+void RefreshDriverHotkeys(const Management::Package& package) {
+    const std::string& source=package.section;
+    const auto raw=current.Get(source,"driver_hotkeys");
+    if(source+"\n"+raw==driver_hotkeys_source) return;
+    driver_hotkeys_source=source+"\n"+raw;
+    driver_hotkeys.clear();
+    // Only ids the live package actually publishes can be bound, which is what
+    // keeps a stale key from silently targeting a different package later.
+    const int count=VisibleDrivers(package);
+    std::vector<std::string> known;
+    for(int i=0;i<count;++i) {
+        const auto id=NarrowText(shared->drivers[i].id,Protocol::kDriverIdCapacity);
+        if(!id.empty()) known.push_back(id);
+    }
+    std::string rem=raw;
+    while(!rem.empty()) {
+        const auto amp=rem.find('&');
+        const auto pair=rem.substr(0,amp);
+        const auto colon=pair.find(':');
+        if(colon!=std::string::npos) {
+            const auto id=pair.substr(0,colon);
+            auto keys=pair.substr(colon+1);
+            // An empty value is the documented "unbound" form.
+            if(!keys.empty()&&keys!="NONE"&&std::find(known.begin(),known.end(),id)!=known.end()) {
+                int parsed=-1;
+                try {parsed=Input::ParseKey(keys,-1);} catch(...) {parsed=-1;}
+                if(parsed>0) driver_hotkeys.push_back(DriverHotkey{id,parsed,false});
+            }
+        }
+        rem=(amp==std::string::npos)?std::string{}:rem.substr(amp+1);
+    }
+}
+
+// Start/stop toggle only: a hotkey never pauses, which is why the four-state
+// value collapses to two here.
+// Looks up the package whose drivers are live and refreshes the key table.
+// Called from the UI timer, not from painting: a hidden panel must still honour
+// its hotkeys.
+void RefreshDriverHotkeysFromLivePackage() {
+    for(const auto& package:library.packages)
+        if(OwnsDrivers(package)) {RefreshDriverHotkeys(package);return;}
+    driver_hotkeys.clear();
+    driver_hotkeys_source.clear();
+}
+
+void RunDriverHotkeys() {
+    const int count=static_cast<int>(std::clamp<LONG>(
+        InterlockedCompareExchange(&shared->driver_count,0,0),0,
+        static_cast<LONG>(Protocol::kDriverCapacity)));
+    if(driver_hotkeys.empty()||count<=0) return;
+    const bool foreground=window.ForegroundGame();
+    for(auto& entry:driver_hotkeys) {
+        const bool down=foreground&&Input::IsDown(entry.key);
+        if(down&&!entry.held) {
+            for(int i=0;i<count;++i) {
+                if(NarrowText(shared->drivers[i].id,Protocol::kDriverIdCapacity)!=entry.id) continue;
+                const LONG state=InterlockedCompareExchange(&shared->drivers[i].state,0,0);
+                // Playing or paused both mean "running", so both stop. Stopped
+                // and finished both mean "not running", so both start.
+                SetDriverState(static_cast<size_t>(i),state==1||state==2?0:1);
+                break;
+            }
+        }
+        entry.held=down;
+    }
 }
 void DriverSpeed(size_t index,uint32_t millis) {
     if(index>=Protocol::kDriverCapacity) return;
@@ -189,14 +287,31 @@ void DrawDrivers(Graphics& g,const Management::Package& package,float& y) {
     DrawVertexUploadMode(g,y);
     for(int i=0;i<count;++i) {
         auto& entry=shared->drivers[i];
-        const bool playing=InterlockedCompareExchange(&entry.playing,0,0)!=0;
+        const LONG state=std::clamp<LONG>(
+            InterlockedCompareExchange(&entry.state,0,0),0,3);
+        const bool once=InterlockedCompareExchange(&entry.playback,0,0)!=0;
         const uint32_t speed=std::clamp<uint32_t>(static_cast<uint32_t>(std::max<LONG>(
             InterlockedCompareExchange(&entry.speed_millis,0,0),1000)),kSpeedMin,kSpeedMax);
         const std::wstring name=entry.name[0]?entry.name:entry.id;
-        UI::Label(g,name,{32,y,window.width-204,30},text);
-        Button(g,playing?T(L"暂停",L"Pause"):T(L"播放",L"Play"),{window.width-160,y,136,28},
-            [i,playing]{DriverPlaying(static_cast<size_t>(i),!playing);});
+        // Leave room for the three buttons on the right of this row.
+        UI::Label(g,name,{32,y,window.width-288,30},text);
+        // Start resumes a paused driver, restarts a stopped or finished one.
+        Button(g,state==3?T(L"重播",L"Replay"):T(L"开始",L"Start"),
+            {window.width-248,y,72,28},[i]{SetDriverState(static_cast<size_t>(i),1);},false,
+            state!=1);
+        Button(g,state==2?T(L"继续",L"Resume"):T(L"暂停",L"Pause"),
+            {window.width-168,y,72,28},[i]{SetDriverState(static_cast<size_t>(i),2);},
+            state==2,state==1);
+        Button(g,T(L"停止",L"Stop"),{window.width-88,y,64,28},
+            [i]{SetDriverState(static_cast<size_t>(i),0);},false,state!=0);
         y+=32;
+        if(once) {
+            // Progress is hidden for loops, where it would be noise.
+            UI::Label(g,state==3?T(L"已结束 · 停在末帧",L"Finished · holding last frame")
+                                  :T(L"单次播放",L"One-shot"),
+                {32,y,window.width-64,22},Color(150,150,158,172),12);
+            y+=22;
+        }
         const RectF rect(44,y,window.width-172,26);
         Pen track(Color(255,64,73,91),4),fill(accent,4);
         g.DrawLine(&track,rect.X,rect.Y+13,rect.GetRight(),rect.Y+13);
@@ -348,6 +463,8 @@ void Tick() {
     try {
         const auto now=GetTickCount64();
         if((!last_scan||now-last_scan>=1000)&&!drag_slider&&!pending) {last_scan=now;Refresh(false);}
+        RefreshDriverHotkeysFromLivePackage();
+        RunDriverHotkeys();
         const bool down=Input::IsDown(binding);
         if(down&&!key_down&&window.ForegroundGame()&&current.Flag("CustomModel","overlay_enabled",true)) SetVisible(!current.Flag("CustomModel","overlay_visible"));
         key_down=down;

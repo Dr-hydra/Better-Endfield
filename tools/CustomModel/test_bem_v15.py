@@ -106,6 +106,23 @@ class Bem15Tests(unittest.TestCase):
             self.assertEqual(main(['validate', str(path)]), 0)
         self.assertTrue(json.loads(output.getvalue())['success'])
 
+    def test_driver_playback_is_a_closed_set(self):
+        base = copy.deepcopy(self.b.m)
+        base["drivers"] = [{"id": "one", "waveform": "sawtooth", "playback": "once",
+                            "bindings": [{"type": "morph_parameter", "target": "length"}]}]
+        path = self.root / "once.bem"
+        bem.write_package(path, base, self.b.payloads)
+        manifest, _ = bem.read_package(path)
+        self.assertEqual(manifest["drivers"][0]["playback"], "once")
+
+        # An unknown mode must be rejected at pack time, matching the runtime rule
+        # that drops the controller instead of silently looping it.
+        for mode in ("bounce", "", 1):
+            broken = copy.deepcopy(base)
+            broken["drivers"][0]["playback"] = mode
+            with self.assertRaises(ValueError):
+                bem.write_package(self.root / ("bad-" + str(mode) + ".bem"), broken, self.b.payloads)
+
     def test_drivers_require_capability_and_declared_parameter(self):
         base = copy.deepcopy(self.b.m)
         base['drivers'] = [{'id': 'pulse', 'waveform': 'sine',

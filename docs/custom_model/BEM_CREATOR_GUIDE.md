@@ -369,7 +369,7 @@ BetterEndfieldNext.BemConverter.exe --version
 
 ## 连续动效与时钟驱动器（BEM 1.5）
 
-`dynamic-drivers-v1` 让模型包在清单里声明随时间循环的动效，不需要外置任何侧车文件。
+`dynamic-drivers-v1` 让模型包在清单里声明随时间变化的动效，不需要外置任何侧车文件。动效可以是**无限循环**，也可以是**播放一次后停在末帧**。
 
 ### 能力声明与配置位置
 
@@ -383,6 +383,7 @@ BetterEndfieldNext.BemConverter.exe --version
       "id": "glow_pulse",
       "name": "发光纹路呼吸",
       "waveform": "sine",
+      "playback": "loop",
       "default_playing": false,
       "base_frequency": 0.8,
       "speed_multiplier": 1.0,
@@ -390,20 +391,43 @@ BetterEndfieldNext.BemConverter.exe --version
         {"type": "material_float", "component": 2, "material_slot": 0,
          "property": "_EmissionWeight", "range": [0.0, 1.5]}
       ]
+    },
+    {
+      "id": "insert_once",
+      "name": "单程推入",
+      "waveform": "sawtooth",
+      "playback": "once",
+      "default_playing": false,
+      "base_frequency": 0.5,
+      "bindings": [
+        {"type": "morph_parameter", "target": "anal_plug_depth", "range": [0.0, 1.0]}
+      ]
     }
   ]
 }
 ```
 
+### 循环还是单次：`playback`
+
+| 值 | 效果 |
+| --- | --- |
+| `loop`（缺省） | 无限往复，适合呼吸灯、抽插、流水。 |
+| `once` | 从 0 播到 1 后停住并保持末帧，适合「推到底就停住」这类一次性动作。 |
+
+`once` 的两个要点：
+
+- **时长由 `base_frequency` 决定**：`时长 = 1 / (base_frequency × speed_multiplier)` 秒。想要 2 秒播完就写 `0.5`；
+- **末帧在哪由波形决定**：`sawtooth` / `step` 停在终点（权重 1），`pingpong` / `sine` 会回到起点（权重 0）。所以「推出去停住」要用 `sawtooth`，不是 `pingpong`。
+
 ### 波形怎么选
 
-| waveform | 形态 | 适合 |
-| --- | --- | --- |
-| `sine` | 余弦平滑往复 | 呼吸灯、心跳、脉冲 |
-| `pingpong` | 三角线性往复 | 机械活塞、道具往复平移 |
-| `sawtooth` | 单向锯齿 | 流水、单向位移 |
-| `jitter` | 高频微噪波 | 小幅震颤、故障抖动 |
-| `step` | 阶跃开关 | 开关灯、档位切换 |
+| waveform | 形态 | 适合 | `once` 末帧 |
+| --- | --- | --- | --- |
+| `sine` | 余弦平滑往复 | 呼吸灯、心跳、脉冲 | 回到起点 |
+| `pingpong` | 三角线性往复 | 机械活塞、道具往复平移 | 回到起点 |
+| `sawtooth` | 单向锯齿 | 流水、单向位移、单程推到底 | 停在终点 |
+| `jitter` | 高频微噪波 | 小幅震颤、故障抖动 | 哈希值，不适合要精确终点 |
+| `step` | 阶跃开关 | 开关灯、档位切换 | 停在终点 |
 
 `base_frequency` 是基频（Hz），`speed_multiplier` 是初始倍速。归一化值落在 0..1，再线性映射到 `range`。
 
@@ -412,15 +436,26 @@ BetterEndfieldNext.BemConverter.exe --version
 - `material_float`：每帧写材质浮点属性，开销接近零，最稳。
 - `material_color`：写颜色属性（如 `_EmissionColor`）。
 - `material_keyword`：开关着色器关键字。
-- `morph_parameter`：驱动包内已有的形态参数，走 `mesh_deformations` 的逐帧形变：按参数刻度域插值出每顶点位置偏移，逐帧写回 Stream 0 的位置分量。只改位置，不碰法线/切线/UV 与骨骼，因此不影响着色与蒙皮。
+- `morph_parameter`：驱动包内已有的形态参数，走 `mesh_deformations` 的逐帧形变：按参数刻度域插值出每顶点位置偏移，逐帧写回位置分量。只改位置，不碰法线/切线/UV 与骨骼，因此不影响着色与蒙皮。
   **重要限制**：不要把同一个参数的动画驱动和手动滑条同时用于同一组顶点。滑条会在加载期重建网格并整条上传，驱动在运行期每帧改写同一批位置，两者会互相覆盖，表现为原位置残影、播放时闪烁与表面发虚。需要「滑条定基准 + 动画往复」时，请拆成两个参数并绑定互不重叠的顶点区间；不同顶点区间上的不同参数可以各自独立控制。
+
+### 音效（可选）
+
+控制器可以带一段内嵌音效，随播放状态启停，且**不会覆盖或暂停游戏原有音频**：
+
+```json
+"sound": { "payload": 12, "format": "ogg", "gain": 0.8, "loop": true, "offset_seconds": 0.0 }
+```
+
+音频以普通 Payload 存进包内。`once` 播完后音效停止；`loop` 下由 `loop` 字段决定。音效与波形是独立时钟，长循环会缓慢漂移，需要严格对齐时让音效长度等于一个波形周期。
 
 ### 现在能用到什么程度
 
 - `default_playing` 必须写 `false`。规范要求进游戏先保持静止，避免加载瞬间就开始动。
-- **只有 Windows 客户端会跑驱动器**，Android 端目前解析但不产生动效。
-- **悬浮窗控件还没有做**。启停目前只能改 `runtime.ini` 的 `drivers=控制器ID:play`，所以现阶段把它当"默认静止、可手动开启"的功能来设计。
-- 老的侧车 `.anim.json` 是开发期验证形态，运行时只在清单没有 `drivers` 时兜底读取。正式发布不要带侧车。
+- **Windows 与 Android 都会跑驱动器**，行为一致；形变在两端都只写位置分量。桌面可在悬浮窗里切换两条等价的顶点上传路径做 A/B 排查，Android 只有一条。
+- **悬浮窗已有完整控件**：每个控制器一行「开始 / 暂停 / 停止」三个按钮加一条 0.25x~4.00x 速度滑条，PC 与 Android 都有。改动只在当次会话有效，不写回包。
+- **桌面快捷键在管理器 GUI 里配置**：每个控制器一条「开始／结束」切换键，**默认不绑定**，语法与 GUI 其它快捷键相同。快捷键只做二元切换，没有暂停；暂停只在悬浮窗里。
+- 老的侧车 `.anim.json` 是开发期验证形态，运行时只认清单内化的 `drivers`。正式发布不要带侧车。
 
 ## 用 ZIP 容器发布模型（无需专用封包工具）
 

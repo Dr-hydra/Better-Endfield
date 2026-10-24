@@ -179,12 +179,99 @@ void Dispatch() {
     Check(host.Summaries()[0].speed_millis == 100, "speed is clamped to 0.1x");
 
     host.SetPlaying("clock", false);
-    Check(!host.HasActiveDrivers(), "pausing releases the driver");
+    Check(!host.HasActiveDrivers(), "stopping releases the driver");
     Check(host.DrivenParameters().empty(), "no active morph parameter while paused");
     host.SetPlaying("clock", true);
     const auto driven = host.DrivenParameters();
     Check(driven.size() == 1 && driven[0] == "depth", "driven parameter is reported once");
 }
+// Playback modes and the four-state control surface. The important guarantees
+// are that `once` clamps instead of wrapping, that a finished driver keeps
+// delivering its last frame, and that only stop releases the parameter.
+void PlaybackModes() {
+    {
+        AnimationDriverHost host;
+        const J drivers = J::array({J{{"id", "one"}, {"waveform", "sawtooth"}, {"playback", "once"},
+            {"base_frequency", 1.0},
+            {"bindings", J::array({J{{"type", "morph_parameter"}, {"target", "depth"}}})}}});
+        Check(host.LoadFromManifest(Manifest(drivers), kPackage), "once driver loads");
+        Check(!host.HasActiveDrivers(), "once driver starts stopped");
+
+        host.Start("one");
+        Capture first; host.Tick(0.25f, first.Sink());
+        Check(first.morph_weight.size() == 1 && Near(first.morph_weight[0], 0.25f),
+              "once advances like loop before the end");
+
+        // Overshooting the end must clamp, not wrap back to a small phase.
+        Capture past; host.Tick(1.0f, past.Sink());
+        Check(past.morph_weight.size() == 1 && Near(past.morph_weight[0], 1.0f),
+              "once clamps the end weight at 1");
+        Check(host.Summaries()[0].state == DriverState::Finished, "once reports finished");
+        Check(host.HasActiveDrivers(), "finished driver still delivers its pose");
+        Check(!host.Summaries()[0].sounding, "finished driver has no sound voice");
+
+        // Holding must survive an arbitrary number of further frames.
+        Capture held; host.Tick(0.5f, held.Sink());
+        Check(held.morph_weight.size() == 1 && Near(held.morph_weight[0], 1.0f),
+              "finished driver keeps delivering the last frame");
+
+        host.Start("one");
+        Check(host.Summaries()[0].state == DriverState::Playing, "start restarts a finished driver");
+        Capture restarted; host.Tick(0.5f, restarted.Sink());
+        Check(Near(restarted.morph_weight[0], 0.5f), "restart resets the phase to 0");
+    }
+    {
+        AnimationDriverHost host;
+        const J drivers = J::array({J{{"id", "loop"}, {"waveform", "sawtooth"},
+            {"bindings", J::array({J{{"type", "morph_parameter"}, {"target", "depth"}}})}}});
+        Check(host.LoadFromManifest(Manifest(drivers), kPackage), "loop driver loads");
+        Check(host.Summaries()[0].playback == DriverPlayback::Loop, "playback defaults to loop");
+        host.Start("loop");
+        Capture wrapped; host.Tick(1.25f, wrapped.Sink());
+        Check(Near(wrapped.morph_weight[0], 0.25f), "loop wraps instead of clamping");
+
+        // Pause freezes the phase but keeps delivering it.
+        host.Pause("loop");
+        Check(host.Summaries()[0].state == DriverState::Paused, "pause is a distinct state");
+        Check(host.HasActiveDrivers(), "paused driver is still active");
+        Check(!host.Summaries()[0].sounding, "paused driver has no sound voice");
+        Capture frozen; host.Tick(0.5f, frozen.Sink());
+        Check(frozen.morph_weight.size() == 1 && Near(frozen.morph_weight[0], 0.25f),
+              "pause holds the frozen phase");
+
+        host.Start("loop");
+        Capture resumed; host.Tick(0.25f, resumed.Sink());
+        Check(Near(resumed.morph_weight[0], 0.5f), "start resumes a paused driver");
+
+        // Stop is the only path that releases the parameter.
+        host.Stop("loop");
+        Check(host.Summaries()[0].state == DriverState::Stopped, "stop is reported");
+        Check(!host.HasActiveDrivers(), "stopped driver is inactive");
+        Capture stopped; host.Tick(0.5f, stopped.Sink());
+        Check(stopped.morph_weight.empty(), "stopped driver dispatches nothing");
+    }
+    {
+        // The legacy boolean entry point must map to start/stop, never pause, so
+        // the existing runtime.ini key keeps its documented meaning.
+        AnimationDriverHost host;
+        const J drivers = J::array({J{{"id", "d"},
+            {"bindings", J::array({J{{"type", "morph_parameter"}, {"target", "depth"}}})}}});
+        Check(host.LoadFromManifest(Manifest(drivers), kPackage), "legacy driver loads");
+        host.SetPlaying("d", true);
+        Check(host.Summaries()[0].state == DriverState::Playing, "legacy true starts");
+        host.SetPlaying("d", false);
+        Check(host.Summaries()[0].state == DriverState::Stopped, "legacy false stops, not pauses");
+    }
+    {
+        AnimationDriverHost host;
+        const J drivers = J::array({J{{"id", "bad"}, {"playback", "bounce"},
+            {"bindings", J::array({J{{"type", "morph_parameter"}, {"target", "depth"}}})}}});
+        Check(!host.LoadFromManifest(Manifest(drivers), kPackage),
+              "unknown playback drops the driver instead of falling back");
+        Check(host.DriverCount() == 0, "unknown playback leaves no driver");
+    }
+}
+
 }  // namespace
 
 int main() {
@@ -192,6 +279,7 @@ int main() {
         Waveforms();
         Parsing();
         Dispatch();
+        PlaybackModes();
         std::cout << "PASS: BEM 1.5 animation driver waveforms, manifest quotas, dispatch and speed ("
                   << checks << " checks)\n";
         return 0;

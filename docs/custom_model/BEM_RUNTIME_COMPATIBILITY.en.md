@@ -249,12 +249,13 @@ With `skip_validation=true`:
 
 ## BEM 1.5 dynamic clock driver runtime behavior (dynamic-drivers-v1)
 
-This section records what `drivers` actually does in the current tree, including the parts that are not closed yet. It is an implementation-boundary note, not a full promise; the target semantics live in [format specification section 13](BEM_FORMAT_SPEC.md).
+This section records what `drivers` actually does in the current tree. It is an implementation-boundary note, not a full promise; the target semantics live in [format specification section 13](BEM_FORMAT_SPEC.en.md).
 
 ### 1. Mount point and clock source
-- Drivers exist on **Windows only**. The PC build ticks them once per frame inside the render-thread `ResourcePump`; Android parses `drivers` but produces no motion.
+- Drivers run on **both Windows and Android**. Windows ticks them once per frame inside the render-thread `ResourcePump`; Android ticks from the same pump on the Unity thread through the native bridge.
 - Δt is the `GetTickCount64()` delta between frames, 16 ms on the first frame, clamped to 0.1 s so a hitch or breakpoint cannot jump the phase.
-- Phase accumulates as `phase = (phase + Δt × base_frequency × speed_multiplier) mod 1`, then `waveform` maps it to a normalised 0..1 value.
+- Under `loop`, the phase accumulates as `phase = (phase + Δt × base_frequency × speed_multiplier) mod 1`; `waveform` then maps it to a normalised 0..1 value.
+- Under `once`, the phase advances the same way but is **clamped at 1**. The driver then sits in the finished state and keeps delivering phase = 1 every frame, so the last frame holds instead of snapping back. `duration = 1 / (base_frequency × speed_multiplier)`.
 
 ### 2. Loading and switching
 - The target structure is decided by `target` itself: `resources` selects the 1.4 explicit resource targets, otherwise `world_resource` / `ui_resource` apply, regardless of the header minor version. A 1.3-style package that declares `dynamic-drivers-v1` is therefore accepted as 1.5 without being rebuilt.
@@ -265,7 +266,11 @@ This section records what `drivers` actually does in the current tree, including
 
 ### 3. Target dispatching
 - **Material float / color / keyword:** locates the assembled clone material by `component` + `material_slot` and calls `material.set_float` / `set_color` / `enable_keyword` every frame. Property names follow the section 12 pattern; an out-of-range slot or unknown component writes nothing and logs once.
-- **Morph:** matches the parameter name against a dynamic mesh channel, interpolates a per-vertex absolute delta between the adjacent `mesh_deformations` frames of that parameter, adds it to the base positions captured at load, and uploads it as contiguous vertex runs through `SafeUpdateSubVertexBuffer` into Stream 0 (position component only). Stream 1 (normal/tangent/UV) and Stream 2 (skinning) are never touched, so shading and skinning are unaffected. More than 32 runs degrades to one whole-range upload.
+- **Morph (Windows):** matches the parameter name against a dynamic mesh channel, interpolates a per-vertex absolute delta between the adjacent `mesh_deformations` frames of that parameter, adds it to the base positions captured at load, and uploads it. Two equivalent paths exist and the overlay can switch at runtime:
+  - `channel` (default): rebuilds the whole Position channel and uploads it through `SetNativeArrayForChannelImpl`. Portable and the only path Android has;
+  - `byte_range`: rewrites only the moved vertex runs through `InternalSetVertexBufferData`.
+- **Morph (Android):** the same base-plus-delta maths, uploaded through `Mesh.SetNativeArrayForChannelImpl` only. `InternalSetVertexBufferData` and `MarkModified` are not exported by the Android Unity build, so the byte-range path does not exist there.
+- Neither path touches Stream 1 (normal/tangent/UV) or Stream 2 (skinning), so shading and skinning stay intact. That is the invariant that matters: **never call `Mesh.AddBlendShapeFrame` on these native multi-stream meshes** — it reorganises the internal streams and corrupts shading.
 - A binding that matches no target is skipped silently. It does not raise an error or stop the remaining bindings.
 
 #### Important limit: do not bind an animation and a slider to the same vertex set
@@ -276,7 +281,7 @@ A morph driver and a manual slider must not control the same vertices at the sam
 - flicker during playback and a surface that looks hazy;
 - inconsistent behavior between props, because whether the rest pose is visible outside the body decides whether the ghost is noticeable.
 
-Root cause: a slider change rebuilds the mesh at the selected tick and uploads the whole stream at load time, while the driver rewrites the Stream 0 position component every frame. On the same vertices the runtime write and the rebuilt base pose overwrite each other.
+Root cause: a slider change rebuilds the mesh at the selected tick and uploads the whole stream at load time, while the driver rewrites the position component every frame. On the same vertices the runtime write and the rebuilt base pose overwrite each other.
 
 Recommended practice:
 
@@ -285,13 +290,24 @@ Recommended practice:
 - different parameters over different vertex ranges (prop A and prop B, for example) remain independent.
 
 ### 4. Play state and control
+
+Every controller has four states: `stopped`, `playing`, `paused` and `finished` (the last is `once` only). Pause and finished **keep delivering** the frozen or last frame; only stop releases the parameter.
+
+| Entry point | Operations | Platform |
+| --- | --- | --- |
+| Overlay "Motion" group | Start / Pause / Stop + speed slider | Windows, Android |
+| Manager GUI hotkeys | Start / Stop toggle (no pause) | Windows only |
+| `runtime.ini` `drivers=` | `id:play` / `id:pause` | Both, headless fallback |
+
 - The `drivers=<id>:play&<id>:pause` key in a `[Mod.*]` section of `runtime.ini` is still read as the headless entry point. It is applied only when the text changes, so it cannot overwrite panel settings every frame.
-- The Windows overlay model detail page now has a Motion group: one play/pause switch plus a 0.25x..4.00x speed slider per controller. Edits travel back through shared memory and are **session-scoped**: nothing is written to `runtime.ini` and the package default is untouched.
-- The Android panel is still pending.
-- Disabling the mod or unloading the model hands material properties back per the section 13 restore rules (static override value, or the binding's lower endpoint) and replays the frame weights sampled at load for morphs.
+- The Windows overlay model detail page has a Motion group: Start, Pause and Stop buttons plus a 0.25x..4.00x speed slider per controller. Edits travel back through shared memory and are **session-scoped**: nothing is written to `runtime.ini` and the package default is untouched.
+- The Android GameOverlay settings page has the same three-button layout plus speed slider, forwarded through `NativeCommandBridge.setCustomModelDriver`. The bridge carries the play state and the per-mille speed; session scope is identical.
+- **Desktop hotkeys** are configured in the manager GUI per controller and stored in `runtime.ini` under `[Mod.<package id>]` as `driver_hotkeys`. They toggle start/stop only, are read-only polled while the game is foreground, and never intercept game input. The overlay process executes them, so they work while the panel is hidden and do not depend on the manager running.
+- Disabling the mod or unloading the model hands material properties back per the section 13 restore rules (static override value, or the binding's lower endpoint) and replays the frame weights sampled at load for morphs. Stop, package switch, model unload and module shutdown all take that same path; pause and finished do not.
 
 ### 5. Verification boundary
 - Morph channels and deltas were checked against a real package (`vag_morph 1637`, `anal_morph 180`, `dildo_depth 6358`, `anal_plug_depth 1434`, matching the Python unpack item by item), and unit tests cover channel merging, tick-domain mapping and frame interpolation.
-- In-game visual results, concurrent drivers, phase continuity across a hot switch, and frame cost with large vertex channels have not been measured systematically.
+- Android was verified on device: the log line `Android position upload: vertices=119860 touched=6358 maxDelta=0.007353` confirmed the channel upload reaches the GPU, and two drivers ran independently with alternating phases.
+- Concurrent drivers, phase continuity across a hot switch, and frame cost with large vertex channels have not been measured systematically.
 - Keyword restore has a known limitation: without a static override the keyword is always disabled (see format specification section 13).
 - A morph driver sharing a vertex set with a manual slider produces residue at the previous position, flicker and a hazy surface (see the limit above); that combination is not supported.

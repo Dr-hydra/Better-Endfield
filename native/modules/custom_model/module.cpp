@@ -48,7 +48,7 @@
 #include <vector>
 #if defined(__ANDROID__)
 namespace betterendfieldnext {
-bool AndroidSetCustomModelDriver(const char* id, bool playing, int speed_millis);
+bool AndroidSetCustomModelDriver(const char* id, int state, int speed_millis);
 std::string AndroidGetCustomModelDriversJson();
 }
 #endif
@@ -70,6 +70,9 @@ void EnsureAnimationDriverLoaded();
 void MaterializeDriverSounds(const std::filesystem::path& package);
 void SyncDriverSounds();
 void PollAnimationDriverControls();
+#if defined(_WIN32)
+void PublishDriverStateIfChanged();
+#endif
 
 struct DynamicMeshRecord {
     int32_t component_id = -1;
@@ -3217,12 +3220,14 @@ void SyncDriverSounds() {
     if (!DriverAudioAvailable()) return;
     const auto summaries = g_animation_driver.Summaries();
     const auto sounds = g_animation_driver.Sounds();
-    std::unordered_map<std::string, bool> playing;
-    for (const auto& summary : summaries) playing.emplace(summary.id, summary.playing);
+    // `sounding` is true only while a driver is actually advancing: a paused or
+    // finished one holds its pose but must not keep a looping voice alive.
+    std::unordered_map<std::string, bool> sounding;
+    for (const auto& summary : summaries) sounding.emplace(summary.id, summary.sounding);
     std::unordered_map<std::string, DriverSound> by_driver;
     for (const auto& [driver_id, sound] : sounds) {
-        const auto state = playing.find(driver_id);
-        if (state != playing.end() && state->second) by_driver.emplace(driver_id, sound);
+        const auto state = sounding.find(driver_id);
+        if (state != sounding.end() && state->second) by_driver.emplace(driver_id, sound);
     }
     // Retire voices whose driver stopped.
     for (auto it = g_sounding_drivers.begin(); it != g_sounding_drivers.end();) {
@@ -4711,6 +4716,9 @@ void __fastcall ResourcePump(void* method) {
             // playing this frame simply has no voice. Platform audio mixes with
             // the game's own output, so nothing here pauses or replaces it.
             SyncDriverSounds();
+#if defined(_WIN32)
+            PublishDriverStateIfChanged();
+#endif
         }
         else {
             ApplyDriverMorph({});
@@ -4763,8 +4771,26 @@ std::string PackagePathUtf8(const std::filesystem::path& path) {
 void PublishAnimationDrivers(const std::filesystem::path& package) {
     std::vector<DriverPanelState> panel;
     for (const auto& summary:g_animation_driver.Summaries())
-        panel.push_back(DriverPanelState{summary.id,summary.name,summary.playing,summary.speed_millis});
+        panel.push_back(DriverPanelState{summary.id,summary.name,
+            static_cast<int>(summary.state),summary.playback==DriverPlayback::Once,
+            summary.speed_millis});
     g_model_overlay.PublishDrivers(PackagePathUtf8(package),panel);
+}
+
+// The module owns the transition into `finished`, so the companion has to learn
+// about it or its button would stay on "Pause" for a driver that already ended.
+// Only a real change is published: republishing every frame would race with a
+// click the companion just made.
+void PublishDriverStateIfChanged() {
+    static std::vector<int> published;
+    const auto summaries=g_animation_driver.Summaries();
+    std::vector<int> current;
+    current.reserve(summaries.size());
+    for (const auto& summary:summaries) current.push_back(static_cast<int>(summary.state));
+    if (current==published) return;
+    published=current;
+    if (g_animation_driver.LoadedPath().empty()) return;
+    g_model_overlay.PublishDriverStates(current);
 }
 #endif
 
@@ -4903,7 +4929,7 @@ void PollAnimationDriverControls() {
     thread_local std::vector<DriverPanelState> panel;
     if (g_model_overlay.PollDriverControls(panel)) {
         for (const auto& state : panel) {
-            g_animation_driver.SetPlaying(state.id, state.playing);
+            g_animation_driver.ApplyState(state.id, static_cast<DriverState>(state.state));
             g_animation_driver.SetSpeedMillis(state.id, state.speed_millis);
         }
     }
@@ -4916,21 +4942,27 @@ void PollAnimationDriverControls() {
 }
 
 #if defined(__ANDROID__)
-static std::unordered_map<std::string, std::pair<bool, uint32_t>> s_driver_overrides;
+// Android has no shared-memory panel, so the JNI bridge is the control surface.
+// It carries the same four-state value the desktop panel uses, which keeps pause
+// and stop distinct on both platforms.
+struct AndroidDriverOverride { int state = 0; uint32_t speed_millis = 1000; };
+static std::unordered_map<std::string, AndroidDriverOverride> s_driver_overrides;
 
 void ReapplyAndroidDriverOverrides() {
     for (const auto& entry : s_driver_overrides) {
-        g_animation_driver.SetPlaying(entry.first, entry.second.first);
-        g_animation_driver.SetSpeedMillis(entry.first, entry.second.second);
+        g_animation_driver.ApplyState(entry.first, static_cast<DriverState>(entry.second.state));
+        g_animation_driver.SetSpeedMillis(entry.first, entry.second.speed_millis);
     }
 }
 
-bool SetAndroidDriver(const char* id, bool playing, int speed_millis) {
+bool SetAndroidDriver(const char* id, int state, int speed_millis) {
     if (!id || *id == '\0') return false;
     std::lock_guard lock(g_state_mutex);
-    uint32_t sp = (speed_millis >= 250 && speed_millis <= 4000) ? static_cast<uint32_t>(speed_millis) : 1000;
-    s_driver_overrides[id] = {playing, sp};
-    g_animation_driver.SetPlaying(id, playing);
+    const int clamped = state < 0 ? 0 : (state > 2 ? 2 : state);
+    const uint32_t sp = (speed_millis >= 250 && speed_millis <= 4000)
+        ? static_cast<uint32_t>(speed_millis) : 1000;
+    s_driver_overrides[id] = AndroidDriverOverride{clamped, sp};
+    g_animation_driver.ApplyState(id, static_cast<DriverState>(clamped));
     g_animation_driver.SetSpeedMillis(id, sp);
     return true;
 }
@@ -4942,7 +4974,10 @@ std::string GetAndroidDriversJson() {
     for (const auto& s : g_animation_driver.Summaries()) {
         if (!first) json += ",";
         first = false;
-        json += "{\"id\":\"" + s.id + "\",\"name\":\"" + s.name + "\",\"playing\":" + (s.playing ? "true" : "false") + ",\"speed_millis\":" + std::to_string(s.speed_millis) + "}";
+        json += "{\"id\":\"" + s.id + "\",\"name\":\"" + s.name +
+            "\",\"state\":" + std::to_string(static_cast<int>(s.state)) +
+            ",\"once\":" + (s.playback == DriverPlayback::Once ? "true" : "false") +
+            ",\"speed_millis\":" + std::to_string(s.speed_millis) + "}";
     }
     json += "]";
     return json;
@@ -5260,8 +5295,8 @@ BE_EXPORT BE_Result BE_CALL BetterEndfieldNext_QueryCustomModelGeometryV1(void* 
 }
 #if defined(__ANDROID__)
 namespace betterendfieldnext {
-bool AndroidSetCustomModelDriver(const char* id, bool playing, int speed_millis) {
-    return BetterEndfieldNext::CustomModel::SetAndroidDriver(id, playing, speed_millis);
+bool AndroidSetCustomModelDriver(const char* id, int state, int speed_millis) {
+    return BetterEndfieldNext::CustomModel::SetAndroidDriver(id, state, speed_millis);
 }
 
 std::string AndroidGetCustomModelDriversJson() {

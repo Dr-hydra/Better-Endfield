@@ -342,6 +342,87 @@ public sealed partial class CustomModelPage : UserControl
                         defaults.Click += (_, _) => { foreach (var (parameter, slider) in parameterSliders) slider.Value = parameter.Default; };
                         parameterActions.Children.Add(apply); parameterActions.Children.Add(defaults); optionPanel.Children.Add(parameterActions);
                     }
+                    // Section 13 driver hotkeys live beside the sliders because both
+                    // describe how this package is driven. The field is empty by
+                    // default: an unbound driver is the documented baseline, and the
+                    // overlay still offers Start / Pause / Stop.
+                    if (p.Drivers.Count > 0)
+                    {
+                        var hotkeyPanel = new StackPanel { Spacing = 6 };
+                        var hint = new TextBlock { TextWrapping = TextWrapping.Wrap };
+                        BemLocalizedUI.Set(hint, TextBlock.TextProperty,
+                            () => BemText.Get("快捷键只做开始／结束切换，不提供暂停；暂停请在游戏内悬浮窗操作。留空即为不绑定。"));
+                        hotkeyPanel.Children.Add(hint);
+                        foreach (var driver in p.Drivers)
+                        {
+                            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+                            row.Children.Add(new TextBlock
+                            {
+                                Text = driver.Name, VerticalAlignment = VerticalAlignment.Center,
+                                MinWidth = 160, TextTrimming = TextTrimming.CharacterEllipsis
+                            });
+                            var box = new TextBox
+                            {
+                                Text = p.DriverHotkeys.GetValueOrDefault(driver.Id, "").Replace("PLUS", "=", StringComparison.Ordinal),
+                                PlaceholderText = BemText.Get("未绑定"), IsSpellCheckEnabled = false, MinWidth = 200
+                            };
+                            box.KeyDown += (_, args) =>
+                            {
+                                args.Handled = true;
+                                if (HotkeyService.IsModifier(args.Key)) return;
+                                if (args.Key is Windows.System.VirtualKey.Back or Windows.System.VirtualKey.Delete)
+                                { box.Text = ""; return; }
+                                string captured = HotkeyService.Capture(args.Key, args.KeyStatus.IsExtendedKey);
+                                if (captured.Length != 0) box.Text = captured;
+                            };
+                            string driverId = driver.Id;
+                            box.TextChanged += async (_, _) =>
+                            {
+                                if (_rendering) return;
+                                string text = box.Text.Trim();
+                                string normalized = "";
+                                if (text.Length > 0 && text is not "NONE" && text is not "OFF")
+                                {
+                                    if (!HotkeyService.TryNormalize(text, out normalized) || normalized == "NONE")
+                                    {
+                                        Message(() => BemText.Get("快捷键格式无效"),
+                                            () => BemText.Get("请直接按下想绑定的键，或留空取消绑定。"),
+                                            InfoBarSeverity.Warning);
+                                        return;
+                                    }
+                                }
+                                if (normalized.Length > 0)
+                                {
+                                    // One key must not drive two controllers: the
+                                    // overlay would have to guess which one wins.
+                                    string clash = p.DriverHotkeys
+                                        .FirstOrDefault(pair => pair.Key != driverId &&
+                                            pair.Value.Equals(normalized, StringComparison.OrdinalIgnoreCase)).Key;
+                                    if (clash.Length > 0)
+                                    {
+                                        Message(() => BemText.Get("按键已被本包的其他动效占用"),
+                                            () => BemText.Get("同一个键不能同时控制两个控制器，请换一个键。"),
+                                            InfoBarSeverity.Warning);
+                                        return;
+                                    }
+                                    if (HotkeyService.TryNormalize(_service.ModelOverlayHotkey, out string overlay) &&
+                                        overlay == normalized && overlay != "NONE")
+                                        Message(() => BemText.Get("与显示／隐藏快捷键相同"),
+                                            () => BemText.Get("两个功能会同时响应；如果这不是你想要的，请换一个键。"),
+                                            InfoBarSeverity.Warning);
+                                    p.DriverHotkeys[driverId] = normalized;
+                                }
+                                else p.DriverHotkeys.Remove(driverId);
+                                try { await _service.SaveAsync(); }
+                                catch (Exception ex)
+                                { Reload(); Message(() => BemText.Get("保存失败"), () => ex.Message, InfoBarSeverity.Error); }
+                            };
+                            row.Children.Add(box);
+                            hotkeyPanel.Children.Add(row);
+                        }
+                        optionPanel.Children.Add(new TextBlock { Text = BemText.Get("桌面快捷键") });
+                        optionPanel.Children.Add(hotkeyPanel);
+                    }
                     // Collapsed by default so the package list stays short; the
                     // header summarises the current selection.
                     var expander = new Expander

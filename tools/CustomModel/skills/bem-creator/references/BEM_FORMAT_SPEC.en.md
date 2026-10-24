@@ -418,12 +418,13 @@ Add `root_offset` at the root level of `manifest.json`:
 
 BEM 1.5 introduces the dynamic-drivers-v1 capability, enabling packages to declare continuous procedural time animations (e.g. reciprocating gadget movement) and dynamic material parameter modulation (such as breathing glow lights, tactical flashlight toggles, and specular ramps) directly in the manifest without external sidecar files.
 
-### Interaction Principle: Dual-Platform In-Game Overlay Controls (No Hotkeys)
+### Interaction Principle: Overlay Controls + Desktop Hotkey Configuration
 
-- Zero Hotkey Dependency: no desktop hotkey drives animation directly, avoiding keyboard layout conflicts and the lack of a physical keyboard on mobile;
-- Cross-Platform Parity: both Windows (ModelOverlay window) and Android (GameOverlay) render a "Motion" group inside the model detail panel, one play/pause switch plus one speed slider per controller, with identical touch and mouse UX;
-- **Session-scoped**: panel edits apply to the current run only. They are not written back to `runtime.ini` and do not modify `default_playing`; a restart returns to the package default. To change the default, change the package.
-- **Implementation status**: shipped on Windows (the runtime publishes the driver list into the shared block; the panel writes back play state and per-mille speed). Android is still pending. The `drivers=<id>:play&...` key in `runtime.ini` remains as a headless fallback; a panel edit overrides it.
+- **Cross-platform parity**: both Windows (ModelOverlay) and Android (GameOverlay) render a "Motion" group inside the model detail panel with **Start / Pause / Stop** buttons and a speed slider per controller, with identical touch and mouse UX.
+- **PC hotkeys are configured in the manager GUI**: one start/stop toggle key per controller, **empty by default (unbound)**. Capture, modifiers and clearing work exactly like every other GUI hotkey field. A hotkey is a binary toggle and never pauses.
+- **Pause is overlay-only**, so a single key never has to cycle through three states.
+- **Session-scoped**: overlay and hotkey edits apply to the current run only. They are not written back to `default_playing` and do not modify the package. A restart returns to the package default; to change the default, change the package.
+- **Where hotkeys live**: hotkeys are a user preference, not package content, so they are stored in `runtime.ini` under `[Mod.<package id>]` as `driver_hotkeys`. They are per package, so disabling or deleting a package simply disables its bindings and re-enabling restores them.
 
 ### Capability Declaration
 
@@ -446,6 +447,7 @@ BEM 1.5 introduces the dynamic-drivers-v1 capability, enabling packages to decla
       "id": "driver_dildo_thrust",
       "name": "Gadget Reciprocating Thrust",
       "waveform": "pingpong",
+      "playback": "loop",
       "default_playing": false,
       "base_frequency": 1.2,
       "speed_multiplier": 1.0,
@@ -453,6 +455,21 @@ BEM 1.5 introduces the dynamic-drivers-v1 capability, enabling packages to decla
         {
           "type": "morph_parameter",
           "target": "dildo_depth",
+          "range": [0.0, 1.0]
+        }
+      ]
+    },
+    {
+      "id": "driver_insert_once",
+      "name": "Single Push",
+      "waveform": "sawtooth",
+      "playback": "once",
+      "default_playing": false,
+      "base_frequency": 0.5,
+      "bindings": [
+        {
+          "type": "morph_parameter",
+          "target": "anal_plug_depth",
           "range": [0.0, 1.0]
         }
       ]
@@ -478,78 +495,169 @@ BEM 1.5 introduces the dynamic-drivers-v1 capability, enabling packages to decla
 ```
 
 #### Field reference
-- `id`: unique controller identifier, unique within the package;
-- `name`: display name used as the control title in the overlay "Motion" group; falls back to `id` when absent;
-- `waveform`: closed generator set, see below; an unknown name drops the controller instead of silently clamping to the lower bound;
-- `default_playing`: initial state after entering the game; must be `false` (at rest) by default;
-- `base_frequency`: base oscillation frequency in Hz, `0 ≤ f ≤ 10`; phase accumulates as `phase = (phase + Δt × base_frequency × speed_multiplier) mod 1`;
-- `speed_multiplier`: initial multiplier, `0 ≤ s ≤ 10`; the panel slider adjusts it live between 0.25x and 4.00x;
-- `bindings`: driven targets, 1..32 entries;
+
+- **id**: unique controller identifier, unique within the package. The GUI hotkey table and the overlay controls both index by it;
+- **name**: display name used as the control title in the overlay "Motion" group and the GUI hotkey row; falls back to `id` when absent;
+- **waveform**: closed generator set, see below; an unknown name drops the controller instead of silently clamping to the lower bound;
+- **playback**: closed set `loop` / `once`, defaults to `loop`; an unknown value drops the controller. See "Playback modes";
+- **default_playing**: initial state after entering the game; must be `false` (at rest) by default;
+- **base_frequency**: base oscillation frequency in Hz, `0 ≤ f ≤ 10`; under `loop` the phase accumulates as `phase = (phase + Δt × base_frequency × speed_multiplier) mod 1`, under `once` it is clamped at 1 instead;
+- **speed_multiplier**: initial multiplier, `0 ≤ s ≤ 10`; the panel slider adjusts it live between 0.25x and 4.00x;
+- **bindings**: driven targets, 1..32 entries;
+- **sound**: optional embedded sound effect, see "Driver sound";
 - **Quotas**: at most 16 controllers per package. Anything beyond that is dropped by the runtime with an `[AnimDriver]` log line; the authoring tools reject it at pack time.
 
 ##### Waveforms (closed set, all output 0 at `phase = 0`)
 
-| Name | Value | Typical use |
-| --- | --- | --- |
-| `pingpong` (default) | `p < 0.5 ? 2p : 2 − 2p` | reciprocation, thrust |
-| `sine` | `(1 − cos 2πp) / 2` | breathing, pulse (`sin` would start at 0.5) |
-| `jitter` | deterministic hash of the quantised phase | high-frequency tremor |
-| `sawtooth` | `p` | one-way flow |
-| `step` | `p < 0.5 ? 0 : 1` | binary switching |
+| Name | Value | `once` end weight | Typical use |
+| --- | --- | --- | --- |
+| `pingpong` (default) | `p < 0.5 ? 2p : 2 − 2p` | 0 (returns to start) | reciprocation, thrust |
+| `sine` | `(1 − cos 2πp) / 2` | 0 (returns to start) | breathing, pulse (`sin` would start at 0.5) |
+| `jitter` | deterministic hash of the quantised phase | hash value (not guaranteed 1) | high-frequency tremor |
+| `sawtooth` | `p` | 1 (rests at the far end) | one-way flow, single push to the end |
+| `step` | `p < 0.5 ? 0 : 1` | 1 (rests at the far end) | binary switching |
 
 `jitter` must be a deterministic function of phase and must never use `rand()`: the same package has to produce the same curve across runs, otherwise A/B comparison is impossible.
 
-#### Common binding fields
+#### Playback modes `playback`
 
-- `type`: closed set — `morph_parameter` (alias `blend_shape`), `material_float`, `material_color`, `material_keyword`. Unknown types drop that binding with a log line;
-- `component`: target component id (that is, `target.components[].id`); required for material bindings, defaults to 0;
-- `material_slot`: index into that component's renderer material array, defaults to 0; an out-of-range slot simply matches no material;
-- `range`: increasing `[low, high]` pair, defaults to `[0, 1]`. Its meaning depends on the binding type, see below.
+| Value | Behaviour |
+| --- | --- |
+| `loop` (default) | The phase wraps in `[0,1)` forever. Packages that omit the field get this mode, so behaviour is identical to the earlier 1.5 implementation. |
+| `once` | The phase advances from 0 to 1, then **clamps at 1 and stops advancing**. The driver enters a "finished" state but still evaluates at phase = 1 every frame, so vertices, material properties and keywords all hold the last frame instead of snapping back. |
 
-#### `morph_parameter` (normative semantics)
+Points that matter for `once`:
 
-Evaluated over the parameter's tick domain — this is **not** weight clipping:
+1. **Duration comes from `base_frequency`**: `duration = 1 / (base_frequency × speed_multiplier)` seconds. No extra duration field, and `loop` semantics are untouched;
+2. **The waveform decides where the end is**: see the "`once` end weight" column above. Use `sawtooth` or `step` for "push out and hold at the far end"; use `pingpong` or `sine` for "go out and come back, ending at rest";
+3. **Restart**: sending Start to a finished driver resets the phase to 0 and plays again. Both the overlay Start button and the hotkey follow this;
+4. **Pause versus Stop** under `once`: Pause freezes the current phase and keeps delivering it, so the pose is held. Stop hands the parameter back and clears the finished state;
+5. **Sound**: `sound` follows the play state. A finished `once` driver stops its voice; under `loop` the `sound.loop` flag decides;
+6. An unknown `playback` value drops the controller with an `[AnimDriver]` log line, exactly like an unknown `waveform`; there is no silent fallback.
 
-1. the waveform yields `w ∈ [0,1]`;
-2. map to a tick: `tick = round(min + (low + (high − low) × w) × (max − min))`, where `min/max` come from that parameter's `parameters[]` entry and `range = [low, high]` is a normalised interval over the tick domain that must stay inside `[0,1]`;
-3. interpolate linearly between the two adjacent `mesh_deformations` frames for that parameter to obtain a per-vertex absolute delta;
-4. add the delta to the base vertex positions and upload it as contiguous vertex runs into Stream 0;
-5. **the driver owns the parameter while it plays and hands it back when it stops**; the two sources are never blended, which removes any ambiguity about clipping order.
+#### Control and state model
 
-`target` must be a parameter id declared in `parameters[]`; an undeclared target fails validation. One controller may drive several parameters; their deltas are summed over the same base and uploaded once per frame.
+Every controller has four states, and any of them can be rewritten at any time by an external control (overlay button, hotkey, or `runtime.ini`):
 
-##### Coexistence limit with manual sliders (important)
+| State | Meaning | Vertices / materials |
+| --- | --- | --- |
+| `stopped` | Stopped. Nothing is delivered and the phase is reset | Hands back the package's authored pose; also clears `finished` |
+| `playing` | The phase is advancing | Delivered every frame |
+| `paused` | Paused. The phase is frozen | Delivered every frame at the frozen phase, so the pose is held |
+| `finished` | `once` only; the phase reached 1 | Delivered every frame at phase = 1, resting on the last frame |
 
-**Do not bind an animated driver and a manual slider to the same parameter over the same vertex set.** Concretely:
+Control entry points:
 
-- Use one or the other per parameter: either the driver plays it or the slider controls it. Do not switch the same vertex set back and forth between them.
-- To get "slider sets the base position, animation oscillates around it", split it into two parameters with disjoint vertex sets, or keep only one of the two control methods.
-- Why: a slider change rebuilds the mesh at the selected tick and uploads the whole stream, while the driver rewrites Stream 0 every frame. Applied to the same vertices the two overwrite each other, which shows up as residue at the previous position, flicker during playback and a hazy surface.
-- This only applies to a shared vertex set. Different parameters on disjoint vertex ranges (for example prop A and prop B) are independent and control separately.
+| Entry point | Operations | Platform |
+| --- | --- | --- |
+| Overlay (model detail "Motion" group) | **Start / Pause / Stop** + speed slider | Windows, Android |
+| Hotkeys configured in the manager GUI | **Start / Stop** binary toggle (no pause) | Windows only |
+| `runtime.ini` `[Mod.<package id>]` `drivers=` | `id:play` / `id:pause` | Both, headless fallback |
 
-#### `material_float`
+How the buttons map to states:
 
-`range = [low, high]` is the **output interval**: `value = low + (high − low) × w`, default `[0,1]`, not restricted to positive values. It is equivalent to calling `Material.SetFloat(property, value)` on that material slot each frame. The property name follows the section 12 pattern `^_[a-zA-Z0-9_]{1,95}$`.
+- **Start**: `playing = true`. From `finished` or `stopped` the phase resets to 0 and playback begins; from `paused` playback resumes at the frozen phase;
+- **Pause**: `playing = false` but the phase is kept and the paused flag is set, so the frozen phase keeps being delivered. A `once` driver freezes where it is and does not snap back;
+- **Stop**: `playing = false`, phase reset to 0, `finished` cleared, parameters handed back so the model returns to its authored pose;
+- **Hotkey**: equivalent to a Start/Stop binary toggle. Pressing it in the stopped state starts playback from 0; pressing it while playing or paused enters the stopped state (never pause). After a `once` finishes, one press stops it and the next starts it again.
 
-#### `material_color`
+**Speed slider**: 0.25x to 4.00x. It rewrites `speed_multiplier` without touching the phase, so changing speed never makes the motion jump.
 
-`colors` holds two RGBA quads `[from, to]` with channels in `[0,8]`; each channel is interpolated by `w` and written to the material slot (`Material.SetColor`). The same property-name pattern applies.
+#### Desktop hotkeys `driver_hotkeys` (user configuration, not package content)
 
-#### `material_keyword`
+Hotkeys live in `runtime.ini` under `[Mod.<package id>]`, next to `parameters_saved`, so they are isolated per package:
 
-`keyword` follows the section 12 pattern `^[A-Z0-9_]{2,96}$`; `EnableKeyword` when `w > threshold`, `DisableKeyword` otherwise. `threshold` defaults to 0.5 and must be inside `[0,1]`.
+```ini
+[Mod.xueyuan-full]
+enabled=true
+package=packages/xueyuan-full.bem
+parameters_saved=dildo_depth:500&anal_morph:300
+driver_hotkeys=dildo_thrust:F1&anal_plug_thrust:CTRL+F2&vag_cycle:
+```
 
-#### Restore rules (stop, pause, package switch, unload)
+- Syntax: `id:key` pairs joined by `&`, the same shape as `parameters_saved` and `options`. **An empty value means unbound** (third entry above);
+- Key names use exactly the `overlay_hotkey` grammar (`F1`, `CTRL+F2`, `NUMPAD1`, `ADD`, `=`, ...), produced by the GUI's hotkey capture field;
+- At most 16 entries per package, matching the driver quota. Two drivers in one package bound to the same key is a configuration error and the GUI refuses to save it;
+- A clash with `overlay_hotkey` only warns: showing the panel and driving motion are different purposes;
+- Hotkeys only respond while the game window is foreground. Keys are polled read-only, so **the game's own input is never intercepted or swallowed**;
+- The overlay process reads and executes the table, so hotkeys keep working while the panel is hidden, and closing the manager GUI has no effect;
+- Drivers without a binding can only be controlled through the overlay or `drivers=`.
 
-Reconciliation happens every frame: a property that no playing driver writes in a frame counts as released, so pause, package switch, model retirement and module shutdown all take the same path and no explicit stop callback is needed.
+### Platform support
 
-- If that material slot statically overrides the same property in `material_overrides`, replay the static value;
-- otherwise write back the binding's lower endpoint: `range[0]` for `material_float`, `colors[0]` for `material_color`, and keyword off for `material_keyword`;
-- `morph_parameter` replays the frame weights sampled at load, so a driver taking over parameter A never erases manual deformation on parameter B.
+| Capability | Windows | Android |
+| --- | --- | --- |
+| Manifest `drivers` parsing | Yes | Yes |
+| Phase clock / waveform evaluation | Yes | Yes |
+| Morph driver (`morph_parameter`) | Yes. Defaults to `SetNativeArrayForChannelImpl` on the whole Position channel; the overlay can switch to `InternalSetVertexBufferData` byte ranges | Yes, `SetNativeArrayForChannelImpl` only (Unity exports neither of the other two icalls) |
+| Material float / color / keyword | Yes | Yes |
+| Embedded sound `sound` | Yes, WASAPI shared mode | Yes, one `MediaPlayer` per effect |
+| Overlay control panel | Yes, ModelOverlay | Yes, GameOverlay |
+| Desktop hotkeys | Yes | No physical keyboard |
 
-**Known limitation**: a keyword without a static override is always disabled, because the runtime deliberately adds no `Material.IsKeywordEnabled` reflection contract. If the target shader had that keyword on, stopping will not restore it; declare it through `material_overrides.enable_keywords` when the semantics matter.
+Android delivers morphs through a different path with identical semantics: both rebuild from the base positions captured at load, write only the position components, and never touch normals/tangents/UVs or skinning. Windows exposes both equivalent paths in the overlay for A/B diagnosis; Android has no switch.
 
-**Known limitation (morph)**: morph drivers write Stream 0 in place per frame and never touch normals/tangents/UVs (Stream 1) or skinning data (Stream 2), so shading and skinning stay intact. If the same vertex set is also controlled by a manual slider, changing the slider rebuilds the mesh and uploads the whole stream, which combines with the runtime write and can produce residue at the previous position, flicker and a hazy surface; see the coexistence limit above.
+### Driver sound `sound` (optional)
+
+A controller may carry one sound effect that starts and stops with its play state. The audio is stored as an ordinary payload inside the package and is materialised to a cache file before the platform audio backend plays it.
+
+```json
+{
+  "id": "driver_dildo_thrust",
+  "name": "Gadget Reciprocating Thrust",
+  "waveform": "pingpong",
+  "base_frequency": 1.2,
+  "sound": {
+    "payload": 12,
+    "format": "ogg",
+    "gain": 0.8,
+    "loop": true,
+    "offset_seconds": 0.0
+  },
+  "bindings": [
+    { "type": "morph_parameter", "target": "dildo_depth", "range": [0.05, 1.0] }
+  ]
+}
+```
+
+#### Field reference
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `payload` | Yes | Payload id holding the audio bytes; 16 B to 32 MiB after decoding |
+| `format` | No | File extension (`wav`/`mp3`/`m4a`/`aac`/`flac`/`ogg`/`wma`/`mp4`), used only to name the cache file; defaults to `bin` |
+| `gain` | No | Linear volume, `[0, 2]`, defaults to 1.0 |
+| `loop` | No | Loop playback, defaults to `true` |
+| `offset_seconds` | No | Start delay, `[0, 60]` seconds, defaults to 0; use it to align sound with motion |
+
+#### Playback semantics
+
+1. The sound follows the driver's play state: Start begins it; Pause, Stop, package switch and model unload end it;
+2. One sound per controller, at most 8 concurrent voices per package; anything beyond that is dropped with a `[driver-audio]` log line;
+3. Sound **does not participate** in the animation clock. Decoding happens on a background thread, so the animation keeps advancing while a voice is not ready and is simply silent for that moment;
+4. A controller may carry only `sound` and no `bindings` (a pure sound driver), but a controller with neither is dropped.
+
+#### Relationship to game audio (important)
+
+Driver sound **never overrides or pauses existing game audio**. Both platforms use a channel independent of Unity/Wwise:
+
+- Windows: a WASAPI **shared-mode** render stream; Windows mixes it with the game's own streams at the endpoint;
+- Android: one independent `MediaPlayer` per effect, mixed by the system mixer with the game audio.
+
+BGM, footsteps and combat audio therefore keep playing normally. This differs from `BetterEndfieldNext.Music`, which deliberately pauses game BGM; driver sound does not.
+
+#### Known limitations
+
+- The sound start point is not hard-synchronised with the waveform phase: audio is an independent clock and long loops drift slowly. For strict alignment, match the sound length to the waveform period or calibrate with `offset_seconds`;
+- Windows is silent when the audio device format is not float32 (animation is unaffected);
+- Sound payloads count toward package size; prefer lossy codecs (ogg/mp3) and a few seconds of length.
+
+### Known limitations summary
+
+- **Morph drivers and manual sliders must not share a vertex set**: a slider rebuilds the mesh at the selected tick and uploads the whole stream, while the driver rewrites Stream 0 every frame. Overlaid on the same vertices they produce residue at the previous position, flicker and a hazy surface. Split into two parameters with disjoint vertex ranges when you need "slider sets the base, animation oscillates";
+- Different parameters on disjoint vertex ranges (for example prop A and prop B) are fully independent and can each start, pause and stop on their own;
+- Without a static override, material keywords are always disabled after a stop, because the runtime deliberately adds no `Material.IsKeywordEnabled` reflection contract; declare them through `material_overrides.enable_keywords` when the semantics matter;
+- The `once` end frame depends on the waveform; `jitter` ends on a hash value rather than 1 and is unsuitable when a precise endpoint matters.
 
 ---
 

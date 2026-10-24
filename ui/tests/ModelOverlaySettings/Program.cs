@@ -123,6 +123,34 @@ static class Program
         persisted = BemRuntimeSettings.Read(runtime);
         Expect(persisted.Where(p => p.Key.StartsWith("Mod.")).All(p => p.Value["enabled"] == "false"), "Real service disable-all missed stale external state.");
         Expect(persisted["Mod.missing"]["opaque"] == "retain", "Disabling an unavailable package lost its unknown fields.");
+        // Section 13 driver hotkeys: the table round-trips through the same
+        // `id:key&id:key` shape as parameters, an empty value means unbound, and
+        // a duplicate key is dropped instead of silently driving two controllers.
+        var driverPackage = new BemPackage
+        {
+            Id = "hotkey-test", Name = "Hotkey", Character = "chr", TargetKind = "character",
+            Drivers =
+            [
+                new BemDriverInfo { Id = "thrust", Name = "Thrust" },
+                new BemDriverInfo { Id = "plug", Name = "Plug" },
+                new BemDriverInfo { Id = "cycle", Name = "Cycle" }
+            ]
+        };
+        Expect(!driverPackage.RestoreDriverHotkeys("thrust:F1&plug:CTRL+F2&cycle:"),
+            "A valid hotkey table must not report repairs.");
+        Expect(driverPackage.DriverHotkeys["thrust"] == "F1", "Driver hotkey is restored.");
+        Expect(driverPackage.DriverHotkeys["plug"] == "CTRL+F2", "Modifier hotkey is restored.");
+        Expect(!driverPackage.DriverHotkeys.ContainsKey("cycle"), "An empty value leaves the driver unbound.");
+        Expect(driverPackage.EncodedDriverHotkeys() == "thrust:F1&plug:CTRL+F2&cycle:",
+            "Hotkeys re-encode to the same documented shape.");
+        Expect(driverPackage.RestoreDriverHotkeys("thrust:F1&plug:F1"),
+            "A duplicate key must be reported as a repair.");
+        Expect(driverPackage.DriverHotkeys.Count == 1 && driverPackage.DriverHotkeys["thrust"] == "F1",
+            "The duplicate key is dropped rather than bound twice.");
+        Expect(driverPackage.RestoreDriverHotkeys("removed:F1"),
+            "A binding for a driver the package no longer declares must be dropped.");
+        Expect(driverPackage.DriverHotkeys.Count == 0, "Stale driver bindings are cleared.");
+
         Console.WriteLine($"Model overlay settings: {checks} checks passed.");
         return 0;
     }

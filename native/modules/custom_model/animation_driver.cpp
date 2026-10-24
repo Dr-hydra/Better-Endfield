@@ -77,6 +77,16 @@ DriverWaveform ParseWaveform(const std::string& name, bool& ok) {
     return DriverWaveform::PingPong;
 }
 
+DriverPlayback ParsePlayback(const std::string& name, bool& ok) {
+    ok = true;
+    if (name == "loop") return DriverPlayback::Loop;
+    if (name == "once") return DriverPlayback::Once;
+    // Closed set, same rule as the waveform: a silently wrong mode is harder to
+    // diagnose than a dropped driver with a log line.
+    ok = false;
+    return DriverPlayback::Loop;
+}
+
 }  // namespace
 
 float AnimationDriverHost::Evaluate(DriverWaveform waveform, double phase) {
@@ -168,8 +178,16 @@ bool AnimationDriverHost::LoadFromManifest(std::string_view manifest_json,
                 ++dropped;
                 continue;
             }
+            bool playback_ok = false;
+            driver.playback = ParsePlayback(entry.value("playback", std::string{"loop"}), playback_ok);
+            if (!playback_ok) {
+                Log("[AnimDriver] Dropped driver '" + driver.id + "': unknown playback '" +
+                    entry.value("playback", std::string{}) + "'.");
+                ++dropped;
+                continue;
+            }
             driver.default_playing = entry.value("default_playing", false);
-            driver.playing = driver.default_playing;
+            driver.state = driver.default_playing ? DriverState::Playing : DriverState::Stopped;
             driver.base_frequency = entry.value("base_frequency", 1.0f);
             driver.speed_multiplier = entry.value("speed_multiplier", 1.0f);
             if (!Finite(driver.base_frequency) || driver.base_frequency < 0.0f ||
@@ -330,18 +348,62 @@ void AnimationDriverHost::SetSoundPathByPayload(uint32_t payload, const std::str
 }
 
 bool AnimationDriverHost::HasActiveDrivers() const {
+    // Paused and finished drivers still deliver samples, so they count as
+    // active: the pump must keep calling Tick or the held pose would be
+    // released on the next frame.
     return std::any_of(drivers_.begin(), drivers_.end(),
-                       [](const Driver& driver) { return driver.playing; });
+                       [](const Driver& driver) { return DriverDelivers(driver.state); });
 }
 
-void AnimationDriverHost::SetPlaying(const std::string& id, bool play) {
+void AnimationDriverHost::Start(const std::string& id) {
     for (auto& driver : drivers_) {
-        if (driver.id == id) driver.playing = play;
+        if (driver.id != id) continue;
+        // Restart from the beginning after a stop or a completed one-shot;
+        // resume from the frozen phase after a pause.
+        if (driver.state == DriverState::Stopped || driver.state == DriverState::Finished)
+            driver.phase = 0.0;
+        driver.state = DriverState::Playing;
     }
 }
 
+void AnimationDriverHost::Pause(const std::string& id) {
+    for (auto& driver : drivers_) {
+        if (driver.id == id && driver.state == DriverState::Playing)
+            driver.state = DriverState::Paused;
+    }
+}
+
+void AnimationDriverHost::Stop(const std::string& id) {
+    for (auto& driver : drivers_) {
+        if (driver.id != id) continue;
+        driver.state = DriverState::Stopped;
+        driver.phase = 0.0;
+    }
+}
+
+void AnimationDriverHost::ApplyState(const std::string& id, DriverState state) {
+    switch (state) {
+        case DriverState::Playing: Start(id); break;
+        case DriverState::Paused: Pause(id); break;
+        default: Stop(id); break;  // Stopped, and Finished is never requested
+    }
+}
+
+void AnimationDriverHost::SetPlaying(const std::string& id, bool play) {
+    if (play) Start(id); else Stop(id);
+}
+
 void AnimationDriverHost::SetAllPlaying(bool play) {
-    for (auto& driver : drivers_) driver.playing = play;
+    for (auto& driver : drivers_) {
+        if (play) {
+            if (driver.state == DriverState::Stopped || driver.state == DriverState::Finished)
+                driver.phase = 0.0;
+            driver.state = DriverState::Playing;
+        } else {
+            driver.state = DriverState::Stopped;
+            driver.phase = 0.0;
+        }
+    }
 }
 
 void AnimationDriverHost::SetSpeedMillis(const std::string& id, uint32_t speed_millis) {
@@ -358,8 +420,10 @@ std::vector<DriverSummary> AnimationDriverHost::Summaries() const {
         DriverSummary summary;
         summary.id = driver.id;
         summary.name = driver.name.empty() ? driver.id : driver.name;
-        summary.playing = driver.playing;
+        summary.state = driver.state;
+        summary.playback = driver.playback;
         summary.default_playing = driver.default_playing;
+        summary.sounding = driver.state == DriverState::Playing;
         const long millis = std::lround(driver.speed_multiplier * 1000.0);
         summary.speed_millis = static_cast<uint32_t>(std::clamp<long>(millis, 100, 8000));
         summary.has_sound = driver.sound.payload != UINT32_MAX;
@@ -374,16 +438,42 @@ void AnimationDriverHost::Reset() {
 }
 
 void AnimationDriverHost::Tick(float dt, const DriverSink& sink) {
-    if (!(dt > 0.0f) || drivers_.empty()) return;
+    if (drivers_.empty()) return;
+    // A non-positive or non-finite delta must still dispatch: paused and
+    // finished drivers hold their pose by being delivered every frame, and the
+    // caller restores the authored pose as soon as a frame delivers nothing.
+    if (!(dt > 0.0f) || !std::isfinite(dt)) dt = 0.0f;
 
     for (auto& driver : drivers_) {
-        if (!driver.playing) continue;
+        // Paused and finished drivers fall through to the dispatch below with
+        // their phase untouched, which is exactly what holds the pose.
+        if (!DriverDelivers(driver.state)) continue;
 
-        driver.phase += static_cast<double>(dt) * driver.base_frequency * driver.speed_multiplier;
-        if (!std::isfinite(driver.phase)) driver.phase = 0.0;
-        if (driver.phase >= 1.0 || driver.phase < 0.0) driver.phase -= std::floor(driver.phase);
+        if (driver.state == DriverState::Playing) {
+            driver.phase += static_cast<double>(dt) * driver.base_frequency * driver.speed_multiplier;
+            if (!std::isfinite(driver.phase)) driver.phase = 0.0;
+            if (driver.playback == DriverPlayback::Once) {
+                // Clamp instead of wrapping: the last frame must survive, and
+                // Tick keeps dispatching it every frame from now on.
+                if (driver.phase >= 1.0) {
+                    driver.phase = 1.0;
+                    driver.state = DriverState::Finished;
+                } else if (driver.phase < 0.0) {
+                    driver.phase = 0.0;
+                }
+            } else if (driver.phase >= 1.0 || driver.phase < 0.0) {
+                driver.phase -= std::floor(driver.phase);
+            }
+        }
 
-        const float weight = Evaluate(driver.waveform, driver.phase);
+        // Evaluate() wraps phase into [0,1), so an exact 1.0 would sample the
+        // start again. A one-shot that has reached its end must sample the limit
+        // from below, which is the value the waveform approaches at p -> 1:
+        // sawtooth/step approach 1, pingpong/sine approach 0.
+        const double sample_phase =
+            (driver.playback == DriverPlayback::Once && driver.phase >= 1.0)
+                ? 1.0 - 1e-9 : driver.phase;
+        const float weight = Evaluate(driver.waveform, sample_phase);
 
         for (const auto& binding : driver.bindings) {
             switch (binding.type) {
@@ -430,7 +520,7 @@ std::vector<std::string> AnimationDriverHost::DrivenParameters() const {
     std::vector<std::string> result;
     std::unordered_set<std::string> seen;
     for (const auto& driver : drivers_) {
-        if (!driver.playing) continue;
+        if (!DriverDelivers(driver.state)) continue;
         for (const auto& binding : driver.bindings) {
             if (binding.type != DriverBindingType::MorphParameter) continue;
             if (seen.insert(binding.target).second) result.push_back(binding.target);
