@@ -24,6 +24,8 @@ import java.util.function.IntConsumer;
 /** Two independent tabs, sharing only a settings transport, never package materialization. */
 final class OverlaySettingsPage {
     private static final int INK = 0xFFF2F2EF, GOLD = 0xFFE6CD82, EDGE = 0xFF3B434A;
+    private static final Map<String, Boolean> driverPlayingStates = new java.util.HashMap<>();
+    private static final Map<String, Integer> driverSpeedStates = new java.util.HashMap<>();
     final LinearLayout root;
     private final Activity activity;
     private final boolean models, preview;
@@ -277,6 +279,64 @@ final class OverlaySettingsPage {
         if (parameters.length() > 0) {
             TextView reset = button("作者默认值"); card.addView(reset, height(44)); mutations.add(reset);
             reset.setOnClickListener(v -> { if (version == render) modelPatch(generation, "parameters", entry.optString("default_parameters", "")); });
+        }
+        JSONArray drivers = entry.optJSONArray("drivers");
+        if (drivers != null && drivers.length() > 0) {
+            card.addView(label("动效"));
+            for (int i = 0; i < drivers.length(); ++i) {
+                JSONObject driver = drivers.getJSONObject(i);
+                String id = driver.getString("id");
+                String name = driver.optString("name", id);
+                boolean defaultPlaying = driver.optBoolean("default_playing", false);
+                boolean playing = driverPlayingStates.computeIfAbsent(id, k -> defaultPlaying);
+                int speed = driverSpeedStates.computeIfAbsent(id, k -> 1000);
+
+                Switch playSwitch = new Switch(activity);
+                playSwitch.setTextColor(INK);
+                playSwitch.setTextSize(13);
+                playSwitch.setMinimumHeight(dp(44));
+                playSwitch.setText(name + " · " + (playing ? "播放中" : "暂停"));
+                playSwitch.setChecked(playing);
+                card.addView(playSwitch);
+                mutations.add(playSwitch);
+
+                final int minSpeed = 250, maxSpeed = 4000, stepSpeed = 50;
+                TextView speedTitle = label("速度  " + String.format(java.util.Locale.ROOT, "%.2fx", speed / 1000.0));
+                card.addView(speedTitle);
+
+                SeekBar speedSlider = slider((maxSpeed - minSpeed) / stepSpeed, (speed - minSpeed) / stepSpeed);
+                mutations.add(speedSlider);
+                card.addView(speedSlider, height(48));
+                speedSlider.setContentDescription(name + " 速度");
+
+                final String driverId = id;
+                playSwitch.setOnCheckedChangeListener((v, checked) -> {
+                    if (version != render) return;
+                    driverPlayingStates.put(driverId, checked);
+                    playSwitch.setText(name + " · " + (checked ? "播放中" : "暂停"));
+                    try {
+                        NativeCommandBridge.setCustomModelDriver(driverId, checked, driverSpeedStates.getOrDefault(driverId, 1000));
+                    } catch (Throwable ignored) {}
+                });
+
+                final boolean[] speedChanged = {false};
+                bindSlider(speedSlider, progress -> {
+                    if (version != render) return;
+                    int curSpeed = minSpeed + progress * stepSpeed;
+                    driverSpeedStates.put(driverId, curSpeed);
+                    speedTitle.setText("速度  " + String.format(java.util.Locale.ROOT, "%.2fx", curSpeed / 1000.0));
+                    speedChanged[0] = true;
+                }, () -> {
+                    if (version == render && speedChanged[0]) {
+                        speedChanged[0] = false;
+                        int curSpeed = driverSpeedStates.getOrDefault(driverId, 1000);
+                        boolean isPlaying = driverPlayingStates.getOrDefault(driverId, defaultPlaying);
+                        try {
+                            NativeCommandBridge.setCustomModelDriver(driverId, isPlaying, curSpeed);
+                        } catch (Throwable ignored) {}
+                    }
+                });
+            }
         }
     }
     private void choice(LinearLayout parent, String title, String[] ids, String[] names, String selected, java.util.function.Consumer<String> changed) {

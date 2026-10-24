@@ -51,6 +51,8 @@ std::string SharedRegistryText(std::string_view config,const std::vector<std::fi
     const auto appearances=ConfigStrings(ConfigValue(config,"appearances"));
     const auto options=ConfigStrings(ConfigValue(config,"options"));
     const auto parameters=ConfigStrings(ConfigValue(config,"parameters"));
+    const auto drivers=ConfigStrings(ConfigValue(config,"drivers"));
+    const auto drivers_single=ConfigValue(config,"drivers");
     for (size_t i=0;i<packages.size();++i) {
         auto path=packages[i]; if (path.is_relative()) path=std::filesystem::path("/data/local/tmp")/path;
         result+="[Mod.android"+std::to_string(i)+"]\nenabled=true\npackage="+path.string()+"\n";
@@ -58,6 +60,8 @@ std::string SharedRegistryText(std::string_view config,const std::vector<std::fi
         if (!selected.empty()) result+="appearance="+selected+"\n";
         if (i<options.size() && !options[i].empty()) result+="options="+options[i]+"\n";
         if (i<parameters.size() && !parameters[i].empty()) result+="parameters="+parameters[i]+"\n";
+        if (i<drivers.size() && !drivers[i].empty()) result+="drivers="+drivers[i]+"\n";
+        else if (i==0 && drivers.empty() && !drivers_single.empty()) result+="drivers="+drivers_single+"\n";
     }
     return result;
 }

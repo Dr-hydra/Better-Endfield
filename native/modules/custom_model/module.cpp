@@ -22,10 +22,10 @@
 #include <Windows.h>
 #include "model_overlay_host.h"
 #include "runtime_ini_win32.h"
-#include "animation_driver.h"
 #else
 #include "platform_compat.h"
 #endif
+#include "animation_driver.h"
 #include <algorithm>
 #include <array>
 #include <atomic>
@@ -45,6 +45,12 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#if defined(__ANDROID__)
+namespace betterendfieldnext {
+bool AndroidSetCustomModelDriver(const char* id, bool playing, int speed_millis);
+std::string AndroidGetCustomModelDriversJson();
+}
+#endif
 namespace BetterEndfieldNext::CustomModel {
 namespace {
 constexpr char kModuleId[]="betterendfieldnext.custom_model";
@@ -53,8 +59,10 @@ std::atomic_bool g_hot_switch_runtime{false};
 std::atomic_bool g_clone_support_runtime{false};
 void WatchModelCloneSource(void* asset);
 std::atomic<DWORD> g_pump_thread{0};
+uint64_t g_registry_generation = 0;
 #if defined(_WIN32)
 ModelOverlayHost g_model_overlay;
+#endif
 AnimationDriverHost g_animation_driver;
 void EnsureAnimationDriverLoaded();
 void PollAnimationDriverControls();
@@ -69,6 +77,9 @@ std::unordered_map<int32_t, DynamicMeshRecord> g_dynamic_meshes;
 // Set while the previous frame pushed driver weights into the meshes, so the
 // first frame carrying none restores the authored pose exactly once.
 bool g_driver_morph_active = false;
+
+#if defined(__ANDROID__)
+void ReapplyAndroidDriverOverrides();
 #endif
 BE_ResolvedClassV1 g_skinned_renderer_class{},g_mesh_class{},g_texture2d_class{},g_material_class{},g_vector3_class{};
 using ArrayNewFn = void* (*)(void* elementTypeInfo, uintptr_t length);
@@ -156,6 +167,19 @@ struct EngineBindings {
     bool resolved = false;
 };
 EngineBindings g_engine{};
+
+// UnityEngine.Mesh::SetNativeArrayForChannelImpl is the Android-retained icall
+// behind Mesh.SetVertices. Unlike a raw write into the native vertex buffer it
+// marks the channel dirty, refreshes the GPU copy and leaves every other
+// channel alone, so normals, UVs and the skin streams are never touched.
+using MeshSetNativeArrayForChannelFn = void(*)(void* mesh, int32_t channel, int32_t format,
+    int32_t dim, const void* values, int32_t array_size, int32_t values_start,
+    int32_t values_count, int32_t flags);
+
+struct AndroidEngineBindings {
+    MeshSetNativeArrayForChannelFn set_native_channel = nullptr;
+};
+AndroidEngineBindings g_android_engine{};
 
 // Unboxed UnityEngine.Rendering.SubMeshDescriptor: Bounds, then six Int32.
 struct SubMeshDescriptorRaw {
@@ -988,6 +1012,49 @@ bool SafeSetVertexBufferData(
     }
 }
 
+uintptr_t GetNativeObjectPointer(void* object);
+
+#if defined(__ANDROID__)
+// Unity's Android build strips UnityEngine.Mesh::InternalSetVertexBufferData, so
+// a sub-range vertex write is impossible. The retained equivalent is
+// SetNativeArrayForChannelImpl (the icall behind Mesh.SetVertices): it replaces
+// one whole channel, marks it dirty and refreshes the GPU copy, leaving every
+// other channel byte-for-byte intact. Positions are therefore re-uploaded as one
+// contiguous Vector3 array, exactly as Unity's own SetVertices does.
+bool AndroidUploadMeshPositions(
+    void* mesh, const BemMorphSet& set, const std::vector<float>& accumulated,
+    const std::vector<uint32_t>& touched) {
+    if (!g_android_engine.set_native_channel || !mesh || set.stride <= 0) return false;
+    const size_t vertex_count = set.base.size() / size_t(set.stride);
+    if (!vertex_count || vertex_count > (size_t(1) << 24) || set.offset + 12 > set.stride) return false;
+
+    thread_local std::vector<float> positions;
+    positions.resize(vertex_count * 3);
+    const uint8_t* base = set.base.data();
+    for (size_t v = 0; v < vertex_count; ++v)
+        std::memcpy(positions.data() + v * 3, base + v * size_t(set.stride) + set.offset, 12);
+
+    for (size_t i = 0; i < touched.size(); ++i) {
+        const size_t index = touched[i];
+        if (index >= set.vertices.size()) continue;
+        const size_t vertex = set.vertices[index];
+        if (vertex >= vertex_count) continue;
+        float* position = positions.data() + vertex * 3;
+        const float* delta = accumulated.data() + index * 3;
+        for (int axis = 0; axis < 3; ++axis) position[axis] += delta[axis];
+    }
+    g_android_engine.set_native_channel(mesh, 0 /*Position*/, 0 /*Float32*/, 3,
+        positions.data(), static_cast<int32_t>(vertex_count), 0,
+        static_cast<int32_t>(vertex_count), 0 /*MeshUpdateFlags.Default*/);
+    if (g_engine.upload_mesh_data) g_engine.upload_mesh_data(mesh, false);
+    return true;
+}
+#endif
+
+#if !defined(__ANDROID__)
+// Byte-range upload into one vertex stream. Windows keeps the raw range setter,
+// so only the runs that actually moved are pushed and the rest of the stream
+// (UV, tangent, skin) is never rewritten.
 bool SafeUpdateSubVertexBuffer(
     void* mesh, int32_t stream, const void* data,
     int32_t byte_offset, int32_t byte_count) {
@@ -1004,6 +1071,8 @@ bool SafeUpdateSubVertexBuffer(
         return false;
     }
 }
+
+#endif
 
 bool SafeSetIndexBufferParams(
     void* mesh, int32_t index_count, int32_t index_format) {
@@ -1061,6 +1130,8 @@ bool SafeUploadMeshData(void* mesh) {
 }
 
 
+using ResolveIcallFn = void* (*)(const char*);
+
 bool ResolveEngineBindings() {
     if (g_engine.resolved) return true;
 
@@ -1075,11 +1146,16 @@ bool ResolveEngineBindings() {
     HMODULE game = GetModuleHandleW(L"GameAssembly.dll");
     auto resolve = reinterpret_cast<ResolveIcallFn>(GetProcAddress(game,"il2cpp_resolve_icall"));
     g_engine.upload_mesh_data = reinterpret_cast<MeshUploadDataFn>(resolve ? resolve("UnityEngine.Mesh::UploadMeshDataImpl") : nullptr);
-    g_engine.resolved = g_engine.upload_mesh_data != nullptr;
+    g_android_engine.set_native_channel = reinterpret_cast<MeshSetNativeArrayForChannelFn>(
+        resolve ? resolve("UnityEngine.Mesh::SetNativeArrayForChannelImpl") : nullptr);
+    Log("Android Engine bindings: upload=" + std::to_string(g_engine.upload_mesh_data != nullptr) +
+        " set_channel=" + std::to_string(g_android_engine.set_native_channel != nullptr));
+    // Never gate model construction on the optional position channel setter: a
+    // missing icall must degrade to a static (non-animated) model, not to a
+    // refused replacement.
+    g_engine.resolved = (g_engine.upload_mesh_data != nullptr);
     return g_engine.resolved;
 #else
-
-    using ResolveIcallFn = void* (*)(const char*);
     HMODULE game = GetModuleHandleW(L"GameAssembly.dll");
     auto resolve = reinterpret_cast<ResolveIcallFn>(
         game ? reinterpret_cast<void*>(
@@ -1560,8 +1636,8 @@ bool BuildMeshFromComponent(
             Log(label + " SetSubMesh faulted."); DestroyUnityObject(mesh); return false;
         }
     }
+#endif
 
-#if defined(_WIN32)
     EnsureAnimationDriverLoaded();
     // Section 10 samples captured at load. Registering them here is what lets a
     // driver address this mesh later; without a record the tick has nothing to
@@ -1579,9 +1655,6 @@ bool BuildMeshFromComponent(
                 std::to_string(vertices) + " sampled vertices");
         }
     }
-#endif
-
-#endif
     void* p_bindposes[1]{bindposes};
     if (!component.static_mesh && !InvokeVoid(Contract("mesh.set_bindposes"), mesh, p_bindposes)) {
         Log(label + " failed to install the original bindpose palette.");
@@ -1971,12 +2044,10 @@ bool GetRendererEnabled(void* renderer, bool& enabled) {
 
 void DestroyUnityObject(void* object) {
     if (!object) return;
-#if defined(_WIN32)
     int32_t destroy_id = 0;
     if (InvokeValue(Contract("object.instance_id"), object, nullptr, destroy_id) && destroy_id != 0) {
         g_dynamic_meshes.erase(destroy_id);
     }
-#endif
     if (g_construction) {
         auto& assets = g_construction->assets;
         auto it = std::find(assets.begin(),assets.end(),object);
@@ -2991,9 +3062,8 @@ bool SameAdapter(const CharacterAdapter& a,const CharacterAdapter& b) {
         a.explicit_resource==b.explicit_resource && a.receiver_lod==b.receiver_lod;
 }
 // ---- Section 10/13 driver morph application ----
-#if defined(_WIN32)
 struct DriverMorphValue {
-    const std::string* parameter=nullptr;
+    std::string parameter;
     float range_low=0.0f,range_high=1.0f,weight=0.0f;
 };
 // Every live mesh that captured a morph source, resolved through the bindings
@@ -3025,9 +3095,12 @@ void ApplyDriverMorph(const std::vector<DriverMorphValue>& values) {
 
     thread_local std::vector<float> accumulated;
     thread_local std::vector<uint32_t> touched;
+#if !defined(__ANDROID__)
     thread_local std::vector<uint8_t> run_bytes;
+#endif
 
     ForEachMorphedMesh([&](void* mesh,const BemMorphSet& set,void* renderer) {
+        (void)renderer; // desktop-only MarkModified target
         if (set.vertices.empty() || set.channels.empty() || set.base.empty()) return;
         // accumulated[] is indexed exactly like BemMorphSet::vertices, which is
         // the layout SampleMorphChannel validates against.
@@ -3035,7 +3108,7 @@ void ApplyDriverMorph(const std::vector<DriverMorphValue>& values) {
         for (const auto& channel:set.channels) {
             const DriverMorphValue* driven=nullptr;
             for (const auto& value:values)
-                if (value.parameter && *value.parameter==channel.parameter) {driven=&value;break;}
+                if (value.parameter == channel.parameter) {driven=&value;break;}
             // A negative weight is the restore sample: it replays whatever the
             // load-time tick selected, so parameters no driver owns keep their
             // authored pose while a neighbour is animated.
@@ -3048,6 +3121,14 @@ void ApplyDriverMorph(const std::vector<DriverMorphValue>& values) {
             if (d[0]!=0.0f || d[1]!=0.0f || d[2]!=0.0f) touched.push_back(static_cast<uint32_t>(i));
         }
         if (touched.empty()) return;
+#if defined(__ANDROID__)
+        // Android strips InternalSetVertexBufferData and MarkModified, so a
+        // sub-range write is impossible there. SetNativeArrayForChannelImpl (the
+        // icall behind Mesh.SetVertices) is retained: it replaces the Position
+        // channel, marks it dirty and refreshes the GPU copy, while the normal,
+        // tangent/UV and skin streams are left byte-for-byte untouched.
+        AndroidUploadMeshPositions(mesh, set, accumulated, touched);
+#else
         // Sub-range upload into Stream 0 only. Stream 1 (normal/tangent/UV) and
         // Stream 2 (skin) are never touched, which is what keeps shading intact.
         // Each range is rebuilt from the captured base so the stride bytes that
@@ -3088,6 +3169,7 @@ void ApplyDriverMorph(const std::vector<DriverMorphValue>& values) {
         // slider path does, and that path is known to animate correctly.
         InvokeVoid(Contract("mesh.mark_modified"),mesh,nullptr);
         InvokeVoid(Contract("skinned.mark_modified"),renderer,nullptr);
+#endif
     });
 }
 
@@ -3227,7 +3309,7 @@ void WriteDriverMaterial(DriverMaterialKind kind,uint32_t component,uint32_t slo
             " slot "+std::to_string(slot)+"; '"+name+"' is not modulated.");
     }
 }
-#endif
+
 std::string RelativeBonePath(void* bone) {
     auto path=BuildTransformPath(bone); const auto slash=path.find('/');
     return slash==path.npos?path:path.substr(slash+1);
@@ -4129,6 +4211,7 @@ void ReloadRegistryAtDelivery() {
 #endif
     if (text==g_last_registry_text) return;
     g_last_registry_text=text;
+    ++g_registry_generation;
     const bool accepted=InstallRegistryUpdate(text);
 #if defined(_WIN32)
     g_model_overlay.Result(text,accepted);
@@ -4503,7 +4586,6 @@ void __fastcall ResourcePump(void* method) {
         if (!stop) { ReloadRegistryAtDelivery(); if (frame_known) PumpModelJobs(static_cast<uint64_t>(frame)); }
         else CancelModelJobs();
 
-#if defined(_WIN32)
         // Continuous Animation Driver Tick
         static uint64_t s_anim_last_tick = 0;
         uint64_t now_ms = GetTickCount64();
@@ -4546,7 +4628,7 @@ void __fastcall ResourcePump(void* method) {
             // uploads on top of each other.
             std::vector<DriverMorphValue> morph_values;
             sink.on_morph_parameter = [&](const std::string& param, float low, float high, float val) {
-                    morph_values.push_back(DriverMorphValue{&param, low, high, val});
+                    morph_values.push_back(DriverMorphValue{param, low, high, val});
                 };
             g_animation_driver.Tick(dt, sink);
             ApplyDriverMorph(morph_values);
@@ -4557,7 +4639,6 @@ void __fastcall ResourcePump(void* method) {
             ApplyDriverMorph({});
             ReleaseDriverMaterials(nullptr);
         }
-#endif
 #if defined(__ANDROID__)
         // Keep the configured highest-available-LOD bias for every enabled
         // mobile model, including explicit LOD1 resources. The geometry LOD
@@ -4607,62 +4688,142 @@ void PublishAnimationDrivers(const std::filesystem::path& package) {
         panel.push_back(DriverPanelState{summary.id,summary.name,summary.playing,summary.speed_millis});
     g_model_overlay.PublishDrivers(PackagePathUtf8(package),panel);
 }
-void EnsureAnimationDriverLoaded() {
-    if (g_registry.enabled.empty()) return;
-    // A package whose manifest cannot be read is retried on a timer instead of
-    // once per frame; a driverless package is remembered through LoadedPath().
-    static std::string failed_package;
-    static uint64_t retry_at=0;
-    // The ini driver overrides are replayed only when the text or the package
-    // changes, so they cannot overwrite what the overlay panel just set.
-    static std::string applied_overrides;
-    for (const auto& mod : g_registry.enabled) {
-        const std::string package=mod.package.string();
-        if (g_animation_driver.LoadedPath() != package) {
-            const uint64_t now=GetTickCount64();
-            if (failed_package==package && now<retry_at) continue;
-            // Dynamic drivers live in the package manifest only. The sidecar
-            // .anim.json route was a development vehicle and was never released,
-            // so there is no compatibility surface to keep.
-            BemPackageInfo info; std::string why;
-            if (ReadBemManagementInfo(mod.package, info, why, true) && !info.manifest_json.empty()) {
-                g_animation_driver.LoadFromManifest(info.manifest_json, package);
-                PublishAnimationDrivers(mod.package);
-                failed_package.clear();
+#endif
+
+void ApplyModDriverOverrides(const std::string& package, const std::string& drivers, std::string& applied_overrides) {
+    if (drivers.empty() || applied_overrides == package + "\n" + drivers) return;
+    applied_overrides = package + "\n" + drivers;
+    std::string rem = drivers;
+    while (!rem.empty()) {
+        auto amp = rem.find('&');
+        auto pair = rem.substr(0, amp);
+        auto colon = pair.find(':');
+        if (colon != std::string::npos) {
+            std::string did = pair.substr(0, colon);
+            std::string val = pair.substr(colon + 1);
+            auto colon2 = val.find(':');
+            if (colon2 != std::string::npos) {
+                std::string play_str = val.substr(0, colon2);
+                std::string speed_str = val.substr(colon2 + 1);
+                bool play = (play_str == "play" || play_str == "1" || play_str == "true");
+                g_animation_driver.SetPlaying(did, play);
+                try {
+                    uint32_t sp = static_cast<uint32_t>(std::stoul(speed_str));
+                    if (sp >= 250 && sp <= 4000) g_animation_driver.SetSpeedMillis(did, sp);
+                } catch (...) {}
             } else {
-                failed_package=package; retry_at=now+5000;
+                bool play = (val == "play" || val == "1" || val == "true");
+                g_animation_driver.SetPlaying(did, play);
             }
         }
-        // Apply driver play/pause states from mod.drivers (synchronized from overlay)
-        if (!mod.drivers.empty() && applied_overrides != package+"\n"+mod.drivers) {
-            applied_overrides = package+"\n"+mod.drivers;
-            std::string rem = mod.drivers;
-            while (!rem.empty()) {
-                auto amp = rem.find('&');
-                auto pair = rem.substr(0, amp);
-                auto colon = pair.find(':');
-                if (colon != std::string::npos) {
-                    std::string did = pair.substr(0, colon);
-                    std::string val = pair.substr(colon + 1);
-                    bool play = (val == "play" || val == "1" || val == "true");
-                    g_animation_driver.SetPlaying(did, play);
-                }
-                rem = (amp == std::string::npos) ? "" : rem.substr(amp + 1);
-            }
-        }
-        // Only a loaded driver set ends the search: a paused set must not be
-        // replaced by the next package in the list.
-        if (g_animation_driver.DriverCount() > 0) break;
+        rem = (amp == std::string::npos) ? "" : rem.substr(amp + 1);
     }
 }
-// The panel sends a whole snapshot on every edit, so applying it is idempotent.
+
+void EnsureAnimationDriverLoaded() {
+    if (g_registry.enabled.empty()) return;
+    static std::string applied_overrides;
+    static uint64_t s_last_registry_gen = 0;
+    static std::unordered_set<std::string> s_driverless_packages;
+    static std::string failed_package;
+    static uint64_t retry_at = 0;
+
+    if (s_last_registry_gen != g_registry_generation) {
+        s_last_registry_gen = g_registry_generation;
+        s_driverless_packages.clear();
+        failed_package.clear();
+    }
+
+    // 1. Fast path: if a package with drivers is already loaded and is still enabled,
+    // do not re-scan or reload from disk.
+    if (g_animation_driver.DriverCount() > 0) {
+        const std::string& current_loaded = g_animation_driver.LoadedPath();
+        for (const auto& mod : g_registry.enabled) {
+            if (mod.package.string() == current_loaded) {
+                ApplyModDriverOverrides(current_loaded, mod.drivers, applied_overrides);
+                return;
+            }
+        }
+    }
+
+    // 2. Slow path: scan enabled mods once to find an authored driver package.
+    for (const auto& mod : g_registry.enabled) {
+        const std::string package = mod.package.string();
+        if (s_driverless_packages.count(package)) continue;
+        if (g_animation_driver.LoadedPath() == package) {
+            if (g_animation_driver.DriverCount() > 0) {
+                ApplyModDriverOverrides(package, mod.drivers, applied_overrides);
+                break;
+            }
+            continue;
+        }
+
+        const uint64_t now = GetTickCount64();
+        if (failed_package == package && now < retry_at) continue;
+
+        BemPackageInfo info; std::string why;
+        if (ReadBemManagementInfo(mod.package, info, why, true) && !info.manifest_json.empty()) {
+            if (g_animation_driver.LoadFromManifest(info.manifest_json, package)) {
+#if defined(_WIN32)
+                PublishAnimationDrivers(mod.package);
+#elif defined(__ANDROID__)
+                ReapplyAndroidDriverOverrides();
+#endif
+                failed_package.clear();
+                ApplyModDriverOverrides(package, mod.drivers, applied_overrides);
+                break; // Found and loaded the package with drivers! Stop scanning!
+            } else {
+                s_driverless_packages.insert(package);
+            }
+        } else {
+            failed_package = package;
+            retry_at = now + 5000;
+        }
+    }
+}
+
 void PollAnimationDriverControls() {
+#if defined(_WIN32)
     thread_local std::vector<DriverPanelState> panel;
     if (!g_model_overlay.PollDriverControls(panel)) return;
     for (const auto& state : panel) {
         g_animation_driver.SetPlaying(state.id, state.playing);
         g_animation_driver.SetSpeedMillis(state.id, state.speed_millis);
     }
+#endif
+}
+
+#if defined(__ANDROID__)
+static std::unordered_map<std::string, std::pair<bool, uint32_t>> s_driver_overrides;
+
+void ReapplyAndroidDriverOverrides() {
+    for (const auto& entry : s_driver_overrides) {
+        g_animation_driver.SetPlaying(entry.first, entry.second.first);
+        g_animation_driver.SetSpeedMillis(entry.first, entry.second.second);
+    }
+}
+
+bool SetAndroidDriver(const char* id, bool playing, int speed_millis) {
+    if (!id || *id == '\0') return false;
+    std::lock_guard lock(g_state_mutex);
+    uint32_t sp = (speed_millis >= 250 && speed_millis <= 4000) ? static_cast<uint32_t>(speed_millis) : 1000;
+    s_driver_overrides[id] = {playing, sp};
+    g_animation_driver.SetPlaying(id, playing);
+    g_animation_driver.SetSpeedMillis(id, sp);
+    return true;
+}
+
+std::string GetAndroidDriversJson() {
+    std::lock_guard lock(g_state_mutex);
+    std::string json = "[";
+    bool first = true;
+    for (const auto& s : g_animation_driver.Summaries()) {
+        if (!first) json += ",";
+        first = false;
+        json += "{\"id\":\"" + s.id + "\",\"name\":\"" + s.name + "\",\"playing\":" + (s.playing ? "true" : "false") + ",\"speed_millis\":" + std::to_string(s.speed_millis) + "}";
+    }
+    json += "]";
+    return json;
 }
 #endif
 
@@ -4671,6 +4832,7 @@ bool ReadRuntimeRegistry() {
     if (g_host->copy_catalog_root(g_host->context,catalog.data(),catalog.size())<=0) return false;
     const auto root=Utf8Path(catalog.data())/"custom-model";
     g_registry_root=root;
+    ++g_registry_generation;
     try { ReadProbeRequest(root); }
     catch (const std::exception& error) { g_probe.active=false; WriteProbeStatus("request_failed",error.what()); Log(std::string("Native probe disabled: ")+error.what()); }
     std::string text;
@@ -4780,9 +4942,7 @@ BE_Result BE_CALL InitializeResourceModule(const BE_HostApiV1* host) {
     g_host=host;
     try {
         BeginProbeStatus();
-        #if defined(_WIN32)
         g_animation_driver.SetLogger([](const std::string& msg){ Log(msg); });
-#endif
     if (!ReadRuntimeRegistry() || !ResolveRuntimeContracts()) { WriteProbeStatus("initialization_failed"); return BE_Result_ContractMismatch; }
 #if defined(__ANDROID__)
         g_retire_hooks=host->release_module_hooks;
@@ -4975,6 +5135,18 @@ BE_EXPORT BE_Result BE_CALL BetterEndfieldNext_QueryCustomModelGeometryV1(void* 
     } catch(...) {return BE_Result_Failed;}
 }
 }
+#if defined(__ANDROID__)
+namespace betterendfieldnext {
+bool AndroidSetCustomModelDriver(const char* id, bool playing, int speed_millis) {
+    return BetterEndfieldNext::CustomModel::SetAndroidDriver(id, playing, speed_millis);
+}
+
+std::string AndroidGetCustomModelDriversJson() {
+    return BetterEndfieldNext::CustomModel::GetAndroidDriversJson();
+}
+} // namespace betterendfieldnext
+#endif
+
 BOOL WINAPI DllMain(HINSTANCE instance,DWORD reason,LPVOID reserved) {
     if (reason==DLL_PROCESS_ATTACH) DisableThreadLibraryCalls(instance);
     if (reason==DLL_PROCESS_DETACH && reserved) BetterEndfieldNext::CustomModel::g_process_terminating.store(true);

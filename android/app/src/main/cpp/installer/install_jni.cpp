@@ -31,6 +31,14 @@ extern "C" JNIEXPORT jstring JNICALL Java_dev_betterendfield_next_BemInstaller_i
         report["parameters"]=BemJson::parse(info.parameter_groups_json);
         report["parameter_groups_json"]=info.parameter_groups_json;
         report["default_parameters"]=info.default_parameters;
+        if (!info.manifest_json.empty()) {
+            try {
+                auto manifest = BemJson::parse(info.manifest_json);
+                if (manifest.contains("drivers") && manifest["drivers"].is_array()) {
+                    report["drivers"] = manifest["drivers"];
+                }
+            } catch (...) {}
+        }
         auto encoded=report.dump();
         return env->NewStringUTF(encoded.c_str());
     } catch(const std::exception& error) {env->ThrowNew(env->FindClass("java/io/IOException"),error.what());return nullptr;}

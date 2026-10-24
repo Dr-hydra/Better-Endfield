@@ -31,7 +31,11 @@
 #include <vector>
 #include <string>
 
-namespace betterendfieldnext { bool AndroidGlobalFov(bool enabled, float fov); }
+namespace betterendfieldnext {
+bool AndroidGlobalFov(bool enabled, float fov);
+bool AndroidSetCustomModelDriver(const char* id, bool playing, int speed_millis);
+std::string AndroidGetCustomModelDriversJson();
+}
 
 // Each desktop feature module keeps its own entry point; the Android CMake build
 // renames the shared BetterEndfieldNext_GetModuleApiV1 symbol per translation unit so
@@ -249,6 +253,23 @@ Java_dev_betterendfield_next_NativeCommandBridge_pcMouseDirectTouch(JNIEnv*, jcl
     betterendfieldnext::SetAndroidPcDirectTouch(active == JNI_TRUE);
 }
 extern "C" JNIEXPORT jboolean JNICALL
+Java_dev_betterendfield_next_NativeCommandBridge_setCustomModelDriver(
+        JNIEnv* env, jclass, jstring driverId, jboolean playing, jint speedMillis) {
+    if (!driverId) return JNI_FALSE;
+    const char* raw = env->GetStringUTFChars(driverId, nullptr);
+    if (!raw) return JNI_FALSE;
+    const bool ok = betterendfieldnext::AndroidSetCustomModelDriver(raw, playing == JNI_TRUE, speedMillis);
+    env->ReleaseStringUTFChars(driverId, raw);
+    return ok ? JNI_TRUE : JNI_FALSE;
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_dev_betterendfield_next_NativeCommandBridge_customModelDriverStatus(JNIEnv* env, jclass) {
+    std::string json = betterendfieldnext::AndroidGetCustomModelDriversJson();
+    return env->NewStringUTF(json.c_str());
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
 Java_dev_betterendfield_next_NativeCommandBridge_updateCustomModelConfig(JNIEnv* env,jclass,jstring configuration) {
     if (!env || !configuration || env->GetStringUTFLength(configuration)>1024*1024) return JNI_FALSE;
     const char* text=env->GetStringUTFChars(configuration,nullptr); if (!text) return JNI_FALSE;
@@ -362,6 +383,8 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
         BE_NATIVE(globalFov, "(ZF)Z"),
         BE_NATIVE(mediaScreen, "(ID)Z"), BE_NATIVE(mediaScreenStatus, "()Ljava/lang/String;"),
         BE_NATIVE(updateCustomModelConfig, "(Ljava/lang/String;)Z"),
+        BE_NATIVE(setCustomModelDriver, "(Ljava/lang/String;ZI)Z"),
+        BE_NATIVE(customModelDriverStatus, "()Ljava/lang/String;"),
         BE_NATIVE(mmd, "(IIDLjava/lang/String;)Z")
     };
 #undef BE_NATIVE
