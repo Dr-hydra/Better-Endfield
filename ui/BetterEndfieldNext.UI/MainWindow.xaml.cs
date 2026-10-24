@@ -186,7 +186,7 @@ public sealed partial class MainWindow : Window
         {
             DependencyObject child = VisualTreeHelper.GetChild(root, index);
             if (child is TextBox textBox && textBox.Name.Contains("Hotkey", StringComparison.OrdinalIgnoreCase))
-                textBox.KeyDown += HotkeyTextBox_KeyDown;
+                textBox.PreviewKeyDown += HotkeyTextBox_KeyDown;
             RegisterHotkeyControls(child);
         }
     }

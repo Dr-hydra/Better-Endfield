@@ -366,14 +366,14 @@ public sealed partial class CustomModelPage : UserControl
                                 Text = p.DriverHotkeys.GetValueOrDefault(driver.Id, "").Replace("PLUS", "=", StringComparison.Ordinal),
                                 PlaceholderText = BemText.Get("未绑定"), IsSpellCheckEnabled = false, MinWidth = 200
                             };
-                            box.KeyDown += (_, args) =>
+                            box.PreviewKeyDown += (_, args) =>
                             {
                                 args.Handled = true;
                                 if (HotkeyService.IsModifier(args.Key)) return;
                                 if (args.Key is Windows.System.VirtualKey.Back or Windows.System.VirtualKey.Delete)
                                 { box.Text = ""; return; }
                                 string captured = HotkeyService.Capture(args.Key, args.KeyStatus.IsExtendedKey);
-                                if (captured.Length != 0) box.Text = captured;
+                                if (captured.Length != 0) { box.Text = captured; box.SelectAll(); }
                             };
                             string driverId = driver.Id;
                             box.TextChanged += async (_, _) =>
@@ -410,7 +410,11 @@ public sealed partial class CustomModelPage : UserControl
                                     p.DriverHotkeys[driverId] = normalized;
                                 }
                                 else p.DriverHotkeys.Remove(driverId);
-                                try { await _service.SaveAsync(); }
+                                try
+                                {
+                                    await _service.SaveAsync();
+                                    Message(() => BemText.Get("快捷键已保存"), () => SelectionAppliedHint);
+                                }
                                 catch (Exception ex)
                                 { Reload(); Message(() => BemText.Get("保存失败"), () => ex.Message, InfoBarSeverity.Error); }
                             };
@@ -650,14 +654,14 @@ public sealed partial class CustomModelPage : UserControl
         catch (Exception ex) { Reload(); Message(() => BemText.Get("保存失败"), () => ex.Message, InfoBarSeverity.Error); }
     }
 
-    private void ModelOverlayHotkey_KeyDown(object sender, KeyRoutedEventArgs e)
+    private void ModelOverlayHotkey_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
     {
         e.Handled = true;
         if (HotkeyService.IsModifier(e.Key)) return;
         if (e.Key is Windows.System.VirtualKey.Back or Windows.System.VirtualKey.Delete)
         { ModelOverlayHotkeyBox.Text = "NONE"; return; }
         string captured = HotkeyService.Capture(e.Key, e.KeyStatus.IsExtendedKey);
-        if (captured.Length != 0) ModelOverlayHotkeyBox.Text = captured;
+        if (captured.Length != 0) { ModelOverlayHotkeyBox.Text = captured; ModelOverlayHotkeyBox.SelectAll(); }
     }
 
     private async void ModelOverlayHotkey_TextChanged(object sender, TextChangedEventArgs e)
