@@ -26,6 +26,7 @@
 #include "platform_compat.h"
 #endif
 #include "animation_driver.h"
+#include "driver_audio.h"
 #include <algorithm>
 #include <array>
 #include <atomic>
@@ -64,7 +65,10 @@ uint64_t g_registry_generation = 0;
 ModelOverlayHost g_model_overlay;
 #endif
 AnimationDriverHost g_animation_driver;
+std::string PackagePathUtf8(const std::filesystem::path& path);
 void EnsureAnimationDriverLoaded();
+void MaterializeDriverSounds(const std::filesystem::path& package);
+void SyncDriverSounds();
 void PollAnimationDriverControls();
 
 struct DynamicMeshRecord {
@@ -77,6 +81,10 @@ std::unordered_map<int32_t, DynamicMeshRecord> g_dynamic_meshes;
 // Set while the previous frame pushed driver weights into the meshes, so the
 // first frame carrying none restores the authored pose exactly once.
 bool g_driver_morph_active = false;
+
+// Section 13 sound attachments. Voices are keyed by driver id and owned by the
+// platform audio backend; the animation clock never waits for audio.
+std::unordered_set<std::string> g_sounding_drivers;
 
 #if defined(__ANDROID__)
 void ReapplyAndroidDriverOverrides();
@@ -168,18 +176,26 @@ struct EngineBindings {
 };
 EngineBindings g_engine{};
 
-// UnityEngine.Mesh::SetNativeArrayForChannelImpl is the Android-retained icall
-// behind Mesh.SetVertices. Unlike a raw write into the native vertex buffer it
-// marks the channel dirty, refreshes the GPU copy and leaves every other
-// channel alone, so normals, UVs and the skin streams are never touched.
+// UnityEngine.Mesh::SetNativeArrayForChannelImpl is the icall behind
+// Mesh.SetVertices. Unlike a raw write into the native vertex buffer it marks
+// the channel dirty, refreshes the GPU copy and leaves every other channel
+// alone, so normals, UVs and the skin streams are never touched. It exists on
+// both Windows and Android, which makes it the portable morph upload path.
 using MeshSetNativeArrayForChannelFn = void(*)(void* mesh, int32_t channel, int32_t format,
     int32_t dim, const void* values, int32_t array_size, int32_t values_start,
     int32_t values_count, int32_t flags);
 
-struct AndroidEngineBindings {
+struct ChannelBindings {
     MeshSetNativeArrayForChannelFn set_native_channel = nullptr;
 };
-AndroidEngineBindings g_android_engine{};
+ChannelBindings g_channel{};
+
+// Desktop-only A/B switch for the morph upload path. Android always uses the
+// channel setter because the byte-range setter is stripped there.
+constexpr int kVertexUploadChannel = 0;   // SetNativeArrayForChannelImpl (default)
+constexpr int kVertexUploadByteRange = 1; // InternalSetVertexBufferData
+std::atomic<int> g_vertex_upload_mode{kVertexUploadChannel};
+bool g_vertex_upload_available[2] = {false, false};
 
 // Unboxed UnityEngine.Rendering.SubMeshDescriptor: Bounds, then six Int32.
 struct SubMeshDescriptorRaw {
@@ -1014,17 +1030,13 @@ bool SafeSetVertexBufferData(
 
 uintptr_t GetNativeObjectPointer(void* object);
 
-#if defined(__ANDROID__)
-// Unity's Android build strips UnityEngine.Mesh::InternalSetVertexBufferData, so
-// a sub-range vertex write is impossible. The retained equivalent is
-// SetNativeArrayForChannelImpl (the icall behind Mesh.SetVertices): it replaces
-// one whole channel, marks it dirty and refreshes the GPU copy, leaving every
-// other channel byte-for-byte intact. Positions are therefore re-uploaded as one
-// contiguous Vector3 array, exactly as Unity's own SetVertices does.
-bool AndroidUploadMeshPositions(
+// Replaces the whole Position channel from the captured base plus this frame's
+// deltas, exactly as Unity's own Mesh.SetVertices does. Only positions move:
+// normals, tangents, UVs and the skin streams keep their bytes.
+bool UploadMeshPositions(
     void* mesh, const BemMorphSet& set, const std::vector<float>& accumulated,
     const std::vector<uint32_t>& touched) {
-    if (!g_android_engine.set_native_channel || !mesh || set.stride <= 0) return false;
+    if (!g_channel.set_native_channel || !mesh || set.stride <= 0) return false;
     const size_t vertex_count = set.base.size() / size_t(set.stride);
     if (!vertex_count || vertex_count > (size_t(1) << 24) || set.offset + 12 > set.stride) return false;
 
@@ -1043,13 +1055,12 @@ bool AndroidUploadMeshPositions(
         const float* delta = accumulated.data() + index * 3;
         for (int axis = 0; axis < 3; ++axis) position[axis] += delta[axis];
     }
-    g_android_engine.set_native_channel(mesh, 0 /*Position*/, 0 /*Float32*/, 3,
+    g_channel.set_native_channel(mesh, 0 /*Position*/, 0 /*Float32*/, 3,
         positions.data(), static_cast<int32_t>(vertex_count), 0,
         static_cast<int32_t>(vertex_count), 0 /*MeshUpdateFlags.Default*/);
     if (g_engine.upload_mesh_data) g_engine.upload_mesh_data(mesh, false);
     return true;
 }
-#endif
 
 #if !defined(__ANDROID__)
 // Byte-range upload into one vertex stream. Windows keeps the raw range setter,
@@ -1146,10 +1157,13 @@ bool ResolveEngineBindings() {
     HMODULE game = GetModuleHandleW(L"GameAssembly.dll");
     auto resolve = reinterpret_cast<ResolveIcallFn>(GetProcAddress(game,"il2cpp_resolve_icall"));
     g_engine.upload_mesh_data = reinterpret_cast<MeshUploadDataFn>(resolve ? resolve("UnityEngine.Mesh::UploadMeshDataImpl") : nullptr);
-    g_android_engine.set_native_channel = reinterpret_cast<MeshSetNativeArrayForChannelFn>(
+    g_channel.set_native_channel = reinterpret_cast<MeshSetNativeArrayForChannelFn>(
         resolve ? resolve("UnityEngine.Mesh::SetNativeArrayForChannelImpl") : nullptr);
-    Log("Android Engine bindings: upload=" + std::to_string(g_engine.upload_mesh_data != nullptr) +
-        " set_channel=" + std::to_string(g_android_engine.set_native_channel != nullptr));
+    g_vertex_upload_available[kVertexUploadChannel] = g_channel.set_native_channel != nullptr;
+    g_vertex_upload_available[kVertexUploadByteRange] = false; // stripped on Android
+    g_vertex_upload_mode.store(kVertexUploadChannel, std::memory_order_relaxed);
+    Log("Android engine bindings: upload=" + std::to_string(g_engine.upload_mesh_data != nullptr) +
+        " channel=" + std::to_string(g_vertex_upload_available[kVertexUploadChannel]));
     // Never gate model construction on the optional position channel setter: a
     // missing icall must degrade to a static (non-animated) model, not to a
     // refused replacement.
@@ -1198,6 +1212,22 @@ bool ResolveEngineBindings() {
             continue;
         }
         *binding.slot = pointer;
+    }
+
+    // Optional on desktop: the morph upload path degrades to the byte-range
+    // setter when this one is missing, so it never blocks model construction.
+    {
+        void* pointer = nullptr;
+        if (SafeResolveIcall(resolve, "UnityEngine.Mesh::SetNativeArrayForChannelImpl", &pointer) && pointer)
+            g_channel.set_native_channel = reinterpret_cast<MeshSetNativeArrayForChannelFn>(pointer);
+        g_vertex_upload_available[kVertexUploadChannel] = g_channel.set_native_channel != nullptr;
+        g_vertex_upload_available[kVertexUploadByteRange] = g_engine.set_vertex_buffer_data != nullptr;
+        // Prefer the channel path, but only when it is actually present.
+        g_vertex_upload_mode.store(g_vertex_upload_available[kVertexUploadChannel]
+            ? kVertexUploadChannel : kVertexUploadByteRange, std::memory_order_relaxed);
+        Log("Desktop morph upload: channel=" + std::to_string(g_vertex_upload_available[kVertexUploadChannel]) +
+            " byte_range=" + std::to_string(g_vertex_upload_available[kVertexUploadByteRange]) +
+            " default=" + (g_vertex_upload_mode.load() == kVertexUploadChannel ? "channel" : "byte_range"));
     }
     if (g_engine.cached_ptr_offset < 0) {
         if (g_host && g_host->resolve_field) {
@@ -3121,13 +3151,20 @@ void ApplyDriverMorph(const std::vector<DriverMorphValue>& values) {
             if (d[0]!=0.0f || d[1]!=0.0f || d[2]!=0.0f) touched.push_back(static_cast<uint32_t>(i));
         }
         if (touched.empty()) return;
+        // Two upload paths produce identical vertex data, so this is a pure A/B
+        // the user can flip at runtime:
+        //   channel    - replace the whole Position channel (default; portable)
+        //   byte_range - rewrite only the moved vertex runs (desktop only)
+        // Android has no byte-range setter, so it always takes the channel path.
+        int upload_mode = g_vertex_upload_mode.load(std::memory_order_relaxed);
+        if (!g_vertex_upload_available[upload_mode])
+            upload_mode = g_vertex_upload_available[kVertexUploadChannel]
+                ? kVertexUploadChannel : kVertexUploadByteRange;
+        if (upload_mode == kVertexUploadChannel) {
+            UploadMeshPositions(mesh, set, accumulated, touched);
+        } else {
 #if defined(__ANDROID__)
-        // Android strips InternalSetVertexBufferData and MarkModified, so a
-        // sub-range write is impossible there. SetNativeArrayForChannelImpl (the
-        // icall behind Mesh.SetVertices) is retained: it replaces the Position
-        // channel, marks it dirty and refreshes the GPU copy, while the normal,
-        // tangent/UV and skin streams are left byte-for-byte untouched.
-        AndroidUploadMeshPositions(mesh, set, accumulated, touched);
+            // Unreachable: the byte-range icall is stripped on Android.
 #else
         // Sub-range upload into Stream 0 only. Stream 1 (normal/tangent/UV) and
         // Stream 2 (skin) are never touched, which is what keeps shading intact.
@@ -3170,7 +3207,41 @@ void ApplyDriverMorph(const std::vector<DriverMorphValue>& values) {
         InvokeVoid(Contract("mesh.mark_modified"),mesh,nullptr);
         InvokeVoid(Contract("skinned.mark_modified"),renderer,nullptr);
 #endif
+        }
     });
+}
+
+// Reconciles running sound voices with the drivers that are actually playing.
+// Called once per animation frame; the set difference is normally empty.
+void SyncDriverSounds() {
+    if (!DriverAudioAvailable()) return;
+    const auto summaries = g_animation_driver.Summaries();
+    const auto sounds = g_animation_driver.Sounds();
+    std::unordered_map<std::string, bool> playing;
+    for (const auto& summary : summaries) playing.emplace(summary.id, summary.playing);
+    std::unordered_map<std::string, DriverSound> by_driver;
+    for (const auto& [driver_id, sound] : sounds) {
+        const auto state = playing.find(driver_id);
+        if (state != playing.end() && state->second) by_driver.emplace(driver_id, sound);
+    }
+    // Retire voices whose driver stopped.
+    for (auto it = g_sounding_drivers.begin(); it != g_sounding_drivers.end();) {
+        if (by_driver.contains(*it)) { ++it; continue; }
+        StopDriverSound(*it);
+        it = g_sounding_drivers.erase(it);
+    }
+    // Start voices whose driver began playing. Starting an already-running key
+    // is a no-op inside the backend, so this stays idempotent.
+    for (const auto& entry : by_driver) {
+        DriverSoundSpec spec;
+        spec.path = entry.second.path;
+        spec.gain = entry.second.gain;
+        spec.loop = entry.second.loop;
+        spec.offset_seconds = entry.second.offset_seconds;
+        if (spec.path.empty()) continue;
+        if (StartDriverSound(entry.first, spec))
+            g_sounding_drivers.insert(entry.first);
+    }
 }
 
 // ---- Section 13 material modulation ----
@@ -4599,6 +4670,8 @@ void __fastcall ResourcePump(void* method) {
             // Leave nothing driver-owned behind on unload: a saved scene would
             // otherwise keep the last animated frame as its authored look.
             ApplyDriverMorph({});
+            StopAllDriverSounds();
+            g_sounding_drivers.clear();
             ReleaseDriverMaterials(nullptr);
         }
         else if (g_animation_driver.HasActiveDrivers() && !g_completed.empty()) {
@@ -4634,10 +4707,15 @@ void __fastcall ResourcePump(void* method) {
             ApplyDriverMorph(morph_values);
             // Anything this frame did not write has gone back to the package.
             ReleaseDriverMaterials(&touched);
+            // Sound attachments follow the same rule: a driver that is not
+            // playing this frame simply has no voice. Platform audio mixes with
+            // the game's own output, so nothing here pauses or replaces it.
+            SyncDriverSounds();
         }
         else {
             ApplyDriverMorph({});
             ReleaseDriverMaterials(nullptr);
+            SyncDriverSounds();
         }
 #if defined(__ANDROID__)
         // Keep the configured highest-available-LOD bias for every enabled
@@ -4675,13 +4753,13 @@ void __fastcall ResourcePump(void* method) {
     } catch (const std::exception& error) { Log(std::string("Resource maintenance failed: ")+error.what()); }
     catch (...) { Log("Resource maintenance failed."); }
 }
-#if defined(_WIN32)
 // UTF-8, not path::string(): package names are routinely non-ASCII and the
 // companion compares this against its own UTF-8 path text.
 std::string PackagePathUtf8(const std::filesystem::path& path) {
     const auto bytes=path.u8string();
     return std::string(reinterpret_cast<const char*>(bytes.data()),bytes.size());
 }
+#if defined(_WIN32)
 void PublishAnimationDrivers(const std::filesystem::path& package) {
     std::vector<DriverPanelState> panel;
     for (const auto& summary:g_animation_driver.Summaries())
@@ -4718,6 +4796,41 @@ void ApplyModDriverOverrides(const std::string& package, const std::string& driv
         }
         rem = (amp == std::string::npos) ? "" : rem.substr(amp + 1);
     }
+}
+
+// Section 13 sound payloads live inside the package, but both audio backends
+// play from a file, so each one is written once into the model cache directory
+// and the runtime keeps that path. Extraction failures only silence the driver:
+// the model and the animation clock are never affected.
+void MaterializeDriverSounds(const std::filesystem::path& package) {
+    const auto sounds = g_animation_driver.Sounds();
+    if (sounds.empty()) return;
+    if (!DriverAudioAvailable()) {
+        Log("[driver-audio] no audio backend on this platform; driver sounds stay silent");
+        return;
+    }
+    std::error_code error;
+    const auto cache = g_registry_root / "driver-audio";
+    std::filesystem::create_directories(cache, error);
+    const uint64_t package_key = Crc32(PackagePathUtf8(package));
+    size_t written = 0;
+    for (const auto& [driver_id, sound] : sounds) {
+        (void)driver_id; // the payload id is what identifies the cached file
+        std::string extension = sound.extension;
+        for (char& c : extension) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        if (extension.empty()) extension = "bin";
+        const auto target = cache / (std::to_string(package_key) + "-" +
+            std::to_string(sound.payload) + "." + extension);
+        std::string why;
+        if (!ExtractBemPayload(package, sound.payload, target, why)) {
+            Log("[driver-audio] payload " + std::to_string(sound.payload) + " unavailable: " + why);
+            continue;
+        }
+        g_animation_driver.SetSoundPathByPayload(sound.payload, PackagePathUtf8(target));
+        ++written;
+    }
+    if (written)
+        Log("[driver-audio] cached " + std::to_string(written) + " driver sound payload(s)");
 }
 
 void EnsureAnimationDriverLoaded() {
@@ -4764,6 +4877,9 @@ void EnsureAnimationDriverLoaded() {
         BemPackageInfo info; std::string why;
         if (ReadBemManagementInfo(mod.package, info, why, true) && !info.manifest_json.empty()) {
             if (g_animation_driver.LoadFromManifest(info.manifest_json, package)) {
+                MaterializeDriverSounds(mod.package);
+                StopAllDriverSounds();
+                g_sounding_drivers.clear();
 #if defined(_WIN32)
                 PublishAnimationDrivers(mod.package);
 #elif defined(__ANDROID__)
@@ -4785,11 +4901,17 @@ void EnsureAnimationDriverLoaded() {
 void PollAnimationDriverControls() {
 #if defined(_WIN32)
     thread_local std::vector<DriverPanelState> panel;
-    if (!g_model_overlay.PollDriverControls(panel)) return;
-    for (const auto& state : panel) {
-        g_animation_driver.SetPlaying(state.id, state.playing);
-        g_animation_driver.SetSpeedMillis(state.id, state.speed_millis);
+    if (g_model_overlay.PollDriverControls(panel)) {
+        for (const auto& state : panel) {
+            g_animation_driver.SetPlaying(state.id, state.playing);
+            g_animation_driver.SetSpeedMillis(state.id, state.speed_millis);
+        }
     }
+    // Vertex upload A/B switch from the overlay. Applies from the next morph
+    // frame; nothing is rebuilt because both paths start from the same base.
+    int mode = kVertexUploadChannel;
+    if (g_model_overlay.PollVertexUploadMode(mode) && g_vertex_upload_available[mode])
+        g_vertex_upload_mode.store(mode, std::memory_order_relaxed);
 #endif
 }
 
@@ -4943,6 +5065,7 @@ BE_Result BE_CALL InitializeResourceModule(const BE_HostApiV1* host) {
     try {
         BeginProbeStatus();
         g_animation_driver.SetLogger([](const std::string& msg){ Log(msg); });
+        SetDriverAudioLogger([](const std::string& msg){ Log(msg); });
     if (!ReadRuntimeRegistry() || !ResolveRuntimeContracts()) { WriteProbeStatus("initialization_failed"); return BE_Result_ContractMismatch; }
 #if defined(__ANDROID__)
         g_retire_hooks=host->release_module_hooks;

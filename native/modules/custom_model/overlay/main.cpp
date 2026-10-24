@@ -167,10 +167,26 @@ void DriverSpeed(size_t index,uint32_t millis) {
     InterlockedExchange(&shared->drivers[index].speed_millis,static_cast<LONG>(millis));
     InterlockedIncrement(&shared->driver_control_revision);
 }
+void DrawVertexUploadMode(Graphics& g,float& y) {
+    const LONG raw=InterlockedCompareExchange(&shared->vertex_upload_mode,0,0);
+    const bool channel=raw!=1;
+    UI::Label(g,T(L"顶点更新方式",L"Vertex upload"),{32,y,window.width-204,26},Color(255,170,180,196),13);
+    Button(g,channel?T(L"通道直传",L"Channel"):T(L"区间写入",L"Byte range"),
+        {window.width-160,y,136,28},[channel]{
+            InterlockedExchange(&shared->vertex_upload_mode,channel?1:0);
+            InterlockedIncrement(&shared->vertex_upload_revision);
+        },false,true,true);
+    y+=30;
+    UI::Label(g,channel?T(L"整条 Position 通道，跨平台",L"Whole Position channel, portable")
+                     :T(L"仅位移区间，桌面专用",L"Moved runs only, desktop only"),
+        {32,y,window.width-64,24},Color(160,150,158,172),12);
+    y+=28;
+}
 void DrawDrivers(Graphics& g,const Management::Package& package,float& y) {
     const int count=VisibleDrivers(package);
     if(count<=0) return;
     UI::Label(g,T(L"动效",L"Motion"),{32,y,window.width-64,26},Color(255,170,180,196),14);y+=28;
+    DrawVertexUploadMode(g,y);
     for(int i=0;i<count;++i) {
         auto& entry=shared->drivers[i];
         const bool playing=InterlockedCompareExchange(&entry.playing,0,0)!=0;

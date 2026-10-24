@@ -49,6 +49,15 @@ final class NativeCommandBridge {
         } catch (org.json.JSONException invalid) { return false; }
     }
 
+    // Section 13 driver sound effects: independent MediaPlayer voices, mixed by
+    // the OS alongside the game's own audio.
+    static int driverAudioStart(String key, String path, float gain, boolean loop) {
+        return DriverAudio.start(key, path, gain, loop);
+    }
+    static void driverAudioStop(String key) { DriverAudio.stop(key); }
+    static void driverAudioStopAll() { DriverAudio.stopAll(); }
+    static String driverAudioStatus() { return DriverAudio.status(); }
+
     // Called through the explicitly bound module ClassLoader from native.
     static long audioOpen(String path) { return MmdAudio.open(path); }
     static int audioControl(long token, int operation, double value) { return MmdAudio.control(token, operation, value); }

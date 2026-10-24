@@ -31,6 +31,11 @@
 #include <vector>
 #include <string>
 
+namespace BetterEndfieldNext::CustomModel {
+// Defined in driver_audio_android.cpp (same shared library).
+bool InitializeAndroidDriverAudio(void* vm, void* env, void* bridge_class);
+}
+
 namespace betterendfieldnext {
 bool AndroidGlobalFov(bool enabled, float fov);
 bool AndroidSetCustomModelDriver(const char* id, bool playing, int speed_millis);
@@ -396,6 +401,9 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
     }
     if (!betterendfieldnext::InitializeAndroidMusic(vm, env, bridge_class))
         betterendfieldnext::LogError("mmd.music", "Java media API unavailable; body and camera remain usable");
+    if (!BetterEndfieldNext::CustomModel::InitializeAndroidDriverAudio(vm, env, bridge_class))
+        betterendfieldnext::LogError("custom_model.audio",
+            "driver sound effects unavailable; animation stays silent");
     state.lock_fd = fd;
     state.status.Set("runtime", "loaded");
     if (betterendfieldnext::AnyModuleRequested() && !state.started.exchange(true)) {

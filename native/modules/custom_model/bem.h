@@ -277,6 +277,11 @@ bool LoadBem(const std::filesystem::path& path, BemPocData& output, std::string&
     bool loading_optimization = false, std::string_view parameters = {},
     uint64_t max_decoded_reservation = UINT64_MAX, bool defer_texture_payloads = false,
     std::string_view resource_id = {});
+// Writes one payload's decoded bytes to `output` (binary BEM and ZIP alike).
+// Used for self-contained driver sound effects: the payload is materialised
+// once on disk because both platform audio backends need a file path.
+bool ExtractBemPayload(const std::filesystem::path& package, uint32_t payload_id,
+    const std::filesystem::path& output, std::string& error);
 // Reads and decodes one deferred texture entry (streaming Zstd; the stored
 // bytes are never held whole). `output` receives exactly info.data_size bytes.
 bool DecodeBemTexturePayload(const BemPayloadSource& source, const BemTexture& texture,

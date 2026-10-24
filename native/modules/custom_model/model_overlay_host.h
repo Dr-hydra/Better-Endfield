@@ -105,6 +105,18 @@ public:
         }
         return true;
     }
+    // Returns true when the companion changed the vertex write path since the
+    // previous call; `mode` is then 0 (channel) or 1 (byte range).
+    bool PollVertexUploadMode(int& mode) {
+        std::lock_guard lock(mutex_);
+        if(!view_) return false;
+        const LONG revision=InterlockedCompareExchange(&view_->vertex_upload_revision,0,0);
+        if(revision==seen_upload_revision_) return false;
+        seen_upload_revision_=revision;
+        mode=InterlockedCompareExchange(&view_->vertex_upload_mode,0,0)==1?1:0;
+        return true;
+    }
+
     void Stop() {
         std::lock_guard lock(mutex_);
         if(view_) InterlockedExchange(&view_->shutdown_requested,1);
@@ -140,6 +152,7 @@ private:
     std::wstring mapping_name_;
     ULONGLONG last_launch_=0;
     LONG seen_control_revision_=0;
+    LONG seen_upload_revision_=0;
 };
 } // namespace BetterEndfieldNext::CustomModel
 #endif

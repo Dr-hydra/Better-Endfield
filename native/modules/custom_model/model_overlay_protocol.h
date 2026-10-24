@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string>
 namespace BetterEndfieldNext::CustomModel::OverlayProtocol {
-inline constexpr uint32_t kMagic=0x4C444D42, kVersion=2;
+inline constexpr uint32_t kMagic=0x4C444D42, kVersion=3;
 inline constexpr size_t kPathCapacity=32768;
 // Section 13 driver panel. The list is published by the game module and edited
 // by the companion, so both sides must agree on the capacity.
@@ -37,6 +37,14 @@ struct Shared {
     // sees the entries behind it.
     volatile LONG driver_count=0;
     DriverState drivers[kDriverCapacity]{};
+    // Which vertex write path the desktop module uses for morph frames.
+    // 0 = SetNativeArrayForChannelImpl (whole Position channel, default),
+    // 1 = InternalSetVertexBufferData (byte range of the moved vertices only).
+    // Both rebuild from the same captured base, so switching is a pure A/B and
+    // never needs a model reload.
+    volatile LONG vertex_upload_mode=0;
+    // Bumped by the companion after it edited vertex_upload_mode.
+    volatile LONG vertex_upload_revision=0;
 };
 inline std::wstring MappingName(DWORD pid) {return L"Local\\BetterEndfieldNext.ModelOverlay."+std::to_wstring(pid);}
 inline uint64_t ConfigHash(std::string_view text) {

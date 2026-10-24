@@ -363,6 +363,13 @@ struct Container {
                 for (const auto& f : ch.value("frames", J::array())) if (f.contains("payload")) inspect_payload(f["payload"]);
             }
             for (const auto& app : manifest.value("appearances", J::array())) if (app.contains("preview")) inspect_payload(app["preview"]);
+            // Section 13 driver sound effects reference their audio payload the same
+            // way, so a ZIP container must register those payload ids too.
+            for (const auto& driver : manifest.value("drivers", J::array())) {
+                if (!driver.is_object()) continue;
+                if (driver.contains("sound") && driver["sound"].is_object() &&
+                    driver["sound"].contains("payload")) inspect_payload(driver["sound"]["payload"]);
+            }
 
             size_t total_payloads = found_any_payload ? (max_payload_id + 1) : 0;
             directory.resize(total_payloads);
@@ -649,6 +656,25 @@ struct Container {
                 Check(validPosition,"Position deformations require Float32 XYZ position attribute");
             }
             Validate(m.at("mesh_deformations").empty() || declared.contains("mesh-position-deltas"),"Position delta capability mismatch");
+        }
+        // Section 13 sound attachments. The payload holds encoded audio, so only
+        // its presence and size can be checked here; the platform decoder is the
+        // authority on whether the bytes are playable.
+        if(m.contains("drivers")) {
+            Check(minor>=5 && m.at("drivers").is_array(),"Driver sound attachments require BEM 1.5");
+            for(const auto& driver:m.at("drivers")) {
+                if(!driver.is_object() || !driver.contains("sound")) continue;
+                const auto& sound=driver.at("sound");
+                Check(sound.is_object(),"Invalid driver sound object");
+                Check(U(sound.at("payload"))<directory.size(),"Missing driver sound payload");
+                const auto id=U(sound.at("payload"));
+                if(!manifestOnly) Check(directory[id].decoded>=16 && directory[id].decoded<=32ull*MiB,
+                    "Driver sound payload extent is outside 16 B..32 MiB");
+                if(sound.contains("gain")) {const auto gain=sound.at("gain").get<float>();
+                    Check(std::isfinite(gain) && gain>=0.0f && gain<=2.0f,"Driver sound gain must be inside [0,2]");}
+                if(sound.contains("offset_seconds")) {const auto offset=sound.at("offset_seconds").get<double>();
+                    Check(std::isfinite(offset) && offset>=0.0 && offset<=60.0,"Driver sound offset must be inside [0,60] s");}
+            }
         }
         auto selection=std::make_shared<BemSelectionMetadata>();
         selection->manifest=J::object();
@@ -1412,6 +1438,22 @@ bool LoadBem(const std::filesystem::path& path,BemPocData& out,std::string& erro
     }
     parsed.payload_source=std::move(source);
     out=std::move(parsed); return true;
+}
+bool ExtractBemPayload(const std::filesystem::path& package,uint32_t payload_id,
+    const std::filesystem::path& output,std::string& error) {
+    return File(package,error,[&](Container& c){
+        Check(payload_id<c.directory.size(),"Missing payload");
+        const auto bytes=c.DecodePayloadBytes(payload_id);
+        Check(!bytes.empty(),"Payload is empty");
+        std::error_code fs_error;
+        if(auto parent=output.parent_path(); !parent.empty())
+            std::filesystem::create_directories(parent,fs_error);
+        std::ofstream out(output,std::ios::binary|std::ios::trunc);
+        Check(bool(out),"Cannot write the audio cache file");
+        out.write(reinterpret_cast<const char*>(bytes.data()),
+            static_cast<std::streamsize>(bytes.size()));
+        Check(bool(out),"Cannot write the audio cache file");
+    },false,false,false,false);
 }
 bool DecodeBemTexturePayload(const BemPayloadSource& source,const BemTexture& texture,std::vector<uint8_t>& out,std::string& error) {
     out.clear(); error.clear();

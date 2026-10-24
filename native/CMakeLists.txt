@@ -96,11 +96,15 @@ set_target_properties(BetterEndfieldNext.MediaCapture PROPERTIES
 add_library(BetterEndfieldNext.CustomModel SHARED
     modules/custom_model/module.cpp
     modules/custom_model/animation_driver.cpp
+    modules/custom_model/driver_audio_win.cpp
     modules/custom_model/native_mesh_layout.cpp
     shared/third_party/minhook/src/hde/hde64.c
 )
 better_endfield_target_defaults(BetterEndfieldNext.CustomModel)
-target_link_libraries(BetterEndfieldNext.CustomModel PRIVATE BetterEndfieldNext.CustomModelCore)
+# WASAPI shared-mode render client for driver sound effects; Media Foundation
+# decodes the effect payloads. Neither touches the game's Wwise graph.
+target_link_libraries(BetterEndfieldNext.CustomModel PRIVATE
+    BetterEndfieldNext.CustomModelCore mfplat mfreadwrite mfuuid ole32)
 set_target_properties(BetterEndfieldNext.CustomModel PROPERTIES
     OUTPUT_NAME "BetterEndfieldNext.CustomModel"
     RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules"

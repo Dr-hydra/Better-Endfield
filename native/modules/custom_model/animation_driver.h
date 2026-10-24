@@ -8,6 +8,7 @@
 #include <functional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace BetterEndfieldNext::CustomModel {
@@ -57,6 +58,19 @@ struct DriverBinding {
     float threshold = 0.5f;
 };
 
+// Section 13 sound attachment. The audio bytes live in a package payload; the
+// loader materialises them next to the model and hands the runtime a file path,
+// because both platform backends play from a path.
+struct DriverSound {
+    uint32_t payload = UINT32_MAX;  // BEM payload id holding the audio bytes
+    std::string extension;          // "wav"/"mp3"/... used to name the cache file
+    float gain = 1.0f;              // linear, clamped to [0,2]
+    bool loop = true;
+    double offset_seconds = 0.0;    // delay before the voice starts
+    // Resolved by the loader; empty until the payload has been written out.
+    std::string path;
+};
+
 struct Driver {
     std::string id, name;
     DriverWaveform waveform = DriverWaveform::PingPong;
@@ -66,6 +80,7 @@ struct Driver {
     float speed_multiplier = 1.0f;
     double phase = 0.0;
     std::vector<DriverBinding> bindings;
+    DriverSound sound;
 };
 
 // Read-only snapshot for the overlay panel. `speed_millis` is the multiplier as
@@ -75,6 +90,7 @@ struct DriverSummary {
     bool playing = false;
     bool default_playing = false;
     uint32_t speed_millis = 1000;
+    bool has_sound = false;
 };
 
 // Per-frame dispatch targets. Any channel may be empty; empty channels are
@@ -138,6 +154,14 @@ public:
     // carry no component field, so resolvers match these against their own
     // meshes' deformation channels.
     std::vector<std::string> DrivenParameters() const;
+
+    // Sound attachments declared by the loaded drivers, paired with the driver
+    // id that owns each one. The loader materialises the payloads; the tick then
+    // starts and stops exactly the voice of the driver that changed state.
+    std::vector<std::pair<std::string, DriverSound>> Sounds() const;
+    // Records the on-disk path resolved for one sound payload. Matching on the
+    // payload id keeps the loader independent of how many drivers share it.
+    void SetSoundPathByPayload(uint32_t payload, const std::string& path);
 
     // Exposed so the waveform table can be unit tested without a clock.
     static float Evaluate(DriverWaveform waveform, double phase);

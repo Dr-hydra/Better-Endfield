@@ -179,6 +179,29 @@ bool AnimationDriverHost::LoadFromManifest(std::string_view manifest_json,
                 continue;
             }
 
+            if (entry.contains("sound")) {
+                const auto& sound = entry.at("sound");
+                if (sound.is_object()) {
+                    driver.sound.payload = sound.value("payload", UINT32_MAX);
+                    driver.sound.extension = sound.value("format", std::string{});
+                    driver.sound.gain = sound.value("gain", 1.0f);
+                    driver.sound.loop = sound.value("loop", true);
+                    driver.sound.offset_seconds = sound.value("offset_seconds", 0.0);
+                    if (driver.sound.payload == UINT32_MAX) {
+                        Log("[AnimDriver] Driver '" + driver.id + "': sound needs a payload id.");
+                        driver.sound = DriverSound{};
+                    } else if (!Finite(driver.sound.gain) || driver.sound.gain < 0.0f ||
+                        driver.sound.gain > 2.0f) {
+                        Log("[AnimDriver] Driver '" + driver.id + "': sound gain must be inside [0,2].");
+                        driver.sound = DriverSound{};
+                    } else if (!Finite(driver.sound.offset_seconds) ||
+                        driver.sound.offset_seconds < 0.0 || driver.sound.offset_seconds > 60.0) {
+                        Log("[AnimDriver] Driver '" + driver.id + "': sound offset must be inside [0,60] s.");
+                        driver.sound = DriverSound{};
+                    }
+                }
+            }
+
             if (entry.contains("bindings")) {
                 const auto& bindings = entry.at("bindings");
                 if (!bindings.is_array()) {
@@ -267,7 +290,7 @@ bool AnimationDriverHost::LoadFromManifest(std::string_view manifest_json,
                 }
             }
 
-            if (driver.bindings.empty()) {
+            if (driver.bindings.empty() && driver.sound.payload == UINT32_MAX) {
                 Log("[AnimDriver] Dropped driver '" + driver.id + "': no usable bindings.");
                 ++dropped;
                 continue;
@@ -291,6 +314,19 @@ bool AnimationDriverHost::LoadFromManifest(std::string_view manifest_json,
         std::to_string(bindings) + " bindings)" +
         (dropped ? ", " + std::to_string(dropped) + " dropped" : std::string{}));
     return true;
+}
+
+std::vector<std::pair<std::string, DriverSound>> AnimationDriverHost::Sounds() const {
+    std::vector<std::pair<std::string, DriverSound>> out;
+    out.reserve(drivers_.size());
+    for (const auto& driver : drivers_)
+        if (driver.sound.payload != UINT32_MAX) out.emplace_back(driver.id, driver.sound);
+    return out;
+}
+
+void AnimationDriverHost::SetSoundPathByPayload(uint32_t payload, const std::string& path) {
+    for (auto& driver : drivers_)
+        if (driver.sound.payload == payload) driver.sound.path = path;
 }
 
 bool AnimationDriverHost::HasActiveDrivers() const {
@@ -326,6 +362,7 @@ std::vector<DriverSummary> AnimationDriverHost::Summaries() const {
         summary.default_playing = driver.default_playing;
         const long millis = std::lround(driver.speed_multiplier * 1000.0);
         summary.speed_millis = static_cast<uint32_t>(std::clamp<long>(millis, 100, 8000));
+        summary.has_sound = driver.sound.payload != UINT32_MAX;
         result.push_back(std::move(summary));
     }
     return result;

@@ -156,6 +156,7 @@ add_library(betterendfieldnext_android SHARED
     modules/custom_model/android_mesh_builder.cpp
     "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/custom_model/module.cpp"
     "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/custom_model/animation_driver.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/custom_model/driver_audio_android.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/modules/custom_model/native_mesh_layout_android.cpp"
     modules/character_voice/character_voice_module.cpp
     modules/desktop/desktop_module.cpp
@@ -168,6 +169,7 @@ add_library(betterendfieldnext_android SHARED
 set_source_files_properties(
     "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/custom_model/module.cpp"
     "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/custom_model/animation_driver.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/custom_model/driver_audio_android.cpp"
     PROPERTIES COMPILE_DEFINITIONS
     "BetterEndfieldNext_GetModuleApiV1=BetterEndfieldNext_GetCustomModelModuleApiV1")
 
