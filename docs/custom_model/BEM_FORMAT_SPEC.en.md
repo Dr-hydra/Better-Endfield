@@ -518,6 +518,15 @@ Evaluated over the parameter's tick domain — this is **not** weight clipping:
 
 `target` must be a parameter id declared in `parameters[]`; an undeclared target fails validation. One controller may drive several parameters; their deltas are summed over the same base and uploaded once per frame.
 
+##### Coexistence limit with manual sliders (important)
+
+**Do not bind an animated driver and a manual slider to the same parameter over the same vertex set.** Concretely:
+
+- Use one or the other per parameter: either the driver plays it or the slider controls it. Do not switch the same vertex set back and forth between them.
+- To get "slider sets the base position, animation oscillates around it", split it into two parameters with disjoint vertex sets, or keep only one of the two control methods.
+- Why: a slider change rebuilds the mesh at the selected tick and uploads the whole stream, while the driver rewrites Stream 0 every frame. Applied to the same vertices the two overwrite each other, which shows up as residue at the previous position, flicker during playback and a hazy surface.
+- This only applies to a shared vertex set. Different parameters on disjoint vertex ranges (for example prop A and prop B) are independent and control separately.
+
 #### `material_float`
 
 `range = [low, high]` is the **output interval**: `value = low + (high − low) × w`, default `[0,1]`, not restricted to positive values. It is equivalent to calling `Material.SetFloat(property, value)` on that material slot each frame. The property name follows the section 12 pattern `^_[a-zA-Z0-9_]{1,95}$`.
@@ -539,6 +548,8 @@ Reconciliation happens every frame: a property that no playing driver writes in 
 - `morph_parameter` replays the frame weights sampled at load, so a driver taking over parameter A never erases manual deformation on parameter B.
 
 **Known limitation**: a keyword without a static override is always disabled, because the runtime deliberately adds no `Material.IsKeywordEnabled` reflection contract. If the target shader had that keyword on, stopping will not restore it; declare it through `material_overrides.enable_keywords` when the semantics matter.
+
+**Known limitation (morph)**: morph drivers write Stream 0 in place per frame and never touch normals/tangents/UVs (Stream 1) or skinning data (Stream 2), so shading and skinning stay intact. If the same vertex set is also controlled by a manual slider, changing the slider rebuilds the mesh and uploads the whole stream, which combines with the runtime write and can produce residue at the previous position, flicker and a hazy surface; see the coexistence limit above.
 
 ---
 

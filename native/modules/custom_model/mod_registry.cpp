@@ -182,8 +182,14 @@ bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,Mod
                 own->adapter={own->id.c_str(),own->world.c_str(),own->ui.c_str(),"",false,own->components,
                     own->resource_id.c_str(),own->asset_path.c_str(),resource?resource->lod:0,resource!=nullptr};
                 const auto resourceKey=resource?key+"\nresource:"+resource->id:key;
-                parsed.enabled.push_back({&own->adapter,canonical,appearance,parsed.skip_validation,
-                    parsed.loading_optimization,resourceKey,parameters,own->resource_id,info.package_id,drivers});
+                // Name every member: a positional aggregate initializer silently
+                // shifted resource_id into drivers when the struct gained a field.
+                EnabledMod mod;
+                mod.adapter=&own->adapter; mod.package=canonical; mod.appearance=appearance;
+                mod.skip_validation=parsed.skip_validation; mod.loading_optimization=parsed.loading_optimization;
+                mod.selection_key=resourceKey; mod.parameters=parameters; mod.drivers=drivers;
+                mod.resource_id=own->resource_id; mod.package_id=info.package_id;
+                parsed.enabled.push_back(std::move(mod));
                 parsed.owned_adapters.push_back(std::move(own));
             }
         }

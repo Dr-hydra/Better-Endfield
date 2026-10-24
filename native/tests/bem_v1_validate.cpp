@@ -232,7 +232,9 @@ int main(int argc,char** argv) {
         (info.minor?"\noptions="+info.default_options:"\nappearance="+info.default_appearance)+"\n";
     ModRegistry registry;
     if(!ParseModRegistry(ini,std::filesystem::path(argv[1]).parent_path(),registry,error)) {std::cerr<<"Registry: "<<error;return 1;}
-    if(info.minor>=4) {
+    // Explicit resource targets are selected by structure, not by the header
+    // minor: a 1.5 package may still use the legacy character roots.
+    if(!info.resources.empty()) {
 #if defined(__ANDROID__)
         const std::string platform="android-arm64";
 #else

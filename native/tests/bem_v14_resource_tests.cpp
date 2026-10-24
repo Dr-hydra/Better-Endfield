@@ -57,7 +57,14 @@ int main(int argc,char** argv) {
         Require(!LoadBem(valid,missing,error,{},nullptr,false,false,{},UINT64_MAX,false,"missing"),"Unknown resource was accepted");
         Require(!ReadBemPackageInfo(root/"cross-resource-donor-invalid.bem",info,error),"Cross-resource donor metadata accepted");
         Require(!ReadBemPackageInfo(root/"cross-resource-donor-invalid.bem",info,error,true),"Skip validation crossed resource boundary");
-        Require(!ReadBemPackageInfo(root/"downgraded-header-invalid.bem",info,error,true),"Older header accepted resource extension");
+        // Structure, not the header minor, selects the target route. A
+        // downgraded header is still rejected by strict validation because the
+        // declared capabilities no longer fit the version, while developer mode
+        // deliberately skips that gate and must still read the explicit targets.
+        Require(!ReadBemPackageInfo(root/"downgraded-header-invalid.bem",info,error),"Older header accepted resource extension");
+        Require(ReadBemPackageInfo(root/"downgraded-header-invalid.bem",info,error,true) &&
+            !info.resources.empty() && info.target_kind=="character",
+            "Structure-based dispatch did not read the downgraded explicit target");
         const auto wrongLod=root/"resource-lod-mismatch-invalid.bem";
         Require(std::filesystem::is_regular_file(wrongLod),"Missing receiver/resource LOD fixture");
         Require(!ReadBemPackageInfo(wrongLod,info,error) && error.find("LOD differs")!=error.npos,
@@ -78,6 +85,22 @@ int main(int argc,char** argv) {
         Require(body && weapon && body->selection_key!=weapon->selection_key,"Resource cache identity collided");
         Require(body->adapter->explicit_resource && body->adapter->components.size()==1 &&
             weapon->adapter->components[0].static_mesh,"Registry lowered invalid component contracts");
+        // EnabledMod is aggregate-initialized in field order. Appending a new
+        // field at the end of the struct without moving its initializer silently
+        // shifts every later member, which previously made resource_id hold the
+        // package ID and every explicit-resource package fail to decode.
+        Require(body->resource_id=="body" && weapon->resource_id=="weapon","Registry resource identity shifted");
+        Require(body->package_id=="synthetic.multi-resource" &&
+            weapon->package_id=="synthetic.multi-resource","Registry package identity shifted");
+        Require(body->drivers.empty() && weapon->drivers.empty(),"Registry driver override shifted");
+        const auto withDrivers=Config("multi-resource-valid.bem")+"drivers=spin:play\n";
+        Require(ParseModRegistry(withDrivers,root,registry,error),"Registry driver parsing: "+error);
+        Require(registry.enabled.size()==3,"Driver override changed the registration count");
+        for(const auto& mod:registry.enabled) Require(mod.drivers=="spin:play" &&
+            mod.package_id=="synthetic.multi-resource" &&
+            (mod.resource_id=="body" || mod.resource_id=="ultimate" || mod.resource_id=="weapon"),
+            "Driver override shifted another registry member");
+        Require(ParseModRegistry(Config("multi-resource-valid.bem"),root,registry,error),"Registry reset: "+error);
         const std::string duplicate=Config("multi-resource-valid.bem")+"[Mod.two]\nenabled=true\npackage=multi-resource-valid.bem\n";
         Require(ParseModRegistry(duplicate,root,registry,error) && registry.enabled.empty(),"Duplicate package entries were enabled");
         std::string report;

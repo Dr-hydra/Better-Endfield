@@ -409,7 +409,8 @@ Add `dynamic-drivers-v1` to `required_capabilities`, then write a root-level `dr
 - `material_float`: writes a material float property every frame. Near-zero cost and the most reliable option.
 - `material_color`: writes colour properties such as `_EmissionColor`.
 - `material_keyword`: toggles shader keywords.
-- `morph_parameter`: drives an existing shape parameter of the package. **Current limitation:** the implementation uses a single fixed-direction delta and is not wired to the per-frame deltas in `mesh_deformations`, so do not build fine motion on it until the semantics settle.
+- `morph_parameter`: drives an existing shape parameter of the package using the per-frame deltas in `mesh_deformations`: it interpolates per-vertex position offsets over the parameter's tick domain and writes them back into the Stream 0 position component every frame. Only positions change; normals/tangents/UVs and skinning are untouched, so shading and skinning are unaffected.
+  **Important limit:** do not drive a parameter with an animation and a manual slider over the same vertex set. The slider rebuilds the mesh and uploads the whole stream at load, while the driver rewrites those positions every frame; the two overwrite each other and produce residue at the previous position, flicker during playback and a hazy surface. To get "slider sets the base, animation oscillates", split it into two parameters bound to disjoint vertex ranges. Different parameters over different vertex ranges remain independent.
 
 ### What works today
 

@@ -416,6 +416,16 @@ MethodContract g_methods[]{
     {"mesh.set_sub_mesh_count",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "set_subMeshCount",
             "System.Int32", "System.Void", 1}, true},
+    // Optional: invalidates Unity's cached mesh/skinning copy after the driver
+    // rewrites vertex positions. A SkinnedMeshRenderer keeps its own uploaded
+    // vertex copy, so writing the Mesh alone leaves the renderer drawing the old
+    // pose (hazy prop plus a solid copy left at the previous position).
+    {"mesh.mark_modified",
+        {"UnityEngine.CoreModule.dll","UnityEngine","Mesh",
+            "MarkModified",nullptr,"System.Void",0},false},
+    {"skinned.mark_modified",
+        {"UnityEngine.CoreModule.dll","UnityEngine","SkinnedMeshRenderer",
+            "MarkModified",nullptr,"System.Void",0},false},
     {"mesh.recalculate_bounds",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", "RecalculateBounds",
             nullptr, "System.Void", 0}, true},
@@ -3000,7 +3010,7 @@ void ForEachMorphedMesh(Fn&& visit) {
             if (found==g_dynamic_meshes.end() || !found->second.morph) continue;
             void* mesh=binding.mesh.Get();
             if (!mesh || !IsNativeObjectAlive(mesh)) continue;
-            visit(mesh,*found->second.morph);
+            visit(mesh,*found->second.morph,binding.renderer.Get());
         }
     }
 }
@@ -3017,8 +3027,10 @@ void ApplyDriverMorph(const std::vector<DriverMorphValue>& values) {
     thread_local std::vector<uint32_t> touched;
     thread_local std::vector<uint8_t> run_bytes;
 
-    ForEachMorphedMesh([&](void* mesh,const BemMorphSet& set) {
+    ForEachMorphedMesh([&](void* mesh,const BemMorphSet& set,void* renderer) {
         if (set.vertices.empty() || set.channels.empty() || set.base.empty()) return;
+        // accumulated[] is indexed exactly like BemMorphSet::vertices, which is
+        // the layout SampleMorphChannel validates against.
         accumulated.assign(set.vertices.size()*3,0.0f);
         for (const auto& channel:set.channels) {
             const DriverMorphValue* driven=nullptr;
@@ -3036,9 +3048,10 @@ void ApplyDriverMorph(const std::vector<DriverMorphValue>& values) {
             if (d[0]!=0.0f || d[1]!=0.0f || d[2]!=0.0f) touched.push_back(static_cast<uint32_t>(i));
         }
         if (touched.empty()) return;
-        // A partial vertex-buffer upload writes contiguous bytes, and the stride
-        // between two touched vertices also carries skin and UV data, so each
-        // range is rebuilt from the captured base rather than from positions only.
+        // Sub-range upload into Stream 0 only. Stream 1 (normal/tangent/UV) and
+        // Stream 2 (skin) are never touched, which is what keeps shading intact.
+        // Each range is rebuilt from the captured base so the stride bytes that
+        // carry UV and skin data stay correct.
         auto upload=[&](size_t begin,size_t end) {
             const uint32_t first_vertex=set.vertices[touched[begin]];
             const uint32_t last_vertex=set.vertices[touched[end-1]];
@@ -3061,13 +3074,20 @@ void ApplyDriverMorph(const std::vector<DriverMorphValue>& values) {
         size_t runs=1;
         for (size_t i=1;i<touched.size();++i)
             if (set.vertices[touched[i]]!=set.vertices[touched[i-1]]+1) ++runs;
-        if (runs>kMaxMorphRuns) { upload(0,touched.size()); return; }
-        size_t begin=0;
-        for (size_t i=1;i<=touched.size();++i) {
-            if (i<touched.size() && set.vertices[touched[i]]==set.vertices[touched[i-1]]+1) continue;
-            upload(begin,i);
-            begin=i;
+        if (runs>kMaxMorphRuns) { upload(0,touched.size()); }
+        else {
+            size_t begin=0;
+            for (size_t i=1;i<=touched.size();++i) {
+                if (i<touched.size() && set.vertices[touched[i]]==set.vertices[touched[i-1]]+1) continue;
+                upload(begin,i);
+                begin=i;
+            }
         }
+        // Ask the renderer to drop its cached copy of the mesh. Optional: when the
+        // method is not available the sub-range upload above is still what the
+        // slider path does, and that path is known to animate correctly.
+        InvokeVoid(Contract("mesh.mark_modified"),mesh,nullptr);
+        InvokeVoid(Contract("skinned.mark_modified"),renderer,nullptr);
     });
 }
 

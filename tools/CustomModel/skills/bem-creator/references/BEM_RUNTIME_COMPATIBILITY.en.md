@@ -265,8 +265,24 @@ This section records what `drivers` actually does in the current tree, including
 
 ### 3. Target dispatching
 - **Material float / color / keyword:** locates the assembled clone material by `component` + `material_slot` and calls `material.set_float` / `set_color` / `enable_keyword` every frame. Property names follow the section 12 pattern; an out-of-range slot or unknown component writes nothing and logs once.
-- **Morph:** matches the parameter name against a dynamic mesh channel, interpolates a per-vertex absolute delta between the adjacent `mesh_deformations` frames of that parameter, adds it to the base positions captured at load, and uploads it as contiguous vertex runs through `SafeUpdateSubVertexBuffer` into Stream 0. More than 32 runs degrades to one whole-range upload.
+- **Morph:** matches the parameter name against a dynamic mesh channel, interpolates a per-vertex absolute delta between the adjacent `mesh_deformations` frames of that parameter, adds it to the base positions captured at load, and uploads it as contiguous vertex runs through `SafeUpdateSubVertexBuffer` into Stream 0 (position component only). Stream 1 (normal/tangent/UV) and Stream 2 (skinning) are never touched, so shading and skinning are unaffected. More than 32 runs degrades to one whole-range upload.
 - A binding that matches no target is skipped silently. It does not raise an error or stop the remaining bindings.
+
+#### Important limit: do not bind an animation and a slider to the same vertex set
+
+A morph driver and a manual slider must not control the same vertices at the same time. Observed symptoms:
+
+- residue geometry left at the original position after playback, with the residual pose following the slider value;
+- flicker during playback and a surface that looks hazy;
+- inconsistent behavior between props, because whether the rest pose is visible outside the body decides whether the ghost is noticeable.
+
+Root cause: a slider change rebuilds the mesh at the selected tick and uploads the whole stream at load time, while the driver rewrites the Stream 0 position component every frame. On the same vertices the runtime write and the rebuilt base pose overwrite each other.
+
+Recommended practice:
+
+- keep exactly one control method per parameter (driver playback or manual slider) and do not switch the same vertex set back and forth;
+- to get "slider sets the base, animation oscillates around it", split it into two parameters bound to disjoint vertex ranges;
+- different parameters over different vertex ranges (prop A and prop B, for example) remain independent.
 
 ### 4. Play state and control
 - The `drivers=<id>:play&<id>:pause` key in a `[Mod.*]` section of `runtime.ini` is still read as the headless entry point. It is applied only when the text changes, so it cannot overwrite panel settings every frame.
@@ -278,3 +294,4 @@ This section records what `drivers` actually does in the current tree, including
 - Morph channels and deltas were checked against a real package (`vag_morph 1637`, `anal_morph 180`, `dildo_depth 6358`, `anal_plug_depth 1434`, matching the Python unpack item by item), and unit tests cover channel merging, tick-domain mapping and frame interpolation.
 - In-game visual results, concurrent drivers, phase continuity across a hot switch, and frame cost with large vertex channels have not been measured systematically.
 - Keyword restore has a known limitation: without a static override the keyword is always disabled (see format specification section 13).
+- A morph driver sharing a vertex set with a manual slider produces residue at the previous position, flicker and a hazy surface (see the limit above); that combination is not supported.

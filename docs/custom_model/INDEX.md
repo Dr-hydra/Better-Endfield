@@ -25,6 +25,7 @@
 - [连续动画驱动器 PoC 方案](BEM_ANIMATION_DRIVER_POC_PLAN.md)：侧车验证形态的原始记录，已被规范第 13 节取代，仅作历史参考。
 - [双端模型悬浮窗与 Android 全局 FOV](research/1.5.3/model-overlay/MODEL_OVERLAY_IMPLEMENTATION.md)
 - [BEM Tools 1.5.2 独立 GUI 与验证](research/not_applicable/creator-gui/BEM_TOOLS_STANDALONE_GUI_20261007.md)
+- [BEM 部件组合器双端实现规划](research/not_applicable/bem-composer/BEM_COMPOSER_DUAL_PLATFORM_PLAN.md)：PC 与 Android 原生部件组合，方案稿
 - [凛布料权重与裁剪废弃研究](../../legacy/native-bem-cloth-20261010/BEM_WEIGHT_SKIRT_EXPERIMENT.md)：废弃研究归档，不参与产品构建；保留物理、权重与裁剪试验的历史记录。
 
 ## 历史 BEM 格式与通用工具研究
