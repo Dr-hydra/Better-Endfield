@@ -395,10 +395,7 @@ public sealed partial class CustomModelPage : UserControl
                                 {
                                     // One key must not drive two controllers: the
                                     // overlay would have to guess which one wins.
-                                    string clash = p.DriverHotkeys
-                                        .FirstOrDefault(pair => pair.Key != driverId &&
-                                            pair.Value.Equals(normalized, StringComparison.OrdinalIgnoreCase)).Key;
-                                    if (clash.Length > 0)
+                                    if (p.DriverHotkeyClash(driverId, normalized) is not null)
                                     {
                                         Message(() => BemText.Get("按键已被本包的其他动效占用"),
                                             () => BemText.Get("同一个键不能同时控制两个控制器，请换一个键。"),

@@ -163,6 +163,59 @@ static class Program
             Console.WriteLine("real drivers: " + string.Join(", ", real.Drivers.Select(x => x.Id)));
         }
 
+        // Regression: the clash check used to dereference a default KeyValuePair,
+        // throwing before SaveAsync ran. Binding a key must never throw.
+        {
+            var probe = new BemPackage
+            {
+                Id = "clash", Name = "Clash", Character = "chr", TargetKind = "character",
+                Drivers = [new BemDriverInfo { Id = "a", Name = "A" }, new BemDriverInfo { Id = "b", Name = "B" }]
+            };
+            Expect(probe.DriverHotkeyClash("a", "F1") is null, "No clash expected on a fresh table.");
+            probe.DriverHotkeys["b"] = "F1";
+            Expect(probe.DriverHotkeyClash("a", "F1") == "b", "Clash must be reported as a real driver id.");
+            Expect(probe.DriverHotkeyClash("b", "F1") is null, "A driver never clashes with itself.");
+            Expect(probe.DriverHotkeyClash("a", "NUMPAD1") is null, "Distinct keys must not clash.");
+        }
+
+        // End-to-end: the real package, the real service, a real write. This is the
+        // check that would have caught the binding silently never reaching disk.
+        {
+            var e2eRoot = Path.Combine(root, "e2e");
+            var e2ePackages = Path.Combine(e2eRoot, "catalog", "custom-model", "packages");
+            Directory.CreateDirectory(e2ePackages);
+            const string realSource = @"E:\Better Endfield\models\学院-完全版-anim.bem";
+            if (File.Exists(realSource))
+            {
+                string copied = Path.Combine(e2ePackages, "school.bem");
+                File.Copy(realSource, copied, true);
+                var previousSettings = ConfigurationService.SettingsDirectory;
+                ConfigurationService.SettingsDirectory = e2eRoot;
+                try
+                {
+                    var e2e = new BemPackageService();
+                    e2e.Load();
+                    Expect(e2e.Packages.Count == 1, "E2E package did not load.");
+                    var pkg = e2e.Packages[0];
+                    Expect(pkg.Drivers.Count == 4, $"E2E expected 4 drivers, got {pkg.Drivers.Count}.");
+                    pkg.DriverHotkeys["driver_dildo"] = "F1";
+                    pkg.DriverHotkeys["driver_anal_plug"] = "CTRL+F2";
+                    await e2e.SaveAsync();
+                    string e2eIni = Path.Combine(e2eRoot, "catalog", "custom-model", "runtime.ini");
+                    var disk = BemRuntimeSettings.Read(e2eIni);
+                    string? written = disk.TryGetValue("Mod." + pkg.Id, out var section)
+                        ? section.GetValueOrDefault("driver_hotkeys") : null;
+                    Expect(written is not null, "E2E driver_hotkeys was never written to disk.");
+                    Expect(written!.Contains("driver_dildo:F1"), $"E2E wrote '{written}', expected driver_dildo:F1.");
+                    Expect(written.Contains("driver_anal_plug:CTRL+F2"), $"E2E lost the modifier binding: '{written}'.");
+                    e2e.Load();
+                    var reloaded = e2e.Packages[0];
+                    Expect(reloaded.DriverHotkeys.GetValueOrDefault("driver_dildo") == "F1",
+                        "E2E binding did not survive a reload.");
+                }
+                finally { ConfigurationService.SettingsDirectory = previousSettings; }
+            }
+        }
         Console.WriteLine($"Model overlay settings: {checks} checks passed.");
         return 0;
     }

@@ -85,6 +85,17 @@ internal sealed class BemPackage
     // Section 13 desktop hotkeys, keyed by driver id. An empty string means the
     // driver is deliberately unbound, which is the documented default.
     public Dictionary<string, string> DriverHotkeys { get; } = new(StringComparer.Ordinal);
+    // Which other driver, if any, already owns `key`. Kept here (not in the
+    // view) so it is unit-testable: a null-reference in this check once threw
+    // before the save ran, so every binding was silently discarded on restart.
+    public string? DriverHotkeyClash(string driverId, string key)
+    {
+        foreach (var pair in DriverHotkeys)
+            if (pair.Key != driverId &&
+                pair.Value.Equals(key, StringComparison.OrdinalIgnoreCase))
+                return pair.Key;
+        return null;
+    }
     public string EncodedDriverHotkeys() =>
         DriverHotkeys.Count == 0 ? "" :
         string.Join("&", Drivers.Select(d => d.Id + ":" + DriverHotkeys.GetValueOrDefault(d.Id, "")));
@@ -344,11 +355,10 @@ internal sealed class BemPackageService
         // Malformed entries are skipped here; the runtime already logs and drops
         // them, and a bad driver must never block loading the package.
         var drivers = new List<BemDriverInfo>();
-        // Gate on the field, not the header minor: the runtime treats a package
-        // that declares `dynamic-drivers-v1` as 1.5 even when the header still
-        // says 1.4, and real packages ship exactly that way. Requiring minor >= 5
-        // here made the GUI hide every hotkey row for them.
-        if (m.TryGetProperty("drivers", out var driverList) &&
+        // Section 13 drivers. The header minor is the authoritative gate, the
+        // same rule the runtime applies, so the GUI and the engine always agree
+        // on which packages can carry drivers at all.
+        if (minor >= 5 && m.TryGetProperty("drivers", out var driverList) &&
             driverList.ValueKind == JsonValueKind.Array)
         {
             foreach (var driver in driverList.EnumerateArray())
