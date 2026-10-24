@@ -151,6 +151,18 @@ static class Program
             "A binding for a driver the package no longer declares must be dropped.");
         Expect(driverPackage.DriverHotkeys.Count == 0, "Stale driver bindings are cleared.");
 
+        // Reads the real deployed package, when present, to prove the GUI really
+        // surfaces its section 13 drivers. Read-only: nothing is written back.
+        const string realPackage = @"E:\Better Endfield\models\学院-完全版-anim.bem";
+        if (File.Exists(realPackage))
+        {
+            var real = BemPackageService.ReadMetadata(realPackage);
+            Expect(real.Drivers.Count == 4,
+                $"Real package must expose its 4 drivers, got {real.Drivers.Count}.");
+            Expect(real.Drivers.Any(x => x.Id == "driver_dildo"), "Real package exposes driver_dildo.");
+            Console.WriteLine("real drivers: " + string.Join(", ", real.Drivers.Select(x => x.Id)));
+        }
+
         Console.WriteLine($"Model overlay settings: {checks} checks passed.");
         return 0;
     }

@@ -344,7 +344,11 @@ internal sealed class BemPackageService
         // Malformed entries are skipped here; the runtime already logs and drops
         // them, and a bad driver must never block loading the package.
         var drivers = new List<BemDriverInfo>();
-        if (minor >= 5 && m.TryGetProperty("drivers", out var driverList) &&
+        // Gate on the field, not the header minor: the runtime treats a package
+        // that declares `dynamic-drivers-v1` as 1.5 even when the header still
+        // says 1.4, and real packages ship exactly that way. Requiring minor >= 5
+        // here made the GUI hide every hotkey row for them.
+        if (m.TryGetProperty("drivers", out var driverList) &&
             driverList.ValueKind == JsonValueKind.Array)
         {
             foreach (var driver in driverList.EnumerateArray())

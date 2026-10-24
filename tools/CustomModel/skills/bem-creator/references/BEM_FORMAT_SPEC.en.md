@@ -558,7 +558,7 @@ How the buttons map to states:
 
 - **Start**: `playing = true`. From `finished` or `stopped` the phase resets to 0 and playback begins; from `paused` playback resumes at the frozen phase;
 - **Pause**: `playing = false` but the phase is kept and the paused flag is set, so the frozen phase keeps being delivered. A `once` driver freezes where it is and does not snap back;
-- **Stop**: `playing = false`, phase reset to 0, `finished` cleared, parameters handed back so the model returns to its authored pose;
+- **Stop**: enters `stopped`, phase reset to 0, `finished` cleared, parameters handed back so the model returns to its authored pose immediately (the baseline the slider or load-time selection produced, i.e. the static state before Start). **That frame re-uploads the baseline even when the delta happens to be exactly zero**: the GPU is still holding the previous animated pose, and skipping the upload would leave the mesh frozen mid-motion;
 - **Hotkey**: equivalent to a Start/Stop binary toggle. Pressing it in the stopped state starts playback from 0; pressing it while playing or paused enters the stopped state (never pause). After a `once` finishes, one press stops it and the next starts it again.
 
 **Speed slider**: 0.25x to 4.00x. It rewrites `speed_multiplier` without touching the phase, so changing speed never makes the motion jump.

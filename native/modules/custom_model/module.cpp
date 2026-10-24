@@ -84,6 +84,11 @@ std::unordered_map<int32_t, DynamicMeshRecord> g_dynamic_meshes;
 // Set while the previous frame pushed driver weights into the meshes, so the
 // first frame carrying none restores the authored pose exactly once.
 bool g_driver_morph_active = false;
+// Meshes whose GPU position buffer currently holds a driver-written pose. A
+// frame with zero deltas still has to re-upload those, because the device is
+// holding the previous frame; meshes that were never touched are skipped, so
+// this does not turn into a per-frame whole-channel upload.
+std::unordered_set<void*> g_driver_dirty_meshes;
 
 // Section 13 sound attachments. Voices are keyed by driver id and owned by the
 // platform audio backend; the animation clock never waits for audio.
@@ -3153,7 +3158,14 @@ void ApplyDriverMorph(const std::vector<DriverMorphValue>& values) {
             const float* d=accumulated.data()+i*3;
             if (d[0]!=0.0f || d[1]!=0.0f || d[2]!=0.0f) touched.push_back(static_cast<uint32_t>(i));
         }
-        if (touched.empty()) return;
+        // An empty delta set is a legitimate frame: Stop restoring the authored
+        // pose, or a pingpong/sine sample at phase 0. For a mesh the driver has
+        // already displaced, the GPU still holds that pose, so the frame must be
+        // uploaded anyway -- skipping it is what left the mesh frozen after Stop.
+        // Meshes that were never displaced are still skipped, so an unrelated
+        // driver does not force a whole-channel upload every frame.
+        const bool was_dirty = g_driver_dirty_meshes.contains(mesh);
+        if (touched.empty() && !was_dirty) return;
         // Two upload paths produce identical vertex data, so this is a pure A/B
         // the user can flip at runtime:
         //   channel    - replace the whole Position channel (default; portable)
@@ -3163,7 +3175,9 @@ void ApplyDriverMorph(const std::vector<DriverMorphValue>& values) {
         if (!g_vertex_upload_available[upload_mode])
             upload_mode = g_vertex_upload_available[kVertexUploadChannel]
                 ? kVertexUploadChannel : kVertexUploadByteRange;
-        if (upload_mode == kVertexUploadChannel) {
+        // The byte-range path writes only moved runs, so it cannot express an
+        // empty restore. Fall back to the whole-channel write for that one frame.
+        if (upload_mode == kVertexUploadChannel || touched.empty()) {
             UploadMeshPositions(mesh, set, accumulated, touched);
         } else {
 #if defined(__ANDROID__)
@@ -3211,6 +3225,9 @@ void ApplyDriverMorph(const std::vector<DriverMorphValue>& values) {
         InvokeVoid(Contract("skinned.mark_modified"),renderer,nullptr);
 #endif
         }
+        // Record whether the device now holds a driver pose for this mesh.
+        if (touched.empty()) g_driver_dirty_meshes.erase(mesh);
+        else g_driver_dirty_meshes.insert(mesh);
     });
 }
 
@@ -4675,6 +4692,7 @@ void __fastcall ResourcePump(void* method) {
             // Leave nothing driver-owned behind on unload: a saved scene would
             // otherwise keep the last animated frame as its authored look.
             ApplyDriverMorph({});
+            g_driver_dirty_meshes.clear();
             StopAllDriverSounds();
             g_sounding_drivers.clear();
             ReleaseDriverMaterials(nullptr);
@@ -4724,6 +4742,11 @@ void __fastcall ResourcePump(void* method) {
             ApplyDriverMorph({});
             ReleaseDriverMaterials(nullptr);
             SyncDriverSounds();
+#if defined(_WIN32)
+            // Keep the shared block truthful after a stop, so a later start does
+            // not compare against a stale "playing" snapshot.
+            PublishDriverStateIfChanged();
+#endif
         }
 #if defined(__ANDROID__)
         // Keep the configured highest-available-LOD bias for every enabled
