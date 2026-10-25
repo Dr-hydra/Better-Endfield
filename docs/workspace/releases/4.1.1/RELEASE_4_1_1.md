@@ -35,6 +35,12 @@
   - 角色名统一取桌面端 `ui/BetterEndfieldNext.UI/Assets/model/character-names-en.json` 的官方英文名，不再从内部 id 推断（洁尔佩塔 Gilberta、梨诺 Reno、祀 Si）。角色配音列表与开屏模型的角色名来自数据文件，在读取处套翻译，`characterId()` / `id()` 仍是存盘值，不影响比较逻辑。
 - **赞助面板新增 Ko-fi**：
   - 桌面端与安卓端赞助面板在微信赞赏、爱发电、PayPal 之外新增 Ko-fi（`https://ko-fi.com/hydra405`），两端顺序一致。
+- **修复材质包加载明显卡顿：日志器改为持久句柄 + 加载期日志汇总**（起因是「不装动画包、只用不带控制器的材质包也掉性能，这一版更明显」）：
+  - 根因不在驱动路径：无 `drivers` 时 `EnsureAnimationDriverLoaded` / `ApplyDriverMorph` / `ReleaseDriverMaterials` / `SyncDriverSounds` / `PublishDriverStateIfChanged` 五处全部早退，逐帧成本约等于 0。真正的成本在加载路径上逐条打日志，而 `Logger::Write` 每条都用 `ofstream` 打开再析构一次文件——Windows 的实时防护会在 write-open 时扫描整份文件，实测本机每条「打开-追加-关闭」**10.6 ms**，且随日志文件变大继续变慢。
+  - `Logger` 改为持有 `std::ofstream` 成员：`Initialize` 时打开一次，`Write` 直接写入并每行 `flush()`，打开失败时在 `Write` 内清 failbit 重试（不会每行重新扫文件）。每行 flush 保住崩溃后日志尾部的可读性。
+  - 两处逐条日志改为汇总：`Applied BEM 1.5 material overrides` 由「每条带覆盖的 draw 一条」改为「每个组件一条」（`C<n> draws=N properties=M`，保留材质路径为 `slots=N properties=M`）；贴图 `built t=` 明细改为每次上传事务只打第一张（结尾标 `(first of this transaction)`），其余进格式直方图，由事务汇总行以 `textureFormats=BC7 sRGB x8,RGBA32 linear x2` 输出。
+  - 实测每行成本 **10.6 ms → 0.02 ms（450–600×）**。上百 draw 的材质包原先要白等数秒，现在日志开销可忽略。诊断信息没有减少：首张贴图的格式/尺寸、覆盖条数与属性总数、本次事务的贴图格式分布都保留在汇总行里。
+  - 行为变化：日志文件在程序运行期间保持打开。运行中删除或重命名日志文件后，后续日志仍写入原句柄（旧实现会重建文件）；需要清空日志请先退出程序。
 
 ## 附件范围
 
@@ -52,4 +58,5 @@
 
 - **安卓英文本地化**：`assembleDebug` 通过；REDMI K90 Pro Max（25102RKBEC，Android 17）实机走查主页、增强功能、关于、悬浮窗、管理员外观、持续冲刺、第三方模型、角色配音八个页面，均为英文且无截断；清除应用级语言覆盖后中文界面与文案与改动前一致。
 - **赞助面板 Ko-fi**：安卓实机确认微信赞赏 / 爱发电 / PayPal / Ko-fi 四个渠道齐全且无换行截断；桌面端 `dotnet build` 通过，未实机点击。
+- **日志器与加载日志汇总**：`logging.cpp`、`host_runtime.cpp`、`module_manager.cpp`、`hook_broker.cpp`、`module.cpp` 用 MSVC 19.44（`-std:c++20 -EHsc -utf-8`）单独编译通过。真实 `Logger` 探针（`worktree/audit/bench/logger_probe.cpp`，直接链接 `logging.cpp`）实测三项：改前/改后各 200 行的每行成本为 10.6 / 10.1 / 11.6 ms 对 0.023 / 0.017 / 0.026 ms；`Logger` 存活期间用另一 `ifstream` 能读到最新行（`hook_chain_tests.cpp:195` 的同文件读取不受影响）；写完末行直接 `std::_Exit(0)` 不跑析构，文件尾部仍完整。**未做完整 CMake 构建与实机加载验证**（`build/native_build` 的 CMake 缓存指向已不存在的 `C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools`），实测数字来自微基准而非实机加载计时。
 - 未覆盖：`values-ja` / `values-ko` / `values-zh-rTW` 仍只有两个文件，其余回落中文；BEM 包内的角色名、选项名、动效名属数据，未翻译；`提弗洛斯`（chr_0034_typhoea）桌面端尚无英文名，暂时回落中文。

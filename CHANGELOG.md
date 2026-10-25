@@ -2,6 +2,8 @@
 
 ## 4.1.1 Better Endfield Next（开发中）
 
+- **材质包加载提速（日志器重写）**：修复不带动画驱动的纯材质包加载时明显卡顿的问题。根因不在驱动路径（无 `drivers` 时逐帧调用全部早退），而在加载过程中每处理一个材质、每构建一张贴图都写一条日志，而 `Logger::Write` 每条都用 `ofstream` 打开再析构一次文件——Windows 实时防护会在 write-open 时扫描整份文件，实测本机单条「打开-追加-关闭」10.6 ms 且随文件变大继续变慢。`Logger` 改为持有 `std::ofstream` 成员（`Initialize` 打开一次，每行 `flush()`，失败时在 `Write` 内重试），崩溃后日志尾部仍完整；`Applied BEM 1.5 material overrides` 改为每个组件汇总一条（`draws=` / `slots=` 与 `properties=`），贴图 `built t=` 明细改为每次上传事务只打第一张，其余进 `textureFormats` 直方图由事务汇总行输出。实测每行成本 10.6 ms → 0.02 ms（450–600×）。行为变化：日志文件在程序运行期间保持打开，运行中删除日志不会重建文件，需清空日志请先退出程序。
+
 - **赞助面板新增 Ko-fi**：桌面端与安卓端赞助面板在微信赞赏、爱发电、PayPal 之外新增 Ko-fi（`https://ko-fi.com/hydra405`），两端顺序一致。
 
 - **安卓界面英文本地化**：新增 `Text` 翻译层与 `res/values-en` 资源，覆盖主页、增强功能、开屏模型、第三方模型、角色配音、MMD 作品库、会客室媒体屏、关于页以及游戏内悬浮窗（含 MMD 控制台、模型管理、FOV 面板、媒体屏控制）的全部界面文案；系统语言为英文时自动切换，中文环境行为与文案完全不变。同时把依赖中文字面量做 `contains` 判断的操作状态栏显隐改为结构化标志（`BemInstaller.IDLE_STATUS`、`MmdInstaller.failed`），避免本地化后判断失效；布局与清单中的硬编码中文改为 `@string` 引用。角色名统一取桌面端 `character-names-en.json` 的官方英文名（如洁尔佩塔 Gilberta、梨诺 Reno、祀 Si），语音与开屏模型的角色列表也一并英文化。
