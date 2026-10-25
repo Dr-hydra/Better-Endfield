@@ -61,18 +61,21 @@
 
 ## 附件范围
 
-候选包产出后填写。
-
 | 文件 | 分发范围 | 用途 |
 | --- | --- | --- |
-| BetterEndfieldNext-4.1.1-Setup.exe | 待定 | Windows x64 安装包 |
-| BetterEndfieldNext-4.1.1-Android-arm64.apk | 待定 | Android arm64 安装包 |
-| BEM-Tools-1.6.3-win-x64.zip | 待定 | 独立创作者 GUI、CLI 和全量角色资料 |
-| dsh-bem-creator-1.6.3.tgz | 待定 | DeepSeek Harness 插件，安装创作者 skill；需与上面的 ZIP 一起使用 |
+| BetterEndfieldNext-4.1.1-Setup.exe | GitHub Release | Windows x64 安装包 |
+| BetterEndfieldNext-4.1.1-Android-arm64.apk | GitHub Release | Android arm64 安装包 |
+| BEM-Tools-1.6.3-win-x64.zip | GitHub Release | 独立创作者 GUI、CLI 和全量角色资料 |
+| dsh-bem-creator-1.6.3.tgz | GitHub Release | DeepSeek Harness 插件，安装创作者 skill；需与上面的 ZIP 一起使用 |
+| BetterEndfieldNext-4.1.1-win-x64.zip | 本地保留 | Windows x64 便携包 |
 
 ## 验证边界
 
-整体仍未产出候选包，安装包与发行验证待补。已完成的验证：
+- **Windows 4.1.1 主程序与安装包构建**：CMake 原生构建、.NET 9 UI 发布与混淆（Obfuscar）、Inno Setup 6.7.3 打包与自签名验证全量通过，产出 `BetterEndfieldNext-4.1.1-Setup.exe` 与 `BetterEndfieldNext-4.1.1-win-x64.zip`。
+- **BEM Tools 1.6.3 构建**：PyInstaller 6.20.0 冻结 CLI，GUI 单文件打包成功并通过签名与 smoke 校验，产出 `BEM-Tools-1.6.3-win-x64.zip`。
+- **DSH 插件构建**：`scripts/BuildDshPlugin.py` smoke 测试与打包通过，产出 `dsh-bem-creator-1.6.3.tgz`。
+- **安卓 4.1.1 Release APK**：已完成构建与签名，产出 `BetterEndfieldNext-4.1.1-Android-arm64.apk`。
+- **已完成的专项验证**：
 
 - **安卓英文本地化**：`assembleDebug` 通过；REDMI K90 Pro Max（25102RKBEC，Android 17）实机走查主页、增强功能、关于、悬浮窗、管理员外观、持续冲刺、第三方模型、角色配音八个页面，均为英文且无截断；清除应用级语言覆盖后中文界面与文案与改动前一致。
 - **赞助面板 Ko-fi**：安卓实机确认微信赞赏 / 爱发电 / PayPal / Ko-fi 四个渠道齐全且无换行截断；桌面端 `dotnet build` 通过，未实机点击。

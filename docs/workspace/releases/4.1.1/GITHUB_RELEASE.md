@@ -1,4 +1,4 @@
-Better Endfield Next **4.1.1** 开发记录。
+Better Endfield Next **4.1.1** 与 BEM Tools **1.6.3**，带来昼雪免校验骨骼兼容修复、安卓界面重构与英文本地化、安卓端管理员外观对齐、持续冲刺支持「祀」、材质包加载提速、BEM Tools 22 个证据门控修复子命令与 DeepSeek Harness 创作者插件。
 
 ## Windows 4.1.1 & Android 4.1.1
 
@@ -35,6 +35,16 @@ Better Endfield Next **4.1.1** 开发记录。
 - **随包附带材质属性名字典**：`catalog/material-attributes.json` 收录 9 个 shader 的 1195 个 float、191 个 color、37 个 keyword 与 82 个 texture 属性名，由 747 个材质实测归并，供生成材质覆盖时查名。
 - 继续只提供 BEM 1.0–1.5 的转换与校验；BEM 1.5 的 draw 级材质覆盖不提供内置自动化。
 
+## DeepSeek Harness 插件 (dsh-bem-creator 1.6.3)
+
+- **创作者 skill 插件化**：把创作者 skill 打包为 npm 插件包，支持 dsh plugin --profile web add dsh-bem-creator-1.6.3.tgz 直接安装至任意 DeepSeek Harness profile。
+- 插件只承载指令与规范参考，不携带可执行文件，需与 BEM-Tools-1.6.3-win-x64.zip 工具链配套使用。
+
 ## 下载
 
-候选包产出后填写。
+| 附件 | 用途 |
+| --- | --- |
+| BetterEndfieldNext-4.1.1-Setup.exe | Windows x64 主程序安装包 |
+| BetterEndfieldNext-4.1.1-Android-arm64.apk | Android 4.1.1 Release APK |
+| BEM-Tools-1.6.3-win-x64.zip | 完整独立创作者 GUI、CLI 和全量角色资料 |
+| dsh-bem-creator-1.6.3.tgz | DeepSeek Harness 插件，安装创作者 skill（需与工具链 ZIP 配合使用） |

@@ -1,7 +1,7 @@
 {
   "version": "4.1.1",
-  "hashes_calculated": false,
-  "status": "in_development",
+  "hashes_calculated": true,
+  "status": "ready",
   "windows": {
     "fileVersion": "4.1.1.0",
     "architecture": "x64",
@@ -17,9 +17,45 @@
     "signing": "original Next release identity",
     "obfuscation": "R8"
   },
-  "checks": {},
-  "assets": [],
-  "local_only_assets": [],
+  "checks": {
+    "windows_release": "passed",
+    "windows_installer": "passed",
+    "bem_tools_portable": "passed",
+    "dsh_plugin": "passed"
+  },
+  "assets": [
+    {
+      "name": "BetterEndfieldNext-4.1.1-Setup.exe",
+      "bytes": 77455344,
+      "sha256": "a54a5344cd81e725f7e422d9ea0c1cbfbfe3a7753a535dfc8984b0002622a5fd",
+      "public": true
+    },
+    {
+      "name": "BetterEndfieldNext-4.1.1-Android-arm64.apk",
+      "bytes": 6615533,
+      "sha256": "b3774f259403d213e630c12d378f2edde6687775ac9d5e60dc86ff9b4286b3bf",
+      "public": true
+    },
+    {
+      "name": "BEM-Tools-1.6.3-win-x64.zip",
+      "bytes": 73642337,
+      "sha256": "b101b9d150b245a5f1f9aa53d2e6b1778252bb6e916ed6d4f6b98efc234bf4d6",
+      "public": true
+    },
+    {
+      "name": "dsh-bem-creator-1.6.3.tgz",
+      "bytes": 341912,
+      "sha256": "82323843379ebcea5d9ff8b52ebb3d77a90ca0500844fc30a82aa2d47aad233a",
+      "public": true
+    }
+  ],
+  "local_only_assets": [
+    {
+      "name": "BetterEndfieldNext-4.1.1-win-x64.zip",
+      "bytes": 85483253,
+      "sha256": "4c8b5217912d06d1df5caa23f213785cf8b148da41950bcf7e61ec283a593071"
+    }
+  ],
   "release": {
     "repository": "Dr-hydra/Better-Endfield",
     "tag": "v4.1.1",
