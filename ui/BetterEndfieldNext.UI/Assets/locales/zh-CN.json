@@ -15,7 +15,6 @@
   "Btn_Edit": "编辑",
   "Btn_OpenFolder": "打开目录",
   "Btn_Explore": "打开文件夹",
-
   "Nav_Model": "开屏",
   "Nav_Voice": "配音语言",
   "Nav_Music": "音乐集成",
@@ -23,7 +22,6 @@
   "Nav_Display": "显示与管线",
   "Nav_Touch": "触屏 UI",
   "Nav_Settings": "设置",
-
   "Status_Ready": "就绪",
   "Status_Saved": "配置已保存",
   "Status_SaveFailed": "保存失败",
@@ -31,7 +29,6 @@
   "Status_GameStopped": "游戏未运行",
   "Status_Launching": "正在启动游戏...",
   "Status_DetectingGpu": "正在检测 GPU...",
-
   "Model_Title": "开屏模型与动作",
   "Model_Description": "替换标题界面的展示角色与动作编排，支持循环、过渡与机位参数微调。",
   "Model_EnableSwitch": "启用开屏替换",
@@ -56,7 +53,6 @@
   "Model_Section_Theme": "标题界面主题",
   "Model_LogoTheme": "自定义 Logo 与背景主题色",
   "Model_LogoThemeColor": "主题色拾取",
-
   "Voice_Title": "角色配音语言分流",
   "Voice_Description": "为不同角色单独指定配音语言（中/英/日/韩），支持主线剧情与局内语音独立分流。",
   "Voice_EnableSwitch": "启用配音分流",
@@ -75,7 +71,6 @@
   "Voice_Lang_Korean": "韩语 (Korean)",
   "Voice_NoRules": "暂无自定义规则，所有角色默认跟随游戏全局语言设置。",
   "Voice_CatalogStatus": "语音包资产状态",
-
   "Music_Title": "OmniMix 音乐替换集成",
   "Music_Description": "通过 OmniMix 引擎动态无缝替换登录、主菜单与战斗背景音乐，支持自定义播放列表。",
   "Music_EnableSwitch": "启用音乐替换",
@@ -87,7 +82,6 @@
   "Music_ReplaceMeta": "替换主菜单与基地音乐",
   "Music_ReplaceGameplay": "替换局内与战斗音乐",
   "Music_TargetLatency": "音频同步目标延迟 (秒)",
-
   "Combat_Title": "战斗统计与悬浮窗",
   "Combat_Description": "实时统计全队伤害、rDPS（团队贡献分流）、技能与破韧数据，支持局内 DirectX 悬浮窗与历史回放。",
   "Combat_EnableOverlay": "启用游戏内悬浮窗 Overlay",
@@ -104,7 +98,6 @@
   "Combat_Detail_Dps": "全队 DPS",
   "Combat_Detail_Hits": "总命中次数",
   "Combat_Detail_Crits": "总暴击次数",
-
   "Display_Title": "显示增强与超分辨率管线",
   "Display_Description": "集成 OptiScaler 超分辨率（DLSS / FSR / XeSS）、帧生成、分辨率缩放以及自由相机与视野调节。",
   "Display_Section_Gpu": "图形硬件环境",
@@ -123,7 +116,6 @@
   "Display_CamFov": "视野角度 (FOV)",
   "Display_DisableDither": "禁用角色近距离消隐/抖动 (Dither)",
   "Display_PauseHotkey": "时间暂停快捷键",
-
   "Touch_Title": "移动端触屏 UI 与操作模拟",
   "Touch_Description": "在 PC 端体验移动端原生触屏 UI 布局，支持鼠标触摸模拟、平台伪装以及界面元素隐藏。",
   "Touch_EnableTouchUI": "启用移动端触屏 UI 布局",
@@ -133,7 +125,6 @@
   "Touch_HideHudHotkey": "HUD 隐藏切换快捷键",
   "Touch_SpoofPlatform": "客户端平台伪装 (Android)",
   "Touch_SpoofPlatformHint": "向服务器宣告为 Android 设备，仅在需要验证特定移动端逻辑时开启。",
-
   "Settings_Title": "全局系统设置",
   "Settings_Description": "配置游戏主程序路径、Mod 注入器、启动方式、界面语言与主题偏好。",
   "Settings_Section_Game": "游戏与注入器路径",
@@ -161,7 +152,6 @@
   "Settings_Link_Xiaoheihe": "小黑盒主页",
   "Settings_Link_QqGroup": "官方 QQ 交流群",
   "Settings_ViewDisclaimer": "查看用户免责声明",
-
   "Dialog_Disclaimer_Title": "Better Endfield 用户免责声明",
   "Dialog_Disclaimer_Accept": "我已阅读并同意",
   "Dialog_Disclaimer_Decline": "退出程序",
@@ -170,6 +160,25 @@
   "Dialog_SaveError_Title": "保存配置失败",
   "Dialog_LaunchError_Title": "启动游戏失败",
   "Dialog_GameNotFound_Message": "未找到有效的终末地游戏客户端，请在设置中指定 Endfield.exe 的正确路径。",
-  "Dialog_InjectorNotFound_Message": "未找到 Better Endfield 注入器程序，请检查安装完整性。"
-
+  "Dialog_InjectorNotFound_Message": "未找到 Better Endfield 注入器程序，请检查安装完整性。",
+  "Nav_WeaponAppearance": "管理员外观",
+  "WeaponAppearance_Title": "管理员外观",
+  "WeaponAppearance_Description": "直接调用游戏客户端内置的原生剧情外观与特效，在运行时自动重定向生效。纯原生 Prefab 调取，零外部模型包开销，不掉帧。",
+  "WeaponAppearance_EnableSwitch": "启用外观覆写模块",
+  "WeaponAppearance_WeaponTitle": "武器外观",
+  "WeaponAppearance_WeaponSwitch": "替换宏愿外观",
+  "WeaponAppearance_WeaponMode": "武器外观样式",
+  "WeaponAppearance_WeaponInk": "宏愿 · 剧情水墨流光",
+  "WeaponAppearance_WeaponDefault": "原版默认外观",
+  "WeaponAppearance_WeaponHint": "将原版宏愿单手剑模型替换为剧情演出中专属的水墨材质与剑身流光外观。",
+  "WeaponAppearance_CharacterTitle": "管理员角色外观",
+  "WeaponAppearance_CharacterSwitch": "替换管理员外观",
+  "WeaponAppearance_CharacterMode": "角色外观形态",
+  "WeaponAppearance_CharacterInk": "剧情水墨专属服装",
+  "WeaponAppearance_CharacterUnmasked": "剧情摘面具形态",
+  "WeaponAppearance_CharacterDefault": "原版默认形态",
+  "WeaponAppearance_CharacterHint": "自由切换管理员在大世界与战斗中的外观形态。支持剧情专属水墨服装与摘面具形态（男女管理员均适配）。",
+  "WeaponAppearance_EffectsTitle": "战斗与剑光特效",
+  "WeaponAppearance_EffectsSwitch": "替换为水墨剑气与打击特效",
+  "WeaponAppearance_EffectsHint": "将管理员的全套普通攻击挥砍、剑气拖尾、Bash 击退、空中攻击与受击粒子替换为官方水墨特效。"
 }

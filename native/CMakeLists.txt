@@ -223,6 +223,23 @@ add_executable(BetterEndfieldNext.ModelOverlayTests EXCLUDE_FROM_ALL
     modules/custom_model/tests/model_overlay_tests.cpp
 )
 better_endfield_target_defaults(BetterEndfieldNext.ModelOverlayTests)
+
+add_library(BetterEndfieldNext.WeaponAppearance SHARED
+    modules/weapon_appearance/module.cpp
+    modules/weapon_appearance/mapping.cpp
+)
+better_endfield_target_defaults(BetterEndfieldNext.WeaponAppearance)
+set_target_properties(BetterEndfieldNext.WeaponAppearance PROPERTIES
+    OUTPUT_NAME "BetterEndfieldNext.WeaponAppearance"
+    RUNTIME_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules"
+    LIBRARY_OUTPUT_DIRECTORY "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules"
+)
+
+add_executable(BetterEndfieldNext.WeaponAppearanceTests EXCLUDE_FROM_ALL
+    modules/weapon_appearance/tests/mapping_tests.cpp
+    modules/weapon_appearance/mapping.cpp
+)
+better_endfield_target_defaults(BetterEndfieldNext.WeaponAppearanceTests)
 target_link_libraries(BetterEndfieldNext.ModelOverlayTests PRIVATE BetterEndfieldNext.CustomModelCore)
 
 add_library(BetterEndfieldNext.Actions SHARED modules/actions/module.cpp)
@@ -504,6 +521,9 @@ add_custom_target(BetterEndfieldNext.Layout ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/modules/camera/betterendfieldnext.camera.module.ini"
         "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules/betterendfieldnext.camera.module.ini"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/modules/weapon_appearance/betterendfieldnext.weapon_appearance.module.ini"
+        "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules/betterendfieldnext.weapon_appearance.module.ini"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/modules/actions/betterendfieldnext.actions.module.ini"
         "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules/betterendfieldnext.actions.module.ini"

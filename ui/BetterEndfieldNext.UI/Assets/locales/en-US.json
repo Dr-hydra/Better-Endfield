@@ -15,7 +15,6 @@
   "Btn_Edit": "Edit",
   "Btn_OpenFolder": "Open Folder",
   "Btn_Explore": "Explore",
-
   "Nav_Model": "Title Screen",
   "Nav_Voice": "Voice Language",
   "Nav_Music": "Music",
@@ -23,7 +22,6 @@
   "Nav_Display": "Display & Pipeline",
   "Nav_Touch": "Mobile Touch",
   "Nav_Settings": "Settings",
-
   "Status_Ready": "Ready",
   "Status_Saved": "Configuration saved",
   "Status_SaveFailed": "Failed to save configuration",
@@ -31,7 +29,6 @@
   "Status_GameStopped": "Game is not running",
   "Status_Launching": "Launching game...",
   "Status_DetectingGpu": "Detecting GPU...",
-
   "Model_Title": "Title Screen Model & Animation",
   "Model_Description": "Customize the character and animation sequence on the game's title screen with fine camera and transition controls.",
   "Model_EnableSwitch": "Enable Title Screen Replacement",
@@ -56,7 +53,6 @@
   "Model_Section_Theme": "Title Screen Theme",
   "Model_LogoTheme": "Custom Logo & Background Accent Color",
   "Model_LogoThemeColor": "Accent Color Picker",
-
   "Voice_Title": "Character Voice Language Routing",
   "Voice_Description": "Assign different voice languages (CN / EN / JP / KR) to individual characters across combat and narrative scenes.",
   "Voice_EnableSwitch": "Enable Voice Language Routing",
@@ -75,7 +71,6 @@
   "Voice_Lang_Korean": "Korean (한국어)",
   "Voice_NoRules": "No custom rules configured. All characters follow game default audio settings.",
   "Voice_CatalogStatus": "Voice Pack Asset Status",
-
   "Music_Title": "OmniMix Music Integration",
   "Music_Description": "Dynamically replaces login, menu, and combat music streams via the OmniMix audio engine with custom playlists.",
   "Music_EnableSwitch": "Enable Music Replacement",
@@ -87,7 +82,6 @@
   "Music_ReplaceMeta": "Replace Main Menu & Base Music",
   "Music_ReplaceGameplay": "Replace Combat & In-Game Music",
   "Music_TargetLatency": "Audio Sync Target Latency (s)",
-
   "Combat_Title": "Combat Statistics & In-Game Overlay",
   "Combat_Description": "Real-time damage metering, team rDPS attribution, skill breakdown, and poise break tracking with DirectX HUD and session history.",
   "Combat_EnableOverlay": "Enable In-Game Overlay (DirectX)",
@@ -104,7 +98,6 @@
   "Combat_Detail_Dps": "Team DPS",
   "Combat_Detail_Hits": "Total Hits",
   "Combat_Detail_Crits": "Total Crits",
-
   "Display_Title": "Display Enhancements & Pipeline",
   "Display_Description": "Integrates OptiScaler upscaling (DLSS / FSR / XeSS), frame generation, resolution scaling, free camera, and FOV overrides.",
   "Display_Section_Gpu": "Graphics Hardware Environment",
@@ -123,7 +116,6 @@
   "Display_CamFov": "Field of View (FOV)",
   "Display_DisableDither": "Disable Near-Object Character Dither",
   "Display_PauseHotkey": "World Pause Toggle Hotkey",
-
   "Touch_Title": "Mobile Touch HUD & Input Emulation",
   "Touch_Description": "Enables the native mobile touch interface layout on PC with mouse touch injection, platform spoofing, and HUD toggles.",
   "Touch_EnableTouchUI": "Enable Mobile Touch Layout",
@@ -133,7 +125,6 @@
   "Touch_HideHudHotkey": "HUD Toggle Hotkey",
   "Touch_SpoofPlatform": "Spoof Client Platform as Android",
   "Touch_SpoofPlatformHint": "Reports client as an Android device to the server. Enable only when testing specific mobile logic.",
-
   "Settings_Title": "Global Settings",
   "Settings_Description": "Configure game paths, mod injector, launch mechanisms, interface language, and appearance theme.",
   "Settings_Section_Game": "Game & Injector Paths",
@@ -161,7 +152,6 @@
   "Settings_Link_Xiaoheihe": "Xiaoheihe Profile",
   "Settings_Link_QqGroup": "Official QQ Group",
   "Settings_ViewDisclaimer": "View User Disclaimer",
-
   "Dialog_Disclaimer_Title": "Better Endfield User Disclaimer",
   "Dialog_Disclaimer_Accept": "I Agree",
   "Dialog_Disclaimer_Decline": "Exit Application",
@@ -170,6 +160,25 @@
   "Dialog_SaveError_Title": "Save Failed",
   "Dialog_LaunchError_Title": "Launch Failed",
   "Dialog_GameNotFound_Message": "Valid Endfield game executable was not found. Please specify the path to Endfield.exe in Settings.",
-  "Dialog_InjectorNotFound_Message": "Better Endfield injector was not found. Please verify installation integrity."
-
+  "Dialog_InjectorNotFound_Message": "Better Endfield injector was not found. Please verify installation integrity.",
+  "Nav_WeaponAppearance": "Administrator Appearance",
+  "WeaponAppearance_Title": "Administrator Appearance",
+  "WeaponAppearance_Description": "Redirect to the game client's built-in story appearances and effects at runtime without external mod packages. High performance, zero stutter.",
+  "WeaponAppearance_EnableSwitch": "Enable Appearance Override Module",
+  "WeaponAppearance_WeaponTitle": "Weapon Appearance",
+  "WeaponAppearance_WeaponSwitch": "Override Hongyuan Appearance",
+  "WeaponAppearance_WeaponMode": "Weapon Style",
+  "WeaponAppearance_WeaponInk": "Hongyuan · Story Ink & Glow",
+  "WeaponAppearance_WeaponDefault": "Vanilla Default Appearance",
+  "WeaponAppearance_WeaponHint": "Replace the vanilla Hongyuan one-handed sword with the story-exclusive ink texture and blade aura.",
+  "WeaponAppearance_CharacterTitle": "Administrator Character Appearance",
+  "WeaponAppearance_CharacterSwitch": "Override Administrator Appearance",
+  "WeaponAppearance_CharacterMode": "Character Form",
+  "WeaponAppearance_CharacterInk": "Story Ink Exclusive Attire",
+  "WeaponAppearance_CharacterUnmasked": "Story Unmasked Form",
+  "WeaponAppearance_CharacterDefault": "Vanilla Default Form",
+  "WeaponAppearance_CharacterHint": "Freely switch administrator appearance forms in world and combat. Supports story ink attire and unmasked forms (both female and male administrators).",
+  "WeaponAppearance_EffectsTitle": "Combat & Blade VFX",
+  "WeaponAppearance_EffectsSwitch": "Enable Ink Blade Slashing & Hit VFX",
+  "WeaponAppearance_EffectsHint": "Replace administrator normal slashes, blade trails, bash, aerial attacks and hit particles with official ink effects."
 }
