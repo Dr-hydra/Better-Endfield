@@ -635,6 +635,8 @@ internal static class ConfigurationService
         configuration.GachaEnabled = Boolean(gachaValues, "enabled", configuration.GachaEnabled);
         configuration.MediaScreen = MediaScreenConfiguration.FromValues(ReadIniSection(
             string.Join(Environment.NewLine, lines), "betterendfieldnext.media_screen"));
+        configuration.WeaponAppearance = WeaponAppearanceConfiguration.FromValues(ReadIniSection(
+            string.Join(Environment.NewLine, lines), "betterendfieldnext.weapon_appearance"));
         return configuration;
     }
 

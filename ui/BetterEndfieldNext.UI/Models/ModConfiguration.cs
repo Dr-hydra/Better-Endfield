@@ -7,6 +7,7 @@ namespace BetterEndfieldNext.UI.Models;
 internal sealed class ModConfiguration
 {
     public MediaScreenConfiguration MediaScreen { get; set; } = new();
+    public WeaponAppearanceConfiguration WeaponAppearance { get; set; } = new();
     public bool GachaEnabled { get; set; }
     public string Character { get; set; } = "chr_0013_aglina";
 
@@ -188,6 +189,7 @@ internal sealed class ModConfiguration
         FreeCameraEnabled ||
         ContinuousSpecialDashEnabled ||
         (MediaScreen != null && MediaScreen.Enabled) ||
+        (WeaponAppearance != null && WeaponAppearance.Enabled) ||
         DisableDitherEnabled ||
         LogoThemeEnabled;
 
@@ -326,6 +328,7 @@ internal sealed class ModConfiguration
         text.AppendLine($"Language={(LocalizationService.Instance.IsChinese ? "zh_CN" : "en_US")}");
         text.AppendLine();
         text.Append(MediaScreen.ToIni());
+        text.Append(WeaponAppearance.ToIni());
         return text.ToString();
     }
 }

@@ -130,6 +130,7 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         GachaPage.EnabledChanged += GachaPage_EnabledChanged;
         MediaScreenPage.ConfigurationChanged += (_, _) => ScheduleAutoSave();
+        WeaponAppearancePage.ConfigurationChanged += (_, _) => ScheduleAutoSave();
         RegisterReactiveControls(MainRoot);
         RegisterHotkeyControls(MainRoot);
         Title = "Better Endfield Next";
@@ -162,7 +163,7 @@ public sealed partial class MainWindow : Window
 
     private void RegisterReactiveControls(DependencyObject root)
     {
-        if (root is Views.SteamIntegrationPage or Views.MediaScreenPage) return;
+        if (root is Views.SteamIntegrationPage or Views.MediaScreenPage or Views.WeaponAppearancePage) return;
         int count = VisualTreeHelper.GetChildrenCount(root);
         for (int index = 0; index < count; index++)
         {
@@ -180,7 +181,7 @@ public sealed partial class MainWindow : Window
 
     private void RegisterHotkeyControls(DependencyObject root)
     {
-        if (root is Views.MediaScreenPage) return;
+        if (root is Views.MediaScreenPage or Views.WeaponAppearancePage) return;
         int count = VisualTreeHelper.GetChildrenCount(root);
         for (int index = 0; index < count; index++)
         {
@@ -1364,6 +1365,7 @@ public sealed partial class MainWindow : Window
             ? Visibility.Visible
             : Visibility.Collapsed;
         MediaScreenPage.Visibility = page == "media-screen" ? Visibility.Visible : Visibility.Collapsed;
+        WeaponAppearancePage.Visibility = page == "weapon-appearance" ? Visibility.Visible : Visibility.Collapsed;
         CombatPageScrollViewer.Visibility = page == "combat"
             ? Visibility.Visible
             : Visibility.Collapsed;
@@ -3390,7 +3392,8 @@ public sealed partial class MainWindow : Window
             FreeCameraMovementSpeed = FreeCameraMovementSpeedNumberBox.Value,
             FreeCameraFieldOfView = FreeCameraFieldOfViewNumberBox.Value,
             FreeCameraExtras = ReadFreeCameraExtras(),
-            MediaScreen = MediaScreenPage.ReadConfiguration()
+            MediaScreen = MediaScreenPage.ReadConfiguration(),
+            WeaponAppearance = WeaponAppearancePage.ReadConfiguration()
         };
         return true;
     }
@@ -3455,6 +3458,7 @@ public sealed partial class MainWindow : Window
         HideHudHotkeyBox.Text = configuration.HideHudToggleHotkey;
         FreeCameraToggle.IsOn = configuration.FreeCameraEnabled;
         MediaScreenPage.ApplyConfiguration(configuration.MediaScreen);
+        WeaponAppearancePage.ApplyConfiguration(configuration.WeaponAppearance);
         _mediaCaptureService.Configure(configuration.MediaScreen);
         ContinuousSpecialDashAglinaToggle.IsOn = configuration.ContinuousSpecialDashAglinaEnabled;
         ContinuousSpecialDashLiinoToggle.IsOn = configuration.ContinuousSpecialDashLiinoEnabled;
@@ -4262,6 +4266,8 @@ public sealed partial class MainWindow : Window
         DisplayNavigationItem.Content = isZh ? "显示增强" : "Display & Pipeline";
         GachaNavigationItem.Content = isZh ? "寻访查询" : "Gacha History";
         CustomModelNavigationItem.Content = isZh ? "角色外观" : "Model Replacement";
+        WeaponAppearanceNavigationItem.Content = isZh ? "管理员外观" : "Administrator Appearance";
+        WeaponAppearancePage.UpdateLanguage();
         WorkshopNavigationItem.Content = isZh ? "创意工坊" : "Workshop";
         if (FeatureNavigation.SettingsItem is NavigationViewItem settingsItem)
         {
