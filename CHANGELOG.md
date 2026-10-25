@@ -1,5 +1,9 @@
 # 更新日志
 
+## 4.1.1 Better Endfield Next（开发中）
+
+- 开发进行中，改动逐项追加。
+
 ## 4.1.0 Better Endfield Next
 
 - **BEM 1.5 连续动画与动效驱动（dynamic-drivers-v1）**：原生实现双端时钟驱动器与波形动画（PingPong、Sine、Sawtooth、Triangle 等），支持单次（once）与循环（loop）播放，停止时自动恢复基准姿态；Android 端采用 SetNativeArrayForChannelImpl 安全多流更新通道，与滑条功能稳定共存；桌面端游戏内悬浮窗支持开始/暂停/停止控制；支持动效音效联动（driver_audio）；客户端支持自定义独立桌面快捷键并实现实时存储。

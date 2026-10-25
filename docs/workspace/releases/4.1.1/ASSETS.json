@@ -1,0 +1,33 @@
+{
+  "version": "4.1.1",
+  "hashes_calculated": false,
+  "status": "in_development",
+  "windows": {
+    "fileVersion": "4.1.1.0",
+    "architecture": "x64",
+    "gameVersion": "1.6.3",
+    "signing": "original Next internal self-signed identity",
+    "obfuscation": "Obfuscar"
+  },
+  "android": {
+    "applicationId": "dev.betterendfield.next",
+    "versionCode": 40101,
+    "versionName": "4.1.1",
+    "architecture": "arm64-v8a",
+    "signing": "original Next release identity",
+    "obfuscation": "R8"
+  },
+  "checks": {},
+  "assets": [],
+  "local_only_assets": [],
+  "release": {
+    "repository": "Dr-hydra/Better-Endfield",
+    "tag": "v4.1.1",
+    "url": "https://github.com/Dr-hydra/Better-Endfield/releases/tag/v4.1.1"
+  },
+  "bem_tools": {
+    "version": "1.6.2",
+    "gui_file_version": "1.6.2.0",
+    "platform": "windows-x64"
+  }
+}
