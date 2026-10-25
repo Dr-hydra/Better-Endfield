@@ -395,3 +395,39 @@ Windows 二进制，所以 dump 链路**不能在 Android 上跑**。手机端�
 **仍未落地**：`option_groups` 从按键循环自动推导。它同样没有既有实现可参考，且需要从源 INI 的
 变量循环还原条件图——属于第六节第 2 条的低层装配 API 范畴，本轮不动。
 
+## 8.3 构建与验证记录（1.6.3 收尾，2026-10-25）
+
+内部质量记录，**不写进** `docs/workspace/releases/4.1.1/`：发布说明只留结论，过程数据留在这里。
+
+### 回归
+
+- `audit/test_bem_repair.py` **141 例全过**，约 4 秒，全为合成用例，不读 `F:\zmd`。
+- `audit/run_complex_set.py` 15 包 / 609 ms，判定与基线一致。
+- **未做 551 包全量回归**（按约定只在发版前跑一次）。
+
+### 构建（`scripts/BuildBemTools.ps1`）
+
+- CLI 侧全通：PyInstaller 6.20.0 冻结 `bem_tool.py`，冻结后 `--version` 报
+  `BEM Tools 1.6.3 / BEM 1.0+1.1+1.2+1.3+1.4+1.5`；`warn-*.txt` 无 `bem_v15` 缺失告警；
+  冒烟 `.bem` 生成 + `validate` 返回 `success:true`。
+- GUI 侧 `dotnet build` EXIT=0（编译通过）。
+- **GUI 单文件打包失败**：`dotnet publish` 走到 `GenerateBundle`，
+  `MachOUtils.AdjustHeadersForBundle` 用 `MemoryMappedFile` 改 apphost 头时报
+  `Access to the path 'build\tools\bem\gui-publish\BetterEndfieldNext.BemTools.exe' is denied`。
+  安全策略按这个**具体路径**拒绝写入，属环境规则不是代码缺陷；重试或换输出目录都算绕规则，已停止。
+  因此 `package_toolchain.py` 与 `BEM-Tools-1.6.3-win-x64.zip` 本轮未产出。
+- 该目录下遗留一个 20:07 的 67 MB 半成品 exe（版本资源 1.6.3.0、MZ 头正常，但 bundle 未写完），
+  **不可信**，重新打包前应先删除。
+- 待办：在无该策略的环境重跑 `scripts\BuildBemTools.ps1` 补出 ZIP。
+
+### `shape-params` 的证据强度
+
+- 合成工程端到端通过：1 参数 1 通道，源权重 0.5 → `default=500`；
+  `bem_v13.apply_author_spec` 接受后载荷 4→5、能力位新增 `body-parameters` 与
+  `mesh-position-deltas`；非中性帧解码出 2 条记录；tick 1000 时顶点 2 位移 0.1，tick 0 不变。
+- 真实包 M0265 提弗洛斯-旗袍：缓冲读全（C4 `batches=1 / ids=46944 / offsets=281664 /
+  highest=59967`；C8 `batches=1 / ids=336234 / offsets=2017404 / highest=207168`），
+  但 `[Constants]` 只有 `run = CommandListInitializeShapeKeys`，`CommandListSetShapeKey`
+  只出现在注释里 → 判 `SHAPE_NOT_DRIVEN`。
+- 15 个复杂包中**没有**带形态键的包，实机滑条验证待有真实样本后补。
+
