@@ -162,7 +162,9 @@ void* BE_CALL InvokeFake(void*,const void* method,void* object,void** args,void*
     if (key=="pipeline.enable_force_lod0" || key=="pipeline.disable_force_lod0") return nullptr;
     if (key=="quality.get_max_lod") return Scalar(fake_max_lod);
     if (key=="quality.set_max_lod") { fake_max_lod=*static_cast<int32_t*>(args[0]); return nullptr; }
-    std::cerr<<"Unhandled fake call "<<key<<'\n'; std::exit(1);
+    if (key=="mesh.get_blend_shape_count") { static int zero=0; return Scalar(zero); }
+if (key=="mesh.get_blend_shape_name") return nullptr;
+std::cerr<<"Unhandled fake call "<<key<<'\n'; std::exit(1);
 }
 void* BE_CALL UnboxFake(void*,void* value) {
     auto* n=static_cast<Fake*>(value); return n->name=="scalar"?static_cast<void*>(&n->scalar):&n->matrix;

@@ -4013,18 +4013,23 @@ GenericMatching::Match SelectCompatibleModelDonor(const CharacterAdapter& adapte
     };
     auto match=GenericMatching::SelectUnique(candidates,request,candidate_valid);
 #if defined(_WIN32)
-    if (windows_compat && match.status==GenericMatching::MatchStatus::Missing && request.check_indices &&
-        AuroraLegacy::IsLegacyTarget(adapter.id,request.resource,component_id,request.mesh_name,request.indices,adapter.explicit_resource)) {
-        // The package/header contract remains unchanged. Only this exact donor
-        // request is adapted, after the normal match failed with no candidate.
+    const bool is_legacy_aurora = windows_compat &&
+        AuroraLegacy::IsLegacyTarget(adapter.id,request.resource,component_id,request.mesh_name,request.indices,adapter.explicit_resource);
+    if (is_legacy_aurora && (match.status==GenericMatching::MatchStatus::Missing || !request.check_indices)) {
+        // The package/header contract remains unchanged. When the normal match has no candidate
+        // or when check_indices was bypassed (e.g. skip_validation=true), adapt to the verified
+        // 1.6.3 donor so the exact receiver path and 10-slot bone remapping are always enforced.
         request.indices=AuroraLegacy::kCurrentIndices;
         request.verified_receiver_path=AuroraLegacy::kReceiverPath;
-        match=GenericMatching::SelectUnique(candidates,request,[&](const auto& candidate) {
+        auto adapted_match=GenericMatching::SelectUnique(candidates,request,[&](const auto& candidate) {
             if (!candidate_valid(candidate)) return false;
             const auto found=std::find_if(index.begin(),index.end(),[&](const auto& entry){return entry.renderer==candidate.renderer;});
             return ValidateAuroraLegacyCandidate(adapter,asset,component_id,*found,candidate.pristine);
         });
-        legacy_aurora=match.status==GenericMatching::MatchStatus::Matched;
+        if (adapted_match.status==GenericMatching::MatchStatus::Matched) {
+            match=adapted_match;
+            legacy_aurora=true;
+        }
     }
 #elif defined(__ANDROID__)
     (void)windows_compat;

@@ -326,11 +326,14 @@ endif()
 
 add_executable(BetterEndfieldNext.CustomModelBindingTests EXCLUDE_FROM_ALL
     tests/custom_model_binding_tests.cpp
+    modules/custom_model/animation_driver.cpp
+    modules/custom_model/driver_audio_win.cpp
     modules/custom_model/native_mesh_layout.cpp
     shared/third_party/minhook/src/hde/hde64.c
 )
 better_endfield_target_defaults(BetterEndfieldNext.CustomModelBindingTests)
-target_link_libraries(BetterEndfieldNext.CustomModelBindingTests PRIVATE BetterEndfieldNext.CustomModelCore)
+target_link_libraries(BetterEndfieldNext.CustomModelBindingTests PRIVATE
+    BetterEndfieldNext.CustomModelCore mfplat mfreadwrite mfuuid ole32)
 
 add_executable(BetterEndfieldNext.AndroidWorldBindingTests EXCLUDE_FROM_ALL
     tests/android_world_binding_tests.cpp

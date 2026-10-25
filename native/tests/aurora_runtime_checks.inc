@@ -78,6 +78,15 @@ void AuroraRuntimeTests() {
             verify(bindings.size()==2 && bindings[1].aurora_legacy_163 && !bindings[0].aurora_legacy_163,
                 "Aurora compatibility flag escaped verified C1");
             verify(bindings[1].custom_enabled==!(flags&kComponentFlagHidden),"Aurora hide/keep behavior changed");
+        {
+            BemPocData skipPayload = payload;
+            skipPayload.skip_validation = true;
+            ConstructionScope scope;
+            std::vector<PreparedBinding> bindings;
+            verify(PrepareResource(owner->adapter,skipPayload,asset,bindings),"Aurora skip_validation preparation failed");
+            verify(bindings.size()==2 && bindings[1].aurora_legacy_163,"CRITICAL BUG: Aurora legacy compat was bypassed when skip_validation=true!");
+        }
+
             unchanged();
             // Cross-component palettes must remap the referenced donor C1,
             // even when the replaced component itself is ordinary C0.
