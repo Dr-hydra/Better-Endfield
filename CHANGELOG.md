@@ -14,6 +14,8 @@
 
 - **BEM Tools 升级至 1.6.3**：`bem_repair.py` 重写为 22 个证据门控子命令（IB/DDS/INI 重复段/条件贴图/蒙皮/合并骨架/入口程序/贴图覆盖/角色资料缺口/形态参数/选项空间/CrossIB 分组），新增 `shape-params` 从源 ShapeKey 自动生成 BEM 1.3 滑条配置，并随包分发 `catalog/material-attributes.json` 材质属性名字典；同时新增 `bem_assemble.py` 与 `catalog/identities/`。
 
+- **新增 DeepSeek Harness 插件 `dsh-bem-creator`（第四个产物）**：把创作者 skill 打包成 DSH 插件，版本与 BEM Tools 对齐到 1.6.3，`dsh plugin --profile web add dsh-bem-creator-1.6.3.tgz` 一条命令装进任意 profile，装完即出现在 `dsh skill list` 中，模型可用 `skill` 工具加载、用户可 `/bem-creator` 直接调用。插件只承载指令、不携带 CLI，需与 `BEM-Tools-1.6.3-win-x64.zip` 一起分发；本版不注册客户端 UI，也不注册 `bem` 工具。由 `scripts/BuildDshPlugin.py` 构建，已接入 `scripts/BuildBemTools.ps1` 的发布流程。
+
 ## 4.1.0 Better Endfield Next
 
 - **BEM 1.5 连续动画与动效驱动（dynamic-drivers-v1）**：原生实现双端时钟驱动器与波形动画（PingPong、Sine、Sawtooth、Triangle 等），支持单次（once）与循环（loop）播放，停止时自动恢复基准姿态；Android 端采用 SetNativeArrayForChannelImpl 安全多流更新通道，与滑条功能稳定共存；桌面端游戏内悬浮窗支持开始/暂停/停止控制；支持动效音效联动（driver_audio）；客户端支持自定义独立桌面快捷键并实现实时存储。

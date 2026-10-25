@@ -104,5 +104,15 @@ if ([System.IO.Path]::GetFullPath($toolArchive) -ne [System.IO.Path]::GetFullPat
     Copy-Item -LiteralPath $toolArchive -Destination $releaseArchive -Force
 }
 Write-Host "BEM toolchain ZIP: $releaseArchive"
+
+# The DeepSeek Harness bundle carries the same skill the ZIP ships, packaged so
+# `dsh plugin add` can install it. It does not depend on the GUI, so it is built
+# beside the ZIP rather than inside it.
+$pluginArgs = @((Join-Path $repo 'scripts\BuildDshPlugin.py'))
+if ($ws.config_file) { $pluginArgs += @('--workspace-config', $ws.config_file) }
+& $python @pluginArgs
+if ($LASTEXITCODE -ne 0) { throw "DSH plugin packaging failed." }
+Write-Host "DSH plugin bundle: $(Join-Path $releaseDir "dsh-bem-creator-$toolVersion.tgz")"
+
 Write-Host "BEM creator GUI: BEM-Tools/BetterEndfieldNext.BemTools.exe inside the ZIP"
 Write-Host "BEM converter: $Destination\dist\BetterEndfieldNext.BemConverter"

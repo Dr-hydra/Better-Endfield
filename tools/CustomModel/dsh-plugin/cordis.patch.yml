@@ -1,0 +1,14 @@
+# The dsh-bem-creator bundle patch.
+#
+# One row, mounted from this package. The row `name` is the package name: the
+# launcher resolves bare names from the dsh installation first and then from the
+# profile directory, so it finds this package once `dsh plugin add` installed it.
+#
+# The skill directory is deliberately not configured here. Patch expressions see
+# `ctx`, `process.env` and `dshHomePath()`, but no package-relative anchor, so a
+# path written here would be a machine path. `lib/index.js` resolves its own
+# packaged `skills/` directory and contributes the skill through the registry.
+
+- insert:
+    - id: bem-creator
+      name: 'dsh-bem-creator'

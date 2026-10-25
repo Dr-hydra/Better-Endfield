@@ -29,5 +29,11 @@
     "version": "1.6.3",
     "gui_file_version": "1.6.3.0",
     "platform": "windows-x64"
+  },
+  "dsh_plugin": {
+    "name": "dsh-bem-creator",
+    "version": "1.6.3",
+    "platform": "any",
+    "requires": "DeepSeek Harness >=0.2.1-rc.2"
   }
 }

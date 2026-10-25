@@ -54,6 +54,11 @@
   - 新增 `bem_assemble.py`（清单组装，与修复职责分开）与 `catalog/identities/`（原生 VB 区域身份、已验证旧版别名）。
   - 文档同步：`SKILL.md` 的子命令清单与拒绝码说明、`BEM_SOURCE_CONVERSION_PLAYBOOK` §13.17「形态键转滑条」、以及 BEM 1.5 draw 级材质覆盖**不提供内置自动化**的边界说明（该形态在真实包中出现 0 次，1.5 也不打算做自动化，用户需要时由 agent 自行拼装）。
 
+- **新增第四个产物：DeepSeek Harness 插件 `dsh-bem-creator`**：
+  - 把创作者 skill 打包成 DSH 插件，`dsh plugin --profile web add dsh-bem-creator-1.6.3.tgz` 一条命令装进任意 profile；装完出现在 `dsh skill list` 里，模型可用 `skill` 工具加载，用户可直接 `/bem-creator` 调用。插件版本与 BEM Tools 对齐，两者一起升级。
+  - 插件只承载指令，**不携带 BEM Tools CLI**：skill 驱动的那份可执行文件仍由 `BEM-Tools-1.6.3-win-x64.zip` 提供，两个产物要一起分发。
+  - 本版不注册客户端 UI，也不注册 `bem` 工具，指令通过既有对话与工具卡片生效。插件运行在主机侧，手机端作为远程客户端使用时不需要额外适配。
+
 ## 附件范围
 
 候选包产出后填写。
@@ -63,6 +68,7 @@
 | BetterEndfieldNext-4.1.1-Setup.exe | 待定 | Windows x64 安装包 |
 | BetterEndfieldNext-4.1.1-Android-arm64.apk | 待定 | Android arm64 安装包 |
 | BEM-Tools-1.6.3-win-x64.zip | 待定 | 独立创作者 GUI、CLI 和全量角色资料 |
+| dsh-bem-creator-1.6.3.tgz | 待定 | DeepSeek Harness 插件，安装创作者 skill；需与上面的 ZIP 一起使用 |
 
 ## 验证边界
 
