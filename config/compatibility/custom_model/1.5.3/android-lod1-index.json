@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "characters": {
+    "chr_0038_purrche": {
+      "source": "android-prefab",
+      "manifest_version": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+      "renderers": {
+        "Mesh_all/lod1/S_actor_purrchena_body_01_lod1": {
+          "mesh": "S_actor_purrchena_body_01_lod1",
+          "vertices": 3251,
+          "indices": 15906
+        },
+        "Mesh_all/lod1/S_actor_purrchena_cloth_01_lod1": {
+          "mesh": "S_actor_purrchena_cloth_01_lod1",
+          "vertices": 12534,
+          "indices": 48900
+        },
+        "Mesh_all/lod1/S_actor_purrchena_cloth_02_lod1": {
+          "mesh": "S_actor_purrchena_cloth_02_lod1",
+          "vertices": 1762,
+          "indices": 8364
+        },
+        "Mesh_all/lod1/S_actor_purrchena_cloth_03_lod1": {
+          "mesh": "S_actor_purrchena_cloth_03_lod1",
+          "vertices": 35,
+          "indices": 144
+        },
+        "Mesh_all/lod1/S_actor_purrchena_eye_01_lod1": {
+          "mesh": "S_actor_purrchena_eye_01_lod1",
+          "vertices": 502,
+          "indices": 1320
+        },
+        "Mesh_all/lod1/S_actor_purrchena_eye_02_lod1": {
+          "mesh": "S_actor_purrchena_eye_02_lod1",
+          "vertices": 502,
+          "indices": 1320
+        },
+        "Mesh_all/lod1/S_actor_purrchena_eye_03_lod1": {
+          "mesh": "S_actor_purrchena_eye_03_lod1",
+          "vertices": 502,
+          "indices": 1320
+        },
+        "Mesh_all/lod1/S_actor_purrchena_eye_04_lod1": {
+          "mesh": "S_actor_purrchena_eye_04_lod1",
+          "vertices": 502,
+          "indices": 1320
+        },
+        "Mesh_all/lod1/S_actor_purrchena_eye_05_lod1": {
+          "mesh": "S_actor_purrchena_eye_05_lod1",
+          "vertices": 502,
+          "indices": 1320
+        },
+        "Mesh_all/lod1/S_actor_purrchena_eye_06_lod1": {
+          "mesh": "S_actor_purrchena_eye_06_lod1",
+          "vertices": 502,
+          "indices": 1320
+        },
+        "Mesh_all/lod1/S_actor_purrchena_eye_07_lod1": {
+          "mesh": "S_actor_purrchena_eye_07_lod1",
+          "vertices": 502,
+          "indices": 1320
+        },
+        "Mesh_all/lod1/S_actor_purrchena_eye_08_lod1": {
+          "mesh": "S_actor_purrchena_eye_08_lod1",
+          "vertices": 502,
+          "indices": 1320
+        },
+        "Mesh_all/lod1/S_actor_purrchena_eye_09_lod1": {
+          "mesh": "S_actor_purrchena_eye_09_lod1",
+          "vertices": 502,
+          "indices": 1320
+        },
+        "Mesh_all/lod1/S_actor_purrchena_eye_10_lod1": {
+          "mesh": "S_actor_purrchena_eye_10_lod1",
+          "vertices": 502,
+          "indices": 1320
+        },
+        "Mesh_all/lod1/S_actor_purrchena_face_01_lod1": {
+          "mesh": "S_actor_purrchena_face_01_lod1",
+          "vertices": 690,
+          "indices": 3414
+        },
+        "Mesh_all/lod1/S_actor_purrchena_fur_01_lod1": {
+          "mesh": "S_actor_purrchena_fur_01_lod1_11",
+          "vertices": 7788,
+          "indices": 40293
+        },
+        "Mesh_all/lod1/S_actor_purrchena_fur_02_lod1": {
+          "mesh": "S_actor_purrchena_fur_02_lod1_11",
+          "vertices": 6941,
+          "indices": 36498
+        },
+        "Mesh_all/lod1/S_actor_purrchena_fur_03_lod1": {
+          "mesh": "S_actor_purrchena_fur_03_lod1_11",
+          "vertices": 12056,
+          "indices": 64944
+        },
+        "Mesh_all/lod1/S_actor_purrchena_furcard_01_lod1": {
+          "mesh": "S_actor_purrchena_furcard_01_lod1",
+          "vertices": 18820,
+          "indices": 28950
+        },
+        "Mesh_all/lod1/S_actor_purrchena_iris_02_lod1": {
+          "mesh": "S_actor_purrchena_iris_02_lod1",
+          "vertices": 122,
+          "indices": 480
+        },
+        "Mesh_all/lod1/S_actor_purrchena_iris_03_lod1": {
+          "mesh": "S_actor_purrchena_iris_03_lod1",
+          "vertices": 8,
+          "indices": 12
+        },
+        "Mesh_all/lod1/S_actor_purrchena_iris_04_lod1": {
+          "mesh": "S_actor_purrchena_iris_04_lod1",
+          "vertices": 56,
+          "indices": 120
+        }
+      }
+    }
+  },
+  "platform": "Android",
+  "snapshot": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+  "manifest": "inputs/1.5.3/Android/resource-sources/20261001-wireless-192.168.31.12-36477/current-inputs/Bundles/Android/manifest.json",
+  "manifest_version": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+  "note": "Per-character renderer evidence extracted from the Android prefab. Rebuild only the characters that are reported broken; others stay as-is."
+}
