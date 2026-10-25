@@ -1,0 +1,143 @@
+{
+  "schema": 1,
+  "purpose": "复杂包回归集：覆盖全部已知失败类与上限陷阱，替代 551 包全量跑。",
+  "policy": "改动 scripts/ 或文档后只跑本集；全量跑仅在发布前做一次。",
+  "count": 15,
+  "packages": [
+    {
+      "id": "M0001",
+      "name": "伊冯-26W by anlingQWQ",
+      "status": "成功",
+      "source": "F:\\zmd\\伊冯\\伊冯-26W by anlingQWQ",
+      "exercises": "CrossIB + RabbitFX + 自定义 Shader + hash-lod + 126 个状态段",
+      "expected": "最硬的混合包；诊断与装配都要能过",
+      "source_exists": true
+    },
+    {
+      "id": "M0019",
+      "name": "伊冯-沁夏霓光 by EnteleJiang",
+      "status": "失败",
+      "source": "F:\\zmd\\伊冯\\伊冯-沁夏霓光 by EnteleJiang",
+      "exercises": "入口 INI 重复 [Constants]×3 + 7 个 draw 路径缺图 + 3 个活动 INI",
+      "expected": "重复段 + 伴随 INI + F1 三合一",
+      "source_exists": true
+    },
+    {
+      "id": "M0012",
+      "name": "伊冯-围裙",
+      "status": "成功",
+      "source": "F:\\zmd\\伊冯\\伊冯-围裙",
+      "exercises": "入口 INI 重复 [Constants]×2，但最终成功",
+      "expected": "重复段可归一化，不该被判死",
+      "source_exists": true
+    },
+    {
+      "id": "M0089",
+      "name": "佩丽卡-闪耀之海",
+      "status": "失败",
+      "source": "F:\\zmd\\佩丽卡\\佩丽卡-闪耀之海",
+      "exercises": "IB 末尾越界：需 54018，缓冲 44610，缺 9408",
+      "expected": "四判据里「末尾 + 整三角形」应判可修",
+      "source_exists": true
+    },
+    {
+      "id": "M0334",
+      "name": "洁尔佩塔-初音未来发色",
+      "status": "失败",
+      "source": "F:\\zmd\\洁尔佩塔\\洁尔佩塔-初音未来发色",
+      "exercises": "IB 越界：需 168594，缓冲 146790",
+      "expected": "同一类，数量级不同",
+      "source_exists": true
+    },
+    {
+      "id": "M0466",
+      "name": "萤石- 绫波丽",
+      "status": "失败",
+      "source": "F:\\zmd\\萤石\\萤石- 绫波丽",
+      "exercises": "IB 越界且末尾开放边界（174 条边界边）",
+      "expected": "必须拒绝裁剪，不许硬修",
+      "source_exists": true
+    },
+    {
+      "id": "M0207",
+      "name": "弧光-02",
+      "status": "成功",
+      "source": "F:\\zmd\\弧光\\弧光-02",
+      "exercises": "IB 越界但缺口是完整重复网格岛",
+      "expected": "应判可修并给出证据",
+      "source_exists": true
+    },
+    {
+      "id": "M0543",
+      "name": "陈千语-赤脚",
+      "status": "成功",
+      "source": "F:\\zmd\\陈千语\\陈千语-赤脚",
+      "exercises": "两个入口 INI，体检仍报 standard_candidate",
+      "expected": "体检漏 ENTRY_SELECTION 的假绿灯",
+      "source_exists": true
+    },
+    {
+      "id": "M0016",
+      "name": "伊冯-时尚装扮 by 孤军",
+      "status": "成功",
+      "source": "F:\\zmd\\伊冯\\伊冯-时尚装扮 by 孤军",
+      "exercises": "单贴图 12288²、Mip0 144 MiB",
+      "expected": ">64 MiB 且 <256 MiB，应走 1.2+ 而非 mipdrop",
+      "source_exists": true
+    },
+    {
+      "id": "M0342",
+      "name": "洁尔佩塔-小肉包 by 布鲁加尔",
+      "status": "成功",
+      "source": "F:\\zmd\\洁尔佩塔\\洁尔佩塔-小肉包 by 布鲁加尔",
+      "exercises": "单贴图 341 MiB",
+      "expected": "超 256 MiB 硬上限，只能降分辨率，必须停",
+      "source_exists": true
+    },
+    {
+      "id": "M0308",
+      "name": "梨诺-颜色切换",
+      "status": "成功",
+      "source": "F:\\zmd\\梨诺\\梨诺-颜色切换",
+      "exercises": "1551 条 draw、$dress_color 20 选项",
+      "expected": "撞「单次选择 ≤256 draw」的真实上限",
+      "source_exists": true
+    },
+    {
+      "id": "M0137",
+      "name": "女管-原版切换 by Lewdlad",
+      "status": "成功",
+      "source": "F:\\zmd\\女管\\女管-原版切换 by Lewdlad",
+      "exercises": "3×5×6×9×5 = 4050 态，持久键初值不在循环里",
+      "expected": "状态 BFS 与初值陷阱",
+      "source_exists": true
+    },
+    {
+      "id": "M0495",
+      "name": "诀-竞速泳装 by FengliS",
+      "status": "成功",
+      "source": "F:\\zmd\\诀\\诀-竞速泳装 by FengliS",
+      "exercises": "合并骨架、源无骨名表，只能按组偏移压入",
+      "expected": "骨骼调色板推断入账",
+      "source_exists": true
+    },
+    {
+      "id": "M0488",
+      "name": "诀-庆典 by 73layol",
+      "status": "成功",
+      "source": "F:\\zmd\\诀\\诀-庆典 by 73layol",
+      "exercises": "衣装 ps-t18 = null，需清空纹理槽",
+      "expected": "1.5 硬边界，必须停不许降级",
+      "source_exists": true
+    },
+    {
+      "id": "M0541",
+      "name": "陈千语-菲比 og 阿鲁提亚",
+      "status": "成功",
+      "source": "F:\\zmd\\陈千语\\陈千语-菲比 og 阿鲁提亚",
+      "exercises": "C1/C3 共用同名材质 M_actor_chen_cloth_01，C2 也消费同名贴图",
+      "expected": "donor 必须逐 draw 绑，不能按材质名替换",
+      "source_exists": true
+    }
+  ]
+}

@@ -518,23 +518,56 @@ L3 是可接受的终点，但有个前提：**推断链上每一环都要能被
 
 ### 9.3 写包：原子替换 + 逐字节回读
 
-写产物这一步有三个必须连着做的动作，缺一个就会在中断时留下半成品：
+写产物这一步有三个动作，缺一个就会在中断时留下半成品或在落盘时悄悄改内容：
 
 ```
-写临时文件 → 读回 → 与内存模型逐字节相等 → 原子替换正式路径 → 再读回一次
+写临时文件 → os.replace 原子替换 → 读回 → 校验读回的结构与几何
 ```
+
+**先说清楚哪些是现成的、哪些要自己做**，别重复实现，也别以为已经有了：
+
+| 环节 | 现状 | 证据 |
+| --- | --- | --- |
+| 原子写入 | **已内建**，不用自己写 | `bem_v1.atomic_write()`（`bem_v1.py:42-54`）用 `mkstemp` + `os.replace`，`write_package()` 在 `bem_v1.py:236` 调它 |
+| 载荷去重 + 索引重映射 | **已内建，且会改清单** | `write_package()` 在 `bem_v1.py:187-217` 把相同字节的 payload 合并，并把 `draw['indices']`、`stream['payload']`、`texture['payload']`、形变帧的 `payload` 全部按 `mapping` 重写 |
+| 写盘后回读校验 | **没有内建**，`pack` / `convert` 都不做 | 需要自己调 `bem_projects.validated()` 或 `bem_v1.read_package()` |
+
+**这里有个陷阱**：因为写盘时会去重并重映射，`read_package(输出)` 得到的清单**不等于**你内存里的 `builder.m`。直接用 `assert m == builder.m` 会在一堆包里假失败（只要有两个 payload 字节相同）。同理 `builder.payloads` 是去重前的列表，读回的是去重后的。
+
+正确的回读校验写成"重新校验"而不是"字节相等"：
 
 ```python
-fd, temp = tempfile.mkstemp(prefix=output.stem + '.', suffix='.bem.tmp', dir=output.parent)
-merged.write(temp)
-m, p = read_package(temp)
-assert m == merged.manifest and p == merged.payloads   # ROUNDTRIP
-os.replace(temp, output)                                # 原子，永不半成品
-m2, p2 = read_package(output)
-assert (m2, p2) == (m, p)                               # FINAL_READBACK
+from pathlib import Path
+from bem_projects import validated      # 内部走 read_package + check_geometry
+
+def write_and_verify(builder, output: Path):
+    """builder 是 bem_v1.Builder：清单在 builder.m，载荷在 builder.payloads。
+
+    属性名别记错：清单是 .m，不是 .manifest；bem_merge.MergeResult 没有
+    write()，它只算"哪些段生效"，不是产物对象。
+    """
+    builder.write(output)              # 内部已原子替换
+    m, p = validated(output)           # 真的把文件读回来，重跑结构与几何校验
+
+    # 语义层面的对照：数量必须对得上（去重只会减少，不会增加）
+    assert len(m['meshes']) == len(builder.m['meshes']), 'READBACK: 网格数变化'
+    assert len(m['textures']) == len(builder.m['textures']), 'READBACK: 贴图数变化'
+    assert len(p) <= len(builder.payloads), 'READBACK: 载荷数变多，去重逻辑异常'
+
+    # 幂等性检查：对读回的模型再写一次，字节必须完全相同。
+    # 这是比"与内存模型相等"更强的检查——它同时验证了去重与重映射是稳定的。
+    import hashlib, tempfile, os
+    fd, again = tempfile.mkstemp(suffix='.bem'); os.close(fd)
+    try:
+        from bem_v1 import write_package
+        write_package(again, m, p)
+        assert Path(again).read_bytes() == output.read_bytes(), 'READBACK: 重写字节不一致'
+    finally:
+        os.unlink(again)
+    return m, p
 ```
 
-为什么不能"写到位再检查"：写到一半断电，磁盘上就有一个头部声明完整但 payload 缺失的文件，而所有"文件存在"的判断都会通过。`os.replace` 在同一分区上是原子的，读者要么看到旧文件，要么看到新文件。
+为什么不能"写到位再检查"：写到一半断电，磁盘上就有一个头部声明完整但 payload 缺失的文件，而所有"文件存在"的判断都会通过。`os.replace` 在同一分区上是原子的，读者要么看到旧文件，要么看到新文件。这一层 `atomic_write` 已经做了，你不用管；你要管的是**回读**。
 
 ### 9.4 账本即真相，报告不能自证
 
@@ -634,8 +667,9 @@ assert (m2, p2) == (m, p)                               # FINAL_READBACK
 
 ## 12. 必须停下报告的情形
 
-下列情形**继续做只会产出看起来合法、实际错误的结果**。遇到就停，把证据整理清楚交给用户，
-不要用相似度蒙一个、也不要用"通过校验"当免责理由。
+下列情形通常意味着源数据存在严重缺陷。
+- 在**协作模式**下：遇到下列情形必须停下，将证据整理清楚后交给用户决策。
+- 在**全托管模式（面向小白）**下：Agent 授权作为逆向工程师自主介入。对于存在明确修复可能的问题（如符合四判据的 IB 越界、可在同级包中找到同名同哈希 donor 的缺失贴图、超大贴图降级等），由 Agent 编写并执行专有装配脚本进行自愈（详见第 13 节），无需中途向小白打扰提问；**仅当核心主体资产（主 Diffuse、基础网格、目标角色 catalog）彻底缺失且完全不可恢复时，才终止并向用户报告**。
 
 | 情形 | 为什么必须停 | 报告要带什么 |
 | --- | --- | --- |
@@ -662,6 +696,679 @@ assert (m2, p2) == (m, p)                               # FINAL_READBACK
   "绑定未知，逐 draw 取值读不出"，并如实披露；不能假设"大概是把槽位映射到某属性"。
 
 四类都不要试图用"同名同义"去补：命名相似不构成证据。
+
+---
+
+
+
+---
+
+## 13. Agent 专有装配脚本编写指南与自愈模式库
+
+当源 Mod 为非规范包（多状态组合键、包含伴随 INI、DDS 缺失、IB 末尾越界、包含自定义 Shader）导致 CLI 的 `bem_tool convert` 抛错中断时，**在全托管模式下，Agent 严禁停下向小白用户求助，必须作为逆向工程师在工作区编写专有 Python 脚本（如 `workspace/build_mod.py`）完成自主修复与装配**。
+
+### 13.1 专有脚本的标准骨架（Standard Assembly Skeleton）
+
+专有脚本在工作区运行，复用底层 `bem_v1`、`component_auto`、`bem_merge`，通过内存中的 `Overlay` 动态净化与修复。
+
+**先弄清为什么需要 Overlay。** `component_auto.prepare()` 第一行是 `sections(src.read_exact(ini).decode('utf-8-sig'))`（`component_auto.py:170`），而 `efmi_source.sections()` 遇到重复段直接 `raise ValueError(f"duplicate INI section: {name}")`（`efmi_source.py:20-21`）。也就是说：**只要入口 INI 里有重复段，`prepare` 连解析都过不去**，与内容是否正确无关。`bem_merge` 会按加载器语义（首次出现生效、include 展开、命名空间重写、水印剥离）算出真正生效的段，压成一个无重复的字典再喂给 `prepare`，就绕过了这个纯语法门槛。这是 Overlay 存在的唯一理由，不是"绕过校验"。
+
+**这不是理论问题，四个真实包的对照**（`prepare` 用的是"入口文件单文件视图"，Overlay 给的是"加载器合并视图"）：
+
+| 包 | 文件数 | 存活段 | 唯一名 | 跨命名空间冲突 | 单文件视图 | 合并视图 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 伊冯-围裙 | 1 | 134 | 134 | 0 | **解析即抛** `duplicate INI section: Constants` | 命中 `chr_0017_yvonne`，11 个入口 |
+| 伊冯-26W | 3 | 477 | 293 | **182** | **解析即抛** `duplicate INI section: Constants` | 过了解析，但报 `SOURCE_IDENTITY`（没有 ComponentN 基础入口） |
+| 弧光-02 | 1 | 99 | 99 | 0 | 解析通过 | 解析通过，两者都报 `CHARACTER_CATALOG`（资料不覆盖） |
+| 梨诺-颜色切换 | 1 | 274 | 274 | 0 | 解析通过 | 解析通过，两者都报 `CHARACTER_CATALOG` |
+
+读法：**"伊冯-围裙"这一类包，不做 Overlay 就完全无法自动转换**——它在单文件视图下连段都解析不出来，而在合并视图下能正常命中角色资料并产出 11 个部件入口。反过来，弧光-02 和梨诺-颜色切换是 `manual_only`，Overlay 帮不上忙，报的是资料缺失而不是语法问题——**这两种失败必须分开报**，否则会把"资料不覆盖"误诊成"格式不规范"。伊冯-26W 则是第三类：语法过了、身份不成立，需要按 §12 的停止条件处理。
+
+**两条硬约束，写脚本时必须遵守**：
+
+1. **路径要相对定位，不能抄本机绝对路径。** 脚本要能在任何人的机器上跑，`F:/…` 这类路径只能出现在你自己的临时调试里。用 `Path(__file__)` 往上找到 `tools/CustomModel`，找不到就报错退出，不要静默降级。
+2. **`standard_worker.normalize_entries` 不存在。** 早期文档里的这个符号在本树中没有任何定义（`grep -rn "def normalize_entries" tools/CustomModel/*.py` 为空）。段归一化现在由 `bem_merge` 承担。照抄旧骨架会在 import 行就 `ImportError`，且看起来像"环境问题"，很容易被误判。
+
+```python
+"""Dedicated assembly script for non-standard mod conversion."""
+import sys, copy, json
+from pathlib import Path
+
+# --- 1. 相对定位工具根：从脚本位置向上找，找不到就明确失败 -------------------
+def find_tools_root(start: Path) -> Path:
+    for base in [start, *start.parents]:
+        candidate = base / "CustomModel"
+        if (candidate / "bem_v1.py").is_file():
+            return candidate
+        if (base / "bem_v1.py").is_file() and base.name == "CustomModel":
+            return base
+    raise SystemExit("TOOLS_ROOT_NOT_FOUND: 把本脚本放进 worktree 内，或用 --tools-root 指定")
+
+TOOLS_ROOT = find_tools_root(Path(__file__).resolve().parent)
+sys.path.insert(0, str(TOOLS_ROOT))
+sys.path.insert(0, str(TOOLS_ROOT / "skills/bem-creator/scripts"))
+
+import bem_v1 as bem
+import component_auto
+import bem_merge
+from convert_efmi_poc import Source
+from efmi_source import value
+from bem_projects import validated
+
+
+class Overlay(Source):
+    """In-memory INI overlay that never touches source files on disk."""
+
+    def __init__(self, src: Source, ini: str, sec_dict: dict[str, str]):
+        self.source, self.path, self.names = src, src.path, src.names
+        self.ini = ini
+        self.raw = "\n\n".join("[" + n + "]\n" + b for n, b in sec_dict.items()).encode("utf-8")
+
+    def read_exact(self, name: str) -> bytes:
+        if name.replace("\\", "/") == self.ini.replace("\\", "/"):
+            return self.raw
+        return self.source.read_exact(name)
+
+
+def flatten_live_sections(merged: bem_merge.MergeResult) -> dict[str, str]:
+    """All surviving sections, keyed by written name, as raw bodies.
+
+    Flattens every document (not just documents()[0]): entries frequently live in
+    an included file, and prepare() looks them up by name in one flat dict.
+    Sections that lost a duplicate are absent — that is the point.
+
+    KNOWN LIMIT: this collapses namespaces. When the same plain name lives in two
+    namespaces (measured: 182 such names in one real package), only the first
+    survives here. The loader keeps both. prepare() only understands plain names,
+    so this is a lossy compromise forced by the route, not a correct merge.
+    If merged.collisions() is non-empty, check that the lost copies are not
+    referenced by a namespaced `run = CommandList\\Name` you care about; if they
+    are, this route is not safe for that package.
+    """
+    out: dict[str, str] = {}
+    for _relative, sections in merged.documents():
+        for name, section in sections.items():
+            out.setdefault(name, section.body)
+    return out
+
+
+def build_package(source_dir: Path, output_bem: Path, character_id: str, package_name: str,
+                  legacy_aliases: dict | None = None, clamp_draws: list | None = None,
+                  root_offset_y: float | None = None, material_overrides: dict | None = None):
+    src = Source(source_dir)
+    merged = bem_merge.merge(source_dir)
+    if not merged.entry:
+        raise SystemExit("NO_ENTRY: bem_merge 没找到入口 INI，先跑 bem_triage.py 看路由")
+    active_ini = merged.entry
+    clean_sec = flatten_live_sections(merged)
+
+    # 2. 净化全局雨雪等外部冲突贴图（哈希取自实际源包，不要凭记忆写）
+    for section, body in list(clean_sec.items()):
+        if section.startswith("TextureOverride_Texture") and value(body, "hash") in ("7d330dbd", "e69d7088"):
+            del clean_sec[section]
+
+    # 3. 匹配角色 Catalog（可注入历史哈希别名）
+    db = copy.deepcopy(component_auto.catalogs())
+    cat = next((c for c in db if c["character_id"] == character_id), None)
+    if cat is None:
+        raise SystemExit(f"CATALOG_MISS: catalog/ 里没有 {character_id}，不要手改 catalog 凑数")
+    if legacy_aliases:
+        cat["entries"].update(legacy_aliases)
+
+    # 4. 剥离 3DMigoto 运行时触发器（BEM 里没有这个命令）
+    for key in list(clean_sec):
+        if key.startswith("CommandList_Draw_Component"):
+            clean_sec[key] = clean_sec[key].replace("run = CommandListTriggerResourceOverrides", "")
+    clean_sec.pop("CommandListTriggerResourceOverrides", None)
+
+    # 5. 修复 IB 越界：改的是 draw 声明的 count，不是缓冲区本身。
+    #    clamp_draws 的每一项必须是 (component_id, declared_count, safe_count, first)，
+    #    safe_count 由 bem_repair.py ib-audit 给出，不要自己估。
+    if clamp_draws:
+        for cid, declared, safe, first in clamp_draws:
+            draw_key = f"CommandList_Draw_Component{cid}"
+            body = clean_sec.get(draw_key)
+            if body is None:
+                raise SystemExit(f"DRAW_SECTION_MISSING: {draw_key}")
+            old = f"drawindexed = {declared}, {first}, 0"
+            new = f"drawindexed = {safe}, {first}, 0"
+            if old not in body:
+                raise SystemExit(f"DRAW_PATTERN_MISS: 在 {draw_key} 里找不到 {old!r}，先 dump 原文核对")
+            clean_sec[draw_key] = body.replace(old, new)
+
+    # 6. 内存装配。prepare 内部已跑 validate_manifest + check_geometry。
+    overlay = Overlay(src, active_ini, clean_sec)
+    builder, info = component_auto.prepare(overlay, active_ini, database=[cat])
+    builder.m["name"] = package_name
+
+    # 7. 注入 BEM 1.5 特性。能力声明与字段必须同时出现，否则校验会拒。
+    if root_offset_y is not None:
+        caps = builder.m.setdefault("required_capabilities", [])
+        if "root-offset-v1" not in caps:
+            caps.append("root-offset-v1")
+        builder.m["root_offset"] = {"path": "Bip001", "translation": [0.0, float(root_offset_y), 0.0]}
+
+    if material_overrides:
+        caps = builder.m.setdefault("required_capabilities", [])
+        if "material-overrides-v1" not in caps:
+            caps.append("material-overrides-v1")
+        for mesh in builder.m.get("meshes", []):
+            for draw in mesh.get("draws", []):
+                draw.setdefault("material_overrides", {}).update(material_overrides)
+
+    # 8. 原子写入 + 逐字节回读。只写不读回来，等于没验证。
+    output_bem.parent.mkdir(parents=True, exist_ok=True)
+    tmp = output_bem.with_suffix(output_bem.suffix + ".tmp")
+    builder.write(tmp)
+    m, p = validated(tmp)          # 真的把文件读回来重新校验
+    tmp.replace(output_bem)
+    print(f"built & read back: {output_bem} ({output_bem.stat().st_size} bytes)")
+    return m, p, info
+```
+
+**这个骨架仍然做不到的事，别假装它做到了**：`prepare` 只处理"每个部件一条连续索引区间"的情形（`component_auto.py:218-224` 对 `bindings`、缓冲切换、非零 `base` 一律抛错）。多材质槽重排、跨缓冲 draw、需要重建顶点流的包，走 `bem_assemble.py`，或者按 §13.5 自己写 `Builder` 调用。骨架里没有 `bem_peer` 的调用：借用 donor 是独立决策，见 §13.3。
+
+### 13.2 模式一：IB 索引越界安全裁剪（F3 根因自愈）
+
+当 `bem_triage.py` 报出 `INDEX_BUFFER_OVERRUN` 时，先跑：
+
+```bash
+python scripts/bem_repair.py ib-audit <包根>/Meshes/Component0_IB.buf --first 0 --count 54018 --stride 2
+```
+
+它会给出 `available_from_first`、`short_by`、`overrun`、`fixable`、`clamped_count`、`dropped_triangles`。**先看数字再决定**，不要凭"越界了"就动手。
+
+**关键纠正：要改的是 draw 声明的 `count`，不是索引缓冲区。** 早期文档给过一个 `clamp_index_buffer()`，把 `.buf` 按 `len//stride` 截断后另存。那个写法有三个致命问题：
+
+1. **它完全无视 `first`。** 越界的是 `first + count > total`，而 `total` 是缓冲区长度。从 `first` 之后可用的索引数是 `total - first`，不是 `total`。`first > 0` 时截断到 `total` 等于没修。
+2. **它把缓冲区写短了。** 缓冲区是源包资产，改短会改变 payload 的字节身份，并且同一个 `.buf` 常被多个 draw 共用——为一个 draw 截断，会顺手弄坏其他 draw。
+3. **它不判断丢了多少三角形。** 裁剪必然删几何，删了多少必须能报出来，否则交付说明就是假的。
+
+正确做法是只改 INI 里那一条绘制声明的 `count`（见 §13.1 骨架第 5 步），让 `count` 落在 `[3 的倍数, total - first]` 内，缓冲区一个字节都不动：
+
+```bash
+# 先算出安全值，再决定接受不接受。结果打到 stdout（不写文件）
+python scripts/bem_repair.py ib-clamp <包根>/Meshes/Component0_IB.buf \
+    --first 0 --count 54018 --stride 2
+# 不接受几何损失时它会拒绝，并给出 IB_TRUNCATION_NOT_ACCEPTED
+```
+
+`ib-clamp` 只有在显式传 `--accept-truncation` 时才会给出裁剪结果，并且**永远不写回 `.buf`**——它输出的是"该把 count 改成多少"这份结论。把结论落到 INI 是你的脚本的事。
+
+### 13.3 模式二：同名/同哈希 DDS 自动借用与注入（F1 根因自愈）
+
+当 `bem_triage.py` 报出某个 DDS 缺失时，**"找到了同名文件"不等于"这是同一张贴图"**。同名不同内容的 DDS 在真实包里非常常见（同一角色不同皮肤共用文件名、作者复用旧版资源），盲抄会把错误的法线贴图贴到脸上，而校验器不会报错——它只看字节是否合法。
+
+分两步，中间必须有人（或脚本）做判断：
+
+```bash
+# 第一步：找候选。输出分两档：strong（相对路径一致）/ weak（仅文件名一致）
+# 结果打到 stdout，按字节大小分组，同名不同大小标 conflict
+python scripts/bem_repair.py donor-find "Body_Diffuse.dds" --root ..
+```
+
+`donor-find` **不复制任何东西**。
+
+```bash
+# 第二步：带着证据复制。必须给 --expect-size 或 --expect-sha256
+python scripts/bem_repair.py donor-copy "<donor-find 输出里的某一个候选路径>" \
+    -o ./payloads/ --expect-sha256 3f2a...
+```
+
+`donor-copy` 的入参是 `donor-find` 列出的**某一个候选**（不是"缺失文件名 + 源目录"两个自由参数），输出目录用 `-o`。没有 `--expect-size` / `--expect-sha256` 时它拒绝（`DONOR_NO_EVIDENCE`），目标已存在时拒绝（`DONOR_WOULD_OVERWRITE`，需显式 `--force`）。这条约束是故意的：**证据等级必须写在命令里**，不能写在注释里。
+
+证据从哪来，按可靠性排序：
+
+| 证据 | 等级 | 说明 |
+| --- | --- | --- |
+| 源包 `hash=` 与 donor 包 `hash=` 相同 | exact | 最硬。同一 hash 就是同一资源 |
+| 相对路径完全一致（含子目录） | computed | `strong` 档的含义。路径是作者的身份声明 |
+| 仅文件名一致 + 字节大小一致 | inferred | `weak` 档。可以接受，但要在交付说明里写明 |
+| 仅文件名一致，大小不同 | 不可用 | 这是冲突，不是候选 |
+
+四个条件都不满足时，正确结论是**这个槽位没有 donor**，走原生材质槽（丢掉该槽位），不要造一张贴图填进去。
+
+### 13.4 模式三：超大贴图（16K / >256MB）Mip0 自动剥离（规避硬上限）
+
+当单张 DDS 超过 256 MiB 时引擎会拒绝加载。用工具，不要手写：
+
+```bash
+# 先看清结构：尺寸、格式、mip 数、array size、是否 cubemap
+python scripts/bem_repair.py dds-audit <贴图>.dds
+
+# 剥离 mip0 并重建成新文件（输入不动）
+python scripts/bem_repair.py dds-mipdrop <贴图>.dds -o <输出>.dds
+```
+
+**为什么不能照抄早期那段 20 行的 `drop_mip0_dds()`**：它写死了 `mip0_bytes = blocks_w * blocks_h * 16`，而每个块的字节数是随格式变的——BC1/BC4 是 8，BC5/BC6H/BC7 是 16，未压缩格式连块都不是。它还只处理了一个 slice：对 `array_size > 1` 或 cubemap（`misc & 0x4`），mip0 在**每个** slice 里都有一份，只切第一份会让文件长度对不上，运行时直接拒收或读到错位数据。
+
+`dds-mipdrop` 做对的几件事：按 DXGI 格式查每块字节数；按 `array_size` 逐 slice 重建；拒绝体积纹理（`DDS_VOLUME_UNSUPPORTED`）；重建后断言长度等于 `header_len + (per_slice - mip_sizes[0]) * array_size`（`DDS_REBUILD_MISMATCH`）；单 mip 时拒绝（`DDS_SINGLE_MIP`）；剥完仍超限时拒绝（`DDS_STILL_OVER_LIMIT`，除非显式 `--allow-still-over`）。
+
+剥掉 mip0 是**降质**：贴图在近景会糊。这必须写进交付说明，不能当作无损修复。
+
+### 13.5 模式四：多状态空间与 Option Groups 自动转译
+
+当 `bem_state_probe.py` 探测出多个按键切换状态时，在 `project.json` 中配置 `option_groups` 与 `component_rules`。
+
+**两个最容易写错的结构细节**（错了只会拿到 `Invalid component rule` / `Invalid condition node` 这种笼统报错，看着像数据问题，其实是格式问题）：
+
+1. `component_rules` 是**每个部件目标一条、按目标顺序排列**，每条形如 `{"target": N, "candidates": [...]}`，**不是** `{"component": N, "rules": [...]}`。校验器要求 `len(component_rules) == len(target.components)` 且 `rule['target'] == 下标`（`bem_v11.py:742-746`）。
+2. `when` **不是字符串表达式**。它是结构化节点——`true`、`{"eq": [组, 选项]}`、`{"all": [...]}`、`{"any": [...]}`、`{"not": ...}`——由 `_condition()` 校验（`bem_v11.py:123-142`）。写 `"glasses == 'off'"` 会直接判为不支持的条件。
+
+```json
+{
+  "option_groups": [
+    {
+      "id": "glasses",
+      "name": "眼镜开关",
+      "default": "on",
+      "choices": [
+        {"id": "on", "name": "佩戴"},
+        {"id": "off", "name": "摘下"}
+      ]
+    }
+  ],
+  "component_rules": [
+    {"target": 0, "candidates": [{"when": true, "operation": "keep"}]},
+    {"target": 1, "candidates": [{"when": true, "operation": "keep"}]},
+    {"target": 2, "candidates": [{"when": true, "operation": "keep"}]},
+    {
+      "target": 3,
+      "candidates": [
+        {"when": {"eq": ["glasses", "off"]}, "operation": "hide"},
+        {"when": {"eq": ["glasses", "on"]}, "operation": "replace", "mesh": 0}
+      ]
+    }
+  ]
+}
+```
+
+注意目标 0–2 的 `keep` 占位：每个部件至少要有一条候选，且**在任意合法组合下恰好有一条成立**（见 `BEM_FORMAT_SPEC` §7）。没被改动的部件不能省略。
+
+写完之后用 `bem_repair.py option-audit work/project.json` 自检：它会把每个合法组合都跑一遍，
+指出"哪个状态有 0 条或 2 条候选成立"，以及最坏状态下的 draw 数。注意 **256 是按单个网格判的，
+不是各部件求和**（`bem_v11.py:392-394` 对每个被选中的 mesh 单独求 `logic.maximum`），
+把各网格 draw 数相加会误报。详见 §13.15。
+
+### 13.6 模式五：BEM 1.5 专有特效与姿态注入
+
+遇到原包的 Shader 特效与高跟悬空，直接写入 BEM 1.5 字段：
+
+```python
+# 1. 材质与着色器覆盖 (material_overrides)
+draw_entry["material_overrides"] = {
+    "floats": {
+        "_TransparentDepthWrite": 1.0,
+        "_Cutoff": 0.5,
+        "_Smoothness": 0.3
+    },
+    "colors": {
+        "_BaseColor": [1.0, 1.0, 1.0, 1.0],
+        "_EmissionColor": [0.2, 0.2, 0.2, 1.0]
+    },
+    "disable_keywords": ["_ANISOTROPY_SPECULAR_ON"],
+    "enable_keywords": ["_ALPHAPREMULTIPLY_ON"]
+}
+
+# 2. 根骨偏移 (root_offset 修复高跟插地)
+manifest["required_capabilities"].append("root-offset-v1")
+manifest["root_offset"] = {
+    "path": "Bip001",
+    "translation": [0.0, 0.04, 0.0]
+}
+```
+
+### 13.7 模式六：入口 INI 重复段归一化（`ini-audit` / `ini-normalize`）
+
+`component_auto.prepare()` 用 `efmi_source.sections()` 读入口 INI，该函数在**任何**重名段上抛
+`duplicate INI section`（`efmi_source.py:20-21`）。这是纯语法门，与重复是否有害无关。
+
+加载器自己对重复段有两条**相反**的规则，搞反了就会改行为：
+
+| 段名类别 | 例子 | 重复时的实际语义 |
+| --- | --- | --- |
+| 无前缀"全局"段 | `Constants`、`Present`、`Rendering` | 按源顺序**追加**，同一变量后写覆盖前写 |
+| 带前缀段 | `TextureOverride*`、`CommandList*`、`Resource*`、`Pool*`、`Key*` | **只取首次出现**，后续副本被解析后丢弃 |
+
+所以"保留第一个"对全局段是错的，"全部合并"对带前缀段也是错的。
+
+```bash
+python bem_repair.py ini-audit F:/zmd/伊冯/伊冯-围裙/mod.ini
+python bem_repair.py ini-normalize F:/zmd/.../mod.ini -o work/mod.norm.ini
+```
+
+`ini-normalize` 在写盘前做两件事，任何一件不成立就拒绝：
+
+1. **投影不变**：把源文本和结果文本各自投影成 `(各段有效语句向量, 键查找表)`，两者必须完全相等；
+   带前缀段取首次赋值，全局段取末次赋值。不相等抛 `INI_PROJECTION_CHANGED` 并列出差异段。
+2. **幂等**：对结果再跑一遍归一化，必须无变化，否则抛 `INI_NOT_IDEMPOTENT`。
+
+它还会拒绝两种无法凭推断处理的情形：`namespace =`（显式空命名空间会改变全局追加语义）和
+缩进段头（`efmi_source.sections()` 的正则要求 `[` 在行首，人类读者却会算作段——两个读者对
+"文件里有什么"意见不一致，不猜）。
+
+**实测**（`伊冯-沁夏霓光`，三个活动 INI）：
+
+| 文件 | 源 | 归一化后 |
+| --- | --- | --- |
+| `065f9a34….ini` | `efmi_source.sections()` 抛 `duplicate INI section: Constants` | 202 段，通过 |
+| `ce1deef2….ini` | 5 段，通过 | 5 段，通过（无改动） |
+| `f38d483e….ini` | 抛 `duplicate INI section: Constants` | 6 段，通过 |
+
+`065f9a34` 的 `[Constants]×3` 与 `[Present]×3` 均为追加语义，语句数分别是 `[27, 7, 43]` 和
+`[1, 9, 54]`——三段都带内容，丢掉任意一段都会改变结果。
+
+### 13.8 模式七：条件贴图覆盖收敛为静态选择（`texture-normalize`）
+
+`component_auto.texture_table` 只接受一种形状：
+
+```ini
+[TextureOverride_X]
+hash = <hex>
+if $object_detected
+this = ResourceY
+endif
+```
+
+源包常写成 `if $swapvar_body==0 / this = ResourceA / else / this = ResourceB / endif`。这**不是缺陷**，
+是状态选择。`texture-normalize` 按给定状态解析分支、改写成上面的形状，再走一遍自己的输出证明
+选中的资源没变（变了抛 `TEXTURE_SELECTION_CHANGED`）。
+
+```bash
+python bem_repair.py texture-normalize work/mod.norm.ini -o work/mod.tex.ini
+python bem_repair.py texture-normalize in.ini -o out.ini --set '$swapvar_body=1'
+```
+
+环境取值的顺序是有讲究的，写反会静默丢掉全部覆盖：`Constants` 声明 → 内置假设
+（`$object_detected=1`、`$mod_enabled=1`、`$lod_level=0`、`$lod_detected=0`）→ `--set`。
+`Constants` 里声明的是**检测前**的值（常见 `$object_detected = 0`），而转换态就是"检测到、模组启用"，
+所以假设必须覆盖声明。实测 `伊冯-围裙`：顺序写反时 21 条覆盖全部被丢，改正后 21 条全部选中。
+
+逐 draw 的 `ps-tN =` 覆盖不动、原样保留并记入 `left_untouched`——收敛它等于改变某个 draw 绑哪张图。
+
+还有两个会让"条件解不出来"的坑，都不是包的错：
+
+- **变量名大小写**。3Dmigoto 的变量名不区分大小写，`Constants` 里写 `$SocksColor`、条件里写
+  `$sockscolor` 是同一个变量。用精确匹配的环境查表会把每条这类条件都判成 unknown。实测
+  `伊冯-沁夏霓光`：改正前 5 条贴图段被拒，改正后 22 条全部选中。
+- **倒卖水印**。同上，用 `bem_merge` 的规则在结构分析前剔除，否则横幅行会被当成"不支持的语句"。
+
+### 13.9 模式八：入口程序降级与模板代差（`entry-normalize`）
+
+`component_auto.validate_entry` 只接受一种分发程序（`component_auto.py:106-111`）。失败时先分清是
+哪一种，三种处理完全不同：
+
+| 现象 | 判断 | 处理 |
+| --- | --- | --- |
+| 旧式内联 `if $mod_enabled && DRAW_TYPE == 4 / handling = skip / run = CommandListX / endif` | 老模板 | **可降级**：改写成固定 LOD0 回调 + 合成分发器 + 声明 `$component_count` |
+| 分发器**缺**模板里的语句 | 包比模板老 | **可升级**：整段替换成规范九行，报告补了哪几条 |
+| 分发器**多**出模板不认识的语句 | 包比转换器**新** | **拒绝** `ENTRY_TEMPLATE_STALE`，列出多余语句；该改的是转换器模板，不是包 |
+| 组件声明 `$\EFMIv1\gpu_posed = 0` | 该 draw 留在原骨架 | **拒绝** `ENTRY_CPU_POSED_COMPONENT`，BEM 无法重新指向它 |
+
+第三种是本轮实测里最重要的一条。`伊冯-围裙` 是复杂集里**判为成功**的包，它的 11 个入口里有 10 个
+被 `ENTRY_PROGRAM: 分发流程超出已支持的 ComponentN 模板` 卡住，而真实差异只有 4 条**新增**语句：
+
+```
+$\EFMIv1\bones_count = $bones_count
+$\EFMIv1\instance_count = $max_instance_count
+$\EFMIv1\custom_mesh_scale = 1.00
+CommandList\EFMIv1\Callback_MergedSkeleton_ConnectComponent = ref CommandList_MergedSkeleton_ConnectComponent
+```
+
+把这 4 条删掉"修好"这个包，会同时删掉合并骨架连线、实例计数和自定义网格缩放。所以正确结论是
+**转换器模板落后于 EFMIv1 运行时**，需要补模板，而不是改包。第 11 个入口（`Component10`）声明
+`gpu_posed = 0`，属于另一类，同样不能改。
+
+反向的例子是 `伊冯-沁夏霓光`：10 个入口全是旧式内联（`handling = skip` 在守卫内），降级后 10/10
+通过 `validate_entry`，分发器与 `$component_count = 10` 自动补齐，其中 4 个入口原本只抑制不绘制，
+按 `standard_worker.normalize_entries` 的同一约定合成了空的 `CommandListBEMReviewedHideN` 回调。
+
+两个容易踩的细节：
+
+- 倒卖水印（`【防倒卖：…】_702728`）会被塞在 `endif` 之后。它不是语句，用 `bem_merge` 的同一条
+  规则（无 `=` 且有方括号 CJK 横幅）剔除后再做结构分析；否则 10 个入口会误判 2 个。
+- 降级后的文件会被重新解析，并对每个入口再跑一次真实的 `component_auto.validate_entry`；任何
+  一个不过就抛 `ENTRY_STILL_INVALID`，绝不写出未验证的结果。这条检查需要 `component_auto`，
+  所以在发行包里该子命令会拒绝（`ENTRY_TEMPLATE_UNAVAILABLE`），其余子命令不受影响。
+
+### 13.10 模式九：蒙皮调色板与顶点压缩（`skin-audit` / `skin-fix` / `vertex-compact`）
+
+这三条只对**已解包工程**（`project.json` + `payloads/`）生效。打包后的 `.bem` 里 payload 是压缩的，
+"改一个顶点"等于重写整个容器。
+
+规则来自校验器，不来自口味：调色板索引是 UINT8、至多 256 项；每个带权顶点的权重和是 65535
+（UNORM16）或 1.0（float）；索引**只有在该槽权重为 0 时**才允许越出调色板。
+
+```bash
+python bem_repair.py skin-audit work/project.json
+python bem_repair.py skin-fix  work/project.json -o work/fixed
+python bem_repair.py vertex-compact work/project.json --mesh 0 -o work/compact
+```
+
+`skin-fix` 只把**零权重**槽上的越界索引清零；带权重的越界一律拒绝
+（`SKIN_BONE_OUT_OF_PALETTE`），因为清零会让那块几何掉到根骨上。`--zero-weight-policy first` 才会
+处理"四个权重全 0"的顶点（给它整份权重压到骨骼 0），这是可见改动，必须显式开启。没有任何顶点
+需要改时不写文件，返回 `written: false`——复制几十兆去证明"没事可做"不是修复。
+
+`vertex-compact` 有三条约束，缺一条就会做出更糟的包：
+
+1. **共享缓冲必须整组压缩**。同一份顶点缓冲被多个 mesh 读时，只压一个会让旧缓冲必须留下，
+   包反而变大。实测 `洁尔佩塔-侦探`：mesh 0 单独压得到 66477/203284，看着省了 2/3；但 mesh 4
+   共用同一份流，整组压完是 203284/203284——一个顶点都不多余。工具因此按组判断并拒绝
+   （`VERTEX_COMPACT_NOOP`），而不是交出一个更大的包。
+2. **写前逐行校验**。每条 draw 的每个索引，新缓冲对应行的字节必须和旧缓冲完全相同；这是比
+   "三角形数没变"强得多的证明，顶点位置、权重、骨骼任一变化都会被抓到。
+3. **清理孤儿载荷**。压缩会新增一份顶点缓冲，旧的不清掉包只会变大。`prune_payloads` 遍历整个清单
+   收集 `payload` / `indices` / `preview` 引用（包括动画帧、音频、预览图），重编号后再写。
+
+### 13.11 模式十：合并骨架蒙皮改写（`skin-convert`）
+
+EFMI 里一旦出现 `Callback_MergedSkeleton_ConnectComponent`，蒙皮流写的就是**全局骨骼 id**，
+而 BEM 的 mesh 只能引用自己的调色板。两种源布局，都必须先转成网格本地调色板：
+
+| 源 stride | 形态 | 内容 |
+| --- | --- | --- |
+| 8 | 刚性 | 4 × UINT16 全局骨骼 id |
+| 16 | 带权 | 4 × UNORM16 权重（偏移 0）+ 4 × UINT16 全局 id（偏移 8） |
+
+目标布局只有两种，和原生网格一致：stride 12（2×U16 权重 + U8×4 索引）、stride 32
+（4×F32 权重 + U32×4 索引）。
+
+```bash
+python bem_repair.py skin-convert work/project.json --mesh 0 -o work/native
+python bem_repair.py skin-convert work/project.json --mesh 0 --target-stride 32 -o work/native
+python bem_repair.py skin-convert work/project.json --mesh 0 --palette palette.json -o work/native
+```
+
+调色板**按首次使用顺序**生成（不是按骨骼表顺序），写前逐顶点核对
+`(权重, 骨骼名)` 二元组，写后重读校验。五个拒绝码：`SKIN_MERGED_PALETTE_TOO_LARGE`
+（>256 根骨骼——这时只能拆网格）、`SKIN_BONE_OUT_OF_TABLE`、`SKIN_ALREADY_NATIVE`、
+`SKIN_NO_BONE_TABLE`（既没给 `--palette`，目标部件也没有骨骼表）、`SKIN_LAYOUT_UNKNOWN`。
+多个 mesh 共用同一份蒙皮缓冲时整组只重写一次，和 `vertex-compact` 同一套 `_stream_group` 逻辑。
+
+### 13.12 模式十一：贴图覆盖分类与重复身份（`texture-audit`）
+
+`component_auto.texture_table` 只认 `hash =` + `if $object_detected` + `this = Resource`。
+`texture-audit` 把每个 `TextureOverride*` 段分成四类，并**复现自动路径会抛出的那条错误**：
+
+| kind | 含义 | 自动路径的结论 |
+| --- | --- | --- |
+| `static` | 上述标准形状 | 可转换 |
+| `per_draw` | `ps-tN = ResourceX` 逐 draw 绑槽 | `TEXTURE_STATE: 不支持的贴图语句` |
+| `empty` | 只有 hash，没有语句 | `TEXTURE_STATE: 不完整的贴图覆盖` |
+| `unsupported` | 其它语句（如 `$active = 1` 标记段） | `TEXTURE_STATE: 不支持的贴图语句` |
+
+只有**重复 hash 是真阻断**（`blockers`）：两个段抢同一个身份，源本身对"哪张贴图生效"是歧义的，
+重写解决不了，必须问人。其余进 `manual_review`，应当原样带过去而不是丢掉。
+`ps-tN = null` 单独收进 `cleared_slots`——BEM 1.5 用 `texture_slots` 表达"这个槽什么都不绑"，
+和"没写这个槽"不是一回事。
+
+实测 `伊冯-围裙`：11 个入口、21 个静态覆盖、0 重复；`诀-庆典`（M0488）两个 `TextureOverride.Active.Mark`
+段带 `$active = 1`，进 `manual_review` 但不阻断。
+
+### 13.13 模式十二：角色资料缺口定位（`catalog-gap`）
+
+`component_auto.match_catalog` 要求**所有** `ComponentN` 身份同时出现在**同一个**角色的
+`catalog/*.json` 里，缺一个就整包拒绝，而且错误信息不说是哪一个。`catalog-gap` 回答这个问题：
+
+```bash
+python bem_repair.py catalog-gap work/mod.ini
+python bem_repair.py catalog-gap work/mod.ini --catalog-dir <tool root>/catalog
+```
+
+`verdict` 有五种，处理方式完全不同：
+
+- `matched`：恰好一个资料全覆盖 → 可以自动转换。
+- `ambiguous-profile`：多个资料都覆盖 → `match_catalog` 会以"匹配不唯一"拒绝，先查资料是否重复。
+- `mixed-characters`：缺口身份**在别的角色资料里** → 这个包混用了多个角色的部件，任何单一资料都
+  满足不了，需要拆包或手工映射。`identities_present_elsewhere` 直接给出归属。
+- `unknown-identity`：缺口身份**谁都不认识** → 缺的是"原资源 ↔ EFMI hash"的对应本身，先补资料。
+- `partial`：两者都有。
+
+它同时识别四种入口族，这是判断"能不能转换"的前提：
+
+| 入口族 | 形态 | 有读取器 |
+| --- | --- | --- |
+| `component-n` | `TextureOverride_(EntryPoint_)?ComponentN` | 是（`component_auto.BASE`） |
+| `hash-lod` | `TextureOverride_(EntryPoint_)?LODn.<hash>_<count>_<first>` | 是（`efmi_lod_source.ENTRY`） |
+| `bare-hash` | `TextureOverride_<hash>_<count>_<first>` | **否** |
+| `ib-component` | `TextureOverride_IB_<hash>_<label>_ComponentN` | **否**（只有 `bem_triage` 认它是 CrossIB 重定向） |
+
+后两种会被报成 `ENTRY_FAMILY` 阻断：身份齐全也降低不了。
+
+**一个容易搞错的地方**：`ib-component` 段名里的 8 位十六进制**不是**绘制身份，而是作者导出时
+给顶点/索引缓冲的资源组标签；真正的身份是段体里的 `hash =`。实测
+`TextureOverride_IB_b21b22ac_衣服_Component1` 的段体是 `hash = 586b4574`——按段名取身份会得到
+一个谁都不认识的假 hash，还会被误判成"段名与段体不一致"。工具因此把段名那一段单独记在
+`resource_tag` 里。同理，`ib-component` 的 `ComponentN` 会按部件重复（cloth/body/skirt 各一个
+`Component1`），所以不能像 `component-n` 那样按组件下标查重。
+
+以 hash 命名的入口（`bare-hash`）自带 index count，降低流程根本不查角色资料，所以那种情况
+`catalog_required: false`，缺口只是参考信息。
+
+实测复杂集 15 个包：3 个 `matched`、10 个 `unknown-identity`、2 个 `not-required`（入口族没有
+读取器，但也不查资料）。也就是说本语料里"资料缺身份"占 2/3，不是偶发。
+
+### 13.14 模式十三：形态参数与增量载荷（`deformation-audit`）
+
+`bem_v13.validate_manifest` 遇错即抛，一个坏帧只会报一条。`deformation-audit` 把规则走完再汇总，
+并且**真的解一遍增量载荷**：
+
+```bash
+python bem_repair.py deformation-audit work/project.json --minor 3
+```
+
+它核对的是规格第 10 节那些不靠读代码看不出来的点：
+
+- 帧值从 `min` 起按 `step` 对齐、严格递增、必须**同时覆盖** `min` 和 `max`；
+- 恰好一个 `{"value":neutral,"neutral":true}` 中性帧，且它不带 payload；
+- 非中性帧字段恰好是 `value/payload/count/encoding`，`count` 可以为 0 但不超过顶点数；
+- payload 长度**恰好** `4 + J + 16N`，`J` 在 1..4096，头部 JSON 是
+  `{"count":N,"encoding":"sparse-position-f32"}`，索引在范围内且同帧唯一，增量是有限值；
+- 形变网格必须有 Float32 XYZ 位置属性（semantic 0、format 0、dimension 3）。
+
+`DEFORM_PAYLOAD_SIZE` 与 `DEFORM_PAYLOAD_HEADER` 经常一起出现：帧上写了 `count=3`、载荷里只有 2 条
+记录时，两个都不对——这正是手工改过帧表的典型痕迹。
+
+### 13.15 模式十四：选项空间枚举与 256 上限（`option-audit`）
+
+`bem_v11.selection_plan` 用符号决策图证明"每个部件恰好一个候选"，需要构建器模块（因而需要
+zstandard）。`option-audit` 改成**枚举**合法组合，好处是能说出**是哪个状态**坏了：
+
+```bash
+python bem_repair.py option-audit work/project.json
+```
+
+- 枚举时 `available_when` 不可用的组**没有取值**，针对它的 `eq` 一律为假——所以
+  "组隐藏"本身也是一个状态，不能只按笛卡尔积算。
+- `selection_constraints` 全部成立才算合法组合；默认组合也必须合法（`OPTION_DEFAULT_ILLEGAL`）。
+- 每个状态下逐条规则求值：0 个候选 → `OPTION_RULE_UNCOVERED`，≥2 个 → `OPTION_RULE_AMBIGUOUS`，
+  两者都带第一个违规状态。
+- **256 是按单个网格判的，不是各部件求和**。`bem_v11` 对每个被选中的 mesh 单独做
+  `logic.maximum(active, ...) <= 256`。两个各 200 draw 的网格永不同时出现，就不算超限；
+  把它们的 draw 数相加会误报。
+- 组合数超过 250000 时置 `truncated: true` 并在 `note` 里说明，不假装穷尽。
+
+### 13.16 模式十五：CrossIB 几何分组（`ib-groups`）
+
+CrossIB 的源侧审计做不了——重定向 shader 一出现，draw 的区间就不再对 `ib = ref X` 所声明的缓冲区
+成立（`bem_triage` 因此主动跳过，见 `CROSS_IB_SECTION_SKIPPED`）。转成 BEM 之后这个问题重新变得可回答：
+按网格**实际索引的字节**做指纹分组。
+
+```bash
+python bem_repair.py ib-groups work/project.json
+```
+
+- `shared-topology`（同一份索引字节、顶点不同）就是 CrossIB 的正常形态：一个拓扑、多套蒙皮。
+- `exact_duplicates` 指出逐字节相同的网格；打包器本来就会去重载荷，所以这只是信息。
+- `same_count_variants`（长度相同、字节不同）是拓扑变体，不是缺陷。
+- `index_size_conflicts` 是唯一的真错误：同一份索引缓冲不可能同时按两种宽度读。
+
+### 13.17 模式十六：形态键转滑条（`shape-params`）
+
+源包的 ShapeKey 数据不是"一个姿势"，而是"一整条可调范围"。缓冲区 `ShapeKeyVertexOffsets` 存的是
+**权重 1 的完整顶点偏移**，Unity 混合按权重线性叠加；`[Constants]` 里那个值只是源作者选的**起始点**。
+所以正确做法是输出两帧覆盖 0..1000，而不是把源默认值烘进顶点后当静态模型交付。
+
+```bash
+python bem_repair.py shape-params "mod/伊冯" work/project.json --output work/body-morphs.json
+```
+
+产出的就是 `deformation-audit` 和构建器本来就要的 `kind: bem-position-morphs` 配置：
+
+```json
+{"schema":1,"kind":"bem-position-morphs",
+ "parameters":[{"id":"shape_0_0","name":"Component 0 shape 0","min":0,"max":1000,
+                "neutral":0,"default":500,"step":1}],
+ "mesh_deformations":[{"mesh":0,"parameter":"shape_0_0","frames":[
+    {"value":0,"neutral":true},
+    {"value":1000,"efmi":{"source":"../../mod/伊冯","ini":"main.ini","component":0,
+                          "shape_key":0,"vertex_order":"exported"}}]}]}
+```
+
+- 帧只写 `efmi` 绑定，不写死偏移：真正的解码由 `efmi_shapes.decode_binding` 在构建时做，偏移永远
+  跟着源缓冲走，不会因为手工抄写而漂移。
+- `default` 取源常量，滑条初始位置与源一致；`neutral` 固定 0。
+- 部件 → 网格的映射走**默认外观**：`appearance.components[].target` 对应 `target.components[].id`，
+  `.mesh` 就是目标网格下标。默认外观没替换的部件会被跳过并列在 `skipped`。
+- 拒绝/阻断码：`SHAPE_DATA_ABSENT`（既没有资源声明也没有 setter 调用）、
+  `SHAPE_NOT_DRIVEN`（缓冲区声明并初始化了，但**没有任何调用方真正执行 setter**，源里滑条是死的、
+  权重恒 0，没有默认值可转 —— M0265 提弗洛斯-旗袍 就是这种：`[Constants]` 里只 `run =
+  CommandListInitializeShapeKeys`，`$shapekey_id`/`$shapekey_value` 全是 0，`CommandListSetShapeKey`
+  只在注释里出现）、`SHAPE_SOURCE_ARCHIVE`（rar/7z 需外部后端，先解压）、`SHAPE_RESOURCE_MISSING`、
+  `SHAPE_VERTEX_MAP_REQUIRED`（源顶点号超出导出网格，必须显式 `vertex_map`）、
+  `SHAPE_KEY_OUT_OF_RANGE`（键号超出 `batch*127`）、`SHAPE_POSITION_ATTRIBUTE`（缺 Float32 XYZ
+  位置属性）、`SHAPE_NO_DRIVEN_KEY`（该部件全部权重为 0）。
+- 写完配置后仍要走 `deformation-audit` 复核，再交给构建器：`shape-params` 只负责"该有哪些参数、
+  绑哪个源"，不代替格式校验。
+
+### 13.18 自我修改与调试闭环（Self-Correction Loop）
+
+Agent 编写专有脚本后，必须在工作区执行并校验，绝不把半成品交给用户：
+1. 运行专有脚本：`python workspace/build_mod.py`
+2. 运行双端校验：`python tools/CustomModel/bem_tool.py validate output.bem --report report.json`
+3. 检查校验报告：
+   - 若 `success == true`：校验通过，进入交付流程。
+   - 若校验失败：读取 `issues` 错误码（如 `UNBOUND_MATERIAL`、`BONE_PALETTE_OVERFLOW`），Agent 自行修改 `build_mod.py` 调整绑定，再次运行并校验，直至通过。
+
+### 13.19 面向小白的通俗交付清单规范
+
+完成制作后，Agent 需生成一份通俗易懂的说明，禁止充斥十六进制 hash，模板如下：
+
+```markdown
+### 转换交付完成
+
+- **产物文件**：`F:\...\package.bem`（已通过离线数据校验，兼容当前游戏版本）
+- **造型与切换说明**：
+  - [默认外观]：包含完整基础服装与发型。
+  - [部件开关]：已适配按键切换（如：按键切换外套穿脱、发型长短）。
+- **自动修复与优化**：
+  - [贴图补全]：原包漏带的 1 张装饰贴图，已自动从同角色资源库借用补齐。
+  - [模型修整]：原模型末尾存在 6 个异常超出边界的索引点，已自动平滑截断，无破面。
+  - [姿态优化]：已为高跟鞋添加 0.04 米站姿抬升微调，防止游戏中鞋跟陷入地面。
+  - [安全过滤]：已自动安全过滤原作者自带的外部 2D 鼠标悬浮菜单脚本。
+```
+
 
 ---
 

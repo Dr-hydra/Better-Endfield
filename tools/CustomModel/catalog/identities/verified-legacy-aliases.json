@@ -1,0 +1,2586 @@
+{
+  "schema": 1,
+  "kind": "bem-legacy-source-identity-aliases",
+  "manifest_version": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+  "policy": "original-vb0-crc32c-with-independent-exact-geometry-anchors-v1",
+  "sources": {
+    "buffer_creation": "https://github.com/SpectrumQT/XXMI-Libs-Package/blob/43e5c9b16f12526f3dbf65355cc2b8f4f3e69138/DirectX11/HackerDevice.cpp#L2142",
+    "vb_region": "https://github.com/SpectrumQT/XXMI-Libs-Package/blob/43e5c9b16f12526f3dbf65355cc2b8f4f3e69138/DirectX11/ResourceHash.cpp#L2150",
+    "identity_change": "https://github.com/SpectrumQT/EFMI-Tools/releases/tag/v0.4.2"
+  },
+  "constraints": [
+    "Use only with the exact recorded native manifest and component contract.",
+    "Aliases are source resource identities, not source ComponentN ordinal mappings.",
+    "Do not waive original index-count, bone palette, material, shader or appearance validation.",
+    "Full-VB descriptor policy [ByteWidth,DEFAULT=0,VERTEX_BUFFER=1,CPU=0,Misc=0,StructureByteStride=0] is anchored by exact native positions and indices in independent source packages; do not enumerate descriptors.",
+    "Unmatched hashes remain unsupported. Existing catalog verified flags were not modified."
+  ],
+  "characters": {
+    "chr_0003_endminf": {
+      "entries": {
+        "1061306c": 1,
+        "ba3f54e3": 2,
+        "9b5f1414": 3,
+        "a0f67a46": 4,
+        "484f1dc9": 5,
+        "de4df2c4": 7,
+        "7e44a343": 8,
+        "953431a6": 10
+      },
+      "evidence": {
+        "1061306c": {
+          "native_component": 1,
+          "native_mesh_id": "cab-3b977317898b4e9256dc96c165ab0327:-2025418779326084746",
+          "native_mesh_name": "S_actor_endminf_face_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "2b1ffa15",
+          "descriptor": [
+            28912,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 9000,
+          "source_anchor_count": 4,
+          "joint_index_equal_anchor_count": 4,
+          "source_task_ids": [
+            "M0134",
+            "M0135",
+            "M0155",
+            "M0159"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "ba3f54e3": {
+          "native_component": 2,
+          "native_mesh_id": "cab-c0654ef816ec0d1944e100a3a0362370:-4792605900652202046",
+          "native_mesh_name": "S_actor_endminf_cloth_03_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "4df20b05",
+          "descriptor": [
+            24768,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 4524,
+          "source_anchor_count": 3,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0134",
+            "M0135",
+            "M0155"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "9b5f1414": {
+          "native_component": 3,
+          "native_mesh_id": "cab-93154d9a601c82222072fffb26dfa40c:4700685562654819015",
+          "native_mesh_name": "S_actor_endminf_cloth_04_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "d8a78822",
+          "descriptor": [
+            124976,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 20577,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0154"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "a0f67a46": {
+          "native_component": 4,
+          "native_mesh_id": "cab-3c40e81cfd1df91d1ed3c3fa459dbbbc:-7607842917680683808",
+          "native_mesh_name": "S_actor_endminf_eyebrow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "e11a8571",
+          "descriptor": [
+            8128,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 1638,
+          "source_anchor_count": 5,
+          "joint_index_equal_anchor_count": 5,
+          "source_task_ids": [
+            "M0134",
+            "M0135",
+            "M0154",
+            "M0155",
+            "M0159"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "484f1dc9": {
+          "native_component": 5,
+          "native_mesh_id": "cab-6f206774b9ff0c286457044399a80776:-4835490286056515511",
+          "native_mesh_name": "S_actor_endminf_body_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "81f3747c",
+          "descriptor": [
+            54784,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 16524,
+          "source_anchor_count": 3,
+          "joint_index_equal_anchor_count": 3,
+          "source_task_ids": [
+            "M0135",
+            "M0154",
+            "M0159"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "de4df2c4": {
+          "native_component": 7,
+          "native_mesh_id": "cab-3c40e81cfd1df91d1ed3c3fa459dbbbc:2982690078685390048",
+          "native_mesh_name": "S_actor_endminf_iris_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "fcf859d0",
+          "descriptor": [
+            4416,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 1386,
+          "source_anchor_count": 5,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0134",
+            "M0135",
+            "M0154",
+            "M0155",
+            "M0159"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "7e44a343": {
+          "native_component": 8,
+          "native_mesh_id": "cab-3c40e81cfd1df91d1ed3c3fa459dbbbc:8059721880286651616",
+          "native_mesh_name": "S_actor_endminf_eyeshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "6d475893",
+          "descriptor": [
+            544,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 90,
+          "source_anchor_count": 7,
+          "joint_index_equal_anchor_count": 7,
+          "source_task_ids": [
+            "M0134",
+            "M0135",
+            "M0144",
+            "M0154",
+            "M0155",
+            "M0156",
+            "M0159"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "953431a6": {
+          "native_component": 10,
+          "native_mesh_id": "cab-3a75b5083e2256b0fbb15be02fb9ada9:3321678093741846373",
+          "native_mesh_name": "S_actor_endminf_cloth_02_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "6ae6ba07",
+          "descriptor": [
+            7520,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 2286,
+          "source_anchor_count": 3,
+          "joint_index_equal_anchor_count": 3,
+          "source_task_ids": [
+            "M0135",
+            "M0154",
+            "M0155"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0019_karin": {
+      "entries": {
+        "e3ee3b47": 1,
+        "d97e500c": 4,
+        "d9bbfb78": 5,
+        "9c39e0dc": 9
+      },
+      "evidence": {
+        "e3ee3b47": {
+          "native_component": 1,
+          "native_mesh_id": "cab-f40c8b85cf5fcc756be31affb44394fd:-828004702448209533",
+          "native_mesh_name": "S_actor_karin_brow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "ec9b924a",
+          "descriptor": [
+            6368,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 1356,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0399"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "d97e500c": {
+          "native_component": 4,
+          "native_mesh_id": "cab-f40c8b85cf5fcc756be31affb44394fd:-2367780662687649405",
+          "native_mesh_name": "S_actor_karin_eyeshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "c49d1a91",
+          "descriptor": [
+            640,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 108,
+          "source_anchor_count": 2,
+          "joint_index_equal_anchor_count": 2,
+          "source_task_ids": [
+            "M0399",
+            "M0400"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "d9bbfb78": {
+          "native_component": 5,
+          "native_mesh_id": "cab-338e88dd778f30581215fefbedb6107e:1765767024387249719",
+          "native_mesh_name": "S_actor_karin_face_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "4cd4456c",
+          "descriptor": [
+            32320,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 9978,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0399"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "9c39e0dc": {
+          "native_component": 9,
+          "native_mesh_id": "cab-f40c8b85cf5fcc756be31affb44394fd:-5086742363059539581",
+          "native_mesh_name": "S_actor_karin_iris_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "b60313ba",
+          "descriptor": [
+            3040,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 840,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0399"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0002_endminm": {
+      "entries": {
+        "0bf3c047": 3,
+        "fa905dcf": 6,
+        "12cc9f3e": 7,
+        "7f017574": 10
+      },
+      "evidence": {
+        "0bf3c047": {
+          "native_component": 3,
+          "native_mesh_id": "cab-eb448507b304dc58eb6c4939b6aa9f90:581639480136862770",
+          "native_mesh_name": "S_actor_endminm_cloth_03_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "92b5ef16",
+          "descriptor": [
+            24768,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 4524,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0386"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "fa905dcf": {
+          "native_component": 6,
+          "native_mesh_id": "cab-ba4a7e3d5cf09fde977dc17e2615c482:-3032329694686463412",
+          "native_mesh_name": "S_actor_endminm_eyebrow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "1f8ca008",
+          "descriptor": [
+            7648,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 1608,
+          "source_anchor_count": 2,
+          "joint_index_equal_anchor_count": 2,
+          "source_task_ids": [
+            "M0384",
+            "M0386"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "12cc9f3e": {
+          "native_component": 7,
+          "native_mesh_id": "cab-ba4a7e3d5cf09fde977dc17e2615c482:7081242689303296588",
+          "native_mesh_name": "S_actor_endminm_eyeshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "50cfd958",
+          "descriptor": [
+            1376,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 114,
+          "source_anchor_count": 4,
+          "joint_index_equal_anchor_count": 4,
+          "source_task_ids": [
+            "M0384",
+            "M0386",
+            "M0388",
+            "M0389"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "7f017574": {
+          "native_component": 10,
+          "native_mesh_id": "cab-ba4a7e3d5cf09fde977dc17e2615c482:-6784116381499966900",
+          "native_mesh_name": "S_actor_endminm_iris_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "1a309bf6",
+          "descriptor": [
+            3808,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 1128,
+          "source_anchor_count": 2,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0384",
+            "M0386"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0004_pelica": {
+      "entries": {
+        "5104e6f9": 2,
+        "be81e8e5": 5,
+        "ed6711c6": 6,
+        "9810da22": 8,
+        "226bfd16": 9
+      },
+      "evidence": {
+        "5104e6f9": {
+          "native_component": 2,
+          "native_mesh_id": "cab-4d3b6094023b68683eff277e9dc3bfa8:1039383356713753500",
+          "native_mesh_name": "S_actor_pelica_body_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "e85036a3",
+          "descriptor": [
+            18528,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 5922,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0088"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "be81e8e5": {
+          "native_component": 5,
+          "native_mesh_id": "cab-99e2787fd148e9debecf0263cc8f17c8:-5360918969602232288",
+          "native_mesh_name": "S_actor_pelica_iris_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "9670a727",
+          "descriptor": [
+            1856,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 480,
+          "source_anchor_count": 5,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0073",
+            "M0079",
+            "M0082",
+            "M0083",
+            "M0088"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "ed6711c6": {
+          "native_component": 6,
+          "native_mesh_id": "cab-99e2787fd148e9debecf0263cc8f17c8:740906136397787168",
+          "native_mesh_name": "S_actor_pelica_eyeshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "b77de48b",
+          "descriptor": [
+            576,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 96,
+          "source_anchor_count": 9,
+          "joint_index_equal_anchor_count": 9,
+          "source_task_ids": [
+            "M0073",
+            "M0079",
+            "M0082",
+            "M0083",
+            "M0086",
+            "M0088",
+            "M0089",
+            "M0090"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "9810da22": {
+          "native_component": 8,
+          "native_mesh_id": "cab-55fb60b664c8e2d56cd7020bba5e7d58:6036074280315204002",
+          "native_mesh_name": "S_actor_pelica_cloth_04_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "6ef05269",
+          "descriptor": [
+            25536,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 8460,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0083"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "226bfd16": {
+          "native_component": 9,
+          "native_mesh_id": "cab-083250b1923949862d97010377544f49:1322269581982536016",
+          "native_mesh_name": "S_actor_pelica_cloth_03_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "c7c40d4e",
+          "descriptor": [
+            7696,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 2178,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0088"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0005_chen": {
+      "entries": {
+        "50d98de2": 5
+      },
+      "evidence": {
+        "50d98de2": {
+          "native_component": 5,
+          "native_mesh_id": "cab-3e3292ab6bcaf82592d4754706fc0277:-6465188344288491545",
+          "native_mesh_name": "S_actor_chen_eyeshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "d275f881",
+          "descriptor": [
+            576,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 96,
+          "source_anchor_count": 3,
+          "joint_index_equal_anchor_count": 3,
+          "source_task_ids": [
+            "M0527",
+            "M0536"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0006_wolfgd": {
+      "entries": {
+        "7bbdd220": 12
+      },
+      "evidence": {
+        "7bbdd220": {
+          "native_component": 12,
+          "native_mesh_id": "cab-618ad2205453b7b8fbabe801e7fe2f38:701160496586736765",
+          "native_mesh_name": "S_actor_wolfgd_hair_02_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "9823fa10",
+          "descriptor": [
+            12192,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 2574,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0382"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0007_ikut": {
+      "entries": {
+        "881c2c14": 0,
+        "f40bf82b": 4,
+        "078861af": 7,
+        "acba4f73": 8
+      },
+      "evidence": {
+        "881c2c14": {
+          "native_component": 0,
+          "native_mesh_id": "cab-e1aef6b79bd7f6dd3ee0069a5cda0e24:6646037808956939394",
+          "native_mesh_name": "S_actor_ikut_body_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "5934537e",
+          "descriptor": [
+            31952,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 9459,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0213"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "f40bf82b": {
+          "native_component": 4,
+          "native_mesh_id": "cab-57f49390ee05f0fe7d2be108d88e16bb:-522003353420793761",
+          "native_mesh_name": "S_actor_ikut_eyeshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "06b5e3db",
+          "descriptor": [
+            576,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 96,
+          "source_anchor_count": 3,
+          "joint_index_equal_anchor_count": 3,
+          "source_task_ids": [
+            "M0211",
+            "M0213",
+            "M0214"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "078861af": {
+          "native_component": 7,
+          "native_mesh_id": "cab-57f49390ee05f0fe7d2be108d88e16bb:3780478574341552223",
+          "native_mesh_name": "S_actor_ikut_hairshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "8b44b758",
+          "descriptor": [
+            1040,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 270,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0213"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "acba4f73": {
+          "native_component": 8,
+          "native_mesh_id": "cab-57f49390ee05f0fe7d2be108d88e16bb:-7330290822751618977",
+          "native_mesh_name": "S_actor_ikut_iris_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "518a2329",
+          "descriptor": [
+            3936,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 1152,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0213"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0009_azrila": {
+      "entries": {
+        "382b8324": 0,
+        "017770a8": 2,
+        "1e3266c6": 5,
+        "c7cc6650": 6,
+        "a883cfd7": 9,
+        "f415f0a3": 10
+      },
+      "evidence": {
+        "382b8324": {
+          "native_component": 0,
+          "native_mesh_id": "cab-01e69e7e896cba12299d0ec6479403b7:1772553492714972352",
+          "native_mesh_name": "S_actor_azrila_body_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "a5a5da09",
+          "descriptor": [
+            11152,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 3138,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0052"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "017770a8": {
+          "native_component": 2,
+          "native_mesh_id": "cab-9f17f981b6b810f16cfd197f94d56d79:-3474465688963984176",
+          "native_mesh_name": "S_actor_azrila_cloth_02_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "7d9268a9",
+          "descriptor": [
+            8160,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 1782,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0053"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "1e3266c6": {
+          "native_component": 5,
+          "native_mesh_id": "cab-6e20cb109ea37f27928b576798f6affa:3042198689244887059",
+          "native_mesh_name": "S_actor_azrila_eyeShadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "4df643e5",
+          "descriptor": [
+            576,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 96,
+          "source_anchor_count": 6,
+          "joint_index_equal_anchor_count": 6,
+          "source_task_ids": [
+            "M0050",
+            "M0052",
+            "M0053",
+            "M0058",
+            "M0061",
+            "M0063"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "c7cc6650": {
+          "native_component": 6,
+          "native_mesh_id": "cab-6e20cb109ea37f27928b576798f6affa:-3913648365092882413",
+          "native_mesh_name": "S_actor_azrila_eyebrow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "63ed3172",
+          "descriptor": [
+            6592,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 1434,
+          "source_anchor_count": 5,
+          "joint_index_equal_anchor_count": 5,
+          "source_task_ids": [
+            "M0050",
+            "M0052",
+            "M0053",
+            "M0058",
+            "M0063"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "a883cfd7": {
+          "native_component": 9,
+          "native_mesh_id": "cab-6e20cb109ea37f27928b576798f6affa:3997977027316791315",
+          "native_mesh_name": "S_actor_azrila_hairshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "dbde2184",
+          "descriptor": [
+            2144,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 366,
+          "source_anchor_count": 5,
+          "joint_index_equal_anchor_count": 5,
+          "source_task_ids": [
+            "M0050",
+            "M0052",
+            "M0053",
+            "M0058",
+            "M0063"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "f415f0a3": {
+          "native_component": 10,
+          "native_mesh_id": "cab-6e20cb109ea37f27928b576798f6affa:8123726293087729683",
+          "native_mesh_name": "S_actor_azrila_iris_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "ec0613b0",
+          "descriptor": [
+            3360,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 948,
+          "source_anchor_count": 6,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0050",
+            "M0052",
+            "M0053",
+            "M0058",
+            "M0063",
+            "M0064"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0011_seraph": {
+      "entries": {
+        "945fe808": 6,
+        "fec42b96": 7,
+        "e06c83c6": 8,
+        "fa25a9d5": 10,
+        "fdaba944": 11,
+        "f5290f58": 12
+      },
+      "evidence": {
+        "945fe808": {
+          "native_component": 6,
+          "native_mesh_id": "cab-757f52a5fce6103245776b4f75712413:-3183883943098297495",
+          "native_mesh_name": "S_actor_seraph_cloth_06_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "e2b69b45",
+          "descriptor": [
+            22976,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 3576,
+          "source_anchor_count": 2,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0518",
+            "M0520"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "fec42b96": {
+          "native_component": 7,
+          "native_mesh_id": "cab-19db7ff10214dc00592df227e7560190:1044735982729054419",
+          "native_mesh_name": "S_actor_seraph_eyebrow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "82ba3c2f",
+          "descriptor": [
+            7904,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 1584,
+          "source_anchor_count": 4,
+          "joint_index_equal_anchor_count": 4,
+          "source_task_ids": [
+            "M0509",
+            "M0517",
+            "M0518",
+            "M0520"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "e06c83c6": {
+          "native_component": 8,
+          "native_mesh_id": "cab-19db7ff10214dc00592df227e7560190:2976333441058293971",
+          "native_mesh_name": "S_actor_seraph_eyeshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "cbdfb343",
+          "descriptor": [
+            608,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 102,
+          "source_anchor_count": 6,
+          "joint_index_equal_anchor_count": 6,
+          "source_task_ids": [
+            "M0509",
+            "M0517",
+            "M0518",
+            "M0519",
+            "M0520"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "fa25a9d5": {
+          "native_component": 10,
+          "native_mesh_id": "cab-a386b9b65db755ef1089e0981c02909d:2451272177172566774",
+          "native_mesh_name": "S_actor_seraph_hair_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "f90deb94",
+          "descriptor": [
+            77104,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 17067,
+          "source_anchor_count": 3,
+          "joint_index_equal_anchor_count": 3,
+          "source_task_ids": [
+            "M0509",
+            "M0518",
+            "M0520"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "fdaba944": {
+          "native_component": 11,
+          "native_mesh_id": "cab-19db7ff10214dc00592df227e7560190:9223281315432122579",
+          "native_mesh_name": "S_actor_seraph_hairshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "2a165f66",
+          "descriptor": [
+            3104,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 630,
+          "source_anchor_count": 3,
+          "joint_index_equal_anchor_count": 3,
+          "source_task_ids": [
+            "M0509",
+            "M0518",
+            "M0520"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "f5290f58": {
+          "native_component": 12,
+          "native_mesh_id": "cab-19db7ff10214dc00592df227e7560190:3176557149521594579",
+          "native_mesh_name": "S_actor_seraph_iris_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "e157e3d9",
+          "descriptor": [
+            3360,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 972,
+          "source_anchor_count": 4,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0509",
+            "M0517",
+            "M0518",
+            "M0520"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0012_avywen": {
+      "entries": {
+        "16e97389": 2,
+        "28a1211e": 3,
+        "f82ced8e": 7
+      },
+      "evidence": {
+        "16e97389": {
+          "native_component": 2,
+          "native_mesh_id": "cab-1d2dac6fcebb7a6c6587df765de04a2c:1663962905701482459",
+          "native_mesh_name": "S_actor_avywen_eyebrow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "01cf6a9c",
+          "descriptor": [
+            9952,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 1926,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0429"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "28a1211e": {
+          "native_component": 3,
+          "native_mesh_id": "cab-1d2dac6fcebb7a6c6587df765de04a2c:858126215941554139",
+          "native_mesh_name": "S_actor_avywen_eyeshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "904455eb",
+          "descriptor": [
+            576,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 96,
+          "source_anchor_count": 3,
+          "joint_index_equal_anchor_count": 3,
+          "source_task_ids": [
+            "M0422",
+            "M0423",
+            "M0429"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "f82ced8e": {
+          "native_component": 7,
+          "native_mesh_id": "cab-1d2dac6fcebb7a6c6587df765de04a2c:2137518565341954011",
+          "native_mesh_name": "S_actor_avywen_iris_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "ff48561f",
+          "descriptor": [
+            4032,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 1146,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0429"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0013_aglina": {
+      "entries": {
+        "fb2cf167": 2,
+        "4070c6cf": 3,
+        "14befcdb": 4,
+        "43e0b975": 6,
+        "45dfd165": 8
+      },
+      "evidence": {
+        "fb2cf167": {
+          "native_component": 2,
+          "native_mesh_id": "cab-41b85ca1b078d98c69af5c0af706cdbc:-2865389746040348092",
+          "native_mesh_name": "S_actor_aglina_eyebrow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "0cd48024",
+          "descriptor": [
+            5664,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 1092,
+          "source_anchor_count": 7,
+          "joint_index_equal_anchor_count": 7,
+          "source_task_ids": [
+            "M0334",
+            "M0336",
+            "M0347",
+            "M0352",
+            "M0353",
+            "M0356"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "4070c6cf": {
+          "native_component": 3,
+          "native_mesh_id": "cab-41b85ca1b078d98c69af5c0af706cdbc:-3683458584687025596",
+          "native_mesh_name": "S_actor_aglina_eyeshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "b7d5a9f4",
+          "descriptor": [
+            608,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 102,
+          "source_anchor_count": 9,
+          "joint_index_equal_anchor_count": 9,
+          "source_task_ids": [
+            "M0334",
+            "M0336",
+            "M0347",
+            "M0349",
+            "M0352",
+            "M0353",
+            "M0356",
+            "M0357"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "14befcdb": {
+          "native_component": 4,
+          "native_mesh_id": "cab-2328cebb5674852b7c27cd701bd09550:8738464150561913968",
+          "native_mesh_name": "S_actor_aglina_face_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "78ed8786",
+          "descriptor": [
+            27184,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 8040,
+          "source_anchor_count": 8,
+          "joint_index_equal_anchor_count": 8,
+          "source_task_ids": [
+            "M0334",
+            "M0336",
+            "M0347",
+            "M0352",
+            "M0353",
+            "M0356",
+            "M0357"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "43e0b975": {
+          "native_component": 6,
+          "native_mesh_id": "cab-01afdd915119c9724fc4b3e3e2074dd1:4522913789152024800",
+          "native_mesh_name": "S_actor_aglina_hair_02_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "8636ec74",
+          "descriptor": [
+            32656,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 7080,
+          "source_anchor_count": 4,
+          "joint_index_equal_anchor_count": 4,
+          "source_task_ids": [
+            "M0334",
+            "M0347",
+            "M0352"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "45dfd165": {
+          "native_component": 8,
+          "native_mesh_id": "cab-41b85ca1b078d98c69af5c0af706cdbc:6136031018696761924",
+          "native_mesh_name": "S_actor_aglina_iris_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "68ea7ed4",
+          "descriptor": [
+            4832,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 1452,
+          "source_anchor_count": 8,
+          "joint_index_equal_anchor_count": 8,
+          "source_task_ids": [
+            "M0334",
+            "M0336",
+            "M0347",
+            "M0352",
+            "M0353",
+            "M0356",
+            "M0357"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0015_lifeng": {
+      "entries": {
+        "fe9664c9": 3,
+        "62dc7c2f": 4,
+        "f585ac2c": 5,
+        "7b193d67": 8,
+        "04569828": 9
+      },
+      "evidence": {
+        "fe9664c9": {
+          "native_component": 3,
+          "native_mesh_id": "cab-7f5c6835a3f4077a8503517b64058d80:8509414530761857680",
+          "native_mesh_name": "S_actor_lifeng_cloth_03_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "6ec1c757",
+          "descriptor": [
+            1952,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 600,
+          "source_anchor_count": 2,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0548",
+            "M0551"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "62dc7c2f": {
+          "native_component": 4,
+          "native_mesh_id": "cab-df4778b40a9b065b3ba64c8e8a726155:1490455153909583788",
+          "native_mesh_name": "S_actor_lifeng_eyebrow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "4b4ce0c6",
+          "descriptor": [
+            10112,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 1908,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0548"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "f585ac2c": {
+          "native_component": 5,
+          "native_mesh_id": "cab-df4778b40a9b065b3ba64c8e8a726155:3612194565426663340",
+          "native_mesh_name": "S_actor_lifeng_eyeshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "b7ade24c",
+          "descriptor": [
+            704,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 120,
+          "source_anchor_count": 2,
+          "joint_index_equal_anchor_count": 2,
+          "source_task_ids": [
+            "M0548",
+            "M0551"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "7b193d67": {
+          "native_component": 8,
+          "native_mesh_id": "cab-df4778b40a9b065b3ba64c8e8a726155:-5574150645930438740",
+          "native_mesh_name": "S_actor_lifeng_hairshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "0536fe16",
+          "descriptor": [
+            2496,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 447,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0548"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "04569828": {
+          "native_component": 9,
+          "native_mesh_id": "cab-df4778b40a9b065b3ba64c8e8a726155:6538693849303437228",
+          "native_mesh_name": "S_actor_lifeng_iris_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "3caf6e25",
+          "descriptor": [
+            2624,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 768,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0548"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0016_laevat": {
+      "entries": {
+        "4868950b": 3,
+        "17809068": 7,
+        "e3c1b9d5": 9,
+        "9089f3c7": 10,
+        "28670b85": 11
+      },
+      "evidence": {
+        "4868950b": {
+          "native_component": 3,
+          "native_mesh_id": "cab-c37f56c5d3245a0011b48e7b341d94a4:-3289736498394033588",
+          "native_mesh_name": "S_actor_laevat_cloth_03_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "a9b80f73",
+          "descriptor": [
+            33952,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 10698,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0431"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "17809068": {
+          "native_component": 7,
+          "native_mesh_id": "cab-b563ff91d2c66f3c0ca095a0bdea245d:-2596667348659509937",
+          "native_mesh_name": "S_actor_laevat_eyeshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "3f129fa2",
+          "descriptor": [
+            576,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 96,
+          "source_anchor_count": 8,
+          "joint_index_equal_anchor_count": 8,
+          "source_task_ids": [
+            "M0431",
+            "M0438",
+            "M0441",
+            "M0443",
+            "M0455",
+            "M0456",
+            "M0459",
+            "M0463"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "e3c1b9d5": {
+          "native_component": 9,
+          "native_mesh_id": "cab-95aa9b1ecdb5e7cda85a8edf6a72f9fa:-7262328921842026558",
+          "native_mesh_name": "S_actor_laevat_hair_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "d261f4d1",
+          "descriptor": [
+            185024,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 43044,
+          "source_anchor_count": 2,
+          "joint_index_equal_anchor_count": 2,
+          "source_task_ids": [
+            "M0441",
+            "M0443"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "9089f3c7": {
+          "native_component": 10,
+          "native_mesh_id": "cab-b563ff91d2c66f3c0ca095a0bdea245d:-151103679351134897",
+          "native_mesh_name": "S_actor_laevat_hairshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "1e462e1d",
+          "descriptor": [
+            2496,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 444,
+          "source_anchor_count": 4,
+          "joint_index_equal_anchor_count": 4,
+          "source_task_ids": [
+            "M0431",
+            "M0438",
+            "M0441",
+            "M0443"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "28670b85": {
+          "native_component": 11,
+          "native_mesh_id": "cab-b563ff91d2c66f3c0ca095a0bdea245d:6790114462792770895",
+          "native_mesh_name": "S_actor_laevat_iris_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "ddd028ab",
+          "descriptor": [
+            3360,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 948,
+          "source_anchor_count": 4,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0441",
+            "M0443",
+            "M0455",
+            "M0459"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0017_yvonne": {
+      "entries": {
+        "91ef4221": 0,
+        "0224158d": 6,
+        "05d1a668": 6,
+        "36135958": 9,
+        "81cebc78": 9,
+        "b90b5a71": 10
+      },
+      "evidence": {
+        "91ef4221": {
+          "native_component": 0,
+          "native_mesh_id": "cab-b2696a44269d7ec910966dad5f186706:2804974472197634215",
+          "native_mesh_name": "S_actor_yvonne_body_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "cd7f2259",
+          "descriptor": [
+            21088,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 6252,
+          "source_anchor_count": 4,
+          "joint_index_equal_anchor_count": 4,
+          "source_task_ids": [
+            "M0003",
+            "M0004",
+            "M0010",
+            "M0011"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "0224158d": {
+          "native_component": 6,
+          "native_mesh_id": "cab-2119a9ef1776fdd280325d6b20abf0c7:-3144396665136160525",
+          "native_mesh_name": "S_actor_yvonne_eyeshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "a86ebd6f",
+          "descriptor": [
+            608,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 102,
+          "source_anchor_count": 22,
+          "joint_index_equal_anchor_count": 22,
+          "source_task_ids": [
+            "M0003",
+            "M0004",
+            "M0005",
+            "M0007",
+            "M0009",
+            "M0011",
+            "M0013",
+            "M0014",
+            "M0020",
+            "M0024",
+            "M0025",
+            "M0029",
+            "M0033",
+            "M0040",
+            "M0043",
+            "M0044",
+            "M0046",
+            "M0049"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "05d1a668": {
+          "native_component": 6,
+          "native_mesh_id": "cab-2119a9ef1776fdd280325d6b20abf0c7:-3144396665136160525",
+          "native_mesh_name": "S_actor_yvonne_eyeshadow_01_lod0",
+          "algorithm": "vb0_region",
+          "native_vb0_crc32c": "a86ebd6f",
+          "descriptor": null,
+          "region_bytes": 288,
+          "original_index_count": 102,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0045"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "36135958": {
+          "native_component": 9,
+          "native_mesh_id": "cab-2119a9ef1776fdd280325d6b20abf0c7:2260791288617230579",
+          "native_mesh_name": "S_actor_yvonne_hairshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "c4cceb74",
+          "descriptor": [
+            4848,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 1158,
+          "source_anchor_count": 7,
+          "joint_index_equal_anchor_count": 7,
+          "source_task_ids": [
+            "M0003",
+            "M0004",
+            "M0010",
+            "M0011",
+            "M0024",
+            "M0033",
+            "M0043"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "81cebc78": {
+          "native_component": 9,
+          "native_mesh_id": "cab-2119a9ef1776fdd280325d6b20abf0c7:2260791288617230579",
+          "native_mesh_name": "S_actor_yvonne_hairshadow_01_lod0",
+          "algorithm": "vb0_region",
+          "native_vb0_crc32c": "c4cceb74",
+          "descriptor": null,
+          "region_bytes": 2832,
+          "original_index_count": 1158,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0045"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "b90b5a71": {
+          "native_component": 10,
+          "native_mesh_id": "cab-2119a9ef1776fdd280325d6b20abf0c7:6140762771984539891",
+          "native_mesh_name": "S_actor_yvonne_iris_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "7355343b",
+          "descriptor": [
+            4928,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 1572,
+          "source_anchor_count": 8,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0003",
+            "M0004",
+            "M0010",
+            "M0011",
+            "M0024",
+            "M0033",
+            "M0040",
+            "M0043"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0020_meurs": {
+      "entries": {
+        "b95723c0": 6
+      },
+      "evidence": {
+        "b95723c0": {
+          "native_component": 6,
+          "native_mesh_id": "cab-1571632b53f8413b3e98b9216f19c7ef:8510142800575034668",
+          "native_mesh_name": "S_actor_meurs_eyeshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "1bd9d992",
+          "descriptor": [
+            896,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 156,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0119"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0022_bounda": {
+      "entries": {
+        "15532afa": 0,
+        "a750c69c": 4,
+        "7278d2d2": 5,
+        "6b0bea53": 6,
+        "9bce8564": 7,
+        "6babe75c": 10,
+        "2cea4051": 11
+      },
+      "evidence": {
+        "15532afa": {
+          "native_component": 0,
+          "native_mesh_id": "cab-a21bc57e6224f3d830eccfba6e5672b1:6467696125892363803",
+          "native_mesh_name": "S_actor_bounda_body_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "8bc24d5a",
+          "descriptor": [
+            42976,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 12102,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0472"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "a750c69c": {
+          "native_component": 4,
+          "native_mesh_id": "cab-18bc35e7be1b44be9be6a451b286d0f0:328851138296558372",
+          "native_mesh_name": "S_actor_bounda_cloth_04_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "c5dc901d",
+          "descriptor": [
+            1120,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 186,
+          "source_anchor_count": 2,
+          "joint_index_equal_anchor_count": 2,
+          "source_task_ids": [
+            "M0472",
+            "M0477"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "7278d2d2": {
+          "native_component": 5,
+          "native_mesh_id": "cab-c7b204a00e02254fa89d41ebc9ca66be:-5190775491733255844",
+          "native_mesh_name": "S_actor_bounda_cloth_05_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "50b04ff9",
+          "descriptor": [
+            416,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 78,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0472"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "6b0bea53": {
+          "native_component": 6,
+          "native_mesh_id": "cab-6c485fc7bd5f4269e630663a13ec80cd:5233089635118772340",
+          "native_mesh_name": "S_actor_bounda_clothshadowless_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "aa7ca75b",
+          "descriptor": [
+            4832,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 1428,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0472"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "9bce8564": {
+          "native_component": 7,
+          "native_mesh_id": "cab-d622afdf79b52b089f5608ad282c206d:-2831170999202555024",
+          "native_mesh_name": "S_actor_bounda_eyeshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "0a8352b0",
+          "descriptor": [
+            576,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 96,
+          "source_anchor_count": 4,
+          "joint_index_equal_anchor_count": 4,
+          "source_task_ids": [
+            "M0469",
+            "M0471",
+            "M0472",
+            "M0477"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "6babe75c": {
+          "native_component": 10,
+          "native_mesh_id": "cab-d622afdf79b52b089f5608ad282c206d:4860725273954147184",
+          "native_mesh_name": "S_actor_bounda_hairshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "9910b118",
+          "descriptor": [
+            4352,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 960,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0472"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "2cea4051": {
+          "native_component": 11,
+          "native_mesh_id": "cab-d622afdf79b52b089f5608ad282c206d:-6252492445974340752",
+          "native_mesh_name": "S_actor_bounda_iris_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "a14d161a",
+          "descriptor": [
+            3712,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 1098,
+          "source_anchor_count": 4,
+          "joint_index_equal_anchor_count": 4,
+          "source_task_ids": [
+            "M0469",
+            "M0471",
+            "M0472",
+            "M0477"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0023_antal": {
+      "entries": {
+        "3a512b0d": 3,
+        "9bfb1586": 6
+      },
+      "evidence": {
+        "3a512b0d": {
+          "native_component": 3,
+          "native_mesh_id": "cab-3209e2ab0860fd54c17396bc515cfdb8:7163548160322149186",
+          "native_mesh_name": "S_actor_antal_eyelid_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "e9671943",
+          "descriptor": [
+            3136,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 936,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0168"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "9bfb1586": {
+          "native_component": 6,
+          "native_mesh_id": "cab-3209e2ab0860fd54c17396bc515cfdb8:4048177392735394626",
+          "native_mesh_name": "S_actor_antal_iris_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "e7de1690",
+          "descriptor": [
+            7072,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 2430,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0168"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0024_deepfin": {
+      "entries": {
+        "3719d47b": 3,
+        "4769edc8": 4,
+        "8f0a8053": 6,
+        "519d9ad9": 7,
+        "23858a76": 9
+      },
+      "evidence": {
+        "3719d47b": {
+          "native_component": 3,
+          "native_mesh_id": "cab-1afc929e8da275732be0cbe9f602fc53:4250321817486214944",
+          "native_mesh_name": "S_actor_deepfin_eyeshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "d997ec15",
+          "descriptor": [
+            608,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 102,
+          "source_anchor_count": 2,
+          "joint_index_equal_anchor_count": 2,
+          "source_task_ids": [
+            "M0522",
+            "M0523"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "4769edc8": {
+          "native_component": 4,
+          "native_mesh_id": "cab-5ea46fba0c17363709db2479e9dfcf32:-7904706156638991472",
+          "native_mesh_name": "S_actor_deepfin_face_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "bf64ae4a",
+          "descriptor": [
+            38112,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 12210,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0522"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "8f0a8053": {
+          "native_component": 6,
+          "native_mesh_id": "cab-1afc929e8da275732be0cbe9f602fc53:-3513164391362869472",
+          "native_mesh_name": "S_actor_deepfin_gouweicao_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "9a1ec22b",
+          "descriptor": [
+            12048,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 2460,
+          "source_anchor_count": 2,
+          "joint_index_equal_anchor_count": 2,
+          "source_task_ids": [
+            "M0522",
+            "M0523"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "519d9ad9": {
+          "native_component": 7,
+          "native_mesh_id": "cab-31d031b5ba3153eb045021ea5ba99174:4792739115457055737",
+          "native_mesh_name": "S_actor_deepfin_hair_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "362f6735",
+          "descriptor": [
+            181824,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 38520,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0522"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "23858a76": {
+          "native_component": 9,
+          "native_mesh_id": "cab-1afc929e8da275732be0cbe9f602fc53:-7844950754274392288",
+          "native_mesh_name": "S_actor_deepfin_iris_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "c970446c",
+          "descriptor": [
+            2880,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 816,
+          "source_anchor_count": 2,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0522",
+            "M0523"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0025_ardelia": {
+      "entries": {
+        "820d431f": 1,
+        "0f250503": 7,
+        "d9ead4ed": 8
+      },
+      "evidence": {
+        "820d431f": {
+          "native_component": 1,
+          "native_mesh_id": "cab-4a694cb1e5f47df3d68de056fc2659cf:1407398382204544760",
+          "native_mesh_name": "S_actor_ardelia_brow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "905a0036",
+          "descriptor": [
+            13216,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 2598,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0415"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "0f250503": {
+          "native_component": 7,
+          "native_mesh_id": "cab-4a694cb1e5f47df3d68de056fc2659cf:3093232198327658232",
+          "native_mesh_name": "S_actor_ardelia_eyeshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "020c2213",
+          "descriptor": [
+            640,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 108,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0415"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "d9ead4ed": {
+          "native_component": 8,
+          "native_mesh_id": "cab-1875251b667473f4762cd0133eb6c55d:-7806326675679033334",
+          "native_mesh_name": "S_actor_ardelia_face_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "324790f7",
+          "descriptor": [
+            28864,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 9282,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0415"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0026_lastrite": {
+      "entries": {
+        "89b7161b": 3,
+        "6fe194d0": 7,
+        "4dfadf17": 8,
+        "20b78b5c": 10,
+        "643bba47": 11
+      },
+      "evidence": {
+        "89b7161b": {
+          "native_component": 3,
+          "native_mesh_id": "cab-429a6381a45075dd80daecac017c3e80:3175008450681638010",
+          "native_mesh_name": "S_actor_lastrite_cloth_02_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "0e1a3039",
+          "descriptor": [
+            14656,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 4056,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0103"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "6fe194d0": {
+          "native_component": 7,
+          "native_mesh_id": "cab-76b21e308a5bad84f23ce3259b944efd:205861010223406285",
+          "native_mesh_name": "S_actor_lastrite_eyeshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "347b92da",
+          "descriptor": [
+            576,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 96,
+          "source_anchor_count": 7,
+          "joint_index_equal_anchor_count": 7,
+          "source_task_ids": [
+            "M0099",
+            "M0100",
+            "M0103",
+            "M0104",
+            "M0108",
+            "M0109",
+            "M0110"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "4dfadf17": {
+          "native_component": 8,
+          "native_mesh_id": "cab-02f0c52e2e8caf75155193f7bffcc1f7:-7849008558695304972",
+          "native_mesh_name": "S_actor_lastrite_face_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "662fae8a",
+          "descriptor": [
+            32912,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 10482,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0100"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "20b78b5c": {
+          "native_component": 10,
+          "native_mesh_id": "cab-76b21e308a5bad84f23ce3259b944efd:-5563121186313986867",
+          "native_mesh_name": "S_actor_lastrite_hairshadow_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "821fc621",
+          "descriptor": [
+            2368,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 453,
+          "source_anchor_count": 3,
+          "joint_index_equal_anchor_count": 3,
+          "source_task_ids": [
+            "M0100",
+            "M0103",
+            "M0108"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        },
+        "643bba47": {
+          "native_component": 11,
+          "native_mesh_id": "cab-76b21e308a5bad84f23ce3259b944efd:5290536694651165901",
+          "native_mesh_name": "S_actor_lastrite_iris_01_lod0",
+          "algorithm": "full_vb0_default_descriptor",
+          "native_vb0_crc32c": "d90ea18f",
+          "descriptor": [
+            3264,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "region_bytes": null,
+          "original_index_count": 870,
+          "source_anchor_count": 4,
+          "joint_index_equal_anchor_count": 0,
+          "source_task_ids": [
+            "M0099",
+            "M0100",
+            "M0103",
+            "M0108"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0027_tangtang": {
+      "entries": {
+        "876fe557": 6
+      },
+      "evidence": {
+        "876fe557": {
+          "native_component": 6,
+          "native_mesh_id": "cab-02cfe093d5d5ea333d4c6f8b8f9209e1:2264893027977134105",
+          "native_mesh_name": "S_actor_tangtang_eyeshadow_01_lod0",
+          "algorithm": "vb0_region",
+          "native_vb0_crc32c": "87e904f8",
+          "descriptor": null,
+          "region_bytes": 288,
+          "original_index_count": 102,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0320"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    },
+    "chr_0028_wulfa": {
+      "entries": {
+        "32111de5": 13
+      },
+      "evidence": {
+        "32111de5": {
+          "native_component": 13,
+          "native_mesh_id": "cab-ebfd77a62ea8328214680fd163c14a13:3050600714331555560",
+          "native_mesh_name": "S_actor_wulfa_hairshadow_01_lod0",
+          "algorithm": "vb0_region",
+          "native_vb0_crc32c": "ffdeced6",
+          "descriptor": null,
+          "region_bytes": 1008,
+          "original_index_count": 402,
+          "source_anchor_count": 1,
+          "joint_index_equal_anchor_count": 1,
+          "source_task_ids": [
+            "M0362"
+          ],
+          "anchor_file": "F:\\zmd_bem\\research\\identities\\legacy-geometry-anchors.json",
+          "evidence_status": "recomputed-from-native-data-and-exact-position-index-anchor",
+          "geometry_identity_only": true
+        }
+      }
+    }
+  }
+}

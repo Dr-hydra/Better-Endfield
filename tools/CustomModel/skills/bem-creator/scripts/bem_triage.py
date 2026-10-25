@@ -534,6 +534,65 @@ def load_documents(package_root: Path):
     return result.documents(), result
 
 
+def entry_conflicts(package_root: Path, family: str | None) -> dict:
+    """Mirror the converter's two entry gates.
+
+    ``bem_tool inspect`` refuses a source with more than one entry INI
+    (``ENTRY_SELECTION``) and one whose other INIs define their own
+    ``TextureOverride`` / ``CommandList`` / ``Resource`` sections
+    (``COMPANION_INI``). Without this check the probe says "no mechanical
+    blocker" for a package the converter will not touch.
+
+    The scan reads raw files, because that is what the converter sees: the
+    merged view namespaces included sections and would hide the split.
+    """
+    if family is None:
+        # No entry at all: the verdict already says unrecognized, and the
+        # converter's message would be the same "0 entries" complaint.
+        return dict(entry_files=[], companion_files=[], blockers=[])
+
+    entry_files: list[str] = []
+    companion_files: list[str] = []
+    for path in sorted(package_root.rglob("*.ini")):
+        relative = path.relative_to(package_root).as_posix()
+        if not is_active_ini(relative):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8-sig", errors="replace")
+        except OSError:
+            continue
+        names = [name.strip() for name in re.findall(r"^\s*\[([^\]\n]+)\]", text, re.M)]
+        if any(ENTRY_COMPONENT.fullmatch(name) or ENTRY_HASH_LOD.fullmatch(name)
+               for name in names):
+            entry_files.append(relative)
+        elif any(name.startswith(("TextureOverride", "CommandList", "Resource"))
+                 for name in names):
+            companion_files.append(relative)
+
+    blockers: list[dict] = []
+    if len(entry_files) > 1:
+        blockers.append({
+            "code": "ENTRY_SELECTION",
+            "kind": "routing",
+            "entries": entry_files,
+            "detail": f"{len(entry_files)} INIs carry an entry section. The converter accepts "
+                      f"exactly one; pick the entry explicitly (recipe --ini) or merge the "
+                      f"variants deliberately. This is a routing blocker, not a source defect.",
+        })
+    elif len(entry_files) == 1 and companion_files:
+        blockers.append({
+            "code": "COMPANION_INI",
+            "kind": "routing",
+            "entry": entry_files[0],
+            "companions": companion_files,
+            "detail": f"{len(companion_files)} other INI(s) define TextureOverride/CommandList/"
+                      f"Resource sections. The converter refuses these because the definitions "
+                      f"may change what the entry does; review them together.",
+        })
+    return dict(entry_files=entry_files, companion_files=companion_files,
+                blockers=blockers)
+
+
 def triage(package: str | Path) -> dict:
     package_root = Path(package).resolve()
     if not package_root.is_dir():
@@ -542,6 +601,7 @@ def triage(package: str | Path) -> dict:
     documents, resolution = load_documents(package_root)
     active = [relative for relative, _ in documents]
     family, entry_sections = find_entry_family(documents)
+    entry_gate = entry_conflicts(package_root, family)
     features, _ = detect_features(documents)
     resources, global_table, missing = collect_resources(package_root, documents)
     framework = framework_inputs(documents, global_table)
@@ -723,6 +783,11 @@ def triage(package: str | Path) -> dict:
                       "command list runs.",
         })
     blocked_by_source = bool(overruns) or (bool(missing_live) and not truncated_copy)
+    if entry_gate["blockers"]:
+        blocked_by_source = True
+        if verdict == "standard_candidate":
+            reason += " The automated route is closed anyway: " + ", ".join(
+                blocker["code"] for blocker in entry_gate["blockers"]) + "."
 
     return {
         "source": str(package_root),
@@ -740,6 +805,7 @@ def triage(package: str | Path) -> dict:
         "active_inis": active,
         "entry_family": family,
         "entry_sections": entry_sections[:24],
+        "entry_conflicts": entry_gate,
         "features": {key: value[:8] for key, value in features.items()},
         "verdict": verdict,
         "reason": reason,
@@ -813,6 +879,15 @@ def render(report: dict) -> str:
     ]
     if report["features"]:
         lines.append("features      : " + ", ".join(sorted(report["features"])))
+    routing = (report.get("entry_conflicts") or {}).get("blockers") or []
+    if routing:
+        lines.append("")
+        lines.append(f"ROUTING ({len(routing)})")
+        for blocker in routing:
+            lines.append(f"  [{blocker['code']}]")
+            for item in (blocker.get("entries") or blocker.get("companions") or [])[:6]:
+                lines.append(f"      {item}")
+            lines.append(f"      {str(blocker.get('detail', ''))[:150]}")
     if report["blockers"]:
         lines.append("")
         lines.append(f"BLOCKERS ({len(report['blockers'])})")
@@ -829,7 +904,11 @@ def render(report: dict) -> str:
                 )
     else:
         lines.append("")
-        lines.append("No mechanical blocker found. Next: identity matching, then appearance review.")
+        if routing:
+            lines.append("No source defect found, but the automated route is closed by the "
+                         "routing blocker(s) above.")
+        else:
+            lines.append("No mechanical blocker found. Next: identity matching, then appearance review.")
     if report["warnings"]:
         lines.append("")
         lines.append(f"WARNINGS ({len(report['warnings'])}): not blockers; verify before "

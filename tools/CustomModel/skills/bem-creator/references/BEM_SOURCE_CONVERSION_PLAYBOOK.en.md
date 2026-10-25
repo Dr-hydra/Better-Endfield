@@ -657,27 +657,67 @@ gate reached 100% coverage, while `excluded_features` / `limitations`, which the
 reached only 84–89%; a single audit found 135 gaps. **Anything that "should be written" must become
 "cannot be registered without it".**
 
-### 9.3 Writing the package: atomic replace + byte-exact readback
+### 9.3 Writing the package: atomic replace + readback
 
-Three actions must happen in sequence, or an interruption leaves a half-written artifact:
+Three actions, or an interruption leaves a half-written artifact or silently changes content on write:
 
 ```
-write temp file → read back → byte-equal to the in-memory model → atomic replace to the real path → read back again
+write to a temp file → os.replace (atomic) → read back → validate the read-back structure and geometry
 ```
+
+**First, separate what already exists from what you must write yourself** — do not reimplement the
+first, and do not assume the last is already there:
+
+| Stage | Status | Evidence |
+| --- | --- | --- |
+| Atomic write | **Built in, do not reimplement** | `bem_v1.atomic_write()` (`bem_v1.py:42-54`) uses `mkstemp` + `os.replace`; `write_package()` calls it at `bem_v1.py:236` |
+| Payload dedup + index remap | **Built in, and it rewrites the manifest** | `write_package()` at `bem_v1.py:187-217` merges byte-identical payloads and rewrites `draw['indices']`, `stream['payload']`, `texture['payload']` and deformation-frame `payload` through `mapping` |
+| Readback validation after write | **Not built in** — neither `pack` nor `convert` does it | Call `bem_projects.validated()` or `bem_v1.read_package()` yourself |
+
+**There is a trap here**: because the write dedups and remaps, the manifest you read back is **not**
+equal to the in-memory `builder.m`. A naive `assert m == builder.m` fails spuriously on any package
+with two byte-identical payloads. Likewise `builder.payloads` is the pre-dedup list while the
+read-back gives you the post-dedup one.
+
+Write the check as "re-validate", not "byte equality":
 
 ```python
-fd, temp = tempfile.mkstemp(prefix=output.stem + '.', suffix='.bem.tmp', dir=output.parent)
-merged.write(temp)
-m, p = read_package(temp)
-assert m == merged.manifest and p == merged.payloads   # ROUNDTRIP
-os.replace(temp, output)                                # atomic, never half a package
-m2, p2 = read_package(output)
-assert (m2, p2) == (m, p)                               # FINAL_READBACK
+from pathlib import Path
+from bem_projects import validated      # wraps read_package + check_geometry
+
+def write_and_verify(builder, output: Path):
+    """builder is bem_v1.Builder: manifest in builder.m, payloads in builder.payloads.
+
+    Get the attribute names right: the manifest is .m, not .manifest; bem_merge's
+    MergeResult has no write() at all — it only computes which sections take effect.
+    """
+    builder.write(output)              # atomic replace is already handled inside
+    m, p = validated(output)           # actually re-read the file, rerun structure + geometry
+
+    # Semantic comparison: counts must match (dedup only shrinks, never grows)
+    assert len(m['meshes']) == len(builder.m['meshes']), 'READBACK: mesh count changed'
+    assert len(m['textures']) == len(builder.m['textures']), 'READBACK: texture count changed'
+    assert len(p) <= len(builder.payloads), 'READBACK: payload count grew; dedup is broken'
+
+    # Idempotence: write the read-back model again; bytes must be identical.
+    # This is stronger than "equals the in-memory model" — it also proves the
+    # dedup and the index remap are stable.
+    import hashlib, tempfile, os
+    fd, again = tempfile.mkstemp(suffix='.bem'); os.close(fd)
+    try:
+        from bem_v1 import write_package
+        write_package(again, m, p)
+        assert Path(again).read_bytes() == output.read_bytes(), 'READBACK: rewrite differs'
+    finally:
+        os.unlink(again)
+    return m, p
 ```
 
 Why not "write in place, then check": if power fails halfway, the disk holds a file whose header
 declares everything while payloads are missing — and every "file exists" check passes.
 `os.replace` is atomic within one partition; readers see either the old file or the new one.
+`atomic_write` already covers that half, so you do not manage it; the half you must manage is
+**the readback**.
 
 ### 9.4 The ledger is the truth; reports cannot self-certify
 
@@ -800,9 +840,9 @@ field does not mean the explanation is unnecessary.
 
 ## 12. Situations that require stopping
 
-In the following cases, **continuing only produces something that looks legal and is actually wrong**.
-Stop, organise the evidence, and hand it over. Do not fudge with similarity, and do not use "it passed
-validation" as an excuse.
+The following situations generally indicate severe flaws in the source data.
+- **In Collaborative Mode**: Stop immediately when encountering these cases and present clear evidence for user decision.
+- **In Fully-Autonomous Mode (Novice Default)**: The Agent is authorised to intervene as a reverse-engineer. For issues with a deterministic repair route (e.g. 4-criteria valid IB overruns, missing non-vital DDS resolvable via peer donors, 16K texture mip drops), the Agent writes and runs dedicated build scripts (Section 13) without interrupting the user. **Halt only when vital core assets (primary diffuse, base mesh geometry, target character catalog) are completely missing and unrecoverable**.
 
 | Situation | Why stop | What the report must carry |
 | --- | --- | --- |
@@ -834,6 +874,801 @@ The way to judge is to look at **where the called section is defined**:
   onto some property"
 
 None of the four may be papered over with "same name, same meaning": a similar name is not evidence.
+
+---
+
+
+
+---
+
+## 13. Dedicated Build & Assembly Script Patterns for Autonomous Agents
+
+When a source Mod is non-standard (multi-state key cycles, companion INIs, missing secondary DDS, end-of-buffer IB overrun, custom shaders) causing CLI `bem_tool convert` to raise exceptions, **in Fully-Autonomous Mode, the Agent must not stop to bug novice users. The Agent must act as a reverse-engineer and write a dedicated Python build script (e.g. `workspace/build_mod.py`) in the workspace to assemble and self-heal the package.**
+
+### 13.1 Standard Assembly Skeleton
+
+Assembly scripts run in the workspace and reuse `bem_v1`, `component_auto` and `bem_merge`, sanitising
+and repairing through an in-memory `Overlay`.
+
+**First understand why the Overlay is necessary.** `component_auto.prepare()` starts with
+`sections(src.read_exact(ini).decode('utf-8-sig'))` (`component_auto.py:170`), and
+`efmi_source.sections()` raises `ValueError(f"duplicate INI section: {name}")` the moment it meets a
+repeated section (`efmi_source.py:20-21`). In other words: **if the entry INI contains any duplicate
+section, `prepare` fails at parse time**, regardless of whether the content is correct. `bem_merge`
+computes the sections that actually take effect (first occurrence wins, include expansion, namespace
+rewriting, watermark stripping) and collapses them into a duplicate-free dict; feeding that to
+`prepare` clears a purely syntactic gate. That is the only reason the Overlay exists — it is not a
+way to bypass validation.
+
+**This is not theoretical. Four real packages, side by side** (`prepare` uses the "entry file only"
+view; the Overlay supplies the "loader merged" view):
+
+| Package | Files | Live sections | Unique names | Namespace collisions | Entry-file view | Merged view |
+| --- | --- | --- | --- | --- | --- | --- |
+| 伊冯-围裙 | 1 | 134 | 134 | 0 | **raises on parse** `duplicate INI section: Constants` | matches `chr_0017_yvonne`, 11 entries |
+| 伊冯-26W | 3 | 477 | 293 | **182** | **raises on parse** `duplicate INI section: Constants` | parses, then `SOURCE_IDENTITY` (no ComponentN base entry) |
+| 弧光-02 | 1 | 99 | 99 | 0 | parses | parses; both report `CHARACTER_CATALOG` (catalog does not cover it) |
+| 梨诺-颜色切换 | 1 | 274 | 274 | 0 | parses | parses; both report `CHARACTER_CATALOG` |
+
+How to read it: **for packages like 伊冯-围裙, conversion is impossible without the Overlay** — the
+single-file view cannot even parse the sections, while the merged view matches the character catalog
+and yields 11 component entries. Conversely, 弧光-02 and 梨诺-颜色切换 are `manual_only`; the Overlay
+does not help, and the error is missing catalog data rather than a syntax problem — **these two
+failures must be reported separately**, or "catalog does not cover it" gets misdiagnosed as
+"malformed package". 伊冯-26W is a third case: syntax passes, identity does not, so it follows the stop
+conditions in §12.
+
+**Two hard constraints you must respect:**
+
+1. **Locate paths relatively; never paste a local absolute path.** The script has to run on someone
+   else's machine. `F:/…` belongs in your own scratch debugging only. Walk up from `Path(__file__)`
+   to find `tools/CustomModel`, and fail loudly if it is not there — do not degrade silently.
+2. **`standard_worker.normalize_entries` does not exist.** Earlier documentation referenced this
+   symbol; nothing in this tree defines it (`grep -rn "def normalize_entries" tools/CustomModel/*.py`
+   is empty). Section normalisation now belongs to `bem_merge`. Copying the old skeleton fails with an
+   `ImportError` on the import line, which looks like an environment problem and is easy to misread.
+
+```python
+"""Dedicated assembly script for non-standard mod conversion."""
+import sys, copy, json
+from pathlib import Path
+
+# --- 1. Locate the tool root relatively; fail loudly if absent -----------------
+def find_tools_root(start: Path) -> Path:
+    for base in [start, *start.parents]:
+        candidate = base / "CustomModel"
+        if (candidate / "bem_v1.py").is_file():
+            return candidate
+        if (base / "bem_v1.py").is_file() and base.name == "CustomModel":
+            return base
+    raise SystemExit("TOOLS_ROOT_NOT_FOUND: run this inside the worktree, or pass --tools-root")
+
+TOOLS_ROOT = find_tools_root(Path(__file__).resolve().parent)
+sys.path.insert(0, str(TOOLS_ROOT))
+sys.path.insert(0, str(TOOLS_ROOT / "skills/bem-creator/scripts"))
+
+import bem_v1 as bem
+import component_auto
+import bem_merge
+from convert_efmi_poc import Source
+from efmi_source import value
+from bem_projects import validated
+
+
+class Overlay(Source):
+    """In-memory INI overlay that never touches source files on disk."""
+
+    def __init__(self, src: Source, ini: str, sec_dict: dict[str, str]):
+        self.source, self.path, self.names = src, src.path, src.names
+        self.ini = ini
+        self.raw = "\n\n".join("[" + n + "]\n" + b for n, b in sec_dict.items()).encode("utf-8")
+
+    def read_exact(self, name: str) -> bytes:
+        if name.replace("\\", "/") == self.ini.replace("\\", "/"):
+            return self.raw
+        return self.source.read_exact(name)
+
+
+def flatten_live_sections(merged: bem_merge.MergeResult) -> dict[str, str]:
+    """All surviving sections, keyed by written name, as raw bodies.
+
+    Flattens every document (not just documents()[0]): entries frequently live in
+    an included file, and prepare() looks them up by name in one flat dict.
+    Sections that lost a duplicate are absent — that is the point.
+
+    KNOWN LIMIT: this collapses namespaces. When the same plain name lives in two
+    namespaces (measured: 182 such names in one real package), only the first
+    survives here. The loader keeps both. prepare() only understands plain names,
+    so this is a lossy compromise forced by the route, not a correct merge.
+    If merged.collisions() is non-empty, check that the lost copies are not
+    referenced by a namespaced `run = CommandList\\Name` you care about; if they
+    are, this route is not safe for that package.
+    """
+    out: dict[str, str] = {}
+    for _relative, sections in merged.documents():
+        for name, section in sections.items():
+            out.setdefault(name, section.body)
+    return out
+
+
+def build_package(source_dir: Path, output_bem: Path, character_id: str, package_name: str,
+                  legacy_aliases: dict | None = None, clamp_draws: list | None = None,
+                  root_offset_y: float | None = None, material_overrides: dict | None = None):
+    src = Source(source_dir)
+    merged = bem_merge.merge(source_dir)
+    if not merged.entry:
+        raise SystemExit("NO_ENTRY: bem_merge found no entry INI; run bem_triage.py for the routing")
+    active_ini = merged.entry
+    clean_sec = flatten_live_sections(merged)
+
+    # 2. Scrub global weather/terrain textures that clash. Hashes come from the
+    #    actual package — do not write them from memory.
+    for section, body in list(clean_sec.items()):
+        if section.startswith("TextureOverride_Texture") and value(body, "hash") in ("7d330dbd", "e69d7088"):
+            del clean_sec[section]
+
+    # 3. Match the character catalog (historical hash aliases may be injected)
+    db = copy.deepcopy(component_auto.catalogs())
+    cat = next((c for c in db if c["character_id"] == character_id), None)
+    if cat is None:
+        raise SystemExit(f"CATALOG_MISS: no {character_id} in catalog/; do not hand-edit the catalog")
+    if legacy_aliases:
+        cat["entries"].update(legacy_aliases)
+
+    # 4. Strip the 3DMigoto runtime trigger (BEM has no such command)
+    for key in list(clean_sec):
+        if key.startswith("CommandList_Draw_Component"):
+            clean_sec[key] = clean_sec[key].replace("run = CommandListTriggerResourceOverrides", "")
+    clean_sec.pop("CommandListTriggerResourceOverrides", None)
+
+    # 5. Repair the IB overrun: change the draw's declared count, not the buffer.
+    #    Each clamp_draws entry must be (component_id, declared_count, safe_count, first),
+    #    where safe_count comes from `bem_repair.py ib-audit`. Do not estimate it.
+    if clamp_draws:
+        for cid, declared, safe, first in clamp_draws:
+            draw_key = f"CommandList_Draw_Component{cid}"
+            body = clean_sec.get(draw_key)
+            if body is None:
+                raise SystemExit(f"DRAW_SECTION_MISSING: {draw_key}")
+            old = f"drawindexed = {declared}, {first}, 0"
+            new = f"drawindexed = {safe}, {first}, 0"
+            if old not in body:
+                raise SystemExit(f"DRAW_PATTERN_MISS: {old!r} not in {draw_key}; dump the body first")
+            clean_sec[draw_key] = body.replace(old, new)
+
+    # 6. Assemble in memory. prepare() already runs validate_manifest + check_geometry.
+    overlay = Overlay(src, active_ini, clean_sec)
+    builder, info = component_auto.prepare(overlay, active_ini, database=[cat])
+    builder.m["name"] = package_name
+
+    # 7. Inject BEM 1.5 features. The capability and the field must appear together
+    #    or validation rejects the package.
+    if root_offset_y is not None:
+        caps = builder.m.setdefault("required_capabilities", [])
+        if "root-offset-v1" not in caps:
+            caps.append("root-offset-v1")
+        builder.m["root_offset"] = {"path": "Bip001", "translation": [0.0, float(root_offset_y), 0.0]}
+
+    if material_overrides:
+        caps = builder.m.setdefault("required_capabilities", [])
+        if "material-overrides-v1" not in caps:
+            caps.append("material-overrides-v1")
+        for mesh in builder.m.get("meshes", []):
+            for draw in mesh.get("draws", []):
+                draw.setdefault("material_overrides", {}).update(material_overrides)
+
+    # 8. Write, then read the file back. Writing without reading back is not verification.
+    output_bem.parent.mkdir(parents=True, exist_ok=True)
+    builder.write(output_bem)
+    m, p = validated(output_bem)       # genuinely re-reads the file and revalidates
+    print(f"built & read back: {output_bem} ({output_bem.stat().st_size} bytes)")
+    return m, p, info
+```
+
+**What this skeleton still cannot do — do not pretend otherwise**: `prepare` only handles the
+"one contiguous index range per component" case (`component_auto.py:218-224` raises on `bindings`,
+buffer switches, or a non-zero `base`). Multi-material-slot reordering, draws spanning buffers, or
+packages needing a rebuilt vertex stream go through `bem_assemble.py` (repository only) or a direct
+`Builder` call per §13.5. The skeleton deliberately does not call `bem_peer`: borrowing a donor is a
+separate decision, see §13.3.
+
+### 13.2 Pattern 1: Index Buffer Overrun (F3 self-healing)
+
+When `bem_triage.py` reports `INDEX_BUFFER_OVERRUN`, start with:
+
+```bash
+python scripts/bem_repair.py ib-audit <package>/Meshes/Component0_IB.buf --first 0 --count 54018 --stride 2
+```
+
+It reports `available_from_first`, `short_by`, `overrun`, `fixable`, `clamped_count` and
+`dropped_triangles`. **Read the numbers before acting** — "it overruns" is not a diagnosis.
+
+**Key correction: what you change is the draw's declared `count`, not the index buffer.** Earlier
+documentation offered a `clamp_index_buffer()` that truncated the `.buf` to `len // stride` and wrote
+a new file. That approach has three fatal problems:
+
+1. **It ignores `first` entirely.** The overrun condition is `first + count > total`, where `total` is
+   the buffer length. The indices available after `first` number `total - first`, not `total`.
+   Truncating to `total` fixes nothing when `first > 0`.
+2. **It shortens the buffer.** The buffer is a source asset; shortening it changes the payload's byte
+   identity, and one `.buf` is usually shared by several draws — truncating for one draw silently
+   corrupts the others.
+3. **It never reports how much geometry it destroyed.** Clamping always deletes geometry, and the
+   amount must be stated or the delivery notes are false.
+
+The correct move is to edit that one draw declaration's `count` so it lands inside
+`[a multiple of 3, total - first]`, leaving the buffer byte-for-byte untouched (see step 5 of the
+§13.1 skeleton):
+
+```bash
+# Compute the safe value first, then decide whether to accept it.
+# Output goes to stdout; nothing is written.
+python scripts/bem_repair.py ib-clamp <package>/Meshes/Component0_IB.buf \
+    --first 0 --count 54018 --stride 2
+# Without --accept-truncation it refuses with IB_TRUNCATION_NOT_ACCEPTED
+```
+
+`ib-clamp` only produces a clamped result when you explicitly pass `--accept-truncation`, and it
+**never writes back to the `.buf`** — its output is the conclusion "this is what `count` should
+become". Applying that conclusion to the INI is your script's job.
+
+### 13.3 Pattern 2: Sibling DDS borrowing (F1 self-healing)
+
+When `bem_triage.py` reports a missing DDS, **"a file with the same name exists" does not mean "this
+is the same texture"**. Same-name-different-content DDS files are common in real packages (one
+character's skins sharing a filename, an author reusing an older asset). Blind copying puts the wrong
+normal map on a face and the validator will not complain — it only checks that the bytes are legal.
+
+Two steps, with a judgement in between:
+
+```bash
+# Step 1: find candidates. Output has two tiers: strong (relative path matches)
+# and weak (filename only). Results go to stdout, grouped by byte size; a
+# same-name-different-size hit is flagged as a conflict.
+python scripts/bem_repair.py donor-find "Body_Diffuse.dds" --root ..
+```
+
+`donor-find` **copies nothing**.
+
+```bash
+# Step 2: copy with evidence. --expect-size or --expect-sha256 is mandatory.
+python scripts/bem_repair.py donor-copy "<one candidate path from donor-find output>" \
+    -o ./payloads/ --expect-sha256 3f2a...
+```
+
+`donor-copy` takes **one candidate listed by `donor-find`** (not a free-form "missing name + source
+dir" pair), with the output directory via `-o`. It refuses without `--expect-size` / `--expect-sha256`
+(`DONOR_NO_EVIDENCE`) and refuses to overwrite an existing target (`DONOR_WOULD_OVERWRITE`, needs an
+explicit `--force`). The constraint is deliberate: **the evidence level belongs in the command**, not
+in a comment.
+
+Where the evidence comes from, most reliable first:
+
+| Evidence | Level | Notes |
+| --- | --- | --- |
+| Source `hash=` equals the donor package's `hash=` | exact | The hardest evidence: same hash is the same resource |
+| Relative path identical including subdirectories | computed | What the `strong` tier means; the path is the author's identity claim |
+| Filename matches and byte size matches | inferred | The `weak` tier. Acceptable, but state it in the delivery notes |
+| Filename matches, size differs | unusable | This is a conflict, not a candidate |
+
+When none of the four holds, the correct conclusion is **this slot has no donor**: fall back to the
+native material slot (drop the slot). Do not fabricate a texture to fill it.
+
+### 13.4 Pattern 3: Oversized textures (16K / >256 MiB) via mip dropping
+
+When a single DDS exceeds 256 MiB the engine refuses to load it. Use the tool; do not hand-roll it:
+
+```bash
+# Inspect the structure first: dimensions, format, mip count, array size, cubemap flag
+python scripts/bem_repair.py dds-audit <texture>.dds
+
+# Drop mip 0 and rebuild into a new file (input untouched)
+python scripts/bem_repair.py dds-mipdrop <texture>.dds -o <output>.dds
+```
+
+**Why you must not copy the old ~20-line `drop_mip0_dds()`**: it hardcodes
+`mip0_bytes = blocks_w * blocks_h * 16`, but bytes per block vary with the format — 8 for BC1/BC4,
+16 for BC5/BC6H/BC7, and uncompressed formats have no blocks at all. It also handles only one slice:
+for `array_size > 1` or a cubemap (`misc & 0x4`) there is a mip 0 in **every** slice, so slicing only
+the first leaves the file length inconsistent and the runtime either rejects it or reads misaligned
+data.
+
+`dds-mipdrop` gets these right: it looks up bytes per block from the DXGI format, rebuilds slice by
+slice according to `array_size`, refuses volume textures (`DDS_VOLUME_UNSUPPORTED`), asserts the
+rebuilt length equals `header_len + (per_slice - mip_sizes[0]) * array_size`
+(`DDS_REBUILD_MISMATCH`), refuses single-mip input (`DDS_SINGLE_MIP`), and refuses when the result is
+still over the limit (`DDS_STILL_OVER_LIMIT`, unless `--allow-still-over` is explicit).
+
+Dropping mip 0 is **lossy**: the texture blurs at close range. State that in the delivery notes; it is
+not a lossless repair.
+
+### 13.5 Pattern 4: Option Groups Translation from State Probe
+
+When `bem_state_probe.py` reveals reachable toggle keys, declare structured `option_groups` and
+`component_rules` in `project.json`.
+
+**Two structural details that are easy to get wrong** (both are rejected with a generic
+`Invalid component rule` / `Invalid condition node`, which reads like a data problem):
+
+1. `component_rules` is **one entry per component target, in target order**, and each entry is
+   `{"target": N, "candidates": [...]}` — not `{"component": N, "rules": [...]}`. The validator
+   requires `len(component_rules) == len(target.components)` and `rule['target'] == index`
+   (`bem_v11.py:742-746`).
+2. `when` is **not a string expression**. It is a structured node — `true`, `{"eq": [group, choice]}`,
+   `{"all": [...]}`, `{"any": [...]}`, `{"not": ...}` — validated by `_condition()`
+   (`bem_v11.py:123-142`). `"glasses == 'off'"` is an unsupported node and fails immediately.
+
+```json
+{
+  "option_groups": [
+    {
+      "id": "glasses",
+      "name": "Glasses Toggle",
+      "default": "on",
+      "choices": [
+        {"id": "on", "name": "Equipped"},
+        {"id": "off", "name": "Removed"}
+      ]
+    }
+  ],
+  "component_rules": [
+    {"target": 0, "candidates": [{"when": true, "operation": "keep"}]},
+    {"target": 1, "candidates": [{"when": true, "operation": "keep"}]},
+    {"target": 2, "candidates": [{"when": true, "operation": "keep"}]},
+    {
+      "target": 3,
+      "candidates": [
+        {"when": {"eq": ["glasses", "off"]}, "operation": "hide"},
+        {"when": {"eq": ["glasses", "on"]}, "operation": "replace", "mesh": 0}
+      ]
+    }
+  ]
+}
+```
+
+Note the `keep` stubs for targets 0–2: every component needs at least one candidate, and exactly one
+candidate must hold in every legal combination (`BEM_FORMAT_SPEC` §7). Do not omit untouched
+components.
+
+Once written, self-check with `bem_repair.py option-audit work/project.json`: it runs every legal
+combination and names the state that has zero or two candidates, plus the worst-case draw count.
+Remember that **the 256 ceiling is judged per mesh, not as a sum over targets** (`bem_v11.py:392-394`
+applies `logic.maximum` to each selected mesh independently), so adding the per-mesh draw counts
+together is a false alarm. See §13.15.
+
+### 13.6 Pattern 5: BEM 1.5 Shader Overrides & Posture Correction
+
+Map source INI tints, cutoff, transparent depth writes, and heel clipping directly:
+
+```python
+# 1. Material and shader overrides
+draw_entry["material_overrides"] = {
+    "floats": {
+        "_TransparentDepthWrite": 1.0,
+        "_Cutoff": 0.5,
+        "_Smoothness": 0.3
+    },
+    "colors": {
+        "_BaseColor": [1.0, 1.0, 1.0, 1.0],
+        "_EmissionColor": [0.2, 0.2, 0.2, 1.0]
+    },
+    "disable_keywords": ["_ANISOTROPY_SPECULAR_ON"],
+    "enable_keywords": ["_ALPHAPREMULTIPLY_ON"]
+}
+
+# 2. Root offset (for high heels clipping into the ground)
+manifest["required_capabilities"].append("root-offset-v1")
+manifest["root_offset"] = {
+    "path": "Bip001",
+    "translation": [0.0, 0.04, 0.0]
+}
+```
+
+### 13.7 Pattern 6: Normalising duplicate entry INI sections (`ini-audit` / `ini-normalize`)
+
+`component_auto.prepare()` reads the entry INI with `efmi_source.sections()`, which raises
+`duplicate INI section` on **any** repeated name (`efmi_source.py:20-21`). That is a purely syntactic
+gate — it fires whether or not the duplicate is harmless.
+
+The loader itself has two **opposite** rules for duplicates, and swapping them changes behaviour:
+
+| Section class | Examples | What a repeat actually does |
+| --- | --- | --- |
+| Prefix-less "global" | `Constants`, `Present`, `Rendering` | **Appends** in source order; a later assignment to the same variable wins |
+| Prefixed | `TextureOverride*`, `CommandList*`, `Resource*`, `Pool*`, `Key*` | **First occurrence only**; later copies are parsed and discarded |
+
+So "keep the first one" is wrong for a global, and "merge everything" is wrong for a prefixed section.
+
+```bash
+python bem_repair.py ini-audit F:/zmd/伊冯/伊冯-围裙/mod.ini
+python bem_repair.py ini-normalize F:/zmd/.../mod.ini -o work/mod.norm.ini
+```
+
+`ini-normalize` proves two things before writing, and refuses if either fails:
+
+1. **Projection unchanged**: the source and the result are each projected to `(per-section active
+   statement vectors, key lookup table)` and the two must be equal — first assignment wins for
+   prefixed sections, last assignment wins for globals. Otherwise `INI_PROJECTION_CHANGED` names the
+   differing sections.
+2. **Idempotence**: a second normalisation pass over the result must be a no-op, else
+   `INI_NOT_IDEMPOTENT`.
+
+It also refuses two shapes it will not infer: `namespace =` (an explicitly empty namespace changes
+the global append rule) and an indented header (`efmi_source.sections()` requires `[` at column zero
+while a human reader counts the section — the two readers disagree about what the file contains, so
+the tool does not pick a side).
+
+**Measured** (`伊冯-沁夏霓光`, three live INIs):
+
+| File | Source | After normalisation |
+| --- | --- | --- |
+| `065f9a34….ini` | `efmi_source.sections()` raises `duplicate INI section: Constants` | 202 sections, passes |
+| `ce1deef2….ini` | 5 sections, passes | 5 sections, passes (unchanged) |
+| `f38d483e….ini` | raises `duplicate INI section: Constants` | 6 sections, passes |
+
+In `065f9a34` both `[Constants]×3` and `[Present]×3` are append-semantics, with active statement
+counts of `[27, 7, 43]` and `[1, 9, 54]` — all three copies carry content, so dropping any one of
+them changes the result.
+
+### 13.8 Pattern 7: Collapsing conditional texture overrides (`texture-normalize`)
+
+`component_auto.texture_table` accepts exactly one shape:
+
+```ini
+[TextureOverride_X]
+hash = <hex>
+if $object_detected
+this = ResourceY
+endif
+```
+
+Sources often write `if $swapvar_body==0 / this = ResourceA / else / this = ResourceB / endif`. That
+is **not a defect**, it is a state choice. `texture-normalize` resolves the branch for a stated
+state, rewrites it into the accepted shape, and then re-walks its own output to prove the selected
+resource did not change (`TEXTURE_SELECTION_CHANGED` if it did).
+
+```bash
+python bem_repair.py texture-normalize work/mod.norm.ini -o work/mod.tex.ini
+python bem_repair.py texture-normalize in.ini -o out.ini --set '$swapvar_body=1'
+```
+
+The order in which the environment is built matters, and getting it backwards silently drops every
+override: `Constants` declarations → built-in assumptions (`$object_detected=1`, `$mod_enabled=1`,
+`$lod_level=0`, `$lod_detected=0`) → `--set`. `Constants` declares the **pre-detection** values
+(commonly `$object_detected = 0`) while a conversion is by definition the detected, mod-enabled
+state, so the assumptions must override the declarations. Measured on `伊冯-围裙`: with the order
+reversed all 21 overrides were dropped; corrected, all 21 are selected.
+
+Per-draw `ps-tN =` overrides are left alone and reported under `left_untouched` — collapsing one
+would change which texture a draw binds.
+
+Two more traps make a condition look unresolvable when the package is fine:
+
+- **Variable name case.** 3Dmigoto variable names are case-insensitive: `$SocksColor` in `Constants`
+  and `$sockscolor` in a condition are the same variable. An exact-match environment reports every
+  such condition as unknown. Measured on `伊冯-沁夏霓光`: 5 texture sections refused before the fix,
+  all 22 selected after it.
+- **Resale watermarks.** Same rule as above — strip them with `bem_merge`'s patterns before
+  structural analysis, or the banner line is read as an unsupported statement.
+
+### 13.9 Pattern 8: Entry program lowering and template drift (`entry-normalize`)
+
+`component_auto.validate_entry` accepts exactly one dispatcher program (`component_auto.py:106-111`).
+When it fails, decide which case you are in first; the three are handled completely differently:
+
+| Symptom | Reading | Action |
+| --- | --- | --- |
+| Old inline `if $mod_enabled && DRAW_TYPE == 4 / handling = skip / run = CommandListX / endif` | older template | **Lowerable**: rewritten to a fixed LOD0 callback + synthesised dispatcher + `$component_count` |
+| Dispatcher is **missing** template statements | package older than template | **Upgradable**: the whole body is replaced with the canonical nine lines, and the added lines are reported |
+| Dispatcher has **extra** statements the template does not know | package **newer** than the converter | **Refuse** `ENTRY_TEMPLATE_STALE` with the extra list; the converter template is what needs fixing |
+| Component declares `$\EFMIv1\gpu_posed = 0` | its draw stays in the original skeleton | **Refuse** `ENTRY_CPU_POSED_COMPONENT`; BEM cannot re-target it |
+
+The third case is the most important finding of this round. `伊冯-围裙` is a package the complex set
+marks as **successful**, yet 10 of its 11 entries are blocked by
+`ENTRY_PROGRAM: 分发流程超出已支持的 ComponentN 模板`, and the real difference is four **added**
+statements:
+
+```
+$\EFMIv1\bones_count = $bones_count
+$\EFMIv1\instance_count = $max_instance_count
+$\EFMIv1\custom_mesh_scale = 1.00
+CommandList\EFMIv1\Callback_MergedSkeleton_ConnectComponent = ref CommandList_MergedSkeleton_ConnectComponent
+```
+
+Deleting those four to "fix" the package would also delete merged-skeleton wiring, instance counts
+and custom mesh scale. The correct conclusion is that **the converter template lags the EFMIv1
+runtime**, and the template is what must be extended — not the package. The eleventh entry
+(`Component10`) declares `gpu_posed = 0`, a different class that also cannot be rewritten.
+
+The opposite case is `伊冯-沁夏霓光`: all 10 entries are old inline form (`handling = skip` inside the
+guard), and after lowering 10/10 pass `validate_entry`, with the dispatcher and `$component_count = 10`
+filled in automatically. Four of those entries only suppressed and never drew, so an empty
+`CommandListBEMReviewedHideN` callback is synthesised for each, matching the convention in
+`standard_worker.normalize_entries`.
+
+Two details that are easy to get wrong:
+
+- Resale watermarks (`【防倒卖：…】_702728`) are spliced in after `endif`. They are not statements; strip
+  them with `bem_merge`'s own rule (no `=` and a bracketed CJK banner) before structural analysis, or
+  2 of 10 entries are misjudged.
+- The rewritten file is re-parsed and every entry is re-run through the real
+  `component_auto.validate_entry`; anything that still fails raises `ENTRY_STILL_INVALID`, so an
+  unverified file is never written. That check needs `component_auto`, so in a shipped toolchain this
+  one subcommand refuses (`ENTRY_TEMPLATE_UNAVAILABLE`); the other fourteen are unaffected.
+
+### 13.10 Pattern 9: Skin palette and vertex compaction (`skin-audit` / `skin-fix` / `vertex-compact`)
+
+These three only apply to an **unpacked project** (`project.json` + `payloads/`). A packed `.bem`
+stores payloads compressed, so "fix one vertex" would mean rewriting the whole container.
+
+The rules come from the validator, not from taste: palette indices are UINT8 with at most 256
+entries; every weighted vertex's weights sum to 65535 (UNORM16) or 1.0 (float); an index may exceed
+the palette **only when its weight is zero**.
+
+```bash
+python bem_repair.py skin-audit work/project.json
+python bem_repair.py skin-fix  work/project.json -o work/fixed
+python bem_repair.py vertex-compact work/project.json --mesh 0 -o work/compact
+```
+
+`skin-fix` zeroes only out-of-palette indices on **zero-weight** slots; a weighted overrun is refused
+(`SKIN_BONE_OUT_OF_PALETTE`) because zeroing it drops that geometry onto the root bone. Only
+`--zero-weight-policy first` touches vertices whose four weights are all zero (giving the whole weight
+to bone 0), which is a visible change and therefore opt-in. When no vertex needs a change it writes
+nothing and returns `written: false` — copying tens of megabytes to prove there was no work is not a
+repair.
+
+`vertex-compact` has three constraints; miss one and it produces a worse package:
+
+1. **A shared buffer must be compacted as one group.** When several meshes read the same vertex
+   buffer, compacting one leaves the old buffer in place and the package grows. Measured on
+   `洁尔佩塔-侦探`: mesh 0 alone compacts to 66477/203284, apparently saving two thirds — but mesh 4
+   shares the same streams, and compacting the group yields 203284/203284, i.e. not one vertex is
+   spare. The tool therefore decides per group and refuses (`VERTEX_COMPACT_NOOP`) rather than hand
+   back a larger package.
+2. **Row-by-row verification before writing.** For every draw and every index, the bytes of the
+   corresponding row in the new buffer must equal the old one. That is a far stronger proof than
+   "the triangle count is unchanged" — any change in position, weight or bone is caught.
+3. **Orphaned payloads are pruned.** Compaction adds a new vertex buffer; leaving the old one behind
+   only makes the package bigger. `prune_payloads` walks the whole manifest collecting `payload` /
+   `indices` / `preview` references (animation frames, audio and the preview image included) and
+   renumbers what survives.
+
+### 13.11 Pattern 10: Merged-skeleton skin rewrite (`skin-convert`)
+
+The moment an EFMI export wires `Callback_MergedSkeleton_ConnectComponent`, its skin stream carries
+**global** bone ids, and a BEM mesh may only reference its own palette. Two source layouts, both of
+which must be converted to a mesh-local palette:
+
+| Source stride | Form | Contents |
+| --- | --- | --- |
+| 8 | rigid | 4 × UINT16 global bone ids |
+| 16 | weighted | 4 × UNORM16 weights (offset 0) + 4 × UINT16 global ids (offset 8) |
+
+Only two target layouts exist, matching native meshes: stride 12 (2 × U16 weights + 4 × U8 indices)
+and stride 32 (4 × F32 weights + 4 × U32 indices).
+
+```bash
+python bem_repair.py skin-convert work/project.json --mesh 0 -o work/native
+python bem_repair.py skin-convert work/project.json --mesh 0 --target-stride 32 -o work/native
+python bem_repair.py skin-convert work/project.json --mesh 0 --palette palette.json -o work/native
+```
+
+The palette is built in **first-use order** (not bone-table order), every `(weight, bone name)` pair
+is verified before writing and re-read afterwards. Five refusal codes: `SKIN_MERGED_PALETTE_TOO_LARGE`
+(>256 bones — the mesh has to be split at that point), `SKIN_BONE_OUT_OF_TABLE`,
+`SKIN_ALREADY_NATIVE`, `SKIN_NO_BONE_TABLE` (no `--palette` and the target component has no bone
+table either) and `SKIN_LAYOUT_UNKNOWN`. When several meshes share one skin buffer the group is
+rewritten once, using the same `_stream_group` logic as `vertex-compact`.
+
+### 13.12 Pattern 11: Texture override classification and duplicate identities (`texture-audit`)
+
+`component_auto.texture_table` accepts only `hash =` + `if $object_detected` + `this = Resource`.
+`texture-audit` sorts every `TextureOverride*` section into four kinds and **reproduces the exact
+error the automatic path would raise**:
+
+| kind | Meaning | What the auto path concludes |
+| --- | --- | --- |
+| `static` | the accepted shape above | convertible |
+| `per_draw` | `ps-tN = ResourceX` binds one slot for one draw | `TEXTURE_STATE: 不支持的贴图语句` |
+| `empty` | hash only, no statements | `TEXTURE_STATE: 不完整的贴图覆盖` |
+| `unsupported` | anything else (e.g. a `$active = 1` marker section) | `TEXTURE_STATE: 不支持的贴图语句` |
+
+Only a **duplicate hash is a real blocker** (`blockers`): two sections claiming one identity means
+the source itself is ambiguous about which texture wins, and no rewrite can settle it — ask the user.
+Everything else lands in `manual_review` and must be carried across verbatim rather than dropped.
+`ps-tN = null` is collected separately in `cleared_slots`, because BEM 1.5 expresses "bind nothing in
+this slot" with `texture_slots` — that is not the same as omitting the slot.
+
+Measured: `伊冯-围裙` has 11 entries, 21 static overrides, 0 duplicates. `诀-庆典` (M0488) has two
+`TextureOverride.Active.Mark` sections carrying `$active = 1`; they land in `manual_review` without
+blocking.
+
+### 13.13 Pattern 12: Locating a character-catalog gap (`catalog-gap`)
+
+`component_auto.match_catalog` requires **every** `ComponentN` identity to appear in **one and the
+same** character's `catalog/*.json`. One missing hash rejects the whole package, and the error does
+not say which one. `catalog-gap` answers that:
+
+```bash
+python bem_repair.py catalog-gap work/mod.ini
+python bem_repair.py catalog-gap work/mod.ini --catalog-dir <tool root>/catalog
+```
+
+Five verdicts, each with a different response:
+
+- `matched`: exactly one profile covers everything — auto-conversion is possible.
+- `ambiguous-profile`: several do — `match_catalog` rejects it as ambiguous; check for a duplicated
+  profile.
+- `mixed-characters`: the missing identities **belong to other characters** — the pack mixes parts
+  from more than one character and no single profile can ever satisfy it. `identities_present_elsewhere`
+  names the owners.
+- `unknown-identity`: nobody knows them — the "native resource ↔ EFMI hash" join itself is missing.
+- `partial`: both of the above.
+
+It also recognises four entry families, which is the precondition for judging convertibility:
+
+| Entry family | Shape | Has a reader |
+| --- | --- | --- |
+| `component-n` | `TextureOverride_(EntryPoint_)?ComponentN` | yes (`component_auto.BASE`) |
+| `hash-lod` | `TextureOverride_(EntryPoint_)?LODn.<hash>_<count>_<first>` | yes (`efmi_lod_source.ENTRY`) |
+| `bare-hash` | `TextureOverride_<hash>_<count>_<first>` | **no** |
+| `ib-component` | `TextureOverride_IB_<hash>_<label>_ComponentN` | **no** (only `bem_triage` reads it as a CrossIB redirect) |
+
+The last two are reported as `ENTRY_FAMILY` blockers: even with every identity resolved they cannot
+be lowered.
+
+**One easy mistake**: in `ib-component` the 8 hex digits in the section name are **not** the draw
+identity — they are the resource-group tag the author exported the vertex/index buffers under. The
+real identity is the body's `hash =`. Measured: `TextureOverride_IB_b21b22ac_衣服_Component1` has
+`hash = 586b4574`, so reading the identity from the name yields a hash nobody knows and also trips a
+bogus "name disagrees with body" error. The tool therefore records the name's hash separately as
+`resource_tag`. Likewise the `ComponentN` in that family repeats once per part (cloth/body/skirt all
+have a `Component1`), so it cannot be used for duplicate detection the way `component-n` is.
+
+Hash-named entries (`bare-hash`) carry their own index count and never consult a catalog, so there
+`catalog_required: false` and a gap is informational only.
+
+Measured over the 15-package complex set: 3 `matched`, 10 `unknown-identity`, 2 `not-required`
+(the entry family has no reader but also needs no catalog). In other words, "the catalog is missing
+identities" accounts for two thirds of this corpus — it is not an occasional case.
+
+### 13.14 Pattern 13: Body parameters and delta payloads (`deformation-audit`)
+
+`bem_v13.validate_manifest` raises on the first violation, so one bad frame reports one problem.
+`deformation-audit` walks all the rules and then **actually decodes every delta payload**:
+
+```bash
+python bem_repair.py deformation-audit work/project.json --minor 3
+```
+
+It checks the points in spec §10 that are invisible without reading the code:
+
+- frame ticks aligned to `min` by `step`, strictly increasing, and **covering both** `min` and `max`;
+- exactly one `{"value":neutral,"neutral":true}` neutral frame, and it carries no payload;
+- a non-neutral frame's fields are exactly `value/payload/count/encoding`; `count` may be 0 but not
+  exceed the vertex count;
+- the payload length is **exactly** `4 + J + 16N`, `J` in 1..4096, the header JSON is
+  `{"count":N,"encoding":"sparse-position-f32"}`, indices in range and unique within the frame,
+  deltas finite;
+- the deformed mesh must have a Float32 XYZ position attribute (semantic 0, format 0, dimension 3).
+
+`DEFORM_PAYLOAD_SIZE` and `DEFORM_PAYLOAD_HEADER` usually appear together: a frame claiming `count=3`
+while the payload holds 2 records breaks both — the typical trace of a hand-edited frame table.
+
+### 13.15 Pattern 14: Option-space enumeration and the 256 ceiling (`option-audit`)
+
+`bem_v11.selection_plan` proves "exactly one candidate per target" with a symbolic decision graph,
+which needs the builder modules (and therefore zstandard). `option-audit` **enumerates** the legal
+combinations instead; the advantage is that it can name **which state** breaks a rule:
+
+```bash
+python bem_repair.py option-audit work/project.json
+```
+
+- A group whose `available_when` is false **has no value** during enumeration, and any `eq` against
+  it is false — so "the group is hidden" is itself a state and cannot be modelled as a plain
+  Cartesian product.
+- A combination is legal only when every `selection_constraints` entry holds; the default
+  combination must be legal too (`OPTION_DEFAULT_ILLEGAL`).
+- Every rule is evaluated per state: 0 candidates → `OPTION_RULE_UNCOVERED`, ≥2 →
+  `OPTION_RULE_AMBIGUOUS`; both carry the first offending state.
+- **The 256 ceiling is judged per mesh, not as a sum over targets.** `bem_v11` applies
+  `logic.maximum(active, ...) <= 256` to each selected mesh independently. Two meshes with 200 draws
+  each never coexist, so they are not over the limit; adding their draw counts would be a false alarm.
+- Above 250000 combinations the report sets `truncated: true` and says so in `note` instead of
+  pretending the enumeration was exhaustive.
+
+### 13.16 Pattern 15: CrossIB geometry grouping (`ib-groups`)
+
+Source-side CrossIB auditing is impossible: once a redirect shader appears, a draw's range no longer
+bounds against the buffer its `ib = ref X` names (which is why `bem_triage` skips it, see
+`CROSS_IB_SECTION_SKIPPED`). After conversion the question becomes answerable again: group the meshes
+by the **bytes they actually index**.
+
+```bash
+python bem_repair.py ib-groups work/project.json
+```
+
+- `shared-topology` (same index bytes, different vertices) is the normal CrossIB outcome: one
+  topology, several skins.
+- `exact_duplicates` names byte-identical meshes; the packer dedups payloads anyway, so this is
+  informational.
+- `same_count_variants` (same length, different bytes) is a topology variant, not a defect.
+- `index_size_conflicts` is the only real error: one index buffer cannot be read at two widths.
+
+### 13.17 Pattern 16: Shape keys as a slider (`shape-params`)
+
+A source package's ShapeKey data is not "one pose" but "a whole adjustable range". The
+`ShapeKeyVertexOffsets` buffer holds the **weight-1 vertex delta** and Unity blends it linearly in
+the weight; the value in `[Constants]` is only the **starting point** the source author picked. So
+emit two frames covering 0..1000 instead of baking the source default into the vertices and shipping
+a static mesh.
+
+```bash
+python bem_repair.py shape-params "mod/yvonne" work/project.json --output work/body-morphs.json
+```
+
+The result is the `kind: bem-position-morphs` spec that `deformation-audit` and the builder already
+consume:
+
+```json
+{"schema":1,"kind":"bem-position-morphs",
+ "parameters":[{"id":"shape_0_0","name":"Component 0 shape 0","min":0,"max":1000,
+                "neutral":0,"default":500,"step":1}],
+ "mesh_deformations":[{"mesh":0,"parameter":"shape_0_0","frames":[
+    {"value":0,"neutral":true},
+    {"value":1000,"efmi":{"source":"../../mod/yvonne","ini":"main.ini","component":0,
+                          "shape_key":0,"vertex_order":"exported"}}]}]}
+```
+
+- Frames carry an `efmi` binding, never copied offsets: decoding happens at build time in
+  `efmi_shapes.decode_binding`, so the deltas always follow the source buffer and cannot drift
+  through transcription.
+- `default` comes from the source constant, so the slider starts where the source sits; `neutral`
+  is always 0.
+- Component-to-mesh mapping goes through the **default appearance**:
+  `appearance.components[].target` indexes `target.components[].id`, and `.mesh` is the target mesh
+  index. Components the default appearance does not replace are skipped and listed under `skipped`.
+- Refusals and blockers: `SHAPE_DATA_ABSENT` (no declarations and no setter call at all),
+  `SHAPE_NOT_DRIVEN` (buffers declared and initialised but **no caller ever runs the setter**, so the
+  source sliders are dead at weight 0 and there is no default to convert — M0265 is exactly this:
+  `[Constants]` only runs `CommandListInitializeShapeKeys`, `$shapekey_id` / `$shapekey_value` are 0,
+  and `CommandListSetShapeKey` appears only inside a comment), `SHAPE_SOURCE_ARCHIVE` (rar/7z need an
+  external backend — unpack first), `SHAPE_RESOURCE_MISSING`, `SHAPE_VERTEX_MAP_REQUIRED` (source
+  vertex ids past the exported mesh need an explicit `vertex_map`), `SHAPE_KEY_OUT_OF_RANGE` (key
+  past `batch*127`), `SHAPE_POSITION_ATTRIBUTE` (no Float32 XYZ position attribute),
+  `SHAPE_NO_DRIVEN_KEY` (every weight for that component is zero).
+- Run `deformation-audit` after writing the spec and before building: `shape-params` only decides
+  which parameters exist and what they bind to; it does not replace format validation.
+
+### 13.18 Self-Debugging & Verification Loop
+
+The Agent must test and validate its custom build script in the workspace before presenting results:
+1. Run custom script: `python workspace/build_mod.py`
+2. Run validation: `python tools/CustomModel/bem_tool.py validate output.bem --report report.json`
+3. Inspect `report.json`:
+   - If `success == true`: Package passes data validation.
+   - If failed: Inspect `issues`, self-patch `build_mod.py`, and repeat until valid.
+
+### 13.19 Novice Delivery Summary Format
+
+Deliver the result using plain language, omitting raw hex hashes:
+
+```markdown
+### Conversion Complete
+
+- **Output Package**: `F:\...\package.bem` (verified compatible with the current game version)
+- **Appearance & Controls**:
+  - [Default Look]: Base outfit and hair.
+  - [Part Toggles]: Hotkey toggles configured (e.g. jacket on/off, hair length).
+- **Automated Repairs**:
+  - [Texture Complete]: Missing secondary texture borrowed from matching sibling package.
+  - [Mesh Trim]: Truncated 6 out-of-bounds trailing index points cleanly with zero visual artifacts.
+  - [Posture Adjustment]: Added 0.04m root offset to eliminate heel ground clipping.
+  - [Safe Filtering]: Excluded author 2D mouse overlay menu scripts.
+```
+
 
 ---
 

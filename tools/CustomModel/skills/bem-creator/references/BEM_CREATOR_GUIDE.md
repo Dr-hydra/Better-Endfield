@@ -14,7 +14,7 @@ BEM（`.bem`）是 Better Endfield Next 的模型替换包。1.0–1.3 包对应
 
 | 工具 | 位置 | 用途 |
 | --- | --- | --- |
-| 独立创作者 GUI `BetterEndfieldNext.BemTools.exe` | `BEM-Tools-1.5.4-win-x64.zip` 根目录，完整解压后双击使用 | 工程、工作区、转换、打包、解包与合集；无需安装主程序、Python 或 .NET |
+| 独立创作者 GUI `BetterEndfieldNext.BemTools.exe` | 独立工具包 `BEM-Tools-win-x64.zip` 根目录，完整解压后双击使用 | 工程、工作区、转换、打包、解包与合集；无需安装主程序、Python 或 .NET |
 | BEM Tools 命令行 `BetterEndfieldNext.BemConverter.exe` | 程序目录 `tools/BemConverter/`，或独立工具包根目录 | 转换、打包、校验、解包、合集，所有功能的核心 |
 | 主程序创作者窗口 | 角色外观页 →“BEM 创作者工具…”；旧版入口为“其他来源 Mod 转换…” | 与独立 GUI 共用窗口代码，调用同一个命令行 |
 | Blender 导出插件 | 独立工具包 `blender_addon/bem_exporter/` | 从带有 `BEM_C<number>` 对象的 Blender 工程导出可编辑 BEM 工程 |
@@ -22,11 +22,11 @@ BEM（`.bem`）是 Better Endfield Next 的模型替换包。1.0–1.3 包对应
 | Android 模型页 | Better Endfield Next App | 导入、启用、选择，以及手机纹理转换 |
 | AI Skill `bem-creator` | 独立工具包 `skills/bem-creator` | 复制到 AI 工具的技能目录（Codex 为 `~/.codex/skills`），用 `$bem-creator` 调用。只辅助准备配方和解释报告，不能代替校验 |
 
-BEM Tools 1.6.1 支持写入和读取 BEM 1.0–1.5，并提供独立 GUI；旧的 1.5.0 正式发行包不包含 BEM 1.4。工具版本与 BEM 格式版本不同，当前 `--version` 输出为 `BEM Tools 1.6.1 / BEM 1.0+1.1+1.2+1.3+1.4+1.5`。从源码运行时，用 `python tools/CustomModel/bem_tool.py` 代替 exe。
+BEM Tools 1.6.3 支持写入和读取 BEM 1.0–1.5，并提供独立 GUI；旧的 1.5.0 正式发行包不包含 BEM 1.4。工具版本与 BEM 格式版本不同，当前 `--version` 输出为 `BEM Tools 1.6.3 / BEM 1.0+1.1+1.2+1.3+1.4+1.5`。从源码运行时，用 `python tools/CustomModel/bem_tool.py` 代替 exe。发行压缩包名为 `BEM-Tools-win-x64.zip`，文件名不带版本号，**版本只能靠 `--version` 确认**，不要从文件名推断。
 
 独立工具请完整解压后运行 `BetterEndfieldNext.BemTools.exe`，保留同目录的命令行和支持文件。GUI 跟随系统语言；可将一个 `.bemproj.json` 工程拖到 EXE 图标上打开，或通过命令行传入该工程路径。主程序中的创作者窗口仍使用主程序的语言设置。
 
-1.5.4 更新昼雪的 Windows 1.6.3 原生合同与来源身份，并保留 1.5.3 新增的祀、明河资料，随工具附带在 catalog/ 和 profiles/。请以各资料的准备状态及缺项为准；运行时采集不等于源 Mod 可自动转换或替换模型已实测。本次不声明 Android 新版游戏兼容。
+本树附带的目标数据更新昼雪的 Windows 1.6.3 原生合同与来源身份，并保留 1.5.3 新增的祀、明河资料，随工具附带在 catalog/ 和 profiles/。请以各资料的准备状态及缺项为准；运行时采集不等于源 Mod 可自动转换或替换模型已实测。本次不声明 Android 新版游戏兼容。
 
 ## 三种制作方式
 
