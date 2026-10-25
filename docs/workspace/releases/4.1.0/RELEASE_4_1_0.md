@@ -1,6 +1,6 @@
-﻿# Better Endfield Next 4.1.0
+# Better Endfield Next 4.1.0
 
-本轮发布 **Windows 4.1.0、Android 4.1.0（40100）与 BEM Tools 1.7.0**。共分发 3 个正式产物。
+本轮发布 **Windows 4.1.0、Android 4.1.0（40100）与 BEM Tools 1.6.2**。共分发 3 个正式产物。
 
 公开发布正文见 [GITHUB_RELEASE.md](GITHUB_RELEASE.md)。
 
@@ -19,7 +19,7 @@
 - **安卓端噗切娜主世界 LOD 映射与模型校验修复**：
   - 补全噗切娜（chr_0038_purrche）全量 22 个组件在安卓端 UI LOD0 与主世界模型之间的映射关系；
   - 解决帽子部件（S_actor_purrchena_fur_02_lod0）在安卓主世界模型中保留 lod0 命名导致的校验失败与节点缺失问题。
-- **BEM Tools 1.7.0**：
+- **BEM Tools 1.6.2**：
   - 完整支持 BEM 1.5 动态驱动器（dynamic-drivers-v1）规范与 ZIP 单包打包 / 解包支持（pack-zip / unpack）。
 
 ## 附件范围
@@ -28,5 +28,5 @@
 | --- | --- | --- |
 | BetterEndfieldNext-4.1.0-Setup.exe | GitHub Release | Windows x64 安装包 |
 | BetterEndfieldNext-4.1.0-Android-arm64.apk | GitHub Release | Android arm64 安装包 |
-| BEM-Tools-1.7.0-win-x64.zip | GitHub Release | 完整独立创作者 GUI、CLI 和全量角色资料 |
+| BEM-Tools-1.6.2-win-x64.zip | GitHub Release | 完整独立创作者 GUI、CLI 和全量角色资料 |
 | BetterEndfieldNext-4.1.0-win-x64.zip | 本地保留 | Windows x64 便携包 |

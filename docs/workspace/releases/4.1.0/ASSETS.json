@@ -33,8 +33,8 @@
       "public": true
     },
     {
-      "name": "BEM-Tools-1.7.0-win-x64.zip",
-      "bytes": 73238550,
+      "name": "BEM-Tools-1.6.2-win-x64.zip",
+      "bytes": 73239538,
       "public": true
     }
   ],
@@ -50,8 +50,8 @@
     "url": "https://github.com/Dr-hydra/Better-Endfield/releases/tag/v4.1.0"
   },
   "bem_tools": {
-    "version": "1.7.0",
-    "gui_file_version": "1.7.0.0",
+    "version": "1.6.2",
+    "gui_file_version": "1.6.2.0",
     "platform": "windows-x64"
   }
 }

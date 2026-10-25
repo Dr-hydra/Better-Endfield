@@ -22,7 +22,7 @@ BEM（`.bem`）是 Better Endfield Next 的模型替换包。1.0–1.3 包对应
 | Android 模型页 | Better Endfield Next App | 导入、启用、选择，以及手机纹理转换 |
 | AI Skill `bem-creator` | 独立工具包 `skills/bem-creator` | 复制到 AI 工具的技能目录（Codex 为 `~/.codex/skills`），用 `$bem-creator` 调用。只辅助准备配方和解释报告，不能代替校验 |
 
-BEM Tools 1.7.0 支持写入和读取 BEM 1.0–1.5，并提供独立 GUI；旧的 1.5.0 正式发行包不包含 BEM 1.4。工具版本与 BEM 格式版本不同，当前 `--version` 输出为 `BEM Tools 1.7.0 / BEM 1.0+1.1+1.2+1.3+1.4+1.5`。从源码运行时，用 `python tools/CustomModel/bem_tool.py` 代替 exe。
+BEM Tools 1.6.2 支持写入和读取 BEM 1.0–1.5，并提供独立 GUI；旧的 1.5.0 正式发行包不包含 BEM 1.4。工具版本与 BEM 格式版本不同，当前 `--version` 输出为 `BEM Tools 1.6.2 / BEM 1.0+1.1+1.2+1.3+1.4+1.5`。从源码运行时，用 `python tools/CustomModel/bem_tool.py` 代替 exe。
 
 独立工具请完整解压后运行 `BetterEndfieldNext.BemTools.exe`，保留同目录的命令行和支持文件。GUI 跟随系统语言；可将一个 `.bemproj.json` 工程拖到 EXE 图标上打开，或通过命令行传入该工程路径。主程序中的创作者窗口仍使用主程序的语言设置。
 

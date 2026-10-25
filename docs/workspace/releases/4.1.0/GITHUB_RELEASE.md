@@ -1,4 +1,4 @@
-Better Endfield Next **4.1.0** 与 BEM Tools **1.7.0**，带来 BEM 1.5 连续动画与动效驱动（dynamic-drivers-v1）、原生单模型 ZIP 容器支持、双端启动自动更新检查与安卓端噗切娜主世界模型校验修复。
+Better Endfield Next **4.1.0** 与 BEM Tools **1.6.2**，带来 BEM 1.5 连续动画与动效驱动（dynamic-drivers-v1）、原生单模型 ZIP 容器支持、双端启动自动更新检查与安卓端噗切娜主世界模型校验修复。
 
 ## Windows 4.1.0 & Android 4.1.0
 
@@ -14,7 +14,7 @@ Better Endfield Next **4.1.0** 与 BEM Tools **1.7.0**，带来 BEM 1.5 连续�
 - **安卓端噗切娜主世界 LOD 映射与模型校验修复**：
   - 补全噗切娜（chr_0038_purrche）全量 22 个组件在安卓端 UI LOD0 与主世界模型之间的映射关系，解决帽子部件（fur_02）在安卓主世界模型中保留 lod0 命名导致的校验失败与节点缺失问题。
 
-## BEM Tools 1.7.0
+## BEM Tools 1.6.2
 
 - **动效驱动规范支持**：完整支持 BEM 1.5 动效驱动（dynamic-drivers-v1）规范导出、检验与构建。
 - **ZIP 容器支持**：新增 pack-zip 与 unpack 命令，全面支持单模型 ZIP 容器打包与解包。
@@ -25,4 +25,4 @@ Better Endfield Next **4.1.0** 与 BEM Tools **1.7.0**，带来 BEM 1.5 连续�
 | --- | --- |
 | BetterEndfieldNext-4.1.0-Setup.exe | Windows x64 主程序安装包 |
 | BetterEndfieldNext-4.1.0-Android-arm64.apk | Android 4.1.0 Release APK |
-| BEM-Tools-1.7.0-win-x64.zip | 完整独立创作者 GUI、CLI 和全量角色资料 |
+| BEM-Tools-1.6.2-win-x64.zip | 完整独立创作者 GUI、CLI 和全量角色资料 |
