@@ -140,6 +140,26 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
             }
             ++visible_index;
         }
+        if (!matched && relation.target_path.ends_with("_lod1")) {
+            std::string lod0_target = relation.target_path;
+            lod0_target.back() = '0';
+            visible_index = 0;
+            for (const auto& candidate:candidates) {
+                if (candidate.key.region!=GenericMatching::Region::Lod1) continue;
+                if (candidate.key.path==lod0_target) {
+                    if (matched) return refuse("duplicate world renderer: "+lod0_target);
+                    matched=&candidate; matched_visible_index=visible_index;
+                    relation.target_path=lod0_target;
+                    relation.target_renderer=lod0_target.substr(std::string_view("Mesh_all/lod1/").size());
+                    if (relation.target_mesh.ends_with("_lod1")) relation.target_mesh.back()='0';
+                    else if (const auto p=relation.target_mesh.find("_lod1"); p!=std::string::npos) {
+                        relation.target_mesh.replace(p,5,"_lod0");
+                    }
+                    Log("Android world renderer fallback to lod0 accepted: "+lod0_target);
+                }
+                ++visible_index;
+            }
+        }
         void* renderer=matched?matched->renderer:nullptr;
         if (!renderer) { Log("Android world renderer missing: "+target_name); return false; }
         if (!bem.skip_validation && !SameMeshSpace(source.renderer,renderer)) {

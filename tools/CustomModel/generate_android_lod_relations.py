@@ -28,49 +28,67 @@ def main() -> None:
     sys.path.insert(0, str(repo / "scripts"))
     from workspace_config import load_workspace, write_if_changed
     workspace = load_workspace(args.workspace_config, repo)
-    policy_path = args.relation_config or repo / "config/compatibility/custom_model" / workspace.get("game.version") / "android-lod-relations.json"
-    policy = json.loads(policy_path.read_text(encoding="utf-8-sig"))
+    configured_version = workspace.get("game.version")
+    policy_candidates = [
+        repo / "config/compatibility/custom_model" / configured_version / "android-lod-relations.json",
+        repo / "config/compatibility/custom_model/1.6.3/android-lod-relations.json",
+        repo / "config/compatibility/custom_model/1.5.3/android-lod-relations.json",
+    ]
+    resolved_policy_path = args.relation_config or next((p for p in policy_candidates if p.exists()), policy_candidates[0])
+    policy = json.loads(resolved_policy_path.read_text(encoding="utf-8-sig"))
     if policy.get("schema_version") != 1:
         raise ValueError("Unsupported LOD relation configuration")
     snapshot = policy["snapshot"]
+    overrides = policy.get("overrides", {})
     output = args.output or repo / "native/modules/custom_model/android_lod_relations.generated.h"
     android_path = workspace.path(policy["catalog_key"])
-    android = {x["characterId"]: x for x in json.loads(android_path.read_text(encoding="utf-8"))["characters"]}
+    android = {x["characterId"]: x for x in json.loads(android_path.read_text(encoding="utf-8-sig"))["characters"]}
     rows: list[tuple[str, str, str, str, str, str, str]] = []
     for catalog_path in sorted((repo / policy["native_catalog"]).glob("chr_*.json")):
-        catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+        catalog = json.loads(catalog_path.read_text(encoding="utf-8-sig"))
         character = catalog["character_id"]
         android_character = android.get(character)
-        if not android_character:
+        char_overrides = overrides.get(character, {})
+        if not android_character and not char_overrides:
             continue
         lod1 = {}
-        for asset in android_character.get("modelAssets", []):
-            path = asset.get("path", "")
-            if "_lod1" not in path.lower():
-                continue
-            name = path.rsplit("##", 1)[1] if "##" in path else Path(path).stem
-            canonical = name[:-2] if name.endswith("_8") else name[:-3] if name.endswith("_20") else name
-            key = canonical.casefold()
-            previous = lod1.get(key)
-            if previous is None or name.endswith(("_8", "_20")):
-                lod1[key] = name
+        if android_character:
+            for asset in android_character.get("modelAssets", []):
+                path_str = asset.get("path", "")
+                if "_lod1" not in path_str.lower():
+                    continue
+                name = path_str.rsplit("##", 1)[1] if "##" in path_str else Path(path_str).stem
+                canonical = name[:-2] if name.endswith("_8") else name[:-3] if name.endswith("_20") else name
+                key = canonical.casefold()
+                previous = lod1.get(key)
+                if previous is None or name.endswith(("_8", "_20")):
+                    lod1[key] = name
+        comp_overrides = char_overrides.get("components", {})
         for component_id in sorted(catalog["components"], key=int):
             component = catalog["components"][component_id]
             source_mesh = component["mesh_name"]
-            source_base = source_mesh[:-3] if source_mesh.endswith("_20") else source_mesh[:-2] if source_mesh.endswith("_8") else source_mesh
-            target_mesh_guess = source_base.rsplit("_lod0", 1)[0] + "_lod1"
-            observed_mesh = lod1.get(target_mesh_guess.casefold())
-            target_mesh = None
-            if observed_mesh:
-                # Preserve the catalog's canonical casing while retaining an
-                # independently observed Android suffix such as _8.
-                suffix = "_8" if observed_mesh.endswith("_8") else "_20" if observed_mesh.endswith("_20") else ""
-                target_mesh = target_mesh_guess + suffix
             observations = component.get("evidence", {}).get("observations", {})
             ui = next((x for name, x in observations.items() if name.endswith("_uimodel") and x.get("path")), None)
-            if not target_mesh or not ui:
+            if not ui:
                 continue
             source_path = ui["path"].split("/", 1)[1]
+            if component_id in comp_overrides:
+                override = comp_overrides[component_id]
+                target_path = override["target_path"]
+                target_mesh = override["target_mesh"]
+                rows.append((character, catalog["ui_resource"], catalog["world_resource"], source_path,
+                             source_mesh, target_path, target_mesh))
+                continue
+            source_base = source_mesh[:-3] if source_mesh.endswith("_20") else source_mesh[:-2] if source_mesh.endswith("_8") else source_mesh
+            target_mesh_guess = source_base.rsplit("_lod0", 1)[0] + "_lod1"
+            if android_character:
+                observed_mesh = lod1.get(target_mesh_guess.casefold())
+                if not observed_mesh:
+                    continue
+                suffix = "_8" if observed_mesh.endswith("_8") else "_20" if observed_mesh.endswith("_20") else ""
+                target_mesh = target_mesh_guess + suffix
+            else:
+                target_mesh = target_mesh_guess
             target_renderer = target_mesh[:-2] if target_mesh.endswith("_8") else target_mesh[:-3] if target_mesh.endswith("_20") else target_mesh
             target_path = "Mesh_all/lod1/" + target_renderer
             rows.append((character, catalog["ui_resource"], catalog["world_resource"], source_path,

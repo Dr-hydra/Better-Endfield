@@ -4,6 +4,16 @@
   "snapshot": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
   "catalog_key": "resource_update.legacy_lod_catalog",
   "native_catalog": "tools/CustomModel/catalog",
+  "overrides": {
+    "chr_0038_purrche": {
+      "components": {
+        "16": {
+          "target_path": "Mesh_all/lod1/S_actor_purrchena_fur_02_lod0",
+          "target_mesh": "S_actor_purrchena_fur_02_lod0"
+        }
+      }
+    }
+  },
   "evidence_status": "inherited-generation-policy-not-revalidated",
-  "note": "Workspace migration retains the existing generated table behavior. The source catalog is a historical Windows capture; this migration does not establish new Android runtime evidence."
+  "note": "Workspace migration retains the existing generated table behavior. Purrche chr_0038_purrche hat S_actor_purrchena_fur_02_lod0 retains lod0 naming in Android world model."
 }
