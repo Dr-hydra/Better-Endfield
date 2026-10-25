@@ -59,9 +59,9 @@ supported way to contribute a packaged skill.
 ## Notes
 
 - **Catalog description length.** The harness truncates catalog descriptions at
-  `catalogDescriptionMaxLength`, which defaults to `500`. The skill's description
-  is longer than that, so the routing summary the model sees is cut. Raise the
-  value on `@deepseek-ai/dsh-tool-skill` if the full text matters for routing.
+  `catalogDescriptionMaxLength`, which defaults to `500`. The skill description
+  is held at or below that ceiling so the routing summary the model sees is
+  never cut mid-sentence; `test/smoke.mjs` enforces the bound.
 - **No tool yet.** This release contributes the skill only. A `bem` tool that
   wraps the CLI is planned so the skill stops depending on shell dialect
   (`bash` on POSIX, `pwsh` on Windows).

@@ -41,6 +41,13 @@ const skill = registered[0]
 
 assert.equal(skill.name, 'bem-creator')
 assert.ok(skill.description.length > 100, 'the routing description must survive the frontmatter parse')
+// The harness truncates catalog descriptions at `catalogDescriptionMaxLength`,
+// which defaults to 500. A longer description is cut mid-sentence in the catalog
+// the model routes from, so the ceiling is enforced here instead.
+assert.ok(
+  skill.description.length <= 500,
+  `description is ${skill.description.length} chars; the harness catalog truncates at 500`,
+)
 assert.equal(skill.source, 'bundled')
 assert.equal(skill.provider, 'bem-creator')
 assert.deepEqual(skill.invocation, { modelInvocable: true, userInvocable: true })

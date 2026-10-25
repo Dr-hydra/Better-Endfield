@@ -1,6 +1,6 @@
 ---
 name: bem-creator
-description: Convert supported Endfield source Mods to BEM 1.0–1.5, build explicit multi-resource and static-mesh BEM 1.4 projects, apply BEM 1.5 material and keyword overrides (material-overrides-v1), configure author position sliders and official EFMI ShapeKey buffer bindings, repair source-side defects (index-buffer overruns, oversized textures, missing donor payloads), inspect and validate packages, unpack editable projects, repack them, and assemble multi-Mod ZIP distributions using the BEM creator CLI. Use for BEM creation and conversion diagnostics.
+description: Convert Endfield source Mods to BEM 1.0–1.5, build explicit multi-resource and static-mesh BEM 1.4 projects, apply BEM 1.5 material and keyword overrides, configure author position sliders and EFMI ShapeKey bindings, repair source-side defects (index-buffer overruns, oversized textures, missing donors), inspect, validate, unpack and repack packages, and assemble multi-Mod ZIPs with the BEM creator CLI. Use for BEM creation and conversion diagnostics.
 ---
 
 ## User Onboarding & Interaction Protocol
