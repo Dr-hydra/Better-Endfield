@@ -352,6 +352,24 @@ public final class MainActivity extends Activity {
                     getString(R.string.home_logo_summary, ModuleSettings.getLogoColor(this)),
                     this::openModelPage));
         }
+        if (ModuleSettings.isAppearanceEnabled(this)) {
+            List<String> parts = new ArrayList<>();
+            if (ModuleSettings.isAppearanceReplaceWeapon(this)
+                    && ModuleSettings.APPEARANCE_MODE_INK.equals(
+                            ModuleSettings.getAppearanceWeaponMode(this))) {
+                parts.add("水墨武器");
+            }
+            if (ModuleSettings.isAppearanceReplaceCharacter(this)) {
+                String mode = ModuleSettings.getAppearanceMode(this);
+                if (ModuleSettings.APPEARANCE_MODE_INK.equals(mode)) parts.add("水墨服装");
+                else if (ModuleSettings.APPEARANCE_MODE_UNMASKED.equals(mode)) parts.add("摘面具形态");
+            }
+            if (ModuleSettings.isAppearanceReplaceEffects(this)) parts.add("水墨剑光");
+            enabled.add(new HomeItem(getString(R.string.home_feature_appearance),
+                    parts.isEmpty() ? getString(R.string.home_appearance_off)
+                            : String.join(" · ", parts),
+                    () -> openEnhancementFeature(EnhancementSettingsActivity.APPEARANCE)));
+        }
         int voiceRules = parseRules(ModuleSettings.getVoiceRules(this)).size();
         if (voiceRules > 0) {
             enabled.add(new HomeItem(getString(R.string.voice_page),
@@ -370,24 +388,6 @@ public final class MainActivity extends Activity {
         if (ModuleSettings.isSustainedDashEnabled(this)) {
             enabled.add(new HomeItem(getString(R.string.home_feature_dash), dashState(),
                     () -> openEnhancementFeature(EnhancementSettingsActivity.DASH)));
-        }
-        if (ModuleSettings.isAppearanceEnabled(this)) {
-            List<String> parts = new ArrayList<>();
-            if (ModuleSettings.isAppearanceReplaceWeapon(this)
-                    && ModuleSettings.APPEARANCE_MODE_INK.equals(
-                            ModuleSettings.getAppearanceWeaponMode(this))) {
-                parts.add("水墨武器");
-            }
-            if (ModuleSettings.isAppearanceReplaceCharacter(this)) {
-                String mode = ModuleSettings.getAppearanceMode(this);
-                if (ModuleSettings.APPEARANCE_MODE_INK.equals(mode)) parts.add("水墨服装");
-                else if (ModuleSettings.APPEARANCE_MODE_UNMASKED.equals(mode)) parts.add("摘面具形态");
-            }
-            if (ModuleSettings.isAppearanceReplaceEffects(this)) parts.add("水墨剑光");
-            enabled.add(new HomeItem(getString(R.string.home_feature_appearance),
-                    parts.isEmpty() ? getString(R.string.home_appearance_off)
-                            : String.join(" · ", parts),
-                    () -> openEnhancementFeature(EnhancementSettingsActivity.APPEARANCE)));
         }
         if (ModuleSettings.isOverlayEnabled(this)) {
             enabled.add(new HomeItem(getString(R.string.overlay_card_title),
@@ -1037,6 +1037,8 @@ public final class MainActivity extends Activity {
                 getString(R.string.enhancement_group_models), "");
         enhancementEntry(models, getString(R.string.model_page), this::openModelPage);
         enhancementEntry(models, getString(R.string.custom_model_page), this::openCustomModelPage);
+        addEnhancementEntry(models, getString(R.string.appearance_card_title),
+                EnhancementSettingsActivity.APPEARANCE);
         page.addView(models, SectionCard.stacked(this, 0));
 
         SectionCard gameplay = new SectionCard(this, "",
@@ -1046,8 +1048,6 @@ public final class MainActivity extends Activity {
         addEnhancementEntry(gameplay, getString(R.string.camera_card_title),
                 EnhancementSettingsActivity.CAMERA);
         addEnhancementEntry(gameplay, "持续冲刺", EnhancementSettingsActivity.DASH);
-        addEnhancementEntry(gameplay, getString(R.string.appearance_card_title),
-                EnhancementSettingsActivity.APPEARANCE);
         addEnhancementEntry(gameplay, getString(R.string.overlay_card_title),
                 EnhancementSettingsActivity.OVERLAY);
         page.addView(gameplay, SectionCard.stacked(this, 12));

@@ -60,13 +60,16 @@ public final class EnhancementSettingsActivity extends Activity {
         back.setOnClickListener(view -> finish());
         page.addView(back, SectionCard.stacked(this, 0));
 
-        SectionCard card;
-        if (INTERFACE.equals(feature)) card = buildInterfaceCard();
-        else if (CAMERA.equals(feature)) card = buildCameraCard();
-        else if (DASH.equals(feature)) card = buildDashCard();
-        else if (APPEARANCE.equals(feature)) card = buildAppearanceCard();
-        else card = buildOverlayCard();
-        page.addView(card, SectionCard.stacked(this, 12));
+        if (APPEARANCE.equals(feature)) {
+            buildAppearanceCards(page);
+        } else {
+            SectionCard card;
+            if (INTERFACE.equals(feature)) card = buildInterfaceCard();
+            else if (CAMERA.equals(feature)) card = buildCameraCard();
+            else if (DASH.equals(feature)) card = buildDashCard();
+            else card = buildOverlayCard();
+            page.addView(card, SectionCard.stacked(this, 12));
+        }
         setContentView(scroll);
 
         scroll.setOnApplyWindowInsetsListener((view, insets) -> {
@@ -175,44 +178,57 @@ public final class EnhancementSettingsActivity extends Activity {
         return card;
     }
 
-    /** Mirrors the desktop WeaponAppearancePage: master switch plus weapon,
-     * character and effects sections, each with its own toggle and style rows. */
-    private SectionCard buildAppearanceCard() {
-        SectionCard card = card(getString(R.string.appearance_card_title));
-        addToggle(card, R.string.appearance_enable,
+    /** Mirrors the desktop WeaponAppearancePage: master switch card plus weapon,
+     * character and effects section cards, each with its own toggle and style rows. */
+    private void buildAppearanceCards(LinearLayout page) {
+        setTitle(getString(R.string.appearance_card_title));
+
+        SectionCard masterCard = new SectionCard(this, "", getString(R.string.appearance_card_title), "");
+        addToggle(masterCard, R.string.appearance_enable,
                 () -> ModuleSettings.isAppearanceEnabled(this),
                 checked -> saveAppearanceSetting(R.string.appearance_enable, checked));
-        addToggle(card, R.string.appearance_weapon_toggle,
+        page.addView(masterCard, SectionCard.stacked(this, 12));
+
+        SectionCard weaponCard = new SectionCard(this, "", getString(R.string.appearance_weapon_section_title), "");
+        addToggle(weaponCard, R.string.appearance_weapon_toggle,
                 () -> ModuleSettings.isAppearanceReplaceWeapon(this),
                 checked -> saveAppearanceSetting(R.string.appearance_weapon_toggle, checked));
-        addToggle(card, R.string.appearance_weapon_mode_ink,
+        weaponCard.addGroupLabel(getString(R.string.appearance_weapon_mode_label));
+        addToggle(weaponCard, R.string.appearance_weapon_mode_ink,
                 () -> ModuleSettings.APPEARANCE_MODE_INK.equals(
                         ModuleSettings.getAppearanceWeaponMode(this)),
                 checked -> saveAppearanceSetting(R.string.appearance_weapon_mode_ink, checked));
-        addToggle(card, R.string.appearance_weapon_mode_default,
+        addToggle(weaponCard, R.string.appearance_weapon_mode_default,
                 () -> ModuleSettings.APPEARANCE_MODE_DEFAULT.equals(
                         ModuleSettings.getAppearanceWeaponMode(this)),
                 checked -> saveAppearanceSetting(R.string.appearance_weapon_mode_default, checked));
-        addToggle(card, R.string.appearance_character_toggle,
+        page.addView(weaponCard, SectionCard.stacked(this, 12));
+
+        SectionCard characterCard = new SectionCard(this, "", getString(R.string.appearance_character_section_title), "");
+        addToggle(characterCard, R.string.appearance_character_toggle,
                 () -> ModuleSettings.isAppearanceReplaceCharacter(this),
                 checked -> saveAppearanceSetting(R.string.appearance_character_toggle, checked));
+        characterCard.addGroupLabel(getString(R.string.appearance_character_mode_label));
         // The style rows are radio groups: tapping either row selects it.
-        addToggle(card, R.string.appearance_character_ink,
+        addToggle(characterCard, R.string.appearance_character_ink,
                 () -> ModuleSettings.APPEARANCE_MODE_INK.equals(
                         ModuleSettings.getAppearanceMode(this)),
                 checked -> saveAppearanceSetting(R.string.appearance_character_ink, checked));
-        addToggle(card, R.string.appearance_character_unmasked,
+        addToggle(characterCard, R.string.appearance_character_unmasked,
                 () -> ModuleSettings.APPEARANCE_MODE_UNMASKED.equals(
                         ModuleSettings.getAppearanceMode(this)),
                 checked -> saveAppearanceSetting(R.string.appearance_character_unmasked, checked));
-        addToggle(card, R.string.appearance_character_default,
+        addToggle(characterCard, R.string.appearance_character_default,
                 () -> ModuleSettings.APPEARANCE_MODE_DEFAULT.equals(
                         ModuleSettings.getAppearanceMode(this)),
                 checked -> saveAppearanceSetting(R.string.appearance_character_default, checked));
-        addToggle(card, R.string.appearance_effects_toggle,
+        page.addView(characterCard, SectionCard.stacked(this, 12));
+
+        SectionCard effectsCard = new SectionCard(this, "", getString(R.string.appearance_effects_section_title), "");
+        addToggle(effectsCard, R.string.appearance_effects_toggle,
                 () -> ModuleSettings.isAppearanceReplaceEffects(this),
                 checked -> saveAppearanceSetting(R.string.appearance_effects_toggle, checked));
-        return card;
+        page.addView(effectsCard, SectionCard.stacked(this, 12));
     }
 
     private void saveAppearanceSetting(int option, boolean checked) {
