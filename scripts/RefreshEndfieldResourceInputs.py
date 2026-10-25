@@ -222,8 +222,15 @@ def parse_blc_records(
         _version, offset = unpacker.read_i32(plain, offset)
     else:
         code_version = 3
-    if code_version != 5:
-        raise ValueError(f"Expected current VFS code version 5, got {code_version}: {blc_path}")
+    if code_version not in (4, 5):
+        raise ValueError(
+            f"Expected VFS code version 4 or 5, got {code_version}: {blc_path}"
+        )
+    # Code version 4 (Android) predates the per-chunk and per-file `extension`
+    # int32 fields that version 5 carries.  Everything else is byte-identical;
+    # the block header's own file count is asserted below, so a wrong layout
+    # cannot pass silently.
+    has_extension = code_version >= 5
 
     name_length, offset = unpacker.read_u16(plain, offset)
     block_name, offset = unpacker.read_string(plain, offset, name_length)
@@ -240,7 +247,8 @@ def parse_blc_records(
         _length, offset = unpacker.read_i64(plain, offset)
         _chunk_type, offset = unpacker.read_u8(plain, offset)
         _main_tag, offset = unpacker.read_i32(plain, offset)
-        _chunk_extension, offset = unpacker.read_i32(plain, offset)
+        if has_extension:
+            _chunk_extension, offset = unpacker.read_i32(plain, offset)
         files_in_chunk, offset = unpacker.read_i32(plain, offset)
         chunk = chunk_md5.hex().upper()
         for _ in range(files_in_chunk):
@@ -260,7 +268,8 @@ def parse_blc_records(
             if encrypted:
                 iv_seed, offset = unpacker.read_i64(plain, offset)
             _file_tag, offset = unpacker.read_i32(plain, offset)
-            _file_extension, offset = unpacker.read_i32(plain, offset)
+            if has_extension:
+                _file_extension, offset = unpacker.read_i32(plain, offset)
             relative_path = normalize_vfs_path(filename)
             if target.fullmatch(relative_path):
                 result.append(
