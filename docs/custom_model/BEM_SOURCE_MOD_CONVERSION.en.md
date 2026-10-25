@@ -10,7 +10,7 @@ This document explains how to convert EFMI / 3DMigoto character Mods to BEM: wha
 - It does not execute source hotkeys, INI command lists, HLSL shaders, or GUI scripts.
 - Identity is established from actual INI declarations and resource hashes, not from character names, archive names, or author descriptions.
 - A successful conversion means only that offline validation passed. `render_verified` remains `false`; test the package in the game.
-- Effects that cannot be represented must be listed in `excluded_features`; they must not disappear silently. Unsupported effects, low-detail LODs, and animation systems may be removed. LOD0 base meshes, base material textures, and all valid static appearances must remain. If an effect command provides base drawing, bone transforms, or base textures, it must first be mapped to an equivalent BEM operation.
+- Effects that cannot be represented must be listed in `excluded_features`; they must not disappear silently. Unsupported effects, low-detail LODs, and animation systems may be removed. LOD0 base meshes, base material textures, and all valid static appearances must remain. If an effect command provides base drawing, bone transforms, or base textures, it must first be mapped to an equivalent BEM operation. Animation is not automatically "remove": first decide per playbook §8.3 whether a lossy approximation is worth it, and only then remove it — recording it in `excluded_features` either way.
 
 ## 2. Inputs
 
@@ -43,10 +43,11 @@ Entry formats are recognized as:
 | `ps-tN` segmented texture writes | Recipe | There is no universal table from slot numbers to native material properties |
 | Merged skeletons or 16-bit bone indices | Recipe | Bone groups and native order require review |
 | RabbitFX, including Stable Textures | Not automatic | An external material framework cannot be assumed equivalent to native materials |
-| GlowFX, custom shaders, ShaderOverride/Regex | Not automatic | The runtime has no corresponding executor |
+| GlowFX, custom shaders, ShaderOverride/Regex | No direct execution; parameter tweaks map to 1.5 overrides | The runtime has no external HLSL executor, but transparency, alpha cutoff, emission tint, and keyword toggles are statically represented via BEM 1.5 material_overrides |
 | ShapeKey | Not a static conversion; can be explicitly bound to a 1.3 slider (section 8) | Source GUI code is not executed; the author must supply slider names and ranges |
 | Multiple hotkey appearances | Static default only by default; organize additional appearances as 1.1 options | Do not blindly enumerate hotkey combinations |
-| Low-detail LODs and animation | Not converted | BEM replaces LOD0 only |
+| Low-detail LODs | Not converted | BEM replaces LOD0 only |
+| Animation | No native channel; lossy approximation per playbook §8.3 (bake deformation frames + waveform drivers), or declare removal | The approximation moves vertex positions only: normals/tangents/UVs do not follow and bones do not actually move, so attachment points, physics and ground contact all break. Judge by whether it is worth it, not by whether it is possible |
 | Global weather textures | Reused when identical to the game resource; modified global textures are rejected as `GLOBAL_TEXTURE` | BEM does not modify global effects |
 
 The automatic ComponentN route supports a standard local-skeleton entry; three vertex streams vb0/vb1/vb2 (vb3 may only equal vb0); catalog-matching layouts; UINT16/UINT32 indices; zero-based vertices; statically evaluable default switches; and fixed texture overrides using a single `this = Resource...` assignment. `drawindexed = index count, first index, 0` preserves an original draw, while an empty callback hides the component. Multiple native materials are replayed in game order.

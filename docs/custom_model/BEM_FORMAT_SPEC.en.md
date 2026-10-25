@@ -177,7 +177,7 @@ The slot is located in the target component's native material table and the name
 | `streams` | Exactly 3 `{"stride":N,"payload":ID}` entries; stride 1..64 and payload length `vertex_count × stride` |
 | `attributes` | `[semantic, format, dimension, stream, offset]`, using Unity `VertexAttributeDescriptor` enum values |
 | `bones` | Local bone palette, 1..256 entries |
-| `draws` | Ordered draw segments, at most 256 per component |
+| `draws` | Ordered draw segments. Candidate limits in section 11: 512 for 1.1, 4096 for 1.2+; at most 256 may be active in any one reachable state |
 | 1.0 `indices`, `index_count` | One index payload for the whole mesh |
 
 **Vertex attributes**
@@ -344,13 +344,17 @@ Shape evaluation follows EFMI ShapeKey semantics: `position = original position 
 | --- | --- | --- | --- |
 | Appearances / option groups | 1..64 appearances | 64 groups | 64 groups |
 | Choices per group | — | 16 | 64 |
-| Component + draw + texture-slot candidates | — | 512 | 4096 |
+| Component + draw + texture-slot candidates (whole package) | — | 512 | 4096 |
+| Candidate draws in one component | — | 512 | 4096 |
+| **Draws active in one selection** (worst reachable state) | — | 256 | 256 |
 | Texture bindings in one selection | 32 | 32 | 64 |
 | One texture (complete mip chain) | 64 MiB | 64 MiB | 256 MiB |
 | Decoded data / resident resources in one selection | 512 / 512 MiB | 768 / 768 MiB | 1536 / 1536 MiB |
 | Payload directory entries | 4096 | 4096 | 16384 |
 
-All versions share these limits: 2 GiB container; 4 MiB manifest; 512 MiB per payload; 1..64 components; 256 palette bones; 256 draws per component; 16,777,216 selected indices; 1,048,576 vertices; 64 shape parameters; and 4096 deformation channels. 1.4 and 1.5 add no container or resource limits and reuse the same column; the 1.5 `material_overrides` and `drivers` quotas are counted per draw, see sections 12 and 13.
+All versions share these limits: 2 GiB container; 4 MiB manifest; 512 MiB per payload; 1..64 components; 256 palette bones; 16,777,216 selected indices; 1,048,576 vertices; 64 shape parameters; and 4096 deformation channels. 1.4 and 1.5 add no container or resource limits and reuse the same column; the 1.5 `material_overrides` and `drivers` quotas are counted per draw, see sections 12 and 13.
+
+**Declared candidates and active draws are different numbers; do not conflate them.** A component may declare up to 4096 candidate draws (`bem_v11.py:720`; package-wide candidate total is also ≤4096, `bem_v11.py:774`). The validator then expands every reachable state from `component_rules` and requires **at most 256 simultaneously active draws in any one state** (`bem_v11.py:394`, message `Selected draw limit exceeded`). So "limit 4096" holds only for declarations, not for a single render. A package with 1551 draw segments passes only because those draws belong to mutually exclusive states; putting them in one state is rejected at 256.
 
 Budgets apply to one selection and are not the same as the actual GPU peak. The 1.3 budget conservatively counts all frames for each channel. See the runtime document for actual loading cost.
 

@@ -1,4 +1,4 @@
 interface:
   display_name: "BEM 创作者工具"
   short_description: "转换与校验 BEM 模型包，解包项目和制作多 Mod ZIP"
-  default_prompt: "使用 $bem-creator 检查并处理这个 BEM 项目或源 Mod，说明转换结果与缺项。"
+  default_prompt: "使用 $bem-creator 检查并处理这个 BEM 项目或源 Mod。源 Mod 转换按 references/BEM_SOURCE_CONVERSION_PLAYBOOK 逐关取证，先跑 scripts/bem_merge 与 scripts/bem_triage，说明每处判断的证据级别与缺项。"

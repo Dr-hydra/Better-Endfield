@@ -14,7 +14,7 @@ BEM (`.bem`) is Better Endfield Next's model replacement package. Versions 1.0�
 
 | Tool | Location | Purpose |
 | --- | --- | --- |
-| Standalone creator GUI `BetterEndfieldNext.BemTools.exe` | Root of `BEM-Tools-1.5.4-win-x64.zip`; extract the complete archive and double-click | Projects, workspaces, conversion, packing, unpacking and collections; no main application, Python or .NET installation required |
+| Standalone creator GUI `BetterEndfieldNext.BemTools.exe` | Root of `BEM-Tools-win-x64.zip`; extract the complete archive and double-click | Projects, workspaces, conversion, packing, unpacking and collections; no main application, Python or .NET installation required |
 | BEM Tools CLI `BetterEndfieldNext.BemConverter.exe` | `tools/BemConverter/` in the application, or the root of the standalone tools | Conversion, packing, validation, unpacking, and collections; the core of every workflow |
 | Main application creator window | Character appearance page → “BEM Creator Tools…”; older versions use “Convert other source Mod…” | Shares the standalone GUI window code and calls the same CLI |
 | Blender exporter | `blender_addon/bem_exporter/` in the portable tool | Export an editable BEM project from Blender objects named `BEM_C<number>` |
@@ -22,11 +22,11 @@ BEM (`.bem`) is Better Endfield Next's model replacement package. Versions 1.0�
 | Android model page | Better Endfield Next App | Importing, enabling, choosing, and converting textures on the phone |
 | AI skill `bem-creator` | Standalone `skills/bem-creator` package | Helps prepare recipes and explain reports; it does not replace validation |
 
-BEM Tools 1.6.1 reads and writes BEM 1.0–1.5 and includes the standalone GUI. The older official 1.5.0 distribution does not include BEM 1.4. Tool and format versions are separate. The current `--version` returns `BEM Tools 1.6.1 / BEM 1.0+1.1+1.2+1.3+1.4+1.5`. When running from source, use `python tools/CustomModel/bem_tool.py` instead of the executable.
+BEM Tools 1.6.3 reads and writes BEM 1.0–1.5 and includes the standalone GUI. The older official 1.5.0 distribution does not include BEM 1.4. Tool and format versions are separate. The current `--version` returns `BEM Tools 1.6.3 / BEM 1.0+1.1+1.2+1.3+1.4+1.5`. When running from source, use `python tools/CustomModel/bem_tool.py` instead of the executable. The release archive is named `BEM-Tools-win-x64.zip`; the filename carries no version, so **`--version` is the only authority** — do not infer the version from the archive name.
 
 Extract the entire standalone package and launch `BetterEndfieldNext.BemTools.exe`, keeping the CLI and support files beside it. The GUI follows the system language. Drop one `.bemproj.json` file onto the EXE icon or pass its path as an argument to open an export project. The creator window inside the main application still uses that application's language preference.
 
-Version 1.5.4 refreshes Snowshine’s Windows 1.6.3 contracts and source identities while retaining the Jsspsi/Minghe data added in 1.5.3, in the bundled catalog/ and profiles/ directories. Follow each collection's readiness and missing-evidence fields: runtime capture alone does not establish automatic source conversion or tested replacement rendering. This update does not establish compatibility with a new Android game version.
+The target refresh bundled with this tree covers Snowshine's Windows 1.6.3 contracts and source identities while retaining the Jsspsi/Minghe data added in 1.5.3, in the bundled catalog/ and profiles/ directories. Follow each collection's readiness and missing-evidence fields: runtime capture alone does not establish automatic source conversion or tested replacement rendering. This update does not establish compatibility with a new Android game version.
 
 ## Three authoring workflows
 

@@ -1,4 +1,4 @@
-# BEM Tools 1.6.2
+# BEM Tools 1.6.3
 
 解压整个工具包，双击 **BetterEndfieldNext.BemTools.exe** 打开创作者 GUI。
 无需安装 Better Endfield、Python 或 .NET。请保留同目录的命令行程序、
