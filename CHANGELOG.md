@@ -12,6 +12,8 @@
 
 - **安卓界面重构：主页改为「启用功能一览」**：主页只列出已开启的功能并显示实时状态（替换角色与动作、主题色、自定义配音角色数、界面与相机项、冲刺角色、悬浮窗透明度、当前 MMD 作品），点击直达对应设置页；未启用的功能不再出现在主页（入口集中在「增强功能」页），第三方模型单独保留一个主页入口。顶部导航收敛为「主页 / 增强功能 / 关于」，开屏模型、第三方模型、角色配音收进增强功能二级页面，并按「模型与外观 / 游戏内增强 / 内容与工具」分组；二级页提供返回入口，系统返回键先回主页。
 
+- **BEM Tools 升级至 1.6.3**：`bem_repair.py` 重写为 22 个证据门控子命令（IB/DDS/INI 重复段/条件贴图/蒙皮/合并骨架/入口程序/贴图覆盖/角色资料缺口/形态参数/选项空间/CrossIB 分组），新增 `shape-params` 从源 ShapeKey 自动生成 BEM 1.3 滑条配置，并随包分发 `catalog/material-attributes.json` 材质属性名字典；同时新增 `bem_assemble.py` 与 `catalog/identities/`。
+
 ## 4.1.0 Better Endfield Next
 
 - **BEM 1.5 连续动画与动效驱动（dynamic-drivers-v1）**：原生实现双端时钟驱动器与波形动画（PingPong、Sine、Sawtooth、Triangle 等），支持单次（once）与循环（loop）播放，停止时自动恢复基准姿态；Android 端采用 SetNativeArrayForChannelImpl 安全多流更新通道，与滑条功能稳定共存；桌面端游戏内悬浮窗支持开始/暂停/停止控制；支持动效音效联动（driver_audio）；客户端支持自定义独立桌面快捷键并实现实时存储。
@@ -19,7 +21,6 @@
 - **双端启动自动检查更新**：Windows 桌面端与 Android 端新增启动时自动检查更新功能，发现新版本时在状态栏或对话框提醒并提供一键直达下载页，可在“关于”界面手动检查更新或关闭自动检查。
 - **Android 噗切娜主世界 LOD 映射与模型校验修复**：补齐噗切娜（chr_0038_purrche）全量 22 个组件在安卓端 UI LOD0 与主世界之间的映射规则，解决帽子部件（fur_02）在安卓主世界模型中保留 lod0 命名导致的校验失败与节点缺失问题。
 - **BEM Tools 升级至 1.6.2**：完整支持 BEM 1.5 动效驱动（dynamic-drivers-v1）与 ZIP 容器打包解包命令（pack-zip / unpack）。
-- **BEM Tools 升级至 1.6.3**：`bem_repair.py` 重写为 22 个证据门控子命令（IB/DDS/INI 重复段/条件贴图/蒙皮/合并骨架/入口程序/贴图覆盖/角色资料缺口/形态参数/选项空间/CrossIB 分组），新增 `shape-params` 从源 ShapeKey 自动生成 BEM 1.3 滑条配置，并随包分发 `catalog/material-attributes.json` 材质属性名字典。
 
 ## 4.0.8 Better Endfield Next
 
