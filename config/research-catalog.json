@@ -1233,16 +1233,6 @@
       "status": "imported"
     },
     {
-      "id": "vendor-bepinex6",
-      "module": "toolchains",
-      "game_version": null,
-      "kind": "toolchain",
-      "path": "toolchains/analysis/bepinex6",
-      "provenance": "F:\\Better Endfield_legacy\\vendor\\bepinex6",
-      "availability": "local",
-      "status": "imported"
-    },
-    {
       "id": "vendor-unity-libs-2021.3.34",
       "module": "toolchains",
       "game_version": null,

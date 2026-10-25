@@ -121,7 +121,6 @@
     "tmp_analysis/ida": "research/host/1.5.3/shared/ida-state",
     "src/EFStartProbe": "research/host/1.5.3/Windows/utilities/EFStartProbe",
     "tools/BuffProbe": "toolchains/diagnostics/BuffProbe",
-    "vendor/bepinex6": "toolchains/analysis/bepinex6",
     "tools/FkArkEnd": "toolchains/FkArkEnd",
     "src/EFStartCtl": "research/host/1.5.3/Windows/utilities/EFStartCtl",
     "vendor/wwiser": "toolchains/wwiser",
