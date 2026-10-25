@@ -20,6 +20,41 @@ when editing a project manifest, [runtime compatibility](references/BEM_RUNTIME_
 diagnosing in-game rejections, and [source Mod conversion](references/BEM_SOURCE_MOD_CONVERSION.en.md)
 for automation status, recipes, identity rules and ShapeKey bindings.
 
+### Source conversion is a judgement task
+
+`convert` advances only the mechanical part. Every remaining gate requires reading evidence,
+deciding, and recording the decision. Follow [the source conversion playbook](references/BEM_SOURCE_CONVERSION_PLAYBOOK.en.md)
+for the four-stage procedure, the field-level landing table and the stop conditions.
+
+Do not treat "passes validation" as "correct". A package can be structurally valid and visually
+wrong: a donor material copied wholesale replaces properties nobody listed, a texture bound to a
+semantically opposite property, a correct-looking DDS on a slot that served another purpose. The
+test is whether every replaced property can be traced back to the exact source item, with the
+evidence level recorded (exact / computed / inferred / assumed). Unsupported assumptions are a
+correct stopping point, not a failure to hide.
+
+Run the bundled evidence scripts before judging anything. They are in `scripts/`, use the standard
+library only, and never write to the source:
+
+| Script | Purpose |
+| --- | --- |
+| `bem_merge.py` | Compute the sections that actually take effect (first occurrence wins, include expansion, namespace rewriting, watermark stripping). Run this first; the others read from it. |
+| `bem_triage.py` | Entry family, tiered missing-payload classification (draw path / framework channel, graded by identity in the name, then slot role, then filename role / unused), index overrun, output-channel contamination, framework input visibility |
+| `bem_state_probe.py` | Reachable states, per-state texture resolution, zero-index draws |
+| `bem_peer.py` | Locate same-byte donors in sibling packages. A candidate is not proof of identity. |
+| `bem_audit.py` | Cross-check ledger, report and artifacts |
+| `bem_ini.py` | INI parsing and condition evaluation, used by the above |
+
+When a source INI calls into the loader's own namespace (`EFMIv1`), read the bundled reference
+copy under `references/efmi/` to learn what those commands actually do. That copy contains the
+loader library and the official templates only, unmodified. Third-party frameworks are **not**
+bundled: the common one, `RabbitFX`, ships under a no-derivatives licence that cannot coexist with
+this project's. Its interface — slot names, register bindings, delegated draw formulas — is written
+down in appendix A.3 of the source-conversion playbook, which is enough to read a source package.
+Only when neither the package nor any published source defines the called section is "bindings
+unknown, cannot be read per draw" the correct conclusion; do not shorten that to a plausible guess.
+
+
 Use the existing task's optional `deformations` input; do not invent a second
 export task format. Targets must match the final exported vertex correspondence.
 Official EFMI buffers need explicit component/key and vertex bindings; source

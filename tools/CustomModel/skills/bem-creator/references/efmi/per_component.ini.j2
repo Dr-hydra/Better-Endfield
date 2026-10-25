@@ -1,0 +1,311 @@
+; EFMI ALPHA-4 INI
+
+{%- macro note(text) %}{% if comment_code %}; {{ text }}{% else %};DEL{% endif %}{% endmacro %}
+
+{%- if cfg.use_ini_toggles %}
+
+; Key Bindings -------------------------
+
+{{note("Hotkeys generated from Ini Toggles")}}
+{%- for var in cfg.ini_toggles.vars -%}
+{%- if var.hotkeys %}
+
+[KeySwap{{ formatter.format_name_camel_case(var.name) }}]
+condition = $object_detected == 1
+{%- for hotkeys in formatter.format_hotkeys(var.hotkeys) %}
+key = {{ hotkeys }}
+{%- endfor %}
+type = cycle
+{{ formatter.format_ini_swapvar(var.name) }} = {{ var.states | map(attribute='name') | join(', ') }}
+{%- endif -%}
+{%- endfor %}
+{%- endif %}
+
+; Mod Info -------------------------
+
+{{note("Name of mod")}}
+[ResourceModName]
+
+{%- if mod_info.mod_name.strip() != '' %}
+type = Buffer
+data = "{{ mod_info.mod_name }}"
+{%- else %}
+; type = Buffer
+; data = "Unknown Mod Name"
+{%- endif %}
+
+{{note("Name of mod author")}}
+[ResourceModAuthor]
+{%- if mod_info.mod_author.strip() != '' %}
+type = Buffer
+data = "{{ mod_info.mod_author }}"
+{%- else %}
+; type = Buffer
+; data = "Unknown Mod Author"
+{%- endif %}
+
+{{note("Mod description")}}
+[ResourceModDesc]
+{%- if mod_info.mod_desc.strip() != '' %}
+type = Buffer
+data = "{{ mod_info.mod_desc }}"
+{%- else %}
+; type = Buffer
+; data = "Empty Mod Description"
+{%- endif %}
+
+{{note("Link to mod repository")}}
+[ResourceModLink]
+{%- if mod_info.mod_link.strip() != '' %}
+type = Buffer
+data = "{{ mod_info.mod_link }}"
+{%- else %}
+; type = Buffer
+; data = "Empty Mod Link"
+{%- endif %}
+
+{{note("Texture file with 512x512 .dds (BC7 SRGB) mod logo")}}
+[ResourceModLogo]
+{%- if mod_info.mod_logo.is_file() %}
+filename = Textures/Logo.dds
+{%- else %}
+; filename = Textures/Logo.dds
+{%- endif %}
+
+; Mod State -------------------------
+
+{{note("Global variables used by entire mod")}}
+[Constants]
+{{note("Allows EFMI to safely disable incompatible mod and notify user about it")}}
+global $required_efmi_version = {{ '%0.2f'| format(mod_info.required_efmi_version.as_float()) }}
+{{note("Number of indices in original model")}}
+global $object_guid = {{ extracted_object.index_count }}
+{{note("Number of vertices in custom model")}}
+global $mesh_vertex_count = {{ merged_object.vertex_count }}
+{{note("ID assigned to our mod by EFMI")}}
+global $mod_id = -1000
+{{note("Controls whether our mod is enabled, prevents any overrides from happening if $mod_enabled == 0")}}
+{{note("Prevents user from being crash-locked in case of incompatible EFMI version")}}
+global $mod_enabled = 0
+{{note("Indicates if our object was detected in previous frame")}}
+global $object_detected = 0
+{{note("Indicates if our object has LoDs applied")}}
+global $lod_detected = 0
+{%- if cfg.use_ini_toggles %}
+; Swap vars aka state values for toggles (marked as `persist` to keep state saved in `d3dx_user.ini`)
+{%- for var in cfg.ini_toggles.vars %}
+global persist {{ formatter.format_ini_swapvar(var.name) }} = {{ var.default_state or 0 }}
+{%- endfor %}
+; Per-object state vars (dynamically controlled by CommandListProcessToggles)
+{%- for component in extracted_object.components %}
+{%- for obj in merged_object.components[loop.index0].objects %}
+global {{ formatter.format_ini_drawvar(obj.name) }} = 1
+{%- endfor %}
+{%- endfor %}
+{%- endif %}
+
+{{note("List of commands executed for every frame")}}
+[Present]
+if $object_detected
+    if $mod_enabled
+        post $object_detected = 0
+        {%- if cfg.use_ini_toggles %}
+        run = CommandListProcessToggles
+        {%- endif %}
+    else
+        {{note("Check if our mod is compatible with installed EFMI version (runs only once)")}}
+        if $mod_id == -1000
+            {{note("Pass required EFMI version along with mod metadata to EFMI")}}
+            run = CommandListRegisterMod
+        endif
+    endif
+endif
+
+{{note("Contacts EFMI to check whether installed version is compatible with our mod")}}
+[CommandListRegisterMod]
+{{note("Pass mod info variables to EFMI")}}
+$\EFMIv1\required_version = $required_efmi_version
+$\EFMIv1\object_guid = $object_guid
+{{note("Pass mod info resources to EFMI")}}
+Resource\EFMIv1\ModName = ref ResourceModName
+Resource\EFMIv1\ModAuthor = ref ResourceModAuthor
+Resource\EFMIv1\ModDesc = ref ResourceModDesc
+Resource\EFMIv1\ModLink = ref ResourceModLink
+Resource\EFMIv1\ModLogo = ref ResourceModLogo
+{{note("Register mod in EFMI")}}
+run = CommandList\EFMIv1\RegisterMod
+{{note("Read mod_id assigned to our mod by EFMI, incompatible mod will get `$mod_id == -1` assigned")}}
+$mod_id = $\EFMIv1\mod_id
+{{note("Enable our mod if EFMI assigned valid $mod_id to it")}}
+if $mod_id >= 0
+    $mod_enabled = 1
+endif
+
+{%- if cfg.use_ini_toggles %}
+
+{{note("Handles toggles logic")}}
+[CommandListProcessToggles]
+; Set display of each object according to toggles logic
+{%- for object_name, conditions in cfg.ini_toggles.compile_conditions().items() %}
+{{ formatter.format_ini_drawvar(object_name) }} = {{ conditions }}
+{%- endfor %}
+{{note("<< Here's a nice place to put your custom logic that controls objects visibility >>")}}
+{%- endif %}
+
+; Shading: Custom Mesh Draw CommandLists -------------------------
+
+{{note("Overrides textures via triggering [Resource_TextureX] sections by calling CheckTextureOverride on ps-t slots")}}
+[CommandListTriggerResourceOverrides]
+{{note("Trigger texture sections to replace texture with matching hash")}}
+CheckTextureOverride = ps-t0
+CheckTextureOverride = ps-t1
+CheckTextureOverride = ps-t2
+CheckTextureOverride = ps-t3
+CheckTextureOverride = ps-t4
+CheckTextureOverride = ps-t5
+CheckTextureOverride = ps-t6
+CheckTextureOverride = ps-t7
+CheckTextureOverride = ps-t8
+CheckTextureOverride = ps-t9
+CheckTextureOverride = ps-t10
+CheckTextureOverride = ps-t11
+CheckTextureOverride = ps-t12
+CheckTextureOverride = ps-t13
+CheckTextureOverride = ps-t14
+CheckTextureOverride = ps-t15
+CheckTextureOverride = ps-t16
+CheckTextureOverride = ps-t17
+CheckTextureOverride = ps-t18
+CheckTextureOverride = ps-t19
+CheckTextureOverride = ps-t20
+
+{%- for componnet_id, component in enumerate(extracted_object.components) if merged_object.components[componnet_id].objects | length > 0%}
+
+{{note("Do custom draw calls for Component %d" | format(loop.index0))}}
+[CommandList_Draw_Component{{ componnet_id }}]
+{{note("Trigger by-hash resource overrides")}}
+run = CommandListTriggerResourceOverrides
+{{note("Do by-slot resource overrides")}}
+ib = ref Resource_Component{{ componnet_id }}_IB
+vb0 = ref Resource_Component{{ componnet_id }}_VB0
+vb1 = ref Resource_Component{{ componnet_id }}_VB1
+{{note("Conditional VB2 (blends buffer) swap for LoDs handling")}}
+{%- if component.lods | length == 0 or component.lods[0].vg_map | length == 0 %}
+vb2 = ref Resource_Component{{ componnet_id }}_VB2
+{%- else %}
+if $lod_detected == 0
+    {{note("Use VB2 with weights for full model")}}
+    vb2 = ref Resource_Component{{ componnet_id }}_VB2
+else
+    {{note("Use VB2 with weights for LoD model")}}
+    vb2 = ref Resource_Component{{ componnet_id }}_VB2_LOD
+endif
+{%- endif %}
+{%- for obj in merged_object.components[componnet_id].objects %}
+; Draw {{ obj.name }}
+{%- if cfg.use_ini_toggles %}
+if {{ formatter.format_ini_drawvar(obj.name) }}
+    drawindexedinstanced = {{ obj.index_count }}, INSTANCE_COUNT, {{ obj.index_offset }}, 0, FIRST_INSTANCE
+endif
+{%- else %}
+drawindexedinstanced = {{ obj.index_count }}, INSTANCE_COUNT, {{ obj.index_offset }}, 0, FIRST_INSTANCE
+{%- endif %}
+{%- endfor %}
+
+{%- endfor %}
+
+; Shading: Full Models Draw Call Stacks Processing -------------------------
+
+{%- for componnet_id, component in enumerate(extracted_object.components) %}
+
+{{note("Override draw calls for Component %d" | format(loop.index0))}}
+[TextureOverride_Component{{ componnet_id }}]
+hash = {{ component.vb0_hash }}
+{{note("Signal our mod that object is found on screen and we can start overriding it")}}
+$object_detected = 1
+
+{{note("Signal our mod that object LoD is NOT found on screen (only components with LoDs should do it)")}}
+{%- if component.lods | length > 0 and component.lods[0].vb0_hash != component.vb0_hash %}
+$lod_detected = 0
+{%- endif %}
+if $mod_enabled && DRAW_TYPE == 4
+    {{note("Skip original draw call")}}
+    handling = skip
+    {%- if merged_object.components[componnet_id].objects | length > 0 %}
+    {{note("Do custom draw calls")}}
+    run = CommandList_Draw_Component{{ componnet_id }}
+    {%- else %}
+    ; Draw skipped: No matching custom components found
+    ; run = CommandList_Draw_Component{{ componnet_id }}
+    {%- endif %}
+endif
+
+{%- endfor %}
+
+; Shading: LoD Models Draw Call Stacks Processing -------------------------
+
+{%- for componnet_id, component in enumerate(extracted_object.components) %}
+
+{%- for lod_id, lod in enumerate(component.lods) if lod.vb0_hash != component.vb0_hash %}
+
+{{note("Override draw calls for LoD of Component %d" | format(loop.index0))}}
+[TextureOverride_Component{{ componnet_id }}_LOD{{ lod_id }}]
+hash = {{ lod.vb0_hash }}
+{{note("Signal our mod that object is found on screen and we can start overriding it")}}
+$object_detected = 1
+{{note("Signal our mod that object LoD is found on screen and we can start overriding it")}}
+$lod_detected = 1
+if $mod_enabled && DRAW_TYPE == 4
+{{note("Skip original draw call")}}
+    handling = skip
+    {%- if merged_object.components[componnet_id].objects | length > 0 %}
+    {{note("Do custom draw calls")}}
+    run = CommandList_Draw_Component{{ componnet_id }}
+    {%- else %}
+    ; Draw skipped: No matching custom components found
+    ; run = CommandList_Draw_Component{{ componnet_id }}
+    {%- endif %}
+endif
+
+{%- endfor %}
+
+{%- endfor %}
+
+; Shading: Textures -------------------------
+
+{%- for texture in textures %}
+
+[Resource_Texture{{ loop.index0 }}]
+filename = Textures/{{ texture.filename }}
+
+[TextureOverride_Texture{{ loop.index0 }}]
+hash = {{ texture.hash }}
+match_priority = 0
+if $object_detected
+    this = Resource_Texture{{ loop.index0 }}
+endif
+{%- endfor %}
+
+; Resources: Buffers -------------------------
+
+{%- for buffer_name, buffer in buffers.items() %}
+
+[Resource_{{ buffer_name }}]
+type = Buffer
+{%- if buffer_name.endswith('IB') %}
+format = {{ buffer.layout.semantics[0].get_format() }}
+{%- endif %}
+stride = {{ buffer.layout.stride }}
+filename = Meshes/{{ buffer_name }}.buf
+
+{%- endfor %}
+
+; Autogenerated -------------------------
+
+; EFMI Tools GitHub: https://github.com/SpectrumQT/EFMI-Tools
+; EFMI Package GitHub: https://github.com/SpectrumQT/EFMI-Package
+; XXMI Launcher GitHub: https://github.com/SpectrumQT/XXMI-Launcher
+; EFMI Mods Website: https://gamebanana.com/games/21842
+; EFMI GameBanana: https://gamebanana.com/tools/21846
+; EFMI Tools GameBanana: https://gamebanana.com/tools/21847
+; AGMF Modding Community Discord: https://discord.com/invite/agmf
