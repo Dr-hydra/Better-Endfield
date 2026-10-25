@@ -19,7 +19,7 @@
 - **双端启动自动检查更新**：Windows 桌面端与 Android 端新增启动时自动检查更新功能，发现新版本时在状态栏或对话框提醒并提供一键直达下载页，可在“关于”界面手动检查更新或关闭自动检查。
 - **Android 噗切娜主世界 LOD 映射与模型校验修复**：补齐噗切娜（chr_0038_purrche）全量 22 个组件在安卓端 UI LOD0 与主世界之间的映射规则，解决帽子部件（fur_02）在安卓主世界模型中保留 lod0 命名导致的校验失败与节点缺失问题。
 - **BEM Tools 升级至 1.6.2**：完整支持 BEM 1.5 动效驱动（dynamic-drivers-v1）与 ZIP 容器打包解包命令（pack-zip / unpack）。
-- **BEM Tools 升级至 1.6.3**：`bem_repair.py` 重写为 21 个证据门控子命令（IB/DDS/INI 重复段/条件贴图/蒙皮/合并骨架/入口程序/贴图覆盖/角色资料缺口/形态参数/选项空间/CrossIB 分组），新增 `shape-params` 从源 ShapeKey 自动生成 BEM 1.3 滑条配置，并随包分发 `catalog/material-attributes.json` 材质属性名字典。
+- **BEM Tools 升级至 1.6.3**：`bem_repair.py` 重写为 22 个证据门控子命令（IB/DDS/INI 重复段/条件贴图/蒙皮/合并骨架/入口程序/贴图覆盖/角色资料缺口/形态参数/选项空间/CrossIB 分组），新增 `shape-params` 从源 ShapeKey 自动生成 BEM 1.3 滑条配置，并随包分发 `catalog/material-attributes.json` 材质属性名字典。
 
 ## 4.0.8 Better Endfield Next
 
