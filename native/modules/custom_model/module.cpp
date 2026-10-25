@@ -545,6 +545,14 @@ struct ConstructionScope {
     std::string resource_name;
     uint64_t started_ms = GetTickCount64();
     uint64_t texture_constructed = 0, texture_submitted = 0;
+    // Per-transaction texture census: (format, srgb) -> count. Replaces one
+    // detail line per built texture; the transaction summary prints the census
+    // in a single line instead.
+    std::map<std::pair<int32_t,int32_t>,uint32_t> texture_formats;
+    // Counts built textures separately from texture_constructed: the ctor
+    // succeeds earlier than the upload, so a texture that fails in between
+    // would otherwise consume the "first of this transaction" detail line.
+    uint64_t texture_detailed = 0;
     uint64_t texture_payload_bytes = 0, largest_texture_payload_bytes = 0;
     uint64_t render_syncs = 0;
     uint64_t mesh_submitted = 0, mesh_payload_bytes = 0;
@@ -2039,12 +2047,27 @@ void* CreateTextureFromBem(const BemPocData& bem,size_t index) {
         InvokeVoid(set_name, object, parameters);
     }
 
-    Log("  built t=" + texture.name + " " + std::to_string(built_width) + "x" +
-        std::to_string(built_height) + " mips=" +
-        std::to_string(info.mip_count) + " " +
-        TextureFormatName(info.create_format) +
-        (info.create_srgb != 0 ? " sRGB" : " linear") + " graphicsFormat=" +
-        std::to_string(built_graphics_format));
+    // One detail line per transaction (the first texture) plus a census that the
+    // transaction summary prints. A 30-texture material package used to write 30
+    // near-identical lines, each one a log-file open before the logger held its
+    // handle; the format/size of the first build is what actually gets read.
+    if (g_construction) {
+        ++g_construction->texture_formats[{info.create_format, info.create_srgb != 0}];
+        if (g_construction->texture_detailed++ == 0)
+            Log("  built t=" + texture.name + " " + std::to_string(built_width) + "x" +
+                std::to_string(built_height) + " mips=" +
+                std::to_string(info.mip_count) + " " +
+                TextureFormatName(info.create_format) +
+                (info.create_srgb != 0 ? " sRGB" : " linear") + " graphicsFormat=" +
+                std::to_string(built_graphics_format) + " (first of this transaction)");
+    } else {
+        Log("  built t=" + texture.name + " " + std::to_string(built_width) + "x" +
+            std::to_string(built_height) + " mips=" +
+            std::to_string(info.mip_count) + " " +
+            TextureFormatName(info.create_format) +
+            (info.create_srgb != 0 ? " sRGB" : " linear") + " graphicsFormat=" +
+            std::to_string(built_graphics_format));
+    }
     RememberGeneratedTexture(object,BemTextureContentIdentity(bem,index));
     return object;
 }
@@ -2100,6 +2123,15 @@ void DestroyUnityObject(void* object) {
 ConstructionScope::~ConstructionScope() {
     if (texture_constructed || mesh_submitted || texture_live_reuse || texture_dedup_hits) {
         try {
+            // "BC7 sRGB x8,RGBA32 linear x2" carries the same information the
+            // per-texture detail lines used to, in one field.
+            std::string formats;
+            for (const auto& [key,count] : texture_formats) {
+                if (!formats.empty()) formats += ',';
+                formats += TextureFormatName(key.first);
+                formats += key.second ? " sRGB x" : " linear x";
+                formats += std::to_string(count);
+            }
             Log("Model upload transaction resource="+resource_name+
                 " mode="+delivery_mode+
                 " published="+(published?"true":"false")+
@@ -2118,6 +2150,7 @@ ConstructionScope::~ConstructionScope() {
                 " renderSyncs="+std::to_string(render_syncs)+
                 " meshSubmitted="+std::to_string(mesh_submitted)+
                 " meshPayloadBytes="+std::to_string(mesh_payload_bytes)+
+                " textureFormats="+(formats.empty()?std::string("-"):formats)+
                 " elapsedMs="+std::to_string(GetTickCount64()-started_ms));
         } catch (...) { /* Diagnostics must not interrupt rollback/unwinding. */ }
     }
@@ -2247,11 +2280,17 @@ bool MaterialCopyCompatible(void* source,void* copy) {
     void* shader=Invoke(Contract("material.get_shader"),source,nullptr);
     return shader && IsNativeObjectAlive(shader) && Invoke(Contract("material.get_shader"),copy,nullptr)==shader;
 }
+// Property total for the per-component summary. Section 12 quotas allow up to
+// 352 properties on one draw under skip_validation, and a component can hold
+// 256 draws, so the summary reports one line per component instead of one per
+// material: every extra line used to cost a log-file open (see
+// worktree/audit/bem15-performance-2026-10-25.md section 11).
+size_t OverridePropertyCount(const BemMaterialOverrides& p) {
+    return p.floats.size() + p.colors.size() + p.vectors.size() +
+           p.disable_keywords.size() + p.enable_keywords.size();
+}
 bool ApplyMaterialOverrides(void* material, const BemMaterialOverrides& p, bool skip_validation = false) {
     if (!material) return false;
-    Log("Applied BEM 1.5 material overrides: floats=" + std::to_string(p.floats.size()) +
-        " colors=" + std::to_string(p.colors.size()) +
-        " disable_keywords=" + std::to_string(p.disable_keywords.size()));
     for (const auto& [name, value] : p.floats) {
         void* key = NewString(name.c_str());
         void* args[]{key, (void*)&value};
@@ -2544,6 +2583,7 @@ bool PrepareDrawMaterials(const BemComponent& component,PreparedBinding& target,
     auto& texture_cache=transaction_textures?*transaction_textures:local_textures;
     target.custom_materials=NewArrayLike(DonorMaterials(target),static_cast<int>(component.draws.size()),bem.skip_validation);
     if (!target.custom_materials) return false;
+    size_t override_draws=0,override_properties=0;
     for (size_t i=0;i<component.draws.size();++i) {
         const auto& draw=component.draws[i]; const auto* donor=FindPrepared(bindings,draw.material_component);
         if (!donor || draw.material_slot>=static_cast<uint32_t>(ArrayLength(DonorMaterials(*donor)))) return false;
@@ -2557,11 +2597,18 @@ bool PrepareDrawMaterials(const BemComponent& component,PreparedBinding& target,
 #endif
         if (!ApplyTextureMask(copy,draw.textures,bem,texture_cache)) return false;
         if (i < component.draw_material_overrides.size() && !component.draw_material_overrides[i].empty()) {
-            if (!ApplyMaterialOverrides(copy, component.draw_material_overrides[i], bem.skip_validation)) {
+            const auto& overrides=component.draw_material_overrides[i];
+            if (!ApplyMaterialOverrides(copy, overrides, bem.skip_validation)) {
                 if (!bem.skip_validation) return false;
             }
+            ++override_draws;
+            override_properties+=OverridePropertyCount(overrides);
         }
     }
+    if (override_draws)
+        Log("Applied BEM 1.5 material overrides: C"+std::to_string(component.info.component_id)+
+            " draws="+std::to_string(override_draws)+
+            " properties="+std::to_string(override_properties));
     return true;
 }
 bool PrepareKeepMaterials(const BemComponent& component,PreparedBinding& target,const BemPocData& bem,
@@ -2578,6 +2625,17 @@ bool PrepareKeepMaterials(const BemComponent& component,PreparedBinding& target,
         if (!source || !copy || (!bem.skip_validation && ObjectName(source)!=component.keep_material_names[i]) ||
             !ApplyTextureMask(copy,override.textures,bem,texture_cache)) return false;
     }
+    // CopyMaterials applied the authored overrides slot by slot; report them as
+    // one line for this component instead of one per material.
+    size_t override_slots=0,override_properties=0;
+    for (const auto& overrides:target.material_overrides) if (!overrides.empty()) {
+        ++override_slots;
+        override_properties+=OverridePropertyCount(overrides);
+    }
+    if (override_slots)
+        Log("Applied BEM 1.5 material overrides: C"+std::to_string(component.info.component_id)+
+            " slots="+std::to_string(override_slots)+
+            " properties="+std::to_string(override_properties));
     return true;
 }
 bool SetRendererBones(void* renderer,void* bones) {
