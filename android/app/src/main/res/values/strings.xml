@@ -26,6 +26,23 @@
     <string name="sponsor_open_failed">无法打开链接</string>
     <string name="voice_page">角色配音</string>
     <string name="enhancement_page">增强功能</string>
+    <string name="home_page">主页</string>
+    <string name="home_title">启用功能一览</string>
+    <string name="home_count">%1$d 项功能已启用</string>
+    <string name="home_none">当前没有启用任何增强功能。进入「增强功能」开启需要的项目。</string>
+    <string name="home_feature_logo">登录主题色</string>
+    <string name="home_feature_dash">持续冲刺</string>
+    <string name="home_model_summary">%1$s · %2$s</string>
+    <string name="home_logo_summary">主题色 %1$s</string>
+    <string name="home_voice_summary">%1$d 名角色自定义语言</string>
+    <string name="home_overlay_summary">透明度 %1$d%%</string>
+    <string name="home_mmd_summary">当前作品：%1$s</string>
+    <string name="home_mmd_none">未选择作品</string>
+    <string name="home_custom_model">第三方 BEM 模型包安装与管理</string>
+    <string name="back_to_enhancement">‹ 返回增强功能</string>
+    <string name="enhancement_group_models">模型与外观</string>
+    <string name="enhancement_group_gameplay">游戏内增强</string>
+    <string name="enhancement_group_content">内容与工具</string>
 
     <string name="enhancement_eyebrow">ENHANCEMENTS</string>
     <string name="enhancement_title">界面与画面增强</string>

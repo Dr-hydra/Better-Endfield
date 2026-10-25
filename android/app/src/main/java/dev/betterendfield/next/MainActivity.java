@@ -6,6 +6,7 @@ import android.widget.Toast;
 import android.content.Intent;
 import android.net.Uri;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
@@ -22,6 +23,7 @@ import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -29,9 +31,16 @@ import java.util.Map;
 
 public final class MainActivity extends Activity {
     static final String EXTRA_PAGE = "settings_page";
-    private static final int CUSTOM_MODEL_PAGE = 4;
-    private static final int ENHANCEMENT_PAGE = 2;
-    private static final int ABOUT_PAGE = 3;
+    // The home page is an overview; every settings page lives one level below it.
+    private static final int HOME_PAGE = 0;
+    private static final int ENHANCEMENT_PAGE = 1;
+    private static final int MODEL_PAGE = 2;
+    private static final int CUSTOM_MODEL_PAGE = 3;
+    private static final int VOICE_PAGE = 4;
+    private static final int ABOUT_PAGE = 5;
+    private static final int[] SUB_PAGE_SECTIONS = {
+            R.id.model_section, R.id.custom_model_section, R.id.voice_section
+    };
     private static final int[] THEME_COLOR_VIEW_IDS = {
             R.id.theme_color_amber,
             R.id.theme_color_cyan,
@@ -91,22 +100,25 @@ public final class MainActivity extends Activity {
         currentPage = savedInstanceState == null
                 ? ("custom_model".equals(requestedPage) ? CUSTOM_MODEL_PAGE
                         : ("enhancement".equals(requestedPage) ? ENHANCEMENT_PAGE
-                                : ("about".equals(requestedPage) ? ABOUT_PAGE : 0)))
-                : savedInstanceState.getInt("page", 0);
+                                : ("model".equals(requestedPage) ? MODEL_PAGE
+                                        : ("voice".equals(requestedPage) ? VOICE_PAGE
+                                                : ("about".equals(requestedPage) ? ABOUT_PAGE : HOME_PAGE)))))
+                : savedInstanceState.getInt("page", HOME_PAGE);
         // Bound restored navigation to the pages exposed by this product.
-        if (currentPage > ABOUT_PAGE && currentPage != CUSTOM_MODEL_PAGE) currentPage = ENHANCEMENT_PAGE;
-        currentPage = Math.max(0, currentPage);
+        if (currentPage < HOME_PAGE || currentPage > ABOUT_PAGE) currentPage = HOME_PAGE;
 
         View bemContent = findViewById(R.id.bem_content);
         bemContent.setPadding(0, 0, 0, 0);
         bemPage = new BemInstallPage(this, bemContent, savedInstanceState);
         setupPageNavigation();
+        setupHomePage();
         setupModelPage();
         setupVoicePage();
         setupEnhancementPage();
         setupAboutPage();
         findViewById(R.id.sponsor_button).setOnClickListener(view -> SponsorDialog.show(this));
         applyResponsiveShell();
+        applyPage();
         if (savedInstanceState == null) {
             checkUpdateOnStartup();
         }
@@ -145,7 +157,18 @@ public final class MainActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         resumed = true;
+        // Settings pages own their own switches, so the overview is rebuilt from
+        // storage every time this activity comes back to the front.
+        if (currentPage == HOME_PAGE) setupHomePage();
         updateBemRefresh();
+    }
+
+    @Override public void onBackPressed() {
+        if (currentPage != HOME_PAGE) {
+            goTo(HOME_PAGE);
+            return;
+        }
+        super.onBackPressed();
     }
 
     @Override protected void onPause() {
@@ -216,40 +239,308 @@ public final class MainActivity extends Activity {
     }
 
     private void setupPageNavigation() {
-        View[] sections = {
-                findViewById(R.id.model_section),
-                findViewById(R.id.voice_section),
-                findViewById(R.id.enhancement_section),
-                findViewById(R.id.about_section),
-                findViewById(R.id.custom_model_section)
-        };
-        View[] buttons = {
-                findViewById(R.id.show_model_button),
-                findViewById(R.id.show_voice_button),
-                findViewById(R.id.show_enhancement_button),
-                findViewById(R.id.show_about_button),
-                findViewById(R.id.show_custom_model_button)
-        };
-        android.widget.ScrollView scroll = findViewById(R.id.responsive_scroll);
-        for (int index = 0; index < buttons.length; ++index) {
-            final int page = index;
-            buttons[index].setOnClickListener(view -> {
-                flushModelEdits();
-                if (currentPage == 0 && page != 0) refreshModelEdits();
-                currentPage = page;
-                showPage(sections, buttons, page);
-                updateBemRefresh();
-                scrollSelectedNavigation();
-                scroll.post(() -> scroll.smoothScrollTo(0, 0));
-            });
-        }
-        showPage(sections, buttons, currentPage);
+        findViewById(R.id.show_home_button).setOnClickListener(view -> goTo(HOME_PAGE));
+        findViewById(R.id.show_enhancement_button).setOnClickListener(view -> goTo(ENHANCEMENT_PAGE));
+        findViewById(R.id.show_about_button).setOnClickListener(view -> goTo(ABOUT_PAGE));
+        for (int sectionId : SUB_PAGE_SECTIONS) installSubPageBack(sectionId);
     }
 
-    private static void showPage(View[] sections, View[] buttons, int page) {
+    /** Every page below the improvement menu gets its own way back to it. */
+    private void installSubPageBack(int sectionId) {
+        View section = findViewById(sectionId);
+        if (!(section instanceof LinearLayout)) return;
+        Button back = enhancementButton(getString(R.string.back_to_enhancement));
+        back.setOnClickListener(view -> goTo(ENHANCEMENT_PAGE));
+        ((LinearLayout) section).addView(back, 0, SectionCard.stacked(this, 0));
+    }
+
+    private void goTo(int page) {
+        if (currentPage == page) {
+            if (page == HOME_PAGE) setupHomePage();
+            scrollToTop();
+            return;
+        }
+        flushModelEdits();
+        if (currentPage == MODEL_PAGE && page != MODEL_PAGE) refreshModelEdits();
+        currentPage = page;
+        applyPage();
+        // In-app pages edit the same settings storage the overview reads, so the
+        // list is rebuilt on entry rather than showing the state from before.
+        if (page == HOME_PAGE) setupHomePage();
+        updateBemRefresh();
+        scrollSelectedNavigation();
+        scrollToTop();
+    }
+
+    private View[] pageSections() {
+        return new View[]{
+                findViewById(R.id.home_section),
+                findViewById(R.id.enhancement_section),
+                findViewById(R.id.model_section),
+                findViewById(R.id.custom_model_section),
+                findViewById(R.id.voice_section),
+                findViewById(R.id.about_section)
+        };
+    }
+
+    private void applyPage() {
+        View[] sections = pageSections();
         for (int index = 0; index < sections.length; ++index) {
-            sections[index].setVisibility(index == page ? View.VISIBLE : View.GONE);
-            buttons[index].setSelected(index == page);
+            sections[index].setVisibility(index == currentPage ? View.VISIBLE : View.GONE);
+        }
+        // Pages below the improvement menu keep the menu tab highlighted, so the
+        // user can always tell which branch of the app they are in.
+        findViewById(R.id.show_home_button).setSelected(currentPage == HOME_PAGE);
+        findViewById(R.id.show_enhancement_button).setSelected(currentPage != HOME_PAGE
+                && currentPage != ABOUT_PAGE);
+        findViewById(R.id.show_about_button).setSelected(currentPage == ABOUT_PAGE);
+    }
+
+    private void scrollToTop() {
+        android.widget.ScrollView scroll = findViewById(R.id.responsive_scroll);
+        if (scroll != null) scroll.post(() -> scroll.smoothScrollTo(0, 0));
+    }
+
+    /** A single line on the home overview: what is on, and where it leads. */
+    private record HomeItem(String name, String summary, Runnable open) {}
+
+    /**
+     * The home page answers one question: what is currently switched on. Features
+     * that are off do not appear at all; their entries live in the improvement
+     * menu, so the overview stays short instead of growing a second menu of its
+     * own. Only the third-party model list has no on/off state to report and
+     * keeps a direct entry here.
+     */
+    private void setupHomePage() {
+        LinearLayout page = findViewById(R.id.home_section);
+        if (page == null) return;
+        page.removeAllViews();
+
+        List<HomeItem> enabled = new ArrayList<>();
+        collectEnabledFeatures(enabled);
+
+        SectionCard overview = new SectionCard(this, "",
+                getString(R.string.home_title), "");
+        if (enabled.isEmpty()) {
+            TextView empty = new TextView(this);
+            empty.setText(getString(R.string.home_none));
+            empty.setTextSize(13);
+            empty.setTextColor(getColor(R.color.text_secondary));
+            overview.add(empty);
+        } else {
+            TextView count = new TextView(this);
+            count.setText(getString(R.string.home_count, enabled.size()));
+            count.setTextSize(12);
+            count.setTextColor(getColor(R.color.text_muted));
+            overview.add(count);
+            for (HomeItem item : enabled) overview.add(featureRow(item));
+        }
+        page.addView(overview, SectionCard.stacked(this, 0));
+
+        page.addView(featureRow(new HomeItem(getString(R.string.custom_model_page),
+                getString(R.string.home_custom_model), this::openCustomModelPage)),
+                SectionCard.stacked(this, 12));
+    }
+
+    private void collectEnabledFeatures(List<HomeItem> enabled) {
+        if (ModuleSettings.isModelEnabled(this)) {
+            enabled.add(new HomeItem(getString(R.string.model_title), modelSummary(),
+                    this::openModelPage));
+        }
+        if (ModuleSettings.isLogoEnabled(this)) {
+            enabled.add(new HomeItem(getString(R.string.home_feature_logo),
+                    getString(R.string.home_logo_summary, ModuleSettings.getLogoColor(this)),
+                    this::openModelPage));
+        }
+        int voiceRules = parseRules(ModuleSettings.getVoiceRules(this)).size();
+        if (voiceRules > 0) {
+            enabled.add(new HomeItem(getString(R.string.voice_page),
+                    getString(R.string.home_voice_summary, voiceRules), this::openVoicePage));
+        }
+        String interfaceState = interfaceState();
+        if (interfaceState != null) {
+            enabled.add(new HomeItem(getString(R.string.ui_card_title), interfaceState,
+                    () -> openEnhancementFeature(EnhancementSettingsActivity.INTERFACE)));
+        }
+        String cameraState = cameraState();
+        if (cameraState != null) {
+            enabled.add(new HomeItem(getString(R.string.camera_card_title), cameraState,
+                    () -> openEnhancementFeature(EnhancementSettingsActivity.CAMERA)));
+        }
+        if (ModuleSettings.isSustainedDashEnabled(this)) {
+            enabled.add(new HomeItem(getString(R.string.home_feature_dash), dashState(),
+                    () -> openEnhancementFeature(EnhancementSettingsActivity.DASH)));
+        }
+        if (ModuleSettings.isOverlayEnabled(this)) {
+            enabled.add(new HomeItem(getString(R.string.overlay_card_title),
+                    getString(R.string.home_overlay_summary,
+                            Math.round(ModuleSettings.getOverlayTransparency(this))),
+                    () -> openEnhancementFeature(EnhancementSettingsActivity.OVERLAY)));
+        }
+        if (ModuleSettings.isMmdEnabled(this)) {
+            enabled.add(new HomeItem(getString(R.string.mmd_title),
+                    getString(R.string.home_mmd_summary, mmdWorkName()), this::openMmdLibrary));
+        }
+    }
+
+    private String modelSummary() {
+        String character = ModuleSettings.getModelCharacter(this);
+        String action = ModuleSettings.getModelAction(this);
+        try {
+            if (modelIndex != null) {
+                ModelPresetIndex.Character selected = modelIndex.findCharacter(character);
+                if (selected != null) character = selected.displayName();
+                String actionName = actionDisplayName(character, action);
+                if (actionName != null) action = actionName;
+            }
+        } catch (RuntimeException ignored) {
+            // A malformed index must not break the overview.
+        }
+        if (character == null || character.isEmpty()) return "";
+        if (action == null || action.isEmpty()) return character;
+        return getString(R.string.home_model_summary, character, action);
+    }
+
+    private String actionDisplayName(String characterName, String actionId) {
+        if (modelIndex == null || actionId == null || actionId.isEmpty()) return null;
+        for (ModelPresetIndex.Character character : modelIndex.characters()) {
+            if (!character.displayName().equals(characterName)) continue;
+            for (ModelPresetIndex.Action action : character.actions()) {
+                if (action.id().equalsIgnoreCase(actionId)) return action.displayName();
+            }
+        }
+        return null;
+    }
+
+    private String interfaceState() {
+        List<String> active = new ArrayList<>();
+        if (ModuleSettings.isHideUidEnabled(this)) active.add(getString(R.string.ui_hide_uid));
+        if (ModuleSettings.isHideHudEnabled(this)) active.add(getString(R.string.ui_hide_hud));
+        if (ModuleSettings.isPcUiEnabled(this)) active.add(getString(R.string.ui_pc));
+        return active.isEmpty() ? null : String.join("、", active);
+    }
+
+    private String cameraState() {
+        List<String> active = new ArrayList<>();
+        if (ModuleSettings.isDisableDitherEnabled(this)) active.add(getString(R.string.camera_dither));
+        if (ModuleSettings.isFreeCameraEnabled(this)) active.add(getString(R.string.camera_free));
+        if (ModuleSettings.isCameraFollowCharacter(this)) {
+            active.add(getString(R.string.camera_follow_character));
+        }
+        if (ModuleSettings.isGlobalFovEnabled(this)) {
+            active.add(getString(R.string.camera_global_fov_value) + " "
+                    + ModuleSettings.getGlobalFieldOfView(this)
+                    + getString(R.string.degree_suffix));
+        }
+        if (ModuleSettings.isWorldPauseEnabled(this)) active.add(getString(R.string.camera_pause));
+        return active.isEmpty() ? null : String.join("、", active);
+    }
+
+    private String dashState() {
+        List<String> active = new ArrayList<>();
+        if (ModuleSettings.isDashCharacterEnabled(this, "aglina")) {
+            active.add(getString(R.string.dash_aglina));
+        }
+        if (ModuleSettings.isDashCharacterEnabled(this, "liino")) {
+            active.add(getString(R.string.dash_liino));
+        }
+        if (ModuleSettings.isLiinoCleanDashEnabled(this)) {
+            active.add(getString(R.string.dash_liino_clean));
+        }
+        return active.isEmpty() ? "" : String.join("、", active);
+    }
+
+    private String mmdWorkName() {
+        String work = ModuleSettings.getMmdWork(this);
+        if (work == null || work.isEmpty()) return getString(R.string.home_mmd_none);
+        // The configured value is the work folder; the library index owns the
+        // human-readable name shown next to it.
+        try {
+            org.json.JSONArray entries = MmdInstaller.index(this);
+            for (int index = 0; index < entries.length(); ++index) {
+                org.json.JSONObject entry = entries.getJSONObject(index);
+                if (!work.equals(entry.optString("folder"))) continue;
+                String name = entry.optString("name");
+                if (!name.isEmpty()) return name;
+            }
+        } catch (Exception ignored) {
+            // An unreadable index falls back to the folder id below.
+        }
+        int separator = Math.max(work.lastIndexOf('/'), work.lastIndexOf('\\'));
+        return separator >= 0 ? work.substring(separator + 1) : work;
+    }
+
+    private View featureRow(HomeItem item) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        row.setBackgroundResource(R.drawable.bg_setting_row);
+        row.setPadding(dp(14), dp(12), dp(12), dp(12));
+        row.setMinimumHeight(dp(58));
+        row.setClickable(true);
+        row.setFocusable(true);
+
+        LinearLayout text = new LinearLayout(this);
+        text.setOrientation(LinearLayout.VERTICAL);
+        TextView name = new TextView(this);
+        name.setText(item.name());
+        name.setTextSize(15);
+        name.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        name.setTextColor(getColor(R.color.text_primary));
+        text.addView(name);
+        if (item.summary() != null && !item.summary().isEmpty()) {
+            TextView summary = new TextView(this);
+            summary.setText(item.summary());
+            summary.setTextSize(12);
+            summary.setTextColor(getColor(R.color.text_secondary));
+            summary.setPadding(0, dp(3), 0, 0);
+            text.addView(summary);
+        }
+        row.addView(text, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView chevron = new TextView(this);
+        chevron.setText("›");
+        chevron.setTextSize(22);
+        chevron.setTextColor(getColor(R.color.text_muted));
+        chevron.setPadding(dp(10), 0, dp(2), 0);
+        row.addView(chevron);
+        row.setContentDescription(item.name());
+        row.setOnClickListener(view -> {
+            flushModelEdits();
+            item.open().run();
+        });
+        return row;
+    }
+
+    private void openModelPage() { goTo(MODEL_PAGE); }
+
+    private void openCustomModelPage() { goTo(CUSTOM_MODEL_PAGE); }
+
+    private void openVoicePage() { goTo(VOICE_PAGE); }
+
+    private void openEnhancementFeature(String feature) {
+        flushModelEdits();
+        startActivity(new Intent(this, EnhancementSettingsActivity.class)
+                .putExtra(EnhancementSettingsActivity.EXTRA_FEATURE, feature));
+    }
+
+    private void openMmdLibrary() {
+        flushModelEdits();
+        startActivity(new Intent(this, MmdLibraryActivity.class));
+    }
+
+    private void openMediaScreen() {
+        startActivity(new Intent(this, MediaScreenActivity.class));
+    }
+
+    private void openWorkshop() {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW,
+                    Uri.parse("https://146.235.16.65:8443/endfield/"))
+                    .addCategory(Intent.CATEGORY_BROWSABLE));
+        } catch (RuntimeException ignored) {
+            Toast.makeText(this, "无法打开创意工坊", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -723,44 +1014,46 @@ public final class MainActivity extends Activity {
         ModuleSettings.republishConfigurations(this);
         LinearLayout page = findViewById(R.id.enhancement_section);
         page.removeAllViews();
-        addEnhancementEntry(page, getString(R.string.ui_card_title),
-                EnhancementSettingsActivity.INTERFACE);
-        addEnhancementEntry(page, getString(R.string.camera_card_title),
-                EnhancementSettingsActivity.CAMERA);
-        addEnhancementEntry(page, "持续冲刺", EnhancementSettingsActivity.DASH);
-        addEnhancementEntry(page, getString(R.string.overlay_card_title),
-                EnhancementSettingsActivity.OVERLAY);
-        Button mmd = enhancementButton(getString(R.string.mmd_title));
-        mmd.setOnClickListener(view -> {
-            flushModelEdits();
-            startActivity(new Intent(this, MmdLibraryActivity.class));
-        });
-        page.addView(mmd, SectionCard.stacked(this, 12));
-        Button media = enhancementButton("会客室媒体屏");
-        media.setOnClickListener(view -> startActivity(new Intent(this, MediaScreenActivity.class)));
-        page.addView(media, SectionCard.stacked(this, 12));
 
+        SectionCard models = new SectionCard(this, "",
+                getString(R.string.enhancement_group_models), "");
+        enhancementEntry(models, getString(R.string.model_page), this::openModelPage);
+        enhancementEntry(models, getString(R.string.custom_model_page), this::openCustomModelPage);
+        page.addView(models, SectionCard.stacked(this, 0));
+
+        SectionCard gameplay = new SectionCard(this, "",
+                getString(R.string.enhancement_group_gameplay), "");
+        addEnhancementEntry(gameplay, getString(R.string.ui_card_title),
+                EnhancementSettingsActivity.INTERFACE);
+        addEnhancementEntry(gameplay, getString(R.string.camera_card_title),
+                EnhancementSettingsActivity.CAMERA);
+        addEnhancementEntry(gameplay, "持续冲刺", EnhancementSettingsActivity.DASH);
+        addEnhancementEntry(gameplay, getString(R.string.overlay_card_title),
+                EnhancementSettingsActivity.OVERLAY);
+        page.addView(gameplay, SectionCard.stacked(this, 12));
+
+        SectionCard content = new SectionCard(this, "",
+                getString(R.string.enhancement_group_content), "");
+        enhancementEntry(content, getString(R.string.voice_page), this::openVoicePage);
+        enhancementEntry(content, getString(R.string.mmd_title), this::openMmdLibrary);
+        enhancementEntry(content, "会客室媒体屏", this::openMediaScreen);
         Button workshop = enhancementButton("创意工坊");
-        workshop.setOnClickListener(view -> {
-            try {
-                startActivity(new Intent(Intent.ACTION_VIEW,
-                        Uri.parse("https://146.235.16.65:8443/endfield/"))
-                        .addCategory(Intent.CATEGORY_BROWSABLE));
-            } catch (RuntimeException ignored) {
-                android.widget.Toast.makeText(this, "无法打开创意工坊", android.widget.Toast.LENGTH_SHORT).show();
-            }
-        });
-        page.addView(workshop, SectionCard.stacked(this, 12));
+        workshop.setOnClickListener(view -> openWorkshop());
+        content.add(workshop);
+        page.addView(content, SectionCard.stacked(this, 12));
     }
 
-    private void addEnhancementEntry(LinearLayout page, String title, String feature) {
+    private void enhancementEntry(SectionCard card, String title, Runnable action) {
         Button entry = enhancementButton(title);
         entry.setOnClickListener(view -> {
             flushModelEdits();
-            startActivity(new Intent(this, EnhancementSettingsActivity.class)
-                    .putExtra(EnhancementSettingsActivity.EXTRA_FEATURE, feature));
+            action.run();
         });
-        page.addView(entry, SectionCard.stacked(this, page.getChildCount() == 0 ? 0 : 12));
+        card.add(entry);
+    }
+
+    private void addEnhancementEntry(SectionCard card, String title, String feature) {
+        enhancementEntry(card, title, () -> openEnhancementFeature(feature));
     }
 
     private Button enhancementButton(String title) {
