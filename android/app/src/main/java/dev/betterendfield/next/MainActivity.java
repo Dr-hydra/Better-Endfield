@@ -465,6 +465,9 @@ public final class MainActivity extends Activity {
         if (ModuleSettings.isLiinoCleanDashEnabled(this)) {
             active.add(getString(R.string.dash_liino_clean));
         }
+        if (ModuleSettings.isDashCharacterEnabled(this, "jsspsi")) {
+            active.add(getString(R.string.dash_jsspsi));
+        }
         return active.isEmpty() ? "" : String.join("、", active);
     }
 

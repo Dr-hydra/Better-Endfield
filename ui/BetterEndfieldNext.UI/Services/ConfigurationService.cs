@@ -503,6 +503,8 @@ internal static class ConfigurationService
             actionsEnabled && (!listPresent || HasCharacter(characters, "aglina"));
         configuration.ContinuousSpecialDashLiinoEnabled =
             actionsEnabled && (!listPresent || HasCharacter(characters, "liino"));
+        configuration.ContinuousSpecialDashJsspsiEnabled =
+            actionsEnabled && listPresent && HasCharacter(characters, "jsspsi");
         // Missing preferences default off; preserve explicitly saved choices.
         configuration.LiinoCleanDashEnabled = Boolean(actionValues, "liino_clean", false);
         configuration.Character = Text(values, "character", configuration.Character);

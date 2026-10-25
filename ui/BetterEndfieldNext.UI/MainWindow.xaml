@@ -1256,6 +1256,8 @@
                                     OffContent="关闭" OnContent="开启" Toggled="ActionsToggle_Toggled" />
                                 <ToggleSwitch x:Name="ContinuousSpecialDashLiinoToggle" Header="梨诺"
                                     OffContent="关闭" OnContent="开启" Toggled="ActionsToggle_Toggled" />
+                                <ToggleSwitch x:Name="ContinuousSpecialDashJsspsiToggle" Header="祀"
+                                    OffContent="关闭" OnContent="开启" Toggled="ActionsToggle_Toggled" />
                                 <StackPanel Margin="24,0,0,0" Spacing="8">
                                     <ToggleSwitch x:Name="LiinoCleanDashToggle" Header="隐藏机甲与光效"
                                         IsEnabled="{Binding IsOn, ElementName=ContinuousSpecialDashLiinoToggle}"

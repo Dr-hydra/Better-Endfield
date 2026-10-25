@@ -123,6 +123,7 @@
     <string name="dash_pose_note">循环段使用随模块附带的骨骼姿态数据，动画由 %1$s 接管；原生动作与移动逻辑保持不变。</string>
     <string name="dash_liino_clean">隐藏机甲与光效</string>
     <string name="dash_liino_clean_hint">梨诺冲刺全程隐藏机甲（含腿甲）与光效，保留飞行动画。</string>
+    <string name="dash_jsspsi">祀</string>
 
     <!-- overlay -->
     <string name="overlay_card_eyebrow">IN-GAME PANEL</string>

@@ -1,6 +1,6 @@
 # 特殊冲刺动画持续播放
 
-按住冲刺时，让角色保持自己的特殊冲刺动作循环播放，而不是播完一遍就回到普通疾跑。当前支持洁尔佩塔（`chr_0013_aglina`）和梨诺（`chr_0035_liino`）。启动器「冲刺持续」页的开关写入 `[betterendfieldnext.actions] enabled`；`external_loop=true` 时启用骨骼姿态覆盖，`false` 时退回只保持状态不改姿态的 v9 行为。
+按住冲刺时，让角色保持自己的特殊冲刺动作循环播放，而不是播完一遍就回到普通疾跑。当前支持洁尔佩塔（`chr_0013_aglina`）、梨诺（`chr_0035_liino`）与祀（`chr_0036_jsspsi`）。启动器「冲刺持续」页的开关写入 `[betterendfieldnext.actions] enabled`；`external_loop=true` 时启用骨骼姿态覆盖，`false` 时退回只保持状态不改姿态的 v9 行为。
 
 ## 1. 运行时如何工作
 
@@ -14,19 +14,30 @@
 
 角色差异集中在 `module.cpp` 的 `CharacterProfile` 表里：模板 id、Perform id、姿态数据文件、Animator 回绕常量、需要保持的持续特效名、需要延后的音频停止事件、需要延后的道具隐藏或网格组隐藏。其余 hook 对所有角色共用。
 
-| | 洁尔佩塔 | 梨诺 |
-| --- | --- | --- |
-| 模板 id | `chr_0013_aglina` | `chr_0035_liino` |
-| Perform | `CharIntPerform_Aglina_Spdash` | `CharIntPerform_Liino_Spdash` |
-| 源 Clip | `A_actor_aglina_sprint_dash_sp_l/r`，209 采样 / 3.4667 秒 | `A_actor_liino_sprint_dash_sp_l/r`，174 采样 / 2.8833 秒 |
-| 动作性质 | 滑翔，循环段内双脚离地 0.27–1.2 m | 踩板滑行，约 2.13 秒落地 |
-| 回绕常量 begin/target/blend/period | 136/208、80/208、18/208、56/208 | 107/173、55/173、15/173、52/173 |
-| 姿态文件 | `actions/pose_aglina.bin` | `actions/pose_liino.bin` |
-| 持续特效保持 | `P_fxbat_aglina_sprint_dash_sp_01/02` 两套粒子 | 无需处理，其特效 duration 为 -1，随 Perform 存续 |
-| 延后的音频停止 | `Aglina_SprintDashSp_Flying_Stop` | 无 |
-| 延后的隐藏动作 | 道具隐藏 logic 11 / index 0 / delay 2.4 | 网格组隐藏（2.2 秒收起滑板），经 `SetCharMeshGroupShow` 拦截 |
+| | 洁尔佩塔 | 梨诺 | 祀 |
+| --- | --- | --- | --- |
+| 模板 id | `chr_0013_aglina` | `chr_0035_liino` | `chr_0036_jsspsi` |
+| Perform | `CharIntPerform_Aglina_Spdash` | `CharIntPerform_Liino_Spdash` | `CharIntPerform_Jsspsi_SpdashL/R` |
+| 源 Clip | `A_actor_aglina_sprint_dash_sp_l/r`，209 采样 / 3.4667 秒 | `A_actor_liino_sprint_dash_sp_l/r`，174 采样 / 2.8833 秒 | `A_actor_jsspsi_sprint_dash_sp_l/r`，5.667 秒 |
+| 动作性质 | 滑翔，循环段内双脚离地 0.27–1.2 m | 踩板滑行，约 2.13 秒落地 | 骑乘墨兽奔跑 |
+| 回绕常量 begin/target/blend/period | 136/208、80/208、18/208、56/208 | 107/173、55/173、15/173、52/173 | 0.315、0.126、0.06、0.189 |
+| 姿态文件 | `actions/pose_aglina.bin` | `actions/pose_liino.bin` | 无（轻量原生回绕，不依赖外部姿态包） |
+| 持续特效保持 | `P_fxbat_aglina_sprint_dash_sp_01/02` 两套粒子 | 无需处理，其特效 duration 为 -1，随 Perform 存续 | 冻结墨兽材质消散时钟，抑制 10–12 号收尾踩水花粒子 |
+| 延后的音频停止 | `Aglina_SprintDashSp_Flying_Stop` | 无 | 无 |
+| 延后的隐藏动作 | 道具隐藏 logic 11 / index 0 / delay 2.4 | 网格组隐藏（2.2 秒收起滑板），经 `SetCharMeshGroupShow` 拦截 | 无 |
+| 临时物体同步 | 无 | 无 | 坐骑墨兽（0 号）同帧 CrossFade 回绕，伴随墨兽（1、2 号）时间窗独立回绕 |
 
 网格组钩子是可选契约：解析不到就只关掉这一项，模块其余功能照常。
+
+### 祀的实现说明与来源致谢
+
+祀（chr_0036_jsspsi）由于骑乘 3 只独立墨兽（TmpObjectInst），且动画剪辑中无纯平稳巡航段，无法套用阿格莱雅与梨诺的离线 BEPOSE12 骨骼覆盖方案。
+
+本项目参考并借鉴了社区贡献者 **zhuran24** 在 **GitHub Issue #32** 中关于祀冲刺结构、墨兽 Animator 多轨协同、材质消散时钟冻结的逆向研究成果。为保障跨平台轻量性、零外部资产负担以及防止受限安装目录写盘风险，本项目采取了精简架构实现：
+- 采用原生 Animator 结合 Unity 自带 CrossFade 平滑融合回绕；
+- 坐骑墨兽同帧回绕，伴随墨兽时间窗回绕，并冻结消散时钟；
+- 剥离了沉重的附属件姿态覆写（BEACC001）与运行时自学习接缝写盘（BESEAM03），在极小代码增量下实现全平台即装即用；
+- 双端启动器新增「祀」独立开关，默认保持关闭。
 
 ## 2. 数据是怎么做出来的
 

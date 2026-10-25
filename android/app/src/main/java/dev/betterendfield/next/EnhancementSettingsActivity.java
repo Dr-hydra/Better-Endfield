@@ -175,6 +175,7 @@ public final class EnhancementSettingsActivity extends Activity {
         addDashToggle(card, R.string.dash_aglina, () -> ModuleSettings.isDashCharacterEnabled(this, "aglina"));
         addDashToggle(card, R.string.dash_liino, () -> ModuleSettings.isDashCharacterEnabled(this, "liino"));
         addDashToggle(card, R.string.dash_liino_clean, () -> ModuleSettings.isLiinoCleanDashEnabled(this));
+        addDashToggle(card, R.string.dash_jsspsi, () -> ModuleSettings.isDashCharacterEnabled(this, "jsspsi"));
         return card;
     }
 
@@ -346,6 +347,7 @@ public final class EnhancementSettingsActivity extends Activity {
             boolean dash = ModuleSettings.isSustainedDashEnabled(this);
             rows.get(R.string.dash_aglina).setAvailable(dash);
             rows.get(R.string.dash_liino).setAvailable(dash);
+            rows.get(R.string.dash_jsspsi).setAvailable(dash);
             rows.get(R.string.dash_liino_clean).setAvailable(
                     dash && ModuleSettings.isDashCharacterEnabled(this, "liino"));
         } else if (APPEARANCE.equals(feature)) {
@@ -391,7 +393,8 @@ public final class EnhancementSettingsActivity extends Activity {
                 option == R.string.dash_enable ? checked : ModuleSettings.isSustainedDashEnabled(this),
                 option == R.string.dash_liino_clean ? checked : ModuleSettings.isLiinoCleanDashEnabled(this),
                 option == R.string.dash_aglina ? checked : ModuleSettings.isDashCharacterEnabled(this, "aglina"),
-                option == R.string.dash_liino ? checked : ModuleSettings.isDashCharacterEnabled(this, "liino"));
+                option == R.string.dash_liino ? checked : ModuleSettings.isDashCharacterEnabled(this, "liino"),
+                option == R.string.dash_jsspsi ? checked : ModuleSettings.isDashCharacterEnabled(this, "jsspsi"));
     }
 
     private void removeOverlayPreview() {

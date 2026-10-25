@@ -142,18 +142,21 @@ internal sealed class ModConfiguration
 
     public bool ContinuousSpecialDashLiinoEnabled { get; set; } = false;
 
+    public bool ContinuousSpecialDashJsspsiEnabled { get; set; } = false;
+
     public bool LiinoCleanDashEnabled { get; set; } = false;
 
     public bool ContinuousSpecialDashEnabled =>
-        ContinuousSpecialDashAglinaEnabled || ContinuousSpecialDashLiinoEnabled;
+        ContinuousSpecialDashAglinaEnabled || ContinuousSpecialDashLiinoEnabled || ContinuousSpecialDashJsspsiEnabled;
 
     public string ContinuousSpecialDashCharacters
     {
         get
         {
-            var names = new List<string>(2);
+            var names = new List<string>(3);
             if (ContinuousSpecialDashAglinaEnabled) names.Add("aglina");
             if (ContinuousSpecialDashLiinoEnabled) names.Add("liino");
+            if (ContinuousSpecialDashJsspsiEnabled) names.Add("jsspsi");
             return string.Join(',', names);
         }
     }

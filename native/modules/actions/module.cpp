@@ -54,6 +54,11 @@ struct CharacterProfile {
     // board at 2.2 s). Deferring those hides keeps the parts visible while the
     // dash repeats; the native Clear still restores them on exit.
     bool defer_mesh_group_hide;
+    bool side_suffixed_perform = false;
+    bool rewind_mount = false;
+    const LoopConstants* side_loop = nullptr;
+    uint32_t skipped_effect_actors = 0;
+    bool freeze_render_vfx = false;
 };
 constexpr CharacterProfile kCharacters[]{
     {"aglina", "chr_0013_aglina", "CharIntPerform_Aglina_Spdash", L"pose_aglina.bin", kAglinaLoop,
@@ -76,6 +81,17 @@ constexpr CharacterProfile kCharacters[]{
       "P_fxbat_liino_sprint_dash_sp_weapons_base_L_a_01_jnt_lvdong",
       "P_fxbat_liino_sprint_dash_sp_weapons_base_R_a_01_jnt_lvdong"}, false,
      nullptr, {}, true},
+    // Jsspsi (chr_0036_jsspsi): Sustained special dash.
+    // Derived from reverse-engineering research in GitHub Issue #32 by zhuran24.
+    // Uses lightweight native Animator rewind + mount TmpObject sync + render VFX freeze;
+    // avoids external pose overlay banks and runtime disk seam writes.
+    {"jsspsi", "chr_0036_jsspsi", "CharIntPerform_Jsspsi_Spdash", nullptr, kJsspsiLoop,
+     {}, false, nullptr, {}, false,
+     /*side_suffixed_perform=*/true,
+     /*rewind_mount=*/true,
+     /*side_loop=*/&kJsspsiSideLoop,
+     /*skipped_effect_actors=*/kJsspsiSkipEffects,
+     /*freeze_render_vfx=*/true},
 };
 constexpr size_t kCharacterCount = std::size(kCharacters);
 
@@ -138,7 +154,8 @@ enum MethodId {
     ControllerGet, ControllerSet, ControllerClips, OverrideCtor, OverrideClip,
     CurrentClipInfos, InfoClip, DestroyOwned,
     PoseTail, PoseComponentTransform, PoseFind, PoseGetLocal, PoseSetLocal, PoseFrameCount, PoseIsChild,
-    MeshGroupShow, EffectActionPlay, EffectManualFollow, VisualPerformId, VisualPerformEntity, MethodCount
+    MeshGroupShow, EffectActionPlay, EffectManualFollow, VisualPerformId, VisualPerformEntity,
+    JsspsiTmpAnimator, JsspsiPlayRenderVfx, JsspsiPlayVfx, JsspsiVfxTick, JsspsiVfxDelta, MethodCount
 };
 struct Method { BE_MethodDescriptorV1 desc; BE_ResolvedMethodV1 resolved{}; };
 Method g_methods[] = {
@@ -228,11 +245,17 @@ Method g_methods[] = {
     {{kGame,"Beyond.Gameplay","EffectInstance","ManualUpdateFollow",nullptr,"System.Void",0}},
     {{kGame,kPerformNs,kHandle,"get_interactPerformId",nullptr,"System.String",0}},
     {{kGame,kPerformNs,kHandle,"get_entity",nullptr,"Beyond.Gameplay.Core.Entity",0}},
+    {{kGame,kPerformNs,"TmpObjectInst","get_animator",nullptr,"UnityEngine.Animator",0}},
+    {{kGame,"Beyond.Gameplay","EffectInstance","PlayRenderVfx",nullptr,"System.Void",0}},
+    {{kGame,kView,"EntityVFX","PlayVFX","System.String","System.Void",1}},
+    {{kGame,kView,"EntityVFX","Tick","System.Single","System.Void",1}},
+    {{"Rendering.Beyond.dll","Beyond.Rendering","EntityVFXControllerBase","GetDeltaTimeFromLastTick","System.Boolean","System.Single",1}},
 };
 static_assert(std::size(g_methods) == MethodCount);
 struct Field { BE_FieldDescriptorV1 desc; BE_ResolvedFieldV1 resolved{}; };
 enum FieldId { TemplateId, Request, RequestHandle, HasCommand,
-    CommandType, CommandReason, ActionLogic, ActionIndex, ActionShow, ActionDelay, Effects, VisualActionHandle, VisualActionData, FieldCount };
+    CommandType, CommandReason, ActionLogic, ActionIndex, ActionShow, ActionDelay, Effects, VisualActionHandle, VisualActionData,
+    JsspsiTmpObjects, JsspsiRenderHelper, JsspsiHelperVfx, JsspsiVfxOwner, FieldCount };
 Field g_fields[] = {
     {{kGame,"Beyond.Gameplay","GameDataWithId","id","System.String"}},
     {{kGame,kView,kCharacterComp,"m_currentRequest","Beyond.Gameplay.View.CharacterAnimationComponent.PerformRequest"}},
@@ -247,6 +270,10 @@ Field g_fields[] = {
     {{kGame,kPerformNs,kHandle,"m_effects","System.Collections.Generic.Dictionary<System.Int32,Beyond.ObjectPtr<Beyond.Gameplay.EffectInstance>>"}},
     {{kGame,kPerformNs,"CharInteractPerformActionBase","m_handle","Beyond.Gameplay.Core.CharInteractPerform.CharPerformHandleBase"}},
     {{kGame,kPerformNs,"CharInteractPerformActionBase","m_actionData","Beyond.Gameplay.Core.CharInteractPerform.CharInteractPerformActionData"}},
+    {{kGame,kPerformNs,kHandle,"m_tmpObjects",nullptr}},
+    {{kGame,kPerformNs,"TmpObjectInst","m_entityRenderHelper",nullptr}},
+    {{kGame,kView,"EntityRenderHelper","m_entityVFX",nullptr}},
+    {{"Rendering.Beyond.dll","Beyond.Rendering","EntityVFXControllerBase","m_owner",nullptr}},
 };
 static_assert(std::size(g_fields) == FieldCount);
 
@@ -389,6 +416,14 @@ bool StringEquals(void* managed, const char* expected) {
     return managed && g_host->copy_managed_string(g_host->context,
         managed, text, sizeof(text)) > 0 && std::strcmp(text, expected) == 0;
 }
+bool PerformMatches(void* managed, const char* expected, bool allow_lr_suffix) {
+    char text[160]{};
+    if (!managed || g_host->copy_managed_string(g_host->context, managed, text, sizeof(text)) <= 0) return false;
+    if (!allow_lr_suffix) return std::strcmp(text, expected) == 0;
+    size_t len = std::strlen(expected);
+    if (std::strncmp(text, expected, len) != 0) return false;
+    return text[len] == '\0' || ((text[len] == 'L' || text[len] == 'R') && text[len + 1] == '\0');
+}
 void* OwnedPerform(void* component, const CharacterProfile* profile) {
     bool ok = true;
     if (!profile || !Value<bool>(IsPlayingPerform, component, ok) || !ok) return nullptr;
@@ -397,7 +432,7 @@ void* OwnedPerform(void* component, const CharacterProfile* profile) {
     void* unboxed = g_host->object_unbox(g_host->context, request);
     if (!unboxed) return nullptr;
     void* id = Invoke(PerformId, unboxed, nullptr, ok);
-    return ok && StringEquals(id, profile->perform_id) ? FieldObject(RequestHandle, request) : nullptr;
+    return ok && PerformMatches(id, profile->perform_id, profile->side_suffixed_perform) ? FieldObject(RequestHandle, request) : nullptr;
 }
 void* InvokeNamed(void* object, const char* name, int count, void** args, bool& ok, bool value_type = false) {
     if (!ok || !object) { ok = false; return nullptr; }
@@ -545,6 +580,154 @@ void* CurrentRequestHandle(void* component) {
     void* request = FieldObject(Request, component);
     return request ? FieldObject(RequestHandle, request) : nullptr;
 }
+
+void* TmpObjectAt(int slot, void* dictionary) {
+    if (!dictionary) return nullptr;
+    bool ok = true;
+    void* args[]{&slot};
+    void* boxed_ptr = InvokeNamed(dictionary, "get_Item", 1, args, ok);
+    return ok ? boxed_ptr : nullptr;
+}
+
+void* TmpObjectAnimator(int slot) {
+    if (!g_session.handle || !g_fields[JsspsiTmpObjects].resolved.field_info || !g_methods[JsspsiTmpAnimator].resolved.method_info) return nullptr;
+    void* dict = FieldObject(JsspsiTmpObjects, g_session.handle);
+    void* inst = TmpObjectAt(slot, dict);
+    if (!inst) return nullptr;
+    bool ok = true;
+    void* animator = Invoke(JsspsiTmpAnimator, inst, nullptr, ok);
+    return ok && animator ? animator : nullptr;
+}
+
+void SyncTmpObjects(float duration, float offset) {
+    void* animator = TmpObjectAnimator(0);
+    if (!animator) return;
+    bool ok = true;
+    int layer = 0;
+    void* layer_args[]{&layer};
+    void* boxed = Invoke(CurrentState, animator, layer_args, ok);
+    void* state = boxed ? g_host->object_unbox(g_host->context, boxed) : nullptr;
+    int hash = Value<int>(StateHash, state, ok);
+    if (!ok || !hash) return;
+    float transition_time = 0;
+    bool blend_root_motion = false;
+    void* args[]{&hash, &duration, &layer, &offset, &transition_time, &g_blend_style, &g_blend_interrupt, &blend_root_motion};
+    Invoke(CrossFade, animator, args, ok);
+}
+
+void TickSideBeasts() {
+    if (!g_session.profile || !g_session.profile->side_loop) return;
+    const LoopConstants& c = *g_session.profile->side_loop;
+    static uint64_t last_side_rewind[3]{};
+    uint64_t now = GetTickCount64();
+    for (int slot = 1; slot <= 2; ++slot) {
+        void* animator = TmpObjectAnimator(slot);
+        if (!animator) continue;
+        bool ok = true;
+        int layer = 0;
+        void* layer_args[]{&layer};
+        if (Value<bool>(InTransition, animator, ok, layer_args) || !ok) continue;
+        void* boxed = Invoke(CurrentState, animator, layer_args, ok);
+        void* state = boxed ? g_host->object_unbox(g_host->context, boxed) : nullptr;
+        int hash = Value<int>(StateHash, state, ok);
+        float time = Value<float>(StateTime, state, ok);
+        if (!ok || !hash || time < c.begin || time > c.begin + 0.2f || now - last_side_rewind[slot] < 300) continue;
+        float d = c.blend;
+        float o = c.target + (time - c.begin);
+        float transition_time = 0;
+        bool blend_root_motion = false;
+        void* fade_args[]{&hash, &d, &layer, &o, &transition_time, &g_blend_style, &g_blend_interrupt, &blend_root_motion};
+        Invoke(CrossFade, animator, fade_args, ok);
+        last_side_rewind[slot] = now;
+    }
+}
+
+void* g_session_vfx[8]{};
+int g_session_vfx_count = 0;
+void* g_session_vfx_helpers[3]{};
+int g_session_vfx_helper_count = 0;
+bool g_session_vfx_frozen = false;
+thread_local bool g_render_vfx_origin = false;
+
+using PlayRenderVfxFn = void(__fastcall*)(void*, const void*);
+using PlayVfxFn = void(__fastcall*)(void*, void*, const void*);
+using VfxTickFn = void(__fastcall*)(void*, float, const void*);
+using VfxDeltaFn = float(__fastcall*)(void*, bool, const void*);
+
+PlayRenderVfxFn g_play_render_vfx = nullptr;
+PlayVfxFn g_play_vfx = nullptr;
+VfxTickFn g_vfx_tick = nullptr;
+VfxDeltaFn g_vfx_delta = nullptr;
+
+bool OwnedDashEffect(void* effect) {
+    if (!effect || !g_session.profile) return false;
+    char name[200]{};
+    bool ok = true;
+    void* managed = Invoke(EffectName, effect, nullptr, ok);
+    if (!ok || !managed || g_host->copy_managed_string(g_host->context, managed, name, sizeof(name)) <= 0) return false;
+    return std::strstr(name, "jsspsi") != nullptr;
+}
+
+void __fastcall PlayRenderVfxDetour(void* effect, const void* method) {
+    bool mine = g_session.profile && g_session.profile->freeze_render_vfx && OwnedDashEffect(effect);
+    bool saved = g_render_vfx_origin;
+    g_render_vfx_origin = mine;
+    if (g_play_render_vfx) g_play_render_vfx(effect, method);
+    g_render_vfx_origin = saved;
+}
+
+void __fastcall PlayVfxDetour(void* vfx, void* name, const void* method) {
+    if (vfx && g_render_vfx_origin) {
+        bool exists = false;
+        for (int k = 0; k < g_session_vfx_count; ++k) if (g_session_vfx[k] == vfx) { exists = true; break; }
+        if (!exists && g_session_vfx_count < 8) g_session_vfx[g_session_vfx_count++] = vfx;
+    }
+    if (g_play_vfx) g_play_vfx(vfx, name, method);
+}
+
+void __fastcall VfxTickDetour(void* vfx, float delta, const void* method) {
+    if (g_session_vfx_frozen && vfx && g_session.policy.active) {
+        for (int k = 0; k < g_session_vfx_count; ++k) {
+            if (g_session_vfx[k] == vfx) { delta = 0; break; }
+        }
+    }
+    if (g_vfx_tick) g_vfx_tick(vfx, delta, method);
+}
+
+float __fastcall VfxDeltaDetour(void* controller, bool scaled, const void* method) {
+    float delta = g_vfx_delta ? g_vfx_delta(controller, scaled, method) : 0.0f;
+    if (g_session_vfx_frozen && controller && g_fields[JsspsiVfxOwner].resolved.offset > 0) {
+        void* owner = *reinterpret_cast<void**>(static_cast<char*>(controller) + g_fields[JsspsiVfxOwner].resolved.offset);
+        for (int k = 0; owner && k < g_session_vfx_helper_count; ++k) {
+            if (owner == g_session_vfx_helpers[k] && g_session.policy.active) { delta = 0; break; }
+        }
+    }
+    return delta;
+}
+
+void FreezeVfx() {
+    if (g_session_vfx_frozen || !g_session.handle || !g_fields[JsspsiTmpObjects].resolved.field_info) return;
+    void* dict = FieldObject(JsspsiTmpObjects, g_session.handle);
+    if (!dict) return;
+    for (int slot = 0; slot < 3; ++slot) {
+        void* inst = TmpObjectAt(slot, dict);
+        if (!inst) continue;
+        void* helper = FieldObject(JsspsiRenderHelper, inst);
+        if (!helper) continue;
+        if (g_session_vfx_helper_count < 3) g_session_vfx_helpers[g_session_vfx_helper_count++] = helper;
+        void* vfx = FieldObject(JsspsiHelperVfx, helper);
+        if (vfx) {
+            bool exists = false;
+            for (int k = 0; k < g_session_vfx_count; ++k) if (g_session_vfx[k] == vfx) { exists = true; break; }
+            if (!exists && g_session_vfx_count < 8) g_session_vfx[g_session_vfx_count++] = vfx;
+        }
+    }
+    g_session_vfx_frozen = true;
+    if (g_session.config && g_session.config->diagnostics) {
+        Log("Sustained dash Jsspsi: render VFX frozen for temporary ink-beasts.");
+    }
+}
+
 bool CanMove(void* component, const CharacterProfile** matched = nullptr) {
     bool ok = true;
     void* entity = Object(GetEntity, component, ok);
@@ -636,6 +819,9 @@ void Cancel(const char* reason, bool stop_perform, bool restore_parameter = true
         g_interrupt(old.component, g_methods[Interrupt].resolved.method_info);
     if (old.root) g_host->gchandle_free(g_host->context, old.root);
     if (old.handle_root) g_host->gchandle_free(g_host->context, old.handle_root);
+    g_session_vfx_count = 0;
+    g_session_vfx_helper_count = 0;
+    g_session_vfx_frozen = false;
 }
 bool HoldContext(void* component);
 bool ShouldHold(void* component) {
@@ -700,6 +886,16 @@ bool CleanLiinoPerform(void* handle, void* target = nullptr) {
     return Value<bool>(IsMain, control, ok) && ok;
 }
 void __fastcall EffectActionPlayDetour(void* action, const void* method) {
+    if (action && !g_stopping && GetCurrentThreadId() == g_game_thread.load(std::memory_order_relaxed)) {
+        if (g_session.profile && g_session.profile->skipped_effect_actors) {
+            void* data = FieldObject(VisualActionData, action);
+            bool ok = data != nullptr;
+            const int actor = ok ? Unbox<int>(FieldObject(ActionIndex, data), ok) : -1;
+            if (ok && actor >= 0 && actor < 32 && (g_session.profile->skipped_effect_actors & (1u << actor))) {
+                if (FieldObject(VisualActionHandle, action) == g_session.handle) return;
+            }
+        }
+    }
     // All EffectPlayActions belonging to this exact perform are cosmetic:
     // entry/exit particles, continuous trails, and material dissolve/glow VFX.
     if (action && !g_stopping && g_liino_clean_contract &&
@@ -995,7 +1191,7 @@ void __fastcall StartDetour(void* component, int index, const void* method) {
     g_session.handle_root = g_host->gchandle_new(g_host->context, handle, 1);
     if (!g_session.root || !g_session.handle_root) Cancel("root failed", false);
     else {
-        if (config->external_loop) {
+        if (config->external_loop && profile->pose_file) {
             BeginPoseOverlay(component, profile);
         }
         if (!g_session.external_expected && g_external_owner.component == component) {
@@ -1069,6 +1265,8 @@ void __fastcall PreLateDetour(void* component, float delta, const void* method) 
                     // Managed playback may synchronously deliver a native exit.
                 } else if (ok) {
                     ++g_session.animation_replays;
+                    if (g_session.profile->freeze_render_vfx) FreezeVfx();
+                    if (g_session.profile->rewind_mount) SyncTmpObjects(duration, offset);
                     if (g_session.config->diagnostics && (g_session.animation_replays <= 4 || g_session.animation_replays % 16 == 0)) {
                         char text[240];
                         std::snprintf(text, sizeof(text), "Sustained dash %s: hash=%d, source=%.3f, target=%.3f, duration=%.3f, count=%u",
@@ -1084,6 +1282,9 @@ void __fastcall PreLateDetour(void* component, float delta, const void* method) 
                 return; // A synchronous callback started a new session; discard the old frame.
             }
             Decision decision = g_session.component ? g_session.policy.Update(frame) : Decision::Wait;
+            if (g_session.profile && g_session.profile->side_loop && g_session.policy.active) {
+                TickSideBeasts();
+            }
             if (decision == Decision::Keep) MaintainEffects();
             if (decision == Decision::Cancel) {
                 if (g_session.config->diagnostics) {
@@ -1257,6 +1458,7 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
                 continue;
             }
             Log((std::string("Missing action method: ") + method.desc.class_name + "." + method.desc.method_name).c_str());
+            if (&method >= &g_methods[JsspsiTmpAnimator]) { method.resolved = {}; continue; }
             if (&method == &g_methods[MeshGroupShow]) { g_mesh_group_contract = false; continue; }
             if (&method == &g_methods[EffectActionPlay]) { g_liino_teardown_contract = false; continue; }
             if (&method == &g_methods[EffectManualFollow]) { g_effect_follow_contract = false; continue; }
@@ -1269,6 +1471,7 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     for (auto& field : g_fields) {
         if (host->resolve_field(host->context, &field.desc, &field.resolved) != BE_Result_Ok) {
             Log((std::string("Missing action field: ") + field.desc.field_name).c_str());
+            if (&field >= &g_fields[JsspsiTmpObjects]) { field.resolved = {}; continue; }
             if (&field >= &g_fields[VisualActionHandle]) { g_liino_teardown_contract = false; continue; }
             return BE_Result_ContractMismatch;
         }
@@ -1425,6 +1628,22 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
             reinterpret_cast<void*>(&PoseTailDetour), reinterpret_cast<void**>(&g_pose_tail)) != BE_Result_Ok) {
         g_pose_contract = false;
         Log("Sustained dash v12: TailLate hook unavailable; pose overlay disabled, native v9 hold remains.");
+    }
+    if (g_methods[JsspsiPlayRenderVfx].resolved.method_pointer) {
+        host->create_hook(host->context, kId, g_methods[JsspsiPlayRenderVfx].resolved.method_pointer,
+            reinterpret_cast<void*>(&PlayRenderVfxDetour), reinterpret_cast<void**>(&g_play_render_vfx));
+    }
+    if (g_methods[JsspsiPlayVfx].resolved.method_pointer) {
+        host->create_hook(host->context, kId, g_methods[JsspsiPlayVfx].resolved.method_pointer,
+            reinterpret_cast<void*>(&PlayVfxDetour), reinterpret_cast<void**>(&g_play_vfx));
+    }
+    if (g_methods[JsspsiVfxTick].resolved.method_pointer) {
+        host->create_hook(host->context, kId, g_methods[JsspsiVfxTick].resolved.method_pointer,
+            reinterpret_cast<void*>(&VfxTickDetour), reinterpret_cast<void**>(&g_vfx_tick));
+    }
+    if (g_methods[JsspsiVfxDelta].resolved.method_pointer && g_fields[JsspsiVfxOwner].resolved.field_info && g_fields[JsspsiVfxOwner].resolved.offset > 0) {
+        host->create_hook(host->context, kId, g_methods[JsspsiVfxDelta].resolved.method_pointer,
+            reinterpret_cast<void*>(&VfxDeltaDetour), reinterpret_cast<void**>(&g_vfx_delta));
     }
     Log("Actions module ready; scoped to character special dashes, disabled by default.");
     return BE_Result_Ok;

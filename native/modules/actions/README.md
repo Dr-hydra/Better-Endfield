@@ -12,16 +12,16 @@ Windows Release 构建及动作策略、特效生命周期、外部动画、双�
 
 ## 支持的角色
 
-角色资源配置在 `module.cpp` 的 `CharacterProfile` 表里，生命周期 hook 共用；梨诺的退场溶解和挂点修正仅作用于她的会话。当前两个条目：
+角色资源配置在 `module.cpp` 的 `CharacterProfile` 表里，生命周期 hook 共用；梨诺的退场溶解和挂点修正仅作用于她的会话。当前三个条目：
 
-| | 洁尔佩塔 `chr_0013_aglina` | 梨诺 `chr_0035_liino` |
-| --- | --- | --- |
-| Perform | `CharIntPerform_Aglina_Spdash` | `CharIntPerform_Liino_Spdash` |
-| 姿态数据 | `actions/pose_aglina.bin`（226 骨骼，周期 103 帧 / 1.717 秒） | `actions/pose_liino.bin`（339 骨骼，低位半速循环 40 帧 / 0.667 秒） |
-| Animator 回绕 | 136/208 → 80/208，周期 56/208 | 107/173 → 55/173，周期 52/173 |
-| 额外保持 | 两套持续粒子、`Aglina_SprintDashSp_Flying_Stop` 延后、道具隐藏（logic 11，2.4 秒）延后 | 网格组隐藏（2.2 秒收板）延后 |
+| | 洁尔佩塔 `chr_0013_aglina` | 梨诺 `chr_0035_liino` | 祀 `chr_0036_jsspsi` |
+| --- | --- | --- | --- |
+| Perform | `CharIntPerform_Aglina_Spdash` | `CharIntPerform_Liino_Spdash` | `CharIntPerform_Jsspsi_SpdashL/R` |
+| 姿态数据 | `actions/pose_aglina.bin`（226 骨骼，周期 103 帧 / 1.717 秒） | `actions/pose_liino.bin`（339 骨骼，低位半速循环 40 帧 / 0.667 秒） | 无（轻量原生回绕，不依赖外部姿态包） |
+| Animator 回绕 | 136/208 → 80/208，周期 56/208 | 107/173 → 55/173，周期 52/173 | 0.315 → 0.126，周期 0.189 |
+| 额外保持 | 两套持续粒子、`Aglina_SprintDashSp_Flying_Stop` 延后、道具隐藏（logic 11，2.4 秒）延后 | 网格组隐藏（2.2 秒收板）延后 | 坐骑墨兽同帧回绕、伴随墨兽时间窗回绕、墨兽材质消散冻结、收尾水花抑制 |
 
-新增角色需要：档案表加一行、离线做一份闭合循环数据、把数据放进 `native/modules/actions/assets/`（构建时由 CMake 自动部署到 `modules/actions/`）。
+祀的持续冲刺支持基于 GitHub Issue #32（zhuran24）逆向研究成果精简实现，采用原生 Animator 回绕与坐骑墨兽对象同步，未引入外部附属件姿态覆写及磁盘接缝修正。
 
 ## 三层机制
 
