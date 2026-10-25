@@ -9,6 +9,7 @@ struct ModelCloneLineageBinding {
     uint64_t original_indices=0;
     bool static_mesh=false;
     bool check_shadow=false;
+    int32_t shadow=0;
     std::shared_ptr<SavedOriginalBinding> original;
 };
 struct ModelCloneLineage {
@@ -42,9 +43,9 @@ std::shared_ptr<const ModelCloneLineage> CaptureModelCloneLineage(void* delivere
         if (!ReadGenericMeshIdentity(old.original->ResolveMesh(found->mesh),GenericMatching::DonorOrigin::SavedOriginal,identity)) return {};
         lineage->bindings.push_back({old.receiver_key,old.mesh.instance_id,old.component_id,identity.name,identity.indices,IsStaticRenderer(found->renderer),
 #if defined(__ANDROID__)
-            old.check_shadow,
+            old.check_shadow,old.shadow,
 #else
-            false,
+            false,0,
 #endif
             old.original});
     }
@@ -149,12 +150,17 @@ bool AdoptObservedModelClone(void* asset,const EnabledMod& mod,const ModelCloneL
             if (!binding.original->bones.Set(original_bones)) return refuse("clone Original palette capture failed");
         }
 #if defined(__ANDROID__)
-        binding.check_shadow=source.check_shadow;
+        binding.check_shadow=source.check_shadow;binding.shadow=source.shadow;
         if (source.check_shadow) {
-            void* shadow_mesh=nullptr;
-            if (!InvokeValue(Contract("android.shadow_get"),candidate.renderer,nullptr,binding.shadow) ||
-                !ReadNullableObject(Contract("android.shadow_mesh_get"),candidate.renderer,shadow_mesh) ||
-                !binding.shadow_mesh.Set(shadow_mesh)) return refuse("clone shadow identity unavailable");
+            int32_t mode=-1;void* shadow_mesh=nullptr;
+            if (!InvokeValue(Contract("android.shadow_get"),candidate.renderer,nullptr,mode) ||
+                !ReadNullableObject(Contract("android.shadow_mesh_get"),candidate.renderer,shadow_mesh))
+                return refuse("clone shadow state unavailable");
+            if (mode!=source.shadow) return refuse("clone shadow mode differs");
+            // A hidden appearance deliberately clears the shadow proxy, so an
+            // empty proxy is the recorded state rather than a lost identity.
+            // Only a proxy the clone actually kept has to be captured.
+            if (shadow_mesh && !binding.shadow_mesh.Set(shadow_mesh)) return refuse("clone shadow mesh unavailable");
         }
         if (!binding.original->shadow_mesh.Set(source.original->shadow_mesh.Get())) return refuse("Original shadow unavailable");
 #endif
