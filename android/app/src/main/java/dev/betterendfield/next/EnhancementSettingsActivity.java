@@ -26,6 +26,7 @@ public final class EnhancementSettingsActivity extends Activity {
     static final String CAMERA = "camera";
     static final String DASH = "dash";
     static final String OVERLAY = "overlay";
+    static final String APPEARANCE = "appearance";
 
     private final Map<Integer, SettingRow> rows = new LinkedHashMap<>();
     private final Map<Integer, BooleanSupplier> rowValues = new LinkedHashMap<>();
@@ -41,7 +42,8 @@ public final class EnhancementSettingsActivity extends Activity {
         super.onCreate(state);
         feature = getIntent().getStringExtra(EXTRA_FEATURE);
         if (!INTERFACE.equals(feature) && !CAMERA.equals(feature)
-                && !DASH.equals(feature) && !OVERLAY.equals(feature)) {
+                && !DASH.equals(feature) && !OVERLAY.equals(feature)
+                && !APPEARANCE.equals(feature)) {
             finish();
             return;
         }
@@ -62,6 +64,7 @@ public final class EnhancementSettingsActivity extends Activity {
         if (INTERFACE.equals(feature)) card = buildInterfaceCard();
         else if (CAMERA.equals(feature)) card = buildCameraCard();
         else if (DASH.equals(feature)) card = buildDashCard();
+        else if (APPEARANCE.equals(feature)) card = buildAppearanceCard();
         else card = buildOverlayCard();
         page.addView(card, SectionCard.stacked(this, 12));
         setContentView(scroll);
@@ -172,6 +175,65 @@ public final class EnhancementSettingsActivity extends Activity {
         return card;
     }
 
+    /** Mirrors the desktop WeaponAppearancePage: master switch plus weapon,
+     * character and effects sections, each with its own toggle and style rows. */
+    private SectionCard buildAppearanceCard() {
+        SectionCard card = card(getString(R.string.appearance_card_title));
+        addToggle(card, R.string.appearance_enable,
+                () -> ModuleSettings.isAppearanceEnabled(this),
+                checked -> saveAppearanceSetting(R.string.appearance_enable, checked));
+        addToggle(card, R.string.appearance_weapon_toggle,
+                () -> ModuleSettings.isAppearanceReplaceWeapon(this),
+                checked -> saveAppearanceSetting(R.string.appearance_weapon_toggle, checked));
+        addToggle(card, R.string.appearance_weapon_mode_ink,
+                () -> ModuleSettings.APPEARANCE_MODE_INK.equals(
+                        ModuleSettings.getAppearanceWeaponMode(this)),
+                checked -> saveAppearanceSetting(R.string.appearance_weapon_mode_ink, checked));
+        addToggle(card, R.string.appearance_weapon_mode_default,
+                () -> ModuleSettings.APPEARANCE_MODE_DEFAULT.equals(
+                        ModuleSettings.getAppearanceWeaponMode(this)),
+                checked -> saveAppearanceSetting(R.string.appearance_weapon_mode_default, checked));
+        addToggle(card, R.string.appearance_character_toggle,
+                () -> ModuleSettings.isAppearanceReplaceCharacter(this),
+                checked -> saveAppearanceSetting(R.string.appearance_character_toggle, checked));
+        // The style rows are radio groups: tapping either row selects it.
+        addToggle(card, R.string.appearance_character_ink,
+                () -> ModuleSettings.APPEARANCE_MODE_INK.equals(
+                        ModuleSettings.getAppearanceMode(this)),
+                checked -> saveAppearanceSetting(R.string.appearance_character_ink, checked));
+        addToggle(card, R.string.appearance_character_unmasked,
+                () -> ModuleSettings.APPEARANCE_MODE_UNMASKED.equals(
+                        ModuleSettings.getAppearanceMode(this)),
+                checked -> saveAppearanceSetting(R.string.appearance_character_unmasked, checked));
+        addToggle(card, R.string.appearance_character_default,
+                () -> ModuleSettings.APPEARANCE_MODE_DEFAULT.equals(
+                        ModuleSettings.getAppearanceMode(this)),
+                checked -> saveAppearanceSetting(R.string.appearance_character_default, checked));
+        addToggle(card, R.string.appearance_effects_toggle,
+                () -> ModuleSettings.isAppearanceReplaceEffects(this),
+                checked -> saveAppearanceSetting(R.string.appearance_effects_toggle, checked));
+        return card;
+    }
+
+    private void saveAppearanceSetting(int option, boolean checked) {
+        ModuleSettings.setAppearanceSettings(this,
+                option == R.string.appearance_enable ? checked
+                        : ModuleSettings.isAppearanceEnabled(this),
+                option == R.string.appearance_weapon_toggle ? checked
+                        : ModuleSettings.isAppearanceReplaceWeapon(this),
+                option == R.string.appearance_weapon_mode_ink ? ModuleSettings.APPEARANCE_MODE_INK
+                        : option == R.string.appearance_weapon_mode_default ? ModuleSettings.APPEARANCE_MODE_DEFAULT
+                        : ModuleSettings.getAppearanceWeaponMode(this),
+                option == R.string.appearance_character_toggle ? checked
+                        : ModuleSettings.isAppearanceReplaceCharacter(this),
+                option == R.string.appearance_character_ink ? ModuleSettings.APPEARANCE_MODE_INK
+                        : option == R.string.appearance_character_unmasked ? ModuleSettings.APPEARANCE_MODE_UNMASKED
+                        : option == R.string.appearance_character_default ? ModuleSettings.APPEARANCE_MODE_DEFAULT
+                        : ModuleSettings.getAppearanceMode(this),
+                option == R.string.appearance_effects_toggle ? checked
+                        : ModuleSettings.isAppearanceReplaceEffects(this));
+    }
+
     private SectionCard buildOverlayCard() {
         SectionCard card = card(getString(R.string.overlay_card_title));
         addToggle(card, R.string.overlay_enable, () -> ModuleSettings.isOverlayEnabled(this),
@@ -270,6 +332,18 @@ public final class EnhancementSettingsActivity extends Activity {
             rows.get(R.string.dash_liino).setAvailable(dash);
             rows.get(R.string.dash_liino_clean).setAvailable(
                     dash && ModuleSettings.isDashCharacterEnabled(this, "liino"));
+        } else if (APPEARANCE.equals(feature)) {
+            boolean enabled = ModuleSettings.isAppearanceEnabled(this);
+            boolean weapon = enabled && ModuleSettings.isAppearanceReplaceWeapon(this);
+            boolean character = enabled && ModuleSettings.isAppearanceReplaceCharacter(this);
+            rows.get(R.string.appearance_weapon_toggle).setAvailable(enabled);
+            rows.get(R.string.appearance_weapon_mode_ink).setAvailable(weapon);
+            rows.get(R.string.appearance_weapon_mode_default).setAvailable(weapon);
+            rows.get(R.string.appearance_character_toggle).setAvailable(enabled);
+            rows.get(R.string.appearance_character_ink).setAvailable(character);
+            rows.get(R.string.appearance_character_unmasked).setAvailable(character);
+            rows.get(R.string.appearance_character_default).setAvailable(character);
+            rows.get(R.string.appearance_effects_toggle).setAvailable(enabled);
         }
     }
 

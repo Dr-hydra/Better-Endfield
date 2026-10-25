@@ -136,6 +136,22 @@
     <string name="enhancement_restart_required">增强设置已保存。请强制停止并重新启动游戏后生效。</string>
     <string name="enhancement_summary">界面 %1$s · 相机 %2$s · 冲刺持续 %3$s</string>
 
+    <!-- appearance: betterendfieldnext.weapon_appearance -->
+    <string name="appearance_card_title">管理员外观</string>
+    <string name="appearance_enable">启用外观覆写</string>
+    <string name="appearance_enable_hint">与桌面端一致：宏愿武器、管理员服装与战斗剑光可分别替换为游戏自带的水墨主题，也可保留原版外观。重启游戏后装载。</string>
+    <string name="appearance_weapon_toggle">替换宏愿外观</string>
+    <string name="appearance_weapon_mode_ink">宏愿 · 剧情水墨流光</string>
+    <string name="appearance_weapon_mode_default">原版默认外观</string>
+    <string name="appearance_character_toggle">替换角色外观</string>
+    <string name="appearance_character_ink">剧情水墨专属服装</string>
+    <string name="appearance_character_unmasked">剧情摘面具形态</string>
+    <string name="appearance_character_default">原版默认形态</string>
+    <string name="appearance_effects_toggle">替换为水墨剑气与打击特效</string>
+    <string name="home_feature_appearance">管理员外观</string>
+    <string name="home_appearance_off">已启用（保留原版外观）</string>
+    <string name="home_off_appearance">宏愿水墨 / 摘面具形态替换</string>
+
     <string name="state_none">未启用</string>
     <string name="badge_overlay">悬浮窗触发</string>
     <string name="degree_suffix">°</string>

@@ -74,8 +74,16 @@ struct Configuration {
   EffectsMode effects_mode = EffectsMode::kInk;
 };
 
-std::atomic<std::shared_ptr<const Configuration>> g_config{
-    std::make_shared<Configuration>()};
+// MSVC specialises std::atomic<std::shared_ptr>, libc++ does not, so the
+// snapshot is guarded by a mutex instead. FinishDetour copies the pointer
+// under the lock and releases it before touching managed state.
+std::mutex g_config_mutex;
+std::shared_ptr<const Configuration> g_config{std::make_shared<Configuration>()};
+
+std::shared_ptr<const Configuration> LoadConfiguration() {
+  std::lock_guard<std::mutex> lock(g_config_mutex);
+  return g_config;
+}
 const BE_HostApiV1 *g_host = nullptr;
 std::atomic_bool g_stopping{false};
 
@@ -217,12 +225,20 @@ void *SafeAssetGet(void *handle) {
   auto *contract = Find("asset.handle.get");
   if (!contract || !contract->pointer)
     return nullptr;
+#if defined(__ANDROID__)
+  // Structured exception handling is MSVC-only; on ARM64 the managed adapter
+  // owns the same lifetime as every other ported module, which calls through
+  // without an SEH frame.
+  return reinterpret_cast<AssetGetFn>(contract->pointer)(
+      handle, const_cast<void *>(contract->method));
+#else
   __try {
     return reinterpret_cast<AssetGetFn>(contract->pointer)(
         handle, const_cast<void *>(contract->method));
   } __except (EXCEPTION_EXECUTE_HANDLER) {
     return nullptr;
   }
+#endif
 }
 
 void *Invoke(const char *key, void *instance, void **parameters, bool log_err = false) {
@@ -658,7 +674,7 @@ using FinishFn = void(__fastcall *)(void *, void *, const void *);
 FinishFn g_original_finish = nullptr;
 
 void __fastcall FinishDetour(void *proxy, void *asset, const void *method) {
-  auto config = g_config.load();
+  auto config = LoadConfiguration();
   if (!g_stopping.load() && !g_resolving_ink && config && config->enabled &&
       IsGameObject(asset)) {
     std::lock_guard<std::recursive_mutex> lock(g_appearance_mutex);
@@ -873,7 +889,10 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1 *host) {
       Configuration initial;
       ParseConfiguration(std::string_view(config_buffer.data(), static_cast<size_t>(len)),
                          initial);
-      g_config.store(std::make_shared<Configuration>(initial));
+      {
+        std::lock_guard<std::mutex> lock(g_config_mutex);
+        g_config = std::make_shared<Configuration>(initial);
+      }
     }
   }
 
@@ -925,7 +944,10 @@ BE_Result BE_CALL Configure(const char *text) {
   Configuration next;
   if (!ParseConfiguration(text ? text : "", next))
     return BE_Result_InvalidArgument;
-  g_config.store(std::make_shared<Configuration>(next));
+  {
+    std::lock_guard<std::mutex> lock(g_config_mutex);
+    g_config = std::make_shared<Configuration>(next);
+  }
   Log("Appearance configuration reloaded.");
   return BE_Result_Ok;
 }

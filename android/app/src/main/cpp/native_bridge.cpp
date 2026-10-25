@@ -49,6 +49,7 @@ extern "C" const BE_ModuleApiV1* BetterEndfieldNext_GetUiModuleApiV1();
 extern "C" const BE_ModuleApiV1* BetterEndfieldNext_GetCameraModuleApiV1();
 extern "C" const BE_ModuleApiV1* BetterEndfieldNext_GetActionsModuleApiV1();
 extern "C" const BE_ModuleApiV1* BetterEndfieldNext_GetMediaScreenModuleApiV1();
+extern "C" const BE_ModuleApiV1* BetterEndfieldNext_GetWeaponAppearanceModuleApiV1();
 extern "C" int BetterEndfieldNext_MediaScreenCommandV1(unsigned action, double value);
 extern "C" int BetterEndfieldNext_MediaScreenStatusV1(char* destination, size_t capacity);
 extern "C" void BetterEndfieldNext_MediaScreenForegroundV1(int visible);
@@ -138,6 +139,12 @@ void RunModules() {
             "betterendfieldnext.media_screen", "BETTER_ENDFIELD_NEXT_MEDIA_SCREEN_CONFIG",
             &BetterEndfieldNext_GetMediaScreenModuleApiV1, "manual guest-room media screen active"));
     }
+    if (Configured("BETTER_ENDFIELD_NEXT_APPEARANCE_CONFIG") != nullptr) {
+        state.modules.emplace_back(std::make_unique<DesktopModule>(
+            "betterendfieldnext.weapon_appearance", "BETTER_ENDFIELD_NEXT_APPEARANCE_CONFIG",
+            &BetterEndfieldNext_GetWeaponAppearanceModuleApiV1,
+            "same-source desktop appearance module active (administrator ink skins)"));
+    }
 
     // Missing hot-update metadata delays only the affected module. The actual
     // Start calls remain serialized; abandoning a timed-out C++ thread is unsafe
@@ -155,6 +162,8 @@ void RunModules() {
             runtime.HasAssembly("Cinemachine.dll");
         if (name == "betterendfieldnext.actions") return runtime.HasAssembly("Gameplay.Beyond.dll") &&
             runtime.HasAssembly("Audio.Beyond.dll");
+        if (name == "betterendfieldnext.weapon_appearance") return runtime.HasAssembly("Common.Beyond.dll") &&
+            runtime.HasAssembly("Gameplay.Beyond.dll");
         return runtime.HasAssembly("Gameplay.Beyond.dll");
     };
     size_t remaining = state.modules.size();
@@ -195,6 +204,7 @@ bool AnyModuleRequested() {
         "BETTER_ENDFIELD_NEXT_ACTIONS_CONFIG",
         "BETTER_ENDFIELD_NEXT_CUSTOM_MODEL_CONFIG",
         "BETTER_ENDFIELD_NEXT_MEDIA_SCREEN_CONFIG",
+        "BETTER_ENDFIELD_NEXT_APPEARANCE_CONFIG",
     };
     for (const char* variable : kVariables) {
         if (Configured(variable) != nullptr) return true;

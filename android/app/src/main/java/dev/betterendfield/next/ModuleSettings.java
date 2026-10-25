@@ -71,6 +71,20 @@ final class ModuleSettings {
     static final String MEDIA_CONFIGURATION = "media_screen_configuration";
     static final String MEDIA_SETTINGS = "media_screen_settings";
 
+    // betterendfieldnext.weapon_appearance — the desktop administrator ink skins.
+    // Mirrors WeaponAppearanceConfiguration.cs: one master switch plus one
+    // toggle+style pair for the weapon, the character and the combat effects.
+    private static final String APPEARANCE_ENABLED = "appearance_enabled";
+    private static final String APPEARANCE_REPLACE_WEAPON = "appearance_replace_weapon";
+    private static final String APPEARANCE_WEAPON_MODE = "appearance_weapon_mode";
+    private static final String APPEARANCE_REPLACE_CHARACTER = "appearance_replace_character";
+    private static final String APPEARANCE_CHARACTER_MODE = "appearance_mode";
+    private static final String APPEARANCE_REPLACE_EFFECTS = "appearance_replace_effects";
+    static final String APPEARANCE_CONFIGURATION = "appearance_configuration";
+    static final String APPEARANCE_MODE_INK = "ink";
+    static final String APPEARANCE_MODE_UNMASKED = "unmasked";
+    static final String APPEARANCE_MODE_DEFAULT = "default";
+
     // Superseded by UI_HIDE_UID and CAMERA_DITHER. Version 3.2.2 and earlier
     // implemented those two switches in a separate Android-only enhancement
     // module; they now run through the shared desktop sources. The old keys are
@@ -485,6 +499,75 @@ final class ModuleSettings {
                 .commit();
     }
 
+    // -------------------------------------------------------------- appearance
+
+    static boolean isAppearanceEnabled(Context context) {
+        return preferences(context).getBoolean(APPEARANCE_ENABLED, false);
+    }
+
+    static boolean isAppearanceReplaceWeapon(Context context) {
+        return preferences(context).getBoolean(APPEARANCE_REPLACE_WEAPON, true);
+    }
+
+    /** "ink" (the story ink & glow) or "default" (the vanilla Hongyuan look). */
+    static String getAppearanceWeaponMode(Context context) {
+        String mode = preferences(context).getString(APPEARANCE_WEAPON_MODE, APPEARANCE_MODE_INK);
+        return APPEARANCE_MODE_DEFAULT.equals(mode) ? APPEARANCE_MODE_DEFAULT : APPEARANCE_MODE_INK;
+    }
+
+    static boolean isAppearanceReplaceCharacter(Context context) {
+        return preferences(context).getBoolean(APPEARANCE_REPLACE_CHARACTER, true);
+    }
+
+    /** "ink", "unmasked" or "default" (keep the vanilla character form). */
+    static String getAppearanceMode(Context context) {
+        String mode = preferences(context).getString(APPEARANCE_CHARACTER_MODE, APPEARANCE_MODE_INK);
+        if (APPEARANCE_MODE_UNMASKED.equals(mode)) return APPEARANCE_MODE_UNMASKED;
+        if (APPEARANCE_MODE_DEFAULT.equals(mode)) return APPEARANCE_MODE_DEFAULT;
+        return APPEARANCE_MODE_INK;
+    }
+
+    static boolean isAppearanceReplaceEffects(Context context) {
+        return preferences(context).getBoolean(APPEARANCE_REPLACE_EFFECTS, true);
+    }
+
+    /**
+     * One configuration string covering every desktop option, matching the
+     * desktop WeaponAppearanceConfiguration.ToIni() layout. An empty
+     * configuration keeps the module out of the game process.
+     */
+    static void setAppearanceSettings(Context context, boolean enabled,
+            boolean replaceWeapon, String weaponMode,
+            boolean replaceCharacter, String characterMode,
+            boolean replaceEffects) {
+        String weapon = APPEARANCE_MODE_DEFAULT.equals(weaponMode)
+                ? APPEARANCE_MODE_DEFAULT : APPEARANCE_MODE_INK;
+        String character;
+        if (APPEARANCE_MODE_UNMASKED.equals(characterMode)) character = APPEARANCE_MODE_UNMASKED;
+        else if (APPEARANCE_MODE_DEFAULT.equals(characterMode)) character = APPEARANCE_MODE_DEFAULT;
+        else character = APPEARANCE_MODE_INK;
+        String configuration = enabled
+                ? "schema_version=1\n"
+                        + "enabled=true\n"
+                        + "replace_weapon=" + replaceWeapon + "\n"
+                        + "weapon_mode=" + weapon + "\n"
+                        + "replace_character=" + replaceCharacter + "\n"
+                        + "character_mode=" + character + "\n"
+                        + "replace_effects=" + replaceEffects + "\n"
+                        + "effects_mode=" + (replaceEffects ? APPEARANCE_MODE_INK : APPEARANCE_MODE_DEFAULT) + "\n"
+                : "";
+        preferences(context)
+                .edit()
+                .putBoolean(APPEARANCE_ENABLED, enabled)
+                .putBoolean(APPEARANCE_REPLACE_WEAPON, replaceWeapon)
+                .putString(APPEARANCE_WEAPON_MODE, weapon)
+                .putBoolean(APPEARANCE_REPLACE_CHARACTER, replaceCharacter)
+                .putString(APPEARANCE_CHARACTER_MODE, character)
+                .putBoolean(APPEARANCE_REPLACE_EFFECTS, replaceEffects)
+                .putString(APPEARANCE_CONFIGURATION, configuration)
+                .commit();
+    }
+
     /**
      * Rewrites every configuration string from the stored switches. Used once per
      * launch of the settings screen so an upgrade that introduced a new key, or a
@@ -500,6 +583,13 @@ final class ModuleSettings {
                 isLiinoCleanDashEnabled(context),
                 isDashCharacterEnabled(context, "aglina"),
                 isDashCharacterEnabled(context, "liino"));
+        setAppearanceSettings(context,
+                isAppearanceEnabled(context),
+                isAppearanceReplaceWeapon(context),
+                getAppearanceWeaponMode(context),
+                isAppearanceReplaceCharacter(context),
+                getAppearanceMode(context),
+                isAppearanceReplaceEffects(context));
     }
 
     static synchronized void republishCameraConfiguration(Context context) {

@@ -371,6 +371,24 @@ public final class MainActivity extends Activity {
             enabled.add(new HomeItem(getString(R.string.home_feature_dash), dashState(),
                     () -> openEnhancementFeature(EnhancementSettingsActivity.DASH)));
         }
+        if (ModuleSettings.isAppearanceEnabled(this)) {
+            List<String> parts = new ArrayList<>();
+            if (ModuleSettings.isAppearanceReplaceWeapon(this)
+                    && ModuleSettings.APPEARANCE_MODE_INK.equals(
+                            ModuleSettings.getAppearanceWeaponMode(this))) {
+                parts.add("水墨武器");
+            }
+            if (ModuleSettings.isAppearanceReplaceCharacter(this)) {
+                String mode = ModuleSettings.getAppearanceMode(this);
+                if (ModuleSettings.APPEARANCE_MODE_INK.equals(mode)) parts.add("水墨服装");
+                else if (ModuleSettings.APPEARANCE_MODE_UNMASKED.equals(mode)) parts.add("摘面具形态");
+            }
+            if (ModuleSettings.isAppearanceReplaceEffects(this)) parts.add("水墨剑光");
+            enabled.add(new HomeItem(getString(R.string.home_feature_appearance),
+                    parts.isEmpty() ? getString(R.string.home_appearance_off)
+                            : String.join(" · ", parts),
+                    () -> openEnhancementFeature(EnhancementSettingsActivity.APPEARANCE)));
+        }
         if (ModuleSettings.isOverlayEnabled(this)) {
             enabled.add(new HomeItem(getString(R.string.overlay_card_title),
                     getString(R.string.home_overlay_summary,
@@ -1028,6 +1046,8 @@ public final class MainActivity extends Activity {
         addEnhancementEntry(gameplay, getString(R.string.camera_card_title),
                 EnhancementSettingsActivity.CAMERA);
         addEnhancementEntry(gameplay, "持续冲刺", EnhancementSettingsActivity.DASH);
+        addEnhancementEntry(gameplay, getString(R.string.appearance_card_title),
+                EnhancementSettingsActivity.APPEARANCE);
         addEnhancementEntry(gameplay, getString(R.string.overlay_card_title),
                 EnhancementSettingsActivity.OVERLAY);
         page.addView(gameplay, SectionCard.stacked(this, 12));

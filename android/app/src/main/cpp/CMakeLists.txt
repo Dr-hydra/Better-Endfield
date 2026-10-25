@@ -98,7 +98,9 @@ add_library(betterendfieldnext_desktop_features STATIC
     "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/eiem/eiem_slot3.cpp"
     "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/host/pose_lease.cpp"
     "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/actions/module.cpp"
-    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/media_screen/module.cpp")
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/media_screen/module.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/weapon_appearance/mapping.cpp"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/weapon_appearance/module.cpp")
 
 # Each desktop module exports the same BetterEndfieldNext_GetModuleApiV1 entry point
 # because on Windows each one is its own DLL. Renaming per translation unit keeps
@@ -119,6 +121,10 @@ set_source_files_properties(
     "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/media_screen/module.cpp"
     PROPERTIES COMPILE_DEFINITIONS
     "BetterEndfieldNext_GetModuleApiV1=BetterEndfieldNext_GetMediaScreenModuleApiV1")
+set_source_files_properties(
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/weapon_appearance/module.cpp"
+    PROPERTIES COMPILE_DEFINITIONS
+    "BetterEndfieldNext_GetModuleApiV1=BetterEndfieldNext_GetWeaponAppearanceModuleApiV1")
 
 target_include_directories(betterendfieldnext_desktop_features PRIVATE
     "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/android_compat/include"
@@ -127,7 +133,8 @@ target_include_directories(betterendfieldnext_desktop_features PRIVATE
     "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/eiem"
     "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/eiem/compat"
     "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/camera/eiem/upstream"
-    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/ui")
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/ui"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/modules/weapon_appearance")
 target_compile_features(betterendfieldnext_desktop_features PRIVATE cxx_std_20)
 # Shared desktop sources are not compiled with -Wpedantic on Windows either;
 # holding them to it here would only produce noise this port cannot act on.
