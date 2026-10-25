@@ -31,17 +31,17 @@ final class BemImportStream {
         while (filled < header.length) {
             checkpoint.check();
             int count = input.read(header, filled, header.length - filled);
-            if (count < 0) throw new EOFException("文件为空或不完整，不是有效的 BEM 包。");
+            if (count < 0) throw new EOFException(Text.of("文件为空或不完整，不是有效的 BEM 包。"));
             if (count == 0) {
                 int value = input.read();
-                if (value < 0) throw new EOFException("文件为空或不完整，不是有效的 BEM 包。");
+                if (value < 0) throw new EOFException(Text.of("文件为空或不完整，不是有效的 BEM 包。"));
                 header[filled++] = (byte) value;
             } else {
                 filled += count;
             }
         }
         if (!matchesHeader(header)) {
-            throw new IOException("不是有效的 BEM 文件；修改扩展名不能转换文件格式。");
+            throw new IOException(Text.of("不是有效的 BEM 文件；修改扩展名不能转换文件格式。"));
         }
         checkpoint.check();
         output.write(header);
@@ -57,7 +57,7 @@ final class BemImportStream {
                 buffer[0] = (byte) value;
                 count = 1;
             }
-            if (count > limit - total) throw new IOException("BEM 文件超过大小限制（最大 2 GiB）。");
+            if (count > limit - total) throw new IOException(Text.of("BEM 文件超过大小限制（最大 2 GiB）。"));
             checkpoint.check();
             output.write(buffer, 0, count);
             total += count;

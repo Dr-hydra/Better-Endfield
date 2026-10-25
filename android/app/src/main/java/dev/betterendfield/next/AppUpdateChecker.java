@@ -45,7 +45,7 @@ final class AppUpdateChecker {
                 byte[] buffer = new byte[8192];
                 int count;
                 while ((count = input.read(buffer)) != -1) {
-                    if (bytes.size() + count > 2 * 1024 * 1024) throw new java.io.IOException("更新数据过大");
+                    if (bytes.size() + count > 2 * 1024 * 1024) throw new java.io.IOException(Text.of("更新数据过大"));
                     bytes.write(buffer, 0, count);
                 }
             }
@@ -64,14 +64,14 @@ final class AppUpdateChecker {
                 }
             }
             if (latest == null) {
-                return new Result(false, null, BuildConfig.VERSION_NAME, RELEASES, "暂无 Android 发布版本");
+                return new Result(false, null, BuildConfig.VERSION_NAME, RELEASES, Text.of("暂无 Android 发布版本"));
             }
             String version = latest.getString("tag_name");
             String link = RELEASES;
             String candidate = latest.optString("html_url", RELEASES);
             if (candidate.startsWith(RELEASES + "/")) link = candidate;
             boolean available = compareVersions(version, BuildConfig.VERSION_NAME) > 0;
-            String message = available ? "发现新版本 " + version : "已是最新版本 · " + BuildConfig.VERSION_NAME;
+            String message = available ? Text.of("发现新版本 ") + version : Text.of("已是最新版本 · ") + BuildConfig.VERSION_NAME;
             return new Result(available, version, BuildConfig.VERSION_NAME, link, message);
         } finally {
             if (connection != null) connection.disconnect();

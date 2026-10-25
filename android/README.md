@@ -303,6 +303,28 @@ and dual-Playable crossfade with editable loop start, loop end, and blend
 duration. Logo and login-band colors can be selected from swatches or entered
 as an exact `#RRGGBB` value.
 
+## Localization
+
+The interface ships in Chinese and English; the system language decides which
+one is shown. Two mechanisms exist because the module draws every view in code
+and also runs inside the game process:
+
+- Text that already lives in `res/values/strings.xml` is translated in
+  `res/values-en/strings.xml`. Layouts and the manifest reference `@string`
+  only, never literals.
+- Text assembled in Java goes through `Text.of("中文")` in `Text.java`. It
+  returns the English entry when the device language is English, and the
+  source text otherwise. This is the only option for the in-game overlay, which
+  runs in the game process and must not depend on the module's `R` table, and
+  it degrades to readable Chinese instead of a blank label when an entry is
+  missing.
+
+When adding interface text, add an entry to `Text.java` (or a `@string`
+resource for XML layouts). Never leave a Chinese literal in Java: it would stay
+Chinese for English users, and status logic must never match on localized text
+(see `BemInstaller.IDLE_STATUS` and `MmdInstaller.failed` for the structured
+flags used instead).
+
 ## Character rules and embedded comparison table
 
 The Android settings page exposes every character present in the desktop

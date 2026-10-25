@@ -69,7 +69,7 @@ final class VoiceCatalogMaterializer {
         JSONObject root = new JSONObject(new String(indexBytes, StandardCharsets.UTF_8));
         if (root.optInt("schemaVersion") != 1 ||
                 !"betterendfield-voice-catalog-index".equals(root.optString("kind"))) {
-            throw new IOException("内置语气词对照表版本不受支持");
+            throw new IOException(Text.of("内置语气词对照表版本不受支持"));
         }
 
         Map<Integer, String> packageFolders = readPackageFolders(root.getJSONArray("packages"));
@@ -82,7 +82,7 @@ final class VoiceCatalogMaterializer {
             RouteSet routeSet = availableRoutes.get(key);
             if (routeSet == null) {
                 failures.add(rule.getKey() + "/" + languageName(rule.getValue()) +
-                        ": 旧表中没有该目录");
+                        Text.of(": 旧表中没有该目录"));
             } else {
                 selected.add(routeSet);
             }
@@ -90,11 +90,11 @@ final class VoiceCatalogMaterializer {
 
         File externalRoot = targetContext.getExternalFilesDir(null);
         if (externalRoot == null) {
-            throw new IOException("游戏外部数据目录不可用");
+            throw new IOException(Text.of("游戏外部数据目录不可用"));
         }
         File catalogRoot = new File(targetContext.getFilesDir(), "betterendfieldnext/catalog");
         if (!catalogRoot.isDirectory() && !catalogRoot.mkdirs()) {
-            throw new IOException("无法创建 catalog 目录：" + catalogRoot);
+            throw new IOException(Text.of("无法创建 catalog 目录：") + catalogRoot);
         }
 
         Map<Integer, List<RouteSet>> byLanguage = new LinkedHashMap<>();
@@ -111,7 +111,7 @@ final class VoiceCatalogMaterializer {
             if (folder == null || folder.isEmpty()) {
                 for (RouteSet routeSet : group.getValue()) {
                     failures.add(routeSet.characterId + "/" + languageName(language) +
-                            ": 旧表缺少语言包分区");
+                            Text.of(": 旧表缺少语言包分区"));
                 }
                 continue;
             }
@@ -212,7 +212,7 @@ final class VoiceCatalogMaterializer {
             }
             JSONArray encoded = item.getJSONArray("routes");
             if (encoded.length() == 0 || (encoded.length() & 1) != 0) {
-                throw new IOException("内置语气词对照表损坏：" + key);
+                throw new IOException(Text.of("内置语气词对照表损坏：") + key);
             }
             TreeMap<Long, Long> routes = new TreeMap<>();
             for (int route = 0; route < encoded.length(); route += 2) {
@@ -220,11 +220,11 @@ final class VoiceCatalogMaterializer {
                 long target = encoded.getLong(route + 1);
                 if (source <= 0 || source > UINT32_MAX ||
                         target <= 0 || target > UINT32_MAX) {
-                    throw new IOException("Media ID 越界：" + key);
+                    throw new IOException(Text.of("Media ID 越界：") + key);
                 }
                 Long previous = routes.putIfAbsent(source, target);
                 if (previous != null && previous != target) {
-                    throw new IOException("Media 路由冲突：" + key + "/" + source);
+                    throw new IOException(Text.of("Media 路由冲突：") + key + "/" + source);
                 }
             }
             result.put(key, new RouteSet(characterId, language, routes));
@@ -237,7 +237,7 @@ final class VoiceCatalogMaterializer {
         File[] candidates = languageRoot.listFiles(file ->
                 file.isFile() && file.getName().toLowerCase(Locale.ROOT).endsWith(".chk"));
         if (candidates == null || candidates.length == 0) {
-            throw new IOException("未下载对应语言包（" + languageRoot + "）");
+            throw new IOException(Text.of("未下载对应语言包（") + languageRoot + Text.of("）"));
         }
         Arrays.sort(candidates, Comparator.comparingLong(File::length).reversed());
         List<String> rejected = new ArrayList<>();
@@ -251,13 +251,13 @@ final class VoiceCatalogMaterializer {
                 for (Long target : targets) {
                     if (!index.media.containsKey(target)) missing++;
                 }
-                rejected.add(candidate.getName() + " 缺少 " + missing + " 个 Media");
+                rejected.add(candidate.getName() + Text.of(" 缺少 ") + missing + Text.of(" 个 Media"));
             } catch (IOException error) {
-                rejected.add(candidate.getName() + "：" + error.getMessage());
+                rejected.add(candidate.getName() + Text.of("：") + error.getMessage());
             }
         }
-        throw new IOException("当前设备语言包与旧表不匹配；" +
-                String.join("；", rejected));
+        throw new IOException(Text.of("当前设备语言包与旧表不匹配；") +
+                String.join(Text.of("；"), rejected));
     }
 
     private static PckIndex readPck(File path) throws Exception {
@@ -266,11 +266,11 @@ final class VoiceCatalogMaterializer {
             readExactly(input, prefix);
         }
         if (!hasMagic(prefix, "AKPK") && !hasMagic(prefix, ":)xD")) {
-            throw new IOException("不是 Endfield PCK");
+            throw new IOException(Text.of("不是 Endfield PCK"));
         }
         long encodedHeaderSize = readU32(prefix, 4);
         if (encodedHeaderSize < 16 || encodedHeaderSize > 64L * 1024 * 1024) {
-            throw new IOException("PCK header size 不受支持");
+            throw new IOException(Text.of("PCK header size 不受支持"));
         }
         int headerLength = Math.toIntExact(encodedHeaderSize + 8);
         byte[] header = new byte[headerLength];
@@ -285,7 +285,7 @@ final class VoiceCatalogMaterializer {
             writeU32(header, 8, 1);
         }
         if (!hasMagic(header, "AKPK")) {
-            throw new IOException("PCK header 解密失败");
+            throw new IOException(Text.of("PCK header 解密失败"));
         }
 
         Cursor cursor = new Cursor(4);
@@ -327,11 +327,11 @@ final class VoiceCatalogMaterializer {
         if (count == 0) return;
         long payloadSize = size - 4;
         if (payloadSize < 0 || payloadSize % count != 0) {
-            throw new IOException("PCK Media sector 未对齐");
+            throw new IOException(Text.of("PCK Media sector 未对齐"));
         }
         long entrySize = payloadSize / count;
         if (entrySize != 20 && entrySize != 24) {
-            throw new IOException("PCK Media entry size 不受支持：" + entrySize);
+            throw new IOException(Text.of("PCK Media entry size 不受支持：") + entrySize);
         }
         for (long index = 0; index < count; ++index) {
             int entryStart = cursor.position;
@@ -390,7 +390,7 @@ final class VoiceCatalogMaterializer {
         TreeSet<Long> targets = new TreeSet<>(routeSet.routes.values());
         for (Long target : targets) {
             if (!packageIndex.media.containsKey(target)) {
-                throw new IOException("语言包缺少 Media ID " + target);
+                throw new IOException(Text.of("语言包缺少 Media ID ") + target);
             }
         }
 
@@ -431,7 +431,7 @@ final class VoiceCatalogMaterializer {
                     if (media.size > Integer.MAX_VALUE ||
                             media.offset < 0 ||
                             media.offset + media.size > packageIndex.size) {
-                        throw new IOException("PCK Media ID " + target + " 越界");
+                        throw new IOException("PCK Media ID " + target + Text.of(" 越界"));
                     }
                     byte[] payload = new byte[(int) media.size];
                     source.seek(media.offset);
@@ -505,7 +505,7 @@ final class VoiceCatalogMaterializer {
     }
 
     private static byte[] readFile(File path) throws IOException {
-        if (path.length() > Integer.MAX_VALUE) throw new IOException("文件过大");
+        if (path.length() > Integer.MAX_VALUE) throw new IOException(Text.of("文件过大"));
         byte[] bytes = new byte[(int) path.length()];
         try (InputStream input = new FileInputStream(path)) {
             readExactly(input, bytes);
@@ -517,7 +517,7 @@ final class VoiceCatalogMaterializer {
         int position = 0;
         while (position < output.length) {
             int count = input.read(output, position, output.length - position);
-            if (count < 0) throw new EOFException("文件被截断");
+            if (count < 0) throw new EOFException(Text.of("文件被截断"));
             position += count;
         }
     }
@@ -558,14 +558,14 @@ final class VoiceCatalogMaterializer {
 
     private static void ensureSector(byte[] data, int start, long size) throws IOException {
         if (start < 0 || size < 0 || start + size > data.length) {
-            throw new IOException("PCK header sector 越界");
+            throw new IOException(Text.of("PCK header sector 越界"));
         }
     }
 
     private static int checkedAdd(int start, long size) throws IOException {
         long result = start + size;
         if (result < 0 || result > Integer.MAX_VALUE) {
-            throw new IOException("PCK header sector 过大");
+            throw new IOException(Text.of("PCK header sector 过大"));
         }
         return (int) result;
     }
@@ -578,13 +578,13 @@ final class VoiceCatalogMaterializer {
 
     private static long readU64(byte[] data, Cursor cursor) throws IOException {
         if (cursor.position < 0 || cursor.position + 8 > data.length) {
-            throw new IOException("PCK header 被截断");
+            throw new IOException(Text.of("PCK header 被截断"));
         }
         long low = readU32(data, cursor.position);
         long high = readU32(data, cursor.position + 4);
         cursor.position += 8;
         if ((high & 0x8000_0000L) != 0) {
-            throw new IOException("PCK 64-bit 字段超出 Android 支持范围");
+            throw new IOException(Text.of("PCK 64-bit 字段超出 Android 支持范围"));
         }
         return low | (high << 32);
     }

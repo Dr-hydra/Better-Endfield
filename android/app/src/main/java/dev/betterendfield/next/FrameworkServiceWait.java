@@ -22,7 +22,7 @@ final class FrameworkServiceWait {
                     monitor.wait(Math.min(250, Math.max(1, TimeUnit.NANOSECONDS.toMillis(remaining))));
                 } catch (InterruptedException error) {
                     Thread.currentThread().interrupt();
-                    throw new IOException("等待框架服务连接已中断", error);
+                    throw new IOException(Text.of("等待框架服务连接已中断"), error);
                 }
             }
         }

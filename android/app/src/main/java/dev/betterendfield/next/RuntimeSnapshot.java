@@ -35,11 +35,11 @@ final class RuntimeSnapshot {
     boolean hudHidden() { return "1".equals(values.get("ui.hud_hidden")); }
     boolean failed() { return values.values().stream().anyMatch(value -> value.startsWith("failed")); }
     String summary() {
-        if (!connected) return "等待运行时连接";
-        if (failed()) return "部分模块启动失败 · 长按查看";
-        if (!"startup_complete".equals(values.get("runtime"))) return "模块准备中 · 长按查看";
-        if (cameraActive(8)) return "时间已冻结 · 再次点按恢复";
-        if (cameraActive(1)) return "自由镜头 · 按住移动，划动转向";
-        return "已连接 · 点按切换，按住持续";
+        if (!connected) return Text.of("等待运行时连接");
+        if (failed()) return Text.of("部分模块启动失败 · 长按查看");
+        if (!"startup_complete".equals(values.get("runtime"))) return Text.of("模块准备中 · 长按查看");
+        if (cameraActive(8)) return Text.of("时间已冻结 · 再次点按恢复");
+        if (cameraActive(1)) return Text.of("自由镜头 · 按住移动，划动转向");
+        return Text.of("已连接 · 点按切换，按住持续");
     }
 }

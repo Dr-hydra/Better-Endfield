@@ -56,7 +56,7 @@ public final class EnhancementSettingsActivity extends Activity {
         page.setPadding(dp(16), dp(16), dp(16), dp(24));
         scroll.addView(page, new FrameLayout.LayoutParams(-1, -2, Gravity.CENTER_HORIZONTAL));
 
-        Button back = button("‹ 返回");
+        Button back = button(Text.of("‹ 返回"));
         back.setOnClickListener(view -> finish());
         page.addView(back, SectionCard.stacked(this, 0));
 
@@ -170,7 +170,7 @@ public final class EnhancementSettingsActivity extends Activity {
     }
 
     private SectionCard buildDashCard() {
-        SectionCard card = card("持续冲刺");
+        SectionCard card = card(Text.of("持续冲刺"));
         addDashToggle(card, R.string.dash_enable, () -> ModuleSettings.isSustainedDashEnabled(this));
         addDashToggle(card, R.string.dash_aglina, () -> ModuleSettings.isDashCharacterEnabled(this, "aglina"));
         addDashToggle(card, R.string.dash_liino, () -> ModuleSettings.isDashCharacterEnabled(this, "liino"));

@@ -158,7 +158,7 @@ final class GameOverlay {
         handle.setElevation(dp(8));
         handle.setPadding(dp(11), dp(11), dp(11), dp(11));
         handle.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
-        handle.setContentDescription("快捷控制，点按展开，拖动移动");
+        handle.setContentDescription(Text.of("快捷控制，点按展开，拖动移动"));
         handle.setOnClickListener(view -> toggle());
         handle.setOnTouchListener(new DragTouch(true));
         host.addView(handle, new FrameLayout.LayoutParams(dp(48), dp(48)));
@@ -250,52 +250,52 @@ final class GameOverlay {
             selectedTab = -1;
             for (int tab = 0; tab <= MEDIA; tab++) if (hasTab(tab)) { selectedTab = tab; break; }
         }
-        addNavigation(HUD, "界面", ControlIcon.HUD);
-        addNavigation(CAMERA, "自由镜头", ControlIcon.CAMERA);
-        addNavigation(PAUSE, "冻结时间", ControlIcon.PAUSE);
+        addNavigation(HUD, Text.of("界面"), ControlIcon.HUD);
+        addNavigation(CAMERA, Text.of("自由镜头"), ControlIcon.CAMERA);
+        addNavigation(PAUSE, Text.of("冻结时间"), ControlIcon.PAUSE);
         addNavigation(MMD, "MMD", ControlIcon.MMD);
-        addNavigation(GLOBAL_FOV, "游戏视野", ControlIcon.EYE);
-        addNavigation(MODELS, "模型管理", ControlIcon.MMD);
-        addNavigation(MEDIA, "媒体屏", ControlIcon.EYE);
+        addNavigation(GLOBAL_FOV, Text.of("游戏视野"), ControlIcon.EYE);
+        addNavigation(MODELS, Text.of("模型管理"), ControlIcon.MMD);
+        addNavigation(MEDIA, Text.of("媒体屏"), ControlIcon.EYE);
         TextView brand = text("BETTER ENDFIELD", 9, GOLD); brand.setLetterSpacing(0.14f);
         brand.setMinimumHeight(dp(32)); brand.setGravity(Gravity.CENTER_VERTICAL);
-        brand.setContentDescription("拖动标题移动悬浮窗"); brand.setOnTouchListener(new DragTouch(false));
+        brand.setContentDescription(Text.of("拖动标题移动悬浮窗")); brand.setOnTouchListener(new DragTouch(false));
         body.addView(brand); body.addView(text(tabTitle(), 18, INK), stacked(6));
         LinearLayout windowActions = row();
-        TextView collapse = smallButton(preview ? "完成" : "收起");
+        TextView collapse = smallButton(preview ? Text.of("完成") : Text.of("收起"));
         collapse.setOnClickListener(v -> { if (preview) remove(); else toggle(); });
         windowActions.addView(collapse, weighted(0));
         if (!preview) {
-            TextView dismiss = smallButton("本次关闭");
-            dismiss.setContentDescription("本次关闭悬浮窗，保留功能状态，游戏重启后可再次出现");
+            TextView dismiss = smallButton(Text.of("本次关闭"));
+            dismiss.setContentDescription(Text.of("本次关闭悬浮窗，保留功能状态，游戏重启后可再次出现"));
             dismiss.setOnClickListener(v -> { sessionDismissed = true; remove(); });
             windowActions.addView(dismiss, weighted(1));
         }
         body.addView(windowActions, stacked(10));
         switch (selectedTab) {
-            case HUD: body.addView(tile("隐藏 / 恢复 HUD", "0", ControlIcon.HUD, Hotkeys.HIDE_HUD, 0), stacked(10)); break;
+            case HUD: body.addView(tile(Text.of("隐藏 / 恢复 HUD"), "0", ControlIcon.HUD, Hotkeys.HIDE_HUD, 0), stacked(10)); break;
             case CAMERA:
-                body.addView(tile("启用 / 退出自由镜头", "9", ControlIcon.CAMERA, Hotkeys.FREE_CAMERA, 1), stacked(10));
-                speedSlider = new CameraSlider("移动速度", "", ModuleSettings.SPEED_MINIMUM, ModuleSettings.SPEED_MAXIMUM, true);
-                fovSlider = new CameraSlider("自由镜头 FOV", "°", ModuleSettings.FOV_MINIMUM, ModuleSettings.FOV_MAXIMUM, false);
+                body.addView(tile(Text.of("启用 / 退出自由镜头"), "9", ControlIcon.CAMERA, Hotkeys.FREE_CAMERA, 1), stacked(10));
+                speedSlider = new CameraSlider(Text.of("移动速度"), "", ModuleSettings.SPEED_MINIMUM, ModuleSettings.SPEED_MAXIMUM, true);
+                fovSlider = new CameraSlider(Text.of("自由镜头 FOV"), "°", ModuleSettings.FOV_MINIMUM, ModuleSettings.FOV_MAXIMUM, false);
                 body.addView(speedSlider, stacked(8)); body.addView(fovSlider, stacked(4));
                 addCameraControls(); break;
             case PAUSE:
-                body.addView(tile("冻结 / 恢复时间", "8", ControlIcon.PAUSE, Hotkeys.WORLD_PAUSE, 8), stacked(10));
-                body.addView(text("冻结时间可独立使用。关闭悬浮窗会保留冻结状态；请先点按恢复，或在设置中关闭后重启游戏。", 12, MUTED), stacked(10)); break;
+                body.addView(tile(Text.of("冻结 / 恢复时间"), "8", ControlIcon.PAUSE, Hotkeys.WORLD_PAUSE, 8), stacked(10));
+                body.addView(text(Text.of("冻结时间可独立使用。关闭悬浮窗会保留冻结状态；请先点按恢复，或在设置中关闭后重启游戏。"), 12, MUTED), stacked(10)); break;
             case MMD: addMmdControls(); break;
             case MEDIA: addMediaControls(); break;
             case GLOBAL_FOV:
             case MODELS:
                 settingsPage = new OverlaySettingsPage(activity, selectedTab == MODELS, preview, expandedModels, modelCharacter);
                 body.addView(settingsPage.root, stacked(10)); break;
-            default: body.addView(text("尚未配置功能。请在增强设置中选择。", 12, MUTED), stacked(14));
+            default: body.addView(text(Text.of("尚未配置功能。请在增强设置中选择。"), 12, MUTED), stacked(14));
         }
         LinearLayout foot = row();
-        TextView settings = text("增强设置", 11, MUTED); settings.setMinimumHeight(dp(40));
+        TextView settings = text(Text.of("增强设置"), 11, MUTED); settings.setMinimumHeight(dp(40));
         settings.setGravity(Gravity.CENTER_VERTICAL); settings.setOnClickListener(v -> openSettings());
         foot.addView(settings, new LinearLayout.LayoutParams(0, -2, 1));
-        TextView info = text("状态", 11, MUTED); info.setMinimumHeight(dp(40)); info.setGravity(Gravity.CENTER);
+        TextView info = text(Text.of("状态"), 11, MUTED); info.setMinimumHeight(dp(40)); info.setGravity(Gravity.CENTER);
         info.setOnClickListener(v -> showDiagnostics()); foot.addView(info, new LinearLayout.LayoutParams(dp(48), -2));
         body.addView(foot, stacked(2));
         View rule = new View(activity); rule.setBackgroundColor(EDGE); body.addView(rule, new LinearLayout.LayoutParams(-1, dp(1)));
@@ -404,14 +404,14 @@ final class GameOverlay {
     }
     private String tabTitle() {
         switch (selectedTab) {
-            case HUD: return "界面控制";
-            case CAMERA: return "自由镜头";
-            case PAUSE: return "冻结时间";
-            case MMD: return "MMD 控制台";
-            case GLOBAL_FOV: return "游戏视野";
-            case MODELS: return "模型管理";
-            case MEDIA: return "会客室媒体屏";
-            default: return "快捷控制";
+            case HUD: return Text.of("界面控制");
+            case CAMERA: return Text.of("自由镜头");
+            case PAUSE: return Text.of("冻结时间");
+            case MMD: return Text.of("MMD 控制台");
+            case GLOBAL_FOV: return Text.of("游戏视野");
+            case MODELS: return Text.of("模型管理");
+            case MEDIA: return Text.of("会客室媒体屏");
+            default: return Text.of("快捷控制");
         }
     }
     private void addNavigation(int tab, String label, int kind) {
@@ -438,7 +438,7 @@ final class GameOverlay {
             icon = new ControlIcon(activity, kind, MUTED); addView(icon, new LinearLayout.LayoutParams(dp(24), dp(24)));
             TextView name = text(title, 11, INK); name.setGravity(Gravity.CENTER); addView(name, stacked(5));
             TextView keycap = text(keyName, 9, MUTED); keycap.setTypeface(Typeface.MONOSPACE); keycap.setGravity(Gravity.CENTER);
-            addView(keycap, stacked(2)); setContentDescription(title + "，对应热键 " + keyName);
+            addView(keycap, stacked(2)); setContentDescription(title + Text.of("，对应热键 ") + keyName);
             setOnClickListener(v -> send(key, NativeCommandBridge.KEY_PULSE));
         }
         void update() {
@@ -497,16 +497,16 @@ final class GameOverlay {
     }
 
     private void addMmdControls() {
-        mmdSummary = text("等待 MMD 运行状态", 12, GOLD); body.addView(mmdSummary, stacked(12));
-        body.addView(text("作品库", 13, INK), stacked(12));
-        body.addView(mmdButton("不选作品", 6, 0, 0, "", () -> !mmd.optString("work").isEmpty()), stacked(4));
+        mmdSummary = text(Text.of("等待 MMD 运行状态"), 12, GOLD); body.addView(mmdSummary, stacked(12));
+        body.addView(text(Text.of("作品库"), 13, INK), stacked(12));
+        body.addView(mmdButton(Text.of("不选作品"), 6, 0, 0, "", () -> !mmd.optString("work").isEmpty()), stacked(4));
         // A bounded inner list keeps transport reachable even with hundreds of works.
         ScrollView works = new ScrollView(activity); works.setFillViewport(false);
         works.setNestedScrollingEnabled(true);
         library = column(); works.addView(library); body.addView(works, new LinearLayout.LayoutParams(-1, dp(156)));
         mmdTime = text("00:00 / 00:00", 12, INK); body.addView(mmdTime, stacked(10));
         timeline = new SeekBar(activity); styleSlider(timeline); timeline.setMax(1000);
-        timeline.setContentDescription("MMD 播放进度"); body.addView(timeline, new LinearLayout.LayoutParams(-1, dp(48)));
+        timeline.setContentDescription(Text.of("MMD 播放进度")); body.addView(timeline, new LinearLayout.LayoutParams(-1, dp(48)));
         timeline.setOnTouchListener((view, event) -> {
             if (event.getActionMasked() == MotionEvent.ACTION_CANCEL) seeking = false;
             return false;
@@ -526,24 +526,24 @@ final class GameOverlay {
                 if (commit && activeMmd()) sendMmd(4, 0, duration() * bar.getProgress() / 1000d, "");
             }
         });
-        body.addView(padRow(mmdButton("−5 秒", 3, 0, -5, "", this::activeMmd),
-                mmdButton("播放", 1, 0, 0, "", () -> mmd.optInt("state") != 1),
-                mmdButton("+5 秒", 3, 0, 5, "", this::activeMmd)), stacked(4));
+        body.addView(padRow(mmdButton(Text.of("−5 秒"), 3, 0, -5, "", this::activeMmd),
+                mmdButton(Text.of("播放"), 1, 0, 0, "", () -> mmd.optInt("state") != 1),
+                mmdButton(Text.of("+5 秒"), 3, 0, 5, "", this::activeMmd)), stacked(4));
         LinearLayout transport = row();
-        transport.addView(mmdButton("停止", 2, 0, 0, "", () -> mmd.optInt("state") != 0), weighted(0));
-        transport.addView(mmdButton("循环", 7, 0, 0, "", () -> true), weighted(1)); body.addView(transport, stacked(4));
-        body.addView(text("镜头模式", 13, INK), stacked(12));
+        transport.addView(mmdButton(Text.of("停止"), 2, 0, 0, "", () -> mmd.optInt("state") != 0), weighted(0));
+        transport.addView(mmdButton(Text.of("循环"), 7, 0, 0, "", () -> true), weighted(1)); body.addView(transport, stacked(4));
+        body.addView(text(Text.of("镜头模式"), 13, INK), stacked(12));
         body.addView(padRow(mmdButton("VMD", 5, 0, 0, "", () -> true),
-                mmdButton("自由", 5, 1, 0, "", () -> (mmd.optInt("available") & 8) != 0),
-                mmdButton("游戏", 5, 2, 0, "", () -> true)), stacked(4));
-        mmdKeys = text("机位 · 0 个", 13, INK); body.addView(mmdKeys, stacked(12));
-        body.addView(padRow(mmdButton("记录", 8, 0, 0, "", this::freeMmd),
-                mmdButton("播放", 9, 0, 0, "", () -> freeMmd() && mmd.optInt("keyframe_count") >= 2),
-                mmdButton("清空", 10, 0, 0, "", () -> freeMmd() && mmd.optInt("keyframe_count") > 0)), stacked(4));
-        body.addView(padRow(mmdButton("保存", 11, 0, 0, "", () -> mmd.optInt("keyframe_count") > 0),
-                mmdButton("读取", 12, 0, 0, "", () -> true),
-                mmdButton("运镜", 13, 0, 0, "", this::freeMmd)), stacked(4));
-        body.addView(mmdButton("自由视角", 14, 0, 0, "", () -> (mmd.optInt("available") & 8) != 0), stacked(4));
+                mmdButton(Text.of("自由"), 5, 1, 0, "", () -> (mmd.optInt("available") & 8) != 0),
+                mmdButton(Text.of("游戏"), 5, 2, 0, "", () -> true)), stacked(4));
+        mmdKeys = text(Text.of("机位 · 0 个"), 13, INK); body.addView(mmdKeys, stacked(12));
+        body.addView(padRow(mmdButton(Text.of("记录"), 8, 0, 0, "", this::freeMmd),
+                mmdButton(Text.of("播放"), 9, 0, 0, "", () -> freeMmd() && mmd.optInt("keyframe_count") >= 2),
+                mmdButton(Text.of("清空"), 10, 0, 0, "", () -> freeMmd() && mmd.optInt("keyframe_count") > 0)), stacked(4));
+        body.addView(padRow(mmdButton(Text.of("保存"), 11, 0, 0, "", () -> mmd.optInt("keyframe_count") > 0),
+                mmdButton(Text.of("读取"), 12, 0, 0, "", () -> true),
+                mmdButton(Text.of("运镜"), 13, 0, 0, "", this::freeMmd)), stacked(4));
+        body.addView(mmdButton(Text.of("自由视角"), 14, 0, 0, "", () -> (mmd.optInt("available") & 8) != 0), stacked(4));
         mmdMessage = text("", 11, MUTED); body.addView(mmdMessage, stacked(10));
     }
     private final class MmdButton {
@@ -558,8 +558,8 @@ final class GameOverlay {
                     || (type == 7 && flag(mmd, "loop")) || (type == 14 && freeMmd())
                     || (type == 1 && mmd.optInt("state") == 2);
             view.setSelected(!preview && mmdConnected && selected);
-            if (type == 1) view.setText(mmd.optInt("state") == 2 ? "暂停" : "播放");
-            if (type == 14) view.setText(freeMmd() ? "退出自由视角" : "自由视角");
+            if (type == 1) view.setText(mmd.optInt("state") == 2 ? Text.of("暂停") : Text.of("播放"));
+            if (type == 14) view.setText(freeMmd() ? Text.of("退出自由视角") : Text.of("自由视角"));
         }
     }
     private TextView mmdButton(String title, int type, int argument, double value, String work, BooleanSupplier allowed) {
@@ -581,8 +581,8 @@ final class GameOverlay {
         try {
             JSONObject command = new JSONObject().put("type", type).put("argument", argument)
                     .put("value", value).put("text", work);
-            if (!NativeCommandBridge.mmdCommand(command.toString())) toast("MMD 指令被拒绝或队列已满");
-        } catch (JSONException | RuntimeException | LinkageError error) { toast("MMD 控制桥不可用"); }
+            if (!NativeCommandBridge.mmdCommand(command.toString())) toast(Text.of("MMD 指令被拒绝或队列已满"));
+        } catch (JSONException | RuntimeException | LinkageError error) { toast(Text.of("MMD 控制桥不可用")); }
     }
     private void refreshMmd() {
         if (library == null) return;
@@ -598,8 +598,8 @@ final class GameOverlay {
         }
         if (!mmdConnected) mmd = new JSONObject();
         int state = mmd.optInt("state");
-        String stateText = state == 1 ? "加载中" : state == 2 ? "播放中" : state == 3 ? "已暂停" : "空闲";
-        mmdSummary.setText(preview ? "预览模式" : mmdConnected ? stateText : "等待 MMD 运行状态");
+        String stateText = state == 1 ? Text.of("加载中") : state == 2 ? Text.of("播放中") : state == 3 ? Text.of("已暂停") : Text.of("空闲");
+        mmdSummary.setText(preview ? Text.of("预览模式") : mmdConnected ? stateText : Text.of("等待 MMD 运行状态"));
         JSONArray works = mmd.optJSONArray("library");
         String signature = (preview ? "preview:" : mmdConnected ? "connected:" : "waiting:")
                 + (works == null ? "[]" : works.toString());
@@ -609,12 +609,12 @@ final class GameOverlay {
                 JSONObject work = works.optJSONObject(i); if (work == null) continue;
                 String folder = work.optString("folder"); if (folder.isEmpty()) continue;
                 TextView item = smallButton(work.optString("name", folder)); item.setPadding(dp(6), dp(4), dp(6), dp(4));
-                item.setGravity(Gravity.CENTER_VERTICAL); item.setContentDescription("选择作品 " + work.optString("name", folder));
+                item.setGravity(Gravity.CENTER_VERTICAL); item.setContentDescription(Text.of("选择作品 ") + work.optString("name", folder));
                 item.setOnClickListener(v -> sendMmd(6, 0, 0, folder));
                 library.addView(item, stacked(4)); workRows.add(item); workFolders.add(folder);
             }
-            if (workRows.isEmpty()) library.addView(text(preview ? "预览不读取作品库。" : mmdConnected
-                    ? "还没有作品。请在管理器的 MMD 作品库中导入。" : "连接后显示已安装作品。", 12, MUTED), stacked(8));
+            if (workRows.isEmpty()) library.addView(text(preview ? Text.of("预览不读取作品库。") : mmdConnected
+                    ? Text.of("还没有作品。请在管理器的 MMD 作品库中导入。") : Text.of("连接后显示已安装作品。"), 12, MUTED), stacked(8));
         }
         for (int i = 0; i < workRows.size(); i++) {
             workRows.get(i).setSelected(workFolders.get(i).equals(mmd.optString("work")));
@@ -628,17 +628,17 @@ final class GameOverlay {
         boolean canSeek = preview || (mmdConnected && activeMmd() && duration() > 0);
         if (!canSeek && seeking) { seeking = false; timeline.getParent().requestDisallowInterceptTouchEvent(false); }
         timeline.setEnabled(canSeek); timeline.setAlpha(canSeek ? 1f : 0.35f);
-        mmdKeys.setText("机位 · " + mmd.optInt("keyframe_count") + " 个");
+        mmdKeys.setText(Text.of("机位 · ") + mmd.optInt("keyframe_count") + Text.of(" 个"));
         String message = mmdMessage();
         if (activeMmd() && mmd.optBoolean("terrain_requested") && !mmd.optBoolean("terrain_available"))
-            message += "\n地形跟随未启用 · " + mmd.optString("terrain_reason", "接口不可用，继续普通动作播放");
+            message += Text.of("\n地形跟随未启用 · ") + mmd.optString("terrain_reason", Text.of("接口不可用，继续普通动作播放"));
         mmdMessage.setText(message);
         for (MmdButton button : mmdButtons) button.update();
     }
     private String mmdMessage() {
-        String[] messages = {"", "正在加载", "开始播放", "已暂停", "已停止", "播放完成", "请先选择作品", "作品配置无法读取",
-                "没有可播放的内容，请检查动作 / 镜头 / 音乐开关", "动作加载失败", "镜头加载失败", "音乐加载失败",
-                "音乐模块未加载", "自由镜头未启用", "角色动作未启用", "已切换镜头模式", "已选择作品", "已切换循环"};
+        String[] messages = {"", Text.of("正在加载"), Text.of("开始播放"), Text.of("已暂停"), Text.of("已停止"), Text.of("播放完成"), Text.of("请先选择作品"), Text.of("作品配置无法读取"),
+                Text.of("没有可播放的内容，请检查动作 / 镜头 / 音乐开关"), Text.of("动作加载失败"), Text.of("镜头加载失败"), Text.of("音乐加载失败"),
+                Text.of("音乐模块未加载"), Text.of("自由镜头未启用"), Text.of("角色动作未启用"), Text.of("已切换镜头模式"), Text.of("已选择作品"), Text.of("已切换循环")};
         int code = mmd.optInt("message_code"); String detail = mmd.optString("message");
         String message = code >= 0 && code < messages.length ? messages[code] : "";
         return detail.isEmpty() ? message : message.isEmpty() ? detail : message + " · " + detail;
@@ -649,11 +649,11 @@ final class GameOverlay {
     }
     private void addCameraControls() {
         LinearLayout controls = row(); LinearLayout pad = column();
-        pad.addView(padRow(hold("升", Hotkeys.MOVE_UP), hold("↑", Hotkeys.MOVE_FORWARD), hold("降", Hotkeys.MOVE_DOWN)));
+        pad.addView(padRow(hold(Text.of("升"), Hotkeys.MOVE_UP), hold("↑", Hotkeys.MOVE_FORWARD), hold(Text.of("降"), Hotkeys.MOVE_DOWN)));
         pad.addView(padRow(hold("←", Hotkeys.MOVE_LEFT), stopButton(), hold("→", Hotkeys.MOVE_RIGHT)), stacked(4));
-        pad.addView(padRow(hold("慢", 0x11), hold("↓", Hotkeys.MOVE_BACK), hold("快", 0x10)), stacked(4));
+        pad.addView(padRow(hold(Text.of("慢"), 0x11), hold("↓", Hotkeys.MOVE_BACK), hold(Text.of("快"), 0x10)), stacked(4));
         controls.addView(pad, new LinearLayout.LayoutParams(0, -2, 1));
-        TextView look = smallButton("划动转向\nLOOK"); look.setTextSize(12); look.setTextColor(MUTED);
+        TextView look = smallButton(Text.of("划动转向\nLOOK")); look.setTextSize(12); look.setTextColor(MUTED);
         class LookTouch implements View.OnTouchListener {
             float px, py; int pointer = -1;
             void cancel() { pointer = -1; look.setPressed(false); look.getParent().requestDisallowInterceptTouchEvent(false); }
@@ -687,13 +687,13 @@ final class GameOverlay {
         LookTouch lookTouch = new LookTouch(); look.setOnTouchListener(lookTouch); cancelGestures.add(lookTouch::cancel);
         LinearLayout.LayoutParams lookParams = new LinearLayout.LayoutParams(0, dp(152), 1); lookParams.leftMargin = dp(10);
         controls.addView(look, lookParams); heldControls.add(look); body.addView(controls, stacked(4));
-        body.addView(padRow(hold("左滚", 0x67), tap("复位", 0x68), hold("右滚", 0x69)), stacked(8));
-        body.addView(cameraAction("运镜", 13), stacked(4));
-        TextView more = smallButton(details ? "收起关键帧" : "关键帧热键");
+        body.addView(padRow(hold(Text.of("左滚"), 0x67), tap(Text.of("复位"), 0x68), hold(Text.of("右滚"), 0x69)), stacked(8));
+        body.addView(cameraAction(Text.of("运镜"), 13), stacked(4));
+        TextView more = smallButton(details ? Text.of("收起关键帧") : Text.of("关键帧热键"));
         more.setOnClickListener(v -> { details = !details; rebuild(); }); body.addView(more, stacked(6));
         if (details) {
-            body.addView(padRow(cameraAction("添加帧", 8), cameraAction("播放帧", 9), cameraAction("清空帧", 10)), stacked(4));
-            body.addView(padRow(cameraAction("保存机位", 11), cameraAction("读取机位", 12), stopButton()), stacked(4));
+            body.addView(padRow(cameraAction(Text.of("添加帧"), 8), cameraAction(Text.of("播放帧"), 9), cameraAction(Text.of("清空帧"), 10)), stacked(4));
+            body.addView(padRow(cameraAction(Text.of("保存机位"), 11), cameraAction(Text.of("读取机位"), 12), stopButton()), stacked(4));
         }
     }
     private LinearLayout padRow(View a, View b, View c) {
@@ -701,14 +701,14 @@ final class GameOverlay {
         row.addView(a, cell(0)); row.addView(b, cell(4)); row.addView(c, cell(4)); return row;
     }
     private View stopButton() {
-        TextView stop = smallButton("停"); stop.setOnClickListener(v -> releaseHeldKeys()); heldControls.add(stop); return stop;
+        TextView stop = smallButton(Text.of("停")); stop.setOnClickListener(v -> releaseHeldKeys()); heldControls.add(stop); return stop;
     }
     private View tap(String label, int key) {
         TextView view = smallButton(label); view.setOnClickListener(v -> send(key, NativeCommandBridge.KEY_PULSE));
         heldControls.add(view); return view;
     }
     private View hold(String label, int key) {
-        TextView view = smallButton(label); view.setContentDescription(label + "，按住生效"); heldControls.add(view);
+        TextView view = smallButton(label); view.setContentDescription(label + Text.of("，按住生效")); heldControls.add(view);
         class HoldTouch implements View.OnTouchListener {
             int pointer = -1;
             void cancel() { pointer = -1; view.setPressed(false); view.getParent().requestDisallowInterceptTouchEvent(false); }
@@ -734,11 +734,11 @@ final class GameOverlay {
     }
 
     private void refreshState() {
-        if (preview) { status.setText("预览模式 · 不发送任何游戏指令"); }
+        if (preview) { status.setText(Text.of("预览模式 · 不发送任何游戏指令")); }
         else if (RuntimeBootstrap.loaded()) {
             try { snapshot = RuntimeSnapshot.parse(NativeCommandBridge.runtimeStatus()); bridgeError = false; }
             catch (RuntimeException | LinkageError error) { snapshot = RuntimeSnapshot.offline(); bridgeError = true; }
-            status.setText(bridgeError ? "控制桥绑定失败 · 请查看日志" : snapshot.summary());
+            status.setText(bridgeError ? Text.of("控制桥绑定失败 · 请查看日志") : snapshot.summary());
         } else { snapshot = RuntimeSnapshot.offline(); status.setText(RuntimeBootstrap.failure()); }
         for (Tile tile : tiles) tile.update();
         boolean movable = preview || (snapshot.cameraAvailable(1) && snapshot.cameraActive(1));
@@ -758,11 +758,11 @@ final class GameOverlay {
     private View cameraAction(String label, int type) {
         TextView view = smallButton(label);
         view.setOnClickListener(v -> {
-            if (preview) { toast("预览模式"); return; }
-            if (!canSend() || !snapshot.cameraAvailable(1)) { toast("请先启用自由镜头功能"); return; }
+            if (preview) { toast(Text.of("预览模式")); return; }
+            if (!canSend() || !snapshot.cameraAvailable(1)) { toast(Text.of("请先启用自由镜头功能")); return; }
             try {
                 if (!NativeCommandBridge.mmdCommand(new JSONObject().put("type", type).toString()))
-                    toast("镜头指令未接受，请查看运行状态");
+                    toast(Text.of("镜头指令未接受，请查看运行状态"));
             } catch (JSONException | RuntimeException | LinkageError error) { bridgeError = true; }
         });
         heldControls.add(view); return view;
@@ -771,35 +771,35 @@ final class GameOverlay {
         return !preview && resumed && !closed && !sessionDismissed && host.hasWindowFocus() && RuntimeBootstrap.loaded();
     }
     private void addMediaControls() {
-        mediaStatus = text("空闲", 12, GOLD); body.addView(mediaStatus, stacked(10));
-        String[] labels = {"开始 / 恢复原画", "停止", "暂停 / 继续"};
+        mediaStatus = text(Text.of("空闲"), 12, GOLD); body.addView(mediaStatus, stacked(10));
+        String[] labels = {Text.of("开始 / 恢复原画"), Text.of("停止"), Text.of("暂停 / 继续")};
         for (int i = 0; i < labels.length; ++i) {
             int action = i; TextView button = smallButton(labels[i]);
             button.setOnClickListener(v -> {
                 if (!canSend()) return;
-                try { if (!NativeCommandBridge.mediaScreen(action, 0)) toast("媒体屏模块未就绪"); }
-                catch (RuntimeException | LinkageError error) { toast("媒体屏控制不可用"); }
+                try { if (!NativeCommandBridge.mediaScreen(action, 0)) toast(Text.of("媒体屏模块未就绪")); }
+                catch (RuntimeException | LinkageError error) { toast(Text.of("媒体屏控制不可用")); }
             }); body.addView(button, stacked(8));
         }
         android.widget.EditText position = new android.widget.EditText(activity);
-        position.setSingleLine(true); position.setHint("跳转秒数"); position.setTextColor(INK);
+        position.setSingleLine(true); position.setHint(Text.of("跳转秒数")); position.setTextColor(INK);
         position.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        body.addView(position, stacked(8)); TextView seek = smallButton("跳转");
+        body.addView(position, stacked(8)); TextView seek = smallButton(Text.of("跳转"));
         seek.setOnClickListener(v -> {
             if (!canSend()) return;
             try { double value = Double.parseDouble(position.getText().toString());
-                if (!Double.isFinite(value) || value < 0 || !NativeCommandBridge.mediaScreen(3, value)) toast("跳转未执行");
-            } catch (RuntimeException | LinkageError error) { toast("请输入有效秒数"); }
+                if (!Double.isFinite(value) || value < 0 || !NativeCommandBridge.mediaScreen(3, value)) toast(Text.of("跳转未执行"));
+            } catch (RuntimeException | LinkageError error) { toast(Text.of("请输入有效秒数")); }
         }); body.addView(seek, stacked(8));
     }
     private void refreshMedia() {
         if (mediaStatus == null || preview || !RuntimeBootstrap.loaded()) return;
         try {
             String value = NativeCommandBridge.mediaScreenStatus(); if (value == null) return;
-            mediaStatus.setText(value.startsWith("playing:") ? "播放中" : value.startsWith("loading:") ? "加载中" :
-                value.startsWith("paused:") ? "已暂停" : value.startsWith("ended:") ? "播放结束" :
-                value.startsWith("error:") ? "操作失败：" + value.substring(6) : "空闲");
-        } catch (RuntimeException | LinkageError ignored) { mediaStatus.setText("控制不可用"); }
+            mediaStatus.setText(value.startsWith("playing:") ? Text.of("播放中") : value.startsWith("loading:") ? Text.of("加载中") :
+                value.startsWith("paused:") ? Text.of("已暂停") : value.startsWith("ended:") ? Text.of("播放结束") :
+                value.startsWith("error:") ? Text.of("操作失败：") + value.substring(6) : Text.of("空闲"));
+        } catch (RuntimeException | LinkageError ignored) { mediaStatus.setText(Text.of("控制不可用")); }
     }
     private void send(int key, int action) {
         if (preview) return;
@@ -809,12 +809,12 @@ final class GameOverlay {
         try {
             if (!NativeCommandBridge.key(key, action)) {
                 if (action == NativeCommandBridge.KEY_RELEASE) releaseHeldKeys();
-                toast("输入队列已满或键位无效");
+                toast(Text.of("输入队列已满或键位无效"));
             }
             else if (action == NativeCommandBridge.KEY_PRESS) heldKeys.add(key);
         } catch (RuntimeException | LinkageError error) {
             if (action == NativeCommandBridge.KEY_RELEASE) releaseHeldKeys();
-            toast("控制桥绑定失败，请查看运行日志");
+            toast(Text.of("控制桥绑定失败，请查看运行日志"));
         }
     }
     private void releaseHeldKeys() {
@@ -835,18 +835,18 @@ final class GameOverlay {
     private void showDiagnostics() {
         releaseHeldKeys();
         StringBuilder text = new StringBuilder();
-        if (preview) text.append("预览模式，不读取游戏运行状态。");
+        if (preview) text.append(Text.of("预览模式，不读取游戏运行状态。"));
         else if (!snapshot.connected) text.append(RuntimeBootstrap.failure());
         else snapshot.values.forEach((key, value) -> text.append(key).append(": ").append(value).append('\n'));
-        text.append("\n设置只表示配置意图。修改模块开关后需要重新启动游戏。");
-        new AlertDialog.Builder(activity).setTitle("运行状态").setMessage(text).setPositiveButton("关闭", null).show();
+        text.append(Text.of("\n设置只表示配置意图。修改模块开关后需要重新启动游戏。"));
+        new AlertDialog.Builder(activity).setTitle(Text.of("运行状态")).setMessage(text).setPositiveButton(Text.of("关闭"), null).show();
     }
     private void openSettings() {
         releaseHeldKeys();
         if (preview) { remove(); return; }
         try { activity.startActivity(new Intent().setClassName(RuntimeBootstrap.MODULE_PACKAGE,
                 RuntimeBootstrap.MODULE_PACKAGE + ".MainActivity").putExtra(MainActivity.EXTRA_PAGE, "enhancement")); }
-        catch (RuntimeException error) { toast("无法打开增强设置"); }
+        catch (RuntimeException error) { toast(Text.of("无法打开增强设置")); }
     }
     void remove() {
         if (settingsPage != null) { settingsPage.close(); settingsPage = null; }

@@ -50,7 +50,7 @@ final class BemInstallPage {
         refreshExperiment(fastLoading,BemInstaller.FAST_LOADING);
         keepLocalCopies.setEnabled(!BemInstaller.busy);cleanUnused.setEnabled(!BemInstaller.busy);
         status.setText(BemInstaller.status);
-        root.findViewById(R.id.bem_operation_state).setVisibility(BemInstaller.busy || BemInstaller.status.contains("ZIP 导入") || BemInstaller.status.contains("未完成") || BemInstaller.status.contains("失败") || BemInstaller.status.startsWith("已清理") || BemInstaller.status.contains("本地副本") ? View.VISIBLE : View.GONE);importButton.setEnabled(!BemInstaller.busy);cancel.setEnabled(BemInstaller.busy && !BemInstaller.removing);
+        root.findViewById(R.id.bem_operation_state).setVisibility(BemInstaller.busy || !BemInstaller.IDLE_STATUS.equals(BemInstaller.status) ? View.VISIBLE : View.GONE);importButton.setEnabled(!BemInstaller.busy);cancel.setEnabled(BemInstaller.busy && !BemInstaller.removing);
         incomingRetry.setEnabled(pendingImport!=null && !BemInstaller.busy);
         reviewBundle();
         progress.setVisibility(BemInstaller.busy?View.VISIBLE:View.GONE);
@@ -61,7 +61,7 @@ final class BemInstallPage {
             progress.setIndeterminate(percent<0);
             if(percent>=0) progress.setProgress(percent);
             long seconds=(SystemClock.elapsedRealtime()-BemInstaller.startedAt)/1000;
-            progressLabel.setText((percent<0?"正在处理":"当前进度："+percent+"%")+" · 已用 "+(seconds/60)+"分"+(seconds%60)+"秒");
+            progressLabel.setText((percent<0?Text.of("正在处理"):Text.of("当前进度：")+percent+"%")+Text.of(" · 已用 ")+(seconds/60)+Text.of("分")+(seconds%60)+Text.of("秒"));
         }
         String index=FrameworkSettings.open(activity).getString(BemInstaller.INDEX,"[]");
         if(!index.equals(displayed)) showEntries();
@@ -93,7 +93,7 @@ final class BemInstallPage {
             if(settings.getBoolean(BemInstaller.KEEP_LOCAL_COPIES,true)==checked) return;
             if(BemInstaller.busy || !settings.edit().putBoolean(BemInstaller.KEEP_LOCAL_COPIES,checked).commit()) {
                 keepLocalCopies.setChecked(!checked);
-                if(!BemInstaller.busy) saveError(new IllegalStateException("存储选项保存失败"));
+                if(!BemInstaller.busy) saveError(new IllegalStateException(Text.of("存储选项保存失败")));
                 return;
             }
             BemInstaller.applyLocalCopies(activity,checked);
@@ -108,7 +108,7 @@ final class BemInstallPage {
             if(settings.getBoolean(BemInstaller.SKIP_VALIDATION,false)==checked) return;
             if(!settings.edit().putBoolean(BemInstaller.SKIP_VALIDATION,checked).commit()) {
                 skipValidation.setChecked(!checked);
-                saveError(new IllegalStateException("实验选项保存失败"));
+                saveError(new IllegalStateException(Text.of("实验选项保存失败")));
             }
         });
         entries=root.findViewById(R.id.bem_entries);
@@ -122,7 +122,7 @@ final class BemInstallPage {
             incoming.setVisibility(View.GONE);
         });
         importButton.setOnClickListener(v -> activity.startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("*/*")
-                .putExtra(Intent.EXTRA_TITLE,"选择 BEM 或 ZIP").addCategory(Intent.CATEGORY_OPENABLE),PICK));
+                .putExtra(Intent.EXTRA_TITLE,Text.of("选择 BEM 或 ZIP")).addCategory(Intent.CATEGORY_OPENABLE),PICK));
         root.findViewById(R.id.bem_models_quark).setOnClickListener(v -> openModelSource("https://pan.quark.cn/s/97a9ca8f9bf2"));
         root.findViewById(R.id.bem_models_baidu).setOnClickListener(v -> openModelSource("https://pan.baidu.com/s/5ekaAiiLmZKXHZ7pHH0W-Vw"));
         root.findViewById(R.id.bem_models_katfile).setOnClickListener(v -> openModelSource("https://katfile.biz/users/hydra405/"));
@@ -168,7 +168,7 @@ final class BemInstallPage {
         disableAll=actionButton(activity.getString(R.string.bem_disable_all));disableAll.setEnabled(false);
         LinearLayout.LayoutParams buttonLayout=new LinearLayout.LayoutParams(-1,dp(44));buttonLayout.topMargin=dp(12);
         management.addView(disableAll,buttonLayout);
-        repairAllNormals=actionButton("修复所有法线");repairAllNormals.setEnabled(false);
+        repairAllNormals=actionButton(Text.of("修复所有法线"));repairAllNormals.setEnabled(false);
         LinearLayout.LayoutParams repairLayout=new LinearLayout.LayoutParams(-1,dp(44));repairLayout.topMargin=dp(8);
         management.addView(repairAllNormals,repairLayout);
         repairAllNormals.setOnClickListener(v->{
@@ -223,9 +223,9 @@ final class BemInstallPage {
         } catch(RuntimeException error) {
             String detail=error.getMessage();
             new android.app.AlertDialog.Builder(activity)
-                    .setTitle("无法打开模型链接")
-                    .setMessage(error.getClass().getSimpleName()+(detail==null || detail.isEmpty()?"":"："+detail))
-                    .setPositiveButton("确定",null).show();
+                    .setTitle(Text.of("无法打开模型链接"))
+                    .setMessage(error.getClass().getSimpleName()+(detail==null || detail.isEmpty()?"":Text.of("：")+detail))
+                    .setPositiveButton(Text.of("确定"),null).show();
         }
     }
     void saveState(Bundle state) {
@@ -245,7 +245,7 @@ final class BemInstallPage {
         } catch(RuntimeException error) {
             // Do not overwrite a different operation's global progress/status.
             pendingImport=null;
-            showIncoming(error.getMessage()==null?"无法打开此文件，请重新选择 BEM 包。":error.getMessage());
+            showIncoming(error.getMessage()==null?Text.of("无法打开此文件，请重新选择 BEM 包。"):error.getMessage());
         }
     }
     private void startPendingImport() {
@@ -257,10 +257,10 @@ final class BemInstallPage {
                 // An Activity kept on the back stack retains the temporary URI grant
                 // while the worker streams the file. Never finish() a relay Activity.
             } else {
-                showIncoming("已有导入、转换或移除任务正在进行。此文件尚未导入；任务结束后可点下方按钮继续。再次打开文件会替换这条待处理请求。");
+                showIncoming(Text.of("已有导入、转换或移除任务正在进行。此文件尚未导入；任务结束后可点下方按钮继续。再次打开文件会替换这条待处理请求。"));
             }
         } catch(RuntimeException error) {
-            showIncoming(error.getMessage()==null?"无法开始导入，请重新选择 BEM 包。":error.getMessage());
+            showIncoming(error.getMessage()==null?Text.of("无法开始导入，请重新选择 BEM 包。"):error.getMessage());
         }
     }
     private void showIncoming(String message) {
@@ -311,15 +311,15 @@ final class BemInstallPage {
             });
             options.addView(choice,new LinearLayout.LayoutParams(-1,-2));
         }
-        if(!bundle.issues.isEmpty()) options.addView(fieldLabel("以下项未通过校验：\n"+String.join("\n",bundle.issues)));
+        if(!bundle.issues.isEmpty()) options.addView(fieldLabel(Text.of("以下项未通过校验：\n")+String.join("\n",bundle.issues)));
         bundleDialog=new android.app.AlertDialog.Builder(activity)
-                .setTitle("导入 ZIP 中的模型包")
+                .setTitle(Text.of("导入 ZIP 中的模型包"))
                 .setView(scroll)
-                .setPositiveButton("导入所选",(dialog,which)->{
+                .setPositiveButton(Text.of("导入所选"),(dialog,which)->{
                     try {BemInstaller.importSelected(bundle,selected);}
-                    catch(RuntimeException error) {showIncoming("无法开始 ZIP 导入："+error.getMessage());}
+                    catch(RuntimeException error) {showIncoming(Text.of("无法开始 ZIP 导入：")+error.getMessage());}
                 })
-                .setNegativeButton("取消",(dialog,which)->BemInstaller.cancelBundle(bundle))
+                .setNegativeButton(Text.of("取消"),(dialog,which)->BemInstaller.cancelBundle(bundle))
                 .setOnCancelListener(dialog->BemInstaller.cancelBundle(bundle)).create();
         bundleDialog.setOnShowListener(dialog->{
             android.view.ViewGroup.LayoutParams layout=scroll.getLayoutParams();
@@ -337,7 +337,7 @@ final class BemInstallPage {
             updateCharacterFilter(list);
             if(list.length()==0) {
                 TextView empty=new TextView(activity);
-                empty.setText("暂无模型包");
+                empty.setText(Text.of("暂无模型包"));
                 empty.setTextColor(activity.getColor(R.color.text_secondary));empty.setTextSize(14);
                 empty.setGravity(android.view.Gravity.CENTER);empty.setPadding(dp(18),dp(32),dp(18),dp(32));
                 empty.setBackgroundResource(R.drawable.bg_card);
@@ -351,11 +351,11 @@ final class BemInstallPage {
                 card.setBackgroundResource(R.drawable.bg_card);
                 LinearLayout.LayoutParams cardLayout=new LinearLayout.LayoutParams(-1,-2);cardLayout.topMargin=dp(12);entries.addView(card,cardLayout);
                 LinearLayout heading=new LinearLayout(activity);heading.setGravity(android.view.Gravity.CENTER_VERTICAL);card.addView(heading);
-                TextView name=new TextView(activity);name.setText((BemOptions.targetKind(entry).equals("weapon")?"武器 · ":"")+entry.getString("name"));name.setTextColor(activity.getColor(R.color.text_primary));
+                TextView name=new TextView(activity);name.setText((BemOptions.targetKind(entry).equals("weapon")?Text.of("武器 · "):"")+entry.getString("name"));name.setTextColor(activity.getColor(R.color.text_primary));
                 name.setTextSize(17);name.setTypeface(null,android.graphics.Typeface.BOLD);
                 heading.addView(name,new LinearLayout.LayoutParams(0,-2,1));
                 Switch enabled=new Switch(activity);enabled.setChecked(entry.optBoolean("enabled",true));
-                enabled.setContentDescription("启用「"+entry.getString("name")+"」");enabled.setMinHeight(dp(48));heading.addView(enabled);
+                enabled.setContentDescription(Text.of("启用「")+entry.getString("name")+Text.of("」"));enabled.setMinHeight(dp(48));heading.addView(enabled);
                 packageActions.add(enabled);enabled.setEnabled(!BemInstaller.busy);
                 enabled.setOnCheckedChangeListener((button,checked)->{
                     if(version!=renderVersion) return;
@@ -363,8 +363,8 @@ final class BemInstallPage {
                     catch(Exception error) {saveError(error);}
                 });
                 String mode=entry.optString("texture_mode","converted");
-                String detailsLabel=entry.optInt("bem_minor",0)>=3?"组件 / 形态滑条选项 ▾":"详细组件 / 外观选项 ▾";
-                Button details=actionButton(expanded.contains(generation)?"收起详细选项 ▴":detailsLabel);
+                String detailsLabel=entry.optInt("bem_minor",0)>=3?Text.of("组件 / 形态滑条选项 ▾"):Text.of("详细组件 / 外观选项 ▾");
+                Button details=actionButton(expanded.contains(generation)?Text.of("收起详细选项 ▴"):detailsLabel);
                 card.addView(details,new LinearLayout.LayoutParams(-1,dp(44)));
                 LinearLayout detailPanel=new LinearLayout(activity);detailPanel.setOrientation(LinearLayout.VERTICAL);
                 detailPanel.setVisibility(expanded.contains(generation)?View.VISIBLE:View.GONE);card.addView(detailPanel);
@@ -372,7 +372,7 @@ final class BemInstallPage {
                     boolean opening=detailPanel.getVisibility()!=View.VISIBLE;
                     if(opening) expanded.add(generation);else expanded.remove(generation);
                     detailPanel.setVisibility(opening?View.VISIBLE:View.GONE);
-                    details.setText(opening?"收起详细选项 ▴":detailsLabel);
+                    details.setText(opening?Text.of("收起详细选项 ▴"):detailsLabel);
                 });
                 if(entry.optInt("bem_minor",0)>=1) {
                     addOptionControls(detailPanel,entry,generation,version);
@@ -382,7 +382,7 @@ final class BemInstallPage {
                     JSONArray apps=entry.getJSONArray("appearances");String[] choices=new String[apps.length()];int selected=0;
                     String active=entry.optString("selected_appearance",entry.getString("default_appearance"));
                     for(int j=0;j<choices.length;++j){choices[j]=apps.getString(j);if(active.equals(choices[j])) selected=j;}
-                    TextView choiceLabel=fieldLabel("启动外观");detailPanel.addView(choiceLabel);
+                    TextView choiceLabel=fieldLabel(Text.of("启动外观"));detailPanel.addView(choiceLabel);
                     Spinner spinner=choiceSpinner(choices,selected);detailPanel.addView(spinner,new LinearLayout.LayoutParams(-1,dp(52)));
                     spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                         @Override public void onItemSelected(AdapterView<?> parent,View view,int position,long id) {
@@ -397,27 +397,27 @@ final class BemInstallPage {
                 LinearLayout.LayoutParams actionLayout=new LinearLayout.LayoutParams(-1,-2);actionLayout.topMargin=dp(16);card.addView(actions,actionLayout);
                 String packageName=entry.getString("name");
                 boolean isAstc=entry.optBoolean("astc_converted",false)||"astc".equals(entry.optString("texture_mode"));
-                Button convertAstc=actionButton(isAstc?"已转为 ASTC":"转为 ASTC 格式");
+                Button convertAstc=actionButton(isAstc?Text.of("已转为 ASTC"):Text.of("转为 ASTC 格式"));
                 LinearLayout.LayoutParams convertLayout=new LinearLayout.LayoutParams(0,dp(44),1f);
                 actions.addView(convertAstc,convertLayout);
                 if(!isAstc) packageActions.add(convertAstc);
                 convertAstc.setEnabled(!isAstc && !BemInstaller.busy);
                 convertAstc.setOnClickListener(v -> new android.app.AlertDialog.Builder(activity)
-                        .setTitle("将「"+packageName+"」转为 ASTC？")
-                        .setMessage("将扫描模型包内所有纹理并重编码为移动端原生 ASTC 格式（自动补全法线 Z 轴并启用流压缩）。用于解决部分机型贴图黑屏、粉屏或显存过大问题。")
-                        .setNegativeButton("取消",null)
-                        .setPositiveButton("开始转换",(dialog,which)->BemInstaller.convertToAstc(activity,generation))
+                        .setTitle(Text.of("将「")+packageName+Text.of("」转为 ASTC？"))
+                        .setMessage(Text.of("将扫描模型包内所有纹理并重编码为移动端原生 ASTC 格式（自动补全法线 Z 轴并启用流压缩）。用于解决部分机型贴图黑屏、粉屏或显存过大问题。"))
+                        .setNegativeButton(Text.of("取消"),null)
+                        .setPositiveButton(Text.of("开始转换"),(dialog,which)->BemInstaller.convertToAstc(activity,generation))
                         .show());
                 View actionSpacer=new View(activity);
                 actions.addView(actionSpacer,new LinearLayout.LayoutParams(dp(8),dp(44)));
-                Button remove=actionButton("移除模型包");
+                Button remove=actionButton(Text.of("移除模型包"));
                 LinearLayout.LayoutParams removeLayout=new LinearLayout.LayoutParams(0,dp(44),1f);
                 actions.addView(remove,removeLayout);packageActions.add(remove);
                 remove.setOnClickListener(v -> new android.app.AlertDialog.Builder(activity)
-                        .setTitle("移除「"+packageName+"」？")
-                        .setMessage("将删除此模型包的安装文件和配置。下载目录中的原始 BEM 文件会保留，可重新导入。游戏内已加载的模型需重启游戏后恢复。")
-                        .setNegativeButton("取消",null)
-                        .setPositiveButton("移除",(dialog,which)->{
+                        .setTitle(Text.of("移除「")+packageName+Text.of("」？"))
+                        .setMessage(Text.of("将删除此模型包的安装文件和配置。下载目录中的原始 BEM 文件会保留，可重新导入。游戏内已加载的模型需重启游戏后恢复。"))
+                        .setNegativeButton(Text.of("取消"),null)
+                        .setPositiveButton(Text.of("移除"),(dialog,which)->{
                             try {BemInstaller.remove(activity,generation);}
                             catch(Exception error) {saveError(error);}
                         }).show());
@@ -426,7 +426,7 @@ final class BemInstallPage {
         } catch(Exception error){
             entries.removeAllViews();packageActions.clear();
             hasEnabledPackages=false;disableAll.setEnabled(false);if(repairAllNormals!=null) repairAllNormals.setEnabled(false);
-            String message="安装列表读取失败："+error.getMessage();
+            String message=Text.of("安装列表读取失败：")+error.getMessage();
             if(!BemInstaller.busy) BemInstaller.status=message;
             status.setText(message);
         }
@@ -434,8 +434,8 @@ final class BemInstallPage {
     private void saveChange(JSONObject change) throws Exception {
         BemInstaller.saveAll(activity,new JSONArray().put(change));
         BemInstaller.status=FrameworkSettings.open(activity).getBoolean(BemInstaller.HOT_SWITCH,false)
-            ? "设置已保存；已启用实验热切换的游戏将在下次切换配队或重新打开详情时更新。首次开启需重启游戏。"
-            : "设置已保存，重启游戏后生效。资源目标重叠的其他包已自动停用。";
+            ? Text.of("设置已保存；已启用实验热切换的游戏将在下次切换配队或重新打开详情时更新。首次开启需重启游戏。")
+            : Text.of("设置已保存，重启游戏后生效。资源目标重叠的其他包已自动停用。");
         status.setText(BemInstaller.status);
         showEntries();
     }
@@ -450,15 +450,15 @@ final class BemInstallPage {
             if(settings.getBoolean(key,false)==checked) return;
             if(!settings.edit().putBoolean(key,checked).commit()) {
                 control.setChecked(!checked);
-                saveError(new IllegalStateException("实验选项保存失败"));
+                saveError(new IllegalStateException(Text.of("实验选项保存失败")));
                 return;
             }
-            BemInstaller.status="实验设置已保存，重启游戏后生效。";
+            BemInstaller.status=Text.of("实验设置已保存，重启游戏后生效。");
             status.setText(BemInstaller.status);
         });
     }
     private void saveError(Exception error) {
-        String message="设置未保存："+error.getMessage();
+        String message=Text.of("设置未保存：")+error.getMessage();
         // Replace every control with the actual committed snapshot, including
         // switches of other packages that an enable operation would disable.
         showEntries();
@@ -518,10 +518,10 @@ final class BemInstallPage {
             slider.setEnabled(!BemInstaller.busy);
             Runnable updateLabel=()->{
                 try {
-                    label.setText(parameter.getString("name")+"："+String.format(java.util.Locale.ROOT,"%.3f",values.get(id)/1000.0)+
-                        "（"+min/1000.0+"–"+max/1000.0+"，步长 "+step/1000.0+"，默认 "+BemParameters.tick(parameter,"default")/1000.0+
-                        "，原形 "+BemParameters.tick(parameter,"neutral")/1000.0+"）");
-                } catch(Exception error) {label.setText("滑条读取失败");}
+                    label.setText(parameter.getString("name")+Text.of("：")+String.format(java.util.Locale.ROOT,"%.3f",values.get(id)/1000.0)+
+                        Text.of("（")+min/1000.0+"–"+max/1000.0+Text.of("，步长 ")+step/1000.0+Text.of("，默认 ")+BemParameters.tick(parameter,"default")/1000.0+
+                        Text.of("，原形 ")+BemParameters.tick(parameter,"neutral")/1000.0+Text.of("）"));
+                } catch(Exception error) {label.setText(Text.of("滑条读取失败"));}
             };
             updateLabel.run();
             slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -533,16 +533,16 @@ final class BemInstallPage {
             });
             row.setVisibility(BemParameters.available(entry,parameter,options)?View.VISIBLE:View.GONE);
         }
-        TextView hint=fieldLabel("调整后点击应用。隐藏的滑条按原形生效，并保留已保存数值。开启实验热切换后，下次切换配队或打开详情时更新；否则重启游戏生效。");
+        TextView hint=fieldLabel(Text.of("调整后点击应用。隐藏的滑条按原形生效，并保留已保存数值。开启实验热切换后，下次切换配队或打开详情时更新；否则重启游戏生效。"));
         card.addView(hint);
         LinearLayout actions=new LinearLayout(activity);actions.setOrientation(LinearLayout.HORIZONTAL);card.addView(actions);
-        Button apply=actionButton("应用滑条");actions.addView(apply,new LinearLayout.LayoutParams(0,dp(44),1));packageActions.add(apply);
+        Button apply=actionButton(Text.of("应用滑条"));actions.addView(apply,new LinearLayout.LayoutParams(0,dp(44),1));packageActions.add(apply);
         apply.setOnClickListener(v->{
             if(version!=renderVersion) return;
             try {saveChange(new JSONObject().put("generation",generation).put("parameters",BemParameters.encode(values)));}
             catch(Exception error) {parameterDrafts.remove(generation);saveError(error);}
         });
-        Button reset=actionButton("作者默认值");actions.addView(reset,new LinearLayout.LayoutParams(0,dp(44),1));packageActions.add(reset);
+        Button reset=actionButton(Text.of("作者默认值"));actions.addView(reset,new LinearLayout.LayoutParams(0,dp(44),1));packageActions.add(reset);
         reset.setOnClickListener(v->{
             if(version!=renderVersion) return;
             try {for(int i=0;i<parameters.length();++i) {

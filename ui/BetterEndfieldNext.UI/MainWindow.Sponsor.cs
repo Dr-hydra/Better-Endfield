@@ -124,6 +124,7 @@ public sealed partial class MainWindow
             content.Children.Add(Link(isZh ? "爱发电" : "Afdian",
                 "https://afdian.com/u/e9a7e6ac6fa411ed980752540025c377"));
             content.Children.Add(Link("PayPal", "https://paypal.me/hydra405"));
+            content.Children.Add(Link("Ko-fi", "https://ko-fi.com/hydra405"));
             content.Children.Add(feedback);
 
             var dialog = new ContentDialog

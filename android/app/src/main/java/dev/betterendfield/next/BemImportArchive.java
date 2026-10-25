@@ -59,10 +59,10 @@ final class BemImportArchive {
         }
         boolean zip = filled >= 4 && header[0] == 'P' && header[1] == 'K'
                 && ((header[2] == 3 && header[3] == 4) || (header[2] == 5 && header[3] == 6));
-        if (!zip) throw new IOException("请选择 BEM 文件或包含 BEM 的 ZIP；修改扩展名不能转换格式。");
+        if (!zip) throw new IOException(Text.of("请选择 BEM 文件或包含 BEM 的 ZIP；修改扩展名不能转换格式。"));
         File archive = new File(stage, "input.zip");
         try {
-            progress.update("正在读取 ZIP 合集…");
+            progress.update(Text.of("正在读取 ZIP 合集…"));
             try (FileOutputStream output = new FileOutputStream(archive)) {
                 copyZip(input, output, checkpoint); output.getFD().sync();
             }
@@ -80,7 +80,7 @@ final class BemImportArchive {
                 int value = input.read(); if (value < 0) break;
                 buffer[0] = (byte) value; count = 1;
             }
-            if (count > MAX_ZIP_BYTES - total) throw new IOException("ZIP 超过 8 GiB 大小上限。");
+            if (count > MAX_ZIP_BYTES - total) throw new IOException(Text.of("ZIP 超过 8 GiB 大小上限。"));
             output.write(buffer, 0, count); total += count;
         }
         checkpoint.check();
@@ -98,7 +98,7 @@ final class BemImportArchive {
             int seen = 0;
             while (probeEntries.hasMoreElements()) {
                 ZipEntry entry = probeEntries.nextElement();
-                if (++seen > MAX_ENTRIES) throw new IOException("ZIP 文件数超过 4096。");
+                if (++seen > MAX_ENTRIES) throw new IOException(Text.of("ZIP 文件数超过 4096。"));
                 if (entry.isDirectory()) continue;
                 members.put(checkedName(entry.getName()), entry);
             }
@@ -116,19 +116,19 @@ final class BemImportArchive {
             Enumeration<? extends ZipEntry> contents = zip.entries();
             while (contents.hasMoreElements()) {
                 checkpoint.check(); ZipEntry entry = contents.nextElement();
-                if (++entries > MAX_ENTRIES) throw new IOException("ZIP 文件数超过 4096。");
+                if (++entries > MAX_ENTRIES) throw new IOException(Text.of("ZIP 文件数超过 4096。"));
                 if (entry.isDirectory() || !entry.getName().toLowerCase(Locale.ROOT).endsWith(".bem")) continue;
-                if (++packages > packageLimit) throw new IOException("ZIP 中的 BEM 数量超过 " + packageLimit + " 个。");
+                if (++packages > packageLimit) throw new IOException(Text.of("ZIP 中的 BEM 数量超过 ") + packageLimit + Text.of(" 个。"));
                 Item item = null;
                 try {
                     String path = checkedName(entry.getName());
-                    if (!names.add(path.toLowerCase(Locale.ROOT))) throw new IOException("ZIP 中存在重复文件路径。");
+                    if (!names.add(path.toLowerCase(Locale.ROOT))) throw new IOException(Text.of("ZIP 中存在重复文件路径。"));
                     if (entry.getMethod() != ZipEntry.STORED && entry.getMethod() != ZipEntry.DEFLATED)
-                        throw new IOException("不支持此 ZIP 条目的压缩方式，请使用存储或 Deflate。");
+                        throw new IOException(Text.of("不支持此 ZIP 条目的压缩方式，请使用存储或 Deflate。"));
                     if (entry.getSize() < 0 || entry.getSize() > BemImportStream.MAX_BYTES)
-                        throw new IOException("ZIP 内 BEM 超过 2 GiB 大小上限。");
-                    if (entry.getSize() > totalLimit - consumed[0]) throw new IOException("ZIP 内 BEM 的总大小超过导入上限。");
-                    item = item(stage, path); progress.update("正在读取：" + path);
+                        throw new IOException(Text.of("ZIP 内 BEM 超过 2 GiB 大小上限。"));
+                    if (entry.getSize() > totalLimit - consumed[0]) throw new IOException(Text.of("ZIP 内 BEM 的总大小超过导入上限。"));
+                    item = item(stage, path); progress.update(Text.of("正在读取：") + path);
                     CRC32 crc = new CRC32(); long bytes;
                     long allowance = Math.min(BemImportStream.MAX_BYTES, totalLimit - consumed[0]);
                     try (InputStream input = new CheckedInputStream(budget(zip.getInputStream(entry), consumed, totalLimit), crc);
@@ -138,17 +138,17 @@ final class BemImportArchive {
                     }
                     // ZipFile streams do not promise a CRC check of extracted bytes.
                     if (bytes != entry.getSize() || crc.getValue() != entry.getCrc())
-                        throw new IOException("ZIP 条目长度或 CRC 校验失败。");
+                        throw new IOException(Text.of("ZIP 条目长度或 CRC 校验失败。"));
                     bundle.packages.add(item);
                 } catch (IOException error) {
                     checkpoint.check(); // Cancellation aborts preparation instead of becoming an invalid item.
                     if (item != null) { item.file.delete(); item.directory.delete(); }
-                    bundle.issues.add(label(entry.getName()) + "：" + error.getMessage());
+                    bundle.issues.add(label(entry.getName()) + Text.of("：") + error.getMessage());
                 }
             }
         }
-        if (entries != expectedEntries) throw new IOException("ZIP 目录记录数量不匹配。");
-        if (packages == 0) throw new IOException("ZIP 中没有找到 BEM 文件。");
+        if (entries != expectedEntries) throw new IOException(Text.of("ZIP 目录记录数量不匹配。"));
+        if (packages == 0) throw new IOException(Text.of("ZIP 中没有找到 BEM 文件。"));
         return bundle;
     }
     /** Root manifest.json, or the manifest inside the single wrapper folder the format allows. */
@@ -176,21 +176,21 @@ final class BemImportArchive {
     private static Item singlePackage(File archive, File stage, ZipFile zip, Map<String, ZipEntry> members,
             String manifestName, String prefix, BemImportStream.Checkpoint checkpoint,
             Progress progress, long totalLimit) throws IOException {
-        progress.update("正在校验 ZIP 单模型包…");
+        progress.update(Text.of("正在校验 ZIP 单模型包…"));
         JSONObject manifest = readManifest(zip, members.get(manifestName), checkpoint);
         if (!manifest.has("package_id") || !manifest.has("target"))
-            throw new IOException("ZIP 中的 manifest.json 不是 BEM 模型清单。");
+            throw new IOException(Text.of("ZIP 中的 manifest.json 不是 BEM 模型清单。"));
         int count = payloadCount(manifest);
         long consumed = 0;
         for (int id = 0; id < count; id++) {
             checkpoint.check();
             ZipEntry entry = payload(members, prefix, id);
-            if (entry == null) throw new IOException("ZIP 单模型包缺少 payload " + id + "。");
+            if (entry == null) throw new IOException(Text.of("ZIP 单模型包缺少 payload ") + id + Text.of("。"));
             if (entry.getMethod() != ZipEntry.STORED && entry.getMethod() != ZipEntry.DEFLATED)
-                throw new IOException("不支持此 ZIP 条目的压缩方式，请使用存储或 Deflate。");
+                throw new IOException(Text.of("不支持此 ZIP 条目的压缩方式，请使用存储或 Deflate。"));
             if (entry.getSize() < 0 || entry.getSize() > BemImportStream.MAX_BYTES)
-                throw new IOException("ZIP 内 payload 超过 2 GiB 大小上限。");
-            if (entry.getSize() > totalLimit - consumed) throw new IOException("ZIP 内 payload 的总大小超过导入上限。");
+                throw new IOException(Text.of("ZIP 内 payload 超过 2 GiB 大小上限。"));
+            if (entry.getSize() > totalLimit - consumed) throw new IOException(Text.of("ZIP 内 payload 的总大小超过导入上限。"));
             consumed += entry.getSize();
             CRC32 crc = new CRC32(); long bytes;
             // ZipFile streams do not promise a CRC check, so every payload is read in full.
@@ -198,10 +198,10 @@ final class BemImportArchive {
                 bytes = drain(input, checkpoint);
             }
             if (bytes != entry.getSize() || crc.getValue() != entry.getCrc())
-                throw new IOException("ZIP 条目长度或 CRC 校验失败。");
+                throw new IOException(Text.of("ZIP 条目长度或 CRC 校验失败。"));
         }
         Item item = item(stage, manifest.optString("package_id", "BEM"));
-        progress.update("正在写入：" + item.name);
+        progress.update(Text.of("正在写入：") + item.name);
         try (InputStream input = new FileInputStream(archive);
                 FileOutputStream output = new FileOutputStream(item.file)) {
             byte[] buffer = new byte[65536]; int read;
@@ -217,7 +217,7 @@ final class BemImportArchive {
         byte[] buffer = new byte[65536]; long total = 0; int read;
         while ((read = input.read(buffer)) != -1) {
             checkpoint.check(); total += read;
-            if (total > BemImportStream.MAX_BYTES) throw new IOException("ZIP 条目超过大小上限。");
+            if (total > BemImportStream.MAX_BYTES) throw new IOException(Text.of("ZIP 条目超过大小上限。"));
         }
         return total;
     }
@@ -233,18 +233,18 @@ final class BemImportArchive {
             BemImportStream.Checkpoint checkpoint) throws IOException {
         final long limit = 4L * 1024 * 1024;
         long declared = entry.getSize();
-        if (declared > limit) throw new IOException("manifest.json 超过 4 MiB 上限。");
+        if (declared > limit) throw new IOException(Text.of("manifest.json 超过 4 MiB 上限。"));
         try (InputStream input = zip.getInputStream(entry);
                 ByteArrayOutputStream bytes = new ByteArrayOutputStream(declared > 0 ? (int) declared : 8192)) {
             byte[] buffer = new byte[8192]; int read; long total = 0;
             while ((read = input.read(buffer)) != -1) {
                 checkpoint.check(); total += read;
-                if (total > limit) throw new IOException("manifest.json 超过 4 MiB 上限。");
+                if (total > limit) throw new IOException(Text.of("manifest.json 超过 4 MiB 上限。"));
                 bytes.write(buffer, 0, read);
             }
             return new JSONObject(new String(bytes.toByteArray(), StandardCharsets.UTF_8));
         } catch (org.json.JSONException error) {
-            throw new IOException("manifest.json 不是合法 JSON。", error);
+            throw new IOException(Text.of("manifest.json 不是合法 JSON。"), error);
         }
     }
 
@@ -291,7 +291,7 @@ final class BemImportArchive {
     private static InputStream budget(InputStream input, long[] consumed, long limit) {
         return new FilterInputStream(input) {
             private void charge(int count) throws IOException {
-                if (count > limit - consumed[0]) throw new IOException("ZIP 内 BEM 的总大小超过导入上限。");
+                if (count > limit - consumed[0]) throw new IOException(Text.of("ZIP 内 BEM 的总大小超过导入上限。"));
                 consumed[0] += count;
             }
             @Override public int read() throws IOException {
@@ -305,19 +305,19 @@ final class BemImportArchive {
 
     private static Item item(File stage, String name) throws IOException {
         File directory = new File(stage, "package-" + UUID.randomUUID());
-        if (!directory.mkdir()) throw new IOException("无法创建模型包临时目录。");
+        if (!directory.mkdir()) throw new IOException(Text.of("无法创建模型包临时目录。"));
         return new Item(name, directory);
     }
     private static String checkedName(String raw) throws IOException {
         String name = raw.replace('\\', '/');
         if (name.isEmpty() || name.length() > 1024 || name.startsWith("/") || name.contains(":"))
-            throw new IOException("ZIP 条目路径不合法。");
+            throw new IOException(Text.of("ZIP 条目路径不合法。"));
         String[] parts = name.split("/", -1);
-        if (parts.length > 32) throw new IOException("ZIP 目录层级超过 32。");
+        if (parts.length > 32) throw new IOException(Text.of("ZIP 目录层级超过 32。"));
         for (String part : parts) {
-            if (part.isEmpty() || part.equals(".") || part.equals("..")) throw new IOException("ZIP 条目路径不合法。");
+            if (part.isEmpty() || part.equals(".") || part.equals("..")) throw new IOException(Text.of("ZIP 条目路径不合法。"));
             for (int i = 0; i < part.length(); i++) if (part.charAt(i) < 32 || part.charAt(i) == 127)
-                throw new IOException("ZIP 条目文件名不合法。");
+                throw new IOException(Text.of("ZIP 条目文件名不合法。"));
         }
         return name;
     }
@@ -331,7 +331,7 @@ final class BemImportArchive {
             // EFS entries still use UTF-8. This fallback supports legacy Chinese ZIP names.
             try { return new ZipFile(archive, Charset.forName("GB18030")); }
             catch (IOException | IllegalArgumentException fallback) {
-                throw new IOException("ZIP 文件损坏、加密或编码不支持。", fallback);
+                throw new IOException(Text.of("ZIP 文件损坏、加密或编码不支持。"), fallback);
             }
         }
     }
@@ -341,52 +341,52 @@ final class BemImportArchive {
     private static int checkDirectory(File archive) throws IOException {
         try (RandomAccessFile file = new RandomAccessFile(archive, "r")) {
             long length = file.length();
-            if (length < 22 || length > MAX_ZIP_BYTES) throw new IOException("ZIP 长度不合法。");
+            if (length < 22 || length > MAX_ZIP_BYTES) throw new IOException(Text.of("ZIP 长度不合法。"));
             long begin = Math.max(0, length - 65557); byte[] tail = new byte[(int)(length - begin)];
             file.seek(begin); file.readFully(tail); int end = -1;
             for (int i = tail.length - 22; i >= 0; i--) {
                 if (u32(tail, i) == 0x06054b50L && i + 22 + u16(tail, i + 20) == tail.length) { end = i; break; }
             }
-            if (end < 0) throw new IOException("ZIP 目录缺失或不完整。");
+            if (end < 0) throw new IOException(Text.of("ZIP 目录缺失或不完整。"));
             if (u16(tail, end + 4) != 0 || u16(tail, end + 6) != 0)
-                throw new IOException("不支持分卷 ZIP。");
+                throw new IOException(Text.of("不支持分卷 ZIP。"));
             long count = u16(tail, end + 10), diskCount = u16(tail, end + 8);
             long size = u32(tail, end + 12), offset = u32(tail, end + 16), directoryEnd = begin + end;
             if (count == 0xffff || diskCount == 0xffff || size == 0xffffffffL || offset == 0xffffffffL) {
                 long locator = begin + end - 20;
-                if (locator < 0) throw new IOException("ZIP64 目录缺失。");
+                if (locator < 0) throw new IOException(Text.of("ZIP64 目录缺失。"));
                 byte[] record = new byte[56], location = new byte[20];
                 file.seek(locator); file.readFully(location);
                 long recordOffset = u64(location, 8);
                 if (u32(location, 0) != 0x07064b50L || u32(location, 4) != 0 || u32(location, 16) != 1
-                        || recordOffset < 0 || recordOffset > locator - 56) throw new IOException("ZIP64 目录不合法。");
+                        || recordOffset < 0 || recordOffset > locator - 56) throw new IOException(Text.of("ZIP64 目录不合法。"));
                 file.seek(recordOffset); file.readFully(record);
                 long recordSize = u64(record, 4);
                 if (u32(record, 0) != 0x06064b50L || recordSize < 44 || recordSize > locator - recordOffset - 12
-                        || u32(record, 16) != 0 || u32(record, 20) != 0) throw new IOException("ZIP64 目录不合法。");
+                        || u32(record, 16) != 0 || u32(record, 20) != 0) throw new IOException(Text.of("ZIP64 目录不合法。"));
                 diskCount = u64(record, 24); count = u64(record, 32); size = u64(record, 40); offset = u64(record, 48);
                 directoryEnd = recordOffset;
             }
             if (count < 0 || count > MAX_ENTRIES || diskCount != count)
-                throw new IOException("ZIP 文件数超过 4096 或目录不合法。");
+                throw new IOException(Text.of("ZIP 文件数超过 4096 或目录不合法。"));
             if (offset < 0 || size < 0 || offset > directoryEnd || size > directoryEnd - offset)
-                throw new IOException("ZIP 目录长度不合法。");
-            if (size > MAX_DIRECTORY_BYTES) throw new IOException("ZIP 目录信息超过大小上限。");
+                throw new IOException(Text.of("ZIP 目录长度不合法。"));
+            if (size > MAX_DIRECTORY_BYTES) throw new IOException(Text.of("ZIP 目录信息超过大小上限。"));
             long position=offset, limit=offset+size;byte[] entry=new byte[46];
             for(int i=0;i<count;i++) {
-                if(position>limit-entry.length) throw new IOException("ZIP 目录记录不完整。");
+                if(position>limit-entry.length) throw new IOException(Text.of("ZIP 目录记录不完整。"));
                 file.seek(position);file.readFully(entry);
-                if(u32(entry,0)!=0x02014b50L) throw new IOException("ZIP 目录记录不合法。");
+                if(u32(entry,0)!=0x02014b50L) throw new IOException(Text.of("ZIP 目录记录不合法。"));
                 long next=position+46L+u16(entry,28)+u16(entry,30)+u16(entry,32);
-                if(next>limit) throw new IOException("ZIP 目录记录长度不合法。");
+                if(next>limit) throw new IOException(Text.of("ZIP 目录记录长度不合法。"));
                 position=next;
             }
             if(position!=limit) {
                 byte[] signature=new byte[6];
-                if(position>limit-6) throw new IOException("ZIP 目录记录数量不匹配。");
+                if(position>limit-6) throw new IOException(Text.of("ZIP 目录记录数量不匹配。"));
                 file.seek(position);file.readFully(signature);
                 if(u32(signature,0)!=0x05054b50L || position+6+u16(signature,4)!=limit)
-                    throw new IOException("ZIP 目录记录数量不匹配。");
+                    throw new IOException(Text.of("ZIP 目录记录数量不匹配。"));
             }
             return (int)count;
         }

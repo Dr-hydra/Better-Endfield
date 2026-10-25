@@ -271,7 +271,7 @@ final class ModuleSettings {
                 else if (old instanceof Boolean) rollback.putBoolean(key, (Boolean) old);
                 else rollback.putString(key, (String) old);
             }
-            rollback.commit(); throw new java.io.IOException("FOV 保存失败");
+            rollback.commit(); throw new java.io.IOException(Text.of("FOV 保存失败"));
         }
     }
 
@@ -394,7 +394,7 @@ final class ModuleSettings {
     static void setMmdSettings(Context context, String work, boolean loop, boolean music,
             double seek, double gain, double offset, CameraExtras extras) {
         if (!work.isEmpty() && !work.matches("[a-f0-9-]{36}"))
-            throw new IllegalArgumentException("无效的作品编号");
+            throw new IllegalArgumentException(Text.of("无效的作品编号"));
         SharedPreferences.Editor edit = preferences(context).edit().putString(MMD_WORK, work)
                 .putBoolean("mmd_loop", loop).putBoolean("mmd_music_enabled", music)
                 .putString("mmd_seek_seconds", number(Math.max(0.5, Math.min(60, seek))))

@@ -56,7 +56,7 @@ public final class MainActivity extends Activity {
             "FollowGlobal", "Chinese", "English", "Japanese", "Korean"
     };
     private static final String[] LANGUAGE_LABELS = {
-            "跟随游戏", "中文", "English", "日本語", "한국어"
+            Text.of("跟随游戏"), Text.of("中文"), "English", Text.of("日本語"), Text.of("한국어")
     };
 
     private final Map<String, Spinner> ruleSpinners = new LinkedHashMap<>();
@@ -134,17 +134,17 @@ public final class MainActivity extends Activity {
                     runOnUiThread(() -> {
                         if (isFinishing() || isDestroyed()) return;
                         new AlertDialog.Builder(this)
-                                .setTitle("发现新版本")
-                                .setMessage("Better Endfield Next 有可用更新：\n\n当前版本：" + result.currentVersion
-                                        + "\n最新版本：" + result.latestVersion)
-                                .setPositiveButton("打开下载页", (dialog, which) -> {
+                                .setTitle(Text.of("发现新版本"))
+                                .setMessage(Text.of("Better Endfield Next 有可用更新：\n\n当前版本：") + result.currentVersion
+                                        + Text.of("\n最新版本：") + result.latestVersion)
+                                .setPositiveButton(Text.of("打开下载页"), (dialog, which) -> {
                                     try {
                                         startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(result.releaseUrl)));
                                     } catch (Exception ignored) {
-                                        Toast.makeText(MainActivity.this, "无法打开链接", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(MainActivity.this, Text.of("无法打开链接"), Toast.LENGTH_SHORT).show();
                                     }
                                 })
-                                .setNegativeButton("稍后再说", null)
+                                .setNegativeButton(Text.of("稍后再说"), null)
                                 .show();
                     });
                 }
@@ -357,14 +357,14 @@ public final class MainActivity extends Activity {
             if (ModuleSettings.isAppearanceReplaceWeapon(this)
                     && ModuleSettings.APPEARANCE_MODE_INK.equals(
                             ModuleSettings.getAppearanceWeaponMode(this))) {
-                parts.add("水墨武器");
+                parts.add(Text.of("水墨武器"));
             }
             if (ModuleSettings.isAppearanceReplaceCharacter(this)) {
                 String mode = ModuleSettings.getAppearanceMode(this);
-                if (ModuleSettings.APPEARANCE_MODE_INK.equals(mode)) parts.add("水墨服装");
-                else if (ModuleSettings.APPEARANCE_MODE_UNMASKED.equals(mode)) parts.add("摘面具形态");
+                if (ModuleSettings.APPEARANCE_MODE_INK.equals(mode)) parts.add(Text.of("水墨服装"));
+                else if (ModuleSettings.APPEARANCE_MODE_UNMASKED.equals(mode)) parts.add(Text.of("摘面具形态"));
             }
-            if (ModuleSettings.isAppearanceReplaceEffects(this)) parts.add("水墨剑光");
+            if (ModuleSettings.isAppearanceReplaceEffects(this)) parts.add(Text.of("水墨剑光"));
             enabled.add(new HomeItem(getString(R.string.home_feature_appearance),
                     parts.isEmpty() ? getString(R.string.home_appearance_off)
                             : String.join(" · ", parts),
@@ -435,7 +435,7 @@ public final class MainActivity extends Activity {
         if (ModuleSettings.isHideUidEnabled(this)) active.add(getString(R.string.ui_hide_uid));
         if (ModuleSettings.isHideHudEnabled(this)) active.add(getString(R.string.ui_hide_hud));
         if (ModuleSettings.isPcUiEnabled(this)) active.add(getString(R.string.ui_pc));
-        return active.isEmpty() ? null : String.join("、", active);
+        return active.isEmpty() ? null : String.join(Text.of("、"), active);
     }
 
     private String cameraState() {
@@ -451,7 +451,7 @@ public final class MainActivity extends Activity {
                     + getString(R.string.degree_suffix));
         }
         if (ModuleSettings.isWorldPauseEnabled(this)) active.add(getString(R.string.camera_pause));
-        return active.isEmpty() ? null : String.join("、", active);
+        return active.isEmpty() ? null : String.join(Text.of("、"), active);
     }
 
     private String dashState() {
@@ -468,7 +468,7 @@ public final class MainActivity extends Activity {
         if (ModuleSettings.isDashCharacterEnabled(this, "jsspsi")) {
             active.add(getString(R.string.dash_jsspsi));
         }
-        return active.isEmpty() ? "" : String.join("、", active);
+        return active.isEmpty() ? "" : String.join(Text.of("、"), active);
     }
 
     private String mmdWorkName() {
@@ -561,7 +561,7 @@ public final class MainActivity extends Activity {
                     Uri.parse("https://146.235.16.65:8443/endfield/"))
                     .addCategory(Intent.CATEGORY_BROWSABLE));
         } catch (RuntimeException ignored) {
-            Toast.makeText(this, "无法打开创意工坊", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, Text.of("无法打开创意工坊"), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -748,11 +748,11 @@ public final class MainActivity extends Activity {
         try {
             scale = Double.parseDouble(scaleText);
             if (!Double.isFinite(scale) || scale < 0.05 || scale > 20.0) {
-                throw new NumberFormatException("范围 0.05–20");
+                throw new NumberFormatException(Text.of("范围 0.05–20"));
             }
             modelScale.setError(null);
         } catch (NumberFormatException error) {
-            modelScale.setError("模型缩放应为 0.05–20；保留上次有效值");
+            modelScale.setError(Text.of("模型缩放应为 0.05–20；保留上次有效值"));
             scale = ModuleSettings.parse(ModuleSettings.getModelScale(this), 1);
         }
 
@@ -774,7 +774,7 @@ public final class MainActivity extends Activity {
             }
             modelLoopEnd.setError(null);
         } catch (NumberFormatException error) {
-            modelLoopEnd.setError("循环区间或混合时长无效；保留上次有效值");
+            modelLoopEnd.setError(Text.of("循环区间或混合时长无效；保留上次有效值"));
             loopStart = ModuleSettings.parse(ModuleSettings.getModelLoopStart(this), 0.968);
             loopEnd = ModuleSettings.parse(ModuleSettings.getModelLoopEnd(this), 2.3760002);
             crossfadeDuration = ModuleSettings.parse(
@@ -783,7 +783,7 @@ public final class MainActivity extends Activity {
 
         String color = logoColor.getText().toString().trim().toUpperCase(Locale.ROOT);
         if (!color.matches("#[0-9A-F]{6}")) {
-            logoColor.setError("主题色应为 #RRGGBB；保留上次有效值");
+            logoColor.setError(Text.of("主题色应为 #RRGGBB；保留上次有效值"));
             color = ModuleSettings.getLogoColor(this);
         } else {
             logoColor.setError(null);
@@ -1050,7 +1050,7 @@ public final class MainActivity extends Activity {
                 EnhancementSettingsActivity.INTERFACE);
         addEnhancementEntry(gameplay, getString(R.string.camera_card_title),
                 EnhancementSettingsActivity.CAMERA);
-        addEnhancementEntry(gameplay, "持续冲刺", EnhancementSettingsActivity.DASH);
+        addEnhancementEntry(gameplay, Text.of("持续冲刺"), EnhancementSettingsActivity.DASH);
         addEnhancementEntry(gameplay, getString(R.string.overlay_card_title),
                 EnhancementSettingsActivity.OVERLAY);
         page.addView(gameplay, SectionCard.stacked(this, 12));
@@ -1059,8 +1059,8 @@ public final class MainActivity extends Activity {
                 getString(R.string.enhancement_group_content), "");
         enhancementEntry(content, getString(R.string.voice_page), this::openVoicePage);
         enhancementEntry(content, getString(R.string.mmd_title), this::openMmdLibrary);
-        enhancementEntry(content, "会客室媒体屏", this::openMediaScreen);
-        Button workshop = enhancementButton("创意工坊");
+        enhancementEntry(content, Text.of("会客室媒体屏"), this::openMediaScreen);
+        Button workshop = enhancementButton(Text.of("创意工坊"));
         workshop.setOnClickListener(view -> openWorkshop());
         content.add(workshop);
         page.addView(content, SectionCard.stacked(this, 12));

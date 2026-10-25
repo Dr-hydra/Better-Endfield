@@ -36,7 +36,7 @@
         <activity
             android:name=".MmdImportActivity"
             android:exported="false"
-            android:label="导入 MMD 作品"
+            android:label="@string/mmd_import_label"
             android:theme="@style/AppTheme" />
         <activity
             android:name=".MmdLibraryActivity"

@@ -39,7 +39,7 @@ final class VoiceCatalogIndex {
         JSONObject root = new JSONObject(readAsset(context, "voice-catalog-index.json"));
         if (root.optInt("schemaVersion") != 1 ||
                 !"betterendfield-voice-catalog-index".equals(root.optString("kind"))) {
-            throw new IOException("桌面端语气词对照表版本不受支持");
+            throw new IOException(Text.of("桌面端语气词对照表版本不受支持"));
         }
 
         JSONArray catalogs = root.getJSONArray("catalogs");
@@ -58,10 +58,10 @@ final class VoiceCatalogIndex {
             String id = entry.getKey();
             choices.add(new CharacterChoice(
                     id,
-                    names.optString(id, id) + "  ·  " + id,
+                    Text.of(names.optString(id, id)) + "  ·  " + id,
                     entry.getValue()));
         }
-        choices.add(new CharacterChoice("*", "其他角色（默认规则）", 0x0f));
+        choices.add(new CharacterChoice("*", Text.of("其他角色（默认规则）"), 0x0f));
         return new VoiceCatalogIndex(
                 Collections.unmodifiableList(choices), catalogs.length());
     }

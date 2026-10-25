@@ -37,10 +37,10 @@ final class OverlayWritePolicy {
     }
     static void requireRevision(String expected, String current) throws IOException {
         if (expected == null || !expected.equals(revision(current)))
-            throw new IOException("设置已被更新，请重新选择");
+            throw new IOException(Text.of("设置已被更新，请重新选择"));
     }
     static JSONObject patch(String text, boolean fov) throws Exception {
-        if (text == null || text.length() > MAX_PATCH) throw new IOException("无效的设置请求");
+        if (text == null || text.length() > MAX_PATCH) throw new IOException(Text.of("无效的设置请求"));
         JSONObject patch = new JSONObject(text);
         Set<String> fields = fov ? Set.of("enabled", "value")
                 : Set.of("generation", "enabled", "appearance", "options", "parameters");
@@ -48,18 +48,18 @@ final class OverlayWritePolicy {
             String key = keys.next(); Object value = patch.get(key);
             if (!fields.contains(key) || (key.equals("enabled") ? !(value instanceof Boolean)
                     : key.equals("value") ? !(value instanceof Number) : !(value instanceof String)))
-                throw new IOException("无效的设置字段");
+                throw new IOException(Text.of("无效的设置字段"));
         }
         if (fov) {
-            if (patch.length() == 0) throw new IOException("缺少设置字段");
+            if (patch.length() == 0) throw new IOException(Text.of("缺少设置字段"));
             if (patch.has("value")) {
                 double value = patch.getDouble("value");
-                if (!Double.isFinite(value) || value < 5 || value > 150) throw new IOException("FOV 超出范围");
+                if (!Double.isFinite(value) || value < 5 || value > 150) throw new IOException(Text.of("FOV 超出范围"));
             }
         } else {
             String generation = patch.getString("generation");
             if (!UUID.fromString(generation).toString().equals(generation) || patch.length() < 2)
-                throw new IOException("无效的模型包版本");
+                throw new IOException(Text.of("无效的模型包版本"));
         }
         return patch;
     }
@@ -71,11 +71,11 @@ final class OverlayWritePolicy {
                 JSONObject candidate = entries.getJSONObject(j);
                 if (change.getString("generation").equals(candidate.getString("generation"))) entry = candidate;
             }
-            if (entry == null) throw new IOException("模型包列表已更新，请重新选择");
+            if (entry == null) throw new IOException(Text.of("模型包列表已更新，请重新选择"));
             if ((entry.optInt("bem_minor", 0) >= 1 && change.has("appearance"))
                     || (entry.optInt("bem_minor", 0) < 1 && change.has("options"))
                     || (entry.optInt("bem_minor", 0) < 3 && change.has("parameters")))
-                throw new IOException("选项类型与模型包不匹配");
+                throw new IOException(Text.of("选项类型与模型包不匹配"));
             if (change.has("options")) entry.put("selected_options", BemOptions.encode(BemOptions.parse(entry, change.getString("options"))));
             if (change.has("appearance")) entry.put("selected_appearance", BemOptions.appearance(entry, change.getString("appearance")));
             if (change.has("parameters")) BemParameters.select(entry, change.getString("parameters"));

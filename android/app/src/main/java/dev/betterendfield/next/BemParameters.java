@@ -21,16 +21,16 @@ final class BemParameters {
             int min=tick(group,"min"),max=tick(group,"max"),step=tick(group,"step");
             int defaultValue=tick(group,"default"),neutral=tick(group,"neutral");
             if(!seen.add(id) || min>max || step<1 || (max-min)%step!=0 ||
-                    !accepts(group,defaultValue) || !accepts(group,neutral)) throw new IOException("无效的滑条目录");
+                    !accepts(group,defaultValue) || !accepts(group,neutral)) throw new IOException(Text.of("无效的滑条目录"));
         }
         return groups;
     }
 
     static int tick(JSONObject group,String key) throws Exception {
         Object value=group.get(key);
-        if(!(value instanceof Integer || value instanceof Long)) throw new IOException("滑条数值必须是整数");
+        if(!(value instanceof Integer || value instanceof Long)) throw new IOException(Text.of("滑条数值必须是整数"));
         long number=((Number)value).longValue();
-        if(number<0 || number>1000) throw new IOException("滑条数值必须在 0–1000 范围内");
+        if(number<0 || number>1000) throw new IOException(Text.of("滑条数值必须在 0–1000 范围内"));
         return (int)number;
     }
 
@@ -48,10 +48,10 @@ final class BemParameters {
         LinkedHashMap<String,Integer> saved=new LinkedHashMap<>();
         if(!encoded.isEmpty()) for(String pair:encoded.split("&",-1)) {
             String[] parts=pair.split(":",-1);
-            if(parts.length!=2 || !parts[1].matches("[0-9]{1,10}")) throw new IOException("无效的滑条设置");
+            if(parts.length!=2 || !parts[1].matches("[0-9]{1,10}")) throw new IOException(Text.of("无效的滑条设置"));
             BemOptions.requireToken(parts[0]);
             long value=Long.parseLong(parts[1]);
-            if(value>1000 || saved.put(parts[0],(int)value)!=null) throw new IOException("无效或重复的滑条设置");
+            if(value>1000 || saved.put(parts[0],(int)value)!=null) throw new IOException(Text.of("无效或重复的滑条设置"));
         }
         return saved;
     }
@@ -62,10 +62,10 @@ final class BemParameters {
         for(int i=0;i<groups.length();++i) {
             JSONObject group=groups.getJSONObject(i);String id=group.getString("id");
             int value=saved.containsKey(id)?saved.remove(id):tick(group,"default");
-            if(!accepts(group,value)) throw new IOException("滑条数值不符合包内范围或步长："+group.getString("name"));
+            if(!accepts(group,value)) throw new IOException(Text.of("滑条数值不符合包内范围或步长：")+group.getString("name"));
             result.put(id,value);
         }
-        if(!saved.isEmpty()) throw new IOException("滑条已从包中移除");
+        if(!saved.isEmpty()) throw new IOException(Text.of("滑条已从包中移除"));
         return result;
     }
 

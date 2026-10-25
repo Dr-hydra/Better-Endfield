@@ -18,7 +18,7 @@ final class RuntimeBootstrap {
     private static final AtomicBoolean LOADING = new AtomicBoolean();
     private static final AtomicInteger ATTEMPTS = new AtomicInteger();
     private static volatile boolean loaded;
-    private static volatile String failure = "等待游戏首帧";
+    private static volatile String failure = Text.of("等待游戏首帧");
 
     static boolean loaded() { return loaded; }
     static String failure() { return failure; }
@@ -66,7 +66,7 @@ final class RuntimeBootstrap {
                         () -> load(application, context, configs, actionPoseRoot, log));
                 log.accept("waiting for first successful Unity frame");
             } catch (Throwable error) {
-                failure = "Unity 首帧入口不可用";
+                failure = Text.of("Unity 首帧入口不可用");
                 log.accept("Unity frame trigger unavailable: " + error);
             }
         }, "BetterEndfieldNext-Catalog");
@@ -119,7 +119,7 @@ final class RuntimeBootstrap {
             failure = "";
             log.accept("native runtime loaded; " + configs.summary());
         } catch (Throwable error) {
-            failure = "运行时载入失败：" + error.getClass().getSimpleName();
+            failure = Text.of("运行时载入失败：") + error.getClass().getSimpleName();
             log.accept("native runtime load attempt " + ATTEMPTS.get() + "/3 failed: " + error);
         } finally {
             LOADING.set(false);

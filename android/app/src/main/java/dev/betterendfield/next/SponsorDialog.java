@@ -26,6 +26,7 @@ import java.io.OutputStream;
 final class SponsorDialog {
     private static final String AFDIAN = "https://afdian.com/u/e9a7e6ac6fa411ed980752540025c377";
     private static final String PAYPAL = "https://paypal.me/hydra405";
+    private static final String KOFI = "https://ko-fi.com/hydra405";
 
     private SponsorDialog() {}
 
@@ -36,6 +37,7 @@ final class SponsorDialog {
         addChannel(activity, channels, R.string.sponsor_wechat, () -> showWechat(activity));
         addChannel(activity, channels, R.string.sponsor_afdian, () -> open(activity, AFDIAN));
         addChannel(activity, channels, R.string.sponsor_paypal, () -> open(activity, PAYPAL));
+        addChannel(activity, channels, R.string.sponsor_kofi, () -> open(activity, KOFI));
         ScrollView scroll = new ScrollView(activity);
         scroll.addView(channels);
         new AlertDialog.Builder(activity).setTitle(R.string.sponsor).setView(scroll)

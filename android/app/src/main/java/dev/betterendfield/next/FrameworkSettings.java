@@ -87,7 +87,7 @@ final class FrameworkSettings {
     static void awaitConnection() throws java.io.IOException {
         if (!FrameworkServiceWait.await(FrameworkSettings.class, () -> remoteService != null,
                 10_000, BemInstaller::checkpoint))
-            throw new java.io.IOException("框架服务未连接；请确认已在框架中启用模块后重试");
+            throw new java.io.IOException(Text.of("框架服务未连接；请确认已在框架中启用模块后重试"));
     }
 
     static synchronized boolean removeBem(String name) {
@@ -114,14 +114,14 @@ final class FrameworkSettings {
         } catch(RuntimeException | java.io.IOException error) {return -1;}
     }
     static synchronized java.io.InputStream openBem(String name) throws java.io.IOException {
-        if(bemSize(name)<=0) throw new java.io.IOException("框架中缺少模型包文件，请重新导入");
+        if(bemSize(name)<=0) throw new java.io.IOException(Text.of("框架中缺少模型包文件，请重新导入"));
         try {return new ParcelFileDescriptor.AutoCloseInputStream(remoteService.openRemoteFile(name));}
-        catch(RuntimeException error) {throw new java.io.IOException("模型包读取失败："+error.getMessage(),error);}
+        catch(RuntimeException error) {throw new java.io.IOException(Text.of("模型包读取失败：")+error.getMessage(),error);}
     }
     static synchronized void publishBem(java.io.File file,String name) throws java.io.IOException {
-        if(remoteService==null) throw new java.io.IOException("框架服务已断开，请重试");
+        if(remoteService==null) throw new java.io.IOException(Text.of("框架服务已断开，请重试"));
         if(!name.matches("bem-[a-f0-9-]+\\.bem") || !file.isFile())
-            throw new java.io.IOException("无效的模型包发布文件");
+            throw new java.io.IOException(Text.of("无效的模型包发布文件"));
         try(ParcelFileDescriptor descriptor=remoteService.openRemoteFile(name);
             java.io.FileInputStream in=new java.io.FileInputStream(file);
             FileOutputStream out=new FileOutputStream(descriptor.getFileDescriptor())) {
@@ -129,7 +129,7 @@ final class FrameworkSettings {
             BemInstaller.copy(in,out,2L*1024*1024*1024);out.getFD().sync();
         } catch(java.io.IOException | RuntimeException error) {
             Log.e("BetterEndfieldNext.Install","Publishing failed",error);
-            throw new java.io.IOException("模型包发布失败："+error.getMessage(),error);
+            throw new java.io.IOException(Text.of("模型包发布失败：")+error.getMessage(),error);
         }
     }
 
@@ -138,16 +138,16 @@ final class FrameworkSettings {
                 && name.matches("mmd-[a-f0-9-]{36}-[A-Za-z0-9_.-]+");
     }
     static void publishMedia(java.io.File file, String name) throws java.io.IOException {
-        if (!MediaScreenFiles.valid(name) || !file.isFile()) throw new java.io.IOException("无效的媒体文件");
+        if (!MediaScreenFiles.valid(name) || !file.isFile()) throw new java.io.IOException(Text.of("无效的媒体文件"));
         ParcelFileDescriptor descriptor;
         synchronized (FrameworkSettings.class) {
-            if (remoteService == null) throw new java.io.IOException("框架服务未连接");
+            if (remoteService == null) throw new java.io.IOException(Text.of("框架服务未连接"));
             descriptor = remoteService.openRemoteFile(name);
         }
         try (descriptor; java.io.FileInputStream input = new java.io.FileInputStream(file);
                 FileOutputStream output = new FileOutputStream(descriptor.getFileDescriptor())) {
             output.getChannel().truncate(0); byte[] buffer = new byte[65536]; long total = 0; int count;
-            while ((count = input.read(buffer)) != -1) { total += count; if (total > 512L * 1024 * 1024) throw new java.io.IOException("媒体文件过大"); output.write(buffer, 0, count); }
+            while ((count = input.read(buffer)) != -1) { total += count; if (total > 512L * 1024 * 1024) throw new java.io.IOException(Text.of("媒体文件过大")); output.write(buffer, 0, count); }
             output.getFD().sync();
         }
     }
@@ -165,7 +165,7 @@ final class FrameworkSettings {
             byte[] buffer = new byte[65536]; long total = 0; int count;
             while ((count = in.read(buffer)) != -1) {
                 total += count;
-                if (total > 512L * 1024 * 1024) throw new java.io.IOException("作品文件过大");
+                if (total > 512L * 1024 * 1024) throw new java.io.IOException(Text.of("作品文件过大"));
                 out.write(buffer, 0, count);
             }
             out.getFD().sync(); return true;

@@ -17,7 +17,9 @@ final class BemInstaller {
     static final String CLONE_SUPPORT = "bem_clone_support";
     static final String FAST_LOADING = "bem_fast_loading";
     static final String KEEP_LOCAL_COPIES = "bem_keep_local_copies";
-    static volatile String status = "原样导入 BEM 包；贴图异常时，可在对应模型包下手动转换手机纹理。";
+    /** Idle hint. The page compares against it instead of matching localized status text. */
+    static final String IDLE_STATUS = Text.of("原样导入 BEM 包；贴图异常时，可在对应模型包下手动转换手机纹理。");
+    static volatile String status = IDLE_STATUS;
     static volatile boolean busy;
     static volatile boolean removing;
     static volatile int progressPercent=-1;
@@ -50,20 +52,20 @@ final class BemInstaller {
     static void conversionProgress(String texture,int current,int total,int mip,int mips,float percent) {
         if(!cancelled) {
             progressPercent=Math.max(0,Math.min(100,Math.round(percent)));
-            status="正在转换第 "+current+" 张纹理 · mip "+mip+" / "+mips+"\n"+texture;
+            status=Text.of("正在转换第 ")+current+Text.of(" 张纹理 · mip ")+mip+" / "+mips+"\n"+texture;
         }
     }
     static synchronized void loadCodec() { if (!nativeLoaded) { System.loadLibrary("betterendfieldnext_installer"); nativeLoaded=true; } }
     static synchronized void cancel() {
         if(removing || !busy) return;
-        cancelled=true; if(nativeLoaded) cancelNative(); status="正在取消，保留原安装版本…";
+        cancelled=true; if(nativeLoaded) cancelNative(); status=Text.of("正在取消，保留原安装版本…");
         PendingBundle bundle=pendingBundle;
         if(bundle!=null) {
             pendingBundle=null;
-            worker.execute(()->{try {deleteOwned(bundle.directory);status="已取消 ZIP 导入，原有模型包已保留。";}finally {busy=false;}});
+            worker.execute(()->{try {deleteOwned(bundle.directory);status=Text.of("已取消 ZIP 导入，原有模型包已保留。");}finally {busy=false;}});
         }
     }
-    static void checkpoint() throws IOException { if(cancelled) throw new IOException("已取消安装"); }
+    static void checkpoint() throws IOException { if(cancelled) throw new IOException(Text.of("已取消安装")); }
     static synchronized JSONArray index(Context context) {
         try {
             String stored=FrameworkSettings.open(context).getString(INDEX,"[]");
@@ -95,10 +97,10 @@ final class BemInstaller {
                 try {BemParameters.restore(entry,parameters);}
                 catch(IOException stale) {BemParameters.restore(entry,entry.optString("default_parameters",""));}
             }
-            if(!entries.toString().equals(stored)) commitIndex(context,stored,entries,"安装索引迁移保存失败");
+            if(!entries.toString().equals(stored)) commitIndex(context,stored,entries,Text.of("安装索引迁移保存失败"));
             return entries;
         }
-        catch (Exception e) { throw new IllegalStateException("安装索引损坏",e); }
+        catch (Exception e) { throw new IllegalStateException(Text.of("安装索引损坏"),e); }
     }
     /** Returns false when another operation owns the worker; never drops a request silently. */
     static synchronized boolean start(Context context, Uri uri) {
@@ -112,43 +114,43 @@ final class BemInstaller {
         Context app=context.getApplicationContext();
         boolean skipValidation=FrameworkSettings.open(app).getBoolean(SKIP_VALIDATION,false);
         progressPercent=-1;startedAt=android.os.SystemClock.elapsedRealtime();
-        busy=true;cancelled=false;status="正在读取 BEM 或 ZIP…";
+        busy=true;cancelled=false;status=Text.of("正在读取 BEM 或 ZIP…");
         try {worker.execute(()->{
             File stage=null;boolean awaitingSelection=false;
             try {
                 File root=new File(app.getFilesDir(),"bem-installed");
-                if(!root.isDirectory() && !root.mkdirs()) throw new IOException("无法创建安装目录");
+                if(!root.isDirectory() && !root.mkdirs()) throw new IOException(Text.of("无法创建安装目录"));
                 stage=new File(root,"stage-"+UUID.randomUUID());
-                if(!stage.mkdir()) throw new IOException("无法创建临时目录");
+                if(!stage.mkdir()) throw new IOException(Text.of("无法创建临时目录"));
                 BemImportArchive.Bundle archive;
                 try(InputStream input=app.getContentResolver().openInputStream(uri)) {
-                    if(input==null) throw new IOException("无法打开包");
+                    if(input==null) throw new IOException(Text.of("无法打开包"));
                     archive=BemImportArchive.read(input,stage,BemInstaller::checkpoint,text->status=text);
                 }
-                if(archive.packages.isEmpty()) throw new IOException("ZIP 中没有可导入的 BEM。\n"+String.join("\n",archive.issues));
+                if(archive.packages.isEmpty()) throw new IOException(Text.of("ZIP 中没有可导入的 BEM。\n")+String.join("\n",archive.issues));
                 loadCodec();checkpoint();
                 PendingBundle bundle=prepareImport(app,stage,archive,skipValidation,
                         (file,skip)->new JSONObject(inspectNativeWithOptions(file.getAbsolutePath(),skip)));
                 checkpoint();
-                if(bundle.packages.isEmpty()) throw new IOException("ZIP 中没有通过校验的 BEM。\n"+String.join("\n",bundle.issues));
+                if(bundle.packages.isEmpty()) throw new IOException(Text.of("ZIP 中没有通过校验的 BEM。\n")+String.join("\n",bundle.issues));
                 if(bundle.zip) {
                     synchronized(BemInstaller.class) {
                         checkpoint();pendingBundle=bundle;awaitingSelection=true;
-                        status="ZIP 已校验，等待选择要导入的 "+bundle.packages.size()+" 个模型包。";
+                        status=Text.of("ZIP 已校验，等待选择要导入的 ")+bundle.packages.size()+Text.of(" 个模型包。");
                     }
                     stage=null; // Ownership passes to confirmation/cancellation, including Activity recreation.
                 } else {
                     awaitPublishing();installPrepared(app,bundle.packages.get(0));
-                    status="已原样导入："+bundle.packages.get(0).report.getString("name")+"。重启游戏后生效。";
+                    status=Text.of("已原样导入：")+bundle.packages.get(0).report.getString("name")+Text.of("。重启游戏后生效。");
                 }
             } catch(Throwable error) {
-                status="导入未完成："+importError(error);
+                status=Text.of("导入未完成：")+importError(error);
                 android.util.Log.e("BetterEndfieldNext.Install",status,error);
             } finally {
                 if(stage!=null) deleteOwned(stage);
                 if(!awaitingSelection) busy=false;
             }
-        });return true;} catch(RuntimeException rejected) {busy=false;status="无法启动导入任务，请重试。";throw rejected;}
+        });return true;} catch(RuntimeException rejected) {busy=false;status=Text.of("无法启动导入任务，请重试。");throw rejected;}
     }
     static PendingBundle prepareImport(Context app,File stage,BemImportArchive.Bundle archive,
             boolean skipValidation,Inspector inspector) throws Exception {
@@ -156,7 +158,7 @@ final class BemInstaller {
         bundle.issues.addAll(archive.issues);JSONArray previous=index(app);
         for(int i=0;i<archive.packages.size();++i) {
             checkpoint();BemImportArchive.Item item=archive.packages.get(i);
-            status="正在校验 "+(i+1)+" / "+archive.packages.size()+"："+item.name;
+            status=Text.of("正在校验 ")+(i+1)+" / "+archive.packages.size()+Text.of("：")+item.name;
             try {
                 JSONObject report=inspector.inspect(item.file,skipValidation);
                 String generation=UUID.randomUUID().toString();
@@ -171,7 +173,7 @@ final class BemInstaller {
             } catch(Exception error) {
                 checkpoint();
                 if(!archive.zip) throw error;
-                bundle.issues.add(item.name+"："+importError(error));deleteOwned(item.directory);
+                bundle.issues.add(item.name+Text.of("：")+importError(error));deleteOwned(item.directory);
             }
         }
         return bundle;
@@ -181,7 +183,7 @@ final class BemInstaller {
         boolean[] selected=choices.clone();pendingBundle=null;
         try {worker.execute(()->installBundle(bundle,selected));return true;}
         catch(RuntimeException rejected) {
-            pendingBundle=bundle;status="无法启动 ZIP 导入，请重试。";throw rejected;
+            pendingBundle=bundle;status=Text.of("无法启动 ZIP 导入，请重试。");throw rejected;
         }
     }
     static synchronized void cancelBundle(PendingBundle bundle) {if(pendingBundle==bundle) cancel();}
@@ -190,16 +192,16 @@ final class BemInstaller {
         java.util.List<String> issues=new java.util.ArrayList<>(bundle.issues);
         boolean stopped=false;
         try {
-            if(selected==0) {status="未选择模型包，已取消 ZIP 导入。";return;}
+            if(selected==0) {status=Text.of("未选择模型包，已取消 ZIP 导入。");return;}
             awaitPublishing();int current=0;
             for(int i=0;i<choices.length;++i) {
                 if(!choices[i]) continue;
                 checkpoint();PreparedPackage item=bundle.packages.get(i);
-                status="正在导入 "+(++current)+" / "+selected+"："+item.report.optString("name",item.item.name);
+                status=Text.of("正在导入 ")+(++current)+" / "+selected+Text.of("：")+item.report.optString("name",item.item.name);
                 progressPercent=(current-1)*100/selected;
                 try {installPrepared(bundle.app,item);installed++;}
                 catch(Exception error) {
-                    checkpoint();issues.add(item.item.name+"："+importError(error));
+                    checkpoint();issues.add(item.item.name+Text.of("：")+importError(error));
                 }
             }
         } catch(Exception error) {
@@ -208,16 +210,16 @@ final class BemInstaller {
         } finally {
             deleteOwned(bundle.directory);progressPercent=-1;
             if(selected>0) {
-                status=(stopped?(cancelled?"已取消 ZIP 导入":"ZIP 导入未完成"):"ZIP 导入完成")
-                        +"：成功 "+installed+" 个，未导入 "+(selected-installed)+" 个"
-                        +(issues.isEmpty()?"。":"，无效或失败项 "+issues.size()+" 个。\n"+String.join("\n",issues))
-                        +(installed>0?"\n重启游戏后生效。":"");
+                status=(stopped?(cancelled?Text.of("已取消 ZIP 导入"):Text.of("ZIP 导入未完成")):Text.of("ZIP 导入完成"))
+                        +Text.of("：成功 ")+installed+Text.of(" 个，未导入 ")+(selected-installed)+Text.of(" 个")
+                        +(issues.isEmpty()?Text.of("。"):Text.of("，无效或失败项 ")+issues.size()+Text.of(" 个。\n")+String.join("\n",issues))
+                        +(installed>0?Text.of("\n重启游戏后生效。"):"");
             }
             busy=false;
         }
     }
     private static void awaitPublishing() throws IOException {
-        checkpoint();if(!FrameworkSettings.isConnected()) status="正在等待框架服务连接…";
+        checkpoint();if(!FrameworkSettings.isConnected()) status=Text.of("正在等待框架服务连接…");
         FrameworkSettings.awaitConnection();checkpoint();
     }
     /** Commit one generation at a time, preserving already imported items on later failures. */
@@ -247,13 +249,13 @@ final class BemInstaller {
         File installed=new File(root,generation);boolean moved=false,committed=false;
         try {
             checkpoint();installedIndex(index(app),item.report,null);
-            if(!item.item.directory.renameTo(installed)) throw new IOException("安装结果发布失败");
+            if(!item.item.directory.renameTo(installed)) throw new IOException(Text.of("安装结果发布失败"));
             moved=true;checkpoint();
             FrameworkSettings.publishBem(new File(installed,"installed.bem"),item.report.getString("remote"));
             checkpoint();
             synchronized(BemInstaller.class) {
                 checkpoint();JSONArray previous=index(app),next=installedIndex(previous,item.report,null);
-                commitIndex(app,previous.toString(),next,"安装索引保存失败");committed=true;
+                commitIndex(app,previous.toString(),next,Text.of("安装索引保存失败"));committed=true;
             }
             if(!FrameworkSettings.open(app).getBoolean(KEEP_LOCAL_COPIES,true)) new File(installed,"installed.bem").delete();
         } finally {
@@ -266,14 +268,14 @@ final class BemInstaller {
         }
     }
     private static String importError(Throwable error) {
-        if(error instanceof SecurityException) return "读取授权已失效，请重新选择文件或从文件管理器打开。";
+        if(error instanceof SecurityException) return Text.of("读取授权已失效，请重新选择文件或从文件管理器打开。");
         String message=error.getMessage();return message==null || message.isEmpty()?error.getClass().getSimpleName():message;
     }
     private static synchronized boolean run(Context context, Uri uri, String previousGeneration) {
         if(busy) return false;
         boolean converting=previousGeneration!=null;
         progressPercent=-1;startedAt=android.os.SystemClock.elapsedRealtime();
-        busy=true; cancelled=false; status=converting?"正在准备纹理转换…":"正在读取并校验包（不转换纹理）…";
+        busy=true; cancelled=false; status=converting?Text.of("正在准备纹理转换…"):Text.of("正在读取并校验包（不转换纹理）…");
         Context app=context.getApplicationContext();
         boolean skipValidation=FrameworkSettings.open(app).getBoolean(SKIP_VALIDATION,false);
         try {
@@ -281,28 +283,28 @@ final class BemInstaller {
             File stage=null;
             try {
                 File root=new File(app.getFilesDir(),"bem-installed");
-                if(!root.isDirectory() && !root.mkdirs()) throw new IOException("无法创建安装目录");
+                if(!root.isDirectory() && !root.mkdirs()) throw new IOException(Text.of("无法创建安装目录"));
                 // Every transaction gets its own directory. A process death cannot replace the active generation.
                 stage=new File(root,"stage-"+UUID.randomUUID());
-                if(!stage.mkdir()) throw new IOException("无法创建临时目录");
+                if(!stage.mkdir()) throw new IOException(Text.of("无法创建临时目录"));
                 File output=new File(stage,"installed.bem");
                 File source=converting?new File(stage,"source.bem"):output;
                 JSONObject previousEntry=null;
                 if(converting) {
-                    if(!previousGeneration.matches("[a-f0-9-]{36}")) throw new IOException("无效的模型包版本");
+                    if(!previousGeneration.matches("[a-f0-9-]{36}")) throw new IOException(Text.of("无效的模型包版本"));
                     previousEntry=findEntry(index(app),previousGeneration);
-                    if(previousEntry==null) throw new IOException("模型包已被替换，请刷新后重试");
+                    if(previousEntry==null) throw new IOException(Text.of("模型包已被替换，请刷新后重试"));
                 }
                 File localSource=converting?new File(new File(root,previousGeneration),"installed.bem"):null;
                 if(converting && !localSource.isFile()) {
-                    if(!FrameworkSettings.isConnected()) status="正在等待框架服务连接…";
+                    if(!FrameworkSettings.isConnected()) status=Text.of("正在等待框架服务连接…");
                     FrameworkSettings.awaitConnection();
-                    status="正在准备纹理转换…";
+                    status=Text.of("正在准备纹理转换…");
                 }
                 try(InputStream in=converting
                         ?(localSource.isFile()?new FileInputStream(localSource):FrameworkSettings.openBem("bem-"+previousGeneration+".bem"))
                         :app.getContentResolver().openInputStream(uri); FileOutputStream out=new FileOutputStream(source)) {
-                    if(in==null) throw new IOException("无法打开包");
+                    if(in==null) throw new IOException(Text.of("无法打开包"));
                     if(converting) copy(in,out,BemImportStream.MAX_BYTES);
                     else BemImportStream.copy(in,out,BemImportStream.MAX_BYTES,BemInstaller::checkpoint);
                     out.getFD().sync();
@@ -311,7 +313,7 @@ final class BemInstaller {
                 JSONObject result;
                 if(converting) {
                     boolean astc=AstcSupport.available();
-                    status=astc?"正在转换 ASTC 纹理；大包可能需要数分钟…":"设备未报告 ASTC，正在生成 RGBA32 资源…";
+                    status=astc?Text.of("正在转换 ASTC 纹理；大包可能需要数分钟…"):Text.of("设备未报告 ASTC，正在生成 RGBA32 资源…");
                     String rules;
                     try(InputStream in=app.getAssets().open("android-normal-rules.json");
                         ByteArrayOutputStream bytes=new ByteArrayOutputStream()) {
@@ -330,34 +332,34 @@ final class BemInstaller {
                 try(FileOutputStream out=new FileOutputStream(new File(stage,"report.json"))) {out.write(result.toString(2).getBytes(StandardCharsets.UTF_8));out.getFD().sync();}
                 String generation=UUID.randomUUID().toString();
                 File installed=new File(root,generation);
-                if(!stage.renameTo(installed)) throw new IOException("安装结果发布失败");
+                if(!stage.renameTo(installed)) throw new IOException(Text.of("安装结果发布失败"));
                 stage=installed;
                 result.put("generation",generation).put("remote","bem-"+generation+".bem").put("enabled",true);
                 // Validate all preserved selections before publishing a payload.
                 installedIndex(index(app),result,previousGeneration);
                 progressPercent=-1;
-                if(!FrameworkSettings.isConnected()) status="正在等待框架服务连接…";
+                if(!FrameworkSettings.isConnected()) status=Text.of("正在等待框架服务连接…");
                 FrameworkSettings.awaitConnection();
-                checkpoint();status="正在发布给游戏…";
+                checkpoint();status=Text.of("正在发布给游戏…");
                 FrameworkSettings.publishBem(new File(installed,"installed.bem"),result.getString("remote"));
                 checkpoint();
                 synchronized(BemInstaller.class) {
                     checkpoint();
                     JSONArray previous=index(app),next=installedIndex(previous,result,previousGeneration);
-                    commitIndex(app,previous.toString(),next,"安装索引保存失败");
+                    commitIndex(app,previous.toString(),next,Text.of("安装索引保存失败"));
                 }
                 // The game reads its private copy, so a replaced conversion source is unreachable.
                 if(converting) discardGeneration(root,previousGeneration);
                 if(!FrameworkSettings.open(app).getBoolean(KEEP_LOCAL_COPIES,true)) new File(installed,"installed.bem").delete();
-                stage=null;status=(converting?"已转换：":"已原样导入：")+result.getString("name")+"。重启游戏后生效。";
+                stage=null;status=(converting?Text.of("已转换："):Text.of("已原样导入："))+result.getString("name")+Text.of("。重启游戏后生效。");
             } catch(Throwable error) {
                 String reason=error instanceof SecurityException
-                        ?"没有读取权限或临时授权已失效，请从文件管理器重新打开，或使用应用内文件选择器。"
+                        ?Text.of("没有读取权限或临时授权已失效，请从文件管理器重新打开，或使用应用内文件选择器。")
                         :error.getMessage();
                 if(reason==null || reason.isEmpty()) reason=error.getClass().getSimpleName();
                 if(reason!=null && reason.contains("Normal slot has no verified source encoding"))
-                    reason="此包缺少已确认的法线贴图编码信息，暂时无法转换；可继续使用原包。";
-                status=(converting?"转换未完成，原包和启用状态已保留：":"导入未完成：")+reason;
+                    reason=Text.of("此包缺少已确认的法线贴图编码信息，暂时无法转换；可继续使用原包。");
+                status=(converting?Text.of("转换未完成，原包和启用状态已保留："):Text.of("导入未完成："))+reason;
                 android.util.Log.e("BetterEndfieldNext.Install",status,error);
             }
             finally {if(stage!=null) deleteOwned(stage);busy=false;}
@@ -365,7 +367,7 @@ final class BemInstaller {
         return true;
         } catch(RuntimeException rejected) {
             busy=false;
-            status="无法启动导入任务，请重试。";
+            status=Text.of("无法启动导入任务，请重试。");
             throw rejected;
         }
     }
@@ -381,17 +383,17 @@ final class BemInstaller {
         JSONArray entries=BemOptions.exclusive(previous),next=new JSONArray();
         JSONObject result=new JSONObject(report.toString());
         JSONObject latest=previousGeneration==null?null:findEntry(entries,previousGeneration);
-        if(previousGeneration!=null && latest==null) throw new IOException("模型包已被替换，原配置保持不变");
+        if(previousGeneration!=null && latest==null) throw new IOException(Text.of("模型包已被替换，原配置保持不变"));
         String target=BemOptions.targetKey(result);BemOptions.resourceKeys(result);BemOptions.requireAndroid(result);
         for(int i=0;i<entries.length();++i) {
             JSONObject existing=entries.getJSONObject(i);
             if(result.has("package_id") && existing.has("package_id") && result.getString("package_id").equals(existing.getString("package_id")) && !target.equals(BemOptions.targetKey(existing)))
-                throw new IOException("同一个包 ID 不能更新为另一目标");
+                throw new IOException(Text.of("同一个包 ID 不能更新为另一目标"));
         }
-        if(latest!=null && !target.equals(BemOptions.targetKey(latest))) throw new IOException("转换结果的目标不匹配");
+        if(latest!=null && !target.equals(BemOptions.targetKey(latest))) throw new IOException(Text.of("转换结果的目标不匹配"));
         if(latest!=null && !BemOptions.resourceKeys(result).equals(BemOptions.resourceKeys(latest)) && latest.has("resource_keys"))
-            throw new IOException("转换结果的资源目标不匹配");
-        if(findEntry(entries,result.getString("generation"))!=null) throw new IOException("模型包版本重复");
+            throw new IOException(Text.of("转换结果的资源目标不匹配"));
+        if(findEntry(entries,result.getString("generation"))!=null) throw new IOException(Text.of("模型包版本重复"));
         result.put("enabled",latest==null || latest.optBoolean("enabled",true));
         if(result.optInt("bem_minor",0)>=1) {
             String saved=latest==null?result.getString("default_options"):latest.optString("selected_options",result.getString("default_options"));
@@ -433,7 +435,7 @@ final class BemInstaller {
             // Never let the next UI refresh mistake that map for a saved change.
             try {durableIndex(app,previous);}
             finally {prefs.edit().putString(INDEX,previous).commit();}
-            throw new IOException(committed?"安装索引校验失败":message);
+            throw new IOException(committed?Text.of("安装索引校验失败"):message);
         }
     }
     private static void durableIndex(Context app,String value) throws IOException {
@@ -443,38 +445,38 @@ final class BemInstaller {
             stream=file.startWrite();
             stream.write(value.getBytes(StandardCharsets.UTF_8));stream.getFD().sync();
             file.finishWrite(stream);stream=null;
-            if(!value.equals(new String(file.readFully(),StandardCharsets.UTF_8))) throw new IOException("安装索引磁盘校验失败");
+            if(!value.equals(new String(file.readFully(),StandardCharsets.UTF_8))) throw new IOException(Text.of("安装索引磁盘校验失败"));
         } catch(IOException error) {if(stream!=null) file.failWrite(stream);throw error;}
     }
     static synchronized void remove(Context context,String generation) throws Exception {
-        if(busy) throw new IOException("请等待当前操作完成，或取消后再移除");
-        if(!generation.matches("[a-f0-9-]{36}")) throw new IOException("无效的模型包版本");
+        if(busy) throw new IOException(Text.of("请等待当前操作完成，或取消后再移除"));
+        if(!generation.matches("[a-f0-9-]{36}")) throw new IOException(Text.of("无效的模型包版本"));
         Context app=context.getApplicationContext();
         JSONArray previous=index(app),next=new JSONArray();
         JSONObject removed=findEntry(previous,generation);
-        if(removed==null) throw new IOException("模型包已被移除或更新，请刷新后重试");
+        if(removed==null) throw new IOException(Text.of("模型包已被移除或更新，请刷新后重试"));
         for(int i=0;i<previous.length();++i) {
             JSONObject entry=previous.getJSONObject(i);
             if(!generation.equals(entry.getString("generation"))) next.put(entry);
         }
         // Stop advertising the package before touching its immutable files.
-        commitIndex(app,previous.toString(),next,"移除配置保存失败");
+        commitIndex(app,previous.toString(),next,Text.of("移除配置保存失败"));
         busy=true;removing=true;cancelled=false;progressPercent=-1;startedAt=android.os.SystemClock.elapsedRealtime();
-        status="已从列表移除，正在清理安装文件…";
+        status=Text.of("已从列表移除，正在清理安装文件…");
         try {worker.execute(()->{
             boolean complete=true;
             try {
                 complete=discardGeneration(new File(app.getFilesDir(),"bem-installed"),generation);
-                status="已移除："+removed.getString("name")+"。其他包已保留，重启游戏后生效。"
-                        +(complete?"":"部分残留文件未能清理，但该包已停用。");
-            } catch(Exception error) {status="模型包已移除；部分文件清理失败："+error.getMessage();}
+                status=Text.of("已移除：")+removed.getString("name")+Text.of("。其他包已保留，重启游戏后生效。")
+                        +(complete?"":Text.of("部分残留文件未能清理，但该包已停用。"));
+            } catch(Exception error) {status=Text.of("模型包已移除；部分文件清理失败：")+error.getMessage();}
             finally {removing=false;busy=false;}
         });} catch(RuntimeException rejected) {removing=false;busy=false;throw rejected;}
     }
     private static boolean discardGeneration(File installed,String generation) throws IOException {
         File root=installed.getCanonicalFile(),version=new File(root,generation);
         if(!generation.matches("[a-f0-9-]{36}") || !version.getCanonicalFile().getParentFile().equals(root))
-            throw new IOException("无效的安装目录");
+            throw new IOException(Text.of("无效的安装目录"));
         boolean complete=FrameworkSettings.removeBem("bem-"+generation+".bem");
         deleteOwned(version);
         return complete && !version.exists();
@@ -501,7 +503,7 @@ final class BemInstaller {
         if(busy) return false;
         Context app=context.getApplicationContext();
         busy=true;cancelled=false;progressPercent=-1;startedAt=android.os.SystemClock.elapsedRealtime();
-        status="正在清理未使用数据…";
+        status=Text.of("正在清理未使用数据…");
         try {worker.execute(()->{
             try {
                 FrameworkSettings.awaitConnection();
@@ -520,10 +522,10 @@ final class BemInstaller {
                     long size=FrameworkSettings.bemSize(remote);
                     if(FrameworkSettings.removeBem(remote)) freed+=Math.max(0,size);
                 }
-                status="已清理 "+megabytes(freed)+"。游戏目录中未启用的模型会在下次启动游戏时清理。";
-            } catch(Exception error) {status="清理未完成："+error.getMessage();}
+                status=Text.of("已清理 ")+megabytes(freed)+Text.of("。游戏目录中未启用的模型会在下次启动游戏时清理。");
+            } catch(Exception error) {status=Text.of("清理未完成：")+error.getMessage();}
             finally {busy=false;}
-        });} catch(RuntimeException rejected) {busy=false;status="无法启动清理任务，请重试。";throw rejected;}
+        });} catch(RuntimeException rejected) {busy=false;status=Text.of("无法启动清理任务，请重试。");throw rejected;}
         return true;
     }
     /** Local copies are optional; the framework copy remains the source the game and conversion read. */
@@ -531,7 +533,7 @@ final class BemInstaller {
         if(busy) return false;
         Context app=context.getApplicationContext();
         busy=true;cancelled=false;progressPercent=-1;startedAt=android.os.SystemClock.elapsedRealtime();
-        status=keepLocal?"正在恢复本地副本…":"正在移除本地副本…";
+        status=keepLocal?Text.of("正在恢复本地副本…"):Text.of("正在移除本地副本…");
         try {worker.execute(()->{
             try {
                 FrameworkSettings.awaitConnection();
@@ -548,30 +550,30 @@ final class BemInstaller {
                     boolean published=shared.contains(remote) && FrameworkSettings.bemSize(remote)==bytes;
                     if(keepLocal) {
                         if(local.isFile() && local.length()==bytes) continue;
-                        if(!published) {missing.append(missing.length()>0?"、":"").append(entry.getString("name"));continue;}
+                        if(!published) {missing.append(missing.length()>0?Text.of("、"):"").append(entry.getString("name"));continue;}
                         File folder=local.getParentFile(),temp=new File(folder,"installed.tmp");
-                        if(!folder.isDirectory() && !folder.mkdirs()) throw new IOException("无法创建安装目录");
+                        if(!folder.isDirectory() && !folder.mkdirs()) throw new IOException(Text.of("无法创建安装目录"));
                         try(InputStream in=FrameworkSettings.openBem(remote);FileOutputStream out=new FileOutputStream(temp)) {
                             copy(in,out,bytes);out.getFD().sync();
                         }
-                        if(temp.length()!=bytes || !temp.renameTo(local)) {temp.delete();throw new IOException("本地副本写入失败");}
+                        if(temp.length()!=bytes || !temp.renameTo(local)) {temp.delete();throw new IOException(Text.of("本地副本写入失败"));}
                         changed+=bytes;
                     } else if(local.isFile()) {
                         // Never drop the last copy of a package.
-                        if(!published) {missing.append(missing.length()>0?"、":"").append(entry.getString("name"));continue;}
+                        if(!published) {missing.append(missing.length()>0?Text.of("、"):"").append(entry.getString("name"));continue;}
                         if(local.delete()) changed+=bytes;
                     }
                 }
-                status=(keepLocal?"已恢复本地副本 ":"已移除本地副本 ")+megabytes(changed)+"。"
-                        +(missing.length()==0?"":(keepLocal?"框架中缺少文件，需重新导入：":"框架中缺少文件，已保留本地副本：")+missing);
-            } catch(Exception error) {status=(keepLocal?"恢复本地副本未完成：":"移除本地副本未完成：")+error.getMessage();}
+                status=(keepLocal?Text.of("已恢复本地副本 "):Text.of("已移除本地副本 "))+megabytes(changed)+Text.of("。")
+                        +(missing.length()==0?"":(keepLocal?Text.of("框架中缺少文件，需重新导入："):Text.of("框架中缺少文件，已保留本地副本："))+missing);
+            } catch(Exception error) {status=(keepLocal?Text.of("恢复本地副本未完成："):Text.of("移除本地副本未完成："))+error.getMessage();}
             finally {busy=false;}
-        });} catch(RuntimeException rejected) {busy=false;status="无法启动任务，请重试。";throw rejected;}
+        });} catch(RuntimeException rejected) {busy=false;status=Text.of("无法启动任务，请重试。");throw rejected;}
         return true;
     }
     static void copy(InputStream in,OutputStream out,long limit) throws IOException {
         byte[] buffer=new byte[65536];long size=0;int count;
-        while((count=in.read(buffer))!=-1) {checkpoint();size+=count;if(size>limit) throw new IOException("文件超过大小限制");out.write(buffer,0,count);}
+        while((count=in.read(buffer))!=-1) {checkpoint();size+=count;if(size>limit) throw new IOException(Text.of("文件超过大小限制"));out.write(buffer,0,count);}
     }
     private static void deleteOwned(File file) {File[] children=file.listFiles();if(children!=null) for(File child:children) deleteOwned(child);file.delete();}
     static synchronized void select(Context app,String generation,String appearance,boolean enabled) throws Exception {
@@ -581,7 +583,7 @@ final class BemInstaller {
         if(busy) return false;
         Context app = context.getApplicationContext();
         progressPercent = -1; startedAt = android.os.SystemClock.elapsedRealtime();
-        busy = true; cancelled = false; status = "正在准备转换为 ASTC 格式…";
+        busy = true; cancelled = false; status = Text.of("正在准备转换为 ASTC 格式…");
         worker.execute(() -> {
             File root = new File(app.getFilesDir(), "bem-installed");
             File folder = new File(root, generation);
@@ -598,7 +600,7 @@ final class BemInstaller {
                     rules = new String(bytes.toByteArray(), StandardCharsets.UTF_8);
                 } catch(Throwable ignored) {}
 
-                status = "正在转换为 ASTC 格式并流压缩…";
+                status = Text.of("正在转换为 ASTC 格式并流压缩…");
                 convertNative(bemFile.getAbsolutePath(), tempRepaired.getAbsolutePath(), rules, true);
                 if(tempRepaired.isFile() && tempRepaired.length() > 0) {
                     if(bemFile.delete() && tempRepaired.renameTo(bemFile)) {
@@ -630,16 +632,16 @@ final class BemInstaller {
                                 break;
                             }
                         }
-                        commitIndex(app, list.toString(), list, "保存 ASTC 转换索引失败");
+                        commitIndex(app, list.toString(), list, Text.of("保存 ASTC 转换索引失败"));
                         FrameworkSettings.publishBem(bemFile, remote);
-                        status = "「" + modelName + "」已成功转换为 ASTC 格式。重启游戏后生效。";
+                        status = Text.of("「") + modelName + Text.of("」已成功转换为 ASTC 格式。重启游戏后生效。");
                     } else {
-                        throw new IOException("无法替换转换后的模型包");
+                        throw new IOException(Text.of("无法替换转换后的模型包"));
                     }
                 }
             } catch(Throwable error) {
                 if(tempRepaired.exists()) tempRepaired.delete();
-                status = "ASTC 转换未完成：" + importError(error);
+                status = Text.of("ASTC 转换未完成：") + importError(error);
             } finally {
                 busy = false; progressPercent = -1;
             }
@@ -651,7 +653,7 @@ final class BemInstaller {
         if(busy) return false;
         Context app=context.getApplicationContext();
         progressPercent=-1;startedAt=android.os.SystemClock.elapsedRealtime();
-        busy=true;cancelled=false;status="正在扫描已安装模型包…";
+        busy=true;cancelled=false;status=Text.of("正在扫描已安装模型包…");
         worker.execute(()->{
             int total=0,repairedCount=0;
             try {
@@ -666,7 +668,7 @@ final class BemInstaller {
                     File folder=new File(root,gen);
                     File bemFile=new File(folder,"installed.bem");
                     if(!bemFile.isFile()) continue;
-                    status="正在检查并修复法线 ("+(i+1)+" / "+total+")："+name;
+                    status=Text.of("正在检查并修复法线 (")+(i+1)+" / "+total+Text.of(")：")+name;
                     progressPercent=(i*100)/Math.max(1,total);
                     File tempRepaired=new File(folder,"installed.bem.tmp");
                     try {
@@ -696,11 +698,11 @@ final class BemInstaller {
                     }
                 }
                 if(repairedCount>0) {
-                    commitIndex(app,list.toString(),list,"保存法线修复索引失败");
+                    commitIndex(app,list.toString(),list,Text.of("保存法线修复索引失败"));
                 }
-                status="法线修复完成：共扫描 "+total+" 个模型包，更新了 "+repairedCount+" 个包。重启游戏后生效。";
+                status=Text.of("法线修复完成：共扫描 ")+total+Text.of(" 个模型包，更新了 ")+repairedCount+Text.of(" 个包。重启游戏后生效。");
             } catch(Throwable error) {
-                status="法线修复未完成："+importError(error);
+                status=Text.of("法线修复未完成：")+importError(error);
             } finally {
                 busy=false;progressPercent=-1;
             }
@@ -709,15 +711,15 @@ final class BemInstaller {
     }
 
     static synchronized void disableAll(Context app) throws Exception {
-        if(busy) throw new IOException("请等待当前操作完成后修改");
+        if(busy) throw new IOException(Text.of("请等待当前操作完成后修改"));
         JSONArray entries=index(app),changes=new JSONArray();
         for(int i=0;i<entries.length();++i)
             changes.put(new JSONObject().put("generation",entries.getJSONObject(i).getString("generation")).put("enabled",false));
         saveAll(app,changes);
     }
     static synchronized void saveAll(Context app,JSONArray changes) throws Exception {
-        if(busy) throw new IOException("请等待当前操作完成后修改");
+        if(busy) throw new IOException(Text.of("请等待当前操作完成后修改"));
         JSONArray previous=index(app),entries=OverlayWritePolicy.apply(previous,changes);
-        commitIndex(app,previous.toString(),entries,"保存失败");
+        commitIndex(app,previous.toString(),entries,Text.of("保存失败"));
     }
 }

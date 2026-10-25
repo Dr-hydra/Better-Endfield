@@ -49,14 +49,14 @@ public final class MmdImportActivity extends Activity {
         scroll.setBackgroundColor(getColor(R.color.app_background));
         LinearLayout page = new LinearLayout(this); page.setOrientation(LinearLayout.VERTICAL);
         page.setPadding(dp(16), dp(16), dp(16), dp(24)); scroll.addView(page);
-        Button back = button("‹ 返回"); back.setOnClickListener(view -> { session.cancel(); finish(); });
+        Button back = button(Text.of("‹ 返回")); back.setOnClickListener(view -> { session.cancel(); finish(); });
         page.addView(back, SectionCard.stacked(this, 0));
-        TextView title = label("导入 MMD"); title.setTextSize(22); page.addView(title, SectionCard.stacked(this, 12));
-        Button archive = button("选择 ZIP / 7z"); archive.setOnClickListener(view -> pick(ARCHIVE));
+        TextView title = label(Text.of("导入 MMD")); title.setTextSize(22); page.addView(title, SectionCard.stacked(this, 12));
+        Button archive = button(Text.of("选择 ZIP / 7z")); archive.setOnClickListener(view -> pick(ARCHIVE));
         page.addView(archive, SectionCard.stacked(this, 12)); controls.add(archive);
-        Button directory = button("选择目录"); directory.setOnClickListener(view -> pick(DIRECTORY));
+        Button directory = button(Text.of("选择目录")); directory.setOnClickListener(view -> pick(DIRECTORY));
         page.addView(directory, SectionCard.stacked(this, 6)); controls.add(directory);
-        page.addView(label("作品"), SectionCard.stacked(this, 12));
+        page.addView(label(Text.of("作品")), SectionCard.stacked(this, 12));
         workPicker = new Spinner(this); workPicker.setBackgroundResource(R.drawable.bg_input); workPicker.setMinimumHeight(dp(52));
         page.addView(workPicker); controls.add(workPicker);
         workPicker.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -67,7 +67,7 @@ public final class MmdImportActivity extends Activity {
             }
             @Override public void onNothingSelected(AdapterView<?> parent) { }
         });
-        page.addView(label("作品名"), SectionCard.stacked(this, 12));
+        page.addView(label(Text.of("作品名")), SectionCard.stacked(this, 12));
         name = new EditText(this); name.setSingleLine(true); name.setTextColor(getColor(R.color.text_primary));
         name.setBackgroundResource(R.drawable.bg_input); name.setMinimumHeight(dp(52));
         name.setSaveEnabled(false); page.addView(name); controls.add(name);
@@ -82,19 +82,19 @@ public final class MmdImportActivity extends Activity {
         for (String slot : MmdImportPlan.SLOTS) {
             page.addView(label(slotLabel(slot)), SectionCard.stacked(this, 12));
             LinearLayout row = new LinearLayout(this); row.setOrientation(LinearLayout.HORIZONTAL);
-            Button choose = button("选择文件"); choose.setOnClickListener(view -> chooseSlot(slot));
+            Button choose = button(Text.of("选择文件")); choose.setOnClickListener(view -> chooseSlot(slot));
             row.addView(choose, new LinearLayout.LayoutParams(0, -2, 1)); slots.put(slot, choose); controls.add(choose);
-            Button clear = button("清空"); clear.setOnClickListener(view -> {
+            Button clear = button(Text.of("清空")); clear.setOnClickListener(view -> {
                 if (session.plan != null) { current().slots.remove(slot); renderWork(); }
             }); row.addView(clear); controls.add(clear); page.addView(row);
         }
         status = label(""); page.addView(status, SectionCard.stacked(this, 12));
-        confirm = button("导入"); confirm.setOnClickListener(view -> {
+        confirm = button(Text.of("导入")); confirm.setOnClickListener(view -> {
             if (session.plan == null) return;
             try {
                 MmdImportPlan.Work work = current();
                 session.plan.validate(work.name, work.slots);
-                if (!MmdInstaller.start(this, session, work.name, work.slots, work.settings)) session.status = "请等待当前操作完成";
+                if (!MmdInstaller.start(this, session, work.name, work.slots, work.settings)) session.status = Text.of("请等待当前操作完成");
             } catch (Exception error) { session.status = error.getMessage(); }
         }); page.addView(confirm, SectionCard.stacked(this, 12)); controls.add(confirm);
         setContentView(scroll);
@@ -112,26 +112,26 @@ public final class MmdImportActivity extends Activity {
         }
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
         try { startActivityForResult(intent, request); }
-        catch (android.content.ActivityNotFoundException error) { session.status = "文件选择器不可用"; }
+        catch (android.content.ActivityNotFoundException error) { session.status = Text.of("文件选择器不可用"); }
     }
     private void chooseSlot(String slot) {
         List<MmdImportPlan.Asset> candidates = new ArrayList<>();
         if (session.plan != null) for (MmdImportPlan.Asset asset : session.plan.assets) if (asset.supports(slot)) candidates.add(asset);
         String[] labels = new String[candidates.size() + 1];
-        labels[0] = "选择外部文件";
+        labels[0] = Text.of("选择外部文件");
         for (int i = 0; i < candidates.size(); i++) labels[i + 1] = candidates.get(i).label();
         new AlertDialog.Builder(this).setTitle(slotLabel(slot)).setItems(labels, (dialog, index) -> {
             if (session.busy || MmdInstaller.busy) return;
             if (index == 0) { pendingSlot = slot; pick(FILE); }
             else { current().slots.put(slot, candidates.get(index - 1).path); renderWork(); }
-        }).setNegativeButton("取消", null).show();
+        }).setNegativeButton(Text.of("取消"), null).show();
     }
     @Override protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
         if (result != RESULT_OK || data == null || data.getData() == null) return;
         if (request != ARCHIVE && request != DIRECTORY && request != FILE) return;
         String slot = request == FILE ? pendingSlot : null;
-        if (request == FILE && slot == null) { session.status = "请重新选择文件"; return; }
+        if (request == FILE && slot == null) { session.status = Text.of("请重新选择文件"); return; }
         session.prepare(this, data.getData(), data.getFlags(), request == DIRECTORY, slot);
         pendingSlot = null;
     }
@@ -157,12 +157,12 @@ public final class MmdImportActivity extends Activity {
         rendering = true; name.setText(current().name); rendering = false;
         for (String slot : MmdImportPlan.SLOTS) {
             MmdImportPlan.Asset asset = session.plan.asset(current().slots.get(slot));
-            slots.get(slot).setText(asset == null ? "选择文件" : asset.display());
+            slots.get(slot).setText(asset == null ? Text.of("选择文件") : asset.display());
         }
         StringBuilder summary = new StringBuilder();
         for (Map.Entry<String, String> selected : current().slots.entrySet()) {
             MmdImportPlan.Asset asset = session.plan.asset(selected.getValue());
-            if (asset != null) summary.append(slotLabel(selected.getKey())).append("：").append(asset.label()).append('\n');
+            if (asset != null) summary.append(slotLabel(selected.getKey())).append(Text.of("：")).append(asset.label()).append('\n');
         }
         for (String warning : session.plan.warnings) summary.append(warning).append('\n');
         results.setText(summary); results.setVisibility(summary.length() == 0 ? View.GONE : View.VISIBLE);
@@ -180,9 +180,9 @@ public final class MmdImportActivity extends Activity {
         super.onDestroy();
     }
     private static String slotLabel(String slot) {
-        if (slot.equals("camera")) return "镜头"; if (slot.equals("music")) return "音乐";
+        if (slot.equals("camera")) return Text.of("镜头"); if (slot.equals("music")) return Text.of("音乐");
         String number = slot.replaceAll("[^0-9]", "");
-        return (slot.startsWith("motion") ? "动作" : "表情") + (number.isEmpty() ? "" : " " + number);
+        return (slot.startsWith("motion") ? Text.of("动作") : Text.of("表情")) + (number.isEmpty() ? "" : " " + number);
     }
     private Button button(String text) {
         Button button = new Button(this); button.setText(text); button.setAllCaps(false);

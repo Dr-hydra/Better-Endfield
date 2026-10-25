@@ -69,83 +69,83 @@ public final class MediaScreenActivity extends Activity {
             }
         });
 
-        Button back = ghostButton("‹ 返回");
+        Button back = ghostButton(Text.of("‹ 返回"));
         back.setOnClickListener(v -> finish());
         page.addView(back, SectionCard.stacked(this, 0));
 
         TextView title = new TextView(this);
-        title.setText("会客室媒体屏");
+        title.setText(Text.of("会客室媒体屏"));
         title.setTextSize(22);
         title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         title.setTextColor(getColor(R.color.text_primary));
         page.addView(title, SectionCard.stacked(this, 12));
 
         // Card 1: 功能状态
-        SectionCard cardEnable = new SectionCard(this, "", "功能状态", "");
-        enabled = new SettingRow(this, "启用媒体屏", "在帝江号会客室替换屏幕显示自选媒体内容", null);
+        SectionCard cardEnable = new SectionCard(this, "", Text.of("功能状态"), "");
+        enabled = new SettingRow(this, Text.of("启用媒体屏"), Text.of("在帝江号会客室替换屏幕显示自选媒体内容"), null);
         cardEnable.add(enabled);
         page.addView(cardEnable, SectionCard.stacked(this, 12));
 
         // Card 2: 媒体内容与文件
-        SectionCard cardSource = new SectionCard(this, "", "媒体内容", "");
-        cardSource.addGroupLabel("媒体来源类型");
-        source = styledSpinner(new String[]{"单张图片", "图片轮播", "视频文件"});
+        SectionCard cardSource = new SectionCard(this, "", Text.of("媒体内容"), "");
+        cardSource.addGroupLabel(Text.of("媒体来源类型"));
+        source = styledSpinner(new String[]{Text.of("单张图片"), Text.of("图片轮播"), Text.of("视频文件")});
         cardSource.add(source);
 
-        choose = primaryButton("导入媒体文件");
+        choose = primaryButton(Text.of("导入媒体文件"));
         cardSource.add(choose);
 
-        state = label("未选择文件");
+        state = label(Text.of("未选择文件"));
         state.setPadding(dp(4), dp(4), dp(4), dp(8));
         cardSource.add(state);
 
-        audio = new SettingRow(this, "播放视频声音", "启用视频内置音频流", null);
-        loop = new SettingRow(this, "循环播放", "视频结束或图片轮播到末尾时自动重新循环", null);
+        audio = new SettingRow(this, Text.of("播放视频声音"), Text.of("启用视频内置音频流"), null);
+        loop = new SettingRow(this, Text.of("循环播放"), Text.of("视频结束或图片轮播到末尾时自动重新循环"), null);
         cardSource.add(audio);
         cardSource.add(loop);
 
-        interval = edit(cardSource, "轮播间隔（秒）", "10");
-        gain = edit(cardSource, "音量（0.0 - 2.0）", "1");
+        interval = edit(cardSource, Text.of("轮播间隔（秒）"), "10");
+        gain = edit(cardSource, Text.of("音量（0.0 - 2.0）"), "1");
         page.addView(cardSource, SectionCard.stacked(this, 12));
 
         // Card 3: 屏幕投屏与适配
-        SectionCard cardScreen = new SectionCard(this, "", "投屏与适配", "");
-        wallScreen = new SettingRow(this, "大屏投屏（墙面轮播屏）", "接管会客室主墙壁大显示屏", null);
-        deskScreen = new SettingRow(this, "小屏投屏（桌面电脑）", "接管会客室桌面电脑显示屏", null);
+        SectionCard cardScreen = new SectionCard(this, "", Text.of("投屏与适配"), "");
+        wallScreen = new SettingRow(this, Text.of("大屏投屏（墙面轮播屏）"), Text.of("接管会客室主墙壁大显示屏"), null);
+        deskScreen = new SettingRow(this, Text.of("小屏投屏（桌面电脑）"), Text.of("接管会客室桌面电脑显示屏"), null);
         cardScreen.add(wallScreen);
         cardScreen.add(deskScreen);
 
-        cardScreen.addGroupLabel("小屏画面适配");
-        deskFit = styledSpinner(new String[]{"完整显示（保持比例，留黑边）", "裁剪填满（保持比例）", "拉伸填满"});
+        cardScreen.addGroupLabel(Text.of("小屏画面适配"));
+        deskFit = styledSpinner(new String[]{Text.of("完整显示（保持比例，留黑边）"), Text.of("裁剪填满（保持比例）"), Text.of("拉伸填满")});
         cardScreen.add(deskFit);
 
-        target = edit(cardScreen, "屏幕对象路径", "ReceptionRoomImagePoster");
+        target = edit(cardScreen, Text.of("屏幕对象路径"), "ReceptionRoomImagePoster");
         page.addView(cardScreen, SectionCard.stacked(this, 12));
 
         // Card 4: 分辨率与控制
-        SectionCard cardRender = new SectionCard(this, "", "分辨率与控制", "");
-        cardRender.addGroupLabel("输出分辨率");
-        resolution = styledSpinner(new String[]{"720p · 1280 × 720", "1080p · 1920 × 1080", "1440p · 2560 × 1440", "4K · 3840 × 2160", "自定义"});
+        SectionCard cardRender = new SectionCard(this, "", Text.of("分辨率与控制"), "");
+        cardRender.addGroupLabel(Text.of("输出分辨率"));
+        resolution = styledSpinner(new String[]{"720p · 1280 × 720", "1080p · 1920 × 1080", "1440p · 2560 × 1440", "4K · 3840 × 2160", Text.of("自定义")});
         cardRender.add(resolution);
 
         customResolution = new LinearLayout(this);
         customResolution.setOrientation(LinearLayout.VERTICAL);
-        width = edit(customResolution, "画布宽度", "1920");
-        height = edit(customResolution, "画布高度", "1080");
+        width = edit(customResolution, Text.of("画布宽度"), "1920");
+        height = edit(customResolution, Text.of("画布高度"), "1080");
         cardRender.add(customResolution);
 
-        toggleHotkey = edit(cardRender, "启停快捷键", "-");
-        pauseHotkey = edit(cardRender, "暂停／继续快捷键", "");
+        toggleHotkey = edit(cardRender, Text.of("启停快捷键"), "-");
+        pauseHotkey = edit(cardRender, Text.of("暂停／继续快捷键"), "");
         page.addView(cardRender, SectionCard.stacked(this, 12));
 
         // Save Button & Hint
-        saveButton = primaryButton("保存设置");
+        saveButton = primaryButton(Text.of("保存设置"));
         saveButton.setOnClickListener(v -> {
-            if (save()) Toast.makeText(this, "媒体屏设置已保存，冷重启游戏后生效", Toast.LENGTH_SHORT).show();
+            if (save()) Toast.makeText(this, Text.of("媒体屏设置已保存，冷重启游戏后生效"), Toast.LENGTH_SHORT).show();
         });
         page.addView(saveButton, SectionCard.stacked(this, 16));
 
-        TextView hint = label("注意：修改设置后需彻底强制停止并重新启动游戏。");
+        TextView hint = label(Text.of("注意：修改设置后需彻底强制停止并重新启动游戏。"));
         hint.setTextColor(getColor(R.color.text_muted));
         hint.setGravity(Gravity.CENTER_HORIZONTAL);
         page.addView(hint, SectionCard.stacked(this, 8));
@@ -342,7 +342,7 @@ public final class MediaScreenActivity extends Activity {
             String destination = target.getText().toString().trim();
             if (!Double.isFinite(seconds) || seconds < 1 || seconds > 3600 || !Double.isFinite(volume) || volume < 0 || volume > 2 ||
                 outputWidth < 64 || outputHeight < 64 || outputWidth > 3840 || outputHeight > 3840 || (long)outputWidth * outputHeight > 3840L * 2160 ||
-                destination.isEmpty() || destination.contains("\n") || destination.contains("\r") || destination.indexOf('\0') >= 0) throw new IllegalArgumentException("设置值无效");
+                destination.isEmpty() || destination.contains("\n") || destination.contains("\r") || destination.indexOf('\0') >= 0) throw new IllegalArgumentException(Text.of("设置值无效"));
             String type = new String[]{"image", "slideshow", "video"}[source.getSelectedItemPosition()];
             String ini = "enabled=" + enabled.isChecked() + "\nsource=" + type + "\nsource_path=" + selectedPath + "\nimage_paths=" + selectedImages +
                 "\nwall_screen_enabled=" + wallScreen.isChecked() + "\ndesk_screen_enabled=" + deskScreen.isChecked() +
@@ -350,7 +350,7 @@ public final class MediaScreenActivity extends Activity {
                 "\ntarget_object=" + destination + "\naudio_enabled=" + audio.isChecked() + "\nloop=" + loop.isChecked() +
                 "\nslide_interval=" + seconds + "\ngain=" + volume + "\nwidth=" + outputWidth + "\nheight=" + outputHeight + "\nfps=" + captureFps + "\ntoggle_hotkey=" + hotkey(toggleHotkey) + "\npause_hotkey=" + hotkey(pauseHotkey) + "\n";
             if (!settings.edit().putString(ModuleSettings.MEDIA_SETTINGS, ini)
-                    .putString(ModuleSettings.MEDIA_CONFIGURATION, enabled.isChecked() ? ini : "").commit()) throw new IOException("设置保存失败");
+                    .putString(ModuleSettings.MEDIA_CONFIGURATION, enabled.isChecked() ? ini : "").commit()) throw new IOException(Text.of("设置保存失败"));
             refresh();
             return true;
         } catch (Exception error) {
@@ -362,13 +362,13 @@ public final class MediaScreenActivity extends Activity {
     private void refresh() {
         if (source.getSelectedItemPosition() == 1) {
             int count = selectedImages.isEmpty() ? 0 : selectedImages.split("\\|").length;
-            state.setText(count > 0 ? "已选择 " + count + " 张轮播图片" : "未选择轮播图片");
+            state.setText(count > 0 ? Text.of("已选择 ") + count + Text.of(" 张轮播图片") : Text.of("未选择轮播图片"));
         } else {
             if (selectedPath.isEmpty()) {
-                state.setText("未选择媒体文件");
+                state.setText(Text.of("未选择媒体文件"));
             } else {
                 String filename = selectedPath.startsWith("@") ? selectedPath.substring(1) : selectedPath;
-                state.setText("已就绪：" + filename);
+                state.setText(Text.of("已就绪：") + filename);
             }
         }
     }
@@ -379,7 +379,7 @@ public final class MediaScreenActivity extends Activity {
         if (text.equals("+")) text = "PLUS";
         else if (text.endsWith("++")) text = text.substring(0, text.length() - 1) + "PLUS";
         if (!text.matches("NONE|(?:(?:CTRL|ALT|SHIFT|WIN)\\+)*(?:[A-Z0-9]|-|=|PLUS|MINUS|OEM_MINUS|OEM_PLUS|ENTER|NUMPAD_ENTER|SPACE|TAB|ESC|ADD|SUBTRACT|MULTIPLY|DIVIDE|DECIMAL|UP|DOWN|LEFT|RIGHT|NUMPAD[0-9]|F(?:[1-9]|1[0-9]|2[0-4]))"))
-            throw new IllegalArgumentException("快捷键无效");
+            throw new IllegalArgumentException(Text.of("快捷键无效"));
         return text;
     }
 
@@ -417,49 +417,49 @@ public final class MediaScreenActivity extends Activity {
         if (uris.isEmpty()) return;
         int mode = source.getSelectedItemPosition();
         setBusy(true);
-        state.setText("导入中...");
+        state.setText(Text.of("导入中..."));
         new Thread(() -> {
             ArrayList<String> tokens = new ArrayList<>();
             ArrayList<File> imported = new ArrayList<>();
             try {
                 FrameworkSettings.awaitConnection();
                 JSONArray manifest = new JSONArray(settings.getString(MediaScreenFiles.INDEX, "[]"));
-                if (manifest.length() + uris.size() > 256) throw new IOException("媒体文件数量已达上限");
+                if (manifest.length() + uris.size() > 256) throw new IOException(Text.of("媒体文件数量已达上限"));
                 File root = new File(getFilesDir(), "media-screen");
-                if (!root.isDirectory() && !root.mkdirs()) throw new IOException("无法创建媒体目录");
+                if (!root.isDirectory() && !root.mkdirs()) throw new IOException(Text.of("无法创建媒体目录"));
                 for (Uri uri : uris) {
                     String mime = getContentResolver().getType(uri);
                     String extension = "image/png".equals(mime) ? ".png" : "image/jpeg".equals(mime) ? ".jpg" : "video/mp4".equals(mime) ? ".mp4" : "";
-                    if (extension.isEmpty() || (mode == 2) != extension.equals(".mp4")) throw new IOException("请选择 PNG、JPEG 或 MP4 文件");
+                    if (extension.isEmpty() || (mode == 2) != extension.equals(".mp4")) throw new IOException(Text.of("请选择 PNG、JPEG 或 MP4 文件"));
                     String name = "media-" + UUID.randomUUID() + extension;
                     File file = new File(root, name);
                     imported.add(file);
                     try (InputStream input = getContentResolver().openInputStream(uri); FileOutputStream output = new FileOutputStream(file)) {
-                        if (input == null) throw new IOException("无法读取所选文件");
+                        if (input == null) throw new IOException(Text.of("无法读取所选文件"));
                         byte[] buffer = new byte[65536];
                         long total = 0;
                         int count;
                         long limit = mode == 2 ? 512L * 1024 * 1024 : 32L * 1024 * 1024;
                         while ((count = input.read(buffer)) != -1) {
                             total += count;
-                            if (total > limit) throw new IOException("文件过大");
+                            if (total > limit) throw new IOException(Text.of("文件过大"));
                             output.write(buffer, 0, count);
                         }
-                        if (total == 0) throw new IOException("文件为空");
+                        if (total == 0) throw new IOException(Text.of("文件为空"));
                         output.getFD().sync();
                     }
                     FrameworkSettings.publishMedia(file, name);
                     manifest.put(new JSONObject().put("remote", name).put("bytes", file.length()));
                     tokens.add("@" + name);
                 }
-                if (!settings.edit().putString(MediaScreenFiles.INDEX, manifest.toString()).commit()) throw new IOException("媒体索引保存失败");
+                if (!settings.edit().putString(MediaScreenFiles.INDEX, manifest.toString()).commit()) throw new IOException(Text.of("媒体索引保存失败"));
                 runOnUiThread(() -> {
                     if (mode == 1) selectedImages = String.join("|", tokens);
                     else selectedPath = tokens.get(0);
                     setBusy(false);
                     if (save()) {
-                        state.setText("导入完成");
-                        Toast.makeText(this, "媒体导入完成并已自动保存", Toast.LENGTH_SHORT).show();
+                        state.setText(Text.of("导入完成"));
+                        Toast.makeText(this, Text.of("媒体导入完成并已自动保存"), Toast.LENGTH_SHORT).show();
                     }
                 });
             } catch (Exception error) {
@@ -469,7 +469,7 @@ public final class MediaScreenActivity extends Activity {
                 }
                 runOnUiThread(() -> {
                     setBusy(false);
-                    state.setText("导入失败：" + error.getMessage());
+                    state.setText(Text.of("导入失败：") + error.getMessage());
                 });
             }
         }, "BetterEndfieldNext-MediaImport").start();

@@ -86,10 +86,10 @@ final class OverlaySettingsClient {
             if (revision != null) request.putString("expected", revision);
             if (patch != null) request.putString("patch", patch);
             reply = app.getContentResolver().call(Uri.parse("content://" + OverlaySettingsProvider.AUTHORITY), method, null, request);
-            if (reply == null) throw new IllegalStateException("设置桥不可用");
+            if (reply == null) throw new IllegalStateException(Text.of("设置桥不可用"));
         } catch (RuntimeException error) {
             reply = new Bundle(); reply.putBoolean("ok", false);
-            reply.putString("error", error instanceof SecurityException ? "设置桥授权检查未通过，请重试" : "设置桥不可用");
+            reply.putString("error", error instanceof SecurityException ? Text.of("设置桥授权检查未通过，请重试") : Text.of("设置桥不可用"));
             reply.putString("error_code", error instanceof SecurityException ? "caller_rejected" : "transport_" + error.getClass().getSimpleName());
         }
         return new Exchange(reply, authorizationState);

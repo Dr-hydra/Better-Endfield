@@ -15,7 +15,7 @@ final class MmdImportPlan {
         Asset(String path, MmdVmdParser.Sections vmd) { this.path = path; this.vmd = vmd; }
         boolean supports(String slot) { return vmd == null ? "music".equals(slot) : vmd.supports(slot); }
         String display() { return path.replaceFirst("^import-[a-f0-9-]{36}/", ""); }
-        String label() { return display() + (vmd == null ? " · 音乐" : " · " + vmd.label().trim()); }
+        String label() { return display() + (vmd == null ? Text.of(" · 音乐") : " · " + vmd.label().trim()); }
     }
     static final class Work {
         String name;
@@ -37,7 +37,7 @@ final class MmdImportPlan {
             String lower = path.toLowerCase(Locale.ROOT);
             if (lower.endsWith(".vmd")) {
                 try { plan.assets.add(new Asset(path, MmdVmdParser.read(MmdImportArchive.target(root, path)))); }
-                catch (IOException invalid) { plan.warnings.add(path + "：" + invalid.getMessage()); }
+                catch (IOException invalid) { plan.warnings.add(path + Text.of("：") + invalid.getMessage()); }
             } else if (lower.matches(".*\\.(mp3|wav|ogg|m4a|aac|flac|opus)")) plan.assets.add(new Asset(path, null));
             else if (base(path).equalsIgnoreCase("set.ini")) sets.add(path);
         }
@@ -54,12 +54,12 @@ final class MmdImportPlan {
                     String path = MmdImportArchive.path(ref);
                     path = directory.isEmpty() ? path : directory + "/" + path;
                     Asset asset = plan.asset(path);
-                    if (asset == null || !asset.supports(slot)) throw new IOException(slot + " 引用缺失或类型不符：" + ref);
+                    if (asset == null || !asset.supports(slot)) throw new IOException(slot + Text.of(" 引用缺失或类型不符：") + ref);
                     work.slots.put(slot, asset.path);
                 }
                 requirePlayable(work.slots);
                 plan.works.add(work); covered.add(directory);
-            } catch (IOException invalid) { plan.warnings.add(set + "：" + invalid.getMessage()); }
+            } catch (IOException invalid) { plan.warnings.add(set + Text.of("：") + invalid.getMessage()); }
         }
         List<Asset> unassigned = new ArrayList<>();
         for (Asset asset : plan.assets) {
@@ -89,7 +89,7 @@ final class MmdImportPlan {
             plan.works.add(work);
         }
         if (plan.works.isEmpty()) plan.works.add(new Work("MMD"));
-        if (plan.works.size() > 512) throw new IOException("识别作品超过 512 个");
+        if (plan.works.size() > 512) throw new IOException(Text.of("识别作品超过 512 个"));
         return plan;
     }
     private void unique(Work work, List<Asset> assets, String slot, String scope) {
@@ -105,17 +105,17 @@ final class MmdImportPlan {
         return null;
     }
     void validate(String name, Map<String, String> slots) throws IOException {
-        safeValue(name); if (name.trim().isEmpty() || name.length() > 120) throw new IOException("请输入作品名（最多 120 字）");
+        safeValue(name); if (name.trim().isEmpty() || name.length() > 120) throw new IOException(Text.of("请输入作品名（最多 120 字）"));
         requirePlayable(slots); long total = 0; Set<String> used = new HashSet<>();
         for (String slot : SLOTS) {
             String path = slots.get(slot); if (path == null || path.isEmpty()) continue;
             Asset asset = asset(path);
-            if (asset == null || !asset.supports(slot)) throw new IOException("资源类型不符：" + slot);
+            if (asset == null || !asset.supports(slot)) throw new IOException(Text.of("资源类型不符：") + slot);
             File file = MmdImportArchive.target(root, path);
-            if (!file.isFile() || file.length() <= 0 || file.length() > MmdImportArchive.limit(path)) throw new IOException("资源缺失或长度异常：" + path);
+            if (!file.isFile() || file.length() <= 0 || file.length() > MmdImportArchive.limit(path)) throw new IOException(Text.of("资源缺失或长度异常：") + path);
             if (used.add(path)) total += file.length();
         }
-        if (total > MmdImportArchive.MAX_TOTAL - 16384) throw new IOException("作品超过 1 GiB");
+        if (total > MmdImportArchive.MAX_TOTAL - 16384) throw new IOException(Text.of("作品超过 1 GiB"));
     }
     byte[] generate(String name, Map<String, String> slots, Map<String, String> extra,
                     Map<String, String> filenames) throws IOException {
@@ -132,7 +132,7 @@ final class MmdImportPlan {
             ini.append(option.getKey()).append('=').append(option.getValue()).append('\n');
         }
         byte[] bytes = ini.toString().getBytes(StandardCharsets.UTF_8);
-        if (bytes.length > 16384) throw new IOException("set.ini 过大");
+        if (bytes.length > 16384) throw new IOException(Text.of("set.ini 过大"));
         return bytes;
     }
     static Map<String, String> parseSet(String text) throws IOException {
@@ -142,31 +142,31 @@ final class MmdImportPlan {
             if (line.isEmpty() || line.startsWith(";") || line.startsWith("#") || line.startsWith("[")) continue;
             int equals = line.indexOf('='); if (equals < 0) continue;
             String key = line.substring(0, equals).trim().toLowerCase(Locale.ROOT), value = line.substring(equals + 1).trim();
-            if (key.matches("motion[0-9]+|face[0-9]+") && !key.matches("motion[2-4]|face[2-4]")) throw new IOException("仅支持动作/表情 1–4");
+            if (key.matches("motion[0-9]+|face[0-9]+") && !key.matches("motion[2-4]|face[2-4]")) throw new IOException(Text.of("仅支持动作/表情 1–4"));
             safeValue(key); safeValue(value);
-            if (values.put(key, value) != null) throw new IOException("重复字段：" + key);
+            if (values.put(key, value) != null) throw new IOException(Text.of("重复字段：") + key);
         }
         return values;
     }
     private static void requirePlayable(Map<String, String> slots) throws IOException {
         if (slots.getOrDefault("motion", "").isEmpty() && slots.getOrDefault("camera", "").isEmpty())
-            throw new IOException("请选择动作或镜头");
+            throw new IOException(Text.of("请选择动作或镜头"));
     }
     private static void safeValue(String value) throws IOException {
-        if (value == null) throw new IOException("缺少配置值");
-        for (int i = 0; i < value.length(); i++) if (value.charAt(i) < 32 || value.charAt(i) == 127) throw new IOException("配置值包含控制字符");
+        if (value == null) throw new IOException(Text.of("缺少配置值"));
+        for (int i = 0; i < value.length(); i++) if (value.charAt(i) < 32 || value.charAt(i) == 127) throw new IOException(Text.of("配置值包含控制字符"));
     }
     private static void scan(File root, File directory, List<String> paths, int depth, MmdImportArchive.Budget budget) throws IOException {
-        if (depth > MmdImportArchive.MAX_DEPTH) throw new IOException("目录层级过深");
-        File[] files = directory.listFiles(); if (files == null) throw new IOException("无法读取缓存资料");
+        if (depth > MmdImportArchive.MAX_DEPTH) throw new IOException(Text.of("目录层级过深"));
+        File[] files = directory.listFiles(); if (files == null) throw new IOException(Text.of("无法读取缓存资料"));
         for (File file : files) {
-            if (java.nio.file.Files.isSymbolicLink(file.toPath())) throw new IOException("不支持符号链接");
+            if (java.nio.file.Files.isSymbolicLink(file.toPath())) throw new IOException(Text.of("不支持符号链接"));
             String path = root.toPath().relativize(file.toPath()).toString().replace('\\', '/');
             MmdImportArchive.path(path); budget.entry(path);
             if (file.isDirectory()) scan(root, file, paths, depth + 1, budget);
             else {
                 budget.bytes += file.length();
-                if (budget.bytes > MmdImportArchive.MAX_TOTAL || file.length() > MmdImportArchive.limit(path)) throw new IOException("资料长度超限：" + path);
+                if (budget.bytes > MmdImportArchive.MAX_TOTAL || file.length() > MmdImportArchive.limit(path)) throw new IOException(Text.of("资料长度超限：") + path);
                 paths.add(path);
             }
         }
@@ -175,10 +175,10 @@ final class MmdImportPlan {
     static String base(String path) { return path.substring(path.lastIndexOf('/') + 1); }
     static String stem(String path) { String name = base(path); int dot = name.lastIndexOf('.'); return dot < 0 ? name : name.substring(0, dot); }
     private static byte[] readSmall(File file) throws IOException {
-        if (file.length() > 16384) throw new IOException("set.ini 过大");
+        if (file.length() > 16384) throw new IOException(Text.of("set.ini 过大"));
         try (InputStream in = new FileInputStream(file); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[1024]; int count;
-            while ((count = in.read(buffer)) != -1) { if (out.size() + count > 16384) throw new IOException("set.ini 过大"); out.write(buffer, 0, count); }
+            while ((count = in.read(buffer)) != -1) { if (out.size() + count > 16384) throw new IOException(Text.of("set.ini 过大")); out.write(buffer, 0, count); }
             return out.toByteArray();
         }
     }

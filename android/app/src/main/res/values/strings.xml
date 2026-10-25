@@ -17,6 +17,7 @@
     <string name="sponsor_wechat">微信赞赏</string>
     <string name="sponsor_afdian">爱发电</string>
     <string name="sponsor_paypal">PayPal</string>
+    <string name="sponsor_kofi">Ko-fi</string>
     <string name="sponsor_close">关闭</string>
     <string name="sponsor_save">保存赞赏码</string>
     <string name="sponsor_saving">保存中…</string>
@@ -215,4 +216,18 @@
     <string name="camera_keyframe_loop">循环播放关键帧</string>
     <string name="camera_keyframe_loop_hint">关键帧路径播放到结尾后重新播放。</string>
     <string name="camera_keyframe_file_hint">关键帧文件保存在游戏内部存储的 betterendfieldnext/camera-path.becam。保存和加载由游戏悬浮窗执行，结果以悬浮窗状态为准。</string>
+
+    <!-- third-party model page (layout/view_bem_install.xml) -->
+    <string name="bem_import">导入 BEM / ZIP</string>
+    <string name="bem_hot_switch">实验：模型热切换</string>
+    <string name="bem_skip_validation">实验：关闭模型校验</string>
+    <string name="bem_models_title">获取模型</string>
+    <string name="bem_models_quark">夸克网盘</string>
+    <string name="bem_models_baidu">百度网盘</string>
+    <string name="bem_models_katfile">Katfile 网盘</string>
+    <string name="bem_incoming_retry">导入收到的文件</string>
+    <string name="bem_incoming_dismiss">忽略此次打开</string>
+    <string name="bem_status_ready">就绪</string>
+    <string name="bem_cancel">取消当前操作</string>
+    <string name="mmd_import_label">导入 MMD 作品</string>
 </resources>

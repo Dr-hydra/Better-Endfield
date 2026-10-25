@@ -19,13 +19,13 @@ final class OverlayModelCatalogState {
     String index() { return index; }
     String revision() { return revision; }
     int version() { return version; }
-    String message() { return hasError() ? "模型列表读取失败：" + error : "正在读取模型列表"; }
+    String message() { return hasError() ? Text.of("模型列表读取失败：") + error : Text.of("正在读取模型列表"); }
 
     boolean succeed(long request, String value, String nextRevision) {
         if (!isCurrent(request)) return false;
         if (value == null || nextRevision == null || nextRevision.isEmpty())
-            return fail(request, "设置桥返回的数据不完整");
-        if (value.length() > 200_000) return fail(request, "模型列表超出桥接大小限制");
+            return fail(request, Text.of("设置桥返回的数据不完整"));
+        if (value.length() > 200_000) return fail(request, Text.of("模型列表超出桥接大小限制"));
         if (known && !hasError() && index.equals(value) && revision.equals(nextRevision)) return true;
         try {
             JSONArray entries = new JSONArray(value);
@@ -37,7 +37,7 @@ final class OverlayModelCatalogState {
                 BemOptions.targetKey(entry);
             }
         }
-        catch (Exception invalid) { return fail(request, "模型列表格式不可用"); }
+        catch (Exception invalid) { return fail(request, Text.of("模型列表格式不可用")); }
         if (!known || !index.equals(value) || !revision.equals(nextRevision) || hasError()) ++version;
         known = true; index = value; revision = nextRevision; error = "";
         return true;
@@ -45,7 +45,7 @@ final class OverlayModelCatalogState {
 
     boolean fail(long request, String reason) {
         if (!isCurrent(request)) return false;
-        String next = reason == null || reason.trim().isEmpty() ? "设置桥不可用" : reason.trim();
+        String next = reason == null || reason.trim().isEmpty() ? Text.of("设置桥不可用") : reason.trim();
         if (next.length() > 160) next = next.substring(0, 160);
         if (!error.equals(next) || !revision.isEmpty()) ++version;
         // Retain a previously fetched list for display, but never reuse its

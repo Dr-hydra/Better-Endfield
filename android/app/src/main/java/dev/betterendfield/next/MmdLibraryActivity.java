@@ -71,7 +71,7 @@ public final class MmdLibraryActivity extends Activity {
             keyframeLoop.setAvailable(available);
             for (EditText field : advancedEdits()) field.setEnabled(available);
             String message = indexError == null ? MmdInstaller.status : indexError;
-            boolean error = indexError != null || message.contains("失败") || message.contains("未完成");
+            boolean error = indexError != null || MmdInstaller.failed;
             status.setText(message);
             status.setVisibility(MmdInstaller.busy || error ? View.VISIBLE : View.GONE);
             handler.postDelayed(this, 500);
@@ -88,7 +88,7 @@ public final class MmdLibraryActivity extends Activity {
         page.setPadding(dp(16), dp(16), dp(16), dp(24));
         scroll.addView(page);
 
-        Button back = button("‹ 返回相机设置");
+        Button back = button(Text.of("‹ 返回相机设置"));
         back.setOnClickListener(view -> finish());
         page.addView(back, SectionCard.stacked(this, 0));
 
@@ -109,12 +109,12 @@ public final class MmdLibraryActivity extends Activity {
         selectedWork.setMinimumHeight(dp(52));
         selectedWork.setContentDescription(getString(R.string.mmd_active_work));
         settings.add(selectedWork);
-        loop = new SettingRow(this, getString(R.string.mmd_loop), "作品结束后重新播放。", null);
+        loop = new SettingRow(this, getString(R.string.mmd_loop), Text.of("作品结束后重新播放。"), null);
         loop.initialize(ModuleSettings.isMmdLoop(this));
         loop.onChanged((button, checked) -> saveSettings());
         settings.add(loop);
         music = new SettingRow(this, getString(R.string.mmd_music),
-                "作品需在 set.ini 中配置 music 文件。音频会叠加游戏背景音乐，建议先关闭游戏 BGM。", null);
+                Text.of("作品需在 set.ini 中配置 music 文件。音频会叠加游戏背景音乐，建议先关闭游戏 BGM。"), null);
         music.initialize(ModuleSettings.isMmdMusicEnabled(this));
         music.onChanged((button, checked) -> saveSettings());
         settings.add(music);
@@ -137,7 +137,7 @@ public final class MmdLibraryActivity extends Activity {
                 getString(R.string.camera_advanced_hint));
         selectedPreset = extras.preset();
         motionPreset = selection(advanced, R.string.camera_motion_preset,
-                new String[]{"Orbit · 环绕", "DollyZoom · 滑动变焦", "Crane · 升降", "Truck · 平移"},
+                new String[]{Text.of("Orbit · 环绕"), Text.of("DollyZoom · 滑动变焦"), Text.of("Crane · 升降"), Text.of("Truck · 平移")},
                 ModuleSettings.choice(ModuleSettings.MOTION_PRESETS, selectedPreset, 0));
         smoothing = edit(advanced, R.string.camera_smoothing, ModuleSettings.number(extras.smoothing()), false);
         motionSpeed = edit(advanced, R.string.camera_motion_speed, ModuleSettings.number(extras.motionSpeed()), true);
@@ -150,7 +150,7 @@ public final class MmdLibraryActivity extends Activity {
                 R.string.camera_keyframe_loop_hint, extras.keyframeLoop());
         page.addView(advanced, SectionCard.stacked(this, 12));
 
-        SectionCard library = new SectionCard(this, "LIBRARY", "导入与管理", "");
+        SectionCard library = new SectionCard(this, "LIBRARY", Text.of("导入与管理"), "");
         importButton = button(getString(R.string.mmd_import));
         importButton.setOnClickListener(view -> {
             flushEdits();
@@ -294,8 +294,8 @@ public final class MmdLibraryActivity extends Activity {
     private double valid(EditText field, double minimum, double maximum, String previous, double fallback) {
         double value = ModuleSettings.parse(field.getText().toString(), Double.NaN);
         if (!Double.isFinite(value) || value < minimum || value > maximum) {
-            field.setError("范围 " + ModuleSettings.number(minimum) + "–" + ModuleSettings.number(maximum)
-                    + "；保留上次有效值");
+            field.setError(Text.of("范围 ") + ModuleSettings.number(minimum) + "–" + ModuleSettings.number(maximum)
+                    + Text.of("；保留上次有效值"));
             return ModuleSettings.parse(previous, fallback);
         }
         field.setError(null);
@@ -364,7 +364,7 @@ public final class MmdLibraryActivity extends Activity {
                     Button publish = button(getString(R.string.mmd_publish));
                     publish.setOnClickListener(view -> {
                         flushEdits();
-                        if (!MmdInstaller.republish(this, generation)) toast("请等待当前作品操作完成");
+                        if (!MmdInstaller.republish(this, generation)) toast(Text.of("请等待当前作品操作完成"));
                     });
                     works.addView(publish, SectionCard.stacked(this, 6)); workButtons.add(publish);
                     Button remove = button(getString(R.string.mmd_remove));
@@ -373,13 +373,13 @@ public final class MmdLibraryActivity extends Activity {
                             .setNegativeButton(android.R.string.cancel, null)
                             .setPositiveButton(R.string.mmd_remove, (dialog, which) -> {
                                 flushEdits();
-                                if (!MmdInstaller.remove(this, generation)) toast("请等待当前作品操作完成");
+                                if (!MmdInstaller.remove(this, generation)) toast(Text.of("请等待当前作品操作完成"));
                             }).show());
                     works.addView(remove, SectionCard.stacked(this, 6)); workButtons.add(remove);
                 }
                 if (entries.length() == 0) {
                     TextView empty = label(0);
-                    empty.setText("暂无作品");
+                    empty.setText(Text.of("暂无作品"));
                     works.addView(empty);
                 }
                 ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
@@ -392,7 +392,7 @@ public final class MmdLibraryActivity extends Activity {
                 indexError = null;
             } finally { initializing = wasInitializing; }
         } catch (Exception error) {
-            indexError = "无法读取作品库：" + error.getMessage();
+            indexError = Text.of("无法读取作品库：") + error.getMessage();
         }
     }
 
@@ -414,7 +414,7 @@ public final class MmdLibraryActivity extends Activity {
     }
 
     private void toast(String text) {
-        Toast.makeText(this, text == null ? "操作失败" : text, Toast.LENGTH_LONG).show();
+        Toast.makeText(this, text == null ? Text.of("操作失败") : text, Toast.LENGTH_LONG).show();
     }
 
     private int dp(int value) {

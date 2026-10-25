@@ -58,7 +58,7 @@ public final class OverlaySettingsProvider extends ContentProvider {
             if (models) synchronized (BemInstaller.class) {
                 // Normalize once through the installer, then compare under the very same lock as every writer.
                 JSONArray current = BemInstaller.index(app);
-                if (current.toString().length() > 200_000) throw new java.io.IOException("模型列表超出桥接大小限制");
+                if (current.toString().length() > 200_000) throw new java.io.IOException(Text.of("模型列表超出桥接大小限制"));
                 if (!read) {
                     OverlayWritePolicy.requireRevision(extras.getString("expected"), current.toString());
                     JSONArray changes = new JSONArray();
@@ -68,7 +68,7 @@ public final class OverlaySettingsProvider extends ContentProvider {
                                 .put("generation", current.getJSONObject(i).getString("generation")).put("enabled", false));
                     } else changes.put(OverlayWritePolicy.patch(extras.getString("patch"), false));
                     if (OverlayWritePolicy.apply(current, changes).toString().length() > 200_000)
-                        throw new java.io.IOException("模型列表超出桥接大小限制");
+                        throw new java.io.IOException(Text.of("模型列表超出桥接大小限制"));
                     if (disable) BemInstaller.disableAll(app); else BemInstaller.saveAll(app, changes);
                     current = BemInstaller.index(app);
                 }
@@ -89,7 +89,7 @@ public final class OverlaySettingsProvider extends ContentProvider {
             result.putBoolean("ok", true);
         } catch (Exception error) {
             result.clear(); result.putBoolean("ok", false);
-            result.putString("error", error.getMessage() == null ? "设置未保存" : error.getMessage());
+            result.putString("error", error.getMessage() == null ? Text.of("设置未保存") : error.getMessage());
             result.putString("error_code", "provider_" + error.getClass().getSimpleName());
             OverlaySettingsDiagnostics.record(app, "operation=" + diagnosticOperation(method)
                     + " result=failed category=provider_" + error.getClass().getSimpleName());

@@ -72,7 +72,7 @@ final class ModelPresetIndex {
         JSONObject names = new JSONObject(readAsset(context, "character-names.json"));
         JSONObject root = new JSONObject(readAsset(context, "character-presets.json"));
         if (root.optInt("schemaVersion") != 1) {
-            throw new IOException("桌面模型预设表版本不受支持");
+            throw new IOException(Text.of("桌面模型预设表版本不受支持"));
         }
         JSONArray encodedCharacters = root.getJSONArray("characters");
         List<Character> characters = new ArrayList<>();
@@ -95,7 +95,7 @@ final class ModelPresetIndex {
             actionCount += actions.size();
             characters.add(new Character(
                     id,
-                    names.optString(id, id) + "  ·  " + id,
+                    Text.of(names.optString(id, id)) + "  ·  " + id,
                     model.getString("path"),
                     model.getString("pathHash"),
                     model.optString("bundleHash", ""),
@@ -106,7 +106,7 @@ final class ModelPresetIndex {
                     Collections.unmodifiableList(actions)));
         }
         if (characters.isEmpty()) {
-            throw new IOException("桌面模型预设表为空");
+            throw new IOException(Text.of("桌面模型预设表为空"));
         }
         return new ModelPresetIndex(Collections.unmodifiableList(characters), actionCount);
     }

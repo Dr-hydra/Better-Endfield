@@ -59,7 +59,7 @@ final class OverlaySettingsPage {
         hot = nextHot;
         if (models) {
             if (renderedHot != hot && !tracking && !writing) renderModels();
-            if (modelState != null) modelState.setText(preview ? "预览模式" : hot ? "热切换：已启用" : "热切换：未启用");
+            if (modelState != null) modelState.setText(preview ? Text.of("预览模式") : hot ? Text.of("热切换：已启用") : Text.of("热切换：未启用"));
             // The saved enabled switches stay editable when hot switching was not loaded at startup.
             updateEnabled();
         } else updateFov();
@@ -95,7 +95,7 @@ final class OverlaySettingsPage {
     }
     private void modelReadFailed(long request, Bundle reply) {
         int previous = modelCatalog.version();
-        if (!modelCatalog.fail(request, reply.getString("error", "设置桥不可用"))) return;
+        if (!modelCatalog.fail(request, reply.getString("error", Text.of("设置桥不可用")))) return;
         revision = modelCatalog.revision();
         if (previous != modelCatalog.version()) renderModels();
         updateEnabled();
@@ -115,7 +115,7 @@ final class OverlaySettingsPage {
                 writing = true;
                 if (!models) { fovEnabled = savedFovEnabled; fov = savedFov; applyFov(fovEnabled, fov); updateFov(); }
                 else if (!closed) renderModels();
-                if (!closed) Toast.makeText(activity, reply.getString("error", "设置未保存"), Toast.LENGTH_SHORT).show();
+                if (!closed) Toast.makeText(activity, reply.getString("error", Text.of("设置未保存")), Toast.LENGTH_SHORT).show();
                 if (models) modelCatalog.beginRead(sequence);
                 OverlaySettingsClient.call(activity, models ? "read_models" : "read_fov", null, null, restored -> {
                     writing = false;
@@ -150,9 +150,9 @@ final class OverlaySettingsPage {
         });
         fovLabel = label(""); root.addView(fovLabel);
         fovSlider = slider(145, 55); root.addView(fovSlider, height(48));
-        fovSlider.setContentDescription("全局 FOV");
+        fovSlider.setContentDescription(Text.of("全局 FOV"));
         bindSlider(fovSlider, progress -> {
-            fov = 5 + progress; fovLabel.setText("全局 FOV  " + (int) fov + "°");
+            fov = 5 + progress; fovLabel.setText(Text.of("全局 FOV  ") + (int) fov + "°");
             dirty = true; applyFov(fovEnabled, fov);
         }, () -> {
             if (!dirty) return; dirty = false;
@@ -171,18 +171,18 @@ final class OverlaySettingsPage {
         updating = true;
         fovSwitch.setChecked(fovEnabled);
         boolean loaded = RuntimeBootstrap.loaded();
-        fovSwitch.setText(preview ? "全局 FOV（预览）" : !loaded ? "全局 FOV（运行时未加载）"
-                : fovReady ? "全局 FOV" : "全局 FOV（重启后生效）");
+        fovSwitch.setText(preview ? Text.of("全局 FOV（预览）") : !loaded ? Text.of("全局 FOV（运行时未加载）")
+                : fovReady ? Text.of("全局 FOV") : Text.of("全局 FOV（重启后生效）"));
         boolean editable = !preview && loaded && !writing && !revision.isEmpty();
         fovSwitch.setEnabled(editable); fovSwitch.setAlpha(editable ? 1 : 0.4f);
         fovSlider.setEnabled(editable && fovEnabled); fovSlider.setAlpha(editable && fovEnabled ? 1 : 0.4f);
         if (!tracking) fovSlider.setProgress(Math.round(fov) - 5);
-        fovLabel.setText("全局 FOV  " + Math.round(fov) + "°"); updating = false;
+        fovLabel.setText(Text.of("全局 FOV  ") + Math.round(fov) + "°"); updating = false;
     }
     private void renderModels() {
         renderedHot = hot;
         ++render; mutations.clear(); root.removeAllViews();
-        modelState = label(preview ? "预览模式" : hot ? "热切换：已启用" : "热切换：未启用"); root.addView(modelState);
+        modelState = label(preview ? Text.of("预览模式") : hot ? Text.of("热切换：已启用") : Text.of("热切换：未启用")); root.addView(modelState);
         if (!modelCatalog.hasCatalog() || modelCatalog.hasError()) {
             root.addView(label(modelCatalog.message()));
             if (modelCatalog.hasError()) addModelReadRetry();
@@ -195,20 +195,20 @@ final class OverlaySettingsPage {
                 enabled |= entry.optBoolean("enabled", true);
             }
             if (!characters.contains(character)) character = "";
-            TextView filter = button(character.isEmpty() ? "全部模型 ▾" : BemOptions.targetLabel(character) + " ▾"); root.addView(filter, height(44));
+            TextView filter = button(character.isEmpty() ? Text.of("全部模型 ▾") : BemOptions.targetLabel(character) + " ▾"); root.addView(filter, height(44));
             filter.setOnClickListener(v -> {
                 String[] ids = new String[characters.size() + 1]; ids[0] = ""; int i = 1;
                 for (String id : characters) ids[i++] = id;
-                String[] names = ids.clone(); names[0] = "全部模型";
+                String[] names = ids.clone(); names[0] = Text.of("全部模型");
                 for (int n = 1; n < names.length; ++n) names[n] = BemOptions.targetLabel(ids[n]);
-                new android.app.AlertDialog.Builder(activity).setTitle("角色或武器筛选").setItems(names, (dialog, which) -> {
+                new android.app.AlertDialog.Builder(activity).setTitle(Text.of("角色或武器筛选")).setItems(names, (dialog, which) -> {
                     character = ids[which]; renderModels();
                 }).show();
             });
-            TextView disable = button("关闭全部"); root.addView(disable, height(44));
+            TextView disable = button(Text.of("关闭全部")); root.addView(disable, height(44));
             disable.setOnClickListener(v -> save("disable_models", null));
             if (enabled) mutations.add(disable); else { disable.setEnabled(false); disable.setAlpha(0.4f); }
-            if (entries.length() == 0) root.addView(label("无已安装模型"));
+            if (entries.length() == 0) root.addView(label(Text.of("无已安装模型")));
             for (int i = 0; i < entries.length(); ++i) {
                 JSONObject entry = entries.getJSONObject(i);
                 if (!character.isEmpty() && !character.equals(BemOptions.targetKey(entry))) continue;
@@ -216,12 +216,12 @@ final class OverlaySettingsPage {
             }
             updateEnabled();
         } catch (Exception error) {
-            modelCatalog.fail(sequence, "模型列表格式不可用"); revision = modelCatalog.revision();
+            modelCatalog.fail(sequence, Text.of("模型列表格式不可用")); revision = modelCatalog.revision();
             root.addView(label(modelCatalog.message())); addModelReadRetry(); updateEnabled();
         }
     }
     private void addModelReadRetry() {
-        TextView retry = button("重试读取"); root.addView(retry, height(44));
+        TextView retry = button(Text.of("重试读取")); root.addView(retry, height(44));
         retry.setOnClickListener(v -> refresh());
     }
     private void addModel(JSONObject entry) throws Exception {
@@ -230,10 +230,10 @@ final class OverlaySettingsPage {
         LinearLayout.LayoutParams space = new LinearLayout.LayoutParams(-1, -2); space.topMargin = dp(10); root.addView(card, space);
         card.addView(label(entry.getString("name")));
         Switch enabled = new Switch(activity); enabled.setTextColor(INK); enabled.setTextSize(13); enabled.setMinimumHeight(dp(48));
-        enabled.setText(BemOptions.targetLabel(BemOptions.targetKey(entry)) + " · " + (hot ? "启用（热切换）" : "启用（重启后生效）"));
+        enabled.setText(BemOptions.targetLabel(BemOptions.targetKey(entry)) + " · " + (hot ? Text.of("启用（热切换）") : Text.of("启用（重启后生效）")));
         enabled.setChecked(entry.optBoolean("enabled", true)); card.addView(enabled); mutations.add(enabled);
         enabled.setOnCheckedChangeListener((v, checked) -> { if (version == render) modelPatch(generation, "enabled", checked); });
-        TextView details = button(expanded.contains(generation) ? "收起详细选项 ▴" : "详细选项 ▾"); card.addView(details, height(44));
+        TextView details = button(expanded.contains(generation) ? Text.of("收起详细选项 ▴") : Text.of("详细选项 ▾")); card.addView(details, height(44));
         details.setOnClickListener(v -> {
             if (!expanded.remove(generation)) expanded.add(generation); renderModels();
         });
@@ -241,7 +241,7 @@ final class OverlaySettingsPage {
         if (entry.optInt("bem_minor", 0) < 1) {
             JSONArray apps = entry.getJSONArray("appearances"); String[] ids = new String[apps.length()];
             for (int i = 0; i < ids.length; ++i) ids[i] = apps.getString(i);
-            choice(card, "外观", ids, ids, entry.optString("selected_appearance", entry.getString("default_appearance")),
+            choice(card, Text.of("外观"), ids, ids, entry.optString("selected_appearance", entry.getString("default_appearance")),
                     value -> { if (version == render) modelPatch(generation, "appearance", value); });
             return;
         }
@@ -278,12 +278,12 @@ final class OverlaySettingsPage {
             });
         }
         if (parameters.length() > 0) {
-            TextView reset = button("作者默认值"); card.addView(reset, height(44)); mutations.add(reset);
+            TextView reset = button(Text.of("作者默认值")); card.addView(reset, height(44)); mutations.add(reset);
             reset.setOnClickListener(v -> { if (version == render) modelPatch(generation, "parameters", entry.optString("default_parameters", "")); });
         }
         JSONArray drivers = entry.optJSONArray("drivers");
         if (drivers != null && drivers.length() > 0) {
-            card.addView(label("动效"));
+            card.addView(label(Text.of("动效")));
             for (int i = 0; i < drivers.length(); ++i) {
                 JSONObject driver = drivers.getJSONObject(i);
                 String id = driver.getString("id");
@@ -298,9 +298,9 @@ final class OverlaySettingsPage {
 
                 LinearLayout buttons = new LinearLayout(activity);
                 buttons.setOrientation(LinearLayout.HORIZONTAL);
-                TextView start = button(state == 3 ? "重播" : "开始");
-                TextView pause = button(state == 2 ? "继续" : "暂停");
-                TextView stop = button("停止");
+                TextView start = button(state == 3 ? Text.of("重播") : Text.of("开始"));
+                TextView pause = button(state == 2 ? Text.of("继续") : Text.of("暂停"));
+                TextView stop = button(Text.of("停止"));
                 buttons.addView(start, weight(1));
                 buttons.addView(pause, weight(1));
                 buttons.addView(stop, weight(1));
@@ -328,20 +328,20 @@ final class OverlaySettingsPage {
                 });
 
                 final int minSpeed = 250, maxSpeed = 4000, stepSpeed = 50;
-                TextView speedTitle = label("速度  " + String.format(java.util.Locale.ROOT, "%.2fx", speed / 1000.0));
+                TextView speedTitle = label(Text.of("速度  ") + String.format(java.util.Locale.ROOT, "%.2fx", speed / 1000.0));
                 card.addView(speedTitle);
 
                 SeekBar speedSlider = slider((maxSpeed - minSpeed) / stepSpeed, (speed - minSpeed) / stepSpeed);
                 mutations.add(speedSlider);
                 card.addView(speedSlider, height(48));
-                speedSlider.setContentDescription(name + " 速度");
+                speedSlider.setContentDescription(name + Text.of(" 速度"));
 
                 final boolean[] speedChanged = {false};
                 bindSlider(speedSlider, progress -> {
                     if (version != render) return;
                     int curSpeed = minSpeed + progress * stepSpeed;
                     driverSpeedStates.put(id, curSpeed);
-                    speedTitle.setText("速度  " + String.format(java.util.Locale.ROOT, "%.2fx", curSpeed / 1000.0));
+                    speedTitle.setText(Text.of("速度  ") + String.format(java.util.Locale.ROOT, "%.2fx", curSpeed / 1000.0));
                     speedChanged[0] = true;
                 }, () -> {
                     if (version == render && speedChanged[0]) {
@@ -354,9 +354,9 @@ final class OverlaySettingsPage {
         }
     }
     private static String stateLabel(int state, boolean once) {
-        if (state == 1) return "播放中";
-        if (state == 2) return "已暂停";
-        return once ? "已停止 / 结束" : "已停止";
+        if (state == 1) return Text.of("播放中");
+        if (state == 2) return Text.of("已暂停");
+        return once ? Text.of("已停止 / 结束") : Text.of("已停止");
     }
     private static void sendDriver(String id, int state, int speed) {
         try { NativeCommandBridge.setCustomModelDriver(id, state, speed); } catch (Throwable ignored) {}
