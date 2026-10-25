@@ -1,0 +1,57 @@
+{
+  "version": "4.1.0",
+  "hashes_calculated": false,
+  "windows": {
+    "fileVersion": "4.1.0.0",
+    "architecture": "x64",
+    "gameVersion": "1.6.3",
+    "signing": "original Next internal self-signed identity",
+    "obfuscation": "Obfuscar"
+  },
+  "android": {
+    "applicationId": "dev.betterendfield.next",
+    "versionCode": 40100,
+    "versionName": "4.1.0",
+    "architecture": "arm64-v8a",
+    "signing": "original Next release identity",
+    "obfuscation": "R8"
+  },
+  "checks": {
+    "windows_release": "passed",
+    "windows_installer": "passed",
+    "bem_tools_portable": "passed"
+  },
+  "assets": [
+    {
+      "name": "BetterEndfieldNext-4.1.0-Setup.exe",
+      "bytes": 77004544,
+      "public": true
+    },
+    {
+      "name": "BetterEndfieldNext-4.1.0-Android-arm64.apk",
+      "bytes": 6529321,
+      "public": true
+    },
+    {
+      "name": "BEM-Tools-1.7.0-win-x64.zip",
+      "bytes": 73238550,
+      "public": true
+    }
+  ],
+  "local_only_assets": [
+    {
+      "name": "BetterEndfieldNext-4.1.0-win-x64.zip",
+      "bytes": 85068017
+    }
+  ],
+  "release": {
+    "repository": "Dr-hydra/Better-Endfield",
+    "tag": "v4.1.0",
+    "url": "https://github.com/Dr-hydra/Better-Endfield/releases/tag/v4.1.0"
+  },
+  "bem_tools": {
+    "version": "1.7.0",
+    "gui_file_version": "1.7.0.0",
+    "platform": "windows-x64"
+  }
+}

@@ -22,7 +22,7 @@ BEM (`.bem`) is Better Endfield Next's model replacement package. Versions 1.0�
 | Android model page | Better Endfield Next App | Importing, enabling, choosing, and converting textures on the phone |
 | AI skill `bem-creator` | Standalone `skills/bem-creator` package | Helps prepare recipes and explain reports; it does not replace validation |
 
-BEM Tools 1.6.1 reads and writes BEM 1.0–1.5 and includes the standalone GUI. The older official 1.5.0 distribution does not include BEM 1.4. Tool and format versions are separate. The current `--version` returns `BEM Tools 1.6.1 / BEM 1.0+1.1+1.2+1.3+1.4+1.5`. When running from source, use `python tools/CustomModel/bem_tool.py` instead of the executable.
+BEM Tools 1.7.0 reads and writes BEM 1.0–1.5 and includes the standalone GUI. The older official 1.5.0 distribution does not include BEM 1.4. Tool and format versions are separate. The current `--version` returns `BEM Tools 1.7.0 / BEM 1.0+1.1+1.2+1.3+1.4+1.5`. When running from source, use `python tools/CustomModel/bem_tool.py` instead of the executable.
 
 Extract the entire standalone package and launch `BetterEndfieldNext.BemTools.exe`, keeping the CLI and support files beside it. The GUI follows the system language. Drop one `.bemproj.json` file onto the EXE icon or pass its path as an argument to open an export project. The creator window inside the main application still uses that application's language preference.
 

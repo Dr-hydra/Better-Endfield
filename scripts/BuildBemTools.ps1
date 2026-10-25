@@ -54,7 +54,7 @@ if ($LASTEXITCODE -ne 0) { throw "BEM converter build failed." }
 $converterDir = Join-Path $Destination 'dist\BetterEndfieldNext.BemConverter'
 $converterExe = Join-Path $converterDir 'BetterEndfieldNext.BemConverter.exe'
 $versionOutput = & $converterExe --version
-if ($LASTEXITCODE -ne 0 -or ($versionOutput -join ' ') -notmatch 'BEM Tools 1\.6\.1') {
+if ($LASTEXITCODE -ne 0 -or ($versionOutput -join ' ') -notmatch ('BEM Tools ' + [regex]::Escape($toolVersion))) {
     throw "Frozen BEM converter version check failed: $($versionOutput -join ' ')"
 }
 $warningFile = Join-Path (Join-Path $Destination 'work\BetterEndfieldNext.BemConverter') 'warn-BetterEndfieldNext.BemConverter.txt'

@@ -1,5 +1,13 @@
 # 更新日志
 
+## 4.1.0 Better Endfield Next
+
+- **BEM 1.5 连续动画与动效驱动（dynamic-drivers-v1）**：原生实现双端时钟驱动器与波形动画（PingPong、Sine、Sawtooth、Triangle 等），支持单次（once）与循环（loop）播放，停止时自动恢复基准姿态；Android 端采用 SetNativeArrayForChannelImpl 安全多流更新通道，与滑条功能稳定共存；桌面端游戏内悬浮窗支持开始/暂停/停止控制；支持动效音效联动（driver_audio）；客户端支持自定义独立桌面快捷键并实现实时存储。
+- **BEM 单模型 ZIP 容器原生支持**：双端运行时及工具链原生支持包含根 manifest.json 与 payloads/ 的单个模型 ZIP 容器文件，方便创作者打包分发与玩家直接加载。
+- **双端启动自动检查更新**：Windows 桌面端与 Android 端新增启动时自动检查更新功能，发现新版本时在状态栏或对话框提醒并提供一键直达下载页，可在“关于”界面手动检查更新或关闭自动检查。
+- **Android 噗切娜主世界 LOD 映射与模型校验修复**：补齐噗切娜（chr_0038_purrche）全量 22 个组件在安卓端 UI LOD0 与主世界之间的映射规则，解决帽子部件（fur_02）在安卓主世界模型中保留 lod0 命名导致的校验失败与节点缺失问题。
+- **BEM Tools 升级至 1.7.0**：完整支持 BEM 1.5 动效驱动（dynamic-drivers-v1）与 ZIP 容器打包解包命令（pack-zip / unpack）。
+
 ## 4.0.8 Better Endfield Next
 
 - **BEM Tools 1.6.1 修复**：修复 1.6.0 中 `bem_v15` 源码 NUL 导致模块无法导入、所有 CLI 校验与打包失败的问题；补全冻结包 hidden import，并在构建后执行真实 BEM 校验。
