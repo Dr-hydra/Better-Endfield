@@ -2,6 +2,7 @@
 #include "BetterEndfieldNext/PoseLease.h"
 #include "dash_policy.h"
 #include "pose_policy.h"
+#include "jsspsi_quality_data.h"
 #include <fstream>
 
 #include <Windows.h>
@@ -59,6 +60,11 @@ struct CharacterProfile {
     const LoopConstants* side_loop = nullptr;
     uint32_t skipped_effect_actors = 0;
     bool freeze_render_vfx = false;
+    // Optional loop quality data (seam split and accessory lap), used only when
+    // jsspsi_quality=true; see loop_quality.inl.
+    const LoopQualityData* quality = nullptr;
+    // Wwise event of the dash start sound that the quality option stops.
+    uint32_t start_sound_event = 0;
 };
 constexpr CharacterProfile kCharacters[]{
     {"aglina", "chr_0013_aglina", "CharIntPerform_Aglina_Spdash", L"pose_aglina.bin", kAglinaLoop,
@@ -91,7 +97,9 @@ constexpr CharacterProfile kCharacters[]{
      /*rewind_mount=*/true,
      /*side_loop=*/&kJsspsiSideLoop,
      /*skipped_effect_actors=*/kJsspsiSkipEffects,
-     /*freeze_render_vfx=*/true},
+     /*freeze_render_vfx=*/true,
+     /*quality=*/&JsspsiQuality::kData,
+     /*start_sound_event=*/1063030539u},
 };
 constexpr size_t kCharacterCount = std::size(kCharacters);
 
@@ -100,6 +108,7 @@ struct Configuration {
     bool diagnostics = true;
     bool external_loop = false; // v12: external bone-pose data, not AnimationClip bundles.
     bool liino_clean = false; // Optional dash features default off.
+    bool jsspsi_quality = false;
     // One bit per kCharacters entry. A configuration without the key predates the
     // per-character switches and keeps every supported character armed.
     uint32_t characters = (1u << kCharacterCount) - 1;
@@ -155,7 +164,7 @@ enum MethodId {
     CurrentClipInfos, InfoClip, DestroyOwned,
     PoseTail, PoseComponentTransform, PoseFind, PoseGetLocal, PoseSetLocal, PoseFrameCount, PoseIsChild,
     MeshGroupShow, EffectActionPlay, EffectManualFollow, VisualPerformId, VisualPerformEntity,
-    JsspsiTmpAnimator, JsspsiPlayRenderVfx, JsspsiPlayVfx, JsspsiVfxTick, JsspsiVfxDelta, MethodCount
+    JsspsiTmpAnimator, JsspsiPlayRenderVfx, JsspsiPlayVfx, JsspsiVfxTick, JsspsiVfxDelta, JsspsiStopSound, MethodCount
 };
 struct Method { BE_MethodDescriptorV1 desc; BE_ResolvedMethodV1 resolved{}; };
 Method g_methods[] = {
@@ -250,6 +259,7 @@ Method g_methods[] = {
     {{kGame,kView,"EntityVFX","PlayVFX","System.String","System.Void",1}},
     {{kGame,kView,"EntityVFX","Tick","System.Single","System.Void",1}},
     {{"Rendering.Beyond.dll","Beyond.Rendering","EntityVFXControllerBase","GetDeltaTimeFromLastTick","System.Boolean","System.Single",1}},
+    {{"Audio.Beyond.dll","Beyond.Audio","AudioAdapter","StopByPlayingId","System.UInt32|System.Int32","System.Void",2}},
 };
 static_assert(std::size(g_methods) == MethodCount);
 struct Field { BE_FieldDescriptorV1 desc; BE_ResolvedFieldV1 resolved{}; };
@@ -788,13 +798,16 @@ bool ReadFrame(void* component, Frame& frame, int& current_hash) {
 }
 const char* ClipLoopText(int loop) { return loop < 0 ? "unknown" : loop ? "1" : "0"; }
 void RefreshLiinoEffectsAfterPose(void* component);
+void ApplyLoopQuality(void* component, float delta);
 #include "external_loop.inl"
 #include "pose_overlay.inl"
+#include "loop_quality.inl"
 void Cancel(const char* reason, bool stop_perform, bool restore_parameter = true) {
     if (!g_session.component) return;
     Session old = std::move(g_session);
     g_session = {};
     if (g_pose_owner.component == old.component) g_pose_owner.clock.End();
+    if (g_quality.component == old.component) EndLoopQuality();
     if (g_external_owner.component == old.component) g_external_owner.pending_restore = true;
     const bool restore_effects = !g_stopping && GetCurrentThreadId() == g_game_thread.load(std::memory_order_relaxed);
     for (auto& effect : old.effects) RestoreEffect(effect, restore_effects);
@@ -1115,6 +1128,7 @@ void __fastcall AudioMonoDetour(void* mono, uint32_t hash, float clip_in, const 
         void* component = Object(AudioMonoComponent, mono, ok);
         if (ok && component == g_session.component && DeferFlyingStop(hash)) return;
     }
+    QualitySoundScope sound(QualitySoundOrigin(mono, hash));
     g_audio_mono(mono, hash, clip_in, method);
 }
 uint32_t __fastcall AudioEntityDetour(void* entity, uint32_t hash, int callback_type,
@@ -1122,7 +1136,9 @@ uint32_t __fastcall AudioEntityDetour(void* entity, uint32_t hash, int callback_
     if (GetCurrentThreadId() == g_game_thread.load(std::memory_order_relaxed) &&
         entity == g_session.entity && !callback && !cookie && callback_type == g_audio_none && DeferFlyingStop(hash))
         return 0; // No playing instance or callback was requested for this deferred stop.
-    return g_audio_entity(entity, hash, callback_type, callback, cookie, method);
+    const uint32_t playing = g_audio_entity(entity, hash, callback_type, callback, cookie, method);
+    QualitySoundPosted(entity, hash, playing);
+    return playing;
 }
 void __fastcall PerformClearDetour(void* handle, bool releasing, const void* method) {
     if (handle == g_session.handle && g_session.component) {
@@ -1194,6 +1210,7 @@ void __fastcall StartDetour(void* component, int index, const void* method) {
         if (config->external_loop && profile->pose_file) {
             BeginPoseOverlay(component, profile);
         }
+        BeginLoopQuality(component, profile);
         if (!g_session.external_expected && g_external_owner.component == component) {
             Cancel("external controller rollback pending", true); return;
         }
@@ -1251,7 +1268,7 @@ void __fastcall PreLateDetour(void* component, float delta, const void* method) 
             } else if (loop_action == LoopAction::Blend) {
                 bool ok = true;
                 int layer = 0;
-                float duration = g_session.external_confirmed ? 0.0f : g_session.loop.c.blend;
+                float duration = g_session.external_confirmed ? 0.0f : LoopQualityBlend(g_session.loop.c.blend);
                 float offset = g_session.external_confirmed ? ImportedLoopSchedule::TargetAt(frame.time) : g_session.loop.TargetAt(frame.time);
                 float transition_time = 0;
                 bool blend_root_motion = false;
@@ -1273,6 +1290,7 @@ void __fastcall PreLateDetour(void* component, float delta, const void* method) 
                             g_session.external_confirmed ? "v11 imported loop wrap" : "v9 normalized bob blend", hash, frame.time, offset, duration, g_session.animation_replays);
                         Log(text);
                     }
+                    StopQualitySound(); // Last: the stop is a managed call.
                     // Observe the actual transition/rewind on following ticks;
                     // never fabricate a successful seek or reset frame.time.
                 } else Cancel("loop blend invocation failed", true);
@@ -1353,6 +1371,7 @@ void __fastcall ReleaseDetour(void* component, bool full, const void* method) {
     if (component == g_session.component) Cancel("component release", false, false);
     if (component == g_external_owner.component) RestoreExternal(true);
     if (component == g_pose_owner.component) ReleasePoseOverlay(true);
+    if (component == g_quality.component) ReleaseLoopQuality(true);
     g_release(component, full, method);
 }
 
@@ -1401,6 +1420,7 @@ BE_Result BE_CALL Configure(const char* raw) {
         else if (key == "diagnostics") valid &= ParseBool(value, config->diagnostics);
         else if (key == "external_loop") valid &= ParseBool(value, config->external_loop);
         else if (key == "liino_clean") valid &= ParseBool(value, config->liino_clean);
+        else if (key == "jsspsi_quality") valid &= ParseBool(value, config->jsspsi_quality);
         else if (key == "characters") valid &= ParseCharacters(value, config->characters);
     }
     if (!valid || (config->enabled && !schema_present)) {
@@ -1427,6 +1447,11 @@ BE_Result BE_CALL Configure(const char* raw) {
                 written += std::snprintf(text + written, sizeof(text) - written, " %s", kCharacters[i].codename);
         if (!config->characters) std::snprintf(text + written, sizeof(text) - written, " none");
         Log(text);
+        if (config->jsspsi_quality) {
+            std::snprintf(text, sizeof(text), "Sustained dash Jsspsi quality: on (pose=%d lease=%d sound=%d); seam split with hard-cut rewinds, accessory lap, dash sound stop.",
+                g_pose_contract, g_pose_lease_ready.load(std::memory_order_relaxed), g_methods[JsspsiStopSound].resolved.method_info != nullptr);
+            Log(text);
+        }
     }
     return BE_Result_Ok;
 }
@@ -1533,6 +1558,7 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
     using NewStringFn = void*(*)(const char*);
     auto new_string = reinterpret_cast<NewStringFn>(GetProcAddress(GetModuleHandleW(L"GameAssembly.dll"), "il2cpp_string_new"));
     if (!new_string) return BE_Result_ContractMismatch;
+    g_quality_string_new = new_string;
     for (size_t i = 0; i < kCharacterCount; ++i) {
         const char* event = kCharacters[i].flying_stop_event;
         if (!event) continue; // This character has no continuous audio to defer.
@@ -1629,6 +1655,11 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
         g_pose_contract = false;
         Log("Sustained dash v12: TailLate hook unavailable; pose overlay disabled, native v9 hold remains.");
     }
+    // jsspsi_quality reuses the pose overlay's TailLate slot and lease. Its only
+    // contract of its own is the optional static sound stop.
+    if (g_methods[JsspsiStopSound].resolved.method_info &&
+        !(flags(g_methods[JsspsiStopSound].resolved.method_info, &impl) & 0x10u))
+        g_methods[JsspsiStopSound].resolved = {};
     if (g_methods[JsspsiPlayRenderVfx].resolved.method_pointer) {
         host->create_hook(host->context, kId, g_methods[JsspsiPlayRenderVfx].resolved.method_pointer,
             reinterpret_cast<void*>(&PlayRenderVfxDetour), reinterpret_cast<void**>(&g_play_render_vfx));
@@ -1657,11 +1688,12 @@ void BE_CALL Shutdown() {
     RestoreExternal(false);
     FreeExternalAssets(false);
     ReleasePoseOverlay(false);
+    ReleaseLoopQuality(false);
     if (g_particle_type_root) g_host->gchandle_free(g_host->context, g_particle_type_root);
     g_particle_type_root = 0;
     g_particle_type = nullptr;
 }
-const BE_ModuleApiV1 kApi{{kId, "Sustained Dash", "1.13.6", BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
+const BE_ModuleApiV1 kApi{{kId, "Sustained Dash", "1.14.0", BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
     &Initialize, &Configure, &Shutdown};
 } // namespace
 } // namespace BetterEndfieldNext::Actions

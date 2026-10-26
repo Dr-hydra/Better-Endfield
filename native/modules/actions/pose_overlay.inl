@@ -181,4 +181,5 @@ void ApplyPoseOverlay(void* component,float delta){
 void __fastcall PoseTailDetour(void* component,float delta,const void* method){
     g_pose_tail(component,delta,method);
     ApplyPoseOverlay(component,delta);
+    ApplyLoopQuality(component,delta);
 }

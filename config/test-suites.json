@@ -922,6 +922,89 @@
       ]
     },
     {
+      "id": "actions.quality_data",
+      "module": "actions",
+      "kind": "simulation",
+      "platform": [
+        "Windows"
+      ],
+      "game_version": [
+        "any"
+      ],
+      "input": {
+        "id": "source-fixtures",
+        "type": "synthetic"
+      },
+      "prerequisite": [
+        {
+          "type": "source",
+          "path": "native/modules/actions/quality_data_tests.cpp"
+        }
+      ],
+      "entry": {
+        "type": "native",
+        "cwd": ".",
+        "sources": [
+          "native/modules/actions/quality_data_tests.cpp",
+          "native/modules/actions/quality_policy.h",
+          "native/modules/actions/jsspsi_quality_data.h"
+        ],
+        "executable": "windows/win-x64/Release/native/Release/BetterEndfieldNext.ActionsQualityDataTests.exe",
+        "artifacts": [
+          "windows/win-x64/Release/native/Release/BetterEndfieldNext.ActionsQualityDataTests.exe"
+        ],
+        "receipt": "tests/receipts/actions.quality_data.json",
+        "configuration": "Release"
+      },
+      "status": "active",
+      "replaced_by": null,
+      "purpose": "Compiled-in Jsspsi quality data, seam closure and accessory sampling; excluded target.",
+      "host_platform": [
+        "Windows"
+      ]
+    },
+    {
+      "id": "actions.quality",
+      "module": "actions",
+      "kind": "simulation",
+      "platform": [
+        "Windows"
+      ],
+      "game_version": [
+        "any"
+      ],
+      "input": {
+        "id": "source-fixtures",
+        "type": "synthetic"
+      },
+      "prerequisite": [
+        {
+          "type": "source",
+          "path": "native/modules/actions/loop_quality_tests.cpp"
+        }
+      ],
+      "entry": {
+        "type": "native",
+        "cwd": ".",
+        "sources": [
+          "native/modules/actions/loop_quality_tests.cpp",
+          "native/modules/actions/loop_quality.inl"
+        ],
+        "executable": "windows/win-x64/Release/native/Release/BetterEndfieldNext.ActionsQualityTests.exe",
+        "artifacts": [
+          "windows/win-x64/Release/native/Release/BetterEndfieldNext.ActionsQualityTests.exe"
+        ],
+        "receipt": "tests/receipts/actions.quality.json",
+        "configuration": "Release"
+      },
+      "status": "active",
+      "replaced_by": null,
+      "purpose": "Production jsspsi_quality path with fake Unity objects: off path, hard-cut seam, accessory lap, fade, lease, sound; excluded target.",
+      "host_platform": [
+        "Windows"
+      ]
+    },
+    {
       "id": "creator.bem.format",
       "module": "creator",
       "kind": "offline",

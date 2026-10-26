@@ -266,6 +266,12 @@ better_endfield_target_defaults(BetterEndfieldNext.ActionsExternalTests)
 add_executable(BetterEndfieldNext.ActionsPoseTests EXCLUDE_FROM_ALL modules/actions/pose_overlay_tests.cpp)
 better_endfield_target_defaults(BetterEndfieldNext.ActionsPoseTests)
 
+add_executable(BetterEndfieldNext.ActionsQualityDataTests EXCLUDE_FROM_ALL modules/actions/quality_data_tests.cpp)
+better_endfield_target_defaults(BetterEndfieldNext.ActionsQualityDataTests)
+
+add_executable(BetterEndfieldNext.ActionsQualityTests EXCLUDE_FROM_ALL modules/actions/loop_quality_tests.cpp)
+better_endfield_target_defaults(BetterEndfieldNext.ActionsQualityTests)
+
 add_library(BetterEndfieldNext.Gacha SHARED
     modules/gacha/module.cpp
 )
