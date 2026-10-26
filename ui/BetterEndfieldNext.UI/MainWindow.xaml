@@ -1254,17 +1254,24 @@
                                     Text="分角色开启特殊冲刺动作的持续播放。设置保存后，下一次特殊冲刺生效。" />
                                 <ToggleSwitch x:Name="ContinuousSpecialDashAglinaToggle" Header="洁尔佩塔"
                                     OffContent="关闭" OnContent="开启" Toggled="ActionsToggle_Toggled" />
-                                <ToggleSwitch x:Name="ContinuousSpecialDashLiinoToggle" Header="梨诺"
-                                    OffContent="关闭" OnContent="开启" Toggled="ActionsToggle_Toggled" />
+                                <StackPanel Spacing="10">
+                                    <ToggleSwitch x:Name="ContinuousSpecialDashLiinoToggle" Header="梨诺"
+                                        OffContent="关闭" OnContent="开启" Toggled="ActionsToggle_Toggled" />
+                                    <ContentControl HorizontalContentAlignment="Stretch"
+                                        IsEnabled="{Binding IsOn, ElementName=ContinuousSpecialDashLiinoToggle}">
+                                        <StackPanel Margin="28,2,0,0" Spacing="6">
+                                            <ToggleSwitch x:Name="LiinoCleanDashToggle" Header="隐藏机甲与光效"
+                                                IsEnabled="{Binding IsOn, ElementName=ContinuousSpecialDashLiinoToggle}"
+                                                OffContent="关闭" OnContent="开启" Toggled="ActionsToggle_Toggled" />
+                                            <TextBlock x:Name="LiinoCleanDashDescription"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                TextWrapping="Wrap"
+                                                Text="梨诺冲刺全程隐藏机甲（含腿甲）与光效，保留飞行动画。" />
+                                        </StackPanel>
+                                    </ContentControl>
+                                </StackPanel>
                                 <ToggleSwitch x:Name="ContinuousSpecialDashJsspsiToggle" Header="祀"
                                     OffContent="关闭" OnContent="开启" Toggled="ActionsToggle_Toggled" />
-                                <StackPanel Margin="24,0,0,0" Spacing="8">
-                                    <ToggleSwitch x:Name="LiinoCleanDashToggle" Header="隐藏机甲与光效"
-                                        IsEnabled="{Binding IsOn, ElementName=ContinuousSpecialDashLiinoToggle}"
-                                        OffContent="关闭" OnContent="开启" Toggled="ActionsToggle_Toggled" />
-                                    <TextBlock x:Name="LiinoCleanDashDescription" TextWrapping="Wrap"
-                                        Text="梨诺冲刺全程隐藏机甲（含腿甲）与光效，保留飞行动画。" />
-                                </StackPanel>
                                 <InfoBar x:Name="ActionsExperimentalInfo" IsOpen="True" IsClosable="False" Severity="Informational"
                                     Title="实验功能"
                                     Message="保留游戏本次选中的左或右特殊冲刺动作，在持续冲刺时循环播放，延后自然结束；停止或被打断时结束。" />

@@ -2,6 +2,10 @@
 
 ## 4.1.2 Better Endfield Next（开发中）
 
+- **优化桌面端持续冲刺界面层级排布**：
+  - 将「隐藏机甲与光效」选项与说明准确归属并嵌套于「梨诺」设置项下方，修正此前「祀」排布在梨诺与其子选项之间的层级错位问题；
+  - 机甲光效子面板与梨诺主开关建立联动绑定，梨诺关闭时自动禁用子选项，清晰体现能力归属与依赖关系。
+
 - **修复桌面端发布遗漏管理员外观模块动态库**：
   - 修复 `native/CMakeLists.txt` 中 `BetterEndfieldNext.Layout` 自定义目标遗漏 `BetterEndfieldNext.WeaponAppearance` 依赖项的问题，确保 Windows 完整构建时自动编译该 DLL 并输出至发布目录；
   - 在 `BuildBetterEndfieldNext.ps1` 发布前完整性检查清单中补全 `BetterEndfieldNext.WeaponAppearance.dll` 与 `betterendfieldnext.weapon_appearance.module.ini`，避免构建产物漏发。
