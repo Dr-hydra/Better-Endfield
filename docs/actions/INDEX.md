@@ -20,5 +20,6 @@
 
 | 文档 | 用途 | 状态 | 游戏版本 |
 | --- | --- | --- | --- |
-| [冲刺持续模块 1.13.4](../../native/modules/actions/README.md) | 持续冲刺三层机制、分角色配置、日志与VFX修复导航 | 维护参考 | 1.5.3 |
+| [冲刺持续模块 1.14.0](../../native/modules/actions/README.md) | 持续冲刺三层机制、分角色配置、祀的可选高质量过渡、日志、测试与VFX修复导航 | 维护参考 | 1.5.3 |
 | [冲刺持续姿态数据来源与说明](../../native/modules/actions/assets/SOURCE.md) | BEPOSE12角色/骨骼/帧数、生成脚本和分发契约 | 来源/证据 | 1.5.3 |
+| [祀高质量过渡数据生成工具](../../tools/actions/jsspsi_quality/README.md) | jsspsi_quality 内置接缝差与附属件循环数据的输入、生成命令、样本数取舍与误差 | 维护参考 | 1.6.4 |

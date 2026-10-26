@@ -12,7 +12,7 @@
 
 **覆盖骨骼姿态（v12 机制）。** 在 `CharacterAnimationComponent.TailLateTick` 之后，按角色数据文件逐骨骼写入局部位移和旋转。数据是离线修好的闭合循环，有自己的时钟，与 Animator 的回绕互不依赖。写入前记录原生基线，只在自己写过且值未被原生改动时还原，退出时按基线回写。不替换 Controller、不禁用 Animator、不动世界坐标、不写缩放。
 
-角色差异集中在 `module.cpp` 的 `CharacterProfile` 表里：模板 id、Perform id、姿态数据文件、Animator 回绕常量、需要保持的持续特效名、需要延后的音频停止事件、需要延后的道具隐藏或网格组隐藏。其余 hook 对所有角色共用。
+角色差异集中在 `module.cpp` 的 `CharacterProfile` 表里：模板 id、Perform id、姿态数据文件、Animator 回绕常量、需要保持的持续特效名、需要延后的音频停止事件、需要延后的道具隐藏或网格组隐藏，以及祀的可选高质量过渡数据（`quality`）和起冲音效事件（`start_sound_event`）。其余 hook 对所有角色共用。
 
 | | 洁尔佩塔 | 梨诺 | 祀 |
 | --- | --- | --- | --- |
@@ -21,9 +21,9 @@
 | 源 Clip | `A_actor_aglina_sprint_dash_sp_l/r`，209 采样 / 3.4667 秒 | `A_actor_liino_sprint_dash_sp_l/r`，174 采样 / 2.8833 秒 | `A_actor_jsspsi_sprint_dash_sp_l/r`，5.667 秒 |
 | 动作性质 | 滑翔，循环段内双脚离地 0.27–1.2 m | 踩板滑行，约 2.13 秒落地 | 骑乘墨兽奔跑 |
 | 回绕常量 begin/target/blend/period | 136/208、80/208、18/208、56/208 | 107/173、55/173、15/173、52/173 | 0.315、0.126、0.06、0.189 |
-| 姿态文件 | `actions/pose_aglina.bin` | `actions/pose_liino.bin` | 无（轻量原生回绕，不依赖外部姿态包） |
+| 姿态文件 | `actions/pose_aglina.bin` | `actions/pose_liino.bin` | 无（轻量原生回绕，不依赖外部姿态包）；可选项 `jsspsi_quality` 用编进模块的接缝和附属件数据，不读文件 |
 | 持续特效保持 | `P_fxbat_aglina_sprint_dash_sp_01/02` 两套粒子 | 无需处理，其特效 duration 为 -1，随 Perform 存续 | 冻结墨兽材质消散时钟，抑制 10–12 号收尾踩水花粒子 |
-| 延后的音频停止 | `Aglina_SprintDashSp_Flying_Stop` | 无 | 无 |
+| 延后的音频停止 | `Aglina_SprintDashSp_Flying_Stop` | 无 | 无；`jsspsi_quality=true` 时第一次回绕停起冲音效（能认出时） |
 | 延后的隐藏动作 | 道具隐藏 logic 11 / index 0 / delay 2.4 | 网格组隐藏（2.2 秒收起滑板），经 `SetCharMeshGroupShow` 拦截 | 无 |
 | 临时物体同步 | 无 | 无 | 坐骑墨兽（0 号）同帧 CrossFade 回绕，伴随墨兽（1、2 号）时间窗独立回绕 |
 
@@ -38,6 +38,38 @@
 - 坐骑墨兽同帧回绕，伴随墨兽时间窗回绕，并冻结消散时钟；
 - 剥离了沉重的附属件姿态覆写（BEACC001）与运行时自学习接缝写盘（BESEAM03），在极小代码增量下实现全平台即装即用；
 - 双端启动器新增「祀」独立开关，默认保持关闭。
+
+### 祀的可选高质量过渡（`jsspsi_quality`，默认关）
+
+轻量版有两处效果没做：
+
+1. **尾巴、后发每圈从背后甩起一次。** 回绕段开头（u 0.126 起）本来就带着刚骑上墨兽的余势，尾巴从背后举起、往右扫，约到 0.25 才落下。这一甩是动画内容自带的，每圈重播一次；淡入、换回绕点都去不掉。
+2. **回绕处身体跳一下。** 圈首、圈尾的姿态本来就差得多：髋（`Bip001` 局部高度）差 8.8 cm，上身朝向差 24–28°。CrossFade 只是把这一跳抹开约 0.34 秒。
+
+成因的数据和试过不采用的做法在完整版分支 `feat/actions-jsspsi-sustained-dash` 的研究文档里（`docs/actions/research/1.6.3/jsspsi-dash/` 下的 `JSSPSI_SUSTAINED_DASH.md` §1.3、§5，`JSSPSI_ACCESSORY_LOOP.md` §1、§6）。`[betterendfieldnext.actions]` 里写 `jsspsi_quality=true` 时，模块补回这两处，做法沿用完整版，但不加钩子、不在运行时读写文件、不录表：
+
+- **接缝修正，回绕改成硬切。** 祀和身下墨兽的每根骨，按「圈首姿态 ⊗ 圈尾姿态⁻¹」的差 D（和位置差 dp）在接缝两侧各补一半：圈内进度 p = (u − 0.126)/0.189，p > 0.5 时补 +½·s((p − 0.5)/0.5)，回绕来的这一圈 p < 0.5 时补 −½·(1 − s(p/0.5))，s(x) = x²(3 − 2x)；每次冲刺第一次自然到达圈首的那一圈不补前一半。接缝两边因此是同一个姿态，祀和身下墨兽的 CrossFade 淡入改为 0，即硬切；每根骨离原版最多偏 D 的一半，只在接缝那一刻。读骨时，某个通道若仍是模块上一帧写的值，就换回记下的原生基线，修正不会一圈圈叠上去。含布料骨：布料在 TailLate 之后读骨头当模拟底子，只补主骨架的话布料部位照样跳（完整版 §5）。
+- **附属件循环。** 尾巴 `tail_01_jnt`–`tail_10_jnt`、后发 `L/R_hairE_01_jnt`–`10` 共 30 根骨，从第一次回绕请求那一帧起，按圈内相位 φ = frac((u − 0.126)/0.189) 整圈改播一段平稳的动作：前段借原版第三步、后段借第二步已经平稳的末段，中间是两端姿态和速度都对齐的连接段（完整版 `JSSPSI_ACCESSORY_LOOP.md` §2）。第一圈照原版，上墨兽那一甩保留一次。这 30 根骨整次冲刺不走接缝修正（第一圈也不），否则第一次回绕交接时尾尖会跳约 71 cm（同上 §4.3）。
+- **起冲音效。** 祀的剪辑在起冲约 0.02 秒投递 Wwise 事件 1063030539，是按原版 5.7 秒配好的一整段，墨兽脚步声在里面，循环以后对不上画面。模块在已有的 `AnimatorMono.PostAudioEvent` 钩子里认出这个事件（投递者的 `innerAnimatorComponent` 就是祀的组件），如果游戏在这次投递里走到已有钩子的 `AudioManager.PostEvent(Entity, …)`，就记下它返回的 playing id，第一次回绕时调 `AudioAdapter.StopByPlayingId(id, 300)`。游戏不这么走就什么也记不到，原生声音照常播完，日志 `dash sound not captured`。这条路径在游戏里没有验证过。
+- **松手。** 冲刺结束后，接缝修正当场撤掉（和轻量版自己的退出一样，不淡出），附属件骨在 0.4 秒内从最后一次写的姿态 smoothstep 淡回原生姿态。新的一次冲刺、组件释放、模块关闭、选项关掉时立刻停；停的时候，动画不每帧重写的通道会写回记下的原生值。
+
+**写骨的时机和冲突。** 写骨放在 `CharacterAnimationComponent.TailLateTick` 之后，和洁尔佩塔、梨诺的姿态覆盖同一个入口（`PoseTailDetour` 里紧跟 `ApplyPoseOverlay`）；祀没有姿态数据文件，两者不会对同一角色同时写。和姿态覆盖一样，每个写骨的 Animator 根（祀一个、身下墨兽一个）在一次冲刺里向宿主申请一次写骨租约（`BE_PoseLeaseApiV1`，非抢占）；VMD 播放等别的写骨者占着时拿不到，这次冲刺不写骨、不硬切，日志 `pose ownership unavailable`，轻量版照常。Android 构建与姿态覆盖相同，不走租约。
+
+**取舍。**
+
+- 两侧墨兽不做接缝修正，保持轻量版的 CrossFade（0.317→0.116，淡入 0.06）。它们不驮人，自己的回绕和祀不在同一帧，淡入的那一跳不牵连祀；去掉它们省两份租约、两棵树的绑定（它们在 Perform 开始后才成形，完整版为此每帧重试 1.5 秒）和每帧约 63 根骨的读写。数据只有约 1 KB，取舍看的是写骨根数。
+- 身下墨兽保留：她骑在上面，祀硬切而墨兽仍淡入的话，0.34 秒里两者姿态对不上。祀和身下墨兽的接缝要么一起生效、一起硬切，要么都不生效：两者都要在同一个自然圈的前半圈开始补，且圈内进度相差不超过 0.05（约三帧）；身下墨兽在祀第一圈过半前没绑上、状态 hash 对不上、绑定不到八成骨或与祀不同步，接缝整次冲刺不生效，回绕照轻量版淡入，附属件循环照常。中途有骨写失败或身下墨兽换根，也同样关掉接缝、退回淡入，并当帧把接缝骨交还原生动画。
+- 不要完整版的 `ClothManager.ClothUpdate` 入口：它只给非默认的布料时序（布料在 LateUpdate 之前跑）兜底，默认设置下布料在 TailLate 之后才跑（完整版 §5、§6）。
+- 不在运行时录接缝差表，用完整版录好的那份（数据分支 `data/jsspsi-quality-inputs`），差低于 0.1°、0.1 mm 的骨丢掉。
+- 附属件表从每圈 1024 个样本降到 128 个：与 1024 样本表比，蒙皮骨最大角度差 0.123°，链末端位置差约 1 mm（取舍表见 [生成工具](../../tools/actions/jsspsi_quality/README.md)）。
+
+**数据。** `native/modules/actions/jsspsi_quality_data.h` 由 [`tools/actions/jsspsi_quality/build_quality_data.py`](../../tools/actions/jsspsi_quality/README.md) 生成，编译后约 86 KB：祀右 / 左各 410 / 398 行接缝差（运行时写 380 / 368 根，另外 30 根归附属件），身下墨兽 32 行，附属件 2 侧 × 128 样本 × 30 根骨。骨按从 Animator 根起的路径 `Transform.Find`，不枚举整棵树。数据只对状态 hash 右 `-445642423`、左 `528430122`、身下墨兽 `340743731` 和回绕区间 0.315→0.126 有效，对不上就不启用。
+
+**契约。** 除了上面已有的钩子和姿态契约（TailLate 钩子、`Transform.Find`、`GetLocalPositionAndRotation`、`SetLocalPositionAndRotation_Injected`、`Time.frameCount`、`Transform.IsChildOf`），只多一个可选方法 `Beyond.Audio.AudioAdapter.StopByPlayingId(UInt32, Int32)`，要求是静态方法；解析不到或签名不对只关掉停音效。完整版在 1.6.4 元数据上核对过这个方法。
+
+**配置。** 只在 INI 里，界面上没有开关。Windows 启动器保存时会整节重写 `[betterendfieldnext.actions]`，`jsspsi_quality` 和 `external_loop` 一样原样保留（`ActionIniPreservation`）；Android 设置页生成的配置不写这个键，按默认关运行。键名只认 `true`、`false`、`1`、`0`，写错时整节判为无效（`Invalid action configuration; special dash disabled.`）。改这个键会发布新的配置快照，正在进行的持续冲刺以 `configuration changed` 结束。选项关着时，模块的行为与轻量版逐调用一致（见模块 README 的「祀的高质量过渡测试」）。
+
+**每帧开销。** 选项开着、接缝生效时，每帧对约 440 根骨各做 `IsChildOf`、读、写三次托管调用，约 1300 次；梨诺姿态覆盖是 339 根骨、同样三次。没有在游戏里量过耗时；释放时的日志 `quality: released … mean_apply_us=` 给出每帧平均微秒数。
 
 ## 2. 数据是怎么做出来的
 
@@ -92,15 +124,28 @@ external_loop=true
 diagnostics=true
 ```
 
-启动器里的开关只重写 `enabled`，会保留 `external_loop`。
+启动器里的开关只重写 `enabled`，会保留 `external_loop` 和 `jsspsi_quality`。祀的可选高质量过渡不需要额外部署文件，数据编在 `BetterEndfieldNext.Actions.dll` 里；要打开它，在这一节加一行 `jsspsi_quality=true`。
 
 ## 5. 日志与验收
 
 开启诊断后应看到 `Sustained dash armed for <角色>`、`Sustained dash v12: bone-pose file loaded for <角色>`、`Sustained dash v12: bone overlay bound: matched=<骨骼数>`。`matched` 应为 226（洁尔佩塔）或 339（梨诺）。出现 `bone binding rejected` 说明必需骨骼路径与实机层级不符。
 
+祀开着 `jsspsi_quality` 时，日志行以 `Sustained dash Jsspsi quality:` 开头。配置载入时有 `on (pose=1 lease=1 sound=1)`，三项依次是姿态契约（TailLate 钩子）、宿主写骨租约、`StopByPlayingId`；某项为 0 只关掉对应部分。一次正常的冲刺（`diagnostics=true`）依次出现：
+
+| 时机 | 日志 |
+| --- | --- |
+| 进入冲刺状态 | `rider bound side=right seam=380 accessory=30 missing=0.`（左侧 `seam=368`） |
+| 第一圈 | `mount bound seam=32 missing=0.`，随后 `seam armed for rider and mount; rewinds are hard cuts.` |
+| 第一次回绕 | `dash sound stopped event=1063030539 playing=… ok=1.` 或 `dash sound not captured; native sound kept.`；共享的 `Sustained dash v9 normalized bob blend: … duration=0.000` 表示硬切；`accessory lap started u=0.316 phi=0.005 bones=30.` |
+| 松手后约 0.4 秒 | `released seam_frames=… accessory_frames=… mean_apply_us=… restored=1.` |
+
+出问题时：`pose ownership unavailable or another visual writer is active`（租约被占）、`rider binding rejected: matched=… missing=… window=…`（骨不到八成或回绕区间不符）、`seam unavailable (<原因>); lightweight crossfade kept.`（只关接缝和硬切，附属件照常；原因如 `mount not bound before the first half lap`、`rider and mount out of step: rider=… mount=…`、`bone write failed`）、`rider root or pose ownership changed`、`accessory bone left its root`（整次冲刺退回轻量版）。前两条和后两条不受 `diagnostics` 控制。
+
 ## 6. 已知边界
 
 离线重建到 FBX / Blender 的转换已逐帧校验，但不等于与实机的 IK、布料、特效完全一致；预览不含贴图和粒子。梨诺低位循环为 0.667 秒，采用半速减缓小幅运动，仍需实机确认长时间重复的观感。武器 IK 与蝴蝶结这类附属骨骼未作单独曲线修复。
+
+祀的 `jsspsi_quality` 没有在游戏里验证过：完整版（逻辑相同、数据从运行时自录和 1024 样本表变成内置精简数据）在 1.6.4 上实机看过，这一版只在 Linux 上用假的 Unity 对象跑过测试。接缝只闭合位置、不闭合速度，接缝处还有小顿挫（完整版 §5）；两侧墨兽仍按轻量版淡入回绕；附属件覆盖写的是录制时的局部姿态，转向或注视层对尾巴、后发的影响会被换掉；起冲音效能不能停取决于游戏的投递路径，没有核对过。
 
 ---
 
