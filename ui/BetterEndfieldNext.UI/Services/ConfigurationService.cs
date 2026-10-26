@@ -168,7 +168,7 @@ internal static class ConfigurationService
         try
         {
             string existing = File.Exists(path) ? await File.ReadAllTextAsync(path) : string.Empty;
-            hostConfiguration = ActionIniPreservation.PreserveExternalLoop(existing, hostConfiguration);
+            hostConfiguration = ActionIniPreservation.PreserveNativeSettings(existing, hostConfiguration);
             await File.WriteAllTextAsync(
                 path,
                 hostConfiguration,
@@ -275,7 +275,7 @@ internal static class ConfigurationService
         try
         {
             string existing = File.Exists(path) ? await File.ReadAllTextAsync(path) : string.Empty;
-            string section = ActionIniPreservation.PreserveExternalLoop(existing, configuration.ToActionsIniSection());
+            string section = ActionIniPreservation.PreserveNativeSettings(existing, configuration.ToActionsIniSection());
             string updated = UpsertIniSection(existing, "betterendfieldnext.actions", section);
             string temporary = path + ".actions.tmp";
             await File.WriteAllTextAsync(temporary, updated, Encoding.Unicode);

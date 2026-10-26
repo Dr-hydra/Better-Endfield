@@ -1005,6 +1005,50 @@
       ]
     },
     {
+      "id": "actions.ini_preservation",
+      "module": "actions",
+      "kind": "offline",
+      "platform": [
+        "Windows"
+      ],
+      "game_version": [
+        "any"
+      ],
+      "input": {
+        "id": "source-fixtures",
+        "type": "synthetic"
+      },
+      "prerequisite": [
+        {
+          "type": "tool",
+          "key": "tools.dotnet"
+        }
+      ],
+      "entry": {
+        "type": "native",
+        "cwd": ".",
+        "sources": [
+          "ui/tests/ActionIniPreservation/ActionIniPreservation.csproj",
+          "ui/tests/ActionIniPreservation/Program.cs",
+          "ui/BetterEndfieldNext.UI/Services/ActionIniPreservation.cs"
+        ],
+        "executable": "next/dotnet/ActionIniPreservation/AnyCPU/bin/Release/net9.0/ActionIniPreservation.exe",
+        "artifacts": [
+          "next/dotnet/ActionIniPreservation/AnyCPU/bin/Release/net9.0/ActionIniPreservation.exe",
+          "next/dotnet/ActionIniPreservation/AnyCPU/bin/Release/net9.0/ActionIniPreservation.dll",
+          "next/dotnet/ActionIniPreservation/AnyCPU/bin/Release/net9.0/ActionIniPreservation.deps.json",
+          "next/dotnet/ActionIniPreservation/AnyCPU/bin/Release/net9.0/ActionIniPreservation.runtimeconfig.json"
+        ],
+        "receipt": "tests/receipts/actions.ini_preservation.json"
+      },
+      "status": "active",
+      "replaced_by": null,
+      "purpose": "Launcher keeps external_loop and jsspsi_quality across Actions section and full saves.",
+      "host_platform": [
+        "Windows"
+      ]
+    },
+    {
       "id": "creator.bem.format",
       "module": "creator",
       "kind": "offline",
