@@ -22,6 +22,9 @@ import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.text.TextUtils;
+import android.util.TypedValue;
+import android.view.Gravity;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -1103,8 +1106,7 @@ public final class MainActivity extends Activity {
         android.widget.ScrollView scroll = findViewById(R.id.responsive_scroll);
         LinearLayout content = findViewById(R.id.responsive_content);
         LinearLayout navigation = findViewById(R.id.page_navigation);
-        View header = findViewById(R.id.app_header);
-        content.removeView(header);
+
         content.removeView(navigation);
         ((ViewGroup) scroll.getParent()).removeView(scroll);
         LinearLayout shell = new LinearLayout(this);
@@ -1116,30 +1118,56 @@ public final class MainActivity extends Activity {
             LinearLayout rail = new LinearLayout(this);
             rail.setOrientation(LinearLayout.VERTICAL);
             rail.setPadding(dp(12), dp(16), dp(12), dp(12));
-            rail.addView(header, new LinearLayout.LayoutParams(-1, -2));
+            TextView title = new TextView(this);
+            title.setText(R.string.app_name);
+            title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
+            title.setTextColor(getColor(R.color.text_primary));
+            title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+            title.setPadding(dp(8), dp(8), dp(8), dp(16));
+            rail.addView(title);
             navigation.setOrientation(LinearLayout.VERTICAL);
             for (int i = 0; i < navigation.getChildCount(); i++) {
                 View tab = navigation.getChildAt(i);
                 LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, -2);
                 p.topMargin = dp(6);
-                tab.setLayoutParams(p); tab.setMinimumHeight(dp(52));
+                p.setMarginStart(0);
+                tab.setLayoutParams(p);
+                tab.setMinimumHeight(dp(52));
             }
             rail.addView(navigation, new LinearLayout.LayoutParams(-1, -2));
             shell.addView(rail, new LinearLayout.LayoutParams(dp(240), -1));
             shell.addView(scroll, new LinearLayout.LayoutParams(0, -1, 1));
         } else {
-            shell.addView(header, new LinearLayout.LayoutParams(-1, -2));
-            shell.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
-            navigationScroll=new android.widget.HorizontalScrollView(this);
-            navigationScroll.setHorizontalScrollBarEnabled(false);navigationScroll.setFillViewport(false);
-            navigationScroll.addView(navigation,new android.widget.FrameLayout.LayoutParams(-2,-2));
-            shell.addView(navigationScroll, new LinearLayout.LayoutParams(-1, -2));
-            for (int i = 0; i < navigation.getChildCount(); i++) {
+            // Remove top banner: only add scroll in the center
+            shell.addView(scroll, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f));
+
+            // Bottom navigation bar: 4 equal parts (四等分) across any device resolution
+            navigation.setOrientation(LinearLayout.HORIZONTAL);
+            LinearLayout.LayoutParams navParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            navParams.setMargins(dp(12), dp(4), dp(12), dp(8));
+            navigation.setLayoutParams(navParams);
+            navigation.setPadding(dp(4), dp(4), dp(4), dp(4));
+            navigation.setBackgroundResource(R.drawable.bg_tabs);
+            shell.addView(navigation);
+
+            int count = navigation.getChildCount();
+            for (int i = 0; i < count; i++) {
                 View tab = navigation.getChildAt(i);
-                LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-2, -2);
-                p.setMarginStart(dp(4));tab.setLayoutParams(p); tab.setMinimumHeight(dp(56));tab.setMinimumWidth(dp(92));
-                tab.setPadding(dp(14),dp(8),dp(14),dp(8));
-                ((TextView) tab).setTextSize(13);
+                LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, dp(44), 1.0f);
+                if (i > 0) p.setMarginStart(dp(4));
+                tab.setLayoutParams(p);
+                tab.setMinimumWidth(0);
+                tab.setMinimumHeight(dp(44));
+                tab.setPadding(dp(2), 0, dp(2), 0);
+                if (tab instanceof TextView tv) {
+                    tv.setGravity(Gravity.CENTER);
+                    tv.setMaxLines(1);
+                    tv.setEllipsize(TextUtils.TruncateAt.END);
+                    tv.setAutoSizeTextTypeUniformWithConfiguration(
+                            10, 14, 1, TypedValue.COMPLEX_UNIT_SP);
+                }
             }
         }
         setContentView(shell);
