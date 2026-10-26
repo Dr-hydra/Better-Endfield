@@ -69,7 +69,7 @@ public sealed partial class CustomModelPage : UserControl
         ImportButton.Content = BemText.Get("导入 BEM / ZIP");
         ConvertButton.Content = BemText.Get("BEM 创作者工具…");
         RefreshButton.Content = BemText.Get("刷新");
-        PackageFolderButton.Content = BemText.Get("打开包目录");
+        PackageFolderButton.Content = BemText.Get("打开模型文件夹");
         CharacterFilter.Header = BemText.Get("按角色或武器筛选");
         DisableAllButton.Content = BemText.Get("关闭全部模型");
         bool chinese = LocalizationService.Instance.IsChinese;
@@ -701,7 +701,17 @@ public sealed partial class CustomModelPage : UserControl
     private void Refresh_Click(object sender, RoutedEventArgs e) => Reload();
     private void OpenFolder_Click(object sender, RoutedEventArgs e)
     {
-        try { Directory.CreateDirectory(_service.Root); Process.Start(new ProcessStartInfo(_service.Root) { UseShellExecute = true }); }
-        catch (Exception ex) { Message(() => BemText.Get("无法打开目录"), () => ex.Message, InfoBarSeverity.Error); }
+        try
+        {
+            string target = !string.IsNullOrWhiteSpace(_service.PackageDirectory)
+                ? _service.PackageDirectory
+                : _service.Root;
+            Directory.CreateDirectory(target);
+            Process.Start(new ProcessStartInfo(target) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            Message(() => BemText.Get("无法打开目录"), () => ex.Message, InfoBarSeverity.Error);
+        }
     }
 }
