@@ -10,6 +10,10 @@ runs/*
 state/*
 Maps/
 vendor/
+# The DSH bundle vendors its BCn decoder in-tree: no build step can fetch it, and
+# the client bundle cannot be rebuilt from a clone without it.
+!tools/CustomModel/dsh-plugin/lib/vendor/
+!tools/CustomModel/dsh-plugin/lib/vendor/**
 dependencies.lock.json
 
 # Research-only applications and extraction tools are not part of the mod repo.
@@ -27,6 +31,7 @@ tools/CombatDataExporter/.icon-cache/
 # Keep only the scripts needed to build the distributable mod.
 scripts/*
 !scripts/BuildBemTools.ps1
+!scripts/BuildBemCliAndroid.ps1
 !scripts/BuildDshPlugin.py
 !scripts/BuildBetterEndfieldNext.ps1
 !scripts/BuildWeb.ps1

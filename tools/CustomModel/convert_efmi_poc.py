@@ -144,7 +144,11 @@ class Source:
             else None
         )
         if path.is_file() and path.suffix.lower() in ('.rar', '.7z'):
-            from source_archive import PackedSource
+            try:
+                from source_archive import PackedSource
+            except ImportError:
+                # Slim distributions (the Android CLI) ship without the 7-Zip backend.
+                raise ValueError('ARCHIVE_BACKEND: 此发行版不含 RAR/7z 解压后端，请提供 .zip 或已解包的目录。') from None
             self._archive = PackedSource(path)
             self.names = self._archive.names
         elif self._zip:

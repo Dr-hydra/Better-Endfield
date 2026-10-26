@@ -70,6 +70,43 @@ installed toolchain — it will not import (see the distribution boundary below)
 
 ---
 
+## Harness tool and preview
+
+When this skill runs inside DeepSeek Harness with the `dsh-bem-creator` bundle installed, two
+capabilities exist that a bare CLI does not. Both are optional: a CLI-only install simply does
+not have them, and the shell entries above stay authoritative either way.
+
+**The `bem` tool — use it instead of the shell for the read-only steps.**
+
+- `{ "action": "inspect", "path": "…/x.bem" }` — format, target, mesh/texture/payload counts
+  from the manifest alone. Nothing is decoded, so it is cheap on a 30 MB package.
+- `{ "action": "validate", "path": "…/x.bem" }` — the defects that make a *render* wrong:
+  index out of range, vertex stream shorter than declared, dangling mesh reference, a
+  deformation channel naming an undeclared parameter. This is a preview-side check; the CLI's
+  `validate` remains the authority on schema conformance. Run both before shipping.
+- `{ "action": "doctor" }` — whether the converter is reachable, where it came from, the version
+  it printed, and which texture families the preview can decode. The bundle carries the BEM Tools
+  **sources** in `lib/bin/cli/`, so `convert` works as long as the host has Python 3.10+. When
+  nothing answers, `doctor` lists the failures and a `remedy` you can run verbatim.
+- `{ "action": "convert", "args": ["…"] }` — forwards to that tree, so `convert` and `inspect`
+  work right after installing the bundle. Two gaps the shell route still covers: `bem_repair.py`
+  and the other maintenance scripts are not part of the shipped tree, and a `.zip/.rar/.7z` source
+  needs the 7-Zip backend, which is not shipped either (it refuses with `ARCHIVE_BACKEND`).
+  Python 3.10–3.13 also needs `pip install zstandard` once; 3.14+ needs nothing.
+
+**The 预览 tab.** `{ "action": "preview", "path": "…/x.bem" }` builds a scene and the
+conversation's 预览 tab shows it: appearances and option groups as chips, `parameters` as
+sliders, per-part visibility, textures or clay. After a successful build, tell the user to open
+that tab — it is the fastest way to confirm an outfit variant or a shape slider came out right
+before handing the package over.
+
+What the tab does **not** show, so do not let a user draw the wrong conclusion from it:
+
+- only the replacement meshes inside the package; the character's untouched geometry is not there;
+- ASTC textures are not decoded in the browser (BC1/BC3/BC4/BC5/BC7 are), so an android-target
+  package renders with some parts untextured;
+- deformations move positions only, which is exactly what `mesh_deformations` stores.
+
 ## BEM Version Capabilities & Obsolete Rules Clearance
 
 Do not rely on outdated rules from older BEM 1.0–1.2 historical logs. The current system is BEM 1.5 (BEM Tools 1.6.3):
@@ -84,9 +121,22 @@ Do not rely on outdated rules from older BEM 1.0–1.2 historical logs. The curr
 
 # BEM creator workflow
 
-Use the installed `BetterEndfieldNext.BemConverter.exe` CLI, or the repository's
-`python tools/CustomModel/bem_tool.py`. The standalone distribution places the
-executable at its root; the player application places it under `tools/BemConverter`.
+Pick the entry point that matches the host. The commands are identical; only the
+launcher and a few capabilities differ:
+
+| Host | Entry point |
+|---|---|
+| Windows distribution | `BEM-Tools\BetterEndfieldNext.BemConverter.exe`, or `tools/BemConverter` inside the player application |
+| Repository checkout | `python tools/CustomModel/bem_tool.py` |
+| Android (Termux, root shell, adb shell) | `/data/local/tmp/bem-cli/bem-tools` |
+
+On Android, run `bem-tools doctor` before the first conversion and follow
+[the Android runtime page](references/ANDROID_RUNTIME.en.md): RAR/7z sources are refused
+there, there is no GUI, and the toolchain ships as source, which changes what
+`bem_repair.py` can reach compared with the frozen Windows build. Python 3.14+ needs no
+extra package (the standard library provides zstd); on older interpreters run
+`bem-tools install-wheel` rather than letting pip compile zstandard on the device.
+
 Run `--version` and `--help` to check the available commands. Do not assume the
 game runtime or creator profiles support a newer format because the extension matches.
 The toolchain in this tree is **BEM Tools 1.6.3**, which reads and writes **BEM 1.0–1.5**
@@ -99,7 +149,9 @@ Read [the creator guide](references/BEM_CREATOR_GUIDE.en.md) for tools, export t
 editable projects, sliders, importing and distribution. Read [the format specification](references/BEM_FORMAT_SPEC.en.md)
 when editing a project manifest, [runtime compatibility](references/BEM_RUNTIME_COMPATIBILITY.en.md) when
 diagnosing in-game rejections, and [source Mod conversion](references/BEM_SOURCE_MOD_CONVERSION.en.md)
-for automation status, recipes, identity rules and ShapeKey bindings.
+for automation status, recipes, identity rules and ShapeKey bindings. Read
+[the Android runtime page](references/ANDROID_RUNTIME.en.md) when the host is an Android
+device: entry point, supported source formats, path constraints and error codes all differ.
 
 ### Source conversion is a judgement task
 
@@ -163,9 +215,10 @@ per-material judgement. Validate everything you write, and tell the user it was 
 than produced by a supported path.
 
 **Where the toolchain lives.** The shipped GUI + CLI + catalogs + profiles + skills are published
-as `BEM-Tools-<version>-win-x64.zip` on the GitHub releases page of
-`https://github.com/Dr-hydra/Better-Endfield` (release `v4.1.0` carries BEM Tools 1.6.3). That is
-the only supported download; do not invent a mirror.
+as `BEM-Tools-<version>-win-x64.zip`, with a separate CLI-only
+`BEM-Tools-<version>-android-arm64.tar.gz` for Android hosts, on the GitHub releases page of
+`https://github.com/Dr-hydra/Better-Endfield` (release `v4.1.0` carries BEM Tools 1.6.3). Those are
+the only supported downloads; do not invent a mirror.
 
 The **native-asset dump path is partly in the repository and partly not**, and the split matters:
 
@@ -194,7 +247,8 @@ The **native-asset dump path is partly in the repository and partly not**, and t
 - The reader targets `net8.0-windows` and loads a native `Texture2DDecoderWrapper`, and `ResConv`
   is a .NET 10 Windows binary, so the dump path **cannot run on an Android host**. Consequence: a
   fresh dump has to be produced on Windows with the game installed. On a phone, work from the
-  shipped `catalog/material-attributes.json` instead.
+  shipped `catalog/material-attributes.json` instead, and convert with the Android CLI
+  ([Android runtime](references/ANDROID_RUNTIME.en.md)) — conversion does run there.
 
 When a source INI calls into the loader's own namespace (`EFMIv1`), read the bundled reference
 copy under `references/efmi/` to learn what those commands actually do. That copy contains the

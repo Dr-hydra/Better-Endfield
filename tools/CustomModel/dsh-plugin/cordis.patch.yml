@@ -4,6 +4,12 @@
 # launcher resolves bare names from the dsh installation first and then from the
 # profile directory, so it finds this package once `dsh plugin add` installed it.
 #
+# That single row is also what the browser half hangs off. `dsh-client-modules`
+# walks the loader rows, reads each package's manifest, and loads
+# `exports["./client"]` for every row that declares `dsh.client` with
+# `platform: "web"`. So there is no second row to add here: `lib/index.js` is the
+# host half and `lib/client.js` is the browser half of the same package.
+#
 # The skill directory is deliberately not configured here. Patch expressions see
 # `ctx`, `process.env` and `dshHomePath()`, but no package-relative anchor, so a
 # path written here would be a machine path. `lib/index.js` resolves its own

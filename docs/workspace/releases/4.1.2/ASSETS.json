@@ -1,7 +1,7 @@
 {
   "version": "4.1.2",
-  "hashes_calculated": false,
-  "status": "in_development",
+  "hashes_calculated": true,
+  "status": "ready",
   "windows": {
     "fileVersion": "4.1.2.0",
     "architecture": "x64",
@@ -17,9 +17,53 @@
     "signing": "original Next release identity",
     "obfuscation": "R8"
   },
-  "checks": {},
-  "assets": [],
-  "local_only_assets": [],
+  "checks": {
+    "windows_release": "passed",
+    "windows_installer": "passed",
+    "android_release": "passed",
+    "bem_tools_portable": "passed",
+    "bem_tools_android": "passed",
+    "dsh_plugin": "passed"
+  },
+  "assets": [
+    {
+      "name": "BetterEndfieldNext-4.1.2-Setup.exe",
+      "bytes": 77495128,
+      "sha256": "01f1c69c8a986cf5c9eb8ec8d5aeb1d0afda1ad66bb94fb832b3826b56c1b28f",
+      "public": true
+    },
+    {
+      "name": "BetterEndfieldNext-4.1.2-Android-arm64.apk",
+      "bytes": 6614561,
+      "sha256": "fdfec40c620d1fc00304274ac880aa523f6b54ec36ce57d451fb6c665258d165",
+      "public": true
+    },
+    {
+      "name": "BEM-Tools-1.6.3-win-x64.zip",
+      "bytes": 73655114,
+      "sha256": "01406ee1e4b64b7f6e0b222eb29d2bb763ac4108ba0ff2c6b283906758e2ba15",
+      "public": true
+    },
+    {
+      "name": "BEM-Tools-1.6.3-android-arm64.tar.gz",
+      "bytes": 2097146,
+      "sha256": "84787a4b77faa7d6b7947ddc4889338374d1e2f22b77b9df084e4b65316a49b5",
+      "public": true
+    },
+    {
+      "name": "dsh-bem-creator-1.6.3.tgz",
+      "bytes": 2052336,
+      "sha256": "9778c6be001bf900b07dc59a0363f78c9b2a8acc88cb74c4fad8f362d9110496",
+      "public": true
+    }
+  ],
+  "local_only_assets": [
+    {
+      "name": "BetterEndfieldNext-4.1.2-win-x64.zip",
+      "bytes": 85608273,
+      "sha256": "bcd89accea1ec709adc19a0b73723b94263b50d3de2f0c3d56f2a175afc6b536"
+    }
+  ],
   "release": {
     "repository": "Dr-hydra/Better-Endfield",
     "tag": "v4.1.2",
@@ -30,10 +74,48 @@
     "gui_file_version": "1.6.3.0",
     "platform": "windows-x64"
   },
+  "bem_tools_android": {
+    "version": "1.6.3",
+    "platform": "android-arm64",
+    "distribution": "source-tree",
+    "python": ">=3.10",
+    "zstd_backends": [
+      "cext",
+      "stdlib"
+    ],
+    "bundled_wheel": "zstandard-0.25.0-cp314-cp314-android_24_arm64_v8a.whl",
+    "source_formats": [
+      "directory",
+      "zip"
+    ],
+    "entry_point": "/data/local/tmp/bem-cli/bem-tools"
+  },
   "dsh_plugin": {
     "name": "dsh-bem-creator",
     "version": "1.6.3",
     "platform": "any",
-    "requires": "DeepSeek Harness >=0.2.1-rc.2"
+    "requires": "DeepSeek Harness >=0.2.1-rc.2",
+    "contributes": [
+      "skill:bem-creator",
+      "tool:bem",
+      "client:conversation.view"
+    ],
+    "client": {
+      "platform": "web",
+      "entry": "lib/client.js",
+      "slots": [
+        "conversation.view"
+      ],
+      "routes": "/dsh-bem/",
+      "decoders": [
+        "bc1",
+        "bc3",
+        "bc4",
+        "bc5",
+        "bc7",
+        "rgba32"
+      ],
+      "astc": "not decoded in the browser build"
+    }
   }
 }

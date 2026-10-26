@@ -19,6 +19,15 @@ from efmi_lod_source import ENTRY, inspect_lod_source
 from source_classification import entry_family, classify
 
 
+def archive_backend_available():
+    """Slim distributions (the Android CLI) ship without the bundled 7-Zip backend."""
+    try:
+        import source_archive  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
 def inspect_source(path, explicit=None, *, prepared=None):
     path = Path(path)
     if path.suffix.lower() == '.bem':
@@ -27,7 +36,8 @@ def inspect_source(path, explicit=None, *, prepared=None):
         return dict(format='BEMv' + version, format_version=version,
                     package=m, entries=[], issues=[], conversion_ready=False)
     if path.is_file() and path.suffix.lower() not in ('.zip','.rar','.7z'):
-        raise ValueError('ARCHIVE_FORMAT: 源 Mod 支持目录、ZIP、RAR 和 7z。')
+        formats = '目录、ZIP、RAR 和 7z' if archive_backend_available() else '目录和 ZIP（此发行版不含 RAR/7z 后端）'
+        raise ValueError(f'ARCHIVE_FORMAT: 源 Mod 支持{formats}。')
     if path.suffix.lower() == '.zip' and bem_projects.has_package_manifest(path):
         package = bem_projects.read_zip_package(path)
         m = package['manifest']

@@ -9,6 +9,7 @@ import re
 import struct
 import zlib
 from pathlib import Path
+import zstd_compat  # noqa: F401  - stdlib stand-in when the zstandard extension is absent
 import zstandard as zstd
 
 MAGIC = b'BEM\x00PKG\x00'

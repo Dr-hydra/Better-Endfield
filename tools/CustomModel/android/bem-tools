@@ -1,0 +1,111 @@
+#!/system/bin/sh
+# BEM Tools - Android CLI entry point.
+#
+# Agents call this by absolute path: /data/local/tmp/bem-cli/bem-tools <command> [args...]
+# Everything bem_tool.py prints to stdout is a single JSON document; the exit code is
+# 0 on success and 2 on failure, so a caller never has to parse stderr.
+#
+# Overrides:
+#   BEM_PYTHON  interpreter to use instead of the auto-detected one
+#   BEM_TOOLS_TMP  scratch directory to use instead of the auto-detected one
+set -u
+
+self=$0
+while [ -L "$self" ]; do
+    link=$(readlink "$self") || break
+    case $link in
+        /*) self=$link ;;
+        *) self=$(dirname "$self")/$link ;;
+    esac
+done
+root=$(cd -P "$(dirname "$self")" 2>/dev/null && pwd) || root=$(dirname "$self")
+app=$root/app
+runtime=$root/runtime
+
+python_bin=${BEM_PYTHON:-}
+if [ -z "$python_bin" ]; then
+    if command -v python3 >/dev/null 2>&1; then
+        python_bin=python3
+    elif command -v python >/dev/null 2>&1; then
+        python_bin=python
+    fi
+fi
+
+# Android has no /tmp. tempfile falls back to the current directory, which breaks
+# whenever the caller happened to start on /sdcard (FUSE mount, no atomic rename).
+tmp=${BEM_TOOLS_TMP:-${TMPDIR:-}}
+if [ -z "$tmp" ] || [ ! -d "$tmp" ] || [ ! -w "$tmp" ]; then
+    tmp=
+    for candidate in /data/local/tmp "$root/tmp" "${HOME:-/}"; do
+        if [ -d "$candidate" ] && [ -w "$candidate" ]; then
+            tmp=$candidate
+            break
+        fi
+    done
+fi
+if [ -n "$tmp" ]; then
+    TMPDIR=$tmp
+    export TMPDIR
+fi
+
+PYTHONPATH=$app${PYTHONPATH:+:$PYTHONPATH}
+PYTHONDONTWRITEBYTECODE=1
+PYTHONIOENCODING=utf-8
+PYTHONUTF8=1
+export PYTHONPATH PYTHONDONTWRITEBYTECODE PYTHONIOENCODING PYTHONUTF8
+
+run_python() {
+    if [ -n "$python_bin" ]; then
+        exec "$python_bin" "$@"
+    fi
+    # A bundled musl CPython cannot be exec'd directly on Android: its PT_INTERP
+    # points at /lib/ld-musl-aarch64.so.1, which does not exist here. Launching
+    # the loader explicitly works without patching the binary.
+    if [ -x "$runtime/bin/python3" ]; then
+        if [ -x "$runtime/lib/ld-musl-aarch64.so.1" ]; then
+            exec "$runtime/lib/ld-musl-aarch64.so.1" --library-path "$runtime/lib" \
+                "$runtime/bin/python3" "$@"
+        fi
+        exec "$runtime/bin/python3" "$@"
+    fi
+    printf '%s\n' 'bem-tools: no Python interpreter found. Install one (pkg install python) or set BEM_PYTHON.' >&2
+    exit 127
+}
+
+if [ "$#" -eq 0 ]; then
+    printf '%s\n' 'usage: bem-tools <command> [args...]' >&2
+    printf '%s\n' 'commands: inspect convert validate pack pack-zip unpack bundle new-project build init-workspace target-profile' >&2
+    printf '%s\n' 'extras: doctor (self-check) | install-wheel (bundled zstandard) | repair (bem_repair.py helpers)' >&2
+    exit 2
+fi
+
+command_name=$1
+case $command_name in
+    --version|-V)
+        run_python "$app/bem_tool.py" --version
+        ;;
+    doctor|self-check|selftest)
+        shift
+        run_python "$app/bem_android.py" doctor "$@"
+        ;;
+    repair)
+        # Repair helpers ship as source in this distribution, so the skill scripts
+        # work here even though the frozen Windows build cannot import them.
+        shift
+        run_python "$app/skills/bem-creator/scripts/bem_repair.py" "$@"
+        ;;
+    install-wheel|install-deps)
+        # Copies the bundled zstandard wheel into site-packages; no compiler, no pip.
+        shift
+        run_python "$app/bem_android.py" install-wheel "$@"
+        ;;
+    --help|-h|help)
+        printf '%s\n' 'usage: bem-tools <command> [args...]'
+        printf '%s\n' 'commands: inspect convert validate pack pack-zip unpack bundle new-project build init-workspace target-profile'
+        printf '%s\n' 'extras: doctor (self-check) | install-wheel (bundled zstandard) | repair (bem_repair.py helpers)'
+        printf '%s\n' 'Every command prints one JSON document. Exit 0 = success, 2 = failure.'
+        ;;
+    *)
+        run_python "$app/bem_tool.py" "$@"
+        ;;
+esac

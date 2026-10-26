@@ -13,6 +13,7 @@ import itertools
 import struct
 from pathlib import Path
 
+import zstd_compat  # noqa: F401  - stdlib stand-in when the zstandard extension is absent
 import zstandard as zstd
 
 import bem_v1 as v1

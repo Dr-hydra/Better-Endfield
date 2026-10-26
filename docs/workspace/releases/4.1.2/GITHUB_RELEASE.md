@@ -1,4 +1,4 @@
-Better Endfield Next **4.1.2** 开发记录。
+Better Endfield Next **4.1.2** 与 BEM Tools **1.6.3**，带来管理员外观模块 DLL 修复与双端默认关闭、持续冲刺与安卓界面排布优化、BEM Tools Android CLI 源码发行包与 DeepSeek Harness 全功能三维模型预览插件。
 
 ## Windows 4.1.2 & Android 4.1.2
 
@@ -32,8 +32,21 @@ Better Endfield Next **4.1.2** 开发记录。
 
 - **随包提供 bionic arm64 的 zstandard wheel**：用 NDK 交叉编译出 `zstandard-0.25.0-cp314-cp314-android_24_arm64_v8a.whl`（301 KB），`bem-tools install-wheel` 按本机 `EXT_SUFFIX` 解包复制，不走 pip、不需要设备上的编译器。
 
+- **DSH 插件补齐工具面与预览面**：`dsh-bem-creator` 从「只带指令」变成「skill + 工具 + 预览页」，在会话里直接看成品模型，不用来回导出截图。
+  - `bem` 工具提供 `inspect` / `validate` / `preview` / `convert` / `doctor`，读包、查渲染级问题、建预览场景、调 CLI 都走同一个入口；工具用裸 JSON Schema 自注册，profile 里解析不到 `@deepseek-ai/dsh-tools` 也能装；
+  - 预览页挂在会话视图槽位：拖拽旋转、滚轮/双指缩放、外观与选项组切换、形态参数滑条、部件勾选、贴图/素模切换；滑条真的在动网格（读 `mesh_deformations` 稀疏帧做插值后回传位置缓冲）；
+  - 贴图在 1–4 个 worker 里解 BC1/BC3/BC4/BC5/BC7，解完立刻丢 CPU 副本，避免五张 4096×2048 的 RGBA 把手机 WebView 撑爆；ASTC 明确不解码，宿主干脆不发 blob 并带 `skipped` 原因，客户端只显示一句「N 张 ASTC 贴图不在浏览器内解码」，几何照常显示；
+  - 预览能站直了：包里的顶点是 Z-up，相机是 Y-up，宿主按包围盒判定后一次性旋转位置与形变增量，模型不再横躺；着色改成线性空间计算、末尾 gamma 编码，并让法线始终朝向视点（网格沿 UV 缝拆点、绕序混杂，`gl_FrontFacing` 不可信），素模平均亮度约翻倍，取景也改按垂直视场计算，头脚不再被裁；
+  - 插件改为随包携带 BEM Tools 源码树（2.0 MB），`convert` 不再需要机器上装过 bemtools；宿主只需有 Python 3.10+（3.14+ 免依赖，更早版本 `pip install zstandard`），缺什么 `doctor` 会直接给出补救命令。
+
 - **产物版本对齐 1.6.3**：Windows 工具包、Android CLI 与 DSH 插件三件产物同版本发布；DSH 插件版本与 `TOOL_VERSION` 由构建脚本强校验。
 
 ## 下载
 
-候选包产出后填写。
+| 附件 | 用途 |
+| --- | --- |
+| BetterEndfieldNext-4.1.2-Setup.exe | Windows x64 主程序安装包 |
+| BetterEndfieldNext-4.1.2-Android-arm64.apk | Android 4.1.2 Release APK |
+| BEM-Tools-1.6.3-win-x64.zip | 完整独立创作者 GUI、CLI 和全量角色资料 |
+| BEM-Tools-1.6.3-android-arm64.tar.gz | 安卓端 BEM CLI（源码形态，供 agent 在 Termux / root shell 直接调用） |
+| dsh-bem-creator-1.6.3.tgz | DeepSeek Harness 插件（创作者 skill + bem 工具 + 会话内模型预览） |

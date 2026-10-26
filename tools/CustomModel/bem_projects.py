@@ -5,6 +5,7 @@ import shutil
 import stat
 import tempfile
 import zipfile
+import zstd_compat  # noqa: F401  - stdlib stand-in when the zstandard extension is absent
 import zstandard
 from collections import Counter
 from pathlib import Path, PurePosixPath

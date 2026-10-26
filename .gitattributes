@@ -3,5 +3,9 @@ manifests/** text eol=lf
 *.besem text eol=lf
 *.bemap text eol=lf
 *.bin binary
+# Android CLI entry points run under Android's mksh; CRLF breaks the shebang.
+tools/CustomModel/android/** text eol=lf
+# ...but the prebuilt wheel next to them is a zip, never line-ending normalised.
+tools/CustomModel/android/wheels/*.whl binary
 # Archived source digests describe the original bytes, including mixed EOLs.
 legacy/retired-before-next/** -text

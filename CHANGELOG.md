@@ -1,6 +1,6 @@
 # 更新日志
 
-## 4.1.2 Better Endfield Next（开发中）
+## 4.1.2 Better Endfield Next
 
 - **桌面端角色外观新增「打开模型文件夹」快捷入口**：
   - 将「角色外观」管理页顶部的快捷按钮明确更名为「打开模型文件夹」（中英文对齐）；
@@ -48,7 +48,27 @@
 
 - **BEM Tools 升级至 1.6.3**：`bem_repair.py` 重写为 22 个证据门控子命令（IB/DDS/INI 重复段/条件贴图/蒙皮/合并骨架/入口程序/贴图覆盖/角色资料缺口/形态参数/选项空间/CrossIB 分组），新增 `shape-params` 从源 ShapeKey 自动生成 BEM 1.3 滑条配置，并随包分发 `catalog/material-attributes.json` 材质属性名字典；同时新增 `bem_assemble.py` 与 `catalog/identities/`。
 
-- **新增 DeepSeek Harness 插件 `dsh-bem-creator`（第四个产物）**：把创作者 skill 打包成 DSH 插件，版本与 BEM Tools 对齐到 1.6.3，`dsh plugin --profile web add dsh-bem-creator-1.6.3.tgz` 一条命令装进任意 profile，装完即出现在 `dsh skill list` 中，模型可用 `skill` 工具加载、用户可 `/bem-creator` 直接调用。插件只承载指令、不携带 CLI，需与 `BEM-Tools-1.6.3-win-x64.zip` 一起分发；本版不注册客户端 UI，也不注册 `bem` 工具。由 `scripts/BuildDshPlugin.py` 构建，已接入 `scripts/BuildBemTools.ps1` 的发布流程。
+- **新增 DeepSeek Harness 插件 `dsh-bem-creator`（第四个产物）**：把创作者 skill 打包成 DSH 插件，版本与 BEM Tools 对齐到 1.6.3，`dsh plugin --profile web add dsh-bem-creator-1.6.3.tgz` 一条命令装进任意 profile，装完即出现在 `dsh skill list` 中，模型可用 `skill` 工具加载、用户可 `/bem-creator` 直接调用。插件随包携带 BEM Tools **源码树**（`lib/bin/cli/`，2.0 MB），`convert` 不再依赖机器上装过 bemtools，也不需要 33 MB 的 PyInstaller 构建——宿主有 Python 3.10+ 即可运行，3.14+ 无需额外包，更早版本按 `doctor` 给出的命令 `pip install zstandard`。由 `scripts/BuildDshPlugin.py` 构建，已接入 `scripts/BuildBemTools.ps1` 的发布流程。
+
+- **`dsh-bem-creator` 注册 `bem` 工具与会话内预览页**：插件从「只带指令」扩到 skill + 工具 + 预览三块，装完在会话里就能看成品模型。
+  - `bem` 工具五个动作：`inspect`（只读 manifest）、`validate`（查会让渲染出错的问题：索引越界、载荷长度不足、网格引用越界）、`preview`（建场景并返回预览 id）、`convert`（自备 CLI 时转发）、`doctor`（报本机能力）。工具用裸 JSON Schema 自注册，不依赖 `@deepseek-ai/dsh-tools`；
+  - 预览页注册 `conversation.view` 槽位：轨道相机、外观与选项组 chips、形态参数滑条、部件勾选、贴图/素模切换、统计与解码状态；1.0–1.2 的 `start`/`count` 共享索引与 1.3+ 的每 draw 自带索引两种布局都支持，draw 级 `when` 条件按当前选项求值；
+  - 形态滑条读 `parameters` 的 0–1000 刻度与 `mesh_deformations` 的稀疏帧（`u32 顶点 + 3×f32 增量`），客户端做相邻帧插值后 `bufferSubData` 回传；
+  - 贴图在 1–4 个 module worker 里解 BC1/BC3/BC4/BC5/BC7，解完立即转移所有权并丢弃 CPU 副本（五张 4096×2048 的 RGBA 是 160 MB，留在主线程会把手机 WebView 撑爆）；解码器从 `@bis-toolkit/bcn` 1.0.2 逐字 vendored（GPL-3.0-or-later，AGPL §13 允许合并）；ASTC 明确不解码并在角标说明；
+  - 宿主侧注册 `/dsh-bem/` 前缀路由（`api/latest`、`api/scene/<id>`、`api/blob/<scene>/<blob>`、两个解码器资产），几何与贴图走 `application/octet-stream`，避开 connection 插件占用的 `/api/*`；场景上限 6 个、最旧先淘汰，过期标签页拿到 410 而不是空舞台；
+  - 新增 `test/host.test.mjs` 与 `test/client.test.mjs`：前者用 stub context 跑真实 1.0/1.5 包（工具、路由、场景 JSON、blob 长度、形变帧、ASTC 跳过），后者用假 React 与假 WebGL2 上下文真渲染一遍（面板、解码、滑条改位置缓冲、部件隐藏、场景过期提示、卸载回收 worker）；`BuildDshPlugin.py` 三条测试全绿才打包，并校验 `exports["./client"]`、`dsh.client.platform`、`lib/client.js` 的模块封装——`dsh-client-modules` 在这三处缺失时直接抛错。
+  - **联调修复：可选服务不能按属性读**：`apply` 原先在插件自己的 ctx 上探 `ctx.webServer` / `ctx.tools`，而 Cordis 4 的 ctx 是服务表上的 Proxy —— 名字不在本 fiber 的 `inject` 集合里时直接抛 `cannot get property "webServer" without inject`，不返回 `undefined`，`source?.name` 挡不住。桌面 profile 因此在 `apply` 的同步栈里把整个 fiber 打成 `failed`，连 skill 一起回滚（实测 `fiberPhase: failed`、`Config.status: absent`、skill 报 unknown、`/dsh-bem/*` 全 404，而客户端半的标签页照常出现，表现为一个永远 404 的空预览页）。改为 `mountService`：先用 `ctx.get(name)` 非严格读做同步快路径（服务已就绪时不额外建 fiber），缺服务时才用 `ctx.inject([name], cb)` 起子 fiber 声明依赖兜底晚到；两条路径都由 `ctx.effect` 管生命周期。`doctor` 新增 `surface.routes` / `surface.tool`，一眼区分「加载了但没挂上」和「根本没加载」；
+  - 新增 `test/cordis.mjs`：stub 用 Proxy 复刻「未声明就抛」的语义（普通对象 stub 返回 `undefined`，正好把这个 bug 藏过去），`host.test.mjs` 里反过来断言 stub 仍在抛，防止测试替身悄悄退化；新增 `test/real-cordis.mjs`，在装有 dsh 的机器上用真实 Cordis 4.0.5 复验四种情形 —— 桌面全服务、headless 只有 skills、服务晚到、以及「fiber 内直接读属性必抛」，四条全绿且 `fiber.state` 均为 2（active）。
+  - **联调修复二：前缀不能带尾斜杠**：`kind: 'prefix'` 的路由原先注册 `/dsh-bem/`，而 `dsh-host-webserver` 的 matcher 是 `pathname !== prefix && !pathname.startsWith(`${prefix}/`)` —— 它自己补分隔符，于是只在找 `/dsh-bem//…`。症状是最坏的一种：注册成功、handler 活着、`doctor.surface.routes` 诚实地报 `true`，但 `/dsh-bem/api/latest` 全部落到 SPA fallback 拿空 404，客户端轮询的 `catch` 又把错误吞掉，页面永远停在空态且 Console 不报错。改为注册 `/dsh-bem`，handler 用 `slice(ROUTE_BASE.length)` 去掉前导斜杠，同时容忍 `/dsh-bem`、`/dsh-bem/`、`/dsh-bem//…` 三种形态；
+  - 测试补上真正的盲区：`host.test.mjs` 的 `request()` 现在先过一遍照抄自 `dsh-host-webserver` 的 `match()` 再分派（原来直接调 `routes[0].handler`，等于绕开了分派，路由挂错也测不出来），`real-cordis.mjs` 进一步用真实的 `WebServer.prototype.match` 在 duck-typed sink 上交叉验证 `/dsh-bem`、`/dsh-bem/`、`/dsh-bem/api/latest`、`/dsh-bem/assets/bcn.js` 都归到这条路由，`/dsh-bemx` 不会误命中。把注册路径改回带尾斜杠，这两处会立刻红。
+  - **客户端不再静默失败**：轮询 `${API}api/latest` 原先直接 `response.json()`，空 body 一抛就被 `catch` 吞掉——上一轮那个「路由注册成功但前缀不可达」的 bug，在页面上表现为永远停在空中态、Console 一条错误都没有。现在先判 `response.ok`、再读 `text()` 判空、最后 `JSON.parse`；连续三个轮询周期（约 4.5 秒）失败后显示「预览服务连不上」并带上失败原文（如 `HTTP 404 Not Found`），恢复后自动清掉。测试新增一段：让 fetch 全返回空 404、手动 tick 三次，断言提示出现且含状态码。
+  - **预览画面三处硬伤（联调第二轮）**：
+    - 朝向：包里的顶点是 Z-up（1.67 m 的角色 Z 跨度 1.668、Y 只有 0.58），相机是 Y-up，于是模型横躺。宿主在 `buildScene` 里按并集包围盒判定（Z 跨度 > Y 跨度 1.05 倍）后，把位置与形变增量一起做 `(x, y, z) → (x, z, −y)`，并在场景 JSON 里写明 `orientation`，下游不必再关心包的坐标系。实测 40 个真实包（1.0/1.4/1.5）全是 Z-up，扁平的合成 fixture Z 跨度为 0，不会被误转；
+    - 亮度：贴图按 `SRGB8_ALPHA8` 采样拿到的是线性值，却被直接写进非 sRGB 的 drawing buffer，中间调整体暗一档；再叠上 `0.42 + 0.58 * key` 的大环境光，整个模型几乎只有一个明度。改为线性空间里 key/fill/半球三灯、末尾 `pow(color, 1/2.2)` 编码一次，环境光降到 0.20、key 提到 0.80；素模平均亮度 0.27 → 0.52（sRGB 0–1），明暗跨度也拉开；
+    - 法线方向：网格沿 UV 缝拆点、绕序混杂（质心法只有约 64% 的三角形朝外），`gl_FrontFacing` 不能当「这面朝外」用，原先那一翻就足以让整片表面变背光。改为按视点翻（`dot(n, view) < 0` 取反）并给零长法线兜底，同时不信绕序、不做整体翻转；
+    - 取景：`resetView` 原用 `radius * 2.4`，在 38° 垂直视场下装不下包围球，头脚被裁；改为 `radius / sin(fov/2) * 1.06`。
+  - **ASTC 不再假装可解码**：宿主原先给 ASTC 也发 blob，客户端逐张送进 worker，换来 6 条 `no decoder for astc` 失败。`TEXTURE_FAMILY` 增加 `decodable` 标志后，格式 48/49/50 只给 `blob: null` + `skipped: 'ASTC blocks are not decoded in the browser build'`，`stats.previewableTextures` 自然排除它们；客户端对空 blob 直接跳过（不算失败），角标写「N 张 ASTC 贴图不在浏览器内解码」，几何照常显示，这些 draw 走素模。
+  - **补掉两处空断言**：`host.test.mjs` 的 ASTC 断言原本写在对 1.0 包的检查里，而那个包一张 ASTC 都没有，`astc.every(...)` 恒真——新增 ASTC 包（22 张全是 ASTC）与 Y-up 朝向两节；`client.test.mjs` 的 fixture 换成绕序朝内的四面体，新增「宿主跳过的贴图不算失败」「着色器不依赖 `gl_FrontFacing`」「末尾有 gamma 编码」三条；`BuildDshPlugin.py` 的冒烟测试补上 `BEM_TEST_PACKAGE_ASTC`。
 
 ## 4.1.0 Better Endfield Next
 
