@@ -1,6 +1,6 @@
-# 冲刺持续模块 1.14.0
+# 冲刺持续模块 1.14.1
 
-1.14.0 给祀加一个默认关的可选项 `jsspsi_quality`，补回轻量版去掉的两处效果：尾巴、后发每圈从背后甩起一次，以及回绕处身体跳一下。打开后，祀和身下墨兽按编进模块的接缝差在接缝两侧各补一半，回绕改成硬切；尾巴、后发从第一次回绕起按圈内相位播一段平稳的附属件循环，松手后 0.4 秒淡回原生；能认出时第一次回绕停掉起冲音效。不新增钩子，写骨和洁尔佩塔、梨诺的姿态覆盖在同一个 TailLate 入口、用同一套宿主写骨租约，运行时不读写任何文件，内置数据约 86 KB。选项关着时，模块的行为与轻量版逐调用一致。做法、取舍、日志和边界见 [特殊冲刺动画持续播放](../../../docs/actions/SPECIAL_DASH_CONTINUOUS_ANIMATION.md) 的「祀的可选高质量过渡」，数据的生成和误差见 [生成工具](../../../tools/actions/jsspsi_quality/README.md)，测试见下文「祀的高质量过渡测试」。这一版没有在游戏里验证过。
+1.14.1 提供默认关闭的祀高质量过渡选项 `jsspsi_quality`，补回轻量版去掉的两处效果：尾巴、后发每圈从背后甩起一次，以及回绕处身体跳一下。打开后，祀和身下墨兽按编进模块的接缝差在接缝两侧各补一半，回绕改成硬切；尾巴、后发从第一次回绕起按圈内相位播一段平稳的附属件循环，松手后 0.4 秒淡回原生；在已有音效钩子里记录音频对象，第一次回绕按对象和事件请求停掉起冲音效（300 ms 线性淡出）。不新增钩子，写骨和洁尔佩塔、梨诺的姿态覆盖在同一个 TailLate 入口、用同一套宿主写骨租约，运行时不读写任何文件，64 位内置数据约 89.1 KB（计入结构体填充和总描述符，详见生成工具）。选项关着时，配置及冲刺调用轨迹与轻量版一致；初始化额外解析两个可选音频方法，缺失时多一条诊断。做法、取舍、日志和边界见 [特殊冲刺动画持续播放](../../../docs/actions/SPECIAL_DASH_CONTINUOUS_ANIMATION.md) 的「祀的可选高质量过渡」，数据的生成和误差见 [生成工具](../../../tools/actions/jsspsi_quality/README.md)，测试见下文「祀的高质量过渡测试」。这一版没有在游戏里验证过。
 
 1.13.6 修复 Windows 1.6.3 中 `AnimatorStateInfo.get_loop` 缺失导致整个动作模块被拒绝加载的问题。该值只用于诊断日志，不参与冲刺保持或回绕判断；现在接口缺失或调用失败时记为 `clip_loop=unknown`，核心状态、时间和长度读取失败仍会终止保持。Android 的 CMake 直接编译同一份 `module.cpp`，同步采用此修复，无须维护另一套逻辑。
 
@@ -58,7 +58,7 @@ diagnostics=true
 动作模块共六个本地测试目标，都在 `config/test-suites.json` 里登记。原有四个是 `BetterEndfieldNext.ActionsTests`、`ActionsEffectsTests`、`ActionsExternalTests`、`ActionsPoseTests`（`actions.policy`、`actions.effects`、`actions.external`、`actions.pose`）；`jsspsi_quality` 新增两个：
 
 - `BetterEndfieldNext.ActionsQualityDataTests`（`actions.quality_data`，`quality_data_tests.cpp`）：内置数据的回绕区间与 `kJsspsiLoop` 一致，节点树、接缝行、阈值和量化范围；每一行接缝差都满足「圈尾补 +½ 等于圈首补 −½」；接缝份额和圈内相位；附属件表的四元数、样本取值和绕圈连续。不含 `module.cpp`。
-- `BetterEndfieldNext.ActionsQualityTests`（`actions.quality`，`loop_quality_tests.cpp`）：把生产的 `module.cpp` 编进测试，用假的 Unity 对象从 `StartSpDash` 起跑完整的冲刺（PreLate 回绕、TailLate 写骨、松手淡出）。覆盖选项关着时不建立任何状态、不碰骨、不申请租约、两次 CrossFade 都用轻量版的 0.06；左右两侧接缝生效、祀和身下墨兽都硬切、硬切那一帧渲染出来的骨的旋转步长不超过普通帧；附属件第一圈不写、第一次回绕起逐骨等于表的取样；0.4 秒淡出和释放后租约、pin 全部归还；租约被别的写骨者占着、身下墨兽不在、身下墨兽进入状态比祀晚太多时不启用接缝（晚一帧仍启用）、写骨失败时关掉接缝和硬切、骨缺太多、不被动画重写的通道不累积、音效走不到 `AudioManager.PostEvent` 或投递的是别的事件、中途关掉选项时还原常量通道、淡出中又冲刺、组件释放、关停线程。不带参数跑全部场景，也可以传 `config`、`off`、`right`、`left`、`lease`、`mount`、`step`、`writefail`、`missing`、`constant`、`sound`、`lifecycle` 之一只跑那一个。
+- `BetterEndfieldNext.ActionsQualityTests`（`actions.quality`，`loop_quality_tests.cpp`）：把生产的 `module.cpp` 编进测试，用假的 Unity 对象从 `StartSpDash` 起跑完整的冲刺（PreLate 回绕、TailLate 写骨、松手淡出）。覆盖选项关着时不建立任何状态、不碰骨、不申请租约、两次 CrossFade 都用轻量版的 0.06；左右两侧接缝生效、祀和身下墨兽都硬切、硬切那一帧渲染出来的骨的旋转步长不超过普通帧；附属件第一圈不写、第一次回绕起逐骨等于表的取样；0.4 秒淡出和释放后租约、pin 全部归还；租约被别的写骨者占着、身下墨兽不在、身下墨兽进入状态比祀晚太多时不启用接缝（晚一帧仍启用）、写骨失败时关掉接缝和硬切、骨缺太多、不被动画重写的通道不累积、音效由 `AnimatorMono.PostAudioEvent` 直接投递、第一次回绕准确传入事件/Stop/64 位对象 id/300 ms/Linear/playingId=0、重复投递只捕获一次、返回失败或异常的日志、缺少任一音频契约/无效对象/无关事件/其他组件/非游戏线程时不停音，祀或墨兽的根/Animator 被替换但旧对象和租约仍存活时当帧退回 0.06 且新根不写骨（另测 TailLate 单独识别墨兽 Animator 替换），换墨兽时归还骑手常量通道、中途关掉选项时还原常量通道、淡出中又冲刺、组件释放、关停线程。不带参数跑全部场景，也可以传 `config`、`off`、`right`、`left`、`lease`、`mount`、`step`、`writefail`、`missing`、`constant`、`sound`、`rider_root`、`rider_animator`、`mount_root`、`mount_animator`、`mount_animator_tail`、`lifecycle` 之一只跑那一个。
 
 六个都是 `EXCLUDE_FROM_ALL` 目标。在 Windows 上装好 Python 3、CMake 3.25 及以上、Visual Studio 2022 的 C++ 工具和 Windows SDK，从仓库根目录配置 `native`（构建目录取工作区 `paths.build`；已有配置可直接把 `$nativeBuild` 设成含 `CMakeCache.txt` 的目录），再构建、运行：
 
@@ -74,11 +74,11 @@ cmake --build "$nativeBuild" --config Release --target BetterEndfieldNext.Action
 
 交给 `scripts/run_workspace_tests.py` 执行时，EXE 要在 registry 的 `paths.build/windows/win-x64/Release/native/Release` 下，并按 [构建凭据](../../../docs/workspace/TESTING.md#构建凭据) 为各套件写出凭据。
 
-这两个目标和原有四个在 Linux 上用 g++ 14 和 clang++ 18 加 `-fsanitize=address,undefined` 编译运行通过（`-DBE_TEST_PC_POSE`，`Windows.h` 取 `native/shared/android_compat/include`）。g++ 13、14 有一个聚合体赋值的编译器缺陷，`module.cpp` 里 `effect = {}`、`g_session = {}` 这几处报 `no match for operator=`（上游原有代码，MSVC、clang 不受影响）；用 g++ 编测试时要在副本里把 `ParticleHold particles[16]{}`、`EffectHold effects[kEffectSlotCount]{}` 的空花括号去掉（含义相同）。MSVC 没有编译或运行过；Windows DLL 只用 Zig 0.13（`x86_64-windows-gnu`，另需一个给 `std::atomic<std::shared_ptr>` 的临时兼容头）交叉编译过。
+这两个目标和原有四个，以及相机 `actions_lease`，在 Linux x86_64 上用 g++ 16.2.1 和 clang++ 23.1.3 加 `-fsanitize=address,undefined -fno-omit-frame-pointer -O1 -g -pthread -DBE_TEST_PC_POSE` 编译运行通过；直接使用仓库源码，未做编译器兼容修改。`actions.quality` 包含 17 个入口场景。移除 PreLate 的当前根检查后，四个换根场景均在期望 0.06 的断言处失败；单独移除 TailLate 的当前墨兽 Animator 比较后，`mount_animator_tail` 失败。Windows MSVC、当前版 Windows DLL、Android NDK 和游戏内效果未验证。
 
-选项关着时与轻量版一致这一点，除了上面 `off` 场景的断言，还另外做过一次逐调用比对：同一个脚本化冲刺（祀左右各一次、洁尔佩塔一次，含音效投递、回绕和松手），分别编进上游 `3434af8` 的 `module.cpp` 和这一版，输出的每一次托管调用及参数、字段读取、pin/free 和日志逐字节相同；INI 里显式写 `jsspsi_quality=false` 时也相同。这个比对程序是一次性的，没有放进仓库。
+选项关着时另用同一套脚本化输入分别驱动上游 `3434af8` 和 1.14.1 的完整初始化、配置、祀左右/洁尔佩塔/梨诺冲刺和关闭流程。未写键时 80,050 行、显式 `jsspsi_quality=false` 时 80,051 行，托管调用、参数、字段读取、pin/free、原函数调用和日志逐字节一致。宿主契约解析轨迹单独保留：1.14.1 多查两个可选音频方法，钩子列表不变。模拟停止方法缺失时，初始化多出一条 `Missing action method` 日志，配置至关闭的轨迹仍一致。这个比对程序是离线验证工具，没有放进仓库；结果只覆盖这些输入，不能替代游戏内验证。
 
-启动器保留 `jsspsi_quality` 的逻辑由 C# 测试 `ui/tests/ActionIniPreservation`（`actions.ini_preservation`）覆盖：在配好 .NET 9 SDK 的 Windows 上先用 `python ui/tests/ActionIniPreservation/build.py` 构建并写出构建凭据，再由 `python -B scripts/run_workspace_tests.py --suite actions.ini_preservation` 运行。它只在 Linux 上用 .NET 8 把同一份源码编成 net8.0 跑过。
+启动器保留 `jsspsi_quality` 的逻辑由 C# 测试 `ui/tests/ActionIniPreservation`（`actions.ini_preservation`）覆盖：在配好 .NET 9 SDK 的 Windows 上先用 `python ui/tests/ActionIniPreservation/build.py` 构建并写出构建凭据，再由 `python -B scripts/run_workspace_tests.py --suite actions.ini_preservation` 运行。离线验证在 Linux 上用 .NET SDK 10.0.113，把同一份源码复制到独立 net10.0 项目运行通过，未验证仓库指定的 .NET 9 和 WinUI。
 
 ## 历史记录
 

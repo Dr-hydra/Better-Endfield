@@ -10,6 +10,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <thread>
 #include <vector>
 using namespace BetterEndfieldNext;
 using namespace BetterEndfieldNext::Actions;
@@ -49,6 +50,10 @@ struct World {
     bool mount_available = true;
 };
 World* w = nullptr;
+AnimatorFake* replacement_rider = nullptr;
+AnimatorFake* replacement_mount = nullptr;
+TransformFake* replacement_root = nullptr;
+std::map<std::string, TransformFake>* replacement_bones = nullptr;
 Motion::PoseLeaseRegistry* registry = nullptr;
 std::deque<std::string> strings;
 std::vector<std::string> logs;
@@ -57,10 +62,12 @@ int side_hash = kRight;
 bool yes = true, no = false, moving = true;
 int move_mode = 20;
 const char* perform = "CharIntPerform_Jsspsi_SpdashR";
-uint32_t pins = 0, frees = 0, stops = 0, stop_playing = 0;
-int stop_fade = 0, interrupts = 0, mono_posts = 0;
-bool route_sound = true;
-uint32_t sound_playing = 777, inner_hash = 0;
+uint32_t pins = 0, frees = 0, stops = 0, stop_event = 0, stop_playing = 0;
+int stop_fade = 0, stop_action = -1, stop_curve = -1, interrupts = 0, mono_posts = 0;
+uint64_t sound_object = 0x12345678abcdef12ULL, stop_object = 0, posted_object = 0;
+uint32_t posted_event = 0;
+int32_t sound_result = 1;
+bool sound_lookup_fails = false, sound_stop_fails = false, wrong_audio_component = false;
 float mount_enter_u = 0;              // The mount enters its dash state once the rider reaches this u.
 TransformFake* failing_write = nullptr;
 const void* kGetItem = &kGetItem;
@@ -88,7 +95,7 @@ void* BE_CALL InvokeFake(void*, const void* method, void* instance, void** args,
     case GetGait: return &w->gait;
     case GaitValue: return &g_sprint;
     case PerformId: return const_cast<char*>(perform);
-    case GetAnimator: return &w->rider;
+    case GetAnimator: return replacement_rider ? replacement_rider : &w->rider;
     case InTransition: return &A(instance)->transitioning;
     case CurrentState: return &A(instance)->current;
     case NextState: return &A(instance)->next;
@@ -105,13 +112,14 @@ void* BE_CALL InvokeFake(void*, const void* method, void* instance, void** args,
     }
     case JsspsiTmpAnimator: {
         const auto slot = static_cast<Fake*>(instance) - w->tmp;
-        if (slot == 0) return w->mount_available ? &w->mount : nullptr;
+        if (slot == 0) return w->mount_available ? (replacement_mount ? replacement_mount : &w->mount) : nullptr;
         return &w->sides[slot - 1];
     }
     case PoseComponentTransform: return A(instance)->root;
     case PoseFind: {
         const std::string path = static_cast<const char*>(args[0]);
-        auto& bones = instance == &w->rider_root ? w->rider_bones : w->mount_bones;
+        auto& bones = instance == replacement_root ? *replacement_bones :
+            instance == &w->rider_root ? w->rider_bones : w->mount_bones;
         auto found = bones.find(path);
         return w->missing.count(path) || found == bones.end() ? nullptr : &found->second;
     }
@@ -129,10 +137,19 @@ void* BE_CALL InvokeFake(void*, const void* method, void* instance, void** args,
     case PoseIsChild: { static bool child; child = T(instance)->root == args[0]; return &child; }
     case PoseFrameCount: return &w->frame;
     case UnityAlive: return &static_cast<Fake*>(args[0])->alive;
-    case AudioMonoComponent: return &w->component;
+    case AudioMonoComponent: return wrong_audio_component ? &w->entity : &w->component;
+    case JsspsiAudioObjectId:
+        CHECK(instance == nullptr && args[0] == &w->entity);
+        if (sound_lookup_fails) { *exception = &w->entity; return nullptr; }
+        return &sound_object;
     case JsspsiStopSound:
-        ++stops; stop_playing = *static_cast<uint32_t*>(args[0]); stop_fade = *static_cast<int*>(args[1]);
-        return nullptr;
+        CHECK(instance == nullptr);
+        ++stops;
+        stop_event = *static_cast<uint32_t*>(args[0]); stop_action = *static_cast<int32_t*>(args[1]);
+        stop_object = *static_cast<uint64_t*>(args[2]); stop_fade = *static_cast<int32_t*>(args[3]);
+        stop_curve = *static_cast<int32_t*>(args[4]); stop_playing = *static_cast<uint32_t*>(args[5]);
+        if (sound_stop_fails) { *exception = &w->entity; return nullptr; }
+        return &sound_result;
     default: std::fprintf(stderr, "unexpected method %d\n", id); CHECK(false); return nullptr;
     }
 }
@@ -165,10 +182,12 @@ void __fastcall StartFake(void*, int, const void*) {}
 void __fastcall TickFake(void*, float, const void*) {}
 void __fastcall InterruptFake(void*, const void*) { ++interrupts; }
 void __fastcall ReleaseFake(void*, bool, const void*) {}
-uint32_t __fastcall EntityPostFake(void*, uint32_t, int, void*, void*, const void*) { return sound_playing; }
+uint32_t __fastcall EntityPostFake(void*, uint32_t, int, void*, void*, const void*) { return 777; }
 void __fastcall MonoPostFake(void*, uint32_t hash, float, const void*) {
     ++mono_posts;
-    if (route_sound) AudioEntityDetour(&w->entity, inner_hash ? inner_hash : hash, g_audio_none, nullptr, nullptr, nullptr);
+    // Match the native route: post directly, without the Entity PostEvent hook.
+    posted_event = hash;
+    posted_object = sound_object;
 }
 bool Logged(const char* text) {
     for (const auto& line : logs) if (line.find(text) != std::string::npos) return true;
@@ -219,7 +238,11 @@ void AddBones(std::map<std::string, TransformFake>& bones, TransformFake& root, 
         model.accessory = i;
     }
 }
-void ResetCounters() { calls.clear(); logs.clear(); stops = stop_playing = 0; stop_fade = interrupts = mono_posts = 0; }
+void ResetCounters() {
+    calls.clear(); logs.clear(); stops = stop_event = stop_playing = posted_event = 0;
+    stop_object = posted_object = 0; stop_action = stop_curve = -1;
+    stop_fade = interrupts = mono_posts = 0;
+}
 void NewWorld(int hash) {
     delete w;
     w = new World;
@@ -236,8 +259,10 @@ void NewWorld(int hash) {
     const int side = hash == kRight ? 0 : 1;
     AddBones(w->rider_bones, w->rider_root, data.rider, &data.rider_seam[side], side);
     AddBones(w->mount_bones, w->mount_root, data.mount, &data.mount_seam, -1);
-    moving = true; move_mode = g_dash_mode; route_sound = true;
-    inner_hash = 0; mount_enter_u = 0; failing_write = nullptr;
+    moving = true; move_mode = g_dash_mode;
+    sound_object = 0x12345678abcdef12ULL; sound_result = 1;
+    sound_lookup_fails = sound_stop_fails = wrong_audio_component = false;
+    mount_enter_u = 0; failing_write = nullptr;
     ResetCounters();
 }
 void SetQuality(bool quality) {
@@ -336,7 +361,7 @@ void OffMatchesLightweight() {
     RunLaps(3, true);
     EndDash();
     for (int i = 0; i < 40; ++i) Step();
-    for (int id : {PoseFind, PoseGetLocal, PoseSetLocal, PoseIsChild, PoseFrameCount, JsspsiStopSound, AudioMonoComponent})
+    for (int id : {PoseFind, PoseGetLocal, PoseSetLocal, PoseIsChild, PoseFrameCount, JsspsiAudioObjectId, JsspsiStopSound, AudioMonoComponent})
         CHECK(calls[id] == 0);
     CHECK(Leases() == 0 && !g_quality.component && stops == 0 && mono_posts == 1);
     CHECK(w->rider.durations.size() == 3 && w->mount.durations.size() == 3);
@@ -355,7 +380,9 @@ void OnSide(int hash) {
     StartDash();
     CHECK(QualityOwned());
     AudioMonoDetour(&w->rider, kCharacters[2].start_sound_event, 0, nullptr);
-    CHECK(g_quality.sound_playing == sound_playing && stops == 0);
+    CHECK(g_quality.sound_object == sound_object && stops == 0);
+    CHECK(mono_posts == 1 && posted_event == 1063030539u && posted_object == sound_object);
+    CHECK(calls[JsspsiAudioObjectId] == 1);
     // First lap: accessory bones stay native until the first rewind request.
     while (w->rider.durations.empty()) {
         for (auto& [bone, model] : w->models) if (model.accessory >= 0) CHECK(bone->writes == 0);
@@ -363,7 +390,9 @@ void OnSide(int hash) {
     }
     CHECK(Logged("rider bound side=") && Logged("mount bound seam=") && Logged("seam armed"));
     CHECK(Leases() == 2);
-    CHECK(stops == 1 && stop_playing == sound_playing && stop_fade == 300 && Logged("dash sound stopped"));
+    CHECK(stops == 1 && stop_event == posted_event && stop_object == posted_object);
+    CHECK(stop_action == 0 && stop_curve == 4 && stop_playing == 0 && stop_fade == 300);
+    CHECK(Logged("dash sound stop requested") && Logged("result=1 ok=1"));
     CheckAccessoryOnLap(side);
     const Steps steps = RunLaps(5, false);
     CHECK(steps.rewinds >= 4);
@@ -507,30 +536,111 @@ void ConstantChannelDoesNotAccumulate() {
     CHECK(Degrees(fixed->pose.rotation, native.rotation) < 1e-4f && Distance(fixed->pose.position, native.position) < 1e-7f);
     while (QualityOwned()) Step();
 }
-// The sound is stopped only when the post reaches AudioManager.PostEvent inside
-// the clip's own post; otherwise native audio is left alone.
-void SoundNotRouted() {
+// Missing contracts, failed lookups and unrelated posts leave native audio
+// alone. A direct AnimatorMono post needs no Entity PostEvent interception.
+void SoundCaptureAndFallback() {
+    for (int mode = 0; mode < 8; ++mode) {
+        NewWorld(kRight); SetQuality(true);
+        const auto object_method = g_methods[JsspsiAudioObjectId].resolved;
+        const auto stop_method = g_methods[JsspsiStopSound].resolved;
+        if (mode == 0) g_methods[JsspsiAudioObjectId].resolved = {};
+        if (mode == 1) g_methods[JsspsiStopSound].resolved = {};
+        if (mode == 2) sound_object = 0;
+        if (mode == 3) sound_object = UINT64_MAX;
+        if (mode == 4) sound_lookup_fails = true;
+        if (mode == 5) wrong_audio_component = true;
+        StartDash();
+        const uint32_t event = mode == 6 ? 12345 : 1063030539u;
+        if (mode == 7) {
+            std::thread worker([&] { AudioMonoDetour(&w->rider, event, 0, nullptr); });
+            worker.join();
+        } else AudioMonoDetour(&w->rider, event, 0, nullptr);
+        CHECK(mono_posts == 1 && posted_event == event && !g_quality.sound_object);
+        if (mode == 6 || mode == 7) CHECK(calls[AudioMonoComponent] == 0 && calls[JsspsiAudioObjectId] == 0);
+        RunLaps(2, false);
+        CHECK(stops == 0 && Logged("dash sound object not captured"));
+        CHECK(g_quality.seam_frames > 0 && g_quality.accessory_frames > 0);
+        EndDash();
+        while (QualityOwned()) Step();
+        g_methods[JsspsiAudioObjectId].resolved = object_method;
+        g_methods[JsspsiStopSound].resolved = stop_method;
+    }
+    for (int mode = 0; mode < 3; ++mode) {
+        NewWorld(kRight); SetQuality(true); StartDash();
+        AudioMonoDetour(&w->rider, 1063030539u, 0, nullptr);
+        const uint64_t captured = sound_object;
+        // A duplicate post or later lookup must not replace the captured id.
+        sound_object = 123;
+        AudioMonoDetour(&w->rider, 1063030539u, 0, nullptr);
+        CHECK(calls[JsspsiAudioObjectId] == 1 && stops == 0);
+        if (mode == 1) sound_result = 2;
+        if (mode == 2) sound_stop_fails = true;
+        while (w->rider.durations.empty()) Step();
+        CHECK(stops == 1 && stop_event == 1063030539u && stop_object == captured);
+        CHECK(stop_action == 0 && stop_curve == 4 && stop_playing == 0 && stop_fade == 300);
+        CHECK(Logged(mode == 0 ? "result=1 ok=1" : "ok=0"));
+        AudioMonoDetour(&w->rider, 1063030539u, 0, nullptr);
+        RunLaps(3, false);
+        CHECK(stops == 1 && calls[JsspsiAudioObjectId] == 1);
+        EndDash();
+        while (QualityOwned()) Step();
+    }
+}
+// Replace a live animator or its root immediately before the first rewind.
+// The old root remains alive and leased, but only the current pair may hard cut.
+void RootReplacement(int mode, bool before_rewind = true) {
     NewWorld(kRight); SetQuality(true);
-    route_sound = false;
+    TransformFake* fixed = nullptr;
+    for (auto& [bone, model] : w->models) if (model.seam && bone->root == &w->rider_root) {
+        fixed = bone; model.constant = true; break;
+    }
+    CHECK(fixed);
+    const BonePose native = fixed->pose;
     StartDash();
-    RunLaps(1, true);
-    CHECK(stops == 0 && Logged("dash sound not captured"));
-    EndDash();
-    while (QualityOwned()) Step();
-    NewWorld(kRight); SetQuality(true);
-    StartDash();
-    AudioMonoDetour(&w->rider, 12345, 0, nullptr); // Another event: not captured.
-    RunLaps(1, false);
-    CHECK(stops == 0 && calls[AudioMonoComponent] == 0);
-    EndDash();
-    while (QualityOwned()) Step();
-    NewWorld(kRight); SetQuality(true);
-    inner_hash = 4242; // The clip's post reaches AudioManager with another event.
-    StartDash();
-    RunLaps(1, true);
-    CHECK(stops == 0 && Logged("dash sound not captured"));
-    EndDash();
-    while (QualityOwned()) Step();
+    while (before_rewind ? w->rider.current.time + kDelta / kLength < data.begin : !g_quality.seam_armed) Step();
+    CHECK(g_quality.seam_armed && QualitySeamArmed());
+    CHECK(w->rider.durations.empty() && w->mount.durations.empty());
+    CHECK(QualityRootOwned(g_quality.rider) && QualityRootOwned(g_quality.mount));
+    TransformFake fresh_root;
+    AnimatorFake fresh_animator;
+    std::map<std::string, TransformFake> fresh_bones;
+    replacement_root = &fresh_root; replacement_bones = &fresh_bones;
+    AddBones(fresh_bones, fresh_root, mode < 2 ? data.rider : data.mount,
+        mode < 2 ? &data.rider_seam[0] : &data.mount_seam, mode < 2 ? 0 : -1);
+    fresh_animator.root = &fresh_root;
+    fresh_animator.current = mode < 2 ? w->rider.current : w->mount.current;
+    if (mode == 0) w->rider.root = &fresh_root;
+    if (mode == 1) replacement_rider = &fresh_animator;
+    if (mode == 2) w->mount.root = &fresh_root;
+    if (mode == 3) replacement_mount = &fresh_animator;
+    auto& rider = replacement_rider ? *replacement_rider : w->rider;
+    auto& mount = replacement_mount ? *replacement_mount : w->mount;
+    ++w->frame; Evaluate(rider); Evaluate(mount);
+    CHECK(w->rider_root.alive && w->mount_root.alive && w->rider.alive && w->mount.alive);
+    CHECK(QualityRootOwned(g_quality.rider) && QualityRootOwned(g_quality.mount));
+    const auto seam_frames = g_quality.seam_frames;
+    const int writes = calls[PoseSetLocal];
+    PreLateDetour(&w->component, kDelta, nullptr);
+    CHECK(calls[PoseSetLocal] == writes);
+    if (before_rewind) {
+        CHECK(rider.durations.size() == 1 && mount.durations.size() == 1);
+        std::printf("replacement=%d rider=%.3f mount=%.3f old_leases=1\n", mode, rider.durations.back(), mount.durations.back());
+        CHECK(rider.durations.back() == kJsspsiLoop.blend && mount.durations.back() == kJsspsiLoop.blend);
+        CHECK(!g_quality.seam_armed && g_quality.seam_failed);
+    } else CHECK(rider.durations.empty() && mount.durations.empty());
+    PoseTailDetour(&w->component, kDelta, nullptr);
+    CHECK(!QualitySeamArmed());
+    if (mode < 2) CHECK(!QualityOwned());
+    else {
+        CHECK(g_quality.seam_failed && g_quality.seam_frames == seam_frames);
+        CHECK(Degrees(fixed->pose.rotation, native.rotation) < 1e-4f && Distance(fixed->pose.position, native.position) < 1e-7f);
+    }
+    for (const auto& [path, bone] : fresh_bones) CHECK(bone.writes == 0);
+    CHECK(fresh_root.writes == 0);
+    Cancel("replacement test", false); ReleaseLoopQuality(false);
+    CHECK(Leases() == 0);
+    replacement_rider = replacement_mount = nullptr;
+    replacement_root = nullptr; replacement_bones = nullptr;
 }
 // Turning the option off mid-dash ends the session (configuration changed) and
 // the owner without a fade; a new dash during a fade replaces the old owner;
@@ -589,7 +699,8 @@ void ConfigurationAndProfile() {
     CHECK(!parse("schema_version=3\nenabled=true\njsspsi_quality=yes\n")->enabled);
     CHECK(kCharacters[2].quality == &JsspsiQuality::kData && kCharacters[2].start_sound_event == 1063030539u);
     CHECK(!kCharacters[0].quality && !kCharacters[1].quality && !kCharacters[0].start_sound_event);
-    CHECK(std::strcmp(g_methods[JsspsiStopSound].desc.method_name, "StopByPlayingId") == 0 && JsspsiStopSound > JsspsiTmpAnimator);
+    CHECK(std::strcmp(g_methods[JsspsiAudioObjectId].desc.method_name, "GetAudioObjectId") == 0 && JsspsiAudioObjectId > JsspsiTmpAnimator);
+    CHECK(std::strcmp(g_methods[JsspsiStopSound].desc.method_name, "ExecuteActionOnEvent") == 0 && JsspsiStopSound > JsspsiTmpAnimator);
 }
 }
 int main(int argc, char** argv) {
@@ -631,7 +742,12 @@ int main(int argc, char** argv) {
         {"step", MountOutOfStep},
         {"writefail", SeamWriteFails},
         {"constant", ConstantChannelDoesNotAccumulate},
-        {"sound", SoundNotRouted},
+        {"sound", SoundCaptureAndFallback},
+        {"rider_root", [] { RootReplacement(0); }},
+        {"rider_animator", [] { RootReplacement(1); }},
+        {"mount_root", [] { RootReplacement(2); }},
+        {"mount_animator", [] { RootReplacement(3); }},
+        {"mount_animator_tail", [] { RootReplacement(3, false); }},
         {"lifecycle", LifecycleEdges},
     };
     int ran = 0;
@@ -645,5 +761,5 @@ int main(int argc, char** argv) {
     CHECK(ran > 0);
     delete w;
     g_host = nullptr;
-    std::printf("Jsspsi quality: %d scenario(s) passed (off path, both sides, hard-cut seam, accessory lap, fade, lease, mount, mount out of step, write failure, missing bones, constant channel, sound, lifecycle).\n", ran);
+    std::printf("Jsspsi quality: %d scenario(s) passed (off path, both sides, hard-cut seam, accessory lap, fade, lease, mount, mount out of step, write failure, missing bones, constant channel, sound, root replacement, lifecycle).\n", ran);
 }

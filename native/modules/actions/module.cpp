@@ -164,7 +164,8 @@ enum MethodId {
     CurrentClipInfos, InfoClip, DestroyOwned,
     PoseTail, PoseComponentTransform, PoseFind, PoseGetLocal, PoseSetLocal, PoseFrameCount, PoseIsChild,
     MeshGroupShow, EffectActionPlay, EffectManualFollow, VisualPerformId, VisualPerformEntity,
-    JsspsiTmpAnimator, JsspsiPlayRenderVfx, JsspsiPlayVfx, JsspsiVfxTick, JsspsiVfxDelta, JsspsiStopSound, MethodCount
+    JsspsiTmpAnimator, JsspsiPlayRenderVfx, JsspsiPlayVfx, JsspsiVfxTick, JsspsiVfxDelta,
+    JsspsiAudioObjectId, JsspsiStopSound, MethodCount
 };
 struct Method { BE_MethodDescriptorV1 desc; BE_ResolvedMethodV1 resolved{}; };
 Method g_methods[] = {
@@ -259,7 +260,8 @@ Method g_methods[] = {
     {{kGame,kView,"EntityVFX","PlayVFX","System.String","System.Void",1}},
     {{kGame,kView,"EntityVFX","Tick","System.Single","System.Void",1}},
     {{"Rendering.Beyond.dll","Beyond.Rendering","EntityVFXControllerBase","GetDeltaTimeFromLastTick","System.Boolean","System.Single",1}},
-    {{"Audio.Beyond.dll","Beyond.Audio","AudioAdapter","StopByPlayingId","System.UInt32|System.Int32","System.Void",2}},
+    {{kGame,"Beyond.Gameplay.Audio","AudioManager","GetAudioObjectId","Beyond.Gameplay.Core.Entity","System.UInt64",1}},
+    {{"AK.Wwise.Unity.API.dll","","AkSoundEngine","ExecuteActionOnEvent","System.UInt32|AkActionOnEventType|System.UInt64|System.Int32|AkCurveInterpolation|System.UInt32","AKRESULT",6}},
 };
 static_assert(std::size(g_methods) == MethodCount);
 struct Field { BE_FieldDescriptorV1 desc; BE_ResolvedFieldV1 resolved{}; };
@@ -1128,7 +1130,7 @@ void __fastcall AudioMonoDetour(void* mono, uint32_t hash, float clip_in, const 
         void* component = Object(AudioMonoComponent, mono, ok);
         if (ok && component == g_session.component && DeferFlyingStop(hash)) return;
     }
-    QualitySoundScope sound(QualitySoundOrigin(mono, hash));
+    CaptureQualitySound(mono, hash);
     g_audio_mono(mono, hash, clip_in, method);
 }
 uint32_t __fastcall AudioEntityDetour(void* entity, uint32_t hash, int callback_type,
@@ -1136,9 +1138,7 @@ uint32_t __fastcall AudioEntityDetour(void* entity, uint32_t hash, int callback_
     if (GetCurrentThreadId() == g_game_thread.load(std::memory_order_relaxed) &&
         entity == g_session.entity && !callback && !cookie && callback_type == g_audio_none && DeferFlyingStop(hash))
         return 0; // No playing instance or callback was requested for this deferred stop.
-    const uint32_t playing = g_audio_entity(entity, hash, callback_type, callback, cookie, method);
-    QualitySoundPosted(entity, hash, playing);
-    return playing;
+    return g_audio_entity(entity, hash, callback_type, callback, cookie, method);
 }
 void __fastcall PerformClearDetour(void* handle, bool releasing, const void* method) {
     if (handle == g_session.handle && g_session.component) {
@@ -1449,7 +1449,8 @@ BE_Result BE_CALL Configure(const char* raw) {
         Log(text);
         if (config->jsspsi_quality) {
             std::snprintf(text, sizeof(text), "Sustained dash Jsspsi quality: on (pose=%d lease=%d sound=%d); seam split with hard-cut rewinds, accessory lap, dash sound stop.",
-                g_pose_contract, g_pose_lease_ready.load(std::memory_order_relaxed), g_methods[JsspsiStopSound].resolved.method_info != nullptr);
+                g_pose_contract, g_pose_lease_ready.load(std::memory_order_relaxed),
+                g_methods[JsspsiAudioObjectId].resolved.method_info && g_methods[JsspsiStopSound].resolved.method_info);
             Log(text);
         }
     }
@@ -1656,10 +1657,11 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
         Log("Sustained dash v12: TailLate hook unavailable; pose overlay disabled, native v9 hold remains.");
     }
     // jsspsi_quality reuses the pose overlay's TailLate slot and lease. Its only
-    // contract of its own is the optional static sound stop.
-    if (g_methods[JsspsiStopSound].resolved.method_info &&
-        !(flags(g_methods[JsspsiStopSound].resolved.method_info, &impl) & 0x10u))
-        g_methods[JsspsiStopSound].resolved = {};
+    // contracts of its own are optional static audio methods.
+    for (MethodId id : {JsspsiAudioObjectId, JsspsiStopSound})
+        if (g_methods[id].resolved.method_info &&
+            !(flags(g_methods[id].resolved.method_info, &impl) & 0x10u))
+            g_methods[id].resolved = {};
     if (g_methods[JsspsiPlayRenderVfx].resolved.method_pointer) {
         host->create_hook(host->context, kId, g_methods[JsspsiPlayRenderVfx].resolved.method_pointer,
             reinterpret_cast<void*>(&PlayRenderVfxDetour), reinterpret_cast<void**>(&g_play_render_vfx));
@@ -1693,7 +1695,7 @@ void BE_CALL Shutdown() {
     g_particle_type_root = 0;
     g_particle_type = nullptr;
 }
-const BE_ModuleApiV1 kApi{{kId, "Sustained Dash", "1.14.0", BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
+const BE_ModuleApiV1 kApi{{kId, "Sustained Dash", "1.14.1", BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
     &Initialize, &Configure, &Shutdown};
 } // namespace
 } // namespace BetterEndfieldNext::Actions

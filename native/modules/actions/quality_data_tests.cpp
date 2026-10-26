@@ -11,6 +11,9 @@ using namespace BetterEndfieldNext::Actions;
 #define CHECK(x) do { if (!(x)) { std::fprintf(stderr, "line %d: %s\n", __LINE__, #x); std::exit(1); } } while (false)
 namespace {
 const LoopQualityData& data = JsspsiQuality::kData;
+// The generator reports the 64-bit target's padded arrays and descriptor.
+static_assert(sizeof(void*) != 8 || (sizeof(QualityNode) == 16 && alignof(QualityNode) == 8));
+static_assert(sizeof(void*) != 8 || sizeof(LoopQualityData) == 176);
 // Angle of a * b^-1 from its vector part; acos of a float dot is too coarse here.
 float Degrees(PoseQuaternion a, PoseQuaternion b) {
     const auto d = QualityMul(a, QualityConj(b));

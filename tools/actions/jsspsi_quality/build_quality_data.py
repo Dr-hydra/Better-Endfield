@@ -393,11 +393,17 @@ def main():
     emit(args.output, inputs, rider, mount,
          [('kRiderRightSeam', right_rows), ('kRiderLeftSeam', left_rows), ('kMountSeam', mount_rows)],
          dict(nodes=nodes, mount_hash=mounts[0]['hash'], sides=[(pos_right, rot_right), (pos_left, rot_left)]))
-    node_bytes = sum(len(n) + 1 + 2 + 8 for tree in (rider, mount) for _, n in tree.nodes)
+    # QualityNode on the 64-bit target: int16 parent, 6 padding bytes, pointer.
+    # Keep the C++ sizeof/alignof check in quality_data_tests.cpp in sync.
+    node_size, node_alignment = 16, 8
+    node_bytes = sum(len(n) + 1 + node_size for tree in (rider, mount) for _, n in tree.nodes)
     seam_bytes = 14 * (len(right_rows) + len(left_rows) + len(mount_rows))
     accessory_bytes = 2 * (SAMPLES * len(nodes) * 8 + len(nodes) * 12) + 2 * len(nodes)
-    report['bytes'] = dict(nodes_including_pointers=node_bytes, seam=seam_bytes, accessory=accessory_bytes,
+    report['layout'] = dict(target_pointer_bytes=8, quality_node_size=node_size, quality_node_alignment=node_alignment)
+    report['bytes'] = dict(nodes_including_pointers_and_padding=node_bytes, seam=seam_bytes, accessory=accessory_bytes,
                            total=node_bytes + seam_bytes + accessory_bytes,
+                           loop_quality_data_descriptor=176,
+                           total_with_descriptor=node_bytes + seam_bytes + accessory_bytes + 176,
                            header_text=Path(args.output).stat().st_size)
     report['nodes'] = dict(rider=len(rider.nodes), mount=len(mount.nodes))
     report['inputs'] = dict(inputs, catalog=digest(args.catalog))

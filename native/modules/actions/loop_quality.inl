@@ -33,11 +33,11 @@ struct QualityOwner {
     double microseconds = 0;
     bool fading = false;
     float fade = 0;
-    uint32_t sound_event = 0, sound_playing = 0;
+    uint32_t sound_event = 0;
+    uint64_t sound_object = 0;
     bool sound_resolved = false;
 } g_quality;
 uint64_t g_quality_generation = 0;
-thread_local bool g_quality_sound_scope = false;
 // il2cpp_string_new, resolved by Initialize; Transform.Find takes managed paths.
 void* (*g_quality_string_new)(const char*) = nullptr;
 void QualityLog(const char* text) {
@@ -137,19 +137,31 @@ bool QualitySeamArmed() {
         g_quality.rider.applying && g_quality.mount.applying &&
         QualityRootOwned(g_quality.rider) && QualityRootOwned(g_quality.mount);
 }
-// Both sides of an armed seam are the same pose, so the rider and mount rewind
-// without a crossfade; otherwise the lightweight blend stays.
-float LoopQualityBlend(float blend) {
-    return QualitySeamArmed() ? 0.0f : blend;
-}
 void QualitySeamFailed(const char* reason) {
     if (g_quality.seam_failed) return;
     g_quality.seam_failed = true;
+    g_quality.seam_armed = false;
     if (g_quality.diagnostics) {
         char text[192];
         std::snprintf(text, sizeof(text), "Sustained dash Jsspsi quality: seam unavailable (%s); lightweight crossfade kept.", reason);
         Log(text);
     }
+}
+// Check the current components before submitting a hard cut in PreLate. Old
+// objects and their leases can survive a replacement until after TailLate.
+float LoopQualityBlend(float blend) {
+    if (!QualitySeamArmed()) return blend;
+    const uint64_t generation = g_quality_generation;
+    bool ok = true;
+    const bool current = Object(GetAnimator, g_quality.component, ok) == g_quality.rider.animator && ok &&
+        QualityRootCurrent(g_quality.rider) && TmpObjectAnimator(0) == g_quality.mount.animator &&
+        QualityRootCurrent(g_quality.mount);
+    if (generation != g_quality_generation) return blend;
+    if (!current) {
+        QualitySeamFailed("animator or root changed before rewind");
+        return blend;
+    }
+    return 0.0f;
 }
 // The destination of a transition is what this frame renders; a zero-length
 // rewind may still report one.
@@ -416,7 +428,8 @@ void ApplyLoopQuality(void* component, float delta) {
         int mount_hash = 0;
         float mount_time = 0;
         if (g_quality.mount.root) {
-            if (!QualityRootCurrent(g_quality.mount) || !QualityReadState(g_quality.mount.animator, mount_hash, mount_time))
+            if (TmpObjectAnimator(0) != g_quality.mount.animator || !QualityRootCurrent(g_quality.mount) ||
+                !QualityReadState(g_quality.mount.animator, mount_hash, mount_time))
                 QualitySeamFailed("mount root or pose ownership changed");
             else UpdateQualitySeamState(g_quality.mount, mount_hash, mount_time, g_quality.data->mount_seam.state_hash);
             if (generation != g_quality_generation) return;
@@ -441,14 +454,15 @@ void ApplyLoopQuality(void* component, float delta) {
             if (WriteQualitySeam(rider, time, generation) && WriteQualitySeam(g_quality.mount, mount_time, generation)) ++g_quality.seam_frames;
             if (generation != g_quality_generation) return;
         }
-        if (g_quality.seam_failed) {
-            // Hand the seam bones back to native animation on the same frame.
-            RestoreQualityBones(rider, rider.seam, generation);
-            if (generation != g_quality_generation) return;
-            if (g_quality.mount.root && QualityRootCurrent(g_quality.mount)) RestoreQualityBones(g_quality.mount, g_quality.mount.seam, generation);
-            if (generation != g_quality_generation) return;
-            FreeQualityRoot(g_quality.mount);
-        }
+    }
+    if (g_quality.seam_failed) {
+        // PreLate can reject the pair before this TailLate starts. Hand back
+        // constant channels on unchanged roots on that same frame as well.
+        RestoreQualityBones(rider, rider.seam, generation);
+        if (generation != g_quality_generation) return;
+        if (g_quality.mount.root && QualityRootCurrent(g_quality.mount)) RestoreQualityBones(g_quality.mount, g_quality.mount.seam, generation);
+        if (generation != g_quality_generation) return;
+        FreeQualityRoot(g_quality.mount);
     }
     // The lap starts with the first rewind request: until then the native
     // first lap plays, including its one swing on mounting.
@@ -470,45 +484,46 @@ void ApplyLoopQuality(void* component, float delta) {
     QueryPerformanceCounter(&end);
     g_quality.microseconds += (end.QuadPart - begin.QuadPart) * 1e6 / frequency.QuadPart;
 }
-// Dash start sound: the clip posts one event timed for the native 5.7 s clip.
-// Two existing hooks see it: AnimatorMono.PostAudioEvent opens the scope and
-// AudioManager.PostEvent(Entity, ...) returns its playing id, if the game
-// routes the post that way. Nothing captured means nothing is stopped.
-bool QualitySoundOrigin(void* mono, uint32_t hash) {
-    if (!g_quality.component || g_quality.fading || g_quality.sound_playing || g_quality.sound_resolved ||
+// Game 1.6.4 global-metadata.dat, AK.Wwise.Unity.API.dll enum fields:
+// AkActionOnEventType_Stop = 0, AkCurveInterpolation_Linear = 4,
+// AKRESULT.AK_Success = 1 (offline metadata audit, 2026-10-26).
+constexpr int32_t kQualitySoundStop = 0, kQualitySoundLinear = 4, kQualitySoundSuccess = 1;
+// AnimatorMono posts directly to AudioAdapter, bypassing the Entity PostEvent
+// hook. Capture its entity's audio object and stop only this event on it.
+void CaptureQualitySound(void* mono, uint32_t hash) {
+    if (GetCurrentThreadId() != g_game_thread.load(std::memory_order_relaxed)) return;
+    if (!g_quality.component || g_quality.fading || g_quality.sound_object || g_quality.sound_resolved ||
         !g_session.component || g_quality.component != g_session.component || g_session.animation_replays ||
         !g_session.profile || !g_session.profile->start_sound_event || hash != g_session.profile->start_sound_event ||
-        !g_methods[JsspsiStopSound].resolved.method_info ||
-        GetCurrentThreadId() != g_game_thread.load(std::memory_order_relaxed)) return false;
+        !g_methods[JsspsiAudioObjectId].resolved.method_info || !g_methods[JsspsiStopSound].resolved.method_info) return;
+    const uint64_t generation = g_quality_generation;
     bool ok = true;
-    return Object(AudioMonoComponent, mono, ok) == g_session.component && ok;
-}
-struct QualitySoundScope {
-    bool previous;
-    explicit QualitySoundScope(bool origin) : previous(g_quality_sound_scope) { g_quality_sound_scope = origin; }
-    ~QualitySoundScope() { g_quality_sound_scope = previous; }
-};
-void QualitySoundPosted(void* entity, uint32_t hash, uint32_t playing) {
-    if (!g_quality_sound_scope || !playing || entity != g_session.entity || g_quality.sound_playing ||
-        !g_quality.component || !g_session.profile || hash != g_session.profile->start_sound_event) return;
+    void* component = Object(AudioMonoComponent, mono, ok);
+    if (generation != g_quality_generation || !ok || component != g_session.component) return;
+    void* args[]{g_session.entity};
+    const uint64_t object = Unbox<uint64_t>(Invoke(JsspsiAudioObjectId, nullptr, args, ok), ok);
+    if (generation != g_quality_generation || !ok || !object || object == UINT64_MAX) return;
     g_quality.sound_event = hash;
-    g_quality.sound_playing = playing;
+    g_quality.sound_object = object;
 }
 void StopQualitySound() {
     if (!g_quality.component || g_quality.sound_resolved || g_quality.component != g_session.component) return;
     g_quality.sound_resolved = true;
-    if (!g_quality.sound_playing) {
-        QualityLog("Sustained dash Jsspsi quality: dash sound not captured; native sound kept.");
+    if (!g_quality.sound_object) {
+        QualityLog("Sustained dash Jsspsi quality: dash sound object not captured; native sound kept.");
         return;
     }
-    uint32_t playing = g_quality.sound_playing;
-    int fade = 300;
-    void* args[]{&playing, &fade};
+    uint32_t event = g_quality.sound_event, playing = 0;
+    uint64_t object = g_quality.sound_object;
+    int32_t action = kQualitySoundStop, fade = 300, curve = kQualitySoundLinear;
+    const bool diagnostics = g_quality.diagnostics;
+    void* args[]{&event, &action, &object, &fade, &curve, &playing};
     bool ok = true;
-    Invoke(JsspsiStopSound, nullptr, args, ok);
-    if (g_quality.diagnostics) {
-        char text[160];
-        std::snprintf(text, sizeof(text), "Sustained dash Jsspsi quality: dash sound stopped event=%u playing=%u ok=%d.", g_quality.sound_event, playing, ok);
+    const int32_t result = Unbox<int32_t>(Invoke(JsspsiStopSound, nullptr, args, ok), ok);
+    if (diagnostics) {
+        char text[192];
+        std::snprintf(text, sizeof(text), "Sustained dash Jsspsi quality: dash sound stop requested event=%u object=%llu result=%d ok=%d.",
+            event, static_cast<unsigned long long>(object), result, ok && result == kQualitySoundSuccess);
         Log(text);
     }
 }
