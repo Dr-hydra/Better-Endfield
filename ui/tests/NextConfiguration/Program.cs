@@ -78,5 +78,13 @@ static class Program
         Console.WriteLine("Next camera configuration: 5 standalone-freeze/MMD/retired-setting checks passed.");
         Console.WriteLine("Next media configuration: 6 audio-gating/path/decimal/injection checks passed.");
         Console.WriteLine("Next media hotkeys: default minus, legacy migration and custom chord serialization passed.");
+        var defaultAppearance = new WeaponAppearanceConfiguration();
+        Require(!defaultAppearance.Enabled, "Weapon appearance must be disabled by default.");
+        Require(defaultAppearance.ToIni().Contains("enabled=false"), "Weapon appearance default INI must serialize enabled=false.");
+        var parsedAppearance = WeaponAppearanceConfiguration.FromValues(new Dictionary<string, string>());
+        Require(!parsedAppearance.Enabled, "Weapon appearance fallback must be disabled.");
+        var enabledAppearance = WeaponAppearanceConfiguration.FromValues(new Dictionary<string, string> { ["enabled"] = "true" });
+        Require(enabledAppearance.Enabled && enabledAppearance.ToIni().Contains("enabled=true"), "Weapon appearance must allow explicit enable.");
+        Console.WriteLine("Next weapon appearance: default disabled and round-trip checks passed.");
     }
 }

@@ -1,6 +1,17 @@
 # 更新日志
 
-## 4.1.1 Better Endfield Next（开发中）
+## 4.1.2 Better Endfield Next（开发中）
+
+- **修复桌面端发布遗漏管理员外观模块动态库**：
+  - 修复 `native/CMakeLists.txt` 中 `BetterEndfieldNext.Layout` 自定义目标遗漏 `BetterEndfieldNext.WeaponAppearance` 依赖项的问题，确保 Windows 完整构建时自动编译该 DLL 并输出至发布目录；
+  - 在 `BuildBetterEndfieldNext.ps1` 发布前完整性检查清单中补全 `BetterEndfieldNext.WeaponAppearance.dll` 与 `betterendfieldnext.weapon_appearance.module.ini`，避免构建产物漏发。
+
+- **管理员外观功能规范化：双端统一默认关闭**：
+  - 桌面端配置模型 `WeaponAppearanceConfiguration` 默认启用状态、ini 读取缺省回退值以及 `betterendfieldnext.weapon_appearance.module.ini` 清单全部调整为 `enabled=false`；
+  - 双端共享原生模块 `weapon_appearance/module.cpp` 的默认运行配置结构体同步调整为 `enabled = false`；
+  - 与安卓端 `ModuleSettings.isAppearanceEnabled`（默认 `false`）完全对齐，消除未配置时自动覆写外观与特效的行为，符合增强模块默认不侵入规范。
+
+## 4.1.1 Better Endfield Next
 
 - **材质包加载提速（日志器重写）**：修复不带动画驱动的纯材质包加载时明显卡顿的问题。根因不在驱动路径（无 `drivers` 时逐帧调用全部早退），而在加载过程中每处理一个材质、每构建一张贴图都写一条日志，而 `Logger::Write` 每条都用 `ofstream` 打开再析构一次文件——Windows 实时防护会在 write-open 时扫描整份文件，实测本机单条「打开-追加-关闭」10.6 ms 且随文件变大继续变慢。`Logger` 改为持有 `std::ofstream` 成员（`Initialize` 打开一次，每行 `flush()`，失败时在 `Write` 内重试），崩溃后日志尾部仍完整；`Applied BEM 1.5 material overrides` 改为每个组件汇总一条（`draws=` / `slots=` 与 `properties=`），贴图 `built t=` 明细改为每次上传事务只打第一张，其余进 `textureFormats` 直方图由事务汇总行输出。实测每行成本 10.6 ms → 0.02 ms（450–600×）。行为变化：日志文件在程序运行期间保持打开，运行中删除日志不会重建文件，需清空日志请先退出程序。
 

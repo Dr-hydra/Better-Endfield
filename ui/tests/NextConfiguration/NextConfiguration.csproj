@@ -7,6 +7,7 @@
     <Compile Include="../../BetterEndfieldNext.UI/Models/ModConfiguration.cs" Link="ModConfiguration.cs" />
     <Compile Include="../../BetterEndfieldNext.UI/Models/MediaScreenConfiguration.cs" Link="MediaScreenConfiguration.cs" />
     <Compile Include="../../BetterEndfieldNext.UI/Models/FreeCameraExtras.cs" Link="FreeCameraExtras.cs" />
+    <Compile Include="../../BetterEndfieldNext.UI/Models/WeaponAppearanceConfiguration.cs" Link="WeaponAppearanceConfiguration.cs" />
     <Compile Include="../../BetterEndfieldNext.UI/Services/LocalizationService.cs" Link="LocalizationService.cs" />
     <EmbeddedResource Include="../../BetterEndfieldNext.UI/Assets/locales/*.json" LogicalName="BetterEndfieldNext.UI.Assets.locales.%(Filename)%(Extension)" />
   </ItemGroup>

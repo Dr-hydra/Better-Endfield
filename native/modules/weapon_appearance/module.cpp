@@ -65,7 +65,7 @@ enum class EffectsMode {
 };
 
 struct Configuration {
-  bool enabled = true;
+  bool enabled = false;
   bool replace_weapon = true;
   WeaponMode weapon_mode = WeaponMode::kInk;
   bool replace_character = true;

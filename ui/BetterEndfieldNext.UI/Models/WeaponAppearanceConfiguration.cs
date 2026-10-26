@@ -5,7 +5,7 @@ namespace BetterEndfieldNext.UI.Models;
 
 internal sealed class WeaponAppearanceConfiguration
 {
-    public bool Enabled { get; set; } = true;
+    public bool Enabled { get; set; } = false;
     public bool ReplaceWeapon { get; set; } = true;
     public string WeaponMode { get; set; } = "ink";
     public bool ReplaceCharacter { get; set; } = true;
@@ -37,7 +37,7 @@ internal sealed class WeaponAppearanceConfiguration
 
         return new WeaponAppearanceConfiguration
         {
-            Enabled = Flag(values, "enabled", true),
+            Enabled = Flag(values, "enabled", false),
             ReplaceWeapon = Flag(values, "replace_weapon", true),
             WeaponMode = Text(values, "weapon_mode", "ink"),
             ReplaceCharacter = Flag(values, "replace_character", true),

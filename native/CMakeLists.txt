@@ -563,6 +563,7 @@ add_custom_target(BetterEndfieldNext.Layout ALL
         BetterEndfieldNext.UiModule
         BetterEndfieldNext.Camera
         BetterEndfieldNext.Actions
+        BetterEndfieldNext.WeaponAppearance
         BetterEndfieldNext.Gacha
         BetterEndfieldNext.CombatStats
         BetterEndfieldNext.CombatOverlay
