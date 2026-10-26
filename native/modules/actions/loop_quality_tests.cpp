@@ -20,6 +20,18 @@ constexpr int kRight = -445642423, kLeft = 528430122, kMount = 340743731;
 constexpr float kLength = 5.667f, kDelta = 1.f / 60;
 const LoopQualityData& data = JsspsiQuality::kData;
 struct Fake { bool alive = true; };
+struct ParticleFake : Fake {
+    bool loop = false;
+    float duration = 1;
+    int plays = 0, stops = 0;
+};
+struct EffectFake : Fake {
+    std::string name = "UnrelatedEffect";
+    bool available = true;
+    int count = 1;
+    ParticleFake particles[16];
+    float last_delta = -1;
+};
 struct TransformFake : Fake { void* root = nullptr; BonePose pose{}; uint32_t writes = 0; };
 struct StateFake { int hash = 0; float time = 0, length = kLength; };
 struct AnimatorFake : Fake {
@@ -48,6 +60,9 @@ struct World {
     std::set<std::string> missing;
     int frame = 1000;
     bool mount_available = true;
+    bool effects_available = false, handle_current = true;
+    Fake effect_dictionary;
+    EffectFake effects[kEffectSlotCount];
 };
 World* w = nullptr;
 AnimatorFake* replacement_rider = nullptr;
@@ -71,6 +86,8 @@ bool sound_lookup_fails = false, sound_stop_fails = false, wrong_audio_component
 float mount_enter_u = 0;              // The mount enters its dash state once the rider reaches this u.
 TransformFake* failing_write = nullptr;
 const void* kGetItem = &kGetItem;
+const void* kContains = &kContains;
+const void* kLock = &kLock;
 const void* kHashFields[4] = {&kHashFields[0], &kHashFields[1], &kHashFields[2], &kHashFields[3]};
 int hash_values[4] = {kLeft, kRight, 111, 222};
 
@@ -78,7 +95,12 @@ AnimatorFake* A(void* p) { return static_cast<AnimatorFake*>(p); }
 TransformFake* T(void* p) { return static_cast<TransformFake*>(p); }
 void* BE_CALL InvokeFake(void*, const void* method, void* instance, void** args, void** exception) {
     *exception = nullptr;
-    if (method == kGetItem) return &w->tmp[*static_cast<int*>(args[0])];
+    if (method == kContains) return &w->effects[*static_cast<int*>(args[0])].available;
+    if (method == kLock) return instance;
+    if (method == kGetItem) {
+        const int slot = *static_cast<int*>(args[0]);
+        return instance == &w->effect_dictionary ? static_cast<void*>(&w->effects[slot]) : &w->tmp[slot];
+    }
     const auto id = static_cast<MethodId>(reinterpret_cast<uintptr_t>(method) - 1);
     ++calls[id];
     switch (id) {
@@ -137,6 +159,16 @@ void* BE_CALL InvokeFake(void*, const void* method, void* instance, void** args,
     case PoseIsChild: { static bool child; child = T(instance)->root == args[0]; return &child; }
     case PoseFrameCount: return &w->frame;
     case UnityAlive: return &static_cast<Fake*>(args[0])->alive;
+    case EffectName: return static_cast<EffectFake*>(instance)->name.data();
+    case EffectObject: case ComponentsInChildren: case ParticleMain: return instance;
+    case ArrayLength: return &static_cast<EffectFake*>(instance)->count;
+    case ArrayItem: return &static_cast<EffectFake*>(instance)->particles[*static_cast<int*>(args[0])];
+    case ParticleLoop: return &static_cast<ParticleFake*>(instance)->loop;
+    case ParticleDuration: return &static_cast<ParticleFake*>(instance)->duration;
+    case ParticleSetLoop: static_cast<ParticleFake*>(instance)->loop = *static_cast<bool*>(args[0]); return nullptr;
+    case ParticleSetDuration: static_cast<ParticleFake*>(instance)->duration = *static_cast<float*>(args[0]); return nullptr;
+    case ParticlePlay: ++static_cast<ParticleFake*>(instance)->plays; return nullptr;
+    case ParticleStop: ++static_cast<ParticleFake*>(instance)->stops; return nullptr;
     case AudioMonoComponent: return wrong_audio_component ? &w->entity : &w->component;
     case JsspsiAudioObjectId:
         CHECK(instance == nullptr && args[0] == &w->entity);
@@ -158,7 +190,8 @@ void* BE_CALL FieldFake(void*, const void* field, void*) {
     switch (static_cast<FieldId>(reinterpret_cast<uintptr_t>(field) - 1)) {
     case TemplateId: return const_cast<char*>("chr_0036_jsspsi");
     case Request: return &w->request;
-    case RequestHandle: return &w->handle;
+    case RequestHandle: return w->handle_current ? &w->handle : &w->request;
+    case Effects: return w->effects_available ? &w->effect_dictionary : nullptr;
     case JsspsiTmpObjects: return &w->dictionary;
     case JsspsiRenderHelper: return nullptr;
     default: CHECK(false); return nullptr;
@@ -173,7 +206,11 @@ void BE_CALL FreeFake(void*, uint32_t) { ++frees; }
 void BE_CALL LogFake(void*, const char*, const char* text) { logs.emplace_back(text); }
 void* StringNewFake(const char* text) { strings.emplace_back(text); return strings.back().data(); }
 void* ClassFake(void* object) { return object; }
-const void* MethodFake(void*, const char* name, int) { return std::strcmp(name, "get_Item") == 0 ? kGetItem : nullptr; }
+const void* MethodFake(void*, const char* name, int) {
+    if (std::strcmp(name, "get_Item") == 0) return kGetItem;
+    if (std::strcmp(name, "ContainsKey") == 0) return kContains;
+    return std::strcmp(name, "Lock") == 0 ? kLock : nullptr;
+}
 void* ParentFake(void*) { return nullptr; }
 uint64_t BE_CALL Acquire(const void* r, const char* o) { return registry->Acquire(r, o); }
 int BE_CALL Owns(const void* r, const char* o, uint64_t t) { return registry->Owns(r, o, t); }
@@ -182,6 +219,9 @@ void __fastcall StartFake(void*, int, const void*) {}
 void __fastcall TickFake(void*, float, const void*) {}
 void __fastcall InterruptFake(void*, const void*) { ++interrupts; }
 void __fastcall ReleaseFake(void*, bool, const void*) {}
+void __fastcall DurationFake(void* instance, float delta, const void*) {
+    static_cast<EffectFake*>(instance)->last_delta = delta;
+}
 uint32_t __fastcall EntityPostFake(void*, uint32_t, int, void*, void*, const void*) { return 777; }
 void __fastcall MonoPostFake(void*, uint32_t hash, float, const void*) {
     ++mono_posts;
@@ -351,6 +391,107 @@ void EndDash() {
     moving = false; move_mode = g_grounded_mode;
     Step(); // PreLate cancels; TailLate starts the fade.
     CHECK(!g_session.component && interrupts == 1);
+}
+// Names and particle counts come from the 2026-10-18 Jsspsi probe, independent
+// of the production profile. Keep unrelated slots present to detect overreach.
+void AddEffects() {
+    w->effects_available = true;
+    for (int slot = 0; slot < 10; ++slot) {
+        char name[96];
+        std::snprintf(name, sizeof(name), "P_fxbat_jsspsi_sprint_dash_sp_start_%02d",
+            slot == 0 ? 1 : slot == 1 ? 2 : slot);
+        w->effects[slot].name = name;
+    }
+    for (int slot = 0; slot < 6; ++slot) w->effects[slot].count = 0;
+    w->effects[13].name = "P_fxbat_jsspsi_sprint_dash_sp_Bip001_jnt";
+    w->effects[13].count = 8;
+    // Even a correct name in the wrong slot must not be held.
+    w->effects[14].name = w->effects[13].name;
+    for (int i = 0; i < 8; ++i) {
+        auto& p = w->effects[13].particles[i];
+        p.loop = i == 3;
+        p.duration = 1.f + i * .5f;
+    }
+}
+void CheckEffectClocks(unsigned held) {
+    for (int slot = 0; slot < static_cast<int>(kEffectSlotCount); ++slot) {
+        auto& effect = w->effects[slot];
+        EffectDurationDetour(&effect, kDelta, nullptr);
+        const float expected = held & (1u << slot) ? 0.f : kDelta;
+        if (effect.last_delta != expected)
+            std::fprintf(stderr, "effect clock slot=%d actual=%g expected=%g\n", slot, effect.last_delta, expected);
+        CHECK(effect.last_delta == expected);
+    }
+}
+void CheckTrail(bool held, int stops_expected = 0) {
+    for (int i = 0; i < 8; ++i) {
+        const auto& p = w->effects[13].particles[i];
+        CHECK(p.loop == (held || i == 3));
+        CHECK(p.duration == 1.f + i * .5f && p.stops == stops_expected);
+        CHECK(p.plays == (held || stops_expected ? 1 : 0));
+    }
+}
+void FirstEffectRewind() {
+    while (w->rider.durations.empty()) {
+        CheckEffectClocks(0);
+        CheckTrail(false);
+        CHECK(calls[EffectName] == 0 && calls[ParticleSetLoop] == 0);
+        Step();
+    }
+    CHECK(g_session.animation_replays == 1);
+}
+// Exercise the real Start/PreLate/Duration/Cancel paths, including the first
+// rewind boundary and restoration on release, configuration change or lost handle.
+void QualityEffects(int exit_mode, int hash = kRight) {
+    NewWorld(hash); SetQuality(true); AddEffects(); StartDash();
+    FirstEffectRewind();
+    CheckEffectClocks(0x203f);
+    CheckTrail(true);
+    CHECK(calls[ParticleSetLoop] == 8 && calls[ParticlePlay] == 8);
+    RunLaps(3, false);
+    CheckEffectClocks(0x203f);
+    CheckTrail(true);
+    if (exit_mode == 0) EndDash();
+    else {
+        if (exit_mode == 1) SetQuality(false);
+        else w->handle_current = false;
+        // Clock holds stop immediately, before the next PreLate cleanup.
+        CheckEffectClocks(0);
+        Step();
+    }
+    CHECK(!g_session.component);
+    CheckEffectClocks(0);
+    CheckTrail(false, 1);
+    for (int i = 0; i < 40; ++i) Step();
+    CHECK(pins == frees);
+}
+void QualityEffectsOff() {
+    NewWorld(kRight); SetQuality(false); AddEffects(); StartDash();
+    FirstEffectRewind();
+    RunLaps(3, false);
+    CheckEffectClocks(0);
+    CheckTrail(false);
+    CHECK(calls[EffectName] == 0 && calls[ParticleSetLoop] == 0);
+    EndDash();
+    CHECK(pins == frees);
+}
+void QualityEffectsIdentity() {
+    NewWorld(kRight); SetQuality(true); AddEffects(); StartDash();
+    w->effects[0].name = w->effects[13].name;
+    w->effects[13].available = false;
+    FirstEffectRewind();
+    CheckEffectClocks(0x3e);
+    CheckTrail(false);
+    // Async creation is retried; path and prefab suffix handling is shared.
+    w->effects[13].available = true;
+    w->effects[13].name = "effects/P_fxbat_jsspsi_sprint_dash_sp_Bip001_jnt.prefab";
+    Step();
+    CheckEffectClocks(0x203e);
+    CheckTrail(true);
+    EndDash();
+    CheckTrail(false, 1);
+    for (int i = 0; i < 40; ++i) Step();
+    CHECK(pins == frees);
 }
 // Off: no quality owner, lease, bone access or sound stop; crossfades keep the
 // lightweight blend for rider and mount.
@@ -727,6 +868,7 @@ int main(int argc, char** argv) {
     g_quality_string_new = StringNewFake;
     g_start = StartFake; g_pre_late = TickFake; g_pose_tail = TickFake; g_interrupt = InterruptFake;
     g_audio_mono = MonoPostFake; g_audio_entity = EntityPostFake;
+    g_effect_duration = DurationFake;
     for (int i = 0; i < 2; ++i) { g_hash_fields[i] = kHashFields[i]; g_locomotion_fields[i] = kHashFields[i + 2]; }
     g_dash_mode = 20; g_grounded_mode = 1; g_sprint = 2; g_audio_none = 0;
     g_blend_style = 1; g_blend_interrupt = 2;
@@ -734,6 +876,12 @@ int main(int argc, char** argv) {
     const Case cases[]{
         {"config", ConfigurationAndProfile},
         {"off", OffMatchesLightweight},
+        {"effects", [] { QualityEffects(0); }},
+        {"effects_left", [] { QualityEffects(0, kLeft); }},
+        {"effects_off", QualityEffectsOff},
+        {"effects_disable", [] { QualityEffects(1); }},
+        {"effects_invalid", [] { QualityEffects(2); }},
+        {"effects_identity", QualityEffectsIdentity},
         {"right", [] { OnSide(kRight); }},
         {"left", [] { OnSide(kLeft); }},
         {"lease", LeaseHeldByAnotherWriter},
@@ -761,5 +909,5 @@ int main(int argc, char** argv) {
     CHECK(ran > 0);
     delete w;
     g_host = nullptr;
-    std::printf("Jsspsi quality: %d scenario(s) passed (off path, both sides, hard-cut seam, accessory lap, fade, lease, mount, mount out of step, write failure, missing bones, constant channel, sound, root replacement, lifecycle).\n", ran);
+    std::printf("Jsspsi quality: %d scenario(s) passed (off path, effects, both sides, hard-cut seam, accessory lap, fade, lease, mount, mount out of step, write failure, missing bones, constant channel, sound, root replacement, lifecycle).\n", ran);
 }

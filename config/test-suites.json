@@ -999,7 +999,7 @@
       },
       "status": "active",
       "replaced_by": null,
-      "purpose": "Production jsspsi_quality path with fake Unity objects: off path, hard-cut seam, accessory lap, fade, lease, sound; excluded target.",
+      "purpose": "Production jsspsi_quality path with fake Unity objects: off path, first-rewind effect holds and restoration, hard-cut seam, accessory lap, fade, lease, sound; excluded target.",
       "host_platform": [
         "Windows"
       ]

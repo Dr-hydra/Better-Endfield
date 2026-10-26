@@ -65,6 +65,9 @@ struct CharacterProfile {
     const LoopQualityData* quality = nullptr;
     // Wwise event of the dash start sound that the quality option stops.
     uint32_t start_sound_event = 0;
+    // Gate named effects on quality and the first rewind, including effects
+    // without particles that only need their lifetime held.
+    bool quality_effects_after_rewind = false;
 };
 constexpr CharacterProfile kCharacters[]{
     {"aglina", "chr_0013_aglina", "CharIntPerform_Aglina_Spdash", L"pose_aglina.bin", kAglinaLoop,
@@ -92,14 +95,20 @@ constexpr CharacterProfile kCharacters[]{
     // Uses lightweight native Animator rewind + mount TmpObject sync + render VFX freeze;
     // avoids external pose overlay banks and runtime disk seam writes.
     {"jsspsi", "chr_0036_jsspsi", "CharIntPerform_Jsspsi_Spdash", nullptr, kJsspsiLoop,
-     {}, false, nullptr, {}, false,
+     {"P_fxbat_jsspsi_sprint_dash_sp_start_01",
+      "P_fxbat_jsspsi_sprint_dash_sp_start_02", "P_fxbat_jsspsi_sprint_dash_sp_start_02",
+      "P_fxbat_jsspsi_sprint_dash_sp_start_03", "P_fxbat_jsspsi_sprint_dash_sp_start_04",
+      "P_fxbat_jsspsi_sprint_dash_sp_start_05",
+      nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 6-12: entry/exit effects
+      "P_fxbat_jsspsi_sprint_dash_sp_Bip001_jnt"}, false, nullptr, {}, false,
      /*side_suffixed_perform=*/true,
      /*rewind_mount=*/true,
      /*side_loop=*/&kJsspsiSideLoop,
      /*skipped_effect_actors=*/kJsspsiSkipEffects,
      /*freeze_render_vfx=*/true,
      /*quality=*/&JsspsiQuality::kData,
-     /*start_sound_event=*/1063030539u},
+     /*start_sound_event=*/1063030539u,
+     /*quality_effects_after_rewind=*/true},
 };
 constexpr size_t kCharacterCount = std::size(kCharacters);
 
@@ -509,6 +518,9 @@ bool TargetEffectName(void* effect, int index, bool& ok) {
 void MaintainEffects() {
     if (!g_session.component || !g_session.policy.active) return;
     if (!g_session.profile || !g_session.profile->effects[0]) return;
+    // Do not freeze the native start delay (0.39 s on Jsspsi actors 1/2).
+    if (g_session.profile->quality_effects_after_rewind &&
+        (!g_session.config->jsspsi_quality || !g_session.animation_replays)) return;
     for (int slot = 0; slot < (int)std::size(g_session.effects); ++slot) {
         auto& effect = g_session.effects[slot];
         if (!g_session.profile->effects[slot] || effect.disabled || effect.prepared) continue;
@@ -541,13 +553,13 @@ void MaintainEffects() {
         void* component_args[]{g_particle_type, &inactive};
         void* array = Invoke(ComponentsInChildren, go, component_args, ok);
         int count = Value<int>(ArrayLength, array, ok);
-        if (!ok || count <= 0 || count > kMaxHeldParticles) {
-            if (count == 0 && ok) continue;
+        if (!ok || count < 0 || count > kMaxHeldParticles) {
             RestoreEffect(effect, true);
             if (!g_session.effect_error_logged) Log("Sustained dash v9: particle enumeration failed; VFX hold skipped.");
             g_session.effect_error_logged = true;
             continue;
         }
+        if (count == 0 && !g_session.profile->quality_effects_after_rewind) continue;
         for (int i = 0; i < count && ok; ++i) {
             void* item_args[]{&i};
             void* particle = Invoke(ArrayItem, array, item_args, ok);
@@ -1695,7 +1707,7 @@ void BE_CALL Shutdown() {
     g_particle_type_root = 0;
     g_particle_type = nullptr;
 }
-const BE_ModuleApiV1 kApi{{kId, "Sustained Dash", "1.14.1", BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
+const BE_ModuleApiV1 kApi{{kId, "Sustained Dash", "1.14.2", BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
     &Initialize, &Configure, &Shutdown};
 } // namespace
 } // namespace BetterEndfieldNext::Actions
