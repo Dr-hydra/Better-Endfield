@@ -6,7 +6,7 @@ CXX="${CXX:-clang++}"
 JAVA_HOME="${JAVA_HOME:-$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")}"
 A=android/app/src/main/cpp
 S=native/shared/android_compat
-flags=(-std=c++20 -pthread -g -I"$A" -I"$S" -I"$S/include" -Inative/tests/android_rebuild/stubs)
+flags=(-std=c++20 -pthread -g -I"$A" -I"$S" -I"$S/include" -Inative/shared/host -Inative/tests/android_rebuild/stubs)
 "$CXX" "${flags[@]}" native/tests/android_rebuild/input_test.cpp "$S/android_win32.cpp" "$S/android_frame.cpp" -ldl -o "$BUILD/input"
 "$BUILD/input"
 "$CXX" "${flags[@]}" -Inative/shared/include native/tests/android_rebuild/hook_test.cpp "$A/core/hook_broker.cpp" -o "$BUILD/hooks"

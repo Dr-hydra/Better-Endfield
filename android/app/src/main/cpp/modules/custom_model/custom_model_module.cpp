@@ -108,6 +108,15 @@ BE_Result CustomModelModule::HostResolveMethod(void* context,
         descriptor->assembly_name, descriptor->namespace_name, descriptor->class_name,
         descriptor->method_name, descriptor->parameter_types, descriptor->return_type,
         static_cast<int>(descriptor->parameter_count));
+    if (descriptor->method_name && std::strcmp(descriptor->method_name,"ApplySharedMaterialArray")==0 &&
+        descriptor->class_name && std::strcmp(descriptor->class_name,"EntityRenderHelperMaterialController/AddedMaterialController")==0) {
+        const std::string diagnostic=std::string("[MaterialCacheSync] Android apply contract resolved=")+
+            ((method.info && method.entry)?"1":"0")+" expected="+
+            (descriptor->parameter_types?descriptor->parameter_types:"")+" actual="+
+            self->runtime_->DescribeMethod(descriptor->assembly_name,descriptor->namespace_name,
+                descriptor->class_name,descriptor->method_name);
+        LogInfo(self->Id(),diagnostic.c_str());
+    }
     if (!method.info || !method.entry) { *result = {}; return BE_Result_NotFound; }
     result->method_info = method.info; result->method_pointer = method.entry;
     return BE_Result_Ok;

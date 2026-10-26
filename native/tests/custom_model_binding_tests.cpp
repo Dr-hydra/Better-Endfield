@@ -12,7 +12,9 @@ struct Fake {
     std::string name;
     std::vector<void*> array;
     void* bones=nullptr; void* poses=nullptr; void* materials=nullptr; void* mesh=nullptr;
+    void* root_bone=nullptr;
     bool enabled=true;
+    bool active_self=true,active_hierarchy=true;
     bool visible=false;
     bool alive=true;
     void* parent=nullptr;
@@ -22,6 +24,11 @@ struct Fake {
     void* filter=nullptr;
     void* transform=nullptr;
     void* game_object=nullptr;
+    void* cache_helper=nullptr; void* cache_controller=nullptr; void* cache_infos=nullptr;
+    void* cache_added=nullptr; void* cache_renderer=nullptr; void* cache_source=nullptr;
+    void* cache_replacements=nullptr;
+    int32_t cache_submeshes=1,submesh_count=1;
+    uint8_t cache_replacing=0;
     Matrix4x4Raw matrix{};
     uint64_t scalar=0;
     std::map<int32_t,void*> textures;
@@ -75,6 +82,11 @@ void* BE_CALL InvokeFake(void*,const void* method,void* object,void** args,void*
     ++fake_runtime_calls;
     const auto key=std::string_view(static_cast<const MethodContract*>(method)->key);
     auto* n=static_cast<Fake*>(object);
+    if (key=="material_cache.helper") {
+        if(n && n->cache_helper)Check(args && args[0]==g_material_cache_api.helper.type_object &&
+            args[1] && *static_cast<bool*>(args[1]),"cache helper lookup lost its resolved type or inactive-parent flag");
+        return n?n->cache_helper:nullptr;
+    }
     if (key.starts_with("game_object.")) {
         Check(n && n->runtime_class==&fake_game_object_class_token,
             "non-GameObject receiver reached a GameObject-specific runtime API");
@@ -82,6 +94,8 @@ void* BE_CALL InvokeFake(void*,const void* method,void* object,void** args,void*
     }
     if (key=="component.get_transform") return n->transform?n->transform:object;
     if (key=="component.get_game_object") return n->game_object;
+    if (key=="audit.active_self") return Scalar(n->active_self);
+    if (key=="audit.active_hierarchy") return Scalar(n->active_hierarchy);
     if (key=="resources.find_all") return fake_scene_game_objects && args[0]==g_game_object_class.type_object?
         fake_scene_game_objects:fake_scene_renderers;
     if (key=="object.get_type" || key=="type.get_element_type" || key=="game_object.get_transform") return object;
@@ -99,7 +113,7 @@ void* BE_CALL InvokeFake(void*,const void* method,void* object,void** args,void*
     }
     if (key=="game_object.renderers") return fake_transform_type && args[0]==fake_transform_type?n->transforms:object;
     if (key=="mesh.get_vertex_count") return Scalar(n->vertex_count);
-    if (key=="mesh.get_sub_mesh_count") return Scalar(1);
+    if (key=="mesh.get_sub_mesh_count") return Scalar(n->submesh_count);
     if (key=="mesh.get_index_count") return Scalar(n->index_count);
     if (key=="mesh.get_vertex_attribute_count") return Scalar(n->array.size());
     if (key=="mesh.get_vertex_attribute") return n->array.at(*static_cast<int*>(args[0]));
@@ -129,6 +143,7 @@ void* BE_CALL InvokeFake(void*,const void* method,void* object,void** args,void*
     if (key=="filter.get_shared_mesh") return n->mesh;
     if (key=="filter.set_shared_mesh") { ++fake_binding_write_calls; n->mesh=args[0]; return nullptr; }
     if (key=="skinned.get_bones") return n->bones;
+    if (key=="skinned.get_root_bone") return n->root_bone;
     if (key=="skinned.set_bones") { ++fake_binding_write_calls; n->bones=args[0]; return nullptr; }
     if (key=="skinned.get_shared_mesh") return n->mesh;
     if (key=="skinned.set_shared_mesh") { ++fake_binding_write_calls; n->mesh=args[0]; return nullptr; }
@@ -469,6 +484,19 @@ void StaticResourceTests() {
         std::vector<PreparedBinding> bindings;
         Check(CaptureGenericResourceBindings(owner->adapter,bem,asset,bindings) && bindings.size()==1,"explicit static receiver capture failed");
         Check(bindings[0].original_mesh==filter->mesh && !bindings[0].original_bones,"static capture did not use the same-object MeshFilter");
+        {
+            BemPocData ordered=bem;auto& c=ordered.components[0];
+            c.draws.resize(2);c.draw_material_overrides.resize(2);
+            c.draws[0].material_slot=1;c.draws[1].material_slot=0;
+            c.draw_material_overrides[0].floats.push_back({"_Audit",0.25f});
+            c.draw_material_overrides[1].floats.push_back({"_Audit",0.75f});
+            std::vector<PreparedBinding> captured;
+            Check(CaptureGenericResourceBindings(owner->adapter,ordered,asset,captured) &&
+                captured[0].material_overrides.size()==2 &&
+                captured[0].material_overrides[0].floats[0].second==0.25f &&
+                captured[0].material_overrides[1].floats[0].second==0.75f,
+                "driver restore snapshots followed donor slots instead of generated draw order");
+        }
         void* poses=reinterpret_cast<void*>(1);
         Check(PreparePalette(component,bindings[0],bindings,poses) && !poses && !bindings[0].custom_bones,"static palette required bones");
         auto malformed=component;malformed.bones.push_back({0,0,0});
@@ -1437,9 +1465,190 @@ void ResourceTypeBoundaryTests(const std::filesystem::path& package_path) {
 #include "custom_model_npc_root_tests.inc"
 
 #include "custom_model_clone_support_tests.inc"
+#include "custom_model_material_cache_tests.inc"
 #include "aurora_runtime_checks.inc"
 
+std::map<void*,float> lifecycle_material_values;
+void* BE_CALL InvokeDriverLifecycle(void* context,const void* method,void* object,void** args,void** exception) {
+    const auto key=std::string_view(static_cast<const MethodContract*>(method)->key);
+    if (key=="material.set_float") {lifecycle_material_values[object]=*static_cast<float*>(args[1]);return nullptr;}
+    return InvokeFake(context,method,object,args,exception);
+}
+void DriverLifecycleTests(const std::filesystem::path& ordinary_package,const std::filesystem::path& driver_package={}) {
+    BE_HostApiV1 host{};host.runtime_invoke=InvokeDriverLifecycle;host.object_unbox=UnboxFake;
+    host.copy_managed_string=StringFake;host.gchandle_new=TrackedRoot;host.gchandle_free=TrackedFree;
+    host.string_new=[](void*,const char* name)->void* {return Make(name);};
+    g_host=&host;g_weak_new=TrackedWeak;
+    g_weak_target=[](uint32_t h)->void* {auto it=tracked_handles.find(h);return it==tracked_handles.end()?nullptr:it->second;};
+    ConfigureFakeObjectClasses();
+    for (auto& method:g_methods) {method.method_info=&method;method.resolved=true;}
+    g_array_new_specific=[](void*,uintptr_t count)->void* {auto* n=Make();n->array.resize(count);return n;};
+    g_dynamic_meshes.clear();g_completed.clear();g_driver_resources.clear();g_animation_driver.Reset();
+    g_driver_material_writes.clear();g_driver_dirty_meshes.clear();g_driver_morph_active=false;
+    g_registry={};lifecycle_material_values.clear();
+    CharacterAdapter owners[3]{};owners[0].id="owner-A";owners[1].id="owner-B";owners[2].id="owner-A-other-resource";
+    for (auto& owner:owners) {owner.world_resource=owner.id;owner.ui_resource=owner.id;owner.default_package="";}
+    const std::string manifest=R"({"drivers":[{"id":"audit","default_playing":true,"bindings":[{"type":"morph_parameter","target":"shared"}]}]})";
+    const std::string package="package-A.bem";
+    Check(g_animation_driver.LoadFromManifest(manifest,package),"lifecycle manifest rejected");
+    g_driver_resources.push_back({&owners[0],{},"selection-A"});
+    g_driver_resources.push_back({&owners[2],{},"selection-C"});
+    Fake* meshes[4]{};Fake* renderers[4]{};Fake* materials[4]{};
+    for (int i=0;i<4;++i) {
+        auto* root=GameObject("root");meshes[i]=Make("mesh");materials[i]=Make("material");renderers[i]=Make("renderer");
+        renderers[i]->mesh=meshes[i];renderers[i]->materials=Array({materials[i]});root->array={renderers[i]};
+        CompletedResource record;record.adapter=&owners[i==1?1:i==3?2:0];
+        record.selection_key=i==0?"selection-A":i==1?"selection-B":i==2?"selection-retired":"selection-C";
+        Check(record.root.Set(root),"lifecycle root setup failed");
+        CompletedBinding binding;binding.component_id=0;
+        Check(binding.mesh.Set(meshes[i]) && binding.renderer.Set(renderers[i]),"lifecycle binding setup failed");
+        WeakObject material;Check(material.Set(materials[i]),"lifecycle material setup failed");
+        binding.materials.push_back(std::move(material));
+        if (i==0) {binding.material_overrides.resize(1);binding.material_overrides[0].floats.push_back({"_Audit",0.25f});}
+        auto morph=std::make_shared<BemMorphSet>();
+        DynamicMeshRecord dynamic;dynamic.morph=morph;g_dynamic_meshes[binding.mesh.instance_id]=std::move(dynamic);
+        record.bindings.push_back(std::move(binding));g_completed.push_back(std::move(record));
+    }
+    // Frame-sliced jobs register samples before their CompletedResource is
+    // published. Maintenance must not discard those in-flight samples.
+    DynamicMeshRecord pending;pending.morph=std::make_shared<BemMorphSet>();
+    g_dynamic_meshes[2147483000]=std::move(pending);
+    PruneCompletedResources();
+    Check(g_dynamic_meshes.contains(2147483000),"maintenance discarded an unpublished job's morph samples");
+    size_t morph_targets=0,material_targets=0;
+    ForEachMorphedMesh([&](void*,const BemMorphSet&,void*){++morph_targets;});
+    ForEachDriverMaterial(0,0,[&](void*,const CompletedBinding&){++material_targets;});
+    Check(morph_targets==2 && material_targets==2,"drivers crossed package or selection ownership, or missed a resource of the same package");
+    renderers[0]->mesh=Make("game-rebound-mesh");morph_targets=material_targets=0;
+    ForEachMorphedMesh([&](void*,const BemMorphSet&,void*){++morph_targets;});
+    ForEachDriverMaterial(0,0,[&](void*,const CompletedBinding&){++material_targets;});
+    Check(morph_targets==1 && material_targets==1,"driver targeted a renderer that no longer owns the recorded mesh");
+    renderers[0]->mesh=meshes[0];
+    std::unordered_set<uint64_t> touched;
+    WriteDriverMaterial(DriverMaterialKind::Float,0,0,"_Audit",0.9f,{},false,0.1f,{},touched);
+    Check(lifecycle_material_values.size()==2 && lifecycle_material_values[materials[0]]==0.9f &&
+        lifecycle_material_values[materials[3]]==0.9f,"driver material write escaped its owner");
+    ReleaseDriverMaterials(nullptr);
+    Check(lifecycle_material_values[materials[0]]==0.25f && lifecycle_material_values[materials[3]]==0.1f,
+        "authored baseline on one target suppressed fallback restore on another");
+    for (int i:{0,2}) {
+        EnabledMod mod;mod.adapter=&owners[i];mod.package=package;mod.selection_key=i==0?"selection-A":"selection-C";
+        g_registry.enabled.push_back(std::move(mod));
+    }
+    Check(DriverOwnerMatchesRegistry(g_registry),"multi-resource driver owner did not match registry");
+    g_animation_driver.Pause("audit");EnsureAnimationDriverLoaded();
+    Check(g_animation_driver.Summaries()[0].state==DriverState::Paused,"unchanged owner reloaded the clock or lost its pause state");
+    g_registry.enabled.clear();EnsureAnimationDriverLoaded();
+    Check(g_animation_driver.DriverCount()==0 && g_animation_driver.LoadedPath().empty() && g_driver_resources.empty() &&
+        g_driver_material_writes.empty() && !g_driver_morph_active && g_sounding_drivers.empty(),"all-disabled retained driver state");
+    Check(g_animation_driver.LoadFromManifest(manifest,package),"lifecycle reload setup failed");
+    g_driver_resources.push_back({&owners[0],{},"selection-A"});
+    EnabledMod ordinary;ordinary.adapter=&owners[0];ordinary.package=ordinary_package;ordinary.selection_key="ordinary";
+    g_registry.enabled.push_back(ordinary);++g_registry_generation;EnsureAnimationDriverLoaded();
+    Check(g_animation_driver.DriverCount()==0 && g_driver_resources.empty(),"switch to a driverless package retained the preceding clock");
+    if (!driver_package.empty()) {
+        EnabledMod live;live.adapter=&owners[0];live.package=driver_package;live.selection_key="selection-A";live.drivers="audit:play:1500";
+        g_registry.enabled={live};++g_registry_generation;EnsureAnimationDriverLoaded();
+        Check(g_animation_driver.DriverCount()==1 && DriverOwnerMatchesRegistry(g_registry) &&
+            g_animation_driver.HasActiveDrivers() && g_animation_driver.Summaries()[0].speed_millis==1500,
+            "late-enabled package did not load and apply controls");
+        WriteDriverMaterial(DriverMaterialKind::Float,0,0,"_Audit",0.9f,{},false,0.1f,{},touched);
+        UnloadAnimationDriver("test-reload");
+        Check(lifecycle_material_values[materials[0]]==0.25f && g_driver_applied_overrides.empty(),"unload lost the prior baseline or control cache");
+        EnsureAnimationDriverLoaded();
+        Check(g_animation_driver.HasActiveDrivers() && g_animation_driver.Summaries()[0].speed_millis==1500,
+            "same-package reload skipped saved controls");
+        g_registry.enabled[0].selection_key="selection-new";EnsureAnimationDriverLoaded();morph_targets=0;
+        ForEachMorphedMesh([&](void*,const BemMorphSet&,void*){++morph_targets;});
+        Check(morph_targets==0 && DriverOwnerMatchesRegistry(g_registry),"new selection still targeted the retired selection");
+        ordinary.adapter=&owners[1];g_registry.enabled.push_back(ordinary);
+        EnsureAnimationDriverLoaded();Check(g_animation_driver.DriverCount()==1,"unrelated ordinary package disturbed the active driver");
+        g_registry.enabled.erase(g_registry.enabled.begin());EnsureAnimationDriverLoaded();
+        Check(g_animation_driver.DriverCount()==0 && g_driver_resources.empty(),"disabling just the driver package retained its clock");
+        g_registry.enabled={live};EnsureAnimationDriverLoaded();
+        Check(g_animation_driver.DriverCount()==1,"driver could not reload after partial disable");
+        g_registry.enabled[0].package=driver_package.parent_path()/"missing-driver-fixture.bem";
+        EnsureAnimationDriverLoaded();
+        Check(g_animation_driver.DriverCount()==0 && g_driver_resources.empty(),"failed package load retained the retired clock");
+        g_registry.enabled.clear();EnsureAnimationDriverLoaded();
+    }
+    // No owner and no prior writes: idle maintenance must not touch Unity meshes.
+    const auto calls=fake_runtime_calls;ApplyDriverMorph({});Check(calls==fake_runtime_calls,"idle morph maintenance touched Unity");
+    g_registry={};g_dynamic_meshes.clear();g_completed.clear();g_driver_resources.clear();g_animation_driver.Reset();
+    lifecycle_material_values.clear();
+    Check(roots==0 && tracked_handles.empty(),"driver lifecycle leaked handles");
+    g_host=nullptr;g_weak_new=nullptr;g_weak_target=nullptr;
+    std::cout<<"PASS driver lifecycle: package/selection isolation, multi-resource ownership, live renderer guard, per-target restore, all-disabled, driverless switch, reload controls and idle behavior"<<std::endl;
+}
+
+void SkinBindingAuditTests() {
+    BE_HostApiV1 host{};host.runtime_invoke=InvokeFake;host.object_unbox=UnboxFake;
+    host.copy_managed_string=StringFake;host.gchandle_new=TrackedRoot;host.gchandle_free=TrackedFree;
+    g_host=&host;g_weak_new=TrackedWeak;
+    g_weak_target=[](uint32_t h)->void* {auto it=tracked_handles.find(h);return it==tracked_handles.end()?nullptr:it->second;};
+    for (auto& method:g_methods) {method.method_info=&method;method.resolved=true;}
+    {
+        ConstructionScope scope;
+        auto* renderer=Make("audit-renderer");auto* mesh=Make("audit-mesh");
+        auto* renderer_object=GameObject("audit-object");renderer->game_object=renderer_object;
+        auto* material=Make("audit-material");renderer->materials=Array({material});
+        auto* a=Make("bone-a");auto* b=Make("bone-b");auto* pose=Make();
+        renderer->mesh=mesh;renderer->bones=Array({a,b});renderer->root_bone=a;mesh->poses=Array({pose});
+        CompletedBinding binding;
+        Check(binding.mesh.Set(mesh),"audit mesh setup failed");
+        for (auto* bone:{a,b}) {WeakObject weak;Check(weak.Set(bone),"audit bone setup failed");binding.bones.push_back(std::move(weak));}
+        binding.bone_paths={"root/a","root/b"};
+        CaptureSkinBindingAudit(renderer,mesh,binding.skin_audit);
+        const auto handles=tracked_handles.size();const auto writes=fake_binding_write_calls;
+        const auto baseline=DescribeSkinBindingState(binding,renderer);
+        renderer->enabled=false;
+        Check(DescribeSkinBindingState(binding,renderer).find(" enabled=0")!=std::string::npos,
+            "audit missed renderer disable");
+        renderer->enabled=true;renderer_object->active_self=false;renderer_object->active_hierarchy=false;
+        Check(DescribeSkinBindingState(binding,renderer).find(" activeSelf=0 activeHierarchy=0")!=std::string::npos,
+            "audit missed inactive GameObject");
+        renderer_object->active_self=true;renderer_object->active_hierarchy=true;material->alive=false;
+        Check(DescribeSkinBindingState(binding,renderer).find("material[0]=dead")!=std::string::npos,
+            "audit missed destroyed material");
+        material->alive=true;auto* shader=material->shader;material->shader=Make("replacement-shader");
+        Check(DescribeSkinBindingState(binding,renderer)!=baseline,
+            "audit missed shader replacement");
+        material->shader=shader;
+        Check(baseline.find("boneMismatches=0")!=baseline.npos && baseline.find("changedPoses=0")!=baseline.npos,
+            "audit rejected an unchanged palette");
+        renderer->bones=Array({b,a});
+        auto state=DescribeSkinBindingState(binding,renderer);
+        Check(state.find("boneMismatches=2")!=state.npos && state.find("firstBone=0")!=state.npos,
+            "audit missed an external palette reorder");
+        renderer->bones=Array({a});state=DescribeSkinBindingState(binding,renderer);
+        Check(state.find("bones=1/2")!=state.npos,"audit missed a truncated palette");
+        renderer->bones=Array({a,b});renderer->root_bone=b;
+        Check(DescribeSkinBindingState(binding,renderer)!=baseline,"audit missed a rootBone replacement");
+        renderer->root_bone=a;pose->matrix.m[12]=3;state=DescribeSkinBindingState(binding,renderer);
+        Check(state.find("changedPoses=1")!=state.npos,"audit missed same-mesh bindpose mutation");
+        pose->matrix.m[12]=0;mesh->poses=Array({pose,Make()});state=DescribeSkinBindingState(binding,renderer);
+        Check(state.find("bindposes=2/1")!=state.npos,"audit missed bindpose count changes");
+        mesh->poses=Array({pose});renderer->mesh=Make("replacement-mesh");
+        Check(DescribeSkinBindingState(binding,renderer)!=baseline,"audit missed a mesh replacement");
+        renderer->mesh=mesh;renderer->root_bone=nullptr;
+        SkinBindingAudit null_root;CaptureSkinBindingAudit(renderer,mesh,null_root);
+        Check(null_root.root_known && null_root.root_bone.instance_id==0,"null rootBone mistaken for an unavailable API");
+        auto* contract=const_cast<MethodContract*>(Contract("skinned.get_root_bone"));contract->resolved=false;
+        SkinBindingAudit missing_root;CaptureSkinBindingAudit(renderer,mesh,missing_root);
+        Check(!missing_root.root_known && DescribeSkinBindingState(binding,renderer).find("rootBone=unavailable")!=std::string::npos,
+            "optional rootBone contract became mandatory");
+        contract->resolved=true;
+        Check(fake_binding_write_calls==writes,"passive audit modified the receiver");
+        Check(tracked_handles.size()>=handles,"audit unexpectedly released live roots");
+    }
+    Check(roots==0 && tracked_handles.empty(),"skin audit leaked GC handles");
+    g_host=nullptr;g_weak_new=nullptr;g_weak_target=nullptr;
+    std::cout<<"PASS passive skin audit: palette reorder/count, mesh/rootBone replacement, bindpose changes, optional API, zero receiver writes and no retained GC roots"<<std::endl;
+}
 int main(int argc,char** argv) {
+    if(argc==2 && std::string_view(argv[1])=="--material-cache-sync") {MaterialCacheSyncTests();return 0;}
+    if(argc==2 && std::string_view(argv[1])=="--skin-binding-audit") {SkinBindingAuditTests();return 0;}
+    if(argc==4 && std::string_view(argv[1])=="--driver-lifecycle") {DriverLifecycleTests(argv[2],argv[3]);return 0;}
     if(argc==2 && std::string_view(argv[1])=="--aurora-legacy") {AuroraRuntimeTests();return 0;}
     if(argc==2 && std::string_view(argv[1])=="--clone-support") {CloneSupportTests();return 0;}
     if(argc==2 && std::string_view(argv[1])=="--npc-roots") {NpcRootTests();return 0;}
@@ -1501,6 +1710,7 @@ int main(int argc,char** argv) {
     if(argc==4 && std::string_view(argv[1])=="--probe-dll") { ProbeDllStartup(argv[2],argv[3]); return 0; }
     if (argc==3 && std::string_view(argv[1])=="--probe") { ProbeTests(argv[2]); return 0; }
     Check(argc>=2,"pass synthetic BEMv1 package path");
-    ParserTests(argv[1]); RegistryTests(argv[1]); HotSwitchTests(argv[1]); StaticResourceTests();ResourceTypeBoundaryTests(argv[1]);SceneRebindTests(argv[1]);InstanceLineageTests();
+    ParserTests(argv[1]); RegistryTests(argv[1]); HotSwitchTests(argv[1]); StaticResourceTests();ResourceTypeBoundaryTests(argv[1]);SceneRebindTests(argv[1]);InstanceLineageTests();DriverLifecycleTests(argv[1]);
+    SkinBindingAuditTests();
     std::cout<<"PASS: BEMv1 parser, exact donor identity, material isolation, rollback, ownership, appearance/LOD routing\n";
 }
