@@ -7,6 +7,7 @@
     <Compile Include="../../BetterEndfieldNext.UI/Services/BemRuntimeSettings.cs" Link="BemRuntimeSettings.cs" />
     <Compile Include="../../BetterEndfieldNext.UI/Services/HotkeyService.cs" Link="HotkeyService.cs" />
     <Compile Include="../../BetterEndfieldNext.UI/Services/BemPackageService.cs" Link="BemPackageService.cs" />
+    <Compile Include="../../BetterEndfieldNext.UI/Services/BemOptionBindings.cs" Link="BemOptionBindings.cs" />
     <Compile Include="../../BetterEndfieldNext.UI/Services/BemToolService.cs" Link="BemToolService.cs" />
   </ItemGroup>
 </Project>

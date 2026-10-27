@@ -18,6 +18,8 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+        <activity android:name=".BemComposeActivity" android:exported="false" android:configChanges="orientation|screenSize" android:theme="@style/AppTheme" />
+        <activity android:name=".BemPreviewActivity" android:exported="false" android:hardwareAccelerated="true" android:theme="@style/AppTheme" />
         <activity
             android:name=".MediaScreenActivity"
             android:exported="false" />

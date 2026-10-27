@@ -349,6 +349,15 @@ void DeferredTexturePayloads() {
     std::vector<uint8_t> bytes;
     Check(DecodeBemTexturePayload(*data.payload_source, data.textures[0], bytes, error) && bytes == fixture.tex0 && bytes == full.textures[0].data, "Raw texture entry differs: " + error);
     Check(DecodeBemTexturePayload(*data.payload_source, data.textures[1], bytes, error) && bytes == fixture.tex1 && bytes == full.textures[1].data, "Zstd texture entry differs: " + error);
+    for(size_t i=0;i<2;++i) {
+        std::vector<uint8_t> streamed;size_t largest=0;
+        Check(VisitBemTexturePayload(*data.payload_source,data.textures[i],[&](std::span<const uint8_t> chunk){
+            largest=std::max(largest,chunk.size());streamed.insert(streamed.end(),chunk.begin(),chunk.end());
+        },error,26),"Texture visitor failed: "+error);
+        Check(streamed==full.textures[i].data && largest<=1024*1024,"Visitor changed raw/Zstd texture data or exceeded chunk bound");
+    }
+    Check(!VisitBemTexturePayload(*data.payload_source,data.textures[0],[](std::span<const uint8_t>){throw std::runtime_error("cancel preview");},error)
+        && error=="cancel preview","Visitor did not propagate cancellation");
     // A frame whose declared content size disagrees with the entry is refused.
     fixture.declared1 = 63; fixture.Write(); BemPocData lying;
     Check(LoadBem(fixture.path, lying, error, {}, nullptr, false, false, {}, UINT64_MAX, true), error);

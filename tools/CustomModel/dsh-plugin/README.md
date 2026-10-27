@@ -100,7 +100,7 @@ and renders it.
 
 | Surface | Behaviour |
 | --- | --- |
-| Orbit / zoom | Drag to orbit, wheel or pinch to zoom, 重置视角 to reframe |
+| Orbit / pan / zoom | Left drag to orbit; right/middle drag or Shift+drag to pan; wheel to zoom. Touch: one finger to orbit, two fingers to pan/pinch. 重置视角 reframes and clears pan. |
 | Appearances (1.0–1.2) | Chips select an `appearances` entry and its component set |
 | Option groups (1.1+) | One chip row per group; choices re-evaluate `component_rules` |
 | Shape parameters (1.3+) | 0–1000 sliders drive `mesh_deformations` sparse frames |

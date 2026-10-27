@@ -69,9 +69,10 @@ set(ASTCENC_UNITTEST OFF CACHE BOOL "" FORCE)
 add_subdirectory("${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/third_party/astcenc"
     "${CMAKE_CURRENT_BINARY_DIR}/astcenc")
 set_target_properties(astcenc-neon-static PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(BetterEndfieldNext.CustomModelCore PUBLIC astcenc-neon-static)
 # ASTC's search loops need optimization even in a debuggable APK. Keep symbols.
 target_compile_options(astcenc-neon-static PRIVATE -O3)
-add_library(betterendfieldnext_installer SHARED installer/install_jni.cpp installer/texture_install.cpp)
+add_library(betterendfieldnext_installer SHARED installer/install_jni.cpp installer/texture_install.cpp installer/preview_jni.cpp installer/compose_jni.cpp)
 target_compile_options(betterendfieldnext_installer PRIVATE -O2)
 target_compile_features(betterendfieldnext_installer PRIVATE cxx_std_20)
 target_include_directories(betterendfieldnext_installer PRIVATE "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/third_party/bcdec")

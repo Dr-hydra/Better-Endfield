@@ -1,4 +1,5 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using BetterEndfieldNext.UI.Controls;
 using System.ComponentModel;
 using BetterEndfieldNext.UI.Models;
 using BetterEndfieldNext.UI.Services;
@@ -22,6 +23,7 @@ public sealed partial class CustomModelPage : UserControl
     private bool _pendingParameters;
     private readonly DispatcherTimer _externalSettingsTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private BemConverterWindow? _converter;
+    private BemComposeWindow? _composer;
     // Packages whose component options are expanded; kept across Render().
     private readonly HashSet<string> _expanded = [];
     private readonly List<Action> _localizeCards = [];
@@ -68,6 +70,7 @@ public sealed partial class CustomModelPage : UserControl
         PageIntro.Text = BemText.Get("支持 BEM 1.0–1.5 模型包，管理角色、武器和技能形态。资源目标不重叠的模型包可以同时启用。");
         ImportButton.Content = BemText.Get("导入 BEM / ZIP");
         ConvertButton.Content = BemText.Get("BEM 创作者工具…");
+        ComposeButton.Content = BemText.Get("组合已安装包");
         RefreshButton.Content = BemText.Get("刷新");
         PackageFolderButton.Content = BemText.Get("打开模型文件夹");
         CharacterFilter.Header = BemText.Get("按角色或武器筛选");
@@ -270,14 +273,31 @@ public sealed partial class CustomModelPage : UserControl
                     controls.Children.Add(appearance);
                     stack.Children.Add(description);
                 }
-                var remove = new Button { Content = BemText.Get("移除"), VerticalAlignment = VerticalAlignment.Bottom };
-                BemLocalizedUI.Set(remove, Button.ContentProperty, () => BemText.Get("移除"));
+                var remove = new Button
+                {
+                    Content = new SymbolIcon(Symbol.Delete),
+                    Width = 40, Height = 40,
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    VerticalAlignment = VerticalAlignment.Bottom
+                };
+                BemLocalizedUI.Set(remove, ToolTipService.ToolTipProperty, () => BemText.Get("移除模型包"));
+                BemLocalizedUI.Set(remove, Microsoft.UI.Xaml.Automation.AutomationProperties.NameProperty,
+                    () => BemText.Get("移除模型包") + " · " + p.Name);
                 remove.Click += async (_, _) =>
                 {
                     try { await _service.RemoveAsync(p); Render(); Message(() => BemText.Get("已移除"), () => p.Name); }
                     catch (Exception ex) { Message(() => BemText.Get("无法移除"), () => ex.Message, InfoBarSeverity.Error); }
                 };
-                controls.Children.Add(remove); stack.Children.Add(controls);
+                var preview = new Button { Content = BemText.Get("预览"), VerticalAlignment = VerticalAlignment.Bottom };
+                BemLocalizedUI.Set(preview, Button.ContentProperty, () => BemText.Get("预览"));
+                preview.Click += (_, _) => BemPreviewWindow.Open(p, InstallRoot, _service, () => { Render(); Message(() => BemText.Get("设置已保存"), () => SelectionAppliedHint); });
+                controls.Children.Add(preview);
+                var actionRow = new Grid { ColumnSpacing = 24 };
+                actionRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                actionRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                actionRow.Children.Add(controls);
+                Grid.SetColumn(remove, 1); actionRow.Children.Add(remove);
+                stack.Children.Add(actionRow);
                 if (p.IsComposable)
                 {
                     var optionPanel = new StackPanel { Spacing = 8 };
@@ -286,7 +306,7 @@ public sealed partial class CustomModelPage : UserControl
                     {
                         var box = new ComboBox
                         {
-                            Header = group.Name, ItemsSource = group.Choices,
+                            Header = BemOptionHeader.Create(group.Name, group.RelatedComponents), ItemsSource = group.Choices,
                             SelectedItem = group.Choices.First(choice => choice.Id == p.SelectedOptions[group.Id]),
                             MinWidth = 220
                         };
@@ -697,6 +717,19 @@ public sealed partial class CustomModelPage : UserControl
             _converter.Activate();
         }
         catch (Exception ex) { Message(() => BemText.Get("无法打开转换器"), () => ex.Message, InfoBarSeverity.Error); }
+    }
+    private void Compose_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_composer == null)
+            {
+                _composer = new BemComposeWindow(_service, InstallRoot, Reload, App.MainWindowInstance);
+                _composer.Closed += (_, _) => _composer = null;
+            }
+            _composer.Activate();
+        }
+        catch (Exception ex) { Message(() => BemText.Get("无法打开组合器"), () => ex.Message, InfoBarSeverity.Error); }
     }
     private void Refresh_Click(object sender, RoutedEventArgs e) => Reload();
     private void OpenFolder_Click(object sender, RoutedEventArgs e)

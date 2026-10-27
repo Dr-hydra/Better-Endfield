@@ -10,6 +10,7 @@
             <StackPanel Orientation="Horizontal" Spacing="12">
                 <Button x:Name="ImportButton" Content="导入 BEM / ZIP" Click="Import_Click" />
                 <Button x:Name="ConvertButton" Content="BEM 创作者工具…" Click="Convert_Click" />
+                <Button x:Name="ComposeButton" Content="组合已安装包" Click="Compose_Click" />
                 <Button x:Name="RefreshButton" Content="刷新" Click="Refresh_Click" />
                 <Button x:Name="PackageFolderButton" Content="打开模型文件夹" Click="OpenFolder_Click" />
             </StackPanel>

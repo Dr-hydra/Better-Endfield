@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "documents": {
+    "BEM_COMPOSER_PC.md": "docs/custom_model/BEM_COMPOSER_PC.md",
     "ANDROID_BEM_OPEN_WITH_20260927.md": "docs/android/research/1.5.3/bem-open-with/ANDROID_BEM_OPEN_WITH.md",
     "ANDROID_CAMERA_MMD_20261001.md": "docs/camera/research/1.5.3/android-mmd/ANDROID_CAMERA_MMD.md",
     "ANDROID_CUSTOM_MODEL_REUSE_AUDIT_20260920.md": "docs/custom_model/research/1.5.3/android-reuse/ANDROID_CUSTOM_MODEL_REUSE_AUDIT.md",

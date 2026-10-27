@@ -1223,6 +1223,8 @@ const zh = {
   astc: 'ASTC 贴图不在浏览器内解码',
   astcCount: '{n} 张 ASTC 贴图不在浏览器内解码',
   reset: '重置视角',
+  controlsMouse: '左键旋转 · 右键/中键或 Shift+拖动平移 · 滚轮缩放',
+  controlsTouch: '单指旋转 · 双指平移/缩放',
   showAll: '全部显示',
   hideNone: '全部隐藏',
   note: '预览的是包内的替换网格，原始角色几何不在包内。',
@@ -1255,6 +1257,8 @@ const en = {
   astc: 'ASTC textures are not decoded in the browser build',
   astcCount: '{n} ASTC textures are not decoded in the browser build',
   reset: 'Reset view',
+  controlsMouse: 'Left drag: orbit · Right/middle or Shift+drag: pan · Wheel: zoom',
+  controlsTouch: 'One finger: orbit · Two fingers: pan/pinch',
   showAll: 'Show all',
   hideNone: 'Hide all',
   note: 'Previews the replacement meshes in the package; the original character geometry is not included.',
@@ -1602,49 +1606,72 @@ class Stage {
     this.frame = requestAnimationFrame(loop)
   }
 
+  pan(dx, dy) {
+    // Move along the camera's screen axes, at the current zoom level.
+    const { yaw, pitch, distance, target } = this.camera
+    const scale = 2 * distance * Math.tan(FOV_Y / 2) / Math.max(1, this.canvas.clientHeight)
+    const right = [Math.cos(yaw), 0, -Math.sin(yaw)]
+    const up = [-Math.sin(pitch) * Math.sin(yaw), Math.cos(pitch), -Math.sin(pitch) * Math.cos(yaw)]
+    for (let axis = 0; axis < 3; axis++) target[axis] += (-dx * right[axis] + dy * up[axis]) * scale
+  }
+
   bindEvents() {
     const canvas = this.canvas
-    let dragging = false
-    let lastX = 0
-    let lastY = 0
     const pointers = new Map()
-
+    let gesture = null
+    const zoom = (distance) => { this.camera.distance = Math.max(0.05, Math.min(400, distance)) }
+    const measure = () => {
+      if (pointers.size < 2) return null
+      const [a, b] = [...pointers.values()]
+      return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, distance: Math.hypot(a.x - b.x, a.y - b.y) }
+    }
+    const isPan = (event) => (event.buttons & 6) !== 0 || event.shiftKey
+    canvas.style.cursor = 'grab'
+    canvas.addEventListener('contextmenu', (event) => event.preventDefault())
     canvas.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse' && ![0, 1, 2].includes(event.button)) return
+      event.preventDefault()
       pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
       canvas.setPointerCapture(event.pointerId)
-      dragging = pointers.size === 1
-      lastX = event.clientX
-      lastY = event.clientY
+      // Establish the baseline when fingers enter/leave; never reuse old coordinates.
+      gesture = measure()
+      canvas.style.cursor = isPan(event) ? 'move' : 'grabbing'
     })
     canvas.addEventListener('pointermove', (event) => {
-      if (!pointers.has(event.pointerId)) return
+      const previous = pointers.get(event.pointerId)
+      if (!previous) return
       pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
       if (pointers.size >= 2) {
-        const [a, b] = [...pointers.values()]
-        const distance = Math.hypot(a.x - b.x, a.y - b.y)
-        if (this.pinch) this.camera.distance *= this.pinch / (distance || 1)
-        this.pinch = distance
+        const next = measure()
+        if (gesture) {
+          this.pan(next.x - gesture.x, next.y - gesture.y)
+          if (gesture.distance > 1 && next.distance > 1) zoom(this.camera.distance * gesture.distance / next.distance)
+        }
+        gesture = next
         return
       }
-      if (!dragging) return
-      const dx = event.clientX - lastX
-      const dy = event.clientY - lastY
-      lastX = event.clientX
-      lastY = event.clientY
-      this.camera.yaw -= dx * 0.008
-      this.camera.pitch = Math.max(-1.45, Math.min(1.45, this.camera.pitch + dy * 0.008))
+      const dx = event.clientX - previous.x
+      const dy = event.clientY - previous.y
+      if (isPan(event)) {
+        this.pan(dx, dy)
+        canvas.style.cursor = 'move'
+      } else {
+        this.camera.yaw -= dx * 0.008
+        this.camera.pitch = Math.max(-1.45, Math.min(1.45, this.camera.pitch + dy * 0.008))
+        canvas.style.cursor = 'grabbing'
+      }
     })
     const release = (event) => {
       pointers.delete(event.pointerId)
-      if (pointers.size < 2) this.pinch = null
-      if (pointers.size === 0) dragging = false
+      gesture = measure()
+      canvas.style.cursor = pointers.size ? 'grabbing' : 'grab'
     }
     canvas.addEventListener('pointerup', release)
     canvas.addEventListener('pointercancel', release)
+    canvas.addEventListener('lostpointercapture', release)
     canvas.addEventListener('wheel', (event) => {
       event.preventDefault()
-      this.camera.distance *= Math.exp(event.deltaY * 0.0012)
-      this.camera.distance = Math.max(0.05, Math.min(400, this.camera.distance))
+      zoom(this.camera.distance * Math.exp(event.deltaY * 0.0012))
     }, { passive: false })
   }
 
@@ -2306,7 +2333,7 @@ function PreviewView() {
     ),
     h('div', { style: styles.body },
       h('div', { style: styles.canvasWrap },
-        h('canvas', { ref: canvasRef, style: styles.canvas }),
+        h('canvas', { ref: canvasRef, style: styles.canvas, title: t((window.matchMedia?.('(pointer: coarse)')?.matches) ? 'controlsTouch' : 'controlsMouse') }),
         h('div', { style: styles.overlay },
           decodeNote || `${t('decoded')} ${status.decoded}/${stats.previewableTextures}`,
           astcCount > 0 ? ` · ${t('astcCount').replace('{n}', String(astcCount))}` : '',

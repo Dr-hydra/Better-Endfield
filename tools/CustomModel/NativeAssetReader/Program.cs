@@ -5,8 +5,8 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using AssetObject = AnimeStudio.Object;
 
-// Read only metadata and references. The external backend understands game
-// serialization; this tool neither exports texture pixels nor rewrites assets.
+// Read metadata and optional preview payloads through the compatible backend.
+// Installed game assets are never modified.
 static class Program
 {
     static readonly JsonSerializerOptions Json = new() { WriteIndented = true, IncludeFields = true };
@@ -99,7 +99,12 @@ static class Program
             case Texture2D t:
                 row["width"] = t.m_Width; row["height"] = t.m_Height;
                 row["format"] = t.m_TextureFormat.ToString(); row["mips"] = t.m_MipCount;
-                row["sampler"] = t.m_TextureSettings; break;
+                row["sampler"] = t.m_TextureSettings;
+                try {
+                    if(t.ToType()?["m_ColorSpace"] is { } colorSpace)
+                        row["serialized_color_space"]=Convert.ToInt32(colorSpace);
+                } catch(Exception ex) {row["color_space_error"]=ex.Message;}
+                break;
         }
         return row;
     }
@@ -114,13 +119,14 @@ static class Program
     }
     static int Run(string[] args)
     {
-        if (args.Length != 2 && !(args.Length==3 && args[2]=="--resource-identities") && !(args.Length==4 && (args[2]=="--shader-metadata" || args[2]=="--texture-bytes"))) {
-            Console.Error.WriteLine("NativeAssetReader <bundle-directory> <raw-graph.json> [--resource-identities | --shader-metadata directory | --texture-bytes directory]"); return 1;
+        if (args.Length != 2 && !(args.Length==3 && args[2]=="--resource-identities") && !(args.Length==4 && (args[2]=="--shader-metadata" || args[2]=="--texture-bytes" || args[2]=="--preview-assets"))) {
+            Console.Error.WriteLine("NativeAssetReader <bundle-directory> <raw-graph.json> [--resource-identities | --shader-metadata directory | --texture-bytes directory | --preview-assets directory]"); return 1;
         }
         string input=Path.GetFullPath(args[0]), output=Path.GetFullPath(args[1]);
         bool resourceIdentities=args.Length==3 && args[2]=="--resource-identities";
         string? shaderDumps=args.Length==4 && args[2]=="--shader-metadata"?Path.GetFullPath(args[3]):null;
-        string? textureBytes=args.Length==4 && args[2]=="--texture-bytes"?Path.GetFullPath(args[3]):null;
+        string? previewAssets=args.Length==4 && args[2]=="--preview-assets"?Path.GetFullPath(args[3]):null;
+        string? textureBytes=args.Length==4 && args[2]=="--texture-bytes"?Path.GetFullPath(args[3]):previewAssets;
         if(shaderDumps!=null) Directory.CreateDirectory(shaderDumps);
         if(textureBytes!=null) Directory.CreateDirectory(textureBytes);
         var files=Directory.GetFiles(input,"*.ab",SearchOption.AllDirectories).Order().ToArray();
@@ -175,6 +181,32 @@ static class Program
                                 if(obj is Mesh identityMesh) row["resource_identity"]=NativeResourceIdentity.MeshIdentity(identityMesh);
                                 if(obj is Texture2D identityTexture) row["resource_identity"]=NativeResourceIdentity.TextureIdentity(identityTexture);
                             } catch(Exception ex) { row["resource_identity_error"]=ex.Message; }
+                        }
+                        if(obj is Mesh mesh && previewAssets!=null) {
+                            try {
+                                int count=mesh.m_VertexCount;
+                                if(count<=0 || mesh.m_Vertices is null || mesh.m_Vertices.Length!=count*3)
+                                    throw new InvalidDataException("Decoded preview vertex positions are incomplete");
+                                if(mesh.m_UV0 is null || mesh.m_UV0.Length<count*2 || mesh.m_UV0.Length%count!=0)
+                                    throw new InvalidDataException("Decoded preview UVs are incomplete");
+                                string prefix=Id(obj).Replace(':','_');
+                                void Floats(string suffix,IEnumerable<float> values) {
+                                    using var writer=new BinaryWriter(File.Create(Path.Combine(previewAssets,prefix+suffix)));
+                                    foreach(float value in values) {
+                                        if(!float.IsFinite(value)) throw new InvalidDataException("Non-finite preview vertex attribute");
+                                        writer.Write(value);
+                                    }
+                                }
+                                Floats(".positions.bin",mesh.m_Vertices);
+                                int uvStride=mesh.m_UV0.Length/count;
+                                Floats(".uvs.bin",Enumerable.Range(0,count).SelectMany(v=>new[]{mesh.m_UV0[v*uvStride],mesh.m_UV0[v*uvStride+1]}));
+                                using(var writer=new BinaryWriter(File.Create(Path.Combine(previewAssets,prefix+".indices.bin"))))
+                                    foreach(uint index in mesh.m_Indices) {
+                                        if(index>=count)throw new InvalidDataException("Preview index exceeds vertex count");
+                                        writer.Write(index);
+                                    }
+                                row["preview_geometry"]=new {positions=prefix+".positions.bin",uvs=prefix+".uvs.bin",indices=prefix+".indices.bin",index_count=mesh.m_Indices.Count,index_size=4};
+                            } catch(Exception ex) {row["preview_geometry_error"]=ex.Message;}
                         }
                         if(obj is Texture2D tex && textureBytes!=null) {
                             try {

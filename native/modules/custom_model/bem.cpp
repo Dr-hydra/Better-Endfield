@@ -1,5 +1,6 @@
 #include "bem.h"
 #include "bem_rewrite.h"
+#include "bem_package_reader.h"
 #include "../../shared/third_party/nlohmann/json.hpp"
 #include "../../shared/third_party/zstd/lib/zstd.h"
 #include "../../shared/third_party/miniz/miniz.h" 
@@ -30,7 +31,7 @@ void Check(bool ok,const std::string& message) { if(!ok) throw std::runtime_erro
 // Per header minor. 1.0 has no option rules; its selected-state budget is 512 MiB.
 struct Limits { size_t choices,rules,textures; uint64_t textureBytes,budget; uint32_t directory; };
 Limits LimitsFor(uint16_t minor) {
-    if(minor>=2) return {64,4096,kMaxBemTextures,kMaxBemTextureBytes,1536*MiB,16384};
+    if(minor>=2) return {64,4096,kMaxBemTextures,kMaxBemTextureBytes,kMaxBemResidentBytes,16384};
     if(minor==1) return {16,512,32,64*MiB,768*MiB,4096};
     return {0,0,32,64*MiB,Budget,4096};
 }
@@ -1308,6 +1309,187 @@ template<class F> bool File(const std::filesystem::path& path,std::string& error
     } catch(const std::exception& e) { error=e.what(); return false; }
 }
 }
+struct BemPackageReader::Impl {
+    std::ifstream file;
+    Container container;
+    struct Slice { uint32_t payload; uint64_t offset, size; };
+    std::vector<Slice> slices;
+};
+BemPackageReader::BemPackageReader() = default;
+BemPackageReader::~BemPackageReader() = default;
+bool BemPackageReader::Open(const std::filesystem::path& path,std::string& error) {
+    error.clear(); impl_.reset();
+    try {
+        auto state=std::make_unique<Impl>();
+        state->file.open(path,std::ios::binary|std::ios::ate);
+        Check(bool(state->file),"BEM package cannot be opened");
+        const auto size=state->file.tellg(); Check(size>=0,"BEM size unavailable");
+        state->container.read=[p=state.get(),size=uint64_t(size)](uint64_t offset,size_t count) {
+            Check(offset<=size && count<=size-offset,"Truncated BEM");
+            std::vector<uint8_t> bytes(count); p->file.clear(); p->file.seekg(offset);
+            Check(bool(p->file.read(reinterpret_cast<char*>(bytes.data()),count)),"BEM read failed");
+            return bytes;
+        };
+        state->container.Open(uint64_t(size)); impl_=std::move(state); return true;
+    } catch(const std::exception& e) { error=e.what(); return false; }
+}
+const BemPackageInfo& BemPackageReader::Info() const { return impl_->container.info; }
+bool BemPackageReader::Snapshot(std::string_view requested,J& out,std::string& error) {
+    error.clear();
+    try {
+        Check(bool(impl_),"Package reader is not open");
+        auto& c=impl_->container; auto selected=c.Select(requested);
+        impl_->slices.clear(); out=c.manifest;
+        std::map<std::string,std::optional<uint32_t>> slots;
+        if(out.contains("texture_slots")) for(const auto& slot:out.at("texture_slots")) {
+            const J* chosen=nullptr;
+            for(const auto& candidate:slot.at("candidates"))
+                if(!candidate.contains("when") || Evaluate(candidate.at("when"),selected.effective)) {
+                    Check(!chosen,"Texture slot has multiple selected candidates"); chosen=&candidate;
+                }
+            Check(chosen,"Texture slot has no selected candidate");
+            slots.emplace(slot.at("id").get<std::string>(),chosen->at("texture").is_null()?
+                std::nullopt:std::optional<uint32_t>(U(chosen->at("texture"))));
+        }
+        auto textures=[&](J& refs) {
+            std::set<uint32_t> seen; J fixed=J::array();
+            for(const auto& ref:refs) {
+                auto id=ref.is_object()?slots.at(ref.at("slot").get<std::string>()):std::optional<uint32_t>(U(ref));
+                if(id && seen.insert(*id).second) fixed.push_back(*id);
+            }
+            refs=std::move(fixed);
+        };
+        out["operations"]=selected.operations; std::set<uint32_t> meshes;
+        std::sort(out["operations"].begin(),out["operations"].end(),[](const J& a,const J& b){return U(a.at("target"))<U(b.at("target"));});
+        for(auto& op:out["operations"]) {
+            op.erase("when");
+            if(op.at("operation")=="replace") meshes.insert(U(op.at("mesh")));
+            if(op.contains("material_overrides")) {
+                J materials=J::array();
+                for(auto material:op.at("material_overrides")) {
+                    textures(material["textures"]);
+                    if(!material.at("textures").empty()) materials.push_back(std::move(material));
+                }
+                if(materials.empty()) op.erase("material_overrides"); else op["material_overrides"]=std::move(materials);
+            }
+        }
+        for(const auto id:meshes) {
+            auto& mesh=out["meshes"].at(id); J draws=J::array();
+            for(auto draw:mesh.at("draws")) {
+                if(c.minor && draw.contains("when") && !Evaluate(draw.at("when"),selected.effective)) continue;
+                draw.erase("when"); textures(draw["textures"]);
+                if(!c.minor) {
+                    const auto width=U(mesh.at("index_size"));
+                    draw["indices"]=c.directory.size()+impl_->slices.size();
+                    impl_->slices.push_back({U(mesh.at("indices")),uint64_t(U(draw.at("start")))*width,uint64_t(U(draw.at("count")))*width});
+                    draw.erase("start");
+                }
+                draws.push_back(std::move(draw));
+            }
+            Check(!draws.empty(),"Selected replacement has no draws"); mesh["draws"]=std::move(draws);
+            mesh.erase("indices"); mesh.erase("index_count");
+        }
+        return true;
+    } catch(const std::exception& e) { error=e.what(); out=J(); return false; }
+}
+bool BemPackageReader::Composition(std::string_view requested,J& out,std::string& error) {
+    error.clear();
+    try {
+        Check(bool(impl_),"Package reader is not open");
+        auto& c=impl_->container; c.Select(requested);
+        impl_->slices.clear(); out=c.manifest;
+        if(c.minor) {
+            std::map<std::string,std::string> saved;
+            while(!requested.empty()) {
+                const auto end=requested.find('&'), colon=requested.find(':');
+                const auto token=requested.substr(0,end);
+                saved.emplace(std::string(token.substr(0,colon)),std::string(token.substr(colon+1)));
+                requested=end==requested.npos?std::string_view{}:requested.substr(end+1);
+            }
+            for(auto& group:out["option_groups"]) {
+                const auto id=group.at("id").get<std::string>();
+                if(saved.contains(id)) group["default"]=saved.at(id);
+            }
+        } else {
+            J choices=J::array();
+            for(const auto& appearance:out.at("appearances"))
+                choices.push_back({{"id",appearance.at("id")},{"name",appearance.at("name")}});
+            out["option_groups"]=J::array({{{"id","appearance"},{"name","Appearance"},
+                {"default",requested.empty()?out.at("default_appearance_id"):J(std::string(requested))},{"choices",choices}}});
+            out["component_rules"]=J::array();
+            for(const auto& component:out.at("target").at("components")) {
+                J candidates=J::array();
+                for(const auto& appearance:out.at("appearances")) for(auto op:appearance.at("components"))
+                    if(op.at("target")==component.at("id")) {
+                        op.erase("target"); op["when"]={{"eq",J::array({"appearance",appearance.at("id")})}};
+                        candidates.push_back(std::move(op));
+                    }
+                out["component_rules"].push_back({{"target",component.at("id")},{"candidates",candidates}});
+            }
+            for(auto& mesh:out["meshes"]) {
+                const auto width=U(mesh.at("index_size"));
+                for(auto& draw:mesh["draws"]) {
+                    const auto id=c.directory.size()+impl_->slices.size();
+                    impl_->slices.push_back({U(mesh.at("indices")),uint64_t(U(draw.at("start")))*width,uint64_t(U(draw.at("count")))*width});
+                    draw["indices"]=id; draw.erase("start");
+                }
+                mesh.erase("indices"); mesh.erase("index_count");
+            }
+            out.erase("appearances"); out.erase("default_appearance_id");
+        }
+        return true;
+    } catch(const std::exception& e) {error=e.what();out=J();return false;}
+}
+bool BemPackageReader::ReadPayload(uint32_t id,uint64_t expected,std::vector<uint8_t>& out,std::string& error) {
+    error.clear();out.clear();
+    try {
+        Check(bool(impl_) && expected>0 && expected<=64ull*1024*1024,"Invalid geometry payload size");
+        auto& c=impl_->container;c.cache.clear();c.decoded=0;
+        if(id<c.directory.size()) {
+            Check(c.directory.at(id).decoded==expected,"Geometry payload length differs");
+            out=c.Payload(id,expected);
+        } else {
+            const auto& slice=impl_->slices.at(id-c.directory.size());
+            Check(slice.size==expected,"Legacy draw length differs");
+            auto bytes=c.Payload(slice.payload,c.directory.at(slice.payload).decoded);
+            Check(slice.offset<=bytes.size() && slice.size<=bytes.size()-slice.offset,"Legacy draw exceeds index payload");
+            out.assign(bytes.begin()+slice.offset,bytes.begin()+slice.offset+slice.size);
+        }
+        c.cache.clear();c.decoded=0;return true;
+    } catch(const std::exception& e) {error=e.what();return false;}
+}
+bool BemPackageReader::CopyPayload(uint32_t id,std::ostream& out,uint32_t& codec,
+        uint64_t& stored,uint64_t& decoded,const std::function<void()>& checkpoint,std::string& error) {
+    error.clear();
+    try {
+        Check(bool(impl_),"Package reader is not open"); auto& c=impl_->container; checkpoint();
+        if(id<c.directory.size() && !c.is_zip) {
+            const auto& entry=c.directory.at(id); codec=entry.codec; stored=entry.stored; decoded=entry.decoded;
+            for(uint64_t pos=0;pos<stored;) {
+                checkpoint(); auto bytes=c.read(entry.offset+pos,size_t(std::min<uint64_t>(65536,stored-pos)));
+                out.write(reinterpret_cast<const char*>(bytes.data()),bytes.size()); pos+=bytes.size();
+                Check(bool(out),"Payload write failed");
+            }
+        } else {
+            std::vector<uint8_t> bytes;
+            if(id<c.directory.size()) bytes=c.Stored(id);
+            else {
+                const auto& slice=impl_->slices.at(id-c.directory.size());
+                c.cache.clear(); c.decoded=0; bytes=c.Payload(slice.payload,c.directory.at(slice.payload).decoded);
+                c.cache.clear(); c.decoded=0;
+                Check(slice.offset<=bytes.size() && slice.size<=bytes.size()-slice.offset,"Legacy draw exceeds index payload");
+                std::vector<uint8_t> sliced(bytes.begin()+slice.offset,bytes.begin()+slice.offset+slice.size); bytes.swap(sliced);
+            }
+            decoded=bytes.size(); Check(decoded>0,"Empty payload"); codec=0;
+            std::vector<uint8_t> packed(ZSTD_compressBound(bytes.size()));
+            auto size=ZSTD_compress(packed.data(),packed.size(),bytes.data(),bytes.size(),3); checkpoint();
+            if(!ZSTD_isError(size) && size<bytes.size()) { packed.resize(size); bytes.swap(packed); codec=1; }
+            stored=bytes.size(); out.write(reinterpret_cast<const char*>(bytes.data()),bytes.size());
+            Check(bool(out),"Payload write failed");
+        }
+        return true;
+    } catch(const std::exception& e) { error=e.what(); return false; }
+}
 bool ReadBemPackageInfo(const std::filesystem::path& path,BemPackageInfo& out,std::string& error,bool skip_validation) {
     out={}; return File(path,error,[&](Container& c){out=c.info;},skip_validation);
 }
@@ -1455,8 +1637,9 @@ bool ExtractBemPayload(const std::filesystem::path& package,uint32_t payload_id,
         Check(bool(out),"Cannot write the audio cache file");
     },false,false,false,false);
 }
-bool DecodeBemTexturePayload(const BemPayloadSource& source,const BemTexture& texture,std::vector<uint8_t>& out,std::string& error) {
-    out.clear(); error.clear();
+bool VisitBemTexturePayload(const BemPayloadSource& source,const BemTexture& texture,
+    const std::function<void(std::span<const uint8_t>)>& consume,std::string& error,int max_window_log) {
+    error.clear();
     try {
         const uint64_t expected=texture.info.data_size;
         Check(texture.payload_id!=UINT32_MAX && texture.payload_codec<=1 && expected && texture.payload_stored &&
@@ -1468,39 +1651,51 @@ bool DecodeBemTexturePayload(const BemPayloadSource& source,const BemTexture& te
         const auto time=std::filesystem::last_write_time(source.path,ec);
         Check(!ec && static_cast<int64_t>(time.time_since_epoch().count())==source.write_time,"BEM package changed since the selection was loaded");
         Check(texture.payload_offset<=size && texture.payload_stored<=size-texture.payload_offset,"Truncated BEM");
-        std::ifstream in(source.path,std::ios::binary); Check(bool(in),"BEM package cannot be opened");
+        std::ifstream in(source.path,std::ios::binary);Check(bool(in),"BEM package cannot be opened");
         in.seekg(static_cast<std::streamoff>(texture.payload_offset));
-        out.resize(static_cast<size_t>(expected));
+        std::vector<uint8_t> chunk(static_cast<size_t>(std::min<uint64_t>(texture.payload_stored,MiB)));
+        uint64_t remaining=texture.payload_stored;
         if(!texture.payload_codec) {
-            Check(bool(in.read(reinterpret_cast<char*>(out.data()),static_cast<std::streamsize>(expected))),"BEM read failed");
+            while(remaining) {
+                const auto count=static_cast<size_t>(std::min<uint64_t>(remaining,chunk.size()));
+                Check(bool(in.read(reinterpret_cast<char*>(chunk.data()),static_cast<std::streamsize>(count))),"BEM read failed");
+                consume(std::span<const uint8_t>(chunk.data(),count));remaining-=count;
+            }
             return true;
         }
-        // Stream the frame: the stored bytes and the decoded texture are never held whole together.
-        struct Stream { ZSTD_DStream* s=ZSTD_createDStream(); ~Stream(){ ZSTD_freeDStream(s); } } stream;
+        struct Stream {ZSTD_DStream* s=ZSTD_createDStream();~Stream(){ZSTD_freeDStream(s);}} stream;
         Check(stream.s && !ZSTD_isError(ZSTD_initDStream(stream.s)),"Zstd stream unavailable");
-        std::vector<uint8_t> chunk(static_cast<size_t>(std::min<uint64_t>(texture.payload_stored,MiB)));
-        uint64_t remaining=texture.payload_stored; ZSTD_outBuffer output{out.data(),out.size(),0}; size_t status=1; bool first=true;
+        if(max_window_log)Check(!ZSTD_isError(ZSTD_DCtx_setParameter(stream.s,ZSTD_d_windowLogMax,max_window_log)),"Invalid preview Zstd window limit");
+        std::vector<uint8_t> decoded(MiB);uint64_t total=0;size_t status=1;bool first=true;
         while(remaining) {
             const auto count=static_cast<size_t>(std::min<uint64_t>(remaining,chunk.size()));
-            Check(bool(in.read(reinterpret_cast<char*>(chunk.data()),static_cast<std::streamsize>(count))),"BEM read failed");
-            remaining-=count;
-            if(first) {
-                first=false;
-                Check(ZSTD_getFrameContentSize(chunk.data(),count)==expected,"Zstd frame extent/content size differs");
-            }
+            Check(bool(in.read(reinterpret_cast<char*>(chunk.data()),static_cast<std::streamsize>(count))),"BEM read failed");remaining-=count;
+            if(first){first=false;Check(ZSTD_getFrameContentSize(chunk.data(),count)==expected,"Zstd frame extent/content size differs");}
             ZSTD_inBuffer input{chunk.data(),count,0};
             while(input.pos<input.size) {
-                Check(status!=0,"Trailing bytes after Zstd frame");
-                const auto consumed=input.pos,produced=output.pos;
+                Check(status!=0,"Trailing bytes after Zstd frame");const auto consumed=input.pos;
+                ZSTD_outBuffer output{decoded.data(),decoded.size(),0};
                 status=ZSTD_decompressStream(stream.s,&output,&input);
-                Check(!ZSTD_isError(status),"Invalid Zstd payload");
-                // No progress with a full output buffer: the frame is larger than declared.
-                Check(status==0 || input.pos!=consumed || output.pos!=produced,"Zstd frame exceeds texture size");
+                Check(!ZSTD_isError(status),"Invalid Zstd payload or preview window limit exceeded");
+                Check(output.pos<=expected-total,"Zstd frame exceeds texture size");total+=output.pos;
+                if(output.pos)consume(std::span<const uint8_t>(decoded.data(),output.pos));
+                Check(status==0 || input.pos!=consumed || output.pos,"Zstd stream made no progress");
             }
         }
-        Check(status==0 && output.pos==out.size(),"Invalid Zstd payload");
-        return true;
-    } catch(const std::exception& e) { out.clear(); out.shrink_to_fit(); error=e.what(); return false; }
+        Check(status==0 && total==expected,"Invalid Zstd payload");return true;
+    } catch(const std::exception& e){error=e.what();return false;}
+}
+bool DecodeBemTexturePayload(const BemPayloadSource& source,const BemTexture& texture,std::vector<uint8_t>& out,std::string& error) {
+    out.clear();error.clear();
+    try {
+        Check(texture.info.data_size && texture.info.data_size<=Budget,"Invalid deferred texture payload extent");
+        out.resize(texture.info.data_size);size_t offset=0;
+        if(VisitBemTexturePayload(source,texture,[&](std::span<const uint8_t> bytes){
+            Check(bytes.size()<=out.size()-offset,"Texture exceeds declared size");
+            std::memcpy(out.data()+offset,bytes.data(),bytes.size());offset+=bytes.size();
+        },error))return true;
+    }catch(const std::exception& e){error=e.what();}
+    out.clear();out.shrink_to_fit();return false;
 }
 bool ParseBem(std::span<const uint8_t> bytes,BemPocData& out,std::string& error,bool skip_validation,bool loading_optimization,std::string_view resource_id) {
     out={}; error.clear(); try {

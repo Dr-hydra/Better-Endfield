@@ -27,6 +27,7 @@ internal sealed class BemOptionGroup
     public string Default { get; init; } = "";
     public List<BemOptionChoice> Choices { get; init; } = [];
     public JsonElement? AvailableWhen { get; init; }
+    public IReadOnlyList<BemComponentBinding> RelatedComponents { get; init; } = [];
 }
 
 // Wire values use fixed ticks so both platforms serialize exactly the same weight.
@@ -77,6 +78,7 @@ internal sealed class BemPackage
     public string SelectedAppearance { get; set; } = "";
     public bool IsComposable { get; init; }
     public List<BemOptionGroup> OptionGroups { get; init; } = [];
+    public IReadOnlyList<BemComponentBinding> Components { get; init; } = [];
     public List<JsonElement> SelectionConstraints { get; init; } = [];
     public Dictionary<string, string> SelectedOptions { get; } = new(StringComparer.Ordinal);
     public List<BemParameterGroup> Parameters { get; init; } = [];
@@ -324,10 +326,11 @@ internal sealed class BemPackageService
         string def = minor == 0 ? StableId(m, "default_appearance_id") : "";
         if (minor == 0 && (appearances.Count < 1 || (!skipValidation && appearances.Count > 64) || appearances.Select(a => a.Id).Distinct().Count() != appearances.Count || !appearances.Any(a => a.Id == def)))
             throw new InvalidDataException(BemText.Get("BEM 外观目录不合法。"));
+        var bindings = BemOptionBindings.Read(m);
         var groups = minor >= 1 ? m.GetProperty("option_groups").EnumerateArray().Select(g => new BemOptionGroup
         {
             Id = StableId(g, "id"), Name = g.GetProperty("name").GetString() ?? "",
-            Default = StableId(g, "default"),
+            Default = StableId(g, "default"), RelatedComponents = bindings.GetValueOrDefault(StableId(g, "id"), []),
             Choices = g.GetProperty("choices").EnumerateArray().Select(c => new BemOptionChoice
             {
                 Id = StableId(c, "id"), Name = c.GetProperty("name").GetString() ?? ""
@@ -382,7 +385,7 @@ internal sealed class BemPackageService
             Author = m.GetProperty("author").GetString() ?? "", Version = m.GetProperty("version").GetString() ?? "",
             Character = target.Id, TargetKind = target.Kind, FormatMinor = minor, ResourceKeys = target.Resources, File = path, Size = stream.Length,
             Appearances = appearances, DefaultAppearance = def, SelectedAppearance = def,
-            IsComposable = minor >= 1, OptionGroups = groups, Parameters = parameters, Drivers = drivers,
+            IsComposable = minor >= 1, OptionGroups = groups, Components = BemOptionBindings.Components(m), Parameters = parameters, Drivers = drivers,
             SelectionConstraints = minor >= 1 && m.TryGetProperty("selection_constraints", out var constraints)
                 ? constraints.EnumerateArray().Select(c => c.Clone()).ToList() : []
         };
@@ -542,13 +545,42 @@ internal sealed class BemPackageService
 
     public Task SaveAsync() => SaveCoreAsync(null);
 
-    private async Task SaveCoreAsync(IReadOnlySet<string>? forcedEnabledIds, bool disableAll = false)
+    // Preview drafts enter the same transaction without changing live UI objects before commit.
+    public Task SavePreviewAsync(BemPackage package, string selection, string parameters) =>
+        SaveCoreAsync(null, preview: (package, selection, parameters));
+
+    private async Task SaveCoreAsync(IReadOnlySet<string>? forcedEnabledIds, bool disableAll = false,
+        (BemPackage Package, string Selection, string Parameters)? preview = null)
     {
         await _gate.WaitAsync();
         try
         {
             var desired = BuildDesiredSettings();
+            var submittedUi = BemRuntimeSettings.Clone(desired);
+            if (preview is { } edit)
+            {
+                var current = Packages.SingleOrDefault(p => p.Id == edit.Package.Id && p.File == edit.Package.File);
+                if (current is null || !System.IO.File.Exists(current.File))
+                    throw new InvalidOperationException(BemText.Get("模型包列表已更新，请重新打开预览。"));
+                var values = desired["Mod." + current.Id];
+                values[current.IsComposable ? "options" : "appearance"] = edit.Selection;
+                var remembered = current.RememberedParameters().Split('&', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(pair => pair.Split(':')).ToDictionary(pair => pair[0], pair => pair[1], StringComparer.Ordinal);
+                foreach (string pair in edit.Parameters.Split('&', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    string[] parts = pair.Split(':'); remembered[parts[0]] = parts[1];
+                }
+                values["parameters_saved"] = string.Join("&", remembered.Select(pair => pair.Key + ":" + pair.Value));
+                values["parameters"] = string.Join("&", current.Parameters.Select(p => p.Id + ":" + remembered.GetValueOrDefault(p.Id, p.Default.ToString())));
+            }
             var baseline = BemRuntimeSettings.Clone(_baseline);
+            if (preview is { } explicitEdit && baseline.TryGetValue("Mod." + explicitEdit.Package.Id, out var before))
+            {
+                // Explicit Save applies this window's validated draft, even if another window or
+                // the in-game overlay changed the same field since the UI snapshot was read.
+                before.Remove(explicitEdit.Package.IsComposable ? "options" : "appearance");
+                before.Remove("parameters"); before.Remove("parameters_saved");
+            }
             var disk = BemRuntimeSettings.Clone(_settings);
             var committed = await Task.Run(() => BemRuntimeSettings.Commit(Path.Combine(Root, "runtime.ini"), baseline, desired, forcedEnabledIds, disk, disableAll));
             var advanced = BuildDesiredSettings();
@@ -564,7 +596,7 @@ internal sealed class BemPackageService
                 p.RestoreDriverHotkeys(state.GetValueOrDefault("driver_hotkeys", ""));
             }
             _baseline = BuildDesiredSettings();
-            RestoreNewerEdits(advanced, desired);
+            RestoreNewerEdits(advanced, submittedUi);
             _settingsStamp = committed.Stamp;
         }
         finally { _gate.Release(); }

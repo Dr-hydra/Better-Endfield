@@ -1,0 +1,8 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; worker-src 'self'; img-src 'self' data:">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="preview.css"><title>BEM Preview</title></head>
+<body><header><strong id="name">BEM</strong><button id="reload"></button><button id="save" disabled></button><button id="reset"></button><label><input id="texture" type="checkbox" checked><span id="textureLabel"></span></label></header>
+<div id="layout"><main><canvas id="canvas"></canvas><div id="status" role="status"></div></main><aside><label id="resourceLabel" for="resource"></label><select id="resource"></select><div id="saveStatus" role="status"></div><div id="options"></div><details><summary id="partsLabel"></summary><p id="notice"></p><div id="parts"></div></details><details><summary id="detailsLabel"></summary><pre id="details"></pre></details></aside></div>
+<script src="renderer.js"></script><script src="preview.js"></script></body></html>

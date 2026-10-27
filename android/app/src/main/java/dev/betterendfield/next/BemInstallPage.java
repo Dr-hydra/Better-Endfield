@@ -168,6 +168,9 @@ final class BemInstallPage {
         disableAll=actionButton(activity.getString(R.string.bem_disable_all));disableAll.setEnabled(false);
         LinearLayout.LayoutParams buttonLayout=new LinearLayout.LayoutParams(-1,dp(44));buttonLayout.topMargin=dp(12);
         management.addView(disableAll,buttonLayout);
+        Button compose=actionButton(Text.of("外观组合"));
+        management.addView(compose,new LinearLayout.LayoutParams(-1,dp(44)));
+        compose.setOnClickListener(v->BemComposeActivity.open(activity));
         repairAllNormals=actionButton(Text.of("修复所有法线"));repairAllNormals.setEnabled(false);
         LinearLayout.LayoutParams repairLayout=new LinearLayout.LayoutParams(-1,dp(44));repairLayout.topMargin=dp(8);
         management.addView(repairAllNormals,repairLayout);
@@ -396,9 +399,14 @@ final class BemInstallPage {
                 LinearLayout actions=new LinearLayout(activity);actions.setOrientation(LinearLayout.HORIZONTAL);
                 LinearLayout.LayoutParams actionLayout=new LinearLayout.LayoutParams(-1,-2);actionLayout.topMargin=dp(16);card.addView(actions,actionLayout);
                 String packageName=entry.getString("name");
+                Button preview=actionButton(Text.of("预览"));
+                LinearLayout.LayoutParams previewLayout=new LinearLayout.LayoutParams(0,dp(48),0.7f);
+                previewLayout.rightMargin=dp(8);actions.addView(preview,previewLayout);
+                packageActions.add(preview);
+                preview.setOnClickListener(v -> BemPreviewActivity.open(activity,generation));
                 boolean isAstc=entry.optBoolean("astc_converted",false)||"astc".equals(entry.optString("texture_mode"));
                 Button convertAstc=actionButton(isAstc?Text.of("已转为 ASTC"):Text.of("转为 ASTC 格式"));
-                LinearLayout.LayoutParams convertLayout=new LinearLayout.LayoutParams(0,dp(44),1f);
+                LinearLayout.LayoutParams convertLayout=new LinearLayout.LayoutParams(0,dp(48),1f);
                 actions.addView(convertAstc,convertLayout);
                 if(!isAstc) packageActions.add(convertAstc);
                 convertAstc.setEnabled(!isAstc && !BemInstaller.busy);
@@ -408,10 +416,17 @@ final class BemInstallPage {
                         .setNegativeButton(Text.of("取消"),null)
                         .setPositiveButton(Text.of("开始转换"),(dialog,which)->BemInstaller.convertToAstc(activity,generation))
                         .show());
-                View actionSpacer=new View(activity);
-                actions.addView(actionSpacer,new LinearLayout.LayoutParams(dp(8),dp(44)));
-                Button remove=actionButton(Text.of("移除模型包"));
-                LinearLayout.LayoutParams removeLayout=new LinearLayout.LayoutParams(0,dp(44),1f);
+                ImageButton remove=new ImageButton(activity);
+                remove.setImageResource(R.drawable.ic_delete);
+                remove.setImageTintList(android.content.res.ColorStateList.valueOf(activity.getColor(R.color.text_primary)));
+                remove.setBackgroundResource(R.drawable.bg_ghost_button);
+                remove.setPadding(dp(12),dp(12),dp(12),dp(12));
+                String removeLabel=Text.of("移除模型包")+" · "+packageName;
+                remove.setContentDescription(removeLabel);
+                remove.setTooltipText(removeLabel);
+                remove.setEnabled(!BemInstaller.busy);
+                LinearLayout.LayoutParams removeLayout=new LinearLayout.LayoutParams(dp(48),dp(48));
+                removeLayout.leftMargin=dp(12);
                 actions.addView(remove,removeLayout);packageActions.add(remove);
                 remove.setOnClickListener(v -> new android.app.AlertDialog.Builder(activity)
                         .setTitle(Text.of("移除「")+packageName+Text.of("」？"))

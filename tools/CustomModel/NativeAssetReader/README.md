@@ -29,3 +29,7 @@ they are distinct from truly absent `missing_resources`.
 Offline reference completeness does not establish runtime replacement support.
 Serialized HG channel flags are retained, and `conversion_ready` remains false
 until the separate runtime/profile validation process is completed.
+
+## Optional static-preview payload export
+
+Use --preview-assets <new-directory> to export decoded mesh positions/UVs/triangle indices and original texture bytes alongside the reference graph. This developer-only mode does not change installed game assets or create a BEM package. Texture metadata includes the serialized color space. The measured head-pack builder is ../build_native_head_preview.py; see docs/custom_model/NATIVE_HEAD_PREVIEW_PROTOTYPE.md for scope and validation.

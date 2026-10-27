@@ -141,7 +141,7 @@ $bemTools = Join-Path $ws.paths.build "tools\bem\dist\BetterEndfieldNext.BemConv
 New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "tools") | Out-Null
 Copy-Item -LiteralPath $bemTools -Destination (Join-Path $publishDir "tools\BemConverter") -Recurse -Force
 New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "docs") | Out-Null
-$documentNames = @("BEM_CREATOR_GUIDE.md", "BEM_FORMAT_SPEC.md", "BEM_V1_4_SPEC.md", "BEM_RUNTIME_COMPATIBILITY.md", "BEM_SOURCE_MOD_CONVERSION.md", "STEAM_CN_LAUNCH.md")
+$documentNames = @("BEM_CREATOR_GUIDE.md", "BEM_FORMAT_SPEC.md", "BEM_V1_4_SPEC.md", "BEM_RUNTIME_COMPATIBILITY.md", "BEM_SOURCE_MOD_CONVERSION.md", "BEM_COMPOSER_PC.md", "STEAM_CN_LAUNCH.md")
 $resolveDocuments = @'
 import json, sys
 from pathlib import Path
@@ -187,6 +187,7 @@ Copy-Item -LiteralPath (Join-Path $nativeStage "runtime") -Destination $publishD
 Copy-Item -LiteralPath (Join-Path $nativeStage "modules") -Destination $publishDir -Recurse -Force
 Copy-Item -LiteralPath (Join-Path $nativeStage "loaders") -Destination $publishDir -Recurse -Force
 Copy-Item -LiteralPath (Join-Path $nativeStage "payloads") -Destination $publishDir -Recurse -Force
+Copy-Item -LiteralPath (Join-Path $nativeStage "tools") -Destination $publishDir -Recurse -Force
 
 $forbiddenReleaseMedia = Get-ChildItem -LiteralPath $publishDir -Recurse -File |
     Where-Object { $_.Extension -in @(".becat", ".wem", ".pck", ".bnk") }
@@ -210,7 +211,9 @@ $requiredReleaseFiles = @(
     "BetterEndfieldNext.exe",
     "loaders\BetterEndfieldNext.Launcher.exe",
     "tools\BemConverter\BetterEndfieldNext.BemConverter.exe",
+    "tools\BemCompose\BetterEndfieldNext.BemCompose.exe",
     "docs\BEM_CREATOR_GUIDE.md",
+    "docs\BEM_COMPOSER_PC.md",
     "docs\BEM_V1_4_SPEC.md",
     "docs\STEAM_CN_LAUNCH.md",
     "modules\BetterEndfieldNext.CustomModel.dll",

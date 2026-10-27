@@ -262,6 +262,9 @@ def convert_automatic(source, output, ini=None, package=None, deformations=None)
 
 def main(argv=None):
     raw_argv = list(sys.argv[1:] if argv is None else argv)
+    if raw_argv and raw_argv[0] == 'compose':
+        from bem_compose_cli import main as compose_main
+        return compose_main(raw_argv[1:])
     # Keep the established single-command CLI while also accepting the more
     # discoverable `workspace init ROOT --source INPUT` spelling.
     if len(raw_argv) >= 2 and raw_argv[0] == 'workspace' and raw_argv[1] == 'init':

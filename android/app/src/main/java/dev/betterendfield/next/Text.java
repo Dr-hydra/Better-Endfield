@@ -27,6 +27,69 @@ final class Text {
         mmd();
         app();
         characters();
+        composer();
+    }
+
+    private static void composer() {
+        put("外观组合", "Appearance composer");
+        put("选择来源", "Select sources");
+        put("选择至少两个已安装的包", "Select at least two installed packages");
+        put("请选择 2 至 16 个来源包", "Select 2 to 16 source packages");
+        put("组合名称", "Composition name");
+        put("组合名称不能为空", "Composition name is required");
+        put("我的外观组合", "My appearance composition");
+        put("分析组合", "Analyze composition");
+        put("正在分析组合…", "Analyzing composition\u2026");
+        put("分析完成", "Analysis complete");
+        put("重新分析", "Analyze again");
+        put("预览与分区修正", "Preview and edit regions");
+        put("保留原版 / 不加入", "Original / exclude");
+        put("自定义分段", "Custom segments");
+        put("展开细分", "Expand parts");
+        put("收起细分", "Collapse parts");
+        put("启用所选", "Enable selected");
+        put("停用所选", "Disable selected");
+        put("高亮所选", "Highlight selected");
+        put("共用选项：", "Shared options: ");
+        put("固定部分", "Fixed parts");
+        put("展开绘制记录", "Expand draws");
+        put("收起绘制记录", "Collapse draws");
+        put("绘制段 ", "Draw ");
+        put("启用", "Enable");
+        put("停用", "Disable");
+        put("已启用", "Enabled");
+        put("已停用", "Disabled");
+        put("部分启用", "Partially enabled");
+        put("未提供", "Unavailable");
+        put("未分类", "Unclassified");
+        put(" 个三角形", " triangles");
+        put("请先选择绘制段", "Select draw segments first");
+        put("所选段的顶点布局不兼容，请分别查看", "Selected segments have incompatible vertex layouts. Inspect them separately.");
+        put("不启用", "Disabled");
+        put("切换选项", "Source options");
+        put("重叠部分会同时绘制；不会自动裁剪或消除穿模。", "Overlapping parts render together. Clipping and intersections are not repaired automatically.");
+        put("生成并安装组合", "Generate and install composition");
+        put("请先开启保留本地副本", "Enable Keep local copies first");
+        put("颈部", "Neck");
+        put("头部", "Head");
+        put("躯干", "Torso");
+        put("骨盆", "Pelvis");
+        put("左臂", "Left arm");
+        put("右臂", "Right arm");
+        put("左腿", "Left leg");
+        put("右腿", "Right leg");
+        put("返回组合", "Back to composer");
+        put("预览包", "Preview package");
+        put("预览包 ", "Preview package ");
+        put("点面修正", "Edit faces");
+        put("结束修正", "Finish editing");
+        put("撤销", "Undo");
+        put("自动分区", "Automatic regions");
+        put("已应用到组合", "Applied to composition");
+        put("选择", "Select ");
+        put("正在生成组合…", "Generating composition\u2026");
+        put("组合已安装", "Composition installed");
+        put("组合安装未完成：", "Composition installation incomplete: ");
     }
 
     /** Source text in, display text out. */
@@ -347,6 +410,13 @@ final class Text {
         put("将扫描模型包内所有纹理并重编码为移动端原生 ASTC 格式（自动补全法线 Z 轴并启用流压缩）。用于解决部分机型贴图黑屏、粉屏或显存过大问题。",
                 "Re-encodes every texture in the package to the mobile-native ASTC format (normals get a reconstructed Z axis and stream compression is enabled). Use it when some devices show black or pink textures or run out of video memory.");
         put("开始转换", "Start conversion");
+        put("预览", "Preview");
+        put("模型预览", "Model preview");
+        put("无法打开预览：", "Could not open preview: ");
+        put("模型包已移除，请关闭预览。", "This package was removed. Close the preview.");
+        put("源包已更新，请重新打开预览。", "The source package changed. Reopen the preview.");
+        put("设置已保存", "Settings saved");
+        put("预览进程已退出，请重新打开。", "The preview process exited. Reopen the preview.");
         put("移除模型包", "Remove model package");
         put("移除「", "Remove \"");
         put("」？", "\"?");

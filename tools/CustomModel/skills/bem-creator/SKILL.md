@@ -1,7 +1,15 @@
 ---
 name: bem-creator
-description: Convert Endfield source Mods to BEM 1.0–1.5, build explicit multi-resource and static-mesh BEM 1.4 projects, apply BEM 1.5 material and keyword overrides, configure author position sliders and EFMI ShapeKey bindings, repair source-side defects (index-buffer overruns, oversized textures, missing donors), inspect, validate, unpack and repack packages, and assemble multi-Mod ZIPs with the BEM creator CLI. Use for BEM creation and conversion diagnostics.
+description: Convert Endfield source Mods to BEM 1.0–1.5, build explicit multi-resource and static-mesh BEM 1.4 projects, apply BEM 1.5 material and keyword overrides, configure author position sliders and EFMI ShapeKey bindings, repair source-side defects (index-buffer overruns, oversized textures, missing donors), inspect, validate, unpack and repack packages, and assemble multi-Mod ZIPs with the BEM creator CLI. Compose existing BEM packages and body regions for PC/Android through the native composer. Use for BEM creation, composition and conversion diagnostics.
 ---
+
+## Existing-package composition
+
+For combining existing BEM packages, mixing source-option groups/draws, or splitting body regions,
+use [references/BEM_COMPOSITION.md](references/BEM_COMPOSITION.md) and scripts/bem_compose.py.
+It calls the shared native composer for PC or Android output; summary gives compact plan IDs without
+dumping triangle arrays. Derive versions from sources, retain source conditions, and use build for
+final delivery. Skip source-Mod onboarding when the requested operation is already clear.
 
 ## User Onboarding & Interaction Protocol
 

@@ -26,6 +26,12 @@
     <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="1.8.260709004" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\resources\bem-preview\*" Exclude="..\..\resources\bem-preview\native-head-android.zip">
+      <LogicalName>BetterEndfieldNext.BemPreview.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
   <!-- Transform only the application assembly; WinUI and framework binaries
        retain their metadata. The clean output assembly stays untouched. -->
   <Target Name="ObfuscateNextApplication" AfterTargets="PrepareForBundle"

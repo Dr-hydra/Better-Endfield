@@ -123,6 +123,34 @@ static class Program
         persisted = BemRuntimeSettings.Read(runtime);
         Expect(persisted.Where(p => p.Key.StartsWith("Mod.")).All(p => p.Value["enabled"] == "false"), "Real service disable-all missed stale external state.");
         Expect(persisted["Mod.missing"]["opaque"] == "retain", "Disabling an unavailable package lost its unknown fields.");
+        // Preview drafts must commit atomically without enabling packages or mutating live state on failure.
+        var previewPackage = service.Packages.Single(p => p.Id == "a");
+        previewPackage.RestoreParameters("removed:250");
+        await service.SaveAsync();
+        string oldAppearance = previewPackage.SelectedAppearance;
+        using (var occupied = new FileStream(runtime, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            try { await service.SavePreviewAsync(previewPackage, "b", "removed:250"); throw new InvalidOperationException("Expected preview save failure."); }
+            catch (IOException) { }
+        }
+        Expect(previewPackage.SelectedAppearance == oldAppearance, "Failed preview save changed the live selection.");
+        await service.SavePreviewAsync(previewPackage, "b", "removed:250");
+        persisted = BemRuntimeSettings.Read(runtime);
+        Expect(previewPackage.SelectedAppearance == "b" && persisted["Mod.a"]["appearance"] == "b", "Preview save did not persist and refresh live state.");
+        Expect(persisted["Mod.a"]["enabled"] == "false", "Saving a preview enabled the package.");
+        Expect(persisted["Mod.a"]["parameters_saved"].Contains("removed:250"), "Preview save lost removed slider memory.");
+        await service.SavePreviewAsync(previewPackage, "a", "removed:250");
+        loaded = BemRuntimeSettings.Read(runtime); external = BemRuntimeSettings.Clone(loaded);
+        external["Mod.a"]["appearance"] = "b";
+        BemRuntimeSettings.Commit(runtime, loaded, external, null);
+        await service.SavePreviewAsync(previewPackage, "a", "removed:350");
+        persisted = BemRuntimeSettings.Read(runtime);
+        Expect(persisted["Mod.a"]["appearance"] == "a", "Explicit preview save lost to a concurrent appearance edit.");
+        Expect(persisted["Mod.a"]["parameters_saved"].Contains("removed:350"), "Explicit preview slider draft was not saved.");
+        service.Packages.Remove(previewPackage);
+        try { await service.SavePreviewAsync(previewPackage, "a", ""); throw new InvalidOperationException("Expected removed-package failure."); }
+        catch (InvalidOperationException error) when (!error.Message.StartsWith("Expected")) { checks++; }
+        service.Load();
         // Section 13 driver hotkeys: the table round-trips through the same
         // `id:key&id:key` shape as parameters, an empty value means unbound, and
         // a duplicate key is dropped instead of silently driving two controllers.

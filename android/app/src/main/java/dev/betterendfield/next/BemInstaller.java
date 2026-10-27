@@ -25,6 +25,7 @@ final class BemInstaller {
     static volatile int progressPercent=-1;
     static volatile long startedAt;
     private static volatile boolean cancelled;
+    private static volatile File compositionCancel;
     private static boolean nativeLoaded;
     private static final java.util.concurrent.ExecutorService worker = Executors.newSingleThreadExecutor();
     static final class PreparedPackage {
@@ -59,6 +60,8 @@ final class BemInstaller {
     static synchronized void cancel() {
         if(removing || !busy) return;
         cancelled=true; if(nativeLoaded) cancelNative(); status=Text.of("正在取消，保留原安装版本…");
+        File signal=compositionCancel;
+        if(signal!=null)try(FileOutputStream out=new FileOutputStream(signal)){out.write(1);}catch(IOException ignored){}
         PendingBundle bundle=pendingBundle;
         if(bundle!=null) {
             pendingBundle=null;
@@ -66,6 +69,39 @@ final class BemInstaller {
         }
     }
     static void checkpoint() throws IOException { if(cancelled) throw new IOException(Text.of("已取消安装")); }
+    static synchronized boolean installComposition(Context context,BemComposeSession session) {
+        if(busy)return false;
+        Context app=context.getApplicationContext();
+        final BemComposeSession snapshot;
+        try {
+            // The editor can keep changing after submission; publish the reviewed snapshot.
+            snapshot=BemComposeSession.create(app);snapshot.write("plan.json",session.read("plan.json"));snapshot.write("choices.json",session.read("choices.json"));
+        }catch(Exception error){status=Text.of("操作失败：")+error.getMessage();return false;}
+        busy=true;cancelled=false;progressPercent=-1;startedAt=android.os.SystemClock.elapsedRealtime();status=Text.of("正在生成组合…");
+        compositionCancel=snapshot.file("cancel");
+        worker.execute(()->{
+            File stage=null;int installed=0;
+            try {
+                File root=new File(app.getFilesDir(),"bem-installed");if(!root.isDirectory() && !root.mkdirs())throw new IOException("Cannot create installed directory");
+                stage=new File(root,"stage-compose-"+UUID.randomUUID());if(!stage.mkdir())throw new IOException("Cannot create composition stage");
+                JSONObject report=snapshot.run("build",new File(stage,"build"),compositionCancel);checkpoint();
+                JSONArray outputs=report.getJSONArray("outputs");
+                // Inspect every output before the first publication, including companion items.
+                java.util.List<PreparedPackage> prepared=new java.util.ArrayList<>();
+                for(int i=0;i<outputs.length();i++) {
+                    checkpoint();String generation=UUID.randomUUID().toString();
+                    BemImportArchive.Item item=new BemImportArchive.Item("composition",new File(stage,generation));if(!item.directory.mkdir())throw new IOException("Cannot stage composition");
+                    java.nio.file.Files.move(new File(outputs.getString(i)).toPath(),item.file.toPath());
+                    JSONObject entry=new JSONObject(inspectNative(item.file.getAbsolutePath()));
+                    entry.put("texture_mode","original").put("generation",generation).put("remote","bem-"+generation+".bem").put("enabled",true);
+                    prepared.add(new PreparedPackage(item,entry));
+                }
+                for(PreparedPackage item:prepared){checkpoint();installPrepared(app,item);installed++;}
+                status=Text.of("组合已安装")+" · "+installed;
+            }catch(Exception error){status=Text.of("组合安装未完成：")+error.getMessage()+(installed>0?" · "+Text.of("已安装")+installed:"");}
+            finally{if(stage!=null)deleteOwned(stage);BemComposeSession.remove(snapshot.directory);compositionCancel=null;busy=false;}
+        });return true;
+    }
     static synchronized JSONArray index(Context context) {
         try {
             String stored=FrameworkSettings.open(context).getString(INDEX,"[]");

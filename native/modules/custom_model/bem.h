@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <span>
 #include <string>
@@ -14,6 +15,7 @@ constexpr uint32_t kMaxBemComponents = 64;
 // BEM 1.2 limits; 1.0/1.1 packages keep their own tighter limits in bem.cpp.
 constexpr uint32_t kMaxBemTextures = 64;
 constexpr uint32_t kMaxBemTextureBytes = 256u * 1024u * 1024u;
+constexpr uint64_t kMaxBemResidentBytes = 1536ull * 1024ull * 1024ull;
 constexpr uint32_t kBemFlagIndex16 = 1u << 2;
 constexpr uint32_t kBemFlagRawStream0 = 1u << 5;
 constexpr uint32_t kBemFlagRawStream1 = 1u << 6;
@@ -286,4 +288,9 @@ bool ExtractBemPayload(const std::filesystem::path& package, uint32_t payload_id
 // bytes are never held whole). `output` receives exactly info.data_size bytes.
 bool DecodeBemTexturePayload(const BemPayloadSource& source, const BemTexture& texture,
     std::vector<uint8_t>& output, std::string& error);
+// Streams validated decoded bytes in bounded chunks. Consumers must discard partial
+// results on failure. An optional Zstd window limit bounds preview decoder memory.
+bool VisitBemTexturePayload(const BemPayloadSource& source, const BemTexture& texture,
+    const std::function<void(std::span<const uint8_t>)>& consume, std::string& error,
+    int max_window_log = 0);
 } // namespace BetterEndfieldNext::CustomModel

@@ -552,6 +552,7 @@ add_custom_target(BetterEndfieldNext.Layout ALL
         "${CMAKE_CURRENT_SOURCE_DIR}/../manifests/combat/buff-sources.bemap"
         "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules/buff-sources.bemap"
     DEPENDS
+        BetterEndfieldNext.BemCompose
         BetterEndfieldNext.Host
         BetterEndfieldNext.Model
         BetterEndfieldNext.CustomModel

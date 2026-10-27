@@ -172,6 +172,7 @@ val prepareAndroidResourceAssets by tasks.registering(Sync::class) {
         }
     }
     from(rootProject.file("resources/character-names.json"))
+    from(rootProject.file("../resources/bem-preview")) { exclude("native-head-pc.zip"); into("bem-preview") }
     // Same layout the desktop module reads from beside its DLL, so one set of
     // bone-pose banks serves both platforms.
     from(rootProject.file("../native/modules/actions/assets")) {

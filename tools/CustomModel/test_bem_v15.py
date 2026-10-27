@@ -14,7 +14,7 @@ import bem_v1 as bem
 import bem_v11
 import bem_v15
 from test_bem_v11 import fixture as composable_fixture
-from bem_tool import main
+from bem_tool import main, TOOL_VERSION
 
 spec = importlib.util.spec_from_file_location(
     'multi_resource_example', Path(__file__).parent / 'examples/multi-resource/create_project.py')
@@ -51,7 +51,7 @@ class Bem15Tests(unittest.TestCase):
         report = json.loads(output.getvalue())
         self.assertTrue(report['success'])
         self.assertEqual(report['format_version'], '1.5')
-        self.assertEqual(report['tool_version'], '1.6.1')
+        self.assertEqual(report['tool_version'], TOOL_VERSION)
 
     def test_material_overrides_require_their_capability(self):
         m = copy.deepcopy(self.b.m)

@@ -34,6 +34,31 @@ public final class BemInstallerTest extends Instrumentation {
         try(InputStream in=getInstrumentation().getContext().getAssets().open("installer-fixture.bem");FileOutputStream out=new FileOutputStream(file)){in.transferTo(out);}
         return file;
     }
+    public void testAndroidComposer() throws Exception {
+        JSONObject group=new JSONObject("{id:'part0',default:'s0',segments:[{id:'a',source_id:'s0',default:'on',count:6,body_draw:'s0.m0.d0',body_region:'neck',triangles:[0,1]},{id:'b',source_id:'s0',default:'on',count:0,body_draw:'s0.m0.d0',body_region:'head',triangles:[]},{id:'c',source_id:'s1',default:'off',count:3}]}" );
+        JSONObject choices=new JSONObject();BemComposeState state=new BemComposeState(new JSONObject().put("slots",new JSONArray().put(group)),choices);
+        JSONObject a=group.getJSONArray("segments").getJSONObject(0),b=group.getJSONArray("segments").getJSONObject(1),c=group.getJSONArray("segments").getJSONObject(2);
+        assertTrue(state.enabled(group,a));assertFalse(state.enabled(group,c));
+        state.setEnabled(group,java.util.List.of(c),true);assertTrue(state.enabled(group,a));assertTrue(state.enabled(group,c));
+        state.setEnabled(group,java.util.List.of(a),false);assertFalse(state.enabled(group,a));assertTrue(state.enabled(group,c));
+        JSONObject before=new JSONObject(choices.toString());JSONObject inspection=state.inspection(group,java.util.List.of(a));
+        assertTrue(inspection.getString("a").equals("on"));assertTrue(inspection.getString("c").equals("off"));assertTrue(before.toString().equals(choices.toString()));
+        choices.put("body_edits",new JSONObject().put("s0.m0.d0",new JSONObject().put("0","head")));
+        assertEquals(1,state.triangles(a));assertEquals(1,state.triangles(b));
+        android.content.Context app=getTargetContext();BemComposeSession session=BemComposeSession.create(app);
+        try {
+            File first=fixture(),second=new File(directory,"compose-second.bem");Files.copy(first.toPath(),second.toPath(),java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            JSONObject request=new JSONObject().put("schema",1).put("platform","android-arm64").put("project_id","test.android.compose").put("name","Android composition test").put("author","Test").put("version","auto")
+                .put("sources",new JSONArray().put(new JSONObject().put("path",first.getAbsolutePath()).put("selection","")).put(new JSONObject().put("path",second.getAbsolutePath()).put("selection","")));
+            session.write("request.json",request);session.analyze();assertTrue(session.read("plan.json").getString("platform").equals("android-arm64"));
+            assertFalse(session.file("preview").exists());
+            JSONObject draft=session.run("draft",session.file("preview"),session.file("cancel"));assertTrue(draft.getBoolean("preview_only"));
+            JSONObject built=session.run("build",session.file("built"),session.file("cancel"));assertFalse(built.getBoolean("preview_only"));
+            JSONObject inspected=new JSONObject(BemInstaller.inspectNative(built.getJSONArray("outputs").getString(0)));assertTrue(inspected.getString("name").contains("Android composition"));
+            session.file("cancel").createNewFile();try{session.run("draft",session.file("cancelled"),session.file("cancel"));fail("Ignored composition cancellation");}catch(IOException expected){}
+            assertFalse(session.file("cancelled").exists());
+        } finally {BemComposeSession.remove(session.directory);}
+    }
     public void testAstcConversionAndOverwriteRejection() throws Exception {
         File input=fixture(),output=new File(directory,"converted.bem");output.delete();
         JSONObject report=new JSONObject(BemInstaller.convertNative(input.getPath(),output.getPath(),"{}",true));
